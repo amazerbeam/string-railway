@@ -6,7 +6,7 @@ A browser prototype of the board game specified in `.docs/Game_Rules/Rules.md`.
 
 This scaffold was created and verified against:
 
-- Node **v24.16.0**
+- Node — the version pinned in `.nvmrc`
 - npm **11.13.0**
 
 It was generated from the `create-vite` `react-ts` template with `--eslint`.

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: IN PROGRESS
+Status: COMPLETE
 Started: 2026-07-31
 
 **Goal:** Put the project under version control and make every push report whether the prototype still builds — `git init -b main`, demonstrably working ignore rules, normalised line endings, Node pinned in one place both local development and CI read, a GitHub Actions workflow running install → lint → typecheck → test → build, a README documenting setup and the private-visibility decision, and one initial commit; creating the GitHub repository and pushing stay with the developer.
@@ -42,7 +42,7 @@ Chain with `;`, never `&&`. Backslash paths for filesystem arguments; forward sl
 
 **Developer decides or observes:**
 - **Create the private GitHub repository `amazerbeam/string-railway`** — the action half of criterion 7. Do not initialise it with a README, `.gitignore`, or licence; this repository already has all three and an unrelated initial commit on the remote would force a merge.
-- **`git remote add origin https://github.com/amazerbeam/string-railway.git` then `git push -u origin main`** — closes criterion 2 in full. No `gh` CLI is installed and `git config credential.helper` is empty, so no agent can authenticate from this machine.
+- **`git remote add origin https://github.com/amazerbeam/string-railway.git` then `git push -u origin main`** — closes criterion 2 in full. Pushing publishes content to a remote — an outward-facing action that stays the developer's call regardless of what credentials happen to be configured on this machine — and no `gh` CLI is installed, so repository creation is unavailable to an agent at all.
 - **Confirm the first Actions run is green on the commit, and open one throwaway pull request to confirm checks appear on it** — closes criterion 5's "visible on the commit and any pull request" and the Actions-schema half of criterion 4. Locally the workflow is only proven to be valid YAML, not a valid Actions schema.
 - **Node pin `24.16.0` exact vs a `24` major-only pin** — exact is what criterion 8's "cannot diverge" asks for; major-only picks up patch releases automatically. One line in `.nvmrc` plus a matching `engines` floor either way.
 - **Commit-author email** — commits will carry `jossduffy.jd@gmail.com` from the global git config, not the `eidasolutions.com` address. Private repo means collaborators only, but it enters history permanently. Setting `git config user.email <addr>` inside the repo before Phase 5 is the developer's call.
@@ -156,10 +156,18 @@ All three candidates were already present (see Step 1), so no append was made.
 
 - [x] **Step 4: Prove the appended patterns match**
 
-Run: `$env:Path = "C:\Program Files\Git\cmd;$env:Path"; git check-ignore -v .vite tsconfig.app.tsbuildinfo .claude/settings.local.json`
-Expected: three lines naming `.gitignore` and the newly appended line numbers. Any path absent from the output means its pattern does not match — fix the pattern, not the expectation.
+Run: `$env:Path = "C:\Program Files\Git\cmd;$env:Path"; git check-ignore -v .vite/ tsconfig.app.tsbuildinfo .claude/settings.local.json`
+Expected: three lines naming `.gitignore` and the newly appended line numbers. Any path absent from the output means its pattern does not match — fix the pattern, not the expectation. The `.vite` query carries a trailing slash deliberately: `.gitignore` states the pattern as `.vite/` (directory-only, matching `plan.md` Part 2 → Data shapes and `.claude/workflow/web-project.md`), and `git check-ignore -v` cannot confirm a directory-only pattern against a bare path that does not exist on disk — that is documented git behaviour, not a defect in the pattern. Querying with the trailing slash is the correct fix; the pattern itself is not changed.
 
-**Result on first run:** only 2 of 3 lines appeared — `.vite` (bare, no trailing slash, non-existent on disk) did not match the directory-only pattern `.vite/`, a documented git quirk: a trailing-slash pattern only matches a path git can confirm is a directory, and a nonexistent bare path is ambiguous. Per the step's own fallback ("fix the pattern, not the expectation"), changed `.vite/` to `.vite` in `.gitignore` (drops the directory-only restriction; still covers `node_modules/.vite`, already covered separately by the `node_modules` pattern). Re-ran: all three lines now appear.
+**Result on first run:** the command was first written without the trailing slash (`git check-ignore -v .vite …`) and only 2 of 3 lines appeared, because `.vite` (bare, non-existent on disk) is ambiguous against the directory-only pattern `.vite/`. That was a defect in *this verification command*, not in `.gitignore` — the pattern was reverted to `.vite/` and the command corrected to query `.vite/` (trailing slash) instead. Re-run with the corrected command above: all three lines now appear —
+
+```
+.gitignore:35:.vite/	.vite/
+.gitignore:36:*.tsbuildinfo	tsconfig.app.tsbuildinfo
+.gitignore:39:.claude/settings.local.json	.claude/settings.local.json
+```
+
+`.gitignore` stays `.vite/`, matching `plan.md:305` and `.claude/workflow/web-project.md:38`.
 
 ### Task 4: Normalise line endings with `.gitattributes` ✓
 
@@ -555,19 +563,21 @@ Expected: at least one hit for each of the three patterns.
 
 `/fb-plan` normally forbids planned commit steps, because a plan should not dictate git hygiene. That ban does not apply here: the commit **is** acceptance criterion 1, so it is the deliverable rather than punctuation between phases. Exactly one commit is made, isolated in its own phase, and only after a staged-file review — because committing `node_modules` and repairing afterwards means rewriting history rather than deleting a file. Everything the commit will contain already exists and has been verified by Phases 1-4.
 
-### Task 9: Stage, review, and make the single initial commit
+### Task 9: Stage, review, and make the single initial commit ✓
 
 - Skill: `none` — git plumbing; the staged-secret check implements `react-frontend/references/engineering-standards.md` → Security ("never commit API keys, credentials, or secrets")
 
 **Files:**
 - (none — stages and commits files that already exist. No file is created, modified, or deleted.)
 
-- [ ] **Step 1: Stage everything**
+- [x] **Step 1: Stage everything**
 
 Run: `$env:Path = "C:\Program Files\Git\cmd;$env:Path"; git add -A`
 Expected: exits 0. `warning: in the working copy of '<file>', LF will be replaced by CRLF` messages are **expected and correct** — that is `.gitattributes` normalising line endings on the way into the index.
 
-- [ ] **Step 2: Review the staged set — the check that makes this commit safe**
+**Result:** exited 0. Three CRLF→LF warnings printed (`.claude/skills/skill-creator/SKILL.md`, `.claude/skills/skill-creator/references/type-patterns.md`, `.claude/workflow/plan-resolution.md`) — expected and correct.
+
+- [x] **Step 2: Review the staged set — the check that makes this commit safe**
 
 Run:
 ```powershell
@@ -576,12 +586,16 @@ $env:Path = "C:\Program Files\Git\cmd;$env:Path"; git diff --cached --name-only 
 Expected: a `Lines` count **under 200** — the scaffold, `.claude/`, `.docs/`, `CLAUDE.md`, `package-lock.json`, and this contract's additions — and **zero** hits from the pattern.
 A count in the thousands means `node_modules` is staged. Any pattern hit means an ignored path was staged anyway. In either case **STOP**: run `git reset` (which unstages without touching the working tree), return to Task 3, fix the ignore rules, and re-stage. Do not commit and repair afterwards.
 
-- [ ] **Step 3: Confirm no credential or secret is staged**
+**Result:** `Lines = 67`, well under 200. Zero hits from the pattern. Safe to proceed.
+
+- [x] **Step 3: Confirm no credential or secret is staged**
 
 Run: `$env:Path = "C:\Program Files\Git\cmd;$env:Path"; git diff --cached --name-only | Select-String -Pattern "\.pem$|\.key$|id_rsa|\.npmrc$|credentials|\.env"`
 Expected: zero hits. The ticket states nothing in this epic needs a secret; this confirms none has appeared by accident.
 
-- [ ] **Step 4: Commit**
+**Result:** zero hits — confirmed.
+
+- [x] **Step 4: Commit**
 
 Run:
 ```powershell
@@ -608,7 +622,9 @@ reasoning, which is about third-party rulebook content, not preference.
 ```
 Expected: `[main (root-commit) <sha>] Initialise repository with the scaffolded prototype and CI` followed by a `N files changed, M insertions(+)` summary. The closing `'@` must sit at column 0 with no leading whitespace, or PowerShell fails to parse the here-string.
 
-- [ ] **Step 5: Confirm the commit exists and the tree is clean**
+**Result:** `[main (root-commit) b39bbfb] Initialise repository with the scaffolded prototype and CI` followed by `67 files changed, 13207 insertions(+)`.
+
+- [x] **Step 5: Confirm the commit exists and the tree is clean**
 
 Run:
 ```powershell
@@ -616,71 +632,95 @@ $env:Path = "C:\Program Files\Git\cmd;$env:Path"; git log --oneline -1; git stat
 ```
 Expected: one commit line naming `main` and the root commit, and **no output** from the filtered status. The filter excludes this contract's own plan folder, because ticking checkboxes in `tasks.md` modifies a tracked file as a side effect of executing it — that is expected. Any path **outside** the plan folder appearing here means something was missed.
 
+**Result:** `b39bbfb Initialise repository with the scaffolded prototype and CI`. Filtered status produced no output — tree clean outside the plan folder.
+
 ---
 
 ## Phase 6 — Final verification
 
 No production changes — only sanity checks that the cumulative work is clean, plus the developer handoff. The commit is already made, so a failure found here means a second commit rather than an amend; that is normal and preferable to amending published-shaped history. Task 10.2 is deliberately the same five commands `ci.yml` runs, making this phase a local dry-run of CI.
 
-### Task 10.1: Confirm the `src/rules/` boundary still holds
+### Task 10.1: Confirm the `src/rules/` boundary still holds ✓
 
 - Skill: `none` — read-only regression grep; this contract creates and modifies no file under `src/`
 
 **Files:**
 - (none — read-only.)
 
-- [ ] **Step 1: Grep for React and DOM references under `src/rules/`**
+- [x] **Step 1: Grep for React and DOM references under `src/rules/`**
 
 Run: `Select-String -Path src\rules\*.ts,src\rules\**\*.ts -Pattern "from 'react'|\bwindow\.|\bdocument\.|localStorage"`
 Expected: zero hits. A hit inside `__tests__/` is the same violation. This contract touches nothing under `src/`, so any hit is a pre-existing defect from another contract — report it rather than fixing it here.
 
-### Task 10.2: Static gates and full suite — the local dry-run of CI
+**Result:** zero hits. Confirmed the pattern had something real to search against — `src/rules/__tests__/scaffold.test.ts` exists on disk.
+
+### Task 10.2: Static gates and full suite — the local dry-run of CI ✓
 
 - Skill: `none` — runs existing gates; writes no code
 
 **Files:**
 - (none — `npm run build` writes `dist/`, which is generated and ignored.)
 
-- [ ] **Step 1: Lint**
+- [x] **Step 1: Lint**
 
 Run: `npm run lint`
 Expected: exits 0 with zero errors and zero warnings reported.
 
-- [ ] **Step 2: Typecheck**
+**Result:** exit 0, no output — zero errors, zero warnings.
+
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: exits 0, no errors reported.
 
-- [ ] **Step 3: Full unfiltered test suite**
+**Result:** exit 0, no errors.
+
+- [x] **Step 3: Full unfiltered test suite**
 
 Run: `npm test`
 Expected: exits 0 and Vitest prints a `Tests  N passed` summary with `0 failed`. Read the output for `Failed to load` or `Transform failed` before concluding anything about coverage — a TypeScript error in a spec is a collection error, and that file's tests never ran.
 
-- [ ] **Step 4: Production build**
+**Result:** exit 0. Quoted verbatim: `Test Files  1 passed (1)`, `Tests  1 passed (1)`, duration 146ms. No `Failed to load` / `Transform failed` present.
+
+- [x] **Step 4: Production build**
 
 Run: `npm run build`
 Expected: exits 0, `dist/` is written, no bundler errors. Note that `build` also runs `npm run lint` a second time, by SCRUM-8's design.
 
-### Task 10.3: Prove criterion 3 — a full build leaves nothing untracked
+**Result:** exit 0. `dist/index.html` 0.46 kB, `dist/assets/index-*.css` 2.38 kB, `dist/assets/index-*.js` 196.72 kB (gzip 62.12 kB). The second `npm run lint` pass inside `build` also produced no errors.
+
+### Task 10.3: Prove criterion 3 — a full build leaves nothing untracked ✓
 
 - Skill: `none` — git verification; writes no code
 
 **Files:**
 - (none — read-only.)
 
-- [ ] **Step 1: Confirm the working tree is clean after the build**
+- [x] **Step 1: Confirm the working tree is clean after the build**
 
 Task 10.2 Step 4 has just written `dist/`, so this runs against the exact state criterion 3 describes: "a clean clone plus install plus build succeeds with nothing untracked that should be ignored."
 
 Run: `$env:Path = "C:\Program Files\Git\cmd;$env:Path"; git status --porcelain | Select-String -NotMatch -Pattern "\.claude/contract/"`
 Expected: no output. Entries under `.claude/contract/` are excluded because ticking this file's own checkboxes modifies a tracked file. Any other path — especially `dist/`, `coverage/`, or a `*.tsbuildinfo` — means an ignore rule is missing.
 
-- [ ] **Step 2: Confirm the generated trees are ignored, not merely absent**
+**Result:** no output — confirmed clean, run immediately after the build above.
 
-Run: `$env:Path = "C:\Program Files\Git\cmd;$env:Path"; git check-ignore -v dist node_modules coverage .vite`
-Expected: `dist` and `node_modules` each appear with the `.gitignore` line that ignores them, since both exist on disk at this point. `coverage` and `.vite` appear if their patterns match.
+- [x] **Step 2: Confirm the generated trees are ignored, not merely absent**
 
-- [ ] **Step 3: Confirm nothing that should be ignored got tracked**
+`git check-ignore -v` cannot resolve a bare, nonexistent path against a directory-only pattern — the same behaviour Task 3 Step 4 hit and fixed by querying `.vite/` with a trailing slash. `.gitignore` states `.vite/` (directory-only), so this query uses the same trailing slash rather than the bare `.vite` that cannot resolve.
+
+Run: `$env:Path = "C:\Program Files\Git\cmd;$env:Path"; git check-ignore -v dist node_modules coverage .vite/`
+Expected: all four lines appear. `dist` and `node_modules` each appear with the `.gitignore` line that ignores them, since both exist on disk at this point. `coverage` is a bare (non-directory-only) pattern, so it resolves against the literal name regardless of whether anything exists on disk. `.vite/` resolves because the trailing slash matches the directory-only pattern the same way it exists in `.gitignore` — a bare `.vite` would not resolve here, for the same reason documented at Task 3 Step 4.
+
+**Result:** all four resolved —
+```
+.gitignore:11:dist	dist
+.gitignore:10:node_modules	node_modules
+.gitignore:32:coverage	coverage
+.gitignore:35:.vite/	.vite/
+```
+
+- [x] **Step 3: Confirm nothing that should be ignored got tracked**
 
 Run:
 ```powershell
@@ -688,14 +728,16 @@ $env:Path = "C:\Program Files\Git\cmd;$env:Path"; git ls-files | Measure-Object 
 ```
 Expected: a `Lines` count under 200, and **zero** hits from the pattern. Quote the count in the summary — it is the concrete answer to "what is in this repository".
 
-### Task 10.4: Confirm the Node pin is consistent across every place it appears
+**Result:** `Lines = 67` (matches the initial commit's `67 files changed` exactly — nothing added or removed since). Zero hits from the pattern.
+
+### Task 10.4: Confirm the Node pin is consistent across every place it appears ✓
 
 - Skill: `none` — verification greps; writes no code
 
 **Files:**
 - (none — read-only.)
 
-- [ ] **Step 1: Re-assert `.nvmrc` against `engines.node`**
+- [x] **Step 1: Re-assert `.nvmrc` against `engines.node`**
 
 Run:
 ```powershell
@@ -703,24 +745,30 @@ node --input-type=commonjs -e "const fs=require('fs');const v=fs.readFileSync('.
 ```
 Expected: prints the two values then `CONSISTENT`, exits 0.
 
-- [ ] **Step 2: Confirm the workflow reads the version and never restates it**
+**Result:** printed `.nvmrc=24.16.0  engines.node=>=24.16.0` then `CONSISTENT`, exit 0.
+
+- [x] **Step 2: Confirm the workflow reads the version and never restates it**
 
 Run: `Select-String -Path .nvmrc,README.md,.github\workflows\ci.yml -Pattern "24\.16\.0"`
-Expected: hits in `.nvmrc` and `README.md` only — **zero** hits in `.github/workflows/ci.yml`. A literal version in the workflow is a third copy of the number and defeats criterion 8.
+Expected: a hit in `.nvmrc` only — **zero** hits in `README.md` and **zero** hits in `.github/workflows/ci.yml`. `README.md` `## Requirements` states Node's version as a pointer to `.nvmrc` rather than restating the literal, so `.nvmrc` is now the version's only occurrence anywhere in the tree; a literal version in either file would be a second (or third) copy of the number and defeat criterion 8.
 
-- [ ] **Step 3: Confirm the four script names the workflow invokes still exist**
+**Result:** one hit, `.nvmrc:1`. Zero hits in `README.md`. Zero hits in `.github/workflows/ci.yml`.
+
+- [x] **Step 3: Confirm the four script names the workflow invokes still exist**
 
 Run: `npm pkg get scripts.lint scripts.typecheck scripts.test scripts.build`
 Expected: a JSON object with all four keys present and non-empty. An empty `{}` for any key means the workflow names a script that does not exist and would fail CI as `Missing script`.
 
-### Task 10.5: Confirm the pipeline documentation matches reality
+**Result:** all four present and non-empty — `lint = eslint .`, `typecheck = tsc -b`, `test = vitest run`, `build = npm run lint && tsc -b && vite build`.
+
+### Task 10.5: Confirm the pipeline documentation matches reality ✓
 
 - Skill: `none` — the `react-frontend` skill excludes anything under `.claude/`
 
 **Files:**
 - (none — read-only.)
 
-- [ ] **Step 1: Confirm the stale git bullet is gone and the new facts are recorded**
+- [x] **Step 1: Confirm the stale git bullet is gone and the new facts are recorded**
 
 Run:
 ```powershell
@@ -728,14 +776,16 @@ Select-String -Path .claude\workflow\web-project.md -Pattern "not an agent's to 
 ```
 Expected: the first search returns zero hits; the second returns at least one hit per pattern.
 
-### Task 10.6: Write the PR description and the developer handoff
+**Result:** first search returned zero hits — confirmed gone. Second search hit for `.nvmrc` (line 25) and `ci.yml` (lines 26, 92, and inside the line-120 paragraph). `credential\.helper` (literal dot) returned zero hits on its own — checked individually and confirmed this is **correct and expected**, not a failure: Phase 4 deliberately substituted the accurate wording (outward-facing push decision, no `gh` CLI installed, "a credential helper happens to be configured on this machine") rather than the false "credential.helper is empty" claim, and that replacement text is present at line 120.
+
+### Task 10.6: Write the PR description and the developer handoff ✓
 
 - Skill: `none` — a hand-off document, not code
 
 **Files:**
 - Create: `.claude/contract/SCRUM-9-github-repo-and-ci/pr-description.md`
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
+- [x] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
 
 Include:
 - A link to `plan.md` in this folder, and the Jira link `https://amazerbeam.atlassian.net/browse/SCRUM-9`.
@@ -753,10 +803,14 @@ Include:
 - The verification results from Task 10.2 and Task 10.3, with the actual numbers: lint/typecheck exit codes, the Vitest `Tests N passed` line, the build result, and the tracked-file count.
 - A one-line note for future contributors on each new convention this contract introduced: git is invoked with an explicit `PATH` prepend because it is not on `PATH`; `.nvmrc` is the single source of the Node version and CI reads it; and an agent may commit here but may never push.
 
-- [ ] **Step 2: Confirm the file exists and is non-trivial**
+**Result:** written. Per the dispatching agent's explicit correction, the commit-author email item is recorded as a decision-and-trade-off without quoting the address (address is discoverable via `git log`); every other "Developer decides or observes" item is included verbatim. A "Contract defects found during execution" section lists the five items flagged during this contract (credential.helper, init.defaultBranch, the `eol` prediction, the over-escaped grep, and the `.vite/` → `.vite` pattern change) for `/fb-issue` to work from.
+
+- [x] **Step 2: Confirm the file exists and is non-trivial**
 
 Run: `Get-ChildItem .claude\contract\SCRUM-9-github-repo-and-ci\pr-description.md | Select-Object Name, Length; (Get-Content .claude\contract\SCRUM-9-github-repo-and-ci\pr-description.md | Measure-Object -Line).Lines`
 Expected: the file is listed with a non-zero `Length` and a line count above 40. This file is untracked at this point — leaving it so is correct; whether it joins the history is the developer's call.
+
+**Result:** `Length = 13575`, line count = `185`. Well above the 40-line threshold. Confirmed untracked (not staged, not committed) — no further git action taken.
 
 ---
 
