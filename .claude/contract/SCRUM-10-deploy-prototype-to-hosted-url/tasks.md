@@ -5,18 +5,21 @@
 Status: PLANNED
 Started: 2026-07-31
 
-**Goal:** Make the repository publish itself — a deployment-location-agnostic build, a visible commit indicator, a `rules.json` fetch that proves the base path resolves, a `noindex` access posture, and a GitHub Actions workflow that publishes to GitHub Pages on every push to `main`, so the placeholder shell goes live now and every later story reaches play-testers by merging.
+**Goal:** Make the repository publish itself — a deployment-location-agnostic build, a visible commit indicator, a `rules.json` fetch that proves the base path resolves, a `noindex` access posture, and a GitHub Actions workflow that publishes to GitHub Pages on every push to `master`, so the placeholder shell goes live now and every later story reaches play-testers by merging.
 
 **Spec:** `plan.md` in this folder.
 
 ---
 
-## Entry conditions — check these before dispatching Phase 1
+## Entry conditions — re-verified 2026-07-31, after the developer completed SCRUM-9
 
-Two things must be true before this contract can usefully run. Neither can be established from inside the pipeline.
+**Condition 1 — SCRUM-9's artefacts: SATISFIED.** `.nvmrc` (`24.16.0`), `.gitattributes`, `.github/workflows/ci.yml`, and the README's `## Continuous integration` and `## Repository visibility` sections all exist. The repository has two commits (`b39bbfb`, `4247e62`) and `origin` points at `https://github.com/amazerbeam/string-railway.git`. Task 1 re-asserts all of this rather than trusting this note.
 
-1. **SCRUM-9 must be finished.** As of 2026-07-31 it is `IN PROGRESS`: `git init -b main` is done, but `.nvmrc`, `.gitattributes`, `.github/workflows/ci.yml`, the README's two new sections and the **initial commit** are not. `git log` reports *"your current branch 'main' does not have any commits yet"* and `git remote -v` is empty. `deploy.yml` reads `node-version-file: .nvmrc`, so it fails on its first run without it. **Task 1 asserts this and stops the contract if it is not true.**
-2. **The GitHub account plan must support Pages from a private repository.** SCRUM-9 commits the repository to being private. Pages publishes from a private repository on **Pro, Team, or Enterprise Cloud — not on Free**. Check `github.com/settings/billing` before executing anything. If the account is Free, stop and decide between upgrading, publishing the repository (which SCRUM-9's `## Repository visibility` section argues against on copyright grounds), or switching to Netlify or Vercel — in which case only Task 9 and Task 10 change, because everything under `src/` and `vite.config.ts` is host-agnostic by design.
+**Condition 2 — the GitHub account plan: STILL THE DEVELOPER'S TO CONFIRM.** SCRUM-9's `## Repository visibility` section commits the repository to being private, and GitHub Pages publishes from a **private** repository only on **Pro, Team, or Enterprise Cloud — not on Free**. If the repository is private on a Free plan, the workflow this contract writes will run green and publish nothing. Check `github.com/settings/billing`. If it is Free, decide between upgrading, making the repository public (which SCRUM-9 argues against on copyright grounds), or moving to Netlify or Vercel — only Tasks 9 and 10 would change, because everything under `src/` and `vite.config.ts` is host-agnostic by design.
+
+**Condition 3 — the branch name.** The working branch is **`master`**, and it tracks `origin/master`. The remote also carries a stale `origin/main` holding only the initial commit, and GitHub's default branch pointer (`origin/HEAD`) still targets it. `master` is **1 commit ahead of `main` with zero divergence**, so nothing is stranded on `main`.
+
+This contract triggers the deploy on **`master`**, per the developer's instruction on 2026-07-31: *"when I push into master a new build will show"*. A workflow's `on.push.branches` filter is independent of which branch GitHub calls default, so this works as-is with no settings change. The stale `origin/main` is left alone by this contract — deleting it and repointing the default branch is tidy-up the developer may want, but it is not required for the deploy to work, and doing it silently could break anything already pointing at `main`.
 
 ---
 
@@ -42,7 +45,7 @@ Chain with `;`, never `&&`. Backslash paths for filesystem arguments; forward sl
 - `src/ui/BuildInfo.tsx` — footer rendering the commit indicator and the probe state
 - `src/ui/BuildInfo.css` — plain CSS for that footer, matching the `AppShell.tsx` / `AppShell.css` pair
 - `public/robots.txt` — crawler exclusion, defence in depth
-- `.github/workflows/deploy.yml` — build-and-publish to GitHub Pages on push to `main`
+- `.github/workflows/deploy.yml` — build-and-publish to GitHub Pages on push to `master`
 - `.claude/contract/SCRUM-10-deploy-prototype-to-hosted-url/pr-description.md` — developer handoff, written in Final verification
 
 **Modified:**
