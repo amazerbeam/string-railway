@@ -100,11 +100,29 @@ Any failing step fails the run. Results appear on the commit and as checks on an
 
 Running those five commands locally is a dry-run of CI. If they pass on your machine, the run should be green.
 
+## Deployment
+
+The prototype is published by the `Deploy to GitHub Pages` workflow at `.github/workflows/deploy.yml`, which runs on every push to `master` and on manual dispatch. Two jobs on `ubuntu-latest`: `build` runs `npm ci` → `npm test` → `npm run build` and uploads `dist/` as a Pages artifact; `deploy` publishes it via `actions/deploy-pages`.
+
+`npm run build` already chains `lint` and `tsc -b`, so a lint or type error fails the deploy. `npm test` runs separately, because nothing else would stop a red suite from publishing. Pushing to `master` is the only publication step — there is no manual upload.
+
+The site is at **https://amazerbeam.github.io/string-railway/**.
+
+### Base path
+
+`vite.config.ts` sets `base: './'`. A GitHub Pages project site serves from `https://<owner>.github.io/<repo>/`, not from a domain root, so the default `base: '/'` would emit asset URLs that 404. A relative base is correct at any depth and on any host, so the deployment could move to Netlify, Vercel or Cloudflare Pages without a code change.
+
+This is safe **only while the app is a single view with no router** — relative bases break for nested client-side routes. If a router is ever added, switch `base` to an explicit path before adding the first route.
+
+`public/rules.json` is served through the same base path, so a tuning change reaches the hosted build through an ordinary push.
+
 ## Repository visibility
 
-**This repository is private, deliberately.** Two reasons, recorded so the decision survives:
+**This repository is public.** It was initially private; the decision was reversed on 2026-07-31 so that GitHub Pages could host the play-test build, which is unavailable for a private repository on the Free plan.
 
-1. `.docs/Game_Rules/` contains a full rules extraction of **String Railway**, a published game credited to Hisashi Hayashi, with art, development and design by named contributors at Forgenext. Publishing that transcription — and `Rules.pdf` alongside it — would republish someone else's rulebook content. A private repository avoids the question entirely and costs nothing for a prototype.
-2. A private repository keeps commit-author email addresses out of public view.
+Two consequences were accepted knowingly rather than overlooked:
 
-Both files are in the initial commit, so making the repository public later republishes them from history — removing them at that point means rewriting history, not deleting a file. Revisit the decision by removing `.docs/Game_Rules/` first.
+1. `.docs/Game_Rules/` contains a full rules extraction of **String Railway**, a published game credited to Hisashi Hayashi, with art, development and design by named contributors at Forgenext. Both `Rules.md` and `Rules.pdf` are in the initial commit, so they are readable from the public history. Deleting them now would not undo that — it would require rewriting history. If a rights holder ever objects, that is the remedy: purge `.docs/Game_Rules/` from history and force-push.
+2. Commit-author email addresses are publicly visible. Enable "Keep my email addresses private" in GitHub account settings if that matters.
+
+Nothing secret belongs in this repository. There are no credentials, tokens, or `.env` files, and the deploy workflow defines no secret — it requests `contents: read`, `pages: write`, and `id-token: write` only.
