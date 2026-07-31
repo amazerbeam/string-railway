@@ -1,0 +1,6 @@
+{
+  "configVersion": 1,
+  "_note": "Tuning surface for String Railway. 'geometry' holds the M2 constants (border perimeter, per-player-count edge lengths, card footprint, string lengths, arc-length tolerance); 'deck' holds the M17 composition. Values are developer decisions — see .docs/Game_Rules/Rules.md §12 and §14. SCRUM-8 ships the shell only.",
+  "geometry": {},
+  "deck": {}
+}

@@ -1,0 +1,13 @@
+# Windows development, Linux CI: normalise line endings once, at the git layer,
+# so a CRLF working tree cannot fail Prettier's lf default in CI.
+* text=auto eol=lf
+
+# Binary assets — never diffed, never line-ending converted.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+
+# SVG is XML and benefits from diffing.
+*.svg text eol=lf
