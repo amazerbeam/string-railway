@@ -1,0 +1,49 @@
+export const PATH_KIND = {
+  SHORT_RAIL: 'SHORT_RAIL',
+  LONG_RAIL: 'LONG_RAIL',
+  MOUNTAIN: 'MOUNTAIN',
+  RIVER: 'RIVER',
+  BORDER: 'BORDER',
+} as const
+
+export const TURN_PHASE = {
+  STATION: 'STATION',
+  STRING: 'STRING',
+  COMPLETE: 'COMPLETE',
+} as const
+
+export const MOVE_KIND = {
+  BEGIN_TURN: 'BEGIN_TURN',
+  PLACE_STATION: 'PLACE_STATION',
+  SKIP_STATION_STEP: 'SKIP_STATION_STEP',
+  PLACE_STRING: 'PLACE_STRING',
+  FORFEIT_STRING: 'FORFEIT_STRING',
+  END_TURN: 'END_TURN',
+} as const
+
+/** Rules.md §10.2, in reject order. The trailing number is the check's position. */
+export const REJECTION_REASON = {
+  NOT_IN_SUPPLY: 'NOT_IN_SUPPLY', // 1
+  WRONG_LENGTH: 'WRONG_LENGTH', // 2 (M6)
+  SELF_INTERSECTS: 'SELF_INTERSECTS', // 3
+  ENDPOINT_OFF_STATION: 'ENDPOINT_OFF_STATION', // 4
+  NETWORK_DISCONNECTED: 'NETWORK_DISCONNECTED', // 5
+  STATION_ENTERED_TWICE: 'STATION_ENTERED_TWICE', // 6
+  TERMINUS_PASS_THROUGH: 'TERMINUS_PASS_THROUGH', // 7
+  PLAYER_LIMIT_EXCEEDED: 'PLAYER_LIMIT_EXCEEDED', // 8 (M15)
+  LEAVES_BORDER: 'LEAVES_BORDER', // 9 (M7)
+  DEGENERATE_TANGENCY: 'DEGENERATE_TANGENCY', // 10 (M8)
+} as const
+
+/** §5.2 station-placement constraints, used by validateStationPlacement. */
+export const STATION_REJECTION_REASON = {
+  TOUCHES_STRING: 'TOUCHES_STRING',
+  TOUCHES_STATION: 'TOUCHES_STATION',
+  NOT_INSIDE_BORDER: 'NOT_INSIDE_BORDER',
+} as const
+
+/** Why step 1 of a turn was skipped. */
+export const SKIP_REASON = {
+  DECK_EMPTY: 'DECK_EMPTY', // M5
+  NO_LEGAL_PLACEMENT: 'NO_LEGAL_PLACEMENT', // M4, after 3 consecutive failures
+} as const

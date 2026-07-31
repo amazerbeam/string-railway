@@ -21,7 +21,9 @@ export default defineConfig([
     },
   },
   {
-    files: ['src/rules/**/*.{ts,tsx}'],
+    // src/rules/ imports the station definitions from src/constants/, so the purity
+    // contract only holds if both trees are guarded. See plan.md → audit.
+    files: ['src/rules/**/*.{ts,tsx}', 'src/constants/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
