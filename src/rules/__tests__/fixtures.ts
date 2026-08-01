@@ -27,6 +27,20 @@ export const TEST_CONFIG: RulesConfig = {
   arcLengthTolerance: 0.02,
   tangencyTolerance: 0.5,
   cardSize: 20,
+  borderPerimeter: 2000,
+  mountainLength: 700,
+  riverLength: 350,
+  deckComposition: {
+    HAMLET: 6,
+    VILLAGE: 6,
+    TOWN: 5,
+    SCENIC: 4,
+    RURAL: 4,
+    TERMINUS: 3,
+    RAILYARD: 3,
+    LANDMARK: 2,
+    DEPOT: 2,
+  },
 }
 
 /** A closed 500x500 loop, corners only (no repeated closing point) — matches the

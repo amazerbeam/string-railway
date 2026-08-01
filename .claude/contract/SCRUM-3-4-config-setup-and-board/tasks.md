@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: IN PROGRESS
 Started: 2026-07-31
 
 **Goal:** Move every M2 geometry constant and the M17 deck composition into `public/rules.json` behind a validator that fails loudly, add a seeded deterministic setup generator under `src/rules/` that produces a complete legal `GameState` for 2–5 players with retry ceilings instead of hangs, render it as a self-scaling SVG board with placeholder station cards and legible owner-to-colour pairing, wire a New Game control with player-count selection, and put all scores, the seed, and the geometry overlays behind a visually distinct toggle that defaults to off.
@@ -71,14 +71,14 @@ Started: 2026-07-31
 
 Populates `rules.json`, widens `RulesConfig` in lockstep with its one construction site, and adds the validator, the seeded PRNG and the deck build. The phase boundary is safe because every new module is pure and self-contained: the widened interface and its only constructor change in a single task, so there is no point at which a `RulesConfig` is missing a required field. `useRulesConfig` lands unconsumed at the end, which type-checks cleanly — `noUnusedLocals` does not flag unused exports.
 
-### Task 1: Add the three new reason-code maps to `src/constants/game.ts`
+### Task 1: Add the three new reason-code maps to `src/constants/game.ts` ✓
 
 - Skill: `react-frontend`
 
 **Files:**
 - Modify: `src/constants/game.ts:49` (append after `SKIP_REASON`)
 
-- [ ] **Step 1: Append `CONFIG_FAILURE`, `SETUP_FAILURE` and `GAME_ACTION`**
+- [x] **Step 1: Append `CONFIG_FAILURE`, `SETUP_FAILURE` and `GAME_ACTION`**
 
 All three are string-bound names the compiler cannot check across the `rules.json` boundary or a `switch`, so they are declared once here per the skill's constants rule. `GAME_ACTION` is deliberately separate from `MOVE_KIND` — see the doc comment.
 
@@ -141,12 +141,12 @@ export const GAME_ACTION = {
 } as const
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: exits 0, no errors reported.
 
-### Task 2: Add `DECK_SIZE` to `src/constants/stations.ts`
+### Task 2: Add `DECK_SIZE` to `src/constants/stations.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -154,7 +154,7 @@ Expected: exits 0, no errors reported.
 - Modify: `src/constants/stations.ts:14` (after the `StationType` export)
 - Test: `src/rules/__tests__/stations.test.ts`
 
-- [ ] **Step 1: Add the constant**
+- [x] **Step 1: Add the constant**
 
 ```ts
 /**
@@ -165,7 +165,7 @@ Expected: exits 0, no errors reported.
 export const DECK_SIZE = 35
 ```
 
-- [ ] **Step 2: Add a spec tying `DECK_SIZE` to the nine deck-eligible types**
+- [x] **Step 2: Add a spec tying `DECK_SIZE` to the nine deck-eligible types**
 
 Append to `src/rules/__tests__/stations.test.ts`. This is the guard that catches a `STATION_DEFINITIONS` row being added or removed without the composition type changing with it.
 
@@ -187,12 +187,12 @@ describe('DECK_SIZE', () => {
 })
 ```
 
-- [ ] **Step 3: Run the stations spec**
+- [x] **Step 3: Run the stations spec**
 
 Run: `npx vitest run src/rules/__tests__/stations.test.ts`
 Expected: exits 0, Vitest reports 0 failed.
 
-### Task 3: Populate `rules.json` and widen `RulesConfig` with its one constructor, in one task
+### Task 3: Populate `rules.json` and widen `RulesConfig` with its one constructor, in one task ✓
 
 - Skill: `react-frontend`
 
@@ -203,7 +203,7 @@ The mandatory config-change shape: the JSON, the TypeScript type and every const
 - Modify: `src/rules/__tests__/fixtures.ts:24-30` — extend `TEST_CONFIG`
 - Config: `public/rules.json` — populate `geometry` and `deck.composition`, update `_note`
 
-- [ ] **Step 1: Write the real values into `public/rules.json`**
+- [x] **Step 1: Write the real values into `public/rules.json`**
 
 Every number is transcribed from `.docs/Game_Rules/Rules.md` §3 and §8.1. Per-player-count edge lengths are **not** keys — they are derived as `borderPerimeter / sideCount`, so AC2's "perimeter preserved" is an identity rather than a tolerance.
 
@@ -237,7 +237,7 @@ Every number is transcribed from `.docs/Game_Rules/Rules.md` §3 and §8.1. Per-
 }
 ```
 
-- [ ] **Step 2: Widen `RulesConfig` and add the deck types in `src/rules/config.ts`**
+- [x] **Step 2: Widen `RulesConfig` and add the deck types in `src/rules/config.ts`**
 
 Replace the file's existing header comment and interface. `DeckStationType` uses `Exclude` so a composition containing `STARTING` is a compile error on the fixture side and a `DECK_TYPE_NOT_ALLOWED` failure on the JSON side.
 
@@ -282,7 +282,7 @@ export interface RulesConfig {
 }
 ```
 
-- [ ] **Step 3: Extend `TEST_CONFIG` in `src/rules/__tests__/fixtures.ts`**
+- [x] **Step 3: Extend `TEST_CONFIG` in `src/rules/__tests__/fixtures.ts`**
 
 Keeps the deliberately-synthetic small figures (so the `no hard-coded tunable` grep over `src/` stays meaningful) and adds the four new fields in the same ratios. The composition sums to `DECK_SIZE` so `parseRulesConfig`-independent consumers of the fixture stay valid.
 
@@ -310,12 +310,12 @@ export const TEST_CONFIG: RulesConfig = {
 }
 ```
 
-- [ ] **Step 4: Typecheck, then run the existing rules suite to prove the widening broke no reader**
+- [x] **Step 4: Typecheck, then run the existing rules suite to prove the widening broke no reader**
 
 Run: `npm run typecheck; npx vitest run src/rules/__tests__/validate.test.ts src/rules/__tests__/search.test.ts src/rules/__tests__/turn.test.ts src/rules/__tests__/reducer.test.ts`
 Expected: typecheck exits 0; Vitest exits 0 with 0 failed — the four specs that consume `TEST_CONFIG` most heavily still pass unchanged.
 
-### Task 4: Add `parseRulesConfig` and `describeConfigFailures` to `src/rules/config.ts`
+### Task 4: Add `parseRulesConfig` and `describeConfigFailures` to `src/rules/config.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -325,7 +325,7 @@ Test-first: the reject cases are the entire point of SCRUM-3 AC4, and each one i
 - Modify: `src/rules/config.ts` — append the result types and both functions
 - Test: `src/rules/__tests__/config.test.ts`
 
-- [ ] **Step 1: Write the failing spec for every reject condition**
+- [x] **Step 1: Write the failing spec for every reject condition**
 
 Create `src/rules/__tests__/config.test.ts`. `valid()` returns a fresh deep copy of the real `rules.json` shape so each case mutates one thing only.
 
@@ -468,12 +468,12 @@ describe('describeConfigFailures', () => {
 })
 ```
 
-- [ ] **Step 2: Confirm the spec fails for the right reason**
+- [x] **Step 2: Confirm the spec fails for the right reason**
 
 Run: `npx vitest run src/rules/__tests__/config.test.ts`
 Expected: exits non-zero. The failure is a transform/collection error naming `parseRulesConfig` as not exported — not an assertion failure, because the functions do not exist yet.
 
-- [ ] **Step 3: Implement both functions in `src/rules/config.ts`**
+- [x] **Step 3: Implement both functions in `src/rules/config.ts`**
 
 Collects **all** failures rather than short-circuiting, so a play-tester who mistyped two keys fixes both in one pass. No branch returns a default or a partially-filled config.
 
@@ -670,12 +670,12 @@ export function describeConfigFailures(failures: readonly ConfigFailure[]): stri
 
 Add `import { DECK_SIZE, STATION_TYPE } from '../constants/stations'` and `import { CONFIG_FAILURE } from '../constants/game'` to the file's import block. The five `as number` / `as DeckComposition` assertions at the return are reachable only when `failures.length === 0`, which guarantees every key was set — noted here so the summary can state the reason rather than leaving them unexplained.
 
-- [ ] **Step 4: Run the spec to green, then typecheck and lint the boundary**
+- [x] **Step 4: Run the spec to green, then typecheck and lint the boundary**
 
 Run: `npx vitest run src/rules/__tests__/config.test.ts; npm run typecheck; npm run lint`
 Expected: Vitest exits 0 with 0 failed; typecheck exits 0; lint exits 0 — the `src/rules/**` override proves `config.ts` reached no DOM global and imported no React.
 
-### Task 5: Create the seeded PRNG at `src/rules/rng.ts`
+### Task 5: Create the seeded PRNG at `src/rules/rng.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -685,7 +685,7 @@ Determinism is SCRUM-4 AC8, so this is test-first. Hand-rolled mulberry32: ~15 l
 - Create: `src/rules/rng.ts`
 - Test: `src/rules/__tests__/rng.test.ts`
 
-- [ ] **Step 1: Write the failing spec**
+- [x] **Step 1: Write the failing spec**
 
 ```ts
 import { describe, expect, it } from 'vitest'
@@ -768,12 +768,12 @@ describe('hashSeed', () => {
 })
 ```
 
-- [ ] **Step 2: Confirm it fails because the module does not exist**
+- [x] **Step 2: Confirm it fails because the module does not exist**
 
 Run: `npx vitest run src/rules/__tests__/rng.test.ts`
 Expected: exits non-zero with a "Failed to load" / cannot-resolve error for `../rng`.
 
-- [ ] **Step 3: Implement `src/rules/rng.ts`**
+- [x] **Step 3: Implement `src/rules/rng.ts`**
 
 ```ts
 /**
@@ -839,12 +839,12 @@ export function hashSeed(text: string): number {
 }
 ```
 
-- [ ] **Step 4: Run to green**
+- [x] **Step 4: Run to green**
 
 Run: `npx vitest run src/rules/__tests__/rng.test.ts; npm run typecheck`
 Expected: Vitest exits 0 with 0 failed; typecheck exits 0.
 
-### Task 6: Create the seeded deck build at `src/rules/deck.ts`
+### Task 6: Create the seeded deck build at `src/rules/deck.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -852,7 +852,7 @@ Expected: Vitest exits 0 with 0 failed; typecheck exits 0.
 - Create: `src/rules/deck.ts`
 - Test: `src/rules/__tests__/deck.test.ts`
 
-- [ ] **Step 1: Write the failing spec**
+- [x] **Step 1: Write the failing spec**
 
 ```ts
 import { describe, expect, it } from 'vitest'
@@ -916,12 +916,12 @@ describe('buildDeck', () => {
 })
 ```
 
-- [ ] **Step 2: Confirm it fails because the module does not exist**
+- [x] **Step 2: Confirm it fails because the module does not exist**
 
 Run: `npx vitest run src/rules/__tests__/deck.test.ts`
 Expected: exits non-zero with a cannot-resolve error for `../deck`.
 
-- [ ] **Step 3: Implement `src/rules/deck.ts`**
+- [x] **Step 3: Implement `src/rules/deck.ts`**
 
 ```ts
 import { STATION_DEFINITIONS, STATION_TYPE } from '../constants/stations'
@@ -985,12 +985,12 @@ export function buildDeck(composition: DeckComposition, rng: Rng): readonly Stat
 }
 ```
 
-- [ ] **Step 4: Run to green**
+- [x] **Step 4: Run to green**
 
 Run: `npx vitest run src/rules/__tests__/deck.test.ts; npm run typecheck`
 Expected: Vitest exits 0 with 0 failed; typecheck exits 0.
 
-### Task 7: Create the config loader hook at `src/ui/useRulesConfig.ts`
+### Task 7: Create the config loader hook at `src/ui/useRulesConfig.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -999,7 +999,7 @@ The project's only `fetch`. All four async states, an `AbortController` released
 **Files:**
 - Create: `src/ui/useRulesConfig.ts`
 
-- [ ] **Step 1: Write the hook**
+- [x] **Step 1: Write the hook**
 
 ```ts
 import { useEffect, useState } from 'react'
@@ -1078,12 +1078,12 @@ export function useRulesConfig(): RulesConfigState {
 }
 ```
 
-- [ ] **Step 2: Typecheck and lint**
+- [x] **Step 2: Typecheck and lint**
 
 Run: `npm run typecheck; npm run lint`
 Expected: both exit 0. Lint proves the `react-hooks` rules are satisfied (empty dep array with no reactive input) and that this file, being under `src/ui/`, is allowed the `fetch` that `src/rules/` is not.
 
-- [ ] **Step 3: Confirm the phase left the rules boundary intact**
+- [x] **Step 3: Confirm the phase left the rules boundary intact**
 
 Run: `Select-String -Path src\rules\*.ts,src\rules\**\*.ts -Pattern "from 'react'|from \"react\"|\bwindow\.|\bdocument\.|localStorage|fetch\("`
 Expected: zero hits — `config.ts`, `rng.ts` and `deck.ts` are pure, and the only `fetch` is in `src/ui/`.
@@ -1094,7 +1094,7 @@ Expected: zero hits — `config.ts`, `rng.ts` and `deck.ts` are pure, and the on
 
 The pieces `generateSetup` is assembled from: the constants file, one new containment predicate, and the exact-perimeter polygon helpers. Each is independently testable and adds no consumer, so the phase boundary is safe — nothing half-wired, and `setup.ts` exports only complete functions.
 
-### Task 8: Create `src/constants/setup.ts`
+### Task 8: Create `src/constants/setup.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -1103,7 +1103,7 @@ Every value here is either a fixed-meaning constant (colours, §2.1 supply count
 **Files:**
 - Create: `src/constants/setup.ts`
 
-- [ ] **Step 1: Write the file**
+- [x] **Step 1: Write the file**
 
 ```ts
 /**
@@ -1180,12 +1180,12 @@ export const LONG_STRINGS_PER_SEAT = 1
 export const MARKERS_PER_SEAT = 2
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: exits 0.
 
-### Task 9: Add `pointTouchesPath` to `src/rules/containment.ts`
+### Task 9: Add `pointTouchesPath` to `src/rules/containment.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -1195,7 +1195,7 @@ The river's "exactly one end touching the border" check (AC6) needs point-to-pol
 - Modify: `src/rules/containment.ts:154` (after `pointInAnyRect`)
 - Test: `src/rules/__tests__/containment.test.ts`
 
-- [ ] **Step 1: Write the failing spec**
+- [x] **Step 1: Write the failing spec**
 
 Append to `src/rules/__tests__/containment.test.ts`, matching the file's existing `SQUARE`-style fixture convention.
 
@@ -1242,12 +1242,12 @@ describe('pointTouchesPath', () => {
 })
 ```
 
-- [ ] **Step 2: Confirm it fails on the missing export**
+- [x] **Step 2: Confirm it fails on the missing export**
 
 Run: `npx vitest run src/rules/__tests__/containment.test.ts`
 Expected: exits non-zero, reporting `pointTouchesPath` is not exported from `../containment`.
 
-- [ ] **Step 3: Implement the predicate**
+- [x] **Step 3: Implement the predicate**
 
 ```ts
 /**
@@ -1280,12 +1280,12 @@ export function pointTouchesPath(point: Point, other: Polyline, tolerance: numbe
 
 Note the closed-loop spec case: `SQUARE` in the existing fixtures is corners-only, so the task's own spec expects the wrap edge to be measured. Either append `SQUARE[0]` at the call site in that one assertion, or drop that assertion — the implementer picks, but the doc comment and the spec must agree.
 
-- [ ] **Step 4: Run to green and confirm no existing containment behaviour moved**
+- [x] **Step 4: Run to green and confirm no existing containment behaviour moved**
 
 Run: `npx vitest run src/rules/__tests__/containment.test.ts; npm run typecheck`
 Expected: Vitest exits 0 with 0 failed — every pre-existing containment spec still passes, since only an addition was made.
 
-### Task 10: Add `sideCountFor`, `regularPolygon` and `inradius` to `src/rules/setup.ts`
+### Task 10: Add `sideCountFor`, `regularPolygon` and `inradius` to `src/rules/setup.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -1295,7 +1295,7 @@ The one place regularity is assumed (§4.2 extensibility). Exact perimeter is th
 - Create: `src/rules/setup.ts`
 - Test: `src/rules/__tests__/setup.test.ts`
 
-- [ ] **Step 1: Write the failing spec**
+- [x] **Step 1: Write the failing spec**
 
 ```ts
 import { describe, expect, it } from 'vitest'
@@ -1401,12 +1401,12 @@ describe('inradius', () => {
 })
 ```
 
-- [ ] **Step 2: Confirm it fails because the module does not exist**
+- [x] **Step 2: Confirm it fails because the module does not exist**
 
 Run: `npx vitest run src/rules/__tests__/setup.test.ts`
 Expected: exits non-zero with a cannot-resolve error for `../setup`.
 
-- [ ] **Step 3: Implement the three helpers**
+- [x] **Step 3: Implement the three helpers**
 
 ```ts
 import type { Point, Polyline } from './types'
@@ -1472,7 +1472,7 @@ export function inradius(sideCount: number, perimeter: number): number {
 }
 ```
 
-- [ ] **Step 4: Run to green, typecheck and lint**
+- [x] **Step 4: Run to green, typecheck and lint**
 
 Run: `npx vitest run src/rules/__tests__/setup.test.ts; npm run typecheck; npm run lint`
 Expected: Vitest exits 0 with 0 failed; typecheck exits 0; lint exits 0.
@@ -1483,7 +1483,7 @@ Expected: Vitest exits 0 with 0 failed; typecheck exits 0; lint exits 0.
 
 The validator lands before the generator so `generateSetup` can use it as its final gate rather than duplicating the checks. The phase boundary is safe because the generator is the only new consumer of the validator, and both are pure functions with no UI wiring — at the end of this phase the engine can produce and prove a legal board with no component in existence.
 
-### Task 11: Create `src/rules/setupValidation.ts`
+### Task 11: Create `src/rules/setupValidation.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -1493,7 +1493,7 @@ SCRUM-4 AC9's gate. **This is deliberately not `validateStationPlacement`**: §4
 - Create: `src/rules/setupValidation.ts`
 - Test: `src/rules/__tests__/setupValidation.test.ts`
 
-- [ ] **Step 1: Write the failing spec — one case per failure code**
+- [x] **Step 1: Write the failing spec — one case per failure code**
 
 Each case takes a known-good state and breaks exactly one invariant, so a passing suite proves each code is reachable and that a legal board trips none of them. Uses `makeState` / `makePath` / `makeStation` / `makeSeat` from `fixtures.ts` and `TEST_CONFIG`.
 
@@ -1673,12 +1673,12 @@ describe('validateSetup', () => {
 })
 ```
 
-- [ ] **Step 2: Confirm it fails on the missing module**
+- [x] **Step 2: Confirm it fails on the missing module**
 
 Run: `npx vitest run src/rules/__tests__/setupValidation.test.ts`
 Expected: exits non-zero with a cannot-resolve error for `../setupValidation`.
 
-- [ ] **Step 3: Implement `src/rules/setupValidation.ts`**
+- [x] **Step 3: Implement `src/rules/setupValidation.ts`** — implemented with one correction: only the mountain is wrapped by `closed()` before the station-touch test. The river is an open arc (§4.1 step 3), so wrapping it invented a phantom chord from its inland tip back to its mouth, which the sampler (`blockers` passes `riverPath` unwrapped) does not see. Same `STATION_TOUCHES_TERRAIN` code, one detail message per terrain.
 
 ```ts
 import { PATH_KIND, SETUP_FAILURE } from '../constants/game'
@@ -1876,12 +1876,12 @@ export function validateSetup(state: GameState, config: RulesConfig): SetupValid
 
 Note: `touchesRect`'s first parameter is the *path*, so the station checks pass the loop first. The `STATION_TOUCHES_STATION` loop reports each offending pair twice (once from each side); that is acceptable for a diagnostic and cheaper than tracking seen pairs, but say so in the summary rather than leaving it as an apparent bug.
 
-- [ ] **Step 4: Leave the spec red until Task 12 exists**
+- [x] **Step 4: Leave the spec red until Task 12 exists** — the spec was left red as directed. The stated `Expected: exits 0` is **not achievable at this step**: `tsc -b` compiles the test files too, so the spec's `import { generateSetup } from '../setup'` fails as `TS2305: Module '"../setup"' has no exported member 'generateSetup'` until Task 12 lands. Observed exit 2 with that single error and nothing else. Typecheck exits 0 at the phase-end block.
 
 Run: `npm run typecheck`
 Expected: exits 0. `setupValidation.test.ts` still fails because it imports `generateSetup`, which Task 12 adds — that is the intended state at this step, not a defect. Do not stub `generateSetup` to make it green early.
 
-### Task 12: Add `generateSetup` and `SetupGenerationError` to `src/rules/setup.ts`
+### Task 12: Add `generateSetup` and `SetupGenerationError` to `src/rules/setup.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -1891,7 +1891,7 @@ M3 generation (SCRUM-4 AC1, 4–9). The three samplers stay **private** to this 
 - Modify: `src/rules/setup.ts` — append the error class, the samplers and `generateSetup`
 - Test: `src/rules/__tests__/setup.test.ts` — append the generation specs
 
-- [ ] **Step 1: Append the failing generation specs**
+- [x] **Step 1: Append the failing generation specs**
 
 ```ts
 describe('generateSetup', () => {
@@ -2060,12 +2060,12 @@ describe('generateSetup', () => {
 
 Add to the spec's import block: `PATH_KIND`, `TURN_PHASE` from `../../constants/game`; `DECK_SIZE`, `STATION_TYPE` from `../../constants/stations`; `MOUNTAIN_OFFSET_FRACTION`, `SHORT_STRINGS_PER_SEAT`, `LONG_STRINGS_PER_SEAT`, `MARKERS_PER_SEAT` from `../../constants/setup`; `generateSetup`, `SetupGenerationError` from `../setup`; `validateSetup` from `../setupValidation`; `TEST_CONFIG` from `./fixtures`; and types `ColourId`, `RulesConfig`.
 
-- [ ] **Step 2: Confirm the new specs fail on the missing exports**
+- [x] **Step 2: Confirm the new specs fail on the missing exports** — observed `Tests  15 failed | 14 passed (29)`, every new spec failing with `TypeError: generateSetup is not a function`. Note the file did **not** hit a collection error: Vite resolves a missing named export from a TS module to `undefined` rather than throwing, so the Task 10 describes did run and passed. Harmless, but the stated expectation was wrong about that.
 
 Run: `npx vitest run src/rules/__tests__/setup.test.ts`
 Expected: exits non-zero, reporting `generateSetup` / `SetupGenerationError` are not exported. The Task 10 describes (`sideCountFor`, `regularPolygon`, `inradius`) do not run either, because a collection error stops the whole file — that is expected here, not a regression.
 
-- [ ] **Step 3: Add the error class and the mountain sampler**
+- [x] **Step 3: Add the error class and the mountain sampler**
 
 ```ts
 /**
@@ -2143,7 +2143,7 @@ function sampleMountain(
 
 The `throw new SetupGenerationError(0, 4, …)` placeholder arguments are wrong on purpose at this step — Step 6 replaces every sampler throw with a thrown `SetupFailure[]` that `generateSetup` wraps with the real seed and player count. Do not leave them.
 
-- [ ] **Step 4: Add the river sampler**
+- [x] **Step 4: Add the river sampler**
 
 ```ts
 /**
@@ -2223,7 +2223,7 @@ function sampleRiver(
 }
 ```
 
-- [ ] **Step 5: Add the corner-station placer**
+- [x] **Step 5: Add the corner-station placer**
 
 ```ts
 /**
@@ -2308,7 +2308,7 @@ function placeCornerStation(
 }
 ```
 
-- [ ] **Step 6: Add `generateSetup`, and make every sampler throw failures the orchestrator wraps**
+- [x] **Step 6: Add `generateSetup`, and make every sampler throw failures the orchestrator wraps** — all three `SetupGenerationError(0, 4, …)` placeholders replaced by `SetupSamplerError`; `Select-String "SetupGenerationError\(0,"` over `src\rules\*.ts` returns zero hits.
 
 Replace each sampler's `throw new SetupGenerationError(0, 4, [...])` with `throw new SetupSamplerError([...])` — a module-private error carrying only `failures` — and let `generateSetup` catch it and re-throw a `SetupGenerationError` with the real seed and player count. That keeps the seed in one place instead of threading it through three samplers.
 
@@ -2461,17 +2461,17 @@ export function generateSetup(request: SetupRequest, config: RulesConfig): GameS
 
 Add to `src/rules/setup.ts`'s import block: `PATH_KIND`, `SETUP_FAILURE`, `TURN_PHASE` from `../constants/game`; `STATION_DEFINITIONS`, `STATION_TYPE` from `../constants/stations`; `COLOUR_SEATS`, `MAX_MOUNTAIN_ATTEMPTS`, `MAX_RIVER_ATTEMPTS`, `MAX_STATION_ATTEMPTS`, `MOUNTAIN_OFFSET_FRACTION`, `MOUNTAIN_SEGMENTS`, `RIVER_EDGE_MARGIN`, `RIVER_MAX_TOTAL_TURN`, `RIVER_SEGMENTS`, `STATION_INSET_DEPTH`, `SHORT_STRINGS_PER_SEAT`, `LONG_STRINGS_PER_SEAT`, `MARKERS_PER_SEAT` from `../constants/setup`; `EPSILON`, `selfIntersects` from `./geometry`; `pathFullyInside`, `pointTouchesPath`, `rectFullyInside`, `rectsOverlapOrTouch`, `touchesPath`, `touchesRect` from `./containment`; `buildDeck` from `./deck`; `createRng` from `./rng`; `validateSetup` from `./setupValidation`; `asColourId`, `asPathId`, `asPlayerId`, `asStationId` from `./types`; and the types `ColourSeat`, `GameState`, `PlacedPath`, `PlacedStation`, `Rect`, plus `RulesConfig`, `Rng` and `SetupFailure`.
 
-- [ ] **Step 7: Run both setup specs to green**
+- [x] **Step 7: Run both setup specs to green** — green after one test-fixture correction: `reports a seat whose starting station is not on the board` was vacuous, because `makeSeat`'s default `startingStationId` is `${colour}-START`, which is exactly the id `generateSetup` assigns, so the "broken" seat still named a station that was on the board. Now overrides `startingStationId` to `NO-SUCH-STATION`.
 
 Run: `npx vitest run src/rules/__tests__/setup.test.ts src/rules/__tests__/setupValidation.test.ts`
 Expected: both exit 0 with 0 failed. `setupValidation.test.ts` now resolves `generateSetup`, so the Task 11 specs run for the first time.
 
-- [ ] **Step 8: Typecheck, lint, and confirm no `Math.random` reached generation**
+- [x] **Step 8: Typecheck, lint, and confirm no `Math.random` reached generation** — typecheck 0, lint 0. The `Select-String` returns 2 hits, both **prose inside doc comments** explaining the absence (`rng.ts:4`, `setup.ts` generateSetup docblock); zero call sites.
 
 Run: `npm run typecheck; npm run lint; Select-String -Path src\rules\*.ts -Pattern "Math\.random|Date\.now"`
 Expected: typecheck and lint exit 0; the `Select-String` returns zero hits.
 
-### Task 13: Add `boardBounds` to `src/rules/setup.ts`
+### Task 13: Add `boardBounds` to `src/rules/setup.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -2481,7 +2481,7 @@ Pure so the SVG `viewBox` is testable without a renderer (AC10).
 - Modify: `src/rules/setup.ts` — append
 - Test: `src/rules/__tests__/setup.test.ts` — append
 
-- [ ] **Step 1: Write the failing spec**
+- [x] **Step 1: Write the failing spec**
 
 ```ts
 describe('boardBounds', () => {
@@ -2524,7 +2524,7 @@ describe('boardBounds', () => {
 })
 ```
 
-- [ ] **Step 2: Implement**
+- [x] **Step 2: Implement**
 
 ```ts
 /**
@@ -2571,7 +2571,7 @@ export function boardBounds(state: GameState, config: RulesConfig): Rect {
 }
 ```
 
-- [ ] **Step 3: Run to green and measure both new rules modules**
+- [x] **Step 3: Run to green and measure both new rules modules** — first measurement put `setup.ts` at **495 lines**, over the blocking budget, so the split was performed in this task as directed. `src/rules/setupSamplers.ts` now holds `SetupSamplerError` and the three samplers, **plus** `PlayerCount` / `sideCountFor` / `regularPolygon` / `inradius`: the samplers call the latter two inside their retry loops, so leaving them in `setup.ts` would have made the two modules import each other. `setup.ts` re-exports all four, so `from './setup'` remains the public entry point and no existing import changed. Final: `setup.ts` 243, `setupSamplers.ts` 294, `setupValidation.ts` 182 — all under 400. Vitest 0, typecheck 0.
 
 Run: `npx vitest run src/rules/__tests__/setup.test.ts; npm run typecheck; (Get-Content src\rules\setup.ts | Measure-Object -Line).Lines; (Get-Content src\rules\setupValidation.ts | Measure-Object -Line).Lines`
 Expected: Vitest exits 0 with 0 failed; typecheck exits 0; **both line counts are under 400**. If `setup.ts` exceeds it, split the three samplers into `src/rules/setupSamplers.ts` in this task rather than deferring it.
@@ -2582,7 +2582,7 @@ Expected: Vitest exits 0 with 0 failed; typecheck exits 0; **both line counts ar
 
 Leaf components first, then the root that composes them, so every import resolves within the phase. `BoardOverlays` lands here rather than with the debug panel because it is a board concern and it owns `OverlayFlags`, which `Board` needs — putting it in Phase 6 would make Phase 4 import from a file that does not exist yet. The phase ends with a board that renders but is not yet reachable from the app; Phase 5 wires it.
 
-### Task 14: Create `src/ui/StationCard.tsx` and its CSS
+### Task 14: Create `src/ui/StationCard.tsx` and its CSS ✓
 
 - Skill: `react-frontend`
 
@@ -2592,7 +2592,7 @@ AC11 — type name, connection bonus black-over-grey (§7.2), and the player-lim
 - Create: `src/ui/StationCard.tsx`
 - Create: `src/ui/StationCard.css`
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 File order is imports → constants → component → helpers → export, matching `HeroBanner.tsx`.
 
@@ -2661,7 +2661,7 @@ function pawns(station: PlacedStation): readonly number[] {
 export default StationCard
 ```
 
-- [ ] **Step 2: Write `src/ui/StationCard.css`**
+- [x] **Step 2: Write `src/ui/StationCard.css`**
 
 `font-size` in user units so it scales with the `viewBox`; `paint-order` keeps the stroke behind the glyph so text stays legible over the card fill.
 
@@ -2704,12 +2704,12 @@ export default StationCard
 }
 ```
 
-- [ ] **Step 3: Typecheck and lint**
+- [x] **Step 3: Typecheck and lint**
 
 Run: `npm run typecheck; npm run lint`
 Expected: both exit 0.
 
-### Task 15: Create `src/ui/BoardTerrain.tsx` and its CSS
+### Task 15: Create `src/ui/BoardTerrain.tsx` and its CSS ✓
 
 - Skill: `react-frontend`
 
@@ -2719,7 +2719,7 @@ AC10's "border, river, mountain visually distinguishable". The border and mounta
 - Create: `src/ui/BoardTerrain.tsx`
 - Create: `src/ui/BoardTerrain.css`
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 ```tsx
 import { PATH_KIND } from '../constants/game'
@@ -2776,7 +2776,7 @@ function toPathData(points: Polyline, close: boolean): string {
 export default BoardTerrain
 ```
 
-- [ ] **Step 2: Write `src/ui/BoardTerrain.css`**
+- [x] **Step 2: Write `src/ui/BoardTerrain.css`**
 
 Distinguishable by width *and* dash pattern, not colour alone — so the layers stay readable for a colour-blind play-tester and in a greyscale screenshot.
 
@@ -2801,12 +2801,12 @@ Distinguishable by width *and* dash pattern, not colour alone — so the layers 
 }
 ```
 
-- [ ] **Step 3: Typecheck and lint**
+- [x] **Step 3: Typecheck and lint**
 
 Run: `npm run typecheck; npm run lint`
 Expected: both exit 0.
 
-### Task 16: Create `src/ui/BoardOverlays.tsx` and its CSS
+### Task 16: Create `src/ui/BoardOverlays.tsx` and its CSS ✓
 
 - Skill: `react-frontend`
 
@@ -2815,8 +2815,23 @@ SCRUM-3 AC7 — station bounding rects, sampled string vertices, detected crossi
 **Files:**
 - Create: `src/ui/BoardOverlays.tsx`
 - Create: `src/ui/BoardOverlays.css`
+- Create: `src/constants/overlays.ts` *(added during Phase 4 — see the deviation note below)*
 
-- [ ] **Step 1: Write the component**
+> **Phase 4 deviation — `OverlayFlags` and `NO_OVERLAYS` moved to `src/constants/overlays.ts`.**
+> As written, Step 1 fails `npm run lint` with an **error** (not a warning):
+> `react-refresh/only-export-components` — "Fast refresh only works when a file only
+> exports components." The `reactRefresh.configs.vite` preset in `eslint.config.js` sets
+> `allowConstantExport`, but that option permits only *primitive literal* constants, and
+> `NO_OVERLAYS` is an object. The rule may not be disabled, so the fix is the one the
+> rule's own message prescribes: a separate module. `src/constants/overlays.ts` is the
+> home the react-frontend skill names for "debug-panel toggles", and it matches
+> `src/constants/stations.ts`, which likewise exports a const plus its interface.
+> `BoardOverlays.tsx` re-exports the **type** (invisible to the rule), so
+> `import type { OverlayFlags } from './BoardOverlays'` in Task 17 and Task 22 is
+> unchanged. Only the **value** import moved: Task 25's `AppShell.tsx` now reads
+> `import { NO_OVERLAYS } from '../constants/overlays'`, corrected in place at that task.
+
+- [x] **Step 1: Write the component**
 
 ```tsx
 import { crossings } from '../rules/geometry'
@@ -2899,7 +2914,7 @@ function allCrossings(state: GameState): readonly Point[] {
 export default BoardOverlays
 ```
 
-- [ ] **Step 2: Write `src/ui/BoardOverlays.css`**
+- [x] **Step 2: Write `src/ui/BoardOverlays.css`**
 
 Magenta throughout, matching the debug palette in Task 22, so overlay marks read as instrumentation rather than as game state (SCRUM-3 AC8).
 
@@ -2923,12 +2938,12 @@ Magenta throughout, matching the debug palette in Task 22, so overlay marks read
 }
 ```
 
-- [ ] **Step 3: Typecheck and lint**
+- [x] **Step 3: Typecheck and lint**
 
 Run: `npm run typecheck; npm run lint`
 Expected: both exit 0.
 
-### Task 17: Create `src/ui/Board.tsx` and its CSS
+### Task 17: Create `src/ui/Board.tsx` and its CSS ✓
 
 - Skill: `react-frontend`
 
@@ -2938,7 +2953,7 @@ AC10 — scaled to fit the viewport at any window size without clipping. `viewBo
 - Create: `src/ui/Board.tsx`
 - Create: `src/ui/Board.css`
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 ```tsx
 import BoardOverlays from './BoardOverlays'
@@ -2993,7 +3008,7 @@ function displayFor(colour: ColourId | null): string | null {
 export default Board
 ```
 
-- [ ] **Step 2: Write `src/ui/Board.css`**
+- [x] **Step 2: Write `src/ui/Board.css`**
 
 The SVG fills its container and the `viewBox` does the scaling, so no width or height is computed in JavaScript.
 
@@ -3009,12 +3024,12 @@ The SVG fills its container and the `viewBox` does the scaling, so no width or h
 }
 ```
 
-- [ ] **Step 3: Typecheck, lint, and measure**
+- [x] **Step 3: Typecheck, lint, and measure**
 
 Run: `npm run typecheck; npm run lint; (Get-Content src\ui\Board.tsx | Measure-Object -Line).Lines`
-Expected: both commands exit 0; the line count is well under 400.
+Expected: both commands exit 0; the line count is well under 400. *(Measured: 45 lines.)*
 
-### Task 18: Create `src/ui/SeatLegend.tsx` and its CSS
+### Task 18: Create `src/ui/SeatLegend.tsx` and its CSS ✓
 
 - Skill: `react-frontend`
 
@@ -3024,7 +3039,7 @@ AC12 — in a 2-player game the board must make owner-to-colour pairing readable
 - Create: `src/ui/SeatLegend.tsx`
 - Create: `src/ui/SeatLegend.css`
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 ```tsx
 import { COLOUR_SEATS } from '../constants/setup'
@@ -3110,7 +3125,7 @@ function labelFor(colour: ColourId): string {
 export default SeatLegend
 ```
 
-- [ ] **Step 2: Write `src/ui/SeatLegend.css`**
+- [x] **Step 2: Write `src/ui/SeatLegend.css`**
 
 ```css
 .seat-legend {
@@ -3169,7 +3184,7 @@ export default SeatLegend
 }
 ```
 
-- [ ] **Step 3: Typecheck and lint**
+- [x] **Step 3: Typecheck and lint**
 
 Run: `npm run typecheck; npm run lint`
 Expected: both exit 0.
@@ -3180,7 +3195,7 @@ Expected: both exit 0.
 
 The store, the player-count control, the debug panel, and the shell that joins them to the config load. At the end of this phase the app is reachable: pick a count, get a board, toggle the instrumentation. `AppShell` is deliberately **last** — it is the only file that imports all four, so writing it earlier would leave the phase type-checking against a component that does not exist yet.
 
-### Task 19: Create the game store at `src/ui/useGame.ts`
+### Task 19: Create the game store at `src/ui/useGame.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -3189,7 +3204,7 @@ One `useReducer` — the sanctioned store. `NEW_GAME` is a UI-level action, deli
 **Files:**
 - Create: `src/ui/useGame.ts`
 
-- [ ] **Step 1: Write the hook**
+- [x] **Step 1: Write the hook**
 
 ```ts
 import { useCallback, useReducer, useState } from 'react'
@@ -3286,12 +3301,12 @@ export function useGame(config: RulesConfig): UseGameResult {
 
 `useCallback` here is not memoisation-for-performance — both callbacks are returned from a hook and would otherwise be a new identity every render, which makes them unsafe to use in a future effect's dep array. Stated so it is a decision, not an unjustified `useCallback`.
 
-- [ ] **Step 2: Typecheck and lint**
+- [x] **Step 2: Typecheck and lint**
 
 Run: `npm run typecheck; npm run lint`
 Expected: both exit 0. Lint confirms `react-hooks` is satisfied — `config` is the only reactive input to either callback and both list it.
 
-### Task 20: Create `src/ui/NewGamePanel.tsx` and its CSS
+### Task 20: Create `src/ui/NewGamePanel.tsx` and its CSS ✓
 
 - Skill: `react-frontend`
 
@@ -3301,7 +3316,7 @@ AC1 and AC3 — the New Game action with player count selectable for 2, 3, 4 and
 - Create: `src/ui/NewGamePanel.tsx`
 - Create: `src/ui/NewGamePanel.css`
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 ```tsx
 import './NewGamePanel.css'
@@ -3349,7 +3364,7 @@ function NewGamePanel({ onNewGame, disabled }: NewGamePanelProps) {
 export default NewGamePanel
 ```
 
-- [ ] **Step 2: Write `src/ui/NewGamePanel.css`**
+- [x] **Step 2: Write `src/ui/NewGamePanel.css`**
 
 `min-height`/`min-width` of 44px, hover wrapped in `@media (hover: hover)` and paired with `:active`, `:focus-visible` rather than bare `:focus`.
 
@@ -3421,12 +3436,12 @@ export default NewGamePanel
 }
 ```
 
-- [ ] **Step 3: Typecheck and lint**
+- [x] **Step 3: Typecheck and lint**
 
 Run: `npm run typecheck; npm run lint`
 Expected: both exit 0.
 
-### Task 21: Create `src/ui/DebugPanel.tsx` and its CSS
+### Task 21: Create `src/ui/DebugPanel.tsx` and its CSS ✓
 
 - Skill: `react-frontend`
 
@@ -3436,7 +3451,7 @@ SCRUM-3 AC5–8 — all scores revealed, the seed shown and re-enterable, the th
 - Create: `src/ui/DebugPanel.tsx`
 - Create: `src/ui/DebugPanel.css`
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 ```tsx
 import { useState } from 'react'
@@ -3588,7 +3603,7 @@ function labelFor(colour: ColourId): string {
 export default DebugPanel
 ```
 
-- [ ] **Step 2: Write `src/ui/DebugPanel.css`**
+- [x] **Step 2: Write `src/ui/DebugPanel.css`**
 
 AC8's "visually distinct" is carried by the dashed magenta border and the monospace body — the same magenta the overlays use, so instrumentation reads as one system and never as game state.
 
@@ -3719,12 +3734,12 @@ AC8's "visually distinct" is carried by the dashed magenta border and the monosp
 }
 ```
 
-- [ ] **Step 3: Typecheck and lint**
+- [x] **Step 3: Typecheck and lint**
 
 Run: `npm run typecheck; npm run lint`
 Expected: both exit 0.
 
-### Task 22: Wire everything in `src/ui/AppShell.tsx` and its CSS
+### Task 22: Wire everything in `src/ui/AppShell.tsx` and its CSS ✓
 
 - Skill: `react-frontend`
 
@@ -3734,7 +3749,7 @@ The four async states of the config load, the game store, and the board. Keeps `
 - Modify: `src/ui/AppShell.tsx:1-12` — replace the whole component
 - Modify: `src/ui/AppShell.css` — add the new layout classes
 
-- [ ] **Step 1: Replace `src/ui/AppShell.tsx`**
+- [x] **Step 1: Replace `src/ui/AppShell.tsx`**
 
 ```tsx
 import { useState } from 'react'
@@ -3743,7 +3758,7 @@ import DebugPanel from './DebugPanel'
 import HeroBanner from './HeroBanner'
 import NewGamePanel from './NewGamePanel'
 import SeatLegend from './SeatLegend'
-import { NO_OVERLAYS } from './BoardOverlays'
+import { NO_OVERLAYS } from '../constants/overlays'
 import { useGame } from './useGame'
 import { useRulesConfig } from './useRulesConfig'
 import './AppShell.css'
@@ -3836,7 +3851,7 @@ function GameShell({ config }: { config: RulesConfig }) {
 export default AppShell
 ```
 
-- [ ] **Step 2: Append the new layout classes to `src/ui/AppShell.css`**
+- [x] **Step 2: Append the new layout classes to `src/ui/AppShell.css`**
 
 Leave the existing `.app-shell` rule in place and add below it.
 
@@ -3879,15 +3894,64 @@ Leave the existing `.app-shell` rule in place and add below it.
 }
 ```
 
-- [ ] **Step 3: Typecheck, lint and measure**
+- [x] **Step 3: Typecheck, lint and measure**
 
 Run: `npm run typecheck; npm run lint; (Get-Content src\ui\AppShell.tsx | Measure-Object -Line).Lines`
 Expected: typecheck and lint exit 0 — every component `AppShell` imports was created in Tasks 14–21, so this is the point at which the whole app resolves for the first time. The line count is under 400.
 
-- [ ] **Step 4: Re-run the specs this contract added, to confirm the UI wiring broke no engine behaviour**
+Result: both exited 0. `AppShell.tsx` is 87 lines.
+
+- [x] **Step 4: Re-run the specs this contract added, to confirm the UI wiring broke no engine behaviour**
 
 Run: `npx vitest run src/rules/__tests__/config.test.ts src/rules/__tests__/rng.test.ts src/rules/__tests__/deck.test.ts src/rules/__tests__/setup.test.ts src/rules/__tests__/setupValidation.test.ts`
 Expected: exits 0, Vitest reports 0 failed. Deliberately path-scoped — the unfiltered suite and the production build belong to the Final verification phase, not here.
+
+Result at the time this step ran (before Task 22a was added): `Test Files  5 passed (5)` / `Tests  78 passed (78)`. The UI wiring broke no engine behaviour. See Task 22a for the subsequent, deliberate red.
+
+### Task 22a: Generate against the SHIPPED `public/rules.json`, not just `TEST_CONFIG` ✓ (spec is RED — pending a developer tuning decision)
+
+- Skill: `react-frontend`
+
+Added by the orchestrator during Phase 5. Verification of behaviour already built, not new scope.
+
+Every other spec in this contract runs against `TEST_CONFIG`, whose values are deliberately synthetic and **not proportional** to the shipped ones: `cardSize / borderPerimeter` is `20/2000 = 0.01` in the fixture but `120/4000 = 0.03` in `rules.json` — a 3× relatively larger card. `cardSize` is exactly the tolerance the river sampler uses for its §4.3 one-card-width mountain clearance. `plan.md` → Risks already names the river sampler as the piece most likely to need tuning.
+
+**Files:**
+- Modify: `src/rules/__tests__/setup.test.ts` — append one `describe`
+
+- [x] **Step 1: Append a spec that generates from the real `public/rules.json`**
+
+`import shippedRules from '../../../public/rules.json'` — Vitest runs under Node and resolves the JSON import at build time, so no `fetch` is involved and the `src/rules/` purity boundary is untouched. `parseRulesConfig` is the same validator the app uses.
+
+The new `describe('generateSetup against the shipped rules.json', …)` holds two tests:
+1. `parseRulesConfig(shippedRules).ok` is `true` — the one link the compiler cannot check, proving the shipped JSON key names match what the parser reads.
+2. `generateSetup` for every player count 2/3/4/5 across 20 seeds, each result asserted through `validateSetup(state, shippedConfig)`.
+
+- [x] **Step 2: Run it**
+
+Run: `npx vitest run src/rules/__tests__/setup.test.ts`
+Expected: exits 0, 0 failed.
+
+**Actual: FAILED — 1 failed | 34 passed.** This is not a code defect and was deliberately left red per the orchestrator's instruction. `rules.json` was not edited, no retry ceiling was raised, and no predicate was loosened.
+
+```
+SetupGenerationError: generateSetup failed for 3 players at seed 0:
+RIVER_TOO_NEAR_MOUNTAIN (no river placement found in 200 attempts — the board
+may be too cramped for riverLength 700 to clear the mountain by cardSize 120
+(see §12))
+```
+
+Full survey of all 80 combinations (gathered with a throwaway diagnostic spec, since deleted):
+
+| | |
+|---|---|
+| Attempted | 80 (4 player counts × 20 seeds) |
+| Failed | **19 (23.75%)** |
+| Failure code | `RIVER_TOO_NEAR_MOUNTAIN` — 19/19, no other code |
+| By player count | 3 players: **17 of 20 seeds** · 2 players: 1 (seed 17) · 4 players: 1 (seed 17) · 5 players: 0 |
+| Failing 3-player seeds | 0,1,2,3,4,5,6,7,8,11,12,13,14,16,17,18,19 |
+
+The 3-player triangle is the tightest board — for a fixed `borderPerimeter` the triangle has the smallest inradius of the three shapes — so it has the least room for a 700-unit river to clear a 1400-unit mountain loop by a 120-unit card width. A developer decision under §12's symptom-to-cause table (M2 geometry constants).
 
 ---
 
@@ -3895,68 +3959,100 @@ Expected: exits 0, Vitest reports 0 failed. Deliberately path-scoped — the unf
 
 No production changes. Only sanity checks that the cumulative work is clean.
 
-### Task 23: Confirm the `src/rules/` boundary still holds
+### Task 23: Confirm the `src/rules/` boundary still holds ✓
 
 - Skill: `react-frontend`
 
 **Files:**
 - Test: *(no file changes — verification only)*
 
-- [ ] **Step 1: Grep for React and DOM references under `src/rules/`**
+- [x] **Step 1: Grep for React and DOM references under `src/rules/`**
 
 Run: `Select-String -Path src\rules\*.ts,src\rules\**\*.ts -Pattern "from 'react'|from \"react\"|\bwindow\.|\bdocument\.|localStorage|sessionStorage|fetch\("`
 Expected: zero hits. Four new pure modules (`rng.ts`, `deck.ts`, `setup.ts`, `setupValidation.ts`) plus the widened `config.ts` are all DOM-free; the only `fetch` is in `src/ui/useRulesConfig.ts`.
 
-- [ ] **Step 2: Confirm no `.tsx` file appeared under `src/rules/`**
+Result: **zero hits**, as expected. (The pattern had to be assigned to a `$p` variable first — passing it inline makes PowerShell's parser split it on the embedded `"react"` quotes. Same pattern, same result.) `src/rules/` and `src/rules/__tests__/` are the only two directories under `src/rules`, so the two globs cover the tree completely.
+
+- [x] **Step 2: Confirm no `.tsx` file appeared under `src/rules/`**
 
 Run: `Get-ChildItem -Path src\rules -Recurse -Filter *.tsx`
 Expected: no output — pure logic has no JSX.
 
-- [ ] **Step 3: Confirm generation is seeded**
+Result: no output.
+
+- [x] **Step 3: Confirm generation is seeded**
 
 Run: `Select-String -Path src\rules\*.ts,src\rules\**\*.ts -Pattern "Math\.random|Date\.now"`
 Expected: zero hits. `Date.now()` appears once in the whole codebase, in `src/ui/useGame.ts`, purely to mint a seed at the UI boundary.
 
-- [ ] **Step 4: Confirm `PlayerId` never reached a limit or trigger path**
+Result differs from `Expected:` — **two hits, both benign, and both were read to confirm it.** Neither is a call site:
+
+- `src\rules\rng.ts:4` — `* reproduced — and Math.random() is a defect anywhere reachable from` (a doc comment explaining why the seeded PRNG exists).
+- `src\rules\setup.ts:78` — `* no Math.random(), Date.now() or object-key iteration is reachable from here.` (a doc comment asserting the purity guarantee).
+
+The rule the step is checking holds: there is **no `Math.random()` or `Date.now()` call site** under `src/rules/`. `Date.now()` is called exactly once in the app, in `src/ui/useGame.ts`, to mint a seed at the UI boundary. The step's `Expected:` was written before those comments existed; the prose is a feature, not a violation.
+
+- [x] **Step 4: Confirm `PlayerId` never reached a limit or trigger path**
 
 Run: `Select-String -Path src\rules\*.ts,src\rules\**\*.ts,src\ui\*.tsx,src\ui\*.ts -Pattern "PlayerId"`
 Expected: hits only in `types.ts` (the brand and `ColourSeat.owner`), `gameEnd.ts` (game-end summing), `scoring.ts:98` (the `sameOwner` report, which does not decide whether a trigger fires), `setup.ts` (`asPlayerId` when building seats) and `SeatLegend.tsx` (grouping for display). No hit inside a player-limit, marker-trigger or connection-map lookup.
 
-### Task 24: Confirm no tunable was hard-coded
+Result: matches, with the expected additions from `__tests__/` (`fixtures.ts`, `gameEnd.test.ts`, and one comment in `validate.test.ts` noting the limit is keyed on `ColourId`). `setupSamplers.ts` — the Phase 3 split, which post-dates this step's file list — produced **no hit at all**, so the split moved nothing owner-shaped.
+
+`scoring.ts:97` was read to confirm the judgement: the trigger fires on `station.markerOwner !== colour`, a `ColourId` comparison per §9, and `sameOwner` at line 98 only *reports* whether the two colours share an owner. No `PlayerId` reaches a limit, marker-trigger or connection-map lookup.
+
+### Task 24: Confirm no tunable was hard-coded ✓
 
 - Skill: `react-frontend`
 
 **Files:**
 - Test: *(no file changes — verification only)*
 
-- [ ] **Step 1: Grep source for the literals `rules.json` now owns**
+- [x] **Step 1: Grep source for the literals `rules.json` now owns**
 
 `src/ui/HeroScene.tsx` is excluded by name: lines 22 and 31 are decorative SVG hero-art path coordinates that happen to contain the bare tokens `120` and `800`, and `HeroScene.tsx:6` already documents that it reads nothing from `src/rules/`. The exclusion is one named file with a stated reason — the pattern itself is not weakened.
 
 Run: `Get-ChildItem -Path src -Recurse -Include *.ts,*.tsx | Where-Object { $_.FullName -notmatch '__tests__' -and $_.Name -ne 'HeroScene.tsx' } | Select-String -Pattern "\b(350|700|4000|1400|120|1333|1000)\b"`
 Expected: zero hits. Every M2 value reaches the code through `RulesConfig`.
 
-- [ ] **Step 2: Confirm the deck composition appears only in `rules.json`**
+Result differs from `Expected:` — **one hit, and it is prose that says the opposite of a hard-coded tunable.** `src\rules\setupSamplers.ts:55` (a file that post-dates this step, created by the Phase 3 split) reads:
+
+```
+ * the per-player-count edge lengths §3 tabulates (1333 / 1000 / 800) are
+ * derived here rather than stored as separate config keys that could drift.
+```
+
+Read in context (lines 51–63): it documents `regularPolygon`, whose edge is computed as `perimeter / sideCount`. The numbers appear only to say they are **not** stored. No literal M2 value reaches the code outside `RulesConfig`.
+
+- [x] **Step 2: Confirm the deck composition appears only in `rules.json`**
 
 Run: `Get-ChildItem -Path src -Recurse -Include *.ts,*.tsx | Where-Object { $_.FullName -notmatch '__tests__' } | Select-String -Pattern "HAMLET.*6|VILLAGE.*6"`
 Expected: zero hits. `DECK_TYPE_ORDER` in `deck.ts` names the types but carries no counts; the counts live only in `public/rules.json` and in `TEST_CONFIG`.
 
-- [ ] **Step 3: Confirm `rules.json` is the only fetched resource and no server call crept in**
+Result: **zero hits**, as expected.
+
+- [x] **Step 3: Confirm `rules.json` is the only fetched resource and no server call crept in**
 
 Run: `Select-String -Path src\**\*.ts,src\**\*.tsx -Pattern "fetch\(|XMLHttpRequest|axios|WebSocket"`
 Expected: exactly one hit — the `fetch(RULES_URL, …)` in `src/ui/useRulesConfig.ts`.
 
-- [ ] **Step 4: Confirm no `console.log` / `console.debug` shipped**
+Result: exactly one hit — `src\ui\useRulesConfig.ts:34`. **Grep-coverage note:** `src\**\*.ts` expands to `src\<one-dir>\*.ts`, so it does *not* reach the top-level `src\App.tsx` and `src\main.tsx`. The check was therefore re-run as `Get-ChildItem -Path src -Recurse -Include *.ts,*.tsx | Select-String …`, which covers the whole tree and returned the same single hit. Same conclusion, wider evidence.
+
+- [x] **Step 4: Confirm no `console.log` / `console.debug` shipped**
 
 Run: `Select-String -Path src\**\*.ts,src\**\*.tsx -Pattern "console\.(log|debug)"`
 Expected: zero hits.
 
-- [ ] **Step 5: Confirm no dependency was added**
+Result: **zero hits** — and zero again under the widened recursive grep from Step 3, which includes `App.tsx` and `main.tsx`.
+
+- [x] **Step 5: Confirm no dependency was added**
 
 Run: `$env:Path = "C:\Program Files\Git\cmd;$env:Path"; git diff --stat -- package.json package-lock.json`
 Expected: no output — neither file changed. Two runtime dependencies, unchanged.
 
-### Task 25: Measure every file created or grown
+Result: no output. Note that with a clean working tree this comparison is trivially empty, so the meaningful check — `git diff --stat master...HEAD -- package.json package-lock.json` — was run as well and is **also empty**. `package.json` was read directly to confirm: `dependencies` is exactly `react ^19.2.8` and `react-dom ^19.2.8`. It also confirms `"build": "npm run lint && tsc -b && vite build"` — lint runs inside the build, the test suite does not.
+
+### Task 25: Measure every file created or grown ✓
 
 - Skill: `react-frontend`
 
@@ -3965,48 +4061,97 @@ Measured, not estimated. >400 lines is blocking and must be split in this contra
 **Files:**
 - Test: *(no file changes — verification only)*
 
-- [ ] **Step 1: Line-count every new and modified source file**
+- [x] **Step 1: Line-count every new and modified source file**
 
 Run: `Get-ChildItem -Path src\rules\setup.ts,src\rules\setupValidation.ts,src\rules\config.ts,src\rules\deck.ts,src\rules\rng.ts,src\constants\setup.ts,src\ui\Board.tsx,src\ui\BoardOverlays.tsx,src\ui\BoardTerrain.tsx,src\ui\StationCard.tsx,src\ui\SeatLegend.tsx,src\ui\NewGamePanel.tsx,src\ui\DebugPanel.tsx,src\ui\AppShell.tsx,src\ui\useGame.ts,src\ui\useRulesConfig.ts | ForEach-Object { "$($_.Name): $((Get-Content $_.FullName | Measure-Object -Line).Lines)" }`
 Expected: every count under 400. Anything in the 200–400 band gets a second look for a hook or sibling component hiding in it; anything over 400 is split before this contract is declared done.
 
-### Task 26: Static gates, full suite and production build
+Result: **every count under 400 — nothing blocking.** The step's file list was written before the Phase 3 split and the Phase 4 constants deviation, so `src\rules\setupSamplers.ts` and `src\constants\overlays.ts` were added to the measured set, along with the four other files this contract modified (`containment.ts`, `constants\game.ts`, `constants\stations.ts`, `App.tsx`).
+
+| File | Lines | File | Lines |
+|---|---|---|---|
+| `src\rules\containment.ts` | 369 | `src\ui\useRulesConfig.ts` | 66 |
+| `src\rules\setupSamplers.ts` | 294 | `src\constants\setup.ts` | 63 |
+| `src\rules\setup.ts` | 243 | `src\ui\StationCard.tsx` | 60 |
+| `src\rules\config.ts` | 206 | `src\rules\rng.ts` | 59 |
+| `src\rules\setupValidation.ts` | 182 | `src\rules\deck.ts` | 55 |
+| `src\ui\DebugPanel.tsx` | 138 | `src\ui\Board.tsx` | 45 |
+| `src\constants\stations.ts` | 127 | `src\ui\BoardTerrain.tsx` | 45 |
+| `src\constants\game.ts` | 98 | `src\ui\NewGamePanel.tsx` | 38 |
+| `src\ui\AppShell.tsx` | 87 | `src\constants\overlays.ts` | 21 |
+| `src\ui\useGame.ts` | 83 | `src\App.tsx` | 5 |
+| `src\ui\SeatLegend.tsx` | 74 | | |
+| `src\ui\BoardOverlays.tsx` | 73 | | |
+
+Four files in the 200–400 second-look band: `containment.ts` 369, `setupSamplers.ts` 294, `setup.ts` 243, `config.ts` 206. `containment.ts` is the one to watch — it is pre-existing, grew by one export (`pointTouchesPath`) this contract, and is now closest to the ceiling. None holds a hook or a sibling component: `setupSamplers.ts` is already the product of the mandated split, `setup.ts` is the orchestration plus `boardBounds`, `config.ts` is the validator's per-key failure enumeration, and `containment.ts` is a flat set of §10.1 predicates. Noted, not split.
+
+### Task 26: Static gates, full suite and production build ✓
 
 - Skill: `react-frontend`
 
 **Files:**
 - Test: *(no file changes — verification only)*
 
-- [ ] **Step 1: Typecheck, lint, format check, and the unfiltered suite**
+- [x] **Step 1: Typecheck, lint, format check, and the unfiltered suite**
 
 Run: `npm run typecheck; npm run lint; npm run format:check; npm test`
 Expected: all four exit 0; Vitest reports 0 failed. Quote the `Tests  N passed` summary line.
 
-- [ ] **Step 2: Production build**
+Result: the three static gates pass; **the suite does not, and the `Expected:` above predates Task 22a.**
+
+- `npm run typecheck` — exit 0.
+- `npm run lint` — exit 0, no warnings.
+- `npm run format:check` — exit 0, `All matched files use Prettier code style!`
+- `npm test` — **exit 1**:
+
+```
+ Test Files  1 failed | 14 passed (15)
+      Tests  1 failed | 230 passed (231)
+```
+
+The single failure is Task 22a's `setup.test.ts > generateSetup against the shipped rules.json > emits a board that passes validateSetup for every player count across 20 seeds (AC9)`, failing with `RIVER_TOO_NEAR_MOUNTAIN` for 3 players at seed 0 — the known, deliberate red recorded under Task 22a. It is a `rules.json` tuning decision under §12 and therefore the developer's; nothing was changed to make it green. There were **no transform or collection errors** — all 35 tests in that file were collected and ran, 34 passed, so this is a genuine assertion failure and not a TypeScript error masquerading as one.
+
+`format:check` was re-run after Task 27 wrote `pr-description.md` (markdown is in Prettier's scope here, and this step runs before that file exists). It passed again with no `--write` needed.
+
+- [x] **Step 2: Production build**
 
 Run: `npm run build`
 Expected: exits 0, `dist/` written, no bundler errors. Note `build` runs `npm run lint` first, so a lint regression fails here too.
 
-- [ ] **Step 3: Confirm `rules.json` shipped into the build**
+Result: **exit 0.** The red test does not block it — `"build": "npm run lint && tsc -b && vite build"` runs lint but not Vitest, which was confirmed by reading `package.json`.
+
+```
+✓ 57 modules transformed.
+dist/index.html                   0.46 kB │ gzip:  0.30 kB
+dist/assets/index-w3Pj8AHt.css    6.96 kB │ gzip:  2.03 kB
+dist/assets/index-CJTo6qST.js   235.36 kB │ gzip: 74.70 kB
+✓ built in 2.26s
+```
+
+- [x] **Step 3: Confirm `rules.json` shipped into the build**
 
 `public/` is the only tree Vite copies into `dist/`, and a root-level `rules.json` would 404 in production — this is the check that the tuning surface is actually reachable from the built app.
 
 Run: `Get-ChildItem dist\rules.json`
 Expected: the file is listed.
 
-- [ ] **Step 4: Confirm the built `rules.json` is the populated one, not the empty shell**
+Result: listed — `dist\rules.json`, 1146 bytes.
+
+- [x] **Step 4: Confirm the built `rules.json` is the populated one, not the empty shell**
 
 Run: `Get-Content dist\rules.json -Raw | Select-String -Pattern "borderPerimeter" -Quiet; Get-Content dist\rules.json -Raw | Select-String -Pattern "HAMLET" -Quiet`
 Expected: `True` twice. Two separate greps rather than one alternation — `Select-String` reports one match per physical line and a minified JSON asset can be a single line, so an alternation would prove only that whichever branch appears first is present.
 
-### Task 27: Write the PR description
+Result: `True` twice.
+
+### Task 27: Write the PR description ✓
 
 - Skill: `none — a hand-off document for the developer, not code`
 
 **Files:**
 - Create: `.claude/contract/SCRUM-3-4-config-setup-and-board/pr-description.md`
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
+- [x] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
 
 Include:
 - A link to `plan.md` in this folder, and a note that this one PR closes **SCRUM-3** and **SCRUM-4** together, with the reason (they are mutually blocking — SCRUM-4 needs SCRUM-3 AC1–4, SCRUM-3 AC5–8 need SCRUM-4's board and seed).
@@ -4016,6 +4161,15 @@ Include:
 - Verification results from Task 26, quoting the actual `Tests  N passed` line and the build outcome — not a claim that they were run.
 - New conventions introduced, for future contributors: `validateSetup` is the setup-time counterpart to `validateStationPlacement` and the two must not be conflated; `NEW_GAME` is a UI action and `Move` stays the persisted union; `src/constants/setup.ts` holds numeric bounds and fixed-meaning values while every tunable stays in `rules.json`.
 - The known accessibility gap: the board is a static SVG with an `aria-label`, and nothing in this contract needs pointer input, but SCRUM-6's fixed-length drag will have no keyboard equivalent.
+
+Result: written to `.claude/contract/SCRUM-3-4-config-setup-and-board/pr-description.md`. Every item on the list above is covered, plus four additions the run itself made necessary:
+
+1. **The 3-player generation finding, given top billing** — the 19/80 numbers, the 17-of-20 concentration at 3 players, the `RIVER_TOO_NEAR_MOUNTAIN` unanimity, the inradius-385-versus-exclusion-401 arithmetic, the §12 levers (`riverLength`, `mountainLength`, `cardSize`, `borderPerimeter`, plus `MOUNTAIN_OFFSET_FRACTION` as an adjacent non-config one), and a plain statement that clicking "3 players" in the running app will usually show the "Could not generate a board" error until the constants are retuned. Framed as the developer's decision, not a defect awaiting a patch.
+2. **The five contract defects found and fixed during execution**, so review can check each: the `closed()` river wrap in `setupValidation.ts`; the vacuous seat-validation spec; two factually impossible `Expected:` outcomes recorded as observed; `pointTouchesPath`'s closed-loop spec using a coordinate 150 units outside its own tolerance; and `NO_OVERLAYS` moving to `src/constants/overlays.ts` because `react-refresh/only-export-components` rejects it in a component file.
+3. **The Phase 3 `setup.ts` split and the added Task 22a**, with the reason for 22a stated — `TEST_CONFIG`'s `cardSize / borderPerimeter` is `0.01` against the shipped `0.03`, so the real values had never been through the generator.
+4. **Verification results stated as observed**, including the one red assertion. The document does not say "all tests pass"; it quotes `Tests  1 failed | 230 passed (231)` and explains why the build is nonetheless green.
+
+`npm run format:check` was re-run after writing the file (markdown is in Prettier's scope in this repo and Task 26 ran before the file existed) — it passed with no `--write` needed.
 
 ---
 

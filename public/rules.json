@@ -1,6 +1,27 @@
 {
   "configVersion": 1,
-  "_note": "Tuning surface for String Railway. 'geometry' holds the M2 constants (border perimeter, per-player-count edge lengths, card footprint, string lengths, arc-length tolerance); 'deck' holds the M17 composition. Values are developer decisions — see .docs/Game_Rules/Rules.md §12 and §14. SCRUM-8 ships the shell only.",
-  "geometry": {},
-  "deck": {}
+  "_note": "Tuning surface for String Railway. geometry: borderPerimeter (M2, §3, world units) · cardSize (M2, §3, square card footprint) · shortStringLength / longStringLength (M2, §3) · mountainLength (M2, §3, closed-loop perimeter) · riverLength (M2, §3, open arc) · arcLengthTolerance (M6, §5.3.1, fraction, inclusive) · tangencyTolerance (M8, §5.3.2, world units). deck.composition: M17 station-type counts (§8.1), summing to the §2 printed total of 35. Per-player-count border edge lengths are NOT stored — they are derived as borderPerimeter / sideCount. See §12 for the symptom-to-cause tuning table and §14 for the M-number index.",
+  "geometry": {
+    "borderPerimeter": 4000,
+    "cardSize": 120,
+    "shortStringLength": 350,
+    "longStringLength": 700,
+    "mountainLength": 1400,
+    "riverLength": 700,
+    "arcLengthTolerance": 0.02,
+    "tangencyTolerance": 0.5
+  },
+  "deck": {
+    "composition": {
+      "HAMLET": 6,
+      "VILLAGE": 6,
+      "TOWN": 5,
+      "SCENIC": 4,
+      "RURAL": 4,
+      "TERMINUS": 3,
+      "RAILYARD": 3,
+      "LANDMARK": 2,
+      "DEPOT": 2
+    }
+  }
 }

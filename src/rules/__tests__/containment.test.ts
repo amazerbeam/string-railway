@@ -5,6 +5,7 @@ import {
   passesThrough,
   pathFullyInside,
   pointInAnyRect,
+  pointTouchesPath,
   rectFullyInside,
   rectsOverlapOrTouch,
   touchesPath,
@@ -182,5 +183,52 @@ describe('passesThrough / endsOn (Terminus, §5.3)', () => {
     const both = [p(42, 42), p(58, 58)]
     expect(endsOn(both, r(40, 40))).toBe(true)
     expect(passesThrough(both, r(40, 40))).toBe(false)
+  })
+})
+
+describe('pointTouchesPath', () => {
+  const line: Polyline = [
+    { x: 0, y: 0 },
+    { x: 100, y: 0 },
+  ]
+
+  it('is true for a point exactly on the path', () => {
+    expect(pointTouchesPath({ x: 50, y: 0 }, line, 0.5)).toBe(true)
+  })
+
+  it('is true for a point within tolerance', () => {
+    expect(pointTouchesPath({ x: 50, y: 0.4 }, line, 0.5)).toBe(true)
+  })
+
+  it('is false for a point beyond tolerance', () => {
+    expect(pointTouchesPath({ x: 50, y: 5 }, line, 0.5)).toBe(false)
+  })
+
+  it('is inclusive at exactly the tolerance', () => {
+    expect(pointTouchesPath({ x: 50, y: 0.5 }, line, 0.5)).toBe(true)
+  })
+
+  it('clamps to the segment extent rather than the infinite line', () => {
+    expect(pointTouchesPath({ x: 200, y: 0 }, line, 0.5)).toBe(false)
+  })
+
+  it('is false for an empty path rather than throwing', () => {
+    expect(pointTouchesPath({ x: 0, y: 0 }, [], 0.5)).toBe(false)
+  })
+
+  it('handles a single-point path as plain point distance', () => {
+    const single: Polyline = [{ x: 10, y: 10 }]
+    expect(pointTouchesPath({ x: 10, y: 10.2 }, single, 0.5)).toBe(true)
+    expect(pointTouchesPath({ x: 10, y: 20 }, single, 0.5)).toBe(false)
+  })
+
+  it('measures the wrap edge only when the caller closes the loop themselves', () => {
+    // SQUARE is corners-only, so its (0,100)->(0,0) edge exists only once the
+    // caller appends the first point back. The predicate is deliberately OPEN
+    // (setup generation relies on that), so the same point answers differently
+    // depending on which polyline it is handed.
+    const onWrapEdge = p(0, 50)
+    expect(pointTouchesPath(onWrapEdge, SQUARE, 0.5)).toBe(false)
+    expect(pointTouchesPath(onWrapEdge, [...SQUARE, SQUARE[0]], 0.5)).toBe(true)
   })
 })

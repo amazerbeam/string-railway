@@ -153,6 +153,33 @@ export function pointInAnyRect(point: Point, rects: readonly Rect[]): boolean {
   return rects.some((rect) => pointInRect(point, rect))
 }
 
+/**
+ * §10.1-adjacent — point-to-polyline closeness, inclusive of `tolerance`.
+ * Needed by setup generation's "exactly one end of the river touches the
+ * border" check (SCRUM-4 AC6): touchesPath answers the question for two
+ * polylines, and a single point is not a polyline.
+ *
+ * Treats the polyline as OPEN — it does not wrap the last point back to the
+ * first. A caller testing a closed loop passes the loop and gets its edges as
+ * written; setup's border loop is tested by appending its first point, which
+ * keeps the wrap decision at the call site rather than hidden here.
+ */
+export function pointTouchesPath(point: Point, other: Polyline, tolerance: number): boolean {
+  if (other.length === 0) {
+    return false
+  }
+  if (other.length === 1) {
+    return Math.hypot(point.x - other[0].x, point.y - other[0].y) <= tolerance
+  }
+  for (let i = 0; i < other.length - 1; i++) {
+    const segment: Segment = { a: other[i], b: other[i + 1] }
+    if (distancePointToSegment(point, segment) <= tolerance) {
+      return true
+    }
+  }
+  return false
+}
+
 /** Closest-approach distance from a point to a segment, clamped to the
  *  segment's own extent. A zero-length segment (lenSq below EPSILON) falls
  *  back to plain point distance rather than dividing by zero. */

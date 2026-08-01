@@ -13,6 +13,13 @@ export const STATION_TYPE = {
 
 export type StationType = (typeof STATION_TYPE)[keyof typeof STATION_TYPE]
 
+/**
+ * §2 — 35 station cards in the box. The M17 tunable is the DISTRIBUTION across
+ * this total (rules.json → deck.composition), not the total itself. Rulebook
+ * constant, following the precedent turn.ts:23 set with ROUNDS_PER_GAME.
+ */
+export const DECK_SIZE = 35
+
 export interface StationFlags {
   readonly drawStation: boolean
   readonly mountainBonus: boolean

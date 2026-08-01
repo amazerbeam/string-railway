@@ -7,3 +7,40 @@
   max-width: 64rem;
   padding: 2rem 1.5rem;
 }
+
+.app-shell__status {
+  margin: 1rem 0;
+  font-family: system-ui, sans-serif;
+  color: #4a4a4a;
+}
+
+.app-shell__error {
+  margin: 1rem 0;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid #c2483f;
+  border-left-width: 5px;
+  border-radius: 8px;
+  background: #fdf3f2;
+  font-family: system-ui, sans-serif;
+  max-width: 70ch;
+}
+
+.app-shell__error h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+
+.app-shell__error p {
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+}
+
+.app-shell__error-detail {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  word-break: break-word;
+}
+
+.app-shell__game {
+  margin-top: 1.2rem;
+}

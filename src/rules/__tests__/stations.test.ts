@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { STATION_DEFINITIONS, STATION_TYPE } from '../../constants/stations'
+import { DECK_SIZE, STATION_DEFINITIONS, STATION_TYPE } from '../../constants/stations'
 
 describe('STATION_DEFINITIONS (§8)', () => {
   it('defines all ten station types', () => {
@@ -45,6 +45,20 @@ describe('STATION_DEFINITIONS (§8)', () => {
         continue
       }
       expect(STATION_DEFINITIONS[type].mountainBonusValue).toBe(0)
+    }
+  })
+})
+
+describe('DECK_SIZE', () => {
+  it('is the §2 printed total of 35 station cards', () => {
+    expect(DECK_SIZE).toBe(35)
+  })
+
+  it('has a STATION_DEFINITIONS row for every deck-eligible type', () => {
+    const deckTypes = Object.values(STATION_TYPE).filter((type) => type !== STATION_TYPE.STARTING)
+    expect(deckTypes).toHaveLength(9)
+    for (const type of deckTypes) {
+      expect(STATION_DEFINITIONS[type]).toBeDefined()
     }
   })
 })

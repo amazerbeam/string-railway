@@ -1,0 +1,18 @@
+.board-terrain__path {
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.board-terrain__path--border {
+  stroke-width: 8;
+}
+
+.board-terrain__path--mountain {
+  stroke-width: 6;
+  stroke-dasharray: 18 10;
+}
+
+.board-terrain__path--river {
+  stroke-width: 7;
+}

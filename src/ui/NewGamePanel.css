@@ -1,0 +1,65 @@
+.new-game {
+  font-family: system-ui, sans-serif;
+}
+
+.new-game__heading {
+  margin: 0 0 0.6rem;
+  font-size: 1.1rem;
+}
+
+.new-game__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.new-game__button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid #2b2b2b;
+  border-radius: 10px;
+  background: #fdfaf3;
+  color: #2b2b2b;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.new-game__button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.new-game__button:focus-visible {
+  outline: 3px solid #2f7fd4;
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .new-game__button:not(:disabled):hover {
+    background: #fff8e8;
+  }
+}
+
+.new-game__button:not(:disabled):active {
+  background: #f0e6d0;
+}
+
+.new-game__count {
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.new-game__shape {
+  font-size: 0.72rem;
+  color: #5a5a5a;
+}

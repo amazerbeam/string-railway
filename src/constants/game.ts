@@ -47,3 +47,60 @@ export const SKIP_REASON = {
   DECK_EMPTY: 'DECK_EMPTY', // M5
   NO_LEGAL_PLACEMENT: 'NO_LEGAL_PLACEMENT', // M4, after 3 consecutive failures
 } as const
+
+/**
+ * parseRulesConfig failure codes (SCRUM-3 AC4). Every one names a specific
+ * malformed-config condition so the startup error can say which key is wrong
+ * rather than "invalid config".
+ */
+export const CONFIG_FAILURE = {
+  NOT_AN_OBJECT: 'NOT_AN_OBJECT',
+  VERSION_MISMATCH: 'VERSION_MISMATCH',
+  MISSING_KEY: 'MISSING_KEY',
+  NOT_A_NUMBER: 'NOT_A_NUMBER',
+  NOT_POSITIVE: 'NOT_POSITIVE',
+  TOLERANCE_OUT_OF_RANGE: 'TOLERANCE_OUT_OF_RANGE',
+  LONG_NOT_LONGER_THAN_SHORT: 'LONG_NOT_LONGER_THAN_SHORT',
+  DECK_COUNT_NOT_INTEGER: 'DECK_COUNT_NOT_INTEGER',
+  DECK_TOTAL_MISMATCH: 'DECK_TOTAL_MISMATCH',
+  DECK_TYPE_NOT_ALLOWED: 'DECK_TYPE_NOT_ALLOWED',
+} as const
+
+/**
+ * validateSetup failure codes (SCRUM-4 AC9). These are the §4.1 setup
+ * invariants, NOT §10.2's in-play REJECTION_REASON codes — §4.1 step 6
+ * requires a starting station to touch the border, which §5.2 forbids for an
+ * in-play placement. Two distinct rule sets, two distinct code sets.
+ */
+export const SETUP_FAILURE = {
+  BORDER_SELF_INTERSECTS: 'BORDER_SELF_INTERSECTS',
+  BORDER_WRONG_PERIMETER: 'BORDER_WRONG_PERIMETER',
+  MOUNTAIN_SELF_INTERSECTS: 'MOUNTAIN_SELF_INTERSECTS',
+  MOUNTAIN_WRONG_LENGTH: 'MOUNTAIN_WRONG_LENGTH',
+  MOUNTAIN_OUTSIDE_BORDER: 'MOUNTAIN_OUTSIDE_BORDER',
+  MOUNTAIN_TOUCHES_BORDER: 'MOUNTAIN_TOUCHES_BORDER',
+  MOUNTAIN_TOUCHES_RIVER: 'MOUNTAIN_TOUCHES_RIVER',
+  RIVER_SELF_INTERSECTS: 'RIVER_SELF_INTERSECTS',
+  RIVER_WRONG_LENGTH: 'RIVER_WRONG_LENGTH',
+  RIVER_OUTSIDE_BORDER: 'RIVER_OUTSIDE_BORDER',
+  RIVER_BORDER_TOUCH_COUNT: 'RIVER_BORDER_TOUCH_COUNT',
+  RIVER_TOO_NEAR_MOUNTAIN: 'RIVER_TOO_NEAR_MOUNTAIN',
+  STATION_OUTSIDE_BORDER: 'STATION_OUTSIDE_BORDER',
+  STATION_NOT_TOUCHING_BORDER: 'STATION_NOT_TOUCHING_BORDER',
+  STATION_TOUCHES_TERRAIN: 'STATION_TOUCHES_TERRAIN',
+  STATION_TOUCHES_STATION: 'STATION_TOUCHES_STATION',
+  SEAT_COUNT_MISMATCH: 'SEAT_COUNT_MISMATCH',
+  SEAT_STARTING_STATION_MISSING: 'SEAT_STARTING_STATION_MISSING',
+} as const
+
+/**
+ * UI-level action kinds for useGame. Deliberately NOT added to MOVE_KIND:
+ * Move is the persisted move-log union that undo and replay derive from, and
+ * starting a new game is not an event in a game's own history. Widening Move
+ * would force a new case through every existing switch and invalidate any
+ * stored log.
+ */
+export const GAME_ACTION = {
+  NEW_GAME: 'NEW_GAME',
+  MOVE: 'MOVE',
+} as const
