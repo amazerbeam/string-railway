@@ -2,7 +2,7 @@
 description: Archive the completed contract — extract learnings, update rules, and clean up
 ---
 
-You are the **Archive Agent** for the StringsAndStations implementation pipeline. Close out the current contract, capture learnings, and clean up.
+You are the **Archive Agent** for this project's implementation pipeline. Close out the current contract, capture learnings, and clean up.
 
 ## Step 1: Resolve the plan and read its status
 
@@ -22,7 +22,7 @@ Analyze the implementation:
 1. **Feature**: What was implemented?
 2. **Completion**: How many tasks passed (✓) vs failed (✗)?
 3. **Acceptance criteria**: Which criteria were met?
-4. **Outstanding developer decisions and observations**: Did the developer choose every tuning value the contract needed, resolve every ambiguous rule reading, and actually look at what only playing can show? A contract carrying a placeholder in `rules.json`, or one whose drag has never been judged by a human, is functionally incomplete even at 100% ✓ — say so plainly rather than archiving it as clean.
+4. **Outstanding developer decisions and observations**: Did the developer choose every tuning value the contract needed, resolve every ambiguous design reading, and actually look at what only running the app can show? A contract carrying a placeholder in configuration, or one whose interaction has never been judged by a human, is functionally incomplete even at 100% ✓ — say so plainly rather than archiving it as clean.
 
 ## Step 3: Extract Learnings
 
@@ -38,7 +38,7 @@ For each source, identify:
 - **What caused failures?** — Root causes of any ✗ tasks (not just symptoms)
 - **What was surprising?** — Unexpected issues, missing context, or wrong assumptions in the plan
 - **Gaps** — edge cases or quality patterns not covered by an existing rule, by `react-frontend`, or by `web-project.md`
-- **Tuning signal** — did play-testing show a made-up value (M2, M6, M17) is wrong? That is not a code learning; it is the output the prototype exists to produce. Record it, and point at §12's symptom-to-cause table rather than proposing a code change.
+- **Tuning signal** — did real-world testing show a chosen configuration value is wrong? That is not a code learning; it is the output a prototype exists to produce. Record it as a developer decision rather than proposing a code change.
 
 If `corrections.md` is present and most issues were already applied via `/fb-issue` during the session, Steps 4 and 5 may have little to add — that is fine. Skip them honestly rather than inventing updates.
 
@@ -49,9 +49,9 @@ If the session revealed **generalizable** improvements, propose specific additio
 | What you learned | Where it belongs |
 |---|---|
 | A path is wrong, a runner command is wrong or missing, a toolchain trap bit us | `.claude/workflow/web-project.md` |
-| A project-wide constraint more than one workflow could trip over (save / move-log compatibility, determinism and seeding, the `rules.json` schema) | a new or existing `.claude/rules/<topic>.md` — see that folder's `README.md` for the required five sections |
+| A project-wide constraint more than one workflow could trip over (save / persisted-data compatibility, determinism and seeding, a configuration file's schema) | a new or existing `.claude/rules/<topic>.md` — see that folder's `README.md` for the required five sections |
 | The wrong plan was picked, or a plan was undiscoverable | `.claude/workflow/plan-resolution.md` |
-| A React/TypeScript convention Claude should have known | `.claude/skills/react-frontend/SKILL.md`, or `references/engineering-standards.md` when it is a general standard rather than a String Railway specific |
+| A React/TypeScript convention Claude should have known | `.claude/skills/react-frontend/SKILL.md`, or `references/engineering-standards.md` when it is a general standard rather than specific to this project |
 | A domain convention no skill covers yet | note that `/skill-creator` should write one, and treat that as its own piece of work |
 | The *process* was wrong — bad step order, missing gate, weak prompt | the relevant `.claude/commands/fb-<name>.md` |
 

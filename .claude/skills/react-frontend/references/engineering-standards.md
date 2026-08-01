@@ -1,30 +1,28 @@
-# Engineering Standards — Reference (String Railway)
+# Engineering Standards — Reference
 
-General React/TypeScript engineering standards that apply regardless of feature. Read once, internalize, return when scaffolding something new or reviewing a large change.
+General React/TypeScript engineering standards that apply regardless of feature. Read once, internalise, return when scaffolding something new or reviewing a large change.
 
-**Not here:** String Railway specifics — the `src/rules/` boundary, colour-first keying, geometry traps, the drag hot path, tutorial copy rules. Those live in `SKILL.md`, along with the MUST/NEVER contract. This file is the rationale and the detail.
+**Not here:** the hard MUST/NEVER contract and the project-specific stack facts and traps — those live in `SKILL.md`. This file is the rationale and the detail behind the principles it names.
 
-## Engineering principles
+## Principles in practice
 
-Optimise every implementation for, in order:
+Optimise every implementation for, in order: readability over cleverness, simplicity over abstraction, consistency over personal preference, maintainability over speed of implementation, reusability over duplication, predictability over complexity. Each one only matters once it's concrete:
 
-1. Readability over cleverness
-2. Simplicity over abstraction
-3. Consistency over personal preference
-4. Maintainability over speed of implementation
-5. Reusability over duplication
-6. Predictability over complexity
+- **Readability over cleverness.** A one-line reduce that requires tracing three levels of destructuring to understand is not shorter in any way that counts — it costs the same six months from now, plus the re-derivation. Prefer:
 
-Before calling a change done, answer:
+  ```ts
+  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  ```
 
-- Will another developer understand this in six months?
-- Is this the simplest solution that solves the problem?
-- Does it align with existing patterns in this codebase?
-- Can it be easily tested and maintained?
+  over a version that folds the same logic into a point-free composition of three generic helpers imported for this one call site.
 
-Code is read far more often than it is written. The goal is an app that stays simple, consistent and reliable as it grows — not a sophisticated one.
+- **Simplicity over abstraction.** A single `formatDate(date, style)` function beats a `DateFormatterFactory` with a strategy interface when there are two call sites and one format. Build the abstraction when the second *real* variation shows up, not in anticipation of one.
 
-This matters more than usual here. The prototype exists to answer a design question — whether the fixed-length string drag (M6) and the geometry constants (M2) make a good game. Code that obscures the rules makes that question harder to answer, which defeats the point of building it.
+- **Consistency over preference.** If the codebase already destructures props at the top of a function, do that in the new one too, even if a different style is arguably nicer — a codebase with one convention per author is harder to read than one with a single mediocre convention applied everywhere.
+
+Before calling a change done, answer: will another developer understand this in six months? Is this the simplest solution that solves the problem? Does it match existing patterns in this codebase? Can it be tested and maintained without special knowledge only the author has?
+
+Code is read far more often than it is written. The goal is an application that stays simple, consistent, and reliable as it grows — not a sophisticated one.
 
 ## Component size budget
 
@@ -34,67 +32,43 @@ This matters more than usual here. The prototype exists to answer a design quest
 | 200–400 | needs a second look — is there a hook or a sibling component hiding in here? |
 | > 400 | **blocking** — split it in the same change |
 
-Measure, don't estimate. Before declaring the work done:
+Measure, don't estimate:
 
 ```powershell
 (Get-Content <file> | Measure-Object -Line).Lines
 ```
 
-A file over 400 lines is not a review note for a human to catch later — split it now. Extract logic into a `use*` hook; extract per-concern render blocks into sibling components in the same folder.
+A file over 400 lines is not a review note for later — split it now, using one of two strategies:
 
-No current offenders — the application is unstarted. The two files most likely to breach it first are `ui/Board.tsx` and `ui/StringDrag.tsx`; both attract mixed concerns quickly. In `src/rules/`, prefer splitting by predicate family (`geometry.ts` vs `validate.ts` vs `scoring.ts`) over one large module.
+- **Logic → a `use*` hook.** If the component body computes, aggregates, sequences, or subscribes to something, that behaviour wants to live in a custom hook that returns values and callbacks, leaving the component to just render them.
+- **Render concerns → sibling components.** If the JSX itself has grown a distinct section — a header, a list item, a footer — with its own props and its own conditional logic, extract it into a sibling file in the same folder rather than deepening the one file.
 
-## Component file order
+Choose based on where the size actually came from: a component that's long because it computes a lot wants the hook split; one that's long because it renders a lot of distinct sub-trees wants the component split. Files frequently need both.
 
-One order, every file:
+## Constants taxonomy
 
-```
-imports → constants → component → helper functions → default export
-```
+Three distinct categories, and conflating them is a defect:
 
-Helpers that don't touch component state belong below the component (or in `src/rules/` if they are game logic, `src/utils/` if they are genuinely generic). Constants belong above it, not inline in JSX.
-
-## One component, one responsibility
-
-- Components render UI. Hooks hold logic. When a component body starts computing, aggregating or sequencing, that logic wants to be a `use*` hook.
-- **Components never adjudicate rules.** Asking `src/rules/` whether a placement is legal is correct; deciding it in a component is not. This is the single most important application of the principle in this project.
-- Custom hooks take **declarative props** and return values. A hook returning an imperative setter meant to be called during render forces `useRef` + force-render workarounds and is an infinite-loop trap with `useState`.
-- Hooks are called at the top level of a component or another `use*` hook — never in a loop, condition, nested function, or a plain non-React function.
-
-## Prefer duplication over premature abstraction
-
-Shared abstractions should emerge from proven reuse, not anticipation. Keep code next to the feature it serves; promote to a shared location only once a second real consumer exists.
-
-Never create dumping-ground folders: `misc`, `helpers`, `temp`, `old`, `new`. If a name doesn't say what's inside, it will collect everything.
-
-## Constants, enumeration and tunables
-
-Two distinct categories in this project, and conflating them is a defect.
-
-**Constants** — values with fixed meaning that appear more than once. Magic strings and numbers are a primary source of silent defects: a typo in a literal fails at runtime, in one branch, quietly.
+**Constants** — values with fixed meaning that appear more than once and will never need to change without a code review. Magic strings and numbers are a primary source of silent defects: a typo in a repeated literal fails at runtime, in one branch, quietly.
 
 ```ts
-export const STATION_TYPE = {
-  HAMLET:   'hamlet',
-  VILLAGE:  'village',
-  TOWN:     'town',
-  SCENIC:   'scenic',
-  RURAL:    'rural',
-  TERMINUS: 'terminus',
-  RAILYARD: 'railyard',
-  LANDMARK: 'landmark',
-  DEPOT:    'depot',
-  STARTING: 'starting',
+export const REQUEST_STATUS = {
+  IDLE: 'idle',
+  LOADING: 'loading',
+  SUCCESS: 'success',
+  ERROR: 'error',
 } as const
 ```
 
-`UPPER_SNAKE_CASE` keys, one exported map, imported everywhere. Categories that always get this treatment: station types, path kinds, rejection reason codes from the §10.2 validation order, move kinds, storage keys, debug-panel toggles.
+`UPPER_SNAKE_CASE` keys, one exported map, imported everywhere it's used. Because `erasableSyntaxOnly` is on in this project's `tsconfig.app.json`, this `as const` object form is the only option — a TypeScript `enum` is not erasable and will fail to compile.
 
-**Tunables** — values the design is still deciding. These go in `rules.json`, never in `src/constants/` and never as literals: border perimeter, per-player-count edge lengths, card footprint, short and long string lengths, mountain and river lengths, arc-length tolerance, deck composition. They are M2 and M17, both marked Low confidence, and §12 of the rulebook is a symptom-to-cause table that only works if they can be changed without a code edit.
+**Configuration** — values a developer is actively tuning and expects to change without touching source: thresholds, limits, feature flags, anything with a "the right number here is a judgement call, not a fact" quality. These belong in a configuration file or a clearly-named config module the developer owns — never hard-coded inline, and never duplicated as a second literal elsewhere "just this once."
 
-The distinction: a station type will never change value. A string length will change repeatedly, and the first time it does, every hard-coded `350` becomes wrong — including in tutorial copy.
+**Legitimate inline literals** — a value with no meaning outside its one use site and no chance of needing to change independently: a CSS `0` used as a reset, an array index in a genuinely one-off transform, a single retry count with no other configuration nearby. If in doubt, promote it — a constant nobody reads twice costs nothing; a hard-coded config value someone needs to change without a code review is a recurring cost.
 
-## Four async states
+The dividing question between the last two: *if this needs to change, does it need a code change and review, or does the developer just want to try a different number?* The first is a constant; the second is configuration.
+
+## The four async states
 
 Every asynchronous surface has **four** states, not two:
 
@@ -105,90 +79,41 @@ Every asynchronous surface has **four** states, not two:
 | error | a human-readable message, never a raw stack trace or a blank screen |
 | empty | distinct from loading and from error |
 
-The async surface here is small — `rules.json` at startup, and whatever the deployed build fetches. That makes it tempting to skip. Don't: a silently failed config load means playing a differently-tuned game than you think you are, which corrupts every play-test conclusion drawn from that session.
+The empty state is the one most often skipped, and skipping it is a defect, not an oversight that doesn't matter: a list that has genuinely zero items and a list that is still loading look identical to a user staring at a blank area, and a user who can't tell "there's nothing here" from "this is broken" will file the wrong bug or refresh in a loop.
 
-## Data loading and resilience
+A `catch` block that returns a success-shaped fallback — `catch { return [] }`, `catch { return DEFAULT_CONFIG }` — is worse than no error handling at all. It converts a real failure into "loaded successfully, and the data happens to be empty/default," which is indistinguishable from the legitimate empty or success state at every layer above the catch. Whoever is debugging a downstream symptom has no way to discover that the actual cause was an upstream failure, because the code told them it succeeded.
 
-- **Validate `rules.json` on load.** Deck counts summing to the expected total, positive lengths, long string longer than short. A malformed config produces a clear startup error, not a silently broken board.
-- **Never swallow an error into a success shape.** `catch { return DEFAULTS }` on a config load is the worst version of this — it plays a game with constants nobody chose and reports nothing.
-- **Distinguish "failed to load" from "loaded and empty."** They need different copy and different recovery.
-- **The config is read once.** A mid-game edit does not apply. Say so in the debug panel rather than letting a play-tester believe a change took effect.
-- **No HTTP client, no server calls.** If a change appears to need one, that is a scope question for the epic, not an implementation detail.
-
-## Performance — priority order
+## Performance order
 
 Work in this order; stop when the problem is solved:
 
-1. **Keep the drag off the reconciler.** The in-progress string path grows every pointer move; mutate its `d` attribute through a ref and dispatch one move on release.
-2. **Make crossing detection incremental.** Test the newest segment against existing paths, not the whole path every frame.
-3. **Bound the legal-placement search.** Asking whether *any* legal position exists for a drawn card is a board-wide search. Sample at card-width granularity, refine near hits.
-4. **Only then minimise re-renders** — first by placing state at the right level, and only after that by memoising.
+1. **Measure first.** Don't optimise a suspicion — profile, or at minimum time the operation, before changing anything. "This feels slow" is not evidence of where the cost is.
+2. **Reduce work per event.** Before touching React's render behaviour, check whether the code is doing more work than it needs to on each interaction — recomputing something already known, iterating a full collection when only the changed item matters, doing a network round-trip that could be batched or cached.
+3. **Keep high-frequency updates off the reconciler.** A value that changes on every animation frame or every pointer move belongs in a ref, mutated directly and read on the next meaningful commit, not in state that re-renders the tree on every tick.
+4. **Only then memoise, with evidence.** `memo`, `useMemo`, and `useCallback` added without a profiler showing they fix a measured problem are themselves an anti-pattern — they add indirection and a dependency-array maintenance burden for a gain nobody confirmed exists.
 
-Anti-patterns: heavy calculation inside render, fresh anonymous functions passed to memoised children, re-rendering the whole board when only the drag changed, and **excessive memoisation** — `memo` / `useMemo` / `useCallback` added without profiling evidence is itself an anti-pattern, adding cost and noise for no measured gain.
+Memoisation is always last. It is the step most often reached for first, and it is the step that should be reached for last.
 
-## State placement
+## Testing posture
 
-| State | Where |
-|---|---|
-| Game state — board, seats, deck, scores, turn | the single `useReducer` over `GameState` |
-| Local UI — panel open/closed, hover, drag in progress | `useState` (or a ref) in the component |
-| Derived values | computed from `GameState`, never stored alongside it |
+**Worth a test:** behaviour with an invariant — a function that must always satisfy some property regardless of input shape (a sort that must be stable, a parser that must round-trip, a reducer transition that must be idempotent when replayed), a bug that has happened once and must not happen silently again, and any pure logic with more than one meaningful branch.
 
-Own state at the lowest level that works. Lift only when genuinely shared.
+**Not worth a test:** implementation detail that would break the test on every refactor without the behaviour changing (asserting on internal variable names or call counts to a helper), and framework behaviour that the framework's own test suite already covers (asserting that `useState` re-renders, that CSS applies, that React calls an effect after mount).
 
-**One sanctioned store: the reducer.** No Redux, no Zustand, no MobX, no second `useReducer` holding a parallel copy of game state. Context may inject the reducer's state and dispatch to avoid prop drilling; it never owns game state itself.
+**Pure logic tested without a renderer is the cheapest coverage available.** A function that takes plain values in and returns a plain value out needs no DOM, no mount, no cleanup, and runs in milliseconds — that's why establishing a pure-logic boundary early (see `SKILL.md` → "The pure-core boundary") pays for itself the first time a substantial chunk of logic can be tested this way instead of through a rendered component.
 
-Derived state is the trap to watch. Anything computable from `GameState` — connected station sets, reachability, current scores — is computed, not stored. A stored duplicate will drift, and in this project a drifted copy means the rules are being applied to a stale board.
-
-## Security
-
-- Validate and sanitise any user-supplied input at the boundary. The prototype's surface is small — a seed field and a config file — but a seed is still input.
-- `dangerouslySetInnerHTML` needs an explicit, reviewed justification. Default answer is no. Tutorial copy is authored content and still does not need it.
-- Never commit API keys, credentials, or secrets. Client-side env vars are public by definition — anything in `VITE_*` is shipped to the browser. This project should need none.
-
-## Logging
-
-- No `console.log` / `console.debug` in shipped code. Current debt: none.
-- Errors that *are* logged must be actionable — include enough context (which predicate, which seed, which move) to diagnose without a repro. A seed plus a move log reproduces any situation exactly; log those rather than a snapshot.
-
-## Testing
-
-Vitest is wired and `src/rules/` needs no DOM to test. That changes the posture from the usual "state what you verified manually" — here, **run the tests and report the result**.
-
-- **Never claim a test passed without running it.** Run `npm test`, and say what passed and what you did not cover.
-- **Coverage is risk-based, deepest where the bugs are.** §11 of the rulebook is explicit that the geometry predicates are where bugs will live. Order: geometry predicates → validation ordering → scoring resolution → turn loop → presentational components last.
-- **The page-7 worked example (§5.4) is the canonical scoring test.** +3 for a Scenic station inside the mountain, +2 for another first connection, −1 −1 for two mountain crossings, 0 for an on-card crossing, net +3. It stays green.
-- **Cover the degenerate geometry cases explicitly** — tangency that does not cross, a path grazing a station edge twice in one pass, a crossing exactly on a card boundary. These are where an epsilon choice shows up as a wrong score.
-- **Cover the §9 same-owner trigger.** One colour scoring at its own owner's other colour's Landmark must still fire the penalty. It is the assertion that proves the engine is colour-first.
-- **Test behaviour, not implementation.** For components, query through accessible roles and labels (`getByRole`, `getByLabelText`) — those queries double as an accessibility audit, so a component that is hard to query is usually hard to use with a screen reader.
-- **A seeded board makes a test reproducible.** Pass a fixed seed rather than asserting against whatever generation produced.
-
-## Dependencies
-
-Two runtime dependencies: `react` and `react-dom`. That is a feature, not an accident. No router, no HTTP client, no geometry library, no state manager, no UI kit.
-
-The geometry library omission is deliberate rather than austere: the project needs transversal-only intersection with a controlled epsilon (M8), and general-purpose libraries do not distinguish tangency from crossing in a way this game can rely on. Hand-rolled predicates are roughly 300 lines and fully testable.
-
-Before adding a dependency, justify it: what existing code or platform API could do this, bundle-size cost, maintenance activity, security surface, and whether it is still supportable in two years. A 20-line utility beats a transitive dependency tree. Say the justification out loud in the change summary — don't add one silently.
+**Component tests query by accessible role and label** (`getByRole`, `getByLabelText`), not by test id or CSS selector, wherever an accessible query exists. This does double duty: it tests the behaviour a user actually experiences rather than an implementation detail, and a component that's awkward to query this way is usually awkward for a screen reader too — the friction is itself a signal.
 
 ## Definition of Done
 
 A change is done when:
 
-- Functionality works, verified by actually exercising it (or explicitly stated as unverified and why).
-- `npm test` and `npm run typecheck` both pass, and you say so having run them.
-- `src/rules/` still imports no React and touches no DOM.
-- No `PlayerId` has entered a limit check or marker trigger.
-- No tunable is hard-coded — in source or in tutorial copy.
-- All four async states are handled on any new async surface.
-- Accessibility is satisfied: keyboard reachable where a keyboard equivalent exists, semantic elements, ARIA on icon-only controls, ≥44px targets, AA contrast. Where no keyboard equivalent exists — notably the freehand drag — that gap is stated, not hidden.
+- Functionality works, verified by actually exercising it — or explicitly stated as unverified, and why.
+- `npm test` and `npm run typecheck` both pass, and the summary says so having actually run them, not assumed it.
+- No file left over 400 lines; no new `console.log` / `console.debug`; no new magic value that should have been a constant or configuration.
+- All four async states are handled on any new async surface, with no `catch` returning a success-shaped fallback.
+- Accessibility is satisfied where it applies: keyboard reachable, semantic elements, ARIA on icon-only controls, ≥44px touch targets, AA contrast. A genuine gap (no keyboard equivalent for a pointer-only interaction, say) is stated openly rather than implied to be covered.
 - Errors are handled — no blank screens, no raw stack traces, no swallowed failures.
-- No file left over 400 lines; no new `console.log`; no new magic string that should be a constant.
-- The summary states: what changed, why this approach, what was verified and how, what wasn't verified, and any known risk or debt.
+- The summary states: what changed, why this approach, what was verified and how, what was not verified, and any known risk or debt introduced deliberately.
 
-## Change size and debt
-
-- Smaller incremental changes beat one giant change. Past ~500 lines of diff, flag it explicitly and say why it couldn't be split.
-- Leave the code better than you found it — readability, duplication, naming, dead code.
-- **Never knowingly introduce technical debt silently.** If a shortcut is the right call, say so in the summary so it's a decision, not a surprise.
-- **Distinguish debt from a tuning decision.** Changing a value in `rules.json` because the game felt wrong is the intended workflow, not debt. Hard-coding that value so it cannot be changed again is debt.
+Smaller incremental changes beat one large one — past roughly 500 lines of diff, flag it explicitly and say why it couldn't be split. Never introduce technical debt silently: if a shortcut is the right call under the circumstances, say so in the summary so it is a decision on record, not a surprise for whoever reads the diff next.

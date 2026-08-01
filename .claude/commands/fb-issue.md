@@ -41,7 +41,7 @@ Resolve to a real file path. The candidates, in the order to consider them:
 | Plan resolution | `.claude/workflow/plan-resolution.md` | The wrong plan was picked, or a plan was undiscoverable |
 | A shared rule | `.claude/rules/<topic>.md` | A project constraint more than one workflow could trip over |
 
-Two targets that are **never** the answer: `.docs/Game_Rules/Rules.md` is the specification — if the code and the rulebook disagree, the fix is in the code, or the rule reading is a design question for the developer. And `.claude/workflow/unity/` is a parked snapshot of the Unity variant; nothing live reads it, so a fix there fixes nothing.
+One target that is **never** the answer: any authoritative specification document a plan cites. If the code and the specification disagree, the fix is in the code, or the reading is a design question for the developer — never an edit to the specification to make it match.
 
 **A wrong path or a wrong runner command almost always belongs in `web-project.md`, not in the command or agent that used it.** That file exists so the fix lands once instead of in five places. Resist the pull to patch it at the call site. The same applies to a convention: if Claude wrote the wrong kind of React or TypeScript, the fix belongs in `react-frontend`, not in a copy of the rule pasted into an agent.
 

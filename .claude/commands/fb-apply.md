@@ -2,7 +2,7 @@
 description: Execute the implementation contract — Implementer runs every phase end-to-end (writing and running tests as it goes), then [Code-Evaluator + Defender + QA] review in parallel once at the end, then a single combined fix pass + verification round (max 2 rounds)
 ---
 
-You are the **Orchestrator** for the StringsAndStations implementation pipeline. Execute the resolved contract under `.claude/contract/<slug>/` (see Step 1) using 4 specialized agents.
+You are the **Orchestrator** for this project's implementation pipeline. Execute the resolved contract under `.claude/contract/<slug>/` (see Step 1) using 4 specialized agents.
 
 The Implementer subagent works through **all phases end-to-end first**, writing and running tests as the tasks dictate. Reviewers run **in parallel only once at the end**, after the full implementation is complete. Then a **single combined fix pass** addresses any issues, followed by one verification round (max 2 rounds total).
 
@@ -17,7 +17,7 @@ Read `.claude/workflow/plan-resolution.md` and follow **Resolving the target pla
 With the board updated, read:
 - `<plan>/plan.md` — Part 1 is scope and acceptance criteria, Part 2 is the technical approach and data shapes
 - `<plan>/tasks.md` — implementation checklist (grouped under `## Phase N — Name` headings; each task carries its own `**Files:**` block and ordered `- [ ] **Step:**` bullets)
-- `.claude/workflow/web-project.md` — the canonical paths, the `src/rules/` boundary, runner commands, developer-owned decisions, and the correctness traps. You need it to judge a pause condition correctly and to paste the right paths into agent prompts.
+- `.claude/workflow/web-project.md` — the canonical paths, the architectural boundaries named in the plan (if any), runner commands, developer-owned decisions, and the correctness traps. You need it to judge a pause condition correctly and to paste the right paths into agent prompts.
 
 If either contract file is missing, **stop** and tell the user to run `/fb-plan <task>` first. The ticket already sitting in `Coding` is correct — the contract is what is missing, not the intent to work on it.
 
@@ -29,7 +29,7 @@ Check these once, here, not at phase 4:
 
 1. **Is the app scaffolded?** `package.json` exists, and every `npm run <script>` the contract's `Run:` steps name is present in it. If a script is missing and no task in this contract creates it, stop and say which — a `Missing script` failure mid-run reads like a defect and is not one. A contract whose *first phase* scaffolds the project legitimately has none of this yet; say so and proceed.
 2. **Are dependencies installed?** If `node_modules` is absent and the contract does not install them, run `npm ci` yourself before the first dispatch (or `npm install` if there is no lockfile yet) and say that you did. `'vite' is not recognized` / `Cannot find module` at phase 3 is this check, skipped.
-3. **Are there unchosen tuning values?** Read `plan.md` Part 2 → Risks and judgement calls and the `tasks.md` File map → "Developer decides or observes". If a task needs a `rules.json` value nobody has chosen, ask the developer now rather than letting the Implementer invent one. This is the cheapest possible moment.
+3. **Are there unchosen tuning values?** Read `plan.md` Part 2 → Risks and judgement calls and the `tasks.md` File map → "Developer decides or observes". If a task needs a configuration value nobody has chosen, ask the developer now rather than letting the Implementer invent one. This is the cheapest possible moment.
 
 There is **no lock to clear and no editor to close** — nothing in this stack holds the project exclusively, and the developer having the app open in a browser breaks nothing.
 
@@ -51,34 +51,34 @@ Each prompt below is the agent's **assignment** only. Read an agent file yoursel
 `<plan>/tasks.md` is grouped under `## Phase N — Name` headings; tasks are numbered sequentially across all phases. Each task carries its own `**Files:**` block listing the file(s) it touches and what changes in each, plus one or more `- [ ] **Step:**` bullets describing the work in order. **File paths are owned by the task, not by `plan.md`.** Example shape produced by `/fb-plan`:
 
 ```
-## Phase 2 — Transversal-crossing predicate with a named epsilon
+## Phase 2 — Debounce helper with a named wait
 
 [Framing paragraph explaining what this phase covers and why it is a safe boundary.]
 
-### Task 5: Add crossesTransversally to src/rules/geometry.ts
+### Task 5: Add debounce to src/utils/debounce.ts
 
 - Skill: react-frontend
 
 **Files:**
-- Modify: `src/rules/geometry.ts`
-- Test: `src/rules/__tests__/geometry.test.ts`
+- Modify: `src/utils/debounce.ts`
+- Test: `src/utils/__tests__/debounce.test.ts`
 
-- [ ] **Step 1: Write the failing test for a tangency that must not count**
+- [ ] **Step 1: Write the failing test for a call made after the wait window**
 
 [code]
 
 - [ ] **Step 2: Run the spec, confirm it fails**
 
-Run: `npx vitest run src/rules/__tests__/geometry.test.ts`
-Expected: FAIL — tangency currently counts as a crossing
+Run: `npx vitest run src/utils/__tests__/debounce.test.ts`
+Expected: FAIL — the call is not yet delayed
 
-- [ ] **Step 3: Implement the predicate with the named epsilon (M8)**
+- [ ] **Step 3: Implement debounce with the named wait**
 
 [code]
 
 - [ ] **Step 4: Re-run the spec**
 
-Run: `npx vitest run src/rules/__tests__/geometry.test.ts`
+Run: `npx vitest run src/utils/__tests__/debounce.test.ts`
 Expected: PASS
 ```
 
@@ -92,10 +92,10 @@ Rules for reading and processing `tasks.md`:
 
 Some tasks — and some items in the File map's "Developer decides or observes" list — are marked `Skill: none — developer decision` or similar. **Never dispatch these to the Implementer and never resolve them yourself.** `.claude/workflow/web-project.md` → **Developer-owned work** lists the categories; the ones that most often gate a later phase:
 
-- **Choosing a tunable value in `rules.json`.** Code reads it; the developer decides it, informed by play-testing and §12's symptom-to-cause table. Anything whose expected behaviour depends on that number comes after the decision.
-- **Resolving a rulebook ambiguity, or overturning a `[MADE UP — M#]` decision.** A design call. The rulebook is the spec and is never edited to match the code.
+- **Choosing a tunable value in configuration.** Code reads it; the developer decides it, informed by real-world testing. Anything whose expected behaviour depends on that number comes after the decision.
+- **Resolving a design ambiguity, or overturning a previously documented decision.** A design call. The specification is never edited to match the code.
 - **Approving a new dependency.**
-- **Judging anything only visible in the running app** — drag feel, visual layout, readability, pacing, whether coaching fires at the right moment.
+- **Judging anything only visible in the running app** — interaction feel, visual layout, readability, pacing, whether copy fires at the right moment.
 
 When you reach one:
 1. Stop dispatching.
@@ -114,7 +114,7 @@ Work through every phase in `tasks.md` in order. **Do NOT invoke reviewers betwe
 - Task is unclear → ask for clarification
 - Implementation reveals a design issue → suggest updating artifacts
 - Error or blocker encountered → report and wait for guidance
-- A task needs a tuning value, a rule reading, a dependency approval, or a *judgement* of the running app (see Step 3) — a functional runtime check is QA's, not a pause
+- A task needs a tuning value, a design reading, a dependency approval, or a *judgement* of the running app (see Step 3) — a functional runtime check is QA's, not a pause
 - A command fails with `'vite' is not recognized`, `Cannot find module`, or `Missing script` → dependencies or scripts are absent, not broken code; resolve the environment and re-run
 - User interrupts
 
@@ -180,20 +180,20 @@ For **each phase** that has unchecked tasks in `tasks.md`, spawn an **Agent** (`
 [Paste the "Skills to invoke during execution" list from `<plan>/plan.md` Part 2. The Implementer must invoke each via the Skill tool before writing code. `react-frontend` is the normal entry for code work. If the list is `none`, say so explicitly — do not leave this section blank, and do not substitute a skill that does not exist.]
 
 ### Rules to honour
-- `.claude/workflow/web-project.md` — paths, the `src/rules/` boundary, runner commands, developer-owned decisions, and the correctness traps. Read it before writing code.
+- `.claude/workflow/web-project.md` — paths, the architectural boundaries named in the plan (if any), runner commands, developer-owned decisions, and the correctness traps. Read it before writing code.
 - Scan `.claude/rules/README.md` and Read every rule file whose topic this phase touches. Their reject conditions are hard constraints. The folder may be empty — that is fine.
 - `CLAUDE.md` at the repo root — project conventions.
-- `.docs/Game_Rules/Rules.md` — the specification. Cite it; never re-derive a rule, and never edit it.
+- Cite the specification named in the plan, where one exists. Never re-derive a rule, and never edit it.
 
 ### Tasks to Implement
 [Paste only the tasks for the current phase from tasks.md, INCLUDING the phase's framing paragraph and each task's `**Files:**` block and full `- [ ] **Step:**` bullets. The `**Files:**` block is the authoritative file list for that task — touch every listed path and nothing outside the union of those paths. The step bullets are the spec — walk every one in order.]
 
 ### Project Paths
 - Repo root: `E:\Game Dev\StringsAndStations`
-- Pure game logic: `src\rules` (no React, no DOM — a lint rule enforces it)
-- Components: `src\ui`, plus `App.tsx`
-- Tests: `src\rules\__tests__`
-- Tunables: `rules.json` (read them; never choose their values)
+- Pure logic (if the plan establishes a boundary): named in the plan (no React, no DOM — a lint rule enforces it once added)
+- Components: `src\`, plus `App.tsx`
+- Tests: co-located `__tests__/` folders, per the plan
+- Tunables: the configuration file the plan names (read them; never choose their values)
 - Never edit: `node_modules\`, `dist\`, `coverage\`, `.vite\`, `*.tsbuildinfo` (generated), or `package-lock.json` by hand (change `package.json` and run `npm install`)
 
 ### Important Constraints
@@ -202,10 +202,10 @@ For **each phase** that has unchecked tasks in `tasks.md`, spawn an **Agent** (`
 - Return your Implementer Report listing every file changed (production AND test files) in this phase.
 - **NO reviewer pass will run between phases** — produce finished, merge-ready code AND tests for this phase. Reviewers (Code-Evaluator + Defender + QA) WILL run once at the very end; QA validates that any tests introduced are present, runnable, passing, and meaningful (not tautological).
 - **Always invoke Vitest with the `run` subcommand** — `npx vitest run <path>`. Bare `vitest` enters watch mode and hangs until the tool times out. **Never run `npm run dev`**; it is a server and does not terminate.
-- **Never choose a value that belongs in `rules.json`.** Add the key if a task says so, read it in code, and report any value nobody has chosen as a developer decision. Inventing a tuning number silently corrupts every play-test conclusion drawn from it.
-- **Never disable a lint rule to land a change** — least of all the `src/rules/` import-boundary rule or `react-hooks/exhaustive-deps`. If suppression seems necessary, that is a pause with a stated reason.
-- **Renaming a `rules.json` key, a storage key, or a persisted `Move` field touches every reader, the type, the fixtures, and any copy that quotes the value.** These bind by string; TypeScript will not catch a miss, and the symptom is `undefined` → `NaN` → a board that renders nothing and logs nothing. Change them together and grep the old name afterwards.
-- If the design references an asset outside the contract (a data table pasted into the brief, a rulebook section, a file the developer pointed at), read it and use it verbatim. Do NOT ship placeholder values or "TODO: replace later" stubs — the source is reachable, fetch it.
+- **Never choose a value that belongs in configuration.** Add the key if a task says so, read it in code, and report any value nobody has chosen as a developer decision. Inventing a tuning number silently corrupts every conclusion drawn from testing it.
+- **Never disable a lint rule to land a change** — least of all an import-boundary rule the plan establishes, or `react-hooks/exhaustive-deps`. If suppression seems necessary, that is a pause with a stated reason.
+- **Renaming a configuration key, a storage key, or a persisted state field touches every reader, the type, the fixtures, and any copy that quotes the value.** These bind by string; TypeScript will not catch a miss, and the symptom is `undefined` → `NaN` → a page that renders nothing and logs nothing. Change them together and grep the old name afterwards.
+- If the design references an asset outside the contract (a data table pasted into the brief, a specification section, a file the developer pointed at), read it and use it verbatim. Do NOT ship placeholder values or "TODO: replace later" stubs — the source is reachable, fetch it.
 ```
 
 Keep dispatching the Implementer phase by phase until every phase in `tasks.md` has its tasks marked `- [x]` (or the Implementer reports it cannot complete a task — note the blocker against that phase, append whatever paths it did touch, and continue with the next phase). Then go to **Step 5**.
@@ -226,7 +226,7 @@ Once every phase is implemented, spawn all 3 reviewers **in a single message wit
 [Full tasks.md task list, grouped by phase, with ✓ marks]
 
 ### Standards Reference
-Read `.claude/skills/react-frontend/SKILL.md` and its `references/engineering-standards.md` (the authority on conventions here), `.claude/workflow/web-project.md` (layout, the `src/rules/` boundary, correctness traps), `CLAUDE.md` at the repo root, any other `.claude/skills/<name>/SKILL.md` named in the contract's skill list, and any relevant `.claude/rules/` file.
+Read `.claude/skills/react-frontend/SKILL.md` and its `references/engineering-standards.md` (the authority on conventions here), `.claude/workflow/web-project.md` (layout, the architectural boundaries named in the plan if any, correctness traps), `CLAUDE.md` at the repo root, any other `.claude/skills/<name>/SKILL.md` named in the contract's skill list, and any relevant `.claude/rules/` file.
 
 Review every changed file and produce your Code-Evaluator Report.
 ```
@@ -243,7 +243,7 @@ Review every changed file and produce your Code-Evaluator Report.
 [Full tasks.md task list, grouped by phase, with ✓ marks]
 
 ### Context
-[Note every `rules.json` key, storage key, persisted `Move` shape, exported constant, or shared predicate this contract renamed, retyped, or changed the meaning of — a rename with a reader left on the old name is silent breakage the Defender must flag. State whether any saved move logs exist, so a persisted-shape change can be judged. Paste the Config and persisted-shape audit from `plan.md` Part 1 if one was performed. Note any tuning value that is still a placeholder pending a developer decision.]
+[Note every configuration key, storage key, persisted state shape, exported constant, or shared predicate this contract renamed, retyped, or changed the meaning of — a rename with a reader left on the old name is silent breakage the Defender must flag. State whether any saved data exists, so a persisted-shape change can be judged. Paste the Config and persisted-shape audit from `plan.md` Part 1 if one was performed. Note any tuning value that is still a placeholder pending a developer decision.]
 
 Apply your full defensive checklist — including §11 Shared-Surface Contract / Blast Radius — to every changed file and produce your Defender Report.
 ```
@@ -267,22 +267,22 @@ Apply your full defensive checklist — including §11 Shared-Surface Contract /
 
 ### Project Paths
 - Repo root: `E:\Game Dev\StringsAndStations`
-- Pure game logic: `src\rules`
-- Components: `src\ui`, plus `App.tsx`
-- Tests: `src\rules\__tests__`
-- Tunables: `rules.json`
+- Pure logic (if the plan establishes a boundary): named in the plan
+- Components: `src\`, plus `App.tsx`
+- Tests: co-located `__tests__/` folders, per the plan
+- Tunables: the configuration file the plan names
 
 ### Environment
 - `package.json` present, with the scripts this contract uses: [YES / NO — name any missing]
 - `node_modules` installed: [YES / NO]
 
 ### Runtime surface (for Step 4.5 — live browser verification)
-[State whether this contract changed anything observable in the running app: a component, the reducer, a hook, `rules.json` or its loader, meaningful styling, or rules logic that feeds what the board draws. If it did, say what the developer should be able to *see* working, and name the seed the contract specifies if there is one. If it changed nothing observable — a test-only task, a script or CI edit, a type-only refactor — say so, so QA can record the skip in one line rather than starting a server for nothing.]
+[State whether this contract changed anything observable in the running app: a component, the reducer, a hook, a configuration file or its loader, meaningful styling, or pure logic that feeds what renders. If it did, say what the developer should be able to *see* working, and name the seed the contract specifies if there is one. If it changed nothing observable — a test-only task, a script or CI edit, a type-only refactor — say so, so QA can record the skip in one line rather than starting a server for nothing.]
 
 ### Delegated Final-Verification Commands
 [Paste verbatim the `Run:` / `Expected:` pairs from the contract's closing `Final verification` phase that the Implementer left unticked — typically the unfiltered `npm test`, `npm run build`, and any grep audits it delegated. If none, say "none delegated".]
 
-Run all eight validation steps (typecheck/build, lint, **test validation** for tasks that list a `Test:` path, boundary/config/persisted-shape verification, **live browser verification via the `chrome-devtools` MCP**, output review, AC traceability, delegated final-verification) against the FULL implementation (not per phase) and produce your QA Report. Remember: you NEVER write code — including tests. If a required test is missing, broken, or tautological, FAIL the task and let the Implementer fix it in the combined fix pass. Always invoke Vitest with the `run` subcommand, and never run `npm run dev` in the foreground — Step 4.5 starts it detached, on the port and by the procedure your agent definition specifies, and kills only the PID it started. **You CAN observe the app running, so verify that the change actually works rather than describing how someone else could check.** Reserve MANUAL VERIFICATION NEEDED for genuine judgement — drag feel, visual and copy judgement, pacing — and for states the browser tooling cannot reach; give the exact command, interaction, and expected outcome for those. A criterion with a right answer that you filed as manual verification is under-verification, not caution.
+Run all eight validation steps (typecheck/build, lint, **test validation** for tasks that list a `Test:` path, boundary/config/persisted-shape verification, **live browser verification via the `chrome-devtools` MCP**, output review, AC traceability, delegated final-verification) against the FULL implementation (not per phase) and produce your QA Report. Remember: you NEVER write code — including tests. If a required test is missing, broken, or tautological, FAIL the task and let the Implementer fix it in the combined fix pass. Always invoke Vitest with the `run` subcommand, and never run `npm run dev` in the foreground — Step 4.5 starts it detached, on the port and by the procedure your agent definition specifies, and kills only the PID it started. **You CAN observe the app running, so verify that the change actually works rather than describing how someone else could check.** Reserve MANUAL VERIFICATION NEEDED for genuine judgement — interaction feel, visual and copy judgement, pacing — and for states the browser tooling cannot reach; give the exact command, interaction, and expected outcome for those. A criterion with a right answer that you filed as manual verification is under-verification, not caution.
 ```
 
 **Wait for all 3 agents to return.** Collect all three reports.
@@ -318,18 +318,18 @@ Fix ALL issues listed below in a single pass.
 
 ### Project Paths
 - Repo root: `E:\Game Dev\StringsAndStations`
-- Pure game logic: `src\rules`
-- Components: `src\ui`, plus `App.tsx`
-- Tests: `src\rules\__tests__`
-- Tunables: `rules.json`
+- Pure logic (if the plan establishes a boundary): named in the plan
+- Components: `src\`, plus `App.tsx`
+- Tests: co-located `__tests__/` folders, per the plan
+- Tunables: the configuration file the plan names
 
 ### Important Constraints
 - Fix ONLY the issues identified by reviewers — do not make unrelated changes
 - For Code-Evaluator issues: apply the specific principle or convention fix suggested
 - For Defender issues: prioritize Critical over Warning; skip Info-level items
 - For QA failures: fix typecheck and lint errors, functional issues, AND test issues — for `test-missing` add the test the task specified at the listed `Test:` path; for `test-broken` make it run and pass; for `test-tautological` rewrite it to assert the actual behaviour described in the task's step bullets; for `test-coverage-gap` or `ac-test-gap` add an assertion for the missed criterion
-- **`boundary-violation` IS yours to fix** — move the offending logic so `src/rules/` stays pure. Never fix it by disabling the lint rule.
-- **`tunable-hardcoded` IS yours to fix** — read the value from `rules.json` instead. If the key does not exist yet, add the key with the placeholder the contract specified and report the unchosen value; do not pick a number.
+- **`boundary-violation` IS yours to fix** — move the offending logic so the tree the plan protects stays pure. Never fix it by disabling the lint rule.
+- **`tunable-hardcoded` IS yours to fix** — read the value from configuration instead. If the key does not exist yet, add the key with the placeholder the contract specified and report the unchosen value; do not pick a number.
 - **`lint-suppressed` IS yours to fix** — remove the suppression and address the underlying issue.
 - **`design-decision-needed` is NOT yours to fix.** An unchosen tuning value, an ambiguous rule reading, and a new dependency are the developer's. Report it back so the orchestrator can resolve it with them.
 - **`deps-not-installed` / `not-scaffolded` are NOT code defects** — they mean the environment is incomplete. Report back; do not "fix" anything.
@@ -410,7 +410,7 @@ Present:
 - **Agents have isolated context** — pass everything they need in the prompt; do not assume any agent remembers prior phases or prior dispatches.
 - **The orchestrator manages state** — track the cumulative changed-files log across phases, fix-round counters, and residual issues.
 - **Files come from tasks, not from `plan.md`** — every phase dispatch uses each task's `**Files:**` block as the authoritative file list.
-- **Nobody in this pipeline decides a tuning value or a rule reading.** `rules.json` values and `[MADE UP — M#]` decisions are the developer's; the rulebook is the spec and is never edited to match the code. If the contract needs a decision mid-run, pause and hand it over.
+- **Nobody in this pipeline decides a tuning value or a design reading.** Configuration values and previously documented decisions are the developer's; the specification is never edited to match the code. If the contract needs a decision mid-run, pause and hand it over.
 - **Never run `npm run dev` in the foreground, and never invoke bare `vitest`.** The first does not terminate; the second enters watch mode and hangs. Both waste the whole timeout and return nothing. QA is the sole exception: it starts the server *detached* and drives the app through the `chrome-devtools` MCP, then kills the PID it started. Neither you nor the Implementer does this.
 - **`'vite' is not recognized` / `Cannot find module` / `Missing script` is never a code defect.** It means dependencies or scripts are absent. Resolve the environment, then re-run.
 - **Maximum 2 fix-review rounds total.** After round 2, log residuals and continue.

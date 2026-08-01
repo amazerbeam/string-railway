@@ -11,7 +11,7 @@ The root `CLAUDE.md` warns that a fact restated in five files gets updated in fo
 | What the pipeline is and why it exists | root `CLAUDE.md` → *Architecture: the `/fb-*` contract pipeline* |
 | Where code lives, runner commands, correctness traps | `.claude/workflow/web-project.md` |
 | Slug grammar, how a command picks *which* plan | `.claude/workflow/plan-resolution.md` |
-| React/TypeScript conventions, the `src/rules/` boundary | `.claude/skills/react-frontend/SKILL.md` |
+| React/TypeScript conventions, architectural boundaries (if any) | `.claude/skills/react-frontend/SKILL.md` |
 | Jira status meanings and which transitions are automatic | `.claude/skills/management-jira/SKILL.md` → *The SCRUM status model* |
 | Project-wide domain rules | `.claude/rules/` (see its `README.md`) |
 
@@ -76,7 +76,7 @@ These run automatically with no confirmation prompt, are reported in the command
 3. **File paths are owned by tasks, not by `plan.md`.** Each `### Task N:` carries its own `**Files:**` block, and nothing outside that union may be touched.
 4. **The Implementer runs scoped Vitest plus `typecheck` only**, batched per phase. The full suite and the build belong to QA.
 5. **Never name a skill that does not exist on disk.** Commands Glob `.claude/skills/*/SKILL.md` and read `description:` lines rather than working from a remembered roster.
-6. **Pause conditions are real.** Tuning values, `rules.json` edits, rulebook ambiguities, overturning a `[MADE UP — M#]` decision, new dependencies, visual judgement, and anything needing the developer's *judgement* of the running app all stop the pipeline. No command decides these on its own authority. A runtime check with a right answer is **not** a pause — QA drives the app through the `chrome-devtools` MCP (`.claude/agents/qa.md` → Step 4.5); reserve the pause for questions of feel.
+6. **Pause conditions are real.** Tuning values, configuration edits, design ambiguities, overturning a previously documented decision, new dependencies, visual judgement, and anything needing the developer's *judgement* of the running app all stop the pipeline. No command decides these on its own authority. A runtime check with a right answer is **not** a pause — QA drives the app through the `chrome-devtools` MCP (`.claude/agents/qa.md` → Step 4.5); reserve the pause for questions of feel.
 7. **Static gates are never `N/A`** while TypeScript is in the diff. `typecheck`, `lint`, `format:check`, `test`, `build` all exist and all run.
 
 ## Before you finish an edit here

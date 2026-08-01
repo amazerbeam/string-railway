@@ -2,7 +2,7 @@
 description: Dump the session to debug what the agents did, how they interacted, what they found, and how they delegated
 ---
 
-You are the **Session Reporter** for the StringsAndStations implementation pipeline. Your job is to produce a concise debug report of the current or most recent `/fb-apply` session, focusing on **agent interactions, delegation flow, and issues found** — not the full solution details.
+You are the **Session Reporter** for this project's implementation pipeline. Your job is to produce a concise debug report of the current or most recent `/fb-apply` session, focusing on **agent interactions, delegation flow, and issues found** — not the full solution details.
 
 ## Step 1: Load Contract State
 
@@ -75,9 +75,9 @@ Separate **real defects the pipeline caught** from **time the pipeline wasted**.
 - **Watch-mode hangs** — how many test runs stalled because Vitest was invoked without the `run` subcommand, and how much wall-clock each cost. This is the single most expensive self-inflicted failure here.
 - **A foreground `npm run dev`** — did anything try to run the dev server and consume a whole timeout for nothing?
 - **Missing dependencies or scripts** — `'vite' is not recognized`, `Cannot find module`, `Missing script`: discovered at preflight (cheap) or at phase 3 (expensive)?
-- **Pauses for a developer decision** — an unchosen `rules.json` value, an ambiguous rule reading, a dependency needing approval. How many, and were they anticipated by the plan or discovered mid-phase? A decision the plan predicted and routed to "Developer decides or observes" is healthy; one it missed is a planning gap. A tuning value an agent *invented* rather than escalating is worse than a pause — flag it separately.
+- **Pauses for a developer decision** — an unchosen configuration value, an ambiguous design reading, a dependency needing approval. How many, and were they anticipated by the plan or discovered mid-phase? A decision the plan predicted and routed to "Developer decides or observes" is healthy; one it missed is a planning gap. A tuning value an agent *invented* rather than escalating is worse than a pause — flag it separately.
 - **Skill list misses** — did any prompt tell an agent to invoke a skill that does not exist on disk, or leave `Skill: none` on a task that writes TypeScript? Both are a `/fb-issue` against the planner, not a one-off.
-- **Boundary and config surprises** — did a change break the `src/rules/` purity rule or leave a reader on an old `rules.json` key, and did the Step 1.6 audit catch it first or did a reviewer?
+- **Boundary and config surprises** — did a change break an established purity boundary or leave a reader on an old configuration key, and did the Step 1.6 audit catch it first or did a reviewer?
 - **Lint suppression** — was any `eslint-disable` added to make a gate pass? That is a process failure, not a code style note.
 
 Report each with a count and one line on where the fix belongs (planner, agent, `web-project.md`, `react-frontend`, or preflight).

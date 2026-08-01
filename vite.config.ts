@@ -3,9 +3,9 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // GitHub Pages serves this from /string-railway/, not a domain root, so asset URLs
-  // must be relative. Safe while this is a single view with no router — revisit before
-  // adding client-side routes.
+  // A relative base keeps asset URLs correct whether this is served from a domain
+  // root or a sub-path. Safe while this is a single view with no router — switch to
+  // an explicit path before adding the first client-side route.
   base: './',
   plugins: [react()],
   test: {

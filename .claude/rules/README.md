@@ -1,6 +1,6 @@
 # Shared Rules
 
-Topic-scoped rules that apply across the StringsAndStations project. Any skill, agent, command, or `CLAUDE.md` reference can pull from here — the goal is one canonical statement of each rule, reused everywhere.
+Topic-scoped rules that apply across this project. Any skill, agent, command, or `CLAUDE.md` reference can pull from here — the goal is one canonical statement of each rule, reused everywhere.
 
 ## Convention
 
@@ -23,7 +23,7 @@ When adding a new skill, audit this folder first and wire any matching rules int
 
 ## When to add a rule here vs. inside a skill
 
-- **Here** — the rule is about project data or constraints that more than one workflow could touch (saved-game / move-log compatibility, the `rules.json` schema, determinism and seeding requirements).
+- **Here** — the rule is about project data or constraints that more than one workflow could touch (a persisted-data schema, a configuration file's shape, determinism and seeding requirements).
 - **Inside a skill** — the rule only makes sense within that skill's narrow domain. Anything about how to write React or TypeScript here belongs in `.claude/skills/react-frontend/`, not in this folder.
 - **In `.claude/workflow/web-project.md`** — the rule is about *where code lives* or *how to verify it*. Paths and runner commands belong there, not here, so there is exactly one place to fix them.
 
@@ -33,8 +33,4 @@ When adding a new skill, audit this folder first and wire any matching rules int
 
 This folder was created because all five `/fb-*` commands and the `implementer`, `code-evaluator`, `defender`, and `qa` agents instruct a scan of this README before touching related work. An empty index is correct for a project with no domain rules yet; the scan simply finds nothing and proceeds.
 
-Candidate first rules, once the prototype has enough shape to make them concrete:
-
-- **Saved-game / move-log versioning** — a saved game is a JSON array of moves, and undo and replay derive from that log. How a log written by an older build is migrated rather than silently deserialised into a half-valid state. Reject conditions around renaming a `Move` kind or field with no migration.
-- **Determinism and seeding** — setup generation must produce an identical board from an identical seed (SCRUM-4 criterion 8). Reject conditions around `Math.random()` anywhere reachable from generation, `Date.now()` in simulation, and iteration order over object keys or a `Set`.
-- **`rules.json` schema and validation** — the required keys, their units and M-numbers, and what a malformed config must do (clear startup error, never defaults nobody chose). Reject conditions around reading a key without validation and around any tunable appearing as a literal in source or copy.
+There are no candidate first rules yet, either — this repository currently holds an empty prototype scaffold with no domain constraints worth stating once. The folder is correctly empty until the next prototype has project-wide constraints more than one workflow could trip over; write the first rule file then, following the five-section shape above.

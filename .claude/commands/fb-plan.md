@@ -1,5 +1,5 @@
 ---
-description: Produce an implementation plan (plan.md + tasks.md, in one plan folder) for a primed StringsAndStations task
+description: Produce an implementation plan (plan.md + tasks.md, in one plan folder) for a primed task
 ---
 
 You are the **Planning Agent**. Produce an implementation plan for the primed task:
@@ -24,7 +24,7 @@ The gate is narrow. Only refuse to plan if one of these two unrecoverable condit
 - Capture every such decision in the **"Assumptions made"** section of `plan.md` Part 1, each with a one-line rationale.
 - Frame the plan so the developer can red-line specific assumptions during Part 1 review rather than rewriting the brief.
 
-**One thing is never an assumption: a tuning value.** If the work needs a number that lives in `rules.json` and nobody has chosen it, that is a developer decision (`.claude/workflow/web-project.md` → Developer-owned work). Plan the code that reads the key, and list the unchosen value under Risks and judgement calls so it is decided at the approval gate rather than invented mid-phase.
+**One thing is never an assumption: a tuning value.** If the work needs a number that lives in configuration and nobody has chosen it, that is a developer decision (`.claude/workflow/web-project.md` → Developer-owned work). Plan the code that reads the key, and list the unchosen value under Risks and judgement calls so it is decided at the approval gate rather than invented mid-phase.
 
 The alignment check happens in `plan.md` Part 1, not at the gate. A best-effort plan with explicit assumptions is more useful to the developer than a refusal.
 
@@ -40,12 +40,12 @@ Run this **after** Step 0's refusal gate, not before it. Step 0 only refuses whe
 
 ## Step 1: Defer to the workflow reference, the skills, and the shared rules
 
-- **Read `.claude/workflow/web-project.md` first, every time.** It is the canonical statement of where code lives, the `src/rules/` boundary, which commands verify what, what only the developer can decide, and the correctness traps (config-key renames, hard-coded tunables, effect cleanup, epsilon choices, the drag hot path). Every `Run:` step you write and every path you name must come from it. If a path or script name there turns out to be wrong, fix *that* file rather than working around it in the plan.
+- **Read `.claude/workflow/web-project.md` first, every time.** It is the canonical statement of where code lives, the architectural boundaries named in past plans (if any), which commands verify what, what only the developer can decide, and the correctness traps (config-key renames, hard-coded tunables, effect cleanup, epsilon choices, high-frequency interaction hot paths). Every `Run:` step you write and every path you name must come from it. If a path or script name there turns out to be wrong, fix *that* file rather than working around it in the plan.
 - **`package.json` is the authority on script names.** Read it before writing a `Run:` step that invokes one. If the app is not scaffolded yet, say so in the plan rather than planning a command that cannot resolve.
 - **Never pattern-match against generated output.** `node_modules/`, `dist/`, `coverage/`, `.vite/`, and `*.tsbuildinfo` are regenerated from the real source. They are not evidence of anything and must never be planned as edit targets. `package-lock.json` is different: it is committed and it matters, but it is machine-written — plan a `package.json` change plus `npm install`, never a hand-edit of the lockfile.
 - **Read the shared rules that apply.** Scan `.claude/rules/README.md` and Read every rule file whose topic the plan touches. Their **reject conditions** are planning constraints: a plan that would trip one is a broken plan. That folder may be empty — an empty scan is a valid outcome, not a reason to stop.
 - **Quality standards live in the skills** — chiefly `.claude/skills/react-frontend/SKILL.md` and its `references/engineering-standards.md` — and in `CLAUDE.md` at the repo root. Do not restate their contents in the plan; name the skill and let the executor load it.
-- **`.docs/Game_Rules/Rules.md` is the specification, and it is complete.** §10 gives the data model, §10.1 the geometry predicates, §10.2 the validation order, §10.3 scoring resolution, §10.4 the turn loop. Do not re-derive a rule in the plan — cite the section. Where the rulebook was silent the document already decided and tagged it `[MADE UP — M#]`; cite the M-number when a task depends on one.
+- **Cite the specification the brief names, where one exists.** Do not re-derive a rule or behaviour that is already defined in a linked document, ticket, or section the brief points at — cite it instead. Where that source was silent and a decision was made anyway, flag it plainly as an assumption in the plan (Part 1 → Assumptions made) rather than treating it as settled fact.
 
 If the brief points to specific files, modules, or components as a pattern reference, treat those as authoritative for this task.
 
@@ -67,16 +67,18 @@ The planner is only as good as the conventions it has loaded. Without the right 
 
 Pick every category that applies; a task can be in more than one.
 
-**Rules-engine code** — anything under `src/rules/`. Pure TypeScript, no React, no DOM, fully unit-testable under Vitest with no renderer. This is where the game lives and where §11 says the bugs will be. Prefer pushing logic here.
+**Pure logic** — self-contained TypeScript with no React import and no DOM access, fully unit-testable under Vitest with no renderer. Prefer pushing logic here whenever it has a testable invariant.
 
-**UI code** — anything under `src/ui/` or `App.tsx`. Subject to effect cleanup, StrictMode double-invocation, stale closures, and hot-path cost. Sub-classify:
-- **Committed-state rendering** (the SVG board, the HUD) — declarative React over `GameState`.
-- **The drag** (`StringDrag.tsx`) — the one sanctioned ref-mutation path, and the performance-critical surface.
+**UI components** — anything rendering markup, plus `App.tsx`. Subject to effect cleanup, StrictMode double-invocation, stale closures, and hot-path cost. Sub-classify:
+- **Committed-state rendering** — declarative React over application state.
+- **A high-frequency interaction** (drag, scroll, resize) — a candidate for a sanctioned ref-mutation path, and the performance-critical surface.
 - **A `use*` hook** — logic extracted out of a component.
 
-**Config and tunables** — `rules.json`, `src/constants/`, `package.json`, `tsconfig.json`, `vite.config.ts`, `eslint.config.js`. Adding a *key* is a code task; choosing its *value* is a developer decision.
+**Hooks** — logic extracted from a component body into a reusable `use*` function; its own category when a task's whole purpose is the extraction rather than the component around it.
 
-**Toolchain and scaffolding** — creating the project, wiring a script, adding the import-boundary rule. Ordinary agent work here, unlike a Unity project.
+**Config and tunables** — a configuration file, `src/constants/` (if the project has one), `package.json`, `tsconfig.json`, `vite.config.ts`, `eslint.config.js`. Adding a *key* is a code task; choosing its *value* is a developer decision.
+
+**Toolchain and scaffolding** — creating the project, wiring a script, adding a lint rule. Ordinary agent work.
 
 **Process** — the developer wants a standalone spec document before code, or the brief is still too vague to plan. Say so rather than planning blind.
 
@@ -97,18 +99,18 @@ Record the loaded skills in `plan.md` Part 2 under "Skills to invoke during exec
 
 ## Step 1.6: Config and persisted-shape audit (when applicable)
 
-This project's integrity risk is not a database and not a compiler-checked interface — it is the **name-bound surface outside the type checker's view**: `rules.json` keys, `localStorage` keys, persisted `Move` kinds and fields, rejection reason codes, exported constant-map keys, `data-testid` values, CSS class names, and SVG/`aria-*` ids. A rename that type-checks cleanly can turn a geometry constant into `undefined`, and a `NaN` renders nothing and logs nothing. Ground the plan in the actual on-disk state before designing.
+This project's integrity risk is not a database and not a compiler-checked interface — it is the **name-bound surface outside the type checker's view**: configuration keys, `localStorage` keys, persisted state kinds and fields, rejection reason codes, exported constant-map keys, `data-testid` values, CSS class names, and SVG/`aria-*` ids. A rename that type-checks cleanly can turn a configured constant into `undefined`, and a `NaN` renders nothing and logs nothing. Ground the plan in the actual on-disk state before designing.
 
-Run this step whenever the task touches a `rules.json` key, a persisted or stored shape, an exported constant map, a reason code, or any name a test or stylesheet references by string. Skip it entirely for a self-contained change with no config, storage, or string-bound surface — and say so in one line.
+Run this step whenever the task touches a configuration key, a persisted or stored shape, an exported constant map, a reason code, or any name a test or stylesheet references by string. Skip it entirely for a self-contained change with no config, storage, or string-bound surface — and say so in one line.
 
 Use `Grep`, `Glob`, and `Read` against the real files. Confirm:
 
-1. **Every `rules.json` key being renamed, retyped, or removed is found by name** across `src/**`, `rules.json`, and any tutorial or UI copy. Quote the actual hit count. Every hit is a site the plan must change in the same task; a key with zero hits is new or dead, and knowing which is the point of the audit.
-2. **Every persisted shape affected is enumerated.** A saved game is a JSON array of moves and undo derives from that log, so a changed `Move` kind or field invalidates stored logs. State whether anything is persisted yet: if nothing is, say so explicitly — that is a cheap window, and recording that it was open here is what lets a later change know it has closed.
+1. **Every configuration key being renamed, retyped, or removed is found by name** across `src/**`, the configuration file, and any user-facing copy. Quote the actual hit count. Every hit is a site the plan must change in the same task; a key with zero hits is new or dead, and knowing which is the point of the audit.
+2. **Every persisted shape affected is enumerated.** Wherever state is persisted (a save file, a stored log, `localStorage`), undo or replay may derive from it, so a changed kind or field invalidates stored records. State whether anything is persisted yet: if nothing is, say so explicitly — that is a cheap window, and recording that it was open here is what lets a later change know it has closed.
 3. **Type changes are checked for loss.** `number` → `string` changes every read; array → object breaks index access; required → optional makes every consumer's assumption wrong; a widened union forces every `switch` to grow a case. State which case applies and what the plan does about it.
-4. **Every consumer of a changed exported constant or predicate is enumerated.** `crossesTransversally` feeds validation *and* scoring — "some callers may be affected" is not an audit; a count is.
-5. **Names align across the chain**: `rules.json` key ↔ its TypeScript type ↔ any `src/constants/` entry ↔ the reader ↔ tutorial copy that quotes the number ↔ test fixtures. Several of these bind by string, so the compiler will not catch a mismatch. Any mismatch found is an in-scope defect.
-6. **The `src/rules/` boundary is not crossed.** Run the boundary grep from `web-project.md` and confirm the design does not require a DOM global or a React import under `src/rules/`. A design that does is a design to change, not a lint rule to disable.
+4. **Every consumer of a changed exported constant or predicate is enumerated.** A predicate that feeds both validation *and* a derived calculation — "some callers may be affected" is not an audit; a count is.
+5. **Names align across the chain**: configuration key ↔ its TypeScript type ↔ any `src/constants/` entry ↔ the reader ↔ copy that quotes the number ↔ test fixtures. Several of these bind by string, so the compiler will not catch a mismatch. Any mismatch found is an in-scope defect.
+6. **Any architectural boundary the plan establishes is not crossed.** Run the boundary grep from `web-project.md`, if one applies, and confirm the design does not require a DOM global or a React import inside a tree meant to stay pure. A design that does is a design to change, not a lint rule to disable.
 
 Capture findings in `plan.md` Part 1 under **"Config and persisted-shape audit"**, one bullet per check, quoting real counts and real key names. An audit that paraphrases instead of quoting has not been done.
 
@@ -163,13 +165,13 @@ Execution status: see `tasks.md` in this folder.
 - [Anything adjacent that could otherwise creep in]
 
 ### Pattern Reference
-[File paths, module names, component names, or "follow `react-frontend`/SKILL.md" — verbatim from the brief where it supplied them. Cite the rulebook section (§10.1, §10.2, …) for any behaviour the spec already defines. If the brief supplied no code reference, write "None supplied" and document the references you chose here.]
+[File paths, module names, component names, or "follow `react-frontend`/SKILL.md" — verbatim from the brief where it supplied them. Cite the specification the brief names (a section, a doc, a linked ticket) for any behaviour it already defines. If the brief supplied no code reference, write "None supplied" and document the references you chose here.]
 
 ### Constraints flagged on the brief
-[Determinism/seeding requirements, the ±2% arc-length tolerance, target pointer responsiveness, save-compatibility, accessibility expectations, the two-dependency limit — anything the developer called out as "don't surprise me on this".]
+[Determinism/seeding requirements, target pointer responsiveness, save-compatibility, accessibility expectations, the two-dependency limit — anything the developer called out as "don't surprise me on this".]
 
 ### Assumptions made
-[Every decision you made because the brief didn't say. One bullet per assumption with a one-line rationale — the developer red-lines this section, which is cheaper than rewriting the brief. Mark developer-confirmed choices as confirmed so they are not re-litigated. Capture: module/folder chosen; pattern reference selected when none was supplied; whether logic goes in `src/rules/` or a hook or a component, and why; the shape of any new `rules.json` key; whether state is in the reducer or local; scope-narrowing when the brief straddled logic and presentation. Never assume a tuning *value* — route it to Risks.]
+[Every decision you made because the brief didn't say. One bullet per assumption with a one-line rationale — the developer red-lines this section, which is cheaper than rewriting the brief. Mark developer-confirmed choices as confirmed so they are not re-litigated. Capture: module/folder chosen; pattern reference selected when none was supplied; whether logic goes in a pure module, a hook, or a component, and why; the shape of any new configuration key; whether state is in a reducer or local; scope-narrowing when the brief straddled logic and presentation. Never assume a tuning *value* — route it to Risks.]
 
 ### Config and persisted-shape audit
 [One bullet per check actually performed in Step 1.6, quoting real hit counts and key names. Skip with a one-line justification when the task has no config, storage, or string-bound surface.]
@@ -179,28 +181,28 @@ Execution status: see `tasks.md` in this folder.
 ## Part 2 — Technical design
 
 ### Approach
-[2-4 paragraphs on the technical shape: how the change is structured, why this shape over the alternatives (call them out by name — the developer often learns more from the road not taken), what the moving parts are, how data and control flow at runtime. Say explicitly which logic goes in `src/rules/` (pure, unit-testable) and which must be in a component or hook, and why. Name the rulebook sections the behaviour comes from, and any M-number the design depends on. Reflect the conventions from the skills loaded in Step 1.5 without restating them.]
+[2-4 paragraphs on the technical shape: how the change is structured, why this shape over the alternatives (call them out by name — the developer often learns more from the road not taken), what the moving parts are, how data and control flow at runtime. Say explicitly which logic goes in a pure, unit-testable module and which must be in a component or hook, and why. Cite the specification the behaviour comes from, where one exists. Reflect the conventions from the skills loaded in Step 1.5 without restating them.]
 
 ### Skills to invoke during execution
 [The confirmed skill list from Step 1.5. One bullet per skill: `skill-name` — why it applies and what it owns for this task. `react-frontend` is the normal entry for code work. When no skill covers the area, write `none — <one-line reason>` rather than inventing one. List any `.claude/rules/` files the executor must Read on a trailing line, and always list `.claude/workflow/web-project.md`. Note any developer override so the execution session knows why.]
 
 ### Diagram
-[A Mermaid diagram of whatever matters most: sequence for a pointer interaction, component diagram for structural change, state diagram for the turn loop, flowchart for the §10.2 validation order. For a genuine single-file edit with no flow, write one line — "Diagram skipped — single-file change, no flow." Never leave an empty fence.]
+[A Mermaid diagram of whatever matters most: sequence for a pointer interaction, component diagram for structural change, state diagram for a multi-step flow, flowchart for a documented validation or reject order. For a genuine single-file edit with no flow, write one line — "Diagram skipped — single-file change, no flow." Never leave an empty fence.]
 
 ### Data shapes
-[The new or modified concrete shapes, as TypeScript: types and interfaces added to `src/rules/types.ts`, new `Move` variants, function signatures with their parameter and return types, `rules.json` keys with their types and units, `src/constants/` entries, component props, reducer action shapes, and any `package.json` script or dependency change. Not prose. If nothing changes shape, write "No type, config, or contract changes." Flag every name or type that changes against the Step 1.6 audit, and state which persisted or stored data it affects. For a new `rules.json` key, give the key, its type, its unit, and its M-number — and mark the value itself as a developer decision if it has not been chosen.]
+[The new or modified concrete shapes, as TypeScript: types and interfaces added, new action/state variants, function signatures with their parameter and return types, configuration keys with their types and units, `src/constants/` entries, component props, reducer action shapes, and any `package.json` script or dependency change. Not prose. If nothing changes shape, write "No type, config, or contract changes." Flag every name or type that changes against the Step 1.6 audit, and state which persisted or stored data it affects. For a new configuration key, give the key, its type, its unit, and its rationale — and mark the value itself as a developer decision if it has not been chosen.]
 
 ### Runtime quality notes
 [Address each dimension below. "Trivial — no concerns" is acceptable per dimension, but only when honestly true.]
 
-- **Purity and adjudication:** [what goes in `src/rules/` and stays DOM-free; that no component decides legality; that limits and triggers are keyed on `ColourId`; that every tunable is read from `rules.json`]
-- **Effects, mount and teardown:** [which effects run when; StrictMode double-invocation safety; every listener/observer/timer/`requestAnimationFrame`/`AbortController` and where its cleanup lives; pointer capture released on `pointerup` *and* `pointercancel`; module-level state and its reset; what happens on a second new game]
-- **Hot-path cost:** [what runs per pointer event and what it allocates; whether crossing detection is incremental rather than whole-path; whether the in-progress path stays off the reconciler; whether any legal-placement search is bounded; any memoisation and the profiling evidence for it]
-- **Determinism and numeric safety:** [the seed path and that no `Math.random()` is reachable from generation; the named epsilon and the degenerate cases it must survive; guarded divisors so no `NaN` reaches a coordinate; that the ±2% arc-length check (M6) is inclusive]
-- **Error paths:** [what's guarded, what throws, what the player sees, what gets logged — no swallowing a failure into a success shape, no `catch { return DEFAULTS }` on the config load; an illegal placement cannot commit and its rejection names a specific §10.2 reason; all four async states on any new async surface]
+- **Purity and adjudication:** [what goes in a pure module and stays DOM-free; that no component decides logic it should only ask about; that every tunable is read from configuration]
+- **Effects, mount and teardown:** [which effects run when; StrictMode double-invocation safety; every listener/observer/timer/`requestAnimationFrame`/`AbortController` and where its cleanup lives; pointer capture released on `pointerup` *and* `pointercancel`; module-level state and its reset; what happens on a second mount]
+- **Hot-path cost:** [what runs per pointer event and what it allocates; whether repeated work is incremental rather than whole-collection; whether a high-frequency value stays off the reconciler; whether any search is bounded; any memoisation and the profiling evidence for it]
+- **Determinism and numeric safety:** [the seed path and that no `Math.random()` is reachable from anything that must be reproducible; the named epsilon and the degenerate cases it must survive; guarded divisors so no `NaN` reaches a rendered value]
+- **Error paths:** [what's guarded, what throws, what the user sees, what gets logged — no swallowing a failure into a success shape, no `catch { return DEFAULTS }` on the config load; an invalid action cannot commit and its rejection names a specific reason; all four async states on any new async surface]
 
 ### Risks and judgement calls
-[Decisions the developer should sanity-check before approving — pattern choice, naming, structure, the rules-vs-hook-vs-component split, scope-narrowing, any rule reading the rulebook leaves ambiguous, **every tuning value the work needs that nobody has chosen**, any dependency that would be required, and every behaviour that can only be judged by playing. One bullet each. The second-most-important section after Approach: it surfaces what could be wrong instead of burying it in prose.]
+[Decisions the developer should sanity-check before approving — pattern choice, naming, structure, the logic-vs-hook-vs-component split, scope-narrowing, any design reading the brief leaves ambiguous, **every tuning value the work needs that nobody has chosen**, any dependency that would be required, and every behaviour that can only be judged by running the app. One bullet each. The second-most-important section after Approach: it surfaces what could be wrong instead of burying it in prose.]
 ```
 
 **Nested headings.** Any heading *inside* one of the fourteen sections is a `####`, never a `###` — a `###` would read as a fifteenth top-level section. This matters most under Data shapes, which often wants sub-headings per artefact.
@@ -216,7 +218,7 @@ Before handing off for approval, review `plan.md` against the brief. No subagent
 5. **Audit (when Step 1.6 ran):** The audit section reports a finding for every check performed, with real counts. Every renamed key with non-zero hits has every hit accounted for in a task.
 6. **Skill list honesty:** Every skill named in Part 2 resolves to a real `.claude/skills/<name>/SKILL.md`. No invented skills, and no `none` on a task that writes TypeScript.
 7. **Rule compliance:** No reject condition from any applicable `.claude/rules/` file is tripped by the design.
-8. **Spec fidelity:** Every behaviour the plan describes either cites a rulebook section or is flagged as new. No rule is re-derived, and no `[MADE UP — M#]` decision is silently overturned — that is a developer call, raised in Risks.
+8. **Spec fidelity:** Every behaviour the plan describes either cites the specification the brief names or is flagged as new. No rule is re-derived, and no prior documented decision is silently overturned — that is a developer call, raised in Risks.
 
 Fix issues inline. Continue to Step 3.
 
@@ -289,45 +291,45 @@ Started: [today's date]
 ## File map
 
 **Created:** *(or "(none — no new files)")*
-- `src/rules/geometry.ts` — [one-line purpose]
+- `src/utils/debounce.ts` — [one-line purpose]
 
 **Modified:**
-- `src/rules/validate.ts` — [one-line summary of change]
-- `src/ui/Board.tsx:120-145` — [one-line summary]
+- `src/hooks/useSomething.ts` — [one-line summary of change]
+- `src/components/Panel.tsx:120-145` — [one-line summary]
 
 **Deleted:** *(or "(none)")*
-- `src/rules/obsolete.ts`
+- `src/utils/obsolete.ts`
 
 **Developer decides or observes:** *(or "(none)")*
-- `rules.json` → `intersectionEpsilon` — [the value to choose, and what it trades off]
-- [Behaviour only judgeable by playing, with what to look for]
+- config → `retryDelayMs` — [the value to choose, and what it trades off]
+- [Behaviour only judgeable by running the app, with what to look for]
 
 ---
 
-## Phase 1 — [Phase name, e.g. "Transversal-crossing predicate with a named epsilon"]
+## Phase 1 — [Phase name, e.g. "Debounce helper with a named wait"]
 
 [1-3 sentence framing paragraph: what this phase covers and why the boundary is a safe stopping point — does it type-check? does it widen before it cuts? are the side effects read-only? The framing tells the executor when to stop and re-evaluate if a step misbehaves. Do not include commit instructions.]
 
-### Task 1: [Module / verb-shaped name — e.g. "Add crossesTransversally to src/rules/geometry.ts"]
+### Task 1: [Module / verb-shaped name — e.g. "Add debounce to src/utils/debounce.ts"]
 
 - Skill: [skill-name from `plan.md` Part 2 "Skills to invoke during execution", normally `react-frontend`, or `none — <one-line reason>` for non-code work]
 
 **Files:**
-- Create: `src/rules/geometry.ts`
-- Modify: `src/rules/validate.ts:40-72`
-- Delete: `src/rules/obsolete.ts`
-- Test: `src/rules/__tests__/geometry.test.ts`
-- Config: `rules.json` — add `intersectionEpsilon` (value is a developer decision) / `package.json` — add the `typecheck` script
+- Create: `src/utils/debounce.ts`
+- Modify: `src/hooks/useSomething.ts:40-72`
+- Delete: `src/utils/obsolete.ts`
+- Test: `src/utils/__tests__/debounce.test.ts`
+- Config: config file — add `retryDelayMs` (value is a developer decision) / `package.json` — add the `typecheck` script
 
-(Omit any sub-bullet that genuinely doesn't apply. Use `path:line-range` on `Modify:` whenever the change is localised. Include the `Config:` sub-bullet whenever the task needs a `rules.json`, `package.json`, `tsconfig.json`, `vite.config.ts`, or ESLint change — without it the executor has no mandate to touch those files.)
+(Omit any sub-bullet that genuinely doesn't apply. Use `path:line-range` on `Modify:` whenever the change is localised. Include the `Config:` sub-bullet whenever the task needs a configuration-file, `package.json`, `tsconfig.json`, `vite.config.ts`, or ESLint change — without it the executor has no mandate to touch those files.)
 
-- [ ] **Step 1: [Imperative verb describing the action — e.g. "Write the failing test for a tangency that must not count"]**
+- [ ] **Step 1: [Imperative verb describing the action — e.g. "Write the failing test for a call made after the wait window"]**
 
 [The exact code or change. Use a fenced block when the action is a code edit. State the precise diff: what gets replaced and what replaces it.]
 
 ​```ts
-/** Transversal crossing only (M8): a tangency that returns to the same side is not a crossing. */
-export function crossesTransversally(a: Segment, b: Segment, epsilon: number): boolean {
+/** Debounce a callback by the given wait in milliseconds. */
+export function debounce<T extends (...args: never[]) => void>(fn: T, waitMs: number): T {
 ​```
 
 - [ ] **Step 2: [Verify the previous step — typecheck or run a scoped spec]**
@@ -355,19 +357,19 @@ Expected: exits 0, no errors reported.
 
 The closing phase. No production changes — only sanity-checks that the cumulative work is clean.
 
-### Task M.1: Confirm the `src/rules/` boundary still holds
+### Task M.1: Confirm any architectural boundary this plan established still holds
 
-- [ ] **Step 1: Grep for React and DOM references under `src/rules/`**
+- [ ] **Step 1: Grep for React and DOM references inside the tree meant to stay pure**
 
-Run: `Select-String -Path src\rules\*.ts,src\rules\**\*.ts -Pattern "from 'react'|\bwindow\.|\bdocument\.|localStorage"`
-Expected: zero hits.
+Run: `Select-String -Path <the tree's glob> -Pattern "from 'react'|\bwindow\.|\bdocument\.|localStorage"`
+Expected: zero hits. Include this task only when the plan established such a boundary — omit it otherwise rather than grepping a directory that doesn't exist.
 
 ### Task M.2: Confirm no tunable was hard-coded and no stale name remains
 
-- [ ] **Step 1: Grep source and copy for the literals `rules.json` owns**
+- [ ] **Step 1: Grep source and copy for the literals configuration owns**
 
-Run: `Select-String -Path src\**\*.ts,src\**\*.tsx -Pattern "\b(350|700|1400|4000|120)\b"`
-Expected: zero hits outside `rules.json` and its type declaration.
+Run: `Select-String -Path src\**\*.ts,src\**\*.tsx -Pattern "\b(<the specific literal values this plan's configuration owns>)\b"`
+Expected: zero hits outside the configuration file and its type declaration.
 
 ### Task M.3: Static gates and full suite
 
@@ -404,7 +406,7 @@ Include:
 
 **Placeholder scan:** No `TBD`, `TODO`, `implement later`, `appropriate error handling`, or "similar to Task N" references. Every step shows the exact code or command.
 
-**Type / name consistency:** [Confirm any new identifiers — exported function names, type names, `rules.json` keys, `Move` kinds, constant-map keys, reason codes, `data-testid` values — are used identically across every task that touches them.]
+**Type / name consistency:** [Confirm any new identifiers — exported function names, type names, configuration keys, action/state kinds, constant-map keys, reason codes, `data-testid` values — are used identically across every task that touches them.]
 
 **Phase boundary cleanliness:** Each phase ends type-checking, with the codebase internally consistent (no half-applied renames, no dead imports, no spec importing a module that does not exist yet). [One sentence per phase confirming this.]
 ```
@@ -417,7 +419,7 @@ Include:
 - Every code-touching task carries a `**Files:**` block and at least one `- [ ] **Step:**` bullet.
 - **Step shape is flexible — fit the work, not a fixed template.** Common shapes:
   - `edit → typecheck` (refactors, config changes)
-  - `add failing test → run-fail → implement → run-pass` (TDD slices — the default for anything under `src/rules/`)
+  - `add failing test → run-fail → implement → run-pass` (TDD slices — the default for anything with a testable invariant, most commonly pure logic)
   - `grep → confirm zero hits` (verification phases)
   Each step must be a real action (a concrete code change, or a runnable command with `Run:` / `Expected:`), never a description.
 - The Skill bullet must name a skill from `plan.md` Part 2. `react-frontend` is the normal value for code work; `Skill: none — <one-line reason>` only for non-code tasks.
@@ -428,29 +430,29 @@ Include:
 Hard constraints worth restating because they change plan shape:
 
 - **Vitest must be invoked with the `run` subcommand.** `npx vitest run <path>`, never bare `vitest` — watch mode hangs the executor until it times out and produces nothing. This is the single most common way to waste a phase.
-- **Never plan a `npm run dev` step.** It is a server that does not terminate, and no task step may invoke it. But "needs the running app" is no longer the same as "developer observation": QA drives the app through the `chrome-devtools` MCP at the end of `/fb-apply`, so a runtime question with a **right answer** — does the board render, does the placement commit, does the panel read `+2 −1`, is the console clean — is QA's to verify. Only *judgement* goes under "Developer decides or observes": drag feel, visual and copy calls, pacing, whether the game is any good. Filing an automatable functional check as a developer observation buries it; the developer will not run it and nothing else will either.
+- **Never plan a `npm run dev` step.** It is a server that does not terminate, and no task step may invoke it. But "needs the running app" is no longer the same as "developer observation": QA drives the app through the `chrome-devtools` MCP at the end of `/fb-apply`, so a runtime question with a **right answer** — does the page render, does the action commit, does the panel read the expected value, is the console clean — is QA's to verify. Only *judgement* goes under "Developer decides or observes": interaction feel, visual and copy calls, pacing, whether the design is any good. Filing an automatable functional check as a developer observation buries it; the developer will not run it and nothing else will either.
 - **`npm run typecheck` is the fast gate**, not `npm run build`. Reserve the build for Final verification.
-- **`npm run lint` is a real, required gate** — plan it in the Final verification phase and, for any phase that touches `src/rules/`, alongside the boundary grep. Never plan an `eslint-disable` as a solution.
+- **`npm run lint` is a real, required gate** — plan it in the Final verification phase and, for any phase that touches a tree with an established purity boundary, alongside the boundary grep. Never plan an `eslint-disable` as a solution.
 - **Dependencies must be installed for any npm step to work.** If the contract is the one that scaffolds the project, make its first task the scaffold and its second `npm install`; otherwise assume `node_modules` exists and let `/fb-apply` preflight it.
 - **Read `package.json` before naming a script.** A `Run: npm run <script>` for a script that does not exist fails as `Missing script`, which reads like a defect and is not one.
 - **Pass/fail is the exit code and the summary line**, not a results file. Write `Expected:` in those terms.
-- **Default every test to `src/rules/__tests__/`.** Planning a component test for logic that could be pure is a design smell — push the logic into `src/rules/` instead, and say so in the plan.
+- **Default every test for pure logic to sit beside that logic, in its own `__tests__/` folder.** Planning a component test for logic that could be pure is a design smell — push the logic into a pure module instead, and say so in the plan.
 - Unfiltered suite runs and the production build belong **only** to the Final verification phase; `/fb-apply` delegates them to QA.
 
 **Config and persisted-shape changes have a mandatory task shape.** Because these names bind by string:
 
-1. One task changes the shape and every reader together — the `rules.json` key or `Move` field, its TypeScript type, every consumer the Step 1.6 audit found, the test fixtures, and any tutorial copy that quotes the value. Splitting these across tasks leaves a phase boundary where the app is silently broken.
+1. One task changes the shape and every reader together — the configuration key or persisted field, its TypeScript type, every consumer the Step 1.6 audit found, the test fixtures, and any copy that quotes the value. Splitting these across tasks leaves a phase boundary where the app is silently broken.
 2. Where stored data exists, a following task handles migration or explicit rejection of the old shape — never a silent deserialisation into a half-valid object.
-3. A task that adds a `rules.json` key whose **value** has not been chosen names the key, gives it a documented placeholder, and lists the value under "Developer decides or observes". The executor must not invent a tuning number.
+3. A task that adds a configuration key whose **value** has not been chosen names the key, gives it a documented placeholder, and lists the value under "Developer decides or observes". The executor must not invent a tuning number.
 
 **Never plan a step that hand-edits `package-lock.json`.** Change `package.json` and run `npm install` so the lockfile is regenerated consistently.
 
 **Other rules:**
 
 - One module per task. If a slice touches a predicate, a validator, and a config key, that's separate tasks under the same phase — not one bundle.
-- If the work warrants TDD (new logic with a meaningful invariant — which describes most of `src/rules/`), the task's steps follow the test-first sequence. If it's a mechanical refactor, rename, or config edit, the steps follow edit/verify. The planner picks the shape per task.
-- **Prefer `src/rules/` for anything with a testable invariant.** A task that puts a geometry comparison or a limit check inside a `.tsx` file has made itself untestable without a renderer; the plan should note why if it does that deliberately.
-- **Cite the spec, don't restate it.** A step implementing §10.2 validation names the section and the reject order rather than paraphrasing the rules.
+- If the work warrants TDD (new logic with a meaningful invariant — which describes most pure logic), the task's steps follow the test-first sequence. If it's a mechanical refactor, rename, or config edit, the steps follow edit/verify. The planner picks the shape per task.
+- **Prefer a pure module for anything with a testable invariant.** A task that puts a comparison or a limit check inside a `.tsx` file has made itself untestable without a renderer; the plan should note why if it does that deliberately.
+- **Cite the spec, don't restate it.** A step implementing a documented validation order names the section and the reject order rather than paraphrasing it.
 
 **How phases execute in `/fb-apply`:**
 - The Implementer subagent walks every phase end-to-end first, executing every `- [ ] **Step:**` bullet of every task in order — including test steps. Reviewers do **not** run between phases.
@@ -497,9 +499,9 @@ Look at `tasks.md` with fresh eyes against the already-approved `plan.md`. Run t
 1. **Brief coverage:** Skim each requirement and acceptance criterion in the brief, plus every "In scope" bullet in `plan.md` Part 1. Can you point to a task that implements it? List gaps and add tasks.
 2. **Phase shape:** Grouped under `## Phase N — Name` headings. Every phase has a framing paragraph and at least one `### Task N:` block. Every code-touching task has a heading, a `- Skill:` line, a `**Files:**` block, and at least one `- [ ] **Step:**` bullet that is either a concrete code change or a runnable command with `Run:` / `Expected:`. The closing phase is `## Phase N — Final verification`.
 3. **Runner sanity:** Every `Run:` command appears in `.claude/workflow/web-project.md` (or is `Get-ChildItem` / `Select-String` / a line count). Every `npm run <script>` names a script that exists in `package.json` — or is created by an earlier task in this contract. No bare `vitest`, no `npm run dev`, no invented flag. Unfiltered suite runs and the build appear only in Final verification.
-4. **Test placement:** Every `Test:` path for rules-engine work is under `src/rules/__tests__/`, needs no DOM, and tests behaviour rather than implementation. A component test exists only where the behaviour is genuinely presentational.
+4. **Test placement:** Every `Test:` path for pure-logic work sits beside the logic it tests, needs no DOM, and tests behaviour rather than implementation. A component test exists only where the behaviour is genuinely presentational.
 5. **Config-change ordering (when a config key or persisted shape changes):** the shape, its type, every reader, the fixtures, and the copy change in ONE task; migration follows; unchosen values are routed to the developer, not invented.
-6. **Cross-file consistency:** Apply the bullets above. A function called `crossesTransversally()` in Task 3 but `isTransversalCrossing()` in Task 7 is a bug — find and fix it. Every `- Skill:` resolves to a skill listed in `plan.md` Part 2 *and* existing on disk. Do **not** silently change anything in the approved `plan.md` — if a gap forces a design change, surface it back to the developer for re-approval.
+6. **Cross-file consistency:** Apply the bullets above. A function called `debounce()` in Task 3 but `createDebouncer()` in Task 7 is a bug — find and fix it. Every `- Skill:` resolves to a skill listed in `plan.md` Part 2 *and* existing on disk. Do **not** silently change anything in the approved `plan.md` — if a gap forces a design change, surface it back to the developer for re-approval.
 7. **Placeholder scan in `tasks.md`:** Search for the patterns in "No placeholders". Fix every hit.
 8. **Self-review block:** Present at the bottom of the file, listing spec coverage, placeholder-scan confirmation, type/name consistency, and a per-phase cleanliness line.
 
