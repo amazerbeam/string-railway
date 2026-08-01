@@ -1,14 +1,22 @@
 import { PATH_KIND } from '../constants/game'
 import { TERRAIN_DISPLAY } from '../constants/setup'
+import { isClosedPathKind } from '../rules/pathGeometry'
+import { terrainStrokes } from './boardScale'
 import './BoardTerrain.css'
-import type { PathKind, PlacedPath, Polyline } from '../rules/types'
+import type { TerrainStrokes } from './boardScale'
+import type { RulesConfig } from '../rules/config'
+import type { PlacedPath, Polyline } from '../rules/types'
 
 /** The three terrain kinds, back to front. Railway strings are SCRUM-6's. */
-const TERRAIN_ORDER: readonly PathKind[] = [PATH_KIND.BORDER, PATH_KIND.MOUNTAIN, PATH_KIND.RIVER]
+type TerrainKind = typeof PATH_KIND.BORDER | typeof PATH_KIND.MOUNTAIN | typeof PATH_KIND.RIVER
 
-const CLOSED: ReadonlySet<PathKind> = new Set([PATH_KIND.BORDER, PATH_KIND.MOUNTAIN])
+const TERRAIN_ORDER: readonly TerrainKind[] = [
+  PATH_KIND.BORDER,
+  PATH_KIND.MOUNTAIN,
+  PATH_KIND.RIVER,
+]
 
-const LABEL: Readonly<Record<string, string>> = {
+const LABEL: Readonly<Record<TerrainKind, string>> = {
   [PATH_KIND.BORDER]: 'Border string',
   [PATH_KIND.MOUNTAIN]: 'Mountain string',
   [PATH_KIND.RIVER]: 'River string',
@@ -16,9 +24,12 @@ const LABEL: Readonly<Record<string, string>> = {
 
 interface BoardTerrainProps {
   paths: readonly PlacedPath[]
+  config: RulesConfig
 }
 
-function BoardTerrain({ paths }: BoardTerrainProps) {
+function BoardTerrain({ paths, config }: BoardTerrainProps) {
+  const strokes = terrainStrokes(config)
+
   return (
     <g className="board-terrain">
       {TERRAIN_ORDER.map((kind) => {
@@ -30,14 +41,29 @@ function BoardTerrain({ paths }: BoardTerrainProps) {
           <path
             key={kind}
             className={`board-terrain__path board-terrain__path--${kind.toLowerCase()}`}
-            d={toPathData(path.path, CLOSED.has(kind))}
-            stroke={TERRAIN_DISPLAY[kind as keyof typeof TERRAIN_DISPLAY]}
+            d={toPathData(path.path, isClosedPathKind(kind))}
+            stroke={TERRAIN_DISPLAY[kind]}
+            strokeWidth={strokeFor(kind, strokes)}
+            strokeDasharray={kind === PATH_KIND.MOUNTAIN ? strokes.mountainDash : undefined}
             aria-label={LABEL[kind]}
           />
         )
       })}
     </g>
   )
+}
+
+/** Stroke width per terrain kind. Exhaustive over TerrainKind, so adding a
+ *  fourth terrain is a type error here rather than a silently hairline path. */
+function strokeFor(kind: TerrainKind, strokes: TerrainStrokes): number {
+  switch (kind) {
+    case PATH_KIND.BORDER:
+      return strokes.border
+    case PATH_KIND.MOUNTAIN:
+      return strokes.mountain
+    case PATH_KIND.RIVER:
+      return strokes.river
+  }
 }
 
 /** Polyline to SVG path data. Loops are stored corners-only, so `Z` closes them

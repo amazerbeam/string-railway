@@ -1,6 +1,9 @@
 import { crossings } from '../rules/geometry'
+import { edgePolyline } from '../rules/pathGeometry'
+import { overlayMarks } from './boardScale'
 import './BoardOverlays.css'
 import type { OverlayFlags } from '../constants/overlays'
+import type { RulesConfig } from '../rules/config'
 import type { GameState, Point } from '../rules/types'
 
 /**
@@ -13,15 +16,15 @@ import type { GameState, Point } from '../rules/types'
  */
 export type { OverlayFlags } from '../constants/overlays'
 
-const VERTEX_RADIUS = 4
-const CROSSING_RADIUS = 7
-
 interface BoardOverlaysProps {
   state: GameState
   flags: OverlayFlags
+  config: RulesConfig
 }
 
-function BoardOverlays({ state, flags }: BoardOverlaysProps) {
+function BoardOverlays({ state, flags, config }: BoardOverlaysProps) {
+  const marks = overlayMarks(config)
+
   return (
     <g className="board-overlays" aria-hidden="true">
       {flags.rects &&
@@ -33,6 +36,8 @@ function BoardOverlays({ state, flags }: BoardOverlaysProps) {
             y={station.rect.y}
             width={station.rect.width}
             height={station.rect.height}
+            strokeWidth={marks.rectStroke}
+            strokeDasharray={marks.rectDash}
           />
         ))}
 
@@ -44,7 +49,7 @@ function BoardOverlays({ state, flags }: BoardOverlaysProps) {
               className="board-overlays__vertex"
               cx={point.x}
               cy={point.y}
-              r={VERTEX_RADIUS}
+              r={marks.vertexRadius}
             />
           )),
         )}
@@ -52,7 +57,12 @@ function BoardOverlays({ state, flags }: BoardOverlaysProps) {
       {flags.crossings &&
         allCrossings(state).map((point, index) => (
           <g key={index} className="board-overlays__crossing">
-            <circle cx={point.x} cy={point.y} r={CROSSING_RADIUS} />
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r={marks.crossingRadius}
+              strokeWidth={marks.crossingStroke}
+            />
           </g>
         ))}
     </g>
@@ -67,12 +77,16 @@ function BoardOverlays({ state, flags }: BoardOverlaysProps) {
  * On a freshly generated board this is empty: setup guarantees the mountain
  * touches neither the border nor the river, and there are no railway strings
  * until SCRUM-6. An empty crossing overlay on a new game is correct, not broken.
+ *
+ * Both sides go through edgePolyline: the border and the mountain are stored
+ * corners-only, and an overlay that missed their closing edges would agree with
+ * the bug it exists to help a play-tester find (SCRUM-16).
  */
 function allCrossings(state: GameState): readonly Point[] {
   const points: Point[] = []
   for (let i = 0; i < state.paths.length; i++) {
     for (let j = i + 1; j < state.paths.length; j++) {
-      points.push(...crossings(state.paths[i].path, state.paths[j].path))
+      points.push(...crossings(edgePolyline(state.paths[i]), edgePolyline(state.paths[j])))
     }
   }
   return points

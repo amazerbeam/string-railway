@@ -2,6 +2,8 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  /* One owned value for vertical rhythm — children carry no top/bottom margins. */
+  gap: 1.5rem;
   min-height: 100vh;
   margin: 0 auto;
   max-width: 64rem;
@@ -9,13 +11,13 @@
 }
 
 .app-shell__status {
-  margin: 1rem 0;
+  margin: 0;
   font-family: system-ui, sans-serif;
   color: #4a4a4a;
 }
 
 .app-shell__error {
-  margin: 1rem 0;
+  margin: 0;
   padding: 0.9rem 1.1rem;
   border: 1px solid #c2483f;
   border-left-width: 5px;
@@ -42,5 +44,5 @@
 }
 
 .app-shell__game {
-  margin-top: 1.2rem;
+  margin-top: 0;
 }

@@ -8,12 +8,21 @@
  * chain) to continue from. reducer.ts is what sequences these calls against
  * a Move; this module never appends to moveLog itself.
  */
-import { PATH_KIND, TURN_PHASE } from '../constants/game'
+import { DRAW_EVENT, PATH_KIND, TURN_PHASE } from '../constants/game'
 import { SKIP_REASON } from '../constants/game'
 import { rectFullyInside } from './containment'
 import { hasLegalStationPlacement } from './search'
 import type { RulesConfig } from './config'
-import type { ColourSeat, GameState, PlacedStation, Rect, SkipReason, StationCard } from './types'
+import type {
+  ColourSeat,
+  DrawEvent,
+  DrawEventKind,
+  GameState,
+  PlacedStation,
+  Rect,
+  SkipReason,
+  StationCard,
+} from './types'
 
 /**
  * §5.5 / §10.4 — exactly five turns per colour-seat before the game ends.
@@ -26,12 +35,17 @@ const ROUNDS_PER_GAME = 5
  * M4 — after this many consecutive failures to place a drawn card, step 1
  * is skipped. §10.4's literal `failures >= 3`. Rulebook constant, not a
  * rules.json tunable.
+ *
+ * Exported so UI copy can state the ceiling ("2 of 3") without a literal.
  */
-const MAX_STATION_STEP_FAILURES = 3
+export const MAX_STATION_STEP_FAILURES = 3
 
 export interface StationStepOutcome {
   readonly state: GameState
   readonly skipped: SkipReason | null
+  /** §5.2's sequence, in the order it happened, so the UI can show a recycle
+   *  instead of silently presenting whatever card finally succeeded. */
+  readonly events: readonly DrawEvent[]
 }
 
 function activeSeat(state: GameState): ColourSeat {
@@ -86,12 +100,25 @@ export function beginStationStep(state: GameState, config: RulesConfig): Station
     extraDraws -= 1
   }
 
+  const events: DrawEvent[] = []
+  // Reads the live `failures` at call time, so an event carries the count
+  // INCLUDING its own failure when called after the increment.
+  const note = (kind: DrawEventKind, card: StationCard | null): void => {
+    events.push({
+      kind,
+      cardId: card?.id ?? null,
+      stationType: card?.type ?? null,
+      failures,
+    })
+  }
+
   const finish = (
     skipped: SkipReason | null,
     pendingCard: StationCard | null,
   ): StationStepOutcome => ({
     state: { ...state, deck, stationStepFailures: failures, extraDraws, pendingCard },
     skipped,
+    events,
   })
 
   const deckSizeOnEntry = deck.length
@@ -99,6 +126,7 @@ export function beginStationStep(state: GameState, config: RulesConfig): Station
 
   for (;;) {
     if (deck.length === 0) {
+      note(DRAW_EVENT.SKIPPED_DECK_EMPTY, null)
       return finish(SKIP_REASON.DECK_EMPTY, null)
     }
 
@@ -106,6 +134,7 @@ export function beginStationStep(state: GameState, config: RulesConfig): Station
 
     if (card.flags.needsMarker && seat.markersLeft === 0) {
       deck = [...rest, card]
+      note(DRAW_EVENT.RECYCLED_NEEDS_MARKER, card)
       markerRecycleStreak += 1
       if (markerRecycleStreak >= deckSizeOnEntry) {
         throw new Error(
@@ -125,13 +154,16 @@ export function beginStationStep(state: GameState, config: RulesConfig): Station
     if (!hasLegalStationPlacement(candidateState, card, config)) {
       deck = [...rest, card]
       failures += 1
+      note(DRAW_EVENT.RECYCLED_NO_LEGAL_PLACEMENT, card)
       if (failures >= MAX_STATION_STEP_FAILURES) {
+        note(DRAW_EVENT.SKIPPED_NO_LEGAL_PLACEMENT, null)
         return finish(SKIP_REASON.NO_LEGAL_PLACEMENT, null)
       }
       continue
     }
 
     deck = rest
+    note(DRAW_EVENT.DREW, card)
     return finish(null, card)
   }
 }
@@ -230,6 +262,9 @@ export function advanceTurn(state: GameState): GameState {
     round: wrapped ? state.round + 1 : state.round,
     phase: TURN_PHASE.STATION,
     pendingCard: null,
+    // A previous seat's draw trace must not linger into the next seat's turn,
+    // in the window between END_TURN and that seat's own BEGIN_TURN.
+    lastDraw: [],
   }
 
   return isGameOver(nextState) ? { ...nextState, status: 'ENDED' } : nextState

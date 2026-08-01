@@ -31,6 +31,7 @@ import {
   touchesRect,
 } from './containment'
 import { EPSILON, selfIntersects } from './geometry'
+import { closeLoop } from './pathGeometry'
 import type { RulesConfig } from './config'
 import type { Rng } from './rng'
 import type { SetupFailure } from './setupValidation'
@@ -55,9 +56,25 @@ export function sideCountFor(playerCount: PlayerCount): 3 | 4 | 5 {
  * the per-player-count edge lengths §3 tabulates (1333 / 1000 / 800) are
  * derived here rather than stored as separate config keys that could drift.
  *
- * Vertex 0 sits at the top (angle -pi/2) and the winding is CLOCKWISE in SVG's
- * y-down coordinate system, so "in clockwise seat order" (§4.1 step 7) means
- * simply walking this array.
+ * ORIENTATION (SCRUM-14). The winding is CLOCKWISE in SVG's y-down coordinate
+ * system, so "in clockwise seat order" (§4.1 step 7) means simply walking this
+ * array — which makes vertex 0's position a documented contract, not an
+ * accident. Where vertex 0 sits depends on the side count's parity:
+ *
+ *   ODD  (3, 5) — vertex 0 at the top, angle -pi/2. The natural presentation for
+ *                 a triangle or pentagon, and unchanged since SCRUM-4.
+ *   EVEN (4, 48) — rotated by HALF a step, angle -pi/2 - pi/sideCount, so an edge
+ *                 is centred at the top and vertex 0 is the TOP-LEFT corner.
+ *                 Walking clockwise from there traverses the top edge first.
+ *
+ * Even counts are rotated because a vertex-at-top square renders as a DIAMOND:
+ * it reads oddly against §4.1 step 2's "square", and its axis-aligned bounding
+ * box is sqrt(2) larger per side than the square itself, so the board is drawn
+ * needlessly small. Subtracting rather than adding the half step is what puts
+ * vertex 0 top-left; adding would put it top-right — equally square, worse to
+ * reason about when debugging seat order. The mountain's 48-gon is also even and
+ * so rotates by 3.75 degrees, which is below the visual resolution of a
+ * polygonised circle.
  *
  * This is the ONLY function that assumes regularity. Everything downstream
  * consumes a Polyline plus its vertex list, so §4.2's irregular borders later
@@ -76,9 +93,14 @@ export function regularPolygon(centre: Point, sideCount: number, perimeter: numb
   // sideCount check above rather than needing its own epsilon test.
   const circumradius = edge / (2 * Math.sin(Math.PI / sideCount))
 
+  // Even side counts are rotated by half a step (pi / sideCount) so an EDGE, not
+  // a vertex, is centred at the top; odd counts keep a vertex there. Hoisted out
+  // of the loop so the parity test runs once and the rule has somewhere to live.
+  const startAngle = -Math.PI / 2 - (sideCount % 2 === 0 ? Math.PI / sideCount : 0)
+
   const points: Point[] = []
   for (let i = 0; i < sideCount; i++) {
-    const angle = -Math.PI / 2 + (2 * Math.PI * i) / sideCount
+    const angle = startAngle + (2 * Math.PI * i) / sideCount
     points.push({
       x: centre.x + circumradius * Math.cos(angle),
       y: centre.y + circumradius * Math.sin(angle),
@@ -135,7 +157,7 @@ export function sampleMountain(
   rng: Rng,
 ): Polyline {
   const maxOffset = inradius(sideCount, config.borderPerimeter) * MOUNTAIN_OFFSET_FRACTION
-  const closedBorder = [...borderLoop, borderLoop[0]]
+  const closedBorder = closeLoop(borderLoop)
 
   for (let attempt = 0; attempt < MAX_MOUNTAIN_ATTEMPTS; attempt++) {
     const angle = rng.nextRange(0, Math.PI * 2)
@@ -145,7 +167,7 @@ export function sampleMountain(
       MOUNTAIN_SEGMENTS,
       config.mountainLength,
     )
-    const closedLoop = [...loop, loop[0]]
+    const closedLoop = closeLoop(loop)
     if (
       pathFullyInside(closedLoop, borderLoop) &&
       !touchesPath(closedLoop, closedBorder, config.tangencyTolerance)
@@ -182,8 +204,8 @@ export function sampleRiver(
   config: RulesConfig,
   rng: Rng,
 ): Polyline {
-  const closedBorder = [...borderLoop, borderLoop[0]]
-  const closedMountain = [...mountainLoop, mountainLoop[0]]
+  const closedBorder = closeLoop(borderLoop)
+  const closedMountain = closeLoop(mountainLoop)
   const centre = centroid(borderLoop)
   const step = config.riverLength / RIVER_SEGMENTS
 
@@ -286,6 +308,7 @@ export function placeCornerStation(
   // The bisector can never need more than the card's diagonal plus the
   // inradius, so that bounds the bisection interval.
   const maxOffset = size * 2 + inradius(borderLoop.length, config.borderPerimeter)
+  const closedBorder = closeLoop(borderLoop)
 
   for (let attempt = 0; attempt < MAX_STATION_ATTEMPTS; attempt++) {
     const slide = attempt === 0 ? 0 : rng.nextRange(-size * 1.5, size * 1.5)
@@ -302,11 +325,7 @@ export function placeCornerStation(
         low = mid
       }
     }
-    if (
-      found &&
-      touchesRect([...borderLoop, borderLoop[0]], found, config.tangencyTolerance) &&
-      clear(found)
-    ) {
+    if (found && touchesRect(closedBorder, found, config.tangencyTolerance) && clear(found)) {
       return found
     }
   }

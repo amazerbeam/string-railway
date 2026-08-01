@@ -8,13 +8,13 @@
  * mistake, and swallowing it would let the board and the move log diverge
  * silently. No branch below catches an error and returns a success shape.
  */
-import { MOVE_KIND, PATH_KIND, TURN_PHASE } from '../constants/game'
+import { DRAW_EVENT, MOVE_KIND, PATH_KIND, TURN_PHASE } from '../constants/game'
 import { validateStationPlacement, validateStringPlacement } from './validate'
 import { applyScoring, resolveScoring } from './scoring'
 import { advanceTurn, beginStationStep, commitStationPlacement } from './turn'
 import { asPathId } from './types'
 import type { RulesConfig } from './config'
-import type { GameState, Move, PlacedPath } from './types'
+import type { DrawEvent, GameState, Move, PlacedPath } from './types'
 
 function appendMove(state: GameState, move: Move): GameState {
   return { ...state, moveLog: [...state.moveLog, move] }
@@ -46,7 +46,7 @@ function applyBeginTurn(state: GameState, move: Move, config: RulesConfig): Game
     stationStepFailures: 0,
   }
   const outcome = beginStationStep(reset, config)
-  return appendMove(outcome.state, move)
+  return appendMove({ ...outcome.state, lastDraw: outcome.events }, move)
 }
 
 /**
@@ -67,9 +67,16 @@ function applyPlaceStation(
   if (state.phase !== TURN_PHASE.STATION) {
     throw new Error('gameReducer: PLACE_STATION dispatched outside phase STATION')
   }
-  if (state.pendingCard === null || state.pendingCard.id !== move.cardId) {
+
+  const card = state.pendingCard
+  if (card === null || card.id !== move.cardId) {
     throw new Error('gameReducer: PLACE_STATION cardId does not match the pending card')
   }
+
+  // §7.3's "disregard it — never a third". MUST be read from the PRE-commit
+  // state: commitStationPlacement sets drewRuralAlready true as a side effect,
+  // so reading it afterwards would report every Rural as capped.
+  const chainCapped = card.flags.drawStation && state.drewRuralAlready
 
   const result = validateStationPlacement(state, move.rect, config)
   if (!result.ok) {
@@ -78,15 +85,31 @@ function applyPlaceStation(
 
   const committed = commitStationPlacement(state, move.rect, config)
 
+  const events: DrawEvent[] = []
+  const noteCard = (kind: DrawEvent['kind']): void => {
+    events.push({
+      kind,
+      cardId: card.id,
+      stationType: card.type,
+      failures: committed.stationStepFailures,
+    })
+  }
+  if (chainCapped) {
+    noteCard(DRAW_EVENT.RURAL_CHAIN_CAPPED)
+  }
+
   let finalState: GameState
   if (committed.extraDraws > 0) {
+    noteCard(DRAW_EVENT.EXTRA_DRAW_FROM_RURAL)
     const outcome = beginStationStep(committed, config)
+    events.push(...outcome.events)
     finalState = {
       ...outcome.state,
       phase: outcome.state.pendingCard ? TURN_PHASE.STATION : TURN_PHASE.STRING,
+      lastDraw: events,
     }
   } else {
-    finalState = { ...committed, phase: TURN_PHASE.STRING }
+    finalState = { ...committed, phase: TURN_PHASE.STRING, lastDraw: events }
   }
 
   return appendMove(finalState, move)

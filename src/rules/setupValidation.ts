@@ -8,8 +8,9 @@ import {
   touchesPath,
   touchesRect,
 } from './containment'
+import { closeLoop } from './pathGeometry'
 import type { RulesConfig } from './config'
-import type { GameState, PlacedPath, Polyline } from './types'
+import type { GameState, PlacedPath } from './types'
 
 export type SetupFailureReason = (typeof SETUP_FAILURE)[keyof typeof SETUP_FAILURE]
 
@@ -20,12 +21,6 @@ export interface SetupFailure {
 
 export type SetupValidationResult =
   { readonly ok: true } | { readonly ok: false; readonly failures: readonly SetupFailure[] }
-
-/** A closed loop is stored corners-only, so wrap it to measure or to test
- *  containment along its final edge. */
-function closed(loop: Polyline): Polyline {
-  return loop.length === 0 ? loop : [...loop, loop[0]]
-}
 
 function terrain(state: GameState, kind: PlacedPath['kind']): PlacedPath | undefined {
   return state.paths.find((path) => path.kind === kind)
@@ -65,7 +60,7 @@ export function validateSetup(state: GameState, config: RulesConfig): SetupValid
     return { ok: false, failures }
   }
 
-  const borderLoop = closed(border.path)
+  const borderLoop = closeLoop(border.path)
 
   if (selfIntersects(borderLoop)) {
     fail(SETUP_FAILURE.BORDER_SELF_INTERSECTS, 'the border loop crosses itself (§4.1 step 2)')
@@ -79,7 +74,7 @@ export function validateSetup(state: GameState, config: RulesConfig): SetupValid
   }
 
   if (mountain) {
-    const mountainLoop = closed(mountain.path)
+    const mountainLoop = closeLoop(mountain.path)
     if (selfIntersects(mountainLoop)) {
       fail(SETUP_FAILURE.MOUNTAIN_SELF_INTERSECTS, 'the mountain loop crosses itself (§4.1 step 4)')
     }
@@ -129,7 +124,7 @@ export function validateSetup(state: GameState, config: RulesConfig): SetupValid
         `exactly one river END must touch the border and no other vertex may: ${endsTouching.length} end(s) and ${touching.length} vertex/vertices touch`,
       )
     }
-    if (mountain && touchesPath(river.path, closed(mountain.path), config.cardSize)) {
+    if (mountain && touchesPath(river.path, closeLoop(mountain.path), config.cardSize)) {
       fail(
         SETUP_FAILURE.RIVER_TOO_NEAR_MOUNTAIN,
         `the river comes within one card width (${config.cardSize}) of the mountain (§4.3)`,
@@ -157,7 +152,7 @@ export function validateSetup(state: GameState, config: RulesConfig): SetupValid
     // chord from its inland tip back to its mouth. A station near that chord
     // would be falsely rejected here while the sampler — which tests the open
     // river — placed it happily, so gate and generator would disagree.
-    if (mountain && touchesRect(closed(mountain.path), station.rect, config.tangencyTolerance)) {
+    if (mountain && touchesRect(closeLoop(mountain.path), station.rect, config.tangencyTolerance)) {
       fail(
         SETUP_FAILURE.STATION_TOUCHES_TERRAIN,
         `station ${String(station.card.id)} touches the mountain (§4.1)`,

@@ -10,6 +10,7 @@ import {
   touchesPath,
   touchesRect,
 } from './containment'
+import { edgePolyline } from './pathGeometry'
 import type { RulesConfig } from './config'
 import type {
   ColourId,
@@ -30,6 +31,19 @@ export type PlacementResult =
     }
 
 /**
+ * §5.2 can only ever fail one of three ways, so the station validator says so
+ * in its type rather than returning the ten-code §10.2 union its string
+ * sibling shares. Lets the placement UI render a reason with no cast.
+ */
+export type StationPlacementResult =
+  | { readonly ok: true }
+  | {
+      readonly ok: false
+      readonly reason: StationRejectionReason
+      readonly stationId?: StationId
+    }
+
+/**
  * §5.2 — the three station-placement constraints, checked in the rulebook's own
  * order: does not touch any string (including terrain) -> does not touch any
  * other station -> fully within the border string.
@@ -38,9 +52,9 @@ export function validateStationPlacement(
   state: GameState,
   rect: Rect,
   config: RulesConfig,
-): PlacementResult {
+): StationPlacementResult {
   for (const placedPath of state.paths) {
-    if (touchesRect(placedPath.path, rect, config.tangencyTolerance)) {
+    if (touchesRect(edgePolyline(placedPath), rect, config.tangencyTolerance)) {
       return { ok: false, reason: STATION_REJECTION_REASON.TOUCHES_STRING }
     }
   }
@@ -202,8 +216,12 @@ export function validateStringPlacement(
     if (otherPath.kind === PATH_KIND.BORDER) {
       continue
     }
-    const genuinelyCrosses = crossings(path, otherPath.path).length > 0
-    if (!genuinelyCrosses && touchesPath(path, otherPath.path, config.tangencyTolerance)) {
+    // One wrapped value for both branches: a closed loop's closing edge must be
+    // visible to the crossing test and the tangency test alike, or the two
+    // disagree about the same edge (SCRUM-16).
+    const otherEdges = edgePolyline(otherPath)
+    const genuinelyCrosses = crossings(path, otherEdges).length > 0
+    if (!genuinelyCrosses && touchesPath(path, otherEdges, config.tangencyTolerance)) {
       return { ok: false, reason: REJECTION_REASON.DEGENERATE_TANGENCY }
     }
   }

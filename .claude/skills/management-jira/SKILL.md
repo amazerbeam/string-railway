@@ -1,7 +1,7 @@
 ---
 name: management-jira
-description: Create and manage Jira tickets. Use when creating any Jira issue — epics, stories, tasks, or bugs — or when transitioning, commenting on, or updating existing tickets. Triggered by phrases like create a ticket, add to Jira, log a bug, create a story, raise a task, move DEV-123 to In Review, close out DEV-123, log a status update on the ticket, or after a commit or PR lands.
-allowed-tools: Read, Bash(git log:*), Bash(git rev-parse:*), Bash(gh pr view:*), mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getVisibleJiraProjects, mcp__atlassian__getJiraIssue, mcp__atlassian__searchJiraIssuesUsingJql, mcp__atlassian__createJiraIssue, mcp__atlassian__createIssueLink, mcp__atlassian__getIssueLinkTypes, mcp__atlassian__getTransitionsForJiraIssue, mcp__atlassian__transitionJiraIssue, mcp__atlassian__addCommentToJiraIssue, mcp__atlassian__getJiraProjectIssueTypesMetadata, mcp__atlassian__getJiraIssueTypeMetaWithFields
+description: Create and manage Jira tickets. Use when creating any Jira issue — epics, stories, tasks, or bugs — or when transitioning, commenting on, or updating existing tickets. Triggered by phrases like create a ticket, add to Jira, log a bug, create a story, raise a task, move SCRUM-12 to Coding, close out SCRUM-12, log a status update on the ticket, or after a commit or PR lands.
+allowed-tools: Read, PowerShell(git log:*), PowerShell(git rev-parse:*), PowerShell(gh pr view:*), mcp__claude_ai_Atlassian_Rovo__getAccessibleAtlassianResources, mcp__claude_ai_Atlassian_Rovo__getVisibleJiraProjects, mcp__claude_ai_Atlassian_Rovo__getJiraIssue, mcp__claude_ai_Atlassian_Rovo__searchJiraIssuesUsingJql, mcp__claude_ai_Atlassian_Rovo__createJiraIssue, mcp__claude_ai_Atlassian_Rovo__createIssueLink, mcp__claude_ai_Atlassian_Rovo__getIssueLinkTypes, mcp__claude_ai_Atlassian_Rovo__getTransitionsForJiraIssue, mcp__claude_ai_Atlassian_Rovo__transitionJiraIssue, mcp__claude_ai_Atlassian_Rovo__addCommentToJiraIssue, mcp__claude_ai_Atlassian_Rovo__editJiraIssue, mcp__claude_ai_Atlassian_Rovo__getJiraProjectIssueTypesMetadata, mcp__claude_ai_Atlassian_Rovo__getJiraIssueTypeMetaWithFields
 metadata:
   type: automation
 ---
@@ -28,6 +28,90 @@ Never hardcode an instance URL or cloud ID. Resolve them at runtime:
 If the MCP returns an auth error mid-session, call
 `getAccessibleAtlassianResources` again to refresh and re-confirm the cloud ID
 before proceeding.
+
+---
+
+## The SCRUM status model
+
+This file is the **single owner** of what each `SCRUM` status means. The
+`/fb-*` commands reference this section; they do not restate it.
+
+`SCRUM` ("DeLorean 1.21") is a team-managed project whose six statuses mirror
+the `/fb-*` contract pipeline, so the board tracks the contract rather than
+being maintained by hand:
+
+| Status | Category | Set when | `tasks.md` `^Status:` |
+|---|---|---|---|
+| `To Do` | To Do | Backlog. No contract folder exists. | — |
+| `Planning` | To Do | `/fb-plan` created the plan folder and is writing `plan.md`. | none yet |
+| `Planned` | To Do | `tasks.md` written after the approval gate; awaiting `/fb-apply`. | `PLANNED` |
+| `Coding` | In Progress | `/fb-apply` resolved the contract and is walking the phases. | `IN PROGRESS` |
+| `Ready for Test` | In Progress | `/fb-apply` finished, gates green — awaiting the developer at the app. | `COMPLETE`, not archived |
+| `Done` | Done | Play-tested and `/fb-archive` run. | `COMPLETE`, archived |
+
+`Planning` is a **claim marker**, not a dwell state — it says an agent is
+mid-plan on this ticket right now, and it makes an abandoned `/fb-plan`
+visible, because a ticket left in `Planning` is a plan that never reached
+approval.
+
+`COMPLETE` in `tasks.md` maps to two Jira statuses, split on whether the
+contract has been archived: `Ready for Test` before `/fb-archive`, `Done`
+after. `tasks.md` keeps its own four-value vocabulary — do not try to make the
+two lists identical.
+
+### Blocked is a flag, not a status
+
+There is deliberately no `Blocked` column. Being blocked is orthogonal to
+progress — a ticket can be blocked while `Planned`, `Coding`, or `Ready for
+Test`, and a status would force it to forget where it was. `tasks.md`'s
+`BLOCKED`, and every `CLAUDE.md` pause condition, map to **flag the card and
+leave the status alone**.
+
+Flagging is a field write, not a transition: set the **Flagged** field to
+`Impediment` via `editJiraIssue`, and clear it to remove the flag.
+
+- **Resolve the field id live.** Call `getJiraIssueTypeMetaWithFields` for the
+  project and issue type and read the `Flagged` field's `customfield_XXXXX` id
+  and its `allowedValues`. Never hardcode the id — it differs per site.
+- **`editJiraIssue` frequently times out on this instance while the write
+  still lands.** Do not retry on timeout. Re-read with `getJiraIssue` to
+  confirm, and only act if the field genuinely did not change.
+- If the field cannot be resolved, say so and add a plain-text comment naming
+  the blocker instead. A missing flag is a reporting gap; a wrong status is a
+  lie about where the work is.
+
+### Pipeline transitions are automatic
+
+Five transitions are driven by the `/fb-*` commands and run **without a
+confirmation prompt**. They are pre-authorised because each is a
+deterministic consequence of contract state the developer already approved —
+not a judgement call:
+
+| Command | Moment | Transition |
+|---|---|---|
+| `/fb-plan` | plan folder created | `→ Planning` |
+| `/fb-plan` | `tasks.md` written | `Planning → Planned` |
+| `/fb-apply` | contract resolved | `Planned → Coding` |
+| `/fb-apply` | final report, gates green | `Coding → Ready for Test` |
+| `/fb-archive` | clean-up | `Ready for Test → Done` |
+
+Rules that apply to all five:
+
+- **Report, never transition silently.** Name the transition in the command's
+  existing output block so an automatic change is still visible.
+- **Never fail the command on a Jira error.** Surface it and continue — a
+  contract must not be blocked by an unreachable ticket tracker.
+- **Skip silently when there is no ticket.** Derive the key from the plan slug
+  (`SCRUM-<n>-*`); a date-branch slug has no key, so do nothing.
+- **No-op when already in the target status**, and tolerate skipped
+  predecessors — transitions are any → any, so `/fb-apply` on a `To Do` ticket
+  goes straight to `Coding`.
+- **Names here, ids resolved live.** Naming `Planning` as a target is not
+  hardcoding: still call `getTransitionsForJiraIssue` and read the id from the
+  response. A literal transition id in any file is a defect.
+
+Everything *outside* this table — a human saying "move SCRUM-5 to Coding" —
+is Workflow B and still requires explicit confirmation.
 
 ---
 
@@ -231,7 +315,7 @@ the instance.
 
 Use when transitioning a ticket's status or posting a status comment — for
 example after a commit lands, a PR is opened or merged, or the user says
-"move DEV-302 to In Review" / "close out DEV-302" / "log a status update".
+"move SCRUM-12 to Coding" / "close out SCRUM-12" / "log a status update".
 
 ### Phase 1 — Identify the ticket
 
@@ -254,16 +338,19 @@ Do not summarise the ticket description back to the ticket.
 Show the proposed comment and transition together before doing anything:
 
 ```
-Proposed update for DEV-302:
+Proposed update for SCRUM-12:
 
-  Transition: In Progress → In Review
+  Transition: Planned → Coding
   Comment:
-    Opened PR #36 for the branch-naming skill — thin wrapper over the
-    documented branching model, pairs with iac-commit and iac-pull-request.
-    https://github.com/example-org/agents/pull/36
+    Started on the station card seat colour — the CSS stroke was overriding
+    the per-seat colour, so the fix is scoped to the board renderer.
+    https://github.com/example-org/strings-and-stations/pull/36
 
 Apply?
 ```
+
+This confirmation applies to **ad-hoc** transitions only. The five pipeline
+transitions in *The SCRUM status model* run automatically and skip this step.
 
 On explicit confirmation, call `addCommentToJiraIssue` then
 `transitionJiraIssue`. Comment first — if the transition fails, the comment
@@ -319,8 +406,9 @@ wrote that; do not echo it back.
 | Fix version | Always ask; link if provided |
 | Testing Type | Mandatory for Test tickets — fixed dropdown; always read live `allowedValues` from `getJiraIssueTypeMetaWithFields`, never hardcode the option list |
 | Related tickets | Ask, then use Relates or Blocks/is blocked by links post-creation |
-| Transitions | Always read live transitions from `getTransitionsForJiraIssue` — never hardcode status names |
-| Auto-transition | Never transition without explicit user confirmation |
+| Transitions | Always resolve transition **ids** live from `getTransitionsForJiraIssue` — never hardcode an id |
+| Auto-transition | Ad-hoc transitions need explicit user confirmation. The five pipeline transitions in *The SCRUM status model* are pre-authorised and automatic |
+| Blocked work | Flag the card; never invent a `Blocked` status |
 | Instance | Resolve the site and cloud ID via `getAccessibleAtlassianResources`; ask if more than one is accessible |
 
 ## Forbidden Behaviors
@@ -330,8 +418,10 @@ wrote that; do not echo it back.
 - Using Subtask as the issue type — use Story, Task, or Bug instead
 - Assigning a sprint field on any ticket
 - Posting a Markdown-formatted comment (headings, bullets, emoji)
-- Auto-transitioning on commit/PR merge without explicit confirmation
-- Hardcoding transition status names
+- Auto-transitioning on commit/PR merge without explicit confirmation — the
+  pre-authorised `/fb-*` pipeline transitions are the only exception
+- Hardcoding a numeric transition or status id instead of resolving it live
+- Adding a `Blocked` status instead of flagging the card
 - Using P0/P1/P2/P3 or any non-standard priority notation
 - Editing fields not covered by this skill — no assignee changes, no component tweaks
 - Creating a Test ticket without a confirmed Testing Type value

@@ -30,6 +30,7 @@ This project is deliberately organised so each fact is stated once. When somethi
 |---|---|
 | Where code lives, runner commands, developer-owned work, correctness traps | `.claude/workflow/web-project.md` |
 | Where plans live, slug grammar, how a command picks *which* plan | `.claude/workflow/plan-resolution.md` |
+| Jira status vocabulary, what each `SCRUM` status means, which transitions the `/fb-*` commands automate | `.claude/skills/management-jira/SKILL.md` → *The SCRUM status model* |
 | How to write React/TypeScript here — the `src/rules/` contract, colour-first keying, the drag hot path, tunables, testing posture | `.claude/skills/react-frontend/SKILL.md` + its `references/engineering-standards.md` |
 | Project-wide domain constraints (save/move-log versioning, determinism, config schema) | `.claude/rules/<topic>.md` — currently empty; see its `README.md` |
 | Game rules, geometry constants, deck composition, scoring resolution | `.docs/Game_Rules/Rules.md` |
@@ -56,7 +57,7 @@ Node and npm are on `PATH`. Nothing here needs a machine-specific `$env:` variab
 Four failure modes that are **not** code defects:
 
 - **Vitest watch mode hangs forever.** Always use the `run` subcommand (`npx vitest run`, or `npm test -- --run`). A test command silent for a minute is in watch mode, not running a slow suite.
-- **`npm run dev` never returns** — it is a server. Never run it in the foreground. If something needs looking at, that is the developer's job.
+- **`npm run dev` never returns** — it is a server. Never run it in the foreground. The QA agent is the one exception and starts it *detached* to drive the app through the `chrome-devtools` MCP (`.claude/agents/qa.md` → Step 4.5); judging what it looks and feels like is still the developer's.
 - **Missing `node_modules`** surfaces as `'vite' is not recognized` or `Cannot find module`. Run `npm ci`; do not edit source in response.
 - **A TypeScript error in a test file is not a failing test** — Vitest reports a transform/collection error and that file's tests never run. Check for it before concluding anything about coverage.
 
@@ -92,7 +93,7 @@ The pipeline is the substantive structure in this repo. It is not a suggestion �
 
 **The pause condition.** Some answers live in a human's eyes and hands. Reaching one of these stops the pipeline — the developer decides, then work resumes:
 
-Whether the drag feels right (M6) · whether the game is any good · **changing a value in `rules.json`** · replacing M17 with the real deck composition · resolving a rulebook ambiguity or overturning a `[MADE UP — M#]` decision · approving a new dependency · visual and copy judgement · anything needing the app running.
+Whether the drag feels right (M6) · whether the game is any good · **changing a value in `rules.json`** · replacing M17 with the real deck composition · resolving a rulebook ambiguity or overturning a `[MADE UP — M#]` decision · approving a new dependency · visual and copy judgement · anything needing *judgement* of the app running. QA drives the app in a real browser now, so a functional question with a right answer ("does the score read `+2 −1`") is QA's, not a pause; a question of feel is still a pause.
 
 Nobody in this pipeline decides a tuning value or a rule reading on their own authority. Code reads `rules.json`; the developer chooses what is in it.
 

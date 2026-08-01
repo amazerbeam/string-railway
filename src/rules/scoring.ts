@@ -1,6 +1,7 @@
 import { STATION_DEFINITIONS } from '../constants/stations'
 import { crossings } from './geometry'
 import { entryCount, pointInAnyRect } from './containment'
+import { edgePolyline } from './pathGeometry'
 import type {
   ColourId,
   ConnectionLine,
@@ -132,7 +133,12 @@ export function resolveScoring(
   // including terrain (border/river/mountain); newPath is not yet in that
   // array, so nothing here double-counts against itself.
   for (const otherPath of state.paths) {
-    for (const point of crossings(newPath.path, otherPath.path)) {
+    // Both sides through edgePolyline: `otherPath` may be the border or the
+    // mountain, whose closing edges are implied rather than stored, and
+    // `newPath` goes through it too so no reader has to work out why one side
+    // is wrapped and the other is not — it is a by-reference no-op on a rail
+    // (SCRUM-16).
+    for (const point of crossings(edgePolyline(newPath), edgePolyline(otherPath))) {
       const onCard = pointInAnyRect(point, stationRects)
       const cost = onCard ? 0 : 1
       lost += cost

@@ -1,9 +1,11 @@
 import type {
+  DRAW_EVENT,
   MOVE_KIND,
   PATH_KIND,
   REJECTION_REASON,
   SKIP_REASON,
   STATION_REJECTION_REASON,
+  STATION_STEP_STAGE,
   TURN_PHASE,
 } from '../constants/game'
 import type { StationFlags, StationType } from '../constants/stations'
@@ -40,6 +42,8 @@ export type StationRejectionReason =
   (typeof STATION_REJECTION_REASON)[keyof typeof STATION_REJECTION_REASON]
 export type SkipReason = (typeof SKIP_REASON)[keyof typeof SKIP_REASON]
 export type MoveKind = (typeof MOVE_KIND)[keyof typeof MOVE_KIND]
+export type DrawEventKind = (typeof DRAW_EVENT)[keyof typeof DRAW_EVENT]
+export type StationStepStage = (typeof STATION_STEP_STAGE)[keyof typeof STATION_STEP_STAGE]
 
 export interface StationCard {
   readonly id: StationId
@@ -48,6 +52,18 @@ export interface StationCard {
   readonly bonusLater: number
   readonly playerLimit: number
   readonly flags: StationFlags
+}
+
+/** One step of §5.2's draw-and-recycle sequence, in the order it happened. */
+export interface DrawEvent {
+  readonly kind: DrawEventKind
+  /** The card the event concerns; null for the two SKIPPED_* kinds, which are
+   *  about the sequence terminating rather than about any one card. */
+  readonly cardId: StationId | null
+  readonly stationType: StationType | null
+  /** Consecutive M4 failures accumulated at the moment this event fired, so the
+   *  UI can say "2 of 3" without knowing the ceiling itself. */
+  readonly failures: number
 }
 
 export interface PlacedStation {
@@ -65,6 +81,23 @@ export interface PlacedPath {
   readonly id: PathId
   readonly kind: PathKind
   readonly owner: ColourId | null
+  /**
+   * Vertices in order. A CLOSED loop (BORDER, MOUNTAIN — §4.1 steps 2 and 4) is
+   * stored CORNERS-ONLY: the first point is NOT repeated at the end, so the
+   * ring's closing edge is implied, never present. RIVER (§4.1 step 3) and both
+   * railway kinds are open and need no wrap.
+   *
+   * SCRUM-16 — three predicate families, three calling conventions:
+   *  - EDGE-WALKING (touchesPath, touchesRect, crossings, selfIntersects,
+   *    arcLength, pointTouchesPath) iterates `i < length - 1` and MISSES the
+   *    closing edge if handed this array. Pass `edgePolyline(placedPath)` from
+   *    './pathGeometry' instead.
+   *  - LOOP-ARGUMENT (rectFullyInside, pathFullyInside — their `loop`
+   *    parameter) wraps internally via containment.loopEdges. Pass this array.
+   *  - ENDPOINT-SENSITIVE (entryCount, passesThrough, endsOn) reads path[0] and
+   *    path[length - 1]. Pass this array — a wrapped copy collapses start onto
+   *    end. Only ever called on open railway strings.
+   */
   readonly path: Polyline
   readonly placedOnTurn: number
 }
@@ -94,6 +127,12 @@ export interface GameState {
   readonly paths: readonly PlacedPath[]
   readonly moveLog: readonly Move[]
   readonly lastScoring: ScoringBreakdown | null
+  /** §5.2's trace for the most recent draw attempt (SCRUM-5 AC7/AC8/AC9).
+   *  Transient UI-facing derived state, exactly like lastScoring — but an array
+   *  rather than `| null`, because "no draw happened" and "an empty sequence of
+   *  draw events" are the same fact here and every read site is a `.map` that
+   *  would otherwise carry a null guard for no information gain. */
+  readonly lastDraw: readonly DrawEvent[]
   readonly status: 'IN_PLAY' | 'ENDED'
 }
 

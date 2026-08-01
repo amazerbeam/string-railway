@@ -2,7 +2,8 @@
   display: block;
   width: 100%;
   height: auto;
-  overflow: visible;
+  /* The UA default, restated: nothing in this scene may paint outside its own box. */
+  overflow: hidden;
 }
 
 .hero-scene__station {

@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { PATH_KIND, SKIP_REASON, TURN_PHASE } from '../../constants/game'
+import { DRAW_EVENT, PATH_KIND, SKIP_REASON, TURN_PHASE } from '../../constants/game'
 import { STATION_TYPE } from '../../constants/stations'
 import { asColourId, asStationId } from '../types'
 import type { GameState, Polyline } from '../types'
-import { advanceTurn, beginStationStep, commitStationPlacement, isGameOver } from '../turn'
+import {
+  MAX_STATION_STEP_FAILURES,
+  advanceTurn,
+  beginStationStep,
+  commitStationPlacement,
+  isGameOver,
+} from '../turn'
 import { TEST_CONFIG, makeCard, makePath, makeSeat, makeState, makeStation } from './fixtures'
 
 const PINK = asColourId('PINK')
@@ -139,6 +145,80 @@ describe('beginStationStep (§10.4)', () => {
     // remains once cardN1 is drawn out as pendingCard.
     expect(outcome.state.deck).toEqual([cardN2, cardM])
     expect(outcome.state.pendingCard).toEqual(cardN1)
+  })
+
+  it('records a DREW event naming the card it settled on', () => {
+    const state = makeState({
+      seats: [makeSeat('PINK', 'P1')],
+      turnOrder: [PINK],
+      phase: TURN_PHASE.STATION,
+      deck: [makeCard(STATION_TYPE.HAMLET)],
+      paths: [makePath(PATH_KIND.BORDER, border(500, 500))],
+    })
+    const outcome = beginStationStep(state, TEST_CONFIG)
+    expect(outcome.events.map((event) => event.kind)).toEqual([DRAW_EVENT.DREW])
+    expect(outcome.events[0].stationType).toBe(STATION_TYPE.HAMLET)
+  })
+
+  it('records RECYCLED_NEEDS_MARKER when the seat has no markers left (§7.3, AC7)', () => {
+    const state = makeState({
+      seats: [makeSeat('PINK', 'P1', { markersLeft: 0 })],
+      turnOrder: [PINK],
+      phase: TURN_PHASE.STATION,
+      deck: [makeCard(STATION_TYPE.LANDMARK), makeCard(STATION_TYPE.HAMLET)],
+      paths: [makePath(PATH_KIND.BORDER, border(500, 500))],
+    })
+    const outcome = beginStationStep(state, TEST_CONFIG)
+    expect(outcome.events.map((event) => event.kind)).toEqual([
+      DRAW_EVENT.RECYCLED_NEEDS_MARKER,
+      DRAW_EVENT.DREW,
+    ])
+    // The bounced card went to the BOTTOM, and it did NOT count as an M4 failure.
+    expect(outcome.state.stationStepFailures).toBe(0)
+  })
+
+  it('records SKIPPED_DECK_EMPTY on an empty deck (M5, AC9)', () => {
+    const state = makeState({
+      seats: [makeSeat('PINK', 'P1')],
+      turnOrder: [PINK],
+      phase: TURN_PHASE.STATION,
+      deck: [],
+      paths: [makePath(PATH_KIND.BORDER, border(500, 500))],
+    })
+    const outcome = beginStationStep(state, TEST_CONFIG)
+    expect(outcome.events.map((event) => event.kind)).toEqual([DRAW_EVENT.SKIPPED_DECK_EMPTY])
+    expect(outcome.events[0].cardId).toBeNull()
+  })
+
+  it('counts each unplaceable draw and ends in SKIPPED_NO_LEGAL_PLACEMENT (M4, AC8)', () => {
+    const state = makeState({
+      seats: [makeSeat('PINK', 'P1')],
+      turnOrder: [PINK],
+      phase: TURN_PHASE.STATION,
+      deck: [
+        makeCard(STATION_TYPE.HAMLET),
+        makeCard(STATION_TYPE.VILLAGE),
+        makeCard(STATION_TYPE.TOWN),
+        makeCard(STATION_TYPE.SCENIC),
+      ],
+      // Smaller than TEST_CONFIG.cardSize, so no rect can ever fit.
+      paths: [makePath(PATH_KIND.BORDER, border(5, 5))],
+    })
+    const outcome = beginStationStep(state, TEST_CONFIG)
+    expect(outcome.events.map((event) => event.kind)).toEqual([
+      DRAW_EVENT.RECYCLED_NO_LEGAL_PLACEMENT,
+      DRAW_EVENT.RECYCLED_NO_LEGAL_PLACEMENT,
+      DRAW_EVENT.RECYCLED_NO_LEGAL_PLACEMENT,
+      DRAW_EVENT.SKIPPED_NO_LEGAL_PLACEMENT,
+    ])
+    // failures is the running count INCLUDING the event's own failure, so the
+    // UI can render "n of MAX" straight from the event.
+    expect(outcome.events.map((event) => event.failures)).toEqual([
+      1,
+      2,
+      MAX_STATION_STEP_FAILURES,
+      MAX_STATION_STEP_FAILURES,
+    ])
   })
 })
 
@@ -310,5 +390,22 @@ describe('advanceTurn / isGameOver', () => {
       const isLastTurn = turn === totalTurns - 1
       expect(isGameOver(state)).toBe(isLastTurn)
     }
+  })
+
+  it('clears lastDraw so a previous seat trace does not linger into the next turn', () => {
+    const state = makeState({
+      seats: [makeSeat('PINK', 'P1')],
+      turnOrder: [PINK],
+      phase: TURN_PHASE.COMPLETE,
+      lastDraw: [
+        {
+          kind: DRAW_EVENT.DREW,
+          cardId: asStationId('HAMLET-1'),
+          stationType: STATION_TYPE.HAMLET,
+          failures: 0,
+        },
+      ],
+    })
+    expect(advanceTurn(state).lastDraw).toEqual([])
   })
 })

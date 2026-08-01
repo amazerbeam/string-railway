@@ -1,8 +1,6 @@
 .board-overlays__rect {
   fill: none;
   stroke: #d81b8f;
-  stroke-width: 2;
-  stroke-dasharray: 6 4;
 }
 
 .board-overlays__vertex {
@@ -13,5 +11,4 @@
 .board-overlays__crossing circle {
   fill: none;
   stroke: #d81b8f;
-  stroke-width: 3;
 }

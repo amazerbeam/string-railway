@@ -1,0 +1,23 @@
+.station-ghost {
+  pointer-events: none;
+}
+
+.station-ghost__body {
+  fill: rgb(255 255 255 / 0.82);
+  stroke: #1a7f37;
+  stroke-width: 3;
+}
+
+.station-ghost__type,
+.station-ghost__bonus {
+  text-anchor: middle;
+  fill: #1f2328;
+  font-size: 0.18em;
+}
+
+/* Illegal: colour AND a dashed edge, so the state does not rest on hue alone. */
+.station-ghost--illegal .station-ghost__body {
+  stroke: #cf222e;
+  stroke-dasharray: 6 4;
+  fill: rgb(255 235 233 / 0.86);
+}

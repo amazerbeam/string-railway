@@ -28,6 +28,16 @@ The gate is narrow. Only refuse to plan if one of these two unrecoverable condit
 
 The alignment check happens in `plan.md` Part 1, not at the gate. A best-effort plan with explicit assumptions is more useful to the developer than a refusal.
 
+## Step 0.5: Move the ticket to `Planning` — before anything else
+
+**This is the first action `/fb-plan` takes.** The board must show the work in flight from the moment planning starts, not once the plan folder exists — a developer looking at the board mid-planning should never see the card still in `To Do`.
+
+Nothing here depends on the slug. Scan `$ARGUMENTS` and the primed brief for a `SCRUM-<n>` key: the developer named a ticket, pasted one, or referenced a spec that cites one. If you find one, invoke the `management-jira` skill and transition that issue to `Planning` — automatically, no confirmation prompt. Read *The SCRUM status model* in that skill for the rules: resolve the transition id live, report the move in one line, and never fail this command over a Jira error. Transitions are any → any, so a card in `To Do` moves straight to `Planning`.
+
+Skip silently when the brief carries no key — that work will get a date-branch slug in Step 1.7 and has no card to move. Do not create a ticket to have something to transition; `/fb-plan` plans, it does not open work.
+
+Run this **after** Step 0's refusal gate, not before it. Step 0 only refuses when there is no brief at all or the named brief is unreadable, and moving a card for a run that is about to refuse would leave the board lying. Everything else — reading `web-project.md`, classification, the skill confirmation, the config audit, creating the folder — comes after this transition.
+
 ## Step 1: Defer to the workflow reference, the skills, and the shared rules
 
 - **Read `.claude/workflow/web-project.md` first, every time.** It is the canonical statement of where code lives, the `src/rules/` boundary, which commands verify what, what only the developer can decide, and the correctness traps (config-key renames, hard-coded tunables, effect cleanup, epsilon choices, the drag hot path). Every `Run:` step you write and every path you name must come from it. If a path or script name there turns out to be wrong, fix *that* file rather than working around it in the plan.
@@ -114,6 +124,8 @@ Then:
 2. Create `.claude/contract/<slug>/`. For the rest of this document, `<plan>` means that path.
 3. If the session was primed with a spec from `.claude/contract/specs/`, **move** it to `<plan>/spec.md` so the plan folder carries its own upstream input, and cite it in Part 1 → Task reference. If the brief came from a Jira ticket, cite the issue key and paste its acceptance criteria into Part 1 → Task reference — the plan folder must stand alone after `/clear`.
 4. State the chosen slug in chat when you hand off in Step 3 — it is the developer's cue to rename the folder now, while it is cheap. A rename must also update the `Plan folder:` line the Step 2 template writes into `plan.md`, or that line names a path that no longer exists; and `specs` and `archive` are reserved names a plan folder may not take, since resolution skips both and the plan would become permanently undiscoverable.
+
+The ticket is already in `Planning` — Step 0.5 moved it before this folder existed. If the slug you just derived carries a `SCRUM-<n>` key that Step 0.5 did not find in the brief, transition it now and say that the move was late.
 
 ## Step 2: Produce the plan — write plan.md
 
@@ -416,7 +428,7 @@ Include:
 Hard constraints worth restating because they change plan shape:
 
 - **Vitest must be invoked with the `run` subcommand.** `npx vitest run <path>`, never bare `vitest` — watch mode hangs the executor until it times out and produces nothing. This is the single most common way to waste a phase.
-- **Never plan a `npm run dev` step.** It is a server that does not terminate. Anything needing the running app is a developer observation, listed under "Developer decides or observes", not a task step.
+- **Never plan a `npm run dev` step.** It is a server that does not terminate, and no task step may invoke it. But "needs the running app" is no longer the same as "developer observation": QA drives the app through the `chrome-devtools` MCP at the end of `/fb-apply`, so a runtime question with a **right answer** — does the board render, does the placement commit, does the panel read `+2 −1`, is the console clean — is QA's to verify. Only *judgement* goes under "Developer decides or observes": drag feel, visual and copy calls, pacing, whether the game is any good. Filing an automatable functional check as a developer observation buries it; the developer will not run it and nothing else will either.
 - **`npm run typecheck` is the fast gate**, not `npm run build`. Reserve the build for Final verification.
 - **`npm run lint` is a real, required gate** — plan it in the Final verification phase and, for any phase that touches `src/rules/`, alongside the boundary grep. Never plan an `eslint-disable` as a solution.
 - **Dependencies must be installed for any npm step to work.** If the contract is the one that scaffolds the project, make its first task the scaffold and its second `npm install`; otherwise assume `node_modules` exists and let `/fb-apply` preflight it.
@@ -495,12 +507,15 @@ Fix issues inline. No need to re-review after fixing — just fix and continue t
 
 ## Step 5: Final hand off
 
-After writing `tasks.md`, present in chat:
+`tasks.md` now exists at `Status: PLANNED`, so **move the ticket `Planning → Planned`** — automatically, no confirmation prompt. Same rules as Step 0.5: invoke `management-jira`, resolve the transition id live per *The SCRUM status model*, skip silently when the slug carries no `SCRUM-<n>` key, and never fail this command over a Jira error.
+
+Then present in chat:
 
 1. **Counts**: total phases and total tasks
 2. **Phase summary**: one line per phase naming the phase and what it delivers
 3. Reminder of the approved skills to invoke during execution (from `plan.md` Part 2)
 4. **Everything the developer owns personally** — every tuning value still to choose, every ambiguous rule reading, any dependency needing approval, and every behaviour that can only be judged by running the app, with what to look for
+5. **Jira**: the transition performed, e.g. `SCRUM-12 → Planned`. Say so plainly if it was skipped or failed
 
 Then tell the developer:
 

@@ -144,12 +144,32 @@ describe('resolveScoring (§10.3)', () => {
   })
 
   it('charges −1 for crossing the mountain, the river and the border alike (M10)', () => {
-    const mountain = makePath(PATH_KIND.MOUNTAIN, [p(200, 200), p(300, 200)])
+    // The mountain is a genuine closed polygon (≥3 vertices, real area) rather
+    // than a bare 2-point segment — a 2-point "loop" cannot occur on a legal
+    // board (§4.1 step 4), and once SCRUM-16's edgePolyline wraps every
+    // MOUNTAIN-kind path unconditionally, a 2-point segment retraces itself
+    // there-and-back and crosses the rail twice instead of once (developer
+    // decision, confirmed 2026-08-01 — amend this pre-existing fixture only;
+    // closeLoop's `length < 2` guard is deliberately left unchanged).
+    //
+    // A closed loop crosses an infinite line an even number of times, so this
+    // rectangle is shaped to put its SECOND crossing of the line x = 250
+    // beyond the rail's own y-extent of [-10, 410]: the top edge crosses at
+    // (250,200), inside the rail's span, and the bottom edge sits at y = 460,
+    // past where the rail ends, so the rail terminates inside the polygon
+    // instead of passing back out and re-crossing. Net result: exactly one
+    // genuine crossing from the mountain, matching a board §4.1 could produce.
+    const mountain = makePath(PATH_KIND.MOUNTAIN, [
+      p(150, 200),
+      p(350, 200),
+      p(350, 460),
+      p(150, 460),
+    ])
     const river = makePath(PATH_KIND.RIVER, [p(200, 400), p(300, 400)])
     const state = makeState({ seats: [makeSeat('PINK', 'P1')], stations: [] })
     const withTerrain = { ...state, paths: [...state.paths, mountain, river] }
-    // Crosses the default 500x500 border's top edge at (250,0), the mountain
-    // segment at (250,200), and the river segment at (250,400).
+    // Crosses the default 500x500 border's top edge at (250,0), the mountain's
+    // top edge at (250,200), and the river segment at (250,400).
     const newPath = makePath(PATH_KIND.SHORT_RAIL, [p(250, -10), p(250, 410)], PINK)
 
     const breakdown = resolveScoring(withTerrain, PINK, newPath, TEST_CONFIG)
@@ -159,6 +179,32 @@ describe('resolveScoring (§10.3)', () => {
     expect(kinds).toEqual([PATH_KIND.BORDER, PATH_KIND.MOUNTAIN, PATH_KIND.RIVER].sort())
     expect(breakdown.crossings.every((c) => c.cost === 1)).toBe(true)
     expect(breakdown.lost).toBe(3)
+  })
+
+  it('counts a crossing of the mountain’s CLOSING edge as −1 (§10.3, M10 — SCRUM-16)', () => {
+    // The mountain is stored corners-only, so its final edge — (100,300) back to
+    // (100,100) — is implied, never in the array. crossings() iterates
+    // `j < other.length - 1` and never reached it, so this rail scored 0 where
+    // §5.4's page-7 example says a mountain crossing costs −1. On a real board
+    // that is the 48th of 48 mountain edges, and the failure is silent.
+    const mountain = makePath(PATH_KIND.MOUNTAIN, [
+      p(100, 100),
+      p(300, 100),
+      p(300, 300),
+      p(100, 300),
+    ])
+    const state = makeState({ seats: [makeSeat('PINK', 'P1')] })
+    const withMountain = { ...state, paths: [...state.paths, mountain] }
+    // Cuts the closing edge at (100,200) and touches nothing else.
+    const newPath = makePath(PATH_KIND.SHORT_RAIL, [p(80, 200), p(120, 200)], PINK)
+
+    const breakdown = resolveScoring(withMountain, PINK, newPath, TEST_CONFIG)
+
+    expect(breakdown.crossings).toHaveLength(1)
+    expect(breakdown.crossings[0]?.otherPathId).toBe(mountain.id)
+    expect(breakdown.crossings[0]?.onCard).toBe(false)
+    expect(breakdown.lost).toBe(1)
+    expect(breakdown.net).toBe(-1)
   })
 
   it('fires a Landmark penalty against the marker owner on every scoring event (M13)', () => {

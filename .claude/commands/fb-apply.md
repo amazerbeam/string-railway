@@ -12,12 +12,14 @@ Reviewers **always run as parallel subagents** in a single Agent dispatch — ne
 
 Read `.claude/workflow/plan-resolution.md` and follow **Resolving the target plan**, accepting statuses `PLANNED`, `IN PROGRESS`, and `BLOCKED`. `$ARGUMENTS` may name the slug directly. The resolved folder is `<plan>` for the rest of this document — state which plan you resolved before doing any work. If that file is absent, do not guess: say so, state that plans live at `.claude/contract/<slug>/` as `plan.md` + `tasks.md`, and ask the developer which plan to use.
 
-Then read:
+**Then move the ticket to `Coding` — before anything else.** The slug is the only prerequisite (it carries the key), so this is the first action `/fb-apply` takes: the board must show work in flight from the moment the command starts, not after the contract has been read. If the slug carries a `SCRUM-<n>` key, invoke the `management-jira` skill and transition that issue to `Coding` — automatically, no confirmation prompt. Read *The SCRUM status model* in that skill for the rules: resolve the transition id live, report the move in one line, skip silently when the slug has no key, and never fail this command over a Jira error. Transitions are any → any, so a ticket still sitting in `To Do` moves straight to `Coding`. Do not defer this to a later step, and do not batch it with the `Status:` write below.
+
+With the board updated, read:
 - `<plan>/plan.md` — Part 1 is scope and acceptance criteria, Part 2 is the technical approach and data shapes
 - `<plan>/tasks.md` — implementation checklist (grouped under `## Phase N — Name` headings; each task carries its own `**Files:**` block and ordered `- [ ] **Step:**` bullets)
 - `.claude/workflow/web-project.md` — the canonical paths, the `src/rules/` boundary, runner commands, developer-owned decisions, and the correctness traps. You need it to judge a pause condition correctly and to paste the right paths into agent prompts.
 
-If either contract file is missing, **stop** and tell the user to run `/fb-plan <task>` first.
+If either contract file is missing, **stop** and tell the user to run `/fb-plan <task>` first. The ticket already sitting in `Coding` is correct — the contract is what is missing, not the intent to work on it.
 
 Update the `Status:` line in `<plan>/tasks.md` to `IN PROGRESS`.
 
@@ -112,9 +114,11 @@ Work through every phase in `tasks.md` in order. **Do NOT invoke reviewers betwe
 - Task is unclear → ask for clarification
 - Implementation reveals a design issue → suggest updating artifacts
 - Error or blocker encountered → report and wait for guidance
-- A task needs a tuning value, a rule reading, a dependency approval, or an observation of the running app (see Step 3)
+- A task needs a tuning value, a rule reading, a dependency approval, or a *judgement* of the running app (see Step 3) — a functional runtime check is QA's, not a pause
 - A command fails with `'vite' is not recognized`, `Cannot find module`, or `Missing script` → dependencies or scripts are absent, not broken code; resolve the environment and re-run
 - User interrupts
+
+**On pause, flag the ticket — do not transition it.** If the slug carries a `SCRUM-<n>` key, invoke `management-jira` and add a flag to that card, leaving its status at `Coding`. Blocked is orthogonal to progress, so there is no `Blocked` status to move to — see *The SCRUM status model*. Clear the flag when work resumes.
 
 ### Output During Implementation
 
@@ -272,10 +276,13 @@ Apply your full defensive checklist — including §11 Shared-Surface Contract /
 - `package.json` present, with the scripts this contract uses: [YES / NO — name any missing]
 - `node_modules` installed: [YES / NO]
 
+### Runtime surface (for Step 4.5 — live browser verification)
+[State whether this contract changed anything observable in the running app: a component, the reducer, a hook, `rules.json` or its loader, meaningful styling, or rules logic that feeds what the board draws. If it did, say what the developer should be able to *see* working, and name the seed the contract specifies if there is one. If it changed nothing observable — a test-only task, a script or CI edit, a type-only refactor — say so, so QA can record the skip in one line rather than starting a server for nothing.]
+
 ### Delegated Final-Verification Commands
 [Paste verbatim the `Run:` / `Expected:` pairs from the contract's closing `Final verification` phase that the Implementer left unticked — typically the unfiltered `npm test`, `npm run build`, and any grep audits it delegated. If none, say "none delegated".]
 
-Run all seven validation steps (typecheck/build, lint, **test validation** for tasks that list a `Test:` path, boundary/config/persisted-shape verification, output review, AC traceability, delegated final-verification) against the FULL implementation (not per phase) and produce your QA Report. Remember: you NEVER write code — including tests. If a required test is missing, broken, or tautological, FAIL the task and let the Implementer fix it in the combined fix pass. Always invoke Vitest with the `run` subcommand; never run `npm run dev`. You have no way to observe the app running — emit visual, feel, and interaction criteria as MANUAL VERIFICATION NEEDED with the exact command, the interaction to perform, and the expected outcome.
+Run all eight validation steps (typecheck/build, lint, **test validation** for tasks that list a `Test:` path, boundary/config/persisted-shape verification, **live browser verification via the `chrome-devtools` MCP**, output review, AC traceability, delegated final-verification) against the FULL implementation (not per phase) and produce your QA Report. Remember: you NEVER write code — including tests. If a required test is missing, broken, or tautological, FAIL the task and let the Implementer fix it in the combined fix pass. Always invoke Vitest with the `run` subcommand, and never run `npm run dev` in the foreground — Step 4.5 starts it detached, on the port and by the procedure your agent definition specifies, and kills only the PID it started. **You CAN observe the app running, so verify that the change actually works rather than describing how someone else could check.** Reserve MANUAL VERIFICATION NEEDED for genuine judgement — drag feel, visual and copy judgement, pacing — and for states the browser tooling cannot reach; give the exact command, interaction, and expected outcome for those. A criterion with a right answer that you filed as manual verification is under-verification, not caution.
 ```
 
 **Wait for all 3 agents to return.** Collect all three reports.
@@ -347,6 +354,8 @@ Update `<plan>/tasks.md`:
 
 Set the `Status:` line to `COMPLETE` (or `BLOCKED` if any task failed after max retries).
 
+**Move the ticket to `Ready for Test`** — but only when the status you just wrote is `COMPLETE`. The gates are green and the one remaining question is how it feels in the hand, which is the developer's to answer. If you wrote `BLOCKED` instead, flag the card and leave it at `Coding`. Automatic either way, no confirmation prompt; the rules are in *The SCRUM status model* in `management-jira`.
+
 Present:
 
 ```markdown
@@ -378,6 +387,9 @@ Present:
 ### Verification Results
 - Typecheck / lint / suite / build: [QA's results, with the counts quoted]
 
+### Jira
+- [The transition performed, e.g. `SCRUM-12 Coding → Ready for Test` — or the flag added, or plainly that it was skipped or failed]
+
 ### Developer Actions Outstanding
 - [Every tuning value still to choose, with what it trades off; every ambiguous rule reading; any dependency awaiting approval; plus every MANUAL VERIFICATION NEEDED item from the QA report with the command to run, the interaction to perform, and the expected outcome]
 
@@ -391,6 +403,7 @@ Present:
 
 ## Important Rules
 
+- **The Jira move to `Coding` is the first action, not a formality.** It happens in Step 1 the moment the slug resolves — before the contract files are read, before preflight, before any dispatch. A run that reaches the Implementer with the card still in `Planned` is a defect in this command's ordering.
 - **Implementer runs through every phase first** — do NOT invoke Code-Evaluator, Defender, or QA between phases. The Implementer carries quality through every phase (writing AND running tests as tasks dictate); reviewers see the full result.
 - **Reviewers run once, at the very end, in a single Agent dispatch** — always spawn all 3 in a single message so they execute concurrently. Never per-phase, never sequentially.
 - **Combined feedback to the Implementer** — all 3 reviewer reports are merged into a single Implementer prompt for the fix pass, never sent one reviewer at a time.
@@ -398,7 +411,7 @@ Present:
 - **The orchestrator manages state** — track the cumulative changed-files log across phases, fix-round counters, and residual issues.
 - **Files come from tasks, not from `plan.md`** — every phase dispatch uses each task's `**Files:**` block as the authoritative file list.
 - **Nobody in this pipeline decides a tuning value or a rule reading.** `rules.json` values and `[MADE UP — M#]` decisions are the developer's; the rulebook is the spec and is never edited to match the code. If the contract needs a decision mid-run, pause and hand it over.
-- **Never run `npm run dev`, and never invoke bare `vitest`.** The first does not terminate; the second enters watch mode and hangs. Both waste the whole timeout and return nothing.
+- **Never run `npm run dev` in the foreground, and never invoke bare `vitest`.** The first does not terminate; the second enters watch mode and hangs. Both waste the whole timeout and return nothing. QA is the sole exception: it starts the server *detached* and drives the app through the `chrome-devtools` MCP, then kills the PID it started. Neither you nor the Implementer does this.
 - **`'vite' is not recognized` / `Cannot find module` / `Missing script` is never a code defect.** It means dependencies or scripts are absent. Resolve the environment, then re-run.
 - **Maximum 2 fix-review rounds total.** After round 2, log residuals and continue.
 - **Failed tasks from a previous `/fb-apply` run** should be retried (they will still be unticked in `tasks.md`).

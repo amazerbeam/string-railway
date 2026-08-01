@@ -7,3 +7,15 @@
   border-radius: 12px;
   touch-action: manipulation;
 }
+
+/* The board is a drag surface while a card is in hand. touch-action: none (not
+   manipulation) is required: a pointer drag must not be stolen by scroll or
+   pinch-zoom mid-placement. */
+.board--placing {
+  cursor: grab;
+  touch-action: none;
+}
+
+.board--placing:active {
+  cursor: grabbing;
+}

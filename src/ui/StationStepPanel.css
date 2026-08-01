@@ -1,0 +1,50 @@
+.station-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.station-step__button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.5rem 1rem;
+  touch-action: manipulation;
+}
+
+.station-step__button:focus-visible {
+  outline: 2px solid #0969da;
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .station-step__button:hover {
+    background: #f3f4f6;
+  }
+}
+
+.station-step__button:active {
+  background: #e6e8eb;
+}
+
+.station-step__bonus-first {
+  background: #1f2328;
+  color: #ffffff;
+  padding: 0.1rem 0.45rem;
+}
+
+.station-step__bonus-later {
+  background: #8c959f;
+  color: #ffffff;
+  padding: 0.1rem 0.45rem;
+}
+
+.station-step__verdict--illegal {
+  color: #cf222e;
+  font-weight: 600;
+}
+
+.station-step__trace {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.9rem;
+}

@@ -111,7 +111,9 @@ export function rectsOverlapOrTouch(a: Rect, b: Rect): boolean {
 
 /** §10.1 — "fully within the border string" / the mountain-containment test.
  *  Four-corners-inside alone would pass a rect a concave loop cuts through, so
- *  this also requires no loop edge to cross any rect edge transversally. */
+ *  this also requires no loop edge to cross any rect edge transversally.
+ *  `loop` takes a PlacedPath's stored corners-only `path` — loopEdges wraps it
+ *  here, so do NOT pass edgePolyline's already-wrapped result (SCRUM-16). */
 export function rectFullyInside(rect: Rect, loop: Polyline): boolean {
   if (!rectCorners(rect).every((corner) => pointInPolygon(corner, loop))) {
     return false
@@ -131,7 +133,9 @@ export function rectFullyInside(rect: Rect, loop: Polyline): boolean {
 /** §10.1 (M7) — every point of the path stays within the loop, and no path
  *  segment crosses the loop boundary (a leave-and-re-enter that happens to
  *  land back inside without a vertex ever outside would otherwise slip past
- *  a points-only check). */
+ *  a points-only check).
+ *  `path` is edge-walked and must be wrapped by the caller if it is a loop;
+ *  `loop` takes the stored corners-only form and is wrapped here (SCRUM-16). */
 export function pathFullyInside(path: Polyline, loop: Polyline): boolean {
   if (!path.every((point) => pointInPolygon(point, loop))) {
     return false

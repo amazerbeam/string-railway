@@ -75,18 +75,50 @@ describe('regularPolygon', () => {
     expect(meanY).toBeCloseTo(300, 6)
   })
 
-  it('winds clockwise from the top so "clockwise seat order" is unambiguous (AC7)', () => {
-    const loop = regularPolygon(centre, 4, 4000)
-    // First vertex is topmost (most negative y in SVG coordinates).
-    expect(loop[0].y).toBeLessThan(loop[1].y)
-    // Signed area is negative for clockwise winding in a y-down coordinate system.
-    let signed = 0
-    for (let i = 0; i < loop.length; i++) {
-      const a = loop[i]
-      const b = loop[(i + 1) % loop.length]
-      signed += a.x * b.y - b.x * a.y
+  it('winds clockwise for every side count so "clockwise seat order" is unambiguous (AC5, AC7)', () => {
+    for (const sides of [3, 4, 5, 48]) {
+      const loop = regularPolygon(centre, sides, 4000)
+      // Shoelace sum is POSITIVE for clockwise winding in a y-down coordinate
+      // system, which is what SVG gives us — so "walk the array" IS §4.1 step 7's
+      // clockwise order. A uniform rotation cannot change this sign, which is why
+      // it still holds after the even-side half-step rotation.
+      let signed = 0
+      for (let i = 0; i < loop.length; i++) {
+        const a = loop[i]
+        const b = loop[(i + 1) % loop.length]
+        signed += a.x * b.y - b.x * a.y
+      }
+      expect(signed).toBeGreaterThan(0)
     }
-    expect(signed).toBeGreaterThan(0)
+  })
+
+  it('keeps a vertex at the top for ODD side counts (AC3)', () => {
+    for (const sides of [3, 5]) {
+      const loop = regularPolygon(centre, sides, 4000)
+      // Vertex 0 sits on the vertical centre line, alone at the top.
+      expect(loop[0].x).toBeCloseTo(centre.x, 6)
+      for (let i = 1; i < loop.length; i++) {
+        expect(loop[i].y).toBeGreaterThan(loop[0].y)
+      }
+    }
+  })
+
+  it('presents a flat edge at the top for EVEN side counts, so the square is not a diamond (AC2)', () => {
+    const loop = regularPolygon(centre, 4, 4000)
+    // toBeCloseTo, not toBe: the two y-values are equal in exact arithmetic but
+    // not in floating point — they come from sin(-3pi/4) and sin(-pi/4).
+    expect(loop[0].y).toBeCloseTo(loop[1].y, 6)
+    // Vertex 0 is the TOP-LEFT corner and vertex 1 the top-right, so walking the
+    // array clockwise traverses the top edge first.
+    expect(loop[0].x).toBeCloseTo(-500, 6)
+    expect(loop[1].x).toBeCloseTo(500, 6)
+    expect(loop[0].y).toBeCloseTo(-500, 6)
+    // Axis-aligned: the bounding box collapses from the diamond's circumradius
+    // box (1414.214 per side) to the edge length itself.
+    const xs = loop.map((point) => point.x)
+    const ys = loop.map((point) => point.y)
+    expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(1000, 6)
+    expect(Math.max(...ys) - Math.min(...ys)).toBeCloseTo(1000, 6)
   })
 
   it('throws rather than dividing by zero for a degenerate side count', () => {
@@ -230,6 +262,7 @@ describe('generateSetup', () => {
     expect(state.moveLog).toEqual([])
     expect(state.pendingCard).toBeNull()
     expect(state.lastScoring).toBeNull()
+    expect(state.lastDraw).toEqual([])
   })
 
   it('is deterministic — same seed and player count give an identical board (AC8)', () => {

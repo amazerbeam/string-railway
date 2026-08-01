@@ -1,7 +1,10 @@
+/* stroke here is the fallback for a card with no markerOwner. An owned card's
+   seat colour arrives as an inline style from StationCard.tsx, which outranks
+   this rule — do not re-apply the colour as an SVG presentation attribute, it
+   loses to any author rule (SCRUM-12). */
 .station-card__body {
   fill: #fdfaf3;
   stroke: #2b2b2b;
-  stroke-width: 3;
 }
 
 .station-card__type,
@@ -14,23 +17,25 @@
 }
 
 .station-card__type {
-  font-size: 16px;
   fill: #2b2b2b;
   letter-spacing: 0.04em;
 }
 
 .station-card__bonus-first {
-  font-size: 26px;
   fill: #111111;
 }
 
 .station-card__bonus-later {
-  font-size: 20px;
   fill: #8a8a8a;
 }
 
 .station-card__pawn {
   fill: #ffffff;
   stroke: #4a4a4a;
+}
+
+.station-card__marker {
+  stroke: #ffffff;
   stroke-width: 1.5;
+  paint-order: stroke;
 }

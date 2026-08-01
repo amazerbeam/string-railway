@@ -54,6 +54,23 @@ describe('validateStationPlacement (§5.2)', () => {
     })
   })
 
+  it('rejects a card flush against the border’s CLOSING edge with TOUCHES_STRING (SCRUM-16)', () => {
+    // BORDER is stored corners-only, so its final edge — (0,500) back to (0,0),
+    // the left wall at x = 0 — is implied, never in the array. Before SCRUM-16
+    // this card passed check 1 (touchesRect never walked that edge) AND check 3
+    // (rectFullyInside wraps internally, and a card whose own left edge is
+    // COLLINEAR with the wall has every corner inside with no transversal
+    // crossing). On a real 4-player board that is 1000 of 4000 world units of
+    // wall a card could sit flush against.
+    const state = makeState()
+    const rect: Rect = { x: 0, y: 240, width: 20, height: 20 }
+
+    expect(validateStationPlacement(state, rect, TEST_CONFIG)).toEqual({
+      ok: false,
+      reason: STATION_REJECTION_REASON.TOUCHES_STRING,
+    })
+  })
+
   it('rejects a card touching a string before one touching a station', () => {
     const existingString = makePath(PATH_KIND.SHORT_RAIL, [p(90, 110), p(130, 110)])
     const otherStation = makeStation(STATION_TYPE.HAMLET, { x: 118, y: 100, width: 20, height: 20 })
@@ -312,6 +329,44 @@ describe('validateStringPlacement (§10.2)', () => {
       seats: [seat],
       stations: [stationA, stationB],
       paths: [makePath(PATH_KIND.BORDER, BORDER), crossingPath],
+    })
+    const path: Polyline = [p(60, 250), p(460, 250)]
+
+    expect(validateStringPlacement(state, PINK, 'SHORT_RAIL', path, TEST_CONFIG)).toEqual({
+      ok: true,
+    })
+  })
+
+  it('does not reject a path that genuinely crosses the mountain’s CLOSING edge, even though it grazes the mountain elsewhere (SCRUM-16)', () => {
+    const stationA = makeStation(STATION_TYPE.STARTING, { x: 40, y: 240, width: 20, height: 20 })
+    const stationB = makeStation(STATION_TYPE.HAMLET, { x: 460, y: 240, width: 20, height: 20 })
+    // The string runs straight along y = 250 from x = 60 to x = 460.
+    //
+    // The mountain is shaped so that its CLOSING edge — (150,280) back to
+    // (150,220) — is the only edge that crosses the string, at (150,250), while
+    // two of its stored edges graze the string at 0.3 units, inside
+    // tangencyTolerance (0.5). Its one other crossing of the line y = 250 sits
+    // at x = 490, beyond the string's own extent, so it is not a crossing OF
+    // THE STRING (a closed loop must cross an infinite line an even number of
+    // times; putting the second one off the end is what isolates the closing
+    // edge here).
+    //
+    // Before SCRUM-16: crossings() missed the closing edge, so genuinelyCrosses
+    // was false, touchesPath saw the 0.3 graze, and check 10 wrongly rejected a
+    // string that plainly cuts through the mountain. Per M8 and §10.3 a genuine
+    // crossing is SCORED, not rejected.
+    const mountain = makePath(PATH_KIND.MOUNTAIN, [
+      p(150, 220),
+      p(300, 249.7),
+      p(490, 220),
+      p(490, 280),
+      p(150, 280),
+    ])
+    const seat = makeSeat('PINK', 'P1', { startingStationId: stationA.card.id })
+    const state = makeState({
+      seats: [seat],
+      stations: [stationA, stationB],
+      paths: [makePath(PATH_KIND.BORDER, BORDER), mountain],
     })
     const path: Polyline = [p(60, 250), p(460, 250)]
 

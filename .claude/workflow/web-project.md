@@ -74,10 +74,15 @@ Node and npm are on `PATH`. There is no machine-specific executable to configure
 | **Types are sound (the fast gate)** | `npm run typecheck` |
 | Lint is clean | `npm run lint` |
 | Formatting is clean | `npm run format:check` — confirm the script exists in `package.json` first |
+| Rewrite formatting in place | `npm run format` — Prettier `--write` across the repo; run it, then re-run `format:check` |
 | Full test suite | `npm test` |
 | One test file | `npx vitest run src/rules/__tests__/geometry.test.ts` |
 | One test or describe block by name | `npx vitest run -t "counts each crossing separately"` |
 | Production build | `npm run build` |
+| **A dev server is already listening** | `try { (Invoke-WebRequest http://localhost:5173/ -UseBasicParsing -TimeoutSec 3).StatusCode } catch { "none" }` |
+| **Start the app for browser verification** (QA only — see below) | `$p = Start-Process npm.cmd -ArgumentList "run","dev","--","--port","5199","--strictPort" -PassThru -WindowStyle Hidden; $p.Id` |
+| **Stop a server you started** | `taskkill /PID <pid> /T /F` |
+| Serve the production bundle instead | `$p = Start-Process npm.cmd -ArgumentList "run","preview","--","--port","5199","--strictPort" -PassThru -WindowStyle Hidden; $p.Id` — needs `npm run build` first |
 | A file exists | `Get-ChildItem <path>` |
 | A pattern is gone | `Select-String -Path <glob> -Pattern "<pattern>"` → Expected: zero hits |
 | A file's line count | `(Get-Content <path> \| Measure-Object -Line).Lines` |
@@ -94,7 +99,10 @@ The five commands in the last row are exactly what `.github/workflows/ci.yml` ru
 ### Hard constraints on runners
 
 - **Vitest defaults to watch mode and will hang forever.** This is the single most common way to stall this pipeline. Always run `vitest run` (the `run` subcommand), never bare `vitest`. If `npm test` is wired to watch, use `npm test -- --run` or `npx vitest run`. A test command that has produced no output for a minute is watch mode, not a slow suite.
-- **`npm run dev` never terminates.** It is a server. Never invoke it as a foreground command — it will consume the whole timeout and return nothing useful. Nobody in this pipeline needs it: verification is `typecheck` / `lint` / `test` / `build`. If a human needs to *look* at something, that is developer-owned work and they start the server themselves.
+- **`npm run dev` never terminates, so it is never a foreground command.** As a foreground call it consumes the whole timeout and returns nothing useful. Two ways to need it, and only one of them is an agent's:
+  - **`/fb-plan` never plans it, and the Implementer never runs it.** Their verification is `typecheck` / `lint` / scoped `vitest run`.
+  - **QA may start it detached** — `Start-Process … -PassThru` per the table above, on `--port 5199 --strictPort` so the port is deterministic and a collision fails loudly instead of silently shifting — and drive the running app through the `chrome-devtools` MCP to verify that a change functionally works. `--strictPort` matters: without it Vite quietly picks 5174 and the browser navigates to whatever was already on 5199. QA prefers a server the developer already has up (check the table's listening probe first) and kills only a PID it started, with `/T` so npm's child `node` goes with it. Details in `.claude/agents/qa.md` → *Step 4.5*.
+  - **Judgement is still the developer's.** Automation can confirm a placement commits, a score reads `+2 −1`, and the console is clean; it cannot answer whether the drag *feels* right. See Developer-owned work.
 - **Pass/fail is the exit code plus stdout.** There is no results file to parse. `0` means everything passed; Vitest prints a `Tests  N passed` summary line. Quote it.
 - **`Select-String` reports one match per physical line, and a bundled asset is one line.** Grepping `dist/assets/*.js` for `"A|B"` surfaces whichever alternative appears first and looks like proof that only A is present. Any check that must prove *two* strings shipped needs `-AllMatches`, two separate greps, or a raw `-match` against `Get-Content -Raw`. This bit the SCRUM-8 closing phase and read as a missing string rather than a grep artefact.
 - **A TypeScript error inside a test file is not a failing test.** Vitest reports it as a collection/transform error and the file's tests never run. Read the output for "Failed to load" or "Transform failed" before concluding anything about coverage.
@@ -116,7 +124,7 @@ The Implementer writes the code; the developer judges it:
 - **Resolving a rulebook ambiguity, or overturning a `[MADE UP — M#]` decision.** A design call, raised rather than coded around. `.docs/Game_Rules/Rules.md` is the specification: it is not edited to match the code.
 - **Approving a new dependency.** Two runtime deps is deliberate. A third needs a stated justification and a yes.
 - **Visual judgement** — layout, readability, colour contrast by eye, whether a coaching message lands at the right moment.
-- **Anything requiring the running app**: they run `npm run dev` themselves and look.
+- **Anything requiring *judgement* of the running app**: they run `npm run dev` themselves and look. QA can now drive the app through the `chrome-devtools` MCP, which changes what "requires the running app" means — but only for questions with a right answer. *Does the string commit and does the panel read `+2 −1`* is QA's; *is laying that string satisfying* is the developer's, and a screenshot is not a substitute for a hand on a pointer. QA reporting a functional check green never closes out a feel question.
 - **Creating the GitHub repository, adding the remote, and pushing.** Pushing publishes content to a remote — an outward-facing action that stays the developer's call, and one an agent must never take on its own initiative even though a credential helper happens to be configured on this machine. No `gh` CLI is installed, so repository creation is not available to an agent at all. Reading the result of a CI run is developer work because there is no `gh` CLI or other GitHub API access on this machine for an agent to query a run's result with. Authoring `.github/workflows/ci.yml`, initialising the repository, verifying ignore rules, and committing are **agent** work — SCRUM-9 asked for them. An agent may run `git init`, `add`, `commit`, `status`, `check-ignore`, `check-attr`, `ls-files`, and `log`; it may not run `push`, `remote add`, `fetch`, `pull`, or `clone`.
 
 Treat reaching one of these as a **pause condition**: stop dispatching, state precisely what the developer must do or decide, wait for their answer, then continue.

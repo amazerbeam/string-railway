@@ -83,119 +83,143 @@ function HeroScene() {
           <stop offset="55%" stopColor="#ffe8f2" />
           <stop offset="100%" stopColor="#e4f3ff" />
         </linearGradient>
+
+        {/* The scene is authored to bleed past the viewBox — the hills are arcs meant to be
+            cut off by the band edge. Clip to the same rect the background paints (SCRUM-13). */}
+        <clipPath id="hero-scene-frame">
+          <rect width="960" height="340" rx="28" />
+        </clipPath>
       </defs>
 
-      <rect width="960" height="340" rx="28" fill="url(#hero-sky)" />
+      <g clipPath="url(#hero-scene-frame)">
+        <rect width="960" height="340" rx="28" fill="url(#hero-sky)" />
 
-      <g className="hero-scene__hills">
-        <ellipse cx="150" cy="352" rx="280" ry="96" fill="#b6e8c9" />
-        <ellipse cx="620" cy="366" rx="330" ry="110" fill="#9fdfd0" />
-        <ellipse cx="900" cy="356" rx="220" ry="84" fill="#c9ecb2" />
-      </g>
+        <g className="hero-scene__hills">
+          <ellipse cx="150" cy="352" rx="280" ry="96" fill="#b6e8c9" />
+          <ellipse cx="620" cy="366" rx="330" ry="110" fill="#9fdfd0" />
+          <ellipse cx="900" cy="356" rx="220" ry="84" fill="#c9ecb2" />
+        </g>
 
-      {SPARKLES.map((sparkle) => (
-        <circle
-          key={`${sparkle.x}-${sparkle.y}`}
-          className="hero-scene__sparkle"
-          cx={sparkle.x}
-          cy={sparkle.y}
-          r={sparkle.r}
-          fill={sparkle.colour}
-          style={{ animationDelay: sparkle.delay }}
-        />
-      ))}
+        {SPARKLES.map((sparkle) => (
+          <circle
+            key={`${sparkle.x}-${sparkle.y}`}
+            className="hero-scene__sparkle"
+            cx={sparkle.x}
+            cy={sparkle.y}
+            r={sparkle.r}
+            fill={sparkle.colour}
+            style={{ animationDelay: sparkle.delay }}
+          />
+        ))}
 
-      {/* Loose loops of spare string, waiting to be played. */}
-      <g className="hero-scene__coils" fill="none" strokeLinecap="round">
-        <path
-          d="M 66 268 C 34 250 40 214 74 216 C 108 218 112 254 82 262 C 56 268 50 240 70 236"
-          stroke="#a86bff"
-          strokeWidth="6"
-        />
-        <path
-          d="M 906 208 C 940 194 946 158 912 156 C 878 154 872 190 902 198 C 926 204 932 178 912 172"
-          stroke="#ff9fb1"
-          strokeWidth="6"
-        />
-      </g>
-
-      {RAILS.map((rail) => (
-        <g key={rail.id}>
+        {/* Loose loops of spare string, waiting to be played. */}
+        <g className="hero-scene__coils" fill="none" strokeLinecap="round">
           <path
-            d={rail.path}
-            fill="none"
-            stroke="#2b2540"
-            strokeOpacity="0.12"
-            strokeWidth="16"
-            strokeLinecap="round"
-            transform="translate(0 7)"
+            d="M 66 268 C 34 250 40 214 74 216 C 108 218 112 254 82 262 C 56 268 50 240 70 236"
+            stroke="#a86bff"
+            strokeWidth="6"
           />
           <path
-            d={rail.path}
-            fill="none"
-            stroke={rail.stringColour}
-            strokeWidth="12"
-            strokeLinecap="round"
-          />
-          <path
-            d={rail.path}
-            fill="none"
-            stroke="#ffffff"
-            strokeOpacity="0.55"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeDasharray="2 16"
+            d="M 906 208 C 940 194 946 158 912 156 C 878 154 872 190 902 198 C 926 204 932 178 912 172"
+            stroke="#ff9fb1"
+            strokeWidth="6"
           />
         </g>
-      ))}
 
-      {STATIONS.map((station) => (
-        <g key={`${station.x}-${station.y}`} transform={`translate(${station.x} ${station.y})`}>
-          <g
-            className="hero-scene__station"
-            style={
-              { '--tilt': `${station.tilt}deg`, animationDelay: station.delay } as CSSProperties
-            }
-          >
-            <rect
-              x="-30"
-              y="-21"
-              width="60"
-              height="42"
-              rx="8"
-              fill="#fffdf6"
-              stroke={station.colour}
-              strokeWidth="5"
+        {RAILS.map((rail) => (
+          <g key={rail.id}>
+            <path
+              d={rail.path}
+              fill="none"
+              stroke="#2b2540"
+              strokeOpacity="0.12"
+              strokeWidth="16"
+              strokeLinecap="round"
+              transform="translate(0 7)"
             />
-            <circle cx="-13" cy="-4" r="7" fill={station.colour} />
-            <rect
-              x="0"
-              y="-8"
-              width="20"
-              height="5"
-              rx="2.5"
-              fill={station.colour}
-              opacity="0.55"
+            <path
+              d={rail.path}
+              fill="none"
+              stroke={rail.stringColour}
+              strokeWidth="12"
+              strokeLinecap="round"
             />
-            <rect x="0" y="2" width="14" height="5" rx="2.5" fill={station.colour} opacity="0.35" />
-            <rect x="-17" y="8" width="34" height="4" rx="2" fill={station.colour} opacity="0.2" />
+            <path
+              d={rail.path}
+              fill="none"
+              stroke="#ffffff"
+              strokeOpacity="0.55"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray="2 16"
+            />
           </g>
-        </g>
-      ))}
+        ))}
 
-      {RAILS.map((rail) => (
-        <g key={`train-${rail.id}`} transform={prefersReducedMotion ? rail.park : undefined}>
-          <Train bodyColour={rail.bodyColour} roofColour={rail.roofColour} />
-          {!prefersReducedMotion && (
-            <animateMotion
-              dur={rail.duration}
-              repeatCount="indefinite"
-              rotate="auto"
-              path={rail.path}
-            />
-          )}
-        </g>
-      ))}
+        {STATIONS.map((station) => (
+          <g key={`${station.x}-${station.y}`} transform={`translate(${station.x} ${station.y})`}>
+            <g
+              className="hero-scene__station"
+              style={
+                { '--tilt': `${station.tilt}deg`, animationDelay: station.delay } as CSSProperties
+              }
+            >
+              <rect
+                x="-30"
+                y="-21"
+                width="60"
+                height="42"
+                rx="8"
+                fill="#fffdf6"
+                stroke={station.colour}
+                strokeWidth="5"
+              />
+              <circle cx="-13" cy="-4" r="7" fill={station.colour} />
+              <rect
+                x="0"
+                y="-8"
+                width="20"
+                height="5"
+                rx="2.5"
+                fill={station.colour}
+                opacity="0.55"
+              />
+              <rect
+                x="0"
+                y="2"
+                width="14"
+                height="5"
+                rx="2.5"
+                fill={station.colour}
+                opacity="0.35"
+              />
+              <rect
+                x="-17"
+                y="8"
+                width="34"
+                height="4"
+                rx="2"
+                fill={station.colour}
+                opacity="0.2"
+              />
+            </g>
+          </g>
+        ))}
+
+        {RAILS.map((rail) => (
+          <g key={`train-${rail.id}`} transform={prefersReducedMotion ? rail.park : undefined}>
+            <Train bodyColour={rail.bodyColour} roofColour={rail.roofColour} />
+            {!prefersReducedMotion && (
+              <animateMotion
+                dur={rail.duration}
+                repeatCount="indefinite"
+                rotate="auto"
+                path={rail.path}
+              />
+            )}
+          </g>
+        ))}
+      </g>
     </svg>
   )
 }

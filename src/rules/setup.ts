@@ -8,6 +8,7 @@ import {
 } from '../constants/setup'
 import { rectFullyInside } from './containment'
 import { buildDeck } from './deck'
+import { closeLoop } from './pathGeometry'
 import { createRng } from './rng'
 import {
   placeCornerStation,
@@ -99,7 +100,7 @@ export function generateSetup(request: SetupRequest, config: RulesConfig): GameS
     // chord back to its mouth, and setupValidation's own station checks make
     // exactly the same distinction — sampler and gate must agree or a legal
     // board fails the final gate on some seeds.
-    const blockers: readonly Polyline[] = [riverPath, [...mountainLoop, mountainLoop[0]]]
+    const blockers: readonly Polyline[] = [riverPath, closeLoop(mountainLoop)]
 
     // §9 — the 2-player variant takes FOUR colour-seats mapped to two owners,
     // in turn order [A1, B1, A2, B2]. Colours are consumed in COLOUR_SEATS
@@ -201,6 +202,7 @@ export function generateSetup(request: SetupRequest, config: RulesConfig): GameS
       paths,
       moveLog: [],
       lastScoring: null,
+      lastDraw: [],
       status: 'IN_PLAY',
     }
 

@@ -104,3 +104,35 @@ export const GAME_ACTION = {
   NEW_GAME: 'NEW_GAME',
   MOVE: 'MOVE',
 } as const
+
+/**
+ * §5.2's draw-and-recycle sequence, made reportable (SCRUM-5 AC5/AC7/AC8/AC9).
+ * beginStationStep already performs every one of these; without a trace it
+ * performs them invisibly, and a Landmark bounced for want of a marker is
+ * indistinguishable from a clean draw.
+ *
+ * Deliberately NOT added to MOVE_KIND, for the reason GAME_ACTION records
+ * above: Move is the persisted log undo and replay derive from, and every
+ * event here is re-derivable by replaying that log through beginStationStep.
+ */
+export const DRAW_EVENT = {
+  DREW: 'DREW',
+  RECYCLED_NEEDS_MARKER: 'RECYCLED_NEEDS_MARKER', // §7.3 — both markers already placed
+  RECYCLED_NO_LEGAL_PLACEMENT: 'RECYCLED_NO_LEGAL_PLACEMENT', // M4 — counts toward the skip
+  SKIPPED_NO_LEGAL_PLACEMENT: 'SKIPPED_NO_LEGAL_PLACEMENT', // M4 — 3 consecutive failures
+  SKIPPED_DECK_EMPTY: 'SKIPPED_DECK_EMPTY', // M5 — nothing is ever reshuffled
+  EXTRA_DRAW_FROM_RURAL: 'EXTRA_DRAW_FROM_RURAL', // §7.3 Draw Station
+  RURAL_CHAIN_CAPPED: 'RURAL_CHAIN_CAPPED', // §7.3 "disregard it — never a third"
+} as const
+
+/**
+ * Which stage of §10.4 step 1 the state is in. AWAITING_DRAW and SKIPPED both
+ * present as phase STATION with no pendingCard — see src/rules/staging.ts for
+ * what separates them.
+ */
+export const STATION_STEP_STAGE = {
+  AWAITING_DRAW: 'AWAITING_DRAW',
+  PLACING: 'PLACING',
+  SKIPPED: 'SKIPPED',
+  DONE: 'DONE',
+} as const

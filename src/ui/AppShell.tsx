@@ -1,14 +1,9 @@
-import { useState } from 'react'
-import Board from './Board'
-import DebugPanel from './DebugPanel'
 import HeroBanner from './HeroBanner'
 import NewGamePanel from './NewGamePanel'
-import SeatLegend from './SeatLegend'
-import { NO_OVERLAYS } from '../constants/overlays'
+import PlayArea from './PlayArea'
 import { useGame } from './useGame'
 import { useRulesConfig } from './useRulesConfig'
 import './AppShell.css'
-import type { OverlayFlags } from './BoardOverlays'
 import type { RulesConfig } from '../rules/config'
 
 function AppShell() {
@@ -57,8 +52,7 @@ function AppShell() {
  * one component is not allowed.
  */
 function GameShell({ config }: { config: RulesConfig }) {
-  const { state, seed, playerCount, setupError, newGame } = useGame(config)
-  const [overlays, setOverlays] = useState<OverlayFlags>(NO_OVERLAYS)
+  const { state, seed, playerCount, setupError, newGame, dispatchMove } = useGame(config)
 
   return (
     <main className="app-shell">
@@ -78,17 +72,14 @@ function GameShell({ config }: { config: RulesConfig }) {
       )}
 
       {state !== null && playerCount !== null && seed !== null && (
-        <section className="app-shell__game" aria-label="Game board">
-          <Board state={state} config={config} overlays={overlays} />
-          <SeatLegend seats={state.seats} turnOrder={state.turnOrder} playerCount={playerCount} />
-          <DebugPanel
-            state={state}
-            seed={seed}
-            flags={overlays}
-            onFlagsChange={setOverlays}
-            onRegenerate={(nextSeed) => newGame(playerCount, nextSeed)}
-          />
-        </section>
+        <PlayArea
+          state={state}
+          config={config}
+          seed={seed}
+          playerCount={playerCount}
+          dispatchMove={dispatchMove}
+          onRegenerate={(nextSeed) => newGame(playerCount, nextSeed)}
+        />
       )}
     </main>
   )

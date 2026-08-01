@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MOVE_KIND, TURN_PHASE } from '../../constants/game'
+import { DRAW_EVENT, MOVE_KIND, TURN_PHASE } from '../../constants/game'
 import { STATION_TYPE } from '../../constants/stations'
 import { asColourId, asStationId } from '../types'
 import type { GameState, Move } from '../types'
@@ -99,6 +99,75 @@ describe('gameReducer', () => {
     const result = gameReducer(state, move, TEST_CONFIG)
 
     expect(result).toBe(state)
+    // AC4 — an illegal placement leaves the trace untouched too, not just the board.
+    expect(result.lastDraw).toEqual(state.lastDraw)
+  })
+
+  it('records the draw trace on lastDraw when a turn begins', () => {
+    const state = makeState({
+      seats: [makeSeat('PINK', 'P1')],
+      turnOrder: [PINK],
+      activeSeatIndex: 0,
+      phase: TURN_PHASE.STATION,
+      deck: [makeCard(STATION_TYPE.HAMLET)],
+    })
+
+    const result = gameReducer(state, { kind: MOVE_KIND.BEGIN_TURN }, TEST_CONFIG)
+
+    expect(result.lastDraw.map((event) => event.kind)).toEqual([DRAW_EVENT.DREW])
+  })
+
+  it('records EXTRA_DRAW_FROM_RURAL and the follow-on draw when a Rural is placed (AC5)', () => {
+    const ruralCard = makeCard(STATION_TYPE.RURAL, { id: asStationId('RURAL-1') })
+    const nextCard = makeCard(STATION_TYPE.HAMLET, { id: asStationId('NEXT') })
+    const state = makeState({
+      seats: [makeSeat('PINK', 'P1')],
+      turnOrder: [PINK],
+      activeSeatIndex: 0,
+      phase: TURN_PHASE.STATION,
+      pendingCard: ruralCard,
+      deck: [nextCard],
+    })
+    const move: Move = {
+      kind: MOVE_KIND.PLACE_STATION,
+      cardId: ruralCard.id,
+      // Well clear of the 500x500 default border's edges.
+      rect: { x: 100, y: 100, width: 20, height: 20 },
+    }
+
+    const result = gameReducer(state, move, TEST_CONFIG)
+
+    expect(result.lastDraw.map((event) => event.kind)).toEqual([
+      DRAW_EVENT.EXTRA_DRAW_FROM_RURAL,
+      DRAW_EVENT.DREW,
+    ])
+    // The chain is still open for exactly one more card — phase stays STATION.
+    expect(result.phase).toBe(TURN_PHASE.STATION)
+    expect(result.pendingCard).not.toBeNull()
+  })
+
+  it('records RURAL_CHAIN_CAPPED and queues nothing on a second Rural (§7.3, AC5)', () => {
+    const secondRural = makeCard(STATION_TYPE.RURAL, { id: asStationId('RURAL-2') })
+    const state = makeState({
+      seats: [makeSeat('PINK', 'P1')],
+      turnOrder: [PINK],
+      activeSeatIndex: 0,
+      phase: TURN_PHASE.STATION,
+      pendingCard: secondRural,
+      drewRuralAlready: true,
+      extraDraws: 0,
+    })
+    const move: Move = {
+      kind: MOVE_KIND.PLACE_STATION,
+      cardId: secondRural.id,
+      rect: { x: 100, y: 100, width: 20, height: 20 },
+    }
+
+    const result = gameReducer(state, move, TEST_CONFIG)
+
+    expect(result.lastDraw.map((event) => event.kind)).toEqual([DRAW_EVENT.RURAL_CHAIN_CAPPED])
+    expect(result.extraDraws).toBe(0)
+    expect(result.phase).toBe(TURN_PHASE.STRING)
   })
 
   it('applies scoring on a legal PLACE_STRING and records lastScoring', () => {

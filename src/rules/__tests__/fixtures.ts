@@ -76,6 +76,7 @@ export function makeState(overrides?: Partial<GameState>): GameState {
     paths: [makePath(PATH_KIND.BORDER, DEFAULT_BORDER_LOOP)],
     moveLog: [],
     lastScoring: null,
+    lastDraw: [],
     status: 'IN_PLAY',
   }
   return { ...defaults, ...overrides }
