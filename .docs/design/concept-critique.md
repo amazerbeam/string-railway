@@ -4,6 +4,9 @@ Applies the lenses in [`design-principles.md`](./design-principles.md) to
 [`hybrid-concept.md`](./hybrid-concept.md). Nothing here overrides a decision in that document;
 where this disagrees with a settled choice it says so and gives the evidence.
 
+Problem 1's three-stone claim is sourced from [HexWiki — Handicap](https://www.hexwiki.net/index.php/Handicap)
+(the Demer scale page), checked directly against the live page on 2026-08-02.
+
 ---
 
 ## What is genuinely strong
@@ -43,6 +46,16 @@ The competitive Hex world measures handicaps on the Demer scale, where *one extr
 handicap points and is worth roughly **250 Elo on an 11×11 board** — about quadrupled winning odds.
 HexWiki notes that handicaps of two moves and above "probably do not make much sense on small board
 sizes," because so few stones are needed to connect.
+
+That page is more specific than "so few": its own reasoning for why is that **three stones are
+enough to connect edge-to-edge on the full 11×11 board using nothing but bridges and edge
+templates.** Your ambush hands out **six** unanswered placements on a board smaller than 11×11 —
+that isn't a large handicap in Hex terms, it's roughly double the stones a guaranteed connection
+needs on the *bigger* board. This isn't an inference from an Elo curve anymore; it's the same
+category of claim the Hex community uses to say a two-move handicap is unplayable on small
+boards, applied to a mechanic that hands out three times that. Treat "the ambush ends the battle
+outright" as close to certain, not merely probable, until the segment-1 measurement says
+otherwise.
 
 Your ambush hands one side **six consecutive unanswered placements**, on a board the doc recommends
 shrinking to 7×7 (49 cells, minimum connection length 7). Six free stones placed as a bridged
@@ -198,6 +211,15 @@ folk belief, and the competitive answer to it is the swap rule, which you have n
 A permanent CPU-first edge compounds across six segments in a single battle. Alternating costs
 nothing and closes the question; if you want something better, let the side that *lost* the card
 round choose who opens — a pie-rule-shaped consolation that also softens Problem 1.
+
+**Dealer alternation is the same open question as "who opens each segment," one level up.** The
+doc flags it and the first pass of this critique missed it. Fox alternates dealer each round, and
+being non-dealer carries a small edge (you lead the first trick). Within one battle that averages
+out over 4–8 rounds. What isn't settled is what happens at the *next* city: if dealer resets to a
+fixed starting side every battle rather than continuing the alternation across the war, that small
+per-round edge compounds across every city the same way a permanently CPU-first segment opener
+would. Same fix as the segment-opener finding: carry the alternation across battle boundaries
+rather than resetting it, and it costs nothing to specify.
 
 **Unspent moves are lost.** Fine as documented, and the right default — banking moves would create
 a second currency and a second source of burst. Make it visible in the UI, though: Meier's rule is
