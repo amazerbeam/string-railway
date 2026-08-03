@@ -7,6 +7,13 @@ where this disagrees with a settled choice it says so and gives the evidence.
 Problem 1's three-stone claim is sourced from [HexWiki — Handicap](https://www.hexwiki.net/index.php/Handicap)
 (the Demer scale page), checked directly against the live page on 2026-08-02.
 
+**Resolution (2026-08-03):** Problems 1–3 below led to
+[`skirmish-board-replacement.md`](./skirmish-board-replacement.md), which replaces Hex with **The
+Vanguard** — a network-growth mechanic on a hex board, designed conversationally with the
+developer after an earlier single-lane draft was scrapped for having only one front to fight over.
+This critique is kept in full as the record of *why Hex specifically* needed replacing — do not
+delete or soften Problems 1–3 to make the old design look better than it was.
+
 ---
 
 ## What is genuinely strong

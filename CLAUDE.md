@@ -18,6 +18,15 @@ commit `2cf7ec7` on `origin/master` is the last commit before removal.
 
 `.claude/contract/` holds the plans in flight; finished ones move to `archive/`. `.claude/lessons/` collects corrections logged via `/fb-issue`.
 
+## Game naming
+
+The hybrid's two component games have in-fiction names — use them everywhere (design docs, code,
+conversation) instead of the parent-game names: the Fox in the Forest card layer is the **War
+Council**; the hex-board network-growth mechanic that replaces Hex is **The Vanguard**. Within a
+round of the Vanguard: **Muster** (the move budget), **The Clash** (the action exchange), **The
+Breach** (a solid base-to-base connection — the win condition). This is a naming pointer, not a
+rules restatement — the mechanic itself is owned by `.docs/design/skirmish-board-replacement.md`.
+
 ## The single-source-of-truth rule
 
 This project is deliberately organised so each fact is stated once. When something is wrong, **fix it where it is owned**, not at the call site that used it:
