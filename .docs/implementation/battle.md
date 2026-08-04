@@ -1,71 +1,161 @@
 # Battle — `src/battle/`
 
-**Status:** scaffold
-**Built by:** SCRUM-19
+**Status:** implemented
+**Built by:** SCRUM-19, SCRUM-25
 
 ## Responsibility
 
-Owns battle-orchestration — the top-level state that will eventually hold a round in progress,
-referencing (not duplicating) each engine's own state. This is the module a future orchestrator
-ticket (plan.md's "A6") holds as its single source of truth. Unlike `src/warCouncil/` and
-`src/vanguard/`, this module has no pure-core ESLint boundary — no ticket has yet stated the
-orchestrator must be React/DOM-free.
+Sequences a full battle end to end: a single `BattleState` moves through a War Council round →
+Muster conversion → The Clash → (Breach, or loop back to the next round with the same persistent
+Vanguard board and an alternated dealer). This is the top-level orchestrator that wires together
+the four independently-built engines — War Council (`src/warCouncil/`), the Vanguard board and
+Clash (`src/vanguard/`) — without re-implementing any of their rules. It holds no CPU logic and no
+UI: every function here takes a card or an action as *input* from whatever calls it (a test script
+today; a future UI or CPU ticket later) and never chooses one itself. Like `src/warCouncil/` and
+`src/vanguard/`, this module has no pure-core ESLint boundary — SCRUM-19 explicitly declined one for
+the orchestrator and SCRUM-25 didn't revisit that call — but the code is pure logic anyway (no
+React import, no DOM access, no I/O).
 
 ## Key types & exports
 
-| Export                                     | Purpose                                                                    | File             |
-| ------------------------------------------ | -------------------------------------------------------------------------- | ---------------- |
-| `BattlePhase`                              | `as const` map of the four battle-loop stages, plus its derived value type | `battlePhase.ts` |
-| `BattleState`                              | Interface composing `phase`, `warCouncil`, and `vanguard`                  | `battleState.ts` |
-| `BattlePhase`, `BattleState` (re-exported) | Barrel                                                                     | `index.ts`       |
+| Export                     | Purpose                                                                                     | File                |
+| --------------------------- | --------------------------------------------------------------------------------------------- | -------------------- |
+| `BattlePhase`               | `as const` map of the four battle-loop stages, plus its derived value type                    | `battlePhase.ts`     |
+| `BattleState`               | 4-variant discriminated union keyed on `phase`, one shape per stage                            | `battleState.ts`     |
+| `WAR_COUNCIL_FIRST_DEALER`  | Configuration constant: which side deals round 1 of a battle                                  | `config.ts`          |
+| `BattleRejectionReason`     | `as const` map of the three orchestration-level rejection reasons (wrong-phase calls)         | `battleAction.ts`    |
+| `BattleActionResult`        | Discriminated union: `{ ok: true, state }` or `{ ok: false, reason }`, unioning orchestration-level and bubbled engine-level rejection reasons | `battleAction.ts`    |
+| `startBattle`               | Builds round 1: creates the Vanguard board (once, ever) and deals the first War Council round | `startBattle.ts`     |
+| `submitWarCouncilCard`      | Submits one card; transitions to `MusterConversion` when the round's 13th trick resolves      | `submitWarCouncilCard.ts` |
+| `beginClash`                | Converts the completed round's score to Muster and opens the Clash                            | `beginClash.ts`      |
+| `submitClashAction`         | Submits one Clash action; resolves on Breach, or deals the next round on a natural Clash end   | `submitClashAction.ts` |
+
+All nine are re-exported from `index.ts` — `BattlePhase`, `WAR_COUNCIL_FIRST_DEALER`,
+`BattleRejectionReason`, and the four functions as values; `BattleState` and `BattleActionResult`
+via `export type` (required by this project's `verbatimModuleSyntax` tsconfig setting).
 
 ## How it works
 
-### `BattlePhase`'s four stages
+### `BattleState` is a phase-keyed discriminated union, not a flat interface
 
-`battlePhase.ts` defines a fixed set of four named phases using the `as const` object-map pattern
-(this project's `erasableSyntaxOnly` tsconfig setting forbids `enum`):
+`battleState.ts` replaced SCRUM-19's flat three-field placeholder with a 4-variant union, one
+variant per `BattlePhase` value:
 
 ```ts
-export const BattlePhase = {
-  WarCouncilRound: 'warCouncilRound',
-  MusterConversion: 'musterConversion',
-  Clash: 'clash',
-  Resolved: 'resolved',
-} as const
-
-export type BattlePhase = (typeof BattlePhase)[keyof typeof BattlePhase]
+export type BattleState =
+  | { phase: WarCouncilRound; round: number; dealer: PlayerSide; vanguard: VanguardState; warCouncil: WarCouncilState }
+  | { phase: MusterConversion; round: number; dealer: PlayerSide; vanguard: VanguardState; warCouncil: WarCouncilState }
+  | { phase: Clash; round: number; dealer: PlayerSide; clash: ClashState }
+  | { phase: Resolved; round: number; vanguard: VanguardState; winner: PlayerSide }
 ```
 
-The four keys map 1:1 to a battle round's stages: a War Council round in progress, Muster
-conversion, The Clash in progress, and Breach reached / battle resolved (the same terminal phase
-covers both descriptions). This value set is locked down by a regression test —
-`src/battle/__tests__/battlePhase.test.ts` asserts `Object.values(BattlePhase)` equals exactly
-`['warCouncilRound', 'musterConversion', 'clash', 'resolved']` and that there are no duplicate
-values — so an accidental rename or deletion of one of these four strings fails a test instead of
-silently breaking whichever future code switches on it.
+This makes an illegal read a compile error rather than a runtime `undefined` — code cannot read
+`.clash` while `phase === 'warCouncilRound'`, because that field doesn't exist on that variant.
+Every field is `readonly`. Note the `Clash` variant carries no `vanguard` field of its own — the
+board lives inside `clash.board` for the duration of a Clash; it re-surfaces as `state.vanguard`
+only once the Clash ends (either `Resolved` or the next `WarCouncilRound`).
 
-### `BattleState` composes, it does not duplicate
+### Board persistence is structural, not conventional
 
-`battleState.ts` holds three `readonly` fields — `phase: BattlePhase`, `warCouncil: WarCouncilState`,
-`vanguard: VanguardState` — importing the two engine types via `import type`. It intentionally does
-**not** inline any War Council or Vanguard fields, and does not yet carry a round counter, dealer,
-active-side, or winner field — see _Deferred_ below. `index.ts` re-exports `BattlePhase` as a value
-(because later code will read `BattlePhase.Clash` etc.) and `BattleState` via `export type`
-(required by this project's `verbatimModuleSyntax` tsconfig setting, since it's type-only).
+`createVanguardBoard()` is called **exactly once** in the entire module — inside `startBattle`.
+Every other transition threads the board it was handed forward: `submitClashAction` reads
+`result.state.board` off the engine's own result and carries that same reference into the next
+`BattleState`, whether that's `Resolved` or the next round's `WarCouncilRound`. This is what makes
+"the board never resets between rounds" (the design doc's stated invariant) a guarantee of the
+code's shape rather than a rule someone has to remember to follow — no function in this module has
+a second code path that could call `createVanguardBoard()` again.
+
+### The four lifecycle functions — one per arrow in the battle-loop diagram
+
+Each function takes the current `BattleState` plus whatever external input that step needs (a
+card, a Clash action, an `rng` function), and returns a `BattleActionResult` — either
+`{ ok: true, state }` with the next `BattleState`, or `{ ok: false, reason }` naming exactly why.
+Every one starts with a **phase guard**: reject with the matching `BattleRejectionReason`
+(`NotWarCouncilPhase`, `NotMusterConversionPhase`, `NotClashPhase`) unless `state.phase` is the one
+this function operates on. This is the only kind of rejection this module invents itself — every
+other failure is bubbled unchanged from the delegated engine call (`IllegalMoveReason` from
+`playCard`, `IllegalActionReason`/`ClashRejectionReason` from `applyClashAction`), so a caller
+inspecting a rejection always gets the real underlying reason, never a laundered "something went
+wrong."
+
+- **`startBattle(rng)`** (`startBattle.ts`) — the only function with no rejection path. Calls
+  `createVanguardBoard()` and `dealRound(WAR_COUNCIL_FIRST_DEALER, rng)`, returns a
+  `WarCouncilRound`-phase state at `round: 1`. Its declared return type is narrowed to
+  `Extract<BattleState, { phase: WarCouncilRound }>` rather than the full `BattleState` union — a
+  deliberate, harmless deviation from the plan's literal signature, since `startBattle` can only
+  ever produce that one variant and every caller reads `dealer`/`vanguard` off the result without a
+  narrowing check first.
+
+- **`submitWarCouncilCard(state, side, card, choice?)`** (`submitWarCouncilCard.ts`) — delegates
+  every legality question to `playCard`, bubbling its `IllegalMoveReason` unchanged on rejection.
+  On success, if the returned round's `phase === RoundPhase.Complete` (the 13th trick just
+  resolved), transitions to `MusterConversion`, carrying the completed round state forward so the
+  next function can read `tricksWon` off it. Otherwise stays in `WarCouncilRound` with the updated
+  round.
+
+- **`beginClash(state)`** (`beginClash.ts`) — the one function with no possible *engine-level*
+  rejection (only the orchestration-level phase check). Runs `scoreRound(tricksWon)` →
+  `convertScoreToMuster(score)` → `openingSideForRound(round)` → `startClash(board, muster,
+  openingSide)` in sequence — all pure functions already fully specified by the War Council and
+  Vanguard engines — and returns a `Clash`-phase state.
+
+- **`submitClashAction(state, side, action, rng)`** (`submitClashAction.ts`) — delegates to
+  `applyClashAction` exactly as `submitWarCouncilCard` delegates to `playCard`, then branches on the
+  returned `ClashState.status`:
+  - **`Breached`** → `Resolved`-phase state naming the winner directly from `ClashState.winner`
+    and carrying the final board (`result.state.board`) — no further actions are accepted, since no
+    function in this module accepts a `Resolved`-phase state as valid input.
+  - **`Complete`** (both sides' Muster exhausted, no Breach) → deals straight into the next round
+    **inside the same function call**: increments `round`, flips `dealer` via
+    `otherSide(state.dealer)`, deals a fresh War Council round with the caller-supplied `rng`. A
+    caller can never observe a stuck "Clash finished but nobody dealt the next round" state,
+    because there is no intermediate state to observe — this is why `rng` is threaded into every
+    `submitClashAction` call even though the overwhelming majority never consume it (only the rare
+    call that ends a Clash naturally does).
+  - **`InProgress`** → carries the updated `ClashState` forward, phase unchanged.
+
+### Dealer alternation is one named field, flipped in exactly one place
+
+`dealer: PlayerSide` lives on three of the four `BattleState` variants (not `Resolved`, which has
+no next round to deal). It is set once by `startBattle` (to `WAR_COUNCIL_FIRST_DEALER`) and flipped
+exactly once — `otherSide(state.dealer)` inside `submitClashAction`'s `Complete` branch, the single
+point where a Clash ends without a Breach. No other code in this module re-derives or reassigns
+`dealer`.
+
+### `WAR_COUNCIL_FIRST_DEALER` — a documented placeholder tunable
+
+`config.ts` exports one configuration constant:
+
+```ts
+export const WAR_COUNCIL_FIRST_DEALER: PlayerSide = PlayerSide.Player
+```
+
+Nothing in the brief or linked design docs states which side deals round 1 of a battle (unlike
+`CLASH_FIRST_ROUND_OPENER` in `src/vanguard/config.ts`, whose default was stated outright by a
+prior ticket's AC). This value is a documented placeholder — `startBattle.ts` is its only consumer.
 
 ## Rules & invariants enforced
 
-- No pure-core ESLint boundary on this folder (deliberate — see Responsibility above).
-- `readonly` on all three `BattleState` fields, matching this project's reducer-driven,
-  produce-a-new-object state-update convention (`.claude/skills/react-frontend/SKILL.md`).
+- No pure-core ESLint boundary on this folder (deliberate — see Responsibility above), but the
+  code contains no React import, no DOM access, and no `Math.random()` — `rng` is threaded
+  explicitly into `startBattle` and `submitClashAction` exactly as `dealRound` requires.
+- Every field on every `BattleState` variant is `readonly`; every transition function returns a
+  new object rather than mutating its input, matching this project's reducer-driven state-update
+  convention.
+- Every rejection is a typed, specific reason (`BattleRejectionReason` or a bubbled engine reason)
+  — no generic `WrongPhase` catch-all, no `try`/`catch` laundering a failure into a success shape
+  (there is nothing in this module capable of throwing under normal operation).
+- `round` is a plain incrementing number with no upper-bound check anywhere in this module —
+  deliberately no round cap (an explicit non-requirement, not an oversight).
 
 ## Deferred / not yet implemented
 
-- `BattleState` has no `round`, `dealer`, `activeSide`, or `winner` field — deliberately minimal per
-  `plan.md`'s stated risk ("over-designing the shared state shape before the engines it wraps
-  exist"). A future orchestrator ticket (A6) is expected to extend it.
-- No actual battle-loop transition logic exists — nothing currently reads or writes `BattlePhase`
-  outside its own test. There is no reducer, no orchestrator component, and no code that advances a
-  battle from one phase to the next.
-- No React component, hook, or rendering code touches this module yet.
+- No CPU decision-making of any kind — every function takes its card/action as caller-supplied
+  input. A future CPU ticket supplies the "what to play" policy from outside this module.
+- No UI, component, or rendering code touches this module.
+- No campaign or multi-battle layer — `round` counts War Council rounds within one battle only;
+  nothing here persists across a battle boundary or exposes a "next battle" concept, though
+  `dealer`'s single-named-field design was deliberately chosen so a later ticket could extend it
+  across a hypothetical multi-battle boundary without rewriting this orchestrator.
+- `WAR_COUNCIL_FIRST_DEALER`'s value (`PlayerSide.Player`) is a placeholder pending developer
+  confirmation — flip it in one line in `config.ts` if the other side is wanted.

@@ -16,7 +16,7 @@ folder — so a mechanic's explanation lives in one place regardless of which ti
 | ----------------- | -------------------------------- | ----------- | ------------------ |
 | `src/warCouncil/` | [war-council.md](war-council.md) | implemented | SCRUM-19, SCRUM-20 |
 | `src/vanguard/`   | [vanguard.md](vanguard.md)       | partial     | SCRUM-19, SCRUM-21, SCRUM-22, SCRUM-23, SCRUM-24 |
-| `src/battle/`     | [battle.md](battle.md)           | scaffold    | SCRUM-19           |
+| `src/battle/`     | [battle.md](battle.md)           | implemented | SCRUM-19, SCRUM-25 |
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

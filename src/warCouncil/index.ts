@@ -2,6 +2,7 @@ export type { RoundState as WarCouncilState } from './types'
 
 export {
   AbilityChoiceKind,
+  CardRank,
   currentTurn,
   IllegalMoveReason,
   otherSide,

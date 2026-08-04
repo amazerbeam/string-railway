@@ -27,7 +27,11 @@ Source rules: [`../game_rules/fox-in-the-forest.md`](../game_rules/fox-in-the-fo
 4. **Between city fights, the player travels the map.** Smaller fights against towns along the way
    yield items and cards. Gathered special cards and consumable buffs (e.g. a potion that lets the
    player ignore the follow-suit requirement once, or one that lets them look at the next 3 cards
-   and choose which to swap in) are things the player finds, not things they start with.
+   and choose which to swap in) are things the player finds through exploration — settled as
+   discovery, not a shop/currency purchase. Closest comparisons: Slay the Spire's Potions (single-use,
+   held outside the deck, break a rule for a moment rather than being a stronger card) and Pokémon's
+   items (X Items, held items — bend a battle's rules in your favour without being part of your
+   team/deck itself).
 5. **Player deck construction, built for progression.** Worked out in detail below.
 
 ---
