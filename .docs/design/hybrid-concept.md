@@ -70,7 +70,7 @@ untouched between iterations (see `skirmish-board-replacement.md` for what the b
 ## Why the move economy is sound
 
 Every Vanguard action was paid for with War Council points. Moves are not a bonus layered on top of
-the board game — they are the *only* way to act, for both sides.
+the board game — they are the _only_ way to act, for both sides.
 
 Historically, when the board was Hex, a 6–0 ambush handed one side six consecutive unopposed
 placements while the other got none at all — genuinely devastating in Hex terms, since bridges and
@@ -88,17 +88,17 @@ into open ground or reinforcing a token to blunt the follow-up.
 Tricks always sum to 13, so both sides' bands are locked together. Every possible split collapses
 into just **two scenario types**:
 
-| Trick split | Points → moves | Scenario | Move gap |
-|---|---|---|---|
-| 0–3 / 10–13 | 6 / 0 | **Ambush** — one side springs it, the other cannot respond at all | 6 |
-| 4 / 9 | 1 / 6 | **Pitched battle** | 5 |
-| 5 / 8 | 2 / 6 | **Pitched battle** | 4 |
-| 6 / 7 | 3 / 6 | **Pitched battle** | 3 |
+| Trick split | Points → moves | Scenario                                                          | Move gap |
+| ----------- | -------------- | ----------------------------------------------------------------- | -------- |
+| 0–3 / 10–13 | 6 / 0          | **Ambush** — one side springs it, the other cannot respond at all | 6        |
+| 4 / 9       | 1 / 6          | **Pitched battle**                                                | 5        |
+| 5 / 8       | 2 / 6          | **Pitched battle**                                                | 4        |
+| 6 / 7       | 3 / 6          | **Pitched battle**                                                | 3        |
 
 Seven distinct outcomes — four ambush intensities, three battle margins.
 
-Note the inversion that gives the card phase its bite: taking *very few* tricks (0–3) is the
-ambusher's result and scores maximum, while taking a *moderate* number (4–6) is the loser's result.
+Note the inversion that gives the card phase its bite: taking _very few_ tricks (0–3) is the
+ambusher's result and scores maximum, while taking a _moderate_ number (4–6) is the loser's result.
 Fox's native "win tricks, but not too many" tension reads directly as "commit enough force to win
 the engagement, but don't overextend."
 
@@ -184,7 +184,7 @@ some escalate to it (the old two-tier split); who opens The Clash each round.
 - **The War Council AI is the hard half.** Hidden hands, 13 tricks of lookahead, odd-card abilities
   that mutate the trump suit mid-trick, and a scoring curve where winning too much loses. Start
   with a heuristic player before reaching for determinized search.
-- **The CPU needs to play both games well *and* connect them** — it should be willing to throw a
+- **The CPU needs to play both games well _and_ connect them** — it should be willing to throw a
   War Council it cannot win cheaply, and its card play should be informed by how badly it needs
   Muster on the current Vanguard. That link is where the game's difficulty will actually live.
 - Two phases with different input models — War Council card selection and Vanguard actions — means

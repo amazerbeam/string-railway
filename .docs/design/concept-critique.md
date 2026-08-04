@@ -11,7 +11,7 @@ Problem 1's three-stone claim is sourced from [HexWiki — Handicap](https://www
 [`skirmish-board-replacement.md`](./skirmish-board-replacement.md), which replaces Hex with **The
 Vanguard** — a network-growth mechanic on a hex board, designed conversationally with the
 developer after an earlier single-lane draft was scrapped for having only one front to fight over.
-This critique is kept in full as the record of *why Hex specifically* needed replacing — do not
+This critique is kept in full as the record of _why Hex specifically_ needed replacing — do not
 delete or soften Problems 1–3 to make the old design look better than it was.
 
 ---
@@ -20,22 +20,22 @@ delete or soften Problems 1–3 to make the old design look better than it was.
 
 **The coupling is real, and that is rare.** The most common failure in a two-game hybrid is that
 the minigame is a toll booth — you play it to earn the right to play the real game. Here the card
-phase is *the only source of moves for both sides*, so it isn't a tax on the war, it **is** the
+phase is _the only source of moves for both sides_, so it isn't a tax on the war, it **is** the
 war's action economy. That is the same structural move Arcs makes with trick-taking, and Puzzle
 Quest with match-3: the subordinate system is not decoration, it is the resource layer.
 
 **The theme is doing mechanical work.** Fox's "win, but not too much" curve reads as "commit enough
-to win, don't overextend" with no strain. That is Rosewater's *resonance* and *piggybacking* — the
+to win, don't overextend" with no strain. That is Rosewater's _resonance_ and _piggybacking_ — the
 fiction teaches the rule for free, so the strangest thing about Fox becomes the most intuitive
 thing about your game. It's the best idea in the document.
 
 **Hex is the right substrate.** Permanent stones mean every decision echoes forward for the whole
 battle — Sirlin's stated ideal. No draws means no tie-handling. Every stone is dual-purpose
-(building necessarily blocks), which gives the board an *intrinsic* comeback pressure that most
+(building necessarily blocks), which gives the board an _intrinsic_ comeback pressure that most
 war maps need bolted on. And the no-draw theorem makes a Monte-Carlo AI cheap, as the doc notes.
 
 **The uncertainty is cleanly stratified.** All randomness lives in the card layer, and it is
-*input* randomness (the deal, then hidden hands) — visible before you decide, planned around. The
+_input_ randomness (the deal, then hidden hands) — visible before you decide, planned around. The
 board layer is perfect information with zero randomness. Players lose to their own decisions, not
 to a die. Very few hybrids get that separation this clean, and it is worth protecting in every
 later decision.
@@ -49,7 +49,7 @@ what earns the "one battle in phases" framing.
 
 This is the finding to act on first.
 
-The competitive Hex world measures handicaps on the Demer scale, where *one extra move* is 0.5
+The competitive Hex world measures handicaps on the Demer scale, where _one extra move_ is 0.5
 handicap points and is worth roughly **250 Elo on an 11×11 board** — about quadrupled winning odds.
 HexWiki notes that handicaps of two moves and above "probably do not make much sense on small board
 sizes," because so few stones are needed to connect.
@@ -58,7 +58,7 @@ That page is more specific than "so few": its own reasoning for why is that **th
 enough to connect edge-to-edge on the full 11×11 board using nothing but bridges and edge
 templates.** Your ambush hands out **six** unanswered placements on a board smaller than 11×11 —
 that isn't a large handicap in Hex terms, it's roughly double the stones a guaranteed connection
-needs on the *bigger* board. This isn't an inference from an Elo curve anymore; it's the same
+needs on the _bigger_ board. This isn't an inference from an Elo curve anymore; it's the same
 category of claim the Hex community uses to say a two-move handicap is unplayable on small
 boards, applied to a mechanic that hands out three times that. Treat "the ambush ends the battle
 outright" as close to certain, not merely probable, until the segment-1 measurement says
@@ -70,8 +70,8 @@ ladder is not an advantage, it is very probably a completed virtual connection �
 opponent cannot cut no matter what they do next. If that's right, a single 0–3 round wins the city,
 and does so at whatever point in the battle it happens.
 
-The doc's defence is a flavour argument: *thematically that is exactly what being ambushed should
-feel like.* That's true, and it is not answering the structural question. Rosewater's lesson #5 is
+The doc's defence is a flavour argument: _thematically that is exactly what being ambushed should
+feel like._ That's true, and it is not answering the structural question. Rosewater's lesson #5 is
 precisely this trap — interesting is not fun, and a systems-minded designer is the person most
 likely to fall for it. What the player experiences is: I played thirteen tricks, lost the card
 round, and the game was over before I placed a stone.
@@ -79,7 +79,7 @@ round, and the game was over before I placed a stone.
 There's a second-order consequence the doc doesn't currently connect:
 
 > **Ambush lethality and pacing pull in opposite directions.** Shrinking the board fixes pacing and
-> makes the ambush *more* decisive. Growing it dilutes the ambush and makes a city take ninety
+> makes the ambush _more_ decisive. Growing it dilutes the ambush and makes a city take ninety
 > minutes. 7×7 is the correct fix for one problem and the worst case for the other.
 
 That tension is the central tuning decision of the whole design, and it's yours to make. Options,
@@ -87,7 +87,7 @@ not prescriptions:
 
 - **Keep 7×7, reshape the ambush.** Cap placements per segment at 3–4 and bank or burn the surplus,
   so a lopsided round is a strong tempo swing rather than a virtual connection.
-- **Keep 7×7, restrict *where*.** Your own placement-zone idea does this — see Fill 2 below. Six
+- **Keep 7×7, restrict _where_.** Your own placement-zone idea does this — see Fill 2 below. Six
   stones confined to cells adjacent to your existing stones or your own edge are strong but
   answerable; six stones placed anywhere are not.
 - **Move to 9×9** and accept 4–6 card rounds per city, treating pacing as the price of survivable
@@ -97,8 +97,8 @@ not prescriptions:
   passing) is dramatically less lethal than a trailing burst, because bridges and ladders assume
   alternation.
 
-**Measure before choosing.** One number settles it: *what fraction of battles are decided in the
-first segment?*
+**Measure before choosing.** One number settles it: _what fraction of battles are decided in the
+first segment?_
 
 ---
 
@@ -106,7 +106,7 @@ first segment?*
 
 Points flow **card → board**. Nothing flows **board → card**. The consequence is that the card
 phase is mechanically identical in round 1 and round 6 of the same battle; the board state changes
-only *how much you want* moves, never *how you should play tricks*. That is a scalar link, not a
+only _how much you want_ moves, never _how you should play tricks_. That is a scalar link, not a
 shared vocabulary.
 
 This is the Puzzle Quest test, and the concept currently fails it. It's also why the pacing problem
@@ -114,9 +114,9 @@ is worse than the raw trick count suggests: by Koster's measure, forty tricks pe
 tolerable if each round teaches something new, and grinding if round five is round one repeated.
 **Pacing and decoupling are the same problem**, and fixing the coupling partly fixes the pacing.
 
-The document actually spots this, but as an AI note — *"its Fox play should be informed by how badly
+The document actually spots this, but as an AI note — _"its Fox play should be informed by how badly
 it needs moves on the current board … that link is where the game's difficulty will actually
-live."* That link is real for the CPU because the CPU can read the board. It is real for the human
+live."_ That link is real for the CPU because the CPU can read the board. It is real for the human
 only if a rule makes it so. Right now no rule does.
 
 Two fills below.
@@ -143,15 +143,15 @@ reshaping every decision. Three consequences:
 2. **Winning better isn't rewarded — only denying is.** 6–0 and 6–3 pay the winner identically.
    Denial is the only gradient. The doc reaches this conclusion about the two 6-point routes; this
    is the general form of it.
-3. **The round can lock long before trick 13.** Once *both* players hold 4 tricks the boundary
+3. **The round can lock long before trick 13.** Once _both_ players hold 4 tricks the boundary
    question is settled, and much of what remains is filler. Combined with 40+ tricks per city, this
-   is the pacing problem's real mechanism. Measure *at which trick the round outcome becomes
-   determined* — if the median is trick 8 or 9, that's five dead tricks per round, six rounds per
+   is the pacing problem's real mechanism. Measure _at which trick the round outcome becomes
+   determined_ — if the median is trick 8 or 9, that's five dead tricks per round, six rounds per
    city.
 
 Your open question about the two 6-point routes is correctly posed and correctly answered
 ("measure first"). Note only that the doc's "chicken" reading is slightly off: both players
-*cannot* duck, because the split is forced. The real contest is a race to shed the 4th trick, with
+_cannot_ duck, because the split is forced. The real contest is a race to shed the 4th trick, with
 the loser of that race getting nothing. That's a cleaner and better game than chicken — but it does
 mean the loser's 0 is common, not exceptional, which feeds straight back into Problem 1.
 
@@ -159,22 +159,22 @@ mean the loser's 0 is common, not exceptional, which feeds straight back into Pr
 
 ## Fill 1 — give the two systems a shared vocabulary (the Friedrich move)
 
-Richard Sivél's *Friedrich* couples cards to a map with almost no machinery: **the map's sectors are
+Richard Sivél's _Friedrich_ couples cards to a map with almost no machinery: **the map's sectors are
 marked with card suits**, so where you're fighting determines which cards are strong. It's the
 cheapest known two-way link between a card system and a board.
 
 Applied here: **divide the Hex board into three regions, one per suit — Bells, Keys, Moons.** Each
 round, the decree card (which sets trump, and is face up before a card is played) also designates
-which region is *the theatre* this segment — say, the only region where placement is unrestricted,
+which region is _the theatre_ this segment — say, the only region where placement is unrestricted,
 or where a placement counts double, or where the surplus may be spent.
 
 What that buys, in one stroke:
 
 - The board becomes **legible during the card phase**. You are no longer playing for "moves," you're
-  playing for moves *in the region that matters to your connection right now*, which changes with
+  playing for moves _in the region that matters to your connection right now_, which changes with
   the position — so round 5 is not round 1.
-- **The Fox (3) becomes a strategic weapon.** Its printed ability is *exchange the decree card* —
-  which now means *redirect the theatre of war*. An existing card in the base deck suddenly carries
+- **The Fox (3) becomes a strategic weapon.** Its printed ability is _exchange the decree card_ —
+  which now means _redirect the theatre of war_. An existing card in the base deck suddenly carries
   the whole coupling. That's Rosewater's "you don't have to change much to change everything."
 - It costs one rule and no new components, and it survives the base-deck-only scope note.
 
@@ -185,7 +185,7 @@ mapping on a rhombus, which is a look-and-feel judgement and therefore yours.
 
 ---
 
-## Fill 2 — Treasures buy *where*, tricks buy *how many*
+## Fill 2 — Treasures buy _where_, tricks buy _how many_
 
 Your open questions include "do the Treasure 7s feed the allowance?" and, separately, an unused
 placement-zone idea. Answer both with one rule:
@@ -216,13 +216,13 @@ one unrestricted placement each — still solves the dead-tricks half.
 **Who opens each segment.** Alternate it. Hex's first-move advantage is a proven theorem, not a
 folk belief, and the competitive answer to it is the swap rule, which you have no room for here.
 A permanent CPU-first edge compounds across six segments in a single battle. Alternating costs
-nothing and closes the question; if you want something better, let the side that *lost* the card
+nothing and closes the question; if you want something better, let the side that _lost_ the card
 round choose who opens — a pie-rule-shaped consolation that also softens Problem 1.
 
 **Dealer alternation is the same open question as "who opens each segment," one level up.** The
 doc flags it and the first pass of this critique missed it. Fox alternates dealer each round, and
 being non-dealer carries a small edge (you lead the first trick). Within one battle that averages
-out over 4–8 rounds. What isn't settled is what happens at the *next* city: if dealer resets to a
+out over 4–8 rounds. What isn't settled is what happens at the _next_ city: if dealer resets to a
 fixed starting side every battle rather than continuing the alternation across the war, that small
 per-round edge compounds across every city the same way a permanently CPU-first segment opener
 would. Same fix as the segment-opener finding: carry the alternation across battle boundaries
@@ -231,7 +231,7 @@ rather than resetting it, and it costs nothing to specify.
 **Unspent moves are lost.** Fine as documented, and the right default — banking moves would create
 a second currency and a second source of burst. Make it visible in the UI, though: Meier's rule is
 to err on the side of too much information, and a segment that ends with three moves unspent needs
-to *look* like a resolved battle, not a bug.
+to _look_ like a resolved battle, not a bug.
 
 **There is no war layer yet, and it decides everything below it.** "How many cities, what winning
 the war means, whether anything carries between cities" is listed as an open question alongside

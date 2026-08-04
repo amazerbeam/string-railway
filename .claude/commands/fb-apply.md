@@ -294,7 +294,7 @@ Verdicts:
 - Defender: `APPROVED` or `ISSUES FOUND`
 - QA: `ALL PASSED` or `FAILURES FOUND`
 
-**If ALL three approved** → skip to **Step 7** (Final Report).
+**If ALL three approved** → skip to **Step 6.5**.
 
 **If ANY reviewer found issues**, spawn the Implementer (`subagent_type: "implementer"`) **once** with all feedback combined:
 
@@ -343,8 +343,18 @@ Collect the result. Extract the updated list of changed files (union with the pr
 
 **Wait for all 3 agents to return.**
 
-- If ALL three now approve → proceed to Step 7.
-- If issues remain → **maximum 2 fix-review rounds total.** If round 2 still has issues, log the remaining issues and proceed to Step 7 — do not block the contract on a stuck reviewer cycle.
+- If ALL three now approve → proceed to Step 6.5.
+- If issues remain → **maximum 2 fix-review rounds total.** If round 2 still has issues, log the remaining issues and proceed to Step 6.5 — do not block the contract on a stuck reviewer cycle.
+
+## Step 6.5: Update implementation docs
+
+Invoke the `implementation-doc-writer` skill (via the Skill tool) once review has concluded — after Step 6, before finalizing `tasks.md` and the Jira transition in Step 7. It creates or updates `.docs/implementation/` for every module the contract touched, so a later question like "how are the cards shuffled" or "what's been implemented so far" has a standing answer that doesn't require re-reading old contracts.
+
+Give it:
+- The complete cumulative changed-files log (all phases, deduplicated).
+- The plan's ticket key (for the doc's "Built by" line) and the plan folder path, so it can read `plan.md` Part 2 (Approach, Data shapes, Runtime quality notes) itself.
+
+This runs once, same as the reviewers — never per phase. If the changed-files log touches no `src/` module (a test-only, tooling-only, or docs-only contract), the skill has nothing to update; note that in one line and proceed to Step 7.
 
 ## Step 7: Update Tasks & Final Report
 
@@ -390,6 +400,9 @@ Present:
 ### Jira
 - [The transition performed, e.g. `SCRUM-12 Coding → Ready for Test` — or the flag added, or plainly that it was skipped or failed]
 
+### Implementation Docs
+- [Which `.docs/implementation/*.md` files the `implementation-doc-writer` skill created vs. updated in Step 6.5 — or "none — no `src/` module touched" if the contract had nothing to document]
+
 ### Developer Actions Outstanding
 - [Every tuning value still to choose, with what it trades off; every ambiguous rule reading; any dependency awaiting approval; plus every MANUAL VERIFICATION NEEDED item from the QA report with the command to run, the interaction to perform, and the expected outcome]
 
@@ -416,4 +429,5 @@ Present:
 - **Maximum 2 fix-review rounds total.** After round 2, log residuals and continue.
 - **Failed tasks from a previous `/fb-apply` run** should be retried (they will still be unticked in `tasks.md`).
 - **Do not implement code yourself** — all code changes go through the Implementer agent.
+- **`.docs/implementation/` is updated once, in Step 6.5, after review concludes** — never per phase, and never by hand-writing doc content yourself. Invoke `implementation-doc-writer`; it owns the folder's structure and template.
 - **If a phase blocks on a genuine failure** (the Implementer cannot complete a task), log the blocker, continue with remaining phases, and surface it in the final report — do not run reviewers as an early-exit hack, and do not auto-retry beyond the post-review fix-loop cap.

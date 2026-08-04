@@ -64,11 +64,11 @@ exposed, which is the genuine offense/defense allocation problem the lane versio
 
 ### Actions, spent during The Clash
 
-| Action | What it does | Legal when | Cost |
-|---|---|---|---|
-| **Expand** | Place a token on an empty cell | Within 2 hex-spaces of your existing connected network — a 1-cell gap is allowed | 1 move |
-| **Overwrite** | Replace an enemy token with your own | Only on a cell **adjacent** (touching) to your existing network — no gap allowed | 2 moves (3 if the target is reinforced) |
-| **Reinforce** | Add defense to one of your own tokens | Any token you already hold | 1 move, and a token can only ever hold **+1** defense — it doesn't stack further |
+| Action        | What it does                          | Legal when                                                                       | Cost                                                                             |
+| ------------- | ------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **Expand**    | Place a token on an empty cell        | Within 2 hex-spaces of your existing connected network — a 1-cell gap is allowed | 1 move                                                                           |
+| **Overwrite** | Replace an enemy token with your own  | Only on a cell **adjacent** (touching) to your existing network — no gap allowed | 2 moves (3 if the target is reinforced)                                          |
+| **Reinforce** | Add defense to one of your own tokens | Any token you already hold                                                       | 1 move, and a token can only ever hold **+1** defense — it doesn't stack further |
 
 Expansion is allowed to leapfrog with a gap, so a side can scout ground quickly; combat is
 adjacency-only, so it only happens where two networks actually meet. That split is deliberate —
@@ -102,9 +102,9 @@ cell) and force a detour, or you can pay the 2-move overwrite cost later to recl
 
 Flagging these honestly rather than quietly resolving them:
 
-- **No stalemate/tiebreak rule yet.** Classic Hex can't draw, because it connects opposite *edges*
+- **No stalemate/tiebreak rule yet.** Classic Hex can't draw, because it connects opposite _edges_
   of the board — a full board is mathematically guaranteed to contain exactly one connecting
-  chain. Base-to-base is two specific *points*, not edges, so that guarantee does not carry over:
+  chain. Base-to-base is two specific _points_, not edges, so that guarantee does not carry over:
   it's entirely possible for the board to fill up, or many rounds to pass, with neither base ever
   reaching the Breach. Deliberately deferred — the developer wants the core loop settled first.
 - **A "cost of holding ground" idea, parked.** Raised in passing: maybe there's a penalty for

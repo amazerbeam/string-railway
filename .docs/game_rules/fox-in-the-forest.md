@@ -1,7 +1,7 @@
 # The Fox in the Forest (Deluxe Edition)
 
 A trick-taking game for 2 players by Joshua Buergel. Rules reference transcribed from the
-*FitF Deluxe* rulebook (Renegade Game Studios, 2025) for development reference.
+_FitF Deluxe_ rulebook (Renegade Game Studios, 2025) for development reference.
 
 ---
 
@@ -11,7 +11,7 @@ Two players play cards to win **tricks** against each other over multiple rounds
 from two sources:
 
 - **During a round** — winning tricks that contain specific cards (Treasure, Poison, goals).
-- **At the end of a round** — how many tricks you won in total (too few *or* too many is bad).
+- **At the end of a round** — how many tricks you won in total (too few _or_ too many is bad).
 
 Most points at the end of the game wins.
 
@@ -19,14 +19,14 @@ Most points at the end of the game wins.
 
 ## Components
 
-| Component | Count | Notes |
-|---|---|---|
-| Game cards | 33 | Three suits — **Bells**, **Keys**, **Moons** — ranked 1–11 each |
-| Special cards | 9 | Expansion module |
-| Poison cards | 3 | Expansion module (Poison 8s) |
-| Goal cards | 16 | Expansion module |
-| Scoring tokens | 17 | ×8, ×4, ×5 denominations |
-| Reference cards | 2 | |
+| Component       | Count | Notes                                                           |
+| --------------- | ----- | --------------------------------------------------------------- |
+| Game cards      | 33    | Three suits — **Bells**, **Keys**, **Moons** — ranked 1–11 each |
+| Special cards   | 9     | Expansion module                                                |
+| Poison cards    | 3     | Expansion module (Poison 8s)                                    |
+| Goal cards      | 16    | Expansion module                                                |
+| Scoring tokens  | 17    | ×8, ×4, ×5 denominations                                        |
+| Reference cards | 2     |                                                                 |
 
 The **base deck is the 33 suited cards** (3 suits × ranks 1–11). Expansion cards are added only
 when their module is in play.
@@ -94,15 +94,15 @@ base game.
 
 ### Suit card reference
 
-| Rank | Name | Ability |
-|---|---|---|
-| 11 | **Monarch** | When you **lead** this: if your opponent has a card of this suit, they must play either the **Swan (1)** of this suit or their **highest-ranked** card of this suit. |
-| 9 | **Witch** | When determining the winner of a trick containing **a single Witch**, treat the Witch as if it were in the **trump suit**. |
-| 8 | **Poison** | *(Poison module only.)* The winner of the trick **loses 1 point** for each Poison in the trick. |
-| 7 | **Treasure** | The winner of the trick **gains 1 point** for each Treasure in the trick. |
-| 5 | **Woodcutter** | When you play this, **draw 1 card**, then discard any 1 card to the **bottom of the deck**, face down. |
-| 3 | **Fox** | When you play this, you may **exchange the decree card** with a card from your hand. |
-| 1 | **Swan** | If you play this and **lose** the trick, **you lead** the next trick. |
+| Rank | Name           | Ability                                                                                                                                                              |
+| ---- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 11   | **Monarch**    | When you **lead** this: if your opponent has a card of this suit, they must play either the **Swan (1)** of this suit or their **highest-ranked** card of this suit. |
+| 9    | **Witch**      | When determining the winner of a trick containing **a single Witch**, treat the Witch as if it were in the **trump suit**.                                           |
+| 8    | **Poison**     | _(Poison module only.)_ The winner of the trick **loses 1 point** for each Poison in the trick.                                                                      |
+| 7    | **Treasure**   | The winner of the trick **gains 1 point** for each Treasure in the trick.                                                                                            |
+| 5    | **Woodcutter** | When you play this, **draw 1 card**, then discard any 1 card to the **bottom of the deck**, face down.                                                               |
+| 3    | **Fox**        | When you play this, you may **exchange the decree card** with a card from your hand.                                                                                 |
+| 1    | **Swan**       | If you play this and **lose** the trick, **you lead** the next trick.                                                                                                |
 
 ---
 
@@ -112,13 +112,13 @@ After all 13 tricks, count tricks won. You want **more tricks than your opponent
 many**.
 
 | Tricks won | Points | Description |
-|---|---|---|
-| 0–3 | 6 | Humble |
-| 4 | 1 | Defeated |
-| 5 | 2 | Defeated |
-| 6 | 3 | Defeated |
-| 7–9 | 6 | Victorious |
-| 10–13 | 0 | Greedy |
+| ---------- | ------ | ----------- |
+| 0–3        | 6      | Humble      |
+| 4          | 1      | Defeated    |
+| 5          | 2      | Defeated    |
+| 6          | 3      | Defeated    |
+| 7–9        | 6      | Victorious  |
+| 10–13      | 0      | Greedy      |
 
 If either player has **at least 21 points** after scoring, the game ends. Otherwise deal another
 round, with the dealer alternating.
@@ -153,7 +153,7 @@ or pick specific ones instead of randomising.
 Special cards are played into a trick like any other card unless stated otherwise. When an
 ability refers to "special cards," it means **only the other cards from this module**.
 
-**Unsuited cards.** Some special cards are *unsuited*: they count as **the same suit as the
+**Unsuited cards.** Some special cards are _unsuited_: they count as **the same suit as the
 other card in the trick**. If an unsuited card is **led**, the follower may play **any suit**.
 
 **Identical cards.** If both cards in a trick are considered identical (via a special card's
@@ -164,17 +164,17 @@ round. A single **9 (Witch)** is still treated as a trump card when determining 
 
 #### Special card reference
 
-| Rank | Name | Ability |
-|---|---|---|
-| ? | **Bow** | Always **beats** any trump card or special card; always **loses** to any other card. |
-| ? | **Hammer** | If you **follow** with this, name a suit. Your opponent discards their card to the **bottom of the deck** face down, draws 1 card, then plays 1 card of the named suit to the trick if possible. Always **beats any odd card**; always **loses** to any other card. |
-| ? | **Potion** | When played, discard it **and another card** from your hand to the bottom of the deck face down. Draw 2 cards, keep 1 in hand and play 1 to the trick, **ignoring suit requirements**. |
-| ? | **Shovel** | When played, you may take **1 random card from the last trick you won** and play it to the trick instead. If you do not or cannot, **you lose the trick**. |
-| 8 | **Axe** | If you follow a **Woodcutter (5)** with this, use the Woodcutter's ability and **win the trick**. Otherwise it is an **unsuited 8**. |
-| 6 | **Tree** | If you **lead** this, your opponent must play **1 random card** from their hand to the trick, ignoring suit requirements. This is an **unsuited 6**. |
-| 4 | **Fairy** | When played, look at up to **2 random cards** from your opponent's hand. You may **take 1** of them; if you do, give your opponent 1 card from your hand. This is an **unsuited 4**. |
-| 2 | **Crown** | You may **add this to any legal play of a non-special card**. If you do, draw 1 card, ignore the other card's ability, and treat it as a **Monarch of its suit** when determining the winner. You may instead play the Crown alone as an **unsuited 2**. |
-| M | **Mirror** | Always treated as **identical to the current decree card** in rank, suit, and ability. |
+| Rank | Name       | Ability                                                                                                                                                                                                                                                             |
+| ---- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ?    | **Bow**    | Always **beats** any trump card or special card; always **loses** to any other card.                                                                                                                                                                                |
+| ?    | **Hammer** | If you **follow** with this, name a suit. Your opponent discards their card to the **bottom of the deck** face down, draws 1 card, then plays 1 card of the named suit to the trick if possible. Always **beats any odd card**; always **loses** to any other card. |
+| ?    | **Potion** | When played, discard it **and another card** from your hand to the bottom of the deck face down. Draw 2 cards, keep 1 in hand and play 1 to the trick, **ignoring suit requirements**.                                                                              |
+| ?    | **Shovel** | When played, you may take **1 random card from the last trick you won** and play it to the trick instead. If you do not or cannot, **you lose the trick**.                                                                                                          |
+| 8    | **Axe**    | If you follow a **Woodcutter (5)** with this, use the Woodcutter's ability and **win the trick**. Otherwise it is an **unsuited 8**.                                                                                                                                |
+| 6    | **Tree**   | If you **lead** this, your opponent must play **1 random card** from their hand to the trick, ignoring suit requirements. This is an **unsuited 6**.                                                                                                                |
+| 4    | **Fairy**  | When played, look at up to **2 random cards** from your opponent's hand. You may **take 1** of them; if you do, give your opponent 1 card from your hand. This is an **unsuited 4**.                                                                                |
+| 2    | **Crown**  | You may **add this to any legal play of a non-special card**. If you do, draw 1 card, ignore the other card's ability, and treat it as a **Monarch of its suit** when determining the winner. You may instead play the Crown alone as an **unsuited 2**.            |
+| M    | **Mirror** | Always treated as **identical to the current decree card** in rank, suit, and ability.                                                                                                                                                                              |
 
 ### Goal cards (16)
 

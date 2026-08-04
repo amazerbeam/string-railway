@@ -35,8 +35,8 @@ Invented independently twice — by **Piet Hein in 1942** and **John Nash in 194
 
 ## Objective
 
-| Player | Connects |
-|---|---|
+| Player        | Connects                   |
+| ------------- | -------------------------- |
 | **Red** (you) | **Left edge → right edge** |
 | **Blue** (AI) | **Top edge → bottom edge** |
 
@@ -71,7 +71,7 @@ game is described as "easy to learn and impossible to exhaust."
 - **Diagonal "bridge" pairs of stones are almost as strong as solid connections.** A bridge is two
   stones a knight's-step apart with two mutually-adjacent empty cells between them; if the
   opponent takes one of those cells, you take the other, so the link cannot be severed.
-- **Every move is dual-purpose:** it advances your own chain *and* blocks your opponent's. Because
+- **Every move is dual-purpose:** it advances your own chain _and_ blocks your opponent's. Because
   the two goals are perpendicular, any stone that helps you necessarily obstructs them.
 
 ---
@@ -101,5 +101,5 @@ against this as a reference:
 
 ---
 
-*Source: <https://arcadiagames.io/free/hex?play=1> ("HOW TO PLAY" panel), © 2026 Arcadia. Board
-dimensions verified from the rendered board markup.*
+_Source: <https://arcadiagames.io/free/hex?play=1> ("HOW TO PLAY" panel), © 2026 Arcadia. Board
+dimensions verified from the rendered board markup._

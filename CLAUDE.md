@@ -38,6 +38,7 @@ This project is deliberately organised so each fact is stated once. When somethi
 | Jira status vocabulary, what each `SCRUM` status means, which transitions the `/fb-*` commands automate | `.claude/skills/management-jira/SKILL.md` → *The SCRUM status model* |
 | How to write React/TypeScript here — conventions, tunables, testing posture | `.claude/skills/react-frontend/SKILL.md` + its `references/engineering-standards.md` |
 | Game design frameworks, designer research, the critique checklist | `.docs/design/design-principles.md` |
+| How implemented code actually works — per-module mechanics, key types, enforced rules | `.claude/skills/implementation-doc-writer/SKILL.md`, output in `.docs/implementation/` |
 | Project-wide domain constraints | `.claude/rules/<topic>.md` — currently empty; see its `README.md` |
 
 A path or command restated in five files gets updated in four. The `/fb-*` commands and the four agents all reference these files rather than carrying copies — keep it that way. In particular, **do not restate the `react-frontend` skill's conventions in a plan or an agent prompt** — name the skill and let it be loaded.
@@ -126,5 +127,6 @@ Glob `.claude/skills/*/SKILL.md` to see what actually exists — never classify 
 | `management-jira` | creating and transitioning Jira tickets |
 | `skill-creator` | writing a new skill |
 | `game-designer` | critiquing and developing game designs; anything under `.docs/design/` |
+| `implementation-doc-writer` | maintaining `.docs/implementation/` — per-module docs on how shipped code actually works |
 
 **`react-frontend` applies to virtually every code task in this repo**, so `Skill: react-frontend` is the normal value in a task, not `none`. Reserve `Skill: none — <reason>` for genuinely non-code work: a spec document, a Jira-only task, a decision hand-off to the developer. Never name a skill that does not resolve to a real file on disk; a plan that tells the executor to invoke a missing skill wastes a turn.

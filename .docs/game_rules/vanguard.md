@@ -32,11 +32,11 @@ player's own existing network.
 
 Every action is paid for out of a player's move budget for the round (see "The Muster" below).
 
-| Action | Effect | Legal when | Cost |
-|---|---|---|---|
-| **Expand** | Place a token on an empty cell | Within 2 hex-spaces of your existing connected network — a 1-cell gap is allowed | 1 move |
-| **Overwrite** | Replace an opponent's token with your own | Only on a cell adjacent (touching) to your existing network — no gap allowed | 2 moves (3 if the target token is reinforced) |
-| **Reinforce** | Add defense to a token you already hold | Any of your own tokens | 1 move; a token holds at most **+1** defense — it does not stack further |
+| Action        | Effect                                    | Legal when                                                                       | Cost                                                                     |
+| ------------- | ----------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| **Expand**    | Place a token on an empty cell            | Within 2 hex-spaces of your existing connected network — a 1-cell gap is allowed | 1 move                                                                   |
+| **Overwrite** | Replace an opponent's token with your own | Only on a cell adjacent (touching) to your existing network — no gap allowed     | 2 moves (3 if the target token is reinforced)                            |
+| **Reinforce** | Add defense to a token you already hold   | Any of your own tokens                                                           | 1 move; a token holds at most **+1** defense — it does not stack further |
 
 Expansion can leapfrog a 1-cell gap, so a player can scout ground quickly. Combat (Overwrite) is
 adjacency-only, so it only happens where two networks actually meet.

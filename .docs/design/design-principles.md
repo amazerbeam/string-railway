@@ -1,7 +1,7 @@
 # Game design principles — a working reference
 
 Research notes gathered from published designer interviews, GDC talks and design essays, organised
-so they can be *used* rather than admired. Sources are listed at the bottom; every claim here is
+so they can be _used_ rather than admired. Sources are listed at the bottom; every claim here is
 attributable to one of them.
 
 This is a lens collection, not a rulebook. Applied to the current concept in
@@ -22,8 +22,8 @@ The practical instruction: **read your game from both ends.** Write mechanics fo
 them backwards — name the feeling you want, then ask which dynamic produces it, then which rule
 produces that dynamic.
 
-LeBlanc's **8 kinds of fun** exist to stop "fun" being a single undifferentiated goal: *sensation,
-fantasy, narrative, challenge, fellowship, discovery, expression, submission*. Name the two or
+LeBlanc's **8 kinds of fun** exist to stop "fun" being a single undifferentiated goal: _sensation,
+fantasy, narrative, challenge, fellowship, discovery, expression, submission_. Name the two or
 three you're actually chasing; the rest are not failures when they're absent.
 
 ### Schell's elemental tetrad
@@ -34,19 +34,19 @@ test and revise, the better the game gets, and nothing substitutes for it.
 
 ### Koster — fun is learning
 
-*A Theory of Fun*: games are pattern-learning machines, and fun is the sensation of grokking a
+_A Theory of Fun_: games are pattern-learning machines, and fun is the sensation of grokking a
 pattern. The corollary is brutal and is the single most useful idea in the book: **once the pattern
-is mastered, the game is boring — that is the destiny of every game.** So a design has a *depth
-budget*. Good games either pick one core lesson and end before it's exhausted, or keep producing
+is mastered, the game is boring — that is the destiny of every game.** So a design has a _depth
+budget_. Good games either pick one core lesson and end before it's exhausted, or keep producing
 variations that force the learnt skill into new applications.
 
-Use it as a test: *what is the player learning in round five that they weren't learning in round
-one?* If the answer is "nothing," that's not a pacing problem, it's a depth problem.
+Use it as a test: _what is the player learning in round five that they weren't learning in round
+one?_ If the answer is "nothing," that's not a pacing problem, it's a depth problem.
 
 ### Lantz — games as an aesthetic form
 
 Frank Lantz's framing is that games are the aesthetic form of interactive systems, judged the way
-literature or music is. It licenses the ambition to make a system that *means* something, and it
+literature or music is. It licenses the ambition to make a system that _means_ something, and it
 warns against treating elegance as a purely engineering virtue.
 
 ---
@@ -77,32 +77,32 @@ of everything you try.
 
 Knizia's method is to find the one scoring principle that reshapes every decision in the game.
 "The scoring drives the gameplay." He is a mathematician by training and looks for a general
-principle rather than a pile of special cases; the ideal is a system that *self-limits*, where
+principle rather than a pile of special cases; the ideal is a system that _self-limits_, where
 overreaching players are punished by the system's own arithmetic rather than by a bolted-on rule.
 
-His other line worth keeping: *the goal is to win, but it is the goal that matters, not the
-winning.* The victory condition is a design tool for focusing attention, not just an end state.
+His other line worth keeping: _the goal is to win, but it is the goal that matters, not the
+winning._ The victory condition is a design tool for focusing attention, not just an end state.
 
 ### Rosewater — ten things every game needs
 
-From the *Making Magic* two-parter, a serviceable completeness checklist:
+From the _Making Magic_ two-parter, a serviceable completeness checklist:
 
-| | Need | Test question |
-|---|---|---|
-| 1 | **Goal** | Can the player state what they're trying to do, and are there several routes to it? |
-| 2 | **Rules** | Do the restrictions create the challenge, rather than merely describing it? |
-| 3 | **Interaction** | Do players have to react to each other, or are they playing solitaire in parallel? |
-| 4 | **Catch-up** | Can a player who is behind still believe they can win? |
-| 5 | **Inertia** | Does the game build momentum toward ending — before players tire? |
-| 6 | **Surprise** | Is there something players can't predict? |
-| 7 | **Strategy** | Is there something to get better at? |
-| 8 | **Fun** | (Not a tautology — it's a separate check that the correct play is enjoyable.) |
-| 9 | **Flavour** | Is the game *about* something, so the rules feel motivated rather than arbitrary? |
-| 10 | **Hook** | Is there one sentence that makes someone want to try it? |
+|     | Need            | Test question                                                                       |
+| --- | --------------- | ----------------------------------------------------------------------------------- |
+| 1   | **Goal**        | Can the player state what they're trying to do, and are there several routes to it? |
+| 2   | **Rules**       | Do the restrictions create the challenge, rather than merely describing it?         |
+| 3   | **Interaction** | Do players have to react to each other, or are they playing solitaire in parallel?  |
+| 4   | **Catch-up**    | Can a player who is behind still believe they can win?                              |
+| 5   | **Inertia**     | Does the game build momentum toward ending — before players tire?                   |
+| 6   | **Surprise**    | Is there something players can't predict?                                           |
+| 7   | **Strategy**    | Is there something to get better at?                                                |
+| 8   | **Fun**         | (Not a tautology — it's a separate check that the correct play is enjoyable.)       |
+| 9   | **Flavour**     | Is the game _about_ something, so the rules feel motivated rather than arbitrary?   |
+| 10  | **Hook**        | Is there one sentence that makes someone want to try it?                            |
 
 ### Rosewater — twenty lessons (the ones that bite)
 
-- **#5 Don't confuse "interesting" with "fun."** Threshold in *Odyssey* was intellectually
+- **#5 Don't confuse "interesting" with "fun."** Threshold in _Odyssey_ was intellectually
   fascinating and players hated it. A mechanic can be structurally admirable and emotionally
   miserable, and structural admiration is exactly the trap a systems-minded designer falls into.
 - **#6 Know what emotion your game evokes.** Every component either serves that emotion or dilutes
@@ -144,9 +144,9 @@ high-luck moment-to-moment game inside a low-luck long-run structure.
 
 ### Input vs output randomness
 
-- **Input randomness** happens *before* the decision — the deal, the tile draw, the map seed. The
+- **Input randomness** happens _before_ the decision — the deal, the tile draw, the map seed. The
   player sees it and plans around it. It preserves agency and supports strategy.
-- **Output randomness** happens *after* — the to-hit roll. It resolves fast and prevents analysis
+- **Output randomness** happens _after_ — the to-hit roll. It resolves fast and prevents analysis
   paralysis, but it can invalidate a plan the player made correctly.
 
 Engelstein's framing is that input randomness supports strategy while output randomness undercuts
@@ -163,7 +163,7 @@ the player loses to their own decision or to the system's**.
 
 The recommendation is to blend: **limited, temporary slippery slope** so advantages feel real, plus
 **tuned comeback** so a single early lead doesn't end the contest. Sirlin's ideal phrasing —
-decisions should *echo forward in time without permanently destabilising the competition* — is a
+decisions should _echo forward in time without permanently destabilising the competition_ — is a
 good sentence to hold any mechanic against.
 
 Note that Rosewater's #4 (catch-up) and #5 (inertia) are the same dial seen from the two ends: too
@@ -175,8 +175,8 @@ little catch-up and the loser disengages; too much and the game never ends.
 
 ### Cook — loops and arcs
 
-A **loop** is a cycle of *mental model → action → simulation → feedback → updated model*. Value is
-delivered by *exercising* the loop, so loops carry replay. An **arc** is "a broken loop you exit
+A **loop** is a cycle of _mental model → action → simulation → feedback → updated model_. Value is
+delivered by _exercising_ the loop, so loops carry replay. An **arc** is "a broken loop you exit
 immediately" — a cutscene, a story beat, a one-off reveal. Arcs deliver information efficiently and
 then are spent; an arc-heavy game needs a content treadmill.
 
@@ -196,7 +196,7 @@ This is the sharpest available literature for a design that bolts a card game to
 
 ### Puzzle Quest — the standard for coupling
 
-The reason the match-3/RPG fusion is still cited: the puzzle mode is the RPG's battle system *and*
+The reason the match-3/RPG fusion is still cited: the puzzle mode is the RPG's battle system _and_
 the RPG is the puzzle's structure, with **actions and achievements in each mode changing the
 player's options in the other**. Two-way traffic. When only one direction carries — mode A produces
 a number that mode B consumes — the minigame becomes a toll booth. The known failure mode in the
@@ -222,8 +222,8 @@ single shared vocabulary between the two systems.
 ### Wehrle on asymmetry
 
 Balance a high-powered position with **increased strategic liabilities** rather than by shaving
-numbers, and make sure the differing roles produce a dynamic that players can *witness and
-understand* in each other. Asymmetry that players can't read is just noise.
+numbers, and make sure the differing roles produce a dynamic that players can _witness and
+understand_ in each other. Asymmetry that players can't read is just noise.
 
 ---
 
@@ -232,28 +232,19 @@ understand* in each other. Asymmetry that players can't read is just noise.
 A repeatable pass to run over any mechanic or whole design.
 
 **Decision quality (Meier)**
+
 1. Name the decision. Is there a dominant option? Is any option ever wrong to take?
 2. Does its value change with game state, or is it a static ranking?
 3. Does the player have the information needed to make it well?
 4. Does it persist — will the player still feel this choice in ten minutes?
 
-**Structural soundness (Sirlin, Rosewater)**
-5. Where is the positive feedback? Can one event decide the outcome? Is that intended?
-6. What does a losing player have to hope for?
-7. What makes the game end? Does it accelerate?
+**Structural soundness (Sirlin, Rosewater)** 5. Where is the positive feedback? Can one event decide the outcome? Is that intended? 6. What does a losing player have to hope for? 7. What makes the game end? Does it accelerate?
 
-**Coupling (Puzzle Quest, Sivél)**
-8. For each pair of subsystems: what flows A→B, and what flows B→A? A one-way arrow is a toll booth.
-9. Is there a shared vocabulary between the two systems, or only a scalar?
+**Coupling (Puzzle Quest, Sivél)** 8. For each pair of subsystems: what flows A→B, and what flows B→A? A one-way arrow is a toll booth. 9. Is there a shared vocabulary between the two systems, or only a scalar?
 
-**Experience (Koster, Rosewater #5/#6/#13)**
-10. What is the player learning on the fifth repetition that they weren't on the first?
-11. Name the emotion. Does every component serve it?
-12. Is the optimal line also the enjoyable line? What is the most boring way to win?
+**Experience (Koster, Rosewater #5/#6/#13)** 10. What is the player learning on the fifth repetition that they weren't on the first? 11. Name the emotion. Does every component serve it? 12. Is the optimal line also the enjoyable line? What is the most boring way to win?
 
-**Honesty**
-13. Which of these answers is a *theme* justification standing in for a *structural* one?
-14. What's the cheapest measurement that would tell you you're wrong?
+**Honesty** 13. Which of these answers is a _theme_ justification standing in for a _structural_ one? 14. What's the cheapest measurement that would tell you you're wrong?
 
 That last pair matters most. Flavour justifications ("thematically that's exactly what an ambush
 should feel like") are the most common way a structural risk survives review, because they're true
@@ -278,7 +269,7 @@ and they're not answering the question.
 - [Cole Wehrle — interview on asymmetry and design process (Wargamer)](https://www.wargamer.com/board-games/cole-wehrle-interview-conversation) · [Erik Twice interview](https://eriktwice.com/en/2021/12/15/interview-player-cole-wehrle-designer-root/)
 - [Input vs output randomness (Skeleton Code Machine)](https://www.skeletoncodemachine.com/p/input-output-randomness-part-1) · [Randomness and Game Design (Game Developer)](https://www.gamedeveloper.com/design/randomness-and-game-design)
 - [Puzzle Quest's genre-bending design (Game Developer analysis)](https://www.gamedeveloper.com/game-platforms/analysis-on-i-puzzle-quest-i-s-genre-bending-charm)
-- [Arcs (board game) — overview](https://en.wikipedia.org/wiki/Arcs_(board_game)) · [review discussing the trick-taking action economy](https://puzzlewick.com/guides/arcs-board-game-review/)
-- [Friedrich — cards as battle resolution, suited map sectors](https://en.wikipedia.org/wiki/Friedrich_(board_game)) · [rulebook](https://www.histogame.de/friedrich/FriedrichRules.pdf)
+- [Arcs (board game) — overview](<https://en.wikipedia.org/wiki/Arcs_(board_game)>) · [review discussing the trick-taking action economy](https://puzzlewick.com/guides/arcs-board-game-review/)
+- [Friedrich — cards as battle resolution, suited map sectors](<https://en.wikipedia.org/wiki/Friedrich_(board_game)>) · [rulebook](https://www.histogame.de/friedrich/FriedrichRules.pdf)
 - [Josh Buergel on trick-taking design (Breakup Gaming Society ep. 106)](https://www.breakupgamingsociety.com/episodes/josh-buergel-interview-best-trick-taking-games-fox-in-the-forest-deluxe)
 - [HexWiki — Handicap (Demer scale)](https://www.hexwiki.net/index.php/Handicap) · [HexWiki — Rules and the swap rule](https://www.hexwiki.net/index.php/Rules)
