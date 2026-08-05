@@ -21,7 +21,7 @@ The root `CLAUDE.md` warns that a fact restated in five files gets updated in fo
 
 | File | Persona it opens with | `$ARGUMENTS` | Writes |
 |---|---|---|---|
-| `fb-plan.md` | Planning Agent | the task brief (prose, Jira key, spec, or file ref) | `<plan>/plan.md`, then `<plan>/tasks.md` |
+| `fb-plan.md` | Planning Agent | the task brief (prose, Jira key, spec, or file ref) | `<plan>/plan.md`, then `<plan>/mockup.html` (UI-classified work only), then `<plan>/tasks.md` |
 | `fb-apply.md` | Orchestrator | slug (optional) | code, `tasks.md` ticks and `Status:` |
 | `fb-issue.md` | — | the issue description, **not** a slug | the target skill/agent, `<plan>/corrections.md` |
 | `fb-archive.md` | Archive Agent | slug (optional) | `.claude/lessons/<slug>.md`, moves the plan folder |
@@ -51,7 +51,8 @@ Duplicating any row means two commands fight over the same state.
 | Writes `IN PROGRESS` | `fb-apply` Step 1 |
 | Writes `COMPLETE` / `BLOCKED` | `fb-apply` Step 7 |
 | Reads status only, never writes | `fb-archive`, `fb-report` |
-| The `AskUserQuestion` approval gate | `fb-plan` Step 3 — mandatory, never inferred from chat |
+| The `AskUserQuestion` approval gate for `plan.md` | `fb-plan` Step 3 — mandatory, never inferred from chat |
+| The `AskUserQuestion` approval gate for the UI mockup | `fb-plan` Step 3.5 — mandatory for any task Step 1.5b classified as UI components; skipped silently otherwise |
 | Destructive moves (plan → `archive/`, corrections → `lessons/`) | `fb-archive` Step 7, behind its own confirmation prompt |
 | Unfiltered test suite + production build | the **QA agent only**, once, at the end of `fb-apply` |
 

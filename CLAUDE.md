@@ -77,6 +77,7 @@ The pipeline is the substantive structure in this repo. It is not a suggestion �
 ```
 /fb-plan <brief>   → .claude/contract/<slug>/plan.md   (14 required sections, 2 parts)
                      ↓ AskUserQuestion approval gate — mandatory, never inferred from chat
+                     ↓ UI-classified work only: .claude/contract/<slug>/mockup.html — interactive, its own AskUserQuestion approval gate
                      → .claude/contract/<slug>/tasks.md (phased checklist, Status: PLANNED)
 /fb-apply <slug>   → Implementer walks EVERY phase end-to-end
                      → [code-evaluator + defender + qa] in ONE parallel dispatch, once, at the end
