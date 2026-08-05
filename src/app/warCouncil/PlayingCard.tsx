@@ -1,0 +1,68 @@
+import type { CSSProperties } from 'react'
+import type { Card } from '../../warCouncil'
+import { cardAccessibleName, RANK_NAME } from './labels'
+import { SuitMark } from './SuitMark'
+
+interface PlayingCardProps {
+  readonly card: Card
+  readonly variant: 'hand' | 'table' | 'pile'
+  readonly armed?: boolean
+  readonly illegal?: boolean
+  readonly winner?: boolean
+  readonly tabIndex?: number
+  readonly style?: CSSProperties
+  readonly onTap?: (card: Card) => void
+}
+
+/**
+ * One card, three renderings. `variant` is what keeps "a played card is a
+ * record, not a choice" a single prop instead of three near-duplicate
+ * components: `table` and `pile` render condensed at `--wc-plate-card-w`
+ * and never enter the keyboard path. This component computes no geometry
+ * of its own — `style` carries whatever placement the caller (e.g.
+ * `fanPlacement`) already worked out.
+ */
+export default function PlayingCard({
+  card,
+  variant,
+  armed = false,
+  illegal = false,
+  winner = false,
+  tabIndex,
+  style,
+  onTap,
+}: PlayingCardProps) {
+  const condensed = variant === 'table' || variant === 'pile'
+  const hasAbility = Boolean(RANK_NAME[card.rank])
+
+  const className = [
+    'wc-card',
+    `wc-suit-${card.suit}`,
+    variant === 'table' && 'wc-is-played',
+    variant === 'pile' && 'wc-is-plate',
+    illegal && 'wc-is-illegal',
+    armed && 'wc-is-armed',
+    winner && 'wc-is-winner',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  return (
+    <button
+      type="button"
+      className={className}
+      style={style}
+      disabled={condensed || illegal}
+      tabIndex={condensed ? -1 : tabIndex}
+      aria-label={cardAccessibleName(card)}
+      aria-pressed={armed ? true : undefined}
+      onClick={() => onTap?.(card)}
+    >
+      <span className="wc-card-rank" aria-hidden="true">
+        {card.rank}
+      </span>
+      <SuitMark suit={card.suit} className="wc-card-suit" />
+      <span className={`wc-card-pip${hasAbility ? '' : ' wc-is-blank'}`} aria-hidden="true" />
+    </button>
+  )
+}

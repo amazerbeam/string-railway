@@ -11,6 +11,7 @@ export {
   Suit,
 } from './types'
 export type { AbilityChoice, Card, PlayCardResult, RoundState, TrickCard } from './types'
+export { containsCard, sameCard } from './cardUtils'
 export { createDeck } from './deck'
 export { shuffle } from './shuffle'
 export { dealRound } from './deal'

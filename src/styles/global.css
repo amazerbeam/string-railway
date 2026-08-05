@@ -10,5 +10,6 @@
 
 body {
   margin: 0;
-  min-height: 100vh;
+  /* The game shell owns its own height in dvh; the document itself never scrolls. */
+  overflow: hidden;
 }

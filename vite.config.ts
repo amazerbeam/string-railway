@@ -9,7 +9,23 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   test: {
-    environment: 'node',
-    include: ['src/**/__tests__/**/*.test.ts'],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['src/**/__tests__/**/*.test.ts'],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'dom',
+          environment: 'jsdom',
+          include: ['src/**/__tests__/**/*.test.tsx'],
+        },
+      },
+    ],
   },
 })

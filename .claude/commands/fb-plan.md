@@ -224,7 +224,13 @@ Fix issues inline. Continue to Step 3.
 
 ## Step 3: Hand off plan.md — gate approval with `AskUserQuestion`
 
-**Do not write `tasks.md` yet.** First present in chat:
+**Do not write `tasks.md` yet.**
+
+**UI-classified work: build the mockup BEFORE this gate.** If Step 1.5b classified this task as touching **UI components**, go to Step 3.5 now, build and publish `<plan>/mockup.html`, and come back — the mockup is presented *in this same handoff* and approved by *this one* gate. There is exactly one approval gate before `tasks.md`, and for UI work the mockup is part of it.
+
+The reason is that this gate's question names `tasks.md` as the next artefact. Gating `plan.md` first and only then producing a mockup makes that promise false, and asks the developer to authorise a step that is not the one that comes next. A developer being asked "shall I write the execution checklist?" is entitled to have already seen the layout that checklist will build.
+
+First present in chat:
 
 1. **The plan folder slug** you created in Step 1.7 — the developer's cheapest chance to rename it
 2. **Restated goal** from Part 1, so the developer can confirm understanding before reading the rest
@@ -233,6 +239,7 @@ Fix issues inline. Continue to Step 3.
 5. **Skills loaded** during planning and **skills to invoke** during execution — flag any developer override
 6. **Judgement calls** you made — pattern choice, naming, structural decisions
 7. **Every decision the developer owns** — unchosen tuning values, ambiguous rule readings, dependencies that would be needed, and anything that can only be judged by playing
+8. **The mockup, for UI work** — the published `Artifact` link and the `<plan>/mockup.html` path, what surfaces it covers, what to click and what should happen, and which acceptance criteria it stands in for (built in Step 3.5, before this handoff)
 
 Then tell the developer:
 
@@ -240,7 +247,9 @@ Then tell the developer:
 
 ### Then call `AskUserQuestion` to gate the tasks.md write
 
-This is a **mandatory** tool call — do not infer approval from chat replies. Use this exact shape:
+This is a **mandatory** tool call — do not infer approval from chat replies. It is the **only** gate between `plan.md` and `tasks.md`; do not split it into two sequential gates.
+
+**For non-UI work** (no mockup), use this exact shape:
 
 ```
 AskUserQuestion({
@@ -258,37 +267,21 @@ AskUserQuestion({
 })
 ```
 
-**Branch on the answer:**
-
-- **Approve — write tasks.md** → continue to Step 3.5 if this task was classified as **UI components** in Step 1.5b, otherwise straight to Step 4.
-- **Request changes** → ask the developer for the specific red-lines (or read them from the same turn if already provided). Revise `plan.md` in place, re-run Step 2.5, then re-call `AskUserQuestion` with the same question. Loop until the developer picks "Approve".
-- **`Other` (free-text)** → treat as a request for changes unless the free-text is unambiguous approval (e.g. "approved", "lgtm, proceed"). When in doubt, re-ask.
-
-If the runtime cannot present `AskUserQuestion` (non-interactive session), state that explicitly in chat and proceed to Step 3.5 or Step 4 as above, but add a one-line note at the top of `tasks.md` that `plan.md` was not developer-confirmed.
-
-## Step 3.5: For UI tickets — build and gate an interactive HTML mockup
-
-**This is a MUST, not a suggestion: every UI ticket gets a mockup before tasks.md is written.** Runs only when Step 1.5b classified this task as touching **UI components** (a `.tsx` surface, `App.tsx`, or a `use*` hook extracted from one) — skip silently, with no note, for pure-logic, config/tunable, toolchain, or process-only work.
-
-`plan.md` is developer-approved at this point; the mockup is downstream of it, not a new design decision. Do not use this step to invent visuals `plan.md` didn't already call for — if `plan.md` Part 1 → Assumptions made already picked the CSS/text-based card/token default (the SCRUM-32 pattern), the mockup follows that; it does not go looking for art.
-
-1. **Build one self-contained file**, `<plan>/mockup.html` — static HTML, inline `<style>`, inline `<script>`. No build step, no framework, no import of this project's real components or styles. It exists to validate layout and interaction before real code is written, not to be shipped or reused as source.
-2. **Cover every surface `plan.md` Part 1 → In scope claims this ticket renders**, populated with obviously-fake placeholder data (hard-coded hand of cards, a fake board, a fake score) — enough to judge layout and information density, nothing that needs to be real.
-3. **Every actionable element the plan's acceptance criteria describe gets a real, clickable handler.** Fidelity floor: a plain `onclick="alert('deal')"`-style stub is enough — it does not need to model real game state, call an engine, or persist anything. The point is that the developer can click the thing and see that clicking it does something, not that the logic is correct.
-4. **Publish it with the `Artifact` tool** (favicon of your choice, one-line description) so the developer can open and click through it from a single link, and confirm the same content is saved at `<plan>/mockup.html` so the plan folder still stands alone after `/clear`.
-5. **Present it in chat**: what surfaces it covers, what to click and what should happen, and which `plan.md` acceptance criteria it's standing in for. Then call `AskUserQuestion` — mandatory, same standing as Step 3's gate:
+**For UI-classified work**, the mockup is already built and presented, so gate both together and let the developer say which one is wrong:
 
 ```
 AskUserQuestion({
   questions: [{
-    question: "Does this mockup's layout and interaction match what should get built? Approve to continue to tasks.md, or describe what's wrong.",
-    header: "Approve mockup",
+    question: "Approve plan.md (Part 1 Alignment + Part 2 Technical design) and the mockup, and proceed to write tasks.md?",
+    header: "Approve plan",
     multiSelect: false,
     options: [
-      { label: "Approve — continue to tasks.md",
-        description: "Layout and interaction read right. Move on to writing the execution checklist." },
-      { label: "Request changes",
-        description: "Something about the layout or interaction is wrong. I'll describe it in the next message." }
+      { label: "Approve — write tasks.md",
+        description: "Alignment, design, and the mockup's layout and interaction all read right. Generate tasks.md in the same plan folder now." },
+      { label: "Change the mockup",
+        description: "The plan is fine but the layout or interaction is wrong. I'll describe it in the next message." },
+      { label: "Change the plan",
+        description: "plan.md itself needs revision before tasks.md. I'll list red-lines in the next message." }
     ]
   }]
 })
@@ -296,11 +289,28 @@ AskUserQuestion({
 
 **Branch on the answer:**
 
-- **Approve — continue to tasks.md** → continue to Step 4.
-- **Request changes** → get the specific red-lines, revise `<plan>/mockup.html`, re-publish via `Artifact`, re-ask. Loop until approved.
-- **`Other` (free-text)** → treat as a request for changes unless unambiguous approval. When in doubt, re-ask.
+- **Approve — write tasks.md** → straight to Step 4.
+- **Change the mockup** → get the specific red-lines, revise `<plan>/mockup.html`, re-publish via `Artifact`, re-present, and re-call this gate. Loop until approved. Do not revise `plan.md` for a layout complaint unless the developer's red-line actually contradicts something `plan.md` states.
+- **Change the plan** → ask the developer for the specific red-lines (or read them from the same turn if already provided). Revise `plan.md` in place, re-run Step 2.5, then re-build the mockup if the change altered what gets rendered, and re-call this gate. Loop until the developer picks "Approve".
+- **`Other` (free-text)** → treat as a request for changes unless the free-text is unambiguous approval (e.g. "approved", "lgtm, proceed"). When in doubt, re-ask. Free-text that corrects *how this command is behaving* rather than the plan's content is a process correction: fix the behaviour, say so in one line, and re-gate — do not record it as a plan red-line.
 
-If the runtime cannot present `AskUserQuestion` (non-interactive session) or the `Artifact` tool is unavailable, state that explicitly in chat, still write `<plan>/mockup.html` to disk, and proceed to Step 4 — but add a one-line note at the top of `tasks.md` that the mockup was not developer-confirmed.
+If the runtime cannot present `AskUserQuestion` (non-interactive session), state that explicitly in chat and proceed to Step 4, but add a one-line note at the top of `tasks.md` that `plan.md` — and the mockup, where one exists — was not developer-confirmed.
+
+## Step 3.5: For UI tickets — build the interactive HTML mockup (runs *before* Step 3's gate)
+
+**This is a MUST, not a suggestion: every UI ticket gets a mockup, and the developer sees it before being asked to authorise `tasks.md`.** Runs only when Step 1.5b classified this task as touching **UI components** (a `.tsx` surface, `App.tsx`, or a `use*` hook extracted from one) — skip silently, with no note, for pure-logic, config/tunable, toolchain, or process-only work.
+
+**Ordering — this is the whole point of the step.** Step 3 sends you here before it presents anything, and you come back to Step 3 to present the plan and the mockup together under one approval gate. This section carries no gate of its own; the numbering is historical, kept so cross-references stay valid. Never present `plan.md` for approval, gate it, and *then* produce a mockup: the gate's question promises `tasks.md` next, and a mockup arriving after it makes that promise false.
+
+`plan.md` is written and self-reviewed at this point; the mockup is downstream of it, not a new design decision. Do not use this step to invent visuals `plan.md` didn't already call for — if `plan.md` Part 1 → Assumptions made already picked the CSS/text-based card/token default (the SCRUM-32 pattern), the mockup follows that; it does not go looking for art.
+
+1. **Build one self-contained file**, `<plan>/mockup.html` — static HTML, inline `<style>`, inline `<script>`. No build step, no framework, no import of this project's real components or styles. It exists to validate layout and interaction before real code is written, not to be shipped or reused as source.
+2. **Cover every surface `plan.md` Part 1 → In scope claims this ticket renders**, populated with obviously-fake placeholder data (hard-coded hand of cards, a fake board, a fake score) — enough to judge layout and information density, nothing that needs to be real.
+3. **Every actionable element the plan's acceptance criteria describe gets a real, clickable handler.** Fidelity floor: a plain `onclick="alert('deal')"`-style stub is enough — it does not need to model real game state, call an engine, or persist anything. The point is that the developer can click the thing and see that clicking it does something, not that the logic is correct.
+4. **Publish it with the `Artifact` tool** (favicon of your choice, one-line description) so the developer can open and click through it from a single link, and confirm the same content is saved at `<plan>/mockup.html` so the plan folder still stands alone after `/clear`.
+5. **Return to Step 3** and present it there, alongside `plan.md`, as item 8 of that handoff — what surfaces it covers, what to click and what should happen, and which `plan.md` acceptance criteria it stands in for. Step 3's single `AskUserQuestion` gate covers both artefacts and owns the revision loop for each.
+
+If the `Artifact` tool is unavailable, still write `<plan>/mockup.html` to disk, say so plainly in chat, point the developer at the file path, and continue to Step 3's gate — noting at the top of `tasks.md` that the mockup could not be published for review.
 
 **Carry the mockup forward.** Once approved, `<plan>/mockup.html` is a pattern reference for Step 4: the task(s) that build each UI surface should cite it by path in their step text (e.g. "layout per `<plan>/mockup.html`'s trick area") so the executor — who may be reading this contract after `/clear` with no memory of this conversation — knows it exists and what it settled. It is a layout/interaction reference, not a substitute for `plan.md` Part 2 → Data shapes or Approach.
 
@@ -556,7 +566,7 @@ Then present in chat:
 3. Reminder of the approved skills to invoke during execution (from `plan.md` Part 2)
 4. **Everything the developer owns personally** — every tuning value still to choose, every ambiguous rule reading, any dependency needing approval, and every behaviour that can only be judged by running the app, with what to look for
 5. **Jira**: the transition performed, e.g. `SCRUM-12 → Planned`. Say so plainly if it was skipped or failed
-6. **Mockup**: if Step 3.5 ran, confirm `<plan>/mockup.html` exists and was approved, and which tasks cite it. Say so plainly if it was skipped (non-UI work) or left unconfirmed (non-interactive session)
+6. **Mockup**: if Step 3.5 ran, confirm `<plan>/mockup.html` exists and was approved at Step 3's gate, and which tasks cite it. Say so plainly if it was skipped (non-UI work) or left unconfirmed (non-interactive session, or the `Artifact` tool unavailable)
 
 Then tell the developer:
 

@@ -1,0 +1,249 @@
+/* War Council — the card face, the ability prompt, and the round-over panel.
+   Sibling to `warCouncil.css`, split out because the combined stylesheet
+   exceeded the 400-line budget; import both from the mount component.
+   Tokens are defined once in `warCouncil.css` and apply globally once both
+   sheets are loaded — nothing here redeclares `:root`. */
+
+/* ---------- ability prompt: on the table, not a modal ---------- */
+
+.wc-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.35rem, 1.2vmin, 0.7rem);
+}
+
+.wc-prompt-row {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(0.25rem, 0.9vmin, 0.5rem);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.wc-drawn-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  margin-right: clamp(0.3rem, 1.2vmin, 0.7rem);
+}
+
+.wc-drawn-tag {
+  font-size: clamp(0.5rem, 1.05vmin, 0.6rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--wc-brass);
+  font-weight: 700;
+}
+
+.wc-decline {
+  font: inherit;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.68rem, 1.45vmin, 0.8rem);
+  min-height: 44px;
+  padding: 0 clamp(0.6rem, 1.8vmin, 1.1rem);
+  background: transparent;
+  color: var(--wc-chalk);
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 2px;
+  cursor: pointer;
+  touch-action: manipulation;
+  align-self: center;
+}
+
+/* ---------- the card ---------- */
+
+.wc-card {
+  font: inherit;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  width: var(--wc-card-w);
+  aspect-ratio: 2 / 3;
+  padding: clamp(0.18rem, 0.7vmin, 0.4rem) 0;
+  background: linear-gradient(168deg, var(--wc-parchment) 0%, var(--wc-parchment-shade) 100%);
+  color: var(--wc-ink);
+  border: 0;
+  border-radius: clamp(2px, 0.5vmin, 4px);
+  box-shadow:
+    0 0 0 1px #00000055,
+    0 clamp(2px, 0.6vmin, 5px) clamp(6px, 1.6vmin, 14px) #00000070;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    transform 0.13s ease-out,
+    box-shadow 0.13s ease-out;
+}
+
+.wc-card-rank {
+  font-family: var(--wc-serif);
+  font-size: calc(var(--wc-card-w) * 0.44);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-ink);
+}
+
+.wc-card-suit {
+  width: calc(var(--wc-card-w) * 0.34);
+  height: calc(var(--wc-card-w) * 0.34);
+}
+
+/* An ability marker, not a printed name — "WOODCUTTER" cannot fit at this width
+   without becoming unreadable. The rank identifies which ability; the full name
+   lives in the accessible label and in the hint under the hand. */
+.wc-card-pip {
+  width: calc(var(--wc-card-w) * 0.12);
+  height: calc(var(--wc-card-w) * 0.12);
+  border-radius: 50%;
+  background: var(--wc-brass-dim);
+  opacity: 0.85;
+}
+
+.wc-card-pip.wc-is-blank {
+  background: transparent;
+}
+
+.wc-card.wc-suit-bells {
+  color: var(--wc-bells);
+}
+.wc-card.wc-suit-keys {
+  color: var(--wc-keys);
+}
+.wc-card.wc-suit-moons {
+  color: var(--wc-moons);
+}
+
+/* cards on the table or the pile are condensed — a record, not a choice */
+.wc-card.wc-is-played {
+  width: var(--wc-plate-card-w);
+  cursor: default;
+  box-shadow:
+    0 0 0 1px #00000055,
+    0 2px 8px #00000060;
+}
+
+.wc-card.wc-is-played.wc-is-winner {
+  box-shadow:
+    0 0 0 2px var(--wc-brass),
+    0 2px 12px #00000070;
+}
+
+.wc-card.wc-is-plate {
+  width: var(--wc-plate-card-w);
+  cursor: default;
+}
+
+.wc-card.wc-is-illegal {
+  filter: grayscale(0.75) brightness(0.62);
+  cursor: not-allowed;
+}
+
+.wc-card.wc-is-armed {
+  box-shadow:
+    0 0 0 2px var(--wc-brass),
+    0 clamp(6px, 1.6vmin, 14px) clamp(10px, 2.6vmin, 22px) #00000090;
+}
+
+/* The base placement — rotation and lift from `fanPlacement`, carried in via the two
+   `--wc-fan-*` custom properties `HandFan` sets inline. This is the ONLY rule that reads
+   `--wc-fan-lift`: hover/active/armed below replace it outright with a flat lift value
+   rather than adding to it, exactly as the approved mockup's own stylesheet does. Keeping
+   `transform` itself out of the inline style is what lets these rules take effect at all —
+   an inline `style.transform` always beats an external rule with no `!important`. */
+.wc-fan .wc-card {
+  transform: var(--wc-fan-lift, translateY(0%)) var(--wc-fan-rot, rotate(0deg));
+}
+
+@media (hover: hover) {
+  .wc-fan .wc-card:not(.wc-is-illegal):hover {
+    transform: translateY(-9%) var(--wc-fan-rot, rotate(0deg));
+  }
+}
+
+.wc-fan .wc-card:not(.wc-is-illegal):active {
+  transform: translateY(-5%) var(--wc-fan-rot, rotate(0deg));
+}
+
+.wc-fan .wc-card.wc-is-armed,
+.wc-fan .wc-card.wc-is-armed:hover {
+  transform: translateY(-20%) rotate(0deg) scale(1.05);
+  z-index: 20;
+}
+
+:is(.wc-card, .wc-decline, .wc-is-carry-on):focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 2px;
+  z-index: 30;
+}
+
+/* The resolved trick's own keyboard-reachable carry-on control (Critical accessibility fix:
+   nothing else is focusable while a trick is held, since every hand card is disabled). Padding
+   plus a matching negative margin grows the hit area toward the ≥44px floor without changing
+   the element's visual footprint — the text still renders at `.wc-table-hint`'s own size.
+   This is now a native `<button>` rather than a `<span role="button">` — `font-family`,
+   `background`, and `border` are reset to neutral values (not new visual values of their own)
+   so the browser's default button chrome doesn't reappear around what is still meant to read
+   as plain hint text; `.wc-table-hint`'s own font-size/weight/letter-spacing/color are
+   untouched since this rule never sets the `font` shorthand. */
+.wc-is-carry-on {
+  font-family: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  padding: 0.6rem 0.9rem;
+  margin: -0.6rem -0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-card {
+    transition: none;
+  }
+}
+
+/* ---------- round over ---------- */
+
+.wc-over {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.4rem, 1.4vmin, 0.9rem);
+}
+
+.wc-over h2 {
+  font-family: var(--wc-serif);
+  font-size: clamp(1.2rem, 3.4vmin, 2rem);
+  font-weight: 600;
+  margin: 0;
+  color: var(--wc-brass);
+}
+
+.wc-tally {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.wc-tally th,
+.wc-tally td {
+  padding: 0.22rem clamp(0.6rem, 2vmin, 1.4rem);
+  border-bottom: 1px solid var(--wc-felt-line);
+  font-size: clamp(0.7rem, 1.6vmin, 0.85rem);
+  text-align: left;
+}
+
+.wc-tally th {
+  font-size: clamp(0.52rem, 1.1vmin, 0.62rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+  font-weight: 600;
+}
+
+.wc-tally td:last-child {
+  font-family: var(--wc-serif);
+  font-size: clamp(0.95rem, 2.4vmin, 1.3rem);
+  color: var(--wc-brass);
+}

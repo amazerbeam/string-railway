@@ -148,6 +148,8 @@ Work in this order; stop as soon as the problem is solved:
 - **Add `touch-action: manipulation`** on interactive elements to remove the tap-delay on touch devices.
 - **Semantic HTML and ARIA** — `header`, `nav`, `main`; labels on icon-only buttons; focus management in modals and dialogs; WCAG AA contrast.
 
+The rules above are the floor for any surface. A **playable game surface** — a hand, a board, a HUD — has a further layer that this file does not own: the full-viewport no-scroll shell, screen zoning, the tap cost of a repeated action, and keyboard navigation across a collection of sibling controls. That is `.claude/skills/game-ux/SKILL.md`; load it alongside this one when the change renders something the player plays on.
+
 ## Testing
 
 - **Vitest.** Specs live under `src/**/__tests__/`.
