@@ -2,8 +2,9 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: COMPLETE
 Started: 2026-08-05
+Completed: 2026-08-05
 
 **Goal:** Add a new `src/app/` module giving War Council UI (SCRUM-28) and Vanguard UI (SCRUM-29) a typed mount-prop contract — initial state in, a completion callback out, plus a validated trick-count request path for Vanguard's standalone Muster feed — and two stub components proving that contract compiles and is genuinely callable before either real UI exists.
 
@@ -42,7 +43,7 @@ Started: 2026-08-05
 
 Everything in this phase is plain TypeScript with no React import — `AppMode`, the trick-count validator (the one piece of genuine logic this ticket adds, with a real invariant worth testing), and the two per-game mount-prop contracts. The phase ends with a barrel export. Nothing here can fail to type-check against a component, since no component exists yet — this phase is a safe stopping point because it is self-contained pure logic with its own passing tests.
 
-### Task 1: Add `AppMode` to `src/app/appMode.ts`
+### Task 1: Add `AppMode` to `src/app/appMode.ts` ✓
 
 - Skill: react-frontend
 
@@ -50,7 +51,7 @@ Everything in this phase is plain TypeScript with no React import — `AppMode`,
 - Create: `src/app/appMode.ts`
 - Test: `src/app/__tests__/appMode.test.ts`
 
-- [ ] **Step 1: Write `src/app/appMode.ts`**
+- [x] **Step 1: Write `src/app/appMode.ts`**
 
 ```ts
 export const AppMode = {
@@ -60,7 +61,7 @@ export const AppMode = {
 export type AppMode = (typeof AppMode)[keyof typeof AppMode]
 ```
 
-- [ ] **Step 2: Write `src/app/__tests__/appMode.test.ts`, following `src/battle/__tests__/battlePhase.test.ts`'s pattern**
+- [x] **Step 2: Write `src/app/__tests__/appMode.test.ts`, following `src/battle/__tests__/battlePhase.test.ts`'s pattern**
 
 ```ts
 import { describe, expect, it } from 'vitest'
@@ -78,12 +79,12 @@ describe('AppMode', () => {
 })
 ```
 
-- [ ] **Step 3: Run the new test and typecheck**
+- [x] **Step 3: Run the new test and typecheck**
 
 Run: `npx vitest run src/app/__tests__/appMode.test.ts; npm run typecheck`
 Expected: both tests pass, `npm run typecheck` exits 0.
 
-### Task 2: Add the trick-count validator to `src/app/tricksWon.ts`
+### Task 2: Add the trick-count validator to `src/app/tricksWon.ts` ✓
 
 - Skill: react-frontend
 
@@ -91,7 +92,7 @@ Expected: both tests pass, `npm run typecheck` exits 0.
 - Create: `src/app/tricksWon.ts`
 - Test: `src/app/__tests__/tricksWon.test.ts`
 
-- [ ] **Step 1: Write the failing test first**
+- [x] **Step 1: Write the failing test first**
 
 ```ts
 // src/app/__tests__/tricksWon.test.ts
@@ -126,12 +127,12 @@ describe('isValidTricksWon', () => {
 })
 ```
 
-- [ ] **Step 2: Run the test and confirm it fails because `src/app/tricksWon.ts` does not exist yet**
+- [x] **Step 2: Run the test and confirm it fails because `src/app/tricksWon.ts` does not exist yet**
 
 Run: `npx vitest run src/app/__tests__/tricksWon.test.ts`
 Expected: fails with a module-not-found / import error — the test exists before the implementation.
 
-- [ ] **Step 3: Write `src/app/tricksWon.ts`**
+- [x] **Step 3: Write `src/app/tricksWon.ts`**
 
 ```ts
 import type { PlayerSide } from '../warCouncil'
@@ -155,19 +156,19 @@ export function isValidTricksWon(tricks: TricksWon): boolean {
 }
 ```
 
-- [ ] **Step 4: Run the test again and typecheck**
+- [x] **Step 4: Run the test again and typecheck**
 
 Run: `npx vitest run src/app/__tests__/tricksWon.test.ts; npm run typecheck`
 Expected: all tests pass, `npm run typecheck` exits 0.
 
-### Task 3: Add `WarCouncilMountProps`/`WarCouncilRoundResult` to `src/app/warCouncilMount.ts`
+### Task 3: Add `WarCouncilMountProps`/`WarCouncilRoundResult` to `src/app/warCouncilMount.ts` ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Create: `src/app/warCouncilMount.ts`
 
-- [ ] **Step 1: Write `src/app/warCouncilMount.ts`**
+- [x] **Step 1: Write `src/app/warCouncilMount.ts`**
 
 ```ts
 import type { PlayerSide, WarCouncilState } from '../warCouncil'
@@ -183,19 +184,19 @@ export interface WarCouncilRoundResult {
 }
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: exits 0. (Pure type declarations — no runtime invariant to test.)
 
-### Task 4: Add `VanguardMountProps`/`VanguardMatchResult` to `src/app/vanguardMount.ts`
+### Task 4: Add `VanguardMountProps`/`VanguardMatchResult` to `src/app/vanguardMount.ts` ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Create: `src/app/vanguardMount.ts`
 
-- [ ] **Step 1: Write `src/app/vanguardMount.ts`**
+- [x] **Step 1: Write `src/app/vanguardMount.ts`**
 
 ```ts
 import type { PlayerSide, VanguardState } from '../vanguard'
@@ -219,19 +220,19 @@ export interface VanguardMatchResult {
 }
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: exits 0. (Pure type declarations — no runtime invariant to test.)
 
-### Task 5: Add the barrel `src/app/index.ts`
+### Task 5: Add the barrel `src/app/index.ts` ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Create: `src/app/index.ts`
 
-- [ ] **Step 1: Write `src/app/index.ts`**
+- [x] **Step 1: Write `src/app/index.ts`**
 
 ```ts
 export { AppMode } from './appMode'
@@ -241,7 +242,7 @@ export type { TricksWon } from './tricksWon'
 export type { VanguardMountProps, VanguardMatchResult, RequestTricksWon } from './vanguardMount'
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: exits 0.
@@ -252,14 +253,16 @@ Expected: exits 0.
 
 This phase adds the only `.tsx` this ticket introduces: two stub components that accept and genuinely exercise each mount-prop contract (AC5), plus the `AppMode` state slot in `App.tsx` (AC1). The phase ends with the whole `src/app/` tree — types, validator, and stubs — type-checking and linting clean together; nothing here is wired into `main.tsx`.
 
-### Task 6: Add the `AppMode` state slot to `src/App.tsx`
+### Task 6: Add the `AppMode` state slot to `src/App.tsx` ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Modify: `src/App.tsx`
 
-- [ ] **Step 1: Add the `useState<AppMode>` slot and display it**
+- [x] **Step 1: Add the `useState<AppMode>` slot and display it**
+
+> **Implementer deviation:** the plan's `import { AppMode } from './app'` fails to typecheck on this Windows checkout — `TS2614`/`TS1149` — because the case-insensitive filesystem resolves the bare specifier `./app` against the sibling file `App.tsx` (same name, differing only by case) before it tries the `app/` directory's `index.ts`. Shipped as `import { AppMode } from './app/index'` instead, which disambiguates to the directory and barrel unambiguously. No export, type, or file was renamed — only the import specifier in this one file. Flagging as a plan defect worth a `/fb-issue`: any future `src/App.tsx` import of a same-named lowercase sibling folder will hit this on Windows.
 
 ```tsx
 import { useState } from 'react'
@@ -282,19 +285,19 @@ export default App
 
 The setter is deliberately not destructured — `const [mode] = useState(...)`, not `const [mode, setMode] = ...` — because nothing calls it until the Campaign/Test menu ticket exists. A destructured-but-unused `setMode` fails this project's `noUnusedLocals` (`tsc`) and `@typescript-eslint/no-unused-vars` (`eslint`, no underscore-ignore pattern configured) alike; omitting the element from the destructuring pattern is the correct fix, not a suppression. When the menu ticket needs the setter, it re-destructures both elements at that call site.
 
-- [ ] **Step 2: Typecheck and lint**
+- [x] **Step 2: Typecheck and lint**
 
 Run: `npm run typecheck; npm run lint`
-Expected: both exit 0.
+Expected: both exit 0. (Deferred to the Phase 2 verification block below; confirmed there.)
 
-### Task 7: Add `WarCouncilStub` to `src/app/stubs/WarCouncilStub.tsx`
+### Task 7: Add `WarCouncilStub` to `src/app/stubs/WarCouncilStub.tsx` ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Create: `src/app/stubs/WarCouncilStub.tsx`
 
-- [ ] **Step 1: Write `src/app/stubs/WarCouncilStub.tsx`**
+- [x] **Step 1: Write `src/app/stubs/WarCouncilStub.tsx`**
 
 ```tsx
 import { scoreRound } from '../../warCouncil'
@@ -322,19 +325,19 @@ function WarCouncilStub({ initialState, onComplete }: WarCouncilMountProps) {
 export default WarCouncilStub
 ```
 
-- [ ] **Step 2: Typecheck and lint**
+- [x] **Step 2: Typecheck and lint**
 
 Run: `npm run typecheck; npm run lint`
-Expected: both exit 0.
+Expected: both exit 0. (Deferred to the Phase 2 verification block below; confirmed there.)
 
-### Task 8: Add `VanguardStub` to `src/app/stubs/VanguardStub.tsx`
+### Task 8: Add `VanguardStub` to `src/app/stubs/VanguardStub.tsx` ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Create: `src/app/stubs/VanguardStub.tsx`
 
-- [ ] **Step 1: Write `src/app/stubs/VanguardStub.tsx`**
+- [x] **Step 1: Write `src/app/stubs/VanguardStub.tsx`**
 
 ```tsx
 import { useEffect, useState } from 'react'
@@ -399,10 +402,17 @@ function VanguardStub({ initialState, requestTricksWon, onComplete }: VanguardMo
 export default VanguardStub
 ```
 
-- [ ] **Step 2: Typecheck and lint**
+- [x] **Step 2: Typecheck and lint**
 
 Run: `npm run typecheck; npm run lint`
 Expected: both exit 0. If `'player'` as a literal winner value fails to satisfy `PlayerSide`, import and use `PlayerSide.Player` from `../../warCouncil` instead of the string literal.
+
+> **Implementer deviation:** the `'player'` string literal typechecks fine as `PlayerSide` (it's a subtype of the `'player' | 'cpu'` union), so no change was needed there. But the plan's exact code as written — `setStatus({ kind: 'loading' })` called synchronously at the top of the effect body, before the async `requestTricksWon(round).then(...)` call — fails `npm run lint` with `react-hooks/set-state-in-effect` ("Calling setState() directly within an effect... Avoid calling setState() directly within an effect"). This is a real react-hooks rule, not `exhaustive-deps`, and per this contract's constraints it may not be suppressed to land the change. Fixed by deriving the `loading` status at render time instead of resetting it via effect: the effect now stores a `RequestOutcome` tagged with the round it resolved for, and `status` is computed each render as `outcome && outcome.round === round ? outcome : { kind: 'loading' }` — no synchronous `setState` call in the effect body, `setOutcome` is only ever called inside the async `.then()` callback (an external-system callback, which the rule allows). The rendered `RequestStatus` union (`loading` / `error` / `success`) and all prop/type contracts are unchanged. Both `npm run typecheck` and `npm run lint` pass clean on the result. Flagging as a plan defect worth a `/fb-issue`: the exact effect shape given in this step trips a live lint rule in this repo's config and cannot ship as written.
+
+- [x] **Step 3 (added by Implementer): Confirm the rewritten effect still typechecks and lints clean**
+
+Run: `npm run typecheck; npm run lint`
+Result: both exited 0 with no output after the `RequestOutcome`-derived-status rewrite.
 
 ---
 
@@ -410,35 +420,39 @@ Expected: both exit 0. If `'player'` as a literal winner value fails to satisfy 
 
 No production changes — only sanity-checks that the cumulative work is clean and that the pure-core boundary and prior design decisions still hold.
 
-### Task 9: Confirm the pure-core boundary still holds for `src/warCouncil/` and `src/vanguard/`
+### Task 9: Confirm the pure-core boundary still holds for `src/warCouncil/` and `src/vanguard/` ✓
 
-- [ ] **Step 1: Grep both trees for a React import, confirming this ticket did not accidentally add one**
+- [x] **Step 1: Grep both trees for a React import, confirming this ticket did not accidentally add one**
+
+Verified by QA: zero hits. `git status --porcelain` separately confirms neither tree appears in the diff. Note the literal command below does not parse under PowerShell 5.1 — backslash is not its escape character, so `\"react\"` is invalid; QA re-ran it with correct quoting for the same result. Plan defect, not a codebase one.
 
 Run: `Select-String -Path src\warCouncil\*.ts,src\warCouncil\__tests__\*.ts,src\vanguard\*.ts,src\vanguard\__tests__\*.ts -Pattern "from 'react'|from \"react\""`
 Expected: zero hits. This ticket's plan states neither tree is touched — this is the check that confirms it.
 
-### Task 10: Confirm no leftover reference to the rejected raw-score design
+### Task 10: Confirm no leftover reference to the rejected raw-score design ✓
 
-- [ ] **Step 1: Grep `src/` for the type names used in this plan's first draft, before the developer's trick-count correction**
+- [x] **Step 1: Grep `src/` for the type names used in this plan's first draft, before the developer's trick-count correction**
 
 Run: `Select-String -Path src\**\*.ts,src\**\*.tsx -Pattern "\bWarCouncilScore\b|\bRequestScore\b"`
 Expected: zero hits — confirms no stale reference to the raw-score contract survived the revision to trick-count validation.
 
-### Task 11: Static gates and full suite
+### Task 11: Static gates and full suite ✓
 
-- [ ] **Step 1: Typecheck, lint, and the unfiltered suite**
+- [x] **Step 1: Typecheck, lint, and the unfiltered suite**
 
 Run: `npm run typecheck; npm run lint; npm test`
 Expected: all three exit 0; Vitest reports `0 failed`, including the new `appMode.test.ts` and `tricksWon.test.ts` files alongside every pre-existing spec.
+Actual: all three exit 0. `Test Files 34 passed (34)`, `Tests 268 passed (268)`, 0 failed. No `eslint-disable` anywhere in the diff.
 
-- [ ] **Step 2: Production build**
+- [x] **Step 2: Production build**
 
 Run: `npm run build`
 Expected: exits 0, `dist/` written, no bundler errors. This is also the check that both `.tsx` stubs compile against their contracts end to end — AC5's actual proof point.
+Actual: exit 0, 19 modules transformed, `dist/index.html` + `dist/assets/*.css` + `dist/assets/*.js` written, no bundler errors.
 
-### Task 12: Update the PR description
+### Task 12: Update the PR description ✓
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder**
+- [x] **Step 1: Write `pr-description.md` in this plan folder**
 
 Include:
 - Link to `plan.md` in this folder.
