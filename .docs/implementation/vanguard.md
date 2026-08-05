@@ -1,7 +1,7 @@
 # Vanguard — `src/vanguard/`
 
 **Status:** partial
-**Built by:** SCRUM-19, SCRUM-21, SCRUM-22, SCRUM-23, SCRUM-24
+**Built by:** SCRUM-19, SCRUM-21, SCRUM-22, SCRUM-23, SCRUM-24, SCRUM-27
 
 ## Responsibility
 
@@ -23,11 +23,16 @@ of SCRUM-24, it also spends a round's Muster: a turn-engine reducer that process
 action at a time, enforcing whose turn it is, delegating legality/cost to `applyVanguardAction`,
 checking the Breach after every action, and alternating turns until one side is exhausted (then
 letting the other spend the rest uncontested) — plus a pure function for which side opens a given
-round. It is pure, headless logic — nothing here chooses *what* either side plays (CPU/UI action
-selection), acts on a detected Breach beyond ending the in-memory exchange (ending the battle at the
-`BattleState` level, declaring a winner there, or surfacing anything in UI), or handles a stalemate
-where a side has Muster left but no legal/affordable action. Those remain a future
-Clash-orchestrator ticket's job (see Deferred).
+round. As of SCRUM-27, it also chooses a Clash action *for* either side via a pure heuristic
+(`chooseCpuClashAction`) — the module's first mover-selection logic, side-generic rather than
+CPU-only despite the name, matching `src/warCouncil/cpuPlayer.ts`'s precedent. It is pure, headless
+logic — nothing here acts on a detected Breach beyond ending the in-memory exchange (ending the
+battle at the `BattleState` level, declaring a winner there, or surfacing anything in UI), handles a
+stalemate where a side has Muster left but no legal/affordable action (the heuristic throws on that
+dead end rather than resolving it — see How it works), or accepts input from an actual human via UI
+(no UI exists anywhere in this repository). Acting on a Breach remains a future Clash-orchestrator
+ticket's job (see Deferred) — though `src/battle/`'s `submitClashAction` already covers the
+battle-level half of that, see `battle.md`.
 
 ## Key types & exports
 
@@ -57,6 +62,8 @@ Clash-orchestrator ticket's job (see Deferred).
 | `CLASH_FIRST_ROUND_OPENER`                                                          | Configuration — which side opens round 1 (`PlayerSide.Cpu`), transcribed from the ticket's own AC, not a placeholder | `config.ts` |
 | `startClash`, `applyClashAction`                                                     | The turn-engine reducer: builds the initial `ClashState`, then processes one submitted action at a time | `clash.ts` |
 | `openingSideForRound`                                                               | Pure function: which side opens a given 1-indexed round number, alternating off `CLASH_FIRST_ROUND_OPENER` | `clashOpener.ts` |
+| `chooseCpuClashAction`                                                              | Pure, side-generic heuristic: picks a legal `VanguardAction` for `side`, dry-run-validated via `applyVanguardAction` before being returned | `cpuPlayer.ts` |
+| `overwriteCostFor`                                                                  | The Overwrite Muster cost for a given `reinforced` stack level — single source of truth shared between `applyOverwrite` and the CPU heuristic | `overwrite.ts` |
 
 ## How it works
 
@@ -229,6 +236,55 @@ in-progress exchange. Odd rounds return `CLASH_FIRST_ROUND_OPENER`; even rounds 
 rather than reading a round counter from anywhere, because `BattleState` has no round field yet —
 supplying and tracking `roundNumber` is left to whatever future orchestrator ticket adds that field.
 
+### The Clash CPU heuristic
+
+`chooseCpuClashAction(board, side, musterAvailable)` in `cpuPlayer.ts` (SCRUM-27) picks one legal
+`VanguardAction` for `side` to spend Muster on. Despite the name, it is side-generic — it takes
+`side` as an explicit parameter like `chooseCpuCard` does in `src/warCouncil/`, so it can drive
+either side's turn, not just the CPU's; `src/battle/playCpuClashTurn.ts` is what pins it to
+`PlayerSide.Cpu` specifically (see `battle.md`).
+
+Because Vanguard has no single `legalMoves()`-style enumerator (each `apply*` function only reports
+legality as a side effect of attempting the action), the heuristic composes two passes instead of
+filtering one:
+
+1. **Candidate generation**, built from the engine's own exported building blocks
+   (`connectedNetwork`, `minDistanceToNetwork`, `hexDistance`, `overwriteCostFor`, and the config
+   constants) rather than a re-derived legality predicate:
+   - `expandCandidates` — empty cells within `EXPAND_RANGE` of `side`'s network.
+   - `overwriteCandidates` — enemy-token cells at distance ≤ 1 from the network, priced via
+     `overwriteCostFor(cell.reinforced)` and filtered to what `musterAvailable` can afford.
+   - `reinforceCandidates` — `side`'s own unreinforced tokens, short-circuited to `[]` up front if
+     `REINFORCE_COST > musterAvailable` (a flat, non-tiered cost, unlike Overwrite's).
+2. **Ranking**, via `candidateTier` + `rankedAdvanceCandidates`: Expand and Overwrite candidates are
+   combined and sorted by a two-tier rule — distance-1-from-network (tier 1: every Overwrite
+   candidate qualifies by construction, since Overwrite itself requires adjacency; an Expand target
+   may or may not) beats a distance-2 Expand gap-jump (tier 2) unconditionally, then within a tier,
+   ascending `hexDistance` to the opponent's base wins, with `cellKey` as a final deterministic
+   tie-break. This tiering is load-bearing, not decorative: a flat distance-only ranking would
+   instead favor an Expand gap-jump past an adjacent blocking enemy token every time (since
+   `EXPAND_RANGE` (2) always reaches one hex closer to a distant base than overwriting an adjacent
+   blocker does), which would never reproduce "prefer Overwrite when it's blocking the shortest
+   path" — grounded in `skirmish-board-replacement.md`'s own rule that a Breach-qualifying connection
+   must be gap-free, so an unfilled gap is worth less than clearing a blocker even when it lands
+   nominally closer.
+3. **Dry-run validation** (`firstValidated`): walks the ranked list, calling
+   `applyVanguardAction(board, side, candidate).ok` on each, returning the first one confirmed
+   legal. This is the structural guarantee behind "never returns an illegal action" — the function
+   never trusts candidate generation alone, so even a latent drift between a candidate filter and
+   the real engine rule it's modeling would surface as "skip to the next candidate," not as a
+   returned illegal action.
+
+If no Expand/Overwrite candidate validates, the same dry-run-validate pattern falls back over
+`reinforceCandidates` (sorted by `cellKey`). If nothing validates at all — an unmodeled dead end
+where `side` still has Muster but no legal Expand, Overwrite, or Reinforce exists (e.g. a boxed-in
+frontier with no reachable empty cell, no unreinforced own token, and only over-budget enemy
+targets) — the function throws a plain `Error`. This is reachable well before the board is anywhere
+near saturated; it is not gated on board fullness. It mirrors the existing, accepted
+`scriptedClashAction`/`scriptedLocalAction` precedent in `src/battle/__tests__/battleTestHelpers.ts`
+for the identical unmodeled situation, and is a documented, deliberate non-handling — not a bug —
+pending the stalemate-handling ticket noted in Deferred below.
+
 ## Rules & invariants enforced
 
 - **Pure-core boundary** (SCRUM-19, re-confirmed by SCRUM-21's Final verification grep):
@@ -259,13 +315,21 @@ supplying and tracking `roundNumber` is left to whatever future orchestrator tic
   (SCRUM-24) transitions `ClashState` to `Breached` with a `winner`, but nothing ends the battle at
   the `BattleState` level, declares a winner there, or surfaces a Breach in any UI/HUD. A future
   Clash-orchestrator ticket owns that.
-- **CPU or UI action selection** — nothing here chooses a move; every `apply*` function and
-  `applyClashAction` itself take an already-decided `VanguardAction`/`target` from their caller.
+- **UI action selection** — nothing here accepts input from an actual human; no UI exists anywhere
+  in this repository. `chooseCpuClashAction` (SCRUM-27) covers move selection for either side
+  programmatically, but that's heuristic play, not a human choosing via UI.
+- **Any lookahead, multi-step search, or Breach-probability evaluation in the CPU heuristic** —
+  `chooseCpuClashAction` ranks by immediate resulting distance to the opponent's base only; it does
+  not evaluate whether a candidate keeps every *future* cell reachable without eventually leaving a
+  gap. Explicitly out of scope per SCRUM-27's brief (flagged as a possibly Monte-Carlo-class future
+  problem).
 - **Stalemate / no-legal-or-affordable-action handling** — a side with Muster left but no action it
   can currently afford or legally play is not detected or resolved by `applyClashAction`; it only
   defines what happens when a *submitted* action is rejected (the caller tries again). A caller that
   keeps submitting the same unaffordable/illegal action has no built-in escape — that's a future
-  ticket's concern, not this reducer's.
+  ticket's concern, not this reducer's. `chooseCpuClashAction` (SCRUM-27) hits the identical
+  unmodeled dead end from the selection side and throws rather than resolving it — the two gaps are
+  the same open question seen from opposite ends of the module, still unresolved by either.
 - **Wiring `ClashState` into `BattleState` or any orchestrator** — `src/battle/battleState.ts` is
   untouched by SCRUM-24; no `round` counter, no `activeSide`, no `winner` field lives there yet. A
   future orchestrator ticket owns supplying `roundNumber` to `openingSideForRound` and reading

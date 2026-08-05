@@ -6,16 +6,15 @@ export const BattleRejectionReason = {
   NotWarCouncilPhase: 'notWarCouncilPhase',
   NotMusterConversionPhase: 'notMusterConversionPhase',
   NotClashPhase: 'notClashPhase',
+  NotCpuTurn: 'notCpuTurn',
 } as const
-export type BattleRejectionReason = (typeof BattleRejectionReason)[keyof typeof BattleRejectionReason]
+export type BattleRejectionReason =
+  (typeof BattleRejectionReason)[keyof typeof BattleRejectionReason]
 
 export type BattleActionResult =
   | { readonly ok: true; readonly state: BattleState }
   | {
       readonly ok: false
       readonly reason:
-        | BattleRejectionReason
-        | IllegalMoveReason
-        | IllegalActionReason
-        | ClashRejectionReason
+        BattleRejectionReason | IllegalMoveReason | IllegalActionReason | ClashRejectionReason
     }

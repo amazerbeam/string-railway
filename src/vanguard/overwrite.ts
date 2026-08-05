@@ -5,6 +5,14 @@ import { connectedNetwork, minDistanceToNetwork } from './network'
 import { IllegalActionReason, VanguardCellKind } from './types'
 import type { HexCoord, VanguardActionResult, VanguardBoard } from './types'
 
+// The Overwrite Muster cost for a token with the given reinforced stack —
+// the single source of truth for the tiered cost, shared with any caller
+// (e.g. the CPU heuristic) that needs to price a target before attempting
+// the action itself.
+export function overwriteCostFor(reinforced: number): number {
+  return reinforced > 0 ? OVERWRITE_COST_REINFORCED : OVERWRITE_COST
+}
+
 export function applyOverwrite(
   board: VanguardBoard,
   side: PlayerSide,
@@ -24,7 +32,7 @@ export function applyOverwrite(
     return { ok: false, reason: IllegalActionReason.NotAdjacentToNetwork }
   }
 
-  const cost = existing.reinforced > 0 ? OVERWRITE_COST_REINFORCED : OVERWRITE_COST
+  const cost = overwriteCostFor(existing.reinforced)
   return {
     ok: true,
     cost,

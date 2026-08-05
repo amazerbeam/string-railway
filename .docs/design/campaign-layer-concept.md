@@ -83,6 +83,46 @@ against it is solving a designed problem, not gambling on a card reveal.
 
 ---
 
+## Overworld travel: the map and the car (idea 4, detailed)
+
+Prompted by looking at how *Overcooked 2* handles its between-level overworld. Three things are
+being taken from that reference, and nothing else:
+
+- The travel layer is **an actual small navigable space** — not a menu of level nodes, not a
+  cutscene, a place the player moves through.
+- **One player physically drives** a vehicle through that space. (*Overcooked 2* has all players
+  sharing control of one vehicle, since it's built for co-op; that doesn't apply here and isn't
+  being carried over.)
+- **The map has nodes, and reaching a node is what triggers a fight** — a city, a town, whatever
+  the node represents.
+
+Explicitly *not* being taken from the reference: the shared/co-op vehicle, the vehicle changing
+form per terrain, hidden switches/secrets along the road, star-gated unlocking of new areas, and
+the "no random encounters while traveling" rule. Those were Overcooked 2's answers to Overcooked
+2's problems (four-player couch co-op, a cooking game with no combat layer) and don't carry an
+argument for why they'd fit here — they're just not part of what's being borrowed.
+
+This gives idea #4 ("between city fights, the player travels the map") an actual mechanism: the
+travel map is the thing you drive across, and the towns/cities it already describes are the nodes
+that trigger a fight on arrival.
+
+**Metroidvania-style upgrade gating**, floated in conversation as a way to make that map more than
+a road: the car itself gains attachments over the course of the campaign, and each attachment
+permanently opens up terrain that was previously blocked —
+
+- different **wheels** to cross terrain the base car can't (mud, sand, snow, whatever the map's
+  regions turn out to be),
+- a **bullbar** to push obstacles out of the road,
+- a **forklift** to lift something blocking a node.
+
+The traversal shape this produces is the standard Metroidvania one: the map isn't fully open from
+the start, a region glimpsed early stays unreachable until the right attachment is found, and
+finding that attachment makes a return trip to an already-visited area worthwhile. This gives the
+travel map a second job beyond "get from fight to fight" — it becomes something the player
+re-explores as their car grows capable of more of it.
+
+---
+
 ## Open questions
 
 - **Visible or hidden order?** Still the open question from earlier conversation: is a city's fixed
@@ -104,3 +144,23 @@ against it is solving a designed problem, not gambling on a card reveal.
   decide the city fight on its own. Not yet decided whether a gym-style War Council win is the whole
   fight for some or all cities, or whether it still feeds a Vanguard afterward — this is a real fork,
   not a detail.
+- **What does driving actually look like?** Top-down on a hand-drawn campaign map, a straight
+  connect-the-nodes road, free-roam within a bounded region — not decided. This also determines
+  whether "reaching a node" means driving onto it directly or something more like selecting/
+  approaching it.
+- **Does arriving at a node always mean a fight**, or can a node be something else (a shop, a
+  story beat, a rest stop) with fight-nodes being one type among several? Idea #4's "smaller
+  fights against towns along the way" implies more than one node type already (fights that yield
+  items vs. the cities themselves), so this may already need two node kinds, not one.
+- **Is the travel map one continuous space for the whole campaign, or one small space per
+  region/chapter** that resets or is replaced as the player advances? Affects whether the car and
+  map are a persistent world object or a per-chapter transition scene. (A single continuous map is
+  the version the Metroidvania upgrade-gating idea assumes — backtracking to an earlier region only
+  means something if that region still exists to return to.)
+- **Where do car attachments come from** — are they what a town/city fight yields (folding into
+  idea #4's existing "smaller fights yield items and cards"), a story-beat reward, or something
+  else? Not decided, and it determines whether upgrade-gating and the deck-construction item system
+  (idea 5's open question "where do gathered items slot into deck construction?") are the same
+  reward pool or two separate ones.
+- **How many attachments, and how much of the map does each one gate?** Unset — needs at least a
+  rough attachment list and a rough map shape before this stops being purely notional.

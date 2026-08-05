@@ -1,7 +1,7 @@
 # Battle — `src/battle/`
 
 **Status:** implemented
-**Built by:** SCRUM-19, SCRUM-25
+**Built by:** SCRUM-19, SCRUM-25, SCRUM-26, SCRUM-27
 
 ## Responsibility
 
@@ -23,15 +23,17 @@ React import, no DOM access, no I/O).
 | `BattlePhase`               | `as const` map of the four battle-loop stages, plus its derived value type                    | `battlePhase.ts`     |
 | `BattleState`               | 4-variant discriminated union keyed on `phase`, one shape per stage                            | `battleState.ts`     |
 | `WAR_COUNCIL_FIRST_DEALER`  | Configuration constant: which side deals round 1 of a battle                                  | `config.ts`          |
-| `BattleRejectionReason`     | `as const` map of the three orchestration-level rejection reasons (wrong-phase calls)         | `battleAction.ts`    |
+| `BattleRejectionReason`     | `as const` map of the four orchestration-level rejection reasons (wrong-phase calls, plus `NotCpuTurn` since SCRUM-26) | `battleAction.ts`    |
 | `BattleActionResult`        | Discriminated union: `{ ok: true, state }` or `{ ok: false, reason }`, unioning orchestration-level and bubbled engine-level rejection reasons | `battleAction.ts`    |
 | `startBattle`               | Builds round 1: creates the Vanguard board (once, ever) and deals the first War Council round | `startBattle.ts`     |
 | `submitWarCouncilCard`      | Submits one card; transitions to `MusterConversion` when the round's 13th trick resolves      | `submitWarCouncilCard.ts` |
 | `beginClash`                | Converts the completed round's score to Muster and opens the Clash                            | `beginClash.ts`      |
 | `submitClashAction`         | Submits one Clash action; resolves on Breach, or deals the next round on a natural Clash end   | `submitClashAction.ts` |
+| `playCpuWarCouncilTurn`     | Plugs `src/warCouncil/`'s `chooseCpuMove` heuristic into `submitWarCouncilCard` for the CPU's War Council turn (SCRUM-26) | `playCpuWarCouncilTurn.ts` |
+| `playCpuClashTurn`          | Plugs `src/vanguard/`'s `chooseCpuClashAction` heuristic into `submitClashAction` for the CPU's Clash turn (SCRUM-27) | `playCpuClashTurn.ts` |
 
-All nine are re-exported from `index.ts` — `BattlePhase`, `WAR_COUNCIL_FIRST_DEALER`,
-`BattleRejectionReason`, and the four functions as values; `BattleState` and `BattleActionResult`
+All eleven are re-exported from `index.ts` — `BattlePhase`, `WAR_COUNCIL_FIRST_DEALER`,
+`BattleRejectionReason`, and the six functions as values; `BattleState` and `BattleActionResult`
 via `export type` (required by this project's `verbatimModuleSyntax` tsconfig setting).
 
 ## How it works
@@ -65,7 +67,7 @@ Every other transition threads the board it was handed forward: `submitClashActi
 code's shape rather than a rule someone has to remember to follow — no function in this module has
 a second code path that could call `createVanguardBoard()` again.
 
-### The four lifecycle functions — one per arrow in the battle-loop diagram
+### The lifecycle functions — one per arrow in the battle-loop diagram, plus one CPU composition
 
 Each function takes the current `BattleState` plus whatever external input that step needs (a
 card, a Clash action, an `rng` function), and returns a `BattleActionResult` — either
@@ -76,7 +78,9 @@ this function operates on. This is the only kind of rejection this module invent
 other failure is bubbled unchanged from the delegated engine call (`IllegalMoveReason` from
 `playCard`, `IllegalActionReason`/`ClashRejectionReason` from `applyClashAction`), so a caller
 inspecting a rejection always gets the real underlying reason, never a laundered "something went
-wrong."
+wrong." `playCpuWarCouncilTurn` (SCRUM-26, below) adds a second kind of guard, `NotCpuTurn`, since
+it is the one function in this module that also cares *whose* turn it is, not just which phase the
+battle is in.
 
 - **`startBattle(rng)`** (`startBattle.ts`) — the only function with no rejection path. Calls
   `createVanguardBoard()` and `dealRound(WAR_COUNCIL_FIRST_DEALER, rng)`, returns a
@@ -114,6 +118,26 @@ wrong."
     call that ends a Clash naturally does).
   - **`InProgress`** → carries the updated `ClashState` forward, phase unchanged.
 
+- **`playCpuWarCouncilTurn(state)`** (`playCpuWarCouncilTurn.ts`, SCRUM-26) — a thin composition,
+  not a fifth independent engine action: phase-guards `WarCouncilRound` (`NotWarCouncilPhase`),
+  then turn-guards that `currentTurn(state.warCouncil) === PlayerSide.Cpu` (`NotCpuTurn` if not),
+  then calls `src/warCouncil/`'s `chooseCpuMove(state.warCouncil, PlayerSide.Cpu)` and hands the
+  result straight to `submitWarCouncilCard`. It introduces no new state-mutation path of its own —
+  every value it can produce is drawn from a set `submitWarCouncilCard`/`playCard` already accept,
+  so its own failure surface is exactly the two guards above.
+
+- **`playCpuClashTurn(state, rng)`** (`playCpuClashTurn.ts`, SCRUM-27) — the exact same shape as
+  `playCpuWarCouncilTurn`, one phase down: phase-guards `Clash` (`NotClashPhase`), then turn-guards
+  that `state.clash.status === InProgress && state.clash.turn === PlayerSide.Cpu` (`NotCpuTurn` if
+  not — reusing the same rejection reason SCRUM-26 added, no new enum member), then calls
+  `src/vanguard/`'s `chooseCpuClashAction(state.clash.board, PlayerSide.Cpu,
+  state.clash.muster[PlayerSide.Cpu])` and hands the result straight to `submitClashAction`,
+  threading through the `rng` that function needs for its own Clash-Complete → next-round
+  transition. Like its War Council sibling, it introduces no new state-mutation path of its own —
+  its failure surface is exactly the two guards above, plus whatever `submitClashAction` can already
+  reject. It does not catch `chooseCpuClashAction`'s dead-end throw (see `vanguard.md` → *The Clash
+  CPU heuristic*) — an unhandled throw from that call propagates straight out of this function too.
+
 ### Dealer alternation is one named field, flipped in exactly one place
 
 `dealer: PlayerSide` lives on three of the four `BattleState` variants (not `Resolved`, which has
@@ -150,9 +174,15 @@ prior ticket's AC). This value is a documented placeholder — `startBattle.ts` 
 
 ## Deferred / not yet implemented
 
-- No CPU decision-making of any kind — every function takes its card/action as caller-supplied
-  input. A future CPU ticket supplies the "what to play" policy from outside this module.
-- No UI, component, or rendering code touches this module.
+- No UI, component, or rendering code touches this module. `playCpuWarCouncilTurn` (SCRUM-26) and
+  `playCpuClashTurn` (SCRUM-27) between them now cover CPU decision-making for both phases of a
+  battle, but nothing here accepts input from an actual human via UI — no UI exists anywhere in this
+  repository.
+- **`battleTestHelpers.ts`'s scripted Clash/War-Council helpers duplicate a simplified version of
+  the real heuristics** now that both `chooseCpuMove` and `chooseCpuClashAction` exist for real.
+  Left untouched by both SCRUM-26 and SCRUM-27 (their own scope boundaries exclude it, to avoid
+  coupling `battleLoop.integration.test.ts` to CPU behaviour it wasn't written to test) — a future
+  ticket could swap the integration test over to the real heuristics and remove the duplication.
 - No campaign or multi-battle layer — `round` counts War Council rounds within one battle only;
   nothing here persists across a battle boundary or exposes a "next battle" concept, though
   `dealer`'s single-named-field design was deliberately chosen so a later ticket could extend it

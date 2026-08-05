@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: IN PROGRESS
+Status: COMPLETE
 Started: 2026-08-04
 
 **Goal:** Give the War Council card engine a CPU that always plays a legal card via a stated,
@@ -45,7 +45,7 @@ TypeScript with no DOM or React access. The phase ends with `chooseCpuMove` comp
 sub-decisions and re-exported from `src/warCouncil/index.ts` — a safe stopping point, since
 nothing outside `src/warCouncil/` has changed yet and the module type-checks on its own.
 
-### Task 1: Add `chooseCpuCard` (leading and following heuristic)
+### Task 1: Add `chooseCpuCard` (leading and following heuristic) ✓
 
 - Skill: react-frontend
 
@@ -53,7 +53,7 @@ nothing outside `src/warCouncil/` has changed yet and the module type-checks on 
 - Create: `src/warCouncil/cpuPlayer.ts`
 - Test: `src/warCouncil/__tests__/cpuPlayer.test.ts`
 
-- [ ] **Step 1: Write the failing tests for `chooseCpuCard`**
+- [x] **Step 1: Write the failing tests for `chooseCpuCard`**
 
 ```ts
 import { describe, expect, it } from 'vitest'
@@ -152,13 +152,13 @@ describe('chooseCpuCard — following', () => {
 })
 ```
 
-- [ ] **Step 2: Run and confirm the red state**
+- [x] **Step 2: Run and confirm the red state**
 
 Run: `npx vitest run src/warCouncil/__tests__/cpuPlayer.test.ts`
 Expected: fails to collect — `chooseCpuCard` has no implementation module yet (`../cpuPlayer`
 does not resolve). This is the expected red state: the test is wired to code that doesn't exist.
 
-- [ ] **Step 3: Implement `chooseCpuCard`**
+- [x] **Step 3: Implement `chooseCpuCard`**
 
 ```ts
 import { legalMoves } from './legalMoves'
@@ -194,12 +194,12 @@ export function chooseCpuCard(state: RoundState, side: PlayerSide): Card {
 }
 ```
 
-- [ ] **Step 4: Run and confirm green, then typecheck**
+- [x] **Step 4: Run and confirm green, then typecheck**
 
 Run: `npx vitest run src/warCouncil/__tests__/cpuPlayer.test.ts; npm run typecheck`
 Expected: Vitest reports all tests in the file passed; `npm run typecheck` exits 0.
 
-### Task 2: Add `chooseCpuFoxChoice`
+### Task 2: Add `chooseCpuFoxChoice` ✓
 
 - Skill: react-frontend
 
@@ -207,7 +207,7 @@ Expected: Vitest reports all tests in the file passed; `npm run typecheck` exits
 - Modify: `src/warCouncil/cpuPlayer.ts`
 - Modify: `src/warCouncil/__tests__/cpuPlayer.test.ts`
 
-- [ ] **Step 1: Write the failing tests for `chooseCpuFoxChoice`**
+- [x] **Step 1: Write the failing tests for `chooseCpuFoxChoice`**
 
 Edit the two import lines at the top of `cpuPlayer.test.ts`:
 
@@ -249,12 +249,12 @@ describe('chooseCpuFoxChoice', () => {
 })
 ```
 
-- [ ] **Step 2: Run and confirm the red state**
+- [x] **Step 2: Run and confirm the red state**
 
 Run: `npx vitest run src/warCouncil/__tests__/cpuPlayer.test.ts`
 Expected: fails to collect — `chooseCpuFoxChoice` is not exported from `../cpuPlayer` yet.
 
-- [ ] **Step 3: Implement `chooseCpuFoxChoice`**
+- [x] **Step 3: Implement `chooseCpuFoxChoice`**
 
 Add to `cpuPlayer.ts`: extend the `type` import from `./types` to include `AbilityChoiceKind`
 (a value import) and `type AbilityChoice`, and add `cardsOfSuit` from `./cardUtils`:
@@ -295,12 +295,12 @@ export function chooseCpuFoxChoice(handAfterFox: readonly Card[], trumpSuit: Sui
 }
 ```
 
-- [ ] **Step 4: Run and confirm green, then typecheck**
+- [x] **Step 4: Run and confirm green, then typecheck**
 
 Run: `npx vitest run src/warCouncil/__tests__/cpuPlayer.test.ts; npm run typecheck`
 Expected: Vitest reports all tests in the file passed; `npm run typecheck` exits 0.
 
-### Task 3: Add `chooseCpuWoodcutterChoice`
+### Task 3: Add `chooseCpuWoodcutterChoice` ✓
 
 - Skill: react-frontend
 
@@ -308,7 +308,7 @@ Expected: Vitest reports all tests in the file passed; `npm run typecheck` exits
 - Modify: `src/warCouncil/cpuPlayer.ts`
 - Modify: `src/warCouncil/__tests__/cpuPlayer.test.ts`
 
-- [ ] **Step 1: Write the failing test for `chooseCpuWoodcutterChoice`**
+- [x] **Step 1: Write the failing test for `chooseCpuWoodcutterChoice`**
 
 Edit the `cpuPlayer` import line:
 
@@ -334,12 +334,12 @@ describe('chooseCpuWoodcutterChoice', () => {
 })
 ```
 
-- [ ] **Step 2: Run and confirm the red state**
+- [x] **Step 2: Run and confirm the red state**
 
 Run: `npx vitest run src/warCouncil/__tests__/cpuPlayer.test.ts`
 Expected: fails to collect — `chooseCpuWoodcutterChoice` is not exported from `../cpuPlayer` yet.
 
-- [ ] **Step 3: Implement `chooseCpuWoodcutterChoice`**
+- [x] **Step 3: Implement `chooseCpuWoodcutterChoice`**
 
 Append below `chooseCpuFoxChoice` in `cpuPlayer.ts`:
 
@@ -352,12 +352,12 @@ export function chooseCpuWoodcutterChoice(handWithDrawn: readonly Card[]): Abili
 }
 ```
 
-- [ ] **Step 4: Run and confirm green, then typecheck**
+- [x] **Step 4: Run and confirm green, then typecheck**
 
 Run: `npx vitest run src/warCouncil/__tests__/cpuPlayer.test.ts; npm run typecheck`
 Expected: Vitest reports all tests in the file passed; `npm run typecheck` exits 0.
 
-### Task 4: Add `chooseCpuMove` and export it from `src/warCouncil/index.ts`
+### Task 4: Add `chooseCpuMove` and export it from `src/warCouncil/index.ts` ✓
 
 - Skill: react-frontend
 
@@ -366,7 +366,7 @@ Expected: Vitest reports all tests in the file passed; `npm run typecheck` exits
 - Modify: `src/warCouncil/__tests__/cpuPlayer.test.ts`
 - Modify: `src/warCouncil/index.ts`
 
-- [ ] **Step 1: Write the failing tests for `chooseCpuMove`**
+- [x] **Step 1: Write the failing tests for `chooseCpuMove`**
 
 Edit the import lines at the top of `cpuPlayer.test.ts` — add `playCard` and `chooseCpuMove`
 (`dealRound` is not needed until Task 5 and is deliberately not imported here, to avoid an
@@ -426,12 +426,12 @@ describe('chooseCpuMove', () => {
 })
 ```
 
-- [ ] **Step 2: Run and confirm the red state**
+- [x] **Step 2: Run and confirm the red state**
 
 Run: `npx vitest run src/warCouncil/__tests__/cpuPlayer.test.ts`
 Expected: fails to collect — `chooseCpuMove` is not exported from `../cpuPlayer` yet.
 
-- [ ] **Step 3: Implement `chooseCpuMove`, add `CpuMove`, and re-export from the package index**
+- [x] **Step 3: Implement `chooseCpuMove`, add `CpuMove`, and re-export from the package index**
 
 Add `removeCard` to the `cardUtils` import and `CardRank` to the `types` import in `cpuPlayer.ts`:
 
@@ -486,12 +486,12 @@ export { chooseCpuMove } from './cpuPlayer'
 export type { CpuMove } from './cpuPlayer'
 ```
 
-- [ ] **Step 4: Run and confirm green, then typecheck**
+- [x] **Step 4: Run and confirm green, then typecheck**
 
 Run: `npx vitest run src/warCouncil/__tests__/cpuPlayer.test.ts; npm run typecheck`
 Expected: Vitest reports all tests in the file passed; `npm run typecheck` exits 0.
 
-- [ ] **Step 5: Measure `cpuPlayer.ts`**
+- [x] **Step 5: Measure `cpuPlayer.ts`**
 
 Run: `(Get-Content src\warCouncil\cpuPlayer.ts | Measure-Object -Line).Lines`
 Expected: well under 400 (the file holds five small pure functions plus one interface).
@@ -505,14 +505,14 @@ Adds the seeded-simulation tests the brief's AC4 asks for directly, driving the 
 rounds. No production code changes in this phase — it verifies behaviour Phase 1 already built,
 so the codebase stays exactly as type-safe as it was at the end of Phase 1.
 
-### Task 5: Add simulated full-round tests to `cpuPlayer.test.ts`
+### Task 5: Add simulated full-round tests to `cpuPlayer.test.ts` ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Modify: `src/warCouncil/__tests__/cpuPlayer.test.ts`
 
-- [ ] **Step 1: Write the simulation tests**
+- [x] **Step 1: Write the simulation tests**
 
 Edit the imports: add `dealRound` (deferred from Task 4) and extend the `types` import with
 `CardRank` and `currentTurn`:
@@ -595,7 +595,7 @@ describe('chooseCpuMove — simulated full rounds (AC4)', () => {
 })
 ```
 
-- [ ] **Step 2: Run and confirm green, then typecheck**
+- [x] **Step 2: Run and confirm green, then typecheck**
 
 Run: `npx vitest run src/warCouncil/__tests__/cpuPlayer.test.ts; npm run typecheck`
 Expected: Vitest reports all tests in the file passed (62 total: 3 leading/following + 3 Fox +
@@ -603,11 +603,17 @@ Expected: Vitest reports all tests in the file passed (62 total: 3 leading/follo
 printed count matches the file's actual `it`/`it.each` total rather than assuming 71); zero
 `illegal play` errors thrown; `npm run typecheck` exits 0.
 
-- [ ] **Step 3: Measure `cpuPlayer.test.ts`**
+Actual: 72 tests passed (the plan's estimate undercounted — "leading/following" is actually 1
+leading test + 3 following tests = 4, not 3, so 4+3+1+3+60+1 = 72). All 72 passed; zero
+`illegal play` errors thrown; `npm run typecheck` exited 0.
+
+- [x] **Step 3: Measure `cpuPlayer.test.ts`**
 
 Run: `(Get-Content src\warCouncil\__tests__\cpuPlayer.test.ts | Measure-Object -Line).Lines`
 Expected: under 400. If it is at or over, split the simulation describe block into a sibling
 file (e.g. `cpuPlayerSimulation.test.ts`) before continuing — do not disable the check.
+
+Actual: 228 lines — under 400, no split needed.
 
 ---
 
@@ -619,14 +625,14 @@ with `playCpuWarCouncilTurn` exported from `src/battle/index.ts` and fully teste
 stopping point since it introduces no new state-mutation path of its own, only composition of
 two already-tested primitives (`chooseCpuMove`, `submitWarCouncilCard`).
 
-### Task 6: Add `BattleRejectionReason.NotCpuTurn`
+### Task 6: Add `BattleRejectionReason.NotCpuTurn` ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Modify: `src/battle/battleAction.ts`
 
-- [ ] **Step 1: Add the new reason**
+- [x] **Step 1: Add the new reason**
 
 ```ts
 export const BattleRejectionReason = {
@@ -637,12 +643,12 @@ export const BattleRejectionReason = {
 } as const
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: exits 0.
 
-### Task 7: Add `playCpuWarCouncilTurn` and export it from `src/battle/index.ts`
+### Task 7: Add `playCpuWarCouncilTurn` and export it from `src/battle/index.ts` ✓
 
 - Skill: react-frontend
 
@@ -651,7 +657,7 @@ Expected: exits 0.
 - Modify: `src/battle/index.ts`
 - Test: `src/battle/__tests__/playCpuWarCouncilTurn.test.ts`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 import { describe, expect, it } from 'vitest'
@@ -749,12 +755,14 @@ describe('playCpuWarCouncilTurn — drives a full round to MusterConversion', ()
 })
 ```
 
-- [ ] **Step 2: Run and confirm the red state**
+- [x] **Step 2: Run and confirm the red state**
 
 Run: `npx vitest run src/battle/__tests__/playCpuWarCouncilTurn.test.ts`
 Expected: fails to collect — `../playCpuWarCouncilTurn` does not exist yet.
 
-- [ ] **Step 3: Implement `playCpuWarCouncilTurn` and export it**
+Actual: confirmed — `Cannot find module '../playCpuWarCouncilTurn'`.
+
+- [x] **Step 3: Implement `playCpuWarCouncilTurn` and export it**
 
 ```ts
 // src/battle/playCpuWarCouncilTurn.ts
@@ -783,10 +791,19 @@ In `src/battle/index.ts`, add one line at the end of the file:
 export { playCpuWarCouncilTurn } from './playCpuWarCouncilTurn'
 ```
 
-- [ ] **Step 4: Run and confirm green, then typecheck**
+- [x] **Step 4: Run and confirm green, then typecheck**
 
 Run: `npx vitest run src/battle/__tests__/playCpuWarCouncilTurn.test.ts; npm run typecheck`
 Expected: Vitest reports all tests in the file passed; `npm run typecheck` exits 0.
+
+Actual: `Tests  4 passed (4)`; `npm run typecheck` exited 0. Note: the test snippet's second
+rejection test (`afterCpuLead.warCouncil` on line 53 of the original snippet) did not typecheck
+as written — `submitFirstLegalCard` returns the full `BattleState` union, not narrowed to the
+`WarCouncilRound` variant, so `.warCouncil` isn't accessible without a narrowing check first. Fixed
+in the test file only (never the production file) by adding
+`if (afterCpuLead.phase !== BattlePhase.WarCouncilRound) throw new Error('expected WarCouncilRound')`
+before the `.warCouncil` access, matching the narrowing pattern already used elsewhere in the same
+file. `npm run lint` also run and clean (0 errors/warnings).
 
 ---
 
@@ -797,31 +814,37 @@ no enforced pure-core import boundary yet (per `.claude/workflow/web-project.md`
 contract introduces no configuration key or tunable, so the two boundary/tunable-grep checks from
 the standard template are omitted rather than run against nothing.
 
-### Task 8: Static gates and full suite
+### Task 8: Static gates and full suite ✓
 
 - Skill: react-frontend
 
 **Files:** (none — verification only)
 
-- [ ] **Step 1: Typecheck, lint, and the unfiltered suite**
+- [x] **Step 1: Typecheck, lint, and the unfiltered suite**
 
 Run: `npm run typecheck; npm run lint; npm test`
 Expected: all three exit 0; Vitest reports 0 failed across the whole suite (including every
 existing `warCouncil`, `vanguard`, and `battle` spec, not just this contract's new files).
 
-- [ ] **Step 2: Production build**
+Actual (run by QA in the final review round): all three exit 0; `Test Files 30 passed (30)`,
+`Tests 225 passed (225)`.
+
+- [x] **Step 2: Production build**
 
 Run: `npm run build`
 Expected: exits 0, `dist/` written, no bundler errors.
 
-### Task 9: Update the PR description
+Actual (run by QA): exit 0, `dist/index.html` + `dist/assets/*.css` + `dist/assets/*.js` written,
+no bundler errors.
+
+### Task 9: Update the PR description ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Create: `.claude/contract/SCRUM-26-war-council-cpu-heuristic/pr-description.md`
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
+- [x] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
 
 Include:
 - Link to `plan.md` in this folder.
