@@ -252,6 +252,157 @@ and they're not answering the question.
 
 ---
 
+## 7. Genre neighbours — how comparable games solved this
+
+Section 5 covers hybrid *theory*. This section covers the specific published games sitting in the
+genres this project touches, and what each one already learned the hard way. Added 2026-08-06.
+
+The genres in play: two-player trick-taking · abstract connection game · card-driven wargame ·
+campaign/territory conquest · roguelike-deckbuilder progression · fixed-encounter JRPG design ·
+Metroidvania traversal gating · solo-vs-CPU AI for a two-player competitive game.
+
+### Faeria — the closest structural cousin
+
+A digital card game on a hex board where **you build the land you fight over**. Each turn the
+"Power Wheel" forces a single choice between gaining resource, drawing a card, or placing land
+tiles (two plain, or one featured: mountain / forest / desert / lake). Creatures may only be
+summoned onto land, and coloured cards require a matching terrain type to already be on the board
+before they are playable. Both players start at opposite ends and race a path toward the enemy orb;
+extra-resource wells sit in the map corners.
+
+Three transferable devices:
+
+- **Terrain type is a shared vocabulary, not a scalar.** Faeria's coupling is Sivél's suited-map-
+  sectors trick (§5) in digital form — the geography determines which cards are strong, so the
+  board talks back to the hand without any conversion number in between.
+- **The board layer is not funded by a separate currency.** Land placement competes with card draw
+  and resource *on the same turn dial*, so expanding the board always costs tempo in the card game.
+- **The corner wells give a reason to expand sideways**, not straight at the enemy. A pure
+  base-to-base race has no such reason; contested off-axis objectives are the standard fix.
+
+### Culdcept — the 30-year warning about hybrid pacing
+
+Magic × Monopoly, running since 1997. Older entries take hours for one match; the 2026 entry
+*Culdcept Begins* shipped a 2× speed toggle as an explicit remedy and still drew "suffers a little
+from pacing issues." The sharper review line is the structural one: it "fails to fully commit to
+any of its identities, and by trying to be everything at once, struggles to find a hook, resulting
+in an experience that feels less like a polished hybrid and more like a collection of mechanics in
+search of a soul."
+
+The lesson for any design that runs a *complete* game of A inside a *complete* game of B: length
+is the first symptom, but the disease is that neither layer is allowed to be the point.
+
+### Thronebreaker — the fixed-encounter design, and its known complaint
+
+A campaign map over Gwent where roughly half the battles are **puzzle battles**: a fixed given deck
+and a special win condition. This is the nearest published thing to the gym-city idea, and its
+recurring player complaint is precise — *"it's a custom deck, with custom text often, in a single
+way to beat the enemy."* Players report trial-and-error and guide-consulting instead of playing the
+deck they built, and the rewards make the puzzles effectively mandatory.
+
+The distinction that matters: Thronebreaker fixes **the player's** deck. The gym-city design fixes
+**the opponent's** hand and leaves the player's own deck theirs — the better side of that line. But
+the complaint lands the moment a city's fixed hand plus fixed trump admits exactly one winning
+line. A designed problem with one solution is a puzzle; the second time through, it is a chore.
+
+### Fox in the Forest Duet — the parent game's own spatial coupling, and it landed flat
+
+Foxtrot's co-op sequel couples tricks to a **tug-of-war path**: trick outcomes move a shared pawn
+along a track, power cards manipulate direction and distance, and overshooting in either direction
+loses ("lost in the forest"). Worth knowing before reinventing it — the reviewed verdict is that
+the spatial layer generated no tension (2.5/5). The diagnosis matches the one that killed the lane
+draft in `skirmish-board-replacement.md`: a single axis of contest has nowhere to be spread thin.
+
+### Card-driven wargames — the dual-use card
+
+*We the People* (Herman, 1993) founded the genre and its defining device is the **dual-use card**:
+each card is either **Ops** (a numeric action budget for the map) *or* an **Event**, and in the
+original you must choose one and lose the other. Later CDGs print both on every card and keep the
+either/or. The tension is entirely in that choice — the map's action economy and the hand's content
+are the same object.
+
+This is the sharpest available contrast with a design where cards are played for tricks and only
+the *aggregate round result* becomes map moves. There the individual card never faces the map; in a
+CDG it always does.
+
+### Connection-game AI — Hex was not solved by Monte Carlo
+
+Connection games are genuinely hard: Hex is PSPACE-complete (Havannah and TwixT likewise), 11×11
+Hex has ~2.4×10^56 legal positions with a branching factor around 100 against chess's ~40, and the
+usual heuristics — material, mobility — are meaningless, so alpha-beta with a generic evaluation
+does not work.
+
+**But the breakthrough was not rollouts.** Anshelevich's **H-search** deduces *virtual connections*:
+start from trivially connected pairs and repeatedly apply an **AND rule** (connections combined in
+series) and an **OR rule** (connections combined in parallel) to prove that two points are connected
+no matter what the opponent does. A virtual connection is defined **point-to-point** — "each point
+could be an empty cell, a group of connected stones or a board side." HEXY then evaluated positions
+with a **Shannon-style electrical resistance** function: treat the board as a circuit, your stones
+as low resistance and the opponent's as infinite, augment cell adjacency with the virtual
+connections H-search found, and the resulting end-to-end resistance is the evaluation. HEXY won
+gold at the 2000 Computer Olympiad on that, before MCTS existed.
+
+Why this transfers unusually well to a base-to-base network board: the win condition *is* the
+H-search primitive (point-to-point, not edge-to-edge), and a legal one-cell expansion gap is
+exactly Hex's **bridge** — the canonical second-order virtual connection. The caveat is real: a
+per-round move budget, a 2–3 cost overwrite and a reinforce action all break the strict alternation
+H-search's proofs assume, so the deductions weaken from proofs to heuristics. That is still a far
+cheaper starting point than rollouts.
+
+### Trick-taking AI — PIMC, and the flaw it survives
+
+**Perfect Information Monte Carlo** remains state of the art for Skat, Bridge and Hearts: sample
+hidden hands consistent with what has been seen, solve each sample as a perfect-information game,
+average the results. Its known defect is **strategy fusion** — because each sampled world is solved
+independently, the search assumes it can act differently in each, and so overvalues plans that
+depend on information it does not actually have. IIMC and EPIMC exist to mitigate it; PIMC works
+well anyway. For a two-player, 33-card, 13-trick game the sampling space is small compared to
+Bridge, so PIMC is cheap here.
+
+### Slay the Spire — a campaign map is a rhythm, not a free-form graph
+
+Each act is 17 floors, up to six nodes wide, every room reachable by 1–3 edges from below and
+leading to 1–3 above. The beats are **fixed by depth**, not randomised: floor 1 is an easy combat,
+floor 9 is always treasure, floor 15 is always a rest site, and the act ends on a boss drawn from a
+pool of three. Elite frequency rises from 8% to 16% after act 1. The player's choice is which risk
+profile to take *between* guaranteed beats — the guarantees are what make the choice legible.
+
+### Metroidvania gating — three uses per ability
+
+The rule of thumb from the design literature: every new traversal ability should be bound to **at
+least three meaningful uses — one to progress, one to open a shortcut, one to reframe existing
+combat or puzzle space**. Backtracking is the point, not a tax, and it only pays if old areas
+change meaning. The known late-game failure is the other end of the same dial: once every ability
+is unlocked the map is large and the fast-travel network is thin, and traversal stops rewarding.
+
+### Roguebook — the maximalism warning
+
+Garfield's deckbuilder makes exploration a **hex map painted into existence** with brushes and ink
+pots, revealing battles, events and card vaults. Two lessons: the exploration currency is kept
+distinct from the combat currency, and the consistent reviewer complaint is that the game "lacks
+focus" — systems stacked rather than converged. Same failure family as the Culdcept note above.
+
+### Pokémon gym design — the team answers its own counter
+
+Thin research, stated as such: no substantial design writing surfaced, only community analysis. The
+one durable point is that a well-built fixed team includes answers to the counter it invites —
+Gyarados carrying Ice Fang for Grass, Quagsire's secondary Ground typing shutting down Electric —
+so the fight cannot be solo'd by the single obvious answer. The fan design-guide framing is also
+worth keeping: decide **what lesson the encounter teaches** first, then build the team and the
+arena to teach it.
+
+### Where this research is thin
+
+- No developer postmortem exists (or surfaced) for Thronebreaker's puzzle-battle design; the
+  evidence above is player discussion.
+- No Slay the Spire designer interview on map generation surfaced — the structure above comes from
+  wiki and strategy sources, which are reliable for *what* the map does and silent on *why*.
+- The Culdcept criticism is review journalism, not design writing.
+- Legacy/campaign trick-taking is barely explored territory; the only substantive item found was a
+  designer's unpublished brainstorm, not a shipped game.
+
+---
+
 ## Sources
 
 - [Sid Meier — "Interesting Decisions", GDC 2012 (report)](https://www.gamedeveloper.com/design/gdc-2012-sid-meier-on-how-to-see-games-as-sets-of-interesting-decisions) · [talk video](https://www.youtube.com/watch?v=WggIdtrqgKg) · [GDC Vault](https://www.gdcvault.com/play/1015756/interesting)
@@ -273,3 +424,18 @@ and they're not answering the question.
 - [Friedrich — cards as battle resolution, suited map sectors](<https://en.wikipedia.org/wiki/Friedrich_(board_game)>) · [rulebook](https://www.histogame.de/friedrich/FriedrichRules.pdf)
 - [Josh Buergel on trick-taking design (Breakup Gaming Society ep. 106)](https://www.breakupgamingsociety.com/episodes/josh-buergel-interview-best-trick-taking-games-fox-in-the-forest-deluxe)
 - [HexWiki — Handicap (Demer scale)](https://www.hexwiki.net/index.php/Handicap) · [HexWiki — Rules and the swap rule](https://www.hexwiki.net/index.php/Rules)
+
+### Section 7 — genre neighbours
+
+- [Faeria — official site](https://www.faeria.com/) · [PC Gamer on the living board](https://www.pcgamer.com/faerias-living-board-makes-it-stand-out-from-the-card-game-crowd/) · [Big Boss Battle — CCG/strategy hybrid analysis](https://bigbossbattle.com/faeria-is-a-huge-ccg-and-strategy-hybrid-that-goes-as-deep-as-it-does-wide/) · [Wikipedia](https://en.wikipedia.org/wiki/Faeria)
+- [Culdcept (series overview)](https://en.wikipedia.org/wiki/Culdcept) · [TheGamer — Culdcept Begins, "mechanics in search of a soul"](https://www.thegamer.com/culdcept-begins-is-brilliant-welcoming-and-occasionally-infuriating/) · [Metacritic — Culdcept Begins](https://www.metacritic.com/game/culdcept-begins/)
+- [Thronebreaker: The Witcher Tales](https://en.wikipedia.org/wiki/Thronebreaker:_The_Witcher_Tales) · [Steam discussion — "there are WAY too many puzzle battles"](https://steamcommunity.com/app/973760/discussions/0/3374780959392809341/)
+- [The Fox in the Forest Duet — BGG](https://boardgamegeek.com/boardgame/288169/the-fox-in-the-forest-duet) · [There Will Be Games review of the path/tug-of-war coupling](https://therewillbe.games/articles-boardgame-reviews/8367-fox-on-the-run-a-the-fox-in-the-forest-duet-board-game-review) · [Tabletop Bellhop review](https://tabletopbellhop.com/game-reviews/the-fox-in-the-forest-duet/)
+- [We the People — the first card-driven wargame](https://en.wikipedia.org/wiki/We_the_People_(boardgame)) · [Meeple Mountain — a brief history of card-driven wargames](https://www.meeplemountain.com/articles/a-brief-history-of-card-driven-wargames/) · [Washington's War (Ellis-Gorman on Ops vs Event)](https://www.stuartellisgorman.com/blog/washingtons-war-by-mark-herman) · [Herman / Ruhnke / Matthews CDG design panel](https://www.youtube.com/watch?v=d_TpfOZ6CrM)
+- [Anshelevich — A hierarchical approach to computer Hex (H-search, virtual connections)](https://www.cs.auckland.ac.nz/courses/compsci767s2c/resources/VAnshelevich-ARTINT.pdf) · [The Game of Hex: an automatic theorem proving approach](https://vanshel.com/Hexy/Publications/VAnshelevich-01.pdf) · [van Rijswijck — Search and evaluation in Hex](https://www.cs.cornell.edu/~adith/docs/y_hex.pdf) · [Bonnet et al. — On the complexity of connection games](https://arxiv.org/pdf/1605.04715) · [Havannah and TwixT are PSPACE-complete](https://arxiv.org/pdf/1403.6518)
+- [Perfect Information Monte Carlo with postponing reasoning](https://arxiv.org/abs/2408.02380) · [Policy-based inference in trick-taking card games](https://www.researchgate.net/publication/336087110_Policy_Based_Inference_in_Trick-Taking_Card_Games) · [Knowledge-based paranoia search in trick-taking](https://arxiv.org/pdf/2104.05423) · [Learning policies from human data for Skat](https://arxiv.org/pdf/1905.10907)
+- [Slay the Spire — map generation (wiki)](https://slaythespire.wiki.gg/wiki/Map_Generation) · [Analysis of uncertainty in procedural maps in Slay the Spire](https://arxiv.org/html/2504.03918v1)
+- [Making sense of Metroidvania game design (Game Developer)](https://www.gamedeveloper.com/design/making-sense-of-metroidvania-game-design) · [Metroidvania design pillars](https://allthings.how/metroidvania-explained-design-pillars-history-scope/)
+- [Roguebook — Tabletop Bellhop review](https://tabletopbellhop.com/game-reviews/roguebook/) · [NME — "an expansive deck builder that lacks focus"](https://www.nme.com/reviews/game-reviews/roguebook-review-an-expansive-deck-builder-that-lacks-focus-2974742)
+- [Pokémon Tabletop RPG — gym design: signature elements](https://pokemontabletop.com/gym-design-signature-elements/) · [gym design: unconventional challenges](https://pokemontabletop.com/gym-design-unconventional-challenges/)
+- [Daniel Solis — brainstorming a legacy-style trick-taking game](https://danielsolisblog.blogspot.com/2015/03/brainstorming-legacy-style-trick-taking.html)

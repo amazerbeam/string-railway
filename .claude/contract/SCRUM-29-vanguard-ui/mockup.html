@@ -1,0 +1,902 @@
+<title>The Vanguard — board mockup (SCRUM-29)</title>
+<style>
+  /* ==========================================================================
+     SCRUM-29 · The Vanguard board.
+
+     Deliberately a SIBLING of the approved War Council mockup, not a new
+     identity: the chamber / felt / brass / chalk neutrals, the serif-display +
+     system-sans pairing, the clamp() sizing idiom, and the
+     `auto 1fr auto` shell all carry over from
+     .claude/contract/SCRUM-28-war-council-ui/mockup.html and the
+     src/app/warCouncil/warCouncil.css token table it produced.
+
+     Single dark theme, deliberately — matching the recorded decision in
+     .docs/implementation/war-council-ui.md. A game surface commits to one
+     visual world; this is that choice, not an omission.
+
+     Every value in the token block is a DEVELOPER TUNING VALUE.
+     ========================================================================== */
+
+  :root {
+    color-scheme: dark;
+
+    /* --- carried over verbatim from warCouncil.css --- */
+    --vg-chamber: #0c1013;
+    --vg-chamber-lift: #141a1f;
+    --vg-felt: #16241f;
+    --vg-felt-line: #2b4038;
+    --vg-brass: #c99a4e;
+    --vg-brass-dim: #7d6132;
+    --vg-chalk: #cdd6d2;
+    --vg-chalk-dim: #6f7d78;
+    --vg-alarm: #d1705f;
+    --vg-parchment: #e9e1cd;
+
+    --vg-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --vg-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    /* --- new to this screen --- */
+    /* Purple Player / green CPU are fixed by skirmish-board-replacement.md;
+       these particular values are not. The purple sits in the same family as
+       warCouncil.css's --wc-moons (#9c7cb8), pushed up in saturation because a
+       filled hex needs more body than a line-art suit mark. */
+    --vg-player: #9575c4;
+    --vg-player-deep: #6f52a0;
+    --vg-cpu: #5f9e6b;
+    --vg-cpu-deep: #3f7049;
+    --vg-defense: #4d5a55;
+    --vg-empty: #1b2925;
+    --vg-empty-edge: #253630;
+    --vg-selectable: var(--vg-brass);
+    --vg-reinforce-mark: var(--vg-parchment);
+
+    --vg-board-max: clamp(18rem, 94vmin, 64rem);
+    --vg-radius: 0.55rem;
+  }
+
+  .vg-shell,
+  .vg-shell * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    overflow: hidden;
+  }
+
+  /* ==========================================================================
+     The shell — one full-viewport grid, never a page.
+     `1fr` belongs to the BOARD; reversed, the palette grows and the board
+     collapses at short viewports.
+     ========================================================================== */
+  .vg-shell {
+    position: relative;
+    height: 100dvh;
+    width: 100%;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      'status'
+      'board'
+      'palette';
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+      env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+    background: radial-gradient(120% 80% at 50% 0%, #17202700 0%, #060809 100%), var(--vg-chamber);
+    color: var(--vg-chalk);
+    font-family: var(--vg-sans);
+  }
+
+  /* --------- status band: anchored to the top edge, deliberately thin -------- */
+  .vg-band {
+    grid-area: status;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--vg-felt-line);
+    background: var(--vg-chamber-lift);
+  }
+
+  .vg-band-round {
+    font-family: var(--vg-serif);
+    font-size: clamp(0.9rem, 2.2vmin, 1.1rem);
+    color: var(--vg-brass);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .vg-band-note {
+    font-size: 0.68rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--vg-chalk-dim);
+    text-align: right;
+  }
+
+  /* ------------------------------- the board -------------------------------- */
+  .vg-board-area {
+    grid-area: board;
+    display: grid;
+    place-items: center;
+    min-height: 0;
+    padding: clamp(0.5rem, 2vmin, 1.2rem);
+  }
+
+  .vg-board {
+    position: relative;
+    width: min(100%, var(--vg-board-max));
+    max-height: 100%;
+    /* Derived from hexBoardMetrics(11), never hand-chosen:
+       widthUnits = 11 + 10/2 + 1 = 16 ; heightUnits = 10*0.75 + 2/√3 = 8.6547 */
+    aspect-ratio: 16 / 8.6547;
+    background:
+      radial-gradient(90% 120% at 50% 50%, #1a2a2400 0%, #0a1211 100%), var(--vg-felt);
+    border: 1px solid var(--vg-felt-line);
+    border-radius: var(--vg-radius);
+  }
+
+  .vg-cell {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    /* A pointy-top hexagon. clip-path clips pointer events too, so the hit
+       area is the hexagon rather than its bounding box. */
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: grid;
+    place-items: center;
+    transition:
+      filter 110ms ease,
+      box-shadow 110ms ease;
+  }
+
+  .vg-cell:disabled {
+    cursor: default;
+  }
+
+  /* The clip would eat an outline, so a focused cell drops the clip and takes
+     a square brass ring instead. Keyboard focus must never be invisible. */
+  .vg-cell:focus-visible {
+    clip-path: none;
+    border-radius: 3px;
+    outline: 3px solid var(--vg-brass);
+    outline-offset: 1px;
+    z-index: 5;
+  }
+
+  @media (hover: hover) {
+    .vg-cell:not(:disabled):hover {
+      filter: brightness(1.3);
+    }
+  }
+
+  .vg-cell:not(:disabled):active {
+    filter: brightness(0.82);
+  }
+
+  .vg-cell[data-kind='empty'] {
+    background: var(--vg-empty);
+    box-shadow: inset 0 0 0 1px var(--vg-empty-edge);
+  }
+
+  /* Defense cells read as blocked by texture as well as colour. */
+  .vg-cell[data-kind='defense'] {
+    background:
+      repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.32) 0 2px, transparent 2px 6px),
+      var(--vg-defense);
+  }
+
+  .vg-cell[data-owner='player'] {
+    background: linear-gradient(160deg, var(--vg-player) 0%, var(--vg-player-deep) 100%);
+  }
+
+  .vg-cell[data-owner='cpu'] {
+    background: linear-gradient(160deg, var(--vg-cpu) 0%, var(--vg-cpu-deep) 100%);
+  }
+
+  /* --- state without colour or motion alone --- */
+  /* A base carries a heavy inner ring plus a star glyph. */
+  .vg-cell[data-base='true'] {
+    box-shadow:
+      inset 0 0 0 2px var(--vg-parchment),
+      inset 0 0 0 5px rgba(0, 0, 0, 0.4);
+  }
+
+  /* A reinforced token carries a parchment bar across its waist. */
+  .vg-cell[data-reinforced='true']::before {
+    content: '';
+    position: absolute;
+    left: 22%;
+    right: 22%;
+    height: 13%;
+    background: var(--vg-reinforce-mark);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+  }
+
+  /* A legal target for the armed action: brass ring + lift. */
+  .vg-cell[data-selectable='true'] {
+    box-shadow:
+      inset 0 0 0 3px var(--vg-selectable),
+      0 0 10px rgba(201, 154, 78, 0.4);
+  }
+
+  .vg-glyph {
+    font-family: var(--vg-serif);
+    font-size: clamp(0.45rem, 1.5vmin, 0.9rem);
+    line-height: 1;
+    color: var(--vg-parchment);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+    pointer-events: none;
+  }
+
+  /* ------------------------------ action palette ----------------------------- */
+  .vg-palette {
+    grid-area: palette;
+    border-top: 1px solid var(--vg-felt-line);
+    background: var(--vg-chamber-lift);
+    padding: 0.7rem 1rem calc(0.7rem + env(safe-area-inset-bottom, 0px));
+    display: grid;
+    gap: 0.6rem;
+    justify-items: center;
+  }
+
+  .vg-hint {
+    margin: 0;
+    min-height: 1.25em;
+    font-size: clamp(0.78rem, 1.9vmin, 0.9rem);
+    color: var(--vg-chalk-dim);
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .vg-hint[data-reject='true'] {
+    color: var(--vg-alarm);
+  }
+
+  .vg-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .vg-action {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.4rem 1rem;
+    border-radius: var(--vg-radius);
+    border: 1px solid var(--vg-felt-line);
+    background: var(--vg-felt);
+    color: var(--vg-chalk);
+    font-family: var(--vg-serif);
+    font-size: clamp(0.85rem, 2vmin, 1rem);
+    cursor: pointer;
+    touch-action: manipulation;
+    display: grid;
+    gap: 0.05rem;
+    justify-items: center;
+    transition: border-color 110ms ease;
+  }
+
+  .vg-action small {
+    font-family: var(--vg-sans);
+    font-size: 0.64rem;
+    letter-spacing: 0.04em;
+    color: var(--vg-chalk-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .vg-action:focus-visible {
+    outline: 3px solid var(--vg-brass);
+    outline-offset: 2px;
+  }
+
+  .vg-action[aria-pressed='true'] {
+    background: var(--vg-brass);
+    border-color: var(--vg-brass);
+    color: #16150f;
+  }
+
+  .vg-action[aria-pressed='true'] small {
+    color: #5b4a24;
+  }
+
+  .vg-action:disabled {
+    opacity: 0.38;
+    cursor: default;
+  }
+
+  @media (hover: hover) {
+    .vg-action:not(:disabled):hover {
+      border-color: var(--vg-brass-dim);
+    }
+  }
+
+  /* ============ Test-mode trick entry — an EDGE panel, never a curtain ========
+     AC3: the board must stay visible while the War Council decides. This is
+     anchored to the right edge for exactly that reason.
+     Lives in the Test-mode HOST, not in the mount (see plan.md Assumptions).
+     ========================================================================== */
+  .vg-entry {
+    position: absolute;
+    top: 50%;
+    right: clamp(0.5rem, 2vmin, 1.25rem);
+    transform: translateY(-50%);
+    width: min(19rem, calc(100% - 1.5rem));
+    background: var(--vg-chamber-lift);
+    border: 1px solid var(--vg-brass-dim);
+    border-radius: var(--vg-radius);
+    padding: 1rem;
+    display: grid;
+    gap: 0.65rem;
+    box-shadow: 0 14px 44px rgba(0, 0, 0, 0.6);
+    z-index: 10;
+  }
+
+  .vg-entry h2 {
+    margin: 0;
+    font-family: var(--vg-serif);
+    font-size: 1rem;
+    color: var(--vg-brass);
+    text-wrap: balance;
+  }
+
+  .vg-entry p {
+    margin: 0;
+    font-size: 0.74rem;
+    line-height: 1.5;
+    color: var(--vg-chalk-dim);
+  }
+
+  .vg-entry label {
+    display: grid;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+  }
+
+  .vg-entry input {
+    min-height: 44px;
+    padding: 0.35rem 0.6rem;
+    font-family: var(--vg-sans);
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+    border-radius: 4px;
+    border: 1px solid var(--vg-felt-line);
+    background: var(--vg-felt);
+    color: var(--vg-chalk);
+  }
+
+  .vg-entry input:focus-visible {
+    outline: 3px solid var(--vg-brass);
+    outline-offset: 1px;
+  }
+
+  .vg-derived {
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--vg-chalk);
+    background: var(--vg-felt);
+    border-radius: 4px;
+    padding: 0.45rem 0.6rem;
+  }
+
+  .vg-derived[data-invalid='true'] {
+    color: var(--vg-alarm);
+  }
+
+  .vg-primary {
+    min-height: 44px;
+    border-radius: var(--vg-radius);
+    border: 0;
+    background: var(--vg-brass);
+    color: #16150f;
+    font-family: var(--vg-serif);
+    font-size: 0.95rem;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .vg-primary:focus-visible {
+    outline: 3px solid var(--vg-parchment);
+    outline-offset: 2px;
+  }
+
+  /* ------------------------------- outcome panel ----------------------------- */
+  .vg-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(25rem, calc(100% - 2rem));
+    background: var(--vg-chamber-lift);
+    border: 1px solid var(--vg-brass);
+    border-radius: var(--vg-radius);
+    padding: 1.3rem;
+    display: grid;
+    gap: 0.8rem;
+    text-align: center;
+    box-shadow: 0 16px 50px rgba(0, 0, 0, 0.68);
+    z-index: 12;
+  }
+
+  .vg-panel h2 {
+    margin: 0;
+    font-family: var(--vg-serif);
+    font-size: clamp(1.1rem, 3vmin, 1.4rem);
+    color: var(--vg-brass);
+  }
+
+  .vg-panel p {
+    margin: 0;
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: var(--vg-chalk-dim);
+    text-wrap: balance;
+  }
+
+  .vg-alert {
+    position: absolute;
+    top: 3.4rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(32rem, calc(100% - 2rem));
+    margin: 0;
+    background: #2e1512;
+    border: 1px solid var(--vg-alarm);
+    color: #f5cfc7;
+    padding: 0.6rem 0.9rem;
+    border-radius: var(--vg-radius);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    z-index: 11;
+  }
+
+  /* ------------------------- mockup-only scene switcher ---------------------- */
+  .vg-devbar {
+    position: fixed;
+    bottom: 0.4rem;
+    left: 0.4rem;
+    z-index: 50;
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    align-items: center;
+    max-width: calc(100% - 0.8rem);
+    background: rgba(6, 8, 9, 0.86);
+    border: 1px dashed var(--vg-chalk-dim);
+    border-radius: 4px;
+    padding: 0.3rem;
+  }
+
+  .vg-devbar span {
+    font-family: var(--vg-sans);
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--vg-chalk-dim);
+    padding: 0 0.3rem;
+  }
+
+  .vg-devbar button {
+    font-family: var(--vg-sans);
+    font-size: 0.66rem;
+    padding: 0.28rem 0.5rem;
+    border-radius: 3px;
+    border: 1px solid var(--vg-felt-line);
+    background: var(--vg-felt);
+    color: var(--vg-chalk);
+    cursor: pointer;
+  }
+
+  .vg-devbar button:focus-visible {
+    outline: 2px solid var(--vg-brass);
+    outline-offset: 1px;
+  }
+
+  .vg-devbar button[aria-pressed='true'] {
+    background: var(--vg-chalk);
+    color: var(--vg-chamber);
+    border-color: var(--vg-chalk);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vg-cell,
+    .vg-action {
+      transition: none;
+    }
+  }
+</style>
+
+<div class="vg-devbar" role="group" aria-label="Mockup scene switcher (not part of the screen)">
+  <span>Scenes</span>
+  <button type="button" data-scene="play">Your turn</button>
+  <button type="button" data-scene="awaiting">War Council · AC3 + AC6</button>
+  <button type="button" data-scene="cpu">Their turn</button>
+  <button type="button" data-scene="reject">Rejected action · AC2</button>
+  <button type="button" data-scene="roundover">Round over</button>
+  <button type="button" data-scene="breach">The Breach</button>
+  <button type="button" data-scene="fault">Engine fault</button>
+</div>
+
+<div class="vg-shell">
+  <header class="vg-band">
+    <span class="vg-band-round" id="band-round">Round 2 · The Clash</span>
+    <span class="vg-band-note">Muster counts and turn indicator are SCRUM-30</span>
+  </header>
+
+  <main class="vg-board-area">
+    <div class="vg-board" id="board" role="group" aria-label="Vanguard board, 11 by 11 hexes"></div>
+  </main>
+
+  <div class="vg-palette">
+    <p class="vg-hint" id="hint" aria-live="polite" data-reject="false">
+      Choose an action, then a target cell
+    </p>
+    <div class="vg-actions" role="group" aria-label="Clash actions" id="actions">
+      <button type="button" class="vg-action" data-action="expand" aria-pressed="false">
+        Expand<small>1 move · empty, within 2</small>
+      </button>
+      <button type="button" class="vg-action" data-action="overwrite" aria-pressed="false">
+        Overwrite<small>2–3 moves · adjacent enemy</small>
+      </button>
+      <button type="button" class="vg-action" data-action="reinforce" aria-pressed="false">
+        Reinforce<small>1 move · your own token</small>
+      </button>
+    </div>
+  </div>
+
+  <aside class="vg-entry" id="entry" hidden aria-labelledby="entry-title">
+    <h2 id="entry-title">Test mode — round 3's War Council result</h2>
+    <p>
+      Stands in for a real match. Runs the same scoreRound → convertScoreToMuster pipeline a real
+      round takes; there is no parallel scoring rule.
+    </p>
+    <label>
+      Tricks you won
+      <input type="number" id="tricks" min="0" max="13" step="1" value="8" />
+    </label>
+    <p class="vg-derived" id="derived" data-invalid="false">They won 5 · 13 tricks in a round</p>
+    <button type="button" class="vg-primary" id="entry-submit">Convert to Muster</button>
+  </aside>
+
+  <div class="vg-panel" id="panel" hidden role="dialog" aria-labelledby="panel-title">
+    <h2 id="panel-title">Round over</h2>
+    <p id="panel-body">
+      Both sides spent their Muster and neither reached the Breach. The board carries over
+      untouched.
+    </p>
+    <button type="button" class="vg-primary" id="panel-action">Next round</button>
+  </div>
+
+  <p class="vg-alert" id="alert" hidden role="alert"></p>
+</div>
+
+<script>
+  // ==========================================================================
+  // MOCKUP ONLY. Hand-placed fake board state and a crude stand-in for legal
+  // targets. The real screen asks the engine: legalTargetsFor() dry-runs
+  // applyVanguardAction, and every submission goes through applyClashAction.
+  // Nothing here is a rule.
+  // ==========================================================================
+  const SIZE = 11
+  const ROW_HEIGHT_RATIO = 0.75
+  const HEX_H = 2 / Math.sqrt(3)
+  const WIDTH_UNITS = SIZE + (SIZE - 1) / 2 + 1
+  const HEIGHT_UNITS = (SIZE - 1) * ROW_HEIGHT_RATIO + HEX_H
+
+  const key = (q, r) => q + ',' + r
+  const hexDistance = (aq, ar, bq, br) => {
+    const dq = aq - bq
+    const dr = ar - br
+    return (Math.abs(dq) + Math.abs(dq + dr) + Math.abs(dr)) / 2
+  }
+
+  const BASES = { player: [0, 0], cpu: [10, 10] }
+  const DEFENSE = [
+    [5, 4],
+    [5, 5],
+    [5, 6],
+    [4, 5],
+    [6, 5],
+  ]
+
+  const cells = new Map()
+  const playerTokens = [
+    [0, 0],
+    [1, 0],
+    [0, 1],
+    [1, 1],
+    [2, 1],
+    [2, 2],
+    [3, 2],
+    [3, 3],
+    [4, 3],
+    [4, 2],
+  ]
+  const cpuTokens = [
+    [10, 10],
+    [9, 10],
+    [10, 9],
+    [9, 9],
+    [8, 9],
+    [8, 8],
+    [7, 8],
+    [6, 8],
+    [6, 7],
+    [5, 3],
+  ]
+  const reinforced = new Set(['3,3', '2,2', '8,8', '6,7'])
+
+  for (const [q, r] of DEFENSE) cells.set(key(q, r), { kind: 'defense' })
+  for (const [q, r] of playerTokens)
+    cells.set(key(q, r), { kind: 'token', owner: 'player', reinforced: reinforced.has(key(q, r)) })
+  for (const [q, r] of cpuTokens)
+    cells.set(key(q, r), { kind: 'token', owner: 'cpu', reinforced: reinforced.has(key(q, r)) })
+
+  const boardEl = document.getElementById('board')
+  const hintEl = document.getElementById('hint')
+  const entryEl = document.getElementById('entry')
+  const panelEl = document.getElementById('panel')
+  const alertEl = document.getElementById('alert')
+  const bandRoundEl = document.getElementById('band-round')
+
+  let armed = null
+  let interactive = true
+  let tabStop = '0,0'
+
+  function occupantText(k, q, r) {
+    const c = cells.get(k)
+    const basePrefix =
+      k === key(...BASES.player) ? 'your base, ' : k === key(...BASES.cpu) ? 'their base, ' : ''
+    if (!c) return basePrefix + 'empty'
+    if (c.kind === 'defense') return 'permanent defense'
+    const who = c.owner === 'player' ? 'your token' : 'their token'
+    return basePrefix + who + (c.reinforced ? ', reinforced' : '')
+  }
+
+  function fakeLegalTargets(action) {
+    const out = new Set()
+    if (!action) return out
+    for (let r = 0; r < SIZE; r++) {
+      for (let q = 0; q < SIZE; q++) {
+        const k = key(q, r)
+        const c = cells.get(k)
+        let near = Infinity
+        for (const [pq, pr] of playerTokens) near = Math.min(near, hexDistance(pq, pr, q, r))
+        if (action === 'expand' && !c && near <= 2) out.add(k)
+        if (action === 'overwrite' && c && c.kind === 'token' && c.owner === 'cpu' && near <= 1)
+          out.add(k)
+        if (
+          action === 'reinforce' &&
+          c &&
+          c.kind === 'token' &&
+          c.owner === 'player' &&
+          !c.reinforced
+        )
+          out.add(k)
+      }
+    }
+    return out
+  }
+
+  function render() {
+    const legal = fakeLegalTargets(armed)
+    boardEl.replaceChildren()
+
+    for (let r = 0; r < SIZE; r++) {
+      for (let q = 0; q < SIZE; q++) {
+        const k = key(q, r)
+        const c = cells.get(k)
+
+        const btn = document.createElement('button')
+        btn.type = 'button'
+        btn.className = 'vg-cell'
+        btn.dataset.cell = k
+        // The r axis is FLIPPED for screen space: increasing r climbs the
+        // screen, so the engine's fixed bases.player {0,0} lands bottom-left
+        // (lowest and leftmost) and bases.cpu {10,10} lands top-right. Rows
+        // shift right as they climb, leaning the rhombus left-to-right off its
+        // bottom-left corner. This projection is the ONLY place orientation
+        // is decided — no coordinate is rewritten anywhere.
+        btn.style.left = ((q + r / 2 + 0.5) / WIDTH_UNITS) * 100 + '%'
+        btn.style.top =
+          (((SIZE - 1 - r) * ROW_HEIGHT_RATIO + HEX_H / 2) / HEIGHT_UNITS) * 100 + '%'
+        btn.style.width = (1 / WIDTH_UNITS) * 100 + '%'
+        btn.style.aspectRatio = '1 / ' + HEX_H
+
+        btn.dataset.kind = c ? c.kind : 'empty'
+        if (c && c.owner) btn.dataset.owner = c.owner
+        if (c && c.reinforced) btn.dataset.reinforced = 'true'
+        if (k === key(...BASES.player) || k === key(...BASES.cpu)) btn.dataset.base = 'true'
+
+        const selectable = interactive && legal.has(k)
+        if (selectable) btn.dataset.selectable = 'true'
+        btn.disabled = !selectable
+        btn.tabIndex = k === tabStop ? 0 : -1
+
+        // AC4 — the accessible name carries the coordinate and the occupant.
+        btn.setAttribute('aria-label', 'Cell ' + q + ', ' + r + ' — ' + occupantText(k, q, r))
+
+        if (btn.dataset.base === 'true') {
+          const glyph = document.createElement('span')
+          glyph.className = 'vg-glyph'
+          glyph.setAttribute('aria-hidden', 'true')
+          glyph.textContent = '★'
+          btn.append(glyph)
+        }
+
+        btn.addEventListener('click', () => onTapCell(q, r))
+        boardEl.append(btn)
+      }
+    }
+  }
+
+  function setHint(text, reject) {
+    hintEl.textContent = text
+    hintEl.dataset.reject = reject ? 'true' : 'false'
+  }
+
+  function clearArmed() {
+    armed = null
+    for (const b of document.querySelectorAll('.vg-action')) b.setAttribute('aria-pressed', 'false')
+  }
+
+  function onTapCell(q, r) {
+    if (!armed) return
+    const k = key(q, r)
+    if (armed === 'reinforce') {
+      cells.set(k, { kind: 'token', owner: 'player', reinforced: true })
+    } else {
+      cells.set(k, { kind: 'token', owner: 'player', reinforced: false })
+      playerTokens.push([q, r])
+    }
+    tabStop = k
+    // The selection stays armed after a successful submission, so a run of
+    // Expands costs one tap each after the first. Flagged in plan.md Risks.
+    setHint('Submitted ' + armed + ' at ' + q + ', ' + r + ' — still armed, tap another cell', false)
+    render()
+  }
+
+  document.getElementById('actions').addEventListener('click', (e) => {
+    const btn = e.target.closest('.vg-action')
+    if (!btn || btn.disabled) return
+    const next = armed === btn.dataset.action ? null : btn.dataset.action
+    clearArmed()
+    armed = next
+    if (armed) {
+      document.querySelector('[data-action="' + armed + '"]').setAttribute('aria-pressed', 'true')
+      setHint('Choose a target for ' + armed, false)
+    } else {
+      setHint('Choose an action, then a target cell', false)
+    }
+    render()
+  })
+
+  // ---- Test-mode manual trick entry: one input, the other side derived ------
+  const tricksInput = document.getElementById('tricks')
+  const derivedEl = document.getElementById('derived')
+
+  function syncDerived() {
+    const v = Number(tricksInput.value)
+    const ok = Number.isInteger(v) && v >= 0 && v <= 13
+    derivedEl.dataset.invalid = ok ? 'false' : 'true'
+    derivedEl.textContent = ok
+      ? 'They won ' + (13 - v) + ' · 13 tricks in a round'
+      : 'Enter a whole number from 0 to 13'
+    return ok
+  }
+
+  tricksInput.addEventListener('input', syncDerived)
+
+  document.getElementById('entry-submit').addEventListener('click', () => {
+    if (!syncDerived()) return
+    const v = Number(tricksInput.value)
+    entryEl.hidden = true
+    interactive = true
+    bandRoundEl.textContent = 'Round 3 · The Clash'
+    setHint(
+      'Muster converted — you ' + (v > 13 - v ? 'won' : 'lost') + " the War Council. Your move.",
+      false,
+    )
+    render()
+  })
+
+  // ------------------------------- scenes -----------------------------------
+  const SCENES = {
+    play() {
+      interactive = true
+      bandRoundEl.textContent = 'Round 2 · The Clash'
+      setHint('Choose an action, then a target cell', false)
+    },
+    awaiting() {
+      interactive = false
+      entryEl.hidden = false
+      bandRoundEl.textContent = 'Round 3 · War Council'
+      setHint('The War Council is deciding this round’s Muster', false)
+    },
+    cpu() {
+      interactive = false
+      bandRoundEl.textContent = 'Round 2 · The Clash'
+      setHint('They are spending their Muster', false)
+    },
+    reject() {
+      interactive = true
+      armed = 'overwrite'
+      document.querySelector('[data-action="overwrite"]').setAttribute('aria-pressed', 'true')
+      setHint('That cell is not next to your network — Overwrite allows no gap.', true)
+    },
+    roundover() {
+      interactive = false
+      panelEl.hidden = false
+      document.getElementById('panel-title').textContent = 'Round over'
+      document.getElementById('panel-body').textContent =
+        'Both sides spent their Muster and neither reached the Breach. The board carries over untouched.'
+      document.getElementById('panel-action').textContent = 'Next round'
+    },
+    breach() {
+      interactive = false
+      panelEl.hidden = false
+      document.getElementById('panel-title').textContent = 'The Breach'
+      document.getElementById('panel-body').textContent =
+        'You joined your base to theirs with an unbroken chain of your own tokens. The Vanguard is yours.'
+      document.getElementById('panel-action').textContent = 'Finish'
+    },
+    fault() {
+      interactive = false
+      alertEl.hidden = false
+      alertEl.textContent =
+        'The opponent has Muster left but the engine can find no legal action for it. That is an engine gap, not a rule, so play stops here rather than retrying.'
+    },
+  }
+
+  document.querySelector('.vg-devbar').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-scene]')
+    if (!btn) return
+    entryEl.hidden = true
+    panelEl.hidden = true
+    alertEl.hidden = true
+    clearArmed()
+    for (const b of document.querySelectorAll('.vg-devbar button'))
+      b.setAttribute('aria-pressed', String(b === btn))
+    SCENES[btn.dataset.scene]()
+    render()
+  })
+
+  document.getElementById('panel-action').addEventListener('click', () => {
+    panelEl.hidden = true
+    SCENES.play()
+    render()
+  })
+
+  // ------------- roving tabindex: one tab stop across 121 cells --------------
+  boardEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      clearArmed()
+      setHint('Choose an action, then a target cell', false)
+      render()
+      return
+    }
+    // r climbs the screen after the flip, so ArrowUp increases r.
+    const step = { ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[
+      e.key
+    ]
+    if (!step) return
+    e.preventDefault()
+    const parts = tabStop.split(',')
+    const nq = Math.min(SIZE - 1, Math.max(0, Number(parts[0]) + step[0]))
+    const nr = Math.min(SIZE - 1, Math.max(0, Number(parts[1]) + step[1]))
+    tabStop = key(nq, nr)
+    render()
+    const target = boardEl.querySelector('[data-cell="' + tabStop + '"]')
+    if (target) target.focus()
+  })
+
+  document.querySelector('[data-scene="play"]').setAttribute('aria-pressed', 'true')
+  syncDerived()
+  render()
+</script>

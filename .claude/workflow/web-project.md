@@ -56,8 +56,10 @@ Node and npm are on `PATH`. There is no machine-specific executable to configure
 | Formatting is clean | `npm run format:check` — confirm the script exists in `package.json` first |
 | Rewrite formatting in place | `npm run format` — Prettier `--write` across the repo; run it, then re-run `format:check` |
 | Full test suite | `npm test` |
+| **One Vitest project only** | `npx vitest run --project node` / `npx vitest run --project dom` |
 | One test file | `npx vitest run src/__tests__/smoke.test.ts` |
 | One test or describe block by name | `npx vitest run -t "runs the test suite"` |
+| Formatting of specific files only | `npx prettier --check <path> [<path>…]` — the repo-wide `format:check` fails on pre-existing files |
 | Production build | `npm run build` |
 | **A dev server is already listening** | `try { (Invoke-WebRequest http://localhost:5173/ -UseBasicParsing -TimeoutSec 3).StatusCode } catch { "none" }` |
 | **Start the app for browser verification** (QA only — see below) | `$p = Start-Process npm.cmd -ArgumentList "run","dev","--","--port","5199","--strictPort" -PassThru -WindowStyle Hidden; $p.Id` |
@@ -85,6 +87,8 @@ The five commands in the last row are exactly what `.github/workflows/ci.yml` ru
   - **Judgement is still the developer's.** Automation can confirm a component renders, a state update commits, and the console is clean; it cannot answer whether an interaction *feels* right. See Developer-owned work.
 - **Pass/fail is the exit code plus stdout.** There is no results file to parse. `0` means everything passed; Vitest prints a `Tests  N passed` summary line. Quote it.
 - **`Select-String` reports one match per physical line, and a bundled asset is one line.** Grepping `dist/assets/*.js` for `"A|B"` surfaces whichever alternative appears first and looks like proof that only A is present. Any check that must prove *two* strings shipped needs `-AllMatches`, two separate greps, or a raw `-match` against `Get-Content -Raw`.
+- **A cold-cache `npm test` can fail with `[vitest-pool-runner]: Timeout waiting for worker to respond` — that is not a failing test.** It is a worker-*start* timeout on the `dom` project: jsdom environment setup has been measured at ~66s against a cold Vite transform cache, which starves the pool while the `node` project is also running. The `node` project passes in the same run and the affected `.test.tsx` files never execute at all, so the summary reports fewer files than exist. Warm the cache by running the projects separately first (`npx vitest run --project node; npx vitest run --project dom`), then run `npm test` — a warm full run has been measured at 1.70s. Treat a **second consecutive** timeout as a real problem; a single cold one is infrastructure, not a defect, and must never be reported as a test failure.
+- **`npm run format:check` currently fails on pre-existing files** across `.docs/**`, `src/battle/**` and `src/vanguard/**` that no current contract has touched. Run it and report the result, but gate a contract on `npx prettier --check` scoped to the files that contract actually changed. Do not "fix" the repo-wide failure as a side effect of unrelated work.
 - **A TypeScript error inside a test file is not a failing test.** Vitest reports it as a collection/transform error and the file's tests never run. Read the output for "Failed to load" or "Transform failed" before concluding anything about coverage.
 - **Missing `node_modules` is not a code defect.** It surfaces as `'vite' is not recognized`, `Cannot find module`, or `npm ERR! Missing script`. Run `npm ci` and re-run; do not "fix" source in response.
 - **`npm run lint` and `npm run typecheck` are required gates, and they exist.** This stack has real static analysis wired up — every contract touching `.ts`/`.tsx` plans both. Never skip them, and never record them as `N/A` while TypeScript files are in the diff.
