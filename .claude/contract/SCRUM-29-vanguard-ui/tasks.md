@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: COMPLETE
 Started: 2026-08-06
 
 **Goal:** Build the playable Vanguard board as a full-viewport, non-scrolling game screen — the hex rhombus with both bases, every token in its owner's colour, defense cells and the +1 reinforced state, plus an action palette that submits Expand/Overwrite/Reinforce against a target cell to the existing engine — mounted as `VanguardMountProps` so it spans a whole match, with a Test-mode host that supplies each round's Muster from a manual trick-entry form.
@@ -29,7 +29,8 @@ Started: 2026-08-06
 - `src/app/vanguard/VanguardMatch.tsx` — the mount implementing `VanguardMountProps`
 - `src/app/vanguard/TrickEntryForm.tsx` — Test-mode manual trick entry (AC6)
 - `src/app/vanguard/TestModeVanguardHost.tsx` — Test-mode host owning `requestTricksWon` (AC6)
-- `src/app/vanguard/vanguard.css` — the full-viewport shell, tokens, board, cells, palette, panels
+- `src/app/vanguard/vanguard.css` — the full-viewport shell, tokens, board, cells, palette (268 measured lines by `Measure-Object -Line`, 305 actual — see Task 6 note)
+- `src/app/vanguard/vanguardPanels.css` — split out from `vanguard.css` (Task 6 Step 2, budget): the Test-mode trick-entry edge panel, the Breach/round-over outcome panel, and the fault alert. Mirrors the `warCouncil.css`/`warCouncilCards.css` split. Import both from the mount component in Phase 3/4.
 - `src/app/vanguard/__tests__/boardFixture.ts` — hand-built `VanguardBoard` helper (not a spec)
 - `src/app/vanguard/__tests__/hexLayout.test.ts`
 - `src/app/vanguard/__tests__/labels.test.ts`
@@ -68,7 +69,7 @@ Started: 2026-08-06
 
 Every module here is plain TypeScript with no React import and no DOM access, tested in the cheap `node` Vitest project — this is where all of this feature's real invariants live. Test-first throughout, since each has a stated invariant. The phase boundary is safe because nothing renders yet: `App.tsx` is untouched, so the running app is byte-for-byte unchanged, and each task ends with `npm run typecheck` clean.
 
-### Task 1: Add `src/app/vanguard/hexLayout.ts`
+### Task 1: Add `src/app/vanguard/hexLayout.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -77,7 +78,7 @@ Every module here is plain TypeScript with no React import and no DOM access, te
 - Create: `src/app/vanguard/hexLayout.ts`
 - Test: `src/app/vanguard/__tests__/hexLayout.test.ts`
 
-- [ ] **Step 1: Write the failing spec**
+- [x] **Step 1: Write the failing spec**
 
 The invariants that matter are orientation (the developer's confirmed instruction), containment, and finiteness. Finiteness is not pedantry: a `NaN` reaching a `%` offset positions the cell at the container origin with no error anywhere — the same class of silent failure `fanLayout.ts`'s `count > 1` guard exists to prevent.
 
@@ -147,12 +148,12 @@ describe('hexPlacement — containment and safety', () => {
 })
 ```
 
-- [ ] **Step 2: Confirm it fails for the right reason**
+- [x] **Step 2: Confirm it fails for the right reason**
 
 Run: `npx vitest run src/app/vanguard/__tests__/hexLayout.test.ts`
 Expected: non-zero exit, failing to resolve `../hexLayout`. A different error means the spec itself is wrong.
 
-- [ ] **Step 3: Implement `hexLayout.ts`**
+- [x] **Step 3: Implement `hexLayout.ts`**
 
 `ROW_HEIGHT_RATIO` and `HEX_HEIGHT_TO_WIDTH` are pure geometry, not tunables — a pointy-top hex row advances three quarters of a hex height, and a pointy-top hex is `2/√3` as tall as it is wide. Neither is the developer's to retune.
 
@@ -215,12 +216,12 @@ export function hexPlacement(coord: HexCoord, size: number): HexPlacement {
 }
 ```
 
-- [ ] **Step 4: Confirm the spec passes**
+- [x] **Step 4: Confirm the spec passes**
 
 Run: `npx vitest run src/app/vanguard/__tests__/hexLayout.test.ts; npm run typecheck`
 Expected: Vitest reports 6 passed, 0 failed; typecheck exits 0.
 
-### Task 2: Add `src/app/vanguard/labels.ts`
+### Task 2: Add `src/app/vanguard/labels.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -229,7 +230,7 @@ Expected: Vitest reports 6 passed, 0 failed; typecheck exits 0.
 - Create: `src/app/vanguard/labels.ts`
 - Test: `src/app/vanguard/__tests__/labels.test.ts`
 
-- [ ] **Step 1: Write the failing spec**
+- [x] **Step 1: Write the failing spec**
 
 `cellAccessibleName` is what every AC4 query binds to, so its exact output is a contract, not a detail. The totality checks on the two `Record` maps matter because a future engine ticket widening either union must fail to compile here rather than rendering `undefined`.
 
@@ -303,12 +304,12 @@ describe('the label maps', () => {
 })
 ```
 
-- [ ] **Step 2: Confirm it fails for the right reason**
+- [x] **Step 2: Confirm it fails for the right reason**
 
 Run: `npx vitest run src/app/vanguard/__tests__/labels.test.ts`
 Expected: non-zero exit, failing to resolve `../labels`.
 
-- [ ] **Step 3: Implement `labels.ts`**
+- [x] **Step 3: Implement `labels.ts`**
 
 Copy is transcribed from the approved mockup. Side words are local copy (`your` / `their`), never a raw `PlayerSide` string leaking into the UI — the same rule `TrickWell` follows in the War Council module. Both `Record` types are total over their unions so a widened union is a compile error here.
 
@@ -382,12 +383,12 @@ export const REJECTION_MESSAGE: Readonly<
 }
 ```
 
-- [ ] **Step 4: Confirm the spec passes**
+- [x] **Step 4: Confirm the spec passes**
 
 Run: `npx vitest run src/app/vanguard/__tests__/labels.test.ts; npm run typecheck`
 Expected: Vitest reports 7 passed, 0 failed; typecheck exits 0.
 
-### Task 3: Add the board fixture helper
+### Task 3: Add the board fixture helper ✓
 
 - Skill: `react-frontend`
 
@@ -395,7 +396,7 @@ Expected: Vitest reports 7 passed, 0 failed; typecheck exits 0.
 
 - Create: `src/app/vanguard/__tests__/boardFixture.ts`
 
-- [ ] **Step 1: Write the fixture builder**
+- [x] **Step 1: Write the fixture builder**
 
 Following the precedent of `src/vanguard/__tests__/testBoard.ts` and `src/app/warCouncil/__tests__/roundFixture.ts`: a helper inside `__tests__/` whose name does not match `*.test.ts`, so neither Vitest project collects it as a spec. Hand-built at a **small size** rather than produced by `createVanguardBoard`, because the reducer and legal-target specs need specific adjacency situations that a real 11×11 board cannot be aimed at, and a 5×5 board keeps assertions readable.
 
@@ -461,12 +462,12 @@ export const coord = (q: number, r: number): HexCoord => ({ q, r })
 export { token, defense }
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: exits 0. A `noUnusedLocals` error here means an unused import — fix it rather than suppressing it.
 
-### Task 4: Add `src/app/vanguard/legalTargets.ts`
+### Task 4: Add `src/app/vanguard/legalTargets.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -475,7 +476,7 @@ Expected: exits 0. A `noUnusedLocals` error here means an unused import — fix 
 - Create: `src/app/vanguard/legalTargets.ts`
 - Test: `src/app/vanguard/__tests__/legalTargets.test.ts`
 
-- [ ] **Step 1: Write the failing spec**
+- [x] **Step 1: Write the failing spec**
 
 The load-bearing property is that this module **agrees with the engine by construction**, because it asks the engine rather than deciding. The last spec is the one that proves it: every coordinate the set contains must be accepted by `applyVanguardAction`, and every coordinate it omits must be rejected or unaffordable. That is a stronger assertion than any hand-listed expectation, and it is what keeps AC2 honest.
 
@@ -535,12 +536,12 @@ describe('legalTargetsFor', () => {
 })
 ```
 
-- [ ] **Step 2: Confirm it fails for the right reason**
+- [x] **Step 2: Confirm it fails for the right reason**
 
 Run: `npx vitest run src/app/vanguard/__tests__/legalTargets.test.ts`
 Expected: non-zero exit, failing to resolve `../legalTargets`.
 
-- [ ] **Step 3: Implement `legalTargets.ts`**
+- [x] **Step 3: Implement `legalTargets.ts`**
 
 This is the `firstValidated` pattern `chooseCpuClashAction` already uses, generalised from "the first legal candidate" to "every legal candidate". It contains **no legality rule of its own** — no distance check, no adjacency test, no ownership comparison, no cost arithmetic.
 
@@ -587,12 +588,12 @@ export function legalTargetsFor(
 }
 ```
 
-- [ ] **Step 4: Confirm the spec passes**
+- [x] **Step 4: Confirm the spec passes**
 
 Run: `npx vitest run src/app/vanguard/__tests__/legalTargets.test.ts; npm run typecheck`
 Expected: Vitest reports 6 passed, 0 failed; typecheck exits 0.
 
-### Task 5: Add `src/app/vanguard/matchReducer.ts`
+### Task 5: Add `src/app/vanguard/matchReducer.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -601,7 +602,7 @@ Expected: Vitest reports 6 passed, 0 failed; typecheck exits 0.
 - Create: `src/app/vanguard/matchReducer.ts`
 - Test: `src/app/vanguard/__tests__/matchReducer.test.ts`
 
-- [ ] **Step 1: Write the failing spec**
+- [x] **Step 1: Write the failing spec**
 
 Covers the Muster pipeline, the player's commit path, the engine's own rejection surface, board persistence across rounds, and the CPU-advance loop's termination.
 
@@ -730,12 +731,12 @@ describe('rounds', () => {
 })
 ```
 
-- [ ] **Step 2: Confirm it fails for the right reason**
+- [x] **Step 2: Confirm it fails for the right reason**
 
 Run: `npx vitest run src/app/vanguard/__tests__/matchReducer.test.ts`
 Expected: non-zero exit, failing to resolve `../matchReducer`.
 
-- [ ] **Step 3: Implement `matchReducer.ts`**
+- [x] **Step 3: Implement `matchReducer.ts`**
 
 Types exactly as `plan.md` Part 2 → Data shapes declares them: `MatchRejection`, `MatchFault`, `MatchUiState`, `MatchActionKind`, `MatchUiAction`, `createMatchUiState`, `matchReducer`. Structure: imports → exported shapes → `createMatchUiState` → `matchReducer` → private helpers → nothing else.
 
@@ -790,12 +791,12 @@ function advanceCpu(clash: ClashState): { clash: ClashState; fault: MatchFault |
    - `CancelSelection` — clears `selectedAction` and `rejection`.
    - `NextRound` — no-op while `clash` is `null`. Otherwise `round + 1`, `board` set to `clash.board`, `clash` back to `null`, selection and rejection cleared.
 
-- [ ] **Step 4: Confirm the spec passes**
+- [x] **Step 4: Confirm the spec passes**
 
 Run: `npx vitest run src/app/vanguard/__tests__/matchReducer.test.ts; npm run typecheck`
-Expected: Vitest reports 11 passed, 0 failed; typecheck exits 0.
+Expected: Vitest reports 11 passed, 0 failed; typecheck exits 0. **Actual: 10 passed, 0 failed** — the literal spec transcribed in Step 1 contains 10 `it()` blocks, not 11; this is a planner miscount in `tasks.md`, not a code defect. All 10 pass cleanly.
 
-- [ ] **Step 5: Confirm the four pure modules stayed pure and within budget**
+- [x] **Step 5: Confirm the four pure modules stayed pure and within budget**
 
 Run: `Select-String -Path src\app\vanguard\hexLayout.ts,src\app\vanguard\labels.ts,src\app\vanguard\legalTargets.ts,src\app\vanguard\matchReducer.ts -Pattern "from 'react'|\bwindow\.|\bdocument\.|localStorage"; (Get-Content src\app\vanguard\matchReducer.ts | Measure-Object -Line).Lines`
 Expected: zero `Select-String` hits; the line count is reported and under 250. This is what lets all four run in the cheap `node` Vitest project.
@@ -806,15 +807,16 @@ Expected: zero `Select-String` hits; the line count is reported and under 250. T
 
 `game-ux` is explicit that retrofitting a no-scroll grid around a laid-out screen is the expensive order, so the shell comes first, before any content. Read `.claude/skills/game-ux/references/full-viewport-layout.md` before writing the CSS. Then the board itself. The phase boundary is safe because nothing mounts these components yet — `App.tsx` is still untouched, so the running app is unchanged.
 
-### Task 6: Add `src/app/vanguard/vanguard.css`
+### Task 6: Add `src/app/vanguard/vanguard.css` ✓
 
 - Skill: `game-ux`
 
 **Files:**
 
 - Create: `src/app/vanguard/vanguard.css`
+- Create: `src/app/vanguard/vanguardPanels.css` (split out — see Step 2)
 
-- [ ] **Step 1: Transcribe the shell, the token table, and every zone from the mockup**
+- [x] **Step 1: Transcribe the shell, the token table, and every zone from the mockup**
 
 Transcribe from `mockup.html`'s `<style>` block. Every custom property and class takes a `vg-` prefix — the audit confirmed that namespace is free (0 hits in `src/`) while `wc-` has 95. The mockup deliberately reuses the War Council's chamber/felt/brass/chalk neutrals and its serif+sans pairing, so this is a sibling stylesheet, not a new identity.
 
@@ -845,12 +847,14 @@ Five details the mockup settled that are easy to lose:
 
 No `vh`/`vw` unit anywhere: dimensions are `dvh`, `%`, `rem`, or `vmin`.
 
-- [ ] **Step 2: Confirm the file is within budget and formatted**
+- [x] **Step 2: Confirm the file is within budget and formatted**
 
 Run: `(Get-Content src\app\vanguard\vanguard.css | Measure-Object -Line).Lines; npx prettier --check src/app/vanguard/vanguard.css`
 Expected: line count reported and under 400; `prettier --check` exits 0. A CSS file over 400 lines is blocking — split the panel and form rules into a sibling `vanguardPanels.css` imported by the same component, exactly as `warCouncilCards.css` was split, and record the split in the File map.
 
-### Task 7: Add `src/app/vanguard/useHexRovingFocus.ts`
+**Actual:** `Measure-Object -Line` reports 268 for `vanguard.css` (this cmdlet undercounts vs. the true line count on this box — `Get-Content ... | Measure-Object -Line` reported 158 against a known 180-line file elsewhere in this same module; treat its number as indicative, not authoritative). The true line count (`(Get-Content ...).Count`, matching the `cat -n` reader) is **305** for `vanguard.css`, safely under 400. Even so, the entry/panel/alert rules (`.vg-entry`, `.vg-panel`, `.vg-alert`) were pre-emptively split into a sibling `vanguardPanels.css` (**145** true lines) — those rules belong to Phase 3/4 components (`TrickEntryForm`, `ClashOverPanel`, `VanguardMatch`'s fault alert) that this phase does not build, and no later task in this contract creates or modifies `vanguard.css` again, so this is the only opportunity to land them within budget for the whole module. `npx prettier --check` on both files exits 0.
+
+### Task 7: Add `src/app/vanguard/useHexRovingFocus.ts` ✓
 
 - Skill: `game-ux`
 
@@ -858,7 +862,7 @@ Expected: line count reported and under 400; `prettier --check` exits 0. A CSS f
 
 - Create: `src/app/vanguard/useHexRovingFocus.ts`
 
-- [ ] **Step 1: Write the hook**
+- [x] **Step 1: Write the hook**
 
 Per `HexRovingFocus` in `plan.md` Part 2 → Data shapes. 121 sibling controls is far past `game-ux`'s "about five" hard floor, so the whole board must be **one** tab stop.
 
@@ -885,12 +889,14 @@ Carry this comment, because it is the module's one string-bound invariant:
 const target = groupRef.current?.querySelector<HTMLButtonElement>(`[data-cell="${key}"]`)
 ```
 
-- [ ] **Step 2: Typecheck and lint**
+- [x] **Step 2: Typecheck and lint**
 
 Run: `npm run typecheck; npm run lint`
 Expected: both exit 0. `react-hooks/refs` forbids reading a ref's `.current` during render — this hook only reads it inside the keydown handler, so it must stay silent.
 
-### Task 8: Add `src/app/vanguard/HexCell.tsx`
+**Actual:** both exit 0, confirmed together with Task 8/9's typecheck+lint runs (batched per this phase's verification policy).
+
+### Task 8: Add `src/app/vanguard/HexCell.tsx` ✓
 
 - Skill: `react-frontend`
 
@@ -898,7 +904,7 @@ Expected: both exit 0. `react-hooks/refs` forbids reading a ref's `.current` dur
 
 - Create: `src/app/vanguard/HexCell.tsx`
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 Per `HexCellProps` in `plan.md` Part 2 → Data shapes. This component computes **no geometry** — it is handed a `HexPlacement` and a `cellWidthFraction` and applies them.
 
@@ -912,12 +918,14 @@ Requirements:
 - `tabIndex={tabStop ? 0 : -1}`.
 - The `★` base glyph is `aria-hidden` — the base is already named in the accessible name, so announcing the glyph would duplicate it.
 
-- [ ] **Step 2: Typecheck, lint, and confirm no colour literal leaked in**
+- [x] **Step 2: Typecheck, lint, and confirm no colour literal leaked in**
 
 Run: `npm run typecheck; npm run lint; Select-String -Path src\app\vanguard\HexCell.tsx -Pattern "#[0-9a-fA-F]{3,6}"`
 Expected: both commands exit 0; zero `Select-String` hits. Every colour belongs to `vanguard.css`'s token table.
 
-### Task 9: Add `src/app/vanguard/VanguardBoardView.tsx` — AC1
+**Actual:** both exit 0; zero `Select-String` hits.
+
+### Task 9: Add `src/app/vanguard/VanguardBoardView.tsx` — AC1 ✓
 
 - Skill: `game-ux`
 
@@ -926,7 +934,7 @@ Expected: both commands exit 0; zero `Select-String` hits. Every colour belongs 
 - Create: `src/app/vanguard/VanguardBoardView.tsx`
 - Test: `src/app/vanguard/__tests__/VanguardBoardView.test.tsx`
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 Per `VanguardBoardViewProps`. Renders every coordinate from `allBoardCoords(board.size)` as a `HexCell`, placed by `hexPlacement(coord, board.size)` — this component computes no geometry itself and decides no legality; it renders the `legalTargets` set it is handed.
 
@@ -936,7 +944,7 @@ Per `VanguardBoardViewProps`. Renders every coordinate from `allBoardCoords(boar
 - The React list key is `cellKey(coord)`.
 - Render order is row-major by `r` then `q`, so DOM order is stable and predictable for `Home`/`End`.
 
-- [ ] **Step 2: Write the component test**
+- [x] **Step 2: Write the component test**
 
 Must be `.test.tsx` — `vite.config.ts:26` collects only `.tsx` into the `dom` project, and a component spec in a `.ts` file silently never runs. `afterEach(cleanup)` is declared per file rather than in `setupFiles`, because a global setup file would import `@testing-library/react` into every node-environment spec and break them.
 
@@ -1025,10 +1033,12 @@ describe('VanguardBoardView — AC1', () => {
 
 Confirmed during planning: neither `@testing-library/jest-dom` nor `@testing-library/user-event` is in `package.json`. The spec above therefore asserts `.disabled` directly and uses only `render`, `screen`, `cleanup` and `fireEvent` from `@testing-library/react`. **Do not add either package** — a new dependency needs developer approval and this contract has none.
 
-- [ ] **Step 3: Confirm the spec passes**
+- [x] **Step 3: Confirm the spec passes**
 
 Run: `npx vitest run src/app/vanguard/__tests__/VanguardBoardView.test.tsx; npm run typecheck`
 Expected: Vitest reports 4 passed, 0 failed; typecheck exits 0. If the run reports `Timeout waiting for worker to respond`, that is the cold-cache jsdom flake recorded in `plan.md` Risks — re-run before treating it as a failure.
+
+**Actual:** `Test Files 1 passed (1)`, `Tests 4 passed (4)` (1.21s, no cold-cache flake encountered); typecheck exits 0. `npm run lint` also exits 0 for the whole phase. `npx prettier --check` initially flagged one over-width `expect(...)` line in the transcribed spec; `npx prettier --write` reformatted it (wrapped across three lines, no assertion text changed) and a re-run of both the spec and `prettier --check` confirmed still green (see Verification Block Results).
 
 ---
 
@@ -1036,7 +1046,7 @@ Expected: Vitest reports 4 passed, 0 failed; typecheck exits 0. If the run repor
 
 The interactive half. `ActionPalette` and `ClashOverPanel` are handed state and decide nothing; `VanguardMatch` wires the reducer to them and owns the module's single effect. The phase boundary is safe because the mount is still not referenced from `App.tsx` — it compiles and is tested, but the running app is unchanged until Phase 4.
 
-### Task 10: Add `src/app/vanguard/ActionPalette.tsx` — AC2
+### Task 10: Add `src/app/vanguard/ActionPalette.tsx` — AC2 ✓
 
 - Skill: `game-ux`
 
@@ -1044,7 +1054,7 @@ The interactive half. `ActionPalette` and `ClashOverPanel` are handed state and 
 
 - Create: `src/app/vanguard/ActionPalette.tsx`
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 Per `ActionPaletteProps`. Three `<button type="button">` controls, one per `VanguardActionKind`, named from `ACTION_NAME` with `ACTION_DESCRIPTION` as a `<small>` sub-label so the cost is on the face of the control and never hover-only.
 
@@ -1054,12 +1064,14 @@ Per `ActionPaletteProps`. Three `<button type="button">` controls, one per `Vang
 - Every control clears 44px.
 - The group is a `<div role="group" aria-label="Clash actions">`. Three controls is under `game-ux`'s "about five", so no roving tabindex here — three natural tab stops is correct.
 
-- [ ] **Step 2: Typecheck and lint**
+- [x] **Step 2: Typecheck and lint**
 
 Run: `npm run typecheck; npm run lint`
 Expected: both exit 0.
 
-### Task 11: Add `src/app/vanguard/ClashOverPanel.tsx`
+**Actual:** both exit 0. `ActionPaletteProps` has no separate rejection-boolean field, so `data-reject` is derived by comparing `hint` against the closed set of `REJECTION_MESSAGE` strings (`REJECTION_TEXTS`) rather than threading a second prop — the interface stays exactly as specified.
+
+### Task 11: Add `src/app/vanguard/ClashOverPanel.tsx` ✓
 
 - Skill: `react-frontend`
 
@@ -1067,7 +1079,7 @@ Expected: both exit 0.
 
 - Create: `src/app/vanguard/ClashOverPanel.tsx`
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 Per `ClashOverPanelProps`. Two renderings off `outcome.kind`, copy transcribed from the mockup:
 
@@ -1076,12 +1088,14 @@ Per `ClashOverPanelProps`. Two renderings off `outcome.kind`, copy transcribed f
 
 A plain `<button type="button" onClick>` with no manual key handler — `Enter`/`Space` activate natively, and `war-council-ui.md` records that pairing a native button with a manual handler is the shape that risks a double dispatch.
 
-- [ ] **Step 2: Typecheck and lint**
+- [x] **Step 2: Typecheck and lint**
 
 Run: `npm run typecheck; npm run lint`
 Expected: both exit 0.
 
-### Task 12: Add `src/app/vanguard/VanguardMatch.tsx` — AC2, AC3
+**Actual:** both exit 0. The mockup's breach body copy is player-only ("You joined your base to theirs..."); generalised to name either winner via `SIDE_NAME` (`${SIDE_NAME[winner]}s` conveniently yields "yours"/"theirs").
+
+### Task 12: Add `src/app/vanguard/VanguardMatch.tsx` — AC2, AC3 ✓
 
 - Skill: `react-frontend`
 
@@ -1090,7 +1104,7 @@ Expected: both exit 0.
 - Create: `src/app/vanguard/VanguardMatch.tsx`
 - Test: `src/app/vanguard/__tests__/VanguardMatch.test.tsx`
 
-- [ ] **Step 1: Write the mount**
+- [x] **Step 1: Write the mount**
 
 Implements `VanguardMountProps`. One `useReducer(matchReducer, initialState, createMatchUiState)` and one effect — nothing else holds state.
 
@@ -1137,7 +1151,7 @@ Render, per the shell in `vanguard.css`:
 - `ui.fault` renders a `role="alert"` naming the fault and **blocks further play** rather than retrying — it is an engine or host bug and must look like one, per `war-council-ui.md`'s precedent.
 - `ClashOverPanel` renders on `status === Breached` (→ `onComplete`) or `status === Complete` (→ `NextRound`).
 
-- [ ] **Step 2: Write the component test — AC2, AC3, AC4**
+- [x] **Step 2: Write the component test — AC2, AC3, AC4**
 
 This is the spec AC4 names. Two constraints confirmed during planning, both already applied below:
 
@@ -1248,15 +1262,19 @@ describe('VanguardMatch', () => {
 
 **If the CPU's opening turns consume its whole Muster before the player acts**, `clashStarted` will still resolve but the player may face a `Complete` round rather than their turn. The fixture's 5×5 board with a Muster of 7 makes that unlikely, but if it happens, aim the fixture (give the CPU a smaller starting network) rather than weakening an assertion.
 
-- [ ] **Step 3: Confirm the spec passes**
+- [x] **Step 3: Confirm the spec passes**
 
 Run: `npx vitest run src/app/vanguard/__tests__/VanguardMatch.test.tsx; npm run typecheck`
 Expected: Vitest reports 4 passed, 0 failed; typecheck exits 0. A `Timeout waiting for worker to respond` is the cold-cache jsdom flake — re-run before treating it as a failure.
 
-- [ ] **Step 4: Confirm the mount holds exactly one effect and the file is within budget**
+**Actual:** `Test Files 1 passed (1)`, `Tests 4 passed (4)` (1.21s, no cold-cache flake); typecheck exits 0.
+
+- [x] **Step 4: Confirm the mount holds exactly one effect and the file is within budget**
 
 Run: `Select-String -Path src\app\vanguard\*.tsx,src\app\vanguard\*.ts -Pattern "useEffect|useLayoutEffect"; (Get-Content src\app\vanguard\VanguardMatch.tsx | Measure-Object -Line).Lines`
 Expected: exactly **one** hit, in `VanguardMatch.tsx`. Line count reported and under 300. A second effect anywhere in the module means a transition that should have been a reducer action or a handler.
+
+**Actual:** two `Select-String` lines matched, both in `VanguardMatch.tsx` — the `import { useEffect, ... }` line and the single `useEffect(` call itself; no other file in the module matched, and there is exactly one effect. Line count: `.Count` reports 180, `Measure-Object -Line` reports 164 (both measured per the note in Task 6 that `Measure-Object -Line` undercounts on this box) — both comfortably under the 300-line mount budget.
 
 ---
 
@@ -1264,7 +1282,7 @@ Expected: exactly **one** hit, in `VanguardMatch.tsx`. Line count reported and u
 
 The half that makes AC6 real and the screen reachable at all. `TrickEntryForm` and `TestModeVanguardHost` implement the Test-mode side of SCRUM-37's contract, then `App.tsx` gains the temporary control that lets a human get to it. The phase boundary is safe because it ends with the app running and every gate green — this is the first phase whose changes are visible in the browser.
 
-### Task 13: Add `src/app/vanguard/TrickEntryForm.tsx` — AC6
+### Task 13: Add `src/app/vanguard/TrickEntryForm.tsx` — AC6 ✓
 
 - Skill: `game-ux`
 
@@ -1273,7 +1291,7 @@ The half that makes AC6 real and the screen reachable at all. `TrickEntryForm` a
 - Create: `src/app/vanguard/TrickEntryForm.tsx`
 - Test: `src/app/vanguard/__tests__/TrickEntryForm.test.tsx`
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 Per `TrickEntryFormProps`. **One** number input, for the player's trick count; the opponent's is *derived* as `TRICKS_PER_ROUND - player` and displayed, never entered. This answers the open question `app.md` → *Deferred* poses for this ticket: it makes an impossible split nearly unrepresentable in the first place rather than relying on `isValidTricksWon` as the primary defence. That validator stays in the reducer as the backstop, unchanged.
 
@@ -1283,7 +1301,7 @@ Per `TrickEntryFormProps`. **One** number input, for the player's trick count; t
 - `TRICKS_PER_ROUND` is imported from `src/app/tricksWon.ts`. **Never write `13` as a literal in this file.**
 - Copy is transcribed from the mockup, including the note that this runs the same `scoreRound` → `convertScoreToMuster` pipeline a real round takes.
 
-- [ ] **Step 2: Write the component test**
+- [x] **Step 2: Write the component test**
 
 ```tsx
 /** @vitest-environment jsdom */
@@ -1323,12 +1341,14 @@ describe('TrickEntryForm — AC6', () => {
 })
 ```
 
-- [ ] **Step 3: Confirm the spec passes**
+- [x] **Step 3: Confirm the spec passes**
 
 Run: `npx vitest run src/app/vanguard/__tests__/TrickEntryForm.test.tsx; npm run typecheck`
 Expected: Vitest reports 3 passed, 0 failed; typecheck exits 0.
 
-### Task 14: Add `src/app/vanguard/TestModeVanguardHost.tsx` — AC6
+**Actual:** `Test Files 1 passed (1)`, `Tests 3 passed (3)`; typecheck exits 0.
+
+### Task 14: Add `src/app/vanguard/TestModeVanguardHost.tsx` — AC6 ✓
 
 - Skill: `react-frontend`
 
@@ -1336,7 +1356,7 @@ Expected: Vitest reports 3 passed, 0 failed; typecheck exits 0.
 
 - Create: `src/app/vanguard/TestModeVanguardHost.tsx`
 
-- [ ] **Step 1: Write the host**
+- [x] **Step 1: Write the host**
 
 This is where AC6's "Test-mode only" becomes **structural** rather than a runtime check: the form lives here, and Campaign's host (SCRUM-34) simply never renders it. The mount stays mode-blind, per SCRUM-37's central design idea that "Vanguard itself never knows which mode it is in".
 
@@ -1348,12 +1368,14 @@ Requirements:
 - Renders `<VanguardMatch initialState={board} requestTricksWon={requestTricksWon} onComplete={...} />` and, whenever a request is pending, `<TrickEntryForm round={pendingRound} onSubmit={...} />` **as a sibling overlay anchored to the screen edge, not a full-screen curtain** — the board must stay visible behind it (AC3). `onSubmit` resolves the stored promise and clears the pending state.
 - `onComplete` renders a plain match-over summary naming the winner. This host is developer scaffolding, not a designed screen.
 
-- [ ] **Step 2: Typecheck and lint**
+- [x] **Step 2: Typecheck and lint**
 
 Run: `npm run typecheck; npm run lint`
 Expected: both exit 0. `react-hooks/exhaustive-deps` must be silent — if it complains about the `useCallback`, fix the dependency rather than suppressing it.
 
-### Task 15: Wire Test mode into `src/App.tsx` and delete the stub
+**Actual:** both exit 0. `react-hooks/exhaustive-deps` did not fire — the callback closes over only a ref and a `useState` setter, both stable by React's contract, so the empty dependency array required no suppression.
+
+### Task 15: Wire Test mode into `src/App.tsx` and delete the stub ✓
 
 - Skill: `react-frontend`
 
@@ -1363,7 +1385,7 @@ Expected: both exit 0. `react-hooks/exhaustive-deps` must be silent — if it co
 - Modify: `src/app/vanguardMount.ts:11`
 - Delete: `src/app/stubs/VanguardStub.tsx` (and the now-empty `src/app/stubs/` folder)
 
-- [ ] **Step 1: Re-destructure `setMode` and add the temporary mode control**
+- [x] **Step 1: Re-destructure `setMode` and add the temporary mode control**
 
 `.docs/implementation/app.md` anticipates exactly this: "the menu ticket re-destructures both when it needs the setter". Without it Test mode is unreachable, AC6 is unverifiable, and this whole screen is as invisible in the running app as `VanguardStub` is today.
 
@@ -1382,21 +1404,25 @@ Extend the existing comment so the next reader knows this is scaffolding:
  */
 ```
 
-- [ ] **Step 2: Delete `VanguardStub.tsx` and correct the comment that names it**
+- [x] **Step 2: Delete `VanguardStub.tsx` and correct the comment that names it**
 
 The audit found `VanguardStub` is imported by no file and is deliberately absent from `src/app/index.ts` — deleting it breaks nothing. Remove `src/app/stubs/VanguardStub.tsx` and then the empty `src/app/stubs/` folder.
 
 In `src/app/vanguardMount.ts:11`, the referential-stability comment names the stub as the consuming mount. Replace `the consuming mount (VanguardStub) calls` with `the consuming mount (VanguardMatch) calls` — the requirement is unchanged, only the file it points at.
 
-- [ ] **Step 3: Confirm the stub is gone and nothing references it**
+- [x] **Step 3: Confirm the stub is gone and nothing references it**
 
 Run: `Select-String -Path src\**\*.ts,src\**\*.tsx -Pattern "VanguardStub"; Get-ChildItem src\app\stubs -ErrorAction SilentlyContinue`
 Expected: zero `Select-String` hits and no directory listing — both the file and the folder are gone.
 
-- [ ] **Step 4: Typecheck, lint, and confirm the suite still collects**
+**Actual:** zero `Select-String` hits; `src\app\stubs` no longer exists (confirmed via a `try`/`catch` around `Get-ChildItem -ErrorAction Stop`, since the bare `-ErrorAction SilentlyContinue` form still reports a non-zero exit code on this box for a missing path).
+
+- [x] **Step 4: Typecheck, lint, and confirm the suite still collects**
 
 Run: `npm run typecheck; npm run lint; npx vitest run --project node`
 Expected: both gates exit 0. The `node` project reports **at least 41 files and 306 tests** — the 37/292 baseline plus Phase 1's four new specs. A lower file count means a spec stopped being collected; stop and fix that rather than continuing.
+
+**Actual:** both gates exit 0. `Test Files 41 passed (41)`, `Tests 321 passed (321)` — at/above both floors.
 
 ---
 
@@ -1404,7 +1430,7 @@ Expected: both gates exit 0. The `node` project reports **at least 41 files and 
 
 No production code. `.docs/implementation/` is maintained per its own skill, and this module is large enough to warrant its own file rather than a section inside `app.md` — the same call `war-council-ui.md` records for `src/app/warCouncil/`.
 
-### Task 16: Document the module
+### Task 16: Document the module ✓
 
 - Skill: `implementation-doc-writer`
 
@@ -1414,7 +1440,7 @@ No production code. `.docs/implementation/` is maintained per its own skill, and
 - Modify: `.docs/implementation/app.md`
 - Modify: `.docs/implementation/README.md:15-25`
 
-- [ ] **Step 1: Write `.docs/implementation/vanguard-ui.md`**
+- [x] **Step 1: Write `.docs/implementation/vanguard-ui.md`**
 
 Invoke the `implementation-doc-writer` skill and follow its structure — the same shape `war-council-ui.md` uses: Responsibility, Key types & exports (a table), How it works, Rules & invariants enforced, Deferred / not yet implemented. Header: `**Status:** implemented`, `**Built by:** SCRUM-29`.
 
@@ -1431,7 +1457,7 @@ The things that will be expensive to rediscover, and so must be written down:
 - **`ArrowUp` increases `r`** because of the flip.
 - Every developer tuning value still outstanding, copied from this file's *Developer decides or observes*.
 
-- [ ] **Step 2: Update `app.md` — append, never replace**
+- [x] **Step 2: Update `app.md` — append, never replace**
 
 Per the `implementation-doc-writer` skill, append so SCRUM-37's and SCRUM-28's contributions survive. Specifically:
 
@@ -1440,7 +1466,7 @@ Per the `implementation-doc-writer` skill, append so SCRUM-37's and SCRUM-28's c
 - *Deferred* — remove the three entries this ticket satisfies: "The Vanguard half of the contract still has no real UI", "No visual form for manual trick entry" (and note that its open question was answered by deriving the opponent's count), and the `VanguardStub`-specific unhandled-rejection entry (`VanguardMatch` has a `.catch`). Leave "No battle-loop wiring" and the `TRICKS_PER_ROUND` duplication entry — both are still true.
 - *`AppMode` and the `App.tsx` mode slot* — `setMode` is now destructured and there is a temporary Test-mode control. Correct the note that says nothing changes the mode.
 
-- [ ] **Step 3: Update the README index**
+- [x] **Step 3: Update the README index**
 
 Add a row to the table at `.docs/implementation/README.md:15-25`, matching the existing column formatting:
 
@@ -1450,10 +1476,12 @@ Add a row to the table at `.docs/implementation/README.md:15-25`, matching the e
 
 Also update the paragraph below the table — it currently explains only why `src/app/warCouncil/` has its own doc, and says `app.md` keeps "the remaining Vanguard stub", which is no longer true.
 
-- [ ] **Step 4: Confirm the docs are within budget and formatted**
+- [x] **Step 4: Confirm the docs are within budget and formatted**
 
-Run: `(Get-Content .docs\implementation\vanguard-ui.md | Measure-Object -Line).Lines; (Get-Content .docs\implementation\app.md | Measure-Object -Line).Lines; npx prettier --check .docs/implementation/vanguard-ui.md .docs/implementation/app.md .docs/implementation/README.md`
-Expected: both line counts reported and under 400; `prettier --check` exits 0. If `app.md` has grown past 400, the `implementation-doc-writer` skill owns whether and how to split it — not this task.
+Run: `(Get-Content .docs\implementation\vanguard-ui.md).Count; (Get-Content .docs\implementation\app.md).Count; npx prettier --check .docs/implementation/vanguard-ui.md .docs/implementation/app.md .docs/implementation/README.md`
+Expected: both line counts reported and under 400; `prettier --check` exits 0.
+
+**Actual:** `vanguard-ui.md` is **398** true lines, `app.md` is **272** true lines — both under 400. `npx prettier --check` initially reported all three files needing formatting (line-wrap width on the newly-written prose and the README table); `npx prettier --write` was run on all three and a second `--check` confirmed all pass. No split was needed.
 
 ---
 
@@ -1604,3 +1632,132 @@ Include:
 - **Phase 4** is the first phase visible in the app: it adds the Test-mode path, deletes the stub, and fixes the one comment that named it in the same task, so no dangling reference survives the boundary. Task 15 Step 4 re-runs the `node` project to prove no spec stopped being collected.
 - **Phase 5** touches only `.docs/`, so the code state is identical to Phase 4's.
 - **Phase 6** makes no production change at all.
+
+---
+
+## Fix pass (post-review, 2026-08-06)
+
+Defender (Warning) and QA (Failure) both independently found the same defect in Task 7's
+`useHexRovingFocus.ts`: the tab-stop cell was seeded once to the player's base and only ever
+updated from inside the keydown handler, so it never resynced when `VanguardMatch` recomputed
+`legalTargets` for a newly armed action — leaving zero focusable cells reachable by `Tab`
+whenever Expand or Overwrite was armed (the player's own base is never a legal target for
+either). Fixed by deriving the returned `tabStopKey` fresh each render — the last explicitly
+chosen cell if still focusable, else the first focusable cell in row-major order — rather than
+resyncing via an effect; `useHexRovingFocus.ts` still contains no `useEffect`. QA's Task 9
+coverage gap was closed by adding a `VanguardBoardView.test.tsx` case that arms Reinforce (where
+the base is legal), then rerenders with Expand's target set (where it isn't), and asserts exactly
+one non-disabled `tabIndex={0}` button remains.
+
+Scoped verification: `npx vitest run src/app/vanguard/__tests__/VanguardBoardView.test.tsx` → 1
+file / 5 tests passed. `npm run typecheck` and `npm run lint` both clean. `npx vitest run
+--project node` → 41 files / 321 tests passed; `npx vitest run --project dom` → 6 files / 34
+tests passed (no regressions against this file's own Task 18 baseline expectations). The
+Info-level `TrickEntryForm.tsx` note and the Phase 6 file-count text were left untouched per the
+fix-pass scope.
+
+## Round 2 residuals (post-fix-pass re-review, 2026-08-06) — contract left BLOCKED
+
+Round 2 review (Code-Evaluator, Defender, QA in parallel) confirmed the Round 1 defect (Tab
+cannot reach the board when Expand/Overwrite is armed) is genuinely fixed, live. But
+Code-Evaluator found that the fix itself introduced a **new regression**, and this is the
+second and final review round this pipeline permits — so per `/fb-apply`'s max-2-rounds rule,
+it is logged here rather than sent through a third fix pass.
+
+**The regression (Critical — blocks Task 7):** `useHexRovingFocus.ts`'s `handleKeyDown` arrow
+branch now computes its current position from the *derived* `tabStopKey` instead of the raw
+`lastChosenKey`:
+
+```ts
+const current = parseCellKey(tabStopKey)   // wrong — should read lastChosenKey
+```
+
+Because `tabStopKey` snaps back to `firstFocusableKey(...)` on every render where the
+just-arrowed-to cell is illegal, a player who arrows into an illegal cell can never continue
+past it — the next arrow press recomputes relative to the board's first legal cell instead of
+the cell the player was actually just standing on. Concretely: legal targets at `(1,1)` and
+`(3,1)` with `(2,1)` illegal in between (the normal shape of a sparse Expand/Overwrite target
+set on this board) — a player tab-stopped at `(1,1)` who presses `ArrowRight` repeatedly is
+stuck oscillating on `(2,1)` and can never reach `(3,1)`. Live QA testing in this round did not
+catch it because the live script only exercised direct legal-to-legal arrow moves, never a move
+across an illegal gap; the new automated test only exercises a prop-driven `rerender` with no
+keypress at all. Neither is a defect in those tests — the scenario simply wasn't in scope for
+either until Code-Evaluator's static read surfaced it.
+
+**The fix is one line**, already identified: change
+
+```ts
+const current = parseCellKey(tabStopKey)
+```
+
+to
+
+```ts
+const current = parseCellKey(lastChosenKey)
+```
+
+in `useHexRovingFocus.ts`'s `handleKeyDown`. This leaves the Round 1 fix (the *returned*
+`tabStopKey`'s fallback-to-first-focosable derivation, used only for the `tabIndex` prop) fully
+intact, and restores gap-traversal. Add a test that arms an action with a legal/illegal/legal
+run (e.g. `(1,1)` legal, `(2,1)` illegal, `(3,1)` legal) and asserts two `ArrowRight` presses
+from `(1,1)` land on `(3,1)`, not back on `(1,1)` or stuck at `(2,1)` — the scenario neither
+existing test covers.
+
+**Non-blocking, cosmetic-only (does not affect Status):**
+- `npx prettier --check src/app/vanguard/__tests__/VanguardBoardView.test.tsx` fails — the fix
+  pass's new `legalTargetsFor(...)` call in the new test exceeds print width. Fix:
+  `npx prettier --write src/app/vanguard/__tests__/VanguardBoardView.test.tsx`. No behavioural
+  effect; typecheck/lint/all test suites pass regardless.
+- Defender (Info): `moveTo` still records `lastChosenKey` for a keydown that lands on an
+  illegal cell without calling `.focus()`, so the rendered `tabIndex={0}` can visually jump to
+  `firstFocusableKey` while real DOM focus stays wherever it last was. Pre-existing behaviour,
+  not introduced by this fix pass, not blocking.
+
+**Verdicts this round:** Code-Evaluator — ISSUES FOUND (the regression above). Defender —
+APPROVED (one Info note, not blocking). QA — FAILURES FOUND (confirmed the Round 1 defect
+fixed live; found the Prettier formatting miss above; wrote `pr-description.md`).
+
+**Both remaining issues are small and precisely scoped** — the next `/fb-apply` run against
+this same slug (still `BLOCKED`, so it remains a valid target) can apply the one-line
+`handleKeyDown` fix plus the `prettier --write`, add the gap-traversal test, and re-run
+verification without redoing any other part of this contract.
+
+---
+
+## Round 3 — residual fix (2026-08-06)
+
+Applied the one-line fix identified in "Round 2 residuals" above, plus its test coverage and
+the cosmetic Prettier miss. Both residual items from Round 2 are now resolved; that section is
+left in place as the historical record of what was found and why.
+
+**The fix:** `src/app/vanguard/useHexRovingFocus.ts`'s `handleKeyDown` arrow branch now reads
+`const current = parseCellKey(lastChosenKey)` instead of `parseCellKey(tabStopKey)`. The
+Round 1 fix (the returned `tabStopKey`'s fallback-to-first-focusable derivation, used only for
+the `tabIndex` prop in `VanguardBoardView`) is untouched.
+
+**The new test:** `src/app/vanguard/__tests__/VanguardBoardView.test.tsx` gained
+`'crosses an illegal gap on repeated ArrowRight instead of getting stuck on it'`. It arms a
+directly-constructed `legalTargets` set with a legal/illegal/legal run — `{1,1}` and `{3,1}`
+legal, `{2,1}` in between not — presses `Home` to genuinely tab-stop the player at `{1,1}`
+(recording it as the real `lastChosenKey`, not merely the derived fallback the seeded base
+`{0,0}` would otherwise show), fires two `ArrowRight` keydowns via `fireEvent.keyDown` on the
+board's `role="group"` element, and asserts the sole non-disabled `tabIndex={0}` button ends up
+at `{3,1}`. Verified this test actually catches the regression: temporarily reverted the
+one-line fix, re-ran the spec, confirmed this new test failed (`stops[0]` stuck at `"1,1"`,
+`AssertionError: expected '1,1' to be '3,1'`) while the other 5 tests in the file still passed,
+then restored the fix and re-confirmed green.
+
+**The Prettier fix:** ran `npx prettier --write src/app/vanguard/__tests__/VanguardBoardView.test.tsx`
+(this also reflowed the pre-existing `legalTargetsFor(...)` call that exceeded print width, and
+was re-applied after the new test was added). `npx prettier --check` on the file now exits 0.
+
+**Real verification numbers, actually run:**
+
+- `npx vitest run src/app/vanguard/__tests__/VanguardBoardView.test.tsx` → `Test Files 1 passed (1)`, `Tests 6 passed (6)`.
+- `npm run typecheck` → exits 0 (after casting `stops[0]` to `HTMLButtonElement` for the `.disabled` read, matching the existing pattern earlier in the same file).
+- `npm run lint` → exits 0.
+- `npx vitest run --project node` → `Test Files 41 passed (41)`, `Tests 321 passed (321)`.
+- `npx vitest run --project dom` → `Test Files 6 passed (6)`, `Tests 35 passed (35)` (34 pre-existing + 1 new).
+- `npx prettier --check src/app/vanguard/__tests__/VanguardBoardView.test.tsx` → exits 0, "All matched files use Prettier code style!".
+
+Task 7's heading is restored to a clean `✓`. Status is now `COMPLETE`.

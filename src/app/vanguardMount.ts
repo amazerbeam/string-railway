@@ -8,7 +8,7 @@ import type { TricksWon } from './tricksWon'
 // for the manual-entry path.
 //
 // Implementations must be referentially stable across renders (memoized with
-// useCallback, or held in a ref) — the consuming mount (VanguardStub) calls
+// useCallback, or held in a ref) — the consuming mount (VanguardMatch) calls
 // this from an effect keyed on its identity, and an unstable identity re-fires
 // that effect and issues unbounded duplicate in-flight requests.
 export type RequestTricksWon = (round: number) => Promise<TricksWon>

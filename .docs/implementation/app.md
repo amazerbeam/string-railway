@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** partial
-**Built by:** SCRUM-37, SCRUM-28
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29
 
 ## Responsibility
 
@@ -17,15 +17,17 @@ retrofitting a test harness onto UI that had assumed a single campaign flow. So 
 the shapes first, plus one small validator and two throwaway stub components that proved the shapes
 were genuinely callable before either real UI existed.
 
-One of those UIs now exists: **`src/app/warCouncil/` is the real War Council round screen**, built
-by SCRUM-28 against `WarCouncilMountProps` and documented separately in
-[war-council-ui.md](war-council-ui.md) — it is large enough to own its own file. The Vanguard half
-is still `stubs/VanguardStub.tsx` awaiting SCRUM-29.
+Both UIs now exist: **`src/app/warCouncil/` is the real War Council round screen**, built by
+SCRUM-28 against `WarCouncilMountProps` and documented separately in
+[war-council-ui.md](war-council-ui.md), and **`src/app/vanguard/` is the real Vanguard match
+screen**, built by SCRUM-29 against `VanguardMountProps` and documented separately in
+[vanguard-ui.md](vanguard-ui.md) — each is large enough to own its own file.
 
 Outside that subfolder this module contains exactly one piece of runtime logic
 (`isValidTricksWon`); everything else is either a pure type declaration or disposable scaffolding.
 It has no pure-core ESLint boundary and does not need one — unlike `src/warCouncil/` and
-`src/vanguard/`, this folder is _expected_ to import React, and both `stubs/` and `warCouncil/` do.
+`src/vanguard/`, this folder is _expected_ to import React, and both `warCouncil/` and `vanguard/`
+do.
 
 ## Key types & exports
 
@@ -43,16 +45,19 @@ It has no pure-core ESLint boundary and does not need one — unlike `src/warCou
 
 `src/app/warCouncil/`'s own exports — `WarCouncilRound`, `roundReducer`, `labels.ts`, `fanLayout.ts`,
 `useRovingTabIndex`, and the zone components — are tabulated in
-[war-council-ui.md](war-council-ui.md), not here.
+[war-council-ui.md](war-council-ui.md), not here. `src/app/vanguard/`'s own exports —
+`VanguardMatch`, `matchReducer`, `hexLayout.ts`, `legalTargets.ts`, `useHexRovingFocus`,
+`TrickEntryForm`, `TestModeVanguardHost`, and the board/palette/panel components — are tabulated in
+[vanguard-ui.md](vanguard-ui.md), not here.
 
 `AppMode`, `TRICKS_PER_ROUND`, and `isValidTricksWon` are re-exported from `index.ts` as values;
 the six type-only exports go via `export type` (required by this project's `verbatimModuleSyntax`
-tsconfig setting). `WarCouncilStub` is gone (see § _The two stubs_, below); `VanguardStub.tsx` under
-`stubs/` remains and is **deliberately not exported from the barrel** — it is not part of the
-contract, only proof of it. `src/app/warCouncil/` has no barrel at all: `App.tsx` imports the mount
-directly by file path (`./app/warCouncil/WarCouncilRound`), because `index.ts` deliberately excludes
-components and a `.ts` barrel re-exporting one is a needless brush with
-`react-refresh/only-export-components`.
+tsconfig setting). `WarCouncilStub` and `VanguardStub` are both gone (see § _The two stubs, then
+none_, below) — nothing under `stubs/` remains, and the folder itself was deleted with the second
+stub. Neither `src/app/warCouncil/` nor `src/app/vanguard/` has a barrel: `App.tsx` and
+`TestModeVanguardHost.tsx` import each mount directly by file path (`./app/warCouncil/WarCouncilRound`,
+`./VanguardMatch`), because `index.ts` deliberately excludes components and a `.ts` barrel
+re-exporting one is a needless brush with `react-refresh/only-export-components`.
 
 ## How it works
 
@@ -121,8 +126,9 @@ requestTricksWon(round) → isValidTricksWon → scoreRound        → convertSc
 
 Points are what `convertScoreToMuster` consumes, so trick counts must be converted before they can
 become a Muster budget. Nothing in this module re-implements or shortcuts either step —
-`VanguardStub` demonstrates the full chain, and that demonstration is the proof the contract's
-pipeline actually composes.
+`src/app/vanguard/matchReducer.ts`'s `handleMusterReady` runs the full chain unchanged (see
+[vanguard-ui.md](vanguard-ui.md) → _The reducer decides no rule..._), which is the proof the
+contract's pipeline actually composes now that a real mount, not just a stub, depends on it.
 
 ### `RequestTricksWon` carries a referential-stability requirement
 
@@ -137,46 +143,30 @@ This is worth knowing precisely because it will bite silently: the failure mode 
 requests with no error, in whichever of SCRUM-28/29 is built first, long after this file was last
 in anyone's diff.
 
-### The two stubs, then one — what remains and what it proved
+### The two stubs, then none — what they proved and how each was retired
 
-`stubs/` originally held two **throwaway** components proving the mount-prop contract was
-genuinely callable before either real UI existed. SCRUM-28 replaced `WarCouncilStub.tsx` wholesale,
-exactly as planned: it is deleted, its only two call sites (`App.tsx`'s prior placeholder host and
-its own definition) are gone with it, and `src/app/warCouncil/WarCouncilRound.tsx` is now the real
-mount, compiled against the same `WarCouncilMountProps` the stub once proved. `VanguardStub.tsx`
-remains — SCRUM-29 has not yet replaced it — and is still neither wired into `main.tsx` nor
-`App.tsx`, so it is still unreachable in the running app; its job is still to make the Vanguard half
-of the contract's usability a compile-time fact. The `stubs/` subfolder placement is still
-deliberate for the same reason: `src/warCouncil/` and `src/vanguard/` are pure-TypeScript-only under
-an ESLint override, so a `.tsx` file in either would trip `no-restricted-imports` on `react`.
+`stubs/` originally held two **throwaway** components proving the mount-prop contract was genuinely
+callable before either real UI existed. Both are now gone, each replaced wholesale by its ticket's
+real mount rather than extended in place:
 
-- **`VanguardStub.tsx`** — the more substantial of the two originally, and now the only one. It
-  exercises the async path: holds its own `round` counter starting at 1, calls
-  `requestTricksWon(round)` in an effect, validates the resolved value, and on success renders the
-  Muster from the full `scoreRound` → `convertScoreToMuster` chain. Its "Next round" button
-  increments `round`, which is what demonstrates the repeat-invocation requirement rather than
-  merely asserting it. "Simulate breach" calls `onComplete` with `winner: PlayerSide.Player`.
+- **SCRUM-28** replaced `WarCouncilStub.tsx`: it is deleted, its only two call sites (`App.tsx`'s
+  prior placeholder host and its own definition) are gone with it, and
+  `src/app/warCouncil/WarCouncilRound.tsx` is the real mount, compiled against the same
+  `WarCouncilMountProps` the stub once proved.
+- **SCRUM-29** replaced `VanguardStub.tsx`, the more substantial of the two: it is deleted, and
+  `src/app/vanguard/VanguardMatch.tsx` is the real mount, compiled against the same
+  `VanguardMountProps` the stub once proved. `VanguardStub` had exercised the async path by holding
+  its own `round` counter and calling `requestTricksWon(round)` in an effect; `VanguardMatch`'s
+  single effect (documented in full in [vanguard-ui.md](vanguard-ui.md) → _The single effect..._)
+  is the real version of exactly that mechanism, now driving an actual playable match rather than a
+  proof.
 
-### `VanguardStub`'s effect: status is derived, not assigned
+Deleting the second stub emptied `stubs/` entirely, so the subfolder itself is gone too — there is
+nothing left under `src/app/` that exists solely to prove the contract rather than fulfil it.
 
-Worth recording because the shape looks indirect until you know why. The effect stores a
-`RequestOutcome` **tagged with the round it resolved for**, and the UI-facing `RequestStatus` is
-computed at render time:
-
-```ts
-const status: RequestStatus = outcome && outcome.round === round ? outcome : { kind: 'loading' }
-```
-
-The direct alternative — calling `setStatus({ kind: 'loading' })` synchronously at the top of the
-effect body — fails this project's `react-hooks/set-state-in-effect` lint rule, and suppressing a
-lint rule to land a change is not permitted here. Deriving instead means `setOutcome` is only ever
-called inside the resolved `.then()` callback, and a stale outcome from a previous round can never
-render against the current one, since its `round` tag will not match.
-
-The effect is guarded with a `cancelled` flag set in its cleanup, so a promise resolving after
-unmount — or after React StrictMode's development double-invocation triggers a second run — never
-calls `setState` on a dead instance. Its dependency array is `[round, requestTricksWon]`, exhaustive
-rather than suppressed.
+Its underlying reason for existing survives it: `src/warCouncil/` and `src/vanguard/` are
+pure-TypeScript-only under an ESLint override, so a `.tsx` mount could never live beside either
+engine — `src/app/warCouncil/` and `src/app/vanguard/` are what that constraint produces.
 
 ### `AppMode` and the `App.tsx` mode slot
 
@@ -188,32 +178,38 @@ TypeScript `enum`.
 `src/App.tsx` holds it in a real state slot, `useState<AppMode>(AppMode.Campaign)`. SCRUM-28's dev
 host renders it as plain text (`Mode: campaign`) only in the round-complete view — while a round is
 in progress, `App` renders `WarCouncilRound` alone with no sibling markup, so its full-viewport
-`.wc-shell` (see _How it works_, below) fills the viewport undisturbed. Two details are
-deliberate:
+`.wc-shell` (see _How it works_, below) fills the viewport undisturbed.
 
-- **The setter is not destructured** — `const [mode] = useState(...)`, not
-  `const [mode, setMode] = ...` — because nothing changes the mode until the Campaign/Test menu
-  ticket exists, and a destructured-but-unused `setMode` fails both `noUnusedLocals` and
-  `@typescript-eslint/no-unused-vars`. Omitting the element is the correct fix, not a suppression;
-  the menu ticket re-destructures both when it needs the setter.
-- **The import is `'./app/index'`, not `'./app'`.** The bare specifier fails to compile on this
-  case-insensitive Windows checkout (`TS2614` / `TS1149`) because it resolves against the sibling
-  `App.tsx` — which differs from the `app/` directory only by case — before trying the directory's
-  `index.ts`. This is the one import site in the repo with that collision; every other barrel is
-  imported bare.
+**SCRUM-29 re-destructured the setter** — `const [mode, setMode] = useState(...)`, no longer
+`const [mode] = useState(...)`. A fixed top-right `<button>` (unstyled, deliberately not a designed
+screen — see _Deferred_) calls `setMode(AppMode.Test)`; `App` checks `mode === AppMode.Test` before
+anything else and, if true, returns `<TestModeVanguardHost />` alone, short-circuiting the whole
+Campaign render path (the dealt round, the button, the round-complete view). This is the only place
+in the running app `mode` currently changes to — there is still no path back to `AppMode.Campaign`
+once switched, and no menu screen to choose either mode deliberately (see _Deferred_).
 
-### The War Council round screen lives in its own doc
+One detail from before SCRUM-29 remains true and still deliberate: **the import is
+`'./app/index'`, not `'./app'`.** The bare specifier fails to compile on this case-insensitive
+Windows checkout (`TS2614` / `TS1149`) because it resolves against the sibling `App.tsx` — which
+differs from the `app/` directory only by case — before trying the directory's `index.ts`. This is
+the one import site in the repo with that collision; every other barrel is imported bare.
+
+### The two game screens live in their own docs
 
 `src/app/warCouncil/` — the full-viewport shell, tap-twice, the reducer, the roving tabindex, the
 two `cpuFault` cases, and the two-project Vitest layout — is documented in
-[war-council-ui.md](war-council-ui.md). It was split out of this file when the combined doc passed
-this project's 400-line budget, and because `src/app/warCouncil/` is a module folder in its own
-right under this folder's one-doc-per-`src/`-folder convention.
+[war-council-ui.md](war-council-ui.md). `src/app/vanguard/` — its own full-viewport shell, the
+board's `hexPlacement` orientation, action-then-target selection, the CPU-advance loop, and the
+Test-mode trick-entry path — is documented in [vanguard-ui.md](vanguard-ui.md). Each was (or
+started as) its own file rather than a section here, because each is a module folder in its own
+right under this folder's one-doc-per-`src/`-folder convention, and War Council's combined doc had
+already passed this project's 400-line budget by the time it was split.
 
-The two things about it that belong here, because they are facts about `src/app/` as a whole:
-`WarCouncilRound.tsx` is the real mount satisfying `WarCouncilMountProps`, replacing the stub that
-once proved that contract; and `src/App.tsx` hosts it directly (see § _`AppMode` and the `App.tsx`
-mode slot_, and _Deferred_).
+The things about each that belong here, because they are facts about `src/app/` as a whole:
+`WarCouncilRound.tsx` and `VanguardMatch.tsx` are the real mounts satisfying `WarCouncilMountProps`
+and `VanguardMountProps` respectively, each replacing the stub that once proved its contract; and
+`src/App.tsx` hosts both, directly for War Council and via `TestModeVanguardHost` for Vanguard (see
+§ _`AppMode` and the `App.tsx` mode slot_, and _Deferred_).
 
 ## Rules & invariants enforced
 
@@ -227,20 +223,19 @@ mode slot_, and _Deferred_).
 - No pure-core ESLint boundary applies to this folder (deliberate — it is expected to import
   React), and none was added to it.
 - No lint rule is suppressed anywhere in the module, and there is no `any` and no module-level
-  mutable state. `VanguardStub`'s effect releases nothing but its own cancellation flag, since it
-  holds no listener, timer, or observer.
-- `src/app/warCouncil/`'s own invariants — that it re-implements no rule, contains no effect, and
-  keeps three of its modules free of React and DOM globals — are listed in
-  [war-council-ui.md](war-council-ui.md).
+  mutable state.
+- `src/app/warCouncil/`'s and `src/app/vanguard/`'s own invariants — that each re-implements no
+  rule, that War Council contains no effect at all while Vanguard contains exactly one (its
+  request effect releases nothing but its own cancellation flag, holding no listener, timer, or
+  observer), and that each keeps its pure modules free of React and DOM globals — are listed in
+  [war-council-ui.md](war-council-ui.md) and [vanguard-ui.md](vanguard-ui.md) respectively.
 
 ## Deferred / not yet implemented
 
-- **The Vanguard half of the contract still has no real UI.** SCRUM-28 replaced `WarCouncilStub`
-  wholesale with the real War Council mount; SCRUM-29 (Vanguard UI) still builds against this
-  module's contract and still has `VanguardStub.tsx` standing in for it.
-- **No Campaign/Test menu screen.** `AppMode` has a state slot but nothing that changes it — no UI
-  to view or select a mode. That is a separate ticket, and until it lands `App.tsx`'s `mode` is
-  permanently `Campaign` and its setter is intentionally absent.
+- **No Campaign/Test menu screen.** `App.tsx` now has a real, unstyled `<button>` that switches
+  `mode` to `AppMode.Test` (see § _`AppMode` and the `App.tsx` mode slot_), but there is still no
+  designed menu to view or choose a mode, and no path back from `Test` to `Campaign` — a genuine
+  menu screen is still a separate ticket.
 - **No battle-loop wiring.** Nothing here decides when a real orchestrator swaps one game mount for
   another — that is SCRUM-34's job. `src/battle/` does not import this module and this module does
   not import `src/battle/`. SCRUM-28's `App.tsx` host (see below) is a stand-in, not this.
@@ -250,15 +245,18 @@ mode slot_, and _Deferred_).
   wiring — SCRUM-34 replaces this host rather than extending it. The deal initializer is not
   idempotent, so React StrictMode's development double-invocation deals a hand this render then
   discards it; that wastes randomness in development only and can never produce two live rounds,
-  since only the round dealt on the render that actually commits is ever mounted.
-- **No visual form for manual trick entry.** `VanguardStub`'s affordances are hard-coded buttons,
-  not number fields with validation UX; SCRUM-29 owns the real form. An open question for that
-  ticket: whether the form should make an invalid split nearly unrepresentable in the first place
-  (e.g. deriving one side's count from the other) with `isValidTricksWon` as a pure backstop,
-  rather than relying on it as the primary defence.
-- **`src/app/warCouncil/` carries its own deferred list** — the untested no-scroll layout, the
-  defensive `cpuFault` branch, single-round-only scope, the single dark theme, and the absent card
-  art are all in [war-council-ui.md](war-council-ui.md).
+  since only the round dealt on the render that actually commits is ever mounted. SCRUM-29's
+  top-right mode-switch button is the same kind of scaffolding, added to the same temporary host
+  rather than to a real menu — it is unstyled on purpose, and SCRUM-34 is expected to delete it
+  along with the rest of this host.
+- **`src/app/warCouncil/` and `src/app/vanguard/` each carry their own deferred list** — the
+  untested no-scroll layout, the defensive `cpuFault`/`cpuRejected` branch, and the single dark
+  theme are recorded per module in [war-council-ui.md](war-council-ui.md) and
+  [vanguard-ui.md](vanguard-ui.md). The open question this file previously posed for SCRUM-29 —
+  "whether the [trick-entry] form should make an invalid split nearly unrepresentable... rather
+  than relying on `isValidTricksWon` as the primary defence" — is answered: `TrickEntryForm`
+  renders one input for the player's count and derives the opponent's by subtraction, so an
+  impossible split cannot be typed; `isValidTricksWon` remains the reducer's backstop.
 - **`TRICKS_PER_ROUND` duplicates rather than consolidates.** The same `13` is hard-coded in
   `src/warCouncil/deal.ts` (13-card hands) and `src/warCouncil/playCard.ts` (the
   `tricksPlayed === 13` round-completion branch). Consolidating all of them into one shared export
@@ -272,7 +270,3 @@ mode slot_, and _Deferred_).
 - **`requestTricksWon`'s referential-stability requirement is documentation only**, unenforceable on
   a plain function type. Whoever implements a real host must remember to memoize it; nothing will
   catch them if they don't.
-- **A rejected `requestTricksWon` promise is unhandled.** `VanguardStub` has no `.catch`, so a
-  rejection surfaces as an unhandled-rejection console error and the UI stays on "Requesting..."
-  indefinitely. Deliberate for a throwaway stub proving the happy and validated-invalid paths; what
-  a rejected request should mean to a user is a real implementation's decision.

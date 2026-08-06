@@ -17,12 +17,16 @@ folder — so a mechanic's explanation lives in one place regardless of which ti
 | `src/warCouncil/`     | [war-council.md](war-council.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26                               |
 | `src/vanguard/`       | [vanguard.md](vanguard.md)             | partial     | SCRUM-19, SCRUM-21, SCRUM-22, SCRUM-23, SCRUM-24, SCRUM-27 |
 | `src/battle/`         | [battle.md](battle.md)                 | implemented | SCRUM-19, SCRUM-25, SCRUM-26, SCRUM-27                     |
-| `src/app/`            | [app.md](app.md)                       | partial     | SCRUM-37, SCRUM-28                                         |
+| `src/app/`            | [app.md](app.md)                       | partial     | SCRUM-37, SCRUM-28, SCRUM-29                               |
 | `src/app/warCouncil/` | [war-council-ui.md](war-council-ui.md) | implemented | SCRUM-28                                                   |
+| `src/app/vanguard/`   | [vanguard-ui.md](vanguard-ui.md)       | implemented | SCRUM-29                                                   |
 
-`src/app/warCouncil/` has its own doc rather than a section inside `app.md`: it is a module folder in
-its own right, and the combined file passed this project's 400-line budget. `app.md` keeps the
-mount-prop contract, the trick-count validator, `AppMode`, and the remaining Vanguard stub.
+`src/app/warCouncil/` and `src/app/vanguard/` each have their own doc rather than a section inside
+`app.md`: both are module folders in their own right, and War Council's combined doc had already
+passed this project's 400-line budget by the time it was split — Vanguard's followed the same
+convention from the start. `app.md` keeps the mount-prop contract, the trick-count validator, and
+`AppMode` — both game-specific stubs are gone now that SCRUM-28 and SCRUM-29 have each replaced
+theirs with a real mount.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).
