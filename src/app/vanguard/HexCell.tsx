@@ -10,7 +10,7 @@ interface HexCellProps {
   readonly bases: Readonly<Record<PlayerSide, HexCoord>>
   readonly placement: HexPlacement
   readonly cellWidthFraction: number
-  readonly selectable: boolean // a legal, affordable target for the armed action
+  readonly selectable: boolean // a legal, affordable target for the current tap
   readonly tabStop: boolean
   readonly onTap: (coord: HexCoord) => void
 }

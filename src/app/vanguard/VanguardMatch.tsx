@@ -4,8 +4,8 @@ import { PlayerSide } from '../../warCouncil'
 import type { VanguardMountProps } from '../vanguardMount'
 import ActionPalette from './ActionPalette'
 import ClashOverPanel from './ClashOverPanel'
-import { ACTION_NAME, REJECTION_MESSAGE } from './labels'
-import { legalTargetsFor } from './legalTargets'
+import { REJECTION_MESSAGE } from './labels'
+import { allLegalTargets, legalTargetsFor } from './legalTargets'
 import {
   createMatchUiState,
   matchReducer,
@@ -94,8 +94,7 @@ export default function VanguardMatch({
     [VanguardActionKind.Overwrite]: targetsByAction[VanguardActionKind.Overwrite].size > 0,
     [VanguardActionKind.Reinforce]: targetsByAction[VanguardActionKind.Reinforce].size > 0,
   }
-  const legalTargets =
-    ui.selectedAction !== null && playerTurn ? targetsByAction[ui.selectedAction] : EMPTY_TARGETS
+  const legalTargets = playerTurn ? allLegalTargets(targetsByAction) : EMPTY_TARGETS
 
   const hint = deriveHint(ui)
 
@@ -130,17 +129,11 @@ export default function VanguardMatch({
           legalTargets={legalTargets}
           interactive={canAct}
           onTapCell={(target) => dispatch({ kind: MatchActionKind.TapCell, target })}
-          onCancel={() => dispatch({ kind: MatchActionKind.CancelSelection })}
+          onCancel={() => dispatch({ kind: MatchActionKind.ClearRejection })}
         />
       </main>
 
-      <ActionPalette
-        selected={ui.selectedAction}
-        enabled={enabled}
-        interactive={canAct}
-        hint={hint}
-        onSelect={(action) => dispatch({ kind: MatchActionKind.SelectAction, action })}
-      />
+      <ActionPalette enabled={enabled} interactive={canAct} hint={hint} />
 
       {ui.fault !== null && (
         <p role="alert" className="vg-alert">
@@ -158,11 +151,10 @@ export default function VanguardMatch({
  * is, or that the War Council is still deciding this round's Muster. */
 function deriveHint(ui: MatchUiState): string {
   if (ui.rejection !== null) return REJECTION_MESSAGE[ui.rejection]
-  if (ui.selectedAction !== null) return `Choose a target for ${ACTION_NAME[ui.selectedAction]}`
   if (ui.clash === null) return 'The War Council is deciding this round’s Muster'
   if (ui.clash.status !== ClashStatus.InProgress) return ''
   return ui.clash.turn === PlayerSide.Player
-    ? 'Choose an action, then a target cell'
+    ? 'Tap a cell to act'
     : 'They are spending their Muster'
 }
 

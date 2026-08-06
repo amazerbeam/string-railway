@@ -13,8 +13,15 @@ const resolveTricks = () => Promise.resolve(winningSplit)
 const neverResolves = () => new Promise<never>(() => {})
 
 const cell = (name: string) => screen.getByRole('button', { name }) as HTMLButtonElement
+// SCRUM-41: no arming step, so "the clash has started (and it's the
+// player's turn)" is signalled by at least one board cell becoming a live,
+// enabled target — the legend renders no button at all anymore.
 const clashStarted = () =>
-  waitFor(() => expect(screen.getByRole('button', { name: /Expand/ })).toBeDefined())
+  waitFor(() =>
+    expect(screen.getAllByRole('button').some((b) => !(b as HTMLButtonElement).disabled)).toBe(
+      true,
+    ),
+  )
 
 describe('VanguardMatch', () => {
   it('keeps the board on screen while the War Council result is outstanding — AC3', () => {
@@ -29,7 +36,7 @@ describe('VanguardMatch', () => {
     expect(cell('Cell 2, 2 — permanent defense')).toBeDefined()
   })
 
-  it('submits a legal Expand to the engine — AC2', async () => {
+  it('taps an empty cell directly and submits the inferred Expand — SCRUM-41', async () => {
     render(
       <VanguardMatch
         initialState={makeBoard()}
@@ -38,37 +45,42 @@ describe('VanguardMatch', () => {
       />,
     )
     await clashStarted()
-    fireEvent.click(screen.getByRole('button', { name: /Expand/ }))
-
-    const target = screen
-      .getAllByRole('button')
-      .find(
-        (b) =>
-          /^Cell /.test(b.getAttribute('aria-label') ?? '') && !(b as HTMLButtonElement).disabled,
-      )
-    expect(target).toBeDefined()
-    const nameBefore = target!.getAttribute('aria-label')!
-    fireEvent.click(target!)
-
-    await waitFor(() => expect(screen.queryByRole('button', { name: nameBefore })).toBeNull())
-  })
-
-  it('submits a legal Overwrite to the engine — AC2', async () => {
-    render(
-      <VanguardMatch
-        initialState={makeBoard()}
-        requestTricksWon={resolveTricks}
-        onComplete={vi.fn()}
-      />,
-    )
-    await clashStarted()
-    fireEvent.click(screen.getByRole('button', { name: /Overwrite/ }))
-
-    const target = cell('Cell 2, 1 — their token')
+    const target = cell('Cell 2, 0 — empty')
     expect(target.disabled).toBe(false)
     fireEvent.click(target)
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Cell 2, 0 — empty' })).toBeNull(),
+    )
+  })
 
-    await waitFor(() => expect(cell('Cell 2, 1 — your token')).toBeDefined())
+  it('taps an adjacent enemy token directly and submits the inferred Overwrite — SCRUM-41', async () => {
+    render(
+      <VanguardMatch
+        initialState={makeBoard()}
+        requestTricksWon={resolveTricks}
+        onComplete={vi.fn()}
+      />,
+    )
+    await clashStarted()
+    const target = cell('Cell 1, 2 — their token')
+    expect(target.disabled).toBe(false)
+    fireEvent.click(target)
+    await waitFor(() => expect(cell('Cell 1, 2 — your token')).toBeDefined())
+  })
+
+  it('taps the player’s own token directly and submits the inferred Reinforce — SCRUM-41', async () => {
+    render(
+      <VanguardMatch
+        initialState={makeBoard()}
+        requestTricksWon={resolveTricks}
+        onComplete={vi.fn()}
+      />,
+    )
+    await clashStarted()
+    const target = cell('Cell 0, 0 — your base, your token')
+    expect(target.disabled).toBe(false)
+    fireEvent.click(target)
+    await waitFor(() => expect(cell('Cell 0, 0 — your base, your token, reinforced')).toBeDefined())
   })
 
   it('disables an illegal target so it cannot be submitted — AC2, AC4', async () => {
@@ -80,8 +92,6 @@ describe('VanguardMatch', () => {
       />,
     )
     await clashStarted()
-    fireEvent.click(screen.getByRole('button', { name: /Overwrite/ }))
-
     const defense = cell('Cell 2, 2 — permanent defense')
     expect(defense.disabled).toBe(true)
     fireEvent.click(defense)

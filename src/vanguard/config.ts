@@ -4,7 +4,6 @@ import { PlayerSide } from '../warCouncil'
 // --- Configuration: values with no chosen number yet, retunable without a design
 // change (see plan.md Part 1 -> Risks and judgement calls) ---
 export const BOARD_SIZE = 11
-export const STARTING_CLUSTER_SIZE = 4
 export const DEFENSE_CELLS: readonly HexCoord[] = [
   { q: 5, r: 4 },
   { q: 5, r: 5 },

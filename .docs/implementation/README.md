@@ -15,11 +15,11 @@ folder — so a mechanic's explanation lives in one place regardless of which ti
 | Module                | Doc                                    | Status      | Built by                                                   |
 | --------------------- | -------------------------------------- | ----------- | ---------------------------------------------------------- |
 | `src/warCouncil/`     | [war-council.md](war-council.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26                               |
-| `src/vanguard/`       | [vanguard.md](vanguard.md)             | partial     | SCRUM-19, SCRUM-21, SCRUM-22, SCRUM-23, SCRUM-24, SCRUM-27 |
+| `src/vanguard/`       | [vanguard.md](vanguard.md)             | partial     | SCRUM-19, SCRUM-21, SCRUM-22, SCRUM-23, SCRUM-24, SCRUM-27, SCRUM-40, SCRUM-42 |
 | `src/battle/`         | [battle.md](battle.md)                 | implemented | SCRUM-19, SCRUM-25, SCRUM-26, SCRUM-27                     |
 | `src/app/`            | [app.md](app.md)                       | partial     | SCRUM-37, SCRUM-28, SCRUM-29                               |
 | `src/app/warCouncil/` | [war-council-ui.md](war-council-ui.md) | implemented | SCRUM-28                                                   |
-| `src/app/vanguard/`   | [vanguard-ui.md](vanguard-ui.md)       | implemented | SCRUM-29                                                   |
+| `src/app/vanguard/`   | [vanguard-ui.md](vanguard-ui.md)       | implemented | SCRUM-29, SCRUM-41                                         |
 
 `src/app/warCouncil/` and `src/app/vanguard/` each have their own doc rather than a section inside
 `app.md`: both are module folders in their own right, and War Council's combined doc had already

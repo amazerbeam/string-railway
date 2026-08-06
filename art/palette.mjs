@@ -50,6 +50,32 @@ export const COLOURS = {
   N: '#5b83d0',
   B: '#2b4c8c',
   b: '#16294f',
+
+  // ---- the three ARM fabrics, for the War Council's Colours ----------------
+  //
+  // These are NOT invented. Each ramp's LIT step is the suit hue the shipped
+  // app already uses (`--wc-bells`, `--wc-keys`, `--wc-moons` in
+  // src/app/warCouncil/warCouncil.css), which is already proven to read
+  // against that screen's dark green felt. The reskin renames the suits; it
+  // has no business repainting them. Base and shadow are darkened beneath
+  // each so a near-white numeral (W) still reads on the fabric.
+  //
+  // An earlier draft used a green ramp for the third arm. On the actual felt
+  // (#16241f) that was green on green — the reason to look at the running app
+  // before choosing a colour.
+  //
+  // Foot  <- Bells  #c9873f
+  M: '#c9873f',
+  J: '#8a4a24',
+  j: '#40201f',
+  // Horse <- Keys   #5f93a8
+  Q: '#5f93a8',
+  D: '#35617a',
+  d: '#16303f',
+  // Siege <- Moons  #9c7cb8
+  U: '#9c7cb8',
+  T: '#6b4d87',
+  t: '#2b1f47',
 }
 
 export const pal = palette(COLOURS)

@@ -1,7 +1,7 @@
 import type { PlayerSide } from '../warCouncil'
 import { EXPAND_COST, EXPAND_RANGE } from './config'
 import { cellKey, isWithinBoard } from './hexGrid'
-import { connectedNetwork, minDistanceToNetwork } from './network'
+import { minDistanceToNetwork, ownedCells } from './network'
 import { IllegalActionReason, VanguardCellKind } from './types'
 import type { HexCoord, VanguardActionResult, VanguardBoard } from './types'
 
@@ -22,8 +22,8 @@ export function applyExpand(
     return { ok: false, reason: IllegalActionReason.CellOccupied }
   }
 
-  const network = connectedNetwork(board, side)
-  if (minDistanceToNetwork(target, network) > EXPAND_RANGE) {
+  const owned = ownedCells(board, side)
+  if (minDistanceToNetwork(target, owned) > EXPAND_RANGE) {
     return { ok: false, reason: IllegalActionReason.OutOfExpandRange }
   }
 

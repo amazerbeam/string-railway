@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { PlayerSide } from '../../warCouncil'
 import { cellKey } from '../hexGrid'
-import { connectedNetwork, minDistanceToNetwork } from '../network'
+import { connectedNetwork, minDistanceToNetwork, ownedCells } from '../network'
 import { VanguardCellKind } from '../types'
 import { boardWith } from './testBoard'
 
@@ -38,6 +38,27 @@ describe('connectedNetwork', () => {
       '0,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Cpu, reinforced: 0 },
     })
     expect(connectedNetwork(board, PlayerSide.Player)).toEqual([])
+  })
+})
+
+describe('ownedCells', () => {
+  it('includes every token the side owns, chain-connected or not', () => {
+    const board = boardWith({
+      '0,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Player, reinforced: 0 },
+      '3,3': { kind: VanguardCellKind.Token, owner: PlayerSide.Player, reinforced: 0 },
+    })
+    expect(new Set(ownedCells(board, PlayerSide.Player).map(cellKey))).toEqual(
+      new Set(['0,0', '3,3']),
+    )
+  })
+
+  it('excludes enemy tokens and defense cells', () => {
+    const board = boardWith({
+      '0,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Player, reinforced: 0 },
+      '1,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Cpu, reinforced: 0 },
+      '0,1': { kind: VanguardCellKind.Defense },
+    })
+    expect(ownedCells(board, PlayerSide.Player)).toEqual([{ q: 0, r: 0 }])
   })
 })
 

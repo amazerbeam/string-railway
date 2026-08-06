@@ -3,7 +3,8 @@ import { chooseCpuClashAction } from '../cpuPlayer'
 import { applyVanguardAction } from '../applyVanguardAction'
 import { createVanguardBoard } from '../createBoard'
 import { applyClashAction, startClash } from '../clash'
-import { MUSTER_BASELINE } from '../config'
+import { EXPAND_RANGE, MUSTER_BASELINE } from '../config'
+import { hexDistance } from '../hexGrid'
 import { VanguardActionKind, VanguardCellKind, ClashStatus } from '../types'
 import type { CellKey, VanguardBoard, VanguardCell, ClashState } from '../types'
 import { PlayerSide } from '../../warCouncil'
@@ -98,6 +99,22 @@ describe('chooseCpuClashAction — throws on a true dead end', () => {
     expect(() => chooseCpuClashAction(board, PlayerSide.Player, 5)).toThrow(
       'chooseCpuClashAction: no legal action available for player',
     )
+  })
+})
+
+describe('chooseCpuClashAction — SCRUM-40: candidates key off every owned cell, not just the connected chain', () => {
+  it('expands from a gapped owned island the base-connected chain alone would miss', () => {
+    const board: VanguardBoard = {
+      size: 11,
+      bases: { [PlayerSide.Player]: { q: 0, r: 0 }, [PlayerSide.Cpu]: { q: 10, r: 10 } },
+      cells: {
+        '0,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Player, reinforced: 0 },
+        '5,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Player, reinforced: 0 },
+      },
+    }
+    const action = chooseCpuClashAction(board, PlayerSide.Player, 5)
+    expect(action.kind).toBe(VanguardActionKind.Expand)
+    expect(hexDistance(action.target, { q: 5, r: 0 })).toBeLessThanOrEqual(EXPAND_RANGE)
   })
 })
 

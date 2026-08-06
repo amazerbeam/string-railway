@@ -1,7 +1,7 @@
 # Vanguard UI — `src/app/vanguard/`
 
 **Status:** implemented
-**Built by:** SCRUM-29
+**Built by:** SCRUM-29, SCRUM-41
 
 ## Responsibility
 
@@ -42,8 +42,10 @@ component is a needless brush with `react-refresh/only-export-components`.
 | `REJECTION_MESSAGE`                     | `Record<IllegalActionReason \| ClashRejectionReason, string>` — human copy for every engine rejection            | `labels.ts`                |
 | `cellReactKey`                          | Re-export of `src/vanguard`'s `cellKey`, so every list in this module shares one stable key function             | `labels.ts`                |
 | `legalTargetsFor`                       | Every coordinate where an action kind is legal and affordable for a side, by dry-running the engine              | `legalTargets.ts`          |
-| `MatchUiState`                          | `{ round, board, clash, selectedAction, rejection, fault }` — the mount's one piece of state                     | `matchReducer.ts`          |
-| `MatchUiAction`, `MatchActionKind`      | `MusterReady \| RequestFailed \| SelectAction \| TapCell \| CancelSelection \| NextRound`, via an `as const` map | `matchReducer.ts`          |
+| `inferActionKind`                        | Total, pure — which action kind a tap on a cell means, inferred from its occupancy (SCRUM-41)                   | `legalTargets.ts`          |
+| `allLegalTargets`                        | The union of every action kind's already-computed legal-target set — the board's continuous highlight (SCRUM-41) | `legalTargets.ts`         |
+| `MatchUiState`                          | `{ round, board, clash, rejection, fault }` — the mount's one piece of state (SCRUM-41 removed `selectedAction`) | `matchReducer.ts`          |
+| `MatchUiAction`, `MatchActionKind`      | `MusterReady \| RequestFailed \| TapCell \| ClearRejection \| NextRound`, via an `as const` map (SCRUM-41 removed `SelectAction`; `CancelSelection` renamed `ClearRejection`) | `matchReducer.ts` |
 | `MatchRejection`                        | `IllegalActionReason \| ClashRejectionReason` — the player's own rejected-action surface                         | `matchReducer.ts`          |
 | `MatchFault`                            | `cpuDeadEnd \| cpuRejected \| requestFailed \| invalidTricks` — a play-blocking fault, always named              | `matchReducer.ts`          |
 | `createMatchUiState`, `matchReducer`    | Lazy `useReducer` initializer and the single reducer owning the whole match                                      | `matchReducer.ts`          |
@@ -128,32 +130,54 @@ because the function never encodes a rule, it **cannot drift** from the engine �
 Expand's range or Overwrite's cost changes what `applyVanguardAction` accepts, and this function's
 output changes with it automatically, with nothing here to update.
 
-The cost is `board.size²` engine calls (121 at `BOARD_SIZE = 11`), recomputed on every render while
-an action is armed — `VanguardMatch.tsx` calls it three times per render, once per action kind, so
-that `ActionPalette`'s `enabled` map and the armed action's `legalTargets` set share one pass of
-results rather than re-asking per kind on demand. This is a discrete turn-based board, not a pointer
-hot path, so recompute-from-scratch is the simplest correct design — the same stance
-[vanguard.md](vanguard.md) documents for `connectedNetwork`. It also mirrors `applyClashAction`'s
-own `Number.isFinite` guard on `musterAvailable`: without it, a malformed Muster value would compare
-as affordable against every cost, so a non-finite value returns an empty set outright.
+The cost is `board.size²` engine calls (121 at `BOARD_SIZE = 11`), recomputed every render for all
+three action kinds unconditionally — `VanguardMatch.tsx` calls it three times per render, once per
+kind, so `ActionPalette`'s `enabled` map and the board's union `legalTargets` set (via
+`allLegalTargets`, below) share one pass of results rather than re-asking per kind on demand. This is
+a discrete turn-based board, not a pointer hot path, so recompute-from-scratch is the simplest
+correct design — the same stance [vanguard.md](vanguard.md) documents for `connectedNetwork`. It
+also mirrors `applyClashAction`'s own `Number.isFinite` guard on `musterAvailable`: without it, a
+malformed Muster value would compare as affordable against every cost, so a non-finite value returns
+an empty set outright.
 
-### Action-then-target: two taps, no confirm step
+### Click-to-act: one tap, the action inferred from what's on the cell (SCRUM-41)
 
-`ActionPalette` offers the three `VanguardActionKind` values as ordinary buttons — three controls is
-comfortably under `game-ux`'s "about five" natural-tab-stop floor, so it needs no roving tabindex.
-`matchReducer.ts`'s `handleSelectAction` toggles the tapped kind off if it is already armed,
-otherwise arms it and clears any prior `rejection`; it is a no-op when it is not the player's turn.
-`handleTapCell` is ignored unless a clash is `InProgress`, it is the player's turn, an action is
-armed, and no `fault` is set. A legal tap calls `applyClashAction`, and on success **keeps the
-selected action armed** — a developer-confirmed choice (`Developer decides or observes`, below)
-that makes a run of same-kind actions cost one tap each after the first, at the cost of a mis-tap
-placing a token instead of doing nothing.
+SCRUM-41 removed the "arm an action, then tap a target" two-step AC2 originally shipped with
+(SCRUM-29) — a deliberate revision of that ticket's own AC2, not a defect fix on top of it. The
+player now taps any highlighted cell directly; `inferActionKind(cell, side)` in `legalTargets.ts`
+is a small, total, pure mapping from a cell's occupancy to a `VanguardActionKind` — empty or a
+defense cell infers `Expand`, the acting side's own token infers `Reinforce` (even at the
+reinforcement cap), an enemy token infers `Overwrite`. It decides no legality — that's still
+entirely `applyVanguardAction`/`applyClashAction`'s job — only which candidate action a tap should
+attempt. Mapping a `Defense`-cell tap to `Expand` is a deliberate choice: `applyExpand`'s own
+`CellIsDefense` check runs before any distance check, so the engine's own correct rejection reason
+is what the player sees, rather than inventing a client-side "not a legal target" concept
+`applyClashAction` has no reason code for.
+
+Because the three action kinds are legal on structurally disjoint occupancy classes (Expand only
+succeeds on an empty cell, Overwrite only on an enemy token, Reinforce only on the acting side's own
+token — enforced by each `apply*` function's own first cell-state check), the union of the three
+already-computed per-kind `legalTargetsFor` sets is already exactly "every cell the player can
+currently tap to do something." `allLegalTargets(byAction)` in `legalTargets.ts` is therefore a
+small, pure union of three already-computed `ReadonlySet<CellKey>`s — it does not re-run the engine
+a fourth time. `VanguardMatch.tsx` wires the board's `legalTargets` prop to
+`allLegalTargets(targetsByAction)` whenever it's the player's turn, so every currently-legal target
+across all three kinds is highlighted continuously, not just one armed kind's targets.
+
+`matchReducer.ts`'s `handleTapCell` calls `inferActionKind` once per tap and submits the result
+directly via `applyClashAction` — there is no more `selectedAction` field, no `SelectAction`
+dispatch, and no arming step of any kind. `ActionPalette` lost its `onSelect`/`selected` props and
+its `<button>`s: it is now a read-only legend (`<ul className="vg-actions">` of plain `<li>`
+items), still showing each kind's name and cost/range copy (`ACTION_NAME`/`ACTION_DESCRIPTION`) and
+dimming (`data-enabled="false"`, `opacity: 0.38`) a kind with `enabled[kind] === false`, but
+committing nothing — the only way to act is tapping a board cell.
 
 A rejected tap sets `rejection` to the engine's own named reason and returns the input state's
 `clash` **by reference** — matching `applyClashAction`'s no-partial-mutation guarantee, so a
-rejected tap provably cannot have touched the board. `ActionPalette`'s `hint` line renders it via
-`REJECTION_MESSAGE` in an `aria-live="polite"` region; the next `SelectAction` or a successful
-`TapCell` clears it.
+rejected tap provably cannot have touched the board. The hint line (rendered by `ActionPalette`,
+still) shows it via `REJECTION_MESSAGE` in an `aria-live="polite"` region; `MatchActionKind.ClearRejection`
+(renamed from `CancelSelection` — there is nothing left to "cancel" an arming of, so Escape now only
+dismisses a rejection banner) or the next successful `TapCell` clears it.
 
 ### The CPU-advance loop and its termination argument
 
@@ -384,10 +408,13 @@ openingSideForRound(round))` — and only calls `scoreRound` once the trick spli
     `--vg-board-max`'s `clamp()` bounds, and `--vg-radius`.
   - Whether the reinforced marker reads clearly as "+1" in its mockup form (a parchment bar across
     the token's waist) rather than a ring, pip, or numeral.
-  - Whether keeping the palette armed after a successful submission is right — a run of Expands
-    costs one tap each after the first, but a mis-tap places a token instead of doing nothing.
-  - Whether two taps per Clash action (palette, then cell) drags across a full Muster of 7–10 moves
-    per round.
+  - Whether the single shared brass-ring highlight (rather than a colour per inferred action kind)
+    reads clearly enough with several cells lit up at once now that SCRUM-41 shows every legal
+    target across all three kinds simultaneously (no longer applicable: whether two taps per Clash
+    action dragged — SCRUM-41 made it one tap, removing the arming step this bullet used to ask
+    about).
+  - Whether inferring `Expand` for a tapped defense cell (surfacing `CellIsDefense`) feels like the
+    right rejection (SCRUM-41).
   - Whether an 11×11 rhombus is legible and pleasant at a phone viewport, and whether 121 cells is
     the right density. `BOARD_SIZE` stays SCRUM-21's placeholder `11`, retunable in one line in
     `src/vanguard/config.ts` — not this module's own value.

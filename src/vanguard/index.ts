@@ -21,7 +21,6 @@ export {
 } from './hexGrid'
 export {
   BOARD_SIZE,
-  STARTING_CLUSTER_SIZE,
   DEFENSE_CELLS,
   EXPAND_RANGE,
   EXPAND_COST,
@@ -30,7 +29,7 @@ export {
   REINFORCE_COST,
   REINFORCE_MAX_STACK,
 } from './config'
-export { connectedNetwork, minDistanceToNetwork } from './network'
+export { connectedNetwork, minDistanceToNetwork, ownedCells } from './network'
 export { hasReachedBreach } from './breach'
 export { createVanguardBoard } from './createBoard'
 export { applyExpand } from './expand'

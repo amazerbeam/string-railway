@@ -1,7 +1,7 @@
 # Vanguard — `src/vanguard/`
 
 **Status:** partial
-**Built by:** SCRUM-19, SCRUM-21, SCRUM-22, SCRUM-23, SCRUM-24, SCRUM-27
+**Built by:** SCRUM-19, SCRUM-21, SCRUM-22, SCRUM-23, SCRUM-24, SCRUM-27, SCRUM-40, SCRUM-42
 
 ## Responsibility
 
@@ -47,9 +47,10 @@ battle-level half of that, see `battle.md`.
 | `IllegalActionReason`                                                               | 8 named rejection reasons (`cellOutOfBounds`, `cellIsDefense`, `cellOccupied`, `outOfExpandRange`, `targetNotEnemyToken`, `notAdjacentToNetwork`, `targetNotOwnToken`, `reinforcementCapReached`) | `types.ts` |
 | `VanguardActionResult`                                                              | `{ ok: true, board, cost }` or `{ ok: false, reason }` — every action's return shape | `types.ts`             |
 | `cellKey`, `isWithinBoard`, `hexNeighbors`, `hexDistance`, `allBoardCoords`, `hexBfs`| Axial coordinate math and a generic reusable BFS                                 | `hexGrid.ts`               |
-| `BOARD_SIZE`, `STARTING_CLUSTER_SIZE`, `DEFENSE_CELLS`                              | Configuration — placeholder values, developer retunes after first playtest       | `config.ts`                |
+| `BOARD_SIZE`, `DEFENSE_CELLS`                                                       | Configuration — placeholder values, developer retunes after first playtest       | `config.ts`                |
 | `EXPAND_RANGE`, `EXPAND_COST`, `OVERWRITE_COST`, `OVERWRITE_COST_REINFORCED`, `REINFORCE_COST`, `REINFORCE_MAX_STACK` | Fixed rule constants from the ticket's acceptance criteria       | `config.ts`                |
 | `connectedNetwork`, `minDistanceToNetwork`                                          | A side's connected token network (BFS from base) and distance-to-network query   | `network.ts`               |
+| `ownedCells`                                                                        | Every cell a side owns, chain-connected or not — SCRUM-40's reference set for Expand/Overwrite legality | `network.ts` |
 | `createVanguardBoard`                                                               | Builds a fresh board: bases, starting clusters, defense cells                    | `createBoard.ts`           |
 | `applyExpand`, `applyOverwrite`, `applyReinforce`                                   | Legality + cost + immutable board update for each Clash action                   | `expand.ts`, `overwrite.ts`, `reinforce.ts` |
 | `applyVanguardAction`                                                               | Single reducer-shaped dispatch entry, routes by `action.kind`                    | `applyVanguardAction.ts`   |
@@ -91,12 +92,18 @@ on `VanguardBoard.cells` in `types.ts`).
 
 ### Board construction
 
-`createVanguardBoard()` in `createBoard.ts` places the Player base at `{0,0}` and the Cpu base at
-`{BOARD_SIZE-1, BOARD_SIZE-1}`, marks every `DEFENSE_CELLS` coordinate as a `DefenseCell` first, then
-for each side runs `hexBfs` from its base with `canEnter = "coord not yet occupied"`, sliced to
-`STARTING_CLUSTER_SIZE`, placing a `TokenCell{ owner: side, reinforced: 0 }` at each visited
-coordinate. Marking defense cells before growing clusters means a cluster naturally routes around
-them — `hexBfs`'s `canEnter` predicate excludes any already-occupied cell.
+`createVanguardBoard()` in `createBoard.ts` (SCRUM-42) places both bases at the horizontal center of
+their own home row — `centerColumn = Math.floor(BOARD_SIZE / 2)`, giving the Player `{centerColumn,
+0}` and the Cpu `{centerColumn, BOARD_SIZE - 1}` — replacing the original opposite-corners placement
+(`{0,0}` / `{BOARD_SIZE-1,BOARD_SIZE-1}`). Every `DEFENSE_CELLS` coordinate is marked a `DefenseCell`
+first, then for each side the starting cluster is built as `[base, ...hexNeighbors(base)]` filtered
+to in-bounds and not-yet-occupied — no traversal, since "the base plus everything touching it" is a
+one-hop neighbour lookup, not a search. This replaces the original `hexBfs`-grown, `STARTING_CLUSTER_SIZE`-capped
+cluster (now-removed configuration key, see Deferred); the cluster's size is a derived fact of hex
+geometry and the base's own position — at a center-of-edge base that's 4 neighbours, 5 cells total —
+never a chosen number. The occupied-cell filter mirrors the guard the removed `hexBfs`'s own
+`canEnter` predicate provided, so a cluster still can never overlap a defense cell or the other
+side's cluster.
 
 ### Connected network
 
@@ -110,20 +117,34 @@ degenerate-case contract for a lost base; it is deliberately *not* a Breach/loss
 (that's out of scope for this ticket). `minDistanceToNetwork(target, network)` returns `Infinity`
 for an empty network, otherwise the minimum `hexDistance` from `target` to any network cell.
 
+### Every owned cell, not just the connected chain
+
+`ownedCells(board, side)`, also in `network.ts` (SCRUM-40), is a deliberately separate, broader
+query sitting beside `connectedNetwork`: a flat `allBoardCoords(board.size)` filter to cells `side`
+owns, with no BFS and no dependency on the base cell at all — the same filter idiom
+`chooseCpuClashAction`'s own candidate generation already used, so it introduces no new traversal
+primitive. This is Expand and Overwrite's reference set as of SCRUM-40: a target is legal within
+range of *any* cell the side currently owns, chain-connected to the base or not, so a scouted gap
+cell actually extends both actions' reach. `connectedNetwork` remains the Breach's own, narrower
+reference set — `breach.ts` is unchanged by SCRUM-40, so a gapped owned island that newly extends
+Expand/Overwrite's reach still does not count toward a Breach until something fills the gap.
+
 ### The three Clash actions
 
 Each of `applyExpand`, `applyOverwrite`, `applyReinforce` follows the same shape: bounds check →
-cell-state check → (Expand/Overwrite only) a `connectedNetwork` + distance check against the
-action's own threshold → on success, an immutable spread-based board update plus the action's cost;
-on any rejection, a named `IllegalActionReason` and the input board is returned untouched (never
-mutated, never thrown).
+cell-state check → (Expand/Overwrite only) an `ownedCells` + distance check against the action's own
+threshold → on success, an immutable spread-based board update plus the action's cost; on any
+rejection, a named `IllegalActionReason` and the input board is returned untouched (never mutated,
+never thrown). As of SCRUM-40, Expand and Overwrite key their distance/adjacency check off
+`ownedCells` (every cell the side owns), not `connectedNetwork` (the base-connected chain alone) —
+only the reference set changed, each action's own range is untouched.
 
 - **`applyExpand`** (`expand.ts`) — legal onto an empty, non-defense cell within `EXPAND_RANGE` (2)
-  hex-spaces of the acting side's `connectedNetwork` — a 1-cell gap is legal, exactly 3 away is not.
+  hex-spaces of any cell the acting side owns — a 1-cell gap is legal, exactly 3 away is not.
   Rejects `CellOutOfBounds`, `CellIsDefense`, `CellOccupied`, or `OutOfExpandRange`. On success,
   costs `EXPAND_COST` and places a fresh `TokenCell{ owner: side, reinforced: 0 }`.
 - **`applyOverwrite`** (`overwrite.ts`) — legal only against an enemy `TokenCell` at hex-distance
-  ≤ 1 from the acting side's network (no gap allowed — a distance-2 target is
+  ≤ 1 from any cell the acting side owns (no gap allowed — a distance-2 target is
   `NotAdjacentToNetwork`). Rejects `CellOutOfBounds` or `TargetNotEnemyToken` (empty, defense, or
   the acting side's own token). Cost is `OVERWRITE_COST` (2) normally, `OVERWRITE_COST_REINFORCED`
   (3) if the captured token's `reinforced > 0`. Capturing always resets the new owner's cell to
@@ -249,20 +270,27 @@ legality as a side effect of attempting the action), the heuristic composes two 
 filtering one:
 
 1. **Candidate generation**, built from the engine's own exported building blocks
-   (`connectedNetwork`, `minDistanceToNetwork`, `hexDistance`, `overwriteCostFor`, and the config
-   constants) rather than a re-derived legality predicate:
-   - `expandCandidates` — empty cells within `EXPAND_RANGE` of `side`'s network.
-   - `overwriteCandidates` — enemy-token cells at distance ≤ 1 from the network, priced via
+   (`ownedCells`, `minDistanceToNetwork`, `hexDistance`, `overwriteCostFor`, and the config
+   constants) rather than a re-derived legality predicate. As of SCRUM-40, every candidate function
+   below ranges from `ownedCells` (every cell `side` owns), not `connectedNetwork` (the
+   base-connected chain alone) — the identical reference-set broadening `applyExpand`/`applyOverwrite`
+   made, so the CPU's own heuristic never generates a candidate the engine it dry-run-validates
+   against would reject for a reason the heuristic didn't model:
+   - `expandCandidates` — empty cells within `EXPAND_RANGE` of any cell `side` owns.
+   - `overwriteCandidates` — enemy-token cells at distance ≤ 1 from any cell `side` owns, priced via
      `overwriteCostFor(cell.reinforced)` and filtered to what `musterAvailable` can afford.
    - `reinforceCandidates` — `side`'s own unreinforced tokens, short-circuited to `[]` up front if
      `REINFORCE_COST > musterAvailable` (a flat, non-tiered cost, unlike Overwrite's).
 2. **Ranking**, via `candidateTier` + `rankedAdvanceCandidates`: Expand and Overwrite candidates are
-   combined and sorted by a two-tier rule — distance-1-from-network (tier 1: every Overwrite
+   combined and sorted by a two-tier rule — distance-1-from-any-owned-cell (tier 1: every Overwrite
    candidate qualifies by construction, since Overwrite itself requires adjacency; an Expand target
    may or may not) beats a distance-2 Expand gap-jump (tier 2) unconditionally, then within a tier,
    ascending `hexDistance` to the opponent's base wins, with `cellKey` as a final deterministic
-   tie-break. This tiering is load-bearing, not decorative: a flat distance-only ranking would
-   instead favor an Expand gap-jump past an adjacent blocking enemy token every time (since
+   tie-break. Note that as of SCRUM-40, "tier 1" no longer implies the candidate is reachable only
+   through the base-connected chain — a gapped, disconnected owned island can also produce a
+   distance-1 tier-1 candidate; the tier name describes adjacency-to-*an*-owned-cell, not
+   contiguity-with-the-base. This tiering is load-bearing, not decorative: a flat distance-only
+   ranking would instead favor an Expand gap-jump past an adjacent blocking enemy token every time (since
    `EXPAND_RANGE` (2) always reaches one hex closer to a distant base than overwriting an adjacent
    blocker does), which would never reproduce "prefer Overwrite when it's blocking the shortest
    path" — grounded in `skirmish-board-replacement.md`'s own rule that a Breach-qualifying connection
@@ -294,10 +322,14 @@ pending the stalemate-handling ticket noted in Deferred below.
   `localStorage`, `requestAnimationFrame`, etc.). Enforced by ESLint (`npm run lint`), not just by
   convention.
 - **No tunable is hard-coded outside `config.ts`** — every one of `BOARD_SIZE`,
-  `STARTING_CLUSTER_SIZE`, `DEFENSE_CELLS`, `EXPAND_RANGE`, `EXPAND_COST`, `OVERWRITE_COST`,
+  `DEFENSE_CELLS`, `EXPAND_RANGE`, `EXPAND_COST`, `OVERWRITE_COST`,
   `OVERWRITE_COST_REINFORCED`, `REINFORCE_COST`, `REINFORCE_MAX_STACK`, `MUSTER_BASELINE`,
   `MUSTER_BONUS` is assigned exactly once, in `config.ts`; every other file only imports it.
-  Verified by a grep audit in Final verification (SCRUM-19, SCRUM-21, SCRUM-22).
+  Verified by a grep audit in Final verification (SCRUM-19, SCRUM-21, SCRUM-22, SCRUM-42).
+  `STARTING_CLUSTER_SIZE` was deleted outright by SCRUM-42, not retyped or deprecated — the
+  starting cluster size is now a derived fact of hex geometry and the base's own position, not a
+  configured number; a repo-wide grep for the name at SCRUM-42's Final verification returned zero
+  hits outside archived contract records.
 - **No board mutation** — every `apply*` function returns a full replacement `VanguardBoard` via an
   immutable spread; the input board is never written to. Covered by an explicit "never mutates the
   input board" test on `applyExpand`.
@@ -345,9 +377,13 @@ pending the stalemate-handling ticket noted in Deferred below.
 - **Rendering, components, or hooks** — nothing under `src/vanguard/` touches React; nothing in the
   app currently renders a `VanguardBoard`.
 - **Developer decisions still outstanding** (implemented per the plan's provisional reading, not
-  yet confirmed): `BOARD_SIZE = 11`, `STARTING_CLUSTER_SIZE = 4`, and `DEFENSE_CELLS`'s 5-cell
-  layout in `config.ts` are placeholders to retune after first playtest; reinforcement-as-numeric-
-  stack (vs. a simpler boolean) and Overwrite resetting captured fortification to 0 (vs. inheriting
+  yet confirmed): `BOARD_SIZE = 11` and `DEFENSE_CELLS`'s 5-cell layout in `config.ts` are
+  placeholders to retune after first playtest (`STARTING_CLUSTER_SIZE` is no longer one of these —
+  SCRUM-42 removed it as dead configuration; the starting cluster's size is now derived from hex
+  geometry and the base's position, not a chosen number). `DEFENSE_CELLS` repositioning relative to
+  the new row-center base placement is explicitly a separate, later play-feel decision, not decided
+  by SCRUM-42. Reinforcement-as-numeric-stack (vs. a simpler boolean) and Overwrite resetting
+  captured fortification to 0 (vs. inheriting
   it) are both judgement calls flagged for sign-off in `plan.md`'s Risks section. `MUSTER_BASELINE
   = 7` (SCRUM-22, transcribed from `skirmish-board-replacement.md`'s own illustrative figure) and
   `MUSTER_BONUS = 3` (SCRUM-22, an invented placeholder with no design-document figure — the

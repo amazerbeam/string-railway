@@ -68,4 +68,16 @@ describe('applyOverwrite', () => {
       reason: IllegalActionReason.CellOutOfBounds,
     })
   })
+
+  it('is legal adjacent to an owned cell that is not chain-connected to the base — SCRUM-40', () => {
+    const board = boardWith({
+      '0,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Player, reinforced: 0 }, // base
+      '3,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Player, reinforced: 0 }, // gapped island
+      '4,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Cpu, reinforced: 0 }, // adjacent only to the island
+    })
+    // (4,0) is distance 4 from the base alone (the old rule would reject it as
+    // NotAdjacentToNetwork) but distance 1 from the gapped island.
+    const result = applyOverwrite(board, PlayerSide.Player, { q: 4, r: 0 })
+    expect(result.ok).toBe(true)
+  })
 })

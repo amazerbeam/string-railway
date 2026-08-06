@@ -1,0 +1,37 @@
+{
+  "image": "war-council-colour-silhouette.png",
+  "size": {
+    "w": 104,
+    "h": 44
+  },
+  "cell": {
+    "w": 32,
+    "h": 40
+  },
+  "pad": 2,
+  "tags": {
+    "cutout": {
+      "frames": 3
+    }
+  },
+  "frames": {
+    "cutout_0": {
+      "x": 2,
+      "y": 2,
+      "w": 32,
+      "h": 40
+    },
+    "cutout_1": {
+      "x": 36,
+      "y": 2,
+      "w": 32,
+      "h": 40
+    },
+    "cutout_2": {
+      "x": 70,
+      "y": 2,
+      "w": 32,
+      "h": 40
+    }
+  }
+}

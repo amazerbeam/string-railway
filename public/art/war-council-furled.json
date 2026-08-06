@@ -1,0 +1,31 @@
+{
+  "image": "war-council-furled.png",
+  "size": {
+    "w": 38,
+    "h": 44
+  },
+  "cell": {
+    "w": 16,
+    "h": 40
+  },
+  "pad": 2,
+  "tags": {
+    "furled": {
+      "frames": 2
+    }
+  },
+  "frames": {
+    "furled_0": {
+      "x": 2,
+      "y": 2,
+      "w": 16,
+      "h": 40
+    },
+    "furled_1": {
+      "x": 20,
+      "y": 2,
+      "w": 16,
+      "h": 40
+    }
+  }
+}

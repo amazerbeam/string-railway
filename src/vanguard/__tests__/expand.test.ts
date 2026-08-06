@@ -62,4 +62,16 @@ describe('applyExpand', () => {
     applyExpand(NETWORK_BOARD, PlayerSide.Player, { q: 1, r: 0 })
     expect(JSON.stringify(NETWORK_BOARD)).toBe(before)
   })
+
+  it('is legal within EXPAND_RANGE of an owned cell that is not chain-connected to the base — SCRUM-40', () => {
+    const board = boardWith({
+      '0,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Player, reinforced: 0 }, // base
+      '3,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Player, reinforced: 0 }, // gapped island
+    })
+    // (4,0) is distance 4 from the base alone (the old connectedNetwork-only
+    // rule would reject it) but distance 1 from the gapped island — legal only
+    // because the reference set is now every owned cell.
+    const result = applyExpand(board, PlayerSide.Player, { q: 4, r: 0 })
+    expect(result.ok).toBe(true)
+  })
 })

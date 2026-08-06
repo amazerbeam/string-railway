@@ -44,8 +44,9 @@ no cost formula fixes a board with only one place to fight over.
 
 ## The replacement: The Vanguard
 
-Two fixed bases sit on a full hex-grid board — purple (Player) in one corner, green (CPU) in the
-opposite corner — each pre-seeded with a small cluster of connected tokens. Each round, the War
+Two fixed bases sit on a full hex-grid board — purple (Player) at the horizontal center of the
+bottom row, green (CPU) at the horizontal center of the top row — each pre-seeded with a cluster
+of every hex touching its base. Each round, the War
 Council (a Fox in the Forest card round) funds a **Muster** for both sides, which they spend
 extending, contesting, and fortifying territory outward from their base in **The Clash**. Whoever
 completes an unbroken chain of their own tokens from their base into the opponent's base achieves
@@ -56,19 +57,20 @@ exposed, which is the genuine offense/defense allocation problem the lane versio
 ### Board
 
 - A hex-grid rhombus (same shape Hex used), with two fixed **base cells** instead of two edges —
-  purple and green, in roughly opposite corners.
-- Each base starts with a small pre-seeded cluster of that side's own connected tokens (size not
-  yet decided — illustrative only).
+  purple and green, each at the horizontal center of its own home row.
+- Each base starts with a pre-seeded cluster of that side's own tokens: the base cell plus every
+  on-board hex touching it — a count derived from hex geometry and the base's position, never a
+  chosen size (SCRUM-42).
 - Certain cells are permanent **defenses** (grey): no one may ever place a token there. Fixed per
   map, not a per-turn action.
 
 ### Actions, spent during The Clash
 
-| Action        | What it does                          | Legal when                                                                       | Cost                                                                             |
-| ------------- | ------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| **Expand**    | Place a token on an empty cell        | Within 2 hex-spaces of your existing connected network — a 1-cell gap is allowed | 1 move                                                                           |
-| **Overwrite** | Replace an enemy token with your own  | Only on a cell **adjacent** (touching) to your existing network — no gap allowed | 2 moves (3 if the target is reinforced)                                          |
-| **Reinforce** | Add defense to one of your own tokens | Any token you already hold                                                       | 1 move, and a token can only ever hold **+1** defense — it doesn't stack further |
+| Action        | What it does                          | Legal when                                                                  | Cost                                                                             |
+| ------------- | ------------------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **Expand**    | Place a token on an empty cell        | Within 2 hex-spaces of any cell you own — a 1-cell gap is allowed           | 1 move                                                                           |
+| **Overwrite** | Replace an enemy token with your own  | Only on a cell **adjacent** (touching) to any cell you own — no gap allowed | 2 moves (3 if the target is reinforced)                                          |
+| **Reinforce** | Add defense to one of your own tokens | Any token you already hold                                                  | 1 move, and a token can only ever hold **+1** defense — it doesn't stack further |
 
 Expansion is allowed to leapfrog with a gap, so a side can scout ground quickly; combat is
 adjacency-only, so it only happens where two networks actually meet. That split is deliberate —
@@ -121,9 +123,11 @@ Flagging these honestly rather than quietly resolving them:
   only strongholds/goal escalate to a full board) is a plausible fit but hasn't been re-checked
   against this mechanic's actual round count.
 - **Who opens The Clash each round** hasn't been decided.
-- **Numbers used above are illustrative, not chosen:** starting cluster size, board size, base
-  distance, the 7-move baseline Muster, the 2/3 overwrite cost, and the +1 reinforce cap are all
-  the developer's to set once there's something playable to test them against.
+- **Numbers used above are illustrative, not chosen:** board size, base distance, the 7-move
+  baseline Muster, the 2/3 overwrite cost, and the +1 reinforce cap are all the developer's to set
+  once there's something playable to test them against. (Starting cluster size is no longer one of
+  these — SCRUM-42 makes it a derived fact of hex geometry and the base's position, not a chosen
+  number.)
 
 ---
 

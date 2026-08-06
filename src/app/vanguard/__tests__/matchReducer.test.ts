@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ClashStatus, IllegalActionReason, VanguardActionKind, cellKey } from '../../../vanguard'
+import { ClashStatus, IllegalActionReason, cellKey } from '../../../vanguard'
 import { PlayerSide } from '../../../warCouncil'
 import { createMatchUiState, matchReducer, MatchActionKind } from '../matchReducer'
 import { makeBoard } from './boardFixture'
@@ -15,11 +15,10 @@ const musterReady = (player: number) =>
   }) as const
 
 describe('createMatchUiState', () => {
-  it('starts at round 1 with no clash and nothing armed', () => {
+  it('starts at round 1 with no clash and nothing at fault', () => {
     const ui = start()
     expect(ui.round).toBe(1)
     expect(ui.clash).toBeNull()
-    expect(ui.selectedAction).toBeNull()
     expect(ui.fault).toBeNull()
   })
 })
@@ -50,23 +49,11 @@ describe('MusterReady', () => {
   })
 })
 
-describe('the player’s turn', () => {
-  const armed = () => {
-    const ui = matchReducer(start(), musterReady(9))
-    return matchReducer(ui, {
-      kind: MatchActionKind.SelectAction,
-      action: VanguardActionKind.Reinforce,
-    })
-  }
+describe('TapCell — SCRUM-41: the action is inferred from the tapped cell, no arming step', () => {
+  const started = () => matchReducer(start(), musterReady(9))
 
-  it('ignores a tap with no action selected', () => {
-    const ui = matchReducer(start(), musterReady(9))
-    const next = matchReducer(ui, { kind: MatchActionKind.TapCell, target: { q: 0, r: 0 } })
-    expect(next).toBe(ui)
-  })
-
-  it('commits a legal action and spends Muster', () => {
-    const ui = armed()
+  it('infers Reinforce for the player’s own unreinforced token and commits it', () => {
+    const ui = started()
     const before = ui.clash?.muster[PlayerSide.Player] ?? 0
     const next = matchReducer(ui, { kind: MatchActionKind.TapCell, target: { q: 0, r: 0 } })
     expect(next.rejection).toBeNull()
@@ -74,29 +61,56 @@ describe('the player’s turn', () => {
     expect(next.clash?.board.cells[cellKey({ q: 0, r: 0 })]).toMatchObject({ reinforced: 1 })
   })
 
+  it('infers Overwrite for an adjacent enemy token and commits it', () => {
+    const ui = started()
+    const next = matchReducer(ui, { kind: MatchActionKind.TapCell, target: { q: 1, r: 2 } })
+    expect(next.rejection).toBeNull()
+    expect(next.clash?.board.cells[cellKey({ q: 1, r: 2 })]).toMatchObject({
+      owner: PlayerSide.Player,
+    })
+  })
+
+  it('infers Expand for an empty cell in range and commits it', () => {
+    const ui = started()
+    const next = matchReducer(ui, { kind: MatchActionKind.TapCell, target: { q: 2, r: 0 } })
+    expect(next.rejection).toBeNull()
+    expect(next.clash?.board.cells[cellKey({ q: 2, r: 0 })]).toMatchObject({
+      owner: PlayerSide.Player,
+    })
+  })
+
   it('names the engine’s own reason on an illegal target and leaves the board untouched', () => {
-    const ui = armed()
+    const ui = started()
     const boardBefore = ui.clash?.board
+    // (2,2) is a permanent defense — inferActionKind infers Expand, and
+    // applyExpand's own CellIsDefense check is what rejects it.
     const next = matchReducer(ui, { kind: MatchActionKind.TapCell, target: { q: 2, r: 2 } })
-    expect(next.rejection).toBe(IllegalActionReason.TargetNotOwnToken)
+    expect(next.rejection).toBe(IllegalActionReason.CellIsDefense)
     expect(next.clash?.board).toBe(boardBefore)
   })
 
-  it('clears a rejection when a new action is selected', () => {
-    const ui = armed()
-    const rejected = matchReducer(ui, { kind: MatchActionKind.TapCell, target: { q: 2, r: 2 } })
-    expect(rejected.rejection).not.toBeNull()
-    const reselected = matchReducer(rejected, {
-      kind: MatchActionKind.SelectAction,
-      action: VanguardActionKind.Expand,
-    })
-    expect(reselected.rejection).toBeNull()
+  it('rejects a tap on an already-reinforced own token with the engine’s own cap reason', () => {
+    const ui = started()
+    // (1,1) is the fixture's already-reinforced player token.
+    const next = matchReducer(ui, { kind: MatchActionKind.TapCell, target: { q: 1, r: 1 } })
+    expect(next.rejection).toBe(IllegalActionReason.ReinforcementCapReached)
   })
 
-  it('keeps the action armed after a successful submission', () => {
-    const ui = armed()
-    const next = matchReducer(ui, { kind: MatchActionKind.TapCell, target: { q: 0, r: 0 } })
-    expect(next.selectedAction).toBe(VanguardActionKind.Reinforce)
+  it('ignores a tap when there is no clash in progress', () => {
+    const noClash = start()
+    const next = matchReducer(noClash, { kind: MatchActionKind.TapCell, target: { q: 0, r: 0 } })
+    expect(next).toBe(noClash)
+  })
+})
+
+describe('ClearRejection', () => {
+  it('clears a rejection without touching the clash', () => {
+    const ui = matchReducer(start(), musterReady(9))
+    const rejected = matchReducer(ui, { kind: MatchActionKind.TapCell, target: { q: 2, r: 2 } })
+    expect(rejected.rejection).not.toBeNull()
+    const cleared = matchReducer(rejected, { kind: MatchActionKind.ClearRejection })
+    expect(cleared.rejection).toBeNull()
+    expect(cleared.clash).toBe(rejected.clash)
   })
 })
 

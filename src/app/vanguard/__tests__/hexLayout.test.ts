@@ -24,13 +24,16 @@ describe('hexPlacement — orientation', () => {
     expect(player.yFraction).toBeGreaterThan(cpu.yFraction)
   })
 
-  it('makes the player base the leftmost cell on the board', () => {
-    const player = hexPlacement({ q: 0, r: 0 }, 11)
-    for (let q = 0; q < 11; q++) {
-      for (let r = 0; r < 11; r++) {
-        expect(hexPlacement({ q, r }, 11).xFraction).toBeGreaterThanOrEqual(player.xFraction)
-      }
-    }
+  it('centers each row’s base near mid-board, leaning left as the rhombus leans — SCRUM-42', () => {
+    // SCRUM-42 moves both bases off the corners to {q: 5, r: 0} / {q: 5, r: 10}
+    // (BOARD_SIZE 11's row-0/row-10 horizontal center). The bases are not
+    // vertically aligned on screen because the rhombus itself leans
+    // left-to-right — expected, per skirmish-board-replacement.md.
+    const bottomRowCenter = hexPlacement({ q: 5, r: 0 }, 11)
+    const topRowCenter = hexPlacement({ q: 5, r: 10 }, 11)
+    expect(bottomRowCenter.xFraction).toBeLessThan(0.5)
+    expect(topRowCenter.xFraction).toBeGreaterThan(0.5)
+    expect(topRowCenter.xFraction).toBeGreaterThan(bottomRowCenter.xFraction)
   })
 
   it('leans rows to the right as they climb', () => {

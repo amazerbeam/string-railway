@@ -1,0 +1,478 @@
+<title>War Council — a round in play</title>
+<style>
+  /* Tokens lifted verbatim from src/app/warCouncil/warCouncil.css so this
+     mockup is the SAME screen wearing the reskin, not a different game. */
+  :root{
+    --wc-chamber:#0c1013; --wc-chamber-lift:#141a1f;
+    --wc-felt:#16241f; --wc-felt-lip:#0a1211; --wc-felt-line:#2b4038;
+    --wc-parchment:#e9e1cd; --wc-ink-soft:#5c5443;
+    --wc-brass:#c99a4e; --wc-brass-dim:#7d6132;
+    --wc-chalk:#cdd6d2; --wc-chalk-dim:#6f7d78; --wc-alarm:#d1705f;
+    --wc-bells:#c9873f; --wc-keys:#5f93a8; --wc-moons:#9c7cb8;
+    --wc-serif:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+    --wc-sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+    /* Pixel art scales by WHOLE numbers only, so these are integer steps at
+       breakpoints rather than the clamp() the shipped card tokens use. */
+    --s-hand:3; --s-play:2; --s-opp:2;
+  }
+  @media (max-height:780px){ :root{ --s-hand:2; --s-play:1; --s-opp:1; } }
+  @media (max-width:620px){ :root{ --s-hand:2; --s-play:1; --s-opp:1; } }
+  @media (min-height:1020px) and (min-width:1100px){ :root{ --s-hand:4; --s-play:3; --s-opp:2; } }
+
+  body{ background:var(--wc-chamber); }
+  .wc-shell,.wc-shell *{ box-sizing:border-box; }
+  .wc-shell{
+    height:100dvh; width:100%; overflow:hidden;
+    display:grid; grid-template-rows:auto 1fr auto;
+    grid-template-areas:'status' 'table' 'hand';
+    padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px)
+            env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);
+    color-scheme:dark;
+    background:radial-gradient(120% 80% at 50% 0%, #17202700 0%, #060809 100%), var(--wc-chamber);
+    color:var(--wc-chalk); font-family:var(--wc-sans); -webkit-font-smoothing:antialiased;
+  }
+  .spr{ display:block; image-rendering:pixelated; background-repeat:no-repeat;
+    width:calc(var(--cw) * var(--s) * 1px); height:calc(var(--ch) * var(--s) * 1px);
+    background-size:calc(var(--sw) * var(--s) * 1px) calc(var(--sh) * var(--s) * 1px);
+    background-position:calc(-1 * (2 + var(--col) * (var(--cw) + 2)) * var(--s) * 1px)
+                        calc(-1 * (2 + var(--row) * (var(--ch) + 2)) * var(--s) * 1px); }
+  .spr-c{ --cw:32; --ch:40; --sw:376; --sh:128; background-image:url(data:image/png;base64,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); }
+  .spr-f{ --cw:16; --ch:40; --sw:38;  --sh:44;  background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACYAAAAsCAYAAAAJpsrIAAAAxUlEQVR42mNgGAVUAI+effg/mMyBGwbCQgIy/weDOSiGtU9YAcbkGkotc+AAZAA1DKSWORiGUsNAapmDYuCng37/p4TLU+wwapiDYiDIMClRFYodRg1zRh1GtmGEMD3NQTHweEI4GPdoO8Cxl5QFGJPisOjmC2Cs7dMDx2Ka/mA86jC6OAxU9qBjUCImpTyiljlDw2GjaWzUYaMOG3XYqMNGHTbqsNHWxWjrYtRhQ6f7NtoTH3XYqMMGq8MoytZUNmcUEAsAsHgScbccsTMAAAAASUVORK5CYII=); }
+
+  /* ---------- status band ---------- */
+  .wc-status{ grid-area:status; display:flex; align-items:flex-start; justify-content:space-between;
+    gap:clamp(.5rem,2vmin,2rem); padding:clamp(.5rem,1.6vmin,1rem) clamp(.6rem,2.2vmin,1.6rem); }
+  .wc-plate{ display:flex; align-items:center; gap:clamp(.4rem,1.2vmin,.75rem);
+    background:var(--wc-chamber-lift); border:1px solid #232c33; border-radius:2px;
+    padding:clamp(.35rem,1vmin,.6rem) clamp(.5rem,1.4vmin,.85rem); }
+  .wc-plate-label{ font-size:clamp(.52rem,1.1vmin,.64rem); letter-spacing:.16em; text-transform:uppercase;
+    color:var(--wc-chalk-dim); font-weight:600; white-space:nowrap; }
+  .wc-furled{ display:flex; --s:var(--s-opp); }
+  .wc-furled .spr{ margin-left:calc(-1 * (16 - 6) * var(--s) * 1px); }
+  .wc-furled .spr:first-child{ margin-left:0; }
+  .wc-score{ display:flex; align-items:stretch; background:var(--wc-chamber-lift);
+    border:1px solid #232c33; border-radius:2px; overflow:hidden; }
+  .wc-score-cell{ display:flex; flex-direction:column; align-items:center; gap:1px;
+    padding:clamp(.3rem,.9vmin,.5rem) clamp(.7rem,2vmin,1.25rem); }
+  .wc-score-cell + .wc-score-cell{ border-left:1px solid #232c33; }
+  .wc-score-cell.wc-is-lead{ background:#1b2229; }
+  .wc-score-side{ font-size:clamp(.52rem,1.1vmin,.64rem); letter-spacing:.14em; text-transform:uppercase;
+    color:var(--wc-chalk-dim); font-weight:600; }
+  .wc-score-value{ font-family:var(--wc-serif); font-size:clamp(1.15rem,3vmin,1.75rem); line-height:1;
+    font-variant-numeric:tabular-nums; color:var(--wc-chalk); }
+  .wc-score-cell.wc-is-lead .wc-score-value{ color:var(--wc-brass); }
+  .wc-band{ font-family:var(--wc-serif); font-style:italic; font-size:clamp(.62rem,1.4vmin,.78rem);
+    color:var(--wc-chalk-dim); }
+
+  /* ---------- the felt ---------- */
+  .wc-table{ grid-area:table; position:relative; margin:0 clamp(.5rem,2vmin,1.5rem);
+    border-radius:clamp(.5rem,2vmin,1.5rem);
+    background:radial-gradient(60% 70% at 50% 45%, #1d2f28 0%, var(--wc-felt) 55%, #101b18 100%);
+    box-shadow:inset 0 0 0 1px var(--wc-felt-line), inset 0 0 0 clamp(4px,1vmin,9px) var(--wc-felt-lip),
+      inset 0 clamp(8px,2vmin,18px) clamp(20px,5vmin,40px) #00000066;
+    display:grid; grid-template-columns:1fr auto 1fr; align-items:center; justify-items:center;
+    min-height:0; }
+  .wc-pile{ grid-column:1; justify-self:start; align-self:center; display:flex; flex-direction:column;
+    align-items:center; gap:clamp(.2rem,.7vmin,.4rem); padding:clamp(.5rem,2vmin,1.5rem); --s:var(--s-play); }
+  .wc-pile-label{ font-size:clamp(.52rem,1.1vmin,.64rem); letter-spacing:.16em; text-transform:uppercase;
+    color:var(--wc-chalk-dim); font-weight:600; }
+  .wc-pile-arm{ font-family:var(--wc-serif); font-size:clamp(.72rem,1.7vmin,.95rem); color:var(--wc-brass); }
+  .wc-table-inner{ grid-column:2; display:flex; flex-direction:column; align-items:center;
+    gap:clamp(.4rem,1.5vmin,1rem); padding:clamp(.5rem,2vmin,1.5rem); text-align:center; min-height:0; }
+  .wc-trick-row{ display:flex; align-items:center; justify-content:center; gap:clamp(.6rem,2.4vmin,1.75rem);
+    padding:clamp(.3rem,1vmin,.6rem) clamp(.6rem,2vmin,1.4rem); border-radius:clamp(3px,.8vmin,6px);
+    box-shadow:inset 0 0 0 1px #ffffff0d; --s:var(--s-play); }
+  .wc-played{ display:flex; flex-direction:column; align-items:center; gap:clamp(.2rem,.7vmin,.4rem); }
+  .wc-played-side{ font-size:clamp(.52rem,1.1vmin,.64rem); letter-spacing:.14em; text-transform:uppercase;
+    color:var(--wc-chalk-dim); font-weight:600; }
+  .wc-played.wc-is-winner .wc-played-side{ color:var(--wc-brass); }
+  .wc-played.wc-is-winner .spr{ outline:2px solid var(--wc-brass); outline-offset:2px; }
+  .wc-empty{ width:calc(32 * var(--s) * 1px); height:calc(40 * var(--s) * 1px);
+    border:1px dashed var(--wc-chalk-dim); opacity:.55; }
+  .wc-table-line{ font-family:var(--wc-serif); font-size:clamp(.85rem,2.1vmin,1.15rem);
+    color:var(--wc-chalk); margin:0; max-width:40ch; }
+  .wc-table-hint{ font-size:clamp(.62rem,1.35vmin,.78rem); letter-spacing:.13em; text-transform:uppercase;
+    color:var(--wc-brass); font-weight:600; margin:0; background:none; border:0; font-family:inherit;
+    cursor:pointer; animation:wc-pulse 2.2s ease-in-out infinite; }
+  @keyframes wc-pulse{ 50%{ opacity:.42; } }
+  @media (prefers-reduced-motion:reduce){ .wc-table-hint{ animation:none; } }
+
+  /* ---------- hand: three arm stacks, not a fan of thirteen ---------- */
+  .wc-hand{ grid-area:hand; display:flex; flex-direction:column; align-items:center;
+    gap:clamp(.15rem,.8vmin,.5rem);
+    padding:clamp(.3rem,1.2vmin,.8rem) clamp(.5rem,2vmin,1.5rem) clamp(.5rem,1.8vmin,1.1rem); }
+  .wc-hand-hint{ font-size:clamp(.58rem,1.25vmin,.72rem); letter-spacing:.13em; text-transform:uppercase;
+    color:var(--wc-chalk-dim); font-weight:600; min-height:1.2em; text-align:center; }
+  .wc-hand-hint.wc-is-live{ color:var(--wc-brass); }
+  .wc-arms{ display:flex; align-items:flex-end; justify-content:center;
+    gap:clamp(.6rem,3vmin,2.2rem); padding-top:calc(7 * var(--s-hand) * 1px); }
+  .wc-arm{ background:none; border:0; padding:0; font:inherit; color:inherit; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:clamp(.2rem,.7vmin,.4rem); --s:var(--s-hand); }
+  .wc-arm:disabled{ cursor:default; }
+  .wc-fan{ display:flex; position:relative; }
+  .wc-pc{ background:none; border:0; padding:0; font:inherit; cursor:pointer; position:relative;
+    margin-left:calc(-1 * (32 - 5) * var(--s) * 1px);
+    transition:margin-left .16s ease, transform .16s ease; }
+  .wc-pc:first-child{ margin-left:0; }
+  .wc-arm.wc-is-open .wc-pc{ margin-left:calc(3 * var(--s) * 1px); }
+  .wc-arm.wc-is-open .wc-pc:first-child{ margin-left:0; }
+  .wc-pc:hover,.wc-pc:focus-visible{ transform:translateY(calc(-3 * var(--s) * 1px)); }
+  /* Armed reads three ways that are not colour: it lifts, it gains a chevron
+     above it, and a solid brass rule beneath it. */
+  .wc-pc.wc-is-armed{ transform:translateY(calc(-6 * var(--s) * 1px)); }
+  .wc-pc.wc-is-armed::before{ content:''; position:absolute; left:50%; top:calc(-6 * var(--s) * 1px);
+    translate:-50% 0; border-left:5px solid transparent; border-right:5px solid transparent;
+    border-top:6px solid var(--wc-brass); }
+  .wc-pc.wc-is-armed::after{ content:''; position:absolute; left:12%; right:12%;
+    bottom:calc(-3 * var(--s) * 1px); height:2px; background:var(--wc-brass); }
+  .wc-arm.wc-is-locked .wc-fan{ opacity:.4; }
+  .wc-arm.wc-is-locked .wc-fan::after{ content:''; position:absolute; inset:0;
+    background:repeating-linear-gradient(45deg, transparent 0 5px, #0a1211 5px 7px); }
+  .wc-arm.wc-is-void .wc-fan{ width:calc(32 * var(--s) * 1px); height:calc(40 * var(--s) * 1px);
+    border:1px dashed var(--wc-felt-line); }
+  .wc-arm-foot{ display:flex; align-items:center; gap:clamp(.25rem,.8vmin,.45rem); }
+  .wc-arm-dot{ width:.5rem; height:.5rem; background:var(--hue); border:1px solid #0006; }
+  .wc-arm-name{ font-size:clamp(.52rem,1.1vmin,.64rem); letter-spacing:.14em; text-transform:uppercase;
+    color:var(--wc-chalk-dim); font-weight:600; }
+  .wc-arm-count{ font-family:var(--wc-serif); font-size:clamp(.75rem,1.7vmin,.95rem);
+    font-variant-numeric:tabular-nums; color:var(--wc-chalk); }
+  .wc-arm.wc-is-locked .wc-arm-name::after{ content:' · locked'; color:var(--wc-ink-soft); }
+  :where(button):focus-visible{ outline:2px solid var(--wc-brass); outline-offset:3px; }
+  @media (prefers-reduced-motion:reduce){ .wc-pc{ transition:none; } }
+
+  /* ================= THE MAP LAYOUT =================================
+     Same DOM, same state, same interactions — the panels simply stop
+     existing. One continuous ground runs from their encampment, through
+     the contested middle, to your camp; depth is carried by the integer
+     sprite scale (theirs smallest, yours largest) rather than by drawing
+     perspective. The two churned strips are the front lines. */
+  .wc-map{
+    background:
+      repeating-linear-gradient(90deg,#0a120f 0 3px,#24382e 3px 7px),
+      repeating-linear-gradient(90deg,#0a120f 0 4px,#24382e 4px 9px),
+      repeating-linear-gradient(90deg,#ffffff06 0 2px,transparent 2px 5px),
+      linear-gradient(180deg,
+        #090f0d 0%,   #090f0d 14%,
+        #101a16 14%,  #101a16 33%,
+        #16241f 39%,  #16241f 64%,
+        #1b2e26 70%,  #1b2e26 100%);
+    background-size:100% 7px,100% 7px,100% 100%,100% 100%;
+    background-position:0 34%,0 65%,0 0,0 0;
+    background-repeat:no-repeat,no-repeat,repeat,no-repeat;
+  }
+  .wc-map .wc-table{ margin:0; border-radius:0; background:none; box-shadow:none; }
+  .wc-map .wc-plate,.wc-map .wc-score{ background:none; border:0; }
+  .wc-map .wc-score-cell + .wc-score-cell{ border-left:1px solid #ffffff14; }
+  .wc-map .wc-trick-row{ box-shadow:none; }
+  .wc-map .wc-pile{ align-self:start; padding-top:0; }
+  .wc-map .wc-status{ padding-top:clamp(.4rem,1.4vmin,.9rem); }
+  /* Planted, not floating: every prop gets a contact shadow where it meets
+     the ground, or it reads as hovering above the map. */
+  .wc-map .wc-fan::before,.wc-map .wc-played::before,.wc-map .wc-furled::before,
+  .wc-map .wc-pile::before{
+    content:''; position:absolute; left:6%; right:6%; bottom:-3px; height:7px;
+    background:#00000073; border-radius:50%; filter:blur(2px); z-index:-1;
+  }
+  .wc-map .wc-played,.wc-map .wc-furled,.wc-map .wc-pile{ position:relative; }
+  .wc-map .wc-pile::before{ bottom:1.35rem; }
+  .wc-map .wc-hand{ padding-bottom:clamp(.8rem,3vmin,2rem); }
+
+  /* review-only control — not part of the game surface */
+  .viewswitch{ position:fixed; top:.55rem; right:.55rem; z-index:9; display:flex;
+    border:1px solid #ffffff1f; border-radius:2px; overflow:hidden; background:#0c1013cc;
+    backdrop-filter:blur(3px); }
+  .viewswitch button{ background:none; border:0; cursor:pointer; font:inherit;
+    font-family:var(--wc-sans); font-size:.6rem; letter-spacing:.14em; text-transform:uppercase;
+    font-weight:600; color:var(--wc-chalk-dim); padding:.35rem .6rem; }
+  .viewswitch button[aria-pressed="true"]{ background:#ffffff12; color:var(--wc-brass); }
+
+  /* ---------- notes, below the surface ---------- */
+  .notes{ max-width:74ch; margin:0 auto; padding:4rem clamp(1rem,5vw,2rem) 6rem;
+    display:flex; flex-direction:column; gap:2.25rem; color:var(--wc-chalk); font-family:var(--wc-sans); }
+  .notes h2{ font-family:var(--wc-serif); font-weight:400; font-size:1.5rem; margin:0 0 .5rem; }
+  .notes h3{ font-size:.7rem; letter-spacing:.16em; text-transform:uppercase; color:var(--wc-brass);
+    margin:0 0 .6rem; font-weight:600; }
+  .notes p,.notes li{ color:#9aa8a3; line-height:1.65; }
+  .notes p{ margin:0 0 .7rem; }
+  .notes ul{ margin:0; padding-left:1.1rem; display:flex; flex-direction:column; gap:.5rem; }
+  .notes b{ color:var(--wc-chalk); font-weight:600; }
+  .notes code{ font-family:ui-monospace,'Cascadia Mono',Consolas,monospace; font-size:.88em; color:var(--wc-parchment); }
+</style>
+
+<div class="viewswitch" role="group" aria-label="Mockup layout">
+  <button type="button" id="v-zoned" aria-pressed="true">Zoned</button>
+  <button type="button" id="v-map" aria-pressed="false">Map</button>
+</div>
+
+<div class="wc-shell" id="shell">
+  <div class="wc-status" id="status"></div>
+  <section class="wc-table" id="table"></section>
+  <div class="wc-hand" id="hand"></div>
+</div>
+
+<div class="notes">
+  <section>
+    <h2>A War Council round, mid-play, wearing the reskin</h2>
+    <p>Same shell as the shipped screen — the tokens, the felt, the brass, the Iowan serif and the status/table/hand zoning are lifted from <code>src/app/warCouncil/warCouncil.css</code> rather than reinvented. What changed is what the pieces <em>are</em>. It is operable: open a stack, arm a Colour, commit it, watch the Gambit resolve, carry on.</p>
+    <p>Keyboard: <code>Tab</code> to the arms, <code>←/→</code> between them, <code>Enter</code> to open, <code>←/→</code> inside, <code>Enter</code> to arm and again to commit, <code>Escape</code> to back out.</p>
+  </section>
+  <section>
+    <h3>The colours came from the app, not from me</h3>
+    <p>The first pass picked oxblood, azure and a green for the three arms. On this felt (<code>#16241f</code>) the green was green on green. The shipped screen already has three suit hues proven against it — <code>--wc-bells</code>, <code>--wc-keys</code>, <code>--wc-moons</code> — so each arm's fabric now uses one of them as its <b>lit</b> step, darkened beneath so the numeral still reads. The reskin renames the suits; it has no business repainting them.</p>
+    <p>That also settles the collision I flagged earlier: arms take the three suit hues, which frees oxblood ↔ azure to keep doing what they already do — <b>faction</b>, visible on the furled Colours in the opponent's plate.</p>
+  </section>
+  <section>
+    <h3>Two layouts, one state — switch top right</h3>
+    <p><b>Zoned</b> is the shipped shell wearing the reskin: status band, felt table with its lip, hand below. Safe, and it inherits every layout decision already made and reviewed.</p>
+    <p><b>Map</b> is the idea from the design doc's open list — no panels at all. One continuous ground runs from the Marshal's encampment, across two churned front lines, through the contested middle, down to your camp. The felt's rounded rectangle stops existing; the plates lose their borders; every piece gets a contact shadow so it reads as planted rather than floating. Depth is carried by the integer sprite scale — theirs smallest, the contested pieces mid, yours largest — rather than by drawing perspective.</p>
+    <p>Both run the same DOM and the same interactions, so the comparison is only about presentation. Flip between them on the same game state.</p>
+  </section>
+  <section>
+    <h3>What the map still needs before it is real</h3>
+    <ul>
+      <li><b>The terrain is CSS, not art.</b> Hard-stepped bands and a rut pattern, standing in for drawn ground. The design doc already flags the map as a materially bigger art scope than the flat layout, and this does not discharge that — it shows the composition so you can judge the idea, not the finish.</li>
+      <li><b>It needs a name, and two obvious ones are taken.</b> &ldquo;Board&rdquo; belongs to the Vanguard's hex grid; &ldquo;Field&rdquo; collides with Field Advantage; and &ldquo;Muster&rdquo; is the Vanguard's move budget — I used it as a zone label in an earlier pass and that was a mistake. Untaken candidates: <em>the Council Ground</em>, <em>the Standing</em>, <em>the Encampment</em>. Not picking one.</li>
+      <li><b>The Marshal's side shows furled Colours here</b>, which is one of the two readings the doc leaves open. The map makes the case for it — an empty far side leaves a third of a continuous landscape with nothing standing on it.</li>
+    </ul>
+  </section>
+  <section>
+    <h3>What both layouts are doing</h3>
+    <ul>
+      <li><b>Three stacks, not a fan of thirteen.</b> Whether you hold the led arm <em>is</em> the follow-suit question; grouping by arm makes it a glance. An exhausted arm is a dashed outline — you can see you are void.</li>
+      <li><b>Confirmation is on the Colour.</b> One tap opens a stack (free browsing), one arms, one commits — two taps on the piece itself, no trip to a distant button.</li>
+      <li><b>Nothing a decision needs is behind hover.</b> Stacks open on click; hover only previews the lift.</li>
+      <li><b>Committed Colours are condensed</b> against the ones in your detachment — a played piece is a record, not a choice.</li>
+      <li><b>Every state reads without colour.</b> Armed lifts, gains a chevron and a rule. A locked arm dims <em>and</em> gains a hatch. Depletion is the stack's thickness.</li>
+      <li><b>The scoring band is on screen.</b> Humble and Victorious both pay 6; only Greedy pays nothing. If the design's argument is that winning a Gambit is not simply good, the player should be able to see where they stand.</li>
+    </ul>
+  </section>
+  <section>
+    <h3>Yours to tune, not mine to pick</h3>
+    <p>Sprite scale steps (×2/×3/×4 by viewport — integer only, since fractional scaling destroys pixel art), stack overlap and fan spread, the terrain band positions, how long a resolved Gambit holds, and whether the band indicator belongs on screen at all.</p>
+  </section>
+  <section>
+    <h3>Honest limits</h3>
+    <ul>
+      <li><b>This is not the engine.</b> Resolution here is the plain rule from the rulebook — a favoured-arm Colour beats an unfavoured one, otherwise the higher value of the led arm. Abilities are not wired. <code>src/warCouncil/</code> owns all of it for real.</li>
+      <li><b>I could not drive the running app.</b> Chrome was already open on the devtools profile, so this is built from <code>warCouncil.css</code> and the components rather than from the live screen, and the no-scroll behaviour has not been verified at named viewport sizes. Close that Chrome window and I will check both layouts properly.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const ARMS = {
+  foot:  { row:0, name:'Foot',   hue:'var(--wc-bells)' },
+  horse: { row:1, name:'Horse',  hue:'var(--wc-keys)'  },
+  siege: { row:2, name:'Siege',  hue:'var(--wc-moons)' },
+}
+const ORDER = ['foot','horse','siege']
+const VALUE = r => r === 11 ? '1M' : r + '0K'
+const BANDS = [
+  { max:3,  name:'Humble' }, { max:6, name:'Defeated' },
+  { max:9,  name:'Victorious' }, { max:13, name:'Greedy' },
+]
+const bandOf = n => BANDS[BANDS.findIndex(b => n <= b.max)].name
+
+let S = {
+  gambit:6, favoured:'horse', decreeRank:4,
+  led:{ arm:'horse', rank:7 },
+  hand:{ foot:[2,6,9], horse:[3,10], siege:[1,5,11] },
+  theirFurled:8, won:{ you:3, them:2 },
+  open:null, armed:null, committed:null, resolved:null,
+}
+let focusAt = { level:'arm', i:1 }, moveFocus = false
+
+const held = a => S.hand[a].length
+const mustFollow = () => S.led && held(S.led.arm) > 0
+const legal = a => !mustFollow() || a === S.led.arm
+
+const colour = (arm, rank) =>
+  '<span class="spr spr-c" style="--col:' + (rank-1) + ';--row:' + ARMS[arm].row + '"' +
+  ' role="img" aria-label="' + VALUE(rank) + ' of ' + ARMS[arm].name + '"></span>'
+
+function renderStatus(){
+  document.getElementById('status').innerHTML =
+    '<div class="wc-plate">' +
+      '<span class="wc-plate-label">Marshal&rsquo;s detachment</span>' +
+      '<span class="wc-furled" role="img" aria-label="' + S.theirFurled + ' Colours still in hand">' +
+        Array.from({length:S.theirFurled}, () => '<span class="spr spr-f" style="--col:1;--row:0"></span>').join('') +
+      '</span>' +
+      '<span class="wc-score-value">' + S.theirFurled + '</span>' +
+    '</div>' +
+    '<div class="wc-score">' +
+      '<div class="wc-score-cell' + (S.won.you >= S.won.them ? ' wc-is-lead':'') + '">' +
+        '<span class="wc-score-side">You</span>' +
+        '<span class="wc-score-value">' + S.won.you + '</span>' +
+        '<span class="wc-band">' + bandOf(S.won.you) + '</span></div>' +
+      '<div class="wc-score-cell' + (S.won.them > S.won.you ? ' wc-is-lead':'') + '">' +
+        '<span class="wc-score-side">Marshal</span>' +
+        '<span class="wc-score-value">' + S.won.them + '</span>' +
+        '<span class="wc-band">' + bandOf(S.won.them) + '</span></div>' +
+      '<div class="wc-score-cell">' +
+        '<span class="wc-score-side">Gambit</span>' +
+        '<span class="wc-score-value">' + S.gambit + '</span>' +
+        '<span class="wc-band">of 13</span></div>' +
+    '</div>'
+}
+
+function renderTable(){
+  let row, line = '', hint = ''
+  if (S.resolved){
+    const youWin = S.resolved === 'you'
+    row = (S.led ? '<div class="wc-played' + (youWin?'':' wc-is-winner') + '">' +
+            '<span class="wc-played-side">Marshal</span>' + colour(S.led.arm, S.led.rank) + '</div>' : '') +
+          '<div class="wc-played' + (youWin?' wc-is-winner':'') + '">' +
+            '<span class="wc-played-side">You</span>' + colour(S.committed.arm, S.committed.rank) + '</div>'
+    line = youWin ? 'You take the Gambit.' : 'The Marshal takes the Gambit.'
+    hint = '<button class="wc-table-hint" id="carry" type="button">Tap the table to carry on</button>'
+  } else if (S.led){
+    row = '<div class="wc-played"><span class="wc-played-side">Marshal</span>' +
+            colour(S.led.arm, S.led.rank) + '</div>' +
+          '<div class="wc-played"><span class="wc-played-side">You</span><span class="wc-empty"></span></div>'
+    line = ARMS[S.led.arm].name + ' was led.'
+  } else {
+    row = '<div class="wc-played"><span class="wc-played-side">You lead</span><span class="wc-empty"></span></div>'
+    line = 'The Gambit is yours to open.'
+  }
+  document.getElementById('table').innerHTML =
+    '<div class="wc-pile">' +
+      '<span class="wc-pile-label">Field advantage</span>' +
+      colour(S.favoured, S.decreeRank) +
+      '<span class="wc-pile-arm">' + ARMS[S.favoured].name + '</span>' +
+    '</div>' +
+    '<div class="wc-table-inner">' +
+      '<div class="wc-trick-row">' + row + '</div>' +
+      '<p class="wc-table-line">' + line + '</p>' + hint +
+    '</div>'
+}
+
+function renderHand(){
+  let hint
+  if (S.resolved) hint = 'Gambit resolved'
+  else if (S.armed) hint = 'Tap ' + VALUE(S.armed.rank) + ' of ' + ARMS[S.armed.arm].name + ' again to commit it'
+  else if (!S.led) hint = 'Your lead — commit any arm'
+  else if (mustFollow()) hint = 'You hold ' + ARMS[S.led.arm].name + ' — you must answer with it'
+  else hint = 'Void in ' + ARMS[S.led.arm].name + ' — commit any arm'
+
+  const arms = ORDER.map((a, i) => {
+    const n = held(a), isOpen = S.open === a, locked = !legal(a) && n > 0
+    const pieces = S.hand[a].map((r, j) => {
+      const armed = S.armed && S.armed.arm === a && S.armed.rank === r
+      return '<button class="wc-pc' + (armed ? ' wc-is-armed':'') + '" type="button"' +
+        ' data-arm="' + a + '" data-rank="' + r + '"' +
+        ' tabindex="' + (isOpen && focusAt.level==='pc' && focusAt.i===j ? '0':'-1') + '"' +
+        ' aria-label="' + VALUE(r) + ' of ' + ARMS[a].name + (armed ? ', armed — commit':', arm') + '">' +
+        colour(a, r) + '</button>'
+    }).join('')
+    return '<button class="wc-arm' + (isOpen?' wc-is-open':'') + (locked?' wc-is-locked':'') +
+      (n===0?' wc-is-void':'') + '" type="button" data-arm-stack="' + a + '"' +
+      (locked || n===0 ? ' disabled':'') +
+      ' tabindex="' + (focusAt.level==='arm' && focusAt.i===i ? '0':'-1') + '"' +
+      ' aria-expanded="' + isOpen + '"' +
+      ' aria-label="' + ARMS[a].name + ', ' + n + ' held' +
+      (locked ? ', locked — you must follow ' + ARMS[S.led.arm].name : '') + '">' +
+      '<span class="wc-fan">' + pieces + '</span>' +
+      '<span class="wc-arm-foot"><span class="wc-arm-dot" style="--hue:' + ARMS[a].hue + '"></span>' +
+      '<span class="wc-arm-name">' + ARMS[a].name + '</span>' +
+      '<span class="wc-arm-count">' + n + '</span></span></button>'
+  }).join('')
+
+  document.getElementById('hand').innerHTML =
+    '<div class="wc-hand-hint' + (S.armed || !S.resolved ? ' wc-is-live':'') + '">' + hint + '</div>' +
+    '<div class="wc-arms" role="group" aria-label="Your detachment, grouped by arm">' + arms + '</div>'
+}
+
+function render(){
+  renderStatus(); renderTable(); renderHand()
+  if (moveFocus){
+    moveFocus = false
+    const el = document.querySelector(focusAt.level === 'arm' ? '.wc-arm[tabindex="0"]' : '.wc-pc[tabindex="0"]')
+    if (el) el.focus()
+  }
+}
+
+function openArm(a){
+  if (!legal(a) || held(a) === 0) return
+  S.open = S.open === a ? null : a
+  S.armed = null
+  focusAt = S.open ? { level:'pc', i:0 } : { level:'arm', i:ORDER.indexOf(a) }
+  moveFocus = true; render()
+}
+
+function tapColour(a, r){
+  if (S.armed && S.armed.arm === a && S.armed.rank === r) return commit(a, r)
+  S.armed = { arm:a, rank:r }
+  focusAt = { level:'pc', i:S.hand[a].indexOf(r) }
+  render()
+}
+
+function commit(a, r){
+  S.committed = { arm:a, rank:r }
+  S.hand[a] = S.hand[a].filter(x => x !== r)
+  S.armed = null; S.open = null
+  // Mockup resolution only — src/warCouncil/ owns the real rule.
+  if (!S.led) S.resolved = 'you'
+  else if (a === S.favoured && S.led.arm !== S.favoured) S.resolved = 'you'
+  else if (S.led.arm === S.favoured && a !== S.favoured) S.resolved = 'them'
+  else if (a === S.led.arm) S.resolved = r > S.led.rank ? 'you' : 'them'
+  else S.resolved = 'them'
+  S.won[S.resolved] += 1
+  focusAt = { level:'arm', i:0 }
+  render()
+  const c = document.getElementById('carry'); if (c) c.focus()
+}
+
+function carryOn(){
+  if (S.gambit >= 13) return
+  S.gambit += 1; S.theirFurled -= 1
+  const winner = S.resolved
+  S.committed = null; S.resolved = null
+  if (winner === 'you') S.led = null
+  else {
+    const pool = ORDER.filter(a => held(a) > 0)
+    S.led = { arm: pool.length ? pool[Math.floor(Math.random()*pool.length)] : 'foot',
+              rank: 1 + Math.floor(Math.random()*11) }
+  }
+  focusAt = { level:'arm', i:0 }; moveFocus = true; render()
+}
+
+function setView(map){
+  document.getElementById('shell').classList.toggle('wc-map', map)
+  document.getElementById('v-map').setAttribute('aria-pressed', String(map))
+  document.getElementById('v-zoned').setAttribute('aria-pressed', String(!map))
+}
+document.getElementById('v-map').addEventListener('click', () => setView(true))
+document.getElementById('v-zoned').addEventListener('click', () => setView(false))
+
+document.addEventListener('click', e => {
+  if (e.target.closest('.viewswitch')) return
+  if (e.target.closest('#carry')) return carryOn()
+  const pc = e.target.closest('.wc-pc')
+  if (pc) return tapColour(pc.dataset.arm, +pc.dataset.rank)
+  const st = e.target.closest('.wc-arm')
+  if (st) return openArm(st.dataset.armStack)
+})
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape'){
+    if (S.armed){ S.armed = null; return render() }
+    if (S.open){ focusAt = { level:'arm', i:ORDER.indexOf(S.open) }; S.open = null; moveFocus = true; return render() }
+    return
+  }
+  if (!['ArrowLeft','ArrowRight','Home','End'].includes(e.key)) return
+  const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
+  if (focusAt.level === 'arm'){
+    const pick = ORDER.map((a,i) => legal(a) && held(a) > 0 ? i : -1).filter(i => i >= 0)
+    if (!pick.length) return
+    let at = pick.indexOf(focusAt.i); if (at < 0) at = 0
+    at = e.key === 'Home' ? 0 : e.key === 'End' ? pick.length-1 : (at + d + pick.length) % pick.length
+    focusAt = { level:'arm', i:pick[at] }
+  } else {
+    const n = held(S.open); if (!n) return
+    focusAt = { level:'pc', i: e.key === 'Home' ? 0 : e.key === 'End' ? n-1 : (focusAt.i + d + n) % n }
+  }
+  e.preventDefault(); moveFocus = true; render()
+})
+
+render()
+</script>

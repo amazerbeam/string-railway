@@ -1,7 +1,7 @@
 import type { PlayerSide } from '../warCouncil'
 import { OVERWRITE_COST, OVERWRITE_COST_REINFORCED } from './config'
 import { cellKey, isWithinBoard } from './hexGrid'
-import { connectedNetwork, minDistanceToNetwork } from './network'
+import { minDistanceToNetwork, ownedCells } from './network'
 import { IllegalActionReason, VanguardCellKind } from './types'
 import type { HexCoord, VanguardActionResult, VanguardBoard } from './types'
 
@@ -27,8 +27,8 @@ export function applyOverwrite(
     return { ok: false, reason: IllegalActionReason.TargetNotEnemyToken }
   }
 
-  const network = connectedNetwork(board, side)
-  if (minDistanceToNetwork(target, network) > 1) {
+  const owned = ownedCells(board, side)
+  if (minDistanceToNetwork(target, owned) > 1) {
     return { ok: false, reason: IllegalActionReason.NotAdjacentToNetwork }
   }
 

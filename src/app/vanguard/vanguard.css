@@ -198,7 +198,7 @@
   pointer-events: none;
 }
 
-/* A legal target for the armed action: brass ring + lift. */
+/* Any currently-legal target: brass ring + lift. */
 .vg-cell[data-selectable='true'] {
   box-shadow:
     inset 0 0 0 3px var(--vg-selectable),
@@ -214,7 +214,9 @@
   pointer-events: none;
 }
 
-/* ------------------------------ action palette ----------------------------- */
+/* ------------------------------ action legend ------------------------------ */
+/* SCRUM-41: ActionPalette is a read-only legend now — no button semantics,
+   no armed/selected state, no click handler. */
 .vg-palette {
   grid-area: palette;
   border-top: 1px solid var(--vg-felt-line);
@@ -239,6 +241,9 @@
 }
 
 .vg-actions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
@@ -255,12 +260,9 @@
   color: var(--vg-chalk);
   font-family: var(--vg-serif);
   font-size: clamp(0.85rem, 2vmin, 1rem);
-  cursor: pointer;
-  touch-action: manipulation;
   display: grid;
   gap: 0.05rem;
   justify-items: center;
-  transition: border-color 110ms ease;
 }
 
 .vg-action small {
@@ -271,35 +273,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-.vg-action:focus-visible {
-  outline: 3px solid var(--vg-brass);
-  outline-offset: 2px;
-}
-
-.vg-action[aria-pressed='true'] {
-  background: var(--vg-brass);
-  border-color: var(--vg-brass);
-  color: #16150f;
-}
-
-.vg-action[aria-pressed='true'] small {
-  color: #5b4a24;
-}
-
-.vg-action:disabled {
+.vg-action[data-enabled='false'] {
   opacity: 0.38;
-  cursor: default;
-}
-
-@media (hover: hover) {
-  .vg-action:not(:disabled):hover {
-    border-color: var(--vg-brass-dim);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vg-cell,
-  .vg-action {
+  .vg-cell {
     transition: none;
   }
 }

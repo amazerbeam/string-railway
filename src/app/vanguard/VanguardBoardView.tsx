@@ -11,7 +11,7 @@ import { useHexRovingFocus } from './useHexRovingFocus'
 
 interface VanguardBoardViewProps {
   readonly board: VanguardBoard
-  readonly legalTargets: ReadonlySet<CellKey> // empty when no action is armed
+  readonly legalTargets: ReadonlySet<CellKey> // a legal, affordable target for the current tap
   readonly interactive: boolean
   readonly onTapCell: (coord: HexCoord) => void
   readonly onCancel: () => void

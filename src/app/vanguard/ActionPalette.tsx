@@ -2,11 +2,9 @@ import { VanguardActionKind } from '../../vanguard'
 import { ACTION_DESCRIPTION, ACTION_NAME, REJECTION_MESSAGE } from './labels'
 
 export interface ActionPaletteProps {
-  readonly selected: VanguardActionKind | null
   readonly enabled: Readonly<Record<VanguardActionKind, boolean>>
   readonly interactive: boolean
   readonly hint: string
-  readonly onSelect: (action: VanguardActionKind) => void
 }
 
 // The closed set of strings `hint` can ever equal when it names a rejection —
@@ -17,18 +15,13 @@ const REJECTION_TEXTS = new Set<string>(Object.values(REJECTION_MESSAGE))
 const ACTIONS = Object.values(VanguardActionKind)
 
 /**
- * The three Clash actions (AC2). Decides nothing itself: `enabled` (this action
- * has at least one legal target) and `hint` both come from the mount, which is
- * the only place `legalTargetsFor` and rejection state live. Three controls is
- * under `game-ux`'s "about five" — natural tab stops, no roving tabindex.
+ * A read-only legend for the three Clash actions (AC2, revised by SCRUM-41):
+ * cost/range reference only, no selection step. `enabled` — this action has
+ * at least one legal target this turn — is the mount's own dry-run result,
+ * not decided here. Tapping a board cell (VanguardBoardView) is the only way
+ * to act; this list never receives a click handler.
  */
-export default function ActionPalette({
-  selected,
-  enabled,
-  interactive,
-  hint,
-  onSelect,
-}: ActionPaletteProps) {
+export default function ActionPalette({ enabled, interactive, hint }: ActionPaletteProps) {
   return (
     <div className="vg-palette">
       <p
@@ -38,21 +31,18 @@ export default function ActionPalette({
       >
         {hint}
       </p>
-      <div className="vg-actions" role="group" aria-label="Clash actions">
+      <ul className="vg-actions" aria-label="Clash actions">
         {ACTIONS.map((kind) => (
-          <button
+          <li
             key={kind}
-            type="button"
             className="vg-action"
-            aria-pressed={selected === kind}
-            disabled={!interactive || !enabled[kind]}
-            onClick={() => onSelect(kind)}
+            data-enabled={interactive && enabled[kind] ? 'true' : 'false'}
           >
             {ACTION_NAME[kind]}
             <small>{ACTION_DESCRIPTION[kind]}</small>
-          </button>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   )
 }

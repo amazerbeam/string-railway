@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { VanguardActionKind, allBoardCoords, applyVanguardAction, cellKey } from '../../../vanguard'
+import {
+  VanguardActionKind,
+  VanguardCellKind,
+  allBoardCoords,
+  applyVanguardAction,
+  cellKey,
+} from '../../../vanguard'
 import { PlayerSide } from '../../../warCouncil'
-import { legalTargetsFor } from '../legalTargets'
+import { allLegalTargets, inferActionKind, legalTargetsFor } from '../legalTargets'
 import { makeBoard } from './boardFixture'
 
 const board = makeBoard()
@@ -24,7 +30,7 @@ describe('legalTargetsFor', () => {
 
   it('offers the adjacent enemy token to Overwrite', () => {
     const targets = legalTargetsFor(board, PlayerSide.Player, VanguardActionKind.Overwrite, 9)
-    expect(targets.has(cellKey({ q: 2, r: 1 }))).toBe(true)
+    expect(targets.has(cellKey({ q: 1, r: 2 }))).toBe(true)
   })
 
   it('offers only unreinforced own tokens to Reinforce', () => {
@@ -42,6 +48,70 @@ describe('legalTargetsFor', () => {
         const engineAllows = engine.ok && engine.cost <= muster
         expect(targets.has(cellKey(target))).toBe(engineAllows)
       }
+    }
+  })
+})
+
+describe('inferActionKind', () => {
+  it('infers Expand for an empty cell', () => {
+    expect(inferActionKind(undefined, PlayerSide.Player)).toBe(VanguardActionKind.Expand)
+  })
+
+  it('infers Expand for a defense cell, so the engine reports CellIsDefense rather than a client guess', () => {
+    expect(inferActionKind({ kind: VanguardCellKind.Defense }, PlayerSide.Player)).toBe(
+      VanguardActionKind.Expand,
+    )
+  })
+
+  it('infers Reinforce for the side’s own token, even at the reinforcement cap', () => {
+    const cell = { kind: VanguardCellKind.Token, owner: PlayerSide.Player, reinforced: 1 } as const
+    expect(inferActionKind(cell, PlayerSide.Player)).toBe(VanguardActionKind.Reinforce)
+  })
+
+  it('infers Overwrite for an enemy token', () => {
+    const cell = { kind: VanguardCellKind.Token, owner: PlayerSide.Cpu, reinforced: 0 } as const
+    expect(inferActionKind(cell, PlayerSide.Player)).toBe(VanguardActionKind.Overwrite)
+  })
+})
+
+describe('allLegalTargets', () => {
+  it('unions every action kind’s legal targets with no duplication', () => {
+    const byAction = {
+      [VanguardActionKind.Expand]: new Set(['2,0']),
+      [VanguardActionKind.Overwrite]: new Set(['2,1']),
+      [VanguardActionKind.Reinforce]: new Set(['0,0', '2,0']),
+    }
+    expect(allLegalTargets(byAction)).toEqual(new Set(['2,0', '2,1', '0,0']))
+  })
+
+  it('agrees with the union of legalTargetsFor’s own per-kind sets on a real board — SCRUM-41', () => {
+    const muster = 9
+    const byAction = {
+      [VanguardActionKind.Expand]: legalTargetsFor(
+        board,
+        PlayerSide.Player,
+        VanguardActionKind.Expand,
+        muster,
+      ),
+      [VanguardActionKind.Overwrite]: legalTargetsFor(
+        board,
+        PlayerSide.Player,
+        VanguardActionKind.Overwrite,
+        muster,
+      ),
+      [VanguardActionKind.Reinforce]: legalTargetsFor(
+        board,
+        PlayerSide.Player,
+        VanguardActionKind.Reinforce,
+        muster,
+      ),
+    }
+    const union = allLegalTargets(byAction)
+    for (const target of allBoardCoords(board.size)) {
+      const inferred = inferActionKind(board.cells[cellKey(target)], PlayerSide.Player)
+      const engine = applyVanguardAction(board, PlayerSide.Player, { kind: inferred, target })
+      const engineAllows = engine.ok && engine.cost <= muster
+      expect(union.has(cellKey(target))).toBe(engineAllows)
     }
   })
 })

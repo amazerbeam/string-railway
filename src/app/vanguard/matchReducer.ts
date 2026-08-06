@@ -1,5 +1,6 @@
 import {
   applyClashAction,
+  cellKey,
   ClashStatus,
   chooseCpuClashAction,
   convertScoreToMuster,
@@ -10,11 +11,11 @@ import {
   type HexCoord,
   type IllegalActionReason,
   type VanguardAction,
-  type VanguardActionKind,
   type VanguardState,
 } from '../../vanguard'
 import { PlayerSide, scoreRound } from '../../warCouncil'
 import { isValidTricksWon, type TricksWon } from '../tricksWon'
+import { inferActionKind } from './legalTargets'
 
 export type MatchRejection = IllegalActionReason | ClashRejectionReason
 
@@ -28,7 +29,6 @@ export interface MatchUiState {
   readonly round: number
   readonly board: VanguardState
   readonly clash: ClashState | null
-  readonly selectedAction: VanguardActionKind | null
   readonly rejection: MatchRejection | null
   readonly fault: MatchFault | null
 }
@@ -36,9 +36,8 @@ export interface MatchUiState {
 export const MatchActionKind = {
   MusterReady: 'musterReady',
   RequestFailed: 'requestFailed',
-  SelectAction: 'selectAction',
   TapCell: 'tapCell',
-  CancelSelection: 'cancelSelection',
+  ClearRejection: 'clearRejection',
   NextRound: 'nextRound',
 } as const
 export type MatchActionKind = (typeof MatchActionKind)[keyof typeof MatchActionKind]
@@ -46,9 +45,8 @@ export type MatchActionKind = (typeof MatchActionKind)[keyof typeof MatchActionK
 export type MatchUiAction =
   | { readonly kind: typeof MatchActionKind.MusterReady; readonly tricks: TricksWon }
   | { readonly kind: typeof MatchActionKind.RequestFailed; readonly message: string }
-  | { readonly kind: typeof MatchActionKind.SelectAction; readonly action: VanguardActionKind }
   | { readonly kind: typeof MatchActionKind.TapCell; readonly target: HexCoord }
-  | { readonly kind: typeof MatchActionKind.CancelSelection }
+  | { readonly kind: typeof MatchActionKind.ClearRejection }
   | { readonly kind: typeof MatchActionKind.NextRound }
 
 export function createMatchUiState(initialState: VanguardState): MatchUiState {
@@ -56,7 +54,6 @@ export function createMatchUiState(initialState: VanguardState): MatchUiState {
     round: 1,
     board: initialState,
     clash: null,
-    selectedAction: null,
     rejection: null,
     fault: null,
   }
@@ -68,12 +65,10 @@ export function matchReducer(state: MatchUiState, action: MatchUiAction): MatchU
       return handleMusterReady(state, action.tricks)
     case MatchActionKind.RequestFailed:
       return { ...state, fault: { kind: 'requestFailed', message: action.message } }
-    case MatchActionKind.SelectAction:
-      return handleSelectAction(state, action.action)
     case MatchActionKind.TapCell:
       return handleTapCell(state, action.target)
-    case MatchActionKind.CancelSelection:
-      return { ...state, selectedAction: null, rejection: null }
+    case MatchActionKind.ClearRejection:
+      return { ...state, rejection: null }
     case MatchActionKind.NextRound:
       return handleNextRound(state)
   }
@@ -96,27 +91,25 @@ function handleMusterReady(state: MatchUiState, tricks: TricksWon): MatchUiState
   return { ...state, clash: advancedClash, fault }
 }
 
-function handleSelectAction(state: MatchUiState, action: VanguardActionKind): MatchUiState {
-  if (state.clash?.status !== ClashStatus.InProgress || state.clash.turn !== PlayerSide.Player) {
-    return state
-  }
-
-  const selectedAction = state.selectedAction === action ? null : action
-  return { ...state, selectedAction, rejection: null }
-}
-
+/**
+ * Infers the action from the tapped cell's own occupancy (SCRUM-41's
+ * click-to-act model — no palette arming step) and submits it directly.
+ * `inferActionKind` is total, so every tap names a candidate action; whether
+ * it's actually legal and affordable is still decided entirely by
+ * `applyClashAction`, never here.
+ */
 function handleTapCell(state: MatchUiState, target: HexCoord): MatchUiState {
-  const { clash, selectedAction, fault } = state
+  const { clash, fault } = state
   if (
     clash?.status !== ClashStatus.InProgress ||
     clash.turn !== PlayerSide.Player ||
-    selectedAction === null ||
     fault !== null
   ) {
     return state
   }
 
-  const action: VanguardAction = { kind: selectedAction, target }
+  const cell = clash.board.cells[cellKey(target)]
+  const action: VanguardAction = { kind: inferActionKind(cell, PlayerSide.Player), target }
   const result = applyClashAction(clash, PlayerSide.Player, action)
   if (!result.ok) {
     return { ...state, rejection: result.reason }
@@ -136,7 +129,6 @@ function handleNextRound(state: MatchUiState): MatchUiState {
     round: state.round + 1,
     board: state.clash.board,
     clash: null,
-    selectedAction: null,
     rejection: null,
   }
 }
