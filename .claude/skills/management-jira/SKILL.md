@@ -293,8 +293,42 @@ Call `createJiraIssue` with:
     `getJiraIssueTypeMetaWithFields`, set it only if the user picked one, and
     omit the field entirely if not provided rather than guessing a value.
 
-Never set a sprint field. All tickets go to the backlog — do not pass `sprint`,
-`customfield_10020`, or any sprint-related field.
+### Step 3b: Sprint placement
+
+Ask where the ticket goes: **the current sprint, or the backlog.** Both are
+valid; neither is the silent default.
+
+To put a ticket in a sprint, set the Sprint field in `additional_fields` to the
+sprint's **numeric id**, as a single-element array — e.g.
+`"customfield_10020": [37]`.
+
+- **Resolve the field id live.** Call `getJiraIssueTypeMetaWithFields` for the
+  project and issue type and read the Sprint field's `customfield_XXXXX` id.
+  Never hardcode it — it differs per site.
+- **Resolve the sprint id live, and never guess it.** The Sprint field returns
+  no `allowedValues`, and this MCP exposes no board or sprint API, so the id
+  cannot be enumerated from field metadata. The only reliable route is to read
+  it off an issue already in the target sprint: `searchJiraIssuesUsingJql` with
+  `sprint in openSprints()`, then read `fields.customfield_10020[].id`,
+  `.name`, and `.state`.
+- **Do not probe candidate ids with JQL — it does not work on this instance.**
+  `sprint = <id>` returns an empty result set for a nonexistent id rather than
+  erroring (verified 2026-08-09 against DLR: `sprint = 99999` returned zero
+  issues, no error), so an empty result proves nothing either way. An empty
+  sprint and a nonexistent one are indistinguishable this way.
+- **A brand-new sprint holds no issues, so its id cannot be read.** The first
+  ticket into an empty sprint has to have its id supplied by the user — read
+  from the board URL or the sprint header in Jira. Ask for it; do not guess.
+- **Only ever write an `active` or `future` sprint.** Check the `state` field
+  before writing. Assigning to a `closed` sprint silently misfiles the ticket
+  where nobody will look at it.
+- **If no open sprint exists, do not invent one.** Sprints cannot be created
+  through this MCP. Say so, create to the backlog, and tell the user to start a
+  sprint on the board — then set the field afterwards with `editJiraIssue`.
+- **`editJiraIssue` frequently times out on this instance while the write still
+  lands.** Do not retry on timeout. Re-read with `getJiraIssue` to confirm.
+
+Omit the field entirely to land in the backlog.
 
 ### Step 4: Link related work items
 
@@ -401,7 +435,7 @@ wrote that; do not echo it back.
 | Jira project | Always ask which project the ticket belongs to |
 | Priority labels | Always Highest, High, Medium, Low, or Lowest — never P0/P1 etc. |
 | Subtasks | Never create subtasks — use linked tickets instead |
-| Sprint | Never assign to a sprint — always land in backlog |
+| Sprint | Ask: current sprint or backlog. Resolve the sprint **id** live from an issue already in it — never guess an id, never write a `closed` sprint. Omit the field for backlog. |
 | Parent epic | Always ask for non-epic tickets; set as parent if confirmed |
 | Fix version | Always ask; link if provided |
 | Testing Type | Mandatory for Test tickets — fixed dropdown; always read live `allowedValues` from `getJiraIssueTypeMetaWithFields`, never hardcode the option list |
@@ -416,7 +450,8 @@ wrote that; do not echo it back.
 - Fabricating a Jira ticket ID
 - Hardcoding an instance URL or cloud ID instead of resolving it at runtime
 - Using Subtask as the issue type — use Story, Task, or Bug instead
-- Assigning a sprint field on any ticket
+- Writing a guessed, hardcoded, or `closed` sprint id instead of one resolved
+  live from an issue already in the target sprint
 - Posting a Markdown-formatted comment (headings, bullets, emoji)
 - Auto-transitioning on commit/PR merge without explicit confirmation — the
   pre-authorised `/fb-*` pipeline transitions are the only exception

@@ -1,12 +1,12 @@
 import { createDeck } from './deck'
 import { shuffle } from './shuffle'
-import { otherSide, PlayerSide, RoundPhase, type RoundState } from './types'
+import { otherSide, PlayerSide, RoundPhase, TRICKS_PER_ROUND, type RoundState } from './types'
 
 export function dealRound(dealer: PlayerSide, rng: () => number): RoundState {
   const shuffled = shuffle(createDeck(), rng)
-  const playerHand = shuffled.slice(0, 13)
-  const cpuHand = shuffled.slice(13, 26)
-  const remaining = shuffled.slice(26)
+  const playerHand = shuffled.slice(0, TRICKS_PER_ROUND)
+  const cpuHand = shuffled.slice(TRICKS_PER_ROUND, TRICKS_PER_ROUND * 2)
+  const remaining = shuffled.slice(TRICKS_PER_ROUND * 2)
   const decree = remaining[0]
   const drawPile = remaining.slice(1)
 

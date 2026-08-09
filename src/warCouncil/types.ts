@@ -18,6 +18,10 @@ export const CardRank = {
   Monarch: 11,
 } as const
 
+// Consolidates the round-length literal previously duplicated as a bare `13` in playCard.ts
+// and deal.ts, and separately declared in the now-deleted src/app/tricksWon.ts.
+export const TRICKS_PER_ROUND = 13
+
 export interface Card {
   readonly suit: Suit
   readonly rank: number

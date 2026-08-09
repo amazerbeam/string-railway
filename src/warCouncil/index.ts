@@ -9,6 +9,7 @@ export {
   PlayerSide,
   RoundPhase,
   Suit,
+  TRICKS_PER_ROUND,
 } from './types'
 export type { AbilityChoice, Card, PlayCardResult, RoundState, TrickCard } from './types'
 export { containsCard, sameCard } from './cardUtils'

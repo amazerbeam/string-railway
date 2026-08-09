@@ -1,15 +1,15 @@
 # War Council — `src/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-19, SCRUM-20, SCRUM-26
+**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47
 
 ## Responsibility
 
-Owns the Fox in the Forest card-game layer of the hybrid — the trick-taking / bidding half of a
-round, as named in the root `CLAUDE.md` → _Game naming_. Kept in its own folder, separate from
-`src/vanguard/` and `src/battle/`, so the card engine and the board engine can each own their own
-state shape without one leaking into the other's internals (`src/battle/` composes both, see
-`battle.md`).
+Owns the Fox in the Forest card-game layer — the trick-taking / bidding engine for one round. Kept
+in its own folder so the card engine owns its own state shape independently of whatever consumes
+it; historically that separation also kept it independent of the now-deleted Vanguard board engine
+and battle-loop orchestrator (see `CLAUDE.md`'s recovery notes for how to view anything DLR-47
+removed).
 
 The module is a pure, headless rules engine for **one round**: deck, deterministic shuffle-and-deal,
 legal-move validation, trick-winner resolution, the base game's five non-Treasure odd-card
@@ -38,8 +38,8 @@ reducer.
 | `applyFoxExchange`, `applyWoodcutterDraw`, `nextLeaderAfterTrick`            | The three ability effects that mutate `RoundState` directly                                                                                                                                                | `abilities.ts`          |
 | `playCard`                                                                   | The single reducer-shaped entry point — the only way to mutate `RoundState`                                                                                                                                | `playCard.ts`           |
 | `tricksToPoints`, `scoreRound`                                               | End-of-round scoring band lookup                                                                                                                                                                           | `scoring.ts`            |
-| `chooseCpuCard`, `chooseCpuFoxChoice`, `chooseCpuWoodcutterChoice`           | The three independently-testable sub-decisions of the CPU heuristic — card choice, and the Fox/Woodcutter ability choices                                                                                 | `cpuPlayer.ts`          |
-| `chooseCpuMove`, `CpuMove`                                                   | Composes the three sub-decisions into one `{ card, choice? }` move; the only heuristic export re-exported from `index.ts`                                                                                 | `cpuPlayer.ts`          |
+| `chooseCpuCard`, `chooseCpuFoxChoice`, `chooseCpuWoodcutterChoice`           | The three independently-testable sub-decisions of the CPU heuristic — card choice, and the Fox/Woodcutter ability choices                                                                                  | `cpuPlayer.ts`          |
+| `chooseCpuMove`, `CpuMove`                                                   | Composes the three sub-decisions into one `{ card, choice? }` move; the only heuristic export re-exported from `index.ts`                                                                                  | `cpuPlayer.ts`          |
 
 ## How it works
 
@@ -202,10 +202,11 @@ _Deferred_).
 ## Rules & invariants enforced
 
 - **Pure-core boundary** (SCRUM-19, re-confirmed by every ticket since): `eslint.config.js` scopes a
-  `no-restricted-imports` / `no-restricted-globals` block to `src/warCouncil/**/*.{ts,tsx}` and
-  `src/vanguard/**/*.{ts,tsx}`. This module may not import `react`/`react-dom` and may not reference
-  DOM/network globals. Enforced by ESLint (`npm run lint`), re-grepped explicitly in SCRUM-20's
-  Final verification (zero hits).
+  `no-restricted-imports` / `no-restricted-globals` block to `src/warCouncil/**/*.{ts,tsx}` — the
+  same block previously also scoped `src/vanguard/**/*.{ts,tsx}` before DLR-47 deleted that tree.
+  This module may not import `react`/`react-dom` and may not reference DOM/network globals.
+  Enforced by ESLint (`npm run lint`), re-grepped explicitly in SCRUM-20's Final verification (zero
+  hits).
 - **No internal `Math.random()`** — every random source in this module is the caller-injected `rng`
   parameter to `shuffle`/`dealRound`. Grepped explicitly in SCRUM-20's Final verification (zero
   hits), so production wiring and tests can diverge (real randomness vs. a deterministic generator)

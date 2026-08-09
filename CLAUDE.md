@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state — read this first
 
-**This is a Vite + React 19 + TypeScript prototype with a working POC on disk.** `src/` holds 142 source files across six modules — `app/` (React screens and the app shell), `battle/` (battle-loop orchestration), `vanguard/` (the hex-board engine), `warCouncil/` (the card-layer engine), `styles/`, and `__tests__/` — plus `App.tsx` and `main.tsx` at the root. 54 of those files are tests.
+**This is a Vite + React 19 + TypeScript prototype with a working POC on disk.** `src/` holds 53 source files across four modules — `app/` (React screens and the app shell), `warCouncil/` (the card-layer engine), `styles/`, and `__tests__/` — plus `App.tsx` and `main.tsx` at the root. 19 of those files are tests.
 
 **The POC implements the project's previous design direction.** The live design is `.docs/design/Balatro-Forbidden-Solitaire/hybrid-design.md`. The POC code and its per-module record in `.docs/implementation/` are retained as a working reference — not as a description of where the game is going. The superseded direction's design documents, its art tree, and its build contracts were retired on DLR-45.
 
@@ -17,16 +17,6 @@ $env:Path = "C:\Program Files\Git\cmd;$env:Path"; git show <commit>:<path>
 commit `2cf7ec7` on `origin/master` is the last commit before the 2026-08-01 removal of an earlier prototype.
 
 `.claude/contract/` holds the plans in flight; finished ones move to `archive/`. `.claude/lessons/` collects corrections logged via `/fb-issue`.
-
-## Game naming — the retained POC's vocabulary
-
-The retained POC's two component games have in-fiction names — use them when working on that code
-or its implementation docs, instead of the parent-game names: the Fox in the Forest card layer is
-the **War Council**; the hex-board network-growth mechanic that replaces Hex is **The Vanguard**.
-Within a round of the Vanguard: **Muster** (the move budget), **The Clash** (the action exchange),
-**The Breach** (a solid base-to-base connection — the win condition). The rules record is
-`.docs/game_rules/vanguard.md`; the fuller design rationale was retired on DLR-45. **The live design
-(`.docs/design/Balatro-Forbidden-Solitaire/hybrid-design.md`) does not use this vocabulary.**
 
 ## The single-source-of-truth rule
 

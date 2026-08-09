@@ -12,27 +12,21 @@ without reading the source, and "what's been implemented" without digging throug
 Docs are organized by module, not by ticket, and accumulate across every ticket that touches that
 folder — so a mechanic's explanation lives in one place regardless of which ticket last changed it.
 
-| Module                | Doc                                    | Status      | Built by                                                                       |
-| --------------------- | -------------------------------------- | ----------- | ------------------------------------------------------------------------------ |
-| `src/warCouncil/`     | [war-council.md](war-council.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26                                                   |
-| `src/vanguard/`       | [vanguard.md](vanguard.md)             | partial     | SCRUM-19, SCRUM-21, SCRUM-22, SCRUM-23, SCRUM-24, SCRUM-27, SCRUM-40, SCRUM-42 |
-| `src/battle/`         | [battle.md](battle.md)                 | implemented | SCRUM-19, SCRUM-25, SCRUM-26, SCRUM-27                                         |
-| `src/app/`            | [app.md](app.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34                                         |
-| `src/app/warCouncil/` | [war-council-ui.md](war-council-ui.md) | implemented | SCRUM-28                                                                       |
-| `src/app/vanguard/`   | [vanguard-ui.md](vanguard-ui.md)       | implemented | SCRUM-29, SCRUM-41, SCRUM-30                                                   |
-| `src/app/battle/`     | [battle-ui.md](battle-ui.md)           | implemented | SCRUM-31, SCRUM-34                                                             |
+| Module                | Doc                                    | Status      | Built by                                       |
+| --------------------- | -------------------------------------- | ----------- | ---------------------------------------------- |
+| `src/warCouncil/`     | [war-council.md](war-council.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26                   |
+| `src/app/`            | [app.md](app.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47 |
+| `src/app/warCouncil/` | [war-council-ui.md](war-council-ui.md) | implemented | SCRUM-28                                       |
 
-`src/app/warCouncil/`, `src/app/vanguard/`, and `src/app/battle/` each have their own doc rather
-than a section inside `app.md`: all three are module folders in their own right, and War Council's
-combined doc had already passed this project's 400-line budget by the time it was split. `app.md`
-keeps the mount-prop contract, the trick-count validator, and `AppMode` — both game-specific stubs
-are gone now that SCRUM-28 and SCRUM-29 have each replaced theirs with a real mount.
+`src/app/warCouncil/` has its own doc rather than a section inside `app.md`: it is a module folder
+in its own right, and War Council's combined doc had already passed this project's 400-line budget
+by the time it was split.
 
-Since SCRUM-34 the app has a playable end-to-end battle loop: `src/App.tsx` mounts `BattleHost`
-(`src/app/battle/`, see [battle-ui.md](battle-ui.md)), which sequences War Council rounds, round
-transitions, The Clash, and the Breach screen. Note that `src/battle/`'s `BattleState` machine
-(see [battle.md](battle.md)) is built and tested but **not** on that path — `battle-ui.md` explains
-why.
+DLR-47 retired the Vanguard board engine, the battle-loop orchestrator, and their UIs —
+`src/App.tsx` now mounts a single War Council round directly
+(`src/app/warCouncil/WarCouncilRound.tsx`), dealing a fresh round and restarting on completion. See
+[app.md](app.md) for the mount itself; the deleted modules' history is recoverable via `git show`
+per `CLAUDE.md`'s recovery instructions, not documented here.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

@@ -6,7 +6,7 @@ Change a path or a command **here only**. A runner stated in five files gets upd
 
 **Conventions are not here.** How to write the code — component structure, hooks, state management, configuration-driven values, component budgets, testing posture — belongs to `.claude/skills/react-frontend/SKILL.md` and its `references/engineering-standards.md`. This file owns paths, commands, and the traps that decide whether a *verification* is trustworthy.
 
-> **Status: the retained POC is on disk** — `src/` holds 142 source files across six modules and 54 test files. The layout and script names below are the ones actually on disk. **`package.json` remains the authority on script names** — Read it before writing a `Run:` step. Correct anything wrong *here*, and the whole pipeline follows.
+> **Status: the retained POC is on disk** — `src/` holds 53 source files across four modules and 19 test files. The layout and script names below are the ones actually on disk. **`package.json` remains the authority on script names** — Read it before writing a `Run:` step. Correct anything wrong *here*, and the whole pipeline follows.
 
 ## Layout
 
@@ -24,10 +24,8 @@ Change a path or a command **here only**. A runner stated in five files gets upd
   .gitattributes          text=auto eol=lf — Windows working tree, Ubuntu CI
   .nvmrc                  the single source of the Node version
   .github/workflows/      ci.yml — install, lint, typecheck, test, build
-  src/                    142 source files across six modules, 54 test files
+  src/                    53 source files across four modules, 19 test files
     app/                  React screens and the app shell
-    battle/               battle-loop orchestration
-    vanguard/             the hex-board engine
     warCouncil/           the card-layer engine
     styles/               plain CSS
     __tests__/            Vitest specs
@@ -92,7 +90,7 @@ The five commands in the last row are exactly what `.github/workflows/ci.yml` ru
 - **Pass/fail is the exit code plus stdout.** There is no results file to parse. `0` means everything passed; Vitest prints a `Tests  N passed` summary line. Quote it.
 - **`Select-String` reports one match per physical line, and a bundled asset is one line.** Grepping `dist/assets/*.js` for `"A|B"` surfaces whichever alternative appears first and looks like proof that only A is present. Any check that must prove *two* strings shipped needs `-AllMatches`, two separate greps, or a raw `-match` against `Get-Content -Raw`.
 - **A cold-cache `npm test` can fail with `[vitest-pool-runner]: Timeout waiting for worker to respond` — that is not a failing test.** It is a worker-*start* timeout on the `dom` project: jsdom environment setup has been measured at ~66s against a cold Vite transform cache, which starves the pool while the `node` project is also running. The `node` project passes in the same run and the affected `.test.tsx` files never execute at all, so the summary reports fewer files than exist. Warm the cache by running the projects separately first (`npx vitest run --project node; npx vitest run --project dom`), then run `npm test` — a warm full run has been measured at 1.70s. Treat a **second consecutive** timeout as a real problem; a single cold one is infrastructure, not a defect, and must never be reported as a test failure.
-- **`npm run format:check` currently fails on pre-existing files** across `.docs/**`, `src/battle/**` and `src/vanguard/**` that no current contract has touched. Run it and report the result, but gate a contract on `npx prettier --check` scoped to the files that contract actually changed. Do not "fix" the repo-wide failure as a side effect of unrelated work.
+- **`npm run format:check` currently fails on pre-existing files** across `.docs/**` that no current contract has touched (this note previously also named the battle-loop and hex-board module trees; both were deleted on DLR-47). Run it and report the result, but gate a contract on `npx prettier --check` scoped to the files that contract actually changed. Do not "fix" the repo-wide failure as a side effect of unrelated work.
 - **A TypeScript error inside a test file is not a failing test.** Vitest reports it as a collection/transform error and the file's tests never run. Read the output for "Failed to load" or "Transform failed" before concluding anything about coverage.
 - **Missing `node_modules` is not a code defect.** It surfaces as `'vite' is not recognized`, `Cannot find module`, or `npm ERR! Missing script`. Run `npm ci` and re-run; do not "fix" source in response.
 - **`npm run lint` and `npm run typecheck` are required gates, and they exist.** This stack has real static analysis wired up — every contract touching `.ts`/`.tsx` plans both. Never skip them, and never record them as `N/A` while TypeScript files are in the diff.

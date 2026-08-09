@@ -8,6 +8,7 @@ import {
   currentTurn,
   IllegalMoveReason,
   RoundPhase,
+  TRICKS_PER_ROUND,
   type AbilityChoice,
   type Card,
   type PlayCardResult,
@@ -90,7 +91,7 @@ export function playCard(
   const nextLeader = nextLeaderAfterTrick(completedTrick, winner)
   const tricksPlayed = next.tricksPlayed + 1
   const tricksWon = { ...next.tricksWon, [winner]: next.tricksWon[winner] + 1 }
-  const phase = tricksPlayed === 13 ? RoundPhase.Complete : RoundPhase.AwaitingLead
+  const phase = tricksPlayed === TRICKS_PER_ROUND ? RoundPhase.Complete : RoundPhase.AwaitingLead
 
   return {
     ok: true,

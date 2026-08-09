@@ -1,7 +1,7 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28
+**Built by:** SCRUM-28, DLR-47
 
 ## Responsibility
 
@@ -13,10 +13,11 @@ only** — every rules question is delegated to `src/warCouncil/` (see
 no trick-winner computation of its own.
 
 It sits under `src/app/` rather than beside the engine for a hard reason: `eslint.config.js`'s
-pure-core override bars `src/warCouncil/**` and `src/vanguard/**` from importing React at all, so a
-`.tsx` file in either would trip `no-restricted-imports`. `src/app/` is the layer that is _expected_
-to consume both engines and import React, which makes this its natural home. See
-[app.md](app.md) for the mount-prop contract this module implements.
+pure-core override bars `src/warCouncil/**` from importing React at all, so a `.tsx` file there
+would trip `no-restricted-imports` (the same override previously also scoped `src/vanguard/**`
+before DLR-47 deleted that tree). `src/app/` is the layer that is _expected_ to consume the engine
+and import React, which makes this its natural home. See [app.md](app.md) for the mount-prop
+contract this module implements.
 
 The folder deliberately has **no barrel**. `App.tsx` imports the mount directly by path
 (`./app/warCouncil/WarCouncilRound`); `src/app/index.ts` excludes components on purpose, and a `.ts`
