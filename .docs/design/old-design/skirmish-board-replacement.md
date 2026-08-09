@@ -104,11 +104,27 @@ cell) and force a detour, or you can pay the 2-move overwrite cost later to recl
 
 Flagging these honestly rather than quietly resolving them:
 
-- **No stalemate/tiebreak rule yet.** Classic Hex can't draw, because it connects opposite _edges_
-  of the board — a full board is mathematically guaranteed to contain exactly one connecting
-  chain. Base-to-base is two specific _points_, not edges, so that guarantee does not carry over:
-  it's entirely possible for the board to fill up, or many rounds to pass, with neither base ever
-  reaching the Breach. Deliberately deferred — the developer wants the core loop settled first.
+- **No stalemate/tiebreak rule yet — and it's not a tail risk, it's measured as the common case.**
+  Classic Hex can't draw, because it connects opposite _edges_ of the board — a full board is
+  mathematically guaranteed to contain exactly one connecting chain. Base-to-base is two specific
+  _points_, not edges, so that guarantee does not carry over. **Measured 2026-08-08:** 500 simulated
+  battles, symmetric shipped AI on both sides (`chooseCpuMove` for War Council, `chooseCpuClashAction`
+  for the Clash), a 20-round safety cap — **292 of 500 (58.4%) hit the cap without either side ever
+  reaching the Breach.** Deliberately deferred while the core loop was being settled is a different
+  posture than "will probably resolve on its own" — at these numbers it won't, under the AI that
+  already exists. Worth resurfacing before this stays deferred much longer.
+- **Compounding advantage — measured, not previously flagged here.** The same 500-battle run found a
+  real Sirlin-style slippery slope: of the 208 battles that *did* reach a Breach, whichever side won
+  the very first War Council round went on to win the battle **87.5% of the time** (182/208) — far
+  above what a self-correcting mechanic would produce. The average token-count gap between sides grew
+  from 3.00 right after round 1's Clash to 8.82 by the battle's last Clash — nearly tripling, not
+  flattening out. The non-zero Muster floor (this document's own fix for the Hex-era single-round
+  ambush problem) prevents a side from being reduced to zero moves in any *one* round; it was never
+  checked against a lopsided side's advantage compounding *across* several rounds on a board that
+  never resets. Reinforce (+1 defense, raising an Overwrite's cost from 2 to 3) is the existing tool
+  shaped like Sirlin's recommended "tuned comeback" pairing, but its sufficiency against several
+  consecutive uncontested rounds hasn't been checked — worth the moves-to-overwrite-a-reinforced-cell
+  vs. typical-leftover-run-length arithmetic before assuming it already closes this.
 - **A "cost of holding ground" idea, parked.** Raised in passing: maybe there's a penalty for
   squares that just sit there doing nothing, or a pull-back/redeploy action (withdraw a token now,
   it returns to hand next round). Not designed yet, just noted so it isn't lost.
@@ -122,7 +138,14 @@ Flagging these honestly rather than quietly resolving them:
   mechanic. The two-tier idea from the lane draft (ordinary nodes decided by card score alone,
   only strongholds/goal escalate to a full board) is a plausible fit but hasn't been re-checked
   against this mechanic's actual round count.
-- **Who opens The Clash each round** hasn't been decided.
+- ~~**Who opens The Clash each round** hasn't been decided.~~ **Settled, stale note removed
+  2026-08-08:** `src/vanguard/clashOpener.ts` already alternates `CLASH_FIRST_ROUND_OPENER` by round
+  parity, and `config.ts`'s own comment calls that constant's default a real choice ("AC3 states
+  outright"), not a placeholder — unlike `WAR_COUNCIL_FIRST_DEALER`, which is still explicitly a
+  placeholder. `claude-civil-war.md` (rounds 12 and 17) builds a scripted-battle-specific refinement
+  on top of this already-decided default (anchoring the opener to whichever side didn't get that
+  hand's authored Muster bonus, with an authorial-intent fallback) — see that document for the
+  scripted case; ordinary battles keep the flat alternation described here.
 - **Numbers used above are illustrative, not chosen:** board size, base distance, the 7-move
   baseline Muster, the 2/3 overwrite cost, and the +1 reinforce cap are all the developer's to set
   once there's something playable to test them against. (Starting cluster size is no longer one of

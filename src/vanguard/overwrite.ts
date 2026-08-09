@@ -1,7 +1,7 @@
-import type { PlayerSide } from '../warCouncil'
+import { otherSide, type PlayerSide } from '../warCouncil'
 import { OVERWRITE_COST, OVERWRITE_COST_REINFORCED } from './config'
 import { cellKey, isWithinBoard } from './hexGrid'
-import { minDistanceToNetwork, ownedCells } from './network'
+import { connectedNetwork, minDistanceToNetwork, ownedCells } from './network'
 import { IllegalActionReason, VanguardCellKind } from './types'
 import type { HexCoord, VanguardActionResult, VanguardBoard } from './types'
 
@@ -27,7 +27,18 @@ export function applyOverwrite(
     return { ok: false, reason: IllegalActionReason.TargetNotEnemyToken }
   }
 
-  const owned = ownedCells(board, side)
+  // Capturing the enemy base is an ordinary Overwrite target, but must come from
+  // the mover's chain-connected network, not merely any owned cell. ownedCells
+  // (SCRUM-40's broader, gap-tolerant set, used for every other target) would let
+  // a single disconnected outpost capture a base for a fraction of the Muster a
+  // real Breach costs — connectedNetwork's own BFS starts at the base and returns
+  // [] outright the instant that cell stops being owned by its side (hexGrid's
+  // hexBfs gates entry on the start cell itself), so a captured base would zero
+  // the victim's entire connectivity query regardless of how much of the rest of
+  // the board they still hold. Every other Overwrite target keeps the original,
+  // gap-tolerant ownedCells reach.
+  const isEnemyBase = cellKey(target) === cellKey(board.bases[otherSide(side)])
+  const owned = isEnemyBase ? connectedNetwork(board, side) : ownedCells(board, side)
   if (minDistanceToNetwork(target, owned) > 1) {
     return { ok: false, reason: IllegalActionReason.NotAdjacentToNetwork }
   }

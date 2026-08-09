@@ -403,6 +403,134 @@ arena to teach it.
 
 ---
 
+## 8. Card-game roguelikes and solitaire hybrids
+
+The 2024–2026 wave of single-player card games that took a *familiar* card game and hung a new layer
+on it. Directly relevant to any design that puts a known card game underneath something else. Added
+2026-08-09.
+
+### Balatro — one equation, and a requirement curve that outgrows any flat build
+
+The entire game is `Score = Chips × Mult`. Every one of its ~150 Jokers, every Tarot, every Planet
+card is an intervention on one of those two terms. This is Knizia's "design the scoring first"
+(§2) taken to the limit — not a scoring *system*, a scoring *equation*, and all content is
+commentary on it.
+
+The load-bearing refinement is that **the two terms belong to different growth classes.** Chips add.
+Mult comes in two flavours: `+Mult` adds, `×Mult` multiplies. Two `+30 Mult` Jokers give `+60`; one
+`+30 Mult` alongside one `×2` gives `60` and climbs from there. Meanwhile the blind requirement
+grows roughly **×2 per ante** — base values on White Stake run 300 · 800 · 2,000 · 5,000 · 11,000 ·
+20,000 · 35,000 · 50,000, with Small Blind = base, Big = 1.5×, Boss = 2× (a few bosses differ; The
+Wall is 4×). Ante-8's boss therefore asks 100,000 against the 300 you cleared first: a **333× climb
+over eight antes.**
+
+A build assembled from flat bonuses grows linearly and is *arithmetically guaranteed* to fail around
+ante 5. The game never says this. It teaches it by killing you. That is Koster's "fun is learning"
+(§1) with the pattern being literally a rate of growth — and it answers the mastery test cleanly:
+what the player learns in round five is a *growth class*, not a card.
+
+**The transferable device:** if the scoring is one equation with terms of differing growth class,
+and the requirement escalates, then "which card is good" stops being a static ranking and becomes a
+question about the shape of your curve. No extra rules were needed to produce that.
+
+### Balatro — escalation by rule-break, not by bigger number
+
+Boss Blinds do not only raise the target. They break a rule: The Club debuffs every Club card, The
+Psychic forces you to play exactly five cards, others flip cards face down, force-select cards, or
+change hand size and discard count. So the mandatory test at the end of each ante asks *your specific
+engine* whether it still works under a constraint.
+
+Paired with it: Small and Big Blinds are **skippable** for a Tag, but skipping forfeits the shop, the
+money, the interest, and a round of Joker/hand scaling. Boss Blinds are never skippable. The shape is
+worth naming — **the optional content is the economy, the mandatory content is the test.**
+
+### Balatro — hidden information only shapes play if it is genuinely unobtainable
+
+LocalThunk withholds the score preview on purpose: *"the game is more fun when you set up your Rube
+Goldberg machine and watch it go"* before knowing whether it clears. The escalating sound and card
+animations are built for that reveal.
+
+Mark Brown's critique is the sharper half, and it generalises well beyond Balatro: **every input to
+the calculation is already on screen, so the preview is hidden but not absent — it is merely
+tedious.** Committed players compute it with external calculators, which means the designed
+experience fails for exactly the players most invested in the game. The cited precedent is *The
+Binding of Isaac* hiding item descriptions to force experimentation; McMillen later called it his
+biggest flaw.
+
+The rule: withholding information is a legitimate and powerful tool, but if the information is
+recoverable by effort, you have not hidden it — you have taxed it, and the most engaged players will
+pay the tax and lose the experience you designed.
+
+### Balatro — familiar substrate as a rules-budget subsidy
+
+LocalThunk calls it *"my modern indie take on solitaire with a poker coat of paint"* and is explicit
+that it has almost no mechanical relationship to poker; the actual inspiration was **Big Two**, a
+Cantonese shedding game. The poker vocabulary is doing one job: a 52-card deck plus "pair / straight
+/ flush / full house" hands you ten hand categories, their ranking, and the whole suit-and-rank
+concept **for free**. That is Rosewater #3/#4 (resonance and piggybacking, §2) monetised — the
+familiar substrate costs nothing to teach, so the entire complexity budget goes to the novel layer.
+
+He is also worth quoting on balance: *"If the picture FEELS level but actually isn't, that is better
+than it being technically level but feeling askew."* Balance passes are number tweaks, not mechanic
+redesigns.
+
+### Luck be a Landlord — how little game you can keep
+
+Balatro's stated primary inspiration, and useful as the boundary case. It strips the roguelike
+deckbuilder to its meta-layer alone: no combat, no HP, no exploration, and **no per-turn decision at
+all** — symbols are drawn and placed by the slot machine. The only choice in the game is which of
+three offered symbols to add to the pool, and the only skill is reading synergy. It works. Evidence
+that the drafting decision can carry a whole design and everything downstream of it can be
+spectacle — and a warning that if your inner loop *is* just spectacle, you should know that.
+
+### Forbidden Solitaire — the clear is the damage
+
+Grey Alien Games × Night Signal, April 2026. Tri Peaks solitaire as a combat engine, and the coupling
+is as tight as coupling gets: **every card removed from the tableau is attack damage, so a long chain
+is simultaneously the puzzle skill and the combat outcome.** There is no conversion number between
+the two layers because there is no intermediate currency — the same event is both.
+
+The return arrow is equally direct. Enemies run pre-programmed telegraphed loops (Slay the Spire's
+intent system) and their moves attack **the board, not your stats**: they curse, poison and infest
+tableau cards, alter a card's value or state, drain mana, steal Jokers. So the RPG layer edits the
+puzzle's rules and the puzzle's performance is the RPG layer's damage. Both arrows carry, and neither
+is a scalar.
+
+Two upgrade tracks kept cleanly apart: **Gems**, bought from a merchant and embedded in the
+protagonist's flesh, are passive (draw-chance, damage multipliers, mana); **Jokers** (~30) are active,
+cast like spells to destroy or transmogrify cards. Passive economy vs. active tools.
+
+This is the third generation of one idea — *Regency Solitaire* → *Shadowhand* → *Ancient Enemy* (IGF
+Excellence in Design honourable mention) — and Birkett's account of adding turn-based combat to
+*Shadowhand* is worth keeping for its shape: *"the idea sprung pretty much fully-formed into my head
+and when I coded it and tried it out, it worked very well."* Twenty years on one substrate before the
+hybrid landed.
+
+### Forbidden Solitaire — spend the depth budget and stop
+
+The developers state it plainly: 120–180 minutes, and *"a linear narrative experience rather than an
+infinitely replayable one."* They declined the roguelike treadmill on purpose.
+
+Reviews split precisely on that decision, and the split is the finding. Shacknews: the game *"has the
+good sense to get out while the going is good."* Other reviews: *"the gameplay runs out of steam
+quickly due to how shallow and straightforward it is."* **Both are describing the same fact.** The
+lesson is Koster's depth budget (§1) as an operational instruction: a small depth budget is not a
+defect — stretching it is. Length is where shallowness becomes visible.
+
+### What all four share, and it is the thing to steal
+
+None of them converts between layers. Balatro: the poker hand **is** the score. Forbidden Solitaire:
+the cards cleared **are** the damage. Faeria (§7): the terrain **is** the card requirement. Friedrich
+(§5): the map sector **is** the suit. In every case the two systems share an object, not an exchange
+rate.
+
+The counterexample is already in this document and it is the closest one to home: *Fox in the Forest
+Duet* converts trick outcomes into movement on a separate path track, and the spatial layer reviewed
+at 2.5/5 for generating no tension. A conversion number is the signature of a toll booth (§6 check 8),
+and it is the default thing a hybrid design reaches for.
+
+---
+
 ## Sources
 
 - [Sid Meier — "Interesting Decisions", GDC 2012 (report)](https://www.gamedeveloper.com/design/gdc-2012-sid-meier-on-how-to-see-games-as-sets-of-interesting-decisions) · [talk video](https://www.youtube.com/watch?v=WggIdtrqgKg) · [GDC Vault](https://www.gdcvault.com/play/1015756/interesting)
@@ -439,3 +567,12 @@ arena to teach it.
 - [Roguebook — Tabletop Bellhop review](https://tabletopbellhop.com/game-reviews/roguebook/) · [NME — "an expansive deck builder that lacks focus"](https://www.nme.com/reviews/game-reviews/roguebook-review-an-expansive-deck-builder-that-lacks-focus-2974742)
 - [Pokémon Tabletop RPG — gym design: signature elements](https://pokemontabletop.com/gym-design-signature-elements/) · [gym design: unconventional challenges](https://pokemontabletop.com/gym-design-unconventional-challenges/)
 - [Daniel Solis — brainstorming a legacy-style trick-taking game](https://danielsolisblog.blogspot.com/2015/03/brainstorming-legacy-style-trick-taking.html)
+
+### Section 8 — card-game roguelikes and solitaire hybrids
+
+- [Rogueliker — LocalThunk interview, "an indie take on solitaire with a poker coat of paint"](https://rogueliker.com/balatro-interview/) · [TouchArcade — LocalThunk on concept, design and balance](https://toucharcade.com/2024/03/18/balatro-interview-mobile-port-localthunk-dlc-plans-updates-new-jokers-demo-feedback/) · [DayOne — "there is a lot more design to explore within Balatro"](https://playday.one/2024/03/09/there-is-a-lot-more-design-to-explore-within-balatro/) · [Rolling Stone — LocalThunk reflects on 2024's best game](https://www.rollingstone.com/culture/rs-gaming/balatro-localthunk-interview-1235214060/)
+- [Mark Brown / GMTK — Balatro's "cursed" design problem (hidden score preview)](https://gmtk.substack.com/p/balatros-cursed-design-problem)
+- [Balatro Wiki — Blinds and Antes (requirement scaling, blind multipliers, skipping)](https://balatrowiki.org/w/Blinds_and_Antes) · [Balatro Wiki — Guide: Scaling (additive vs xMult)](https://balatrowiki.org/w/Guide:_Scaling) · [Balatro Wiki — Skip and Tags](https://balatrowiki.org/w/Skip) · [Steam guide — score calculation](https://steamcommunity.com/sharedfiles/filedetails/?id=3169032575) · [Matt Greer — Balatro score growth](https://www.mattgreer.dev/blog/balatro-score-growth/)
+- [Luck be a Landlord (TrampolineTales) — Steam](https://store.steampowered.com/app/1404850/Luck_be_a_Landlord/) · [Wikipedia](https://en.wikipedia.org/wiki/Luck_Be_a_Landlord) · [Shacknews — Balatro was largely inspired by Luck Be a Landlord](https://www.shacknews.com/article/139116/balatro-inspiration-luck-be-a-landlord-reddit-ama)
+- [Six One Indie — interview with the developers of Forbidden Solitaire](https://www.sixoneindie.com/post/interview-with-the-developer-of-forbidden-solitaire) · [Shacknews review](https://www.shacknews.com/article/149240/forbidden-solitaire-review-score) · [Higher Plain Games review (mechanics detail)](https://higherplaingames.com/pc/forbidden-solitaire-review/) · [So Many Games review](https://somanygames.co.uk/review/forbidden-solitaire-review/) · [Metacritic](https://www.metacritic.com/game/forbidden-solitaire/)
+- [Grey Alien Games — about (Regency Solitaire, Shadowhand, Ancient Enemy lineage)](https://greyaliengames.com/blog/about-grey-alien-games/) · [Wikipedia](https://en.wikipedia.org/wiki/Grey_Alien_Games) · [We Love Every Game — Jake Birkett interview](https://www.weloveeverygame.com/articles/spotlights/the-overnight-success-20-years-in-the-making-an-interview-with-grey-alien-game-s-jake-birkett.html)

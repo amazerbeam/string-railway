@@ -7,7 +7,8 @@ own calls, not defaults I invented — where something is still genuinely undeci
 
 **Why this exists:** the developer doesn't want the War Council to feel like a card game, and wants
 every physical card replaced. This is the first real answer to
-[`campaign-layer-concept.md`](./campaign-layer-concept.md)'s idea #2 — "same trick-taking mechanics
+[`ideas-and-concepts.md`](./ideas-and-concepts.md)'s idea #2 (that file was renamed from
+`campaign-layer-concept.md` on 2026-08-07, same content) — "same trick-taking mechanics
 underneath, but presented as a turn-based tactical exchange, not visibly 'playing cards.'" Nothing
 in this document changes a rule; it changes what every rule is *made of*. The mechanics themselves
 are still [`../game_rules/fox-in-the-forest.md`](../game_rules/fox-in-the-forest.md)'s trick-taking
@@ -169,9 +170,13 @@ was for a flat 13-piece fan.
 
 ## Open
 
-- **Rank 1: Private or Recruit.** Private is a real deployed soldier (my default so far); Recruit
-  is Halo's actual bottom rung and arguably fits the "expendable vanguard" flavour of that ability
-  (lose with this, you lead next) better, at the cost of implying a unit not yet properly deployed.
+- **Rank 1: Private, Recruit, or Scout.** Private is a real deployed soldier (my default so far);
+  Recruit is Halo's actual bottom rung and arguably fits the "expendable vanguard" flavour of that
+  ability (lose with this, you lead next) better, at the cost of implying a unit not yet properly
+  deployed. **Scout**, raised in conversation 2026-08-07, is a third candidate worth weighing
+  seriously — a scout being first to move and expendable by design fits the ability at least as
+  well as either of the first two, arguably better since it's motivated by the *role* rather than
+  by rank alone. Undecided among all three.
 - **What the hand of 13 is called.** Proposed: **Detachment** — a portion of a larger force split
   off for one specific task, which also does double duty setting up the campaign layer (your hand
   isn't your whole war effort, just what you've committed to this siege). **Army** was considered
@@ -182,9 +187,43 @@ was for a flat 13-piece fan.
 - **The War Council Map.** Idea stage: replace the hand-fan-plus-panels layout with one continuous
   flat 2D map/table visual — opponent's forces, a contested middle, your own forces (now: three
   arm-stacks of Colours — see Settled, above), all as one image rather than separate UI regions.
-  Directly extends `game-ux`'s existing principle that the cards (here, the board) take visual
-  precedence and the UI serves them. Needs a name that isn't "board" (see collision table above).
-  Still open within this idea, now that the piece itself is settled:
+  Directly extends `game-ux`'s existing principle that the cards (here, the map) take visual
+  precedence and the UI serves them. **Name:** "map," not "board" — satisfies the collision-table
+  requirement above without a made-up word; treat as tentative, not final.
+
+  **Developed further in conversation, 2026-08-07 — the important scope boundary first:** this map
+  is its **own screen**, not a surface shared with the Vanguard. The two stay separate screens
+  joined by the existing transition, and the Vanguard board itself is untouched by any of this — it
+  is a separate redesign, not scoped here. That matters for one specific reason: none of what
+  follows closes `concept-critique.md`'s Problem 2 (the card phase and the board never talk to each
+  other). That finding stays exactly as open as it was — this map is presentation, not a data path
+  to the Vanguard, however similar the two might end up looking.
+
+  What was settled about it in that conversation:
+  - **Layout matches `game-ux`'s existing shell model directly — no new pattern needed.** The map
+    takes the `1fr` play band, where `TrickWell` sits today. Status and the opponent's side anchor
+    the top band; the player's own three Colour stacks (Settled, above) occupy the bottom hub band,
+    thumb-reachable. A rough wireframe from that conversation: thin top and side margins, a wide
+    bottom band for the stacks. Side margins are currently empty in that sketch — whether anything
+    besides breathing room belongs there (the decree card itself? a depletion indicator?) is open.
+  - **The decree highlights a themed region of the map**, matching whichever arm currently holds
+    Field Advantage — "Horses" lights up an open field, and so on for Foot and Siege engines once
+    their terrain reading is picked. This is the Friedrich/Faeria device from
+    [`design-principles.md`](./design-principles.md) §7 (suit-as-terrain, a shared vocabulary
+    instead of a scalar) applied here as pure flavour rather than a rule change — it reuses
+    Corporal's existing "Swap Field Advantage" ability for free, which now reads as *redirecting the
+    theatre* rather than just changing a printed word.
+  - **Per-Gambit resolution:** the winner's token visually lands in the highlighted region, and the
+    **aggression meter** — a corner-anchored HUD element, the visual answer to job #7's "public
+    count of wins" — ticks up by one. Both are flavour on this screen; neither currently reads from
+    or writes to Vanguard state (see the scope boundary above).
+  - **Top-down vs. isometric is undecided, developer's call** — but the trade-off is worth stating
+    plainly: top-down keeps the highlighted region and the landing token unambiguous at the map's
+    actual size (inset, not full-bleed) — no perspective foreshortening, nothing drawn "in front of"
+    a token to occlude it. Isometric reads more like a real battlefield but costs more art and care
+    to keep the same two things legible when something else on a tile can sit in front of them.
+
+  Carried over from the original idea, still genuinely open:
   - Whether the opponent's side shows abstracted, unrevealed stacks (reads as a real standoff) or
     stays empty until they commit a Gambit (reads closer to today's scoreboard-only public count).
   - What actually happens when a stack fans open — a full spread, a slide, an arc — not designed
@@ -192,6 +231,29 @@ was for a flat 13-piece fan.
   - This is a materially bigger art/rendering scope than the current flat 2D implementation
     (`HandFan`, `PlayingCard`, `TrickWell` already exist) — flagged honestly, not a blocker to the
     idea, just a real cost for whenever implementation is scoped.
+
+- **Ability and outcome feedback needs its own pass, and it isn't uniform.** Raised alongside the
+  map idea, 2026-08-07. A round result and a battle result are rare enough (4–8 rounds a battle, and
+  fewer battles than that) that fully authored, varied narrative flavour is cheap and worth having
+  — e.g. a 0–3-trick round narrated as a "cunning ambush." A single Gambit is not rare: up to 13 a
+  round, so 50-plus a battle, which makes it the single most-repeated event in the game. Giving
+  every one of those the same full-sentence treatment stacks a real reading cost on top of
+  `concept-critique.md` Problem 3's already-flagged pacing issue — a round's outcome often locks by
+  trick 8–9, so several Gambits a round are already mechanical filler; narrating each in full prose
+  spends real time on exactly the tricks that were already dead weight. The likely shape, not yet
+  built: full authored prose reserved for what's actually rare (an ability firing, the round result,
+  the battle result), a compact log-line for the routine Gambit ("Horses — you, 2 vs their 3"), no
+  sentence required.
+  - **Ability triggers need a visible beat regardless of the above** — Sergeant's draw/bury,
+    Lieutenant's per-match scoring, Captain's alone-favoured, Brigadier's forced answer all change
+    the outcome in a way a bare score-tick can't communicate; a hidden ability trigger is Meier's
+    invisible-consequence trap.
+  - **Any dialogue-stitching system should slot from pieces the game already names** — arm, rank
+    title, decree, the numeric value — rather than hand-authoring one line per exact combination:
+    3 arms × 11 ranks × win/lose × ability-or-not clears a hundred raw combinations fast.
+  - **The Colour itself needs to show its own ability, not just arm and rank.** The Settled
+    description above only specifies "icon and value on the fabric face." Without the ability on
+    the piece, a player has no way to read the odd-rank table from the object in front of them.
 - **Tap-to-commit or select-then-confirm.** Once a stack is open, does tapping a specific banner
   play it immediately, or does it just select it, with a separate confirm step after? The tap-cost
   principle favours "opening a stack is free browsing, tapping the banner inside it is the commit"
@@ -200,6 +262,11 @@ was for a flat 13-piece fan.
   *titles* when the scheme moved to generic ranks, but neither was explicitly re-examined as
   possible *descriptive text* for what rank 1's and rank 7's abilities actually do (e.g. "the
   winner pillages: scores per matching card in the Gambit"). Genuinely unresolved, not assumed.
+  Related, raised 2026-08-07: rank 1's ability text ("lose with this, you lead the next Gambit") has
+  been drafted informally using the verb "lay first" — flagged by the developer as still card-table
+  language, needing a non-card replacement. Whatever's chosen **can't reuse "Clash"**, which the
+  collision table above already reserves for the Vanguard's action exchange. Candidates raised,
+  undecided: "opens the next Gambit," "advances first," "leads first."
 - **Card-to-board coupling (A/B/C from the pre-reskin conversation), still live, still undecided:**
   - **A** — an ability gains a direct Vanguard effect (e.g. Lieutenant's pillage grants an Expand
     to the Gambit's winner instead of, or alongside, points).

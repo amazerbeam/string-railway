@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
-**Status:** partial
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29
+**Status:** implemented
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34
 
 ## Responsibility
 
@@ -168,31 +168,60 @@ Its underlying reason for existing survives it: `src/warCouncil/` and `src/vangu
 pure-TypeScript-only under an ESLint override, so a `.tsx` mount could never live beside either
 engine — `src/app/warCouncil/` and `src/app/vanguard/` are what that constraint produces.
 
-### `AppMode` and the `App.tsx` mode slot
+### `App.tsx` is now a five-line mount, and `AppMode` has no consumer
 
-`appMode.ts` declares `AppMode` as an `as const` object map with a derived type of the same name —
-the convention used throughout this codebase (`PlayerSide`, `BattlePhase`, `RoundPhase`) and a
-requirement rather than a taste, since `erasableSyntaxOnly` in `tsconfig.app.json` forbids a real
-TypeScript `enum`.
+**SCRUM-34 replaced the dev host wholesale.** `src/App.tsx` is now, in its entirety:
 
-`src/App.tsx` holds it in a real state slot, `useState<AppMode>(AppMode.Campaign)`. SCRUM-28's dev
-host renders it as plain text (`Mode: campaign`) only in the round-complete view — while a round is
-in progress, `App` renders `WarCouncilRound` alone with no sibling markup, so its full-viewport
-`.wc-shell` (see _How it works_, below) fills the viewport undisturbed.
+```tsx
+import BattleHost from './app/battle/BattleHost'
 
-**SCRUM-29 re-destructured the setter** — `const [mode, setMode] = useState(...)`, no longer
-`const [mode] = useState(...)`. A fixed top-right `<button>` (unstyled, deliberately not a designed
-screen — see _Deferred_) calls `setMode(AppMode.Test)`; `App` checks `mode === AppMode.Test` before
-anything else and, if true, returns `<TestModeVanguardHost />` alone, short-circuiting the whole
-Campaign render path (the dealt round, the button, the round-complete view). This is the only place
-in the running app `mode` currently changes to — there is still no path back to `AppMode.Campaign`
-once switched, and no menu screen to choose either mode deliberately (see _Deferred_).
+function App() {
+  return <BattleHost />
+}
 
-One detail from before SCRUM-29 remains true and still deliberate: **the import is
-`'./app/index'`, not `'./app'`.** The bare specifier fails to compile on this case-insensitive
-Windows checkout (`TS2614` / `TS1149`) because it resolves against the sibling `App.tsx` — which
-differs from the `app/` directory only by case — before trying the directory's `index.ts`. This is
-the one import site in the repo with that collision; every other barrel is imported bare.
+export default App
+```
+
+Everything SCRUM-28 and SCRUM-29 had put there is gone: the `useState<AppMode>` slot, the top-right
+"Switch to Test mode" button, the inline `dealRound(WAR_COUNCIL_FIRST_DEALER, Math.random)`
+initializer, the direct `WarCouncilRound` mount, and the round-complete view. Grep-verified — no
+occurrence of `Switch to Test mode`, `AppMode`, `dealRound`, or `WAR_COUNCIL_FIRST_DEALER` survives
+in `App.tsx`. The dev host's own doc comment had asked for exactly this ("SCRUM-34 owns real
+battle-loop orchestration and should delete this host rather than extend it").
+
+`appMode.ts` still exists and still exports `AppMode` as an `as const` object map with a derived type
+of the same name — the convention used throughout this codebase (`PlayerSide`, `BattlePhase`,
+`RoundPhase`), and a requirement rather than a taste since `erasableSyntaxOnly` in
+`tsconfig.app.json` forbids a real TypeScript `enum`. But **nothing in the running app reads it any
+more.** It is left on disk alongside `TestModeVanguardHost.tsx` and `TrickEntryForm.tsx`, all three
+unreferenced from the entry point (see _Deferred_).
+
+The case-collision detail that governed the old host's imports no longer applies to `App.tsx`, which
+now imports only `./app/battle/BattleHost` by full path. It remains true for anyone importing the
+`src/app/` barrel: **write `'./app/index'`, not `'./app'`** — the bare specifier fails to compile on
+this case-insensitive Windows checkout (`TS2614` / `TS1149`) because it resolves against the sibling
+`App.tsx`, which differs from the `app/` directory only by case, before trying the directory's
+`index.ts`.
+
+### The mount-prop contract now has a real campaign-mode host
+
+`RequestTricksWon`'s Campaign-mode description above — "the host derives `TricksWon` straight from
+the just-completed War Council round" — is no longer hypothetical. `BattleHost`
+(`src/app/battle/BattleHost.tsx`, SCRUM-34) is that host: it fulfils `requestTricksWon` by mounting
+a real `WarCouncilRound`, waiting for the player to finish it, and resolving with the round's actual
+trick split. Both mount-prop contracts this module defined are now satisfied by production code
+rather than by a stub or a dev harness — `VanguardMountProps` by `BattleHost`'s `VanguardMatch`
+mount, `WarCouncilMountProps` by its `WarCouncilRound` mount.
+
+The memoization requirement documented on `RequestTricksWon` is honoured in practice:
+`BattleHost` wraps it in `useCallback` with deps `[rng]`, and defaults `rng` to the `Math.random`
+*reference* (not an `() => Math.random()` wrapper) precisely so that identity stays stable. See
+[battle-ui.md](battle-ui.md) for the full sequencing mechanism.
+
+Note that `isValidTricksWon` is **not** on this path. It gates the Test-mode manual-entry harness,
+where a human types a split; the campaign path takes `finalState.tricksWon` straight from a real
+completed round, which is valid by construction. With `TestModeVanguardHost` now unreferenced, the
+validator currently has no live caller (see _Deferred_).
 
 ### The two game screens live in their own docs
 
@@ -205,11 +234,14 @@ started as) its own file rather than a section here, because each is a module fo
 right under this folder's one-doc-per-`src/`-folder convention, and War Council's combined doc had
 already passed this project's 400-line budget by the time it was split.
 
+`src/app/battle/` — the two Battle-level panels and, since SCRUM-34, the `BattleHost` orchestrator
+that sequences the whole playable loop — is documented in [battle-ui.md](battle-ui.md).
+
 The things about each that belong here, because they are facts about `src/app/` as a whole:
 `WarCouncilRound.tsx` and `VanguardMatch.tsx` are the real mounts satisfying `WarCouncilMountProps`
 and `VanguardMountProps` respectively, each replacing the stub that once proved its contract; and
-`src/App.tsx` hosts both, directly for War Council and via `TestModeVanguardHost` for Vanguard (see
-§ _`AppMode` and the `App.tsx` mode slot_, and _Deferred_).
+`src/App.tsx` no longer hosts either directly — it mounts `BattleHost`, which hosts both (see
+§ _`App.tsx` is now a five-line mount_).
 
 ## Rules & invariants enforced
 
@@ -232,23 +264,19 @@ and `VanguardMountProps` respectively, each replacing the stub that once proved 
 
 ## Deferred / not yet implemented
 
-- **No Campaign/Test menu screen.** `App.tsx` now has a real, unstyled `<button>` that switches
-  `mode` to `AppMode.Test` (see § _`AppMode` and the `App.tsx` mode slot_), but there is still no
-  designed menu to view or choose a mode, and no path back from `Test` to `Campaign` — a genuine
-  menu screen is still a separate ticket.
-- **No battle-loop wiring.** Nothing here decides when a real orchestrator swaps one game mount for
-  another — that is SCRUM-34's job. `src/battle/` does not import this module and this module does
-  not import `src/battle/`. SCRUM-28's `App.tsx` host (see below) is a stand-in, not this.
-- **`App.tsx`'s dev host is temporary, by design.** It deals one round with
-  `useState(() => dealRound(WAR_COUNCIL_FIRST_DEALER, Math.random))` and mounts
-  `WarCouncilRound` directly so the round is playable and QA can drive it, but it is not battle-loop
-  wiring — SCRUM-34 replaces this host rather than extending it. The deal initializer is not
-  idempotent, so React StrictMode's development double-invocation deals a hand this render then
-  discards it; that wastes randomness in development only and can never produce two live rounds,
-  since only the round dealt on the render that actually commits is ever mounted. SCRUM-29's
-  top-right mode-switch button is the same kind of scaffolding, added to the same temporary host
-  rather than to a real menu — it is unstyled on purpose, and SCRUM-34 is expected to delete it
-  along with the rest of this host.
+- **No Campaign/Test menu screen, and no way to reach Test mode at all.** SCRUM-34 deleted the
+  unstyled mode-switch button along with the rest of the dev host, so `AppMode`, `appMode.ts`,
+  `TestModeVanguardHost.tsx`, and `TrickEntryForm.tsx` are all still on disk but unreachable from
+  the running app. Nothing reads `AppMode` and nothing calls `isValidTricksWon` any more. They were
+  left rather than deleted because removing a standalone dev sandbox wasn't asked for and is easily
+  reversible either way — but a future ticket should decide deliberately: build a real menu that
+  makes Test mode reachable again, or delete the four files. Leaving them indefinitely unreferenced
+  is the worst of the three.
+- **Battle-loop wiring now exists** — `BattleHost` (`src/app/battle/`, SCRUM-34) is the orchestrator
+  this section previously said was missing. What it does *not* do is route through `src/battle/`'s
+  `BattleState` machine: that module's reducer functions remain built, tested, and uncalled by the
+  running app. See [battle-ui.md](battle-ui.md) → _The loop is driven by fulfilling `VanguardMatch`'s
+  promise_ for why, and what reconciling the two would cost.
 - **`src/app/warCouncil/` and `src/app/vanguard/` each carry their own deferred list** — the
   untested no-scroll layout, the defensive `cpuFault`/`cpuRejected` branch, and the single dark
   theme are recorded per module in [war-council-ui.md](war-council-ui.md) and
@@ -268,5 +296,6 @@ and `VanguardMountProps` respectively, each replacing the stub that once proved 
   existing types but were not specified by the brief — worth a second look before SCRUM-28/29 treat
   them as fixed.
 - **`requestTricksWon`'s referential-stability requirement is documentation only**, unenforceable on
-  a plain function type. Whoever implements a real host must remember to memoize it; nothing will
-  catch them if they don't.
+  a plain function type. `BattleHost` honours it correctly (`useCallback` with deps `[rng]`, and a
+  stable `Math.random` reference as the default), but nothing would have caught it if it hadn't —
+  the failure mode is silent duplicate in-flight requests, not an error.

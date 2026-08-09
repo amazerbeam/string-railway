@@ -163,8 +163,10 @@ some escalate to it (the old two-tier split); who opens The Clash each round.
   zones is still open.
 - **Does Fox's 21-point race survive?** Assumed gone — points are spent as moves each round, not
   accumulated toward a card-game victory.
-- **The war above the battle.** How many cities, how they connect, and what winning the whole war
-  means. Whether anything carries between cities.
+- **The war above the battle.** How many cities, how they connect, and whether anything carries
+  between cities are still open. **What winning the whole war means is no longer fully open** — see
+  [`us-civil-war-game-framing.md`](./us-civil-war-game-framing.md): the war's outcome is fixed by
+  which side the player picks, not computed from battle results.
 - **Dealer alternation across a long battle.** Fox alternates dealer each round; over 4–8 rounds in
   one battle that stays even, but worth confirming it isn't reset per battle in a way that favours
   one side.

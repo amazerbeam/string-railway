@@ -3,16 +3,12 @@ import { ClashStatus, VanguardActionKind, type CellKey, type VanguardBoard } fro
 import { PlayerSide } from '../../warCouncil'
 import type { VanguardMountProps } from '../vanguardMount'
 import ActionPalette from './ActionPalette'
+import { deriveClashHud, deriveHint, TurnIndicator } from './clashHud'
 import ClashOverPanel from './ClashOverPanel'
 import { REJECTION_MESSAGE } from './labels'
 import { allLegalTargets, legalTargetsFor } from './legalTargets'
-import {
-  createMatchUiState,
-  matchReducer,
-  MatchActionKind,
-  type MatchFault,
-  type MatchUiState,
-} from './matchReducer'
+import { createMatchUiState, matchReducer, MatchActionKind, type MatchFault } from './matchReducer'
+import MusterBand from './MusterBand'
 import VanguardBoardView from './VanguardBoardView'
 import './vanguard.css'
 import './vanguardPanels.css'
@@ -60,11 +56,10 @@ export default function VanguardMatch({
 
   const clash = ui.clash
   const board: VanguardBoard = clash?.board ?? ui.board
-  const playerTurn =
-    clash !== null && clash.status === ClashStatus.InProgress && clash.turn === PlayerSide.Player
+  const hud = deriveClashHud(clash)
+  const playerTurn = hud.indicator === TurnIndicator.PlayerTurn
   const canAct = playerTurn && ui.fault === null
-  const musterAvailable =
-    clash !== null && clash.status === ClashStatus.InProgress ? clash.muster[PlayerSide.Player] : 0
+  const musterAvailable = playerTurn ? (hud.playerMuster ?? 0) : 0
 
   // Computed once per render for all three kinds so `enabled` and the armed
   // action's `legalTargets` share the same dry-run results rather than
@@ -96,7 +91,7 @@ export default function VanguardMatch({
   }
   const legalTargets = playerTurn ? allLegalTargets(targetsByAction) : EMPTY_TARGETS
 
-  const hint = deriveHint(ui)
+  const hint = deriveHint(ui, hud)
 
   let outcomePanel: ReactNode = null
   if (clash !== null && clash.status === ClashStatus.Breached) {
@@ -120,7 +115,7 @@ export default function VanguardMatch({
     <div className="vg-shell">
       <header className="vg-band">
         <span className="vg-band-round">Round {ui.round} · The Clash</span>
-        <span className="vg-band-note">Muster counts and turn indicator are SCRUM-30</span>
+        <MusterBand hud={hud} />
       </header>
 
       <main className="vg-board-area">
@@ -144,18 +139,6 @@ export default function VanguardMatch({
       {outcomePanel}
     </div>
   )
-}
-
-/** Priority mirrors the mockup's hint cascade: a rejection or an armed action
- * always says the most specific thing; otherwise the hint names whose turn it
- * is, or that the War Council is still deciding this round's Muster. */
-function deriveHint(ui: MatchUiState): string {
-  if (ui.rejection !== null) return REJECTION_MESSAGE[ui.rejection]
-  if (ui.clash === null) return 'The War Council is deciding this round’s Muster'
-  if (ui.clash.status !== ClashStatus.InProgress) return ''
-  return ui.clash.turn === PlayerSide.Player
-    ? 'Tap a cell to act'
-    : 'They are spending their Muster'
 }
 
 function faultMessage(fault: MatchFault): string {

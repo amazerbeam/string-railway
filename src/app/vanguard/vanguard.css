@@ -71,10 +71,9 @@
 /* --------- status band: anchored to the top edge, deliberately thin -------- */
 .vg-band {
   grid-area: status;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 0.35rem;
   padding: 0.6rem 1rem;
   border-bottom: 1px solid var(--vg-felt-line);
   background: var(--vg-chamber-lift);
@@ -87,12 +86,81 @@
   font-variant-numeric: tabular-nums;
 }
 
-.vg-band-note {
-  font-size: 0.68rem;
-  letter-spacing: 0.07em;
+/* -------------------------- Muster / turn HUD (SCRUM-30) ------------------------- */
+.vg-muster {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.vg-muster-cell {
+  display: grid;
+  justify-items: center;
+  gap: 0.05rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--vg-radius);
+  border: 1px solid var(--vg-felt-line);
+  background: var(--vg-felt);
+}
+
+.vg-muster-cell[data-side='player'] {
+  justify-self: start;
+}
+
+.vg-muster-cell[data-side='cpu'] {
+  justify-self: end;
+}
+
+.vg-muster-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--vg-chalk-dim);
-  text-align: right;
+}
+
+.vg-muster-value {
+  font-family: var(--vg-serif);
+  font-size: clamp(1rem, 2.6vmin, 1.3rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--vg-chalk);
+}
+
+.vg-turn-indicator {
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  padding: 0.28rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--vg-felt-line);
+  background: var(--vg-chamber);
+  font-family: var(--vg-serif);
+  font-size: clamp(0.78rem, 2vmin, 0.92rem);
+  color: var(--vg-chalk-dim);
+  white-space: nowrap;
+}
+
+.vg-turn-indicator[data-indicator='playerTurn'] {
+  border-color: var(--vg-brass);
+  color: var(--vg-brass);
+}
+
+.vg-turn-indicator[data-indicator='resolved'] {
+  border-color: var(--vg-chalk-dim);
+  color: var(--vg-chalk);
+}
+
+.vg-turn-uncontested {
+  display: none;
+  font-family: var(--vg-sans);
+  font-size: 0.6rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--vg-alarm);
+}
+
+.vg-turn-uncontested[data-visible='true'] {
+  display: block;
 }
 
 /* ------------------------------- the board -------------------------------- */

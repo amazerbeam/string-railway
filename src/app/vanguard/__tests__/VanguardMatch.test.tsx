@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide } from '../../../warCouncil'
 import VanguardMatch from '../VanguardMatch'
@@ -96,5 +96,44 @@ describe('VanguardMatch', () => {
     expect(defense.disabled).toBe(true)
     fireEvent.click(defense)
     expect(cell('Cell 2, 2 — permanent defense')).toBeDefined()
+  })
+
+  // Multiple .vg-muster-value cells exist (player + CPU), so a single-match
+  // getByText would throw on "multiple elements found" — read both as one
+  // joined string instead, still queried through the accessible group only.
+  const musterReading = () =>
+    within(screen.getByRole('group', { name: 'Muster and turn' }))
+      .getAllByText(/^\d+$/)
+      .map((el) => el.textContent)
+      .join(',')
+
+  it('updates the rendered Muster count after an accepted action, having switched to the player’s own turn — AC1, AC2, AC5', async () => {
+    render(
+      <VanguardMatch
+        initialState={makeBoard()}
+        requestTricksWon={resolveTricks}
+        onComplete={vi.fn()}
+      />,
+    )
+    await clashStarted()
+    await waitFor(() => expect(screen.getByText('Your move')).toBeDefined())
+    expect(screen.queryByText('Awaiting Muster')).toBeNull()
+    const before = musterReading()
+
+    const target = cell('Cell 2, 0 — empty')
+    fireEvent.click(target)
+
+    await waitFor(() => expect(musterReading()).not.toBe(before))
+  })
+
+  it('shows the awaiting-Muster state before the clash starts — AC2, AC5', () => {
+    render(
+      <VanguardMatch
+        initialState={makeBoard()}
+        requestTricksWon={neverResolves}
+        onComplete={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('Awaiting Muster')).toBeDefined()
   })
 })

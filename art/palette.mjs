@@ -1,4 +1,6 @@
-// art/palette.mjs — the art bible in code.
+// art/palette.mjs — the art bible in code (technical values only).
+// Setting, faction colour reasoning, and visual reference live in
+// ./ART_BIBLE.md — this file doesn't restate them.
 //
 // Projection : orthographic side-on (character / War Council art)
 // Base res   : 480x270  (x4 = 1080p, x8 = 4K)

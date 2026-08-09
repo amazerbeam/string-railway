@@ -80,4 +80,38 @@ describe('applyOverwrite', () => {
     const result = applyOverwrite(board, PlayerSide.Player, { q: 4, r: 0 })
     expect(result.ok).toBe(true)
   })
+
+  it('is illegal to capture the enemy base from a gapped, disconnected outpost', () => {
+    // A disconnected island adjacent to the enemy base would otherwise satisfy
+    // ownedCells' gap-tolerant reach (same shape as the SCRUM-40 test above),
+    // but capturing a base has to come from the mover's actual connected
+    // network — otherwise a single scouted outpost could zero the victim's
+    // entire connectedNetwork BFS (which starts at, and gates on, the base
+    // cell itself) for a fraction of a real Breach's cost.
+    const board = boardWith(
+      {
+        '0,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Player, reinforced: 0 }, // player base
+        '3,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Player, reinforced: 0 }, // gapped island
+        '4,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Cpu, reinforced: 0 }, // cpu base
+      },
+      { bases: { player: { q: 0, r: 0 }, cpu: { q: 4, r: 0 } } },
+    )
+    expect(applyOverwrite(board, PlayerSide.Player, { q: 4, r: 0 })).toEqual({
+      ok: false,
+      reason: IllegalActionReason.NotAdjacentToNetwork,
+    })
+  })
+
+  it('is legal to capture the enemy base from an actually chain-connected network', () => {
+    const board = boardWith(
+      {
+        '0,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Player, reinforced: 0 }, // player base
+        '1,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Player, reinforced: 0 }, // connected
+        '2,0': { kind: VanguardCellKind.Token, owner: PlayerSide.Cpu, reinforced: 0 }, // cpu base
+      },
+      { bases: { player: { q: 0, r: 0 }, cpu: { q: 2, r: 0 } } },
+    )
+    const result = applyOverwrite(board, PlayerSide.Player, { q: 2, r: 0 })
+    expect(result.ok).toBe(true)
+  })
 })

@@ -91,6 +91,12 @@ feedback diagnoses well and prescribes badly; collect numbers before choosing a 
 Use these headings. Order matters — strengths first, because a critique that opens with problems
 gets read as a verdict rather than as analysis.
 
+**Every framework, designer, or precedent you cite — a name, a numbered lesson, a comparable
+game — must be unpacked in one plain-language sentence the first time you use it, and every
+finding needs a concrete worked example (real numbers, or a specific scenario walked through)
+instead of just naming a concept.** This is a critique for the developer, not a citation to
+someone who already knows the source — write it so it stands on its own.
+
 ```markdown
 ## What is genuinely strong
    — specific, and say *why* it works by naming the mechanism, not the vibe.
@@ -187,6 +193,8 @@ Project-wide rules live at `.claude/rules/`. Before answering, scan `.claude/rul
 - Proposing a new subsystem when an existing component would do
 - Re-raising an open question the document already asked and reasoned about, as if it were a finding
 - Duplicating framework content into this file instead of `.docs/design/design-principles.md`
+- Naming a framework, designer, lesson number, or precedent game (e.g. "Rosewater #17," "the
+  Thronebreaker rebuttal") without explaining in plain language what it is, the first time it's used
 
 ## Success Criteria
 

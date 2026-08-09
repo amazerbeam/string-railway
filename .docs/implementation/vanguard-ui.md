@@ -1,7 +1,7 @@
 # Vanguard UI — `src/app/vanguard/`
 
 **Status:** implemented
-**Built by:** SCRUM-29, SCRUM-41
+**Built by:** SCRUM-29, SCRUM-41, SCRUM-30
 
 ## Responsibility
 
@@ -31,38 +31,44 @@ component is a needless brush with `react-refresh/only-export-components`.
 
 ## Key types & exports
 
-| Export                                  | Purpose                                                                                                          | File                       |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| `hexBoardMetrics`                       | Pure board-level geometry: `widthUnits`, `heightUnits`, `aspectRatio`, `cellWidthFraction` for a given `size`    | `hexLayout.ts`             |
-| `hexPlacement`                          | The single point where an axial `HexCoord` becomes a screen-space fraction — owns board orientation              | `hexLayout.ts`             |
-| `HexPlacement`, `HexBoardMetrics`       | The two return shapes above                                                                                      | `hexLayout.ts`             |
-| `SIDE_NAME`                             | `'your'` / `'their'` — local copy for a side, never a raw `PlayerSide` string in UI                              | `labels.ts`                |
-| `ACTION_NAME`, `ACTION_DESCRIPTION`     | Display name and short cost/range copy for each `VanguardActionKind`                                             | `labels.ts`                |
-| `cellAccessibleName`                    | The one accessible name every cell `<button>` binds to (AC4)                                                     | `labels.ts`                |
-| `REJECTION_MESSAGE`                     | `Record<IllegalActionReason \| ClashRejectionReason, string>` — human copy for every engine rejection            | `labels.ts`                |
-| `cellReactKey`                          | Re-export of `src/vanguard`'s `cellKey`, so every list in this module shares one stable key function             | `labels.ts`                |
-| `legalTargetsFor`                       | Every coordinate where an action kind is legal and affordable for a side, by dry-running the engine              | `legalTargets.ts`          |
-| `inferActionKind`                        | Total, pure — which action kind a tap on a cell means, inferred from its occupancy (SCRUM-41)                   | `legalTargets.ts`          |
-| `allLegalTargets`                        | The union of every action kind's already-computed legal-target set — the board's continuous highlight (SCRUM-41) | `legalTargets.ts`         |
-| `MatchUiState`                          | `{ round, board, clash, rejection, fault }` — the mount's one piece of state (SCRUM-41 removed `selectedAction`) | `matchReducer.ts`          |
-| `MatchUiAction`, `MatchActionKind`      | `MusterReady \| RequestFailed \| TapCell \| ClearRejection \| NextRound`, via an `as const` map (SCRUM-41 removed `SelectAction`; `CancelSelection` renamed `ClearRejection`) | `matchReducer.ts` |
-| `MatchRejection`                        | `IllegalActionReason \| ClashRejectionReason` — the player's own rejected-action surface                         | `matchReducer.ts`          |
-| `MatchFault`                            | `cpuDeadEnd \| cpuRejected \| requestFailed \| invalidTricks` — a play-blocking fault, always named              | `matchReducer.ts`          |
-| `createMatchUiState`, `matchReducer`    | Lazy `useReducer` initializer and the single reducer owning the whole match                                      | `matchReducer.ts`          |
-| `useHexRovingFocus`                     | One tab stop across the whole board; axial arrow-key movement, `Home`/`End`, `Escape`                            | `useHexRovingFocus.ts`     |
-| `HexRovingFocus`                        | `{ groupRef, tabStopKey, handleKeyDown }` — the hook's return shape                                              | `useHexRovingFocus.ts`     |
-| `HexCell`                               | Default export — one board cell as a native `<button>` (AC1, AC4)                                                | `HexCell.tsx`              |
-| `VanguardBoardView`                     | Default export — the board group (AC1), renders every coordinate via `HexCell`                                   | `VanguardBoardView.tsx`    |
-| `ActionPalette`, `ActionPaletteProps`   | Default export — the three Clash actions plus the hint line (AC2)                                                | `ActionPalette.tsx`        |
-| `ClashOverPanel`, `ClashOverPanelProps` | Default export — the Breach and round-over overlay                                                               | `ClashOverPanel.tsx`       |
-| `VanguardMatch`                         | Default export — the mount, satisfying `VanguardMountProps`                                                      | `VanguardMatch.tsx`        |
-| `TrickEntryForm`, `TrickEntryFormProps` | Default export — Test-mode manual trick entry (AC6)                                                              | `TrickEntryForm.tsx`       |
-| `TestModeVanguardHost`                  | Default export — the Test-mode host owning `requestTricksWon` (AC6)                                              | `TestModeVanguardHost.tsx` |
+| Export                                  | Purpose                                                                                                                                                                       | File                       |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `hexBoardMetrics`                       | Pure board-level geometry: `widthUnits`, `heightUnits`, `aspectRatio`, `cellWidthFraction` for a given `size`                                                                 | `hexLayout.ts`             |
+| `hexPlacement`                          | The single point where an axial `HexCoord` becomes a screen-space fraction — owns board orientation                                                                           | `hexLayout.ts`             |
+| `HexPlacement`, `HexBoardMetrics`       | The two return shapes above                                                                                                                                                   | `hexLayout.ts`             |
+| `SIDE_NAME`                             | `'your'` / `'their'` — local copy for a side, never a raw `PlayerSide` string in UI                                                                                           | `labels.ts`                |
+| `ACTION_NAME`, `ACTION_DESCRIPTION`     | Display name and short cost/range copy for each `VanguardActionKind`                                                                                                          | `labels.ts`                |
+| `cellAccessibleName`                    | The one accessible name every cell `<button>` binds to (AC4)                                                                                                                  | `labels.ts`                |
+| `REJECTION_MESSAGE`                     | `Record<IllegalActionReason \| ClashRejectionReason, string>` — human copy for every engine rejection                                                                         | `labels.ts`                |
+| `cellReactKey`                          | Re-export of `src/vanguard`'s `cellKey`, so every list in this module shares one stable key function                                                                          | `labels.ts`                |
+| `legalTargetsFor`                       | Every coordinate where an action kind is legal and affordable for a side, by dry-running the engine                                                                           | `legalTargets.ts`          |
+| `inferActionKind`                       | Total, pure — which action kind a tap on a cell means, inferred from its occupancy (SCRUM-41)                                                                                 | `legalTargets.ts`          |
+| `allLegalTargets`                       | The union of every action kind's already-computed legal-target set — the board's continuous highlight (SCRUM-41)                                                              | `legalTargets.ts`          |
+| `MatchUiState`                          | `{ round, board, clash, rejection, fault }` — the mount's one piece of state (SCRUM-41 removed `selectedAction`)                                                              | `matchReducer.ts`          |
+| `MatchUiAction`, `MatchActionKind`      | `MusterReady \| RequestFailed \| TapCell \| ClearRejection \| NextRound`, via an `as const` map (SCRUM-41 removed `SelectAction`; `CancelSelection` renamed `ClearRejection`) | `matchReducer.ts`          |
+| `MatchRejection`                        | `IllegalActionReason \| ClashRejectionReason` — the player's own rejected-action surface                                                                                      | `matchReducer.ts`          |
+| `MatchFault`                            | `cpuDeadEnd \| cpuRejected \| requestFailed \| invalidTricks` — a play-blocking fault, always named                                                                           | `matchReducer.ts`          |
+| `createMatchUiState`, `matchReducer`    | Lazy `useReducer` initializer and the single reducer owning the whole match                                                                                                   | `matchReducer.ts`          |
+| `TurnIndicator`                         | `awaitingMuster \| playerTurn \| cpuTurn \| resolved` — the HUD's own lifecycle label, via an `as const` map (SCRUM-30)                                                       | `clashHud.ts`              |
+| `ClashHudState`                         | `{ playerMuster, cpuMuster, indicator, uncontested }` — the HUD's whole displayed shape (SCRUM-30)                                                                            | `clashHud.ts`              |
+| `deriveClashHud`                        | Total, pure — `ClashState \| null` to `ClashHudState`; reads Muster and turn straight off the engine's result (SCRUM-30)                                                      | `clashHud.ts`              |
+| `deriveHint`                            | Total, pure — `(MatchUiState, ClashHudState)` to the palette's hint string; moved out of `VanguardMatch.tsx`'s own body so it's unit-tested without a renderer (SCRUM-30)     | `clashHud.ts`              |
+| `useHexRovingFocus`                     | One tab stop across the whole board; axial arrow-key movement, `Home`/`End`, `Escape`                                                                                         | `useHexRovingFocus.ts`     |
+| `HexRovingFocus`                        | `{ groupRef, tabStopKey, handleKeyDown }` — the hook's return shape                                                                                                           | `useHexRovingFocus.ts`     |
+| `HexCell`                               | Default export — one board cell as a native `<button>` (AC1, AC4)                                                                                                             | `HexCell.tsx`              |
+| `VanguardBoardView`                     | Default export — the board group (AC1), renders every coordinate via `HexCell`                                                                                                | `VanguardBoardView.tsx`    |
+| `ActionPalette`, `ActionPaletteProps`   | Default export — the three Clash actions plus the hint line (AC2)                                                                                                             | `ActionPalette.tsx`        |
+| `MusterBand`, `MusterBandProps`         | Default export — the status-band HUD: both sides' Muster and the turn/lifecycle badge (SCRUM-30, AC1–AC4)                                                                     | `MusterBand.tsx`           |
+| `ClashOverPanel`, `ClashOverPanelProps` | Default export — the Breach and round-over overlay                                                                                                                            | `ClashOverPanel.tsx`       |
+| `VanguardMatch`                         | Default export — the mount, satisfying `VanguardMountProps`                                                                                                                   | `VanguardMatch.tsx`        |
+| `TrickEntryForm`, `TrickEntryFormProps` | Default export — Test-mode manual trick entry (AC6)                                                                                                                           | `TrickEntryForm.tsx`       |
+| `TestModeVanguardHost`                  | Default export — the Test-mode host owning `requestTricksWon` (AC6)                                                                                                           | `TestModeVanguardHost.tsx` |
 
-`hexLayout.ts`, `labels.ts`, `legalTargets.ts`, and `matchReducer.ts` import no React and touch no
-DOM global, so all four are unit-tested in the cheap `node` Vitest project; the components are
-tested in the `dom` project (see `war-council-ui.md`'s § _The two-project Vitest layout_ — this
-module follows the identical split, unchanged).
+`hexLayout.ts`, `labels.ts`, `legalTargets.ts`, `matchReducer.ts`, and `clashHud.ts` import no
+React and touch no DOM global, so all five are unit-tested in the cheap `node` Vitest project; the
+components — including `MusterBand.tsx`, purely presentational — are tested in the `dom` project
+(see `war-council-ui.md`'s § _The two-project Vitest layout_ — this module follows the identical
+split, unchanged).
 
 ## How it works
 
@@ -74,6 +80,13 @@ with `env(safe-area-inset-*)` padding — the same idiom `war-council-ui.md` doc
 rather than re-derived. The status band and action palette take `auto`; the board takes `1fr`. Every
 custom property and class carries a `vg-` prefix (confirmed free of collisions in `src/` during
 planning, where `wc-` already had 95 hits).
+
+`.vg-band` (the header, `grid-area: status`) is itself a two-row grid (SCRUM-30):
+`grid-template-rows: auto auto`, its own row holding `.vg-band-round` ("Round N · The Clash") and its
+second row holding `MusterBand`. This replaced a single flex row carrying only the round label and a
+placeholder note; the second row was added because a three-cell Muster/turn scoreboard did not fit
+the original thin single row at short viewports (`plan.md` → _Risks and judgement calls_ flagged this
+as a space call, confirmed against the mockup during implementation).
 
 The styling ships as **two** stylesheets: `vanguard.css` (tokens, the shell grid, the status band,
 the board, the cells, and the action palette — 305 true lines) and `vanguardPanels.css` (the
@@ -211,6 +224,59 @@ the loop's own `status`/`turn` guard eventually becomes false either from exhaus
 `applyClashAction`, [vanguard.md](vanguard.md)) or a Breach; any rejection or thrown dead end breaks
 the loop immediately rather than retrying.
 
+### The Muster/turn HUD (SCRUM-30) and why `CpuTurn` is typed but not reachable here
+
+`clashHud.ts`'s `deriveClashHud(clash: ClashState | null): ClashHudState` is a total, pure read of
+`ClashState` — no legality, cost, or turn-order rule of its own, matching the reducer's own
+"decides no rule" convention below. With no clash yet (the War Council still deciding the round)
+it returns `{ playerMuster: null, cpuMuster: null, indicator: AwaitingMuster, uncontested: false }`,
+distinguishing "not started" from "zero" so the HUD never reads "you have 0 moves" before a round
+has begun. Once a clash exists, `playerMuster`/`cpuMuster` are read straight off
+`clash.muster[PlayerSide.Player]`/`clash.muster[PlayerSide.Cpu]`; while `status === InProgress` the
+`indicator` is `PlayerTurn` or `CpuTurn` from `clash.turn`, and `uncontested` re-reads the identical
+predicate `applyClashAction`'s own step 7 already uses to lock a turn — `clash.muster[mover] > 0 &&
+clash.muster[other] === 0` — rather than deriving a second version of the same rule. Once `status`
+leaves `InProgress` (`Breached` or `Complete`), the indicator becomes `Resolved` and `uncontested`
+is forced `false`; the two counts are left exactly as `applyClashAction` last set them, which is
+what lets `MusterBand` keep showing the frozen final tallies behind `ClashOverPanel`'s overlay (AC4)
+with no special-casing in either component.
+
+`deriveHint(ui: MatchUiState, hud: ClashHudState): string` moved out of `VanguardMatch.tsx`'s own
+body into this same module so it is unit-tested without a renderer (it was previously a
+module-local function inside the component file). Its cascade is unchanged in priority — a live
+`ui.rejection` always wins, via `REJECTION_MESSAGE` — but its lifecycle branches now switch on
+`hud.indicator` instead of the two separate `playerTurn`/`selectedAction`-shaped booleans the
+component used to compute inline, and its uncontested branches name the mover's exact remaining
+Muster count (`` `CPU is out of moves — you're spending your remaining ${hud.playerMuster} moves` ``),
+matching AC3's own example copy verbatim in shape.
+
+`MusterBand.tsx` is the presentational sibling that renders `ClashHudState` with no state and no
+handler of its own: a `role="group" aria-label="Muster and turn"` three-cell layout — a Muster cell
+for the player, a turn/lifecycle badge in the middle switching its text off a `TURN_LABEL` map keyed
+by `TurnIndicator`, a Muster cell for the CPU — mirroring `war-council-ui.md`'s `RoundStatusBand`
+scoreboard shape rather than inventing a new one. The uncontested case is marked by a second,
+separately-styled `<span data-visible={hud.uncontested}>Uncontested</span>`, not by a colour change
+alone, satisfying `game-ux`'s "state reads without motion or colour alone" rule; each Muster value
+falls back to an em dash (`hud.playerMuster ?? '—'`) rather than a bare `0` while `AwaitingMuster`.
+No `aria-live` region — like `RoundStatusBand`, the counts and badge text simply update on normal
+re-render, since nothing here is announced mid-interaction the way a rejection banner is.
+
+`TurnIndicator.CpuTurn` is a real, tested branch of the type — but it is **provably unreachable
+through `VanguardMatch`'s actual render output**, confirmed by tracing `matchReducer.ts`, not
+guessed: `advanceCpu` (above) runs synchronously inside `handleMusterReady` and `handleTapCell`,
+_before_ either handler ever returns a new `MatchUiState`, and its `while` loop does not stop until
+`current.turn` genuinely returns to `Player` or `current.status` leaves `InProgress`. So
+`ui.clash.turn` is provably always `Player` whenever `ui.clash.status === InProgress`, in every
+state this mount ever stores or renders — the CPU's own turns are always fully drained within one
+synchronous batch, never observed mid-turn. `deriveClashHud`'s `CpuTurn`/uncontested-for-CPU
+branches are exercised only through direct fixtures in `clashHud.test.ts` and `MusterBand.test.tsx`
+(a hand-built `ClashState` with `turn: PlayerSide.Cpu`), the identical "typed but currently
+unreachable through today's caller" pattern this module already carries for the `cpuRejected`
+`MatchRejection` branch, above. `plan.md` → Part 1 → _Assumptions_ carries the full trace and names
+this as the plan's single most consequential judgement call, flagged for the developer to re-check
+if a future engine change ever lets a CPU turn become independently observable — at which point this
+branch would need an end-to-end test, not just a fixture-level one.
+
 ### The module's single `try`/`catch`
 
 `chooseCpuClashAction` throws a plain `Error` on its documented, unmodeled dead end: a side with
@@ -346,13 +412,15 @@ openingSideForRound(round))` — and only calls `scoreRound` once the trick spli
   selectable, `applyClashAction` decides what commits, `chooseCpuClashAction` plays the opponent,
   `openingSideForRound` decides who opens a round, and `scoreRound` → `convertScoreToMuster` decide
   the Muster. `matchReducer.ts` contains no distance comparison, no adjacency test, no cost
-  arithmetic, and no `hasReachedBreach` call.
+  arithmetic, and no `hasReachedBreach` call. `clashHud.ts`'s `uncontested` flag re-reads
+  `applyClashAction`'s own step-7 exhaustion predicate rather than deriving a second version of it.
 - **Exactly one effect exists in the module** (`VanguardMatch.tsx`, the `requestTricksWon` request) —
   verified by grep in the contract's Final verification. It registers no listener, timer, observer,
   `requestAnimationFrame`, or `AbortController`; its only resource is a `cancelled` boolean released
   in its own cleanup.
-- **`hexLayout.ts`, `labels.ts`, `legalTargets.ts`, and `matchReducer.ts` import no React and touch
-  no DOM global** — verified by grep, which is what lets them run in the `node` Vitest project.
+- **`hexLayout.ts`, `labels.ts`, `legalTargets.ts`, `matchReducer.ts`, and `clashHud.ts` import no
+  React and touch no DOM global** — verified by grep, which is what lets them run in the `node`
+  Vitest project.
 - **Every visual value is a named CSS custom property**, `vg`-prefixed and transcribed from the
   approved `mockup.html`. No hex colour literal appears in any `.tsx` — a grep enforces this — and
   no `vh`/`vw` unit appears anywhere in the module; dimensions are `dvh`, `%`, `rem`, or `vmin`.
@@ -391,10 +459,11 @@ openingSideForRound(round))` — and only calls `scoreRound` once the trick spli
 - **`src/App.tsx`'s Test-mode control is throwaway scaffolding.** It is the only way this screen and
   AC6 are reachable in the running app today; SCRUM-34 replaces the whole dev host rather than
   extending it.
-- **Muster counts and a turn indicator are not shown.** `VanguardMatch.tsx`'s status band literally
-  reads "Muster counts and turn indicator are SCRUM-30" — `ActionPalette`'s `hint` line carries a
-  minimal whose-turn message (needed so the palette can be correctly disabled), but the fuller
-  Muster/turn display is explicitly out of scope here.
+- **Muster counts and a turn indicator now ship (SCRUM-30).** `MusterBand`, driven by
+  `clashHud.ts`'s `deriveClashHud`, replaced the former placeholder note in `.vg-band` — see
+  _The Muster/turn HUD (SCRUM-30)_ above. `TurnIndicator.CpuTurn` and its uncontested pairing remain
+  typed and fixture-tested but not reachable through this mount's real render output, per the same
+  section.
 - **A single dark theme, deliberately** — `vanguard.css` sets `color-scheme: dark` locally with no
   light variant, matching `war-council-ui.md`'s identical choice.
 - **No token or board art beyond CSS.** Every visual is a CSS rule keyed off `data-*` attributes —
@@ -423,3 +492,10 @@ openingSideForRound(round))` — and only calls `scoreRound` once the trick spli
   - Accepting this module's single `try`/`catch` (around `chooseCpuClashAction`'s dead-end throw),
     where `src/app/warCouncil/` has none.
   - Accepting that `src/App.tsx`'s mode control is throwaway scaffolding SCRUM-34 deletes.
+  - The exact HUD copy (`TURN_LABEL`'s four strings, the "Uncontested" marker, and `deriveHint`'s
+    uncontested sentences) and the exact visual treatment of the turn-active/uncontested badge
+    (colour, shape, whether it pulses) are mockup-confirmed defaults, not fixed permanently
+    (`plan.md` → _Risks and judgement calls_).
+  - Whether the `.vg-band` two-row header reads well at a genuinely short phone viewport — worth
+    judging on a real device, which is QA's job, not something planned or implemented against a
+    guess (`plan.md` → _Risks and judgement calls_).
