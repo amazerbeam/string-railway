@@ -36,10 +36,13 @@ called "War Council" here).
 **Spoils** is the summed value of the cards you captured in tricks. It is additive: every card you
 take adds to it, and nothing about the term itself punishes taking more.
 
-**Standing** is a multiplier read off the band your final trick count lands in, taken
-**unchanged** from the base game's own printed end-of-round table (`fox-in-the-forest.md` →
-End-of-round scoring): Humble (0–3) ×6, Defeated (4/5/6) ×1/×2/×3, Victorious (7–9) ×6,
-Greedy (10–13) ×0.
+**Standing** is a multiplier read off the band your final trick count lands in. The **band
+boundaries** are taken unchanged from the base game's own printed end-of-round table
+(`fox-in-the-forest.md` → End-of-round scoring): Humble 0–3, Defeated 4/5/6, Victorious 7–9, Greedy
+10–13. The **values** are first-pass — ×6 / ×1,×2,×3 / ×6 / ×0 as printed — and are **§9's to
+decide, not settled by transcription**: §6 shows the printed Humble ×6 leaves that band dominated,
+so at least one of the six is wrong for this game. Every number below that reads a multiplier is
+stated at the printed values and moves if §9 moves them.
 
 Why this equation and not a fresh one: Fox in the Forest's signature property is that winning
 too many tricks is punished exactly as hard as winning too few. In the base game that property
@@ -167,8 +170,16 @@ Two further facts fall out of the same table and are used later in this document
   Humble-lane argument rests on this shape, not merely on the two bands sharing a ×6.
 - **Standing is a gate, not a term you can build.** Nothing in §1's component table raises Standing
   directly; every device listed as intervening on it does so by changing which tricks you win.
-  Standing is capped at ×6 permanently. All unbounded growth must therefore come through Spoils —
-  which is what makes Forage's edits to card _value_ the load-bearing ones.
+  Standing is capped at whatever the table's largest value is, permanently. All unbounded growth
+  must therefore come through Spoils — which is what makes Forage's edits to card _value_ the
+  load-bearing ones.
+
+**What the 108 is contingent on.** Three things, and §9 has reopened one of them since this was
+written. It moves if the round length changes (13 tricks), if the card-value rule changes (below),
+or **if any Standing multiplier is raised such that a lower-`k` band out-earns `k=9`**. That last
+one is live: §6 computes ×18 as the Humble break-even, and ×18 is the exact value at which `k=3`
+also reaches 108 — the ceiling survives at the break-even and only at or below it. Any Humble value
+above ×18 raises the ceiling and every downstream number keyed to it, including §5's crossing point.
 
 The consequence follows without needing a rule: a Demand (the encounter's score target, named in
 full in §5) that rises past 108 **cannot** be met by winning more tricks. There is no `k` that pays
@@ -204,6 +215,176 @@ only ever wins more tricks — the equivalent of a Balatro build made entirely o
 does not need to tell the player so; the ceiling tells them. This costs **zero rules added**: it
 is not a mechanic anyone had to design, it falls straight out of the 13-trick round already fixed
 in §1 and the printed multiplier table already reused unchanged.
+
+### Where a Forage edit actually lands — the variance nobody costed
+
+The precedent cited above is Balatro's Tarot cards, and the transplant is not clean. Balatro's deck
+belongs to one player and is heavily cycled: 8 cards in hand, 4 hands, 3 discards, so a round sees
+roughly 35 of 52 cards. An enhanced card is very likely to appear, and it is always **yours**.
+
+Here the deck is dealt once, split two ways, and a fifth of it is never seen at all:
+
+| Where a Foraged card lands | Chance | |
+| -------------------------- | ------ | --- |
+| Your hand                  | 13/33 = **39.4%** | The intended case |
+| The Quarry's hand          | 13/33 = **39.4%** | See below — depends entirely on the edit type |
+| The undealt seven          | 7/33 = **21.2%**  | The edit did nothing this round |
+
+**Roughly one edit in five is a no-op**, on the outer loop's only verb, against a Demand that keeps
+rising. Neither of these failure modes exists in the game the mechanic was borrowed from, so the
+precedent does not cover them.
+
+**The two edit types behave completely differently, and the document's "four verbs" framing hides
+it.**
+
+- **A value edit in the Quarry's hand is not a loss** — arguably it is the best case. A card worth 8
+  sitting in the opponent's hand is a concrete objective: force it out, take the trick it lands in.
+  That is a specific thing to play for each round rather than an abstract trick target, and it is
+  what the round is named after. It is also not a _new_ uncertainty — Fox in the Forest already
+  deals its three Monarchs at random and players cope. Forage raises the stakes on existing texture
+  rather than introducing a new problem.
+- **An ability edit in the Quarry's hand is pure downside.** You spent an edit arming your opponent.
+  There is no version of that which plays well.
+
+**One cheap mitigation, consistent with what the design already does.** Show the player where their
+Foraged cards landed — "2 in your hand, 1 with the Quarry, 1 undealt" — without revealing anything
+else about the hidden hand. Without it, the 39% case is invisible variance rather than a hunt,
+because §4 keeps the Quarry's hand hidden and you therefore cannot chase what you cannot locate.
+This is consistent with the design's existing information posture: §4's visibility table already
+telegraphs the Quarry's intent every trick, and the base game already turns the decree card face up.
+It does not address the 21% dead-edit rate, which needs a different answer — the base game has two
+verbs that reach into the undealt cards (the Woodcutter's draw, the Fox's decree exchange) if one is
+wanted.
+
+### The ability edit has real depth and the document demonstrates none of it
+
+The value edit is self-explanatory; the ability edit is not, and as written a reader is entitled to
+ask what the strategy even is. The answer is that **rank and ability are currently welded together**
+— the power that forces an opponent's highest card is printed on the 11, a card that already wins
+the trick regardless. Moving an ability decouples _which card wins_ from _what the card does_. Four
+worked plays, none of which the document currently contains:
+
+- **Monarch onto a low card — the sacrifice lead.** Put the Monarch's power on a Bells 2. You lead a
+  card that _loses_ and it drags out the opponent's highest Bells. This is better here than in the
+  base game for a reason specific to this design: **deliberately losing tricks is a strategy**, because
+  you are trying to land in a band. Giving away a trick is sometimes the goal, which is never true in
+  a game scored on tricks alone.
+- **Treasure onto a card you reliably win with.** The Treasure's +1 goes to the trick's winner; on a
+  7 that is a coin flip. On your Bells 11 you collect it every time — an ability edit doing a Spoils
+  job.
+- **Swan onto a high card — insurance.** "If you play this and lose, you lead next" is automatic on
+  the 1, which always loses. On a Keys 10 it becomes a safety net against being trumped.
+- **Fox onto a card worth playing.** The decree swap is stranded on the 3, a card you rarely want to
+  spend. On a 10 you can flip trump _and_ win the trick.
+
+**Three things this exposes as unspecified**, and all three block an implementation: whether two
+abilities may be stacked on one card; whether the source card keeps its ability or loses it; and
+whether Forage may target any of the 33 cards or only cards the player captured. The last is the
+interesting one — restricting edits to captured cards would tie the two loops tighter, since the
+right to upgrade a card would have to be earned in the Hunt that preceded it.
+
+### Proposed: a second, in-round edit resource — the two-layer split
+
+**Status: open proposal, 2026-08-09. Explicitly kept separate from the Forage budget decision.**
+Originated in play-through as "what if you could Forage mid-round, on cards in your hand." The
+version below is the two-layer form the idea resolves into; the blocking problem in the last
+subsection must be solved before it is viable.
+
+**Why it stayed open after the budget was raised to 4.** Raising the between-round budget (§9) fixes
+volume, halves the per-round impact of the dead-edit rate, and makes the Humble lane reachable — but
+it does not touch what this proposal is actually for. A Forage edit made between rounds is chosen
+with **no information**: the player does not know the next Quarry, the deal, or the decree. Four
+blind edits is a bigger bet than two, not a better decision — Meier's "the consequence is invisible"
+(`design-principles.md` §2) rather than his "dominant option." The in-round layer is the only thing
+proposed anywhere in this document that makes an edit a decision taken with the board visible. The
+two fix different problems and neither substitutes for the other.
+
+**The shape.** Two separate editing systems, deliberately kept as different objects:
+
+| Layer                  | When            | Targets                    | Persists      | Answers                  |
+| ---------------------- | --------------- | -------------------------- | ------------- | ------------------------ |
+| **Forage**             | Between Hunts   | Any of the 33 deck cards   | For the run   | _What my deck is_        |
+| **Snare** *(placeholder name)* | Mid-Hunt | Cards currently in your hand | Spent on use | _What I do right now_    |
+
+The name **Snare** is a placeholder and the developer's to red-line, per §10 — a snare is set during
+a hunt rather than gathered between them, which is the distinction the two layers encode. What must
+not happen is both layers being called Forage; the whole value of the split is that they are
+different objects.
+
+**This is Forbidden Solitaire's structure, not an invention.** `forbidden-solitaire.md` §6 documents
+the same split and states why it is load-bearing: **Gems** are passive, purchased between battles,
+permanent, and set the _rate_ at which a run scales; **Jokers** are active, cast during the solve,
+situational, and change _this board_. That file's own summary — *"Forbidden Solitaire pays two
+slots' worth of UI to keep 'what my run is' and 'what I do right now' as different objects"* — is
+exactly the argument for adopting it here.
+
+**What the in-round layer fixes, and these are the reasons to want it.**
+
+- **It deletes the variance problem above.** A card in your hand cannot be undealt and cannot be in
+  the Quarry's hand. Every in-round edit lands, on a card you can see.
+- **It converts a blind bet into a situational decision.** Between-round Forage is "pump a card and
+  hope." Mid-round it is "trump is Keys, they have spent their high Keys, make this Keys 6 worth 8
+  and take the trick" — Meier's situational value (`design-principles.md` §2), which the outer-loop
+  version cannot have because nothing is visible when the choice is made.
+- **It makes the Humble lane executable.** §6 establishes that Humble needs a few very fat cards.
+  Mid-round, a player can see which three tricks they are actually going to win and pump exactly
+  those cards. This is the first form of the Humble lane a player could deliberately execute rather
+  than hope into.
+- **Information rises while options fall.** Later in a round you know more — what has been played,
+  where trump has moved — but hold fewer cards to apply it to. That tension is free; nobody designs
+  it.
+
+**What it costs, and why the between-round layer must survive.** An in-round-only version would
+delete the outer loop: §3's Cook's-loop argument requires that something between Hunts changes the
+conditions the next Hunt runs under, and if all editing happens inside the round, nothing persists
+and the run becomes a sequence of independent puzzles rather than a build. Keeping Forage as the
+permanent layer is what preserves that; the in-round layer is an addition, never a replacement.
+
+**It passes §1's component test.** A mid-round value edit is an intervention on Spoils; a mid-round
+ability or suit edit is an intervention on Standing by the same route as its Forage equivalent.
+Neither opens a third scoring channel, so the rule §1 sets is not breached.
+
+**It moves the 108 ceiling, and §5 depends on that number.** This is the consequence most likely to
+be missed. If a player can add value to cards mid-round, the plain-value ceiling is no longer
+`18 × 6`. At an illustrative four in-round edits of +3 each, all landing on captured cards:
+
+```
+(18 + 12) × 6 = 180
+```
+
+**§3's ceiling and §5's Demand-crossing point must both be recomputed against whatever in-round
+budget is chosen.** The ceiling stops being a property of the round's shape alone and becomes a
+function of that budget — which weakens, though does not destroy, the argument that the ceiling is
+"derived, not tuned."
+
+#### The blocking problem: pump-what-I-am-about-to-win is a dominant strategy
+
+Stated as blocking rather than as a caveat, because the proposal is not viable until it is answered.
+"Raise the value of the card I am about to play and win with" is correct almost every time. At four
+in-round edits of +3, that is a reliable **+12 Spoils, +72 score**, with no decision attached — which
+is Meier's dominant-option failure landing on the new mechanic before it ships.
+
+The in-round edit needs a cost that makes it a trade-off. Three candidates, none chosen here:
+
+- **Limited and consumed**, as Forbidden Solitaire does — you hold a small number, using one spends
+  it. Makes _when_ the decision rather than _whether_.
+- **Spent from the same pool as between-round Forage**, so an in-round edit costs you a permanent
+  deck edit. This is the strongest version structurally, because it puts the two layers in direct
+  tension — tactics now versus build later — and needs no new resource.
+- **Charged against something the round already has**, e.g. only usable on a trick you go on to lose.
+
+The second is the one worth trying first: it adds no new currency, keeps §3's no-shop position
+intact, and turns the two layers into a single interesting choice rather than two independent
+handouts.
+
+#### Two details from the originating proposal, recorded
+
+- **"Every 3 tricks" gives dead offers at the end.** After trick 9 the hand holds four cards; after
+  trick 12, one. The final one or two opportunities are close to worthless. Either space them
+  unevenly toward the early round or offer fewer.
+- **"One buy at the start" implies a currency this design does not have.** §3 rejected a shop
+  deliberately. If the in-round layer is granted rather than purchased, no currency is needed and
+  the no-shop position survives; if it is bought, that decision is reopened.
 
 **Discarded branch:** the alternative considered was a Balatro-style shop selling flat score
 bonuses — buy +10 Spoils, buy a one-round ×1.5 Standing token. Rejected because a constant added
@@ -313,7 +494,9 @@ ranks, and which cards are in the deck at all. Four worked examples, covering fo
   trump, all round — multiplying how often the base game's rarest ruling actually applies.
 
 **The Demand's shape, not its value.** The Demand rises with each encounter and must eventually
-cross the 156-card plain-value ceiling derived in §3 — that crossing is the moment §3's lesson
+cross the plain-value ceiling derived in §3 — **108 as the design currently stands, and higher if
+§3's proposed in-round edit layer is adopted, since that layer raises the ceiling as a function of
+its budget** — that crossing is the moment §3's lesson
 actually lands on a player, the same way Balatro's requirement curve eventually outruns a
 flat-Joker build (`balatro.md` §2.1). The curve's base value and its rate of rise are not chosen
 here; §9 states the shape and the range and routes the numbers to the developer.
@@ -327,21 +510,74 @@ This is the design's weakest claim, and it is written as such rather than overso
 **The position: a cheap restart, plus the Humble lane as a bounded second route.** Two branches
 were discarded, one line each. A gentler requirement curve was rejected because it removes the
 growth-class lesson §3 derives — softening the curve so more builds survive it is the same move as
-removing the 156-card ceiling, and that ceiling is the design's main source of depth. Sub-run
+removing the 108-point ceiling, and that ceiling is the design's main source of depth. Sub-run
 checkpointing was rejected because it is the linear-narrative answer, and §7 does not choose a
 linear-narrative structure — there is nothing below a short, restartable run worth checkpointing
 into.
 
-**Why the Humble lane is real, not a consolation prize — with arithmetic.** The base game's own
-end-of-round table already pays the 0–3 trick band ×6, the same multiplier as the 7–9 band
-(`fox-in-the-forest.md` → End-of-round scoring). At flat card value, a Victorious round that takes
-8 tricks captures 16 cards (2 cards per trick), for `16 × 6 = 96`. A Humble round that takes only 3
-tricks captures 6 cards, for `6 × 6 = 36` — illustrative arithmetic, not a tuning value, since both
-numbers assume every captured card is worth exactly its printed face value. Humble only closes
-that gap, or beats it, once the deck has been Foraged so a small number of captured cards are each
-worth far more than face value. That condition — win with fewer, richer cards — is a distinct
-build lane with its own growth class, not a fallback for a player who couldn't win tricks the
-normal way.
+### The Humble lane is dominated at the printed multipliers, and Forage does not rescue it
+
+An earlier draft of this section argued the opposite — that Humble becomes competitive "once the
+deck has been Foraged so a small number of captured cards are each worth far more than face value."
+That argument does not survive being written out, and the correction is load-bearing enough to
+replace it rather than footnote it.
+
+**The setup.** The base game's table pays the 0–3 band ×6, the same multiplier as 7–9
+(`fox-in-the-forest.md` → End-of-round scoring). At flat card value a Victorious round taking 8
+tricks captures 16 cards for `16 × 6 = 96`; a Humble round taking 3 captures 6 for `6 × 6 = 36`.
+Same multiplier, and Humble loses by a factor of nearly three — the whole gap is in Spoils, because
+Spoils is made of captured cards and Humble captures fewer.
+
+**Why Forage does not close it — the superset argument.** The intuition was that concentrating
+Forage into a few enormous cards favours the lane that only needs a few cards. It doesn't, because
+**the Victorious player captures those same cards and then twelve more.** Worked, with three cards
+Foraged to value 20 and everything else left at 1:
+
+```
+Humble      (6 cards):   20 + 20 + 20 + 1 + 1 + 1          =  63    ×6 =  378
+Victorious (18 cards):   20 + 20 + 20 + fifteen 1s         =  75    ×6 =  450
+```
+
+Winning more tricks does not make you miss the pumped cards. So as long as every additional card
+carries **positive** value, the Victorious pile is a superset of anything Humble can assemble and
+Victorious wins by construction — not narrowly, and not for a tuning reason that could be tuned
+away. Humble is not a weaker lane; it is a **dominated** one, which is Meier's definition of an
+uninteresting decision (`design-principles.md` §2) landing on one of the two terms of §1's equation.
+
+**The two exits, both of which reuse existing pieces.** Neither is chosen here.
+
+**(a) Raise the Humble multiplier.** The dominance is a fixed ratio — 6 cards against 18 — so a
+constant fixes it, and the break-even is computable rather than a feel judgement:
+
+```
+6 × M = 18 × 6   →   M = 18
+```
+
+Below ×18 Victorious still dominates; above it Humble does. ×18 also leaves the 108 ceiling
+untouched (both peaks land on 108), so §3's argument survives unchanged. The better property is what
+happens after Forage: writing `A` for the value of the best 6 cards and `B` for the next 12,
+
+```
+Humble = 18A     Victorious = 6(A + B)     Humble wins when   B < 2A
+```
+
+— so **concentrating** Forage favours Humble and **spreading** it favours Victorious. That is a
+genuine build fork driven by the player's own edits, which is what this section originally claimed
+to have and did not. Costs: the multiplier table stops being transcribed and becomes designed (§9),
+and the low end gets generous — at ×18 two tricks scores 72 against seven tricks' 84, so whether
+1–2 tricks reads as a build or as a no-op needs watching.
+
+**(b) Let Forage set a card's value below zero.** The superset argument depends on every extra card
+being a gain. It collapses the moment the deck holds cards you would rather leave behind. The base
+game already ships them — the Poison 8s, −1 to whoever takes the trick (`fox-in-the-forest.md` →
+Poison cards) — but three cards in thirty-three is a rounding error. Negative values are not a new
+device: they are §3's existing "edit a card's value" verb with the sign flipped, so **rules added:
+zero**. This fixes the problem one level lower than (a) does, at the trick rather than the round: it
+creates a reason to decline a trick you could win, a decision the player currently never faces.
+
+The two compose; they are not alternatives. (a) makes a small pile worth more, (b) makes some cards
+worth dodging. Which, whether, and at what value is the developer's — §9 carries the row and the
+measurement.
 
 **The honest consequence.** This is a second _strategy_, not a comeback _mechanic_: it gives a
 build already leaning toward high-value, low-count captures a second way to hit the Demand, and it
@@ -385,6 +621,29 @@ a rising Demand and which are additive-only and therefore doomed at a predictabl
 the same shape as Balatro's requirement curve teaching `Chips × Mult` (`balatro.md` §2.1),
 reapplied here to `Spoils × Standing`.
 
+**One progression system against four — the sharpest version of the risk this section accepts.**
+The comparison usually drawn is roster size, five Quarry characters against Balatro's ~150 Jokers.
+The more damaging comparison is structural. Balatro runs **four** progression systems concurrently
+(`balatro.md` §1.8–§1.10, §1.7):
+
+| System                | What it does                                                      |
+| --------------------- | ----------------------------------------------------------------- |
+| **Jokers** (5 slots)  | Persistent multipliers sitting outside the deck — the actual engine |
+| **Tarots** (22)       | Deck edits — **the only one this design has**                     |
+| **Planets** (12)      | Permanently level a hand type                                     |
+| **Vouchers**          | Run-long upgrades to the shop and economy                         |
+
+Deck editing is Balatro's _supporting_ system; the Jokers are what make a build. Here, Forage is the
+whole of it — and by §3's own measurement it fires less reliably than Balatro's Tarots do, being a
+no-op roughly one edit in five.
+
+This is not an argument for adding a Joker layer: §1's component table forbids any device that is
+not an intervention on Spoils or Standing, and a persistent flat multiplier would be a third
+channel. It is an argument that **this section's accepted risk is larger than it states.** The
+honest position in the paragraph below — that this design is choosing to risk "runs out of steam
+quickly" — should be read against one progression system, not five characters, because that is where
+the depth budget actually is.
+
 **The critique this design is accepting.** `forbidden-solitaire.md` §9 records reviews splitting
 on exactly this decision: Shacknews calls the game one that _"has the good sense to get out while
 the going is good,"_ while other reviews say _"the gameplay runs out of steam quickly due to how
@@ -399,6 +658,72 @@ with a different Forage line, not to manufacture depth the roster doesn't have.
 encounter count and the target session length are not chosen here; §9 routes both to the
 developer.
 
+### What a run keeps, and what happens when one fails
+
+Two questions this section left implicit, both surfaced in play-through on 2026-08-09 and both
+**decided by the developer**, provisionally, pending a playtest.
+
+**Forage persists within a run, and nothing persists across one.** A card pumped at encounter 1 is
+still pumped at encounter 5 — that is what makes a run feel like building something. But a new run
+starts on a bare 33-card deck with every card back to base value. This is Balatro's model
+(`balatro.md` §2.4): every run is a clean test, and what improves between runs is the player, not
+the deck.
+
+**Missing the Demand ends the run.** This follows from §6 rather than being a separate choice. §6's
+whole answer to having no catch-up mechanic is that losing is cheap and restarting is free — which
+is only true if failure actually ends the run. Retries would make the Demand curve decorative: an
+under-built deck would never fail, it would merely take more attempts, and §3's growth-class lesson
+would stop being taught. Note the two parents disagree here and the disagreement is instructive —
+Forbidden Solitaire grants effectively unlimited retries because it is a 2–3 hour linear story that
+cannot afford to delete progress, and this design chose the other structure in this section.
+
+**Open, and explicitly held open: banked progress across runs.** The developer is open to a
+Hades/Rogue Legacy-style layer in which failed runs still bank something. The consequence to weigh
+is that carrying **power** across runs dissolves the lesson §3 exists to teach — enough runs and the
+starting deck is strong enough that build quality stops mattering. Balatro's own cautious middle is
+worth noting as a third option: beating content unlocks new Jokers and decks **into the pool**, so
+the player gains *options* rather than a head start, and the deck still resets. Unlocking a new
+Quarry character or a new kind of Forage edit would be this design's equivalent and costs nothing
+arithmetically.
+
+**Settled by playtest, not on paper.** Whether run failure is too harsh, and whether banked progress
+is wanted, are both feel questions. The measurement: run a full session under the clean-test rule
+and record whether players restart voluntarily or stop playing. A player who restarts immediately
+does not need banked progress; a player who quits after one failed run does.
+
+### Two gaps in how a run ends and how runs differ
+
+Both surfaced in play-through on 2026-08-09, from a developer describing the run back in their own
+words. Neither is a tuning value; both are structural and unanswered.
+
+**A run has no defeated opponent.** The developer's phrasing was "then we beat the CPU" — and the
+design does not permit that. The Quarry has no score, no health, and no failure state. Clearing the
+final Demand wins the run, but nothing is beaten; the Quarry simply stops. This is the same fact
+§8 establishes about the Standing bands, arriving at the emotional layer rather than the arithmetic
+one: removing the opponent's stake in the outcome removes the player's stake in defeating it.
+
+It matters most at the exact moment a design can least afford flatness — the end of a run.
+Balatro's Ante 8 Boss is also just a number, but Balatro spends its whole climax on the _reveal_
+(`balatro.md` §2.5 — the Rube Goldberg machine going off), an aesthetic this design has not claimed
+and would have to build deliberately. §12's existing smaller finding that the document never names
+its target emotion (Rosewater #6) is the general form of this; the run's ending is where it bites
+hardest. **Nothing is proposed here.** It is recorded so that whatever names the target emotion has
+to answer it.
+
+**Every run shows the same five characters.** §4 fixes the roster at five and §7 fixes a run at a
+sequence of encounters. If the run length is five — the no-repeat length — then every run faces the
+same five Quarries, and if the order is also fixed, every run is the same sequence. Balatro draws
+each Ante's Boss from a pool, so two runs differ in which constraints they meet and when; that
+variation is a real part of what makes its runs distinct, and this design as written has none of it.
+
+This is the between-runs counterpart to §12's Problem 3, which covers repeats _within_ a run, and
+the two are answered by the same decision: how the encounter sequence is built. It also directly
+undercuts this section's own claim that repeatability exists "to let a player who exhausts one run's
+pattern try again with a different Forage line" — a different Forage line against an identical
+sequence of five is a narrower kind of variation than that sentence implies. Cheapest fixes, neither
+chosen: randomise the order, or hold a roster larger than the run length so each run draws a subset.
+The second costs new characters; the first costs nothing.
+
 ---
 
 ## 8. The ruleset: kept, modified, dropped
@@ -412,7 +737,7 @@ kept/dropped list says nothing about whether the design still works once the rea
 | Follow-suit obligation                        | Kept, unchanged                                                  | `fox-in-the-forest.md` → Following. It is the entire tension of a trick-taker: without it, card choice is free and the layer collapses into "play your best card." It is also the input the Quarry attacks in §5's Swan (1) worked example.                                                                                                                |
 | Odd-rank abilities (1, 3, 5, 7, 9, 11)        | Kept as substrate, made editable by Forage                       | `fox-in-the-forest.md` → Abilities. Abilities already sit on cards, so "move or add an ability" is a deck edit that needs no new vocabulary — the cheapest possible Forage extension per §3's Cook's-loop argument.                                                                                                                                        |
 | Trick-count scoring curve                     | Modified                                                         | From a points lookup (`fox-in-the-forest.md` → End-of-round scoring) to the Standing multiplier (§1). Bands preserved verbatim; only the curve's _role_ changes, from an end-of-round score to a term of the equation. Whether its shape still does the same job is the sub-section below.                                                                 |
-| 13-card hands / 13 tricks / 33-card base deck | Kept, as the round's fixed shape                                 | Everything quantitative in this document — the 26-card cap and 156 ceiling (§3), the 14-split enumeration below — is derived from this shape staying fixed. The deck's _contents_ grow as Forage edits them; the round's _length_ does not.                                                                                                                |
+| 13-card hands / 13 tricks / 33-card base deck | Kept, as the round's fixed shape                                 | Everything quantitative in this document — the 26-card cap, the 108 ceiling and the `2k × f(k)` score curve (§3), the 14-split enumeration below — is derived from this shape staying fixed. The deck's _contents_ grow as Forage edits them; the round's _length_ does not.                                                                                                                |
 | The 21-point match                            | Dropped, replaced by the run                                     | `fox-in-the-forest.md` → End of game. Match-to-21 is the ending condition of a symmetric two-player contest, which no longer exists once the opponent does not score. §7's fixed encounter sequence replaces it.                                                                                                                                           |
 | Goal cards (16)                               | Dropped                                                          | `fox-in-the-forest.md` → Goal cards. A second scoring channel running alongside `Score = Spoils × Standing`, which §1's component table rules out by construction — any device that isn't an intervention on Spoils or Standing is a design defect, not a table entry.                                                                                     |
 | Poison 8s (3)                                 | Kept                                                             | `fox-in-the-forest.md` → Poison cards. A negative-value card is an intervention on Spoils per §1's table, and it doubles as the Quarry's "curse a card" device — the direct analogue of Forbidden Solitaire's board-attacking enemies (`forbidden-solitaire.md` §5).                                                                                       |
@@ -443,7 +768,10 @@ about what the split means:
 | 13                  | Greedy → ×0              | 0                        | Humble → ×6              |
 
 Read down either Standing column and the same fact repeats at every one of the fourteen rows:
-**exactly one side scores ×6 and the other side's Standing never rises above ×3.** That is not a
+**exactly one side scores ×6 and the other side's Standing never rises above ×3.** (Stated at the
+printed values, per §1. If §9 raises the Humble band the phrasing changes — one side lands in a high
+band and the other in a low one — but the mirroring itself is a property of the band _boundaries_,
+which nothing here proposes moving, so the argument below is unaffected.) That is not a
 property of any single split — it is a property of the table itself, because the Humble/Victorious
 bands and the Greedy/Defeated bands mirror each other across the 13-trick line. In the base game
 that mirroring _is_ the mid-round tension: every trick either side takes pulls the other side's band
@@ -462,7 +790,7 @@ Standing punishes your own overreach — Greedy still pays ×0, Defeated still p
 or not anyone is competing for the band you didn't reach. This is plainly a weaker version of the
 original property: the base game's tension was "I am fighting someone for this threshold," and what
 survives is "I am fighting arithmetic for this threshold." The design accepts that trade because
-§3's 156 ceiling supplies the pressure the opponent's mirrored band used to supply — the Demand
+§3's 108 ceiling supplies the pressure the opponent's mirrored band used to supply — the Demand
 plays the role the opponent's loss used to play, forcing the player to care which band they land in
 even with nobody contesting the other side of it.
 
@@ -480,6 +808,15 @@ that pressure is strong enough to keep 7–9 from being a dominant strategy is n
 flagged as this design's most likely balance failure, and §9 states the measurement that would
 settle it.
 
+**Upgraded from a risk to a proof.** §6 now demonstrates that at the printed multipliers this is not
+merely _likely_ — Victorious dominates Humble by construction, because a 9-trick pile is a superset
+of a 3-trick pile and every card carries positive value. That has one consequence for this section:
+Quarry pressure cannot be the whole answer. Displacing the player's achievable `k` makes Humble
+_reachable_; it does not make Humble _worth reaching_, so it converts Humble from a dominated choice
+into an assigned outcome rather than into a decision. Making it a decision requires one of §6's two
+exits — a higher Humble multiplier, or negative card values — and Quarry pressure then does the job
+this section describes on top of that, rather than instead of it.
+
 ---
 
 ## 9. First-pass values
@@ -491,17 +828,27 @@ the cheapest measurement that would settle it.
 
 | Value                           | First-pass                                                                     | Status                                                                                                          | What would settle it                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | ------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Standing multipliers            | ×6 / ×1 / ×2 / ×3 / ×6 / ×0 (Humble / Defeated ×1,×2,×3 / Victorious / Greedy) | Taken verbatim from the base game's printed table (`fox-in-the-forest.md` → End-of-round scoring), not invented | The ×0 Greedy band is the most likely to be wrong: it zeroes a whole round's Spoils, harsher than the base game, where a 0-point round still leaves your running total toward 21 intact. Settle it by playing several Greedy-band Hunts and checking whether the zeroed round reads as a proportionate cost or a null round — the same play sessions that would confirm or deny §8's residual risk that Victorious becomes a dominant target with nothing pulling toward Greedy at all. |
-| Plain-card Spoils ceiling — 156 | `26 × 6`                                                                       | Derived arithmetic, not tuning (§3)                                                                             | Already settled as arithmetic; it moves only if the round length (13 tricks) or the top Standing multiplier (×6) is revised elsewhere in this document.                                                                                                                                                                                                                                                                                                                                 |
+| Standing multipliers            | ×6 / ×1 / ×2 / ×3 / ×6 / ×0 (Humble / Defeated ×1,×2,×3 / Victorious / Greedy) | **Undecided** — transcribed, but §6 proves the transcription does not hold up here            | Two rows of this table are now live decisions rather than copies. **The Humble ×6 is wrong as transcribed**: §6 shows Victorious dominates Humble by construction at these values, and computes the break-even at **×18** (`6 × M = 18 × 6`), which also leaves the 108 ceiling intact since both peaks then land on 108. Settle it by playing Hunts at a candidate value and counting how often `k` lands in 1–2 rather than 3 — at ×18 two tricks scores 72 against seven tricks' 84, so the risk is the low end becoming a no-op. **The ×0 Greedy band is the second**: it zeroes a whole round's Spoils, harsher than the base game, where a 0-point round still leaves your running total toward 21 intact. Settle it by playing several Greedy-band Hunts and checking whether the zeroed round reads as a proportionate cost or a null round. Note that the transcription argument is weaker than it looks for every row: the printed table was tuned for a **symmetric** contest in which both players read it, and §8 establishes that half of it is now read by nobody. |
+| In-round edit budget            | How many mid-round edits, how spaced, and what they cost                       | **Undecided** — §3 proposal, blocked                                                                            | Only live if the two-layer split in §3 is adopted. The blocking question is not the budget but the **cost**: without one, "pump the card I am about to win with" is a dominant strategy. §3 names three candidate costs and recommends trying the shared-pool version first, since it introduces no currency. Once a cost exists, settle the budget by recomputing the ceiling — four edits at +3 moves it from 108 to 180 — and checking the Demand curve still crosses it inside the run length. |
+| Negative card values            | Whether Forage may set a card's value below zero                               | **Undecided** — §6 exit (b)                                                                                     | The alternative to re-tuning the Humble multiplier, and it composes with rather than replaces it. Rules added: zero — it is §3's existing value edit with the sign flipped. Settle it by counting how often a player declines a trick they could win; if the answer is never, the deck does not yet hold enough cards worth dodging and the Poison 8s alone (3 of 33) are too thin to carry it.                                                                                                                                                                                                                                                                                             |
+| Plain-card score ceiling — 108  | `max(2k × f(k)) = 18 × 6`, at `k = 9`                                          | Derived arithmetic, not tuning (§3)                                                                             | Already settled as arithmetic; it moves only if the round length (13 tricks), the top Standing multiplier (×6), or the card-value rule two rows below is revised. **Corrected from an earlier figure of 156**, which multiplied the maximum of Spoils by the maximum of Standing as though they were independent — capturing all 26 cards means winning all 13 tricks, which is Greedy ×0. The highest `k` still paying ×6 is 9.                                                        |
 | Encounters per run              | A range, not a number                                                          | **Undecided**                                                                                                   | Play a full run at a guessed length and count how many encounters it takes an additive-only build (one that only raises Spoils) to first miss its Demand (§3, §7). The honest run length is roughly that count plus one, so a poorly-built run discovers the lesson before it overstays it.                                                                                                                                                                                             |
-| Demand base and growth rate     | Shape only — rising, and crossing 156 at some point                            | **Undecided**                                                                                                   | `balatro.md` Part 3's first suggestion, adapted: plot the Demand curve against the best achievable score for a build that only raises Spoils, and check whether it dies at a _predictable_ encounter (the lesson is being taught) or a random one (it is noise).                                                                                                                                                                                                                        |
-| Forage budget per encounter     | How many edits, and whether they are chosen or drafted                         | **Undecided**                                                                                                   | Track how many Forage edits it actually takes to keep a build's Spoils or Standing pace with the chosen Demand curve, once that curve exists. A budget much larger than that count removes scarcity; a budget much smaller makes every encounter unwinnable regardless of play.                                                                                                                                                                                                         |
-| Card base values                | Whether a plain card is worth 1 or its printed rank                            | **Undecided**                                                                                                   | Recompute the 156 ceiling under both rules (`26 × 6` at value 1, versus a rank-weighted ceiling) and check which keeps the Demand's eventual 156-crossing point inside the encounters-per-run range chosen above. This is the highest-leverage number in the document, because §3's entire ceiling argument is stated in terms of it.                                                                                                                                                   |
+| Demand base and growth rate     | Shape only — rising, and crossing 108 at some point                            | **Undecided**                                                                                                   | `balatro.md` Part 3's first suggestion, adapted: plot the Demand curve against the best achievable score for a build that only raises Spoils, and check whether it dies at a _predictable_ encounter (the lesson is being taught) or a random one (it is noise).                                                                                                                                                                                                                        |
+| Forage budget per encounter     | **4 edits** (developer decision, 2026-08-09). Chosen vs drafted still undecided | **Decided, provisional**                                                                                        | Set to 4 over an earlier 2 for three reasons, all arithmetic. **Volume:** a 5-encounter run gives 4 Forage opportunities, so 4 edits is 16 edits across a 33-card deck — roughly half the deck touched, which is a build; at 2 it was 8, which is not. **Variance:** the 21% dead-edit rate in §3 does not change, but its impact per round halves — one dead edit out of 4 costs a quarter of a Forage rather than half. **Humble reachability:** 4 edits can be stacked on one card for +12 in a single Forage, which is what makes §6's concentrate-vs-spread fork playable rather than theoretical. Cost: zero — this row already existed. **What to watch, per this row's original warning:** a budget much larger than needed removes scarcity. The test is whether the player ever leaves an edit unspent or regrets how one was spent. If that never happens, 4 is too many. |
+| Card base values                | Whether a plain card is worth 1 or its printed rank                            | **Undecided**                                                                                                   | Recompute the ceiling under both rules — 108 at value 1 (`18 × 6`, fixed), versus roughly 918 best-case and ~650 typical under rank weighting, which is deal-dependent rather than fixed — and check which keeps the Demand's crossing point inside the encounters-per-run range chosen above. This is the highest-leverage number in the document, and for a second reason §3 now states: at value 1, Spoils is fully determined by trick count, so `Spoils × Standing` collapses to the single-variable function `2k × f(k)` and the equation has no genuine second axis. Rank weighting is what makes the two terms independent. |
 
-Two rows are not marked undecided, and each says plainly why: the Standing multipliers are
-**transcribed**, copied from the base game's own printed table rather than invented, so there was
-nothing to choose; the 156 ceiling is **derived**, an arithmetic consequence of the round length and
-the top multiplier rather than a value picked for feel. Every other row is a first-pass illustration
+**One row is not marked undecided**, and it says plainly why: the 108 ceiling is **derived**, an
+arithmetic consequence of the round length and the top multiplier rather than a value picked for
+feel. Note that "derived" is not the same as "unreviewed" — it was previously stated as 156, and the
+error survived because a derivation was trusted rather than enumerated.
+
+The Standing multipliers row used to sit alongside it on the grounds that a **transcribed** value
+involves no choice. That reasoning has been withdrawn. Transcription answers "where did this number
+come from," not "is it right for this game" — and §6 shows that at least one of the six is not,
+because the printed table assumes a symmetric contest that no longer exists. **A number copied from
+a source whose assumptions the design has changed is not a settled number; it is an unexamined
+one.** Every other row is a first-pass illustration only, and none of them may be treated as a
+conclusion this document reached. Every other row is a first-pass illustration
 only, and none of them may be treated as a conclusion this document reached.
 
 ---
@@ -541,6 +888,7 @@ shapes:
 | **Standing**   | multiplier from the trick-count band | the multiplicative term                   |
 | **the Demand** | the encounter's score target         | rises per encounter                       |
 | **Forage**     | the between-encounter deck edit      | the outer loop's only verb                |
+| **Snare**      | the in-round edit, on cards in hand  | **proposed, not decided** — §3. Placeholder name; the layer it names is the developer's to accept before the name matters |
 
 This table is **first-pass and the developer's to red-line** — naming is a copy judgement, not a
 decision this document is entitled to make on its own authority.
@@ -587,8 +935,11 @@ the one that matters.
   coded as a single-card ability (`abilities.ts`).
 - Trick resolution and a full play orchestration (`resolveTrick.ts`, `playCard.ts`).
 - `scoring.ts`'s `tricksToPoints` — this **is**, verbatim, the Standing multiplier table §1 cites
-  (≤3 tricks → ×6, 4 → ×1, 5 → ×2, 6 → ×3, 7–9 → ×6, ≥10 → ×0). Nothing needs inventing for Standing;
-  it is already coded to the exact bands this document builds on.
+  (≤3 tricks → ×6, 4 → ×1, 5 → ×2, 6 → ×3, 7–9 → ×6, ≥10 → ×0). The _band boundaries_ need nothing
+  invented; the _values_ are now a live decision per §6 and §9, so the slice should read them from a
+  configurable table rather than hard-code the printed six. That is a smaller change than it sounds
+  — one lookup, same shape — but it has to be true from the first commit, because the slice is where
+  the Humble-multiplier question gets measured.
 - A working CPU (`cpuPlayer.ts`) that only ever plays legal moves, favours winning a trick cheaply
   over winning it expensively, and already resolves the Fox and Woodcutter ability choices.
 
@@ -639,10 +990,13 @@ a finished argument, not a work in progress.
 
 - **The Standing multiplier is not a new component — it is `scoring.ts`'s `tricksToPoints`, already
   coded to the exact bands §1 cites, doing a second job for free.** The base game's own end-of-round
-  table becomes the multiplicative term of the run's one equation at zero new numbers and, per §11's
-  inventory, zero new code. That is Rosewater's lesson #17 (you don't have to change much to change
-  everything) demonstrated rather than argued for.
-- **The 156 ceiling forces the outer loop to edit an input rather than hand over a bonus, and the
+  table becomes the multiplicative term of the run's one equation at, per §11's inventory, near-zero
+  new code. That is Rosewater's lesson #17 (you don't have to change much to change everything)
+  demonstrated rather than argued for. **Qualified since drafting:** the claim holds for the band
+  _structure_, which is what makes the strength real. It no longer holds for the band _values_ — §6
+  shows the printed Humble ×6 leaves that band dominated, so at least one number is the design's to
+  own rather than to inherit.
+- **The 108 ceiling forces the outer loop to edit an input rather than hand over a bonus, and the
   force is arithmetic, not a rule someone wrote.** §3 derives it from the round length and the
   printed multiplier alone; nothing needed to be designed to make Forage the only lever that keeps
   working past a point. A design that instead let a shop sell +10 Spoils would have needed a second
