@@ -230,13 +230,13 @@ _Deferred_).
 
 - **Vanguard-board-aware or search-based CPU play.** `chooseCpuMove` (SCRUM-26) treats every War
   Council round identically regardless of Vanguard board state or Muster need, and does no
-  lookahead/determinized search — both explicitly out of scope per the epic and
-  `.docs/design/hybrid-concept.md`, which names Vanguard-awareness as a later difficulty tier.
+  lookahead/determinized search — both explicitly out of scope per the epic and the hybrid
+  concept document (retired on DLR-45), which named Vanguard-awareness as a later difficulty tier.
 - **CPU decision-making for the Clash (Vanguard) phase.** `chooseCpuMove` only ever picks a War
   Council card; nothing in this module or `src/vanguard/` chooses a Clash action.
 - **Treasure's (rank 7) mid-round point bonus.** The card is an ordinary playable card here — no
   special ability, no scoring bonus. Whether/how Treasure points feed Muster is an explicitly open
-  design question (`.docs/design/hybrid-concept.md` → _Open questions_) this ticket was told not to
+  design question (the hybrid concept document's _Open questions_, retired on DLR-45) this ticket was told not to
   resolve.
 - **Dealer alternation across a battle.** `dealRound` takes `dealer` as an input parameter; deciding
   what value to pass across a sequence of rounds (reset vs. continue per city/battle) belongs to the

@@ -2,7 +2,7 @@
 
 **Scope.** Everything in this file is **structural** — it is craft technique and projection geometry, not a versioned API. The 2:1 ratio, the walk-cycle key poses, and the named shading failures have been stable for thirty years and will not drift. Nothing here should ever be replaced by a live documentation lookup.
 
-**Owned elsewhere:** the project's chosen projection, base resolution, tile size, palette, light direction, and outline policy are the art bible in `SKILL.md` Phase 1 and `art/palette.mjs`. This file explains *how* each option works; it does not decide which one this project uses.
+**Owned elsewhere:** the project's chosen projection, base resolution, tile size, palette, light direction, and outline policy are the art bible in `SKILL.md` Phase 1 and, where a project has recorded them, its `art/palette.mjs`. This project has no art tree at present — the previous one was retired on DLR-45. This file explains *how* each option works; it does not decide which one this project uses.
 
 ---
 

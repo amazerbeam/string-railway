@@ -11,8 +11,8 @@ everything the root `CLAUDE.md` → _Game naming_ places "within a round of the 
 connection — the win condition). Per `plan.md`'s Assumptions, these three concepts are deliberately
 _not_ split into separate folders (`src/muster/`, `src/clash/`) — they all belong here, inside
 `src/vanguard/`, once implemented. Design rationale for the mechanic itself lives in
-`.docs/design/skirmish-board-replacement.md` and `.docs/game_rules/vanguard.md` — this file
-documents only what is actually built.
+`.docs/game_rules/vanguard.md` — this file documents only what is actually built. (The fuller
+design-rationale document was retired with the old direction on DLR-45.)
 
 As of SCRUM-21, this module is the **board engine**: hex-grid coordinate math, board construction,
 a connected-network query, and the three Clash actions (Expand, Overwrite, Reinforce) with their
@@ -178,7 +178,7 @@ Deferred).
 rather than a runtime clamp — there is no code path in which a side's Muster can compute to less
 than `MUSTER_BASELINE`, since the baseline term is never subtracted from or conditioned, only added
 to. This is the concrete fix for the old Hex board's zero-Muster ambush problem
-(`.docs/design/concept-critique.md` Problem 1): the losing side always keeps its full baseline move
+(named "Problem 1" in a design critique retired on DLR-45): the losing side always keeps its full baseline move
 budget, it just doesn't get the bonus.
 
 Winner detection is a plain three-way comparison of the two supplied numbers (`>` / `<` / neither)
@@ -293,7 +293,7 @@ filtering one:
    ranking would instead favor an Expand gap-jump past an adjacent blocking enemy token every time (since
    `EXPAND_RANGE` (2) always reaches one hex closer to a distant base than overwriting an adjacent
    blocker does), which would never reproduce "prefer Overwrite when it's blocking the shortest
-   path" — grounded in `skirmish-board-replacement.md`'s own rule that a Breach-qualifying connection
+   path" — grounded in the design rule that a Breach-qualifying connection
    must be gap-free, so an unfilled gap is worth less than clearing a blocker even when it lands
    nominally closer.
 3. **Dry-run validation** (`firstValidated`): walks the ranked list, calling
@@ -366,7 +366,7 @@ pending the stalemate-handling ticket noted in Deferred below.
   untouched by SCRUM-24; no `round` counter, no `activeSide`, no `winner` field lives there yet. A
   future orchestrator ticket owns supplying `roundNumber` to `openingSideForRound` and reading
   `ClashState.status === Breached` to end a battle.
-- **Treasure 7s feeding the Muster** — named an open question in `.docs/design/hybrid-concept.md`;
+- **Treasure 7s feeding the Muster** — named an open question in the hybrid concept document retired on DLR-45;
   `convertScoreToMuster` implements the end-of-round score band only, not resolved by SCRUM-22.
 - **Any multi-round or `BattleState`-level orchestration** — this module's surface is a single,
   already-constructed board, the three actions applicable to it, and one in-memory exchange over a
@@ -385,7 +385,7 @@ pending the stalemate-handling ticket noted in Deferred below.
   by SCRUM-42. Reinforcement-as-numeric-stack (vs. a simpler boolean) and Overwrite resetting
   captured fortification to 0 (vs. inheriting
   it) are both judgement calls flagged for sign-off in `plan.md`'s Risks section. `MUSTER_BASELINE
-  = 7` (SCRUM-22, transcribed from `skirmish-board-replacement.md`'s own illustrative figure) and
+  = 7` (SCRUM-22, transcribed from an illustrative figure in the design document retired on DLR-45) and
   `MUSTER_BONUS = 3` (SCRUM-22, an invented placeholder with no design-document figure — the
   least-grounded number in the module) both await first-playtest retuning; whether the bonus should
   scale with score margin instead of staying flat, and whether a tied score band should really

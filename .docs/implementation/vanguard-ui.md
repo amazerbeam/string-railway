@@ -472,7 +472,7 @@ openingSideForRound(round))` — and only calls `scoreRound` once the trick spli
   or observes_:
   - Every custom-property value in `vanguard.css` is a one-line retune, transcribed from the
     approved mockup: `--vg-player`/`--vg-player-deep` and `--vg-cpu`/`--vg-cpu-deep` (purple
-    Player / green CPU are fixed by `skirmish-board-replacement.md`; these exact shades are not),
+    Player / green CPU were fixed by the design document retired on DLR-45; these exact shades are not),
     `--vg-defense`, `--vg-empty`, `--vg-empty-edge`, `--vg-selectable`, `--vg-reinforce-mark`,
     `--vg-board-max`'s `clamp()` bounds, and `--vg-radius`.
   - Whether the reinforced marker reads clearly as "+1" in its mockup form (a parchment bar across

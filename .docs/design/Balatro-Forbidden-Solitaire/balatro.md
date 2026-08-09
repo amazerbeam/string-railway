@@ -4,7 +4,7 @@ Researched 2026-08-09. Two parts: **Part 1** is what the game actually does (num
 citable). **Part 2** is what those rules *produce* — the structural reading, with the arithmetic
 shown.
 
-**Scope and ownership.** `.docs/design/old-design/design-principles.md` §8 already owns Balatro's
+**Scope and ownership.** `.docs/design/design-principles.md` §8 already owns Balatro's
 *transferable lessons* (growth class, escalation-by-rule-break, the hidden-preview problem, familiar
 substrate as a rules subsidy) and its Forbidden Solitaire notes. This file does not restate them —
 it holds the rules those lessons rest on, and adds the findings §8 does not carry: the round
@@ -271,7 +271,7 @@ the pattern is mastered. Balatro's central pattern is a *growth class*, not a ca
 > `(95 + 40) × (12 + 22) × 3` = **13,770.** Clears.
 
 Same cards, same hand, same skill — the run lives or dies on whether one term is additive or
-multiplicative. Nothing in the game says this. `.docs/design/old-design/design-principles.md` §8
+multiplicative. Nothing in the game says this. `.docs/design/design-principles.md` §8
 covers this as the transferable device; the point to add here is that it is delivered with **zero
 extra rules**. The escalating requirement and the two growth classes were already there.
 
@@ -511,4 +511,4 @@ The cheapest things that would settle the claims above:
 - [Mark Brown / GMTK — Balatro's "cursed" design problem](https://gmtk.substack.com/p/balatros-cursed-design-problem)
 - [Matt Greer — Balatro score growth](https://www.mattgreer.dev/blog/balatro-score-growth/)
 - [Steam guide — score calculation](https://steamcommunity.com/sharedfiles/filedetails/?id=3169032575)
-- Design frameworks and the Forbidden Solitaire notes: `.docs/design/old-design/design-principles.md` §1–§8
+- Design frameworks and the Forbidden Solitaire notes: `.docs/design/design-principles.md` §1–§8

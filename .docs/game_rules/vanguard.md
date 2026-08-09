@@ -4,8 +4,10 @@ An original design, not adapted from an external source — the board-layer half
 Fox in the Forest (**the War Council**), replacing Hex. Two players grow a network of tokens
 outward from their own base across a shared hex-grid board.
 
-Design rationale and open questions:
-[`../design/skirmish-board-replacement.md`](../design/skirmish-board-replacement.md).
+The fuller design rationale and open-questions document was retired with the old design direction
+(DLR-45). This file is now the standalone rules record for the retained `src/vanguard/` POC — it is
+not a description of where the game is going. The live design is
+[`../design/Balatro-Forbidden-Solitaire/hybrid-design.md`](../design/Balatro-Forbidden-Solitaire/hybrid-design.md).
 
 ---
 
@@ -77,6 +79,5 @@ detour) or reclaimed later by paying the Overwrite cost.
 - Whether there's any cost to holding ground, or a way to withdraw and redeploy a token later.
 - The win-condition name itself ("the Breach") is proposed, not confirmed.
 
-Full rationale for all of the above:
-[`../design/skirmish-board-replacement.md`](../design/skirmish-board-replacement.md) → "Open, not
-yet decided".
+Full rationale for all of the above lived in the design document's "Open, not yet decided" section,
+retired on DLR-45. The items above remain open and are recorded here as the POC's own open list.

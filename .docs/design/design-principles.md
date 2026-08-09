@@ -4,8 +4,9 @@ Research notes gathered from published designer interviews, GDC talks and design
 so they can be _used_ rather than admired. Sources are listed at the bottom; every claim here is
 attributable to one of them.
 
-This is a lens collection, not a rulebook. Applied to the current concept in
-[`concept-critique.md`](./concept-critique.md).
+This is a lens collection, not a rulebook. The concept critique it was originally written against
+was retired with the old design direction (DLR-45); §6's checklist is now run against the live
+design in [`Balatro-Forbidden-Solitaire/hybrid-design.md`](./Balatro-Forbidden-Solitaire/hybrid-design.md) §12.
 
 ---
 
@@ -310,8 +311,9 @@ line. A designed problem with one solution is a puzzle; the second time through,
 Foxtrot's co-op sequel couples tricks to a **tug-of-war path**: trick outcomes move a shared pawn
 along a track, power cards manipulate direction and distance, and overshooting in either direction
 loses ("lost in the forest"). Worth knowing before reinventing it — the reviewed verdict is that
-the spatial layer generated no tension (2.5/5). The diagnosis matches the one that killed the lane
-draft in `skirmish-board-replacement.md`: a single axis of contest has nowhere to be spread thin.
+the spatial layer generated no tension (2.5/5). The diagnosis matches the one that killed an earlier
+lane-draft board design in this project (its design document was retired on DLR-45): a single axis
+of contest has nowhere to be spread thin.
 
 ### Card-driven wargames — the dual-use card
 

@@ -4,28 +4,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state — read this first
 
-**This is a Vite + React 19 + TypeScript prototype scaffold with no application code.** `src/` holds `main.tsx`, `App.tsx` (a placeholder component) and `styles/global.css`. There is one placeholder spec at `src/__tests__/smoke.test.ts`, which exists solely to keep `npm test` meaningful on an otherwise-empty suite.
+**This is a Vite + React 19 + TypeScript prototype with a working POC on disk.** `src/` holds 142 source files across six modules — `app/` (React screens and the app shell), `battle/` (battle-loop orchestration), `vanguard/` (the hex-board engine), `warCouncil/` (the card-layer engine), `styles/`, and `__tests__/` — plus `App.tsx` and `main.tsx` at the root. 54 of those files are tests.
 
-A previous prototype lived in this repository and was removed on 2026-08-01. It is fully recoverable — nothing was force-pushed, no branch was deleted, and no history was rewritten. Any file from it can be restored with:
+**The POC implements the project's previous design direction.** The live design is `.docs/design/Balatro-Forbidden-Solitaire/hybrid-design.md`. The POC code and its per-module record in `.docs/implementation/` are retained as a working reference — not as a description of where the game is going. The superseded direction's design documents, its art tree, and its build contracts were retired on DLR-45.
+
+Everything removed is fully recoverable — nothing was force-pushed, no branch was deleted, and no history was rewritten. Any file can be restored with:
 
 ```
-$env:Path = "C:\Program Files\Git\cmd;$env:Path"; git show origin/master:<path>
+$env:Path = "C:\Program Files\Git\cmd;$env:Path"; git show <commit>:<path>
 ```
 
-commit `2cf7ec7` on `origin/master` is the last commit before removal.
-
-**Do not describe an architecture the next prototype has not chosen.** No subfolder structure, module boundary, or configuration surface exists yet beyond the three files named above — those are decisions for whatever gets built here next, not facts to assume from a deleted predecessor.
+commit `2cf7ec7` on `origin/master` is the last commit before the 2026-08-01 removal of an earlier prototype.
 
 `.claude/contract/` holds the plans in flight; finished ones move to `archive/`. `.claude/lessons/` collects corrections logged via `/fb-issue`.
 
-## Game naming
+## Game naming — the retained POC's vocabulary
 
-The hybrid's two component games have in-fiction names — use them everywhere (design docs, code,
-conversation) instead of the parent-game names: the Fox in the Forest card layer is the **War
-Council**; the hex-board network-growth mechanic that replaces Hex is **The Vanguard**. Within a
-round of the Vanguard: **Muster** (the move budget), **The Clash** (the action exchange), **The
-Breach** (a solid base-to-base connection — the win condition). This is a naming pointer, not a
-rules restatement — the mechanic itself is owned by `.docs/design/skirmish-board-replacement.md`.
+The retained POC's two component games have in-fiction names — use them when working on that code
+or its implementation docs, instead of the parent-game names: the Fox in the Forest card layer is
+the **War Council**; the hex-board network-growth mechanic that replaces Hex is **The Vanguard**.
+Within a round of the Vanguard: **Muster** (the move budget), **The Clash** (the action exchange),
+**The Breach** (a solid base-to-base connection — the win condition). The rules record is
+`.docs/game_rules/vanguard.md`; the fuller design rationale was retired on DLR-45. **The live design
+(`.docs/design/Balatro-Forbidden-Solitaire/hybrid-design.md`) does not use this vocabulary.**
 
 ## The single-source-of-truth rule
 
@@ -35,7 +36,7 @@ This project is deliberately organised so each fact is stated once. When somethi
 |---|---|
 | Where code lives, runner commands, developer-owned work, correctness traps | `.claude/workflow/web-project.md` |
 | Where plans live, slug grammar, how a command picks *which* plan | `.claude/workflow/plan-resolution.md` |
-| Jira status vocabulary, what each `SCRUM` status means, which transitions the `/fb-*` commands automate | `.claude/skills/management-jira/SKILL.md` → *The SCRUM status model* |
+| Jira status vocabulary, what each board status means, which transitions the `/fb-*` commands automate | `.claude/skills/management-jira/SKILL.md` → its status-model section |
 | How to write React/TypeScript here — conventions, tunables, testing posture | `.claude/skills/react-frontend/SKILL.md` + its `references/engineering-standards.md` |
 | How a game screen is laid out and operated — viewport shell, zoning, interaction cost, navigating a collection of controls | `.claude/skills/game-ux/SKILL.md` + its `references/full-viewport-layout.md` |
 | Game design frameworks, designer research, the critique checklist | `.docs/design/design-principles.md` |
@@ -91,7 +92,7 @@ The pipeline is the substantive structure in this repo. It is not a suggestion �
 **Load-bearing properties:**
 
 - `tasks.md` owns plan status via its first `^Status:` line (`PLANNED` / `IN PROGRESS` / `COMPLETE` / `BLOCKED`). There is no index or registry — a second source of truth drifts.
-- Slugs take the **Jira key** when the work has one (`SCRUM-8-scaffold-vite-app`) and the **date branch** (`YYYY-MM-DD-kebab-title`) otherwise. `specs` and `archive` are reserved folder names.
+- Slugs take the **Jira key** when the work has one (`DLR-45-retire-old-design-documentation`) and the **date branch** (`YYYY-MM-DD-kebab-title`) otherwise. `specs` and `archive` are reserved folder names.
 - **File paths are owned by tasks, not by `plan.md`.** Each `### Task N:` carries its own `**Files:**` block (Create / Modify / Delete / Test / Config) — that block is the authoritative file list for the Implementer, and nothing outside its union may be touched.
 - **Reviewers never run between phases.** Per-phase review was deliberately removed; the Implementer carries quality through all phases, writing and running tests as tasks dictate.
 - The Implementer runs only scoped Vitest runs plus `npm run typecheck`, batched into one block per phase. **The unfiltered suite and the production build belong to QA alone**, once, at the end.

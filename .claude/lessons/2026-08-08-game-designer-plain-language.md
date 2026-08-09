@@ -2,7 +2,7 @@
 
 ## 2026-08-08 — Framework shorthand used without explanation; findings lacked worked examples
 
-**What Claude did:** While critiquing `.docs/design/us-civil-war-game-framing.md` under the
+**What Claude did:** While critiquing `us-civil-war-game-framing.md` (a design document retired on DLR-45) under the
 `game-designer` skill, cited frameworks and precedents by shorthand without unpacking them — e.g.
 "a real Rosewater #17 win" with no statement of what lesson #17 says, and "the Thronebreaker
 rebuttal answers a different question" without first explaining what Thronebreaker is, what the

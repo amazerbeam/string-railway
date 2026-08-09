@@ -17,10 +17,8 @@ design choice this document makes or is free to re-open.
   toll-booth argument this design is built to avoid.
 - [`../../game_rules/fox-in-the-forest.md`](../../game_rules/fox-in-the-forest.md) — the base game:
   the trick-count table, the odd-rank abilities, the decree/trump rule, the follow-suit rule.
-- [`../old-design/design-principles.md`](../old-design/design-principles.md) — the frameworks and
-  the §6 critique checklist this document is run against in §12. Note the path: **not**
-  `../design-principles.md`, which does not exist on disk even though `CLAUDE.md` and the
-  `game-designer` skill both point at it.
+- [`../design-principles.md`](../design-principles.md) — the frameworks and
+  the §6 critique checklist this document is run against in §12.
 
 ---
 
@@ -30,8 +28,7 @@ design choice this document makes or is free to re-open.
 Score = Spoils × Standing
 ```
 
-evaluated once at the end of each 13-trick round (**the Hunt** — see §2 for why the round is not
-called "War Council" here).
+evaluated once at the end of each 13-trick round (**the Hunt** — §10 carries the full vocabulary).
 
 **Spoils** is the summed value of the cards you captured in tricks. It is additive: every card you
 take adds to it, and nothing about the term itself punishes taking more.
@@ -853,36 +850,16 @@ only, and none of them may be treated as a conclusion this document reached.
 
 ---
 
-## 10. Relationship to the Vanguard direction
+## 10. Vocabulary
 
-**The position: independent alternative.** This design neither supersedes DLR-18 (the single-city
-War Council → Vanguard battle loop) nor depends on it, and the two are not sequential. DLR-44's own
-ticket calls them "alternative directions, not sequential work," and this document adopts that
-framing rather than re-arguing it. Nothing about building this design requires the Vanguard
-direction to ship, stall, or be abandoned first, and nothing about the Vanguard direction requires
-this one to happen at all.
-
-**The shared-work note.** DLR-26, filed under the Vanguard epic, is a heuristic CPU card player for
-that direction's War Council layer. Both directions need a Fox in the Forest trick-taking CPU — this
-design's Quarry (§4) and DLR-26's opponent are the same category of problem, hidden hand and all —
-so whichever direction proceeds first, that CPU work is a candidate to share rather than duplicate.
-It is not, however, a candidate to share unmodified: DLR-26's opponent plays to win a symmetric
-scoring contest, while the Quarry never scores at all and instead executes one printed round-long
-rule-break (§4, §5), so the two would share card-play heuristics, not an objective function.
-`src/warCouncil/` already ships a tested rules engine — deck, deal, legal moves, abilities, trick
-resolution, scoring, and a `cpuPlayer.ts` — and §11 sizes this design's own smallest slice against
-that engine directly, read-only, rather than assuming a clean build.
-
-**The naming position.** This direction names its card layer afresh — **the Hunt** — rather than
-inheriting "War Council," because `CLAUDE.md` → "Game naming" defines War Council specifically as
-the Fox in the Forest layer _of the Vanguard hybrid_, and reusing the name would carry that
-direction's framing (Muster, the Clash, the Breach) into a design that has none of those things. The
-vocabulary below is the complete set this document defines, reproduced from `plan.md` Part 2 → Data
-shapes:
+Every term this document defines, and nothing else — the complete set, reproduced from `plan.md`
+Part 2 → Data shapes. The framing name is the round itself: a Hunt, run against the Quarry §4 casts
+from the deck's own odd ranks. Everything else names a term of §1's equation or a verb that edits
+one.
 
 | Term           | Is                                   | Note                                      |
 | -------------- | ------------------------------------ | ----------------------------------------- |
-| **the Hunt**   | one 13-trick round                   | replaces "War Council" for this direction |
+| **the Hunt**   | one 13-trick round                   | the inner loop — §1's equation is scored once per Hunt |
 | **the Quarry** | the CPU opponent for one encounter   | a character from the deck's odd ranks     |
 | **Spoils**     | summed value of cards captured       | the additive term                         |
 | **Standing**   | multiplier from the trick-count band | the multiplicative term                   |
@@ -893,11 +870,11 @@ shapes:
 This table is **first-pass and the developer's to red-line** — naming is a copy judgement, not a
 decision this document is entitled to make on its own authority.
 
-One consequence is stated and deliberately not acted on: if this naming is accepted, `CLAUDE.md`'s
-naming pointer needs a follow-up edit so it no longer implies "War Council" covers every Fox in the
-Forest layer in the repository. **This document does not make that edit.** It is out of scope for
-this contract, and propagating the naming decision into `CLAUDE.md` is the developer's to authorise
-separately.
+One consequence is stated and deliberately not acted on: if this naming is accepted, the
+repository's own naming pointer in `CLAUDE.md` needs a follow-up edit so that this direction's
+vocabulary is the one a reader of a Fox in the Forest layer is sent to. **This document does not
+make that edit.** It is out of scope for this contract, and propagating the naming decision into
+`CLAUDE.md` is the developer's to authorise separately.
 
 ---
 
@@ -974,16 +951,17 @@ Standing, the Demand, or Forage repairs that, because all three operate one leve
 trick-by-trick decision the kill criterion tests. That is the condition for abandoning this
 direction rather than tuning it.
 
-**One line on sizing basis.** This slice is sized against `src/warCouncil/` as it exists today. If
-the developer instead wants it sized as though nothing exists — for instance because this direction
-would start a clean prototype rather than build on the Vanguard's engine — this section changes
-materially. That is the developer's call, flagged in `plan.md`'s Risks, not this document's to make.
+**One line on sizing basis.** This slice is sized against the trick-taking engine already on disk,
+as it exists today. If the developer instead wants it sized as though nothing exists — for instance
+because this direction would start a clean prototype rather than build on that engine — this section
+changes materially. That is the developer's call, flagged in `plan.md`'s Risks, not this document's
+to make.
 
 ---
 
 ## 12. Critique
 
-Run against `.docs/design/old-design/design-principles.md` §6's fourteen checks, over §1–§11 read as
+Run against `.docs/design/design-principles.md` §6's fourteen checks, over §1–§11 read as
 a finished argument, not a work in progress.
 
 ### What is genuinely strong

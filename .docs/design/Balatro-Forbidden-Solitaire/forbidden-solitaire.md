@@ -11,7 +11,7 @@ section 12 lists the questions that are the developer's to answer before any of 
 
 The framework vocabulary used in section 10 — Meier's interesting decisions, Knizia's scoring-first
 method, Koster's depth budget, Cook's loops, Puzzle Quest's two-way coupling — is owned by
-[`../old-design/design-principles.md`](../old-design/design-principles.md). That file already carries
+[`../design-principles.md`](../design-principles.md). That file already carries
 a short §8 entry on this game and on Balatro. This document is the detail underneath it; it does not
 restate the frameworks.
 
@@ -380,4 +380,4 @@ Substrate:
 - [Anytime Games — TriPeaks rules](https://anytime.games/tri-peaks-solitaire-rules/)
 
 Frameworks referenced in §10 are sourced in
-[`../old-design/design-principles.md`](../old-design/design-principles.md) §1–§8.
+[`../design-principles.md`](../design-principles.md) §1–§8.
