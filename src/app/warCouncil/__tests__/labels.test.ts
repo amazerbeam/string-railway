@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { IllegalMoveReason, Suit } from '../../../warCouncil'
-import { cardAccessibleName, ILLEGAL_MOVE_MESSAGE, RANK_NAME, SUIT_NAME } from '../labels'
+import { DemandOutcome, IllegalMoveReason, QuarryIntentStance, Suit } from '../../../warCouncil'
+import { StandingBandName } from '../../../hunt'
+import {
+  cardAccessibleName,
+  DEMAND_OUTCOME_VERDICT,
+  ILLEGAL_MOVE_MESSAGE,
+  intentAccessibleName,
+  RANK_NAME,
+  STANCE_PHRASE,
+  STANDING_BAND_NAME,
+  SUIT_NAME,
+} from '../labels'
 
 describe('cardAccessibleName', () => {
   it('names an ability-bearing rank', () => {
@@ -29,5 +39,49 @@ describe('the label maps', () => {
     for (const reason of Object.values(IllegalMoveReason)) {
       expect(ILLEGAL_MOVE_MESSAGE[reason]).toBeTruthy()
     }
+  })
+
+  it('carries a stance phrase for every QuarryIntentStance', () => {
+    for (const stance of Object.values(QuarryIntentStance)) {
+      expect(STANCE_PHRASE[stance]).toBeTruthy()
+    }
+  })
+
+  it('carries a display name for every Standing band', () => {
+    for (const name of Object.values(StandingBandName)) {
+      expect(STANDING_BAND_NAME[name]).toBeTruthy()
+    }
+  })
+
+  it('carries a verdict for both Demand outcomes', () => {
+    for (const outcome of Object.values(DemandOutcome)) {
+      expect(DEMAND_OUTCOME_VERDICT[outcome]).toBeTruthy()
+    }
+  })
+})
+
+describe('intentAccessibleName', () => {
+  it('names the suit and the stance for a live intent', () => {
+    expect(
+      intentAccessibleName({ suit: Suit.Bells, stance: QuarryIntentStance.Pressing }, false),
+    ).toBe('The Quarry will press with Bells.')
+  })
+
+  it('prefixes with "If you lead that card" when speculative', () => {
+    expect(
+      intentAccessibleName({ suit: Suit.Keys, stance: QuarryIntentStance.Ducking }, true),
+    ).toBe('If you lead that card: The Quarry will duck with Keys.')
+  })
+
+  it('returns a distinct sentence for null in each mode', () => {
+    const live = intentAccessibleName(null, false)
+    const speculative = intentAccessibleName(null, true)
+    expect(live).not.toBe(speculative)
+    expect(live).toBeTruthy()
+    expect(speculative).toBeTruthy()
+  })
+
+  it('omits the stance without crashing when stance is absent (suit-only fidelity)', () => {
+    expect(intentAccessibleName({ suit: Suit.Moons }, false)).toBe('The Quarry will play Moons.')
   })
 })

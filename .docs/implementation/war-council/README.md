@@ -131,12 +131,12 @@ reducer.
   by DLR-47; a later ticket in the DLR-46 epic (the Hunt run loop) decides what, if any, run-level
   context ought to feed the CPU's decisions, and this module's public surface is unaffected either
   way — `chooseCpuMove` takes only a `RoundState` today.
-- **Nothing renders the intent telegraph.** DLR-52 makes the Quarry's next move previewable —
-  `quarryIntent` and `commitQuarryMove` are exported and fully tested — but neither has a caller
-  outside its own test file, and `src/app/**` still advances the CPU through `roundReducer.ts`'s
-  `advanceCpu` rather than through the commit step. Showing the telegraph on screen, and any pacing
-  or animation of the reveal, is T7/T15 in the DLR-46 epic. Until then the split is provable only
-  under Vitest.
+- **The intent telegraph renders, but its pacing is unstyled.** DLR-53 gave `quarryIntent` and
+  `commitQuarryMove` their first production callers: the Hunt screen reads the intent every render,
+  and `roundReducer.ts` now commits the Quarry's *lead* through `commitQuarryMove` (its
+  `advanceQuarryLead` path) while still using `chooseCpuMove` for the *follow*, which needs the
+  chosen card to build the trick reveal. So DLR-52's split is live rather than provable only under
+  Vitest. What remains deferred is presentation: any pacing or animation of the reveal is T15's.
 - **`chooseCpuCard` itself is still undefended against an empty legal set.** Its internal
   `lowestCard` remains a bare `[...cards].sort(...)[0]`, returning `undefined` rather than throwing a
   meaningful error. Every path that currently reaches it is guarded by its caller — `advanceCpu`,
@@ -159,11 +159,12 @@ reducer.
   nothing here tracks score, state, or a win condition across rounds. `src/App.tsx`'s current
   restart-on-completion (DLR-47) is a placeholder, not a run loop — see
   [../app/README.md](../app/README.md)'s Deferred section.
-- **Nothing displays a Hunt score yet.** DLR-50 makes a round's outcome computable — `spoils` now
-  has a production consumer in `scoreHunt`, and `checkDemand` compares that score against a Demand
-  — but `scoreHunt`/`checkDemand` themselves have no caller outside their tests. The UI still shows
-  `scoreRound`'s per-side Standing multiplier in its "Points" column, not `Spoils × Standing`;
-  surfacing the real score, band, and Demand on screen is T7 in the DLR-46 epic.
+- **The Hunt score is displayed; the *run* around it is not.** DLR-53 wired `spoils`,
+  `resolveStanding`, `scoreHunt`, and `checkDemand` to the screen — a running ledger during play and
+  `Spoils × Standing = Score` with a cleared/missed verdict at the end (see
+  [../war-council-ui/hunt-readouts-and-telegraph.md](../war-council-ui/hunt-readouts-and-telegraph.md)).
+  `scoreRound` is deliberately still what `WarCouncilRoundResult` reports, because that payload was
+  left unchanged rather than reshaped for a run loop nobody has written.
 - **Nothing decides, stores, or advances a Demand.** `checkDemand` takes one as a parameter and
   compares it; where the number comes from and how it grows across encounters is T9's run state.
   `src/hunt`'s `DEMAND_CURVE` is still `{ base: null, growthPerEncounter: null }` and is not read

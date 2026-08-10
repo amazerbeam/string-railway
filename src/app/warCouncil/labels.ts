@@ -1,4 +1,13 @@
-import { CardRank, IllegalMoveReason, Suit, type Card } from '../../warCouncil'
+import {
+  CardRank,
+  DemandOutcome,
+  IllegalMoveReason,
+  QuarryIntentStance,
+  Suit,
+  type Card,
+  type QuarryIntent,
+} from '../../warCouncil'
+import { StandingBandName } from '../../hunt'
 
 export const SUIT_NAME: Readonly<Record<Suit, string>> = {
   [Suit.Bells]: 'Bells',
@@ -36,4 +45,43 @@ export const ILLEGAL_MOVE_MESSAGE: Readonly<Record<IllegalMoveReason, string>> =
   [IllegalMoveReason.UnexpectedAbilityChoice]: 'That card takes no choice.',
   [IllegalMoveReason.InvalidFoxExchangeCard]: 'That card is not available to exchange.',
   [IllegalMoveReason.InvalidWoodcutterDiscard]: 'That card is not available to discard.',
+}
+
+/** The verb phrase for each telegraphed stance (§4, DLR-52's QuarryIntentStance). */
+export const STANCE_PHRASE: Readonly<Record<QuarryIntentStance, string>> = {
+  [QuarryIntentStance.Leading]: 'lead',
+  [QuarryIntentStance.Pressing]: 'press with',
+  [QuarryIntentStance.Ducking]: 'duck with',
+}
+
+/** Display copy for each Standing band (§1). The multiplier is rendered beside it and is
+ *  read from the band itself, never written here. */
+export const STANDING_BAND_NAME: Readonly<Record<StandingBandName, string>> = {
+  [StandingBandName.Humble]: 'Humble',
+  [StandingBandName.Defeated]: 'Defeated',
+  [StandingBandName.Victorious]: 'Victorious',
+  [StandingBandName.Greedy]: 'Greedy',
+}
+
+/** The end-of-Hunt verdict (§11's "a visible outcome: cleared or missed"). */
+export const DEMAND_OUTCOME_VERDICT: Readonly<Record<DemandOutcome, string>> = {
+  [DemandOutcome.Cleared]: 'Demand cleared',
+  [DemandOutcome.Missed]: 'Demand missed',
+}
+
+/**
+ * The telegraph's screen-reader name (AC6). `speculative` distinguishes the live reading of
+ * the Quarry's own turn from the preview against a card the player has merely armed, so the
+ * two never sound identical to someone who cannot see the difference in the border.
+ */
+export function intentAccessibleName(intent: QuarryIntent | null, speculative: boolean): string {
+  if (intent === null) {
+    return speculative
+      ? 'The Quarry has no readable answer to that lead.'
+      : 'The Quarry has no intent to read yet.'
+  }
+  const suit = SUIT_NAME[intent.suit]
+  const phrase = intent.stance === undefined ? 'play' : STANCE_PHRASE[intent.stance]
+  const body = `The Quarry will ${phrase} ${suit}.`
+  return speculative ? `If you lead that card: ${body}` : body
 }

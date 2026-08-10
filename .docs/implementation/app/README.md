@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53
 
 ## Responsibility
 
@@ -29,8 +29,16 @@ import React, and `src/app/warCouncil/` does.
 
 | Export                  | Purpose                                                                    | File                 |
 | ------------------------ | ---------------------------------------------------------------------------- | --------------------- |
-| `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState` in, `onComplete` out     | `warCouncilMount.ts` |
+| `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState` and (since DLR-53) a required `hunt: Hunt` in, `onComplete` out | `warCouncilMount.ts` |
 | `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + derived `score` | `warCouncilMount.ts` |
+
+DLR-53 added `hunt: Hunt` — `src/hunt`'s own `{ quarry, demand }` pairing — as a **required** field.
+Required rather than optional on purpose: an optional Demand would let a caller render a Hunt with
+nothing to clear and no verdict to reach, and a required→required addition breaks every construction
+site at compile time rather than rendering `undefined` into a comparison that would silently report
+"missed" for every round. `WarCouncilRoundResult` was deliberately **not** changed — putting the
+`HuntScore` and outcome in the completion payload would be speculative shape for a run loop nobody
+has written yet.
 
 Both are type-only exports, re-exported via `export type` from `index.ts` (required by this
 project's `verbatimModuleSyntax` tsconfig setting). `src/app/warCouncil/`'s own exports —
@@ -42,21 +50,32 @@ components — are tabulated in [../war-council-ui/README.md](../war-council-ui/
 ### `App.tsx` deals directly and restarts on completion
 
 `src/App.tsx` holds exactly two pieces of state — the current round number and the currently dealt
-`RoundState` — and mounts `WarCouncilRound` (`src/app/warCouncil/WarCouncilRound.tsx`) against them
-directly, with no orchestrator in between:
+`RoundState` — plus one module-scope constant, and mounts `WarCouncilRound`
+(`src/app/warCouncil/WarCouncilRound.tsx`) against them directly, with no orchestrator in between:
 
 ```tsx
+// The slice's single encounter: one fixed Demand, one Quarry.
+const HUNT: Hunt = { quarry: { character: SLICE_QUARRY_CHARACTER }, demand: FIXED_DEMAND }
+
 const [round, setRound] = useState(1)
-const [dealt, setDealt] = useState<WarCouncilState>(() => dealRound(dealerForRound(1), Math.random))
+const [dealt, setDealt] = useState<WarCouncilState>(() =>
+  dealRound(dealerForRound(1), Math.random, SLICE_QUARRY_CHARACTER),
+)
 
 function handleComplete() {
   const next = round + 1
   setRound(next)
-  setDealt(dealRound(dealerForRound(next), Math.random))
+  setDealt(dealRound(dealerForRound(next), Math.random, SLICE_QUARRY_CHARACTER))
 }
 
-return <WarCouncilRound key={round} initialState={dealt} onComplete={handleComplete} />
+return <WarCouncilRound key={round} initialState={dealt} hunt={HUNT} onComplete={handleComplete} />
 ```
+
+`HUNT` lives at module scope because both halves are configuration constants — it holds no
+per-round state, so it cannot go stale across the `key={round}` remounts below, and it is read-only
+rather than the kind of module-level mutable state this project's conventions bar. DLR-53 also
+started passing `SLICE_QUARRY_CHARACTER` as `dealRound`'s third argument, which is what makes the
+Quarry's round-long rule-break active in the shipped app for the first time.
 
 `onComplete`'s declared type is `(result: WarCouncilRoundResult) => void`, but `handleComplete`
 takes no parameter at all rather than an unread `_result` — this project's ESLint config has no
@@ -91,7 +110,11 @@ deleted module and is unit-tested directly (`src/app/__tests__/dealerForRound.te
 
 - **No multi-round run loop.** `App.tsx`'s "deal again on completion" restart tracks no score, no
   win condition, and no state across rounds beyond dealer alternation — a later ticket in the
-  DLR-46 epic (referenced as T9/T10 on DLR-47) replaces this with the real Hunt run loop.
+  DLR-46 epic (referenced as T9/T10 on DLR-47) replaces this with the real Hunt run loop. DLR-53
+  narrowed the gap without closing it: a single Hunt is now playable end to end against a fixed
+  Demand and reaches a real cleared/missed verdict, but every restart re-deals the *same* encounter,
+  because `HUNT` is a constant rather than run state. A rising Demand, encounter progression, and a
+  victory/defeat screen are all still absent.
 - **No way to reach a standalone/manual-entry test harness.** DLR-47 deleted
   `TestModeVanguardHost.tsx`, `TrickEntryForm.tsx`, `appMode.ts`, and `isValidTricksWon` along with
   the rest of the Vanguard UI — there is currently no manual-entry mechanism at all, campaign or

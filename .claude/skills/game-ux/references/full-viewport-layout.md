@@ -94,6 +94,32 @@ With `overflow: hidden`, content that does not fit is content the player cannot 
 - **A played card is a record, not a choice** — render it condensed. Full hand-card dimensions in the play area spend the most valuable part of the screen on information the player has already acted on.
 - **Reserve the space a transient state needs.** A zone that is empty until something resolves and then grows shifts everything around it at the moment the player is reading it.
 
+## The round-end summary teaches through what the player *didn't* use
+
+A between-rounds summary that reports only what happened is a receipt. A summary that also reports the
+options that went **unused** — resources not spent, rerolls not taken, an ability never fired — teaches
+the player that those options exist at all, which is the one moment they have attention to spare for
+learning something.
+
+The observation this comes from: a first Balatro session where the round-end line "0 purchased, 0
+rerolled" was what revealed two systems the player had not noticed while playing. The zeros did the
+teaching, not the score.
+
+Two properties make this cheap rather than clever:
+
+- **It needs no new surface.** The panel already exists; this is a row on it.
+- **It is usually already instrumented.** "Was this resource left unspent" is the same number a
+  designer needs to know whether the resource's budget is too generous — so one line can settle a
+  tuning question and teach the player at once.
+
+The reject condition is the ordinary one: a summary is read once per round, so it may not carry
+anything the player needs *during* a round. If a number belongs to a live decision, it belongs on the
+screen the decision is made on.
+
+Source: developer play session, recorded at `.docs/design/Balatro-Forbidden-Solitaire/balatro-play-notes.md`
+(note 7, and §3.4 for the worked application). This is one session's observation, not researched
+literature — treated as a pattern worth reusing, not as an established principle.
+
 ## Keyboard navigation within a collection
 
 The WAI-ARIA composite-widget model, applied to a hand or a row of tiles:

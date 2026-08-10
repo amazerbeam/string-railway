@@ -1,8 +1,10 @@
 import {
   CardRank,
   PlayerSide,
+  QUARRY_SIDE,
   RoundPhase,
   chooseCpuMove,
+  commitQuarryMove,
   currentTurn,
   legalMoves,
   playCard,
@@ -47,27 +49,20 @@ export type RoundUiAction =
   | { readonly kind: typeof RoundUiActionKind.CancelSelection }
   | { readonly kind: typeof RoundUiActionKind.CarryOn }
 
-/** Initial UI state — advances the CPU when it leads trick 1, so the player always sees the lead. */
+/**
+ * Initial UI state. Deliberately does **not** play the Quarry's opening lead: DLR-53 AC3
+ * requires that lead to be telegraphed before it lands, and `handleCarryOn` commits it when
+ * the player is ready. Being a pure restructuring of `initialState` also makes it trivially
+ * safe under StrictMode's double-invocation of a lazy `useReducer` initialiser.
+ */
 export function createRoundUiState(initialState: WarCouncilState): RoundUiState {
-  const base: RoundUiState = {
+  return {
     round: initialState,
     armed: null,
     prompt: null,
     resolvedTrick: null,
     rejection: null,
     cpuFault: null,
-  }
-
-  if (currentTurn(initialState) !== PlayerSide.Cpu) {
-    return base
-  }
-
-  const advanced = advanceCpu(initialState)
-  return {
-    ...base,
-    round: advanced.round,
-    resolvedTrick: advanced.resolvedTrick,
-    cpuFault: advanced.cpuFault,
   }
 }
 
@@ -116,25 +111,29 @@ function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
 }
 
 /**
- * Clears a held trick reveal — including the deciding thirteenth trick, so its cards and
- * winner are seen before the round-over panel appears. A no-op when nothing is held. Only
- * advances the opponent when the round is still in progress; a completed round needs no
- * further turn and the mount reports it via its own "Finish" control instead.
+ * The single control the player presses between decisions. Clears a held trick reveal —
+ * including the deciding thirteenth, so its cards and winner are seen before the end panel
+ * — and then commits the Quarry's lead if one is pending.
+ *
+ * Doing both in one transition is what keeps the telegraph free: the Quarry's next lead is
+ * already readable beside the held reveal, so the tap that clears the reveal is the same tap
+ * that lets them lead. Only trick 1 has no prior reveal to fold onto.
  */
 function handleCarryOn(state: RoundUiState): RoundUiState {
-  if (state.resolvedTrick === null) {
-    return state
-  }
+  const cleared: RoundUiState =
+    state.resolvedTrick === null ? state : { ...state, resolvedTrick: null }
 
-  const cleared: RoundUiState = { ...state, resolvedTrick: null }
   if (
+    cleared.cpuFault !== null ||
+    cleared.prompt !== null ||
     cleared.round.phase === RoundPhase.Complete ||
-    currentTurn(cleared.round) !== PlayerSide.Cpu
+    currentTurn(cleared.round) !== QUARRY_SIDE ||
+    cleared.round.currentTrick.length > 0
   ) {
     return cleared
   }
 
-  const advanced = advanceCpu(cleared.round)
+  const advanced = advanceQuarryLead(cleared.round)
   return {
     ...cleared,
     round: advanced.round,
@@ -166,7 +165,7 @@ function commit(state: RoundUiState, cardToPlay: Card, choice?: AbilityChoice): 
   }
 
   // The player led — advance the opponent in the same commit.
-  const advanced = advanceCpu(result.state)
+  const advanced = advanceQuarryFollow(result.state)
   return {
     ...settled,
     round: advanced.round,
@@ -193,23 +192,46 @@ function deriveResolvedTrick(
   return { cards: [before.currentTrick[0], playedCard], winner }
 }
 
-/** Guards `legalMoves` before calling `chooseCpuMove`, which throws on an empty legal set. */
-function advanceCpu(round: WarCouncilState): CpuAdvanceResult {
-  const legal = legalMoves(round, PlayerSide.Cpu)
+/**
+ * Commits the Quarry's *follow* — the answer to a lead already on the table — needing
+ * `chooseCpuMove`'s chosen card to derive the resolved trick's reveal. Guards `legalMoves`
+ * before calling `chooseCpuMove`, which throws on an empty legal set.
+ */
+function advanceQuarryFollow(round: WarCouncilState): CpuAdvanceResult {
+  const legal = legalMoves(round, QUARRY_SIDE)
   if (legal.length === 0) {
     return { round, resolvedTrick: null, cpuFault: 'noLegalMove' }
   }
 
-  const move = chooseCpuMove(round, PlayerSide.Cpu)
-  const result = playCard(round, PlayerSide.Cpu, move.card, move.choice)
+  const move = chooseCpuMove(round, QUARRY_SIDE)
+  const result = playCard(round, QUARRY_SIDE, move.card, move.choice)
   if (!result.ok) {
     return { round, resolvedTrick: null, cpuFault: result.reason }
   }
 
-  const playedCard: TrickCard = { side: PlayerSide.Cpu, card: move.card }
+  const playedCard: TrickCard = { side: QUARRY_SIDE, card: move.card }
   return {
     round: result.state,
     resolvedTrick: deriveResolvedTrick(round, result.state, playedCard),
     cpuFault: null,
   }
+}
+
+/**
+ * Commits a Quarry *lead* through the engine's own `commitQuarryMove` — the commit half of
+ * the split DLR-52 introduced for exactly this. A lead never completes a trick, so there is
+ * no resolved reveal to derive and no need to know which card was chosen.
+ *
+ * Keeps `advanceQuarryFollow`'s empty-legal-set guard: `commitQuarryMove` reaches
+ * `chooseCpuCard`, whose `lowestCard([])` would throw rather than return a rejection.
+ */
+function advanceQuarryLead(round: WarCouncilState): CpuAdvanceResult {
+  if (legalMoves(round, QUARRY_SIDE).length === 0) {
+    return { round, resolvedTrick: null, cpuFault: 'noLegalMove' }
+  }
+  const result = commitQuarryMove(round)
+  if (!result.ok) {
+    return { round, resolvedTrick: null, cpuFault: result.reason }
+  }
+  return { round: result.state, resolvedTrick: null, cpuFault: null }
 }

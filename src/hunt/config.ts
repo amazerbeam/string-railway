@@ -1,3 +1,5 @@
+import { QuarryCharacter, type Demand } from './types'
+
 export const StandingBandName = {
   Humble: 'humble',
   Defeated: 'defeated',
@@ -84,3 +86,17 @@ export type TelegraphFidelity = (typeof TelegraphFidelity)[keyof typeof Telegrap
 // default named at the DLR-52 planning gate; the single value most likely to move after T8's
 // playtest.
 export const TELEGRAPH_FIDELITY: TelegraphFidelity = TelegraphFidelity.SuitAndStance
+
+// §11 "one fixed Demand": the slice checks Score against a single target rather than a
+// curve. DEMAND_CURVE stays null-valued — the rising curve is T9's run state, not this.
+// UNIT: score points, compared against `Spoils × Standing` by `checkDemand`.
+// VALUE: a developer decision (DLR-53 plan.md → Risks). 220 is the placeholder recorded
+// at the DLR-53 planning gate so the slice is playable — it is not a derived constant and
+// it is the number most likely to move after T8's playtest.
+export const FIXED_DEMAND: Demand = 220
+
+// §11 "any single character is sufficient; which of the five is not load-bearing". Not a
+// tuning value: DLR-51 enforces only the Monarch's rule-break and QUARRY_CHARACTERS holds
+// only its copy, so this is forced by what is implemented. It exists as a key so T13 has
+// exactly one place to change when the other four characters land.
+export const SLICE_QUARRY_CHARACTER: QuarryCharacter = QuarryCharacter.Monarch

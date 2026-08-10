@@ -1,0 +1,268 @@
+/* War Council — the Hunt screen's readouts: the status band's Hunt ledger, the dossier
+   zone (the Quarry's card and the intent telegraph), and the end-of-Hunt equation panel.
+   Sibling to `warCouncil.css` and `warCouncilCards.css`, split out because the shell
+   stylesheet is at its 400-line budget; import all three from the mount component.
+   Tokens are defined once in `warCouncil.css` and apply globally once that sheet is
+   loaded — nothing here redeclares `:root`. Selectors and values are transcribed from the
+   approved mockup (`.claude/contract/DLR-53-hunt-screen/mockup.html`) — no new colour
+   token is introduced (AC8; visual polish itself is T15's). */
+
+/* ---------- the Hunt ledger, mounted inside the status band ---------- */
+
+.wc-ledger {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.wc-ledger-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.4rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 0.4rem;
+  background: var(--wc-chamber-lift);
+  border: 1px solid #23303a;
+}
+
+/* Solid vs. dashed carries the Demand/Standing distinction in form, not colour alone. */
+.wc-ledger-cell.wc-is-demand {
+  border-color: var(--wc-brass);
+  border-width: 2px;
+}
+
+.wc-ledger-cell.wc-is-band {
+  border-style: dashed;
+  border-color: var(--wc-brass-dim);
+}
+
+.wc-ledger-key {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--wc-chalk-dim);
+  white-space: nowrap;
+}
+
+.wc-ledger-value {
+  font-family: var(--wc-serif);
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-parchment);
+  white-space: nowrap;
+}
+
+.wc-ledger-op {
+  display: flex;
+  align-items: center;
+  font-family: var(--wc-serif);
+  font-size: 1.1rem;
+  color: var(--wc-chalk-dim);
+}
+
+/* ---------- the dossier zone: the Quarry's card, then the telegraph ---------- */
+
+.wc-dossier {
+  grid-area: dossier;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0 clamp(0.5rem, 1.6vmin, 1rem) clamp(0.5rem, 1.6vmin, 1rem)
+    clamp(0.6rem, 2.2vmin, 1.6rem);
+  /* The zone most likely to break the no-scroll guarantee: a long rule-break sentence must
+     never be allowed to force the grid wider than the viewport. */
+  min-width: 0;
+  overflow: hidden;
+}
+
+.wc-dossier-card {
+  background: var(--wc-chamber-lift);
+  border: 1px solid #23303a;
+  border-left: 3px solid var(--wc-brass-dim);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.7rem;
+}
+
+.wc-dossier-eyebrow {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-dossier-name {
+  font-family: var(--wc-serif);
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: var(--wc-parchment);
+  margin: 0.1rem 0 0.35rem;
+}
+
+.wc-dossier-rule {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--wc-chalk);
+  margin: 0;
+}
+
+.wc-dossier-tricks {
+  margin-top: 0.45rem;
+  font-size: 0.72rem;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-dossier-tricks b {
+  font-family: var(--wc-serif);
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--wc-parchment);
+}
+
+/* ---------- the intent telegraph ---------- */
+
+.wc-telegraph {
+  background: #101a20;
+  border: 1px dashed var(--wc-keys);
+  border-radius: 0.4rem;
+  padding: 0.55rem 0.7rem;
+}
+
+/* Live vs. speculative vs. empty carry their own border style — never colour alone. */
+.wc-telegraph.wc-is-speculative {
+  border-style: dotted;
+}
+
+.wc-telegraph.wc-telegraph-empty {
+  border-color: #2b3a44;
+  border-style: solid;
+}
+
+.wc-telegraph-eyebrow {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-telegraph-line {
+  font-family: var(--wc-serif);
+  font-size: 0.98rem;
+  color: var(--wc-parchment);
+  margin: 0.2rem 0 0;
+  line-height: 1.3;
+}
+
+.wc-telegraph-mark {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  vertical-align: -0.1em;
+  margin-right: 0.3em;
+  color: var(--wc-brass);
+}
+
+/* ---------- the end-of-Hunt equation panel (Phase 4's consumer) ---------- */
+
+.wc-equation {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.wc-equation-part {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.45rem 0.8rem;
+  background: var(--wc-chamber-lift);
+  border: 1px solid #23303a;
+  border-radius: 0.4rem;
+  min-width: 4.4rem;
+}
+
+.wc-equation-part.wc-is-result {
+  border-color: var(--wc-brass);
+  border-width: 2px;
+}
+
+.wc-equation-key {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-equation-value {
+  font-family: var(--wc-serif);
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-parchment);
+}
+
+.wc-equation-op {
+  font-family: var(--wc-serif);
+  font-size: 1.4rem;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-verdict {
+  font-family: var(--wc-serif);
+  font-size: 1.15rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 0.4rem;
+  margin: 0;
+}
+
+.wc-verdict.wc-is-cleared {
+  color: var(--wc-brass);
+  border: 2px solid var(--wc-brass);
+}
+
+.wc-verdict.wc-is-missed {
+  color: var(--wc-alarm);
+  border: 2px dashed var(--wc-alarm);
+}
+
+.wc-verdict-detail {
+  font-size: 0.8rem;
+  color: var(--wc-chalk-dim);
+  margin: 0;
+}
+
+/* ---------- narrow/short collapse — AC5 on a phone or a short laptop window ---------- */
+
+@media (max-width: 44rem), (max-height: 34rem) {
+  .wc-shell {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'status'
+      'dossier'
+      'table'
+      'hand';
+    grid-template-rows: auto auto 1fr auto;
+  }
+
+  .wc-dossier {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* .wc-status (defined in warCouncil.css) holds three children — .wc-plate,
+     .wc-score, and .wc-ledger — in a row with no wrap; at this width their
+     combined min-content widths exceed the viewport. .wc-ledger's own row
+     (five cells plus three operators, all `white-space: nowrap`) is wide
+     enough on its own to overflow even after .wc-status wraps, so it needs
+     the same treatment. */
+  .wc-status {
+    flex-wrap: wrap;
+  }
+
+  .wc-ledger {
+    flex-wrap: wrap;
+  }
+}

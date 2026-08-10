@@ -48,10 +48,11 @@
   overflow: hidden;
   display: grid;
   grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(10rem, 17vw) 1fr;
   grid-template-areas:
-    'status'
-    'table'
-    'hand';
+    'status  status'
+    'dossier table'
+    'hand    hand';
   padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
     env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
   color-scheme: dark;

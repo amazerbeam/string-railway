@@ -14,6 +14,11 @@ that a linear-narrative hybrid inherits without inheriting Balatro's answer to i
 Nothing here is a decision about what this project builds. Part 3 lays out what transfers and what
 the open questions are; the choices in it are the developer's.
 
+**The presentation layer is a separate file.** [`balatro-play-notes.md`](./balatro-play-notes.md)
+holds a developer play session's observations about how Balatro *presents* itself — its spoken
+onboarding, its reference panels, its round-end report, and the one place it loses the player — and
+maps each onto The Hunt. This file does not cover that layer.
+
 ---
 
 ## Part 1 — the rules

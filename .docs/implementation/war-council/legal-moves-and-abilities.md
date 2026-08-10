@@ -24,9 +24,10 @@ ability applies for the *whole round* rather than just the single card that prin
 carries this as an optional `quarryCharacter` field, written once by `dealRound` and never written
 again anywhere else — since every state update in `playCard`/`abilities.ts` rebuilds `RoundState`
 by spreading (`{ ...state, … }`), the field survives every trick unchanged by construction, not by
-convention. `dealRound`'s third parameter is optional and every call site in the app still passes
-only two arguments, so no round in the shipped app has a character active yet — assigning one is a
-later ticket's run-scheduling job.
+convention. `dealRound`'s third parameter is optional, but since DLR-53 `src/App.tsx` passes it —
+`SLICE_QUARRY_CHARACTER`, the Monarch — so **every round in the shipped app now runs with a
+character active** and its round-long rule enforced. Which character appears in which encounter is
+still a later ticket's run-scheduling job; today it is one constant.
 
 Only the Monarch (`CardRank.Monarch`, rank 11) is implemented; the other four characters named in
 §4 (Witch, Fox, Woodcutter, Swan) have no round-long enforcement. `quarryRuleBreak.ts` holds the

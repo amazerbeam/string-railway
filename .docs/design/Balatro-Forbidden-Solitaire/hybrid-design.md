@@ -13,6 +13,9 @@ design choice this document makes or is free to re-open.
 **Read alongside:**
 
 - [`balatro.md`](./balatro.md) — what Balatro does and what it teaches.
+- [`balatro-play-notes.md`](./balatro-play-notes.md) — a play session's notes on how Balatro
+  *presents* itself, mapped onto this design's screens: which of its readouts The Hunt already ships,
+  which are gaps, and which are structurally unavailable here.
 - [`forbidden-solitaire.md`](./forbidden-solitaire.md) — the clear-is-the-damage coupling and the
   toll-booth argument this design is built to avoid.
 - [`../../game_rules/fox-in-the-forest.md`](../../game_rules/fox-in-the-forest.md) — the base game:

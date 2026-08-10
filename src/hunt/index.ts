@@ -12,6 +12,8 @@ export {
   ENCOUNTERS_PER_RUN,
   TelegraphFidelity,
   TELEGRAPH_FIDELITY,
+  FIXED_DEMAND,
+  SLICE_QUARRY_CHARACTER,
 } from './config'
 
 export type { QuarryCharacterInfo } from './quarryCharacters'

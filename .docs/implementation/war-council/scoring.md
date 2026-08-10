@@ -33,8 +33,10 @@ first real consumer of that module's config (see [../hunt/README.md](../hunt/REA
 never re-derived inline; the optional third parameter exists purely so a test can substitute a flat
 `() => 1` to prove the summation itself is correct independent of the real per-rank values, the
 same injectable-second-argument pattern `src/hunt/config.ts`'s `resolveStanding` already uses.
-Since DLR-50, `spoils` has one production consumer: `scoreHunt` (below). It is still not wired into
-`scoreRound` or any UI display — that's T7, a later ticket in the DLR-46 epic.
+Since DLR-50, `spoils` has one production consumer inside this module: `scoreHunt` (below). DLR-53
+added a second, outside it — the Hunt screen calls `spoils(round, PlayerSide.Player)` every render
+to show the running total. It is still deliberately not wired into `scoreRound`, whose per-side
+output remains what `WarCouncilRoundResult` reports.
 
 ### The Hunt outcome — `scoreHunt` and `checkDemand` (DLR-50)
 
@@ -66,5 +68,8 @@ two (`checkDemand(scoreHunt(state, side).score, demand)`) is the caller's job. D
 Demand actually *is*, storing it, or advancing it across encounters is T9's run state, and nothing
 in this module reads the (still `null`/`null`) `DEMAND_CURVE`.
 
-Neither function has a caller outside its own tests yet — surfacing a score, band, or Demand on
-screen is T7.
+Both functions gained their first production caller in DLR-53: `WarCouncilRound.tsx` composes them
+exactly as described above — `checkDemand(scoreHunt(ui.round, PlayerSide.Player).score, hunt.demand)`
+— and the end-of-Hunt panel renders the `HuntScore`'s parts as arithmetic before the verdict. The
+Demand it supplies is `src/hunt`'s `FIXED_DEMAND`, a single placeholder target; a Demand that rises
+across encounters is still T9's run state.

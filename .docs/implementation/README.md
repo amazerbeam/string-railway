@@ -21,9 +21,9 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | Module                | Doc                                              | Status      | Built by                                       |
 | --------------------- | ------------------------------------------------- | ----------- | ---------------------------------------------- |
 | `src/warCouncil/`     | [war-council/](war-council/README.md)             | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52 |
-| `src/app/`            | [app/](app/README.md)                             | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md)       | implemented | SCRUM-28, DLR-47                               |
-| `src/hunt/`           | [hunt/](hunt/README.md)                           | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52         |
+| `src/app/`            | [app/](app/README.md)                             | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53 |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md)       | implemented | SCRUM-28, DLR-47, DLR-53                       |
+| `src/hunt/`           | [hunt/](hunt/README.md)                           | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -35,6 +35,12 @@ DLR-47 retired the Vanguard board engine, the battle-loop orchestrator, and thei
 (`src/app/warCouncil/WarCouncilRound.tsx`), dealing a fresh round and restarting on completion. See
 [app/README.md](app/README.md) for the mount itself; the deleted modules' history is recoverable
 via `git show` per `CLAUDE.md`'s recovery instructions, not documented here.
+
+DLR-53 turned that round screen into the **Hunt screen** — §4's persistent readouts, the Quarry's
+intent telegraphed before every commit, and an end panel showing `Spoils × Standing = Score`. It is
+the ticket that gave `src/hunt/` its first UI consumers and made a Hunt playable end to end against
+a real Demand; start at
+[war-council-ui/hunt-readouts-and-telegraph.md](war-council-ui/hunt-readouts-and-telegraph.md).
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

@@ -49,6 +49,24 @@ newly-focused card is already `document.activeElement` and the `contains` check 
 only the `tabindex` attribute. The attribute-only version passed throughout, which is exactly why the
 defect went undetected by every test and was found only by QA driving the app in a real browser.
 
+### The Hunt readouts each carry their own accessible name
+
+DLR-53's four readouts are bare numbers whose meaning lives in a separate visual key element, which
+a screen reader would otherwise announce as an unlabelled run of digits. Each therefore carries its
+own `aria-label` while the visual key is `aria-hidden`: `HuntLedger`'s four cells ("Running Spoils:
+N", "Standing band: Victorious, multiplier 6", "Score so far: N", "The Demand: N"),
+`QuarryDossier`'s region and trick count, and `RoundOverPanel`'s three equation parts.
+
+`IntentTelegraph` goes further and hides *all* its visible text, carrying one `aria-label` on the
+container built by `intentAccessibleName` — so the eyebrow and the line are heard as one sentence
+rather than two fragments. Its `role="status"` announces a changed intent without stealing focus
+from the hand.
+
+One collision worth knowing about: `HuntLedger` stays mounted in the status band while
+`RoundOverPanel` is on the felt, so the panel's Demand deliberately reads "Demand for this Hunt: N"
+rather than reusing the ledger's "The Demand: N". Identical names across two simultaneously-mounted
+components make a `getByLabelText` query ambiguous.
+
 ### While a prompt is open, the fan leaves the accessibility tree
 
 `AbilityPrompt` renders a live, enabled button for every remaining hand card, using the same

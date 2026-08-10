@@ -1,4 +1,5 @@
 import { PlayerSide, RoundPhase, Suit, type Card, type WarCouncilState } from '../../../warCouncil'
+import { QuarryCharacter, type Hunt } from '../../../hunt'
 
 const card = (suit: Suit, rank: number): Card => ({ suit, rank })
 
@@ -43,3 +44,10 @@ export function makeRound(overrides: Partial<WarCouncilState> = {}): WarCouncilS
 }
 
 export { card }
+
+/** A fixed Hunt for component tests — a literal Demand, so a test never depends on the
+ *  developer-owned FIXED_DEMAND value and never breaks when that value is retuned. */
+export const huntFixture: Hunt = {
+  quarry: { character: QuarryCharacter.Monarch },
+  demand: 100,
+}

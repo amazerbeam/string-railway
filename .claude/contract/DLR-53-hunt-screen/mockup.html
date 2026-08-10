@@ -1,0 +1,509 @@
+<title>DLR-53 — The Hunt screen</title>
+<style>
+  :root {
+    --wc-chamber: #0c1013;
+    --wc-chamber-lift: #141a1f;
+    --wc-felt: #16241f;
+    --wc-felt-lip: #0a1211;
+    --wc-felt-line: #2b4038;
+    --wc-parchment: #e9e1cd;
+    --wc-parchment-shade: #d3c8ae;
+    --wc-ink: #191610;
+    --wc-ink-soft: #5c5443;
+    --wc-brass: #c99a4e;
+    --wc-brass-dim: #7d6132;
+    --wc-chalk: #cdd6d2;
+    --wc-chalk-dim: #6f7d78;
+    --wc-alarm: #d1705f;
+    --wc-bells: #c9873f;
+    --wc-keys: #5f93a8;
+    --wc-moons: #9c7cb8;
+    --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --wc-card-w: clamp(2.9rem, 6.2vmin, 4.3rem);
+  }
+
+  /* Single-theme by choice: this is the War Council chamber, and it is dark on either host
+     ground. Every colour is painted explicitly from a token — nothing is inherited. */
+  html, body {
+    margin: 0; padding: 0; background: var(--wc-chamber); color: var(--wc-chalk);
+    font-family: var(--wc-sans); overflow: hidden;
+  }
+
+  .wc-shell, .wc-shell * { box-sizing: border-box; }
+
+  .wc-shell {
+    height: 100dvh; width: 100%; overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: minmax(10rem, 17vw) 1fr;
+    grid-template-areas:
+      'status  status'
+      'dossier table'
+      'hand    hand';
+    color-scheme: dark;
+    background: radial-gradient(120% 80% at 50% 0%, #17202700 0%, #060809 100%), var(--wc-chamber);
+    color: var(--wc-chalk);
+    font-family: var(--wc-sans);
+    margin: 0;
+  }
+  @media (max-width: 44rem), (max-height: 34rem) {
+    .wc-shell {
+      grid-template-columns: 1fr;
+      grid-template-areas: 'status' 'dossier' 'table' 'hand';
+      grid-template-rows: auto auto 1fr auto;
+    }
+    .wc-dossier { flex-direction: row; align-items: center; flex-wrap: wrap; }
+  }
+
+  /* ---------- status band + Hunt ledger ---------- */
+  .wc-status {
+    grid-area: status; display: flex; align-items: flex-start; justify-content: space-between;
+    gap: clamp(0.5rem, 2vmin, 2rem); padding: clamp(0.5rem, 1.6vmin, 1rem) clamp(0.6rem, 2.2vmin, 1.6rem);
+    flex-wrap: wrap;
+  }
+  .wc-plate {
+    display: flex; align-items: center; gap: 0.5rem; background: var(--wc-chamber-lift);
+    border: 1px solid #23303a; border-radius: 0.4rem; padding: 0.4rem 0.7rem;
+  }
+  .wc-plate-label { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--wc-chalk-dim); }
+  .wc-stack { display: flex; }
+  .wc-stack-back {
+    width: 0.75rem; height: 1.15rem; margin-left: -0.35rem; border-radius: 0.15rem;
+    background: linear-gradient(160deg, #2a3942, #162026); border: 1px solid #3b4c57;
+  }
+  .wc-score { display: flex; gap: 0.35rem; }
+  .wc-score-cell {
+    display: flex; flex-direction: column; align-items: center; min-width: 3.1rem;
+    background: var(--wc-chamber-lift); border: 1px solid #23303a; border-radius: 0.4rem; padding: 0.3rem 0.5rem;
+  }
+  .wc-score-cell.wc-is-lead { border-color: var(--wc-brass-dim); }
+  .wc-score-side { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--wc-chalk-dim); }
+  .wc-score-value { font-family: var(--wc-serif); font-size: 1.3rem; color: var(--wc-parchment); }
+
+  .wc-ledger { display: flex; align-items: stretch; gap: 0.35rem; }
+  .wc-ledger-cell {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-width: 3.4rem; padding: 0.3rem 0.55rem; border-radius: 0.4rem;
+    background: var(--wc-chamber-lift); border: 1px solid #23303a;
+  }
+  .wc-ledger-cell.wc-is-demand { border-color: var(--wc-brass); border-width: 2px; }
+  .wc-ledger-cell.wc-is-band { border-style: dashed; border-color: var(--wc-brass-dim); }
+  .wc-ledger-key { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--wc-chalk-dim); white-space: nowrap; }
+  .wc-ledger-value { font-family: var(--wc-serif); font-size: 1.25rem; color: var(--wc-parchment); white-space: nowrap; }
+  .wc-ledger-op { display: flex; align-items: center; font-family: var(--wc-serif); font-size: 1.1rem; color: var(--wc-chalk-dim); }
+
+  /* ---------- the dossier zone ---------- */
+  .wc-dossier {
+    grid-area: dossier; display: flex; flex-direction: column; gap: 0.6rem;
+    padding: 0 clamp(0.5rem, 1.6vmin, 1rem) clamp(0.5rem, 1.6vmin, 1rem) clamp(0.6rem, 2.2vmin, 1.6rem);
+    min-width: 0; overflow: hidden;
+  }
+  .wc-dossier-card {
+    background: var(--wc-chamber-lift); border: 1px solid #23303a; border-left: 3px solid var(--wc-brass-dim);
+    border-radius: 0.4rem; padding: 0.6rem 0.7rem;
+  }
+  .wc-dossier-eyebrow { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--wc-chalk-dim); }
+  .wc-dossier-name { font-family: var(--wc-serif); font-size: 1.15rem; color: var(--wc-parchment); margin: 0.1rem 0 0.35rem; }
+  .wc-dossier-rule { font-size: 0.78rem; line-height: 1.35; color: var(--wc-chalk); margin: 0; }
+  .wc-dossier-tricks { margin-top: 0.45rem; font-size: 0.72rem; color: var(--wc-chalk-dim); }
+  .wc-dossier-tricks b { font-family: var(--wc-serif); font-size: 1rem; color: var(--wc-parchment); }
+
+  .wc-telegraph {
+    background: #101a20; border: 1px dashed var(--wc-keys); border-radius: 0.4rem; padding: 0.55rem 0.7rem;
+  }
+  .wc-telegraph.wc-is-speculative { border-style: dotted; }
+  .wc-telegraph.wc-telegraph-empty { border-color: #2b3a44; border-style: solid; }
+  .wc-telegraph-eyebrow { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--wc-chalk-dim); }
+  .wc-telegraph-line { font-family: var(--wc-serif); font-size: 0.98rem; color: var(--wc-parchment); margin: 0.2rem 0 0; line-height: 1.3; }
+  .wc-telegraph-line .pip { display: inline-block; width: 0.55rem; height: 0.55rem; border-radius: 50%; margin-right: 0.25rem; vertical-align: baseline; }
+
+  /* ---------- the felt ---------- */
+  .wc-table {
+    grid-area: table; margin: 0 clamp(0.6rem, 2.2vmin, 1.6rem) clamp(0.5rem, 1.6vmin, 1rem) 0;
+    background: radial-gradient(120% 100% at 50% 0%, #1c2f28, var(--wc-felt));
+    border: 1px solid var(--wc-felt-line); border-radius: 0.7rem;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.7rem;
+    position: relative; min-height: 0; padding: 1rem;
+  }
+  .wc-decree { position: absolute; top: 0.6rem; right: 0.7rem; display: flex; align-items: center; gap: 0.4rem; }
+  .wc-decree-label { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--wc-chalk-dim); }
+  .wc-trick-row { display: flex; gap: 1rem; min-height: calc(var(--wc-card-w) * 1.45); align-items: center; }
+  .wc-played { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+  .wc-played-side { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--wc-chalk-dim); }
+  .wc-table-line { font-family: var(--wc-serif); font-size: 1rem; color: var(--wc-parchment); margin: 0; text-align: center; }
+  .wc-table-hint {
+    font: inherit; font-size: 0.8rem; color: var(--wc-brass); background: none; border: 1px solid var(--wc-brass-dim);
+    border-radius: 0.35rem; padding: 0.55rem 0.9rem; min-height: 44px; cursor: pointer; touch-action: manipulation;
+  }
+  .wc-table-hint:focus-visible { outline: 2px solid var(--wc-brass); outline-offset: 2px; }
+
+  /* ---------- cards ---------- */
+  .card {
+    width: var(--wc-card-w); aspect-ratio: 5 / 7; border-radius: 0.3rem;
+    background: linear-gradient(170deg, var(--wc-parchment), var(--wc-parchment-shade));
+    color: var(--wc-ink); border: 1px solid #b3a888;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.1rem;
+    font-family: var(--wc-serif); position: relative;
+  }
+  .card.table { width: calc(var(--wc-card-w) * 0.78); }
+  .card-rank { font-size: 1.15rem; line-height: 1; }
+  .card.table .card-rank { font-size: 0.95rem; }
+  /* The suit mark, matching src/app/warCouncil/SuitMark.tsx — every path is
+     stroke="currentColor", so the glyph takes its tint from the card's own colour. */
+  .card-suit { width: 45%; height: 45%; display: block; }
+  .card.bells { box-shadow: inset 0 -3px 0 var(--wc-bells); }
+  .card.keys { box-shadow: inset 0 -3px 0 var(--wc-keys); }
+  .card.moons { box-shadow: inset 0 -3px 0 var(--wc-moons); }
+  .card.bells .card-suit { color: var(--wc-bells); }
+  .card.keys .card-suit { color: var(--wc-keys); }
+  .card.moons .card-suit { color: var(--wc-moons); }
+  /* A named rank (Swan, Fox, Woodcutter, Witch, Monarch) carries an ability — the pip
+     says so in form, not colour, so it survives a greyscale screenshot. */
+  .card-pip { width: 0.3rem; height: 0.3rem; border-radius: 50%; background: var(--wc-ink); }
+  .card-pip.blank { background: none; border: 1px solid var(--wc-ink-soft); opacity: 0.35; }
+  .card.wc-is-winner { outline: 2px solid var(--wc-brass); outline-offset: 2px; }
+
+  /* ---------- hand ---------- */
+  .wc-hand {
+    grid-area: hand; display: flex; justify-content: center; align-items: flex-end; gap: 0.2rem;
+    padding: 0 clamp(0.6rem, 2.2vmin, 1.6rem) clamp(0.5rem, 1.6vmin, 1rem); flex-wrap: nowrap; min-height: 0;
+  }
+  .hand-card {
+    border: 0; padding: 0; background: none; cursor: pointer; touch-action: manipulation;
+    transition: transform 120ms ease; position: relative; min-height: 44px;
+  }
+  .hand-card:disabled { cursor: default; }
+  .hand-card .card { pointer-events: none; }
+  .hand-card.armed { transform: translateY(-0.9rem); }
+  .hand-card.armed .card { outline: 2px solid var(--wc-brass); outline-offset: 2px; }
+  .hand-card.illegal .card { opacity: 0.4; filter: grayscale(0.6); }
+  .hand-card.illegal::after {
+    content: ''; position: absolute; inset: 0; border: 1px dashed var(--wc-chalk-dim); border-radius: 0.3rem;
+  }
+  .hand-card:focus-visible { outline: 2px solid var(--wc-brass); outline-offset: 3px; border-radius: 0.3rem; }
+  @media (hover: hover) { .hand-card:not(:disabled):hover { transform: translateY(-0.4rem); } }
+
+  /* ---------- the end-of-Hunt panel ---------- */
+  .wc-over { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.8rem; max-width: 32rem; }
+  .wc-over h2 { font-family: var(--wc-serif); font-size: 1.3rem; margin: 0; color: var(--wc-parchment); font-weight: 400; }
+  .wc-equation { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+  .wc-equation-part {
+    display: flex; flex-direction: column; align-items: center; padding: 0.45rem 0.8rem;
+    background: var(--wc-chamber-lift); border: 1px solid #23303a; border-radius: 0.4rem; min-width: 4.4rem;
+  }
+  .wc-equation-part.wc-is-result { border-color: var(--wc-brass); border-width: 2px; }
+  .wc-equation-key { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--wc-chalk-dim); }
+  .wc-equation-value { font-family: var(--wc-serif); font-size: 1.5rem; color: var(--wc-parchment); }
+  .wc-equation-op { font-family: var(--wc-serif); font-size: 1.4rem; color: var(--wc-chalk-dim); }
+  .wc-verdict { font-family: var(--wc-serif); font-size: 1.15rem; padding: 0.5rem 1.1rem; border-radius: 0.4rem; }
+  .wc-verdict.wc-is-cleared { color: var(--wc-brass); border: 2px solid var(--wc-brass); }
+  .wc-verdict.wc-is-missed { color: var(--wc-alarm); border: 2px dashed var(--wc-alarm); }
+  .wc-verdict-detail { font-size: 0.8rem; color: var(--wc-chalk-dim); margin: 0; }
+  .wc-tally { border-collapse: collapse; font-size: 0.8rem; }
+  .wc-tally th, .wc-tally td { padding: 0.25rem 0.9rem; border-bottom: 1px solid #23303a; color: var(--wc-chalk); }
+  .wc-tally th { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--wc-chalk-dim); font-weight: 400; }
+  .wc-decline {
+    font: inherit; font-size: 0.85rem; color: var(--wc-chalk); background: none; border: 1px solid #3b4c57;
+    border-radius: 0.35rem; padding: 0.6rem 1.1rem; min-height: 44px; cursor: pointer; touch-action: manipulation;
+  }
+  .wc-decline:focus-visible { outline: 2px solid var(--wc-brass); outline-offset: 2px; }
+
+  /* ---------- mockup-only harness ---------- */
+  .mock-bar {
+    position: fixed; bottom: 0.4rem; left: 50%; transform: translateX(-50%); z-index: 10;
+    display: flex; gap: 0.3rem; background: #000000cc; border: 1px solid #2b3a44; border-radius: 0.4rem; padding: 0.3rem;
+  }
+  .mock-bar button {
+    font: inherit; font-size: 0.7rem; color: var(--wc-chalk-dim); background: none; border: 1px solid #2b3a44;
+    border-radius: 0.25rem; padding: 0.3rem 0.5rem; cursor: pointer;
+  }
+  .mock-bar button[aria-pressed='true'] { color: var(--wc-brass); border-color: var(--wc-brass-dim); }
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+</style>
+
+<!-- The three suit glyphs, transcribed verbatim from src/app/warCouncil/SuitMark.tsx's
+     SuitSymbolSheet so the mockup's cards read exactly as the shipped ones do. -->
+<svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+  <symbol id="s-bells" viewBox="0 0 24 24">
+    <path d="M6.8 16.4v-4.6a5.2 5.2 0 0 1 10.4 0v4.6M4.6 16.4h14.8M12 6.6V4.6M10.2 19.1a1.9 1.9 0 0 0 3.6 0"
+      fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+  </symbol>
+  <symbol id="s-keys" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+      <circle cx="12" cy="7.2" r="3.5" />
+      <path d="M12 10.7V20M12 14.6h3.1M12 17.6h2.3" />
+    </g>
+  </symbol>
+  <symbol id="s-moons" viewBox="0 0 24 24">
+    <path d="M15.3 3.9a8.2 8.2 0 1 0 3.9 11.8 6.7 6.7 0 0 1-3.9-11.8z"
+      fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+  </symbol>
+</svg>
+
+<div class="wc-shell">
+  <header class="wc-status">
+    <div class="wc-plate">
+      <span class="wc-plate-label">Quarry</span>
+      <span class="wc-stack" aria-hidden="true">
+        <span class="wc-stack-back"></span><span class="wc-stack-back"></span><span class="wc-stack-back"></span>
+        <span class="wc-stack-back"></span><span class="wc-stack-back"></span><span class="wc-stack-back"></span>
+      </span>
+      <span class="wc-plate-label" id="held">8 held</span>
+    </div>
+
+    <div class="wc-score" role="group" aria-label="Tricks won">
+      <span class="wc-score-cell wc-is-lead">
+        <span class="wc-score-side">You</span><span class="wc-score-value" id="youTricks">4</span>
+      </span>
+      <span class="wc-score-cell">
+        <span class="wc-score-side">Trick</span><span class="wc-score-value" id="trickNo">6</span>
+      </span>
+      <span class="wc-score-cell">
+        <span class="wc-score-side">Them</span><span class="wc-score-value" id="themTricks">1</span>
+      </span>
+    </div>
+
+    <div class="wc-ledger" role="group" aria-label="The Hunt so far">
+      <span class="wc-ledger-cell">
+        <span class="wc-ledger-key">Spoils</span>
+        <span class="wc-ledger-value" id="spoils" aria-label="Running Spoils: 48">48</span>
+      </span>
+      <span class="wc-ledger-op" aria-hidden="true">×</span>
+      <span class="wc-ledger-cell wc-is-band">
+        <span class="wc-ledger-key">Standing</span>
+        <span class="wc-ledger-value" id="band" aria-label="Standing band: Defeated, multiplier 1">Defeated ×1</span>
+      </span>
+      <span class="wc-ledger-op" aria-hidden="true">=</span>
+      <span class="wc-ledger-cell">
+        <span class="wc-ledger-key">Score</span>
+        <span class="wc-ledger-value" id="live" aria-label="Score so far: 48">48</span>
+      </span>
+      <span class="wc-ledger-op" aria-hidden="true">/</span>
+      <span class="wc-ledger-cell wc-is-demand">
+        <span class="wc-ledger-key">Demand</span>
+        <span class="wc-ledger-value" id="demand" aria-label="The Demand: 220">220</span>
+      </span>
+    </div>
+  </header>
+
+  <aside class="wc-dossier">
+    <div class="wc-dossier-card">
+      <div class="wc-dossier-eyebrow">The Quarry</div>
+      <h2 class="wc-dossier-name">The Monarch</h2>
+      <p class="wc-dossier-rule" id="ruleBreak">
+        Every time the Monarch leads a suit you hold, you must play your Swan of that suit or your
+        highest card of it.
+      </p>
+      <div class="wc-dossier-tricks">Tricks taken <b id="themTricks2">1</b></div>
+    </div>
+
+    <div class="wc-telegraph" id="telegraph" role="status" aria-live="polite">
+      <div class="wc-telegraph-eyebrow" id="tgEyebrow">Their intent</div>
+      <p class="wc-telegraph-line" id="tgLine">
+        <span class="pip" style="background: var(--wc-bells)" aria-hidden="true"></span>They will lead Bells.
+      </p>
+    </div>
+  </aside>
+
+  <section class="wc-table" id="felt">
+    <div class="wc-decree">
+      <span class="wc-decree-label">Decree</span>
+      <span class="card table keys">
+        <span class="card-rank">6</span>
+        <svg class="card-suit" aria-hidden="true" focusable="false"><use href="#s-keys"></use></svg>
+        <span class="card-pip blank"></span>
+      </span>
+    </div>
+    <div id="feltInner"></div>
+  </section>
+
+  <div class="wc-hand" id="hand" role="group" aria-label="Your hand"></div>
+</div>
+
+<div class="mock-bar" role="group" aria-label="Mockup states">
+  <button type="button" id="btnLead" aria-pressed="true">Quarry to lead</button>
+  <button type="button" id="btnYours" aria-pressed="false">Your lead</button>
+  <button type="button" id="btnResolved" aria-pressed="false">Trick resolved</button>
+  <button type="button" id="btnCleared" aria-pressed="false">End — cleared</button>
+  <button type="button" id="btnMissed" aria-pressed="false">End — missed</button>
+</div>
+
+<script>
+  // ---- obviously-fake fixture data ----
+  var HAND = [
+    { rank: 1, suit: 'moons', name: 'Swan' }, { rank: 2, suit: 'bells' },
+    { rank: 4, suit: 'keys' }, { rank: 5, suit: 'bells', name: 'Woodcutter' },
+    { rank: 7, suit: 'moons', name: 'Treasure' }, { rank: 9, suit: 'keys', name: 'Witch' },
+    { rank: 10, suit: 'bells' }, { rank: 11, suit: 'moons', name: 'Monarch' }
+  ];
+  var SUIT_NAME = { bells: 'Bells', keys: 'Keys', moons: 'Moons' };
+  var LEGAL = { '1-moons': 1, '2-bells': 1, '4-keys': 1, '7-moons': 1, '10-bells': 1, '11-moons': 1 };
+
+  // If you led card X, the Quarry would respond like this — the speculative telegraph.
+  var PREVIEW = {
+    '1-moons':  { suit: 'moons', stance: 'press with' },
+    '2-bells':  { suit: 'bells', stance: 'press with' },
+    '4-keys':   { suit: 'keys',  stance: 'duck with' },
+    '7-moons':  { suit: 'moons', stance: 'press with' },
+    '10-bells': { suit: 'bells', stance: 'duck with' },
+    '11-moons': null // a Monarch needs no choice here, but the Quarry is void — nothing to read
+  };
+
+  var state = 'lead';
+  var armed = null;
+
+  function key(c) { return c.rank + '-' + c.suit; }
+  function cardName(c) { return c.rank + ' of ' + SUIT_NAME[c.suit] + (c.name ? ' (' + c.name + ')' : ''); }
+
+  function cardHtml(c, extra) {
+    return '<span class="card ' + c.suit + (extra || '') + '">' +
+      '<span class="card-rank">' + c.rank + '</span>' +
+      '<svg class="card-suit" aria-hidden="true" focusable="false"><use href="#s-' + c.suit + '"></use></svg>' +
+      '<span class="card-pip' + (c.name ? '' : ' blank') + '"></span></span>';
+  }
+
+  // ---- the telegraph ----
+  function setTelegraph(intent, speculative) {
+    var box = document.getElementById('telegraph');
+    var line = document.getElementById('tgLine');
+    var eyebrow = document.getElementById('tgEyebrow');
+    box.className = 'wc-telegraph' + (speculative ? ' wc-is-speculative' : '') + (intent ? '' : ' wc-telegraph-empty');
+    eyebrow.textContent = speculative ? 'If you lead that' : 'Their intent';
+    if (!intent) {
+      line.textContent = speculative ? 'Nothing to read from that lead.' : 'Waiting on your lead.';
+      line.setAttribute('aria-label', 'The Quarry\'s intent: nothing to read yet.');
+      return;
+    }
+    var suit = SUIT_NAME[intent.suit];
+    var text = intent.stance === 'lead'
+      ? 'They will lead ' + suit + '.'
+      : 'They will ' + intent.stance + ' ' + suit + '.';
+    line.innerHTML = '<span class="pip" style="background: var(--wc-' + intent.suit + ')" aria-hidden="true"></span>' + text;
+    line.setAttribute('aria-label', 'The Quarry\'s intent: ' + text);
+  }
+
+  // ---- the felt ----
+  function renderFelt() {
+    var inner = document.getElementById('feltInner');
+    if (state === 'lead') {
+      inner.innerHTML =
+        '<div class="wc-trick-row"></div>' +
+        '<p class="wc-table-line">They are about to lead. Read the telegraph before they do.</p>' +
+        '<button type="button" class="wc-table-hint" id="carryOn">Let them lead</button>';
+      setTelegraph({ suit: 'bells', stance: 'lead' }, false);
+    } else if (state === 'yours') {
+      inner.innerHTML =
+        '<div class="wc-trick-row"></div>' +
+        '<p class="wc-table-line">The table is yours — lead.</p>';
+      setTelegraph(armed ? PREVIEW[key(armed)] : null, !!armed);
+    } else if (state === 'resolved') {
+      inner.innerHTML =
+        '<div class="wc-trick-row">' +
+          '<span class="wc-played"><span class="wc-played-side">Them</span>' + cardHtml({ rank: 6, suit: 'bells' }, ' table') + '</span>' +
+          '<span class="wc-played"><span class="wc-played-side">You</span>' + cardHtml({ rank: 10, suit: 'bells' }, ' table wc-is-winner') + '</span>' +
+        '</div>' +
+        '<p class="wc-table-line">You take the trick.</p>' +
+        '<button type="button" class="wc-table-hint" id="carryOn">Tap the table to carry on</button>';
+      setTelegraph({ suit: 'moons', stance: 'lead' }, false);
+    } else {
+      var cleared = state === 'cleared';
+      var spoils = cleared ? 84 : 48;
+      var mult = cleared ? 6 : 1;
+      var bandName = cleared ? 'Victorious' : 'Defeated';
+      inner.innerHTML =
+        '<div class="wc-over">' +
+          '<h2>The Hunt is over</h2>' +
+          '<div class="wc-equation" role="group" aria-label="Spoils times Standing equals Score">' +
+            '<span class="wc-equation-part"><span class="wc-equation-key">Spoils</span><span class="wc-equation-value">' + spoils + '</span></span>' +
+            '<span class="wc-equation-op" aria-hidden="true">×</span>' +
+            '<span class="wc-equation-part"><span class="wc-equation-key">Standing</span><span class="wc-equation-value">×' + mult + '</span></span>' +
+            '<span class="wc-equation-op" aria-hidden="true">=</span>' +
+            '<span class="wc-equation-part wc-is-result"><span class="wc-equation-key">Score</span><span class="wc-equation-value">' + (spoils * mult) + '</span></span>' +
+          '</div>' +
+          '<p class="wc-verdict-detail">' + (cleared ? 7 : 4) + ' tricks — ' + bandName + '. The Demand was 220.</p>' +
+          '<p class="wc-verdict ' + (cleared ? 'wc-is-cleared' : 'wc-is-missed') + '">' +
+            (cleared ? '✔ Demand cleared' : '✘ Demand missed') + '</p>' +
+          '<table class="wc-tally"><thead><tr><th>Side</th><th>Tricks</th></tr></thead>' +
+          '<tbody><tr><td>You</td><td>' + (cleared ? 7 : 4) + '</td></tr>' +
+          '<tr><td>The Monarch</td><td>' + (cleared ? 6 : 9) + '</td></tr></tbody></table>' +
+          '<button type="button" class="wc-decline" id="finish">Finish the Hunt</button>' +
+        '</div>';
+      setTelegraph(null, false);
+    }
+
+    var carry = document.getElementById('carryOn');
+    // Both the "let them lead" control and the resolved-trick carry-on hand the table back
+    // to the player — the same single tap that commits the Quarry's telegraphed move.
+    if (carry) carry.onclick = function () { state = 'yours'; armed = null; render(); };
+    var finish = document.getElementById('finish');
+    if (finish) finish.onclick = function () { alert('onComplete fired — the run screen is T9, not this ticket.'); };
+  }
+
+  // ---- the hand ----
+  function renderHand() {
+    var hand = document.getElementById('hand');
+    var playable = state === 'yours';
+    hand.innerHTML = '';
+    HAND.forEach(function (c, i) {
+      var legal = LEGAL[key(c)] === 1;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'hand-card' + (armed && key(armed) === key(c) ? ' armed' : '') + (playable && !legal ? ' illegal' : '');
+      btn.disabled = !playable || !legal;
+      btn.setAttribute('tabindex', i === 0 ? '0' : '-1');
+      btn.setAttribute('aria-label', cardName(c) + (playable && !legal ? ' — not a legal move' : ''));
+      btn.innerHTML = cardHtml(c);
+      btn.onclick = function () {
+        if (armed && key(armed) === key(c)) {
+          alert('Played ' + cardName(c) + ' — the Quarry answers, and the trick resolves.');
+          armed = null; state = 'resolved'; render();
+          return;
+        }
+        armed = c; render();
+        var again = document.querySelector('.hand-card.armed');
+        if (again) again.focus();
+      };
+      hand.appendChild(btn);
+    });
+  }
+
+  function renderLedger() {
+    var yours = state === 'cleared' ? 7 : state === 'missed' ? 4 : 4;
+    document.getElementById('youTricks').textContent = yours;
+  }
+
+  function render() { renderFelt(); renderHand(); renderLedger(); syncBar(); }
+
+  function syncBar() {
+    [['btnLead', 'lead'], ['btnYours', 'yours'], ['btnResolved', 'resolved'],
+     ['btnCleared', 'cleared'], ['btnMissed', 'missed']].forEach(function (pair) {
+      document.getElementById(pair[0]).setAttribute('aria-pressed', String(state === pair[1]));
+    });
+  }
+
+  [['btnLead', 'lead'], ['btnYours', 'yours'], ['btnResolved', 'resolved'],
+   ['btnCleared', 'cleared'], ['btnMissed', 'missed']].forEach(function (pair) {
+    document.getElementById(pair[0]).onclick = function () { state = pair[1]; armed = null; render(); };
+  });
+
+  // Roving tabindex across the hand — arrow keys move, Escape cancels the armed card.
+  document.getElementById('hand').addEventListener('keydown', function (e) {
+    var cards = Array.prototype.slice.call(this.querySelectorAll('.hand-card'));
+    var at = cards.indexOf(document.activeElement);
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      var next = at + (e.key === 'ArrowRight' ? 1 : -1);
+      if (next < 0) next = cards.length - 1;
+      if (next >= cards.length) next = 0;
+      cards.forEach(function (c, i) { c.setAttribute('tabindex', i === next ? '0' : '-1'); });
+      cards[next].focus();
+    } else if (e.key === 'Escape' && armed) {
+      e.preventDefault(); armed = null; render();
+    }
+  });
+
+  render();
+</script>

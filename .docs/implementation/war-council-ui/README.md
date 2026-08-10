@@ -1,16 +1,23 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28, DLR-47
+**Built by:** SCRUM-28, DLR-47, DLR-53
 
 ## Responsibility
 
-The playable War Council round screen: a full-viewport, non-scrolling game surface that renders a
-dealt `WarCouncilState`, lets a human play a round of it by hand, and reports the finished round
-back through SCRUM-37's `WarCouncilMountProps` contract. It owns **presentation and sequencing
-only** — every rules question is delegated to `src/warCouncil/` (see
+The playable **Hunt screen**: a full-viewport, non-scrolling game surface that renders a dealt
+`WarCouncilState`, lets a human play a 13-trick round of it by hand against a telegraphing Quarry,
+and reports the finished round back through SCRUM-37's `WarCouncilMountProps` contract. It owns
+**presentation and sequencing only** — every rules question is delegated to `src/warCouncil/` (see
 [../war-council/README.md](../war-council/README.md)), and this module contains no legality check,
 no scoring rule, and no trick-winner computation of its own.
+
+DLR-53 added the Hunt layer on top of the round renderer rather than rebuilding it: §4's persistent
+readouts (the Demand, running Spoils, the Standing band, the Quarry's character and trick count),
+the Quarry's intent telegraphed before every commit, and an end panel showing
+`Spoils × Standing = Score` as arithmetic before its cleared/missed verdict. Every number on that
+screen originates in `src/hunt/config.ts` and arrives already derived — see
+[Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md).
 
 It sits under `src/app/` rather than beside the engine for a hard reason: `eslint.config.js`'s
 pure-core override bars `src/warCouncil/**` from importing React at all, so a `.tsx` file there
@@ -29,7 +36,7 @@ barrel re-exporting one is a needless brush with `react-refresh/only-export-comp
 | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- | ------------------------ |
 | `WarCouncilRound`                                                                 | Default export — the mount, satisfying `WarCouncilMountProps` (`initialState` in, `onComplete` out)   | `WarCouncilRound.tsx`  |
 | `roundReducer`                                                                    | The single reducer owning every UI transition: `(RoundUiState, RoundUiAction) => RoundUiState`        | `roundReducer.ts`      |
-| `createRoundUiState`                                                              | Lazy `useReducer` initializer; advances the opponent's opening lead when they lead trick 1            | `roundReducer.ts`      |
+| `createRoundUiState`                                                              | Lazy `useReducer` initializer; a pure restructuring of `initialState` — since DLR-53 it deliberately leaves the Quarry's opening lead uncommitted so it can be telegraphed | `roundReducer.ts`      |
 | `RoundUiState`                                                                    | `{ round, armed, prompt, resolvedTrick, rejection, cpuFault }` — the mount's one piece of state       | `roundReducer.ts`      |
 | `RoundUiAction`                                                                   | `TapCard \| ChooseAbility \| CancelSelection \| CarryOn`, via the `RoundUiActionKind` `as const` map  | `roundReducer.ts`      |
 | `ResolvedTrick`                                                                   | `{ cards, winner }` — a just-resolved trick held on screen until the player carries on                | `roundReducer.ts`      |
@@ -38,6 +45,9 @@ barrel re-exporting one is a needless brush with `react-refresh/only-export-comp
 | `cardAccessibleName`                                                              | `"3 of Keys (Fox)"` / `"7 of Bells"` — the accessible name every card button binds to                 | `labels.ts`            |
 | `cardKey`                                                                         | `"bells-7"` — the one stable React list key for a card, shared by every card list in the module       | `labels.ts`            |
 | `ILLEGAL_MOVE_MESSAGE`                                                            | `Record<IllegalMoveReason, string>` — human copy for the engine's own rejection reasons               | `labels.ts`            |
+| `STANCE_PHRASE`, `STANDING_BAND_NAME`, `DEMAND_OUTCOME_VERDICT`                   | Display copy for the telegraphed stance, the four Standing bands, and the cleared/missed verdict (DLR-53) | `labels.ts`            |
+| `intentAccessibleName`                                                            | The telegraph's single screen-reader sentence; distinguishes a live reading from a speculative one (DLR-53) | `labels.ts`            |
+| `previewQuarryIntent`                                                             | Pure: the Quarry's intent for the trick the player is *about* to lead. Returns `null`, never throws (DLR-53) | `intentPreview.ts`     |
 | `fanPlacement`                                                                    | Pure fan geometry: rotation, lift, overlap, and z-order for one card at one hand position             | `fanLayout.ts`         |
 | `FAN_ROTATION_STEP_DEG`, `FAN_LIFT_FACTOR`, `FAN_OVERLAP_PX`, `FAN_ARMED_Z_INDEX` | Named tuning constants `fanPlacement` reads, transcribed from the approved mockup                     | `fanLayout.ts`         |
 | `useRovingTabIndex`                                                               | Shared roving-tabindex hook: one tab stop over a flat list of `count` controls, arrow/Home/End/Escape | `useRovingTabIndex.ts` |
@@ -45,19 +55,24 @@ barrel re-exporting one is a needless brush with `react-refresh/only-export-comp
 | `PlayingCard`                                                                     | One card in three renderings via `variant: 'hand' \| 'table' \| 'pile'`                               | `PlayingCard.tsx`      |
 
 The zone components — `RoundStatusBand`, `DecreePile`, `TrickWell`, `HandFan`, `AbilityPrompt`,
-`RoundOverPanel` — are each a default export consumed only by `WarCouncilRound.tsx`.
+`RoundOverPanel` — are each a default export consumed only by `WarCouncilRound.tsx`. DLR-53 added
+three more in the same shape: `HuntLedger` (mounted inside `RoundStatusBand`), `QuarryDossier`, and
+`IntentTelegraph` (both mounted in the new `wc-dossier` zone).
 
-`labels.ts`, `fanLayout.ts`, and `roundReducer.ts` import no React and touch no DOM global, so all
-three are unit-tested in the cheap `node` Vitest project; the components are tested in the `dom`
-project (see [Testing](testing.md)).
+`labels.ts`, `fanLayout.ts`, `roundReducer.ts`, and `intentPreview.ts` import no React and touch no
+DOM global, so all four are unit-tested in the cheap `node` Vitest project; the components are
+tested in the `dom` project (see [Testing](testing.md)).
 
 ## How it works
 
 - [Layout and styling](layout-and-styling.md) — the full-viewport shell, the `dvh` vs `svh`
-  choice, the two-stylesheet split, and how the fan's transform is composed in CSS rather than
+  choice, the three-stylesheet split, and how the fan's transform is composed in CSS rather than
   written whole from React.
 - [Interaction and state](interaction-and-state.md) — tap-twice-to-play, the reducer's no-effect
   design, how a held trick's winner is derived rather than recomputed, and rejected-move recovery.
+- [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md) — the `hunt` prop, the ledger
+  and dossier, the telegraph's two readings and why the Quarry's lead is held uncommitted, and the
+  end panel's equation.
 - [Accessibility](accessibility.md) — the shared roving tabindex, the ability prompt's focus
   handling, and the fan's `aria-hidden` behaviour while a prompt is open.
 - [Error handling](error-handling.md) — the two `cpuFault` cases and why they're shown, not
@@ -67,8 +82,11 @@ project (see [Testing](testing.md)).
 ## Rules & invariants enforced
 
 - **This module re-implements no rule.** `legalMoves` decides what `HandFan` renders as tappable,
-  `playCard` decides what commits, `chooseCpuMove` plays the opponent, `scoreRound` computes the
-  reported score, and card equality is always the engine's own `sameCard`/`containsCard` (exported
+  `playCard` decides what commits, `chooseCpuMove` and `commitQuarryMove` play the opponent,
+  `scoreRound` computes the reported score, and — since DLR-53 — `spoils` computes the running
+  Spoils, `resolveStanding` the Standing band, `quarryIntent` the telegraphed stance, `scoreHunt`
+  the end-of-Hunt score, and `checkDemand` the cleared/missed verdict. Card equality is always the
+  engine's own `sameCard`/`containsCard` (exported
   from `src/warCouncil/index.ts` by this ticket rather than deep-imported or re-written).
   `roundReducer.ts` contains no suit comparison, no rank comparison, and no trick-winner
   computation. The single permitted rank _identity_ check is "is this rank `CardRank.Fox` or
@@ -78,6 +96,12 @@ project (see [Testing](testing.md)).
   a grep in the contract's final verification.
 - **`labels.ts`, `fanLayout.ts`, and `roundReducer.ts` import no React and touch no DOM global** —
   verified by grep, which is what lets them run in the `node` Vitest project.
+- **No component sees a numeric literal standing in for a Demand, a multiplier, or a band
+  boundary** (DLR-53). Every one arrives already derived — `hunt.demand`, `band.multiplier`,
+  `huntScore.standing` — from `src/hunt/config.ts` through the engine. Grep-verified in the
+  contract's final verification, but structural rather than merely observed: there is no path by
+  which a component could invent one. See
+  [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md).
 - **Every visual value is a named CSS custom property or a named constant in `fanLayout.ts`**,
   transcribed from the developer-approved `mockup.html`. No hex colour appears in any `.tsx` — a grep
   enforces this — and no `vh`/`vw` unit appears anywhere in `src/` or `index.html`; dimensions are
@@ -94,18 +118,24 @@ project (see [Testing](testing.md)).
 
 ## Deferred / not yet implemented
 
-- **The "Points" column is a Standing multiplier, not a Hunt score.** `RoundOverPanel` reports
-  `scoreRound`'s per-side value, which since DLR-50 comes from `src/hunt`'s `resolveStanding` — a
-  ×0–×6 multiplier, not `Spoils × Standing`. `scoreHunt`/`checkDemand` exist and are tested (see
-  [../war-council/scoring.md](../war-council/scoring.md)) but nothing in this module calls them;
-  surfacing the real score, band, and Demand on screen is T7 in the DLR-46 epic.
 - **No automated test covers the no-scroll layout.** `jsdom` has no layout engine, so nothing in the
-  suite can prove `.wc-shell` never scrolls or crops at a given viewport size. That check belongs to
-  QA driving the app in a real browser at named sizes. It has been verified at 1280×720, 844×390
-  (landscape), and a phone portrait — the last at 500×844 rather than 390×844, because the browser
-  tooling floors window width at 500px on this machine; `--wc-card-w`'s
+  suite can prove `.wc-shell` never scrolls or crops at a given viewport size — which is not a
+  theoretical gap: DLR-53's first review round shipped a `.wc-status` that pushed the Demand cell
+  entirely off-screen at phone width, with every component test passing. That check belongs to QA
+  driving the app in a real browser at named sizes, and it has caught a real defect exactly once.
+  Verified at 1280×720 and 844×390 (landscape) by SCRUM-28, and re-verified by DLR-53 at 1920×1080,
+  1366×768, 1024×640, and a phone portrait — the last at 500×844 rather than 390×844, because the
+  browser tooling floors window width at 500px on this machine; `--wc-card-w`'s
   `clamp(2.9rem, 6.2vmin, 4.3rem)` resolves to its `2.9rem` floor at both widths, making the two
   layout-equivalent for that measurement.
+- **The telegraph's line renders beside the end-of-Hunt panel.** Once the round completes,
+  `quarryIntent` correctly returns `null` and `IntentTelegraph` reads "Waiting on your lead" next to
+  a panel where there is nothing left to lead. Harmless and never stale, but a redundant line during
+  that state — worth a glance when the visual pass lands.
+- **The Quarry's *lead* costs one extra tap on trick 1 only.** Holding the lead uncommitted is what
+  makes it telegraphable, and every later lead folds its commit onto the carry-on tap the player was
+  already making. Trick 1 has no prior reveal to fold onto, so it opens with a "Let them lead" tap.
+  Whether that reads as a stall is a developer judgement nobody has made yet.
 - **The `cpuFault` `IllegalMoveReason` branch is defensive and deliberately untested** — unreachable
   through today's engine, carried as a guard against a future engine regression rather than faked
   with a contrived fixture.
@@ -138,9 +168,10 @@ project (see [Testing](testing.md)).
   the Quarry's round-long rule-break, where an ordinary card was led and the Monarch character is
   simply active for the round — not the pre-existing case this string was written for, where a
   literal Monarch (rank 11) was led. The fixed string here (`"The Monarch was led — play your Swan
-  or your highest card of that suit."`) is factually wrong for the round-long trigger. Currently
-  unreachable — no round in the shipped app has a `quarryCharacter` active (see
-  [../war-council/README.md](../war-council/README.md)'s Deferred section) — but whichever ticket
-  next wires character scheduling into a real round must fix this copy before it ships, either by
-  rewording to a trigger-neutral statement or by splitting the reason code. Left as-is here because
-  the wording is a developer copy call, not this doc-writer's or any agent's to invent.
+  or your highest card of that suit."`) is factually wrong for the round-long trigger.
+  **DLR-53 made this reachable.** `src/App.tsx` now passes `SLICE_QUARRY_CHARACTER` (the Monarch) as
+  `dealRound`'s third argument, so every round in the shipped app has the character active and a
+  player who breaks the round-long rule now sees copy describing a trigger that did not fire. This
+  is the highest-value copy fix outstanding in the module. It was left as-is through DLR-53 because
+  the wording is a developer copy call — reword to a trigger-neutral statement, or split the reason
+  code in the engine — and not this doc-writer's or any agent's to invent.

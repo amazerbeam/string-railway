@@ -16,11 +16,18 @@ or `cpuFault` is set, or the round is complete.
 ### The module has no effect at all
 
 Every state transition is either the lazy `useReducer` initializer (`createRoundUiState`, called
-once per mount to play the opponent's lead if they lead trick 1) or a handler fired by a tap, a
-keypress, or a callback from one of the felt's own controls (`AbilityPrompt`'s `onChoose`,
-`RoundOverPanel`'s `onFinish`). Both the initializer and the reducer are pure functions of their
-arguments, so React StrictMode's development double-invocation simply recomputes an identical value
-rather than doing anything twice for real.
+once per mount) or a handler fired by a tap, a keypress, or a callback from one of the felt's own
+controls (`AbilityPrompt`'s `onChoose`, `RoundOverPanel`'s `onFinish`). Both the initializer and the
+reducer are pure functions of their arguments, so React StrictMode's development double-invocation
+simply recomputes an identical value rather than doing anything twice for real. Since DLR-53 the
+initializer is a *pure restructuring* of `initialState` with no engine call at all — it no longer
+plays the opponent's opening lead, which makes it trivially rather than arguably idempotent. See
+[Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md) for why that lead is now held.
+
+DLR-53 added `previewQuarryIntent` and `quarryIntent` calls *during render*, which is safe for the
+same reason: both are documented pure and neither mutates the state handed to it, so a StrictMode
+double-invoke recomputes identical values. Neither result is stored in `RoundUiState` — a stored
+copy could only go stale against `ui.round`.
 
 The alternative — an effect that watches "it's the CPU's turn" and dispatches — is what SCRUM-37
 actually hit: a synchronous `setState` inside an effect body fails this project's
@@ -75,19 +82,21 @@ call the same `handleCarryOn`, and dispatching `CarryOn` a second time is a safe
 
 ### The deciding trick is held exactly like every other
 
-`roundReducer.ts`'s `commit` and `advanceCpu` set `resolvedTrick` and, on the thirteenth trick,
+`roundReducer.ts`'s `commit` and `advanceQuarryFollow` set `resolvedTrick` and, on the thirteenth trick,
 `phase: RoundPhase.Complete` in the same transition — both become true at once. An earlier version
 of `WarCouncilRound.tsx` branched on `roundComplete` **first**, so `RoundOverPanel` replaced the
 deciding trick instantly and the player never saw which cards won the round. The felt now branches on
 `resolvedTrick` before `roundComplete`, so the held trick's cards and winner are always shown first;
 the round-over panel renders only once `resolvedTrick` is `null` again.
 
-`handleCarryOn` is one function serving both the held trick's control and the round-over panel's
-"Finish the round" button: it dispatches `CarryOn` whenever something is held (clearing it, even when
-the round is already complete), and calls `onComplete` only once nothing is held and the round is
-complete — conditions mutually exclusive by construction, so `onComplete` cannot fire twice for one
-click. `roundReducer.ts`'s own `handleCarryOn` mirrors this: it no longer treats a completed round as
-a blanket no-op, and only skips advancing the opponent once the round is over. That guard matters —
+`handleCarryOn` is one function serving three controls — the held trick's, the pending Quarry lead's
+(DLR-53), and the round-over panel's "Finish the round" button: it dispatches `CarryOn` whenever
+something is held *or* a Quarry lead is pending (clearing and/or committing, even when the round is
+already complete), and calls `onComplete` only once nothing is held or pending and the round is
+complete. `quarryToLead` is only ever true while `roundComplete` is false, so those conditions stay
+mutually exclusive by construction and `onComplete` cannot fire twice for one click.
+`roundReducer.ts`'s own `handleCarryOn` mirrors this: it no longer treats a completed round as a
+blanket no-op, and only skips advancing the opponent once the round is over. That guard matters —
 without it, advancing on a completed round would set `cpuFault: 'noLegalMove'` every time a round
 ended, since the CPU's hand is empty.
 

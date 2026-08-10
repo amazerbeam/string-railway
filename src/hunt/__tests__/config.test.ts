@@ -9,8 +9,11 @@ import {
   ENCOUNTERS_PER_RUN,
   TelegraphFidelity,
   TELEGRAPH_FIDELITY,
+  FIXED_DEMAND,
+  SLICE_QUARRY_CHARACTER,
   type StandingBand,
 } from '../config'
+import { quarryCharacterInfo } from '../quarryCharacters'
 
 describe('resolveStanding', () => {
   it.each([
@@ -88,5 +91,18 @@ describe('TELEGRAPH_FIDELITY', () => {
       expect.arrayContaining(['suit', 'suitAndStance']),
     )
     expect(Object.values(TelegraphFidelity)).toHaveLength(2)
+  })
+})
+
+describe('FIXED_DEMAND', () => {
+  it('is a positive finite number, so checkDemand can never compare against null', () => {
+    expect(Number.isFinite(FIXED_DEMAND)).toBe(true)
+    expect(FIXED_DEMAND).toBeGreaterThan(0)
+  })
+})
+
+describe('SLICE_QUARRY_CHARACTER', () => {
+  it('names a character whose rule-break is actually enforced', () => {
+    expect(quarryCharacterInfo(SLICE_QUARRY_CHARACTER)).toBeDefined()
   })
 })
