@@ -1,3 +1,5 @@
+import type { QuarryCharacter } from '../hunt'
+
 export const Suit = {
   Bells: 'bells',
   Keys: 'keys',
@@ -66,6 +68,13 @@ export interface RoundState {
   readonly leader: PlayerSide
   readonly tricksPlayed: number
   readonly phase: RoundPhase
+  /**
+   * The encounter's round-long rule-break (§4). Written once by `dealRound` and carried
+   * by every state spread in `playCard`/`abilities`, so it cannot toggle mid-round
+   * (DLR-51 AC1). Absent means no character is active and the base rules apply unchanged
+   * — optional so the specs' hand-built `RoundState` literals still compile.
+   */
+  readonly quarryCharacter?: QuarryCharacter
 }
 
 export function currentTurn(state: RoundState): PlayerSide {

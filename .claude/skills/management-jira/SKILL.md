@@ -12,8 +12,8 @@ metadata:
 
 Full lifecycle Jira skill. Two workflows: **create** a new issue, or **manage**
 an existing one (transition + comment). Both follow the same conventions —
-correct priority labels, no subtasks, backlog placement, parent epic linking,
-and plain-text comments.
+correct priority labels, the closed label vocabulary, no subtasks, backlog
+placement, parent epic linking, and plain-text comments.
 
 ## Instance
 
@@ -115,6 +115,64 @@ is Workflow B and still requires explicit confirmation.
 
 ---
 
+## The label vocabulary
+
+This file is the **single owner** of the label set. It exists to answer one
+question off the board, without opening a ticket: **when this closes, will
+there be something the developer can actually put their hands on?**
+
+Labels are a **closed set**. Never invent one outside the two axes below — a
+one-off label is invisible on a board because nobody thinks to filter for it,
+which defeats the entire point.
+
+### Axis 1 — layer (mandatory, exactly one)
+
+| Label | The ticket's work lands in | Verified by |
+|---|---|---|
+| `ui` | a surface the developer can see and operate — a screen, a HUD, a board renderer, an interaction model, a visual or copy pass | opening the app |
+| `engine` | rules, scoring, state machines, CPU logic, domain types — no visible surface | Vitest |
+| `infra` | scaffold, toolchain, CI, deploy, dependency and configuration plumbing | the gates, or a deploy URL |
+| `design` | a document or a recorded decision, no code | reading it |
+| `spike` | time-boxed research whose deliverable is a finding | reading the finding |
+
+- **Exactly one, always.** A mixed ticket takes the layer its *diff* mostly
+  lands in. If it is genuinely half and half, that is usually two tickets.
+- **Judge by where the files change, not by what the ticket is about.** A
+  ticket that moves something on screen but only edits engine files is
+  `engine` — its own `Affected Product` section is the evidence. Getting this
+  backwards is the most common mislabel.
+- **Epics take no layer label.** Their children carry it; an epic labelled
+  `ui` pollutes every filter with a container.
+
+### Axis 2 — `playable` (optional, add alongside the layer)
+
+Add `playable` when **closing this ticket leaves the developer able to open the
+app and exercise the change by hand.** This is the label that answers "when do
+I get something to test", so it is the one that has to be honest.
+
+- **`ui` does not imply `playable`.** A types-only mount contract, or a
+  component with no route into it yet, is `ui` and not `playable`.
+- **`engine` can be `playable`** when it changes behaviour already reachable
+  through a shipped screen.
+- A bug found by playing is almost always `playable`.
+- If the honest answer is "only once the ticket after it lands", leave
+  `playable` off and say so in `Dependencies & Risks`. A `playable` that turns
+  out not to be is worse than none, because it is the label the developer
+  plans their evening around.
+
+### Board setup (one-time, so the labels are visible)
+
+Labels do not show on cards by default. Add the **Labels** field via board
+settings → **Card layout**, and keep a **`playable`** filter to hand. Without
+that, the labels are correct and useless.
+
+Pre-existing free-form labels on old tickets (`prototype-playtest`,
+`latent-defect`, `rules-engine`, `platform-research`) predate this vocabulary.
+Leave them where they are, do not add more, and do not strip them while
+touching a ticket for another reason.
+
+---
+
 ## Workflow A — Create a Ticket
 
 Use when the user says "create a ticket", "add to Jira", "log a bug", "create
@@ -137,6 +195,10 @@ obvious, use it; otherwise ask.
 - **Priority** — Highest, High, Medium, Low, or Lowest. Never use P0/P1/P2/P3
   or any other notation.
 - **Description** — see Step 2
+- **Labels** — pick the layer label, and decide `playable`, per *The label
+  vocabulary*. Do **not** ask; derive both from the work and state the choice
+  in your output so a wrong call is visible and correctable. Non-epics always
+  carry a layer label; epics carry none.
 - **Fix version** — ask: "Does this belong to a fix version?" Link if provided;
   skip if not.
 
@@ -281,6 +343,12 @@ Call `createJiraIssue` with:
 - `contentFormat`: `markdown`
 - `additional_fields`:
   - `priority`: `{ "name": "High" }` (or whichever applies)
+  - `labels`: a plain string array — the layer label, plus `playable` if it
+    applies. E.g. `["ui", "playable"]`, or `["engine"]`. Omit the field
+    entirely for an epic. This is a standard Jira field, so no live id
+    resolution is needed — but note that `labels` **replaces** the whole array
+    on an `editJiraIssue` call, so read the current labels first when adding
+    one to an existing ticket rather than clobbering what is there.
   - `fixVersions`: `[{ "name": "version name" }]` if provided
   - `parent`: `{ "key": "PROJ-XX" }` if a parent epic was confirmed (non-epics only)
   - Testing Type field: required for Test tickets. Call
@@ -434,6 +502,7 @@ wrote that; do not echo it back.
 |---|---|
 | Jira project | Always ask which project the ticket belongs to |
 | Priority labels | Always Highest, High, Medium, Low, or Lowest — never P0/P1 etc. |
+| Labels | Closed set, per *The label vocabulary*. Exactly one layer label on every non-epic, none on an epic; add `playable` only when the developer can exercise it by hand on close. Derive it, state it, never ask. |
 | Subtasks | Never create subtasks — use linked tickets instead |
 | Sprint | Ask: current sprint or backlog. Resolve the sprint **id** live from an issue already in it — never guess an id, never write a `closed` sprint. Omit the field for backlog. |
 | Parent epic | Always ask for non-epic tickets; set as parent if confirmed |
@@ -458,6 +527,14 @@ wrote that; do not echo it back.
 - Hardcoding a numeric transition or status id instead of resolving it live
 - Adding a `Blocked` status instead of flagging the card
 - Using P0/P1/P2/P3 or any non-standard priority notation
+- Creating a non-epic with no layer label, or inventing a label outside the
+  closed set in *The label vocabulary*
+- Labelling a ticket `ui` because it concerns something on screen when its own
+  `Affected Product` scopes the change to non-UI files
+- Marking a ticket `playable` when it is only playable once a later ticket
+  lands — the dependency belongs in `Dependencies & Risks`, not in a label
+- Overwriting a ticket's existing labels when adding one — `labels` replaces
+  the array, so read the current value first
 - Editing fields not covered by this skill — no assignee changes, no component tweaks
 - Creating a Test ticket without a confirmed Testing Type value
 - Hardcoding Testing Type or Test Activity option lists instead of reading live `allowedValues` from `getJiraIssueTypeMetaWithFields`

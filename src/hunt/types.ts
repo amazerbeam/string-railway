@@ -21,6 +21,9 @@ export type Standing = number
 /** The encounter's score target; rises per encounter (§5). */
 export type Demand = number
 
+/** The equation's result — Spoils × Standing, checked against the Demand (§1). */
+export type Score = number
+
 /** One 13-trick round — the inner loop, scored once via Spoils × Standing checked against the Demand (§1, §10). */
 export interface Hunt {
   readonly quarry: Quarry

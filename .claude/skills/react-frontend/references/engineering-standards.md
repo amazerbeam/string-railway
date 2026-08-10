@@ -68,6 +68,35 @@ export const REQUEST_STATUS = {
 
 The dividing question between the last two: *if this needs to change, does it need a code change and review, or does the developer just want to try a different number?* The first is a constant; the second is configuration.
 
+## Exhaustiveness checking
+
+A discriminated union (a set of variants sharing one literal-typed field — `kind`, `stance`, `phase`) is only as safe as the code that switches on it. A `switch` with a `default:` that silently falls through, or an `if`/`else if` chain with no final `else`, compiles cleanly today and stops compiling loudly the day a variant is added — it just silently does nothing for the new case instead. Close that gap with a `never` guard in the branch that should be unreachable:
+
+```ts
+function describe(intent: QuarryIntent): string {
+  switch (intent.stance) {
+    case QuarryIntentStance.Leading:
+      return 'opening the trick'
+    case QuarryIntentStance.Pressing:
+      return 'pressing to win'
+    case QuarryIntentStance.Ducking:
+      return 'ducking'
+    default: {
+      const _exhaustive: never = intent.stance
+      return _exhaustive
+    }
+  }
+}
+```
+
+Adding a fourth `QuarryIntentStance` value without adding its case here now fails `npm run typecheck` instead of shipping a silent no-op. This is worth reaching for anywhere a union is expected to grow — CPU intent shapes, ability-choice kinds, round phases — not just where a bug already happened once.
+
+## A known gap, not yet closed: `noUncheckedIndexedAccess`
+
+This project's `tsconfig.app.json` enables `strict: true`, but `noUncheckedIndexedAccess` is not among the flags `strict` bundles — it has to be turned on separately. With it off, `someArray[i]` and `someRecord[key]` type as `T`, not `T | undefined`, so an out-of-range index or a mistyped `Record` key type-checks cleanly and fails at runtime instead of at the type checker. This codebase leans on exactly the patterns that flag protects — `state.hands[side]`, table scans in `src/hunt/config.ts`, `Record<PlayerSide, ...>` lookups throughout `src/warCouncil/`.
+
+Recorded here as a stated gap rather than turned on inline: enabling it repo-wide is very likely to surface a batch of new type errors across existing files, which is its own scoped piece of work, not something to fold silently into an unrelated task. Reach for it as a deliberate follow-up, not a drive-by fix.
+
 ## The four async states
 
 Every asynchronous surface has **four** states, not two:

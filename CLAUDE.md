@@ -27,6 +27,7 @@ This project is deliberately organised so each fact is stated once. When somethi
 | Where code lives, runner commands, developer-owned work, correctness traps | `.claude/workflow/web-project.md` |
 | Where plans live, slug grammar, how a command picks *which* plan | `.claude/workflow/plan-resolution.md` |
 | Jira status vocabulary, what each board status means, which transitions the `/fb-*` commands automate | `.claude/skills/management-jira/SKILL.md` → its status-model section |
+| Jira label vocabulary — the closed layer set (`ui` / `engine` / `infra` / `design` / `spike`) and the `playable` marker | `.claude/skills/management-jira/SKILL.md` → its label-vocabulary section |
 | How to write React/TypeScript here — conventions, tunables, testing posture | `.claude/skills/react-frontend/SKILL.md` + its `references/engineering-standards.md` |
 | How a game screen is laid out and operated — viewport shell, zoning, interaction cost, navigating a collection of controls | `.claude/skills/game-ux/SKILL.md` + its `references/full-viewport-layout.md` |
 | Game design frameworks, designer research, the critique checklist | `.docs/design/design-principles.md` |

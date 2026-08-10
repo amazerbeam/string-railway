@@ -7,6 +7,8 @@ import {
   DEMAND_CURVE,
   FORAGE_BUDGET_PER_ENCOUNTER,
   ENCOUNTERS_PER_RUN,
+  TelegraphFidelity,
+  TELEGRAPH_FIDELITY,
   type StandingBand,
 } from '../config'
 
@@ -73,5 +75,18 @@ describe('Forage and run-length constants', () => {
   it('matches the provisional values from DLR-48 AC3', () => {
     expect(FORAGE_BUDGET_PER_ENCOUNTER).toBe(4)
     expect(ENCOUNTERS_PER_RUN).toBe(5)
+  })
+})
+
+describe('TELEGRAPH_FIDELITY', () => {
+  it("defaults to SuitAndStance — DLR-52 AC4's stated default", () => {
+    expect(TELEGRAPH_FIDELITY).toBe(TelegraphFidelity.SuitAndStance)
+  })
+
+  it('has exactly the two named fidelity levels', () => {
+    expect(Object.values(TelegraphFidelity)).toEqual(
+      expect.arrayContaining(['suit', 'suitAndStance']),
+    )
+    expect(Object.values(TelegraphFidelity)).toHaveLength(2)
   })
 })

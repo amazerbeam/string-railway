@@ -1,4 +1,4 @@
-export type { Hunt, Quarry, Spoils, Standing, Demand } from './types'
+export type { Hunt, Quarry, Spoils, Standing, Demand, Score } from './types'
 export { QuarryCharacter } from './types'
 
 export type { StandingBand, DemandCurve } from './config'
@@ -10,4 +10,9 @@ export {
   DEMAND_CURVE,
   FORAGE_BUDGET_PER_ENCOUNTER,
   ENCOUNTERS_PER_RUN,
+  TelegraphFidelity,
+  TELEGRAPH_FIDELITY,
 } from './config'
+
+export type { QuarryCharacterInfo } from './quarryCharacters'
+export { QUARRY_CHARACTERS, quarryCharacterInfo } from './quarryCharacters'

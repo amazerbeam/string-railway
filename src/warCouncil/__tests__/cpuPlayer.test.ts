@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { dealRound } from '../deal'
 import { playCard } from '../playCard'
+import { legalMoves } from '../legalMoves'
+import { monarchFollowApplies } from '../quarryRuleBreak'
 import {
   chooseCpuCard,
   chooseCpuFoxChoice,
@@ -16,6 +18,7 @@ import {
   type Card,
   type RoundState,
 } from '../types'
+import { QuarryCharacter } from '../../hunt'
 
 function stateWith(overrides: Partial<RoundState>): RoundState {
   return {
@@ -245,5 +248,69 @@ describe('chooseCpuMove — simulated full rounds (AC4)', () => {
 
     expect(foxPlays).toBeGreaterThan(0)
     expect(woodcutterPlays).toBeGreaterThan(0)
+  })
+})
+
+describe('the Monarch rule-break — simulated full rounds (DLR-51 AC6)', () => {
+  const seeds = Array.from({ length: 60 }, (_, i) => i + 1)
+
+  it.each(seeds)(
+    'completes 13 tricks with the Monarch active, never stalling or playing illegally (seed %i)',
+    (seed) => {
+      let state = dealRound(
+        seed % 2 === 0 ? PlayerSide.Player : PlayerSide.Cpu,
+        lcg(seed),
+        QuarryCharacter.Monarch,
+      )
+      let guard = 0
+
+      while (state.phase !== RoundPhase.Complete) {
+        guard += 1
+        if (guard > 100) throw new Error('runaway loop — round never completed')
+        const turn = currentTurn(state)
+        const legal = legalMoves(state, turn)
+        if (legal.length === 0) {
+          throw new Error(
+            `empty legal-move set for ${turn} at seed ${seed}, trick ${state.tricksPlayed}`,
+          )
+        }
+        const move = chooseCpuMove(state, turn)
+        const result = playCard(state, turn, move.card, move.choice)
+        if (!result.ok) throw new Error(`illegal play at seed ${seed}: ${result.reason}`)
+        // AC1 — the character never toggles mid-round.
+        expect(result.state.quarryCharacter).toBe(QuarryCharacter.Monarch)
+        state = result.state
+      }
+
+      expect(state.tricksPlayed).toBe(13)
+      expect(state.tricksWon.player + state.tricksWon.cpu).toBe(13)
+    },
+  )
+
+  it('actually fires the constraint, and only ever against the player, across the sample', () => {
+    let constrainedTurns = 0
+    let narrowedTurns = 0
+
+    for (const seed of seeds) {
+      let state = dealRound(PlayerSide.Cpu, lcg(seed), QuarryCharacter.Monarch)
+      let guard = 0
+      while (state.phase !== RoundPhase.Complete) {
+        guard += 1
+        if (guard > 100) throw new Error('runaway loop — round never completed')
+        const turn = currentTurn(state)
+        if (monarchFollowApplies(state, turn)) {
+          constrainedTurns += 1
+          expect(turn).toBe(PlayerSide.Player)
+          if (legalMoves(state, turn).length < state.hands[turn].length) narrowedTurns += 1
+        }
+        const move = chooseCpuMove(state, turn)
+        const result = playCard(state, turn, move.card, move.choice)
+        if (!result.ok) throw new Error(`illegal play at seed ${seed}: ${result.reason}`)
+        state = result.state
+      }
+    }
+
+    expect(constrainedTurns).toBeGreaterThan(0)
+    expect(narrowedTurns).toBeGreaterThan(0)
   })
 })

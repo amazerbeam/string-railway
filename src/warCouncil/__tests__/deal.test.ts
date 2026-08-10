@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { QuarryCharacter } from '../../hunt'
 import { dealRound } from '../deal'
 import { PlayerSide, RoundPhase } from '../types'
 
@@ -50,5 +51,22 @@ describe('dealRound', () => {
     const a = dealRound(PlayerSide.Player, lcg(55))
     const b = dealRound(PlayerSide.Player, lcg(55))
     expect(a).toEqual(b)
+  })
+
+  it('deals a characterless round when no Quarry character is given', () => {
+    expect(dealRound(PlayerSide.Player, lcg(11)).quarryCharacter).toBeUndefined()
+  })
+
+  it('records the Quarry character it was dealt with', () => {
+    const state = dealRound(PlayerSide.Player, lcg(11), QuarryCharacter.Monarch)
+    expect(state.quarryCharacter).toBe(QuarryCharacter.Monarch)
+  })
+
+  it('leaves the rest of the deal identical whether a character is active or not', () => {
+    const plain = dealRound(PlayerSide.Player, lcg(11))
+    const withMonarch = dealRound(PlayerSide.Player, lcg(11), QuarryCharacter.Monarch)
+    expect(withMonarch.hands).toEqual(plain.hands)
+    expect(withMonarch.decree).toEqual(plain.decree)
+    expect(withMonarch.drawPile).toEqual(plain.drawPile)
   })
 })

@@ -72,3 +72,15 @@ export const FORAGE_BUDGET_PER_ENCOUNTER = 4
 // §9 "Encounters per run" — undecided in §9 itself; DLR-48 AC3 sets a
 // provisional 5 so the prototype is playable.
 export const ENCOUNTERS_PER_RUN = 5
+
+export const TelegraphFidelity = {
+  Suit: 'suit', // narrowest — only the lead suit is telegraphed
+  SuitAndStance: 'suitAndStance', // §4's stated default — suit plus pressing/ducking
+} as const
+export type TelegraphFidelity = (typeof TelegraphFidelity)[keyof typeof TelegraphFidelity]
+
+// §4's visibility table / DLR-52 AC4 — the Quarry's next-trick intent is telegraphed at this
+// fidelity, never as the exact card, so §4's hidden-hand row is never violated. Conservative
+// default named at the DLR-52 planning gate; the single value most likely to move after T8's
+// playtest.
+export const TELEGRAPH_FIDELITY: TelegraphFidelity = TelegraphFidelity.SuitAndStance

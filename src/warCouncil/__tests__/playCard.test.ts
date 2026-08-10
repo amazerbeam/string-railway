@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { QuarryCharacter } from '../../hunt'
 import { dealRound } from '../deal'
 import { playCard } from '../playCard'
 import {
@@ -66,6 +67,24 @@ describe('playCard — rejections', () => {
     })
     const result = playCard(state, 'player', { suit: 'bells', rank: 2 })
     expect(result).toEqual({ ok: false, reason: IllegalMoveReason.MustFollowLeadSuit })
+  })
+
+  it('names the Monarch when a round-long rule-break, not the led card, narrowed the follow', () => {
+    const state = stateWith({
+      quarryCharacter: QuarryCharacter.Monarch,
+      leader: PlayerSide.Cpu,
+      currentTrick: [{ side: 'cpu', card: { suit: 'keys', rank: 4 } }],
+      hands: {
+        player: [
+          { suit: 'keys', rank: 1 },
+          { suit: 'keys', rank: 6 },
+          { suit: 'keys', rank: 9 },
+        ],
+        cpu: [],
+      },
+    })
+    const result = playCard(state, 'player', { suit: 'keys', rank: 6 })
+    expect(result).toEqual({ ok: false, reason: IllegalMoveReason.MustFollowMonarch })
   })
 
   it('rejects Fox (rank 3) played with no ability choice', () => {

@@ -94,6 +94,11 @@ project (see [Testing](testing.md)).
 
 ## Deferred / not yet implemented
 
+- **The "Points" column is a Standing multiplier, not a Hunt score.** `RoundOverPanel` reports
+  `scoreRound`'s per-side value, which since DLR-50 comes from `src/hunt`'s `resolveStanding` — a
+  ×0–×6 multiplier, not `Spoils × Standing`. `scoreHunt`/`checkDemand` exist and are tested (see
+  [../war-council/scoring.md](../war-council/scoring.md)) but nothing in this module calls them;
+  surfacing the real score, band, and Demand on screen is T7 in the DLR-46 epic.
 - **No automated test covers the no-scroll layout.** `jsdom` has no layout engine, so nothing in the
   suite can prove `.wc-shell` never scrolls or crops at a given viewport size. That check belongs to
   QA driving the app in a real browser at named sizes. It has been verified at 1280×720, 844×390
@@ -127,3 +132,15 @@ project (see [Testing](testing.md)).
   three suit hues, the `clamp()` card-size bounds, and `fanLayout.ts`'s rotation step, lift factor,
   and overlap are transcribed-and-confirmed defaults from the approved mockup, each a one-line
   change — not final values.
+- **`ILLEGAL_MOVE_MESSAGE[IllegalMoveReason.MustFollowMonarch]`'s copy is now stale for one of its
+  two triggers, and this module was not the one that made it so.** DLR-51 (engine-side, this
+  module's files untouched) widened *when* the engine reports that reason: it now also fires for
+  the Quarry's round-long rule-break, where an ordinary card was led and the Monarch character is
+  simply active for the round — not the pre-existing case this string was written for, where a
+  literal Monarch (rank 11) was led. The fixed string here (`"The Monarch was led — play your Swan
+  or your highest card of that suit."`) is factually wrong for the round-long trigger. Currently
+  unreachable — no round in the shipped app has a `quarryCharacter` active (see
+  [../war-council/README.md](../war-council/README.md)'s Deferred section) — but whichever ticket
+  next wires character scheduling into a real round must fix this copy before it ships, either by
+  rewording to a trigger-neutral statement or by splitting the reason code. Left as-is here because
+  the wording is a developer copy call, not this doc-writer's or any agent's to invent.

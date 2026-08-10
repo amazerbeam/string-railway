@@ -1,12 +1,19 @@
+import { TelegraphFidelity, TELEGRAPH_FIDELITY } from '../hunt'
 import { cardsOfSuit, removeCard } from './cardUtils'
 import { legalMoves } from './legalMoves'
+import { playCard } from './playCard'
+import { QUARRY_SIDE } from './quarryRuleBreak'
 import { resolveTrickWinner } from './resolveTrick'
 import {
   ALL_SUITS,
   AbilityChoiceKind,
   CardRank,
+  currentTurn,
+  IllegalMoveReason,
+  RoundPhase,
   type AbilityChoice,
   type Card,
+  type PlayCardResult,
   type PlayerSide,
   type RoundState,
   type Suit,
@@ -85,4 +92,80 @@ export function chooseCpuMove(state: RoundState, side: PlayerSide): CpuMove {
     return { card, choice: chooseCpuWoodcutterChoice(handWithDrawn) }
   }
   return { card }
+}
+
+export const QuarryIntentStance = {
+  Leading: 'leading',
+  Pressing: 'pressing',
+  Ducking: 'ducking',
+} as const
+export type QuarryIntentStance = (typeof QuarryIntentStance)[keyof typeof QuarryIntentStance]
+
+export interface QuarryIntent {
+  readonly suit: Suit
+  // Omitted, not `undefined`-valued, when the configured fidelity is Suit-only — narrowing
+  // the fidelity narrows the shape a caller actually receives (DLR-52 AC4).
+  readonly stance?: QuarryIntentStance
+}
+
+// Derives the Quarry's stance for `card` against the trick already in progress — the exact
+// win/duck test chooseCpuCard's own winners-filter performs internally, re-run here so
+// quarryIntent never has to expose the card itself to get the same answer.
+function deriveStance(state: RoundState, card: Card): QuarryIntentStance {
+  if (state.currentTrick.length === 0) {
+    return QuarryIntentStance.Leading
+  }
+  const lead = state.currentTrick[0]
+  const wouldWin =
+    resolveTrickWinner([lead, { side: QUARRY_SIDE, card }], state.trumpSuit) === QUARRY_SIDE
+  return wouldWin ? QuarryIntentStance.Pressing : QuarryIntentStance.Ducking
+}
+
+/**
+ * The telegraph's read of the Quarry's next move (§4, DLR-52) — never the card itself. Pure:
+ * reads `state` and the configured fidelity, mutates nothing, safe to call any number of times
+ * including under StrictMode's double-invoke (AC2). Covers both the leading and the following
+ * case (AC3) via the same `currentTrick.length` branch chooseCpuCard already uses.
+ *
+ * A polling caller has no way to know from the outside whether it's safe to ask, so this makes
+ * that check its own responsibility rather than a precondition the caller must independently
+ * enforce. Returns `null` — never throws — in either state where there is no Quarry move to
+ * describe: the round is already complete (its hand is empty, the same empty-hand crash
+ * `chooseCpuCard`'s `lowestCard` risks and `roundReducer.ts`'s `advanceCpu` already had to guard
+ * against for its own caller), or it currently isn't the Quarry's turn (the Player is about to
+ * lead, or the Quarry just led and it's the Player's turn to follow).
+ */
+export function quarryIntent(
+  state: RoundState,
+  fidelity: TelegraphFidelity = TELEGRAPH_FIDELITY,
+): QuarryIntent | null {
+  if (state.phase === RoundPhase.Complete || currentTurn(state) !== QUARRY_SIDE) {
+    return null
+  }
+  const card = chooseCpuCard(state, QUARRY_SIDE)
+  if (fidelity === TelegraphFidelity.Suit) {
+    return { suit: card.suit }
+  }
+  return { suit: card.suit, stance: deriveStance(state, card) }
+}
+
+/**
+ * The commit step DLR-52 AC1 names — plays exactly the move quarryIntent described, by calling
+ * the existing, unmodified chooseCpuMove + playCard sequence. Named so a caller doesn't need to
+ * know QUARRY_SIDE to invoke it.
+ *
+ * Returns `{ ok: false, reason }` rather than throwing for the same two states `quarryIntent`
+ * returns `null` for: the round is already complete (`RoundComplete`), or it isn't currently
+ * the Quarry's turn (`NotYourTurn`) — mirroring the reasons `playCard` itself would give for
+ * the same states.
+ */
+export function commitQuarryMove(state: RoundState): PlayCardResult {
+  if (state.phase === RoundPhase.Complete) {
+    return { ok: false, reason: IllegalMoveReason.RoundComplete }
+  }
+  if (currentTurn(state) !== QUARRY_SIDE) {
+    return { ok: false, reason: IllegalMoveReason.NotYourTurn }
+  }
+  const move = chooseCpuMove(state, QUARRY_SIDE)
+  return playCard(state, QUARRY_SIDE, move.card, move.choice)
 }
