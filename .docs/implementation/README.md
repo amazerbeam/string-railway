@@ -1,8 +1,8 @@
 # Implementation docs
 
-One living file per `src/` module folder, describing how the code in that folder actually works —
+One living folder per `src/` module, describing how the code in that folder actually works —
 maintained by the `implementation-doc-writer` skill (`.claude/skills/implementation-doc-writer/SKILL.md`),
-invoked automatically by `/fb-apply` once a contract's reviewers approve.
+invoked automatically by `/fb-apply` every run, once review concludes.
 
 This is the third leg alongside `.docs/design/` (design intent, why a mechanic exists) and
 `.docs/game_rules/` (rules as designed/transcribed): **implementation-as-built** — what is actually
@@ -12,21 +12,29 @@ without reading the source, and "what's been implemented" without digging throug
 Docs are organized by module, not by ticket, and accumulate across every ticket that touches that
 folder — so a mechanic's explanation lives in one place regardless of which ticket last changed it.
 
-| Module                | Doc                                    | Status      | Built by                                       |
-| --------------------- | -------------------------------------- | ----------- | ---------------------------------------------- |
-| `src/warCouncil/`     | [war-council.md](war-council.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26                   |
-| `src/app/`            | [app.md](app.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47 |
-| `src/app/warCouncil/` | [war-council-ui.md](war-council-ui.md) | implemented | SCRUM-28                                       |
+Each module gets its own folder under here (e.g. `war-council/`), not a single flat file. A
+module's `README.md` is its spine — Status, Built by, Responsibility, Key types & exports, Rules &
+invariants, Deferred — and links out to one file per mechanic once the module has more than a
+couple worth a standalone answer. A thin module stays a single `README.md`; nothing forces a split
+before it earns one. See the skill's own SKILL.md for the split threshold and per-module template.
 
-`src/app/warCouncil/` has its own doc rather than a section inside `app.md`: it is a module folder
-in its own right, and War Council's combined doc had already passed this project's 400-line budget
-by the time it was split.
+| Module                | Doc                                              | Status      | Built by                                       |
+| --------------------- | ------------------------------------------------- | ----------- | ---------------------------------------------- |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)             | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47           |
+| `src/app/`            | [app/](app/README.md)                             | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47 |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md)       | implemented | SCRUM-28, DLR-47                               |
+| `src/hunt/`           | [hunt/](hunt/README.md)                           | scaffold    | DLR-48                                         |
+
+`src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
+in its own right, and War Council's combined doc had already passed this project's per-file line
+budget by the time it was split (SCRUM-28) — and has since been split again, into per-mechanic
+files within each of `war-council/` and `war-council-ui/`, for the same reason.
 
 DLR-47 retired the Vanguard board engine, the battle-loop orchestrator, and their UIs —
 `src/App.tsx` now mounts a single War Council round directly
 (`src/app/warCouncil/WarCouncilRound.tsx`), dealing a fresh round and restarting on completion. See
-[app.md](app.md) for the mount itself; the deleted modules' history is recoverable via `git show`
-per `CLAUDE.md`'s recovery instructions, not documented here.
+[app/README.md](app/README.md) for the mount itself; the deleted modules' history is recoverable
+via `git show` per `CLAUDE.md`'s recovery instructions, not documented here.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

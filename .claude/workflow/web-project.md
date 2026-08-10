@@ -6,7 +6,7 @@ Change a path or a command **here only**. A runner stated in five files gets upd
 
 **Conventions are not here.** How to write the code — component structure, hooks, state management, configuration-driven values, component budgets, testing posture — belongs to `.claude/skills/react-frontend/SKILL.md` and its `references/engineering-standards.md`. This file owns paths, commands, and the traps that decide whether a *verification* is trustworthy.
 
-> **Status: the retained POC is on disk** — `src/` holds 53 source files across four modules and 19 test files. The layout and script names below are the ones actually on disk. **`package.json` remains the authority on script names** — Read it before writing a `Run:` step. Correct anything wrong *here*, and the whole pipeline follows.
+> **Status: the retained POC is on disk** — `src/` holds 57 source files across five modules and 20 test files. The layout and script names below are the ones actually on disk. **`package.json` remains the authority on script names** — Read it before writing a `Run:` step. Correct anything wrong *here*, and the whole pipeline follows.
 
 ## Layout
 
@@ -24,9 +24,10 @@ Change a path or a command **here only**. A runner stated in five files gets upd
   .gitattributes          text=auto eol=lf — Windows working tree, Ubuntu CI
   .nvmrc                  the single source of the Node version
   .github/workflows/      ci.yml — install, lint, typecheck, test, build
-  src/                    53 source files across four modules, 19 test files
+  src/                    57 source files across five modules, 20 test files
     app/                  React screens and the app shell
     warCouncil/           the card-layer engine
+    hunt/                 the Hunt configuration module and domain types
     styles/               plain CSS
     __tests__/            Vitest specs
     App.tsx  main.tsx     root component and Vite mount point
@@ -38,7 +39,7 @@ Change a path or a command **here only**. A runner stated in five files gets upd
 
 ## Architectural boundaries
 
-This project has **no enforced import boundary yet** — there is no subfolder convention, module split, or lint-enforced purity rule beyond the ESLint recommended config and the Vite/React defaults. A previous prototype that lived in this repository enforced a pure-core boundary (a logic tree with no React import and no DOM access) via an ESLint override combining `no-restricted-imports` and `no-restricted-globals`. That mechanism was removed with the prototype it protected, but the pattern is worth re-establishing once the next prototype has a logic tree worth keeping pure.
+This project enforces a pure-core boundary — no React import, no DOM access — on `src/warCouncil/**` and `src/hunt/**` via an ESLint override in `eslint.config.js` combining `no-restricted-imports` and `no-restricted-globals`. Extend that block's `files` array, don't paste a second copy, when a future pure-logic tree earns the same protection.
 
 `.claude/skills/react-frontend/SKILL.md` carries the paste-back version of that override, ready to adapt to whatever module name the next prototype chooses. Do not plan a verification grep against a directory that does not exist — add one only once a boundary is actually established, and name it after whatever the plan calls that tree.
 

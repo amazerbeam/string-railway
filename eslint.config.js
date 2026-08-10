@@ -21,7 +21,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['src/warCouncil/**/*.{ts,tsx}'],
+    files: ['src/warCouncil/**/*.{ts,tsx}', 'src/hunt/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -29,7 +29,7 @@ export default defineConfig([
           patterns: [
             {
               group: ['react', 'react-dom', 'react/*', 'react-dom/*'],
-              message: 'src/warCouncil/ is pure TypeScript — no React.',
+              message: 'This module is pure TypeScript — no React.',
             },
           ],
         },

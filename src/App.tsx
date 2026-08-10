@@ -10,7 +10,7 @@ function App() {
   )
 
   // onComplete's declared signature is (result: WarCouncilRoundResult) => void; the result is
-  // deliberately not read here (see .docs/implementation/app.md — no score display yet), so the
+  // deliberately not read here (see .docs/implementation/app/README.md — no score display yet), so the
   // parameter is omitted rather than named and left unused (a zero-arg function is assignable to
   // a wider callback type). Naming it `_result` trips @typescript-eslint/no-unused-vars, which
   // this project has not configured with an argsIgnorePattern.

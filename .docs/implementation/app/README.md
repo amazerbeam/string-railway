@@ -16,7 +16,8 @@ the App-mode/manual-trick-entry scaffolding that once bridged War Council into t
 `vanguardMount.ts`'s types) are all gone. `src/App.tsx` now mounts the War Council round directly.
 
 **`src/app/warCouncil/` is the real War Council round screen**, built by SCRUM-28 against
-`WarCouncilMountProps` and documented separately in [war-council-ui.md](war-council-ui.md).
+`WarCouncilMountProps` and documented separately in
+[../war-council-ui/README.md](../war-council-ui/README.md).
 
 Outside that subfolder this module now contains no runtime logic at all — only the two type
 declarations in `warCouncilMount.ts`. `src/App.tsx` and `src/app/dealerForRound.ts` do the actual
@@ -27,14 +28,14 @@ import React, and `src/app/warCouncil/` does.
 ## Key types & exports
 
 | Export                  | Purpose                                                                    | File                 |
-| ----------------------- | -------------------------------------------------------------------------- | -------------------- |
+| ------------------------ | ---------------------------------------------------------------------------- | --------------------- |
 | `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState` in, `onComplete` out     | `warCouncilMount.ts` |
 | `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + derived `score` | `warCouncilMount.ts` |
 
 Both are type-only exports, re-exported via `export type` from `index.ts` (required by this
 project's `verbatimModuleSyntax` tsconfig setting). `src/app/warCouncil/`'s own exports —
 `WarCouncilRound`, `roundReducer`, `labels.ts`, `fanLayout.ts`, `useRovingTabIndex`, and the zone
-components — are tabulated in [war-council-ui.md](war-council-ui.md), not here.
+components — are tabulated in [../war-council-ui/README.md](../war-council-ui/README.md), not here.
 
 ## How it works
 
@@ -62,10 +63,10 @@ takes no parameter at all rather than an unread `_result` — this project's ESL
 `argsIgnorePattern` exemption for underscore-prefixed unused parameters, so a zero-argument function
 (structurally assignable to that callback type) is what actually lints clean. The completed round's
 result is deliberately not read either way. There is no score display, no Muster-equivalent
-conversion, and no match-level state left to feed once `src/battle/` and `src/vanguard/` are gone;
-this restart is a placeholder ahead of the real multi-round run loop a later ticket in the DLR-46
-epic builds. The `key={round}` remount is what makes each restart a genuinely fresh
-`WarCouncilRound` instance rather than one instance being fed new props.
+conversion, and no match-level state left to feed once `src/battle/` and `src/vanguard/` are gone
+(both retired by DLR-47); this restart is a placeholder ahead of the real multi-round run loop a
+later ticket in the DLR-46 epic builds. The `key={round}` remount is what makes each restart a
+genuinely fresh `WarCouncilRound` instance rather than one instance being fed new props.
 
 ### `dealerForRound` alternates the dealer by round parity
 
@@ -83,7 +84,8 @@ deleted module and is unit-tested directly (`src/app/__tests__/dealerForRound.te
 - No lint rule is suppressed anywhere in the module, and there is no `any` and no module-level
   mutable state.
 - `src/app/warCouncil/`'s own invariants — no effect at all in `WarCouncilRound`, the reducer, the
-  roving tabindex, the two `cpuFault` cases — are listed in [war-council-ui.md](war-council-ui.md).
+  roving tabindex, the two `cpuFault` cases — are listed in
+  [../war-council-ui/README.md](../war-council-ui/README.md).
 
 ## Deferred / not yet implemented
 
@@ -96,4 +98,4 @@ deleted module and is unit-tested directly (`src/app/__tests__/dealerForRound.te
   otherwise. A future ticket should decide whether a Hunt-era equivalent is worth building.
 - **`src/app/warCouncil/` carries its own deferred list** — the untested no-scroll layout, the
   defensive `cpuFault`/`cpuRejected` branch, and the single dark theme are recorded in
-  [war-council-ui.md](war-council-ui.md).
+  [../war-council-ui/README.md](../war-council-ui/README.md).

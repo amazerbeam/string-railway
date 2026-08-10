@@ -16,7 +16,7 @@ $env:Path = "C:\Program Files\Git\cmd;$env:Path"; git show <commit>:<path>
 
 commit `2cf7ec7` on `origin/master` is the last commit before the 2026-08-01 removal of an earlier prototype.
 
-`.claude/contract/` holds the plans in flight; finished ones move to `archive/`. `.claude/lessons/` collects corrections logged via `/fb-issue`.
+`.claude/contract/` holds the plans in flight; finished ones move to `archive/`. `.claude/lessons/` collects corrections logged via `/fb-issue`. `.docs/implementation/` holds one folder per `src/` module — living, cumulative documentation of how the shipped code actually works (responsibilities, key exports, the mechanics behind each rule, enforced invariants), maintained by the `implementation-doc-writer` skill and updated on every `/fb-apply` run, never by hand. It answers "how does X actually work" or "what's been built so far" without re-reading old contracts — see that skill's `SKILL.md` for the folder's internal shape.
 
 ## The single-source-of-truth rule
 
