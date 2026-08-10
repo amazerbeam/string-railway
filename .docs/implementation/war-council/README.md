@@ -1,7 +1,7 @@
 # War Council — `src/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47
+**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49
 
 ## Responsibility
 
@@ -24,9 +24,9 @@ reducer.
 | Export                                                                       | Purpose                                                                                                                                                                                                    | File                    |
 | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
 | `WarCouncilState`                                                            | Alias for `RoundState` — the engine's real per-round state shape, replacing SCRUM-19's `unknown` placeholder                                                                                               | `index.ts` / `types.ts` |
-| `RoundState`                                                                 | Both hands, draw pile, decree/trump, tricks won, in-progress trick, leader, tricks played, phase                                                                                                           | `types.ts`              |
+| `RoundState`                                                                 | Both hands, draw pile, decree/trump, tricks won, **captured cards per side** (DLR-49), in-progress trick, leader, tricks played, phase                                                                     | `types.ts`              |
 | `Suit`, `PlayerSide`, `RoundPhase`, `AbilityChoiceKind`, `IllegalMoveReason` | `as const` string-value maps (no TS `enum` — `erasableSyntaxOnly`)                                                                                                                                         | `types.ts`              |
-| `CardRank`                                                                   | Named ranks for the five ability-bearing cards (`Swan: 1, Fox: 3, Woodcutter: 5, Witch: 9, Monarch: 11`) — every branch that keys off one of these ranks references this map, never a bare numeric literal | `types.ts`              |
+| `CardRank`                                                                   | Named ranks for every rank with an ability or scoring rule (`Swan: 1, Fox: 3, Woodcutter: 5, Treasure: 7, Poison: 8, Witch: 9, Monarch: 11`) — every branch that keys off one of these ranks references this map, never a bare numeric literal | `types.ts`              |
 | `Card`, `TrickCard`, `AbilityChoice`, `PlayCardResult`                       | Supporting shapes — a card, a card-plus-side in a trick, a discriminated ability-choice payload, and `playCard`'s `{ ok: true, state } \| { ok: false, reason }` result                                    | `types.ts`              |
 | `otherSide`, `currentTurn`                                                   | `otherSide` flips a `PlayerSide`; `currentTurn` derives whose turn it is from `currentTrick`/`leader`                                                                                                      | `types.ts`              |
 | `TRICKS_PER_ROUND`                                                           | The round-length constant (`13`) — consolidated here by DLR-47, previously duplicated as a bare literal in `deal.ts`/`playCard.ts` and separately declared in the now-deleted `src/app/tricksWon.ts`      | `types.ts`              |
@@ -39,6 +39,7 @@ reducer.
 | `applyFoxExchange`, `applyWoodcutterDraw`, `nextLeaderAfterTrick`            | The three ability effects that mutate `RoundState` directly                                                                                                                                                | `abilities.ts`          |
 | `playCard`                                                                   | The single reducer-shaped entry point — the only way to mutate `RoundState`                                                                                                                                | `playCard.ts`           |
 | `tricksToPoints`, `scoreRound`                                               | End-of-round scoring band lookup                                                                                                                                                                           | `scoring.ts`            |
+| `spoils`                                                                     | Sums a side's `capturedCards` value from `src/hunt`'s `cardBaseValue`, folding in Treasure(+1)/Poison(-1) per card (DLR-49)                                                                                | `spoils.ts`             |
 | `chooseCpuCard`, `chooseCpuFoxChoice`, `chooseCpuWoodcutterChoice`           | The three independently-testable sub-decisions of the CPU heuristic — card choice, and the Fox/Woodcutter ability choices                                                                                  | `cpuPlayer.ts`          |
 | `chooseCpuMove`, `CpuMove`                                                   | Composes the three sub-decisions into one `{ card, choice? }` move; the only heuristic export re-exported from `index.ts`                                                                                  | `cpuPlayer.ts`          |
 
@@ -52,7 +53,8 @@ reducer.
 - [Trick resolution and `playCard`](trick-resolution-and-play.md) — how a trick's winner is
   decided (including the Witch's "counts as trump" rule and the Fox's trump-mutation ordering), and
   `playCard`'s full order of operations as the module's single mutator.
-- [Scoring](scoring.md) — the end-of-round tricks-to-points lookup.
+- [Scoring](scoring.md) — the end-of-round tricks-to-points lookup, and Spoils (DLR-49) — the
+  summed value of a side's captured cards.
 - [The CPU heuristic](cpu-heuristic.md) — `cpuPlayer.ts`'s five pure functions and what they do and
   don't know about.
 
@@ -79,10 +81,11 @@ reducer.
   to `currentTrick` is always the lead).
 - **Card equality is structural** (`suit` + `rank`, via `cardUtils.ts`) — no identity or synthetic id
   scheme, since the 33-card deck has exactly one card per (suit, rank) pair.
-- **Named rank constants, not magic numbers** — the five ability-bearing ranks are referenced via
-  `CardRank.Swan` / `.Fox` / `.Woodcutter` / `.Witch` / `.Monarch` at every production branch that
-  keys off one of them (added during SCRUM-20's review fix pass, after the first draft used bare
-  numeric literals at several of these sites).
+- **Named rank constants, not magic numbers** — every rank with a named ability or scoring rule is
+  referenced via `CardRank.Swan` / `.Fox` / `.Woodcutter` / `.Treasure` / `.Poison` / `.Witch` /
+  `.Monarch` at every production branch that keys off one of them (added during SCRUM-20's review
+  fix pass for the original five, extended to Treasure/Poison by DLR-49; re-grepped in DLR-49's
+  Final verification for a stray bare `rank === 7`/`rank === 8` — zero hits).
 - **File-size budget** — every file in this tree is well under the project's 400-line limit; the
   largest production file (`playCard.ts`) is 89 lines.
 
@@ -95,9 +98,11 @@ reducer.
   by DLR-47; a later ticket in the DLR-46 epic (the Hunt run loop) decides what, if any, run-level
   context ought to feed the CPU's decisions, and this module's public surface is unaffected either
   way — `chooseCpuMove` takes only a `RoundState` today.
-- **Treasure's (rank 7) mid-round point bonus.** The card is an ordinary playable card here — no
-  special ability, no scoring bonus. Whether/how Treasure points feed any run-level resource is an
-  open design question for a later ticket, not resolved here.
+- **Treasure/Poison's play-time behaviour.** Both are ordinary playable cards during the trick
+  itself — no play-time ability, unlike Fox/Woodcutter/Witch/Monarch. Their effect is a scoring
+  intervention applied after capture (see [Scoring](scoring.md)'s Spoils section, DLR-49), not a
+  rule enforced during legal-move checking or trick resolution. Whether/how Treasure/Poison feed
+  any further run-level resource beyond Spoils is an open design question for a later ticket.
 - **Dealer alternation across more than one round.** `dealRound` takes `dealer` as a plain input
   parameter and does not decide alternation itself. `src/App.tsx`'s placeholder restart (DLR-47) now
   calls `src/app/dealerForRound.ts` to alternate by round parity from a placeholder first-dealer
@@ -108,6 +113,10 @@ reducer.
   nothing here tracks score, state, or a win condition across rounds. `src/App.tsx`'s current
   restart-on-completion (DLR-47) is a placeholder, not a run loop — see
   [../app/README.md](../app/README.md)'s Deferred section.
+- **`spoils` has no consumer yet.** DLR-49 adds the function and proves it correct in isolation, but
+  nothing calls it from `scoreRound`, a running score, or `src/app/`. Multiplying it by Standing and
+  checking it against a Demand (T4) and displaying it (T7) are both later tickets in the DLR-46
+  epic.
 - **Persistence/serialisation.** Nothing in this module reads or writes storage; `RoundState` is an
   in-memory shape only.
 - **The special, goal, and poison expansion modules.** Only the base 33-card deck is representable —

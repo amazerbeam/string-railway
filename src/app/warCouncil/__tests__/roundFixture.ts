@@ -33,6 +33,7 @@ export function makeRound(overrides: Partial<WarCouncilState> = {}): WarCouncilS
     decree: card(Suit.Bells, 10),
     trumpSuit: Suit.Bells,
     tricksWon: { [PlayerSide.Player]: 0, [PlayerSide.Cpu]: 0 },
+    capturedCards: { [PlayerSide.Player]: [], [PlayerSide.Cpu]: [] },
     currentTrick: [],
     leader: PlayerSide.Player,
     tricksPlayed: 0,

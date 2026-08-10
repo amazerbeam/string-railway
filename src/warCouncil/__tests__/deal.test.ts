@@ -41,6 +41,7 @@ describe('dealRound', () => {
     const state = dealRound(PlayerSide.Player, lcg(3))
     expect(state.tricksPlayed).toBe(0)
     expect(state.tricksWon).toEqual({ player: 0, cpu: 0 })
+    expect(state.capturedCards).toEqual({ player: [], cpu: [] })
     expect(state.phase).toBe(RoundPhase.AwaitingLead)
     expect(state.currentTrick).toEqual([])
   })

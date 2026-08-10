@@ -6,6 +6,7 @@ import {
   IllegalMoveReason,
   PlayerSide,
   RoundPhase,
+  type Card,
   type RoundState,
 } from '../types'
 
@@ -20,6 +21,7 @@ function stateWith(overrides: Partial<RoundState>): RoundState {
     decree: { suit: 'bells', rank: 4 },
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
+    capturedCards: { player: [], cpu: [] },
     currentTrick: [],
     leader: PlayerSide.Player,
     tricksPlayed: 0,
@@ -163,6 +165,12 @@ describe('playCard — the Fox (rank 3) mutates trump mid-trick, and it is illeg
     // trump nor lead-suit, so the lead card (player's Fox, keys 3) would win instead —
     // this fixture would catch that regression, unlike the previous one.
     expect(afterFollow.state.tricksWon.cpu).toBe(1)
+    // AC2 — captured in trick order (lead card, then follow card), regardless of who led.
+    expect(afterFollow.state.capturedCards.cpu).toEqual([
+      { suit: 'keys', rank: 3 },
+      { suit: 'moons', rank: 8 },
+    ])
+    expect(afterFollow.state.capturedCards.player).toEqual([])
   })
 })
 
@@ -178,6 +186,7 @@ describe('playCard — a full round plays out exactly 13 tricks', () => {
   it('deals and plays a full round to RoundPhase.Complete with 13 total tricks won', () => {
     let state = dealRound('player', lcg(2024))
     let guard = 0
+    const allPlayed: Card[] = []
 
     while (state.phase !== 'complete') {
       guard += 1
@@ -198,6 +207,7 @@ describe('playCard — a full round plays out exactly 13 tricks', () => {
               return followSuit.length > 0 ? followSuit : state.hands[turn]
             })()
       const chosen = options[0]
+      allPlayed.push(chosen)
 
       const choice =
         chosen.rank === 3
@@ -216,5 +226,16 @@ describe('playCard — a full round plays out exactly 13 tricks', () => {
     expect(state.tricksPlayed).toBe(13)
     expect(state.tricksWon.player + state.tricksWon.cpu).toBe(13)
     expect(state.phase).toBe('complete')
+
+    // AC5 — the two captured lists together hold exactly the 26 cards actually
+    // played, with no card appearing twice and none missing.
+    const cardKey = (c: Card): string => `${c.suit}-${c.rank}`
+    const capturedTotal = state.capturedCards.player.length + state.capturedCards.cpu.length
+    expect(capturedTotal).toBe(26)
+    const capturedKeys = [...state.capturedCards.player, ...state.capturedCards.cpu]
+      .map(cardKey)
+      .sort()
+    const playedKeys = allPlayed.map(cardKey).sort()
+    expect(capturedKeys).toEqual(playedKeys)
   })
 })

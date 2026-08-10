@@ -52,3 +52,16 @@ state }` with `phase: AwaitingFollow`. If it's the second, `resolveTrickWinner` 
 Every rejection returns `{ ok: false, reason }` and leaves the **input** `state` untouched — no
 partial mutation, no thrown exception; a caller (a future CPU or UI ticket) branches on the named
 `IllegalMoveReason` rather than parsing an exception message.
+
+### `capturedCards` accumulation (DLR-49)
+
+The same second-card branch that increments `tricksWon[winner]` also appends the trick's two cards
+— `completedTrick[0].card` (the lead), then `completedTrick[1].card` (the follow), **in that
+order** regardless of which side actually led — to `capturedCards[winner]`, using the same `winner`
+value so the two fields can never disagree about who won. `capturedCards` starts as `{ player: [],
+cpu: [] }` in every `RoundState` (set by `dealRound` and every test fixture) and only ever grows,
+never shrinks or reorders, for the life of a round. Across a full 13-trick round the two sides'
+lists together hold exactly the 26 cards played, with no card appearing twice and none missing —
+enforced by an invariant test in `playCard.test.ts` that independently tracks every card played and
+cross-checks it against the union of both `capturedCards` lists. See [Scoring](scoring.md) for what
+reads this field.

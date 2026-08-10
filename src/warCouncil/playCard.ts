@@ -91,10 +91,22 @@ export function playCard(
   const nextLeader = nextLeaderAfterTrick(completedTrick, winner)
   const tricksPlayed = next.tricksPlayed + 1
   const tricksWon = { ...next.tricksWon, [winner]: next.tricksWon[winner] + 1 }
+  const capturedCards = {
+    ...next.capturedCards,
+    [winner]: [...next.capturedCards[winner], completedTrick[0].card, completedTrick[1].card],
+  }
   const phase = tricksPlayed === TRICKS_PER_ROUND ? RoundPhase.Complete : RoundPhase.AwaitingLead
 
   return {
     ok: true,
-    state: { ...next, currentTrick: [], leader: nextLeader, tricksPlayed, tricksWon, phase },
+    state: {
+      ...next,
+      currentTrick: [],
+      leader: nextLeader,
+      tricksPlayed,
+      tricksWon,
+      capturedCards,
+      phase,
+    },
   }
 }

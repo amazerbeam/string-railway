@@ -8,12 +8,17 @@ export type Suit = (typeof Suit)[keyof typeof Suit]
 export const ALL_SUITS: readonly Suit[] = [Suit.Bells, Suit.Keys, Suit.Moons]
 export const RANKS: readonly number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
-// The five odd ranks each carry a named ability/rule — referenced by name at every
+// Every rank with a named ability or scoring rule — referenced by name at every
 // branch that keys off one of them, rather than as a bare numeric literal.
+// Treasure (7) and Poison (8) are scoring interventions rather than play-time
+// triggers (fox-in-the-forest.md → Poison cards; hybrid-design.md §1's component
+// table) but are named here for the same reason.
 export const CardRank = {
   Swan: 1,
   Fox: 3,
   Woodcutter: 5,
+  Treasure: 7,
+  Poison: 8,
   Witch: 9,
   Monarch: 11,
 } as const
@@ -56,6 +61,7 @@ export interface RoundState {
   readonly decree: Card
   readonly trumpSuit: Suit
   readonly tricksWon: Readonly<Record<PlayerSide, number>>
+  readonly capturedCards: Readonly<Record<PlayerSide, readonly Card[]>>
   readonly currentTrick: readonly TrickCard[]
   readonly leader: PlayerSide
   readonly tricksPlayed: number

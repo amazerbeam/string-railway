@@ -9,6 +9,7 @@ function baseState(overrides: Partial<RoundState> = {}): RoundState {
     decree: { suit: 'bells', rank: 2 },
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
+    capturedCards: { player: [], cpu: [] },
     currentTrick: [],
     leader: PlayerSide.Cpu,
     tricksPlayed: 0,

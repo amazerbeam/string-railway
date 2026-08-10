@@ -13,6 +13,7 @@ function stateWith(
     decree: { suit: 'bells', rank: 2 },
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
+    capturedCards: { player: [], cpu: [] },
     currentTrick,
     leader: PlayerSide.Player,
     tricksPlayed: 0,

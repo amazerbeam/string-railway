@@ -17,6 +17,7 @@ export function dealRound(dealer: PlayerSide, rng: () => number): RoundState {
     decree,
     trumpSuit: decree.suit,
     tricksWon: { [PlayerSide.Player]: 0, [PlayerSide.Cpu]: 0 },
+    capturedCards: { [PlayerSide.Player]: [], [PlayerSide.Cpu]: [] },
     currentTrick: [],
     leader: otherSide(dealer),
     tricksPlayed: 0,

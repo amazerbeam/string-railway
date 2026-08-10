@@ -1,16 +1,17 @@
 # Hunt — `src/hunt/`
 
-**Status:** scaffold
-**Built by:** DLR-48
+**Status:** partial
+**Built by:** DLR-48, DLR-49
 
 ## Responsibility
 
 Owns the Hunt run's vocabulary and every §9-cited tunable that will drive its scoring — the
 Standing band table, the card base value rule, the Demand curve's shape, the Forage budget per
 encounter, and the encounters-per-run count — each read from one place so no later Hunt ticket
-duplicates a number or invents an incompatible shape. Nothing here is wired into the running game
-yet: this module exists purely as a target for future tickets (T3 Spoils, T4 Standing/Demand, T11
-Forage) to import from, and has zero consumers today.
+duplicates a number or invents an incompatible shape. `cardBaseValue` now has a real consumer —
+`src/warCouncil/spoils.ts` (DLR-49) — but every other export (`resolveStanding`, the Demand curve,
+the Forage budget, the run length) is still unconsumed; a later Hunt ticket (T4 Standing/Demand,
+T11 Forage) wires those in.
 
 ## Key types & exports
 
@@ -84,10 +85,11 @@ with a comment citing its §9 row and provisional status.
 
 ## Deferred / not yet implemented
 
-- **Wiring into gameplay.** Nothing here is called from anywhere yet — `Spoils` capture (T3),
+- **Wiring into gameplay beyond `cardBaseValue`.** `Spoils` capture (DLR-49) is wired —
+  `src/warCouncil/spoils.ts` calls `cardBaseValue` for every real call (see
+  [../war-council/scoring.md](../war-council/scoring.md)'s Spoils section) — but `resolveStanding`,
   `Standing`/`Demand` checked against a running score (T4), and `Forage` deck edits (T11) are all
-  future tickets in the DLR-46 epic. This module's whole job for now is to exist as their shared
-  import target.
+  still future tickets in the DLR-46 epic with zero consumers today.
 - **Migrating `src/warCouncil/scoring.ts`'s `tricksToPoints` to call `resolveStanding`.** Deferred to
   T4 by DLR-48's own AC7; until then the same six Standing values are intentionally declared twice.
 - **Choosing `DEMAND_CURVE`'s actual `base` and `growthPerEncounter` numbers.** §9 states plainly

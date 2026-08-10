@@ -20,10 +20,10 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                              | Status      | Built by                                       |
 | --------------------- | ------------------------------------------------- | ----------- | ---------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)             | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47           |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)             | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49   |
 | `src/app/`            | [app/](app/README.md)                             | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47 |
 | `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md)       | implemented | SCRUM-28, DLR-47                               |
-| `src/hunt/`           | [hunt/](hunt/README.md)                           | scaffold    | DLR-48                                         |
+| `src/hunt/`           | [hunt/](hunt/README.md)                           | partial     | DLR-48, DLR-49                                 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
