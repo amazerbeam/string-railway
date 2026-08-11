@@ -1,7 +1,7 @@
 # Hunt — `src/hunt/`
 
 **Status:** partial
-**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53
+**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63
 
 ## Responsibility
 
@@ -26,11 +26,21 @@ types are read directly by the Hunt screen (see
 The Demand curve, the Forage budget, and the run length are still unconsumed; later Hunt tickets
 (T9 run state, T11 Forage) wire those in.
 
+**DLR-63 added the Lose path's vocabulary.** `Hunt` gained a third, **required** field
+(`loseCredits`), and `config.ts` gained the rank inversion (`RANK_INVERSION_PIVOT`,
+`invertedCardValue`) plus the credit cap (`LOSE_CREDITS_PER_HUNT`). `invertedCardValue` was given
+`cardBaseValue`'s exact `(rank: number) => number` signature deliberately, so it drops into
+`spoils`'s existing injectable value parameter with no new plumbing — see
+[../war-council/scoring.md](../war-council/scoring.md). The declaration union itself
+(`HuntDeclaration`) lives here rather than in `src/warCouncil/` because it is Hunt vocabulary that
+both the engine and the screen name.
+
 ## Key types & exports
 
 | Export | Purpose | File |
 |---|---|---|
-| `Hunt` | One 13-trick round — `{ quarry, demand }`, scored once via Spoils × Standing checked against Demand (§1, §10) | `types.ts` |
+| `Hunt` | One 13-trick round — `{ quarry, demand, loseCredits }`, scored once via Spoils × Standing checked against Demand (§1, §10). `loseCredits` is **required**, not optional (DLR-63): the same reasoning that made `demand` required — an optional count would let a caller render a Lose path with `undefined` credits and no error anywhere | `types.ts` |
+| `HuntDeclaration` | `as const` union of the two declarable paths, `Win` / `Lose`, chosen off the dealt hand before the first trick (DLR-63 AC1) | `types.ts` |
 | `Quarry` | The CPU opponent for one encounter — `{ character: QuarryCharacter }` (§4) | `types.ts` |
 | `QuarryCharacter` | `as const` union of the five odd-rank characters: Swan, Fox, Woodcutter, Witch, Monarch | `types.ts` |
 | `Spoils`, `Standing`, `Demand` | Each a bare `number` alias — the additive term, the multiplicative term, and the score target from §1's equation | `types.ts` |
@@ -40,6 +50,9 @@ The Demand curve, the Forage budget, and the run length are still unconsumed; la
 | `STANDING_BANDS` | The 6-row Standing table (§9), originally transcribed from `warCouncil/scoring.ts`'s hard-coded bands and, since DLR-50, their only home | `config.ts` |
 | `resolveStanding` | Resolves a trick count to its `StandingBand` by scanning a table (defaults to `STANDING_BANDS`) — since DLR-50, the only Standing lookup anywhere in `src/` | `config.ts` |
 | `cardBaseValue` | `(rank) => rank` — a card's Hunt value is its printed rank, not a flat 1 (§3, §9) | `config.ts` |
+| `RANK_INVERSION_PIVOT` | `12` — the pivot the Lose path's inversion turns on. **Not a tuning value**: it is `max(RANKS) + 1` for the 1–11 deck, which is what makes the inversion its own mirror (rank 1 ↔ 11) and keeps every output in 1–11 with no zero and no negative. Named rather than inlined so a future deck-size change has one place to look (DLR-63) | `config.ts` |
+| `invertedCardValue` | `(rank) => 12 − rank` — a card's value on the Lose path (DLR-63 AC3). Deliberately the same `(rank: number) => number` signature as `cardBaseValue`, so it drops into `spoils`'s injectable value parameter with no new plumbing | `config.ts` |
+| `LOSE_CREDITS_PER_HUNT` | `3` — credits per Hunt, each spendable on one lost trick (DLR-63 AC3). **A documented placeholder, not a chosen value**: derived as `220 / (6 × 12) ≈ 3` against `FIXED_DEMAND` and the Humble ×6 band. Typed `number`, never `number \| null`, so no consumer can coerce a `null` to `0` | `config.ts` |
 | `DemandCurve`, `DEMAND_CURVE` | `{ base: number \| null; growthPerEncounter: number \| null }` — shape only, both fields deliberately `null` | `config.ts` |
 | `FORAGE_BUDGET_PER_ENCOUNTER` | `4` — provisional Forage edits per encounter (§9) | `config.ts` |
 | `ENCOUNTERS_PER_RUN` | `5` — provisional run length (§9 leaves this undecided; DLR-48 supplies a playable placeholder) | `config.ts` |
@@ -62,8 +75,8 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
 ## How it works
 
 - [Scoring tunables](scoring-tunables.md) — Standing band resolution and why the table is an
-  injectable parameter, the card base value rule, and the deliberately-`null` Demand curve alongside
-  the two provisional run constants.
+  injectable parameter, the card base value rule, the Lose path's rank inversion and its credit cap,
+  and the deliberately-`null` Demand curve alongside the two provisional run constants.
 - [The Quarry and the telegraph](quarry-and-telegraph.md) — the per-character display data and why
   it is `Partial`, and `TELEGRAPH_FIDELITY`: how much of the Quarry's next move the player is allowed
   to see (§4).
@@ -92,10 +105,15 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   live behaviour of the UI's scoring path too — see
   [../war-council/scoring.md](../war-council/scoring.md) for why a corrupt trick count is treated as
   a caller bug rather than scored as `0`.
-- **File-size budget** — `config.ts` is 102 lines after DLR-53, `types.ts` 31, `index.ts` 18, all far
-  under the project's 400-line limit. Measure with `(Get-Content <file>).Count`, **not**
-  `(… | Measure-Object -Line).Lines`: the latter counts a blank line as zero and so undercounts every
-  file by its blank-line count (`warCouncil.css` reports 317 that way and is actually 367).
+- **File-size budget** — `config.ts` is 127 lines after DLR-63, `types.ts` 44, `index.ts` 23, all far
+  under the project's 400-line limit. Measure with `(Get-Content <file>).Count` or
+  `[System.IO.File]::ReadAllLines(<file>).Length`, **not** `(… | Measure-Object -Line).Lines`: the
+  latter counts a blank line as zero and so undercounts every file by its blank-line count.
+  **DLR-63 is the ticket that proved this is not a pedantic footnote** — `warCouncilHunt.css` was
+  reported at 367 lines by three separate measurements and was actually **423**, breaching the
+  400-line ceiling undetected until the final review round, which then split it (see
+  [../war-council-ui/layout-and-styling.md](../war-council-ui/layout-and-styling.md)). `CLAUDE.md`
+  and `.claude/workflow/web-project.md` still prescribe the undercounting form.
 
 ## Deferred / not yet implemented
 
@@ -113,6 +131,13 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   at 4, 120 at 5, 216 at 6, ≈504 at 7, ≈648 at 9, and 0 at 10+ — so 220 puts the Humble-3 and
   Defeated-6 lines on a knife edge while ~500 would make only Victorious clear. This is the number
   most likely to move after the first real playtest, and it sets what that playtest measures.
+- **`LOSE_CREDITS_PER_HUNT`'s value is the developer's, and it is the number most likely to move.**
+  `3` is derived arithmetic offered for review, not a felt decision: against `FIXED_DEMAND` (220) and
+  the Humble ×6 band, a credited trick is worth the two cards' inverted values — about 12 on an
+  average trick, up to 22 on a two-Swan trick — so clearing 220 needs roughly `220 / (6 × 12) ≈ 3`
+  average credited tricks, or 2 in the best case. **What to watch:** whether a Hunt ever ends with an
+  unspent credit, or a spend is regretted. If neither ever happens, 3 is too many. Note the ceiling
+  this is calibrated against is itself provisional, so the two numbers move together.
 - **Choosing `DEMAND_CURVE`'s actual `base` and `growthPerEncounter` numbers.** §9 states plainly
   that no number in that row is a chosen value; both fields stay `null` until a future
   playtest/UI-driven ticket sets them.

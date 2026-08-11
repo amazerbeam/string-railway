@@ -32,15 +32,34 @@ because **card rotation and lift are transforms, which do not affect layout size
 reserved room the fan's visual pixels spill outside its box and the shell's `overflow: hidden` crops
 them. The fix is to reserve the room, never to loosen the overflow.
 
-The styling ships as **three** stylesheets, not one: `warCouncil.css` (tokens, the shell grid, the
+The styling ships as **four** stylesheets, not one: `warCouncil.css` (tokens, the shell grid, the
 status band, the felt/table, and the hand container), `warCouncilCards.css` (the card face, the
-ability prompt, and the round-over panel), and `warCouncilHunt.css` (DLR-53: the ledger, the dossier
-zone, the telegraph, and the end panel's equation). The first split happened because the combined
-transcription measured 581 lines, over this project's 400-line file budget; the second happened for
-the same reason — `warCouncil.css` was at 367 lines and could not absorb a new zone plus four new
-surfaces. `WarCouncilRound.tsx` imports **all three**, and importing only some leaves part of the
+ability prompt, and the round-over panel), `warCouncilHunt.css` (DLR-53: the ledger, the dossier
+zone, the telegraph, and the end panel's equation), and `warCouncilDeclare.css` (DLR-63: the declare
+gate and the claim control). Every split happened for the same reason — the 400-line file budget. The
+combined original transcription measured 581 lines; `warCouncil.css` then could not absorb DLR-53's new
+zone plus four surfaces; and `warCouncilHunt.css` reached 423 lines once DLR-63 added the declare and
+claim surfaces to it.
+
+`WarCouncilRound.tsx` imports **all four**, in that order, and importing only some leaves part of the
 feature unstyled with no error anywhere — worth knowing before debugging a card that renders with no
-face or a ledger that renders as an undifferentiated run of text.
+face, a ledger that renders as an undifferentiated run of text, or a declare gate that renders as two
+default browser buttons.
+
+**Import order is load-bearing, not incidental.** `.wc-declare-option`'s hover lift and its
+`@media (prefers-reduced-motion: reduce)` suppression are deliberately co-located in
+`warCouncilCards.css`, with the suppression later in the same file, so it wins at equal specificity.
+Putting the hover rule in a sheet that loads *after* `warCouncilCards.css` — which is what DLR-63's
+tasks originally specified — would have silently inverted that, leaving the reduced-motion override
+unreachable while every test still passed.
+
+> **A measurement trap this file's own history now documents.** `warCouncilHunt.css`'s breach went
+> undetected through both of DLR-63's review rounds because three separate measurements used
+> `(Get-Content <file> | Measure-Object -Line).Lines`, which **counts a blank line as zero** and so
+> undercounts a file by its blank-line count. It reported 367 for a 423-line file. Measure a stylesheet
+> with `(Get-Content <file>).Count` or `[System.IO.File]::ReadAllLines(<file>).Length`. `CLAUDE.md` and
+> `.claude/workflow/web-project.md` still prescribe the undercounting form; see
+> [../hunt/README.md](../hunt/README.md)'s file-size note.
 
 ### The narrow/short collapse, and the bug it was written without
 
@@ -63,6 +82,12 @@ The lesson is the general one for this shell: **`overflow: hidden` converts an o
 invisibility bug rather than preventing it.** A no-scroll assertion is necessary and not sufficient;
 the check that catches this class of defect is measuring a specific element's
 `getBoundingClientRect()` against the viewport.
+
+DLR-63 added the second-ever cell to `.wc-status` — the Lose-credit readout — and it inherits that
+`flex-wrap` by sitting inside `.wc-ledger`. Measured at 500×844 with the pool visible, the cell's
+`right` edge resolves to 446 against a 500px viewport, with no scroll on either axis. The media query
+itself now lives in `warCouncilHunt.css` after the split; the declare and claim surfaces it does not
+govern moved to `warCouncilDeclare.css`.
 
 ### The fan's transform is composed in CSS, not written whole from React
 

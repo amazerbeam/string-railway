@@ -5,9 +5,15 @@ maintained by the `implementation-doc-writer` skill (`.claude/skills/implementat
 invoked automatically by `/fb-apply` every run, once review concludes.
 
 This is the third leg alongside `.docs/design/` (design intent, why a mechanic exists) and
-`.docs/game_rules/` (rules as designed/transcribed): **implementation-as-built** — what is actually
-on disk right now, not what a plan proposed. A doc here should answer "how does X actually work"
-without reading the source, and "what's been implemented" without digging through old tickets.
+`.docs/game_rules/the-hunt.md` (the game's rules as they currently stand):
+**implementation-as-built** — what is actually on disk right now, not what a plan proposed. A doc
+here should answer "how does X actually work" without reading the source, and "what's been
+implemented" without digging through old tickets.
+
+Same skill, same `/fb-apply` step, different question: ask **`the-hunt.md`** what a player may do
+and whether a rule is settled; ask **here** how the code does it. `CLAUDE.md`'s three-doc split
+states the boundary once. (`.docs/game_rules/fox-in-the-forest.md` is outside that split — it is the
+base game's published rulebook, transcribed, and nothing in the pipeline maintains it.)
 
 Docs are organized by module, not by ticket, and accumulate across every ticket that touches that
 folder — so a mechanic's explanation lives in one place regardless of which ticket last changed it.
@@ -20,10 +26,10 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                              | Status      | Built by                                       |
 | --------------------- | ------------------------------------------------- | ----------- | ---------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)             | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52 |
-| `src/app/`            | [app/](app/README.md)                             | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md)       | implemented | SCRUM-28, DLR-47, DLR-53                       |
-| `src/hunt/`           | [hunt/](hunt/README.md)                           | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53 |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)             | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63 |
+| `src/app/`            | [app/](app/README.md)                             | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63 |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md)       | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63                |
+| `src/hunt/`           | [hunt/](hunt/README.md)                           | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -41,6 +47,14 @@ intent telegraphed before every commit, and an end panel showing `Spoils × Stan
 the ticket that gave `src/hunt/` its first UI consumers and made a Hunt playable end to end against
 a real Demand; start at
 [war-council-ui/hunt-readouts-and-telegraph.md](war-council-ui/hunt-readouts-and-telegraph.md).
+
+DLR-63 put a decision at the **front** of that Hunt: the player declares **Win or Lose** off the dealt
+hand, where Lose inverts every card's value (`12 − rank`) and hands out a capped pool of Lose-credits,
+each spendable on one lost trick. It spans all four modules — the vocabulary and the tunable in
+`hunt/`, two new engine mutators and a two-branch `spoils` in `war-council/`, the gate and the claim
+control in `war-council-ui/`, and the credit pool threaded through `app/`. Start at
+[war-council/declaration-and-lose-path.md](war-council/declaration-and-lose-path.md) for the rules, or
+[war-council-ui/declare-gate-and-claim.md](war-council-ui/declare-gate-and-claim.md) for the screen.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

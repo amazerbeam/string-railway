@@ -1,7 +1,7 @@
 # War Council — `src/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52
+**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63
 
 ## Responsibility
 
@@ -19,12 +19,20 @@ and `playCard` still accepts a proposed play from either side rather than choosi
 heuristic is a separate, optional caller of the same public surface, not a special path inside the
 reducer.
 
+**DLR-63 gave the module two more mutators and made `spoils` two-branch.** The Hunt's Win/Lose
+declaration is engine state, not UI state — a Lose-credit is spent mid-round and the set of credited
+cards determines the score, so a reducer tracking it would be adjudicating a scoring rule. `playCard`
+is therefore no longer the only way to mutate `RoundState`: `declareHunt` and `claimLostTrick` join
+it, each shaped identically (`{ ok: true, state } | { ok: false, reason }` over a closed `as const`
+reason map, a named rejection rather than a throw, never a partially-mutated state). See
+[the declaration and the Lose path](declaration-and-lose-path.md).
+
 ## Key types & exports
 
 | Export                                                                       | Purpose                                                                                                                                                                                                    | File                    |
 | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
 | `WarCouncilState`                                                            | Alias for `RoundState` — the engine's real per-round state shape, replacing SCRUM-19's `unknown` placeholder                                                                                               | `index.ts` / `types.ts` |
-| `RoundState`                                                                 | Both hands, draw pile, decree/trump, tricks won, **captured cards per side** (DLR-49), in-progress trick, leader, tricks played, phase, and (DLR-51) an **optional** `quarryCharacter` naming the round-long rule-break in force                                                                     | `types.ts`              |
+| `RoundState`                                                                 | Both hands, draw pile, decree/trump, tricks won, **captured cards per side** (DLR-49), in-progress trick, leader, tricks played, phase, (DLR-51) an **optional** `quarryCharacter` naming the round-long rule-break in force, and (DLR-63) an **optional** `declaration` — absent means undeclared                                                                     | `types.ts`              |
 | `Suit`, `PlayerSide`, `RoundPhase`, `AbilityChoiceKind`, `IllegalMoveReason` | `as const` string-value maps (no TS `enum` — `erasableSyntaxOnly`)                                                                                                                                         | `types.ts`              |
 | `CardRank`                                                                   | Named ranks for every rank with an ability or scoring rule (`Swan: 1, Fox: 3, Woodcutter: 5, Treasure: 7, Poison: 8, Witch: 9, Monarch: 11`) — every branch that keys off one of these ranks references this map, never a bare numeric literal | `types.ts`              |
 | `Card`, `TrickCard`, `AbilityChoice`, `PlayCardResult`                       | Supporting shapes — a card, a card-plus-side in a trick, a discriminated ability-choice payload, and `playCard`'s `{ ok: true, state } \| { ok: false, reason }` result                                    | `types.ts`              |
@@ -40,7 +48,11 @@ reducer.
 | `QUARRY_SIDE`, `monarchFollowSet`, `monarchFollowApplies`                    | The round-long rule-break module (DLR-51): the seat the Quarry plays, the Monarch's Swan-or-highest follow set, and the predicate for whether the round-long constraint is in force this trick              | `quarryRuleBreak.ts`    |
 | `playCard`                                                                   | The single reducer-shaped entry point — the only way to mutate `RoundState`; since DLR-51 its rejection-reason branch also consults `monarchFollowApplies`, so a round-long Monarch rejection reports `MustFollowMonarch` rather than the generic follow-suit reason | `playCard.ts`           |
 | `tricksToPoints`, `scoreRound`                                               | End-of-round scoring band lookup — since DLR-50 a one-line delegation to `src/hunt`'s `resolveStanding`, holding no band values of its own                                                                  | `scoring.ts`            |
-| `spoils`                                                                     | Sums a side's `capturedCards` value from `src/hunt`'s `cardBaseValue`, folding in Treasure(+1)/Poison(-1) per card (DLR-49)                                                                                | `spoils.ts`             |
+| `spoils`                                                                     | Two-branch since DLR-63. Lose-declared + player side sums `declaration.creditedCards` at `invertedCardValue`; **every other case** (undeclared, Win, or the Quarry's side) sums that side's `capturedCards` at `cardBaseValue` exactly as DLR-49 built it. Treasure(+1)/Poison(−1) folds into both branches | `spoils.ts`             |
+| `creditedTrickWorth`                                                         | `(cards, inverted?) => Spoils` — what a claimed trick is worth on the Lose path, including the Treasure/Poison fold. Extracted in DLR-63's review round so the UI's pre-claim preview and the actual score cannot diverge; both call this one function | `spoils.ts`             |
+| `DeclarationState`                                                           | The declaration plus the Lose path's bookkeeping — `{ path, creditsRemaining, creditedCards, creditedThrough }`. One nested object rather than four sibling fields so a reader has exactly one absence check (DLR-63) | `types.ts`              |
+| `declareHunt`, `DeclareRejection`, `DeclareResult`                           | Writes the declaration once, before the first card (AC1). Rejects `AlreadyDeclared` and `HuntUnderway`. Takes the credit pool as a **parameter** rather than reading config, so the engine stays free of the tunable (DLR-63) | `declareHunt.ts`        |
+| `claimLostTrick`, `canClaimLostTrick`, `ClaimRejection`, `ClaimResult`       | Spends one Lose-credit on a trick the player lost, crediting its two cards (AC3). Four guards: `NotDeclaredLose`, `NoCreditsRemaining`, `TrickAlreadyCredited`, `TrickNotLost`. The predicate shares one private `rejectionFor` with the mutator, so the UI's offer and the engine's guard cannot disagree (DLR-63) | `claimLostTrick.ts`     |
 | `scoreHunt`, `HuntScore`                                                     | §1's equation for one finished round — `{ spoils, tricks, band, standing, score }` where `score = spoils × standing`, computed once from a final `RoundState`, never accumulated per trick (DLR-50)        | `scoring.ts`            |
 | `checkDemand`, `DemandOutcome`                                               | Compares a computed score against a caller-supplied Demand, returning `'cleared'` \| `'missed'`; the boundary is inclusive — equal clears (DLR-50)                                                          | `scoring.ts`            |
 | `chooseCpuCard`, `chooseCpuFoxChoice`, `chooseCpuWoodcutterChoice`           | The three independently-testable sub-decisions of the CPU heuristic — card choice, and the Fox/Woodcutter ability choices                                                                                  | `cpuPlayer.ts`          |
@@ -60,8 +72,12 @@ reducer.
   decided (including the Witch's "counts as trump" rule and the Fox's trump-mutation ordering), and
   `playCard`'s full order of operations as the module's single mutator.
 - [Scoring](scoring.md) — the end-of-round tricks-to-points lookup, Spoils (DLR-49) — the summed
-  value of a side's captured cards — and the Hunt outcome (DLR-50): `scoreHunt`'s
-  Spoils × Standing, and `checkDemand`'s inclusive Demand boundary.
+  value of a side's captured cards, two-branch since DLR-63 — and the Hunt outcome (DLR-50):
+  `scoreHunt`'s Spoils × Standing, and `checkDemand`'s inclusive Demand boundary.
+- [The declaration and the Lose path](declaration-and-lose-path.md) — `declareHunt`'s two guards,
+  `claimLostTrick`'s four, why trick ownership is read off the capture pile's ordered tail rather
+  than re-resolved, the `creditedThrough` watermark that makes a claim idempotent, and how AC4/AC5
+  hold by construction rather than by discipline (DLR-63).
 - [The CPU heuristic and the intent telegraph](cpu-heuristic.md) — `cpuPlayer.ts`'s five pure
   decision functions and what they do and don't know about, plus (DLR-52) the intent/commit split:
   how `quarryIntent` previews the Quarry's next move as a suit-and-stance shape without revealing

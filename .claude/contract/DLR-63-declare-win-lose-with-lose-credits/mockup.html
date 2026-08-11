@@ -1,0 +1,1167 @@
+<title>DLR-63 — Declare Win/Lose, Lose-credits, and the new card face</title>
+<style>
+  /* ============================================================================
+     DLR-63 mockup. Every colour token, font stack, and layout value below is
+     TRANSCRIBED from the shipped Hunt screen (src/app/warCouncil/warCouncil.css,
+     warCouncilCards.css, warCouncilHunt.css) so the four new surfaces are judged
+     in the real screen rather than in a vacuum. Deliberately single-theme: the
+     shipped shell sets `color-scheme: dark` and offers no light variant, so this
+     commits to the same one world and paints its own ground explicitly.
+     Nothing here is a new colour decision.
+     ============================================================================ */
+
+  :root {
+    --wc-chamber: #0c1013;
+    --wc-chamber-lift: #141a1f;
+    --wc-felt: #16241f;
+    --wc-felt-lip: #0a1211;
+    --wc-felt-line: #2b4038;
+    --wc-parchment: #e9e1cd;
+    --wc-parchment-shade: #d3c8ae;
+    --wc-ink: #191610;
+    --wc-brass: #c99a4e;
+    --wc-brass-dim: #7d6132;
+    --wc-chalk: #cdd6d2;
+    --wc-chalk-dim: #6f7d78;
+    --wc-alarm: #d1705f;
+
+    --wc-bells: #c9873f;
+    --wc-keys: #5f93a8;
+    --wc-moons: #9c7cb8;
+
+    --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    --wc-card-w: clamp(2.9rem, 6.2vmin, 4.3rem);
+    --wc-plate-card-w: clamp(2.3rem, 4.6vmin, 3.2rem);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--wc-chamber);
+    color: var(--wc-chalk);
+    font-family: var(--wc-sans);
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- mockup-only scaffolding, clearly outside the game shell ---------- */
+
+  .mk-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem clamp(0.6rem, 2.2vmin, 1.6rem);
+    background: #07090b;
+    border-bottom: 1px solid #1d2429;
+  }
+
+  .mk-bar-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+    font-weight: 700;
+    margin-right: 0.3rem;
+  }
+
+  .mk-tab {
+    font: inherit;
+    font-size: 0.74rem;
+    padding: 0.4rem 0.7rem;
+    min-height: 34px;
+    background: transparent;
+    color: var(--wc-chalk-dim);
+    border: 1px solid #26313a;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+
+  .mk-tab:hover { color: var(--wc-chalk); border-color: #3a4954; }
+
+  .mk-tab[aria-pressed='true'] {
+    color: var(--wc-brass);
+    border-color: var(--wc-brass);
+    background: #c99a4e14;
+  }
+
+  .mk-note {
+    padding: 0.55rem clamp(0.6rem, 2.2vmin, 1.6rem);
+    background: #0a0f13;
+    border-bottom: 1px solid #1d2429;
+    font-size: 0.76rem;
+    line-height: 1.45;
+    color: var(--wc-chalk-dim);
+  }
+
+  .mk-note b { color: var(--wc-brass); font-weight: 600; }
+  .mk-note code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.92em;
+    color: var(--wc-chalk);
+  }
+
+  /* ---------- the shell, transcribed ---------- */
+
+  .wc-shell {
+    height: 78vh;
+    min-height: 30rem;
+    width: 100%;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: minmax(10rem, 17vw) 1fr;
+    grid-template-areas:
+      'status  status'
+      'dossier table'
+      'hand    hand';
+    background: radial-gradient(120% 80% at 50% 0%, #17202700 0%, #060809 100%), var(--wc-chamber);
+  }
+
+  .wc-status {
+    grid-area: status;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: clamp(0.5rem, 2vmin, 2rem);
+    padding: clamp(0.5rem, 1.6vmin, 1rem) clamp(0.6rem, 2.2vmin, 1.6rem);
+  }
+
+  .wc-plate {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.4rem, 1.2vmin, 0.75rem);
+    background: var(--wc-chamber-lift);
+    border: 1px solid #232c33;
+    border-radius: 2px;
+    padding: clamp(0.35rem, 1vmin, 0.6rem) clamp(0.5rem, 1.4vmin, 0.85rem);
+  }
+
+  .wc-plate-label {
+    font-size: clamp(0.52rem, 1.1vmin, 0.64rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .wc-stack { display: flex; }
+
+  .wc-stack-back {
+    width: clamp(0.85rem, 1.9vmin, 1.2rem);
+    height: clamp(1.3rem, 2.9vmin, 1.8rem);
+    border-radius: 1px;
+    background: repeating-linear-gradient(-45deg, #2c3a42 0 2px, #1e282e 2px 4px);
+    border: 1px solid #3a4a53;
+    margin-left: -0.35rem;
+  }
+  .wc-stack-back:first-child { margin-left: 0; }
+
+  .wc-score {
+    display: flex;
+    align-items: stretch;
+    background: var(--wc-chamber-lift);
+    border: 1px solid #232c33;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .wc-score-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding: clamp(0.3rem, 0.9vmin, 0.5rem) clamp(0.7rem, 2vmin, 1.25rem);
+  }
+  .wc-score-cell + .wc-score-cell { border-left: 1px solid #232c33; }
+  .wc-score-cell.wc-is-lead { background: #1b2229; }
+
+  .wc-score-side {
+    font-size: clamp(0.52rem, 1.1vmin, 0.64rem);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+    font-weight: 600;
+  }
+
+  .wc-score-value {
+    font-family: var(--wc-serif);
+    font-size: clamp(1.15rem, 3vmin, 1.75rem);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--wc-chalk);
+  }
+  .wc-score-cell.wc-is-lead .wc-score-value { color: var(--wc-brass); }
+
+  /* ---------- the ledger, plus DLR-63's new credits cell ---------- */
+
+  .wc-ledger { display: flex; align-items: stretch; gap: 0.35rem; }
+
+  .wc-ledger-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 3.4rem;
+    padding: 0.3rem 0.55rem;
+    border-radius: 0.4rem;
+    background: var(--wc-chamber-lift);
+    border: 1px solid #23303a;
+  }
+
+  .wc-ledger-cell.wc-is-demand { border-color: var(--wc-brass); border-width: 2px; }
+  .wc-ledger-cell.wc-is-band { border-style: dashed; border-color: var(--wc-brass-dim); }
+
+  /* NEW (DLR-63): the remaining-credit count. Double border carries "a spendable
+     resource" in form, not colour alone, and it goes flat when the pool is empty. */
+  .wc-ledger-cell.wc-is-credits {
+    border-style: double;
+    border-width: 3px;
+    border-color: var(--wc-keys);
+  }
+  .wc-ledger-cell.wc-is-credits.wc-is-spent {
+    border-style: solid;
+    border-width: 1px;
+    border-color: #2b3a44;
+  }
+  .wc-ledger-cell.wc-is-credits.wc-is-spent .wc-ledger-value { color: var(--wc-chalk-dim); }
+
+  .wc-ledger-key {
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--wc-chalk-dim);
+    white-space: nowrap;
+  }
+
+  .wc-ledger-value {
+    font-family: var(--wc-serif);
+    font-size: 1.25rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--wc-parchment);
+    white-space: nowrap;
+  }
+
+  .wc-ledger-op {
+    display: flex;
+    align-items: center;
+    font-family: var(--wc-serif);
+    font-size: 1.1rem;
+    color: var(--wc-chalk-dim);
+  }
+
+  /* ---------- dossier ---------- */
+
+  .wc-dossier {
+    grid-area: dossier;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0 clamp(0.5rem, 1.6vmin, 1rem) clamp(0.5rem, 1.6vmin, 1rem) clamp(0.6rem, 2.2vmin, 1.6rem);
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .wc-dossier-card {
+    background: var(--wc-chamber-lift);
+    border: 1px solid #23303a;
+    border-left: 3px solid var(--wc-brass-dim);
+    border-radius: 0.4rem;
+    padding: 0.6rem 0.7rem;
+  }
+
+  .wc-dossier-eyebrow,
+  .wc-telegraph-eyebrow {
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--wc-chalk-dim);
+  }
+
+  .wc-dossier-name {
+    font-family: var(--wc-serif);
+    font-size: 1.15rem;
+    font-weight: 400;
+    color: var(--wc-parchment);
+    margin: 0.1rem 0 0.35rem;
+  }
+
+  .wc-dossier-rule { font-size: 0.78rem; line-height: 1.35; color: var(--wc-chalk); margin: 0; }
+  .wc-dossier-tricks { margin: 0.45rem 0 0; font-size: 0.72rem; color: var(--wc-chalk-dim); }
+  .wc-dossier-tricks b {
+    font-family: var(--wc-serif);
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--wc-parchment);
+  }
+
+  .wc-telegraph {
+    background: #101a20;
+    border: 1px dashed var(--wc-keys);
+    border-radius: 0.4rem;
+    padding: 0.55rem 0.7rem;
+  }
+  .wc-telegraph-line {
+    font-family: var(--wc-serif);
+    font-size: 0.98rem;
+    color: var(--wc-parchment);
+    margin: 0.2rem 0 0;
+    line-height: 1.3;
+  }
+
+  /* NEW (DLR-63): the declared path, held in the dossier zone beside the Quarry's
+     card so "what I committed to" and "what I'm up against" read in one glance. */
+  .wc-declared {
+    background: var(--wc-chamber-lift);
+    border: 1px solid #23303a;
+    border-left: 3px solid var(--wc-brass);
+    border-radius: 0.4rem;
+    padding: 0.5rem 0.7rem;
+  }
+  .wc-declared-path {
+    font-family: var(--wc-serif);
+    font-size: 1.05rem;
+    color: var(--wc-brass);
+    margin: 0.1rem 0 0;
+  }
+  .wc-declared-detail { font-size: 0.72rem; color: var(--wc-chalk-dim); margin: 0.25rem 0 0; line-height: 1.35; }
+
+  /* ---------- the felt ---------- */
+
+  .wc-table {
+    grid-area: table;
+    position: relative;
+    margin: 0 clamp(0.5rem, 2vmin, 1.5rem);
+    border-radius: clamp(0.5rem, 2vmin, 1.5rem);
+    background: radial-gradient(60% 70% at 50% 45%, #1d2f28 0%, var(--wc-felt) 55%, #101b18 100%);
+    box-shadow:
+      inset 0 0 0 1px var(--wc-felt-line),
+      inset 0 0 0 clamp(4px, 1vmin, 9px) var(--wc-felt-lip),
+      inset 0 clamp(8px, 2vmin, 18px) clamp(20px, 5vmin, 40px) #00000066;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    justify-items: center;
+    min-height: 0;
+  }
+
+  .wc-table-inner {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.4rem, 1.5vmin, 1rem);
+    padding: clamp(0.5rem, 2vmin, 1.5rem);
+    text-align: center;
+  }
+
+  .wc-trick-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.6rem, 2.4vmin, 1.75rem);
+    min-width: calc(var(--wc-plate-card-w) * 3.6);
+    min-height: calc(var(--wc-plate-card-w) * 1.9);
+    padding: clamp(0.3rem, 1vmin, 0.6rem);
+    border-radius: clamp(3px, 0.8vmin, 6px);
+    box-shadow: inset 0 0 0 1px #ffffff0d;
+  }
+
+  .wc-played { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+  .wc-played-side {
+    font-size: clamp(0.52rem, 1.1vmin, 0.64rem);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+    font-weight: 600;
+  }
+  .wc-played.wc-is-winner .wc-played-side { color: var(--wc-brass); }
+
+  .wc-table-line {
+    font-family: var(--wc-serif);
+    font-size: clamp(0.85rem, 2.1vmin, 1.15rem);
+    color: var(--wc-chalk);
+    margin: 0;
+    max-width: 40ch;
+  }
+
+  .wc-table-hint {
+    font-size: clamp(0.62rem, 1.35vmin, 0.78rem);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--wc-brass);
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .wc-is-carry-on {
+    font-family: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    padding: 0.6rem 0.9rem;
+    margin: -0.6rem -0.9rem;
+  }
+
+  /* ---------- the card face — AC7's two changes ---------- */
+
+  .wc-card {
+    font: inherit;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: var(--wc-card-w);
+    aspect-ratio: 2 / 3;
+    padding: clamp(0.18rem, 0.7vmin, 0.4rem) 0;
+    background: linear-gradient(168deg, var(--wc-parchment) 0%, var(--wc-parchment-shade) 100%);
+    color: var(--wc-ink);
+    /* AC7 (2/2): a border in the card's own suit colour. `currentColor` resolves
+       against the `.wc-suit-*` rule below, so this is one declaration for all three
+       suits and introduces no new colour token. */
+    border: 2px solid currentColor;
+    border-radius: clamp(2px, 0.5vmin, 4px);
+    box-shadow:
+      0 0 0 1px #00000055,
+      0 clamp(2px, 0.6vmin, 5px) clamp(6px, 1.6vmin, 14px) #00000070;
+    cursor: pointer;
+    transition: transform 0.13s ease-out, box-shadow 0.13s ease-out;
+  }
+
+  .wc-card-rank {
+    font-family: var(--wc-serif);
+    font-size: calc(var(--wc-card-w) * 0.44);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--wc-ink);
+  }
+
+  /* AC7 (1/2): the suit mark moves to the bottom-left corner. Absolute, so it is
+     out of the column flow and the rank keeps the optical centre of the face. */
+  .wc-card-suit {
+    position: absolute;
+    left: calc(var(--wc-card-w) * 0.09);
+    bottom: calc(var(--wc-card-w) * 0.07);
+    width: calc(var(--wc-card-w) * 0.3);
+    height: calc(var(--wc-card-w) * 0.3);
+  }
+
+  .wc-card-pip {
+    position: absolute;
+    right: calc(var(--wc-card-w) * 0.11);
+    bottom: calc(var(--wc-card-w) * 0.11);
+    width: calc(var(--wc-card-w) * 0.12);
+    height: calc(var(--wc-card-w) * 0.12);
+    border-radius: 50%;
+    background: var(--wc-brass-dim);
+    opacity: 0.85;
+  }
+  .wc-card-pip.wc-is-blank { background: transparent; }
+
+  /* The inverted value, shown on the hand only while Lose is declared or previewed. */
+  .wc-card-inverted {
+    position: absolute;
+    top: calc(var(--wc-card-w) * 0.06);
+    right: calc(var(--wc-card-w) * 0.09);
+    font-family: var(--wc-serif);
+    font-size: calc(var(--wc-card-w) * 0.2);
+    line-height: 1;
+    color: #6d5a2e;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wc-card.wc-suit-bells { color: var(--wc-bells); }
+  .wc-card.wc-suit-keys { color: var(--wc-keys); }
+  .wc-card.wc-suit-moons { color: var(--wc-moons); }
+
+  .wc-card.wc-is-played,
+  .wc-card.wc-is-plate {
+    width: var(--wc-plate-card-w);
+    cursor: default;
+  }
+  .wc-card.wc-is-played.wc-is-winner {
+    box-shadow: 0 0 0 2px var(--wc-brass), 0 2px 12px #00000070;
+  }
+  .wc-card.wc-is-illegal { filter: grayscale(0.75) brightness(0.62); cursor: not-allowed; }
+  .wc-card.wc-is-armed {
+    box-shadow: 0 0 0 2px var(--wc-brass), 0 clamp(6px, 1.6vmin, 14px) clamp(10px, 2.6vmin, 22px) #00000090;
+  }
+
+  :is(.wc-card, .wc-decline, .wc-is-carry-on, .mk-tab, .wc-declare-option):focus-visible {
+    outline: 2px solid var(--wc-brass);
+    outline-offset: 2px;
+    z-index: 30;
+  }
+
+  /* ---------- the hand ---------- */
+
+  .wc-hand {
+    grid-area: hand;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.15rem, 0.8vmin, 0.5rem);
+    padding: clamp(0.3rem, 1.2vmin, 0.8rem) clamp(0.5rem, 2vmin, 1.5rem) clamp(0.5rem, 1.8vmin, 1.1rem);
+  }
+
+  .wc-hand-hint {
+    font-size: clamp(0.58rem, 1.25vmin, 0.72rem);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+    font-weight: 600;
+    min-height: 1.2em;
+    text-align: center;
+    margin: 0;
+  }
+  .wc-hand-hint.wc-is-live { color: var(--wc-brass); }
+
+  .wc-fan {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(var(--wc-card-w) * 1.5 + 2.1rem);
+    padding: 1.3rem 0 0.6rem;
+  }
+
+  .wc-fan .wc-card {
+    transform: var(--wc-fan-lift, translateY(0%)) var(--wc-fan-rot, rotate(0deg));
+  }
+
+  @media (hover: hover) {
+    .wc-fan .wc-card:not(.wc-is-illegal):hover {
+      transform: translateY(-9%) var(--wc-fan-rot, rotate(0deg));
+    }
+  }
+
+  /* ---------- DLR-63: the declare gate ---------- */
+
+  .wc-declare {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.45rem, 1.6vmin, 1rem);
+    max-width: 42rem;
+  }
+
+  .wc-declare-eyebrow {
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .wc-declare h2 {
+    font-family: var(--wc-serif);
+    font-size: clamp(1.1rem, 3vmin, 1.7rem);
+    font-weight: 600;
+    color: var(--wc-brass);
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .wc-declare-choices {
+    display: flex;
+    gap: clamp(0.5rem, 1.8vmin, 1.1rem);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .wc-declare-option {
+    font: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+    min-height: 44px;
+    min-width: 11rem;
+    max-width: 15rem;
+    padding: 0.7rem 0.9rem;
+    text-align: left;
+    background: var(--wc-chamber-lift);
+    color: var(--wc-chalk);
+    border: 2px solid var(--wc-brass-dim);
+    border-radius: 0.4rem;
+    cursor: pointer;
+    transition: border-color 0.13s ease-out, transform 0.13s ease-out;
+  }
+
+  .wc-declare-option:hover { border-color: var(--wc-brass); transform: translateY(-2px); }
+
+  /* Win vs Lose read apart in form as well as colour: Win is solid-bordered,
+     Lose is dashed, matching how the ledger already separates Demand from Standing. */
+  .wc-declare-option.wc-is-lose { border-style: dashed; }
+
+  .wc-declare-option-name {
+    font-family: var(--wc-serif);
+    font-size: 1.2rem;
+    color: var(--wc-parchment);
+  }
+  .wc-declare-option-body { font-size: 0.76rem; line-height: 1.4; color: var(--wc-chalk-dim); }
+  .wc-declare-option-body b { color: var(--wc-brass); font-weight: 600; }
+
+  .wc-declare-foot { font-size: 0.72rem; color: var(--wc-chalk-dim); margin: 0; max-width: 40ch; line-height: 1.4; }
+
+  /* ---------- DLR-63: the claim control on a held lost trick ---------- */
+
+  .wc-claim-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .wc-claim {
+    font: inherit;
+    font-size: clamp(0.68rem, 1.45vmin, 0.8rem);
+    min-height: 44px;
+    padding: 0 clamp(0.7rem, 2vmin, 1.2rem);
+    background: #c99a4e18;
+    color: var(--wc-brass);
+    border: 2px double var(--wc-keys);
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  .wc-claim:hover { background: #c99a4e2e; }
+
+  .wc-decline {
+    font: inherit;
+    font-family: var(--wc-sans);
+    font-size: clamp(0.68rem, 1.45vmin, 0.8rem);
+    min-height: 44px;
+    padding: 0 clamp(0.6rem, 1.8vmin, 1.1rem);
+    background: transparent;
+    color: var(--wc-chalk);
+    border: 1px solid var(--wc-brass-dim);
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  .wc-decline:hover { border-color: var(--wc-chalk-dim); }
+
+  .wc-claim-worth {
+    font-size: 0.72rem;
+    color: var(--wc-chalk-dim);
+    margin: 0;
+  }
+  .wc-claim-worth b { font-family: var(--wc-serif); font-size: 1rem; color: var(--wc-brass); font-weight: 400; }
+
+  /* ---------- DLR-63: the end panel, Lose path ---------- */
+
+  .wc-over { display: flex; flex-direction: column; align-items: center; gap: clamp(0.4rem, 1.4vmin, 0.9rem); }
+  .wc-over h2 {
+    font-family: var(--wc-serif);
+    font-size: clamp(1.2rem, 3.4vmin, 2rem);
+    font-weight: 600;
+    margin: 0;
+    color: var(--wc-brass);
+  }
+
+  .wc-equation { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+  .wc-equation-part {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.45rem 0.8rem;
+    background: var(--wc-chamber-lift);
+    border: 1px solid #23303a;
+    border-radius: 0.4rem;
+    min-width: 4.4rem;
+  }
+  .wc-equation-part.wc-is-result { border-color: var(--wc-brass); border-width: 2px; }
+  .wc-equation-key {
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--wc-chalk-dim);
+  }
+  .wc-equation-value {
+    font-family: var(--wc-serif);
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--wc-parchment);
+  }
+  .wc-equation-op { font-family: var(--wc-serif); font-size: 1.4rem; color: var(--wc-chalk-dim); }
+
+  .wc-verdict-detail { font-size: 0.8rem; color: var(--wc-chalk-dim); margin: 0; }
+  .wc-verdict {
+    font-family: var(--wc-serif);
+    font-size: 1.15rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: 0.4rem;
+    margin: 0;
+    color: var(--wc-alarm);
+    border: 2px dashed var(--wc-alarm);
+  }
+  .wc-verdict.wc-is-cleared { color: var(--wc-brass); border: 2px solid var(--wc-brass); }
+
+  /* ---------- narrow / short collapse, transcribed + the new cell ---------- */
+
+  @media (max-width: 44rem), (max-height: 34rem) {
+    .wc-shell {
+      grid-template-columns: 1fr;
+      grid-template-areas: 'status' 'dossier' 'table' 'hand';
+      grid-template-rows: auto auto 1fr auto;
+    }
+    .wc-dossier { flex-direction: row; align-items: stretch; flex-wrap: wrap; }
+    .wc-status { flex-wrap: wrap; }
+    .wc-ledger { flex-wrap: wrap; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wc-card, .wc-declare-option { transition: none; }
+    .wc-declare-option:hover { transform: none; }
+  }
+</style>
+
+<div class="mk-bar">
+  <span class="mk-bar-label">State</span>
+  <button class="mk-tab" type="button" data-state="declare" aria-pressed="true">1 — Declare gate</button>
+  <button class="mk-tab" type="button" data-state="win" aria-pressed="false">2 — Win, mid-round</button>
+  <button class="mk-tab" type="button" data-state="claim" aria-pressed="false">3 — Lose, trick lost, claimable</button>
+  <button class="mk-tab" type="button" data-state="spent" aria-pressed="false">4 — Lose, credits spent</button>
+  <button class="mk-tab" type="button" data-state="over" aria-pressed="false">5 — Hunt over, Lose path</button>
+</div>
+
+<p class="mk-note" id="mk-note"></p>
+
+<div class="wc-shell">
+  <header class="wc-status">
+    <div class="wc-plate">
+      <span class="wc-plate-label">Opponent</span>
+      <span class="wc-stack" aria-hidden="true">
+        <span class="wc-stack-back"></span><span class="wc-stack-back"></span
+        ><span class="wc-stack-back"></span><span class="wc-stack-back"></span
+        ><span class="wc-stack-back"></span><span class="wc-stack-back"></span>
+      </span>
+      <span class="wc-plate-label" id="mk-held">13 held</span>
+    </div>
+
+    <div class="wc-score" role="group" aria-label="Tricks won">
+      <span class="wc-score-cell" id="mk-cell-you">
+        <span class="wc-score-side">You</span>
+        <span class="wc-score-value" id="mk-you">0</span>
+      </span>
+      <span class="wc-score-cell">
+        <span class="wc-score-side">Trick</span>
+        <span class="wc-score-value" id="mk-trick">1</span>
+      </span>
+      <span class="wc-score-cell" id="mk-cell-them">
+        <span class="wc-score-side">Them</span>
+        <span class="wc-score-value" id="mk-them">0</span>
+      </span>
+    </div>
+
+    <div class="wc-ledger" role="group" aria-label="The Hunt so far">
+      <span class="wc-ledger-cell">
+        <span class="wc-ledger-key" aria-hidden="true">Spoils</span>
+        <span class="wc-ledger-value" id="mk-spoils">0</span>
+      </span>
+      <span class="wc-ledger-op" aria-hidden="true">×</span>
+      <span class="wc-ledger-cell wc-is-band">
+        <span class="wc-ledger-key" aria-hidden="true">Standing</span>
+        <span class="wc-ledger-value" id="mk-band">Humble ×6</span>
+      </span>
+      <span class="wc-ledger-op" aria-hidden="true">=</span>
+      <span class="wc-ledger-cell">
+        <span class="wc-ledger-key" aria-hidden="true">Score</span>
+        <span class="wc-ledger-value" id="mk-score">0</span>
+      </span>
+      <span class="wc-ledger-op" aria-hidden="true">/</span>
+      <span class="wc-ledger-cell wc-is-demand">
+        <span class="wc-ledger-key" aria-hidden="true">Demand</span>
+        <span class="wc-ledger-value">220</span>
+      </span>
+      <span class="wc-ledger-cell wc-is-credits" id="mk-credits-cell" hidden>
+        <span class="wc-ledger-key" aria-hidden="true">Credits</span>
+        <span class="wc-ledger-value" id="mk-credits">3</span>
+      </span>
+    </div>
+  </header>
+
+  <aside class="wc-dossier">
+    <section class="wc-dossier-card" aria-label="The Quarry: The Monarch">
+      <span class="wc-dossier-eyebrow" aria-hidden="true">The Quarry</span>
+      <h2 class="wc-dossier-name">The Monarch</h2>
+      <p class="wc-dossier-rule">
+        Every time the Monarch leads a suit you hold, you must play your Swan of that suit or your
+        highest card of it.
+      </p>
+      <p class="wc-dossier-tricks">Tricks taken <b id="mk-dossier-tricks">0</b></p>
+    </section>
+
+    <section class="wc-declared" id="mk-declared" hidden aria-label="Your declaration">
+      <span class="wc-dossier-eyebrow" aria-hidden="true">You declared</span>
+      <p class="wc-declared-path" id="mk-declared-path">Lose</p>
+      <p class="wc-declared-detail" id="mk-declared-detail"></p>
+    </section>
+
+    <section class="wc-telegraph" id="mk-telegraph">
+      <span class="wc-telegraph-eyebrow" aria-hidden="true">Their intent</span>
+      <p class="wc-telegraph-line">The Quarry will lead Keys.</p>
+    </section>
+  </aside>
+
+  <section class="wc-table">
+    <div class="wc-table-inner" id="mk-felt"></div>
+  </section>
+
+  <div class="wc-hand">
+    <p class="wc-hand-hint" id="mk-hint">Declare before the first trick</p>
+    <div class="wc-fan" role="group" aria-label="Your hand" id="mk-fan"></div>
+  </div>
+</div>
+
+<script>
+  'use strict'
+
+  // The 13-card dealt hand, given in DEALT order — the sort below is what AC6 changes.
+  const DEALT = [
+    { suit: 'moons', rank: 9 },
+    { suit: 'bells', rank: 4 },
+    { suit: 'keys', rank: 11 },
+    { suit: 'moons', rank: 5 },
+    { suit: 'bells', rank: 10 },
+    { suit: 'keys', rank: 3 },
+    { suit: 'moons', rank: 11 },
+    { suit: 'bells', rank: 2 },
+    { suit: 'keys', rank: 8 },
+    { suit: 'moons', rank: 6 },
+    { suit: 'bells', rank: 7 },
+    { suit: 'keys', rank: 1 },
+    { suit: 'moons', rank: 10 },
+  ]
+
+  // The engine's own declared suit order (ALL_SUITS), reused so display order has no
+  // second source of truth.
+  const SUIT_ORDER = ['bells', 'keys', 'moons']
+  const SUIT_NAME = { bells: 'Bells', keys: 'Keys', moons: 'Moons' }
+  const RANK_NAME = { 1: 'Swan', 3: 'Fox', 5: 'Woodcutter', 9: 'Witch', 11: 'Monarch' }
+  const RANK_INVERSION_PIVOT = 12
+
+  // AC6, three keys (developer-confirmed 2026-08-11):
+  //   1. holding size DESCENDING — the suit you hold most of sits leftmost
+  //   2. ALL_SUITS order as the tie-break, so the comparator is total
+  //   3. rank ASCENDING within a suit
+  // A copy, never a mutation. Holding size is counted from the argument alone, so the
+  // order re-derives correctly as the hand shrinks.
+  function sortHandForDisplay(hand) {
+    const held = hand.reduce(function (counts, card) {
+      counts[card.suit] = (counts[card.suit] || 0) + 1
+      return counts
+    }, {})
+
+    return [...hand].sort(
+      (a, b) =>
+        held[b.suit] - held[a.suit] ||
+        SUIT_ORDER.indexOf(a.suit) - SUIT_ORDER.indexOf(b.suit) ||
+        a.rank - b.rank,
+    )
+  }
+
+  const HAND = sortHandForDisplay(DEALT)
+
+  function accessibleName(card) {
+    const base = card.rank + ' of ' + SUIT_NAME[card.suit]
+    return RANK_NAME[card.rank] ? base + ' (' + RANK_NAME[card.rank] + ')' : base
+  }
+
+  const SUIT_GLYPH = {
+    bells:
+      '<path d="M6.8 16.4v-4.6a5.2 5.2 0 0 1 10.4 0v4.6M4.6 16.4h14.8M12 6.6V4.6M10.2 19.1a1.9 1.9 0 0 0 3.6 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+    keys:
+      '<g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="7.2" r="3.5"/><path d="M12 10.7V20M12 14.6h3.1M12 17.6h2.3"/></g>',
+    moons:
+      '<path d="M15.3 3.9a8.2 8.2 0 1 0 3.9 11.8 6.7 6.7 0 0 1-3.9-11.8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>',
+  }
+
+  /** One card face. `opts.showInverted` renders the Lose-path value in the top-right. */
+  function cardHtml(card, opts) {
+    const o = opts || {}
+    const classes = ['wc-card', 'wc-suit-' + card.suit]
+    if (o.variant === 'table') classes.push('wc-is-played')
+    if (o.winner) classes.push('wc-is-winner')
+    if (o.illegal) classes.push('wc-is-illegal')
+
+    const inverted = o.showInverted
+      ? '<span class="wc-card-inverted" aria-hidden="true">' +
+        (RANK_INVERSION_PIVOT - card.rank) +
+        '</span>'
+      : ''
+
+    return (
+      '<button type="button" class="' +
+      classes.join(' ') +
+      '" aria-label="' +
+      accessibleName(card) +
+      '"' +
+      (o.variant === 'table' || o.illegal ? ' disabled' : '') +
+      '>' +
+      '<span class="wc-card-rank" aria-hidden="true">' +
+      card.rank +
+      '</span>' +
+      inverted +
+      '<svg class="wc-card-suit" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+      SUIT_GLYPH[card.suit] +
+      '</svg>' +
+      '<span class="wc-card-pip' +
+      (RANK_NAME[card.rank] ? '' : ' wc-is-blank') +
+      '" aria-hidden="true"></span>' +
+      '</button>'
+    )
+  }
+
+  // ---------------------------------------------------------------------------
+  // The five states. Each is a plain data description of one screen; nothing here
+  // models real game state, per the mockup's fidelity floor.
+  // ---------------------------------------------------------------------------
+
+  const LOST_TRICK = [
+    { side: 'You', card: { suit: 'keys', rank: 1 }, winner: false },
+    { side: 'Them', card: { suit: 'keys', rank: 6 }, winner: true },
+  ]
+
+  // Two Keys cards: the Swan (rank 1 → 11 inverted) and their 6 (→ 6). 11 + 6 = 17.
+  const LOST_TRICK_WORTH = LOST_TRICK.reduce(
+    (t, p) => t + (RANK_INVERSION_PIVOT - p.card.rank),
+    0,
+  )
+
+  const STATES = {
+    declare: {
+      note:
+        '<b>AC1</b> — the declare gate. The full 13-card hand is on screen and non-interactive below; the gate sits on the felt rather than in a modal so nothing hides the hand being judged. <b>Click either option</b> and the mockup jumps to that path. The hand below is also <b>AC6</b>: dealt order was <code>moons 9, bells 4, keys 11, moons 5, …</code> and it renders <b>Moons (5 held) → Bells (4) → Keys (4)</b>, longest suit leftmost, ascending rank within each.',
+      held: '13 held',
+      you: 0, them: 0, trick: 1,
+      spoils: 0, band: 'Humble ×6', score: 0,
+      credits: null,
+      declared: null,
+      hint: 'Declare before the first trick',
+      handIllegal: true,
+      showInverted: false,
+      telegraph: 'They are waiting on your declaration.',
+      felt: function () {
+        return (
+          '<div class="wc-declare">' +
+          '<p class="wc-declare-eyebrow">Before the first trick</p>' +
+          '<h2>Thirteen cards. Which way are you playing this Hunt?</h2>' +
+          '<div class="wc-declare-choices">' +
+          '<button type="button" class="wc-declare-option" data-declare="win">' +
+          '<span class="wc-declare-option-name">Play to Win</span>' +
+          '<span class="wc-declare-option-body">Cards score their printed rank. Every trick you take adds both cards to <b>Spoils</b>.</span>' +
+          '</button>' +
+          '<button type="button" class="wc-declare-option wc-is-lose" data-declare="lose">' +
+          '<span class="wc-declare-option-name">Play to Lose</span>' +
+          '<span class="wc-declare-option-body">Cards invert — a 1 scores 11. You get <b>3 credits</b>, each claiming one trick you lose.</span>' +
+          '</button>' +
+          '</div>' +
+          '<p class="wc-declare-foot">Standing still comes from your trick count either way, and the Demand is still 220.</p>' +
+          '</div>'
+        )
+      },
+    },
+
+    win: {
+      note:
+        '<b>AC2</b> — Win declared, mid-round. Identical to the shipped slice: printed ranks, no credits cell, no inverted values on the hand. The only visible differences from today are <b>AC6</b>’s sorted hand — longest suit leftmost, so <b>Moons → Bells → Keys</b> here — and <b>AC7</b>’s new card face. Note the consequence: as cards leave the hand, holding sizes change and a suit can lose its leftmost slot mid-round.',
+      held: '8 held',
+      you: 3, them: 2, trick: 6,
+      spoils: 34, band: 'Humble ×6', score: 204,
+      credits: null,
+      declared: { path: 'Win', detail: 'Cards score their printed rank.' },
+      hint: 'Your lead',
+      handIllegal: false,
+      showInverted: false,
+      telegraph: 'The Quarry will duck with Moons.',
+      felt: function () {
+        return (
+          '<div class="wc-trick-row"></div>' +
+          '<p class="wc-table-line">The table is yours — lead.</p>'
+        )
+      },
+    },
+
+    claim: {
+      note:
+        '<b>AC3</b> — Lose declared, a trick just lost, one credit spendable on it. The claim decision folds onto the carry-on tap you were already making, so the tap count per trick is unchanged. <b>Click “Claim”</b> to spend a credit, or <b>“Let it go”</b> to decline.',
+      held: '8 held',
+      you: 1, them: 4, trick: 6,
+      spoils: 31, band: 'Humble ×6', score: 186,
+      credits: 3,
+      declared: { path: 'Lose', detail: 'Cards invert — rank r scores 12 − r.' },
+      hint: 'Trick resolved',
+      handIllegal: true,
+      showInverted: true,
+      telegraph: 'The Quarry will lead Bells.',
+      felt: function () {
+        return (
+          '<div class="wc-trick-row">' +
+          LOST_TRICK.map(function (p) {
+            return (
+              '<span class="wc-played' + (p.winner ? ' wc-is-winner' : '') + '">' +
+              '<span class="wc-played-side">' + p.side + '</span>' +
+              cardHtml(p.card, { variant: 'table', winner: p.winner }) +
+              '</span>'
+            )
+          }).join('') +
+          '</div>' +
+          '<p class="wc-table-line">They take the trick.</p>' +
+          '<p class="wc-claim-worth">Claiming credits <b>' + LOST_TRICK_WORTH + '</b> Spoils — the Swan inverts to 11.</p>' +
+          '<div class="wc-claim-row">' +
+          '<button type="button" class="wc-claim" data-claim="1">Claim these — 3 credits left</button>' +
+          '<button type="button" class="wc-decline" data-carry="1">Let it go</button>' +
+          '</div>'
+        )
+      },
+    },
+
+    spent: {
+      note:
+        '<b>AC3, second half</b> — the pool is empty, so this lost trick credits nothing and only the carry-on control remains. The Credits cell drops from double border to flat, so “spent” reads in form and not colour alone.',
+      held: '3 held',
+      you: 2, them: 8, trick: 11,
+      spoils: 48, band: 'Humble ×6', score: 288,
+      credits: 0,
+      declared: { path: 'Lose', detail: 'Cards invert — rank r scores 12 − r.' },
+      hint: 'Trick resolved',
+      handIllegal: true,
+      showInverted: true,
+      telegraph: 'The Quarry will press with Keys.',
+      felt: function () {
+        return (
+          '<div class="wc-trick-row">' +
+          LOST_TRICK.map(function (p) {
+            return (
+              '<span class="wc-played' + (p.winner ? ' wc-is-winner' : '') + '">' +
+              '<span class="wc-played-side">' + p.side + '</span>' +
+              cardHtml(p.card, { variant: 'table', winner: p.winner }) +
+              '</span>'
+            )
+          }).join('') +
+          '</div>' +
+          '<p class="wc-table-line">They take the trick.</p>' +
+          '<p class="wc-claim-worth">No credits left — this trick credits nothing.</p>' +
+          '<button type="button" class="wc-table-hint wc-is-carry-on" data-carry="1">Tap the table to carry on</button>'
+        )
+      },
+    },
+
+    over: {
+      note:
+        '<b>AC4 + AC5</b> — the Hunt ends on the Lose path through exactly today’s code path: Standing came from the one band table (2 tricks → Humble ×6) and the score met the same fixed Demand of 220. The panel is unchanged apart from naming the declared path.',
+      held: '0 held',
+      you: 2, them: 11, trick: 13,
+      spoils: 51, band: 'Humble ×6', score: 306,
+      credits: 0,
+      declared: { path: 'Lose', detail: 'All 3 credits spent.' },
+      hint: '',
+      handIllegal: true,
+      showInverted: true,
+      telegraph: 'Nothing left to read.',
+      felt: function () {
+        return (
+          '<div class="wc-over">' +
+          '<h2>The Hunt is over</h2>' +
+          '<div class="wc-equation" role="group" aria-label="Spoils times Standing equals Score">' +
+          '<span class="wc-equation-part"><span class="wc-equation-key">Spoils</span><span class="wc-equation-value">51</span></span>' +
+          '<span class="wc-equation-op" aria-hidden="true">×</span>' +
+          '<span class="wc-equation-part"><span class="wc-equation-key">Standing</span><span class="wc-equation-value">×6</span></span>' +
+          '<span class="wc-equation-op" aria-hidden="true">=</span>' +
+          '<span class="wc-equation-part wc-is-result"><span class="wc-equation-key">Score</span><span class="wc-equation-value">306</span></span>' +
+          '</div>' +
+          '<p class="wc-verdict-detail">Declared Lose. 2 tricks — Humble. The Demand was 220.</p>' +
+          '<p class="wc-verdict wc-is-cleared">Demand cleared</p>' +
+          '<button type="button" class="wc-decline" data-restart="1">Deal another Hunt</button>' +
+          '</div>'
+        )
+      },
+    },
+  }
+
+  // ---------------------------------------------------------------------------
+
+  const el = (id) => document.getElementById(id)
+  let current = 'declare'
+
+  function render(name) {
+    const s = STATES[name]
+    if (!s) return
+    current = name
+
+    el('mk-note').innerHTML = s.note
+    el('mk-held').textContent = s.held
+    el('mk-you').textContent = s.you
+    el('mk-them').textContent = s.them
+    el('mk-trick').textContent = s.trick
+    el('mk-dossier-tricks').textContent = s.them
+    el('mk-spoils').textContent = s.spoils
+    el('mk-band').textContent = s.band
+    el('mk-score').textContent = s.score
+    el('mk-hint').textContent = s.hint
+    el('mk-hint').className = 'wc-hand-hint' + (s.hint === 'Trick resolved' ? '' : ' wc-is-live')
+    el('mk-telegraph').querySelector('.wc-telegraph-line').textContent = s.telegraph
+
+    el('mk-cell-you').className = 'wc-score-cell' + (s.you > s.them ? ' wc-is-lead' : '')
+    el('mk-cell-them').className = 'wc-score-cell' + (s.them > s.you ? ' wc-is-lead' : '')
+
+    const creditsCell = el('mk-credits-cell')
+    if (s.credits === null) {
+      creditsCell.hidden = true
+    } else {
+      creditsCell.hidden = false
+      creditsCell.className = 'wc-ledger-cell wc-is-credits' + (s.credits === 0 ? ' wc-is-spent' : '')
+      el('mk-credits').textContent = s.credits
+    }
+
+    const declared = el('mk-declared')
+    if (s.declared === null) {
+      declared.hidden = true
+    } else {
+      declared.hidden = false
+      el('mk-declared-path').textContent = s.declared.path
+      el('mk-declared-detail').textContent = s.declared.detail
+    }
+
+    el('mk-felt').innerHTML = s.felt()
+
+    el('mk-fan').innerHTML = HAND.map(function (card) {
+      return cardHtml(card, { illegal: s.handIllegal, showInverted: s.showInverted })
+    }).join('')
+
+    document.querySelectorAll('.mk-tab').forEach(function (tab) {
+      tab.setAttribute('aria-pressed', String(tab.dataset.state === name))
+    })
+  }
+
+  // One delegated listener for every control on the page.
+  document.addEventListener('click', function (event) {
+    const target = event.target.closest('[data-state],[data-declare],[data-claim],[data-carry],[data-restart]')
+    if (!target) return
+
+    if (target.dataset.state) return render(target.dataset.state)
+    if (target.dataset.declare) return render(target.dataset.declare === 'win' ? 'win' : 'claim')
+    if (target.dataset.claim) {
+      // Spending the last credit is what state 4 shows; one click demonstrates the move.
+      el('mk-note').innerHTML =
+        '<b>Claimed.</b> One credit spent, both cards credited at their inverted values (+' +
+        LOST_TRICK_WORTH +
+        ' Spoils), and the same tap carried the round on. Jump to state 4 to see the pool empty.'
+      return render('spent')
+    }
+    if (target.dataset.carry) {
+      el('mk-note').innerHTML =
+        '<b>Let it go.</b> No credit spent and the trick credited nothing — the carry-on tap behaves exactly as it does today.'
+      return render(current === 'claim' ? 'spent' : 'over')
+    }
+    if (target.dataset.restart) return render('declare')
+  })
+
+  render('declare')
+</script>

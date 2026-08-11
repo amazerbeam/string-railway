@@ -45,9 +45,11 @@ export function makeRound(overrides: Partial<WarCouncilState> = {}): WarCouncilS
 
 export { card }
 
-/** A fixed Hunt for component tests — a literal Demand, so a test never depends on the
- *  developer-owned FIXED_DEMAND value and never breaks when that value is retuned. */
+/** A fixed Hunt for component tests — literal Demand and credit pool, so a test never
+ *  depends on the developer-owned FIXED_DEMAND / LOSE_CREDITS_PER_HUNT values and never
+ *  breaks when either is retuned. */
 export const huntFixture: Hunt = {
   quarry: { character: QuarryCharacter.Monarch },
   demand: 100,
+  loseCredits: 2,
 }

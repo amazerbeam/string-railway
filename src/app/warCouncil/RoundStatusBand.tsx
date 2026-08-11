@@ -1,5 +1,5 @@
 import type { Demand, Spoils, StandingBand } from '../../hunt'
-import { PlayerSide } from '../../warCouncil'
+import { PlayerSide, type DeclarationState } from '../../warCouncil'
 import HuntLedger from './HuntLedger'
 
 const MAX_VISIBLE_OPPONENT_BACKS = 8
@@ -12,6 +12,8 @@ interface RoundStatusBandProps {
   readonly demand: Demand
   readonly spoils: Spoils
   readonly band: StandingBand
+  /** Passed straight through to `HuntLedger` — this band adjudicates nothing itself. */
+  readonly declaration: DeclarationState | null
 }
 
 /**
@@ -29,6 +31,7 @@ export default function RoundStatusBand({
   demand,
   spoils,
   band,
+  declaration,
 }: RoundStatusBandProps) {
   const yourTricks = tricksWon[PlayerSide.Player]
   const theirTricks = tricksWon[PlayerSide.Cpu]
@@ -60,7 +63,7 @@ export default function RoundStatusBand({
           <span className="wc-score-value">{theirTricks}</span>
         </span>
       </div>
-      <HuntLedger demand={demand} spoils={spoils} band={band} />
+      <HuntLedger demand={demand} spoils={spoils} band={band} declaration={declaration} />
     </header>
   )
 }

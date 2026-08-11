@@ -1,9 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { DemandOutcome, IllegalMoveReason, QuarryIntentStance, Suit } from '../../../warCouncil'
-import { StandingBandName } from '../../../hunt'
+import {
+  ClaimRejection,
+  DeclareRejection,
+  DemandOutcome,
+  IllegalMoveReason,
+  QuarryIntentStance,
+  Suit,
+} from '../../../warCouncil'
+import { HuntDeclaration, StandingBandName } from '../../../hunt'
 import {
   cardAccessibleName,
+  CLAIM_REJECTION_MESSAGE,
+  DECLARE_REJECTION_MESSAGE,
   DEMAND_OUTCOME_VERDICT,
+  HUNT_DECLARATION_NAME,
   ILLEGAL_MOVE_MESSAGE,
   intentAccessibleName,
   RANK_NAME,
@@ -57,6 +67,30 @@ describe('the label maps', () => {
     for (const outcome of Object.values(DemandOutcome)) {
       expect(DEMAND_OUTCOME_VERDICT[outcome]).toBeTruthy()
     }
+  })
+})
+
+describe('DLR-63 copy maps are exhaustive over their unions', () => {
+  it('names every declaration path', () => {
+    for (const path of Object.values(HuntDeclaration)) {
+      expect(HUNT_DECLARATION_NAME[path]).toBeTruthy()
+    }
+  })
+
+  it('names every declare rejection', () => {
+    for (const reason of Object.values(DeclareRejection)) {
+      expect(DECLARE_REJECTION_MESSAGE[reason]).toBeTruthy()
+    }
+  })
+
+  it('names every claim rejection', () => {
+    for (const reason of Object.values(ClaimRejection)) {
+      expect(CLAIM_REJECTION_MESSAGE[reason]).toBeTruthy()
+    }
+  })
+
+  it('names the new illegal-move reason', () => {
+    expect(ILLEGAL_MOVE_MESSAGE[IllegalMoveReason.HuntNotDeclared]).toBeTruthy()
   })
 })
 

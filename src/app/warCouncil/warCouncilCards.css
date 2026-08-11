@@ -60,13 +60,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   width: var(--wc-card-w);
   aspect-ratio: 2 / 3;
   padding: clamp(0.18rem, 0.7vmin, 0.4rem) 0;
   background: linear-gradient(168deg, var(--wc-parchment) 0%, var(--wc-parchment-shade) 100%);
   color: var(--wc-ink);
-  border: 0;
+  /* AC7 (2/2): a border in the card's own suit colour. `currentColor` resolves against
+     the `.wc-suit-*` rules below, so this is one declaration covering all three suits
+     and introduces no new colour token. */
+  border: 2px solid currentColor;
   border-radius: clamp(2px, 0.5vmin, 4px);
   box-shadow:
     0 0 0 1px #00000055,
@@ -86,15 +89,23 @@
   color: var(--wc-ink);
 }
 
+/* AC7 (1/2): the suit mark moves to the bottom-left corner. Absolute, so it leaves the
+   column flow and the rank keeps the optical centre of the face. */
 .wc-card-suit {
-  width: calc(var(--wc-card-w) * 0.34);
-  height: calc(var(--wc-card-w) * 0.34);
+  position: absolute;
+  left: calc(var(--wc-card-w) * 0.09);
+  bottom: calc(var(--wc-card-w) * 0.07);
+  width: calc(var(--wc-card-w) * 0.3);
+  height: calc(var(--wc-card-w) * 0.3);
 }
 
 /* An ability marker, not a printed name — "WOODCUTTER" cannot fit at this width
    without becoming unreadable. The rank identifies which ability; the full name
    lives in the accessible label and in the hint under the hand. */
 .wc-card-pip {
+  position: absolute;
+  right: calc(var(--wc-card-w) * 0.11);
+  bottom: calc(var(--wc-card-w) * 0.11);
   width: calc(var(--wc-card-w) * 0.12);
   height: calc(var(--wc-card-w) * 0.12);
   border-radius: 50%;
@@ -173,7 +184,7 @@
   z-index: 20;
 }
 
-:is(.wc-card, .wc-decline, .wc-is-carry-on):focus-visible {
+:is(.wc-card, .wc-decline, .wc-is-carry-on, .wc-declare-option, .wc-claim):focus-visible {
   outline: 2px solid var(--wc-brass);
   outline-offset: 2px;
   z-index: 30;
@@ -198,9 +209,36 @@
   margin: -0.6rem -0.9rem;
 }
 
+/* DLR-63's declare-gate hover lift lives here rather than beside `.wc-declare-option`'s
+   other rules, which now live in `warCouncilDeclare.css` (formerly in `warCouncilHunt.css`
+   before that sheet, too, crossed its 400-line budget): both sheets are imported AFTER this
+   one, so a rule there would sit later in cascade order and win over the
+   `prefers-reduced-motion` override below it at equal specificity — exactly backwards.
+   Keeping the hover rule and its suppression in the same file, in that order, is what makes
+   the override reliable. */
+@media (hover: hover) {
+  .wc-declare-option:hover {
+    border-color: var(--wc-brass);
+    transform: translateY(-2px);
+  }
+}
+
+/* Paired with the hover lift above (react-frontend's hover/active pairing rule) so touch
+   and stylus input — which never fire :hover — still get a pressed acknowledgement. */
+.wc-declare-option:active {
+  border-color: var(--wc-brass);
+  transform: translateY(0);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .wc-card {
+  .wc-card,
+  .wc-declare-option,
+  .wc-claim {
     transition: none;
+  }
+
+  .wc-declare-option:hover {
+    transform: none;
   }
 }
 

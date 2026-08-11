@@ -1,7 +1,10 @@
 /* War Council — the Hunt screen's readouts: the status band's Hunt ledger, the dossier
    zone (the Quarry's card and the intent telegraph), and the end-of-Hunt equation panel.
    Sibling to `warCouncil.css` and `warCouncilCards.css`, split out because the shell
-   stylesheet is at its 400-line budget; import all three from the mount component.
+   stylesheet is at its 400-line budget; import all four sheets from the mount component
+   (the fourth, `warCouncilDeclare.css`, holds the DLR-63 declare gate and claim control
+   that used to live here — moved out when this file's own DLR-63 additions crossed 400
+   lines in turn; see that file's header for why it is imported after this one).
    Tokens are defined once in `warCouncil.css` and apply globally once that sheet is
    loaded — nothing here redeclares `:root`. Selectors and values are transcribed from the
    approved mockup (`.claude/contract/DLR-53-hunt-screen/mockup.html`) — no new colour
@@ -36,6 +39,22 @@
 .wc-ledger-cell.wc-is-band {
   border-style: dashed;
   border-color: var(--wc-brass-dim);
+}
+
+/* NEW (DLR-63): the remaining-credit count. Double border carries "a spendable
+   resource" in form, not colour alone, and it goes flat when the pool is empty. */
+.wc-ledger-cell.wc-is-credits {
+  border-style: double;
+  border-width: 3px;
+  border-color: var(--wc-keys);
+}
+.wc-ledger-cell.wc-is-credits.wc-is-spent {
+  border-style: solid;
+  border-width: 1px;
+  border-color: #2b3a44;
+}
+.wc-ledger-cell.wc-is-credits.wc-is-spent .wc-ledger-value {
+  color: var(--wc-chalk-dim);
 }
 
 .wc-ledger-key {

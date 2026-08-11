@@ -11,6 +11,8 @@ import {
   TELEGRAPH_FIDELITY,
   FIXED_DEMAND,
   SLICE_QUARRY_CHARACTER,
+  invertedCardValue,
+  RANK_INVERSION_PIVOT,
   type StandingBand,
 } from '../config'
 import { quarryCharacterInfo } from '../quarryCharacters'
@@ -104,5 +106,33 @@ describe('FIXED_DEMAND', () => {
 describe('SLICE_QUARRY_CHARACTER', () => {
   it('names a character whose rule-break is actually enforced', () => {
     expect(quarryCharacterInfo(SLICE_QUARRY_CHARACTER)).toBeDefined()
+  })
+})
+
+describe('invertedCardValue — DLR-63 AC3', () => {
+  it.each([
+    [1, 11],
+    [2, 10],
+    [6, 6],
+    [10, 2],
+    [11, 1],
+  ])('inverts rank %i to %i', (rank, expected) => {
+    expect(invertedCardValue(rank)).toBe(expected)
+  })
+
+  it('is symmetric across the 1-11 deck — every rank maps into the same range', () => {
+    const ranks = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    expect(ranks.map(invertedCardValue).sort((a, b) => a - b)).toEqual(ranks)
+  })
+
+  it('is its own inverse', () => {
+    for (const rank of [1, 5, 8, 11]) {
+      expect(invertedCardValue(invertedCardValue(rank))).toBe(rank)
+    }
+  })
+
+  it('pivots on max rank + 1, so no rank inverts to zero or below', () => {
+    expect(RANK_INVERSION_PIVOT).toBe(12)
+    expect(invertedCardValue(11)).toBeGreaterThan(0)
   })
 })

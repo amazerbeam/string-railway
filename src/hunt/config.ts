@@ -53,6 +53,31 @@ export function cardBaseValue(rank: number): number {
   return rank
 }
 
+// DLR-63 AC3's `12 − r`. NOT a tuning value: 12 is max(RANKS) + 1 for the 1-11 deck,
+// so the inversion is symmetric (rank 1 <-> 11) and its own inverse. Named rather than
+// inlined so a future deck-size change has exactly one place to look.
+export const RANK_INVERSION_PIVOT = 12
+
+/**
+ * DLR-63 AC3 — a card's value on the Lose path. Deliberately the same
+ * `(rank: number) => number` signature as `cardBaseValue`, so it drops into `spoils`'s
+ * injectable value parameter with no new plumbing.
+ */
+export function invertedCardValue(rank: number): number {
+  return RANK_INVERSION_PIVOT - rank
+}
+
+// DLR-63 AC3 "a capped number of Lose-credits".
+// UNIT: credits per Hunt — each spendable on exactly one lost trick.
+// VALUE: a DEVELOPER DECISION (DLR-63 plan.md -> Risks). The number below is derived
+// arithmetic offered for review, not a chosen value: against FIXED_DEMAND (220) and
+// STANDING_BANDS' Humble x6, a credited trick is worth the two cards' inverted values —
+// about 12 on an average trick, up to 22 on a two-Swan trick. Clearing 220 therefore
+// needs roughly 220 / (6 * 12) ~= 3 average credited tricks, or 2 in the best case.
+// 3 sits at that break-even and is the number most likely to move after the first
+// playtest. Typed `number`, never `number | null`, so no consumer can coerce a null to 0.
+export const LOSE_CREDITS_PER_HUNT = 3
+
 export interface DemandCurve {
   readonly base: number | null
   readonly growthPerEncounter: number | null

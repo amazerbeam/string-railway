@@ -13,6 +13,7 @@ import {
   quarryIntent,
   type AbilityChoice,
 } from '../../../warCouncil'
+import { HuntDeclaration } from '../../../hunt'
 import {
   createRoundUiState,
   roundReducer,
@@ -20,7 +21,21 @@ import {
   type ResolvedTrick,
   type RoundUiState,
 } from '../roundReducer'
-import { card, makeRound } from './roundFixture'
+import { card, huntFixture, makeRound } from './roundFixture'
+
+// DLR-63: `playCard` (and everything routed through it — `commit`, `commitQuarryMove`,
+// `previewQuarryIntent`) rejects with `HuntNotDeclared` before any card may be played, and
+// `makeRound()`'s fixture default is deliberately undeclared — Task 13's own Declare specs
+// below start from exactly that default. Every pre-existing spec in this file that goes on
+// to play a card therefore needs the round already declared first; Win, since none of them
+// are concerned with the Lose path. A plain object rather than a helper function, threaded
+// through `makeRound`'s existing `overrides` parameter.
+const WIN_DECLARED = {
+  path: HuntDeclaration.Win,
+  creditsRemaining: 0,
+  creditedCards: [],
+  creditedThrough: 0,
+} as const
 
 const tap = (c: Parameters<typeof card>[0] extends never ? never : ReturnType<typeof card>) =>
   ({ kind: RoundUiActionKind.TapCard, card: c }) as const
@@ -62,7 +77,7 @@ describe('createRoundUiState', () => {
 
 describe('CarryOn commits a pending Quarry lead', () => {
   it('puts exactly one Quarry card on the table and leaves cpuFault null', () => {
-    let ui = createRoundUiState(makeRound({ leader: PlayerSide.Cpu }))
+    let ui = createRoundUiState(makeRound({ leader: PlayerSide.Cpu, declaration: WIN_DECLARED }))
     ui = roundReducer(ui, carryOn)
     expect(ui.round.currentTrick).toHaveLength(1)
     expect(ui.round.currentTrick[0].side).toBe(PlayerSide.Cpu)
@@ -81,6 +96,7 @@ describe('CarryOn commits a pending Quarry lead', () => {
     const round = makeRound({
       leader: PlayerSide.Cpu,
       tricksWon: { [PlayerSide.Player]: 1, [PlayerSide.Cpu]: 1 },
+      declaration: WIN_DECLARED,
     })
     const heldReveal: ResolvedTrick = {
       cards: [
@@ -103,6 +119,11 @@ describe('a full round driven purely by CarryOn and taps', () => {
     // scenarios above), a full round needs both hands dealt the real 13 cards each —
     // `dealRound` is what actually produces that shape.
     let ui = createRoundUiState(dealRound(PlayerSide.Cpu, lcg(2026)))
+    ui = roundReducer(ui, {
+      kind: RoundUiActionKind.Declare,
+      path: HuntDeclaration.Win,
+      loseCredits: huntFixture.loseCredits,
+    })
     let guard = 0
     while (ui.round.phase !== RoundPhase.Complete) {
       guard += 1
@@ -159,7 +180,7 @@ describe('tap-twice', () => {
   })
 
   it('commits on the second tap of the same card', () => {
-    let ui = createRoundUiState(makeRound())
+    let ui = createRoundUiState(makeRound({ declaration: WIN_DECLARED }))
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
     expect(ui.armed).toBeNull()
@@ -185,6 +206,7 @@ describe('rejection', () => {
       leader: PlayerSide.Cpu,
       currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Moons, 9) }],
       phase: RoundPhase.AwaitingFollow,
+      declaration: WIN_DECLARED,
     })
     let ui = { ...createRoundUiState(round), round }
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
@@ -206,7 +228,7 @@ describe('abilities', () => {
   })
 
   it('changes the trump suit when the exchange is chosen', () => {
-    let ui = createRoundUiState(makeRound())
+    let ui = createRoundUiState(makeRound({ declaration: WIN_DECLARED }))
     expect(ui.round.trumpSuit).toBe(Suit.Bells)
     ui = roundReducer(ui, tap(card(Suit.Keys, 3)))
     ui = roundReducer(ui, tap(card(Suit.Keys, 3)))
@@ -222,7 +244,7 @@ describe('abilities', () => {
 
 describe('the trick beat', () => {
   it('derives the winner from the tricks-won delta', () => {
-    let ui = createRoundUiState(makeRound())
+    let ui = createRoundUiState(makeRound({ declaration: WIN_DECLARED }))
     ui = roundReducer(ui, tap(card(Suit.Moons, 11)))
     ui = roundReducer(ui, tap(card(Suit.Moons, 11)))
     const winner = ui.resolvedTrick?.winner
@@ -231,7 +253,7 @@ describe('the trick beat', () => {
   })
 
   it('clears the reveal on CarryOn', () => {
-    let ui = createRoundUiState(makeRound())
+    let ui = createRoundUiState(makeRound({ declaration: WIN_DECLARED }))
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
     ui = roundReducer(ui, { kind: RoundUiActionKind.CarryOn })
@@ -245,6 +267,7 @@ describe('the trick beat', () => {
         [PlayerSide.Player]: [card(Suit.Bells, 7)],
         [PlayerSide.Cpu]: [card(Suit.Bells, 4)],
       },
+      declaration: WIN_DECLARED,
     })
     let ui = { ...createRoundUiState(round), round }
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
@@ -277,5 +300,70 @@ describe('a corrupt opponent turn', () => {
     ui = roundReducer(ui, carryOn)
     expect(ui.cpuFault).toBe('noLegalMove')
     expect(ui.round.currentTrick).toHaveLength(0)
+  })
+})
+
+describe('roundReducer — DLR-63 Declare', () => {
+  it('writes a Win declaration onto the round', () => {
+    const state = createRoundUiState(makeRound())
+    const next = roundReducer(state, {
+      kind: RoundUiActionKind.Declare,
+      path: HuntDeclaration.Win,
+      loseCredits: 2,
+    })
+    expect(next.round.declaration?.path).toBe(HuntDeclaration.Win)
+    expect(next.round.declaration?.creditsRemaining).toBe(0)
+  })
+
+  it('writes a Lose declaration carrying the pool', () => {
+    const state = createRoundUiState(makeRound())
+    const next = roundReducer(state, {
+      kind: RoundUiActionKind.Declare,
+      path: HuntDeclaration.Lose,
+      loseCredits: 2,
+    })
+    expect(next.round.declaration?.creditsRemaining).toBe(2)
+  })
+
+  it('is a no-op on an already-declared round', () => {
+    const declared = roundReducer(createRoundUiState(makeRound()), {
+      kind: RoundUiActionKind.Declare,
+      path: HuntDeclaration.Win,
+      loseCredits: 2,
+    })
+    const again = roundReducer(declared, {
+      kind: RoundUiActionKind.Declare,
+      path: HuntDeclaration.Lose,
+      loseCredits: 2,
+    })
+    expect(again.round.declaration?.path).toBe(HuntDeclaration.Win)
+  })
+})
+
+describe('roundReducer — DLR-63 ClaimTrick', () => {
+  it('spends a credit and carries on in one transition', () => {
+    // A Lose-declared round where the player's led trump card loses to the Quarry's
+    // higher trump follow: makeRound()'s default hands each hold exactly one Bells
+    // (trump) card, and the Quarry's forced 4 beats the player's led 2.
+    let ui = createRoundUiState(makeRound())
+    ui = roundReducer(ui, {
+      kind: RoundUiActionKind.Declare,
+      path: HuntDeclaration.Lose,
+      loseCredits: huntFixture.loseCredits,
+    })
+    ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
+    ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
+    expect(ui.resolvedTrick?.winner).toBe(PlayerSide.Cpu)
+
+    const held = ui
+    const next = roundReducer(held, { kind: RoundUiActionKind.ClaimTrick })
+    expect(next.round.declaration?.creditsRemaining).toBe(huntFixture.loseCredits - 1)
+    expect(next.round.declaration?.creditedCards).toHaveLength(2)
+    expect(next.resolvedTrick).toBeNull() // the same tap cleared the reveal
+  })
+
+  it('is a no-op when nothing is held', () => {
+    const state = createRoundUiState(makeRound())
+    expect(roundReducer(state, { kind: RoundUiActionKind.ClaimTrick })).toBe(state)
   })
 })

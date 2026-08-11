@@ -1,5 +1,5 @@
 export type { Hunt, Quarry, Spoils, Standing, Demand, Score } from './types'
-export { QuarryCharacter } from './types'
+export { QuarryCharacter, HuntDeclaration } from './types'
 
 export type { StandingBand, DemandCurve } from './config'
 export {
@@ -14,6 +14,9 @@ export {
   TELEGRAPH_FIDELITY,
   FIXED_DEMAND,
   SLICE_QUARRY_CHARACTER,
+  RANK_INVERSION_PIVOT,
+  invertedCardValue,
+  LOSE_CREDITS_PER_HUNT,
 } from './config'
 
 export type { QuarryCharacterInfo } from './quarryCharacters'

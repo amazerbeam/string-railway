@@ -1,4 +1,4 @@
-import type { QuarryCharacter } from '../hunt'
+import type { HuntDeclaration, QuarryCharacter } from '../hunt'
 
 export const Suit = {
   Bells: 'bells',
@@ -56,6 +56,25 @@ export interface TrickCard {
   readonly card: Card
 }
 
+/**
+ * DLR-63: the declaration made before the first trick, plus the Lose path's bookkeeping.
+ * One nested object rather than three sibling fields so a reader has exactly one
+ * absence check.
+ */
+export interface DeclarationState {
+  readonly path: HuntDeclaration
+  /** Credits not yet spent. Always `0` when `path` is `Win`. */
+  readonly creditsRemaining: number
+  /** Cards credited to the player's Spoils from lost tricks. Always empty when `path` is `Win`. */
+  readonly creditedCards: readonly Card[]
+  /**
+   * `tricksPlayed` at the moment the most recent credit was spent. A credit may only be
+   * spent on the trick that just resolved and `tricksPlayed` strictly increases, so this
+   * makes a second claim on one trick a rejection rather than a double-credit.
+   */
+  readonly creditedThrough: number
+}
+
 export interface RoundState {
   readonly dealer: PlayerSide
   readonly hands: Readonly<Record<PlayerSide, readonly Card[]>>
@@ -75,6 +94,14 @@ export interface RoundState {
    * — optional so the specs' hand-built `RoundState` literals still compile.
    */
   readonly quarryCharacter?: QuarryCharacter
+  /**
+   * DLR-63 AC1/AC3. Written by `declareHunt`, updated only by `claimLostTrick`, and
+   * carried by every existing state spread. Optional — absent means undeclared, which is
+   * the pre-DLR-63 shape every existing spec fixture holds, and which `spoils` treats
+   * identically to a Win declaration (AC2). Required would break 22 hand-built
+   * `RoundState` literals for no gain; this follows `quarryCharacter?`'s precedent.
+   */
+  readonly declaration?: DeclarationState
 }
 
 export function currentTurn(state: RoundState): PlayerSide {
@@ -95,6 +122,7 @@ export type AbilityChoice =
 
 export const IllegalMoveReason = {
   RoundComplete: 'roundComplete',
+  HuntNotDeclared: 'huntNotDeclared',
   NotYourTurn: 'notYourTurn',
   CardNotInHand: 'cardNotInHand',
   MustFollowLeadSuit: 'mustFollowLeadSuit',

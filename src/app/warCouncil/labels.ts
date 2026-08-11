@@ -1,5 +1,7 @@
 import {
   CardRank,
+  ClaimRejection,
+  DeclareRejection,
   DemandOutcome,
   IllegalMoveReason,
   QuarryIntentStance,
@@ -7,7 +9,7 @@ import {
   type Card,
   type QuarryIntent,
 } from '../../warCouncil'
-import { StandingBandName } from '../../hunt'
+import { HuntDeclaration, StandingBandName } from '../../hunt'
 
 export const SUIT_NAME: Readonly<Record<Suit, string>> = {
   [Suit.Bells]: 'Bells',
@@ -36,6 +38,7 @@ export function cardKey(card: Card): string {
 
 export const ILLEGAL_MOVE_MESSAGE: Readonly<Record<IllegalMoveReason, string>> = {
   [IllegalMoveReason.RoundComplete]: 'The round is over.',
+  [IllegalMoveReason.HuntNotDeclared]: 'Declare Win or Lose before you play a card.',
   [IllegalMoveReason.NotYourTurn]: 'It is not your turn.',
   [IllegalMoveReason.CardNotInHand]: 'That card is not in your hand.',
   [IllegalMoveReason.MustFollowLeadSuit]: 'You must follow the led suit.',
@@ -67,6 +70,28 @@ export const STANDING_BAND_NAME: Readonly<Record<StandingBandName, string>> = {
 export const DEMAND_OUTCOME_VERDICT: Readonly<Record<DemandOutcome, string>> = {
   [DemandOutcome.Cleared]: 'Demand cleared',
   [DemandOutcome.Missed]: 'Demand missed',
+}
+
+/** AC1 — the two declarable paths, as the player sees them named. */
+export const HUNT_DECLARATION_NAME: Readonly<Record<HuntDeclaration, string>> = {
+  [HuntDeclaration.Win]: 'Win',
+  [HuntDeclaration.Lose]: 'Lose',
+}
+
+/** Copy for `declareHunt`'s rejections. Both are structurally unreachable through the
+ *  gate, which only renders while undeclared — carried so a future caller has copy. */
+export const DECLARE_REJECTION_MESSAGE: Readonly<Record<DeclareRejection, string>> = {
+  [DeclareRejection.AlreadyDeclared]: 'This Hunt is already declared.',
+  [DeclareRejection.HuntUnderway]: 'The Hunt has started — it is too late to declare.',
+}
+
+/** Copy for `claimLostTrick`'s rejections. Unreachable while the claim control renders
+ *  only when `canClaimLostTrick` already said yes. */
+export const CLAIM_REJECTION_MESSAGE: Readonly<Record<ClaimRejection, string>> = {
+  [ClaimRejection.NotDeclaredLose]: 'Credits are only spendable when you declared Lose.',
+  [ClaimRejection.NoCreditsRemaining]: 'No credits left — this trick credits nothing.',
+  [ClaimRejection.TrickAlreadyCredited]: 'You already claimed this trick.',
+  [ClaimRejection.TrickNotLost]: 'A credit only claims a trick you lost.',
 }
 
 /**

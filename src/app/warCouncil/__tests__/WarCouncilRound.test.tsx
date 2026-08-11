@@ -2,10 +2,21 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { dealRound, PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
+import { HuntDeclaration } from '../../../hunt'
 import WarCouncilRound from '../WarCouncilRound'
 import { card, huntFixture, makeRound } from './roundFixture'
 
 afterEach(cleanup)
+
+// DLR-63: a round built already mid-trick or mid-round cannot be declared through the
+// gate — `declareHunt` itself rejects once a card has been played (AC1) — so those fixtures
+// carry this declaration directly rather than reaching `declareWin()` below.
+const WIN_DECLARED = {
+  path: HuntDeclaration.Win,
+  creditsRemaining: 0,
+  creditedCards: [],
+  creditedThrough: 0,
+} as const
 
 // A deterministic RNG, duplicated here to match the same local pattern
 // `roundReducer.test.ts` and the engine's own `playCard.test.ts`/`deal.test.ts` already use —
@@ -62,6 +73,15 @@ function playFullRoundToCompletion() {
   }
 }
 
+// DLR-63: the declare gate is the felt cascade's first branch and every hand card is
+// disabled until the Hunt is declared (AC1), so every pre-existing spec below that goes on
+// to tap a hand card or reach a TrickWell control must declare first. Win, since none of
+// these specs are concerned with the Lose path — the mockup's own copy ("Play to Win") is
+// what both this file's and `DeclareGate.test.tsx`'s regexes are written to satisfy.
+function declareWin() {
+  fireEvent.click(screen.getByRole('button', { name: /play to win/i }))
+}
+
 describe('WarCouncilRound', () => {
   it('renders the hand as buttons named by rank and suit', () => {
     render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
@@ -71,6 +91,7 @@ describe('WarCouncilRound', () => {
 
   it('plays a legal card on the second tap of the same card', () => {
     render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    declareWin()
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     // Correction: a raw `element.click()` dispatches a real event, but under
     // React 19 + jsdom the resulting state update is not guaranteed to flush
@@ -97,6 +118,7 @@ describe('WarCouncilRound', () => {
     // committed 7 of Bells resolves the trick in the same commit (AC2) and the player's card
     // (7) beats the CPU's forced follow (4) under trump.
     render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    declareWin()
     // No `@testing-library/jest-dom` is installed in this project (see devDependencies),
     // so the assertion reads the element's own `textContent` rather than reaching for its
     // `toHaveTextContent` matcher.
@@ -109,10 +131,14 @@ describe('WarCouncilRound', () => {
   })
 
   it('disables a card the engine says is illegal', () => {
+    // Built already mid-trick, so declaring through the gate is unreachable here —
+    // `declareHunt` itself rejects once `currentTrick.length > 0` (AC1) — hence the
+    // declaration is written directly onto the fixture instead of clicked through the UI.
     const round = makeRound({
       leader: PlayerSide.Cpu,
       currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Moons, 9) }],
       phase: RoundPhase.AwaitingFollow,
+      declaration: WIN_DECLARED,
     })
     render(<WarCouncilRound initialState={round} hunt={huntFixture} onComplete={vi.fn()} />)
     // The player holds Moons, so following suit is forced and Bells is out.
@@ -128,6 +154,7 @@ describe('WarCouncilRound', () => {
 
   it('shows the trump suit and updates it when a Fox exchange lands', () => {
     render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    declareWin()
     expect(screen.getByText(/Bells is trump/i)).toBeDefined()
     const fox = screen.getByRole('button', { name: '3 of Keys (Fox)' })
     fireEvent.click(fox)
@@ -151,6 +178,9 @@ describe('WarCouncilRound', () => {
         [PlayerSide.Player]: [card(Suit.Bells, 7)],
         [PlayerSide.Cpu]: [card(Suit.Bells, 4)],
       },
+      // Built already twelve tricks in, so `declareHunt` itself rejects `tricksPlayed > 0`
+      // (AC1) — the declaration is written directly onto the fixture instead.
+      declaration: WIN_DECLARED,
     })
     render(<WarCouncilRound initialState={round} hunt={huntFixture} onComplete={onComplete} />)
     const last = screen.getByRole('button', { name: '7 of Bells' })
@@ -176,6 +206,7 @@ describe('WarCouncilRound', () => {
     // `fireEvent.keyDown(..., { key: 'Enter' })` — a native button's own Enter/Space
     // activation is the HTML platform's guarantee, not this component's to re-prove.
     render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    declareWin()
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
     fireEvent.click(bells7)
@@ -195,10 +226,13 @@ describe('WarCouncilRound', () => {
       />,
     )
     // Nothing has been committed yet — the trick row is still empty (no `wc-played` card).
+    // The telegraph itself reads off `quarryIntent`, which has no dependency on the
+    // declaration, so this holds true even while the gate is still showing.
     expect(screen.queryByText(/^They led/i)).toBeNull()
     const status = screen.getByRole('status')
     expect(status.getAttribute('aria-label')).toMatch(/will lead/i)
 
+    declareWin()
     const letThemLead = screen.getByRole('button', { name: /let them lead/i })
     fireEvent.click(letThemLead)
     expect(screen.getByText(/^They led/i)).toBeDefined()
@@ -206,6 +240,7 @@ describe('WarCouncilRound', () => {
 
   it('previews the Quarry’s answer to an armed card before it is played (AC3)', () => {
     render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    declareWin()
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
     const status = screen.getByRole('status')
@@ -216,6 +251,7 @@ describe('WarCouncilRound', () => {
 
   it('clears the speculative reading back to the live one on Escape', () => {
     render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    declareWin()
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
     expect(screen.getByRole('status').getAttribute('aria-label')).toMatch(/^If you lead that card/)
@@ -245,6 +281,7 @@ describe('WarCouncilRound', () => {
         onComplete={vi.fn()}
       />,
     )
+    declareWin()
     const letThemLead = screen.getByRole('button', { name: /let them lead/i })
     letThemLead.focus()
     expect(document.activeElement).toBe(letThemLead)
@@ -273,6 +310,7 @@ describe('WarCouncilRound', () => {
           onComplete={vi.fn()}
         />,
       )
+      declareWin()
       playFullRoundToCompletion()
 
       const spoilsValue = readEquationValue(/^Spoils: \d+$/)
@@ -292,6 +330,7 @@ describe('WarCouncilRound', () => {
           onComplete={vi.fn()}
         />,
       )
+      declareWin()
       playFullRoundToCompletion()
 
       const spoilsValue = readEquationValue(/^Spoils: \d+$/)
@@ -303,5 +342,55 @@ describe('WarCouncilRound', () => {
       expect(screen.getByText(/demand missed/i)).toBeDefined()
       expect(screen.queryByText(/demand cleared/i)).toBeNull()
     })
+  })
+})
+
+describe('WarCouncilRound — DLR-63', () => {
+  // `DecreePile` renders the decree face-up through the same `PlayingCard` button — always
+  // disabled, but its accessible name ("10 of Bells" for `makeRound()`'s default decree)
+  // still matches `/of (Bells|Keys|Moons)/`, so every query below is scoped to the hand's
+  // own labelled group to avoid counting that card as a hand card.
+  function handCardButtons() {
+    const hand = screen.getByRole('group', { name: /hand/i })
+    return within(hand).getAllByRole('button', { name: /of (Bells|Keys|Moons)/ })
+  }
+
+  it('shows the declare gate before the first trick and no tappable card', () => {
+    render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    expect(screen.getByRole('button', { name: /play to win/i })).toBeDefined()
+    for (const button of handCardButtons()) {
+      expect((button as HTMLButtonElement).disabled).toBe(true)
+    }
+  })
+
+  it('clears the gate and enables the hand once declared', () => {
+    render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button', { name: /play to win/i }))
+    expect(screen.queryByRole('button', { name: /play to win/i })).toBeNull()
+    expect(handCardButtons().some((b) => !(b as HTMLButtonElement).disabled)).toBe(true)
+  })
+
+  it('renders the hand longest-suit-first, not in dealt order (AC6)', () => {
+    render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    const names = handCardButtons().map((b) => b.getAttribute('aria-label') ?? '')
+    // makeRound's hand holds 2 of each suit, so ALL_SUITS order applies throughout:
+    // Bells 2, Bells 7, Keys 3, Keys 8, Moons 5, Moons 11.
+    expect(names).toEqual([
+      '2 of Bells',
+      '7 of Bells',
+      '3 of Keys (Fox)',
+      '8 of Keys',
+      '5 of Moons (Woodcutter)',
+      '11 of Moons (Monarch)',
+    ])
+  })
+
+  it('shows the credits cell only after declaring Lose', () => {
+    render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    expect(screen.queryByLabelText(/Lose-credits remaining/)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /play to lose/i }))
+    expect(
+      screen.getByLabelText(`Lose-credits remaining: ${huntFixture.loseCredits}`),
+    ).toBeDefined()
   })
 })

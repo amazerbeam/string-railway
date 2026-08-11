@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { dealRound } from '../deal'
+import { declareHunt } from '../declareHunt'
 import { playCard } from '../playCard'
 import { legalMoves } from '../legalMoves'
 import { monarchFollowApplies } from '../quarryRuleBreak'
@@ -16,9 +17,29 @@ import {
   PlayerSide,
   RoundPhase,
   type Card,
+  type DeclarationState,
   type RoundState,
 } from '../types'
-import { QuarryCharacter } from '../../hunt'
+import { HuntDeclaration, QuarryCharacter } from '../../hunt'
+
+// DLR-63 AC1: playCard now rejects an undeclared round. The fixtures below that call
+// playCard (directly or via a full simulated round) must declare first; the ones that
+// only exercise chooseCpuCard / chooseCpuFoxChoice / chooseCpuWoodcutterChoice never
+// reach playCard, so they are untouched.
+const WIN_DECLARATION: DeclarationState = {
+  path: HuntDeclaration.Win,
+  creditsRemaining: 0,
+  creditedCards: [],
+  creditedThrough: 0,
+}
+
+// Declares a Win on a freshly dealt round for the simulated full-round fixtures below.
+function declaredDeal(...args: Parameters<typeof dealRound>): RoundState {
+  const dealt = dealRound(...args)
+  const declared = declareHunt(dealt, HuntDeclaration.Win, 3)
+  if (!declared.ok) throw new Error('expected declare ok')
+  return declared.state
+}
 
 function stateWith(overrides: Partial<RoundState>): RoundState {
   return {
@@ -163,6 +184,7 @@ describe('chooseCpuMove', () => {
 
   it('produces a Fox move accepted by playCard', () => {
     const state = stateWith({
+      declaration: WIN_DECLARATION,
       leader: PlayerSide.Cpu,
       hands: {
         player: [],
@@ -181,6 +203,7 @@ describe('chooseCpuMove', () => {
 
   it('produces a Woodcutter move accepted by playCard', () => {
     const state = stateWith({
+      declaration: WIN_DECLARATION,
       leader: PlayerSide.Cpu,
       hands: {
         player: [],
@@ -209,7 +232,7 @@ describe('chooseCpuMove — simulated full rounds (AC4)', () => {
   const seeds = Array.from({ length: 60 }, (_, i) => i + 1)
 
   it.each(seeds)('plays a full 13-trick round with zero illegal plays (seed %i)', (seed) => {
-    let state = dealRound(seed % 2 === 0 ? PlayerSide.Player : PlayerSide.Cpu, lcg(seed))
+    let state = declaredDeal(seed % 2 === 0 ? PlayerSide.Player : PlayerSide.Cpu, lcg(seed))
     let guard = 0
 
     while (state.phase !== RoundPhase.Complete) {
@@ -231,7 +254,7 @@ describe('chooseCpuMove — simulated full rounds (AC4)', () => {
     let woodcutterPlays = 0
 
     for (const seed of seeds) {
-      let state = dealRound(seed % 2 === 0 ? PlayerSide.Player : PlayerSide.Cpu, lcg(seed))
+      let state = declaredDeal(seed % 2 === 0 ? PlayerSide.Player : PlayerSide.Cpu, lcg(seed))
       let guard = 0
       while (state.phase !== RoundPhase.Complete) {
         guard += 1
@@ -257,7 +280,7 @@ describe('the Monarch rule-break — simulated full rounds (DLR-51 AC6)', () => 
   it.each(seeds)(
     'completes 13 tricks with the Monarch active, never stalling or playing illegally (seed %i)',
     (seed) => {
-      let state = dealRound(
+      let state = declaredDeal(
         seed % 2 === 0 ? PlayerSide.Player : PlayerSide.Cpu,
         lcg(seed),
         QuarryCharacter.Monarch,
@@ -292,7 +315,7 @@ describe('the Monarch rule-break — simulated full rounds (DLR-51 AC6)', () => 
     let narrowedTurns = 0
 
     for (const seed of seeds) {
-      let state = dealRound(PlayerSide.Cpu, lcg(seed), QuarryCharacter.Monarch)
+      let state = declaredDeal(PlayerSide.Cpu, lcg(seed), QuarryCharacter.Monarch)
       let guard = 0
       while (state.phase !== RoundPhase.Complete) {
         guard += 1

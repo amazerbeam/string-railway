@@ -4,6 +4,7 @@ import {
   CardRank,
   PlayerSide,
   RoundPhase,
+  canClaimLostTrick,
   checkDemand,
   currentTurn,
   legalMoves,
@@ -17,8 +18,10 @@ import {
 } from '../../warCouncil'
 import type { WarCouncilMountProps } from '../warCouncilMount'
 import AbilityPrompt from './AbilityPrompt'
+import DeclareGate from './DeclareGate'
 import DecreePile from './DecreePile'
 import HandFan from './HandFan'
+import { sortHandForDisplay } from './handOrder'
 import { previewQuarryIntent } from './intentPreview'
 import IntentTelegraph from './IntentTelegraph'
 import { cardAccessibleName, ILLEGAL_MOVE_MESSAGE } from './labels'
@@ -36,6 +39,7 @@ import TrickWell from './TrickWell'
 import './warCouncil.css'
 import './warCouncilCards.css'
 import './warCouncilHunt.css'
+import './warCouncilDeclare.css'
 
 /**
  * The round mount, implementing SCRUM-37's `WarCouncilMountProps`. Owns
@@ -56,6 +60,7 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
     ui.resolvedTrick === null &&
     ui.prompt === null &&
     ui.cpuFault === null &&
+    ui.round.declaration !== undefined &&
     currentTurn(ui.round) === PlayerSide.Player
 
   const legal = legalMoves(ui.round, PlayerSide.Player)
@@ -65,6 +70,18 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
   const runningSpoils = spoils(ui.round, PlayerSide.Player)
   const band = resolveStanding(ui.round.tricksWon[PlayerSide.Player])
 
+  const declared = ui.round.declaration ?? null
+  const displayHand = sortHandForDisplay(ui.round.hands[PlayerSide.Player])
+
+  // Derived every render, never stored — a stored copy could only go stale against
+  // `ui.round`, and both calls are pure and bounded (a 13-card sort; a two-card tail
+  // comparison). Same rule as `runningSpoils`, `band`, and `intent` above.
+  const held = ui.resolvedTrick
+  const claimable =
+    held !== null &&
+    held.cards.length === 2 &&
+    canClaimLostTrick(ui.round, [held.cards[0], held.cards[1]] as const)
+
   // The Quarry has chosen its lead but has not committed it, so the telegraph can be read
   // before the card lands. `currentTrick.length === 0` is what keeps this to leads only.
   const quarryToLead =
@@ -72,6 +89,7 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
     ui.resolvedTrick === null &&
     ui.prompt === null &&
     ui.cpuFault === null &&
+    ui.round.declaration !== undefined &&
     currentTurn(ui.round) === PlayerSide.Cpu &&
     ui.round.currentTrick.length === 0
 
@@ -95,6 +113,10 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
     dispatch({ kind: RoundUiActionKind.CancelSelection })
   }
 
+  function handleClaim() {
+    dispatch({ kind: RoundUiActionKind.ClaimTrick })
+  }
+
   /** Shared by the held trick's own carry-on control, the pending Quarry lead's own
    * control, and the round-over panel's "Finish the round" control: reads the current
    * render's state and either carries on — clearing a held trick (including the deciding
@@ -113,7 +135,17 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
   }
 
   let felt: ReactNode
-  if (ui.cpuFault) {
+  if (ui.round.declaration === undefined) {
+    felt = (
+      <DeclareGate
+        demand={hunt.demand}
+        loseCredits={hunt.loseCredits}
+        onDeclare={(path) =>
+          dispatch({ kind: RoundUiActionKind.Declare, path, loseCredits: hunt.loseCredits })
+        }
+      />
+    )
+  } else if (ui.cpuFault) {
     felt = (
       <p className="wc-fault" role="alert">
         The engine rejected the opponent&rsquo;s own move — reason: {ui.cpuFault}. That is a bug,
@@ -130,6 +162,9 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
         resolvedTrick={ui.resolvedTrick}
         quarryToLead={quarryToLead}
         onCarryOn={handleCarryOn}
+        claimable={claimable}
+        creditsRemaining={declared?.creditsRemaining ?? 0}
+        onClaim={handleClaim}
       />
     )
   } else if (roundComplete) {
@@ -148,7 +183,7 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
       <AbilityPrompt
         card={promptCard}
         decree={ui.round.decree}
-        hand={ui.round.hands[PlayerSide.Player].filter((c) => !sameCard(c, promptCard))}
+        hand={displayHand.filter((c) => !sameCard(c, promptCard))}
         drawnCard={promptCard.rank === CardRank.Woodcutter ? (ui.round.drawPile[0] ?? null) : null}
         onChoose={(choice) => dispatch({ kind: RoundUiActionKind.ChooseAbility, choice })}
         onCancel={handleCancel}
@@ -161,6 +196,9 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
         resolvedTrick={null}
         quarryToLead={quarryToLead}
         onCarryOn={handleCarryOn}
+        claimable={claimable}
+        creditsRemaining={declared?.creditsRemaining ?? 0}
+        onClaim={handleClaim}
       />
     )
   }
@@ -176,6 +214,7 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
         demand={hunt.demand}
         spoils={runningSpoils}
         band={band}
+        declaration={declared}
       />
       <aside className="wc-dossier">
         <QuarryDossier
@@ -197,7 +236,7 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
         <div className="wc-table-inner">{felt}</div>
       </section>
       <HandFan
-        hand={ui.round.hands[PlayerSide.Player]}
+        hand={displayHand}
         legal={legal}
         armed={ui.armed}
         interactive={interactive}
@@ -215,6 +254,7 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
  * always says the most specific thing; otherwise the hint names whose turn
  * it is to lead or follow. */
 function deriveHint(ui: RoundUiState, interactive: boolean, quarryToLead: boolean): string {
+  if (ui.round.declaration === undefined) return 'Declare Win or Lose'
   if (ui.rejection) return ILLEGAL_MOVE_MESSAGE[ui.rejection]
   if (ui.prompt) return 'Choose what the card does'
   if (ui.resolvedTrick) return 'Trick resolved'

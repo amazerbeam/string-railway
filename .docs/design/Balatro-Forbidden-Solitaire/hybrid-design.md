@@ -22,6 +22,8 @@ design choice this document makes or is free to re-open.
   the trick-count table, the odd-rank abilities, the decree/trump rule, the follow-suit rule.
 - [`../design-principles.md`](../design-principles.md) — the frameworks and
   the §6 critique checklist this document is run against in §12.
+- [`ideas.md`](./ideas.md) — the parking lot: ideas not yet argued for, and the record of which
+  ones were rejected and why. Nothing there is settled; nothing here depends on it.
 
 ---
 

@@ -31,10 +31,26 @@ This project is deliberately organised so each fact is stated once. When somethi
 | How to write React/TypeScript here — conventions, tunables, testing posture | `.claude/skills/react-frontend/SKILL.md` + its `references/engineering-standards.md` |
 | How a game screen is laid out and operated — viewport shell, zoning, interaction cost, navigating a collection of controls | `.claude/skills/game-ux/SKILL.md` + its `references/full-viewport-layout.md` |
 | Game design frameworks, designer research, the critique checklist | `.docs/design/design-principles.md` |
+| What the game's rules currently are, and which are still undecided | `.docs/game_rules/the-hunt.md` — see the three-doc split below |
 | How implemented code actually works — per-module mechanics, key types, enforced rules | `.claude/skills/implementation-doc-writer/SKILL.md`, output in `.docs/implementation/` |
 | Project-wide domain constraints | `.claude/rules/<topic>.md` — currently empty; see its `README.md` |
 
 A path or command restated in five files gets updated in four. The `/fb-*` commands and the four agents all reference these files rather than carrying copies — keep it that way. In particular, **do not restate the `react-frontend` skill's conventions in a plan or an agent prompt** — name the skill and let it be loaded.
+
+### The three docs about the game, and the question each answers
+
+The game itself is documented three times, deliberately, because these are three different questions and answering them in one file means the answer to each drifts. Before writing about the game anywhere, work out which question you are answering:
+
+| Doc | Owns | Answers |
+|---|---|---|
+| `.docs/game_rules/the-hunt.md` | The playable procedure as it currently stands | "What are the rules?" |
+| `.docs/design/…/hybrid-design.md` | Why each rule exists, the discarded branches, §9's open forks | "Why this rule?" |
+| `.docs/implementation/<module>/` | What the code does, per module | "How does the code do it?" |
+
+Two consequences worth stating, because both are easy to get wrong:
+
+- **`the-hunt.md` is the ruleset, not a changelog.** It is organised in playing order, marks every rule `[settled]` / `[provisional]` / `[open]` / `[not built]`, cites `hybrid-design.md §N` rather than reproducing its reasoning, and names no functions outside its Status register. `implementation-doc-writer` owns it and `/fb-apply` updates it every run that changes a rule — never edit it by hand, and never add a per-ticket section to it.
+- **`.docs/game_rules/fox-in-the-forest.md` is not part of this split.** It is the base game's published rulebook, transcribed, and it is a fixed reference — nothing in the pipeline maintains it.
 
 ## Commands
 
@@ -122,6 +138,6 @@ Glob `.claude/skills/*/SKILL.md` to see what actually exists — never classify 
 | `skill-creator` | writing a new skill |
 | `game-designer` | critiquing and developing game designs; anything under `.docs/design/` |
 | `game-ux` | the game-screen layer — full-viewport no-scroll layout, zoning, interaction cost, keyboard navigation of a hand or board |
-| `implementation-doc-writer` | maintaining `.docs/implementation/` — per-module docs on how shipped code actually works |
+| `implementation-doc-writer` | maintaining `.docs/implementation/` — per-module docs on how shipped code actually works — and `.docs/game_rules/the-hunt.md`, the game's current ruleset |
 
 **`react-frontend` applies to virtually every code task in this repo**, so `Skill: react-frontend` is the normal value in a task, not `none`. Reserve `Skill: none — <reason>` for genuinely non-code work: a spec document, a Jira-only task, a decision hand-off to the developer. Never name a skill that does not resolve to a real file on disk; a plan that tells the executor to invoke a missing skill wastes a turn.

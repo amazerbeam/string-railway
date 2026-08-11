@@ -346,11 +346,13 @@ Collect the result. Extract the updated list of changed files (union with the pr
 - If ALL three now approve → proceed to Step 6.5.
 - If issues remain → **maximum 2 fix-review rounds total.** If round 2 still has issues, log the remaining issues and proceed to Step 6.5 — do not block the contract on a stuck reviewer cycle.
 
-## Step 6.5: Update implementation docs
+## Step 6.5: Update implementation docs and the ruleset
 
 **ALWAYS invoke the `implementation-doc-writer` skill (via the Skill tool) here — every run, no exception.** This is not a judgement call the orchestrator makes from the changed-files log. Even a contract that looks test-only, tooling-only, or docs-only still gets the invocation — the skill itself decides whether there is anything to update and says so if not; the orchestrator does not pre-judge that by skipping the call. Skipping this step because "there's nothing to document" is a defect in this command's execution, not a shortcut — the skill's own Step 1 checks for stale cross-references in *other* modules' docs too (a contract can go undocumented-relevant even when it never touches `src/`, e.g. a contract that deletes a doc-cited file elsewhere).
 
 Invoke it once review has concluded — after Step 6, before finalizing `tasks.md` and the Jira transition in Step 7. It creates or updates `.docs/implementation/` for every module the contract touched, so a later question like "how are the cards shuffled" or "what's been implemented so far" has a standing answer that doesn't require re-reading old contracts.
+
+The skill also owns **`.docs/game_rules/the-hunt.md`**, the game's current ruleset, and updates it in the same pass whenever the contract changed what a player may do, must do, or is scored on. That decision is the skill's, not the orchestrator's — do not pre-judge it from the changed-files log, and never hand-edit that file yourself. Its scope, markers, and checks live in its `SKILL.md`.
 
 Give it:
 - The complete cumulative changed-files log (all phases, deduplicated).
@@ -404,6 +406,7 @@ Present:
 
 ### Implementation Docs
 - [Which `.docs/implementation/<module>/` folders/files the `implementation-doc-writer` skill created vs. updated in Step 6.5 — or "invoked, nothing to update" if the skill reported nothing to document]
+- [Whether `.docs/game_rules/the-hunt.md` was updated and which rules or status markers moved — or the skill's one-line reason why this contract changed no rule. Never leave this blank: a silent absence cannot be told apart from a skipped check]
 
 ### Developer Actions Outstanding
 - [Every tuning value still to choose, with what it trades off; every ambiguous rule reading; any dependency awaiting approval; plus every MANUAL VERIFICATION NEEDED item from the QA report with the command to run, the interaction to perform, and the expected outcome]
@@ -431,5 +434,5 @@ Present:
 - **Maximum 2 fix-review rounds total.** After round 2, log residuals and continue.
 - **Failed tasks from a previous `/fb-apply` run** should be retried (they will still be unticked in `tasks.md`).
 - **Do not implement code yourself** — all code changes go through the Implementer agent.
-- **ALWAYS invoke `implementation-doc-writer` in Step 6.5 — every run, no exception, never skipped because the orchestrator judged there was nothing to document.** `.docs/implementation/` is updated once, after review concludes, never per phase, and never by hand-writing doc content yourself — invoke the skill and let it decide what (if anything) needs updating; it owns the folder's structure and template.
+- **ALWAYS invoke `implementation-doc-writer` in Step 6.5 — every run, no exception, never skipped because the orchestrator judged there was nothing to document.** `.docs/implementation/` and `.docs/game_rules/the-hunt.md` are updated once, after review concludes, never per phase, and never by hand-writing doc content yourself — invoke the skill and let it decide what (if anything) needs updating; it owns both outputs' structure and templates.
 - **If a phase blocks on a genuine failure** (the Implementer cannot complete a task), log the blocker, continue with remaining phases, and surface it in the final report — do not run reviewers as an early-exit hack, and do not auto-retry beyond the post-review fix-loop cap.

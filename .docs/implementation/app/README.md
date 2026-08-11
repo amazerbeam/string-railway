@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63
 
 ## Responsibility
 
@@ -32,7 +32,10 @@ import React, and `src/app/warCouncil/` does.
 | `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState` and (since DLR-53) a required `hunt: Hunt` in, `onComplete` out | `warCouncilMount.ts` |
 | `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + derived `score` | `warCouncilMount.ts` |
 
-DLR-53 added `hunt: Hunt` — `src/hunt`'s own `{ quarry, demand }` pairing — as a **required** field.
+DLR-53 added `hunt: Hunt` — `src/hunt`'s own `{ quarry, demand }` pairing, widened by DLR-63 to
+`{ quarry, demand, loseCredits }` — as a **required** field. `warCouncilMount.ts` itself needed no edit
+for that widening: it merely declares the prop, and `Hunt` widened underneath it, which is exactly why
+DLR-63 made `loseCredits` required rather than optional.
 Required rather than optional on purpose: an optional Demand would let a caller render a Hunt with
 nothing to clear and no verdict to reach, and a required→required addition breaks every construction
 site at compile time rather than rendering `undefined` into a comparison that would silently report
@@ -54,8 +57,12 @@ components — are tabulated in [../war-council-ui/README.md](../war-council-ui/
 (`src/app/warCouncil/WarCouncilRound.tsx`) against them directly, with no orchestrator in between:
 
 ```tsx
-// The slice's single encounter: one fixed Demand, one Quarry.
-const HUNT: Hunt = { quarry: { character: SLICE_QUARRY_CHARACTER }, demand: FIXED_DEMAND }
+// The slice's single encounter: one fixed Demand, one Quarry, one Lose-credit pool.
+const HUNT: Hunt = {
+  quarry: { character: SLICE_QUARRY_CHARACTER },
+  demand: FIXED_DEMAND,
+  loseCredits: LOSE_CREDITS_PER_HUNT,
+}
 
 const [round, setRound] = useState(1)
 const [dealt, setDealt] = useState<WarCouncilState>(() =>
@@ -71,7 +78,7 @@ function handleComplete() {
 return <WarCouncilRound key={round} initialState={dealt} hunt={HUNT} onComplete={handleComplete} />
 ```
 
-`HUNT` lives at module scope because both halves are configuration constants — it holds no
+`HUNT` lives at module scope because all three halves are configuration constants — it holds no
 per-round state, so it cannot go stale across the `key={round}` remounts below, and it is read-only
 rather than the kind of module-level mutable state this project's conventions bar. DLR-53 also
 started passing `SLICE_QUARRY_CHARACTER` as `dealRound`'s third argument, which is what makes the

@@ -1,7 +1,7 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28, DLR-47, DLR-53
+**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63
 
 ## Responsibility
 
@@ -18,6 +18,14 @@ the Quarry's intent telegraphed before every commit, and an end panel showing
 `Spoils × Standing = Score` as arithmetic before its cleared/missed verdict. Every number on that
 screen originates in `src/hunt/config.ts` and arrives already derived — see
 [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md).
+
+DLR-63 put a decision at the front of the round and changed what a card looks like: a **declare gate**
+gating the first trick, a **claim control** on each lost trick as it resolves, a **credit readout** in
+the ledger, the hand rendered **longest-suit-first** instead of in dealt order, and a suit-coloured
+border with a bottom-left suit mark on every card face. As with the Hunt layer, no rule moved here —
+`declareHunt` writes the declaration, `canClaimLostTrick` decides whether the claim is offered,
+`claimLostTrick` spends the credit, and `creditedTrickWorth` computes what the preview shows. See
+[The declare gate, the claim, and the hand's order](declare-gate-and-claim.md).
 
 It sits under `src/app/` rather than beside the engine for a hard reason: `eslint.config.js`'s
 pure-core override bars `src/warCouncil/**` from importing React at all, so a `.tsx` file there
@@ -38,7 +46,9 @@ barrel re-exporting one is a needless brush with `react-refresh/only-export-comp
 | `roundReducer`                                                                    | The single reducer owning every UI transition: `(RoundUiState, RoundUiAction) => RoundUiState`        | `roundReducer.ts`      |
 | `createRoundUiState`                                                              | Lazy `useReducer` initializer; a pure restructuring of `initialState` — since DLR-53 it deliberately leaves the Quarry's opening lead uncommitted so it can be telegraphed | `roundReducer.ts`      |
 | `RoundUiState`                                                                    | `{ round, armed, prompt, resolvedTrick, rejection, cpuFault }` — the mount's one piece of state       | `roundReducer.ts`      |
-| `RoundUiAction`                                                                   | `TapCard \| ChooseAbility \| CancelSelection \| CarryOn`, via the `RoundUiActionKind` `as const` map  | `roundReducer.ts`      |
+| `RoundUiAction`                                                                   | `TapCard \| ChooseAbility \| CancelSelection \| CarryOn \| Declare \| ClaimTrick` (the last two DLR-63), via the `RoundUiActionKind` `as const` map. **`RoundUiState` gained no field for either** — the declaration lives on `RoundState` | `roundReducer.ts`      |
+| `sortHandForDisplay`                                                              | Pure: a **copy** of the hand in display order — longest suit first, `ALL_SUITS` as the tie-break, ascending rank within a suit (DLR-63 AC6). React-free and DOM-free, so it runs in the `node` project | `handOrder.ts`         |
+| `HUNT_DECLARATION_NAME`, `DECLARE_REJECTION_MESSAGE`, `CLAIM_REJECTION_MESSAGE`    | Display copy for the two declarable paths and the two engine rejection unions (DLR-63)                | `labels.ts`            |
 | `ResolvedTrick`                                                                   | `{ cards, winner }` — a just-resolved trick held on screen until the player carries on                | `roundReducer.ts`      |
 | `CpuFault`                                                                        | `IllegalMoveReason \| 'noLegalMove'` — a corrupt CPU turn, shown rather than swallowed                | `roundReducer.ts`      |
 | `SUIT_NAME`, `RANK_NAME`                                                          | Display names for `Suit` and the five ability-bearing `CardRank` values                               | `labels.ts`            |
@@ -57,11 +67,17 @@ barrel re-exporting one is a needless brush with `react-refresh/only-export-comp
 The zone components — `RoundStatusBand`, `DecreePile`, `TrickWell`, `HandFan`, `AbilityPrompt`,
 `RoundOverPanel` — are each a default export consumed only by `WarCouncilRound.tsx`. DLR-53 added
 three more in the same shape: `HuntLedger` (mounted inside `RoundStatusBand`), `QuarryDossier`, and
-`IntentTelegraph` (both mounted in the new `wc-dossier` zone).
+`IntentTelegraph` (both mounted in the new `wc-dossier` zone). DLR-63 added `DeclareGate`, mounted as
+the felt cascade's **first** branch.
 
-`labels.ts`, `fanLayout.ts`, `roundReducer.ts`, and `intentPreview.ts` import no React and touch no
-DOM global, so all four are unit-tested in the cheap `node` Vitest project; the components are
-tested in the `dom` project (see [Testing](testing.md)).
+`labels.ts`, `fanLayout.ts`, `roundReducer.ts`, `intentPreview.ts`, and `handOrder.ts` import no React
+and touch no DOM global, so all five are unit-tested in the cheap `node` Vitest project; the
+components are tested in the `dom` project (see [Testing](testing.md)).
+
+`handOrder.ts` sits here rather than in the lint-enforced pure core on purpose: **display order is not
+a game rule.** It is the same call `intentPreview.ts` already makes — React-free and DOM-free, but
+review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead would have changed what
+`dealRound` returns, and what every engine spec asserts, for a purely presentational reason.
 
 ## How it works
 
@@ -73,6 +89,10 @@ tested in the `dom` project (see [Testing](testing.md)).
 - [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md) — the `hunt` prop, the ledger
   and dossier, the telegraph's two readings and why the Quarry's lead is held uncommitted, and the
   end panel's equation.
+- [The declare gate, the claim, and the hand's order](declare-gate-and-claim.md) — why the gate is
+  the felt cascade's first branch rather than a modal, how the claim decision folds onto the tap the
+  player was already making, the three-key display sort and why the hand re-orders mid-round, the
+  credits cell's zero case, and AC7's card face (DLR-63).
 - [Accessibility](accessibility.md) — the shared roving tabindex, the ability prompt's focus
   handling, and the fan's `aria-hidden` behaviour while a prompt is open.
 - [Error handling](error-handling.md) — the two `cpuFault` cases and why they're shown, not
@@ -96,9 +116,10 @@ tested in the `dom` project (see [Testing](testing.md)).
   a grep in the contract's final verification.
 - **`labels.ts`, `fanLayout.ts`, and `roundReducer.ts` import no React and touch no DOM global** —
   verified by grep, which is what lets them run in the `node` Vitest project.
-- **No component sees a numeric literal standing in for a Demand, a multiplier, or a band
-  boundary** (DLR-53). Every one arrives already derived — `hunt.demand`, `band.multiplier`,
-  `huntScore.standing` — from `src/hunt/config.ts` through the engine. Grep-verified in the
+- **No component sees a numeric literal standing in for a Demand, a multiplier, a band boundary, or
+  a credit pool** (DLR-53, extended by DLR-63). Every one arrives already derived — `hunt.demand`,
+  `band.multiplier`, `huntScore.standing`, `hunt.loseCredits`, `declaration.creditsRemaining` — from
+  `src/hunt/config.ts` through the engine. Grep-verified in the
   contract's final verification, but structural rather than merely observed: there is no path by
   which a component could invent one. See
   [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md).
@@ -161,7 +182,28 @@ tested in the `dom` project (see [Testing](testing.md)).
 - **Every visual constant remains the developer's to retune.** The felt/brass/parchment palette, the
   three suit hues, the `clamp()` card-size bounds, and `fanLayout.ts`'s rotation step, lift factor,
   and overlap are transcribed-and-confirmed defaults from the approved mockup, each a one-line
-  change — not final values.
+  change — not final values. DLR-63 added four more of the same kind: the card border's width, the
+  suit mark's corner offset, whether a suit-coloured border reads as information or decoration at
+  `--wc-card-w`'s `clamp(2.9rem, 6.2vmin, 4.3rem)` floor, and the rank direction *within* a suit in
+  `sortHandForDisplay` (ascending is the chosen default — see
+  [declare-gate-and-claim.md](declare-gate-and-claim.md)).
+- **Whether the declare gate's opening tap reads as a decision or a speed bump is unjudged**, and it
+  compounds the "Let them lead" tap below: trick 1 now opens with **two** taps before the first card.
+  Both are structural consequences of things worth having — the gate makes the round's target legible,
+  and holding the lead uncommitted is what makes it telegraphable — but nobody has yet played it and
+  said whether the opening reads well.
+- **The mid-round hand re-order is accepted, not mitigated.** Because holding size is one of the sort
+  keys, a suit can lose its leftmost slot as cards leave the hand, so a card located by position on
+  trick 4 may sit elsewhere on trick 5. This is what a physical hand does and positions already
+  shifted whenever a card was removed — but whether it reads as the hand tidying itself or as cards
+  moving under your finger is only answerable by playing. The fallback is fixed `ALL_SUITS` order, one
+  line in `handOrder.ts`.
+- **The `prefers-reduced-motion` suppression of the declare option's hover lift is unverified in a
+  browser.** The rule and its suppression are co-located in `warCouncilCards.css` with the override
+  later in source order, so it wins at equal specificity by construction — but the browser tooling
+  available to QA exposes no CSS media-feature emulation, so it has only been checked statically.
+  Confirm by hand: DevTools → Rendering → "Emulate CSS media feature `prefers-reduced-motion: reduce`"
+  → hover a declare option → expect no lift.
 - **`ILLEGAL_MOVE_MESSAGE[IllegalMoveReason.MustFollowMonarch]`'s copy is now stale for one of its
   two triggers, and this module was not the one that made it so.** DLR-51 (engine-side, this
   module's files untouched) widened *when* the engine reports that reason: it now also fires for

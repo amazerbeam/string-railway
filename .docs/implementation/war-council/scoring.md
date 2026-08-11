@@ -23,6 +23,13 @@ corrupt and should fail loudly rather than silently score as `0`.
 
 ### Spoils — the summed value of captured cards (DLR-49)
 
+> **Since DLR-63 `spoils` has a second branch.** Everything in this section describes the
+> capture-pile branch, which is what runs when the Hunt is undeclared, when Win was declared, or for
+> the Quarry's own side — unchanged byte for byte. The Lose-declared player branch sums credited cards
+> at inverted values instead, and is documented in
+> [the declaration and the Lose path](declaration-and-lose-path.md). The signature gained a fourth
+> optional parameter (`inverted = invertedCardValue`) alongside the third described below.
+
 `spoils(state, side, cardValue = cardBaseValue)` in `spoils.ts` is the additive term of the Hunt
 scoring equation (`.docs/design/Balatro-Forbidden-Solitaire/hybrid-design.md` §1/§3). It's a plain
 reduce over `state.capturedCards[side]` (see [Trick resolution](trick-resolution-and-play.md)'s
@@ -44,7 +51,10 @@ output remains what `WarCouncilRoundResult` reports.
 finished round, returning a `HuntScore` of `{ spoils, tricks, band, standing, score }`. It reads
 `state.tricksWon[side]` for the trick count, calls `resolveStanding(tricks, standingTable)` once for
 the band and its multiplier, calls `spoils(state, side, cardValue)` once for the additive term, and
-multiplies the two — `score = spoils × band.multiplier`. Every field comes from that single pass
+multiplies the two — `score = spoils × band.multiplier`. **That delegation is why DLR-63 needed no
+edit here at all**: the declaration reaches the score only through `spoils`, so the multiplicative
+term never learns it exists, and the ticket's "one Standing table for both declared paths" holds by
+construction. Every field comes from that single pass
 over an **already-final** `RoundState`; there is no accumulator, no loop over tricks, and no
 mutation, so the function is safe to call repeatedly and meaningless to call mid-round. `standing`
 and `band` are not independent lookups — `standing` is literally `band.multiplier`, so the two can

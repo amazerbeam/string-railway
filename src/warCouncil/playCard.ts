@@ -27,6 +27,13 @@ export function playCard(
   if (state.phase === RoundPhase.Complete) {
     return { ok: false, reason: IllegalMoveReason.RoundComplete }
   }
+  // AC1: the declaration is made before the first trick, so no card may be played
+  // without one. Structurally unreachable through the shipped UI — the declare gate
+  // renders before the fan becomes interactive — and carried as a guard against a
+  // future caller that skips it.
+  if (state.declaration === undefined) {
+    return { ok: false, reason: IllegalMoveReason.HuntNotDeclared }
+  }
   if (currentTurn(state) !== side) {
     return { ok: false, reason: IllegalMoveReason.NotYourTurn }
   }
@@ -96,6 +103,9 @@ export function playCard(
   const nextLeader = nextLeaderAfterTrick(completedTrick, winner)
   const tricksPlayed = next.tricksPlayed + 1
   const tricksWon = { ...next.tricksWon, [winner]: next.tricksWon[winner] + 1 }
+  // `claimLostTrick` establishes which side won a trick by matching against the ORDERED
+  // tail of the winner's pile. Changing what, or in what order, this appends invalidates
+  // that guard — see `isQuarryPileTail` in claimLostTrick.ts.
   const capturedCards = {
     ...next.capturedCards,
     [winner]: [...next.capturedCards[winner], completedTrick[0].card, completedTrick[1].card],
