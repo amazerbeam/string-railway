@@ -3,9 +3,7 @@ import {
   PlayerSide,
   QUARRY_SIDE,
   RoundPhase,
-  canClaimLostTrick,
   chooseCpuMove,
-  claimLostTrick,
   commitQuarryMove,
   currentTurn,
   declareHunt,
@@ -45,7 +43,6 @@ export const RoundUiActionKind = {
   CancelSelection: 'cancelSelection',
   CarryOn: 'carryOn',
   Declare: 'declare',
-  ClaimTrick: 'claimTrick',
 } as const
 export type RoundUiActionKind = (typeof RoundUiActionKind)[keyof typeof RoundUiActionKind]
 
@@ -54,12 +51,7 @@ export type RoundUiAction =
   | { readonly kind: typeof RoundUiActionKind.ChooseAbility; readonly choice: AbilityChoice }
   | { readonly kind: typeof RoundUiActionKind.CancelSelection }
   | { readonly kind: typeof RoundUiActionKind.CarryOn }
-  | {
-      readonly kind: typeof RoundUiActionKind.Declare
-      readonly path: HuntDeclaration
-      readonly loseCredits: number
-    }
-  | { readonly kind: typeof RoundUiActionKind.ClaimTrick }
+  | { readonly kind: typeof RoundUiActionKind.Declare; readonly path: HuntDeclaration }
 
 /**
  * Initial UI state. Deliberately does **not** play the Quarry's opening lead: DLR-53 AC3
@@ -89,9 +81,7 @@ export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundU
     case RoundUiActionKind.CarryOn:
       return handleCarryOn(state)
     case RoundUiActionKind.Declare:
-      return handleDeclare(state, action.path, action.loseCredits)
-    case RoundUiActionKind.ClaimTrick:
-      return handleClaimTrick(state)
+      return handleDeclare(state, action.path)
   }
 }
 
@@ -159,40 +149,13 @@ function handleCarryOn(state: RoundUiState): RoundUiState {
 }
 
 /**
- * AC1. A rejection returns the input state unchanged — both of `declareHunt`'s
- * rejections are structurally unreachable from the gate, which only renders while
- * `declaration` is undefined, so this is a guard rather than a live path.
+ * AC1. A rejection returns the input state unchanged — both of `declareHunt`'s rejections are
+ * structurally unreachable from the gate, which only renders while `declaration` is undefined,
+ * so this is a guard rather than a live path.
  */
-function handleDeclare(
-  state: RoundUiState,
-  path: HuntDeclaration,
-  loseCredits: number,
-): RoundUiState {
-  const result = declareHunt(state.round, path, loseCredits)
+function handleDeclare(state: RoundUiState, path: HuntDeclaration): RoundUiState {
+  const result = declareHunt(state.round, path)
   return result.ok ? { ...state, round: result.state } : state
-}
-
-/**
- * AC3. Spends one credit on the held trick and then carries on through the SAME
- * transition, so the claim costs no extra tap over the carry-on the player was already
- * making. `canClaimLostTrick` is asked first so an unavailable claim is a no-op returning
- * the input state by reference, never a partial commit.
- */
-function handleClaimTrick(state: RoundUiState): RoundUiState {
-  const held = state.resolvedTrick
-  if (held === null || held.cards.length !== 2) {
-    return state
-  }
-  const trick = [held.cards[0], held.cards[1]] as const
-  if (!canClaimLostTrick(state.round, trick)) {
-    return state
-  }
-
-  const result = claimLostTrick(state.round, trick)
-  if (!result.ok) {
-    return state
-  }
-  return handleCarryOn({ ...state, round: result.state })
 }
 
 /** Commits `cardToPlay` for the player, then advances the opponent when the player led. */

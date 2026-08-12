@@ -103,9 +103,9 @@ export function playCard(
   const nextLeader = nextLeaderAfterTrick(completedTrick, winner)
   const tricksPlayed = next.tricksPlayed + 1
   const tricksWon = { ...next.tricksWon, [winner]: next.tricksWon[winner] + 1 }
-  // `claimLostTrick` establishes which side won a trick by matching against the ORDERED
-  // tail of the winner's pile. Changing what, or in what order, this appends invalidates
-  // that guard — see `isQuarryPileTail` in claimLostTrick.ts.
+  // `capturedCards` is appended as exactly `[lead, follow]` for the winning side, in that
+  // order. `spoils` sums each side's own pile, so the order is not load-bearing for scoring
+  // — but DLR-68's pile swap reads these piles too, so keep the append shape deliberate.
   const capturedCards = {
     ...next.capturedCards,
     [winner]: [...next.capturedCards[winner], completedTrick[0].card, completedTrick[1].card],

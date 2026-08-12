@@ -1,8 +1,9 @@
-/* War Council — DLR-63's declare gate (the Win/Lose choice at the top of a Hunt) and the
-   claim control on a held lost trick. Split out of `warCouncilHunt.css`, which crossed the
-   400-line budget when this contract's own additions to it landed; import all four sheets
-   from the mount component. Tokens are defined once in `warCouncil.css` and apply globally
-   once that sheet is loaded — nothing here redeclares `:root`.
+/* War Council — DLR-63's declare gate (the Win/Lose choice at the top of a Hunt). The claim
+   control this sheet once also carried was retired on DLR-67 along with the mechanic it
+   spent. Split out of `warCouncilHunt.css`, which crossed the 400-line budget when this
+   contract's own additions to it landed; import all four sheets from the mount component.
+   Tokens are defined once in `warCouncil.css` and apply globally once that sheet is
+   loaded — nothing here redeclares `:root`.
 
    Imported LAST, after `warCouncilCards.css` AND `warCouncilHunt.css`: `.wc-declare-option`
    below sets its own unconditional `transition` property, which must win — at equal
@@ -76,7 +77,8 @@
    between the two sheets matters. */
 
 /* Win vs Lose read apart in form as well as colour: Win is solid-bordered, Lose is
-   dashed, matching how the ledger already separates Demand from Standing. */
+   dashed, matching how the ledger already sets the Standing cell apart with its own
+   dashed border. */
 .wc-declare-option.wc-is-lose {
   border-style: dashed;
 }
@@ -102,53 +104,4 @@
   margin: 0;
   max-width: 40ch;
   line-height: 1.4;
-}
-
-/* ---------- DLR-63: the claim control on a held lost trick ---------- */
-/* `.wc-decline` is already defined in warCouncilCards.css — reused unchanged for the
-   "Let it go" control here, so it is not redeclared. */
-
-.wc-claim-row {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-}
-
-.wc-claim {
-  font: inherit;
-  font-size: clamp(0.68rem, 1.45vmin, 0.8rem);
-  min-height: 44px;
-  padding: 0 clamp(0.7rem, 2vmin, 1.2rem);
-  background: #c99a4e18;
-  color: var(--wc-brass);
-  border: 2px double var(--wc-keys);
-  border-radius: 2px;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-@media (hover: hover) {
-  .wc-claim:hover {
-    background: #c99a4e2e;
-  }
-}
-
-/* Paired with the hover state above (react-frontend's hover/active pairing rule) so touch
-   and stylus input — which never fire :hover — still get a pressed acknowledgement. */
-.wc-claim:active {
-  background: #c99a4e44;
-}
-
-.wc-claim-worth {
-  font-size: 0.72rem;
-  color: var(--wc-chalk-dim);
-  margin: 0;
-}
-.wc-claim-worth b {
-  font-family: var(--wc-serif);
-  font-size: 1rem;
-  color: var(--wc-brass);
-  font-weight: 400;
 }

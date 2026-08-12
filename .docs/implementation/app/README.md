@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67
 
 ## Responsibility
 
@@ -30,18 +30,23 @@ import React, and `src/app/warCouncil/` does.
 | Export                  | Purpose                                                                    | File                 |
 | ------------------------ | ---------------------------------------------------------------------------- | --------------------- |
 | `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState` and (since DLR-53) a required `hunt: Hunt` in, `onComplete` out | `warCouncilMount.ts` |
-| `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + derived `score` | `warCouncilMount.ts` |
+| `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + `damage`, a `Record<PlayerSide, number>` | `warCouncilMount.ts` |
 
-DLR-53 added `hunt: Hunt` — `src/hunt`'s own `{ quarry, demand }` pairing, widened by DLR-63 to
-`{ quarry, demand, loseCredits }` — as a **required** field. `warCouncilMount.ts` itself needed no edit
-for that widening: it merely declares the prop, and `Hunt` widened underneath it, which is exactly why
-DLR-63 made `loseCredits` required rather than optional.
-Required rather than optional on purpose: an optional Demand would let a caller render a Hunt with
-nothing to clear and no verdict to reach, and a required→required addition breaks every construction
-site at compile time rather than rendering `undefined` into a comparison that would silently report
-"missed" for every round. `WarCouncilRoundResult` was deliberately **not** changed — putting the
-`HuntScore` and outcome in the completion payload would be speculative shape for a run loop nobody
-has written yet.
+DLR-53 added `hunt: Hunt` as a **required** field — `src/hunt`'s own pairing, widened by DLR-63 to
+`{ quarry, demand, loseCredits }` and then **narrowed by DLR-67 to `{ quarry }`** when the Demand and
+the Lose-credit pool were both retired. `warCouncilMount.ts` needed no edit for any of that: it merely
+declares the prop, and `Hunt` changes underneath it.
+
+Required rather than optional keeps earning its place — a required-field change breaks every
+construction site at compile time rather than rendering `undefined`. DLR-67's narrowing is the case
+that proved it in the deletion direction: the compiler found both construction sites.
+
+**`WarCouncilRoundResult.score` became `damage` on DLR-67**, keeping its `Record<PlayerSide, number>`
+shape but now built from `scoreHunt` per side rather than from the deleted `scoreRound`. DLR-53 had
+deliberately left this payload alone as speculative shape for a run loop nobody had written; DLR-67
+changed it because DLR-68's acceptance criteria already name the field `damage`, so the epic's
+vocabulary is adopted one ticket early rather than a second one invented. **Nothing consumes it** —
+`App.tsx`'s `handleComplete` still takes no parameter.
 
 Both are type-only exports, re-exported via `export type` from `index.ts` (required by this
 project's `verbatimModuleSyntax` tsconfig setting). `src/app/warCouncil/`'s own exports —
@@ -57,12 +62,9 @@ components — are tabulated in [../war-council-ui/README.md](../war-council-ui/
 (`src/app/warCouncil/WarCouncilRound.tsx`) against them directly, with no orchestrator in between:
 
 ```tsx
-// The slice's single encounter: one fixed Demand, one Quarry, one Lose-credit pool.
-const HUNT: Hunt = {
-  quarry: { character: SLICE_QUARRY_CHARACTER },
-  demand: FIXED_DEMAND,
-  loseCredits: LOSE_CREDITS_PER_HUNT,
-}
+// The slice's single encounter (§11): one Quarry. Narrowed by DLR-67 — the Demand and the
+// Lose-credit pool were both retired.
+const HUNT: Hunt = { quarry: { character: SLICE_QUARRY_CHARACTER } }
 
 const [round, setRound] = useState(1)
 const [dealt, setDealt] = useState<WarCouncilState>(() =>
@@ -78,7 +80,7 @@ function handleComplete() {
 return <WarCouncilRound key={round} initialState={dealt} hunt={HUNT} onComplete={handleComplete} />
 ```
 
-`HUNT` lives at module scope because all three halves are configuration constants — it holds no
+`HUNT` lives at module scope because its one half is a configuration constant — it holds no
 per-round state, so it cannot go stale across the `key={round}` remounts below, and it is read-only
 rather than the kind of module-level mutable state this project's conventions bar. DLR-53 also
 started passing `SLICE_QUARRY_CHARACTER` as `dealRound`'s third argument, which is what makes the
@@ -117,11 +119,12 @@ deleted module and is unit-tested directly (`src/app/__tests__/dealerForRound.te
 
 - **No multi-round run loop.** `App.tsx`'s "deal again on completion" restart tracks no score, no
   win condition, and no state across rounds beyond dealer alternation — a later ticket in the
-  DLR-46 epic (referenced as T9/T10 on DLR-47) replaces this with the real Hunt run loop. DLR-53
-  narrowed the gap without closing it: a single Hunt is now playable end to end against a fixed
-  Demand and reaches a real cleared/missed verdict, but every restart re-deals the *same* encounter,
-  because `HUNT` is a constant rather than run state. A rising Demand, encounter progression, and a
-  victory/defeat screen are all still absent.
+  DLR-46 epic replaces this with the real Hunt run loop. DLR-53 narrowed the gap without closing it:
+  a single Hunt is playable end to end and reaches a real end panel. But every restart re-deals the
+  *same* encounter, because `HUNT` is a constant rather than run state — and since DLR-67 there is no
+  target and no verdict either, only two damage figures nothing consumes. Health, damage
+  application, encounter progression, and a victory/defeat screen are all still absent; DLR-68 is
+  where the damage this app already computes first does something.
 - **No way to reach a standalone/manual-entry test harness.** DLR-47 deleted
   `TestModeVanguardHost.tsx`, `TrickEntryForm.tsx`, `appMode.ts`, and `isValidTricksWon` along with
   the rest of the Vanguard UI — there is currently no manual-entry mechanism at all, campaign or

@@ -7,72 +7,58 @@ import TrickWell from '../TrickWell'
 
 afterEach(cleanup)
 
-// A Treasure card (rank 7) alongside a plain card — the exact case the DLR-63 review fix
-// covers. invertedCardValue(7) = 5, invertedCardValue(2) = 10: the unfolded raw sum a buggy
-// preview would show is 5 + 10 = 15. `creditedTrickWorth` folds Treasure's +1 in, so the
-// correct, credited total is (5 + 1) + 10 = 16 — the two numbers deliberately differ by
-// exactly 1, so this fixture would catch the bug Fix 1 corrects (a Treasure/Poison pair
-// cancels the fold's effect on the total and would not).
 const resolvedTrick: ResolvedTrick = {
   cards: [
-    { side: PlayerSide.Player, card: { suit: Suit.Bells, rank: 7 } }, // Treasure
-    { side: PlayerSide.Cpu, card: { suit: Suit.Keys, rank: 2 } }, // plain
+    { side: PlayerSide.Player, card: { suit: Suit.Bells, rank: 7 } },
+    { side: PlayerSide.Cpu, card: { suit: Suit.Keys, rank: 2 } },
   ],
   winner: PlayerSide.Cpu,
 }
 
-describe('TrickWell — claim control (AC3)', () => {
-  it('previews the claim worth with the Treasure/Poison fold applied, matching spoils exactly', () => {
-    const { container } = render(
+describe('TrickWell — a resolved trick', () => {
+  it('offers exactly one control, and it carries on (DLR-67: the claim fork is gone)', () => {
+    // `PlayingCard` renders every table-variant card as its own (disabled, tab-index -1)
+    // <button> for the played cards, so `getAllByRole('button')` alone would also pick
+    // those up — filtering to the enabled buttons isolates the actual interactive controls.
+    const onCarryOn = vi.fn()
+    render(
       <TrickWell
         currentTrick={[]}
         resolvedTrick={resolvedTrick}
         quarryToLead={false}
-        onCarryOn={vi.fn()}
-        claimable
-        creditsRemaining={3}
-        onClaim={vi.fn()}
+        onCarryOn={onCarryOn}
       />,
     )
-    // The rendered number sits inside a <b>, splitting the sentence across elements
-    // (the same reason WarCouncilRound.test.tsx reads `.textContent` off a queried node
-    // rather than matching a plain string/regex across it) — no accessible name exists
-    // for a purely informational paragraph, so this reads the paragraph's own textContent
-    // via the same CSS-class query `HandFan.test.tsx` already uses for `.wc-fan`.
-    const claimWorth = container.querySelector('.wc-claim-worth')
-    expect(claimWorth?.textContent).toBe('Claiming credits 16 Spoils.')
+    const buttons = screen
+      .getAllByRole('button')
+      .filter((button) => !button.hasAttribute('disabled'))
+    expect(buttons).toHaveLength(1)
+    fireEvent.click(buttons[0])
+    expect(onCarryOn).toHaveBeenCalledTimes(1)
   })
 
-  it('reports a claim through the button, once the credited worth is read', () => {
-    const onClaim = vi.fn()
+  it('renders no claim control and no claim-worth preview', () => {
     render(
       <TrickWell
         currentTrick={[]}
         resolvedTrick={resolvedTrick}
         quarryToLead={false}
         onCarryOn={vi.fn()}
-        claimable
-        creditsRemaining={3}
-        onClaim={onClaim}
       />,
     )
-    fireEvent.click(screen.getByRole('button', { name: /claim these — 3 credits left/i }))
-    expect(onClaim).toHaveBeenCalledTimes(1)
-  })
-
-  it('renders no claim control, and no claim-worth preview, when the trick is not claimable', () => {
-    render(
-      <TrickWell
-        currentTrick={[]}
-        resolvedTrick={resolvedTrick}
-        quarryToLead={false}
-        onCarryOn={vi.fn()}
-        claimable={false}
-        creditsRemaining={3}
-        onClaim={vi.fn()}
-      />,
-    )
-    expect(screen.queryByRole('button', { name: /claim these/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /claim/i })).toBeNull()
     expect(screen.queryByText(/Claiming credits/)).toBeNull()
+  })
+
+  it('names the winning side', () => {
+    render(
+      <TrickWell
+        currentTrick={[]}
+        resolvedTrick={resolvedTrick}
+        quarryToLead={false}
+        onCarryOn={vi.fn()}
+      />,
+    )
+    expect(screen.getByText(/They take the trick/)).toBeDefined()
   })
 })

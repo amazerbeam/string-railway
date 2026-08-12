@@ -12,19 +12,13 @@ export type DeclareResult =
   | { readonly ok: false; readonly reason: DeclareRejection }
 
 /**
- * AC1: writes the declaration once, before the first card is played. Shaped like
- * `playCard` — a named rejection rather than a throw, and the input state is never
- * partially mutated.
+ * AC1: writes the declaration once, before the first card is played. Shaped like `playCard` —
+ * a named rejection rather than a throw, and the input state is never partially mutated.
  *
- * `loseCredits` is supplied by the caller rather than read from config here, so this
- * module stays free of the tunable and a test can vary the pool without touching
- * `LOSE_CREDITS_PER_HUNT`. It is ignored on the Win path by construction.
+ * Took a `loseCredits` pool until DLR-67; the credit mechanic it seeded is retired, so the
+ * declaration is now the path and nothing else.
  */
-export function declareHunt(
-  state: RoundState,
-  path: HuntDeclaration,
-  loseCredits: number,
-): DeclareResult {
+export function declareHunt(state: RoundState, path: HuntDeclaration): DeclareResult {
   if (state.declaration !== undefined) {
     return { ok: false, reason: DeclareRejection.AlreadyDeclared }
   }
@@ -32,16 +26,5 @@ export function declareHunt(
     return { ok: false, reason: DeclareRejection.HuntUnderway }
   }
 
-  return {
-    ok: true,
-    state: {
-      ...state,
-      declaration: {
-        path,
-        creditsRemaining: path === HuntDeclaration.Lose ? loseCredits : 0,
-        creditedCards: [],
-        creditedThrough: 0,
-      },
-    },
-  }
+  return { ok: true, state: { ...state, declaration: { path } } }
 }

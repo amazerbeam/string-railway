@@ -54,7 +54,8 @@ defect went undetected by every test and was found only by QA driving the app in
 DLR-53's four readouts are bare numbers whose meaning lives in a separate visual key element, which
 a screen reader would otherwise announce as an unlabelled run of digits. Each therefore carries its
 own `aria-label` while the visual key is `aria-hidden`: `HuntLedger`'s four cells ("Running Spoils:
-N", "Standing band: Victorious, multiplier 6", "Score so far: N", "The Demand: N"),
+N", "Standing band: Victorious, multiplier 5", "Score so far: N", "The Demand: N" — the multiplier is
+interpolated from the live band, so the example figure follows whichever table DLR-66 shipped),
 `QuarryDossier`'s region and trick count, and `RoundOverPanel`'s three equation parts.
 
 `IntentTelegraph` goes further and hides *all* its visible text, carrying one `aria-label` on the

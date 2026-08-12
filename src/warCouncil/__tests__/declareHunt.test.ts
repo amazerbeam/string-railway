@@ -21,42 +21,36 @@ function undeclaredRound(overrides: Partial<RoundState> = {}): RoundState {
 }
 
 describe('declareHunt — AC1', () => {
-  it('writes a Win declaration with no credits and no credited cards', () => {
-    const result = declareHunt(undeclaredRound(), HuntDeclaration.Win, 3)
+  it('writes a Win declaration as the path and nothing else', () => {
+    const result = declareHunt(undeclaredRound(), HuntDeclaration.Win)
     expect(result.ok).toBe(true)
     if (!result.ok) return
-    expect(result.state.declaration).toEqual({
-      path: HuntDeclaration.Win,
-      creditsRemaining: 0,
-      creditedCards: [],
-      creditedThrough: 0,
-    })
+    expect(result.state.declaration).toEqual({ path: HuntDeclaration.Win })
   })
 
-  it('writes a Lose declaration carrying the supplied credit pool', () => {
-    const result = declareHunt(undeclaredRound(), HuntDeclaration.Lose, 3)
+  it('writes a Lose declaration as the path and nothing else', () => {
+    const result = declareHunt(undeclaredRound(), HuntDeclaration.Lose)
     expect(result.ok).toBe(true)
     if (!result.ok) return
-    expect(result.state.declaration?.path).toBe(HuntDeclaration.Lose)
-    expect(result.state.declaration?.creditsRemaining).toBe(3)
+    expect(result.state.declaration).toEqual({ path: HuntDeclaration.Lose })
   })
 
   it('does not mutate the input state', () => {
     const before = undeclaredRound()
-    declareHunt(before, HuntDeclaration.Lose, 3)
+    declareHunt(before, HuntDeclaration.Lose)
     expect(before.declaration).toBeUndefined()
   })
 
   it('rejects a second declaration', () => {
-    const first = declareHunt(undeclaredRound(), HuntDeclaration.Win, 3)
+    const first = declareHunt(undeclaredRound(), HuntDeclaration.Win)
     expect(first.ok).toBe(true)
     if (!first.ok) return
-    const second = declareHunt(first.state, HuntDeclaration.Lose, 3)
+    const second = declareHunt(first.state, HuntDeclaration.Lose)
     expect(second).toEqual({ ok: false, reason: DeclareRejection.AlreadyDeclared })
   })
 
   it('rejects a declaration once a trick has been played', () => {
-    const result = declareHunt(undeclaredRound({ tricksPlayed: 1 }), HuntDeclaration.Win, 3)
+    const result = declareHunt(undeclaredRound({ tricksPlayed: 1 }), HuntDeclaration.Win)
     expect(result).toEqual({ ok: false, reason: DeclareRejection.HuntUnderway })
   })
 
@@ -65,7 +59,7 @@ describe('declareHunt — AC1', () => {
       currentTrick: [{ side: PlayerSide.Player, card: { suit: 'bells', rank: 4 } }],
       phase: RoundPhase.AwaitingFollow,
     })
-    expect(declareHunt(underway, HuntDeclaration.Win, 3)).toEqual({
+    expect(declareHunt(underway, HuntDeclaration.Win)).toEqual({
       ok: false,
       reason: DeclareRejection.HuntUnderway,
     })

@@ -1,27 +1,23 @@
-import { HuntDeclaration, type Demand, type Spoils, type StandingBand } from '../../hunt'
-import type { DeclarationState } from '../../warCouncil'
+import type { Spoils, StandingBand } from '../../hunt'
 import { STANDING_BAND_NAME } from './labels'
 
 interface HuntLedgerProps {
-  readonly demand: Demand
   readonly spoils: Spoils
   readonly band: StandingBand
-  /** `null` on the Win path and while undeclared — the cell renders only under Lose. */
-  readonly declaration: DeclarationState | null
 }
 
 /**
- * §1's equation in progress (AC2): running Spoils, the Standing band the player's trick
- * count currently sits in, the product they make, and the Demand it is checked against.
- * Computes only that product — every input arrives already derived from config through
- * `spoils` and `resolveStanding`, so no multiplier or band boundary is written here.
+ * §1's equation in progress: running Spoils, the Standing band the player's trick count
+ * currently sits in, and the Damage they make. Computes only that product — both inputs arrive
+ * already derived from config through `spoils` and `resolveStanding`, so no multiplier or band
+ * boundary is written here. The Demand cell and the Lose-credit cell were removed on DLR-67.
  *
  * Each cell carries its own `aria-label` because the visible value is a bare number whose
- * meaning lives in a separate key element (AC6).
+ * meaning lives in a separate key element.
  */
-export default function HuntLedger({ demand, spoils, band, declaration }: HuntLedgerProps) {
+export default function HuntLedger({ spoils, band }: HuntLedgerProps) {
   const bandName = STANDING_BAND_NAME[band.name]
-  const score = spoils * band.multiplier
+  const damage = spoils * band.multiplier
 
   return (
     <div className="wc-ledger" role="group" aria-label="The Hunt so far">
@@ -52,38 +48,12 @@ export default function HuntLedger({ demand, spoils, band, declaration }: HuntLe
       </span>
       <span className="wc-ledger-cell">
         <span className="wc-ledger-key" aria-hidden="true">
-          Score
+          Damage
         </span>
-        <span className="wc-ledger-value" aria-label={`Score so far: ${score}`}>
-          {score}
-        </span>
-      </span>
-      <span className="wc-ledger-op" aria-hidden="true">
-        /
-      </span>
-      <span className="wc-ledger-cell wc-is-demand">
-        <span className="wc-ledger-key" aria-hidden="true">
-          Demand
-        </span>
-        <span className="wc-ledger-value" aria-label={`The Demand: ${demand}`}>
-          {demand}
+        <span className="wc-ledger-value" aria-label={`Damage so far: ${damage}`}>
+          {damage}
         </span>
       </span>
-      {declaration?.path === HuntDeclaration.Lose && (
-        <span
-          className={`wc-ledger-cell wc-is-credits${declaration.creditsRemaining === 0 ? ' wc-is-spent' : ''}`}
-        >
-          <span className="wc-ledger-key" aria-hidden="true">
-            Credits
-          </span>
-          <span
-            className="wc-ledger-value"
-            aria-label={`Lose-credits remaining: ${declaration.creditsRemaining}`}
-          >
-            {declaration.creditsRemaining}
-          </span>
-        </span>
-      )}
     </div>
   )
 }

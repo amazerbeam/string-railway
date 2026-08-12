@@ -1,28 +1,30 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { HuntDeclaration } from '../../../hunt'
+import { HuntDeclaration, invertedCardValue } from '../../../hunt'
+import { CardRank } from '../../../warCouncil'
 import DeclareGate from '../DeclareGate'
 
 afterEach(cleanup)
 
 describe('DeclareGate — AC1', () => {
   it('offers both paths as named controls', () => {
-    render(<DeclareGate demand={100} loseCredits={2} onDeclare={vi.fn()} />)
+    render(<DeclareGate onDeclare={vi.fn()} />)
     expect(screen.getByRole('button', { name: /win/i })).toBeDefined()
     expect(screen.getByRole('button', { name: /lose/i })).toBeDefined()
   })
 
   it('reports the chosen path', () => {
     const onDeclare = vi.fn()
-    render(<DeclareGate demand={100} loseCredits={2} onDeclare={onDeclare} />)
+    render(<DeclareGate onDeclare={onDeclare} />)
     fireEvent.click(screen.getByRole('button', { name: /lose/i }))
     expect(onDeclare).toHaveBeenCalledWith(HuntDeclaration.Lose)
   })
 
-  it('shows the credit pool it was handed, not a hard-coded number', () => {
-    render(<DeclareGate demand={100} loseCredits={7} onDeclare={vi.fn()} />)
-    expect(screen.getByRole('button', { name: /lose/i }).textContent).toContain('7')
+  it('reads the inverted example off invertedCardValue, not a hard-coded 11', () => {
+    render(<DeclareGate onDeclare={vi.fn()} />)
+    const lose = screen.getByRole('button', { name: /lose/i })
+    expect(lose.textContent).toContain(String(invertedCardValue(CardRank.Swan)))
   })
 
   it('is a real focus target that a native button activates on click once focused', () => {
@@ -39,7 +41,7 @@ describe('DeclareGate — AC1', () => {
     // `TrickWell` double-dispatch note). `WarCouncilRound.test.tsx`'s own "reaches ... by
     // keyboard alone" specs use this identical substitution.
     const onDeclare = vi.fn()
-    render(<DeclareGate demand={100} loseCredits={2} onDeclare={onDeclare} />)
+    render(<DeclareGate onDeclare={onDeclare} />)
     const win = screen.getByRole('button', { name: /win/i })
     win.focus()
     expect(document.activeElement).toBe(win)

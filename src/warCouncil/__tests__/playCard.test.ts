@@ -18,9 +18,6 @@ import {
 // carries no bookkeeping, so this is the neutral default for those fixtures.
 const WIN_DECLARATION: DeclarationState = {
   path: HuntDeclaration.Win,
-  creditsRemaining: 0,
-  creditedCards: [],
-  creditedThrough: 0,
 }
 
 function stateWith(overrides: Partial<RoundState>): RoundState {
@@ -233,7 +230,7 @@ function lcg(seed: number): () => number {
 describe('playCard — a full round plays out exactly 13 tricks', () => {
   it('deals and plays a full round to RoundPhase.Complete with 13 total tricks won', () => {
     const dealt = dealRound('player', lcg(2024))
-    const declared = declareHunt(dealt, HuntDeclaration.Win, 3)
+    const declared = declareHunt(dealt, HuntDeclaration.Win)
     if (!declared.ok) throw new Error('expected declare ok')
     let state = declared.state
     let guard = 0
@@ -303,7 +300,7 @@ describe('playCard — DLR-63 AC1: no card before the declaration', () => {
 
   it('accepts the same play once the Hunt is declared', () => {
     const round = stateWith({ hands: { player: [{ suit: 'bells', rank: 2 }], cpu: [] } })
-    const declared = declareHunt(round, HuntDeclaration.Win, 3)
+    const declared = declareHunt(round, HuntDeclaration.Win)
     expect(declared.ok).toBe(true)
     if (!declared.ok) return
     const card = declared.state.hands[PlayerSide.Player][0]

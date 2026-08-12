@@ -184,7 +184,7 @@
   z-index: 20;
 }
 
-:is(.wc-card, .wc-decline, .wc-is-carry-on, .wc-declare-option, .wc-claim):focus-visible {
+:is(.wc-card, .wc-decline, .wc-is-carry-on, .wc-declare-option):focus-visible {
   outline: 2px solid var(--wc-brass);
   outline-offset: 2px;
   z-index: 30;
@@ -232,8 +232,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .wc-card,
-  .wc-declare-option,
-  .wc-claim {
+  .wc-declare-option {
     transition: none;
   }
 

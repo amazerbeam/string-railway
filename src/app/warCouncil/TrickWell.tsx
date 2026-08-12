@@ -1,5 +1,5 @@
 import type { MouseEvent } from 'react'
-import { creditedTrickWorth, PlayerSide, type TrickCard } from '../../warCouncil'
+import { PlayerSide, type TrickCard } from '../../warCouncil'
 import { cardAccessibleName } from './labels'
 import PlayingCard from './PlayingCard'
 import type { ResolvedTrick } from './roundReducer'
@@ -15,10 +15,6 @@ interface TrickWellProps {
   readonly resolvedTrick: ResolvedTrick | null
   readonly quarryToLead: boolean
   readonly onCarryOn: () => void
-  /** AC3 — derived by the mount from `canClaimLostTrick`; this component adjudicates nothing. */
-  readonly claimable: boolean
-  readonly creditsRemaining: number
-  readonly onClaim: () => void
 }
 
 /**
@@ -33,9 +29,6 @@ export default function TrickWell({
   resolvedTrick,
   quarryToLead,
   onCarryOn,
-  claimable,
-  creditsRemaining,
-  onClaim,
 }: TrickWellProps) {
   // A real, keyboard-reachable control rather than relying on the enclosing felt's own
   // pointer tap: while a trick is held (or the Quarry's lead is pending), every hand card
@@ -52,17 +45,8 @@ export default function TrickWell({
     onCarryOn()
   }
 
-  function handleClaimClick(event: MouseEvent<HTMLButtonElement>) {
-    event.stopPropagation()
-    onClaim()
-  }
-
   if (resolvedTrick) {
     const winnerLabel = resolvedTrick.winner === PlayerSide.Player ? 'You' : 'They'
-    // AC3: the credit's worth if claimed — shared with `spoils`'s Lose branch via
-    // `creditedTrickWorth`, so this preview and the actual credit can never diverge
-    // (DLR-63 review fix: the two used to be a duplicated ±1 fold that could drift).
-    const claimWorth = creditedTrickWorth(resolvedTrick.cards.map((played) => played.card))
 
     return (
       <>
@@ -82,25 +66,9 @@ export default function TrickWell({
           ))}
         </div>
         <p className="wc-table-line">{winnerLabel} take the trick.</p>
-        {claimable ? (
-          <>
-            <p className="wc-claim-worth">
-              Claiming credits <b>{claimWorth}</b> Spoils.
-            </p>
-            <div className="wc-claim-row">
-              <button type="button" className="wc-claim" onClick={handleClaimClick}>
-                Claim these — {creditsRemaining} credits left
-              </button>
-              <button type="button" className="wc-decline" onClick={handleHintClick}>
-                Let it go
-              </button>
-            </div>
-          </>
-        ) : (
-          <button type="button" className="wc-table-hint wc-is-carry-on" onClick={handleHintClick}>
-            Tap the table to carry on
-          </button>
-        )}
+        <button type="button" className="wc-table-hint wc-is-carry-on" onClick={handleHintClick}>
+          Tap the table to carry on
+        </button>
       </>
     )
   }

@@ -94,9 +94,11 @@ actually lives.
 
 How much the telegraph reveals is read from `src/hunt/config.ts`'s `TELEGRAPH_FIDELITY`, not decided
 in this module — see [../hunt/README.md](../hunt/README.md). `quarryIntent` takes the fidelity as an
-optional second parameter defaulting to that constant, mirroring `resolveStanding`'s
-table-override pattern: a test can prove the config genuinely drives the output by passing a
-different value, without mutating shared module state between test cases. Under
+optional second parameter defaulting to that constant, mirroring the injectable-parameter pattern
+`resolveStanding` established (and which `roundDamage` now follows for its rounding rule — though
+`resolveStanding`'s own table stopped being *defaulted* in DLR-66 and is now required): a test can
+prove the config genuinely drives the output by passing a different value, without mutating shared
+module state between test cases. Under
 `TelegraphFidelity.Suit` the returned object is `{ suit }` with **no `stance` key at all** — the key
 is omitted, not set to `undefined` — so narrowing the fidelity genuinely narrows the shape a caller
 receives rather than blanking a field. `quarryIntent.test.ts` asserts this with `'stance' in narrow`

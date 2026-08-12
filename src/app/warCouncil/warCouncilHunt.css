@@ -30,31 +30,11 @@
   border: 1px solid #23303a;
 }
 
-/* Solid vs. dashed carries the Demand/Standing distinction in form, not colour alone. */
-.wc-ledger-cell.wc-is-demand {
-  border-color: var(--wc-brass);
-  border-width: 2px;
-}
-
+/* Dashed border carries the Standing cell's distinction from the two plain cells in form,
+   not colour alone. */
 .wc-ledger-cell.wc-is-band {
   border-style: dashed;
   border-color: var(--wc-brass-dim);
-}
-
-/* NEW (DLR-63): the remaining-credit count. Double border carries "a spendable
-   resource" in form, not colour alone, and it goes flat when the pool is empty. */
-.wc-ledger-cell.wc-is-credits {
-  border-style: double;
-  border-width: 3px;
-  border-color: var(--wc-keys);
-}
-.wc-ledger-cell.wc-is-credits.wc-is-spent {
-  border-style: solid;
-  border-width: 1px;
-  border-color: #2b3a44;
-}
-.wc-ledger-cell.wc-is-credits.wc-is-spent .wc-ledger-value {
-  color: var(--wc-chalk-dim);
 }
 
 .wc-ledger-key {
@@ -228,28 +208,45 @@
   color: var(--wc-chalk-dim);
 }
 
-.wc-verdict {
-  font-family: var(--wc-serif);
-  font-size: 1.15rem;
-  padding: 0.5rem 1.1rem;
-  border-radius: 0.4rem;
-  margin: 0;
-}
-
-.wc-verdict.wc-is-cleared {
-  color: var(--wc-brass);
-  border: 2px solid var(--wc-brass);
-}
-
-.wc-verdict.wc-is-missed {
-  color: var(--wc-alarm);
-  border: 2px dashed var(--wc-alarm);
-}
-
 .wc-verdict-detail {
   font-size: 0.8rem;
   color: var(--wc-chalk-dim);
   margin: 0;
+}
+
+/* AC7's two-sided panel (DLR-67): one bordered panel per side, each holding its own
+   `.wc-equation`. The heavier border marks the higher Damage in form, not colour alone,
+   so a static screenshot still shows who is ahead. Values transcribed from the approved
+   mockup (`.claude/contract/DLR-67-retire-demand-and-lose-credits/mockup.html` §4); no new
+   colour token is introduced. */
+.wc-sides {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+
+.wc-side {
+  flex: 1 1 17rem;
+  max-width: 21rem;
+  padding: 0.85rem;
+  border: 1px solid #23303a;
+  border-radius: 0.5rem;
+  background: var(--wc-chamber-lift);
+}
+
+.wc-side.wc-is-ahead {
+  border-color: var(--wc-brass);
+  border-width: 2px;
+}
+
+.wc-side-name {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--wc-chalk-dim);
+  margin-bottom: 0.55rem;
 }
 
 /* ---------- narrow/short collapse — AC5 on a phone or a short laptop window ---------- */
@@ -274,7 +271,7 @@
   /* .wc-status (defined in warCouncil.css) holds three children — .wc-plate,
      .wc-score, and .wc-ledger — in a row with no wrap; at this width their
      combined min-content widths exceed the viewport. .wc-ledger's own row
-     (five cells plus three operators, all `white-space: nowrap`) is wide
+     (three cells plus two operators, all `white-space: nowrap`) is wide
      enough on its own to overflow even after .wc-status wraps, so it needs
      the same treatment. */
   .wc-status {
@@ -283,5 +280,26 @@
 
   .wc-ledger {
     flex-wrap: wrap;
+  }
+
+  /* AC7's two-sided end panel (DLR-67 fix pass, QA-reported layout-overflow): two
+     `.wc-side` panels can still exceed the felt's available height at a phone-sized or
+     short-laptop window even after they wrap onto their own row — `.wc-table` (in
+     warCouncil.css) centres `.wc-table-inner` at its own content height at every
+     viewport, and `.wc-shell` clips rather than scrolls, so past this floor the panel
+     was rendered but permanently unreachable. This is a static end-of-round readout
+     read after the Hunt is decided, not a moment being played, so the shell's no-scroll
+     rule's own stated exception applies (`game-ux` SKILL.md: "if some region genuinely
+     must scroll, scope the overflow to that region and say why"). Stretching
+     `.wc-table-inner` to the row's own height and re-centring its content with
+     `justify-content` reproduces today's centred look pixel-for-pixel whenever content
+     still fits — every other felt state at this breakpoint (the declare gate, a
+     resolved trick) already fits and is visually unaffected; only the overflowing case
+     gains a scrollbar. No new size, colour or spacing value is introduced. */
+  .wc-table-inner {
+    align-self: stretch;
+    min-height: 0;
+    justify-content: center;
+    overflow-y: auto;
   }
 }

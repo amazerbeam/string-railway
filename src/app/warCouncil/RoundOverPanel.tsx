@@ -1,78 +1,43 @@
-import type { Demand } from '../../hunt'
-import { DemandOutcome, PlayerSide, type HuntScore } from '../../warCouncil'
-import { DEMAND_OUTCOME_VERDICT, STANDING_BAND_NAME } from './labels'
+import { PlayerSide, type HuntDamage } from '../../warCouncil'
+import { STANDING_BAND_NAME } from './labels'
+
+const SIDE_LABEL: Readonly<Record<PlayerSide, string>> = {
+  [PlayerSide.Player]: 'You',
+  [PlayerSide.Cpu]: 'Opponent',
+}
 
 interface RoundOverPanelProps {
   readonly tricksWon: Readonly<Record<PlayerSide, number>>
-  readonly huntScore: HuntScore
-  readonly demand: Demand
-  readonly outcome: DemandOutcome
+  readonly huntDamage: Readonly<Record<PlayerSide, HuntDamage>>
   readonly onFinish: () => void
 }
 
 /**
- * The end-of-Hunt panel (AC4): shows the score as its parts — `Spoils × Standing = Score` —
- * before the Demand and the cleared/missed verdict, because §1's whole claim is that the
- * equation is legible, not just its result. Computes nothing: `huntScore` arrives already
- * computed by the engine's `scoreHunt` and `outcome` by `checkDemand` — this component only
- * formats. The opponent's *points* row is dropped from the tally below, because §1's
- * equation is one-sided and the Quarry has no Demand to clear, but its trick count stays.
+ * The end-of-Hunt panel (AC7): shows each side's Damage as its parts — `Spoils × Standing =
+ * Damage` — because §1's whole claim is that the equation is legible, not just its result.
+ * Computes nothing: both sides' `HuntDamage` arrive already computed by the engine's
+ * `scoreHunt` — this component only formats. The Demand line and the cleared/missed verdict
+ * were removed on DLR-67; nothing here consumes the Damage yet, that is DLR-68's.
  */
-export default function RoundOverPanel({
-  tricksWon,
-  huntScore,
-  demand,
-  outcome,
-  onFinish,
-}: RoundOverPanelProps) {
-  const bandName = STANDING_BAND_NAME[huntScore.band.name]
-  const isCleared = outcome === DemandOutcome.Cleared
+export default function RoundOverPanel({ tricksWon, huntDamage, onFinish }: RoundOverPanelProps) {
+  const playerDamage = huntDamage[PlayerSide.Player].damage
+  const cpuDamage = huntDamage[PlayerSide.Cpu].damage
 
   return (
     <div className="wc-over">
       <h2>The Hunt is over</h2>
-      <div className="wc-equation" role="group" aria-label="Spoils times Standing equals Score">
-        <span className="wc-equation-part">
-          <span className="wc-equation-key" aria-hidden="true">
-            Spoils
-          </span>
-          <span className="wc-equation-value" aria-label={`Spoils: ${huntScore.spoils}`}>
-            {huntScore.spoils}
-          </span>
-        </span>
-        <span className="wc-equation-op" aria-hidden="true">
-          ×
-        </span>
-        <span className="wc-equation-part">
-          <span className="wc-equation-key" aria-hidden="true">
-            Standing
-          </span>
-          <span
-            className="wc-equation-value"
-            aria-label={`Standing multiplier: times ${huntScore.standing}`}
-          >
-            ×{huntScore.standing}
-          </span>
-        </span>
-        <span className="wc-equation-op" aria-hidden="true">
-          =
-        </span>
-        <span className="wc-equation-part wc-is-result">
-          <span className="wc-equation-key" aria-hidden="true">
-            Score
-          </span>
-          <span className="wc-equation-value" aria-label={`Score: ${huntScore.score}`}>
-            {huntScore.score}
-          </span>
-        </span>
+      <div className="wc-sides">
+        <SideEquation
+          side={PlayerSide.Player}
+          damage={huntDamage[PlayerSide.Player]}
+          ahead={playerDamage > cpuDamage}
+        />
+        <SideEquation
+          side={PlayerSide.Cpu}
+          damage={huntDamage[PlayerSide.Cpu]}
+          ahead={cpuDamage > playerDamage}
+        />
       </div>
-      <p className="wc-verdict-detail">
-        {huntScore.tricks} tricks — {bandName}. The Demand was{' '}
-        <span aria-label={`Demand for this Hunt: ${demand}`}>{demand}</span>.
-      </p>
-      <p className={`wc-verdict ${isCleared ? 'wc-is-cleared' : 'wc-is-missed'}`}>
-        {DEMAND_OUTCOME_VERDICT[outcome]}
-      </p>
       <table className="wc-tally">
         <thead>
           <tr>
@@ -94,6 +59,66 @@ export default function RoundOverPanel({
       <button type="button" className="wc-decline" onClick={onFinish}>
         Finish the round
       </button>
+    </div>
+  )
+}
+
+function SideEquation({
+  side,
+  damage,
+  ahead,
+}: {
+  side: PlayerSide
+  damage: HuntDamage
+  ahead: boolean
+}) {
+  const bandName = STANDING_BAND_NAME[damage.band.name]
+  const name = SIDE_LABEL[side]
+  return (
+    <div className={`wc-side${ahead ? ' wc-is-ahead' : ''}`}>
+      <p className="wc-side-name">{name}</p>
+      <div
+        className="wc-equation"
+        role="group"
+        aria-label={`${name}: Spoils times Standing equals Damage`}
+      >
+        <span className="wc-equation-part">
+          <span className="wc-equation-key" aria-hidden="true">
+            Spoils
+          </span>
+          <span className="wc-equation-value" aria-label={`${name} Spoils: ${damage.spoils}`}>
+            {damage.spoils}
+          </span>
+        </span>
+        <span className="wc-equation-op" aria-hidden="true">
+          ×
+        </span>
+        <span className="wc-equation-part">
+          <span className="wc-equation-key" aria-hidden="true">
+            Standing
+          </span>
+          <span
+            className="wc-equation-value"
+            aria-label={`${name} Standing multiplier: times ${damage.standing}`}
+          >
+            ×{damage.standing}
+          </span>
+        </span>
+        <span className="wc-equation-op" aria-hidden="true">
+          =
+        </span>
+        <span className="wc-equation-part wc-is-result">
+          <span className="wc-equation-key" aria-hidden="true">
+            Damage
+          </span>
+          <span className="wc-equation-value" aria-label={`${name} Damage: ${damage.damage}`}>
+            {damage.damage}
+          </span>
+        </span>
+      </div>
+      <p className="wc-verdict-detail">
+        {damage.tricks} tricks — {bandName}.
+      </p>
     </div>
   )
 }

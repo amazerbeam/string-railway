@@ -1,22 +1,29 @@
-export type { Hunt, Quarry, Spoils, Standing, Demand, Score } from './types'
-export { QuarryCharacter, HuntDeclaration } from './types'
+export type { Hunt, Quarry, Spoils, Standing, Damage, Health } from './types'
+export { QuarryCharacter, HuntDeclaration, DuelSide } from './types'
 
-export type { StandingBand, DemandCurve } from './config'
+export type { StandingBand } from './config'
 export {
   StandingBandName,
-  STANDING_BANDS,
+  HUNT_MULTIPLIER_TABLES,
+  standingTableFor,
   resolveStanding,
   cardBaseValue,
-  DEMAND_CURVE,
+  cardValueFor,
   FORAGE_BUDGET_PER_ENCOUNTER,
   ENCOUNTERS_PER_RUN,
   TelegraphFidelity,
   TELEGRAPH_FIDELITY,
-  FIXED_DEMAND,
   SLICE_QUARRY_CHARACTER,
   RANK_INVERSION_PIVOT,
   invertedCardValue,
-  LOSE_CREDITS_PER_HUNT,
+  DamageRounding,
+  DAMAGE_ROUNDING,
+  roundDamage,
+  PLAYER_START_HEALTH,
+  QUARRY_ENCOUNTER_HEALTH,
+  quarryHealthForEncounter,
+  ENCOUNTER_PLAYER_RESTORE,
+  SIMULTANEOUS_DEPLETION_WINNER,
 } from './config'
 
 export type { QuarryCharacterInfo } from './quarryCharacters'

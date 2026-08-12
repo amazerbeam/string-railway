@@ -4,8 +4,21 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-08-11**. Everything below is reachable in
+Last reviewed against the code and the design on **2026-08-12**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
+
+> **A redesign is in progress, and this document straddles it.** The design has moved to a **duel**:
+> both sides hold health, and each side's total is *damage* dealt to the other rather than a score
+> checked against a target. Two pieces have landed. DLR-66 gave the two multiplier tables and every
+> health, rounding, and depletion value as configuration. **DLR-67 then removed the old direction**:
+> the Demand target and the capped Lose-credit mechanic are both gone from the game, and the Hunt now
+> ends by stating each side's damage.
+>
+> **What that leaves is a Hunt with no ending condition.** Both sides' damage is computed and shown,
+> and **nothing consumes it** — there is no health to deplete, so a Hunt can no longer be won or lost.
+> Section 8 says so plainly rather than describing a victory rule that does not exist. This is a
+> deliberate intermediate state, not an oversight: the deletion was taken in one pass so the code
+> stopped carrying two directions at once, and the next ticket applies the damage.
 
 ---
 
@@ -94,45 +107,60 @@ first trick**.
 
 ## 3. The declaration
 
-**[provisional]** — the rule is settled; the credit count is the developer's to set.
+**[settled]**
 
 Before the first card is played, the player sees their full 13-card hand and **declares Win or
 Lose** for this Hunt. The declaration is made **once** and cannot be changed, and **no card may be
 played until it is made**.
 
+It is the player's alone — **the Quarry never declares** — and it governs **both sides**: whichever
+path is declared sets the card values and the Standing table that the player and the Quarry are both
+scored on.
+
 ### Declaring Win
 
-Card capture and card value work as sections 5–6 describe with no modification. This is the plain
+Card capture and card value work as sections 5–7 describe with no modification. This is the plain
 game.
 
 ### Declaring Lose
 
 Two things change, and nothing else does.
 
-**Card value inverts.** A card of rank `r` is worth **`12 − r`** instead of `r`. The Swan (1)
-becomes the fattest card at 11; the Monarch (11) becomes the thinnest at 1. The pivot is 12 because
-that is one above the deck's top rank, which makes the inversion its own mirror — rank 1 and rank 11
-swap places.
+**Card value inverts**, for both sides. A card of rank `r` is worth **`12 − r`** instead of `r`. The
+Swan (1) becomes the fattest card at 11; the Monarch (11) becomes the thinnest at 1. The pivot is 12
+because that is one above the deck's top rank, which makes the inversion its own mirror — rank 1 and
+rank 11 swap places.
 
-**You hold a capped pool of Lose-credits: `3`.** **[provisional — the value most likely to move.]**
-Each credit may be spent on **one trick you lose**, which credits that trick's two cards to your
-Spoils at their inverted values.
+**A different Standing table bands the trick count** — see section 7. Its peak sits at 4–6 tricks
+where the Win table's sits at 7–9.
 
-A credit may only be spent on **the trick that has just resolved**, and only if you lost it:
+That is the whole of it. **Declaring Lose adds no decision during play**: every trick plays and
+resolves identically on both paths, and the declaration's entire effect is on how the Hunt is scored
+at the end.
 
-- One credit per trick — a trick already credited cannot be credited again.
-- A trick you **won** while declared Lose credits **nothing**, and no credit is spent.
-- A trick you **lost** with **no credits left** credits **nothing**.
-- Spending a credit does not change who won the trick. The Quarry keeps the cards and the trick
-  still counts toward its trick total; only your Spoils changes.
+> **This is a reduction from what the Lose path used to be.** Until 2026-08-12 declaring Lose also
+> handed you a capped pool of three **Lose-credits**, each spendable on a trick you had just lost to
+> credit its two cards to your Spoils — a decision offered on every lost trick as it resolved. §1
+> replaces that mechanic outright with a **pile swap**, and the credit pool was removed ahead of the
+> swap landing. So the Lose path currently has **no between-trick decision of its own**; the swap in
+> section 7 is what gives it one back, and it is **[not built]**.
 
-**Spending a credit is your choice, made on the trick as it resolves** — nothing is spent
-automatically.
+### What the declaration changes, and what it does not
 
-### What the declaration does not change
+**[settled]**
 
-Standing (section 7), the score equation, and the Demand check (section 8) are **identical on both
-paths**. There is no second multiplier table for the Lose path.
+**Standing depends on the declaration.** Each path reads **its own multiplier table**, and the two
+tables differ in both their multipliers and their band boundaries — see section 7. This replaced a
+single shared table, and it is the declaration's whole consequence on the multiplicative term.
+
+**Card value depends on the declaration** — base rank on Win, inverted on Lose — and applies to both
+sides' cards alike.
+
+The **damage equation** (section 8) is identical on both paths.
+
+> **This reverses an earlier rule.** Until 2026-08-12 there was one Standing table read on both
+> declared paths, and this document said so. There are now two (§1, §9 "The multipliers", Decided
+> 2026-08-11).
 
 ---
 
@@ -164,16 +192,17 @@ constraint in a suit once you hold none of that suit at all.
 
 **[settled]**
 
-Each named rank does one thing. The odd ranks act during play; the Treasure (7) and the Poison (8)
-do nothing during play and act only at scoring. Every other even rank does nothing at all.
+Each named rank does one thing — except two. The odd ranks act during play; the **Treasure (7) and
+the Poison (8) now do nothing at all**, and are named cards with no rule attached. Every other even
+rank does nothing either.
 
 | Rank | Name           | Effect                                                                                                                                                                              |
 | ---- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1    | **Swan**       | If a Swan is in a trick and belongs to the side that **lost** it, that side **leads the next trick**. Two Swans: the loser leads either way.                                        |
 | 3    | **Fox**        | On playing it, you **may** exchange the decree card for a card from your hand. The exchanged card becomes the new decree, and its suit becomes the new trump suit. You may decline. |
 | 5    | **Woodcutter** | On playing it, **draw the top card of the draw pile**, then put **one card** from your hand — the drawn card or one you already held — on the **bottom** of the pile.               |
-| 7    | **Treasure**   | No effect during play. **+1** to whoever's Spoils the card scores for (section 6).                                                                                                  |
-| 8    | **Poison**     | No effect during play. **−1** to whoever's Spoils the card scores for (section 6). Note this is a discount, not a penalty — see below.                                              |
+| 7    | **Treasure**   | **No effect at all.** A named card that scores its printed rank like any other. Its `+1` was removed on 2026-08-12.                                                                 |
+| 8    | **Poison**     | **No effect at all.** A named card that scores its printed rank like any other. Its `−1` was removed on 2026-08-12.                                                                 |
 | 9    | **Witch**      | If a trick contains **exactly one** Witch, that Witch counts as trump when the winner is decided. **Two Witches cancel** — neither is treated as trump.                             |
 | 11   | **Monarch**    | Narrows the follower's legal play — see section 4.                                                                                                                                  |
 
@@ -181,29 +210,23 @@ do nothing during play and act only at scoring. Every other even rank does nothi
 card is played and before the winner is decided. So if the Fox changes the decree, the **new** trump
 suit decides the **current** trick — as the base game's own appendix specifies.
 
-> **Deviation from the base game — the Treasure.** There, the Treasure awards its point to the
-> trick's winner. Here it is a +1 on the card's Spoils value, applied wherever that card scores. On
-> the Win path the arithmetic is the same, because the winner captures the card. On the Lose path a
-> Treasure only counts if the trick it landed in is credited.
-
-> **Deviation from the base game — the Poison, and it is a bigger one.** In the base game the Poison
-> is an **expansion module**, not part of the base deck: you swap the three ordinary 8s out for three
-> Poison 8s before the game, and taking one costs you a point off your running total, floored at
-> zero. **Play the base game without that module and rank 8 has no rule on it whatsoever.**
+> **Deviation from the base game — the Treasure and the Poison, and it is total.** In the base game
+> the Treasure awards a point to the trick's winner, and the Poison is an **expansion module** (swap
+> the three ordinary 8s for three Poison 8s; taking one costs a point, floored at zero). Play the base
+> game without that module and rank 8 has no rule on it whatsoever.
 >
-> This game has no modules. The Poison rule is **always on** and sits on the three ordinary 8s — the
-> same three cards the module would have replaced, so the count (3 of 33) matches §8's "Poison 8s:
-> kept". Two things did not carry over, and both matter:
+> **Here neither card has any rule.** Both scored a `±1` on their Spoils value until 2026-08-12, when
+> §1 removed every modifier from the additive term: at ×5 a ±1 moves a Hunt by under 1%, so both were
+> paying rules budget for a rounding error. A card's value is now its printed rank and nothing else.
 >
-> - **It is not a penalty here.** A card's base value is its rank, so an 8 scores `8 − 1 = 7` — still
->   one of the fattest cards in its suit. On the Lose path it scores `(12 − 8) − 1 = 3`. There is no
->   value of a captured card in this game that is negative, so **no card is ever worth dodging.**
-> - **The zero floor is absent**, and cannot bite: nothing in the scoring can drive a total below
->   zero for it to catch.
+> The two names are **kept** — §1 keeps rank 7's identity as a named card — so Treasure and Poison
+> still exist to be referred to, and a later ticket may give them something to do. Today they are
+> ordinary cards with memorable names.
 >
-> The consequence is a design one and is recorded under [Known tensions](#known-tensions-recorded-not-resolved):
-> §6's exit (b) wants cards a player would rather leave behind and points at the Poison 8s as the
-> existing example. They are not that here.
+> One consequence is worth stating because the design leaned on it: **no card is worth declining**,
+> and now permanently so. There is no negative card value anywhere in this game, so no card a player
+> would rather leave behind. That is recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
 
 ---
 
@@ -237,82 +260,136 @@ The Hunt is scored on two terms, and they are different kinds of number: **Spoil
 
 ### Spoils — the additive term
 
-**[provisional]** — a card's base value is `rank`, and that is §9's highest-leverage open fork.
+**[settled]** — a card's value is its printed rank, and **no modifier of any kind touches it**. This
+was §9's highest-leverage open fork and is now closed (Decided 2026-08-11): the Lose path's `12 − r`
+inversion has no meaning at a flat value of 1.
 
-**A card's base value is its printed rank.** A Bells 11 is worth 11; a Moons 2 is worth 2. Then
-**+1 for each Treasure** and **−1 for each Poison**.
+**A card's value is its printed rank**, or `12 − r` if Lose was declared. A Bells 11 is worth 11 on
+the Win path and 1 on the Lose path. Nothing is added or subtracted on top — no Treasure `+1`, no
+Poison `−1` (see section 5).
 
-Your Spoils is the sum of:
+**Each side's Spoils is the sum of the cards in its own capture pile**, at whichever value scheme the
+declaration put in force. Both sides are summed the same way; the declaration is the round's, not the
+player's.
 
-- **Declared Win** — every card in your **capture pile**, at base value.
-- **Declared Lose** — every card **credited** from a lost trick, at **inverted** value (`12 − r`).
-  Your capture pile is not counted at all: the Quarry took those tricks.
-
-> §9 leaves open whether a card's base value should be its rank or a flat 1. The code uses rank.
-> Under a flat 1, Spoils would be fully determined by trick count and the equation would lose its
-> second axis — which is why rank is the reading in play. Nothing about this is settled.
+> **This own-pile reading is an interim, and the Lose path's pile swap is [not built].** The design
+> replaces it with a two-way swap: you are paid for the cards **the Quarry** captured at inverted
+> value, and it is paid for the cards **you** captured, also inverted — each pile counted once by the
+> side that did not win it (§9, Decided 2026-08-11). Until that lands, both sides are simply paid for
+> what they captured themselves, on either path. The credit pool that used to sit between these two
+> states was removed on 2026-08-12 (section 3).
 
 ### Standing — the multiplicative term
 
-**Boundaries [settled]. Multipliers [open].**
+**[settled]**
 
-Standing is read off the band your **final trick count** lands in. It is the same table on both
-declared paths.
+Standing is read off the band your **final trick count** lands in, on **the table for the declaration
+in force**. There are two.
 
-| Tricks won | Band           | Standing |
-| ---------- | -------------- | -------- |
-| 0–3        | **Humble**     | ×6       |
-| 4          | **Defeated**   | ×1       |
-| 5          | **Defeated**   | ×2       |
-| 6          | **Defeated**   | ×3       |
-| 7–9        | **Victorious** | ×6       |
-| 10–13      | **Greedy**     | ×0       |
+The declaration is the player's alone — **the Quarry never declares for itself** — and **both sides
+read whichever table that single declaration selected**. Since 2026-08-12 both sides' Standing is
+read and both sides' damage is stated (section 8).
 
-The **band boundaries are carried over unchanged** from the base game's end-of-round table and are
-fixed by §1. The **multiplier column is not settled**, and two rows are known problems:
+| Tricks won | Band           | Declared Win | Declared Lose |
+| ---------- | -------------- | ------------ | ------------- |
+| 0–3        | **Humble**     | ×1           | ×0.5          |
+| 4          | **Defeated**   | ×2           | ×5            |
+| 5          | **Defeated**   | ×3           | ×5            |
+| 6          | **Defeated**   | ×4           | ×5            |
+| 7          | **Victorious** | ×5           | ×4            |
+| 8          | **Victorious** | ×5           | ×3            |
+| 9          | **Victorious** | ×5           | ×2            |
+| 10–13      | **Greedy**     | ×0.5         | ×1            |
 
-- **Humble ×6 is wrong as transcribed.** §6 shows a 9-trick capture pile is a superset of a 3-trick
-  one, so Victorious dominates Humble by construction at these values. The break-even is **×18**.
-- **Greedy ×0** zeroes a whole Hunt's Spoils — harsher than the base game, where a 0-point round
-  still leaves your running total intact. Flagged in §9, not re-tuned.
+**Each path has exactly one peak**: 7–9 on Win, 4–6 on Lose. Winning too many tricks is punished on
+either path, which is the property the whole equation exists to carry (§1).
 
-Both are the developer's to decide. The table above is what the game currently pays.
+**The two tables are exact complements** — the Lose multiplier at `k` tricks always equals the Win
+multiplier at `13 − k`. That is load-bearing rather than a curiosity: it is why a Quarry allowed to
+declare the opposite path would cancel the two tables to zero damage in every split, which is why it
+does not get to declare (§1, and the design's direction section).
 
-> **Note on the Lose path.** Declaring Lose steers you toward a low trick count, which lands in
-> Humble — the band §6 proves is dominated at ×6. This tension is known and deliberately left
-> visible rather than papered over.
+The **band boundaries** are still the base game's own end-of-round groupings — Humble 0–3, Defeated
+4/5/6, Victorious 7–9, Greedy 10–13 — but **the two tables group their rows differently within them**:
+Win pays one rate across all of 7–9, while Lose pays one rate across all of 4–6. The **multipliers are
+no longer a transcription**; they are designed, capped at ×5 on either path, and recorded as Decided
+2026-08-11 (§9 "The multipliers").
+
+> **This replaced the base game's printed column, and two long-standing problems went with it.** The old
+> single table paid ×6 at both 0–3 and 7–9, and ×0 at 10–13. §6 retires the proof that made the first a
+> problem: it depended on two bands *sharing* a top multiplier, and neither new table does that, so the
+> dominance is dissolved by construction rather than argued away. The ×0 row is gone as well — the
+> lowest multiplier anywhere is now ×0.5, so no Hunt is zeroed outright.
+
+> **Changing either table is a design change, not a tuning pass.** The alternative pair the design
+> records moves both peaks to the extremes, which reverses the property §1 is built on. The tables are
+> configuration and a whole-pair swap is a one-file edit — but cheap is not the same as neutral.
+
+> **Half-multipliers mean half-point totals, and the rounding rule is [not built].** ×0.5 on an odd card
+> sum produces a fractional result. The rule is decided as **round half away from zero** and exists in
+> configuration, but nothing applies it yet — so the app can currently display a total ending in `.5`.
+> §9 keeps this row Undecided and offers an alternative that deletes the question: double every entry in
+> both tables and both health totals, and every product is an integer.
 
 ---
 
-## 8. Winning and losing a Hunt
+## 8. The end of a Hunt
 
-**[provisional]** — the equation is settled; the target is a placeholder.
+**[settled]** — the equation. **A Hunt currently has no win or lose condition at all**; see below.
 
 ```
-Score = Spoils × Standing
+Damage = Spoils × Standing
 ```
 
-Computed **once**, at the end of the Hunt, from the player's own trick count and Spoils. It is then
-checked against the Hunt's **Demand** — its score target:
+Computed **once**, at the end of the thirteenth trick, **for each side** from that side's own trick
+count and Spoils. The multiplier is read off the *final* trick count, so no total can be applied, or
+even known, before the last trick resolves.
 
-- **Score ≥ Demand → cleared.** The boundary is inclusive: a score exactly equal to the Demand
-  clears it.
-- **Score < Demand → missed.**
+Both figures are stated when the Hunt ends, side by side.
 
-The Demand is currently a single fixed number: **220**. **[provisional — a placeholder recorded at a
-planning gate, not a chosen value.]** A Demand that **rises** across a sequence of encounters is
-§5's design and is **[not built]**.
+### Nothing consumes the damage yet — **[not built]**
 
-### The Quarry does not score
+**A Hunt cannot currently be won or lost.** The two damage figures are computed and shown, and then
+the Hunt simply ends and a new one is dealt.
 
-Only the player's Score is checked. The Quarry has **no Demand and no failure state** — clearing
-your own Demand ends the Hunt successfully; nothing is beaten (§8, §12). The Quarry's trick count is
-public and its captured cards do have a Spoils value, but neither is compared against anything, so
-neither is a way to win or lose.
+This is a deliberate intermediate state. Until 2026-08-12 the player's total was checked against a
+**Demand** — a score target, fixed at 220 — and the Hunt was cleared or missed on an inclusive
+boundary. §1 replaces that comparison with the duel below, and §9 **deleted** its Demand base/growth
+row rather than marking it Undecided, because there is no longer a question to ask. The Demand was
+removed ahead of the health that replaces it, so the game would stop carrying two directions at once.
 
-§8 records what this costs: in the base game, every trick either side took pushed the other toward a
-mirrored losing band, and that was the mid-round tension. With one scorer, the Standing table is a
-self-limit on the player alone.
+### The duel that replaces it — **[not built]**
+
+Both sides hold **health**, and each side's damage depletes the other's rather than being checked
+against a target. Damage is applied **once**, at the end of the thirteenth trick.
+
+The values are decided and sit in configuration with no consumer:
+
+| Value                             | Decided                                                         |
+| --------------------------------- | --------------------------------------------------------------- |
+| Player's starting health          | **1,350** (§9, 2026-08-11)                                      |
+| First Quarry's health             | **1,350** — equal to the player's, deliberately                 |
+| Second Quarry's health            | **1,600**                                                       |
+| Health restored between encounters| **None**                                                        |
+| Both bars emptying on one Hunt    | **The player loses** (§5, §9, 2026-08-11)                       |
+
+The player's and first Quarry's health being **equal** is the load-bearing part, not the number: that
+equality is what puts the win/lose boundary exactly on the **6/7 trick line** the declaration commits
+to. §5 states the property survives any later rescaling, so moving both together keeps it.
+
+**The player's health emptying ends the run.**
+
+### Both sides are now scored — but neither can lose
+
+Since 2026-08-12 the Quarry's Spoils, Standing and damage are all computed and shown alongside the
+player's, on the same declaration's value scheme and table. That is a change from the old direction,
+where only the player was scored because only the player had a target.
+
+It does not yet make the Quarry a contestant: with no health, **neither side's damage does
+anything**, so neither side can win or lose. §8 records what the old one-sided version cost — in the
+base game every trick either side took pushed the other toward a mirrored losing band, and that was
+the mid-round tension. Two-sided damage is meant to restore it; stating both totals is the first half
+of that, and applying them is the second.
 
 ---
 
@@ -355,7 +432,8 @@ Designed in §4/§5, with no enforcement and no display copy. Facing them is not
 | The Quarry's next-trick intent      | **Telegraphed** before you commit — the suit it is about to play, plus its stance: **leading**, or, when it is following you, **pressing** (this card takes the trick) or **ducking** (it does not). Never the exact card. |
 | The Quarry's trick count            | Public                                                                                                                                                                                                                     |
 | The Quarry's character and its rule | Always on screen                                                                                                                                                                                                           |
-| The Demand, and your running Spoils | Open                                                                                                                                                                                                                       |
+| Your running Spoils, Standing and Damage | Open — shown throughout the Hunt                                                                                                                                                                                      |
+| Both sides' final Damage            | Open — stated side by side when the Hunt ends                                                                                                                                                                              |
 
 The telegraph's fidelity — suit only, or suit and stance — is **[provisional]**; it currently shows
 both.
@@ -371,15 +449,16 @@ rather than as one round.
   from. It may edit exactly four things — a card's **value**, its **ability**, its **suit**, and the
   **decree**. There is no shop and no flat score bonus. The budget is **4 edits per encounter**
   (**[provisional]**).
-- **A run** is a fixed sequence of Hunts against different Quarries, each with a higher Demand than
-  the last. **Missing a Demand ends the run.** Forage persists within a run; nothing persists across
+- **A run** is a fixed sequence of Hunts against different Quarries, each with more health than the
+  last. **Your health emptying ends the run.** Forage persists within a run; nothing persists across
   one — a new run starts on a bare deck.
 - **The run length** is **[open]** (a placeholder 5 exists in config). Since there are five
   characters, any run longer than five must repeat one, and no rule says how.
 - **Snare** — an in-Hunt edit layer, on cards in your hand — is **[open]** and explicitly blocked:
   "raise the value of the card I am about to win with" is a dominant strategy until it has a cost.
 
-The app today plays **one Hunt**, re-dealing on completion with the same Quarry and the same Demand.
+The app today plays **one Hunt**, re-dealing on completion against the same Quarry — with no health,
+no target, and so no way to end.
 
 ---
 
@@ -390,12 +469,13 @@ to stop looking for.
 
 | Base-game rule                    | Here                                                                                                                                                                                        |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **The 21-point match**            | **Dropped.** It ends a symmetric two-player contest, and the Quarry does not score. The run replaces it.                                                                                    |
+| **The 21-point match**            | **Dropped.** It ends a symmetric two-player contest. The run, and the health both sides hold, replace it.                                                                                   |
 | **Goal cards (16)**               | **Dropped.** A second scoring channel alongside `Spoils × Standing`, which §1 rules out by construction.                                                                                    |
 | **Special cards (9)**             | **Dropped as cards.** The _unsuited_ concept is kept as the grammar for a Forage suit edit; Bow, Hammer, Potion, Shovel, Axe, Tree, Fairy, Crown and Mirror are not in the deck.            |
-| **The Poison-8 swap**             | **Folded in, always on.** There is no module and no swapped card — the ordinary rank 8 of each suit carries the −1 permanently. It is a discount rather than a penalty here; see section 5. |
-| **The Poison zero floor**         | **Absent**, and unreachable — no captured card has a negative value, so no total can go below zero for a floor to catch.                                                                    |
-| **The end-of-round points table** | **Repurposed**, not dropped. Its bands became the Standing multiplier (section 7).                                                                                                          |
+| **The Poison-8 swap**             | **Dropped entirely.** There is no module, no swapped card, and since 2026-08-12 no −1 either — rank 8 is an ordinary card that happens to be named. See section 5.                          |
+| **The Poison zero floor**         | **Absent**, and unreachable — no card has a negative value, so no total can go below zero for a floor to catch.                                                                             |
+| **The Treasure's point**          | **Dropped.** It awarded a point to the trick's winner; here rank 7 scores its printed rank like any other card.                                                                             |
+| **The end-of-round points table** | **Its bands repurposed, its values replaced.** The four band groupings became the Standing multiplier's boundaries (section 7); the printed multipliers themselves were designed anew as two per-declaration tables, so nothing of the original column survives. |
 
 ---
 
@@ -409,49 +489,87 @@ the mechanics themselves are documented in `../implementation/`.
 | Deck, deal, decree, draw pile      | settled                       | `src/warCouncil/deck.ts`, `deal.ts`                  | —                               |
 | Hunt-1 dealer, alternation         | provisional                   | `src/app/dealerForRound.ts`                          | Developer                       |
 | Declaration, Win/Lose              | settled                       | `src/warCouncil/declareHunt.ts`                      | —                               |
+| Undeclared reads as Win            | settled                       | `src/warCouncil/types.ts` — `declaredPath`           | —                               |
 | Value inversion (`12 − r`)         | settled                       | `src/hunt/config.ts` — `invertedCardValue`           | —                               |
-| Lose-credit count (`3`)            | **provisional**               | `src/hunt/config.ts` — `LOSE_CREDITS_PER_HUNT`       | Developer, once playable        |
-| Credit spend and its four guards   | settled                       | `src/warCouncil/claimLostTrick.ts`                   | —                               |
+| Declaration governs both sides     | settled                       | `src/warCouncil/spoils.ts`, `scoring.ts`             | —                               |
 | Follow-suit, Monarch narrowing     | settled                       | `src/warCouncil/legalMoves.ts`, `quarryRuleBreak.ts` | —                               |
 | Odd-rank abilities                 | settled                       | `src/warCouncil/abilities.ts`, `resolveTrick.ts`     | —                               |
 | Trick resolution, Witch-as-trump   | settled                       | `src/warCouncil/resolveTrick.ts`                     | —                               |
 | Capture pile accumulation          | settled                       | `src/warCouncil/playCard.ts`                         | —                               |
-| Spoils, both branches              | settled                       | `src/warCouncil/spoils.ts`                           | —                               |
-| Card base value = rank             | **provisional** (§9 fork)     | `src/hunt/config.ts` — `cardBaseValue`               | Developer — §9's biggest lever  |
-| Standing band boundaries           | settled                       | `src/hunt/config.ts` — `STANDING_BANDS`              | —                               |
-| Standing multipliers               | **open** — Humble ×6 is wrong | `src/hunt/config.ts` — `STANDING_BANDS`              | Developer, per §6/§9            |
-| `Score = Spoils × Standing`        | settled                       | `src/warCouncil/scoring.ts` — `scoreHunt`            | —                               |
-| Demand check, inclusive boundary   | settled                       | `src/warCouncil/scoring.ts` — `checkDemand`          | —                               |
-| Demand value (`220`, fixed)        | **provisional**               | `src/hunt/config.ts` — `FIXED_DEMAND`                | Developer, after playtest       |
+| Spoils = own capture pile, one branch | settled — but an **interim**, see §7 | `src/warCouncil/spoils.ts`                | —                               |
+| Card base value = rank             | settled (§9, 2026-08-11)      | `src/hunt/config.ts` — `cardBaseValue`, `cardValueFor` | —                             |
+| Treasure/Poison have no rule       | settled (§9, 2026-08-11)      | `src/hunt/config.ts` — `cardValueFor` applies no modifier | —                           |
+| Standing band boundaries           | settled                       | `src/hunt/config.ts` — `HUNT_MULTIPLIER_TABLES`      | —                               |
+| Standing multipliers, both tables  | settled (§9, 2026-08-11)      | `src/hunt/config.ts` — `HUNT_MULTIPLIER_TABLES`      | —                               |
+| One table per declaration          | settled                       | `src/hunt/config.ts` — `standingTableFor`            | —                               |
+| Rounding of the ×0.5 bands         | **not built** — default set   | `src/hunt/config.ts` — `DAMAGE_ROUNDING`, `roundDamage` (no consumer) | Developer, per §9 |
+| Health totals, both sides          | **not built**                 | `src/hunt/config.ts` — `PLAYER_START_HEALTH`, `QUARRY_ENCOUNTER_HEALTH` (no consumer) | — |
+| Between-encounter restore (none)   | **not built**                 | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE` (no consumer) | Developer — most likely to change |
+| Simultaneous depletion             | **not built** — ruling set    | `src/hunt/config.ts` — `SIMULTANEOUS_DEPLETION_WINNER` (no consumer) | —          |
+| Damage **applied** to health       | **not built**                 | —                                                    | —                               |
+| Any way to win or lose a Hunt      | **not built** — none exists   | —                                                    | —                               |
+| The Lose path's pile swap          | **not built**                 | —                                                    | —                               |
+| `Damage = Spoils × Standing`       | settled                       | `src/warCouncil/scoring.ts` — `scoreHunt`            | —                               |
+| Both sides' Damage computed        | settled                       | `src/app/warCouncil/WarCouncilRound.tsx`             | —                               |
 | Monarch Quarry                     | settled                       | `src/warCouncil/quarryRuleBreak.ts`                  | —                               |
 | Four other Quarry characters       | **not built**                 | —                                                    | —                               |
 | Telegraph fidelity                 | provisional                   | `src/hunt/config.ts` — `TELEGRAPH_FIDELITY`          | Developer, after playtest       |
-| Forage, the run, escalating Demand | **not built**                 | —                                                    | —                               |
+| Forage, the run, encounter health  | **not built**                 | —                                                    | —                               |
 | Snare (in-Hunt edits)              | **open**, blocked             | —                                                    | Needs a cost before it's viable |
 
-### The declaration is now reachable — DLR-63 closed 2026-08-11
+### The old direction is now gone — DLR-67 closed 2026-08-12
 
-Section 3 is playable end to end. The declare step gates the first trick, the claim control is
-offered on each lost trick as it resolves, and the remaining credit count is on screen throughout —
-so every declaration rule above can be exercised by hand, not just asserted in a test. The one thing
-still outstanding is the **credit count itself (`3`)**, which stays **provisional** until a playtest
-moves it.
+**What changed for a player:** the **Demand is gone** — no target, no cleared/missed verdict — and the
+Lose path's **credit pool is gone** with it, so declaring Lose no longer offers a decision on each
+lost trick. A resolved trick now always offers the same single "carry on" control on either path.
+The Treasure's `+1` and the Poison's `−1` are gone, so a card is worth its printed rank and nothing
+else. At the end of a Hunt, **both sides'** `Spoils × Standing = Damage` is stated side by side.
+
+**What a player cannot reach:** any way to win or lose. Health does not exist in the code, so the two
+damage figures are shown and then discarded. The rounding rule, both health totals, the
+between-encounter restore, and the simultaneous-depletion ruling all exist as configuration with **no
+consumer anywhere**, and the Lose path's pile swap has not been written at all.
+
+**What is deliberately interim:** §7's Spoils reading. Each side is currently paid for its own capture
+pile on both paths; the design's two-way swap replaces that, and it is the next ticket's.
+
+### The declaration is reachable — DLR-63 closed 2026-08-11
+
+Section 3 is playable end to end: the declare step gates the first trick and the full 13-card hand is
+visible while choosing, so every declaration rule above can be exercised by hand rather than only
+asserted in a test. The claim control that shipped alongside it was removed a day later — see above.
 
 ### Known tensions, recorded not resolved
 
-- **Victorious dominates Humble** at the printed multipliers (§6), which the Lose path walks
-  straight into. Either the Humble multiplier rises to ×18 or Forage gains the ability to set a
-  card's value **below zero** — §9 carries both, and they compose rather than compete.
-- **Whether declaring Lose dominates declaring Win** is unanswered. The credit cap stops the
-  in-Hunt runaway; it does not prove the two paths are balanced. Carried on DLR-63 as an open
-  question to check once real numbers exist.
+- **~~Victorious dominates Humble~~ — dissolved 2026-08-12, not resolved by tuning.** The proof
+  depended on two bands *sharing* a top multiplier (0–3 and 7–9 both paying ×6 in the single printed
+  table), so the band reachable with fewer cards was strictly worse than the one that could reach the
+  same multiplier *and* capture more. The two tables DLR-66 shipped have **one peak each** — 7–9 on Win,
+  4–6 on Lose — so there is no second band sharing either path's top multiplier for the superset
+  argument to compare against. §6 keeps the proof as a historical note recording why the multipliers
+  stopped being a transcription. The ×18 break-even is moot, and exit (b) is retired with it.
+- **Whether declaring Lose dominates declaring Win** is unanswered, and **harder to answer than it
+  was**. DLR-63 carried this with the credit cap as the thing stopping an in-Hunt runaway; that cap
+  is now gone and the pile swap that replaces it is not built, so what is currently measurable is an
+  interim neither direction intends. Re-ask once the swap lands.
+- **The Lose path has no decision of its own between tricks** (2026-08-12). Removing the credit spend
+  took thirteen forks per round out of the Hunt and gave the path nothing back yet, so declaring Lose
+  is currently a scoring reading with no play consequence. Expected and temporary — the pile swap is
+  what restores a reason to care mid-round — but worth playing before assuming it is fine.
 - **Aiming for Victorious every Hunt** may not be a decision at all, with nobody contesting the
   band (§8, §12 Problem 1). The Quarry's rule-break is what is meant to displace it. Unproven.
-- **No card is worth declining, so §6's exit (b) has no foothold.** Exit (b) proposes letting Forage
-  set a card's value below zero, on the grounds that the base game "already ships them — the Poison
-  8s" and that three of thirty-three is merely too thin. Under this game's rank-weighted values that
-  understates it: a Poison 8 scores 7 on the Win path and 3 on the Lose path, so the count is not the
-  problem — **the sign is.** There are currently **zero** cards a player would rather leave behind,
-  which is what the superset argument behind Humble's dominance depends on. Whoever takes up exit (b)
-  should read §6's Poison sentence as needing correction, not just extending. Noted 2026-08-11 while
-  checking the base-game transcription; nothing changed in code or design.
+- **No card is worth declining — and as of 2026-08-12 that is permanent rather than incidental.** Exit
+  (b) proposed letting Forage set a card's value below zero, on the grounds that the base game "already
+  ships them — the Poison 8s" and that three of thirty-three is merely too thin. Under rank-weighted
+  values that understated it: a Poison 8 scored 7 on the Win path and 3 on the Lose path, so the count
+  was never the problem — **the sign was.** §6 retires exit (b) outright, because the direction removes
+  the Poison modifier entirely: card value is the printed rank alone, so every captured card is a gain
+  and there are **zero** cards worth declining by construction. **The removal shipped on 2026-08-12**,
+  so this is now the literal state of the game rather than a pending decision. It stays on the list
+  because a future Forage ticket that wants "cards you would rather leave behind" must create that
+  property deliberately — nothing in the deck supplies it any more.
+- **Whether either declaration is a live read is still unmeasured, and the built CPU cannot measure it.**
+  §9 records that the Quarry which plays today maximises tricks, landing it in 10–13 on either
+  declaration — the band that now pays ×0.5 on Win and ×1 on Lose. A Quarry that plays for **band
+  position** is named as the redesign's largest engineering item, and until it exists the question
+  "is the declaration a hard read" is being asked of an opponent that cannot make it one.

@@ -1,8 +1,6 @@
 import {
   CardRank,
-  ClaimRejection,
   DeclareRejection,
-  DemandOutcome,
   IllegalMoveReason,
   QuarryIntentStance,
   Suit,
@@ -66,12 +64,6 @@ export const STANDING_BAND_NAME: Readonly<Record<StandingBandName, string>> = {
   [StandingBandName.Greedy]: 'Greedy',
 }
 
-/** The end-of-Hunt verdict (§11's "a visible outcome: cleared or missed"). */
-export const DEMAND_OUTCOME_VERDICT: Readonly<Record<DemandOutcome, string>> = {
-  [DemandOutcome.Cleared]: 'Demand cleared',
-  [DemandOutcome.Missed]: 'Demand missed',
-}
-
 /** AC1 — the two declarable paths, as the player sees them named. */
 export const HUNT_DECLARATION_NAME: Readonly<Record<HuntDeclaration, string>> = {
   [HuntDeclaration.Win]: 'Win',
@@ -83,15 +75,6 @@ export const HUNT_DECLARATION_NAME: Readonly<Record<HuntDeclaration, string>> = 
 export const DECLARE_REJECTION_MESSAGE: Readonly<Record<DeclareRejection, string>> = {
   [DeclareRejection.AlreadyDeclared]: 'This Hunt is already declared.',
   [DeclareRejection.HuntUnderway]: 'The Hunt has started — it is too late to declare.',
-}
-
-/** Copy for `claimLostTrick`'s rejections. Unreachable while the claim control renders
- *  only when `canClaimLostTrick` already said yes. */
-export const CLAIM_REJECTION_MESSAGE: Readonly<Record<ClaimRejection, string>> = {
-  [ClaimRejection.NotDeclaredLose]: 'Credits are only spendable when you declared Lose.',
-  [ClaimRejection.NoCreditsRemaining]: 'No credits left — this trick credits nothing.',
-  [ClaimRejection.TrickAlreadyCredited]: 'You already claimed this trick.',
-  [ClaimRejection.TrickNotLost]: 'A credit only claims a trick you lost.',
 }
 
 /**

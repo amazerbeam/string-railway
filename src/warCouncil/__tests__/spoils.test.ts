@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { HuntDeclaration } from '../../hunt'
+import { cardValueFor, HuntDeclaration } from '../../hunt'
 import { spoils } from '../spoils'
-import { PlayerSide, RoundPhase, type Card, type DeclarationState, type RoundState } from '../types'
+import {
+  CardRank,
+  PlayerSide,
+  RoundPhase,
+  type Card,
+  type DeclarationState,
+  type RoundState,
+} from '../types'
 
 function stateWithCaptured(
   capturedCards: Record<'player' | 'cpu', Card[]>,
@@ -24,8 +31,8 @@ function stateWithCaptured(
   }
 }
 
-describe('spoils — §3 flat-value identity (AC6)', () => {
-  it('equals 2 × tricksWon under a flat card value of 1, with no Poison/Treasure in the capture set', () => {
+describe('spoils — the flat-value identity survives (§3)', () => {
+  it('equals 2 × tricksWon under a flat card value of 1', () => {
     const captured = {
       player: [
         { suit: 'bells' as const, rank: 2 },
@@ -38,23 +45,6 @@ describe('spoils — §3 flat-value identity (AC6)', () => {
     const state = stateWithCaptured(captured, { player: 2, cpu: 0 })
     expect(spoils(state, 'player', () => 1)).toBe(2 * state.tricksWon.player)
   })
-})
-
-describe('spoils — rank-weighted default with Poison/Treasure (AC7)', () => {
-  it('sums printed rank and folds in Poison(-1)/Treasure(+1) per capture', () => {
-    const captured = {
-      player: [
-        { suit: 'bells' as const, rank: 4 }, // 4
-        { suit: 'keys' as const, rank: 7 }, // Treasure: 7 + 1 = 8
-        { suit: 'moons' as const, rank: 8 }, // Poison: 8 - 1 = 7
-        { suit: 'bells' as const, rank: 11 }, // 11
-      ],
-      cpu: [],
-    }
-    const state = stateWithCaptured(captured, { player: 2, cpu: 0 })
-    // hand-computed: 4 + (7+1) + (8-1) + 11 = 30
-    expect(spoils(state, 'player')).toBe(30)
-  })
 
   it('returns 0 for a side with no captured cards', () => {
     const state = stateWithCaptured({ player: [], cpu: [] }, { player: 0, cpu: 0 })
@@ -63,83 +53,41 @@ describe('spoils — rank-weighted default with Poison/Treasure (AC7)', () => {
   })
 })
 
-describe('spoils — DLR-63 AC3, the Lose branch', () => {
-  const credited = [
-    { suit: 'keys' as const, rank: 1 }, // inverts to 11
-    { suit: 'keys' as const, rank: 6 }, // inverts to 6
-  ]
-
-  const losing: DeclarationState = {
-    path: HuntDeclaration.Lose,
-    creditsRemaining: 2,
-    creditedCards: credited,
-    creditedThrough: 1,
-  }
-
-  it('sums credited cards at their inverted values, ignoring the capture pile', () => {
-    const state = {
-      ...stateWithCaptured({ player: [], cpu: [...credited] }, { player: 0, cpu: 1 }),
-      declaration: losing,
+describe('spoils — no modifier of any kind is applied (§1, DLR-67)', () => {
+  it('scores a Treasure and a Poison at their bare configured value, with no ±1', () => {
+    const captured = {
+      player: [
+        { suit: 'keys' as const, rank: CardRank.Treasure },
+        { suit: 'moons' as const, rank: CardRank.Poison },
+      ],
+      cpu: [],
     }
-    // 11 + 6 = 17
-    expect(spoils(state, 'player')).toBe(17)
-  })
-
-  it('returns 0 for a Lose declaration with nothing credited yet', () => {
-    const state = {
-      ...stateWithCaptured({ player: [], cpu: [...credited] }, { player: 0, cpu: 1 }),
-      declaration: { ...losing, creditedCards: [] },
-    }
-    expect(spoils(state, 'player')).toBe(0)
-  })
-
-  it('folds Treasure(+1) and Poison(-1) into credited cards, as on the Win path', () => {
-    const state = {
-      ...stateWithCaptured({ player: [], cpu: [] }, { player: 0, cpu: 1 }),
-      declaration: {
-        ...losing,
-        creditedCards: [
-          { suit: 'keys' as const, rank: 7 }, // Treasure: (12-7) + 1 = 6
-          { suit: 'moons' as const, rank: 8 }, // Poison:   (12-8) - 1 = 3
-        ],
-      },
-    }
-    expect(spoils(state, 'player')).toBe(9)
-  })
-
-  it('leaves the Quarry on its own capture pile at base value — nothing scores the Quarry', () => {
-    const state = {
-      ...stateWithCaptured(
-        { player: [], cpu: [{ suit: 'bells' as const, rank: 4 }] },
-        { player: 0, cpu: 1 },
-      ),
-      declaration: losing,
-    }
-    expect(spoils(state, 'cpu')).toBe(4)
+    const state = stateWithCaptured(captured, { player: 1, cpu: 0 })
+    const value = cardValueFor(HuntDeclaration.Win)
+    expect(spoils(state, 'player')).toBe(value(CardRank.Treasure) + value(CardRank.Poison))
   })
 })
 
-describe('spoils — DLR-63 AC2, the Win and undeclared branches are identical', () => {
+describe('spoils — the declaration governs the value scheme for BOTH sides (AC4)', () => {
   const captured = {
-    player: [
-      { suit: 'bells' as const, rank: 4 },
-      { suit: 'keys' as const, rank: 11 },
-    ],
-    cpu: [],
+    player: [{ suit: 'bells' as const, rank: 1 }],
+    cpu: [{ suit: 'keys' as const, rank: 11 }],
   }
 
-  it('scores a Win declaration exactly as an undeclared round', () => {
-    const undeclared = stateWithCaptured(captured, { player: 1, cpu: 0 })
-    const declared = {
-      ...undeclared,
-      declaration: {
-        path: HuntDeclaration.Win,
-        creditsRemaining: 0,
-        creditedCards: [],
-        creditedThrough: 0,
-      } satisfies DeclarationState,
-    }
-    expect(spoils(declared, 'player')).toBe(spoils(undeclared, 'player'))
-    expect(spoils(declared, 'player')).toBe(15)
+  it.each([HuntDeclaration.Win, HuntDeclaration.Lose])(
+    'values each side’s own pile through cardValueFor(%s)',
+    (path) => {
+      const state = { ...stateWithCaptured(captured, { player: 1, cpu: 1 }), declaration: { path } }
+      const value = cardValueFor(path)
+      expect(spoils(state, 'player')).toBe(value(1))
+      expect(spoils(state, 'cpu')).toBe(value(11))
+    },
+  )
+
+  it('reads an undeclared round as Win, identically to a declared one', () => {
+    const undeclared = stateWithCaptured(captured, { player: 1, cpu: 1 })
+    const declared = { ...undeclared, declaration: { path: HuntDeclaration.Win } }
+    expect(spoils(undeclared, 'player')).toBe(spoils(declared, 'player'))
+    expect(spoils(undeclared, 'cpu')).toBe(spoils(declared, 'cpu'))
   })
 })

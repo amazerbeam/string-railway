@@ -8,12 +8,7 @@ import { card, makeRound } from './roundFixture'
 // `makeRound()`'s fixture default is deliberately undeclared. Every spec below reaches
 // `playCard` through `previewQuarryIntent` itself, so the round must already be declared —
 // Win, since none of these specs are concerned with the Lose path.
-const WIN_DECLARED = {
-  path: HuntDeclaration.Win,
-  creditsRemaining: 0,
-  creditedCards: [],
-  creditedThrough: 0,
-} as const
+const WIN_DECLARED = { path: HuntDeclaration.Win } as const
 
 describe('previewQuarryIntent', () => {
   it('returns a QuarryIntent naming a suit for a card the Quarry can answer', () => {

@@ -5,6 +5,7 @@ export {
   ALL_SUITS,
   CardRank,
   currentTurn,
+  declaredPath,
   IllegalMoveReason,
   otherSide,
   PlayerSide,
@@ -22,12 +23,10 @@ export { legalMoves } from './legalMoves'
 export { QUARRY_SIDE, monarchFollowApplies, monarchFollowSet } from './quarryRuleBreak'
 export { resolveTrickWinner } from './resolveTrick'
 export { playCard } from './playCard'
-export { scoreRound, tricksToPoints, scoreHunt, checkDemand, DemandOutcome } from './scoring'
-export type { HuntScore } from './scoring'
+export { scoreHunt } from './scoring'
+export type { HuntDamage } from './scoring'
 export { chooseCpuMove, commitQuarryMove, quarryIntent, QuarryIntentStance } from './cpuPlayer'
 export type { CpuMove, QuarryIntent } from './cpuPlayer'
-export { spoils, creditedTrickWorth } from './spoils'
+export { spoils } from './spoils'
 export { declareHunt, DeclareRejection } from './declareHunt'
 export type { DeclareResult } from './declareHunt'
-export { claimLostTrick, canClaimLostTrick, ClaimRejection } from './claimLostTrick'
-export type { ClaimResult } from './claimLostTrick'

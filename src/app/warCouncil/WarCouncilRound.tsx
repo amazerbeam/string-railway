@@ -1,19 +1,16 @@
 import { useReducer, type ReactNode } from 'react'
-import { quarryCharacterInfo, resolveStanding } from '../../hunt'
+import { quarryCharacterInfo } from '../../hunt'
 import {
   CardRank,
   PlayerSide,
   RoundPhase,
-  canClaimLostTrick,
-  checkDemand,
   currentTurn,
   legalMoves,
   quarryIntent,
   sameCard,
   scoreHunt,
-  scoreRound,
-  spoils,
   type Card,
+  type HuntDamage,
   type QuarryIntent,
 } from '../../warCouncil'
 import type { WarCouncilMountProps } from '../warCouncilMount'
@@ -65,22 +62,16 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
 
   const legal = legalMoves(ui.round, PlayerSide.Player)
 
-  // Both derived every render from already-final state. `spoils` reduces over at most 26
-  // captured cards and `resolveStanding` scans a six-row table — bounded work, no memo.
-  const runningSpoils = spoils(ui.round, PlayerSide.Player)
-  const band = resolveStanding(ui.round.tricksWon[PlayerSide.Player])
+  // Both sides derived every render from already-final state, then reused three ways — the
+  // status band's readout, the end panel, and `onComplete` — so the number the player reads and
+  // the number the mount reports cannot diverge. `spoils` reduces over at most 26 captured cards
+  // and `resolveStanding` scans a six-row table: bounded work, no memo.
+  const huntDamage: Readonly<Record<PlayerSide, HuntDamage>> = {
+    [PlayerSide.Player]: scoreHunt(ui.round, PlayerSide.Player),
+    [PlayerSide.Cpu]: scoreHunt(ui.round, PlayerSide.Cpu),
+  }
 
-  const declared = ui.round.declaration ?? null
   const displayHand = sortHandForDisplay(ui.round.hands[PlayerSide.Player])
-
-  // Derived every render, never stored — a stored copy could only go stale against
-  // `ui.round`, and both calls are pure and bounded (a 13-card sort; a two-card tail
-  // comparison). Same rule as `runningSpoils`, `band`, and `intent` above.
-  const held = ui.resolvedTrick
-  const claimable =
-    held !== null &&
-    held.cards.length === 2 &&
-    canClaimLostTrick(ui.round, [held.cards[0], held.cards[1]] as const)
 
   // The Quarry has chosen its lead but has not committed it, so the telegraph can be read
   // before the card lands. `currentTrick.length === 0` is what keeps this to leads only.
@@ -113,10 +104,6 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
     dispatch({ kind: RoundUiActionKind.CancelSelection })
   }
 
-  function handleClaim() {
-    dispatch({ kind: RoundUiActionKind.ClaimTrick })
-  }
-
   /** Shared by the held trick's own carry-on control, the pending Quarry lead's own
    * control, and the round-over panel's "Finish the round" control: reads the current
    * render's state and either carries on — clearing a held trick (including the deciding
@@ -130,21 +117,19 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
       return
     }
     if (roundComplete) {
-      onComplete({ finalState: ui.round, score: scoreRound(ui.round.tricksWon) })
+      onComplete({
+        finalState: ui.round,
+        damage: {
+          [PlayerSide.Player]: huntDamage[PlayerSide.Player].damage,
+          [PlayerSide.Cpu]: huntDamage[PlayerSide.Cpu].damage,
+        },
+      })
     }
   }
 
   let felt: ReactNode
   if (ui.round.declaration === undefined) {
-    felt = (
-      <DeclareGate
-        demand={hunt.demand}
-        loseCredits={hunt.loseCredits}
-        onDeclare={(path) =>
-          dispatch({ kind: RoundUiActionKind.Declare, path, loseCredits: hunt.loseCredits })
-        }
-      />
-    )
+    felt = <DeclareGate onDeclare={(path) => dispatch({ kind: RoundUiActionKind.Declare, path })} />
   } else if (ui.cpuFault) {
     felt = (
       <p className="wc-fault" role="alert">
@@ -162,19 +147,13 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
         resolvedTrick={ui.resolvedTrick}
         quarryToLead={quarryToLead}
         onCarryOn={handleCarryOn}
-        claimable={claimable}
-        creditsRemaining={declared?.creditsRemaining ?? 0}
-        onClaim={handleClaim}
       />
     )
   } else if (roundComplete) {
-    const huntScore = scoreHunt(ui.round, PlayerSide.Player)
     felt = (
       <RoundOverPanel
         tricksWon={ui.round.tricksWon}
-        huntScore={huntScore}
-        demand={hunt.demand}
-        outcome={checkDemand(huntScore.score, hunt.demand)}
+        huntDamage={huntDamage}
         onFinish={handleCarryOn}
       />
     )
@@ -196,9 +175,6 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
         resolvedTrick={null}
         quarryToLead={quarryToLead}
         onCarryOn={handleCarryOn}
-        claimable={claimable}
-        creditsRemaining={declared?.creditsRemaining ?? 0}
-        onClaim={handleClaim}
       />
     )
   }
@@ -211,10 +187,8 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
         tricksPlayed={ui.round.tricksPlayed}
         opponentHandCount={ui.round.hands[PlayerSide.Cpu].length}
         roundComplete={roundComplete}
-        demand={hunt.demand}
-        spoils={runningSpoils}
-        band={band}
-        declaration={declared}
+        spoils={huntDamage[PlayerSide.Player].spoils}
+        band={huntDamage[PlayerSide.Player].band}
       />
       <aside className="wc-dossier">
         <QuarryDossier

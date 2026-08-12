@@ -1,4 +1,4 @@
-import type { HuntDeclaration, QuarryCharacter } from '../hunt'
+import { HuntDeclaration, type QuarryCharacter } from '../hunt'
 
 export const Suit = {
   Bells: 'bells',
@@ -57,22 +57,13 @@ export interface TrickCard {
 }
 
 /**
- * DLR-63: the declaration made before the first trick, plus the Lose path's bookkeeping.
- * One nested object rather than three sibling fields so a reader has exactly one
- * absence check.
+ * The declaration made before the first trick. Narrowed to `path` alone on DLR-67 — the
+ * Lose path's three-field credit-pool bookkeeping is retired along with the mechanic that
+ * spent it (§1: the pile swap "replaces it outright"). Kept as a nested object rather than
+ * a bare field on `RoundState` so a reader still has exactly one absence check.
  */
 export interface DeclarationState {
   readonly path: HuntDeclaration
-  /** Credits not yet spent. Always `0` when `path` is `Win`. */
-  readonly creditsRemaining: number
-  /** Cards credited to the player's Spoils from lost tricks. Always empty when `path` is `Win`. */
-  readonly creditedCards: readonly Card[]
-  /**
-   * `tricksPlayed` at the moment the most recent credit was spent. A credit may only be
-   * spent on the trick that just resolved and `tricksPlayed` strictly increases, so this
-   * makes a second claim on one trick a rejection rather than a double-credit.
-   */
-  readonly creditedThrough: number
 }
 
 export interface RoundState {
@@ -95,17 +86,27 @@ export interface RoundState {
    */
   readonly quarryCharacter?: QuarryCharacter
   /**
-   * DLR-63 AC1/AC3. Written by `declareHunt`, updated only by `claimLostTrick`, and
-   * carried by every existing state spread. Optional — absent means undeclared, which is
-   * the pre-DLR-63 shape every existing spec fixture holds, and which `spoils` treats
-   * identically to a Win declaration (AC2). Required would break 22 hand-built
-   * `RoundState` literals for no gain; this follows `quarryCharacter?`'s precedent.
+   * DLR-63 AC1. Written once by `declareHunt` and never updated thereafter. Optional —
+   * absent means undeclared, which is the pre-DLR-63 shape every existing spec fixture
+   * holds, and which `spoils` treats identically to a Win declaration (AC2). Required
+   * would break 22 hand-built `RoundState` literals for no gain; this follows
+   * `quarryCharacter?`'s precedent.
    */
   readonly declaration?: DeclarationState
 }
 
 export function currentTurn(state: RoundState): PlayerSide {
   return state.currentTrick.length === 0 ? state.leader : otherSide(state.currentTrick[0].side)
+}
+
+/**
+ * The value scheme and Standing table in force. An undeclared round reads as Win: nothing has
+ * scored yet, and the readouts need a table to display before the player declares. The single
+ * statement of that default — `spoils`, `scoreHunt` and the status band all read it here rather
+ * than each writing their own `?? HuntDeclaration.Win`.
+ */
+export function declaredPath(state: RoundState): HuntDeclaration {
+  return state.declaration?.path ?? HuntDeclaration.Win
 }
 
 export const AbilityChoiceKind = {

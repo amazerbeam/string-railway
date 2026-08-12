@@ -1,17 +1,66 @@
 _Part of [Hunt](README.md)._
 
-### Standing band resolution
+### Standing band resolution — two tables, one per declaration
 
-`STANDING_BANDS` is a flat array of six `StandingBand` rows covering trick counts 0–13 with no gap
-and no overlap: 0–3 Humble ×6, 4 Defeated ×1, 5 Defeated ×2, 6 Defeated ×3, 7–9 Victorious ×6,
-10–13 Greedy ×0. `resolveStanding(tricks, table = STANDING_BANDS)` in `config.ts` does a linear
-scan for the row whose `[minTricks, maxTricks]` contains `tricks`, and throws a `RangeError` for
-anything outside 0–13 (there's always exactly one match inside that range by construction, so an
-out-of-range call is treated as a caller bug, not a data gap). The table is a second, optional
-parameter rather than a value the function closes over directly — this is what lets
-`__tests__/config.test.ts` prove the function is genuinely table-driven (a test builds a mutated
-copy of the table, confirms the resolved multiplier changes, then confirms the real
-`STANDING_BANDS` export is unaffected) without ever mutating shared module state between tests.
+**DLR-66 replaced the single table with a mirrored pair.** `HUNT_MULTIPLIER_TABLES` is a
+`Readonly<Record<HuntDeclaration, readonly StandingBand[]>>` — one six-row array per declaration,
+each row carrying its own `minTricks`/`maxTricks`:
+
+| Tricks | Win band       | Win | Lose band      | Lose |
+| ------ | -------------- | --- | -------------- | ---- |
+| 0–3    | Humble         | ×1  | Humble         | ×0.5 |
+| 4      | Defeated       | ×2  | Defeated (4–6) | ×5   |
+| 5      | Defeated       | ×3  | Defeated (4–6) | ×5   |
+| 6      | Defeated       | ×4  | Defeated (4–6) | ×5   |
+| 7      | Victorious     | ×5  | Victorious     | ×4   |
+| 8      | Victorious     | ×5  | Victorious     | ×3   |
+| 9      | Victorious     | ×5  | Victorious     | ×2   |
+| 10–13  | Greedy         | ×0.5| Greedy         | ×1   |
+
+**The two tables' row splits genuinely differ** — Win groups 7–9 into one row, Lose groups 4–6 —
+which is the reason the boundaries are per-row data and never a shared boundary list or an
+`if (declaration === Lose)` fixup. A shared list would make the boundaries identical *by
+construction*, which is exactly the property the design forbids; a branch would put a rule in code
+instead of in data. Both alternatives were considered and rejected on those grounds.
+
+Their defining property is **exact complementarity**: `Lose(k) = Win(13 − k)` at all fourteen
+splits. That is load-bearing rather than decorative — it is what makes the same-path rule hold, and
+what makes a Quarry declaring the opposite path cancel to zero damage (hybrid-design's direction
+section). `__tests__/config.test.ts` asserts it over *whatever pair is configured*, so a hand-edit
+that breaks it fails loudly instead of silently deleting the property.
+
+`standingTableFor(declaration)` is the only way a consumer outside this module gets a table.
+Callers name a **declaration**; the module resolves it. Nothing under `src/app/` or
+`src/warCouncil/` names `HUNT_MULTIPLIER_TABLES` or any table identifier, verified by grep in
+DLR-66's Final verification.
+
+`resolveStanding(tricks, table)` does a linear scan for the row whose `[minTricks, maxTricks]`
+contains `tricks`, and throws a `RangeError` outside 0–13 (there is exactly one match inside that
+range by construction in *both* tables, so an out-of-range call is a caller bug, not a data gap).
+
+**The `table` parameter is now required, and that is deliberate.** It was optional, defaulting to
+the retired single table. With two tables in play, re-pointing that default at the Win table would
+let a Lose-path caller who omits the argument score off the wrong table and get a plausible number
+with nothing failing anywhere. Requiring it turns every such omission into a compile error — which
+is also how DLR-66 found its seven call sites, rather than by grepping for them. The injectability
+DLR-48 established survives unchanged: `__tests__/config.test.ts` swaps in the whole alternative
+pair (different multipliers *and* the Lose side's different boundaries), confirms the resolved
+multipliers change, confirms the alternative pair is still an exact complement, and confirms the
+real exports are unaffected — all without mutating shared module state.
+
+### Card value per declaration
+
+`cardValueFor(declaration)` returns `invertedCardValue` on Lose and `cardBaseValue` on Win — both
+already on disk, both unchanged, both `(rank: number) => number`. It is the exact counterpart of
+`standingTableFor` on the additive term, so the module's whole public story is: *name a
+declaration, get both terms of the equation.*
+
+**No modifier of any kind is applied** — no Treasure `+1`, no Poison `−1`. Both were
+Decided-removed (§1, §9 2026-08-11) on the grounds that at ×5 a ±1 card modifier moves a Hunt by 5
+out of 540, under 1%. **DLR-67 made that rule live**: `src/warCouncil/spoils.ts` now calls
+`cardValueFor` and applies nothing on top, and its `sumCards` helper — which had gone on folding the
+±1 in for one ticket after the design removed it — is deleted. See
+[../war-council/scoring.md](../war-council/scoring.md).
 
 ### Card base value
 
@@ -31,29 +80,26 @@ zero and no negative. `__tests__/config.test.ts` asserts all four of those prope
 identity, and that rank 11 inverts to something greater than zero).
 
 The signature match with `cardBaseValue` is the load-bearing design choice. Both are
-`(rank: number) => number`, so `spoils` takes each as an injectable parameter and branches on the
-declaration rather than on any knowledge of how a value is computed — see
+`(rank: number) => number`, so `spoils` takes each as an injectable parameter and reads the scheme
+off the declaration rather than knowing anything about how a value is computed — see
 [../war-council/scoring.md](../war-council/scoring.md). Nothing here divides, so no inverted value
 can be `NaN` or `Infinity`.
 
-### The Lose-credit cap
+> **The Lose-credit cap that used to sit here is gone.** `LOSE_CREDITS_PER_HUNT` (`3`, credits per
+> Hunt, each spendable on one lost trick) was a placeholder whose derivation was computed against the
+> retired Demand and the retired single multiplier table. §1 says the Lose path's pile swap "replaces
+> it outright", and **DLR-67 deleted the constant along with the whole mechanic** rather than tuning
+> a number nobody was going to keep. See
+> [../war-council/declaration-and-lose-path.md](../war-council/declaration-and-lose-path.md).
 
-`LOSE_CREDITS_PER_HUNT` is `3`, in units of **credits per Hunt**, each spendable on exactly one lost
-trick. Its comment in `config.ts` records the unit, that the value is the developer's, and the
-arithmetic behind the placeholder — this is a documented derivation, not a chosen number, and
-`README.md`'s Deferred section carries what to watch for. It is typed `number` rather than
-`number | null` specifically so no consumer can coerce a `null` to `0` and silently hand the player
-an empty pool — the trap `DEMAND_CURVE`'s own comment warns about.
+### Forage budget and run length
 
-The engine never reads this key. `declareHunt` takes the pool as a parameter, and it reaches the
-screen through the `Hunt` prop as `hunt.loseCredits`, so `src/warCouncil/` stays free of the tunable
-and no component holds a numeric literal standing in for it.
+`FORAGE_BUDGET_PER_ENCOUNTER` (`4`) and `ENCOUNTERS_PER_RUN` (`5`) are provisional values DLR-48
+supplied, each with a comment citing its §9 row and its provisional status. Both are still read by
+nothing.
 
-### Demand curve, Forage budget, and run length
-
-`DEMAND_CURVE` ships as `{ base: null, growthPerEncounter: null }`, typed `DemandCurve` with both
-fields `number | null` — not defaulted to `0` or any other number. §9 marks this row "Undecided,"
-and DLR-48's own acceptance criteria supply provisional numbers for every other §9 row except this
-one; a consumer must not coerce either field to `0`. `FORAGE_BUDGET_PER_ENCOUNTER` (`4`) and
-`ENCOUNTERS_PER_RUN` (`5`) are the two constants DLR-48 does supply provisional values for, each
-with a comment citing its §9 row and provisional status.
+> **The Demand curve that used to sit here is gone.** `DEMAND_CURVE` shipped as
+> `{ base: null, growthPerEncounter: null }` — a deliberately unfilled shape, because §9 marked the
+> row Undecided. DLR-67 deleted it, the `DemandCurve` interface, and `FIXED_DEMAND` with it: §9
+> deleted the row outright rather than leaving it Undecided, because the duel direction replaces the
+> target comparison itself. There is no longer a question to answer here.

@@ -2,26 +2,28 @@ _Part of [War Council UI](README.md)._
 
 DLR-53 turned the round screen into the **Hunt screen**: the same 13-trick felt, plus §4's
 persistent readouts, the Quarry's telegraphed intent shown before every commit, and an end panel
-that shows `Spoils × Standing = Score` as arithmetic. Nothing here computes a rule — every number
+that shows the scoring equation as arithmetic. Nothing here computes a rule — every number
 originates in `src/hunt/config.ts` and reaches a component already derived by the engine.
+
+> **DLR-67 retired the Demand from every readout on this screen.** The ledger's Demand cell, the end
+> panel's Demand line, and its cleared/missed verdict are gone; the third ledger cell reads **Damage**
+> where it read "Score"; and the end panel now states the equation **once per side**.
 
 ### The `hunt` prop is what makes "no hard-coded number" structural
 
-`WarCouncilMountProps` gained a **required** `hunt: Hunt` (`{ quarry: { character }, demand }` —
-`src/hunt/types.ts`'s own name for the pairing). `src/App.tsx` builds it once at module scope from
-`FIXED_DEMAND` and `SLICE_QUARRY_CHARACTER` and passes it down; `WarCouncilRound.tsx` reads
-`hunt.demand` and `hunt.quarry.character` and hands them on.
+`WarCouncilMountProps` carries a **required** `hunt: Hunt`. Since DLR-67 that is `{ quarry }` alone —
+it was `{ quarry, demand }` at DLR-53 and `{ quarry, demand, loseCredits }` at DLR-63. `src/App.tsx`
+builds it once at module scope from `SLICE_QUARRY_CHARACTER` and passes it down.
 
-Required rather than optional is deliberate: an optional Demand would let a caller render a Hunt
-with nothing to clear and no verdict to reach. Being required also means every construction site
-breaks at compile time rather than silently rendering `undefined` — which matters, because
-`checkDemand` comparing a score against `undefined` would return "missed" for every Hunt with no
-error anywhere. `FIXED_DEMAND` is typed `Demand` (a `number`) for the same reason: `null` is a
-compile error, not a silent wrong verdict.
+Required rather than optional remains deliberate: a required→required change breaks every
+construction site at compile time rather than silently rendering `undefined`. That property earned
+its keep on DLR-67, which narrowed the type — every construction site failed to compile, which is how
+they were found rather than by grepping for them.
 
 The pay-off is that **no component in this module ever sees a numeric literal standing in for a
-multiplier, a band boundary, or a Demand.** A multiplier always arrives as `band.multiplier` or
-`huntScore.standing`; a Demand always as `hunt.demand`. That is checked by grep in the contract's
+multiplier, a band boundary, or a card value.** A multiplier always arrives as `band.multiplier` or
+`huntDamage[side].standing`; the declare gate's worked example reads
+`invertedCardValue(CardRank.Swan)` rather than a typed 11. That is checked by grep in the contract's
 final verification, but the reason it holds is structural — there is no path by which a component
 could invent one.
 
@@ -29,19 +31,38 @@ could invent one.
 
 **`HuntLedger.tsx`** mounts as the last child of `RoundStatusBand`'s `<header className="wc-status">`,
 beside the existing opponent plate and three-cell scoreboard — the Standing band is read off the
-player's trick count, so the two belong in one glance. It renders §1's equation in progress:
-`Spoils × Standing = Score / Demand`. It computes exactly one thing, the product
-`spoils * band.multiplier`; every input arrives already derived. `WarCouncilRound.tsx` derives
-those inputs each render:
+player's trick count, so the two belong in one glance. Since DLR-67 it renders **three** cells rather
+than five: running Spoils, the Standing band, and the **Damage** they make. It takes two props
+(`spoils`, `band`) and computes exactly one thing, the product `spoils * band.multiplier`.
+
+**`WarCouncilRound.tsx` derives both sides once per render and reuses the record three ways** —
+DLR-67 replaced DLR-53's separate `spoils` + `resolveStanding` calls with:
 
 ```ts
-const runningSpoils = spoils(ui.round, PlayerSide.Player)
-const band = resolveStanding(ui.round.tricksWon[PlayerSide.Player])
+const huntDamage: Readonly<Record<PlayerSide, HuntDamage>> = {
+  [PlayerSide.Player]: scoreHunt(ui.round, PlayerSide.Player),
+  [PlayerSide.Cpu]: scoreHunt(ui.round, PlayerSide.Cpu),
+}
 ```
 
-`spoils` reduces over at most 26 captured cards and `resolveStanding` scans a six-row table — both
-bounded, both whole-collection rather than incremental, which is correct at these sizes. **No
-`useMemo`**, per the module's standing rule.
+The status band reads `huntDamage[PlayerSide.Player]`'s `spoils` and `band`; the end panel takes the
+whole record; and `onComplete` reports each side's `damage`. **One derivation, three consumers**, so
+the number the player reads and the number the mount reports cannot diverge.
+
+Note what disappeared with it: the `?? HuntDeclaration.Win` fallback DLR-66 named at this call site is
+now `declaredPath`'s job inside the engine, so the component names no declaration at all and cannot
+drift from `spoils`' own reading of it.
+
+Each `scoreHunt` reduces over at most 26 captured cards and scans a six-row table — bounded,
+whole-collection rather than incremental, which is correct at these sizes. The derivation grew from
+one `spoils` + one `resolveStanding` to two `scoreHunt` calls, which is the same bounded-work
+argument. **No `useMemo`**, per the module's standing rule.
+
+**One visible consequence, expected.** Because `band.multiplier` is fractional on both tables
+(each carries a ×0.5 band), a rendered Damage can be a half-step — e.g. `6.5`. `roundDamage` is
+deliberately not wired in here; DLR-68 owns rounding when damage is actually applied. **Anything that
+parses these readouts must not assume an integer** — a spec matching a multiplier's `aria-label` with
+a bare `\d+` was corrected on DLR-67 for exactly this.
 
 The player's Spoils is shown and the Quarry's is not: §4's visibility table makes "your running
 Spoils" open and says nothing about theirs, so showing it would be an unasked-for reveal. The live
@@ -169,36 +190,46 @@ share the one handler and its `event.stopPropagation()` guard against the felt's
 felt's waiting class and `onClick` both now key off `ui.resolvedTrick || quarryToLead`, so a pending
 lead behaves exactly like a held reveal.
 
-### The end panel shows the arithmetic, not just the result
+### The end panel states the equation once per side
 
-`RoundOverPanel.tsx` was rewritten in place. Its props changed *shape*, not just gained fields:
-`score: Record<PlayerSide, number>` (from `scoreRound`) was replaced by `huntScore: HuntScore` (from
-`scoreHunt`), plus `demand` and `outcome`. It renders, in order: a heading; a `role="group"` labelled
-"Spoils times Standing equals Score" holding the three parts and their `×` / `=` operators, each
-value carrying its own `aria-label`; a line naming the trick count, the band, and the Demand; the
-verdict; and the trick tally with the unchanged "Finish the round" control.
+`RoundOverPanel.tsx` has been rewritten twice. DLR-53 replaced a `Record<PlayerSide, number>` points
+tally with a single `huntScore: HuntScore` plus `demand` and `outcome`, rendering one equation and a
+cleared/missed verdict. **DLR-67 rewrote it again**, and this is the contract's one *addition* rather
+than a deletion: its prop is now `huntDamage: Readonly<Record<PlayerSide, HuntDamage>>`, and it
+renders the same `.wc-equation` group **twice**, one per side, inside a `.wc-sides` row.
 
-`WarCouncilRound.tsx` computes both at the call site — `scoreHunt(ui.round, PlayerSide.Player)` and
-`checkDemand(huntScore.score, hunt.demand)` — so the panel formats and decides nothing.
+Each side's group is labelled for that side — `"You: Spoils times Standing equals Damage"`,
+`"You Spoils: N"`, `"You Standing multiplier: times N"`, `"You Damage: N"`, and the mirror for
+"Opponent" — followed by a `{tricks} tricks — {band}.` detail line. **Naming the side in every
+`aria-label` is load-bearing**, not decoration: two structurally identical groups on one panel would
+otherwise give a `getByLabelText` query two matches, and a screen-reader user two indistinguishable
+readings.
 
-Two details worth knowing before editing it:
+The higher total carries a `wc-is-ahead` class rendering as a **heavier border** — form rather than
+colour, so the distinction survives for a colour-blind player. A tie marks neither side.
 
-- **The opponent's *points* row was dropped, its trick count kept.** §1's equation is one-sided and
-  the Quarry has no Demand to clear, so a two-side points tally would be stating something the
-  design does not claim.
-- **The panel's Demand label reads `Demand for this Hunt: N`, not `The Demand: N`.** `HuntLedger` is
-  still mounted in the status band while the panel is on the felt, so identical accessible names
-  would make a `getByLabelText` query ambiguous across the two components. Same fact, deliberately
-  distinct wording.
+The Demand paragraph and the verdict paragraph are gone. So is the asymmetry that justified them:
+§1's equation is no longer one-sided, so showing both sides is now what the design claims rather than
+more than it claims.
 
-`scoreRound` and `tricksToPoints` are **not** orphaned by this: `WarCouncilRound`'s `onComplete`
-payload still uses `scoreRound(ui.round.tricksWon)`, because `WarCouncilRoundResult` was deliberately
-left unchanged — putting the `HuntScore` and outcome in the completion payload would be speculative
-shape for the run loop nobody has written yet.
+`WarCouncilRound.tsx` hands over the record it already derived, so the panel formats and decides
+nothing — it computes not even the ahead comparison's inputs, only which of two given numbers is
+larger.
+
+`WarCouncilRoundResult` **was** changed this time: its `score` field became `damage`, built from the
+same record. DLR-53 deliberately left the payload alone as speculative shape; DLR-67 changed it
+because DLR-68's own acceptance criteria already name the field `damage`, so this adopts the epic's
+vocabulary one ticket early rather than inventing a second one.
 
 ### Falsy numbers render, blanks do not
 
-A Greedy band (10+ tricks) has `multiplier: 0`, which makes both the ledger's product and the end
-panel's Score `0`. Both render the value as a bare `{score}` / `{huntScore.score}` expression rather
+Both the ledger's product and the end panel's Damage render as a bare `{damage}` expression rather
 than behind any truthiness gate — the classic React render hole, where `0 && …` renders nothing at
-all. Both are covered by a spec that asserts the zero case explicitly.
+all.
+
+**Since DLR-66 no shipped band reaches this state**: the retired single table's Greedy row was ×0, and
+the lowest multiplier in either new table is ×0.5, so a `0` product now requires a Spoils of `0`. The
+regression guard is kept and still meaningful — the render hole is a property of the JSX, not of the
+table — but its spec had to **construct** a `multiplier: 0` band rather than look one up, since
+`resolveStanding` no longer returns one. That is the honest form of the test: it asserts the component
+renders a falsy number, without pretending the table still produces one.

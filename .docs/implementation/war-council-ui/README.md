@@ -1,7 +1,7 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63
+**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67
 
 ## Responsibility
 
@@ -13,19 +13,22 @@ and reports the finished round back through SCRUM-37's `WarCouncilMountProps` co
 no scoring rule, and no trick-winner computation of its own.
 
 DLR-53 added the Hunt layer on top of the round renderer rather than rebuilding it: §4's persistent
-readouts (the Demand, running Spoils, the Standing band, the Quarry's character and trick count),
-the Quarry's intent telegraphed before every commit, and an end panel showing
-`Spoils × Standing = Score` as arithmetic before its cleared/missed verdict. Every number on that
-screen originates in `src/hunt/config.ts` and arrives already derived — see
+readouts (running Spoils, the Standing band, the Quarry's character and trick count), the Quarry's
+intent telegraphed before every commit, and an end panel showing the scoring equation as arithmetic.
+Every number on that screen originates in `src/hunt/config.ts` and arrives already derived — see
 [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md).
 
 DLR-63 put a decision at the front of the round and changed what a card looks like: a **declare gate**
-gating the first trick, a **claim control** on each lost trick as it resolves, a **credit readout** in
-the ledger, the hand rendered **longest-suit-first** instead of in dealt order, and a suit-coloured
-border with a bottom-left suit mark on every card face. As with the Hunt layer, no rule moved here —
-`declareHunt` writes the declaration, `canClaimLostTrick` decides whether the claim is offered,
-`claimLostTrick` spends the credit, and `creditedTrickWorth` computes what the preview shows. See
-[The declare gate, the claim, and the hand's order](declare-gate-and-claim.md).
+gating the first trick, the hand rendered **longest-suit-first** instead of in dealt order, and a
+suit-coloured border with a bottom-left suit mark on every card face. As with the Hunt layer, no rule
+moved here — `declareHunt` writes the declaration. See
+[The declare gate and the hand's order](declare-gate-and-hand-order.md).
+
+**DLR-67 took two things off this screen and reshaped a third.** The Demand cell, the end panel's
+cleared/missed verdict, the credits cell and the trick well's claim control are all gone with the
+mechanics behind them; the ledger's third cell now reads **Damage** rather than "Score"; and the end
+panel grew a **second equation**, so both sides' `Spoils × Standing = Damage` is stated side by side.
+A resolved trick now always offers exactly one control.
 
 It sits under `src/app/` rather than beside the engine for a hard reason: `eslint.config.js`'s
 pure-core override bars `src/warCouncil/**` from importing React at all, so a `.tsx` file there
@@ -46,16 +49,16 @@ barrel re-exporting one is a needless brush with `react-refresh/only-export-comp
 | `roundReducer`                                                                    | The single reducer owning every UI transition: `(RoundUiState, RoundUiAction) => RoundUiState`        | `roundReducer.ts`      |
 | `createRoundUiState`                                                              | Lazy `useReducer` initializer; a pure restructuring of `initialState` — since DLR-53 it deliberately leaves the Quarry's opening lead uncommitted so it can be telegraphed | `roundReducer.ts`      |
 | `RoundUiState`                                                                    | `{ round, armed, prompt, resolvedTrick, rejection, cpuFault }` — the mount's one piece of state       | `roundReducer.ts`      |
-| `RoundUiAction`                                                                   | `TapCard \| ChooseAbility \| CancelSelection \| CarryOn \| Declare \| ClaimTrick` (the last two DLR-63), via the `RoundUiActionKind` `as const` map. **`RoundUiState` gained no field for either** — the declaration lives on `RoundState` | `roundReducer.ts`      |
+| `RoundUiAction`                                                                   | `TapCard \| ChooseAbility \| CancelSelection \| CarryOn \| Declare`, via the `RoundUiActionKind` `as const` map. **`RoundUiState` gained no field for `Declare`** — the declaration lives on `RoundState`. DLR-63's sixth member `ClaimTrick` was deleted by DLR-67 | `roundReducer.ts`      |
 | `sortHandForDisplay`                                                              | Pure: a **copy** of the hand in display order — longest suit first, `ALL_SUITS` as the tie-break, ascending rank within a suit (DLR-63 AC6). React-free and DOM-free, so it runs in the `node` project | `handOrder.ts`         |
-| `HUNT_DECLARATION_NAME`, `DECLARE_REJECTION_MESSAGE`, `CLAIM_REJECTION_MESSAGE`    | Display copy for the two declarable paths and the two engine rejection unions (DLR-63)                | `labels.ts`            |
+| `HUNT_DECLARATION_NAME`, `DECLARE_REJECTION_MESSAGE`                              | Display copy for the two declarable paths and `declareHunt`'s rejection union (DLR-63). `CLAIM_REJECTION_MESSAGE` was deleted by DLR-67 with the union it keyed on | `labels.ts`            |
 | `ResolvedTrick`                                                                   | `{ cards, winner }` — a just-resolved trick held on screen until the player carries on                | `roundReducer.ts`      |
 | `CpuFault`                                                                        | `IllegalMoveReason \| 'noLegalMove'` — a corrupt CPU turn, shown rather than swallowed                | `roundReducer.ts`      |
 | `SUIT_NAME`, `RANK_NAME`                                                          | Display names for `Suit` and the five ability-bearing `CardRank` values                               | `labels.ts`            |
 | `cardAccessibleName`                                                              | `"3 of Keys (Fox)"` / `"7 of Bells"` — the accessible name every card button binds to                 | `labels.ts`            |
 | `cardKey`                                                                         | `"bells-7"` — the one stable React list key for a card, shared by every card list in the module       | `labels.ts`            |
 | `ILLEGAL_MOVE_MESSAGE`                                                            | `Record<IllegalMoveReason, string>` — human copy for the engine's own rejection reasons               | `labels.ts`            |
-| `STANCE_PHRASE`, `STANDING_BAND_NAME`, `DEMAND_OUTCOME_VERDICT`                   | Display copy for the telegraphed stance, the four Standing bands, and the cleared/missed verdict (DLR-53) | `labels.ts`            |
+| `STANCE_PHRASE`, `STANDING_BAND_NAME`                                             | Display copy for the telegraphed stance and the four Standing bands (DLR-53). `DEMAND_OUTCOME_VERDICT` was deleted by DLR-67 — there is no verdict, because there is no target | `labels.ts`            |
 | `intentAccessibleName`                                                            | The telegraph's single screen-reader sentence; distinguishes a live reading from a speculative one (DLR-53) | `labels.ts`            |
 | `previewQuarryIntent`                                                             | Pure: the Quarry's intent for the trick the player is *about* to lead. Returns `null`, never throws (DLR-53) | `intentPreview.ts`     |
 | `fanPlacement`                                                                    | Pure fan geometry: rotation, lift, overlap, and z-order for one card at one hand position             | `fanLayout.ts`         |
@@ -89,10 +92,10 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
 - [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md) — the `hunt` prop, the ledger
   and dossier, the telegraph's two readings and why the Quarry's lead is held uncommitted, and the
   end panel's equation.
-- [The declare gate, the claim, and the hand's order](declare-gate-and-claim.md) — why the gate is
-  the felt cascade's first branch rather than a modal, how the claim decision folds onto the tap the
-  player was already making, the three-key display sort and why the hand re-orders mid-round, the
-  credits cell's zero case, and AC7's card face (DLR-63).
+- [The declare gate and the hand's order](declare-gate-and-hand-order.md) — why the gate is the felt
+  cascade's first branch rather than a modal, its one-prop shape and the copy that is the developer's
+  to overturn, the three-key display sort and why the hand re-orders mid-round, and AC7's card face
+  (DLR-63, DLR-67).
 - [Accessibility](accessibility.md) — the shared roving tabindex, the ability prompt's focus
   handling, and the fan's `aria-hidden` behaviour while a prompt is open.
 - [Error handling](error-handling.md) — the two `cpuFault` cases and why they're shown, not
@@ -103,9 +106,10 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
 
 - **This module re-implements no rule.** `legalMoves` decides what `HandFan` renders as tappable,
   `playCard` decides what commits, `chooseCpuMove` and `commitQuarryMove` play the opponent,
-  `scoreRound` computes the reported score, and — since DLR-53 — `spoils` computes the running
-  Spoils, `resolveStanding` the Standing band, `quarryIntent` the telegraphed stance, `scoreHunt`
-  the end-of-Hunt score, and `checkDemand` the cleared/missed verdict. Card equality is always the
+  `quarryIntent` computes the telegraphed stance, and — since DLR-67 — a single `scoreHunt` call per
+  side computes everything the screen shows about scoring: the running Spoils, the Standing band, and
+  the Damage. That one record feeds the status band, the end panel, and `onComplete` alike, so the
+  number the player reads and the number the mount reports cannot diverge. Card equality is always the
   engine's own `sameCard`/`containsCard` (exported
   from `src/warCouncil/index.ts` by this ticket rather than deep-imported or re-written).
   `roundReducer.ts` contains no suit comparison, no rank comparison, and no trick-winner
@@ -116,10 +120,13 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
   a grep in the contract's final verification.
 - **`labels.ts`, `fanLayout.ts`, and `roundReducer.ts` import no React and touch no DOM global** —
   verified by grep, which is what lets them run in the `node` Vitest project.
-- **No component sees a numeric literal standing in for a Demand, a multiplier, a band boundary, or
-  a credit pool** (DLR-53, extended by DLR-63). Every one arrives already derived — `hunt.demand`,
-  `band.multiplier`, `huntScore.standing`, `hunt.loseCredits`, `declaration.creditsRemaining` — from
-  `src/hunt/config.ts` through the engine. Grep-verified in the
+- **No component sees a numeric literal standing in for a multiplier, a band boundary, or a card
+  value** (DLR-53, extended by DLR-63, re-verified by DLR-66 and DLR-67). Every one arrives already
+  derived — `band.multiplier`, `huntDamage[side].standing`, `invertedCardValue(CardRank.Swan)` for the
+  declare gate's worked example — from `src/hunt/config.ts` through the engine. DLR-66 made
+  `resolveStanding`'s table required, so `WarCouncilRound.tsx` now names a **declaration** at that call
+  site (never a table) and the module still holds no boundary or multiplier of its own: DLR-66's
+  verification greps `src/app/` for `minTricks|maxTricks` and expects zero hits. Grep-verified in the
   contract's final verification, but structural rather than merely observed: there is no path by
   which a component could invent one. See
   [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md).
@@ -139,11 +146,24 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
 
 ## Deferred / not yet implemented
 
+- **⚠ The short-viewport layout is currently BROKEN and is not a settled state.** DLR-67's end panel
+  grew a second equation, which overflowed the felt at viewports inside the stylesheet's own
+  `@media (max-width: 44rem), (max-height: 34rem)` breakpoint — the Opponent's panel rendered below
+  the fold with `.wc-shell { overflow: hidden }` and no way to reach it. The fix applied
+  (`align-self: stretch` + `min-height: 0` + `justify-content: center` + `overflow-y: auto` on
+  `.wc-table-inner`, scoped to that media query) resolved the end panel **but regressed the declare
+  gate**: `justify-content: center` on a scroll container clips overflowing content symmetrically,
+  and `scrollTop` cannot go negative, so the "Play to Win" option's own heading became unreachable at
+  any scroll position at 680×520 and 700×544 — and a click on that button failed on first attempt.
+  QA measured both. **Do not treat this breakpoint's behaviour as documented-and-intended until it is
+  resolved**; the two candidate resolutions are scoping the stretch/scroll to the end-panel state
+  alone, or `align-items: flex-start` so `scrollTop: 0` shows the true top of content.
 - **No automated test covers the no-scroll layout.** `jsdom` has no layout engine, so nothing in the
   suite can prove `.wc-shell` never scrolls or crops at a given viewport size — which is not a
   theoretical gap: DLR-53's first review round shipped a `.wc-status` that pushed the Demand cell
-  entirely off-screen at phone width, with every component test passing. That check belongs to QA
-  driving the app in a real browser at named sizes, and it has caught a real defect exactly once.
+  entirely off-screen at phone width, and DLR-67 did it twice more (above), with every component
+  test passing each time. That check belongs to QA driving the app in a real browser at named sizes,
+  and it has now caught a real defect three times.
   Verified at 1280×720 and 844×390 (landscape) by SCRUM-28, and re-verified by DLR-53 at 1920×1080,
   1366×768, 1024×640, and a phone portrait — the last at 500×844 rather than 390×844, because the
   browser tooling floors window width at 500px on this machine; `--wc-card-w`'s
@@ -186,12 +206,22 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
   suit mark's corner offset, whether a suit-coloured border reads as information or decoration at
   `--wc-card-w`'s `clamp(2.9rem, 6.2vmin, 4.3rem)` floor, and the rank direction *within* a suit in
   `sortHandForDisplay` (ascending is the chosen default — see
-  [declare-gate-and-claim.md](declare-gate-and-claim.md)).
+  [declare-gate-and-hand-order.md](declare-gate-and-hand-order.md)).
 - **Whether the declare gate's opening tap reads as a decision or a speed bump is unjudged**, and it
   compounds the "Let them lead" tap below: trick 1 now opens with **two** taps before the first card.
-  Both are structural consequences of things worth having — the gate makes the round's target legible,
-  and holding the lead uncommitted is what makes it telegraphable — but nobody has yet played it and
-  said whether the opening reads well.
+  Both are structural consequences of things worth having — the gate is where the round's whole
+  scoring scheme is chosen, and holding the lead uncommitted is what makes it telegraphable — but
+  nobody has yet played it and said whether the opening reads well. DLR-67 added a second open
+  question here: its replacement gate copy describes the **interim** scoring, so it will read as
+  slightly wrong to anyone who knows §1's pile swap is next.
+- **The Lose path has no decision of its own between tricks.** DLR-67 removed the claim fork, so
+  every resolved trick now offers the same single carry-on control under either declaration —
+  thirteen fewer forks per round, and a strictly lower interaction cost, but also a path whose
+  only decision is the opening one. DLR-68's pile swap is what gives it texture back. Worth playing
+  before then.
+- **Whether the end panel's two mirrored equations read as a comparison or as two unrelated sums is
+  unjudged**, as is whether the heavier border on the higher total is the right ahead-marker. Both
+  are DLR-67 additions settled by `mockup.html` rather than by play.
 - **The mid-round hand re-order is accepted, not mitigated.** Because holding size is one of the sort
   keys, a suit can lose its leftmost slot as cards leave the hand, so a card located by position on
   trick 4 may sit elsewhere on trick 5. This is what a physical hand does and positions already

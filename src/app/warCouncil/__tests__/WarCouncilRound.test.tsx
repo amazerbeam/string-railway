@@ -11,12 +11,7 @@ afterEach(cleanup)
 // DLR-63: a round built already mid-trick or mid-round cannot be declared through the
 // gate — `declareHunt` itself rejects once a card has been played (AC1) — so those fixtures
 // carry this declaration directly rather than reaching `declareWin()` below.
-const WIN_DECLARED = {
-  path: HuntDeclaration.Win,
-  creditsRemaining: 0,
-  creditedCards: [],
-  creditedThrough: 0,
-} as const
+const WIN_DECLARED = { path: HuntDeclaration.Win } as const
 
 // A deterministic RNG, duplicated here to match the same local pattern
 // `roundReducer.test.ts` and the engine's own `playCard.test.ts`/`deal.test.ts` already use —
@@ -260,11 +255,10 @@ describe('WarCouncilRound', () => {
     expect(screen.getByRole('status').getAttribute('aria-label')).not.toMatch(/^If you lead/)
   })
 
-  it('shows the Demand, running Spoils, Standing band, the Quarry’s trick count, and its rule-break sentence (AC2/AC6)', () => {
+  it('shows the running Spoils, Standing band, the Quarry’s trick count, and its rule-break sentence (AC2/AC6)', () => {
     const round = makeRound({ tricksWon: { [PlayerSide.Player]: 4, [PlayerSide.Cpu]: 2 } })
     render(<WarCouncilRound initialState={round} hunt={huntFixture} onComplete={vi.fn()} />)
 
-    expect(screen.getByLabelText(`The Demand: ${huntFixture.demand}`)).toBeDefined()
     expect(screen.getByLabelText(/Running Spoils: \d+/)).toBeDefined()
     expect(screen.getByLabelText(/Standing band: \w+, multiplier \d+/)).toBeDefined()
     expect(screen.getByLabelText('The Quarry has taken 2 tricks')).toBeDefined()
@@ -289,58 +283,41 @@ describe('WarCouncilRound', () => {
     expect(screen.queryByRole('button', { name: /let them lead/i })).toBeNull()
   })
 
-  describe('the end-of-Hunt panel (AC4)', () => {
-    // A Demand of 0 is guaranteed to clear — `scoreHunt`'s score is always a product of two
-    // non-negative integers — and one of 1,000,000 is unreachable, so both verdicts are
-    // deterministic without depending on the actual Spoils a full random-seeded round scores.
-    function readEquationValue(label: RegExp): number {
+  describe('the end-of-Hunt panel (AC7)', () => {
+    // The Standing multiplier can be fractional (`hunt/config.ts`'s Greedy/Humble bands are
+    // ×0.5), so the number is matched as digits with an optional decimal part rather than
+    // `\d+` alone — a plain `\d+` would silently truncate "0.5" to "0" or fail the label
+    // query outright depending on where it sits in the pattern.
+    function readValue(label: RegExp): number {
       const text = screen.getByLabelText(label).getAttribute('aria-label') ?? ''
-      const match = text.match(/\d+/)
-      if (!match) {
-        throw new Error(`no number found in aria-label: ${text}`)
-      }
+      const match = text.match(/\d+(?:\.\d+)?/)
+      if (!match) throw new Error(`no number found in aria-label: ${text}`)
       return Number(match[0])
     }
 
-    it('shows Spoils × Standing = Score, then the Demand and a cleared verdict', () => {
+    it('shows Spoils × Standing = Damage for both sides, with no Demand and no verdict', () => {
       render(
         <WarCouncilRound
           initialState={dealRound(PlayerSide.Cpu, lcg(2026), huntFixture.quarry.character)}
-          hunt={{ ...huntFixture, demand: 0 }}
+          hunt={huntFixture}
           onComplete={vi.fn()}
         />,
       )
       declareWin()
       playFullRoundToCompletion()
 
-      const spoilsValue = readEquationValue(/^Spoils: \d+$/)
-      const standingValue = readEquationValue(/^Standing multiplier: times \d+$/)
-      const scoreValue = readEquationValue(/^Score: \d+$/)
-      expect(scoreValue).toBe(spoilsValue * standingValue)
+      for (const name of ['You', 'Opponent']) {
+        const spoilsValue = readValue(new RegExp(`^${name} Spoils: \\d+$`))
+        const standingValue = readValue(
+          new RegExp(`^${name} Standing multiplier: times \\d+(?:\\.\\d+)?$`),
+        )
+        expect(readValue(new RegExp(`^${name} Damage: \\d+(?:\\.\\d+)?$`))).toBe(
+          spoilsValue * standingValue,
+        )
+      }
 
-      expect(screen.getByLabelText('Demand for this Hunt: 0')).toBeDefined()
-      expect(screen.getByText(/demand cleared/i)).toBeDefined()
-    })
-
-    it('shows a missed verdict, distinct from the cleared one, against an unreachable Demand', () => {
-      render(
-        <WarCouncilRound
-          initialState={dealRound(PlayerSide.Cpu, lcg(2026), huntFixture.quarry.character)}
-          hunt={{ ...huntFixture, demand: 1_000_000 }}
-          onComplete={vi.fn()}
-        />,
-      )
-      declareWin()
-      playFullRoundToCompletion()
-
-      const spoilsValue = readEquationValue(/^Spoils: \d+$/)
-      const standingValue = readEquationValue(/^Standing multiplier: times \d+$/)
-      const scoreValue = readEquationValue(/^Score: \d+$/)
-      expect(scoreValue).toBe(spoilsValue * standingValue)
-
-      expect(screen.getByLabelText('Demand for this Hunt: 1000000')).toBeDefined()
-      expect(screen.getByText(/demand missed/i)).toBeDefined()
-      expect(screen.queryByText(/demand cleared/i)).toBeNull()
+      expect(screen.queryByLabelText(/Demand/)).toBeNull()
+      expect(screen.queryByText(/demand (cleared|missed)/i)).toBeNull()
     })
   })
 })
@@ -383,14 +360,5 @@ describe('WarCouncilRound — DLR-63', () => {
       '5 of Moons (Woodcutter)',
       '11 of Moons (Monarch)',
     ])
-  })
-
-  it('shows the credits cell only after declaring Lose', () => {
-    render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
-    expect(screen.queryByLabelText(/Lose-credits remaining/)).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: /play to lose/i }))
-    expect(
-      screen.getByLabelText(`Lose-credits remaining: ${huntFixture.loseCredits}`),
-    ).toBeDefined()
   })
 })

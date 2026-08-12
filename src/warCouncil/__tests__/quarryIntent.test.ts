@@ -19,15 +19,12 @@ import { resolveTrickWinner } from '../resolveTrick'
 // undeclared round. Only the fixtures that actually reach playCard need this.
 const WIN_DECLARATION: DeclarationState = {
   path: HuntDeclaration.Win,
-  creditsRemaining: 0,
-  creditedCards: [],
-  creditedThrough: 0,
 }
 
 // Declares a Win on a freshly dealt round for the simulated full-round fixture below.
 function declaredDeal(...args: Parameters<typeof dealRound>): RoundState {
   const dealt = dealRound(...args)
-  const declared = declareHunt(dealt, HuntDeclaration.Win, 3)
+  const declared = declareHunt(dealt, HuntDeclaration.Win)
   if (!declared.ok) throw new Error('expected declare ok')
   return declared.state
 }

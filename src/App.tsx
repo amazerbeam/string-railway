@@ -1,17 +1,13 @@
 import { useState } from 'react'
-import { FIXED_DEMAND, LOSE_CREDITS_PER_HUNT, SLICE_QUARRY_CHARACTER, type Hunt } from './hunt'
+import { SLICE_QUARRY_CHARACTER, type Hunt } from './hunt'
 import { dealRound, type WarCouncilState } from './warCouncil'
 import WarCouncilRound from './app/warCouncil/WarCouncilRound'
 import { dealerForRound } from './app/dealerForRound'
 
-// The slice's single encounter (§11): one fixed Demand, one Quarry, one Lose-credit pool.
-// Built once at module scope because all three halves are configuration constants — it
-// holds no per-round state, so it cannot go stale across the remounts below.
-const HUNT: Hunt = {
-  quarry: { character: SLICE_QUARRY_CHARACTER },
-  demand: FIXED_DEMAND,
-  loseCredits: LOSE_CREDITS_PER_HUNT,
-}
+// The slice's single encounter (§11): one Quarry. Built once at module scope because its only
+// half is a configuration constant — it holds no per-round state, so it cannot go stale across
+// the remounts below. The Demand and the Lose-credit pool were retired on DLR-67.
+const HUNT: Hunt = { quarry: { character: SLICE_QUARRY_CHARACTER } }
 
 function App() {
   const [round, setRound] = useState(1)

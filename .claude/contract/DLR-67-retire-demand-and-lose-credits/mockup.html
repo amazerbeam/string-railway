@@ -1,0 +1,410 @@
+<title>Hunt Without a Demand</title>
+<style>
+  :root {
+    --wc-ink: #0e161c;
+    --wc-chamber: #14212a;
+    --wc-chamber-lift: #1b2b36;
+    --wc-parchment: #e9dfc8;
+    --wc-chalk: #c6d3dc;
+    --wc-chalk-dim: #7f929f;
+    --wc-brass: #c9a227;
+    --wc-brass-dim: #7d6a2c;
+    --wc-keys: #6fa8c7;
+    --wc-felt: #16302b;
+    --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+    --wc-gone: #b4574f;
+    --wc-kept: #4f8f6a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--wc-ink);
+    color: var(--wc-chalk);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .page { max-width: 1180px; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
+  h1 { font-family: var(--wc-serif); color: var(--wc-parchment); font-size: 1.9rem; margin: 0 0 0.35rem; }
+  .lede { color: var(--wc-chalk-dim); margin: 0 0 2rem; max-width: 62ch; }
+  h2 {
+    font-family: var(--wc-serif); color: var(--wc-parchment); font-size: 1.25rem;
+    margin: 2.75rem 0 0.3rem; border-top: 1px solid #23303a; padding-top: 1.25rem;
+  }
+  h2:first-of-type { border-top: none; }
+  .note { color: var(--wc-chalk-dim); font-size: 0.85rem; margin: 0 0 1rem; max-width: 70ch; }
+  .note b { color: var(--wc-chalk); font-weight: 600; }
+  .gone { color: var(--wc-gone); }
+  .kept { color: var(--wc-kept); }
+  .surface {
+    background: var(--wc-chamber); border: 1px solid #23303a; border-radius: 0.6rem;
+    padding: 1.1rem; margin-bottom: 0.75rem;
+  }
+  .felt { background: var(--wc-felt); }
+  .log {
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 0.78rem;
+    color: var(--wc-keys); background: #0a1218; border: 1px dashed #24343f;
+    border-radius: 0.4rem; padding: 0.5rem 0.7rem; min-height: 2.4rem; margin-top: 0.6rem;
+  }
+
+  /* ---- status band + ledger ---- */
+  .wc-status { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+  .wc-plate { display: flex; align-items: center; gap: 0.5rem; }
+  .wc-plate-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--wc-chalk-dim); }
+  .wc-stack { display: inline-flex; }
+  .wc-stack-back {
+    width: 0.75rem; height: 1.1rem; margin-left: -0.35rem; border-radius: 0.15rem;
+    background: #22323d; border: 1px solid #33454f;
+  }
+  .wc-score, .wc-ledger { display: flex; align-items: stretch; gap: 0.4rem; }
+  .wc-ledger { margin-left: auto; }
+  .wc-score-cell, .wc-ledger-cell {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-width: 3.4rem; padding: 0.3rem 0.55rem; border-radius: 0.4rem;
+    background: var(--wc-chamber-lift); border: 1px solid #23303a;
+  }
+  .wc-ledger-cell.wc-is-band { border-style: dashed; border-color: var(--wc-brass-dim); }
+  .wc-score-side, .wc-ledger-key {
+    font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.09em;
+    color: var(--wc-chalk-dim); white-space: nowrap;
+  }
+  .wc-score-value, .wc-ledger-value {
+    font-family: var(--wc-serif); font-size: 1.25rem; color: var(--wc-parchment);
+  }
+  .wc-ledger-op { align-self: center; color: var(--wc-chalk-dim); font-size: 1rem; }
+  .removed-cell {
+    border-style: dotted !important; border-color: var(--wc-gone) !important;
+    opacity: 0.45; text-decoration: line-through;
+  }
+
+  /* ---- declare gate ---- */
+  .wc-declare { text-align: center; padding: 1.25rem 0.5rem; }
+  .wc-declare-eyebrow {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--wc-chalk-dim); margin: 0 0 0.4rem;
+  }
+  .wc-declare h3 { font-family: var(--wc-serif); color: var(--wc-parchment); font-size: 1.3rem; margin: 0 0 1.1rem; font-weight: 400; }
+  .wc-declare-choices { display: flex; gap: 0.9rem; justify-content: center; flex-wrap: wrap; }
+  .wc-declare-option {
+    display: flex; flex-direction: column; gap: 0.4rem; text-align: left;
+    width: 20rem; min-height: 44px; padding: 0.9rem 1rem; cursor: pointer;
+    background: var(--wc-chamber-lift); color: inherit; font: inherit;
+    border: 2px solid var(--wc-brass-dim); border-radius: 0.5rem;
+    touch-action: manipulation;
+  }
+  .wc-declare-option.wc-is-lose { border-style: dashed; }
+  .wc-declare-option:focus-visible { outline: 2px solid var(--wc-keys); outline-offset: 2px; }
+  @media (hover: hover) { .wc-declare-option:hover { border-color: var(--wc-brass); } }
+  .wc-declare-option:active { transform: translateY(1px); }
+  .wc-declare-option-name { font-family: var(--wc-serif); font-size: 1.2rem; color: var(--wc-parchment); }
+  .wc-declare-option-body { font-size: 0.78rem; color: var(--wc-chalk-dim); }
+  .wc-declare-foot { font-size: 0.76rem; color: var(--wc-chalk-dim); margin: 1rem 0 0; }
+
+  /* ---- trick well ---- */
+  .wc-trick-row { display: flex; gap: 1.5rem; justify-content: center; margin-bottom: 0.6rem; }
+  .wc-played { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+  .wc-played-side { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--wc-chalk-dim); }
+  .card {
+    width: 3.1rem; height: 4.4rem; border-radius: 0.35rem; background: var(--wc-parchment);
+    color: #1b1b1b; display: flex; align-items: center; justify-content: center;
+    font-family: var(--wc-serif); font-size: 1.35rem; border: 1px solid #b8ac92;
+  }
+  .wc-is-winner .card { box-shadow: 0 0 0 2px var(--wc-brass); }
+  .wc-table-line { text-align: center; color: var(--wc-chalk); margin: 0.4rem 0; }
+  .wc-table-hint, .wc-decline, .wc-claim {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 0.55rem 1.1rem; cursor: pointer;
+    background: transparent; color: var(--wc-chalk); font: inherit;
+    border: 1px solid var(--wc-brass-dim); border-radius: 0.4rem; touch-action: manipulation;
+  }
+  .wc-claim { border-color: var(--wc-keys); color: var(--wc-keys); }
+  .wc-table-hint:focus-visible, .wc-decline:focus-visible, .wc-claim:focus-visible {
+    outline: 2px solid var(--wc-keys); outline-offset: 2px;
+  }
+  .centre { text-align: center; }
+  .wc-claim-row { display: flex; gap: 0.6rem; justify-content: center; }
+
+  /* ---- round over panel ---- */
+  .wc-over { text-align: center; padding: 1rem 0.5rem; }
+  .wc-over h3 { font-family: var(--wc-serif); color: var(--wc-parchment); font-size: 1.45rem; margin: 0 0 1rem; font-weight: 400; }
+  .wc-sides { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 0.9rem; }
+  .wc-side {
+    flex: 1 1 17rem; max-width: 21rem; padding: 0.85rem;
+    border: 1px solid #23303a; border-radius: 0.5rem; background: var(--wc-chamber-lift);
+  }
+  .wc-side.wc-is-ahead { border-color: var(--wc-brass); border-width: 2px; }
+  .wc-side-name {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--wc-chalk-dim); margin-bottom: 0.55rem;
+  }
+  .wc-equation { display: flex; align-items: stretch; gap: 0.4rem; justify-content: center; }
+  .wc-equation-part { display: flex; flex-direction: column; align-items: center; min-width: 3.6rem; }
+  .wc-equation-key { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--wc-chalk-dim); }
+  .wc-equation-value { font-family: var(--wc-serif); font-size: 1.5rem; color: var(--wc-parchment); }
+  .wc-equation-part.wc-is-result .wc-equation-value { color: var(--wc-brass); }
+  .wc-equation-op { align-self: flex-end; padding-bottom: 0.2rem; color: var(--wc-chalk-dim); }
+  .wc-verdict-detail { font-size: 0.78rem; color: var(--wc-chalk-dim); margin: 0.6rem 0 0; }
+  .wc-tally { margin: 0 auto 1rem; border-collapse: collapse; font-size: 0.85rem; }
+  .wc-tally th, .wc-tally td { padding: 0.3rem 1.1rem; border-bottom: 1px solid #23303a; }
+  .wc-tally th { color: var(--wc-chalk-dim); font-weight: 500; text-transform: uppercase; font-size: 0.66rem; letter-spacing: 0.09em; }
+
+  .before-after { display: flex; gap: 0.9rem; flex-wrap: wrap; }
+  .before-after > * { flex: 1 1 24rem; }
+  .tag {
+    display: inline-block; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.1em;
+    padding: 0.1rem 0.45rem; border-radius: 0.25rem; margin-bottom: 0.5rem;
+  }
+  .tag-before { color: var(--wc-gone); border: 1px solid var(--wc-gone); }
+  .tag-after { color: var(--wc-kept); border: 1px solid var(--wc-kept); }
+</style>
+
+<div class="page">
+  <h1>The Hunt, with no Demand and no credits</h1>
+  <p class="lede">
+    DLR-67 mockup. Placeholder numbers throughout — nothing here computes. Every control is
+    clickable and reports what it would dispatch. Each section shows what is on screen today
+    beside what this ticket leaves.
+  </p>
+
+  <h2>1 · The declare gate</h2>
+  <p class="note">
+    <b>Gone:</b> <span class="gone">the credit-pool sentence</span> and
+    <span class="gone">"the Demand is still 220"</span>.
+    <b>Kept:</b> <span class="kept">two options, the inverted-value example, the dashed Lose border</span>.
+    The gate still blocks the first trick and still writes the declaration once.
+  </p>
+  <div class="before-after">
+    <div>
+      <span class="tag tag-before">on disk today</span>
+      <div class="surface felt">
+        <div class="wc-declare">
+          <p class="wc-declare-eyebrow">Before the first trick</p>
+          <h3>Thirteen cards. Which way are you playing this Hunt?</h3>
+          <div class="wc-declare-choices">
+            <button class="wc-declare-option" disabled style="opacity:.6">
+              <span class="wc-declare-option-name">Play to Win</span>
+              <span class="wc-declare-option-body">Cards score their printed rank. Every trick you take adds both cards to <b>Spoils</b>.</span>
+            </button>
+            <button class="wc-declare-option wc-is-lose" disabled style="opacity:.6">
+              <span class="wc-declare-option-name">Play to Lose</span>
+              <span class="wc-declare-option-body">Cards invert — a 1 scores 11. <span class="gone">You get <b>3 credits</b>, each claiming one trick you lose.</span></span>
+            </button>
+          </div>
+          <p class="wc-declare-foot">Standing still comes from your trick count either way, <span class="gone">and the Demand is still 220.</span></p>
+        </div>
+      </div>
+    </div>
+    <div>
+      <span class="tag tag-after">after DLR-67</span>
+      <div class="surface felt">
+        <div class="wc-declare">
+          <p class="wc-declare-eyebrow">Before the first trick</p>
+          <h3>Thirteen cards. Which way are you playing this Hunt?</h3>
+          <div class="wc-declare-choices">
+            <button class="wc-declare-option" onclick="log('Declare → path=win')">
+              <span class="wc-declare-option-name">Play to Win</span>
+              <span class="wc-declare-option-body">Cards score their printed rank. Every trick you take adds both cards to <b>Spoils</b>.</span>
+            </button>
+            <button class="wc-declare-option wc-is-lose" onclick="log('Declare → path=lose')">
+              <span class="wc-declare-option-name">Play to Lose</span>
+              <span class="wc-declare-option-body">Cards invert — a 1 scores 11. Every trick you take still adds both its cards to your <b>Spoils</b>, at those inverted values.</span>
+            </button>
+          </div>
+          <p class="wc-declare-foot">Standing still comes from your trick count either way — but the two paths band it differently.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="log" id="log-declare">Click either option.</div>
+
+  <h2>2 · The status band's ledger</h2>
+  <p class="note">
+    Five cells become three. <b>Gone:</b> <span class="gone">the Demand cell (solid brass border)</span>
+    and <span class="gone">the credits cell (double border)</span>.
+    <b>Kept:</b> <span class="kept">Spoils × Standing</span>, with the dashed border still
+    separating Standing from the rest in form, not colour alone — and the third cell now reads
+    <span class="kept">Damage</span> rather than Score, per your gate decision. The trick counter
+    to its left is untouched: its <code>wc-score-*</code> classes are a different thing entirely
+    and must not move.
+  </p>
+  <div class="surface">
+    <div class="wc-status">
+      <div class="wc-plate">
+        <span class="wc-plate-label">Opponent</span>
+        <span class="wc-stack"><i class="wc-stack-back"></i><i class="wc-stack-back"></i><i class="wc-stack-back"></i><i class="wc-stack-back"></i></span>
+        <span class="wc-plate-label">4 held</span>
+      </div>
+      <div class="wc-score">
+        <span class="wc-score-cell"><span class="wc-score-side">You</span><span class="wc-score-value">7</span></span>
+        <span class="wc-score-cell"><span class="wc-score-side">Trick</span><span class="wc-score-value">10</span></span>
+        <span class="wc-score-cell"><span class="wc-score-side">Them</span><span class="wc-score-value">3</span></span>
+      </div>
+      <div class="wc-ledger" id="ledger">
+        <span class="wc-ledger-cell"><span class="wc-ledger-key">Spoils</span><span class="wc-ledger-value">84</span></span>
+        <span class="wc-ledger-op">×</span>
+        <span class="wc-ledger-cell wc-is-band"><span class="wc-ledger-key">Standing</span><span class="wc-ledger-value">Victorious ×5</span></span>
+        <span class="wc-ledger-op">=</span>
+        <span class="wc-ledger-cell"><span class="wc-ledger-key">Damage</span><span class="wc-ledger-value">420</span></span>
+        <span class="wc-ledger-op removed" id="op-demand">/</span>
+        <span class="wc-ledger-cell removed-cell" id="cell-demand"><span class="wc-ledger-key">Demand</span><span class="wc-ledger-value">220</span></span>
+        <span class="wc-ledger-cell removed-cell" id="cell-credits"><span class="wc-ledger-key">Credits</span><span class="wc-ledger-value">2</span></span>
+      </div>
+    </div>
+    <p class="centre" style="margin-top:1rem">
+      <button class="wc-table-hint" onclick="toggleLedger()" id="btn-ledger">Delete the two struck cells</button>
+    </p>
+  </div>
+  <div class="log" id="log-ledger">Click to see the ledger this ticket leaves.</div>
+
+  <h2>3 · A resolved trick you lost</h2>
+  <p class="note">
+    This is the moment that repeats thirteen times a round. <b>Gone:</b>
+    <span class="gone">the "Claiming credits N Spoils" preview and the Claim / Let it go fork</span>.
+    <b>Kept:</b> <span class="kept">one carry-on control</span>, the same one the Win path
+    already had — so the Lose path stops costing an extra decision per trick.
+  </p>
+  <div class="before-after">
+    <div>
+      <span class="tag tag-before">on disk today (Lose declared)</span>
+      <div class="surface felt">
+        <div class="wc-trick-row">
+          <span class="wc-played"><span class="wc-played-side">You</span><span class="card">4</span></span>
+          <span class="wc-played wc-is-winner"><span class="wc-played-side">Them</span><span class="card">9</span></span>
+        </div>
+        <p class="wc-table-line">They take the trick.</p>
+        <p class="wc-table-line gone" style="font-size:.85rem">Claiming credits <b>11</b> Spoils.</p>
+        <div class="wc-claim-row">
+          <button class="wc-claim" onclick="log('ClaimTrick — the action this ticket deletes', 'log-trick')">Claim these — 2 credits left</button>
+          <button class="wc-decline" onclick="log('CarryOn', 'log-trick')">Let it go</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <span class="tag tag-after">after DLR-67</span>
+      <div class="surface felt">
+        <div class="wc-trick-row">
+          <span class="wc-played"><span class="wc-played-side">You</span><span class="card">4</span></span>
+          <span class="wc-played wc-is-winner"><span class="wc-played-side">Them</span><span class="card">9</span></span>
+        </div>
+        <p class="wc-table-line">They take the trick.</p>
+        <p class="centre" style="margin-top:1.55rem">
+          <button class="wc-table-hint" onclick="log('CarryOn — the only control left here', 'log-trick')">Tap the table to carry on</button>
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="log" id="log-trick">Click any control in either panel.</div>
+
+  <h2>4 · The end-of-Hunt panel — the one thing that grows</h2>
+  <p class="note">
+    AC7: <b>card value × Standing for both sides, no target and no verdict.</b>
+    <span class="gone">The Demand line and the cleared/missed verdict go</span>;
+    <span class="kept">a second equation arrives</span>, and the result reads
+    <span class="kept">Damage</span>. The heavier border marks the higher total —
+    <b>this is the layout call for you to judge</b>: does two mirrored equations read as a
+    comparison, or as two unrelated sums? Nothing <i>applies</i> these numbers yet; DLR-68 makes
+    each one deplete the other side's health.
+  </p>
+  <div class="before-after">
+    <div>
+      <span class="tag tag-before">on disk today</span>
+      <div class="surface felt">
+        <div class="wc-over">
+          <h3>The Hunt is over</h3>
+          <div class="wc-equation">
+            <span class="wc-equation-part"><span class="wc-equation-key">Spoils</span><span class="wc-equation-value">84</span></span>
+            <span class="wc-equation-op">×</span>
+            <span class="wc-equation-part"><span class="wc-equation-key">Standing</span><span class="wc-equation-value">×5</span></span>
+            <span class="wc-equation-op">=</span>
+            <span class="wc-equation-part wc-is-result"><span class="wc-equation-key">Score</span><span class="wc-equation-value">420</span></span>
+          </div>
+          <p class="wc-verdict-detail">7 tricks — Victorious. <span class="gone">The Demand was 220.</span></p>
+          <p class="gone" style="font-family:var(--wc-serif);font-size:1.2rem">Demand cleared</p>
+          <table class="wc-tally">
+            <thead><tr><th>Side</th><th>Tricks</th></tr></thead>
+            <tbody><tr><td>You</td><td>7</td></tr><tr><td>Opponent</td><td>6</td></tr></tbody>
+          </table>
+          <button class="wc-decline" disabled style="opacity:.6">Finish the round</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <span class="tag tag-after">after DLR-67</span>
+      <div class="surface felt">
+        <div class="wc-over">
+          <h3>The Hunt is over</h3>
+          <div class="wc-sides">
+            <div class="wc-side wc-is-ahead">
+              <div class="wc-side-name">You</div>
+              <div class="wc-equation">
+                <span class="wc-equation-part"><span class="wc-equation-key">Spoils</span><span class="wc-equation-value">84</span></span>
+                <span class="wc-equation-op">×</span>
+                <span class="wc-equation-part"><span class="wc-equation-key">Standing</span><span class="wc-equation-value">×5</span></span>
+                <span class="wc-equation-op">=</span>
+                <span class="wc-equation-part wc-is-result"><span class="wc-equation-key">Damage</span><span class="wc-equation-value">420</span></span>
+              </div>
+              <p class="wc-verdict-detail">7 tricks — Victorious.</p>
+            </div>
+            <div class="wc-side">
+              <div class="wc-side-name">Opponent</div>
+              <div class="wc-equation">
+                <span class="wc-equation-part"><span class="wc-equation-key">Spoils</span><span class="wc-equation-value">72</span></span>
+                <span class="wc-equation-op">×</span>
+                <span class="wc-equation-part"><span class="wc-equation-key">Standing</span><span class="wc-equation-value">×4</span></span>
+                <span class="wc-equation-op">=</span>
+                <span class="wc-equation-part wc-is-result"><span class="wc-equation-key">Damage</span><span class="wc-equation-value">288</span></span>
+              </div>
+              <p class="wc-verdict-detail">6 tricks — Defeated.</p>
+            </div>
+          </div>
+          <table class="wc-tally">
+            <thead><tr><th>Side</th><th>Tricks</th></tr></thead>
+            <tbody><tr><td>You</td><td>7</td></tr><tr><td>Opponent</td><td>6</td></tr></tbody>
+          </table>
+          <button class="wc-decline" onclick="log('onComplete({ finalState, damage: { player: 420, cpu: 288 } })', 'log-over')">Finish the round</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="log" id="log-over">Click "Finish the round" to see what the mount now reports.</div>
+
+  <h2>5 · What no longer exists anywhere on screen</h2>
+  <p class="note">
+    Click each to confirm it is gone rather than merely hidden — every one of these is a
+    zero-hit grep in the Final verification phase.
+  </p>
+  <div class="surface">
+    <p class="centre">
+      <button class="wc-table-hint" onclick="log('checkDemand / DemandOutcome — deleted from src/warCouncil/scoring.ts', 'log-gone')">checkDemand</button>
+      <button class="wc-table-hint" onclick="log('FIXED_DEMAND (220) / DEMAND_CURVE — deleted from src/hunt/config.ts', 'log-gone')">FIXED_DEMAND</button>
+      <button class="wc-table-hint" onclick="log('claimLostTrick + its four guards — whole module deleted', 'log-gone')">claimLostTrick</button>
+      <button class="wc-table-hint" onclick="log('LOSE_CREDITS_PER_HUNT (3) / Hunt.loseCredits — deleted', 'log-gone')">LOSE_CREDITS_PER_HUNT</button>
+      <button class="wc-table-hint" onclick="log('scoreRound / tricksToPoints — deleted; onComplete now reports scoreHunt per side, as `damage`', 'log-gone')">scoreRound</button>
+      <button class="wc-table-hint" onclick="log('Score → Damage: the type alias, HuntScore→HuntDamage, both readouts and their aria-labels. NOT renamed: scoreHunt, Spoils, and every wc-score-* class (those style the trick counter).', 'log-gone')">Score → Damage</button>
+      <button class="wc-table-hint" onclick="log('DeclarationState keeps `path` only — creditsRemaining, creditedCards, creditedThrough gone', 'log-gone')">DeclarationState fields</button>
+    </p>
+  </div>
+  <div class="log" id="log-gone">Click any name.</div>
+</div>
+
+<script>
+  function log(message, target) {
+    const id = target || 'log-declare';
+    const el = document.getElementById(id);
+    if (el) el.textContent = '→ ' + message;
+  }
+  let ledgerTrimmed = false;
+  function toggleLedger() {
+    ledgerTrimmed = !ledgerTrimmed;
+    const hide = ['op-demand', 'cell-demand', 'cell-credits'];
+    hide.forEach(function (id) {
+      document.getElementById(id).style.display = ledgerTrimmed ? 'none' : '';
+    });
+    document.getElementById('btn-ledger').textContent =
+      ledgerTrimmed ? 'Put them back' : 'Delete the two struck cells';
+    log(ledgerTrimmed
+      ? 'Three cells: Spoils × Standing = Damage. This is the ledger DLR-67 leaves.'
+      : 'Five cells — the Demand cell and the credits cell are what this ticket removes.',
+      'log-ledger');
+  }
+</script>
