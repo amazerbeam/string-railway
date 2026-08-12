@@ -35,13 +35,19 @@ path through `HUNT_DECLARATION_NAME`, and the one number in its copy — the wor
 inversion pivot cannot leave the copy lying. Two sibling controls is under `game-ux`'s five-control
 threshold, so they are ordinary tab stops with no roving tabindex.
 
-**Its copy describes the interim and is the developer's to overturn.** The Lose option now reads
-"Cards invert — a 1 scores 11. Every trick you take still adds both its cards to your Spoils, at
-those inverted values", and the foot line "Standing still comes from your trick count either way —
-but the two paths band it differently." Both replaced strings that quoted a Demand or a credit count.
-Honest about what the game currently does — and, deliberately, *not* about §1's pile swap, which
-lands next. Anyone who has read §1 will find it reads slightly wrong; that is the price of shipping
-the interim as a coherent state rather than a half-migration.
+**Its Lose copy now states the opposite of the rule, and is the developer's to rewrite.** The Lose
+option reads "Cards invert — a 1 scores 11. Every trick you take still adds both its cards to your
+Spoils, at those inverted values", and the foot line "Standing still comes from your trick count
+either way — but the two paths band it differently." The foot line is still correct. **The first
+sentence is not, as of DLR-69** (2026-08-12): under the pile swap a trick you take adds its cards to
+the **Quarry's** total, not yours — the sentence asserts precisely what the swap reverses, and it is
+the sentence a player reads at the moment they choose the path.
+
+This was written when the own-pile reading was the live interim and was honest then. DLR-69 put every
+UI file out of scope, so it could not fix the copy it invalidated. Three ways out were recorded for the
+developer — accept it for the prototype, widen a later ticket by this one file, or a follow-up ticket —
+and **the replacement wording is theirs to write**, since the gate's copy is the one place the game
+explains its own scoring to a player in a sentence.
 
 ### The hand's display order — three keys, and why it is total
 

@@ -63,17 +63,23 @@ declare in the fixture, never to weaken the guard.
 
 ### What the Lose path is now
 
-The Lose path is, as of DLR-67, **entirely a scoring reading** — it changes what your cards are
-worth and which Standing table bands your trick count, and nothing else. It adds no decision during
-play.
+The Lose path is **entirely a scoring reading** — it changes what your cards are worth, *whose* cards
+you are paid for, and which Standing table bands your trick count, and nothing else. It adds no
+decision during play.
 
-- **Card values invert.** `cardValueFor(HuntDeclaration.Lose)` scores a rank `r` as `12 − r`, so a
-  Swan (1) is worth 11 and a Monarch (11) is worth 1. See
+- **Card values invert.** `cardValueSchemeFor(HuntDeclaration.Lose).value` scores a rank `r` as
+  `12 − r`, so a Swan (1) is worth 11 and a Monarch (11) is worth 1. See
   [../hunt/scoring-tunables.md](../hunt/scoring-tunables.md).
+- **The capture piles swap (DLR-69).** That same scheme's `paidPile` is `other`, so on Lose each side
+  is paid for the pile it did *not* win — you for the Quarry's captured cards, the Quarry for yours,
+  each pile counted exactly once. This is the half that makes a declared Lose executable as a plan:
+  every trick you take fattens the Quarry's total rather than your own.
 - **A different Standing table bands the trick count** — `standingTableFor(HuntDeclaration.Lose)`
   peaks at 4–6 tricks where the Win table peaks at 7–9 (DLR-66).
-- **Both readings apply to both sides.** The declaration is the round's, not the player's, so
-  `spoils(state, 'cpu')` uses the same scheme as the player's.
+- **All three readings apply to both sides.** The declaration is the round's, not the player's, so
+  `spoils(state, 'cpu')` uses the same scheme as the player's — and because that scheme is resolved
+  once and handed to both seats, the two sides reading *different piles* is one crossing rather than a
+  per-seat decision.
 
 > **What DLR-67 deleted, and why it is worth knowing.** DLR-63 gave the Lose path a **capped
 > credit mechanic**: a pool of `LOSE_CREDITS_PER_HUNT` credits, each spendable on a trick you had
@@ -85,11 +91,15 @@ play.
 > `DeclarationState`, the `ClaimTrick` reducer action and the on-screen claim control. It is
 > recoverable from git history, not from this ticket; `CLAUDE.md` records the `git show` incantation.
 
-**The immediate consequence for play: the Lose path currently has no decision of its own between
-tricks.** Where a resolved lost trick used to offer a two-way fork ("Claim these — N credits left" /
-"Let it go"), every resolved trick now offers the same single carry-on control — thirteen fewer
-forks per round. That is expected for the interim; DLR-68's pile swap is what gives the path its
-texture back.
+**The immediate consequence for play: the Lose path still has no decision of its own between
+tricks, and the swap did not give it one.** Where a resolved lost trick used to offer a two-way fork
+("Claim these — N credits left" / "Let it go"), every resolved trick now offers the same single
+carry-on control — thirteen fewer forks per round. DLR-69's pile swap was expected to give the path its
+texture back and does so **structurally rather than as a decision**: a lost trick now fattens your own
+total automatically, with nothing to spend and nothing to choose. What it genuinely adds is a reason to
+care *which* cards the Quarry captures, since those are the cards you are paid for — but that is a
+consideration inside the existing follow-suit choice, not a fork of its own. Whether it reads as a
+decision is recorded as an open tension in `.docs/game_rules/the-hunt.md`.
 
 ### Single-branch `spoils`, and the modifier that went with it
 
@@ -107,6 +117,8 @@ card modifier moved a Hunt by under 1% of the ceiling, which is what made it saf
 than re-home.
 
 **This own-pile reading is a chosen interim, not the design.** §1 specifies a two-way pile swap;
-DLR-68 owns it. DLR-67 collapsed the credit branch to the simplest coherent form rather than
+**DLR-69** owns it. DLR-67 collapsed the credit branch to the simplest coherent form rather than
 jumping straight to the swap, so the intermediate state is a state someone could play, not a
-half-migration.
+half-migration. DLR-68 pinned the interim explicitly rather than leaving it implied: its enumeration
+spec asserts §8's Win column in full but an **own-pile** Lose column, with the handover stated at the
+fixture — see [scoring.md](scoring.md).

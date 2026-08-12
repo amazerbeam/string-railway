@@ -11,6 +11,7 @@ interface RoundStatusBandProps {
   readonly roundComplete: boolean
   readonly spoils: Spoils
   readonly band: StandingBand
+  readonly table: readonly StandingBand[]
 }
 
 /**
@@ -27,6 +28,7 @@ export default function RoundStatusBand({
   roundComplete,
   spoils,
   band,
+  table,
 }: RoundStatusBandProps) {
   const yourTricks = tricksWon[PlayerSide.Player]
   const theirTricks = tricksWon[PlayerSide.Cpu]
@@ -58,7 +60,7 @@ export default function RoundStatusBand({
           <span className="wc-score-value">{theirTricks}</span>
         </span>
       </div>
-      <HuntLedger spoils={spoils} band={band} />
+      <HuntLedger spoils={spoils} band={band} table={table} tricks={yourTricks} />
     </header>
   )
 }

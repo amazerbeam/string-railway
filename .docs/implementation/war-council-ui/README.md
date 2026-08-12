@@ -1,7 +1,7 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67
+**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68
 
 ## Responsibility
 
@@ -29,6 +29,15 @@ cleared/missed verdict, the credits cell and the trick well's claim control are 
 mechanics behind them; the ledger's third cell now reads **Damage** rather than "Score"; and the end
 panel grew a **second equation**, so both sides' `Spoils × Standing = Damage` is stated side by side.
 A resolved trick now always offers exactly one control.
+
+**DLR-68 replaced the ledger's one-cell Standing readout with the whole table.** Where the bar
+previously said only *"Defeated ×3"* — where you are, and nothing about where you could go — it now
+shows every configured band as a **profile**: each bracket as wide as its trick span, as tall as its
+multiplier, pipped once per trick, with the bracket you currently occupy marked. Below the existing
+narrow-viewport breakpoint it collapses back to the single cell. This arrived as a **mid-planning
+scope widening** — DLR-68 was an engine-only ticket until the developer supplied an annotated
+screenshot and asked for it — so the ticket carries an `engine` label over what is now partly UI work.
+See [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md).
 
 It sits under `src/app/` rather than beside the engine for a hard reason: `eslint.config.js`'s
 pure-core override bars `src/warCouncil/**` from importing React at all, so a `.tsx` file there
@@ -71,11 +80,21 @@ The zone components — `RoundStatusBand`, `DecreePile`, `TrickWell`, `HandFan`,
 `RoundOverPanel` — are each a default export consumed only by `WarCouncilRound.tsx`. DLR-53 added
 three more in the same shape: `HuntLedger` (mounted inside `RoundStatusBand`), `QuarryDossier`, and
 `IntentTelegraph` (both mounted in the new `wc-dossier` zone). DLR-63 added `DeclareGate`, mounted as
-the felt cascade's **first** branch.
+the felt cascade's **first** branch. DLR-68 added `StandingTrack`, mounted inside `HuntLedger` — which
+gained two required props (`table` and `tricks`) to feed it, threaded down from `WarCouncilRound`
+through `RoundStatusBand`.
 
-`labels.ts`, `fanLayout.ts`, `roundReducer.ts`, `intentPreview.ts`, and `handOrder.ts` import no React
-and touch no DOM global, so all five are unit-tested in the cheap `node` Vitest project; the
-components are tested in the `dom` project (see [Testing](testing.md)).
+`WarCouncilRound` supplies that table as `standingTableFor(declaredPath(ui.round))` — **the same pair
+the engine scores with**, which is what makes it impossible for the track to display a different table
+from the one `huntDamage` would use.
+
+`labels.ts`, `fanLayout.ts`, `roundReducer.ts`, `intentPreview.ts`, `handOrder.ts`, and (DLR-68)
+`standingSegments.ts` import no React and touch no DOM global, so all six are unit-tested in the cheap
+`node` Vitest project; the components are tested in the `dom` project (see [Testing](testing.md)).
+
+`standingSegments.ts` sits here rather than in the lint-enforced pure core for the same reason
+`handOrder.ts` does: **how a table is drawn is not a game rule.** It derives spans, height ratios and
+peak/cliff flags from whatever table it is handed and writes no multiplier or boundary of its own.
 
 `handOrder.ts` sits here rather than in the lint-enforced pure core on purpose: **display order is not
 a game rule.** It is the same call `intentPreview.ts` already makes — React-free and DOM-free, but
@@ -85,13 +104,15 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
 ## How it works
 
 - [Layout and styling](layout-and-styling.md) — the full-viewport shell, the `dvh` vs `svh`
-  choice, the three-stylesheet split, and how the fan's transform is composed in CSS rather than
-  written whole from React.
+  choice, the **five**-stylesheet split and the 400-line budget that caused every one of them, and
+  how the fan's transform is composed in CSS rather than written whole from React.
 - [Interaction and state](interaction-and-state.md) — tap-twice-to-play, the reducer's no-effect
   design, how a held trick's winner is derived rather than recomputed, and rejected-move recovery.
 - [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md) — the `hunt` prop, the ledger
-  and dossier, the telegraph's two readings and why the Quarry's lead is held uncommitted, and the
-  end panel's equation.
+  and dossier, the telegraph's two readings and why the Quarry's lead is held uncommitted, the
+  end panel's equation, and (DLR-68) the **Standing track**: the whole multiplier table drawn as a
+  profile, why its geometry lives in a pure helper, why its pips nest inside their bracket, and why
+  its narrow-viewport collapse is pure CSS with no effect to clean up.
 - [The declare gate and the hand's order](declare-gate-and-hand-order.md) — why the gate is the felt
   cascade's first branch rather than a modal, its one-prop shape and the copy that is the developer's
   to overturn, the three-key display sort and why the hand re-orders mid-round, and AC7's card face
@@ -211,14 +232,24 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
   compounds the "Let them lead" tap below: trick 1 now opens with **two** taps before the first card.
   Both are structural consequences of things worth having — the gate is where the round's whole
   scoring scheme is chosen, and holding the lead uncommitted is what makes it telegraphable — but
-  nobody has yet played it and said whether the opening reads well. DLR-67 added a second open
-  question here: its replacement gate copy describes the **interim** scoring, so it will read as
-  slightly wrong to anyone who knows §1's pile swap is next.
-- **The Lose path has no decision of its own between tricks.** DLR-67 removed the claim fork, so
-  every resolved trick now offers the same single carry-on control under either declaration —
-  thirteen fewer forks per round, and a strictly lower interaction cost, but also a path whose
-  only decision is the opening one. DLR-68's pile swap is what gives it texture back. Worth playing
-  before then.
+  nobody has yet played it and said whether the opening reads well.
+- **The declare gate's Lose copy is now factually wrong, and fixing it is a copy decision.** DLR-67
+  wrote it to describe the own-pile interim; DLR-69 landed the pile swap and put every UI file out of
+  scope, so the sentence "every trick you take still adds both its cards to your Spoils" now asserts
+  the opposite of the rule — at the moment a player is choosing the path. See
+  [declare-gate-and-hand-order.md](declare-gate-and-hand-order.md); the wording is the developer's.
+- **The Spoils readouts may no longer read honestly on a Lose Hunt.** Since DLR-69, `HuntLedger`'s
+  "Running Spoils" and `RoundOverPanel`'s "Spoils" display a figure built from the **Quarry's** captured
+  cards under the player's own heading. The labels are neutral enough to survive — they name the additive
+  term without claiming whose cards it came from — but whether that reads as honest or as a mislabelled
+  number can only be answered by playing a declared-Lose Hunt and looking at it.
+- **The Lose path has no decision of its own between tricks, and the pile swap did not give it one.**
+  DLR-67 removed the claim fork, so every resolved trick now offers the same single carry-on control
+  under either declaration — thirteen fewer forks per round, and a strictly lower interaction cost, but
+  also a path whose only decision is the opening one. DLR-69's swap was expected to give it texture back
+  and does so structurally rather than as a decision: what it adds is a reason to care *which* cards the
+  Quarry captures, inside the existing follow-suit choice. Whether that reads as a decision is the thing
+  to watch when playing.
 - **Whether the end panel's two mirrored equations read as a comparison or as two unrelated sums is
   unjudged**, as is whether the heavier border on the higher total is the right ahead-marker. Both
   are DLR-67 additions settled by `mockup.html` rather than by play.

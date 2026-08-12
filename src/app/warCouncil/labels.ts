@@ -64,6 +64,10 @@ export const STANDING_BAND_NAME: Readonly<Record<StandingBandName, string>> = {
   [StandingBandName.Greedy]: 'Greedy',
 }
 
+/** Group label for the Standing track (DLR-68). Kept beside `STANDING_BAND_NAME` because both
+ *  are display copy for the same module — see `.claude/skills/react-frontend/SKILL.md`. */
+export const STANDING_TRACK_LABEL = 'Standing track'
+
 /** AC1 — the two declarable paths, as the player sees them named. */
 export const HUNT_DECLARATION_NAME: Readonly<Record<HuntDeclaration, string>> = {
   [HuntDeclaration.Win]: 'Win',

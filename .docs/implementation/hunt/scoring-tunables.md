@@ -48,19 +48,40 @@ pair (different multipliers *and* the Lose side's different boundaries), confirm
 multipliers change, confirms the alternative pair is still an exact complement, and confirms the
 real exports are unaffected — all without mutating shared module state.
 
-### Card value per declaration
+### Card value per declaration — and, since DLR-69, the pile it is summed over
 
-`cardValueFor(declaration)` returns `invertedCardValue` on Lose and `cardBaseValue` on Win — both
-already on disk, both unchanged, both `(rank: number) => number`. It is the exact counterpart of
-`standingTableFor` on the additive term, so the module's whole public story is: *name a
-declaration, get both terms of the equation.*
+The declaration decides **two** things about card value, and since DLR-69 they travel together as a
+single `CardValueScheme` of `{ value, paidPile }`:
+
+| Declaration | `value`              | `paidPile` | So a side is paid for…                  |
+| ----------- | -------------------- | ---------- | --------------------------------------- |
+| Win         | `cardBaseValue`      | `own`      | its own captured cards, at printed rank |
+| Lose        | `invertedCardValue`  | `other`    | the *other* side's cards, at `12 − r`   |
+
+`cardValueSchemeFor(declaration)` is the accessor, and a module-private total
+`Readonly<Record<HuntDeclaration, CardValueScheme>>` is the data behind it. It is the third sibling of
+`standingTableFor` and `cardValueFor`, so the module's whole public story is still: *name a
+declaration, get every term of the equation.*
+
+**The record is total on purpose, and that is what closes DLR-69's AC6.** A ternary
+(`declaration === Lose ? inverted : base`, which is what `cardValueFor` was until DLR-69) gives a
+hypothetical third declared path a **silent** default of printed rank and the own pile. A
+`Record<HuntDeclaration, …>` makes that same third member a missing-property compile error instead.
+`cardValueFor` survives, redefined as `CARD_VALUE_SCHEMES[declaration].value`, so the declaration →
+value mapping exists exactly once and its consumers outside the value path — chiefly
+`src/app/warCouncil/DeclareGate.tsx` — kept compiling with no edit.
+
+**Both axes are bound into one object so neither can be read without the other.** Two separate
+parameters would leave a genuinely bad state reachable: a caller injecting the Lose value function
+while the pile defaulted off an undeclared state would apply inverted values to the **own** pile — the
+exact DLR-67 interim DLR-69 retired, reproduced by a caller who supplied half the answer.
 
 **No modifier of any kind is applied** — no Treasure `+1`, no Poison `−1`. Both were
 Decided-removed (§1, §9 2026-08-11) on the grounds that at ×5 a ±1 card modifier moves a Hunt by 5
-out of 540, under 1%. **DLR-67 made that rule live**: `src/warCouncil/spoils.ts` now calls
-`cardValueFor` and applies nothing on top, and its `sumCards` helper — which had gone on folding the
-±1 in for one ticket after the design removed it — is deleted. See
-[../war-council/scoring.md](../war-council/scoring.md).
+out of 540, under 1%. **DLR-67 made that rule live**: `src/warCouncil/spoils.ts` calls the accessor
+and applies nothing on top, and its `sumCards` helper — which had gone on folding the ±1 in for one
+ticket after the design removed it — is deleted. DLR-69 re-verified it by grep across the three
+value-path source files. See [../war-council/scoring.md](../war-council/scoring.md).
 
 ### Card base value
 
@@ -80,10 +101,22 @@ zero and no negative. `__tests__/config.test.ts` asserts all four of those prope
 identity, and that rank 11 inverts to something greater than zero).
 
 The signature match with `cardBaseValue` is the load-bearing design choice. Both are
-`(rank: number) => number`, so `spoils` takes each as an injectable parameter and reads the scheme
-off the declaration rather than knowing anything about how a value is computed — see
+`(rank: number) => number`, so either drops into a `CardValueScheme`'s `value` field and `spoils`
+reads the scheme off the declaration rather than knowing anything about how a value is computed — see
 [../war-council/scoring.md](../war-council/scoring.md). Nothing here divides, so no inverted value
 can be `NaN` or `Infinity`.
+
+> **The mirror property is a trap when choosing test fixture ranks, and it caught DLR-69.** Because
+> the inversion is its own mirror, any two ranks summing to `12` are interchangeable under it — so a
+> fixture of rank 1 against rank 11 makes "own pile at printed rank" and "other pile at `12 − r`"
+> produce *identical* numbers on both sides, and a test built on it passes under either scheme. That is
+> exactly the degeneracy DLR-69's AC1/AC2 fixture shipped with and had corrected post-review, to rank 2
+> against rank 11. A fixture meant to discriminate the two value schemes must use ranks that **do not
+> sum to `RANK_INVERSION_PIVOT`**. Rank 6 is the same trap in its sharpest form — it is the inversion's
+> fixed point, so a pile of rank-6 cards is worth the same under both schemes. That property is used
+> *deliberately* in `src/warCouncil/__tests__/huntEnumeration.test.ts`, where it is what lets §8's
+> published table be checked against a call with no injected scheme; the distinction is whether the
+> test is trying to hold the value axis constant or to tell the two schemes apart.
 
 > **The Lose-credit cap that used to sit here is gone.** `LOSE_CREDITS_PER_HUNT` (`3`, credits per
 > Hunt, each spendable on one lost trick) was a placeholder whose derivation was computed against the

@@ -1,7 +1,7 @@
 export type { Hunt, Quarry, Spoils, Standing, Damage, Health } from './types'
 export { QuarryCharacter, HuntDeclaration, DuelSide } from './types'
 
-export type { StandingBand } from './config'
+export type { StandingBand, CardValueScheme } from './config'
 export {
   StandingBandName,
   HUNT_MULTIPLIER_TABLES,
@@ -9,6 +9,8 @@ export {
   resolveStanding,
   cardBaseValue,
   cardValueFor,
+  PaidPile,
+  cardValueSchemeFor,
   FORAGE_BUDGET_PER_ENCOUNTER,
   ENCOUNTERS_PER_RUN,
   TelegraphFidelity,

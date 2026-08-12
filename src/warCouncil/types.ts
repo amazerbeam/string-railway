@@ -104,6 +104,11 @@ export function currentTurn(state: RoundState): PlayerSide {
  * scored yet, and the readouts need a table to display before the player declares. The single
  * statement of that default — `spoils`, `scoreHunt` and the status band all read it here rather
  * than each writing their own `?? HuntDeclaration.Win`.
+ *
+ * NOT the path `huntDamage` takes. Its undeclared-reads-as-Win default is right for a readout
+ * and wrong for scoring — routed through here, an undeclared Hunt would score cleanly off the
+ * Win table and deal damage no rule authorised. `huntDamage` reads `state.declaration`
+ * directly and throws `HuntNotScorableError` instead (DLR-68 AC5).
  */
 export function declaredPath(state: RoundState): HuntDeclaration {
   return state.declaration?.path ?? HuntDeclaration.Win

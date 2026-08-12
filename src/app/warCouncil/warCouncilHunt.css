@@ -1,10 +1,12 @@
 /* War Council — the Hunt screen's readouts: the status band's Hunt ledger, the dossier
    zone (the Quarry's card and the intent telegraph), and the end-of-Hunt equation panel.
    Sibling to `warCouncil.css` and `warCouncilCards.css`, split out because the shell
-   stylesheet is at its 400-line budget; import all four sheets from the mount component
+   stylesheet is at its 400-line budget; import all five sheets from the mount component
    (the fourth, `warCouncilDeclare.css`, holds the DLR-63 declare gate and claim control
    that used to live here — moved out when this file's own DLR-63 additions crossed 400
-   lines in turn; see that file's header for why it is imported after this one).
+   lines in turn; the fifth, `warCouncilStandingTrack.css`, holds the DLR-68 Standing track —
+   moved out before landing here at all, because this file's own DLR-68 addition would have
+   crossed 400 lines in turn; see that file's header for why it is imported after this one).
    Tokens are defined once in `warCouncil.css` and apply globally once that sheet is
    loaded — nothing here redeclares `:root`. Selectors and values are transcribed from the
    approved mockup (`.claude/contract/DLR-53-hunt-screen/mockup.html`) — no new colour

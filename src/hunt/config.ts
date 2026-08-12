@@ -103,6 +103,51 @@ export function invertedCardValue(rank: number): number {
 }
 
 /**
+ * Whose capture pile a side is paid for, stated RELATIVE to that side — which is why this union
+ * needs no `PlayerSide` and `src/hunt/` stays free of any `src/warCouncil/` import (types.ts:26-32).
+ * Resolving `Other` into a concrete seat is `src/warCouncil/spoils.ts`'s job, via `otherSide`.
+ */
+export const PaidPile = {
+  Own: 'own',
+  Other: 'other',
+} as const
+export type PaidPile = (typeof PaidPile)[keyof typeof PaidPile]
+
+/**
+ * The two halves of §1's card-value rule, bound so neither can be read without the other.
+ * Deliberately not two parameters: a caller who injected `cardValueFor(Lose)` while the pile
+ * defaulted from an undeclared state would get inverted values over the OWN pile — the exact
+ * interim DLR-69 retires, produced by supplying half the scheme (DLR-69 AC1, AC2).
+ */
+export interface CardValueScheme {
+  readonly value: (rank: number) => number
+  readonly paidPile: PaidPile
+}
+
+/**
+ * §1's card-value rule as data, per declaration (hybrid-design.md lines 42-44). A total `Record`,
+ * not a ternary: a third `HuntDeclaration` member becomes a missing-property compile error rather
+ * than a silent fall through to printed rank and the own pile (DLR-69 AC6).
+ *
+ * Module-private, unlike `HUNT_MULTIPLIER_TABLES` — which is exported and then documented as
+ * unusable outside `src/hunt/`. `cardValueSchemeFor` is the only way in.
+ *
+ * The scheme objects are built once here rather than per call, so the accessor allocates nothing.
+ */
+const CARD_VALUE_SCHEMES: Readonly<Record<HuntDeclaration, CardValueScheme>> = {
+  [HuntDeclaration.Win]: { value: cardBaseValue, paidPile: PaidPile.Own },
+  [HuntDeclaration.Lose]: { value: invertedCardValue, paidPile: PaidPile.Other },
+}
+
+/**
+ * The third sibling of `standingTableFor` and `cardValueFor`: name a declaration once, get both
+ * halves of §1's card-value rule as one inseparable object.
+ */
+export function cardValueSchemeFor(declaration: HuntDeclaration): CardValueScheme {
+  return CARD_VALUE_SCHEMES[declaration]
+}
+
+/**
  * §1's additive term, per declaration: a card is worth its printed rank on Win and `12 − r`
  * on Lose (DLR-66 AC6). Both functions already existed and are unchanged; this is the
  * accessor that pairs with `standingTableFor`, so a consumer names a declaration once and
@@ -110,9 +155,13 @@ export function invertedCardValue(rank: number): number {
  *
  * NO modifier of any kind is applied. The Treasure `+1` and Poison `−1` are Decided-removed
  * (§1, §9 2026-08-11) — at ×5 a ±1 card modifier moves a Hunt by 5 out of 540.
+ *
+ * DLR-69: now read off `CARD_VALUE_SCHEMES` rather than a `declaration === Lose` ternary, so the
+ * declaration → value mapping exists exactly once and a third declared path cannot default. This
+ * is the VALUE half only; a caller that also needs the pile half wants `cardValueSchemeFor`.
  */
 export function cardValueFor(declaration: HuntDeclaration): (rank: number) => number {
-  return declaration === HuntDeclaration.Lose ? invertedCardValue : cardBaseValue
+  return CARD_VALUE_SCHEMES[declaration].value
 }
 
 /**

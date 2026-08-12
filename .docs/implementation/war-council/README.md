@@ -1,7 +1,7 @@
 # War Council — `src/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67
+**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69
 
 ## Responsibility
 
@@ -48,10 +48,12 @@ served. See [the declaration and the Lose path](declaration-and-lose-path.md).
 | `applyFoxExchange`, `applyWoodcutterDraw`, `nextLeaderAfterTrick`            | The three ability effects that mutate `RoundState` directly                                                                                                                                                | `abilities.ts`          |
 | `QUARRY_SIDE`, `monarchFollowSet`, `monarchFollowApplies`                    | The round-long rule-break module (DLR-51): the seat the Quarry plays, the Monarch's Swan-or-highest follow set, and the predicate for whether the round-long constraint is in force this trick              | `quarryRuleBreak.ts`    |
 | `playCard`                                                                   | The single reducer-shaped entry point — the only way to mutate `RoundState`; since DLR-51 its rejection-reason branch also consults `monarchFollowApplies`, so a round-long Monarch rejection reports `MustFollowMonarch` rather than the generic follow-suit reason | `playCard.ts`           |
-| `spoils`                                                                     | **Single-branch again since DLR-67.** A plain reduce over that side's own `capturedCards` at `cardValueFor(declaredPath(state))` — printed rank on Win, `12 − r` on Lose. No modifier of any kind: the Treasure(+1)/Poison(−1) fold was removed here, closing the gap DLR-66 opened. **A deliberate interim** — DLR-68's pile swap replaces this own-pile reading | `spoils.ts`             |
+| `spoils`                                                                     | **Single-branch again since DLR-67.** A plain reduce over that side's own `capturedCards` at `cardValueFor(declaredPath(state))` — printed rank on Win, `12 − r` on Lose. No modifier of any kind: the Treasure(+1)/Poison(−1) fold was removed here, closing the gap DLR-66 opened. **A deliberate interim** — **DLR-69's** pile swap replaces this own-pile reading (attribution corrected by DLR-68, which does not own the swap) | `spoils.ts`             |
 | `DeclarationState`                                                           | `{ path }` — narrowed by DLR-67 from DLR-63's four fields when the Lose-credit bookkeeping was retired. Still a nested object rather than a bare field on `RoundState`, so a reader has exactly one absence check | `types.ts`              |
 | `declareHunt`, `DeclareRejection`, `DeclareResult`                           | Writes the declaration once, before the first card. Rejects `AlreadyDeclared` and `HuntUnderway` — both kept by DLR-67, which removed only its third `loseCredits` parameter                               | `declareHunt.ts`        |
-| `scoreHunt`, `HuntDamage`                                                    | §1's equation for one finished round — `{ spoils, tricks, band, standing, damage }` where `damage = spoils × standing`, computed once from a final `RoundState`, never accumulated per trick (DLR-50; renamed from `HuntScore`/`score` by DLR-67). Both injectable terms now default off the state's **own** declaration | `scoring.ts`            |
+| `scoreHunt`, `HuntDamage`                                                    | §1's equation for **one seat** of a finished round — `{ spoils, tricks, band, standing, damage }` where `damage = roundDamage(spoils × standing)`, computed once from a final `RoundState`, never accumulated per trick (DLR-50; renamed from `HuntScore`/`score` by DLR-67; rounding added by DLR-68). Both injectable terms default off the state's **own** declaration. `spoils` is deliberately **not** renamed to `cardValue` — developer's call, 2026-08-12 | `scoring.ts`            |
+| `huntDamage`, `HuntOutcome`                                                  | **DLR-68's entry point** — both sides' damage for one finished Hunt, off the single declaration the player made, returned as `{ declaration, incoming }` where `incoming` is keyed by the side each figure **depletes** (not by the side that dealt it). Reads `state.declaration` directly, never `declaredPath`. Nothing consumes it yet | `scoring.ts`            |
+| `HuntNotScorable`, `HuntNotScorableError`                                    | Why a Hunt cannot be scored — a closed `as const` map (`'unfinished'` / `'undeclared'`) carried on the **first `Error` subclass in `src/`**, so a test asserts which guard fired without matching a message string. `huntDamage` throws rather than returning a zero, which would be indistinguishable from a legitimately scoreless Hunt (DLR-68) | `scoring.ts`            |
 | `chooseCpuCard`, `chooseCpuFoxChoice`, `chooseCpuWoodcutterChoice`           | The three independently-testable sub-decisions of the CPU heuristic — card choice, and the Fox/Woodcutter ability choices                                                                                  | `cpuPlayer.ts`          |
 | `chooseCpuMove`, `CpuMove`                                                   | Composes the three sub-decisions into one `{ card, choice? }` move                                                                                  | `cpuPlayer.ts`          |
 | `quarryIntent`, `QuarryIntent`, `QuarryIntentStance`                         | The telegraph's preview of the Quarry's next move (DLR-52) — `{ suit, stance? }` or `null` when there is no move to describe; never the exact card, and `stance` is `Leading`/`Pressing`/`Ducking` | `cpuPlayer.ts`          |
@@ -68,9 +70,12 @@ served. See [the declaration and the Lose path](declaration-and-lose-path.md).
 - [Trick resolution and `playCard`](trick-resolution-and-play.md) — how a trick's winner is
   decided (including the Witch's "counts as trump" rule and the Fox's trump-mutation ordering), and
   `playCard`'s full order of operations as the module's single mutator.
-- [Scoring](scoring.md) — Spoils (DLR-49) — the summed value of a side's own captured cards, single
-  branch again since DLR-67 — and `scoreHunt`'s Spoils × Standing = Damage, now computed per side
-  off the state's own declaration.
+- [Scoring](scoring.md) — Spoils (DLR-49) — the summed value of the one capture pile a side is paid
+  for, which since DLR-69 is its **own** pile on Win and the **other side's** on Lose — `scoreHunt`'s
+  Spoils × Standing = Damage, computed per side off the state's own declaration and rounded at one
+  point (DLR-68), and (DLR-68) `huntDamage`: the two-sided entry point, why its result is keyed by the
+  side each figure *depletes*, why it refuses an unfinished or undeclared Hunt by throwing, and how the
+  enumeration spec pins configuration against the design document.
 - [The declaration and the Lose path](declaration-and-lose-path.md) — `declareHunt`'s two guards,
   `declaredPath`'s undeclared-reads-as-Win default, what the Lose path is now that the credit
   mechanic is gone, and what DLR-67 deleted and why (DLR-63, DLR-67).
@@ -171,14 +176,30 @@ served. See [the declaration and the Lose path](declaration-and-lose-path.md).
   nothing here tracks score, state, or a win condition across rounds. `src/App.tsx`'s current
   restart-on-completion (DLR-47) is a placeholder, not a run loop — see
   [../app/README.md](../app/README.md)'s Deferred section.
-- **The Damage is computed and displayed, but nothing consumes it.** DLR-67 left both sides'
-  `card value × Standing` derived every render and reported through `WarCouncilRoundResult.damage`,
-  with no health to apply it to. Applying damage, the two-way pile swap, health bars and encounter
-  sequencing are DLR-68's — this module deliberately produces the number and stops.
-- **`spoils`' single branch is an interim, not a settled reading.** Each side is currently paid for
-  the cards it captured itself. §1 specifies a two-way pile *swap*, which DLR-68 implements; DLR-67
-  collapsed DLR-63's credit branch to this simpler form deliberately rather than jumping straight to
-  the swap, so the intermediate state is coherent rather than half-migrated.
+- **The Damage is computed, rounded, pointed at a side — and still nothing consumes it.** DLR-68
+  closed the arithmetic and the direction: `huntDamage` returns both sides' totals keyed by the side
+  each depletes, and `roundDamage` is applied at one point so every figure is a whole number. What
+  remains absent is the **health** itself. `PLAYER_START_HEALTH` and `QUARRY_ENCOUNTER_HEALTH` are
+  still read by nothing, nothing subtracts a figure from anything, and no Hunt can be won or lost.
+  Health bars, damage application, pending-damage display and encounter sequencing are DLR-70's and
+  DLR-71's — this module deliberately produces the numbers and stops.
+- **`huntDamage` has no production caller at all.** It is exported from the barrel and exercised only
+  by Vitest. A hazard while that is true: `src/app/warCouncil/WarCouncilRound.tsx` holds a local
+  `const huntDamage` passed as a prop of the same name, so the first ticket to import the engine
+  function into that file must rename the local first or it will silently read the local instead.
+- ~~**`spoils`' single branch is an interim, not a settled reading.**~~ **Closed by DLR-69**
+  (2026-08-12). The two-way pile swap is implemented: a side is paid for its own pile on Win and the
+  other side's on Lose, each pile counted exactly once. `__tests__/huntEnumeration.test.ts` now carries
+  §8's published Lose column in full rather than the interim own-pile column, and the `k = 0` row is
+  asserted on its own as `+78` to the player — the falsifier for the discarded branch that would have
+  made a perfectly executed Lose finish 78 *behind*.
+- **A stale comment survives at `playCard.ts:106-108`, and it is now wrong twice.** It states that
+  "`spoils` sums each side's own pile", which DLR-69 reversed, and it credits **DLR-68** for the pile
+  swap, which was DLR-69's. `playCard.ts` was outside DLR-69's file map exactly as it was outside
+  DLR-68's, so neither ticket could correct it. The surrounding claim it exists to support is still
+  true and still worth keeping — the append shape `[lead, follow]` is deliberate and both piles are now
+  read by the value path — so this is a comment rewrite, not a deletion. Small, and worth folding into
+  the next ticket that opens that file.
 - **Four of the Quarry's five §4 characters have no round-long enforcement.** Only the Monarch is
   implemented (DLR-51); the Witch, Fox, Woodcutter, and Swan have no entry in `quarryRuleBreak.ts`
   and no round-long behaviour anywhere in this tree — a later ticket adds each the same way: an

@@ -6,6 +6,8 @@ import {
   resolveStanding,
   cardBaseValue,
   cardValueFor,
+  cardValueSchemeFor,
+  PaidPile,
   FORAGE_BUDGET_PER_ENCOUNTER,
   ENCOUNTERS_PER_RUN,
   TelegraphFidelity,
@@ -159,6 +161,47 @@ describe('cardValueFor — §1’s additive term per declaration (AC6)', () => {
     // Treasure (7) and Poison (8) are Decided-removed — neither carries a ±1 here.
     expect(onWin(7)).toBe(7)
     expect(onWin(8)).toBe(8)
+  })
+})
+
+describe('cardValueSchemeFor — the two schemes are exhaustive over the declaration union (DLR-69 AC6)', () => {
+  const EVERY_DECLARATION = Object.values(HuntDeclaration)
+
+  it('covers every declared path, so none can fall through to a default', () => {
+    // Guards the loop below from passing vacuously if the union were ever emptied.
+    expect(EVERY_DECLARATION.length).toBeGreaterThan(1)
+    for (const declaration of EVERY_DECLARATION) {
+      const scheme = cardValueSchemeFor(declaration)
+      expect(typeof scheme.value).toBe('function')
+      expect(Object.values(PaidPile)).toContain(scheme.paidPile)
+    }
+  })
+
+  it('pairs printed rank with the own pile on Win, and 12 − r with the other pile on Lose', () => {
+    const onWin = cardValueSchemeFor(HuntDeclaration.Win)
+    expect(onWin.value(1)).toBe(cardBaseValue(1))
+    expect(onWin.paidPile).toBe(PaidPile.Own)
+
+    const onLose = cardValueSchemeFor(HuntDeclaration.Lose)
+    expect(onLose.value(1)).toBe(invertedCardValue(1))
+    expect(onLose.paidPile).toBe(PaidPile.Other)
+  })
+
+  it('differs between the two declarations on BOTH axes', () => {
+    // The falsifier for a half-applied change: a record that varied only the value function
+    // would satisfy every assertion above and still leave the Lose path on its own pile.
+    const onWin = cardValueSchemeFor(HuntDeclaration.Win)
+    const onLose = cardValueSchemeFor(HuntDeclaration.Lose)
+    expect(onLose.paidPile).not.toBe(onWin.paidPile)
+    expect(onLose.value(11)).not.toBe(onWin.value(11))
+  })
+
+  it('keeps cardValueFor in step with the scheme’s value function', () => {
+    // cardValueFor is derived from the same record, so the two cannot drift. Asserted because
+    // consumers outside the value path (src/app/warCouncil/DeclareGate.tsx) still call it.
+    for (const declaration of EVERY_DECLARATION) {
+      expect(cardValueSchemeFor(declaration).value).toBe(cardValueFor(declaration))
+    }
   })
 })
 

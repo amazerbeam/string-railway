@@ -32,19 +32,31 @@ because **card rotation and lift are transforms, which do not affect layout size
 reserved room the fan's visual pixels spill outside its box and the shell's `overflow: hidden` crops
 them. The fix is to reserve the room, never to loosen the overflow.
 
-The styling ships as **four** stylesheets, not one: `warCouncil.css` (tokens, the shell grid, the
+The styling ships as **five** stylesheets, not one: `warCouncil.css` (tokens, the shell grid, the
 status band, the felt/table, and the hand container), `warCouncilCards.css` (the card face, the
 ability prompt, and the round-over panel), `warCouncilHunt.css` (DLR-53: the ledger, the dossier
-zone, the telegraph, and the end panel's equation), and `warCouncilDeclare.css` (DLR-63: the declare
-gate and the claim control). Every split happened for the same reason — the 400-line file budget. The
-combined original transcription measured 581 lines; `warCouncil.css` then could not absorb DLR-53's new
-zone plus four surfaces; and `warCouncilHunt.css` reached 423 lines once DLR-63 added the declare and
-claim surfaces to it.
+zone, the telegraph, and the end panel's equation), `warCouncilDeclare.css` (DLR-63: the declare
+gate and the claim control), and `warCouncilStandingTrack.css` (DLR-68: the Standing track).
+**Every split happened for the same reason — the 400-line file budget**, and the count is a reliable
+record of how often this sheet family has hit it. The combined original transcription measured 581
+lines; `warCouncil.css` then could not absorb DLR-53's new zone plus four surfaces;
+`warCouncilHunt.css` reached 423 lines once DLR-63 added the declare and claim surfaces to it; and it
+reached **419** again when DLR-68's track rules were appended, which is what carved the fifth sheet.
+That last one is worth noting as a process point: DLR-68's own contract predicted the additions would
+land around 365 lines and instructed the implementer to carve a new sheet rather than compress the
+rules if the prediction proved wrong. It did, and the sheet was carved — `warCouncilHunt.css` is back
+at 307.
 
-`WarCouncilRound.tsx` imports **all four**, in that order, and importing only some leaves part of the
+`warCouncilStandingTrack.css` carries **its own copy of the `@media (max-width: 44rem),
+(max-height: 34rem)` breakpoint** rather than adding two selectors to the block in
+`warCouncilHunt.css`, precisely to avoid reopening a sheet that had just been brought back under
+budget. That duplicates the breakpoint **value** in two files, not any rule — a two-file edit if the
+threshold is ever tuned, and the one real drift risk the split introduced.
+
+`WarCouncilRound.tsx` imports **all five**, in that order, and importing only some leaves part of the
 feature unstyled with no error anywhere — worth knowing before debugging a card that renders with no
-face, a ledger that renders as an undifferentiated run of text, or a declare gate that renders as two
-default browser buttons.
+face, a ledger that renders as an undifferentiated run of text, a declare gate that renders as two
+default browser buttons, or a Standing track that renders as a bare row of empty spans.
 
 **Import order is load-bearing, not incidental.** `.wc-declare-option`'s hover lift and its
 `@media (prefers-reduced-motion: reduce)` suppression are deliberately co-located in

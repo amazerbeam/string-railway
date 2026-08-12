@@ -1,10 +1,11 @@
 import { useReducer, type ReactNode } from 'react'
-import { quarryCharacterInfo } from '../../hunt'
+import { quarryCharacterInfo, standingTableFor } from '../../hunt'
 import {
   CardRank,
   PlayerSide,
   RoundPhase,
   currentTurn,
+  declaredPath,
   legalMoves,
   quarryIntent,
   sameCard,
@@ -37,6 +38,7 @@ import './warCouncil.css'
 import './warCouncilCards.css'
 import './warCouncilHunt.css'
 import './warCouncilDeclare.css'
+import './warCouncilStandingTrack.css'
 
 /**
  * The round mount, implementing SCRUM-37's `WarCouncilMountProps`. Owns
@@ -189,6 +191,7 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
         roundComplete={roundComplete}
         spoils={huntDamage[PlayerSide.Player].spoils}
         band={huntDamage[PlayerSide.Player].band}
+        table={standingTableFor(declaredPath(ui.round))}
       />
       <aside className="wc-dossier">
         <QuarryDossier

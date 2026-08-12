@@ -58,11 +58,89 @@ whole-collection rather than incremental, which is correct at these sizes. The d
 one `spoils` + one `resolveStanding` to two `scoreHunt` calls, which is the same bounded-work
 argument. **No `useMemo`**, per the module's standing rule.
 
-**One visible consequence, expected.** Because `band.multiplier` is fractional on both tables
-(each carries a ×0.5 band), a rendered Damage can be a half-step — e.g. `6.5`. `roundDamage` is
-deliberately not wired in here; DLR-68 owns rounding when damage is actually applied. **Anything that
-parses these readouts must not assume an integer** — a spec matching a multiplier's `aria-label` with
-a bare `\d+` was corrected on DLR-67 for exactly this.
+**One visible consequence, and DLR-68 made it asymmetric.** Because `band.multiplier` is fractional on
+both tables (each carries a ×0.5 band), a rendered product can be a half-step — e.g. `6.5`. DLR-68
+wired `roundDamage` into `scoreHunt`, so **the end panel's Damage is now a whole number** — but
+`HuntLedger.tsx` computes its **own** `spoils * band.multiplier` for the mid-round preview and that
+expression is still unrounded. The two readouts can therefore disagree by 0.5 for the same state.
+
+That duplicated equation is a real defect and a known one: the fix is to pass the engine's
+already-computed `damage` down rather than re-derive it in a component, which would make the ledger
+rounded too and delete the divergence at source. DLR-68 left it deliberately — the duplicate sits in a
+UI file its scope did not cover — and it is worth its own ticket. **Anything that parses either readout
+must still not assume an integer**, since the mid-round one can be a half-step; a spec matching a
+multiplier's `aria-label` with a bare `\d+` was corrected on DLR-67 for exactly this.
+
+### The Standing track — the whole table as a profile (DLR-68)
+
+`StandingTrack.tsx` replaced the ledger's single `Standing` cell in the roomy layout. The cell stated
+*"Defeated ×3"*: where you are, and nothing about where you could go — so a player deciding whether to
+take the next trick had to remember the table. The track shows all of it.
+
+**The x-axis is trick count.** Each bracket is as wide as its trick span (`flex-grow: span`), so 0–3
+is four positions wide and 7 is one — position on the track means something, which is what lets a
+single marker say where you are. **Height is the multiplier**, scaled against the table's largest, so
+the ramp through 4-5-6 and the cliff at 10 are *shapes* rather than six numerals to compare.
+
+That encoding does double duty. `game-ux` requires state to read without colour alone, and this
+sheet's standing rule forbids introducing a new colour token — height carrying the value satisfies
+both, leaving the existing `--wc-brass` / `--wc-alarm` tokens to mark only the peak, the cliff, and
+the current bracket. The current bracket takes a lifted fill **and** a solid brass rail, so it survives
+a greyscale screenshot and a colour-vision difference.
+
+**Each bracket is pipped once per trick it covers**, at the developer's request, because a flat bracket
+otherwise loses real information: across 0–3 the multiplier is frozen at ×1 while card value climbs
+0 → 12 → 24 → 36, and the bar alone cannot say which of those four tricks you are on. The current
+trick's pip carries a full-height dashed rule and a brass foot.
+
+> **The pips are nested inside their segment, not laid across the track as one row.** The segment row
+> has five flex gaps where a 14-pip row would have thirteen; those do not divide the same width, so a
+> track-wide row drifts out of register with the bracket edges — worst at the two ends, which is
+> exactly where the pips were asked for. Nesting makes alignment exact whatever the gaps do. An earlier
+> mockup also had a **separate needle element** marking the current trick; it was removed for the same
+> misalignment reason, and because two markers for one position is one too many.
+
+**All the geometry is in a pure helper.** `standingSegments(table, tricks)` returns each row's `span`,
+`heightPct`, `isPeak`, `isCliff`, `isCurrent` and `currentPipIndex`; the component only maps that array
+to markup and decides nothing. So the logic worth testing is unit-testable with no renderer, and the
+component spec is left to assert what is genuinely presentational.
+
+The helper **writes no multiplier and no band boundary of its own** — spans come from each row's own
+trick range, heights from the multiplier ratio, peak and cliff from the table's own extremes. Retuning
+`src/hunt/config.ts` redraws the track, *including at a different row count*. Every visual value lives
+in CSS, including the `min-height` floor that keeps a ×0.5 bar visible, so none is invented in a `.ts`
+file.
+
+**Its error posture is deliberately the opposite of the engine's.** An out-of-range trick count yields
+no current segment and renders with no marker, rather than throwing — this is a readout drawn on every
+render, including before the first trick, and a throw would blank the screen. An **empty table** does
+throw `RangeError`: `Math.max()` of nothing is `-Infinity`, and dividing by it yields a `NaN` height
+that would collapse every bar with nothing logged anywhere. Both branches are asserted. Compare
+`huntDamage`, which throws because it *commits damage*; this only displays.
+
+**The narrow-viewport collapse is pure CSS, and that is the point.** `HuntLedger` renders the track
+*and* the old compact cell together, and the existing `@media (max-width: 44rem), (max-height: 34rem)`
+block shows exactly one — so there is no `matchMedia`, no resize listener, no effect, and nothing to
+clean up. `display: none` also removes the hidden one from the accessibility tree. It collapses rather
+than wrapping because that breakpoint's own comment already records `.wc-status` being over-full at
+that width: below the floor the bar carries no more than it did before DLR-68, and the compact cell
+still states the one decision-critical fact.
+
+> **The two readouts take deliberately different accessible labels** — the track says `Standing track:
+> <band>, multiplier <n>, at <k> tricks won`, the cell keeps `Standing band: <band>, multiplier <n>`.
+> jsdom applies no CSS, so **both are in the accessibility tree during a component test**, and identical
+> labels would make a `getByLabelText(/Standing band/)` query match twice and throw. A future
+> contributor tidying away the "duplicate" readout needs to know the breakpoint is doing the choosing.
+
+The track is a **readout, not a control** — nothing to focus, nothing to activate — so `game-ux`'s
+roving-tabindex rule does not apply, and the absence of keyboard handling is deliberate rather than an
+omission.
+
+**What no Vitest test can prove about it:** that the status band does not scroll or crop. jsdom has no
+layout engine. That check was performed in a browser at seven viewport sizes and is recorded in the
+contract's `qa-viewports.md`; the six visual values (three fills, the `clamp()` bounds, the height, the
+`min-height` floor, the pip opacity) and whether 44rem/34rem is the right place to collapse remain the
+developer's judgement.
 
 The player's Spoils is shown and the Quarry's is not: §4's visibility table makes "your running
 Spoils" open and says nothing about theirs, so showing it would be an unasked-for reveal. The live
@@ -218,8 +296,9 @@ larger.
 
 `WarCouncilRoundResult` **was** changed this time: its `score` field became `damage`, built from the
 same record. DLR-53 deliberately left the payload alone as speculative shape; DLR-67 changed it
-because DLR-68's own acceptance criteria already name the field `damage`, so this adopts the epic's
-vocabulary one ticket early rather than inventing a second one.
+because DLR-68's own acceptance criteria already named the field `damage`, so this adopted the epic's
+vocabulary one ticket early rather than inventing a second one. That bet paid off — DLR-68 shipped with
+`damage` as written, so no second rename was needed.
 
 ### Falsy numbers render, blanks do not
 

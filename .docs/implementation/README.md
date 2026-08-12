@@ -26,10 +26,10 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                              | Status      | Built by                                       |
 | --------------------- | ------------------------------------------------- | ----------- | ---------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)             | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67 |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)             | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69 |
 | `src/app/`            | [app/](app/README.md)                             | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md)       | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                           | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67 |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md)       | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                           | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -68,12 +68,37 @@ DLR-67 is the redesign's **deletion** ticket, and it is where the old direction 
 code. Two whole mechanics went: the **Demand** (its constants, its type, its comparator, and every
 screen element showing a target or a cleared/missed verdict) and the **capped Lose-credit mechanic**
 (its module, its four guards, its three bookkeeping fields, its reducer action and its on-screen
-claim control). What survives is the declaration itself and a single-branch `spoils` paying each side
-for its own captured cards; the end panel now states `Spoils × Standing = Damage` for **both** sides.
-`Score` was renamed `Damage` throughout. **Nothing consumes the damage yet** — DLR-68 owns applying
-it, along with the pile swap that replaces `spoils`' deliberately interim reading. One caveat worth
-carrying: the short-viewport layout regressed during this ticket and is **not** currently in a good
-state — see [war-council-ui/README.md](war-council-ui/README.md)'s Deferred section.
+claim control). What survived is the declaration itself and a single-branch `spoils` that paid each side
+for its own captured cards — an interim DLR-69 later replaced with the pile swap, see below; the end
+panel now states `Spoils × Standing = Damage` for **both** sides.
+`Score` was renamed `Damage` throughout. One caveat worth carrying: the short-viewport layout regressed
+during this ticket and is **not** currently in a good state — see
+[war-council-ui/README.md](war-council-ui/README.md)'s Deferred section.
+
+DLR-68 gave that damage a **direction** and a **rounding rule**. `huntDamage(finalState)` is now the
+single entry point that scores both seats off the one declaration the player made and returns the pair
+**keyed by the side each figure depletes** — so the crossing is carried by the data instead of trusted
+to whoever reads it next — and it refuses an unfinished or undeclared Hunt by throwing rather than
+returning a zero that would be applied as authorised damage. `roundDamage` is applied at exactly one
+point, so the ×0.5 bands can no longer produce a fractional total. **Nothing consumes the damage yet**
+even so: there is still no health, and applying it is DLR-70's and DLR-71's.
+Mid-planning, the developer also widened the ticket to add the **Standing track** — the whole multiplier
+table drawn as a profile in the top bar — which is the only part of DLR-68 a player can see. Start at
+[war-council/scoring.md](war-council/scoring.md) for the engine, or
+[war-council-ui/hunt-readouts-and-telegraph.md](war-council-ui/hunt-readouts-and-telegraph.md) for the
+track.
+
+DLR-69 closed the **last interim in the scoring equation**: the Lose path's two-way pile swap. A side is
+now paid for its own capture pile on Win and for the **other side's** on Lose, at `12 − r`, each pile
+counted exactly once by the side that did not win it — which is what makes declaring Lose a plan that
+can be executed well rather than one that punishes doing it perfectly. The mechanism is a
+`CardValueScheme` binding the value function and the paid pile into one declaration-keyed object, so
+neither can be read without the other and the half-applied state the interim left reachable is now
+unrepresentable. Engine-only, but its numbers surface on screen immediately, and two consequences are
+the developer's to settle — the declare gate's Lose copy now states the opposite of the rule, and the
+"Spoils" readouts show the Quarry's pile value under the player's heading. Start at
+[hunt/scoring-tunables.md](hunt/scoring-tunables.md) for the scheme, or
+[war-council/scoring.md](war-council/scoring.md) for the pile resolution.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

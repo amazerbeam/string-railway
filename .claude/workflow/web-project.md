@@ -71,7 +71,7 @@ Node and npm are on `PATH`. There is no machine-specific executable to configure
 | A file exists | `Get-ChildItem <path>` |
 | A pattern is gone, in ONE directory | `Select-String -Path <dir>\*.ts -Pattern "<pattern>"` → Expected: zero hits |
 | A pattern is gone, **recursively** | `Get-ChildItem <dir> -Recurse -Include *.ts,*.tsx,*.css \| Select-String -Pattern "<pattern>"` → Expected: zero hits |
-| A file's line count | `(Get-Content <path> \| Measure-Object -Line).Lines` |
+| A file's line count | `(Get-Content <path>).Count` — **not** `Measure-Object -Line`, see below |
 | Invoke git (**not on `PATH`**) | `$env:Path = "C:\Program Files\Git\cmd;$env:Path"; git <args>` |
 | The working tree is clean | `git status --porcelain` → Expected: no output |
 | What CI will run | `npm ci; npm run lint; npm run typecheck; npm test; npm run build` |
@@ -96,6 +96,7 @@ The five commands in the last row are exactly what `.github/workflows/ci.yml` ru
 - **`npm run format:check` currently fails on pre-existing files** across `.docs/**` that no current contract has touched (this note previously also named the battle-loop and hex-board module trees; both were deleted on DLR-47). Run it and report the result, but gate a contract on `npx prettier --check` scoped to the files that contract actually changed. Do not "fix" the repo-wide failure as a side effect of unrelated work.
 - **A TypeScript error inside a test file is not a failing test.** Vitest reports it as a collection/transform error and the file's tests never run. Read the output for "Failed to load" or "Transform failed" before concluding anything about coverage.
 - **Missing `node_modules` is not a code defect.** It surfaces as `'vite' is not recognized`, `Cannot find module`, or `npm ERR! Missing script`. Run `npm ci` and re-run; do not "fix" source in response.
+- **`Measure-Object -Line` undercounts a file and must not be used for the 400-line budget.** It counts only lines with content, silently dropping every blank line — so a 410-line file measures as, say, 360 and reads as passing. This hid a real breach on DLR-63. Use `(Get-Content <path>).Count`, which is the array length and therefore every line. `CLAUDE.md`'s Code conventions section still prescribes the `Measure-Object` form; that restatement is the one to fix if it is ever revised, and until then this row is the authority.
 - **`npm run lint` and `npm run typecheck` are required gates, and they exist.** This stack has real static analysis wired up — every contract touching `.ts`/`.tsx` plans both. Never skip them, and never record them as `N/A` while TypeScript files are in the diff.
 - **Nothing holds an exclusive lock.** Several commands can run concurrently and the developer having the app open in a browser breaks nothing.
 - **Unfiltered full-suite runs (`npm test`, `npm run build`) belong only to QA** in the closing `Final verification` phase. The Implementer runs path- or name-scoped Vitest runs and `npm run typecheck`.

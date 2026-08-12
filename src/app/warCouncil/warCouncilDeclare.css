@@ -1,7 +1,9 @@
 /* War Council — DLR-63's declare gate (the Win/Lose choice at the top of a Hunt). The claim
    control this sheet once also carried was retired on DLR-67 along with the mechanic it
    spent. Split out of `warCouncilHunt.css`, which crossed the 400-line budget when this
-   contract's own additions to it landed; import all four sheets from the mount component.
+   contract's own additions to it landed; import all five sheets from the mount component
+   (the fifth, `warCouncilStandingTrack.css`, holds the DLR-68 Standing track and is imported
+   after this one — see that file's header for why).
    Tokens are defined once in `warCouncil.css` and apply globally once that sheet is
    loaded — nothing here redeclares `:root`.
 

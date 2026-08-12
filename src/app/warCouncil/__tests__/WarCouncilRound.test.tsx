@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { dealRound, PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
-import { HuntDeclaration } from '../../../hunt'
+import { HuntDeclaration, roundDamage } from '../../../hunt'
 import WarCouncilRound from '../WarCouncilRound'
 import { card, huntFixture, makeRound } from './roundFixture'
 
@@ -311,8 +311,15 @@ describe('WarCouncilRound', () => {
         const standingValue = readValue(
           new RegExp(`^${name} Standing multiplier: times \\d+(?:\\.\\d+)?$`),
         )
+        // DLR-68 AC4 wrapped `scoreHunt`'s `damage` field in `roundDamage`, so the panel's
+        // figure is the ROUNDED product, not the bare one — a ×0.5 band on an odd card sum no
+        // longer reaches the screen as a fraction. Reading the engine's own rounding rule here
+        // (rather than re-deriving the arithmetic) keeps this assertion meaningful and
+        // non-tautological: it pins AC4's consequence at the UI layer instead of asserting the
+        // raw product this test asserted before AC4 landed. Whether a rounded equation like
+        // `123 × 0.5 = 62` reads correctly to a player is DLR-71's copy call, not this test's.
         expect(readValue(new RegExp(`^${name} Damage: \\d+(?:\\.\\d+)?$`))).toBe(
-          spoilsValue * standingValue,
+          roundDamage(spoilsValue * standingValue),
         )
       }
 

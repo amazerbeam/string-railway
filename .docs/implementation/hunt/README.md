@@ -1,7 +1,7 @@
 # Hunt — `src/hunt/`
 
 **Status:** partial
-**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67
+**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69
 
 ## Responsibility
 
@@ -10,8 +10,9 @@ Owns the Hunt run's vocabulary and every §9-cited tunable that drives its scori
 accessor, the ×0.5 rounding rule, both health totals and the simultaneous-depletion ruling, plus the
 Forage budget per encounter and the encounters-per-run count — each read
 from one place so no later Hunt ticket duplicates a number or invents an incompatible shape. Three exports now have real consumers in
-`src/warCouncil/`: `cardValueFor` via `spoils.ts` (DLR-49 first wired `cardBaseValue`; DLR-67 moved
-it to the per-declaration accessor), `resolveStanding` via `scoring.ts`
+`src/warCouncil/`: the card-value accessors via `spoils.ts` (DLR-49 first wired `cardBaseValue`;
+DLR-67 moved it to the per-declaration `cardValueFor`; DLR-69 widened it again to
+`cardValueSchemeFor`, which carries the paid pile alongside the value function), `resolveStanding` via `scoring.ts`
 (DLR-50, which built `scoreHunt` on it), and (DLR-51)
 `QuarryCharacter` itself, whose first production consumer is `src/warCouncil/quarryRuleBreak.ts`'s
 round-long rule-break mechanism. A fourth followed in DLR-52: `TELEGRAPH_FIDELITY`, read by
@@ -63,14 +64,17 @@ and is enforced, because `src/warCouncil/spoils.ts` calls it.
 | `Quarry` | The CPU opponent for one encounter — `{ character: QuarryCharacter }` (§4) | `types.ts` |
 | `QuarryCharacter` | `as const` union of the five odd-rank characters: Swan, Fox, Woodcutter, Witch, Monarch | `types.ts` |
 | `Spoils`, `Standing` | Each a bare `number` alias — the additive and the multiplicative term of §1's equation. The `Demand` alias was deleted by DLR-67 along with the target it named | `types.ts` |
-| `Damage` | A bare `number` alias for the equation's result — a side's card value × its Standing for one Hunt, what depletes the other side's health (§1's vocabulary table). Renamed from `Score` by DLR-67: there is no target to score against any more. Nothing applies it yet — DLR-68 owns that | `types.ts` |
+| `Damage` | A bare `number` alias for the equation's result — a side's card value × its Standing for one Hunt, what depletes the other side's health (§1's vocabulary table). Renamed from `Score` by DLR-67: there is no target to score against any more. Since DLR-68 every value of this type is **rounded** (`roundDamage` is applied inside `scoreHunt`) and is labelled with the side it depletes, but nothing **applies** it to health yet — DLR-70/DLR-71 own that | `types.ts` |
 | `StandingBandName` | `as const` union of the four band names: Humble, Defeated, Victorious, Greedy | `config.ts` |
 | `StandingBand` | `{ minTricks, maxTricks, name, multiplier }` — one row of the Standing table; boundaries and multiplier are independently editable fields | `config.ts` |
 | `HUNT_MULTIPLIER_TABLES` | `Readonly<Record<HuntDeclaration, readonly StandingBand[]>>` — the duel direction's **two mirrored tables**, one per declaration, replacing the retired single `STANDING_BANDS` (DLR-66 AC1). The two tables' row splits genuinely differ (Win groups 7–9, Lose groups 4–6), which is why boundaries are per-row data and never a shared list | `config.ts` |
 | `standingTableFor` | `(declaration) => readonly StandingBand[]` — the declaration-aware accessor, and the **only** way a consumer outside this module gets a table (DLR-66 AC2) | `config.ts` |
 | `resolveStanding` | Resolves a trick count to its `StandingBand` by scanning a **caller-supplied** table. The `table` parameter is **required** since DLR-66 — a default would let a Lose-path caller silently score off the Win table. Still throws `RangeError` outside 0–13; still the only Standing lookup anywhere in `src/` | `config.ts` |
 | `cardBaseValue` | `(rank) => rank` — a card's Hunt value is its printed rank, not a flat 1 (§3, §9) | `config.ts` |
-| `cardValueFor` | `(declaration) => (rank: number) => number` — returns `cardBaseValue` on Win and `invertedCardValue` on Lose (DLR-66 AC6). The counterpart of `standingTableFor` on the additive term. **No modifier of any kind** — the Treasure `+1` and Poison `−1` are Decided-removed (§1, §9), and since DLR-67 that rule is **enforced**: `spoils` calls this accessor and applies nothing on top | `config.ts` |
+| `cardValueFor` | `(declaration) => (rank: number) => number` — returns `cardBaseValue` on Win and `invertedCardValue` on Lose (DLR-66 AC6). The counterpart of `standingTableFor` on the additive term. **No modifier of any kind** — the Treasure `+1` and Poison `−1` are Decided-removed (§1, §9), and since DLR-67 that rule is **enforced**: the value path applies nothing on top. Since DLR-69 it is **derived from `CARD_VALUE_SCHEMES`** rather than a `declaration === Lose` ternary, so the declaration → value mapping exists exactly once; its name and signature are unchanged, which is what left its out-of-module consumers untouched. This is the **value half only** — a caller that also needs the pile wants `cardValueSchemeFor` | `config.ts` |
+| `PaidPile` | `as const` union of `own` / `other` — whose capture pile a side is paid for, stated **relative** to that side, which is why it needs no `PlayerSide` and keeps `src/hunt/` free of any `src/warCouncil/` import. Resolving `other` into a concrete seat is `spoils.ts`'s job, via `otherSide` (DLR-69) | `config.ts` |
+| `CardValueScheme` | `{ readonly value: (rank) => number; readonly paidPile: PaidPile }` — the two halves of §1's card-value rule bound into one object so **neither can be read without the other**. Deliberately not two parameters: a caller injecting the Lose value function while the pile defaulted from an undeclared state would apply inverted values to the *own* pile, which is exactly the DLR-67 interim DLR-69 retired (DLR-69) | `config.ts` |
+| `cardValueSchemeFor` | `(declaration) => CardValueScheme` — the third sibling of `standingTableFor` and `cardValueFor`: name a declaration once, get both halves of the card-value rule. Backed by a module-private total `Readonly<Record<HuntDeclaration, CardValueScheme>>` — Win pairs `cardBaseValue` with `own`, Lose pairs `invertedCardValue` with `other`. A **total record, not a ternary**, so a third `HuntDeclaration` member is a missing-property compile error rather than a silent fall through to printed rank and the own pile (DLR-69 AC6). The record itself is not exported — this accessor is the only way in, unlike `HUNT_MULTIPLIER_TABLES`, which is exported and then documented as unusable outside this module | `config.ts` |
 | `DamageRounding`, `DAMAGE_ROUNDING` | `as const` union of `HalfAwayFromZero` / `None`, and the shipped default (`HalfAwayFromZero`). §9 records this row Undecided and offers doubling both tables and both health totals as the dissolution; DLR-66 ships a stated default rather than a `null`. **The developer's to overturn** | `config.ts` |
 | `roundDamage` | `(raw, rule = DAMAGE_ROUNDING) => number` — `Math.sign(raw) * Math.round(Math.abs(raw))`, never bare `Math.round` (JS breaks ties toward `+∞`, so `Math.round(-0.5)` is `-0`). Throws `RangeError` on a non-finite input. **Deliberately inert — no consumer until T3** | `config.ts` |
 | `PLAYER_START_HEALTH` | `1350` — §9 "Player health P", **Decided 2026-08-11**. Equal to the Quarry's first-encounter health by design: `P = H` puts the win/lose boundary exactly on the 6/7 line the declaration commits to | `config.ts` |
@@ -80,7 +84,7 @@ and is enforced, because `src/warCouncil/spoils.ts` calls it.
 | `DuelSide` | `as const` union of `player` / `quarry` — the two sides that **hold health**, deliberately distinct from `src/warCouncil/`'s `PlayerSide` (`player`/`cpu`), which names the two **seats at a trick**. `src/hunt/` cannot import from `src/warCouncil/` without a cycle (DLR-66) | `types.ts` |
 | `Health` | A bare `number` alias — a side's remaining health, the pool damage depletes (§5) | `types.ts` |
 | `RANK_INVERSION_PIVOT` | `12` — the pivot the Lose path's inversion turns on. **Not a tuning value**: it is `max(RANKS) + 1` for the 1–11 deck, which is what makes the inversion its own mirror (rank 1 ↔ 11) and keeps every output in 1–11 with no zero and no negative. Named rather than inlined so a future deck-size change has one place to look (DLR-63) | `config.ts` |
-| `invertedCardValue` | `(rank) => 12 − rank` — a card's value on the Lose path (DLR-63 AC3). Deliberately the same `(rank: number) => number` signature as `cardBaseValue`, so it drops into `spoils`'s injectable value parameter with no new plumbing | `config.ts` |
+| `invertedCardValue` | `(rank) => 12 − rank` — a card's value on the Lose path (DLR-63 AC3). Deliberately the same `(rank: number) => number` signature as `cardBaseValue`, so both drop into a `CardValueScheme`'s `value` field with no new plumbing. Unchanged by DLR-69 in name, signature and body — which is what kept the two out-of-scope `DeclareGate` files compiling untouched | `config.ts` |
 | `FORAGE_BUDGET_PER_ENCOUNTER` | `4` — provisional Forage edits per encounter (§9) | `config.ts` |
 | `ENCOUNTERS_PER_RUN` | `5` — provisional run length (§9 leaves this undecided; DLR-48 supplies a playable placeholder) | `config.ts` |
 | `QuarryCharacterInfo` | Display data for one Quarry character — `{ character, name, description }`, player-facing text only, no rule-break logic (DLR-51) | `quarryCharacters.ts` |
@@ -158,9 +162,10 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
 ## Deferred / not yet implemented
 
 - **`Forage` deck edits (T11) still have zero consumers.** `FORAGE_BUDGET_PER_ENCOUNTER` is read by
-  nothing. The scoring side is fully wired — `cardValueFor` and `standingTableFor` through
+  nothing. The scoring side is fully wired — `cardValueSchemeFor` and `standingTableFor` through
   `src/warCouncil/`'s `spoils`/`scoreHunt` (see [../war-council/scoring.md](../war-council/scoring.md)),
-  and, since DLR-53, onto the screen.
+  and, since DLR-53, onto the screen. §9's deferred "Forage value edits under inversion" question is
+  still open and was explicitly out of DLR-69's scope — there is no Forage in this epic.
 - **The Demand is gone, and there is nothing left to decide about it.** DLR-67 deleted
   `FIXED_DEMAND`, `DEMAND_CURVE`, the `DemandCurve` interface and the `Demand` alias outright. §9
   deleted the Demand base/growth row rather than marking it Undecided, because the duel direction
@@ -168,7 +173,8 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   checked against a target. Nothing in this module names a Demand any more.
 - **The Lose-credit cap is gone with its mechanic.** `LOSE_CREDITS_PER_HUNT` was a placeholder whose
   derivation was already void; §1 says the Lose path's **pile swap replaces the credit mechanism
-  outright**, so DLR-67 deleted the constant rather than tuning it. The pile swap itself is DLR-68's.
+  outright**, so DLR-67 deleted the constant rather than tuning it. The pile swap itself is **DLR-69's**
+  (corrected by DLR-68, which was previously named here and does not own it).
 - **Choosing `TELEGRAPH_FIDELITY`'s real value.** The constant is consumed and provably live
   (`quarryIntent` reads it, and a test proves `Suit` genuinely narrows the returned shape), and
   since DLR-53 the telegraph it governs is on screen before every commit. But `SuitAndStance` is
@@ -197,8 +203,10 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   presentation is `DAMAGE_ROUNDING`, both tables, and both health totals — all in `config.ts` — plus
   one fixture.
 - ~~**`cardValueFor`'s no-modifier rule is exported but not enforced.**~~ **Closed by DLR-67.**
-  `src/warCouncil/spoils.ts` now calls `cardValueFor` and applies nothing on top; its `sumCards`
-  helper and the Treasure `+1` / Poison `−1` fold are deleted. The app no longer applies ±1.
+  `src/warCouncil/spoils.ts` calls the accessor and applies nothing on top; its `sumCards`
+  helper and the Treasure `+1` / Poison `−1` fold are deleted. The app no longer applies ±1. DLR-69
+  re-verified it by grep across the three value-path source files and added a regression guard to the
+  contract's own closing checks.
 - **`DuelSide` and `PlayerSide` are two side-vocabularies that will need mapping.** No code conflates
   them yet (`DuelSide` appears only inside `src/hunt/`), but T5 must map `DuelSide.Quarry` ↔
   `PlayerSide.Cpu`. If that translation lands in more than one place, a later ticket should unify

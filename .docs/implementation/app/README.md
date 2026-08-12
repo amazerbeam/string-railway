@@ -44,9 +44,10 @@ that proved it in the deletion direction: the compiler found both construction s
 **`WarCouncilRoundResult.score` became `damage` on DLR-67**, keeping its `Record<PlayerSide, number>`
 shape but now built from `scoreHunt` per side rather than from the deleted `scoreRound`. DLR-53 had
 deliberately left this payload alone as speculative shape for a run loop nobody had written; DLR-67
-changed it because DLR-68's acceptance criteria already name the field `damage`, so the epic's
-vocabulary is adopted one ticket early rather than a second one invented. **Nothing consumes it** —
-`App.tsx`'s `handleComplete` still takes no parameter.
+changed it because DLR-68's acceptance criteria already named the field `damage`, so the epic's
+vocabulary was adopted one ticket early rather than a second one invented — and DLR-68 duly shipped
+with `damage`, so no second rename followed. **Nothing consumes it** — `App.tsx`'s `handleComplete`
+still takes no parameter.
 
 Both are type-only exports, re-exported via `export type` from `index.ts` (required by this
 project's `verbatimModuleSyntax` tsconfig setting). `src/app/warCouncil/`'s own exports —
@@ -123,8 +124,10 @@ deleted module and is unit-tested directly (`src/app/__tests__/dealerForRound.te
   a single Hunt is playable end to end and reaches a real end panel. But every restart re-deals the
   *same* encounter, because `HUNT` is a constant rather than run state — and since DLR-67 there is no
   target and no verdict either, only two damage figures nothing consumes. Health, damage
-  application, encounter progression, and a victory/defeat screen are all still absent; DLR-68 is
-  where the damage this app already computes first does something.
+  application, encounter progression, and a victory/defeat screen are all still absent. DLR-68 closed
+  the arithmetic and the direction — both figures are now rounded and labelled with the side each
+  depletes — but it deliberately applied nothing, so **DLR-70/DLR-71** are where the damage this app
+  computes first does something.
 - **No way to reach a standalone/manual-entry test harness.** DLR-47 deleted
   `TestModeVanguardHost.tsx`, `TrickEntryForm.tsx`, `appMode.ts`, and `isValidTricksWon` along with
   the rest of the Vanguard UI — there is currently no manual-entry mechanism at all, campaign or

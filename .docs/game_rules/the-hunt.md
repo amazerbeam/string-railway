@@ -9,16 +9,20 @@ the app today except where a rule is marked **[not built]**.
 
 > **A redesign is in progress, and this document straddles it.** The design has moved to a **duel**:
 > both sides hold health, and each side's total is *damage* dealt to the other rather than a score
-> checked against a target. Two pieces have landed. DLR-66 gave the two multiplier tables and every
+> checked against a target. Four pieces have landed. DLR-66 gave the two multiplier tables and every
 > health, rounding, and depletion value as configuration. **DLR-67 then removed the old direction**:
 > the Demand target and the capped Lose-credit mechanic are both gone from the game, and the Hunt now
-> ends by stating each side's damage.
+> ends by stating each side's damage. **DLR-68 then gave that damage a direction and a rounding rule**
+> — each side's total is now computed as damage *to the other side*, and the ×0.5 bands can no longer
+> produce a fractional total. **DLR-69 then closed the last interim in the equation**: on the Lose
+> path the two capture piles swap, so each side is paid for the pile it did *not* win (section 7).
 >
-> **What that leaves is a Hunt with no ending condition.** Both sides' damage is computed and shown,
-> and **nothing consumes it** — there is no health to deplete, so a Hunt can no longer be won or lost.
-> Section 8 says so plainly rather than describing a victory rule that does not exist. This is a
-> deliberate intermediate state, not an oversight: the deletion was taken in one pass so the code
-> stopped carrying two directions at once, and the next ticket applies the damage.
+> **What that leaves is a Hunt with no ending condition.** Both sides' damage is computed, rounded,
+> pointed at the side it would deplete, and shown — and **nothing consumes it** — there is no health
+> to deplete, so a Hunt can no longer be won or lost. Section 8 says so plainly rather than describing
+> a victory rule that does not exist. This is a deliberate intermediate state, not an oversight: the
+> deletion was taken in one pass so the code stopped carrying two directions at once, and the health
+> bars are the next ticket's.
 
 ---
 
@@ -142,8 +146,10 @@ at the end.
 > handed you a capped pool of three **Lose-credits**, each spendable on a trick you had just lost to
 > credit its two cards to your Spoils — a decision offered on every lost trick as it resolved. §1
 > replaces that mechanic outright with a **pile swap**, and the credit pool was removed ahead of the
-> swap landing. So the Lose path currently has **no between-trick decision of its own**; the swap in
-> section 7 is what gives it one back, and it is **[not built]**.
+> swap landing. The swap landed on 2026-08-12 (section 7), so the Lose path's reward for a lost trick
+> is now structural rather than a decision: a trick you lose fattens your own total automatically,
+> with nothing to spend and nothing to choose. The Lose path therefore still has **no between-trick
+> decision of its own**, and by design no longer needs one.
 
 ### What the declaration changes, and what it does not
 
@@ -268,16 +274,23 @@ inversion has no meaning at a flat value of 1.
 the Win path and 1 on the Lose path. Nothing is added or subtracted on top — no Treasure `+1`, no
 Poison `−1` (see section 5).
 
-**Each side's Spoils is the sum of the cards in its own capture pile**, at whichever value scheme the
-declaration put in force. Both sides are summed the same way; the declaration is the round's, not the
-player's.
+**[settled]** — whose pile a side is paid for. Closed 2026-08-12; this was the last piece of §1's
+equation left unbuilt.
 
-> **This own-pile reading is an interim, and the Lose path's pile swap is [not built].** The design
-> replaces it with a two-way swap: you are paid for the cards **the Quarry** captured at inverted
-> value, and it is paid for the cards **you** captured, also inverted — each pile counted once by the
-> side that did not win it (§9, Decided 2026-08-11). Until that lands, both sides are simply paid for
-> what they captured themselves, on either path. The credit pool that used to sit between these two
-> states was removed on 2026-08-12 (section 3).
+**Each side is paid for exactly one capture pile, and the declaration decides which.** On the Win
+path a side is paid for **its own** pile, at printed rank. On the Lose path a side is paid for **the
+other side's** pile, at `12 − r`. So **each pile is counted exactly once, by the side that did not
+win it** (§1). Both sides are read the same way; the declaration is the round's, not the player's.
+
+The consequence is the whole point of the Lose path: **every trick you take fattens the Quarry's
+total, and every trick it takes fattens yours.** That is what makes declaring Lose a plan you can
+execute well rather than badly — a player who declares Lose and wins zero tricks is paid for the
+Quarry's entire thirteen-trick sweep, and finishes ahead rather than behind.
+
+> **This reverses the own-pile reading this document carried until 2026-08-12.** Both sides used to
+> be paid for what they had captured themselves, on either path — a deliberate interim held while the
+> Lose-credit pool it replaced was removed (section 3). The swap is now what the code does, so the
+> interim is gone rather than pending.
 
 ### Standing — the multiplicative term
 
@@ -325,11 +338,16 @@ no longer a transcription**; they are designed, capped at ×5 on either path, an
 > records moves both peaks to the extremes, which reverses the property §1 is built on. The tables are
 > configuration and a whole-pair swap is a one-file edit — but cheap is not the same as neutral.
 
-> **Half-multipliers mean half-point totals, and the rounding rule is [not built].** ×0.5 on an odd card
-> sum produces a fractional result. The rule is decided as **round half away from zero** and exists in
-> configuration, but nothing applies it yet — so the app can currently display a total ending in `.5`.
-> §9 keeps this row Undecided and offers an alternative that deletes the question: double every entry in
-> both tables and both health totals, and every product is an integer.
+> **Half-multipliers mean half-point totals, and the rounding rule is now [settled] and applied.**
+> ×0.5 on an odd card sum produces a fractional product. The rule is **round half away from zero**,
+> and since 2026-08-12 it is applied at the single point where a product becomes damage — so **every
+> damage total is a whole number**. §9's alternative that would have deleted the question (double every
+> entry in both tables and both health totals) was therefore not taken.
+>
+> One consequence is visible and is a copy problem rather than a rules problem: the Hunt's closing
+> readout states the two terms and the product side by side, so a card sum of 123 in a ×0.5 band reads
+> as `123 × 0.5 = 62`. The damage is correct; the equation as written looks wrong. How that is
+> presented is the developer's, and the ticket that builds the health bars owns it.
 
 ---
 
@@ -343,9 +361,27 @@ Damage = Spoils × Standing
 
 Computed **once**, at the end of the thirteenth trick, **for each side** from that side's own trick
 count and Spoils. The multiplier is read off the *final* trick count, so no total can be applied, or
-even known, before the last trick resolves.
+even known, before the last trick resolves. Every total is **rounded to a whole number** (section 7).
 
 Both figures are stated when the Hunt ends, side by side.
+
+**Each side's damage is dealt to the other side.** Your thirteen tricks produce the figure that would
+deplete the *Quarry*, and its tricks produce the figure that would deplete *you*. Since 2026-08-12
+that direction is part of the result itself rather than something a later reader has to apply — the
+two totals arrive already labelled with the side each one hurts.
+
+Note that the *pile* each figure sums is a separate question from the *side* it hurts, and on the Lose
+path the two cross in opposite directions: your figure is built from the Quarry's captured cards
+(section 7) and is dealt to the Quarry.
+
+> **The base game has no equivalent, because it had no direction to state.** There, one table scored
+> each player against the same 21-point match. Here the two figures point at each other.
+
+**A Hunt that has not finished, or was never declared, is not scored at all.** There is no partial
+answer and no zero: a total is only meaningful once all thirteen tricks have resolved, and the value
+scheme both sides are paid on comes from the declaration, so an undeclared Hunt has no scheme to
+score under. Neither state is reachable in normal play — the declaration gates the first trick
+(section 3) — and both are refused outright rather than guessed at.
 
 ### Nothing consumes the damage yet — **[not built]**
 
@@ -388,8 +424,12 @@ where only the player was scored because only the player had a target.
 It does not yet make the Quarry a contestant: with no health, **neither side's damage does
 anything**, so neither side can win or lose. §8 records what the old one-sided version cost — in the
 base game every trick either side took pushed the other toward a mirrored losing band, and that was
-the mid-round tension. Two-sided damage is meant to restore it; stating both totals is the first half
-of that, and applying them is the second.
+the mid-round tension. Two-sided damage is meant to restore it.
+
+Since 2026-08-12 the second half of that is also in place: each total is now **pointed at the side it
+would deplete**, so what remains missing is only the health itself, not the arithmetic or the
+direction. A player still cannot feel any of it — the figures appear once, when the Hunt is already
+over, and then the Hunt ends.
 
 ---
 
@@ -433,6 +473,7 @@ Designed in §4/§5, with no enforcement and no display copy. Facing them is not
 | The Quarry's trick count            | Public                                                                                                                                                                                                                     |
 | The Quarry's character and its rule | Always on screen                                                                                                                                                                                                           |
 | Your running Spoils, Standing and Damage | Open — shown throughout the Hunt                                                                                                                                                                                      |
+| **The whole Standing table**        | **Open — on screen throughout.** Every band, its trick range and its multiplier is shown as a profile, with your current trick count marked on it, so what the next trick is worth is readable without recalling the table. |
 | Both sides' final Damage            | Open — stated side by side when the Hunt ends                                                                                                                                                                              |
 
 The telegraph's fidelity — suit only, or suit and stance — is **[provisional]**; it currently shows
@@ -496,21 +537,24 @@ the mechanics themselves are documented in `../implementation/`.
 | Odd-rank abilities                 | settled                       | `src/warCouncil/abilities.ts`, `resolveTrick.ts`     | —                               |
 | Trick resolution, Witch-as-trump   | settled                       | `src/warCouncil/resolveTrick.ts`                     | —                               |
 | Capture pile accumulation          | settled                       | `src/warCouncil/playCard.ts`                         | —                               |
-| Spoils = own capture pile, one branch | settled — but an **interim**, see §7 | `src/warCouncil/spoils.ts`                | —                               |
+| Spoils sums exactly one pile per side | settled                       | `src/warCouncil/spoils.ts`                           | —                               |
 | Card base value = rank             | settled (§9, 2026-08-11)      | `src/hunt/config.ts` — `cardBaseValue`, `cardValueFor` | —                             |
 | Treasure/Poison have no rule       | settled (§9, 2026-08-11)      | `src/hunt/config.ts` — `cardValueFor` applies no modifier | —                           |
 | Standing band boundaries           | settled                       | `src/hunt/config.ts` — `HUNT_MULTIPLIER_TABLES`      | —                               |
 | Standing multipliers, both tables  | settled (§9, 2026-08-11)      | `src/hunt/config.ts` — `HUNT_MULTIPLIER_TABLES`      | —                               |
 | One table per declaration          | settled                       | `src/hunt/config.ts` — `standingTableFor`            | —                               |
-| Rounding of the ×0.5 bands         | **not built** — default set   | `src/hunt/config.ts` — `DAMAGE_ROUNDING`, `roundDamage` (no consumer) | Developer, per §9 |
+| Rounding of the ×0.5 bands         | settled (applied 2026-08-12)  | `src/hunt/config.ts` — `DAMAGE_ROUNDING`, `roundDamage`; applied in `src/warCouncil/scoring.ts` — `scoreHunt` | — |
 | Health totals, both sides          | **not built**                 | `src/hunt/config.ts` — `PLAYER_START_HEALTH`, `QUARRY_ENCOUNTER_HEALTH` (no consumer) | — |
 | Between-encounter restore (none)   | **not built**                 | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE` (no consumer) | Developer — most likely to change |
 | Simultaneous depletion             | **not built** — ruling set    | `src/hunt/config.ts` — `SIMULTANEOUS_DEPLETION_WINNER` (no consumer) | —          |
 | Damage **applied** to health       | **not built**                 | —                                                    | —                               |
 | Any way to win or lose a Hunt      | **not built** — none exists   | —                                                    | —                               |
-| The Lose path's pile swap          | **not built**                 | —                                                    | —                               |
+| The Lose path's pile swap          | settled (2026-08-12)          | `src/hunt/config.ts` — `cardValueSchemeFor`; resolved in `src/warCouncil/spoils.ts` via `otherSide` | —          |
 | `Damage = Spoils × Standing`       | settled                       | `src/warCouncil/scoring.ts` — `scoreHunt`            | —                               |
-| Both sides' Damage computed        | settled                       | `src/app/warCouncil/WarCouncilRound.tsx`             | —                               |
+| Both sides' Damage computed        | settled                       | `src/warCouncil/scoring.ts` — `huntDamage`; also derived per render in `src/app/warCouncil/WarCouncilRound.tsx` | — |
+| Damage is dealt to the **other** side | settled (2026-08-12) — engine only, nothing applies it | `src/warCouncil/scoring.ts` — `huntDamage`'s `incoming` | — |
+| An unfinished or undeclared Hunt is refused, never scored 0 | settled (2026-08-12) | `src/warCouncil/scoring.ts` — `huntDamage`'s two guards | — |
+| The whole Standing table is on screen during play | settled (2026-08-12) | `src/app/warCouncil/StandingTrack.tsx`, `standingSegments.ts` | — |
 | Monarch Quarry                     | settled                       | `src/warCouncil/quarryRuleBreak.ts`                  | —                               |
 | Four other Quarry characters       | **not built**                 | —                                                    | —                               |
 | Telegraph fidelity                 | provisional                   | `src/hunt/config.ts` — `TELEGRAPH_FIDELITY`          | Developer, after playtest       |
@@ -526,12 +570,31 @@ The Treasure's `+1` and the Poison's `−1` are gone, so a card is worth its pri
 else. At the end of a Hunt, **both sides'** `Spoils × Standing = Damage` is stated side by side.
 
 **What a player cannot reach:** any way to win or lose. Health does not exist in the code, so the two
-damage figures are shown and then discarded. The rounding rule, both health totals, the
-between-encounter restore, and the simultaneous-depletion ruling all exist as configuration with **no
-consumer anywhere**, and the Lose path's pile swap has not been written at all.
+damage figures are shown and then discarded. Both health totals, the between-encounter restore, and
+the simultaneous-depletion ruling all exist as configuration with **no consumer anywhere**.
 
-**What is deliberately interim:** §7's Spoils reading. Each side is currently paid for its own capture
-pile on both paths; the design's two-way swap replaces that, and it is the next ticket's.
+**What was deliberately interim, and is no longer:** §7's Spoils reading. Each side was paid for its
+own capture pile on both paths; DLR-69 replaced that with the design's two-way swap on 2026-08-12.
+
+### The pile swap landed — DLR-69 closed 2026-08-12
+
+**What changed for a player:** on a Lose-declared Hunt the two capture piles swap. You are paid for
+the cards **the Quarry** captured, at `12 − r`, and it is paid for the cards **you** captured, also
+inverted — each pile counted once, by the side that did not win it (section 7). The Win path is
+unchanged. This is what makes a declared Lose executable as a plan: winning zero tricks now finishes
+you ahead rather than behind.
+
+**What a player will see, and one thing they will be told wrongly.** The change is engine-only, but
+its numbers surface immediately — the in-play "Running Spoils" readout and the end panel both now show
+the Quarry's pile value under your own heading on a Lose Hunt. Two consequences, both the developer's
+to settle and neither a defect:
+
+- **The declare gate's Lose copy now states the opposite of the rule.** It reads that every trick you
+  take still adds both its cards to *your* Spoils at inverted values, which the swap reverses. Every
+  UI file was out of DLR-69's scope, so it could not be fixed there. It is the first thing a player
+  reads at the moment they choose the path.
+- **Whether the readouts read honestly** under their current labels — a figure built from the Quarry's
+  cards sitting under a heading that says "your" — is a judgement answerable only by playing.
 
 ### The declaration is reachable — DLR-63 closed 2026-08-11
 
@@ -548,14 +611,24 @@ asserted in a test. The claim control that shipped alongside it was removed a da
   4–6 on Lose — so there is no second band sharing either path's top multiplier for the superset
   argument to compare against. §6 keeps the proof as a historical note recording why the multipliers
   stopped being a transcription. The ×18 break-even is moot, and exit (b) is retired with it.
-- **Whether declaring Lose dominates declaring Win** is unanswered, and **harder to answer than it
-  was**. DLR-63 carried this with the credit cap as the thing stopping an in-Hunt runaway; that cap
-  is now gone and the pile swap that replaces it is not built, so what is currently measurable is an
-  interim neither direction intends. Re-ask once the swap lands.
-- **The Lose path has no decision of its own between tricks** (2026-08-12). Removing the credit spend
-  took thirteen forks per round out of the Hunt and gave the path nothing back yet, so declaring Lose
-  is currently a scoring reading with no play consequence. Expected and temporary — the pile swap is
-  what restores a reason to care mid-round — but worth playing before assuming it is fine.
+- **Whether declaring Lose dominates declaring Win** is still unanswered, but as of 2026-08-12 it is
+  **finally measurable**. DLR-63 carried this with the credit cap as the thing stopping an in-Hunt
+  runaway; that cap is gone and the pile swap that replaces it has now landed, so what the code scores
+  is the direction's intended reading rather than an interim neither direction wanted. The
+  fourteen-split enumeration says the two paths are exact mirrors at average card values — the Lose
+  column is the negative of the Win column at every trick count (§8) — which answers the *symmetry*
+  question but not the *dominance* one, since a real Hunt is not played at average card values and the
+  two paths differ in how easily their peak band is reached. Worth measuring by playing now that there
+  is something honest to measure.
+- **The Lose path has no decision of its own between tricks, and the swap did not give it one**
+  (restated 2026-08-12). Removing the credit spend took thirteen forks per round out of the Hunt, and
+  the pile swap — which was expected to restore a reason to care mid-round — turns out to do it
+  *structurally* rather than as a decision: a trick you lose fattens your total automatically, with
+  nothing to spend and nothing to choose. What it does add is a reason to care **which** cards the
+  Quarry captures, since those are the cards you are paid for, but that is a consideration inside the
+  existing follow-suit choice, not a fork of its own. So the tension stands rather than being resolved,
+  and the thing to watch when playing is whether that consideration is legible enough to feel like a
+  decision.
 - **Aiming for Victorious every Hunt** may not be a decision at all, with nobody contesting the
   band (§8, §12 Problem 1). The Quarry's rule-break is what is meant to displace it. Unproven.
 - **No card is worth declining — and as of 2026-08-12 that is permanent rather than incidental.** Exit
@@ -568,6 +641,13 @@ asserted in a test. The claim control that shipped alongside it was removed a da
   so this is now the literal state of the game rather than a pending decision. It stays on the list
   because a future Forage ticket that wants "cards you would rather leave behind" must create that
   property deliberately — nothing in the deck supplies it any more.
+- **The closing equation now reads as arithmetically wrong on a ×0.5 band** (2026-08-12). Rounding is
+  applied to the product but the two terms are stated unrounded beside it, so a card sum of 123 in a
+  ×0.5 band shows as `123 × 0.5 = 62`. Every figure is correct and the rule is settled; what is
+  unresolved is how to present it — round the displayed product, state the unrounded one and the
+  rounded one, or say nothing and accept that a player checking the multiplication finds a half-point
+  discrepancy. A presentation call, not a rules one, and it only becomes visible now that rounding
+  actually applies.
 - **Whether either declaration is a live read is still unmeasured, and the built CPU cannot measure it.**
   §9 records that the Quarry which plays today maximises tricks, landing it in 10–13 on either
   declaration — the band that now pays ×0.5 on Win and ×1 on Lose. A Quarry that plays for **band
