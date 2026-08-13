@@ -36,7 +36,7 @@ const MAX_HEALTH = {
 function App() {
   const [round, setRound] = useState(1)
   const [dealt, setDealt] = useState<WarCouncilState>(() =>
-    dealRound(dealerForRound(1), Math.random, SLICE_QUARRY_CHARACTER),
+    dealRound(dealerForRound(1), Math.random),
   )
   const [encounter, setEncounter] = useState(() => startEncounter(SLICE_ENCOUNTER_INDEX))
 
@@ -50,7 +50,7 @@ function App() {
     }
     const next = round + 1
     setRound(next)
-    setDealt(dealRound(dealerForRound(next), Math.random, SLICE_QUARRY_CHARACTER))
+    setDealt(dealRound(dealerForRound(next), Math.random))
   }
 
   return (

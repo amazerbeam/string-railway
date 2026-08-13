@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DAMAGE_PER_HIT, HAND_SIZE, QuarryCharacter } from '../../hunt'
+import { DAMAGE_PER_HIT, HAND_SIZE } from '../../hunt'
 import { TrickOutcome } from '../bank'
 import { dealRound } from '../deal'
 import { playCard } from '../playCard'
@@ -74,11 +74,13 @@ describe('playCard — rejections', () => {
     expect(result).toEqual({ ok: false, reason: IllegalMoveReason.MustFollowLeadSuit })
   })
 
-  it('names the Monarch when a round-long rule-break, not the led card, narrowed the follow', () => {
+  it('names the Monarch when a led rank 11 narrowed the follow', () => {
+    // The only source of this reason since DLR-81 deleted the round-long rule-break: the led
+    // card is itself a Monarch. The same position under an ordinary lead is legal — see
+    // legalMovesQuarry.test.ts.
     const state = stateWith({
-      quarryCharacter: QuarryCharacter.Monarch,
       leader: PlayerSide.Cpu,
-      currentTrick: [{ side: 'cpu', card: { suit: 'keys', rank: 4 } }],
+      currentTrick: [{ side: 'cpu', card: { suit: 'keys', rank: 11 } }],
       hands: {
         player: [
           { suit: 'keys', rank: 1 },
@@ -90,6 +92,24 @@ describe('playCard — rejections', () => {
     })
     const result = playCard(state, 'player', { suit: 'keys', rank: 6 })
     expect(result).toEqual({ ok: false, reason: IllegalMoveReason.MustFollowMonarch })
+  })
+
+  it('does NOT name the Monarch on an ordinary Quarry lead — the rule-break is gone', () => {
+    const state = stateWith({
+      leader: PlayerSide.Cpu,
+      currentTrick: [{ side: 'cpu', card: { suit: 'keys', rank: 4 } }],
+      hands: {
+        player: [
+          { suit: 'keys', rank: 1 },
+          { suit: 'keys', rank: 6 },
+          { suit: 'keys', rank: 9 },
+        ],
+        cpu: [],
+      },
+    })
+    // The middle card is legal now, so this is not a rejection at all.
+    const result = playCard(state, 'player', { suit: 'keys', rank: 6 })
+    expect(result.ok).toBe(true)
   })
 
   it('rejects Fox (rank 3) played with no ability choice', () => {

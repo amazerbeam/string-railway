@@ -24,12 +24,12 @@ invariants, Deferred — and links out to one file per mechanic once the module 
 couple worth a standalone answer. A thin module stays a single `README.md`; nothing forces a split
 before it earns one. See the skill's own SKILL.md for the split threshold and per-module template.
 
-| Module                | Doc                                              | Status      | Built by                                       |
-| --------------------- | ------------------------------------------------- | ----------- | ---------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)             | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80 |
-| `src/app/`            | [app/](app/README.md)                             | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md)       | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                           | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80 |
+| Module                | Doc                                         | Status      | Built by                                                                                                                             |
+| --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81 |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81                                       |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81                                                     |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81                               |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -73,6 +73,26 @@ deleted from configuration, or
 [war-council-ui/hunt-readouts-and-telegraph.md](war-council-ui/hunt-readouts-and-telegraph.md) for
 the two new readouts. **One figure is deliberately undecided** — the Quarry's health, a labelled
 placeholder the developer sets from the first play session.
+
+**DLR-81 removed the Quarry's character power, and it is the one deletion here that undoes a feature
+nobody decided to have.** DLR-51 had given the Monarch a _round-long rule-break_: on every lead the
+Quarry made, the player narrowed to their Swan or their highest card of that suit, whether or not a
+rank 11 was on the table. The five character names were only ever meant as placeholder framing —
+"opponent 1, opponent 2" — and powers were intended for a **final boss**, not for every opponent. A
+play session measured what it cost: five follows in twelve tricks, **every one with exactly one legal
+card**, which made both eaten skulls undodgeable.
+
+`quarryRuleBreak.ts` is gone, along with `monarchFollowApplies`, `RoundState.quarryCharacter`,
+`dealRound`'s third parameter, `QuarryCharacterInfo.description`, and the rule line on the dossier
+panel. The Quarry now plays by exactly the player's rules; a character is a **name only**. The
+`monarchFollowSet` helper survives in `legal-moves-and-abilities.md` as the _printed_ rank-11 rule,
+which fires on the led card and binds both sides. Two things worth knowing: a **60-seed soak test**
+guards the absence, and the removal incidentally closed the module's highest-value outstanding copy
+bug (`MustFollowMonarch`'s message has one trigger again, so its wording is accurate as written).
+
+**Every engine measurement recorded before 2026-08-13 was taken against that power**, including the
+play sessions that produced the current design — treat pre-DLR-81 numbers as provisional. Powers
+return only when a final-boss ticket designs them; nothing about their shape is decided.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

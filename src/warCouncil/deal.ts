@@ -3,7 +3,6 @@ import { createDeck } from './deck'
 import { shuffle } from './shuffle'
 import { assignSkulls } from './skulls'
 import { otherSide, PlayerSide, RoundPhase, type RoundState } from './types'
-import type { QuarryCharacter } from '../hunt'
 
 /**
  * One hand: `HAND_SIZE` cards each, one decree, the rest a draw pile. With the 33-card deck that
@@ -13,11 +12,7 @@ import type { QuarryCharacter } from '../hunt'
  * `rng` the shuffle uses, so a seeded deal reproduces its skulls as well as its cards. A card the
  * Woodcutter later draws arrives unskulled: §3.4's density is a property of the deal.
  */
-export function dealRound(
-  dealer: PlayerSide,
-  rng: () => number,
-  quarryCharacter?: QuarryCharacter,
-): RoundState {
+export function dealRound(dealer: PlayerSide, rng: () => number): RoundState {
   const shuffled = shuffle(createDeck(), rng)
   const playerHand = shuffled.slice(0, HAND_SIZE)
   const cpuHand = shuffled.slice(HAND_SIZE, HAND_SIZE * 2)
@@ -40,6 +35,5 @@ export function dealRound(
     leader: otherSide(dealer),
     tricksPlayed: 0,
     phase: RoundPhase.AwaitingLead,
-    quarryCharacter,
   }
 }

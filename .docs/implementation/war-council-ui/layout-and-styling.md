@@ -76,7 +76,7 @@ the split has introduced. Consolidating it is its own ticket.
 > `warCouncilHunt.css` copy was therefore not merely redundant but **completely unreachable**, and it
 > took a reviewer reading both sheets' media blocks side by side to notice. Review deleted it and left a
 > pointer comment naming the surviving rule's one home. Two copies of a breakpoint are a maintenance
-> cost; two copies of a *rule* inside them is a bug that no test can see.
+> cost; two copies of a _rule_ inside them is a bug that no test can see.
 
 `WarCouncilRound.tsx` imports **all four**, in that order, and importing only some leaves part of the
 feature unstyled with no error anywhere — worth knowing before debugging a card that renders with no
@@ -87,7 +87,7 @@ import, so a stale import is a broken build rather than a silent gap.
 **Import order is load-bearing, not incidental.** A card's hover lift and its
 `@media (prefers-reduced-motion: reduce)` suppression are deliberately co-located in
 `warCouncilCards.css`, with the suppression later in the same file, so it wins at equal specificity.
-Putting the hover rule in a sheet that loads *after* `warCouncilCards.css` — which is what DLR-63's
+Putting the hover rule in a sheet that loads _after_ `warCouncilCards.css` — which is what DLR-63's
 tasks originally specified — would have silently inverted that, leaving the reduced-motion override
 unreachable while every test still passed.
 
@@ -103,8 +103,10 @@ unreachable while every test still passed.
 
 `warCouncilHunt.css` closes with `@media (max-width: 44rem), (max-height: 34rem)`, which collapses
 the shell to a single column (`'status' 'dossier' 'table' 'hand'`) and turns `.wc-dossier` into a
-wrapping row. `.wc-dossier` also carries `min-width: 0` and `overflow: hidden` unconditionally, so a
-long rule-break sentence cannot force the grid wider than the viewport.
+wrapping row. `.wc-dossier` also carries `min-width: 0` and `overflow: hidden` unconditionally, so no
+long readout can force the grid wider than the viewport. (The specific overflow risk that motivated
+it — the Quarry's round-long rule-break sentence — is gone with the power itself as of DLR-81, but
+the guard stays: `.wc-dossier` still hosts the intent telegraph and the suit-shape rows.)
 
 That block originally restructured `.wc-shell` and `.wc-dossier` but **not `.wc-status`** — the
 unwrapped flex row that had just gained a third child. At phone width the band's
@@ -137,14 +139,14 @@ within the viewport (rightmost edge 489). See [The duel's health bars](duel-heal
 
 The same `@media (max-width: 44rem), (max-height: 34rem)` block governs `.wc-table-inner`, and that
 rule produced this family's fourth browser-caught layout defect — the subtlest of them, because the
-thing that broke was the *fix* for something else.
+thing that broke was the _fix_ for something else.
 
 DLR-67's end panel grew a second equation and overflowed the felt at those sizes. The fix applied was
 `align-self: stretch` + `min-height: 0` + `justify-content: center` + `overflow-y: auto`, which
 resolved the end panel and **broke the declare gate**. The mechanism is worth stating plainly because
 it is not obvious and it generalises: **`justify-content: center` on an `overflow-y: auto` container
 clips overflowing content symmetrically — half above the top edge, half below the bottom — and
-`scrollTop` cannot go negative.** So the content above the top edge is unreachable at *every* scroll
+`scrollTop` cannot go negative.** So the content above the top edge is unreachable at _every_ scroll
 position, not merely at rest. The declare gate's own "Play to Win" heading became invisible at 680×520
 and 700×544, and a click on that option failed on first attempt. Scrolling could not recover it.
 

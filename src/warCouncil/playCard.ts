@@ -3,7 +3,6 @@ import { applyFoxExchange, applyWoodcutterDraw, nextLeaderAfterTrick } from './a
 import { resolveTrickBank } from './bank'
 import { containsCard, removeCard, sameCard } from './cardUtils'
 import { legalMoves } from './legalMoves'
-import { monarchFollowApplies } from './quarryRuleBreak'
 import { resolveTrickWinner } from './resolveTrick'
 import { trickIsSkulled } from './skulls'
 import {
@@ -38,12 +37,10 @@ export function playCard(
 
   const legal = legalMoves(state, side)
   if (!legal.some((c) => sameCard(c, card))) {
-    // The Monarch constraint can be in force for either reason: the led card is a Monarch,
-    // or the encounter's round-long rule-break is (§4). Both must name the same reason, so
-    // this asks the same predicate legalMoves used rather than re-deriving it.
+    // The Monarch constraint has exactly one source since DLR-81: the led card is a Monarch.
+    // Mirrors legalMoves' own condition, so the legal set and the reason code cannot disagree.
     const monarchConstrained =
-      (state.currentTrick.length === 1 && state.currentTrick[0].card.rank === CardRank.Monarch) ||
-      monarchFollowApplies(state, side)
+      state.currentTrick.length === 1 && state.currentTrick[0].card.rank === CardRank.Monarch
     return {
       ok: false,
       reason: monarchConstrained

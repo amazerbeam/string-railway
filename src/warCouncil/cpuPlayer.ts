@@ -2,7 +2,6 @@ import { TelegraphFidelity, TELEGRAPH_FIDELITY } from '../hunt'
 import { cardsOfSuit, removeCard } from './cardUtils'
 import { legalMoves } from './legalMoves'
 import { playCard } from './playCard'
-import { QUARRY_SIDE } from './quarryRuleBreak'
 import { resolveTrickWinner } from './resolveTrick'
 import { isSkulled } from './skulls'
 import {
@@ -11,6 +10,7 @@ import {
   CardRank,
   currentTurn,
   IllegalMoveReason,
+  QUARRY_SIDE,
   RoundPhase,
   type AbilityChoice,
   type Card,

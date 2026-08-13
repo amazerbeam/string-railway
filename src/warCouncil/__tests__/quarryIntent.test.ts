@@ -3,8 +3,14 @@ import { HAND_SIZE, TelegraphFidelity } from '../../hunt'
 import { chooseCpuMove, commitQuarryMove, quarryIntent, QuarryIntentStance } from '../cpuPlayer'
 import { dealRound } from '../deal'
 import { playCard } from '../playCard'
-import { QUARRY_SIDE } from '../quarryRuleBreak'
-import { currentTurn, IllegalMoveReason, PlayerSide, RoundPhase, type RoundState } from '../types'
+import {
+  currentTurn,
+  IllegalMoveReason,
+  PlayerSide,
+  QUARRY_SIDE,
+  RoundPhase,
+  type RoundState,
+} from '../types'
 import { resolveTrickWinner } from '../resolveTrick'
 
 function stateWith(overrides: Partial<RoundState>): RoundState {

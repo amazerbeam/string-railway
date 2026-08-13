@@ -1,31 +1,31 @@
-# The Hunt — play-test feedback (session 1, 2026-08-10)
+# The Hunt — play-test feedback (sessions 1–3, from 2026-08-10)
 
 The developer's first play of The Hunt itself, as opposed to a reference game. Recorded
 **retrospectively on 2026-08-12** from the session transcript, because it was never written down at
 the time.
 
-**Why that matters more than a missing file.** Three of the four things the developer *proposed* that
+**Why that matters more than a missing file.** Three of the four things the developer _proposed_ that
 evening became tickets within the hour and are now in the design and on disk. The two things they
-*observed* went nowhere. That is exactly the failure Rosewater's lesson #19 warns about — his rule is
+_observed_ went nowhere. That is exactly the failure Rosewater's lesson #19 warns about — his rule is
 that players recognise problems accurately and solve them badly, so playtest feedback should be read
 as **diagnosis, never prescription** (`../design-principles.md` §2). The record kept the
 prescriptions and lost the diagnosis. This file exists to put the diagnosis back.
 
-**Scope and ownership.** This file owns *observed feedback on The Hunt*, and only that. It is not the
+**Scope and ownership.** This file owns _observed feedback on The Hunt_, and only that. It is not the
 ruleset ([`../../game_rules/the-hunt.md`](../../game_rules/the-hunt.md)), not the reasoning
 ([`hybrid-design.md`](./hybrid-design.md)), not what the code does
 ([`../../implementation/`](../../implementation/)), and not notes on somebody else's game — those are
 [`balatro-play-notes.md`](./balatro-play-notes.md) and
 [`forbidden-solitaire-play-notes.md`](./forbidden-solitaire-play-notes.md), both of which record
-sessions playing *published* games. Nothing from any of those files is restated here.
+sessions playing _published_ games. Nothing from any of those files is restated here.
 
 **Nothing here is a decision.** The session produced proposals about multiplier brackets, how often a
 path may be chosen, and card presentation — all tuning and visual calls that `CLAUDE.md` reserves for
 the developer. Where this file names a number, it is quoting the session, not ratifying it.
 
 **Provenance.** Session `1d90e186-348d-4ffe-95c6-9b8d5bebef5a`, 2026-08-10, 20:41–21:13 BST, eight
-messages. The app was launched in the preceding session (`04a24df9`, 19:25 — *"get it runningg for
-me"*). Quotations are verbatim, including typos.
+messages. The app was launched in the preceding session (`04a24df9`, 19:25 — _"get it runningg for
+me"_). Quotations are verbatim, including typos.
 
 ---
 
@@ -83,7 +83,7 @@ Two things, credited because they are method rather than luck.
   and an absent per-action readout — were named separately rather than fused into "it isn't fun."
   Both survive as live problems eleven days later, which is the test of a real observation.
 - **It asked about iteration order before changing anything**: "would you recommand trying them all
-  at once or 1 by 1?" Schell's *rule of the loop* — the more times you test and revise, the better
+  at once or 1 by 1?" Schell's _rule of the loop_ — the more times you test and revise, the better
   the game gets (`../design-principles.md` §1) — is the whole justification for that question, and
   four simultaneous changes would have made the next play unattributable.
 
@@ -91,17 +91,17 @@ Two things, credited because they are method rather than luck.
 
 ## Part 2 — where each item landed
 
-| # | From the session | Status today | Where |
-|---|---|---|---|
-| 4 | Declare Win/Lose after the deal; values 1–11 inverting on Lose; declaration selects the multiplier | **Built, and now the design's spine.** Shipped as the declare gate with `12 − r` inversion and two mirrored Standing tables selected by the declaration | DLR-63 · `hybrid-design.md` §1 · `the-hunt.md` (settled) · `../../implementation/war-council/declaration-and-lose-path.md` |
-| 5 | Ration the Lose path "like how discard is limited" | **Built, then retired.** Became the three-credit mechanic (`LOSE_CREDITS_PER_HUNT`, `claimLostTrick`, four guards); deleted outright by DLR-67, whose brief records that it was "replaced, not tuned" | DLR-63 → DLR-67 |
-| 6 | Suit-then-rank hand order, icon to bottom-left, suit-coloured border | **Built** | DLR-63 · `../../implementation/war-council-ui/declare-gate-and-hand-order.md` |
-| 7 | One Hunt means the declaration has no escalation behind it | **Still true, now by design.** The duel direction removed the Demand escalation entirely; the slice is deliberately one encounter | `hybrid-design.md` §5, §9 · DLR-67 |
-| 1 | "it's not clear what a good decision is" | **Never recorded anywhere until this file.** See §3.2 — and note the twist: the fix for it is now itself under suspicion | — |
-| 2 | "there's no good feedback each time I lay a card" | **Never recorded anywhere until this file.** See §3.1 | — |
-| 3 | The Balatro fresh-ante benchmark | **Never recorded, never re-run** | See §3.3 |
-| 8–13 | Session 2 (2026-08-13) — cannot steer the trick count | **Open, undiagnosed before this entry** | See §5.1–§5.4 |
-| 14 | "the player should always deal" | **Recorded as a prescription, not adopted** | See §5.4 |
+| #    | From the session                                                                                   | Status today                                                                                                                                                                                          | Where                                                                                                                      |
+| ---- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 4    | Declare Win/Lose after the deal; values 1–11 inverting on Lose; declaration selects the multiplier | **Built, and now the design's spine.** Shipped as the declare gate with `12 − r` inversion and two mirrored Standing tables selected by the declaration                                               | DLR-63 · `hybrid-design.md` §1 · `the-hunt.md` (settled) · `../../implementation/war-council/declaration-and-lose-path.md` |
+| 5    | Ration the Lose path "like how discard is limited"                                                 | **Built, then retired.** Became the three-credit mechanic (`LOSE_CREDITS_PER_HUNT`, `claimLostTrick`, four guards); deleted outright by DLR-67, whose brief records that it was "replaced, not tuned" | DLR-63 → DLR-67                                                                                                            |
+| 6    | Suit-then-rank hand order, icon to bottom-left, suit-coloured border                               | **Built**                                                                                                                                                                                             | DLR-63 · `../../implementation/war-council-ui/declare-gate-and-hand-order.md`                                              |
+| 7    | One Hunt means the declaration has no escalation behind it                                         | **Still true, now by design.** The duel direction removed the Demand escalation entirely; the slice is deliberately one encounter                                                                     | `hybrid-design.md` §5, §9 · DLR-67                                                                                         |
+| 1    | "it's not clear what a good decision is"                                                           | **Never recorded anywhere until this file.** See §3.2 — and note the twist: the fix for it is now itself under suspicion                                                                              | —                                                                                                                          |
+| 2    | "there's no good feedback each time I lay a card"                                                  | **Never recorded anywhere until this file.** See §3.1                                                                                                                                                 | —                                                                                                                          |
+| 3    | The Balatro fresh-ante benchmark                                                                   | **Never recorded, never re-run**                                                                                                                                                                      | See §3.3                                                                                                                   |
+| 8–13 | Session 2 (2026-08-13) — cannot steer the trick count                                              | **Open, undiagnosed before this entry**                                                                                                                                                               | See §5.1–§5.4                                                                                                              |
+| 14   | "the player should always deal"                                                                    | **Recorded as a prescription, not adopted**                                                                                                                                                           | See §5.4                                                                                                                   |
 
 The pattern in that table is worth stating plainly: **every prescription was actioned, no diagnosis
 was.** Prescriptions convert into tickets and tickets leave a trail; an observation about feel has
@@ -118,16 +118,16 @@ Ranked by how much of the design currently rests on the answer.
 This is the **first** of three independent records of the same complaint, and the only one about The
 Hunt itself:
 
-| Date | Game | The complaint |
-|---|---|---|
-| **2026-08-10** | **The Hunt** | **"there's no good feedback each time I lay a card"** |
-| 2026-08-12 | Forbidden Solitaire | "the damage is bult as potential damge like my game, but it's actually not clear that's happening and I can't tell that I'm going to take damage" (`forbidden-solitaire-play-notes.md` note 5) |
-| — | Balatro | a state change the player was actively waiting for happened and did not register (`balatro-play-notes.md` note 16; a third variant in `balatro.md` §2.5) |
+| Date           | Game                | The complaint                                                                                                                                                                                  |
+| -------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **2026-08-10** | **The Hunt**        | **"there's no good feedback each time I lay a card"**                                                                                                                                          |
+| 2026-08-12     | Forbidden Solitaire | "the damage is bult as potential damge like my game, but it's actually not clear that's happening and I can't tell that I'm going to take damage" (`forbidden-solitaire-play-notes.md` note 5) |
+| —              | Balatro             | a state change the player was actively waiting for happened and did not register (`balatro-play-notes.md` note 16; a third variant in `balatro.md` §2.5)                                       |
 
 `forbidden-solitaire-play-notes.md` §3.1 already calls this "the single thing this project's screens
 are most likely to get wrong" and reaches that verdict from the two published games. **It did not
 know the earliest instance was our own game.** That strengthens the finding rather than repeating it:
-the failure mode was observed in The Hunt *before* it was observed in either reference game, so it is
+the failure mode was observed in The Hunt _before_ it was observed in either reference game, so it is
 not a lesson borrowed from games we admire — it is a defect we already had.
 
 **Where the design's answer stands.** §6 and §11 bet on pending damage shown on both health bars —
@@ -152,22 +152,22 @@ in Meier's terms: it gives the round a stated objective, and it is Knizia's "des
 first" applied honestly, since the declaration reshapes every subsequent trick rather than adding a
 side rule (`../design-principles.md` §2).
 
-Then the design's own arithmetic turned on it. `ideas.md` → *The declaration as a free option*
-(2026-08-11, "the session's largest finding") and *Measured: the declaration is a live 50/50 read, and
-the Monarch tilts it the wrong way* (2026-08-12) argue that the declaration may be a coin flip the
+Then the design's own arithmetic turned on it. `ideas.md` → _The declaration as a free option_
+(2026-08-11, "the session's largest finding") and _Measured: the declaration is a live 50/50 read, and
+the Monarch tilts it the wrong way_ (2026-08-12) argue that the declaration may be a coin flip the
 player is not equipped to make; `hybrid-design.md` §9 Problem 1 and §11's kill criterion are built
 around that risk.
 
 **So the two problems are one problem.** The cure for "I don't know what a good decision is" was a
 new decision — and the open question about that new decision is, in the same words, whether the
 player knows what a good one looks like. Any fix that makes the declaration readable also answers the
-2026-08-10 complaint; any fix that only makes it *consequential* does not. That distinction is not
+2026-08-10 complaint; any fix that only makes it _consequential_ does not. That distinction is not
 currently drawn anywhere, and it is the one worth holding the §6 mitigations against.
 
 There is a second-order consequence in §3.3 of `forbidden-solitaire-play-notes.md` that lands harder
 now: with no teaching layer, §11's kill criterion cannot distinguish "the declaration is a bad
 decision" from "the declaration was never explained." The 2026-08-10 session is evidence that a
-player *who designed the game* found the objective unclear before the declaration existed — which
+player _who designed the game_ found the objective unclear before the declaration existed — which
 says nothing about the declaration, but does say the screen has never yet succeeded at making an
 objective legible.
 
@@ -181,7 +181,7 @@ instrumentation, and it is the only measurement in the project's history that ha
 would produce a trend if run twice. It has not been re-run across the declaration, the duel
 direction, or DLR-66–68.
 
-Whether the answer is *yes* is a feel judgement and the developer's alone.
+Whether the answer is _yes_ is a feel judgement and the developer's alone.
 
 ---
 
@@ -195,7 +195,7 @@ Cheapest first. All three are sittings, not instrumentation.
    to do, and did laying each card tell you anything? Same two questions, so the answers are
    comparable to this session.
 3. **Separate the two failures in §3.2 before tuning.** Have a player declare and then say aloud
-   *why*. A player who declares confidently and is then surprised by the result has a legibility
+   _why_. A player who declares confidently and is then surprised by the result has a legibility
    problem in the readout; a player who cannot say why they declared at all has the §3.1 problem, and
    no amount of Quarry pressure will fix it.
 
@@ -254,7 +254,7 @@ One prescription was offered alongside them, and is recorded as a prescription p
 
 Every one of observations 8–13 is the same sentence said six ways: **I cannot steer the trick count.**
 
-The declaration asks for a pre-commitment to a *band* — on Win, the peak is 7–9 tricks. That is a
+The declaration asks for a pre-commitment to a _band_ — on Win, the peak is 7–9 tricks. That is a
 three-wide window out of fourteen possible outcomes. Base Fox in the Forest never asks for that
 commitment: you play, you land where you land, and the six printed values make the landing zone a
 source of emergent tension rather than a target you promised to hit. **Follow-suit exists precisely to
@@ -268,23 +268,23 @@ randomness (Engelstein, `../design-principles.md`) landing on the wrong side —
 system rather than to their own decision.
 
 This is the **executable half** of §12's Problem 1. That problem asks whether the declaration is a
-*readable* choice at the moment it is made. Session 2 adds the question after it: even given a correct
+_readable_ choice at the moment it is made. Session 2 adds the question after it: even given a correct
 read, **is the declaration a plan that can be carried out?** Observation 8 says no, and it says no in
 the presence of a CPU that is not even trying.
 
 ### 5.2 The trick-maximising Quarry is simultaneously weak and maximally disruptive
 
-§11 records that the shipped CPU is close to the *worst* policy available to it — maximising tricks
+§11 records that the shipped CPU is close to the _worst_ policy available to it — maximising tricks
 lands it at `k = 10–13`, its own ×0.5 band, dealing 24–78 against a competent player's 420–540. That
 reading is about the Quarry's own scoring, and it is correct.
 
 Session 2 supplies the other half, and it is not a contradiction: **a trick-maximiser is the single
 most disruptive opponent to a player trying to hit a precise trick count.** It contests every trick,
-so it pushes the player *down* out of 7–9 on every hand while scoring almost nothing for doing it.
+so it pushes the player _down_ out of 7–9 on every hand while scoring almost nothing for doing it.
 From the player's seat that reads as "the CPU outplays me and ruins my plan" (obs. 8) even though the
 CPU is losing badly on the arithmetic.
 
-The consequence for sequencing: the band-aware Quarry is not only an *escalation* item. Replacing the
+The consequence for sequencing: the band-aware Quarry is not only an _escalation_ item. Replacing the
 trick-maximiser may **reduce** the steering problem, because a Quarry playing for its own band will
 deliberately shed tricks the player wants. Whether that is enough on its own is unknown and untested.
 
@@ -293,7 +293,7 @@ deliberately shed tricks the player wants. Whether that is enough on its own is 
 Observation 11's singleton is not variance to be tuned out. A 13-card hand drawn from 33 cards across
 three suits averages **4.3 cards per suit**, so holding one or zero of a suit is routine, not unlucky.
 Every time it happens, follow-suit reduces the player's choice for that trick to a single legal card —
-and, as observed, that card can *win a trick they did not want*. Agency does not degrade at the
+and, as observed, that card can _win a trick they did not want_. Agency does not degrade at the
 endgame; it is absent on those tricks from the first deal.
 
 Observation 10 ("once the cards get closer to 1/2… a foregone conclusion") is the aggregate of this
@@ -304,20 +304,20 @@ and nobody has counted it. See Part 6.
 ### 5.4 The lead is a burden, and it is handed out by the mechanic the player least controls
 
 Base rules: the non-dealer leads the first trick, then **the winner of a trick leads the next**. So the
-lead is awarded for winning — and observations 11–13 describe being handed it as a *punishment*: no
+lead is awarded for winning — and observations 11–13 describe being handed it as a _punishment_: no
 information about the opponent's hand, no obvious right move, "frozen."
 
 Two distinct complaints are tangled in observation 12 and worth separating before anything is changed:
 
 - **Trump uncertainty** — "I don't know that playing the 7 will let me win, and it didn't." This is
   ordinary trick-taker hidden information. It is not obviously a defect.
-- **Losing the lead as a compounded loss** — losing the trick *and* the initiative in one event. This
+- **Losing the lead as a compounded loss** — losing the trick _and_ the initiative in one event. This
   is base-game behaviour, but the duel direction raises its cost, because the lead is what steers the
   trick count the declaration commits to.
 
 **Prescription 14 — "the player should always deal" — is recorded, not adopted.** Read as diagnosis
-(Rosewater #19), the underlying report is *"I hate leading with no information."* Note that the
-prescription as stated would give the player the **follow** seat on trick 1, which is the *informed*
+(Rosewater #19), the underlying report is _"I hate leading with no information."_ Note that the
+prescription as stated would give the player the **follow** seat on trick 1, which is the _informed_
 seat — so the instinct is pointing at information, not at the deal. Whether the fix is dealer control,
 an information device, or something that makes leading legible is open, and it is the developer's.
 
@@ -329,7 +329,7 @@ declaration. If §5.1 is right, the declaration made the second one worse, becau
 emergent landing zone into a promise the player is held to.
 
 That does not mean the declaration should go. It means **the two mitigations in §6 aimed at making the
-declaration *readable* do not touch this**, and a redesign that only improves the read will not move
+declaration _readable_ do not touch this**, and a redesign that only improves the read will not move
 observations 8–13.
 
 ---
@@ -352,9 +352,324 @@ Two of these are counts, not feelings, and neither has been taken.
 
 **What would prove §5.1 wrong.** If measurement 5 shows the player landing in 7–9 more often than
 chance would give (roughly 3 in 14), then trick-count control exists and the problem is that it is
-*invisible* rather than absent — which is a readout problem and a much cheaper one. If the
+_invisible_ rather than absent — which is a readout problem and a much cheaper one. If the
 distribution is flat, the declaration is a promise the ruleset does not let the player keep, and that
 is a structural redesign.
+
+---
+
+## Session 3 — 2026-08-13, the first play of the redesign (played by Claude, not the developer)
+
+**Provenance and its one caveat.** The developer asked for this one — _"I keep drawing lol, maybe you
+try play and see how you get on and what you think."_ So the player here is **not a human**, and every
+"feel" reading below is worth less than a developer's would be. What survives that caveat is the
+**arithmetic and the legal-move counts**, which are properties of the rules rather than of the player.
+Read this section for the counts; discount the adjectives.
+
+**What was on screen.** DLR-80 as shipped: six-card hands, skulls, the bank and the streak, damage per
+trick, both bars. Two hands played to completion against the Monarch, plus one trick of a third.
+Player health 25 → 20. Quarry 1,000 → 870.
+
+### 6.1 The counts
+
+| Figure                                  | Hand 1      | Hand 2      | Session    |
+| --------------------------------------- | ----------- | ----------- | ---------- |
+| Tricks taken / conceded                 | 4 / 2       | 3 / 3       | **7 / 5**  |
+| Health lost                             | 2           | 3           | **5**      |
+| Dealt to the Quarry                     | 74          | 56          | **130**    |
+| Largest single cash-out                 | 42 (21 × 2) | 36 (18 × 2) | **42**     |
+| Skulls dealt to the Quarry              | 2           | 2           | **4**      |
+| — dodged                                | 1           | 1           | **2**      |
+| — eaten                                 | 1           | 1           | **2**      |
+| Skull eats that had a legal alternative | 0           | 0           | **0 of 2** |
+
+Play-test 2 §8 asked for four measurements. All four now have a first reading:
+
+1. **Deliberate dodges: 2 of 12 tricks**, and one of the two was fully engineered — see §6.4. The
+   inversion does produce a decision. It is not decoration.
+2. **Forced skull eats: 2 of 2.** Both eaten skulls arrived on a trick where exactly one card was
+   legal. See §6.2, which is the session's main finding.
+3. **Largest cash-out: 42.** Damage rate 65 per hand. See §6.3.
+4. **Did the multiplier change a decision?** **Yes, twice** — see §6.4.
+
+### 6.2 The finding: against the Monarch the player never makes a follow decision, and the skull now punishes that
+
+**Five follows, five tricks with exactly one legal card.**
+
+| Trick | Their lead              | Legal cards in the player's hand | Why                                          |
+| ----- | ----------------------- | -------------------------------- | -------------------------------------------- |
+| H1 T1 | 2 of Keys               | 1 — the 9 of Keys                | Monarch: no Swan of Keys, so highest Keys    |
+| H1 T3 | **3 of Bells, skulled** | 1 — the 10 of Bells              | Monarch: highest Bells. **Forced to win it** |
+| H1 T6 | 7 of Bells              | 1 — last card in hand            | End of hand                                  |
+| H2 T2 | 2 of Bells              | 1 — the 5 of Bells               | Monarch: highest Bells                       |
+| H2 T4 | 8 of Keys               | 1 — the 1 of Keys                | Monarch: Swan of Keys (the only Keys held)   |
+
+Every decision made in twelve tricks was a **lead**. Seven leads, six of them real choices; five
+follows, zero choices. That is the first reading of session 2's measurement 4 ("count the tricks the
+player actually decides") — **7 of 12, and the split is not random: it is exactly the lead/follow
+line.**
+
+**Session 2's observation 11 is still live, and the redesign gave it teeth.** Verbatim, from the
+session above: _"they led with bells and I had 1 bell the 8, I had no choince but to take the trick."_
+H1 T3 is that sentence, replayed, with a skull on it. The Quarry led its skulled **3 of Bells**; the
+player held exactly one Bells, the 10; the Monarch narrows the follow to _the Swan of that suit or the
+highest of it_; the 10 was the only legal card; 10 beats 3; the trick was taken; the skull was eaten.
+One damage, and a 32-point cash-out fired two tricks early.
+
+The player **knew all of it in advance**. The shape readout said Bells held a skull. The telegraph said
+_"The Quarry will lead Bells."_ Play-test 2 §3.5 is explicit that this foreknowledge is what makes
+§3.4's ambush survivable — _"you can see which suits are mined and lead low into them deliberately."_
+Against the Monarch that defence is unavailable by construction, because **the Monarch does not wait
+for you to lead into the mined suit; it leads into the suit itself, and then dictates your reply.**
+
+**The enumeration.** When the Monarch leads suit _S_ and the player holds at least one card of _S_,
+the legal set is `{Swan of S, if held} ∪ {highest S held}`. So a skull of rank _r_ led in _S_ is
+dodgeable **only** if:
+
+- the player holds the **Swan of _S_** — one specific card in 33, so roughly **18%** of hands; or
+- the player's **entire holding in _S_ is below _r_** — which for a low skull (_r_ ≤ 4) requires every
+  card of that suit in hand to be a 2 or a 3; or
+- the player is **void in _S_** — in which case the Monarch's narrowing does not apply at all.
+
+**Why this is a six-card problem specifically, and nobody noticed.** The Monarch's printed liability
+(`the-hunt.md` §9) is _"shedding your Swan and your top card of a suit early neutralises the Monarch
+in that suit before it is ever led."_ At thirteen cards there is an _early_ in which to do that. At
+six cards there are six tricks, you hold roughly two cards per suit, and shedding your top card of a
+suit means playing it — into a trick. **DLR-80 shrank the hand from thirteen to six and carried the
+character over verbatim, and the shrink deleted the character's only counterplay.** Play-test 2 §3.1
+lists three jobs the six-card hand does; none of them is this, and §4's deletion list does not mention
+the Monarch.
+
+### 6.3 Quarry health at 1,000 makes the encounter arithmetically unwinnable
+
+The one figure `the-hunt.md` §8 marks as a placeholder awaiting a play session. Here is the session.
+
+- **Damage dealt: 65 per hand** (130 over two hands, in which the trick count was won 7–5).
+- **Health lost: 2.5 per hand** — which lands squarely inside play-test 2 §5's own estimate of 2–4.
+- **Hands needed to empty 1,000:** 1000 ÷ 65 ≈ **15.4**.
+- **Hands of health available:** 25 ÷ 2.5 = **10**.
+
+So the player dies with roughly **350 of the Quarry's 1,000 still on the bar** — while winning the
+trick count. §5's estimate of "something like eight hands" was a health-rate prediction and it was
+close; what was never estimated was the damage rate, and 1,000 is out by a factor of about two.
+
+Scaled off this session, an encounter that ends in _N_ hands wants Quarry health near `65 × N`: about
+**520** for the eight hands §5 reasoned toward, or **650** for a fight that goes the full distance the
+player's health allows. **Both numbers are the developer's to set, and two hands is a thin sample** —
+the damage rate is the term with the variance, since one six-trick sweep at ×6 would deal more than
+either hand here did in total. What the session establishes is not the value but the **order of
+magnitude**: it is in the hundreds, not the thousands.
+
+**One knock-on.** Play-test 2 §5's closing note — _"in a one-encounter build a competent player should
+beat the first CPU comfortably"_ — is not currently reachable at any level of play, so the scoping note
+cannot be used to judge difficulty until the health figure moves.
+
+### 6.4 What is genuinely working — three mechanisms, named
+
+**The skull inversion produces a real, learnable, engineered play.** H1 T2 was the best moment of the
+session and it was built entirely out of rules that already existed. The readout showed _Moons 1, one
+skull_: the Quarry's only Moon was skulled. The player held the 2 and the 6 of Moons. Leading the **2**
+forces the Quarry to follow suit with its single Moon, which cannot be lower than a 2, so it **must**
+win the trick — and the trick is a skull trick, so winning it is the player's dodge. Both cards banked,
+streak to ×2. That is a read, executed, off the shape readout, and it is exactly the play play-test 2
+§3.5 predicted the readout would enable. **It works.**
+
+**The bank only climbing removed the noise, as designed.** Across twelve tricks the number never once
+moved in the unexpected direction. Session 2's _"eh....."_ — the non-monotonic pending figure that
+could _fall_ when you won a trick — is gone, and nothing replaced it.
+
+**The multiplier changed decisions, twice, and in a way the design did not anticipate.** Both times the
+lever was not the multiplier's size but the **bank's emptiness**:
+
+- **H2 T1 — throwing a trick on purpose because it was free.** With the bank at 0, losing a trick costs
+  1 health and cashes _nothing_. Losing the same trick at bank 30 × ×3 costs 1 health _and_ discards 90
+  damage. So the player led their lowest card (3 of Bells) deliberately to lose the first trick of the
+  hand, while a loss was cheapest.
+- **H1 T4 — taking the risky line to keep the streak alive.** Holding 5 and 8 of Keys plus the 6 of
+  Moons against a Quarry with one trump left, the safe play banks less; leading the highest trump to
+  strip their trump set up a three-trick sweep at ×3 instead of a scattered ×1. The multiplier is what
+  made the greedier line correct.
+
+**This is worth stating as a positive answer to §8's fourth question and a new entry on §6 Q4's
+slippery-slope watch list at the same time.** The incentive the bank creates is _"get your losses over
+with at the start of a hand, then run the streak."_ That is a genuine strategic texture, and it also
+means the front of every hand is something the player deliberately throws away. Balatro's comparable
+move — spending a discard — costs a metered resource; here throwing a trick costs 1 of 25 health, which
+is 4%, and buys a much larger swing. Whether that reads as clever sequencing or as an exploit is a feel
+question and therefore the developer's.
+
+### 6.5 Two corrections to claims in play-test 2, both cheap and both closing an open question
+
+**Q2 — "many six-card hands will contain none of the named ranks at all" — is wrong by two orders of
+magnitude.** The arithmetic was never done. Five ranks carry an actual effect (Swan 1, Fox 3,
+Woodcutter 5, Witch 9, Monarch 11), which is 15 of the 33 cards; Treasure 7 and Poison 8 do nothing, so
+they count with the plain ranks.
+
+- Expected effect-bearing cards in a six-card hand: `6 × 15/33` = **2.7**.
+- Probability a six-card hand holds **none**: `C(18,6) / C(33,6)` = `18,564 / 1,107,568` = **1.7%**, or
+  about **one hand in sixty**.
+
+The session bears it out: hand 1 held 2 and drew a third, hand 2 held 5, hand 3 held 2 — and the Fox,
+the Woodcutter, the Witch, the Swan and the Monarch narrowing all fired at least once in twelve tricks.
+**Q2 needs no rule change and no deck weighting.** It can be closed as answered by arithmetic, which
+also retires the three exits §6 Q2 offered.
+
+**"A skull's threat is inversely proportional to its rank" (§3.4) holds only while the Quarry must
+follow suit.** Two counter-cases, one per hand:
+
+- **When the Quarry is void in the lead suit, rank is irrelevant and the threat is 1.** H2 T5: the
+  Quarry was void in trump, held one skulled **10 of Bells**, and the player held nothing but trumps.
+  The player led; the Quarry dumped the 10 into a trick it was guaranteed to lose; the player ate it. A
+  rank-10 skull — the _"announcement"_, the safe one by §3.4's rule — was a **100% hit**.
+- **When the Monarch leads a low skull, §6.2 makes it near-undodgeable** rather than an ambush the
+  readout defends against.
+
+So the rule wants re-scoping to: _a skull's threat is inversely proportional to its rank **when the
+Quarry must follow suit**, and independent of rank when it is void or when the Monarch is dictating the
+follow._
+
+**And the emergent corollary, which is not in any document and was the most interesting thing the
+session produced: holding only trumps is a curse.** With no card that can lose, you cannot dodge
+anything. In H2 the player used the Woodcutter to _discard a trump_ and keep the **1 of Keys** purely
+as a card capable of losing a trick — and it paid off immediately at H2 T4, where it was the only legal
+card and it guaranteed the loss. **"Keep one card that can lose"** is a real skill this design teaches,
+and it is Koster's mastery test answered honestly (`../design-principles.md` §1): it is not a thing a
+first-hand player would know.
+
+### 6.6 The connection — and why the queued CPU improvement points the wrong way
+
+**§6.2 and the void case in §6.5 are one problem: the player has no card that can lose.** The Monarch
+narrows the legal set to cards that win; holding only trumps means every card wins. Both produce the
+same experience, which is session 2's observation 11.
+
+That reframes two open items:
+
+- **§6 Q1 — the skull rank distribution — cannot be answered while the Monarch is the only opponent.**
+  Skewing skulls **low** is the option that makes ambushes more common, and against the Monarch a low
+  skull led is close to free damage. Answering Q1 off play against this character would tune the whole
+  game around one broken interaction. Q1 is downstream of §6.2.
+- **The known tension _"the Quarry does not avoid leading a skull, so some dodges are free"_ is
+  backwards against the Monarch.** The Quarry led a skull once in this session and it was its **best
+  play of the session**, not a giveaway. The queued "obvious next CPU change" — teach it to avoid
+  leading skulls — would make its skull play _worse for the player_, because the remaining route is the
+  follow-dump into a trick it is losing, which §6.5 shows is undodgeable. Both of the session's skull
+  eats came from routes that change would keep or strengthen. **The two fixes pull in opposite
+  directions**, and the tension as written should be narrowed to the case it was reasoned about: a
+  _high_ skull led at a _non-Monarch_ Quarry.
+
+### 6.7 Options, with what each costs in new rules
+
+> **Resolved the same day — DLR-81 took none of these four, and removed the power outright.** The
+> developer's answer reframed the finding: the character powers were never a design decision at all.
+> They were placeholder framing — _"like opponent 1, opponent 2 and nothing more"_ — and the intent
+> was for powers to belong to a **final boss**, not to every opponent. So the Monarch's round-long
+> rule-break was not a mechanic to be tuned, scoped, or counterbalanced; it was something that had
+> been built without ever being chosen.
+>
+> **What shipped:** the whole-hand narrowing is gone, and the Quarry now plays by exactly the
+> player's rules. The rank-11 card's _printed_ narrowing survives, fires only on the trick where an
+> 11 is actually led, and binds both sides. A character is now a name on a panel. Powers are deferred
+> to a final-boss ticket that will design them first.
+>
+> **What that does to the table below:** row 1 is superseded — there is no contaminated sample to
+> separate any more, because the contaminant is gone rather than isolated. Rows 2 and 4 are moot.
+> **Row 3 — guarantee the player one rank-1 card — survives on its own merits**, since §6.6's
+> "no card that can lose" also arises from an all-trump hand, which the removal does not touch. It is
+> now the only live option here, and still the developer's call.
+>
+> Kept rather than deleted because the reasoning is what identified the problem, and because the
+> outcome is the argument for the pause condition: the fix was one the analysis could not have
+> proposed, and only the developer knew.
+
+For §6.2. All four are the developer's call; they are ordered by rules added, cheapest first.
+
+| Option                                                              | New rules              | What it buys                                                                                                                                                                                                      | What it risks                                                                                                                                                                          |
+| ------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Build a second character before touching any skull rule**         | 0                      | Separates _"skulls are unfair"_ from _"the Monarch plus skulls is unfair."_ Every hand ever played of this design has been against the one opponent that deletes the follow decision — the sample is contaminated | Costs a build, answers nothing on its own                                                                                                                                              |
+| **Scope the Monarch's narrowing to one suit** instead of every lead | 0 — a scope change     | Forced follows drop from 5 of 5 toward 1 of 5; the character keeps its identity and its printed liability becomes exercisable again                                                                               | Weakens the only built character; the round-long rule-break is the whole point of the character design                                                                                 |
+| **Guarantee the player one rank-1 card in the deal**                | 1 deal rule            | Restores the Monarch's stated liability, and gives the player the "card that can lose" §6.6 identifies as the missing piece. Reuses a printed card and adds no subsystem                                          | Not free, which is good: the Swan hands the lead to the loser, and in H2 T4→T5 that lead was itself a liability. Also a candidate for Forage to sell rather than the deal to guarantee |
+| **Exempt skull tricks from the narrowing**                          | 1 rule, a special case | Targets the interaction precisely                                                                                                                                                                                 | A special case rather than a general principle, which is the shape Knizia's method warns against (`../design-principles.md` §2)                                                        |
+
+### 6.8 Smaller findings
+
+Presentation and copy. Every one of these is the developer's to judge; they are recorded, not ruled on.
+
+- **`"Deal the next Hunt"` is one word wrong.** The panel above it reads _"The hand is over"_, and
+  `the-hunt.md`'s vocabulary note reserves _Hunt_ for the encounter and _hand_ for the deal. The button
+  should say **hand**. `src/app/warCouncil/RoundOverPanel.tsx`.
+- **`"You take the trick."` is printed when you eat a skull**, in the largest type on screen, directly
+  above _"You ate the skull. 1 damage — the bank cashes."_ Two contradictory readings of one event, and
+  the winning one is bigger and more central.
+- **The telegraph goes stale.** _"THEIR INTENT: Waiting on your lead."_ stayed on screen while it was
+  the Quarry's lead with its card already face up, and again after it had taken a trick — i.e. when it
+  leads next.
+- **A forced play costs four taps.** On a trick with exactly one legal card: `LET THEM LEAD` → tap the
+  card → tap it _again_ to confirm → tap the table. The confirm tap is ceremony when there is no choice,
+  and `LET THEM LEAD` gates information the sidebar has already shown. Half the tricks in this session
+  were forced (§6.2), so this is not a rare path. `game-ux` territory.
+- **The Quarry's Fox changed trump inside the same tap as its lead.** H1 T3: it played the 3 of Bells,
+  exchanged the decree, moved trump from Bells to Keys and took a Swan into hand — a strong-looking
+  play, and the single largest state change the game can make, arriving with no beat of its own.
+- **Rank 8 read as a bug, exactly as predicted.** An 8 of Keys was led at H2 T4 and the player looked
+  for a skull interaction that does not exist. Play-test 2 §6 Q3 called this and it is confirmed.
+- **The player's health bar reads fine at 25** in 1-point steps — 20/25 was legible at a glance. The
+  known tension can probably be closed.
+- **The layout reflowed to a cramped single column** when the window size changed mid-session: the left
+  rail wrapped _"The Monarch"_ onto two lines and the hand shrank. No scroll break, but worth a look.
+
+### 6.9 What to measure next
+
+Ranked. The first two are the ones that would change a decision.
+
+1. **Play four to six more hands and record dealt-per-hand and health-lost-per-hand each time.** Two
+   hands is a thin sample and the damage term is where the variance is — a single six-trick sweep at ×6
+   would exceed either hand here. The **median**, not the mean, is what Quarry health should be set
+   against.
+2. **Re-run §6.1's counts now the power is gone (DLR-81).** This was written as "build one
+   non-Monarch character"; the removal is a stronger version of the same experiment, and it is
+   already done — so this measurement is **available now and costs one play session**. It is still
+   the falsifier for §6.2. Count forced follows again: if they fall from 5 of 5 to something like
+   1 of 5, the character was the problem and the skull rules are sound; if they stay high,
+   follow-suit at six cards is the problem and the skull merely inherits it. **Everything else in
+   this section was measured against the power and should be re-taken with it.**
+3. **On every skull you eat, record whether a legal card existed that would have lost the trick.** This
+   session: 0 of 2. It is the single number that separates _"I misplayed"_ from _"I was taxed"_, and it
+   costs nothing to write down.
+4. **Count the tricks where you hold no card that can lose.** §6.6's unified reading of the problem;
+   if it is common, the fix belongs in the deal rather than in the character.
+5. **Re-run the standing benchmark.** Still never repeated since session 1, and still the only
+   comparative measurement in this project's history — one fresh Balatro ante, then one hand of this,
+   same question. A non-human player cannot answer it; this one is the developer's alone.
+
+### 6.10 The one-line summary
+
+The skull inversion works, the bank feels right, and the numbers say two things: **the Monarch did not
+survive the shrink from thirteen cards to six** — five follows, five forced, both skull eats
+undodgeable — **and 1,000 Quarry health makes the encounter unwinnable while winning the trick count.**
+
+### 6.11 What the session changed, and the one lesson worth keeping
+
+**Shipped the same day (DLR-81):** the Quarry's character power was removed entirely — see §6.7's
+resolution note. Section 9 of `the-hunt.md` and four module docs were rewritten around it.
+
+**Still open, and unchanged by that:** Quarry health (§6.3), the skull rank distribution — which
+§6.6 argued is downstream of §6.2 and is therefore **now answerable**, since the blocker is gone —
+and every presentation item in §6.8.
+
+**The lesson, and it is a process one rather than a design one.** The finding in §6.2 was measured
+correctly and diagnosed correctly, and every fix §6.7 proposed was still wrong, because all four
+assumed the power was a design decision to be tuned. It never had been. Nothing in the code, the
+ruleset, or the design documents recorded that the five characters were meant to be inert framing —
+`the-hunt.md` had the Monarch's rule-break marked **[settled]**, which is the strongest marker the
+document has, and the implementation docs described it as a deliberate mechanism with a liability and
+a test suite.
+
+So a placeholder became a settled rule with nobody deciding it, and it then survived two play
+sessions and a whole redesign. That is Rosewater's lesson #19 (`../design-principles.md` §2 —
+players diagnose accurately and prescribe badly) with the roles swapped: the _analysis_ diagnosed
+accurately and prescribed badly, and the developer's one sentence about original intent was worth
+more than the four costed options. **When a rule looks structurally indefensible, ask whether anyone
+chose it before proposing how to fix it.**
 
 ---
 

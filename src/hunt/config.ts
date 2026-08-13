@@ -64,10 +64,11 @@ export type TelegraphFidelity = (typeof TelegraphFidelity)[keyof typeof Telegrap
 // playtest.
 export const TELEGRAPH_FIDELITY: TelegraphFidelity = TelegraphFidelity.SuitAndStance
 
-// §11 "any single character is sufficient; which of the five is not load-bearing". Not a
-// tuning value: DLR-51 enforces only the Monarch's rule-break and QUARRY_CHARACTERS holds
-// only its copy, so this is forced by what is implemented. It exists as a key so T13 has
-// exactly one place to change when the other four characters land.
+// Which opponent the single encounter is fought against. Purely an IDENTITY LABEL — it selects
+// a name for the dossier panel and nothing else. No character carries a mechanical power:
+// DLR-81 deleted the Monarch's round-long rule-break, and powers are deferred to a final-boss
+// ticket rather than given to every opponent. Forced by what QUARRY_CHARACTERS holds, so not a
+// tuning value; it exists as a key so the later roster ticket has one place to change.
 export const SLICE_QUARRY_CHARACTER: QuarryCharacter = QuarryCharacter.Monarch
 
 // §3.1/§5 — six cards each, six tricks. ONE constant, not two: every card dealt is played, so

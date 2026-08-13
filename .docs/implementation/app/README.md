@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81
 
 ## Responsibility
 
@@ -27,10 +27,10 @@ import React, and `src/app/warCouncil/` does.
 
 ## Key types & exports
 
-| Export                  | Purpose                                                                    | File                 |
-| ------------------------ | ---------------------------------------------------------------------------- | --------------------- |
+| Export                  | Purpose                                                                                                                                                                                                                   | File                 |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
 | `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState`, a required `hunt: Hunt` (DLR-53), and — since DLR-71 — a required `encounter: EncounterState` and `maxHealth: Readonly<Record<DuelSide, Health>>` in; `onComplete` out | `warCouncilMount.ts` |
-| `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + `encounter`, the `EncounterState` **after** this Hunt's damage was applied (DLR-71) | `warCouncilMount.ts` |
+| `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + `encounter`, the `EncounterState` **after** this Hunt's damage was applied (DLR-71)                                                                            | `warCouncilMount.ts` |
 
 DLR-53 added `hunt: Hunt` as a **required** field — `src/hunt`'s own pairing, widened by DLR-63 to
 `{ quarry, demand, loseCredits }` and then **narrowed by DLR-67 to `{ quarry }`** when the Demand and
@@ -62,7 +62,7 @@ DLR-71.** An audit before the second change found **1 producer and 0 consumers**
 been read, and `App.tsx`'s `handleComplete` took no parameter at all — so replacing the shape outright
 was free, and the type widened from two numbers to a state object rather than narrowing. What it buys
 is not brevity: the mount hands up **the encounter the player just watched the damage land on**,
-already applied by the reducer. `App` *sets* it rather than re-applying it, which makes applying a
+already applied by the reducer. `App` _sets_ it rather than re-applying it, which makes applying a
 hand's damage twice **unexpressible** rather than merely unlikely.
 
 Both are type-only exports, re-exported via `export type` from `index.ts` (required by this
@@ -94,9 +94,7 @@ const MAX_HEALTH = {
 }
 
 const [round, setRound] = useState(1)
-const [dealt, setDealt] = useState<WarCouncilState>(() =>
-  dealRound(dealerForRound(1), Math.random, SLICE_QUARRY_CHARACTER),
-)
+const [dealt, setDealt] = useState<WarCouncilState>(() => dealRound(dealerForRound(1), Math.random))
 const [encounter, setEncounter] = useState(() => startEncounter(SLICE_ENCOUNTER_INDEX))
 
 function handleComplete(result: WarCouncilRoundResult) {
@@ -106,15 +104,17 @@ function handleComplete(result: WarCouncilRoundResult) {
   }
   const next = round + 1
   setRound(next)
-  setDealt(dealRound(dealerForRound(next), Math.random, SLICE_QUARRY_CHARACTER))
+  setDealt(dealRound(dealerForRound(next), Math.random))
 }
 ```
 
 `HUNT` and `MAX_HEALTH` live at module scope because both are built purely from configuration
 constants — neither holds per-round state, so neither can go stale across the `key={round}` remounts,
 and both are read-only rather than the kind of module-level mutable state this project's conventions
-bar. DLR-53 started passing `SLICE_QUARRY_CHARACTER` as `dealRound`'s third argument, which is what
-makes the Quarry's round-long rule-break active in the shipped app.
+bar. `SLICE_QUARRY_CHARACTER` reaches only `HUNT`, and from there only the dossier panel's name —
+**it never reaches `dealRound` or the engine.** DLR-53 had passed it as a third argument to make the
+Quarry's round-long rule-break active; DLR-81 removed both the power and the parameter, so the
+character is display data and the engine has no knowledge of it.
 
 `MAX_HEALTH` reads `PLAYER_START_HEALTH` and `quarryHealthForEncounter` rather than stating either
 number, and it reads the Quarry's from **the same function `startEncounter` uses**, so the bar's
@@ -164,7 +164,7 @@ deleted module and is unit-tested directly (`src/app/__tests__/dealerForRound.te
 
 ## Deferred / not yet implemented
 
-- **No run loop across *encounters*** — but a single encounter now runs, ends, and can be won or lost.
+- **No run loop across _encounters_** — but a single encounter now runs, ends, and can be won or lost.
   This entry has narrowed three times and DLR-71 narrowed it furthest. DLR-53 made one Hunt playable end
   to end; DLR-68 closed the arithmetic and the direction; DLR-70 built the health, the depletion and
   both end conditions **and none of it reached this module** — no file under `src/app/` imported a single

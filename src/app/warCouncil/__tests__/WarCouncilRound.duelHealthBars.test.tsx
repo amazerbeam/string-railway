@@ -30,7 +30,7 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
     const onComplete = vi.fn()
     render(
       <WarCouncilRound
-        initialState={dealRound(PlayerSide.Cpu, lcg(2026), huntFixture.quarry.character)}
+        initialState={dealRound(PlayerSide.Cpu, lcg(2026))}
         hunt={huntFixture}
         encounter={encounterFixture}
         maxHealth={maxHealthFixture}

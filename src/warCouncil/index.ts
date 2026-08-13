@@ -8,6 +8,7 @@ export {
   IllegalMoveReason,
   otherSide,
   PlayerSide,
+  QUARRY_SIDE,
   RoundPhase,
   Suit,
 } from './types'
@@ -16,8 +17,7 @@ export { containsCard, sameCard } from './cardUtils'
 export { createDeck } from './deck'
 export { shuffle } from './shuffle'
 export { dealRound } from './deal'
-export { legalMoves } from './legalMoves'
-export { QUARRY_SIDE, monarchFollowApplies, monarchFollowSet } from './quarryRuleBreak'
+export { legalMoves, monarchFollowSet } from './legalMoves'
 export { resolveTrickWinner } from './resolveTrick'
 export { playCard } from './playCard'
 export { assignSkulls, isSkulled, skullableCards, suitShape, trickIsSkulled } from './skulls'

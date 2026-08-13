@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { HAND_SIZE, QuarryCharacter, SKULL_DENSITY, SKULL_MIN_RANK } from '../../hunt'
+import { HAND_SIZE, SKULL_DENSITY, SKULL_MIN_RANK } from '../../hunt'
 import { containsCard } from '../cardUtils'
 import { createDeck } from '../deck'
 import { dealRound } from '../deal'
@@ -54,21 +54,10 @@ describe('dealRound', () => {
     expect(a).toEqual(b)
   })
 
-  it('deals a characterless round when no Quarry character is given', () => {
-    expect(dealRound(PlayerSide.Player, lcg(11)).quarryCharacter).toBeUndefined()
-  })
-
-  it('records the Quarry character it was dealt with', () => {
-    const state = dealRound(PlayerSide.Player, lcg(11), QuarryCharacter.Monarch)
-    expect(state.quarryCharacter).toBe(QuarryCharacter.Monarch)
-  })
-
-  it('leaves the rest of the deal identical whether a character is active or not', () => {
-    const plain = dealRound(PlayerSide.Player, lcg(11))
-    const withMonarch = dealRound(PlayerSide.Player, lcg(11), QuarryCharacter.Monarch)
-    expect(withMonarch.hands).toEqual(plain.hands)
-    expect(withMonarch.decree).toEqual(plain.decree)
-    expect(withMonarch.drawPile).toEqual(plain.drawPile)
+  it('carries no Quarry character into engine state at all', () => {
+    // DLR-81: the character is an identity label held by `Hunt` for the dossier panel, and the
+    // engine has no field for it. A round state that carried one would mean a power could read it.
+    expect(dealRound(PlayerSide.Player, lcg(11))).not.toHaveProperty('quarryCharacter')
   })
 
   it('skulls only cards in the Quarry’s own hand, and never a rank 1', () => {

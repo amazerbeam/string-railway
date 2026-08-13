@@ -1,34 +1,34 @@
 import { QuarryCharacter } from './types'
 
 /**
- * Display data for one Quarry character — §4's cast. Player-facing text only; the
- * rule-break itself is enforced in `src/warCouncil/quarryRuleBreak.ts`, so a UI layer
- * renders these fields without restating the rule (DLR-51 AC7).
+ * Display data for one Quarry character — an identity label, and nothing more.
+ *
+ * **No character carries a mechanical power.** DLR-81 deleted the Monarch's round-long
+ * rule-break: it was never a design decision, and character powers are deferred to a
+ * final-boss ticket rather than being given to every opponent. So this interface
+ * deliberately has no `description` field — there is no rule to describe, and a sentence
+ * here would be a rule on screen that no code applies. The power ticket adds its own copy
+ * back alongside its own enforcement.
  */
 export interface QuarryCharacterInfo {
   readonly character: QuarryCharacter
   readonly name: string
-  /** One sentence, addressed to the player — transcribed from §4's worked example. */
-  readonly description: string
 }
 
 /**
- * Partial by design: only the Monarch's rule-break is enforced (DLR-51). The other four
- * characters of §4's cast are a later ticket's, and an entry here without matching
- * enforcement in `quarryRuleBreak.ts` would put a rule on screen that no code applies.
+ * Partial by design: one opponent is configured, which is all a one-encounter build needs.
+ * The other four names of the cast are a later ticket's.
  */
 export const QUARRY_CHARACTERS: Readonly<Partial<Record<QuarryCharacter, QuarryCharacterInfo>>> = {
   [QuarryCharacter.Monarch]: {
     character: QuarryCharacter.Monarch,
     name: 'The Monarch',
-    description:
-      'Every time the Monarch leads a suit you hold, you must play your Swan of that suit or your highest card of it.',
   },
 }
 
 /**
- * Display data for `character`, or `undefined` when its rule-break is not implemented
- * yet — a caller shows no panel rather than crashing mid-round.
+ * Display data for `character`, or `undefined` when it has no entry yet — a caller shows no
+ * panel rather than crashing mid-round.
  */
 export function quarryCharacterInfo(character: QuarryCharacter): QuarryCharacterInfo | undefined {
   return QUARRY_CHARACTERS[character]

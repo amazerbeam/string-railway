@@ -50,13 +50,6 @@
   margin: 0.1rem 0 0.35rem;
 }
 
-.wc-dossier-rule {
-  font-size: 0.78rem;
-  line-height: 1.35;
-  color: var(--wc-chalk);
-  margin: 0;
-}
-
 .wc-dossier-tricks {
   margin-top: 0.45rem;
   font-size: 0.72rem;

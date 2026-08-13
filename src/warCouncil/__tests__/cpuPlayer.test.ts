@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { dealRound } from '../deal'
 import { playCard } from '../playCard'
 import { legalMoves } from '../legalMoves'
-import { monarchFollowApplies, QUARRY_SIDE } from '../quarryRuleBreak'
 import {
   chooseCpuCard,
   chooseCpuFoxChoice,
@@ -14,12 +13,13 @@ import {
   CardRank,
   currentTurn,
   PlayerSide,
+  QUARRY_SIDE,
   RoundPhase,
   Suit,
   type Card,
   type RoundState,
 } from '../types'
-import { HAND_SIZE, QuarryCharacter } from '../../hunt'
+import { HAND_SIZE } from '../../hunt'
 
 function stateWith(overrides: Partial<RoundState>): RoundState {
   return {
@@ -335,58 +335,38 @@ describe('chooseCpuMove — simulated full hands (AC4)', () => {
   })
 })
 
-describe('the Monarch rule-break — simulated full hands (DLR-51 AC6)', () => {
+// Replaces DLR-51 AC6's soak test, which asserted the round-long rule-break DID fire. DLR-81
+// deleted that power, so the same simulation now guards the opposite property: across 60 seeded
+// hands the player is never narrowed below plain follow-suit unless a rank 11 was actually led.
+// This is the regression test for the power not creeping back.
+describe('the Quarry has no rule-break — simulated full hands', () => {
   const seeds = Array.from({ length: 60 }, (_, i) => i + 1)
 
-  it.each(seeds)(
-    'completes a hand with the Monarch active, never stalling or playing illegally (seed %i)',
-    (seed) => {
-      let state = dealRound(
-        seed % 2 === 0 ? PlayerSide.Player : PlayerSide.Cpu,
-        lcg(seed),
-        QuarryCharacter.Monarch,
-      )
-      let guard = 0
-
-      while (state.phase !== RoundPhase.Complete) {
-        guard += 1
-        if (guard > 100) throw new Error('runaway loop — round never completed')
-        const turn = currentTurn(state)
-        const legal = legalMoves(state, turn)
-        if (legal.length === 0) {
-          throw new Error(
-            `empty legal-move set for ${turn} at seed ${seed}, trick ${state.tricksPlayed}`,
-          )
-        }
-        const move = chooseCpuMove(state, turn)
-        const result = playCard(state, turn, move.card, move.choice)
-        if (!result.ok) throw new Error(`illegal play at seed ${seed}: ${result.reason}`)
-        // AC1 — the character never toggles mid-round.
-        expect(result.state.quarryCharacter).toBe(QuarryCharacter.Monarch)
-        state = result.state
-      }
-
-      expect(state.tricksPlayed).toBe(HAND_SIZE)
-      expect(state.tricksWon.player + state.tricksWon.cpu).toBe(HAND_SIZE)
-    },
-  )
-
-  it('actually fires the constraint, and only ever against the player, across the sample', () => {
-    let constrainedTurns = 0
-    let narrowedTurns = 0
+  it('never narrows a follow below follow-suit except on a led Monarch', () => {
+    let followsChecked = 0
+    let monarchLeads = 0
 
     for (const seed of seeds) {
-      let state = dealRound(PlayerSide.Cpu, lcg(seed), QuarryCharacter.Monarch)
+      let state = dealRound(seed % 2 === 0 ? PlayerSide.Player : PlayerSide.Cpu, lcg(seed))
       let guard = 0
       while (state.phase !== RoundPhase.Complete) {
         guard += 1
         if (guard > 100) throw new Error('runaway loop — round never completed')
         const turn = currentTurn(state)
-        if (monarchFollowApplies(state, turn)) {
-          constrainedTurns += 1
-          expect(turn).toBe(PlayerSide.Player)
-          if (legalMoves(state, turn).length < state.hands[turn].length) narrowedTurns += 1
+        const led = state.currentTrick[0]
+
+        if (led !== undefined) {
+          const hand = state.hands[turn]
+          const inSuit = hand.filter((c) => c.suit === led.card.suit)
+          const expected = inSuit.length > 0 ? inSuit : hand
+          if (led.card.rank === CardRank.Monarch) {
+            monarchLeads += 1
+          } else {
+            followsChecked += 1
+            expect(legalMoves(state, turn)).toEqual(expected)
+          }
         }
+
         const move = chooseCpuMove(state, turn)
         const result = playCard(state, turn, move.card, move.choice)
         if (!result.ok) throw new Error(`illegal play at seed ${seed}: ${result.reason}`)
@@ -394,7 +374,9 @@ describe('the Monarch rule-break — simulated full hands (DLR-51 AC6)', () => {
       }
     }
 
-    expect(constrainedTurns).toBeGreaterThan(0)
-    expect(narrowedTurns).toBeGreaterThan(0)
+    // The sample has to actually contain follows, or the assertion above never ran.
+    expect(followsChecked).toBeGreaterThan(0)
+    // ...and it has to contain led Monarchs, or the exemption is untested.
+    expect(monarchLeads).toBeGreaterThan(0)
   })
 })

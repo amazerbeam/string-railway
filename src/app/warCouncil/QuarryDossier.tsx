@@ -1,17 +1,18 @@
 import type { QuarryCharacterInfo } from '../../hunt'
 
 interface QuarryDossierProps {
-  /** `undefined` when the character's rule-break is not implemented — `quarryCharacterInfo`'s
-   *  documented contract. Renders nothing rather than putting a rule on screen no code applies. */
+  /** `undefined` when the character has no entry — `quarryCharacterInfo`'s documented
+   *  contract. Renders nothing rather than an empty panel. */
   readonly info: QuarryCharacterInfo | undefined
   readonly tricksWon: number
 }
 
 /**
- * §4's always-on rows (AC2): the encounter's character, its round-long rule-break in the
- * plain language `quarryCharacters.ts` already writes, and its public trick count. Restates
- * no rule of its own — the sentence is the config's, and enforcement is
- * `warCouncil/quarryRuleBreak.ts`'s (DLR-51 AC7).
+ * Who you are facing, and how many tricks they have taken.
+ *
+ * **No rule line.** DLR-81 deleted the Monarch's round-long rule-break, so there is no power
+ * to print — the Quarry plays by exactly the player's rules. This panel states no rule of its
+ * own, and it must not grow one back without a power in the engine to match it.
  */
 export default function QuarryDossier({ info, tricksWon }: QuarryDossierProps) {
   if (info === undefined) {
@@ -24,7 +25,6 @@ export default function QuarryDossier({ info, tricksWon }: QuarryDossierProps) {
         The Quarry
       </span>
       <h2 className="wc-dossier-name">{info.name}</h2>
-      <p className="wc-dossier-rule">{info.description}</p>
       <p className="wc-dossier-tricks">
         Tricks taken <b aria-label={`The Quarry has taken ${tricksWon} tricks`}>{tricksWon}</b>
       </p>

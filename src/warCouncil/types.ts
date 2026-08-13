@@ -1,4 +1,3 @@
-import type { QuarryCharacter } from '../hunt'
 import type { TrickResolution } from './bank'
 
 export const Suit = {
@@ -36,6 +35,12 @@ export const PlayerSide = {
   Cpu: 'cpu',
 } as const
 export type PlayerSide = (typeof PlayerSide)[keyof typeof PlayerSide]
+
+// The seat the Quarry plays. Named so a later mode that seats the Quarry as the player has
+// exactly one place to change, and so no caller writes `PlayerSide.Cpu` when it means "the
+// opponent". Lived in the deleted `quarryRuleBreak.ts` until DLR-81 — it is a seat constant
+// and never had anything to do with a character power.
+export const QUARRY_SIDE: PlayerSide = PlayerSide.Cpu
 
 export function otherSide(side: PlayerSide): PlayerSide {
   return side === PlayerSide.Player ? PlayerSide.Cpu : PlayerSide.Player
@@ -76,11 +81,6 @@ export interface RoundState {
   readonly leader: PlayerSide
   readonly tricksPlayed: number
   readonly phase: RoundPhase
-  /**
-   * The encounter's round-long rule-break (§4). Written once by `dealRound` and carried by every
-   * state spread, so it cannot toggle mid-hand. Absent means the base rules apply unchanged.
-   */
-  readonly quarryCharacter?: QuarryCharacter
 }
 
 export function currentTurn(state: RoundState): PlayerSide {

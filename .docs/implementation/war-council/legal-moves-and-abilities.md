@@ -17,49 +17,46 @@ _state_, not what's legal to play, so none of them appear here — they live in 
 post-validation ability dispatch and in `resolveTrickWinner` instead (see
 [Trick resolution and `playCard`](trick-resolution-and-play.md)).
 
-### The Quarry's round-long rule-break — the Monarch (DLR-51)
+### The Quarry has no rule-break — DLR-81 removed the one that existed
 
-§4 of the design gives the Hunt's CPU opponent (the Quarry) one character per round whose printed
-ability applies for the *whole round* rather than just the single card that prints it. `RoundState`
-carries this as an optional `quarryCharacter` field, written once by `dealRound` and never written
-again anywhere else — since every state update in `playCard`/`abilities.ts` rebuilds `RoundState`
-by spreading (`{ ...state, … }`), the field survives every trick unchanged by construction, not by
-convention. `dealRound`'s third parameter is optional, but since DLR-53 `src/App.tsx` passes it —
-`SLICE_QUARRY_CHARACTER`, the Monarch — so **every round in the shipped app now runs with a
-character active** and its round-long rule enforced. Which character appears in which encounter is
-still a later ticket's run-scheduling job; today it is one constant.
+**The Quarry plays by exactly the player's rules.** Nothing in this module gives it a power, an
+exemption, or a rule the player does not also play under. `legalMoves` reads only the led card and
+the follower's hand — it never asks who is sitting in which seat, and there is no character-keyed
+branch anywhere in the tree.
 
-Only the Monarch (`CardRank.Monarch`, rank 11) is implemented; the other four characters named in
-§4 (Witch, Fox, Woodcutter, Swan) have no round-long enforcement. `quarryRuleBreak.ts` holds the
-whole mechanism, factored so the single-card and round-long paths cannot disagree:
+`monarchFollowSet(hand, suit)` lives in `legalMoves.ts` beside its single caller: the Swan of `suit`
+then the highest card of `suit`, deduplicated when they are the same card, empty when `hand` holds
+none of `suit`. "Highest" is recomputed from the hand at the moment of the follow rather than fixed
+at deal time, matching the printed rule's own wording — a follower who sheds their Swan and top card
+of a suit while still holding middle cards of it stays narrowed to their new highest, and is only
+released once they hold none of that suit at all. `playCard`'s rejection-reason branch mirrors
+`legalMoves`' own condition (`currentTrick.length === 1 && led.rank === CardRank.Monarch`) so the
+legal set and `IllegalMoveReason.MustFollowMonarch` cannot disagree.
 
-- `QUARRY_SIDE` — a named constant for the seat the Quarry plays (`PlayerSide.Cpu`, per §4's "The
-  CPU opponent for one encounter"), so a future mode that ever seats the Quarry as the player has
-  one place to change.
-- `monarchFollowSet(hand, suit)` — the base Monarch option set: the Swan of `suit` then the highest
-  card of `suit`, deduplicated when they're the same card, empty when `hand` holds none of `suit`.
-  This is the *exact* logic the single-card exception above already used, lifted into its own
-  function rather than duplicated — both `legalMoves`'s single-card branch and its round-long
-  branch call this one function, so their output can never drift apart. "Highest" is recomputed
-  from the hand at the moment of the follow, not fixed at deal time — matching the printed rule's
-  own wording (evaluated when the trick is played) — so a player who sheds their Swan and top card
-  of a suit while still holding middle cards of it stays narrowed to their new highest, rather than
-  being freed in that suit. The suit is only fully released once the hand holds none of it at all.
-- `monarchFollowApplies(state, side)` — true when the round-long constraint narrows `side`'s follow
-  options on the current trick: the Monarch is the active character, `side` is not the Quarry, and
-  the Quarry led this trick. `legalMoves` reads this as an *added* condition alongside the existing
-  `led.rank === CardRank.Monarch` check (`if (led.rank === CardRank.Monarch ||
-  monarchFollowApplies(state, side))`) — the round-long version narrows the follower exactly like
-  the single-card exception already did, it just fires on a different trigger.
+`QUARRY_SIDE` — the seat the Quarry plays (`PlayerSide.Cpu`) — now lives in `types.ts` with the
+other seat vocabulary. It is a naming constant for `cpuPlayer.ts` and the reducer, and never had
+anything to do with a power.
 
-`playCard`'s rejection-reason branch calls the same `monarchFollowApplies` predicate rather than
-re-deriving "was a Monarch constraint in force" from the led card's rank, so a round-long rejection
-reports `IllegalMoveReason.MustFollowMonarch` — the same reason code the single-card case already
-used — instead of the generic `MustFollowLeadSuit`. No new reason code was added.
+**What was removed, and why it is worth recording.** DLR-51 built a round-long rule-break for the
+Monarch: on _every_ lead the Quarry made, the player narrowed to their Swan-or-highest of that suit,
+whether or not a rank 11 was on the table. It was placeholder framing implemented as though it were
+a design decision — the character names were meant to be "opponent 1, opponent 2" and nothing more,
+and powers were intended for a final boss rather than for every opponent. A play session measured
+the cost: five follows in twelve tricks, **every one with exactly one legal card**, which made both
+eaten skulls undodgeable. DLR-81 deleted `quarryRuleBreak.ts` entirely, along with
+`monarchFollowApplies`, the `quarryCharacter` field on `RoundState`, and `dealRound`'s third
+parameter.
 
-`src/hunt/quarryCharacters.ts` (see [../hunt/README.md](../hunt/README.md)) exports the Monarch's
-display data — a name and one player-facing sentence — for a later UI ticket to render without
-restating the rule; nothing under `src/app/**` reads it yet.
+**The regression guard is a 60-seed soak** in `__tests__/cpuPlayer.test.ts` ("the Quarry has no
+rule-break — simulated full hands"): across every trick of every seeded hand it asserts the legal
+set equals plain follow-suit unless a rank 11 was actually led, and asserts the sample contains both
+follows and led Monarchs so neither branch can pass vacuously.
+`__tests__/legalMovesQuarry.test.ts` covers the same property per-position, including the explicit
+case that the _middle_ card of a suit is legal against an ordinary Quarry lead.
+
+`src/hunt/quarryCharacters.ts` (see [../hunt/README.md](../hunt/README.md)) still exports the
+Quarry's display data, but it is now **a name only** — `QuarryCharacterInfo` has no rule field, by
+design, so nothing can put a rule on screen that no code applies.
 
 ### The other four odd-card abilities
 
@@ -72,8 +69,9 @@ sequencing so each is independently testable against a hand-built `RoundState` f
   `resolveTrickWinner` is the module's single correctness-critical sequencing.
 - **Woodcutter** (`CardRank.Woodcutter`, rank 5) — `applyWoodcutterDraw` draws the top card of
   `drawPile` into the side's hand, then removes the chosen discard (drawn or previously held) and
-  appends it to the bottom of `drawPile`. **Invariant:** `drawPile`'s length stays fixed at 6 for
-  the life of a round, since every draw is paired with a discard back onto the pile — documented in
+  appends it to the bottom of `drawPile`. **Invariant:** `drawPile`'s length stays fixed for the
+  life of a round — **20 cards since DLR-80's six-card deal** — since every draw is paired with a
+  discard back onto the pile. Documented in
   a comment directly above the function, since nothing type-checks this and a future mutator that
   breaks the pairing would silently corrupt the pile.
 - **Swan** (`CardRank.Swan`, rank 1) — `nextLeaderAfterTrick` normally returns the trick's winner as
