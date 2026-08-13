@@ -23,7 +23,14 @@ export { legalMoves } from './legalMoves'
 export { QUARRY_SIDE, monarchFollowApplies, monarchFollowSet } from './quarryRuleBreak'
 export { resolveTrickWinner } from './resolveTrick'
 export { playCard } from './playCard'
-export { huntDamage, HuntNotScorable, HuntNotScorableError, scoreHunt } from './scoring'
+export {
+  huntDamage,
+  pendingHuntDamage,
+  duelSideDamage,
+  HuntNotScorable,
+  HuntNotScorableError,
+  scoreHunt,
+} from './scoring'
 export type { HuntDamage, HuntOutcome } from './scoring'
 export { chooseCpuMove, commitQuarryMove, quarryIntent, QuarryIntentStance } from './cpuPlayer'
 export type { CpuMove, QuarryIntent } from './cpuPlayer'

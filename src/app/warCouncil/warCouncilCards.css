@@ -81,16 +81,23 @@
     box-shadow 0.13s ease-out;
 }
 
+/* The rank is a corner index, in the top-left, the way a real card prints it — so a fanned
+   hand stays readable when each card covers all but the leading edge of the one behind it.
+   Absolute like the suit and the pip, so all three corner marks are placed rather than
+   flowed. Both the offsets and the size are the developer's to retune. */
 .wc-card-rank {
+  position: absolute;
+  top: calc(var(--wc-card-w) * 0.06);
+  left: calc(var(--wc-card-w) * 0.1);
   font-family: var(--wc-serif);
-  font-size: calc(var(--wc-card-w) * 0.44);
+  font-size: calc(var(--wc-card-w) * 0.34);
   line-height: 1;
   font-variant-numeric: tabular-nums;
   color: var(--wc-ink);
 }
 
-/* AC7 (1/2): the suit mark moves to the bottom-left corner. Absolute, so it leaves the
-   column flow and the rank keeps the optical centre of the face. */
+/* AC7 (1/2): the suit mark sits in the bottom-left corner, under the rank. Absolute, so it
+   leaves the column flow. */
 .wc-card-suit {
   position: absolute;
   left: calc(var(--wc-card-w) * 0.09);
@@ -150,6 +157,19 @@
 .wc-card.wc-is-illegal {
   filter: grayscale(0.75) brightness(0.62);
   cursor: not-allowed;
+}
+
+/* The grey means "this card is not a legal choice" — it only carries that meaning against
+   legal siblings. When the WHOLE hand is inert (before the declaration, during the Quarry's
+   turn, while a trick is held or a prompt is open) every card is illegal, so greying them all
+   singles out nothing and just reads as a dead hand — at the declare gate, which is exactly
+   the moment the player has to read all thirteen cards to choose a path. So the filter is
+   suppressed while the fan is inert; the cards stay `disabled` and unliftable regardless, and
+   the hint line above the fan is what says why nothing is tappable. `not-allowed` goes too:
+   nothing here is being refused, it is just not your turn yet. */
+.wc-fan.wc-is-inert .wc-card.wc-is-illegal {
+  filter: none;
+  cursor: default;
 }
 
 .wc-card.wc-is-armed {

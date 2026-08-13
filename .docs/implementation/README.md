@@ -26,10 +26,10 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                              | Status      | Built by                                       |
 | --------------------- | ------------------------------------------------- | ----------- | ---------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)             | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69 |
-| `src/app/`            | [app/](app/README.md)                             | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md)       | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                           | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69 |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)             | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70 |
+| `src/app/`            | [app/](app/README.md)                             | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71 |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md)       | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                           | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -81,7 +81,8 @@ single entry point that scores both seats off the one declaration the player mad
 to whoever reads it next — and it refuses an unfinished or undeclared Hunt by throwing rather than
 returning a zero that would be applied as authorised damage. `roundDamage` is applied at exactly one
 point, so the ×0.5 bands can no longer produce a fractional total. **Nothing consumes the damage yet**
-even so: there is still no health, and applying it is DLR-70's and DLR-71's.
+even so: at the time it landed there was no health at all, and applying the damage was left to DLR-70
+(below) and DLR-71.
 Mid-planning, the developer also widened the ticket to add the **Standing track** — the whole multiplier
 table drawn as a profile in the top bar — which is the only part of DLR-68 a player can see. Start at
 [war-council/scoring.md](war-council/scoring.md) for the engine, or
@@ -99,6 +100,40 @@ the developer's to settle — the declare gate's Lose copy now states the opposi
 "Spoils" readouts show the Quarry's pile value under the player's heading. Start at
 [hunt/scoring-tunables.md](hunt/scoring-tunables.md) for the scheme, or
 [war-council/scoring.md](war-council/scoring.md) for the pile resolution.
+
+DLR-70 built the **thing the damage was always for**: health that depletes, and an encounter that
+ends. `src/hunt/encounter.ts` is the first state in this codebase that outlives a single `RoundState` —
+an immutable `EncounterState` with both bars and an applied-Hunt count, one `applyHunt` transition
+that subtracts each side's damage **once**, a single clamp point where health stops at zero and
+surplus damage is discarded, and the three end conditions with the both-bars-empty tie read from
+configuration rather than paraphrased into an `if`. Two functions on the warCouncil side complete the
+join: `pendingHuntDamage`, the same equation evaluated early for a mid-Hunt readout — sharing one
+private arithmetic path with `huntDamage`, so there is no second total to drift — and
+`duelSideDamage`, the program's only `PlayerSide` → `DuelSide` crossing. There is **deliberately no cap
+on Hunts per encounter**; the stall is the evidence a cap is needed. It landed with **nothing in the app
+calling any of it** — the duel's rules existed and were enforced while the game as played still had no
+ending. **DLR-71 supplied the callers** (below); the encounter sequence is still DLR-73's. Start at
+[hunt/encounter-state-and-end-conditions.md](hunt/encounter-state-and-end-conditions.md) for the state
+and its transition, or [war-council/scoring.md](war-council/scoring.md) for the shared arithmetic path
+and the adapter.
+
+DLR-71 **put the duel on screen, and it is the ticket that made the game winnable and losable by
+playing.** Two health bars sit across the top as a mirrored opposed pair — the whole of the mirror is one
+`flex-direction: row-reverse` — each carrying its own **pending damage** as a lighter segment carved out
+of its own current health, the fighting-game recoverable-damage grammar, so a player distinguishes health
+*lost* from health *at risk* inside one bar rather than across two readouts. The end panel gained a
+second stage: the two equations, one press, and the bars visibly move as the reducer commits through
+`applyHunt`. `App.tsx` now owns a real `EncounterState` and carries it Hunt to Hunt, so health depletes
+and an encounter ends.
+
+Its structural achievement is subtractive. `WarCouncilRound`'s two `scoreHunt` calls became **one**
+`pendingHuntDamage`, and `HuntLedger`'s own `spoils * band.multiplier` — a second arithmetic path that
+bypassed `roundDamage`, correct only because `DAMAGE_ROUNDING` happens to be a no-op on integer products
+— was deleted. The bars project post-Hunt health by applying the pending damage to a **copy** of the
+encounter, so the figure a player watches climb through thirteen tricks *is* the figure that lands, by
+construction rather than by test. It also fixed DLR-67's blocking short-viewport defect, because its own
+taller end panel could not ship without it. Start at
+[war-council-ui/duel-health-bars.md](war-council-ui/duel-health-bars.md).
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

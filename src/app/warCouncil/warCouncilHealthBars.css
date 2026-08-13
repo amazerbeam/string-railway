@@ -1,0 +1,121 @@
+/* War Council — the duel's two health bars, each carrying its own pending damage as a lighter
+   segment carved out of its own current health (DLR-71, hybrid-design.md §6).
+
+   The SIXTH stylesheet. `warCouncilHunt.css` stood at 307 lines and a full bar surface — track,
+   two segments, the lethal state, the movement transition, its reduced-motion suppression and its
+   own narrow-viewport block — would have carried it past the 400-line budget, which is the same
+   forced split that produced the fourth and fifth sheets. Imported from the mount AFTER
+   `warCouncilHunt.css`. Tokens live in `warCouncil.css`; nothing here redeclares `:root`.
+
+   Carries its own copy of the `@media (max-width: 44rem), (max-height: 34rem)` breakpoint, the
+   same duplication `warCouncilStandingTrack.css` already makes. The VALUE now lives in three
+   files — a three-file edit if the threshold is ever tuned, and the split's one real drift risk. */
+
+.wc-hp {
+  flex: 1 1 8rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.wc-hp-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.wc-hp[data-side='quarry'] .wc-hp-head {
+  flex-direction: row-reverse;
+}
+
+.wc-hp-who {
+  font-size: clamp(0.52rem, 1.1vmin, 0.64rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-hp-num {
+  font-family: var(--wc-serif);
+  font-size: clamp(0.8rem, 1.7vmin, 1rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-parchment);
+}
+
+/* The track. Depletion runs toward the CENTRE of the screen: the player's fill is
+   anchored left, the Quarry's right. row-reverse is the whole of the mirror. */
+.wc-hp-track {
+  display: flex;
+  height: var(--wc-hp-height);
+  background: var(--wc-hp-track);
+  border: 1px solid #23303a;
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.wc-hp[data-side='quarry'] .wc-hp-track {
+  flex-direction: row-reverse;
+}
+
+.wc-hp-secure,
+.wc-hp-pending {
+  flex: 0 0 var(--w);
+  width: var(--w);
+  transition:
+    flex-basis var(--wc-hp-move-ms) ease-out,
+    width var(--wc-hp-move-ms) ease-out;
+}
+
+.wc-hp-secure {
+  background: var(--wc-hp-secure-fill);
+}
+
+/* Pending is the fighting-game recoverable segment: carved OUT of current health,
+   drawn by lightness on the same bar, and allowed to shrink. `secure + pending`
+   always equals current health, so the filled length never grows. */
+.wc-hp-pending {
+  background: var(--wc-hp-pending-fill);
+  opacity: 0.85;
+}
+
+/* Lethal reads without colour: a hatch, plus a hard leading edge. */
+.wc-hp-pending.wc-is-lethal {
+  background-image: repeating-linear-gradient(-45deg, #ffffff26 0 3px, #00000026 3px 6px);
+  box-shadow: inset 0 0 0 1px var(--wc-hp-lethal-edge);
+}
+
+/* ---------- the end panel's AC4 second stage (Task 9): the apply/finish control
+   and the resolved-encounter terminal state ---------- */
+
+.wc-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.wc-terminal {
+  font-family: var(--wc-serif);
+  font-size: 1rem;
+  color: var(--wc-brass);
+  margin: 0;
+  text-align: center;
+}
+
+/* ---------- the narrow / short collapse — same breakpoint value as the other sheets ---------- */
+
+@media (max-width: 44rem), (max-height: 34rem) {
+  .wc-hp {
+    flex: 1 1 40%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-hp-secure,
+  .wc-hp-pending {
+    transition: none;
+  }
+}

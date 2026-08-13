@@ -33,6 +33,16 @@
 
   --wc-card-w: clamp(2.9rem, 6.2vmin, 4.3rem);
   --wc-plate-card-w: clamp(2.3rem, 4.6vmin, 3.2rem);
+
+  /* DLR-71 — the duel health bars. Every value below is a placeholder transcribed from
+     `.claude/contract/DLR-71-two-health-bars-with-pending-damage/mockup.html` and is the
+     developer's to retune; the visual polish ticket owns them. */
+  --wc-hp-track: #0a1211;
+  --wc-hp-secure-fill: #c99a4e;
+  --wc-hp-pending-fill: #8b9a94;
+  --wc-hp-lethal-edge: #d1705f;
+  --wc-hp-height: clamp(0.7rem, 1.7vmin, 1.05rem);
+  --wc-hp-move-ms: 620ms;
 }
 
 /* ---------- the shell: one full-viewport grid, never scrolls ---------- */
@@ -67,8 +77,11 @@
 .wc-status {
   grid-area: status;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  /* DLR-71: the mirrored health-bar pair now flexes to fill the band rather than sitting
+     pinned at the two ends, so `align-items: center` (not `flex-start`) and `flex-wrap: nowrap`
+     replace the old `justify-content: space-between` — the narrow-viewport block still wraps. */
+  align-items: center;
+  flex-wrap: nowrap;
   /* vmin, not vw — vw includes scrollbar width and overflows horizontally. */
   gap: clamp(0.5rem, 2vmin, 2rem);
   padding: clamp(0.5rem, 1.6vmin, 1rem) clamp(0.6rem, 2.2vmin, 1.6rem);

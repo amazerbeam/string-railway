@@ -1,4 +1,13 @@
-export type { Hunt, Quarry, Spoils, Standing, Damage, Health } from './types'
+export type {
+  Hunt,
+  Quarry,
+  Spoils,
+  Standing,
+  Damage,
+  Health,
+  IncomingDamage,
+  EncounterState,
+} from './types'
 export { QuarryCharacter, HuntDeclaration, DuelSide } from './types'
 
 export type { StandingBand, CardValueScheme } from './config'
@@ -27,6 +36,8 @@ export {
   ENCOUNTER_PLAYER_RESTORE,
   SIMULTANEOUS_DEPLETION_WINNER,
 } from './config'
+
+export { startEncounter, applyHunt, isEncounterResolved } from './encounter'
 
 export type { QuarryCharacterInfo } from './quarryCharacters'
 export { QUARRY_CHARACTERS, quarryCharacterInfo } from './quarryCharacters'

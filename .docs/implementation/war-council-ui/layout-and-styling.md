@@ -32,11 +32,12 @@ because **card rotation and lift are transforms, which do not affect layout size
 reserved room the fan's visual pixels spill outside its box and the shell's `overflow: hidden` crops
 them. The fix is to reserve the room, never to loosen the overflow.
 
-The styling ships as **five** stylesheets, not one: `warCouncil.css` (tokens, the shell grid, the
+The styling ships as **six** stylesheets, not one: `warCouncil.css` (tokens, the shell grid, the
 status band, the felt/table, and the hand container), `warCouncilCards.css` (the card face, the
 ability prompt, and the round-over panel), `warCouncilHunt.css` (DLR-53: the ledger, the dossier
 zone, the telegraph, and the end panel's equation), `warCouncilDeclare.css` (DLR-63: the declare
-gate and the claim control), and `warCouncilStandingTrack.css` (DLR-68: the Standing track).
+gate and the claim control), `warCouncilStandingTrack.css` (DLR-68: the Standing track), and
+`warCouncilHealthBars.css` (DLR-71: the duel's two health bars).
 **Every split happened for the same reason — the 400-line file budget**, and the count is a reliable
 record of how often this sheet family has hit it. The combined original transcription measured 581
 lines; `warCouncil.css` then could not absorb DLR-53's new zone plus four surfaces;
@@ -47,16 +48,33 @@ land around 365 lines and instructed the implementer to carve a new sheet rather
 rules if the prediction proved wrong. It did, and the sheet was carved — `warCouncilHunt.css` is back
 at 307.
 
+The **sixth** was carved differently: DLR-71 planned it up front rather than discovering it. A full bar
+surface — track, two segments, the lethal state, the movement transition, its reduced-motion
+suppression and its own narrow-viewport block — measured around 150 lines against a
+`warCouncilHunt.css` already at 307, so the split was in the contract's file map before any CSS was
+written. `warCouncilHealthBars.css` landed at 121 lines after review removed four dead rules from it.
+
 `warCouncilStandingTrack.css` carries **its own copy of the `@media (max-width: 44rem),
 (max-height: 34rem)` breakpoint** rather than adding two selectors to the block in
 `warCouncilHunt.css`, precisely to avoid reopening a sheet that had just been brought back under
-budget. That duplicates the breakpoint **value** in two files, not any rule — a two-file edit if the
-threshold is ever tuned, and the one real drift risk the split introduced.
+budget. `warCouncilHealthBars.css` does the same for the same reason, so **the breakpoint value now
+lives in three files** — a three-file edit if the threshold is ever tuned, and the one real drift risk
+the split has introduced. Consolidating it is its own ticket.
 
-`WarCouncilRound.tsx` imports **all five**, in that order, and importing only some leaves part of the
+> **That duplication cost something real on DLR-71, and it is the concrete argument for consolidating.**
+> The contract instructed a `.wc-hp { flex: 1 1 40% }` rule into `warCouncilHunt.css`'s copy of the
+> breakpoint — but the mockup transcription had already produced the identical rule in
+> `warCouncilHealthBars.css`'s copy, at identical specificity, in a sheet that loads **later**. The
+> `warCouncilHunt.css` copy was therefore not merely redundant but **completely unreachable**, and it
+> took a reviewer reading both sheets' media blocks side by side to notice. Review deleted it and left a
+> pointer comment naming the surviving rule's one home. Two copies of a breakpoint are a maintenance
+> cost; two copies of a *rule* inside them is a bug that no test can see.
+
+`WarCouncilRound.tsx` imports **all six**, in that order, and importing only some leaves part of the
 feature unstyled with no error anywhere — worth knowing before debugging a card that renders with no
 face, a ledger that renders as an undifferentiated run of text, a declare gate that renders as two
-default browser buttons, or a Standing track that renders as a bare row of empty spans.
+default browser buttons, a Standing track that renders as a bare row of empty spans, or a health bar
+that renders as an empty box with no fill and no mirror.
 
 **Import order is load-bearing, not incidental.** `.wc-declare-option`'s hover lift and its
 `@media (prefers-reduced-motion: reduce)` suppression are deliberately co-located in
@@ -100,6 +118,40 @@ DLR-63 added the second-ever cell to `.wc-status` — the Lose-credit readout �
 `right` edge resolves to 446 against a 500px viewport, with no scroll on either axis. The media query
 itself now lives in `warCouncilHunt.css` after the split; the declare and claim surfaces it does not
 govern moved to `warCouncilDeclare.css`.
+
+DLR-71 rebuilt `.wc-status` around the health bars: `justify-content: space-between` became
+`align-items: center` with `flex-wrap: nowrap`, since the bars flex to fill rather than sitting at the
+two ends, and each bar carries `min-width: 0` with a `flex` basis so it **compresses before it pushes**.
+The narrow-viewport block keeps `flex-wrap: wrap`, so at 500×844 the pair wraps to two rows and stays
+within the viewport (rightmost edge 489). See [The duel's health bars](duel-health-bars.md).
+
+### A centred scroll container cannot reach its own top
+
+The same `@media (max-width: 44rem), (max-height: 34rem)` block governs `.wc-table-inner`, and that
+rule produced this family's fourth browser-caught layout defect — the subtlest of them, because the
+thing that broke was the *fix* for something else.
+
+DLR-67's end panel grew a second equation and overflowed the felt at those sizes. The fix applied was
+`align-self: stretch` + `min-height: 0` + `justify-content: center` + `overflow-y: auto`, which
+resolved the end panel and **broke the declare gate**. The mechanism is worth stating plainly because
+it is not obvious and it generalises: **`justify-content: center` on an `overflow-y: auto` container
+clips overflowing content symmetrically — half above the top edge, half below the bottom — and
+`scrollTop` cannot go negative.** So the content above the top edge is unreachable at *every* scroll
+position, not merely at rest. The declare gate's own "Play to Win" heading became invisible at 680×520
+and 700×544, and a click on that option failed on first attempt. Scrolling could not recover it.
+
+DLR-71 resolved it with **`justify-content: flex-start`**, so `scrollTop: 0` shows the true top of
+content, and it was forced rather than chosen: DLR-71's end panel is taller again — two equations, two
+bars, a control — and its acceptance criteria gated on 1024×640 and phone portrait, so shipping without
+the fix was not possible. QA re-measured the two sizes that left DLR-67 blocked: the heading is fully
+visible at `scrollTop: 0` (top 362.6 in the 520px viewport, 365.3 in the 544px one) and the click
+succeeds first time.
+
+The cost is that the felt's content now **top-aligns rather than centring** at these two sizes. That is
+a visible change the developer owns, and the alternative remains scoping the stretch/scroll to the
+end-panel state alone — more CSS, centring preserved. A standing check accompanies the fix: grep this
+sheet family for `justify-content: center` and confirm no remaining hit shares a rule with
+`overflow-y: auto`, since the same pairing under a different selector is the same defect.
 
 ### The fan's transform is composed in CSS, not written whole from React
 

@@ -1,7 +1,7 @@
 # War Council — `src/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69
+**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70
 
 ## Responsibility
 
@@ -53,6 +53,8 @@ served. See [the declaration and the Lose path](declaration-and-lose-path.md).
 | `declareHunt`, `DeclareRejection`, `DeclareResult`                           | Writes the declaration once, before the first card. Rejects `AlreadyDeclared` and `HuntUnderway` — both kept by DLR-67, which removed only its third `loseCredits` parameter                               | `declareHunt.ts`        |
 | `scoreHunt`, `HuntDamage`                                                    | §1's equation for **one seat** of a finished round — `{ spoils, tricks, band, standing, damage }` where `damage = roundDamage(spoils × standing)`, computed once from a final `RoundState`, never accumulated per trick (DLR-50; renamed from `HuntScore`/`score` by DLR-67; rounding added by DLR-68). Both injectable terms default off the state's **own** declaration. `spoils` is deliberately **not** renamed to `cardValue` — developer's call, 2026-08-12 | `scoring.ts`            |
 | `huntDamage`, `HuntOutcome`                                                  | **DLR-68's entry point** — both sides' damage for one finished Hunt, off the single declaration the player made, returned as `{ declaration, incoming }` where `incoming` is keyed by the side each figure **depletes** (not by the side that dealt it). Reads `state.declaration` directly, never `declaredPath`. Nothing consumes it yet | `scoring.ts`            |
+| `pendingHuntDamage`                                                          | **DLR-70's mid-Hunt readout** — the same equation as `huntDamage`, evaluated early, for a figure drawn every trick. Returns `HuntOutcome \| null`, with **no phase guard** and `null` on an undeclared Hunt. Both it and `huntDamage` delegate to one module-private `outcomeFor`, so there is literally one arithmetic path and no second one to drift from the applied total. No production caller yet | `scoring.ts`            |
+| `duelSideDamage`                                                             | **DLR-70's one crossing** — `(outcome: HuntOutcome) => IncomingDamage`, the only `PlayerSide` → `DuelSide` translation in the program. It lives here rather than in `src/hunt/` because warCouncil is the side allowed to know both vocabularies: `src/hunt/` cannot import `src/warCouncil/` without a cycle. Preserves `incoming`'s applied-to keying end to end. No production caller yet | `scoring.ts`            |
 | `HuntNotScorable`, `HuntNotScorableError`                                    | Why a Hunt cannot be scored — a closed `as const` map (`'unfinished'` / `'undeclared'`) carried on the **first `Error` subclass in `src/`**, so a test asserts which guard fired without matching a message string. `huntDamage` throws rather than returning a zero, which would be indistinguishable from a legitimately scoreless Hunt (DLR-68) | `scoring.ts`            |
 | `chooseCpuCard`, `chooseCpuFoxChoice`, `chooseCpuWoodcutterChoice`           | The three independently-testable sub-decisions of the CPU heuristic — card choice, and the Fox/Woodcutter ability choices                                                                                  | `cpuPlayer.ts`          |
 | `chooseCpuMove`, `CpuMove`                                                   | Composes the three sub-decisions into one `{ card, choice? }` move                                                                                  | `cpuPlayer.ts`          |
@@ -75,7 +77,9 @@ served. See [the declaration and the Lose path](declaration-and-lose-path.md).
   Spoils × Standing = Damage, computed per side off the state's own declaration and rounded at one
   point (DLR-68), and (DLR-68) `huntDamage`: the two-sided entry point, why its result is keyed by the
   side each figure *depletes*, why it refuses an unfinished or undeclared Hunt by throwing, and how the
-  enumeration spec pins configuration against the design document.
+  enumeration spec pins configuration against the design document, and (DLR-70) `outcomeFor` — the one
+  arithmetic path both public entry points delegate to — with `pendingHuntDamage`'s guard-free mid-Hunt
+  readout and `duelSideDamage`, the single `PlayerSide` → `DuelSide` crossing.
 - [The declaration and the Lose path](declaration-and-lose-path.md) — `declareHunt`'s two guards,
   `declaredPath`'s undeclared-reads-as-Win default, what the Lose path is now that the credit
   mechanic is gone, and what DLR-67 deleted and why (DLR-63, DLR-67).
@@ -114,8 +118,11 @@ served. See [the declaration and the Lose path](declaration-and-lose-path.md).
   fix pass for the original five, extended to Treasure/Poison by DLR-49; re-grepped in DLR-49's
   Final verification for a stray bare `rank === 7`/`rank === 8` — zero hits).
 - **File-size budget** — every file in this tree is well under the project's 400-line limit; the
-  largest production file is `cpuPlayer.ts` at 171 lines (it overtook `playCard.ts`, now 117, when
-  DLR-52 added the intent telegraph).
+  largest production file is `scoring.ts` at 225 lines after DLR-70's extraction and two new
+  functions (it overtook `cpuPlayer.ts` at 171, which had itself overtaken `playCard.ts`, now 117,
+  when DLR-52 added the intent telegraph). Measure with `(Get-Content <file>).Count`, never
+  `Measure-Object -Line` — see [../hunt/README.md](../hunt/README.md) for the DLR-63 breach that
+  proved why.
 - **The round-long rule-break's narrowing is defined once, consulted twice** (DLR-51) —
   `quarryRuleBreak.ts`'s `monarchFollowSet`/`monarchFollowApplies` are the sole source of truth for
   both `legalMoves`'s narrowing and `playCard`'s rejection-reason branch, so the legal set and the
@@ -176,17 +183,26 @@ served. See [the declaration and the Lose path](declaration-and-lose-path.md).
   nothing here tracks score, state, or a win condition across rounds. `src/App.tsx`'s current
   restart-on-completion (DLR-47) is a placeholder, not a run loop — see
   [../app/README.md](../app/README.md)'s Deferred section.
-- **The Damage is computed, rounded, pointed at a side — and still nothing consumes it.** DLR-68
-  closed the arithmetic and the direction: `huntDamage` returns both sides' totals keyed by the side
-  each depletes, and `roundDamage` is applied at one point so every figure is a whole number. What
-  remains absent is the **health** itself. `PLAYER_START_HEALTH` and `QUARRY_ENCOUNTER_HEALTH` are
-  still read by nothing, nothing subtracts a figure from anything, and no Hunt can be won or lost.
-  Health bars, damage application, pending-damage display and encounter sequencing are DLR-70's and
-  DLR-71's — this module deliberately produces the numbers and stops.
-- **`huntDamage` has no production caller at all.** It is exported from the barrel and exercised only
-  by Vitest. A hazard while that is true: `src/app/warCouncil/WarCouncilRound.tsx` holds a local
-  `const huntDamage` passed as a prop of the same name, so the first ticket to import the engine
-  function into that file must rename the local first or it will silently read the local instead.
+- ~~**The Damage is computed, rounded, pointed at a side, and still nothing applies it.**~~ **Closed by
+  DLR-71** (2026-08-12). DLR-68 closed the arithmetic and the direction; DLR-70 closed the gap between
+  this module and the health by adding `duelSideDamage`; **DLR-71 supplied the callers.**
+  `WarCouncilRound.tsx` calls `pendingHuntDamage` once per render and `duelSideDamage` on its result,
+  and `roundReducer.ts` calls `applyHunt` when the player commits — so a Hunt's damage now depletes real
+  health and an encounter can be won or lost by playing. The **encounter sequence** is still DLR-73's.
+- **`huntDamage` is the one of the three with no production caller**, and that is expected rather than a
+  gap: DLR-71 reads the *pending* figure every render, and on a finished Hunt `pendingHuntDamage` returns
+  exactly what `huntDamage` would, because both delegate to the private `outcomeFor`. So the UI needs
+  only one of them, and `huntDamage` remains the barrel's finished-Hunt entry point, exercised by Vitest.
+  The naming hazard this list used to carry is **resolved**: `WarCouncilRound.tsx` held a local
+  `const huntDamage` shadowing the engine export, and DLR-71 renamed the local when it wired the module
+  in, so nothing silently reads past the import.
+- **`pendingHuntDamage` is on a per-trick path by design, and is unmemoised.** It does exactly what
+  `huntDamage` does once per Hunt — two `resolveStanding` scans of a six-row table and two `spoils`
+  reductions over at most 26 cards — but a mid-Hunt readout would call it every trick. No memoisation
+  was added because this project's conventions require profiling evidence and there is none, and there
+  is no reason to expect a problem at this size. **DLR-71 put it on that per-trick path and measured no
+  problem** — and the net per-render cost went *down*, because the one `pendingHuntDamage` call replaced
+  two `scoreHunt` calls. Still unmemoised, still no profiling evidence for changing that.
 - ~~**`spoils`' single branch is an interim, not a settled reading.**~~ **Closed by DLR-69**
   (2026-08-12). The two-way pile swap is implemented: a side is paid for its own pile on Win and the
   other side's on Lose, each pile counted exactly once. `__tests__/huntEnumeration.test.ts` now carries

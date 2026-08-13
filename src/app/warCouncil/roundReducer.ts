@@ -16,7 +16,13 @@ import {
   type TrickCard,
   type WarCouncilState,
 } from '../../warCouncil'
-import type { HuntDeclaration } from '../../hunt'
+import {
+  applyHunt,
+  isEncounterResolved,
+  type EncounterState,
+  type HuntDeclaration,
+  type IncomingDamage,
+} from '../../hunt'
 
 export interface ResolvedTrick {
   readonly cards: readonly TrickCard[] // [lead, follow] — the engine's load-bearing order
@@ -30,6 +36,10 @@ export interface RoundUiState {
   readonly resolvedTrick: ResolvedTrick | null // held on screen until CarryOn
   readonly rejection: IllegalMoveReason | null // the player's own illegal move — recoverable
   readonly cpuFault: CpuFault | null // a corrupt CPU turn — a bug, shown not swallowed
+  /** `null` until the player commits the finished Hunt's damage. Set by `CommitDamage`, which
+   *  delegates to `applyHunt` — this module never subtracts a health value itself, so DLR-70's
+   *  single clamp point stays single. */
+  readonly applied: EncounterState | null
 }
 
 // `chooseCpuMove` throws rather than returning a rejection when the CPU has no legal
@@ -43,6 +53,7 @@ export const RoundUiActionKind = {
   CancelSelection: 'cancelSelection',
   CarryOn: 'carryOn',
   Declare: 'declare',
+  CommitDamage: 'commitDamage',
 } as const
 export type RoundUiActionKind = (typeof RoundUiActionKind)[keyof typeof RoundUiActionKind]
 
@@ -52,6 +63,13 @@ export type RoundUiAction =
   | { readonly kind: typeof RoundUiActionKind.CancelSelection }
   | { readonly kind: typeof RoundUiActionKind.CarryOn }
   | { readonly kind: typeof RoundUiActionKind.Declare; readonly path: HuntDeclaration }
+  | {
+      readonly kind: typeof RoundUiActionKind.CommitDamage
+      readonly encounter: EncounterState
+      /** Already keyed by the side it depletes — `duelSideDamage` performed that crossing, so
+       *  this reducer cannot get it backwards. */
+      readonly incoming: IncomingDamage
+    }
 
 /**
  * Initial UI state. Deliberately does **not** play the Quarry's opening lead: DLR-53 AC3
@@ -67,6 +85,7 @@ export function createRoundUiState(initialState: WarCouncilState): RoundUiState 
     resolvedTrick: null,
     rejection: null,
     cpuFault: null,
+    applied: null,
   }
 }
 
@@ -82,6 +101,8 @@ export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundU
       return handleCarryOn(state)
     case RoundUiActionKind.Declare:
       return handleDeclare(state, action.path)
+    case RoundUiActionKind.CommitDamage:
+      return handleCommitDamage(state, action.encounter, action.incoming)
   }
 }
 
@@ -156,6 +177,27 @@ function handleCarryOn(state: RoundUiState): RoundUiState {
 function handleDeclare(state: RoundUiState, path: HuntDeclaration): RoundUiState {
   const result = declareHunt(state.round, path)
   return result.ok ? { ...state, round: result.state } : state
+}
+
+/**
+ * AC4's first stage: the finished Hunt's damage applied once, so the bars can be seen to move
+ * before the screen changes.
+ *
+ * Both guards return the input state rather than letting `applyHunt`'s `RangeError` escape — a
+ * throw inside a reducer during an event handler unmounts the tree. Neither is a live path: the
+ * panel only renders the control while `applied === null`, and `App` stops dealing once the
+ * encounter resolves. They are here because a guard that costs two comparisons is cheaper than a
+ * blank screen.
+ */
+function handleCommitDamage(
+  state: RoundUiState,
+  encounter: EncounterState,
+  incoming: IncomingDamage,
+): RoundUiState {
+  if (state.applied !== null || isEncounterResolved(encounter)) {
+    return state
+  }
+  return { ...state, applied: applyHunt(encounter, incoming) }
 }
 
 /** Commits `cardToPlay` for the player, then advances the opponent when the player led. */

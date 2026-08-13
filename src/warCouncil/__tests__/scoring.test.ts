@@ -1,13 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { HuntNotScorable, HuntNotScorableError, huntDamage, scoreHunt } from '../scoring'
+import {
+  duelSideDamage,
+  HuntNotScorable,
+  HuntNotScorableError,
+  huntDamage,
+  pendingHuntDamage,
+  scoreHunt,
+} from '../scoring'
 import { CardRank, PlayerSide, RoundPhase, Suit, type Card, type RoundState } from '../types'
 import {
+  applyHunt,
   cardValueSchemeFor,
+  DuelSide,
   HuntDeclaration,
   PaidPile,
+  PLAYER_START_HEALTH,
+  quarryHealthForEncounter,
   resolveStanding,
   standingTableFor,
   StandingBandName,
+  startEncounter,
   type CardValueScheme,
   type StandingBand,
 } from '../../hunt'
@@ -245,5 +257,62 @@ describe('huntDamage — both sides read the player’s one declaration (AC2)', 
       HuntDeclaration.Lose,
     )
     expect(Object.keys(state.declaration ?? {})).toEqual(['path'])
+  })
+})
+
+describe('pendingHuntDamage — the same equation evaluated early, never a second path (AC3)', () => {
+  it('agrees exactly with huntDamage on a finished Hunt', () => {
+    // The real guarantee against DoD 7's drift: an edit to the equation that touched only one
+    // path would fail here. Deep equality over the whole outcome, not just the damage figure.
+    const state = finished(
+      huntState({ player: averageCards(14), cpu: averageCards(12) }, { player: 7, cpu: 6 }),
+      HuntDeclaration.Win,
+    )
+    expect(pendingHuntDamage(state)).toEqual(huntDamage(state))
+  })
+
+  it('returns a partial total mid-Hunt where huntDamage refuses', () => {
+    const midHunt = {
+      ...huntState({ player: averageCards(8), cpu: averageCards(6) }, { player: 4, cpu: 3 }),
+      declaration: { path: HuntDeclaration.Win },
+    }
+    expect(() => huntDamage(midHunt)).toThrow(HuntNotScorableError)
+
+    const pending = pendingHuntDamage(midHunt)
+    // The player's 4 tricks (48 x2 on the Win table) are pending against the QUARRY.
+    expect(pending?.incoming[PlayerSide.Cpu].damage).toBe(96)
+    // The Quarry's 3 tricks (36 x1) are pending against the PLAYER.
+    expect(pending?.incoming[PlayerSide.Player].damage).toBe(36)
+  })
+
+  it('returns null on an undeclared Hunt rather than defaulting to the Win table', () => {
+    const undeclared = huntState({ player: averageCards(8), cpu: [] }, { player: 4, cpu: 3 })
+    expect(pendingHuntDamage(undeclared)).toBeNull()
+  })
+})
+
+describe('duelSideDamage — maps the Cpu seat onto the Quarry without re-crossing (DLR-70)', () => {
+  it('preserves the applied-to keying, proven with asymmetric trick counts', () => {
+    // Deliberately asymmetric — player 9 / Quarry 4. A symmetric fixture would pass under
+    // either mapping and prove nothing.
+    const state = finished(
+      huntState({ player: averageCards(18), cpu: averageCards(8) }, { player: 9, cpu: 4 }),
+      HuntDeclaration.Win,
+    )
+    const incoming = duelSideDamage(huntDamage(state))
+
+    // The player's 9 tricks (108 x5) deplete the QUARRY; the Quarry's 4 (48 x2) deplete the PLAYER.
+    expect(incoming[DuelSide.Quarry]).toBe(540)
+    expect(incoming[DuelSide.Player]).toBe(96)
+  })
+
+  it('produces damage applyHunt accepts, end to end', () => {
+    const state = finished(
+      huntState({ player: averageCards(18), cpu: averageCards(8) }, { player: 9, cpu: 4 }),
+      HuntDeclaration.Win,
+    )
+    const after = applyHunt(startEncounter(0), duelSideDamage(huntDamage(state)))
+    expect(after.health[DuelSide.Quarry]).toBe(quarryHealthForEncounter(0) - 540)
+    expect(after.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH - 96)
   })
 })

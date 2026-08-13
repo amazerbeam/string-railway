@@ -67,7 +67,11 @@ export default function HandFan({
       </p>
       <div
         ref={groupRef}
-        className="wc-fan"
+        // `wc-is-inert` marks "no card here is tappable right now" — which is a different
+        // thing from "this card is an illegal choice", and the stylesheet suppresses the
+        // illegal grey inside it for that reason. Purely presentational: every card is
+        // `disabled` either way, so nothing about behaviour or the accessible tree changes.
+        className={`wc-fan${interactive ? '' : ' wc-is-inert'}`}
         role="group"
         aria-label="Your hand"
         // While a Fox/Woodcutter prompt is open, AbilityPrompt renders every remaining hand

@@ -1,5 +1,12 @@
 import { PlayerSide, RoundPhase, Suit, type Card, type WarCouncilState } from '../../../warCouncil'
-import { QuarryCharacter, type Hunt } from '../../../hunt'
+import {
+  DuelSide,
+  PLAYER_START_HEALTH,
+  QuarryCharacter,
+  quarryHealthForEncounter,
+  startEncounter,
+  type Hunt,
+} from '../../../hunt'
 
 const card = (suit: Suit, rank: number): Card => ({ suit, rank })
 
@@ -47,3 +54,12 @@ export { card }
 
 /** A fixed Hunt for component tests. */
 export const huntFixture: Hunt = { quarry: { character: QuarryCharacter.Monarch } }
+
+/** A fresh encounter for component specs — both bars full, nothing applied. */
+export const encounterFixture = startEncounter(0)
+
+/** The configured maxima, read from config rather than written as numbers (AC5). */
+export const maxHealthFixture = {
+  [DuelSide.Player]: PLAYER_START_HEALTH,
+  [DuelSide.Quarry]: quarryHealthForEncounter(0),
+}

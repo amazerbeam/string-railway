@@ -1,7 +1,7 @@
 # Hunt — `src/hunt/`
 
 **Status:** partial
-**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69
+**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70
 
 ## Responsibility
 
@@ -49,6 +49,19 @@ and T5, so nothing about the duel is playable yet. The contract deliberately exc
 deletions (`FIXED_DEMAND`, `DEMAND_CURVE`, `LOSE_CREDITS_PER_HUNT`, the credit mechanism) so its own
 diff read as an addition plus one table replacement.
 
+**DLR-70 gave the module its first *behaviour* rather than more vocabulary, and it is where three of
+DLR-66's inert constants finally got a reader.** `encounter.ts` is a new file and the first thing in
+the codebase holding state that outlives one `RoundState`: an immutable `EncounterState` with both
+health bars and an applied-Hunt count, one `applyHunt` transition, a single clamp point, and the three
+end conditions with the tie read from `SIMULTANEOUS_DEPLETION_WINNER`. `PLAYER_START_HEALTH`,
+`quarryHealthForEncounter` and that ruling all have production readers now; `ENCOUNTER_PLAYER_RESTORE`
+still does not, deliberately (DLR-73's). It shipped with **no app caller at all** — the duel resolved
+under Vitest and nowhere else — and **DLR-71 wired it up**: `src/App.tsx` seeds an `EncounterState` from
+`startEncounter` and carries it Hunt to Hunt, `roundReducer.ts` calls `applyHunt`, and both
+`isEncounterResolved` call sites are live, so health now depletes on screen and an encounter ends where
+a player can see it. See
+[The encounter state and the end conditions](encounter-state-and-end-conditions.md).
+
 **DLR-67 is the epic's deletion ticket, and it is where this module got smaller.** `FIXED_DEMAND`,
 `DEMAND_CURVE`, the `DemandCurve` interface, `LOSE_CREDITS_PER_HUNT` and the `Demand` type alias are
 all gone; `Hunt` narrowed from three required fields to `{ quarry }`; and `Score` was renamed
@@ -64,7 +77,7 @@ and is enforced, because `src/warCouncil/spoils.ts` calls it.
 | `Quarry` | The CPU opponent for one encounter — `{ character: QuarryCharacter }` (§4) | `types.ts` |
 | `QuarryCharacter` | `as const` union of the five odd-rank characters: Swan, Fox, Woodcutter, Witch, Monarch | `types.ts` |
 | `Spoils`, `Standing` | Each a bare `number` alias — the additive and the multiplicative term of §1's equation. The `Demand` alias was deleted by DLR-67 along with the target it named | `types.ts` |
-| `Damage` | A bare `number` alias for the equation's result — a side's card value × its Standing for one Hunt, what depletes the other side's health (§1's vocabulary table). Renamed from `Score` by DLR-67: there is no target to score against any more. Since DLR-68 every value of this type is **rounded** (`roundDamage` is applied inside `scoreHunt`) and is labelled with the side it depletes, but nothing **applies** it to health yet — DLR-70/DLR-71 own that | `types.ts` |
+| `Damage` | A bare `number` alias for the equation's result — a side's card value × its Standing for one Hunt, what depletes the other side's health (§1's vocabulary table). Renamed from `Score` by DLR-67: there is no target to score against any more. Since DLR-68 every value of this type is **rounded** (`roundDamage` is applied inside `scoreHunt`) and is labelled with the side it depletes. Since DLR-70 it is also **applied**: `applyHunt` subtracts it from a bar via `encounter.ts`. No screen shows the result — DLR-71's | `types.ts` |
 | `StandingBandName` | `as const` union of the four band names: Humble, Defeated, Victorious, Greedy | `config.ts` |
 | `StandingBand` | `{ minTricks, maxTricks, name, multiplier }` — one row of the Standing table; boundaries and multiplier are independently editable fields | `config.ts` |
 | `HUNT_MULTIPLIER_TABLES` | `Readonly<Record<HuntDeclaration, readonly StandingBand[]>>` — the duel direction's **two mirrored tables**, one per declaration, replacing the retired single `STANDING_BANDS` (DLR-66 AC1). The two tables' row splits genuinely differ (Win groups 7–9, Lose groups 4–6), which is why boundaries are per-row data and never a shared list | `config.ts` |
@@ -76,13 +89,18 @@ and is enforced, because `src/warCouncil/spoils.ts` calls it.
 | `CardValueScheme` | `{ readonly value: (rank) => number; readonly paidPile: PaidPile }` — the two halves of §1's card-value rule bound into one object so **neither can be read without the other**. Deliberately not two parameters: a caller injecting the Lose value function while the pile defaulted from an undeclared state would apply inverted values to the *own* pile, which is exactly the DLR-67 interim DLR-69 retired (DLR-69) | `config.ts` |
 | `cardValueSchemeFor` | `(declaration) => CardValueScheme` — the third sibling of `standingTableFor` and `cardValueFor`: name a declaration once, get both halves of the card-value rule. Backed by a module-private total `Readonly<Record<HuntDeclaration, CardValueScheme>>` — Win pairs `cardBaseValue` with `own`, Lose pairs `invertedCardValue` with `other`. A **total record, not a ternary**, so a third `HuntDeclaration` member is a missing-property compile error rather than a silent fall through to printed rank and the own pile (DLR-69 AC6). The record itself is not exported — this accessor is the only way in, unlike `HUNT_MULTIPLIER_TABLES`, which is exported and then documented as unusable outside this module | `config.ts` |
 | `DamageRounding`, `DAMAGE_ROUNDING` | `as const` union of `HalfAwayFromZero` / `None`, and the shipped default (`HalfAwayFromZero`). §9 records this row Undecided and offers doubling both tables and both health totals as the dissolution; DLR-66 ships a stated default rather than a `null`. **The developer's to overturn** | `config.ts` |
-| `roundDamage` | `(raw, rule = DAMAGE_ROUNDING) => number` — `Math.sign(raw) * Math.round(Math.abs(raw))`, never bare `Math.round` (JS breaks ties toward `+∞`, so `Math.round(-0.5)` is `-0`). Throws `RangeError` on a non-finite input. **Deliberately inert — no consumer until T3** | `config.ts` |
+| `roundDamage` | `(raw, rule = DAMAGE_ROUNDING) => number` — `Math.sign(raw) * Math.round(Math.abs(raw))`, never bare `Math.round` (JS breaks ties toward `+∞`, so `Math.round(-0.5)` is `-0`). Throws `RangeError` on a non-finite input. Shipped inert by DLR-66; **`scoreHunt` has been its caller since DLR-68** | `config.ts` |
 | `PLAYER_START_HEALTH` | `1350` — §9 "Player health P", **Decided 2026-08-11**. Equal to the Quarry's first-encounter health by design: `P = H` puts the win/lose boundary exactly on the 6/7 line the declaration commits to | `config.ts` |
-| `QUARRY_ENCOUNTER_HEALTH`, `quarryHealthForEncounter` | `[1350, 1600]` in encounter order, and an accessor that throws `RangeError` rather than returning `undefined` (an out-of-range index would become `NaN` on T5's first subtraction). A `readonly Health[]`, so a third encounter is one more entry, not a type change | `config.ts` |
+| `QUARRY_ENCOUNTER_HEALTH`, `quarryHealthForEncounter` | `[1350, 1600]` in encounter order, and an accessor that throws `RangeError` rather than returning `undefined` (an out-of-range index would become `NaN` on the first subtraction). A `readonly Health[]`, so a third encounter is one more entry, not a type change. Called by `startEncounter` since DLR-70, which relies on that throw rather than duplicating the check | `config.ts` |
 | `ENCOUNTER_PLAYER_RESTORE` | `0` — health restored entering the next encounter. New to DLR-65; exists as a tunable precisely because the breakdown names it the thing most likely to change | `config.ts` |
-| `SIMULTANEOUS_DEPLETION_WINNER` | `DuelSide.Quarry` — §5/§9, **Decided 2026-08-11**: both bars empty on the same Hunt and the player loses. Data rather than a hardcoded branch, so T5 reads an attributed ruling (DLR-66 AC8) | `config.ts` |
+| `SIMULTANEOUS_DEPLETION_WINNER` | `DuelSide.Quarry` — §5/§9, **Decided 2026-08-11**: both bars empty on the same Hunt and the player loses. Data rather than a hardcoded branch, so the ruling stays attributable (DLR-66 AC8). **Read by `encounter.ts`'s `resolveWinner` since DLR-70** — overturning §9's ruling is still an edit to this file alone | `config.ts` |
 | `DuelSide` | `as const` union of `player` / `quarry` — the two sides that **hold health**, deliberately distinct from `src/warCouncil/`'s `PlayerSide` (`player`/`cpu`), which names the two **seats at a trick**. `src/hunt/` cannot import from `src/warCouncil/` without a cycle (DLR-66) | `types.ts` |
 | `Health` | A bare `number` alias — a side's remaining health, the pool damage depletes (§5) | `types.ts` |
+| `IncomingDamage` | `Readonly<Record<DuelSide, Damage>>` — one Hunt's damage **keyed by the side it is applied to**, never by the side that dealt it. `HuntOutcome.incoming`'s convention carried across the module boundary deliberately, so the `PlayerSide` → `DuelSide` crossing happens exactly once, on the warCouncil side, in `duelSideDamage` (DLR-70) | `types.ts` |
+| `EncounterState` | `{ health: Readonly<Record<DuelSide, Health>>; huntsApplied: number; winner: DuelSide \| null }` — a sequence of Hunts fought until a bar empties (§5), and the first state in this codebase that outlives one `RoundState`. Immutable: `applyHunt` returns a new one, so a caller previews a Hunt by applying it to a copy rather than projecting health through a second arithmetic path. `huntsApplied` is a counter and **not** a cap (DLR-70 AC7). Holds no `RoundState` and no `PlayerSide` (DLR-70) | `types.ts` |
+| `startEncounter` | `(encounterIndex, playerHealth = PLAYER_START_HEALTH) => EncounterState` — both bars read from DLR-66's configured totals, never from literals. The index **selects** the Quarry's bar and sequences nothing; `ENCOUNTER_PLAYER_RESTORE` is deliberately unread (DLR-73's). Throws `RangeError` on a non-finite or non-positive starting health, and lets `quarryHealthForEncounter`'s own `RangeError` surface on a bad index (DLR-70) | `encounter.ts` |
+| `applyHunt` | `(encounter, incoming) => EncounterState` — one finished Hunt's damage applied **once**, never per trick. Depletes **both** bars before inspecting either, which is what makes the simultaneous-depletion case reachable at all. Throws `RangeError` on an already-resolved encounter, and on non-finite or negative damage — finite and non-negative but deliberately **not** integral, since `DAMAGE_ROUNDING = None` legitimately yields half-point totals (DLR-70) | `encounter.ts` |
+| `isEncounterResolved` | `(encounter) => boolean` — `winner !== null`, exported rather than left to callers so DLR-71's render guard and DLR-73's loop condition cannot disagree about what "resolved" means (DLR-70) | `encounter.ts` |
 | `RANK_INVERSION_PIVOT` | `12` — the pivot the Lose path's inversion turns on. **Not a tuning value**: it is `max(RANKS) + 1` for the 1–11 deck, which is what makes the inversion its own mirror (rank 1 ↔ 11) and keeps every output in 1–11 with no zero and no negative. Named rather than inlined so a future deck-size change has one place to look (DLR-63) | `config.ts` |
 | `invertedCardValue` | `(rank) => 12 − rank` — a card's value on the Lose path (DLR-63 AC3). Deliberately the same `(rank: number) => number` signature as `cardBaseValue`, so both drop into a `CardValueScheme`'s `value` field with no new plumbing. Unchanged by DLR-69 in name, signature and body — which is what kept the two out-of-scope `DeclareGate` files compiling untouched | `config.ts` |
 | `FORAGE_BUDGET_PER_ENCOUNTER` | `4` — provisional Forage edits per encounter (§9) | `config.ts` |
@@ -110,8 +128,13 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   accessor, the Lose path's rank inversion, and the two provisional run constants.
 - [The duel's health and damage constants](duel-health-and-damage.md) — the `DuelSide` vocabulary,
   the ×0.5 rounding rule and why it is not bare `Math.round`, both health totals, the restore, and
-  the simultaneous-depletion ruling. **All of it is exported and unconsumed** — T3 and T5 are the
-  first readers.
+  the simultaneous-depletion ruling. Three of them gained their first reader in DLR-70; the restore
+  is still unread.
+- [The encounter state and the end conditions](encounter-state-and-end-conditions.md) — `EncounterState`
+  and its one transition, the single clamp point where surplus damage is discarded and health stops at
+  zero, the three end conditions and why the tie reads a config constant, the four refusals, why there
+  is no Hunt cap, and how long an encounter actually runs (3–4 Hunts at the fast end, 18–23 at the
+  tail). **Live in the app since DLR-71** — `App.tsx` carries the state, the reducer applies the damage.
 - [The Quarry and the telegraph](quarry-and-telegraph.md) — the per-character display data and why
   it is `Partial`, and `TELEGRAPH_FIDELITY`: how much of the Quarry's next move the player is allowed
   to see (§4).
@@ -147,7 +170,8 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   live behaviour of the UI's scoring path too — see
   [../war-council/scoring.md](../war-council/scoring.md) for why a corrupt trick count is treated as
   a caller bug rather than scored as `0`.
-- **File-size budget** — `config.ts` is 253 lines after DLR-66, `types.ts` 60, `index.ts` 33, all far
+- **File-size budget** — measured after DLR-70: `config.ts` 270, `encounter.ts` 138, `types.ts` 81,
+  `index.ts` 43, all far
   under the project's 400-line limit. (DLR-66's contingency, had `config.ts` passed 400, was to split
   the table pair and `standingTableFor` into `src/hunt/standingTables.ts` and re-export through the
   barrel; on the measured count it did not fire.) Measure with `(Get-Content <file>).Count` or
@@ -190,13 +214,22 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   design change wearing tuning clothes.** The alternative pair moves both peaks to the extremes and
   reverses the Knizia property §1 is built on. DLR-66 made the experiment cheap; it did not make it
   neutral.
-- **The rounding rule, both health totals, the restore, and the depletion ruling are exported and
-  entirely unconsumed.** `roundDamage`, `PLAYER_START_HEALTH`, `QUARRY_ENCOUNTER_HEALTH`,
-  `quarryHealthForEncounter`, `ENCOUNTER_PLAYER_RESTORE`, and `SIMULTANEOUS_DEPLETION_WINNER` have no
-  reader anywhere in `src/` — deliberately, so DLR-66's diff stayed additive and reviewable. **T3
-  owns the damage arithmetic** that calls `roundDamage`; **T5 owns the health state** that reads the
-  totals and the ruling. Nothing about damage or health is playable today. See
-  [The duel's health and damage constants](duel-health-and-damage.md).
+- ~~**The rounding rule, both health totals, the restore, and the depletion ruling are exported and
+  entirely unconsumed.**~~ **Mostly closed — DLR-68 and DLR-70.** `roundDamage` gained its first
+  caller in DLR-68 (`scoreHunt`), and DLR-70's `encounter.ts` is the first production reader of
+  `PLAYER_START_HEALTH`, `quarryHealthForEncounter` (and so `QUARRY_ENCOUNTER_HEALTH`), and
+  `SIMULTANEOUS_DEPLETION_WINNER`. **`ENCOUNTER_PLAYER_RESTORE` is the one that remains unread**, and
+  deliberately so: it applies *between* encounters, which is DLR-73's scope, and putting a second
+  reader on a key whose semantics that ticket has not fixed would be worse than leaving it inert. See
+  [The encounter state and the end conditions](encounter-state-and-end-conditions.md).
+- **The duel is reachable now, and one encounter is all of it.** DLR-70 closed the arithmetic — health,
+  the single clamp, the three end conditions — and closed nothing about visibility; **DLR-71 closed
+  that**. `src/App.tsx` imports `startEncounter` and `isEncounterResolved`, the round reducer imports
+  `applyHunt`, and two health bars carry each side's pending damage every trick, so a Hunt's damage now
+  lands somewhere a player can watch and an encounter ends. What is still missing is the **sequence**:
+  nothing advances the encounter index, so the second Quarry at 1,600 health is unreachable, the
+  between-encounter restore has no reader, and there is no outcome screen — the end panel states the
+  result in place. All **DLR-73's**.
 - **`DAMAGE_ROUNDING`'s value is a stated default, not a settled decision.** §9 records the row
   Undecided and offers doubling both tables and both health totals as a dissolution that deletes the
   question. `HalfAwayFromZero` with health at 1,350 / 1,600 is what ships; switching to the doubled
@@ -207,10 +240,14 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   helper and the Treasure `+1` / Poison `−1` fold are deleted. The app no longer applies ±1. DLR-69
   re-verified it by grep across the three value-path source files and added a regression guard to the
   contract's own closing checks.
-- **`DuelSide` and `PlayerSide` are two side-vocabularies that will need mapping.** No code conflates
-  them yet (`DuelSide` appears only inside `src/hunt/`), but T5 must map `DuelSide.Quarry` ↔
-  `PlayerSide.Cpu`. If that translation lands in more than one place, a later ticket should unify
-  them rather than spread it.
+- ~~**`DuelSide` and `PlayerSide` are two side-vocabularies that will need mapping.**~~ **Closed by
+  DLR-70**, and closed the way this bullet asked for: the mapping landed in **exactly one place**.
+  `duelSideDamage(outcome)` in `src/warCouncil/scoring.ts` is the only `PlayerSide` → `DuelSide`
+  crossing in the program, and it lives on the warCouncil side because that is the side permitted to
+  know both vocabularies — `src/hunt/` still cannot import `src/warCouncil/`. The two unions were not
+  unified, and should not be: they name different things (seats at a trick vs. sides holding health),
+  and one adapter is cheaper than collapsing the distinction. A second crossing appearing anywhere is
+  the thing to grep for — see [../war-council/scoring.md](../war-council/scoring.md).
 - **The `Snare` in-round edit layer.** §3's in-round layer is explicitly blocked and out of scope
   for the whole DLR-46 epic — no type or stub exists for it anywhere in this module.
 - **Display data for four of the five Quarry characters.** `QUARRY_CHARACTERS` (DLR-51) has an

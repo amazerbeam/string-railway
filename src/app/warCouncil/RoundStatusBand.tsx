@@ -1,6 +1,6 @@
-import type { Spoils, StandingBand } from '../../hunt'
 import { PlayerSide } from '../../warCouncil'
-import HuntLedger from './HuntLedger'
+import type { HealthBarView } from './duelHealthBars.ts'
+import DuelHealthBars from './DuelHealthBars.tsx'
 
 const MAX_VISIBLE_OPPONENT_BACKS = 8
 
@@ -9,26 +9,24 @@ interface RoundStatusBandProps {
   readonly tricksPlayed: number
   readonly opponentHandCount: number
   readonly roundComplete: boolean
-  readonly spoils: Spoils
-  readonly band: StandingBand
-  readonly table: readonly StandingBand[]
+  readonly bars: readonly HealthBarView[]
 }
 
 /**
- * The top band (AC4): an opponent plate — a decorative face-down stack plus
- * a held count — anchored to one edge, and a three-cell scoreboard anchored
- * to the other. Renders exactly the counts it is handed; the only
- * arithmetic here is the display-only trick-number clamp, so the final
- * trick never reads as trick 14.
+ * The top band (AC4): an opponent plate anchored to one edge, the mirrored duel health-bar
+ * pair flanking the `You · Trick · Them` trio Tekken-fashion (§6, DLR-71), each bar depleting
+ * toward the centre. Renders exactly the counts and views it is handed; the only arithmetic
+ * here is the display-only trick-number clamp, so the final trick never reads as trick 14.
+ *
+ * `HuntLedger` — the Standing readout — no longer mounts here: DLR-71 moved it to the dossier
+ * column to make room for the bars, which are the band's widest new child.
  */
 export default function RoundStatusBand({
   tricksWon,
   tricksPlayed,
   opponentHandCount,
   roundComplete,
-  spoils,
-  band,
-  table,
+  bars,
 }: RoundStatusBandProps) {
   const yourTricks = tricksWon[PlayerSide.Player]
   const theirTricks = tricksWon[PlayerSide.Cpu]
@@ -46,21 +44,25 @@ export default function RoundStatusBand({
         </span>
         <span className="wc-plate-label">{opponentHandCount} held</span>
       </div>
-      <div className="wc-score" role="group" aria-label="Tricks won">
-        <span className={`wc-score-cell${yourTricks > theirTricks ? ' wc-is-lead' : ''}`}>
-          <span className="wc-score-side">You</span>
-          <span className="wc-score-value">{yourTricks}</span>
-        </span>
-        <span className="wc-score-cell">
-          <span className="wc-score-side">Trick</span>
-          <span className="wc-score-value">{trickNumber}</span>
-        </span>
-        <span className={`wc-score-cell${theirTricks > yourTricks ? ' wc-is-lead' : ''}`}>
-          <span className="wc-score-side">Them</span>
-          <span className="wc-score-value">{theirTricks}</span>
-        </span>
-      </div>
-      <HuntLedger spoils={spoils} band={band} table={table} tricks={yourTricks} />
+      <DuelHealthBars
+        bars={bars}
+        centre={
+          <div className="wc-score" role="group" aria-label="Tricks won">
+            <span className={`wc-score-cell${yourTricks > theirTricks ? ' wc-is-lead' : ''}`}>
+              <span className="wc-score-side">You</span>
+              <span className="wc-score-value">{yourTricks}</span>
+            </span>
+            <span className="wc-score-cell">
+              <span className="wc-score-side">Trick</span>
+              <span className="wc-score-value">{trickNumber}</span>
+            </span>
+            <span className={`wc-score-cell${theirTricks > yourTricks ? ' wc-is-lead' : ''}`}>
+              <span className="wc-score-side">Them</span>
+              <span className="wc-score-value">{theirTricks}</span>
+            </span>
+          </div>
+        }
+      />
     </header>
   )
 }

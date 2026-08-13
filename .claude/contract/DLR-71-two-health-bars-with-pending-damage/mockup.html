@@ -1,0 +1,1441 @@
+<title>Duel Health Bars</title>
+
+<style>
+  /* =========================================================================
+     DLR-71 mockup — two health bars with live pending damage.
+
+     Static HTML/CSS/JS. Imports nothing from src/. Exists to settle LAYOUT and
+     INTERACTION before code is written, not to be reused as source.
+
+     Palette tokens are transcribed from src/app/warCouncil/warCouncil.css so the
+     bars are judged against the shipped surface rather than a neutral one. The six
+     --wc-hp-* tokens are NEW and every one of their values is the developer's —
+     they are placeholders drawn from the existing palette, not chosen values.
+
+     A single committed dark world, deliberately: the shipped shell sets
+     `color-scheme: dark` and offers no light variant. Every colour is painted
+     explicitly so the page holds on either host ground.
+     ========================================================================= */
+
+  :root {
+    /* --- shipped tokens (warCouncil.css) --- */
+    --wc-chamber: #0c1013;
+    --wc-chamber-lift: #141a1f;
+    --wc-felt: #16241f;
+    --wc-felt-lip: #0a1211;
+    --wc-felt-line: #2b4038;
+    --wc-parchment: #e9e1cd;
+    --wc-parchment-shade: #d3c8ae;
+    --wc-ink: #191610;
+    --wc-brass: #c99a4e;
+    --wc-brass-dim: #7d6132;
+    --wc-chalk: #cdd6d2;
+    --wc-chalk-dim: #6f7d78;
+    --wc-alarm: #d1705f;
+    --wc-bells: #c9873f;
+    --wc-keys: #5f93a8;
+    --wc-moons: #9c7cb8;
+    --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --wc-card-w: clamp(2.9rem, 6.2vmin, 4.3rem);
+    --wc-plate-card-w: clamp(2.3rem, 4.6vmin, 3.2rem);
+
+    /* --- NEW in DLR-71. Every value below is the developer's. --- */
+    --wc-hp-track: #0a1211;
+    --wc-hp-secure-fill: #c99a4e;
+    --wc-hp-pending-fill: #8b9a94;
+    --wc-hp-lethal-edge: #d1705f;
+    --wc-hp-height: clamp(0.7rem, 1.7vmin, 1.05rem);
+    --wc-hp-move-ms: 620ms;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    background: var(--wc-chamber);
+    color: var(--wc-chalk);
+    font-family: var(--wc-sans);
+  }
+
+  /* ---------- mockup staging (NOT part of the design) ---------- */
+
+  .stage {
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+    border: 0;
+  }
+
+  .stage.is-framed {
+    border: 1px dashed #33424a;
+    margin-top: 2.5rem;
+    margin-bottom: 6rem;
+    max-width: 100%;
+  }
+
+  /* ---------- the shell: one full-viewport grid, never scrolls ---------- */
+
+  .wc-shell {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: minmax(10rem, 17vw) 1fr;
+    grid-template-areas:
+      'status  status'
+      'dossier table'
+      'hand    hand';
+    color-scheme: dark;
+    background:
+      radial-gradient(120% 80% at 50% 0%, #17202700 0%, #060809 100%), var(--wc-chamber);
+    color: var(--wc-chalk);
+    font-family: var(--wc-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- status band: plate | player bar | trick trio | quarry bar ---------- */
+
+  .wc-status {
+    grid-area: status;
+    display: flex;
+    align-items: center;
+    gap: clamp(0.5rem, 1.6vmin, 1.4rem);
+    padding: clamp(0.5rem, 1.6vmin, 1rem) clamp(0.6rem, 2.2vmin, 1.6rem);
+    flex-wrap: nowrap;
+  }
+
+  .wc-plate {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.4rem, 1.2vmin, 0.75rem);
+    background: var(--wc-chamber-lift);
+    border: 1px solid #232c33;
+    border-radius: 2px;
+    padding: clamp(0.35rem, 1vmin, 0.6rem) clamp(0.5rem, 1.4vmin, 0.85rem);
+    flex: 0 0 auto;
+  }
+
+  .wc-plate-label {
+    font-size: clamp(0.52rem, 1.1vmin, 0.64rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .wc-stack {
+    display: flex;
+  }
+
+  .wc-stack-back {
+    width: clamp(0.85rem, 1.9vmin, 1.2rem);
+    height: clamp(1.3rem, 2.9vmin, 1.8rem);
+    border-radius: 1px;
+    background: repeating-linear-gradient(-45deg, #2c3a42 0 2px, #1e282e 2px 4px);
+    border: 1px solid #3a4a53;
+    margin-left: -0.35rem;
+  }
+
+  .wc-stack-back:first-child {
+    margin-left: 0;
+  }
+
+  .wc-score {
+    display: flex;
+    align-items: stretch;
+    gap: 0.3rem;
+    flex: 0 0 auto;
+  }
+
+  .wc-score-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 2.6rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 0.3rem;
+    background: var(--wc-chamber-lift);
+    border: 1px solid #23303a;
+  }
+
+  .wc-score-cell.wc-is-lead {
+    border-color: var(--wc-brass-dim);
+  }
+
+  .wc-score-side {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--wc-chalk-dim);
+  }
+
+  .wc-score-value {
+    font-family: var(--wc-serif);
+    font-size: 1.2rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--wc-parchment);
+  }
+
+  /* ---------- THE HEALTH BARS (new — warCouncilHealthBars.css) ---------- */
+
+  .wc-hp {
+    flex: 1 1 8rem;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.22rem;
+  }
+
+  .wc-hp-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    white-space: nowrap;
+  }
+
+  .wc-hp[data-side='quarry'] .wc-hp-head {
+    flex-direction: row-reverse;
+  }
+
+  .wc-hp-who {
+    font-size: clamp(0.52rem, 1.1vmin, 0.64rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--wc-chalk-dim);
+  }
+
+  .wc-hp-num {
+    font-family: var(--wc-serif);
+    font-size: clamp(0.8rem, 1.7vmin, 1rem);
+    font-variant-numeric: tabular-nums;
+    color: var(--wc-parchment);
+  }
+
+  .wc-hp-risk {
+    font-size: clamp(0.56rem, 1.2vmin, 0.7rem);
+    font-variant-numeric: tabular-nums;
+    color: var(--wc-hp-pending-fill);
+    margin-inline-start: auto;
+  }
+
+  .wc-hp[data-side='quarry'] .wc-hp-risk {
+    margin-inline-start: 0;
+    margin-inline-end: auto;
+  }
+
+  .wc-hp-risk[data-empty='true'] {
+    color: var(--wc-chalk-dim);
+  }
+
+  /* The track. Depletion runs toward the CENTRE of the screen: the player's fill is
+     anchored left, the Quarry's right. row-reverse is the whole of the mirror. */
+  .wc-hp-track {
+    display: flex;
+    height: var(--wc-hp-height);
+    background: var(--wc-hp-track);
+    border: 1px solid #23303a;
+    border-radius: 1px;
+    overflow: hidden;
+  }
+
+  .wc-hp[data-side='quarry'] .wc-hp-track {
+    flex-direction: row-reverse;
+  }
+
+  .wc-hp-secure,
+  .wc-hp-pending {
+    flex: 0 0 var(--w);
+    width: var(--w);
+    transition: flex-basis var(--wc-hp-move-ms) ease-out, width var(--wc-hp-move-ms) ease-out;
+  }
+
+  .wc-hp-secure {
+    background: var(--wc-hp-secure-fill);
+  }
+
+  /* Pending is the fighting-game recoverable segment: carved OUT of current health,
+     drawn by lightness on the same bar, and allowed to shrink. `secure + pending`
+     always equals current health, so the filled length never grows. */
+  .wc-hp-pending {
+    background: var(--wc-hp-pending-fill);
+    opacity: 0.85;
+  }
+
+  /* Lethal reads without colour: a hatch, plus a hard leading edge. */
+  .wc-hp-pending.wc-is-lethal {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      #ffffff26 0 3px,
+      #00000026 3px 6px
+    );
+    box-shadow: inset 0 0 0 1px var(--wc-hp-lethal-edge);
+  }
+
+  .wc-hp-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* ---------- dossier column: Quarry card, Standing track, telegraph ---------- */
+
+  .wc-dossier {
+    grid-area: dossier;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0 clamp(0.5rem, 1.6vmin, 1rem) clamp(0.5rem, 1.6vmin, 1rem)
+      clamp(0.6rem, 2.2vmin, 1.6rem);
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .wc-dossier-card {
+    background: var(--wc-chamber-lift);
+    border: 1px solid #23303a;
+    border-left: 3px solid var(--wc-brass-dim);
+    border-radius: 0.4rem;
+    padding: 0.6rem 0.7rem;
+  }
+
+  .wc-dossier-eyebrow {
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--wc-chalk-dim);
+  }
+
+  .wc-dossier-name {
+    font-family: var(--wc-serif);
+    font-size: 1.15rem;
+    font-weight: 400;
+    color: var(--wc-parchment);
+    margin: 0.1rem 0 0.35rem;
+  }
+
+  .wc-dossier-rule {
+    font-size: 0.78rem;
+    line-height: 1.35;
+    color: var(--wc-chalk);
+    margin: 0;
+  }
+
+  .wc-telegraph {
+    border: 1px dashed var(--wc-brass-dim);
+    border-radius: 0.4rem;
+    padding: 0.5rem 0.6rem;
+    font-size: 0.78rem;
+    color: var(--wc-chalk);
+  }
+
+  /* Standing track — relocated here from the status band by this ticket. */
+  .wc-ledger {
+    display: flex;
+    align-items: stretch;
+    gap: 0.35rem;
+  }
+
+  .wc-track {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: clamp(3rem, 8vmin, 4.6rem);
+    padding-bottom: 0.95rem;
+  }
+
+  .wc-track-seg {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    min-height: 0.5rem;
+    background: #1b2429;
+    border: 1px solid #263239;
+    border-bottom: none;
+    border-radius: 2px 2px 0 0;
+  }
+
+  .wc-track-seg.wc-is-peak {
+    background: #22303a;
+    border-color: var(--wc-brass-dim);
+  }
+
+  .wc-track-seg.wc-is-cliff {
+    background: #241d1d;
+    border-color: #4a3130;
+  }
+
+  .wc-track-seg.wc-is-current {
+    outline: 1px solid var(--wc-brass);
+    outline-offset: -1px;
+    background: #2a3a44;
+  }
+
+  .wc-track-mult {
+    font-size: 0.56rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--wc-chalk-dim);
+    margin-top: 1px;
+  }
+
+  .wc-track-pips {
+    display: flex;
+    gap: 1px;
+    margin-top: auto;
+    margin-bottom: 2px;
+  }
+
+  .wc-track-pip {
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: #3d4c53;
+  }
+
+  .wc-track-pip.wc-is-here {
+    background: var(--wc-brass);
+    box-shadow: 0 0 0 1px #c99a4e66;
+  }
+
+  .wc-track-ticks {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    gap: 2px;
+  }
+
+  .wc-track-tick {
+    text-align: center;
+    font-size: 0.5rem;
+    color: var(--wc-chalk-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- the felt ---------- */
+
+  .wc-table {
+    grid-area: table;
+    position: relative;
+    margin: 0 clamp(0.6rem, 2.2vmin, 1.6rem) clamp(0.4rem, 1.4vmin, 0.9rem) 0;
+    border-radius: 0.6rem;
+    background: radial-gradient(120% 100% at 50% 0%, #1b2c26 0%, var(--wc-felt) 70%);
+    border: 1px solid var(--wc-felt-line);
+    box-shadow: inset 0 0 0 4px var(--wc-felt-lip);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .wc-decree {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0 clamp(0.5rem, 1.6vmin, 1.1rem);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--wc-chalk-dim);
+  }
+
+  /* This ticket's one-line fix to DLR-67's open defect lives on the next rule:
+     flex-start rather than center, so scrollTop:0 shows the true top of content
+     at the short viewports where the panel overflows. */
+  .wc-table-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    min-height: 0;
+    padding: clamp(0.5rem, 2vmin, 1.2rem);
+  }
+
+  /* ---------- cards ---------- */
+
+  .card {
+    width: var(--wc-card-w);
+    aspect-ratio: 5 / 7.4;
+    border-radius: 0.22rem;
+    background: linear-gradient(180deg, var(--wc-parchment) 0%, var(--wc-parchment-shade) 100%);
+    color: var(--wc-ink);
+    border: 2px solid var(--suit, var(--wc-brass-dim));
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 0.15rem;
+    font-family: var(--wc-serif);
+    font-size: 1rem;
+    position: relative;
+    flex: 0 0 auto;
+  }
+
+  .card::after {
+    content: attr(data-suit);
+    position: absolute;
+    left: 0.15rem;
+    bottom: 0.05rem;
+    font-size: 0.62rem;
+    color: var(--suit);
+  }
+
+  .card.is-table {
+    width: calc(var(--wc-card-w) * 0.86);
+  }
+
+  .card[data-suit='Bells'] {
+    --suit: var(--wc-bells);
+  }
+  .card[data-suit='Keys'] {
+    --suit: var(--wc-keys);
+  }
+  .card[data-suit='Moons'] {
+    --suit: var(--wc-moons);
+  }
+
+  .wc-trick {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .wc-trick-note {
+    font-size: 0.78rem;
+    color: var(--wc-chalk-dim);
+    margin: 0;
+  }
+
+  /* ---------- controls ---------- */
+
+  button {
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--wc-parchment);
+    background: var(--wc-chamber-lift);
+    border: 1px solid var(--wc-brass-dim);
+    border-radius: 0.3rem;
+    padding: 0.6rem 0.95rem;
+    min-height: 44px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--wc-brass);
+    outline-offset: 2px;
+  }
+
+  @media (hover: hover) {
+    button:hover {
+      border-color: var(--wc-brass);
+    }
+  }
+
+  button:active {
+    background: #1b232a;
+  }
+
+  button.is-primary {
+    background: var(--wc-brass-dim);
+    border-color: var(--wc-brass);
+    color: var(--wc-parchment);
+  }
+
+  .wc-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* ---------- declare gate ---------- */
+
+  .wc-declare {
+    display: flex;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .wc-declare-option {
+    width: min(15rem, 40vw);
+    text-align: left;
+    padding: 0.8rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .wc-declare-h {
+    font-family: var(--wc-serif);
+    font-size: 1.1rem;
+    color: var(--wc-parchment);
+  }
+
+  .wc-declare-b {
+    font-size: 0.74rem;
+    line-height: 1.35;
+    color: var(--wc-chalk-dim);
+  }
+
+  /* ---------- end-of-Hunt panel ---------- */
+
+  .wc-over {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    max-width: 100%;
+  }
+
+  .wc-over h2 {
+    font-family: var(--wc-serif);
+    font-weight: 400;
+    font-size: clamp(1rem, 2.6vmin, 1.4rem);
+    margin: 0;
+    color: var(--wc-parchment);
+  }
+
+  .wc-sides {
+    display: flex;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .wc-side {
+    border: 1px solid #23303a;
+    border-radius: 0.4rem;
+    padding: 0.5rem 0.7rem;
+    background: #101820;
+  }
+
+  .wc-side.wc-is-ahead {
+    border-color: var(--wc-brass);
+    border-width: 2px;
+  }
+
+  .wc-side-name {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--wc-chalk-dim);
+    margin: 0 0 0.25rem;
+  }
+
+  .wc-equation {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.4rem;
+  }
+
+  .wc-equation-part {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .wc-equation-key {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--wc-chalk-dim);
+  }
+
+  .wc-equation-value {
+    font-family: var(--wc-serif);
+    font-size: 1.1rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--wc-parchment);
+  }
+
+  .wc-equation-part.wc-is-result .wc-equation-value {
+    color: var(--wc-brass);
+  }
+
+  .wc-equation-op {
+    font-family: var(--wc-serif);
+    color: var(--wc-chalk-dim);
+    padding-bottom: 0.1rem;
+  }
+
+  .wc-verdict-detail {
+    font-size: 0.68rem;
+    color: var(--wc-chalk-dim);
+    margin: 0.25rem 0 0;
+  }
+
+  .wc-terminal {
+    font-family: var(--wc-serif);
+    font-size: 1rem;
+    color: var(--wc-brass);
+    margin: 0;
+    text-align: center;
+  }
+
+  /* ---------- hand ---------- */
+
+  .wc-hand {
+    grid-area: hand;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 0;
+    min-height: calc(var(--wc-card-w) * 1.75);
+    padding: 0.3rem clamp(0.6rem, 2.2vmin, 1.6rem) clamp(0.4rem, 1.4vmin, 0.9rem);
+  }
+
+  .wc-hand .card {
+    margin-left: -0.55rem;
+    transform-origin: 50% 130%;
+  }
+
+  .wc-hand .card:first-child {
+    margin-left: 0;
+  }
+
+  /* ---------- the narrow / short collapse ---------- */
+
+  @media (max-width: 44rem), (max-height: 34rem) {
+    .wc-shell {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        'status'
+        'dossier'
+        'table'
+        'hand';
+    }
+
+    .wc-status {
+      flex-wrap: wrap;
+    }
+
+    .wc-hp {
+      flex: 1 1 40%;
+    }
+
+    .wc-dossier {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      padding-right: clamp(0.6rem, 2.2vmin, 1.6rem);
+    }
+
+    .wc-table {
+      margin-left: clamp(0.6rem, 2.2vmin, 1.6rem);
+    }
+
+    /* DLR-67's blocked defect, resolved: flex-start rather than center, so
+       scrollTop:0 reaches the true top of an overflowing panel. */
+    .wc-table-inner {
+      align-self: stretch;
+      justify-content: flex-start;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .wc-track {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wc-hp-secure,
+    .wc-hp-pending {
+      transition: none;
+    }
+  }
+
+  /* ---------- mockup control panel (not part of the design) ---------- */
+
+  .mk {
+    position: fixed;
+    right: 0.8rem;
+    bottom: 0.8rem;
+    z-index: 20;
+    width: min(21rem, calc(100vw - 1.6rem));
+    background: #0f1418f2;
+    border: 1px solid #33424a;
+    border-radius: 0.5rem;
+    padding: 0.7rem 0.8rem;
+    font-size: 0.75rem;
+    color: var(--wc-chalk);
+    backdrop-filter: blur(6px);
+    max-height: min(70vh, 34rem);
+    overflow-y: auto;
+  }
+
+  .mk[hidden] {
+    display: none;
+  }
+
+  .mk h3 {
+    margin: 0 0 0.15rem;
+    font-family: var(--wc-serif);
+    font-weight: 400;
+    font-size: 0.95rem;
+    color: var(--wc-brass);
+  }
+
+  .mk p {
+    margin: 0 0 0.55rem;
+    color: var(--wc-chalk-dim);
+    line-height: 1.4;
+  }
+
+  .mk-row {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+
+  .mk button {
+    font-size: 0.72rem;
+    padding: 0.45rem 0.6rem;
+    min-height: 34px;
+    border-color: #3d4c53;
+  }
+
+  .mk-label {
+    display: block;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--wc-chalk-dim);
+    margin: 0.35rem 0 0.25rem;
+  }
+
+  .mk-toggle {
+    position: fixed;
+    right: 0.8rem;
+    bottom: 0.8rem;
+    z-index: 21;
+    font-size: 0.72rem;
+    padding: 0.45rem 0.7rem;
+    min-height: 34px;
+  }
+
+  .mk-log {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.66rem;
+    color: var(--wc-chalk-dim);
+    border-top: 1px solid #263239;
+    padding-top: 0.4rem;
+    margin: 0.3rem 0 0;
+    line-height: 1.5;
+  }
+</style>
+
+<div class="stage" id="stage" style="height: 100dvh">
+  <div class="wc-shell">
+    <!-- ============ STATUS BAND: the mirrored opposed pair ============ -->
+    <header class="wc-status">
+      <div class="wc-plate">
+        <span class="wc-plate-label">Opponent</span>
+        <span class="wc-stack" aria-hidden="true" id="stack"></span>
+        <span class="wc-plate-label" id="held">7 held</span>
+      </div>
+
+      <div class="wc-hp" data-side="player" id="hp-player">
+        <div class="wc-hp-head">
+          <span class="wc-hp-who">You</span>
+          <span class="wc-hp-num" id="num-player">1350 / 1350</span>
+          <span class="wc-hp-risk" id="risk-player" data-empty="true">nothing at risk</span>
+        </div>
+        <div
+          class="wc-hp-track"
+          role="meter"
+          aria-label="Your health"
+          aria-valuemin="0"
+          aria-valuemax="1350"
+          aria-valuenow="1350"
+          id="meter-player"
+        >
+          <span class="wc-hp-secure" id="secure-player" style="--w: 100%"></span>
+          <span class="wc-hp-pending" id="pending-player" style="--w: 0%"></span>
+        </div>
+      </div>
+
+      <div class="wc-score" role="group" aria-label="Tricks won">
+        <span class="wc-score-cell" id="cell-you">
+          <span class="wc-score-side">You</span>
+          <span class="wc-score-value" id="tricks-you">0</span>
+        </span>
+        <span class="wc-score-cell">
+          <span class="wc-score-side">Trick</span>
+          <span class="wc-score-value" id="trick-no">1</span>
+        </span>
+        <span class="wc-score-cell" id="cell-them">
+          <span class="wc-score-side">Them</span>
+          <span class="wc-score-value" id="tricks-them">0</span>
+        </span>
+      </div>
+
+      <div class="wc-hp" data-side="quarry" id="hp-quarry">
+        <div class="wc-hp-head">
+          <span class="wc-hp-who">The Quarry</span>
+          <span class="wc-hp-num" id="num-quarry">1350 / 1350</span>
+          <span class="wc-hp-risk" id="risk-quarry" data-empty="true">nothing at risk</span>
+        </div>
+        <div
+          class="wc-hp-track"
+          role="meter"
+          aria-label="The Quarry's health"
+          aria-valuemin="0"
+          aria-valuemax="1350"
+          aria-valuenow="1350"
+          id="meter-quarry"
+        >
+          <span class="wc-hp-secure" id="secure-quarry" style="--w: 100%"></span>
+          <span class="wc-hp-pending" id="pending-quarry" style="--w: 0%"></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============ DOSSIER: Quarry, Standing track (relocated), telegraph ============ -->
+    <aside class="wc-dossier">
+      <div class="wc-dossier-card">
+        <p class="wc-dossier-eyebrow">The Quarry</p>
+        <p class="wc-dossier-name">The Monarch</p>
+        <p class="wc-dossier-rule">
+          When they lead, you must play your Swan or your highest card of that suit.
+        </p>
+      </div>
+
+      <div class="wc-ledger" role="group" aria-label="Standing">
+        <div class="wc-track" role="group" aria-label="Standing track" id="track"></div>
+      </div>
+
+      <p class="wc-telegraph" id="telegraph">They will press with Keys.</p>
+    </aside>
+
+    <!-- ============ THE FELT ============ -->
+    <section class="wc-table">
+      <div class="wc-decree">
+        <span>Decree</span>
+        <span class="card is-table" data-suit="Bells">10</span>
+        <span>Trump: Bells</span>
+      </div>
+      <div class="wc-table-inner" id="felt"></div>
+    </section>
+
+    <!-- ============ HAND ============ -->
+    <div class="wc-hand" id="hand"></div>
+  </div>
+</div>
+
+<button class="mk-toggle" id="mk-show" hidden>Mockup controls</button>
+
+<aside class="mk" id="mk">
+  <h3>DLR-71 mockup controls</h3>
+  <p>
+    Not part of the design. Drive the Hunt from here to watch pending damage lurch at every band
+    crossing, then apply it and watch both bars move.
+  </p>
+
+  <span class="mk-label">Play the Hunt</span>
+  <div class="mk-row">
+    <button type="button" id="btn-win">You take the trick</button>
+    <button type="button" id="btn-lose">They take it</button>
+    <button type="button" id="btn-jump9">Jump to 9&ndash;3</button>
+  </div>
+
+  <span class="mk-label">Layout, at AC9's named sizes</span>
+  <div class="mk-row">
+    <button type="button" data-vp="full">Full</button>
+    <button type="button" data-vp="1366x768">1366&times;768</button>
+    <button type="button" data-vp="1024x640">1024&times;640</button>
+    <button type="button" data-vp="500x844">500&times;844</button>
+    <button type="button" data-vp="700x544">700&times;544</button>
+  </div>
+
+  <span class="mk-label">AC8 &mdash; the net-only fallback</span>
+  <div class="mk-row">
+    <button type="button" id="btn-net">Show one net bar</button>
+    <button type="button" id="btn-reset">Reset the encounter</button>
+    <button type="button" id="mk-hide">Hide this panel</button>
+  </div>
+
+  <p class="mk-log" id="log">Declare a path to begin.</p>
+</aside>
+
+<script>
+  'use strict'
+
+  /* ---------------------------------------------------------------------------
+     Fake state, real arithmetic. The multiplier table below is transcribed from
+     src/hunt/config.ts (HUNT_MULTIPLIER_TABLES) so the band crossings the bars
+     are meant to teach behave exactly as they will in the app. A trick's two
+     cards are valued at 12 — the deck's mean rank of 6, doubled — which is the
+     same simplification hybrid-design.md §8 and ideas.md compute against.
+     --------------------------------------------------------------------------- */
+
+  var TRICKS_PER_ROUND = 13
+  var TRICK_CARD_VALUE = 12
+  var PLAYER_MAX = 1350
+  var QUARRY_MAX = 1350
+
+  var WIN_TABLE = [
+    { min: 0, max: 3, name: 'Humble', mult: 1 },
+    { min: 4, max: 4, name: 'Defeated', mult: 2 },
+    { min: 5, max: 5, name: 'Defeated', mult: 3 },
+    { min: 6, max: 6, name: 'Defeated', mult: 4 },
+    { min: 7, max: 9, name: 'Victorious', mult: 5 },
+    { min: 10, max: 13, name: 'Greedy', mult: 0.5 }
+  ]
+
+  var LOSE_TABLE = [
+    { min: 0, max: 3, name: 'Humble', mult: 0.5 },
+    { min: 4, max: 6, name: 'Defeated', mult: 5 },
+    { min: 7, max: 7, name: 'Victorious', mult: 4 },
+    { min: 8, max: 8, name: 'Victorious', mult: 3 },
+    { min: 9, max: 9, name: 'Victorious', mult: 2 },
+    { min: 10, max: 13, name: 'Greedy', mult: 1 }
+  ]
+
+  var HAND = [
+    { suit: 'Bells', rank: 11 },
+    { suit: 'Bells', rank: 9 },
+    { suit: 'Bells', rank: 7 },
+    { suit: 'Keys', rank: 8 },
+    { suit: 'Keys', rank: 3 },
+    { suit: 'Moons', rank: 10 },
+    { suit: 'Moons', rank: 4 }
+  ]
+
+  var state = {
+    declaration: null, // 'win' | 'lose'
+    tricks: { player: 0, quarry: 0 },
+    health: { player: PLAYER_MAX, quarry: QUARRY_MAX },
+    applied: null, // post-Hunt health, once committed
+    hunt: 1,
+    netOnly: false
+  }
+
+  /* ---- the engine's shape, in miniature ---- */
+
+  function table() {
+    return state.declaration === 'lose' ? LOSE_TABLE : WIN_TABLE
+  }
+
+  function bandFor(tricks) {
+    var rows = table()
+    for (var i = 0; i < rows.length; i++) {
+      if (tricks >= rows[i].min && tricks <= rows[i].max) return rows[i]
+    }
+    return null
+  }
+
+  /** `scoreHunt` in miniature: card value x Standing, for one side. */
+  function dealtBy(side) {
+    var band = bandFor(state.tricks[side])
+    var spoils = TRICK_CARD_VALUE * state.tricks[side]
+    return { spoils: spoils, band: band, damage: Math.round(spoils * band.mult) }
+  }
+
+  /** `pendingHuntDamage` + `duelSideDamage`: keyed by the side it is APPLIED TO. */
+  function incoming() {
+    if (state.declaration === null) return { player: 0, quarry: 0 }
+    return { player: dealtBy('quarry').damage, quarry: dealtBy('player').damage }
+  }
+
+  /** `applyHunt`: THE clamp point. Never re-implemented anywhere else. */
+  function applyHunt(health, dmg) {
+    return {
+      player: Math.max(0, health.player - dmg.player),
+      quarry: Math.max(0, health.quarry - dmg.quarry)
+    }
+  }
+
+  /** `duelHealthBars`: percentages only, no damage arithmetic, guarded divisor. */
+  function duelHealthBars(current, projected, max) {
+    return ['player', 'quarry'].map(function (side) {
+      if (!(max[side] > 0)) throw new RangeError('Cannot draw a bar against a max of ' + max[side])
+      var secure = projected[side]
+      var pending = current[side] - secure
+      return {
+        side: side,
+        secure: secure,
+        pending: pending,
+        current: current[side],
+        max: max[side],
+        securePct: (secure / max[side]) * 100,
+        pendingPct: (pending / max[side]) * 100,
+        lethal: pending > 0 && secure === 0
+      }
+    })
+  }
+
+  /* ---- render ---- */
+
+  var MAXES = { player: PLAYER_MAX, quarry: QUARRY_MAX }
+  var SIDE_WORD = { player: 'You', quarry: 'The Quarry' }
+
+  function renderBars() {
+    var live = state.applied || state.health
+    var dmg = state.applied ? { player: 0, quarry: 0 } : incoming()
+    var views = duelHealthBars(live, applyHunt(live, dmg), MAXES)
+
+    views.forEach(function (v) {
+      document.getElementById('secure-' + v.side).style.setProperty('--w', v.securePct + '%')
+      var pendingEl = document.getElementById('pending-' + v.side)
+      pendingEl.style.setProperty('--w', v.pendingPct + '%')
+      pendingEl.classList.toggle('wc-is-lethal', v.lethal)
+
+      document.getElementById('num-' + v.side).textContent = v.current + ' / ' + v.max
+
+      var riskEl = document.getElementById('risk-' + v.side)
+      riskEl.dataset.empty = v.pending === 0 ? 'true' : 'false'
+      riskEl.textContent = v.lethal
+        ? 'lethal this Hunt'
+        : v.pending === 0
+          ? 'nothing at risk'
+          : v.pending + ' at risk'
+
+      var meter = document.getElementById('meter-' + v.side)
+      meter.setAttribute('aria-valuenow', String(v.current))
+      meter.setAttribute('aria-valuemax', String(v.max))
+      meter.setAttribute(
+        'aria-valuetext',
+        v.current +
+          ' of ' +
+          v.max +
+          '. ' +
+          (v.lethal
+            ? 'Lethal this Hunt.'
+            : v.pending === 0
+              ? 'Nothing at risk yet.'
+              : v.pending + ' at risk this Hunt.')
+      )
+    })
+
+    // AC8's fallback, previewed: one bar, one direction.
+    document.getElementById('hp-quarry').style.display = state.netOnly ? 'none' : ''
+    document.getElementById('hp-player').querySelector('.wc-hp-who').textContent = state.netOnly
+      ? 'Net'
+      : 'You'
+  }
+
+  function renderTrack() {
+    var rows = table()
+    var top = Math.max.apply(
+      null,
+      rows.map(function (r) {
+        return r.mult
+      })
+    )
+    var low = Math.min.apply(
+      null,
+      rows.map(function (r) {
+        return r.mult
+      })
+    )
+    var tricks = state.tricks.player
+    var segs = ''
+    var ticks = ''
+
+    rows.forEach(function (r) {
+      var span = r.max - r.min + 1
+      var isCurrent = tricks >= r.min && tricks <= r.max
+      var pips = ''
+      for (var p = 0; p < span; p++) {
+        pips +=
+          '<span class="wc-track-pip' +
+          (isCurrent && tricks - r.min === p ? ' wc-is-here' : '') +
+          '"></span>'
+      }
+      segs +=
+        '<span class="wc-track-seg' +
+        (r.mult === top ? ' wc-is-peak' : '') +
+        (r.mult === low ? ' wc-is-cliff' : '') +
+        (isCurrent ? ' wc-is-current' : '') +
+        '" style="flex-grow:' +
+        span +
+        ';flex-basis:0;height:' +
+        (r.mult / top) * 100 +
+        '%"><span class="wc-track-mult">&times;' +
+        r.mult +
+        '</span><span class="wc-track-pips">' +
+        pips +
+        '</span></span>'
+      ticks +=
+        '<span class="wc-track-tick" style="flex-grow:' +
+        span +
+        ';flex-basis:0">' +
+        (r.min === r.max ? r.min : r.min + '-' + r.max) +
+        '</span>'
+    })
+
+    document.getElementById('track').innerHTML =
+      segs + '<span class="wc-track-ticks">' + ticks + '</span>'
+  }
+
+  function cardHtml(c, tableCard) {
+    return (
+      '<span class="card' +
+      (tableCard ? ' is-table' : '') +
+      '" data-suit="' +
+      c.suit +
+      '">' +
+      c.rank +
+      '</span>'
+    )
+  }
+
+  function renderFelt() {
+    var felt = document.getElementById('felt')
+    var played = state.tricks.player + state.tricks.quarry
+
+    if (state.declaration === null) {
+      felt.innerHTML =
+        '<h2 style="font-family:var(--wc-serif);font-weight:400;margin:0;color:var(--wc-parchment)">Declare this Hunt</h2>' +
+        '<div class="wc-declare">' +
+        '<button type="button" class="wc-declare-option" data-declare="win">' +
+        '<span class="wc-declare-h">Play to Win</span>' +
+        '<span class="wc-declare-b">Your captured cards pay at printed rank. The peak is 7&ndash;9 tricks.</span>' +
+        '</button>' +
+        '<button type="button" class="wc-declare-option" data-declare="lose">' +
+        '<span class="wc-declare-h">Play to Lose</span>' +
+        '<span class="wc-declare-b">You are paid for what they capture, at inverted rank. The peak is 4&ndash;6 tricks.</span>' +
+        '</button>' +
+        '</div>'
+      return
+    }
+
+    if (played >= TRICKS_PER_ROUND) {
+      renderOverPanel(felt)
+      return
+    }
+
+    felt.innerHTML =
+      '<div class="wc-trick">' +
+      cardHtml({ suit: 'Keys', rank: 6 }, true) +
+      cardHtml({ suit: 'Keys', rank: 8 }, true) +
+      '</div>' +
+      '<p class="wc-trick-note">Trick ' +
+      (played + 1) +
+      ' of 13 &mdash; use the mockup controls to award it.</p>'
+  }
+
+  function equationHtml(name, d, ahead) {
+    return (
+      '<div class="wc-side' +
+      (ahead ? ' wc-is-ahead' : '') +
+      '"><p class="wc-side-name">' +
+      name +
+      '</p><div class="wc-equation" role="group" aria-label="' +
+      name +
+      ': Spoils times Standing equals Damage">' +
+      '<span class="wc-equation-part"><span class="wc-equation-key">Spoils</span><span class="wc-equation-value">' +
+      d.spoils +
+      '</span></span><span class="wc-equation-op">&times;</span>' +
+      '<span class="wc-equation-part"><span class="wc-equation-key">Standing</span><span class="wc-equation-value">&times;' +
+      d.band.mult +
+      '</span></span><span class="wc-equation-op">=</span>' +
+      '<span class="wc-equation-part wc-is-result"><span class="wc-equation-key">Damage</span><span class="wc-equation-value">' +
+      d.damage +
+      '</span></span></div>' +
+      '<p class="wc-verdict-detail">' +
+      d.spoils / TRICK_CARD_VALUE +
+      ' tricks &mdash; ' +
+      d.band.name +
+      '.</p></div>'
+    )
+  }
+
+  function renderOverPanel(felt) {
+    var mine = dealtBy('player')
+    var theirs = dealtBy('quarry')
+    var resolved =
+      state.applied && (state.applied.player <= 0 || state.applied.quarry <= 0)
+
+    var tail
+    if (state.applied === null) {
+      tail =
+        '<div class="wc-actions"><button type="button" class="is-primary" id="btn-apply">Apply the damage</button></div>'
+    } else if (resolved) {
+      tail =
+        '<p class="wc-terminal">' +
+        (state.applied.quarry <= 0 ? 'The Quarry is down. The encounter is yours.' : 'You are down. The run ends here.') +
+        '</p>'
+    } else {
+      tail =
+        '<div class="wc-actions"><button type="button" class="is-primary" id="btn-finish">Deal the next Hunt</button></div>'
+    }
+
+    felt.innerHTML =
+      '<h2>The Hunt is over</h2><div class="wc-sides">' +
+      equationHtml('You', mine, mine.damage > theirs.damage) +
+      equationHtml('Opponent', theirs, theirs.damage > mine.damage) +
+      '</div>' +
+      tail
+  }
+
+  function renderChrome() {
+    var played = state.tricks.player + state.tricks.quarry
+    document.getElementById('tricks-you').textContent = state.tricks.player
+    document.getElementById('tricks-them').textContent = state.tricks.quarry
+    document.getElementById('trick-no').textContent = Math.min(
+      played + (played >= TRICKS_PER_ROUND ? 0 : 1),
+      TRICKS_PER_ROUND
+    )
+    document
+      .getElementById('cell-you')
+      .classList.toggle('wc-is-lead', state.tricks.player > state.tricks.quarry)
+    document
+      .getElementById('cell-them')
+      .classList.toggle('wc-is-lead', state.tricks.quarry > state.tricks.player)
+
+    var held = Math.max(0, HAND.length - state.tricks.player - state.tricks.quarry)
+    document.getElementById('held').textContent = held + ' held'
+    var backs = ''
+    for (var i = 0; i < Math.min(held, 8); i++) backs += '<span class="wc-stack-back"></span>'
+    document.getElementById('stack').innerHTML = backs
+
+    document.getElementById('hand').innerHTML = HAND.slice(0, Math.max(1, held))
+      .map(function (c) {
+        return cardHtml(c, false)
+      })
+      .join('')
+
+    document.getElementById('telegraph').textContent =
+      played >= TRICKS_PER_ROUND ? 'Nothing left to read.' : 'They will press with Keys.'
+  }
+
+  function log(msg) {
+    document.getElementById('log').textContent = msg
+  }
+
+  function render() {
+    renderBars()
+    renderTrack()
+    renderFelt()
+    renderChrome()
+  }
+
+  /* ---- interactions ---- */
+
+  function award(side) {
+    if (state.declaration === null) return log('Declare a path first — pending has no table to read.')
+    if (state.applied !== null) return log('This Hunt is applied. Deal the next one.')
+    if (state.tricks.player + state.tricks.quarry >= TRICKS_PER_ROUND) {
+      return log('All 13 tricks are played. Apply the damage.')
+    }
+    var before = incoming()
+    state.tricks[side] += 1
+    var after = incoming()
+    render()
+    var mine = after.quarry - before.quarry
+    log(
+      'Trick to ' +
+        SIDE_WORD[side] +
+        '. Pending on the Quarry ' +
+        (mine >= 0 ? '+' : '') +
+        mine +
+        ' → ' +
+        after.quarry +
+        ', on you → ' +
+        after.player +
+        '.'
+    )
+  }
+
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('button')
+    if (!el) return
+
+    var declare = el.getAttribute('data-declare')
+    if (declare) {
+      state.declaration = declare
+      render()
+      return log('Declared ' + declare + '. Both sides now read that path’s table.')
+    }
+
+    var vp = el.getAttribute('data-vp')
+    if (vp) {
+      var stage = document.getElementById('stage')
+      if (vp === 'full') {
+        stage.className = 'stage'
+        stage.style.width = ''
+        stage.style.height = '100dvh'
+      } else {
+        var wh = vp.split('x')
+        stage.className = 'stage is-framed'
+        stage.style.width = wh[0] + 'px'
+        stage.style.height = wh[1] + 'px'
+      }
+      return log('Stage at ' + vp + '. Check the band wraps and the panel reaches its own top.')
+    }
+
+    switch (el.id) {
+      case 'btn-win':
+        return award('player')
+      case 'btn-lose':
+        return award('quarry')
+      case 'btn-jump9':
+        if (state.declaration === null) return log('Declare a path first.')
+        state.tricks = { player: 9, quarry: 4 }
+        state.applied = null
+        render()
+        return log(
+          'Nine tricks to you, four to them — the Victorious peak. Now give them a tenth and watch your pending collapse to the Greedy cliff.'
+        )
+      case 'btn-apply':
+        state.applied = applyHunt(state.health, incoming())
+        render()
+        return log('Damage applied. Both bars just moved, and the pending segments are gone.')
+      case 'btn-finish':
+        state.health = state.applied
+        state.applied = null
+        state.tricks = { player: 0, quarry: 0 }
+        state.declaration = null
+        state.hunt += 1
+        render()
+        return log('Hunt ' + state.hunt + '. Health carried over — declare again.')
+      case 'btn-net':
+        state.netOnly = !state.netOnly
+        render()
+        return log(
+          state.netOnly
+            ? 'AC8 previewed: one bar. In code this is duelHealthBars returning a single view.'
+            : 'Back to the mirrored pair.'
+        )
+      case 'btn-reset':
+        state = {
+          declaration: null,
+          tricks: { player: 0, quarry: 0 },
+          health: { player: PLAYER_MAX, quarry: QUARRY_MAX },
+          applied: null,
+          hunt: 1,
+          netOnly: state.netOnly
+        }
+        render()
+        return log('Encounter reset. Declare a path to begin.')
+      case 'mk-hide':
+        document.getElementById('mk').hidden = true
+        document.getElementById('mk-show').hidden = false
+        return
+      case 'mk-show':
+        document.getElementById('mk').hidden = false
+        document.getElementById('mk-show').hidden = true
+        return
+    }
+  })
+
+  render()
+</script>

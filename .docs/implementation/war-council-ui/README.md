@@ -1,7 +1,7 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68
+**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71
 
 ## Responsibility
 
@@ -39,6 +39,16 @@ scope widening** — DLR-68 was an engine-only ticket until the developer suppli
 screenshot and asked for it — so the ticket carries an `engine` label over what is now partly UI work.
 See [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md).
 
+**DLR-71 is the ticket that put the duel on screen**, and it is the one that made this module's
+numbers mean something to a player. Two **health bars** — a mirrored opposed pair across the status
+row, each carrying its own **pending damage** as a lighter segment carved out of its own current
+health — replace the player-only Spoils and Damage cells; the end panel gained a second stage so the
+damage visibly *lands*; and `App.tsx` now carries a real `EncounterState` from Hunt to Hunt, so health
+depletes and an encounter can end. The two `scoreHunt` calls this module used to make are gone,
+replaced by one `pendingHuntDamage` — and with them went `HuntLedger`'s own
+`spoils * band.multiplier`, a second arithmetic path that bypassed `roundDamage`. See
+[The duel's health bars](duel-health-bars.md).
+
 It sits under `src/app/` rather than beside the engine for a hard reason: `eslint.config.js`'s
 pure-core override bars `src/warCouncil/**` from importing React at all, so a `.tsx` file there
 would trip `no-restricted-imports` (the same override previously also scoped `src/vanguard/**`
@@ -57,8 +67,12 @@ barrel re-exporting one is a needless brush with `react-refresh/only-export-comp
 | `WarCouncilRound`                                                                 | Default export — the mount, satisfying `WarCouncilMountProps` (`initialState` in, `onComplete` out)   | `WarCouncilRound.tsx`  |
 | `roundReducer`                                                                    | The single reducer owning every UI transition: `(RoundUiState, RoundUiAction) => RoundUiState`        | `roundReducer.ts`      |
 | `createRoundUiState`                                                              | Lazy `useReducer` initializer; a pure restructuring of `initialState` — since DLR-53 it deliberately leaves the Quarry's opening lead uncommitted so it can be telegraphed | `roundReducer.ts`      |
-| `RoundUiState`                                                                    | `{ round, armed, prompt, resolvedTrick, rejection, cpuFault }` — the mount's one piece of state       | `roundReducer.ts`      |
-| `RoundUiAction`                                                                   | `TapCard \| ChooseAbility \| CancelSelection \| CarryOn \| Declare`, via the `RoundUiActionKind` `as const` map. **`RoundUiState` gained no field for `Declare`** — the declaration lives on `RoundState`. DLR-63's sixth member `ClaimTrick` was deleted by DLR-67 | `roundReducer.ts`      |
+| `RoundUiState`                                                                    | `{ round, armed, prompt, resolvedTrick, rejection, cpuFault, applied }` — the mount's one piece of state. DLR-71 added `applied: EncounterState \| null`, `null` until the player commits the finished Hunt's damage | `roundReducer.ts`      |
+| `RoundUiAction`                                                                   | `TapCard \| ChooseAbility \| CancelSelection \| CarryOn \| Declare \| CommitDamage`, via the `RoundUiActionKind` `as const` map. **`RoundUiState` gained no field for `Declare`** — the declaration lives on `RoundState`. DLR-63's sixth member `ClaimTrick` was deleted by DLR-67; DLR-71's `CommitDamage` is the one that calls `applyHunt` | `roundReducer.ts`      |
+| `duelHealthBars`                                                                  | Pure: three health records (current / projected / maximum) → one `HealthBarView` per side, `player` first. **No damage arithmetic and no clamping** — `applyHunt` did both first. Throws `RangeError` on a non-positive or non-finite `max` rather than emitting a `NaN` width. React-free and DOM-free, so it runs in the `node` project (DLR-71) | `duelHealthBars.ts`    |
+| `HealthBarView`                                                                   | `{ side, secure, pending, current, max, securePct, pendingPct, lethal }` — one bar, ready to render. `securePct + pendingPct === current / max × 100` exactly (DLR-71) | `duelHealthBars.ts`    |
+| `HEALTH_BAR_LABEL`, `healthBarValueText`                                          | Each bar's accessible name, and the one sentence carrying **both** the current and the pending figure — `aria-valuenow` can hold only one number, so the second lives here (DLR-71) | `labels.ts`            |
+| `APPLY_DAMAGE_LABEL`, `FINISH_ROUND_LABEL`, `ENCOUNTER_OUTCOME`                   | The end panel's two-stage control copy, and the terminal line when a bar empties. `ENCOUNTER_OUTCOME`'s two strings are **placeholder copy — the developer's** (DLR-71) | `labels.ts`            |
 | `sortHandForDisplay`                                                              | Pure: a **copy** of the hand in display order — longest suit first, `ALL_SUITS` as the tie-break, ascending rank within a suit (DLR-63 AC6). React-free and DOM-free, so it runs in the `node` project | `handOrder.ts`         |
 | `HUNT_DECLARATION_NAME`, `DECLARE_REJECTION_MESSAGE`                              | Display copy for the two declarable paths and `declareHunt`'s rejection union (DLR-63). `CLAIM_REJECTION_MESSAGE` was deleted by DLR-67 with the union it keyed on | `labels.ts`            |
 | `ResolvedTrick`                                                                   | `{ cards, winner }` — a just-resolved trick held on screen until the player carries on                | `roundReducer.ts`      |
@@ -82,15 +96,24 @@ three more in the same shape: `HuntLedger` (mounted inside `RoundStatusBand`), `
 `IntentTelegraph` (both mounted in the new `wc-dossier` zone). DLR-63 added `DeclareGate`, mounted as
 the felt cascade's **first** branch. DLR-68 added `StandingTrack`, mounted inside `HuntLedger` — which
 gained two required props (`table` and `tricks`) to feed it, threaded down from `WarCouncilRound`
-through `RoundStatusBand`.
+through `RoundStatusBand`. **DLR-71 added `DuelHealthBars`**, mounted inside `RoundStatusBand` with the
+`You · Trick · Them` trio passed as its `centre` prop — and **moved `HuntLedger` out of the band
+entirely**, remounting it in the `wc-dossier` column. `RoundStatusBand` lost `spoils`, `band` and
+`table` and gained `bars`; `HuntLedger` lost `spoils` and is now the Standing readout alone.
 
 `WarCouncilRound` supplies that table as `standingTableFor(declaredPath(ui.round))` — **the same pair
 the engine scores with**, which is what makes it impossible for the track to display a different table
 from the one `huntDamage` would use.
 
-`labels.ts`, `fanLayout.ts`, `roundReducer.ts`, `intentPreview.ts`, `handOrder.ts`, and (DLR-68)
-`standingSegments.ts` import no React and touch no DOM global, so all six are unit-tested in the cheap
-`node` Vitest project; the components are tested in the `dom` project (see [Testing](testing.md)).
+`labels.ts`, `fanLayout.ts`, `roundReducer.ts`, `intentPreview.ts`, `handOrder.ts`, (DLR-68)
+`standingSegments.ts`, and (DLR-71) `duelHealthBars.ts` import no React and touch no DOM global, so all
+seven are unit-tested in the cheap `node` Vitest project; the components are tested in the `dom`
+project (see [Testing](testing.md)).
+
+`duelHealthBars.ts` sits here rather than in the lint-enforced pure core for the third instance of the
+same reason `handOrder.ts` and `standingSegments.ts` do: **how a bar is drawn is not a game rule.** It
+converts three health records into percentages and performs no clamp, no rounding and no subtraction
+of its own beyond recovering the already-clamped pending figure for display.
 
 `standingSegments.ts` sits here rather than in the lint-enforced pure core for the same reason
 `handOrder.ts` does: **how a table is drawn is not a game rule.** It derives spans, height ratios and
@@ -104,8 +127,13 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
 ## How it works
 
 - [Layout and styling](layout-and-styling.md) — the full-viewport shell, the `dvh` vs `svh`
-  choice, the **five**-stylesheet split and the 400-line budget that caused every one of them, and
+  choice, the **six**-stylesheet split and the 400-line budget that caused every one of them, and
   how the fan's transform is composed in CSS rather than written whole from React.
+- [The duel's health bars](duel-health-bars.md) — the mirrored opposed pair and the one CSS
+  declaration that is the whole of the mirror, why pending is drawn *on* the bar rather than beside
+  it, the single-arithmetic-path guarantee that makes the pending figure the applied figure by
+  construction, the two-stage commit that lets a player watch the damage land, and why `HuntLedger`
+  was reshaped rather than retired (DLR-71).
 - [Interaction and state](interaction-and-state.md) — tap-twice-to-play, the reducer's no-effect
   design, how a held trick's winner is derived rather than recomputed, and rejected-move recovery.
 - [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md) — the `hunt` prop, the ledger
@@ -127,10 +155,14 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
 
 - **This module re-implements no rule.** `legalMoves` decides what `HandFan` renders as tappable,
   `playCard` decides what commits, `chooseCpuMove` and `commitQuarryMove` play the opponent,
-  `quarryIntent` computes the telegraphed stance, and — since DLR-67 — a single `scoreHunt` call per
-  side computes everything the screen shows about scoring: the running Spoils, the Standing band, and
-  the Damage. That one record feeds the status band, the end panel, and `onComplete` alike, so the
-  number the player reads and the number the mount reports cannot diverge. Card equality is always the
+  `quarryIntent` computes the telegraphed stance, and — **since DLR-71** — a single
+  `pendingHuntDamage` call per render computes everything the screen shows about damage, replacing
+  DLR-67's two `scoreHunt` calls. Because `pendingHuntDamage` and `huntDamage` share the private
+  `outcomeFor`, and because the bars' projection is `applyHunt` against a **copy** rather than a
+  subtraction written here, the figure the player watches climb is the figure that lands — structurally,
+  not by convention. DLR-71 also deleted the one place this module *did* compute a rule:
+  `HuntLedger`'s `spoils * band.multiplier`, which bypassed `roundDamage` entirely and would have
+  disagreed with the end panel on the first ×0.5 band with an odd card sum. Card equality is always the
   engine's own `sameCard`/`containsCard` (exported
   from `src/warCouncil/index.ts` by this ticket rather than deep-imported or re-written).
   `roundReducer.ts` contains no suit comparison, no rank comparison, and no trick-winner
@@ -167,24 +199,31 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
 
 ## Deferred / not yet implemented
 
-- **⚠ The short-viewport layout is currently BROKEN and is not a settled state.** DLR-67's end panel
-  grew a second equation, which overflowed the felt at viewports inside the stylesheet's own
-  `@media (max-width: 44rem), (max-height: 34rem)` breakpoint — the Opponent's panel rendered below
-  the fold with `.wc-shell { overflow: hidden }` and no way to reach it. The fix applied
-  (`align-self: stretch` + `min-height: 0` + `justify-content: center` + `overflow-y: auto` on
-  `.wc-table-inner`, scoped to that media query) resolved the end panel **but regressed the declare
-  gate**: `justify-content: center` on a scroll container clips overflowing content symmetrically,
-  and `scrollTop` cannot go negative, so the "Play to Win" option's own heading became unreachable at
-  any scroll position at 680×520 and 700×544 — and a click on that button failed on first attempt.
-  QA measured both. **Do not treat this breakpoint's behaviour as documented-and-intended until it is
-  resolved**; the two candidate resolutions are scoping the stretch/scroll to the end-panel state
-  alone, or `align-items: flex-start` so `scrollTop: 0` shows the true top of content.
+- **✅ The short-viewport clipping defect is fixed (DLR-71), and the fix has a visual cost the
+  developer owns.** DLR-67's end panel grew a second equation, overflowed the felt inside the
+  stylesheet's own `@media (max-width: 44rem), (max-height: 34rem)` breakpoint, and the fix applied
+  there — `justify-content: center` on an `overflow-y: auto` container — clipped content
+  **symmetrically** while `scrollTop` cannot go negative, so the declare gate's "Play to Win" heading
+  became unreachable at any scroll position at 680×520 and 700×544, and a click on it failed on first
+  attempt. DLR-71 took the second of the two candidate resolutions: **`justify-content: flex-start`**,
+  so `scrollTop: 0` shows the true top of content. It had to, rather than choosing to — DLR-71's end
+  panel is taller again (two equations, two bars, a control) and its own AC gated on 1024×640 and
+  phone portrait. QA re-measured both original sizes: the heading is fully visible at `scrollTop: 0`
+  (top 362.6 in a 520px viewport; 365.3 in a 544px one) and the click succeeds on the **first**
+  attempt. The cost is that the felt's content now **top-aligns rather than centring** at these two
+  sizes, which is a visible change and the developer's to accept or reject — the alternative remains
+  scoping the stretch/scroll to the end-panel state alone, which is more CSS and leaves centring
+  intact.
 - **No automated test covers the no-scroll layout.** `jsdom` has no layout engine, so nothing in the
   suite can prove `.wc-shell` never scrolls or crops at a given viewport size — which is not a
   theoretical gap: DLR-53's first review round shipped a `.wc-status` that pushed the Demand cell
   entirely off-screen at phone width, and DLR-67 did it twice more (above), with every component
   test passing each time. That check belongs to QA driving the app in a real browser at named sizes,
-  and it has now caught a real defect three times.
+  and it has now caught a real defect three times. **DLR-71 hardened what that check measures**: a
+  no-scroll assertion is necessary and not sufficient, precisely because `overflow: hidden` converts an
+  overflow bug into an invisibility bug, so QA now measures `getBoundingClientRect()` on both `.wc-hp`
+  elements and on `.wc-score` against the viewport at every named size rather than only asking whether
+  the shell scrolls. At 500×844 the bars wrap to two rows and stay within 0–500 (rightmost edge 489).
   Verified at 1280×720 and 844×390 (landscape) by SCRUM-28, and re-verified by DLR-53 at 1920×1080,
   1366×768, 1024×640, and a phone portrait — the last at 500×844 rather than 390×844, because the
   browser tooling floors window width at 500px on this machine; `--wc-card-w`'s
@@ -204,10 +243,14 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
 - **`chooseCpuMove` throws instead of rejecting on an empty legal set.** The reducer guards around it
   rather than fixing the engine, which was out of scope for a UI ticket. A future engine ticket
   should make it return a rejection like every other failure path.
-- **Single round only.** The mount spans exactly one round per `WarCouncilRoundResult`. Multi-round
-  play, persistence, save/replay, and undo are all absent — nothing in this repository stores state
-  yet, so round state lives only in the `useReducer` and a later persistence ticket would need no
-  migration.
+- **One Hunt per mount, but health now survives across mounts.** The mount still spans exactly one
+  Hunt per `WarCouncilRoundResult`; what DLR-71 changed is that the result hands up an
+  already-applied `EncounterState`, and `App.tsx` carries it into the next Hunt, so health depletes
+  Hunt to Hunt and an encounter can end. **Encounter-to-encounter sequencing is still absent** —
+  `App.tsx` holds one encounter index and DLR-73 replaces it with the loop. Persistence, save/replay
+  and undo remain absent: nothing in this repository stores state, so round state lives only in the
+  `useReducer` and a later persistence ticket would need no migration. That window is open **now** and
+  closes the moment one lands.
 - **A single dark theme, deliberately.** The shell sets `color-scheme: dark` locally and offers no
   light variant; `src/styles/global.css` keeps `color-scheme` for any future non-game screen.
   Reversible, but it means the game screen and a future non-game screen will not match by default.
@@ -238,11 +281,53 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
   scope, so the sentence "every trick you take still adds both its cards to your Spoils" now asserts
   the opposite of the rule — at the moment a player is choosing the path. See
   [declare-gate-and-hand-order.md](declare-gate-and-hand-order.md); the wording is the developer's.
-- **The Spoils readouts may no longer read honestly on a Lose Hunt.** Since DLR-69, `HuntLedger`'s
-  "Running Spoils" and `RoundOverPanel`'s "Spoils" display a figure built from the **Quarry's** captured
-  cards under the player's own heading. The labels are neutral enough to survive — they name the additive
-  term without claiming whose cards it came from — but whether that reads as honest or as a mislabelled
-  number can only be answered by playing a declared-Lose Hunt and looking at it.
+- **The Lose-path Spoils honesty question narrowed to one surface (DLR-71).** DLR-69's pile swap left
+  two readouts showing a figure built from the **Quarry's** captured cards under the player's own
+  heading. **`HuntLedger`'s "Running Spoils" cell is now gone** — DLR-71 retired it along with the
+  Damage cell, because the bars carry those figures — so only `RoundOverPanel`'s end-of-Hunt "Spoils"
+  term remains, and it is stated beside the Quarry's own equation where the pairing is at least
+  visible. Whether that reads as honest or as a mislabelled number is still only answerable by playing
+  a declared-Lose Hunt and looking at it.
+
+- **Six visual values for the health bars are transcribed placeholders, and they are the developer's**
+  (DLR-71): `--wc-hp-track`, `--wc-hp-secure-fill`, `--wc-hp-pending-fill`, `--wc-hp-lethal-edge`,
+  `--wc-hp-height`, and `--wc-hp-move-ms` (the bar-movement duration). All six come from the approved
+  `mockup.html` and live in `warCouncil.css`'s `:root`; no task invented one. QA confirmed the two
+  fills are *distinguishable* as shipped — secure `rgb(201,154,78)` against pending
+  `rgb(139,154,148)` — so the readability criterion holds, but the palette is not final.
+
+- **Whether the mirrored pair reads as tension or as clutter is unjudged, and it is the design
+  document's own named pause condition.** The measurement to make while playing: can a playtester say
+  who is ahead, and tell a fast Hunt from a stalling one, from the bars alone? A yes to the first and a
+  no to the second means the net-bar fallback is free to take — it is a one-line change in
+  `duelHealthBars`, recorded in the contract's `pr-description.md`.
+
+- **Whether the Standing track reads cramped in the dossier column is unjudged.** DLR-71 demoted it out
+  of the status band to pay for the bars' room, into a `minmax(10rem, 17vw)` column — about 326px at
+  1920 — which no 14-pip profile has been drawn that narrow before. The alternatives if it reads badly:
+  a new `auto` grid row for the bars (which costs vertical space in a no-scroll shell) or accepting the
+  compact cell at all widths.
+
+- **Whether the one extra press per Hunt earns its beat is unjudged**, and it compounds the two opening
+  taps below. AC4's "then both bars moving" needs a second stage or the movement happens after the
+  screen has already changed — so committing the damage is a press, 3–4 times in a fast-band encounter.
+  Whether that reads as a beat or a speed bump is the developer's.
+
+- **`ENCOUNTER_OUTCOME`'s two strings are placeholder copy**, and the resolved-encounter terminal state
+  they sit in is minimal by design: when a bar empties the end panel states the outcome in place and
+  stops offering a next Hunt. A real transition and outcome screen is DLR-73's.
+
+- **`handleCarryOn`'s `onComplete` has no reducer-level idempotence guard**, unlike `CommitDamage`,
+  which is made idempotent by its `state.applied !== null` check. No reachable failure was
+  demonstrated — React's synchronous flush per discrete event plus `App.tsx`'s `key={round}` remount
+  protect it today — but the asymmetry with a guard one call away is deliberate to record. Whether it
+  is worth a guard is the developer's; the shape would be a "reported" flag on `RoundUiState` mirroring
+  `applied`.
+
+- **`.wc-hp-risk` and `.wc-hp-sr` were transcribed from the mockup and then deleted**, because Task 4's
+  markup renders neither element. Noted only so a future contributor re-reading `mockup.html` does not
+  assume a risk-copy span or a screen-reader-only fallback is missing — the accessible equivalent is
+  `aria-valuetext` on the meter itself, which is why neither was needed.
 - **The Lose path has no decision of its own between tricks, and the pile swap did not give it one.**
   DLR-67 removed the claim fork, so every resolved trick now offers the same single carry-on control
   under either declaration — thirteen fewer forks per round, and a strictly lower interaction cost, but

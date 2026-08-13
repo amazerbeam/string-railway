@@ -3,8 +3,9 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { dealRound, PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
 import { HuntDeclaration, roundDamage } from '../../../hunt'
+import type { WarCouncilMountProps } from '../../warCouncilMount'
 import WarCouncilRound from '../WarCouncilRound'
-import { card, huntFixture, makeRound } from './roundFixture'
+import { card, encounterFixture, huntFixture, makeRound, maxHealthFixture } from './roundFixture'
 
 afterEach(cleanup)
 
@@ -77,15 +78,33 @@ function declareWin() {
   fireEvent.click(screen.getByRole('button', { name: /play to win/i }))
 }
 
+/**
+ * Renders `WarCouncilRound` with the shared fixtures, letting any prop be overridden per test.
+ * Collapses this file's many near-identical five-prop render calls back to one line each
+ * (DLR-71 Round 2) — a mechanical `prettier --write` reflowing all seventeen into
+ * one-prop-per-line blocks was what pushed the file over the 400-line budget in the first place.
+ */
+function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
+  return render(
+    <WarCouncilRound
+      initialState={overrides.initialState ?? makeRound()}
+      hunt={overrides.hunt ?? huntFixture}
+      encounter={overrides.encounter ?? encounterFixture}
+      maxHealth={overrides.maxHealth ?? maxHealthFixture}
+      onComplete={overrides.onComplete ?? vi.fn()}
+    />,
+  )
+}
+
 describe('WarCouncilRound', () => {
   it('renders the hand as buttons named by rank and suit', () => {
-    render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    renderRound()
     expect(screen.getByRole('button', { name: '7 of Bells' })).toBeDefined()
     expect(screen.getByRole('button', { name: '3 of Keys (Fox)' })).toBeDefined()
   })
 
   it('plays a legal card on the second tap of the same card', () => {
-    render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    renderRound()
     declareWin()
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     // Correction: a raw `element.click()` dispatches a real event, but under
@@ -112,7 +131,7 @@ describe('WarCouncilRound', () => {
     // state. Bells is trump, and both fixture hands hold exactly one Bells card each, so the
     // committed 7 of Bells resolves the trick in the same commit (AC2) and the player's card
     // (7) beats the CPU's forced follow (4) under trump.
-    render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    renderRound()
     declareWin()
     // No `@testing-library/jest-dom` is installed in this project (see devDependencies),
     // so the assertion reads the element's own `textContent` rather than reaching for its
@@ -135,7 +154,7 @@ describe('WarCouncilRound', () => {
       phase: RoundPhase.AwaitingFollow,
       declaration: WIN_DECLARED,
     })
-    render(<WarCouncilRound initialState={round} hunt={huntFixture} onComplete={vi.fn()} />)
+    renderRound({ initialState: round })
     // The player holds Moons, so following suit is forced and Bells is out.
     expect(screen.getByRole('button', { name: '7 of Bells' })).toHaveProperty('disabled', true)
     // Correction (see Task 18 Step 2): 11 of Moons is CardRank.Monarch, one of the
@@ -148,7 +167,7 @@ describe('WarCouncilRound', () => {
   })
 
   it('shows the trump suit and updates it when a Fox exchange lands', () => {
-    render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    renderRound()
     declareWin()
     expect(screen.getByText(/Bells is trump/i)).toBeDefined()
     const fox = screen.getByRole('button', { name: '3 of Keys (Fox)' })
@@ -177,18 +196,23 @@ describe('WarCouncilRound', () => {
       // (AC1) — the declaration is written directly onto the fixture instead.
       declaration: WIN_DECLARED,
     })
-    render(<WarCouncilRound initialState={round} hunt={huntFixture} onComplete={onComplete} />)
+    renderRound({ initialState: round, onComplete })
     const last = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(last)
     fireEvent.click(last)
     // The deciding trick resolves and completes the round in the same commit, but its
     // cards and winner must be visible before the round-over panel replaces them.
     expect(screen.getByText(/take the trick/i)).toBeDefined()
-    expect(screen.queryByRole('button', { name: /finish/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Apply the damage' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: /tap the table to carry on/i }))
-    fireEvent.click(screen.getByRole('button', { name: /finish/i }))
+    // AC4's two-stage control: one press applies the damage, then the next-Hunt control appears.
+    fireEvent.click(screen.getByRole('button', { name: 'Apply the damage' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Deal the next Hunt' }))
     expect(onComplete).toHaveBeenCalledTimes(1)
     expect(onComplete.mock.calls[0][0].finalState.phase).toBe(RoundPhase.Complete)
+    // The applied encounter is handed up, never the raw damage record — a second commit of
+    // the same Hunt is unexpressible (DLR-71).
+    expect(onComplete.mock.calls[0][0].encounter.huntsApplied).toBe(1)
   })
 
   it('reaches the resolved trick’s carry-on control by keyboard alone', () => {
@@ -200,7 +224,7 @@ describe('WarCouncilRound', () => {
     // contract to prove. Activating it via `fireEvent.click` rather than
     // `fireEvent.keyDown(..., { key: 'Enter' })` — a native button's own Enter/Space
     // activation is the HTML platform's guarantee, not this component's to re-prove.
-    render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    renderRound()
     declareWin()
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
@@ -213,13 +237,7 @@ describe('WarCouncilRound', () => {
   })
 
   it('telegraphs the Quarry’s lead before it lands, and commits it on "Let them lead" (AC3)', () => {
-    render(
-      <WarCouncilRound
-        initialState={makeRound({ leader: PlayerSide.Cpu })}
-        hunt={huntFixture}
-        onComplete={vi.fn()}
-      />,
-    )
+    renderRound({ initialState: makeRound({ leader: PlayerSide.Cpu }) })
     // Nothing has been committed yet — the trick row is still empty (no `wc-played` card).
     // The telegraph itself reads off `quarryIntent`, which has no dependency on the
     // declaration, so this holds true even while the gate is still showing.
@@ -234,7 +252,7 @@ describe('WarCouncilRound', () => {
   })
 
   it('previews the Quarry’s answer to an armed card before it is played (AC3)', () => {
-    render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    renderRound()
     declareWin()
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
@@ -245,7 +263,7 @@ describe('WarCouncilRound', () => {
   })
 
   it('clears the speculative reading back to the live one on Escape', () => {
-    render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    renderRound()
     declareWin()
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
@@ -255,26 +273,28 @@ describe('WarCouncilRound', () => {
     expect(screen.getByRole('status').getAttribute('aria-label')).not.toMatch(/^If you lead/)
   })
 
-  it('shows the running Spoils, Standing band, the Quarry’s trick count, and its rule-break sentence (AC2/AC6)', () => {
+  it('shows the Standing band, the Quarry’s trick count, and its rule-break sentence, with the retired Spoils cell gone (AC2/AC5/AC6)', () => {
     const round = makeRound({ tricksWon: { [PlayerSide.Player]: 4, [PlayerSide.Cpu]: 2 } })
-    render(<WarCouncilRound initialState={round} hunt={huntFixture} onComplete={vi.fn()} />)
+    renderRound({ initialState: round })
 
-    expect(screen.getByLabelText(/Running Spoils: \d+/)).toBeDefined()
     expect(screen.getByLabelText(/Standing band: \w+, multiplier \d+/)).toBeDefined()
     expect(screen.getByLabelText('The Quarry has taken 2 tricks')).toBeDefined()
     expect(
       screen.getByText(/Every time the Monarch leads a suit you hold, you must play your Swan/i),
     ).toBeDefined()
+    // DLR-71: the running Spoils cell retired from the status band's ledger — the health
+    // bars carry that figure now.
+    expect(screen.queryByLabelText(/^Running Spoils: /)).toBeNull()
+  })
+
+  it('shows both health bars from the first render, before any Hunt is declared (AC1)', () => {
+    renderRound()
+    expect(screen.getByRole('meter', { name: 'Your health' })).toBeTruthy()
+    expect(screen.getByRole('meter', { name: 'The Quarry’s health' })).toBeTruthy()
   })
 
   it('reaches "Let them lead" by keyboard alone (AC1)', () => {
-    render(
-      <WarCouncilRound
-        initialState={makeRound({ leader: PlayerSide.Cpu })}
-        hunt={huntFixture}
-        onComplete={vi.fn()}
-      />,
-    )
+    renderRound({ initialState: makeRound({ leader: PlayerSide.Cpu }) })
     declareWin()
     const letThemLead = screen.getByRole('button', { name: /let them lead/i })
     letThemLead.focus()
@@ -296,13 +316,9 @@ describe('WarCouncilRound', () => {
     }
 
     it('shows Spoils × Standing = Damage for both sides, with no Demand and no verdict', () => {
-      render(
-        <WarCouncilRound
-          initialState={dealRound(PlayerSide.Cpu, lcg(2026), huntFixture.quarry.character)}
-          hunt={huntFixture}
-          onComplete={vi.fn()}
-        />,
-      )
+      renderRound({
+        initialState: dealRound(PlayerSide.Cpu, lcg(2026), huntFixture.quarry.character),
+      })
       declareWin()
       playFullRoundToCompletion()
 
@@ -340,7 +356,7 @@ describe('WarCouncilRound — DLR-63', () => {
   }
 
   it('shows the declare gate before the first trick and no tappable card', () => {
-    render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    renderRound()
     expect(screen.getByRole('button', { name: /play to win/i })).toBeDefined()
     for (const button of handCardButtons()) {
       expect((button as HTMLButtonElement).disabled).toBe(true)
@@ -348,14 +364,14 @@ describe('WarCouncilRound — DLR-63', () => {
   })
 
   it('clears the gate and enables the hand once declared', () => {
-    render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    renderRound()
     fireEvent.click(screen.getByRole('button', { name: /play to win/i }))
     expect(screen.queryByRole('button', { name: /play to win/i })).toBeNull()
     expect(handCardButtons().some((b) => !(b as HTMLButtonElement).disabled)).toBe(true)
   })
 
   it('renders the hand longest-suit-first, not in dealt order (AC6)', () => {
-    render(<WarCouncilRound initialState={makeRound()} hunt={huntFixture} onComplete={vi.fn()} />)
+    renderRound()
     const names = handCardButtons().map((b) => b.getAttribute('aria-label') ?? '')
     // makeRound's hand holds 2 of each suit, so ALL_SUITS order applies throughout:
     // Bells 2, Bells 7, Keys 3, Keys 8, Moons 5, Moons 11.

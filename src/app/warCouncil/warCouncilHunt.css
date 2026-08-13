@@ -55,14 +55,6 @@
   white-space: nowrap;
 }
 
-.wc-ledger-op {
-  display: flex;
-  align-items: center;
-  font-family: var(--wc-serif);
-  font-size: 1.1rem;
-  color: var(--wc-chalk-dim);
-}
-
 /* ---------- the dossier zone: the Quarry's card, then the telegraph ---------- */
 
 .wc-dossier {
@@ -280,6 +272,12 @@
     flex-wrap: wrap;
   }
 
+  /* DLR-71 review pass: the `.wc-hp { flex: 1 1 40% }` rule that stood here was deleted as
+     unreachable — `warCouncilHealthBars.css` is imported AFTER this sheet and carries the
+     identical selector at identical specificity inside its own copy of this same breakpoint, so
+     that later rule always won and this copy never painted anything. The rule's one home is now
+     `warCouncilHealthBars.css`; do not re-add it here. */
+
   .wc-ledger {
     flex-wrap: wrap;
   }
@@ -301,7 +299,13 @@
   .wc-table-inner {
     align-self: stretch;
     min-height: 0;
-    justify-content: center;
+    /* flex-start, NOT center: a centred scroll container clips overflowing content symmetrically
+       and `scrollTop` cannot go negative, so the top of a tall panel becomes unreachable at any
+       scroll position — measured by QA at 680×520 and 700×544 on DLR-67, which is still BLOCKED on
+       it. DLR-71's end panel is taller again (two equations, two bars, a control), so this is the
+       ticket that must resolve it. The cost is that the felt's content top-aligns rather than
+       centring at these sizes; that visual change is the developer's to accept. */
+    justify-content: flex-start;
     overflow-y: auto;
   }
 }

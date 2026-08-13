@@ -13,7 +13,7 @@ import {
   quarryIntent,
   type AbilityChoice,
 } from '../../../warCouncil'
-import { HuntDeclaration } from '../../../hunt'
+import { HuntDeclaration, DuelSide, isEncounterResolved, startEncounter } from '../../../hunt'
 import {
   createRoundUiState,
   roundReducer,
@@ -320,5 +320,48 @@ describe('roundReducer — DLR-63 Declare', () => {
       path: HuntDeclaration.Lose,
     })
     expect(again.round.declaration?.path).toBe(HuntDeclaration.Win)
+  })
+})
+
+describe('CommitDamage — the Hunt lands once, through applyHunt', () => {
+  const incoming = { [DuelSide.Player]: 96, [DuelSide.Quarry]: 540 }
+
+  function commit(state: RoundUiState, encounter = startEncounter(0)) {
+    return roundReducer(state, { kind: RoundUiActionKind.CommitDamage, encounter, incoming })
+  }
+
+  it('depletes both bars from the encounter it was handed', () => {
+    const next = commit(createRoundUiState(makeRound()))
+    expect(next.applied?.health).toEqual({
+      [DuelSide.Player]: 1350 - 96,
+      [DuelSide.Quarry]: 1350 - 540,
+    })
+    expect(next.applied?.huntsApplied).toBe(1)
+  })
+
+  it('resolves the encounter when a bar empties, rather than going negative', () => {
+    const next = roundReducer(createRoundUiState(makeRound()), {
+      kind: RoundUiActionKind.CommitDamage,
+      encounter: startEncounter(0),
+      incoming: { [DuelSide.Player]: 0, [DuelSide.Quarry]: 99_999 },
+    })
+    expect(next.applied?.health[DuelSide.Quarry]).toBe(0)
+    expect(isEncounterResolved(next.applied!)).toBe(true)
+  })
+
+  it('is a no-op the second time, so one Hunt cannot be applied twice', () => {
+    const once = commit(createRoundUiState(makeRound()))
+    expect(commit(once)).toBe(once)
+  })
+
+  it('is a no-op against an already-resolved encounter instead of throwing', () => {
+    const resolved = { ...startEncounter(0), winner: DuelSide.Player }
+    const state = createRoundUiState(makeRound())
+    expect(commit(state, resolved)).toBe(state)
+  })
+
+  it('leaves applied untouched on every other action', () => {
+    const state = createRoundUiState(makeRound())
+    expect(roundReducer(state, { kind: RoundUiActionKind.CancelSelection }).applied).toBeNull()
   })
 })

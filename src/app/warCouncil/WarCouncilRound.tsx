@@ -1,15 +1,24 @@
 import { useReducer, type ReactNode } from 'react'
-import { quarryCharacterInfo, standingTableFor } from '../../hunt'
+import {
+  applyHunt,
+  DuelSide,
+  quarryCharacterInfo,
+  resolveStanding,
+  standingTableFor,
+  type IncomingDamage,
+} from '../../hunt'
 import {
   CardRank,
   PlayerSide,
   RoundPhase,
   currentTurn,
   declaredPath,
+  duelSideDamage,
   legalMoves,
+  otherSide,
+  pendingHuntDamage,
   quarryIntent,
   sameCard,
-  scoreHunt,
   type Card,
   type HuntDamage,
   type QuarryIntent,
@@ -18,8 +27,10 @@ import type { WarCouncilMountProps } from '../warCouncilMount'
 import AbilityPrompt from './AbilityPrompt'
 import DeclareGate from './DeclareGate'
 import DecreePile from './DecreePile'
+import { duelHealthBars } from './duelHealthBars'
 import HandFan from './HandFan'
 import { sortHandForDisplay } from './handOrder'
+import HuntLedger from './HuntLedger'
 import { previewQuarryIntent } from './intentPreview'
 import IntentTelegraph from './IntentTelegraph'
 import { cardAccessibleName, ILLEGAL_MOVE_MESSAGE } from './labels'
@@ -39,6 +50,10 @@ import './warCouncilCards.css'
 import './warCouncilHunt.css'
 import './warCouncilDeclare.css'
 import './warCouncilStandingTrack.css'
+import './warCouncilHealthBars.css'
+
+/** Nothing pending — the state before a declaration, where `pendingHuntDamage` returns `null`. */
+const NO_PENDING: IncomingDamage = { [DuelSide.Player]: 0, [DuelSide.Quarry]: 0 }
 
 /**
  * The round mount, implementing SCRUM-37's `WarCouncilMountProps`. Owns
@@ -50,7 +65,13 @@ import './warCouncilStandingTrack.css'
  * this component: every other transition is a tap, a keypress, or a callback fired from
  * one of the felt's own controls.
  */
-export default function WarCouncilRound({ initialState, hunt, onComplete }: WarCouncilMountProps) {
+export default function WarCouncilRound({
+  initialState,
+  hunt,
+  encounter,
+  maxHealth,
+  onComplete,
+}: WarCouncilMountProps) {
   const [ui, dispatch] = useReducer(roundReducer, initialState, createRoundUiState)
 
   const roundComplete = ui.round.phase === RoundPhase.Complete
@@ -64,14 +85,40 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
 
   const legal = legalMoves(ui.round, PlayerSide.Player)
 
-  // Both sides derived every render from already-final state, then reused three ways — the
-  // status band's readout, the end panel, and `onComplete` — so the number the player reads and
-  // the number the mount reports cannot diverge. `spoils` reduces over at most 26 captured cards
-  // and `resolveStanding` scans a six-row table: bounded work, no memo.
-  const huntDamage: Readonly<Record<PlayerSide, HuntDamage>> = {
-    [PlayerSide.Player]: scoreHunt(ui.round, PlayerSide.Player),
-    [PlayerSide.Cpu]: scoreHunt(ui.round, PlayerSide.Cpu),
-  }
+  // ONE call, not two. `pendingHuntDamage` is the same function that produces the applied damage —
+  // both it and `huntDamage` delegate to `outcomeFor` — so the figure the player watches climb
+  // through thirteen tricks IS the figure that lands (AC2). It returns `null` while undeclared:
+  // a figure no declaration authorises is exactly what that guard exists to prevent.
+  const pending = pendingHuntDamage(ui.round)
+
+  // Keyed by the side that DEALT it, which is what the end panel's per-side equation states.
+  // `otherSide` performs the inverse of the crossing `outcomeFor` already made, rather than
+  // this component swapping two keys by hand.
+  const dealt: Readonly<Record<PlayerSide, HuntDamage>> | null =
+    pending === null
+      ? null
+      : {
+          [PlayerSide.Player]: pending.incoming[otherSide(PlayerSide.Player)],
+          [PlayerSide.Cpu]: pending.incoming[otherSide(PlayerSide.Cpu)],
+        }
+
+  // The bars' projection. `applyHunt` against a COPY — never a second subtraction written here —
+  // which is what DLR-70's own docblock asks of this caller, and it keeps the clamp at zero and
+  // the overkill discard in exactly one place in the program.
+  const incoming = pending === null ? NO_PENDING : duelSideDamage(pending)
+  const live = ui.applied ?? encounter
+  const bars = duelHealthBars(
+    live.health,
+    ui.applied === null ? applyHunt(live, incoming).health : live.health,
+    maxHealth,
+  )
+
+  // The Standing readout, NOT a damage figure — so this one is deliberately routed through
+  // `declaredPath`, whose undeclared-reads-as-Win default exists to give the track a table to
+  // draw before the player declares. The component names a declaration and never a table or a
+  // boundary (AC5, DLR-66).
+  const standingTable = standingTableFor(declaredPath(ui.round))
+  const band = resolveStanding(ui.round.tricksWon[PlayerSide.Player], standingTable)
 
   const displayHand = sortHandForDisplay(ui.round.hands[PlayerSide.Player])
 
@@ -106,26 +153,35 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
     dispatch({ kind: RoundUiActionKind.CancelSelection })
   }
 
+  /**
+   * AC4's first stage. Guarded on `pending` for the type; unreachable with it null, because the
+   * panel this fires from only renders once the round is complete and a round cannot complete
+   * undeclared.
+   */
+  function handleApply() {
+    if (pending === null) return
+    dispatch({
+      kind: RoundUiActionKind.CommitDamage,
+      encounter,
+      incoming: duelSideDamage(pending),
+    })
+  }
+
   /** Shared by the held trick's own carry-on control, the pending Quarry lead's own
-   * control, and the round-over panel's "Finish the round" control: reads the current
+   * control, and the round-over panel's "Deal the next Hunt" control: reads the current
    * render's state and either carries on — clearing a held trick (including the deciding
    * thirteenth, so its cards and winner are seen before the panel appears) and/or
-   * committing the Quarry's pending lead — or, once nothing is held or pending and the
-   * round is complete, reports it. `quarryToLead` is only ever true while `roundComplete`
-   * is false, so this never fires `onComplete` twice for one click. */
+   * committing the Quarry's pending lead — or, once nothing is held or pending, the round
+   * is complete, and the Hunt's damage has been applied, reports it. `quarryToLead` is only
+   * ever true while `roundComplete` is false, so this never fires `onComplete` twice for one
+   * click. */
   function handleCarryOn() {
     if (ui.resolvedTrick !== null || quarryToLead) {
       dispatch({ kind: RoundUiActionKind.CarryOn })
       return
     }
-    if (roundComplete) {
-      onComplete({
-        finalState: ui.round,
-        damage: {
-          [PlayerSide.Player]: huntDamage[PlayerSide.Player].damage,
-          [PlayerSide.Cpu]: huntDamage[PlayerSide.Cpu].damage,
-        },
-      })
+    if (roundComplete && ui.applied !== null) {
+      onComplete({ finalState: ui.round, encounter: ui.applied })
     }
   }
 
@@ -151,11 +207,13 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
         onCarryOn={handleCarryOn}
       />
     )
-  } else if (roundComplete) {
+  } else if (roundComplete && dealt !== null) {
     felt = (
       <RoundOverPanel
         tricksWon={ui.round.tricksWon}
-        huntDamage={huntDamage}
+        huntDamage={dealt}
+        applied={ui.applied}
+        onApply={handleApply}
         onFinish={handleCarryOn}
       />
     )
@@ -189,14 +247,17 @@ export default function WarCouncilRound({ initialState, hunt, onComplete }: WarC
         tricksPlayed={ui.round.tricksPlayed}
         opponentHandCount={ui.round.hands[PlayerSide.Cpu].length}
         roundComplete={roundComplete}
-        spoils={huntDamage[PlayerSide.Player].spoils}
-        band={huntDamage[PlayerSide.Player].band}
-        table={standingTableFor(declaredPath(ui.round))}
+        bars={bars}
       />
       <aside className="wc-dossier">
         <QuarryDossier
           info={quarryCharacterInfo(hunt.quarry.character)}
           tricksWon={ui.round.tricksWon[PlayerSide.Cpu]}
+        />
+        <HuntLedger
+          band={band}
+          table={standingTable}
+          tricks={ui.round.tricksWon[PlayerSide.Player]}
         />
         <IntentTelegraph intent={intent} speculative={speculative} />
       </aside>

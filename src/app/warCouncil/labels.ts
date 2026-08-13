@@ -7,7 +7,8 @@ import {
   type Card,
   type QuarryIntent,
 } from '../../warCouncil'
-import { HuntDeclaration, StandingBandName } from '../../hunt'
+import { DuelSide, HuntDeclaration, StandingBandName } from '../../hunt'
+import type { HealthBarView } from './duelHealthBars'
 
 export const SUIT_NAME: Readonly<Record<Suit, string>> = {
   [Suit.Bells]: 'Bells',
@@ -67,6 +68,41 @@ export const STANDING_BAND_NAME: Readonly<Record<StandingBandName, string>> = {
 /** Group label for the Standing track (DLR-68). Kept beside `STANDING_BAND_NAME` because both
  *  are display copy for the same module — see `.claude/skills/react-frontend/SKILL.md`. */
 export const STANDING_TRACK_LABEL = 'Standing track'
+
+/** AC1/AC7 — each bar's accessible name. The two must differ, because `getByRole('meter', …)`
+ *  is how the spec distinguishes them. */
+export const HEALTH_BAR_LABEL: Readonly<Record<DuelSide, string>> = {
+  [DuelSide.Player]: 'Your health',
+  [DuelSide.Quarry]: 'The Quarry’s health',
+}
+
+/**
+ * AC7's one sentence: both the current and the pending figure, for a reader who cannot see the
+ * bar's two segments. `aria-valuenow` can carry only one number, so the second lives here.
+ *
+ * "Nothing at risk yet" rather than "0 at risk": before the declaration there is no table to read
+ * and `pendingHuntDamage` returns `null`, which is a different state from a Hunt that genuinely
+ * threatens nothing.
+ */
+export function healthBarValueText(view: HealthBarView): string {
+  const standing = `${view.current} of ${view.max}.`
+  if (view.lethal) return `${standing} Lethal this Hunt.`
+  if (view.pending === 0) return `${standing} Nothing at risk yet.`
+  return `${standing} ${view.pending} at risk this Hunt.`
+}
+
+/** The end panel's two-stage control (AC4). Stage one commits the damage so the bars can be seen
+ *  to move; stage two leaves the Hunt. */
+export const APPLY_DAMAGE_LABEL = 'Apply the damage'
+export const FINISH_ROUND_LABEL = 'Deal the next Hunt'
+
+/** The terminal state when a bar empties. Keyed by the winner `applyHunt` resolved — the tie is
+ *  already decided by `SIMULTANEOUS_DEPLETION_WINNER`, so there is no third case here.
+ *  Placeholder copy: the wording is the developer's. */
+export const ENCOUNTER_OUTCOME: Readonly<Record<DuelSide, string>> = {
+  [DuelSide.Player]: 'The Quarry is down. The encounter is yours.',
+  [DuelSide.Quarry]: 'You are down. The run ends here.',
+}
 
 /** AC1 — the two declarable paths, as the player sees them named. */
 export const HUNT_DECLARATION_NAME: Readonly<Record<HuntDeclaration, string>> = {

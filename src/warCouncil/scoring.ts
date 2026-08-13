@@ -1,11 +1,13 @@
 import {
   cardValueSchemeFor,
+  DuelSide,
   resolveStanding,
   roundDamage,
   standingTableFor,
   type CardValueScheme,
   type Damage,
   type HuntDeclaration,
+  type IncomingDamage,
   type Spoils,
   type Standing,
   type StandingBand,
@@ -150,22 +152,74 @@ export function huntDamage(finalState: RoundState): HuntOutcome {
     )
   }
 
+  return outcomeFor(finalState, declaration)
+}
+
+/**
+ * THE one arithmetic path for a Hunt's two-sided damage. `huntDamage` and `pendingHuntDamage`
+ * both call it and neither computes anything of its own, so DoD 7's "no second arithmetic
+ * path that could drift from the applied total" is structural rather than a promise —
+ * scoring.test.ts asserts the two agree exactly on a finished Hunt.
+ *
+ * Both terms are resolved ONCE from the single declaration and handed to both seats: the
+ * Quarry reading a different table is not a bug that could occur and be caught, it is a state
+ * this code cannot express (hybrid-design.md lines 67-72).
+ */
+function outcomeFor(state: RoundState, declaration: HuntDeclaration): HuntOutcome {
   const scheme = cardValueSchemeFor(declaration)
   const standingTable = standingTableFor(declaration)
 
   // Keyed by the side that DEALT it. Crossed below — never returned in this form.
   const dealt: Readonly<Record<PlayerSide, HuntDamage>> = {
-    [PlayerSide.Player]: scoreHunt(finalState, PlayerSide.Player, scheme, standingTable),
-    [PlayerSide.Cpu]: scoreHunt(finalState, PlayerSide.Cpu, scheme, standingTable),
+    [PlayerSide.Player]: scoreHunt(state, PlayerSide.Player, scheme, standingTable),
+    [PlayerSide.Cpu]: scoreHunt(state, PlayerSide.Cpu, scheme, standingTable),
   }
 
   return {
     declaration,
-    // AC3, performed once, here. `otherSide` states the rule in the code: the damage that
-    // depletes a side is the damage the OTHER side dealt.
+    // The crossing, performed once, here. `otherSide` states the rule in the code: the damage
+    // that depletes a side is the damage the OTHER side dealt.
     incoming: {
       [PlayerSide.Player]: dealt[otherSide(PlayerSide.Player)],
       [PlayerSide.Cpu]: dealt[otherSide(PlayerSide.Cpu)],
     },
+  }
+}
+
+/**
+ * DLR-70 AC3 — the same equation evaluated early, for a readout drawn every trick.
+ *
+ * No phase guard, deliberately: this is the mid-Hunt figure, and §6 names it the catch-up
+ * route the equation already pays for at zero new rules. Because nothing is applied until
+ * trick 13, no Hunt is decided until the last trick, and a Quarry sitting on 9 tricks with
+ * lethal pending damage can still be pushed to a 10th.
+ *
+ * `null` — not a zero-valued outcome — when the Hunt is undeclared. A `damage: 0` return is
+ * indistinguishable from a legitimately scoreless Hunt (DLR-68 AC5's own reasoning), and a
+ * figure no declaration authorises is exactly what `huntDamage`'s Undeclared guard exists to
+ * prevent. This is NOT routed through `declaredPath`: that helper's undeclared-reads-as-Win
+ * default is right for the Standing track, which shows which TABLE is in force, and wrong for
+ * a number the player will read as damage about to land.
+ */
+export function pendingHuntDamage(state: RoundState): HuntOutcome | null {
+  const declaration = state.declaration?.path
+  return declaration === undefined ? null : outcomeFor(state, declaration)
+}
+
+/**
+ * THE one `PlayerSide` -> `DuelSide` crossing (DLR-70). `src/hunt/` cannot import
+ * `src/warCouncil/` without a cycle (hunt/types.ts:26-32), so the encounter module takes two
+ * plain numbers and this is what produces them — on the warCouncil side, which is the side
+ * allowed to know both vocabularies.
+ *
+ * Keyed by the side the damage is APPLIED TO, preserving `incoming`'s convention end to end.
+ * Existing as one function is the point: a call site writing
+ * `outcome.incoming[PlayerSide.Cpu].damage` by hand is one typo away from depleting the wrong
+ * bar, type-checking cleanly, and producing plausible numbers indefinitely.
+ */
+export function duelSideDamage(outcome: HuntOutcome): IncomingDamage {
+  return {
+    [DuelSide.Player]: outcome.incoming[PlayerSide.Player].damage,
+    [DuelSide.Quarry]: outcome.incoming[PlayerSide.Cpu].damage,
   }
 }

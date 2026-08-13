@@ -29,21 +29,35 @@ could invent one.
 
 ### The two persistent readouts
 
-**`HuntLedger.tsx`** mounts as the last child of `RoundStatusBand`'s `<header className="wc-status">`,
-beside the existing opponent plate and three-cell scoreboard — the Standing band is read off the
-player's trick count, so the two belong in one glance. Since DLR-67 it renders **three** cells rather
-than five: running Spoils, the Standing band, and the **Damage** they make. It takes two props
-(`spoils`, `band`) and computes exactly one thing, the product `spoils * band.multiplier`.
+**`HuntLedger.tsx`** was the status band's last child through DLR-68, beside the opponent plate and the
+three-cell scoreboard, and it shrank at every ticket that touched it: five cells at DLR-53, **three**
+after DLR-67 (running Spoils, the Standing band, and the **Damage** they make), and **one** after
+DLR-71 — the Standing readout alone. Its `Spoils` cell, its two operators and its `Damage` cell are all
+retired, because the health bars carry those figures now.
 
-**`WarCouncilRound.tsx` derives both sides once per render and reuses the record three ways** —
-DLR-67 replaced DLR-53's separate `spoils` + `resolveStanding` calls with:
+**DLR-71 also moved it out of the band**, into the `wc-dossier` column beside the Quarry's card, to pay
+for the bars' room. It takes `band`, `table` and `tricks`, and — this is the point of the change —
+**computes nothing at all.** It used to compute exactly one thing, the product
+`spoils * band.multiplier`, and that product **bypassed `roundDamage`**: a second arithmetic path,
+correct only because `DAMAGE_ROUNDING` happens to be a no-op on integer products, which would have
+disagreed with the end panel on the first ×0.5 band with an odd card sum. See
+[The duel's health bars](duel-health-bars.md).
+
+**`WarCouncilRound.tsx` derived both sides once per render and reused the record three ways** — DLR-67
+replaced DLR-53's separate `spoils` + `resolveStanding` calls with two `scoreHunt` calls:
 
 ```ts
+// DLR-67 through DLR-68. Replaced by ONE `pendingHuntDamage` call on DLR-71.
 const huntDamage: Readonly<Record<PlayerSide, HuntDamage>> = {
   [PlayerSide.Player]: scoreHunt(ui.round, PlayerSide.Player),
   [PlayerSide.Cpu]: scoreHunt(ui.round, PlayerSide.Cpu),
 }
 ```
+
+**DLR-71 replaced both calls with one** `pendingHuntDamage(ui.round)`, which returns `null` while the
+Hunt is undeclared and otherwise the same outcome `huntDamage` would return — the two share the private
+`outcomeFor`. The local `const huntDamage` above was renamed at the same time, since the file now
+imports engine functions and a local of that name would have shadowed one.
 
 The status band reads `huntDamage[PlayerSide.Player]`'s `spoils` and `band`; the end panel takes the
 whole record; and `onComplete` reports each side's `damage`. **One derivation, three consumers**, so

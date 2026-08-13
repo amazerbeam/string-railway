@@ -219,6 +219,90 @@ that consume it are a later ticket's. Note a name hazard while that is true: `Wa
 holds a **local `const huntDamage`** passed as a prop of the same name, so the first UI ticket to
 import the engine function into that file must rename the local first.
 
+### One arithmetic path — `outcomeFor`, and the mid-Hunt readout (DLR-70)
+
+DLR-70 needed the same damage figure **mid-Hunt**, for a readout drawn every trick — and the epic's
+DoD forbids a second arithmetic path that could drift from the applied total. It was solved by
+**refactoring rather than by adding arithmetic**.
+
+`huntDamage`'s entire body below its two guards was extracted verbatim into a module-private
+`outcomeFor(state, declaration)`. `huntDamage` keeps its doc comment, **both** guards, and its exported
+signature, and is now a single delegating `return outcomeFor(finalState, declaration)`. Alongside it:
+
+```ts
+export function pendingHuntDamage(state: RoundState): HuntOutcome | null {
+  const declaration = state.declaration?.path
+  return declaration === undefined ? null : outcomeFor(state, declaration)
+}
+```
+
+So there is **literally one** place a Hunt's two-sided damage is computed, and the claim is proven
+rather than asserted: `__tests__/scoring.test.ts` builds a finished, declared `RoundState` and requires
+`pendingHuntDamage(s)` to **deep-equal** `huntDamage(s)`.
+
+> **What that test does and does not guarantee, precisely.** Because both wrappers hand identical
+> arguments to the same helper on a finished declared state, it is structurally bound to pass today
+> regardless of whether the arithmetic underneath is *correct* — that correctness is `scoreHunt`'s and
+> the enumeration spec's job, below. What it genuinely guards is the thing DoD 7 actually worries
+> about: a future edit that changes one wrapper's guard or resolution path without the other — routing
+> one through `declaredPath`, say, or adding a rounding step to only one — fails here immediately. It
+> is a regression guard on an architectural property, not a proof of the equation.
+
+**`pendingHuntDamage` has no phase guard, deliberately.** That is the entire point: it is the figure
+*before* trick 13. Because nothing is applied until the Hunt ends, no Hunt is decided early — a Quarry
+sitting on nine tricks with lethal pending damage can still be pushed to a tenth, which is the
+catch-up route §6 says the equation already pays for at zero new rules.
+
+**It returns `null` on an undeclared Hunt, not a zero-valued outcome and not a `declaredPath` default.**
+Two separate refusals in one line:
+
+- A `damage: 0` return is indistinguishable from a legitimately scoreless Hunt — DLR-68 AC5's own
+  reasoning for why `huntDamage` throws.
+- `declaredPath`'s undeclared-reads-as-Win default is right for the **Standing track**, which shows
+  *which table is in force*, and wrong for a number a player will read as damage about to land. A
+  figure no declaration authorises is exactly what `huntDamage`'s `Undeclared` guard exists to prevent.
+
+The rejected alternative was relaxing `huntDamage`'s own phase guard so one function could serve both
+callers — rejected because DLR-68's tests require that throw, and because the guard is the thing
+standing between an unfinished Hunt and real damage.
+
+> **The extraction was verified as behaviour-neutral before any new behaviour was added.** DLR-70's
+> contract ran `scoring.test.ts` + `huntEnumeration.test.ts` immediately after the cut-and-paste and
+> confirmed the same 72 passing tests as before it, so a failure at that point could only have been
+> the refactor. The full module suite (17 files, 370 tests) passed afterwards, covering every existing
+> `huntDamage` consumer.
+
+### The one side-vocabulary crossing — `duelSideDamage` (DLR-70)
+
+```ts
+export function duelSideDamage(outcome: HuntOutcome): IncomingDamage {
+  return {
+    [DuelSide.Player]: outcome.incoming[PlayerSide.Player].damage,
+    [DuelSide.Quarry]: outcome.incoming[PlayerSide.Cpu].damage,
+  }
+}
+```
+
+This is the **only** `PlayerSide` → `DuelSide` translation in the program, and where it lives is forced
+rather than chosen. `src/hunt/`'s `applyHunt` cannot accept a `HuntOutcome`, because `HuntOutcome` is
+keyed by `PlayerSide` — a warCouncil type — and **`src/hunt/` cannot import `src/warCouncil/` without a
+cycle** (warCouncil already imports hunt; `../hunt/types.ts`'s `DuelSide` docblock states the rule).
+So the encounter module takes two plain numbers, and this function is what produces them, on the side
+permitted to know both vocabularies.
+
+**Existing as one function is the point, not a convenience.** A call site writing
+`outcome.incoming[PlayerSide.Cpu].damage` by hand is one typo away from depleting the wrong bar,
+type-checking cleanly, and producing plausible numbers indefinitely — which is precisely the
+invert-it-yourself mistake `incoming`'s applied-to keying exists to make unrepresentable. Keeping that
+keying **end to end** through the adapter is what preserves the guarantee across the module boundary.
+
+Its spec uses **deliberately asymmetric** trick counts — player 9, Quarry 4 — for the same reason
+`huntDamage`'s does: a symmetric fixture would pass under either mapping and prove nothing. A second
+test runs the whole chain, `applyHunt(startEncounter(0), duelSideDamage(huntDamage(state)))`, and
+asserts both bars moved by the right figure — the one place the two modules are exercised together.
+
+**Nothing calls either function yet.** Both are exported from the barrel and reached only by Vitest.
+
 ### Agreement with the design document — `__tests__/huntEnumeration.test.ts` (DLR-68)
 
 A second spec file exists because it answers a different question from `scoring.test.ts`, and the two

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { DeclareRejection, IllegalMoveReason, QuarryIntentStance, Suit } from '../../../warCouncil'
-import { HuntDeclaration, StandingBandName } from '../../../hunt'
+import { DuelSide, HuntDeclaration, StandingBandName } from '../../../hunt'
 import {
   cardAccessibleName,
   DECLARE_REJECTION_MESSAGE,
+  healthBarValueText,
   HUNT_DECLARATION_NAME,
   ILLEGAL_MOVE_MESSAGE,
   intentAccessibleName,
@@ -96,5 +97,34 @@ describe('intentAccessibleName', () => {
 
   it('omits the stance without crashing when stance is absent (suit-only fidelity)', () => {
     expect(intentAccessibleName({ suit: Suit.Moons }, false)).toBe('The Quarry will play Moons.')
+  })
+})
+
+describe('healthBarValueText — both figures in one sentence (AC7)', () => {
+  const base = {
+    side: DuelSide.Player,
+    secure: 966,
+    pending: 96,
+    current: 1062,
+    max: 1350,
+    securePct: 71.5,
+    pendingPct: 7.1,
+    lethal: false,
+  }
+
+  it('names the current total and the pending figure', () => {
+    expect(healthBarValueText(base)).toBe('1062 of 1350. 96 at risk this Hunt.')
+  })
+
+  it('distinguishes an undeclared Hunt from one that threatens nothing', () => {
+    expect(healthBarValueText({ ...base, pending: 0, secure: 1062 })).toBe(
+      '1062 of 1350. Nothing at risk yet.',
+    )
+  })
+
+  it('says lethal rather than making the reader compare two numbers', () => {
+    expect(healthBarValueText({ ...base, secure: 0, pending: 1062, lethal: true })).toBe(
+      '1062 of 1350. Lethal this Hunt.',
+    )
   })
 })

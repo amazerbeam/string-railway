@@ -1,10 +1,22 @@
 _Part of [Hunt](README.md)._
 
-Everything on this page was added by **DLR-66** and has **no consumer anywhere in `src/` yet**. That
-is by design, not an oversight: DLR-66's job was to make every number the rest of the DLR-65 epic
-needs exist in one file, provably swappable in a single edit. T3 owns the damage arithmetic that
-will call `roundDamage`; T5 owns the health state that will read the totals below. Until those land,
-the app still scores `Spoils × Standing` against a fixed Demand and no health bar exists.
+Everything on this page was added by **DLR-66**, which shipped all of it with no consumer at all —
+deliberately, so every number the rest of the DLR-65 epic needs would exist in one file, provably
+swappable in a single edit.
+
+**Most of it now has one.** DLR-68 made `scoreHunt` the first caller of `roundDamage`, and DLR-70's
+`src/hunt/encounter.ts` is the first production reader of `PLAYER_START_HEALTH`,
+`quarryHealthForEncounter` and `SIMULTANEOUS_DEPLETION_WINNER` — see
+[The encounter state and the end conditions](encounter-state-and-end-conditions.md) for what reads
+them and how. **`ENCOUNTER_PLAYER_RESTORE` is the one constant on this page still read by nothing**,
+and that is intentional: it applies between encounters, which is DLR-73's.
+
+**And since DLR-71 a player can see it.** `src/app/` imports the encounter module — `App.tsx` seeds and
+carries an `EncounterState`, the round reducer applies each Hunt's damage — and both health totals on
+this page are now drawn as bars, each showing its side's current health against the maximum these
+constants set. `PLAYER_START_HEALTH` and `quarryHealthForEncounter` are read a second time in
+`App.tsx`, for the bars' **denominator**, which `EncounterState` does not carry. See
+[../war-council-ui/duel-health-bars.md](../war-council-ui/duel-health-bars.md).
 
 ### The two sides — `DuelSide`
 
@@ -18,9 +30,12 @@ direction settles it regardless of preference: `src/warCouncil/` already imports
 `src/hunt/` cannot import back without a cycle. The design's vocabulary (§10) also calls the
 opponent the Quarry rather than the CPU.
 
-**T5 will have to map `DuelSide.Quarry` ↔ `PlayerSide.Cpu`.** No code conflates them today — a grep
-confirms `DuelSide` appears only inside `src/hunt/`. If that mapping ends up in more than one place,
-a later ticket should unify the two unions rather than spreading the translation.
+**That mapping now exists, in exactly one place.** DLR-70's `duelSideDamage(outcome)` in
+`src/warCouncil/scoring.ts` is the only `PlayerSide` → `DuelSide` crossing in the program, and it sits
+on the warCouncil side because that is the side allowed to know both vocabularies. The two unions were
+deliberately **not** unified — they name genuinely different things, and one adapter is cheaper than
+collapsing the distinction. `DuelSide` is no longer confined to `src/hunt/`; a *second* crossing
+appearing anywhere is what to grep for.
 
 ### The rounding rule
 
@@ -80,9 +95,14 @@ mechanism — testing a restore is then a one-line edit instead of a new feature
 
 `quarryHealthForEncounter(index)` throws a `RangeError` rather than returning `undefined` for an
 index it has no health for. Same posture as `resolveStanding`: an out-of-range index would otherwise
-become `NaN` on T5's first subtraction and vanish from a health bar with no error logged anywhere.
+become `NaN` on the first subtraction and vanish from a health bar with no error logged anywhere.
 The sequence is a `readonly Health[]` rather than a fixed two-tuple so a third encounter is one more
-entry, not a type change.
+entry, not a type change. **DLR-70 relies on that guard rather than duplicating it** —
+`startEncounter` validates its own `playerHealth` and lets this `RangeError` propagate for a bad
+index.
 
-`SIMULTANEOUS_DEPLETION_WINNER` is data rather than a branch so that T5 reads an attributed ruling
-instead of writing an unexplained `if`.
+`SIMULTANEOUS_DEPLETION_WINNER` is data rather than a branch so that the code reading it presents an
+attributed ruling instead of an unexplained `if`. **DLR-70's `resolveWinner` is that reader**, and it
+returns the constant directly for the both-bars-empty case; its spec asserts the *rule* by comparing
+against the constant, while `__tests__/config.test.ts` remains the single assertion of its *value*.
+Overturning §9's ruling is therefore still an edit to this file alone.

@@ -51,3 +51,31 @@ export type HuntDeclaration = (typeof HuntDeclaration)[keyof typeof HuntDeclarat
 export interface Hunt {
   readonly quarry: Quarry
 }
+
+/**
+ * One Hunt's damage, keyed by the side it is APPLIED TO — never by the side that dealt it.
+ * The same convention as `HuntOutcome.incoming` in src/warCouncil/scoring.ts, carried across
+ * the module boundary deliberately: the crossing is performed exactly once, there, by
+ * `duelSideDamage`. A dealer-keyed record would let the first caller who forgot subtract a
+ * side's own damage from its own health, type-check, and produce plausible numbers forever.
+ */
+export type IncomingDamage = Readonly<Record<DuelSide, Damage>>
+
+/**
+ * A sequence of Hunts fought until a bar empties (§5) — the state that outlives one
+ * `RoundState`. Immutable: `applyHunt` returns a new one, so a caller previews a Hunt by
+ * applying it to a copy rather than projecting health through a second arithmetic path.
+ *
+ * Holds no `RoundState` and no `PlayerSide`. `src/hunt/` cannot import `src/warCouncil/`
+ * without a cycle (types.ts:26-32), which is why damage arrives as two numbers.
+ */
+export interface EncounterState {
+  readonly health: Readonly<Record<DuelSide, Health>>
+  /** How many Hunts have been applied. NOT a cap — DLR-70 AC7 states there deliberately is
+   *  none; the stall is the evidence a cap is needed (§11). */
+  readonly huntsApplied: number
+  /** `null` while the encounter is live. `Player` — the encounter is won; `Quarry` — the run
+   *  ends. Typed `DuelSide` so the simultaneous-depletion tie is a direct read of
+   *  `SIMULTANEOUS_DEPLETION_WINNER` rather than a translation onto a second vocabulary. */
+  readonly winner: DuelSide | null
+}

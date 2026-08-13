@@ -53,10 +53,21 @@ defect went undetected by every test and was found only by QA driving the app in
 
 DLR-53's four readouts are bare numbers whose meaning lives in a separate visual key element, which
 a screen reader would otherwise announce as an unlabelled run of digits. Each therefore carries its
-own `aria-label` while the visual key is `aria-hidden`: `HuntLedger`'s four cells ("Running Spoils:
-N", "Standing band: Victorious, multiplier 5", "Score so far: N", "The Demand: N" — the multiplier is
-interpolated from the live band, so the example figure follows whichever table DLR-66 shipped),
-`QuarryDossier`'s region and trick count, and `RoundOverPanel`'s three equation parts.
+own `aria-label` while the visual key is `aria-hidden`: `HuntLedger`'s cells, `QuarryDossier`'s region
+and trick count, and `RoundOverPanel`'s three equation parts. `HuntLedger` shipped four such cells on
+DLR-53 ("Running Spoils: N", "Standing band: Victorious, multiplier 5", "Score so far: N", "The Demand:
+N"); DLR-67 retired the Demand and renamed Score to Damage, and **DLR-71 left it with one** —
+`"Standing band: <name>, multiplier <n>"`, the multiplier interpolated from the live band, so the
+example figure follows whichever table DLR-66 shipped.
+
+**DLR-71 added the two health bars, and they are the module's first `role="meter"` elements.** Each
+carries `aria-label` (`"Your health"` / `"The Quarry's health"` — the two must differ, since that is how
+a test and a screen-reader user both tell them apart), `aria-valuemin`/`max`/`now`, and an
+`aria-valuetext` sentence built by `healthBarValueText`. The `valuetext` exists because
+**`aria-valuenow` can carry only one number** and a bar carries two: the current health and the pending
+damage. It also distinguishes *nothing declared yet* from *a Hunt that threatens nothing* — "Nothing at
+risk yet" rather than "0 at risk" — and states the lethal case outright rather than making a listener
+compare two figures. See [The duel's health bars](duel-health-bars.md).
 
 `IntentTelegraph` goes further and hides *all* its visible text, carrying one `aria-label` on the
 container built by `intentAccessibleName` — so the eyebrow and the line are heard as one sentence

@@ -9,20 +9,23 @@ the app today except where a rule is marked **[not built]**.
 
 > **A redesign is in progress, and this document straddles it.** The design has moved to a **duel**:
 > both sides hold health, and each side's total is *damage* dealt to the other rather than a score
-> checked against a target. Four pieces have landed. DLR-66 gave the two multiplier tables and every
+> checked against a target. Five pieces have landed. DLR-66 gave the two multiplier tables and every
 > health, rounding, and depletion value as configuration. **DLR-67 then removed the old direction**:
 > the Demand target and the capped Lose-credit mechanic are both gone from the game, and the Hunt now
 > ends by stating each side's damage. **DLR-68 then gave that damage a direction and a rounding rule**
 > — each side's total is now computed as damage *to the other side*, and the ×0.5 bands can no longer
 > produce a fractional total. **DLR-69 then closed the last interim in the equation**: on the Lose
 > path the two capture piles swap, so each side is paid for the pile it did *not* win (section 7).
+> **DLR-70 then built the health those figures were always for** — both bars deplete, an encounter
+> ends the moment one empties, and the game finally has a win and a lose condition (section 8).
+> **DLR-71 then put the duel on screen**: both health bars are visible for the whole Hunt, each showing
+> its side's pending damage as it accumulates, and the damage lands where a player can watch it.
 >
-> **What that leaves is a Hunt with no ending condition.** Both sides' damage is computed, rounded,
-> pointed at the side it would deplete, and shown — and **nothing consumes it** — there is no health
-> to deplete, so a Hunt can no longer be won or lost. Section 8 says so plainly rather than describing
-> a victory rule that does not exist. This is a deliberate intermediate state, not an oversight: the
-> deletion was taken in one pass so the code stopped carrying two directions at once, and the health
-> bars are the next ticket's.
+> **The duel is now playable.** You can win an encounter and you can lose a run, by playing. That is the
+> change to hold onto while reading section 8 — the previous revision of this document said the opposite,
+> because until 2026-08-12 every rule of the duel was enforced in code and none of it was wired to a
+> screen. What remains unreachable is narrower and named: the **sequence of encounters**. The app fights
+> one Quarry; the second, the between-encounter restore, and the run around them are DLR-73's.
 
 ---
 
@@ -347,21 +350,27 @@ no longer a transcription**; they are designed, capped at ×5 on either path, an
 > One consequence is visible and is a copy problem rather than a rules problem: the Hunt's closing
 > readout states the two terms and the product side by side, so a card sum of 123 in a ×0.5 band reads
 > as `123 × 0.5 = 62`. The damage is correct; the equation as written looks wrong. How that is
-> presented is the developer's, and the ticket that builds the health bars owns it.
+> presented is the developer's, and **it is still open**: the health-bar ticket was expected to own it
+> and did not — it changed nothing about how the equation is written, so the discrepancy shipped intact.
 
 ---
 
-## 8. The end of a Hunt
+## 8. The end of a Hunt, and the duel
 
-**[settled]** — the equation. **A Hunt currently has no win or lose condition at all**; see below.
+**[settled]** — the equation, and since 2026-08-12 the duel it feeds, which is now **playable**; see the
+note at the foot of this section for what is still out of reach.
 
 ```
 Damage = Spoils × Standing
 ```
 
 Computed **once**, at the end of the thirteenth trick, **for each side** from that side's own trick
-count and Spoils. The multiplier is read off the *final* trick count, so no total can be applied, or
-even known, before the last trick resolves. Every total is **rounded to a whole number** (section 7).
+count and Spoils. Every total is **rounded to a whole number** (section 7).
+
+The multiplier is read off the *final* trick count, so **no total is settled before the last trick
+resolves** — the same equation run mid-Hunt gives you the figure as it stands, not the figure you will
+end on, and one more trick can move it to a different band entirely. Nothing is applied until the Hunt
+ends — see **Damage is knowable before it lands**, below.
 
 Both figures are stated when the Hunt ends, side by side.
 
@@ -383,53 +392,129 @@ scheme both sides are paid on comes from the declaration, so an undeclared Hunt 
 score under. Neither state is reachable in normal play — the declaration gates the first trick
 (section 3) — and both are refused outright rather than guessed at.
 
-### Nothing consumes the damage yet — **[not built]**
+### The old direction is gone
 
-**A Hunt cannot currently be won or lost.** The two damage figures are computed and shown, and then
-the Hunt simply ends and a new one is dealt.
+Until 2026-08-12 the player's total was checked against a **Demand** — a score target, fixed at 220 —
+and the Hunt was cleared or missed on an inclusive boundary. §1 replaces that comparison with the duel
+below, and §9 **deleted** its Demand base/growth row rather than marking it Undecided, because there is
+no longer a question to ask. There is no target of any kind in this game.
 
-This is a deliberate intermediate state. Until 2026-08-12 the player's total was checked against a
-**Demand** — a score target, fixed at 220 — and the Hunt was cleared or missed on an inclusive
-boundary. §1 replaces that comparison with the duel below, and §9 **deleted** its Demand base/growth
-row rather than marking it Undecided, because there is no longer a question to ask. The Demand was
-removed ahead of the health that replaces it, so the game would stop carrying two directions at once.
+### The duel — **[settled]**
 
-### The duel that replaces it — **[not built]**
+Both sides hold **health**, and each side's damage depletes the other's. Damage is applied **once**, at
+the end of the thirteenth trick — **never per trick**.
 
-Both sides hold **health**, and each side's damage depletes the other's rather than being checked
-against a target. Damage is applied **once**, at the end of the thirteenth trick.
-
-The values are decided and sit in configuration with no consumer:
-
-| Value                             | Decided                                                         |
-| --------------------------------- | --------------------------------------------------------------- |
-| Player's starting health          | **1,350** (§9, 2026-08-11)                                      |
-| First Quarry's health             | **1,350** — equal to the player's, deliberately                 |
-| Second Quarry's health            | **1,600**                                                       |
-| Health restored between encounters| **None**                                                        |
-| Both bars emptying on one Hunt    | **The player loses** (§5, §9, 2026-08-11)                       |
+| Value                              | Decided                                                    |
+| ---------------------------------- | ---------------------------------------------------------- |
+| Player's starting health           | **1,350** (§9, 2026-08-11)                                 |
+| First Quarry's health              | **1,350** — equal to the player's, deliberately            |
+| Second Quarry's health             | **1,600**                                                  |
+| Health restored between encounters | **None** — **[not built]**, and nothing reads it yet       |
+| Both bars emptying on one Hunt     | **The player loses** (§5, §9, 2026-08-11)                  |
 
 The player's and first Quarry's health being **equal** is the load-bearing part, not the number: that
 equality is what puts the win/lose boundary exactly on the **6/7 trick line** the declaration commits
 to. §5 states the property survives any later rescaling, so moving both together keeps it.
 
-**The player's health emptying ends the run.**
+### An encounter, and how it ends — **[settled]**
 
-### Both sides are now scored — but neither can lose
+An **encounter** is a sequence of Hunts against one Quarry, fought until a bar empties. A Hunt does not
+end anything by itself; it deals damage, and the encounter ends when that damage runs a bar out.
+
+**Both bars deplete together**, from the one Hunt, before either is checked. Then:
+
+| After the damage lands            | Outcome                                    |
+| --------------------------------- | ------------------------------------------ |
+| Only the Quarry's bar is empty    | **You win the encounter.**                 |
+| Only your bar is empty            | **The run ends.**                          |
+| **Both, on the same Hunt**        | **You lose** (§5, §9, 2026-08-11).         |
+| Neither                           | The encounter continues; deal another Hunt. |
+
+That both bars are settled simultaneously is what makes the third row reachable at all — checking one
+bar before applying the other side's damage would end the encounter early and the tie could never
+happen.
+
+**Surplus damage is discarded.** Damage past a depleted bar is not carried into the next Hunt, not
+banked, and not converted into anything. Dealing 5,000 into a bar with 1,350 left is exactly the same
+as dealing 1,350. §9 records the question of paying overkill out as **Deferred**, so this is a chosen
+rule rather than an accident of the arithmetic. **Health is never negative** — a bar stops at zero.
+
+### Closing a Hunt takes one confirmation — **[provisional]**
+
+When the thirteenth trick resolves, the Hunt's closing readout appears with both sides' equations stated
+and **the damage not yet applied**. Both bars still stand where they did, each still showing its pending
+segment. You then **confirm, once**, and the damage lands: both bars move together to their new totals.
+
+Only then does the Hunt actually end. If neither bar emptied you confirm a second time to be dealt the
+next Hunt; if one did, the encounter's outcome is stated in its place and no further Hunt is offered.
+
+The confirmation exists so the damage is seen to land rather than having already landed by the time the
+next screen appears — the bars are the whole point of watching pending damage accumulate for thirteen
+tricks, and they would otherwise move off-screen. **It is not a decision**: nothing is chosen, nothing
+can be declined, and the damage is identical either way.
+
+It is marked provisional for that reason. An encounter resolved in the fast band costs 3–4 of these
+presses and a Greedy-band encounter costs up to 23, on top of the two the Hunt already opens with (the
+declaration, then the Quarry's first lead). Whether it reads as a beat or as a speed bump is the
+developer's, and removing it is a presentation change rather than a rules one.
+
+### There is no limit on the number of Hunts — **[settled]**
+
+An encounter runs **as many Hunts as it takes**. There is deliberately no cap, and this is a decision
+rather than an omission: §11 records that the stall is the evidence a cap is needed, so the game is
+played uncapped first and a limit is added only if playing proves one necessary.
+
+It matters because the spread is wide. Playing for the peak band resolves an encounter in **3–4
+Hunts**; playing for the Greedy band at ×0.5 stretches it to **18–23**. The long tail is the thing to
+watch for.
+
+### Damage is knowable before it lands — **[settled]**, and now shown
+
+Because a total is `Spoils × Standing` over the tricks captured so far, the **pending** figure for both
+sides can be read at any point mid-Hunt: the same equation, evaluated early. It is a **readout, never
+an application** — nothing touches a health bar until the thirteenth trick resolves, so a pending
+figure large enough to kill does not kill.
+
+That is what keeps a Hunt live to the end. A Quarry sitting on nine tricks with lethal pending damage
+can still be pushed to a tenth, where its multiplier collapses — §6 names this the catch-up route the
+equation already pays for at no new rules.
+
+**Since 2026-08-12 both pending figures are on screen for the whole Hunt**, drawn on the health bars
+themselves rather than printed beside them: each bar shows the health that would survive this Hunt as
+solid, and the health at risk as a lighter segment carved out of it. So the two are distinguishable
+without reading a number, and **the segment shrinks** when a trick moves you into a worse band — the
+540-to-60 collapse a tenth trick causes on the Win path is visible as the lighter part receding rather
+than as a figure changing.
+
+The pending figure and the applied damage are **the same figure**: what a bar shows at the thirteenth
+trick is what it loses when the damage lands. That is not a promise about care taken; it is a property of
+there being one equation and one place it is applied.
+
+A bar also states when this Hunt's pending damage would empty it. That is a state of the bar rather than
+a warning, and it is drawn as a change of form as well as of shade, so it survives a greyscale display.
+
+### Both sides are scored, and now both can lose
 
 Since 2026-08-12 the Quarry's Spoils, Standing and damage are all computed and shown alongside the
-player's, on the same declaration's value scheme and table. That is a change from the old direction,
-where only the player was scored because only the player had a target.
+player's, on the same declaration's value scheme and table — a change from the old direction, where
+only the player was scored because only the player had a target. §8 records what the one-sided version
+cost: in the base game every trick either side took pushed the other toward a mirrored losing band, and
+that was the mid-round tension. Two-sided damage into two health bars is what restores it.
 
-It does not yet make the Quarry a contestant: with no health, **neither side's damage does
-anything**, so neither side can win or lose. §8 records what the old one-sided version cost — in the
-base game every trick either side took pushed the other toward a mirrored losing band, and that was
-the mid-round tension. Two-sided damage is meant to restore it.
-
-Since 2026-08-12 the second half of that is also in place: each total is now **pointed at the side it
-would deplete**, so what remains missing is only the health itself, not the arithmetic or the
-direction. A player still cannot feel any of it — the figures appear once, when the Hunt is already
-over, and then the Hunt ends.
+> ### What a player can actually reach today — **as of 2026-08-12**
+>
+> **Everything in section 8 above is now playable.** Both health bars are on screen for the whole Hunt
+> against their configured maxima, each carrying its own pending damage, updated after every trick. The
+> damage lands when you confirm it, both bars move, health carries into the next Hunt, and the encounter
+> ends the moment a bar empties — so **you can win an encounter, and you can lose the run.**
+>
+> What is **not** reachable is the sequence around it. You fight one Quarry: nothing advances to the
+> second at 1,600 health, the **between-encounter restore** is still read by nothing (the one value in the
+> table above with no consumer), and there is no victory or defeat screen — when a bar empties, the Hunt's
+> closing readout states the outcome in place and stops offering another Hunt. **Forage** (section 10) does
+> not exist either, so the deck never changes between Hunts.
+>
+> So a session can now end. What it cannot yet do is continue past the encounter it ends.
 
 ---
 
@@ -472,9 +557,12 @@ Designed in §4/§5, with no enforcement and no display copy. Facing them is not
 | The Quarry's next-trick intent      | **Telegraphed** before you commit — the suit it is about to play, plus its stance: **leading**, or, when it is following you, **pressing** (this card takes the trick) or **ducking** (it does not). Never the exact card. |
 | The Quarry's trick count            | Public                                                                                                                                                                                                                     |
 | The Quarry's character and its rule | Always on screen                                                                                                                                                                                                           |
-| Your running Spoils, Standing and Damage | Open — shown throughout the Hunt                                                                                                                                                                                      |
-| **The whole Standing table**        | **Open — on screen throughout.** Every band, its trick range and its multiplier is shown as a profile, with your current trick count marked on it, so what the next trick is worth is readable without recalling the table. |
+| Your running Spoils                 | **No longer shown on its own.** Retired 2026-08-12 — the health bars carry the running figure now, as pending damage. The term is still stated in the Hunt's closing equation.                                              |
+| Your Standing                       | Open — shown throughout the Hunt                                                                                                                                                                                           |
+| **The whole Standing table**        | **Open — on screen throughout.** Every band, its trick range and its multiplier is shown as a profile, with your current trick count marked on it, so what the next trick is worth is readable without recalling the table. Moved out of the top bar on 2026-08-12 to make room for the health bars; it sits beside the Quarry's card now. |
 | Both sides' final Damage            | Open — stated side by side when the Hunt ends                                                                                                                                                                              |
+| Both sides' **pending** Damage      | **Open — on both health bars, for the whole Hunt.** Drawn as the at-risk segment of each bar rather than as a number beside it, and updated after every trick (section 8).                                                   |
+| **Both sides' health**              | **Open — two bars, on screen for the whole Hunt**, each against its own configured maximum, arranged as an opposed pair depleting toward the centre. Both move when the damage lands.                                        |
 
 The telegraph's fidelity — suit only, or suit and stance — is **[provisional]**; it currently shows
 both.
@@ -490,16 +578,20 @@ rather than as one round.
   from. It may edit exactly four things — a card's **value**, its **ability**, its **suit**, and the
   **decree**. There is no shop and no flat score bonus. The budget is **4 edits per encounter**
   (**[provisional]**).
-- **A run** is a fixed sequence of Hunts against different Quarries, each with more health than the
-  last. **Your health emptying ends the run.** Forage persists within a run; nothing persists across
-  one — a new run starts on a bare deck.
+- **A run** is a fixed sequence of encounters against different Quarries, each with more health than
+  the last. **Your health emptying ends the run** — and since 2026-08-12 that is not only enforced but
+  reachable: you can play until your bar empties and the run stops there. What is still not built is the
+  *sequence*: nothing runs one encounter after another, and the between-encounter restore is read by
+  nothing. Forage persists within a run; nothing persists across one — a new run starts on a bare deck.
 - **The run length** is **[open]** (a placeholder 5 exists in config). Since there are five
   characters, any run longer than five must repeat one, and no rule says how.
 - **Snare** — an in-Hunt edit layer, on cards in your hand — is **[open]** and explicitly blocked:
   "raise the value of the card I am about to win with" is a dominant strategy until it has a cost.
 
-The app today plays **one Hunt**, re-dealing on completion against the same Quarry — with no health,
-no target, and so no way to end.
+The app today plays **one encounter** against one Quarry: Hunt after Hunt, with both health bars visible
+throughout, until a bar empties and the encounter resolves. A session can therefore end, in victory or in
+defeat. What it cannot do is carry on afterwards — nothing sequences a second encounter, no Forage step
+exists between Hunts, and the run around the encounter is unbuilt.
 
 ---
 
@@ -544,21 +636,31 @@ the mechanics themselves are documented in `../implementation/`.
 | Standing multipliers, both tables  | settled (§9, 2026-08-11)      | `src/hunt/config.ts` — `HUNT_MULTIPLIER_TABLES`      | —                               |
 | One table per declaration          | settled                       | `src/hunt/config.ts` — `standingTableFor`            | —                               |
 | Rounding of the ×0.5 bands         | settled (applied 2026-08-12)  | `src/hunt/config.ts` — `DAMAGE_ROUNDING`, `roundDamage`; applied in `src/warCouncil/scoring.ts` — `scoreHunt` | — |
-| Health totals, both sides          | **not built**                 | `src/hunt/config.ts` — `PLAYER_START_HEALTH`, `QUARRY_ENCOUNTER_HEALTH` (no consumer) | — |
-| Between-encounter restore (none)   | **not built**                 | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE` (no consumer) | Developer — most likely to change |
-| Simultaneous depletion             | **not built** — ruling set    | `src/hunt/config.ts` — `SIMULTANEOUS_DEPLETION_WINNER` (no consumer) | —          |
-| Damage **applied** to health       | **not built**                 | —                                                    | —                               |
-| Any way to win or lose a Hunt      | **not built** — none exists   | —                                                    | —                               |
+| Health totals, both sides          | settled (2026-08-12)          | `src/hunt/config.ts` — `PLAYER_START_HEALTH`, `QUARRY_ENCOUNTER_HEALTH`; read by `src/hunt/encounter.ts` — `startEncounter` | — |
+| Between-encounter restore (none)   | **not built**                 | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE` (still no consumer) | Developer — most likely to change |
+| Simultaneous depletion             | settled (§5, §9, 2026-08-11)  | `src/hunt/config.ts` — `SIMULTANEOUS_DEPLETION_WINNER`; read by `src/hunt/encounter.ts` — `resolveWinner` | —          |
+| Damage **applied** to health, once | settled (2026-08-12) — **playable** | `src/hunt/encounter.ts` — `applyHunt`; crossed from the seat vocabulary by `src/warCouncil/scoring.ts` — `duelSideDamage`; called from `src/app/warCouncil/roundReducer.ts` — `CommitDamage` | — |
+| Health never negative; surplus discarded | settled (2026-08-12)    | `src/hunt/encounter.ts` — `deplete`, the single clamp | — (overkill payout is §9 Deferred) |
+| Confirming the damage to close a Hunt | **provisional** — one press, not a decision | `src/app/warCouncil/RoundOverPanel.tsx`; `roundReducer.ts` — `RoundUiState.applied` | Developer — whether the beat earns its press |
+| Winning or losing an encounter     | settled (2026-08-12) — **playable** | `src/hunt/encounter.ts` — `resolveWinner`, `isEncounterResolved`; read by `src/App.tsx` and `RoundOverPanel.tsx` | — |
+| Health carried Hunt to Hunt within one encounter | settled (2026-08-12) | `src/App.tsx` — holds the `EncounterState`, seeded by `startEncounter`, replaced from `WarCouncilRoundResult.encounter` | — |
+| No cap on Hunts per encounter      | settled (§11, 2026-08-12) — deliberately none | `src/hunt/encounter.ts` — no cap key exists to read | Developer, if the tail stalls |
+| Pending damage, shown mid-Hunt     | settled (shown 2026-08-12)    | `src/warCouncil/scoring.ts` — `pendingHuntDamage`, sharing `outcomeFor` with `huntDamage`; drawn by `src/app/warCouncil/DuelHealthBars.tsx` off `duelHealthBars.ts` | — |
+| The pending figure equals the applied damage | settled — structural, not asserted | one arithmetic path (`outcomeFor`) and one clamp point (`applyHunt`), which the bars project against a copy of the encounter | — |
+| Both sides' health on screen, whole Hunt | settled (2026-08-12)     | `src/app/warCouncil/DuelHealthBars.tsx`, `duelHealthBars.ts`; maxima read in `src/App.tsx` from `PLAYER_START_HEALTH` / `quarryHealthForEncounter` | Developer — the six `--wc-hp-*` visual values |
+| Any way to win or lose **by playing** | **settled** (2026-08-12) — one encounter deep | `src/App.tsx` stops dealing once `isEncounterResolved`; the outcome is stated on the Hunt's closing panel | — |
 | The Lose path's pile swap          | settled (2026-08-12)          | `src/hunt/config.ts` — `cardValueSchemeFor`; resolved in `src/warCouncil/spoils.ts` via `otherSide` | —          |
 | `Damage = Spoils × Standing`       | settled                       | `src/warCouncil/scoring.ts` — `scoreHunt`            | —                               |
 | Both sides' Damage computed        | settled                       | `src/warCouncil/scoring.ts` — `huntDamage`; also derived per render in `src/app/warCouncil/WarCouncilRound.tsx` | — |
-| Damage is dealt to the **other** side | settled (2026-08-12) — engine only, nothing applies it | `src/warCouncil/scoring.ts` — `huntDamage`'s `incoming` | — |
+| Damage is dealt to the **other** side | settled (2026-08-12) — **applied** | `src/warCouncil/scoring.ts` — `huntDamage`'s `incoming`, crossed once by `duelSideDamage` | — |
 | An unfinished or undeclared Hunt is refused, never scored 0 | settled (2026-08-12) | `src/warCouncil/scoring.ts` — `huntDamage`'s two guards | — |
 | The whole Standing table is on screen during play | settled (2026-08-12) | `src/app/warCouncil/StandingTrack.tsx`, `standingSegments.ts` | — |
 | Monarch Quarry                     | settled                       | `src/warCouncil/quarryRuleBreak.ts`                  | —                               |
 | Four other Quarry characters       | **not built**                 | —                                                    | —                               |
 | Telegraph fidelity                 | provisional                   | `src/hunt/config.ts` — `TELEGRAPH_FIDELITY`          | Developer, after playtest       |
-| Forage, the run, encounter health  | **not built**                 | —                                                    | —                               |
+| Forage                             | **not built**                 | `src/hunt/config.ts` — `FORAGE_BUDGET_PER_ENCOUNTER` (no consumer) | Developer — budget is provisional |
+| The run — a sequence of encounters | **not built**                 | `src/hunt/encounter.ts` takes an encounter index but sequences nothing | —            |
+| Run length                         | **open** — placeholder 5      | `src/hunt/config.ts` — `ENCOUNTERS_PER_RUN` (no consumer) | Developer                   |
 | Snare (in-Hunt edits)              | **open**, blocked             | —                                                    | Needs a cost before it's viable |
 
 ### The old direction is now gone — DLR-67 closed 2026-08-12
@@ -569,9 +671,11 @@ lost trick. A resolved trick now always offers the same single "carry on" contro
 The Treasure's `+1` and the Poison's `−1` are gone, so a card is worth its printed rank and nothing
 else. At the end of a Hunt, **both sides'** `Spoils × Standing = Damage` is stated side by side.
 
-**What a player cannot reach:** any way to win or lose. Health does not exist in the code, so the two
-damage figures are shown and then discarded. Both health totals, the between-encounter restore, and
-the simultaneous-depletion ruling all exist as configuration with **no consumer anywhere**.
+**What a player cannot reach:** any way to win or lose. **As of DLR-67 that was because health did not
+exist in the code at all** — the two damage figures were shown and then discarded, and both health
+totals, the between-encounter restore and the simultaneous-depletion ruling sat in configuration with
+no consumer anywhere. DLR-70 has since changed the reason: health, its depletion and both end
+conditions are now real, and what is missing is the screen (see below).
 
 **What was deliberately interim, and is no longer:** §7's Spoils reading. Each side was paid for its
 own capture pile on both paths; DLR-69 replaced that with the design's two-way swap on 2026-08-12.
@@ -585,9 +689,10 @@ unchanged. This is what makes a declared Lose executable as a plan: winning zero
 you ahead rather than behind.
 
 **What a player will see, and one thing they will be told wrongly.** The change is engine-only, but
-its numbers surface immediately — the in-play "Running Spoils" readout and the end panel both now show
-the Quarry's pile value under your own heading on a Lose Hunt. Two consequences, both the developer's
-to settle and neither a defect:
+its numbers surface immediately — the in-play "Running Spoils" readout and the end panel both showed
+the Quarry's pile value under your own heading on a Lose Hunt. (DLR-71 has since retired the in-play
+readout, so only the closing equation states the term now.) Two consequences, both the developer's to
+settle and neither a defect:
 
 - **The declare gate's Lose copy now states the opposite of the rule.** It reads that every trick you
   take still adds both its cards to *your* Spoils at inverted values, which the swap reverses. Every
@@ -595,6 +700,80 @@ to settle and neither a defect:
   reads at the moment they choose the path.
 - **Whether the readouts read honestly** under their current labels — a figure built from the Quarry's
   cards sitting under a heading that says "your" — is a judgement answerable only by playing.
+
+### Health, and a way to lose — DLR-70 closed 2026-08-12
+
+**What changed in the rules:** the duel is no longer a description of an intended mechanic. Both sides
+hold health that depletes, damage lands **once** at the end of the thirteenth trick, an **encounter**
+runs Hunt after Hunt until a bar empties, and all three end conditions resolve — including the
+both-bars-empty tie, which the player loses. **Surplus damage past a depleted bar is discarded**, and
+health never goes below zero. There is **deliberately no cap** on Hunts per encounter. The **pending**
+damage figure for both sides is derivable at any point mid-Hunt from the same equation, shown rather
+than applied. Section 8 states all of it.
+
+**What a player could reach when it landed: none of it.** Nothing in the app called the encounter module
+— no health bar was drawn, no pending figure displayed, no encounter ended. That was the widest gap this
+document has ever carried between what the rules are and what can be played, and it was deliberate: the
+arithmetic was built and proved on its own before any surface was attached to it. **DLR-71 closed it the
+same day** (below), so this paragraph is a record of the interval rather than of the present.
+
+**Two things the developer owns**, neither blocking:
+
+- **§9's "wins on Hunt 4 with 486 left"** needed a reading. 486 is the player's health *entering* Hunt
+  4; because both bars deplete together, the player is on **198** at the moment the Quarry's bar
+  empties on that Hunt. Both figures are correct about different instants and both are asserted, so
+  nothing was blocked — but if 486 was meant as the *post-victory* figure, it is `hybrid-design.md`
+  §9's wording that wants amending, not the game.
+- **Whether fighting on after an encounter has resolved should be refused or ignored.** It is currently
+  refused outright. No design section rules on it, because nothing should do it; the health-bar ticket
+  may prefer it to be harmless instead.
+
+**One number now measurable that was not before:** how long an encounter runs. Playing for the peak
+band resolves one in **3–4 Hunts**; playing for the Greedy band stretches it to **18–23**. §11's stall
+is no longer a prediction.
+
+### The duel is playable — DLR-71 closed 2026-08-12
+
+**What changed for a player:** everything about the duel that DLR-70 had made true and left unreachable.
+**Both health bars are on screen for the whole Hunt**, one per side, arranged as an opposed pair
+depleting toward the centre, each showing its side's current health against its own configured maximum.
+Each bar carries **its own pending damage** as a lighter segment carved out of its own health, updated
+after every trick — so *health lost* and *health at risk* are distinguishable within one bar rather than
+by comparing two numbers, and a bad band change shows as the at-risk part **receding** rather than as a
+figure dropping. Closing a Hunt now takes **one confirmation**, after which both bars visibly move; the
+new health carries into the next Hunt, and when a bar empties the encounter's outcome is stated and no
+further Hunt is offered. A player can win an encounter and lose a run.
+
+**The one property worth stating as a rule rather than as a feature:** the pending figure a bar shows at
+the thirteenth trick **is** the damage that lands. Not because it was checked, but because the game
+computes damage in one place and applies it in one place, and the bar's projection is that same
+application run against a copy. There is no second total that could drift from the first.
+
+**Retired from the screen, not from the rules:** the running Spoils readout and the player-only Damage
+readout. The bars carry those figures now, and both terms are still stated in the Hunt's closing
+equation. The Standing table moved out of the top bar to make room, and sits beside the Quarry's card.
+
+**What a player still cannot reach:** the sequence. One Quarry, one encounter. Nothing advances to the
+second Quarry at 1,600 health, the between-encounter restore is still read by nothing, and there is no
+victory or defeat screen — the outcome is stated on the Hunt's own closing panel. Forage does not exist.
+All of that is DLR-73's, and it is a much narrower gap than the one this document carried a day earlier.
+
+**Three things the developer owns**, none blocking:
+
+- **The confirmation press.** It is what makes the damage visible landing rather than already landed, and
+  it costs 3–4 presses in a fast encounter or up to 23 in a Greedy one, on top of the two the Hunt
+  already opens with. Marked provisional in section 8 for exactly that reason.
+- **Six visual values** for the bars — the two fills, the track, the lethal edge, the bar height and the
+  movement duration — are transcribed from the approved mockup and are not final. The two fills were
+  measured as genuinely distinguishable as shipped, so the rule they carry holds; the palette is still a
+  polish decision.
+- **Whether the two bars read as tension or as clutter.** The measurement §6 asks for: can a playtester
+  say who is ahead, and tell a fast Hunt from a stalling one, from the bars alone? If the first yes comes
+  without the second, §6's single net-bar fallback is a cheap change.
+
+**One consequence for an earlier note:** the fix this ticket needed for its own taller closing panel also
+resolved a defect that had made the declare gate's "Play to Win" heading unreachable at two short
+viewport sizes. The cost is that the play area top-aligns rather than centring at those sizes.
 
 ### The declaration is reachable — DLR-63 closed 2026-08-11
 
@@ -648,6 +827,23 @@ asserted in a test. The claim control that shipped alongside it was removed a da
   rounded one, or say nothing and accept that a player checking the multiplication finds a half-point
   discrepancy. A presentation call, not a rules one, and it only becomes visible now that rounding
   actually applies.
+- **The Greedy tail makes an encounter six times longer than the peak line, and there is no cap to
+  stop it** (new 2026-08-12). Now that health depletes, the length of an encounter is arithmetic rather
+  than speculation: playing into the peak band resolves one in **3–4 Hunts**, while playing for 10–13
+  tricks at ×0.5 takes **18–23**. §11 chose to ship uncapped deliberately — the stall is the evidence a
+  cap is needed — so this is the tension being deliberately courted rather than an oversight. Whether 23
+  Hunts against one Quarry reads as attrition or as tedium **is now answerable by playing** (DLR-71), and
+  it is the first thing to measure: the bars make the rate of an encounter legible, which is exactly what
+  the long tail is a complaint about. Note the interaction with the point above: **the Quarry the code
+  ships maximises tricks**, so it lands in 10–13 on either declaration — meaning the built opponent is
+  the one most likely to produce the long tail. The confirmation press added at the close of every Hunt
+  (section 8) rides on the same count, so a 23-Hunt encounter carries 23 of them.
+- **Overkill is thrown away, and that is a placeholder rather than a preference** (new 2026-08-12).
+  Damage past a depleted bar vanishes. §9 records paying it out — as cash, or carried into the next
+  encounter — as **Deferred**, so the discard is what ships and is asserted as a chosen rule, not what
+  was argued for. The consequence worth watching is that a hugely overpowered final Hunt is worth
+  exactly as much as a barely sufficient one, which removes any reason to push a winning encounter
+  harder than it needs.
 - **Whether either declaration is a live read is still unmeasured, and the built CPU cannot measure it.**
   §9 records that the Quarry which plays today maximises tricks, landing it in 10–13 on either
   declaration — the band that now pays ×0.5 on Win and ×1 on Lose. A Quarry that plays for **band
