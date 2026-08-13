@@ -37,6 +37,30 @@ one that was handled that way. This file is for the free-floating ones.
 
 ## Raw
 
+### A player-triggered cash-out — "apply damage" before playing a card
+
+**What it is.** Raised 2026-08-13, during the session-2 redesign
+([`the-hunt-play-test-2-feedback.md`](./the-hunt-play-test-2-feedback.md)). In that design the bank
+cashes out **automatically** whenever the player takes damage. This idea gives the player a button —
+before committing a card, they may choose to cash the bank at its current multiplier and reset,
+rather than waiting to be forced.
+
+**Problem it reaches for.** It converts the cash-out from something that *happens to* the player into
+a decision they make. You are sitting on 43 at ×3 and the next trick looks unwinnable — do you bank
+129 now, or push for ×4 and risk being cashed out anyway on a trick you can't take? That is
+press-your-luck with an explicit stop button, which is the shape of a Balatro "do I play this hand
+now" decision.
+
+**Cost in new rules.** One control and one sentence, and it changes nothing else in the loop — the
+cash-out arithmetic already exists and already resets. Cheap.
+
+**What to watch.** Whether it is ever *not* obviously correct to press. If the button is always right
+before a trick you expect to lose, it is a chore rather than a decision, and the interesting version
+is one where holding has a visible upside — which the multiplier already supplies.
+
+**Status.** Deliberately out of the first build. Recorded so the automatic cash-out is understood as
+the simple case, not the only one.
+
 ### Declaring before the decree is turned
 
 **What it is.** Move the declaration earlier in the setup sequence — before the decree card is

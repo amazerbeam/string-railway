@@ -100,6 +100,8 @@ Two things, credited because they are method rather than luck.
 | 1 | "it's not clear what a good decision is" | **Never recorded anywhere until this file.** See §3.2 — and note the twist: the fix for it is now itself under suspicion | — |
 | 2 | "there's no good feedback each time I lay a card" | **Never recorded anywhere until this file.** See §3.1 | — |
 | 3 | The Balatro fresh-ante benchmark | **Never recorded, never re-run** | See §3.3 |
+| 8–13 | Session 2 (2026-08-13) — cannot steer the trick count | **Open, undiagnosed before this entry** | See §5.1–§5.4 |
+| 14 | "the player should always deal" | **Recorded as a prescription, not adopted** | See §5.4 |
 
 The pattern in that table is worth stating plainly: **every prescription was actioned, no diagnosis
 was.** Prescriptions convert into tickets and tickets leave a trail; an observation about feel has
@@ -205,6 +207,154 @@ screens get built — and this file should be demoted to a historical record. §
 falsifiable the same way `hybrid-design.md` §11's kill criterion is, and deliberately shares it: if
 the declaration reads as a genuine read rather than a coin flip, the connection drawn above cost
 nothing to state and can be closed.
+
+---
+
+## Session 2 — 2026-08-13, the first play of the duel
+
+> **The redesign this session produced lives in
+> [`the-hunt-play-test-2-feedback.md`](./the-hunt-play-test-2-feedback.md)** — six-card hands, skulls,
+> stakes, and what is deleted to get there. This section owns the **observations**; that file owns the
+> **design**. Neither restates the other.
+
+**What was on screen.** The slice as DLR-71 left it: the declare gate, both mirrored Standing tables,
+the pile swap, two health bars carrying pending damage every trick, damage applied at trick 13, and an
+encounter that ends. The Quarry is the Monarch with its round-long rule-break — and still the
+**trick-maximising CPU**, not the band-aware one §11 names as the slice's largest unbuilt item.
+
+This is the first session where the developer played the duel rather than a Hunt against a target, and
+the first where the complaint is about **control** rather than about legibility.
+
+### The observations, verbatim
+
+> **8.** "I think it's too balanced, I'm playing to win and I can't land in the 7-9 range, everytime I
+> think I'm about to do something good the CPU out plays me and ruins my plan."
+
+> **9.** "The play to win/play to lose to me seems like an arbatary choice, reading the hand is too
+> complex to gauge where I should aim to land, and even if I spent time trying to land in that point
+> bracked I can't."
+
+> **10.** "Once the cards get closer to 1/2 I feel like I have no choice, that it just a fore gone
+> conclusion."
+
+> **11.** "the whole they lead and I follow, if I have very little cards of that suit, so for example
+> the led with bells and I had 1 bell the 8, I had no choince but to take the trick."
+
+> **12.** "Keys are trumos and my hihgers is a 7, I don't know that playing teh 7 will let me win, and
+> it didn't he had a 10, fustrated, not only do I lose I also lose the deal"
+
+> **13.** "I'm to lead know, but since I have no idea what cards they have I'm actually frozen and
+> don't konw what I shold do, what I should do isn't obvious to me."
+
+One prescription was offered alongside them, and is recorded as a prescription per Rosewater #19:
+
+> **14.** "maybe the player should always deal"
+
+### 5.1 The finding: the declaration commits the player to a number the ruleset is designed to deny them
+
+Every one of observations 8–13 is the same sentence said six ways: **I cannot steer the trick count.**
+
+The declaration asks for a pre-commitment to a *band* — on Win, the peak is 7–9 tricks. That is a
+three-wide window out of fourteen possible outcomes. Base Fox in the Forest never asks for that
+commitment: you play, you land where you land, and the six printed values make the landing zone a
+source of emergent tension rather than a target you promised to hit. **Follow-suit exists precisely to
+take control of the trick count away from you** — that is its entire function as a mechanic, and §8
+keeps it for exactly that reason ("without it, card choice is free and the layer collapses").
+
+So the design currently stacks a precision commitment on top of a mechanic engineered to deny
+precision. Observation 9 is the honest report of that: not "I chose wrong," but "I could not have
+chosen, and could not have executed either." That is the difference between input and output
+randomness (Engelstein, `../design-principles.md`) landing on the wrong side — the player loses to the
+system rather than to their own decision.
+
+This is the **executable half** of §12's Problem 1. That problem asks whether the declaration is a
+*readable* choice at the moment it is made. Session 2 adds the question after it: even given a correct
+read, **is the declaration a plan that can be carried out?** Observation 8 says no, and it says no in
+the presence of a CPU that is not even trying.
+
+### 5.2 The trick-maximising Quarry is simultaneously weak and maximally disruptive
+
+§11 records that the shipped CPU is close to the *worst* policy available to it — maximising tricks
+lands it at `k = 10–13`, its own ×0.5 band, dealing 24–78 against a competent player's 420–540. That
+reading is about the Quarry's own scoring, and it is correct.
+
+Session 2 supplies the other half, and it is not a contradiction: **a trick-maximiser is the single
+most disruptive opponent to a player trying to hit a precise trick count.** It contests every trick,
+so it pushes the player *down* out of 7–9 on every hand while scoring almost nothing for doing it.
+From the player's seat that reads as "the CPU outplays me and ruins my plan" (obs. 8) even though the
+CPU is losing badly on the arithmetic.
+
+The consequence for sequencing: the band-aware Quarry is not only an *escalation* item. Replacing the
+trick-maximiser may **reduce** the steering problem, because a Quarry playing for its own band will
+deliberately shed tricks the player wants. Whether that is enough on its own is unknown and untested.
+
+### 5.3 Short suits are the normal deal, not the bad deal
+
+Observation 11's singleton is not variance to be tuned out. A 13-card hand drawn from 33 cards across
+three suits averages **4.3 cards per suit**, so holding one or zero of a suit is routine, not unlucky.
+Every time it happens, follow-suit reduces the player's choice for that trick to a single legal card —
+and, as observed, that card can *win a trick they did not want*. Agency does not degrade at the
+endgame; it is absent on those tricks from the first deal.
+
+Observation 10 ("once the cards get closer to 1/2… a foregone conclusion") is the aggregate of this
+across a hand: as cards are shed, void suits accumulate and the proportion of tricks with exactly one
+legal play climbs. **The number of tricks the player actually decides is materially lower than 13**,
+and nobody has counted it. See Part 6.
+
+### 5.4 The lead is a burden, and it is handed out by the mechanic the player least controls
+
+Base rules: the non-dealer leads the first trick, then **the winner of a trick leads the next**. So the
+lead is awarded for winning — and observations 11–13 describe being handed it as a *punishment*: no
+information about the opponent's hand, no obvious right move, "frozen."
+
+Two distinct complaints are tangled in observation 12 and worth separating before anything is changed:
+
+- **Trump uncertainty** — "I don't know that playing the 7 will let me win, and it didn't." This is
+  ordinary trick-taker hidden information. It is not obviously a defect.
+- **Losing the lead as a compounded loss** — losing the trick *and* the initiative in one event. This
+  is base-game behaviour, but the duel direction raises its cost, because the lead is what steers the
+  trick count the declaration commits to.
+
+**Prescription 14 — "the player should always deal" — is recorded, not adopted.** Read as diagnosis
+(Rosewater #19), the underlying report is *"I hate leading with no information."* Note that the
+prescription as stated would give the player the **follow** seat on trick 1, which is the *informed*
+seat — so the instinct is pointing at information, not at the deal. Whether the fix is dealer control,
+an information device, or something that makes leading legible is open, and it is the developer's.
+
+### 5.5 What is now suspected of being the same problem
+
+Session 1's diagnosis was **legibility** — "it's not clear what a good decision is." Session 2's is
+**authority** — "even when it is clear, I cannot execute it." The fix for the first was the
+declaration. If §5.1 is right, the declaration made the second one worse, because it converted an
+emergent landing zone into a promise the player is held to.
+
+That does not mean the declaration should go. It means **the two mitigations in §6 aimed at making the
+declaration *readable* do not touch this**, and a redesign that only improves the read will not move
+observations 8–13.
+
+---
+
+## Part 6 — what to measure, session 2
+
+Two of these are counts, not feelings, and neither has been taken.
+
+4. **Count the tricks the player actually decides.** Over one Hunt, record for each trick how many
+   legal moves the player had. A trick with one legal card is not a decision. If the count is (say) 7
+   of 13, then §5.1's "precision target" is being aimed with half the control the design assumes, and
+   that number — not a feel report — is what a redesign should be aimed at.
+5. **Count where the player lands versus where they declared.** Play ten Hunts declaring Win and
+   record the final trick count each time. If the distribution is not centred on 7–9, the player is
+   not steering; if it is centred there but wide, they are steering and the variance is the problem.
+   These are different repairs.
+6. **Re-run 4 and 5 against a band-aware Quarry** once one exists (§5.2), before concluding anything
+   about the declaration itself. The current opponent contests every trick, which is the maximally
+   adversarial case for steering.
+
+**What would prove §5.1 wrong.** If measurement 5 shows the player landing in 7–9 more often than
+chance would give (roughly 3 in 14), then trick-count control exists and the problem is that it is
+*invisible* rather than absent — which is a readout problem and a much cheaper one. If the
+distribution is flat, the declaration is a promise the ruleset does not let the player keep, and that
+is a structural redesign.
 
 ---
 
