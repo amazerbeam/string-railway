@@ -5,14 +5,19 @@ became arithmetic that resolves. `src/hunt/encounter.ts` is the first thing in t
 state that **outlives a single `RoundState`** — before it, nothing in the program remembered anything
 about a finished Hunt.
 
-It shipped with **no caller at all** — complete, tested, and reachable only from Vitest, with
-`src/App.tsx` and `WarCouncilRound.tsx` untouched. **DLR-71 wired it up**: `src/App.tsx` now holds a
-real `EncounterState` seeded by `startEncounter` and carries it Hunt to Hunt, `roundReducer.ts` calls
-`applyHunt` behind its `CommitDamage` action, and both `isEncounterResolved` call sites (the panel's
-terminal state and App's stop-dealing guard) are live. So the health depletes on screen and an
-encounter ends where a player can see it. The **sequence** of encounters is still DLR-73's — one
-encounter index, nothing advancing it — and so is `ENCOUNTER_PLAYER_RESTORE`, which still has no
-consumer.
+It shipped with **no caller at all** — complete, tested, and reachable only from Vitest. **DLR-71
+wired it up**, and **DLR-80 changed when it fires and who owns it.**
+
+Damage used to land once per Hunt, on a confirmation press, with `App.tsx` holding the
+`EncounterState` and the reducer holding a nullable applied copy. Since DLR-80 the **reducer owns the
+live state**: `createRoundUiState` seeds it from the mount's prop, and `applyDamage` is called on
+**every trick resolution that carries a non-zero figure** — so the encounter can resolve mid-hand,
+and `onComplete` hands the final state back to `App.tsx`. The rejected alternative, keeping the
+encounter in `App.tsx` and calling up on every trick, would have put a second write path beside the
+reducer's own.
+
+The **sequence** of encounters is still unbuilt — one encounter index, nothing advancing it — and so
+is `ENCOUNTER_PLAYER_RESTORE`, which still has no consumer.
 
 ### The state — `EncounterState`
 
@@ -22,16 +27,16 @@ An **encounter** is a sequence of Hunts fought until one bar empties (§5). `Enc
 ```ts
 export interface EncounterState {
   readonly health: Readonly<Record<DuelSide, Health>>
-  readonly huntsApplied: number
+  readonly damageEventsApplied: number
   readonly winner: DuelSide | null
 }
 ```
 
-It is **immutable** — `applyHunt` returns a new one and never touches its input, which a spec asserts
+It is **immutable** — `applyDamage` returns a new one and never touches its input, which a spec asserts
 directly. That is not decoration: it is what lets DLR-71 preview a Hunt by applying it to a copy
 rather than writing a second projection routine that could drift from this one.
 
-**`huntsApplied` is a counter, not a cap.** There is deliberately no maximum number of Hunts per
+**`damageEventsApplied` is a counter, not a cap.** There is deliberately no maximum number of Hunts per
 encounter — see [No Hunt cap](#no-hunt-cap) below.
 
 **`winner` is `DuelSide | null`, not a three-value outcome union.** `null` while the encounter is
@@ -45,7 +50,7 @@ changing this type, and nothing serialises it.
 `IncomingDamage` beside it is `Readonly<Record<DuelSide, Damage>>` — one Hunt's damage **keyed by the
 side it is applied to**, never by the side that dealt it. That is `HuntOutcome.incoming`'s convention
 carried deliberately across the module boundary, so the crossing is performed exactly once and on
-the other side of it (see [`duelSideDamage`](../war-council/scoring.md)).
+the other side of it (see [`incomingFrom`](../war-council/bank-and-cash-out.md)).
 
 ### Starting one — `startEncounter`
 
@@ -60,12 +65,12 @@ restore between them, is DLR-73's — and this module deliberately does not read
 ticket has not fixed yet.
 
 `playerHealth` is a **defaulted parameter** rather than something the function closes over — the same
-injectable pattern `resolveStanding`'s table and `roundDamage`'s rule use, so a spec varies it
-without mutating module state.
+injectable pattern this codebase uses for every tunable — and which `assignSkulls`'s `density` and
+`minRank` followed in DLR-80 — so a spec varies it without mutating module state.
 
-### Applying one — `applyHunt`
+### Applying one — `applyDamage`
 
-`applyHunt(encounter, incoming)` is the whole transition, and three things happen in a **fixed
+`applyDamage(encounter, incoming)` is the whole transition, and three things happen in a **fixed
 order**:
 
 1. **Refuse an already-resolved encounter**, and refuse damage that is not a finite non-negative
@@ -139,13 +144,12 @@ and the terminal outcome line, and `App.tsx` reads it to stop dealing.
 ### Four refusals
 
 All four are bare `RangeError`, matching `src/hunt/config.ts`'s existing posture for a caller bug
-(`quarryHealthForEncounter`, `resolveStanding`, `roundDamage`) rather than `src/warCouncil/`'s
-`HuntNotScorableError` class:
+(`quarryHealthForEncounter`):
 
 | Refused                                       | Why not a plausible value instead                                                      |
 | --------------------------------------------- | -------------------------------------------------------------------------------------- |
 | A non-finite or non-positive `playerHealth`   | seeding a broken bar produces a game that cannot be played and reports nothing          |
-| Applying a Hunt to a **resolved** encounter   | a silent no-op lets a caller's loop spin forever with `huntsApplied` frozen             |
+| Applying damage to a **resolved** encounter   | a silent no-op lets a caller's loop spin forever with `damageEventsApplied` frozen             |
 | Non-finite damage (`NaN`, `Infinity`)         | `NaN - x` is `NaN`, `Math.max(0, NaN)` is `NaN` — a `NaN` bar renders empty and logs nothing |
 | Negative damage                               | it would *heal* the side it was pointed at                                              |
 
@@ -153,19 +157,22 @@ An out-of-range `encounterIndex` is refused too, one level removed: `quarryHealt
 `RangeError` propagates through `startEncounter` uncaught, which is exactly the failure mode DLR-66
 shipped that guard for.
 
-**Damage is guarded finite and non-negative, but pointedly not integral.** Under
-`DAMAGE_ROUNDING = None` a ×0.5 band legitimately produces a half-point total, so an integer guard
-would break a supported configuration. No epsilon is needed anywhere: the clamp compares against
-exact `0`, and exact halves are exactly representable in binary floating point.
+**Damage is guarded finite and non-negative, but not integral.** That guard predates DLR-80, when
+a ×0.5 multiplier band could legitimately produce a half-point total. **Since DLR-80 every figure
+reaching it is an integer by construction** — the bank is a sum of integer ranks, the multiplier an
+integer count, and there is no division anywhere in the new arithmetic — so the non-integral case is
+no longer producible. The guard is kept as a backstop against a bad caller rather than a supported
+configuration. No epsilon is needed anywhere: the clamp compares against exact `0`.
 
-> **`applyHunt` throwing on a resolved encounter is a design reading, not a documented rule.** No
+> **`applyDamage` throwing on a resolved encounter is a design reading, not a documented rule.** No
 > design section says what happens if you fight on after a bar empties, because nothing should. The
-> throw survived DLR-71: rather than making it idempotent, `roundReducer`'s `CommitDamage` branch
-> **guards ahead of it** — `state.applied !== null || isEncounterResolved(encounter)` returns the input
-> state unchanged — because a throw escaping a reducer during an event handler unmounts the tree. That
-> keeps the engine loud and the UI safe, and neither guard is a live path (the panel only renders the
-> control while `applied === null`, and App stops dealing once resolved). Making the throw a no-op
-> return is still one line if a later caller would rather have it, and still the developer's call.
+> throw survived DLR-80, and it now matters more than it did: damage lands per trick, so the resolved
+> state is reachable **mid-hand** rather than only between Hunts. `roundReducer`'s `applyResolution`
+> helper therefore **guards ahead of it** — it returns the encounter unchanged if
+> `isEncounterResolved` is already true, and also if the resolution carries neither a cash-out nor a
+> hit (an all-zero event would otherwise bump `damageEventsApplied` for nothing). Guarding rather
+> than catching is deliberate: a throw escaping a reducer during an event handler unmounts the tree.
+> `canAct` carries the same check, so play stops rather than queueing taps into a finished fight.
 
 ### No Hunt cap
 
@@ -199,7 +206,7 @@ Two properties worth reading off it:
 
 **The win/lose boundary sits exactly on the 6/7 line the declaration commits to** — 7 tricks a Hunt
 wins on Hunt 4, 6 tricks loses on Hunt 4, an exact mirror. That is `P = H` doing its work (see
-[the health constants](duel-health-and-damage.md)), not a coincidence of the multipliers.
+[the health constants](hand-and-skull-tunables.md)), not a coincidence of the multipliers.
 
 **The tail is long.** Playing for the Greedy band at ×0.5 stretches an encounter to 18–23 Hunts. That
 is the stall §11 is watching for, and it is now measurable rather than predicted.

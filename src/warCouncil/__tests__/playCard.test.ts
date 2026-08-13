@@ -1,24 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { HuntDeclaration, QuarryCharacter } from '../../hunt'
+import { DAMAGE_PER_HIT, HAND_SIZE, QuarryCharacter } from '../../hunt'
+import { TrickOutcome } from '../bank'
 import { dealRound } from '../deal'
-import { declareHunt } from '../declareHunt'
 import { playCard } from '../playCard'
 import {
   AbilityChoiceKind,
   IllegalMoveReason,
   PlayerSide,
   RoundPhase,
+  Suit,
   type Card,
-  type DeclarationState,
   type RoundState,
 } from '../types'
-
-// DLR-63 AC1: playCard now rejects an undeclared round, so every fixture in this file
-// that exercises a rule OTHER than the declaration gate itself must declare first. Win
-// carries no bookkeeping, so this is the neutral default for those fixtures.
-const WIN_DECLARATION: DeclarationState = {
-  path: HuntDeclaration.Win,
-}
 
 function stateWith(overrides: Partial<RoundState>): RoundState {
   return {
@@ -31,7 +24,10 @@ function stateWith(overrides: Partial<RoundState>): RoundState {
     decree: { suit: 'bells', rank: 4 },
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
-    capturedCards: { player: [], cpu: [] },
+    skulledCards: [],
+    bank: 0,
+    multiplier: 0,
+    lastResolution: null,
     currentTrick: [],
     leader: PlayerSide.Player,
     tricksPlayed: 0,
@@ -49,7 +45,6 @@ describe('playCard — rejections', () => {
 
   it('rejects a play out of turn', () => {
     const state = stateWith({
-      declaration: WIN_DECLARATION,
       leader: PlayerSide.Cpu,
       hands: { player: [{ suit: 'bells', rank: 2 }], cpu: [] },
     })
@@ -58,14 +53,13 @@ describe('playCard — rejections', () => {
   })
 
   it('rejects a card not held', () => {
-    const state = stateWith({ declaration: WIN_DECLARATION, hands: { player: [], cpu: [] } })
+    const state = stateWith({ hands: { player: [], cpu: [] } })
     const result = playCard(state, 'player', { suit: 'bells', rank: 2 })
     expect(result).toEqual({ ok: false, reason: IllegalMoveReason.CardNotInHand })
   })
 
   it('rejects a follow-up play that breaks suit when the lead suit is held', () => {
     const state = stateWith({
-      declaration: WIN_DECLARATION,
       leader: PlayerSide.Cpu,
       currentTrick: [{ side: 'cpu', card: { suit: 'keys', rank: 5 } }],
       hands: {
@@ -82,7 +76,6 @@ describe('playCard — rejections', () => {
 
   it('names the Monarch when a round-long rule-break, not the led card, narrowed the follow', () => {
     const state = stateWith({
-      declaration: WIN_DECLARATION,
       quarryCharacter: QuarryCharacter.Monarch,
       leader: PlayerSide.Cpu,
       currentTrick: [{ side: 'cpu', card: { suit: 'keys', rank: 4 } }],
@@ -101,7 +94,6 @@ describe('playCard — rejections', () => {
 
   it('rejects Fox (rank 3) played with no ability choice', () => {
     const state = stateWith({
-      declaration: WIN_DECLARATION,
       hands: { player: [{ suit: 'keys', rank: 3 }], cpu: [] },
     })
     const result = playCard(state, 'player', { suit: 'keys', rank: 3 })
@@ -110,7 +102,6 @@ describe('playCard — rejections', () => {
 
   it('rejects Woodcutter (rank 5) played with no ability choice', () => {
     const state = stateWith({
-      declaration: WIN_DECLARATION,
       hands: { player: [{ suit: 'keys', rank: 5 }], cpu: [] },
     })
     const result = playCard(state, 'player', { suit: 'keys', rank: 5 })
@@ -119,7 +110,6 @@ describe('playCard — rejections', () => {
 
   it('rejects Woodcutter (rank 5) played with a mismatched-kind ability choice', () => {
     const state = stateWith({
-      declaration: WIN_DECLARATION,
       hands: { player: [{ suit: 'keys', rank: 5 }], cpu: [] },
     })
     const result = playCard(
@@ -133,7 +123,6 @@ describe('playCard — rejections', () => {
 
   it('rejects Fox (rank 3) played with a mismatched-kind ability choice', () => {
     const state = stateWith({
-      declaration: WIN_DECLARATION,
       hands: { player: [{ suit: 'keys', rank: 3 }], cpu: [] },
     })
     const result = playCard(
@@ -149,7 +138,6 @@ describe('playCard — rejections', () => {
 describe('playCard — the Fox (rank 3) mutates trump mid-trick, and it is illegal to ignore the new trump on the next play', () => {
   it('exchanging the decree updates trumpSuit and decree immediately', () => {
     const state = stateWith({
-      declaration: WIN_DECLARATION,
       hands: {
         player: [
           { suit: 'keys', rank: 3 },
@@ -175,7 +163,6 @@ describe('playCard — the Fox (rank 3) mutates trump mid-trick, and it is illeg
 
   it('a full trick resolves using the trump suit as of after the Fox exchange', () => {
     const state = stateWith({
-      declaration: WIN_DECLARATION,
       leader: PlayerSide.Player,
       trumpSuit: 'bells',
       hands: {
@@ -210,12 +197,6 @@ describe('playCard — the Fox (rank 3) mutates trump mid-trick, and it is illeg
     // trump nor lead-suit, so the lead card (player's Fox, keys 3) would win instead —
     // this fixture would catch that regression, unlike the previous one.
     expect(afterFollow.state.tricksWon.cpu).toBe(1)
-    // AC2 — captured in trick order (lead card, then follow card), regardless of who led.
-    expect(afterFollow.state.capturedCards.cpu).toEqual([
-      { suit: 'keys', rank: 3 },
-      { suit: 'moons', rank: 8 },
-    ])
-    expect(afterFollow.state.capturedCards.player).toEqual([])
   })
 })
 
@@ -227,83 +208,111 @@ function lcg(seed: number): () => number {
   }
 }
 
-describe('playCard — a full round plays out exactly 13 tricks', () => {
-  it('deals and plays a full round to RoundPhase.Complete with 13 total tricks won', () => {
-    const dealt = dealRound('player', lcg(2024))
-    const declared = declareHunt(dealt, HuntDeclaration.Win)
-    if (!declared.ok) throw new Error('expected declare ok')
-    let state = declared.state
-    let guard = 0
-    const allPlayed: Card[] = []
+// Naive strategy: always plays the first legal card. Good enough to drive a hand to
+// completion deterministically; not a claim about good play.
+function playOutHand(dealt: RoundState): { state: RoundState; allPlayed: Card[] } {
+  let state = dealt
+  let guard = 0
+  const allPlayed: Card[] = []
 
-    while (state.phase !== 'complete') {
-      guard += 1
-      if (guard > 500) throw new Error('runaway loop — round never completed')
+  while (state.phase !== RoundPhase.Complete) {
+    guard += 1
+    if (guard > 500) throw new Error('runaway loop — round never completed')
 
-      const turn =
-        state.currentTrick.length === 0
-          ? state.leader
-          : state.currentTrick[0].side === 'player'
-            ? 'cpu'
-            : 'player'
-      const options =
-        state.currentTrick.length === 0
-          ? state.hands[turn]
-          : (() => {
-              const led = state.currentTrick[0].card
-              const followSuit = state.hands[turn].filter((c) => c.suit === led.suit)
-              return followSuit.length > 0 ? followSuit : state.hands[turn]
-            })()
-      const chosen = options[0]
-      allPlayed.push(chosen)
+    const turn =
+      state.currentTrick.length === 0
+        ? state.leader
+        : state.currentTrick[0].side === 'player'
+          ? 'cpu'
+          : 'player'
+    const options =
+      state.currentTrick.length === 0
+        ? state.hands[turn]
+        : (() => {
+            const led = state.currentTrick[0].card
+            const followSuit = state.hands[turn].filter((c) => c.suit === led.suit)
+            return followSuit.length > 0 ? followSuit : state.hands[turn]
+          })()
+    const chosen = options[0]
+    allPlayed.push(chosen)
 
-      const choice =
-        chosen.rank === 3
-          ? { kind: 'foxDecline' as const }
-          : chosen.rank === 5
-            ? { kind: 'woodcutterDiscard' as const, discard: state.drawPile[0] }
-            : undefined
+    const choice =
+      chosen.rank === 3
+        ? { kind: 'foxDecline' as const }
+        : chosen.rank === 5
+          ? { kind: 'woodcutterDiscard' as const, discard: state.drawPile[0] }
+          : undefined
 
-      const result = playCard(state, turn, chosen, choice)
-      if (!result.ok) {
-        throw new Error(`unexpected rejection: ${result.reason}`)
-      }
-      state = result.state
+    const result = playCard(state, turn, chosen, choice)
+    if (!result.ok) {
+      throw new Error(`unexpected rejection: ${result.reason}`)
     }
+    state = result.state
+  }
 
-    expect(state.tricksPlayed).toBe(13)
-    expect(state.tricksWon.player + state.tricksWon.cpu).toBe(13)
-    expect(state.phase).toBe('complete')
+  return { state, allPlayed }
+}
 
-    // AC5 — the two captured lists together hold exactly the 26 cards actually
-    // played, with no card appearing twice and none missing.
+describe('playCard — a full hand plays out exactly HAND_SIZE tricks', () => {
+  it('ends the hand on the sixth trick, not the thirteenth', () => {
+    const dealt = dealRound('player', lcg(2024))
+    const { state } = playOutHand(dealt)
+
+    expect(state.phase).toBe(RoundPhase.Complete)
+    expect(state.tricksPlayed).toBe(HAND_SIZE)
+  })
+
+  it('plays every dealt card exactly once', () => {
+    const dealt = dealRound('player', lcg(2024))
+    const { allPlayed } = playOutHand(dealt)
+
+    expect(allPlayed).toHaveLength(HAND_SIZE * 2)
     const cardKey = (c: Card): string => `${c.suit}-${c.rank}`
-    const capturedTotal = state.capturedCards.player.length + state.capturedCards.cpu.length
-    expect(capturedTotal).toBe(26)
-    const capturedKeys = [...state.capturedCards.player, ...state.capturedCards.cpu]
-      .map(cardKey)
-      .sort()
+    const dealtKeys = [...dealt.hands.player, ...dealt.hands.cpu].map(cardKey).sort()
     const playedKeys = allPlayed.map(cardKey).sort()
-    expect(capturedKeys).toEqual(playedKeys)
+    expect(playedKeys).toEqual(dealtKeys)
   })
 })
 
-describe('playCard — DLR-63 AC1: no card before the declaration', () => {
-  it('rejects a play on an undeclared round', () => {
-    const round = stateWith({ hands: { player: [{ suit: 'bells', rank: 2 }], cpu: [] } })
-    const card = round.hands[PlayerSide.Player][0]
-    expect(playCard(round, PlayerSide.Player, card)).toEqual({
-      ok: false,
-      reason: IllegalMoveReason.HuntNotDeclared,
+describe('playCard — banking and skulls', () => {
+  it('banks a clean win and clears the resolution on the next lead', () => {
+    const state = stateWith({
+      hands: {
+        player: [{ suit: 'moons', rank: 4 }],
+        cpu: [{ suit: 'bells', rank: 2 }],
+      },
+      trumpSuit: 'keys',
+      currentTrick: [{ side: PlayerSide.Player, card: { suit: 'bells', rank: 9 } }],
+      leader: PlayerSide.Player,
+      phase: RoundPhase.AwaitingFollow,
     })
+
+    const won = playCard(state, PlayerSide.Cpu, { suit: 'bells', rank: 2 })
+    expect(won.ok && won.state.lastResolution?.outcome).toBe(TrickOutcome.CleanWin)
+
+    const led = playCard(won.ok ? won.state : state, PlayerSide.Player, {
+      suit: 'moons',
+      rank: 4,
+    })
+    expect(led.ok && led.state.lastResolution).toBeNull()
   })
 
-  it('accepts the same play once the Hunt is declared', () => {
-    const round = stateWith({ hands: { player: [{ suit: 'bells', rank: 2 }], cpu: [] } })
-    const declared = declareHunt(round, HuntDeclaration.Win)
-    expect(declared.ok).toBe(true)
-    if (!declared.ok) return
-    const card = declared.state.hands[PlayerSide.Player][0]
-    expect(playCard(declared.state, PlayerSide.Player, card).ok).toBe(true)
+  it('treats a trick containing a skulled card as a skull trick', () => {
+    const skulled: Card = { suit: Suit.Bells, rank: 6 }
+    const state = stateWith({
+      hands: {
+        player: [{ suit: Suit.Bells, rank: 9 }],
+        cpu: [],
+      },
+      trumpSuit: 'keys',
+      skulledCards: [skulled],
+      currentTrick: [{ side: PlayerSide.Cpu, card: skulled }],
+      leader: PlayerSide.Cpu,
+      phase: RoundPhase.AwaitingFollow,
+    })
+
+    const result = playCard(state, PlayerSide.Player, { suit: Suit.Bells, rank: 9 })
+    expect(result.ok && result.state.lastResolution?.outcome).toBe(TrickOutcome.SkullWin)
+    expect(result.ok && result.state.lastResolution?.damageToPlayer).toBe(DAMAGE_PER_HIT)
   })
 })

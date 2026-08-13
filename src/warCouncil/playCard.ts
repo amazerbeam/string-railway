@@ -1,19 +1,21 @@
+import { HAND_SIZE } from '../hunt'
 import { applyFoxExchange, applyWoodcutterDraw, nextLeaderAfterTrick } from './abilities'
+import { resolveTrickBank } from './bank'
 import { containsCard, removeCard, sameCard } from './cardUtils'
 import { legalMoves } from './legalMoves'
 import { monarchFollowApplies } from './quarryRuleBreak'
 import { resolveTrickWinner } from './resolveTrick'
+import { trickIsSkulled } from './skulls'
 import {
   AbilityChoiceKind,
   CardRank,
   currentTurn,
   IllegalMoveReason,
+  PlayerSide,
   RoundPhase,
-  TRICKS_PER_ROUND,
   type AbilityChoice,
   type Card,
   type PlayCardResult,
-  type PlayerSide,
   type RoundState,
   type TrickCard,
 } from './types'
@@ -26,13 +28,6 @@ export function playCard(
 ): PlayCardResult {
   if (state.phase === RoundPhase.Complete) {
     return { ok: false, reason: IllegalMoveReason.RoundComplete }
-  }
-  // AC1: the declaration is made before the first trick, so no card may be played
-  // without one. Structurally unreachable through the shipped UI — the declare gate
-  // renders before the fan becomes interactive — and carried as a guard against a
-  // future caller that skips it.
-  if (state.declaration === undefined) {
-    return { ok: false, reason: IllegalMoveReason.HuntNotDeclared }
   }
   if (currentTurn(state) !== side) {
     return { ok: false, reason: IllegalMoveReason.NotYourTurn }
@@ -94,7 +89,10 @@ export function playCard(
   const currentTrick = [...next.currentTrick, trickCard]
 
   if (currentTrick.length === 1) {
-    return { ok: true, state: { ...next, currentTrick, phase: RoundPhase.AwaitingFollow } }
+    return {
+      ok: true,
+      state: { ...next, currentTrick, lastResolution: null, phase: RoundPhase.AwaitingFollow },
+    }
   }
 
   // safe: length===1 already returned above, so this is exactly 2
@@ -103,14 +101,17 @@ export function playCard(
   const nextLeader = nextLeaderAfterTrick(completedTrick, winner)
   const tricksPlayed = next.tricksPlayed + 1
   const tricksWon = { ...next.tricksWon, [winner]: next.tricksWon[winner] + 1 }
-  // `capturedCards` is appended as exactly `[lead, follow]` for the winning side, in that
-  // order. `spoils` sums each side's own pile, so the order is not load-bearing for scoring
-  // — but DLR-68's pile swap reads these piles too, so keep the append shape deliberate.
-  const capturedCards = {
-    ...next.capturedCards,
-    [winner]: [...next.capturedCards[winner], completedTrick[0].card, completedTrick[1].card],
-  }
-  const phase = tricksPlayed === TRICKS_PER_ROUND ? RoundPhase.Complete : RoundPhase.AwaitingLead
+  const finalTrick = tricksPlayed === HAND_SIZE
+
+  // Every rule AC4-AC9 states lives in `resolveTrickBank`; this function decides nothing about
+  // the outcome, it only reports who won and whether the trick was mined.
+  const lastResolution = resolveTrickBank(
+    { bank: next.bank, multiplier: next.multiplier },
+    completedTrick,
+    winner === PlayerSide.Player,
+    trickIsSkulled(next.skulledCards, completedTrick),
+    finalTrick,
+  )
 
   return {
     ok: true,
@@ -120,8 +121,10 @@ export function playCard(
       leader: nextLeader,
       tricksPlayed,
       tricksWon,
-      capturedCards,
-      phase,
+      bank: lastResolution.bank,
+      multiplier: lastResolution.multiplier,
+      lastResolution,
+      phase: finalTrick ? RoundPhase.Complete : RoundPhase.AwaitingLead,
     },
   }
 }

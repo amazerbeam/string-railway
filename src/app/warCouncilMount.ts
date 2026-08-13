@@ -5,8 +5,8 @@ export interface WarCouncilMountProps {
   readonly initialState: WarCouncilState
   /** The encounter's Quarry (§4). The Demand and the Lose-credit pool were retired on DLR-67. */
   readonly hunt: Hunt
-  /** The live encounter this Hunt is fought inside (DLR-71). Health only changes at trick 13, so
-   *  this is constant for the whole round. */
+  /** The encounter this hand starts from — the reducer owns it thereafter and applies each
+   *  trick's damage as it lands (DLR-80 AC6/AC8). */
   readonly encounter: EncounterState
   /** Each side's configured maximum, for the bars' denominator. NOT derivable from
    *  `EncounterState`, which carries current health only. */
@@ -15,10 +15,16 @@ export interface WarCouncilMountProps {
 }
 
 export interface WarCouncilRoundResult {
-  readonly finalState: WarCouncilState // finalState.phase === RoundPhase.Complete
-  /** The encounter AFTER this Hunt's damage was applied — the state the player just watched land.
-   *  Replaces DLR-67's `damage: Readonly<Record<PlayerSide, number>>`, which had one producer and
-   *  no consumer: handing up the applied state makes applying one Hunt twice unexpressible rather
-   *  than merely unlikely. */
+  /** The round state at the moment `onComplete` fired. `finalState.phase` is NOT guaranteed to be
+   *  `RoundPhase.Complete`: a bank cash-out can resolve the encounter mid-hand (AC6/AC8), on any
+   *  trick, in which case `onComplete` fires immediately with the hand still short of its sixth
+   *  trick — `finalState.phase` sitting on `AwaitingLead`/`AwaitingFollow` rather than `Complete`.
+   *  A reader must check `encounter` (below) for whether the encounter itself is over, never this
+   *  phase, for that. */
+  readonly finalState: WarCouncilState
+  /** The encounter after every damage event this hand produced. Replaces DLR-67's
+   *  `damage: Readonly<Record<PlayerSide, number>>`, which had one producer and no consumer:
+   *  handing up the encounter itself makes applying one event twice unexpressible rather than
+   *  merely unlikely. */
   readonly encounter: EncounterState
 }

@@ -18,9 +18,9 @@ import {
  * sequence anything. Running the encounters in order, and any restore between them
  * (`ENCOUNTER_PLAYER_RESTORE`), is DLR-73's, and this module deliberately reads neither.
  *
- * `playerHealth` is a defaulted parameter rather than something the function closes over, the
- * same injectable pattern `resolveStanding`'s table uses — so a spec can vary it without
- * mutating module state.
+ * `playerHealth` is a defaulted parameter rather than something the function closes over — the
+ * same injectable pattern this module's other configuration-derived values use — so a spec can
+ * vary it without mutating module state.
  */
 export function startEncounter(
   encounterIndex: number,
@@ -36,27 +36,27 @@ export function startEncounter(
       [DuelSide.Player]: playerHealth,
       [DuelSide.Quarry]: quarryHealthForEncounter(encounterIndex),
     },
-    huntsApplied: 0,
+    damageEventsApplied: 0,
     winner: null,
   }
 }
 
 /**
- * AC2 — one finished Hunt's damage applied once, at the end of the thirteenth trick, never
- * per trick. `incoming` is already keyed by the side it depletes (`duelSideDamage` performs
- * that crossing), so this function does not invert anything and cannot get it backwards.
+ * AC6/AC8 — one damage event applied as it happens, which may fire several times across a
+ * hand. `incoming` is already keyed by the side it depletes (`incomingFrom` performs that
+ * crossing), so this function does not invert anything and cannot get it backwards.
  *
  * Both bars are depleted BEFORE either is inspected. Resolving after the first subtraction
  * would make AC4's simultaneous case unreachable and §9's tie ruling dead code.
  *
- * Returns a new state; the input is never mutated. That is what lets a caller preview a Hunt
- * by applying it to a copy, rather than DLR-71 writing a second projection routine that could
- * drift from this one.
+ * Returns a new state; the input is never mutated. That is what lets a caller preview an event
+ * by applying it to a copy, rather than writing a second projection routine that could drift
+ * from this one.
  */
-export function applyHunt(encounter: EncounterState, incoming: IncomingDamage): EncounterState {
+export function applyDamage(encounter: EncounterState, incoming: IncomingDamage): EncounterState {
   if (encounter.winner !== null) {
     throw new RangeError(
-      `Cannot apply a Hunt to an encounter already resolved in favour of the ${encounter.winner} after ${encounter.huntsApplied} Hunts`,
+      `Cannot apply damage to an encounter already resolved in favour of the ${encounter.winner} after ${encounter.damageEventsApplied} damage events`,
     )
   }
   assertApplicable(incoming[DuelSide.Player], DuelSide.Player)
@@ -69,7 +69,7 @@ export function applyHunt(encounter: EncounterState, incoming: IncomingDamage): 
 
   return {
     health,
-    huntsApplied: encounter.huntsApplied + 1,
+    damageEventsApplied: encounter.damageEventsApplied + 1,
     winner: resolveWinner(health),
   }
 }

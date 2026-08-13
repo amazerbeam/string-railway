@@ -51,14 +51,24 @@ defect went undetected by every test and was found only by QA driving the app in
 
 ### The Hunt readouts each carry their own accessible name
 
-DLR-53's four readouts are bare numbers whose meaning lives in a separate visual key element, which
-a screen reader would otherwise announce as an unlabelled run of digits. Each therefore carries its
-own `aria-label` while the visual key is `aria-hidden`: `HuntLedger`'s cells, `QuarryDossier`'s region
-and trick count, and `RoundOverPanel`'s three equation parts. `HuntLedger` shipped four such cells on
-DLR-53 ("Running Spoils: N", "Standing band: Victorious, multiplier 5", "Score so far: N", "The Demand:
-N"); DLR-67 retired the Demand and renamed Score to Damage, and **DLR-71 left it with one** —
-`"Standing band: <name>, multiplier <n>"`, the multiplier interpolated from the live band, so the
-example figure follows whichever table DLR-66 shipped.
+The dossier readouts are bare numbers whose meaning lives in a separate visual key element, which a
+screen reader would otherwise announce as an unlabelled run of digits. Each therefore carries its own
+`aria-label` while the visual key is `aria-hidden`: `QuarryDossier`'s region and trick count, and
+since DLR-80 `QuarryShape`'s per-suit rows and `BankMeter`'s figures.
+
+**`QuarryShape`'s rows** read `"<Suit>: N held, M skulled"` — or `"…, none skulled"` at zero — built
+by `labels.ts`'s `suitShapeRowText`, which is the **single owner** of that phrase and is also what
+`quarryShapeText` composes its whole-shape sentence from. Each skull glyph inside a row is
+additionally a `role="img"` carrying `SKULL_MARK_LABEL`, so the count is announced rather than left
+to a visual tally of repeated glyphs.
+
+**A skulled card announces itself.** `cardAccessibleName` takes a `skulled` flag and appends a
+suffix, so the skull is in the accessible name and not only in the glyph — which is what makes the
+"skulls are visible before you commit" rule hold for a screen-reader user as well as a sighted one.
+
+> Retired by DLR-80: `HuntLedger`'s cells and `RoundOverPanel`'s three equation parts. The hand-over
+> panel now renders a plain tally table rather than an equation, so its figures are labelled by their
+> own row headers rather than by hand-written `aria-label`s.
 
 **DLR-71 added the two health bars, and they are the module's first `role="meter"` elements.** Each
 carries `aria-label` (`"Your health"` / `"The Quarry's health"` — the two must differ, since that is how
@@ -74,10 +84,10 @@ container built by `intentAccessibleName` — so the eyebrow and the line are he
 rather than two fragments. Its `role="status"` announces a changed intent without stealing focus
 from the hand.
 
-One collision worth knowing about: `HuntLedger` stays mounted in the status band while
-`RoundOverPanel` is on the felt, so the panel's Demand deliberately reads "Demand for this Hunt: N"
-rather than reusing the ledger's "The Demand: N". Identical names across two simultaneously-mounted
-components make a `getByLabelText` query ambiguous.
+One collision hazard worth keeping in mind: the dossier readouts stay mounted while `RoundOverPanel`
+is on the felt, so any accessible name the panel introduces must not duplicate one already on screen
+— identical names across two simultaneously-mounted components make a `getByLabelText` query
+ambiguous. The DLR-80 panel avoids it by using a table with row headers rather than labelled figures.
 
 ### While a prompt is open, the fan leaves the accessibility tree
 

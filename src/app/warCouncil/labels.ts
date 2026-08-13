@@ -1,13 +1,14 @@
 import {
   CardRank,
-  DeclareRejection,
   IllegalMoveReason,
   QuarryIntentStance,
   Suit,
+  TrickOutcome,
   type Card,
   type QuarryIntent,
+  type SuitShape,
 } from '../../warCouncil'
-import { DuelSide, HuntDeclaration, StandingBandName } from '../../hunt'
+import { DuelSide } from '../../hunt'
 import type { HealthBarView } from './duelHealthBars'
 
 export const SUIT_NAME: Readonly<Record<Suit, string>> = {
@@ -24,10 +25,14 @@ export const RANK_NAME: Readonly<Record<number, string>> = {
   [CardRank.Monarch]: 'Monarch',
 }
 
-export function cardAccessibleName(card: Card): string {
+/** `skulled` defaults to `false` so every existing call site — none of which yet knows whether
+ *  the card it names carries a skull — keeps compiling unchanged; a caller that does know passes
+ *  it explicitly. */
+export function cardAccessibleName(card: Card, skulled = false): string {
   const base = `${card.rank} of ${SUIT_NAME[card.suit]}`
   const named = RANK_NAME[card.rank]
-  return named ? `${base} (${named})` : base
+  const name = named ? `${base} (${named})` : base
+  return skulled ? `${name}, skulled` : name
 }
 
 /** A stable React list key for a card — suit and rank never repeat within one hand or pile. */
@@ -37,7 +42,6 @@ export function cardKey(card: Card): string {
 
 export const ILLEGAL_MOVE_MESSAGE: Readonly<Record<IllegalMoveReason, string>> = {
   [IllegalMoveReason.RoundComplete]: 'The round is over.',
-  [IllegalMoveReason.HuntNotDeclared]: 'Declare Win or Lose before you play a card.',
   [IllegalMoveReason.NotYourTurn]: 'It is not your turn.',
   [IllegalMoveReason.CardNotInHand]: 'That card is not in your hand.',
   [IllegalMoveReason.MustFollowLeadSuit]: 'You must follow the led suit.',
@@ -56,19 +60,6 @@ export const STANCE_PHRASE: Readonly<Record<QuarryIntentStance, string>> = {
   [QuarryIntentStance.Ducking]: 'duck with',
 }
 
-/** Display copy for each Standing band (§1). The multiplier is rendered beside it and is
- *  read from the band itself, never written here. */
-export const STANDING_BAND_NAME: Readonly<Record<StandingBandName, string>> = {
-  [StandingBandName.Humble]: 'Humble',
-  [StandingBandName.Defeated]: 'Defeated',
-  [StandingBandName.Victorious]: 'Victorious',
-  [StandingBandName.Greedy]: 'Greedy',
-}
-
-/** Group label for the Standing track (DLR-68). Kept beside `STANDING_BAND_NAME` because both
- *  are display copy for the same module — see `.claude/skills/react-frontend/SKILL.md`. */
-export const STANDING_TRACK_LABEL = 'Standing track'
-
 /** AC1/AC7 — each bar's accessible name. The two must differ, because `getByRole('meter', …)`
  *  is how the spec distinguishes them. */
 export const HEALTH_BAR_LABEL: Readonly<Record<DuelSide, string>> = {
@@ -77,44 +68,51 @@ export const HEALTH_BAR_LABEL: Readonly<Record<DuelSide, string>> = {
 }
 
 /**
- * AC7's one sentence: both the current and the pending figure, for a reader who cannot see the
- * bar's two segments. `aria-valuenow` can carry only one number, so the second lives here.
- *
- * "Nothing at risk yet" rather than "0 at risk": before the declaration there is no table to read
- * and `pendingHuntDamage` returns `null`, which is a different state from a Hunt that genuinely
- * threatens nothing.
+ * AC7's one sentence, for a reader who cannot see the bar itself. There is no pending figure any
+ * more (DLR-80): damage has already landed by the time a bar renders, so the view carries only
+ * the current-of-max reading and whether it is lethal.
  */
 export function healthBarValueText(view: HealthBarView): string {
   const standing = `${view.current} of ${view.max}.`
-  if (view.lethal) return `${standing} Lethal this Hunt.`
-  if (view.pending === 0) return `${standing} Nothing at risk yet.`
-  return `${standing} ${view.pending} at risk this Hunt.`
+  return view.lethal ? `${standing} Lethal.` : standing
 }
 
-/** The end panel's two-stage control (AC4). Stage one commits the damage so the bars can be seen
- *  to move; stage two leaves the Hunt. */
-export const APPLY_DAMAGE_LABEL = 'Apply the damage'
 export const FINISH_ROUND_LABEL = 'Deal the next Hunt'
 
-/** The terminal state when a bar empties. Keyed by the winner `applyHunt` resolved — the tie is
- *  already decided by `SIMULTANEOUS_DEPLETION_WINNER`, so there is no third case here.
+/** The terminal state when a bar empties. Keyed by the winner `applyDamage` resolved — the tie
+ *  is already decided by `SIMULTANEOUS_DEPLETION_WINNER`, so there is no third case here.
  *  Placeholder copy: the wording is the developer's. */
 export const ENCOUNTER_OUTCOME: Readonly<Record<DuelSide, string>> = {
   [DuelSide.Player]: 'The Quarry is down. The encounter is yours.',
   [DuelSide.Quarry]: 'You are down. The run ends here.',
 }
 
-/** AC1 — the two declarable paths, as the player sees them named. */
-export const HUNT_DECLARATION_NAME: Readonly<Record<HuntDeclaration, string>> = {
-  [HuntDeclaration.Win]: 'Win',
-  [HuntDeclaration.Lose]: 'Lose',
+/** §3.2's four outcomes, as the player is told them. Placeholder copy: the wording is the
+ *  developer's. */
+export const TRICK_OUTCOME_MESSAGE: Readonly<Record<TrickOutcome, string>> = {
+  [TrickOutcome.CleanWin]: 'Clean trick, taken. Both cards banked.',
+  [TrickOutcome.Dodge]: 'Skull dodged. Both cards banked.',
+  [TrickOutcome.CleanLoss]: 'Clean trick lost. 1 damage — the bank cashes.',
+  [TrickOutcome.SkullWin]: 'You ate the skull. 1 damage — the bank cashes.',
 }
 
-/** Copy for `declareHunt`'s rejections. Both are structurally unreachable through the
- *  gate, which only renders while undeclared — carried so a future caller has copy. */
-export const DECLARE_REJECTION_MESSAGE: Readonly<Record<DeclareRejection, string>> = {
-  [DeclareRejection.AlreadyDeclared]: 'This Hunt is already declared.',
-  [DeclareRejection.HuntUnderway]: 'The Hunt has started — it is too late to declare.',
+export const SKULL_MARK_LABEL = 'Skull'
+export const BANK_LABEL = 'Bank'
+export const MULTIPLIER_LABEL = 'Streak'
+export const QUARRY_SHAPE_LABEL = 'What the Quarry holds'
+
+/** One suit row's own phrase (AC11) — never a rank. The single owner of this wording: both
+ *  `quarryShapeText`'s joined sentence and `QuarryShape.tsx`'s per-row `aria-label` build from
+ *  this rather than each spelling the phrase out separately (DLR-80 review — the two had drifted
+ *  into two copies of the same phrase, one live and one tested only against itself). */
+export function suitShapeRowText(row: SuitShape): string {
+  const skulls = row.skulled === 0 ? 'none skulled' : `${row.skulled} skulled`
+  return `${SUIT_NAME[row.suit]}: ${row.held} held, ${skulls}`
+}
+
+/** One sentence for a reader who cannot see the shape rows (AC11) — never a rank. */
+export function quarryShapeText(shape: readonly SuitShape[]): string {
+  return `${QUARRY_SHAPE_LABEL} — ${shape.map(suitShapeRowText).join('; ')}.`
 }
 
 /**

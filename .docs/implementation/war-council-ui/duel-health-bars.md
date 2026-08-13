@@ -1,57 +1,76 @@
 _Part of [War Council UI](README.md)._
 
-**DLR-71** built this, and it is the ticket where the duel reached the screen. Before it, health
-depleted correctly and no player could see it: `src/hunt/encounter.ts` resolved encounters under
-Vitest while the app dealt one Hunt, stated two damage figures, and re-dealt. This is the surface
-that closes that gap — **two health bars, one per side, each carrying its own pending damage** — plus
-the commit that makes the damage land where a player can watch it.
+**DLR-71** built this, and it is the ticket where the duel reached the screen. **DLR-80 then retired
+the bars' pending segment and rescaled them**, so read this file with that in mind: the mirror, the
+geometry and the CSS transition survive unchanged, and the projection machinery does not.
 
-### One derivation replaces two, and one widget replaces four readouts
+### The pending segment is gone, and that was the point of the redesign
 
-The change's shape is easiest to see in what was deleted. `WarCouncilRound` used to call `scoreHunt`
-**twice**, handing the player's half to `HuntLedger`, which then computed `spoils * band.multiplier`
-**itself** — a second arithmetic path that bypassed `roundDamage` entirely. It was not producing
-wrong numbers, but only because `DAMAGE_ROUNDING` happens to be a no-op on integer products; the
-first ×0.5 band with an odd card sum would have made the ledger and the end panel disagree.
+The bars used to carry each side's **pending damage** as a lighter segment carved out of its own
+current health — the fighting-game recoverable-damage grammar — projected by applying
+`pendingHuntDamage`'s figure to a copy of the encounter every render.
 
-Both calls are gone. `WarCouncilRound` now makes **one** call to `pendingHuntDamage(ui.round)` per
-render, which returns `null` while the Hunt is undeclared and otherwise the same `HuntOutcome` that
-`huntDamage` returns on a finished Hunt — the two share the private `outcomeFor`, so there is no
-second total that could drift (see [../war-council/scoring.md](../war-council/scoring.md)). That
-outcome is crossed into the duel's vocabulary by `duelSideDamage`, the program's only
-`PlayerSide` → `DuelSide` crossing, and the crossed record is fed to `applyHunt` against a **copy**
-of the live encounter to get each side's projected post-Hunt health.
+**DLR-80 deleted all of it**, along with `pendingHuntDamage` itself. The reason is the whole of the
+redesign in miniature: that figure was **non-monotonic**. It was `Spoils × Standing` read off the
+*current* trick count, so winning a trick could move you into a worse Standing band and make the
+number you were watching *fall*. A readout that goes backwards when you do well is the thing the
+redesign exists to remove.
 
-This is what makes the ticket's headline guarantee structural rather than a promise: **the number the
-player watches climb through thirteen tricks is the number that lands**, because the clamp at zero,
-the overkill discard and the rounding are each performed at exactly one point in the program and the
-bar reads the result of that same point. It is not enforced by a test — a test asserts it, in
-`__tests__/WarCouncilRound.duelHealthBars.test.tsx`, but it holds because there is no second path to
-drift from. `applyHunt`'s own docblock asks for precisely this, naming a second projection routine as
-the thing it exists to prevent.
+What replaced it is not a bar segment at all. **The bank only ever climbs** until it cashes, and it
+lives in its own readout in the dossier column — see
+[hunt-readouts-and-telegraph.md](hunt-readouts-and-telegraph.md). Reusing the bars' pending machinery
+would have carried the old shape forward into a mechanic that does not need it.
 
-`HuntLedger` consequently computes nothing at all now (see below).
+So `WarCouncilRound` now passes `ui.encounter.health` as **both** `current` and `projected`:
+
+```ts
+const bars = duelHealthBars(ui.encounter.health, ui.encounter.health, maxHealth)
+```
+
+There is nothing to project, because **damage has already landed by the time this renders**. The
+reducer applies each trick's damage as the trick resolves, so the bar shows the real, current,
+already-clamped figure rather than a preview of one. The guarantee the old design needed a shared
+arithmetic path to make ("the number you watch is the number that lands") is now trivially true:
+there is only one number.
+
+`secure`/`pending`/`securePct`/`pendingPct` therefore still exist in `HealthBarView` but the pending
+half is always zero. That is a simplification a later ticket could take further by narrowing the
+type; it was left alone here because the geometry is correct as it stands and nothing renders a
+zero-width segment.
+
+### The scale changed by ~54×, and it is the developer's to judge
+
+`PLAYER_START_HEALTH` went from **1,350 to 25**, so the player's bar is now the denominator of a
+small integer count: it moves in **nine or so discrete steps of 1** rather than draining smoothly.
+The Quarry's bar is unchanged in kind — a placeholder 1,000 absorbing `bank × multiplier`.
+
+Every spec asserting a bar percentage against 1,350 was rewritten to **derive** its figures from
+`PLAYER_START_HEALTH` and `QUARRY_ENCOUNTER_HEALTH[0]` rather than restating a literal, so they
+survive the developer setting the Quarry's real figure.
+
+**Whether a bar treatment tuned for a continuous drain reads well for a nine-step count is a visual
+question, and it is open.**
 
 ### The geometry is pure, and the component only formats
 
 `duelHealthBars.ts` takes three health records — `current`, `projected`, `max` — and returns one
 `HealthBarView` per side: `secure`, `pending`, `current`, `max`, `securePct`, `pendingPct`, and a
-`lethal` flag. It performs **no damage arithmetic and no clamping**, because `applyHunt` did both
+`lethal` flag. It performs **no damage arithmetic and no clamping**, because `applyDamage` did both
 before `projected` arrived. Its only computation is one subtraction recovering the already-clamped
 pending figure for display, and two divisions by `max`.
 
 That divisor is the module's one guard: a non-positive or non-finite `max` throws a `RangeError`
 rather than emitting a `NaN` percentage, because **a `NaN` width collapses a bar to nothing and logs
-nothing anywhere** — the same reasoning `standingSegments.ts` uses for an empty table, and the reason
+nothing anywhere** — the same reasoning the retired `standingSegments.ts` used for an empty table, and the reason
 the guard sits on the divisor rather than on the symptom. Both configured maxima are positive, so it
 is a guard and not a live path.
 
 It carries one **documented, unasserted precondition**: `projected[side] <= current[side]` for both
 sides. A caller violating it renders a negative `pending` rather than being rejected. This is
 deliberately documentation rather than a second throw — the module performs no clamping by design,
-and duplicating `applyHunt`'s clamp here would be the second arithmetic path the whole ticket exists
+and duplicating `applyDamage`'s clamp here would be a second arithmetic path this split exists
 to avoid. It holds today because every caller derives `projected` either as `current` itself (pending
-forced to exactly zero) or via `applyHunt`, whose `deplete` is `Math.max(0, current - damage)` and so
+forced to exactly zero, which is what every caller passes since DLR-80) or via `applyDamage`, whose `deplete` is `Math.max(0, current - damage)` and so
 never increases health. A future healing mechanic or a different projection source must preserve it.
 
 `DuelHealthBars.tsx` then **computes nothing** — the same division of labour that lets
@@ -62,7 +81,7 @@ cheap, not that it be built; the array return is what makes it cheap, and the co
 `pr-description.md` is the record.
 
 Because it imports no React and touches no DOM global, `duelHealthBars.ts` runs in the cheap `node`
-Vitest project beside `standingSegments.ts` and `handOrder.ts` — the same call, for the same reason:
+Vitest project beside `handOrder.ts` — the same call, for the same reason:
 **how a bar is drawn is not a game rule.**
 
 > **A Windows resolution trap this pair created.** `duelHealthBars.ts` and `DuelHealthBars.tsx`
@@ -72,39 +91,6 @@ Vitest project beside `standingSegments.ts` and `handOrder.ts` — the same call
 > undefined`. Every file importing both writes **explicit extensions**. `src/App.tsx` hit the same
 > trap in a second shape: `./app` collides with `App.tsx` itself, so it imports
 > `./app/warCouncilMount` directly rather than the barrel.
-
-### Pending is carved out of current health, and it shrinks
-
-The rendering grammar is the fighting-game **recoverable-damage** segment: pending is drawn as a
-lighter segment carved out of the bar's own current health, not as a second widget. `secure +
-pending` always equals `current`, so the filled length **is** current health and never grows.
-
-That property is what makes the design's own worst case legible. A tenth trick collapsing the Win
-path's multiplier from ×5 to ×0.5 takes pending from 540 to 60, and it shows as the grey segment
-shrinking back into solid rather than as two numbers changing in opposite directions. §6's stated
-risk was four moving figures reading as noise; two bars whose own lightness carries the distinction
-answers it by form. A player distinguishes *health lost* from *health at risk* **inside one bar**
-rather than by comparing two readouts.
-
-Three states, and the accessible sentence says which:
-
-| State                        | `aria-valuetext` reads                | Why the distinction matters                                                                             |
-| ---------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Undeclared, or nothing at risk | `1350 of 1350. Nothing at risk yet.` | `pendingHuntDamage` returns `null` before a declaration — a different state from a Hunt threatening zero |
-| Damage pending                | `1062 of 1350. 96 at risk this Hunt.` | `aria-valuenow` carries one number; the second has to live here                                          |
-| Pending would empty the bar   | `96 of 1350. Lethal this Hunt.`       | Rather than making a screen-reader user compare two figures                                             |
-
-Each bar is one `role="meter"` — the ARIA role for a bounded reading that is **not** a task's
-progress — with `aria-valuemin`/`max`/`now` and that `aria-valuetext`. Both are directly queryable by
-role and name, which is what the specs use. The lethal state is a `repeating-linear-gradient` hatch
-**and** an inset `box-shadow` edge, not a colour swap, so it survives greyscale and
-`prefers-reduced-motion`.
-
-The two segment widths are set as **CSS custom properties** carrying ready-made percentage strings
-(`--w`), never as an inline `width`. An inline style property outranks an external rule with no
-`!important`, so writing `width` here would make the stylesheet's own transition and lethal state
-permanently unreachable — the same defect `HandFan`'s transform split exists to avoid, recorded in
-[layout-and-styling.md](layout-and-styling.md).
 
 ### The mirror is one CSS declaration, and it costs no vertical space
 
@@ -131,58 +117,6 @@ to reveal it, because `.wc-shell`'s `overflow: hidden` converts an overflow bug 
 bug. QA measured the bars' own `getBoundingClientRect()` at every named viewport for the same reason
 — a no-scroll assertion is necessary and not sufficient.
 
-### `HuntLedger` reshaped rather than retired, and why that was the safe call
-
-`HuntLedger` is now the **Standing readout only**: its `Spoils` cell, its two operators and its
-`Damage` cell are gone, along with the `spoils * band.multiplier` product described above. The bars
-carry those numbers. It computes nothing.
-
-Reshaping it rather than deleting it was a **deliberate choice made off an audit finding**, and the
-reasoning is worth keeping because nothing type-checks it. The `wc-ledger*` class family had 24
-occurrences across three files — and three of them were in `warCouncilStandingTrack.css`, which was
-**outside this ticket's file list**: lines 136 and 167 select `.wc-ledger-cell.wc-is-compact`, the
-Standing track's own narrow-viewport fallback. Retiring the class family would have silently deleted
-the narrow-viewport Standing readout, because CSS binds by string and TypeScript sees none of it. So
-`.wc-ledger`, `.wc-ledger-cell`, `.wc-ledger-key` and `.wc-ledger-value` were **kept**, and only
-`.wc-ledger-op` — whose two operators left with the cells they separated — was deleted. A grep
-expecting *at least three* `wc-is-compact` hits is the standing check.
-
-### The commit is a reducer transition; the movement is a CSS transition
-
-AC4 asked for the arithmetic **then** the bars moving, and the bars only move if something commits
-the damage while the panel is still on screen. So the end panel is two-stage:
-
-1. Both sides' `Spoils × Standing = Damage` as arithmetic, bars still at pre-Hunt health with their
-   pending segments, and one control: **"Apply the damage"**.
-2. `applied` is set, the bars re-render at the new health with zero pending, and the control becomes
-   **"Deal the next Hunt"** — or, if a bar emptied, a terminal `role="status"` line stating the
-   outcome and offering no next Hunt.
-
-`RoundUiState` gained `applied: EncounterState | null` for this — **in the existing reducer, not a
-second `useState`** — and `CommitDamage` calls `applyHunt` in the reducer, where the engine calls
-already live and never in a component. Because `applied` is state and the bar's fill is a `width`
-driven by a custom property, the movement AC4 asked for is a plain CSS `transition` on a declarative
-re-render: **no effect, no timer, nothing to clean up**, and suppressed under
-`prefers-reduced-motion` like the module's two existing animations.
-
-The reducer branch carries **two guards** — `state.applied !== null` and
-`isEncounterResolved(encounter)` — each returning the input state unchanged rather than letting
-`applyHunt`'s `RangeError` escape, because **a throw inside a reducer during an event handler
-unmounts the tree**. Neither is a live path: the panel only renders the control while
-`applied === null`, and `App` stops dealing once the encounter resolves. They are there because two
-comparisons are cheaper than a blank screen.
-
-Once `applied` is set, `onComplete` hands the **already-applied** `EncounterState` up to App. That is
-why `WarCouncilRoundResult.damage` became `encounter` rather than staying a damage record: handing up
-the applied state makes applying one Hunt twice **unexpressible** rather than merely unlikely. App
-sets it; it never re-applies.
-
-`App.tsx` owns that `EncounterState` and carries it Hunt to Hunt, seeded from
-`startEncounter(SLICE_ENCOUNTER_INDEX)` — see [../app/README.md](../app/README.md). The `key={round}`
-remount that was already there is what resets `ui.applied` for the next Hunt while `encounter`
-persists, which is the whole of the Hunt-to-Hunt continuity. Encounter-*to*-encounter sequencing is
-still DLR-73's.
-
 ### What QA measured, rather than what the tests assert
 
 `jsdom` has no layout engine, and this screen has had a layout defect caught by a real browser
@@ -201,10 +135,10 @@ a full played Hunt, not spec assertions:
   scrollbar at phone portrait is the felt's own scoped `.wc-table-inner` region, the documented
   exception.
 
-> **The crossing is easy to get backwards, and the contract's own test sketch did.** The Quarry's bar
-> depletes by what the **player** dealt — `duelSideDamage`'s `DuelSide.Quarry` entry reads
-> `outcome.incoming[PlayerSide.Cpu]`, the damage applied *to* the Cpu seat — so it pairs with the end
-> panel's *"You Damage"*, not *"Opponent Damage"*. The plan's test sketch had it the other way round
-> and was corrected during implementation. This is exactly the typo `duelSideDamage`'s own docblock
-> warns type-checks cleanly and produces plausible numbers forever, which is why the crossing is
-> performed in one place and never by a component swapping two keys.
+> **The crossing is easy to get backwards, and a previous contract's test sketch did.** The Quarry's
+> bar depletes by what the **player** dealt. Since DLR-80 that reading is `incomingFrom`'s
+> `DuelSide.Quarry` entry, which carries the resolution's `cashOut` — the bank the player just cashed
+> — while `DuelSide.Player` carries `damageToPlayer`. A component swapping the two keys would
+> type-check cleanly and produce plausible numbers indefinitely, because both are non-negative
+> integers and neither bar can tell whose damage it received. That is why the crossing is performed
+> in exactly one place and never by a component.

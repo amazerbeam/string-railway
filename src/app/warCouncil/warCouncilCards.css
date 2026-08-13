@@ -66,10 +66,11 @@
   padding: clamp(0.18rem, 0.7vmin, 0.4rem) 0;
   background: linear-gradient(168deg, var(--wc-parchment) 0%, var(--wc-parchment-shade) 100%);
   color: var(--wc-ink);
-  /* AC7 (2/2): a border in the card's own suit colour. `currentColor` resolves against
-     the `.wc-suit-*` rules below, so this is one declaration covering all three suits
-     and introduces no new colour token. */
-  border: 2px solid currentColor;
+  /* AC7 (2/2)/DLR-80: the border reads the `--wc-suit` custom property the `.wc-suit-*` rules
+     below set — the same property the centred `SuitMark` reads via its own `color`, so the
+     suit reads twice (edge and symbol) and never from colour alone. One declaration covers all
+     three suits; `--wc-ink-soft` is the fallback for a card rendered with no suit class. */
+  border: 2px solid var(--wc-suit, var(--wc-ink-soft));
   border-radius: clamp(2px, 0.5vmin, 4px);
   box-shadow:
     0 0 0 1px #00000055,
@@ -96,14 +97,39 @@
   color: var(--wc-ink);
 }
 
-/* AC7 (1/2): the suit mark sits in the bottom-left corner, under the rank. Absolute, so it
-   leaves the column flow. */
+/* DLR-80: the suit mark moved from a bottom-left corner index to centred and large — the
+   card's dominant mark, so the suit reads at a glance across a fanned hand and a condensed
+   table card alike. `color` reads the same `--wc-suit` property the border does (AC7/game-ux's
+   state-without-colour rule: the suit is legible from the symbol alone even if the border's
+   hue is indistinguishable). */
 .wc-card-suit {
   position: absolute;
-  left: calc(var(--wc-card-w) * 0.09);
-  bottom: calc(var(--wc-card-w) * 0.07);
-  width: calc(var(--wc-card-w) * 0.3);
-  height: calc(var(--wc-card-w) * 0.3);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(var(--wc-card-w) * 0.56);
+  height: calc(var(--wc-card-w) * 0.56);
+  color: var(--wc-suit, var(--wc-ink-soft));
+}
+
+/* DLR-80/AC3: the skull on a face-up mined card. A dark disc under a light glyph, so it reads
+   over any of the three suit colours and survives greyscale — the colour is never the signal,
+   the disc-plus-glyph form is. Sized and positioned against the card in `PlayingCard`'s own
+   context; the shape readout below repositions the identical mark inline instead. */
+.wc-card .wc-skull-mark {
+  position: absolute;
+  top: calc(var(--wc-card-w) * 0.07);
+  right: calc(var(--wc-card-w) * 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--wc-card-w) * 0.24);
+  height: calc(var(--wc-card-w) * 0.24);
+  border-radius: 50%;
+  background: var(--wc-ink);
+  color: var(--wc-parchment);
+  font-size: calc(var(--wc-card-w) * 0.13);
+  line-height: 1;
 }
 
 /* An ability marker, not a printed name — "WOODCUTTER" cannot fit at this width
@@ -125,13 +151,13 @@
 }
 
 .wc-card.wc-suit-bells {
-  color: var(--wc-bells);
+  --wc-suit: var(--wc-bells);
 }
 .wc-card.wc-suit-keys {
-  color: var(--wc-keys);
+  --wc-suit: var(--wc-keys);
 }
 .wc-card.wc-suit-moons {
-  color: var(--wc-moons);
+  --wc-suit: var(--wc-moons);
 }
 
 /* cards on the table or the pile are condensed — a record, not a choice */
@@ -160,13 +186,13 @@
 }
 
 /* The grey means "this card is not a legal choice" — it only carries that meaning against
-   legal siblings. When the WHOLE hand is inert (before the declaration, during the Quarry's
-   turn, while a trick is held or a prompt is open) every card is illegal, so greying them all
-   singles out nothing and just reads as a dead hand — at the declare gate, which is exactly
-   the moment the player has to read all thirteen cards to choose a path. So the filter is
-   suppressed while the fan is inert; the cards stay `disabled` and unliftable regardless, and
-   the hint line above the fan is what says why nothing is tappable. `not-allowed` goes too:
-   nothing here is being refused, it is just not your turn yet. */
+   legal siblings. When the WHOLE hand is inert (during the Quarry's turn, while a trick is
+   held, or while a prompt is open) every card is illegal, so greying them all singles out
+   nothing and just reads as a dead hand — at exactly the moment the player most needs to read
+   the hand clearly. So the filter is suppressed while the fan is inert; the cards stay
+   `disabled` and unliftable regardless, and the hint line above the fan is what says why
+   nothing is tappable. `not-allowed` goes too: nothing here is being refused, it is just not
+   your turn yet. */
 .wc-fan.wc-is-inert .wc-card.wc-is-illegal {
   filter: none;
   cursor: default;
@@ -204,7 +230,7 @@
   z-index: 20;
 }
 
-:is(.wc-card, .wc-decline, .wc-is-carry-on, .wc-declare-option):focus-visible {
+:is(.wc-card, .wc-decline, .wc-is-carry-on):focus-visible {
   outline: 2px solid var(--wc-brass);
   outline-offset: 2px;
   z-index: 30;
@@ -229,35 +255,9 @@
   margin: -0.6rem -0.9rem;
 }
 
-/* DLR-63's declare-gate hover lift lives here rather than beside `.wc-declare-option`'s
-   other rules, which now live in `warCouncilDeclare.css` (formerly in `warCouncilHunt.css`
-   before that sheet, too, crossed its 400-line budget): both sheets are imported AFTER this
-   one, so a rule there would sit later in cascade order and win over the
-   `prefers-reduced-motion` override below it at equal specificity — exactly backwards.
-   Keeping the hover rule and its suppression in the same file, in that order, is what makes
-   the override reliable. */
-@media (hover: hover) {
-  .wc-declare-option:hover {
-    border-color: var(--wc-brass);
-    transform: translateY(-2px);
-  }
-}
-
-/* Paired with the hover lift above (react-frontend's hover/active pairing rule) so touch
-   and stylus input — which never fire :hover — still get a pressed acknowledgement. */
-.wc-declare-option:active {
-  border-color: var(--wc-brass);
-  transform: translateY(0);
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .wc-card,
-  .wc-declare-option {
+  .wc-card {
     transition: none;
-  }
-
-  .wc-declare-option:hover {
-    transform: none;
   }
 }
 

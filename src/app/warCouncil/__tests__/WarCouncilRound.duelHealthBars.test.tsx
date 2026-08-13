@@ -1,18 +1,16 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { dealRound, PlayerSide } from '../../../warCouncil'
-import { DuelSide } from '../../../hunt'
+import { dealRound, PlayerSide, RoundPhase } from '../../../warCouncil'
+import { HAND_SIZE } from '../../../hunt'
 import WarCouncilRound from '../WarCouncilRound'
 import { encounterFixture, huntFixture, maxHealthFixture } from './roundFixture'
 
 afterEach(cleanup)
 
-// DLR-71's AC2 needs a full 13-trick round driven to completion, which is enough apparatus
-// (a deterministic RNG, a driving loop, the declare click) to carve into its own file rather
-// than pushing `WarCouncilRound.test.tsx` past the 400-line budget — the same resolution
-// `plan.md`'s own Risks section names for this exact file. Duplicated rather than imported,
-// matching the established local pattern (`roundReducer.test.ts`, `playCard.test.ts`).
+// DLR-80's full-hand, six-trick end-to-end pass — carved into its own file for the same reason
+// DLR-71 first split it off `WarCouncilRound.test.tsx`: the driving-loop apparatus for a full
+// hand pushes that file back over the 400-line budget if it lives beside every other spec.
 
 // A deterministic RNG — never `Math.random()` in anything that must be reproducible.
 function lcg(seed: number): () => number {
@@ -23,88 +21,106 @@ function lcg(seed: number): () => number {
   }
 }
 
-/**
- * Drives a full 13-trick round to completion through the rendered DOM alone — no reach into
- * reducer state. Mirrors `WarCouncilRound.test.tsx`'s own driving loop.
- */
-function playFullRoundToCompletion() {
-  let guard = 0
-  while (screen.queryByRole('heading', { name: /the hunt is over/i }) === null) {
-    guard += 1
-    if (guard > 400) {
-      throw new Error('round did not complete — infinite loop guard tripped')
-    }
-    const fault = screen.queryByRole('alert')
-    if (fault) {
-      throw new Error(`the engine rejected the Quarry's own move: ${fault.textContent}`)
-    }
-    const prompt = screen.queryByRole('group', { name: 'Choose what the card does' })
-    if (prompt) {
-      fireEvent.click(within(prompt).getAllByRole('button')[0])
-      continue
-    }
-    const tapToCarryOn = screen.queryByRole('button', { name: /tap the table to carry on/i })
-    if (tapToCarryOn) {
-      fireEvent.click(tapToCarryOn)
-      continue
-    }
-    const letThemLead = screen.queryByRole('button', { name: /let them lead/i })
-    if (letThemLead) {
-      fireEvent.click(letThemLead)
-      continue
-    }
-    const hand = screen.getByRole('group', { name: /hand/i })
-    const legalCard = within(hand)
-      .getAllByRole('button')
-      .find((button) => !(button as HTMLButtonElement).disabled)
-    if (!legalCard) {
-      throw new Error('no legal card found in hand, and no other branch applied')
-    }
-    fireEvent.click(legalCard)
-    fireEvent.click(legalCard)
-  }
+function healthMeter(name: 'Your health' | 'The Quarry’s health') {
+  return screen.getByRole('meter', { name })
 }
 
-function declareWin() {
-  fireEvent.click(screen.getByRole('button', { name: /play to win/i }))
-}
-
-/** Pulls the pending figure out of a bar's `aria-valuetext` (AC7's one sentence). */
-function readRiskFrom(meter: HTMLElement): number {
-  const text = meter.getAttribute('aria-valuetext') ?? ''
-  const match = text.match(/(\d+(?:\.\d+)?) at risk this Hunt\./)
-  if (!match) throw new Error(`no pending figure found in aria-valuetext: ${text}`)
-  return Number(match[1])
-}
-
-describe('WarCouncilRound — the pending figure IS the applied figure (AC2)', () => {
-  it('reports the same figure as pending, as arithmetic, and as applied damage', () => {
+describe('WarCouncilRound — a full hand, damage landing per trick as it happens (AC6/AC8)', () => {
+  it('resolves every trick, and reports onComplete once with the encounter carrying every damage event the DOM itself showed land', () => {
+    const onComplete = vi.fn()
     render(
       <WarCouncilRound
         initialState={dealRound(PlayerSide.Cpu, lcg(2026), huntFixture.quarry.character)}
         hunt={huntFixture}
         encounter={encounterFixture}
         maxHealth={maxHealthFixture}
-        onComplete={vi.fn()}
+        onComplete={onComplete}
       />,
     )
-    declareWin()
-    playFullRoundToCompletion()
 
-    // The Quarry's bar depletes by what the PLAYER dealt — `duelSideDamage` crosses
-    // `dealt[PlayerSide.Player]` onto `DuelSide.Quarry` — so that is the figure this pins
-    // against the panel's own "You Damage" cell, not "Opponent Damage" (which depletes the
-    // PLAYER's own bar instead). Getting this crossing backwards is exactly the typo DLR-70's
-    // `duelSideDamage` docblock warns would type-check and produce plausible numbers forever.
-    const quarryMeter = screen.getByRole('meter', { name: 'The Quarry’s health' })
-    const pendingOnQuarry = readRiskFrom(quarryMeter)
-    const stated = Number(screen.getByLabelText(/^You Damage: /).textContent)
-    expect(pendingOnQuarry).toBe(stated)
+    let tricksResolved = 0
+    let eventsObserved = 0
+    let guard = 0
 
-    fireEvent.click(screen.getByRole('button', { name: 'Apply the damage' }))
-    const after = screen.getByRole('meter', { name: 'The Quarry’s health' })
-    expect(Number(after.getAttribute('aria-valuenow'))).toBe(
-      maxHealthFixture[DuelSide.Quarry] - stated,
-    )
+    /** Snapshots both meters, runs `action`, then counts a resolution iff the reveal appears —
+     *  called after EITHER a completing hand tap or a completing ability choice, since a Fox or
+     *  Woodcutter played as a trick's second card only resolves once its choice is made, one
+     *  dispatch after the tap that opened the prompt. Missing the prompt path here is exactly
+     *  how two of six tricks went silently uncounted before this was written this way. */
+    function resolveIfShown(action: () => void) {
+      const before = {
+        player: healthMeter('Your health').getAttribute('aria-valuenow'),
+        quarry: healthMeter('The Quarry’s health').getAttribute('aria-valuenow'),
+      }
+      action()
+      if (screen.queryByText(/take the trick/i)) {
+        tricksResolved += 1
+        const after = {
+          player: healthMeter('Your health').getAttribute('aria-valuenow'),
+          quarry: healthMeter('The Quarry’s health').getAttribute('aria-valuenow'),
+        }
+        if (after.player !== before.player || after.quarry !== before.quarry) {
+          eventsObserved += 1
+        }
+      }
+    }
+
+    // Stops the instant either the hand-over or the terminal panel appears — DLR-80's cash-out
+    // can resolve the encounter before the sixth trick, so this never assumes six will be
+    // reached; the assertion below checks which one actually happened.
+    while (screen.queryByRole('heading', { name: /the hand is over|the hunt is over/i }) === null) {
+      guard += 1
+      if (guard > 200) {
+        throw new Error('hand did not complete — infinite loop guard tripped')
+      }
+      const fault = screen.queryByRole('alert')
+      if (fault) {
+        throw new Error(`the engine rejected the Quarry's own move: ${fault.textContent}`)
+      }
+      const prompt = screen.queryByRole('group', { name: 'Choose what the card does' })
+      if (prompt) {
+        const choice = within(prompt).getAllByRole('button')[0]
+        resolveIfShown(() => fireEvent.click(choice))
+        continue
+      }
+      const tapToCarryOn = screen.queryByRole('button', { name: /tap the table to carry on/i })
+      if (tapToCarryOn) {
+        fireEvent.click(tapToCarryOn)
+        continue
+      }
+      const letThemLead = screen.queryByRole('button', { name: /let them lead/i })
+      if (letThemLead) {
+        fireEvent.click(letThemLead)
+        continue
+      }
+      const hand = screen.getByRole('group', { name: /hand/i })
+      const legalCard = within(hand)
+        .getAllByRole('button')
+        .find((button) => !(button as HTMLButtonElement).disabled)
+      if (!legalCard) {
+        throw new Error('no legal card found in hand, and no other branch applied')
+      }
+      resolveIfShown(() => {
+        fireEvent.click(legalCard)
+        fireEvent.click(legalCard)
+      })
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: 'Deal the next Hunt' }))
+    expect(onComplete).toHaveBeenCalledTimes(1)
+    const result = onComplete.mock.calls[0][0]
+
+    // This seed's Quarry health (1000) and this player's (25) cannot be drained by one hand's
+    // worth of cash-outs and hits — HAND_SIZE=6 tricks at DAMAGE_PER_HIT=1 caps the player's
+    // own loss at 6, and typical card-rank sums never approach a thousand-point cash-out — so
+    // the hand reaches its own sixth trick rather than an early terminal resolution.
+    expect(tricksResolved).toBe(HAND_SIZE)
+    expect(result.finalState.tricksPlayed).toBe(HAND_SIZE)
+    expect(result.finalState.phase).toBe(RoundPhase.Complete)
+    // AC8's forced end-of-hand cash-out fires even on a hand that took every trick clean, so
+    // this is always at least 1 — but the exact count is cross-checked against what the DOM
+    // itself showed moving, rather than re-deriving the bank arithmetic in the test.
+    expect(result.encounter.damageEventsApplied).toBe(eventsObserved)
+    expect(eventsObserved).toBeGreaterThanOrEqual(1)
   })
 })

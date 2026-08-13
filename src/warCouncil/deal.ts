@@ -1,20 +1,27 @@
+import { HAND_SIZE } from '../hunt'
 import { createDeck } from './deck'
 import { shuffle } from './shuffle'
-import { otherSide, PlayerSide, RoundPhase, TRICKS_PER_ROUND, type RoundState } from './types'
+import { assignSkulls } from './skulls'
+import { otherSide, PlayerSide, RoundPhase, type RoundState } from './types'
 import type { QuarryCharacter } from '../hunt'
 
-// `quarryCharacter` is the encounter's round-long rule-break (§4), set here and nowhere
-// else. Optional: which character an encounter draws is a later ticket's run scheduling,
-// so every caller today deals a characterless round with the base rules.
+/**
+ * One hand: `HAND_SIZE` cards each, one decree, the rest a draw pile. With the 33-card deck that
+ * is 6 + 6 dealt, 1 decree and 20 left for the Woodcutter.
+ *
+ * Skulls are assigned to the Quarry's dealt hand only (AC2) and drawn through the SAME injected
+ * `rng` the shuffle uses, so a seeded deal reproduces its skulls as well as its cards. A card the
+ * Woodcutter later draws arrives unskulled: §3.4's density is a property of the deal.
+ */
 export function dealRound(
   dealer: PlayerSide,
   rng: () => number,
   quarryCharacter?: QuarryCharacter,
 ): RoundState {
   const shuffled = shuffle(createDeck(), rng)
-  const playerHand = shuffled.slice(0, TRICKS_PER_ROUND)
-  const cpuHand = shuffled.slice(TRICKS_PER_ROUND, TRICKS_PER_ROUND * 2)
-  const remaining = shuffled.slice(TRICKS_PER_ROUND * 2)
+  const playerHand = shuffled.slice(0, HAND_SIZE)
+  const cpuHand = shuffled.slice(HAND_SIZE, HAND_SIZE * 2)
+  const remaining = shuffled.slice(HAND_SIZE * 2)
   const decree = remaining[0]
   const drawPile = remaining.slice(1)
 
@@ -25,7 +32,10 @@ export function dealRound(
     decree,
     trumpSuit: decree.suit,
     tricksWon: { [PlayerSide.Player]: 0, [PlayerSide.Cpu]: 0 },
-    capturedCards: { [PlayerSide.Player]: [], [PlayerSide.Cpu]: [] },
+    skulledCards: assignSkulls(cpuHand, rng),
+    bank: 0,
+    multiplier: 0,
+    lastResolution: null,
     currentTrick: [],
     leader: otherSide(dealer),
     tricksPlayed: 0,

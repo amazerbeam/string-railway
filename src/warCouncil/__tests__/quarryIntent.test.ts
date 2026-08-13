@@ -1,33 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { HuntDeclaration, TelegraphFidelity } from '../../hunt'
+import { HAND_SIZE, TelegraphFidelity } from '../../hunt'
 import { chooseCpuMove, commitQuarryMove, quarryIntent, QuarryIntentStance } from '../cpuPlayer'
 import { dealRound } from '../deal'
-import { declareHunt } from '../declareHunt'
 import { playCard } from '../playCard'
 import { QUARRY_SIDE } from '../quarryRuleBreak'
-import {
-  currentTurn,
-  IllegalMoveReason,
-  PlayerSide,
-  RoundPhase,
-  type DeclarationState,
-  type RoundState,
-} from '../types'
+import { currentTurn, IllegalMoveReason, PlayerSide, RoundPhase, type RoundState } from '../types'
 import { resolveTrickWinner } from '../resolveTrick'
-
-// DLR-63 AC1: playCard (and commitQuarryMove, which delegates to it) now rejects an
-// undeclared round. Only the fixtures that actually reach playCard need this.
-const WIN_DECLARATION: DeclarationState = {
-  path: HuntDeclaration.Win,
-}
-
-// Declares a Win on a freshly dealt round for the simulated full-round fixture below.
-function declaredDeal(...args: Parameters<typeof dealRound>): RoundState {
-  const dealt = dealRound(...args)
-  const declared = declareHunt(dealt, HuntDeclaration.Win)
-  if (!declared.ok) throw new Error('expected declare ok')
-  return declared.state
-}
 
 function stateWith(overrides: Partial<RoundState>): RoundState {
   return {
@@ -40,7 +18,10 @@ function stateWith(overrides: Partial<RoundState>): RoundState {
     decree: { suit: 'bells', rank: 4 },
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
-    capturedCards: { player: [], cpu: [] },
+    skulledCards: [],
+    bank: 0,
+    multiplier: 0,
+    lastResolution: null,
     currentTrick: [],
     leader: PlayerSide.Player,
     tricksPlayed: 0,
@@ -149,7 +130,7 @@ describe('quarryIntent — guarded states (Defender Critical 1, Critical 2)', ()
     const state = stateWith({
       leader: QUARRY_SIDE,
       hands: { player: [], cpu: [] },
-      tricksPlayed: 13,
+      tricksPlayed: HAND_SIZE,
       phase: RoundPhase.Complete,
     })
     expect(quarryIntent(state)).toBeNull()
@@ -184,7 +165,6 @@ describe('quarryIntent — guarded states (Defender Critical 1, Critical 2)', ()
 describe('commitQuarryMove', () => {
   it('plays a legal move for the Quarry, matching what quarryIntent described', () => {
     const state = stateWith({
-      declaration: WIN_DECLARATION,
       leader: QUARRY_SIDE,
       hands: {
         player: [],
@@ -209,7 +189,7 @@ describe('commitQuarryMove', () => {
     const state = stateWith({
       leader: QUARRY_SIDE,
       hands: { player: [], cpu: [] },
-      tricksPlayed: 13,
+      tricksPlayed: HAND_SIZE,
       phase: RoundPhase.Complete,
     })
     const result = commitQuarryMove(state)
@@ -240,13 +220,13 @@ function lcg(seed: number): () => number {
   }
 }
 
-describe('quarryIntent and commitQuarryMove — simulated full rounds (AC5, AC6)', () => {
+describe('quarryIntent and commitQuarryMove — simulated full hands (AC5, AC6)', () => {
   const seeds = Array.from({ length: 60 }, (_, i) => i + 1)
 
   it.each(seeds)(
     'intent and the committed move agree on suit and stance every Quarry turn (seed %i)',
     (seed) => {
-      let state = declaredDeal(seed % 2 === 0 ? PlayerSide.Player : PlayerSide.Cpu, lcg(seed))
+      let state = dealRound(seed % 2 === 0 ? PlayerSide.Player : PlayerSide.Cpu, lcg(seed))
       let guard = 0
       let quarryTurns = 0
 
@@ -284,7 +264,7 @@ describe('quarryIntent and commitQuarryMove — simulated full rounds (AC5, AC6)
       }
 
       expect(quarryTurns).toBeGreaterThan(0)
-      expect(state.tricksPlayed).toBe(13)
+      expect(state.tricksPlayed).toBe(HAND_SIZE)
     },
   )
 })

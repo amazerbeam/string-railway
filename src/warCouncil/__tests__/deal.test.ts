@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { QuarryCharacter } from '../../hunt'
+import { HAND_SIZE, QuarryCharacter, SKULL_DENSITY, SKULL_MIN_RANK } from '../../hunt'
+import { containsCard } from '../cardUtils'
+import { createDeck } from '../deck'
 import { dealRound } from '../deal'
 import { PlayerSide, RoundPhase } from '../types'
 
@@ -12,11 +14,11 @@ function lcg(seed: number): () => number {
 }
 
 describe('dealRound', () => {
-  it('deals 13 cards to each side, a 6-card draw pile, and a decree card', () => {
+  it('deals six cards to each side and leaves a decree plus twenty', () => {
     const state = dealRound(PlayerSide.Player, lcg(42))
-    expect(state.hands.player).toHaveLength(13)
-    expect(state.hands.cpu).toHaveLength(13)
-    expect(state.drawPile).toHaveLength(6)
+    expect(state.hands[PlayerSide.Player]).toHaveLength(HAND_SIZE)
+    expect(state.hands[PlayerSide.Cpu]).toHaveLength(HAND_SIZE)
+    expect(state.drawPile).toHaveLength(createDeck().length - HAND_SIZE * 2 - 1)
     expect(state.decree).toBeDefined()
   })
 
@@ -42,7 +44,6 @@ describe('dealRound', () => {
     const state = dealRound(PlayerSide.Player, lcg(3))
     expect(state.tricksPlayed).toBe(0)
     expect(state.tricksWon).toEqual({ player: 0, cpu: 0 })
-    expect(state.capturedCards).toEqual({ player: [], cpu: [] })
     expect(state.phase).toBe(RoundPhase.AwaitingLead)
     expect(state.currentTrick).toEqual([])
   })
@@ -68,5 +69,21 @@ describe('dealRound', () => {
     expect(withMonarch.hands).toEqual(plain.hands)
     expect(withMonarch.decree).toEqual(plain.decree)
     expect(withMonarch.drawPile).toEqual(plain.drawPile)
+  })
+
+  it('skulls only cards in the Quarry’s own hand, and never a rank 1', () => {
+    const state = dealRound(PlayerSide.Player, lcg(42))
+    expect(state.skulledCards).toHaveLength(Math.round(HAND_SIZE * SKULL_DENSITY))
+    for (const skull of state.skulledCards) {
+      expect(skull.rank).toBeGreaterThanOrEqual(SKULL_MIN_RANK)
+      expect(containsCard(state.hands[PlayerSide.Cpu], skull)).toBe(true)
+    }
+  })
+
+  it('opens the bank and the streak at zero with nothing resolved', () => {
+    const state = dealRound(PlayerSide.Player, lcg(42))
+    expect(state.bank).toBe(0)
+    expect(state.multiplier).toBe(0)
+    expect(state.lastResolution).toBeNull()
   })
 })

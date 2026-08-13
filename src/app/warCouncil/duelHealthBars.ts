@@ -26,24 +26,25 @@ export interface HealthBarView {
 /**
  * Converts three health records into render geometry.
  *
- * Performs NO damage arithmetic and NO clamping: `applyHunt` — DLR-70's single clamp point — did
+ * Performs NO damage arithmetic and NO clamping: `applyDamage` — DLR-70's single clamp point — did
  * both before `projected` arrived. That is what keeps DLR-71 AC2's single-function guarantee
- * intact, and it is what DLR-70's own `applyHunt` docblock asks of this caller.
+ * intact, and it is what DLR-70's own `applyDamage` docblock asks of this caller.
  *
  * Refuses a non-positive or non-finite `max`. The division by `max` is the only one here, and a
- * `NaN` percentage collapses a bar to nothing while logging nothing anywhere — the same reasoning
- * `standingSegments` uses for an empty table. Both configured maxima are positive, so this is a
- * guard rather than a live path.
+ * `NaN` percentage collapses a bar to nothing while logging nothing anywhere — the same guard-
+ * rather-than-live-path reasoning this codebase applies to any other division against a
+ * configured total. Both configured maxima are positive, so this is a guard rather than a live
+ * path.
  *
  * Returns an ARRAY, which is what makes §6's net-only fallback (AC8) a one-line change here —
  * return a single view whose `pending` is the net — rather than a rewrite in the component.
  *
  * PRECONDITION (caller's responsibility, not asserted here): `projected[side] <= current[side]`
- * for both sides. This module performs no clamping by design — `applyHunt` is DLR-70's single
+ * for both sides. This module performs no clamping by design — `applyDamage` is DLR-70's single
  * clamp point, and a second guard here would duplicate it — so a caller that violates this
  * renders a negative `pending` (and a `pendingPct` below zero) rather than being rejected. It
  * currently holds because every caller derives `projected` either as `current` itself (pending
- * forced to exactly 0) or via `applyHunt`, whose `deplete` is `Math.max(0, current - damage)` and
+ * forced to exactly 0) or via `applyDamage`, whose `deplete` is `Math.max(0, current - damage)` and
  * therefore never increases health, and whose `assertApplicable` rejects negative damage. A new
  * caller — a healing mechanic, a different projection source — must preserve this invariant
  * itself.

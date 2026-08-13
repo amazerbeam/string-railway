@@ -72,6 +72,21 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* Re-homed verbatim from the now-deleted Standing-track sheet it used to live in alone
+   (DLR-80) — the project's sole screen-reader-only utility, so it lives beside the shell
+   rules rather than with any one readout that happens to use it today. */
+.wc-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ---------- status band ---------- */
 
 .wc-status {

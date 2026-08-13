@@ -1,35 +1,16 @@
-export type {
-  Hunt,
-  Quarry,
-  Spoils,
-  Standing,
-  Damage,
-  Health,
-  IncomingDamage,
-  EncounterState,
-} from './types'
-export { QuarryCharacter, HuntDeclaration, DuelSide } from './types'
+export type { Hunt, Quarry, Damage, Health, IncomingDamage, EncounterState } from './types'
+export { QuarryCharacter, DuelSide } from './types'
 
-export type { StandingBand, CardValueScheme } from './config'
 export {
-  StandingBandName,
-  HUNT_MULTIPLIER_TABLES,
-  standingTableFor,
-  resolveStanding,
-  cardBaseValue,
-  cardValueFor,
-  PaidPile,
-  cardValueSchemeFor,
+  HAND_SIZE,
+  SKULL_DENSITY,
+  SKULL_MIN_RANK,
+  DAMAGE_PER_HIT,
   FORAGE_BUDGET_PER_ENCOUNTER,
   ENCOUNTERS_PER_RUN,
   TelegraphFidelity,
   TELEGRAPH_FIDELITY,
   SLICE_QUARRY_CHARACTER,
-  RANK_INVERSION_PIVOT,
-  invertedCardValue,
-  DamageRounding,
-  DAMAGE_ROUNDING,
-  roundDamage,
   PLAYER_START_HEALTH,
   QUARRY_ENCOUNTER_HEALTH,
   quarryHealthForEncounter,
@@ -37,7 +18,7 @@ export {
   SIMULTANEOUS_DEPLETION_WINNER,
 } from './config'
 
-export { startEncounter, applyHunt, isEncounterResolved } from './encounter'
+export { startEncounter, applyDamage, isEncounterResolved } from './encounter'
 
 export type { QuarryCharacterInfo } from './quarryCharacters'
 export { QUARRY_CHARACTERS, quarryCharacterInfo } from './quarryCharacters'

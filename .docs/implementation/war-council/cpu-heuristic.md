@@ -8,11 +8,20 @@ already treats as legal:
 - **`chooseCpuCard(state, side)`** — card selection only. Reads `legalMoves(state, side)` and never
   re-derives legality itself. If `currentTrick` is empty (leading), picks the lowest-ranked legal
   card (tie-broken by `ALL_SUITS` declaration order — Bells < Keys < Moons — via an internal
-  `compareCards`/`lowestCard` pair). If a card has already been led (following), filters
-  `legalMoves()`'s output down to the cards that would win the trick — evaluated by calling the
-  engine's own `resolveTrickWinner` for each candidate, never a re-implemented trump/suit
-  comparison — and plays the lowest of those; if none would win, ducks with the lowest legal card
-  at all.
+  `compareCards`/`lowestCard` pair). If a card has already been led (following), it works down three
+  priorities in order:
+
+  1. **(DLR-80) The lowest legal card that would *lose* the trick and carries a skull** — so the
+     player is the one who wins it, and eats the skull. Without this the skull mechanic is toothless
+     and a play-test measures nothing: a Quarry that never aims its skulls would only ever produce
+     skull tricks by accident.
+  2. The lowest legal card that would win the trick.
+  3. Failing both, the lowest legal card at all.
+
+  Every "would win" test calls the engine's own `resolveTrickWinner` for each candidate, never a
+  re-implemented trump/suit comparison, and the skull test is `skulls.ts`'s `isSkulled` against
+  `state.skulledCards`. **The lead is deliberately unchanged** — see the module's Deferred section
+  for why avoiding a skulled lead was scoped out.
 - **`chooseCpuFoxChoice(handAfterFox, trumpSuit)`** — exchanges the Fox for the lowest card of the
   hand's most-held suit whenever that suit isn't already trump (concentrates trump in the CPU's
   strongest suit); declines if the strongest suit is already trump, or if the hand is empty (the
@@ -95,10 +104,9 @@ actually lives.
 How much the telegraph reveals is read from `src/hunt/config.ts`'s `TELEGRAPH_FIDELITY`, not decided
 in this module — see [../hunt/README.md](../hunt/README.md). `quarryIntent` takes the fidelity as an
 optional second parameter defaulting to that constant, mirroring the injectable-parameter pattern
-`resolveStanding` established (and which `roundDamage` now follows for its rounding rule — though
-`resolveStanding`'s own table stopped being *defaulted* in DLR-66 and is now required): a test can
-prove the config genuinely drives the output by passing a different value, without mutating shared
-module state between test cases. Under
+used across this codebase's tunables — `startEncounter`'s `playerHealth`, and (DLR-80)
+`assignSkulls`'s `density` and `minRank`: a test can prove the config genuinely drives the output by
+passing a different value, without mutating shared module state between test cases. Under
 `TelegraphFidelity.Suit` the returned object is `{ suit }` with **no `stance` key at all** — the key
 is omitted, not set to `undefined` — so narrowing the fidelity genuinely narrows the shape a caller
 receives rather than blanking a field. `quarryIntent.test.ts` asserts this with `'stance' in narrow`

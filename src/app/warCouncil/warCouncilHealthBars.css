@@ -7,9 +7,10 @@
    forced split that produced the fourth and fifth sheets. Imported from the mount AFTER
    `warCouncilHunt.css`. Tokens live in `warCouncil.css`; nothing here redeclares `:root`.
 
-   Carries its own copy of the `@media (max-width: 44rem), (max-height: 34rem)` breakpoint, the
-   same duplication `warCouncilStandingTrack.css` already makes. The VALUE now lives in three
-   files — a three-file edit if the threshold is ever tuned, and the split's one real drift risk. */
+   Carries its own copy of the `@media (max-width: 44rem), (max-height: 34rem)` breakpoint —
+   the same duplication a sibling sheet's own narrow-viewport block already made. The VALUE
+   lives in more than one file as a result — a multi-file edit if the threshold is ever tuned,
+   and the split's one real drift risk. */
 
 .wc-hp {
   flex: 1 1 8rem;

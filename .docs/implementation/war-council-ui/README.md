@@ -1,53 +1,43 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71
+**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80
 
 ## Responsibility
 
 The playable **Hunt screen**: a full-viewport, non-scrolling game surface that renders a dealt
-`WarCouncilState`, lets a human play a 13-trick round of it by hand against a telegraphing Quarry,
+`WarCouncilState`, lets a human play a six-trick hand of it by hand against a telegraphing Quarry,
 and reports the finished round back through SCRUM-37's `WarCouncilMountProps` contract. It owns
 **presentation and sequencing only** — every rules question is delegated to `src/warCouncil/` (see
 [../war-council/README.md](../war-council/README.md)), and this module contains no legality check,
 no scoring rule, and no trick-winner computation of its own.
 
-DLR-53 added the Hunt layer on top of the round renderer rather than rebuilding it: §4's persistent
-readouts (running Spoils, the Standing band, the Quarry's character and trick count), the Quarry's
-intent telegraphed before every commit, and an end panel showing the scoring equation as arithmetic.
+DLR-53 added the Hunt layer on top of the round renderer rather than rebuilding it: persistent
+readouts in a dossier column, the Quarry's intent telegraphed before every commit, and an end panel.
 Every number on that screen originates in `src/hunt/config.ts` and arrives already derived — see
-[Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md).
+[The dossier readouts and the telegraph](hunt-readouts-and-telegraph.md).
 
-DLR-63 put a decision at the front of the round and changed what a card looks like: a **declare gate**
-gating the first trick, the hand rendered **longest-suit-first** instead of in dealt order, and a
-suit-coloured border with a bottom-left suit mark on every card face. As with the Hunt layer, no rule
-moved here — `declareHunt` writes the declaration. See
-[The declare gate and the hand's order](declare-gate-and-hand-order.md).
+**DLR-71 put the duel on screen** — two **health bars** as a mirrored opposed pair across the status
+row — and `App.tsx` began carrying a real `EncounterState`, so health depleted and an encounter could
+end. See [The duel's health bars](duel-health-bars.md).
 
-**DLR-67 took two things off this screen and reshaped a third.** The Demand cell, the end panel's
-cleared/missed verdict, the credits cell and the trick well's claim control are all gone with the
-mechanics behind them; the ledger's third cell now reads **Damage** rather than "Score"; and the end
-panel grew a **second equation**, so both sides' `Spoils × Standing = Damage` is stated side by side.
-A resolved trick now always offers exactly one control.
+**DLR-80 replaced most of this screen, and it is the largest deletion the module has taken.** Four
+components and two stylesheets went: `DeclareGate.tsx`, `HuntLedger.tsx`, `StandingTrack.tsx`,
+`standingSegments.ts`, `warCouncilDeclare.css` and `warCouncilStandingTrack.css`. What replaced them:
 
-**DLR-68 replaced the ledger's one-cell Standing readout with the whole table.** Where the bar
-previously said only *"Defeated ×3"* — where you are, and nothing about where you could go — it now
-shows every configured band as a **profile**: each bracket as wide as its trick span, as tall as its
-multiplier, pipped once per trick, with the bracket you currently occupy marked. Below the existing
-narrow-viewport breakpoint it collapses back to the single cell. This arrived as a **mid-planning
-scope widening** — DLR-68 was an engine-only ticket until the developer supplied an annotated
-screenshot and asked for it — so the ticket carries an `engine` label over what is now partly UI work.
-See [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md).
+- **`QuarryShape.tsx`** — per suit, how many cards the Quarry holds and how many are skulled, and
+  **never a rank**. The type it renders has no rank field, so that rule is enforced by the data.
+- **`BankMeter.tsx`** — the bank, the streak, and what the streak would cash for. It took the
+  Standing track's slot in the dossier column and the pending figure's job on the health bars, and it
+  is monotonic where the pending figure was not.
+- **A `skulled` prop on `PlayingCard`**, passed through by `TrickWell`, marking a skulled card once
+  it is face up — with the skull in the **accessible name**, not only in the glyph.
+- **A hand-over tally** in place of the scoring equation, and no Apply-the-damage control at all.
 
-**DLR-71 is the ticket that put the duel on screen**, and it is the one that made this module's
-numbers mean something to a player. Two **health bars** — a mirrored opposed pair across the status
-row, each carrying its own **pending damage** as a lighter segment carved out of its own current
-health — replace the player-only Spoils and Damage cells; the end panel gained a second stage so the
-damage visibly *lands*; and `App.tsx` now carries a real `EncounterState` from Hunt to Hunt, so health
-depletes and an encounter can end. The two `scoreHunt` calls this module used to make are gone,
-replaced by one `pendingHuntDamage` — and with them went `HuntLedger`'s own
-`spoils * band.multiplier`, a second arithmetic path that bypassed `roundDamage`. See
-[The duel's health bars](duel-health-bars.md).
+The structural change behind all of it: **the reducer now owns the live `EncounterState`** and
+applies each trick's damage as the trick resolves, rather than holding a nullable applied copy while
+`App.tsx` owned the real one. So the encounter can resolve **mid-hand**, and the felt renders the
+terminal outcome in place of the trick well when it does.
 
 It sits under `src/app/` rather than beside the engine for a hard reason: `eslint.config.js`'s
 pure-core override bars `src/warCouncil/**` from importing React at all, so a `.tsx` file there
@@ -67,21 +57,26 @@ barrel re-exporting one is a needless brush with `react-refresh/only-export-comp
 | `WarCouncilRound`                                                                 | Default export — the mount, satisfying `WarCouncilMountProps` (`initialState` in, `onComplete` out)   | `WarCouncilRound.tsx`  |
 | `roundReducer`                                                                    | The single reducer owning every UI transition: `(RoundUiState, RoundUiAction) => RoundUiState`        | `roundReducer.ts`      |
 | `createRoundUiState`                                                              | Lazy `useReducer` initializer; a pure restructuring of `initialState` — since DLR-53 it deliberately leaves the Quarry's opening lead uncommitted so it can be telegraphed | `roundReducer.ts`      |
-| `RoundUiState`                                                                    | `{ round, armed, prompt, resolvedTrick, rejection, cpuFault, applied }` — the mount's one piece of state. DLR-71 added `applied: EncounterState \| null`, `null` until the player commits the finished Hunt's damage | `roundReducer.ts`      |
-| `RoundUiAction`                                                                   | `TapCard \| ChooseAbility \| CancelSelection \| CarryOn \| Declare \| CommitDamage`, via the `RoundUiActionKind` `as const` map. **`RoundUiState` gained no field for `Declare`** — the declaration lives on `RoundState`. DLR-63's sixth member `ClaimTrick` was deleted by DLR-67; DLR-71's `CommitDamage` is the one that calls `applyHunt` | `roundReducer.ts`      |
-| `duelHealthBars`                                                                  | Pure: three health records (current / projected / maximum) → one `HealthBarView` per side, `player` first. **No damage arithmetic and no clamping** — `applyHunt` did both first. Throws `RangeError` on a non-positive or non-finite `max` rather than emitting a `NaN` width. React-free and DOM-free, so it runs in the `node` project (DLR-71) | `duelHealthBars.ts`    |
+| `RoundUiState`                                                                    | `{ round, armed, prompt, resolvedTrick, rejection, cpuFault, encounter }` — the mount's one piece of state. **DLR-80 replaced `applied: EncounterState \| null` with `encounter: EncounterState`, never null**: seeded from the mount's prop and updated in place as each trick resolves, because the cash-out is automatic and mid-hand | `roundReducer.ts`      |
+| `RoundUiSeed`                                                                     | `{ round, encounter }` — `createRoundUiState`'s widened seed (DLR-80). Still a pure restructuring, so StrictMode's double-invocation of the lazy initialiser recomputes an identical value | `roundReducer.ts`      |
+| `ResolvedTrick`                                                                   | `{ cards, winner, resolution }` — DLR-80 added `resolution: TrickResolution`, so the felt reads what the trick *did* from the engine rather than re-deriving it from a state diff | `roundReducer.ts`      |
+| `RoundUiAction`                                                                   | `TapCard \| ChooseAbility \| CancelSelection \| CarryOn`, via the `RoundUiActionKind` `as const` map. **DLR-80 deleted `Declare` and `CommitDamage`** — there is no pre-trick decision to gate and nothing left to commit, since damage lands as each trick resolves | `roundReducer.ts`      |
+| `duelHealthBars`                                                                  | Pure: three health records (current / projected / maximum) → one `HealthBarView` per side, `player` first. **No damage arithmetic and no clamping** — `applyDamage` did both first. Since DLR-80 every caller passes the same record as `current` and `projected`, because damage has already landed by render time. Throws `RangeError` on a non-positive or non-finite `max` rather than emitting a `NaN` width. React-free and DOM-free, so it runs in the `node` project | `duelHealthBars.ts`    |
+| `QuarryShape`                                                                     | **DLR-80** — the per-suit shape-and-skull readout. Renders the `SuitShape[]` it is handed and computes nothing; skulls draw as repeated glyphs rather than a digit, and each row carries an `aria-label` from `suitShapeRowText` | `QuarryShape.tsx`      |
+| `BankMeter`                                                                       | **DLR-80** — the bank, the streak, and their product as the figure this streak would cash for, plus `TRICK_OUTCOME_MESSAGE` for the last trick. The product is computed here because it is display-only; `resolveTrickBank` owns the cash-out that lands | `BankMeter.tsx`        |
 | `HealthBarView`                                                                   | `{ side, secure, pending, current, max, securePct, pendingPct, lethal }` — one bar, ready to render. `securePct + pendingPct === current / max × 100` exactly (DLR-71) | `duelHealthBars.ts`    |
-| `HEALTH_BAR_LABEL`, `healthBarValueText`                                          | Each bar's accessible name, and the one sentence carrying **both** the current and the pending figure — `aria-valuenow` can hold only one number, so the second lives here (DLR-71) | `labels.ts`            |
-| `APPLY_DAMAGE_LABEL`, `FINISH_ROUND_LABEL`, `ENCOUNTER_OUTCOME`                   | The end panel's two-stage control copy, and the terminal line when a bar empties. `ENCOUNTER_OUTCOME`'s two strings are **placeholder copy — the developer's** (DLR-71) | `labels.ts`            |
+| `HEALTH_BAR_LABEL`, `healthBarValueText` | Each bar's accessible name and its value sentence. **DLR-80 rewrote `healthBarValueText`** to drop its pending branch — no pending figure exists any more | `labels.ts` |
+| `FINISH_ROUND_LABEL`, `ENCOUNTER_OUTCOME` | The hand-over panel's single control, and the terminal line when a bar empties. **DLR-80 deleted `APPLY_DAMAGE_LABEL`** with the two-stage commit. `ENCOUNTER_OUTCOME`'s two strings are **placeholder copy — the developer's** | `labels.ts` |
 | `sortHandForDisplay`                                                              | Pure: a **copy** of the hand in display order — longest suit first, `ALL_SUITS` as the tie-break, ascending rank within a suit (DLR-63 AC6). React-free and DOM-free, so it runs in the `node` project | `handOrder.ts`         |
-| `HUNT_DECLARATION_NAME`, `DECLARE_REJECTION_MESSAGE`                              | Display copy for the two declarable paths and `declareHunt`'s rejection union (DLR-63). `CLAIM_REJECTION_MESSAGE` was deleted by DLR-67 with the union it keyed on | `labels.ts`            |
 | `ResolvedTrick`                                                                   | `{ cards, winner }` — a just-resolved trick held on screen until the player carries on                | `roundReducer.ts`      |
 | `CpuFault`                                                                        | `IllegalMoveReason \| 'noLegalMove'` — a corrupt CPU turn, shown rather than swallowed                | `roundReducer.ts`      |
 | `SUIT_NAME`, `RANK_NAME`                                                          | Display names for `Suit` and the five ability-bearing `CardRank` values                               | `labels.ts`            |
 | `cardAccessibleName`                                                              | `"3 of Keys (Fox)"` / `"7 of Bells"` — the accessible name every card button binds to                 | `labels.ts`            |
 | `cardKey`                                                                         | `"bells-7"` — the one stable React list key for a card, shared by every card list in the module       | `labels.ts`            |
 | `ILLEGAL_MOVE_MESSAGE`                                                            | `Record<IllegalMoveReason, string>` — human copy for the engine's own rejection reasons               | `labels.ts`            |
-| `STANCE_PHRASE`, `STANDING_BAND_NAME`                                             | Display copy for the telegraphed stance and the four Standing bands (DLR-53). `DEMAND_OUTCOME_VERDICT` was deleted by DLR-67 — there is no verdict, because there is no target | `labels.ts`            |
+| `STANCE_PHRASE` | Display copy for the telegraphed stance (DLR-53). `STANDING_BAND_NAME` was deleted by DLR-80 with the bands it named | `labels.ts` |
+| `TRICK_OUTCOME_MESSAGE`, `SKULL_MARK_LABEL`, `BANK_LABEL`, `MULTIPLIER_LABEL`, `QUARRY_SHAPE_LABEL` | **DLR-80's new copy.** `TRICK_OUTCOME_MESSAGE` is a total `Record<TrickOutcome, string>`, so a fifth outcome is a compile error rather than a blank string. All of it is **placeholder copy — the developer's** | `labels.ts` |
+| `suitShapeRowText`, `quarryShapeText` | **DLR-80.** `suitShapeRowText` is the single owner of the per-suit phrase (`"Bells: 3 held, 1 skulled"`); `quarryShapeText` composes the whole-shape sentence from it. Neither ever names a rank | `labels.ts` |
 | `intentAccessibleName`                                                            | The telegraph's single screen-reader sentence; distinguishes a live reading from a speculative one (DLR-53) | `labels.ts`            |
 | `previewQuarryIntent`                                                             | Pure: the Quarry's intent for the trick the player is *about* to lead. Returns `null`, never throws (DLR-53) | `intentPreview.ts`     |
 | `fanPlacement`                                                                    | Pure fan geometry: rotation, lift, overlap, and z-order for one card at one hand position             | `fanLayout.ts`         |
@@ -92,32 +87,27 @@ barrel re-exporting one is a needless brush with `react-refresh/only-export-comp
 
 The zone components — `RoundStatusBand`, `DecreePile`, `TrickWell`, `HandFan`, `AbilityPrompt`,
 `RoundOverPanel` — are each a default export consumed only by `WarCouncilRound.tsx`. DLR-53 added
-three more in the same shape: `HuntLedger` (mounted inside `RoundStatusBand`), `QuarryDossier`, and
-`IntentTelegraph` (both mounted in the new `wc-dossier` zone). DLR-63 added `DeclareGate`, mounted as
-the felt cascade's **first** branch. DLR-68 added `StandingTrack`, mounted inside `HuntLedger` — which
-gained two required props (`table` and `tricks`) to feed it, threaded down from `WarCouncilRound`
-through `RoundStatusBand`. **DLR-71 added `DuelHealthBars`**, mounted inside `RoundStatusBand` with the
-`You · Trick · Them` trio passed as its `centre` prop — and **moved `HuntLedger` out of the band
-entirely**, remounting it in the `wc-dossier` column. `RoundStatusBand` lost `spoils`, `band` and
-`table` and gained `bars`; `HuntLedger` lost `spoils` and is now the Standing readout alone.
+three more in the same shape: `QuarryDossier` and `IntentTelegraph` (both mounted in the `wc-dossier`
+zone), and a ledger since deleted. **DLR-71 added `DuelHealthBars`**, mounted inside
+`RoundStatusBand` with the `You · Trick · Them` trio passed as its `centre` prop.
 
-`WarCouncilRound` supplies that table as `standingTableFor(declaredPath(ui.round))` — **the same pair
-the engine scores with**, which is what makes it impossible for the track to display a different table
-from the one `huntDamage` would use.
+**DLR-80 emptied the dossier column and refilled it.** `HuntLedger`, `StandingTrack` and
+`DeclareGate` were deleted; `QuarryShape` and `BankMeter` took their slot, mounted directly by
+`WarCouncilRound` beside the surviving `QuarryDossier` and `IntentTelegraph`. `RoundStatusBand` kept
+`bars` and gained nothing, but its trick counter now clamps against `HAND_SIZE` rather than a
+hard-coded `13`.
 
-`labels.ts`, `fanLayout.ts`, `roundReducer.ts`, `intentPreview.ts`, `handOrder.ts`, (DLR-68)
-`standingSegments.ts`, and (DLR-71) `duelHealthBars.ts` import no React and touch no DOM global, so all
-seven are unit-tested in the cheap `node` Vitest project; the components are tested in the `dom`
-project (see [Testing](testing.md)).
+`WarCouncilRound` supplies `QuarryShape`'s rows as `suitShape(ui.round.hands[Cpu],
+ui.round.skulledCards)` and `BankMeter`'s figures straight off `ui.round` — **the same values the
+engine wrote**, so a readout cannot disagree with the state it describes.
 
-`duelHealthBars.ts` sits here rather than in the lint-enforced pure core for the third instance of the
-same reason `handOrder.ts` and `standingSegments.ts` do: **how a bar is drawn is not a game rule.** It
-converts three health records into percentages and performs no clamp, no rounding and no subtraction
-of its own beyond recovering the already-clamped pending figure for display.
+`labels.ts`, `fanLayout.ts`, `roundReducer.ts`, `intentPreview.ts`, `handOrder.ts` and
+`duelHealthBars.ts` import no React and touch no DOM global, so all six are unit-tested in the cheap
+`node` Vitest project; the components are tested in the `dom` project (see [Testing](testing.md)).
 
-`standingSegments.ts` sits here rather than in the lint-enforced pure core for the same reason
-`handOrder.ts` does: **how a table is drawn is not a game rule.** It derives spans, height ratios and
-peak/cliff flags from whatever table it is handed and writes no multiplier or boundary of its own.
+`duelHealthBars.ts` sits here rather than in the lint-enforced pure core for the same reason
+`handOrder.ts` does: **how a bar is drawn is not a game rule.** It converts three health records into
+percentages and performs no clamp, no rounding and no damage arithmetic of its own.
 
 `handOrder.ts` sits here rather than in the lint-enforced pure core on purpose: **display order is not
 a game rule.** It is the same call `intentPreview.ts` already makes — React-free and DOM-free, but
@@ -127,24 +117,20 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
 ## How it works
 
 - [Layout and styling](layout-and-styling.md) — the full-viewport shell, the `dvh` vs `svh`
-  choice, the **six**-stylesheet split and the 400-line budget that caused every one of them, and
-  how the fan's transform is composed in CSS rather than written whole from React.
+  choice, the stylesheet split and the 400-line budget that caused every one of them (six sheets at
+  its peak, **four** since DLR-80 deleted two), where `.wc-sr-only` was re-homed to, and how the
+  fan's transform is composed in CSS rather than written whole from React.
 - [The duel's health bars](duel-health-bars.md) — the mirrored opposed pair and the one CSS
-  declaration that is the whole of the mirror, why pending is drawn *on* the bar rather than beside
-  it, the single-arithmetic-path guarantee that makes the pending figure the applied figure by
-  construction, the two-stage commit that lets a player watch the damage land, and why `HuntLedger`
-  was reshaped rather than retired (DLR-71).
+  declaration that is the whole of the mirror, **why DLR-80 retired the pending segment** and what
+  replaced it, what the ~54× rescale to 25 health means for how the bar reads, and the pure geometry
+  helper that computes no damage and does no clamping.
 - [Interaction and state](interaction-and-state.md) — tap-twice-to-play, the reducer's no-effect
   design, how a held trick's winner is derived rather than recomputed, and rejected-move recovery.
-- [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md) — the `hunt` prop, the ledger
-  and dossier, the telegraph's two readings and why the Quarry's lead is held uncommitted, the
-  end panel's equation, and (DLR-68) the **Standing track**: the whole multiplier table drawn as a
-  profile, why its geometry lives in a pure helper, why its pips nest inside their bracket, and why
-  its narrow-viewport collapse is pure CSS with no effect to clean up.
-- [The declare gate and the hand's order](declare-gate-and-hand-order.md) — why the gate is the felt
-  cascade's first branch rather than a modal, its one-prop shape and the copy that is the developer's
-  to overturn, the three-key display sort and why the hand re-orders mid-round, and AC7's card face
-  (DLR-63, DLR-67).
+- [The dossier readouts and the telegraph](hunt-readouts-and-telegraph.md) — the `hunt` prop, the
+  **shape readout** and why it cannot leak a rank, the **bank meter** and why the bank replaced the
+  pending segment, the skull mark on a played card, the telegraph's two readings and why the Quarry's
+  lead is held uncommitted, and the hand-over tally that replaced the scoring equation (DLR-53,
+  DLR-80).
 - [Accessibility](accessibility.md) — the shared roving tabindex, the ability prompt's focus
   handling, and the fan's `aria-hidden` behaviour while a prompt is open.
 - [Error handling](error-handling.md) — the two `cpuFault` cases and why they're shown, not
@@ -155,15 +141,12 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
 
 - **This module re-implements no rule.** `legalMoves` decides what `HandFan` renders as tappable,
   `playCard` decides what commits, `chooseCpuMove` and `commitQuarryMove` play the opponent,
-  `quarryIntent` computes the telegraphed stance, and — **since DLR-71** — a single
-  `pendingHuntDamage` call per render computes everything the screen shows about damage, replacing
-  DLR-67's two `scoreHunt` calls. Because `pendingHuntDamage` and `huntDamage` share the private
-  `outcomeFor`, and because the bars' projection is `applyHunt` against a **copy** rather than a
-  subtraction written here, the figure the player watches climb is the figure that lands — structurally,
-  not by convention. DLR-71 also deleted the one place this module *did* compute a rule:
-  `HuntLedger`'s `spoils * band.multiplier`, which bypassed `roundDamage` entirely and would have
-  disagreed with the end panel on the first ×0.5 band with an odd card sum. Card equality is always the
-  engine's own `sameCard`/`containsCard` (exported
+  `quarryIntent` computes the telegraphed stance, and — **since DLR-80** — `resolveTrickBank` decides
+  every trick's outcome, `suitShape` builds the shape rows, and `isSkulled` decides whether a played
+  card is marked. The screen reads `ui.round.lastResolution` and formats it; it never re-derives what
+  a trick did. The one arithmetic a component still performs is `BankMeter`'s `bank × multiplier`,
+  which is a **display preview with no rule attached** — the cash-out that actually lands is
+  `resolveTrickBank`'s. Card equality is always the engine's own `sameCard`/`containsCard` (exported
   from `src/warCouncil/index.ts` by this ticket rather than deep-imported or re-written).
   `roundReducer.ts` contains no suit comparison, no rank comparison, and no trick-winner
   computation. The single permitted rank _identity_ check is "is this rank `CardRank.Fox` or
@@ -173,14 +156,11 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
   a grep in the contract's final verification.
 - **`labels.ts`, `fanLayout.ts`, and `roundReducer.ts` import no React and touch no DOM global** —
   verified by grep, which is what lets them run in the `node` Vitest project.
-- **No component sees a numeric literal standing in for a multiplier, a band boundary, or a card
-  value** (DLR-53, extended by DLR-63, re-verified by DLR-66 and DLR-67). Every one arrives already
-  derived — `band.multiplier`, `huntDamage[side].standing`, `invertedCardValue(CardRank.Swan)` for the
-  declare gate's worked example — from `src/hunt/config.ts` through the engine. DLR-66 made
-  `resolveStanding`'s table required, so `WarCouncilRound.tsx` now names a **declaration** at that call
-  site (never a table) and the module still holds no boundary or multiplier of its own: DLR-66's
-  verification greps `src/app/` for `minTricks|maxTricks` and expects zero hits. Grep-verified in the
-  contract's final verification, but structural rather than merely observed: there is no path by
+- **No component sees a numeric literal standing in for a tunable** (DLR-53, extended by every ticket
+  since). Every figure arrives already derived from `src/hunt/config.ts` through the engine.
+  **DLR-80 closed the last hole in that claim**: `RoundStatusBand.tsx` had clamped its trick counter
+  with a hard-coded `13`, and it now reads `HAND_SIZE`. Grep-verified in the contract's final
+  verification, but structural rather than merely observed: there is no path by
   which a component could invent one. See
   [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md).
 - **Every visual value is a named CSS custom property or a named constant in `fanLayout.ts`**,
@@ -269,26 +249,9 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
   change — not final values. DLR-63 added four more of the same kind: the card border's width, the
   suit mark's corner offset, whether a suit-coloured border reads as information or decoration at
   `--wc-card-w`'s `clamp(2.9rem, 6.2vmin, 4.3rem)` floor, and the rank direction *within* a suit in
-  `sortHandForDisplay` (ascending is the chosen default — see
-  [declare-gate-and-hand-order.md](declare-gate-and-hand-order.md)).
-- **Whether the declare gate's opening tap reads as a decision or a speed bump is unjudged**, and it
-  compounds the "Let them lead" tap below: trick 1 now opens with **two** taps before the first card.
-  Both are structural consequences of things worth having — the gate is where the round's whole
-  scoring scheme is chosen, and holding the lead uncommitted is what makes it telegraphable — but
-  nobody has yet played it and said whether the opening reads well.
-- **The declare gate's Lose copy is now factually wrong, and fixing it is a copy decision.** DLR-67
-  wrote it to describe the own-pile interim; DLR-69 landed the pile swap and put every UI file out of
-  scope, so the sentence "every trick you take still adds both its cards to your Spoils" now asserts
-  the opposite of the rule — at the moment a player is choosing the path. See
-  [declare-gate-and-hand-order.md](declare-gate-and-hand-order.md); the wording is the developer's.
-- **The Lose-path Spoils honesty question narrowed to one surface (DLR-71).** DLR-69's pile swap left
-  two readouts showing a figure built from the **Quarry's** captured cards under the player's own
-  heading. **`HuntLedger`'s "Running Spoils" cell is now gone** — DLR-71 retired it along with the
-  Damage cell, because the bars carry those figures — so only `RoundOverPanel`'s end-of-Hunt "Spoils"
-  term remains, and it is stated beside the Quarry's own equation where the pairing is at least
-  visible. Whether that reads as honest or as a mislabelled number is still only answerable by playing
-  a declared-Lose Hunt and looking at it.
-
+  `sortHandForDisplay` (ascending is the chosen default). **DLR-80 added more**: the skull glyph, the
+  suit-border weight, the centred suit mark's proportion of the card face, and how long a resolved
+  trick holds on screen — all proposed by `mockup.html` and all the developer's to retune.
 - **Six visual values for the health bars are transcribed placeholders, and they are the developer's**
   (DLR-71): `--wc-hp-track`, `--wc-hp-secure-fill`, `--wc-hp-pending-fill`, `--wc-hp-lethal-edge`,
   `--wc-hp-height`, and `--wc-hp-move-ms` (the bar-movement duration). All six come from the approved
@@ -317,12 +280,11 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
   they sit in is minimal by design: when a bar empties the end panel states the outcome in place and
   stops offering a next Hunt. A real transition and outcome screen is DLR-73's.
 
-- **`handleCarryOn`'s `onComplete` has no reducer-level idempotence guard**, unlike `CommitDamage`,
-  which is made idempotent by its `state.applied !== null` check. No reachable failure was
-  demonstrated — React's synchronous flush per discrete event plus `App.tsx`'s `key={round}` remount
-  protect it today — but the asymmetry with a guard one call away is deliberate to record. Whether it
-  is worth a guard is the developer's; the shape would be a "reported" flag on `RoundUiState` mirroring
-  `applied`.
+- **`handleCarryOn`'s `onComplete` has no reducer-level idempotence guard.** It previously stood in
+  contrast to `CommitDamage`'s `state.applied !== null` check; **DLR-80 deleted that action**, so the
+  asymmetry is gone and this is now simply unguarded. No reachable failure was demonstrated — React's
+  synchronous flush per discrete event plus `App.tsx`'s `key={round}` remount protect it today. Whether it
+  is worth a guard is the developer's; the shape would be a "reported" flag on `RoundUiState`.
 
 - **`.wc-hp-risk` and `.wc-hp-sr` were transcribed from the mockup and then deleted**, because Task 4's
   markup renders neither element. Noted only so a future contributor re-reading `mockup.html` does not

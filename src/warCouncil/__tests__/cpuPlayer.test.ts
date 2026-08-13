@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { dealRound } from '../deal'
-import { declareHunt } from '../declareHunt'
 import { playCard } from '../playCard'
 import { legalMoves } from '../legalMoves'
-import { monarchFollowApplies } from '../quarryRuleBreak'
+import { monarchFollowApplies, QUARRY_SIDE } from '../quarryRuleBreak'
 import {
   chooseCpuCard,
   chooseCpuFoxChoice,
@@ -16,27 +15,11 @@ import {
   currentTurn,
   PlayerSide,
   RoundPhase,
+  Suit,
   type Card,
-  type DeclarationState,
   type RoundState,
 } from '../types'
-import { HuntDeclaration, QuarryCharacter } from '../../hunt'
-
-// DLR-63 AC1: playCard now rejects an undeclared round. The fixtures below that call
-// playCard (directly or via a full simulated round) must declare first; the ones that
-// only exercise chooseCpuCard / chooseCpuFoxChoice / chooseCpuWoodcutterChoice never
-// reach playCard, so they are untouched.
-const WIN_DECLARATION: DeclarationState = {
-  path: HuntDeclaration.Win,
-}
-
-// Declares a Win on a freshly dealt round for the simulated full-round fixtures below.
-function declaredDeal(...args: Parameters<typeof dealRound>): RoundState {
-  const dealt = dealRound(...args)
-  const declared = declareHunt(dealt, HuntDeclaration.Win)
-  if (!declared.ok) throw new Error('expected declare ok')
-  return declared.state
-}
+import { HAND_SIZE, QuarryCharacter } from '../../hunt'
 
 function stateWith(overrides: Partial<RoundState>): RoundState {
   return {
@@ -49,7 +32,10 @@ function stateWith(overrides: Partial<RoundState>): RoundState {
     decree: { suit: 'bells', rank: 4 },
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
-    capturedCards: { player: [], cpu: [] },
+    skulledCards: [],
+    bank: 0,
+    multiplier: 0,
+    lastResolution: null,
     currentTrick: [],
     leader: PlayerSide.Player,
     tricksPlayed: 0,
@@ -130,6 +116,86 @@ describe('chooseCpuCard — following', () => {
   })
 })
 
+describe('AC12 — the Quarry dumps skulls into tricks it is losing', () => {
+  it('plays a skulled loser rather than a clean one', () => {
+    const skulled: Card = { suit: Suit.Bells, rank: 4 }
+    const state = stateWith({
+      leader: PlayerSide.Player,
+      trumpSuit: 'keys',
+      currentTrick: [{ side: PlayerSide.Player, card: { suit: Suit.Bells, rank: 10 } }],
+      skulledCards: [skulled],
+      hands: {
+        player: [],
+        cpu: [{ suit: Suit.Bells, rank: 2 }, skulled],
+      },
+    })
+    expect(chooseCpuCard(state, QUARRY_SIDE)).toEqual(skulled)
+  })
+
+  it('prefers dumping a skull over winning the trick', () => {
+    const skulled: Card = { suit: Suit.Bells, rank: 4 }
+    const state = stateWith({
+      leader: PlayerSide.Player,
+      trumpSuit: 'keys',
+      currentTrick: [{ side: PlayerSide.Player, card: { suit: Suit.Bells, rank: 10 } }],
+      skulledCards: [skulled],
+      hands: {
+        player: [],
+        cpu: [{ suit: Suit.Bells, rank: 11 }, skulled],
+      },
+    })
+    expect(chooseCpuCard(state, QUARRY_SIDE)).toEqual(skulled)
+  })
+
+  it('plays the lowest skulled loser when it holds several', () => {
+    const skulledLow: Card = { suit: Suit.Bells, rank: 2 }
+    const skulledHigh: Card = { suit: Suit.Bells, rank: 4 }
+    const state = stateWith({
+      leader: PlayerSide.Player,
+      trumpSuit: 'keys',
+      currentTrick: [{ side: PlayerSide.Player, card: { suit: Suit.Bells, rank: 10 } }],
+      skulledCards: [skulledLow, skulledHigh],
+      hands: {
+        player: [],
+        cpu: [skulledLow, skulledHigh],
+      },
+    })
+    expect(chooseCpuCard(state, QUARRY_SIDE).rank).toBe(2)
+  })
+
+  it('falls back to the unchanged rule when no skulled card would lose', () => {
+    const state = stateWith({
+      leader: PlayerSide.Player,
+      trumpSuit: 'keys',
+      currentTrick: [{ side: PlayerSide.Player, card: { suit: Suit.Bells, rank: 10 } }],
+      skulledCards: [],
+      hands: {
+        player: [],
+        cpu: [
+          { suit: Suit.Bells, rank: 2 },
+          { suit: Suit.Bells, rank: 11 },
+        ],
+      },
+    })
+    expect(chooseCpuCard(state, QUARRY_SIDE)).toEqual({ suit: Suit.Bells, rank: 11 })
+  })
+
+  it('leads unchanged — the lowest legal card, skull or not', () => {
+    const skulled: Card = { suit: Suit.Bells, rank: 2 }
+    const state = stateWith({
+      leader: QUARRY_SIDE,
+      trumpSuit: 'keys',
+      currentTrick: [],
+      skulledCards: [skulled],
+      hands: {
+        player: [],
+        cpu: [skulled, { suit: Suit.Bells, rank: 5 }],
+      },
+    })
+    expect(chooseCpuCard(state, QUARRY_SIDE).rank).toBe(2)
+  })
+})
+
 describe('chooseCpuFoxChoice', () => {
   it('exchanges, offering the lowest card of the most-held non-trump suit', () => {
     const handAfterFox: Card[] = [
@@ -181,7 +247,6 @@ describe('chooseCpuMove', () => {
 
   it('produces a Fox move accepted by playCard', () => {
     const state = stateWith({
-      declaration: WIN_DECLARATION,
       leader: PlayerSide.Cpu,
       hands: {
         player: [],
@@ -200,7 +265,6 @@ describe('chooseCpuMove', () => {
 
   it('produces a Woodcutter move accepted by playCard', () => {
     const state = stateWith({
-      declaration: WIN_DECLARATION,
       leader: PlayerSide.Cpu,
       hands: {
         player: [],
@@ -225,11 +289,11 @@ function lcg(seed: number): () => number {
   }
 }
 
-describe('chooseCpuMove — simulated full rounds (AC4)', () => {
+describe('chooseCpuMove — simulated full hands (AC4)', () => {
   const seeds = Array.from({ length: 60 }, (_, i) => i + 1)
 
-  it.each(seeds)('plays a full 13-trick round with zero illegal plays (seed %i)', (seed) => {
-    let state = declaredDeal(seed % 2 === 0 ? PlayerSide.Player : PlayerSide.Cpu, lcg(seed))
+  it.each(seeds)('plays a full hand with zero illegal plays (seed %i)', (seed) => {
+    let state = dealRound(seed % 2 === 0 ? PlayerSide.Player : PlayerSide.Cpu, lcg(seed))
     let guard = 0
 
     while (state.phase !== RoundPhase.Complete) {
@@ -242,8 +306,8 @@ describe('chooseCpuMove — simulated full rounds (AC4)', () => {
       state = result.state
     }
 
-    expect(state.tricksPlayed).toBe(13)
-    expect(state.tricksWon.player + state.tricksWon.cpu).toBe(13)
+    expect(state.tricksPlayed).toBe(HAND_SIZE)
+    expect(state.tricksWon.player + state.tricksWon.cpu).toBe(HAND_SIZE)
   })
 
   it('exercises both the Fox exchange and the Woodcutter discard across the seeded sample', () => {
@@ -251,7 +315,7 @@ describe('chooseCpuMove — simulated full rounds (AC4)', () => {
     let woodcutterPlays = 0
 
     for (const seed of seeds) {
-      let state = declaredDeal(seed % 2 === 0 ? PlayerSide.Player : PlayerSide.Cpu, lcg(seed))
+      let state = dealRound(seed % 2 === 0 ? PlayerSide.Player : PlayerSide.Cpu, lcg(seed))
       let guard = 0
       while (state.phase !== RoundPhase.Complete) {
         guard += 1
@@ -271,13 +335,13 @@ describe('chooseCpuMove — simulated full rounds (AC4)', () => {
   })
 })
 
-describe('the Monarch rule-break — simulated full rounds (DLR-51 AC6)', () => {
+describe('the Monarch rule-break — simulated full hands (DLR-51 AC6)', () => {
   const seeds = Array.from({ length: 60 }, (_, i) => i + 1)
 
   it.each(seeds)(
-    'completes 13 tricks with the Monarch active, never stalling or playing illegally (seed %i)',
+    'completes a hand with the Monarch active, never stalling or playing illegally (seed %i)',
     (seed) => {
-      let state = declaredDeal(
+      let state = dealRound(
         seed % 2 === 0 ? PlayerSide.Player : PlayerSide.Cpu,
         lcg(seed),
         QuarryCharacter.Monarch,
@@ -302,8 +366,8 @@ describe('the Monarch rule-break — simulated full rounds (DLR-51 AC6)', () => 
         state = result.state
       }
 
-      expect(state.tricksPlayed).toBe(13)
-      expect(state.tricksWon.player + state.tricksWon.cpu).toBe(13)
+      expect(state.tricksPlayed).toBe(HAND_SIZE)
+      expect(state.tricksWon.player + state.tricksWon.cpu).toBe(HAND_SIZE)
     },
   )
 
@@ -312,7 +376,7 @@ describe('the Monarch rule-break — simulated full rounds (DLR-51 AC6)', () => 
     let narrowedTurns = 0
 
     for (const seed of seeds) {
-      let state = declaredDeal(PlayerSide.Cpu, lcg(seed), QuarryCharacter.Monarch)
+      let state = dealRound(PlayerSide.Cpu, lcg(seed), QuarryCharacter.Monarch)
       let guard = 0
       while (state.phase !== RoundPhase.Complete) {
         guard += 1

@@ -16,7 +16,7 @@ ticket must add both together. `quarryCharacterInfo(character)` is the accessor 
 `undefined` for an unimplemented character rather than a fabricated description, so a caller shows
 no panel rather than crashing or lying. This module holds no rule-break logic itself; enforcement
 lives entirely in `src/warCouncil/`, one edge already established before this ticket
-(`spoils.ts`/`scoring.ts`'s `warCouncil → hunt` imports) and now joined by a second: `QuarryCharacter`
+(`skulls.ts`/`bank.ts`'s `warCouncil → hunt` imports) and now joined by a second: `QuarryCharacter`
 itself, imported by `src/warCouncil/types.ts` and `quarryRuleBreak.ts`.
 
 ### Telegraph fidelity — how much of the Quarry's intent the player sees (DLR-52)

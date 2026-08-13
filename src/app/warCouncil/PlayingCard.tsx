@@ -9,6 +9,11 @@ interface PlayingCardProps {
   readonly armed?: boolean
   readonly illegal?: boolean
   readonly winner?: boolean
+  /** AC3's second half — a card carrying a skull, once it is face up. Defaults to `false` so
+   *  every existing call site keeps compiling; a caller that knows the card's skull state (the
+   *  hand fan never does — skulls are the Quarry's foreknowledge, not the player's own) passes
+   *  it explicitly. */
+  readonly skulled?: boolean
   readonly tabIndex?: number
   readonly style?: CSSProperties
   readonly onTap?: (card: Card) => void
@@ -28,6 +33,7 @@ export default function PlayingCard({
   armed = false,
   illegal = false,
   winner = false,
+  skulled = false,
   tabIndex,
   style,
   onTap,
@@ -54,7 +60,7 @@ export default function PlayingCard({
       style={style}
       disabled={condensed || illegal}
       tabIndex={condensed ? -1 : tabIndex}
-      aria-label={cardAccessibleName(card)}
+      aria-label={cardAccessibleName(card, skulled)}
       aria-pressed={armed ? true : undefined}
       onClick={() => onTap?.(card)}
     >
@@ -62,6 +68,11 @@ export default function PlayingCard({
         {card.rank}
       </span>
       <SuitMark suit={card.suit} className="wc-card-suit" />
+      {skulled && (
+        <span className="wc-skull-mark" aria-hidden="true">
+          ☠
+        </span>
+      )}
       <span className={`wc-card-pip${hasAbility ? '' : ' wc-is-blank'}`} aria-hidden="true" />
     </button>
   )

@@ -1,3 +1,4 @@
+import { HAND_SIZE } from '../../hunt'
 import { PlayerSide } from '../../warCouncil'
 import type { HealthBarView } from './duelHealthBars.ts'
 import DuelHealthBars from './DuelHealthBars.tsx'
@@ -16,10 +17,11 @@ interface RoundStatusBandProps {
  * The top band (AC4): an opponent plate anchored to one edge, the mirrored duel health-bar
  * pair flanking the `You · Trick · Them` trio Tekken-fashion (§6, DLR-71), each bar depleting
  * toward the centre. Renders exactly the counts and views it is handed; the only arithmetic
- * here is the display-only trick-number clamp, so the final trick never reads as trick 14.
+ * here is the display-only trick-number clamp, read from `HAND_SIZE` rather than written as a
+ * literal (DLR-80), so the final trick never reads as one past the hand's own length.
  *
- * `HuntLedger` — the Standing readout — no longer mounts here: DLR-71 moved it to the dossier
- * column to make room for the bars, which are the band's widest new child.
+ * The Standing readout no longer mounts here — DLR-80 retired it along with the declaration
+ * it scored.
  */
 export default function RoundStatusBand({
   tricksWon,
@@ -30,7 +32,7 @@ export default function RoundStatusBand({
 }: RoundStatusBandProps) {
   const yourTricks = tricksWon[PlayerSide.Player]
   const theirTricks = tricksWon[PlayerSide.Cpu]
-  const trickNumber = Math.min(tricksPlayed + (roundComplete ? 0 : 1), 13)
+  const trickNumber = Math.min(tricksPlayed + (roundComplete ? 0 : 1), HAND_SIZE)
   const backs = Array.from({ length: Math.min(opponentHandCount, MAX_VISIBLE_OPPONENT_BACKS) })
 
   return (

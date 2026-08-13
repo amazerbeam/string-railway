@@ -11,7 +11,7 @@ export function applyFoxExchange(state: RoundState, side: PlayerSide, handCard: 
   }
 }
 
-// drawPile length is invariant at 6 for the life of a round — every draw pairs with a
+// drawPile's length never changes once dealt, for the life of a round — every draw pairs with a
 // discard back onto the pile; do not add a mutator that breaks this pairing without
 // re-checking this function
 export function applyWoodcutterDraw(

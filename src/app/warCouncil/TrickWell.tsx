@@ -1,5 +1,5 @@
 import type { MouseEvent } from 'react'
-import { PlayerSide, type TrickCard } from '../../warCouncil'
+import { isSkulled, PlayerSide, type Card, type TrickCard } from '../../warCouncil'
 import { cardAccessibleName } from './labels'
 import PlayingCard from './PlayingCard'
 import type { ResolvedTrick } from './roundReducer'
@@ -13,6 +13,10 @@ const SIDE_LABEL: Readonly<Record<PlayerSide, string>> = {
 interface TrickWellProps {
   readonly currentTrick: readonly TrickCard[]
   readonly resolvedTrick: ResolvedTrick | null
+  /** AC3's second half — once a card is face up here, it announces its own skull. Defaults to
+   *  `[]` so a caller that predates this (there is none left after this task, but the pattern
+   *  matches `cardAccessibleName`'s own default) keeps compiling. */
+  readonly skulledCards?: readonly Card[]
   readonly quarryToLead: boolean
   readonly onCarryOn: () => void
 }
@@ -27,6 +31,7 @@ interface TrickWellProps {
 export default function TrickWell({
   currentTrick,
   resolvedTrick,
+  skulledCards = [],
   quarryToLead,
   onCarryOn,
 }: TrickWellProps) {
@@ -61,6 +66,7 @@ export default function TrickWell({
                 card={played.card}
                 variant="table"
                 winner={played.side === resolvedTrick.winner}
+                skulled={isSkulled(skulledCards, played.card)}
               />
             </span>
           ))}
@@ -96,7 +102,11 @@ export default function TrickWell({
         <div className="wc-trick-row">
           <span className="wc-played">
             <span className="wc-played-side">{SIDE_LABEL[led.side]}</span>
-            <PlayingCard card={led.card} variant="table" />
+            <PlayingCard
+              card={led.card}
+              variant="table"
+              skulled={isSkulled(skulledCards, led.card)}
+            />
           </span>
         </div>
         <p className="wc-table-line">

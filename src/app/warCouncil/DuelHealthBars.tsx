@@ -24,7 +24,7 @@ type SegmentStyle = CSSProperties & { '--w'?: string }
  * to two moving widgets rather than four, and it is what makes AC3's "health lost versus health at
  * risk" a distinction inside one bar rather than a comparison across two readouts.
  *
- * Computes nothing. `duelHealthBars` derived every percentage, and `applyHunt` did every clamp and
+ * Computes nothing. `duelHealthBars` derived every percentage, and `applyDamage` did every clamp and
  * every subtraction before that. Renders whatever length of `bars` it is handed, which is what
  * makes §6's net-only fallback (AC8) a one-line change in `duelHealthBars` rather than here.
  */

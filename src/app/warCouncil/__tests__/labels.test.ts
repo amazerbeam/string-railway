@@ -1,17 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { DeclareRejection, IllegalMoveReason, QuarryIntentStance, Suit } from '../../../warCouncil'
-import { DuelSide, HuntDeclaration, StandingBandName } from '../../../hunt'
+import {
+  IllegalMoveReason,
+  QuarryIntentStance,
+  Suit,
+  TrickOutcome,
+  type SuitShape,
+} from '../../../warCouncil'
+import { DuelSide } from '../../../hunt'
 import {
   cardAccessibleName,
-  DECLARE_REJECTION_MESSAGE,
   healthBarValueText,
-  HUNT_DECLARATION_NAME,
   ILLEGAL_MOVE_MESSAGE,
   intentAccessibleName,
+  quarryShapeText,
   RANK_NAME,
   STANCE_PHRASE,
-  STANDING_BAND_NAME,
+  suitShapeRowText,
   SUIT_NAME,
+  TRICK_OUTCOME_MESSAGE,
 } from '../labels'
 
 describe('cardAccessibleName', () => {
@@ -21,6 +27,14 @@ describe('cardAccessibleName', () => {
 
   it('omits the parenthetical for an ordinary rank', () => {
     expect(cardAccessibleName({ suit: Suit.Bells, rank: 7 })).toBe('7 of Bells')
+  })
+
+  it('appends a skulled suffix when told the card is skulled', () => {
+    expect(cardAccessibleName({ suit: Suit.Bells, rank: 4 }, true)).toBe('4 of Bells, skulled')
+  })
+
+  it('defaults to not skulled, so every existing call site keeps compiling unchanged', () => {
+    expect(cardAccessibleName({ suit: Suit.Bells, rank: 4 })).toBe('4 of Bells')
   })
 })
 
@@ -49,28 +63,10 @@ describe('the label maps', () => {
     }
   })
 
-  it('carries a display name for every Standing band', () => {
-    for (const name of Object.values(StandingBandName)) {
-      expect(STANDING_BAND_NAME[name]).toBeTruthy()
+  it('carries copy for every trick outcome (§3.2)', () => {
+    for (const outcome of Object.values(TrickOutcome)) {
+      expect(TRICK_OUTCOME_MESSAGE[outcome]).toBeTruthy()
     }
-  })
-})
-
-describe('DLR-63 copy maps are exhaustive over their unions', () => {
-  it('names every declaration path', () => {
-    for (const path of Object.values(HuntDeclaration)) {
-      expect(HUNT_DECLARATION_NAME[path]).toBeTruthy()
-    }
-  })
-
-  it('names every declare rejection', () => {
-    for (const reason of Object.values(DeclareRejection)) {
-      expect(DECLARE_REJECTION_MESSAGE[reason]).toBeTruthy()
-    }
-  })
-
-  it('names the new illegal-move reason', () => {
-    expect(ILLEGAL_MOVE_MESSAGE[IllegalMoveReason.HuntNotDeclared]).toBeTruthy()
   })
 })
 
@@ -100,31 +96,65 @@ describe('intentAccessibleName', () => {
   })
 })
 
-describe('healthBarValueText — both figures in one sentence (AC7)', () => {
+describe('healthBarValueText — the current total against the max (DLR-80)', () => {
   const base = {
     side: DuelSide.Player,
-    secure: 966,
-    pending: 96,
-    current: 1062,
-    max: 1350,
-    securePct: 71.5,
-    pendingPct: 7.1,
+    secure: 20,
+    pending: 0,
+    current: 20,
+    max: 25,
+    securePct: 80,
+    pendingPct: 0,
     lethal: false,
   }
 
-  it('names the current total and the pending figure', () => {
-    expect(healthBarValueText(base)).toBe('1062 of 1350. 96 at risk this Hunt.')
-  })
-
-  it('distinguishes an undeclared Hunt from one that threatens nothing', () => {
-    expect(healthBarValueText({ ...base, pending: 0, secure: 1062 })).toBe(
-      '1062 of 1350. Nothing at risk yet.',
-    )
+  it('names the current total against the max — no pending figure exists any more', () => {
+    expect(healthBarValueText(base)).toBe('20 of 25.')
   })
 
   it('says lethal rather than making the reader compare two numbers', () => {
-    expect(healthBarValueText({ ...base, secure: 0, pending: 1062, lethal: true })).toBe(
-      '1062 of 1350. Lethal this Hunt.',
+    expect(healthBarValueText({ ...base, secure: 0, current: 0, lethal: true })).toBe(
+      '0 of 25. Lethal.',
     )
+  })
+})
+
+describe('suitShapeRowText — the single owner `quarryShapeText` and `QuarryShape.tsx` both build from', () => {
+  it('states one row’s held and skulled counts', () => {
+    expect(suitShapeRowText({ suit: Suit.Keys, held: 2, skulled: 1 })).toBe(
+      'Keys: 2 held, 1 skulled',
+    )
+  })
+
+  it('names nothing skulled distinctly from a positive count', () => {
+    expect(suitShapeRowText({ suit: Suit.Moons, held: 4, skulled: 0 })).toBe(
+      'Moons: 4 held, none skulled',
+    )
+  })
+})
+
+describe('quarryShapeText — AC11, never a rank', () => {
+  it('states each suit’s held and skulled counts, in ALL_SUITS order', () => {
+    const shape: readonly SuitShape[] = [
+      { suit: Suit.Bells, held: 3, skulled: 1 },
+      { suit: Suit.Keys, held: 0, skulled: 0 },
+      { suit: Suit.Moons, held: 2, skulled: 2 },
+    ]
+    expect(quarryShapeText(shape)).toBe(
+      'What the Quarry holds — Bells: 3 held, 1 skulled; Keys: 0 held, none skulled; Moons: 2 held, 2 skulled.',
+    )
+  })
+
+  it('names a suit with nothing skulled distinctly from one held', () => {
+    expect(quarryShapeText([{ suit: Suit.Bells, held: 4, skulled: 0 }])).toContain(
+      'Bells: 4 held, none skulled',
+    )
+  })
+
+  it('never mentions a card rank — SuitShape carries none to leak', () => {
+    const shape: readonly SuitShape[] = [{ suit: Suit.Moons, held: 6, skulled: 2 }]
+    // Every digit in the sentence is a count (held/skulled), never a rank — there is no rank
+    // field on SuitShape for this function to read in the first place.
+    expect(quarryShapeText(shape)).not.toMatch(/rank/i)
   })
 })

@@ -1,59 +1,16 @@
-/* War Council — the Hunt screen's readouts: the status band's Hunt ledger, the dossier
-   zone (the Quarry's card and the intent telegraph), and the end-of-Hunt equation panel.
-   Sibling to `warCouncil.css` and `warCouncilCards.css`, split out because the shell
-   stylesheet is at its 400-line budget; import all five sheets from the mount component
-   (the fourth, `warCouncilDeclare.css`, holds the DLR-63 declare gate and claim control
-   that used to live here — moved out when this file's own DLR-63 additions crossed 400
-   lines in turn; the fifth, `warCouncilStandingTrack.css`, holds the DLR-68 Standing track —
-   moved out before landing here at all, because this file's own DLR-68 addition would have
-   crossed 400 lines in turn; see that file's header for why it is imported after this one).
+/* War Council — the Hunt screen's readouts: the dossier zone (the Quarry's card and the
+   intent telegraph). Sibling to `warCouncil.css` and `warCouncilCards.css`, split out because
+   the shell stylesheet is at its 400-line budget; import both from the mount component.
    Tokens are defined once in `warCouncil.css` and apply globally once that sheet is
    loaded — nothing here redeclares `:root`. Selectors and values are transcribed from the
    approved mockup (`.claude/contract/DLR-53-hunt-screen/mockup.html`) — no new colour
-   token is introduced (AC8; visual polish itself is T15's). */
+   token is introduced (AC8; visual polish itself is T15's).
 
-/* ---------- the Hunt ledger, mounted inside the status band ---------- */
-
-.wc-ledger {
-  display: flex;
-  align-items: stretch;
-  gap: 0.35rem;
-}
-
-.wc-ledger-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 3.4rem;
-  padding: 0.3rem 0.55rem;
-  border-radius: 0.4rem;
-  background: var(--wc-chamber-lift);
-  border: 1px solid #23303a;
-}
-
-/* Dashed border carries the Standing cell's distinction from the two plain cells in form,
-   not colour alone. */
-.wc-ledger-cell.wc-is-band {
-  border-style: dashed;
-  border-color: var(--wc-brass-dim);
-}
-
-.wc-ledger-key {
-  font-size: 0.66rem;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--wc-chalk-dim);
-  white-space: nowrap;
-}
-
-.wc-ledger-value {
-  font-family: var(--wc-serif);
-  font-size: 1.25rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--wc-parchment);
-  white-space: nowrap;
-}
+   The status band's old Standing readout, the end-of-Hunt Spoils-times-Standing equation
+   panel and its two-sided layout, and the two sibling sheets that once held the declare gate
+   and the Standing track were all retired on DLR-80 along with the declaration and the
+   Standing multiplier they scored — none of that machinery has a place in the bank-and-skull
+   loop that replaced it. */
 
 /* ---------- the dossier zone: the Quarry's card, then the telegraph ---------- */
 
@@ -113,6 +70,155 @@
   color: var(--wc-parchment);
 }
 
+/* ---------- the shape readout (DLR-80, AC11): what the Quarry holds, never a rank ---------- */
+
+.wc-shape {
+  background: var(--wc-chamber-lift);
+  border: 1px solid #23303a;
+  border-left: 3px solid var(--wc-brass-dim);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.7rem;
+}
+
+.wc-shape-eyebrow {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--wc-chalk-dim);
+  margin: 0 0 0.3rem;
+}
+
+.wc-shape-row {
+  display: grid;
+  grid-template-columns: 1.1rem 1fr auto;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.2rem 0;
+  font-size: 0.78rem;
+}
+
+.wc-shape-row + .wc-shape-row {
+  border-top: 1px dashed #232d33;
+}
+
+.wc-shape-pip {
+  width: 0.95rem;
+  height: 0.95rem;
+  display: block;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-shape-row.wc-suit-bells .wc-shape-pip {
+  color: var(--wc-bells);
+}
+.wc-shape-row.wc-suit-keys .wc-shape-pip {
+  color: var(--wc-keys);
+}
+.wc-shape-row.wc-suit-moons .wc-shape-pip {
+  color: var(--wc-moons);
+}
+
+.wc-shape-held {
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-chalk);
+}
+
+.wc-shape-skulls {
+  display: flex;
+  gap: 0.15rem;
+  min-height: 1rem;
+  align-items: center;
+}
+
+.wc-shape-none {
+  font-size: 0.68rem;
+  color: var(--wc-chalk-dim);
+}
+
+/* The shared `.wc-skull-mark` glyph (defined for the card face in `warCouncilCards.css`) is
+   absolutely positioned there; inline in a shape row it needs to sit in normal flow instead, at
+   a smaller, row-appropriate size — the glyph and its dark disc are unchanged. */
+.wc-shape-skulls .wc-skull-mark {
+  position: static;
+  width: 0.85rem;
+  height: 0.85rem;
+  font-size: 0.5rem;
+}
+
+/* ---------- the bank meter (DLR-80, AC4/AC5/AC8/AC9) ---------- */
+
+.wc-bank {
+  background: var(--wc-chamber-lift);
+  border: 1px solid #23303a;
+  border-left: 3px solid var(--wc-brass-dim);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.7rem;
+}
+
+.wc-bank-eyebrow {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--wc-chalk-dim);
+  margin: 0 0 0.3rem;
+}
+
+.wc-bank-figures {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.wc-bank-num {
+  font-family: var(--wc-serif);
+  font-size: 1.5rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-brass);
+}
+
+.wc-bank-op {
+  color: var(--wc-chalk-dim);
+  font-size: 1rem;
+}
+
+.wc-bank-mult {
+  font-family: var(--wc-serif);
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-parchment);
+}
+
+.wc-bank-cash {
+  margin: 0.3rem 0 0;
+  font-size: 0.72rem;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-bank-cash b {
+  color: var(--wc-parchment);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Take vs. hit is carried by this copy and by the class below — never by colour alone. */
+.wc-bank-last {
+  margin: 0.4rem 0 0;
+  padding-top: 0.4rem;
+  border-top: 1px solid #232d33;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-bank-last.wc-is-take {
+  color: var(--wc-brass);
+}
+
+.wc-bank-last.wc-is-hit {
+  color: var(--wc-alarm);
+}
+
 /* ---------- the intent telegraph ---------- */
 
 .wc-telegraph {
@@ -156,93 +262,6 @@
   color: var(--wc-brass);
 }
 
-/* ---------- the end-of-Hunt equation panel (Phase 4's consumer) ---------- */
-
-.wc-equation {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.wc-equation-part {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0.45rem 0.8rem;
-  background: var(--wc-chamber-lift);
-  border: 1px solid #23303a;
-  border-radius: 0.4rem;
-  min-width: 4.4rem;
-}
-
-.wc-equation-part.wc-is-result {
-  border-color: var(--wc-brass);
-  border-width: 2px;
-}
-
-.wc-equation-key {
-  font-size: 0.64rem;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--wc-chalk-dim);
-}
-
-.wc-equation-value {
-  font-family: var(--wc-serif);
-  font-size: 1.5rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--wc-parchment);
-}
-
-.wc-equation-op {
-  font-family: var(--wc-serif);
-  font-size: 1.4rem;
-  color: var(--wc-chalk-dim);
-}
-
-.wc-verdict-detail {
-  font-size: 0.8rem;
-  color: var(--wc-chalk-dim);
-  margin: 0;
-}
-
-/* AC7's two-sided panel (DLR-67): one bordered panel per side, each holding its own
-   `.wc-equation`. The heavier border marks the higher Damage in form, not colour alone,
-   so a static screenshot still shows who is ahead. Values transcribed from the approved
-   mockup (`.claude/contract/DLR-67-retire-demand-and-lose-credits/mockup.html` §4); no new
-   colour token is introduced. */
-.wc-sides {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 0.9rem;
-}
-
-.wc-side {
-  flex: 1 1 17rem;
-  max-width: 21rem;
-  padding: 0.85rem;
-  border: 1px solid #23303a;
-  border-radius: 0.5rem;
-  background: var(--wc-chamber-lift);
-}
-
-.wc-side.wc-is-ahead {
-  border-color: var(--wc-brass);
-  border-width: 2px;
-}
-
-.wc-side-name {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--wc-chalk-dim);
-  margin-bottom: 0.55rem;
-}
-
 /* ---------- narrow/short collapse — AC5 on a phone or a short laptop window ---------- */
 
 @media (max-width: 44rem), (max-height: 34rem) {
@@ -262,12 +281,8 @@
     flex-wrap: wrap;
   }
 
-  /* .wc-status (defined in warCouncil.css) holds three children — .wc-plate,
-     .wc-score, and .wc-ledger — in a row with no wrap; at this width their
-     combined min-content widths exceed the viewport. .wc-ledger's own row
-     (three cells plus two operators, all `white-space: nowrap`) is wide
-     enough on its own to overflow even after .wc-status wraps, so it needs
-     the same treatment. */
+  /* .wc-status (defined in warCouncil.css) holds .wc-plate and .wc-score in a row with no
+     wrap; at this width their combined min-content widths exceed the viewport. */
   .wc-status {
     flex-wrap: wrap;
   }
@@ -278,33 +293,25 @@
      that later rule always won and this copy never painted anything. The rule's one home is now
      `warCouncilHealthBars.css`; do not re-add it here. */
 
-  .wc-ledger {
-    flex-wrap: wrap;
-  }
-
-  /* AC7's two-sided end panel (DLR-67 fix pass, QA-reported layout-overflow): two
-     `.wc-side` panels can still exceed the felt's available height at a phone-sized or
-     short-laptop window even after they wrap onto their own row — `.wc-table` (in
-     warCouncil.css) centres `.wc-table-inner` at its own content height at every
-     viewport, and `.wc-shell` clips rather than scrolls, so past this floor the panel
-     was rendered but permanently unreachable. This is a static end-of-round readout
-     read after the Hunt is decided, not a moment being played, so the shell's no-scroll
-     rule's own stated exception applies (`game-ux` SKILL.md: "if some region genuinely
-     must scroll, scope the overflow to that region and say why"). Stretching
-     `.wc-table-inner` to the row's own height and re-centring its content with
-     `justify-content` reproduces today's centred look pixel-for-pixel whenever content
-     still fits — every other felt state at this breakpoint (the declare gate, a
-     resolved trick) already fits and is visually unaffected; only the overflowing case
-     gains a scrollbar. No new size, colour or spacing value is introduced. */
+  /* A static end-of-round readout — the hand-over panel (`RoundOverPanel`) — can still exceed
+     the felt's available height at a phone-sized or short-laptop window: `.wc-table` (in
+     warCouncil.css) centres `.wc-table-inner` at its own content height at every viewport, and
+     `.wc-shell` clips rather than scrolls, so past this floor the panel was rendered but
+     permanently unreachable. This is a readout read after a hand is decided, not a moment
+     being played, so the shell's no-scroll rule's own stated exception applies (`game-ux`
+     SKILL.md: "if some region genuinely must scroll, scope the overflow to that region and say
+     why"). Stretching `.wc-table-inner` to the row's own height and re-centring its content
+     with `justify-content` reproduces the centred look pixel-for-pixel whenever content still
+     fits — every other felt state at this breakpoint already fits and is visually unaffected;
+     only the overflowing case gains a scrollbar. No new size, colour or spacing value is
+     introduced. */
   .wc-table-inner {
     align-self: stretch;
     min-height: 0;
     /* flex-start, NOT center: a centred scroll container clips overflowing content symmetrically
        and `scrollTop` cannot go negative, so the top of a tall panel becomes unreachable at any
-       scroll position — measured by QA at 680×520 and 700×544 on DLR-67, which is still BLOCKED on
-       it. DLR-71's end panel is taller again (two equations, two bars, a control), so this is the
-       ticket that must resolve it. The cost is that the felt's content top-aligns rather than
-       centring at these sizes; that visual change is the developer's to accept. */
+       scroll position. The cost is that the felt's content top-aligns rather than centring at
+       these sizes; that visual change is the developer's to accept. */
     justify-content: flex-start;
     overflow-y: auto;
   }

@@ -1,226 +1,27 @@
-import { HuntDeclaration, QuarryCharacter, DuelSide, type Health } from './types'
+import { QuarryCharacter, DuelSide, type Health, type Damage } from './types'
 
-export const StandingBandName = {
-  Humble: 'humble',
-  Defeated: 'defeated',
-  Victorious: 'victorious',
-  Greedy: 'greedy',
-} as const
-export type StandingBandName = (typeof StandingBandName)[keyof typeof StandingBandName]
+// §5 "Player health" — DECIDED, and small on purpose: Balatro tracks 4 hands and 3 discards as
+// integers held in the head against score requirements in the hundreds and thousands, and §5
+// says the asymmetry here is the same shape. At 2-4 health lost a hand, 25 is roughly eight
+// hands. Replaces DLR-66's 1,350, which belonged to the retired Standing arithmetic.
+// UNIT: health points, depleted 1 at a time.
+export const PLAYER_START_HEALTH: Health = 25
 
-export interface StandingBand {
-  readonly minTricks: number
-  readonly maxTricks: number
-  readonly name: StandingBandName
-  readonly multiplier: number
-}
-
-/**
- * The direction section's two mirrored tables — one per declaration, both sides reading
- * whichever is in force. Decided 2026-08-11 (§9 "The multipliers"): designed, not
- * transcribed from the printed table, and capped at ×5 on either path.
- *
- * The two tables' BAND BOUNDARIES genuinely differ — Win groups 7–9 in one row, Lose groups
- * 4–6 — which is why boundaries are per-row data here and never a shared list or an `if`
- * branch (DLR-66 AC1). §1 derives why the Lose table peaks at 4–6: on that path every trick
- * you win is material handed to the opponent.
- *
- * Their defining property is exact complementarity — Lose(k) = Win(13 − k) at all fourteen
- * splits. That is load-bearing, not decorative: it is what makes §1's same-path rule hold,
- * and `__tests__/config.test.ts` asserts it over whatever pair is configured here, so a
- * hand-edit that breaks it fails loudly.
- *
- * VALUES: the developer's to overturn. Swapping the whole pair — different multipliers AND
- * different boundaries — is an edit to this one literal.
- */
-export const HUNT_MULTIPLIER_TABLES: Readonly<Record<HuntDeclaration, readonly StandingBand[]>> = {
-  [HuntDeclaration.Win]: [
-    { minTricks: 0, maxTricks: 3, name: StandingBandName.Humble, multiplier: 1 },
-    { minTricks: 4, maxTricks: 4, name: StandingBandName.Defeated, multiplier: 2 },
-    { minTricks: 5, maxTricks: 5, name: StandingBandName.Defeated, multiplier: 3 },
-    { minTricks: 6, maxTricks: 6, name: StandingBandName.Defeated, multiplier: 4 },
-    { minTricks: 7, maxTricks: 9, name: StandingBandName.Victorious, multiplier: 5 },
-    { minTricks: 10, maxTricks: 13, name: StandingBandName.Greedy, multiplier: 0.5 },
-  ],
-  [HuntDeclaration.Lose]: [
-    { minTricks: 0, maxTricks: 3, name: StandingBandName.Humble, multiplier: 0.5 },
-    { minTricks: 4, maxTricks: 6, name: StandingBandName.Defeated, multiplier: 5 },
-    { minTricks: 7, maxTricks: 7, name: StandingBandName.Victorious, multiplier: 4 },
-    { minTricks: 8, maxTricks: 8, name: StandingBandName.Victorious, multiplier: 3 },
-    { minTricks: 9, maxTricks: 9, name: StandingBandName.Victorious, multiplier: 2 },
-    { minTricks: 10, maxTricks: 13, name: StandingBandName.Greedy, multiplier: 1 },
-  ],
-}
-
-/**
- * AC2's declaration-aware accessor — the only way a consumer outside this module gets a
- * table. Nothing outside `src/hunt/` names `HUNT_MULTIPLIER_TABLES` or any table identifier;
- * callers name a declaration and this resolves it.
- */
-export function standingTableFor(declaration: HuntDeclaration): readonly StandingBand[] {
-  return HUNT_MULTIPLIER_TABLES[declaration]
-}
-
-/**
- * Resolves a trick count to its Standing band by scanning `table`.
- *
- * `table` is REQUIRED — it was optional, defaulting to the retired single table. With two
- * tables in play a default would let a Lose-path caller who omits the argument score off the
- * Win table and get a plausible number with nothing failing anywhere; requiring it turns
- * every such omission into a compile error (DLR-66 AC2). Use `standingTableFor` to get one.
- *
- * Still throws a `RangeError` outside 0–13: inside that range there is exactly one match by
- * construction in both tables, so an out-of-range call is a caller bug, not a data gap.
- */
-export function resolveStanding(tricks: number, table: readonly StandingBand[]): StandingBand {
-  const band = table.find((b) => tricks >= b.minTricks && tricks <= b.maxTricks)
-  if (!band) {
-    throw new RangeError(`No Standing band configured for trick count ${tricks}`)
-  }
-  return band
-}
-
-// §9 "Card base values" — provisional: a card's value is its printed rank,
-// not flat 1 (§3, §9 — flat 1 collapses Spoils×Standing to the
-// single-variable function 2k×f(k); rank weighting keeps the two terms
-// independent).
-export function cardBaseValue(rank: number): number {
-  return rank
-}
-
-// DLR-63 AC3's `12 − r`. NOT a tuning value: 12 is max(RANKS) + 1 for the 1-11 deck,
-// so the inversion is symmetric (rank 1 <-> 11) and its own inverse. Named rather than
-// inlined so a future deck-size change has exactly one place to look.
-export const RANK_INVERSION_PIVOT = 12
-
-/**
- * DLR-63 AC3 — a card's value on the Lose path. Deliberately the same
- * `(rank: number) => number` signature as `cardBaseValue`, so it drops into `spoils`'s
- * injectable value parameter with no new plumbing.
- */
-export function invertedCardValue(rank: number): number {
-  return RANK_INVERSION_PIVOT - rank
-}
-
-/**
- * Whose capture pile a side is paid for, stated RELATIVE to that side — which is why this union
- * needs no `PlayerSide` and `src/hunt/` stays free of any `src/warCouncil/` import (types.ts:26-32).
- * Resolving `Other` into a concrete seat is `src/warCouncil/spoils.ts`'s job, via `otherSide`.
- */
-export const PaidPile = {
-  Own: 'own',
-  Other: 'other',
-} as const
-export type PaidPile = (typeof PaidPile)[keyof typeof PaidPile]
-
-/**
- * The two halves of §1's card-value rule, bound so neither can be read without the other.
- * Deliberately not two parameters: a caller who injected `cardValueFor(Lose)` while the pile
- * defaulted from an undeclared state would get inverted values over the OWN pile — the exact
- * interim DLR-69 retires, produced by supplying half the scheme (DLR-69 AC1, AC2).
- */
-export interface CardValueScheme {
-  readonly value: (rank: number) => number
-  readonly paidPile: PaidPile
-}
-
-/**
- * §1's card-value rule as data, per declaration (hybrid-design.md lines 42-44). A total `Record`,
- * not a ternary: a third `HuntDeclaration` member becomes a missing-property compile error rather
- * than a silent fall through to printed rank and the own pile (DLR-69 AC6).
- *
- * Module-private, unlike `HUNT_MULTIPLIER_TABLES` — which is exported and then documented as
- * unusable outside `src/hunt/`. `cardValueSchemeFor` is the only way in.
- *
- * The scheme objects are built once here rather than per call, so the accessor allocates nothing.
- */
-const CARD_VALUE_SCHEMES: Readonly<Record<HuntDeclaration, CardValueScheme>> = {
-  [HuntDeclaration.Win]: { value: cardBaseValue, paidPile: PaidPile.Own },
-  [HuntDeclaration.Lose]: { value: invertedCardValue, paidPile: PaidPile.Other },
-}
-
-/**
- * The third sibling of `standingTableFor` and `cardValueFor`: name a declaration once, get both
- * halves of §1's card-value rule as one inseparable object.
- */
-export function cardValueSchemeFor(declaration: HuntDeclaration): CardValueScheme {
-  return CARD_VALUE_SCHEMES[declaration]
-}
-
-/**
- * §1's additive term, per declaration: a card is worth its printed rank on Win and `12 − r`
- * on Lose (DLR-66 AC6). Both functions already existed and are unchanged; this is the
- * accessor that pairs with `standingTableFor`, so a consumer names a declaration once and
- * gets both terms of §1's equation.
- *
- * NO modifier of any kind is applied. The Treasure `+1` and Poison `−1` are Decided-removed
- * (§1, §9 2026-08-11) — at ×5 a ±1 card modifier moves a Hunt by 5 out of 540.
- *
- * DLR-69: now read off `CARD_VALUE_SCHEMES` rather than a `declaration === Lose` ternary, so the
- * declaration → value mapping exists exactly once and a third declared path cannot default. This
- * is the VALUE half only; a caller that also needs the pile half wants `cardValueSchemeFor`.
- */
-export function cardValueFor(declaration: HuntDeclaration): (rank: number) => number {
-  return CARD_VALUE_SCHEMES[declaration].value
-}
-
-/**
- * The two settings §9's "Rounding of the ×0.5 bands" row leaves open. `None` is the doubling
- * dissolution that row offers: double every multiplier in both tables and both health totals
- * and every product is an integer, so there is nothing left to round — the same table in a
- * different presentation, not a different table.
- */
-export const DamageRounding = {
-  HalfAwayFromZero: 'halfAwayFromZero',
-  None: 'none',
-} as const
-export type DamageRounding = (typeof DamageRounding)[keyof typeof DamageRounding]
-
-/**
- * §9 records this row Undecided; DLR-65 says it cannot be deferred past phase 2, so DLR-66
- * ships a stated default rather than a null. THE DEVELOPER'S TO OVERTURN — switching to the
- * doubled presentation is this constant plus both tables plus both health totals, every one
- * of them in this file.
- */
-export const DAMAGE_ROUNDING: DamageRounding = DamageRounding.HalfAwayFromZero
-
-/**
- * Applies the rule to one side's raw `card value × Standing`. Nothing calls this yet — DLR-65
- * T3 owns the damage arithmetic. The rule is a defaulted parameter rather than something the
- * function closes over, so a test proves both settings without mutating module state, the
- * same injectable pattern `resolveStanding`'s table already uses.
- *
- * `Math.sign(raw) * Math.round(Math.abs(raw))`, never bare `Math.round`: JS breaks ties toward
- * +∞, so `Math.round(-0.5)` is `-0` and the rule would not be the one it is named after.
- * Throws on a non-finite input — a NaN rounded into a health bar renders nothing and logs
- * nothing, which is the failure mode that never gets reported.
- */
-export function roundDamage(raw: number, rule: DamageRounding = DAMAGE_ROUNDING): number {
-  if (!Number.isFinite(raw)) {
-    throw new RangeError(`Cannot round a non-finite damage value: ${raw}`)
-  }
-  return rule === DamageRounding.None ? raw : Math.sign(raw) * Math.round(Math.abs(raw))
-}
-
-// §9 "Player health P" — DECIDED 2026-08-11, the developer's value. Equal to the Quarry's
-// first-encounter health by design: `P = H` is what puts the win/lose boundary exactly on the
-// 6/7 line the declaration commits to (7 tricks a Hunt wins on Hunt 4, 6 tricks loses on
-// Hunt 4), and §5 states that property survives any later rescaling of health.
-// UNIT: health points, depleted by damage.
-export const PLAYER_START_HEALTH: Health = 1350
-
-// Per-encounter Quarry health, in encounter order. NEW TO DLR-65 — §9 decides only the 1,350
-// of the first bar (Quarry health H, 2026-08-11); the 1,600 second encounter is the epic's,
-// and which character carries it is an assumption (the Monarch, the only one with round-long
-// enforcement on disk — src/warCouncil/quarryRuleBreak.ts).
-// UNIT: health points per encounter. A `readonly Health[]` rather than a fixed pair so a third
-// encounter is one more entry, not a type change.
-export const QUARRY_ENCOUNTER_HEALTH: readonly Health[] = [1350, 1600]
+// PLACEHOLDER — THE DEVELOPER'S TO SET, from the first play session and not from this file.
+// §5 states CPU health "cannot be derived honestly yet": it depends on how large real cash-outs
+// get, which is a function of play rather than arithmetic. DLR-80's Dependencies & Risks
+// authorises a plainly-labelled placeholder and forbids inventing the real figure.
+// The anchor behind 1000, stated so it can be argued with rather than trusted: 25 player health
+// is roughly eight hands; §3.3's worked hand deals 173 but wins five of six tricks, and a hand
+// that trades evenly deals perhaps a third of that. Eight hands at ~125 is ~1,000.
+// One entry, not two: the second encounter is out of scope for DLR-80.
+// UNIT: health points, encounter 0.
+export const QUARRY_ENCOUNTER_HEALTH: readonly Health[] = [1000]
 
 /**
  * Throws a `RangeError` rather than returning `undefined`: an out-of-range index would
  * otherwise become `NaN` on the first subtraction and vanish from a health bar with no error
- * logged anywhere. Same posture as `resolveStanding` — a bad index is a caller bug.
+ * logged anywhere — a bad index is a caller bug.
  */
 export function quarryHealthForEncounter(index: number): Health {
   const health = QUARRY_ENCOUNTER_HEALTH[index]
@@ -268,3 +69,26 @@ export const TELEGRAPH_FIDELITY: TelegraphFidelity = TelegraphFidelity.SuitAndSt
 // only its copy, so this is forced by what is implemented. It exists as a key so T13 has
 // exactly one place to change when the other four characters land.
 export const SLICE_QUARRY_CHARACTER: QuarryCharacter = QuarryCharacter.Monarch
+
+// §3.1/§5 — six cards each, six tricks. ONE constant, not two: every card dealt is played, so
+// hand size and trick count cannot differ, and two constants that must be equal is a bug waiting
+// for one of them to be edited. SETTLED (§5).
+// UNIT: cards dealt to each side, and therefore tricks in a hand.
+export const HAND_SIZE = 6
+
+// §5 "Skull density, first CPU" — roughly 30% of the CPU's dealt cards carry a skull. SETTLED as
+// a proportion; the count it produces is Math.round(HAND_SIZE * SKULL_DENSITY) = 2 of 6, which is
+// 33%. AC2 requires this be named rather than written at its point of use.
+// UNIT: proportion of the CPU's dealt hand, 0..1.
+export const SKULL_DENSITY = 0.3
+
+// §3.4 "never rank 1", stated as the lowest rank a skull may sit on. SETTLED — a skulled 1 cannot
+// lose a trick, so no amount of foreknowledge helps and the dodge is unavailable. The distribution
+// ACROSS the eligible ranks is §6 Q1's open question: uniform today, and `assignSkulls` takes it
+// as a parameter so testing a skew is a change at one call site.
+// UNIT: rank.
+export const SKULL_MIN_RANK = 2
+
+// §5 "Damage to the player" — 1, every time they take damage (AC10). SETTLED.
+// UNIT: health points per damage event.
+export const DAMAGE_PER_HIT: Damage = 1

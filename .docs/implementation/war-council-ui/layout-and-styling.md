@@ -32,12 +32,20 @@ because **card rotation and lift are transforms, which do not affect layout size
 reserved room the fan's visual pixels spill outside its box and the shell's `overflow: hidden` crops
 them. The fix is to reserve the room, never to loosen the overflow.
 
-The styling ships as **six** stylesheets, not one: `warCouncil.css` (tokens, the shell grid, the
-status band, the felt/table, and the hand container), `warCouncilCards.css` (the card face, the
-ability prompt, and the round-over panel), `warCouncilHunt.css` (DLR-53: the ledger, the dossier
-zone, the telegraph, and the end panel's equation), `warCouncilDeclare.css` (DLR-63: the declare
-gate and the claim control), `warCouncilStandingTrack.css` (DLR-68: the Standing track), and
-`warCouncilHealthBars.css` (DLR-71: the duel's two health bars).
+The styling ships as **four** stylesheets since DLR-80, not one: `warCouncil.css` (tokens, the shell
+grid, the status band, the felt/table, the hand container, and — re-homed by DLR-80 — the
+`.wc-sr-only` utility), `warCouncilCards.css` (the card face, the ability prompt, and the hand-over
+panel), `warCouncilHunt.css` (the dossier zone, the telegraph, and DLR-80's `.wc-shape*` and
+`.wc-bank*` readouts), and `warCouncilHealthBars.css` (DLR-71: the duel's two health bars).
+
+> **DLR-80 deleted two of the six.** `warCouncilDeclare.css` went with the declare gate and
+> `warCouncilStandingTrack.css` with the Standing track. **`.wc-sr-only` was defined only in the
+> latter and used only by `StandingTrack.tsx`**, so deleting the pair would have taken the project's
+> sole screen-reader-only utility with it — it was re-homed verbatim into `warCouncil.css` in the
+> same task. A CSS class that binds by string and resolves to nothing fails silently and is invisible
+> to the compiler, which is exactly why the audit looked for it. It currently has no consumer: both
+> new readouts label their glyphs directly rather than using a visually-hidden span.
+
 **Every split happened for the same reason — the 400-line file budget**, and the count is a reliable
 record of how often this sheet family has hit it. The combined original transcription measured 581
 lines; `warCouncil.css` then could not absorb DLR-53's new zone plus four surfaces;
@@ -54,7 +62,7 @@ suppression and its own narrow-viewport block — measured around 150 lines agai
 `warCouncilHunt.css` already at 307, so the split was in the contract's file map before any CSS was
 written. `warCouncilHealthBars.css` landed at 121 lines after review removed four dead rules from it.
 
-`warCouncilStandingTrack.css` carries **its own copy of the `@media (max-width: 44rem),
+`warCouncilHealthBars.css` carries **its own copy of the `@media (max-width: 44rem),
 (max-height: 34rem)` breakpoint** rather than adding two selectors to the block in
 `warCouncilHunt.css`, precisely to avoid reopening a sheet that had just been brought back under
 budget. `warCouncilHealthBars.css` does the same for the same reason, so **the breakpoint value now
@@ -70,13 +78,13 @@ the split has introduced. Consolidating it is its own ticket.
 > pointer comment naming the surviving rule's one home. Two copies of a breakpoint are a maintenance
 > cost; two copies of a *rule* inside them is a bug that no test can see.
 
-`WarCouncilRound.tsx` imports **all six**, in that order, and importing only some leaves part of the
+`WarCouncilRound.tsx` imports **all four**, in that order, and importing only some leaves part of the
 feature unstyled with no error anywhere — worth knowing before debugging a card that renders with no
-face, a ledger that renders as an undifferentiated run of text, a declare gate that renders as two
-default browser buttons, a Standing track that renders as a bare row of empty spans, or a health bar
-that renders as an empty box with no fill and no mirror.
+face, a shape or bank readout that renders as an undifferentiated run of text, or a health bar
+that renders as an empty box with no fill and no mirror. A Vite build fails loudly on a missing CSS
+import, so a stale import is a broken build rather than a silent gap.
 
-**Import order is load-bearing, not incidental.** `.wc-declare-option`'s hover lift and its
+**Import order is load-bearing, not incidental.** A card's hover lift and its
 `@media (prefers-reduced-motion: reduce)` suppression are deliberately co-located in
 `warCouncilCards.css`, with the suppression later in the same file, so it wins at equal specificity.
 Putting the hover rule in a sheet that loads *after* `warCouncilCards.css` — which is what DLR-63's
@@ -99,14 +107,15 @@ wrapping row. `.wc-dossier` also carries `min-width: 0` and `overflow: hidden` u
 long rule-break sentence cannot force the grid wider than the viewport.
 
 That block originally restructured `.wc-shell` and `.wc-dossier` but **not `.wc-status`** — the
-unwrapped flex row that had just gained `HuntLedger` as its third child. At phone width the band's
+unwrapped flex row that had just gained a third child. At phone width the band's
 content measured 744px against a 500px viewport, and the Demand cell rendered at `left: 682` —
 entirely off-screen. `.wc-shell`'s `overflow: hidden` meant no scrollbar ever appeared, so the
 no-scroll check passed while one of the five readouts the screen exists to show was invisible.
-Every component test passed too, because jsdom has no layout engine. The fix is `flex-wrap: wrap` on
-both `.wc-status` and `.wc-ledger`, inside that same media query — the ledger needs it
-independently, since its five `white-space: nowrap` cells and three operators can overflow on their
-own even once the band has wrapped.
+Every component test passed too, because jsdom has no layout engine. The fix was `flex-wrap: wrap` on
+`.wc-status` and on the offending readout independently, inside that same media query — a readout
+whose cells carry `white-space: nowrap` can overflow on its own even once the band has wrapped.
+(The readout in question, the Hunt ledger, was deleted by DLR-80; the wrapping rule on `.wc-status`
+survives, and the lesson below is why.)
 
 The lesson is the general one for this shell: **`overflow: hidden` converts an overflow bug into an
 invisibility bug rather than preventing it.** A no-scroll assertion is necessary and not sufficient;
@@ -114,10 +123,9 @@ the check that catches this class of defect is measuring a specific element's
 `getBoundingClientRect()` against the viewport.
 
 DLR-63 added the second-ever cell to `.wc-status` — the Lose-credit readout — and it inherits that
-`flex-wrap` by sitting inside `.wc-ledger`. Measured at 500×844 with the pool visible, the cell's
+`flex-wrap` by sitting inside its own readout. Measured at 500×844, the cell's
 `right` edge resolves to 446 against a 500px viewport, with no scroll on either axis. The media query
-itself now lives in `warCouncilHunt.css` after the split; the declare and claim surfaces it does not
-govern moved to `warCouncilDeclare.css`.
+itself lives in `warCouncilHunt.css`.
 
 DLR-71 rebuilt `.wc-status` around the health bars: `justify-content: space-between` became
 `align-items: center` with `flex-wrap: nowrap`, since the bars flex to fill rather than sitting at the

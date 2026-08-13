@@ -4,6 +4,7 @@ import { legalMoves } from './legalMoves'
 import { playCard } from './playCard'
 import { QUARRY_SIDE } from './quarryRuleBreak'
 import { resolveTrickWinner } from './resolveTrick'
+import { isSkulled } from './skulls'
 import {
   ALL_SUITS,
   AbilityChoiceKind,
@@ -36,19 +37,33 @@ function lowestCard(cards: readonly Card[]): Card {
   return [...cards].sort(compareCards)[0]
 }
 
-// Card selection only — always drawn from legalMoves()'s own output, so this can
-// never produce an illegal card. Leading: lowest legal card. Following: the lowest
-// legal card that would win the trick (per the engine's own resolveTrickWinner),
-// or the lowest legal card at all if none would win.
+// Card selection only — always drawn from legalMoves()'s own output, so this can never
+// produce an illegal card. Leading: the lowest legal card, unchanged. Following, in priority
+// order:
+//   1. AC12 — the lowest legal card that would LOSE the trick and carries a skull, so the
+//      player is the one who wins it. Without this the mechanic is toothless and a play-test
+//      measures nothing.
+//   2. unchanged — the lowest legal card that would win.
+//   3. unchanged — the lowest legal card at all.
+// The LEAD is deliberately unchanged: DLR-80 names AC12 as the minimum CPU change, and
+// avoiding a skulled lead is a second behaviour with its own feel consequences.
 export function chooseCpuCard(state: RoundState, side: PlayerSide): Card {
   const legal = legalMoves(state, side)
   if (state.currentTrick.length === 0) {
     return lowestCard(legal)
   }
   const lead = state.currentTrick[0]
-  const winners = legal.filter(
-    (card) => resolveTrickWinner([lead, { side, card }], state.trumpSuit) === side,
+  const wouldWin = (card: Card) =>
+    resolveTrickWinner([lead, { side, card }], state.trumpSuit) === side
+
+  const skulledLosers = legal.filter(
+    (card) => !wouldWin(card) && isSkulled(state.skulledCards, card),
   )
+  if (skulledLosers.length > 0) {
+    return lowestCard(skulledLosers)
+  }
+
+  const winners = legal.filter(wouldWin)
   return lowestCard(winners.length > 0 ? winners : legal)
 }
 

@@ -47,21 +47,27 @@ other exported function mutates state. Its order of operations:
 6. Append the card to `currentTrick`. If this is the trick's first card, the result is `{ ok: true,
 state }` with `phase: AwaitingFollow`. If it's the second, `resolveTrickWinner` and
    `nextLeaderAfterTrick` run, `tricksWon`/`tricksPlayed` increment, and `phase` becomes `Complete`
-   once `tricksPlayed` reaches `TRICKS_PER_ROUND`, else `AwaitingLead`.
+   once `tricksPlayed` reaches `HAND_SIZE`, else `AwaitingLead`.
 
 Every rejection returns `{ ok: false, reason }` and leaves the **input** `state` untouched — no
 partial mutation, no thrown exception; a caller (a future CPU or UI ticket) branches on the named
 `IllegalMoveReason` rather than parsing an exception message.
 
-### `capturedCards` accumulation (DLR-49)
+### Resolving the trick's bank effect (DLR-80)
 
-The same second-card branch that increments `tricksWon[winner]` also appends the trick's two cards
-— `completedTrick[0].card` (the lead), then `completedTrick[1].card` (the follow), **in that
-order** regardless of which side actually led — to `capturedCards[winner]`, using the same `winner`
-value so the two fields can never disagree about who won. `capturedCards` starts as `{ player: [],
-cpu: [] }` in every `RoundState` (set by `dealRound` and every test fixture) and only ever grows,
-never shrinks or reorders, for the life of a round. Across a full 13-trick round the two sides'
-lists together hold exactly the 26 cards played, with no card appearing twice and none missing —
-enforced by an invariant test in `playCard.test.ts` that independently tracks every card played and
-cross-checks it against the union of both `capturedCards` lists. See [Scoring](scoring.md) for what
-reads this field.
+The same second-card branch that increments `tricksWon[winner]` calls `resolveTrickBank` once and
+writes its result onto `lastResolution`, copying the returned `bank` and `multiplier` onto the state
+alongside it. It passes the completed trick, whether the **player** won it (`winner ===
+PlayerSide.Player`), whether the trick was skulled (`trickIsSkulled`), and whether this was the final
+trick (`tricksPlayed === HAND_SIZE`).
+
+`playCard` decides nothing about the outcome itself — it reports those facts and lets `bank.ts` apply
+the rule. See [the bank and the cash-out](bank-and-cash-out.md).
+
+The one-card early return writes `lastResolution: null`, so a lead always clears the previous trick's
+resolution rather than leaving it to be rendered against the wrong trick.
+
+> **`capturedCards` was removed by DLR-80.** Until then this branch also appended the trick's two
+> cards to a per-side capture pile, which existed solely to be summed by `spoils` at the end of the
+> round. The bank replaced the only thing the piles fed, so both the field and the invariant test
+> that cross-checked the two lists against every card played are gone.

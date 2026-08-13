@@ -1,40 +1,29 @@
 import { useReducer, type ReactNode } from 'react'
-import {
-  applyHunt,
-  DuelSide,
-  quarryCharacterInfo,
-  resolveStanding,
-  standingTableFor,
-  type IncomingDamage,
-} from '../../hunt'
+import { DuelSide, isEncounterResolved, quarryCharacterInfo } from '../../hunt'
 import {
   CardRank,
   PlayerSide,
   RoundPhase,
   currentTurn,
-  declaredPath,
-  duelSideDamage,
   legalMoves,
-  otherSide,
-  pendingHuntDamage,
   quarryIntent,
   sameCard,
+  suitShape,
   type Card,
-  type HuntDamage,
   type QuarryIntent,
 } from '../../warCouncil'
 import type { WarCouncilMountProps } from '../warCouncilMount'
 import AbilityPrompt from './AbilityPrompt'
-import DeclareGate from './DeclareGate'
+import BankMeter from './BankMeter'
 import DecreePile from './DecreePile'
 import { duelHealthBars } from './duelHealthBars'
 import HandFan from './HandFan'
 import { sortHandForDisplay } from './handOrder'
-import HuntLedger from './HuntLedger'
 import { previewQuarryIntent } from './intentPreview'
 import IntentTelegraph from './IntentTelegraph'
 import { cardAccessibleName, ILLEGAL_MOVE_MESSAGE } from './labels'
 import QuarryDossier from './QuarryDossier'
+import QuarryShape from './QuarryShape'
 import RoundOverPanel from './RoundOverPanel'
 import {
   createRoundUiState,
@@ -48,22 +37,22 @@ import TrickWell from './TrickWell'
 import './warCouncil.css'
 import './warCouncilCards.css'
 import './warCouncilHunt.css'
-import './warCouncilDeclare.css'
-import './warCouncilStandingTrack.css'
 import './warCouncilHealthBars.css'
 
-/** Nothing pending — the state before a declaration, where `pendingHuntDamage` returns `null`. */
-const NO_PENDING: IncomingDamage = { [DuelSide.Player]: 0, [DuelSide.Quarry]: 0 }
-
 /**
- * The round mount, implementing SCRUM-37's `WarCouncilMountProps`. Owns
- * exactly one piece of state — the reducer below, seeded by a lazy initializer that is a
- * pure restructuring of `initialState` (DLR-53 AC3: the Quarry's opening lead is left
+ * The round mount, implementing SCRUM-37's `WarCouncilMountProps`. Owns exactly one piece of
+ * state — the reducer below, seeded by a lazy initializer that is a pure restructuring of
+ * `{ round: initialState, encounter }` (DLR-53 AC3: the Quarry's opening lead is left
  * uncommitted so it can be telegraphed before it lands; `handleCarryOn` commits it). That
  * initializer, like the reducer itself, is pure, so StrictMode's development
- * double-invocation simply recomputes an identical value. There is no effect anywhere in
- * this component: every other transition is a tap, a keypress, or a callback fired from
- * one of the felt's own controls.
+ * double-invocation simply recomputes an identical value. There is no effect anywhere in this
+ * component: every other transition is a tap, a keypress, or a callback fired from one of the
+ * felt's own controls.
+ *
+ * `encounter` (the prop) is this hand's OPENING figure — `warCouncilMount.ts`'s own docblock —
+ * and the reducer's own `ui.encounter` is the live value, updated in place as each trick's
+ * damage lands (AC6/AC8). Both are read here: the prop as the hand's fixed starting point for
+ * `handSummary`'s deltas, the reducer's copy for everything that must track the hand live.
  */
 export default function WarCouncilRound({
   initialState,
@@ -72,53 +61,38 @@ export default function WarCouncilRound({
   maxHealth,
   onComplete,
 }: WarCouncilMountProps) {
-  const [ui, dispatch] = useReducer(roundReducer, initialState, createRoundUiState)
+  const [ui, dispatch] = useReducer(
+    roundReducer,
+    { round: initialState, encounter },
+    createRoundUiState,
+  )
 
+  const encounterOver = isEncounterResolved(ui.encounter)
   const roundComplete = ui.round.phase === RoundPhase.Complete
   const interactive =
     !roundComplete &&
+    !encounterOver &&
     ui.resolvedTrick === null &&
     ui.prompt === null &&
     ui.cpuFault === null &&
-    ui.round.declaration !== undefined &&
     currentTurn(ui.round) === PlayerSide.Player
 
   const legal = legalMoves(ui.round, PlayerSide.Player)
 
-  // ONE call, not two. `pendingHuntDamage` is the same function that produces the applied damage —
-  // both it and `huntDamage` delegate to `outcomeFor` — so the figure the player watches climb
-  // through thirteen tricks IS the figure that lands (AC2). It returns `null` while undeclared:
-  // a figure no declaration authorises is exactly what that guard exists to prevent.
-  const pending = pendingHuntDamage(ui.round)
+  // Both bars read straight off the reducer's own encounter — there is no projection any more,
+  // because damage has already landed by the time this renders. The pending segment retired with
+  // `pendingHuntDamage`: it was the non-monotonic figure the redesign exists to remove.
+  const bars = duelHealthBars(ui.encounter.health, ui.encounter.health, maxHealth)
 
-  // Keyed by the side that DEALT it, which is what the end panel's per-side equation states.
-  // `otherSide` performs the inverse of the crossing `outcomeFor` already made, rather than
-  // this component swapping two keys by hand.
-  const dealt: Readonly<Record<PlayerSide, HuntDamage>> | null =
-    pending === null
-      ? null
-      : {
-          [PlayerSide.Player]: pending.incoming[otherSide(PlayerSide.Player)],
-          [PlayerSide.Cpu]: pending.incoming[otherSide(PlayerSide.Cpu)],
-        }
+  const shape = suitShape(ui.round.hands[PlayerSide.Cpu], ui.round.skulledCards)
 
-  // The bars' projection. `applyHunt` against a COPY — never a second subtraction written here —
-  // which is what DLR-70's own docblock asks of this caller, and it keeps the clamp at zero and
-  // the overkill discard in exactly one place in the program.
-  const incoming = pending === null ? NO_PENDING : duelSideDamage(pending)
-  const live = ui.applied ?? encounter
-  const bars = duelHealthBars(
-    live.health,
-    ui.applied === null ? applyHunt(live, incoming).health : live.health,
-    maxHealth,
-  )
-
-  // The Standing readout, NOT a damage figure — so this one is deliberately routed through
-  // `declaredPath`, whose undeclared-reads-as-Win default exists to give the track a table to
-  // draw before the player declares. The component names a declaration and never a table or a
-  // boundary (AC5, DLR-66).
-  const standingTable = standingTableFor(declaredPath(ui.round))
-  const band = resolveStanding(ui.round.tricksWon[PlayerSide.Player], standingTable)
+  // This hand's own tally, as the delta against the encounter this component was mounted with.
+  // `encounter` (the prop) never changes across this hand's life; `ui.encounter` does, on every
+  // trick that cashes or hits — so the difference is exactly what this hand did.
+  const handSummary = {
+    healthLost: encounter.health[DuelSide.Player] - ui.encounter.health[DuelSide.Player],
+    dealtToQuarry: encounter.health[DuelSide.Quarry] - ui.encounter.health[DuelSide.Quarry],
+  }
 
   const displayHand = sortHandForDisplay(ui.round.hands[PlayerSide.Player])
 
@@ -126,10 +100,10 @@ export default function WarCouncilRound({
   // before the card lands. `currentTrick.length === 0` is what keeps this to leads only.
   const quarryToLead =
     !roundComplete &&
+    !encounterOver &&
     ui.resolvedTrick === null &&
     ui.prompt === null &&
     ui.cpuFault === null &&
-    ui.round.declaration !== undefined &&
     currentTurn(ui.round) === PlayerSide.Cpu &&
     ui.round.currentTrick.length === 0
 
@@ -154,40 +128,45 @@ export default function WarCouncilRound({
   }
 
   /**
-   * AC4's first stage. Guarded on `pending` for the type; unreachable with it null, because the
-   * panel this fires from only renders once the round is complete and a round cannot complete
-   * undeclared.
+   * Shared by the held trick's own carry-on control, the pending Quarry lead's own control, and
+   * both the round-over and terminal panels' single control.
+   *
+   * Checked first and unconditionally: once the encounter has resolved, the felt no longer shows
+   * a held reveal to clear (the branch order below puts the terminal panel ahead of the resolved
+   * trick, matching the deciding cash-out's own trick never being shown separately from the
+   * outcome it produced), so every tap from here on reports the finished hand upward rather than
+   * dispatching a `CarryOn` that would just clear a reveal nothing renders. Otherwise this clears
+   * a held trick reveal (including the deciding sixth, so its cards and outcome are seen before
+   * the round-over panel) and/or commits the Quarry's pending lead — or, once nothing is held or
+   * pending and the round is complete, reports the finished hand the same way.
    */
-  function handleApply() {
-    if (pending === null) return
-    dispatch({
-      kind: RoundUiActionKind.CommitDamage,
-      encounter,
-      incoming: duelSideDamage(pending),
-    })
-  }
-
-  /** Shared by the held trick's own carry-on control, the pending Quarry lead's own
-   * control, and the round-over panel's "Deal the next Hunt" control: reads the current
-   * render's state and either carries on — clearing a held trick (including the deciding
-   * thirteenth, so its cards and winner are seen before the panel appears) and/or
-   * committing the Quarry's pending lead — or, once nothing is held or pending, the round
-   * is complete, and the Hunt's damage has been applied, reports it. `quarryToLead` is only
-   * ever true while `roundComplete` is false, so this never fires `onComplete` twice for one
-   * click. */
   function handleCarryOn() {
+    if (encounterOver) {
+      onComplete({ finalState: ui.round, encounter: ui.encounter })
+      return
+    }
     if (ui.resolvedTrick !== null || quarryToLead) {
       dispatch({ kind: RoundUiActionKind.CarryOn })
       return
     }
-    if (roundComplete && ui.applied !== null) {
-      onComplete({ finalState: ui.round, encounter: ui.applied })
+    if (roundComplete) {
+      onComplete({ finalState: ui.round, encounter: ui.encounter })
     }
   }
 
   let felt: ReactNode
-  if (ui.round.declaration === undefined) {
-    felt = <DeclareGate onDeclare={(path) => dispatch({ kind: RoundUiActionKind.Declare, path })} />
+  if (encounterOver) {
+    // AC6/AC8's cash-out can resolve the encounter mid-hand, on any trick — so this is checked
+    // ahead of `resolvedTrick` rather than after it. The trick that finished the encounter
+    // never gets its own reveal beat; the terminal panel is what the player sees next.
+    felt = (
+      <RoundOverPanel
+        tricksWon={ui.round.tricksWon}
+        handSummary={handSummary}
+        winner={ui.encounter.winner}
+        onFinish={handleCarryOn}
+      />
+    )
   } else if (ui.cpuFault) {
     felt = (
       <p className="wc-fault" role="alert">
@@ -196,24 +175,24 @@ export default function WarCouncilRound({
       </p>
     )
   } else if (ui.resolvedTrick) {
-    // Held regardless of `roundComplete` — the deciding thirteenth trick resolves and
-    // completes the round in the same reducer transition, so without this branch running
-    // first the winning card of the final trick would never be shown.
+    // Held regardless of `roundComplete` — the deciding sixth trick resolves and completes the
+    // hand in the same reducer transition, so without this branch running first the winning
+    // card of the final trick would never be shown.
     felt = (
       <TrickWell
         currentTrick={ui.round.currentTrick}
         resolvedTrick={ui.resolvedTrick}
+        skulledCards={ui.round.skulledCards}
         quarryToLead={quarryToLead}
         onCarryOn={handleCarryOn}
       />
     )
-  } else if (roundComplete && dealt !== null) {
+  } else if (roundComplete) {
     felt = (
       <RoundOverPanel
         tricksWon={ui.round.tricksWon}
-        huntDamage={dealt}
-        applied={ui.applied}
-        onApply={handleApply}
+        handSummary={handSummary}
+        winner={null}
         onFinish={handleCarryOn}
       />
     )
@@ -233,6 +212,7 @@ export default function WarCouncilRound({
       <TrickWell
         currentTrick={ui.round.currentTrick}
         resolvedTrick={null}
+        skulledCards={ui.round.skulledCards}
         quarryToLead={quarryToLead}
         onCarryOn={handleCarryOn}
       />
@@ -254,10 +234,11 @@ export default function WarCouncilRound({
           info={quarryCharacterInfo(hunt.quarry.character)}
           tricksWon={ui.round.tricksWon[PlayerSide.Cpu]}
         />
-        <HuntLedger
-          band={band}
-          table={standingTable}
-          tricks={ui.round.tricksWon[PlayerSide.Player]}
+        <QuarryShape shape={shape} />
+        <BankMeter
+          bank={ui.round.bank}
+          multiplier={ui.round.multiplier}
+          lastResolution={ui.round.lastResolution}
         />
         <IntentTelegraph intent={intent} speculative={speculative} />
       </aside>
@@ -292,7 +273,6 @@ export default function WarCouncilRound({
  * always says the most specific thing; otherwise the hint names whose turn
  * it is to lead or follow. */
 function deriveHint(ui: RoundUiState, interactive: boolean, quarryToLead: boolean): string {
-  if (ui.round.declaration === undefined) return 'Declare Win or Lose'
   if (ui.rejection) return ILLEGAL_MOVE_MESSAGE[ui.rejection]
   if (ui.prompt) return 'Choose what the card does'
   if (ui.resolvedTrick) return 'Trick resolved'

@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { PlayerSide, Suit } from '../../../warCouncil'
+import { PlayerSide, Suit, TrickOutcome } from '../../../warCouncil'
 import type { ResolvedTrick } from '../roundReducer'
 import TrickWell from '../TrickWell'
 
@@ -13,6 +13,15 @@ const resolvedTrick: ResolvedTrick = {
     { side: PlayerSide.Cpu, card: { suit: Suit.Keys, rank: 2 } },
   ],
   winner: PlayerSide.Cpu,
+  resolution: {
+    outcome: TrickOutcome.CleanLoss,
+    bankAdded: 0,
+    cashOut: 20,
+    damageToPlayer: 1,
+    bank: 0,
+    multiplier: 0,
+    cashedAtHandEnd: false,
+  },
 }
 
 describe('TrickWell — a resolved trick', () => {

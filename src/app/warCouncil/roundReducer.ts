@@ -3,10 +3,11 @@ import {
   PlayerSide,
   QUARRY_SIDE,
   RoundPhase,
+  TrickOutcome,
   chooseCpuMove,
   commitQuarryMove,
   currentTurn,
-  declareHunt,
+  incomingFrom,
   legalMoves,
   playCard,
   sameCard,
@@ -14,19 +15,16 @@ import {
   type Card,
   type IllegalMoveReason,
   type TrickCard,
+  type TrickResolution,
   type WarCouncilState,
 } from '../../warCouncil'
-import {
-  applyHunt,
-  isEncounterResolved,
-  type EncounterState,
-  type HuntDeclaration,
-  type IncomingDamage,
-} from '../../hunt'
+import { applyDamage, isEncounterResolved, type EncounterState } from '../../hunt'
 
 export interface ResolvedTrick {
   readonly cards: readonly TrickCard[] // [lead, follow] — the engine's load-bearing order
   readonly winner: PlayerSide
+  /** What the trick did to the bank, the streak and both bars. */
+  readonly resolution: TrickResolution
 }
 
 export interface RoundUiState {
@@ -36,10 +34,15 @@ export interface RoundUiState {
   readonly resolvedTrick: ResolvedTrick | null // held on screen until CarryOn
   readonly rejection: IllegalMoveReason | null // the player's own illegal move — recoverable
   readonly cpuFault: CpuFault | null // a corrupt CPU turn — a bug, shown not swallowed
-  /** `null` until the player commits the finished Hunt's damage. Set by `CommitDamage`, which
-   *  delegates to `applyHunt` — this module never subtracts a health value itself, so DLR-70's
-   *  single clamp point stays single. */
-  readonly applied: EncounterState | null
+  /** The live encounter. Never null: seeded from the mount's prop and updated in place as each
+   *  trick resolves, because AC6 and AC8 make the cash-out automatic and mid-hand. Replaces the
+   *  nullable `applied`, which existed only to model "the player has pressed Apply". */
+  readonly encounter: EncounterState
+}
+
+export interface RoundUiSeed {
+  readonly round: WarCouncilState
+  readonly encounter: EncounterState
 }
 
 // `chooseCpuMove` throws rather than returning a rejection when the CPU has no legal
@@ -52,8 +55,6 @@ export const RoundUiActionKind = {
   ChooseAbility: 'chooseAbility',
   CancelSelection: 'cancelSelection',
   CarryOn: 'carryOn',
-  Declare: 'declare',
-  CommitDamage: 'commitDamage',
 } as const
 export type RoundUiActionKind = (typeof RoundUiActionKind)[keyof typeof RoundUiActionKind]
 
@@ -62,30 +63,18 @@ export type RoundUiAction =
   | { readonly kind: typeof RoundUiActionKind.ChooseAbility; readonly choice: AbilityChoice }
   | { readonly kind: typeof RoundUiActionKind.CancelSelection }
   | { readonly kind: typeof RoundUiActionKind.CarryOn }
-  | { readonly kind: typeof RoundUiActionKind.Declare; readonly path: HuntDeclaration }
-  | {
-      readonly kind: typeof RoundUiActionKind.CommitDamage
-      readonly encounter: EncounterState
-      /** Already keyed by the side it depletes — `duelSideDamage` performed that crossing, so
-       *  this reducer cannot get it backwards. */
-      readonly incoming: IncomingDamage
-    }
 
-/**
- * Initial UI state. Deliberately does **not** play the Quarry's opening lead: DLR-53 AC3
- * requires that lead to be telegraphed before it lands, and `handleCarryOn` commits it when
- * the player is ready. Being a pure restructuring of `initialState` also makes it trivially
- * safe under StrictMode's double-invocation of a lazy `useReducer` initialiser.
- */
-export function createRoundUiState(initialState: WarCouncilState): RoundUiState {
+/** Still a pure restructuring of its seed, so StrictMode's double-invocation of the lazy
+ *  `useReducer` initialiser recomputes an identical value. */
+export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
   return {
-    round: initialState,
+    round: seed.round,
     armed: null,
     prompt: null,
     resolvedTrick: null,
     rejection: null,
     cpuFault: null,
-    applied: null,
+    encounter: seed.encounter,
   }
 }
 
@@ -99,10 +88,6 @@ export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundU
       return { ...state, armed: null, prompt: null }
     case RoundUiActionKind.CarryOn:
       return handleCarryOn(state)
-    case RoundUiActionKind.Declare:
-      return handleDeclare(state, action.path)
-    case RoundUiActionKind.CommitDamage:
-      return handleCommitDamage(state, action.encounter, action.incoming)
   }
 }
 
@@ -115,6 +100,7 @@ interface CpuAdvanceResult {
 function canAct(state: RoundUiState): boolean {
   return (
     state.round.phase !== RoundPhase.Complete &&
+    !isEncounterResolved(state.encounter) &&
     state.resolvedTrick === null &&
     state.prompt === null &&
     state.cpuFault === null &&
@@ -139,8 +125,8 @@ function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
 
 /**
  * The single control the player presses between decisions. Clears a held trick reveal —
- * including the deciding thirteenth, so its cards and winner are seen before the end panel
- * — and then commits the Quarry's lead if one is pending.
+ * including the deciding sixth, so its cards and outcome are seen before the end panel — and
+ * then commits the Quarry's lead if one is pending.
  *
  * Doing both in one transition is what keeps the telegraph free: the Quarry's next lead is
  * already readable beside the held reveal, so the tap that clears the reveal is the same tap
@@ -154,6 +140,7 @@ function handleCarryOn(state: RoundUiState): RoundUiState {
     cleared.cpuFault !== null ||
     cleared.prompt !== null ||
     cleared.round.phase === RoundPhase.Complete ||
+    isEncounterResolved(cleared.encounter) ||
     currentTurn(cleared.round) !== QUARRY_SIDE ||
     cleared.round.currentTrick.length > 0
   ) {
@@ -170,34 +157,17 @@ function handleCarryOn(state: RoundUiState): RoundUiState {
 }
 
 /**
- * AC1. A rejection returns the input state unchanged — both of `declareHunt`'s rejections are
- * structurally unreachable from the gate, which only renders while `declaration` is undefined,
- * so this is a guard rather than a live path.
- */
-function handleDeclare(state: RoundUiState, path: HuntDeclaration): RoundUiState {
-  const result = declareHunt(state.round, path)
-  return result.ok ? { ...state, round: result.state } : state
-}
-
-/**
- * AC4's first stage: the finished Hunt's damage applied once, so the bars can be seen to move
- * before the screen changes.
+ * AC6/AC8 — one trick's damage, applied once, as it happens.
  *
- * Both guards return the input state rather than letting `applyHunt`'s `RangeError` escape — a
- * throw inside a reducer during an event handler unmounts the tree. Neither is a live path: the
- * panel only renders the control while `applied === null`, and `App` stops dealing once the
- * encounter resolves. They are here because a guard that costs two comparisons is cheaper than a
- * blank screen.
+ * Skips `applyDamage` entirely when the trick neither cashed nor hit: an all-zero event would
+ * bump `damageEventsApplied` for nothing. Guards `isEncounterResolved` rather than catching the
+ * `RangeError` it would otherwise throw — a throw inside a reducer during an event handler
+ * unmounts the tree.
  */
-function handleCommitDamage(
-  state: RoundUiState,
-  encounter: EncounterState,
-  incoming: IncomingDamage,
-): RoundUiState {
-  if (state.applied !== null || isEncounterResolved(encounter)) {
-    return state
-  }
-  return { ...state, applied: applyHunt(encounter, incoming) }
+function applyResolution(encounter: EncounterState, resolution: TrickResolution): EncounterState {
+  if (isEncounterResolved(encounter)) return encounter
+  if (resolution.cashOut === 0 && resolution.damageToPlayer === 0) return encounter
+  return applyDamage(encounter, incomingFrom(resolution))
 }
 
 /** Commits `cardToPlay` for the player, then advances the opponent when the player led. */
@@ -209,6 +179,9 @@ function commit(state: RoundUiState, cardToPlay: Card, choice?: AbilityChoice): 
 
   const playedCard: TrickCard = { side: PlayerSide.Player, card: cardToPlay }
   const resolvedTrick = deriveResolvedTrick(state.round, result.state, playedCard)
+  const encounter = resolvedTrick
+    ? applyResolution(state.encounter, resolvedTrick.resolution)
+    : state.encounter
   const settled: RoundUiState = {
     ...state,
     round: result.state,
@@ -216,6 +189,7 @@ function commit(state: RoundUiState, cardToPlay: Card, choice?: AbilityChoice): 
     prompt: null,
     rejection: null,
     resolvedTrick,
+    encounter,
   }
 
   if (resolvedTrick) {
@@ -229,25 +203,30 @@ function commit(state: RoundUiState, cardToPlay: Card, choice?: AbilityChoice): 
     round: advanced.round,
     resolvedTrick: advanced.resolvedTrick,
     cpuFault: advanced.cpuFault,
+    encounter: advanced.resolvedTrick
+      ? applyResolution(settled.encounter, advanced.resolvedTrick.resolution)
+      : settled.encounter,
   }
 }
 
-/** A trick resolved iff `tricksPlayed` rose; the winner is whichever side's `tricksWon` rose. */
+/** A trick resolved iff the engine wrote a `lastResolution` on `after` — the definitive signal
+ *  now that the bank, not `tricksWon`, is what changed. The physical winner is recovered from
+ *  the outcome itself (`CleanWin`/`SkullWin` favour the player, `Dodge`/`CleanLoss` favour the
+ *  Quarry) rather than by diffing `tricksWon`, which `resolveTrickBank` already consulted once. */
 function deriveResolvedTrick(
   before: WarCouncilState,
   after: WarCouncilState,
   playedCard: TrickCard,
 ): ResolvedTrick | null {
-  if (after.tricksPlayed <= before.tricksPlayed) {
+  const resolution = after.lastResolution
+  if (resolution === null) {
     return null
   }
-
   const winner =
-    after.tricksWon[PlayerSide.Player] > before.tricksWon[PlayerSide.Player]
+    resolution.outcome === TrickOutcome.CleanWin || resolution.outcome === TrickOutcome.SkullWin
       ? PlayerSide.Player
       : PlayerSide.Cpu
-
-  return { cards: [before.currentTrick[0], playedCard], winner }
+  return { cards: [before.currentTrick[0], playedCard], winner, resolution }
 }
 
 /**

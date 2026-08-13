@@ -18,8 +18,7 @@ import WarCouncilRound from './app/warCouncil/WarCouncilRound'
 import { dealerForRound } from './app/dealerForRound'
 
 // The slice's single encounter (§11): one Quarry, one health bar each. `0` indexes
-// `QUARRY_ENCOUNTER_HEALTH`; it is not a tuning value and not a multiplier, band boundary, health
-// total or rounding rule (AC5). DLR-73 replaces it with the encounter loop.
+// `QUARRY_ENCOUNTER_HEALTH`; it is not a tuning value. DLR-73 replaces it with the encounter loop.
 const SLICE_ENCOUNTER_INDEX = 0
 
 // Built once at module scope because its only half is a configuration constant — it holds no
@@ -42,7 +41,7 @@ function App() {
   const [encounter, setEncounter] = useState(() => startEncounter(SLICE_ENCOUNTER_INDEX))
 
   // The result IS read now (DLR-71): it carries the encounter the player just watched the
-  // damage land on, already applied by the reducer through `applyHunt`. Setting it here rather
+  // damage land on, already applied by the reducer through `applyDamage`. Setting it here rather
   // than re-applying is what keeps one Hunt to one application.
   function handleComplete(result: WarCouncilRoundResult) {
     setEncounter(result.encounter)

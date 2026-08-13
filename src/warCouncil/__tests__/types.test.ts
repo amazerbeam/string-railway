@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { currentTurn, declaredPath, PlayerSide, RoundPhase, type RoundState } from '../types'
-import { HuntDeclaration } from '../../hunt'
+import { currentTurn, PlayerSide, RoundPhase, type RoundState } from '../types'
 
 function baseState(overrides: Partial<RoundState> = {}): RoundState {
   return {
@@ -10,7 +9,10 @@ function baseState(overrides: Partial<RoundState> = {}): RoundState {
     decree: { suit: 'bells', rank: 2 },
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
-    capturedCards: { player: [], cpu: [] },
+    skulledCards: [],
+    bank: 0,
+    multiplier: 0,
+    lastResolution: null,
     currentTrick: [],
     leader: PlayerSide.Cpu,
     tricksPlayed: 0,
@@ -30,17 +32,5 @@ describe('currentTurn', () => {
       currentTrick: [{ side: PlayerSide.Player, card: { suit: 'bells', rank: 4 } }],
     })
     expect(currentTurn(state)).toBe('cpu')
-  })
-})
-
-describe('declaredPath', () => {
-  it('reads Win on an undeclared round, so the readouts have a table before the player declares', () => {
-    expect(declaredPath(baseState())).toBe(HuntDeclaration.Win)
-  })
-
-  it('reads the declared path once one is written', () => {
-    for (const path of [HuntDeclaration.Win, HuntDeclaration.Lose]) {
-      expect(declaredPath(baseState({ declaration: { path } }))).toBe(path)
-    }
   })
 })

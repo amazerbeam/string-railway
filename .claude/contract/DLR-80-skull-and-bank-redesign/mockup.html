@@ -1,0 +1,692 @@
+<title>Skull and Bank</title>
+<style>
+  /* Tokens transcribed from src/app/warCouncil/warCouncil.css — this mockup honours the
+     existing felt system rather than inventing a palette. Two are new to DLR-80. */
+  :root {
+    --wc-chamber: #0c1013;
+    --wc-chamber-lift: #141a1f;
+    --wc-felt: #16241f;
+    --wc-felt-lip: #0a1211;
+    --wc-felt-line: #2b4038;
+    --wc-parchment: #e9e1cd;
+    --wc-parchment-shade: #d3c8ae;
+    --wc-ink: #191610;
+    --wc-ink-soft: #5c5443;
+    --wc-brass: #c99a4e;
+    --wc-brass-dim: #7d6132;
+    --wc-chalk: #cdd6d2;
+    --wc-chalk-dim: #6f7d78;
+    --wc-alarm: #d1705f;
+
+    --wc-bells: #c9873f;
+    --wc-keys: #5f93a8;
+    --wc-moons: #9c7cb8;
+
+    --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    --wc-card-w: clamp(2.9rem, 6.2vmin, 4.3rem);
+    --wc-plate-card-w: clamp(2.3rem, 4.6vmin, 3.2rem);
+
+    --wc-hp-track: #0a1211;
+    --wc-hp-secure-fill: #c99a4e;
+    --wc-hp-lethal-edge: #d1705f;
+    --wc-hp-height: clamp(0.7rem, 1.7vmin, 1.05rem);
+
+    /* NEW to DLR-80 — placeholders, the developer's to retune. The skull reads as a bone
+       glyph on a dark disc so it survives greyscale; colour is not the signal. */
+    --wc-skull: #e6e0d4;
+    --wc-skull-ground: #2a1e1e;
+    --wc-bank: #7fb08a;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    height: 100dvh;
+    overflow: hidden;
+    color-scheme: dark;
+    background: radial-gradient(120% 80% at 50% 0%, #17202700 0%, #060809 100%), var(--wc-chamber);
+    color: var(--wc-chalk);
+    font-family: var(--wc-sans);
+  }
+
+  .wc-shell {
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: minmax(11rem, 18vw) 1fr;
+    grid-template-areas:
+      'status  status'
+      'dossier table'
+      'hand    hand';
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+      env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  }
+
+  /* ---------- status band ---------- */
+  .wc-status {
+    grid-area: status;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.55rem 1rem;
+    background: linear-gradient(180deg, var(--wc-chamber-lift), #0c1013);
+    border-bottom: 1px solid #1e262b;
+  }
+  .wc-plate { display: flex; align-items: center; gap: 0.5rem; }
+  .wc-plate-label {
+    font-size: 0.68rem; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+  }
+  .wc-stack { display: flex; }
+  .wc-stack-back {
+    width: 0.85rem; height: 1.25rem; margin-right: -0.42rem; border-radius: 2px;
+    background: repeating-linear-gradient(45deg, #223138 0 3px, #1a262c 3px 6px);
+    border: 1px solid #33454d;
+  }
+  .wc-bars { flex: 1; display: flex; align-items: center; gap: 1rem; }
+  .wc-hp { flex: 1; min-width: 0; }
+  .wc-hp-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 0.66rem; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--wc-chalk-dim); margin-bottom: 0.2rem;
+  }
+  .wc-hp-num { font-variant-numeric: tabular-nums; color: var(--wc-chalk); font-size: 0.82rem; }
+  .wc-hp-track {
+    height: var(--wc-hp-height); background: var(--wc-hp-track);
+    border: 1px solid #23312c; border-radius: 2px; overflow: hidden; display: flex;
+  }
+  .wc-hp.is-mirror .wc-hp-track { flex-direction: row-reverse; }
+  .wc-hp.is-mirror .wc-hp-head { flex-direction: row-reverse; }
+  .wc-hp-secure { background: var(--wc-hp-secure-fill); transition: width 420ms ease; }
+  .wc-hp.is-lethal .wc-hp-track { border-color: var(--wc-hp-lethal-edge); }
+
+  .wc-score { display: flex; gap: 0.9rem; }
+  .wc-score-cell { display: flex; flex-direction: column; align-items: center; }
+  .wc-score-side {
+    font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--wc-chalk-dim);
+  }
+  .wc-score-value {
+    font-family: var(--wc-serif); font-size: 1.25rem; font-variant-numeric: tabular-nums;
+  }
+  .wc-score-cell.is-lead .wc-score-value { color: var(--wc-brass); }
+
+  /* ---------- dossier column ---------- */
+  .wc-dossier {
+    grid-area: dossier;
+    display: flex; flex-direction: column; gap: 0.7rem;
+    padding: 0.8rem; overflow: hidden;
+    border-right: 1px solid #1a2126;
+  }
+  .wc-panel {
+    background: var(--wc-chamber-lift); border: 1px solid #222c32; border-radius: 3px;
+    padding: 0.6rem 0.65rem;
+  }
+  .wc-eyebrow {
+    font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--wc-chalk-dim); margin: 0 0 0.4rem;
+  }
+  .wc-dossier-name { font-family: var(--wc-serif); font-size: 1rem; margin: 0 0 0.2rem; color: var(--wc-parchment); }
+  .wc-dossier-rule { font-size: 0.72rem; line-height: 1.35; margin: 0; color: var(--wc-chalk-dim); }
+
+  /* the AC11 shape-and-skull readout */
+  .wc-shape-row {
+    display: grid; grid-template-columns: 1.1rem 1fr auto; align-items: center;
+    gap: 0.45rem; padding: 0.2rem 0; font-size: 0.78rem;
+  }
+  .wc-shape-row + .wc-shape-row { border-top: 1px dashed #232d33; }
+  .wc-pip { width: 0.95rem; height: 0.95rem; display: block; }
+  .wc-pip.bells { color: var(--wc-bells); }
+  .wc-pip.keys { color: var(--wc-keys); }
+  .wc-pip.moons { color: var(--wc-moons); }
+  .wc-shape-held { font-variant-numeric: tabular-nums; color: var(--wc-chalk); }
+  .wc-shape-skulls { display: flex; gap: 0.15rem; min-height: 1rem; align-items: center; }
+  .wc-shape-none { font-size: 0.68rem; color: var(--wc-chalk-dim); }
+
+  .skull {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1rem; height: 1rem; border-radius: 50%;
+    background: var(--wc-skull-ground); border: 1px solid #4a3535;
+    color: var(--wc-skull); font-size: 0.7rem; line-height: 1;
+  }
+
+  /* the bank meter */
+  .wc-bank-figures { display: flex; align-items: baseline; gap: 0.35rem; }
+  .wc-bank-num {
+    font-family: var(--wc-serif); font-size: 1.9rem; line-height: 1;
+    font-variant-numeric: tabular-nums; color: var(--wc-bank);
+  }
+  .wc-bank-mult {
+    font-family: var(--wc-serif); font-size: 1.35rem; color: var(--wc-brass);
+    font-variant-numeric: tabular-nums;
+  }
+  .wc-bank-op { color: var(--wc-chalk-dim); font-size: 1.1rem; }
+  .wc-bank-cash {
+    margin: 0.35rem 0 0; font-size: 0.72rem; color: var(--wc-chalk-dim);
+  }
+  .wc-bank-cash b { color: var(--wc-parchment); font-variant-numeric: tabular-nums; }
+  .wc-bank-last {
+    margin: 0.4rem 0 0; padding-top: 0.4rem; border-top: 1px solid #232d33;
+    font-size: 0.72rem; line-height: 1.35;
+  }
+  .wc-bank-last.take { color: var(--wc-bank); }
+  .wc-bank-last.hit { color: var(--wc-alarm); }
+
+  .wc-telegraph-line { margin: 0; font-size: 0.76rem; color: var(--wc-parchment); }
+
+  /* ---------- table ---------- */
+  .wc-table {
+    grid-area: table; position: relative; display: flex;
+    align-items: center; justify-content: center;
+    background: radial-gradient(90% 70% at 50% 45%, #1c302a 0%, var(--wc-felt) 55%, var(--wc-felt-lip) 100%);
+    border-top: 1px solid var(--wc-felt-line);
+  }
+  .wc-table.is-waiting { cursor: pointer; }
+  .wc-decree {
+    position: absolute; top: 0.8rem; right: 0.9rem; display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.68rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--wc-chalk-dim);
+  }
+  .wc-table-inner { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
+  .wc-trick-row { display: flex; gap: 1.1rem; align-items: flex-end; }
+  .wc-played { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+  .wc-played-side {
+    font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--wc-chalk-dim);
+  }
+  .wc-table-line { font-size: 0.85rem; color: var(--wc-parchment); margin: 0; text-align: center; }
+  .wc-table-hint { font-size: 0.72rem; color: var(--wc-chalk-dim); margin: 0; }
+  .wc-outcome {
+    font-family: var(--wc-serif); font-size: 1.15rem; margin: 0; text-align: center;
+  }
+  .wc-outcome.take { color: var(--wc-bank); }
+  .wc-outcome.hit { color: var(--wc-alarm); }
+
+  /* ---------- cards ---------- */
+  /* The suit reads twice, and never from colour alone: as the centred symbol, and as the
+     card's own border in that suit's hue. The rank sits top-left, out of the symbol's way. */
+  .wc-card {
+    position: relative; width: var(--wc-card-w); aspect-ratio: 5 / 7;
+    background: linear-gradient(160deg, var(--wc-parchment), var(--wc-parchment-shade));
+    color: var(--wc-ink);
+    border: 2px solid var(--wc-suit, #b3a887);
+    border-radius: 4px; padding: 0.28rem; font-family: var(--wc-serif);
+    display: grid; grid-template-rows: auto 1fr auto; justify-items: center;
+    cursor: pointer; touch-action: manipulation;
+    transition: transform 140ms ease, box-shadow 140ms ease;
+  }
+  .wc-card:disabled { cursor: default; }
+  .wc-card.is-plate { width: var(--wc-plate-card-w); }
+  .wc-card-rank { font-size: 1.1rem; line-height: 1; justify-self: start; }
+  .wc-card.is-plate .wc-card-rank { font-size: 0.9rem; }
+  .wc-card-suit {
+    width: 62%; height: auto; align-self: center; color: var(--wc-suit);
+  }
+  .wc-card-name {
+    font-size: 0.48rem; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--wc-ink-soft); line-height: 1.1;
+  }
+  .wc-card.suit-bells { --wc-suit: var(--wc-bells); }
+  .wc-card.suit-keys { --wc-suit: var(--wc-keys); }
+  .wc-card.suit-moons { --wc-suit: var(--wc-moons); }
+  .wc-card.is-armed { transform: translateY(-0.85rem); box-shadow: 0 0 0 2px var(--wc-brass); }
+  .wc-card.is-winner { box-shadow: 0 0 0 2px var(--wc-brass); }
+  .wc-card:focus-visible { outline: 2px solid var(--wc-brass); outline-offset: 2px; }
+  @media (hover: hover) {
+    .wc-card:hover:not(:disabled) { transform: translateY(-0.35rem); }
+  }
+  /* the skull mark on a face-up skulled card — form, not colour */
+  .wc-card .skull { position: absolute; top: 0.22rem; right: 0.24rem; }
+
+  /* ---------- hand ---------- */
+  .wc-hand {
+    grid-area: hand; display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
+    padding: 0.7rem 1rem 1rem;
+    background: linear-gradient(0deg, #0a0d10, #0c1013);
+    border-top: 1px solid #1a2126;
+  }
+  .wc-fan { display: flex; gap: 0.4rem; }
+  .wc-hand-hint { font-size: 0.75rem; color: var(--wc-chalk-dim); margin: 0; min-height: 1.1rem; }
+
+  /* ---------- hand-over / terminal panel ---------- */
+  .wc-over {
+    background: var(--wc-chamber-lift); border: 1px solid var(--wc-brass-dim); border-radius: 4px;
+    padding: 1rem 1.4rem; text-align: center; max-width: 26rem;
+  }
+  .wc-over h2 { font-family: var(--wc-serif); font-size: 1.2rem; margin: 0 0 0.6rem; color: var(--wc-parchment); }
+  .wc-over dl {
+    margin: 0 0 0.9rem; display: grid; grid-template-columns: 1fr auto; gap: 0.25rem 1rem;
+    font-size: 0.82rem; text-align: left;
+  }
+  .wc-over dt { color: var(--wc-chalk-dim); }
+  .wc-over dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
+  .wc-over dd.big { font-family: var(--wc-serif); font-size: 1.05rem; color: var(--wc-bank); }
+
+  .wc-btn {
+    font-family: var(--wc-sans); font-size: 0.8rem; letter-spacing: 0.06em;
+    min-height: 44px; padding: 0.5rem 1.1rem; cursor: pointer; touch-action: manipulation;
+    background: var(--wc-brass-dim); color: var(--wc-parchment);
+    border: 1px solid var(--wc-brass); border-radius: 3px;
+  }
+  .wc-btn:focus-visible { outline: 2px solid var(--wc-parchment); outline-offset: 2px; }
+
+  /* ---------- mockup-only demo rail ---------- */
+  .demo {
+    position: fixed; right: 0.6rem; bottom: 0.6rem; z-index: 5;
+    display: flex; flex-direction: column; gap: 0.3rem; align-items: flex-end;
+    font-family: var(--wc-sans);
+  }
+  .demo-label {
+    font-size: 0.58rem; letter-spacing: 0.11em; text-transform: uppercase; color: var(--wc-chalk-dim);
+  }
+  .demo-row { display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: flex-end; }
+  .demo button {
+    font-size: 0.65rem; padding: 0.35rem 0.5rem; min-height: 32px;
+    background: #1b2429; color: var(--wc-chalk); border: 1px solid #2c383f;
+    border-radius: 3px; cursor: pointer;
+  }
+  .demo button:focus-visible { outline: 2px solid var(--wc-brass); outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <symbol id="mark-bells" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M12 2a1.6 1.6 0 0 1 1.6 1.6v.7A6.6 6.6 0 0 1 18 10.5v4l1.7 2.6a.8.8 0 0 1-.67 1.23H5a.8.8 0 0 1-.67-1.23L6 14.5v-4a6.6 6.6 0 0 1 4.4-6.2v-.7A1.6 1.6 0 0 1 12 2Z"/>
+    <path fill="currentColor" d="M9.6 19.6h4.8a2.4 2.4 0 0 1-4.8 0Z"/>
+  </symbol>
+  <symbol id="mark-keys" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M15.5 2a6.5 6.5 0 0 0-6.2 8.5L2.3 17.4a1 1 0 0 0-.3.7V21a1 1 0 0 0 1 1h2.9a1 1 0 0 0 .7-.3l1.1-1.1v-1.9h1.9v-1.9h1.9l1.9-1.9A6.5 6.5 0 1 0 15.5 2Zm1.6 6.4a1.9 1.9 0 1 1 0-3.8 1.9 1.9 0 0 1 0 3.8Z"/>
+  </symbol>
+  <symbol id="mark-moons" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M20 15.4A9 9 0 0 1 8.6 4 9.3 9.3 0 1 0 20 15.4Z"/>
+  </symbol>
+</svg>
+
+<div class="wc-shell">
+  <header class="wc-status">
+    <div class="wc-plate">
+      <span class="wc-plate-label">Quarry</span>
+      <span class="wc-stack" id="backs" aria-hidden="true"></span>
+      <span class="wc-plate-label" id="heldLabel">6 held</span>
+    </div>
+
+    <div class="wc-bars">
+      <div class="wc-hp is-mirror" id="hpPlayer">
+        <div class="wc-hp-head"><span>You</span><span class="wc-hp-num" id="hpPlayerNum">25 / 25</span></div>
+        <div class="wc-hp-track" role="meter" aria-label="Your health" aria-valuemin="0" aria-valuemax="25" aria-valuenow="25">
+          <span class="wc-hp-secure" id="hpPlayerFill" style="width:100%"></span>
+        </div>
+      </div>
+
+      <div class="wc-score">
+        <span class="wc-score-cell" id="cellYou"><span class="wc-score-side">You</span><span class="wc-score-value" id="tricksYou">0</span></span>
+        <span class="wc-score-cell"><span class="wc-score-side">Trick</span><span class="wc-score-value" id="trickNo">1</span></span>
+        <span class="wc-score-cell" id="cellThem"><span class="wc-score-side">Them</span><span class="wc-score-value" id="tricksThem">0</span></span>
+      </div>
+
+      <div class="wc-hp" id="hpQuarry">
+        <div class="wc-hp-head"><span>Quarry</span><span class="wc-hp-num" id="hpQuarryNum">1000 / 1000</span></div>
+        <div class="wc-hp-track" role="meter" aria-label="The Quarry’s health" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="1000">
+          <span class="wc-hp-secure" id="hpQuarryFill" style="width:100%"></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <aside class="wc-dossier">
+    <section class="wc-panel">
+      <p class="wc-eyebrow">Quarry</p>
+      <p class="wc-dossier-name">The Monarch</p>
+      <p class="wc-dossier-rule">When a Monarch is led, answer with your Swan or your highest card of that suit.</p>
+    </section>
+
+    <section class="wc-panel" aria-label="What the Quarry holds">
+      <p class="wc-eyebrow">What they hold</p>
+      <div id="shape"></div>
+    </section>
+
+    <section class="wc-panel" aria-label="Bank and streak">
+      <p class="wc-eyebrow">Bank</p>
+      <div class="wc-bank-figures">
+        <span class="wc-bank-num" id="bankNum">0</span>
+        <span class="wc-bank-op">×</span>
+        <span class="wc-bank-mult" id="multNum">0</span>
+      </div>
+      <p class="wc-bank-cash">Cashes for <b id="cashNum">0</b></p>
+      <p class="wc-bank-last" id="lastLine">Take tricks. Make them eat the skulls.</p>
+    </section>
+
+    <section class="wc-panel" aria-label="What the Quarry will do">
+      <p class="wc-eyebrow">Telegraph</p>
+      <p class="wc-telegraph-line" id="telegraph">They will lead Keys.</p>
+    </section>
+  </aside>
+
+  <section class="wc-table" id="table" aria-live="polite">
+    <div class="wc-decree"><span>Decree</span><span id="decreeSlot"></span></div>
+    <div class="wc-table-inner" id="felt"></div>
+  </section>
+
+  <div class="wc-hand">
+    <div class="wc-fan" id="fan"></div>
+    <p class="wc-hand-hint" id="hint">Your lead</p>
+  </div>
+</div>
+
+<div class="demo">
+  <span class="demo-label">Mockup shortcuts — force an outcome</span>
+  <div class="demo-row">
+    <button type="button" data-force="cleanWin">Clean win</button>
+    <button type="button" data-force="dodge">Dodge a skull</button>
+    <button type="button" data-force="cleanLoss">Lose clean</button>
+    <button type="button" data-force="skullWin">Win a skull</button>
+  </div>
+  <div class="demo-row">
+    <button type="button" id="btnHandEnd">Jump to hand end</button>
+    <button type="button" id="btnKill">Empty the Quarry’s bar</button>
+    <button type="button" id="btnReset">Reset</button>
+  </div>
+</div>
+
+<script>
+  // ---- fake data. Obviously not real: hard-coded hands, no follow-suit, a CPU that
+  // only demonstrates AC12's skull dump. This exists to judge layout and interaction.
+  const HAND_SIZE = 6
+  const DAMAGE_PER_HIT = 1
+  const PLAYER_MAX = 25
+  const QUARRY_MAX = 1000 // placeholder — the developer's
+
+  const SUITS = { bells: 'Bells', keys: 'Keys', moons: 'Moons' }
+  const NAMED = { 1: 'Swan', 3: 'Fox', 5: 'Woodcutter', 7: 'Treasure', 8: 'Poison', 9: 'Witch', 11: 'Monarch' }
+
+  const START_PLAYER = [
+    { suit: 'bells', rank: 11 }, { suit: 'bells', rank: 4 }, { suit: 'keys', rank: 9 },
+    { suit: 'keys', rank: 2 }, { suit: 'moons', rank: 7 }, { suit: 'moons', rank: 3 },
+  ]
+  // Two of six skulled = 33%, matching Math.round(6 * 0.3). Neither sits on rank 1.
+  const START_CPU = [
+    { suit: 'bells', rank: 10 }, { suit: 'bells', rank: 6, skull: true }, { suit: 'bells', rank: 1 },
+    { suit: 'keys', rank: 8, skull: true }, { suit: 'moons', rank: 5 }, { suit: 'moons', rank: 2 },
+  ]
+  const DECREE = { suit: 'keys', rank: 6 }
+
+  let S
+  function reset() {
+    S = {
+      player: START_PLAYER.map((c) => ({ ...c })),
+      cpu: START_CPU.map((c) => ({ ...c })),
+      bank: 0, mult: 0,
+      hpPlayer: PLAYER_MAX, hpQuarry: QUARRY_MAX,
+      tricksYou: 0, tricksThem: 0, tricksPlayed: 0,
+      armed: null, lead: null, resolved: null, over: false, terminal: null,
+    }
+    render()
+  }
+
+  // ---- helpers
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n }
+
+  const SVG_NS = 'http://www.w3.org/2000/svg'
+  function suitMark(suit, cls) {
+    const svg = document.createElementNS(SVG_NS, 'svg')
+    svg.setAttribute('class', cls)
+    svg.setAttribute('viewBox', '0 0 24 24')
+    svg.setAttribute('aria-hidden', 'true')
+    const use = document.createElementNS(SVG_NS, 'use')
+    use.setAttribute('href', `#mark-${suit}`)
+    svg.appendChild(use)
+    return svg
+  }
+
+  function cardNode(card, opts = {}) {
+    const b = el('button', `wc-card suit-${card.suit}${opts.plate ? ' is-plate' : ''}${opts.armed ? ' is-armed' : ''}${opts.winner ? ' is-winner' : ''}`)
+    b.type = 'button'
+    b.disabled = !!opts.plate
+    const named = NAMED[card.rank]
+    b.setAttribute('aria-label', `${card.rank} of ${SUITS[card.suit]}${named ? ` (${named})` : ''}${card.skull ? ', skulled' : ''}`)
+    b.appendChild(el('span', 'wc-card-rank', String(card.rank)))
+    b.appendChild(suitMark(card.suit, 'wc-card-suit'))
+    b.appendChild(el('span', 'wc-card-name', named || ''))
+    if (card.skull) { const s = el('span', 'skull', '☠'); s.title = 'Skull'; b.appendChild(s) }
+    if (opts.onTap) b.addEventListener('click', () => opts.onTap(card))
+    return b
+  }
+
+  // ---- the four outcomes (AC4–AC7), plus AC8's forced cash at trick 6
+  function outcomeFor(playerWon, skullTrick) {
+    if (playerWon) return skullTrick ? 'skullWin' : 'cleanWin'
+    return skullTrick ? 'dodge' : 'cleanLoss'
+  }
+  const TAKEN = { cleanWin: true, dodge: true, cleanLoss: false, skullWin: false }
+  const OUTCOME_LINE = {
+    cleanWin: 'Clean trick, taken. Both cards banked.',
+    dodge: 'Skull dodged. Both cards banked.',
+    cleanLoss: 'Clean trick lost. 1 damage — the bank cashes.',
+    skullWin: 'You ate the skull. 1 damage — the bank cashes.',
+  }
+
+  function resolveTrick(playerCard, cpuCard, playerWon) {
+    const skullTrick = !!playerCard.skull || !!cpuCard.skull
+    const outcome = outcomeFor(playerWon, skullTrick)
+    const finalTrick = S.tricksPlayed + 1 === HAND_SIZE
+    let bankAdded = 0, cashOut = 0, dmg = 0, cashedAtHandEnd = false
+
+    if (TAKEN[outcome]) {
+      bankAdded = playerCard.rank + cpuCard.rank
+      S.bank += bankAdded
+      S.mult += 1
+    } else {
+      cashOut = S.bank * S.mult
+      dmg = DAMAGE_PER_HIT
+      S.bank = 0; S.mult = 0
+    }
+    if (finalTrick && S.bank > 0) { cashOut += S.bank * S.mult; cashedAtHandEnd = true; S.bank = 0; S.mult = 0 }
+
+    S.hpPlayer = Math.max(0, S.hpPlayer - dmg)
+    S.hpQuarry = Math.max(0, S.hpQuarry - cashOut)
+    S.tricksPlayed += 1
+    if (playerWon) S.tricksYou += 1; else S.tricksThem += 1
+    if (S.hpQuarry <= 0) S.terminal = 'player'
+    else if (S.hpPlayer <= 0) S.terminal = 'quarry'
+    return { outcome, bankAdded, cashOut, damageToPlayer: dmg, cashedAtHandEnd, playerCard, cpuCard, playerWon }
+  }
+
+  // ---- interaction: tap to arm, tap again to play (confirmation on the object itself)
+  function tapCard(card) {
+    if (S.over || S.terminal || S.resolved) return
+    if (S.armed && S.armed.suit === card.suit && S.armed.rank === card.rank) return playPlayerCard(card)
+    S.armed = card
+    render()
+  }
+
+  function playPlayerCard(card) {
+    S.armed = null
+    S.player = S.player.filter((c) => !(c.suit === card.suit && c.rank === card.rank))
+    // AC12 in miniature: among cards that would lose, prefer a skulled one.
+    const losers = S.cpu.filter((c) => c.rank < card.rank)
+    const skulledLoser = losers.filter((c) => c.skull).sort((a, b) => a.rank - b.rank)[0]
+    const winners = S.cpu.filter((c) => c.rank > card.rank).sort((a, b) => a.rank - b.rank)
+    const cpuCard = skulledLoser || winners[0] || S.cpu.slice().sort((a, b) => a.rank - b.rank)[0]
+    S.cpu = S.cpu.filter((c) => c !== cpuCard)
+    S.resolved = resolveTrick(card, cpuCard, card.rank > cpuCard.rank)
+    render()
+  }
+
+  function carryOn() {
+    if (!S.resolved) return
+    S.resolved = null
+    if (S.tricksPlayed >= HAND_SIZE) S.over = true
+    render()
+  }
+
+  function forceOutcome(kind) {
+    if (S.over || S.terminal) return
+    S.resolved = null
+    const mine = S.player[0] || { suit: 'moons', rank: 4 }
+    const theirs = S.cpu[0] || { suit: 'keys', rank: 3 }
+    const playerCard = { ...mine, skull: false }
+    const cpuCard = { ...theirs, skull: kind === 'dodge' || kind === 'skullWin' }
+    S.player = S.player.slice(1)
+    S.cpu = S.cpu.slice(1)
+    S.resolved = resolveTrick(playerCard, cpuCard, kind === 'cleanWin' || kind === 'skullWin')
+    render()
+  }
+
+  // ---- render
+  function render() {
+    // status band
+    document.getElementById('backs').innerHTML = ''
+    for (let i = 0; i < S.cpu.length; i++) document.getElementById('backs').appendChild(el('span', 'wc-stack-back'))
+    document.getElementById('heldLabel').textContent = `${S.cpu.length} held`
+    document.getElementById('tricksYou').textContent = S.tricksYou
+    document.getElementById('tricksThem').textContent = S.tricksThem
+    document.getElementById('trickNo').textContent = Math.min(S.tricksPlayed + (S.over ? 0 : 1), HAND_SIZE)
+    document.getElementById('cellYou').classList.toggle('is-lead', S.tricksYou > S.tricksThem)
+    document.getElementById('cellThem').classList.toggle('is-lead', S.tricksThem > S.tricksYou)
+
+    setBar('hpPlayer', S.hpPlayer, PLAYER_MAX)
+    setBar('hpQuarry', S.hpQuarry, QUARRY_MAX)
+
+    // AC11 — per suit, held and skulled, never a rank
+    const shape = document.getElementById('shape')
+    shape.innerHTML = ''
+    for (const suit of ['bells', 'keys', 'moons']) {
+      const held = S.cpu.filter((c) => c.suit === suit)
+      const row = el('div', 'wc-shape-row')
+      row.setAttribute('aria-label', `${SUITS[suit]}: ${held.length} held, ${held.filter((c) => c.skull).length} skulled`)
+      row.appendChild(suitMark(suit, `wc-pip ${suit}`))
+      row.appendChild(el('span', 'wc-shape-held', `${SUITS[suit]} ${held.length}`))
+      const marks = el('span', 'wc-shape-skulls')
+      const skulls = held.filter((c) => c.skull).length
+      if (skulls === 0) marks.appendChild(el('span', 'wc-shape-none', '—'))
+      for (let i = 0; i < skulls; i++) marks.appendChild(el('span', 'skull', '☠'))
+      row.appendChild(marks)
+      shape.appendChild(row)
+    }
+
+    // bank meter
+    document.getElementById('bankNum').textContent = S.bank
+    document.getElementById('multNum').textContent = S.mult
+    document.getElementById('cashNum').textContent = S.bank * S.mult
+    const last = document.getElementById('lastLine')
+    if (S.resolved) {
+      last.textContent = OUTCOME_LINE[S.resolved.outcome] + (S.resolved.cashedAtHandEnd ? ' Hand over — forced cash-out.' : '')
+      last.className = `wc-bank-last ${TAKEN[S.resolved.outcome] ? 'take' : 'hit'}`
+    } else {
+      last.textContent = 'Take tricks. Make them eat the skulls.'
+      last.className = 'wc-bank-last'
+    }
+
+    document.getElementById('telegraph').textContent =
+      S.cpu.some((c) => c.skull) ? 'They are holding skulls. Lead low into a mined suit.' : 'They have no skulls left.'
+
+    // decree
+    const decreeSlot = document.getElementById('decreeSlot')
+    decreeSlot.innerHTML = ''
+    decreeSlot.appendChild(cardNode(DECREE, { plate: true }))
+
+    // felt
+    const felt = document.getElementById('felt')
+    const table = document.getElementById('table')
+    felt.innerHTML = ''
+    table.classList.toggle('is-waiting', !!S.resolved)
+    table.onclick = S.resolved ? carryOn : null
+
+    if (S.terminal) {
+      felt.appendChild(terminalPanel())
+    } else if (S.resolved) {
+      const r = S.resolved
+      const row = el('div', 'wc-trick-row')
+      row.appendChild(played('You', r.playerCard, r.playerWon))
+      row.appendChild(played('Them', r.cpuCard, !r.playerWon))
+      felt.appendChild(row)
+      const line = el('p', `wc-outcome ${TAKEN[r.outcome] ? 'take' : 'hit'}`, OUTCOME_LINE[r.outcome])
+      felt.appendChild(line)
+      const detail = TAKEN[r.outcome]
+        ? `+${r.bankAdded} banked · streak ×${S.mult}` + (r.cashedAtHandEnd ? ` · cashed ${r.cashOut}` : '')
+        : `−${r.damageToPlayer} health · cashed ${r.cashOut} into the Quarry`
+      felt.appendChild(el('p', 'wc-table-hint', detail))
+      felt.appendChild(el('p', 'wc-table-hint', 'Click the felt to carry on'))
+    } else if (S.over) {
+      felt.appendChild(handOverPanel())
+    } else {
+      felt.appendChild(el('p', 'wc-table-line', 'The table is clear. Lead a card.'))
+      felt.appendChild(el('p', 'wc-table-hint', `Trick ${S.tricksPlayed + 1} of ${HAND_SIZE}`))
+    }
+
+    // hand
+    const fan = document.getElementById('fan')
+    fan.innerHTML = ''
+    for (const card of S.player) {
+      fan.appendChild(cardNode(card, {
+        armed: S.armed && S.armed.suit === card.suit && S.armed.rank === card.rank,
+        onTap: tapCard,
+      }))
+    }
+    document.getElementById('hint').textContent =
+      S.terminal ? '' : S.over ? 'Hand over' : S.resolved ? 'Trick resolved' :
+      S.armed ? `Tap ${S.armed.rank} of ${SUITS[S.armed.suit]} again to play it` : 'Your lead'
+  }
+
+  function played(who, card, winner) {
+    const wrap = el('div', 'wc-played')
+    wrap.appendChild(el('span', 'wc-played-side', who))
+    wrap.appendChild(cardNode(card, { plate: true, winner }))
+    return wrap
+  }
+
+  function setBar(id, value, max) {
+    const pct = Math.max(0, Math.min(100, (value / max) * 100))
+    document.getElementById(id + 'Fill').style.width = pct + '%'
+    document.getElementById(id + 'Num').textContent = `${value} / ${max}`
+    const track = document.querySelector(`#${id} .wc-hp-track`)
+    track.setAttribute('aria-valuenow', String(value))
+    document.getElementById(id).classList.toggle('is-lethal', value <= max * 0.2)
+  }
+
+  function handOverPanel() {
+    const box = el('div', 'wc-over')
+    box.appendChild(el('h2', null, 'The hand is over'))
+    const dl = el('dl')
+    const add = (k, v, big) => { dl.appendChild(el('dt', null, k)); dl.appendChild(el('dd', big ? 'big' : null, v)) }
+    add('Tricks taken', `${S.tricksYou} of ${HAND_SIZE}`)
+    add('Health lost this hand', String(PLAYER_MAX - S.hpPlayer))
+    add('Dealt to the Quarry', String(QUARRY_MAX - S.hpQuarry), true)
+    box.appendChild(dl)
+    const b = el('button', 'wc-btn', 'Deal the next hand')
+    b.type = 'button'
+    b.addEventListener('click', reset)
+    box.appendChild(b)
+    return box
+  }
+
+  function terminalPanel() {
+    const box = el('div', 'wc-over')
+    box.appendChild(el('h2', null, S.terminal === 'player' ? 'The Quarry is down. The encounter is yours.' : 'You are down. The run ends here.'))
+    box.appendChild(el('p', 'wc-table-hint', S.tricksPlayed < HAND_SIZE
+      ? `It ended mid-hand, on trick ${S.tricksPlayed} of ${HAND_SIZE}.`
+      : 'It ended on the last trick of the hand.'))
+    const b = el('button', 'wc-btn', 'Start again')
+    b.type = 'button'
+    b.addEventListener('click', reset)
+    box.appendChild(b)
+    return box
+  }
+
+  // ---- demo rail
+  document.querySelectorAll('[data-force]').forEach((b) =>
+    b.addEventListener('click', () => forceOutcome(b.dataset.force)))
+  document.getElementById('btnHandEnd').addEventListener('click', () => {
+    if (S.terminal) return
+    S.resolved = null; S.tricksPlayed = HAND_SIZE; S.over = true; render()
+  })
+  document.getElementById('btnKill').addEventListener('click', () => {
+    S.resolved = null; S.hpQuarry = 0; S.terminal = 'player'; render()
+  })
+  document.getElementById('btnReset').addEventListener('click', reset)
+
+  reset()
+</script>

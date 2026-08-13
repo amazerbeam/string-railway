@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80
 
 ## Responsibility
 
@@ -43,26 +43,27 @@ that proved it in the deletion direction: the compiler found both construction s
 
 DLR-71 added `encounter` and `maxHealth`, both required for the same reason `hunt` is. `maxHealth` is
 **not derivable from `EncounterState`**, which carries current health only — the bars need the
-denominator separately. `encounter` is constant for the whole round, because health only changes at
-trick 13.
+denominator separately.
+
+**`encounter` is no longer constant for the hand.** Until DLR-80 health changed only at trick 13, so
+the prop was a fixed input for the whole round. Since DLR-80 the prop **seeds** the reducer, which
+owns the live state and applies each trick's damage as it lands; `onComplete` hands the final state
+back. Both docblocks on `warCouncilMount.ts` were corrected in that ticket, because both asserted the
+trick-13 behaviour outright.
+
+> **`WarCouncilRoundResult.finalState.phase` is not guaranteed to be `Complete`.** `handleCarryOn`
+> calls `onComplete` the moment the encounter resolves, with no phase check — and since damage lands
+> per trick, that can happen on trick 3 of 6. A reader wanting to know whether the fight is over
+> should check `encounter`, not `finalState.phase`. The docblock says so since DLR-80, and a
+> regression test drives that exact path.
 
 **`WarCouncilRoundResult.score` became `damage` on DLR-67, and `damage` became `encounter` on
-DLR-71.** The first kept a `Record<PlayerSide, number>` shape, now built from `scoreHunt` per side
-rather than from the deleted `scoreRound`; DLR-67 made that change because DLR-68's acceptance
-criteria already named the field `damage`, so the epic's vocabulary was adopted a ticket early rather
-than a second one invented, and DLR-68 duly shipped with `damage`.
-
-The second change is the substantive one. An audit before it found **1 producer and 0 consumers** — the
-field had never been read, and `App.tsx`'s `handleComplete` took no parameter at all — so replacing the
-shape outright was free, and the type widened from two numbers to a state object rather than narrowing.
-What it buys is not brevity: the mount now hands up **the encounter the player just watched the damage
-land on**, already applied by the reducer through `applyHunt`. `App` *sets* it rather than re-applying
-it, which makes applying one Hunt twice **unexpressible** rather than merely unlikely. **The result is
-read now**, for the first time since SCRUM-37 declared it.
-
-> The trade worth recording: a future caller wanting the raw per-side damage figure would read it off
-> `pendingHuntDamage` rather than off the result. That is a narrowing of what the mount reports, taken
-> deliberately.
+DLR-71.** An audit before the second change found **1 producer and 0 consumers** — the field had never
+been read, and `App.tsx`'s `handleComplete` took no parameter at all — so replacing the shape outright
+was free, and the type widened from two numbers to a state object rather than narrowing. What it buys
+is not brevity: the mount hands up **the encounter the player just watched the damage land on**,
+already applied by the reducer. `App` *sets* it rather than re-applying it, which makes applying a
+hand's damage twice **unexpressible** rather than merely unlikely.
 
 Both are type-only exports, re-exported via `export type` from `index.ts` (required by this
 project's `verbatimModuleSyntax` tsconfig setting). `src/app/warCouncil/`'s own exports —
@@ -130,14 +131,17 @@ took none at all rather than an unread `_result` — this project's ESLint confi
 (structurally assignable to the callback type) was what actually linted clean, and the result was
 deliberately unread because there was nothing to feed. There is now: the result carries the
 `EncounterState` the player just watched the damage land on, already applied by the reducer through
-`applyHunt`. Setting it here rather than re-applying it is what keeps **one Hunt to one application**.
+`applyDamage`. Setting it here rather than re-applying it is what keeps **one damage event to one
+application**.
 
-Two consequences follow. The `key={round}` remount, unchanged since DLR-47, is now doing real work
-beyond freshness: it resets the mount's `ui.applied` for the next Hunt **while `encounter` persists in
-App**, which is the whole of the Hunt-to-Hunt health continuity. And an encounter can now **end** —
-once `isEncounterResolved`, App stops dealing, so `applyHunt` is never reached in a state it would
-refuse and the end panel's terminal line is the last thing on screen. That is a terminal state on a
-panel that already exists, not a new screen; the real transition and outcome screens are DLR-73's.
+Two consequences follow. The `key={round}` remount, unchanged since DLR-47, is doing real work beyond
+freshness: it gives the next hand a fresh reducer **seeded from the `encounter` App carries**, which
+is the whole of the hand-to-hand health continuity. And an encounter can **end** — once
+`isEncounterResolved`, App stops dealing, so `applyDamage` is never reached in a state it would
+refuse and the hand-over panel's terminal line is the last thing on screen. Since DLR-80 the reducer
+carries the same guard internally, because the encounter can now resolve **mid-hand** rather than
+only between hands: `canAct` refuses further taps and the felt renders the outcome in place of the
+trick well.
 
 ### `dealerForRound` alternates the dealer by round parity
 
@@ -165,14 +169,15 @@ deleted module and is unit-tested directly (`src/app/__tests__/dealerForRound.te
   to end; DLR-68 closed the arithmetic and the direction; DLR-70 built the health, the depletion and
   both end conditions **and none of it reached this module** — no file under `src/app/` imported a single
   symbol from `src/hunt/encounter.ts`, so the duel resolved under Vitest while the app could not end.
-  **DLR-71 closed that gap.** `App.tsx` now imports `startEncounter` and `isEncounterResolved`, holds a
-  real `EncounterState`, carries it Hunt to Hunt, and stops dealing once a bar empties; the reducer
-  imports `applyHunt`, and `WarCouncilRound` imports `pendingHuntDamage` and `duelSideDamage`. A player
-  can now win or lose by playing.
+  **DLR-71 closed that gap**, and **DLR-80 moved where the damage is applied**. `App.tsx` imports
+  `startEncounter` and `isEncounterResolved`, holds a real `EncounterState`, carries it hand to hand,
+  and stops dealing once a bar empties; the reducer imports `applyDamage` and calls it **per trick**
+  rather than on a confirmation press. A player can win or lose by playing.
   What remains absent is the **sequence**: `App.tsx` holds one `SLICE_ENCOUNTER_INDEX = 0` and nothing
-  advances it, so the second Quarry at 1,600 health is unreachable, `ENCOUNTER_PLAYER_RESTORE` still has
-  no consumer, and there is no victory/defeat screen — when the encounter resolves the existing end
-  panel states the outcome in place and stops offering a next Hunt. All of that is **DLR-73's**, as is
+  advances it, `QUARRY_ENCOUNTER_HEALTH` now holds a single entry so there is no second Quarry to
+  reach, `ENCOUNTER_PLAYER_RESTORE` still has no consumer, and there is no victory/defeat screen —
+  when the encounter resolves the existing panel states the outcome in place. All of that is
+  **DLR-73's**, as is
   the Forage step between Hunts.
 - **No way to reach a standalone/manual-entry test harness.** DLR-47 deleted
   `TestModeVanguardHost.tsx`, `TrickEntryForm.tsx`, `appMode.ts`, and `isValidTricksWon` along with

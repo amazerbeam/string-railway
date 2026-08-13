@@ -6,14 +6,15 @@ import {
   PlayerSide,
   RoundPhase,
   Suit,
-  TRICKS_PER_ROUND,
+  TrickOutcome,
   currentTurn,
   dealRound,
   legalMoves,
   quarryIntent,
   type AbilityChoice,
+  type WarCouncilState,
 } from '../../../warCouncil'
-import { HuntDeclaration, DuelSide, isEncounterResolved, startEncounter } from '../../../hunt'
+import { HAND_SIZE, startEncounter, type EncounterState } from '../../../hunt'
 import {
   createRoundUiState,
   roundReducer,
@@ -23,18 +24,18 @@ import {
 } from '../roundReducer'
 import { card, makeRound } from './roundFixture'
 
-// DLR-63: `playCard` (and everything routed through it — `commit`, `commitQuarryMove`,
-// `previewQuarryIntent`) rejects with `HuntNotDeclared` before any card may be played, and
-// `makeRound()`'s fixture default is deliberately undeclared — Task 13's own Declare specs
-// below start from exactly that default. Every pre-existing spec in this file that goes on
-// to play a card therefore needs the round already declared first; Win, since none of them
-// are concerned with the Lose path. A plain object rather than a helper function, threaded
-// through `makeRound`'s existing `overrides` parameter.
-const WIN_DECLARED = { path: HuntDeclaration.Win } as const
-
 const tap = (c: Parameters<typeof card>[0] extends never ? never : ReturnType<typeof card>) =>
   ({ kind: RoundUiActionKind.TapCard, card: c }) as const
 const carryOn = { kind: RoundUiActionKind.CarryOn } as const
+
+// Every call site wants a fresh encounter unless a scenario is specifically testing the
+// encounter itself — this is `createRoundUiState`'s seed object, spelled once.
+function uiFrom(
+  round: WarCouncilState,
+  encounter: EncounterState = startEncounter(0),
+): RoundUiState {
+  return createRoundUiState({ round, encounter })
+}
 
 // A deterministic RNG, duplicated here to match the same local pattern the engine's own
 // `playCard.test.ts`, `deal.test.ts`, and `cpuPlayer.test.ts` each already use — never
@@ -48,9 +49,9 @@ function lcg(seed: number): () => number {
 }
 
 describe('createRoundUiState', () => {
-  it('does not play the Quarry’s opening lead — it is a pure restructuring of its argument', () => {
+  it('does not play the Quarry’s opening lead — it is a pure restructuring of its seed', () => {
     const initialState = makeRound({ leader: PlayerSide.Cpu })
-    const ui = createRoundUiState(initialState)
+    const ui = uiFrom(initialState)
     expect(ui.round).toBe(initialState)
     expect(ui.resolvedTrick).toBeNull()
     expect(ui.cpuFault).toBeNull()
@@ -59,20 +60,26 @@ describe('createRoundUiState', () => {
   })
 
   it('leaves a Quarry lead readable by quarryIntent before anything is played', () => {
-    const ui = createRoundUiState(makeRound({ leader: PlayerSide.Cpu }))
+    const ui = uiFrom(makeRound({ leader: PlayerSide.Cpu }))
     expect(quarryIntent(ui.round)).not.toBeNull()
   })
 
   it('leaves the table empty when the player leads', () => {
-    const ui = createRoundUiState(makeRound({ leader: PlayerSide.Player }))
+    const ui = uiFrom(makeRound({ leader: PlayerSide.Player }))
     expect(ui.round.currentTrick).toHaveLength(0)
     expect(ui.armed).toBeNull()
+  })
+
+  it('seeds the encounter from the given seed, unchanged', () => {
+    const encounter = startEncounter(0)
+    const ui = uiFrom(makeRound(), encounter)
+    expect(ui.encounter).toBe(encounter)
   })
 })
 
 describe('CarryOn commits a pending Quarry lead', () => {
   it('puts exactly one Quarry card on the table and leaves cpuFault null', () => {
-    let ui = createRoundUiState(makeRound({ leader: PlayerSide.Cpu, declaration: WIN_DECLARED }))
+    let ui = uiFrom(makeRound({ leader: PlayerSide.Cpu }))
     ui = roundReducer(ui, carryOn)
     expect(ui.round.currentTrick).toHaveLength(1)
     expect(ui.round.currentTrick[0].side).toBe(PlayerSide.Cpu)
@@ -80,7 +87,7 @@ describe('CarryOn commits a pending Quarry lead', () => {
   })
 
   it('is a no-op when the player is to lead', () => {
-    const ui = createRoundUiState(makeRound({ leader: PlayerSide.Player }))
+    const ui = uiFrom(makeRound({ leader: PlayerSide.Player }))
     const next = roundReducer(ui, carryOn)
     expect(next).toBe(ui)
   })
@@ -91,7 +98,6 @@ describe('CarryOn commits a pending Quarry lead', () => {
     const round = makeRound({
       leader: PlayerSide.Cpu,
       tricksWon: { [PlayerSide.Player]: 1, [PlayerSide.Cpu]: 1 },
-      declaration: WIN_DECLARED,
     })
     const heldReveal: ResolvedTrick = {
       cards: [
@@ -99,8 +105,17 @@ describe('CarryOn commits a pending Quarry lead', () => {
         { side: PlayerSide.Cpu, card: card(Suit.Bells, 4) },
       ],
       winner: PlayerSide.Player,
+      resolution: {
+        outcome: TrickOutcome.CleanWin,
+        bankAdded: 11,
+        cashOut: 0,
+        damageToPlayer: 0,
+        bank: 11,
+        multiplier: 1,
+        cashedAtHandEnd: false,
+      },
     }
-    let ui: RoundUiState = { ...createRoundUiState(round), resolvedTrick: heldReveal }
+    let ui: RoundUiState = { ...uiFrom(round), resolvedTrick: heldReveal }
     ui = roundReducer(ui, carryOn)
     expect(ui.resolvedTrick).toBeNull()
     expect(ui.round.currentTrick).toHaveLength(1)
@@ -108,13 +123,9 @@ describe('CarryOn commits a pending Quarry lead', () => {
   })
 })
 
-describe('a full round driven purely by CarryOn and taps', () => {
-  it('reaches RoundPhase.Complete with all thirteen tricks played (AC1)', () => {
-    // Unlike `makeRound()`'s deliberately asymmetric fixture hands (sized for the smaller
-    // scenarios above), a full round needs both hands dealt the real 13 cards each —
-    // `dealRound` is what actually produces that shape.
-    let ui = createRoundUiState(dealRound(PlayerSide.Cpu, lcg(2026)))
-    ui = roundReducer(ui, { kind: RoundUiActionKind.Declare, path: HuntDeclaration.Win })
+describe('a full hand driven purely by CarryOn and taps', () => {
+  it('reaches RoundPhase.Complete with all HAND_SIZE tricks played (AC1)', () => {
+    let ui = uiFrom(dealRound(PlayerSide.Cpu, lcg(2026)))
     let guard = 0
     while (ui.round.phase !== RoundPhase.Complete) {
       guard += 1
@@ -149,13 +160,13 @@ describe('a full round driven purely by CarryOn and taps', () => {
       }
     }
     expect(ui.round.phase).toBe(RoundPhase.Complete)
-    expect(ui.round.tricksPlayed).toBe(TRICKS_PER_ROUND)
+    expect(ui.round.tricksPlayed).toBe(HAND_SIZE)
   })
 })
 
 describe('tap-twice', () => {
   it('arms on the first tap without playing', () => {
-    const ui = createRoundUiState(makeRound())
+    const ui = uiFrom(makeRound())
     const next = roundReducer(ui, tap(card(Suit.Bells, 7)))
     expect(next.armed).toEqual(card(Suit.Bells, 7))
     expect(next.round.currentTrick).toHaveLength(0)
@@ -163,7 +174,7 @@ describe('tap-twice', () => {
   })
 
   it('moves the arm when a different card is tapped', () => {
-    let ui = createRoundUiState(makeRound())
+    let ui = uiFrom(makeRound())
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
     ui = roundReducer(ui, tap(card(Suit.Keys, 8)))
     expect(ui.armed).toEqual(card(Suit.Keys, 8))
@@ -171,7 +182,7 @@ describe('tap-twice', () => {
   })
 
   it('commits on the second tap of the same card', () => {
-    let ui = createRoundUiState(makeRound({ declaration: WIN_DECLARED }))
+    let ui = uiFrom(makeRound())
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
     expect(ui.armed).toBeNull()
@@ -182,7 +193,7 @@ describe('tap-twice', () => {
   })
 
   it('clears the arm on CancelSelection', () => {
-    let ui = createRoundUiState(makeRound())
+    let ui = uiFrom(makeRound())
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
     ui = roundReducer(ui, { kind: RoundUiActionKind.CancelSelection })
     expect(ui.armed).toBeNull()
@@ -197,9 +208,8 @@ describe('rejection', () => {
       leader: PlayerSide.Cpu,
       currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Moons, 9) }],
       phase: RoundPhase.AwaitingFollow,
-      declaration: WIN_DECLARED,
     })
-    let ui = { ...createRoundUiState(round), round }
+    let ui = { ...uiFrom(round), round }
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
     const before = ui.round
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
@@ -210,7 +220,7 @@ describe('rejection', () => {
 
 describe('abilities', () => {
   it('opens the prompt instead of playing a Fox', () => {
-    let ui = createRoundUiState(makeRound())
+    let ui = uiFrom(makeRound())
     ui = roundReducer(ui, tap(card(Suit.Keys, 3)))
     ui = roundReducer(ui, tap(card(Suit.Keys, 3)))
     expect(ui.prompt).toEqual(card(Suit.Keys, 3))
@@ -219,7 +229,7 @@ describe('abilities', () => {
   })
 
   it('changes the trump suit when the exchange is chosen', () => {
-    let ui = createRoundUiState(makeRound({ declaration: WIN_DECLARED }))
+    let ui = uiFrom(makeRound())
     expect(ui.round.trumpSuit).toBe(Suit.Bells)
     ui = roundReducer(ui, tap(card(Suit.Keys, 3)))
     ui = roundReducer(ui, tap(card(Suit.Keys, 3)))
@@ -234,8 +244,8 @@ describe('abilities', () => {
 })
 
 describe('the trick beat', () => {
-  it('derives the winner from the tricks-won delta', () => {
-    let ui = createRoundUiState(makeRound({ declaration: WIN_DECLARED }))
+  it('agrees with the tricks-won delta on which side actually won', () => {
+    let ui = uiFrom(makeRound())
     ui = roundReducer(ui, tap(card(Suit.Moons, 11)))
     ui = roundReducer(ui, tap(card(Suit.Moons, 11)))
     const winner = ui.resolvedTrick?.winner
@@ -244,23 +254,22 @@ describe('the trick beat', () => {
   })
 
   it('clears the reveal on CarryOn', () => {
-    let ui = createRoundUiState(makeRound({ declaration: WIN_DECLARED }))
+    let ui = uiFrom(makeRound())
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
     ui = roundReducer(ui, { kind: RoundUiActionKind.CarryOn })
     expect(ui.resolvedTrick).toBeNull()
   })
 
-  it('completes the round on the thirteenth trick, holding it for the same CarryOn beat', () => {
+  it('completes the hand on the sixth trick, holding it for the same CarryOn beat', () => {
     const round = makeRound({
-      tricksPlayed: 12,
+      tricksPlayed: HAND_SIZE - 1,
       hands: {
         [PlayerSide.Player]: [card(Suit.Bells, 7)],
         [PlayerSide.Cpu]: [card(Suit.Bells, 4)],
       },
-      declaration: WIN_DECLARED,
     })
-    let ui = { ...createRoundUiState(round), round }
+    let ui = { ...uiFrom(round), round }
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 7)))
     expect(ui.round.phase).toBe(RoundPhase.Complete)
@@ -279,14 +288,14 @@ describe('a corrupt opponent turn', () => {
   it('reports a fault instead of throwing when the Quarry has no legal lead', () => {
     // chooseCpuMove throws on an empty legal set — lowestCard([]) is undefined and
     // card.rank then throws — so advanceQuarryLead must guard before calling it. The lead
-    // is no longer committed by createRoundUiState (Task 5), so this now surfaces on the
-    // CarryOn that commits it, not at creation.
+    // is not committed by createRoundUiState, so this surfaces on the CarryOn that commits
+    // it, not at creation.
     const round = makeRound({
       leader: PlayerSide.Cpu,
       hands: { [PlayerSide.Player]: [card(Suit.Bells, 7)], [PlayerSide.Cpu]: [] },
       tricksPlayed: 5,
     })
-    let ui = createRoundUiState(round)
+    let ui = uiFrom(round)
     expect(ui.cpuFault).toBeNull()
     ui = roundReducer(ui, carryOn)
     expect(ui.cpuFault).toBe('noLegalMove')
@@ -294,74 +303,6 @@ describe('a corrupt opponent turn', () => {
   })
 })
 
-describe('roundReducer — DLR-63 Declare', () => {
-  it('writes a Win declaration onto the round', () => {
-    const state = createRoundUiState(makeRound())
-    const next = roundReducer(state, { kind: RoundUiActionKind.Declare, path: HuntDeclaration.Win })
-    expect(next.round.declaration).toEqual({ path: HuntDeclaration.Win })
-  })
-
-  it('writes a Lose declaration onto the round', () => {
-    const state = createRoundUiState(makeRound())
-    const next = roundReducer(state, {
-      kind: RoundUiActionKind.Declare,
-      path: HuntDeclaration.Lose,
-    })
-    expect(next.round.declaration).toEqual({ path: HuntDeclaration.Lose })
-  })
-
-  it('is a no-op on an already-declared round', () => {
-    const declared = roundReducer(createRoundUiState(makeRound()), {
-      kind: RoundUiActionKind.Declare,
-      path: HuntDeclaration.Win,
-    })
-    const again = roundReducer(declared, {
-      kind: RoundUiActionKind.Declare,
-      path: HuntDeclaration.Lose,
-    })
-    expect(again.round.declaration?.path).toBe(HuntDeclaration.Win)
-  })
-})
-
-describe('CommitDamage — the Hunt lands once, through applyHunt', () => {
-  const incoming = { [DuelSide.Player]: 96, [DuelSide.Quarry]: 540 }
-
-  function commit(state: RoundUiState, encounter = startEncounter(0)) {
-    return roundReducer(state, { kind: RoundUiActionKind.CommitDamage, encounter, incoming })
-  }
-
-  it('depletes both bars from the encounter it was handed', () => {
-    const next = commit(createRoundUiState(makeRound()))
-    expect(next.applied?.health).toEqual({
-      [DuelSide.Player]: 1350 - 96,
-      [DuelSide.Quarry]: 1350 - 540,
-    })
-    expect(next.applied?.huntsApplied).toBe(1)
-  })
-
-  it('resolves the encounter when a bar empties, rather than going negative', () => {
-    const next = roundReducer(createRoundUiState(makeRound()), {
-      kind: RoundUiActionKind.CommitDamage,
-      encounter: startEncounter(0),
-      incoming: { [DuelSide.Player]: 0, [DuelSide.Quarry]: 99_999 },
-    })
-    expect(next.applied?.health[DuelSide.Quarry]).toBe(0)
-    expect(isEncounterResolved(next.applied!)).toBe(true)
-  })
-
-  it('is a no-op the second time, so one Hunt cannot be applied twice', () => {
-    const once = commit(createRoundUiState(makeRound()))
-    expect(commit(once)).toBe(once)
-  })
-
-  it('is a no-op against an already-resolved encounter instead of throwing', () => {
-    const resolved = { ...startEncounter(0), winner: DuelSide.Player }
-    const state = createRoundUiState(makeRound())
-    expect(commit(state, resolved)).toBe(state)
-  })
-
-  it('leaves applied untouched on every other action', () => {
-    const state = createRoundUiState(makeRound())
-    expect(roundReducer(state, { kind: RoundUiActionKind.CancelSelection }).applied).toBeNull()
-  })
-})
+// The bank cash-out specs (AC6/AC8) live in `roundReducer.bank.test.ts` — carved out once this
+// file crossed the 400-line budget with Task 12's own additions (the encounter, its seed, and
+// the four cash-out scenarios together were the largest single piece).

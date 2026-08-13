@@ -41,13 +41,26 @@ export function makeRound(overrides: Partial<WarCouncilState> = {}): WarCouncilS
     decree: card(Suit.Bells, 10),
     trumpSuit: Suit.Bells,
     tricksWon: { [PlayerSide.Player]: 0, [PlayerSide.Cpu]: 0 },
-    capturedCards: { [PlayerSide.Player]: [], [PlayerSide.Cpu]: [] },
+    skulledCards: [],
+    bank: 0,
+    multiplier: 0,
+    lastResolution: null,
     currentTrick: [],
     leader: PlayerSide.Player,
     tricksPlayed: 0,
     phase: RoundPhase.AwaitingLead,
     ...overrides,
   }
+}
+
+/** A state mid-streak, for the bank readout. */
+export function bankedRound(bank: number, multiplier: number): WarCouncilState {
+  return makeRound({ bank, multiplier })
+}
+
+/** A state whose Quarry holds a known shape with known skulls, for the shape readout. */
+export function skulledRound(skulls: readonly Card[]): WarCouncilState {
+  return makeRound({ skulledCards: skulls })
 }
 
 export { card }

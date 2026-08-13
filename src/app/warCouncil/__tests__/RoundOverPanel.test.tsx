@@ -2,83 +2,55 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide } from '../../../warCouncil'
-import {
-  applyHunt,
-  DuelSide,
-  HuntDeclaration,
-  resolveStanding,
-  standingTableFor,
-  type IncomingDamage,
-} from '../../../hunt'
+import { DuelSide } from '../../../hunt'
 import RoundOverPanel from '../RoundOverPanel'
-import { encounterFixture } from './roundFixture'
 
 afterEach(cleanup)
 
-const winTable = standingTableFor(HuntDeclaration.Win)
-
-// Hand-built HuntDamage fixtures — this spec is about the two-stage control and the terminal
-// state, not the arithmetic, which WarCouncilRound.test.tsx pins end to end (AC2).
-const huntDamage = {
-  [PlayerSide.Player]: {
-    spoils: 48,
-    tricks: 7,
-    band: resolveStanding(7, winTable),
-    standing: resolveStanding(7, winTable).multiplier,
-    damage: 240,
-  },
-  [PlayerSide.Cpu]: {
-    spoils: 24,
-    tricks: 4,
-    band: resolveStanding(4, winTable),
-    standing: resolveStanding(4, winTable).multiplier,
-    damage: 48,
-  },
-}
-
 const baseProps = {
-  tricksWon: { [PlayerSide.Player]: 7, [PlayerSide.Cpu]: 4 },
-  huntDamage,
+  tricksWon: { [PlayerSide.Player]: 4, [PlayerSide.Cpu]: 2 },
+  handSummary: { healthLost: 3, dealtToQuarry: 87 },
   onFinish: vi.fn(),
-  onApply: vi.fn(),
 }
 
-// `IncomingDamage` fixtures fed through the real `applyHunt` — never a hand-written health
-// record — so `applied` is exactly what the reducer's `CommitDamage` would have produced.
-const LIGHT: IncomingDamage = { [DuelSide.Player]: 10, [DuelSide.Quarry]: 10 }
-const LETHAL_TO_QUARRY: IncomingDamage = { [DuelSide.Player]: 10, [DuelSide.Quarry]: 99_999 }
+describe('RoundOverPanel — the hand-over tally, then either the outcome or the next-hand control (DLR-80)', () => {
+  it('shows this hand’s own tally — tricks, health lost, health dealt to the Quarry', () => {
+    render(<RoundOverPanel {...baseProps} winner={null} />)
+    expect(screen.getByRole('cell', { name: '4' })).toBeTruthy()
+    expect(screen.getByRole('cell', { name: '2' })).toBeTruthy()
+    expect(screen.getByRole('cell', { name: '3' })).toBeTruthy()
+    expect(screen.getByRole('cell', { name: '87' })).toBeTruthy()
+  })
 
-describe('RoundOverPanel — arithmetic first, then the bars move (AC4)', () => {
-  it('offers only the apply control while nothing is committed', () => {
-    render(<RoundOverPanel {...baseProps} applied={null} />)
-    expect(screen.getByRole('button', { name: 'Apply the damage' })).toBeTruthy()
+  it('titles the panel by whether the encounter has resolved', () => {
+    const { rerender } = render(<RoundOverPanel {...baseProps} winner={null} />)
+    expect(screen.getByRole('heading').textContent).toBe('The hand is over')
+    rerender(<RoundOverPanel {...baseProps} winner={DuelSide.Player} />)
+    expect(screen.getByRole('heading').textContent).toBe('The Hunt is over')
+  })
+
+  it('offers only the finish control while the encounter is still live', () => {
+    render(<RoundOverPanel {...baseProps} winner={null} />)
+    expect(screen.getByRole('button', { name: 'Deal the next Hunt' })).toBeTruthy()
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+
+  it('calls onFinish once per click, so one hand is dealt once', () => {
+    const onFinish = vi.fn()
+    render(<RoundOverPanel {...baseProps} winner={null} onFinish={onFinish} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Deal the next Hunt' }))
+    expect(onFinish).toHaveBeenCalledTimes(1)
+  })
+
+  it('states the outcome and offers no next-hand control once the Quarry’s bar empties', () => {
+    render(<RoundOverPanel {...baseProps} winner={DuelSide.Player} />)
+    expect(screen.getByRole('status').textContent).toContain('The Quarry is down')
     expect(screen.queryByRole('button', { name: 'Deal the next Hunt' })).toBeNull()
   })
 
-  it('shows both sides’ Spoils × Standing = Damage before anything is applied', () => {
-    render(<RoundOverPanel {...baseProps} applied={null} />)
-    expect(screen.getByLabelText('You: Spoils times Standing equals Damage')).toBeTruthy()
-    expect(screen.getByLabelText('Opponent: Spoils times Standing equals Damage')).toBeTruthy()
-  })
-
-  it('calls onApply once, so one Hunt is committed once', () => {
-    const onApply = vi.fn()
-    render(<RoundOverPanel {...baseProps} applied={null} onApply={onApply} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Apply the damage' }))
-    expect(onApply).toHaveBeenCalledTimes(1)
-  })
-
-  it('swaps to the finish control once the damage has landed', () => {
-    render(<RoundOverPanel {...baseProps} applied={applyHunt(encounterFixture, LIGHT)} />)
-    expect(screen.getByRole('button', { name: 'Deal the next Hunt' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Apply the damage' })).toBeNull()
-  })
-
-  it('states the outcome and offers no next Hunt once a bar empties', () => {
-    render(
-      <RoundOverPanel {...baseProps} applied={applyHunt(encounterFixture, LETHAL_TO_QUARRY)} />,
-    )
-    expect(screen.getByRole('status').textContent).toContain('The Quarry is down')
+  it('names the other terminal outcome when the player’s own bar empties', () => {
+    render(<RoundOverPanel {...baseProps} winner={DuelSide.Quarry} />)
+    expect(screen.getByRole('status').textContent).toContain('You are down')
     expect(screen.queryByRole('button', { name: 'Deal the next Hunt' })).toBeNull()
   })
 })
