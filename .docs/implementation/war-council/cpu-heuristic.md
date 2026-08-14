@@ -105,7 +105,7 @@ How much the telegraph reveals is read from `src/hunt/config.ts`'s `TELEGRAPH_FI
 in this module — see [../hunt/README.md](../hunt/README.md). `quarryIntent` takes the fidelity as an
 optional second parameter defaulting to that constant, mirroring the injectable-parameter pattern
 used across this codebase's tunables — `startEncounter`'s `playerHealth`, and (DLR-80)
-`assignSkulls`'s `density` and `minRank`: a test can prove the config genuinely drives the output by
+`assignSkulls`'s `density` and (PT-001) `weights`: a test can prove the config genuinely drives the output by
 passing a different value, without mutating shared module state between test cases. Under
 `TelegraphFidelity.Suit` the returned object is `{ suit }` with **no `stance` key at all** — the key
 is omitted, not set to `undefined` — so narrowing the fidelity genuinely narrows the shape a caller

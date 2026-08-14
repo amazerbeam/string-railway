@@ -15,8 +15,11 @@ per-declaration card-value accessor, and rank inversion. **All of that was delet
 | --- | --- | --- | --- |
 | `HAND_SIZE` | `6` | cards a side, and therefore tricks in a hand | settled |
 | `SKULL_DENSITY` | `0.3` | proportion of the Quarry's dealt hand, 0..1 | settled |
-| `SKULL_MIN_RANK` | `2` | rank | settled |
+| `SKULL_RANK_WEIGHTS` | `SKULL_WEIGHTS_HUMP` | relative weight per rank, ≥ 0, unitless | provisional (PT-001) |
 | `DAMAGE_PER_HIT` | `1` | health points per damage event | settled |
+
+`SKULL_MIN_RANK` was the fourth key here until **PT-001** absorbed it into the weight curves — see
+[the rank curve](#the-rank-curve-replaced-the-rank-floor-pt-001) below.
 
 ### `HAND_SIZE` is deliberately one constant, not two
 
@@ -41,16 +44,43 @@ the skulls with it.
 `assignSkulls` clamps the result to the number of *eligible* cards, so a hand that cannot carry two
 skulls carries fewer rather than throwing.
 
-### `SKULL_MIN_RANK` is settled; the distribution above it is not
+### The rank curve replaced the rank floor (PT-001)
 
-`2` — no skull ever sits on a rank 1. A skulled 1 cannot lose its trick, so it would be an
-undodgeable tax rather than a decision.
+Which ranks carry skulls is a **table**, not a floor. `SkullRankWeights` is
+`Readonly<Record<number, number>>` — a relative weight per rank, where `0` means never and only the
+ratios matter, so a curve can be reshaped without renormalising it.
 
-**How skulls spread across ranks 2–11 is an open question** and the design ranks it as the one the
-game's feel depends on most: low skulls are ambushes, high skulls are announcements. It is uniform
-today. `assignSkulls` takes both `density` and `minRank` as **defaulted parameters** rather than
-closing over these constants, so testing a skew is a change at one call site with no module state
-mutated — the same injectable idiom `startEncounter`'s `playerHealth` uses.
+Four curves ship as named constants. **`SKULL_RANK_WEIGHTS` is the one in force**, and changing that
+single reference is the whole cost of play-testing a different shape:
+
+| Curve | Weights, rank 1 → 11 | In force? |
+| --- | --- | --- |
+| `SKULL_WEIGHTS_UNIFORM` | `0,1,1,1,1,1,1,1,1,1,1` | no — the pre-PT-001 behaviour, kept as the reference point |
+| `SKULL_WEIGHTS_RAMP` | `0,1,2,3,4,5,6,7,8,9,10` | no |
+| `SKULL_WEIGHTS_HUMP` | `0,2,5,8,10,10,8,5,2,1,1` | **yes** |
+| `SKULL_WEIGHTS_AMBUSH` | `0,10,9,8,7,6,5,4,3,2,1` | no |
+
+**"Never rank 1" is now `1: 0` in every curve**, which is why `SKULL_MIN_RANK` was deleted rather
+than kept — the two stated the same rule twice. The table form is also the stronger guarantee: a
+config test asserts `curve[1] === 0` across every shipped curve, so the rule extends to any curve
+added later, where a single floor constant only ever covered the current draw.
+
+**Hump is a decision, not a default — and it is provisional.** The developer chose it on 2026-08-14
+from a rendered comparison of all four curves plus a 300,000-hand simulation of the per-rank skull
+rates each produces. Its reasoning is that the extremes of the scale remove the player's decision,
+so the weight belongs in the middle band where the player's own card settles the trick (see
+`.docs/design/Balatro-Forbidden-Solitaire/ideas.md` → "Worth costing"). **Nobody has played it yet**,
+so expect the numbers to move; that is the marker, not a caveat.
+
+**The three unused curves are exported on purpose and must not be deleted as dead code.** They are
+the intended difficulty and variety lever — a later opponent handed the ambush curve plays very
+differently from one handed the ramp, with no new rule anywhere. Wiring a curve *to* an opponent is
+not built.
+
+`assignSkulls` takes both `density` and `weights` as **defaulted parameters** rather than closing over
+these constants, so testing a curve is a change at one call site with no module state mutated — the
+same injectable idiom `startEncounter`'s `playerHealth` uses. The two are orthogonal: density decides
+how many skulls, the curve decides which ranks.
 
 ### `DAMAGE_PER_HIT` is flat, and that is the rule
 

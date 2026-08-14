@@ -66,7 +66,8 @@ ticket has not fixed yet.
 
 `playerHealth` is a **defaulted parameter** rather than something the function closes over — the same
 injectable pattern this codebase uses for every tunable — and which `assignSkulls`'s `density` and
-`minRank` followed in DLR-80 — so a spec varies it without mutating module state.
+`weights` followed (DLR-80, the latter renamed from `minRank` by PT-001) — so a spec varies it
+without mutating module state.
 
 ### Applying one — `applyDamage`
 

@@ -2,21 +2,29 @@ import { QuarryCharacter, DuelSide, type Health, type Damage } from './types'
 
 // §5 "Player health" — DECIDED, and small on purpose: Balatro tracks 4 hands and 3 discards as
 // integers held in the head against score requirements in the hundreds and thousands, and §5
-// says the asymmetry here is the same shape. At 2-4 health lost a hand, 25 is roughly eight
-// hands. Replaces DLR-66's 1,350, which belonged to the retired Standing arithmetic.
+// says the asymmetry here is the same shape.
+// SET BY THE DEVELOPER 2026-08-14, down from 25. At 2-4 health lost a hand, 25 was roughly eight
+// hands and the player's bar was never actually under threat inside a three-hand encounter —
+// which made losing a trick cheap enough that throwing trick 1 (no bank to forfeit yet) was close
+// to free. 10 makes a hand's worth of losses matter. Replaces DLR-66's 1,350, which belonged to
+// the retired Standing arithmetic.
 // UNIT: health points, depleted 1 at a time.
-export const PLAYER_START_HEALTH: Health = 25
+export const PLAYER_START_HEALTH: Health = 10
 
-// PLACEHOLDER — THE DEVELOPER'S TO SET, from the first play session and not from this file.
-// §5 states CPU health "cannot be derived honestly yet": it depends on how large real cash-outs
-// get, which is a function of play rather than arithmetic. DLR-80's Dependencies & Risks
-// authorises a plainly-labelled placeholder and forbids inventing the real figure.
-// The anchor behind 1000, stated so it can be argued with rather than trusted: 25 player health
-// is roughly eight hands; §3.3's worked hand deals 173 but wins five of six tricks, and a hand
-// that trades evenly deals perhaps a third of that. Eight hands at ~125 is ~1,000.
-// One entry, not two: the second encounter is out of scope for DLR-80.
+// SET BY THE DEVELOPER, from play — no longer a placeholder. 450 on 2026-08-13, trimmed to 400 on
+// 2026-08-14 alongside the drop in player health.
+// §5 said this figure "cannot be derived honestly yet" because it depends on how large real
+// cash-outs get, which is a function of play rather than arithmetic. It has now been played:
+// one hand after DLR-81 removed the Quarry's rule-break dealt 136 damage for 1 health lost
+// (5 tricks to 1). At that rate 400 is about three hands, so this is deliberately a SHORT first
+// encounter rather than the ~8 hands the retired 1000 implied.
+// Worth knowing when retuning: damage is roughly QUADRATIC in streak length, since the bank and
+// the multiplier both climb per trick taken and cash as their product. So this number is far
+// more sensitive to how often a streak breaks than to how many tricks are won overall — a hand
+// that trades evenly deals a small fraction of one that runs five in a row.
+// One entry, not two: the second encounter is still out of scope.
 // UNIT: health points, encounter 0.
-export const QUARRY_ENCOUNTER_HEALTH: readonly Health[] = [1000]
+export const QUARRY_ENCOUNTER_HEALTH: readonly Health[] = [400]
 
 /**
  * Throws a `RangeError` rather than returning `undefined`: an out-of-range index would
@@ -83,12 +91,53 @@ export const HAND_SIZE = 6
 // UNIT: proportion of the CPU's dealt hand, 0..1.
 export const SKULL_DENSITY = 0.3
 
-// §3.4 "never rank 1", stated as the lowest rank a skull may sit on. SETTLED — a skulled 1 cannot
-// lose a trick, so no amount of foreknowledge helps and the dodge is unavailable. The distribution
-// ACROSS the eligible ranks is §6 Q1's open question: uniform today, and `assignSkulls` takes it
-// as a parameter so testing a skew is a change at one call site.
-// UNIT: rank.
-export const SKULL_MIN_RANK = 2
+/**
+ * How likely each rank is to carry a skull, keyed by rank. Weight 0 means never; a higher weight
+ * means likelier. Only the RATIOS matter — the absolute scale is arbitrary, so a curve can be
+ * re-shaped without renormalising it.
+ *
+ * Replaces the old rank-floor rule: "never rank 1" is now expressed as `1: 0` in every curve
+ * rather than as a separate minimum-rank constant, so the rule is stated once.
+ * UNIT: relative weight per rank, >= 0, unitless.
+ */
+export type SkullRankWeights = Readonly<Record<number, number>>
+
+// Every eligible rank equally likely — the behaviour before PT-001. NOT ACTIVE: kept as the
+// reference point a play-test compares a shaped curve against.
+export const SKULL_WEIGHTS_UNIFORM: SkullRankWeights = {
+  1: 0, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1, 10: 1, 11: 1,
+}
+
+// Weight climbs with rank, so skulls land on high cards. NOT ACTIVE. High skulls mostly WIN their
+// own trick, and a skull trick the Quarry wins is a dodge for the player — so this is the gentlest
+// curve, not the harshest. Transcribed from the developer's sketch as `weight = rank - 1`.
+export const SKULL_WEIGHTS_RAMP: SkullRankWeights = {
+  1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: 8, 10: 9, 11: 10,
+}
+
+// ACTIVE (see SKULL_RANK_WEIGHTS). Weight on the middle ranks, where the player's own card decides
+// who takes the trick: their skulled 6 loses to a 9 and beats a 4, so the outcome is the player's
+// choice rather than the deal's. The extremes are deliberately light — a very low skull is one the
+// Quarry can only lose with, so it is dumped into a trick the player has already won and eaten with
+// no counterplay; a very high skull wins its own trick, which is a dodge the player did not earn.
+export const SKULL_WEIGHTS_HUMP: SkullRankWeights = {
+  1: 0, 2: 2, 3: 5, 4: 8, 5: 10, 6: 10, 7: 8, 8: 5, 9: 2, 10: 1, 11: 1,
+}
+
+// The ramp mirrored: weight on low cards. NOT ACTIVE, and the harshest curve — a low skull is one
+// the Quarry can only lose with, so most of these are eaten with no counterplay.
+export const SKULL_WEIGHTS_AMBUSH: SkullRankWeights = {
+  1: 0, 2: 10, 3: 9, 4: 8, 5: 7, 6: 6, 7: 5, 8: 4, 9: 3, 10: 2, 11: 1,
+}
+
+// The curve in force. CHANGE THIS ONE REFERENCE to play-test a different shape.
+// Set to HUMP by the developer on 2026-08-14, from a rendered comparison of all four curves and a
+// 300,000-hand simulation of the per-rank skull rates each produces.
+//
+// The three inactive curves above are exported and unused ON PURPOSE — they are the difficulty and
+// variety lever for later opponents, so a boss can be differentiated by its skull curve rather than
+// by a rule-break. DO NOT DELETE THEM AS DEAD CODE. See `ideas.md` → "Worth costing".
+export const SKULL_RANK_WEIGHTS: SkullRankWeights = SKULL_WEIGHTS_HUMP
 
 // §5 "Damage to the player" — 1, every time they take damage (AC10). SETTLED.
 // UNIT: health points per damage event.

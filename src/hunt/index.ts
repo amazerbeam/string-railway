@@ -1,10 +1,16 @@
 export type { Hunt, Quarry, Damage, Health, IncomingDamage, EncounterState } from './types'
 export { QuarryCharacter, DuelSide } from './types'
 
+export type { SkullRankWeights } from './config'
+
 export {
   HAND_SIZE,
   SKULL_DENSITY,
-  SKULL_MIN_RANK,
+  SKULL_WEIGHTS_UNIFORM,
+  SKULL_WEIGHTS_RAMP,
+  SKULL_WEIGHTS_HUMP,
+  SKULL_WEIGHTS_AMBUSH,
+  SKULL_RANK_WEIGHTS,
   DAMAGE_PER_HIT,
   FORAGE_BUDGET_PER_ENCOUNTER,
   ENCOUNTERS_PER_RUN,

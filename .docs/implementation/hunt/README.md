@@ -1,17 +1,17 @@
 # Hunt — `src/hunt/`
 
 **Status:** partial
-**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81
+**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, PT-001
 
 ## Responsibility
 
 Owns the Hunt run's vocabulary and every design-cited tunable the game turns on — since DLR-80 the
-**hand size**, the **skull density and rank floor**, the **flat per-hit damage**, both health totals
+**hand size**, the **skull density and rank curve**, the **flat per-hit damage**, both health totals
 and the simultaneous-depletion ruling, plus the Forage budget per encounter and the
 encounters-per-run count — each read from one place so no later ticket duplicates a number or
 invents an incompatible shape. It also owns `encounter.ts`, the only state in this codebase that
 outlives a single `RoundState`. Its consumers in `src/warCouncil/`: the four DLR-80 keys —
-`HAND_SIZE` via `deal.ts` and `playCard.ts`, `SKULL_DENSITY` and `SKULL_MIN_RANK` via `skulls.ts`,
+`HAND_SIZE` via `deal.ts` and `playCard.ts`, `SKULL_DENSITY` and `SKULL_RANK_WEIGHTS` via `skulls.ts`,
 and `DAMAGE_PER_HIT` via `bank.ts` — plus (DLR-52) `TELEGRAPH_FIDELITY`, read by `cpuPlayer.ts`'s
 `quarryIntent` to decide how much of the Quarry's next move the telegraph reveals. **`QuarryCharacter`
 is no longer a `src/warCouncil/` consumer at all**: DLR-81 removed the round-long rule-break and the
@@ -35,8 +35,9 @@ module.
 taken.** Sixteen exports from `config.ts` and three types went at once: both Standing multiplier
 tables and everything that read them, the whole card-value apparatus (`cardBaseValue`,
 `invertedCardValue`, `RANK_INVERSION_PIVOT`, `CardValueScheme` and its accessors), and the damage
-rounding pair. Four keys replaced them — `HAND_SIZE`, `SKULL_DENSITY`, `SKULL_MIN_RANK`,
-`DAMAGE_PER_HIT` — and `PLAYER_START_HEALTH` dropped from 1,350 to **25** while
+rounding pair. Four keys replaced them — `HAND_SIZE`, `SKULL_DENSITY`, `SKULL_MIN_RANK`
+(since replaced by `SKULL_RANK_WEIGHTS`, PT-001), `DAMAGE_PER_HIT` — and `PLAYER_START_HEALTH`
+dropped from 1,350 to **25** while
 `QUARRY_ENCOUNTER_HEALTH` narrowed from two entries to one **placeholder**. `applyHunt` became
 `applyDamage` and `EncounterState.huntsApplied` became `damageEventsApplied`, because damage now
 lands several times a hand rather than once at the end of a 13-trick Hunt — a Hunt-shaped name and
@@ -73,7 +74,9 @@ DLR-80 unchanged.
 | `Hunt`                                                | The encounter's framing — `{ quarry }` since DLR-67. Unchanged by DLR-80, though what a "Hunt" contains is not: hands are six tricks and damage lands per trick                                                                                                                                                                                                                                                                                                                                                                                                                  | `types.ts`            |
 | `HAND_SIZE`                                           | `6` — cards a side, **and therefore tricks in a hand**. Deliberately one constant, not two: every card dealt is played, so they cannot differ. Replaced `src/warCouncil/types.ts`'s `TRICKS_PER_ROUND` (DLR-80)                                                                                                                                                                                                                                                                                                                                                                  | `config.ts`           |
 | `SKULL_DENSITY`                                       | `0.3` — the proportion of the Quarry's dealt hand carrying a skull; `Math.round(6 × 0.3)` = **2 of 6**. Stated as a proportion so it scales with the hand size (DLR-80)                                                                                                                                                                                                                                                                                                                                                                                                          | `config.ts`           |
-| `SKULL_MIN_RANK`                                      | `2` — no skull ever sits on a rank 1, which could not lose its trick. Settled; **the distribution across ranks 2–11 is the open question**, and `assignSkulls` takes it as a defaulted parameter so a skew is testable at one call site (DLR-80)                                                                                                                                                                                                                                                                                                                                 | `config.ts`           |
+| `SkullRankWeights`                                    | `Readonly<Record<number, number>>` — a relative weight per rank; `0` means never, and only the ratios matter. **Replaced `SKULL_MIN_RANK`** (PT-001): "no skull on a rank 1" is now `1: 0` in every curve, which extends the rule to any curve added later rather than only to the current draw                                                                                                                                                                                                                                                                                  | `config.ts`           |
+| `SKULL_WEIGHTS_UNIFORM`, `_RAMP`, `_HUMP`, `_AMBUSH`  | The four shipped curves. **Only `_HUMP` has a reader; the other three are exported and unread ON PURPOSE** — they are the difficulty and variety lever for a later opponent, so a boss can differ by its skull curve rather than by a rule-break. **Do not delete them as dead code** (PT-001)                                                                                                                                                                                                                                                                                   | `config.ts`           |
+| `SKULL_RANK_WEIGHTS`                                  | The curve in force — `SKULL_WEIGHTS_HUMP`, weight on the middle ranks. **Provisional:** chosen by the developer 2026-08-14 from a rendered comparison and a 300,000-hand simulation, but not yet played, so the weights are expected to move. Changing this one reference play-tests a different shape (PT-001)                                                                                                                                                                                                                                                                  | `config.ts`           |
 | `DAMAGE_PER_HIT`                                      | `1` — health points the player loses per damage event, flat. Does not scale with the cards, the streak, or the hand. Typed `Damage` (DLR-80)                                                                                                                                                                                                                                                                                                                                                                                                                                     | `config.ts`           |
 | `Quarry`                                              | The CPU opponent for one encounter — `{ character: QuarryCharacter }` (§4)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `types.ts`            |
 | `QuarryCharacter`                                     | `as const` union of the five odd-rank characters: Swan, Fox, Woodcutter, Witch, Monarch                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `types.ts`            |
@@ -109,10 +112,10 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
 ## How it works
 
 - [The hand, the skulls, and the damage constants](hand-and-skull-tunables.md) — `HAND_SIZE` and why
-  it is one constant rather than two, the skull density and the count it produces, the never-rank-1
-  floor and the open question above it, the flat per-hit damage, both health totals and why the
-  Quarry's is a labelled placeholder, the `DuelSide` vs `PlayerSide` distinction, and the full list
-  of what DLR-80 deleted from this module (DLR-80; supersedes the retired `scoring-tunables.md` and
+  it is one constant rather than two, the skull density and the count it produces, the **four rank
+  curves and which one is in force**, why the rank floor became a zero weight, the flat per-hit
+  damage, both health totals, the `DuelSide` vs `PlayerSide` distinction, and the full list of what
+  DLR-80 deleted from this module (DLR-80, PT-001; supersedes the retired `scoring-tunables.md` and
   `duel-health-and-damage.md`).
 - [The encounter state and the end conditions](encounter-state-and-end-conditions.md) — `EncounterState`
   and its one transition, the single clamp point where surplus damage is discarded and health stops at
@@ -162,10 +165,15 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   hands; too high and it is a grind. **The developer sets it from the first play session** — the
   measurement is the biggest cash-out per hand. See
   [the hand, the skulls, and the damage constants](hand-and-skull-tunables.md).
-- **The skull rank distribution is uniform and untested.** `SKULL_MIN_RANK` settles the floor; how
-  skulls spread across ranks 2–11 does not, and the design ranks it as the question the game's feel
-  depends on most. Low skulls are ambushes, high skulls are announcements. `assignSkulls` takes the
-  parameters so the experiment is cheap — but which way to skew is a design decision after playing.
+- **The skull rank curve is chosen but unplayed** (PT-001). `SKULL_RANK_WEIGHTS` is the hump curve —
+  weight on the middle ranks — chosen from a simulation rather than from a session. The mechanism is
+  settled and the numbers are not: whether hump is right, and whether its weights want moving, both
+  answer only to playing. Reverting to `SKULL_WEIGHTS_UNIFORM` is a one-line change here.
+- **No opponent carries its own curve** (PT-001). `SKULL_WEIGHTS_UNIFORM`, `_RAMP` and `_AMBUSH` are
+  exported with **no production reader, deliberately** — they exist so a later opponent can be given a
+  different curve as a difficulty and variety lever, which is a cheaper axis than the character
+  rule-breaks DLR-81 removed. Wiring one up needs `Quarry`/`Hunt` to carry a curve and `dealRound` to
+  thread it through to `assignSkulls`; none of that is built. **Do not delete the three as dead code.**
 - **The Demand is gone, and there is nothing left to decide about it.** DLR-67 deleted
   `FIXED_DEMAND`, `DEMAND_CURVE`, the `DemandCurve` interface and the `Demand` alias outright. §9
   deleted the Demand base/growth row rather than marking it Undecided, because the duel direction

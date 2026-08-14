@@ -24,12 +24,12 @@ invariants, Deferred — and links out to one file per mechanic once the module 
 couple worth a standalone answer. A thin module stays a single `README.md`; nothing forces a split
 before it earns one. See the skill's own SKILL.md for the split threshold and per-module template.
 
-| Module                | Doc                                         | Status      | Built by                                                                                                                             |
-| --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81 |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81                                       |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81                                                     |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81                               |
+| Module                | Doc                                         | Status      | Built by                                                                                                                                     |
+| --------------------- | ------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, PT-001 |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81                                               |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81                                                             |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, PT-001                               |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -93,6 +93,22 @@ bug (`MustFollowMonarch`'s message has one trigger again, so its wording is accu
 **Every engine measurement recorded before 2026-08-13 was taken against that power**, including the
 play sessions that produced the current design — treat pre-DLR-81 numbers as provisional. Powers
 return only when a final-boss ticket designs them; nothing about their shape is decided.
+
+**PT-001 made the skull rank distribution a tunable curve, and it is the first `PT-` (play-test)
+contract rather than a Jira-tracked one.** Skulls were drawn uniformly from ranks 2–11; they are now
+drawn against a **weight-per-rank table**, and the active curve — **hump** — concentrates them on the
+middle ranks, so a 5 or 6 in the Quarry's hand is skulled far more often than a 10 or an 11. **The
+game plays differently from the moment it landed**; that is the point of the contract, not a side
+effect, and whether hump is right is the developer's to answer by playing.
+
+`SKULL_MIN_RANK` is gone: "never rank 1" is now `1: 0` in every curve, which extends the guarantee to
+any curve added later. Three curves ship **exported with no reader on purpose** — they are the
+intended per-opponent difficulty lever, so a later boss can differ by its skull curve instead of by a
+rule-break — and both the config comments and `ideas.md` say so, because deleting them as dead code
+is the likeliest way this work gets undone. Start at
+[hunt/hand-and-skull-tunables.md](hunt/hand-and-skull-tunables.md) for the four curves and their
+numbers, or [war-council/skulls.md](war-council/skulls.md) for the weighted draw and why it consumes
+exactly one `rng` call per skull.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

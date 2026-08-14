@@ -2,11 +2,11 @@ Part of [War Council](README.md).
 
 # Skulls — assignment, the predicate, and the shape readout
 
-`skulls.ts` (DLR-80) owns everything about which of the Quarry's cards carry a skull, and what a
-consumer may learn about them. Five exports, all pure, none of which takes a `RoundState` — they take
-the hand and the skull list directly. That is deliberate and is what let the module be written and
-tested a whole phase before `RoundState.skulledCards` existed; it also means every spec is a plain
-function call with no fabricated state.
+`skulls.ts` (DLR-80; the draw reworked by PT-001) owns everything about which of the Quarry's cards
+carry a skull, and what a consumer may learn about them. Six exports, all pure, none of which takes a
+`RoundState` — they take the hand and the skull list directly. That is deliberate and is what let the
+module be written and tested a whole phase before `RoundState.skulledCards` existed; it also means
+every spec is a plain function call with no fabricated state.
 
 ## What a skull is, in data terms
 
@@ -26,36 +26,81 @@ That shape is load-bearing in two directions:
 ## Assignment — `assignSkulls`
 
 ```ts
-assignSkulls(hand, rng, density = SKULL_DENSITY, minRank = SKULL_MIN_RANK): readonly Card[]
+assignSkulls(hand, rng, density = SKULL_DENSITY, weights = SKULL_RANK_WEIGHTS): readonly Card[]
 ```
 
 Called by `dealRound` with the **Quarry's dealt hand only**. Three properties matter:
 
-**It draws from the injected `rng`, never `Math.random`.** It shuffles the eligible cards with the
-same `shuffle` the deal itself uses, threaded from the same caller-supplied `rng`, and slices off the
-front. So a seeded deal reproduces its skulls as well as its cards — and a spec can fix a sequence and
-assert an exact selection. `Math.random` appears exactly once in the whole program, in `App.tsx`, and
-Phase 4's boundary grep asserts it is absent from `src/warCouncil/**` and `src/hunt/**`.
+**It draws from the injected `rng`, never `Math.random`.** Since PT-001 the selection is `weightedDraw`
+(below) rather than a shuffle-and-slice, but the contract is unchanged and stricter: every random
+number comes from the caller-supplied `rng`, so a seeded deal reproduces its skulls as well as its
+cards. `Math.random` appears exactly once in the whole program, in `App.tsx`, and a boundary grep
+asserts it is absent from `src/warCouncil/**` and `src/hunt/**`.
 
 **The count is `Math.round(hand.length × density)`, clamped to the eligible cards.** At the shipped
 values that is `Math.round(6 × 0.3)` = **2 of 6**. The clamp is not decoration: a hand of five rank-1s
 has fewer eligible cards than the density asks for, and silently returning fewer is correct where
 throwing would turn a legal deal into a crash.
 
-**`density` and `minRank` are defaulted parameters, not values the module closes over.** This is the
-same injectable idiom `startEncounter`'s `playerHealth` uses, and it exists so the open question about
-skull *distribution* can be tested without mutating module state — a skew is a change at one call
-site.
+**`density` and `weights` are two orthogonal dials, both defaulted parameters rather than values the
+module closes over.** Density decides **how many** skulls a hand carries; the weight curve decides
+**which ranks** they land on. This is the same injectable idiom `startEncounter`'s `playerHealth`
+uses, and it is what lets a spec test a curve without mutating module state. PT-001 replaced the
+fourth parameter `minRank: number` with `weights: SkullRankWeights` — a widening from a rank floor to
+a full table. `dealRound` passes two arguments and relies on both defaults, so the swap needed no
+change at the only production call site.
+
+## The weighted draw — `weightedDraw`
+
+```ts
+weightedDraw(candidates, rng, weights, count): readonly Card[]
+```
+
+PT-001's core. Picks `count` distinct cards, each with probability proportional to its rank's weight,
+**without replacement**: pick one, remove it from the pool, repeat. It is exported so its invariants
+can be asserted directly rather than only through `assignSkulls`, but it is deliberately **not** in
+`src/warCouncil/index.ts`'s barrel — nothing outside this module needs it.
+
+**It consumes exactly one `rng` call per card drawn**, and that is the property the design turns on.
+Two alternatives were rejected for it: *rejection sampling* (pick uniformly, keep with probability
+`weight/maxWeight`) consumes an unbounded number of calls, so a seeded deal's skulls would depend on
+how many rejections happened to occur — which breaks reproducibility rather than merely being untidy.
+*Weight-expanded shuffling* (push each card in `weight` times, shuffle, take distinct) is
+deterministic but scales its `rng` consumption with total weight and needs a de-duplication pass that
+quietly distorts the distribution. Sequential selection is the tightest of the three, and a spec pins
+the call count with a counting stub.
+
+Three degenerate cases are handled rather than assumed away:
+
+- **Zero total weight breaks the loop, it does not divide.** `rng() * total` with `total === 0` gives
+  `0`, and the accumulate walk would then select nothing and spin. The loop tests `total <= 0` and
+  breaks **before** computing the threshold, so an all-zero curve returns `[]` — "this Quarry carries
+  no skulls" is a coherent configuration, not an error.
+- **A rank missing from the table reads as zero, never as `NaN`.** Every one of the three lookup
+  sites coerces through an explicit `?? 0`. `Record<number, number>` cannot force all eleven keys to
+  be present, so a curve that omits a rank type-checks cleanly; this makes the omission mean
+  "unskullable" instead of poisoning the running total.
+- **Running out of candidates returns fewer than asked**, silently and correctly — the same posture
+  as `assignSkulls`'s clamp.
+
+The accumulate walk falls back to the **last** candidate if the threshold never drops below zero,
+which is only reachable through floating-point drift: for any `rng() < 1`, subtracting every weight
+in the pool must drive `rng() * total - total` negative by construction.
 
 ## The never-rank-1 rule — `skullableCards`
 
 ```ts
-skullableCards(hand, minRank = SKULL_MIN_RANK): readonly Card[]
+skullableCards(hand, weights = SKULL_RANK_WEIGHTS): readonly Card[]
 ```
 
-A filter, `rank >= minRank`, with `SKULL_MIN_RANK` at 2. A skulled rank 1 cannot lose its trick, so it
-would be an undodgeable tax rather than a decision — excluding it is what leaves the foreknowledge the
-shape readout gives you worth having.
+A filter on **positive weight** — `(weights[card.rank] ?? 0) > 0`. Before PT-001 this was `rank >=
+minRank` against a `SKULL_MIN_RANK` of 2; the rule did not change, but where it lives did. "Never
+rank 1" is now `1: 0` in every shipped curve rather than a separate constant, which satisfies the
+single-source-of-truth rule and, more usefully, extends the guarantee to **any curve added later**
+instead of only the current one.
+
+A skulled rank 1 cannot lose its trick, so it would be an undodgeable tax rather than a decision —
+excluding it is what leaves the foreknowledge the shape readout gives you worth having.
 
 It is exported separately rather than being inlined into `assignSkulls` so the eligibility rule can be
 asserted on its own, including the degenerate all-rank-1 hand.

@@ -12,7 +12,11 @@ import {
   SIMULTANEOUS_DEPLETION_WINNER,
   HAND_SIZE,
   SKULL_DENSITY,
-  SKULL_MIN_RANK,
+  SKULL_WEIGHTS_UNIFORM,
+  SKULL_WEIGHTS_RAMP,
+  SKULL_WEIGHTS_HUMP,
+  SKULL_WEIGHTS_AMBUSH,
+  SKULL_RANK_WEIGHTS,
   DAMAGE_PER_HIT,
 } from '../config'
 import { DuelSide } from '../types'
@@ -71,20 +75,46 @@ describe('DLR-80 configuration', () => {
     expect(count / HAND_SIZE).toBeCloseTo(0.333, 3)
   })
 
-  it('excludes rank 1 from skulls', () => {
-    expect(SKULL_MIN_RANK).toBe(2)
-  })
-
   it('deals exactly one damage per damage event', () => {
     expect(DAMAGE_PER_HIT).toBe(1)
   })
 
-  it('starts the player at twenty-five', () => {
-    expect(PLAYER_START_HEALTH).toBe(25)
+  it('starts the player at ten', () => {
+    expect(PLAYER_START_HEALTH).toBe(10)
   })
 
   it('configures exactly one encounter', () => {
     expect(QUARRY_ENCOUNTER_HEALTH).toHaveLength(1)
     expect(() => quarryHealthForEncounter(1)).toThrow(RangeError)
+  })
+})
+
+describe('skull rank weight curves', () => {
+  const RANKS = Array.from({ length: 11 }, (_, i) => i + 1)
+  const CURVES = {
+    uniform: SKULL_WEIGHTS_UNIFORM,
+    ramp: SKULL_WEIGHTS_RAMP,
+    hump: SKULL_WEIGHTS_HUMP,
+    ambush: SKULL_WEIGHTS_AMBUSH,
+  }
+
+  it.each(Object.entries(CURVES))('%s names every rank 1-11', (_name, curve) => {
+    for (const rank of RANKS) expect(curve[rank]).toBeTypeOf('number')
+  })
+
+  it.each(Object.entries(CURVES))('%s never skulls a rank 1', (_name, curve) => {
+    expect(curve[1]).toBe(0)
+  })
+
+  it.each(Object.entries(CURVES))('%s has no negative weight', (_name, curve) => {
+    for (const rank of RANKS) expect(curve[rank]).toBeGreaterThanOrEqual(0)
+  })
+
+  it.each(Object.entries(CURVES))('%s has some positive weight', (_name, curve) => {
+    expect(RANKS.reduce((sum, r) => sum + curve[r], 0)).toBeGreaterThan(0)
+  })
+
+  it('has hump as the active curve', () => {
+    expect(SKULL_RANK_WEIGHTS).toBe(SKULL_WEIGHTS_HUMP)
   })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { HAND_SIZE, SKULL_DENSITY, SKULL_MIN_RANK } from '../../hunt'
+import { HAND_SIZE, SKULL_DENSITY, SKULL_RANK_WEIGHTS } from '../../hunt'
 import { containsCard } from '../cardUtils'
 import { createDeck } from '../deck'
 import { dealRound } from '../deal'
@@ -64,7 +64,7 @@ describe('dealRound', () => {
     const state = dealRound(PlayerSide.Player, lcg(42))
     expect(state.skulledCards).toHaveLength(Math.round(HAND_SIZE * SKULL_DENSITY))
     for (const skull of state.skulledCards) {
-      expect(skull.rank).toBeGreaterThanOrEqual(SKULL_MIN_RANK)
+      expect(SKULL_RANK_WEIGHTS[skull.rank]).toBeGreaterThan(0)
       expect(containsCard(state.hands[PlayerSide.Cpu], skull)).toBe(true)
     }
   })

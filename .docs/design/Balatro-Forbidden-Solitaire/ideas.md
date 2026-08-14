@@ -693,6 +693,78 @@ free, since it is the same data the slice collects to size the cap.
 doubling every entry removes the ×0.5 half-point problem and reads health as 2,700; ratios and
 orderings here are preserved under that change, absolute numbers are not.
 
+### Skull rank weighting — a curve per opponent
+
+**What it is.** Replaces the uniform "shuffle the Quarry's eligible cards and draw" skull
+assignment with one weight table per rank (`SkullRankWeights`, `src/hunt/config.ts`) and ships
+four named curves — uniform, ramp, hump, ambush — of which **hump is active**. Landed 2026-08-14
+(PT-001).
+
+**Problem it solves.** `the-hunt.md` §3 marks "How skulls are spread across ranks" **[open]**;
+today's draw is uniform across ranks 2–11, and play-test 2 §6 names it Q1, "the open question the
+game's feel depends on most." The shape readout (§3, "What you are shown, and what you are not")
+gives suit and count but never rank — and rank is what decides whether a skull is a threat or a
+gift, per §7's outcome table. A uniform draw means the readout tells you where the mines are
+without telling you whether any of them are live.
+
+**The mechanism.** One weight table per rank (0 = never, higher = likelier; only the ratios
+matter), read by `assignSkulls` through `weightedDraw`, which consumes exactly one `rng` call per
+skull so a seeded deal stays reproducible. **Cost: zero new rules.** It replaces the old
+`SKULL_MIN_RANK` constant rather than sitting alongside it — "never rank 1" now lives as `1: 0` in
+every curve, so the rule is stated once instead of as a floor plus a separate reasoning comment.
+
+**The four curves and what each does to play**, by simulated per-rank skull rate:
+
+- **Uniform** — flat at ~37% across every eligible rank. The shipped behaviour before this
+  contract; kept as the curve a shaped one is judged against.
+- **Ramp** — climbs 10% → 56% from rank 2 to rank 11. Counter-intuitively the **gentlest** curve: a
+  high skull mostly wins its own trick, and a skull trick the Quarry wins is a dodge the player
+  gets for free.
+- **Hump** — peaks at ~60% on ranks 5–6, light at both ends. **Active.**
+- **Ambush** — the ramp mirrored, 57% → 10% from rank 2 to rank 11. The **harshest**: most skulls
+  land on cards the Quarry can only lose with, and most of those are eaten with no counterplay.
+
+**Why hump is active.** The extremes remove the player's decision rather than sharpening it. A
+very low skull is one the Quarry can only lose with, so it gets dumped into a trick the player has
+already committed to winning and is eaten with no counterplay; a very high skull wins its own
+trick, handing the player a dodge they did not earn. Only the middle band leaves the outcome to
+the card the player actually plays — a skulled 6 loses to a 9 and beats a 4, so who takes the
+trick is a choice rather than a foregone conclusion of rank alone. Under hump a rank 5 or 6 in the
+Quarry's hand is skulled about 60% of the time against 11% for a rank 10 or 11 — a gap wide enough
+to read off the shape panel, and pointed at exactly the ranks where reading it changes what gets
+played.
+
+**The curve as a difficulty and variety lever.** The developer's own framing, and the reason the
+three inactive curves ship exported rather than deleted: an opponent handed the ambush curve plays
+a materially harsher game than one handed the ramp, with **no new rule anywhere** — the same draw
+reading a different constant. That is a cheaper axis of opponent differentiation than the
+character rule-breaks DLR-81 removed, and it partly answers the question that ticket left open
+about what a boss should actually do differently. **Not built here.** Wiring a curve to a specific
+opponent needs `Quarry`/`Hunt` to carry a curve and `dealRound` to receive it, which is a later
+contract; this one ships the vocabulary — one active module-level curve plus three others sitting
+ready — so that later contract has something to select between.
+
+**What rank-weighting cannot fix.** Two cases, both observed in play-test 4
+(`the-hunt-play-test-feedback.md` §7.2), where no per-rank curve reaches the problem:
+
+- **Skulls in the trump suit.** A trump wins its trick regardless of what it is up against, so a
+  trump skull is near-harmless at any rank — the same "a skull trick you win is a dodge" logic
+  that makes hump's high ranks gentle applies to every trump rank at once.
+- **A Quarry void in the led suit.** Confirmed independently in §6.5: when the Quarry cannot
+  follow suit, whatever it plays is undodgeable regardless of rank. A weighted draw still decides
+  which rank the void card carries, but not whether the player had any way to lose that trick.
+
+Shipping this does not read as having solved skull fairness outright — it solves the part that
+lives in rank, and leaves these two named as known limitations rather than built around.
+
+**Cost in new rules.** Zero. The type and the four curves replace `SKULL_MIN_RANK` rather than
+adding to it; the draw gains a parameter, not a new step.
+
+**What would prove it wrong.** Play a hand under hump and one under uniform. If hump does not feel
+more decision-heavy — if the ranks 5–6 spike reads as noise rather than a signal worth planning
+around — the middle-band argument is wrong and the curve should revert to uniform, a one-line
+change in `src/hunt/config.ts`.
+
 ---
 
 ## Promoted

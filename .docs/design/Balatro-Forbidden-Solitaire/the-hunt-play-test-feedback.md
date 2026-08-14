@@ -1,4 +1,4 @@
-# The Hunt — play-test feedback (sessions 1–3, from 2026-08-10)
+# The Hunt — play-test feedback (sessions 1–4, from 2026-08-10)
 
 The developer's first play of The Hunt itself, as opposed to a reference game. Recorded
 **retrospectively on 2026-08-12** from the session transcript, because it was never written down at
@@ -670,6 +670,238 @@ players diagnose accurately and prescribe badly) with the roles swapped: the _an
 accurately and prescribed badly, and the developer's one sentence about original intent was worth
 more than the four costed options. **When a rule looks structurally indefensible, ask whether anyone
 chose it before proposing how to fix it.**
+
+---
+
+## Session 4 — 2026-08-13, the first encounter anyone has won
+
+**What was played.** Two sittings on the same build, after DLR-81 removed the Quarry's power.
+First the **developer played one hand** against Quarry health 1,000. Then, on the strength of that
+hand, the developer **set Quarry health to 450** — the first time this figure has come from play
+rather than from arithmetic — and **Claude played the encounter through to its end**. The same
+caveat as session 3 applies to the second half: the player was not a human, so read the counts and
+discount the adjectives.
+
+### 7.1 The counts, and the comparison that matters
+
+|                                        | Tricks | Health lost | Dealt                                   |
+| -------------------------------------- | ------ | ----------- | --------------------------------------- |
+| **Developer's hand** (at 1,000 health) | 5–1    | 1           | **136**                                 |
+| Claude, hand 1 (at 450)                | 2–4    | 2           | **156**                                 |
+| Claude, hand 2                         | 3–3    | 2           | **166**                                 |
+| Claude, hand 3                         | 4–2    | 0           | **128** — capped; the cash-out was ~420 |
+| **Encounter total**                    | —      | **4 of 25** | **450, in three hands**                 |
+
+For contrast, the same player's two session-3 hands **with** the power in force dealt **74** and
+**56**.
+
+**Quarry health 450 is now settled by play.** Three hands, which is what the developer predicted when
+setting it. §6.3's finding that 1,000 made the encounter unwinnable is closed — it was not the
+number that was wrong so much as the opponent.
+
+### 7.2 What is genuinely strong
+
+**The payoff is quadratic in streak length, and that is the best structural property this design
+has.** The bank and the multiplier both climb per trick taken and cash as their product, so a hand's
+output is not a function of how many tricks you took but of **how they were clustered**. Take _n_
+tricks with one loss splitting them into runs of _a_ and _b_: since the bank grows roughly linearly
+with run length, the hand pays about `a² + b²`. For `a + b = 5`:
+
+| Split                       | Pays like |
+| --------------------------- | --------- |
+| 5 + 0 — loss at either edge | **25**    |
+| 4 + 1                       | 17        |
+| 3 + 2 — loss in the middle  | **13**    |
+
+**A loss in the middle of a hand costs about half of one at the edge, for the same trick count.**
+That is why Claude's 2–4 hand outdealt the developer's 5–1 hand, and it is a rare thing to find: a
+scoring rule where the obvious metric (tricks won) genuinely does not determine the outcome. Meier's
+test for a decision worth making is that its value changes with board state
+(`../design-principles.md` §2) — here the _same_ action is worth twice as much depending on when it
+happens.
+
+**It also explains the removed power's cost exactly, and retroactively.** The Monarch's narrowing
+forced losses to arrive scattered rather than clustered, so the damage penalty was quadratic rather
+than linear. That is why removing it more than doubled output rather than improving it a little.
+
+**Where the skulls sit changes the whole plan, not one card.** Three positions from this session,
+all real reads made off the shape readout:
+
+- **Skulls in a side suit the player holds** — lead it low and force their own skull to win. Two
+  dodges taken this way in hand 1.
+- **Skulls in trump** — the inverse: _never_ lead trump, because a trump lead wins the trick and
+  wins you the skull with it. Hand 3 was played entirely around this.
+- **Skulls held by a Quarry void in the led suit** — undodgeable, as §6.5 established.
+
+**"A card that can lose" is a scarce resource, and the game teaches it without stating it.** Claude
+used the Woodcutter to keep a drawn rank-1 off-suit over a stronger card, purely because a card that
+cannot win is the only reliable way to dodge. This was noted in §6.5 and it recurred unprompted.
+Koster's mastery test (`../design-principles.md` §1) — what is round five teaching that round one
+wasn't — has a real answer here.
+
+### 7.3 Problem — throwing the first trick is close to free, and it is the one position-independent move
+
+> **In plain terms, because the version below is a report and this is the thing to remember.**
+> Throwing the very first trick of a hand costs you almost nothing. You lose 1 health out of 25, and
+> that is it, because your bank is empty so there is no cash-out to forfeit. Meanwhile you get
+> something real: the Quarry takes the lead, and your streak stays intact for one long run instead
+> of two short ones.
+>
+> So it is more or less always the right opening. **A move that is always right is not a choice, it
+> is a thing you do every hand before the game starts** — and that is the objection. Not that it is
+> powerful; that it is automatic.
+>
+> It is also not urgent. Build the run (§7.6) and health starts mattering across five encounters
+> instead of one, at which point the free health point stops being free and this probably dissolves
+> on its own.
+
+Ranked first because it is the only line in this session that was correct _without reading the
+board_.
+
+Losing a trick is supposed to cost two things: 1 health, and the cash-out you forfeit by resetting
+the multiplier early. **At bank 0 the second cost does not exist**, so the designed penalty is
+structurally absent on the first trick of every hand. What remains is 1 health out of 25 — **4%** —
+against a positional gain that is often large: it hands the lead to the Quarry, which is a liability
+while it holds skulls, and it buys an unbroken run afterwards, worth up to 2× by §7.2's table.
+
+Claude played this deliberately in hand 2 and it was plainly right. It is the same move §6.4 first
+recorded, now confirmed on a second occasion with the power gone, so it is not an artefact of the
+removed rule.
+
+**What makes it a problem rather than a skill:** §7.2's clustering rule is genuine skill — it depends
+on the deal, the shape readout and what you can actually steer. _"Throw trick 1"_ does not. It is
+available in every hand, costs the same in every hand, and needs no read. Soren Johnson's warning
+applies (`../design-principles.md` §2): players will find the joyless line if it wins.
+
+**Options, cheapest first. All are the developer's.**
+
+| Option                                                                                                                            | New rules                                          | What it buys                                                                                                                                                                                                              | What it risks                                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Build the run** — 5 encounters, no restore between, which §10 already specifies and configures (`ENCOUNTER_PLAYER_RESTORE = 0`) | **0** — it is designed and unbuilt, not undesigned | At ~4 health an encounter, 25 health is almost exactly a five-encounter run. A health point stops being 4% of one fight and becomes 4% of the _run_, which is what the throw is spending. **This also fixes §7.4**, below | Costs a build. Does not change anything about a single encounter played in isolation                                                                                     |
+| **Lower player health**                                                                                                           | 0 — a tuning change                                | Raises the price of the throw directly                                                                                                                                                                                    | Health is currently readable at 25; a smaller number makes each hit heavier but the bar coarser. And it treats the symptom in the wrong loop if the run is coming anyway |
+| **Accept it**                                                                                                                     | 0                                                  | It is a real opening decision with a real cost, and Balatro's discard is also "free" in the sense of being budgeted rather than penalised                                                                                 | If it is always correct it stops being a decision after the third hand                                                                                                   |
+
+### 7.4 Problem — the player's health bar is not a resource inside one encounter
+
+Claude finished the encounter on **21 of 25**, having never been within fifteen points of losing.
+Across all four hands ever played on this build, health lost per hand is **1–2**. An encounter lasts
+three hands. So the player's bar moves about 15% and then the fight ends.
+
+**One of the two health bars is therefore doing nothing in the game as built.** All tension lives in
+the Quarry's bar, which is one-directional: the question is only ever _"how large can I make the
+cash-out"_, never _"can I survive this"_. Rosewater's interaction check
+(`../design-principles.md` §2) — do the players have to react to each other — is only half-answered:
+the Quarry's skulls shape your play, but its damage never threatens you.
+
+This is **not** an argument for raising damage. It is an argument that the player's health is a
+**run-level** resource that is currently being asked to do an encounter-level job it was never
+designed for. §5 of the redesign says as much — 25 was chosen as _"roughly eight hands"_, which is
+two to three encounters, not one.
+
+### 7.5 Problem — the trick count is prominent, and it does not predict winning
+
+The status band's largest element after the health bars is **YOU / TRICK / THEM**, dead centre. The
+hand-over panel leads with **Tricks taken** and **Opponent's tricks**.
+
+The encounter was won with hand results of **2–4, 3–3, 4–2** — losing or tying the trick count in two
+hands of three. §7.2 explains why: clustering dominates count. So the most visually prominent
+readout on the screen is tracking the statistic that predicts the outcome _least_ well, and a new
+player will reasonably read it as the score.
+
+**And the counter is inverted on exactly the tricks the game is about.** This was first written up
+as a vocabulary collision — two meanings of _taken_ — which understated it. The developer spotted it
+in play and it was then confirmed against the source: `playCard.ts` increments
+`tricksWon[resolveTrickWinner(...)]` with **no skull logic at all**, and the panel prints that number
+directly. So:
+
+| Trick outcome                    | Good for the player?           | Counted as the player's trick? |
+| -------------------------------- | ------------------------------ | ------------------------------ |
+| Clean win                        | yes — banks, streak climbs     | **yes** ✓                      |
+| **Dodge** (losing a skull trick) | **yes** — banks, streak climbs | **no** — scored to the Quarry  |
+| **Eating a skull** (winning one) | **no** — 1 damage, bank cashes | **yes** ✗                      |
+| Clean loss                       | no — 1 damage                  | no ✓                           |
+
+It agrees on the two clean outcomes and is **inverted on both skull outcomes**. The headline figure
+counts the thing that damages you and excludes the thing that pays you — which is the precise
+opposite of what `the-hunt.md` §7 means by _taking_ a trick, and of what the multiplier counts.
+
+Session-4 hand 1 is the worked case: clean win, dodge, dodge, clean win, loss, loss. The panel read
+**"Tricks taken 2 / Opponent's tricks 4"** while the streak that cashed 156 was **4**. The two dodges
+— the best tricks in the hand, and the whole point of the skull mechanic — were scored to the
+opponent.
+
+**This is worse than a wrong label, because the skull inversion is the design's central idea.**
+Play-test 2 §3.2 states it as the line a player should be able to hold: _"Make them eat the skulls.
+Win everything else."_ The end-of-hand panel reports the first half backwards. A player learning the
+game from the screen is being taught the opposite of the rule.
+
+**Whose decision, and what it is not.** The engine is not wrong — `tricksWon` is a faithful
+trick-count and other things may want it. What to _show_ is the call: the trick-taking count, the
+streak-relevant count (clean wins + dodges), both, or neither. That is a display and copy decision,
+so it is the developer's.
+
+### 7.6 The connection, and the one fix that closes two problems
+
+**§7.3 and §7.4 are the same problem seen from two ends: one health point is too cheap.** It is too
+cheap to make throwing a trick cost anything, and too cheap for the bar to ever feel at risk. Both
+are consequences of spending a run-scale resource inside a single encounter.
+
+**The run closes both, and it adds no rules.** A five-encounter sequence with no restore between them
+is already designed (§10), already configured, and already marked `[not built]`. At the measured
+~4 health an encounter, 25 health is almost exactly five encounters — so the number is _already
+tuned for the run_, which is why it reads as slack inside one fight. Build the sequence and a
+thrown trick is spending 4% of the whole run rather than 4% of a fight you were going to win anyway.
+
+Scored by Rosewater's lesson #17 — you don't have to change much to change everything
+(`../design-principles.md` §2) — this is the cheapest available fix: **zero new rules, one unbuilt
+feature that already exists on paper.**
+
+**What it does not fix:** §7.5, which is presentation, and the open skull-distribution question.
+
+### 7.7 Smaller findings
+
+- **The final blow reports the wrong number.** Hand 3's panel says _"Dealt to the Quarry 128"_ — the
+  capped figure. The actual cash-out was about **420**. Surplus damage is correctly discarded
+  (`the-hunt.md` §8), but the panel reports what _landed_ rather than what the player _did_, so the
+  most spectacular hand of the encounter reads as its smallest. The kill is the one moment the design
+  should be loudest about.
+- **The Witch is doing excellent work and needs no change.** It beat the player once (a Moons 9
+  taking a Moons 11) and saved them once (a Bells 9 taking a Bells 11). Both were surprises, both
+  were fair, both were the player's own failure to track a known rule. This is Garfield's drama
+  argument working (`../design-principles.md` §3).
+- **Two Witches cancelling produced a genuinely subtle resolution** — a skulled Keys 9 against a
+  Bells 9 with Keys as trump. The Witches cancelled, but the Keys was trump _by suit_ regardless, so
+  it still won. Correct by §6, and not obvious.
+- **The Quarry's Fox hid a skull in the decree**, changing trump mid-hand and removing a skull from
+  the shape readout in the same action. Effective, and it made the remaining skull _trump_ — which
+  by §7.2's logic was actually good for the player. Worth knowing the CPU can do this accidentally
+  well.
+- **`"Deal the next Hunt"` still says Hunt** where it means _hand_ (carried from §6.8, unfixed).
+- Skulls-in-trump is a distinct tactical case from anything §3.4 of the redesign anticipated, and it
+  is the one where the readout pays off most.
+
+### 7.8 What to measure
+
+1. **Play one hand deliberately never throwing trick 1, and compare total damage** against a hand
+   where you do. §7.3 predicts the throw is worth up to 2× on the hand. If it is under ~30%, the
+   problem is smaller than stated and can be left alone.
+2. **Record, per hand, the trick count and the damage.** §7.2 predicts they correlate weakly and
+   that clustering predicts far better. Four hands exist; ten would settle it, and it is the number
+   that decides whether §7.5's readout should change.
+3. **The skull rank distribution (§6 Q1) is now answerable and is the biggest open question.** It was
+   blocked on the removed power. Play a few hands with skulls skewed low, then a few skewed high.
+4. **Play five encounters back to back without restoring health**, even by hand, before building the
+   run. §7.6's whole argument rests on ~4 health an encounter holding up across five, and it is one
+   session's work to check.
+5. **Re-run the standing benchmark.** Still never repeated since session 1. One fresh Balatro ante,
+   then one hand of this. The developer's alone.
+
+### 7.9 The one-line summary
+
+The game is now winnable, the skulls produce real reads, and the scoring has a genuinely good shape —
+**damage is quadratic in how well you cluster your losses, not linear in how many tricks you win** —
+but one health point is too cheap to price the first trick of a hand or to make the player's bar
+matter, and the run that is already designed would fix both without adding a rule.
 
 ---
 

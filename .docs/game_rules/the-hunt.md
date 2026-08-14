@@ -4,7 +4,7 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-08-13**. Everything below is reachable in
+Last reviewed against the code and the design on **2026-08-14**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
 
 > **The Quarry has no powers — DLR-81, the same day.** It plays by exactly the player's rules, with
@@ -27,8 +27,9 @@ the app today except where a rule is marked **[not built]**.
 >   **1 health**, cashes `bank × multiplier` into the Quarry, and resets both to zero (sections 7–8).
 > - Damage now lands **per trick, mid-hand** — so an encounter can end on trick 3 (section 8).
 >
-> **The whole of it is playable.** The one figure that is not decided is the Quarry's health, which
-> is a deliberate placeholder awaiting a play session (section 8).
+> **The whole of it is playable, and it has been won.** The Quarry's health — the one figure DLR-80
+> left as a placeholder — was **set to 450 from a play session on 2026-08-13** (section 8), and the
+> first encounter was beaten in three hands the same day.
 
 ---
 
@@ -146,14 +147,17 @@ rather than always running its full six tricks.
 
 ## 3. What you can see before you commit — the skulls
 
-**[settled]** — the procedure and the ~30% density; the distribution across ranks is
-**[open]**, below.
+**[settled]** — the procedure and the ~30% density; which ranks the skulls land on is
+**[provisional]**, below.
 
 Roughly **30% of the Quarry's dealt cards carry a skull**. In a six-card hand that is **2 of 6**.
+How _many_ skulls a hand carries and _which ranks_ they land on are two separate dials: the density
+below is settled, the rank curve below it is not.
 
 **No skull is ever on a rank 1.** A skulled 1 could not lose its trick, so it would be an undodgeable
 tax rather than a decision — excluding it is what leaves foreknowledge worth having (play-test 2
-§3.4).
+§3.4). Rank 1 carries **zero weight in every rank curve the game ships**, so the rule holds whichever
+curve is in force — including any curve added later.
 
 ### What a skull does
 
@@ -184,14 +188,39 @@ Two readouts carry the skulls, and neither ever reveals a rank:
 That split is the whole design of it: counting suits is bookkeeping and reading ranks is judgement,
 so the readout removes the first and keeps the second (play-test 2 §3.5).
 
-### How skulls are spread across ranks — **[open]**
+### How skulls are spread across ranks — **[provisional]**
 
-Only "never rank 1" is settled. Today skulls are drawn **uniformly at random from the Quarry's
-eligible cards (ranks 2–11)**. Whether they should instead **skew low** (more ambushes — a low skull
-is hard to avoid winning) or **skew high** (more announcements — a high skull is easy to see coming)
-is untested, and play-test 2 §6 Q1 ranks it as the open question the game's feel depends on most.
+Skulls are **not** spread evenly. Each rank carries a **weight** — how likely a card of that rank is
+to be the one skulled — and the Quarry's skulls are drawn against those weights. Rank 1's weight is
+zero, which is where "never rank 1" now lives.
 
-**Whose decision:** the developer's, after playing.
+The curve in force concentrates skulls on the **middle ranks** and leaves the extremes light:
+
+| Rank   | 1   | 2   | 3   | 4   | 5   | 6   | 7   | 8   | 9   | 10  | 11  |
+| ------ | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Weight | 0   | 2   | 5   | 8   | 10  | 10  | 8   | 5   | 2   | 1   | 1   |
+
+In play that means a **5 or a 6 in the Quarry's hand is skulled far more often than a 10 or an 11**.
+The reasoning is that the extremes take the decision away from you: a very low skull is one the Quarry
+can only lose with, so it goes into a trick you have already won and you eat it with no counterplay,
+while a very high skull wins its own trick, which is a dodge you did not earn. Only the middle band
+leaves the outcome to the card you choose. Play-test 2 §6 Q1 raised the question and ranks it as the
+one the game's feel depends on most; `hybrid-design.md` does not cover rank weighting, so the
+reasoning is recorded in `ideas.md` → "Worth costing" rather than in a design section.
+
+**Why provisional and not settled:** the curve was chosen from a simulation, not from play. It is a
+deliberate choice rather than a placeholder — but nobody has yet played a hand under it, and the
+weights are expected to move. Three other curves ship unused (an even one, one rising with rank, and
+one falling with rank) so a later opponent can be given a different curve as a difficulty setting;
+**none of that is wired to an opponent yet** — the game has one curve for everyone.
+
+**Whose decision:** the developer's, after playing. Whether this reads as tense or merely noisy is
+the thing to watch.
+
+> **Rank weighting does not fix every unfair skull, and two cases survive it.** A skull in the
+> **trump suit** is near-harmless at any rank, because a trump wins its trick and a skull trick the
+> Quarry wins is a dodge for you. And a Quarry **holding nothing in the led suit** can dump a skull
+> whatever its rank, which you cannot dodge. Both are recorded in `ideas.md` and neither is addressed.
 
 ---
 
@@ -356,36 +385,50 @@ never double-counts its last trick.
 
 ## 8. Damage, and the duel
 
-**[settled]** — except the Quarry's health, which is **[open]**.
+**[settled]** — the procedure; both health totals are **[provisional]**, below.
 
 Both sides hold **health**, and the encounter ends when either total reaches zero.
 
-| Value                              | Status                                                 |
-| ---------------------------------- | ------------------------------------------------------ |
-| Player's starting health           | **25** — **[settled]** (play-test 2 §5)                |
-| Quarry's health                    | **1,000** — **[open]**, a plainly-labelled placeholder |
-| Damage to the player, per event    | **1**, every time — **[settled]**                      |
-| Health restored between encounters | **None** — **[not built]**, and nothing reads it yet   |
-| Both bars emptying together        | **The player loses**                                   |
+| Value                              | Status                                               |
+| ---------------------------------- | ---------------------------------------------------- |
+| Player's starting health           | **10** — **[provisional]** (set 2026-08-14)          |
+| Quarry's health                    | **400** — **[provisional]** (set 2026-08-14)         |
+| Damage to the player, per event    | **1**, every time — **[settled]**                    |
+| Health restored between encounters | **None** — **[not built]**, and nothing reads it yet |
+| Both bars emptying together        | **The player loses**                                 |
 
-**The two numbers are asymmetric on purpose.** The player's 25 is a small integer you can hold in
-your head; the Quarry's total lands in the hundreds or thousands because it absorbs `bank ×
-multiplier`. Play-test 2 §5 names Balatro's _4 hands, 3 discards_ against score requirements in the
-thousands as the same shape.
+**The two numbers are asymmetric on purpose.** The player's 10 is a small integer you can hold in
+your head; the Quarry's total lands in the hundreds because it absorbs `bank × multiplier`.
+Play-test 2 §5 names Balatro's _4 hands, 3 discards_ against score requirements in the thousands as
+the same shape.
 
-### The Quarry's health is a placeholder — **[open]**
+### Both totals were set by playing — **[provisional]**
 
-**1,000 is not a decision.** Play-test 2 §5 states outright that CPU health cannot be derived
-honestly yet: it depends on how large real cash-outs get, which depends on how long streaks actually
-run, and that is a function of play rather than arithmetic. The figure in configuration is labelled
-as a placeholder and the reasoning behind it is written beside it so it can be argued with rather
-than trusted.
+**Neither figure is derived, and both came from the table rather than the page.** Play-test 2 §5 had
+stated outright that the Quarry's health could not be derived honestly from arithmetic, because it
+depends on how large real cash-outs get and that is a function of play.
 
-**Whose decision:** the developer's, from the first play session. Play-test 2 §8 names the
-measurement: record your biggest cash-out each hand.
+The Quarry went to **450 on 2026-08-13** from the first winning session, and both numbers were
+re-set on **2026-08-14**: the player to **10**, the Quarry to **400**. They are marked provisional
+rather than settled because each has moved once already and neither has been played at its current
+value.
 
-If it is badly wrong the encounter is either over in two hands or a grind — and neither tells you
-anything about the six tricks, which is what the play-test is for.
+**What the player's 10 changes.** At 25 the player's bar never came under threat inside a
+three-hand encounter — it was sized as a **run-level** resource spent across several encounters, not
+as tension within one, and the cheapness of a single health point had a second cost: losing the
+**first** trick of a hand forfeits no cash-out, because the bank is still zero, so throwing trick 1
+was close to free. At 10, a hand's worth of losses is a real fraction of the bar. Whether that makes
+the fight tense or merely punishing is the thing to watch.
+
+> **The retired 1,000 was not wrong by arithmetic so much as by opponent.** Every figure it was
+> reasoned from had been measured against the Quarry's since-removed rule-break (section 9), which
+> roughly halved a hand's damage. Play-test 3 §6.3 concluded 1,000 made the encounter unwinnable;
+> play-test 4 §7.1 closed that finding when the same hands started dealing more than twice as much.
+
+**One thing worth knowing before retuning the Quarry's total:** damage is roughly **quadratic in
+streak length**, since the bank and the multiplier both climb per trick taken and cash as their
+product. So that number is far more sensitive to how often a streak breaks than to how many tricks
+are won overall — a hand that trades evenly deals a small fraction of one that runs five in a row.
 
 ### Damage lands per trick, and an encounter can end mid-hand
 
@@ -583,55 +626,56 @@ shape is decided.
 One row per rule area. `Where enforced` is a pointer for checking this document has not gone stale —
 the mechanics themselves are documented in `../implementation/`.
 
-| Rule area                                     | Status                            | Where enforced                                                                                              | Who decides what's open                                 |
-| --------------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| Deck, decree, draw pile                       | settled                           | `src/warCouncil/deck.ts`, `deal.ts`                                                                         | —                                                       |
-| Hand size and trick count (6)                 | settled                           | `src/hunt/config.ts` — `HAND_SIZE`; sliced in `src/warCouncil/deal.ts`, ends the hand in `playCard.ts`      | —                                                       |
-| First dealer, alternation                     | provisional                       | `src/app/dealerForRound.ts`                                                                                 | Developer                                               |
-| Skull density (~30%, 2 of 6)                  | settled                           | `src/hunt/config.ts` — `SKULL_DENSITY`; applied by `src/warCouncil/skulls.ts` — `assignSkulls`              | —                                                       |
-| Skulls never on rank 1                        | settled                           | `src/hunt/config.ts` — `SKULL_MIN_RANK`; filtered by `src/warCouncil/skulls.ts` — `skullableCards`          | —                                                       |
-| Skull rank distribution (uniform)             | **open**                          | `src/warCouncil/skulls.ts` — `assignSkulls` takes it as a parameter                                         | Developer, after playtest                               |
-| Skulls assigned to the Quarry's deal only     | settled                           | `src/warCouncil/deal.ts` — `assignSkulls(cpuHand, rng)`; the draw pile is never skulled                     | —                                                       |
-| A trick is skulled if any card in it is       | settled                           | `src/warCouncil/skulls.ts` — `trickIsSkulled`                                                               | Developer — whether it should die with a Fox exchange   |
-| Shape readout shows no rank                   | settled                           | `src/warCouncil/skulls.ts` — `suitShape`; drawn by `src/app/warCouncil/QuarryShape.tsx`                     | —                                                       |
-| A skulled card is marked once face up         | settled                           | `src/app/warCouncil/PlayingCard.tsx` — the `skulled` prop; passed by `TrickWell.tsx`                        | —                                                       |
-| Follow-suit, led-Monarch narrowing            | settled                           | `src/warCouncil/legalMoves.ts` — `legalMoves`, `monarchFollowSet`                                           | —                                                       |
-| Odd-rank abilities                            | settled                           | `src/warCouncil/abilities.ts`, `resolveTrick.ts`                                                            | —                                                       |
-| Whether abilities survive six-card hands      | **open**                          | nothing — abilities are unchanged and ability-free hands are accepted                                       | Developer, after playtest                               |
-| Trick resolution, Witch-as-trump              | settled                           | `src/warCouncil/resolveTrick.ts`                                                                            | —                                                       |
-| Winner leads next, Swan's exception           | settled                           | `src/warCouncil/playCard.ts`, `abilities.ts`                                                                | —                                                       |
-| The four outcomes                             | settled                           | `src/warCouncil/bank.ts` — `trickOutcomeFor`, `isTaken`                                                     | —                                                       |
-| Card value = printed rank                     | settled                           | `src/warCouncil/bank.ts` — `resolveTrickBank` sums `card.rank`; no value function exists                    | —                                                       |
-| The bank, and that it only climbs             | settled                           | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                               | —                                                       |
-| The streak multiplier, and its reset          | settled                           | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                               | —                                                       |
-| Cash-out on damage (`bank × multiplier`)      | settled                           | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                               | —                                                       |
-| Cash-out at the end of the sixth trick        | settled                           | `src/warCouncil/bank.ts` — `resolveTrickBank`'s `finalTrick` fold                                           | —                                                       |
-| Damage to the player = 1 per event            | settled                           | `src/hunt/config.ts` — `DAMAGE_PER_HIT`                                                                     | —                                                       |
-| Player health (25)                            | settled                           | `src/hunt/config.ts` — `PLAYER_START_HEALTH`                                                                | —                                                       |
-| Quarry health (1,000)                         | **open** — a labelled placeholder | `src/hunt/config.ts` — `QUARRY_ENCOUNTER_HEALTH`                                                            | **Developer, from a play session**                      |
-| Damage applied per trick, mid-hand            | settled                           | `src/hunt/encounter.ts` — `applyDamage`; called per resolution by `src/app/warCouncil/roundReducer.ts`      | —                                                       |
-| The seat → side crossing, once                | settled                           | `src/warCouncil/bank.ts` — `incomingFrom`                                                                   | —                                                       |
-| Health never negative; surplus discarded      | settled                           | `src/hunt/encounter.ts` — `deplete`, the single clamp                                                       | —                                                       |
-| Both bars settle before either is checked     | settled                           | `src/hunt/encounter.ts` — `applyDamage` depletes both, then `resolveWinner`                                 | —                                                       |
-| Simultaneous depletion → player loses         | settled                           | `src/hunt/config.ts` — `SIMULTANEOUS_DEPLETION_WINNER`; read by `resolveWinner`                             | —                                                       |
-| An encounter can end mid-hand, and play stops | settled                           | `src/app/warCouncil/roundReducer.ts` — the `isEncounterResolved` guard in `canAct`                          | Developer — whether it feels abrupt                     |
-| Health carried hand to hand                   | settled                           | `src/app/warCouncil/roundReducer.ts` owns the live `EncounterState`; `src/App.tsx` carries it between hands | —                                                       |
-| No cap on hands per encounter                 | settled — deliberately none       | no cap key exists to read                                                                                   | Developer, if the tail stalls                           |
-| Bank and streak on screen throughout          | settled                           | `src/app/warCouncil/BankMeter.tsx`                                                                          | Developer — the visual values                           |
-| Both sides' health on screen                  | settled                           | `src/app/warCouncil/DuelHealthBars.tsx`, `duelHealthBars.ts`                                                | Developer — whether 25 reads well in 1-point steps      |
-| The hand-over tally                           | settled                           | `src/app/warCouncil/RoundOverPanel.tsx`                                                                     | —                                                       |
-| The Quarry dumps skulls into losing tricks    | settled                           | `src/warCouncil/cpuPlayer.ts` — `chooseCpuCard`'s first branch                                              | —                                                       |
-| The Quarry's **lead** ignores skulls          | settled — deliberately minimal    | `src/warCouncil/cpuPlayer.ts` — the lead branch is unchanged                                                | Developer — the obvious next CPU change                 |
-| The Quarry has no rule-break of any kind      | settled                           | nothing to enforce — `legalMoves.ts` reads only the led card; guarded by `cpuPlayer.test.ts`'s 60-seed soak | —                                                       |
-| Quarry character = a name only                | settled                           | `src/hunt/quarryCharacters.ts` — `QuarryCharacterInfo` has no rule field                                    | —                                                       |
-| What any character's power is                 | **not built** — undecided         | —                                                                                                           | **Developer — a final-boss ticket, not every opponent** |
-| Telegraph fidelity                            | provisional                       | `src/hunt/config.ts` — `TELEGRAPH_FIDELITY`                                                                 | Developer, after playtest                               |
-| Rank 8's name ("Poison")                      | **open** — misleading             | `src/app/warCouncil/labels.ts` — `RANK_NAME`                                                                | Developer                                               |
-| Between-encounter restore (none)              | **not built**                     | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE` (still no consumer)                                       | Developer — most likely to change                       |
-| Forage                                        | **not built**                     | `src/hunt/config.ts` — `FORAGE_BUDGET_PER_ENCOUNTER` (no consumer)                                          | Developer — budget is provisional                       |
-| The run — a sequence of encounters            | **not built**                     | `src/hunt/config.ts` — `QUARRY_ENCOUNTER_HEALTH` holds one entry                                            | —                                                       |
-| Run length                                    | **open** — placeholder 5          | `src/hunt/config.ts` — `ENCOUNTERS_PER_RUN` (no consumer)                                                   | Developer                                               |
-| Snare (in-hand edits)                         | **open**, blocked                 | —                                                                                                           | Needs a cost before it's viable                         |
+| Rule area                                     | Status                             | Where enforced                                                                                                                   | Who decides what's open                                 |
+| --------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Deck, decree, draw pile                       | settled                            | `src/warCouncil/deck.ts`, `deal.ts`                                                                                              | —                                                       |
+| Hand size and trick count (6)                 | settled                            | `src/hunt/config.ts` — `HAND_SIZE`; sliced in `src/warCouncil/deal.ts`, ends the hand in `playCard.ts`                           | —                                                       |
+| First dealer, alternation                     | provisional                        | `src/app/dealerForRound.ts`                                                                                                      | Developer                                               |
+| Skull density (~30%, 2 of 6)                  | settled                            | `src/hunt/config.ts` — `SKULL_DENSITY`; applied by `src/warCouncil/skulls.ts` — `assignSkulls`                                   | —                                                       |
+| Skulls never on rank 1                        | settled                            | `src/hunt/config.ts` — every `SKULL_WEIGHTS_*` curve sets rank `1: 0`; filtered by `src/warCouncil/skulls.ts` — `skullableCards` | —                                                       |
+| Skull rank curve (hump — mid-ranks heaviest)  | **provisional**                    | `src/hunt/config.ts` — `SKULL_RANK_WEIGHTS`; drawn against by `src/warCouncil/skulls.ts` — `weightedDraw`                        | Developer, after playing                                |
+| A curve per opponent                          | **not built**                      | nothing — `SKULL_RANK_WEIGHTS` is one module-level curve; the other three are exported and unread                                | Developer — a later ticket                              |
+| Skulls assigned to the Quarry's deal only     | settled                            | `src/warCouncil/deal.ts` — `assignSkulls(cpuHand, rng)`; the draw pile is never skulled                                          | —                                                       |
+| A trick is skulled if any card in it is       | settled                            | `src/warCouncil/skulls.ts` — `trickIsSkulled`                                                                                    | Developer — whether it should die with a Fox exchange   |
+| Shape readout shows no rank                   | settled                            | `src/warCouncil/skulls.ts` — `suitShape`; drawn by `src/app/warCouncil/QuarryShape.tsx`                                          | —                                                       |
+| A skulled card is marked once face up         | settled                            | `src/app/warCouncil/PlayingCard.tsx` — the `skulled` prop; passed by `TrickWell.tsx`                                             | —                                                       |
+| Follow-suit, led-Monarch narrowing            | settled                            | `src/warCouncil/legalMoves.ts` — `legalMoves`, `monarchFollowSet`                                                                | —                                                       |
+| Odd-rank abilities                            | settled                            | `src/warCouncil/abilities.ts`, `resolveTrick.ts`                                                                                 | —                                                       |
+| Whether abilities survive six-card hands      | **open**                           | nothing — abilities are unchanged and ability-free hands are accepted                                                            | Developer, after playtest                               |
+| Trick resolution, Witch-as-trump              | settled                            | `src/warCouncil/resolveTrick.ts`                                                                                                 | —                                                       |
+| Winner leads next, Swan's exception           | settled                            | `src/warCouncil/playCard.ts`, `abilities.ts`                                                                                     | —                                                       |
+| The four outcomes                             | settled                            | `src/warCouncil/bank.ts` — `trickOutcomeFor`, `isTaken`                                                                          | —                                                       |
+| Card value = printed rank                     | settled                            | `src/warCouncil/bank.ts` — `resolveTrickBank` sums `card.rank`; no value function exists                                         | —                                                       |
+| The bank, and that it only climbs             | settled                            | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                    | —                                                       |
+| The streak multiplier, and its reset          | settled                            | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                    | —                                                       |
+| Cash-out on damage (`bank × multiplier`)      | settled                            | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                    | —                                                       |
+| Cash-out at the end of the sixth trick        | settled                            | `src/warCouncil/bank.ts` — `resolveTrickBank`'s `finalTrick` fold                                                                | —                                                       |
+| Damage to the player = 1 per event            | settled                            | `src/hunt/config.ts` — `DAMAGE_PER_HIT`                                                                                          | —                                                       |
+| Player health (25)                            | settled                            | `src/hunt/config.ts` — `PLAYER_START_HEALTH`                                                                                     | —                                                       |
+| Quarry health (450)                           | settled — set from play 2026-08-13 | `src/hunt/config.ts` — `QUARRY_ENCOUNTER_HEALTH`                                                                                 | —                                                       |
+| Damage applied per trick, mid-hand            | settled                            | `src/hunt/encounter.ts` — `applyDamage`; called per resolution by `src/app/warCouncil/roundReducer.ts`                           | —                                                       |
+| The seat → side crossing, once                | settled                            | `src/warCouncil/bank.ts` — `incomingFrom`                                                                                        | —                                                       |
+| Health never negative; surplus discarded      | settled                            | `src/hunt/encounter.ts` — `deplete`, the single clamp                                                                            | —                                                       |
+| Both bars settle before either is checked     | settled                            | `src/hunt/encounter.ts` — `applyDamage` depletes both, then `resolveWinner`                                                      | —                                                       |
+| Simultaneous depletion → player loses         | settled                            | `src/hunt/config.ts` — `SIMULTANEOUS_DEPLETION_WINNER`; read by `resolveWinner`                                                  | —                                                       |
+| An encounter can end mid-hand, and play stops | settled                            | `src/app/warCouncil/roundReducer.ts` — the `isEncounterResolved` guard in `canAct`                                               | Developer — whether it feels abrupt                     |
+| Health carried hand to hand                   | settled                            | `src/app/warCouncil/roundReducer.ts` owns the live `EncounterState`; `src/App.tsx` carries it between hands                      | —                                                       |
+| No cap on hands per encounter                 | settled — deliberately none        | no cap key exists to read                                                                                                        | Developer, if the tail stalls                           |
+| Bank and streak on screen throughout          | settled                            | `src/app/warCouncil/BankMeter.tsx`                                                                                               | Developer — the visual values                           |
+| Both sides' health on screen                  | settled                            | `src/app/warCouncil/DuelHealthBars.tsx`, `duelHealthBars.ts`                                                                     | Developer — whether 25 reads well in 1-point steps      |
+| The hand-over tally                           | settled                            | `src/app/warCouncil/RoundOverPanel.tsx`                                                                                          | —                                                       |
+| The Quarry dumps skulls into losing tricks    | settled                            | `src/warCouncil/cpuPlayer.ts` — `chooseCpuCard`'s first branch                                                                   | —                                                       |
+| The Quarry's **lead** ignores skulls          | settled — deliberately minimal     | `src/warCouncil/cpuPlayer.ts` — the lead branch is unchanged                                                                     | Developer — the obvious next CPU change                 |
+| The Quarry has no rule-break of any kind      | settled                            | nothing to enforce — `legalMoves.ts` reads only the led card; guarded by `cpuPlayer.test.ts`'s 60-seed soak                      | —                                                       |
+| Quarry character = a name only                | settled                            | `src/hunt/quarryCharacters.ts` — `QuarryCharacterInfo` has no rule field                                                         | —                                                       |
+| What any character's power is                 | **not built** — undecided          | —                                                                                                                                | **Developer — a final-boss ticket, not every opponent** |
+| Telegraph fidelity                            | provisional                        | `src/hunt/config.ts` — `TELEGRAPH_FIDELITY`                                                                                      | Developer, after playtest                               |
+| Rank 8's name ("Poison")                      | **open** — misleading              | `src/app/warCouncil/labels.ts` — `RANK_NAME`                                                                                     | Developer                                               |
+| Between-encounter restore (none)              | **not built**                      | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE` (still no consumer)                                                            | Developer — most likely to change                       |
+| Forage                                        | **not built**                      | `src/hunt/config.ts` — `FORAGE_BUDGET_PER_ENCOUNTER` (no consumer)                                                               | Developer — budget is provisional                       |
+| The run — a sequence of encounters            | **not built**                      | `src/hunt/config.ts` — `QUARRY_ENCOUNTER_HEALTH` holds one entry                                                                 | —                                                       |
+| Run length                                    | **open** — placeholder 5           | `src/hunt/config.ts` — `ENCOUNTERS_PER_RUN` (no consumer)                                                                        | Developer                                               |
+| Snare (in-hand edits)                         | **open**, blocked                  | —                                                                                                                                | Needs a cost before it's viable                         |
 
 ### The redesign landed whole — DLR-80 closed 2026-08-13
 
@@ -666,16 +710,49 @@ character you are facing.
 **Deferred, not deleted.** Powers are intended for a final boss and will be designed then. See
 [What this game does not have](#the-quarrys-character-power--removed-2026-08-13-deferred-not-deleted).
 
+### The skull rank curve landed — PT-001, 2026-08-14
+
+**What a player does now that they did not before:** reads the shape readout knowing that a skull is
+far likelier to be sitting on a mid-rank card than on a 10 or an 11. Nothing about the _procedure_
+changed — no new decision point, no new legal-move constraint — but **the game plays differently from
+the moment this landed**, because which cards carry skulls moved.
+
+**What is gone:** the separate "never below rank 2" constant. That rule is now rank 1's zero weight in
+every curve, which makes it hold for any curve added later rather than only for the current one.
+
+**Engine only, and that is complete.** The curve is a deal-time property; nothing about it is shown,
+and nothing should be — the shape readout still shows suit and count and never a rank
+([section 3](#what-you-are-shown-and-what-you-are-not)). There is no unreachable rule here.
+
+**What the developer owns:** whether hump is the right curve, and whether its weights want moving.
+Both answer only to playing. Reverting to an even spread is a one-line change.
+
 ### Known tensions, recorded not resolved
 
-- **The Quarry's health is a placeholder, and every other measurement depends on it** (new
-  2026-08-13). Too low and the encounter is over in two hands; too high and it is a grind. Neither
-  tells you anything about the six tricks, which is what the play-test is for. Play-test 2 §8 names
-  the measurement that sets it: record your biggest cash-out each hand.
+- ~~**The Quarry's health is a placeholder**~~ — **resolved 2026-08-13.** Set to 450 from play
+  (section 8). Three hands, and the first encounter anyone has won.
+- **One health point is too cheap, and it costs the game two things** (new 2026-08-13, play-test 4
+  §7.3 and §7.6). Losing the **first** trick of a hand forfeits no cash-out, because the bank is
+  zero — so the only price is 1 health in 25, which makes throwing trick 1 close to free and is the
+  one move that is right without reading the board. The same cheapness means the player's bar never
+  comes under threat inside a three-hand encounter. Both follow from health being sized as a
+  **run-level** resource spent inside a single fight. Section 10's unbuilt run is the fix that costs
+  no new rules; until it exists, both stand.
+- **The trick count does not predict the outcome, and it is the biggest thing on screen** (new
+  2026-08-13, play-test 4 §7.5). A hand pays roughly `a² + b²` for streaks of length _a_ and _b_, so
+  **where** the losses fall matters about twice as much as how many there are — the winning encounter
+  went 2–4, 3–3, 4–2. The status band and the hand-over panel both lead with the trick count.
+  **And that counter is inverted on the skull tricks**: a **dodge** — which banks and climbs your
+  streak — is scored to the Quarry, while **eating a skull** — which costs you 1 health — is scored
+  to you. It agrees with section 7's **taken** on clean tricks and disagrees on both skulled ones, so
+  the panel reports the design's own one-line summary backwards. Confirmed against the source
+  2026-08-13; what the panel should show instead is the developer's call (play-test 4 §7.5).
 - **The slippery slope may need a brake** (new 2026-08-13, play-test 2 §6 Q4). Losing a trick punishes
   you **twice** — 1 damage _and_ an early cash-out at a small multiplier — while winning compounds
   both terms. That is Balatro's shape and may be exactly right, but it means a bad hand is very bad.
-  Play-test 2 says explicitly: watch for it before adding anything.
+  Play-test 2 says explicitly: watch for it before adding anything. **Play-test 4 sharpens it:** the
+  punishment is quadratic rather than linear, and it lands hardest on a loss in the _middle_ of a
+  hand, which is the position the player controls least.
 - **The Quarry does not avoid leading a skull, so some dodges are free** (new 2026-08-13). Its skull
   play is adversarial only when following. Leading a skulled card hands the player a dodge that was
   not a decision. Play-test 2 §8's first measurement — count the tricks you deliberately dodge — is
@@ -691,6 +768,12 @@ character you are facing.
   Q3). It has no play-time ability and no scoring intervention, and the skull is a _separate_ marker
   — so the name actively suggests a connection that does not exist. It will read as a bug in the
   play-test.
+- **Two unfair skulls survive the rank curve, and shipping the curve may look like it fixed them**
+  (new 2026-08-14, PT-001; observed play-test 4). Weighting decides which _rank_ carries a skull, so
+  it cannot touch either case that does not turn on rank. A skull in the **trump suit** is
+  near-harmless whatever its rank, because a trump wins its trick and a skull trick the Quarry wins
+  is a dodge for the player. And a Quarry **void in the led suit** may discard a skull at any rank,
+  which the player cannot dodge at all. Both are recorded in `ideas.md`; neither is built against.
 - **Many six-card hands will contain no named rank at all** (new 2026-08-13, play-test 2 §6 Q2). The
   Fox, Witch, Woodcutter, Swan and Monarch are much of what makes this feel like Fox in the Forest,
   and a six-card hand draws from the same 33-card deck. Ability-free hands are accepted as normal
