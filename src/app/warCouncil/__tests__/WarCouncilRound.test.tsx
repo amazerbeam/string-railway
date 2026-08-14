@@ -331,7 +331,7 @@ describe('WarCouncilRound', () => {
     renderRound({ initialState: round })
 
     // AC11 — the shape readout is on screen before any card is played, and never shows a rank.
-    expect(screen.getByLabelText(/Bells: 1 held, none skulled/i)).toBeTruthy()
+    expect(screen.getByText(/Bells: 1 held, none skulled/i)).toBeTruthy()
 
     // The bank readout's cash figure (bank × multiplier) starts at zero, before any trick.
     expect(screen.getByLabelText(/cashes for 0/i)).toBeTruthy()

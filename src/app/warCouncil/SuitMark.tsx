@@ -14,7 +14,16 @@ interface SuitMarkProps {
   readonly className?: string
 }
 
-/** Mounted once by the round mount. Defines the three suit glyphs referenced by `SuitMark`. */
+/**
+ * Mounted once by the round mount. Defines the three suit glyphs referenced by `SuitMark`.
+ *
+ * None of the paths carries a `strokeWidth` attribute. `stroke-width` is an *inherited* SVG
+ * property, so leaving it unset here lets each call site set its own weight in CSS and have it
+ * reach the cloned content through the `<use>` shadow tree — a presentation attribute on the path
+ * would win over that inheritance and pin every mark in the app to one weight. The default lives
+ * once, on `.wc-suit-mark` in `warCouncil.css`; a call site that wants a heavier glyph overrides
+ * it on its own class.
+ */
 export function SuitSymbolSheet() {
   return (
     <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true" focusable="false">
@@ -23,13 +32,12 @@ export function SuitSymbolSheet() {
           d="M6.8 16.4v-4.6a5.2 5.2 0 0 1 10.4 0v4.6M4.6 16.4h14.8M12 6.6V4.6M10.2 19.1a1.9 1.9 0 0 0 3.6 0"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.7"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
       </symbol>
       <symbol id="s-keys" viewBox="0 0 24 24">
-        <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+        <g fill="none" stroke="currentColor" strokeLinecap="round">
           <circle cx="12" cy="7.2" r="3.5" />
           <path d="M12 10.7V20M12 14.6h3.1M12 17.6h2.3" />
         </g>
@@ -39,7 +47,6 @@ export function SuitSymbolSheet() {
           d="M15.3 3.9a8.2 8.2 0 1 0 3.9 11.8 6.7 6.7 0 0 1-3.9-11.8z"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.7"
           strokeLinejoin="round"
         />
       </symbol>
@@ -54,7 +61,11 @@ export function SuitSymbolSheet() {
  */
 export function SuitMark({ suit, className }: SuitMarkProps) {
   return (
-    <svg className={className} aria-hidden="true" focusable="false">
+    <svg
+      className={className ? `wc-suit-mark ${className}` : 'wc-suit-mark'}
+      aria-hidden="true"
+      focusable="false"
+    >
       <use href={`#${SUIT_SYMBOL_ID[suit]}`} />
     </svg>
   )

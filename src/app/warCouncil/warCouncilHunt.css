@@ -83,10 +83,12 @@
 
 .wc-shape-row {
   display: grid;
-  grid-template-columns: 1.1rem 1fr auto;
+  /* The suit-name column is fixed rather than `auto` so the card tiles start at the same x on
+     every row — a ragged left edge makes three tallies of different lengths hard to compare. */
+  grid-template-columns: 1.1rem 3.1rem 1fr;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.2rem 0;
+  padding: 0.25rem 0;
   font-size: 0.78rem;
 }
 
@@ -111,15 +113,17 @@
   color: var(--wc-moons);
 }
 
-.wc-shape-held {
-  font-variant-numeric: tabular-nums;
+.wc-shape-suit {
   color: var(--wc-chalk);
 }
 
-.wc-shape-skulls {
+/* One tile per card held. Wraps rather than overflowing: at HAND_SIZE 6 a single suit can hold
+   six, which will not fit this column on a narrow viewport. */
+.wc-shape-cards {
   display: flex;
-  gap: 0.15rem;
-  min-height: 1rem;
+  flex-wrap: wrap;
+  gap: 0.22rem;
+  min-height: 1.62rem;
   align-items: center;
 }
 
@@ -128,14 +132,58 @@
   color: var(--wc-chalk-dim);
 }
 
-/* The shared `.wc-skull-mark` glyph (defined for the card face in `warCouncilCards.css`) is
-   absolutely positioned there; inline in a shape row it needs to sit in normal flow instead, at
-   a smaller, row-appropriate size — the glyph and its dark disc are unchanged. */
-.wc-shape-skulls .wc-skull-mark {
-  position: static;
-  width: 0.85rem;
-  height: 0.85rem;
-  font-size: 0.5rem;
+/* A miniature of the card face rather than a bare glyph, so the readout and the table share a
+   visual vocabulary — a white face, a suit-tinted border, and a centred suit mark, exactly as
+   `.wc-card` is built. Deliberately far too small to carry a rank, which is the point: there is
+   no room to leak one.
+
+   The border reads the same `--wc-suit` custom property the mark's `color` does, so the suit
+   reads twice (edge and symbol) and never from colour alone — the card face's own AC7 rule,
+   applied at this size. */
+.wc-shape-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 1.22rem;
+  height: 1.62rem;
+  border-radius: 0.18rem;
+  border: 1px solid var(--wc-suit, var(--wc-ink-soft));
+  background: #fff;
+  color: var(--wc-suit, var(--wc-ink-soft));
+}
+
+/* Nearly filling the tile, and at a heavier weight than the default 1.7. Both are needed: scaling
+   an SVG scales its stroke too, but a mark this small still lands on sub-pixel strokes that the
+   renderer washes out to grey — the extra weight is what keeps the three suits distinguishable at
+   a glance rather than merely present. */
+.wc-shape-card-mark {
+  width: 0.92rem;
+  height: 0.92rem;
+  display: block;
+  stroke-width: 2.6;
+}
+
+/* The mined tile takes the poison green and a dark skull. It is still the same card shape at the
+   same size, so it reads as "this card, marked" rather than as a different kind of object.
+   The colour is never the *only* signal — the skull's shape carries it too, so the row still
+   parses in greyscale and under any colour-blindness. */
+.wc-shape-card-skulled {
+  background: var(--wc-poison, #8fb04e);
+  border-color: var(--wc-poison-edge, #5c7a2e);
+  color: var(--wc-ink, #191610);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.wc-shape-row.wc-suit-bells .wc-shape-card {
+  --wc-suit: var(--wc-bells);
+}
+.wc-shape-row.wc-suit-keys .wc-shape-card {
+  --wc-suit: var(--wc-keys);
+}
+.wc-shape-row.wc-suit-moons .wc-shape-card {
+  --wc-suit: var(--wc-moons);
 }
 
 /* ---------- the bank meter (DLR-80, AC4/AC5/AC8/AC9) ---------- */

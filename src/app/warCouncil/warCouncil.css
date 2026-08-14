@@ -28,6 +28,13 @@
   --wc-keys: #5f93a8;
   --wc-moons: #9c7cb8;
 
+  /* The mined-card green. Deliberately a sickly yellow-green rather than a felt green — it must
+     not read as "the table" — and light enough to carry the dark skull glyph at full contrast.
+     Not a suit colour: it names a card's *state*, which is why it sits apart from the three
+     above. The developer's to retune. */
+  --wc-poison: #8fb04e;
+  --wc-poison-edge: #5c7a2e;
+
   --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
   --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
 
@@ -85,6 +92,15 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Every `SuitMark` carries this class alongside whatever its call site passes. The symbols in
+   `SuitSymbolSheet` deliberately set no `strokeWidth` attribute, so this is the one place the
+   default glyph weight is stated — and because `stroke-width` inherits, it reaches the paths
+   inside each `<use>` shadow tree. A call site that needs a heavier mark overrides it on its own
+   class; see `.wc-shape-card-mark` in `warCouncilHunt.css`. */
+.wc-suit-mark {
+  stroke-width: 1.7;
 }
 
 /* ---------- status band ---------- */
