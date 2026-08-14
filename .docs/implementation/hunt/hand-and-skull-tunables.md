@@ -92,32 +92,40 @@ a rank or a health total at a call site.
 
 | Key | Value | Status |
 | --- | --- | --- |
-| `PLAYER_START_HEALTH` | `25` | **settled** |
-| `QUARRY_ENCOUNTER_HEALTH` | `[1000]` | **a placeholder — the developer's** |
+| `PLAYER_START_HEALTH` | `10` | **provisional** — set from play 2026-08-14 |
+| `QUARRY_ENCOUNTER_HEALTH` | `[400]` | **provisional** — set from play 2026-08-14 |
 | `ENCOUNTER_PLAYER_RESTORE` | `0` | not built, still no consumer |
 | `SIMULTANEOUS_DEPLETION_WINNER` | `DuelSide.Quarry` | settled |
 
-**The two totals are asymmetric on purpose.** The player's 25 is a small integer held in the head;
-the Quarry's lands in the hundreds or thousands because it absorbs `bank × multiplier`. The design
-names Balatro's *4 hands, 3 discards* against score requirements in the thousands as the same shape.
-At 2–4 health lost per hand, 25 is roughly eight hands.
+**The two totals are asymmetric on purpose.** The player's 10 is a small integer held in the head;
+the Quarry's lands in the hundreds because it absorbs `bank × multiplier`. The design names
+Balatro's *4 hands, 3 discards* against score requirements in the thousands as the same shape.
 
-25 replaced DLR-66's 1,350, which belonged to the retired Standing arithmetic. One consequence worth
-knowing: `duelHealthBars`'s denominator changed scale by ~54×, so the player's bar now moves in nine
-or so discrete steps of 1 rather than draining smoothly. Whether that reads well is a visual question
-for the developer.
+### Both totals came from play, and neither is settled
 
-### The Quarry's health is a labelled placeholder, not a decision
+**Neither number is derived.** The design states outright that CPU health cannot be derived honestly
+from arithmetic: it depends on how large real cash-outs get, which depends on how long streaks
+actually run, and that is a function of play. The player's total is the same kind of number.
 
-`QUARRY_ENCOUNTER_HEALTH = [1000]` and **the code says so in its own comment**. The design states
-outright that CPU health cannot be derived honestly yet: it depends on how large real cash-outs get,
-which depends on how long streaks actually run, and that is a function of play rather than
-arithmetic.
+Both have moved, which is why they are marked provisional rather than settled:
 
-The anchor behind 1000 is written beside it so it can be argued with rather than trusted: 25 player
-health is roughly eight hands; the design's worked hand deals 173 but wins five of six tricks, and a
-hand that trades evenly deals perhaps a third of that; eight hands at ~125 is ~1,000. **That is an
-anchor, not a derivation.**
+| When | Player | Quarry | Why |
+| --- | --- | --- | --- |
+| DLR-66 | 1,350 | — | belonged to the retired Standing arithmetic |
+| DLR-80 | 25 | `[1000]` placeholder | the placeholder's anchor was reasoned against the Quarry's since-removed rule-break, which roughly halved a hand's damage |
+| 2026-08-13 | 25 | `[450]` | first winning session — one hand dealt 136 damage for 1 health lost, so 450 is about three hands |
+| 2026-08-14 | **10** | **`[400]`** | 25 left the player's bar never actually under threat inside a three-hand encounter, which also made throwing trick 1 nearly free (no bank to forfeit yet) |
+
+**Neither has been played at its current value.** Expect both to move again.
+
+**When retuning the Quarry's total, know that damage is roughly quadratic in streak length** — the
+bank and the multiplier both climb per trick taken and cash as their product, so the number is far
+more sensitive to how often a streak breaks than to how many tricks are won overall. A hand that
+trades evenly deals a small fraction of one that runs five in a row.
+
+One consequence of the player's small total worth knowing: `duelHealthBars`'s denominator is now 10,
+so the player's bar moves in ten discrete steps of 1 rather than draining smoothly as it did from
+1,350. Whether that reads well is a visual question for the developer.
 
 **It dropped from two entries to one** — the second encounter is out of scope. The array type and
 `quarryHealthForEncounter`'s `RangeError` are both kept unchanged: the throw is what turns a stale
