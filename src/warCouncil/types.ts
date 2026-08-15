@@ -69,7 +69,7 @@ export interface RoundState {
    *  every state spread thereafter, so a skull cannot appear or vanish mid-hand. A card that
    *  changes hands keeps its skull, which is what `trickIsSkulled` tests against. */
   readonly skulledCards: readonly Card[]
-  /** AC4/AC5 — the summed ranks of every trick taken since the last cash-out. Only ever climbs
+  /** AC4/AC5 — the number of tricks taken in a row since the last cash-out. Only ever climbs
    *  until it cashes, which is the property the retired pending-damage figure lacked. */
   readonly bank: number
   /** AC9 — the number of tricks taken in a row. Zero on any damage taken. */

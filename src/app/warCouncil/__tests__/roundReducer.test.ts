@@ -107,10 +107,10 @@ describe('CarryOn commits a pending Quarry lead', () => {
       winner: PlayerSide.Player,
       resolution: {
         outcome: TrickOutcome.CleanWin,
-        bankAdded: 11,
+        bankAdded: 1,
         cashOut: 0,
         damageToPlayer: 0,
-        bank: 11,
+        bank: 1,
         multiplier: 1,
         cashedAtHandEnd: false,
       },

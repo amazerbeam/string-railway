@@ -1,7 +1,7 @@
 # War Council — `src/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, PT-001
+**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, PT-001, PT-002
 
 ## Responsibility
 
@@ -31,6 +31,12 @@ thirteen; there are no capture piles; and a trick's whole effect — what it ban
 what damage it deals — is decided the moment it resolves rather than once at the end. See
 [skulls](skulls.md) and [the bank and the cash-out](bank-and-cash-out.md).
 
+**PT-002 changed what the bank counts, and nothing else in the loop.** It banked both cards' printed
+ranks until 2026-08-14; it now banks **1 per trick taken**, so both terms of the cash-out equation
+are the streak length and a streak of _n_ cashes exactly `n × n` — 1, 4, 9, 16, 25, 36 across a hand.
+`resolveTrickBank` reads no card at all as a result and lost its `trickCards` parameter. The four
+outcomes, the reset, the `finalTrick` fold and `incomingFrom` are untouched.
+
 ## Key types & exports
 
 | Export                                                                       | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | File                    |
@@ -54,7 +60,7 @@ what damage it deals — is decided the moment it resolves rather than once at t
 | `suitShape`, `SuitShape`                                                     | **DLR-80.** One row per suit — `{ suit, held, skulled }` — in `ALL_SUITS` order, including a zero row for a stripped suit. **Carries no rank field**, so the never-reveal-a-rank rule is enforced by the type rather than by the component                                                                                                                                                                                                                                                                                                                                                               | `skulls.ts`             |
 | `trickIsSkulled`                                                             | **DLR-80.** True if **any** card in the trick is skulled, not just the Quarry's — so a skull that changed hands via a Fox exchange survives with no special case                                                                                                                                                                                                                                                                                                                                                                                                                                         | `skulls.ts`             |
 | `TrickOutcome`, `trickOutcomeFor`, `isTaken`                                 | **DLR-80.** The four-outcome table as a total function of two booleans (`CleanWin`/`Dodge` take the trick, `CleanLoss`/`SkullWin` take damage), plus whether an outcome banks or hits — read from a total `Record`, so a fifth outcome is a compile error                                                                                                                                                                                                                                                                                                                                                | `bank.ts`               |
-| `resolveTrickBank`, `BankState`, `TrickResolution`                           | **DLR-80 — the whole scoring loop in one pure function.** Banks both printed ranks and increments the streak on a taken trick; cashes `bank × multiplier`, deals `DAMAGE_PER_HIT` and resets both on a hit. `finalTrick` folds the end-of-hand cash-out in rather than firing a second event — safe because exactly one of the two can be non-zero                                                                                                                                                                                                                                                       | `bank.ts`               |
+| `resolveTrickBank`, `BankState`, `TrickResolution`                           | **DLR-80 — the whole scoring loop in one pure function; what it banks reworked by PT-002.** Banks **1 per trick taken** and increments the streak, so both terms climb together and a streak of _n_ cashes `n × n`; cashes `bank × multiplier`, deals `DAMAGE_PER_HIT` and resets both on a hit. `finalTrick` folds the end-of-hand cash-out in rather than firing a second event — safe because exactly one of the two can be non-zero. **Four parameters since PT-002** — `trickCards` went with the last card read; `bank` still holds a trick count under its old name                                                                                                                                                                                                                                                       | `bank.ts`               |
 | `incomingFrom`                                                               | **DLR-80.** The program's only `PlayerSide` → `DuelSide` crossing, replacing the retired `duelSideDamage`. Keyed by the side each figure **depletes**: the player eats `damageToPlayer`, the Quarry eats `cashOut`                                                                                                                                                                                                                                                                                                                                                                                       | `bank.ts`               |
 | `chooseCpuCard`, `chooseCpuFoxChoice`, `chooseCpuWoodcutterChoice`           | The three independently-testable sub-decisions of the CPU heuristic — card choice, and the Fox/Woodcutter ability choices                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `cpuPlayer.ts`          |
 | `chooseCpuMove`, `CpuMove`                                                   | Composes the three sub-decisions into one `{ card, choice? }` move                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `cpuPlayer.ts`          |
@@ -77,9 +83,10 @@ what damage it deals — is decided the moment it resolves rather than once at t
   weight, why a trick is skulled if _any_ card in it is, and how `SuitShape` makes "never reveal a
   rank" a property of the type rather than of the component (DLR-80, PT-001).
 - [The bank, the streak, and the cash-out](bank-and-cash-out.md) — the four-outcome table, what a
-  taken trick and a hit each do, why the end-of-hand cash-out folds into the sixth trick's resolution
-  instead of firing separately, why there is no division anywhere in the new arithmetic, and
-  `incomingFrom` as the single seat → side crossing (DLR-80).
+  taken trick and a hit each do, **why a streak of _n_ cashes exactly `n × n`** now that the bank
+  counts tricks rather than card values, why the end-of-hand cash-out folds into the sixth trick's
+  resolution instead of firing separately, why there is no division anywhere in the new arithmetic,
+  and `incomingFrom` as the single seat → side crossing (DLR-80, PT-002).
 - [The CPU heuristic and the intent telegraph](cpu-heuristic.md) — `cpuPlayer.ts`'s five pure
   decision functions and what they do and don't know about, plus (DLR-52) the intent/commit split:
   how `quarryIntent` previews the Quarry's next move as a suit-and-stance shape without revealing
@@ -191,9 +198,20 @@ RoundPhase.AwaitingLead`), so the two can never disagree.
   `duelSideDamage`, `HuntNotScorable`), `spoils.ts` and `declareHunt.ts` no longer exist, along with
   the enumeration spec that pinned the Standing tables against the design document and the stale
   `playCard.ts` comment about which pile `spoils` summed. The per-render cost note went with them
-  too: `resolveTrickBank` is a fixed number of additions over exactly two cards, called once when a
-  trick completes rather than once per render, so there is nothing left on a hot path to consider
-  memoising.
+  too: `resolveTrickBank` is a fixed handful of integer additions, called once when a trick completes
+  rather than once per render, so there is nothing left on a hot path to consider memoising. **PT-002
+  reduced that further** — it no longer reads either card.
+- **The `bank` field's name no longer describes what it holds** (PT-002). It is a **trick count**,
+  not a rank sum, and renaming it (`streakTricks`, say) was deliberately left out of a play-test
+  ticket — it would touch `bank.ts`, `playCard.ts`, `types.ts`, `deal.ts`, `roundReducer.ts`,
+  `WarCouncilRound.tsx`, `BankMeter.tsx` and roughly ten test files. Every one is compiler-checked, so
+  the rename is safe whenever someone wants it. `types.ts` and `bank.ts`'s doc comments were restated
+  to say "the number of tricks taken in a row", so the identifier is the only thing left describing
+  the retired model. **Whether to rename it is the developer's call.**
+- **Nothing yet moves the two terms independently** (PT-002). `bank` and `multiplier` are kept as two
+  fields specifically so a planned one-time-use **"+1 ×"** item can push the multiplier without
+  touching the trick count — but no item, shop, or currency exists, so today the two are always equal
+  for the whole of a streak. The shape is the affordance; the consumer is a later contract.
 - **The Quarry does not avoid _leading_ a skulled card** (DLR-80). `chooseCpuCard`'s skull-dump
   branch applies only when following; the lead is the unchanged lowest-legal-card rule. This is the
   deliberate minimum the ticket scoped — a lead-time skull-avoidance rule is a second behaviour with

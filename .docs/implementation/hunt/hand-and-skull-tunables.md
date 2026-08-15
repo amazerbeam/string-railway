@@ -93,13 +93,16 @@ a rank or a health total at a call site.
 | Key | Value | Status |
 | --- | --- | --- |
 | `PLAYER_START_HEALTH` | `10` | **provisional** — set from play 2026-08-14 |
-| `QUARRY_ENCOUNTER_HEALTH` | `[400]` | **provisional** — set from play 2026-08-14 |
+| `QUARRY_ENCOUNTER_HEALTH` | `[10]` | **provisional** — set by the developer 2026-08-14 (PT-002) |
 | `ENCOUNTER_PLAYER_RESTORE` | `0` | not built, still no consumer |
 | `SIMULTANEOUS_DEPLETION_WINNER` | `DuelSide.Quarry` | settled |
 
-**The two totals are asymmetric on purpose.** The player's 10 is a small integer held in the head;
-the Quarry's lands in the hundreds because it absorbs `bank × multiplier`. The design names
-Balatro's *4 hands, 3 discards* against score requirements in the thousands as the same shape.
+**The two totals stopped being asymmetric when the bank stopped counting card values.** Until PT-002
+the Quarry's health lived in the hundreds because it absorbed a rank-sum `bank × multiplier` — a hand
+dealt about 84. Under `n × n` a hand pays a **mean of ~7.2** (range 0–36, over 6,000 simulated hands),
+so 400 would have been roughly **55 hands** of grinding. Both bars now stand at **10**, and the
+design's Balatro comparison — small integers held in the head against requirements in the thousands —
+no longer describes this game's shape at all.
 
 ### Both totals came from play, and neither is settled
 
@@ -114,18 +117,30 @@ Both have moved, which is why they are marked provisional rather than settled:
 | DLR-66 | 1,350 | — | belonged to the retired Standing arithmetic |
 | DLR-80 | 25 | `[1000]` placeholder | the placeholder's anchor was reasoned against the Quarry's since-removed rule-break, which roughly halved a hand's damage |
 | 2026-08-13 | 25 | `[450]` | first winning session — one hand dealt 136 damage for 1 health lost, so 450 is about three hands |
-| 2026-08-14 | **10** | **`[400]`** | 25 left the player's bar never actually under threat inside a three-hand encounter, which also made throwing trick 1 nearly free (no bank to forfeit yet) |
+| 2026-08-14 | **10** | `[400]` | 25 left the player's bar never actually under threat inside a three-hand encounter, which also made throwing trick 1 nearly free (no bank to forfeit yet) |
+| 2026-08-14 (PT-002) | **10** | **`[10]`** | the bank stopped counting card values, so a hand's damage fell from ~84 to ~7.2 — the developer's stated number, "the first enemy at 10 hp", set in the same session as the rule change |
 
 **Neither has been played at its current value.** Expect both to move again.
 
-**When retuning the Quarry's total, know that damage is roughly quadratic in streak length** — the
-bank and the multiplier both climb per trick taken and cash as their product, so the number is far
-more sensitive to how often a streak breaks than to how many tricks are won overall. A hand that
-trades evenly deals a small fraction of one that runs five in a row.
+**A 10-health Quarry is a walkover, and that was known and accepted when it was set.** Simulated over
+3,000 encounters against a 10-health player: random legal play wins **63.8%**, ordinary play 73.3%,
+strong play 85.0%, and a fight lasts **~1.9 hands**. About a quarter of hands pay ≥10 on their own, so
+a single good hand ends it — and **~37% of all damage dealt is discarded as overkill**, which also
+means the top of the payout curve (a 16, 25 or 36 cash-out) is invisible in play. The developer's own
+framing is that the shop will raise the player's damage later, and that the health numbers move after
+playing. The consequence table for 15 / 20 / 25 / 30 is in the contract's `plan.md` → Risks.
 
-One consequence of the player's small total worth knowing: `duelHealthBars`'s denominator is now 10,
-so the player's bar moves in ten discrete steps of 1 rather than draining smoothly as it did from
-1,350. Whether that reads well is a visual question for the developer.
+**When retuning either total, know that damage is quadratic in streak length — exactly, now.** The
+bank and the multiplier both climb by 1 per trick taken and cash as their product, so a streak of _n_
+pays precisely `n × n`. The total is therefore far more sensitive to how often a streak breaks than to
+how many tricks are won overall: a hand that trades evenly deals a small fraction of one that runs
+five in a row. PT-002 made this relationship exact rather than approximate — the printed ranks used to
+add roughly ±20% of jitter around it that no decision controlled.
+
+One consequence of both totals being small: `duelHealthBars`'s denominator is now 10 on **both** sides,
+so each bar moves in ten discrete steps of 1 rather than draining smoothly as the player's did from
+1,350 and the Quarry's did from the hundreds. Whether that reads well is a visual question for the
+developer.
 
 **It dropped from two entries to one** — the second encounter is out of scope. The array type and
 `quarryHealthForEncounter`'s `RangeError` are both kept unchanged: the throw is what turns a stale
@@ -165,5 +180,5 @@ The reasoning, in the design's own terms: six tricks give seven possible outcome
 four bands without one trick swinging a whole band — and the streak multiplier replaces what the
 bands were for. The declaration existed to select a multiplier table and a card-value scheme, so it
 had nothing left to select. Rank inversion and the pile swap died with the declaration. And rounding
-went because **no fractional damage is producible any more**: the bank is a sum of integer ranks and
-the multiplier an integer count, so there is no division anywhere in the new arithmetic.
+went because **no fractional damage is producible any more**: both the bank and the multiplier are
+integer counts (of tricks, since PT-002), so there is no division anywhere in the new arithmetic.

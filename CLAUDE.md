@@ -29,7 +29,7 @@ This project is deliberately organised so each fact is stated once. When somethi
 | Jira status vocabulary, what each board status means, which transitions the `/fb-*` commands automate | `.claude/skills/management-jira/SKILL.md` → its status-model section |
 | Jira label vocabulary — the closed layer set (`ui` / `engine` / `infra` / `design` / `spike`) and the `playable` marker | `.claude/skills/management-jira/SKILL.md` → its label-vocabulary section |
 | How to write React/TypeScript here — conventions, tunables, testing posture | `.claude/skills/react-frontend/SKILL.md` + its `references/engineering-standards.md` |
-| How a game screen is laid out and operated — viewport shell, zoning, interaction cost, navigating a collection of controls | `.claude/skills/game-ux/SKILL.md` + its `references/full-viewport-layout.md` |
+| How a game screen is laid out and operated — viewport shell, zoning, interaction cost, navigating a collection of controls; and how feedback about a screen becomes a redesign | `.claude/skills/game-ux/SKILL.md` + its `references/full-viewport-layout.md` and `references/feedback-to-redesign.md` |
 | Game design frameworks, designer research, the critique checklist | `.docs/design/design-principles.md` |
 | What the game's rules currently are, and which are still undecided | `.docs/game_rules/the-hunt.md` — see the three-doc split below |
 | How implemented code actually works — per-module mechanics, key types, enforced rules | `.claude/skills/implementation-doc-writer/SKILL.md`, output in `.docs/implementation/` |
@@ -137,7 +137,7 @@ Glob `.claude/skills/*/SKILL.md` to see what actually exists — never classify 
 | `management-jira` | creating and transitioning Jira tickets |
 | `skill-creator` | writing a new skill |
 | `game-designer` | critiquing and developing game designs; anything under `.docs/design/` |
-| `game-ux` | the game-screen layer — full-viewport no-scroll layout, zoning, interaction cost, keyboard navigation of a hand or board |
+| `game-ux` | the game-screen layer — full-viewport no-scroll layout, zoning, interaction cost, keyboard navigation of a hand or board; and turning play-session feedback about a screen into a redesign doc |
 | `implementation-doc-writer` | maintaining `.docs/implementation/` — per-module docs on how shipped code actually works — and `.docs/game_rules/the-hunt.md`, the game's current ruleset |
 
 **`react-frontend` applies to virtually every code task in this repo**, so `Skill: react-frontend` is the normal value in a task, not `none`. Reserve `Skill: none — <reason>` for genuinely non-code work: a spec document, a Jira-only task, a decision hand-off to the developer. Never name a skill that does not resolve to a real file on disk; a plan that tells the executor to invoke a missing skill wastes a turn.

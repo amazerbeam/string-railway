@@ -90,15 +90,15 @@ export const ENCOUNTER_OUTCOME: Readonly<Record<DuelSide, string>> = {
 /** §3.2's four outcomes, as the player is told them. Placeholder copy: the wording is the
  *  developer's. */
 export const TRICK_OUTCOME_MESSAGE: Readonly<Record<TrickOutcome, string>> = {
-  [TrickOutcome.CleanWin]: 'Clean trick, taken. Both cards banked.',
-  [TrickOutcome.Dodge]: 'Skull dodged. Both cards banked.',
-  [TrickOutcome.CleanLoss]: 'Clean trick lost. 1 damage — the bank cashes.',
-  [TrickOutcome.SkullWin]: 'You ate the skull. 1 damage — the bank cashes.',
+  [TrickOutcome.CleanWin]: 'Clean trick, taken. The streak climbs.',
+  [TrickOutcome.Dodge]: 'Skull dodged. The streak climbs.',
+  [TrickOutcome.CleanLoss]: 'Clean trick lost. 1 damage — the streak cashes.',
+  [TrickOutcome.SkullWin]: 'You ate the skull. 1 damage — the streak cashes.',
 }
 
 export const SKULL_MARK_LABEL = 'Skull'
-export const BANK_LABEL = 'Bank'
-export const MULTIPLIER_LABEL = 'Streak'
+export const TRICKS_LABEL = 'Tricks'
+export const MULTIPLIER_LABEL = 'Multiplier'
 export const QUARRY_SHAPE_LABEL = 'What the Quarry holds'
 
 /** One suit row's own phrase (AC11) — never a rank. The single owner of this wording: both

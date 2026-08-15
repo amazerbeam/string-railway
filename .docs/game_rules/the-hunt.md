@@ -23,15 +23,17 @@ the app today except where a rule is marked **[not built]**.
 >   (section 3).
 > - The skull **inverts the trick**: on a clean trick you want to win it, on a skull trick you want
 >   to lose it (section 7).
-> - Taking a trick banks both cards' ranks and climbs a **streak multiplier**; taking damage costs
->   **1 health**, cashes `bank × multiplier` into the Quarry, and resets both to zero (sections 7–8).
+> - Taking a trick banks it and climbs a **streak multiplier**; taking damage costs **1 health**,
+>   cashes `bank × multiplier` into the Quarry, and resets both to zero (sections 7–8).
 > - Damage now lands **per trick, mid-hand** — so an encounter can end on trick 3 (section 8).
 >
-> **The whole of it is playable, and it has been won.** The Quarry's health — the one figure DLR-80
-> left as a placeholder — was set from a play session on 2026-08-13 and the first encounter was
-> beaten in three hands the same day. **Both health totals were re-set on 2026-08-14** and now stand
-> at **10 for the player and 400 for the Quarry** (section 8); neither has been played at its
-> current value.
+> **The whole of it is playable, and it has been won.**
+
+> **The bank counts tricks, not card values — PT-002, 2026-08-14.** DLR-80's bank added **both cards'
+> printed ranks** on every trick taken. It now adds **1 per trick**, so both terms of the cash-out are
+> the same number — the length of your streak — and a streak of _n_ cashes exactly **`n × n`**: 1, 4,
+> 9, 16, 25, 36 across a hand (section 7). Nothing else about the loop moved. **Both health totals now
+> stand at 10** (section 8), because a hand that used to deal about 84 now deals about 7.
 
 ---
 
@@ -318,7 +320,11 @@ scored later. What a trick does is section 7, and it happens immediately.
 
 ## 7. The four outcomes, the bank and the streak
 
-**[settled]** — the whole of this section (play-test 2 §3.2, §3.3).
+**[settled]** — the whole of this section. The four outcomes and the cash-out equation are play-test
+2 §3.2 and §3.3; **what the bank counts is not, and no design document covers it** — play-test 2 §3.3
+specifies the rank sum this section no longer describes. The trick-count bank was decided in session
+on 2026-08-14 and the measurement behind it is recorded in `ideas.md` → "Worth costing" rather than in
+a design section. Where the two disagree, this document follows the code.
 
 Every trick resolves into exactly one of four outcomes, decided by two facts: **did you win it**, and
 **was it a skull trick**.
@@ -333,8 +339,8 @@ lose it.
 
 ### Taking a trick — a clean win, or a dodge
 
-Both cards' **printed ranks are added to your bank**, and your **streak multiplier goes up by one**.
-Nothing else happens: no damage is dealt in either direction.
+**One is added to your bank**, and your **multiplier goes up by one**. Nothing else happens: no damage
+is dealt in either direction.
 
 A clean win and a dodge are **identical in every respect** but their name.
 
@@ -350,26 +356,47 @@ A clean loss and eating a skull are **identical in every respect** but their nam
 
 ### The bank
 
-**The bank only ever climbs** until it cashes. It is the summed printed ranks of every card in every
-trick you have taken since the last cash-out — both cards from each trick, yours and the Quarry's.
+**The bank only ever climbs** until it cashes. It is **the number of tricks you have taken** since the
+last cash-out — one per trick, whatever the cards in it were.
 
-A card's value is its **printed rank**, always. There is no inversion, no modifier, and no
-per-card exception anywhere in this game.
+**The cards you take are worth nothing in themselves.** A trick of two 11s and a trick of two 2s bank
+exactly the same: one. Ranks decide who _wins_ a trick (section 6) and nothing else.
 
 ### The streak multiplier
 
 **The multiplier is the number of tricks you have taken in a row.** Clean wins and dodges both count;
 it starts at zero each time it resets, and any damage you take resets it.
 
-So the bank and the multiplier climb together while you keep taking tricks, and a cash-out is worth
-the product of the two. Six tricks taken in a row cash for far more than six tricks taken with a loss
-in the middle.
+### So a streak of _n_ cashes `n × n`
+
+The bank and the multiplier climb together — by exactly one each, per trick taken — so while a streak
+runs they are the same number, and a cash-out is worth its square:
+
+| Tricks taken in a row | 1   | 2   | 3   | 4   | 5   | 6   |
+| --------------------- | --- | --- | --- | --- | --- | --- |
+| **Cashes for**        | 1   | 4   | 9   | 16  | 25  | 36  |
+
+A whole hand taken in one unbroken run pays **36**. One loss in the middle of that same hand costs far
+more than a sixth of it: taking three, losing the fourth, then taking the last two pays **9 + 4 = 13**.
+So **where** your losses fall matters more than how many you take, and a loss in the middle of a hand
+is worse than one at either end.
+
+The two terms are shown separately on screen rather than as one number, and they are kept separate in
+the rules for the same reason: an item that raises the multiplier without adding tricks is a thing
+this game intends to have. Nothing does it yet.
 
 > **This replaced `Spoils × Standing`, and the shape of the reward is the point of the change.** The
 > old equation was scored once, at the end of thirteen tricks, off a multiplier table read from the
 > final trick count — so a total could _fall_ when you won a trick, and nothing was settled until the
 > last card. The bank only climbs, the multiplier only climbs, and both cash on an event the player
 > can see coming.
+
+> **Card values left the bank on 2026-08-14, and this is what changed.** The bank was the summed
+> printed ranks of every card in every trick taken. The payout is now **exactly predictable from the
+> tricks alone** — the same shape of hand always pays the same number, where before the printed ranks
+> swung it by roughly ±20% with no decision controlling that swing. Whether predictable reads as
+> _readable_ or merely as _flat_ is the open question, and it is recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
 
 ### At the end of the sixth trick, the bank cashes
 
@@ -391,18 +418,18 @@ never double-counts its last trick.
 
 Both sides hold **health**, and the encounter ends when either total reaches zero.
 
-| Value                              | Status                                               |
-| ---------------------------------- | ---------------------------------------------------- |
-| Player's starting health           | **10** — **[provisional]** (set 2026-08-14)          |
-| Quarry's health                    | **400** — **[provisional]** (set 2026-08-14)         |
-| Damage to the player, per event    | **1**, every time — **[settled]**                    |
-| Health restored between encounters | **None** — **[not built]**, and nothing reads it yet |
-| Both bars emptying together        | **The player loses**                                 |
+| Value                              | Status                                                        |
+| ---------------------------------- | ------------------------------------------------------------- |
+| Player's starting health           | **10** — **[provisional]** (set 2026-08-14)                   |
+| Quarry's health                    | **10** — **[provisional]** (set 2026-08-14, with the new bank) |
+| Damage to the player, per event    | **1**, every time — **[settled]**                             |
+| Health restored between encounters | **None** — **[not built]**, and nothing reads it yet          |
+| Both bars emptying together        | **The player loses**                                          |
 
-**The two numbers are asymmetric on purpose.** The player's 10 is a small integer you can hold in
-your head; the Quarry's total lands in the hundreds because it absorbs `bank × multiplier`.
-Play-test 2 §5 names Balatro's _4 hands, 3 discards_ against score requirements in the thousands as
-the same shape.
+**The two numbers are now the same, and they were not before.** The Quarry's total sat in the
+hundreds for as long as the bank summed card values and a hand dealt about 84. Once the bank counted
+tricks instead, a hand dealt about **7** — so 400 would have been roughly 55 hands, and the figure
+came down with the payout it was sized against.
 
 ### Both totals were set by playing — **[provisional]**
 
@@ -410,10 +437,11 @@ the same shape.
 stated outright that the Quarry's health could not be derived honestly from arithmetic, because it
 depends on how large real cash-outs get and that is a function of play.
 
-The Quarry went to **450 on 2026-08-13** from the first winning session, and both numbers were
-re-set on **2026-08-14**: the player to **10**, the Quarry to **400**. They are marked provisional
-rather than settled because each has moved once already and neither has been played at its current
-value.
+The Quarry went to **450 on 2026-08-13** from the first winning session, and to **400** on
+2026-08-14 alongside the cut in player health. It came down to **10** later the same day, set by the
+developer in the session that changed what the bank counts. The player's **10** has not moved since.
+Both are provisional because each has moved more than once and neither has been played at its
+current value.
 
 **What the player's 10 changes.** At 25 the player's bar never came under threat inside a
 three-hand encounter — it was sized as a **run-level** resource spent across several encounters, not
@@ -422,15 +450,23 @@ as tension within one, and the cheapness of a single health point had a second c
 was close to free. At 10, a hand's worth of losses is a real fraction of the bar. Whether that makes
 the fight tense or merely punishing is the thing to watch.
 
+**A 10-health Quarry is a walkover, and that was accepted when it was set.** A single good hand can
+pay 36, which is more than three times what it takes to win — so about a quarter of hands end the
+encounter on their own, a fight lasts under two hands, and even random legal play wins most of the
+time. The whole top of the payout table is invisible in practice, because everything past 10 is
+discarded. The stated intent is that later upgrades raise the player's damage and the health numbers
+move with them; both are expected to change after playing.
+
 > **The retired 1,000 was not wrong by arithmetic so much as by opponent.** Every figure it was
 > reasoned from had been measured against the Quarry's since-removed rule-break (section 9), which
 > roughly halved a hand's damage. Play-test 3 §6.3 concluded 1,000 made the encounter unwinnable;
 > play-test 4 §7.1 closed that finding when the same hands started dealing more than twice as much.
 
-**One thing worth knowing before retuning the Quarry's total:** damage is roughly **quadratic in
-streak length**, since the bank and the multiplier both climb per trick taken and cash as their
-product. So that number is far more sensitive to how often a streak breaks than to how many tricks
-are won overall — a hand that trades evenly deals a small fraction of one that runs five in a row.
+**One thing worth knowing before retuning the Quarry's total:** damage is **exactly quadratic in
+streak length** — a streak of _n_ pays `n × n` and nothing else feeds it. So that number is far more
+sensitive to how often a streak breaks than to how many tricks are won overall: a hand that trades
+evenly deals a small fraction of one that runs five in a row. This used to be only _roughly_ true,
+with the printed ranks adding noise around it.
 
 ### Damage lands per trick, and an encounter can end mid-hand
 
@@ -459,8 +495,12 @@ remaining tricks are not played, and the outcome is stated in place of the table
 > [Known tensions](#known-tensions-recorded-not-resolved).
 
 **Surplus damage is discarded.** Damage past a depleted bar is not carried, banked, or converted.
-Dealing 5,000 into a bar with 200 left is exactly the same as dealing 200. **Health is never
-negative** — a bar stops at zero.
+Cashing 36 into a bar with 4 left is exactly the same as cashing 4. **Health is never negative** — a
+bar stops at zero.
+
+> **This is no longer a rare edge case.** With the Quarry at 10 and a good hand paying up to 36, more
+> than a third of all damage dealt is thrown away. Paying the surplus back as currency is a stated
+> intention and is **[not built]** — see [section 10](#10-between-hands-and-the-run).
 
 ### What closing a hand takes
 
@@ -534,7 +574,7 @@ design document, not from this section.
 | The Quarry's next-trick intent      | **Telegraphed** before you commit — the suit it is about to play, plus its stance: **leading**, or, when it is following you, **pressing** (this card takes the trick) or **ducking** (it does not). Never the exact card. |
 | The Quarry's trick count            | Public                                                                                                                                                                                                                     |
 | The Quarry's character and its rule | Always on screen                                                                                                                                                                                                           |
-| **Your bank and your streak**       | **Open — on screen throughout**, together with what the streak would cash for at its current size.                                                                                                                         |
+| **Your tricks and your multiplier** | **Open — on screen throughout** as two separate figures, plus what the streak would cash for now.                                                                                                                         |
 | What the last trick did             | **Stated** — which of the four outcomes it was, and what it cost or banked.                                                                                                                                                |
 | **Both sides' health**              | **Open — two bars**, each against its own maximum, moving as each trick's damage lands.                                                                                                                                    |
 
@@ -550,8 +590,15 @@ rather than as one hand.
 
 - **Forage** is the only thing you do between hands: edit the 33-card deck the next hand is dealt
   from. It may edit exactly four things — a card's **value**, its **ability**, its **suit**, and the
-  **decree**. There is no shop and no flat score bonus. The budget is **4 edits per encounter**
-  (**[provisional]**). **The player holds no skulls of their own**, and Forage cannot add any.
+  **decree**. The budget is **4 edits per encounter** (**[provisional]**). **The player holds no
+  skulls of their own**, and Forage cannot add any.
+- **A shop, a currency, and a flat payout for winning** are all **[not built]** and none is designed.
+  The stated intention is that surplus cash-out damage (section 8) is paid back as money, that winning
+  an encounter also pays a flat amount, and that the shop then raises the player's damage — which is
+  what is expected to make the `n × n` payout scale past the early game. **Nothing of it exists**:
+  there is no currency, no shop, and no consumer for either. Note also that a card's **value** is one
+  of the four things Forage may edit, and since 2026-08-14 a card's rank decides only who wins a
+  trick — it feeds no scoring at all (section 7).
 - **A run** is a fixed sequence of encounters against different Quarries. **Your health emptying ends
   the run**, and that is both enforced and reachable. What is not built is the _sequence_: nothing
   runs one encounter after another, and the between-encounter restore is read by nothing. Only
@@ -597,7 +644,7 @@ Removed by DLR-80, **not deferred**. Nothing in the code refers to any of it.
 | **Pending damage on the health bars**               | The bank, which unlike the pending figure **only climbs**.                                                       |
 | **Damage applied once, at the end**                 | The cash-out (section 8), which fires several times a hand.                                                      |
 | **The confirmation press**                          | Nothing. Damage lands as it happens.                                                                             |
-| **Health at 1,350 / 1,600**                         | 10 and 400, both set from play (section 8).                                                                      |
+| **Health at 1,350 / 1,600**                         | 10 and 10, both set from play (section 8).                                                                       |
 
 ### The Quarry's character power — removed 2026-08-13, deferred not deleted
 
@@ -647,14 +694,15 @@ the mechanics themselves are documented in `../implementation/`.
 | Trick resolution, Witch-as-trump              | settled                          | `src/warCouncil/resolveTrick.ts`                                                                                                 | —                                                       |
 | Winner leads next, Swan's exception           | settled                          | `src/warCouncil/playCard.ts`, `abilities.ts`                                                                                     | —                                                       |
 | The four outcomes                             | settled                          | `src/warCouncil/bank.ts` — `trickOutcomeFor`, `isTaken`                                                                          | —                                                       |
-| Card value = printed rank                     | settled                          | `src/warCouncil/bank.ts` — `resolveTrickBank` sums `card.rank`; no value function exists                                         | —                                                       |
+| Cards have no value; the bank counts tricks   | settled — since PT-002           | `src/warCouncil/bank.ts` — `resolveTrickBank` banks a literal 1 per trick taken; it reads no card at all, and no value function exists | —                                                  |
+| A streak of _n_ cashes `n × n`                | settled                          | `src/warCouncil/bank.ts` — both terms climb by 1 per take, so the product is a square; pinned by `bank.test.ts`'s `[1,4,9,16,25,36]` spec | —                                               |
 | The bank, and that it only climbs             | settled                          | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                    | —                                                       |
 | The streak multiplier, and its reset          | settled                          | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                    | —                                                       |
 | Cash-out on damage (`bank × multiplier`)      | settled                          | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                    | —                                                       |
 | Cash-out at the end of the sixth trick        | settled                          | `src/warCouncil/bank.ts` — `resolveTrickBank`'s `finalTrick` fold                                                                | —                                                       |
 | Damage to the player = 1 per event            | settled                          | `src/hunt/config.ts` — `DAMAGE_PER_HIT`                                                                                          | —                                                       |
 | Player health (10)                            | **provisional** — set 2026-08-14 | `src/hunt/config.ts` — `PLAYER_START_HEALTH`                                                                                     | Developer, after playing                                |
-| Quarry health (400)                           | **provisional** — set 2026-08-14 | `src/hunt/config.ts` — `QUARRY_ENCOUNTER_HEALTH`                                                                                 | Developer, after playing                                |
+| Quarry health (10)                            | **provisional** — set 2026-08-14 | `src/hunt/config.ts` — `QUARRY_ENCOUNTER_HEALTH`                                                                                 | Developer, after playing                                |
 | Damage applied per trick, mid-hand            | settled                          | `src/hunt/encounter.ts` — `applyDamage`; called per resolution by `src/app/warCouncil/roundReducer.ts`                           | —                                                       |
 | The seat → side crossing, once                | settled                          | `src/warCouncil/bank.ts` — `incomingFrom`                                                                                        | —                                                       |
 | Health never negative; surplus discarded      | settled                          | `src/hunt/encounter.ts` — `deplete`, the single clamp                                                                            | —                                                       |
@@ -663,7 +711,9 @@ the mechanics themselves are documented in `../implementation/`.
 | An encounter can end mid-hand, and play stops | settled                          | `src/app/warCouncil/roundReducer.ts` — the `isEncounterResolved` guard in `canAct`                                               | Developer — whether it feels abrupt                     |
 | Health carried hand to hand                   | settled                          | `src/app/warCouncil/roundReducer.ts` owns the live `EncounterState`; `src/App.tsx` carries it between hands                      | —                                                       |
 | No cap on hands per encounter                 | settled — deliberately none      | no cap key exists to read                                                                                                        | Developer, if the tail stalls                           |
-| Bank and streak on screen throughout          | settled                          | `src/app/warCouncil/BankMeter.tsx`                                                                                               | Developer — the visual values                           |
+| Tricks and multiplier on screen throughout    | settled                          | `src/app/warCouncil/BankMeter.tsx`; wording in `labels.ts` — `TRICKS_LABEL`, `MULTIPLIER_LABEL`                                  | Developer — the wording and the visual values           |
+| The two terms stay separately addressable     | settled — an affordance, unused  | `src/warCouncil/bank.ts` — `bank` and `multiplier` are two fields; nothing moves them apart yet                                  | —                                                       |
+| Surplus damage paid back as money             | **not built**                    | nothing — no currency, no shop, and no consumer exists                                                                           | Developer — a later ticket                              |
 | Both sides' health on screen                  | settled                          | `src/app/warCouncil/DuelHealthBars.tsx`, `duelHealthBars.ts`                                                                     | Developer — whether 10 reads well in 1-point steps      |
 | The hand-over tally                           | settled                          | `src/app/warCouncil/RoundOverPanel.tsx`                                                                                          | —                                                       |
 | The Quarry dumps skulls into losing tricks    | settled                          | `src/warCouncil/cpuPlayer.ts` — `chooseCpuCard`'s first branch                                                                   | —                                                       |
@@ -729,11 +779,64 @@ and nothing should be — the shape readout still shows suit and count and never
 **What the developer owns:** whether hump is the right curve, and whether its weights want moving.
 Both answer only to playing. Reverting to an even spread is a one-line change.
 
+### The bank started counting tricks — PT-002, 2026-08-14
+
+**What a player does now that they did not before:** nothing procedurally — no new decision point, no
+new legal-move constraint, no new phase. **What changed is what a decision is worth.** The payout for
+a streak is now readable off the trick count alone (`n × n`: 1, 4, 9, 16, 25, 36), where it used to
+depend on which cards happened to be in the tricks you took. A player can call their next cash-out
+before it fires, which they could not do the day before.
+
+**What is gone:** card values, as a concept. Nothing in this game reads a rank except to decide who
+wins a trick. Rank inversion had already gone at DLR-80; the printed-rank sum was the last thing that
+made a card worth more than another, and it is now the case that a 2 and an 11 are worth the same to
+your bank.
+
+**Engine and screen landed together.** The readout was relabelled in the same contract — "Tricks ×
+Multiplier" rather than "Bank × Streak" — and the four outcome messages no longer say "Both cards
+banked". No rule here is enforced but unreachable, or reachable but unenforced.
+
+**The Quarry's health came down with the payout**, 400 → 10, because a hand's damage fell from about
+84 to about 7 ([section 8](#8-damage-and-the-duel)). That figure is knowingly generous and is
+the developer's to move.
+
+**What the developer owns:** whether `n × n` feels better than the rank sum (below), whether 10 is
+the right Quarry health, the placeholder wording on the readout, and whether the engine's `bank`
+field should be renamed now that it holds a trick count.
+
 ### Known tensions, recorded not resolved
 
+- **Predictable may read as flat, and that is the whole risk of this change** (new 2026-08-14,
+  PT-002). Removing card values from the bank removed roughly ±20% of payout swing that no decision
+  controlled — 1,251 hands of identical trick shape had paid anywhere between 20 and 93. The measured
+  claim is that the payout became _readable_. The risk is that the jitter was doing work as
+  **spectacle**, and that a number you can always predict stops being interesting to watch. **The
+  cheapest disproof is to call the next cash-out before it fires**: if you are right most of the time
+  and it feels dull rather than legible, the rank sum was load-bearing after all and this was the
+  wrong trade.
+- **A 10-health Quarry hides the top of its own payout table** (new 2026-08-14, PT-002). A streak of
+  four already pays 16, and the Quarry has 10 — so 16, 25 and 36 are numbers a player can reach but
+  never see land, and better than about a quarter of hands is indistinguishable from exactly that
+  much. More than a third of all damage dealt is discarded. The fight also lasts under two hands,
+  which leaves little room for a streak to break and recover. Raising the Quarry's health is a
+  one-line change; the trade is against the stated intent that upgrades raise the player's damage
+  later instead.
+- **Leftover damage is meant to become money, and there is nothing to spend it on** (new 2026-08-14,
+  PT-002). Overkill can only occur on the cash-out that kills, so it fires **about 0.8 times per
+  encounter** whatever the Quarry's size — and about 19% of wins overkill by nothing at all. A fixed
+  share of _every_ cash-out is the measured alternative if this is wanted as an economy rather than a
+  flourish. Neither is built, deliberately: a currency with no consumer is a number that goes up and
+  does nothing.
+- **The multiplier and the bank are now always the same number** (new 2026-08-14, PT-002). They are
+  kept as two separate terms on screen and in the engine because a one-time-use "+1 ×" item is
+  intended, and that item needs a term to push. Until something moves them apart, showing `3 × 3`
+  states the same fact twice — which may read as redundant rather than as two dials.
+
 - ~~**The Quarry's health is a placeholder**~~ — **resolved 2026-08-13.** Set to 450 from play
-  (section 8). Three hands, and the first encounter anyone has won. **Trimmed to 400 on 2026-08-14**
-  alongside the cut in player health; both totals are provisional until the pair is played together.
+  (section 8). Three hands, and the first encounter anyone has won. Trimmed to 400 on 2026-08-14
+  alongside the cut in player health, then **cut to 10 the same day when the bank stopped counting
+  card values** — a hand's damage fell by roughly 12×, so the bar came down with it. Both totals are
+  provisional until the pair is played together.
 - **One health point was too cheap, and the fix has not been played yet** (new 2026-08-13, play-test
   4 §7.3 and §7.6; **acted on 2026-08-14**). Losing the **first** trick of a hand forfeits no
   cash-out, because the bank is zero — so the only price was 1 health in 25, which made throwing
@@ -744,8 +847,9 @@ Both answer only to playing. Reverting to an even spread is a one-line change.
   structural fix — health was sized as a **run-level** resource spent inside a single fight, and a
   smaller number does not change what it is, only what it costs.
 - **The trick count does not predict the outcome, and it is the biggest thing on screen** (new
-  2026-08-13, play-test 4 §7.5). A hand pays roughly `a² + b²` for streaks of length _a_ and _b_, so
-  **where** the losses fall matters about twice as much as how many there are — the winning encounter
+  2026-08-13, play-test 4 §7.5; **sharpened 2026-08-14 by PT-002**). A hand pays `a² + b²` for streaks
+  of length _a_ and _b_ — **exactly**, now that the printed ranks no longer add noise around it — so
+  **where** the losses fall matters about twice as much as how many there are. The winning encounter
   went 2–4, 3–3, 4–2. The status band and the hand-over panel both lead with the trick count.
   **And that counter is inverted on the skull tricks**: a **dodge** — which banks and climbs your
   streak — is scored to the Quarry, while **eating a skull** — which costs you 1 health — is scored
@@ -788,10 +892,13 @@ Both answer only to playing. Reverting to an even spread is a one-line change.
 - **Whether a skull should survive changing hands** (new 2026-08-13). The rule tests the trick, not
   the seat, so a skulled card the Quarry's Fox exchanges into the decree still carries its skull if
   the player's Fox later takes it. Rare, but expressible in one hand.
-- **No card is worth declining.** There is no negative card value anywhere in this game, so there is
-  no card a player would rather leave behind. A future Forage ticket wanting "cards you would rather
-  leave behind" must create that property deliberately — nothing in the deck supplies it. _(Carried
-  from 2026-08-12; DLR-80 did not change it, and the bank summing printed ranks preserves it.)_
+- **No card is worth declining, and PT-002 made this stronger rather than weaker.** There is no
+  negative card value anywhere in this game, so there is no card a player would rather leave behind. A
+  future Forage ticket wanting "cards you would rather leave behind" must create that property
+  deliberately — nothing in the deck supplies it. _(Carried from 2026-08-12; DLR-80 did not change it,
+  and PT-002 went further: a card now has **no value at all** outside deciding who wins its trick, so
+  Forage editing "a card's value" (section 10) currently edits a property that only affects trick
+  resolution.)_
 - **Aiming for the same line every hand may not be a decision.** Carried forward in a new form: the
   old version was "aim for Victorious every Hunt". The new equivalent is whether the streak
   multiplier ever actually changes a choice, or whether taking every trick you can is simply always

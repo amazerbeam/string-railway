@@ -1,5 +1,5 @@
 import { isTaken, type TrickResolution } from '../../warCouncil'
-import { BANK_LABEL, MULTIPLIER_LABEL, TRICK_OUTCOME_MESSAGE } from './labels'
+import { TRICKS_LABEL, MULTIPLIER_LABEL, TRICK_OUTCOME_MESSAGE } from './labels'
 
 interface BankMeterProps {
   readonly bank: number
@@ -34,13 +34,13 @@ export default function BankMeter({ bank, multiplier, lastResolution }: BankMete
     .join(' ')
 
   return (
-    <section className="wc-bank" aria-label="Bank and streak">
+    <section className="wc-bank" aria-label={`${TRICKS_LABEL} and ${MULTIPLIER_LABEL}`}>
       <p className="wc-bank-eyebrow" aria-hidden="true">
-        {BANK_LABEL}
+        {TRICKS_LABEL}
       </p>
       <p
         className="wc-bank-figures"
-        aria-label={`${BANK_LABEL} ${bank}, ${MULTIPLIER_LABEL} ${multiplier}, cashes for ${cash}`}
+        aria-label={`${TRICKS_LABEL} ${bank}, ${MULTIPLIER_LABEL} ${multiplier}, cashes for ${cash}`}
       >
         <span className="wc-bank-num" aria-hidden="true">
           {bank}

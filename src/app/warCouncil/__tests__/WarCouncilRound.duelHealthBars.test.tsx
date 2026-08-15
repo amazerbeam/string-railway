@@ -1,10 +1,10 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { dealRound, PlayerSide, RoundPhase } from '../../../warCouncil'
-import { HAND_SIZE } from '../../../hunt'
+import { dealRound, PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
+import { DAMAGE_PER_HIT, HAND_SIZE, quarryHealthForEncounter } from '../../../hunt'
 import WarCouncilRound from '../WarCouncilRound'
-import { encounterFixture, huntFixture, maxHealthFixture } from './roundFixture'
+import { card, encounterFixture, huntFixture, makeRound, maxHealthFixture } from './roundFixture'
 
 afterEach(cleanup)
 
@@ -110,10 +110,13 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
     expect(onComplete).toHaveBeenCalledTimes(1)
     const result = onComplete.mock.calls[0][0]
 
-    // This seed's Quarry health (1000) and this player's (25) cannot be drained by one hand's
-    // worth of cash-outs and hits — HAND_SIZE=6 tricks at DAMAGE_PER_HIT=1 caps the player's
-    // own loss at 6, and typical card-rank sums never approach a thousand-point cash-out — so
-    // the hand reaches its own sixth trick rather than an early terminal resolution.
+    // This seed's hand reaches its own sixth trick rather than an early terminal resolution.
+    // NOTE: that is now a property of THIS SEED, not of the arithmetic. The comment here used to
+    // argue it from the health totals (1,000 and 25) against rank-sum cash-outs that "never
+    // approach a thousand" — both halves died with PT-002, which put both bars at 10 while a
+    // six-trick streak pays 36. An unbroken run under a different seed WOULD empty the Quarry
+    // early, and this assertion would then fail. The `while` loop above already stops on either
+    // panel; it is this line that pins the seed's behaviour.
     expect(tricksResolved).toBe(HAND_SIZE)
     expect(result.finalState.tricksPlayed).toBe(HAND_SIZE)
     expect(result.finalState.phase).toBe(RoundPhase.Complete)
@@ -122,5 +125,63 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
     // itself showed moving, rather than re-deriving the bank arithmetic in the test.
     expect(result.encounter.damageEventsApplied).toBe(eventsObserved)
     expect(eventsObserved).toBeGreaterThanOrEqual(1)
+  })
+})
+
+describe('WarCouncilRound — the hand tally survives the parent re-sending the live encounter', () => {
+  it('keeps its figures after onComplete, on the hand that ends the encounter', () => {
+    // Observed in play: the terminal panel's "Health lost" and "Dealt to the Quarry" both read 0
+    // on a hand that plainly did damage. The tally was a delta against the `encounter` PROP, and
+    // on the encounter-ending hand `App` sets its own encounter from `onComplete` and then returns
+    // early WITHOUT changing the `key` that would remount this component — so the prop became the
+    // live value underneath a panel still on screen, and both deltas collapsed to zero. The
+    // baseline now lives in the reducer, frozen at mount; this pins that.
+    const round = makeRound({
+      leader: PlayerSide.Player,
+      trumpSuit: Suit.Keys,
+      bank: 4,
+      multiplier: 4,
+      tricksPlayed: HAND_SIZE - 1,
+      hands: {
+        [PlayerSide.Player]: [card(Suit.Bells, 2)],
+        [PlayerSide.Cpu]: [card(Suit.Bells, 9)],
+      },
+      currentTrick: [],
+    })
+    const onComplete = vi.fn()
+    const props = {
+      initialState: round,
+      hunt: huntFixture,
+      encounter: encounterFixture,
+      maxHealth: maxHealthFixture,
+      onComplete,
+    }
+    const { container, rerender } = render(<WarCouncilRound {...props} />)
+
+    // The player leads the 2, the Quarry follows the higher card of the lead suit and takes it —
+    // a clean loss, cashing 4 × 4 = 16 into a 10-health Quarry, which empties the bar outright.
+    const bells2 = screen.getByRole('button', { name: '2 of Bells' })
+    fireEvent.click(bells2)
+    fireEvent.click(bells2)
+
+    expect(screen.getByRole('heading', { name: /the hunt is over/i })).toBeTruthy()
+    const tally = (label: RegExp) =>
+      within(screen.getByRole('row', { name: label })).getAllByRole('cell')[1].textContent
+
+    // Surplus is discarded, so the Quarry's delta is its whole bar, not the 16 that was cashed.
+    expect(tally(/health lost/i)).toBe(String(DAMAGE_PER_HIT))
+    expect(tally(/dealt to the quarry/i)).toBe(String(quarryHealthForEncounter(0)))
+
+    // The terminal panel carries no button, so the carry-on fires from the table — which is what
+    // the player clicks next, and what used to zero the figures behind them.
+    fireEvent.click(container.querySelector('.wc-table') as HTMLElement)
+    expect(onComplete).toHaveBeenCalledTimes(1)
+
+    // Exactly what `App` does with that result: adopt the encounter, leave `key` alone.
+    rerender(<WarCouncilRound {...props} encounter={onComplete.mock.calls[0][0].encounter} />)
+
+    expect(screen.getByRole('heading', { name: /the hunt is over/i })).toBeTruthy()
+    expect(tally(/health lost/i)).toBe(String(DAMAGE_PER_HIT))
+    expect(tally(/dealt to the quarry/i)).toBe(String(quarryHealthForEncounter(0)))
   })
 })

@@ -11,20 +11,17 @@ import { QuarryCharacter, DuelSide, type Health, type Damage } from './types'
 // UNIT: health points, depleted 1 at a time.
 export const PLAYER_START_HEALTH: Health = 10
 
-// SET BY THE DEVELOPER, from play — no longer a placeholder. 450 on 2026-08-13, trimmed to 400 on
-// 2026-08-14 alongside the drop in player health.
-// §5 said this figure "cannot be derived honestly yet" because it depends on how large real
-// cash-outs get, which is a function of play rather than arithmetic. It has now been played:
-// one hand after DLR-81 removed the Quarry's rule-break dealt 136 damage for 1 health lost
-// (5 tricks to 1). At that rate 400 is about three hands, so this is deliberately a SHORT first
-// encounter rather than the ~8 hands the retired 1000 implied.
-// Worth knowing when retuning: damage is roughly QUADRATIC in streak length, since the bank and
-// the multiplier both climb per trick taken and cash as their product. So this number is far
-// more sensitive to how often a streak breaks than to how many tricks are won overall — a hand
-// that trades evenly deals a small fraction of one that runs five in a row.
-// One entry, not two: the second encounter is still out of scope.
+// The Quarry's health for encounter 0.
+// SET BY THE DEVELOPER 2026-08-14 (PT-002): "the first enemy at 10 hp", chosen alongside the move
+// to a trick-counting bank. Replaces 400, which was measured under the retired rank-sum bank where
+// a hand dealt ~84; under `n × n` a hand pays a mean of ~7.2 (range 0-36, over 6,000 simulated
+// hands — see `.docs/design/Balatro-Forbidden-Solitaire/ideas.md`), so 400 would be ~55 hands.
+// KNOWN CONSEQUENCE, accepted: at 10 the encounter lasts ~1.9 hands, random legal play wins 63.8%,
+// and ~37% of damage dealt is discarded as overkill because a single good hand can pay 36. The
+// developer's own framing is that the shop will raise the player's damage later; the health numbers
+// are expected to move after playing.
 // UNIT: health points, encounter 0.
-export const QUARRY_ENCOUNTER_HEALTH: readonly Health[] = [400]
+export const QUARRY_ENCOUNTER_HEALTH: readonly Health[] = [10]
 
 /**
  * Throws a `RangeError` rather than returning `undefined`: an out-of-range index would
@@ -105,14 +102,34 @@ export type SkullRankWeights = Readonly<Record<number, number>>
 // Every eligible rank equally likely — the behaviour before PT-001. NOT ACTIVE: kept as the
 // reference point a play-test compares a shaped curve against.
 export const SKULL_WEIGHTS_UNIFORM: SkullRankWeights = {
-  1: 0, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1, 10: 1, 11: 1,
+  1: 0,
+  2: 1,
+  3: 1,
+  4: 1,
+  5: 1,
+  6: 1,
+  7: 1,
+  8: 1,
+  9: 1,
+  10: 1,
+  11: 1,
 }
 
 // Weight climbs with rank, so skulls land on high cards. NOT ACTIVE. High skulls mostly WIN their
 // own trick, and a skull trick the Quarry wins is a dodge for the player — so this is the gentlest
 // curve, not the harshest. Transcribed from the developer's sketch as `weight = rank - 1`.
 export const SKULL_WEIGHTS_RAMP: SkullRankWeights = {
-  1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: 8, 10: 9, 11: 10,
+  1: 0,
+  2: 1,
+  3: 2,
+  4: 3,
+  5: 4,
+  6: 5,
+  7: 6,
+  8: 7,
+  9: 8,
+  10: 9,
+  11: 10,
 }
 
 // ACTIVE (see SKULL_RANK_WEIGHTS). Weight on the middle ranks, where the player's own card decides
@@ -121,13 +138,33 @@ export const SKULL_WEIGHTS_RAMP: SkullRankWeights = {
 // Quarry can only lose with, so it is dumped into a trick the player has already won and eaten with
 // no counterplay; a very high skull wins its own trick, which is a dodge the player did not earn.
 export const SKULL_WEIGHTS_HUMP: SkullRankWeights = {
-  1: 0, 2: 2, 3: 5, 4: 8, 5: 10, 6: 10, 7: 8, 8: 5, 9: 2, 10: 1, 11: 1,
+  1: 0,
+  2: 2,
+  3: 5,
+  4: 8,
+  5: 10,
+  6: 10,
+  7: 8,
+  8: 5,
+  9: 2,
+  10: 1,
+  11: 1,
 }
 
 // The ramp mirrored: weight on low cards. NOT ACTIVE, and the harshest curve — a low skull is one
 // the Quarry can only lose with, so most of these are eaten with no counterplay.
 export const SKULL_WEIGHTS_AMBUSH: SkullRankWeights = {
-  1: 0, 2: 10, 3: 9, 4: 8, 5: 7, 6: 6, 7: 5, 8: 4, 9: 3, 10: 2, 11: 1,
+  1: 0,
+  2: 10,
+  3: 9,
+  4: 8,
+  5: 7,
+  6: 6,
+  7: 5,
+  8: 4,
+  9: 3,
+  10: 2,
+  11: 1,
 }
 
 // The curve in force. CHANGE THIS ONE REFERENCE to play-test a different shape.

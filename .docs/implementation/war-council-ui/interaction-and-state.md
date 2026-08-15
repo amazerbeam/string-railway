@@ -41,11 +41,17 @@ observer, or `AbortController` in the module and therefore no cleanup to omit.
 
 `roundReducer.ts`'s `deriveResolvedTrick(before, after, playedCard)` never calls `resolveTrickWinner`
 itself — doing so would require choosing a trump suit, which is a rules question this layer must not
-answer. Instead it compares `tricksPlayed` before and after the commit: a trick resolved iff
-`after.tricksPlayed > before.tricksPlayed`, and the winner is whichever side's `tricksWon` entry
-rose. This is possible only because `playCard` already applies `resolveTrickWinner` internally and
+answer. This is possible only because `playCard` already applies `resolveTrickWinner` internally and
 returns the _result_ of that decision in the new state — `roundReducer` reads the consequence rather
 than re-deriving the rule.
+
+**What it reads changed with DLR-80.** It used to diff `tricksPlayed` and `tricksWon` across the
+commit: a trick resolved iff `after.tricksPlayed > before.tricksPlayed`, the winner being whichever
+side's `tricksWon` entry rose. It now tests **`after.lastResolution`** — non-null iff a trick
+resolved — and recovers the physical winner from the outcome itself: `CleanWin` and `SkullWin` favour
+the player, `Dodge` and `CleanLoss` favour the Quarry. The bank, not the trick count, is what a trick
+now changes, so `lastResolution` is the definitive signal; and the winner comes from an enum
+`resolveTrickBank` already consulted rather than from a second diff that could disagree with it.
 
 ### A held trick, and the keyboard path to leave it
 
@@ -82,19 +88,37 @@ call the same `handleCarryOn`, and dispatching `CarryOn` a second time is a safe
 
 ### The deciding trick is held exactly like every other
 
-`roundReducer.ts`'s `commit` and `advanceQuarryFollow` set `resolvedTrick` and, on the thirteenth trick,
-`phase: RoundPhase.Complete` in the same transition — both become true at once. An earlier version
-of `WarCouncilRound.tsx` branched on `roundComplete` **first**, so `RoundOverPanel` replaced the
-deciding trick instantly and the player never saw which cards won the round. The felt now branches on
-`resolvedTrick` before `roundComplete`, so the held trick's cards and winner are always shown first;
-the round-over panel renders only once `resolvedTrick` is `null` again.
+`roundReducer.ts`'s `commit` and `advanceQuarryFollow` set `resolvedTrick` and, on the **sixth** trick
+(`HAND_SIZE`, thirteen before DLR-80), `phase: RoundPhase.Complete` in the same transition — both
+become true at once. An earlier version of `WarCouncilRound.tsx` branched on `roundComplete`
+**first**, so `RoundOverPanel` replaced the deciding trick instantly and the player never saw which
+cards won the round. The felt now branches on `resolvedTrick` before `roundComplete`, so the held
+trick's cards and winner are always shown first; the round-over panel renders only once
+`resolvedTrick` is `null` again.
 
-`handleCarryOn` is one function serving three controls — the held trick's, the pending Quarry lead's
-(DLR-53), and the round-over panel's "Finish the round" button: it dispatches `CarryOn` whenever
-something is held *or* a Quarry lead is pending (clearing and/or committing, even when the round is
-already complete), and calls `onComplete` only once nothing is held or pending and the round is
-complete. `quarryToLead` is only ever true while `roundComplete` is false, so those conditions stay
-mutually exclusive by construction and `onComplete` cannot fire twice for one click.
+**One case deliberately breaks that order: a resolved *encounter*.** `encounterOver` is checked ahead
+of both, because DLR-80's cash-out can empty a bar on any trick — so the trick that finishes the
+encounter never gets its own reveal beat, and the terminal panel is what the player sees next. That
+is the one place a trick's cards are traded away for stating the outcome immediately.
+
+`handleCarryOn` is one function serving four controls — the held trick's, the pending Quarry lead's
+(DLR-53), the round-over panel's "Finish the round" button, and the felt itself. Its branches, in
+order:
+
+1. **`encounterOver` → `onComplete`, unconditionally.** Checked first because once a bar has emptied
+   the felt shows the terminal panel rather than a held reveal, so there is nothing left to clear; a
+   `CarryOn` dispatch here would only clear something nothing renders.
+2. **Something held *or* a Quarry lead pending → dispatch `CarryOn`**, clearing and/or committing,
+   even when the round is already complete.
+3. **Otherwise, `roundComplete` → `onComplete`.**
+
+`quarryToLead` is only ever true while `roundComplete` is false, so branches 2 and 3 stay mutually
+exclusive by construction and `onComplete` cannot fire twice for one click.
+
+Branch 1 is also why the hand-over tally cannot read the mount's `encounter` prop: it is the branch
+that hands the encounter upward while the panel stays mounted, which is exactly when the prop stops
+being this hand's opening figure. See
+[the hand-over panel](hunt-readouts-and-telegraph.md#the-hand-over-panel-states-a-tally-not-an-equation).
 `roundReducer.ts`'s own `handleCarryOn` mirrors this: it no longer treats a completed round as a
 blanket no-op, and only skips advancing the opponent once the round is over. That guard matters —
 without it, advancing on a completed round would set `cpuFault: 'noLegalMove'` every time a round

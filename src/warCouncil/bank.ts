@@ -1,5 +1,4 @@
 import { DAMAGE_PER_HIT, DuelSide, type IncomingDamage } from '../hunt'
-import { type TrickCard } from './types'
 
 /** §3.2's four rows. Named rather than a pair of booleans at every branch, so the rule reads
  *  out of the code the way it reads out of the design's table. */
@@ -20,7 +19,7 @@ export interface BankState {
 
 export interface TrickResolution extends BankState {
   readonly outcome: TrickOutcome
-  /** Ranks added to the bank by this trick — both cards on a take, 0 on a hit. */
+  /** Tricks added to the bank by this trick — 1 on a take, 0 on a hit. */
   readonly bankAdded: number
   /** Damage dealt to the Quarry by this trick: AC6/AC7's cash-out, AC8's forced one, or 0. */
   readonly cashOut: number
@@ -61,12 +60,11 @@ export function isTaken(outcome: TrickOutcome): boolean {
  * AC8's subsequent `0 × 0` is zero; a take leaves exactly one bank to cash. The result is one
  * damage application per trick, with `cashedAtHandEnd` recording which rule paid out.
  *
- * Pure arithmetic over two integer ranks — there is no division anywhere here, so no epsilon is
+ * Pure arithmetic over two integer counters — there is no division anywhere here, so no epsilon is
  * needed and no `NaN` is producible from the inputs this takes.
  */
 export function resolveTrickBank(
   before: BankState,
-  trickCards: readonly [TrickCard, TrickCard],
   playerWon: boolean,
   skullTrick: boolean,
   finalTrick: boolean,
@@ -80,7 +78,11 @@ export function resolveTrickBank(
   let damageToPlayer = 0
 
   if (isTaken(outcome)) {
-    bankAdded = trickCards[0].card.rank + trickCards[1].card.rank
+    // PT-002 — the bank counts TRICKS, not card values. Both terms climb by exactly 1 per trick
+    // taken, so a streak of n cashes n × n: 1, 4, 9, 16, 25, 36 across a six-trick hand.
+    // Not a config key: 1 is what counting a trick means, and a later item that grants bonus
+    // bank adds to `bank` rather than redefining a trick's worth.
+    bankAdded = 1
     bank += bankAdded
     multiplier += 1
   } else {

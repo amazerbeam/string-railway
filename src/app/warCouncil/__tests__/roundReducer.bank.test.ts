@@ -46,7 +46,7 @@ describe('the bank cash-out — AC6/AC8, applied mid-hand as it happens', () => 
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
-      bank: 20,
+      bank: 2,
       multiplier: 2,
       hands: {
         [PlayerSide.Player]: [card(Suit.Bells, 2)],
@@ -58,7 +58,8 @@ describe('the bank cash-out — AC6/AC8, applied mid-hand as it happens', () => 
     ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanLoss)
-    expect(ui.encounter.health[DuelSide.Quarry]).toBe(quarryHealthForEncounter(0) - 40)
+    expect(ui.resolvedTrick?.resolution.cashOut).toBe(4)
+    expect(ui.encounter.health[DuelSide.Quarry]).toBe(quarryHealthForEncounter(0) - 4)
     expect(ui.encounter.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH - DAMAGE_PER_HIT)
   })
 
@@ -101,8 +102,9 @@ describe('the bank cash-out — AC6/AC8, applied mid-hand as it happens', () => 
     let ui = uiFrom(round)
     // Player leads the Swan (rank 1) and loses it — the losing Swan-player leads next
     // (`nextLeaderAfterTrick`), so it would ordinarily be the Player's turn again. The
-    // cash-out — 500 x 2 = 1000, exactly this encounter's configured Quarry health — resolves
-    // the encounter first, so this isolates the new guard from the ordinary turn-order one.
+    // cash-out (500 x 2 = 1000) comfortably exceeds this encounter's 10-health Quarry, so the
+    // bar empties and resolves the encounter first — this isolates the new guard from the
+    // ordinary turn-order one, independent of the fixture's synthetic magnitude.
     ui = roundReducer(ui, tap(card(Suit.Bells, 1)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 1)))
     expect(isEncounterResolved(ui.encounter)).toBe(true)

@@ -164,11 +164,11 @@ describe('WarCouncilRound', () => {
 
   it('reports onComplete with a finalState still short of RoundPhase.Complete when a cash-out resolves the encounter mid-hand (Defender Warning 1)', () => {
     // Same construction as `roundReducer.bank.test.ts`'s "stops accepting taps" spec: trick 3 of
-    // 6, a bank of 500 at streak 2 cashes for exactly 1000 — this encounter's configured Quarry
-    // health — so the Quarry's bar empties on this trick rather than the hand's sixth. Once
-    // `encounterOver` is true, `WarCouncilRound` renders the terminal panel directly (its own
-    // comment on that branch order) with no six-trick completion in between, so `onComplete`'s
-    // `finalState` never reaches `RoundPhase.Complete` down this path.
+    // 6, a bank of 500 at streak 2 cashes for 500 x 2 = 1000, which comfortably exceeds this
+    // encounter's 10-health Quarry — so the Quarry's bar empties on this trick rather than the
+    // hand's sixth. Once `encounterOver` is true, `WarCouncilRound` renders the terminal panel
+    // directly (its own comment on that branch order) with no six-trick completion in between,
+    // so `onComplete`'s `finalState` never reaches `RoundPhase.Complete` down this path.
     const onComplete = vi.fn()
     const round = makeRound({
       leader: PlayerSide.Player,
@@ -294,7 +294,7 @@ describe('WarCouncilRound', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
-      bank: 20,
+      bank: 2,
       multiplier: 2,
       tricksPlayed: HAND_SIZE - 1,
       hands: {
@@ -312,7 +312,7 @@ describe('WarCouncilRound', () => {
       PLAYER_START_HEALTH - DAMAGE_PER_HIT,
     )
     expect(Number(healthMeter('The Quarry’s health').getAttribute('aria-valuenow'))).toBe(
-      quarryHealthForEncounter(0) - 40,
+      quarryHealthForEncounter(0) - 4,
     )
   })
 
@@ -341,8 +341,9 @@ describe('WarCouncilRound', () => {
     fireEvent.click(bells9)
     expect(screen.getByText(/take the trick/i)).toBeDefined()
 
-    // …and climbs the instant the trick is taken: 9 + 2 = 11 banked, one trick into the streak.
-    expect(screen.getByLabelText(/cashes for 11/i)).toBeTruthy()
+    // …and climbs the instant the trick is taken: PT-002 banks 1 per trick taken, so one trick
+    // into the streak reads bank 1 × multiplier 1 = 1, not a rank sum.
+    expect(screen.getByLabelText(/cashes for 1\b/i)).toBeTruthy()
   })
 })
 

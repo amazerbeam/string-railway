@@ -104,7 +104,6 @@ export function playCard(
   // the outcome, it only reports who won and whether the trick was mined.
   const lastResolution = resolveTrickBank(
     { bank: next.bank, multiplier: next.multiplier },
-    completedTrick,
     winner === PlayerSide.Player,
     trickIsSkulled(next.skulledCards, completedTrick),
     finalTrick,

@@ -49,10 +49,18 @@ import './warCouncilHealthBars.css'
  * component: every other transition is a tap, a keypress, or a callback fired from one of the
  * felt's own controls.
  *
- * `encounter` (the prop) is this hand's OPENING figure — `warCouncilMount.ts`'s own docblock —
- * and the reducer's own `ui.encounter` is the live value, updated in place as each trick's
- * damage lands (AC6/AC8). Both are read here: the prop as the hand's fixed starting point for
- * `handSummary`'s deltas, the reducer's copy for everything that must track the hand live.
+ * `encounter` (the prop) is this hand's OPENING figure — `warCouncilMount.ts`'s own docblock — and
+ * it is read in exactly one place: seeding the reducer. Everything else reads the reducer's own
+ * state, which holds BOTH the live encounter (`ui.encounter`, updated in place as each trick's
+ * damage lands, AC6/AC8) and the frozen baseline (`ui.openingEncounter`) that `handSummary` is a
+ * delta against.
+ *
+ * The baseline is state rather than the prop because the prop is not stable for this component's
+ * whole life. On the hand that ends the encounter, `handleCarryOn` calls `onComplete`, and `App`
+ * adopts that encounter and returns early WITHOUT changing the `key` that would remount this
+ * component — so the prop becomes the live value while the terminal panel is still on screen. A
+ * prop-based delta therefore zeroed itself under the player, which is what the tally regression in
+ * `WarCouncilRound.duelHealthBars.test.tsx` pins.
  */
 export default function WarCouncilRound({
   initialState,
@@ -87,11 +95,19 @@ export default function WarCouncilRound({
   const shape = suitShape(ui.round.hands[PlayerSide.Cpu], ui.round.skulledCards)
 
   // This hand's own tally, as the delta against the encounter this component was mounted with.
-  // `encounter` (the prop) never changes across this hand's life; `ui.encounter` does, on every
-  // trick that cashes or hits — so the difference is exactly what this hand did.
+  // Both sides of the subtraction come from the reducer: `ui.openingEncounter` is frozen at mount,
+  // `ui.encounter` moves on every trick that cashes or hits — so the difference is exactly what
+  // this hand did.
+  //
+  // The baseline is deliberately NOT the `encounter` prop. On the hand that ends the encounter,
+  // `handleCarryOn` calls `onComplete`, and `App` sets its own encounter and returns early without
+  // changing the `key` that would remount this component — so the prop turns into the live value
+  // while the terminal panel is still on screen, and a prop-based delta reads 0 for a hand that
+  // plainly did damage.
   const handSummary = {
-    healthLost: encounter.health[DuelSide.Player] - ui.encounter.health[DuelSide.Player],
-    dealtToQuarry: encounter.health[DuelSide.Quarry] - ui.encounter.health[DuelSide.Quarry],
+    healthLost: ui.openingEncounter.health[DuelSide.Player] - ui.encounter.health[DuelSide.Player],
+    dealtToQuarry:
+      ui.openingEncounter.health[DuelSide.Quarry] - ui.encounter.health[DuelSide.Quarry],
   }
 
   const displayHand = sortHandForDisplay(ui.round.hands[PlayerSide.Player])

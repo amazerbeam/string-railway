@@ -51,7 +51,7 @@ single owner of that phrase, which `quarryShapeText` also builds its joined sent
 skull glyph is a `role="img"` carrying `SKULL_MARK_LABEL`. So the readout reads without colour and
 without counting glyphs visually.
 
-### `BankMeter` — the bank, the streak, and what it would cash for
+### `BankMeter` — the tricks, the multiplier, and what it would cash for
 
 Renders `bank`, `× multiplier`, and their product as the figure this streak would cash for, plus
 `TRICK_OUTCOME_MESSAGE[lastResolution.outcome]` when a resolution is present — so the meter says
@@ -63,6 +63,28 @@ nothing" and is deliberate: it is a **display** figure with no rule attached to 
 next hit would pay. If the two ever disagreed, the engine's is the one that matters.
 
 The take/hit distinction is carried by **copy and a class name, never colour alone**.
+
+**PT-002 changed the words, not the layout.** The bank now counts tricks rather than card values, so
+the left term is labelled **`TRICKS_LABEL`** (`'Tricks'`, renamed from `BANK_LABEL`/`'Bank'`) and the
+right **`MULTIPLIER_LABEL`** (`'Multiplier'`, was `'Streak'`). The three spans, the `×` glyph and every
+`.wc-bank-*` class name are byte-for-byte unchanged — the classes are string-bound to
+`warCouncilHunt.css` and renaming them would buy nothing a player can see. All four
+`TRICK_OUTCOME_MESSAGE` strings were rewritten in the same pass, because two of them said "Both cards
+banked", which became false the moment cards stopped being what is banked.
+
+**Two separate terms is a requirement, not an accident of the engine's shape.** They hold the same
+number for the whole of a streak now, and collapsing the readout to one figure would foreclose the
+planned one-time-use **"+1 ×"** item — which needs a term the shop can push independently of the
+trick count.
+
+**Accessibility — the region and the figures are named separately, and both from the constants.** The
+figures paragraph carries `` `${TRICKS_LABEL} ${bank}, ${MULTIPLIER_LABEL} ${multiplier}, cashes for
+${cash}` ``, and the wrapping `<section>` is named `` `${TRICKS_LABEL} and ${MULTIPLIER_LABEL}` ``.
+That second one was a hardcoded `"Bank and streak"` literal until PT-002's review pass: every span
+inside the section is `aria-hidden`, so the section's own label is the only accessible name it
+carries, and it had survived the rename to sit directly around a paragraph reading "Tricks …
+Multiplier …". `BankMeter.test.tsx` now pins it with `getByRole('region', { name: … })`, so it cannot
+drift silently again.
 
 > **Why the bank replaced the pending-damage segment on the health bars.** The old readout was
 > non-monotonic — a total could *fall* when you won a trick, because winning could move you into a
@@ -110,8 +132,31 @@ The fidelity is read from `TELEGRAPH_FIDELITY`, never decided here.
 lost, and health dealt to the Quarry — followed by either the terminal outcome or the single control
 that deals the next hand.
 
-`handSummary`'s two figures are the **mount's own delta** against the encounter this hand started
-from, computed in `WarCouncilRound.tsx` and never re-derived in the panel.
+`handSummary`'s two figures are a **delta against the encounter this hand started from**, computed in
+`WarCouncilRound.tsx` and never re-derived in the panel.
+
+**Both sides of that subtraction come from the reducer** — `ui.openingEncounter` frozen at mount
+against `ui.encounter` live — and that is a correction, not an implementation detail. The baseline
+used to be the mount's `encounter` **prop**, which is correct only while the prop is stable, and on
+the one hand that matters it is not:
+
+`handleCarryOn` calls `onComplete`; `src/App.tsx`'s `handleComplete` adopts that encounter with
+`setEncounter` and then **returns early without changing `round`** — and `round` is the `key` on
+`<WarCouncilRound>`. So on the encounter-ending hand the component is never remounted, the prop
+becomes the live value underneath a terminal panel that is still on screen, and both deltas collapse
+to zero. The figures were right when the panel appeared and **zeroed themselves on the player's next
+click** — observed in play as a "The Hunt is over" panel reporting `Health lost 0` and `Dealt to the
+Quarry 0` for a hand that had just emptied the Quarry's bar.
+
+Freezing the baseline in reducer state makes the tally independent of anything the parent does after
+the hand is over. It survives because every reducer return spreads the previous state, so a
+write-once field carries forward untouched. `WarCouncilRound.duelHealthBars.test.tsx`'s
+`keeps its figures after onComplete` pins it by rerendering with exactly the encounter `onComplete`
+returned — the same move `App` makes — and asserting the figures do not move.
+
+> **`encounter` (the prop) is now read in exactly one place: seeding the reducer.** That is the
+> property worth preserving. Any future read of it during render re-opens this defect, because the
+> prop is not stable for this component's whole life.
 
 > **The two-stage close is gone.** The panel used to state `Spoils × Standing = Damage` per side and
 > offer an *Apply the damage* control, then a second press to deal on. Damage now lands as each trick

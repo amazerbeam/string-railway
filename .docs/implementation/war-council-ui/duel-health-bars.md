@@ -40,16 +40,23 @@ zero-width segment.
 
 ### The scale changed by ~54×, and it is the developer's to judge
 
-`PLAYER_START_HEALTH` went from **1,350 to 25**, so the player's bar is now the denominator of a
-small integer count: it moves in **nine or so discrete steps of 1** rather than draining smoothly.
-The Quarry's bar is unchanged in kind — a placeholder 1,000 absorbing `bank × multiplier`.
+`PLAYER_START_HEALTH` went from **1,350 to 25** at DLR-80, so the player's bar became the denominator
+of a small integer count: it moves in discrete steps of 1 rather than draining smoothly. The Quarry's
+bar was unchanged in kind at that point — a placeholder in the thousands absorbing `bank ×
+multiplier`.
+
+**Both totals have since fallen to 10**, and the Quarry's is the larger change of the two. The player
+went 25 → **10** on 2026-08-14; the Quarry went 1,000 → 450 → 400 → **10**, the last step at PT-002,
+when the bank stopped counting card values and a hand's damage fell from about 84 to about 7. So the
+two bars are no longer a small integer against a large one: **each now has exactly ten steps of 1**,
+and the mirrored pair is symmetric in scale for the first time.
 
 Every spec asserting a bar percentage against 1,350 was rewritten to **derive** its figures from
-`PLAYER_START_HEALTH` and `QUARRY_ENCOUNTER_HEALTH[0]` rather than restating a literal, so they
-survive the developer setting the Quarry's real figure.
+`PLAYER_START_HEALTH` and `QUARRY_ENCOUNTER_HEALTH[0]` rather than restating a literal — which is why
+none of them needed editing when either total moved again.
 
-**Whether a bar treatment tuned for a continuous drain reads well for a nine-step count is a visual
-question, and it is open.**
+**Whether a bar treatment tuned for a continuous drain reads well for a ten-step count is a visual
+question, and it is open** — now for both bars rather than only the player's.
 
 ### The geometry is pure, and the component only formats
 

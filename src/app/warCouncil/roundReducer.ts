@@ -38,6 +38,16 @@ export interface RoundUiState {
    *  trick resolves, because AC6 and AC8 make the cash-out automatic and mid-hand. Replaces the
    *  nullable `applied`, which existed only to model "the player has pressed Apply". */
   readonly encounter: EncounterState
+  /** This hand's OPENING encounter, frozen at mount and never written again — the baseline the
+   *  hand-over panel's tally is a delta against.
+   *
+   *  It is state rather than the mount's `encounter` prop deliberately. On the hand that ends the
+   *  encounter, `App` sets its own encounter from `onComplete` and then returns early WITHOUT
+   *  changing the `key` that would remount this component — so the prop becomes the live value
+   *  underneath a panel that is still on screen, and a prop-based delta silently collapses to
+   *  zero. Freezing the baseline here makes the tally independent of anything the parent does
+   *  after the hand is over. */
+  readonly openingEncounter: EncounterState
 }
 
 export interface RoundUiSeed {
@@ -75,6 +85,7 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     rejection: null,
     cpuFault: null,
     encounter: seed.encounter,
+    openingEncounter: seed.encounter,
   }
 }
 

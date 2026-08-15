@@ -26,10 +26,10 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                     |
 | --------------------- | ------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, PT-001 |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81                                               |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81                                                             |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, PT-001                               |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, PT-001, PT-002 |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81                                                       |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, PT-002                                                             |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, PT-001, PT-002                               |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -109,6 +109,30 @@ is the likeliest way this work gets undone. Start at
 [hunt/hand-and-skull-tunables.md](hunt/hand-and-skull-tunables.md) for the four curves and their
 numbers, or [war-council/skulls.md](war-council/skulls.md) for the weighted draw and why it consumes
 exactly one `rng` call per skull.
+
+**PT-002 changed what the bank counts, and it is the smallest diff with the largest effect on how the
+game plays.** The bank added both cards' **printed ranks** on every trick taken; it now adds **1 per
+trick**. Both terms of the cash-out equation are therefore the streak length, so a streak of _n_ cashes
+exactly `n × n` — **1, 4, 9, 16, 25, 36** across a six-trick hand. One branch of one function changed;
+the four outcomes, the reset, the end-of-hand fold and the damage path are all untouched.
+
+The measurement behind it: per-hand damage regressed against `Σn²` at **R² = 0.938**, so the ranks were
+contributing almost nothing structural — but they still swung the payout by roughly **±20%** with no
+decision controlling it, and 1,251 hands of identical trick shape paid anywhere between 20 and 93. What
+went is variance the player could not act on; what stays is the compounding.
+
+Because a hand now pays a mean of ~7 rather than ~84, **the Quarry's encounter health drops 400 → 10**
+— the developer's own figure, set in the same session, and a knowingly easy one (random legal play wins
+63.8%, a fight lasts ~1.9 hands, ~37% of damage is discarded as overkill). Start at
+[war-council/bank-and-cash-out.md](war-council/bank-and-cash-out.md) for why `n × n` falls out of two
+counters, or [hunt/hand-and-skull-tunables.md](hunt/hand-and-skull-tunables.md) for both health totals
+and what a 10-health Quarry costs.
+
+Two shapes were deliberately preserved rather than simplified, and both are load-bearing for work not
+yet built: `bank` and `multiplier` stay **two independent fields** so a planned one-time-use "+1 ×"
+item can move one without the other, and the engine field is still **named `bank`** although it holds
+a trick count — a ~20-file rename judged not worth a play-test ticket. Money, the shop, and leftover
+damage as currency are all explicitly out of scope; there is nothing to spend it on yet.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

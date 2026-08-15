@@ -45,7 +45,7 @@ cashes out **automatically** whenever the player takes damage. This idea gives t
 before committing a card, they may choose to cash the bank at its current multiplier and reset,
 rather than waiting to be forced.
 
-**Problem it reaches for.** It converts the cash-out from something that *happens to* the player into
+**Problem it reaches for.** It converts the cash-out from something that _happens to_ the player into
 a decision they make. You are sitting on 43 at ×3 and the next trick looks unwinnable — do you bank
 129 now, or push for ×4 and risk being cashed out anyway on a trick you can't take? That is
 press-your-luck with an explicit stop button, which is the shape of a Balatro "do I play this hand
@@ -54,7 +54,7 @@ now" decision.
 **Cost in new rules.** One control and one sentence, and it changes nothing else in the loop — the
 cash-out arithmetic already exists and already resets. Cheap.
 
-**What to watch.** Whether it is ever *not* obviously correct to press. If the button is always right
+**What to watch.** Whether it is ever _not_ obviously correct to press. If the button is always right
 before a trick you expect to lose, it is a chore rather than a decision, and the interesting version
 is one where holding has a visible upside — which the multiplier already supplies.
 
@@ -563,7 +563,7 @@ the pending-damage overlay on them are already decided (`hybrid-design.md`'s dir
 
 **One borrowable detail.** Pending damage is the fighting-game **recoverable "grey" segment** — damage
 recorded but not yet permanent, drawn by lightness on the same bar rather than as a second widget, and
-allowed to *shrink*. That last part matters here, since a tenth trick collapses pending from `540` to
+allowed to _shrink_. That last part matters here, since a tenth trick collapses pending from `540` to
 `60`, and a shrinking bar segment is established grammar rather than something to invent
 ([SFV HUD](https://wiki.supercombo.gg/w/Street_Fighter_V/HUD) ·
 [Tekken 8 recoverable health](https://steamcommunity.com/app/1778820/discussions/0/597412189643889679/)).
@@ -582,8 +582,8 @@ second, the mirrored pair bought nothing over §6's net-bar fallback and the fal
 Raised 2026-08-12, alongside the entry above.
 
 **Both halves collide with something, and neither collision is fatal — but they are different
-collisions.** The *timer* half is not new: §9's cap `R` is already exactly this, deferred, with a
-derivable range of **3 to 5** Hunts. The *money* half was rejected — but rejected **as power**
+collisions.** The _timer_ half is not new: §9's cap `R` is already exactly this, deferred, with a
+derivable range of **3 to 5** Hunts. The _money_ half was rejected — but rejected **as power**
 (more health, higher card damage: see Rejected, below, and `hybrid-design.md` §3), and two live rows
 already park the noun: §9's overkill row says surplus damage _"may later pay out as cash or
 similar,"_ and `balatro-play-notes.md` note 12 records Balatro's `$1` per unused hand with the want
@@ -637,9 +637,9 @@ optimise-the-fun-out landing on the exact tail §5 already calls unbounded.
 **Finding 5 — the two halves fix each other, which is why the developer proposed the time term and
 why it is load-bearing.** `health remaining ÷ Hunts taken`:
 
-| `k`   | 9       | 8   | 13 | 12   | 7    | 11   | 10   |
-| ----- | ------- | --- | -- | ---- | ---- | ---- | ---- |
-| Index | **354** | 270 | 75 | 59.1 | 49.5 | 40.3 | 22.7 |
+| `k`   | 9       | 8   | 13  | 12   | 7    | 11   | 10   |
+| ----- | ------- | --- | --- | ---- | ---- | ---- | ---- |
+| Index | **354** | 270 | 75  | 59.1 | 49.5 | 40.3 | 22.7 |
 
 The design's intended peak is now top, at **4.7× the best grind**. Time supplies the sign, health
 supplies the resolution, and neither works alone. **The cheaper route to the same place: if the cap
@@ -650,7 +650,7 @@ deferred rather than anything new. Which of the two, and the curve's shape, are 
 **Finding 6 — overkill is `H mod D`, so §9's parked basis is noise dressed as a reward.** The row
 that already exists suggests surplus damage might pay out as cash. Overkill is
 `D − (1,350 mod D)` — an alignment artifact of how the last Hunt happens to land, not a measure of
-anything: `k = 7` overkills by **330** and `k = 9` by **270**, so it pays the *worst* win in the fast
+anything: `k = 7` overkills by **330** and `k = 9` by **270**, so it pays the _worst_ win in the fast
 band **1.2×** the best one, while the grinds pay 18–54. The sign against the grind is right; the
 ordering inside the band is close to arbitrary. If overkill is the basis, that should be a stated
 choice rather than a surprise.
@@ -665,15 +665,15 @@ arithmetically instead of by appeal to the earlier rejection.
 **The sink is the harder half, and only one candidate survives §1.** Money must never touch
 `card value × Standing`; §1's component table forbids a third channel, and health and card damage are
 the rejected power branch by name. What passes: **Snare charges** — §3 already certifies the in-round
-edit as an intervention on card value, so money buying charges is a *pricing layer over an existing
-verb*, not a new term. It is also a fourth candidate answer to §3's blocking problem (the in-round
-edit needs a cost, and money makes that cost *earned by prior performance* rather than traded against
+edit as an intervention on card value, so money buying charges is a _pricing layer over an existing
+verb_, not a new term. It is also a fourth candidate answer to §3's blocking problem (the in-round
+edit needs a cost, and money makes that cost _earned by prior performance_ rather than traded against
 Forage). The stated catch is §3's own: _"if it is bought, that decision is reopened"_ — the no-shop
 position. Buying extra Forage edits is the weaker candidate, because §9's test for the budget of 4 is
 whether an edit is ever left unspent, and selling a fifth before that is measured is premature.
 
 **One ambiguity this exposes, recorded rather than resolved.** §5 states `k = 7` _"wins the encounter
-on Hunt 4 with 486 of 1,350 left."_ 486 is health *entering* Hunt 4 (`1,350 − 3 × 288`); after Hunt
+on Hunt 4 with 486 of 1,350 left."_ 486 is health _entering_ Hunt 4 (`1,350 − 3 × 288`); after Hunt
 4's simultaneous application it is **198**. Both are defensible phrasings of the same line, but a
 payout reading off "health remaining" pays **2.5× more** under one than the other, so the idea forces
 the reading to be pinned. Not fixed here — §5 and §9 own that number.
@@ -764,6 +764,467 @@ adding to it; the draw gains a parameter, not a new step.
 more decision-heavy — if the ranks 5–6 spike reads as noise rather than a signal worth planning
 around — the middle-band argument is wrong and the curve should revert to uniform, a one-line
 change in `src/hunt/config.ts`.
+
+### Replace the rank-sum bank with a trick-count bank — `Σn²` instead of `Σranks × n`
+
+> **The developer settled the shape of this on 2026-08-14, in the same session that raised it.**
+> The direction below is chosen, not merely costed; what remains open is tuning. In summary:
+>
+> - **Damage per streak is `n × n`** — 1, 4, 9, 16, 25, 36. The `n × max(n,2)` variant with its
+>   2, 4, 9 opening was considered and dropped, because its second trick paid the same as its first
+>   and the compounding did not start until the third.
+> - **Both terms stay on screen as an `× ` readout**, and each trick taken adds one to each side.
+> - **The two terms are separate quantities that merely start equal.** This is load-bearing, not
+>   cosmetic: the developer wants a one-time-use "+1 ×" item, so the shop needs a term to buy.
+>   Three in a row is `3 × 3 = 9`; with `+1 ×` it is `3 × 4 = 12`; with `+2` to the left it is
+>   `5 × 3 = 15`; with both, `5 × 4 = 20`. If the two can never come apart there is one number on
+>   screen and the shop has nothing to modify — `design-principles.md` §8's Chips × Mult note is
+>   the precedent, including the reason a build that only ever feeds one term stops working.
+> - **Leftover damage converts to money, and is explicitly an extra rather than the economy.**
+>   The developer also intends a flat payout for winning an encounter. Problems 1 and 2 below are
+>   therefore acknowledged rather than open, and the scaling problem is to be solved by the shop
+>   raising the player's damage rather than by growing the income.
+> - **Both health totals are to be tuned after playing**, so every win-rate figure below is a
+>   consequence table, not a recommendation.
+
+**Status: Worth costing.** Raised by the developer 2026-08-14 after playing the 10/400 build: _"the
+damage numbers are pointless, the ones that come from the card values. I can't really do anything
+about them, they're either good or bad — the only skill expression I have is keeping the streak
+alive."_ Measured against the shipped engine the same day; every figure below comes from simulating
+`src/warCouncil` directly, not from arithmetic on the design.
+
+**Method, so the numbers can be re-derived.** A harness drove the real `dealRound` → `playCard` →
+`commitQuarryMove` loop. The Quarry is deterministic, so only the player branches, which makes an
+_exact_ perfect-information solve possible (≤6! lines per hand). Four player policies were measured
+on identical seeded deals:
+
+| Policy        | What it knows                                                                  | Damage/hand (mean, sd) |
+| ------------- | ------------------------------------------------------------------------------ | ---------------------- |
+| random legal  | nothing                                                                        | 72 (sd 72)             |
+| simple greedy | lead card, skull marks, the suit shape readout                                 | 82 (sd 69)             |
+| **PIMC**      | **exactly what the screen shows** — own hand, decree, played cards, suit shape | **125 (sd 103)**       |
+| ceiling       | the Quarry's actual ranks (not obtainable in play)                             | 223 (sd 123)           |
+
+PIMC = Perfect Information Monte Carlo, the standard trick-taking AI method already recorded in
+`design-principles.md` §7: sample opponent hands consistent with what has been seen, solve each,
+average. It is the honest stand-in for a strong player, because it is given no information the
+screen withholds. A human sits between _simple greedy_ and _PIMC_.
+
+#### 1. The card-value bank is 94% redundant with the streak
+
+Regressing per-hand damage on `Σn²` — the sum of squared streak lengths — gives **R² = 0.938**
+across 6,000 hands. The printed ranks account for the remaining ~6%, and that 6% arrives as a
+**±20% jitter that no decision controls**:
+
+| `Σn²` | hands | mean damage | sd   | min | max | ratio max/min |
+| ----- | ----- | ----------- | ---- | --- | --- | ------------- |
+| 2     | 773   | 23.4        | 5.2  | 8   | 39  | 4.9×          |
+| 5     | 1251  | 57.2        | 12.2 | 20  | 93  | 4.7×          |
+| 10    | 547   | 116.1       | 22.6 | 52  | 176 | 3.4×          |
+| 25    | 121   | 298.1       | 45.8 | 180 | 430 | 2.4×          |
+| 36    | 93    | 437.7       | 55.2 | 306 | 570 | 1.9×          |
+
+Read the `Σn²=5` row: **every one of those 1,251 hands took the same shape of tricks, and they paid
+between 20 and 93.** The developer's read is correct and this is the number behind it.
+
+**The one decision that could have made ranks matter measures as zero.** Because the bank sums both
+cards' printed ranks, "win the trick with your highest affordable card" should bank more than "win
+with your cheapest". Over 4,000 identical deals: winning cheap **83.7**, winning rich **82.9** —
+indistinguishable. Spending the high card early costs the later tricks it would have won, and the
+two effects cancel. So there is no rank lever, only rank noise.
+
+**The precise charge is illegibility, not variance.** Dropping the bank barely moves the relative
+spread (`Σn²` has sd/mean 0.86 against damage's 0.82). What it removes is the _unattributable_ part:
+`Σn²` is fully determined by which tricks the player took, which is a fact on screen and reasonable
+about. `Σranks × n` is that same fact times an unpredictable 0.8–1.2. This is `design-principles.md`
+§8's Balatro/Mark Brown finding running in reverse — not information hidden but recoverable by
+effort, but information _displayed_ and not recoverable at all.
+
+#### 2. "Keep the multiplier, drop the bank" deletes the multiplier — arithmetic, not opinion
+
+The literal proposal — cash out `multiplier` rather than `bank × multiplier` — collapses to a linear
+count, because **the streak lengths of a hand partition the tricks taken**. A hand of streaks
+{4, 2} pays 4 + 2 = 6; a hand of one streak of 6 pays 6. Measured: mean 3.2/hand, sd 1.1, range
+0–6, and identical to "tricks taken" in every hand. The compounding the developer wants to keep is
+exactly what this removes.
+
+**The version that keeps the intent** is to leave the equation `bank × multiplier` alone and change
+what the bank _counts_ — tricks instead of ranks. The bank then equals the streak length, so a
+cash-out is `n × n`, and a hand pays `Σn²`: mean **7.1**, sd 6.1, range **0–36**. Same quadratic
+shape, no card values, one term changed. Cost in new rules: **none** — it deletes a rule
+(`resolveTrickBank` stops reading `card.rank`).
+
+Variants, if `Σn²` proves too top-heavy — all one-liners, all preserving super-linearity:
+
+| Model       | mean/hand | range | note                                                    |
+| ----------- | --------- | ----- | ------------------------------------------------------- |
+| `Σn²`       | 7.1       | 0–36  | the direct analogue of the current equation             |
+| `Σn(n+1)/2` | 5.1       | 0–21  | triangular — gentler top end                            |
+| `Σn(n−1)`   | 4.0       | 0–30  | pays nothing for a streak of 1; a lone trick is worth 0 |
+| `Σn²/2`     | 3.3       | 0–18  | halves the ceiling                                      |
+
+#### 3. A small bar throws the top of the curve away
+
+The reason `Σn²` cannot simply be paired with a 10-point Quarry bar: **24% of hands already reach
+`Σn²` ≥ 10** under ordinary play, so a quarter of hands one-shot the encounter and every value above
+10 is discarded. Overkill waste, and the encounter length it buys:
+
+| Quarry HP | random win | greedy win | PIMC win | hands | damage wasted as overkill |
+| --------- | ---------- | ---------- | -------- | ----- | ------------------------- |
+| 10        | 63.8%      | 73.3%      | 85.0%    | 1.9   | **36.6%**                 |
+| 20        | 33.9%      | 43.5%      | 63.3%    | 2.8   | 25.3%                     |
+| 25        | 21.6%      | 28.8%      | 52.3%    | 3.0   | 18.9%                     |
+| 30        | 13.8%      | 20.5%      | 42.7%    | 3.3   | 14.1%                     |
+| 40        | 6.0%       | 10.7%      | 26.7%    | 3.6   | 7.3%                      |
+
+At 10 the multiplier stops being legible for the second time — a streak of 4 (16) and a streak of 6
+(36) both simply win, so the curve's whole upper half is invisible. **The bar has to be large enough
+that the top of the range still buys something**, which is the same requirement the current 400
+satisfies by accident. The value is the developer's; the constraint is that it interacts with the
+`Σn²` ceiling of 36.
+
+**What would prove this idea wrong.** If `Σn²` plays as _flatter_ than `Σranks × n` — if the numbers
+being small enough to predict makes the cash-out unexciting rather than readable — then the jitter
+was doing work as spectacle and the finding above mistook noise for a defect. The cheapest test is
+one encounter under `Σn²` with the Quarry sized from the table, judged on whether the player can
+say what the next cash-out will be _before_ it fires.
+
+#### 4. Leftover damage as money — what it can and cannot be
+
+Measured the same day, on the `n × max(n,2)` table; the shape of the finding is unchanged under
+`n × n`, which pays slightly less per hand (mean 7.2 against 8.1).
+
+**Overkill can only ever happen on the cash-out that kills.** Damage lands per cash-out, several per
+hand, so spare damage only exists once the bar is nearly empty. Measured across encounters, at every
+Quarry size from 10 to 60, **only ~0.8 cash-outs per encounter produce any money at all** — out of
+2.9 (at 10 HP) to 6.6 (at 60 HP). A 36-payout hand in the first hand of a three-hand fight earns
+nothing; it is simply damage.
+
+Its distribution at Quarry 20 is the rest of the finding: **19% of wins pay 0**, a further 25% pay
+exactly 1, the median is **2**, the mean is 4.8, and the maximum is 35 — so the mean is carried
+almost entirely by a ~3% tail. As an income that is a scratchcard rather than wages; nothing can be
+saved against it.
+
+**It also does not scale**, and cannot: money per encounter sits flat at **4–6** whether the Quarry
+holds 10 HP or 60, because it is the overshoot of one cash-out and the overshoot is set by the payout
+distribution rather than by the bar.
+
+Both facts are **accepted** — the developer's plan is a flat payout for winning plus shop items that
+raise the player's damage, with leftover damage as a bonus on top. Recorded because the numbers say
+what the bonus is worth, and "median 2, nothing at all a fifth of the time" is the figure to hold it
+against once the shop exists. The alternative that was costed and not taken: a fixed share of
+_every_ cash-out, which pays 2.7 → 14.8 per encounter at 25% as the Quarry grows 10 → 60, fires on
+every streak, and scales without help.
+
+#### 5. How Balatro pays the player — the reference for the flat payout
+
+Gathered 2026-08-14 to answer the developer's question directly; sources are in
+`design-principles.md` §8.
+
+| Source                     | Amount                                                                |
+| -------------------------- | --------------------------------------------------------------------- |
+| Beating a blind            | **$3** Small, **$4** Big, **$5** Boss — **and this never scales**     |
+| Hands not used             | **$1 each** (four hands a blind, so up to $3 kept by finishing early) |
+| Interest                   | **$1 per $5 held, capped at $5** (vouchers raise the cap)             |
+| Selling a Joker            | half its cost                                                         |
+| Money Jokers               | e.g. Golden Joker, +$4 a round                                        |
+| Skipping a Small/Big blind | a Tag instead of money, and the shop is forfeited                     |
+
+Three things worth keeping:
+
+- **The flat reward genuinely does not scale.** $3/$4/$5 in Ante 8 as in Ante 1, against blind
+  requirements that climb 300 → 100,000. This is direct support for the developer's position that a
+  non-scaling flat payout is fine; Balatro solves growth on the _build_ side, not the income side —
+  which is exactly the plan here.
+- **Interest is where the late economy comes from**, and it is the source of the only real decision
+  in Balatro's shop: holding cash earns cash, so every purchase costs more than its price. If the
+  shop here ever feels like a vending machine rather than a choice, this is the missing piece.
+- **"$1 per unused hand" is the device that rewards playing well**, and it is a better model for
+  this game than overkill is: it fires every single round and the player can see it coming. The
+  analogue here is money for **hands the encounter did not need** — which rewards the same thing
+  overkill was meant to reward, because a long streak kills faster, but reliably rather than only on
+  the killing blow.
+
+### Two-thirds of this game's skill is locked behind the Quarry's hidden ranks
+
+**Status: Worth costing.** Measured 2026-08-14, from the same harness. Not a proposal — a diagnosis
+that should be settled before any tuning pass, because it explains the "it feels like RNG" reading
+that prompted it.
+
+The policy ladder above splits the skill headroom in two:
+
+- **available** — what a strong player can gain using only what the screen shows:
+  `PIMC − random = 125 − 72 = **53** damage/hand`
+- **locked** — what remains reachable only by seeing the Quarry's ranks:
+  `ceiling − PIMC = 223 − 125 = **97** damage/hand`
+
+So **65% of the total skill span in a hand is unreachable in principle**, and the deal's own spread
+at strong play (sd **103**) is **twice** the entire available span. Two consequences:
+
+- **Random out-damages strong play on 22% of the same deals.** Roughly one hand in five pays the
+  player less for playing well, which is `design-principles.md` §3's input/output-randomness test
+  failing in the way that matters: the player loses to the system rather than to their decision.
+- **At perfect play a hand still pays between 4 and 522.** The deal, not the decision, sets the
+  scale of a hand.
+
+**The encounter, however, is not RNG at all** — and this is the reframing the diagnosis turns on.
+At 10 v 400: random wins **10%**, simple greedy **15%**, PIMC **49%**. A 5× separation in win rate
+from the same information. So skill decides the _encounter_ while noise decides the _hand_.
+
+**Therefore the complaint is a feedback problem, not a randomness problem.** The skill signal needs
+about three hands to clear the noise, and the encounter is 3.3 hands long — so it resolves exactly
+as the run ends, and the player never sees evidence that their play mattered. Sid Meier's
+"invisible consequence" (`design-principles.md` §2) is the exact failure: the consequence is real,
+large, and imperceptible at the frequency the player experiences it.
+
+**What connects this to the bank.** The card-value jitter is not the largest source of noise, but it
+is the only source that is _pure_ noise — every other one (the deal, the trump, the skull placement)
+is at least something the player can read and plan against. Removing it does not make the game less
+random; it makes the randomness attributable, which is what a feedback problem needs.
+
+**What would prove it wrong.** Two cheap measurements, both from one session:
+
+1. Before each cash-out fires, write down what you expect it to be. If you are inside ±20% most of
+   the time, the number is legible and the illegibility finding is wrong.
+2. Log tricks-taken and damage for every hand of one encounter. If the hands you judged well-played
+   are the high-damage hands, the signal is reaching you and the feedback finding is wrong.
+
+A third, if it is ever worth the effort: raising the telegraph's fidelity toward showing rank
+information would convert part of the locked 97 into available skill. That is a design change with
+its own costs and is not proposed here — only the fact that the headroom exists is.
+
+### The shop and the payment system — what the live equation can actually sell
+
+**Status: Worth costing.** Opened 2026-08-14 at the developer's request ("start designing the shop
+and the payment system"), read against the game **as it stands after PT-002**, not against the
+retired `card value × Standing` design. Nothing here is decided; prices, health curves and item
+counts are the developer's.
+
+**First, a documentation correction, because the shop's standing rejection is void.** The Rejected
+entry below (_Money, a shop, and permanent cross-run upgrades_, DLR-64) says its reasons are
+"unchanged by the direction". That was true on 2026-08-11 and is **not true now.** Three of its four
+reasons cite `hybrid-design.md` §1's component table, which forbids any device that is not an
+intervention on **Spoils** or **Standing** — and DLR-80 deleted both terms from the game. The fourth
+cites §3's Demand curve, which is also gone. So the shop is not being re-litigated against a live
+argument; the argument's subject no longer exists. **The spirit survives and restates cleanly for the
+live equation**, and the restatement is what gives the shop its whole vocabulary:
+
+> Every purchase must be an intervention on **the bank**, **the multiplier**, or **which tricks you
+> take**. Anything else is a third channel.
+
+Everything below is derived from that one line.
+
+#### 1. There are exactly two growth classes, and the design already has the fields for both
+
+Write the general cash-out. Let the bank climb by `b` per trick taken and the multiplier by `m`, with
+flat starting values `B` and `M`. Today `b = m = 1` and `B = M = 0` (`src/warCouncil/bank.ts` —
+`resolveTrickBank` adds a literal 1 to each). A streak of `n` then cashes:
+
+```
+(b·n + B) × (m·n + M)  =  bm·n²  +  (bM + mB)·n  +  BM
+```
+
+- **Buying a rate (`b` or `m`) multiplies the `n²` coefficient.** It is the quadratic class.
+- **Buying a flat (`B` or `M`) adds a linear term.** It is the linear class.
+- **Buying both rates multiplies them together** — `b = m = 2` is `4n²`, not `2n²`.
+
+That last line is `Chips × Mult` reproduced exactly, and it is the real justification for keeping the
+two terms apart. **The stated justification is weaker than the true one, and worth correcting.** The
+direction note above records the reason as _"the developer wants a one-time-use `+1 ×` item, so the
+shop needs a term to buy."_ But a one-time `+1` to the **multiplier** and a one-time `+1` to the
+**bank** both pay `+n` — they are the **same item with two names**, because the two terms are
+symmetric in the product. A one-time flat item does **not** need two terms. **Rate items do**, and
+they are the ones that compound. Keep the split; keep it for the rate items.
+
+Worked, at the streaks a six-trick hand actually produces:
+
+| Purchase                         | Class     | Streak 3 | Streak 6 | Mean/hand vs base |
+| -------------------------------- | --------- | -------- | -------- | ----------------- |
+| _(base — `b = m = 1`)_           | —         | **9**    | **36**   | **7.1**           |
+| `+1` bank, one-time-use per hand | linear    | 12       | 42       | ~9 (+28%)         |
+| `+1` multiplier, one-time-use    | linear    | 12       | 42       | ~9 (+28%)         |
+| `B = 1` (bank starts at 1)       | linear    | 12       | 42       | 10.3 (+45%)       |
+| `b = 2` (bank climbs 2/trick)    | quadratic | 18       | 72       | 14.2 (+100%)      |
+| `m = 2`                          | quadratic | 18       | 72       | 14.2 (+100%)      |
+| `b = 2` **and** `m = 2`          | quadratic | **36**   | **144**  | 28.4 (+300%)      |
+| hand size 7 (max streak 6 → 7)   | quadratic | —        | **49**   | not computed      |
+
+Mean/hand figures use the measured baseline `Σn² = 7.1` and `Σn = 3.2` tricks taken per hand (both
+from the PT-002 harness, above). A flat bonus applied to every cash-out is worth `Σn` = **+3.2**; a
+rate doubling is worth `Σn²` = **+7.1**.
+
+**The pricing constraint that falls out, and it is not a tuning value.** A rate purchase beats a flat
+purchase at every streak length ≥ 2 and ties at 1 — `n² ≥ n` always. So **if the shop prices the two
+classes comparably, the linear class is dominated and nobody buys it** (Meier's dominant-option test,
+`design-principles.md` §2, failing on the price list rather than on a rule). Balatro survives the
+identical problem by making `+Mult` common and cheap and `×Mult` rare and expensive. Here the whole
+payout range is 1–36 — **one order of magnitude, against Balatro's 333× across eight antes** — so
+there is far less curve for two growth classes to separate on, and the price ratio has to be tight.
+
+**A consequence for the one-time item specifically.** A one-time `+1` is worth ~`+2` damage on a mean
+7.1 hand. Against the current Quarry's **10** health that reads as significant; against any Quarry
+sized so the top of the payout table is visible (`Σn² ≥ 10` occurs in 24% of hands — measured above)
+it is noise. The item is legible today largely because the bar is small.
+
+#### 2. The strongest thing to sell is not either term — it is the reset
+
+Damage is quadratic in streak length, so merging two streaks pays the **cross term**: `a² + b²`
+becomes `(a+b)² = a² + b² + 2ab`. The gain is `2ab`, and it is bought by nothing in either term.
+
+| Hand's streaks | Pays | Merged  | Gain    |
+| -------------- | ---- | ------- | ------- |
+| {2, 2}         | 8    | {4} 16  | **+8**  |
+| {3, 2}         | 13   | {5} 25  | **+12** |
+| {3, 3}         | 18   | {6} 36  | **+18** |
+
+An item reading _"the first time you take damage each hand, the multiplier does not reset"_ is
+therefore worth up to **+100% on a specific hand**. On the population it is less, and it can be
+bounded rather than guessed: removing **every** reset makes a hand pay `T²` where `T` is tricks
+taken, and `E[T²] ≥ (E[T])² = 3.2² = 10.24` against the measured 7.1 — so removing all resets is
+worth **at least +44%**, and removing one is worth less than that. **It is comparable to a flat
+adder, not to a rate doubling** — which is the opposite of what the per-hand worked cases suggest,
+and is why the population figure has to be stated next to them.
+
+**One trap, stated because it is easy to ship by accident.** Taking damage does two things —
+`1` health **and** the reset (`the-hunt.md` §7). An item that cancels both is two benefits at one
+price, and it is the item most likely to make losing a trick feel free, which is the whole tension
+§7 built. If this is sold, sell the reset and keep the health.
+
+#### 3. Information is cheaper than it looks, and it is the item that fixes the known complaint
+
+The measurement is already above (_Two-thirds of this game's skill is locked behind the Quarry's
+hidden ranks_): available skill `PIMC − random = 53`, locked skill `ceiling − PIMC = 97`, so **65% of
+the skill span is unreachable in principle**.
+
+**Those figures are in the retired rank-sum unit and must not be compared to `7.1` directly** — that
+comparison would overstate the case by an order of magnitude. Converted to a ratio, which does carry
+over: locked headroom is `97 / 125` = **~78% of a strong player's typical hand**. So full sight of the
+Quarry's hand is worth slightly **less** than one rate doubling (+100%), and an item revealing *one*
+card is worth a fraction of that.
+
+The conclusion reverses the intuition and is the useful part: **information items are a cheap tier,
+not a premium one** — and they are the only tier that addresses the diagnosis those measurements were
+taken for, that the "it feels like RNG" reading is a feedback problem rather than a randomness
+problem. The shop is the natural place to convert locked skill into available skill, one purchase at
+a time, which is a thing no arithmetic item can do at any price.
+
+Candidates, all reusing built machinery: raise `TELEGRAPH_FIDELITY` for the run; reveal one of the
+Quarry's ranks per hand; reveal which rank carries a skull (the shape readout deliberately withholds
+exactly this — `the-hunt.md` §3).
+
+#### 4. Two things the shop must not sell
+
+- **Anything that reduces skull density.** The skull is the game's only inversion — it is what stops
+  "take every trick" being correct (`the-hunt.md` §7). Selling `SKULL_DENSITY` down from 2-of-6
+  removes decisions rather than adding power, and it is the exact analogue of selling "the Boss Blind
+  does not apply."
+- **Player health, if health becomes the currency** (§5 below). It would be both the resource and the
+  thing bought with it. It is also the branch already rejected by name as *power* rather than
+  *options* (`hybrid-design.md` §7).
+
+#### 5. The payment system — four bases, and two of them fail on incentive rather than on size
+
+The size question is already answered in _Leftover damage as money_, above. What that entry does not
+test is **whether the money-maximising line is the damage-maximising line** — `hybrid-design.md` §2's
+toll-booth test, which is decided by the basis and not by argument.
+
+| Basis                          | Scales?            | Fires                    | Money line = damage line?         |
+| ------------------------------ | ------------------ | ------------------------ | --------------------------------- |
+| **Overkill** (surplus damage)  | No — flat 4–6      | ~0.8× per encounter      | **No — it inverts it.** See below |
+| **Flat payout for winning**    | No (fine — see §5) | once per encounter       | No signal either way              |
+| **% of every cash-out**        | Yes — 2.7 → 14.8   | every cash-out           | **Yes**                           |
+| **Health remaining** _(new)_   | With the curve     | once per encounter       | **Yes**                           |
+
+**Overkill inverts the incentive, and this is new.** To maximise overkill you want the *killing*
+cash-out to overshoot as far as possible — so you want to arrive at 1 remaining HP and then land a
+36. Worked against the current Quarry's 10: chip it to 1 with streaks of {2, 2, 1} (4 + 4 + 1 = 9),
+which costs **3 breaks = 3 of your 10 health**, then take a clean hand for 36 → **overkill 35.**
+Playing to kill fast instead — one streak of 4 for 16 into a 10-point bar — overkills by **6**. The
+perverse line pays **~6× more** and costs 3 health of 10. So overkill as income pays the player to
+**break their own streaks**, which is precisely the skill the developer named as the only one the game
+has (_"the only skill expression I have is keeping the streak alive"_). That is Soren Johnson's
+optimise-the-fun-out (`design-principles.md` §2) landing on the economy. It survives as a *flourish*
+— a number that appears when it appears — and fails as a *basis*.
+
+**Health remaining is the honest analogue of Balatro's `$1 per unused hand`, and it is not yet in this
+file.** The entry above already identifies that device as the better model than overkill, and names
+the analogue as "money for hands the encounter did not need". The tighter analogue is **health**: a
+break costs exactly 1 health, so health remaining *is* a count of streaks not broken. It pays for the
+one skill the game has, it fires every encounter, it is a number already on screen throughout, and it
+needs no new quantity. Two things to watch: it is a **slippery slope** (play well → more money →
+stronger build → play better — `design-principles.md` §3, the same slope Balatro runs), and it turns
+`ENCOUNTER_PLAYER_RESTORE = 0` into a load-bearing decision rather than a placeholder, since health
+would then be survival *and* wages at once.
+
+**Interest is probably not worth its rules here, and that is cheap to establish.** The entry above
+calls Balatro's interest _"where the late economy comes from"_ and _"the only real decision in
+Balatro's shop."_ It compounds over roughly **24 shop visits** in a Balatro run. A five-encounter run
+gives **4–5 visits**. `$1 per $5 held` across four visits cannot compound into a decision; the
+decision it is wanted for has to come from somewhere else (a reroll price, or few items well chosen).
+
+**Scale, so a price list has a frame.** At 25% of every cash-out the measured income is **2.7 per
+encounter** at Quarry 10. Adding a Balatro-shaped flat win payout (**$3–$5**) gives roughly **6–8 per
+encounter**, so **~30–40 per run** of five. Items priced at 5 buy **6–8 purchases a run**, against
+Balatro's 15–20. Thin but workable; it tightens if the flat payout is smaller.
+
+#### 6. The blocking dependency: there is no run, so there is nothing to price against
+
+`QUARRY_ENCOUNTER_HEALTH` holds **one** entry, `[10]`, and `ENCOUNTERS_PER_RUN = 5` has no consumer
+(`the-hunt.md` §10 — the run is **[not built]**). A shop with one visit and no escalating opponent is
+a vending machine: nothing is being prepared for.
+
+**This is the same problem as §1's, and that is the connection worth acting on.** §1 says the design
+has no growth-class distinction; this says it has nothing to grow *against*. Balatro's shop is
+interesting because the requirement climbs `×2` per ante while the engine climbs multiplicatively —
+neither half is interesting alone. Here:
+
+- **The Quarry-health curve across the five encounters is the requirement curve**, and it is what
+  prices every item in the shop.
+- **A run's shop can raise damage by roughly the product of the rates bought.** With two rate slots
+  reachable in one run, that is a ceiling near **4×** (`b = m = 2`). So an encounter-5 Quarry more than
+  ~4× encounter 1 is unclearable, and much less than that is a shop that changed nothing.
+
+Both numbers are the developer's. The ordering is not: **run and health curve first, shop second.**
+
+#### 7. Where this leaves Forage and Snare — one clean division, at no cost
+
+Three layers already exist on paper, and PT-002 accidentally sorted them. Since a card's rank now
+decides **only who wins a trick** (`the-hunt.md` §7), a Forage *value* edit is no longer a damage edit
+at all — it is a trick-winning edit. So:
+
+| Layer      | When            | Intervenes on           | Answers                    |
+| ---------- | --------------- | ----------------------- | -------------------------- |
+| **Forage** | between fights  | **which tricks I take**  | what my deck is            |
+| **Shop**   | between fights  | **what a trick pays**    | what my engine is          |
+| **Snare**  | mid-hand, spent | which tricks I take, now | what I do right now        |
+
+No overlap, both feeding one equation. This is `forbidden-solitaire.md` §6's Gems/Jokers split with a
+third row, and it is the division the two existing docs were reaching for separately.
+
+It also closes a stated blocker for free, which the _fight timer_ entry above already spotted: Snare
+is **[open], blocked** because "raise the value of the card I am about to win with" is dominant until
+it has a cost (`the-hunt.md` §10). **Money is that cost**, and it is a cost *earned by prior
+performance* rather than traded against a Forage edit.
+
+**Cost in new rules.** The vocabulary itself: **zero new terms** — `bank` and `multiplier` are already
+two fields, and rate/flat are readings of numbers `resolveTrickBank` already writes. Then one currency,
+one payout rule, and one shop screen. The rules budget goes on the item list, and every item above is
+an intervention on an existing quantity rather than a new one.
+
+**What would prove this wrong.**
+
+1. **Price-list dominance.** If the linear class is never bought once a rate item is on the shelf, the
+   two classes are not separable at this scale (§1's one-order-of-magnitude problem) and the shop
+   should sell one class plus structural items only.
+2. **Legibility.** PT-002's whole claim was that `n × n` became predictable. Log whether the next
+   cash-out can still be called *after* two or three items are stacked. If not, the shop bought damage
+   by spending the thing PT-002 was for.
+3. **The reset item.** If _"first break each hand doesn't reset"_ makes losing a trick feel free, §7's
+   tension was carried by the reset and not by the health point.
+4. **Unspent money.** If money is left over at the end of a run, the sink is thinner than the income —
+   which is the failure mode a five-visit shop is most exposed to.
+5. **Health as wages.** If it is taken, measure whether players start declining risky lines to hoard
+   currency. That is the slippery slope showing up as caution rather than as power.
 
 ---
 
