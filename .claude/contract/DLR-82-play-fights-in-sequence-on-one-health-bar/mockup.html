@@ -1,0 +1,451 @@
+<title>Run Verdict Screens</title>
+<style>
+  :root {
+    --wc-chamber: #0c1013;
+    --wc-chamber-lift: #141a1f;
+    --wc-felt: #16241f;
+    --wc-felt-line: #2b4038;
+    --wc-parchment: #e9e1cd;
+    --wc-ink: #191610;
+    --wc-brass: #c99a4e;
+    --wc-brass-dim: #7d6132;
+    --wc-chalk: #cdd6d2;
+    --wc-chalk-dim: #6f7d78;
+    --wc-alarm: #d1705f;
+    --wc-poison: #8fb04e;
+    --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --wc-card-w: clamp(2.9rem, 6.2vmin, 4.3rem);
+    --wc-hp-track: #0a1211;
+    --wc-hp-height: clamp(0.7rem, 1.7vmin, 1.05rem);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--wc-chamber);
+    color: var(--wc-chalk);
+    font-family: var(--wc-sans);
+    color-scheme: dark;
+  }
+
+  /* ---------- the mockup's own chrome, not part of the design ---------- */
+
+  .mk-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 50;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.7rem;
+    background: #050708ee;
+    border-bottom: 1px solid #232c33;
+    font-size: 0.72rem;
+  }
+  .mk-bar strong { color: var(--wc-brass); letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.62rem; margin-right: 0.4rem; }
+  .mk-bar button {
+    font: inherit;
+    min-height: 30px;
+    padding: 0.25rem 0.6rem;
+    border-radius: 3px;
+    border: 1px solid #3a4a53;
+    background: var(--wc-chamber-lift);
+    color: var(--wc-chalk);
+    cursor: pointer;
+  }
+  .mk-bar button[aria-pressed='true'] { border-color: var(--wc-brass); color: var(--wc-brass); }
+  .mk-note {
+    margin-left: auto;
+    color: var(--wc-chalk-dim);
+    font-size: 0.68rem;
+  }
+  .mk-stage { padding-top: 3.2rem; }
+  .mk-screen { display: none; }
+  .mk-screen.is-on { display: block; }
+
+  /* ---------- EXISTING felt shell, reproduced only far enough to place the run label ---------- */
+
+  .wc-shell {
+    height: calc(100dvh - 3.2rem);
+    width: 100%;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: minmax(10rem, 17vw) 1fr;
+    grid-template-areas:
+      'status  status'
+      'dossier table'
+      'hand    hand';
+    background: radial-gradient(120% 80% at 50% 0%, #17202700 0%, #060809 100%), var(--wc-chamber);
+  }
+
+  .wc-status {
+    grid-area: status;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: clamp(0.5rem, 2vmin, 2rem);
+    padding: clamp(0.5rem, 1.6vmin, 1rem) clamp(0.6rem, 2.2vmin, 1.6rem);
+  }
+
+  .wc-plate {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.4rem, 1.2vmin, 0.75rem);
+    background: var(--wc-chamber-lift);
+    border: 1px solid #232c33;
+    border-radius: 2px;
+    padding: clamp(0.35rem, 1vmin, 0.6rem) clamp(0.5rem, 1.4vmin, 0.85rem);
+  }
+  .wc-plate-label {
+    font-size: clamp(0.52rem, 1.1vmin, 0.64rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* THE NEW BIT in the felt: AC6's run-position readout, edge-anchored beside the
+     opponent plate rather than drifting toward the centre. */
+  .wc-run {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: clamp(0.35rem, 1vmin, 0.6rem) clamp(0.5rem, 1.4vmin, 0.85rem);
+    background: var(--wc-chamber-lift);
+    border: 1px solid var(--wc-brass-dim);
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .wc-run-value {
+    font-family: var(--wc-serif);
+    font-size: clamp(0.85rem, 2.1vmin, 1.15rem);
+    color: var(--wc-brass);
+    line-height: 1;
+  }
+
+  .wc-bars { display: flex; flex: 1; align-items: center; gap: clamp(0.5rem, 2vmin, 1.6rem); }
+  .wc-hp { flex: 1; height: var(--wc-hp-height); background: var(--wc-hp-track); border: 1px solid #232c33; }
+  .wc-hp span { display: block; height: 100%; background: var(--wc-brass); }
+  .wc-hp.is-mirror { display: flex; justify-content: flex-end; }
+  .wc-score { display: flex; gap: clamp(0.5rem, 1.6vmin, 1.2rem); font-family: var(--wc-serif); }
+  .wc-score b { display: block; font-size: 1.1rem; color: var(--wc-brass); font-weight: 600; }
+  .wc-score i { font-style: normal; font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--wc-chalk-dim); }
+
+  .wc-dossier { grid-area: dossier; border-right: 1px solid #1b2429; padding: 0.8rem; color: var(--wc-chalk-dim); font-size: 0.7rem; }
+  .wc-table {
+    grid-area: table;
+    display: grid;
+    place-items: center;
+    margin: clamp(0.4rem, 1.4vmin, 1rem);
+    background: var(--wc-felt);
+    border: 1px solid var(--wc-felt-line);
+    border-radius: 4px;
+  }
+  .wc-hand { grid-area: hand; display: flex; justify-content: center; gap: 0.4rem; padding: 0.8rem; }
+  .wc-card {
+    width: var(--wc-card-w);
+    aspect-ratio: 2 / 3;
+    border-radius: 3px;
+    background: var(--wc-parchment);
+    color: var(--wc-ink);
+    font-family: var(--wc-serif);
+    display: grid;
+    place-items: center;
+    font-size: 1.1rem;
+  }
+
+  /* ---------- EXISTING round-over panel + THE NEW terminal control ---------- */
+
+  .wc-over { display: flex; flex-direction: column; align-items: center; gap: clamp(0.4rem, 1.4vmin, 0.9rem); }
+  .wc-over h2 { font-family: var(--wc-serif); font-size: clamp(1.2rem, 3.4vmin, 2rem); margin: 0; color: var(--wc-brass); font-weight: 600; }
+  .wc-tally { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .wc-tally th, .wc-tally td { padding: 0.22rem clamp(0.6rem, 2vmin, 1.4rem); border-bottom: 1px solid var(--wc-felt-line); font-size: 0.8rem; text-align: left; }
+  .wc-tally th { font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--wc-chalk-dim); }
+  .wc-tally td:last-child { font-family: var(--wc-serif); font-size: 1.15rem; color: var(--wc-brass); }
+  .wc-terminal { font-family: var(--wc-serif); font-size: 1rem; color: var(--wc-brass); margin: 0; text-align: center; }
+
+  /* ---------- THE NEW SCREEN: the run verdict ---------- */
+
+  .run-shell {
+    height: calc(100dvh - 3.2rem);
+    width: 100%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    padding: clamp(1rem, 4vmin, 3rem);
+    padding-bottom: max(clamp(1rem, 4vmin, 3rem), env(safe-area-inset-bottom, 0px));
+    background: radial-gradient(120% 80% at 50% 40%, #172027 0%, #050708 100%), var(--wc-chamber);
+  }
+
+  .run-verdict {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.7rem, 2.4vmin, 1.6rem);
+    text-align: center;
+    max-width: 34rem;
+  }
+
+  .run-headline {
+    font-family: var(--wc-serif);
+    font-size: clamp(2.6rem, 12vmin, 7rem);
+    line-height: 0.95;
+    letter-spacing: 0.06em;
+    margin: 0;
+    font-weight: 600;
+    color: var(--wc-brass);
+  }
+
+  /* Each verdict differs in FORM as well as colour — a rule above the headline for a fight won,
+     a double rule for the run won, a hatched rule for the run lost — so a screenshot in
+     greyscale still tells the three apart. */
+  .run-rule { width: clamp(6rem, 30vmin, 16rem); height: 2px; background: var(--wc-brass-dim); }
+  .run-verdict[data-verdict='runWon'] .run-rule { height: 8px; border-top: 2px solid var(--wc-brass); border-bottom: 2px solid var(--wc-brass); background: none; }
+  .run-verdict[data-verdict='runLost'] .run-rule { height: 6px; background: repeating-linear-gradient(-45deg, #ffffff26 0 3px, #00000026 3px 6px); }
+  .run-verdict[data-verdict='runLost'] .run-headline { color: var(--wc-alarm); }
+  .run-verdict[data-verdict='runWon'] .run-headline { color: var(--wc-poison); }
+
+  .run-detail {
+    margin: 0;
+    font-size: clamp(0.85rem, 2.2vmin, 1.05rem);
+    color: var(--wc-chalk);
+    line-height: 1.5;
+  }
+  .run-detail em { font-style: normal; color: var(--wc-brass); font-family: var(--wc-serif); font-size: 1.15em; }
+
+  /* The developer's gate ruling: a bar per trick, taken vs lost. Colour is NOT the only
+     signal — a lost trick is hatched and outlined where a taken trick is solid, and the row
+     carries a text count. Hues reuse the existing --wc-poison / --wc-alarm tokens. */
+  .run-tricks {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .run-tricks-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+  }
+  .run-bars { display: flex; gap: clamp(0.2rem, 0.8vmin, 0.45rem); }
+  .run-trick {
+    width: clamp(1.6rem, 6vmin, 3rem);
+    height: clamp(0.5rem, 1.6vmin, 0.85rem);
+    border-radius: 1px;
+    background: var(--wc-poison);
+    border: 1px solid #5c7a2e;
+  }
+  .run-trick.is-lost {
+    background: var(--wc-alarm);
+    background-image: repeating-linear-gradient(-45deg, #00000040 0 3px, #ffffff1a 3px 6px);
+    border-color: #7d3a30;
+  }
+
+  .run-carry {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+  }
+  .run-carry .wc-hp { width: clamp(7rem, 26vmin, 13rem); flex: none; }
+
+  .run-actions { display: flex; gap: 0.7rem; flex-wrap: wrap; justify-content: center; margin-top: 0.4rem; }
+
+  .run-btn, .wc-btn {
+    font-family: var(--wc-sans);
+    font-size: clamp(0.8rem, 2vmin, 0.95rem);
+    letter-spacing: 0.08em;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.7rem 1.6rem;
+    border-radius: 3px;
+    border: 1px solid var(--wc-brass);
+    background: transparent;
+    color: var(--wc-brass);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .run-btn.is-primary { background: var(--wc-brass); color: var(--wc-ink); font-weight: 600; }
+  .run-btn:focus-visible, .wc-btn:focus-visible, .mk-bar button:focus-visible { outline: 2px solid var(--wc-parchment); outline-offset: 2px; }
+  @media (hover: hover) {
+    .run-btn:hover, .wc-btn:hover { border-color: var(--wc-parchment); }
+  }
+  .run-btn:active, .wc-btn:active { transform: translateY(1px); }
+
+  @media (max-width: 44rem), (max-height: 34rem) {
+    .wc-dossier { display: none; }
+    .wc-shell { grid-template-columns: 1fr; grid-template-areas: 'status' 'table' 'hand'; }
+  }
+</style>
+
+<div class="mk-bar">
+  <strong>DLR-82</strong>
+  <button type="button" data-go="felt" aria-pressed="true">1 · Felt (run label)</button>
+  <button type="button" data-go="fightWon" aria-pressed="false">2 · Fight won</button>
+  <button type="button" data-go="runWon" aria-pressed="false">3 · Run won</button>
+  <button type="button" data-go="runLost" aria-pressed="false">4 · Run lost</button>
+  <span class="mk-note">Mockup only — placeholder data and copy. Buttons in the screens below are live.</span>
+</div>
+
+<div class="mk-stage">
+
+  <!-- 1 · the felt, unchanged apart from AC6's run-position readout in the status band -->
+  <section class="mk-screen is-on" id="screen-felt">
+    <div class="wc-shell">
+      <header class="wc-status">
+        <div class="wc-plate">
+          <span class="wc-plate-label">Opponent</span>
+          <span class="wc-plate-label">4 held</span>
+        </div>
+        <div class="wc-run">
+          <span class="wc-plate-label">Run</span>
+          <span class="wc-run-value">Fight 2 of 3</span>
+        </div>
+        <div class="wc-bars">
+          <div class="wc-hp is-mirror"><span style="width: 60%"></span></div>
+          <div class="wc-score">
+            <span><i>You</i><b>3</b></span>
+            <span><i>Trick</i><b>5</b></span>
+            <span><i>Them</i><b>1</b></span>
+          </div>
+          <div class="wc-hp"><span style="width: 35%"></span></div>
+        </div>
+      </header>
+      <aside class="wc-dossier">The Monarch<br /><br />Bells: 2 held, 1 skulled<br />Keys: 1 held, none skulled<br />Moons: 1 held, none skulled</aside>
+      <!-- When the encounter resolves, the deciding trick stays revealed here (it is SKIPPED
+           today) and the tap that clears it goes straight to the verdict — one tap, no tally
+           panel in between. Click the felt to see it. -->
+      <section class="wc-table" data-go="fightWon" style="cursor: pointer">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 0.6rem">
+          <div style="display: flex; gap: 0.6rem">
+            <div class="wc-card">9</div>
+            <div class="wc-card">4</div>
+          </div>
+          <span class="wc-plate-label">Deciding trick — tap to carry on</span>
+        </div>
+      </section>
+      <div class="wc-hand">
+        <div class="wc-card">2</div>
+        <div class="wc-card">7</div>
+        <div class="wc-card">3</div>
+        <div class="wc-card">8</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · fight won, more to come -->
+  <section class="mk-screen" id="screen-fightWon">
+    <div class="run-shell">
+      <div class="run-verdict" data-verdict="fightWon">
+        <div class="run-rule"></div>
+        <h1 class="run-headline">FIGHT WON</h1>
+        <p class="run-detail">The Quarry is down. <em>Fight 3 of 3</em> is waiting.</p>
+        <div class="run-tricks">
+          <span class="run-tricks-label">Tricks taken · 4 of 6</span>
+          <div class="run-bars">
+            <span class="run-trick"></span>
+            <span class="run-trick"></span>
+            <span class="run-trick"></span>
+            <span class="run-trick"></span>
+            <span class="run-trick is-lost"></span>
+            <span class="run-trick is-lost"></span>
+          </div>
+        </div>
+        <div class="run-carry">
+          <span>Carried health</span>
+          <div class="wc-hp"><span style="width: 40%"></span></div>
+          <span>4 of 10</span>
+        </div>
+        <div class="run-actions">
+          <button type="button" class="run-btn is-primary" data-go="felt">Next fight</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · run won — the developer's "nice and clear YOU WIN" -->
+  <section class="mk-screen" id="screen-runWon">
+    <div class="run-shell">
+      <div class="run-verdict" data-verdict="runWon">
+        <div class="run-rule"></div>
+        <h1 class="run-headline">YOU WIN</h1>
+        <p class="run-detail">Every Quarry is down. You took <em>all 3 fights</em> and finished the run on your feet.</p>
+        <div class="run-tricks">
+          <span class="run-tricks-label">Tricks taken · 5 of 6</span>
+          <div class="run-bars">
+            <span class="run-trick"></span>
+            <span class="run-trick"></span>
+            <span class="run-trick"></span>
+            <span class="run-trick"></span>
+            <span class="run-trick"></span>
+            <span class="run-trick is-lost"></span>
+          </div>
+        </div>
+        <div class="run-carry">
+          <span>Health remaining</span>
+          <div class="wc-hp"><span style="width: 20%"></span></div>
+          <span>2 of 10</span>
+        </div>
+        <div class="run-actions">
+          <button type="button" class="run-btn is-primary" data-go="felt">Start a new run</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · run lost -->
+  <section class="mk-screen" id="screen-runLost">
+    <div class="run-shell">
+      <div class="run-verdict" data-verdict="runLost">
+        <div class="run-rule"></div>
+        <h1 class="run-headline">YOU LOSE</h1>
+        <p class="run-detail">You went down on <em>fight 3 of 3</em>. The run ends here.</p>
+        <div class="run-tricks">
+          <span class="run-tricks-label">Tricks taken · 1 of 6</span>
+          <div class="run-bars">
+            <span class="run-trick"></span>
+            <span class="run-trick is-lost"></span>
+            <span class="run-trick is-lost"></span>
+            <span class="run-trick is-lost"></span>
+            <span class="run-trick is-lost"></span>
+            <span class="run-trick is-lost"></span>
+          </div>
+        </div>
+        <div class="run-carry">
+          <span>Health remaining</span>
+          <div class="wc-hp"><span style="width: 0%"></span></div>
+          <span>0 of 10</span>
+        </div>
+        <div class="run-actions">
+          <button type="button" class="run-btn is-primary" data-go="felt">Start a new run</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  // Mockup navigation only. Real state lives in RunState (plan.md Part 2 -> Data shapes).
+  function show(name) {
+    document.querySelectorAll('.mk-screen').forEach(function (s) {
+      s.classList.toggle('is-on', s.id === 'screen-' + name)
+    })
+    document.querySelectorAll('.mk-bar button').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.go === name))
+    })
+  }
+  document.addEventListener('click', function (event) {
+    var target = event.target.closest('[data-go]')
+    if (target) show(target.dataset.go)
+  })
+</script>

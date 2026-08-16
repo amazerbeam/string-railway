@@ -1,7 +1,7 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, PT-002
+**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-86, PT-002
 
 ## Responsibility
 
@@ -68,7 +68,7 @@ barrel re-exporting one is a needless brush with `react-refresh/only-export-comp
 | `BankMeter`                                                                                         | **DLR-80** — the bank, the streak, and their product as the figure this streak would cash for, plus `TRICK_OUTCOME_MESSAGE` for the last trick. The product is computed here because it is display-only; `resolveTrickBank` owns the cash-out that lands                                                                                                                                                                                                                     | `BankMeter.tsx`        |
 | `HealthBarView`                                                                                     | `{ side, secure, pending, current, max, securePct, pendingPct, lethal }` — one bar, ready to render. `securePct + pendingPct === current / max × 100` exactly (DLR-71)                                                                                                                                                                                                                                                                                                       | `duelHealthBars.ts`    |
 | `HEALTH_BAR_LABEL`, `healthBarValueText`                                                            | Each bar's accessible name and its value sentence. **DLR-80 rewrote `healthBarValueText`** to drop its pending branch — no pending figure exists any more                                                                                                                                                                                                                                                                                                                    | `labels.ts`            |
-| `FINISH_ROUND_LABEL`, `ENCOUNTER_OUTCOME`                                                           | The hand-over panel's single control, and the terminal line when a bar empties. **DLR-80 deleted `APPLY_DAMAGE_LABEL`** with the two-stage commit. `ENCOUNTER_OUTCOME`'s two strings are **placeholder copy — the developer's**                                                                                                                                                                                                                                              | `labels.ts`            |
+| `FINISH_ROUND_LABEL`                                                                                | The hand-over panel's single control. **DLR-80 deleted `APPLY_DAMAGE_LABEL`** with the two-stage commit; **DLR-82 deleted `ENCOUNTER_OUTCOME`** with the terminal branch that was its only reader — a resolved encounter is now the run verdict's, not the felt's                                                                                                                                                                                            | `labels.ts`            |
 | `sortHandForDisplay`                                                                                | Pure: a **copy** of the hand in display order — longest suit first, `ALL_SUITS` as the tie-break, ascending rank within a suit (DLR-63 AC6). React-free and DOM-free, so it runs in the `node` project                                                                                                                                                                                                                                                                       | `handOrder.ts`         |
 | `CpuFault`                                                                                          | `IllegalMoveReason \| 'noLegalMove'` — a corrupt CPU turn, shown rather than swallowed                                                                                                                                                                                                                                                                                                                                                                                       | `roundReducer.ts`      |
 | `SUIT_NAME`, `RANK_NAME`                                                                            | Display names for `Suit` and the five ability-bearing `CardRank` values                                                                                                                                                                                                                                                                                                                                                                                                      | `labels.ts`            |
@@ -85,6 +85,8 @@ barrel re-exporting one is a needless brush with `react-refresh/only-export-comp
 | `useRovingTabIndex`                                                                                 | Shared roving-tabindex hook: one tab stop over a flat list of `count` controls, arrow/Home/End/Escape                                                                                                                                                                                                                                                                                                                                                                        | `useRovingTabIndex.ts` |
 | `SuitSymbolSheet`, `SuitMark`                                                                       | The three inline `<symbol>` definitions, mounted once, and a `<use>` reference to one of them                                                                                                                                                                                                                                                                                                                                                                                | `SuitMark.tsx`         |
 | `PlayingCard`                                                                                       | One card in three renderings via `variant: 'hand' \| 'table' \| 'pile'`                                                                                                                                                                                                                                                                                                                                                                                                      | `PlayingCard.tsx`      |
+| `HeartSymbolSheet`, `HeartMark`                                                                     | **DLR-86.** The two heart `<symbol>` definitions — a solid heart and a cracked outline — mounted once, and a `<use>` reference to one of them. Same pattern as `SuitMark.tsx`, including the id map                                                                                                                                                                                                                                                                          | `HeartMark.tsx`        |
+| `HeartState`, `NO_BREAKING`, `projectedFromStreak`                                                  | **DLR-86.** The four readings a heart can carry (`whole` / `atRisk` / `breaking` / `broken`, written into the DOM as `data-state`); the zero-damage record `duelHealthBars` defaults its fourth argument to; and the Quarry's health as the banked streak would leave it                                                                                                                                                                                                     | `duelHealthBars.ts`    |
 
 The zone components — `RoundStatusBand`, `DecreePile`, `TrickWell`, `HandFan`, `AbilityPrompt`,
 `RoundOverPanel` — are each a default export consumed only by `WarCouncilRound.tsx`. DLR-53 added
@@ -138,6 +140,46 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
   swallowed.
 - [Testing](testing.md) — the two-project Vitest layout this module's tests depend on.
 
+### DLR-82 removed this module's terminal state, and inverted two problems at once
+
+The felt's render chain used to open `if (encounterOver) { … }`, **ahead of** the resolved-trick
+branch. Two consequences followed, and both were defects nobody had named: the trick that ended a
+fight **never got its reveal** (the old code's own comment said so), and the player landed on a
+tally table with **no control on it** — the dead end that produced the play-session feedback.
+
+DLR-82 deleted that branch. A resolved encounter now falls through to the deciding trick's ordinary
+`TrickWell` reveal, and the tap that clears it reaches `handleCarryOn`, **whose first line already
+tested `encounterOver` and called `onComplete`**. The report upward therefore needed no new code
+path and — the part that mattered — **no effect**: it stays a user tap, not a `useEffect` that
+StrictMode would fire twice. One tap replaced two, and the deciding trick gained a beat it had
+never had.
+
+One gap the deletion opened was closed in the same task: an encounter resolving with nothing held
+and the hand not complete would have rendered a felt with no branch to carry a tap. The felt's
+existing waiting affordance was widened to cover it — both the `wc-is-waiting` class and the
+`onClick` on `.wc-table` now read `ui.resolvedTrick || quarryToLead || encounterOver`, so a tap
+always has somewhere to land.
+
+`RoundOverPanel` reverted to the between-hands tally it now solely is: its `winner` prop is
+**removed from the type** (so the compiler found the one production call site still passing
+`winner={null}`), its heading is the constant `The hand is over`, and `ENCOUNTER_OUTCOME` and the
+`.wc-terminal` rule were deleted with the branch that was their only reader.
+
+### The run position in the status band
+
+`RoundStatusBand` gained a `.wc-run` block rendering `runLabel` verbatim, edge-anchored beside the
+opponent plate rather than drifting toward the centre — `game-ux` names centre-drift as the mistake
+that cramps the play area. The band **renders the string and nothing more**: it receives no
+`RunState`, performs no formatting, and cannot read or change the run.
+
+### A third stylesheet split
+
+Adding `.wc-run` pushed `warCouncil.css` to **431 lines**, over this project's blocking 400-line
+budget. The pre-existing hand/fan rules were moved out into a new sibling,
+`warCouncilHand.css` (46 lines), imported from `WarCouncilRound.tsx` alongside the other sheets —
+the same pattern the file had already used twice before. Content only moved; no rule changed. See
+[Layout and styling](layout-and-styling.md) for the full split history.
+
 ## Rules & invariants enforced
 
 - **This module re-implements no rule.** `legalMoves` decides what `HandFan` renders as tappable,
@@ -176,7 +218,20 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
   state, and no `console.log`/`console.debug`.
 - The three SVG `<symbol>` ids (`s-bells`, `s-keys`, `s-moons`) are defined and consumed entirely
   within `SuitMark.tsx`, routed through a `SUIT_SYMBOL_ID` map. They bind by string: a rename
-  type-checks cleanly and renders nothing.
+  type-checks cleanly and renders nothing. **DLR-86's `HeartMark.tsx` inherits the rule verbatim**
+  for `hp-heart` and `hp-heart-broken` via `HEART_SYMBOL_ID`; a mistyped id there renders an empty
+  `<svg>` with no console error anywhere.
+- **`HeartState`'s four values are a second string-bound surface of the same kind**, written straight
+  into the DOM as `data-state` and matched by attribute selectors in `warCouncilHealthBars.css`. The
+  `as const` map and the stylesheet are the only two places they may be written — including the
+  camelCase in `atRisk`.
+- **`DuelHealthBars.tsx` writes no inline style at all, and that is a guarantee rather than an
+  omission.** Until DLR-86 it split bar geometry through a `--w` custom property specifically because
+  an inline `width` out-ranks an external rule carrying no `!important`, which would have silently
+  defeated the stylesheet's own transition and lethal-state rules. A row of fixed-size glyphs has no
+  per-element geometry to communicate, so DLR-86 **designed the hazard out** rather than continuing to
+  guard against it — and the component's own spec asserts that no `.wc-hp-heart` carries a `style`
+  attribute. Any future need for a per-heart value must come back through a custom property.
 
 ## Deferred / not yet implemented
 
@@ -227,8 +282,9 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
 - **One Hunt per mount, but health now survives across mounts.** The mount still spans exactly one
   Hunt per `WarCouncilRoundResult`; what DLR-71 changed is that the result hands up an
   already-applied `EncounterState`, and `App.tsx` carries it into the next Hunt, so health depletes
-  Hunt to Hunt and an encounter can end. **Encounter-to-encounter sequencing is still absent** —
-  `App.tsx` holds one encounter index and DLR-73 replaces it with the loop. Persistence, save/replay
+  Hunt to Hunt and an encounter can end. **Encounter-to-encounter sequencing landed at DLR-82** and
+  lives entirely above this module: `App.tsx` owns a `RunState` and this mount learns of the run
+  only through a pre-formatted `runLabel: string`. Persistence, save/replay
   and undo remain absent: nothing in this repository stores state, so round state lives only in the
   `useReducer` and a later persistence ticket would need no migration. That window is open **now** and
   closes the moment one lands.
@@ -253,12 +309,25 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
   `sortHandForDisplay` (ascending is the chosen default). **DLR-80 added more**: the skull glyph, the
   suit-border weight, the centred suit mark's proportion of the card face, and how long a resolved
   trick holds on screen — all proposed by `mockup.html` and all the developer's to retune.
-- **Six visual values for the health bars are transcribed placeholders, and they are the developer's**
-  (DLR-71): `--wc-hp-track`, `--wc-hp-secure-fill`, `--wc-hp-pending-fill`, `--wc-hp-lethal-edge`,
-  `--wc-hp-height`, and `--wc-hp-move-ms` (the bar-movement duration). All six come from the approved
-  `mockup.html` and live in `warCouncil.css`'s `:root`; no task invented one. QA confirmed the two
-  fills are _distinguishable_ as shipped — secure `rgb(201,154,78)` against pending
-  `rgb(139,154,148)` — so the readability criterion holds, but the palette is not final.
+- **The health display's visual values are transcribed placeholders, and they are the developer's.**
+  DLR-71 contributed `--wc-hp-secure-fill`, `--wc-hp-pending-fill`, `--wc-hp-lethal-edge` and
+  `--wc-hp-height`, all of which survive with new consumers. **DLR-86 retired `--wc-hp-track` and
+  `--wc-hp-move-ms`** — both went dead when the track and its width transition did — and added six
+  more: `--wc-hp-heart-size` (a `clamp()`; its **min bound is what decides whether the third fight's
+  18 hearts fit**), `--wc-hp-heart-gap`, `--wc-hp-broken`, `--wc-hp-atrisk-opacity`,
+  `--wc-hp-break-ms` and `--wc-hp-flash-ms`. Every one comes from an approved `mockup.html` and lives
+  in `warCouncil.css`'s `:root`; no task invented one.
+- **Three DLR-86 judgements are still open and only playing settles them**: whether the at-risk
+  hearts read as *pending* rather than as damage already dealt (the reading DLR-80 removed,
+  reintroduced deliberately — ask a player mid-hand what the flashing hearts will do); whether the
+  break beat feels punchy or missed, given it clears on the same tap that clears the trick reveal;
+  and whether 18 hearts stay legible at the measured **11.5 × 11.5 px** per glyph at 1366×768. If the
+  last one fails, the fallback is a grouped or two-row treatment — a redesign, not a fix inside this
+  contract.
+- **The at-risk sentence appended to `healthBarValueText` is placeholder copy** (`"10 of 10. 6 at
+  risk."`), and whether the preview should be announced to assistive tech *at all* is a call the
+  brief did not make. The module says yes, on the grounds that a meter's text should not be less true
+  than its picture — see [accessibility.md](accessibility.md).
 
 - **Whether the mirrored pair reads as tension or as clutter is unjudged, and it is the design
   document's own named pause condition.** The measurement to make while playing: can a playtester say
@@ -277,9 +346,11 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
   screen has already changed — so committing the damage is a press, 3–4 times in a fast-band encounter.
   Whether that reads as a beat or a speed bump is the developer's.
 
-- **`ENCOUNTER_OUTCOME`'s two strings are placeholder copy**, and the resolved-encounter terminal state
-  they sit in is minimal by design: when a bar empties the end panel states the outcome in place and
-  stops offering a next Hunt. A real transition and outcome screen is DLR-73's.
+- **The resolved-encounter terminal state is GONE from this module** (DLR-82), and with it
+  `ENCOUNTER_OUTCOME` and the `.wc-terminal` rule. When a bar empties the felt no longer renders a
+  tally table with an outcome sentence on it; the deciding trick gets its own reveal and the tap
+  that clears it carries the player to the run verdict, [`src/app/run/`](../run-ui/README.md), owned
+  by `App`. See _How it works_ for the two edits that made it work.
 
 - **`handleCarryOn`'s `onComplete` has no reducer-level idempotence guard.** It previously stood in
   contrast to `CommitDamage`'s `state.applied !== null` check; **DLR-80 deleted that action**, so the

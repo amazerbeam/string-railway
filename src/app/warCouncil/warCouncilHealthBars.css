@@ -1,10 +1,11 @@
-/* War Council — the duel's two health bars, each carrying its own pending damage as a lighter
-   segment carved out of its own current health (DLR-71, hybrid-design.md §6).
+/* War Council — the duel's two health bars, each a row of discrete heart glyphs (DLR-86, replacing
+   DLR-71's percentage-width track) with the Quarry's row previewing the live streak as its last
+   `bank × multiplier` standing hearts, dimmed and flashing (hybrid-design.md §6).
 
-   The SIXTH stylesheet. `warCouncilHunt.css` stood at 307 lines and a full bar surface — track,
-   two segments, the lethal state, the movement transition, its reduced-motion suppression and its
-   own narrow-viewport block — would have carried it past the 400-line budget, which is the same
-   forced split that produced the fourth and fifth sheets. Imported from the mount AFTER
+   The SIXTH stylesheet. `warCouncilHunt.css` stood at 307 lines and a full bar surface — the heart
+   row, its four states, two `@keyframes`, the lethal treatment, its reduced-motion suppression and
+   its own narrow-viewport block — would have carried it past the 400-line budget, which is the
+   same forced split that produced the fourth and fifth sheets. Imported from the mount AFTER
    `warCouncilHunt.css`. Tokens live in `warCouncil.css`; nothing here redeclares `:root`.
 
    Carries its own copy of the `@media (max-width: 44rem), (max-height: 34rem)` breakpoint —
@@ -46,64 +47,106 @@
   color: var(--wc-parchment);
 }
 
-/* The track. Depletion runs toward the CENTRE of the screen: the player's fill is
-   anchored left, the Quarry's right. row-reverse is the whole of the mirror. */
-.wc-hp-track {
+/* The row. Depletion runs toward the CENTRE of the screen: the player's hearts fill from the
+   left, the Quarry's from the right. row-reverse is the whole of the mirror, exactly as it was
+   for the track this replaces.
+
+   `nowrap` plus `min-width: 0` is load-bearing: the top band is an `auto` row of the no-scroll
+   shell, so a wrapping heart row would grow the band rather than the hearts shrinking. At
+   QUARRY_ENCOUNTER_HEALTH's third entry this row holds 18 glyphs. */
+.wc-hp-hearts {
   display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--wc-hp-heart-gap);
+  min-width: 0;
   height: var(--wc-hp-height);
-  background: var(--wc-hp-track);
-  border: 1px solid #23303a;
-  border-radius: 1px;
-  overflow: hidden;
 }
 
-.wc-hp[data-side='quarry'] .wc-hp-track {
+.wc-hp[data-side='quarry'] .wc-hp-hearts {
   flex-direction: row-reverse;
 }
 
-.wc-hp-secure,
-.wc-hp-pending {
-  flex: 0 0 var(--w);
-  width: var(--w);
-  transition:
-    flex-basis var(--wc-hp-move-ms) ease-out,
-    width var(--wc-hp-move-ms) ease-out;
+.wc-hp-heart {
+  flex: 0 1 var(--wc-hp-heart-size);
+  min-width: 0.34rem;
+  aspect-ratio: 1;
+  display: block;
 }
 
-.wc-hp-secure {
-  background: var(--wc-hp-secure-fill);
+.wc-hp-heart svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
-/* Pending is the fighting-game recoverable segment: carved OUT of current health,
-   drawn by lightness on the same bar, and allowed to shrink. `secure + pending`
-   always equals current health, so the filled length never grows. */
-.wc-hp-pending {
-  background: var(--wc-hp-pending-fill);
-  opacity: 0.85;
+/* The four resting states — AC6, and AC7's guarantee that nothing is lost when motion stops.
+   Shape carries the reading before colour does: `whole` and `broken` bind to two different
+   <symbol>s (solid versus cracked outline), so the row still separates in greyscale. Opacity
+   and the animations below are reinforcement, never the only signal. */
+.wc-hp-heart[data-state='whole'] {
+  color: var(--wc-hp-secure-fill);
 }
 
-/* Lethal reads without colour: a hatch, plus a hard leading edge. */
-.wc-hp-pending.wc-is-lethal {
-  background-image: repeating-linear-gradient(-45deg, #ffffff26 0 3px, #00000026 3px 6px);
-  box-shadow: inset 0 0 0 1px var(--wc-hp-lethal-edge);
+.wc-hp-heart[data-state='atRisk'] {
+  color: var(--wc-hp-pending-fill);
+  opacity: var(--wc-hp-atrisk-opacity);
+  animation: wc-hp-flash var(--wc-hp-flash-ms) ease-in-out infinite alternate;
 }
 
-/* ---------- the end panel's AC4 second stage (Task 9): the apply/finish control
-   and the resolved-encounter terminal state ---------- */
+.wc-hp-heart[data-state='breaking'] {
+  color: var(--wc-hp-lethal-edge);
+  animation: wc-hp-break var(--wc-hp-break-ms) ease-out 1 both;
+}
+
+.wc-hp-heart[data-state='broken'] {
+  color: var(--wc-hp-broken);
+}
+
+/* The break runs ONCE on the state's arrival and never retriggers: health only decreases, so a
+   given index can never re-enter `breaking`. */
+@keyframes wc-hp-break {
+  0% {
+    transform: scale(1) rotate(0deg);
+    color: var(--wc-hp-secure-fill);
+  }
+  22% {
+    transform: scale(1.28) rotate(-9deg);
+    color: var(--wc-hp-lethal-edge);
+  }
+  55% {
+    transform: scale(0.88) rotate(7deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    color: var(--wc-hp-broken);
+  }
+}
+
+@keyframes wc-hp-flash {
+  from {
+    opacity: var(--wc-hp-atrisk-opacity);
+    transform: scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.09);
+  }
+}
+
+/* Lethal reads without colour: a hard rule under the whole row. */
+.wc-hp-hearts.wc-is-lethal {
+  box-shadow: inset 0 -2px 0 0 var(--wc-hp-lethal-edge);
+}
+
+/* ---------- the between-hands panel's single control. The terminal branch this block also
+   served was deleted on DLR-82: a resolved encounter is now the run verdict's. ---------- */
 
 .wc-actions {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
   justify-content: center;
-}
-
-.wc-terminal {
-  font-family: var(--wc-serif);
-  font-size: 1rem;
-  color: var(--wc-brass);
-  margin: 0;
-  text-align: center;
 }
 
 /* ---------- the narrow / short collapse — same breakpoint value as the other sheets ---------- */
@@ -114,9 +157,16 @@
   }
 }
 
+/* AC7 — motion off, state intact. Every one of the four states is already carried by symbol
+   shape, colour and opacity at rest, so switching the animations off costs no information;
+   `breaking` keeps its lethal-edge colour, which the keyframe would otherwise have landed on. */
 @media (prefers-reduced-motion: reduce) {
-  .wc-hp-secure,
-  .wc-hp-pending {
-    transition: none;
+  .wc-hp-heart[data-state='atRisk'],
+  .wc-hp-heart[data-state='breaking'] {
+    animation: none;
+  }
+
+  .wc-hp-heart[data-state='breaking'] {
+    color: var(--wc-hp-lethal-edge);
   }
 }

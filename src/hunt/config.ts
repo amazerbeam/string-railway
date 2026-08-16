@@ -11,17 +11,17 @@ import { QuarryCharacter, DuelSide, type Health, type Damage } from './types'
 // UNIT: health points, depleted 1 at a time.
 export const PLAYER_START_HEALTH: Health = 10
 
-// The Quarry's health for encounter 0.
-// SET BY THE DEVELOPER 2026-08-14 (PT-002): "the first enemy at 10 hp", chosen alongside the move
-// to a trick-counting bank. Replaces 400, which was measured under the retired rank-sum bank where
-// a hand dealt ~84; under `n × n` a hand pays a mean of ~7.2 (range 0-36, over 6,000 simulated
-// hands — see `.docs/design/Balatro-Forbidden-Solitaire/ideas.md`), so 400 would be ~55 hands.
-// KNOWN CONSEQUENCE, accepted: at 10 the encounter lasts ~1.9 hands, random legal play wins 63.8%,
-// and ~37% of damage dealt is discarded as overkill because a single good hand can pay 36. The
-// developer's own framing is that the shop will raise the player's damage later; the health numbers
-// are expected to move after playing.
-// UNIT: health points, encounter 0.
-export const QUARRY_ENCOUNTER_HEALTH: readonly Health[] = [10]
+// The Quarry's health, one entry per encounter, in run order.
+// AC1 (DLR-82) — at least three entries, rising, not all the same.
+// PLACEHOLDER VALUES: the SHAPE is the ticket's, the NUMBERS are the DEVELOPER'S and are listed
+// under "Developer decides or observes" in this contract's tasks.md. DLR-82's own risk note
+// predicts the player losing around fight three on these numbers and states that this is the
+// arithmetic working — the answer is the shop and the flask in later stories, NOT raising
+// PLAYER_START_HEALTH.
+// Entry 0 keeps 10, set by the developer 2026-08-14 (PT-002) alongside the trick-counting bank:
+// at 10 the encounter lasts ~1.9 hands and random legal play wins 63.8%.
+// UNIT: health points, indexed 0..n-1 by encounter.
+export const QUARRY_ENCOUNTER_HEALTH: readonly Health[] = [10, 14, 18]
 
 /**
  * Throws a `RangeError` rather than returning `undefined`: an out-of-range index would
@@ -53,9 +53,11 @@ export const SIMULTANEOUS_DEPLETION_WINNER: DuelSide = DuelSide.Quarry
 // 2026-08-09 per DLR-48 AC3): 4 edits.
 export const FORAGE_BUDGET_PER_ENCOUNTER = 4
 
-// §9 "Encounters per run" — undecided in §9 itself; DLR-48 AC3 sets a
-// provisional 5 so the prototype is playable.
-export const ENCOUNTERS_PER_RUN = 5
+// §9 "Encounters per run" — DERIVED, never chosen. `QUARRY_ENCOUNTER_HEALTH` is the single source
+// of truth for run length (DLR-82 AC1); a free-standing number beside it is the second source that
+// drifts, and any value larger than the array is a RangeError from `quarryHealthForEncounter`
+// waiting to happen. Replaces DLR-48 AC3's provisional 5, which sat beside a one-entry array.
+export const ENCOUNTERS_PER_RUN = QUARRY_ENCOUNTER_HEALTH.length
 
 export const TelegraphFidelity = {
   Suit: 'suit', // narrowest — only the lead suit is telegraphed

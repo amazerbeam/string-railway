@@ -6,7 +6,8 @@
 
    This file exceeded the 400-line budget as one stylesheet, so the card
    face, the ability prompt, and the round-over panel live in the sibling
-   `warCouncilCards.css` — import both from the mount component. */
+   `warCouncilCards.css`, and (DLR-82) the hand's own rules live in
+   `warCouncilHand.css` — import all three from the mount component. */
 
 :root {
   --wc-chamber: #0c1013;
@@ -42,14 +43,19 @@
   --wc-plate-card-w: clamp(2.3rem, 4.6vmin, 3.2rem);
 
   /* DLR-71 — the duel health bars. Every value below is a placeholder transcribed from
-     `.claude/contract/DLR-71-two-health-bars-with-pending-damage/mockup.html` and is the
-     developer's to retune; the visual polish ticket owns them. */
-  --wc-hp-track: #0a1211;
+     `.claude/contract/DLR-71-two-health-bars-with-pending-damage/mockup.html` (and, for the six
+     heart-row tokens, `.claude/contract/DLR-86-hearts-with-pending-cash-preview/mockup.html`) and
+     is the developer's to retune; the visual polish ticket owns them. */
   --wc-hp-secure-fill: #c99a4e;
   --wc-hp-pending-fill: #8b9a94;
   --wc-hp-lethal-edge: #d1705f;
   --wc-hp-height: clamp(0.7rem, 1.7vmin, 1.05rem);
-  --wc-hp-move-ms: 620ms;
+  --wc-hp-heart-size: clamp(0.62rem, 1.5vmin, 0.95rem);
+  --wc-hp-heart-gap: 0.18rem;
+  --wc-hp-broken: #3a4a52;
+  --wc-hp-atrisk-opacity: 0.55;
+  --wc-hp-break-ms: 520ms;
+  --wc-hp-flash-ms: 900ms;
 }
 
 /* ---------- the shell: one full-viewport grid, never scrolls ---------- */
@@ -135,6 +141,26 @@
   color: var(--wc-chalk-dim);
   font-weight: 600;
   white-space: nowrap;
+}
+
+/* DLR-82 AC6 — the run position, edge-anchored beside the opponent plate rather than drifting
+   toward the centre, which game-ux names as the mistake that cramps the play area. */
+.wc-run {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: clamp(0.35rem, 1vmin, 0.6rem) clamp(0.5rem, 1.4vmin, 0.85rem);
+  background: var(--wc-chamber-lift);
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.wc-run-value {
+  font-family: var(--wc-serif);
+  font-size: clamp(0.85rem, 2.1vmin, 1.15rem);
+  color: var(--wc-brass);
+  line-height: 1;
 }
 
 .wc-stack {
@@ -367,45 +393,6 @@
   max-width: 44ch;
 }
 
-/* ---------- hand ---------- */
-
-.wc-hand {
-  grid-area: hand;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(0.15rem, 0.8vmin, 0.5rem);
-  padding: clamp(0.3rem, 1.2vmin, 0.8rem) clamp(0.5rem, 2vmin, 1.5rem)
-    clamp(0.5rem, 1.8vmin, 1.1rem);
-}
-
-.wc-hand-hint {
-  font-size: clamp(0.58rem, 1.25vmin, 0.72rem);
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--wc-chalk-dim);
-  font-weight: 600;
-  min-height: 1.2em;
-  text-align: center;
-}
-
-.wc-hand-hint.wc-is-live {
-  color: var(--wc-brass);
-}
-
-.wc-hand-hint.wc-is-reject {
-  color: var(--wc-alarm);
-  letter-spacing: 0.04em;
-  text-transform: none;
-  font-size: clamp(0.68rem, 1.45vmin, 0.82rem);
-}
-
-/* Rotation and lift push pixels outside the layout box, and the shell clips
-   overflow — so reserve the room explicitly rather than letting cards crop. */
-.wc-fan {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: calc(var(--wc-card-w) * 1.5 + 2.1rem);
-  padding: 1.3rem 0 0.6rem;
-}
+/* ---------- hand: moved to `warCouncilHand.css` (DLR-82) — the `.wc-run` status-band block
+   pushed this file over the 400-line budget, and the hand's own rules were the cleanest split.
+   Import both from the mount component; the hand rules share this file's `:root` tokens. ---------- */

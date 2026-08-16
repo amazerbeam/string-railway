@@ -2,9 +2,16 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { dealRound, PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
-import { DAMAGE_PER_HIT, HAND_SIZE, quarryHealthForEncounter } from '../../../hunt'
+import { DAMAGE_PER_HIT, DuelSide, HAND_SIZE, quarryHealthForEncounter } from '../../../hunt'
 import WarCouncilRound from '../WarCouncilRound'
-import { card, encounterFixture, huntFixture, makeRound, maxHealthFixture } from './roundFixture'
+import {
+  card,
+  encounterFixture,
+  huntFixture,
+  makeRound,
+  maxHealthFixture,
+  runLabelFixture,
+} from './roundFixture'
 
 afterEach(cleanup)
 
@@ -34,6 +41,7 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
         hunt={huntFixture}
         encounter={encounterFixture}
         maxHealth={maxHealthFixture}
+        runLabel={runLabelFixture}
         onComplete={onComplete}
       />,
     )
@@ -128,14 +136,15 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
   })
 })
 
-describe('WarCouncilRound — the hand tally survives the parent re-sending the live encounter', () => {
-  it('keeps its figures after onComplete, on the hand that ends the encounter', () => {
-    // Observed in play: the terminal panel's "Health lost" and "Dealt to the Quarry" both read 0
-    // on a hand that plainly did damage. The tally was a delta against the `encounter` PROP, and
-    // on the encounter-ending hand `App` sets its own encounter from `onComplete` and then returns
-    // early WITHOUT changing the `key` that would remount this component — so the prop became the
-    // live value underneath a panel still on screen, and both deltas collapsed to zero. The
-    // baseline now lives in the reducer, frozen at mount; this pins that.
+describe('WarCouncilRound — the deciding trick reports the correct encounter figures (DLR-82)', () => {
+  it('reports onComplete with the whole hand’s damage once the encounter resolves mid-hand', () => {
+    // DLR-82 deleted the terminal panel this test used to pin (a tally that read 0 because the
+    // panel's delta was taken against the live `encounter` PROP, and on the encounter-ending hand
+    // `App` used to adopt that encounter without changing the `key` that would remount this
+    // component). `App` no longer leaves `WarCouncilRound` mounted at all once the encounter
+    // resolves — it switches to the run verdict instead — so that reproduction no longer applies.
+    // What still matters: the deciding trick gets its own reveal like any other, and the SAME tap
+    // that clears it reports the finished encounter upward with the correct figures.
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
@@ -149,14 +158,16 @@ describe('WarCouncilRound — the hand tally survives the parent re-sending the 
       currentTrick: [],
     })
     const onComplete = vi.fn()
-    const props = {
-      initialState: round,
-      hunt: huntFixture,
-      encounter: encounterFixture,
-      maxHealth: maxHealthFixture,
-      onComplete,
-    }
-    const { container, rerender } = render(<WarCouncilRound {...props} />)
+    render(
+      <WarCouncilRound
+        initialState={round}
+        hunt={huntFixture}
+        encounter={encounterFixture}
+        maxHealth={maxHealthFixture}
+        runLabel={runLabelFixture}
+        onComplete={onComplete}
+      />,
+    )
 
     // The player leads the 2, the Quarry follows the higher card of the lead suit and takes it —
     // a clean loss, cashing 4 × 4 = 16 into a 10-health Quarry, which empties the bar outright.
@@ -164,24 +175,107 @@ describe('WarCouncilRound — the hand tally survives the parent re-sending the 
     fireEvent.click(bells2)
     fireEvent.click(bells2)
 
-    expect(screen.getByRole('heading', { name: /the hunt is over/i })).toBeTruthy()
-    const tally = (label: RegExp) =>
-      within(screen.getByRole('row', { name: label })).getAllByRole('cell')[1].textContent
+    // The deciding trick's own reveal — no terminal panel any more (encounterOver widens this
+    // same control's click target, so the tap that clears the reveal also reports upward).
+    const carryOn = screen.getByRole('button', { name: /tap the table to carry on/i })
+    fireEvent.click(carryOn)
 
-    // Surplus is discarded, so the Quarry's delta is its whole bar, not the 16 that was cashed.
-    expect(tally(/health lost/i)).toBe(String(DAMAGE_PER_HIT))
-    expect(tally(/dealt to the quarry/i)).toBe(String(quarryHealthForEncounter(0)))
-
-    // The terminal panel carries no button, so the carry-on fires from the table — which is what
-    // the player clicks next, and what used to zero the figures behind them.
-    fireEvent.click(container.querySelector('.wc-table') as HTMLElement)
     expect(onComplete).toHaveBeenCalledTimes(1)
+    const { encounter } = onComplete.mock.calls[0][0]
+    // Surplus is discarded, so the Quarry's delta is its whole bar, not the 16 that was cashed.
+    expect(encounterFixture.health[DuelSide.Quarry] - encounter.health[DuelSide.Quarry]).toBe(
+      quarryHealthForEncounter(0),
+    )
+    expect(encounterFixture.health[DuelSide.Player] - encounter.health[DuelSide.Player]).toBe(
+      DAMAGE_PER_HIT,
+    )
+  })
+})
 
-    // Exactly what `App` does with that result: adopt the encounter, leave `key` alone.
-    rerender(<WarCouncilRound {...props} encounter={onComplete.mock.calls[0][0].encounter} />)
+describe('WarCouncilRound — the Quarry’s at-risk preview (DLR-86)', () => {
+  function renderRound() {
+    return render(
+      <WarCouncilRound
+        initialState={dealRound(PlayerSide.Cpu, lcg(2026))}
+        hunt={huntFixture}
+        encounter={encounterFixture}
+        maxHealth={maxHealthFixture}
+        runLabel={runLabelFixture}
+        onComplete={vi.fn()}
+      />,
+    )
+  }
 
-    expect(screen.getByRole('heading', { name: /the hunt is over/i })).toBeTruthy()
-    expect(tally(/health lost/i)).toBe(String(DAMAGE_PER_HIT))
-    expect(tally(/dealt to the quarry/i)).toBe(String(quarryHealthForEncounter(0)))
+  function quarryHearts(container: HTMLElement, state: string) {
+    return container.querySelectorAll(`.wc-hp[data-side="quarry"] [data-state="${state}"]`)
+  }
+
+  /** `BankMeter`'s own accessible name carries `Multiplier N` — read it rather than restating
+   *  the arithmetic here. */
+  function currentMultiplier(container: HTMLElement): number {
+    const label = container.querySelector('.wc-bank-figures')?.getAttribute('aria-label') ?? ''
+    const match = label.match(/Multiplier (\d+)/)
+    return match ? Number(match[1]) : 0
+  }
+
+  /** Drives real play — tap a legal card twice to take a trick, clear a held reveal, let the
+   *  Quarry's own lead through — until the multiplier reads above zero. Fails loudly, rather than
+   *  looping, if the hand ends first or a bounded attempt count is exhausted. */
+  function playUntilStreak(container: HTMLElement) {
+    let guard = 0
+    while (currentMultiplier(container) === 0) {
+      guard += 1
+      if (guard > 200) {
+        throw new Error('multiplier never rose above zero within the attempt budget')
+      }
+      if (screen.queryByRole('heading', { name: /the hand is over|the hunt is over/i })) {
+        throw new Error('the hand ended before the streak ever banked a multiplier')
+      }
+      const fault = screen.queryByRole('alert')
+      if (fault) {
+        throw new Error(`the engine rejected the Quarry's own move: ${fault.textContent}`)
+      }
+      const prompt = screen.queryByRole('group', { name: 'Choose what the card does' })
+      if (prompt) {
+        fireEvent.click(within(prompt).getAllByRole('button')[0])
+        continue
+      }
+      const tapToCarryOn = screen.queryByRole('button', { name: /tap the table to carry on/i })
+      if (tapToCarryOn) {
+        fireEvent.click(tapToCarryOn)
+        continue
+      }
+      const letThemLead = screen.queryByRole('button', { name: /let them lead/i })
+      if (letThemLead) {
+        fireEvent.click(letThemLead)
+        continue
+      }
+      const hand = screen.getByRole('group', { name: /hand/i })
+      const legalCard = within(hand)
+        .getAllByRole('button')
+        .find((button) => !(button as HTMLButtonElement).disabled)
+      if (!legalCard) {
+        throw new Error('no legal card found in hand, and no other branch applied')
+      }
+      fireEvent.click(legalCard)
+      fireEvent.click(legalCard)
+    }
+  }
+
+  it('AC3/AC5 — the Quarry’s at-risk hearts track the live streak and clear when it resets', () => {
+    const { container } = renderRound()
+    // Nothing banked at the deal: no preview at all.
+    expect(quarryHearts(container, 'atRisk')).toHaveLength(0)
+
+    // Drive real play until the reducer has banked a streak, then assert the preview equals
+    // bank × multiplier clamped by the Quarry's own row length — derived from the rendered
+    // meter, never a restated literal, so a config retune cannot make this test lie.
+    playUntilStreak(container)
+    const meter = screen.getByRole('meter', { name: 'The Quarry’s health' })
+    const atRisk = quarryHearts(container, 'atRisk').length
+    expect(atRisk).toBeGreaterThan(0)
+    expect(meter.getAttribute('aria-valuetext')).toContain(`${atRisk} at risk.`)
+    // The rendered figure never exceeds what the Quarry actually has left.
+    expect(atRisk).toBeLessThanOrEqual(Number(meter.getAttribute('aria-valuenow')))
   })
 })

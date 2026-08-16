@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { DuelSide, PLAYER_START_HEALTH, quarryHealthForEncounter } from '../../../hunt'
-import { duelHealthBars } from '../duelHealthBars.ts'
+import { duelHealthBars, projectedFromStreak } from '../duelHealthBars.ts'
 import DuelHealthBars from '../DuelHealthBars.tsx'
 
 afterEach(cleanup)
@@ -16,9 +16,16 @@ const FULL = {
   [DuelSide.Quarry]: quarryHealthForEncounter(0),
 }
 
-function renderPair(current: Record<DuelSide, number>, projected: Record<DuelSide, number>) {
+function renderPair(
+  current: Record<DuelSide, number>,
+  projected: Record<DuelSide, number>,
+  breaking?: Record<DuelSide, number>,
+) {
   return render(
-    <DuelHealthBars bars={duelHealthBars(current, projected, MAX)} centre={<span>trio</span>} />,
+    <DuelHealthBars
+      bars={duelHealthBars(current, projected, MAX, breaking)}
+      centre={<span>trio</span>}
+    />,
   )
 }
 
@@ -48,32 +55,56 @@ describe('DuelHealthBars', () => {
     )
   })
 
-  it('is not lethal at zero health with nothing pending — that side is already dead', () => {
-    const empty = { [DuelSide.Player]: 0, [DuelSide.Quarry]: quarryHealthForEncounter(0) }
-    const { container } = renderPair(empty, empty)
-    expect(screen.getByRole('meter', { name: 'Your health' }).getAttribute('aria-valuetext')).toBe(
-      `0 of ${PLAYER_START_HEALTH}.`,
-    )
-    expect(container.querySelectorAll('.wc-hp-pending.wc-is-lethal')).toHaveLength(0)
+  it('renders one heart per health point, counted from max (AC1)', () => {
+    const { container } = renderPair(FULL, FULL)
+    const player = container.querySelector('.wc-hp[data-side="player"]')
+    const quarry = container.querySelector('.wc-hp[data-side="quarry"]')
+    expect(player?.querySelectorAll('.wc-hp-heart')).toHaveLength(PLAYER_START_HEALTH)
+    expect(quarry?.querySelectorAll('.wc-hp-heart')).toHaveLength(quarryHealthForEncounter(0))
   })
 
-  it('sets the two segment widths as custom properties, never as an inline width', () => {
-    // A pending segment is dead in this app's own call shape (current always equals projected —
-    // WarCouncilRound.tsx's own comment says why), but `duelHealthBars`/`DuelHealthBars` remain
-    // generically capable of rendering one, so this pins the CSS mechanics against whatever
-    // percentage the pure function itself computes, rather than a restated literal.
+  it('marks the hearts this event took as breaking, and the rest of the loss as broken (AC2)', () => {
+    const dented = {
+      [DuelSide.Player]: PLAYER_START_HEALTH - 4,
+      [DuelSide.Quarry]: quarryHealthForEncounter(0),
+    }
+    const { container } = renderPair(dented, dented, {
+      [DuelSide.Player]: 2,
+      [DuelSide.Quarry]: 0,
+    })
+    const player = container.querySelector('.wc-hp[data-side="player"]')
+    expect(player?.querySelectorAll('[data-state="whole"]')).toHaveLength(PLAYER_START_HEALTH - 4)
+    expect(player?.querySelectorAll('[data-state="breaking"]')).toHaveLength(2)
+    expect(player?.querySelectorAll('[data-state="broken"]')).toHaveLength(2)
+  })
+
+  it('previews the streak on the Quarry’s hearts and says so to a screen reader (AC3, AC6)', () => {
     const quarryMax = quarryHealthForEncounter(0)
     const current = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
-    const projected = {
-      [DuelSide.Player]: PLAYER_START_HEALTH,
-      [DuelSide.Quarry]: quarryMax - Math.round(quarryMax * 0.4),
+    const { container } = renderPair(current, projectedFromStreak(current, 2, 2))
+    const quarry = container.querySelector('.wc-hp[data-side="quarry"]')
+    expect(quarry?.querySelectorAll('[data-state="atRisk"]')).toHaveLength(4)
+    expect(
+      screen.getByRole('meter', { name: 'The Quarry’s health' }).getAttribute('aria-valuetext'),
+    ).toBe(`${quarryMax} of ${quarryMax}. 4 at risk.`)
+  })
+
+  it('binds each heart to the symbol its state calls for — a broken state is a different shape, not a colour (AC6)', () => {
+    const dented = {
+      [DuelSide.Player]: PLAYER_START_HEALTH - 1,
+      [DuelSide.Quarry]: quarryHealthForEncounter(0),
     }
-    const [, quarryView] = duelHealthBars(current, projected, MAX)
-    const { container } = renderPair(current, projected)
-    const pending = container.querySelector<HTMLElement>(
-      '.wc-hp[data-side="quarry"] .wc-hp-pending',
+    const { container } = renderPair(dented, dented)
+    const hearts = container.querySelectorAll('.wc-hp[data-side="player"] .wc-hp-heart use')
+    expect(hearts[0]?.getAttribute('href')).toBe('#hp-heart')
+    expect(hearts[hearts.length - 1]?.getAttribute('href')).toBe('#hp-heart-broken')
+  })
+
+  it('writes no inline style on any heart — the retired `--w` split’s successor guarantee', () => {
+    const { container } = renderPair(FULL, FULL)
+    const styled = Array.from(container.querySelectorAll<HTMLElement>('.wc-hp-heart')).filter(
+      (h) => h.getAttribute('style'),
     )
-    expect(pending?.style.getPropertyValue('--w')).toBe(`${quarryView.pendingPct}%`)
-    expect(pending?.style.width).toBe('')
+    expect(styled).toHaveLength(0)
   })
 })

@@ -1,0 +1,46 @@
+/* The player's own hand — split out of `warCouncil.css` (DLR-82) to keep that file under the
+   400-line budget after the `.wc-run` status-band block pushed it over. Import alongside
+   `warCouncil.css` from the mount component; both share that file's `:root` tokens. */
+
+/* ---------- hand ---------- */
+
+.wc-hand {
+  grid-area: hand;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.15rem, 0.8vmin, 0.5rem);
+  padding: clamp(0.3rem, 1.2vmin, 0.8rem) clamp(0.5rem, 2vmin, 1.5rem)
+    clamp(0.5rem, 1.8vmin, 1.1rem);
+}
+
+.wc-hand-hint {
+  font-size: clamp(0.58rem, 1.25vmin, 0.72rem);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+  font-weight: 600;
+  min-height: 1.2em;
+  text-align: center;
+}
+
+.wc-hand-hint.wc-is-live {
+  color: var(--wc-brass);
+}
+
+.wc-hand-hint.wc-is-reject {
+  color: var(--wc-alarm);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  font-size: clamp(0.68rem, 1.45vmin, 0.82rem);
+}
+
+/* Rotation and lift push pixels outside the layout box, and the shell clips
+   overflow — so reserve the room explicitly rather than letting cards crop. */
+.wc-fan {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(var(--wc-card-w) * 1.5 + 2.1rem);
+  padding: 1.3rem 0 0.6rem;
+}

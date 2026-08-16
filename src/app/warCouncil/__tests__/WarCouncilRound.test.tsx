@@ -10,7 +10,14 @@ import {
 } from '../../../hunt'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
 import WarCouncilRound from '../WarCouncilRound'
-import { card, encounterFixture, huntFixture, makeRound, maxHealthFixture } from './roundFixture'
+import {
+  card,
+  encounterFixture,
+  huntFixture,
+  makeRound,
+  maxHealthFixture,
+  runLabelFixture,
+} from './roundFixture'
 
 afterEach(cleanup)
 
@@ -27,6 +34,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       hunt={overrides.hunt ?? huntFixture}
       encounter={overrides.encounter ?? encounterFixture}
       maxHealth={overrides.maxHealth ?? maxHealthFixture}
+      runLabel={overrides.runLabel ?? runLabelFixture}
       onComplete={overrides.onComplete ?? vi.fn()}
     />,
   )
@@ -166,9 +174,10 @@ describe('WarCouncilRound', () => {
     // Same construction as `roundReducer.bank.test.ts`'s "stops accepting taps" spec: trick 3 of
     // 6, a bank of 500 at streak 2 cashes for 500 x 2 = 1000, which comfortably exceeds this
     // encounter's 10-health Quarry — so the Quarry's bar empties on this trick rather than the
-    // hand's sixth. Once `encounterOver` is true, `WarCouncilRound` renders the terminal panel
-    // directly (its own comment on that branch order) with no six-trick completion in between,
-    // so `onComplete`'s `finalState` never reaches `RoundPhase.Complete` down this path.
+    // hand's sixth. DLR-82 deleted the terminal panel: the deciding trick now gets its own reveal
+    // beat like any other, and `handleCarryOn` reports the finished encounter upward on the next
+    // tap regardless — so `onComplete`'s `finalState` never reaches `RoundPhase.Complete` down
+    // this path.
     const onComplete = vi.fn()
     const round = makeRound({
       leader: PlayerSide.Player,
@@ -186,11 +195,9 @@ describe('WarCouncilRound', () => {
     const swan = screen.getByRole('button', { name: '1 of Bells (Swan)' })
     fireEvent.click(swan)
     fireEvent.click(swan)
-    const heading = screen.getByRole('heading', { name: 'The Hunt is over' })
-    // The terminal panel shows the outcome as status text, not a "Deal the next Hunt" button
-    // (`RoundOverPanel` only renders that control when the encounter is still live) — so the
-    // affordance that reports the hand upward is the felt's own tap-to-carry-on surface.
-    fireEvent.click(heading)
+    // The deciding trick's own reveal, same as any other trick — no terminal panel any more.
+    const carryOn = screen.getByRole('button', { name: /tap the table to carry on/i })
+    fireEvent.click(carryOn)
     expect(onComplete).toHaveBeenCalledTimes(1)
     expect(onComplete.mock.calls[0][0].finalState.phase).not.toBe(RoundPhase.Complete)
   })

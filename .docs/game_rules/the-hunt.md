@@ -4,8 +4,14 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-08-14**. Everything below is reachable in
+Last reviewed against the code and the design on **2026-08-16**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
+
+> **The game is a run now — DLR-82, 2026-08-15.** Three fights in order, against Quarries of rising
+> health, on **one health bar that never refills**. Win and you carry your remaining health into a
+> tougher fight; empty and the run is over. A full-screen verdict states which of the three things
+> just happened. See [section 10](#10-between-hands-and-the-run). **Engine and screen landed
+> together — nothing in that section is enforced but unreachable.**
 
 > **The Quarry has no powers — DLR-81, the same day.** It plays by exactly the player's rules, with
 > no exceptions. A character is a name only. The Monarch previously carried a whole-hand narrowing
@@ -576,7 +582,7 @@ design document, not from this section.
 | The Quarry's character and its rule | Always on screen                                                                                                                                                                                                           |
 | **Your tricks and your multiplier** | **Open — on screen throughout** as two separate figures, plus what the streak would cash for now.                                                                                                                         |
 | What the last trick did             | **Stated** — which of the four outcomes it was, and what it cost or banked.                                                                                                                                                |
-| **Both sides' health**              | **Open — two bars**, each against its own maximum, moving as each trick's damage lands.                                                                                                                                    |
+| **Both sides' health**              | **Open — two rows of hearts**, one heart per health point against each side's own maximum. The hearts a trick just took break as it resolves. While a streak is banked, the Quarry's last _bank × multiplier_ standing hearts flash as a preview of what cashing right now would take.                                                                                                                                    |
 
 The telegraph's fidelity — suit only, or suit and stance — is **[provisional]**; it currently shows
 both.
@@ -585,31 +591,78 @@ both.
 
 ## 10. Between hands, and the run
 
-**[not built]** — none of this section is playable. It is recorded so the rules read as one game
-rather than as one hand.
+Since 2026-08-15 most of this section is playable. The run itself is real; what surrounds it —
+Forage, a currency, a shop — is not.
 
-- **Forage** is the only thing you do between hands: edit the 33-card deck the next hand is dealt
-  from. It may edit exactly four things — a card's **value**, its **ability**, its **suit**, and the
-  **decree**. The budget is **4 edits per encounter** (**[provisional]**). **The player holds no
-  skulls of their own**, and Forage cannot add any.
-- **A shop, a currency, and a flat payout for winning** are all **[not built]** and none is designed.
-  The stated intention is that surplus cash-out damage (section 8) is paid back as money, that winning
-  an encounter also pays a flat amount, and that the shop then raises the player's damage — which is
-  what is expected to make the `n × n` payout scale past the early game. **Nothing of it exists**:
-  there is no currency, no shop, and no consumer for either. Note also that a card's **value** is one
-  of the four things Forage may edit, and since 2026-08-14 a card's rank decides only who wins a
-  trick — it feeds no scoring at all (section 7).
-- **A run** is a fixed sequence of encounters against different Quarries. **Your health emptying ends
-  the run**, and that is both enforced and reachable. What is not built is the _sequence_: nothing
-  runs one encounter after another, and the between-encounter restore is read by nothing. Only
-  **one** Quarry is configured.
-- **The run length** is **[open]** (a placeholder 5 exists in config).
+### A run is three fights on one health bar — **[settled]**
+
+A run is a fixed sequence of encounters, fought in order. **Three** are configured, and each Quarry
+has more health than the last.
+
+- **Your health carries from fight to fight, and nothing restores it.** You begin the next fight on
+  exactly the health you finished the last one on. There is no rest, no heal, and no flask.
+- **Beating a Quarry does not end the session.** The fight resolves, you are told you won it, and
+  you choose to go on to the next one.
+- **Your health emptying ends the run**, wherever it happens — including on the last fight. No
+  further fight is offered.
+- **Beating the last Quarry ends the run as a win**, and it is stated differently from beating any
+  earlier one.
+
+> **Deviation from the base game.** There is no 21-point match and no symmetric contest. A run is
+> one-directional: you accumulate damage and never recover it, and the only question is how far you
+> get.
+
+### The Quarries' health — **[provisional]**
+
+**10, then 14, then 18.** The shape is fixed — at least three, rising, not all the same — and the
+three numbers are the developer's to set from play.
+
+At these values a run is **expected to be lost around the third fight**: a fight costs the player
+roughly four health and the player starts with ten. That is the arithmetic working as designed, not
+a fault. The intended answers are the shop and the flask in later work; **raising the player's
+starting health is explicitly the wrong response** and is ruled out.
+
+### The run's length — **[settled]**
+
+**Three fights**, and the length is not separately settable: it is however many Quarry health values
+are configured. Adding a fourth number adds a fourth fight.
+
+### What you are told when a fight ends — **[settled]**
+
+The fight's last trick is shown like any other, and clearing it takes you to a full-screen verdict:
+a headline naming which of the three things happened, which fight of the run it was, the health you
+carry, and how many of the deciding hand's tricks you took. There is exactly one thing to do from
+it — go on to the next fight, or start a new run.
+
+> This replaced a one-line message on a tally table that a play session showed the player did not
+> read as having won or lost. The wording of every line on the verdict is placeholder and the
+> developer's.
+
+### Which fight you are on — **[settled]**
+
+Shown throughout play, beside the opponent's plate: `Fight 2 of 3`.
+
+### Not built
+
+- **Forage** — the only thing you would do between hands: edit the 33-card deck the next hand is
+  dealt from, in exactly four ways — a card's **value**, its **ability**, its **suit**, and the
+  **decree**. The budget is **4 edits per encounter** (**[provisional]**). **[not built]** — nothing
+  reads the budget. **The player holds no skulls of their own**, and Forage could not add any.
+- **A shop, a currency, and a flat payout for winning** are all **[not built]** and none is
+  designed. The stated intention is that surplus cash-out damage (section 8) is paid back as money,
+  that winning an encounter also pays a flat amount, and that the shop then raises the player's
+  damage — which is what is expected to make the `n × n` payout scale past the early game, and what
+  is expected to close the gap the rising health curve opens. Note that a card's **value** is one of
+  the four things Forage may edit, and since 2026-08-14 a card's rank decides only who wins a trick
+  — it feeds no scoring at all (section 7).
+- **A restore between fights** — **[not built]**, and deliberately so. The tunable exists and is
+  read by nothing; wiring it in was explicitly forbidden until the flask is designed.
+- **Different Quarries.** Every fight of the run is against the same character, and every opponent
+  plays identically — only its health differs. A roster of named opponents is later work.
+- **Stages, stage gimmicks, and a boss.** The run is a flat sequence.
+- **Persistence.** Reloading the page starts a new run; nothing is saved.
 - **Snare** — an in-hand edit layer — is **[open]** and explicitly blocked: "raise the value of the
   card I am about to win with" is a dominant strategy until it has a cost.
-
-The app today plays **one encounter** against one Quarry: hand after hand, both bars visible, until a
-bar empties. A session can therefore end, in victory or in defeat. What it cannot do is carry on
-afterwards.
 
 ---
 
@@ -621,7 +674,7 @@ Two tables: what the base game had, and what this game itself had until 2026-08-
 
 | Base-game rule                    | Here                                                                                                                                                 |
 | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **The 21-point match**            | **Dropped.** It ends a symmetric two-player contest. The run, and the health both sides hold, replace it.                                            |
+| **The 21-point match**            | **Dropped.** It ends a symmetric two-player contest. The run, and the health both sides hold, replace it — and since DLR-82 the run genuinely exists ([section 10](#10-between-hands-and-the-run)). |
 | **13-card hands, 13 tricks**      | **Dropped.** Six and six (section 2).                                                                                                                |
 | **Goal cards (16)**               | **Dropped.** A second scoring channel.                                                                                                               |
 | **Special cards (9)**             | **Dropped as cards.** The _unsuited_ concept is kept as the grammar for a Forage suit edit.                                                          |
@@ -714,8 +767,9 @@ the mechanics themselves are documented in `../implementation/`.
 | Tricks and multiplier on screen throughout    | settled                          | `src/app/warCouncil/BankMeter.tsx`; wording in `labels.ts` — `TRICKS_LABEL`, `MULTIPLIER_LABEL`                                  | Developer — the wording and the visual values           |
 | The two terms stay separately addressable     | settled — an affordance, unused  | `src/warCouncil/bank.ts` — `bank` and `multiplier` are two fields; nothing moves them apart yet                                  | —                                                       |
 | Surplus damage paid back as money             | **not built**                    | nothing — no currency, no shop, and no consumer exists                                                                           | Developer — a later ticket                              |
-| Both sides' health on screen                  | settled                          | `src/app/warCouncil/DuelHealthBars.tsx`, `duelHealthBars.ts`                                                                     | Developer — whether 10 reads well in 1-point steps      |
-| The hand-over tally                           | settled                          | `src/app/warCouncil/RoundOverPanel.tsx`                                                                                          | —                                                       |
+| Both sides' health on screen                  | settled                          | `src/app/warCouncil/DuelHealthBars.tsx`, `duelHealthBars.ts`, `HeartMark.tsx` — one heart per point since DLR-86                 | Developer — whether 10 (and 18) hearts read well        |
+| The Quarry's hearts preview the banked streak | **provisional**                  | `src/app/warCouncil/duelHealthBars.ts` — `projectedFromStreak`; styling in `warCouncilHealthBars.css`                            | Developer — whether it reads as pending or as spent     |
+| The hand-over tally (between hands only)      | settled                          | `src/app/warCouncil/RoundOverPanel.tsx` — its terminal branch was **deleted** by DLR-82; a resolved fight is the verdict's       | Developer — whether losing the felt's tally costs anything |
 | The Quarry dumps skulls into losing tricks    | settled                          | `src/warCouncil/cpuPlayer.ts` — `chooseCpuCard`'s first branch                                                                   | —                                                       |
 | The Quarry's **lead** ignores skulls          | settled — deliberately minimal   | `src/warCouncil/cpuPlayer.ts` — the lead branch is unchanged                                                                     | Developer — the obvious next CPU change                 |
 | The Quarry has no rule-break of any kind      | settled                          | nothing to enforce — `legalMoves.ts` reads only the led card; guarded by `cpuPlayer.test.ts`'s 60-seed soak                      | —                                                       |
@@ -723,10 +777,17 @@ the mechanics themselves are documented in `../implementation/`.
 | What any character's power is                 | **not built** — undecided        | —                                                                                                                                | **Developer — a final-boss ticket, not every opponent** |
 | Telegraph fidelity                            | provisional                      | `src/hunt/config.ts` — `TELEGRAPH_FIDELITY`                                                                                      | Developer, after playtest                               |
 | Rank 8's name ("Poison")                      | **open** — misleading            | `src/app/warCouncil/labels.ts` — `RANK_NAME`                                                                                     | Developer                                               |
-| Between-encounter restore (none)              | **not built**                    | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE` (still no consumer)                                                            | Developer — most likely to change                       |
+| Between-encounter restore (none)              | **not built** — deliberately     | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE`; still **no consumer**, and DLR-82 forbade adding one. A grep guards it        | Developer — the flask stories own it                    |
 | Forage                                        | **not built**                    | `src/hunt/config.ts` — `FORAGE_BUDGET_PER_ENCOUNTER` (no consumer)                                                               | Developer — budget is provisional                       |
-| The run — a sequence of encounters            | **not built**                    | `src/hunt/config.ts` — `QUARRY_ENCOUNTER_HEALTH` holds one entry                                                                 | —                                                       |
-| Run length                                    | **open** — placeholder 5         | `src/hunt/config.ts` — `ENCOUNTERS_PER_RUN` (no consumer)                                                                        | Developer                                               |
+| The run — a sequence of encounters            | settled — since DLR-82           | `src/hunt/run.ts` — `RunState`, `startRun`, `advanceRun`; driven by `src/App.tsx`                                                | —                                                       |
+| Health carried fight to fight, no restore     | settled                          | `src/hunt/run.ts` — `advanceRun` passes `encounter.health[Player]` into `startEncounter`                                         | —                                                       |
+| Your health emptying ends the run             | settled                          | `src/hunt/run.ts` — `outcomeFor` checks the Quarry's win before the last-fight case                                             | —                                                       |
+| Winning the last fight wins the run           | settled                          | `src/hunt/run.ts` — `outcomeFor`'s `encounterIndex === encounterCount - 1`                                                       | —                                                       |
+| The Quarries' health (10, 14, 18)             | **provisional** — set 2026-08-15 | `src/hunt/config.ts` — `QUARRY_ENCOUNTER_HEALTH`                                                                                 | **Developer, after playing** — entries 1–2 are placeholders |
+| Run length (3)                                | settled — derived, not chosen    | `src/hunt/config.ts` — `ENCOUNTERS_PER_RUN` is `QUARRY_ENCOUNTER_HEALTH.length`                                                  | — (add a health value to add a fight)                   |
+| The end-of-fight verdict screen               | settled                          | `src/app/run/RunOutcomePanel.tsx`; copy in `src/app/run/runLabels.ts`                                                            | Developer — all wording, and whether it reads as unmissable |
+| Which fight of the run you are on             | settled                          | `src/app/run/runLabels.ts` — `runProgressText`; rendered by `src/app/warCouncil/RoundStatusBand.tsx`'s `.wc-run` block           | —                                                       |
+| Every Quarry plays identically                | settled — only health differs    | `src/hunt/config.ts` — `SLICE_QUARRY_CHARACTER` is one character for the whole run                                               | Developer — a roster is later work                      |
 | Snare (in-hand edits)                         | **open**, blocked                | —                                                                                                                                | Needs a cost before it's viable                         |
 
 ### The redesign landed whole — DLR-80 closed 2026-08-13
@@ -804,8 +865,48 @@ the developer's to move.
 the right Quarry health, the placeholder wording on the readout, and whether the engine's `bank`
 field should be renamed now that it holds a trick count.
 
+### The run landed — DLR-82, 2026-08-15
+
+**What a player does now that they did not before:** plays a **second and third fight**. Beating a
+Quarry no longer ends the session with a sentence — it takes you into a tougher opponent on the
+health you have left, and that health is never given back. Losing at any point ends the run rather
+than the encounter. There is now a difference between winning a fight and winning **the run**, and
+the game says which happened.
+
+**What is gone:** the felt's terminal panel. When a bar emptied, the screen used to show a tally
+table with a one-line outcome message and no control — and that branch sat *ahead of* the
+resolved-trick reveal, so the trick that ended a fight was never shown at all. Both are fixed by the
+same deletion: the deciding trick now gets its beat, and one tap reaches the verdict where two were
+needed before.
+
+**Engine and screen landed together.** Every rule in [section 10](#10-between-hands-and-the-run)
+that is not marked **[not built]** is reachable by playing.
+
+**What the developer owns:** the three health values (10, 14, 18 — the shape is fixed, the numbers
+are not), every word of the verdict's copy, whether the headline actually reads as unmissable, and
+whether losing the felt's hand tally at the end of a fight costs anything worth restoring.
+
+**One thing was deliberately left unwired.** `ENCOUNTER_PLAYER_RESTORE` still has no consumer, and
+the ticket forbade adding one — a between-fight heal is the flask's job, and the flask is not
+designed. The run being hard is not a reason to wire it in.
+
 ### Known tensions, recorded not resolved
 
+- **The run is expected to be lost around fight three, and that is shipped knowingly** (new
+  2026-08-15, DLR-82). A fight costs the player roughly four health; the player starts with ten and
+  gets nothing back. Three fights against 10, 14 and 18 health therefore do not add up, and the
+  ticket says so outright: the arithmetic is working, and the gap is what a shop, an upgrade and a
+  flask exist to close. **The tension is that none of those exist yet**, so the only thing currently
+  available to a player who keeps losing is a rule change — and the two obvious ones (raise starting
+  health, wire up the between-fight restore) are both explicitly ruled out. Until the economy lands,
+  the honest measurement is *how far* a run gets, not whether it is won. The cheapest disproof that
+  something is wrong rather than merely unfinished: if fight two is routinely unreachable rather than
+  fight three being unwinnable, the curve is too steep and the numbers want moving.
+- **A run that can only be lost has no ending to see** (new 2026-08-15, DLR-82). The `YOU WIN`
+  screen is built, tested and — on the shipped curve — very unlikely to be reached in ordinary play.
+  A verdict nobody sees is a verdict nobody can judge, which is awkward given that "does this read
+  as clear" is exactly the question the developer asked. Worth reaching deliberately once, by
+  lowering the curve for one session, before trusting that the screen works.
 - **Predictable may read as flat, and that is the whole risk of this change** (new 2026-08-14,
   PT-002). Removing card values from the bank removed roughly ±20% of payout swing that no decision
   controlled — 1,251 hands of identical trick shape had paid anywhere between 20 and 93. The measured
@@ -874,7 +975,17 @@ field should be renamed now that it holds a trick count.
   steps of 1, where the same bar previously drained smoothly from 1,350. A bar treatment tuned for a
   continuous figure may read badly for a small integer count. **Sharpened 2026-08-14:** the total is
   now **10**, so the bar has ten steps rather than twenty-five and each loss moves it a tenth — which
-  makes the question more pressing, not less.
+  makes the question more pressing, not less. **Answered in kind, not yet settled, 2026-08-16:**
+  DLR-86 replaced both bars with rows of countable hearts that break as damage lands, which is the
+  treatment a small integer count calls for. Whether it actually reads better is a play observation
+  and the entry stays open until someone plays it. It also raises its own version of the question at
+  the other end — the third fight's Quarry holds **18** hearts in the same band, and whether 18 stay
+  legible once shrunk to fit is the same kind of question at the opposite scale.
+- **A pending preview on a health bar can read as damage already dealt** (new 2026-08-16, DLR-86).
+  The Quarry's at-risk hearts are the reading DLR-80 removed when it retired the bars' pending
+  segment, reintroduced deliberately and in a different grammar — dimmed and flashing rather than
+  solid, Quarry-side only, and never touching the stated current-of-max figure. The measurement is
+  cheap and has one right answer: ask a player mid-hand what the flashing hearts will do.
 - **Rank 8 is still called "Poison" and now means nothing at all** (new 2026-08-13, play-test 2 §6
   Q3). It has no play-time ability and no scoring intervention, and the skull is a _separate_ marker
   — so the name actively suggests a connection that does not exist. It will read as a bug in the

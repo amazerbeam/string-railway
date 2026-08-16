@@ -11,6 +11,11 @@ export interface WarCouncilMountProps {
   /** Each side's configured maximum, for the bars' denominator. NOT derivable from
    *  `EncounterState`, which carries current health only. */
   readonly maxHealth: Readonly<Record<DuelSide, Health>>
+  /** AC6 — which fight of the run this is, ALREADY WORDED by the run layer. A string, not a
+   *  `RunState`: the card layer renders the run's position and must not be able to read or change
+   *  it. Required rather than optional deliberately, so the compiler enumerates every mount site
+   *  instead of letting one silently render an empty band. */
+  readonly runLabel: string
   readonly onComplete: (result: WarCouncilRoundResult) => void
 }
 

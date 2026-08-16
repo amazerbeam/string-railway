@@ -27,14 +27,16 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | Module                | Doc                                         | Status      | Built by                                                                                                                                     |
 | --------------------- | ------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, PT-001, PT-002 |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81                                                       |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, PT-002                                                             |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, PT-001, PT-002                               |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82                                               |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-86, PT-002                                             |
+| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82                                                                                                                                               |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, PT-001, PT-002                       |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
 budget by the time it was split (SCRUM-28) — and has since been split again, into per-mechanic
-files within each of `war-council/` and `war-council-ui/`, for the same reason.
+files within each of `war-council/` and `war-council-ui/`, for the same reason. `src/app/run/`
+(DLR-82) follows the same convention as a sibling screen module: `run-ui/`.
 
 DLR-47 retired the Vanguard board engine, the battle-loop orchestrator, and their UIs —
 `src/App.tsx` now mounts a single War Council round directly
@@ -48,7 +50,9 @@ the Quarry's intent telegraphed before every commit, and an end panel. It is the
 [war-council-ui/hunt-readouts-and-telegraph.md](war-council-ui/hunt-readouts-and-telegraph.md).
 
 DLR-71 put the **duel** on screen — two health bars as a mirrored opposed pair, health carried Hunt
-to Hunt, and an encounter that could finally end. See
+to Hunt, and an encounter that could finally end. **DLR-86 then replaced both bars with rows of
+countable hearts** that break as damage lands, and gave the Quarry's row a preview of what the banked
+streak would cash for. See
 [war-council-ui/duel-health-bars.md](war-council-ui/duel-health-bars.md).
 
 **DLR-80 replaced the game's entire scoring layer, and it is the largest deletion this project has
@@ -133,6 +137,35 @@ yet built: `bank` and `multiplier` stay **two independent fields** so a planned 
 item can move one without the other, and the engine field is still **named `bank`** although it holds
 a trick count — a ~20-file rename judged not worth a play-test ticket. Money, the shop, and leftover
 damage as currency are all explicitly out of scope; there is nothing to spend it on yet.
+
+**DLR-82 turned one encounter into a run, and it is the first ticket that makes a session something
+you can lose rather than merely end.** Three Quarries are fought in order — `QUARRY_ENCOUNTER_HEALTH`
+went from `[10]` to **`[10, 14, 18]`** — on **one player health bar that is never restored**. Win a
+fight and you carry the health you finished on into a tougher one; your bar emptying at any point
+ends the run and offers no further fight; winning the third ends it as a win that reads plainly
+differently from winning the first two.
+
+The rules live in a new pure module, `src/hunt/run.ts` — `RunState` and four transitions, inside the
+lint-enforced no-React boundary — and `src/App.tsx` became a driver that calls them and does no
+arithmetic of its own. `ENCOUNTERS_PER_RUN` stopped being a free-standing `5` sitting beside a
+one-entry array and became an alias of that array's length, so run length has one source of truth.
+Start at [hunt/run-sequence.md](hunt/run-sequence.md) for the transitions and where a run's end is
+decided, or [app/run-driver.md](app/run-driver.md) for the driver and why it holds no effect.
+
+**It also deleted a screen, on the developer's own ruling, in answer to a play session.** The
+feedback was that _"the player didn't know when she beat the opponent or lose"_ — and the terminal
+state responsible was a `<p role="status">` sentence inside a tally table on the felt, with no
+control on it. That branch sat **ahead of** the resolved-trick reveal, so the trick that ended a
+fight was never shown at all. Removing it inverted both problems: the deciding trick now gets its
+beat, one tap replaces two, and a full-screen verdict — [run-ui/](run-ui/README.md) — states
+`FIGHT WON` / `YOU WIN` / `YOU LOSE` with the run position, the carried health and a trick-bar row.
+`ENCOUNTER_OUTCOME`, `.wc-terminal` and `RoundOverPanel`'s `winner` prop went with the branch.
+
+**Two things are deliberately still not wired.** `ENCOUNTER_PLAYER_RESTORE` remains exported and
+**unread** — DLR-82 forbade wiring it in, and a grep guards the absence — and there is no currency,
+shop, or purchase. The curve's second and third values are a **documented placeholder**: the ticket
+predicts the player losing around fight three at these numbers and calls that the arithmetic
+working, with the shop and the flask as the answer rather than a bigger health bar.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

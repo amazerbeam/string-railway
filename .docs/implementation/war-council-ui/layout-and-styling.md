@@ -32,11 +32,29 @@ because **card rotation and lift are transforms, which do not affect layout size
 reserved room the fan's visual pixels spill outside its box and the shell's `overflow: hidden` crops
 them. The fix is to reserve the room, never to loosen the overflow.
 
-The styling ships as **four** stylesheets since DLR-80, not one: `warCouncil.css` (tokens, the shell
-grid, the status band, the felt/table, the hand container, and — re-homed by DLR-80 — the
-`.wc-sr-only` utility), `warCouncilCards.css` (the card face, the ability prompt, and the hand-over
-panel), `warCouncilHunt.css` (the dossier zone, the telegraph, and DLR-80's `.wc-shape*` and
-`.wc-bank*` readouts), and `warCouncilHealthBars.css` (DLR-71: the duel's two health bars).
+The styling ships as **five** stylesheets since DLR-82, not one: `warCouncil.css` (tokens, the shell
+grid, the status band including DLR-82's `.wc-run` readout, the felt/table, and — re-homed by
+DLR-80 — the `.wc-sr-only` utility), `warCouncilCards.css` (the card face, the ability prompt, and
+the hand-over panel), `warCouncilHunt.css` (the dossier zone, the telegraph, and DLR-80's
+`.wc-shape*` and `.wc-bank*` readouts), `warCouncilHealthBars.css` (DLR-71: the duel's two health
+displays — rewritten by DLR-86 from a bar surface into the heart rows, their four `[data-state]`
+rules, the two `@keyframes`, and the reduced-motion block), and `warCouncilHand.css` (DLR-82: the
+hand container and the fan).
+
+> **DLR-86 retired this module's one inline-style mechanism, and the reasoning is worth keeping
+> rather than the mechanism.** `DuelHealthBars.tsx` used to write bar geometry into a `--w` custom
+> property on each segment instead of an inline `width`, precisely because an inline `width`
+> out-ranks an external rule that carries no `!important` — it would have permanently defeated the
+> stylesheet's own transition and lethal-state rules. The heart rows have **no per-element geometry
+> to communicate at all**, so the component now writes no inline style anywhere and the hazard is
+> designed out rather than guarded against. The rule that survives: any future need for a per-heart
+> value comes back through a custom property, never through `style={…}`.
+
+> **DLR-82 split the fifth out, for the same reason as every split before it.** Adding the `.wc-run`
+> block pushed `warCouncil.css` to **431 lines**, past the 400-line ceiling. The hand/fan rules moved
+> out verbatim into `warCouncilHand.css` (46 lines), leaving `warCouncil.css` at 393. Content only
+> moved — no rule, value or selector changed — and the new sheet is imported from
+> `WarCouncilRound.tsx` with the others.
 
 > **DLR-80 deleted two of the six.** `warCouncilDeclare.css` went with the declare gate and
 > `warCouncilStandingTrack.css` with the Standing track. **`.wc-sr-only` was defined only in the
@@ -78,7 +96,7 @@ the split has introduced. Consolidating it is its own ticket.
 > pointer comment naming the surviving rule's one home. Two copies of a breakpoint are a maintenance
 > cost; two copies of a _rule_ inside them is a bug that no test can see.
 
-`WarCouncilRound.tsx` imports **all four**, in that order, and importing only some leaves part of the
+`WarCouncilRound.tsx` imports **all five**, in that order, and importing only some leaves part of the
 feature unstyled with no error anywhere — worth knowing before debugging a card that renders with no
 face, a shape or bank readout that renders as an undifferentiated run of text, or a health bar
 that renders as an empty box with no fill and no mirror. A Vite build fails loudly on a missing CSS

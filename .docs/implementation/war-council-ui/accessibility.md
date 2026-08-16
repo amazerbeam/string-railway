@@ -74,10 +74,35 @@ suffix, so the skull is in the accessible name and not only in the glyph — whi
 carries `aria-label` (`"Your health"` / `"The Quarry's health"` — the two must differ, since that is how
 a test and a screen-reader user both tell them apart), `aria-valuemin`/`max`/`now`, and an
 `aria-valuetext` sentence built by `healthBarValueText`. The `valuetext` exists because
-**`aria-valuenow` can carry only one number** and a bar carries two: the current health and the pending
-damage. It also distinguishes *nothing declared yet* from *a Hunt that threatens nothing* — "Nothing at
-risk yet" rather than "0 at risk" — and states the lethal case outright rather than making a listener
-compare two figures. See [The duel's health bars](duel-health-bars.md).
+**`aria-valuenow` can carry only one number** and the display carries two: the current health and the
+pending damage. It also states the lethal case outright rather than making a listener compare two
+figures. See [The duel's health bars](duel-health-bars.md).
+
+**DLR-86 turned the bars into heart rows without touching any of that**, and the fact that the whole
+query surface survived is the load-bearing part rather than an incidental one: every existing spec
+reads these meters by `getByRole('meter', { name })` and `aria-valuenow`, so a passing suite is the
+evidence that the accessible reading did not regress while the picture changed completely. Each
+individual heart is `aria-hidden` — the meter above the row already carries the reading, and a screen
+reader counting eighteen glyphs would be stating the same figure a second time.
+
+The one deliberate addition: `healthBarValueText` **appends an at-risk clause when, and only when,
+`pending > 0`** — `"10 of 10. 6 at risk."`, or `"10 of 10. 12 at risk. Lethal."`. Its no-pending
+output is byte-identical to DLR-80's, which is exactly what the untouched pre-DLR-86 assertions pin.
+The reasoning is that DLR-86 gives a sighted player a preview of what the banked streak would cash
+for, and **a meter whose text is less true than its picture is worse than one with no picture**.
+Withholding the preview from assistive tech would have been the alternative; it was rejected on those
+grounds. The wording is placeholder copy and the call itself is flagged for the developer, since the
+brief asked for neither.
+
+**The four heart states read without colour, and without motion.** `whole` and `broken` bind to two
+different `<symbol>`s — a solid heart against a cracked outline — so the row separates in greyscale;
+opacity, colour and the two animations are reinforcement, never the only signal. Under
+`prefers-reduced-motion: reduce`, `warCouncilHealthBars.css` sets `animation: none` on the `atRisk`
+and `breaking` states and pins `breaking` to the colour its keyframe would otherwise have landed on.
+Nothing else changes, because the resting appearance was already carrying all four states before
+either animation ran — which is what makes the reduced-motion guarantee structural rather than a
+second set of rules to keep in step. jsdom evaluates no media query, so this one is held by static
+review of the stylesheet rather than by a test.
 
 `IntentTelegraph` goes further and hides *all* its visible text, carrying one `aria-label` on the
 container built by `intentAccessibleName` — so the eyebrow and the line are heard as one sentence

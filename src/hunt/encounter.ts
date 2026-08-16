@@ -15,8 +15,10 @@ import {
  * AC1 — a fresh encounter, both bars read from DLR-66's configured totals.
  *
  * `encounterIndex` selects the Quarry's bar from `QUARRY_ENCOUNTER_HEALTH`; it does NOT
- * sequence anything. Running the encounters in order, and any restore between them
- * (`ENCOUNTER_PLAYER_RESTORE`), is DLR-73's, and this module deliberately reads neither.
+ * sequence anything. Running the encounters in order is `src/hunt/run.ts`'s (DLR-82), which calls
+ * this function once per fight and passes the health the player carried out of the last one. Any
+ * restore between them (`ENCOUNTER_PLAYER_RESTORE`) remains DELIBERATELY UNREAD — DLR-82 forbids
+ * wiring it in, and the flask stories own it.
  *
  * `playerHealth` is a defaulted parameter rather than something the function closes over — the
  * same injectable pattern this module's other configuration-derived values use — so a spec can

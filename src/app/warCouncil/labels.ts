@@ -68,24 +68,20 @@ export const HEALTH_BAR_LABEL: Readonly<Record<DuelSide, string>> = {
 }
 
 /**
- * AC7's one sentence, for a reader who cannot see the bar itself. There is no pending figure any
- * more (DLR-80): damage has already landed by the time a bar renders, so the view carries only
- * the current-of-max reading and whether it is lethal.
+ * AC6's one sentence, for a reader who cannot see the row.
+ *
+ * The current-of-max reading is byte-identical to DLR-80's whenever `pending` is 0, which is every
+ * shape the pre-DLR-86 assertions pin. The at-risk clause exists because DLR-86 gives a sighted
+ * player a preview of what the streak would cash for, and a meter whose text is less true than its
+ * picture is worse than one with no picture. Placeholder copy: the wording is the developer's.
  */
 export function healthBarValueText(view: HealthBarView): string {
   const standing = `${view.current} of ${view.max}.`
-  return view.lethal ? `${standing} Lethal.` : standing
+  const atRisk = view.pending > 0 ? ` ${view.pending} at risk.` : ''
+  return view.lethal ? `${standing}${atRisk} Lethal.` : `${standing}${atRisk}`
 }
 
 export const FINISH_ROUND_LABEL = 'Deal the next Hunt'
-
-/** The terminal state when a bar empties. Keyed by the winner `applyDamage` resolved — the tie
- *  is already decided by `SIMULTANEOUS_DEPLETION_WINNER`, so there is no third case here.
- *  Placeholder copy: the wording is the developer's. */
-export const ENCOUNTER_OUTCOME: Readonly<Record<DuelSide, string>> = {
-  [DuelSide.Player]: 'The Quarry is down. The encounter is yours.',
-  [DuelSide.Quarry]: 'You are down. The run ends here.',
-}
 
 /** §3.2's four outcomes, as the player is told them. Placeholder copy: the wording is the
  *  developer's. */

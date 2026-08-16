@@ -1,0 +1,427 @@
+<title>Breakable Hearts Band</title>
+<style>
+  /* DLR-86 mockup — the War Council top band with both health bars as heart rows.
+     Deliberately single-theme: this is a game screen, and the game is dark. Every colour
+     is painted explicitly so the page holds on either host ground.
+     Palette is lifted from src/app/warCouncil/warCouncil.css so the mockup reads as the game. */
+  :root {
+    --chamber: #0b0f12;
+    --panel: #111a1f;
+    --edge: #23303a;
+    --chalk: #cfd8d5;
+    --chalk-dim: #7d8c8a;
+    --parchment: #e8dfc8;
+
+    /* the six tokens this ticket adds — placeholders, the developer's to retune */
+    --hp-heart-size: clamp(0.62rem, 1.5vmin, 0.95rem);
+    --hp-heart-gap: 0.18rem;
+    --hp-broken: #3a4a52;
+    --hp-atrisk-opacity: 0.55;
+    --hp-break-ms: 520ms;
+    --hp-flash-ms: 900ms;
+
+    /* tokens that survive from DLR-71 */
+    --hp-secure-fill: #c99a4e;
+    --hp-pending-fill: #8b9a94;
+    --hp-lethal-edge: #d1705f;
+
+    --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background:
+      radial-gradient(120% 80% at 50% 0%, #17202700 0%, #060809 100%),
+      var(--chamber);
+    color: var(--chalk);
+    font-family: var(--sans);
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+    padding: 1.4rem clamp(0.8rem, 3vw, 2rem) 3rem;
+  }
+
+  .sheet-title {
+    font-family: var(--serif);
+    font-size: clamp(1.15rem, 3vw, 1.6rem);
+    font-weight: 600;
+    margin: 0;
+    color: var(--parchment);
+    text-wrap: balance;
+  }
+  .sheet-sub {
+    margin: 0;
+    max-width: 62ch;
+    color: var(--chalk-dim);
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+
+  /* ---------- the band under test ---------- */
+
+  .band-frame {
+    border: 1px solid var(--edge);
+    background: #060809;
+    padding: 0.55rem 0.7rem;
+    overflow-x: auto;
+  }
+
+  .wc-status {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.5rem, 1.6vw, 1.1rem);
+    min-width: 40rem;
+  }
+
+  .wc-plate, .wc-run {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 0 0 auto;
+  }
+  .wc-plate-label {
+    font-size: 0.52rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--chalk-dim);
+    white-space: nowrap;
+  }
+  .wc-run-value {
+    font-family: var(--serif);
+    font-size: 0.9rem;
+    color: var(--parchment);
+    font-variant-numeric: tabular-nums;
+  }
+  .wc-stack { display: flex; }
+  .wc-stack-back {
+    width: 0.7rem; height: 1.05rem; margin-right: -0.34rem;
+    border: 1px solid var(--edge); border-radius: 1px; background: #16222a;
+  }
+
+  .wc-score {
+    display: flex;
+    gap: 0.75rem;
+    flex: 0 0 auto;
+    padding: 0 0.4rem;
+  }
+  .wc-score-cell { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+  .wc-score-side {
+    font-size: 0.5rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--chalk-dim);
+  }
+  .wc-score-value {
+    font-family: var(--serif); font-size: 1.15rem; color: var(--parchment);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- one side's bar ---------- */
+
+  .wc-hp { flex: 1 1 8rem; min-width: 0; display: flex; flex-direction: column; gap: 0.22rem; }
+  .wc-hp-head { display: flex; align-items: baseline; gap: 0.5rem; white-space: nowrap; }
+  .wc-hp[data-side='quarry'] .wc-hp-head { flex-direction: row-reverse; }
+  .wc-hp-who {
+    font-size: 0.52rem; letter-spacing: 0.16em; text-transform: uppercase;
+    font-weight: 600; color: var(--chalk-dim);
+  }
+  .wc-hp-num {
+    font-family: var(--serif); font-size: 0.85rem;
+    font-variant-numeric: tabular-nums; color: var(--parchment);
+  }
+
+  /* The row. `nowrap` + `min-width: 0` so 18 hearts shrink rather than growing the band —
+     a wrapping row would add height to a zone the no-scroll shell sizes `auto`. */
+  .wc-hp-hearts {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--hp-heart-gap);
+    min-width: 0;
+  }
+  .wc-hp[data-side='quarry'] .wc-hp-hearts { flex-direction: row-reverse; }
+
+  .wc-hp-heart {
+    flex: 0 1 var(--hp-heart-size);
+    min-width: 0.34rem;
+    aspect-ratio: 1;
+    display: block;
+  }
+  .wc-hp-heart svg { width: 100%; height: 100%; display: block; }
+
+  /* Four resting states. Shape carries the reading before colour does: whole and broken are
+     two different symbols, so a screenshot in greyscale still separates them. */
+  .wc-hp-heart[data-state='whole']    { color: var(--hp-secure-fill); opacity: 1; }
+  .wc-hp-heart[data-state='atRisk']   { color: var(--hp-pending-fill); opacity: var(--hp-atrisk-opacity); }
+  .wc-hp-heart[data-state='breaking'] { color: var(--hp-lethal-edge); opacity: 1; }
+  .wc-hp-heart[data-state='broken']   { color: var(--hp-broken); opacity: 1; }
+
+  .wc-hp-heart[data-state='atRisk']   { animation: wc-hp-flash var(--hp-flash-ms) ease-in-out infinite alternate; }
+  .wc-hp-heart[data-state='breaking'] { animation: wc-hp-break var(--hp-break-ms) ease-out 1 both; }
+
+  @keyframes wc-hp-flash {
+    from { opacity: var(--hp-atrisk-opacity); transform: scale(1); }
+    to   { opacity: 1; transform: scale(1.09); }
+  }
+  @keyframes wc-hp-break {
+    0%   { transform: scale(1) rotate(0deg); color: var(--hp-secure-fill); }
+    22%  { transform: scale(1.28) rotate(-9deg); color: var(--hp-lethal-edge); }
+    55%  { transform: scale(0.88) rotate(7deg); }
+    100% { transform: scale(1) rotate(0deg); color: var(--hp-broken); }
+  }
+
+  /* Lethal reads without colour: a hard rule under the whole row. */
+  .wc-hp-hearts.wc-is-lethal {
+    box-shadow: inset 0 -2px 0 0 var(--hp-lethal-edge);
+    padding-bottom: 0.14rem;
+  }
+
+  /* AC7 — motion off, state intact. Nothing above depends on an animation to be readable. */
+  @media (prefers-reduced-motion: reduce) {
+    .wc-hp-heart[data-state='atRisk'],
+    .wc-hp-heart[data-state='breaking'] { animation: none; }
+    .wc-hp-heart[data-state='breaking'] { color: var(--hp-lethal-edge); }
+  }
+  body.force-reduced .wc-hp-heart[data-state='atRisk'],
+  body.force-reduced .wc-hp-heart[data-state='breaking'] { animation: none; }
+  body.force-reduced .wc-hp-heart[data-state='breaking'] { color: var(--hp-lethal-edge); }
+
+  /* ---------- mockup-only chrome, not part of the ticket ---------- */
+
+  .rig {
+    display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
+    padding: 0.75rem; border: 1px solid var(--edge); background: var(--panel);
+  }
+  .rig h2 {
+    width: 100%; margin: 0 0 0.15rem; font-size: 0.55rem; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--chalk-dim); font-weight: 600;
+  }
+  button, select {
+    font: inherit; font-size: 0.8rem;
+    min-height: 44px; padding: 0 0.85rem;
+    background: #16222a; color: var(--chalk);
+    border: 1px solid var(--edge); border-radius: 2px;
+    cursor: pointer; touch-action: manipulation;
+  }
+  button:focus-visible, select:focus-visible { outline: 2px solid var(--hp-secure-fill); outline-offset: 2px; }
+  @media (hover: hover) { button:hover { background: #1d2c36; } }
+  button:active { background: #0f1920; }
+  button[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+  .readout {
+    font-family: var(--serif); font-variant-numeric: tabular-nums;
+    color: var(--parchment); font-size: 0.9rem; margin-left: auto; white-space: nowrap;
+  }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 1.1rem; font-size: 0.78rem; color: var(--chalk-dim); }
+  .legend div { display: flex; align-items: center; gap: 0.4rem; }
+  .legend .wc-hp-heart { flex: 0 0 0.95rem; }
+
+  .note { max-width: 66ch; font-size: 0.8rem; line-height: 1.6; color: var(--chalk-dim); margin: 0; }
+  .note strong { color: var(--chalk); font-weight: 600; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+
+<h1 class="sheet-title">DLR-86 — health as breakable hearts</h1>
+<p class="sheet-sub">
+  The War Council top band, with both health bars rendered as one heart per health point. Drive it
+  with the controls below: taking tricks grows the streak and dims the Quarry's hearts; losing a
+  trick cashes that streak into breaks and costs you a heart of your own.
+</p>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="hp-heart" viewBox="0 0 24 24">
+    <path d="M12 20.4 4.5 13a4.9 4.9 0 0 1 7.5-6.2A4.9 4.9 0 0 1 19.5 13Z"
+          fill="currentColor" stroke="currentColor" stroke-linejoin="round" />
+  </symbol>
+  <symbol id="hp-heart-broken" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M12 20.4 4.5 13a4.9 4.9 0 0 1 7.5-6.2A4.9 4.9 0 0 1 19.5 13Z" />
+      <path d="M12 6.1 9.9 10.4l3.4 1.6-2.6 2.9 2 1.9" />
+    </g>
+  </symbol>
+</svg>
+
+<div class="band-frame">
+  <header class="wc-status">
+    <div class="wc-plate">
+      <span class="wc-plate-label">Opponent</span>
+      <span class="wc-stack" aria-hidden="true">
+        <span class="wc-stack-back"></span><span class="wc-stack-back"></span>
+        <span class="wc-stack-back"></span><span class="wc-stack-back"></span>
+      </span>
+      <span class="wc-plate-label" id="held">4 held</span>
+    </div>
+    <div class="wc-run">
+      <span class="wc-plate-label">Run</span>
+      <span class="wc-run-value">Fight 1 of 3</span>
+    </div>
+
+    <div class="wc-hp" data-side="player">
+      <div class="wc-hp-head">
+        <span class="wc-hp-who">Your health</span>
+        <span class="wc-hp-num" id="player-num">10 / 10</span>
+      </div>
+      <div class="wc-hp-hearts" id="player-hearts" role="meter"
+           aria-label="Your health" aria-valuemin="0" aria-valuemax="10"
+           aria-valuenow="10" aria-valuetext="10 of 10."></div>
+    </div>
+
+    <div class="wc-score" role="group" aria-label="Tricks won">
+      <span class="wc-score-cell"><span class="wc-score-side">You</span><span class="wc-score-value" id="you-tricks">0</span></span>
+      <span class="wc-score-cell"><span class="wc-score-side">Trick</span><span class="wc-score-value" id="trick-no">1</span></span>
+      <span class="wc-score-cell"><span class="wc-score-side">Them</span><span class="wc-score-value" id="them-tricks">0</span></span>
+    </div>
+
+    <div class="wc-hp" data-side="quarry">
+      <div class="wc-hp-head">
+        <span class="wc-hp-who">The Quarry&rsquo;s health</span>
+        <span class="wc-hp-num" id="quarry-num">10 / 10</span>
+      </div>
+      <div class="wc-hp-hearts" id="quarry-hearts" role="meter"
+           aria-label="The Quarry&rsquo;s health" aria-valuemin="0" aria-valuemax="10"
+           aria-valuenow="10" aria-valuetext="10 of 10."></div>
+    </div>
+  </header>
+</div>
+
+<div class="rig">
+  <h2>Play the hand</h2>
+  <button id="win">Take the trick</button>
+  <button id="lose">Lose the trick</button>
+  <button id="carry" disabled>Carry on</button>
+  <button id="reset">Deal again</button>
+  <span class="readout" id="readout">bank 0 &times; mult 0 &rarr; cashes for 0</span>
+</div>
+
+<div class="rig">
+  <h2>The layout question</h2>
+  <label for="qmax" class="wc-plate-label">Quarry total</label>
+  <select id="qmax">
+    <option value="10">10 — fight 1</option>
+    <option value="14">14 — fight 2</option>
+    <option value="18">18 — fight 3</option>
+  </select>
+  <button id="rm">Simulate reduced motion: off</button>
+</div>
+
+<div class="legend">
+  <div><span class="wc-hp-heart" data-state="whole"><svg aria-hidden="true"><use href="#hp-heart"/></svg></span> whole</div>
+  <div><span class="wc-hp-heart" data-state="atRisk"><svg aria-hidden="true"><use href="#hp-heart"/></svg></span> at risk — the streak would take it</div>
+  <div><span class="wc-hp-heart" data-state="breaking"><svg aria-hidden="true"><use href="#hp-heart-broken"/></svg></span> breaking now</div>
+  <div><span class="wc-hp-heart" data-state="broken"><svg aria-hidden="true"><use href="#hp-heart-broken"/></svg></span> gone</div>
+</div>
+
+<p class="note">
+  <strong>What to look for.</strong> Take three tricks in a row and watch the Quarry's last nine
+  hearts dim and pulse — that is <strong>bank &times; multiplier</strong> sitting on the thing it
+  will empty, clamped by the row's own length when the streak would overkill. Lose the trick and
+  those same hearts break in place rather than being replaced by a second animation, while one of
+  yours breaks too. &ldquo;Carry on&rdquo; clears the reveal and the cracks settle. Switch the
+  Quarry total to 18 to judge whether the band still holds together, and toggle reduced motion to
+  confirm all four states still read at rest.
+</p>
+
+<script>
+  const MAX_PLAYER = 10;
+  const state = {
+    playerMax: MAX_PLAYER, quarryMax: 10,
+    player: MAX_PLAYER, quarry: 10,
+    bank: 0, mult: 0,
+    breakPlayer: 0, breakQuarry: 0,
+    revealHeld: false,
+    you: 0, them: 0, trick: 1,
+  };
+
+  // The ticket's partition, in the same order the pure module will use it.
+  function hearts(current, max, pending, breaking) {
+    const secure = current - pending;
+    const out = [];
+    for (let i = 0; i < max; i += 1) {
+      if (i < secure) out.push('whole');
+      else if (i < current) out.push('atRisk');
+      else if (i < current + breaking) out.push('breaking');
+      else out.push('broken');
+    }
+    return out;
+  }
+
+  function paint(rowId, numId, current, max, pending, breaking) {
+    const row = document.getElementById(rowId);
+    const states = hearts(current, max, pending, breaking);
+    const lethal = pending > 0 && current - pending <= 0;
+    row.classList.toggle('wc-is-lethal', lethal);
+    row.setAttribute('aria-valuemax', String(max));
+    row.setAttribute('aria-valuenow', String(current));
+    row.setAttribute('aria-valuetext',
+      `${current} of ${max}.` + (pending > 0 ? ` ${pending} at risk.` : '') + (lethal ? ' Lethal.' : ''));
+    document.getElementById(numId).textContent = `${current} / ${max}`;
+    row.innerHTML = states.map((s) => {
+      const id = (s === 'broken' || s === 'breaking') ? 'hp-heart-broken' : 'hp-heart';
+      return `<span class="wc-hp-heart" data-state="${s}"><svg aria-hidden="true" focusable="false"><use href="#${id}"/></svg></span>`;
+    }).join('');
+  }
+
+  function render() {
+    const cash = state.bank * state.mult;
+    const pendingQuarry = Math.min(cash, state.quarry);
+    paint('player-hearts', 'player-num', state.player, state.playerMax, 0, state.breakPlayer);
+    paint('quarry-hearts', 'quarry-num', state.quarry, state.quarryMax, pendingQuarry, state.breakQuarry);
+    document.getElementById('readout').innerHTML =
+      `bank ${state.bank} &times; mult ${state.mult} &rarr; cashes for ${cash}`;
+    document.getElementById('you-tricks').textContent = state.you;
+    document.getElementById('them-tricks').textContent = state.them;
+    document.getElementById('trick-no').textContent = state.trick;
+    document.getElementById('carry').disabled = !state.revealHeld;
+    document.getElementById('win').disabled = state.revealHeld;
+    document.getElementById('lose').disabled = state.revealHeld;
+  }
+
+  document.getElementById('win').onclick = () => {
+    state.bank += 1; state.mult += 1; state.you += 1;
+    state.trick = Math.min(state.trick + 1, 6);
+    state.revealHeld = true;
+    render();
+  };
+
+  document.getElementById('lose').onclick = () => {
+    const cash = state.bank * state.mult;
+    state.breakQuarry = cash;
+    state.breakPlayer = 1;
+    state.quarry = Math.max(0, state.quarry - cash);
+    state.player = Math.max(0, state.player - 1);
+    state.bank = 0; state.mult = 0;
+    state.them += 1;
+    state.trick = Math.min(state.trick + 1, 6);
+    state.revealHeld = true;
+    render();
+  };
+
+  document.getElementById('carry').onclick = () => {
+    state.breakQuarry = 0; state.breakPlayer = 0; state.revealHeld = false;
+    render();
+  };
+
+  document.getElementById('reset').onclick = () => {
+    state.player = state.playerMax; state.quarry = state.quarryMax;
+    state.bank = 0; state.mult = 0; state.breakPlayer = 0; state.breakQuarry = 0;
+    state.revealHeld = false; state.you = 0; state.them = 0; state.trick = 1;
+    render();
+  };
+
+  document.getElementById('qmax').onchange = (e) => {
+    state.quarryMax = Number(e.target.value);
+    state.quarry = state.quarryMax;
+    state.breakQuarry = 0;
+    render();
+  };
+
+  document.getElementById('rm').onclick = (e) => {
+    const on = document.body.classList.toggle('force-reduced');
+    e.target.textContent = `Simulate reduced motion: ${on ? 'on' : 'off'}`;
+  };
+
+  render();
+</script>

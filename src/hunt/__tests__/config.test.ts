@@ -23,9 +23,12 @@ import { DuelSide } from '../types'
 import { quarryCharacterInfo } from '../quarryCharacters'
 
 describe('Forage and run-length constants', () => {
-  it('matches the provisional values from DLR-48 AC3', () => {
+  it('keeps DLR-48 AC3’s forage budget', () => {
     expect(FORAGE_BUDGET_PER_ENCOUNTER).toBe(4)
-    expect(ENCOUNTERS_PER_RUN).toBe(5)
+  })
+
+  it('derives the run length from the curve rather than stating it twice (DLR-82 AC1)', () => {
+    expect(ENCOUNTERS_PER_RUN).toBe(QUARRY_ENCOUNTER_HEALTH.length)
   })
 })
 
@@ -83,9 +86,14 @@ describe('DLR-80 configuration', () => {
     expect(PLAYER_START_HEALTH).toBe(10)
   })
 
-  it('configures exactly one encounter', () => {
-    expect(QUARRY_ENCOUNTER_HEALTH).toHaveLength(1)
-    expect(() => quarryHealthForEncounter(1)).toThrow(RangeError)
+  it('configures at least three encounters, rising and not all the same (DLR-82 AC1)', () => {
+    expect(QUARRY_ENCOUNTER_HEALTH.length).toBeGreaterThanOrEqual(3)
+    expect(new Set(QUARRY_ENCOUNTER_HEALTH).size).toBeGreaterThan(1)
+    for (const health of QUARRY_ENCOUNTER_HEALTH) {
+      expect(health).toBeGreaterThan(0)
+      expect(Number.isFinite(health)).toBe(true)
+    }
+    expect(() => quarryHealthForEncounter(QUARRY_ENCOUNTER_HEALTH.length)).toThrow(RangeError)
   })
 })
 

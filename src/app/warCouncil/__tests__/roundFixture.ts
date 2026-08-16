@@ -76,3 +76,6 @@ export const maxHealthFixture = {
   [DuelSide.Player]: PLAYER_START_HEALTH,
   [DuelSide.Quarry]: quarryHealthForEncounter(0),
 }
+
+/** A fixed run readout for component specs (AC6). */
+export const runLabelFixture = 'Fight 1 of 3'

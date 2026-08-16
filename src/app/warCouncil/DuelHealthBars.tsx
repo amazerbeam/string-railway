@@ -1,5 +1,6 @@
-import { type CSSProperties, type ReactNode } from 'react'
-import type { HealthBarView } from './duelHealthBars'
+import type { ReactNode } from 'react'
+import { HeartState, type HealthBarView } from './duelHealthBars'
+import { HeartMark, HeartSymbolSheet } from './HeartMark'
 import { HEALTH_BAR_LABEL, healthBarValueText } from './labels'
 
 interface DuelHealthBarsProps {
@@ -10,21 +11,17 @@ interface DuelHealthBarsProps {
   readonly centre: ReactNode
 }
 
-/** `--w` carries the ready-made percentage string the stylesheet reads for both segments'
- *  `flex-basis`/`width` (see `warCouncilHealthBars.css`), matching `HandFan`'s `FanCardStyle`
- *  pattern for a custom property CSS doesn't type natively. */
-type SegmentStyle = CSSProperties & { '--w'?: string }
-
 /**
  * The duel's two health bars as a mirrored opposed pair (§6, `ideas.md`'s Tekken entry): the
  * player's anchored to the left edge, the Quarry's to the right, both depleting toward the centre.
  *
- * Each bar carries its OWN pending damage as a lighter segment carved out of its own current
- * health — the fighting-game recoverable-damage grammar. That is what keeps §6's four-figures risk
- * to two moving widgets rather than four, and it is what makes AC3's "health lost versus health at
- * risk" a distinction inside one bar rather than a comparison across two readouts.
+ * The Quarry-side row previews the live streak as its last `bank × multiplier` standing hearts,
+ * dimmed and flashing — the fighting-game recoverable-damage grammar, now expressed as discrete
+ * glyphs rather than a carved-out segment. That is what keeps §6's four-figures risk to two moving
+ * widgets rather than four, and it is what makes AC3's "health lost versus health at risk" a
+ * distinction inside one row rather than a comparison across two readouts.
  *
- * Computes nothing. `duelHealthBars` derived every percentage, and `applyDamage` did every clamp and
+ * Computes nothing. `duelHealthBars` derived every heart, and `applyDamage` did every clamp and
  * every subtraction before that. Renders whatever length of `bars` it is handed, which is what
  * makes §6's net-only fallback (AC8) a one-line change in `duelHealthBars` rather than here.
  */
@@ -32,6 +29,7 @@ export default function DuelHealthBars({ bars, centre }: DuelHealthBarsProps) {
   const [player, quarry] = bars
   return (
     <>
+      <HeartSymbolSheet />
       {player ? <SideBar view={player} /> : null}
       {centre}
       {quarry ? <SideBar view={quarry} /> : null}
@@ -43,16 +41,14 @@ export default function DuelHealthBars({ bars, centre }: DuelHealthBarsProps) {
  * One side's bar. `role="meter"` is the ARIA role for a bounded reading that is not a task's
  * progress, and it is directly queryable by role and name (AC7).
  *
- * The two segment widths are set as CSS custom properties carrying ready-made percentage strings,
- * never as an inline `width`. An inline style property outranks an external rule with no
- * `!important`, so writing `width` here would make the stylesheet's own transition and lethal
- * state permanently unreachable — the exact defect `HandFan`'s transform split exists to avoid
- * (see `.docs/implementation/war-council-ui/layout-and-styling.md`).
+ * This component writes NO inline style at all — not an omission of the custom-property split
+ * `--w` used to carry, but its retirement. That split existed because an inline `width` outranks
+ * an external rule carrying no `!important`, and a row of fixed-size glyphs has no per-element
+ * geometry to communicate, so the hazard is designed out rather than guarded against. Any future
+ * need for a per-heart value must come back through a custom property rather than an inline
+ * style; the reasoning is recorded at `.docs/implementation/war-council-ui/layout-and-styling.md`.
  */
 function SideBar({ view }: { view: HealthBarView }) {
-  const secureStyle: SegmentStyle = { '--w': `${view.securePct}%` }
-  const pendingStyle: SegmentStyle = { '--w': `${view.pendingPct}%` }
-
   return (
     <div className="wc-hp" data-side={view.side}>
       <div className="wc-hp-head">
@@ -62,7 +58,7 @@ function SideBar({ view }: { view: HealthBarView }) {
         </span>
       </div>
       <div
-        className="wc-hp-track"
+        className={`wc-hp-hearts${view.lethal ? ' wc-is-lethal' : ''}`}
         role="meter"
         aria-label={HEALTH_BAR_LABEL[view.side]}
         aria-valuemin={0}
@@ -70,11 +66,11 @@ function SideBar({ view }: { view: HealthBarView }) {
         aria-valuenow={view.current}
         aria-valuetext={healthBarValueText(view)}
       >
-        <span className="wc-hp-secure" style={secureStyle} />
-        <span
-          className={`wc-hp-pending${view.lethal ? ' wc-is-lethal' : ''}`}
-          style={pendingStyle}
-        />
+        {view.hearts.map((state, index) => (
+          <span key={index} className="wc-hp-heart" data-state={state}>
+            <HeartMark broken={state === HeartState.Broken || state === HeartState.Breaking} />
+          </span>
+        ))}
       </div>
     </div>
   )

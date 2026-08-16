@@ -2,6 +2,7 @@ import { useReducer, type ReactNode } from 'react'
 import { DuelSide, isEncounterResolved, quarryCharacterInfo } from '../../hunt'
 import {
   CardRank,
+  incomingFrom,
   PlayerSide,
   RoundPhase,
   currentTurn,
@@ -16,7 +17,7 @@ import type { WarCouncilMountProps } from '../warCouncilMount'
 import AbilityPrompt from './AbilityPrompt'
 import BankMeter from './BankMeter'
 import DecreePile from './DecreePile'
-import { duelHealthBars } from './duelHealthBars'
+import { duelHealthBars, NO_BREAKING, projectedFromStreak } from './duelHealthBars'
 import HandFan from './HandFan'
 import { sortHandForDisplay } from './handOrder'
 import { previewQuarryIntent } from './intentPreview'
@@ -38,6 +39,7 @@ import './warCouncil.css'
 import './warCouncilCards.css'
 import './warCouncilHunt.css'
 import './warCouncilHealthBars.css'
+import './warCouncilHand.css'
 
 /**
  * The round mount, implementing SCRUM-37's `WarCouncilMountProps`. Owns exactly one piece of
@@ -67,6 +69,7 @@ export default function WarCouncilRound({
   hunt,
   encounter,
   maxHealth,
+  runLabel,
   onComplete,
 }: WarCouncilMountProps) {
   const [ui, dispatch] = useReducer(
@@ -87,10 +90,26 @@ export default function WarCouncilRound({
 
   const legal = legalMoves(ui.round, PlayerSide.Player)
 
-  // Both bars read straight off the reducer's own encounter — there is no projection any more,
-  // because damage has already landed by the time this renders. The pending segment retired with
-  // `pendingHuntDamage`: it was the non-monotonic figure the redesign exists to remove.
-  const bars = duelHealthBars(ui.encounter.health, ui.encounter.health, maxHealth)
+  // Both bars read straight off the reducer. Two derivations, no new state:
+  //
+  //  · the AT-RISK preview (AC3) is `projectedFromStreak` over `bank` and `multiplier`, which the
+  //    engine already writes on every trick — it resets itself when they reset (AC5), because it
+  //    is a view of them rather than a copy.
+  //  · the BREAKING hearts (AC2) are the damage of the trick currently held on screen.
+  //    `roundReducer` never applies damage without setting `resolvedTrick` in the same transition
+  //    (`commit` calls `applyResolution` only when `deriveResolvedTrick` returned one), so the
+  //    held reveal IS the damage event. Reading it rather than diffing a remembered previous
+  //    health keeps this a pure function of committed state — no effect, no StrictMode hazard —
+  //    and ties the crack to the cards that caused it, which is F2's whole finding.
+  //
+  // AC4 needs no code: a cash-out zeroes bank and multiplier and sets `resolvedTrick` in ONE
+  // transition, so the same hearts at the same indices go atRisk → breaking in one render.
+  const bars = duelHealthBars(
+    ui.encounter.health,
+    projectedFromStreak(ui.encounter.health, ui.round.bank, ui.round.multiplier),
+    maxHealth,
+    ui.resolvedTrick ? incomingFrom(ui.resolvedTrick.resolution) : NO_BREAKING,
+  )
 
   const shape = suitShape(ui.round.hands[PlayerSide.Cpu], ui.round.skulledCards)
 
@@ -145,16 +164,13 @@ export default function WarCouncilRound({
 
   /**
    * Shared by the held trick's own carry-on control, the pending Quarry lead's own control, and
-   * both the round-over and terminal panels' single control.
+   * the round-over panel's single control.
    *
-   * Checked first and unconditionally: once the encounter has resolved, the felt no longer shows
-   * a held reveal to clear (the branch order below puts the terminal panel ahead of the resolved
-   * trick, matching the deciding cash-out's own trick never being shown separately from the
-   * outcome it produced), so every tap from here on reports the finished hand upward rather than
-   * dispatching a `CarryOn` that would just clear a reveal nothing renders. Otherwise this clears
-   * a held trick reveal (including the deciding sixth, so its cards and outcome are seen before
-   * the round-over panel) and/or commits the Quarry's pending lead — or, once nothing is held or
-   * pending and the round is complete, reports the finished hand the same way.
+   * Checked first and unconditionally: once the encounter has resolved, this reports the finished
+   * hand upward regardless of what the felt is currently showing (DLR-82) — including the deciding
+   * trick's own reveal, which now renders like any other before the tap that clears it lands here.
+   * Otherwise this clears a held trick reveal and/or commits the Quarry's pending lead — or, once
+   * nothing is held or pending and the round is complete, reports the finished hand the same way.
    */
   function handleCarryOn() {
     if (encounterOver) {
@@ -170,20 +186,13 @@ export default function WarCouncilRound({
     }
   }
 
+  // DLR-82: a resolved encounter NO LONGER renders a terminal panel here. The run verdict is
+  // `src/app/run/RunOutcomePanel.tsx`, owned by `App`, and the tap that clears the deciding
+  // trick reports upward through `handleCarryOn` — whose first line already tests `encounterOver`.
+  // Consequence worth knowing: the trick that ends a fight now gets its own reveal beat, which
+  // the old branch ordering deliberately skipped.
   let felt: ReactNode
-  if (encounterOver) {
-    // AC6/AC8's cash-out can resolve the encounter mid-hand, on any trick — so this is checked
-    // ahead of `resolvedTrick` rather than after it. The trick that finished the encounter
-    // never gets its own reveal beat; the terminal panel is what the player sees next.
-    felt = (
-      <RoundOverPanel
-        tricksWon={ui.round.tricksWon}
-        handSummary={handSummary}
-        winner={ui.encounter.winner}
-        onFinish={handleCarryOn}
-      />
-    )
-  } else if (ui.cpuFault) {
+  if (ui.cpuFault) {
     felt = (
       <p className="wc-fault" role="alert">
         The engine rejected the opponent&rsquo;s own move — reason: {ui.cpuFault}. That is a bug,
@@ -208,7 +217,6 @@ export default function WarCouncilRound({
       <RoundOverPanel
         tricksWon={ui.round.tricksWon}
         handSummary={handSummary}
-        winner={null}
         onFinish={handleCarryOn}
       />
     )
@@ -244,6 +252,7 @@ export default function WarCouncilRound({
         opponentHandCount={ui.round.hands[PlayerSide.Cpu].length}
         roundComplete={roundComplete}
         bars={bars}
+        runLabel={runLabel}
       />
       <aside className="wc-dossier">
         <QuarryDossier
@@ -259,9 +268,9 @@ export default function WarCouncilRound({
         <IntentTelegraph intent={intent} speculative={speculative} />
       </aside>
       <section
-        className={`wc-table${ui.resolvedTrick || quarryToLead ? ' wc-is-waiting' : ''}`}
+        className={`wc-table${ui.resolvedTrick || quarryToLead || encounterOver ? ' wc-is-waiting' : ''}`}
         aria-live="polite"
-        onClick={ui.resolvedTrick || quarryToLead ? handleCarryOn : undefined}
+        onClick={ui.resolvedTrick || quarryToLead || encounterOver ? handleCarryOn : undefined}
       >
         <DecreePile
           decree={ui.round.decree}

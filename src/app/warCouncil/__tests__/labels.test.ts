@@ -103,8 +103,7 @@ describe('healthBarValueText — the current total against the max (DLR-80)', ()
     pending: 0,
     current: 20,
     max: 25,
-    securePct: 80,
-    pendingPct: 0,
+    hearts: [],
     lethal: false,
   }
 
@@ -115,6 +114,16 @@ describe('healthBarValueText — the current total against the max (DLR-80)', ()
   it('says lethal rather than making the reader compare two numbers', () => {
     expect(healthBarValueText({ ...base, secure: 0, current: 0, lethal: true })).toBe(
       '0 of 25. Lethal.',
+    )
+  })
+
+  it('names what the streak puts at risk, without disturbing the current-of-max reading', () => {
+    expect(healthBarValueText({ ...base, secure: 14, pending: 6 })).toBe('20 of 25. 6 at risk.')
+  })
+
+  it('says both when a live streak would empty the bar', () => {
+    expect(healthBarValueText({ ...base, secure: 0, pending: 20, lethal: true })).toBe(
+      '20 of 25. 20 at risk. Lethal.',
     )
   })
 })

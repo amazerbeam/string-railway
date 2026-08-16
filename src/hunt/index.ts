@@ -26,5 +26,8 @@ export {
 
 export { startEncounter, applyDamage, isEncounterResolved } from './encounter'
 
+export type { RunState } from './run'
+export { RunOutcome, startRun, recordEncounter, canAdvanceRun, advanceRun } from './run'
+
 export type { QuarryCharacterInfo } from './quarryCharacters'
 export { QUARRY_CHARACTERS, quarryCharacterInfo } from './quarryCharacters'

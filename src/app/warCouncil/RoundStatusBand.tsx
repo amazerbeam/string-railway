@@ -11,6 +11,7 @@ interface RoundStatusBandProps {
   readonly opponentHandCount: number
   readonly roundComplete: boolean
   readonly bars: readonly HealthBarView[]
+  readonly runLabel: string
 }
 
 /**
@@ -29,6 +30,7 @@ export default function RoundStatusBand({
   opponentHandCount,
   roundComplete,
   bars,
+  runLabel,
 }: RoundStatusBandProps) {
   const yourTricks = tricksWon[PlayerSide.Player]
   const theirTricks = tricksWon[PlayerSide.Cpu]
@@ -45,6 +47,10 @@ export default function RoundStatusBand({
           ))}
         </span>
         <span className="wc-plate-label">{opponentHandCount} held</span>
+      </div>
+      <div className="wc-run">
+        <span className="wc-plate-label">Run</span>
+        <span className="wc-run-value">{runLabel}</span>
       </div>
       <DuelHealthBars
         bars={bars}

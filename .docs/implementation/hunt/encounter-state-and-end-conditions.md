@@ -59,10 +59,11 @@ DLR-66's configured totals rather than from literals: the player's from `PLAYER_
 Quarry's from `quarryHealthForEncounter(encounterIndex)`. No `1350` and no `1600` appears anywhere in
 `encounter.ts`, and DLR-70's own closing checks grep for exactly those two literals to prove it.
 
-**`encounterIndex` selects a bar; it sequences nothing.** Running the encounters in order, and any
-restore between them, is DLR-73's — and this module deliberately does not read
-`ENCOUNTER_PLAYER_RESTORE` at all, rather than putting a second reader on a key whose semantics that
-ticket has not fixed yet.
+**`encounterIndex` selects a bar; it sequences nothing.** Running the encounters in order is
+[`run.ts`'s](run-sequence.md) (DLR-82), which calls `startEncounter` once per fight and passes the
+health the player carried out of the last one. Any restore between them
+(`ENCOUNTER_PLAYER_RESTORE`) remains **deliberately unread** by both modules — DLR-82 forbids
+wiring it in, and the flask stories own it.
 
 `playerHealth` is a **defaulted parameter** rather than something the function closes over — the same
 injectable pattern this codebase uses for every tunable — and which `assignSkulls`'s `density` and
@@ -138,9 +139,11 @@ floor today, so the two are equivalent right now; the inequality is what survive
 does not clamp.
 
 `isEncounterResolved(encounter)` is exported as `winner !== null` rather than left to callers, so
-DLR-71's render guard and DLR-73's loop condition cannot disagree about what "resolved" means. Both of
-DLR-71's uses are now live: `RoundOverPanel` reads it to decide between the "Deal the next Hunt" control
-and the terminal outcome line, and `App.tsx` reads it to stop dealing.
+every reader agrees on what "resolved" means. Since DLR-82 there are three: `App.tsx` reads it to
+switch from the felt to the run verdict, `run.ts`'s `outcomeFor` reads it to decide whether the run
+has ended, and the reducer's `canAct` guard reads it to refuse further taps. **`RoundOverPanel` is
+no longer one of them** — DLR-82 deleted its terminal branch along with the panel's `winner` prop;
+a resolved encounter now renders the run verdict instead of a tally table.
 
 ### Four refusals
 
@@ -222,8 +225,9 @@ is the stall §11 is watching for, and it is now measurable rather than predicte
 
 ### What this module deliberately does not do
 
-- **Sequence anything.** One encounter, in isolation. Running two in order, and
-  `ENCOUNTER_PLAYER_RESTORE`, are DLR-73's — and this module reads neither.
+- **Sequence anything.** One encounter, in isolation. Running them in order is
+  [`run.ts`'s](run-sequence.md) (DLR-82), a separate module one level up — this file's functions are
+  unchanged by it and still know nothing of a run. `ENCOUNTER_PLAYER_RESTORE` is read by neither.
 - **Render anything.** No `.tsx` file and no CSS live here, and none ever will. The health bars DLR-71
   built read this module's output from `src/app/warCouncil/` — see
   [../war-council-ui/duel-health-bars.md](../war-council-ui/duel-health-bars.md).

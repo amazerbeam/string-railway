@@ -1,8 +1,10 @@
 _Part of [War Council UI](README.md)._
 
 **DLR-71** built this, and it is the ticket where the duel reached the screen. **DLR-80 then retired
-the bars' pending segment and rescaled them**, so read this file with that in mind: the mirror, the
-geometry and the CSS transition survive unchanged, and the projection machinery does not.
+the bars' pending segment and rescaled them.** **DLR-86 retired the bars themselves**: there is no
+track, no width and no percentage any more — each side is a row of countable hearts, one per health
+point. Read the history below with that in mind; the mirror survives all three tickets, the geometry
+does not.
 
 ### The pending segment is gone, and that was the point of the redesign
 
@@ -21,22 +23,82 @@ lives in its own readout in the dossier column — see
 [hunt-readouts-and-telegraph.md](hunt-readouts-and-telegraph.md). Reusing the bars' pending machinery
 would have carried the old shape forward into a mechanic that does not need it.
 
-So `WarCouncilRound` now passes `ui.encounter.health` as **both** `current` and `projected`:
+DLR-80 left `WarCouncilRound` passing `ui.encounter.health` as **both** `current` and `projected`,
+because there was nothing to project: damage has already landed by the time this renders. The
+reducer applies each trick's damage as the trick resolves, so the display shows the real, current,
+already-clamped figure. The guarantee the old design needed a shared arithmetic path to make ("the
+number you watch is the number that lands") became trivially true — there was only one number.
 
-```ts
-const bars = duelHealthBars(ui.encounter.health, ui.encounter.health, maxHealth)
-```
+`securePct` and `pendingPct` survived that ticket as dead-but-correct geometry, with `pending`
+pinned at zero. **DLR-86 deleted both**, because a row of fixed-size glyphs has no width to
+communicate and nothing divides by `max` any more. `secure` and `pending` themselves stayed: DLR-86
+gave them a live consumer again, described next.
 
-There is nothing to project, because **damage has already landed by the time this renders**. The
-reducer applies each trick's damage as the trick resolves, so the bar shows the real, current,
-already-clamped figure rather than a preview of one. The guarantee the old design needed a shared
-arithmetic path to make ("the number you watch is the number that lands") is now trivially true:
-there is only one number.
+### DLR-86 brought a projection back, in a grammar that cannot lie the old one's way
 
-`secure`/`pending`/`securePct`/`pendingPct` therefore still exist in `HealthBarView` but the pending
-half is always zero. That is a simplification a later ticket could take further by narrowing the
-type; it was left alone here because the geometry is correct as it stands and nothing renders a
-zero-width segment.
+The Quarry's row now previews what the current streak would cash for. That is the same *shape* of
+reading DLR-80 deleted, and the redesign note it was deleted over still binds — so the differences
+are the point:
+
+- **It is monotonic.** The old pending figure was `Spoils × Standing` off the current trick count, so
+  winning a trick could make the number you were watching fall. The bank only ever climbs until it
+  cashes, so the preview only ever grows until it lands.
+- **It is Quarry-side only, and it is a different visual grammar** — dimmed, flashing hearts, never a
+  solid segment carved out of health you still have.
+- **It never touches the stated figure.** `aria-valuenow` and the current-of-max reading are the
+  already-landed health, unchanged. The preview is additive (see
+  [accessibility.md](accessibility.md)).
+
+`projectedFromStreak(current, bank, multiplier)` in `duelHealthBars.ts` is the whole of it — the
+Quarry's health minus `bank × multiplier`, floored at zero, the player untouched. The floor is
+**not** a second damage clamp; it exists solely so the module's documented `projected <= current`
+precondition holds under an overkill streak, which a negative projection would violate and turn into
+a negative `pending`. `applyDamage` remains the single clamp point.
+
+### One heart per health point, partitioned four ways
+
+`duelHealthBars` returns `hearts: readonly HeartState[]` of length exactly `max`, and every heart is
+in one of four states — `whole`, `atRisk`, `breaking`, `broken`. The partition is three comparisons
+per index and no branches beyond them:
+
+| Index falls under      | State      | Means                                                   |
+| ---------------------- | ---------- | ------------------------------------------------------- |
+| `i < secure`           | `whole`    | survives even if the streak cashes right now             |
+| `i < current`          | `atRisk`   | standing, but the banked streak would take it            |
+| `i < current + breaking` | `breaking` | the event **currently on screen** just took it          |
+| otherwise              | `broken`   | already gone                                             |
+
+**Overkill needs no clamp.** A cash-out of 16 into a Quarry holding 10 leaves `current = 0` and
+`breaking = 16`; every index `0..9` satisfies `i < 0 + 16`, so all ten hearts break and the array's
+own length discards the surplus. That reproduces `applyDamage`'s "surplus damage is discarded"
+without writing a second rule that could drift from it.
+
+**Rendering from `max` rather than a fixed count is load-bearing**, not tidiness:
+`QUARRY_ENCOUNTER_HEALTH` is `[10, 14, 18]`, so the Quarry's row is three different lengths within a
+single run and no UI change tracks it.
+
+### `breaking` is the trick held on screen, not a remembered previous health
+
+The obvious way to animate a delta is to mirror last render's health in a `useState` and diff it.
+DLR-86 rejected that, and the reason generalises: **the damage event is already on screen.**
+`roundReducer` never applies damage without setting `resolvedTrick` in the same transition — `commit`
+calls `applyResolution` only when `deriveResolvedTrick` returned one — so the held reveal *is* the
+damage event, exactly. `WarCouncilRound` passes `incomingFrom(ui.resolvedTrick.resolution)` as the
+fourth argument, or `NO_BREAKING` when no reveal is held.
+
+The payoff is that this whole feature is a pure function of committed state: **no `useState`, no
+`useEffect`, no ref, no timer, no `requestAnimationFrame`, and no memoisation is added anywhere** —
+so there is nothing to release in a cleanup, nothing that double-fires under StrictMode's development
+double-mount, and no module-level mutable state to reset between tests. It also ties the crack to the
+cards that caused it, which was the finding the ticket came from.
+
+The consequence worth knowing: **the crack lives exactly as long as the player leaves the reveal
+up**, and clears on the same tap that clears it. That is a pacing choice, and whether it reads as
+punchy or as missed is a developer judgement listed in [README.md](README.md)'s Deferred list.
+
+**AC4 — the preview converting into the break — needed no code at all.** A cash-out zeroes `bank` and
+`multiplier` and sets `resolvedTrick` in one reducer transition, so the same hearts at the same
+indices go `atRisk → breaking` in a single render. Nothing sequences it, because nothing has to.
 
 ### The scale changed by ~54×, and it is the developer's to judge
 
@@ -60,28 +122,38 @@ question, and it is open** — now for both bars rather than only the player's.
 
 ### The geometry is pure, and the component only formats
 
-`duelHealthBars.ts` takes three health records — `current`, `projected`, `max` — and returns one
-`HealthBarView` per side: `secure`, `pending`, `current`, `max`, `securePct`, `pendingPct`, and a
-`lethal` flag. It performs **no damage arithmetic and no clamping**, because `applyDamage` did both
-before `projected` arrived. Its only computation is one subtraction recovering the already-clamped
-pending figure for display, and two divisions by `max`.
+`duelHealthBars.ts` takes three health records — `current`, `projected`, `max` — plus a **defaulted
+fourth** `breaking` record, and returns one `HealthBarView` per side: `secure`, `pending`, `current`,
+`max`, a `lethal` flag, and the `hearts` array. It performs **no damage arithmetic and no clamping**,
+because `applyDamage` did both before `projected` arrived. The fourth argument defaults to
+`NO_BREAKING`, which is why every three-argument call site compiled unchanged through DLR-86.
 
-That divisor is the module's one guard: a non-positive or non-finite `max` throws a `RangeError`
-rather than emitting a `NaN` percentage, because **a `NaN` width collapses a bar to nothing and logs
-nothing anywhere** — the same reasoning the retired `standingSegments.ts` used for an empty table, and the reason
-the guard sits on the divisor rather than on the symptom. Both configured maxima are positive, so it
-is a guard and not a live path.
+The module's one guard **was repurposed rather than removed**, and the move is worth stating because
+it is the same reasoning one failure mode along. `max` used to be a divisor, and the guard existed
+because **a `NaN` width collapses a bar to nothing and logs nothing anywhere** — the same reasoning
+the retired `standingSegments.ts` used for an empty table. The division is now gone entirely, so that
+failure is structurally absent rather than guarded. What replaced it is a bad **array length**, so
+`max` is now checked as a positive finite **integer**: `Number.isInteger(sideMax) || sideMax <= 0`
+rejects `0`, negatives, `NaN`, `Infinity` **and a fraction** in one predicate, all five of which would
+otherwise render a wrong or absent row with no error anywhere. Integrality is genuinely new —
+`assertApplicable` in `src/hunt/encounter.ts` permits fractional *damage* under `DAMAGE_ROUNDING =
+None`, so a fractional total is expressible in the type even though every configured value is an
+integer today. Both configured maxima are positive integers, so it remains a guard and not a live
+path.
 
 It carries one **documented, unasserted precondition**: `projected[side] <= current[side]` for both
 sides. A caller violating it renders a negative `pending` rather than being rejected. This is
 deliberately documentation rather than a second throw — the module performs no clamping by design,
 and duplicating `applyDamage`'s clamp here would be a second arithmetic path this split exists
-to avoid. It holds today because every caller derives `projected` either as `current` itself (pending
-forced to exactly zero, which is what every caller passes since DLR-80) or via `applyDamage`, whose `deplete` is `Math.max(0, current - damage)` and so
-never increases health. A future healing mechanic or a different projection source must preserve it.
+to avoid. It holds today because every caller derives `projected` in one of three ways, all of which
+uphold it: as `current` itself (pending forced to exactly zero — the tests and every DLR-80-era call
+site), via `applyDamage`, whose `deplete` is `Math.max(0, current - damage)` and so never increases
+health, or — since DLR-86 — via `projectedFromStreak`, whose zero floor exists for precisely this
+reason. A future healing mechanic or a different projection source must preserve it.
 
 `DuelHealthBars.tsx` then **computes nothing** — the same division of labour that lets
-`RoundOverPanel` make that claim. It renders whatever length of `bars` array it is handed, which is
+`RoundOverPanel` make that claim. Since DLR-86 it maps `view.hearts` to elements and binds a `<use
+href>`; it does not know what a bank is. It renders whatever length of `bars` array it is handed, which is
 what makes §6's net-only fallback a one-line change **in `duelHealthBars`** (return a single view
 whose `pending` is the net) rather than a rewrite in the component. AC8 asked that the fallback be
 cheap, not that it be built; the array return is what makes it cheap, and the contract's
@@ -106,8 +178,10 @@ The pair takes the **existing** `status` row rather than a new grid row:
 through a `centre` prop, so which bar anchors left and which right lives inside the component instead
 of being reassembled by its caller.
 
-The whole of the mirror is `.wc-hp[data-side='quarry'] .wc-hp-track { flex-direction: row-reverse }`
-— both bars deplete **toward the centre**. Taking the existing row is what makes the arrangement cost
+The whole of the mirror is `.wc-hp[data-side='quarry'] .wc-hp-hearts { flex-direction: row-reverse }`
+— both sides deplete **toward the centre**. (The class was `.wc-hp-track` until DLR-86 renamed it: it
+is a row of countable glyphs now, not a depletion track, and a stale name in a string-bound
+stylesheet is exactly the trap this project's correctness notes warn about.) Taking the existing row is what makes the arrangement cost
 **zero** new vertical space in a `100dvh` no-scroll shell, which is the cost the design idea it came
 from named as the real one.
 
@@ -116,6 +190,13 @@ The track is the band's widest child and its least time-critical: it says which 
 which changes once a Hunt, while the bars change every trick. Demoting it out of the per-trick zone
 is the trade, and whether the track reads cramped in a `minmax(10rem, 17vw)` column is a developer
 judgement recorded in [README.md](README.md)'s Deferred list.
+
+**DLR-86 kept that property and pushed it down a level.** The heart row is `flex-wrap: nowrap` with
+`min-width: 0`, and each `.wc-hp-heart` is `flex: 0 1 var(--wc-hp-heart-size)` with a `min-width`
+floor — so at the third fight's 18 hearts the **glyphs shrink** rather than the row wrapping. A
+wrapping row would add height to a band the shell sizes `auto`, which is the one thing a
+`100dvh` no-scroll shell cannot absorb. Whether 18 hearts stay *legible* once shrunk is a browser
+measurement plus a developer judgement, not a test — see the QA numbers below.
 
 Each bar carries `min-width: 0` and `flex: 1 1 <basis>` so it **compresses before it pushes**. That
 is not caution: this band's documented failure mode is over-fullness at phone width, where DLR-53
@@ -136,11 +217,27 @@ a full played Hunt, not spec assertions:
   Exact, both sides. "Deal the next Hunt" then carried `1291/1350` and `1320/1350` into the following
   Hunt.
 - **Pending distinct from secure**, by computed style: secure `rgb(201,154,78)` against pending
-  `rgb(139,154,148)`, with the pending segment's rendered width matching its `pendingPct`.
+  `rgb(139,154,148)`. _(DLR-71/DLR-80-era measurement — the segment it measured no longer exists.)_
 - **No shell scroll and both bars in bounds** at 1920×1080 (rightmost bar edge 1899.1), 1366×768,
   1024×640, and 500×844 phone portrait (rightmost edge 489, bars wrapped to two rows). The visible
   scrollbar at phone portrait is the felt's own scoped `.wc-table-inner` region, the documented
   exception.
+
+**DLR-86 re-measured the same screen against the heart rows**, and these numbers supersede the width
+figures above:
+
+- **The count is config-driven end to end.** Fight 1 rendered 10 hearts a side; taking the fight
+  through to "Next fight" rendered **14** on the Quarry (`QUARRY_ENCOUNTER_HEALTH[1]`), and fight 3
+  rendered **18** — none of it a literal anywhere in the diff.
+- **No document scroll** at 1920×1080, 1366×768 and 500×844, console clean at all three. The 390 px
+  case could not be reached: the browser tooling clamped the window to ~500 px wide on this machine,
+  so 500×844 is the narrowest directly observed reading and 390 px remains unverified.
+- **The 18-heart case measures 11.5 × 11.5 px per heart at 1366×768.** That is the number the
+  legibility question turns on, and the judgement is the developer's.
+- **The preview and the break were driven live**, not inferred: at multiplier 1 the Quarry showed
+  exactly one `atRisk` heart with `aria-valuetext` reading `10 of 10. 1 at risk.`; on the cash the
+  Quarry showed 10 `breaking` and 0 `atRisk` in the same read, while the player's row broke one and
+  its `aria-valuenow` went 10 → 9.
 
 > **The crossing is easy to get backwards, and a previous contract's test sketch did.** The Quarry's
 > bar depletes by what the **player** dealt. Since DLR-80 that reading is `incomingFrom`'s

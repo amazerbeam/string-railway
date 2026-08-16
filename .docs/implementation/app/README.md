@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82
 
 ## Responsibility
 
@@ -19,7 +19,11 @@ the App-mode/manual-trick-entry scaffolding that once bridged War Council into t
 `WarCouncilMountProps` and documented separately in
 [../war-council-ui/README.md](../war-council-ui/README.md).
 
-Outside that subfolder this module now contains no runtime logic at all — only the two type
+**`src/app/run/` is the run verdict screen**, added by DLR-82 and documented separately in
+[../run-ui/README.md](../run-ui/README.md) — the full-viewport surface shown whenever a fight or the
+run resolves.
+
+Outside those two subfolders this module contains no runtime logic at all — only the two type
 declarations in `warCouncilMount.ts`. `src/App.tsx` and `src/app/dealerForRound.ts` do the actual
 mount wiring (see _How it works_ below) — `src/App.tsx` lives at the project root, not inside this
 folder. This module has no pure-core ESLint boundary and does not need one — it is expected to
@@ -29,7 +33,7 @@ import React, and `src/app/warCouncil/` does.
 
 | Export                  | Purpose                                                                                                                                                                                                                   | File                 |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState`, a required `hunt: Hunt` (DLR-53), and — since DLR-71 — a required `encounter: EncounterState` and `maxHealth: Readonly<Record<DuelSide, Health>>` in; `onComplete` out | `warCouncilMount.ts` |
+| `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState`, a required `hunt: Hunt` (DLR-53), a required `encounter: EncounterState` and `maxHealth` (DLR-71), and a required `runLabel: string` (DLR-82) in; `onComplete` out | `warCouncilMount.ts` |
 | `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + `encounter`, the `EncounterState` **after** this Hunt's damage was applied (DLR-71)                                                                            | `warCouncilMount.ts` |
 
 DLR-53 added `hunt: Hunt` as a **required** field — `src/hunt`'s own pairing, widened by DLR-63 to
@@ -44,6 +48,14 @@ that proved it in the deletion direction: the compiler found both construction s
 DLR-71 added `encounter` and `maxHealth`, both required for the same reason `hunt` is. `maxHealth` is
 **not derivable from `EncounterState`**, which carries current health only — the bars need the
 denominator separately.
+
+**DLR-82 added `runLabel: string`, and its type is the point.** The card layer renders which fight
+of the run the player is on, and must not be able to read or change the run — so it receives a
+string the run layer has **already worded**, never a `RunState`. A `string` prop renders and cannot
+grow into a second run-state consumer; a `RunState` prop would invite one. It is required rather
+than optional for the usual reason, and that earned its place immediately: the compiler enumerated
+all four construction sites (`App.tsx` plus three in the component specs) rather than letting one
+silently render an empty band.
 
 **`encounter` is no longer constant for the hand.** Until DLR-80 health changed only at trick 13, so
 the prop was a fixed input for the whole round. Since DLR-80 the prop **seeds** the reducer, which
@@ -72,84 +84,16 @@ components — are tabulated in [../war-council-ui/README.md](../war-council-ui/
 
 ## How it works
 
-### `App.tsx` deals directly, and since DLR-71 carries an encounter across Hunts
+- [`App.tsx` as the run driver, and `dealerForRound`](run-driver.md) — the four pieces of state and
+  why the hand counter never resets, what replaced `SLICE_ENCOUNTER_INDEX` and `MAX_HEALTH` and why
+  the Quarry's denominator had to become per-render, the three click-handler transitions, why there
+  is no effect in the file at all, and the felt-versus-verdict render switch (DLR-71, DLR-80,
+  DLR-82).
 
-`src/App.tsx` holds **three** pieces of state — the current round number, the currently dealt
-`RoundState`, and (DLR-71) the live `EncounterState` — plus three module-scope constants, and mounts
-`WarCouncilRound` (`src/app/warCouncil/WarCouncilRound.tsx`) against them directly, with no
-orchestrator in between:
-
-```tsx
-// The slice's single encounter (§11): one Quarry, one health bar each. `0` indexes
-// `QUARRY_ENCOUNTER_HEALTH`. DLR-73 replaces it with the encounter loop.
-const SLICE_ENCOUNTER_INDEX = 0
-
-const HUNT: Hunt = { quarry: { character: SLICE_QUARRY_CHARACTER } }
-
-// Read from config, never written as numbers. `startEncounter` resolves the Quarry's bar from the
-// same function, so the maximum and the opening value cannot disagree.
-const MAX_HEALTH = {
-  [DuelSide.Player]: PLAYER_START_HEALTH,
-  [DuelSide.Quarry]: quarryHealthForEncounter(SLICE_ENCOUNTER_INDEX),
-}
-
-const [round, setRound] = useState(1)
-const [dealt, setDealt] = useState<WarCouncilState>(() => dealRound(dealerForRound(1), Math.random))
-const [encounter, setEncounter] = useState(() => startEncounter(SLICE_ENCOUNTER_INDEX))
-
-function handleComplete(result: WarCouncilRoundResult) {
-  setEncounter(result.encounter)
-  if (isEncounterResolved(result.encounter)) {
-    return // No next Hunt. The transition and outcome screens are DLR-73's.
-  }
-  const next = round + 1
-  setRound(next)
-  setDealt(dealRound(dealerForRound(next), Math.random))
-}
-```
-
-`HUNT` and `MAX_HEALTH` live at module scope because both are built purely from configuration
-constants — neither holds per-round state, so neither can go stale across the `key={round}` remounts,
-and both are read-only rather than the kind of module-level mutable state this project's conventions
-bar. `SLICE_QUARRY_CHARACTER` reaches only `HUNT`, and from there only the dossier panel's name —
-**it never reaches `dealRound` or the engine.** DLR-53 had passed it as a third argument to make the
-Quarry's round-long rule-break active; DLR-81 removed both the power and the parameter, so the
-character is display data and the engine has no knowledge of it.
-
-`MAX_HEALTH` reads `PLAYER_START_HEALTH` and `quarryHealthForEncounter` rather than stating either
-number, and it reads the Quarry's from **the same function `startEncounter` uses**, so the bar's
-denominator and its opening value cannot disagree.
-
-**`SLICE_ENCOUNTER_INDEX = 0` is a placeholder, not a configuration key.** It is an array index into
-`QUARRY_ENCOUNTER_HEALTH` — not a multiplier, a band boundary, a health total or a rounding rule — so
-the module's no-numeric-literals invariant does not reach it, and promoting it to `src/hunt/config.ts`
-would pre-empt DLR-73, which owns the loop that replaces it.
-
-**`handleComplete` now takes its parameter**, which is the change DLR-71 made here. Through DLR-67 it
-took none at all rather than an unread `_result` — this project's ESLint config has no
-`argsIgnorePattern` exemption for underscore-prefixed unused parameters, so a zero-argument function
-(structurally assignable to the callback type) was what actually linted clean, and the result was
-deliberately unread because there was nothing to feed. There is now: the result carries the
-`EncounterState` the player just watched the damage land on, already applied by the reducer through
-`applyDamage`. Setting it here rather than re-applying it is what keeps **one damage event to one
-application**.
-
-Two consequences follow. The `key={round}` remount, unchanged since DLR-47, is doing real work beyond
-freshness: it gives the next hand a fresh reducer **seeded from the `encounter` App carries**, which
-is the whole of the hand-to-hand health continuity. And an encounter can **end** — once
-`isEncounterResolved`, App stops dealing, so `applyDamage` is never reached in a state it would
-refuse and the hand-over panel's terminal line is the last thing on screen. Since DLR-80 the reducer
-carries the same guard internally, because the encounter can now resolve **mid-hand** rather than
-only between hands: `canAct` refuses further taps and the felt renders the outcome in place of the
-trick well.
-
-### `dealerForRound` alternates the dealer by round parity
-
-`src/app/dealerForRound.ts` is a small pure function: round 1 deals to a placeholder
-`FIRST_DEALER` constant (`PlayerSide.Player`, carried forward from the equivalent placeholder the
-now-deleted `src/battle/config.ts` shipped), and every later round alternates by parity alone —
-`(round - 1) % 2 === 0` picks `FIRST_DEALER`, otherwise the other side. It has no dependency on any
-deleted module and is unit-tested directly (`src/app/__tests__/dealerForRound.test.ts`).
+**The historical shape, for orientation:** through DLR-71 this file held a round number, the dealt
+`RoundState` and a single live `EncounterState`, with a module-scope `SLICE_ENCOUNTER_INDEX = 0`
+standing in for a sequence that did not exist. DLR-82 replaced all of that with a `RunState`; both
+that constant and the module-scope `MAX_HEALTH` beside it are **deleted**, not renamed.
 
 ## Rules & invariants enforced
 
@@ -164,21 +108,20 @@ deleted module and is unit-tested directly (`src/app/__tests__/dealerForRound.te
 
 ## Deferred / not yet implemented
 
-- **No run loop across _encounters_** — but a single encounter now runs, ends, and can be won or lost.
-  This entry has narrowed three times and DLR-71 narrowed it furthest. DLR-53 made one Hunt playable end
-  to end; DLR-68 closed the arithmetic and the direction; DLR-70 built the health, the depletion and
-  both end conditions **and none of it reached this module** — no file under `src/app/` imported a single
-  symbol from `src/hunt/encounter.ts`, so the duel resolved under Vitest while the app could not end.
-  **DLR-71 closed that gap**, and **DLR-80 moved where the damage is applied**. `App.tsx` imports
-  `startEncounter` and `isEncounterResolved`, holds a real `EncounterState`, carries it hand to hand,
-  and stops dealing once a bar empties; the reducer imports `applyDamage` and calls it **per trick**
-  rather than on a confirmation press. A player can win or lose by playing.
-  What remains absent is the **sequence**: `App.tsx` holds one `SLICE_ENCOUNTER_INDEX = 0` and nothing
-  advances it, `QUARRY_ENCOUNTER_HEALTH` now holds a single entry so there is no second Quarry to
-  reach, `ENCOUNTER_PLAYER_RESTORE` still has no consumer, and there is no victory/defeat screen —
-  when the encounter resolves the existing panel states the outcome in place. All of that is
-  **DLR-73's**, as is
-  the Forage step between Hunts.
+- **The run loop across encounters is BUILT** (DLR-82) — this entry has narrowed four times and is
+  now closed. DLR-53 made one Hunt playable end to end; DLR-68 closed the arithmetic; DLR-70 built
+  the health and both end conditions **and none of it reached this module**; DLR-71 wired the
+  encounter in; DLR-80 moved where damage is applied. **DLR-82 built the sequence.** `App.tsx` holds
+  a `RunState`, three fights run in order on one health bar that is never restored, winning advances
+  and losing ends the run, and a full-screen verdict states which of the three happened. What
+  remains deliberately absent here is narrower than "the loop":
+  - **No between-encounter restore.** `ENCOUNTER_PLAYER_RESTORE` still has **no consumer**, and
+    DLR-82 explicitly forbade wiring it in — the flask stories own it. A final-verification grep
+    guards the absence.
+  - **No Forage step between Hunts**, and no currency, shop, or purchase of any kind.
+  - **No stages, gimmicks, or boss.** The run is a flat sequence; every opponent plays identically
+    and differs only in health.
+  - **No persistence.** A page reload starts a new run; nothing is saved.
 - **No way to reach a standalone/manual-entry test harness.** DLR-47 deleted
   `TestModeVanguardHost.tsx`, `TrickEntryForm.tsx`, `appMode.ts`, and `isValidTricksWon` along with
   the rest of the Vanguard UI — there is currently no manual-entry mechanism at all, campaign or

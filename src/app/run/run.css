@@ -1,0 +1,155 @@
+/* The run verdict's own full-viewport shell (DLR-82). Transcribed from
+   `.claude/contract/DLR-82-play-fights-in-sequence-on-one-health-bar/mockup.html`.
+   `100dvh`, never `100vh`; `100%`, never `100vw` — game-ux's hard floor.
+   Every clamp() bound and every hue below is the DEVELOPER'S to retune. */
+
+.run-shell {
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  padding: clamp(1rem, 4vmin, 3rem);
+  padding-top: max(clamp(1rem, 4vmin, 3rem), env(safe-area-inset-top, 0px));
+  padding-bottom: max(clamp(1rem, 4vmin, 3rem), env(safe-area-inset-bottom, 0px));
+  background: radial-gradient(120% 80% at 50% 40%, #172027 0%, #050708 100%), var(--wc-chamber);
+  color: var(--wc-chalk);
+  font-family: var(--wc-sans);
+  color-scheme: dark;
+}
+
+.run-verdict {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.7rem, 2.4vmin, 1.6rem);
+  text-align: center;
+  max-width: 34rem;
+}
+
+/* Form, not just colour: one rule for a won fight, a double rule for a won run, a hatched rule
+   for a lost one, so greyscale still tells the three apart. */
+.run-rule {
+  width: clamp(6rem, 30vmin, 16rem);
+  height: 2px;
+  background: var(--wc-brass-dim);
+}
+
+.run-verdict[data-verdict='won'] .run-rule {
+  height: 8px;
+  background: none;
+  border-top: 2px solid var(--wc-brass);
+  border-bottom: 2px solid var(--wc-brass);
+}
+
+.run-verdict[data-verdict='lost'] .run-rule {
+  height: 6px;
+  background: repeating-linear-gradient(-45deg, #ffffff26 0 3px, #00000026 3px 6px);
+}
+
+.run-headline {
+  font-family: var(--wc-serif);
+  font-size: clamp(2.6rem, 12vmin, 7rem);
+  line-height: 0.95;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  margin: 0;
+  color: var(--wc-brass);
+}
+
+.run-verdict[data-verdict='won'] .run-headline {
+  color: var(--wc-poison);
+}
+
+.run-verdict[data-verdict='lost'] .run-headline {
+  color: var(--wc-alarm);
+}
+
+.run-detail {
+  margin: 0;
+  font-size: clamp(0.85rem, 2.2vmin, 1.05rem);
+  line-height: 1.5;
+}
+
+.run-tricks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.run-tricks-label,
+.run-carry,
+.run-position {
+  margin: 0;
+  font-size: clamp(0.55rem, 1.2vmin, 0.68rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+}
+
+.run-bars {
+  display: flex;
+  gap: clamp(0.2rem, 0.8vmin, 0.45rem);
+}
+
+/* A taken trick is solid; a lost one is hatched AND outlined as well as red, so the split does
+   not depend on hue. */
+.run-trick {
+  width: clamp(1.6rem, 6vmin, 3rem);
+  height: clamp(0.5rem, 1.6vmin, 0.85rem);
+  border-radius: 1px;
+  background: var(--wc-poison);
+  border: 1px solid var(--wc-poison-edge);
+}
+
+.run-trick.is-lost {
+  background-color: var(--wc-alarm);
+  background-image: repeating-linear-gradient(-45deg, #00000040 0 3px, #ffffff1a 3px 6px);
+  border-color: #7d3a30;
+}
+
+.run-actions {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.4rem;
+}
+
+.run-btn {
+  font-family: var(--wc-sans);
+  font-size: clamp(0.8rem, 2vmin, 0.95rem);
+  letter-spacing: 0.08em;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.7rem 1.6rem;
+  border-radius: 3px;
+  border: 1px solid var(--wc-brass);
+  background: transparent;
+  color: var(--wc-brass);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.run-btn.is-primary {
+  background: var(--wc-brass);
+  color: var(--wc-ink);
+  font-weight: 600;
+}
+
+.run-btn:focus-visible {
+  outline: 2px solid var(--wc-parchment);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .run-btn:hover {
+    border-color: var(--wc-parchment);
+  }
+}
+
+.run-btn:active {
+  transform: translateY(1px);
+}
