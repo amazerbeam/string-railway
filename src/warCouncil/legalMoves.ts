@@ -22,6 +22,19 @@ export function monarchFollowSet(hand: readonly Card[], suit: Suit): readonly Ca
 }
 
 /**
+ * AC8 — the ONLY thing a Cheat lifts is the follow-suit narrowing. `legalMoves` reaches the
+ * follow-suit branch only when the led card is NOT a Monarch, so the Monarch follow set is a
+ * different branch and is untouched by construction rather than by a guard someone could delete.
+ *
+ * AC10 — an OPTIONS parameter rather than a field on `RoundState` deliberately: the Quarry's
+ * call sites (`cpuPlayer.ts`, and `roundReducer`'s lead and follow advances) simply pass nothing,
+ * so the Quarry cannot be handed a bypass without editing a line that has no reason to change.
+ */
+export interface LegalMoveOptions {
+  readonly ignoreFollowSuit?: boolean
+}
+
+/**
  * Every card `side` may legally play right now.
  *
  * The Quarry plays by exactly the player's rules — it has no character power and no rule-break
@@ -31,7 +44,11 @@ export function monarchFollowSet(hand: readonly Card[], suit: Suit): readonly Ca
  * only Monarch narrowing left is the printed one below, which fires on the led card's rank and
  * applies identically to both sides.
  */
-export function legalMoves(state: RoundState, side: PlayerSide): readonly Card[] {
+export function legalMoves(
+  state: RoundState,
+  side: PlayerSide,
+  options?: LegalMoveOptions,
+): readonly Card[] {
   const hand = state.hands[side]
 
   if (state.currentTrick.length === 0) {
@@ -41,8 +58,12 @@ export function legalMoves(state: RoundState, side: PlayerSide): readonly Card[]
   const led = state.currentTrick[0].card
 
   if (led.rank === CardRank.Monarch) {
-    const options = monarchFollowSet(hand, led.suit)
-    return options.length > 0 ? options : hand
+    const monarchOptions = monarchFollowSet(hand, led.suit)
+    return monarchOptions.length > 0 ? monarchOptions : hand
+  }
+
+  if (options?.ignoreFollowSuit) {
+    return hand
   }
 
   const followSuit = cardsOfSuit(hand, led.suit)

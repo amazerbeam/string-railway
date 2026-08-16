@@ -26,11 +26,11 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                     |
 | --------------------- | ------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, PT-001, PT-002 |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82                                               |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-86, PT-002                                             |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, PT-001, PT-002 |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83                                       |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-86, PT-002                                     |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82                                                                                                                                               |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, PT-001, PT-002                       |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, PT-001, PT-002               |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -166,6 +166,30 @@ beat, one tap replaces two, and a full-screen verdict — [run-ui/](run-ui/READM
 shop, or purchase. The curve's second and third values are a **documented placeholder**: the ticket
 predicts the player losing around fight three at these numbers and calls that the arithmetic
 working, with the shop and the flask as the answer rather than a bigger health bar.
+
+**DLR-83 gave the player the first thing they can do that the Quarry cannot.** Follow-suit could not
+be broken by anything, at any price — so the worst tricks to lose were the ones there was no legal way
+to refuse. The player now holds **two Cheat cards in two slots**; two clicks on one arms it, and while
+it is armed **every card in hand is legal**. The next card committed spends it and empties the slot;
+a third click gives it back unspent. The slots are run state, carried across fights exactly as health
+is, and granted once at the start of a run.
+
+The whole rules half is a **trailing optional parameter** — `legalMoves(state, side, options?)` — and
+that shape is what makes two acceptance criteria structural rather than careful. The Monarch narrowing
+is untouched because its branch returns before the bypass is reached; the **Quarry can never be handed
+one** because it is an argument its call sites simply do not pass, which a grep proves. With both slots
+empty the code path is byte-identical to the day before. Start at
+[war-council/legal-moves-and-abilities.md](war-council/legal-moves-and-abilities.md) for the bypass,
+[hunt/cheats-and-slots.md](hunt/cheats-and-slots.md) for the card and the two-slot cap, or
+[war-council-ui/cheat-slots.md](war-council-ui/cheat-slots.md) for the felt-left plate and the
+two-click arm.
+
+**One breaking change and two deliberate loose ends.** `recordEncounter` gained a **required** third
+parameter so the compiler enumerates every site rather than letting one silently drop a spend. And
+`addCheat` and `nextCheatId` both ship **unread by production code** — the first states the cap once,
+the second stops a spent id being re-issued as a colliding React key. Both are DLR-84's foundations;
+**do not delete them as dead code.** How many Cheats a run starts with is a labelled placeholder and
+the developer's.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

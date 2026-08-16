@@ -17,6 +17,57 @@ _state_, not what's legal to play, so none of them appear here — they live in 
 post-validation ability dispatch and in `resolveTrickWinner` instead (see
 [Trick resolution and `playCard`](trick-resolution-and-play.md)).
 
+### The Cheat bypass — the only sanctioned way to break a legality rule
+
+DLR-83 gave the player two **Cheat** cards that lift follow-suit for exactly one committed card. The
+whole of the rules half is a **trailing optional parameter**:
+
+```ts
+export interface LegalMoveOptions {
+  readonly ignoreFollowSuit?: boolean
+}
+legalMoves(state, side, options?)
+playCard(state, side, card, choice?, options?)
+```
+
+When `ignoreFollowSuit` is set, the branch that would narrow to `cardsOfSuit(hand, led.suit)` returns
+the **whole hand** instead. `playCard` threads the same options into its own `legalMoves` call — the
+single body change — so the legal set and the rejection reason cannot disagree, which is the
+invariant `playCard` already existed to hold.
+
+Three properties fall out of that shape, and each replaces a guard someone could later delete:
+
+- **The Monarch narrowing is untouched by construction, not by a check.** `legalMoves` reaches the
+  follow-suit branch only when the led card is *not* a Monarch — the Monarch branch above it returns
+  first — so a Cheat cannot reach it. Nothing tests for "is this a Monarch trick" on the bypass path
+  because nothing needs to.
+- **The Quarry cannot be handed a bypass.** This is an *argument*, not a field on `RoundState`. The
+  Quarry's call sites — `cpuPlayer.ts`'s `chooseCpuMove`, and the reducer's lead and follow advances
+  — simply pass nothing, and cannot be given it without editing a line that has no reason to change.
+  A `followSuitWaived` flag on the state would have reached `chooseCpuMove` automatically, since it
+  calls `legalMoves(state, side)` on that same object; the parameter form makes the property
+  structural and greppable. `ignoreFollowSuit` appears in exactly four production places —
+  `legalMoves.ts`'s declaration and its one read, the reducer's `commit`, and the mount's `legal`
+  computation — and **zero times in `cpuPlayer.ts`**.
+- **With no Cheat armed, the code path is byte-identical to yesterday's.** The parameter is trailing
+  and optional, so not one pre-existing call site changed and every engine spec passes untouched.
+
+**No `IllegalMoveReason` was added, removed, or renamed.** The bypass widens the legal set *before*
+the rejection branch is reached, so `MustFollowLeadSuit` simply stops being produced for a cheated
+play — its wording and its key stand. Guards that run before legality is consulted are equally
+unaffected: a card not in hand is still `CardNotInHand` with a Cheat armed, and a led Monarch still
+produces `MustFollowMonarch`. Both are pinned by `__tests__/playCard.test.ts`.
+
+One incidental change worth knowing when reading the file: the Monarch branch's local `options` was
+renamed `monarchOptions` so it no longer shadows the new parameter. Its logic is unchanged.
+
+**For future contributors: `LegalMoveOptions` is the only sanctioned way to bypass a legality rule,
+and only the player's call sites may pass it.** A second mechanism is how AC10 stops being true.
+The holding, arming and spending of a Cheat are not here — see
+[../hunt/cheats-and-slots.md](../hunt/cheats-and-slots.md) for the card and the cap, and
+[../war-council-ui/interaction-and-state.md](../war-council-ui/interaction-and-state.md) for the
+two-click arm.
+
 ### The Quarry has no rule-break — DLR-81 removed the one that existed
 
 **The Quarry plays by exactly the player's rules.** Nothing in this module gives it a power, an

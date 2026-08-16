@@ -33,6 +33,10 @@ export type DuelSide = (typeof DuelSide)[keyof typeof DuelSide]
 /** A side's remaining health — the pool damage depletes, replacing the rising Demand (§5). */
 export type Health = number
 
+/** The run's spendable currency (DLR-84). A whole number of coins, never fractional and never
+ *  negative — `buyFromShop` refuses a purchase it cannot pay for rather than going below zero. */
+export type Coins = number
+
 /** One six-trick hand — the inner loop. Every trick's outcome cashes into the bank or into
  *  damage (§3.2, §10). Narrowed on DLR-80: the declaration, the Standing multiplier and the
  *  card-value schemes are all retired along with the round they scored. */

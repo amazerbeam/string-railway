@@ -10,6 +10,7 @@ import {
 } from '../../warCouncil'
 import { DuelSide } from '../../hunt'
 import type { HealthBarView } from './duelHealthBars'
+import { CheatStage } from './roundReducer'
 
 export const SUIT_NAME: Readonly<Record<Suit, string>> = {
   [Suit.Bells]: 'Bells',
@@ -126,4 +127,19 @@ export function intentAccessibleName(intent: QuarryIntent | null, speculative: b
   const phrase = intent.stance === undefined ? 'play' : STANCE_PHRASE[intent.stance]
   const body = `The Quarry will ${phrase} ${suit}.`
   return speculative ? `If you lead that card: ${body}` : body
+}
+
+/** The Cheat rail's copy (DLR-83). PLACEHOLDER — the wording is the developer's, exactly as
+ *  `FINISH_ROUND_LABEL` and `TRICK_OUTCOME_MESSAGE` above are. */
+export const CHEAT_RAIL_LABEL = 'Cheats'
+export const CHEAT_EMPTY_SLOT_LABEL = 'Empty Cheat slot'
+export const CHEAT_ARMED_HINT = 'Cheat armed — play any card in your hand'
+export const CHEAT_POISED_HINT = 'Tap the Cheat again to arm it'
+
+/** One slot's accessible name. `null` is a held but unselected Cheat. The three must differ —
+ *  `getByRole('button', { name })` is how the spec tells the stages apart. */
+export function cheatAccessibleName(stage: CheatStage | null): string {
+  if (stage === CheatStage.Armed) return 'Cheat, armed'
+  if (stage === CheatStage.Poised) return 'Cheat, selected'
+  return 'Cheat, held'
 }

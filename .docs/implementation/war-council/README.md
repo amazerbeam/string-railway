@@ -1,7 +1,7 @@
 # War Council — `src/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, PT-001, PT-002
+**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, PT-001, PT-002
 
 ## Responsibility
 
@@ -73,7 +73,9 @@ outcomes, the reset, the `finalTrick` fold and `incomingFrom` are untouched.
   how `dealRound` deals hands, the decree, and the draw pile.
 - [Legal moves and the odd-card abilities](legal-moves-and-abilities.md) — what's playable at any
   moment, the led-Monarch exception, the four non-Witch/Monarch ability effects (Fox, Woodcutter,
-  Swan, Treasure), and why the Quarry has **no** rule-break (DLR-81 removed the one DLR-51 built).
+  Swan, Treasure), why the Quarry has **no** rule-break (DLR-81 removed the one DLR-51 built), and
+  the **Cheat bypass** — `LegalMoveOptions`, the one sanctioned way to lift a legality rule, and why
+  making it a parameter rather than a state field is what keeps it out of the Quarry's reach (DLR-83).
 - [Trick resolution and `playCard`](trick-resolution-and-play.md) — how a trick's winner is
   decided (including the Witch's "counts as trump" rule and the Fox's trump-mutation ordering), and
   `playCard`'s full order of operations as the module's single mutator.

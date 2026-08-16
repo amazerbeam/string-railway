@@ -247,14 +247,13 @@
 /* ---------- decree + draw pile: on the felt, where they physically sit ---------- */
 
 .wc-pile {
-  grid-column: 1;
-  justify-self: start;
-  align-self: center;
+  /* grid-column, justify-self, align-self and padding MOVE to `.wc-felt-rail`, declared in
+     warCouncilCheats.css — this file is 2 lines under the 400-line budget and cannot take a
+     new block. Nothing else about the pile changes and it renders identically. */
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: clamp(0.2rem, 0.7vmin, 0.4rem);
-  padding: clamp(0.5rem, 2vmin, 1.5rem);
 }
 
 .wc-pile-cards {

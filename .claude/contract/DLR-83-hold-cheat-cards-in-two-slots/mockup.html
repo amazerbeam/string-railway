@@ -1,0 +1,581 @@
+<title>Cheat Slots</title>
+<style>
+  :root {
+    --wc-chamber: #0c1013;
+    --wc-felt: #16241f;
+    --wc-felt-lip: #0a1211;
+    --wc-felt-line: #2b4038;
+    --wc-parchment: #e9e1cd;
+    --wc-parchment-shade: #d3c8ae;
+    --wc-ink: #191610;
+    --wc-ink-soft: #5c5443;
+    --wc-brass: #c99a4e;
+    --wc-brass-dim: #7d6132;
+    --wc-chalk: #cdd6d2;
+    --wc-chalk-dim: #6f7d78;
+    --wc-alarm: #d1705f;
+    --wc-bells: #c9873f;
+    --wc-keys: #5f93a8;
+    --wc-moons: #9c7cb8;
+    --wc-poison: #8fb04e;
+    --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+    --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --wc-card-w: clamp(2.9rem, 6.2vmin, 4.3rem);
+    --wc-plate-card-w: clamp(2.3rem, 4.6vmin, 3.2rem);
+    /* DLR-83 — the Cheat slot's own frame. Sized against the decree pile it sits under, so the
+       two registers of the felt-left plate line up. Tuning value; the developer's to retune. */
+    --wc-cheat-slot-w: clamp(2rem, 4vmin, 2.8rem);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--wc-chamber);
+    color: var(--wc-chalk);
+    font-family: var(--wc-sans);
+    color-scheme: dark;
+  }
+
+  /* ---------- the shell: the real .wc-shell grid, verbatim ---------- */
+  .wc-shell {
+    height: 100dvh;
+    width: 100%;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: minmax(10rem, 17vw) 1fr;
+    grid-template-areas:
+      'status  status'
+      'dossier table'
+      'hand    hand';
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+      env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+    background: radial-gradient(120% 80% at 50% 0%, #17202700 0%, #060809 100%), var(--wc-chamber);
+  }
+
+  /* ---------- status band (placeholder — unchanged by this ticket) ---------- */
+  .wc-status {
+    grid-area: status;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #ffffff14;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+  }
+  .wc-status b { color: var(--wc-brass); font-weight: 600; }
+  .wc-hp { flex: 1; height: 0.55rem; border-radius: 2px; background: #ffffff12; position: relative; overflow: hidden; max-width: 14rem; }
+  .wc-hp span { position: absolute; inset: 0 auto 0 0; background: var(--wc-brass); }
+  .wc-hp.them span { background: var(--wc-alarm); }
+
+  /* ---------- dossier (placeholder) ---------- */
+  .wc-dossier {
+    grid-area: dossier;
+    padding: 0.9rem;
+    border-right: 1px solid #ffffff10;
+    font-size: 0.72rem;
+    color: var(--wc-chalk-dim);
+    line-height: 1.7;
+  }
+  .wc-dossier h2 { font-family: var(--wc-serif); font-size: 0.95rem; color: var(--wc-chalk); margin: 0 0 0.4rem; }
+
+  /* ---------- table / felt (placeholder) ---------- */
+  .wc-table {
+    grid-area: table;
+    position: relative;
+    margin: 0 clamp(0.5rem, 2vmin, 1.5rem);
+    border-radius: clamp(0.5rem, 2vmin, 1.5rem);
+    background: radial-gradient(60% 70% at 50% 45%, #1d2f28 0%, var(--wc-felt) 55%, #101b18 100%);
+    box-shadow:
+      inset 0 0 0 1px var(--wc-felt-line),
+      inset 0 0 0 clamp(4px, 1vmin, 9px) var(--wc-felt-lip);
+    /* Spacer columns keep the trick centred while the felt-left rail stays clear of it. */
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    justify-items: center;
+    min-height: 0;
+  }
+  .wc-table-inner { grid-column: 2; }
+
+  /* The felt-left rail: the decree pile and the Cheat slots as ONE plate.
+     `.wc-pile` gives up its own grid-column/justify-self to this wrapper. */
+  .wc-felt-rail {
+    grid-column: 1;
+    justify-self: start;
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.35rem, 1.2vmin, 0.7rem);
+    padding: clamp(0.5rem, 2vmin, 1.5rem);
+  }
+  .wc-pile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.2rem, 0.7vmin, 0.4rem);
+  }
+  .wc-pile-cards { position: relative; display: flex; padding: 0 0.45rem 0.3rem 0; }
+  .wc-pile-back {
+    position: absolute;
+    width: var(--wc-plate-card-w);
+    aspect-ratio: 2 / 3;
+    border-radius: clamp(2px, 0.5vmin, 4px);
+    background: repeating-linear-gradient(-45deg, #2c3a42 0 2px, #1e282e 2px 4px);
+    box-shadow: 0 0 0 1px #00000055;
+  }
+  .wc-pile-back.wc-b1 { top: -5px; left: 7px; }
+  .wc-pile-back.wc-b2 { top: -2.5px; left: 3.5px; }
+  .wc-pile .card { position: relative; z-index: 2; width: var(--wc-plate-card-w); }
+  .wc-plate-label {
+    font-size: clamp(0.48rem, 1vmin, 0.6rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+    font-weight: 600;
+  }
+  .wc-trump-mark {
+    font-size: clamp(0.5rem, 1.05vmin, 0.62rem);
+    letter-spacing: 0.08em;
+    color: var(--wc-brass);
+  }
+  /* The hairline that makes the two registers read as one plate rather than two objects. */
+  .wc-felt-rail-split {
+    width: 78%;
+    height: 1px;
+    background: linear-gradient(90deg, #ffffff00, #ffffff26, #ffffff00);
+  }
+  .wc-well { display: flex; gap: 1.1rem; align-items: center; }
+  .wc-well-note { position: absolute; }
+  .wc-led {
+    text-align: center;
+    font-size: 0.62rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+    margin-top: 0.55rem;
+  }
+
+  /* ---------- cards ---------- */
+  .card {
+    width: var(--wc-card-w);
+    aspect-ratio: 5 / 7;
+    border-radius: 6px;
+    background: linear-gradient(160deg, var(--wc-parchment) 0%, var(--wc-parchment-shade) 100%);
+    color: var(--wc-ink);
+    border: 1px solid #00000040;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    padding: 0.24rem 0.3rem;
+    font-family: var(--wc-serif);
+    box-shadow: 0 2px 6px #0006;
+  }
+  .card .rank { font-size: 0.82rem; font-weight: 700; line-height: 1; }
+  .card .pip { place-self: center; font-size: 1.15rem; line-height: 1; }
+  .card.bells .rank, .card.bells .pip { color: var(--wc-bells); }
+  .card.keys  .rank, .card.keys  .pip { color: var(--wc-keys); }
+  .card.moons .rank, .card.moons .pip { color: var(--wc-moons); }
+  .card.skulled { outline: 2px solid var(--wc-poison); outline-offset: -2px; }
+
+  /* ---------- the hand zone: UNCHANGED by this ticket ---------- */
+  .wc-hand {
+    grid-area: hand;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.15rem, 0.8vmin, 0.5rem);
+    padding: clamp(0.3rem, 1.2vmin, 0.8rem) clamp(0.5rem, 2vmin, 1.5rem) clamp(0.5rem, 1.8vmin, 1.1rem);
+  }
+
+  .wc-hand-hint {
+    font-size: clamp(0.58rem, 1.25vmin, 0.72rem);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+    font-weight: 600;
+    min-height: 1.2em;
+    text-align: center;
+    margin: 0;
+  }
+  .wc-hand-hint.wc-is-live { color: var(--wc-brass); }
+
+  .wc-fan { display: flex; justify-content: center; align-items: center; padding: 1.3rem 0 0.6rem; }
+  .wc-fan .card {
+    border: none;
+    background: none;
+    padding: 0;
+    box-shadow: none;
+    cursor: pointer;
+    transition: transform 140ms ease, opacity 140ms ease, filter 140ms ease;
+  }
+  .fan-slot { position: relative; }
+  .fan-face {
+    width: var(--wc-card-w);
+    aspect-ratio: 5 / 7;
+    border-radius: 6px;
+    background: linear-gradient(160deg, var(--wc-parchment) 0%, var(--wc-parchment-shade) 100%);
+    color: var(--wc-ink);
+    display: grid;
+    grid-template-rows: auto 1fr;
+    padding: 0.24rem 0.3rem;
+    font-family: var(--wc-serif);
+    box-shadow: 0 2px 8px #0007;
+  }
+  button.fan-slot {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-left: -0.9rem;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform 150ms ease, filter 150ms ease;
+  }
+  button.fan-slot:first-child { margin-left: 0; }
+  button.fan-slot:focus-visible { outline: 2px solid var(--wc-brass); outline-offset: 3px; border-radius: 8px; }
+  @media (hover: hover) {
+    button.fan-slot:not(.illegal):hover { transform: translateY(-10%); }
+  }
+  button.fan-slot.illegal { filter: grayscale(1) brightness(0.55); cursor: not-allowed; }
+  button.fan-slot.armed { transform: translateY(-22%); }
+  button.fan-slot.armed .fan-face { box-shadow: 0 0 0 2px var(--wc-brass), 0 6px 14px #000a; }
+
+  /* ---------- the Cheat rail: the second register of the felt-left plate ---------- */
+  .wc-cheat-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.2rem, 0.7vmin, 0.4rem);
+  }
+  /* Side by side, not stacked: the felt column is height-constrained, and a PAIR reads as
+     "two slots" where a vertical stack reads as a list. Same width as the pile above. */
+  .wc-cheat-slots { display: flex; flex-direction: row; gap: clamp(0.2rem, 0.7vmin, 0.4rem); }
+
+  /* Every slot is the same frame. Form carries the state, not colour alone:
+     empty = dashed faint, poised = dashed brass, armed = solid brass + lift + corner tick. */
+  .wc-cheat-slot {
+    width: var(--wc-cheat-slot-w);
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    aspect-ratio: 2 / 3;
+    border-radius: 5px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    background: none;
+    font-family: var(--wc-serif);
+    position: relative;
+    transition: transform 140ms ease, box-shadow 140ms ease;
+  }
+  .wc-cheat-slot.is-empty {
+    border: 1px dashed #6f7d7855;
+    color: #6f7d7866;
+    font-size: 0.9rem;
+  }
+  .wc-cheat-slot.is-held {
+    border: 1px solid var(--wc-brass-dim);
+    background: linear-gradient(160deg, #2a2418 0%, #1a1710 100%);
+    color: var(--wc-brass);
+    cursor: pointer;
+    touch-action: manipulation;
+    font-size: 0.95rem;
+  }
+  .wc-cheat-slot.is-poised {
+    border: 2px dashed var(--wc-brass);
+    transform: translateY(-3px);
+  }
+  .wc-cheat-slot.is-armed {
+    border: 2px solid var(--wc-brass);
+    background: linear-gradient(160deg, #453718 0%, #2b2311 100%);
+    transform: translateY(-7px);
+    box-shadow: 0 0 0 1px #c99a4e55, 0 5px 14px #000a;
+  }
+  /* A second, non-colour signal on the armed slot: a filled corner notch. */
+  .wc-cheat-slot.is-armed::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--wc-brass);
+    border-radius: 50%;
+  }
+  .wc-cheat-slot:focus-visible { outline: 2px solid var(--wc-brass); outline-offset: 3px; }
+  .wc-cheat-stage {
+    font-size: 0.46rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--wc-brass);
+    font-family: var(--wc-sans);
+    font-weight: 700;
+    min-height: 0.7em;
+  }
+
+  /* ---------- mockup-only scaffolding, not part of the design ---------- */
+  .mk-bar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    padding: 0.4rem 0.6rem;
+    background: #000000cc;
+    border-bottom-left-radius: 8px;
+    font-size: 0.68rem;
+    border: 1px solid #ffffff1a;
+    border-top: none;
+    border-right: none;
+  }
+  .mk-bar button {
+    font: inherit;
+    background: #ffffff14;
+    color: var(--wc-chalk);
+    border: 1px solid #ffffff26;
+    border-radius: 5px;
+    padding: 0.28rem 0.5rem;
+    cursor: pointer;
+  }
+  .mk-bar button:hover { background: #ffffff24; }
+  .mk-log {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    z-index: 10;
+    max-width: min(30rem, 60vw);
+    padding: 0.4rem 0.7rem;
+    background: #000000cc;
+    border-top-right-radius: 8px;
+    border: 1px solid #ffffff1a;
+    border-left: none;
+    border-bottom: none;
+    font-family: ui-monospace, monospace;
+    font-size: 0.65rem;
+    color: var(--wc-poison);
+    min-height: 1.6em;
+  }
+</style>
+
+<div class="mk-bar">
+  <span>mockup</span>
+  <button type="button" onclick="reset(2)">2 cheats</button>
+  <button type="button" onclick="reset(1)">1 cheat</button>
+  <button type="button" onclick="reset(0)">0 cheats (AC9)</button>
+</div>
+<div class="mk-log" id="log">Tap a Cheat frame twice to arm it. Then play a Moons card into the Keys lead.</div>
+
+<div class="wc-shell">
+  <header class="wc-status">
+    <span>Opponent <b>5 held</b></span>
+    <span class="wc-hp them"><span style="width:70%"></span></span>
+    <span>You <b>2</b> · Trick <b>3</b> · Them <b>1</b></span>
+    <span class="wc-hp"><span style="width:60%"></span></span>
+    <span>Run <b>Fight 1 of 3</b></span>
+  </header>
+
+  <aside class="wc-dossier">
+    <h2>The Monarch</h2>
+    <div>Bells: 2 held, 1 skulled</div>
+    <div>Keys: 2 held, none skulled</div>
+    <div>Moons: 1 held, 1 skulled</div>
+    <div style="margin-top:0.8rem">Bank <b style="color:var(--wc-brass)">3</b> · ×2</div>
+    <div style="margin-top:0.8rem">They will press Keys.</div>
+  </aside>
+
+  <section class="wc-table">
+    <!-- ONE felt-left plate: the deck above, the Cheat slots below, a hairline between them. -->
+    <div class="wc-felt-rail">
+      <div class="wc-pile">
+        <span class="wc-plate-label">Decree</span>
+        <span class="wc-pile-cards">
+          <span class="wc-pile-back wc-b1" aria-hidden="true"></span>
+          <span class="wc-pile-back wc-b2" aria-hidden="true"></span>
+          <span class="card moons"><span class="rank">4</span><span class="pip">&#9789;</span></span>
+        </span>
+        <span class="wc-trump-mark">Moons is trump</span>
+        <span class="wc-plate-label">7 in the pile</span>
+      </div>
+
+      <div class="wc-felt-rail-split" aria-hidden="true"></div>
+
+      <!-- exactly CHEAT_SLOT_COUNT frames, filled from the head.
+           stopPropagation: .wc-table carries the carry-on onClick. -->
+      <div class="wc-cheat-rail" role="group" aria-label="Cheats"
+           onkeydown="onRailKey(event)" onclick="event.stopPropagation()">
+        <span class="wc-plate-label">Cheats</span>
+        <div class="wc-cheat-slots" id="slots"></div>
+        <span class="wc-cheat-stage" id="stage"></span>
+      </div>
+    </div>
+
+    <div class="wc-table-inner">
+      <div class="wc-well">
+        <div class="card keys"><span class="rank">9</span><span class="pip">&#9919;</span></div>
+        <div class="card" style="opacity:.25;border-style:dashed;background:none;box-shadow:none"></div>
+      </div>
+      <p class="wc-led">They led Keys &mdash; 9</p>
+    </div>
+  </section>
+
+  <div class="wc-hand">
+    <p class="wc-hand-hint" id="hint">Follow their lead</p>
+    <div class="wc-fan" role="group" aria-label="Your hand" id="fan"></div>
+  </div>
+</div>
+
+<script>
+  // ---- fake state, obviously fake data ----
+  const LED_SUIT = 'keys';
+  const PIP = { bells: '⚬', keys: '⚿', moons: '☽' };
+  const HAND = [
+    { rank: 3, suit: 'keys' },
+    { rank: 7, suit: 'keys' },
+    { rank: 2, suit: 'moons' },
+    { rank: 8, suit: 'moons' },
+    { rank: 11, suit: 'bells' },
+  ];
+
+  let cheats = [];      // [{ id }]
+  let selection = null; // { id, stage: 'poised' | 'armed' }
+  let armedCard = null; // index into HAND
+
+  const armed = () => selection !== null && selection.stage === 'armed';
+
+  // The one rule this ticket adds: with the cheat armed, follow-suit stops narrowing.
+  // The led-Monarch narrowing (AC8) is a different branch and is not modelled here.
+  function isLegal(card) {
+    if (armed()) return true;
+    return HAND.some((c) => c.suit === LED_SUIT) ? card.suit === LED_SUIT : true;
+  }
+
+  function log(msg) { document.getElementById('log').textContent = msg; }
+
+  function reset(n) {
+    cheats = Array.from({ length: n }, (_, i) => ({ id: i + 1 }));
+    selection = null;
+    armedCard = null;
+    log(n === 0
+      ? 'Both slots empty — legal play is exactly what it is today (AC9). Moons cards stay greyed.'
+      : 'Tap a Cheat frame twice to arm it. Then play a Moons card into the Keys lead.');
+    render();
+  }
+
+  function tapCheat(id) {
+    if (selection && selection.id === id) {
+      if (selection.stage === 'poised') {
+        selection = { id, stage: 'armed' };
+        log('Click 2 — ARMED. Follow-suit is lifted; the whole hand is playable (AC5).');
+      } else {
+        selection = null; // AC6 — disarm without spending
+        log('Disarmed. The Cheat is still held — nothing was spent (AC6).');
+      }
+    } else {
+      selection = { id, stage: 'poised' };
+      log('Click 1 — poised only. A single misclick can never spend it (AC4).');
+    }
+    // Disarming re-narrows the legal set; drop a poised card that just became illegal.
+    if (armedCard !== null && !isLegal(HAND[armedCard])) armedCard = null;
+    render();
+  }
+
+  function cancelCheat() {
+    if (!selection) return;
+    selection = null;
+    if (armedCard !== null && !isLegal(HAND[armedCard])) armedCard = null;
+    log('Escape — selection cleared, nothing spent (AC6).');
+    render();
+  }
+
+  function onRailKey(e) { if (e.key === 'Escape') cancelCheat(); }
+
+  function tapCard(i) {
+    const card = HAND[i];
+    if (!isLegal(card)) return;
+    if (armedCard === i) {
+      // commit
+      const spent = armed() ? selection.id : null;
+      if (spent !== null) {
+        cheats = cheats.filter((c) => c.id !== spent);   // AC7 — consumed, slot freed
+        log('Committed ' + card.rank + ' of ' + card.suit +
+            ' — Cheat #' + spent + ' consumed, its slot is now empty (AC7).');
+      } else {
+        log('Committed ' + card.rank + ' of ' + card.suit + ' — an ordinary legal play.');
+      }
+      selection = null;
+      armedCard = null;
+      HAND.splice(i, 1);
+    } else {
+      armedCard = i;
+      log('Card poised — tap it again to play it.');
+    }
+    render();
+  }
+
+  function hintText() {
+    if (armedCard !== null) return 'Tap that card again to play it';
+    if (armed()) return 'Cheat armed — play any card in your hand';
+    if (selection) return 'Tap the Cheat again to arm it';
+    return 'Follow their lead';
+  }
+
+  function render() {
+    // --- rail ---
+    const slots = document.getElementById('slots');
+    slots.innerHTML = '';
+    for (let i = 0; i < 2; i++) {           // CHEAT_SLOT_COUNT
+      const held = cheats[i];
+      if (!held) {
+        const el = document.createElement('span');
+        el.className = 'wc-cheat-slot is-empty';
+        el.setAttribute('aria-label', 'Empty Cheat slot');
+        el.textContent = '—';
+        slots.appendChild(el);
+      } else {
+        const stage = selection && selection.id === held.id ? selection.stage : null;
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'wc-cheat-slot is-held' +
+          (stage === 'poised' ? ' is-poised' : '') + (stage === 'armed' ? ' is-armed' : '');
+        el.setAttribute('aria-pressed', String(stage === 'armed'));
+        el.setAttribute('aria-label',
+          stage === 'armed' ? 'Cheat, armed' :
+          stage === 'poised' ? 'Cheat, selected' : 'Cheat, held');
+        el.textContent = '✘';
+        el.onclick = () => tapCheat(held.id);
+        slots.appendChild(el);
+      }
+    }
+    document.getElementById('stage').textContent = armed() ? 'ARMED' : selection ? 'TAP AGAIN' : '';
+
+    // --- hand ---
+    const fan = document.getElementById('fan');
+    fan.innerHTML = '';
+    HAND.forEach((card, i) => {
+      const legal = isLegal(card);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'fan-slot' + (legal ? '' : ' illegal') + (armedCard === i ? ' armed' : '');
+      b.disabled = !legal;
+      b.setAttribute('aria-label', card.rank + ' of ' + card.suit);
+      b.innerHTML =
+        '<span class="fan-face ' + card.suit + '">' +
+        '<span class="rank" style="color:var(--wc-' + card.suit + ')">' + card.rank + '</span>' +
+        '<span class="pip" style="color:var(--wc-' + card.suit + ')">' + PIP[card.suit] + '</span>' +
+        '</span>';
+      b.onclick = () => tapCard(i);
+      fan.appendChild(b);
+    });
+
+    const hint = document.getElementById('hint');
+    hint.textContent = hintText();
+    hint.className = 'wc-hand-hint' + (armed() || armedCard !== null ? ' wc-is-live' : '');
+  }
+
+  reset(2);
+</script>

@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { RunOutcome } from '../../../hunt'
 import {
+  CONTINUE_ANYWAY_LABEL,
+  CONTINUE_LABEL,
   NEW_RUN_LABEL,
   NEXT_FIGHT_LABEL,
+  SHOP_LABEL,
+  VISIT_SHOP_LABEL,
   runHeadline,
   runProgressText,
   runVerdictDetail,
   tricksTakenText,
+  unspentCoinsText,
 } from '../runLabels'
 
 describe('runProgressText (AC6)', () => {
@@ -61,5 +66,25 @@ describe('tricksTakenText', () => {
 describe('control labels', () => {
   it('names the two forward controls differently, so a role query tells them apart', () => {
     expect(NEXT_FIGHT_LABEL).not.toBe(NEW_RUN_LABEL)
+  })
+
+  it('names all six controls mutually distinctly, so a role query never matches two', () => {
+    const labels = [
+      NEXT_FIGHT_LABEL,
+      NEW_RUN_LABEL,
+      CONTINUE_LABEL,
+      SHOP_LABEL,
+      VISIT_SHOP_LABEL,
+      CONTINUE_ANYWAY_LABEL,
+    ]
+    expect(new Set(labels).size).toBe(labels.length)
+  })
+})
+
+describe('unspentCoinsText', () => {
+  it('names the balance, reading singular at 1 and plural at 2', () => {
+    expect(unspentCoinsText(1)).toContain('1 coin')
+    expect(unspentCoinsText(1)).not.toContain('1 coins')
+    expect(unspentCoinsText(2)).toContain('2 coins')
   })
 })

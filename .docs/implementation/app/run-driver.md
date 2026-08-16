@@ -61,7 +61,7 @@ Quarry's health, and the roster is DLR-85's.
 
 ```tsx
 function handleComplete(result: WarCouncilRoundResult) {
-  const next = recordEncounter(run, result.encounter)
+  const next = recordEncounter(run, result.encounter, result.cheats)
   setRun(next)
   if (isEncounterResolved(next.encounter)) {
     setTricks({
@@ -76,6 +76,17 @@ function handleComplete(result: WarCouncilRoundResult) {
 
 `handleNextFight` calls `advanceRun`, clears the tally and deals; `handleNewRun` calls `startRun`,
 clears the tally, resets `hand` to 1 and deals fresh.
+
+**DLR-83 added the third argument and one prop, and nothing else.** `recordEncounter` now takes the
+Cheats a hand finished with — `result.cheats`, arriving through the same `WarCouncilRoundResult`
+round trip `encounter` already used — and the mount gains `cheats={run.cheats}` on the way down. The
+parameter is **required**, deliberately: an optional one would let this function silently drop a
+spend, and the run would quietly refill the slot on the next hand.
+
+Neither of the other two handlers needed a line. `handleNextFight` carries the slots into the next
+fight because `advanceRun`'s existing `...run` spread already does it, and `handleNewRun` re-grants
+from configuration because `startRun` does. No new state, no new effect — this driver still holds
+none. See [../hunt/cheats-and-slots.md](../hunt/cheats-and-slots.md).
 
 **There is no `useEffect` anywhere in this file, and that is load-bearing rather than incidental.**
 Every transition above is a callback fired from a control, so there is no listener, timer,

@@ -18,6 +18,12 @@ import {
   SKULL_WEIGHTS_AMBUSH,
   SKULL_RANK_WEIGHTS,
   DAMAGE_PER_HIT,
+  CHEAT_SLOT_COUNT,
+  RUN_STARTING_CHEATS,
+  COINS_PER_ENCOUNTER_WIN,
+  CHEAT_PRICE,
+  HEAL_PRICE,
+  HEAL_HEALTH_RESTORED,
 } from '../config'
 import { DuelSide } from '../types'
 import { quarryCharacterInfo } from '../quarryCharacters'
@@ -94,6 +100,33 @@ describe('DLR-80 configuration', () => {
       expect(Number.isFinite(health)).toBe(true)
     }
     expect(() => quarryHealthForEncounter(QUARRY_ENCOUNTER_HEALTH.length)).toThrow(RangeError)
+  })
+})
+
+describe('Cheat slots (DLR-83)', () => {
+  it('offers exactly two Cheat slots (DLR-83 AC1/AC2)', () => {
+    expect(CHEAT_SLOT_COUNT).toBe(2)
+  })
+
+  it('grants a starting number of Cheats that the slots can actually hold (AC3)', () => {
+    expect(Number.isInteger(RUN_STARTING_CHEATS)).toBe(true)
+    expect(RUN_STARTING_CHEATS).toBeGreaterThanOrEqual(0)
+    expect(RUN_STARTING_CHEATS).toBeLessThanOrEqual(CHEAT_SLOT_COUNT)
+  })
+})
+
+describe('DLR-84 shop tunables', () => {
+  it('prices both items and the payout as non-negative whole numbers of coins', () => {
+    for (const value of [COINS_PER_ENCOUNTER_WIN, CHEAT_PRICE, HEAL_PRICE]) {
+      expect(Number.isInteger(value)).toBe(true)
+      expect(value).toBeGreaterThanOrEqual(0)
+    }
+  })
+
+  it('restores a positive, finite amount of health that cannot exceed the player maximum in one buy', () => {
+    expect(HEAL_HEALTH_RESTORED).toBeGreaterThan(0)
+    expect(Number.isFinite(HEAL_HEALTH_RESTORED)).toBe(true)
+    expect(HEAL_HEALTH_RESTORED).toBeLessThanOrEqual(PLAYER_START_HEALTH)
   })
 })
 

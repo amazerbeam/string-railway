@@ -9,6 +9,7 @@ import {
 import { DuelSide } from '../../../hunt'
 import {
   cardAccessibleName,
+  cheatAccessibleName,
   healthBarValueText,
   ILLEGAL_MOVE_MESSAGE,
   intentAccessibleName,
@@ -19,6 +20,7 @@ import {
   SUIT_NAME,
   TRICK_OUTCOME_MESSAGE,
 } from '../labels'
+import { CheatStage } from '../roundReducer'
 
 describe('cardAccessibleName', () => {
   it('names an ability-bearing rank', () => {
@@ -165,5 +167,16 @@ describe('quarryShapeText — AC11, never a rank', () => {
     // Every digit in the sentence is a count (held/skulled), never a rank — there is no rank
     // field on SuitShape for this function to read in the first place.
     expect(quarryShapeText(shape)).not.toMatch(/rank/i)
+  })
+})
+
+describe('cheatAccessibleName', () => {
+  it('names each Cheat stage distinctly, so a spec can tell them apart', () => {
+    const names = [
+      cheatAccessibleName(null),
+      cheatAccessibleName(CheatStage.Poised),
+      cheatAccessibleName(CheatStage.Armed),
+    ]
+    expect(new Set(names).size).toBe(3)
   })
 })

@@ -1,14 +1,21 @@
 import { useState } from 'react'
 import {
   advanceRun,
+  buyFromShop,
   canAdvanceRun,
+  canBuyAnything,
   DuelSide,
   isEncounterResolved,
   PLAYER_START_HEALTH,
+  quarryCharacterInfo,
   quarryHealthForEncounter,
   recordEncounter,
+  refusalFor,
+  ShopItem,
+  shopStockFor,
   SLICE_QUARRY_CHARACTER,
   startRun,
+  CHEAT_SLOT_COUNT,
   type Hunt,
 } from './hunt'
 import { dealRound, PlayerSide, type WarCouncilState } from './warCouncil'
@@ -20,6 +27,7 @@ import type { WarCouncilRoundResult } from './app/warCouncilMount'
 import WarCouncilRound from './app/warCouncil/WarCouncilRound'
 import { dealerForRound } from './app/dealerForRound'
 import RunOutcomePanel, { type TrickTally } from './app/run/RunOutcomePanel'
+import ShopPanel from './app/run/ShopPanel'
 import { runProgressText } from './app/run/runLabels'
 
 // Built once at module scope because its only half is a configuration constant — it holds no
@@ -28,6 +36,15 @@ import { runProgressText } from './app/run/runLabels'
 const HUNT: Hunt = { quarry: { character: SLICE_QUARRY_CHARACTER } }
 
 const NO_TRICKS: TrickTally = { taken: 0, lost: 0 }
+
+/** Which of the three between-fights surfaces is showing. A union rather than two booleans,
+ *  because "in the shop AND warned" is a state that must not exist. */
+const BetweenPhase = {
+  Verdict: 'verdict',
+  Warned: 'warned',
+  Shop: 'shop',
+} as const
+type BetweenPhase = (typeof BetweenPhase)[keyof typeof BetweenPhase]
 
 /**
  * The run driver (DLR-82). Owns `RunState` and switches on it: while the encounter is live it
@@ -52,8 +69,13 @@ function App() {
   // it. Nothing accumulates tricks across the several hands a fight takes, so this is the last
   // hand's, which is the only figure that exists.
   const [tricks, setTricks] = useState<TrickTally>(NO_TRICKS)
+  const [between, setBetween] = useState<BetweenPhase>(BetweenPhase.Verdict)
 
   const encounterOver = isEncounterResolved(run.encounter)
+
+  // AC7 — the same predicate the shop's buttons read, so the warning cannot claim there is
+  // something to buy while every purchase card is greyed out.
+  const stock = shopStockFor(run)
 
   // Read from config, never written as numbers, and derived from the SAME index the encounter was
   // started from — so a bar's denominator cannot disagree with its opening value. Not a module
@@ -70,7 +92,7 @@ function App() {
   }
 
   function handleComplete(result: WarCouncilRoundResult) {
-    const next = recordEncounter(run, result.encounter)
+    const next = recordEncounter(run, result.encounter, result.cheats)
     setRun(next)
     if (isEncounterResolved(next.encounter)) {
       setTricks({
@@ -82,18 +104,57 @@ function App() {
     dealNextHand()
   }
 
-  function handleNextFight() {
+  // The ONE call to advanceRun. Reached from Continue on an unwarned verdict, Continue anyway on a
+  // warned one, and Next fight in the shop — three controls, one transition.
+  function leaveForNextFight() {
     setRun(advanceRun(run))
+    setBetween(BetweenPhase.Verdict)
     setTricks(NO_TRICKS)
     dealNextHand()
+  }
+
+  function handleContinue() {
+    if (between === BetweenPhase.Verdict && canBuyAnything(stock)) {
+      setBetween(BetweenPhase.Warned)
+      return
+    }
+    leaveForNextFight()
+  }
+
+  // AC8 — the FUNCTIONAL updater, so two clicks batched into one render cannot both compute from
+  // the same stale run and lose a purchase. `buyFromShop` is pure, so StrictMode's development
+  // double-invocation recomputes an identical value.
+  function handleBuy(item: ShopItem) {
+    setRun((r) => buyFromShop(r, item))
   }
 
   function handleNewRun() {
     const fresh = startRun()
     setRun(fresh)
+    setBetween(BetweenPhase.Verdict)
     setTricks(NO_TRICKS)
     setHand(1)
     setDealt(dealRound(dealerForRound(1), Math.random))
+  }
+
+  if (encounterOver && between === BetweenPhase.Shop) {
+    return (
+      <ShopPanel
+        coins={run.coins}
+        playerHealth={run.encounter.health[DuelSide.Player]}
+        maxPlayerHealth={PLAYER_START_HEALTH}
+        cheatCount={run.cheats.length}
+        cheatSlotCount={CHEAT_SLOT_COUNT}
+        nextOpponentName={quarryCharacterInfo(SLICE_QUARRY_CHARACTER)?.name}
+        progressText={runProgressText(run.encounterIndex + 1, run.encounterCount)}
+        refusals={{
+          [ShopItem.Cheat]: refusalFor(stock, ShopItem.Cheat),
+          [ShopItem.Heal]: refusalFor(stock, ShopItem.Heal),
+        }}
+        onBuy={handleBuy}
+        onLeave={leaveForNextFight}
+      />
+    )
   }
 
   if (encounterOver) {
@@ -105,7 +166,11 @@ function App() {
         carriedHealth={run.encounter.health[DuelSide.Player]}
         tricks={tricks}
         canContinue={canAdvanceRun(run)}
-        onNextFight={handleNextFight}
+        coins={run.coins}
+        warning={between === BetweenPhase.Warned}
+        onShop={() => setBetween(BetweenPhase.Shop)}
+        onContinue={handleContinue}
+        onDismissWarning={() => setBetween(BetweenPhase.Verdict)}
         onNewRun={handleNewRun}
       />
     )
@@ -119,6 +184,7 @@ function App() {
       encounter={run.encounter}
       maxHealth={maxHealth}
       runLabel={runProgressText(run.encounterIndex, run.encounterCount)}
+      cheats={run.cheats}
       onComplete={handleComplete}
     />
   )

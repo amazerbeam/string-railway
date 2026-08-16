@@ -94,3 +94,52 @@ describe('legalMoves', () => {
     expect(legalMoves(state, 'cpu')).toEqual(cpuHand)
   })
 })
+
+describe('the Cheat bypass (DLR-83)', () => {
+  const playerHand: Card[] = [
+    { suit: 'keys', rank: 9 },
+    { suit: 'bells', rank: 2 },
+  ]
+  const stateWithLedSuitInHand = stateWith({ player: playerHand, cpu: [] }, [
+    { side: 'cpu', card: { suit: 'keys', rank: 4 } },
+  ])
+
+  const monarchHand: Card[] = [
+    { suit: 'keys', rank: 1 },
+    { suit: 'keys', rank: 6 },
+    { suit: 'keys', rank: 9 },
+  ]
+  const stateWithMonarchLed = stateWith({ player: monarchHand, cpu: [] }, [
+    { side: 'cpu', card: { suit: 'keys', rank: 11 } },
+  ])
+
+  const emptyTrickState = stateWith({ player: playerHand, cpu: [] }, [])
+
+  it('returns the whole hand when follow-suit would otherwise narrow it (AC5)', () => {
+    const narrowed = legalMoves(stateWithLedSuitInHand, PlayerSide.Player)
+    const widened = legalMoves(stateWithLedSuitInHand, PlayerSide.Player, {
+      ignoreFollowSuit: true,
+    })
+    expect(narrowed.length).toBeLessThan(widened.length)
+    expect(widened).toEqual(stateWithLedSuitInHand.hands[PlayerSide.Player])
+  })
+
+  it('leaves the led-Monarch narrowing binding (AC8)', () => {
+    const withBypass = legalMoves(stateWithMonarchLed, PlayerSide.Player, {
+      ignoreFollowSuit: true,
+    })
+    expect(withBypass).toEqual(legalMoves(stateWithMonarchLed, PlayerSide.Player))
+  })
+
+  it('changes nothing on a lead, where nothing narrows anyway', () => {
+    expect(legalMoves(emptyTrickState, PlayerSide.Player, { ignoreFollowSuit: true })).toEqual(
+      legalMoves(emptyTrickState, PlayerSide.Player),
+    )
+  })
+
+  it('is off by default, so today is unchanged (AC9)', () => {
+    expect(legalMoves(stateWithLedSuitInHand, PlayerSide.Player, {})).toEqual(
+      legalMoves(stateWithLedSuitInHand, PlayerSide.Player),
+    )
+  })
+})

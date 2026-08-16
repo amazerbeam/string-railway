@@ -1,4 +1,4 @@
-import { RunOutcome, type Health } from '../../hunt'
+import { RunOutcome, type Coins, type Health } from '../../hunt'
 
 /**
  * Every user-visible string on the run verdict, and the run's own progress readout.
@@ -57,3 +57,21 @@ export const TRICKS_TAKEN_LABEL = 'Tricks taken'
 export const CARRIED_HEALTH_LABEL = 'Carried health'
 export const NEXT_FIGHT_LABEL = 'Next fight'
 export const NEW_RUN_LABEL = 'Start a new run'
+
+/** The verdict's two forward controls (DLR-84, developer's gate decision 2026-08-16). The shop is
+ *  OPT-IN: `Continue` goes to the fight, `Shop` goes to the shop. `NEXT_FIGHT_LABEL` above keeps
+ *  its value and moves to the shop's own leave button, where it is literally true (AC9).
+ *  ALL PLACEHOLDER COPY, exactly as this file's header states. */
+export const CONTINUE_LABEL = 'Continue'
+export const SHOP_LABEL = 'Shop'
+
+/** The unspent-coin warning's own pair. Both must differ from the two above — a component test
+ *  tells the warned verdict from the plain one by button name. */
+export const VISIT_SHOP_LABEL = 'Visit the shop'
+export const CONTINUE_ANYWAY_LABEL = 'Continue anyway'
+
+/** The warning sentence. Takes the balance so it names what is being left behind; the driver
+ *  decides WHETHER to warn (`canBuyAnything`), this only decides the words. */
+export function unspentCoinsText(coins: Coins): string {
+  return `You still have ${coins} coin${coins === 1 ? '' : 's'} to spend.`
+}

@@ -38,7 +38,7 @@ function uiFrom(
   round: WarCouncilState,
   encounter: EncounterState = startEncounter(0),
 ): RoundUiState {
-  return createRoundUiState({ round, encounter })
+  return createRoundUiState({ round, encounter, cheats: [] })
 }
 
 describe('the bank cash-out — AC6/AC8, applied mid-hand as it happens', () => {

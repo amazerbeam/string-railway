@@ -7,6 +7,15 @@ player follows, stated once, in playing order.
 Last reviewed against the code and the design on **2026-08-16**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
 
+> **You can break follow-suit twice a run — DLR-83, 2026-08-16.** You hold **two Cheat slots**, drawn
+> as two card frames beside the decree. A held Cheat is **armed with two clicks**, and while it is
+> armed **follow-suit does not bind you** — every card in your hand becomes legal, so a trick you
+> would have been forced to take can be refused. The next card you commit **spends** that Cheat and
+> empties its slot; the slots carry across fights like health does. It lifts **follow-suit only** —
+> the led-Monarch narrowing still binds — and the Quarry gets nothing. See
+> [section 4](#4-playing-a-trick). **Engine and screen landed together.** Buying them is later work;
+> today a run simply starts with two.
+
 > **The game is a run now — DLR-82, 2026-08-15.** Three fights in order, against Quarries of rising
 > health, on **one health bar that never refills**. Win and you carry your remaining health into a
 > tougher fight; empty and the run is over. A full-screen verdict states which of the three things
@@ -258,6 +267,46 @@ rather than the card; section 9 records why it was removed.
 "Highest" is read from the hand **at the moment you follow**, not fixed at the deal. Shedding your
 Swan and your top card of a suit leaves you narrowed to your new highest; you are only free of the
 constraint in a suit once you hold none of that suit at all.
+
+### Cheats — refusing a trick follow-suit would force on you
+
+**[settled]** — the procedure; **how many Cheats a run starts with** is **[open]**, below.
+
+You hold **two Cheat slots**. A Cheat is a card you hold, not a counter: each is one use, and
+spending one frees its slot. The slots sit beside the decree and are on screen for the whole hand,
+whether they hold anything or not.
+
+**Playing a held Cheat takes two clicks on it.**
+
+1. **The first click selects it.** Nothing about the rules changes yet — this exists so a single
+   misclick can never spend one.
+2. **The second click arms it.** While a Cheat is armed, **follow-suit does not bind you**: every
+   card in your hand is legal, including the off-suit cards it would otherwise forbid. Your whole
+   hand becomes playable on screen, which is how you can tell.
+3. **The next card you commit spends it.** The Cheat is gone and its slot is empty.
+
+**A third click gives an armed Cheat back**, unspent. So does pressing Escape. Nothing is committed
+until you play a card.
+
+**The Cheat lifts follow-suit and nothing else.** A led Monarch still narrows you to your Swan or
+your highest of that suit (above), and every other rule in these sections is untouched. If you play
+a card that some other rule forbids, the play is refused and the Cheat is **not** spent — a refusal
+is not a commitment.
+
+> **The Cheat is spent whether or not it was needed.** Committing any card while one is armed
+> consumes it, even a card that was perfectly legal anyway. Arming is therefore itself the decision;
+> there is no refund for changing your mind after the fact, only for disarming before you play. It is
+> recorded under [Known tensions](#known-tensions-recorded-not-resolved).
+
+**The Quarry holds no Cheats and can never break follow-suit.** This is a thing the player can do
+that the opponent cannot — the first such asymmetry in the game.
+
+#### How many you get — **[open]**
+
+A run currently **starts with two**, filling both slots, and that number is a placeholder chosen so
+the mechanic can be exercised at all. Nothing else grants, buys, or replaces them, so two is all a
+run will ever see. **Whose decision:** the developer's — one would make _when_ to spend it a sharper
+question from the first fight, which is the question this mechanic exists to raise.
 
 ---
 
@@ -582,6 +631,7 @@ design document, not from this section.
 | The Quarry's character and its rule | Always on screen                                                                                                                                                                                                           |
 | **Your tricks and your multiplier** | **Open — on screen throughout** as two separate figures, plus what the streak would cash for now.                                                                                                                         |
 | What the last trick did             | **Stated** — which of the four outcomes it was, and what it cost or banked.                                                                                                                                                |
+| **Your Cheat slots**                | **Open — two frames beside the decree**, filled or empty, all hand. A selected Cheat and an armed one differ in frame as well as tone, and the hint line names which state you are in (section 4).                          |
 | **Both sides' health**              | **Open — two rows of hearts**, one heart per health point against each side's own maximum. The hearts a trick just took break as it resolves. While a streak is banked, the Quarry's last _bank × multiplier_ standing hearts flash as a preview of what cashing right now would take.                                                                                                                                    |
 
 The telegraph's fidelity — suit only, or suit and stance — is **[provisional]**; it currently shows
@@ -607,6 +657,9 @@ has more health than the last.
   further fight is offered.
 - **Beating the last Quarry ends the run as a win**, and it is stated differently from beating any
   earlier one.
+- **Your Cheat slots carry from fight to fight exactly as your health does** (section 4). A Cheat
+  spent in fight one is still gone in fight two; one held is still held. They are granted once, at
+  the start of the run, and never replenished between fights.
 
 > **Deviation from the base game.** There is no 21-point match and no symmetric contest. A run is
 > one-directional: you accumulate damage and never recover it, and the only question is how far you
@@ -742,6 +795,15 @@ the mechanics themselves are documented in `../implementation/`.
 | Shape readout shows no rank                   | settled                          | `src/warCouncil/skulls.ts` — `suitShape`; drawn by `src/app/warCouncil/QuarryShape.tsx`                                          | —                                                       |
 | A skulled card is marked once face up         | settled                          | `src/app/warCouncil/PlayingCard.tsx` — the `skulled` prop; passed by `TrickWell.tsx`                                             | —                                                       |
 | Follow-suit, led-Monarch narrowing            | settled                          | `src/warCouncil/legalMoves.ts` — `legalMoves`, `monarchFollowSet`                                                                | —                                                       |
+| An armed Cheat lifts follow-suit only         | settled — since DLR-83           | `src/warCouncil/legalMoves.ts` — `LegalMoveOptions.ignoreFollowSuit`, read after the Monarch branch returns; threaded by `playCard.ts` | —                                                 |
+| Two Cheat slots, one card each                | settled                          | `src/hunt/config.ts` — `CHEAT_SLOT_COUNT`; the cap is stated once, in `src/hunt/cheats.ts` — `addCheat`                          | —                                                       |
+| Two clicks to arm, a third to give it back    | settled                          | `src/app/warCouncil/roundReducer.ts` — `TapCheat`, `CancelCheat`, `cheatArmed`; rendered by `CheatSlots.tsx`                     | Developer — whether arming feels like a detour          |
+| Committing while armed spends the Cheat       | settled                          | `src/app/warCouncil/roundReducer.ts` — `commit`; removal in `src/hunt/cheats.ts` — `removeCheat`                                 | Developer — whether spending it on an already-legal card is right |
+| A refused play does not spend the Cheat       | settled                          | `src/app/warCouncil/roundReducer.ts` — `commit`'s rejection branch returns before the removal                                    | —                                                       |
+| Cheats carried fight to fight                 | settled                          | `src/hunt/run.ts` — `RunState.cheats`; `advanceRun`'s spread carries it, `recordEncounter` adopts the hand's survivors           | —                                                       |
+| Cheats a run starts with (2)                  | **open** — a placeholder         | `src/hunt/config.ts` — `RUN_STARTING_CHEATS`; granted by `src/hunt/cheats.ts` — `grantCheats`                                    | **Developer** — 1 sharpens the "when" question          |
+| The Quarry holds no Cheats                    | settled                          | nothing to enforce — the bypass is an argument the Quarry's call sites never pass; a grep guards the absence                     | —                                                       |
+| Buying, selling or replacing a Cheat          | **not built**                    | nothing — no currency, no shop, and `addCheat` has no production caller yet                                                      | Developer — a later ticket                              |
 | Odd-rank abilities                            | settled                          | `src/warCouncil/abilities.ts`, `resolveTrick.ts`                                                                                 | —                                                       |
 | Whether abilities survive six-card hands      | **open**                         | nothing — abilities are unchanged and ability-free hands are accepted                                                            | Developer, after playtest                               |
 | Trick resolution, Witch-as-trump              | settled                          | `src/warCouncil/resolveTrick.ts`                                                                                                 | —                                                       |
@@ -890,8 +952,51 @@ whether losing the felt's hand tally at the end of a fight costs anything worth 
 the ticket forbade adding one — a between-fight heal is the flask's job, and the flask is not
 designed. The run being hard is not a reason to wire it in.
 
+### The Cheat landed — DLR-83, 2026-08-16
+
+**What a player does now that they did not before:** **refuses a trick they had no legal way to
+refuse.** Follow-suit could not be broken by anything, at any price, so a hand that dealt you one
+card of the led suit made your next move for you. You now hold two Cheats, and arming one makes your
+whole hand legal for exactly one card.
+
+**It is the first thing in this game the player can do and the Quarry cannot.** Every rule until now
+bound both sides identically — that was the whole point of removing the Quarry's power
+([section 9](#9-the-quarry)) — and this deliberately breaks the symmetry in the player's favour
+rather than the opponent's.
+
+**What is gone:** nothing. No rule was removed, no reason code retired, and with both slots empty the
+game plays exactly as it did the day before — the bypass is an argument nobody passes.
+
+**Engine and screen landed together.** The slots are on the felt beside the decree, the two-click arm
+is on the card itself, and the strongest signal that a Cheat is live is the hand fan un-greying.
+
+**What the developer owns:** how many Cheats a run starts with (2 is a placeholder), every word of
+the new copy, the slots' size and spacing, whether arming feels like a detour now the slots sit by
+the decree rather than by the hand — and the design question the ticket itself raised and deferred:
+**whether holding a Cheat changes how a hand is played before it is spent.**
+
 ### Known tensions, recorded not resolved
 
+- **A Cheat may only ever be spent reflexively, which would make holding one worth nothing** (new
+  2026-08-16, DLR-83). The ticket's own open question. A Cheat has **no value while held** — it does
+  not change a legal set, a payout, or a readout until it is armed — so if the right play is always
+  "spend it the first time follow-suit pinches", then the two slots are a consumable with no decision
+  attached and the interesting version of this mechanic has not been built. **The cheapest measurement
+  is when you spent them**: if both went in the first fight, at the first forced trick, without a
+  moment's thought, the answer is no. The fix would be to give holding one visible value, not to add
+  more of them.
+- **Arming spends the Cheat even when the card was legal anyway** (new 2026-08-16, DLR-83). The rule
+  is deliberately literal: committing any card while armed consumes it. The alternative — spend it
+  only when the bypass was actually needed — makes arming free, and "always arm first" then becomes
+  correct, which is worse. But it means a careless tap after arming costs a card with nothing to show
+  for it, and a player who does not notice will read that as the game taking something. Worth watching
+  for in the first session.
+- **Two slots is a cap, and the skull is what it protects** (new 2026-08-16, DLR-83). Refusing tricks
+  is exactly the thing the skull exists to punish — "take every trick" is only wrong because some
+  tricks are traps — so an unbounded supply of follow-suit breaks would remove the game's only
+  inversion. Two is nowhere near that line, and the cap is what keeps it that way. The tension is that
+  the shop (section 10) is intended to **sell** these, and nothing yet says what stops a player buying
+  their way past the number that makes skulls matter.
 - **The run is expected to be lost around fight three, and that is shipped knowingly** (new
   2026-08-15, DLR-82). A fight costs the player roughly four health; the player starts with ten and
   gets nothing back. Three fights against 10, 14 and 18 health therefore do not add up, and the

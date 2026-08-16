@@ -1,4 +1,4 @@
-import { QuarryCharacter, DuelSide, type Health, type Damage } from './types'
+import { QuarryCharacter, DuelSide, type Health, type Damage, type Coins } from './types'
 
 // §5 "Player health" — DECIDED, and small on purpose: Balatro tracks 4 hands and 3 discards as
 // integers held in the head against score requirements in the hundreds and thousands, and §5
@@ -58,6 +58,40 @@ export const FORAGE_BUDGET_PER_ENCOUNTER = 4
 // drifts, and any value larger than the array is a RangeError from `quarryHealthForEncounter`
 // waiting to happen. Replaces DLR-48 AC3's provisional 5, which sat beside a one-entry array.
 export const ENCOUNTERS_PER_RUN = QUARRY_ENCOUNTER_HEALTH.length
+
+// DLR-83 AC1/AC2 — exactly two slots. TRANSCRIBED FROM THE TICKET, not chosen: its Dependencies
+// section defends the cap at length ("the skull is the only thing stopping 'take every trick'
+// from being correct, so unlimited Cheats would remove the game's only inversion"). A key so the
+// number is stated once, NOT so it is easy to raise.
+// UNIT: slots available to the player, for the whole run.
+export const CHEAT_SLOT_COUNT = 2
+
+// DLR-83 AC3 — how many Cheats a run opens with. PLACEHOLDER VALUE: the ticket requires the grant
+// come from configuration and says cards are granted free "so they can be played with", but names
+// no number. 2 fills both slots so the mechanic is exercisable in a play session.
+// THE VALUE IS THE DEVELOPER'S — see this contract's tasks.md, "Developer decides or observes".
+// Must be 0..CHEAT_SLOT_COUNT; `grantCheats` throws outside that range rather than clamping.
+// UNIT: Cheat cards granted once, at the start of a run.
+export const RUN_STARTING_CHEATS = 2
+
+// DLR-84 AC1 — what beating an opponent pays. TRANSCRIBED FROM THE TICKET (developer's
+// specification, 2026-08-15), not chosen here. Credited by `recordEncounter`, which is the one
+// place a fight is known to have been won.
+// UNIT: coins, credited once per encounter won.
+export const COINS_PER_ENCOUNTER_WIN: Coins = 1
+
+// DLR-84 AC3 — the shop's two prices. Both TRANSCRIBED, both 1, and deliberately TWO keys rather
+// than one shared price: the ticket predicts the player buying Heal every visit and names
+// re-pricing the Cheat as the one-line answer, which is only one line if they are separate.
+// UNIT: coins per purchase.
+export const CHEAT_PRICE: Coins = 1
+export const HEAL_PRICE: Coins = 1
+
+// DLR-84 AC4 — health restored by one Heal, BEFORE the clamp to PLAYER_START_HEALTH. TRANSCRIBED.
+// The ONLY source of healing in the game: the ticket states there is no flask and no rest site,
+// and `ENCOUNTER_PLAYER_RESTORE` above stays deliberately unread.
+// UNIT: health points, added once on purchase.
+export const HEAL_HEALTH_RESTORED: Health = 4
 
 export const TelegraphFidelity = {
   Suit: 'suit', // narrowest — only the lead suit is telegraphed

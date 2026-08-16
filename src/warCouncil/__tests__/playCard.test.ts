@@ -273,6 +273,63 @@ function playOutHand(dealt: RoundState): { state: RoundState; allPlayed: Card[] 
   return { state, allPlayed }
 }
 
+describe('the Cheat bypass (DLR-83)', () => {
+  it('commits an off-suit card that would otherwise be rejected (AC5)', () => {
+    const state = stateWith({
+      leader: PlayerSide.Cpu,
+      currentTrick: [{ side: 'cpu', card: { suit: 'keys', rank: 5 } }],
+      hands: {
+        player: [
+          { suit: 'keys', rank: 9 },
+          { suit: 'bells', rank: 2 },
+        ],
+        cpu: [],
+      },
+    })
+    const offSuitCard: Card = { suit: 'bells', rank: 2 }
+
+    const without = playCard(state, 'player', offSuitCard)
+    expect(without).toEqual({ ok: false, reason: IllegalMoveReason.MustFollowLeadSuit })
+
+    const withCheat = playCard(state, 'player', offSuitCard, undefined, {
+      ignoreFollowSuit: true,
+    })
+    expect(withCheat.ok).toBe(true)
+  })
+
+  it('still rejects a card that is not in hand', () => {
+    const state = stateWith({ hands: { player: [], cpu: [] } })
+    const cardNotHeld: Card = { suit: 'bells', rank: 2 }
+
+    const result = playCard(state, 'player', cardNotHeld, undefined, { ignoreFollowSuit: true })
+    expect(result).toEqual({ ok: false, reason: IllegalMoveReason.CardNotInHand })
+  })
+
+  it('still enforces the led-Monarch narrowing (AC8)', () => {
+    const monarchLedState = stateWith({
+      leader: PlayerSide.Cpu,
+      currentTrick: [{ side: 'cpu', card: { suit: 'keys', rank: 11 } }],
+      hands: {
+        player: [
+          { suit: 'keys', rank: 1 },
+          { suit: 'keys', rank: 6 },
+          { suit: 'keys', rank: 9 },
+        ],
+        cpu: [],
+      },
+    })
+    // the Monarch follow set here is the Swan (rank 1, CardRank.Swan) and the highest keys
+    // card (rank 9) — rank 6 is a legal keys card generally, but neither of those two, so the
+    // Monarch narrowing still forbids it even with the follow-suit bypass armed.
+    const wrongCard: Card = { suit: 'keys', rank: 6 }
+
+    const result = playCard(monarchLedState, 'player', wrongCard, undefined, {
+      ignoreFollowSuit: true,
+    })
+    expect(result).toEqual({ ok: false, reason: IllegalMoveReason.MustFollowMonarch })
+  })
+})
+
 describe('playCard — a full hand plays out exactly HAND_SIZE tricks', () => {
   it('ends the hand on the sixth trick, not the thirteenth', () => {
     const dealt = dealRound('player', lcg(2024))

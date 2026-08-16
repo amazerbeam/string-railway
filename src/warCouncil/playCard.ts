@@ -2,7 +2,7 @@ import { HAND_SIZE } from '../hunt'
 import { applyFoxExchange, applyWoodcutterDraw, nextLeaderAfterTrick } from './abilities'
 import { resolveTrickBank } from './bank'
 import { containsCard, removeCard, sameCard } from './cardUtils'
-import { legalMoves } from './legalMoves'
+import { legalMoves, type LegalMoveOptions } from './legalMoves'
 import { resolveTrickWinner } from './resolveTrick'
 import { trickIsSkulled } from './skulls'
 import {
@@ -24,6 +24,7 @@ export function playCard(
   side: PlayerSide,
   card: Card,
   choice?: AbilityChoice,
+  options?: LegalMoveOptions,
 ): PlayCardResult {
   if (state.phase === RoundPhase.Complete) {
     return { ok: false, reason: IllegalMoveReason.RoundComplete }
@@ -35,7 +36,7 @@ export function playCard(
     return { ok: false, reason: IllegalMoveReason.CardNotInHand }
   }
 
-  const legal = legalMoves(state, side)
+  const legal = legalMoves(state, side, options)
   if (!legal.some((c) => sameCard(c, card))) {
     // The Monarch constraint has exactly one source since DLR-81: the led card is a Monarch.
     // Mirrors legalMoves' own condition, so the legal set and the reason code cannot disagree.

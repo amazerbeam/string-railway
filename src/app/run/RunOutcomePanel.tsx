@@ -1,13 +1,17 @@
-import { RunOutcome, type Health } from '../../hunt'
+import { RunOutcome, type Coins, type Health } from '../../hunt'
 import {
   CARRIED_HEALTH_LABEL,
+  CONTINUE_ANYWAY_LABEL,
+  CONTINUE_LABEL,
   NEW_RUN_LABEL,
-  NEXT_FIGHT_LABEL,
+  SHOP_LABEL,
+  VISIT_SHOP_LABEL,
   runHeadline,
   runProgressText,
   runVerdictDetail,
   TRICKS_TAKEN_LABEL,
   tricksTakenText,
+  unspentCoinsText,
 } from './runLabels'
 import './run.css'
 
@@ -29,10 +33,22 @@ interface RunOutcomePanelProps {
   readonly carriedHealth: Health
   readonly tricks: TrickTally
   /** `true` when the Quarry is down and another fight remains — the only state offering
-   *  `onNextFight`. Handed in from `canAdvanceRun` rather than derived here, so this component
-   *  cannot disagree with the run module about whether the run is over. */
+   *  `onContinue`/`onShop`. Handed in from `canAdvanceRun` rather than derived here, so this
+   *  component cannot disagree with the run module about whether the run is over. */
   readonly canContinue: boolean
-  readonly onNextFight: () => void
+  /** AC2/AC10 — the purse, so the verdict states what is in hand before the player decides
+   *  whether to spend it. */
+  readonly coins: Coins
+  /** `true` when the driver has judged there is something affordable being walked past. Swaps
+   *  the two forward controls for the warning sentence and its own pair. The panel does NOT
+   *  decide this — `canBuyAnything` does, in `App.tsx`. */
+  readonly warning: boolean
+  readonly onShop: () => void
+  /** RENAMED from `onNextFight`: this control no longer starts a fight on its own. Pressed on an
+   *  unwarned verdict it may raise the warning instead; pressed on a warned one it advances. */
+  readonly onContinue: () => void
+  /** Leaves the warning without advancing and without opening the shop — the `Escape` path. */
+  readonly onDismissWarning: () => void
   readonly onNewRun: () => void
 }
 
@@ -57,7 +73,11 @@ export default function RunOutcomePanel({
   carriedHealth,
   tricks,
   canContinue,
-  onNextFight,
+  coins,
+  warning,
+  onShop,
+  onContinue,
+  onDismissWarning,
   onNewRun,
 }: RunOutcomePanelProps) {
   const verdict = canContinue ? 'fightWon' : outcome
@@ -89,19 +109,45 @@ export default function RunOutcomePanel({
           </span>
         </div>
         <p className="run-carry">
-          {CARRIED_HEALTH_LABEL} — {carriedHealth}
+          {CARRIED_HEALTH_LABEL} — {carriedHealth} · {coins} coin{coins === 1 ? '' : 's'}
         </p>
-        <div className="run-actions">
-          {canContinue ? (
-            <button type="button" className="run-btn is-primary" onClick={onNextFight}>
-              {NEXT_FIGHT_LABEL}
-            </button>
-          ) : (
+        {!canContinue ? (
+          <div className="run-actions">
             <button type="button" className="run-btn is-primary" onClick={onNewRun}>
               {NEW_RUN_LABEL}
             </button>
-          )}
-        </div>
+          </div>
+        ) : warning ? (
+          // An in-place swap of the two controls, NOT a modal — so there is no focus trap, no
+          // document-level key listener, and nothing to clean up.
+          <div
+            className="run-warning"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') onDismissWarning()
+            }}
+          >
+            <p className="run-warning-text" role="status">
+              {unspentCoinsText(coins)}
+            </p>
+            <div className="run-actions">
+              <button type="button" className="run-btn is-primary" onClick={onShop}>
+                {VISIT_SHOP_LABEL}
+              </button>
+              <button type="button" className="run-btn" onClick={onContinue}>
+                {CONTINUE_ANYWAY_LABEL}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="run-actions">
+            <button type="button" className="run-btn is-primary" onClick={onContinue}>
+              {CONTINUE_LABEL}
+            </button>
+            <button type="button" className="run-btn" onClick={onShop}>
+              {SHOP_LABEL}
+            </button>
+          </div>
+        )}
         <p className="run-position">{runProgressText(encounterIndex, encounterCount)}</p>
       </div>
     </div>

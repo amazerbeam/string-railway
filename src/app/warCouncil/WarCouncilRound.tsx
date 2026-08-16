@@ -16,17 +16,25 @@ import {
 import type { WarCouncilMountProps } from '../warCouncilMount'
 import AbilityPrompt from './AbilityPrompt'
 import BankMeter from './BankMeter'
+import CheatSlots from './CheatSlots'
 import DecreePile from './DecreePile'
 import { duelHealthBars, NO_BREAKING, projectedFromStreak } from './duelHealthBars'
 import HandFan from './HandFan'
 import { sortHandForDisplay } from './handOrder'
 import { previewQuarryIntent } from './intentPreview'
 import IntentTelegraph from './IntentTelegraph'
-import { cardAccessibleName, ILLEGAL_MOVE_MESSAGE } from './labels'
+import {
+  cardAccessibleName,
+  CHEAT_ARMED_HINT,
+  CHEAT_POISED_HINT,
+  ILLEGAL_MOVE_MESSAGE,
+} from './labels'
 import QuarryDossier from './QuarryDossier'
 import QuarryShape from './QuarryShape'
 import RoundOverPanel from './RoundOverPanel'
 import {
+  cheatArmed,
+  CheatStage,
   createRoundUiState,
   roundReducer,
   RoundUiActionKind,
@@ -70,11 +78,12 @@ export default function WarCouncilRound({
   encounter,
   maxHealth,
   runLabel,
+  cheats,
   onComplete,
 }: WarCouncilMountProps) {
   const [ui, dispatch] = useReducer(
     roundReducer,
-    { round: initialState, encounter },
+    { round: initialState, encounter, cheats },
     createRoundUiState,
   )
 
@@ -88,7 +97,13 @@ export default function WarCouncilRound({
     ui.cpuFault === null &&
     currentTurn(ui.round) === PlayerSide.Player
 
-  const legal = legalMoves(ui.round, PlayerSide.Player)
+  // The SAME predicate the reducer commits with (`cheatArmed`), not a second reading of the
+  // selection — two readings is how the fan's greying and a rejection reason drift apart.
+  const legal = legalMoves(
+    ui.round,
+    PlayerSide.Player,
+    cheatArmed(ui) ? { ignoreFollowSuit: true } : undefined,
+  )
 
   // Both bars read straight off the reducer. Two derivations, no new state:
   //
@@ -174,7 +189,7 @@ export default function WarCouncilRound({
    */
   function handleCarryOn() {
     if (encounterOver) {
-      onComplete({ finalState: ui.round, encounter: ui.encounter })
+      onComplete({ finalState: ui.round, encounter: ui.encounter, cheats: ui.cheats })
       return
     }
     if (ui.resolvedTrick !== null || quarryToLead) {
@@ -182,7 +197,7 @@ export default function WarCouncilRound({
       return
     }
     if (roundComplete) {
-      onComplete({ finalState: ui.round, encounter: ui.encounter })
+      onComplete({ finalState: ui.round, encounter: ui.encounter, cheats: ui.cheats })
     }
   }
 
@@ -272,11 +287,21 @@ export default function WarCouncilRound({
         aria-live="polite"
         onClick={ui.resolvedTrick || quarryToLead || encounterOver ? handleCarryOn : undefined}
       >
-        <DecreePile
-          decree={ui.round.decree}
-          trumpSuit={ui.round.trumpSuit}
-          drawPileCount={ui.round.drawPile.length}
-        />
+        <div className="wc-felt-rail">
+          <DecreePile
+            decree={ui.round.decree}
+            trumpSuit={ui.round.trumpSuit}
+            drawPileCount={ui.round.drawPile.length}
+          />
+          <div className="wc-felt-rail-split" aria-hidden="true" />
+          <CheatSlots
+            cheats={ui.cheats}
+            selection={ui.cheatSelection}
+            interactive={interactive}
+            onTap={(id) => dispatch({ kind: RoundUiActionKind.TapCheat, id })}
+            onCancel={() => dispatch({ kind: RoundUiActionKind.CancelCheat })}
+          />
+        </div>
         <div className="wc-table-inner">{felt}</div>
       </section>
       <HandFan
@@ -303,6 +328,9 @@ function deriveHint(ui: RoundUiState, interactive: boolean, quarryToLead: boolea
   if (ui.resolvedTrick) return 'Trick resolved'
   if (quarryToLead) return 'They are choosing their lead'
   if (ui.armed) return `Tap ${cardAccessibleName(ui.armed)} again to play it`
+  if (ui.cheatSelection) {
+    return ui.cheatSelection.stage === CheatStage.Armed ? CHEAT_ARMED_HINT : CHEAT_POISED_HINT
+  }
   if (interactive) return ui.round.currentTrick.length > 0 ? 'Follow their lead' : 'Your lead'
   return ''
 }

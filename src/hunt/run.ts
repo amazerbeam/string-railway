@@ -1,6 +1,14 @@
-﻿import { PLAYER_START_HEALTH, QUARRY_ENCOUNTER_HEALTH } from './config'
+﻿import {
+  COINS_PER_ENCOUNTER_WIN,
+  HEAL_HEALTH_RESTORED,
+  PLAYER_START_HEALTH,
+  QUARRY_ENCOUNTER_HEALTH,
+  RUN_STARTING_CHEATS,
+} from './config'
+import { addCheat, grantCheats, type CheatCard, type CheatCardId } from './cheats'
 import { isEncounterResolved, startEncounter } from './encounter'
-import { DuelSide, type EncounterState, type Health } from './types'
+import { priceOf, refusalFor, ShopItem, type ShopStock } from './shop'
+import { DuelSide, type Coins, type EncounterState, type Health } from './types'
 
 /**
  * How a run has ended, or that it has not (DLR-82 AC4/AC5).
@@ -32,6 +40,16 @@ export interface RunState {
   readonly encounterCount: number
   readonly encounter: EncounterState
   readonly outcome: RunOutcome
+  /** AC3 — held Cheats, capped at `CHEAT_SLOT_COUNT` by `cheats.ts` and carried across every
+   *  fight boundary. Run state, not hand state: `advanceRun` passes it through untouched. */
+  readonly cheats: readonly CheatCard[]
+  /** The next id to mint. Monotonic and never reused, so DLR-84's mid-run purchase cannot
+   *  re-issue the id of a card already spent — which would collide as a React key. */
+  readonly nextCheatId: CheatCardId
+  /** AC2 — the run's purse. Starts at 0, credited by `recordEncounter` on a won encounter, spent
+   *  by `buyFromShop`, and carried through `advanceRun` untouched by the spread. NEVER persisted:
+   *  the ticket puts cross-run carry-over out of scope. */
+  readonly coins: Coins
 }
 
 /**
@@ -47,6 +65,9 @@ export function startRun(playerHealth: Health = PLAYER_START_HEALTH): RunState {
     encounterCount: QUARRY_ENCOUNTER_HEALTH.length,
     encounter: startEncounter(0, playerHealth),
     outcome: RunOutcome.InProgress,
+    cheats: grantCheats(RUN_STARTING_CHEATS, 1),
+    nextCheatId: RUN_STARTING_CHEATS + 1,
+    coins: 0,
   }
 }
 
@@ -56,16 +77,29 @@ export function startRun(playerHealth: Health = PLAYER_START_HEALTH): RunState {
  *
  * Refuses a run that has already ended: recording onto a finished run would silently resurrect
  * it, and there is no legitimate caller — the driver stops handing hands to a finished run.
+ *
+ * `cheats` (DLR-83) is REQUIRED: the hand owns the Cheats for its lifetime and hands the
+ * survivors back through `WarCouncilRoundResult`. A second transition the caller must remember
+ * to make beside this one is the transition that eventually gets forgotten.
  */
-export function recordEncounter(run: RunState, encounter: EncounterState): RunState {
+export function recordEncounter(
+  run: RunState,
+  encounter: EncounterState,
+  cheats: readonly CheatCard[],
+): RunState {
   if (run.outcome !== RunOutcome.InProgress) {
     throw new RangeError(
       `Cannot record an encounter onto a run already ${run.outcome} at fight ${run.encounterIndex + 1} of ${run.encounterCount}`,
     )
   }
+  // AC1 — THE payout, here and nowhere else. `advanceRun` would never pay for the final fight of
+  // a won run, and the driver is a component and must not hold the rule.
+  const wonThisEncounter = encounter.winner === DuelSide.Player
   return {
     ...run,
     encounter,
+    cheats,
+    coins: wonThisEncounter ? run.coins + COINS_PER_ENCOUNTER_WIN : run.coins,
     outcome: outcomeFor(run.encounterIndex, run.encounterCount, encounter),
   }
 }
@@ -95,6 +129,74 @@ export function advanceRun(run: RunState): RunState {
     encounterIndex,
     encounter: startEncounter(encounterIndex, run.encounter.health[DuelSide.Player]),
     outcome: RunOutcome.InProgress,
+  }
+}
+
+/** Projects a run into the four figures the shop's rules need, so no screen assembles a
+ *  `ShopStock` by hand and gets one field wrong. */
+export function shopStockFor(
+  run: RunState,
+  maxPlayerHealth: Health = PLAYER_START_HEALTH,
+): ShopStock {
+  return {
+    coins: run.coins,
+    cheatCount: run.cheats.length,
+    playerHealth: run.encounter.health[DuelSide.Player],
+    maxPlayerHealth,
+  }
+}
+
+/**
+ * AC4/AC5/AC7 — the purchase. Throws a `RangeError` naming the `PurchaseRefusal` rather than
+ * returning the run unchanged: a silent no-op is exactly the "took payment for nothing" failure
+ * `cheats.ts`'s `addCheat` already refuses to allow. Reaching the throw is a driver bug, because
+ * the control is disabled whenever `refusalFor` is non-null.
+ *
+ * The heal writes into `encounter.health[Player]` because that IS the carried figure — this
+ * module's own docblock states a second copy beside it is the number that drifts, and
+ * `advanceRun` seeds the next fight from it. It deliberately does NOT go through `applyDamage`,
+ * which refuses a resolved encounter: a restore is not a damage event.
+ *
+ * `maxPlayerHealth` is a defaulted parameter, matching `startEncounter`/`startRun`'s injectable
+ * pattern, so a spec varies the clamp without mutating module state.
+ */
+export function buyFromShop(
+  run: RunState,
+  item: ShopItem,
+  maxPlayerHealth: Health = PLAYER_START_HEALTH,
+): RunState {
+  if (!Number.isFinite(maxPlayerHealth) || maxPlayerHealth <= 0) {
+    throw new RangeError(
+      `Cannot buy against a maximum health of ${maxPlayerHealth}: it must be a positive finite number`,
+    )
+  }
+  const refusal = refusalFor(shopStockFor(run, maxPlayerHealth), item)
+  if (refusal !== null) {
+    throw new RangeError(
+      `Cannot buy ${item} — ${refusal} (holding ${run.coins} coins, ${run.cheats.length} Cheats, ${run.encounter.health[DuelSide.Player]} of ${maxPlayerHealth} health)`,
+    )
+  }
+  const paid = { ...run, coins: run.coins - priceOf(item) }
+  if (item === ShopItem.Cheat) {
+    return {
+      ...paid,
+      cheats: addCheat(run.cheats, { id: run.nextCheatId }),
+      nextCheatId: run.nextCheatId + 1,
+    }
+  }
+  return {
+    ...paid,
+    encounter: {
+      ...run.encounter,
+      health: {
+        ...run.encounter.health,
+        // THE clamp, and therefore also the single place overheal is discarded (AC4).
+        [DuelSide.Player]: Math.min(
+          maxPlayerHealth,
+          run.encounter.health[DuelSide.Player] + HEAL_HEALTH_RESTORED,
+        ),
+      },
+    },
   }
 }
 

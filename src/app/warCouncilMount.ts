@@ -1,4 +1,4 @@
-import type { DuelSide, EncounterState, Health, Hunt } from '../hunt'
+import type { CheatCard, DuelSide, EncounterState, Health, Hunt } from '../hunt'
 import type { WarCouncilState } from '../warCouncil'
 
 export interface WarCouncilMountProps {
@@ -16,6 +16,11 @@ export interface WarCouncilMountProps {
    *  it. Required rather than optional deliberately, so the compiler enumerates every mount site
    *  instead of letting one silently render an empty band. */
   readonly runLabel: string
+  /** AC1/AC3 — the run's held Cheats at the START of this hand. Same contract as `encounter`
+   *  above: an opening figure the reducer owns for the life of the hand and hands back through
+   *  `WarCouncilRoundResult.cheats`. Required, not optional, so the compiler enumerates every
+   *  mount site rather than letting one render an empty rail. */
+  readonly cheats: readonly CheatCard[]
   readonly onComplete: (result: WarCouncilRoundResult) => void
 }
 
@@ -32,4 +37,7 @@ export interface WarCouncilRoundResult {
    *  handing up the encounter itself makes applying one event twice unexpressible rather than
    *  merely unlikely. */
   readonly encounter: EncounterState
+  /** AC7 — the Cheats still held after this hand. One fewer for each Cheat spent; the run adopts
+   *  it through `recordEncounter`'s third parameter. */
+  readonly cheats: readonly CheatCard[]
 }

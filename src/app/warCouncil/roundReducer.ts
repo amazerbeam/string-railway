@@ -6,6 +6,7 @@ import {
   TrickOutcome,
   chooseCpuMove,
   commitQuarryMove,
+  containsCard,
   currentTurn,
   incomingFrom,
   legalMoves,
@@ -18,13 +19,36 @@ import {
   type TrickResolution,
   type WarCouncilState,
 } from '../../warCouncil'
-import { applyDamage, isEncounterResolved, type EncounterState } from '../../hunt'
+import {
+  applyDamage,
+  hasCheat,
+  isEncounterResolved,
+  removeCheat,
+  type CheatCard,
+  type CheatCardId,
+  type EncounterState,
+} from '../../hunt'
 
 export interface ResolvedTrick {
   readonly cards: readonly TrickCard[] // [lead, follow] — the engine's load-bearing order
   readonly winner: PlayerSide
   /** What the trick did to the bank, the streak and both bars. */
   readonly resolution: TrickResolution
+}
+
+export const CheatStage = {
+  /** One click — a selection, no rule effect. AC4's guard against a single misclick. */
+  Poised: 'poised',
+  /** Two clicks — follow-suit is lifted for the next committed card. AC5. */
+  Armed: 'armed',
+} as const
+export type CheatStage = (typeof CheatStage)[keyof typeof CheatStage]
+
+/** ONE field, not two nullables: `poised` and `armed` are stages of a single selection, and two
+ *  nullable fields would admit the invalid pair "poised AND armed". */
+export interface CheatSelection {
+  readonly id: CheatCardId
+  readonly stage: CheatStage
 }
 
 export interface RoundUiState {
@@ -48,11 +72,20 @@ export interface RoundUiState {
    *  zero. Freezing the baseline here makes the tally independent of anything the parent does
    *  after the hand is over. */
   readonly openingEncounter: EncounterState
+  /** AC1/AC3 — the run's held Cheats, mirrored from the mount's opening prop and updated in place
+   *  as `commit` spends one. Run state carried for the life of the hand — see
+   *  `warCouncilMount.ts`'s `WarCouncilMountProps.cheats` for the same contract `encounter` above
+   *  already documents. */
+  readonly cheats: readonly CheatCard[]
+  /** The hand's OWN transient — dies on remount, never touches `RunState`. `null` when nothing is
+   *  selected. */
+  readonly cheatSelection: CheatSelection | null
 }
 
 export interface RoundUiSeed {
   readonly round: WarCouncilState
   readonly encounter: EncounterState
+  readonly cheats: readonly CheatCard[]
 }
 
 // `chooseCpuMove` throws rather than returning a rejection when the CPU has no legal
@@ -65,6 +98,8 @@ export const RoundUiActionKind = {
   ChooseAbility: 'chooseAbility',
   CancelSelection: 'cancelSelection',
   CarryOn: 'carryOn',
+  TapCheat: 'tapCheat',
+  CancelCheat: 'cancelCheat',
 } as const
 export type RoundUiActionKind = (typeof RoundUiActionKind)[keyof typeof RoundUiActionKind]
 
@@ -73,6 +108,8 @@ export type RoundUiAction =
   | { readonly kind: typeof RoundUiActionKind.ChooseAbility; readonly choice: AbilityChoice }
   | { readonly kind: typeof RoundUiActionKind.CancelSelection }
   | { readonly kind: typeof RoundUiActionKind.CarryOn }
+  | { readonly kind: typeof RoundUiActionKind.TapCheat; readonly id: CheatCardId }
+  | { readonly kind: typeof RoundUiActionKind.CancelCheat }
 
 /** Still a pure restructuring of its seed, so StrictMode's double-invocation of the lazy
  *  `useReducer` initialiser recomputes an identical value. */
@@ -86,7 +123,16 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     cpuFault: null,
     encounter: seed.encounter,
     openingEncounter: seed.encounter,
+    cheats: seed.cheats,
+    cheatSelection: null,
   }
+}
+
+/** `true` when the next committed card should ignore follow-suit. EXPORTED so the mount computes
+ *  its `legal` set from the SAME predicate the reducer commits with — two readings of "is the
+ *  Cheat armed" is exactly how a fan's greying and a rejection reason drift apart. */
+export function cheatArmed(state: RoundUiState): boolean {
+  return state.cheatSelection?.stage === CheatStage.Armed
 }
 
 export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundUiState {
@@ -99,6 +145,10 @@ export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundU
       return { ...state, armed: null, prompt: null }
     case RoundUiActionKind.CarryOn:
       return handleCarryOn(state)
+    case RoundUiActionKind.TapCheat:
+      return handleTapCheat(state, action.id)
+    case RoundUiActionKind.CancelCheat:
+      return clearCheat(state)
   }
 }
 
@@ -132,6 +182,37 @@ function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
   }
 
   return { ...state, armed: tapped, rejection: null }
+}
+
+/**
+ * AC4/AC6 — four outcomes on one id. Nothing selected poises; poised on the same id arms; armed
+ * on the same id gives it back unspent; a tap on a different id poises that one instead.
+ *
+ * Guards `hasCheat` rather than trusting the id: a selection can outlive its card if a future
+ * caller ever removes one outside `commit`, and a reducer must not throw — a throw inside a
+ * reducer during an event handler unmounts the tree.
+ */
+function handleTapCheat(state: RoundUiState, id: CheatCardId): RoundUiState {
+  if (!canAct(state) || !hasCheat(state.cheats, id)) {
+    return state
+  }
+  const current = state.cheatSelection
+  if (current === null || current.id !== id) {
+    return { ...state, cheatSelection: { id, stage: CheatStage.Poised } }
+  }
+  const stage = current.stage === CheatStage.Poised ? CheatStage.Armed : null
+  return stage === null ? clearCheat(state) : { ...state, cheatSelection: { id, stage } }
+}
+
+/**
+ * AC6 — disarm without spending. Also drops a poised hand card that the RE-NARROWED legal set has
+ * just made illegal, so the player is never left holding a selection that will be rejected on its
+ * next tap with no visible cause.
+ */
+function clearCheat(state: RoundUiState): RoundUiState {
+  const stillLegal =
+    state.armed === null || containsCard(legalMoves(state.round, PlayerSide.Player), state.armed)
+  return { ...state, cheatSelection: null, armed: stillLegal ? state.armed : null }
 }
 
 /**
@@ -183,10 +264,24 @@ function applyResolution(encounter: EncounterState, resolution: TrickResolution)
 
 /** Commits `cardToPlay` for the player, then advances the opponent when the player led. */
 function commit(state: RoundUiState, cardToPlay: Card, choice?: AbilityChoice): RoundUiState {
-  const result = playCard(state.round, PlayerSide.Player, cardToPlay, choice)
+  const armedCheat = cheatArmed(state) ? state.cheatSelection : null
+  const result = playCard(
+    state.round,
+    PlayerSide.Player,
+    cardToPlay,
+    choice,
+    armedCheat ? { ignoreFollowSuit: true } : undefined,
+  )
   if (!result.ok) {
+    // A rejection is NOT a commit (AC7), so the Cheat survives and stays armed — the player can
+    // try another card without paying twice.
     return { ...state, armed: null, prompt: null, rejection: result.reason }
   }
+
+  // AC7 — consumed on ANY successful commit while armed, even if the card was legal anyway.
+  // No "was it needed" check: that would put a legality judgement in the reducer that
+  // `legalMoves` already owns, and would make arming free.
+  const cheats = armedCheat ? removeCheat(state.cheats, armedCheat.id) : state.cheats
 
   const playedCard: TrickCard = { side: PlayerSide.Player, card: cardToPlay }
   const resolvedTrick = deriveResolvedTrick(state.round, result.state, playedCard)
@@ -201,6 +296,8 @@ function commit(state: RoundUiState, cardToPlay: Card, choice?: AbilityChoice): 
     rejection: null,
     resolvedTrick,
     encounter,
+    cheats,
+    cheatSelection: null,
   }
 
   if (resolvedTrick) {

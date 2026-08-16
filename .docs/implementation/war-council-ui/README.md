@@ -1,7 +1,7 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-86, PT-002
+**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-86, PT-002
 
 ## Responsibility
 
@@ -129,6 +129,10 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
   helper that computes no damage and does no clamping.
 - [Interaction and state](interaction-and-state.md) — tap-twice-to-play, the reducer's no-effect
   design, how a held trick's winner is derived rather than recomputed, and rejected-move recovery.
+- [The Cheat slots](cheat-slots.md) — the felt-left plate and the developer's red-line that put it
+  there, why `stopPropagation` on the rail is load-bearing rather than defensive, the four slot
+  states and why none is told apart by colour alone, the two-click arm in the reducer, and the three
+  signals that say a Cheat is live (DLR-83).
 - [The dossier readouts and the telegraph](hunt-readouts-and-telegraph.md) — the `hunt` prop, the
   **shape readout** and why it cannot leak a rank, the **bank meter** and why the bank replaced the
   pending segment, the skull mark on a played card, the telegraph's two readings and why the Quarry's

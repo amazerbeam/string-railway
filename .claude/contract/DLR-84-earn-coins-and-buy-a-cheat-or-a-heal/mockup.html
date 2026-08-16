@@ -1,0 +1,442 @@
+<title>DLR-84 Between Fights</title>
+<style>
+  :root {
+    --wc-chamber: #0c1013;
+    --wc-parchment: #e9e1cd;
+    --wc-ink: #191610;
+    --wc-brass: #c99a4e;
+    --wc-brass-dim: #7d6132;
+    --wc-chalk: #cdd6d2;
+    --wc-chalk-dim: #6f7d78;
+    --wc-alarm: #d1705f;
+    --wc-poison: #8fb04e;
+    --wc-poison-edge: #5c7a2e;
+    --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  /* ---- .run-shell, reused verbatim from src/app/run/run.css ---- */
+  .run-shell {
+    height: 100dvh;
+    width: 100%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    padding: clamp(1rem, 4vmin, 3rem);
+    padding-top: max(clamp(1rem, 4vmin, 3rem), env(safe-area-inset-top, 0px));
+    padding-bottom: max(clamp(1rem, 4vmin, 3rem), env(safe-area-inset-bottom, 0px));
+    background: radial-gradient(120% 80% at 50% 40%, #172027 0%, #050708 100%), var(--wc-chamber);
+    color: var(--wc-chalk);
+    font-family: var(--wc-sans);
+    color-scheme: dark;
+  }
+
+  .run-verdict {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.7rem, 2.4vmin, 1.6rem);
+    text-align: center;
+    max-width: 34rem;
+  }
+
+  .run-rule { width: clamp(6rem, 30vmin, 16rem); height: 2px; background: var(--wc-brass-dim); }
+
+  .run-headline {
+    font-family: var(--wc-serif);
+    font-size: clamp(2.6rem, 12vmin, 7rem);
+    line-height: 0.95;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin: 0;
+    color: var(--wc-brass);
+  }
+
+  .run-detail { margin: 0; font-size: clamp(0.85rem, 2.2vmin, 1.05rem); line-height: 1.5; }
+
+  .run-tricks-label, .run-carry, .run-position {
+    margin: 0;
+    font-size: clamp(0.55rem, 1.2vmin, 0.68rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+  }
+
+  .run-bars { display: flex; gap: clamp(0.2rem, 0.8vmin, 0.45rem); }
+  .run-trick {
+    width: clamp(1.6rem, 6vmin, 3rem);
+    height: clamp(0.5rem, 1.6vmin, 0.85rem);
+    border-radius: 1px;
+    background: var(--wc-poison);
+    border: 1px solid var(--wc-poison-edge);
+  }
+  .run-trick.is-lost {
+    background-color: var(--wc-alarm);
+    background-image: repeating-linear-gradient(-45deg, #00000040 0 3px, #ffffff1a 3px 6px);
+    border-color: #7d3a30;
+  }
+
+  .run-actions { display: flex; gap: 0.7rem; justify-content: center; margin-top: 0.4rem; }
+
+  /* The unspent-coin warning. Bracketed rather than merely tinted, so it reads as a held
+     decision in greyscale too. */
+  .run-warning {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: clamp(0.6rem, 2vmin, 1rem) clamp(0.9rem, 3vmin, 1.6rem);
+    border: 1px dashed var(--wc-brass-dim);
+    border-radius: 4px;
+  }
+  .run-warning-text {
+    margin: 0;
+    font-size: clamp(0.8rem, 2vmin, 0.95rem);
+    color: var(--wc-parchment);
+  }
+
+  .run-btn {
+    font-family: var(--wc-sans);
+    font-size: clamp(0.8rem, 2vmin, 0.95rem);
+    letter-spacing: 0.08em;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.7rem 1.6rem;
+    border-radius: 3px;
+    border: 1px solid var(--wc-brass);
+    background: transparent;
+    color: var(--wc-brass);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .run-btn.is-primary { background: var(--wc-brass); color: var(--wc-ink); font-weight: 600; }
+  .run-btn:focus-visible { outline: 2px solid var(--wc-parchment); outline-offset: 2px; }
+  @media (hover: hover) { .run-btn:hover { border-color: var(--wc-parchment); } }
+  .run-btn:active { transform: translateY(1px); }
+
+  /* ---- new: src/app/run/shop.css ---- */
+  .shop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.7rem, 2.4vmin, 1.5rem);
+    text-align: center;
+    max-width: 42rem;
+    width: 100%;
+  }
+
+  .shop-title {
+    font-family: var(--wc-serif);
+    font-size: clamp(1.6rem, 6vmin, 3rem);
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin: 0;
+    color: var(--wc-brass);
+  }
+
+  .shop-next { margin: 0; font-size: clamp(0.85rem, 2.2vmin, 1.05rem); line-height: 1.5; }
+
+  /* The purse row: coins and health, anchored above the choice, always visible (AC10). */
+  .shop-purse {
+    display: flex;
+    gap: clamp(1rem, 5vmin, 3rem);
+    padding: 0.55rem clamp(0.9rem, 3vmin, 1.6rem);
+    border-top: 1px solid var(--wc-brass-dim);
+    border-bottom: 1px solid var(--wc-brass-dim);
+  }
+  .shop-purse-cell { display: flex; flex-direction: column; gap: 0.2rem; }
+  .shop-purse-label {
+    font-size: clamp(0.55rem, 1.2vmin, 0.68rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+  }
+  .shop-purse-value {
+    font-family: var(--wc-serif);
+    font-size: clamp(1.1rem, 3.4vmin, 1.8rem);
+    color: var(--wc-parchment);
+  }
+
+  .shop-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(0.6rem, 2.4vmin, 1.2rem);
+    width: 100%;
+  }
+
+  .shop-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: clamp(0.9rem, 3vmin, 1.6rem) clamp(0.7rem, 2vmin, 1.2rem);
+    border: 1px solid var(--wc-brass);
+    border-radius: 4px;
+    background: #ffffff08;
+    color: var(--wc-chalk);
+    font-family: var(--wc-sans);
+    cursor: pointer;
+    touch-action: manipulation;
+    text-align: center;
+  }
+  /* Refused reads as refused in FORM, not only in colour: a dashed edge and no fill. */
+  .shop-item:disabled {
+    cursor: not-allowed;
+    border-style: dashed;
+    border-color: var(--wc-chalk-dim);
+    background: none;
+    color: var(--wc-chalk-dim);
+  }
+  .shop-item:focus-visible { outline: 2px solid var(--wc-parchment); outline-offset: 2px; }
+  @media (hover: hover) { .shop-item:not(:disabled):hover { border-color: var(--wc-parchment); } }
+  .shop-item:not(:disabled):active { transform: translateY(1px); }
+
+  .shop-item-name {
+    font-family: var(--wc-serif);
+    font-size: clamp(1.05rem, 3vmin, 1.5rem);
+    letter-spacing: 0.04em;
+    color: var(--wc-brass);
+  }
+  .shop-item:disabled .shop-item-name { color: var(--wc-chalk-dim); }
+  .shop-item-blurb { font-size: clamp(0.75rem, 1.9vmin, 0.9rem); line-height: 1.4; }
+  .shop-item-price {
+    font-size: clamp(0.55rem, 1.2vmin, 0.68rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+  }
+
+  /* AC6 — the reason is a sentence on the face of the screen, never a silent no-op. */
+  .shop-refusal {
+    margin: 0;
+    min-height: 1.4em;
+    font-size: clamp(0.7rem, 1.8vmin, 0.85rem);
+    color: var(--wc-alarm);
+  }
+
+  .shop-hint { margin: 0; font-size: clamp(0.7rem, 1.8vmin, 0.85rem); color: var(--wc-chalk-dim); }
+
+  .shop-log {
+    margin: 0;
+    min-height: 1.4em;
+    font-size: clamp(0.7rem, 1.8vmin, 0.85rem);
+    color: var(--wc-poison);
+  }
+
+  @media (max-width: 30rem) {
+    .shop-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* Mockup-only chrome, not part of the design. */
+  .mock-note {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    padding: 0.4rem 0.8rem;
+    font: 11px/1.4 var(--wc-sans);
+    color: #6f7d78;
+    background: #00000099;
+    text-align: center;
+  }
+</style>
+
+<div class="run-shell">
+  <!-- ===== Screen A — the run verdict (existing DLR-82 panel, one label changed) ===== -->
+  <div class="run-verdict" id="verdict">
+    <div class="run-rule" aria-hidden="true"></div>
+    <h1 class="run-headline">FIGHT WON</h1>
+    <p class="run-detail" role="status" id="verdict-detail">
+      The Quarry is down. Fight 2 of 3 is waiting, and you carry 6 health into it.
+    </p>
+    <div class="run-tricks" role="group" aria-label="Tricks taken — 4 of 6.">
+      <span class="run-tricks-label">Tricks taken · 4 of 6</span>
+      <span class="run-bars" aria-hidden="true">
+        <span class="run-trick"></span><span class="run-trick"></span>
+        <span class="run-trick"></span><span class="run-trick"></span>
+        <span class="run-trick is-lost"></span><span class="run-trick is-lost"></span>
+      </span>
+    </div>
+    <p class="run-carry">
+      Carried health — <span id="verdict-health">6</span> · Coins — <span id="verdict-coins">1</span>
+    </p>
+
+    <!-- DLR-84: TWO forward controls. Shop is always offered; Continue is the guarded one. -->
+    <div class="run-actions" id="verdict-actions">
+      <button type="button" class="run-btn is-primary" id="continue">Continue</button>
+      <button type="button" class="run-btn" id="to-shop">Shop</button>
+    </div>
+
+    <!-- Raised by Continue when canBuyAnything(stock) is true. An in-place swap of the two
+         controls above, NOT a modal — so it needs no focus trap and Escape just dismisses it. -->
+    <div class="run-warning" id="verdict-warning" hidden>
+      <p class="run-warning-text" role="status" id="warning-text">
+        You still have 1 coin to spend.
+      </p>
+      <div class="run-actions">
+        <button type="button" class="run-btn is-primary" id="warn-shop">Visit the shop</button>
+        <button type="button" class="run-btn" id="warn-continue">Continue anyway</button>
+      </div>
+    </div>
+
+    <p class="run-position">Fight 1 of 3</p>
+  </div>
+
+  <!-- ===== Screen B — the between-fight screen (new) ===== -->
+  <div class="shop" id="shop" hidden>
+    <h1 class="shop-title">Between fights</h1>
+    <p class="shop-next" id="shop-next">Next up — The Monarch. Fight 2 of 3.</p>
+
+    <div class="shop-purse" role="group" aria-label="Your purse and health">
+      <span class="shop-purse-cell">
+        <span class="shop-purse-label">Coins</span>
+        <span class="shop-purse-value" id="purse-coins">1</span>
+      </span>
+      <span class="shop-purse-cell">
+        <span class="shop-purse-label">Health</span>
+        <span class="shop-purse-value" id="purse-health">6 / 10</span>
+      </span>
+      <span class="shop-purse-cell">
+        <span class="shop-purse-label">Cheat slots</span>
+        <span class="shop-purse-value" id="purse-slots">1 / 2</span>
+      </span>
+    </div>
+
+    <div class="shop-grid">
+      <div>
+        <button type="button" class="shop-item" id="buy-cheat">
+          <span class="shop-item-name">Cheat</span>
+          <span class="shop-item-blurb">A card for a slot. Play it later to ignore follow-suit.</span>
+          <span class="shop-item-price">1 coin</span>
+        </button>
+        <p class="shop-refusal" role="status" id="refusal-cheat"></p>
+      </div>
+      <div>
+        <button type="button" class="shop-item" id="buy-heal">
+          <span class="shop-item-name">Heal</span>
+          <span class="shop-item-blurb">Restore 4 health, now. Anything over your maximum is lost.</span>
+          <span class="shop-item-price">1 coin</span>
+        </button>
+        <p class="shop-refusal" role="status" id="refusal-heal"></p>
+      </div>
+    </div>
+
+    <p class="shop-log" role="status" id="shop-log"></p>
+    <p class="shop-hint">Buy nothing and carry the coin if you would rather.</p>
+
+    <div class="run-actions">
+      <!-- NEXT_FIGHT_LABEL, re-sited here from the verdict — literally true now (AC9). -->
+      <button type="button" class="run-btn is-primary" id="leave-shop">Next fight</button>
+    </div>
+  </div>
+</div>
+
+<p class="mock-note">
+  Mockup for DLR-84 — placeholder data and copy, no engine behind it. Press Continue with a coin in hand
+  to see the warning (Escape dismisses it); Shop goes straight in. Try buying twice on one coin, and keep
+  buying Cheats until the slots are full.
+</p>
+
+<script>
+  // Fake run state. Nothing here models the real engine — it exists so the controls do something.
+  const MAX_HEALTH = 10, HEAL = 4, CHEAT_PRICE = 1, HEAL_PRICE = 1, SLOTS = 2, PAYOUT = 1
+  const state = { coins: 1, health: 6, cheats: 1, fight: 1, fights: 3 }
+
+  const $ = (id) => document.getElementById(id)
+
+  // The one refusal predicate, mirroring src/hunt/shop.ts's refusalFor:
+  // item-specific reason first, coins second.
+  function refusalFor(item) {
+    if (item === 'cheat' && state.cheats >= SLOTS) return 'Both Cheat slots are full.'
+    if (item === 'heal' && state.health >= MAX_HEALTH) return 'You are already at full health.'
+    const price = item === 'cheat' ? CHEAT_PRICE : HEAL_PRICE
+    if (state.coins < price) return `You need ${price} coin to buy this.`
+    return null
+  }
+
+  // canBuyAnything — some() over the SAME predicate, never a second reading of the rules.
+  const canBuyAnything = () => ['cheat', 'heal'].some((i) => refusalFor(i) === null)
+
+  function render() {
+    $('purse-coins').textContent = String(state.coins)
+    $('purse-health').textContent = `${state.health} / ${MAX_HEALTH}`
+    $('purse-slots').textContent = `${state.cheats} / ${SLOTS}`
+    $('shop-next').textContent =
+      `Next up — The Monarch. Fight ${state.fight + 1} of ${state.fights}.`
+    $('verdict-detail').textContent =
+      `The Quarry is down. Fight ${state.fight + 1} of ${state.fights} is waiting, and you carry ${state.health} health into it.`
+    $('verdict-health').textContent = String(state.health)
+    $('verdict-coins').textContent = String(state.coins)
+    $('warning-text').textContent =
+      `You still have ${state.coins} coin${state.coins === 1 ? '' : 's'} to spend.`
+    for (const item of ['cheat', 'heal']) {
+      const reason = refusalFor(item)
+      $('buy-' + item).disabled = reason !== null
+      $('refusal-' + item).textContent = reason ?? ''
+    }
+  }
+
+  function showVerdict(warned) {
+    $('shop').hidden = true
+    $('verdict').hidden = false
+    $('verdict-actions').hidden = warned
+    $('verdict-warning').hidden = !warned
+    render()
+  }
+
+  function openShop() {
+    $('verdict').hidden = true
+    $('shop').hidden = false
+    $('shop-log').textContent = ''
+    render()
+  }
+
+  // Continue is the guarded control: it warns rather than advancing when something is affordable.
+  $('continue').addEventListener('click', () => {
+    if (canBuyAnything()) showVerdict(true)
+    else nextFight()
+  })
+  $('to-shop').addEventListener('click', openShop)
+  $('warn-shop').addEventListener('click', openShop)
+  $('warn-continue').addEventListener('click', nextFight)
+
+  $('buy-cheat').addEventListener('click', () => {
+    state.coins -= CHEAT_PRICE
+    state.cheats += 1
+    $('shop-log').textContent = 'Cheat bought — it is in a slot for the next fight.'
+    render()
+  })
+
+  $('buy-heal').addEventListener('click', () => {
+    const before = state.health
+    state.coins -= HEAL_PRICE
+    state.health = Math.min(MAX_HEALTH, state.health + HEAL)
+    const wasted = before + HEAL - state.health
+    $('shop-log').textContent = wasted > 0
+      ? `Healed to ${state.health} — ${wasted} discarded over your maximum.`
+      : `Healed to ${state.health}.`
+    render()
+  })
+
+  // Pretend the next fight happened and was won: costs health, pays a coin.
+  function nextFight() {
+    state.fight += 1
+    state.health = Math.max(1, state.health - 4)
+    state.coins += PAYOUT
+    if (state.fight >= state.fights) {
+      state.fight = 1; state.health = 6; state.coins = 1; state.cheats = 1
+    }
+    showVerdict(false)
+  }
+
+  $('leave-shop').addEventListener('click', nextFight)
+
+  // Escape dismisses the warning back to the plain verdict — it takes no action for the player.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !$('verdict-warning').hidden) showVerdict(false)
+  })
+
+  showVerdict(false)
+</script>

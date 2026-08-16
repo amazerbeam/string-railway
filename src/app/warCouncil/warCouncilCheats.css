@@ -1,0 +1,118 @@
+/* The felt-left plate: the decree pile and the Cheat slots as ONE object, not two near
+   each other (developer's red-line, 2026-08-16). Takes the three positioning properties
+   `.wc-pile` used to carry itself, so the trick stays centred in `.wc-table`'s middle column. */
+.wc-felt-rail {
+  grid-column: 1;
+  justify-self: start;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.35rem, 1.2vmin, 0.7rem);
+  padding: clamp(0.5rem, 2vmin, 1.5rem);
+}
+
+/* The hairline that makes the two registers read as one plate rather than two objects. */
+.wc-felt-rail-split {
+  width: 78%;
+  height: 1px;
+  background: linear-gradient(90deg, #ffffff00, #ffffff26, #ffffff00);
+}
+
+/* DLR-83 — the Cheat slot's frame, sized just under the decree pile's card so the pair of
+   slots lines up with it. Declared here rather than in warCouncil.css's `:root` for the
+   budget reason above; a custom property resolves the same from any loaded sheet.
+   PLACEHOLDER BOUNDS: the developer's to retune. */
+:root {
+  --wc-cheat-slot-w: clamp(2rem, 4vmin, 2.8rem);
+}
+
+/* ---------- the Cheat rail: the second register of the felt-left plate ---------- */
+.wc-cheat-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.2rem, 0.7vmin, 0.4rem);
+}
+
+/* Side by side, not stacked: the felt column is height-constrained, and a PAIR reads as
+   "two slots" where a vertical stack reads as a list. Same width as the pile above. */
+.wc-cheat-slots {
+  display: flex;
+  flex-direction: row;
+  gap: clamp(0.2rem, 0.7vmin, 0.4rem);
+}
+
+/* Every slot is the same frame. Form carries the state, not colour alone:
+   empty = dashed faint, held = solid dim, poised = dashed brass, armed = solid brass +
+   lift + corner tick. */
+.wc-cheat-slot {
+  width: var(--wc-cheat-slot-w);
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  aspect-ratio: 2 / 3;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: none;
+  font-family: var(--wc-serif);
+  position: relative;
+  touch-action: manipulation;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.wc-cheat-slot.is-empty {
+  border: 1px dashed var(--wc-chalk-dim);
+  opacity: 0.55;
+}
+
+.wc-cheat-slot.is-held {
+  border: 1px solid var(--wc-brass-dim);
+  background: linear-gradient(160deg, #2a2418 0%, #1a1710 100%);
+  color: var(--wc-brass);
+  cursor: pointer;
+}
+
+.wc-cheat-slot.is-poised {
+  border: 2px dashed var(--wc-brass);
+  transform: translateY(-3px);
+}
+
+.wc-cheat-slot.is-armed {
+  border: 2px solid var(--wc-brass);
+  background: linear-gradient(160deg, #453718 0%, #2b2311 100%);
+  transform: translateY(-7px);
+  box-shadow:
+    0 0 0 1px #c99a4e55,
+    0 5px 14px #000a;
+}
+
+/* A second, non-colour signal on the armed slot: a filled corner notch. */
+.wc-cheat-slot.is-armed::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--wc-brass);
+  border-radius: 50%;
+}
+
+.wc-cheat-slot:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .wc-cheat-slot.is-held:hover {
+    filter: brightness(1.15);
+  }
+}
+
+.wc-cheat-slot.is-held:active {
+  filter: brightness(0.9);
+}

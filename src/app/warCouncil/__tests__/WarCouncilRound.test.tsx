@@ -9,6 +9,8 @@ import {
   quarryHealthForEncounter,
 } from '../../../hunt'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
+import { cardAccessibleName, cheatAccessibleName } from '../labels'
+import { CheatStage } from '../roundReducer'
 import WarCouncilRound from '../WarCouncilRound'
 import {
   card,
@@ -35,6 +37,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       encounter={overrides.encounter ?? encounterFixture}
       maxHealth={overrides.maxHealth ?? maxHealthFixture}
       runLabel={overrides.runLabel ?? runLabelFixture}
+      cheats={overrides.cheats ?? []}
       onComplete={overrides.onComplete ?? vi.fn()}
     />,
   )
@@ -351,6 +354,27 @@ describe('WarCouncilRound', () => {
     // …and climbs the instant the trick is taken: PT-002 banks 1 per trick taken, so one trick
     // into the streak reads bank 1 × multiplier 1 = 1, not a rank sum.
     expect(screen.getByLabelText(/cashes for 1\b/i)).toBeTruthy()
+  })
+
+  it('makes a forbidden card playable once a Cheat is armed (AC5)', () => {
+    // Same construction as "disables a card the engine says is illegal" above: the player is
+    // forced to follow Moons, so their sole Bells card is genuinely forbidden without a Cheat.
+    const round = makeRound({
+      leader: PlayerSide.Cpu,
+      currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Moons, 9) }],
+      phase: RoundPhase.AwaitingFollow,
+    })
+    renderRound({ initialState: round, cheats: [{ id: 1 }] })
+
+    const offSuitName = cardAccessibleName(card(Suit.Bells, 7))
+    const offSuit = screen.getByRole('button', { name: offSuitName })
+    expect(offSuit).toHaveProperty('disabled', true)
+
+    const slot = screen.getByRole('button', { name: cheatAccessibleName(null) })
+    fireEvent.click(slot)
+    fireEvent.click(screen.getByRole('button', { name: cheatAccessibleName(CheatStage.Poised) }))
+
+    expect(screen.getByRole('button', { name: offSuitName })).toHaveProperty('disabled', false)
   })
 })
 

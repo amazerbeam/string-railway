@@ -1,7 +1,7 @@
 # Hunt — `src/hunt/`
 
 **Status:** partial
-**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, PT-001, PT-002
+**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, PT-001, PT-002
 
 ## Responsibility
 
@@ -36,6 +36,15 @@ and `ENCOUNTERS_PER_RUN` stopped being a free-standing `5` beside a one-entry ar
 alias of that array's length. `startEncounter`'s injectable `playerHealth` parameter — present since
 DLR-70 and never called with an argument until now — is what makes the carry between fights nearly
 free. See [The run — sequencing encounters](run-sequence.md).
+
+**DLR-83 gave the run something to carry besides health, and it is this module's first
+player-only advantage.** `cheats.ts` is a new pure module holding `CheatCard` and the two-slot cap;
+`RunState` gained `cheats` and a monotonic `nextCheatId`; `startRun` grants from configuration and
+`advanceRun` carries them across a fight boundary through the spread it already had. The one
+breaking change in the ticket is `recordEncounter`'s **required third parameter** — the survivors a
+hand reports upward — chosen over a second transition precisely so the compiler enumerates the call
+sites rather than trusting a caller to remember both. The *rule* a Cheat buys lives in
+`src/warCouncil/legalMoves.ts`, not here. See [Cheats — the held card and the slot cap](cheats-and-slots.md).
 
 **DLR-63 added the Lose path's vocabulary, and DLR-80 deleted the last of it.** `config.ts` gained
 rank inversion and the credit cap; DLR-67 removed the cap, and DLR-80 removed the inversion along
@@ -108,7 +117,11 @@ DLR-80 unchanged.
 | `RunState`                                            | `{ encounterIndex, encounterCount, encounter, outcome }` — a position in the configured sequence plus the encounter being fought at it. **Holds no separate player-health field**: the carried figure is `encounter.health[DuelSide.Player]`, and a second copy beside it is a number that drifts (DLR-82)                                                                                                                                                                                                                                                                     | `run.ts`              |
 | `RunOutcome`                                          | `as const` union — `InProgress` / `Won` / `Lost`. `InProgress` covers **both** "the fight is live" and "the fight is won, the next one waits"; the difference is `encounter.winner` read through `canAdvanceRun`, not a fourth outcome (DLR-82)                                                                                                                                                                                                                                                                                                                                | `run.ts`              |
 | `startRun`                                            | `(playerHealth = PLAYER_START_HEALTH) => RunState` — fight 0, both bars from configuration. Propagates `startEncounter`'s and `quarryHealthForEncounter`'s `RangeError`s rather than catching them, so a mis-configured curve fails loudly at startup (DLR-82)                                                                                                                                                                                                                                                                                                                 | `run.ts`              |
-| `recordEncounter`                                     | `(run, encounter) => RunState` — adopts the encounter a hand reported upward and re-derives the outcome. **The single place AC4 and AC5 are decided.** Throws `RangeError` on a run that has already ended, which would otherwise be silently resurrected (DLR-82)                                                                                                                                                                                                                                                                                                             | `run.ts`              |
+| `recordEncounter`                                     | `(run, encounter, cheats) => RunState` — adopts the encounter a hand reported upward and re-derives the outcome. **The single place AC4 and AC5 are decided.** Throws `RangeError` on a run that has already ended, which would otherwise be silently resurrected (DLR-82). **DLR-83 added the third parameter and made it required rather than optional** — the hand owns the Cheats for its lifetime and hands the survivors back, and an optional parameter would let a caller silently drop a spend so the run quietly refilled the slot. The one breaking signature change in that ticket | `run.ts`              |
+| `CheatCard`, `CheatCardId`                            | A held Cheat — `{ id }` and deliberately nothing else, plus its numeric id alias. An **object rather than a counter** so a spend names a specific card, React gets a stable key, and DLR-84 has somewhere to hang a price. No kind, no name, no cost (DLR-83)                                                                                                                                                                                                                                                                                                                  | `cheats.ts`           |
+| `grantCheats`, `addCheat`, `removeCheat`, `hasCheat`  | The four slot transitions. The first three **throw `RangeError` rather than clamping or no-op'ing** — an over-cap grant, a third card, and a spend of something not held are each a loud failure by design. `addCheat` has **no production caller yet**: it exists so the cap is stated once, and DLR-84's purchase is what will call it (DLR-83)                                                                                                                                                                                                                               | `cheats.ts`           |
+| `CHEAT_SLOT_COUNT`                                    | `2` — slots the player holds, for the whole run. **Transcribed from the ticket, not chosen**: it says "exactly two" twice and defends the cap at length. A key so the number is stated once, **not** so it is easy to raise (DLR-83)                                                                                                                                                                                                                                                                                                                                           | `config.ts`           |
+| `RUN_STARTING_CHEATS`                                 | `2` — Cheats granted once, at the start of a run. **A labelled placeholder, and the developer's to choose**: the ticket requires the grant come from configuration and names no number; `2` fills both slots so the mechanic is exercisable. Must stay within `0..CHEAT_SLOT_COUNT` — `grantCheats` throws outside it rather than clamping (DLR-83)                                                                                                                                                                                                                            | `config.ts`           |
 | `canAdvanceRun`                                       | `(run) => boolean` — "the Quarry is down and there is another fight". One statement, so the screen offering the control and the transition performing it cannot disagree (DLR-82)                                                                                                                                                                                                                                                                                                                                                                                             | `run.ts`              |
 | `advanceRun`                                          | `(run) => RunState` — the next fight, opened on the health carried out of the last one via `startEncounter`'s injectable parameter. Restores nothing. Throws rather than returning the run unchanged, which would present a stuck screen as success (DLR-82)                                                                                                                                                                                                                                                                                                                   | `run.ts`              |
 | `QuarryCharacterInfo`                                 | Display data for one Quarry character — `{ character, name }`. **No rule field**: DLR-81 removed `description` with the power it described, and a test pins the key set                                                                                                                                                                                                                                                                                                                                                                                                          | `quarryCharacters.ts` |
@@ -142,6 +155,10 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
 - [The run — sequencing encounters](run-sequence.md) — `RunState` and its four transitions, where a
   run's end is decided and why the loss check comes first, the carry that restores nothing, and why
   run length is derived from the health curve rather than stated beside it (DLR-82).
+- [Cheats — the held card, the two-slot cap, and the run's grant](cheats-and-slots.md) — what a
+  Cheat is and why it is an object rather than a counter, the four transitions and why three of them
+  throw, how the reducer calls them without ever throwing, the minted ids, and the two configuration
+  keys — one transcribed, one a placeholder (DLR-83).
 - [The Quarry and the telegraph](quarry-and-telegraph.md) — the per-character display data and why
   it is `Partial`, and `TELEGRAPH_FIDELITY`: how much of the Quarry's next move the player is allowed
   to see (§4).
@@ -160,8 +177,8 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   four keys and chose no number either** — all four are settled by its design spec — and it made the
   one genuinely undecided value, `QUARRY_ENCOUNTER_HEALTH[0]`, a _labelled_ placeholder carrying its
   own reasoning in a comment rather than an unmarked figure.
-- **File-size budget** — measured after DLR-80: `config.ts` 95, `encounter.ts` 138, `types.ts` 60,
-  `index.ts` 25, all far
+- **File-size budget** — measured after DLR-83: `config.ts` 198, `run.ts` 132, `encounter.ts` 138,
+  `cheats.ts` 58, `types.ts` 60, `index.ts` 25, all far
   under the project's 400-line limit. (`config.ts` shrank by roughly two-thirds when DLR-80 deleted
   the Standing tables and the card-value apparatus, so DLR-66's split contingency is moot.) Measure
   with `(Get-Content <file>).Count` or
@@ -208,6 +225,20 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   different curve as a difficulty and variety lever, which is a cheaper axis than the character
   rule-breaks DLR-81 removed. Wiring one up needs `Quarry`/`Hunt` to carry a curve and `dealRound` to
   thread it through to `assignSkulls`; none of that is built. **Do not delete the three as dead code.**
+- **How many Cheats a run starts with is the developer's, and unchosen** (DLR-83).
+  `RUN_STARTING_CHEATS = 2` is a labelled placeholder — it fills both slots so the mechanic can be
+  exercised at all. `1` makes "when do I spend it" a sharper question from the first fight, which is
+  the question the ticket says a play session must answer; `0` satisfies the letter of the grant and
+  makes the ticket unplayable. `CHEAT_SLOT_COUNT = 2` beside it is **not** open — it is transcribed
+  from the ticket, which defends the cap at length.
+- **Nothing buys, sells, or replaces a Cheat** (DLR-83). `addCheat` and `nextCheatId` both exist and
+  both are **unread by production code**: the first states the cap once, the second stops a spent id
+  being re-issued as a colliding React key. They are DLR-84's foundations, deliberately laid here
+  because the cap has to be stated once and ids have to be unique — **do not delete either as dead
+  code**. A run is granted its Cheats at `startRun` and never gets another.
+- **`nextCheatId` never advances past the opening grant** (DLR-83). Nothing in this ticket increments
+  it, and whether it earns its place before DLR-84 needs it is explicitly flagged as the developer's
+  call in the contract.
 - **The Demand is gone, and there is nothing left to decide about it.** DLR-67 deleted
   `FIXED_DEMAND`, `DEMAND_CURVE`, the `DemandCurve` interface and the `Demand` alias outright. §9
   deleted the Demand base/growth row rather than marking it Undecided, because the duel direction

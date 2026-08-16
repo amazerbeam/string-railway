@@ -118,6 +118,24 @@
   margin-top: 0.4rem;
 }
 
+/* The unspent-coin warning. Bracketed rather than merely tinted, so it reads as a held
+   decision in greyscale too. */
+.run-warning {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: clamp(0.6rem, 2vmin, 1rem) clamp(0.9rem, 3vmin, 1.6rem);
+  border: 1px dashed var(--wc-brass-dim);
+  border-radius: 4px;
+}
+
+.run-warning-text {
+  margin: 0;
+  font-size: clamp(0.8rem, 2vmin, 0.95rem);
+  color: var(--wc-parchment);
+}
+
 .run-btn {
   font-family: var(--wc-sans);
   font-size: clamp(0.8rem, 2vmin, 0.95rem);
