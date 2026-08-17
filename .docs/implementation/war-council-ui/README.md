@@ -1,7 +1,7 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-86, PT-002
+**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, PT-002
 
 ## Responsibility
 
@@ -175,6 +175,28 @@ always has somewhere to land.
 opponent plate rather than drifting toward the centre — `game-ux` names centre-drift as the mistake
 that cramps the play area. The band **renders the string and nothing more**: it receives no
 `RunState`, performs no formatting, and cannot read or change the run.
+
+**DLR-84 put the purse beside it**, on the same contract: a `.wc-coins` plate carrying
+`COINS_PLATE_LABEL` and the balance, threaded down as a required `coins: Coins` through
+`WarCouncilMountProps` → `WarCouncilRound` → `RoundStatusBand`. Same discipline as `runLabel` — the
+card layer renders a run figure it can neither read from `RunState` nor change — and the same
+reason for being required: the compiler enumerated all four mount sites rather than letting one
+render a blank plate.
+
+It is there because AC2 asks that coins be visible *and* carry across the run, and "carries across
+the whole run" is unobservable if the number only exists on screens the player passes through. One
+extra text node per hand render; no memoisation, no derivation.
+
+The label lives in `warCouncil/labels.ts` rather than in `run-ui`'s `shopLabels.ts`, deliberately —
+each file owns its own surface's copy, so the felt and the shop can be reworded independently even
+though both currently read "Coins".
+
+> **The CSS took a merged selector rather than a second block.** `.wc-run`'s rule became
+> `.wc-run, .wc-coins`, because duplicating the block would have pushed `warCouncil.css` from 397 to
+> 410 lines — over the blocking 400-line budget, in a file whose own comment already flagged it as
+> having no room. The two plates render identically, so sharing one rule is more DRY than the
+> contract's literal instruction and the review judged it the better call. **The file now sits at
+> exactly 400 lines and has zero headroom**: the next rule added to it must split the sheet first.
 
 ### A third stylesheet split
 

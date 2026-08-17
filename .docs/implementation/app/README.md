@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84
 
 ## Responsibility
 
@@ -19,9 +19,9 @@ the App-mode/manual-trick-entry scaffolding that once bridged War Council into t
 `WarCouncilMountProps` and documented separately in
 [../war-council-ui/README.md](../war-council-ui/README.md).
 
-**`src/app/run/` is the run verdict screen**, added by DLR-82 and documented separately in
-[../run-ui/README.md](../run-ui/README.md) — the full-viewport surface shown whenever a fight or the
-run resolves.
+**`src/app/run/` is the run verdict and shop screens**, added by DLR-82 and DLR-84 and documented
+separately in [../run-ui/README.md](../run-ui/README.md) — the full-viewport surface shown whenever
+a fight or the run resolves, and the shop the player may enter from it.
 
 Outside those two subfolders this module contains no runtime logic at all — only the two type
 declarations in `warCouncilMount.ts`. `src/App.tsx` and `src/app/dealerForRound.ts` do the actual
@@ -33,7 +33,7 @@ import React, and `src/app/warCouncil/` does.
 
 | Export                  | Purpose                                                                                                                                                                                                                   | File                 |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState`, a required `hunt: Hunt` (DLR-53), a required `encounter: EncounterState` and `maxHealth` (DLR-71), and a required `runLabel: string` (DLR-82) in; `onComplete` out | `warCouncilMount.ts` |
+| `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState`, a required `hunt: Hunt` (DLR-53), a required `encounter: EncounterState` and `maxHealth` (DLR-71), a required `runLabel: string` (DLR-82), a required `cheats` (DLR-83) and a required `coins: Coins` (DLR-84) in; `onComplete` out | `warCouncilMount.ts` |
 | `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + `encounter`, the `EncounterState` **after** this Hunt's damage was applied (DLR-71)                                                                            | `warCouncilMount.ts` |
 
 DLR-53 added `hunt: Hunt` as a **required** field — `src/hunt`'s own pairing, widened by DLR-63 to
@@ -56,6 +56,13 @@ grow into a second run-state consumer; a `RunState` prop would invite one. It is
 than optional for the usual reason, and that earned its place immediately: the compiler enumerated
 all four construction sites (`App.tsx` plus three in the component specs) rather than letting one
 silently render an empty band.
+
+**DLR-84 added `coins: Coins`, and it follows `runLabel`'s precedent exactly.** The card layer
+renders the run's purse on its status band and must not be able to read or change the run, so it
+receives **a number** — not a `RunState`, and not a projection it could grow into a second
+run-state consumer. Required rather than optional for the usual reason, and it earned that
+immediately: the compiler enumerated all four mount sites (`App.tsx` plus one render helper and
+three JSX mounts in the component specs) rather than letting one silently render a blank plate.
 
 **`encounter` is no longer constant for the hand.** Until DLR-80 health changed only at trick 13, so
 the prop was a fixed input for the whole round. Since DLR-80 the prop **seeds** the reducer, which
@@ -118,7 +125,9 @@ that constant and the module-scope `MAX_HEALTH` beside it are **deleted**, not r
   - **No between-encounter restore.** `ENCOUNTER_PLAYER_RESTORE` still has **no consumer**, and
     DLR-82 explicitly forbade wiring it in — the flask stories own it. A final-verification grep
     guards the absence.
-  - **No Forage step between Hunts**, and no currency, shop, or purchase of any kind.
+  - **No Forage step between Hunts.** A currency and a shop **do** exist since DLR-84 — the driver
+    holds a three-state `between` phase (verdict / warned / shop) and mounts `ShopPanel` from it —
+    but Forage is untouched and `FORAGE_BUDGET_PER_ENCOUNTER` still has no consumer.
   - **No stages, gimmicks, or boss.** The run is a flat sequence; every opponent plays identically
     and differs only in health.
   - **No persistence.** A page reload starts a new run; nothing is saved.

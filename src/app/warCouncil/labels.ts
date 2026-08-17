@@ -143,3 +143,8 @@ export function cheatAccessibleName(stage: CheatStage | null): string {
   if (stage === CheatStage.Poised) return 'Cheat, selected'
   return 'Cheat, held'
 }
+
+/** The purse plate on the status band (DLR-84). PLACEHOLDER copy, as this file's other labels
+ *  are. Distinct from `runLabels.ts`'s `SHOP_COINS_LABEL`: each file owns its own surface's
+ *  copy, so the felt and the shop can be reworded independently. */
+export const COINS_PLATE_LABEL = 'Coins'

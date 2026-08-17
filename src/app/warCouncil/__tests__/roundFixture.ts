@@ -79,3 +79,6 @@ export const maxHealthFixture = {
 
 /** A fixed run readout for component specs (AC6). */
 export const runLabelFixture = 'Fight 1 of 3'
+
+/** A fixed purse for component specs (DLR-84 AC2). */
+export const coinsFixture = 2

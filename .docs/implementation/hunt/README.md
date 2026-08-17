@@ -1,7 +1,7 @@
 # Hunt — `src/hunt/`
 
 **Status:** partial
-**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, PT-001, PT-002
+**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, PT-001, PT-002
 
 ## Responsibility
 
@@ -45,6 +45,17 @@ breaking change in the ticket is `recordEncounter`'s **required third parameter*
 hand reports upward — chosen over a second transition precisely so the compiler enumerates the call
 sites rather than trusting a caller to remember both. The *rule* a Cheat buys lives in
 `src/warCouncil/legalMoves.ts`, not here. See [Cheats — the held card and the slot cap](cheats-and-slots.md).
+
+**DLR-84 gave the run an economy, and it is the ticket that finally called DLR-83's two unread
+foundations.** `shop.ts` is a new pure module holding a two-item catalogue, a price lookup, and
+**one predicate** — `refusalFor` — that decides whether a purchase may be made; `RunState` gained
+`coins`, seeded to 0 and credited by `recordEncounter` at the single moment a fight is won; and
+`buyFromShop` deducts a price and then either mints a Cheat through `addCheat` (using
+`nextCheatId`, which now advances) or raises player health by `HEAL_HEALTH_RESTORED`, clamped by
+`Math.min`. Four transcribed tunables came with it. The convention the ticket introduces is worth
+carrying forward: **`refusalFor` is read by the transition that throws, the button that greys, the
+driver guard that no-ops, and the warning that fires — and is never re-derived at a call site.** See
+[Coins and the shop](coins-and-the-shop.md).
 
 **DLR-63 added the Lose path's vocabulary, and DLR-80 deleted the last of it.** `config.ts` gained
 rank inversion and the credit cap; DLR-67 removed the cap, and DLR-80 removed the inversion along
@@ -114,7 +125,7 @@ DLR-80 unchanged.
 | `isEncounterResolved`                                 | `(encounter) => boolean` — `winner !== null`, exported rather than left to callers so DLR-71's render guard and the run loop's condition cannot disagree about what "resolved" means. Since DLR-82 both readers exist: `App.tsx`'s verdict switch and `run.ts`'s `outcomeFor` (DLR-70)                                                                                                                                                                                                                                                                                                                                                                                     | `encounter.ts`        |
 | `FORAGE_BUDGET_PER_ENCOUNTER`                         | `4` — provisional Forage edits per encounter (§9)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `config.ts`           |
 | `ENCOUNTERS_PER_RUN`                                  | **`QUARRY_ENCOUNTER_HEALTH.length`** since DLR-82 — **derived, never chosen.** It was a free-standing `5` sitting beside a one-entry array; anything that had trusted it would have thrown `RangeError` out of `quarryHealthForEncounter(1)`. The array is the single source of truth for run length (AC1), so the two cannot disagree                                                                                                                                                                                                                                          | `config.ts`           |
-| `RunState`                                            | `{ encounterIndex, encounterCount, encounter, outcome }` — a position in the configured sequence plus the encounter being fought at it. **Holds no separate player-health field**: the carried figure is `encounter.health[DuelSide.Player]`, and a second copy beside it is a number that drifts (DLR-82)                                                                                                                                                                                                                                                                     | `run.ts`              |
+| `RunState`                                            | `{ encounterIndex, encounterCount, encounter, outcome, cheats, nextCheatId, coins }` — a position in the configured sequence plus the encounter being fought at it. **Holds no separate player-health field**: the carried figure is `encounter.health[DuelSide.Player]`, and a second copy beside it is a number that drifts (DLR-82). `coins` was added by DLR-84 and is carried by the same spread                                                                                                                                                                                                                                                                     | `run.ts`              |
 | `RunOutcome`                                          | `as const` union — `InProgress` / `Won` / `Lost`. `InProgress` covers **both** "the fight is live" and "the fight is won, the next one waits"; the difference is `encounter.winner` read through `canAdvanceRun`, not a fourth outcome (DLR-82)                                                                                                                                                                                                                                                                                                                                | `run.ts`              |
 | `startRun`                                            | `(playerHealth = PLAYER_START_HEALTH) => RunState` — fight 0, both bars from configuration. Propagates `startEncounter`'s and `quarryHealthForEncounter`'s `RangeError`s rather than catching them, so a mis-configured curve fails loudly at startup (DLR-82)                                                                                                                                                                                                                                                                                                                 | `run.ts`              |
 | `recordEncounter`                                     | `(run, encounter, cheats) => RunState` — adopts the encounter a hand reported upward and re-derives the outcome. **The single place AC4 and AC5 are decided.** Throws `RangeError` on a run that has already ended, which would otherwise be silently resurrected (DLR-82). **DLR-83 added the third parameter and made it required rather than optional** — the hand owns the Cheats for its lifetime and hands the survivors back, and an optional parameter would let a caller silently drop a spend so the run quietly refilled the slot. The one breaking signature change in that ticket | `run.ts`              |
@@ -122,6 +133,18 @@ DLR-80 unchanged.
 | `grantCheats`, `addCheat`, `removeCheat`, `hasCheat`  | The four slot transitions. The first three **throw `RangeError` rather than clamping or no-op'ing** — an over-cap grant, a third card, and a spend of something not held are each a loud failure by design. `addCheat` has **no production caller yet**: it exists so the cap is stated once, and DLR-84's purchase is what will call it (DLR-83)                                                                                                                                                                                                                               | `cheats.ts`           |
 | `CHEAT_SLOT_COUNT`                                    | `2` — slots the player holds, for the whole run. **Transcribed from the ticket, not chosen**: it says "exactly two" twice and defends the cap at length. A key so the number is stated once, **not** so it is easy to raise (DLR-83)                                                                                                                                                                                                                                                                                                                                           | `config.ts`           |
 | `RUN_STARTING_CHEATS`                                 | `2` — Cheats granted once, at the start of a run. **A labelled placeholder, and the developer's to choose**: the ticket requires the grant come from configuration and names no number; `2` fills both slots so the mechanic is exercisable. Must stay within `0..CHEAT_SLOT_COUNT` — `grantCheats` throws outside it rather than clamping (DLR-83)                                                                                                                                                                                                                            | `config.ts`           |
+| `Coins`                                               | A bare `number` alias — the run's spendable currency. A whole number, never fractional and never negative: `buyFromShop` refuses a purchase it cannot pay for rather than going below zero (DLR-84)                                                                                                                                                                                                                                                                                                                                                                            | `types.ts`            |
+| `COINS_PER_ENCOUNTER_WIN`                             | `1` — what beating an opponent pays. **Transcribed from the ticket**, not chosen. Credited by `recordEncounter`, the one place a fight is known to have been won (DLR-84)                                                                                                                                                                                                                                                                                                                                                                                                     | `config.ts`           |
+| `CHEAT_PRICE`, `HEAL_PRICE`                           | `1` each — the shop's two prices. Both transcribed, and **deliberately two keys rather than one shared price**: the ticket predicts the player buying Heal every visit and names re-pricing the Cheat as the answer, which is only one line if they are separate (DLR-84)                                                                                                                                                                                                                                                                                                     | `config.ts`           |
+| `HEAL_HEALTH_RESTORED`                                | `4` — health restored by one Heal, **before** the clamp to `PLAYER_START_HEALTH`. Transcribed. **The only source of healing in the game**: there is no flask and no rest site, and `ENCOUNTER_PLAYER_RESTORE` stays deliberately unread beside it (DLR-84)                                                                                                                                                                                                                                                                                                                    | `config.ts`           |
+| `ShopItem`, `SHOP_ITEMS`                              | The two-member catalogue — `Cheat` / `Heal` — and the ordered list of it. **THE statement of what the shop sells**: the screen maps `SHOP_ITEMS` and never lists the two items itself (DLR-84)                                                                                                                                                                                                                                                                                                                                                                                | `shop.ts`             |
+| `PurchaseRefusal`                                     | `as const` union of three reason **codes** — `SlotsFull` / `AlreadyFullHealth` / `NotEnoughCoins`. Codes, not sentences: `src/hunt/` holds no user-facing copy, and `src/app/run/shopLabels.ts` maps each to words (DLR-84)                                                                                                                                                                                                                                                                                                                                                    | `shop.ts`             |
+| `ShopStock`                                           | `{ coins, cheatCount, playerHealth, maxPlayerHealth }` — everything the refusal rules need and nothing else. **Deliberately not a `RunState`**: this module states the shop's rules and must not learn the run's shape. Built by `shopStockFor` (DLR-84)                                                                                                                                                                                                                                                                                                                       | `shop.ts`             |
+| `priceOf`                                             | `(item) => Coins` — an exhaustive `switch`, not a `Record`, so a third item is a compile error here rather than an `undefined` price at runtime (DLR-84)                                                                                                                                                                                                                                                                                                                                                                                                                      | `shop.ts`             |
+| `refusalFor`                                          | `(stock, item) => PurchaseRefusal \| null` — **THE single statement of whether a purchase is available**, and the ticket's load-bearing arrangement. Read by `buyFromShop` (which throws), by `App.tsx`'s derived `refusals` prop (which greys the control and prints the reason), by `App.tsx`'s purchase guard (which no-ops), and by `canBuyAnything`. Item-specific reasons come **before** the coin check — the durable reason wins — and a non-finite balance refuses rather than letting `NaN >= 1` read as "not enough coins" by accident (DLR-84)                    | `shop.ts`             |
+| `canBuyAnything`                                      | `(stock) => boolean` — `SHOP_ITEMS.some()` over `refusalFor`, **never a second reading of the rules**. What the verdict's `Continue` warning fires on: affordability, not a non-zero balance, because a warning a player cannot act on is noise (DLR-84)                                                                                                                                                                                                                                                                                                                       | `shop.ts`             |
+| `shopStockFor`                                        | `(run, maxPlayerHealth = PLAYER_START_HEALTH) => ShopStock` — projects a run into the four figures the rules need, so no screen assembles a `ShopStock` by hand and gets one field wrong (DLR-84)                                                                                                                                                                                                                                                                                                                                                                             | `run.ts`              |
+| `buyFromShop`                                         | `(run, item, maxPlayerHealth = PLAYER_START_HEALTH) => RunState` — deduct the price, then mint a Cheat through `addCheat` (advancing `nextCheatId`) or raise player health by `HEAL_HEALTH_RESTORED` clamped by `Math.min`. **Throws a `RangeError` naming the refusal** rather than returning the run unchanged — a silent no-op is the "took payment for nothing" failure `addCheat` already refuses. Writes into `encounter.health[Player]` because that **is** the carried figure, and deliberately not through `applyDamage`, which refuses a resolved encounter (DLR-84) | `run.ts`              |
 | `canAdvanceRun`                                       | `(run) => boolean` — "the Quarry is down and there is another fight". One statement, so the screen offering the control and the transition performing it cannot disagree (DLR-82)                                                                                                                                                                                                                                                                                                                                                                                             | `run.ts`              |
 | `advanceRun`                                          | `(run) => RunState` — the next fight, opened on the health carried out of the last one via `startEncounter`'s injectable parameter. Restores nothing. Throws rather than returning the run unchanged, which would present a stuck screen as success (DLR-82)                                                                                                                                                                                                                                                                                                                   | `run.ts`              |
 | `QuarryCharacterInfo`                                 | Display data for one Quarry character — `{ character, name }`. **No rule field**: DLR-81 removed `description` with the power it described, and a test pins the key set                                                                                                                                                                                                                                                                                                                                                                                                          | `quarryCharacters.ts` |
@@ -159,6 +182,10 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   Cheat is and why it is an object rather than a counter, the four transitions and why three of them
   throw, how the reducer calls them without ever throwing, the minted ids, and the two configuration
   keys — one transcribed, one a placeholder (DLR-83).
+- [Coins and the shop — the run's economy, and the one predicate that guards it](coins-and-the-shop.md)
+  — the coin and its single payout site, the two-item catalogue and its three refusal codes, why
+  `ShopStock` is not a `RunState`, the `refusalFor` convention and its four readers, the purchase
+  and its clamp, and the four transcribed tunables (DLR-84).
 - [The Quarry and the telegraph](quarry-and-telegraph.md) — the per-character display data and why
   it is `Partial`, and `TELEGRAPH_FIDELITY`: how much of the Quarry's next move the player is allowed
   to see (§4).
@@ -177,8 +204,8 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   four keys and chose no number either** — all four are settled by its design spec — and it made the
   one genuinely undecided value, `QUARRY_ENCOUNTER_HEALTH[0]`, a _labelled_ placeholder carrying its
   own reasoning in a comment rather than an unmarked figure.
-- **File-size budget** — measured after DLR-83: `config.ts` 198, `run.ts` 132, `encounter.ts` 138,
-  `cheats.ts` 58, `types.ts` 60, `index.ts` 25, all far
+- **File-size budget** — measured after DLR-84: `config.ts` 217, `run.ts` 216, `encounter.ts` 140,
+  `shop.ts` 75, `types.ts` 73, `cheats.ts` 58, `index.ts` 53, all far
   under the project's 400-line limit. (`config.ts` shrank by roughly two-thirds when DLR-80 deleted
   the Standing tables and the card-value apparatus, so DLR-66's split contingency is moot.) Measure
   with `(Get-Content <file>).Count` or
@@ -203,8 +230,10 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   satisfy AC1's shape (three, rising, not all equal) and are **the developer's numbers to set**. The
   ticket's own arithmetic predicts the player losing around fight three at these values and calls
   that correct — a fight costs roughly four health and the player starts with ten, and the gap is
-  what the shop and the flask exist to close. **Raising `PLAYER_START_HEALTH` in response is
-  explicitly the wrong move** and the ticket says so. Whether to soften the ramp or add fights is
+  what the shop and the flask exist to close. **Half of that answer now exists**: DLR-84's shop sells
+  4 health for a coin, and the curve was deliberately **not** retuned in response, because whether
+  that is enough of an answer is a play-session question. **Raising `PLAYER_START_HEALTH` in response
+  is explicitly the wrong move** and the ticket says so. Whether to soften the ramp or add fights is
   open.
 - **Both health totals came from play and neither is settled.** `PLAYER_START_HEALTH = 10` and
   `QUARRY_ENCOUNTER_HEALTH[0] = 10`, both set 2026-08-14 and **neither yet played at that value**.
@@ -231,14 +260,28 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   the question the ticket says a play session must answer; `0` satisfies the letter of the grant and
   makes the ticket unplayable. `CHEAT_SLOT_COUNT = 2` beside it is **not** open — it is transcribed
   from the ticket, which defends the cap at length.
-- **Nothing buys, sells, or replaces a Cheat** (DLR-83). `addCheat` and `nextCheatId` both exist and
-  both are **unread by production code**: the first states the cap once, the second stops a spent id
-  being re-issued as a colliding React key. They are DLR-84's foundations, deliberately laid here
-  because the cap has to be stated once and ids have to be unique — **do not delete either as dead
-  code**. A run is granted its Cheats at `startRun` and never gets another.
-- **`nextCheatId` never advances past the opening grant** (DLR-83). Nothing in this ticket increments
-  it, and whether it earns its place before DLR-84 needs it is explicitly flagged as the developer's
-  call in the contract.
+- **Buying a Cheat is BUILT** (DLR-84) — this entry and the one that followed it are both closed.
+  `addCheat` and `nextCheatId` were laid down unread by DLR-83 and flagged as this ticket's
+  foundations; `buyFromShop` now calls both, and `nextCheatId` advances on every purchase so a spent
+  card's id cannot be re-issued as a colliding React key. **Selling and replacing are still absent**
+  and nothing is designed for either. What remains deliberately out of scope here is narrower than
+  "an economy": no third item, no price curve, no reroll, no rotating shelf, and no payout basis
+  beyond beating an opponent — overkill damage as currency was named by PT-002 and is still not
+  built.
+- **Whether the shop's prices are right is the developer's, and unmeasured** (DLR-84).
+  `COINS_PER_ENCOUNTER_WIN`, `CHEAT_PRICE` and `HEAL_PRICE` are all `1` and `HEAL_HEALTH_RESTORED`
+  is `4` — every one transcribed from the ticket, none invented. The ticket's own prediction is that
+  the player will take Heal on every visit, because a heal is a guaranteed 4 health against a fight
+  costing about 4 while a Cheat is worth about 1 health directly. **If Heal is bought every single
+  time, the Cheat is mispriced rather than uninteresting**, and the two prices are separate keys so
+  the fix is one line.
+- **Whether 4 health per fight is the right answer to the fight-three wall** (DLR-84). The heal makes
+  a run measurably easier and **nothing else was retuned in response** — `QUARRY_ENCOUNTER_HEALTH`
+  and `PLAYER_START_HEALTH` are both untouched, deliberately, because the right response to a new
+  economy is a play session rather than a pre-emptive rebalance.
+- **Coins are not persisted, and this ticket did not change that** (DLR-84). They die on reload with
+  the rest of `RunState`; cross-run carry-over is explicitly out of scope. The first ticket that adds
+  a save file inherits a `coins` field with no migration story.
 - **The Demand is gone, and there is nothing left to decide about it.** DLR-67 deleted
   `FIXED_DEMAND`, `DEMAND_CURVE`, the `DemandCurve` interface and the `Demand` alias outright. §9
   deleted the Demand base/growth row rather than marking it Undecided, because the duel direction

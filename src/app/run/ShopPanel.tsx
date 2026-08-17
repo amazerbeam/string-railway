@@ -1,23 +1,21 @@
-import {
-  SHOP_ITEMS,
-  ShopItem,
-  type Coins,
-  type Health,
-  type PurchaseRefusal,
-} from '../../hunt'
+import { SHOP_ITEMS, ShopItem, type Coins, type Health, type PurchaseRefusal } from '../../hunt'
 import {
   nextOpponentText,
   priceText,
   PURCHASE_REFUSAL_MESSAGE,
-  purseText,
+  SHOP_COINS_LABEL,
+  SHOP_HEALTH_LABEL,
   SHOP_ITEM_BLURB,
   SHOP_ITEM_NAME,
   SHOP_NOTHING_TO_BUY_HINT,
   SHOP_PURSE_GROUP_LABEL,
+  SHOP_SLOTS_LABEL,
   SHOP_TITLE,
   shopItemAccessibleName,
 } from './shopLabels'
 import { NEXT_FIGHT_LABEL } from './runLabels'
+import { HeartMark, HeartSymbolSheet } from '../warCouncil/HeartMark'
+import { HeartState } from '../warCouncil/duelHealthBars'
 import './run.css'
 import './shop.css'
 
@@ -25,6 +23,10 @@ interface ShopPanelProps {
   readonly coins: Coins
   readonly playerHealth: Health
   readonly maxPlayerHealth: Health
+  /** One entry per point of maximum health, derived by the driver from the SAME
+   *  `duelHealthBars` the felt reads — never re-derived here, so the shop's row and the fight's
+   *  row cannot disagree. Between fights nothing is pending, so every entry is whole or broken. */
+  readonly playerHearts: readonly HeartState[]
   readonly cheatCount: number
   readonly cheatSlotCount: number
   /** AC10 — the coming opponent's display name, `undefined` while the roster has no entry.
@@ -56,6 +58,9 @@ export default function ShopPanel({
   coins,
   playerHealth,
   maxPlayerHealth,
+  playerHearts,
+  cheatCount,
+  cheatSlotCount,
   nextOpponentName,
   progressText,
   refusals,
@@ -70,12 +75,44 @@ export default function ShopPanel({
           if (e.key === 'Escape') onLeave()
         }}
       >
+        <HeartSymbolSheet />
         <h1 className="shop-title">{SHOP_TITLE}</h1>
         <p className="shop-next">{nextOpponentText(nextOpponentName, progressText)}</p>
 
         <div className="shop-purse" role="group" aria-label={SHOP_PURSE_GROUP_LABEL}>
           <span className="shop-purse-cell">
-            <span className="shop-purse-label">{purseText(coins, playerHealth, maxPlayerHealth)}</span>
+            <span className="shop-purse-label">{SHOP_COINS_LABEL}</span>
+            <span className="shop-purse-value">{coins}</span>
+          </span>
+          <span className="shop-purse-cell">
+            <span className="shop-purse-label">{SHOP_SLOTS_LABEL}</span>
+            <span className="shop-purse-value">
+              {cheatCount} / {cheatSlotCount}
+            </span>
+          </span>
+        </div>
+
+        {/* The health readout is a row of its own rather than a purse cell: it is what a heal is
+            bought against, so it gets the width to be counted at a glance. The numeric stays —
+            it carries the `meter`'s accessible reading, and the hearts are decoration over it. */}
+        <div
+          className="shop-health"
+          role="meter"
+          aria-valuenow={playerHealth}
+          aria-valuemin={0}
+          aria-valuemax={maxPlayerHealth}
+          aria-label={`${SHOP_HEALTH_LABEL} ${playerHealth} of ${maxPlayerHealth}`}
+        >
+          <span className="shop-purse-label">{SHOP_HEALTH_LABEL}</span>
+          <span className="shop-hearts" aria-hidden="true">
+            {playerHearts.map((state, index) => (
+              <span key={index} className="shop-heart" data-state={state}>
+                <HeartMark broken={state === HeartState.Broken || state === HeartState.Breaking} />
+              </span>
+            ))}
+          </span>
+          <span className="shop-purse-value">
+            {playerHealth} / {maxPlayerHealth}
           </span>
         </div>
 

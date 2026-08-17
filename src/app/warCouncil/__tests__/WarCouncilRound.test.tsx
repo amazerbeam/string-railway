@@ -14,6 +14,7 @@ import { CheatStage } from '../roundReducer'
 import WarCouncilRound from '../WarCouncilRound'
 import {
   card,
+  coinsFixture,
   encounterFixture,
   huntFixture,
   makeRound,
@@ -38,6 +39,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       maxHealth={overrides.maxHealth ?? maxHealthFixture}
       runLabel={overrides.runLabel ?? runLabelFixture}
       cheats={overrides.cheats ?? []}
+      coins={overrides.coins ?? coinsFixture}
       onComplete={overrides.onComplete ?? vi.fn()}
     />,
   )
@@ -261,6 +263,14 @@ describe('WarCouncilRound', () => {
     renderRound()
     expect(healthMeter('Your health')).toBeTruthy()
     expect(healthMeter('The Quarry’s health')).toBeTruthy()
+  })
+
+  it('renders the purse plate showing the coins prop it was mounted with (DLR-84 AC2)', () => {
+    renderRound({ coins: 7 })
+    // Scoped to the plate labelled "Coins" rather than a bare `getByText('7')`, which also
+    // matches the "7 of Bells" card in the dealt hand.
+    const coinsPlate = screen.getByText('Coins').closest('.wc-coins')
+    expect(coinsPlate?.textContent).toMatch(/7/)
   })
 
   it('reaches "Let them lead" by keyboard alone', () => {

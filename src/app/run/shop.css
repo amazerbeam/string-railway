@@ -28,7 +28,8 @@
   line-height: 1.5;
 }
 
-/* The purse row: coins and health, anchored above the choice, always visible (AC10). */
+/* The purse row: coins and Cheat slots, anchored above the choice, always visible (AC10).
+   Health moved out to `.shop-health` below, where it has room for a countable heart row. */
 .shop-purse {
   display: flex;
   gap: clamp(1rem, 5vmin, 3rem);
@@ -54,6 +55,56 @@
   font-family: var(--wc-serif);
   font-size: clamp(1.1rem, 3.4vmin, 1.8rem);
   color: var(--wc-parchment);
+}
+
+/* The health row (DLR-84 follow-up). Its own row rather than a purse cell: health is what a heal
+   is bought against, so it gets the full width and is counted at a glance rather than read as a
+   fraction. Hearts are DELIBERATELY LARGER HERE than on the felt — this screen has room the
+   status band does not, and nothing competes with them for it. Every value below is a placeholder
+   and the developer's to retune, as this file's header states. */
+.shop-health {
+  /* Declared here rather than in `warCouncil.css`'s `:root` block deliberately: that file sits at
+     exactly its 400-line budget, and this token is only ever read on this screen. */
+  --shop-heart-size: clamp(1.4rem, 4vmin, 2.2rem);
+  display: flex;
+  align-items: center;
+  gap: clamp(0.6rem, 2vmin, 1.1rem);
+  flex-wrap: wrap;
+  padding: 0.55rem clamp(0.9rem, 3vmin, 1.6rem);
+  border-bottom: 1px solid var(--wc-brass-dim);
+}
+
+.shop-hearts {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.16rem, 0.6vmin, 0.3rem);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.shop-heart {
+  flex: 0 1 var(--shop-heart-size);
+  aspect-ratio: 1;
+  min-width: 0;
+  line-height: 0;
+}
+
+.shop-heart svg {
+  width: 100%;
+  height: 100%;
+  stroke-width: 1.6;
+}
+
+/* Whole and broken differ in SHAPE as well as tone (the glyphs are a filled heart and a cracked
+   outline), so this row still reads in greyscale — `game-ux`'s no-colour-alone floor. */
+.shop-heart[data-state='whole'] {
+  color: var(--wc-hp-secure-fill);
+}
+
+.shop-heart[data-state='broken'],
+.shop-heart[data-state='atRisk'],
+.shop-heart[data-state='breaking'] {
+  color: var(--wc-hp-broken);
 }
 
 .shop-grid {
@@ -139,13 +190,6 @@
   margin: 0;
   font-size: clamp(0.7rem, 1.8vmin, 0.85rem);
   color: var(--wc-chalk-dim);
-}
-
-.shop-log {
-  margin: 0;
-  min-height: 1.4em;
-  font-size: clamp(0.7rem, 1.8vmin, 0.85rem);
-  color: var(--wc-poison);
 }
 
 @media (max-width: 30rem) {

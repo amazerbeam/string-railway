@@ -1,11 +1,4 @@
-import {
-  HEAL_HEALTH_RESTORED,
-  priceOf,
-  PurchaseRefusal,
-  ShopItem,
-  type Coins,
-  type Health,
-} from '../../hunt'
+import { HEAL_HEALTH_RESTORED, priceOf, PurchaseRefusal, ShopItem } from '../../hunt'
 
 /**
  * Every user-visible string on the shop screen (DLR-84).
@@ -60,10 +53,4 @@ export function shopItemAccessibleName(item: ShopItem, refusal: PurchaseRefusal 
  *  `QUARRY_CHARACTERS` today, DLR-85 lands the rest) — reads sensibly either way. */
 export function nextOpponentText(name: string | undefined, progressText: string): string {
   return name === undefined ? `Next up. ${progressText}` : `Next up — ${name}. ${progressText}`
-}
-
-/** The purse row's own sentence, for a reader who sees neither the row nor its layout —
- *  `game-ux`: no state may depend on colour or position alone. */
-export function purseText(coins: Coins, health: Health, maxHealth: Health): string {
-  return `${SHOP_COINS_LABEL} — ${coins}. ${SHOP_HEALTH_LABEL} — ${health} of ${maxHealth}.`
 }

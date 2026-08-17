@@ -25,6 +25,7 @@ import { dealRound, PlayerSide, type WarCouncilState } from './warCouncil'
 // instead of to the barrel, which does not export this type.
 import type { WarCouncilRoundResult } from './app/warCouncilMount'
 import WarCouncilRound from './app/warCouncil/WarCouncilRound'
+import { duelHealthBars } from './app/warCouncil/duelHealthBars'
 import { dealerForRound } from './app/dealerForRound'
 import RunOutcomePanel, { type TrickTally } from './app/run/RunOutcomePanel'
 import ShopPanel from './app/run/ShopPanel'
@@ -124,8 +125,16 @@ function App() {
   // AC8 — the FUNCTIONAL updater, so two clicks batched into one render cannot both compute from
   // the same stale run and lose a purchase. `buyFromShop` is pure, so StrictMode's development
   // double-invocation recomputes an identical value.
+  //
+  // The refusal is RE-DERIVED here, inside the updater, against whichever run this call actually
+  // sees — not read from the render's stale `stock`/`refusalFor` closure. `disabled` only takes
+  // effect on the render FOLLOWING a purchase, so a second click landing before that commit (a
+  // double-click, or a fast repeated key-activation) would otherwise reach `buyFromShop` with the
+  // item already refused and hit its deliberate throw. No-op instead of calling `buyFromShop` when
+  // the item is already refused, so the single `refusalFor` predicate stays the only source of
+  // truth and the throw stays reachable only from a genuine driver bug.
   function handleBuy(item: ShopItem) {
-    setRun((r) => buyFromShop(r, item))
+    setRun((r) => (refusalFor(shopStockFor(r), item) !== null ? r : buyFromShop(r, item)))
   }
 
   function handleNewRun() {
@@ -138,11 +147,16 @@ function App() {
   }
 
   if (encounterOver && between === BetweenPhase.Shop) {
+    // The same heart-state derivation the felt uses, so the shop's row and the fight's row can
+    // never disagree about what the player is holding. `projected` is `current`: nothing is
+    // pending between fights, so no heart is ever at risk or breaking here.
+    const [playerBar] = duelHealthBars(run.encounter.health, run.encounter.health, maxHealth)
     return (
       <ShopPanel
         coins={run.coins}
         playerHealth={run.encounter.health[DuelSide.Player]}
         maxPlayerHealth={PLAYER_START_HEALTH}
+        playerHearts={playerBar.hearts}
         cheatCount={run.cheats.length}
         cheatSlotCount={CHEAT_SLOT_COUNT}
         nextOpponentName={quarryCharacterInfo(SLICE_QUARRY_CHARACTER)?.name}
@@ -185,6 +199,7 @@ function App() {
       maxHealth={maxHealth}
       runLabel={runProgressText(run.encounterIndex, run.encounterCount)}
       cheats={run.cheats}
+      coins={run.coins}
       onComplete={handleComplete}
     />
   )

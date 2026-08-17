@@ -7,14 +7,23 @@ player follows, stated once, in playing order.
 Last reviewed against the code and the design on **2026-08-16**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
 
+> **Winning pays, and there is somewhere to spend it — DLR-84, 2026-08-16.** Beating a Quarry pays
+> you **1 coin**, which carries for the rest of the run and is on screen while you fight for it.
+> Between fights you now choose: go straight on, or **visit a shop** selling exactly two things at 1
+> coin each — a **Cheat** into a free slot, or **4 health** restored on the spot. You may buy
+> nothing, or buy again while you can pay. Try to walk past with money you could spend and the game
+> stops to say so. See [section 10](#10-between-hands-and-the-run). **This is the first thing in the
+> game that costs something, and the first answer to a run you were expected to lose.** Engine and
+> screen landed together.
+
 > **You can break follow-suit twice a run — DLR-83, 2026-08-16.** You hold **two Cheat slots**, drawn
 > as two card frames beside the decree. A held Cheat is **armed with two clicks**, and while it is
 > armed **follow-suit does not bind you** — every card in your hand becomes legal, so a trick you
 > would have been forced to take can be refused. The next card you commit **spends** that Cheat and
 > empties its slot; the slots carry across fights like health does. It lifts **follow-suit only** —
 > the led-Monarch narrowing still binds — and the Quarry gets nothing. See
-> [section 4](#4-playing-a-trick). **Engine and screen landed together.** Buying them is later work;
-> today a run simply starts with two.
+> [section 4](#4-playing-a-trick). **Engine and screen landed together.** A run starts with two, and
+> since DLR-84 you can buy more.
 
 > **The game is a run now — DLR-82, 2026-08-15.** Three fights in order, against Quarries of rising
 > health, on **one health bar that never refills**. Win and you carry your remaining health into a
@@ -303,10 +312,15 @@ that the opponent cannot — the first such asymmetry in the game.
 
 #### How many you get — **[open]**
 
-A run currently **starts with two**, filling both slots, and that number is a placeholder chosen so
-the mechanic can be exercised at all. Nothing else grants, buys, or replaces them, so two is all a
-run will ever see. **Whose decision:** the developer's — one would make _when_ to spend it a sharper
-question from the first fight, which is the question this mechanic exists to raise.
+A run **starts with two**, filling both slots, and that number is a placeholder chosen so the
+mechanic can be exercised at all. **Whose decision:** the developer's — one would make _when_ to
+spend it a sharper question from the first fight, which is the question this mechanic exists to
+raise.
+
+**Since 2026-08-16 you can also buy them.** A Cheat costs 1 coin at the shop between fights, and
+goes into a free slot ([section 10](#10-between-hands-and-the-run)). You still hold no more than
+two at once: with both slots full the shop refuses the purchase and says so. So a run's total supply
+is two at a time, replenished for a coin whenever you have spent one.
 
 ---
 
@@ -478,8 +492,14 @@ Both sides hold **health**, and the encounter ends when either total reaches zer
 | Player's starting health           | **10** — **[provisional]** (set 2026-08-14)                   |
 | Quarry's health                    | **10** — **[provisional]** (set 2026-08-14, with the new bank) |
 | Damage to the player, per event    | **1**, every time — **[settled]**                             |
-| Health restored between encounters | **None** — **[not built]**, and nothing reads it yet          |
+| Health restored on winning a fight | **None** — **[not built]**, and nothing reads the tunable yet |
+| Health restored by buying a heal   | **4**, clamped to your maximum — **[provisional]** (DLR-84)   |
 | Both bars emptying together        | **The player loses**                                          |
+
+**There is exactly one source of healing in the game, and you have to pay for it.** Winning a fight
+restores nothing automatically; the only way health comes back is buying a heal at the shop between
+fights, for a coin ([section 10](#10-between-hands-and-the-run)). There is no flask and no rest
+site.
 
 **The two numbers are now the same, and they were not before.** The Quarry's total sat in the
 hundreds for as long as the bank summed card values and a hand dealt about 84. Once the bank counted
@@ -632,6 +652,7 @@ design document, not from this section.
 | **Your tricks and your multiplier** | **Open — on screen throughout** as two separate figures, plus what the streak would cash for now.                                                                                                                         |
 | What the last trick did             | **Stated** — which of the four outcomes it was, and what it cost or banked.                                                                                                                                                |
 | **Your Cheat slots**                | **Open — two frames beside the decree**, filled or empty, all hand. A selected Cheat and an armed one differ in frame as well as tone, and the hint line names which state you are in (section 4).                          |
+| **Your coins**                      | **Open — a plate on the status band**, beside the fight counter, all hand. Also stated on the verdict and throughout the shop (section 10).                                                                                 |
 | **Both sides' health**              | **Open — two rows of hearts**, one heart per health point against each side's own maximum. The hearts a trick just took break as it resolves. While a streak is banked, the Quarry's last _bank × multiplier_ standing hearts flash as a preview of what cashing right now would take.                                                                                                                                    |
 
 The telegraph's fidelity — suit only, or suit and stance — is **[provisional]**; it currently shows
@@ -641,8 +662,8 @@ both.
 
 ## 10. Between hands, and the run
 
-Since 2026-08-15 most of this section is playable. The run itself is real; what surrounds it —
-Forage, a currency, a shop — is not.
+Since 2026-08-15 most of this section is playable, and since 2026-08-16 the economy is too. The run
+and the shop are both real; **Forage is not**.
 
 ### A run is three fights on one health bar — **[settled]**
 
@@ -659,7 +680,8 @@ has more health than the last.
   earlier one.
 - **Your Cheat slots carry from fight to fight exactly as your health does** (section 4). A Cheat
   spent in fight one is still gone in fight two; one held is still held. They are granted once, at
-  the start of the run, and never replenished between fights.
+  the start of the run, and are replenished only by buying one.
+- **Your coins carry too**, and nothing takes them away but spending them.
 
 > **Deviation from the base game.** There is no 21-point match and no symmetric contest. A run is
 > one-directional: you accumulate damage and never recover it, and the only question is how far you
@@ -670,10 +692,15 @@ has more health than the last.
 **10, then 14, then 18.** The shape is fixed — at least three, rising, not all the same — and the
 three numbers are the developer's to set from play.
 
-At these values a run is **expected to be lost around the third fight**: a fight costs the player
+At these values a run was **expected to be lost around the third fight**: a fight costs the player
 roughly four health and the player starts with ten. That is the arithmetic working as designed, not
-a fault. The intended answers are the shop and the flask in later work; **raising the player's
+a fault. The intended answers were the shop and the flask in later work; **raising the player's
 starting health is explicitly the wrong response** and is ruled out.
+
+**The shop landed on 2026-08-16 and these numbers were deliberately left alone.** A heal buys back
+4 health for a coin, and a fight pays a coin — so a player who spends every coin on health roughly
+breaks even against a fight's cost. Whether that is enough of an answer is the thing to watch, and
+retuning the curve before playing under the economy would answer nothing.
 
 ### The run's length — **[settled]**
 
@@ -691,9 +718,65 @@ it — go on to the next fight, or start a new run.
 > read as having won or lost. The wording of every line on the verdict is placeholder and the
 > developer's.
 
+### Winning a fight pays a coin — **[settled]**; the amount is **[provisional]**
+
+Beating a Quarry pays you **1 coin**. It is paid at the moment the fight is won, and only then —
+nothing else in the game pays anything. Overkill damage pays nothing, taking tricks pays nothing,
+and health remaining pays nothing.
+
+Coins **carry for the whole run** and are on screen throughout: on a plate beside the fight counter
+while you play, on the verdict, and in the shop while you choose. They do not survive a new run.
+
+**Whose decision:** the developer's — 1 coin a fight is transcribed from the ticket, not derived.
+
+### Between fights you choose: go on, or visit the shop — **[settled]**
+
+Beating a Quarry with another still to come offers **two** things to do: **continue** straight to the
+next fight, or **visit the shop**. The shop is never forced, and you can always go and look.
+
+**Trying to walk past money you could spend stops you.** Choosing to continue while at least one
+purchase is currently affordable replaces the two controls with a line naming what you are holding,
+and offers the shop or the fight again. If nothing is affordable — you have no coins, or both slots
+are full and you are at full health — you are not stopped, because there would be nothing to stop
+for. Backing out of that prompt returns you to the verdict without doing either.
+
+### What the shop sells — **[settled]**; both prices are **[provisional]**
+
+Exactly **two** things, **1 coin** each:
+
+| Buy         | You get                                                                          |
+| ----------- | -------------------------------------------------------------------------------- |
+| **Cheat**   | One Cheat card into a free slot (section 4)                                      |
+| **Heal**    | **4 health**, immediately, and never above your maximum — the excess is lost     |
+
+The screen states which opponent is coming next, and shows your coins, your health against its
+maximum, and how many Cheat slots you are holding while you choose.
+
+**You may buy nothing**, and the screen says so. **You may buy more than once in a visit** while you
+still have the coins — two heals in one visit is eight health if you have the room and the money.
+
+**A purchase you cannot make is refused with the reason on the screen**, never silently. Three
+things can refuse one:
+
+- **Both Cheat slots are full** — a Cheat has nowhere to go.
+- **You are already at full health** — a heal would do nothing at all, so it is not sold to you.
+- **You do not have the coins.**
+
+When more than one applies, the shop names the one that will still be true when the money
+arrives — full slots rather than an empty purse.
+
+> **Refusing a heal at full health is this game's own rule, not the base game's and not the
+> ticket's.** It was added deliberately: the clamp already discards overheal, but selling a heal to a
+> player at full health takes a coin for provably nothing. Buying at 9 of 10 is still allowed and
+> still costs a coin — only the wholly wasted purchase is refused.
+
+**Leaving the shop starts the next fight**, with everything you bought already in effect: the health
+you healed to, the Cheats in your slots, and whatever coins you did not spend.
+
 ### Which fight you are on — **[settled]**
 
-Shown throughout play, beside the opponent's plate: `Fight 2 of 3`.
+Shown throughout play, beside the opponent's plate: `Fight 2 of 3`. It is stated on the shop screen
+too, alongside who is coming next.
 
 ### Not built
 
@@ -701,15 +784,24 @@ Shown throughout play, beside the opponent's plate: `Fight 2 of 3`.
   dealt from, in exactly four ways — a card's **value**, its **ability**, its **suit**, and the
   **decree**. The budget is **4 edits per encounter** (**[provisional]**). **[not built]** — nothing
   reads the budget. **The player holds no skulls of their own**, and Forage could not add any.
-- **A shop, a currency, and a flat payout for winning** are all **[not built]** and none is
-  designed. The stated intention is that surplus cash-out damage (section 8) is paid back as money,
-  that winning an encounter also pays a flat amount, and that the shop then raises the player's
-  damage — which is what is expected to make the `n × n` payout scale past the early game, and what
-  is expected to close the gap the rising health curve opens. Note that a card's **value** is one of
-  the four things Forage may edit, and since 2026-08-14 a card's rank decides only who wins a trick
-  — it feeds no scoring at all (section 7).
+- **Surplus cash-out damage paid back as money** — **[not built]**. The intention stated at PT-002
+  was that overkill (section 8) becomes currency; the coin you actually get is a **flat payment for
+  winning a fight** instead, and nothing reads overkill. That flat payout is the part of the
+  intention that shipped.
+- **Anything in the shop that raises the player's damage** — **[not built]**. The stated intention
+  is that upgrades are what make the `n × n` payout scale past the early game; the shop currently
+  sells survivability and a rule-break, and nothing touching the bank, the multiplier or damage. A
+  card's **value** is one of the four things Forage may edit, and since 2026-08-14 a card's rank
+  decides only who wins a trick — it feeds no scoring at all (section 7).
+- **Any third item, a price curve, rerolls, or a rotating shelf** — **[not built]**. The shop shows
+  the same two things at the same two prices on every visit.
+- **Anything in the shop that reduces skull density** — **[not built]**, and ruled out rather than
+  merely absent. The skull is the game's only inversion (section 7), and selling a way past it would
+  remove the reason taking every trick is not simply correct.
 - **A restore between fights** — **[not built]**, and deliberately so. The tunable exists and is
-  read by nothing; wiring it in was explicitly forbidden until the flask is designed.
+  read by nothing; wiring it in was explicitly forbidden until the flask is designed. **The shop's
+  heal is not this** — it costs a coin and you must choose it.
+- **Coins carrying between runs** — **[not built]**. A new run starts at zero.
 - **Different Quarries.** Every fight of the run is against the same character, and every opponent
   plays identically — only its health differs. A roster of named opponents is later work.
 - **Stages, stage gimmicks, and a boss.** The run is a flat sequence.
@@ -803,7 +895,8 @@ the mechanics themselves are documented in `../implementation/`.
 | Cheats carried fight to fight                 | settled                          | `src/hunt/run.ts` — `RunState.cheats`; `advanceRun`'s spread carries it, `recordEncounter` adopts the hand's survivors           | —                                                       |
 | Cheats a run starts with (2)                  | **open** — a placeholder         | `src/hunt/config.ts` — `RUN_STARTING_CHEATS`; granted by `src/hunt/cheats.ts` — `grantCheats`                                    | **Developer** — 1 sharpens the "when" question          |
 | The Quarry holds no Cheats                    | settled                          | nothing to enforce — the bypass is an argument the Quarry's call sites never pass; a grep guards the absence                     | —                                                       |
-| Buying, selling or replacing a Cheat          | **not built**                    | nothing — no currency, no shop, and `addCheat` has no production caller yet                                                      | Developer — a later ticket                              |
+| Buying a Cheat (1 coin, into a free slot)     | settled — since DLR-84           | `src/hunt/run.ts` — `buyFromShop` calls `addCheat` and advances `nextCheatId`; priced by `src/hunt/config.ts` — `CHEAT_PRICE`    | Developer — the price                                   |
+| Selling or replacing a Cheat                  | **not built**                    | nothing — the shop only adds                                                                                                     | Developer — a later ticket                              |
 | Odd-rank abilities                            | settled                          | `src/warCouncil/abilities.ts`, `resolveTrick.ts`                                                                                 | —                                                       |
 | Whether abilities survive six-card hands      | **open**                         | nothing — abilities are unchanged and ability-free hands are accepted                                                            | Developer, after playtest                               |
 | Trick resolution, Witch-as-trump              | settled                          | `src/warCouncil/resolveTrick.ts`                                                                                                 | —                                                       |
@@ -828,7 +921,7 @@ the mechanics themselves are documented in `../implementation/`.
 | No cap on hands per encounter                 | settled — deliberately none      | no cap key exists to read                                                                                                        | Developer, if the tail stalls                           |
 | Tricks and multiplier on screen throughout    | settled                          | `src/app/warCouncil/BankMeter.tsx`; wording in `labels.ts` — `TRICKS_LABEL`, `MULTIPLIER_LABEL`                                  | Developer — the wording and the visual values           |
 | The two terms stay separately addressable     | settled — an affordance, unused  | `src/warCouncil/bank.ts` — `bank` and `multiplier` are two fields; nothing moves them apart yet                                  | —                                                       |
-| Surplus damage paid back as money             | **not built**                    | nothing — no currency, no shop, and no consumer exists                                                                           | Developer — a later ticket                              |
+| Surplus damage paid back as money             | **not built**                    | nothing reads overkill — the coin is a flat payment for winning, not a share of the cash-out                                     | Developer — a later ticket                              |
 | Both sides' health on screen                  | settled                          | `src/app/warCouncil/DuelHealthBars.tsx`, `duelHealthBars.ts`, `HeartMark.tsx` — one heart per point since DLR-86                 | Developer — whether 10 (and 18) hearts read well        |
 | The Quarry's hearts preview the banked streak | **provisional**                  | `src/app/warCouncil/duelHealthBars.ts` — `projectedFromStreak`; styling in `warCouncilHealthBars.css`                            | Developer — whether it reads as pending or as spent     |
 | The hand-over tally (between hands only)      | settled                          | `src/app/warCouncil/RoundOverPanel.tsx` — its terminal branch was **deleted** by DLR-82; a resolved fight is the verdict's       | Developer — whether losing the felt's tally costs anything |
@@ -839,7 +932,23 @@ the mechanics themselves are documented in `../implementation/`.
 | What any character's power is                 | **not built** — undecided        | —                                                                                                                                | **Developer — a final-boss ticket, not every opponent** |
 | Telegraph fidelity                            | provisional                      | `src/hunt/config.ts` — `TELEGRAPH_FIDELITY`                                                                                      | Developer, after playtest                               |
 | Rank 8's name ("Poison")                      | **open** — misleading            | `src/app/warCouncil/labels.ts` — `RANK_NAME`                                                                                     | Developer                                               |
-| Between-encounter restore (none)              | **not built** — deliberately     | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE`; still **no consumer**, and DLR-82 forbade adding one. A grep guards it        | Developer — the flask stories own it                    |
+| Between-encounter restore (none, automatic)   | **not built** — deliberately     | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE`; still **no consumer**, and DLR-82 forbade adding one. A grep guards it        | Developer — the flask stories own it                    |
+| Winning a fight pays 1 coin                   | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `COINS_PER_ENCOUNTER_WIN`; credited by `src/hunt/run.ts` — `recordEncounter`, the single payout site      | Developer — transcribed, not derived                    |
+| Coins carry across the run, and are on screen | settled — since DLR-84           | `src/hunt/run.ts` — `RunState.coins`, carried by `advanceRun`'s spread; drawn by `src/app/warCouncil/RoundStatusBand.tsx`'s `.wc-coins` plate | —                                          |
+| The shop, and its exactly two items           | settled — since DLR-84           | `src/hunt/shop.ts` — `SHOP_ITEMS`; rendered by `src/app/run/ShopPanel.tsx`, which maps it rather than listing the items          | —                                                       |
+| The shop is opt-in, reached from the verdict  | settled — the developer's ruling | `src/App.tsx` — the `BetweenPhase` union; controls in `src/app/run/RunOutcomePanel.tsx`                                          | Developer — whether the pair reads at a glance          |
+| Continue warns when something is affordable   | settled                          | `src/hunt/shop.ts` — `canBuyAnything`, `some()` over `refusalFor`; raised by `src/App.tsx`'s `handleContinue`                    | **Developer** — safety net or nag; a threshold is one line |
+| Backing out of the warning takes no action    | settled                          | `src/app/run/RunOutcomePanel.tsx` — `onDismissWarning` on the swapped block's `Escape`                                           | Developer — whether it should mean "continue anyway"    |
+| Both prices (1 coin each)                     | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `CHEAT_PRICE`, `HEAL_PRICE`, deliberately two keys                                                        | **Developer** — if Heal wins every visit, the Cheat is mispriced |
+| A heal restores 4, clamped, surplus discarded | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `HEAL_HEALTH_RESTORED`; the `Math.min` in `src/hunt/run.ts` — `buyFromShop` is the single clamp           | Developer — the amount                                  |
+| A heal is the only healing in the game        | settled                          | `src/hunt/run.ts` — `buyFromShop` is the sole writer that raises player health; no flask and no rest site exist                  | —                                                       |
+| A refused purchase states its reason          | settled                          | `src/hunt/shop.ts` — `refusalFor`; worded by `src/app/run/shopLabels.ts` — `PURCHASE_REFUSAL_MESSAGE`                            | Developer — the wording                                 |
+| The durable reason wins over the coin check   | settled                          | `src/hunt/shop.ts` — `refusalFor` tests slots and health **before** the balance                                                  | —                                                       |
+| A heal at full health is refused, not sold    | settled — this game's own rule   | `src/hunt/shop.ts` — `PurchaseRefusal.AlreadyFullHealth`; the ticket did not state it                                            | Developer — selling it and discarding is the alternative |
+| Buy nothing, or buy repeatedly while you can  | settled                          | nothing to enforce — leaving is always offered, and `buyFromShop` is a plain transition with no per-visit cap                    | —                                                       |
+| Leaving the shop starts the next fight        | settled                          | `src/App.tsx` — `leaveForNextFight`, the one call to `advanceRun`, reached from all three forward controls                       | Developer — whether `Escape` should do this             |
+| Nothing in the shop reduces skull density     | settled — ruled out              | nothing to enforce — no key, no item, and no code path touches `SKULL_DENSITY` or the curves                                     | —                                                       |
+| Coins carrying between runs                   | **not built**                    | nothing is persisted anywhere; `startRun` seeds `coins: 0`                                                                       | Developer — a later ticket                              |
 | Forage                                        | **not built**                    | `src/hunt/config.ts` — `FORAGE_BUDGET_PER_ENCOUNTER` (no consumer)                                                               | Developer — budget is provisional                       |
 | The run — a sequence of encounters            | settled — since DLR-82           | `src/hunt/run.ts` — `RunState`, `startRun`, `advanceRun`; driven by `src/App.tsx`                                                | —                                                       |
 | Health carried fight to fight, no restore     | settled                          | `src/hunt/run.ts` — `advanceRun` passes `encounter.health[Player]` into `startEncounter`                                         | —                                                       |
@@ -975,8 +1084,63 @@ the new copy, the slots' size and spacing, whether arming feels like a detour no
 the decree rather than by the hand — and the design question the ticket itself raised and deferred:
 **whether holding a Cheat changes how a hand is played before it is spent.**
 
+### The economy landed — DLR-84, 2026-08-16
+
+**What a player does now that they did not before:** **spends something.** Every decision in this
+game until now was made with cards you were dealt; beating a Quarry now pays a coin, and between
+fights you choose what to do with it. It is also the first time the player chooses **whether to see
+a screen at all** — the shop is opt-in, and continuing past it is a decision the game will question.
+
+**It is the first answer to a run the player was expected to lose.** DLR-82 shipped a health curve
+its own ticket predicted losing around fight three, and named the shop as the answer rather than a
+bigger health bar. Half of that answer now exists — 4 health for a coin, against a fight costing
+about four — and **the curve was deliberately not retuned**, so whether it is enough is now
+measurable rather than argued.
+
+**What is gone:** nothing. No rule was removed and nothing was deferred to make room. The verdict's
+single `Next fight` control became a `Continue` / `Shop` pair, and the words "Next fight" moved to
+the shop's own leave button where they are literally true.
+
+**Engine and screen landed together.** Every rule in
+[section 10](#10-between-hands-and-the-run) that is not marked **[not built]** is reachable by
+playing, and every purchase, refusal and carry was confirmed in a running browser.
+
+**One rule here is this game's own and appears in no ticket:** a heal at full health is **refused
+with a reason** rather than sold and discarded. The clamp already throws away overheal; taking a
+coin for a purchase that provably does nothing is a different thing, and it is the developer's to
+overturn.
+
+**What the developer owns:** every price and the payout (all four transcribed, none derived —
+and the ticket's own warning stands, that **buying Heal every single visit means the Cheat is
+mispriced, not uninteresting**), whether 4 health a fight is the right size of answer, whether the
+`Continue` / `Shop` pair reads at a glance, whether the warning is a safety net or a nag, whether
+`Escape` in the shop should really start the next fight, and every word of the new copy.
+
 ### Known tensions, recorded not resolved
 
+- **The shop may have exactly one right answer, in which case it is not a decision** (new
+  2026-08-16, DLR-84). A heal is a guaranteed 4 health against a fight that costs about 4; a Cheat is
+  worth roughly 1 health directly, and more only when it saves a long streak. At 1 coin each the
+  ticket predicts the player taking Heal every single time — and if they do, **the Cheat is
+  mispriced rather than uninteresting**, which is a one-line change because the two prices are two
+  keys. **The cheapest measurement is what you bought**: if you never once hesitated, there was no
+  decision on that screen.
+- **The warning fires on nearly every visit, which is how a safety net becomes a nag** (new
+  2026-08-16, DLR-84). It stops you whenever anything is affordable, and with a 1-coin payout against
+  1-coin prices that is every visit where you have not already spent. It was built to stop a player
+  walking past a purchase they did not notice; the failure mode is that it becomes a keypress you
+  learn to dismiss without reading, which is worse than not having it. Firing it only above a
+  threshold, or dropping it, are both one line.
+- **`Escape` in the shop starts the next fight, and it is also the obvious way to back out** (new
+  2026-08-16, DLR-84). The shop's "cancel" gesture and its "commit and move on" gesture are the same
+  key, so a reflexive press permanently burns the between-fights moment — the very moment the
+  warning above exists to protect. The alternatives are returning to the verdict or doing nothing.
+- **Two slots is a cap, and the shop can now refill it every fight** (new 2026-08-16, DLR-84;
+  sharpens DLR-83's entry below). Buying does not raise the ceiling — with both slots full the
+  purchase is refused — but a coin a fight means a Cheat spent is a Cheat replaceable, so the
+  *effective* supply across a run is no longer two. DLR-83's own tension asked what stops a player
+  buying their way past the number that makes skulls matter; the answer today is the two-slot cap
+  and the price, and neither has been played against.
 - **A Cheat may only ever be spent reflexively, which would make holding one worth nothing** (new
   2026-08-16, DLR-83). The ticket's own open question. A Cheat has **no value while held** — it does
   not change a legal set, a payout, or a readout until it is armed — so if the right play is always
@@ -1001,10 +1165,13 @@ the decree rather than by the hand — and the design question the ticket itself
   2026-08-15, DLR-82). A fight costs the player roughly four health; the player starts with ten and
   gets nothing back. Three fights against 10, 14 and 18 health therefore do not add up, and the
   ticket says so outright: the arithmetic is working, and the gap is what a shop, an upgrade and a
-  flask exist to close. **The tension is that none of those exist yet**, so the only thing currently
-  available to a player who keeps losing is a rule change — and the two obvious ones (raise starting
-  health, wire up the between-fight restore) are both explicitly ruled out. Until the economy lands,
-  the honest measurement is *how far* a run gets, not whether it is won. The cheapest disproof that
+  flask exist to close. **Updated 2026-08-16, DLR-84: the shop now exists and the curve was left
+  alone deliberately.** A coin a fight buys back 4 health, against a fight costing about four — so a
+  player spending everything on health roughly breaks even, and the gap is closed only if they were
+  going to win anyway. Upgrades and the flask are still absent, and the two obvious rule changes
+  (raise starting health, wire up the between-fight restore) remain explicitly ruled out. The honest
+  measurement is still *how far* a run gets, but it is now a measurement of the economy rather than
+  of its absence. The cheapest disproof that
   something is wrong rather than merely unfinished: if fight two is routinely unreachable rather than
   fight three being unwinnable, the curve is too steep and the numbers want moving.
 - **A run that can only be lost has no ending to see** (new 2026-08-15, DLR-82). The `YOU WIN`

@@ -1,7 +1,8 @@
-import { HAND_SIZE } from '../../hunt'
+import { HAND_SIZE, type Coins } from '../../hunt'
 import { PlayerSide } from '../../warCouncil'
 import type { HealthBarView } from './duelHealthBars.ts'
 import DuelHealthBars from './DuelHealthBars.tsx'
+import { COINS_PLATE_LABEL } from './labels'
 
 const MAX_VISIBLE_OPPONENT_BACKS = 8
 
@@ -12,6 +13,9 @@ interface RoundStatusBandProps {
   readonly roundComplete: boolean
   readonly bars: readonly HealthBarView[]
   readonly runLabel: string
+  /** AC2 — the run's purse during a hand, threaded through unread and unchanged
+   *  (`warCouncilMount.ts`'s own docblock). */
+  readonly coins: Coins
 }
 
 /**
@@ -31,6 +35,7 @@ export default function RoundStatusBand({
   roundComplete,
   bars,
   runLabel,
+  coins,
 }: RoundStatusBandProps) {
   const yourTricks = tricksWon[PlayerSide.Player]
   const theirTricks = tricksWon[PlayerSide.Cpu]
@@ -51,6 +56,10 @@ export default function RoundStatusBand({
       <div className="wc-run">
         <span className="wc-plate-label">Run</span>
         <span className="wc-run-value">{runLabel}</span>
+      </div>
+      <div className="wc-coins">
+        <span className="wc-plate-label">{COINS_PLATE_LABEL}</span>
+        <span className="wc-run-value">{coins}</span>
       </div>
       <DuelHealthBars
         bars={bars}

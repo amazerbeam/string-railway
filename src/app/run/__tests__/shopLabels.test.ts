@@ -4,7 +4,6 @@ import {
   nextOpponentText,
   priceText,
   PURCHASE_REFUSAL_MESSAGE,
-  purseText,
   SHOP_ITEM_BLURB,
   SHOP_ITEM_NAME,
   shopItemAccessibleName,
@@ -12,7 +11,9 @@ import {
 
 describe('shopLabels', () => {
   it('has a distinct refusal sentence for every PurchaseRefusal member', () => {
-    const values = Object.values(PurchaseRefusal).map((refusal) => PURCHASE_REFUSAL_MESSAGE[refusal])
+    const values = Object.values(PurchaseRefusal).map(
+      (refusal) => PURCHASE_REFUSAL_MESSAGE[refusal],
+    )
     expect(values).toHaveLength(Object.values(PurchaseRefusal).length)
     expect(new Set(values).size).toBe(values.length)
     for (const message of values) {
@@ -53,12 +54,5 @@ describe('shopLabels', () => {
   it('prices an item from configuration', () => {
     expect(priceText(ShopItem.Cheat)).toBeTruthy()
     expect(priceText(ShopItem.Heal)).toBeTruthy()
-  })
-
-  it('states the purse figures', () => {
-    const text = purseText(3, 6, 10)
-    expect(text).toContain('3')
-    expect(text).toContain('6')
-    expect(text).toContain('10')
   })
 })

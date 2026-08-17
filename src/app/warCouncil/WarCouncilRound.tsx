@@ -79,6 +79,7 @@ export default function WarCouncilRound({
   maxHealth,
   runLabel,
   cheats,
+  coins,
   onComplete,
 }: WarCouncilMountProps) {
   const [ui, dispatch] = useReducer(
@@ -268,6 +269,7 @@ export default function WarCouncilRound({
         roundComplete={roundComplete}
         bars={bars}
         runLabel={runLabel}
+        coins={coins}
       />
       <aside className="wc-dossier">
         <QuarryDossier

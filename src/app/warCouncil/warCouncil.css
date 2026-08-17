@@ -46,11 +46,11 @@
      `.claude/contract/DLR-71-two-health-bars-with-pending-damage/mockup.html` (and, for the six
      heart-row tokens, `.claude/contract/DLR-86-hearts-with-pending-cash-preview/mockup.html`) and
      is the developer's to retune; the visual polish ticket owns them. */
-  --wc-hp-secure-fill: #c99a4e;
+  --wc-hp-secure-fill: #cc3f4a;
   --wc-hp-pending-fill: #8b9a94;
   --wc-hp-lethal-edge: #d1705f;
   --wc-hp-height: clamp(0.7rem, 1.7vmin, 1.05rem);
-  --wc-hp-heart-size: clamp(0.62rem, 1.5vmin, 0.95rem);
+  --wc-hp-heart-size: clamp(0.95rem, 2.3vmin, 1.45rem);
   --wc-hp-heart-gap: 0.18rem;
   --wc-hp-broken: #3a4a52;
   --wc-hp-atrisk-opacity: 0.55;
@@ -144,8 +144,11 @@
 }
 
 /* DLR-82 AC6 — the run position, edge-anchored beside the opponent plate rather than drifting
-   toward the centre, which game-ux names as the mistake that cramps the play area. */
-.wc-run {
+   toward the centre, which game-ux names as the mistake that cramps the play area. DLR-84 AC2
+   — `.wc-coins` joins this selector, not a second block, so the two plates share one rule and
+   this file (already tight on budget, see `.wc-pile` below) stays under it. */
+.wc-run,
+.wc-coins {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;

@@ -115,9 +115,7 @@ describe('RunOutcomePanel — the three verdicts (AC2, AC4, AC5)', () => {
 
 describe('RunOutcomePanel — the unspent-coin warning (DLR-84)', () => {
   it('replaces the plain pair with the warning pair when warning is true', () => {
-    render(
-      <RunOutcomePanel {...baseProps} outcome={RunOutcome.InProgress} canContinue warning />,
-    )
+    render(<RunOutcomePanel {...baseProps} outcome={RunOutcome.InProgress} canContinue warning />)
     expect(screen.getByRole('button', { name: VISIT_SHOP_LABEL })).toBeTruthy()
     expect(screen.getByRole('button', { name: CONTINUE_ANYWAY_LABEL })).toBeTruthy()
     expect(screen.queryByRole('button', { name: CONTINUE_LABEL })).toBeNull()

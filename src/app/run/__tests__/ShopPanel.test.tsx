@@ -2,15 +2,23 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PurchaseRefusal, ShopItem } from '../../../hunt'
+import { HeartState } from '../../warCouncil/duelHealthBars'
 import ShopPanel from '../ShopPanel'
 import { shopItemAccessibleName } from '../shopLabels'
 
 afterEach(cleanup)
 
+/** Six whole then four broken — the shape `duelHealthBars` produces for 6 of 10 health. */
+const heartsAt6of10: readonly HeartState[] = [
+  ...Array.from({ length: 6 }, () => HeartState.Whole),
+  ...Array.from({ length: 4 }, () => HeartState.Broken),
+]
+
 const baseProps = {
   coins: 3,
   playerHealth: 6,
   maxPlayerHealth: 10,
+  playerHearts: heartsAt6of10,
   cheatCount: 1,
   cheatSlotCount: 2,
   nextOpponentName: 'The Monarch',
@@ -48,7 +56,9 @@ describe('ShopPanel', () => {
   it('fires onBuy exactly once with the right ShopItem when an available control is clicked', () => {
     const onBuy = vi.fn()
     render(<ShopPanel {...baseProps} refusals={noRefusals} onBuy={onBuy} />)
-    fireEvent.click(screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Heal, null) }))
+    fireEvent.click(
+      screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Heal, null) }),
+    )
     expect(onBuy).toHaveBeenCalledTimes(1)
     expect(onBuy).toHaveBeenCalledWith(ShopItem.Heal)
   })
@@ -76,12 +86,34 @@ describe('ShopPanel', () => {
     render(<ShopPanel {...baseProps} refusals={noRefusals} />)
     expect(screen.getByText(/The Monarch/)).toBeTruthy()
     expect(screen.getByRole('group', { name: /purse/i }).textContent).toContain('3')
-    expect(screen.getByRole('group', { name: /purse/i }).textContent).toContain('6')
+    expect(screen.getByRole('meter', { name: /health/i }).textContent).toContain('6 / 10')
+  })
+
+  it('draws one heart per point of maximum health, whole for the health still held', () => {
+    const { container } = render(<ShopPanel {...baseProps} refusals={noRefusals} />)
+    expect(container.querySelectorAll('.shop-heart')).toHaveLength(10)
+    expect(container.querySelectorAll('.shop-heart[data-state="whole"]')).toHaveLength(6)
+    expect(container.querySelectorAll('.shop-heart[data-state="broken"]')).toHaveLength(4)
+  })
+
+  it('carries the health reading on the meter, so the hearts never have to be counted', () => {
+    render(<ShopPanel {...baseProps} refusals={noRefusals} />)
+    const meter = screen.getByRole('meter', { name: /health/i })
+    expect(meter.getAttribute('aria-valuenow')).toBe('6')
+    expect(meter.getAttribute('aria-valuemax')).toBe('10')
+  })
+
+  it('states the cheat-slots readout with the supplied counts', () => {
+    render(<ShopPanel {...baseProps} cheatCount={1} cheatSlotCount={2} refusals={noRefusals} />)
+    expect(screen.getByText('Cheat slots')).toBeTruthy()
+    expect(screen.getByRole('group', { name: /purse/i }).textContent).toContain('1 / 2')
   })
 
   it('fires onLeave on Escape', () => {
     const onLeave = vi.fn()
-    const { container } = render(<ShopPanel {...baseProps} refusals={noRefusals} onLeave={onLeave} />)
+    const { container } = render(
+      <ShopPanel {...baseProps} refusals={noRefusals} onLeave={onLeave} />,
+    )
     const shop = container.querySelector('.shop') as Element
     fireEvent.keyDown(shop, { key: 'Escape' })
     expect(onLeave).toHaveBeenCalledTimes(1)

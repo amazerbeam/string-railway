@@ -6,6 +6,7 @@ import { DAMAGE_PER_HIT, DuelSide, HAND_SIZE, quarryHealthForEncounter } from '.
 import WarCouncilRound from '../WarCouncilRound'
 import {
   card,
+  coinsFixture,
   encounterFixture,
   huntFixture,
   makeRound,
@@ -43,6 +44,7 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
         maxHealth={maxHealthFixture}
         runLabel={runLabelFixture}
         cheats={[]}
+        coins={coinsFixture}
         onComplete={onComplete}
       />,
     )
@@ -167,6 +169,7 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
         maxHealth={maxHealthFixture}
         runLabel={runLabelFixture}
         cheats={[]}
+        coins={coinsFixture}
         onComplete={onComplete}
       />,
     )
@@ -204,6 +207,7 @@ describe('WarCouncilRound — the Quarry’s at-risk preview (DLR-86)', () => {
         maxHealth={maxHealthFixture}
         runLabel={runLabelFixture}
         cheats={[]}
+        coins={coinsFixture}
         onComplete={vi.fn()}
       />,
     )

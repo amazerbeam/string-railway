@@ -1,4 +1,4 @@
-import type { CheatCard, DuelSide, EncounterState, Health, Hunt } from '../hunt'
+import type { CheatCard, Coins, DuelSide, EncounterState, Health, Hunt } from '../hunt'
 import type { WarCouncilState } from '../warCouncil'
 
 export interface WarCouncilMountProps {
@@ -21,6 +21,11 @@ export interface WarCouncilMountProps {
    *  `WarCouncilRoundResult.cheats`. Required, not optional, so the compiler enumerates every
    *  mount site rather than letting one render an empty rail. */
   readonly cheats: readonly CheatCard[]
+  /** AC2 — the run's purse during a hand. A number, not a `RunState`: the same contract
+   *  `runLabel` above states — the card layer renders a run figure and must not change it.
+   *  Required, not optional, so the compiler enumerates every mount site rather than letting one
+   *  silently render a blank plate. */
+  readonly coins: Coins
   readonly onComplete: (result: WarCouncilRoundResult) => void
 }
 

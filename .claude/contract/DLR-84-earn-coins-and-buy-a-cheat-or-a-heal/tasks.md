@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: IN PROGRESS
+Status: COMPLETE
 Started: 2026-08-16
 
 **Goal:** Give the run a coin balance paid for beating an opponent, and a shop screen of its own — reached by choice from the verdict, guarded by a warning when the player walks past it with something affordable — selling a Cheat into a free slot or 4 health restored immediately, each priced from configuration and each refusable with a stated reason.
@@ -771,7 +771,7 @@ Expected: `tsc -b` exits 0 with no errors; Vitest reports 0 failed.
 
 One string-bound thread — a required prop, its four mount sites, and the plate that renders it — done in a single task, because a required prop added without its callers leaves the phase not type-checking. This closes AC2's "visible … across the whole run": the balance is readable during the fight that is earning it, not only on the screens the player passes through.
 
-### Task 10: Thread `coins` to the status band and render its plate
+### Task 10: Thread `coins` to the status band and render its plate ✓
 
 - Skill: react-frontend
 
@@ -779,7 +779,7 @@ One string-bound thread — a required prop, its four mount sites, and the plate
 - Modify: `src/app/warCouncilMount.ts`, `src/app/warCouncil/WarCouncilRound.tsx`, `src/app/warCouncil/RoundStatusBand.tsx`, `src/app/warCouncil/labels.ts`, `src/app/warCouncil/warCouncil.css:148`, `src/App.tsx` (the `WarCouncilRound` element only)
 - Test: `src/app/warCouncil/__tests__/roundFixture.ts`, `src/app/warCouncil/__tests__/WarCouncilRound.test.tsx`, `src/app/warCouncil/__tests__/WarCouncilRound.duelHealthBars.test.tsx`
 
-- [ ] **Step 1: Add the prop to `WarCouncilMountProps`**
+- [x] **Step 1: Add the prop to `WarCouncilMountProps`**
 
 ```ts
   /** AC2 — the run's purse during a hand. A number, not a `RunState`: the same contract
@@ -791,7 +791,7 @@ One string-bound thread — a required prop, its four mount sites, and the plate
 
 Add `Coins` to the file's `../hunt` type import.
 
-- [ ] **Step 2: Add `COINS_PLATE_LABEL` to `src/app/warCouncil/labels.ts`**
+- [x] **Step 2: Add `COINS_PLATE_LABEL` to `src/app/warCouncil/labels.ts`**
 
 ```ts
 /** The purse plate on the status band (DLR-84). PLACEHOLDER copy, as this file's other labels
@@ -800,7 +800,7 @@ Add `Coins` to the file's `../hunt` type import.
 export const COINS_PLATE_LABEL = 'Coins'
 ```
 
-- [ ] **Step 3: Render the plate in `RoundStatusBand.tsx`**
+- [x] **Step 3: Render the plate in `RoundStatusBand.tsx`**
 
 Add `readonly coins: Coins` to `RoundStatusBandProps`, destructure it, and add beside the existing `.wc-run` div:
 
@@ -811,19 +811,19 @@ Add `readonly coins: Coins` to `RoundStatusBandProps`, destructure it, and add b
 </div>
 ```
 
-- [ ] **Step 4: Add the `.wc-coins` block to `src/app/warCouncil/warCouncil.css`, immediately after `.wc-run` at line 148**
+- [x] **Step 4: Add the `.wc-coins` block to `src/app/warCouncil/warCouncil.css`, immediately after `.wc-run` at line 148**
 
-Mirror `.wc-run`'s own rules so the two plates read as a pair. Every value is the developer's to retune, noted in a comment.
+Mirror `.wc-run`'s own rules so the two plates read as a pair. Every value is the developer's to retune, noted in a comment. Implemented as a shared `.wc-run, .wc-coins` selector rather than a duplicated block — the file was already 2 lines under the 400-line budget (per `.wc-pile`'s own comment) and a second full block would have pushed it to 410. The `warCouncil.css:148` file map path is confirmed still current: `.wc-run,` starts at line 150 after the extended comment, `.wc-coins` joining it directly below.
 
-- [ ] **Step 5: Pass `coins` through `WarCouncilRound.tsx` and supply it in `App.tsx`**
+- [x] **Step 5: Pass `coins` through `WarCouncilRound.tsx` and supply it in `App.tsx`**
 
 Add `coins` to `WarCouncilRound`'s destructured props and pass `coins={coins}` to `RoundStatusBand`. Then add `coins={run.coins}` to the `WarCouncilRound` element in `src/App.tsx` — the prop and its production mount site land in the same step, so the required prop is never half-applied.
 
-- [ ] **Step 6: Supply `coins` at every test mount site**
+- [x] **Step 6: Supply `coins` at every test mount site**
 
-Add `export const coinsFixture = 2` to `src/app/warCouncil/__tests__/roundFixture.ts`; add `coins={overrides.coins ?? coinsFixture}` to `WarCouncilRound.test.tsx:39`'s render helper; add `coins={coinsFixture}` to all three JSX mounts in `WarCouncilRound.duelHealthBars.test.tsx` (lines 44, 168, 205).
+Add `export const coinsFixture = 2` to `src/app/warCouncil/__tests__/roundFixture.ts`; add `coins={overrides.coins ?? coinsFixture}` to `WarCouncilRound.test.tsx`'s render helper; add `coins={coinsFixture}` to all three JSX mounts in `WarCouncilRound.duelHealthBars.test.tsx`. Also added a new spec asserting the coins plate renders the actual supplied value (7), scoped to `.wc-coins` to avoid colliding with the "7 of Bells" card in the fixture hand.
 
-- [ ] **Step 7: Typecheck and run every touched spec**
+- [x] **Step 7: Typecheck and run every touched spec**
 
 Run: `npm run typecheck; npx vitest run src/app/warCouncil/__tests__/WarCouncilRound.test.tsx src/app/warCouncil/__tests__/WarCouncilRound.duelHealthBars.test.tsx`
 Expected: `tsc -b` exits 0 with **no** remaining errors anywhere, including `src/App.tsx`; Vitest reports 0 failed.
@@ -834,58 +834,58 @@ Expected: `tsc -b` exits 0 with **no** remaining errors anywhere, including `src
 
 No production changes. Only cumulative sanity checks: the purity boundary still holds, no tunable was written as a literal, and every gate is green.
 
-### Task 11: Confirm the `src/hunt/` purity boundary still holds
+### Task 11: Confirm the `src/hunt/` purity boundary still holds ✓
 
 - Skill: none — a verification grep, no code written
 
-- [ ] **Step 1: Grep the pure tree for React and DOM references**
+- [x] **Step 1: Grep the pure tree for React and DOM references** (run by QA)
 
 Run: `Get-ChildItem src\hunt -Recurse -Include *.ts | Select-String -Pattern "from 'react'|\bwindow\.|\bdocument\.|localStorage|Math\.random"`
-Expected: zero hits. (`Select-String -Path` does not recurse — the `Get-ChildItem -Recurse` form is required, per `.claude/workflow/web-project.md`.)
+Expected: zero hits. (`Select-String -Path` does not recurse — the `Get-ChildItem -Recurse` form is required, per `.claude/workflow/web-project.md`.) — Confirmed clean by QA.
 
-### Task 12: Confirm no shop tunable was hard-coded outside configuration
+### Task 12: Confirm no shop tunable was hard-coded outside configuration ✓
 
 - Skill: none — a verification grep, no code written
 
-- [ ] **Step 1: Grep source and copy for a literal heal amount or price outside `config.ts`**
+- [x] **Step 1: Grep source and copy for a literal heal amount or price outside `config.ts`** (run by QA)
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx,*.css | Select-String -Pattern "COINS_PER_ENCOUNTER_WIN|CHEAT_PRICE|HEAL_PRICE|HEAL_HEALTH_RESTORED"`
-Expected: every hit is an import, an export, a `config.ts` declaration, or an interpolation — **no hit is a bare number standing in for one of these keys**. In particular `SHOP_ITEM_BLURB[ShopItem.Heal]` must interpolate `HEAL_HEALTH_RESTORED` rather than quote `4`.
+Expected: every hit is an import, an export, a `config.ts` declaration, or an interpolation — **no hit is a bare number standing in for one of these keys**. In particular `SHOP_ITEM_BLURB[ShopItem.Heal]` must interpolate `HEAL_HEALTH_RESTORED` rather than quote `4`. — Confirmed clean by QA.
 
-### Task 13: Static gates and the full suite
+### Task 13: Static gates and the full suite ✓
 
 - Skill: none — verification only, no code written
 
-- [ ] **Step 1: Warm the Vitest transform cache, then run the unfiltered suite**
+- [x] **Step 1: Warm the Vitest transform cache, then run the unfiltered suite** (run by QA)
 
 Run: `npx vitest run --project node; npx vitest run --project dom; npm test`
-Expected: all three exit 0; the final run reports 0 failed. Warming first is required, not optional: a cold-cache `npm test` can fail with `[vitest-pool-runner]: Timeout waiting for worker to respond` on the `dom` project, which is infrastructure and **must never be reported as a test failure** (`.claude/workflow/web-project.md`).
+Expected: all three exit 0; the final run reports 0 failed. Warming first is required, not optional: a cold-cache `npm test` can fail with `[vitest-pool-runner]: Timeout waiting for worker to respond` on the `dom` project, which is infrastructure and **must never be reported as a test failure** (`.claude/workflow/web-project.md`). — QA reported 581 passed across 46 files, 0 failed.
 
-- [ ] **Step 2: Typecheck and lint**
+- [x] **Step 2: Typecheck and lint** (run by QA, re-confirmed by the Implementer after the review fix pass)
 
 Run: `npm run typecheck; npm run lint`
-Expected: both exit 0.
+Expected: both exit 0. — Both exit 0 after the review fix pass.
 
-- [ ] **Step 3: Check formatting of this contract's files only**
+- [x] **Step 3: Check formatting of this contract's files only** (fixed and re-confirmed by the Implementer after QA found 4 files unformatted)
 
 Run: `npx prettier --check src/hunt/shop.ts src/hunt/run.ts src/hunt/config.ts src/hunt/types.ts src/hunt/index.ts src/App.tsx src/app/run src/app/warCouncilMount.ts src/app/warCouncil/RoundStatusBand.tsx src/app/warCouncil/WarCouncilRound.tsx src/app/warCouncil/labels.ts src/app/warCouncil/warCouncil.css`
-Expected: exits 0. The repo-wide `format:check` fails on pre-existing `.docs/**` files this contract has not touched — do not "fix" those.
+Expected: exits 0. The repo-wide `format:check` fails on pre-existing `.docs/**` files this contract has not touched — do not "fix" those. — QA's first pass found `ShopPanel.tsx`, `ShopPanel.test.tsx`, `shopLabels.test.ts` and `RunOutcomePanel.test.tsx` unformatted; the Implementer ran `npx prettier --write` on those four and re-ran `--check` on them, exit 0, "All matched files use Prettier code style!".
 
-- [ ] **Step 4: Production build**
+- [x] **Step 4: Production build** (run by QA)
 
 Run: `npm run build`
-Expected: exits 0, `dist/` written, no bundler errors.
+Expected: exits 0, `dist/` written, no bundler errors. — Confirmed by QA.
 
-- [ ] **Step 5: Measure every file created or grown**
+- [x] **Step 5: Measure every file created or grown**
 
 Run: `Get-ChildItem src\hunt\shop.ts,src\hunt\run.ts,src\App.tsx,src\app\run\ShopPanel.tsx,src\app\run\shopLabels.ts,src\app\run\RunOutcomePanel.tsx,src\app\run\runLabels.ts | ForEach-Object { "$($_.Name) $((Get-Content $_.FullName).Count)" }`
-Expected: every count under 400.
+Expected: every count under 400. — Re-measured after the review fix pass: `App.tsx` 202, `ShopPanel.tsx` 133, `shopLabels.ts` 56, `shop.css` 148 — all clear.
 
-### Task 14: Write the PR description
+### Task 14: Write the PR description ✓
 
 - Skill: none — a document for the developer, no code written
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder**
+- [x] **Step 1: Write `pr-description.md` in this plan folder**
 
 Include:
 - A link to `plan.md` and `mockup.html` in this folder.
@@ -893,6 +893,8 @@ Include:
 - Every decision the developer must make and every behaviour they must judge by playing — copied from the File map's "Developer decides or observes" block, in full.
 - Verification results from Phase 5, quoting the actual Vitest summary line and exit codes.
 - A one-line note for future contributors on the convention introduced: **one exported predicate (`refusalFor`) is read by the transition that throws, the button that greys, and the warning that fires — never re-derived at a call site.**
+
+Written to `pr-description.md` in this folder, after the review fix pass (cheat-slots readout wired up, the double-click race fixed, and the formatting failure resolved).
 
 ---
 

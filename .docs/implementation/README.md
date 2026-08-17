@@ -27,10 +27,10 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | Module                | Doc                                         | Status      | Built by                                                                                                                                     |
 | --------------------- | ------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, PT-001, PT-002 |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83                                       |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-86, PT-002                                     |
-| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82                                                                                                                                               |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, PT-001, PT-002               |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84                               |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, PT-002                             |
+| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84                                                                                                                                       |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, PT-001, PT-002       |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -135,8 +135,9 @@ and what a 10-health Quarry costs.
 Two shapes were deliberately preserved rather than simplified, and both are load-bearing for work not
 yet built: `bank` and `multiplier` stay **two independent fields** so a planned one-time-use "+1 ×"
 item can move one without the other, and the engine field is still **named `bank`** although it holds
-a trick count — a ~20-file rename judged not worth a play-test ticket. Money, the shop, and leftover
-damage as currency are all explicitly out of scope; there is nothing to spend it on yet.
+a trick count — a ~20-file rename judged not worth a play-test ticket. Money and the shop were
+explicitly out of scope for PT-002 and **arrived at DLR-84** (below); **leftover damage as currency
+still has not** — the coin is paid for winning a fight, not for overkill.
 
 **DLR-82 turned one encounter into a run, and it is the first ticket that makes a session something
 you can lose rather than merely end.** Three Quarries are fought in order — `QUARRY_ENCOUNTER_HEALTH`
@@ -161,9 +162,10 @@ beat, one tap replaces two, and a full-screen verdict — [run-ui/](run-ui/READM
 `FIGHT WON` / `YOU WIN` / `YOU LOSE` with the run position, the carried health and a trick-bar row.
 `ENCOUNTER_OUTCOME`, `.wc-terminal` and `RoundOverPanel`'s `winner` prop went with the branch.
 
-**Two things are deliberately still not wired.** `ENCOUNTER_PLAYER_RESTORE` remains exported and
-**unread** — DLR-82 forbade wiring it in, and a grep guards the absence — and there is no currency,
-shop, or purchase. The curve's second and third values are a **documented placeholder**: the ticket
+**Two things were deliberately not wired, and one of them still is not.**
+`ENCOUNTER_PLAYER_RESTORE` remains exported and **unread** — DLR-82 forbade wiring it in, DLR-84 did
+not touch it, and a grep guards the absence. The currency and the shop it also lacked **arrived at
+DLR-84** (below). The curve's second and third values are a **documented placeholder**: the ticket
 predicts the player losing around fight three at these numbers and calls that the arithmetic
 working, with the shop and the flask as the answer rather than a bigger health bar.
 
@@ -190,6 +192,36 @@ parameter so the compiler enumerates every site rather than letting one silently
 the second stops a spent id being re-issued as a colliding React key. Both are DLR-84's foundations;
 **do not delete them as dead code.** How many Cheats a run starts with is a labelled placeholder and
 the developer's.
+
+**DLR-84 gave the run an economy, and it is the first ticket where a decision costs something.**
+Beating a Quarry now pays **1 coin**, carried across the whole run and shown on the felt beside the
+fight counter. Between fights the verdict offers **two** forward controls — `Continue` and `Shop` —
+and the shop sells exactly two things at 1 coin each: a **Cheat** into a free slot, or a **Heal** of
+4 health applied immediately and clamped to the player's maximum. You may buy nothing, or buy
+repeatedly while you can pay, and leaving starts the next fight with every purchase already in
+effect. It is the answer DLR-82 predicted for its own fight-three wall, and **the health curve was
+deliberately not retuned in response** — whether 4 health a fight is enough of an answer is a play
+question.
+
+The shop is **opt-in, on the developer's ruling at the planning gate** — an earlier draft made it a
+mandatory step on the path. Because it can be walked past, `Continue` is guarded: pressed while
+anything is affordable it warns in place and offers the shop or the fight.
+
+**Its one convention is worth carrying forward.** A single exported predicate, `refusalFor`, is read
+by the transition that throws, the button that greys, the driver guard that no-ops, and the warning
+that fires — and is **never re-derived at a call site**. That is what makes a greyed control and a
+thrown `RangeError` one rule read four times rather than four rules that can disagree. Start at
+[hunt/coins-and-the-shop.md](hunt/coins-and-the-shop.md) for the economy,
+[run-ui/shop-screen.md](run-ui/shop-screen.md) for the screen and its three-channel refusals, or
+[app/run-driver.md](app/run-driver.md) for the three-state between-fights phase and the double-click
+race it closes.
+
+**Two things it also closed.** `addCheat` and `nextCheatId` finally have production readers, so the
+"do not delete as dead code" warning above is discharged. And `run-ui/` outgrew a single file and was
+split into [verdict-panel.md](run-ui/verdict-panel.md) and
+[shop-screen.md](run-ui/shop-screen.md). **One thing it left at a hard edge**: `warCouncil.css` now
+sits at **exactly 400 lines**, the blocking budget, reached by merging the coins plate into `.wc-run`'s
+selector rather than duplicating the block. The next rule added to that file must split it first.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).
