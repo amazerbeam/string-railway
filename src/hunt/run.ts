@@ -111,6 +111,19 @@ export function canAdvanceRun(run: RunState): boolean {
 }
 
 /**
+ * DLR-85 AC6/AC7 — how many encounters of the run are behind the player, as one integer.
+ *
+ * `encounterIndex` alone is WRONG: a won-but-not-yet-advanced run sits at index n with
+ * `encounter.winner === Player`, so without the +1 the map marks the opponent just beaten
+ * as the one about to be fought. One exported statement, beside `canAdvanceRun` and for the
+ * same reason — the screen drawing the path and the transition advancing it must not each
+ * do their own arithmetic.
+ */
+export function beatenCount(run: RunState): number {
+  return run.encounterIndex + (run.encounter.winner === DuelSide.Player ? 1 : 0)
+}
+
+/**
  * AC3 — the next fight, opened on the health the player carried out of the last one. Nothing is
  * restored: `ENCOUNTER_PLAYER_RESTORE` is deliberately NOT read here, per DLR-82.
  *

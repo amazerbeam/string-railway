@@ -62,10 +62,33 @@ export const STANCE_PHRASE: Readonly<Record<QuarryIntentStance, string>> = {
 }
 
 /** AC1/AC7 — each bar's accessible name. The two must differ, because `getByRole('meter', …)`
- *  is how the spec distinguishes them. */
+ *  is how the spec distinguishes them.
+ *
+ *  The Quarry entry is now only the FALLBACK for an unnamed opponent — see
+ *  `quarryHealthLabel` below, which is what the app actually renders. */
 export const HEALTH_BAR_LABEL: Readonly<Record<DuelSide, string>> = {
   [DuelSide.Player]: 'Your health',
   [DuelSide.Quarry]: 'The Quarry’s health',
+}
+
+/**
+ * The Quarry bar's name, after the opponent being fought — `Aoife’s health`.
+ *
+ * DLR-85 named the opponent on every RUN-level surface (the map, the verdict, the shop, the fight
+ * counter) and deliberately left the fight screen generic, which put "Aoife" and "The Quarry" on
+ * screen at the same time. This closes half of that seam; the dossier is the other half.
+ *
+ * Falls back to `HEALTH_BAR_LABEL[Quarry]` when no name is known, so the generic wording is stated
+ * once rather than duplicated at a call site. Production always passes a name — every entry in
+ * `RUN_ENCOUNTERS` has one — so the fallback is a guard, not a path the player reaches.
+ *
+ * Takes an already-resolved NAME, not an index or a run: this module holds copy, and the card layer
+ * must not learn how to look an opponent up. Same discipline as `runLabel`.
+ *
+ * PLACEHOLDER COPY — the possessive wording is the developer's, as with everything else in here.
+ */
+export function quarryHealthLabel(name: string | undefined): string {
+  return name === undefined ? HEALTH_BAR_LABEL[DuelSide.Quarry] : `${name}’s health`
 }
 
 /**

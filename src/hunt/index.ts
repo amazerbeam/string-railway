@@ -2,6 +2,7 @@ export type { Hunt, Quarry, Damage, Health, IncomingDamage, EncounterState, Coin
 export { QuarryCharacter, DuelSide } from './types'
 
 export type { SkullRankWeights } from './config'
+export type { RunEncounterConfig } from './config'
 
 export {
   HAND_SIZE,
@@ -28,7 +29,19 @@ export {
   CHEAT_PRICE,
   HEAL_PRICE,
   HEAL_HEALTH_RESTORED,
+  OpponentKind,
+  RUN_ENCOUNTERS,
+  ORDINARY_OPPONENT_NAMES,
+  STAGE_BOSS_NAMES,
+  ORDINARY_PER_STAGE,
+  ORDINARY_HEALTH_BASE,
+  ORDINARY_HEALTH_STEP,
+  BOSS_HEALTH_MULTIPLIER,
+  runEncounterAt,
 } from './config'
+
+export type { PathNode, PathStage } from './runPath'
+export { PathNodeStatus, runPath } from './runPath'
 
 export type { CheatCard, CheatCardId } from './cheats'
 export { grantCheats, addCheat, removeCheat, hasCheat } from './cheats'
@@ -45,6 +58,7 @@ export {
   recordEncounter,
   canAdvanceRun,
   advanceRun,
+  beatenCount,
   shopStockFor,
   buyFromShop,
 } from './run'

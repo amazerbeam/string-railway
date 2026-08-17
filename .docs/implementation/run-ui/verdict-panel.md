@@ -1,6 +1,6 @@
 Part of [Run verdict UI](README.md).
 
-# The verdict panel — three outcomes, two forward controls, and the unspent-coin warning
+# The verdict panel — three outcomes, three forward controls, and the unspent-coin warning
 
 `RunOutcomePanel.tsx` is the full-viewport surface shown whenever a fight or the run resolves. It
 computes nothing: every figure and every branch arrives as a prop from `App.tsx`.
@@ -10,11 +10,28 @@ computes nothing: every figure and every branch arrives as a prop from `App.tsx`
 The panel renders one of three states, and `game-ux`'s hard floor is that a greyscale screenshot
 must still distinguish them. Four things differ, not just the hue:
 
-| State                     | Headline    | Rule above it        | Controls                        |
-| ------------------------- | ----------- | -------------------- | ------------------------------- |
-| Fight won, more to come   | `FIGHT WON` | single 2px rule      | `Continue` **and** `Shop`       |
-| Run won                   | `YOU WIN`   | **double** rule      | `Start a new run`               |
-| Run lost                  | `YOU LOSE`  | **hatched** rule     | `Start a new run`               |
+| State                     | Headline           | Rule above it        | Controls                                       |
+| ------------------------- | ------------------ | -------------------- | ---------------------------------------------- |
+| Fight won, more to come   | `Aoife defeated`   | single 2px rule      | `Fight Cillian`, `Shop` **and** `Map` (DLR-85) |
+| Run won                   | `YOU WIN`          | **double** rule      | `Start a new run`                              |
+| Run lost                  | `YOU LOSE`         | **hatched** rule     | `Start a new run`                              |
+
+**DLR-85 named the first row and added the third control.** The headline is
+`runHeadline(outcome, beatenName)` — the opponent just beaten, which is the one at `encounterIndex`
+because `recordEncounter` does not advance it. The primary control is `fightLabel(nextName)`, falling
+back to `NEXT_FIGHT_LABEL` when there is no next fight. **Only the intermediate-win headline takes a
+name:** `YOU WIN` and `YOU LOSE` keep DLR-82's wording, because a run-level verdict is about the run
+rather than about one opponent, and the opponent is named in the supporting line instead.
+
+The `Map` control (`onMap`) opens the run's path — the same `RunPathScreen` the start screen uses. It
+sits **only on the first row**: a finished run offers `Start a new run` and nothing else, so there is no
+map from a won or lost verdict, and a spec pins that absence. See
+[the run map and the path screen](run-map-and-the-path-screen.md).
+
+> **The warned branch's labels were deliberately left alone.** `Visit the shop` / `Continue anyway` keep
+> their DLR-84 wording rather than being renamed to name the opponent, because a DLR-84 component spec
+> tells the warned verdict from the plain one **by button name** and renaming both branches risked a
+> collision. AC8 is satisfied on the unwarned primary control.
 
 The supporting line differs in all three too. Colour is carried by a `data-verdict` attribute on
 `.run-verdict` rather than by a class per state, so the CSS selects on one attribute.
@@ -41,6 +58,12 @@ chooses to enter.
 moved from this panel to the shop's own leave button, where "Next fight" is literally what the
 control does. The verdict took the new `CONTINUE_LABEL` / `SHOP_LABEL` pair instead, which was
 cheaper than renaming a constant across nine hits for no change in meaning.
+
+**DLR-85 then deleted `CONTINUE_LABEL` outright**, because the unwarned primary control now reads
+`fightLabel(nextName)` and a constant nothing renders is debt. Ten hits across four files changed
+together and a final-verification grep confirms zero remain. `NEXT_FIGHT_LABEL` survives as the
+fallback for an `undefined` name — and, in the shop, is still what the leave control reads when no
+opponent is known.
 
 The `onNextFight` prop **was** renamed, to `onContinue`, because its meaning genuinely changed: the
 control no longer starts a fight on its own. Pressed on an unwarned verdict it may raise the warning
@@ -99,18 +122,34 @@ A lost bar is **hatched and outlined as well as red**, and the row carries a tex
 (`Tricks taken · 4 of 6`) plus an accessible name via `tricksTakenText`. Red-versus-green alone
 fails the no-colour-only rule; three channels is what satisfies it.
 
-## The copy names no Quarry, deliberately
+## The copy names the opponent now — DLR-85
 
-Every string is generic — `FIGHT WON`, not `Aoife defeated`. `SLICE_QUARRY_CHARACTER` names **one**
-character for the whole run and `QUARRY_CHARACTERS` holds one of five entries, so a name here would
-print identically on every fight, and `quarryCharacterInfo` returns `undefined` for the other four —
-name-based copy would need a fallback exercised the moment the roster grows.
+**This section previously recorded the opposite, and DLR-85 is the change it was waiting for.** Until
+then every string here was generic (`FIGHT WON`, never `Aoife defeated`), because
+`SLICE_QUARRY_CHARACTER` named one character for the whole run and `QUARRY_CHARACTERS` held one of five
+entries — so a name would have printed identically on every fight, and `quarryCharacterInfo` returns
+`undefined` for the other four.
 
-**DLR-85 owns the roster and must rename this file's copy in the same change that lands it.** That
-ticket's description carries a note naming `RunOutcomePanel.tsx`, `runLabels.ts` (`runHeadline`,
-`NEXT_FIGHT_LABEL`) and the `runLabel` band readout as the surfaces it must update in step, so the
-map and the verdict cannot ship one named and one anonymous. **The shop screen joins that list** —
-it prints the opponent's name through `nextOpponentText`, which already handles `undefined`.
+`RUN_ENCOUNTERS` removed that obstacle: every one of the twenty-five entries carries a name, so
+`runEncounterAt(index).name` is always a real string and no fallback is exercised in production. The
+naming landed across **four surfaces in one pass**, deliberately, because a named map beside an unnamed
+verdict reads as two different games:
+
+| Surface                        | Now reads                  | Via                                 |
+| ------------------------------ | -------------------------- | ----------------------------------- |
+| The verdict headline           | `Aoife defeated`           | `runHeadline(outcome, beatenName)`  |
+| The verdict's primary control  | `Fight Cillian`            | `fightLabel(nextName)`              |
+| The shop's leave control       | `Fight Cillian`            | `fightLabel(nextOpponentName)`      |
+| The felt's status band         | `Fight 1 of 25 — Aoife`    | `runPositionLabel(…, currentName)`  |
+
+`App.tsx` is the only file that reads the roster; all four surfaces receive **already-worded strings or
+plain names as props**, so no component looks an opponent up for itself.
+
+**The fight screen was left anonymous by DLR-85, and has since been half closed.** The **health bar** now
+reads `Aoife’s health` — `quarryHealthLabel(name)` in `src/app/warCouncil/labels.ts`, threaded down as a
+pre-worded string exactly as `runLabel` is, so the bar and the map agree. **`QuarryDossier` is the
+remainder**, along with the "What the Quarry holds" heading beside it; both still name the Monarch, which
+is what DLR-85's ticket scoped to a separate ticket. See the README's Deferred section.
 
 ## The shell
 

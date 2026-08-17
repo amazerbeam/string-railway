@@ -7,6 +7,11 @@ within a fight exactly as it did before, and switches to a full-screen verdict w
 resolves. It performs no health arithmetic and no index arithmetic of its own — every transition is
 a call into `src/hunt/run.ts`, and every number is read from configuration.
 
+**Since DLR-85 it also owns the run's shape on screen**: it opens on a start screen rather than on fight
+one, mounts a map between fights, is the **only** file that reads the opponent roster, and returns to the
+start screen when a run is lost. It is 262 lines (from 208) and holds five `useState` calls — still inside
+the 400-line budget, but the next surface added here should probably convert it to a reducer.
+
 ## The state
 
 ```tsx
@@ -14,8 +19,13 @@ const [run, setRun] = useState(startRun)
 const [hand, setHand] = useState(1)
 const [dealt, setDealt] = useState<WarCouncilState>(() => dealRound(dealerForRound(1), Math.random))
 const [tricks, setTricks] = useState<TrickTally>(NO_TRICKS)
-const [between, setBetween] = useState<BetweenPhase>(BetweenPhase.Verdict) // DLR-84
+const [phase, setPhase] = useState<RunPhase>(RunPhase.Start) // DLR-84, widened DLR-85
 ```
+
+**DLR-85 renamed `between`/`setBetween` to `phase`/`setPhase` and opened it on `RunPhase.Start`.** The
+app therefore no longer opens on fight one — it opens on the start screen. Five `useState` calls, the
+same as before: the start screen and the map cost **no new state variable**, which is the whole
+argument for widening the union rather than adding a boolean beside it.
 
 `run` replaced the separate `encounter` state DLR-71 introduced — the encounter now lives *inside*
 `RunState`, so there is one owner rather than two things to keep in step.
@@ -55,8 +65,42 @@ the one place a stale maximum would be invisible, which is why it is derived fro
 tracked separately.
 
 `HUNT` survives at module scope, correctly: it is built purely from `SLICE_QUARRY_CHARACTER` and
-holds no per-run state. Every fight of the run faces the same character — DLR-82 varies only each
-Quarry's health, and the roster is DLR-85's.
+holds no per-run state. **DLR-85 left it there deliberately.** The roster it added names opponents on
+every *run-level* surface, but the fight screen's dossier is out of that ticket's scope, so every
+fight still faces the same character on the felt while the map, the verdict, the shop and the status
+band all name the real opponent.
+
+## The roster reads, derived once per render (DLR-85)
+
+`App.tsx` is **the only file that reads the roster**, and it hands names down as plain strings — no
+component looks an opponent up for itself.
+
+```tsx
+const beaten = beatenCount(run)
+const stages = runPath(beaten)
+const goalText = runGoalText(run.encounterCount)
+const currentName = runEncounterAt(run.encounterIndex).name
+const nextName =
+  run.encounterIndex + 1 < run.encounterCount ? runEncounterAt(run.encounterIndex + 1).name : undefined
+```
+
+Three things about this are load-bearing:
+
+- **`beatenCount` is called, never re-derived.** `run.encounterIndex` alone is wrong on a
+  won-but-not-yet-advanced run, and getting it wrong would mark the opponent just beaten as the one
+  about to be fought. That correction lives once, in `src/hunt/run.ts` — see
+  [../hunt/run-path-and-the-roster.md](../hunt/run-path-and-the-roster.md).
+- **`nextName` is `undefined` exactly when there is no next fight** — the final encounter of a won run.
+  That is the case `fightLabel`'s callers fall back on rather than throw on, which is why
+  `runEncounterAt(run.encounterIndex + 1)` is guarded here rather than allowed to raise its own
+  `RangeError`.
+- **`stages` is not memoised.** `runPath` is one O(n) pass over twenty-five entries on a click-driven
+  render, and `react-frontend` forbids `useMemo` without profiling evidence — there is none.
+
+`currentName` does double duty: it names the felt's status band during the fight (the opponent being
+fought) and the verdict's headline after it (the opponent just beaten). Those are **the same
+encounter** — `recordEncounter` does not advance `encounterIndex` — so one derivation serves both
+without an off-by-one.
 
 ## The three transitions, all click handlers
 
@@ -75,8 +119,14 @@ function handleComplete(result: WarCouncilRoundResult) {
 }
 ```
 
-`handleNewRun` calls `startRun`, clears the tally, resets `hand` to 1 and `between` to `Verdict`,
-and deals fresh. Advancing to the next fight is `leaveForNextFight`, below.
+`handleNewRun` calls `startRun`, clears the tally, resets `hand` to 1, and deals fresh. Advancing to the
+next fight is `leaveForNextFight`, below.
+
+**DLR-85 changed one line of it, and that line is the whole of AC10.** It now sets `RunPhase.Start`
+rather than `RunPhase.Verdict`, so **losing a run returns to the start screen** instead of dropping
+straight into fight one. "Starting again resets the path" then follows **by construction** rather than by
+a second reset step: `startRun()` returns `encounterIndex: 0` with a fresh encounter, so `beatenCount` is
+0 and every node on the map is `Upcoming` again. Nothing clears the path, because nothing owns it.
 
 **DLR-83 added the third argument and one prop, and nothing else.** `recordEncounter` now takes the
 Cheats a hand finished with — `result.cheats`, arriving through the same `WarCouncilRoundResult`
@@ -89,14 +139,34 @@ fight because `advanceRun`'s existing `...run` spread already does it, and `hand
 from configuration because `startRun` does. No new state, no new effect — this driver still holds
 none. See [../hunt/cheats-and-slots.md](../hunt/cheats-and-slots.md).
 
-## The between-fights phase (DLR-84)
+## The phase union (DLR-84, widened DLR-85)
 
 ```ts
-const BetweenPhase = { Verdict: 'verdict', Warned: 'warned', Shop: 'shop' } as const
+const RunPhase = {
+  Start: 'start', // DLR-85
+  Verdict: 'verdict',
+  Warned: 'warned',
+  Shop: 'shop',
+  Map: 'map', // DLR-85
+} as const
 ```
 
-**A union rather than two booleans, because "in the shop AND warned" is a state that must not
-exist.** It is declared at module scope beside `HUNT` and `NO_TRICKS`, and held in one `useState`.
+**A union rather than booleans beside each other, because "in the shop AND warned" is a state that must
+not exist.** It is declared at module scope beside `HUNT` and `NO_TRICKS`, and held in one `useState`.
+
+**DLR-85 widened it from `BetweenPhase` and the argument extends unchanged**: folding the start screen in
+here makes **"in the shop before the run began" unrepresentable for free**, where a sixth `useState` would
+have made it merely unlikely. The rename was safe to do wholesale — `BetweenPhase` had **eleven
+references, every one of them inside this file**, so no external reader could break, and a grep confirms
+zero remain.
+
+The union's two new members are gated differently, and the asymmetry is deliberate:
+
+- **`Start` is checked before everything**, including before `encounterOver`, because it precedes the run
+  rather than sitting between fights.
+- **`Map` is checked as `encounterOver && phase === RunPhase.Map`**, exactly like `Shop`, because it is a
+  between-fights surface. Neither can be reached with `encounterOver` false: the only thing that sets
+  them is `RunOutcomePanel`'s `onMap` / `onShop`, and that panel only renders when the encounter is over.
 
 The driver owns it rather than the panel, for the same reason the driver owns `canContinue`:
 `RunOutcomePanel` derives nothing, and a second state owner for the same moment is the copy that
@@ -107,7 +177,7 @@ drifts.
 ```ts
 function leaveForNextFight() {
   setRun(advanceRun(run))
-  setBetween(BetweenPhase.Verdict)
+  setPhase(RunPhase.Verdict)
   setTricks(NO_TRICKS)
   dealNextHand()
 }
@@ -120,8 +190,8 @@ all reach it — so three controls cannot each grow their own copy of "start the
 
 ```ts
 function handleContinue() {
-  if (between === BetweenPhase.Verdict && canBuyAnything(stock)) {
-    setBetween(BetweenPhase.Warned)
+  if (phase === RunPhase.Verdict && canBuyAnything(stock)) {
+    setPhase(RunPhase.Warned)
     return
   }
   leaveForNextFight()
@@ -132,7 +202,7 @@ function handleContinue() {
 `refusals` record the shop is handed. So the warning reads **the same rule** the shop's buttons grey
 on, and cannot claim there is something to buy while every purchase card is disabled.
 
-`Shop` is unguarded — `setBetween(BetweenPhase.Shop)` — because a player is always allowed to go and
+`Shop` is unguarded — `setPhase(RunPhase.Shop)` — because a player is always allowed to go and
 look.
 
 ### The purchase handler, and the race it closes
@@ -176,24 +246,49 @@ deliberately not taken, precisely because StrictMode would fire it twice.
 ## The render switch
 
 ```tsx
-if (encounterOver && between === BetweenPhase.Shop) {
-  return <ShopPanel coins={run.coins} refusals={{ … refusalFor(stock, item) … }} onBuy={handleBuy} onLeave={leaveForNextFight} … />
+if (phase === RunPhase.Start) {                       // DLR-85 — precedes the run, so it is first
+  return <RunPathScreen title={START_TITLE} stages={stages} goalText={goalText}
+    actionLabel={fightLabel(currentName)} onAction={() => setPhase(RunPhase.Verdict)} />
+}
+if (encounterOver && phase === RunPhase.Map) {        // DLR-85 — same component, different two strings
+  return <RunPathScreen title={MAP_TITLE} stages={stages} goalText={goalText}
+    actionLabel={MAP_BACK_LABEL} onAction={() => setPhase(RunPhase.Verdict)} />
+}
+if (encounterOver && phase === RunPhase.Shop) {
+  return <ShopPanel coins={run.coins} nextOpponentName={nextName} refusals={{ … refusalFor(stock, item) … }} onBuy={handleBuy} onLeave={leaveForNextFight} … />
 }
 if (encounterOver) {
   return <RunOutcomePanel outcome={run.outcome} canContinue={canAdvanceRun(run)} coins={run.coins}
-    warning={between === BetweenPhase.Warned} onShop={…} onContinue={handleContinue} … />
+    warning={phase === RunPhase.Warned} onShop={…} onContinue={handleContinue}
+    beatenName={currentName} nextName={nextName} onMap={() => setPhase(RunPhase.Map)} … />
 }
-return <WarCouncilRound key={hand} … runLabel={runProgressText(…)} coins={run.coins} onComplete={handleComplete} />
+return <WarCouncilRound key={hand} … runLabel={runPositionLabel(run.encounterIndex, run.encounterCount, currentName)} coins={run.coins} onComplete={handleComplete} />
 ```
 
-The shop branch sits **before** the verdict branch, so the two cannot both match.
+The shop branch sits **before** the verdict branch, so the two cannot both match, and the map branch sits
+before the shop for the same reason. **The `Start` branch sits ahead of all of them and is the only one
+not gated on `encounterOver`** — it is the surface shown before any fight exists, so an
+`encounterOver` test would be meaningless there.
+
+**Both `RunPathScreen` mounts are the same component with two strings different** — a title and an action
+label. That is the entire difference between the start screen and the between-fights map, and it is why
+one component serves both rather than two near-identical siblings. `Start`'s action begins the run by
+moving to `Verdict`; `Map`'s action goes back to `Verdict`. See
+[../run-ui/run-map-and-the-path-screen.md](../run-ui/run-map-and-the-path-screen.md).
+
+**`ShopPanel`'s `nextOpponentName` was a real defect until DLR-85.** It read
+`quarryCharacterInfo(SLICE_QUARRY_CHARACTER)?.name`, so the shop announced **"The Monarch"** as the next
+opponent on every fight of the run. It now reads `nextName` from the roster. `quarryCharacterInfo`'s
+import was dropped from this file with the change; `SLICE_QUARRY_CHARACTER` stays, because it still feeds
+the module-scope `HUNT`.
 
 `ShopPanel`'s `progressText` is `runProgressText(run.encounterIndex + 1, run.encounterCount)`, and
 the `+ 1` is correct rather than an off-by-one: `recordEncounter` does not advance
 `encounterIndex`, so at shop time it still holds the **just-won** fight's 0-based index, and the
 coming fight's is one higher. `runLabels.ts`'s own `runVerdictDetail` uses the identical expression
 for the identical reason. All three DLR-84 reviewers checked this independently and QA confirmed it
-live — the shop reads "Fight 2 of 3" after winning fight 1.
+live — the shop reads "Fight 2 of 3" after winning fight 1. (Since DLR-85 that same expression reads
+"Fight 2 of 25", because the run's length grew; the arithmetic is unchanged.)
 
 `canContinue` is computed by `canAdvanceRun` **here and handed down**, so the panel cannot disagree
 with the run module about whether the run is over. The verdict is a separate full surface owned by
@@ -203,7 +298,16 @@ it depend on the run layer. Keeping the split is what makes "existing encounter 
 unchanged" true by construction rather than by intention.
 
 The card layer learns the run's position as a **pre-formatted `runLabel: string`**, never as a
-`RunState` — a string prop renders and cannot grow into a second run-state consumer.
+`RunState` — a string prop renders and cannot grow into a second run-state consumer. **DLR-85 changed
+what that string says and nothing about how it travels**: `runProgressText(index, count)` became
+`runPositionLabel(index, count, currentName)`, so the band reads `Fight 1 of 25 — Aoife`. The prop's type
+is still `string`, so `WarCouncilMountProps` needed no edit at all — which is the payoff of having made
+it a worded string in the first place.
+
+**DLR-85 added no effect either**, so the no-`useEffect` property above still holds for the whole file.
+Every new transition is a `setPhase` call fired from a control, and `RunPathScreen`'s `Escape` handling is
+a container `onKeyDown` inside that component rather than a document listener here. On StrictMode's
+development double-mount the app returns to `RunPhase.Start`, which is the correct initial state.
 
 ## `dealerForRound` alternates the dealer by round parity
 

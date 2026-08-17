@@ -16,6 +16,9 @@ interface RoundStatusBandProps {
   /** AC2 — the run's purse during a hand, threaded through unread and unchanged
    *  (`warCouncilMount.ts`'s own docblock). */
   readonly coins: Coins
+  /** The Quarry bar's name, already worded by `quarryHealthLabel`. Threaded straight to
+   *  `DuelHealthBars` unread, same as `runLabel` and `coins`. */
+  readonly quarryLabel: string
 }
 
 /**
@@ -36,6 +39,7 @@ export default function RoundStatusBand({
   bars,
   runLabel,
   coins,
+  quarryLabel,
 }: RoundStatusBandProps) {
   const yourTricks = tricksWon[PlayerSide.Player]
   const theirTricks = tricksWon[PlayerSide.Cpu]
@@ -63,6 +67,7 @@ export default function RoundStatusBand({
       </div>
       <DuelHealthBars
         bars={bars}
+        quarryLabel={quarryLabel}
         centre={
           <div className="wc-score" role="group" aria-label="Tricks won">
             <span className={`wc-score-cell${yourTricks > theirTricks ? ' wc-is-lead' : ''}`}>

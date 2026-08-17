@@ -5,10 +5,11 @@ import { RunOutcome } from '../../../hunt'
 import RunOutcomePanel from '../RunOutcomePanel'
 import {
   CONTINUE_ANYWAY_LABEL,
-  CONTINUE_LABEL,
+  MAP_LABEL,
   NEW_RUN_LABEL,
   SHOP_LABEL,
   VISIT_SHOP_LABEL,
+  fightLabel,
 } from '../runLabels'
 
 afterEach(cleanup)
@@ -24,12 +25,15 @@ const baseProps = {
   onContinue: vi.fn(),
   onDismissWarning: vi.fn(),
   onNewRun: vi.fn(),
+  beatenName: undefined,
+  nextName: 'Cillian',
+  onMap: vi.fn(),
 }
 
 describe('RunOutcomePanel — the three verdicts (AC2, AC4, AC5)', () => {
   it('offers both forward controls when a fight is won and another remains (AC2)', () => {
     render(<RunOutcomePanel {...baseProps} outcome={RunOutcome.InProgress} canContinue />)
-    expect(screen.getByRole('button', { name: CONTINUE_LABEL })).toBeTruthy()
+    expect(screen.getByRole('button', { name: fightLabel(baseProps.nextName) })).toBeTruthy()
     expect(screen.getByRole('button', { name: SHOP_LABEL })).toBeTruthy()
     expect(screen.queryByRole('button', { name: NEW_RUN_LABEL })).toBeNull()
   })
@@ -44,7 +48,7 @@ describe('RunOutcomePanel — the three verdicts (AC2, AC4, AC5)', () => {
         canContinue={false}
       />,
     )
-    expect(screen.queryByRole('button', { name: CONTINUE_LABEL })).toBeNull()
+    expect(screen.queryByRole('button', { name: fightLabel(baseProps.nextName) })).toBeNull()
     expect(screen.queryByRole('button', { name: SHOP_LABEL })).toBeNull()
     expect(screen.queryByRole('button', { name: VISIT_SHOP_LABEL })).toBeNull()
     expect(screen.queryByRole('button', { name: CONTINUE_ANYWAY_LABEL })).toBeNull()
@@ -95,7 +99,7 @@ describe('RunOutcomePanel — the three verdicts (AC2, AC4, AC5)', () => {
         onContinue={onContinue}
       />,
     )
-    fireEvent.click(screen.getByRole('button', { name: CONTINUE_LABEL }))
+    fireEvent.click(screen.getByRole('button', { name: fightLabel(baseProps.nextName) }))
     expect(onContinue).toHaveBeenCalledTimes(1)
   })
 
@@ -118,7 +122,7 @@ describe('RunOutcomePanel — the unspent-coin warning (DLR-84)', () => {
     render(<RunOutcomePanel {...baseProps} outcome={RunOutcome.InProgress} canContinue warning />)
     expect(screen.getByRole('button', { name: VISIT_SHOP_LABEL })).toBeTruthy()
     expect(screen.getByRole('button', { name: CONTINUE_ANYWAY_LABEL })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: CONTINUE_LABEL })).toBeNull()
+    expect(screen.queryByRole('button', { name: fightLabel(baseProps.nextName) })).toBeNull()
     expect(screen.queryByRole('button', { name: SHOP_LABEL })).toBeNull()
   })
 
@@ -150,5 +154,46 @@ describe('RunOutcomePanel — the unspent-coin warning (DLR-84)', () => {
     expect(warningEl).toBeTruthy()
     fireEvent.keyDown(warningEl as Element, { key: 'Escape' })
     expect(onDismissWarning).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('RunOutcomePanel — naming and the map control (DLR-85)', () => {
+  it('names the opponent just beaten in the headline (AC8)', () => {
+    render(
+      <RunOutcomePanel
+        {...baseProps}
+        outcome={RunOutcome.InProgress}
+        canContinue
+        beatenName="Aoife"
+      />,
+    )
+    expect(screen.getByRole('heading', { name: 'Aoife defeated' })).toBeTruthy()
+  })
+
+  it('names the next opponent on the primary control (AC8)', () => {
+    render(
+      <RunOutcomePanel
+        {...baseProps}
+        outcome={RunOutcome.InProgress}
+        canContinue
+        nextName="Cillian"
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Fight Cillian' })).toBeTruthy()
+  })
+
+  it('offers a Map control that fires onMap (AC9)', () => {
+    const onMap = vi.fn()
+    render(
+      <RunOutcomePanel {...baseProps} outcome={RunOutcome.InProgress} canContinue onMap={onMap} />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: MAP_LABEL }))
+    expect(onMap).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers no Map or continue control on a finished run', () => {
+    render(<RunOutcomePanel {...baseProps} canContinue={false} outcome={RunOutcome.Lost} />)
+    expect(screen.queryByRole('button', { name: MAP_LABEL })).toBeNull()
+    expect(screen.getByRole('button', { name: NEW_RUN_LABEL })).toBeTruthy()
   })
 })

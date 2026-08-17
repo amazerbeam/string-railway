@@ -19,6 +19,7 @@ import {
   huntFixture,
   makeRound,
   maxHealthFixture,
+  quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
 
@@ -38,6 +39,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       encounter={overrides.encounter ?? encounterFixture}
       maxHealth={overrides.maxHealth ?? maxHealthFixture}
       runLabel={overrides.runLabel ?? runLabelFixture}
+      quarryLabel={quarryLabelFixture}
       cheats={overrides.cheats ?? []}
       coins={overrides.coins ?? coinsFixture}
       onComplete={overrides.onComplete ?? vi.fn()}
@@ -45,7 +47,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
   )
 }
 
-function healthMeter(name: 'Your health' | 'The Quarry’s health') {
+function healthMeter(name: 'Your health' | typeof quarryLabelFixture) {
   return screen.getByRole('meter', { name })
 }
 
@@ -262,7 +264,7 @@ describe('WarCouncilRound', () => {
   it('shows both health bars from the first render', () => {
     renderRound()
     expect(healthMeter('Your health')).toBeTruthy()
-    expect(healthMeter('The Quarry’s health')).toBeTruthy()
+    expect(healthMeter(quarryLabelFixture)).toBeTruthy()
   })
 
   it('renders the purse plate showing the coins prop it was mounted with (DLR-84 AC2)', () => {
@@ -297,13 +299,13 @@ describe('WarCouncilRound', () => {
     })
     renderRound({ initialState: round })
     const playerBefore = healthMeter('Your health').getAttribute('aria-valuenow')
-    const quarryBefore = healthMeter('The Quarry’s health').getAttribute('aria-valuenow')
+    const quarryBefore = healthMeter(quarryLabelFixture).getAttribute('aria-valuenow')
     const bells9 = screen.getByRole('button', { name: '9 of Bells (Witch)' })
     fireEvent.click(bells9)
     fireEvent.click(bells9)
     expect(screen.getByText(/take the trick/i)).toBeDefined()
     expect(healthMeter('Your health').getAttribute('aria-valuenow')).toBe(playerBefore)
-    expect(healthMeter('The Quarry’s health').getAttribute('aria-valuenow')).toBe(quarryBefore)
+    expect(healthMeter(quarryLabelFixture).getAttribute('aria-valuenow')).toBe(quarryBefore)
   })
 
   it('moves the player’s bar by exactly one hit on a lost clean trick, and cashes the bank into the Quarry (AC6)', () => {
@@ -331,7 +333,7 @@ describe('WarCouncilRound', () => {
     expect(Number(healthMeter('Your health').getAttribute('aria-valuenow'))).toBe(
       PLAYER_START_HEALTH - DAMAGE_PER_HIT,
     )
-    expect(Number(healthMeter('The Quarry’s health').getAttribute('aria-valuenow'))).toBe(
+    expect(Number(healthMeter(quarryLabelFixture).getAttribute('aria-valuenow'))).toBe(
       quarryHealthForEncounter(0) - 4,
     )
   })

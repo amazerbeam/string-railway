@@ -24,6 +24,11 @@ import {
   CHEAT_PRICE,
   HEAL_PRICE,
   HEAL_HEALTH_RESTORED,
+  OpponentKind,
+  ORDINARY_OPPONENT_NAMES,
+  STAGE_BOSS_NAMES,
+  RUN_ENCOUNTERS,
+  runEncounterAt,
 } from '../config'
 import { DuelSide } from '../types'
 import { quarryCharacterInfo } from '../quarryCharacters'
@@ -157,5 +162,46 @@ describe('skull rank weight curves', () => {
 
   it('has hump as the active curve', () => {
     expect(SKULL_RANK_WEIGHTS).toBe(SKULL_WEIGHTS_HUMP)
+  })
+})
+
+describe('RUN_ENCOUNTERS (DLR-85)', () => {
+  it('is the source QUARRY_ENCOUNTER_HEALTH projects, entry for entry', () => {
+    expect(QUARRY_ENCOUNTER_HEALTH).toEqual(RUN_ENCOUNTERS.map((e) => e.health))
+    expect(ENCOUNTERS_PER_RUN).toBe(RUN_ENCOUNTERS.length)
+  })
+
+  it('preserves DLR-82’s measured opening curve', () => {
+    expect(QUARRY_ENCOUNTER_HEALTH.slice(0, 3)).toEqual([10, 14, 18])
+  })
+
+  it('runs four ordinary opponents to a boss, five stages over, closing on Diarmuid', () => {
+    expect(RUN_ENCOUNTERS).toHaveLength(25)
+    expect(RUN_ENCOUNTERS.filter((e) => e.kind === OpponentKind.Boss)).toHaveLength(5)
+    const last = RUN_ENCOUNTERS[RUN_ENCOUNTERS.length - 1]
+    expect(last?.kind).toBe(OpponentKind.Boss)
+    expect(last?.name).toBe('Diarmuid')
+  })
+
+  it('names every entry from the roster, without reuse', () => {
+    const names = RUN_ENCOUNTERS.map((e) => e.name)
+    expect(new Set(names).size).toBe(names.length)
+    for (const e of RUN_ENCOUNTERS) {
+      const roster = e.kind === OpponentKind.Boss ? STAGE_BOSS_NAMES : ORDINARY_OPPONENT_NAMES
+      expect(roster).toContain(e.name)
+    }
+  })
+
+  it('gives every entry a positive finite health', () => {
+    for (const e of RUN_ENCOUNTERS) {
+      expect(Number.isFinite(e.health)).toBe(true)
+      expect(e.health).toBeGreaterThan(0)
+      expect(Number.isInteger(e.health)).toBe(true)
+    }
+  })
+
+  it('throws a RangeError for an index past the configured run', () => {
+    expect(() => runEncounterAt(RUN_ENCOUNTERS.length)).toThrow(RangeError)
+    expect(() => runEncounterAt(-1)).toThrow(RangeError)
   })
 })

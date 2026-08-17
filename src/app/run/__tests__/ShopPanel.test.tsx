@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PurchaseRefusal, ShopItem } from '../../../hunt'
 import { HeartState } from '../../warCouncil/duelHealthBars'
 import ShopPanel from '../ShopPanel'
+import { fightLabel } from '../runLabels'
 import { shopItemAccessibleName } from '../shopLabels'
 
 afterEach(cleanup)
@@ -78,13 +79,13 @@ describe('ShopPanel', () => {
   it('fires onLeave exactly once when the leave control is clicked (AC9)', () => {
     const onLeave = vi.fn()
     render(<ShopPanel {...baseProps} refusals={noRefusals} onLeave={onLeave} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Next fight' }))
+    fireEvent.click(screen.getByRole('button', { name: fightLabel(baseProps.nextOpponentName) }))
     expect(onLeave).toHaveBeenCalledTimes(1)
   })
 
   it('states the coming opponent, the coins and the health on the face of the screen (AC10)', () => {
-    render(<ShopPanel {...baseProps} refusals={noRefusals} />)
-    expect(screen.getByText(/The Monarch/)).toBeTruthy()
+    const { container } = render(<ShopPanel {...baseProps} refusals={noRefusals} />)
+    expect(container.querySelector('.shop-next')?.textContent).toContain('The Monarch')
     expect(screen.getByRole('group', { name: /purse/i }).textContent).toContain('3')
     expect(screen.getByRole('meter', { name: /health/i }).textContent).toContain('6 / 10')
   })

@@ -80,6 +80,7 @@ export default function WarCouncilRound({
   runLabel,
   cheats,
   coins,
+  quarryLabel,
   onComplete,
 }: WarCouncilMountProps) {
   const [ui, dispatch] = useReducer(
@@ -270,6 +271,7 @@ export default function WarCouncilRound({
         bars={bars}
         runLabel={runLabel}
         coins={coins}
+        quarryLabel={quarryLabel}
       />
       <aside className="wc-dossier">
         <QuarryDossier

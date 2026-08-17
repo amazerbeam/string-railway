@@ -27,10 +27,10 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | Module                | Doc                                         | Status      | Built by                                                                                                                                     |
 | --------------------- | ------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, PT-001, PT-002 |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84                               |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85                       |
 | `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, PT-002                             |
-| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84                                                                                                                                       |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, PT-001, PT-002       |
+| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85                                                                                                                               |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, PT-001, PT-002 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -222,6 +222,43 @@ split into [verdict-panel.md](run-ui/verdict-panel.md) and
 [shop-screen.md](run-ui/shop-screen.md). **One thing it left at a hard edge**: `warCouncil.css` now
 sits at **exactly 400 lines**, the blocking budget, reached by merging the coins plate into `.wc-run`'s
 selector rather than duplicating the block. The next rule added to that file must split it first.
+
+**DLR-85 gave the run a visible shape, and it is the first ticket where the game shows you how far there
+is to go.** The app now opens on a **start screen** rather than on fight one: the whole run drawn as a
+single horizontal path — twenty thin **ticks** for ordinary opponents and five filled **blocks** for stage
+bosses, grouped four-then-a-boss five times over — with all twenty-five names angled below the line, the
+goal stated in words ("Beat all 25"), and one button reading **`Fight Aoife`**. The same surface is
+reachable between fights from a third `Map` control on the verdict, where beaten opponents are **struck
+out and still present** and the next one is marked out from those beyond it. Losing returns you to the
+start screen with a fresh path.
+
+**The run grew from three fights to twenty-five**, and opponents got names — Aoife through Oisín, with
+Bréanainn, Muireann, Conchobhar, Gráinne and Diarmuid closing the five stages. Naming spread across four
+surfaces in one pass, because a named map beside an unnamed verdict reads as two different games: the
+verdict headline is `Aoife defeated`, the forward controls read `Fight Cillian`, the shop's leave button
+does too, and the felt's band reads `Fight 1 of 25 — Aoife`.
+
+The structural decision is the one worth carrying forward: **`RUN_ENCOUNTERS` is now the run's single
+source and `QUARRY_ENCOUNTER_HEALTH` is a projection of it**, which is why growing the run from 3 to 25
+required **zero test edits** — and why it must stay declared above that projection, since a forward
+reference throws at module init. Stages are **derived from where the bosses actually sit**, so no stage
+count appears in the code and the same component renders three ticks and no boss as happily as five
+stages. Start at [hunt/run-path-and-the-roster.md](hunt/run-path-and-the-roster.md) for the sequence, the
+generated health curve and the path model, or
+[run-ui/run-map-and-the-path-screen.md](run-ui/run-map-and-the-path-screen.md) for the two surfaces.
+
+**Two things are worth knowing before playing it.** The run is **not expected to be winnable** — Oisín
+holds 86 health and Diarmuid 135 against a player starting on 10 — which is the arithmetic working as
+DLR-82 designed it, and makes `YOU WIN` effectively unreachable in play. And **AC11 is not met**: the
+restored horizontal path is wider than the viewport below about 1088px, and the shell is
+`overflow: hidden`, so it **crops silently** — 21 of 25 nodes at 1024×768, 14 at 500×844. The remedy is a
+tuning choice (a smaller name font, a steeper angle, or a scrolling path region) and is the developer's.
+
+**It is also the clearest case yet for QA driving a real browser.** The first implementation left the
+per-stage node list unstyled, so the path rendered as a 5×5 vertical grid instead of one line — and
+**every one of the 633 tests passed**, because `jsdom` has no layout engine. It was found by reading
+`getComputedStyle` and twenty-five bounding boxes in Chrome, and fixing it is what revealed the AC11 crop
+that the broken-but-more-compact layout had been hiding.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

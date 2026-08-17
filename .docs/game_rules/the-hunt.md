@@ -4,8 +4,31 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-08-16**. Everything below is reachable in
+Last reviewed against the code and the design on **2026-08-17**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
+
+> **The run is twenty-five fights and you can see all of them — DLR-85, 2026-08-17.** The game now
+> **opens on a start screen** showing the whole run as one horizontal path: a short **tick** for each of
+> the twenty ordinary opponents and a filled **block** for each of the five **stage bosses**, in the
+> order you will fight them, with **every opponent named**. Four ordinary opponents then a boss, five
+> times over, closing on **Diarmuid**. The goal is stated in words, and one button starts the run by
+> naming who you fight first. **Between fights the same path is reachable again** from a `Map` control on
+> the verdict, where opponents you have beaten are **struck out and still on the path** and the next one
+> is marked out from those beyond it. **Losing the run returns you to the start screen** with a fresh
+> path. Every forward control now names the opponent it leads to — `Fight Aoife`, then `Fight Cillian` —
+> and so do the verdict headline, the shop's leave button and the fight counter. See
+> [section 10](#10-between-hands-and-the-run). **Engine and screen landed together.**
+>
+> **The health bar names them too, added 2026-08-17 after a play session.** The Quarry's heart row is
+> headed **"Aoife's health"** rather than "The Quarry's health", so the bar agrees with the map. The
+> **dossier still says "The Monarch"** — that is the remaining half of the seam, and it is recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
+>
+> **Two caveats stated up front.** The run is **not expected to be winnable** on today's health curve —
+> that is DLR-82's arithmetic working, not a fault — so `YOU WIN` is effectively unreachable in play. And
+> **the path does not currently fit a viewport narrower than about 1088px**: it is cropped rather than
+> scrolled, so opponents at the end of the run (Diarmuid included) simply are not on screen. That is a
+> known defect awaiting a tuning decision, not a rule.
 
 > **Winning pays, and there is somewhere to spend it — DLR-84, 2026-08-16.** Beating a Quarry pays
 > you **1 coin**, which carries for the rest of the run and is on screen while you fight for it.
@@ -25,8 +48,9 @@ the app today except where a rule is marked **[not built]**.
 > [section 4](#4-playing-a-trick). **Engine and screen landed together.** A run starts with two, and
 > since DLR-84 you can buy more.
 
-> **The game is a run now — DLR-82, 2026-08-15.** Three fights in order, against Quarries of rising
-> health, on **one health bar that never refills**. Win and you carry your remaining health into a
+> **The game is a run now — DLR-82, 2026-08-15.** *(Superseded on length by DLR-85 above: the run is
+> twenty-five fights, not three. Everything else here still holds.)* Three fights in order, against
+> Quarries of rising health, on **one health bar that never refills**. Win and you carry your remaining health into a
 > tougher fight; empty and the run is over. A full-screen verdict states which of the three things
 > just happened. See [section 10](#10-between-hands-and-the-run). **Engine and screen landed
 > together — nothing in that section is enforced but unreachable.**
@@ -624,11 +648,43 @@ the lowest legal card at all.
 skulled card, so it will sometimes lead a skull and be trivially dodged. That is recorded under
 [Known tensions](#known-tensions-recorded-not-resolved) as the obvious next improvement.
 
-### The character roster — a name each, and nothing more
+### The opponents — twenty-five of them, each a name and a health total
 
-Five names exist, cast from the deck's own odd ranks: **Swan**, **Fox**, **Woodcutter**, **Witch**,
-**Monarch**. Only the Monarch is configured, and every hand in the app today runs against it — as a
-label on a panel, with no mechanical effect whatsoever.
+**[settled]** — the roster and the order; every health figure is **[provisional]** (section 10).
+
+Since 2026-08-17 the run has **twenty-five named opponents**, fought in a fixed order:
+
+**Ordinary opponents**, in order — Aoife, Cillian, Niamh, Eoin, Saoirse, Rónán, Maeve, Fergus, Órla,
+Declan, Sinéad, Pádraig, Bríd, Lorcán, Clodagh, Tadhg, Róisín, Cormac, Aisling, Oisín.
+
+**Stage bosses**, in order — Bréanainn, Muireann, Conchobhar, Gráinne, **Diarmuid**, who closes the run.
+
+**A name is all that distinguishes them, and so is a boss.** Every one of the twenty-five plays by
+exactly the rules in sections 4–7, with no exceptions, and **a boss is not a different kind of
+opponent** — it is drawn differently on the path and holds more health, and that is the whole of it. No
+opponent has a power, a gimmick, or a rule it may break.
+
+> **Diarmuid is intended to ignore follow-suit, and does not — [not built].** The design's plan for the
+> final boss is that it breaks the rule the player's Cheat breaks. Nothing enforces that today; Diarmuid
+> is a block on the map with 135 health.
+
+#### The deck-rank names are still on part of the fight screen — a narrowing seam
+
+The five earlier names cast from the deck's own odd ranks — **Swan**, **Fox**, **Woodcutter**, **Witch**,
+**Monarch** — have **not** been removed. They still name the opponent in the fight screen's **dossier
+panel**, and the readout beside it still reads "What the Quarry holds", on every fight of the run.
+
+**The health bar was named on 2026-08-17**: it reads **"Aoife's health"** against the opponent you are
+actually fighting, so the bar now agrees with the map, the verdict and the fight counter.
+
+So the same fight is fought against **"Aoife" everywhere except the dossier**, which still says "The
+Monarch". That remainder is a deliberate scope boundary rather than an oversight, and it is recorded under
+[Known tensions](#known-tensions-recorded-not-resolved).
+
+> **The trade the roster made is knowing.** Swan / Fox / Woodcutter / Witch / Monarch were free to teach,
+> because they are the names of cards the player already reads. Twenty-five human names are not, and buy
+> nothing mechanically. The developer took that trade deliberately in exchange for a run whose shape can
+> be seen; it is recorded so it is not mistaken for an oversight.
 
 **What each of them will do is undecided — [not built].** Sketches for round-long rule-breaks were
 written before powers were deferred, and they are deliberately not reproduced here: a rules document
@@ -653,7 +709,7 @@ design document, not from this section.
 | What the last trick did             | **Stated** — which of the four outcomes it was, and what it cost or banked.                                                                                                                                                |
 | **Your Cheat slots**                | **Open — two frames beside the decree**, filled or empty, all hand. A selected Cheat and an armed one differ in frame as well as tone, and the hint line names which state you are in (section 4).                          |
 | **Your coins**                      | **Open — a plate on the status band**, beside the fight counter, all hand. Also stated on the verdict and throughout the shop (section 10).                                                                                 |
-| **Both sides' health**              | **Open — two rows of hearts**, one heart per health point against each side's own maximum. The hearts a trick just took break as it resolves. While a streak is banked, the Quarry's last _bank × multiplier_ standing hearts flash as a preview of what cashing right now would take.                                                                                                                                    |
+| **Both sides' health**              | **Open — two rows of hearts**, one heart per health point against each side's own maximum. The Quarry's row is **named after the opponent** — "Aoife's health" (since 2026-08-17). The hearts a trick just took break as it resolves. While a streak is banked, the Quarry's last _bank × multiplier_ standing hearts flash as a preview of what cashing right now would take.                                                                                                                                    |
 
 The telegraph's fidelity — suit only, or suit and stance — is **[provisional]**; it currently shows
 both.
@@ -662,22 +718,69 @@ both.
 
 ## 10. Between hands, and the run
 
-Since 2026-08-15 most of this section is playable, and since 2026-08-16 the economy is too. The run
-and the shop are both real; **Forage is not**.
+Since 2026-08-15 most of this section is playable, since 2026-08-16 the economy is too, and since
+2026-08-17 the run is twenty-five fights you can see laid out in front of you. The run, the shop and the
+map are all real; **Forage is not**.
 
-### A run is three fights on one health bar — **[settled]**
+### The run starts on a screen showing the whole path — **[settled]**
 
-A run is a fixed sequence of encounters, fought in order. **Three** are configured, and each Quarry
-has more health than the last.
+**[settled]** — the procedure; every word of the copy is **[provisional]** and the developer's.
+
+Before the first fight you are shown the run itself: **one horizontal path** with every opponent on it,
+in the order you will meet them.
+
+- **An ordinary opponent is a short tick. A stage boss is a filled block.** They are marked out by shape,
+  not by colour, so the shape of the run reads at a glance: four ticks, a block, four ticks, a block, and
+  so on.
+- **Every opponent on the path is named**, angled below its mark.
+- **The goal is stated in words** beside the path — "Beat all 25".
+- **There is exactly one thing to do**, and it names who you fight first: `Fight Aoife`.
+
+**Nothing on the path is clickable.** It is something you read, not something you choose from — there are
+no branches, no route to pick, and no node that does anything other than tell you who is there.
+
+### The same path is reachable between fights — **[settled]**
+
+Beating an opponent offers a **`Map`** control, beside the one that goes on to the next fight and the one
+that visits the shop. It shows the same path, with your progress on it:
+
+- **Opponents you have beaten are struck through, and stay on the path.** They are not removed — how far
+  you have come is part of what the path is for.
+- **The opponent you fight next is marked out from those beyond it** — a taller mark and a caret, again
+  distinguishable without relying on colour.
+- **One control returns you to the verdict**, and `Escape` does the same. Looking at the map costs you
+  nothing and commits you to nothing.
+
+The map is offered only **between** fights. A run that has ended offers `Start a new run` and nothing
+else.
+
+> **The path does not currently fit a narrow viewport, and it crops rather than scrolls.** Below roughly
+> 1088px of width the opponents at the end of the run are simply not drawn — at a phone width barely half
+> the path is visible, Diarmuid included, and the title and button are cut off too. Nothing on screen
+> indicates this. It is a defect awaiting a tuning decision (a smaller name size, a steeper angle, or
+> letting the path scroll sideways), and it is recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
+
+### A run is twenty-five fights on one health bar — **[settled]**
+
+A run is a fixed sequence of encounters, fought in order. **Twenty-five** are configured — **four
+ordinary opponents then a stage boss, five times over** — and each opponent has more health than the last
+of its kind.
+
+**A stage is not a rule.** It is a group of four opponents and the boss that closes it, and it changes
+nothing about how a fight is played: there is no stage gimmick, no reward for finishing one, and nothing
+happens between stages that does not happen between any two fights. What a stage does is make the run's
+length legible.
 
 - **Your health carries from fight to fight, and nothing restores it.** You begin the next fight on
   exactly the health you finished the last one on. There is no rest, no heal, and no flask.
-- **Beating a Quarry does not end the session.** The fight resolves, you are told you won it, and
-  you choose to go on to the next one.
+- **Beating a Quarry does not end the session.** The fight resolves, you are told **by name** that you
+  beat them, and you choose to go on to the next one.
 - **Your health emptying ends the run**, wherever it happens — including on the last fight. No
-  further fight is offered.
-- **Beating the last Quarry ends the run as a win**, and it is stated differently from beating any
-  earlier one.
+  further fight is offered, and **starting again returns you to the start screen** with the whole path
+  fresh: nothing struck out, and the first opponent current again.
+- **Beating the last Quarry — Diarmuid — ends the run as a win**, and it is stated differently from
+  beating any earlier one. In practice you will not see it: see the health curve below.
 - **Your Cheat slots carry from fight to fight exactly as your health does** (section 4). A Cheat
   spent in fight one is still gone in fight two; one held is still held. They are granted once, at
   the start of the run, and are replenished only by buying one.
@@ -687,32 +790,56 @@ has more health than the last.
 > one-directional: you accumulate damage and never recover it, and the only question is how far you
 > get.
 
-### The Quarries' health — **[provisional]**
+### The opponents' health — **[provisional]**
 
-**10, then 14, then 18.** The shape is fixed — at least three, rising, not all the same — and the
-three numbers are the developer's to set from play.
+Every opponent's health is **generated from three numbers**, not written out one by one:
 
-At these values a run was **expected to be lost around the third fight**: a fight costs the player
-roughly four health and the player starts with ten. That is the arithmetic working as designed, not
-a fault. The intended answers were the shop and the flask in later work; **raising the player's
-starting health is explicitly the wrong response** and is ruled out.
+| Number                                            | Value  |
+| ------------------------------------------------- | ------ |
+| The first opponent's health                       | **10** |
+| Added for each ordinary opponent already fought   | **4**  |
+| A boss's multiplier over the step it sits on      | **1.5**|
 
-**The shop landed on 2026-08-16 and these numbers were deliberately left alone.** A heal buys back
-4 health for a coin, and a fight pays a coin — so a player who spends every coin on health roughly
-breaks even against a fight's cost. Whether that is enough of an answer is the thing to watch, and
-retuning the curve before playing under the economy would answer nothing.
+So the ordinary opponents run **10, 14, 18, 22**, then Bréanainn holds **39**; the next four run 26, 30,
+34, 38 and Muireann holds **63**; and so on to **Oisín at 86 and Diarmuid at 135**. The five bosses hold
+**39, 63, 87, 111, 135**.
+
+The first three figures are unchanged from the three-fight run they replaced — the formula was chosen to
+reproduce `10, 14, 18` exactly, so nothing measured at those values was disturbed.
+
+**Whose decision:** the developer's. The step and the base are not new choices, but **the boss multiplier
+is** — it is the one number in the change nobody has decided. Whether a formula is even the right shape is
+also open: twenty-five editable numbers is the alternative, and swapping to it changes nothing else.
+
+> **This run is not winnable, and that is the arithmetic working rather than a fault.** A fight costs the
+> player roughly four health, the player starts with **ten**, and the only healing in the game is 4 health
+> for a coin at one coin a fight. Expect to lose in the first or second stage. DLR-82 already recorded
+> that the answer is the shop and later upgrades, and that **raising the player's starting health is
+> explicitly the wrong response**. The practical consequence: **`YOU WIN` is effectively unreachable in
+> play**, so checking that screen needs the run temporarily shortened.
 
 ### The run's length — **[settled]**
 
-**Three fights**, and the length is not separately settable: it is however many Quarry health values
-are configured. Adding a fourth number adds a fourth fight.
+**Twenty-five fights**, and the length is not separately settable: it is however many opponents are
+configured. Adding a name adds a fight.
+
+**The number of stages is not settable either — it is derived from where the bosses sit.** A stage closes
+wherever a boss is; five bosses make five stages. Removing the bosses would leave one long stage of ticks
+and no blocks, and the path would draw that correctly rather than breaking. Nothing anywhere states "five"
+or "four".
 
 ### What you are told when a fight ends — **[settled]**
 
 The fight's last trick is shown like any other, and clearing it takes you to a full-screen verdict:
 a headline naming which of the three things happened, which fight of the run it was, the health you
-carry, and how many of the deciding hand's tricks you took. There is exactly one thing to do from
-it — go on to the next fight, or start a new run.
+carry, and how many of the deciding hand's tricks you took.
+
+**Since 2026-08-17 the headline names the opponent you just beat** — "Aoife defeated" — where it used to
+say "FIGHT WON". Winning or losing the **run** is still stated as `YOU WIN` / `YOU LOSE`, because that is
+about the run rather than about one opponent; the opponent is named in the line beneath instead.
+
+From an intermediate verdict there are **three** things to do: go on to the next fight, visit the shop, or
+look at the map. From a finished run there is one: start a new run.
 
 > This replaced a one-line message on a tally table that a play session showed the player did not
 > read as having won or lost. The wording of every line on the verdict is placeholder and the
@@ -729,10 +856,14 @@ while you play, on the verdict, and in the shop while you choose. They do not su
 
 **Whose decision:** the developer's — 1 coin a fight is transcribed from the ticket, not derived.
 
-### Between fights you choose: go on, or visit the shop — **[settled]**
+### Between fights you choose: go on, visit the shop, or look at the map — **[settled]**
 
-Beating a Quarry with another still to come offers **two** things to do: **continue** straight to the
-next fight, or **visit the shop**. The shop is never forced, and you can always go and look.
+Beating a Quarry with another still to come offers **three** things to do: **go on** straight to the
+next fight, **visit the shop**, or **look at the map**. The shop is never forced, and you can always go
+and look; the map costs nothing and commits you to nothing.
+
+**The control that goes on names who it takes you to** — `Fight Cillian`, not `Continue`. So does the
+button that leaves the shop.
 
 **Trying to walk past money you could spend stops you.** Choosing to continue while at least one
 purchase is currently affordable replaces the two controls with a line naming what you are holding,
@@ -773,9 +904,10 @@ arrives — full slots rather than an empty purse.
 **Leaving the shop starts the next fight**, with everything you bought already in effect: the health
 you healed to, the Cheats in your slots, and whatever coins you did not spend.
 
-### Which fight you are on — **[settled]**
+### Which fight you are on, and who you are fighting — **[settled]**
 
-Shown throughout play, beside the opponent's plate: `Fight 2 of 3`. It is stated on the shop screen
+Shown throughout play, beside the opponent's plate: **`Fight 1 of 25 — Aoife`**. Until 2026-08-17 it read
+a bare `Fight 1 of 3`; it now names the opponent as well as the position. It is stated on the shop screen
 too, alongside who is coming next.
 
 ### Not built
@@ -802,9 +934,16 @@ too, alongside who is coming next.
   read by nothing; wiring it in was explicitly forbidden until the flask is designed. **The shop's
   heal is not this** — it costs a coin and you must choose it.
 - **Coins carrying between runs** — **[not built]**. A new run starts at zero.
-- **Different Quarries.** Every fight of the run is against the same character, and every opponent
-  plays identically — only its health differs. A roster of named opponents is later work.
-- **Stages, stage gimmicks, and a boss.** The run is a flat sequence.
+- **Different Quarries — HALF BUILT.** The twenty-five opponents now have **names of their own**
+  (section 9), and the map, the verdict, the shop and the fight counter all use them. But **every opponent
+  still plays identically** and differs only in health: no power, no gimmick, nothing it may do that
+  another may not. The **fight screen's own dossier still says "The Monarch"** on every fight, which is
+  the seam recorded under [Known tensions](#known-tensions-recorded-not-resolved).
+- **Stage gimmicks, and a boss that plays differently — HALF BUILT.** The run **is** grouped into five
+  stages of four opponents and a boss, and the path draws that shape. But a stage does nothing: no
+  gimmick, no reward for closing one, nothing that happens between stages and not between any two fights.
+  And **a boss is only a bigger health total and a different mark** — Diarmuid is intended to ignore
+  follow-suit and does not.
 - **Persistence.** Reloading the page starts a new run; nothing is saved.
 - **Snare** — an in-hand edit layer — is **[open]** and explicitly blocked: "raise the value of the
   card I am about to win with" is a dominant strategy until it has a cost.
@@ -873,6 +1012,14 @@ shape is decided.
 One row per rule area. `Where enforced` is a pointer for checking this document has not gone stale —
 the mechanics themselves are documented in `../implementation/`.
 
+> **Where the last contract stands, 2026-08-17 (DLR-85).** Engine and screen landed together: the start
+> screen, the map, the twenty-five-fight run and the naming across four surfaces are **all reachable by
+> playing right now** — none of it is enforced-but-unreachable. **One row below is marked `NOT MET`** —
+> the path does not fit a viewport narrower than about 1088px and crops silently — and it is a defect
+> awaiting a tuning decision, not an undecided rule. Two rules the change *implies* are **not** built:
+> a boss that plays differently (Diarmuid should ignore follow-suit), and the **dossier** naming the
+> opponent the rest of the game names — the health bar half of that was closed on 2026-08-17.
+
 | Rule area                                     | Status                           | Where enforced                                                                                                                   | Who decides what's open                                 |
 | --------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | Deck, decree, draw pile                       | settled                          | `src/warCouncil/deck.ts`, `deal.ts`                                                                                              | —                                                       |
@@ -936,7 +1083,7 @@ the mechanics themselves are documented in `../implementation/`.
 | Winning a fight pays 1 coin                   | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `COINS_PER_ENCOUNTER_WIN`; credited by `src/hunt/run.ts` — `recordEncounter`, the single payout site      | Developer — transcribed, not derived                    |
 | Coins carry across the run, and are on screen | settled — since DLR-84           | `src/hunt/run.ts` — `RunState.coins`, carried by `advanceRun`'s spread; drawn by `src/app/warCouncil/RoundStatusBand.tsx`'s `.wc-coins` plate | —                                          |
 | The shop, and its exactly two items           | settled — since DLR-84           | `src/hunt/shop.ts` — `SHOP_ITEMS`; rendered by `src/app/run/ShopPanel.tsx`, which maps it rather than listing the items          | —                                                       |
-| The shop is opt-in, reached from the verdict  | settled — the developer's ruling | `src/App.tsx` — the `BetweenPhase` union; controls in `src/app/run/RunOutcomePanel.tsx`                                          | Developer — whether the pair reads at a glance          |
+| The shop is opt-in, reached from the verdict  | settled — the developer's ruling | `src/App.tsx` — the `RunPhase` union (was `BetweenPhase`; DLR-85 widened it with `Start` and `Map`); controls in `src/app/run/RunOutcomePanel.tsx` | Developer — whether the three controls read at a glance |
 | Continue warns when something is affordable   | settled                          | `src/hunt/shop.ts` — `canBuyAnything`, `some()` over `refusalFor`; raised by `src/App.tsx`'s `handleContinue`                    | **Developer** — safety net or nag; a threshold is one line |
 | Backing out of the warning takes no action    | settled                          | `src/app/run/RunOutcomePanel.tsx` — `onDismissWarning` on the swapped block's `Escape`                                           | Developer — whether it should mean "continue anyway"    |
 | Both prices (1 coin each)                     | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `CHEAT_PRICE`, `HEAL_PRICE`, deliberately two keys                                                        | **Developer** — if Heal wins every visit, the Cheat is mispriced |
@@ -954,11 +1101,28 @@ the mechanics themselves are documented in `../implementation/`.
 | Health carried fight to fight, no restore     | settled                          | `src/hunt/run.ts` — `advanceRun` passes `encounter.health[Player]` into `startEncounter`                                         | —                                                       |
 | Your health emptying ends the run             | settled                          | `src/hunt/run.ts` — `outcomeFor` checks the Quarry's win before the last-fight case                                             | —                                                       |
 | Winning the last fight wins the run           | settled                          | `src/hunt/run.ts` — `outcomeFor`'s `encounterIndex === encounterCount - 1`                                                       | —                                                       |
-| The Quarries' health (10, 14, 18)             | **provisional** — set 2026-08-15 | `src/hunt/config.ts` — `QUARRY_ENCOUNTER_HEALTH`                                                                                 | **Developer, after playing** — entries 1–2 are placeholders |
-| Run length (3)                                | settled — derived, not chosen    | `src/hunt/config.ts` — `ENCOUNTERS_PER_RUN` is `QUARRY_ENCOUNTER_HEALTH.length`                                                  | — (add a health value to add a fight)                   |
+| The opponents' health (10…86; bosses 39…135)  | **provisional** — set 2026-08-17 | `src/hunt/config.ts` — generated by `buildRunEncounters` from `ORDINARY_HEALTH_BASE` (10), `ORDINARY_HEALTH_STEP` (4) and `BOSS_HEALTH_MULTIPLIER` (1.5); projected into `QUARRY_ENCOUNTER_HEALTH` | **Developer** — the multiplier is the one number nobody chose, and whether a formula beats 25 literals is open |
+| The run is not winnable as configured         | **provisional** — accepted       | nothing to enforce — Oisín holds 86 and Diarmuid 135 against a `PLAYER_START_HEALTH` of 10; DLR-82 ruled the answer is the shop, **not** a bigger bar | Developer — `YOU WIN` is unreachable in play until the curve or the upgrades move |
+| Run length (25)                               | settled — derived, not chosen    | `src/hunt/config.ts` — `ENCOUNTERS_PER_RUN` is `QUARRY_ENCOUNTER_HEALTH.length`, itself a projection of `RUN_ENCOUNTERS`          | — (add a roster name to add a fight)                    |
+| The run's sequence has ONE source             | settled — since DLR-85           | `src/hunt/config.ts` — `RUN_ENCOUNTERS` is authoritative and **must stay declared above** the `QUARRY_ENCOUNTER_HEALTH` projection that reads it at module init | —                          |
+| Stage count derived from boss position        | settled — since DLR-85           | `src/hunt/runPath.ts` — `runPath` closes a stage at each `OpponentKind.Boss`; no stage count appears in it, and it never reads `ORDINARY_PER_STAGE` | —                                       |
+| Ordinary opponents per stage (4)              | **provisional** — from a sketch  | `src/hunt/config.ts` — `ORDINARY_PER_STAGE`, read only by `buildRunEncounters`                                                    | Developer                                               |
+| Every opponent has a name                     | settled — since DLR-85           | `src/hunt/config.ts` — `ORDINARY_OPPONENT_NAMES` (20), `STAGE_BOSS_NAMES` (5); read via `runEncounterAt`                          | Developer — the names themselves                        |
+| A boss is health and a mark, nothing more     | settled — deliberately minimal   | nothing to enforce — `OpponentKind` feeds only the map's glyph and the health formula; no game rule reads it                       | **Developer — a final-boss ticket** (Diarmuid should ignore follow-suit) |
+| The start screen precedes the first fight     | settled — since DLR-85           | `src/App.tsx` — `RunPhase.Start`, the initial state, checked before every other branch; drawn by `src/app/run/RunPathScreen.tsx`  | Developer — all of its copy                             |
+| The map is reachable between fights           | settled — since DLR-85           | `src/App.tsx` — `RunPhase.Map`, entered from `RunOutcomePanel.tsx`'s third control; the **same** `RunPathScreen` the start screen uses | Developer — whether it earns the extra click        |
+| Beaten opponents struck out, still on the path | settled — since DLR-85          | `src/hunt/runPath.ts` — `PathNodeStatus.Beaten`; drawn as an `<s>` element by `src/app/run/RunMap.tsx`, so it reads without colour | —                                                       |
+| The next opponent marked out from those beyond | settled — since DLR-85          | `src/hunt/runPath.ts` — `PathNodeStatus.Current`, at most one; `aria-current="step"` plus a caret and a taller glyph in `runMap.css` | —                                                  |
+| Nothing on the path is clickable              | settled — no route choice        | `src/app/run/RunMap.tsx` — an `<ol>` of `<li>`s with zero tab stops, pinned by a spec; branching is out of scope                   | Developer — if route choice is ever wanted              |
+| **The path fits the viewport**                | **NOT MET** — crops below ~1088px | `src/app/run/run.css` — `.run-shell` is `overflow: hidden`, so the path is **cropped, not scrolled**: 21/25 nodes at 1024×768, 14/25 at 500×844 | **Developer** — name size, name angle, or a scrolling path region |
+| Losing returns to the start screen            | settled — since DLR-85           | `src/App.tsx` — `handleNewRun` sets `RunPhase.Start`; the path resets by construction, because `startRun` returns `encounterIndex: 0` | —                                                  |
+| Forward controls name their opponent          | settled — since DLR-85           | `src/app/run/runLabels.ts` — `fightLabel`, one function read by the start screen, the verdict and the shop; `CONTINUE_LABEL` was deleted | Developer — the wording                          |
 | The end-of-fight verdict screen               | settled                          | `src/app/run/RunOutcomePanel.tsx`; copy in `src/app/run/runLabels.ts`                                                            | Developer — all wording, and whether it reads as unmissable |
-| Which fight of the run you are on             | settled                          | `src/app/run/runLabels.ts` — `runProgressText`; rendered by `src/app/warCouncil/RoundStatusBand.tsx`'s `.wc-run` block           | —                                                       |
-| Every Quarry plays identically                | settled — only health differs    | `src/hunt/config.ts` — `SLICE_QUARRY_CHARACTER` is one character for the whole run                                               | Developer — a roster is later work                      |
+| The verdict names the opponent just beaten    | settled — since DLR-85           | `src/app/run/runLabels.ts` — `runHeadline(outcome, beatenName)`; only the intermediate-win case takes a name, so `YOU WIN`/`YOU LOSE` stay run-level | Developer — whether "<name> defeated" lands as a win |
+| Which fight, and against whom                 | settled — named since DLR-85     | `src/app/run/runLabels.ts` — `runPositionLabel`, built on `runProgressText`; rendered by `src/app/warCouncil/RoundStatusBand.tsx`'s `.wc-run` block | —                                     |
+| Every opponent plays identically              | settled — health and name only   | nothing to enforce — no game rule reads `OpponentKind` or an opponent's name; `SLICE_QUARRY_CHARACTER` is still the one *character* the felt shows | Developer — powers are a final-boss ticket   |
+| The health bar names the opponent             | settled — since 2026-08-17        | `src/app/warCouncil/labels.ts` — `quarryHealthLabel(name)`; threaded from `src/App.tsx` as a pre-worded string, like `runLabel`. `HEALTH_BAR_LABEL[Quarry]` is now only the unnamed fallback | Developer — the possessive wording |
+| The dossier still says "The Monarch"          | **open** — the remaining seam     | `src/hunt/quarryCharacters.ts` — `QUARRY_CHARACTERS`; rendered by `src/app/warCouncil/QuarryDossier.tsx`, with "What the Quarry holds" beside it | **Developer** — accept the seam for a release, or pull the follow-on in |
 | Snare (in-hand edits)                         | **open**, blocked                | —                                                                                                                                | Needs a cost before it's viable                         |
 
 ### The redesign landed whole — DLR-80 closed 2026-08-13
@@ -1116,8 +1280,78 @@ mispriced, not uninteresting**), whether 4 health a fight is the right size of a
 `Continue` / `Shop` pair reads at a glance, whether the warning is a safety net or a nag, whether
 `Escape` in the shop should really start the next fight, and every word of the new copy.
 
+### The run got a shape — DLR-85, 2026-08-17
+
+**What a player does now that they did not before:** **sees where they are going.** Until now the run's
+length was a number on a status band — "Fight 1 of 3" — and the opponents were anonymous. The game now
+opens on the whole path, drawn: twenty ticks and five blocks in the order you will meet them, everyone
+named, the goal stated in words, and one button that names who is first. The path is reachable again
+between every fight, with what you have beaten struck out and still on it.
+
+**The run went from three fights to twenty-five**, and that was a deliberate widening of the ticket's own
+scope, taken on the developer's ruling: the map exists to make the run's shape legible, and a three-node
+path shows no shape. Four ordinary opponents then a stage boss, five times over, closing on Diarmuid.
+
+**Naming spread to four surfaces in one pass**, because a named map beside an unnamed verdict reads as two
+different games — the verdict headline, the verdict's forward control, the shop's leave button and the
+fight counter all name the opponent now.
+
+**What is gone:** the word "Continue" from the verdict's forward control, which now reads `Fight <name>`.
+No rule was removed and nothing was deferred to make room.
+
+**Engine and screen landed together.** Every rule in
+[section 10](#10-between-hands-and-the-run) that is not marked **[not built]** is reachable by playing —
+the start screen, the map, the naming, and the return to the start screen on a loss were all confirmed in
+a running browser, including a run played to a real loss and restarted.
+
+**One structural rule is worth carrying forward:** the run's sequence has **one source**,
+`RUN_ENCOUNTERS`, and the health array is a projection of it. That is why growing the run from three
+fights to twenty-five needed no test to change. The stages are **derived from where the bosses sit**, so
+neither a stage count nor a per-stage figure appears anywhere in the code.
+
+**Two things did not land, and both are on the record rather than hidden.** The run is **not winnable** on
+today's curve, so `YOU WIN` cannot be reached by playing — DLR-82's ruling that the answer is the shop
+rather than a bigger health bar still stands. And **the path does not fit a viewport narrower than about
+1088px**: it is cropped rather than scrolled, silently, which is the first acceptance criterion in this
+epic to ship unmet.
+
+**What the developer owns:** the boss health multiplier (the one number in the change nobody chose) and
+whether a formula is the right shape for twenty-five health figures at all; the fix for the crop — a
+smaller name size, a steeper name angle, or letting the path scroll sideways; every word of the new copy,
+including whether `Fight Aoife` or `Begin run` is the right thing on the start screen and whether
+"Aoife defeated" still lands as a win; whether the map earns the extra click; whether five stages of four
+ticks and a block read as five stages **without counting**; and whether the two coexisting rosters are
+tolerable for a release.
+
 ### Known tensions, recorded not resolved
 
+- **The path is cropped, not scrolled, and nothing tells you** (new 2026-08-17, DLR-85). Below roughly
+  1088px of width the opponents at the end of the run are not drawn at all — 21 of 25 at 1024×768, 14 of
+  25 at a phone width, where the title and the button are cut off too. The shell is `overflow: hidden`, so
+  there is no scrollbar and no visual edge to suggest anything is missing: **a player at a narrow window
+  would believe the run ends at Clodagh.** This is the sharpest kind of layout failure — silent — and it
+  was invisible until the path was fixed to draw horizontally at all, because the broken vertical layout
+  happened to be more compact. The three exits are a smaller name size, a steeper name angle, or letting
+  the path itself be the one region that scrolls sideways. **All three are tuning decisions, so nothing
+  was chosen.**
+- **The player sees two different names for the same opponent** (new 2026-08-17, DLR-85; **narrowed the
+  same day**). The map, the verdict, the shop, the fight counter **and now the health bar** say "Aoife";
+  the dossier still says "The Monarch", and the readout beside it still says "What the Quarry holds". Both
+  are on screen during the same fight. The health bar was the most prominent half and is closed; what is
+  left is the dossier, which is where a player looks to find out **who** they are fighting — so the seam
+  is narrower but sits in the worst remaining place. Closing it or accepting it for a release is the
+  developer's call.
+- **Twenty-five names buy nothing mechanically, and cost what the old names taught** (new 2026-08-17,
+  DLR-85). Swan, Fox, Woodcutter, Witch and Monarch were free to teach, because they name cards the player
+  already reads; Aoife and Diarmuid are twenty-five strings to learn that carry no rule. The trade was
+  made knowingly, for a run whose shape can be seen — but if the names never come to mean anything (no
+  power, no tell, no reason to remember which is which), they are decoration on a number. **What would
+  settle it is a boss that plays differently**, which is a later ticket.
+- **A twenty-five-fight run that ends in stage one may read as failure rather than as a run** (new
+  2026-08-17, DLR-85). The path now shows the player exactly how far they did not get. That is the point
+  of drawing it — and it is also the risk: seeing twenty-one untouched opponents behind a loss at fight
+  four is either motivating or dispiriting, and which one it is cannot be argued from the page. **The
+  cheapest measurement is whether you wanted to press "Start a new run" immediately.**
 - **The shop may have exactly one right answer, in which case it is not a decision** (new
   2026-08-16, DLR-84). A heal is a guaranteed 4 health against a fight that costs about 4; a Cheat is
   worth roughly 1 health directly, and more only when it saves a long streak. At 1 coin each the
@@ -1161,10 +1395,12 @@ mispriced, not uninteresting**), whether 4 health a fight is the right size of a
   inversion. Two is nowhere near that line, and the cap is what keeps it that way. The tension is that
   the shop (section 10) is intended to **sell** these, and nothing yet says what stops a player buying
   their way past the number that makes skulls matter.
-- **The run is expected to be lost around fight three, and that is shipped knowingly** (new
-  2026-08-15, DLR-82). A fight costs the player roughly four health; the player starts with ten and
-  gets nothing back. Three fights against 10, 14 and 18 health therefore do not add up, and the
-  ticket says so outright: the arithmetic is working, and the gap is what a shop, an upgrade and a
+- **The run is expected to be lost in the first stage or two, and that is shipped knowingly** (new
+  2026-08-15, DLR-82; **restated 2026-08-17, DLR-85** — the run is now twenty-five fights rather than
+  three, so the loss is expected in stage one or two rather than "around fight three", and the sums are
+  further apart, not closer: Oisín holds 86 and Diarmuid 135). A fight costs the player roughly four
+  health; the player starts with ten and gets nothing back. Twenty-five rising health totals against ten
+  therefore do not add up, and the ticket says so outright: the arithmetic is working, and the gap is what a shop, an upgrade and a
   flask exist to close. **Updated 2026-08-16, DLR-84: the shop now exists and the curve was left
   alone deliberately.** A coin a fight buys back 4 health, against a fight costing about four — so a
   player spending everything on health roughly breaks even, and the gap is closed only if they were

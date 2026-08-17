@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import {
   advanceRun,
+  beatenCount,
   buyFromShop,
   canAdvanceRun,
   canBuyAnything,
   DuelSide,
   isEncounterResolved,
   PLAYER_START_HEALTH,
-  quarryCharacterInfo,
   quarryHealthForEncounter,
   recordEncounter,
   refusalFor,
+  runEncounterAt,
+  runPath,
   ShopItem,
   shopStockFor,
   SLICE_QUARRY_CHARACTER,
@@ -26,10 +28,20 @@ import { dealRound, PlayerSide, type WarCouncilState } from './warCouncil'
 import type { WarCouncilRoundResult } from './app/warCouncilMount'
 import WarCouncilRound from './app/warCouncil/WarCouncilRound'
 import { duelHealthBars } from './app/warCouncil/duelHealthBars'
+import { quarryHealthLabel } from './app/warCouncil/labels'
 import { dealerForRound } from './app/dealerForRound'
 import RunOutcomePanel, { type TrickTally } from './app/run/RunOutcomePanel'
 import ShopPanel from './app/run/ShopPanel'
-import { runProgressText } from './app/run/runLabels'
+import RunPathScreen from './app/run/RunPathScreen'
+import {
+  fightLabel,
+  runGoalText,
+  runPositionLabel,
+  runProgressText,
+  MAP_BACK_LABEL,
+  MAP_TITLE,
+  START_TITLE,
+} from './app/run/runLabels'
 
 // Built once at module scope because its only half is a configuration constant — it holds no
 // per-run state, so it cannot go stale across the remounts below. Every fight of the run faces
@@ -38,14 +50,18 @@ const HUNT: Hunt = { quarry: { character: SLICE_QUARRY_CHARACTER } }
 
 const NO_TRICKS: TrickTally = { taken: 0, lost: 0 }
 
-/** Which of the three between-fights surfaces is showing. A union rather than two booleans,
- *  because "in the shop AND warned" is a state that must not exist. */
-const BetweenPhase = {
+/** Which surface is showing. A union rather than a phase boolean beside it, because
+ *  "in the shop AND warned" and "in the shop before the run began" are both states that
+ *  must not exist. Widened on DLR-85 with Start and Map — folding the start screen in here
+ *  costs no new state variable. */
+const RunPhase = {
+  Start: 'start',
   Verdict: 'verdict',
   Warned: 'warned',
   Shop: 'shop',
+  Map: 'map',
 } as const
-type BetweenPhase = (typeof BetweenPhase)[keyof typeof BetweenPhase]
+type RunPhase = (typeof RunPhase)[keyof typeof RunPhase]
 
 /**
  * The run driver (DLR-82). Owns `RunState` and switches on it: while the encounter is live it
@@ -70,7 +86,7 @@ function App() {
   // it. Nothing accumulates tricks across the several hands a fight takes, so this is the last
   // hand's, which is the only figure that exists.
   const [tricks, setTricks] = useState<TrickTally>(NO_TRICKS)
-  const [between, setBetween] = useState<BetweenPhase>(BetweenPhase.Verdict)
+  const [phase, setPhase] = useState<RunPhase>(RunPhase.Start)
 
   const encounterOver = isEncounterResolved(run.encounter)
 
@@ -85,6 +101,18 @@ function App() {
     [DuelSide.Player]: PLAYER_START_HEALTH,
     [DuelSide.Quarry]: quarryHealthForEncounter(run.encounterIndex),
   }
+
+  // The roster reads, in ONE place. Every named surface below takes a string from here, so
+  // no component looks an opponent up for itself.
+  const beaten = beatenCount(run)
+  const stages = runPath(beaten)
+  const goalText = runGoalText(run.encounterCount)
+  const currentName = runEncounterAt(run.encounterIndex).name
+  // `undefined` exactly when there is no next fight — the final encounter of a won run.
+  const nextName =
+    run.encounterIndex + 1 < run.encounterCount
+      ? runEncounterAt(run.encounterIndex + 1).name
+      : undefined
 
   function dealNextHand() {
     const next = hand + 1
@@ -109,14 +137,14 @@ function App() {
   // warned one, and Next fight in the shop — three controls, one transition.
   function leaveForNextFight() {
     setRun(advanceRun(run))
-    setBetween(BetweenPhase.Verdict)
+    setPhase(RunPhase.Verdict)
     setTricks(NO_TRICKS)
     dealNextHand()
   }
 
   function handleContinue() {
-    if (between === BetweenPhase.Verdict && canBuyAnything(stock)) {
-      setBetween(BetweenPhase.Warned)
+    if (phase === RunPhase.Verdict && canBuyAnything(stock)) {
+      setPhase(RunPhase.Warned)
       return
     }
     leaveForNextFight()
@@ -140,13 +168,37 @@ function App() {
   function handleNewRun() {
     const fresh = startRun()
     setRun(fresh)
-    setBetween(BetweenPhase.Verdict)
+    setPhase(RunPhase.Start)
     setTricks(NO_TRICKS)
     setHand(1)
     setDealt(dealRound(dealerForRound(1), Math.random))
   }
 
-  if (encounterOver && between === BetweenPhase.Shop) {
+  if (phase === RunPhase.Start) {
+    return (
+      <RunPathScreen
+        title={START_TITLE}
+        stages={stages}
+        goalText={goalText}
+        actionLabel={fightLabel(currentName)}
+        onAction={() => setPhase(RunPhase.Verdict)}
+      />
+    )
+  }
+
+  if (encounterOver && phase === RunPhase.Map) {
+    return (
+      <RunPathScreen
+        title={MAP_TITLE}
+        stages={stages}
+        goalText={goalText}
+        actionLabel={MAP_BACK_LABEL}
+        onAction={() => setPhase(RunPhase.Verdict)}
+      />
+    )
+  }
+
+  if (encounterOver && phase === RunPhase.Shop) {
     // The same heart-state derivation the felt uses, so the shop's row and the fight's row can
     // never disagree about what the player is holding. `projected` is `current`: nothing is
     // pending between fights, so no heart is ever at risk or breaking here.
@@ -159,7 +211,7 @@ function App() {
         playerHearts={playerBar.hearts}
         cheatCount={run.cheats.length}
         cheatSlotCount={CHEAT_SLOT_COUNT}
-        nextOpponentName={quarryCharacterInfo(SLICE_QUARRY_CHARACTER)?.name}
+        nextOpponentName={nextName}
         progressText={runProgressText(run.encounterIndex + 1, run.encounterCount)}
         refusals={{
           [ShopItem.Cheat]: refusalFor(stock, ShopItem.Cheat),
@@ -181,11 +233,14 @@ function App() {
         tricks={tricks}
         canContinue={canAdvanceRun(run)}
         coins={run.coins}
-        warning={between === BetweenPhase.Warned}
-        onShop={() => setBetween(BetweenPhase.Shop)}
+        warning={phase === RunPhase.Warned}
+        onShop={() => setPhase(RunPhase.Shop)}
         onContinue={handleContinue}
-        onDismissWarning={() => setBetween(BetweenPhase.Verdict)}
+        onDismissWarning={() => setPhase(RunPhase.Verdict)}
         onNewRun={handleNewRun}
+        beatenName={currentName}
+        nextName={nextName}
+        onMap={() => setPhase(RunPhase.Map)}
       />
     )
   }
@@ -197,9 +252,10 @@ function App() {
       hunt={HUNT}
       encounter={run.encounter}
       maxHealth={maxHealth}
-      runLabel={runProgressText(run.encounterIndex, run.encounterCount)}
+      runLabel={runPositionLabel(run.encounterIndex, run.encounterCount, currentName)}
       cheats={run.cheats}
       coins={run.coins}
+      quarryLabel={quarryHealthLabel(currentName)}
       onComplete={handleComplete}
     />
   )

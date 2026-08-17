@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { DuelSide, PLAYER_START_HEALTH, quarryHealthForEncounter } from '../../../hunt'
 import { duelHealthBars, projectedFromStreak } from '../duelHealthBars.ts'
 import DuelHealthBars from '../DuelHealthBars.tsx'
+import { HEALTH_BAR_LABEL, quarryHealthLabel } from '../labels'
 
 afterEach(cleanup)
 
@@ -16,6 +17,10 @@ const FULL = {
   [DuelSide.Quarry]: quarryHealthForEncounter(0),
 }
 
+/** A NAMED Quarry label, so the assertions prove the threaded string reaches the meter rather
+ *  than passing against the generic fallback by coincidence. */
+const QUARRY_LABEL = quarryHealthLabel('Aoife')
+
 function renderPair(
   current: Record<DuelSide, number>,
   projected: Record<DuelSide, number>,
@@ -25,6 +30,7 @@ function renderPair(
     <DuelHealthBars
       bars={duelHealthBars(current, projected, MAX, breaking)}
       centre={<span>trio</span>}
+      quarryLabel={QUARRY_LABEL}
     />,
   )
 }
@@ -33,7 +39,22 @@ describe('DuelHealthBars', () => {
   it('puts both sides on screen as separately named meters (AC1, AC7)', () => {
     renderPair(FULL, FULL)
     expect(screen.getByRole('meter', { name: 'Your health' })).toBeTruthy()
-    expect(screen.getByRole('meter', { name: 'The Quarry’s health' })).toBeTruthy()
+    expect(screen.getByRole('meter', { name: QUARRY_LABEL })).toBeTruthy()
+  })
+
+  it('names the Quarry bar after the opponent it is handed, not generically', () => {
+    renderPair(FULL, FULL)
+    expect(screen.getByRole('meter', { name: 'Aoife’s health' })).toBeTruthy()
+    // The generic wording is the fallback only — it must not reach the screen when a name was
+    // threaded, which is the whole point of the prop.
+    expect(screen.queryByRole('meter', { name: HEALTH_BAR_LABEL[DuelSide.Quarry] })).toBeNull()
+    // The label shows to a sighted reader as well as to a screen reader.
+    expect(screen.getByText('Aoife’s health')).toBeTruthy()
+  })
+
+  it('keeps the player bar generic — it needs nothing from the run', () => {
+    renderPair(FULL, FULL)
+    expect(screen.getByRole('meter', { name: HEALTH_BAR_LABEL[DuelSide.Player] })).toBeTruthy()
   })
 
   it('renders the centre slot between the two bars', () => {
@@ -84,9 +105,9 @@ describe('DuelHealthBars', () => {
     const { container } = renderPair(current, projectedFromStreak(current, 2, 2))
     const quarry = container.querySelector('.wc-hp[data-side="quarry"]')
     expect(quarry?.querySelectorAll('[data-state="atRisk"]')).toHaveLength(4)
-    expect(
-      screen.getByRole('meter', { name: 'The Quarry’s health' }).getAttribute('aria-valuetext'),
-    ).toBe(`${quarryMax} of ${quarryMax}. 4 at risk.`)
+    expect(screen.getByRole('meter', { name: QUARRY_LABEL }).getAttribute('aria-valuetext')).toBe(
+      `${quarryMax} of ${quarryMax}. 4 at risk.`,
+    )
   })
 
   it('binds each heart to the symbol its state calls for — a broken state is a different shape, not a colour (AC6)', () => {
@@ -102,8 +123,8 @@ describe('DuelHealthBars', () => {
 
   it('writes no inline style on any heart — the retired `--w` split’s successor guarantee', () => {
     const { container } = renderPair(FULL, FULL)
-    const styled = Array.from(container.querySelectorAll<HTMLElement>('.wc-hp-heart')).filter(
-      (h) => h.getAttribute('style'),
+    const styled = Array.from(container.querySelectorAll<HTMLElement>('.wc-hp-heart')).filter((h) =>
+      h.getAttribute('style'),
     )
     expect(styled).toHaveLength(0)
   })

@@ -2,10 +2,12 @@ import { RunOutcome, type Coins, type Health } from '../../hunt'
 import {
   CARRIED_HEALTH_LABEL,
   CONTINUE_ANYWAY_LABEL,
-  CONTINUE_LABEL,
+  MAP_LABEL,
   NEW_RUN_LABEL,
+  NEXT_FIGHT_LABEL,
   SHOP_LABEL,
   VISIT_SHOP_LABEL,
+  fightLabel,
   runHeadline,
   runProgressText,
   runVerdictDetail,
@@ -50,6 +52,14 @@ interface RunOutcomePanelProps {
   /** Leaves the warning without advancing and without opening the shop — the `Escape` path. */
   readonly onDismissWarning: () => void
   readonly onNewRun: () => void
+  /** AC8 / the ticket's scope extension — the opponent just beaten, which names the
+   *  headline. `undefined` falls back to DLR-82's generic `FIGHT WON`. */
+  readonly beatenName: string | undefined
+  /** The opponent the primary control leads to. `undefined` on a won or lost run, where
+   *  there is no next fight and the only control is `Start a new run`. */
+  readonly nextName: string | undefined
+  /** AC9 — opens the run map. The third control beside DLR-84's Continue and Shop. */
+  readonly onMap: () => void
 }
 
 /**
@@ -65,6 +75,10 @@ interface RunOutcomePanelProps {
  * above it differs in form (single / double / hatched), the supporting line differs, and the
  * control's label differs. `game-ux` requires this — a screenshot in greyscale must still tell
  * them apart.
+ *
+ * DLR-85: the headline names the opponent just beaten when one is known, the primary control
+ * names the opponent it leads to, and the unwarned action row gains a third control, `Map`
+ * (AC9), beside DLR-84's Continue and Shop.
  */
 export default function RunOutcomePanel({
   outcome,
@@ -79,6 +93,9 @@ export default function RunOutcomePanel({
   onContinue,
   onDismissWarning,
   onNewRun,
+  beatenName,
+  nextName,
+  onMap,
 }: RunOutcomePanelProps) {
   const verdict = canContinue ? 'fightWon' : outcome
   const bars = [
@@ -90,9 +107,9 @@ export default function RunOutcomePanel({
     <div className="run-shell">
       <div className="run-verdict" data-verdict={verdict}>
         <div className="run-rule" aria-hidden="true" />
-        <h1 className="run-headline">{runHeadline(outcome)}</h1>
+        <h1 className="run-headline">{runHeadline(outcome, beatenName)}</h1>
         <p className="run-detail" role="status">
-          {runVerdictDetail(outcome, encounterIndex, encounterCount, carriedHealth)}
+          {runVerdictDetail(outcome, encounterIndex, encounterCount, carriedHealth, nextName)}
         </p>
         <div
           className="run-tricks"
@@ -141,10 +158,13 @@ export default function RunOutcomePanel({
         ) : (
           <div className="run-actions">
             <button type="button" className="run-btn is-primary" onClick={onContinue}>
-              {CONTINUE_LABEL}
+              {nextName === undefined ? NEXT_FIGHT_LABEL : fightLabel(nextName)}
             </button>
             <button type="button" className="run-btn" onClick={onShop}>
               {SHOP_LABEL}
+            </button>
+            <button type="button" className="run-btn" onClick={onMap}>
+              {MAP_LABEL}
             </button>
           </div>
         )}

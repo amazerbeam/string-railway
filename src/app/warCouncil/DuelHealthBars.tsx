@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { DuelSide } from '../../hunt'
 import { HeartState, type HealthBarView } from './duelHealthBars'
 import { HeartMark, HeartSymbolSheet } from './HeartMark'
 import { HEALTH_BAR_LABEL, healthBarValueText } from './labels'
@@ -9,6 +10,11 @@ interface DuelHealthBarsProps {
    *  fighting-game centre slot. The mirror's geometry (which bar anchors left, which right)
    *  therefore lives entirely in this component rather than being reassembled by its caller. */
   readonly centre: ReactNode
+  /** The Quarry bar's name, ALREADY WORDED by `quarryHealthLabel` — `Aoife’s health`. A string
+   *  rather than a name to interpolate, and never a run or an index, for the same reason
+   *  `runLabel` is a string: the card layer renders a run figure and must not learn to derive
+   *  one. The player's side keeps `HEALTH_BAR_LABEL`, which needs nothing from the run. */
+  readonly quarryLabel: string
 }
 
 /**
@@ -25,14 +31,18 @@ interface DuelHealthBarsProps {
  * every subtraction before that. Renders whatever length of `bars` it is handed, which is what
  * makes §6's net-only fallback (AC8) a one-line change in `duelHealthBars` rather than here.
  */
-export default function DuelHealthBars({ bars, centre }: DuelHealthBarsProps) {
+export default function DuelHealthBars({ bars, centre, quarryLabel }: DuelHealthBarsProps) {
   const [player, quarry] = bars
+  // Selected by the view's own side rather than by its position in `bars`, so the two labels
+  // cannot be swapped by a caller that orders the pair differently.
+  const nameFor = (view: HealthBarView) =>
+    view.side === DuelSide.Quarry ? quarryLabel : HEALTH_BAR_LABEL[view.side]
   return (
     <>
       <HeartSymbolSheet />
-      {player ? <SideBar view={player} /> : null}
+      {player ? <SideBar view={player} label={nameFor(player)} /> : null}
       {centre}
-      {quarry ? <SideBar view={quarry} /> : null}
+      {quarry ? <SideBar view={quarry} label={nameFor(quarry)} /> : null}
     </>
   )
 }
@@ -48,11 +58,11 @@ export default function DuelHealthBars({ bars, centre }: DuelHealthBarsProps) {
  * need for a per-heart value must come back through a custom property rather than an inline
  * style; the reasoning is recorded at `.docs/implementation/war-council-ui/layout-and-styling.md`.
  */
-function SideBar({ view }: { view: HealthBarView }) {
+function SideBar({ view, label }: { view: HealthBarView; label: string }) {
   return (
     <div className="wc-hp" data-side={view.side}>
       <div className="wc-hp-head">
-        <span className="wc-hp-who">{HEALTH_BAR_LABEL[view.side]}</span>
+        <span className="wc-hp-who">{label}</span>
         <span className="wc-hp-num">
           {view.current} / {view.max}
         </span>
@@ -60,7 +70,7 @@ function SideBar({ view }: { view: HealthBarView }) {
       <div
         className={`wc-hp-hearts${view.lethal ? ' wc-is-lethal' : ''}`}
         role="meter"
-        aria-label={HEALTH_BAR_LABEL[view.side]}
+        aria-label={label}
         aria-valuemin={0}
         aria-valuemax={view.max}
         aria-valuenow={view.current}

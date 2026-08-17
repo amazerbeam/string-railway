@@ -26,6 +26,12 @@ export interface WarCouncilMountProps {
    *  Required, not optional, so the compiler enumerates every mount site rather than letting one
    *  silently render a blank plate. */
   readonly coins: Coins
+  /** The Quarry health bar's name, ALREADY WORDED by `quarryHealthLabel` — `Aoife’s health`.
+   *  Exactly `runLabel`'s contract, for exactly its reason: the card layer renders the opponent's
+   *  name and must not learn how to look one up, so it receives a string rather than a roster, an
+   *  index, or a `RunState`. Required, not optional, so the compiler enumerates every mount site
+   *  rather than letting one silently fall back to the generic wording. */
+  readonly quarryLabel: string
   readonly onComplete: (result: WarCouncilRoundResult) => void
 }
 

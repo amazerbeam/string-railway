@@ -1,0 +1,533 @@
+<title>Run Map Mockup</title>
+
+<style>
+  :root {
+    --chamber: #0c1216;
+    --chalk: #e8e2d4;
+    --chalk-dim: #9aa4a8;
+    --brass: #c9a227;
+    --brass-dim: #7d6a2a;
+    --beaten: #5c666a;
+    --sans: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: #05080a;
+    color: var(--chalk);
+    font-family: var(--sans);
+    color-scheme: dark;
+  }
+
+  /* ─── Harness chrome (NOT part of the design — mockup controls only) ─────────── */
+
+  .harness {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.4rem;
+    align-items: center;
+    padding: 0.7rem 1rem;
+    background: #12181c;
+    border-bottom: 1px solid #2a3438;
+    font-size: 0.8rem;
+  }
+
+  .harness strong { color: var(--brass); letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.7rem; }
+  .harness label { display: inline-flex; gap: 0.35rem; align-items: center; cursor: pointer; }
+  .harness .note { color: var(--chalk-dim); font-style: italic; }
+
+  .frame {
+    /* Stands in for the real viewport. The real shell is `.run-shell` — 100dvh. */
+    height: 78vh;
+    min-height: 30rem;
+    margin: 1rem;
+    border: 1px solid #2a3438;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ─── The real shell, transcribed from src/app/run/run.css ───────────────────── */
+
+  .run-shell {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    padding: clamp(1rem, 4vmin, 3rem);
+    background: radial-gradient(120% 80% at 50% 40%, #172027 0%, #050708 100%), var(--chamber);
+  }
+
+  .screen { display: none; }
+  .screen.is-active { display: contents; }
+
+  /* ─── RunPathScreen ─────────────────────────────────────────────────────────── */
+
+  .run-path-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.8rem, 3vmin, 2rem);
+    width: 100%;
+    max-width: 68rem;
+    text-align: center;
+  }
+
+  .run-path-title {
+    margin: 0;
+    font-size: clamp(1.4rem, 5vmin, 2.6rem);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--chalk);
+    font-weight: 600;
+  }
+
+  .run-path-goal {
+    margin: 0;
+    color: var(--brass);
+    font-size: clamp(0.85rem, 2.2vmin, 1.05rem);
+    letter-spacing: 0.08em;
+  }
+
+  /* ─── RunMap: one horizontal path ───────────────────────────────────────────── */
+
+  .run-path {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+
+  /* Stage grouping is DERIVED from boss position — a separator after each closed stage. */
+  .run-path-stage {
+    display: flex;
+    align-items: flex-start;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .run-path-stage + .run-path-stage { margin-left: clamp(0.4rem, 1.4vmin, 1rem); }
+
+  .run-path-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    padding: 0 clamp(0.15rem, 0.7vmin, 0.55rem);
+  }
+
+  /* The line itself: a rule behind every node, so it reads as one continuous path. */
+  .run-path-node::before {
+    content: '';
+    position: absolute;
+    top: calc(1.15rem + 0.55rem);
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--brass-dim);
+  }
+
+  .run-path-glyph {
+    position: relative;
+    z-index: 1;
+    height: 2.3rem;
+    display: grid;
+    place-items: center;
+  }
+
+  /* Ordinary opponent — a short tick. */
+  .run-path-tick {
+    width: 3px;
+    height: 1.15rem;
+    background: var(--chalk-dim);
+  }
+
+  /* Stage boss — a filled block. */
+  .run-path-block {
+    width: clamp(0.8rem, 2vmin, 1.1rem);
+    height: clamp(0.8rem, 2vmin, 1.1rem);
+    background: var(--chalk-dim);
+  }
+
+  .run-path-name {
+    margin-top: 0.3rem;
+    font-size: clamp(0.55rem, 1.5vmin, 0.78rem);
+    color: var(--chalk-dim);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  /* Name orientation — the open visual question. Toggled by the harness. */
+  body[data-names='vertical'] .run-path-name {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    height: 5.5rem;
+  }
+
+  body[data-names='angled'] .run-path-name {
+    transform: rotate(-52deg);
+    transform-origin: top right;
+    height: 4.2rem;
+    text-align: right;
+    direction: rtl;
+  }
+
+  /* ── State: beaten. Struck out, still present (AC6). Form, not colour alone. ── */
+  .run-path-node[data-status='beaten'] .run-path-tick,
+  .run-path-node[data-status='beaten'] .run-path-block {
+    background: var(--beaten);
+  }
+  .run-path-node[data-status='beaten'] .run-path-block {
+    background: transparent;
+    border: 2px solid var(--beaten);
+  }
+  .run-path-node[data-status='beaten'] .run-path-name {
+    color: var(--beaten);
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+  }
+
+  /* ── State: current. Distinguishable from everything beyond it (AC7): brass, a
+        caret above, and a taller glyph — three signals, none of them colour alone. ── */
+  .run-path-node[data-status='current'] .run-path-tick {
+    background: var(--brass);
+    width: 5px;
+    height: 1.75rem;
+  }
+  .run-path-node[data-status='current'] .run-path-block {
+    background: var(--brass);
+    outline: 2px solid var(--brass);
+    outline-offset: 3px;
+  }
+  .run-path-node[data-status='current'] .run-path-name {
+    color: var(--brass);
+    font-weight: 700;
+  }
+  .run-path-node[data-status='current'] .run-path-glyph::after {
+    content: '▾';
+    position: absolute;
+    top: -0.75rem;
+    color: var(--brass);
+    font-size: 0.7rem;
+  }
+
+  /* ── State: upcoming. The plain case — thin, dim, no caret. ── */
+
+  /* Final node of the run gets a heavier block: Diarmuid closes it. */
+  .run-path-node[data-final='true'] .run-path-block {
+    width: clamp(1.1rem, 2.8vmin, 1.5rem);
+    height: clamp(1.1rem, 2.8vmin, 1.5rem);
+  }
+
+  /* ─── Buttons — transcribed from run.css's .run-btn ─────────────────────────── */
+
+  .run-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; justify-content: center; }
+
+  .run-btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.7rem 1.4rem;
+    background: transparent;
+    color: var(--chalk);
+    border: 1px solid var(--brass-dim);
+    border-radius: 2px;
+    font: inherit;
+    font-size: clamp(0.8rem, 2vmin, 0.95rem);
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .run-btn.is-primary {
+    background: var(--brass);
+    border-color: var(--brass);
+    color: #14100a;
+    font-weight: 700;
+  }
+
+  .run-btn:focus-visible { outline: 2px solid var(--chalk); outline-offset: 2px; }
+
+  @media (hover: hover) {
+    .run-btn:hover { border-color: var(--brass); }
+  }
+  .run-btn:active { transform: translateY(1px); }
+
+  /* ─── The verdict, for context — AC9's third control lives here ─────────────── */
+
+  .run-verdict {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.7rem, 2.4vmin, 1.5rem);
+    text-align: center;
+    max-width: 34rem;
+  }
+
+  .run-rule { width: clamp(6rem, 30vmin, 16rem); height: 2px; background: var(--brass-dim); }
+
+  .run-headline {
+    margin: 0;
+    font-size: clamp(1.3rem, 4.6vmin, 2.2rem);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .run-detail, .run-carry, .run-position { margin: 0; color: var(--chalk-dim); font-size: 0.88rem; }
+  .run-position { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .run-tricks { display: flex; align-items: center; gap: 0.6rem; font-size: 0.78rem; color: var(--chalk-dim); }
+  .run-bars { display: flex; gap: 3px; }
+  .run-trick { width: 1.1rem; height: 0.4rem; background: var(--brass); }
+  .run-trick.is-lost { background: transparent; border: 1px solid var(--beaten); }
+
+  .caption {
+    margin: 0 1rem 1.6rem;
+    color: var(--chalk-dim);
+    font-size: 0.82rem;
+    line-height: 1.6;
+    max-width: 60rem;
+  }
+  .caption code { color: var(--brass); font-size: 0.95em; }
+</style>
+
+<div class="harness">
+  <strong>Mockup harness</strong>
+  <label><input type="radio" name="size" value="25" checked> 25-fight run — 5 stages (what ships)</label>
+  <label><input type="radio" name="size" value="3"> 3-fight slice (unit-tested edge case)</label>
+  <span>·</span>
+  <label><input type="radio" name="names" value="angled" checked> Angled names (chosen)</label>
+  <label><input type="radio" name="names" value="vertical"> Vertical names</label>
+  <span>·</span>
+  <label><input type="radio" name="beaten" value="0" checked> Not started</label>
+  <label><input type="radio" name="beaten" value="mid"> Part-way through</label>
+  <span class="note">— these toggles are the mockup's, not the design's.</span>
+</div>
+
+<p class="caption">
+  <strong>Screen 1 — Start screen (AC1, AC5).</strong> Precedes fight one. One action, which names
+  the first opponent per AC8. The path shows every opponent upcoming. Click
+  <em>Fight Aoife</em> to reach the verdict, which is where the <em>Map</em> control lives.
+</p>
+
+<div class="frame">
+  <div class="run-shell">
+    <div class="screen is-active" id="screen-start">
+      <div class="run-path-screen">
+        <h1 class="run-path-title">The Hunt</h1>
+        <p class="run-path-goal" id="goal-start">Beat all 25</p>
+        <ol class="run-path" id="path-start" aria-label="The run’s path"></ol>
+        <div class="run-actions">
+          <button type="button" class="run-btn is-primary" id="btn-begin">Fight Aoife</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="caption">
+  <strong>Screen 2 — Run verdict (AC8, AC9).</strong> DLR-84 already landed <em>Continue</em> +
+  <em>Shop</em>; this ticket renames the primary to name the next opponent and adds the third
+  <em>Map</em> control. The headline names the opponent just beaten. Click <em>Map</em>.
+</p>
+
+<div class="frame">
+  <div class="run-shell">
+    <div class="screen is-active" id="screen-verdict">
+      <div class="run-verdict">
+        <div class="run-rule"></div>
+        <h1 class="run-headline" id="verdict-headline">Aoife defeated</h1>
+        <p class="run-detail" id="verdict-detail">
+          Aoife is down. Fight 2 of 3 — Cillian — is waiting, and you carry 8 health into it.
+        </p>
+        <div class="run-tricks">
+          <span>Tricks taken · 4 of 6</span>
+          <span class="run-bars">
+            <span class="run-trick"></span><span class="run-trick"></span>
+            <span class="run-trick"></span><span class="run-trick"></span>
+            <span class="run-trick is-lost"></span><span class="run-trick is-lost"></span>
+          </span>
+        </div>
+        <p class="run-carry">Carried health — 8 · 1 coin</p>
+        <div class="run-actions">
+          <button type="button" class="run-btn is-primary" id="btn-next">Fight Cillian</button>
+          <button type="button" class="run-btn" id="btn-shop">Shop</button>
+          <button type="button" class="run-btn" id="btn-map">Map</button>
+        </div>
+        <p class="run-position" id="verdict-position">Fight 1 of 25</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="caption">
+  <strong>Screen 3 — Map, reached between fights (AC6, AC7, AC9).</strong> The same
+  <code>RunPathScreen</code> + <code>RunMap</code> as screen 1, with a <em>Back</em> action.
+  Beaten opponents are struck out and still present; the current one carries a caret, a taller
+  glyph and brass — three signals, so it survives greyscale. Switch the harness to
+  the <em>3-fight slice</em> to see the degenerate case AC2 demands — three ticks, no block, one
+  stage — which now ships as unit-test coverage of <code>runPath</code> rather than as the live
+  configuration.
+</p>
+
+<div class="frame">
+  <div class="run-shell">
+    <div class="screen is-active" id="screen-map">
+      <div class="run-path-screen">
+        <h1 class="run-path-title">The path</h1>
+        <p class="run-path-goal" id="goal-map">Beat all 25</p>
+        <ol class="run-path" id="path-map" aria-label="The run’s path"></ol>
+        <div class="run-actions">
+          <button type="button" class="run-btn" id="btn-back">Back</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Fake data. Stands in for src/hunt/config.ts's RUN_ENCOUNTERS. ──────────────
+  var ORDINARY = ['Aoife','Cillian','Niamh','Eoin','Saoirse','Rónán','Maeve','Fergus','Órla','Declan',
+                  'Sinéad','Pádraig','Bríd','Lorcán','Clodagh','Tadhg','Róisín','Cormac','Aisling','Oisín'];
+  var BOSSES = ['Bréanainn','Muireann','Conchobhar','Gráinne','Diarmuid'];
+
+  /** The 3-fight slice actually on disk: three ordinary opponents, no boss. */
+  function sliceRun() {
+    return ORDINARY.slice(0, 3).map(function (name) {
+      return { name: name, kind: 'ordinary' };
+    });
+  }
+
+  /** The eventual 25: four ordinary opponents then a boss, five times over. */
+  function fullRun() {
+    var out = [];
+    for (var stage = 0; stage < 5; stage++) {
+      for (var i = 0; i < 4; i++) out.push({ name: ORDINARY[stage * 4 + i], kind: 'ordinary' });
+      out.push({ name: BOSSES[stage], kind: 'boss' });
+    }
+    return out;
+  }
+
+  // ── Stands in for src/hunt/runPath.ts. Stages DERIVED from boss position. ──────
+  function runPath(beatenCount, encounters) {
+    var stages = [];
+    var current = [];
+    encounters.forEach(function (e, index) {
+      current.push({
+        index: index,
+        name: e.name,
+        kind: e.kind,
+        status: index < beatenCount ? 'beaten' : index === beatenCount ? 'current' : 'upcoming',
+        isFinal: index === encounters.length - 1
+      });
+      if (e.kind === 'boss') {
+        stages.push({ nodes: current, closedByBoss: true });
+        current = [];
+      }
+    });
+    if (current.length > 0) stages.push({ nodes: current, closedByBoss: false });
+    return stages;
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────────
+  function renderPath(el, stages) {
+    el.innerHTML = '';
+    stages.forEach(function (stage) {
+      var li = document.createElement('li');
+      li.className = 'run-path-stage';
+      var inner = document.createElement('ol');
+      inner.className = 'run-path-stage';
+      stage.nodes.forEach(function (node) {
+        var n = document.createElement('li');
+        n.className = 'run-path-node';
+        n.setAttribute('data-status', node.status);
+        if (node.isFinal) n.setAttribute('data-final', 'true');
+        if (node.status === 'current') n.setAttribute('aria-current', 'step');
+        var glyph = '<span class="run-path-glyph"><span class="' +
+          (node.kind === 'boss' ? 'run-path-block' : 'run-path-tick') + '"></span></span>';
+        var label = node.status === 'beaten' ? '<s>' + node.name + '</s>' : node.name;
+        n.innerHTML = glyph + '<span class="run-path-name">' + label + '</span>';
+        inner.appendChild(n);
+      });
+      li.appendChild(inner);
+      el.appendChild(li);
+    });
+  }
+
+  function state() {
+    var size = document.querySelector('input[name=size]:checked').value;
+    var beaten = document.querySelector('input[name=beaten]:checked').value;
+    var encounters = size === '3' ? sliceRun() : fullRun();
+    return {
+      encounters: encounters,
+      beatenStart: 0,
+      beatenMap: beaten === '0' ? 0 : Math.floor(encounters.length / 3)
+    };
+  }
+
+  function draw() {
+    var s = state();
+    var goal = 'Beat all ' + s.encounters.length;
+    document.getElementById('goal-start').textContent = goal;
+    document.getElementById('goal-map').textContent = goal;
+    renderPath(document.getElementById('path-start'), runPath(s.beatenStart, s.encounters));
+    renderPath(document.getElementById('path-map'), runPath(s.beatenMap, s.encounters));
+
+    var first = s.encounters[0].name;
+    var beatenName = s.beatenMap > 0 ? s.encounters[s.beatenMap - 1].name : first;
+    var nextName = s.encounters[Math.min(s.beatenMap, s.encounters.length - 1)].name;
+    document.getElementById('btn-begin').textContent = 'Fight ' + first;
+    document.getElementById('btn-next').textContent = 'Fight ' + nextName;
+    document.getElementById('verdict-headline').textContent = beatenName + ' defeated';
+    document.getElementById('verdict-position').textContent =
+      'Fight ' + Math.max(1, s.beatenMap) + ' of ' + s.encounters.length;
+    document.getElementById('verdict-detail').textContent =
+      beatenName + ' is down. Fight ' + (s.beatenMap + 1) + ' of ' + s.encounters.length +
+      ' — ' + nextName + ' — is waiting, and you carry 8 health into it.';
+  }
+
+  document.querySelectorAll('.harness input').forEach(function (input) {
+    input.addEventListener('change', function () {
+      document.body.setAttribute('data-names',
+        document.querySelector('input[name=names]:checked').value);
+      draw();
+    });
+  });
+
+  // Every actionable element the ACs describe gets a real handler (stub fidelity).
+  function scrollToFrame(index) {
+    document.querySelectorAll('.frame')[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  document.getElementById('btn-begin').addEventListener('click', function () {
+    console.log('[mockup] begin run → felt, then verdict');
+    scrollToFrame(1);
+  });
+  document.getElementById('btn-map').addEventListener('click', function () {
+    console.log('[mockup] verdict → RunPhase.Map');
+    scrollToFrame(2);
+  });
+  document.getElementById('btn-back').addEventListener('click', function () {
+    console.log('[mockup] map → RunPhase.Verdict');
+    scrollToFrame(1);
+  });
+  document.getElementById('btn-next').addEventListener('click', function () {
+    console.log('[mockup] advanceRun() → next fight');
+    scrollToFrame(0);
+  });
+  document.getElementById('btn-shop').addEventListener('click', function () {
+    console.log('[mockup] verdict → RunPhase.Shop (DLR-84, already built)');
+  });
+
+  document.body.setAttribute('data-names', 'angled');
+  draw();
+</script>

@@ -247,6 +247,26 @@ Hearts), Zodiac (three merchant vouchers), Painted (+2 hand size, −1 Joker slo
 Tag after every Boss), Plasma (Chips and Mult averaged together; **2× blind size**), Erratic (all
 ranks and suits randomised).
 
+**How the decks unlock — corrected 2026-08-17, and the correction matters.** The 15 decks are not
+all available, and they unlock in three distinct ways:
+
+| Group             | Decks                                          | Unlocked by                                            |
+| ----------------- | ---------------------------------------------- | ------------------------------------------------------ |
+| **From the start** | Red                                            | Nothing — a fresh save holds this deck only            |
+| **Discovery**     | Blue, Yellow, Green, Black                     | Discovering _N_ items in the Collection, **cumulative across every run, won or lost** |
+| **Paired win**    | Magic, Nebula, Ghost, Abandoned, Checkered      | Winning a run with Red / Blue / Yellow / Green / Black respectively, any Stake |
+| **Stake win**     | Zodiac, Painted, Anaglyph, Plasma, Erratic     | Winning at Red / Green / Black / Blue / Orange Stake or harder |
+
+The discovery thresholds are the one figure the sources disagree on — 20/50/75/100 against
+20/40/60/80 — so **quote the group, not the number**. Nothing below turns on which is right.
+
+The load-bearing fact is the second row. **Blue (+1 hand) and Yellow (+$10) are unlocked by playing,
+not by winning** — the Collection counter accrues from losing runs exactly as it does from winning
+ones. Both are unambiguous starting power: +1 hand is a fifth scoring attempt per blind against a
+base of four, and +$10 against a $4 opening bankroll buys roughly two extra early Jokers and reaches
+the $25 interest cap two antes sooner, so its realised value over a run substantially exceeds $10.
+A player who has never won a run can still grind their way to a materially stronger start.
+
 8 **Stakes**, cumulative: White (base) → Red (no Small Blind money) → Green (requirements scale
 faster) → Black (30% Eternal stickers) → Blue (−1 discard) → Purple (requirements scale faster
 again) → Orange (30% Perishable) → Gold (30% Rental).
@@ -363,6 +383,31 @@ run *feels* alive for another two or three rounds after it stopped being winnabl
 Balatro's answer is not a comeback mechanic. Its answer is that **a run is ~30 minutes and restarting
 is free**. Losing is cheap, so an unwinnable run is a short one and the meta-loop — try another deck,
 another Joker line — absorbs the failure.
+
+**Cross-run progression is real here, and the earlier reading of it in this folder was wrong.** It
+is tempting — and this document previously implied — that Balatro grants only *options* across runs
+while power resets. It does not. Per §1.11, the front of the deck tree is gated on a Collection
+counter that accrues from losing runs, and it dispenses flat starting power: an extra hand every
+round, an extra $10 at the opening shop. In kind, that is Dead Cells' bargain — failure banks
+progress toward a stronger start.
+
+What separates them is **bound, not kind**, and the bound is the transferable lesson:
+
+- **The modifiers never stack.** A player picks exactly one deck per run. Two hundred hours in, they
+  start with one starting-condition modifier, the same count as a fresh save. Dead Cells stacks —
+  starting health, flask charges, forge quality and runes all apply at once — so its curve rises
+  without limit while Balatro's is flat after the first pick.
+- **Most later unlocks are trade-offs, not upgrades.** Black buys a Joker slot with a hand; Painted
+  buys hand size with a Joker slot; Plasma doubles every blind requirement. The pure-upside decks
+  are the early, discovery-gated ones; the tree widens into sidegrades rather than climbing.
+- **The Stake ladder is a counterweight the player opts into**, and the completion metagame pushes
+  them up it, so the difficulty floor rises alongside the pool.
+
+So the accurate one-line characterisation is **"one bounded, non-stacking power pick, with a
+difficulty dial as the counterweight"** — structurally nearer Hades than to a pure clean-test
+roguelike. Anything in this folder that reads Balatro as granting *options and never power* is
+citing a version of the game that does not exist; see `hybrid-design.md` §7's banked-progress item,
+corrected on the same date.
 
 **This is the finding that matters most for anything built here**, and it connects directly to the
 other parent in this folder's name. Forbidden Solitaire is explicitly *"a linear narrative experience

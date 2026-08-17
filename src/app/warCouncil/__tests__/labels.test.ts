@@ -10,6 +10,8 @@ import { DuelSide } from '../../../hunt'
 import {
   cardAccessibleName,
   cheatAccessibleName,
+  quarryHealthLabel,
+  HEALTH_BAR_LABEL,
   healthBarValueText,
   ILLEGAL_MOVE_MESSAGE,
   intentAccessibleName,
@@ -178,5 +180,21 @@ describe('cheatAccessibleName', () => {
       cheatAccessibleName(CheatStage.Armed),
     ]
     expect(new Set(names).size).toBe(3)
+  })
+})
+
+describe('quarryHealthLabel', () => {
+  it('names the bar after the opponent being fought', () => {
+    expect(quarryHealthLabel('Aoife')).toBe('Aoife’s health')
+    expect(quarryHealthLabel('Diarmuid')).toBe('Diarmuid’s health')
+  })
+
+  it('falls back to the generic wording when no opponent is known', () => {
+    expect(quarryHealthLabel(undefined)).toBe(HEALTH_BAR_LABEL[DuelSide.Quarry])
+  })
+
+  it('stays distinct from the player bar, which is what a spec queries them by', () => {
+    expect(quarryHealthLabel('Aoife')).not.toBe(HEALTH_BAR_LABEL[DuelSide.Player])
+    expect(quarryHealthLabel(undefined)).not.toBe(HEALTH_BAR_LABEL[DuelSide.Player])
   })
 })

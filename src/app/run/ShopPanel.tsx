@@ -13,7 +13,7 @@ import {
   SHOP_TITLE,
   shopItemAccessibleName,
 } from './shopLabels'
-import { NEXT_FIGHT_LABEL } from './runLabels'
+import { fightLabel, NEXT_FIGHT_LABEL } from './runLabels'
 import { HeartMark, HeartSymbolSheet } from '../warCouncil/HeartMark'
 import { HeartState } from '../warCouncil/duelHealthBars'
 import './run.css'
@@ -30,7 +30,8 @@ interface ShopPanelProps {
   readonly cheatCount: number
   readonly cheatSlotCount: number
   /** AC10 — the coming opponent's display name, `undefined` while the roster has no entry.
-   *  Reads "The Monarch" on every fight until DLR-85 lands the roster; that is correct today. */
+   *  Also names the leave control (AC8, DLR-85): `Fight <name>` when known, `NEXT_FIGHT_LABEL`
+   *  otherwise. */
   readonly nextOpponentName: string | undefined
   /** AC10 — the run's position, ALREADY WORDED by `runProgressText`. */
   readonly progressText: string
@@ -144,7 +145,7 @@ export default function ShopPanel({
 
         <div className="run-actions">
           <button type="button" className="run-btn is-primary" onClick={onLeave}>
-            {NEXT_FIGHT_LABEL}
+            {nextOpponentName === undefined ? NEXT_FIGHT_LABEL : fightLabel(nextOpponentName)}
           </button>
         </div>
       </div>

@@ -82,3 +82,8 @@ export const runLabelFixture = 'Fight 1 of 3'
 
 /** A fixed purse for component specs (DLR-84 AC2). */
 export const coinsFixture = 2
+
+/** A fixed, NAMED Quarry bar label for component specs. Deliberately not the generic
+ *  `HEALTH_BAR_LABEL[Quarry]` wording, so a spec querying the bar by name proves the threaded
+ *  label is what reaches the meter rather than the fallback. */
+export const quarryLabelFixture = 'Aoife’s health'

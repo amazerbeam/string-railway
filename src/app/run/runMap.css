@@ -1,0 +1,168 @@
+/* The run path's own classes (DLR-85). Transcribed from
+   `.claude/contract/DLR-85-start-screen-and-run-map/mockup.html`, approved 2026-08-17.
+   The full-viewport shell is `.run-shell` in run.css — this file adds no second shell.
+   Every clamp() bound, the -52deg name angle, the name font size and every colour below
+   is the DEVELOPER'S to retune. */
+
+.run-path-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.8rem, 3vmin, 2rem);
+  width: 100%;
+  max-width: 68rem;
+  text-align: center;
+}
+
+.run-path-title {
+  margin: 0;
+  font-size: clamp(1.4rem, 5vmin, 2.6rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wc-chalk);
+  font-weight: 600;
+}
+
+.run-path-goal {
+  margin: 0;
+  color: var(--wc-brass);
+  font-size: clamp(0.85rem, 2.2vmin, 1.05rem);
+  letter-spacing: 0.08em;
+}
+
+/* ─── RunMap: one horizontal path ───────────────────────────────────────────── */
+
+.run-path {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+/* Stage grouping is DERIVED from boss position — a separator after each closed stage. */
+.run-path-stage {
+  display: flex;
+  align-items: flex-start;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* The stage's own node list — holds the same flex row the mockup gives `.run-path-stage`
+   itself (mockup.html's renderer nests an inner <ol> for valid li>ol>li markup). Kept as
+   its own class rather than reusing `.run-path-stage` on two nesting levels. */
+.run-path-stage-nodes {
+  display: flex;
+  align-items: flex-start;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.run-path-stage + .run-path-stage {
+  margin-left: clamp(0.4rem, 1.4vmin, 1rem);
+}
+
+.run-path-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  padding: 0 clamp(0.15rem, 0.7vmin, 0.55rem);
+}
+
+/* The line itself: a rule behind every node, so it reads as one continuous path. */
+.run-path-node::before {
+  content: '';
+  position: absolute;
+  top: calc(1.15rem + 0.55rem);
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--wc-brass-dim);
+}
+
+.run-path-glyph {
+  position: relative;
+  z-index: 1;
+  height: 2.3rem;
+  display: grid;
+  place-items: center;
+}
+
+/* Ordinary opponent — a short tick. */
+.run-path-tick {
+  width: 3px;
+  height: 1.15rem;
+  background: var(--wc-chalk-dim, #9aa4a8);
+}
+
+/* Stage boss — a filled block. */
+.run-path-block {
+  width: clamp(0.8rem, 2vmin, 1.1rem);
+  height: clamp(0.8rem, 2vmin, 1.1rem);
+  background: var(--wc-chalk-dim, #9aa4a8);
+}
+
+.run-path-name {
+  margin-top: 0.3rem;
+  font-size: clamp(0.55rem, 1.5vmin, 0.78rem);
+  color: var(--wc-chalk-dim, #9aa4a8);
+  white-space: nowrap;
+  transform: rotate(-52deg);
+  transform-origin: top right;
+  height: 4.2rem;
+  text-align: right;
+  direction: rtl;
+}
+
+/* ── State: beaten. Struck out, still present (AC6). Form, not colour alone. ── */
+.run-path-node[data-status='beaten'] .run-path-tick,
+.run-path-node[data-status='beaten'] .run-path-block {
+  background: var(--wc-beaten, #5c666a);
+}
+.run-path-node[data-status='beaten'] .run-path-block {
+  background: transparent;
+  border: 2px solid var(--wc-beaten, #5c666a);
+}
+.run-path-node[data-status='beaten'] .run-path-name {
+  color: var(--wc-beaten, #5c666a);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+/* ── State: current. Distinguishable from everything beyond it (AC7): brass, a
+      caret above, and a taller glyph — three signals, none of them colour alone. ── */
+.run-path-node[data-status='current'] .run-path-tick {
+  background: var(--wc-brass);
+  width: 5px;
+  height: 1.75rem;
+}
+.run-path-node[data-status='current'] .run-path-block {
+  background: var(--wc-brass);
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 3px;
+}
+.run-path-node[data-status='current'] .run-path-name {
+  color: var(--wc-brass);
+  font-weight: 700;
+}
+.run-path-node[data-status='current'] .run-path-glyph::after {
+  content: '▾';
+  position: absolute;
+  top: -0.75rem;
+  color: var(--wc-brass);
+  font-size: 0.7rem;
+}
+
+/* ── State: upcoming. The plain case — thin, dim, no caret. ── */
+
+/* Final node of the run gets a heavier block: the last boss closes it. */
+.run-path-node[data-final='true'] .run-path-block {
+  width: clamp(1.1rem, 2.8vmin, 1.5rem);
+  height: clamp(1.1rem, 2.8vmin, 1.5rem);
+}

@@ -882,9 +882,14 @@ Two questions this section left implicit, both surfaced in play-through on 2026-
 
 **Forage persists within a run, and nothing persists across one.** A card pumped at encounter 1 is
 still pumped at encounter 5 — that is what makes a run feel like building something. But a new run
-starts on a bare 33-card deck with every card back to base value. This is Balatro's model
-(`balatro.md` §2.4): every run is a clean test, and what improves between runs is the player, not
-the deck.
+starts on a bare 33-card deck with every card back to base value: every run is a clean test, and what
+improves between runs is the player, not the deck.
+
+> **Correction, 2026-08-17.** This paragraph used to cite Balatro as the source of that model.
+> Balatro is **not** a clean-test roguelike — `balatro.md` §1.11 and §2.4 now record that its
+> discovery-gated decks hand out flat starting power (+1 hand, +$10) on a counter that accrues from
+> losing runs. The clean-test rule above stands on its own merits and is unaffected; only the
+> attribution was wrong.
 
 **The player's health emptying during an encounter ends the run.** This follows from §6 rather
 than being a separate choice. §6's whole answer to having no catch-up mechanic beyond pending
@@ -895,21 +900,34 @@ would stop being taught. Note the two parents disagree here and the disagreement
 Forbidden Solitaire grants effectively unlimited retries because it is a 2–3 hour linear story that
 cannot afford to delete progress, and this design chose the other structure in this section.
 
-**Banked progress across runs: rejected for power, left open for options.** The developer is open
-to a Hades/Rogue Legacy-style layer in which failed runs still bank something, and the two halves
-of that idea now resolve differently. Carrying **power** across runs — more health, higher card
-damage — is **rejected**: it dissolves the growth-class lesson the health bar exists to teach,
-because enough runs and the starting deck is strong enough that build quality stops mattering,
-which is the same failure §3's discarded shop-and-money branch describes from inside a single run
-rather than across several. Carrying **options** stays open: Balatro's own cautious middle, where
-beating content unlocks new Jokers and decks **into the pool** rather than handing over a head
-start, so the player gains _variety_ and the deck still resets every run. Unlocking a new Quarry
-character or a new kind of Forage edit would be this design's equivalent, and it costs nothing
-arithmetically. Hades is the third weighing worth naming: its banked progress is real, but the
+**Banked progress across runs: rejected for _accruing_ power, left open for options and for a
+bounded pick.** The developer is open to a Hades/Rogue Legacy-style layer in which failed runs still
+bank something. Carrying **accruing power** across runs — more health, higher card damage, each
+unlock adding to the last — is **rejected**: it dissolves the growth-class lesson the health bar
+exists to teach, because enough runs and the starting deck is strong enough that build quality stops
+mattering, which is the same failure §3's discarded shop-and-money branch describes from inside a
+single run rather than across several. Carrying **options** stays open — unlocking a new Quarry
+character or a new kind of Forage edit puts variety in the pool, the deck still resets every run,
+and it costs nothing arithmetically.
+
+**Revised 2026-08-17: a third answer sits between those two, and Balatro is it.** This paragraph
+previously described Balatro as the cautious middle that unlocks content "into the pool rather than
+handing over a head start." That is factually wrong and the correction opens a door the paragraph
+had closed. Per `balatro.md` §1.11, Balatro hands over a real head start — but **one that never
+stacks**: the player picks exactly one deck per run, so a two-hundred-hour player starts with the
+same _count_ of modifiers as a fresh save, and the Stake ladder raises the difficulty floor
+alongside the widening pool. The rejection above is a rejection of _accrual_, not of cross-run power
+as such, and a **pick-one** bank — unlocked starting loadouts the player chooses exactly one from —
+does not trigger it. That shape is untested here and unadopted; it is recorded as live rather than
+foreclosed. See `ideas.md`, _The buff persistence ladder_, for the stacking/pick-one distinction
+stated generally.
+
+Hades is the third weighing worth naming: its banked progress is real and it _does_ accrue, but the
 difficulty it is spent against (Pact of Punishment) is a separate dial the player opts into on top
 of it, so the base test — can this run's build clear this run's content — stays re-armable rather
-than gradually trivialised. That is the shape an _options_ answer would need to keep, if it is
-taken.
+than gradually trivialised. Balatro reaches the same end by capping the bank instead of raising the
+target. Either device would work; what an answer here cannot do is bank accruing power with no
+counterweight at all.
 
 **Settled by playtest, not on paper.** Whether run failure is too harsh, and whether banked progress
 is wanted, are both feel questions. The measurement: run a full session under the clean-test rule

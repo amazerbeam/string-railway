@@ -11,31 +11,162 @@ import { QuarryCharacter, DuelSide, type Health, type Damage, type Coins } from 
 // UNIT: health points, depleted 1 at a time.
 export const PLAYER_START_HEALTH: Health = 10
 
-// The Quarry's health, one entry per encounter, in run order.
-// AC1 (DLR-82) — at least three entries, rising, not all the same.
-// PLACEHOLDER VALUES: the SHAPE is the ticket's, the NUMBERS are the DEVELOPER'S and are listed
-// under "Developer decides or observes" in this contract's tasks.md. DLR-82's own risk note
-// predicts the player losing around fight three on these numbers and states that this is the
-// arithmetic working — the answer is the shop and the flask in later stories, NOT raising
-// PLAYER_START_HEALTH.
-// Entry 0 keeps 10, set by the developer 2026-08-14 (PT-002) alongside the trick-counting bank:
-// at 10 the encounter lasts ~1.9 hands and random legal play wins 63.8%.
-// UNIT: health points, indexed 0..n-1 by encounter.
-export const QUARRY_ENCOUNTER_HEALTH: readonly Health[] = [10, 14, 18]
+/** DLR-85 AC3 — whether a path entry is an ordinary opponent (a tick) or a stage boss
+ *  (a filled block). The ONLY two node types; the ticket puts rewards, shops and events
+ *  off the path explicitly. */
+export const OpponentKind = {
+  Ordinary: 'ordinary',
+  Boss: 'boss',
+} as const
+export type OpponentKind = (typeof OpponentKind)[keyof typeof OpponentKind]
 
 /**
- * Throws a `RangeError` rather than returning `undefined`: an out-of-range index would
- * otherwise become `NaN` on the first subtraction and vanish from a health bar with no error
- * logged anywhere — a bad index is a caller bug.
+ * DLR-85 AC4 — the ordinary opponents, in run order. THE DEVELOPER'S LIST, 2026-08-15,
+ * replacing the deck-rank names (Swan, Fox, Woodcutter, Witch, Monarch) the design used
+ * until now. Ten women and ten men. `as const` so an index read is a string literal
+ * rather than a possibly-undefined element.
+ *
+ * Fadas are ordinary Unicode and need NO special handling. The ticket records plain
+ * anglicisations as a fallback; nothing here implements one, because nothing needs to.
  */
-export function quarryHealthForEncounter(index: number): Health {
-  const health = QUARRY_ENCOUNTER_HEALTH[index]
-  if (health === undefined) {
+export const ORDINARY_OPPONENT_NAMES = [
+  'Aoife',
+  'Cillian',
+  'Niamh',
+  'Eoin',
+  'Saoirse',
+  'Rónán',
+  'Maeve',
+  'Fergus',
+  'Órla',
+  'Declan',
+  'Sinéad',
+  'Pádraig',
+  'Bríd',
+  'Lorcán',
+  'Clodagh',
+  'Tadhg',
+  'Róisín',
+  'Cormac',
+  'Aisling',
+  'Oisín',
+] as const
+
+/** The five stage bosses, in order. Diarmuid closes the run and is the boss the design
+ *  intends to ignore follow-suit — that power is a later ticket's, not this one's. */
+export const STAGE_BOSS_NAMES = [
+  'Bréanainn',
+  'Muireann',
+  'Conchobhar',
+  'Gráinne',
+  'Diarmuid',
+] as const
+
+/** One encounter of the run: who it is, what they are, and how much health they hold. */
+export interface RunEncounterConfig {
+  readonly name: string
+  readonly kind: OpponentKind
+  readonly health: Health
+}
+
+// How many ordinary opponents precede each stage boss. From the developer's sketch
+// (2026-08-15): four ticks then a block, five times over. `runPath` NEVER reads this — a
+// stage is derived from where a boss actually sits, so changing this reshapes the run
+// without touching the path model.
+// UNIT: ordinary opponents per stage. VALUE: the developer's.
+export const ORDINARY_PER_STAGE = 4
+
+// The health curve's three tunables. PLACEHOLDER VALUES: twenty-five hand-written figures
+// would be twenty-five tuning decisions, so the SHAPE is here and the NUMBERS are the
+// DEVELOPER'S — see this contract's tasks.md, "Developer decides or observes".
+//
+// BASE and STEP are chosen to reproduce DLR-82's existing curve EXACTLY at indices 0..2:
+// 10, 14, 18. Entry 0's 10 is the developer's measured value (2026-08-14, PT-002, where
+// the encounter lasted ~1.9 hands and random legal play won 63.8%) and this formula does
+// not disturb it. BOSS_HEALTH_MULTIPLIER is the only genuinely new number.
+//
+// The run is NOT expected to be winnable on these values — Oisín holds 86 and Diarmuid
+// 129 against a player starting on 10. DLR-82 already recorded that the answer is the
+// shop and later stories, NOT raising PLAYER_START_HEALTH.
+// UNIT: health points; health points per ordinary step; unitless multiplier.
+export const ORDINARY_HEALTH_BASE: Health = 10
+export const ORDINARY_HEALTH_STEP: Health = 4
+export const BOSS_HEALTH_MULTIPLIER = 1.5
+
+/**
+ * `[ORDINARY_PER_STAGE × Ordinary, Boss]`, repeated until either roster list runs out —
+ * so the two name lists are the run's length ceiling and no index can go out of range.
+ *
+ * An ordinary opponent's health is BASE + STEP × (how many ordinary opponents precede it);
+ * a boss's is that same figure times the multiplier, `Math.round`ed so no fractional
+ * health can reach a heart row that renders whole hearts.
+ */
+function buildRunEncounters(): readonly RunEncounterConfig[] {
+  const encounters: RunEncounterConfig[] = []
+  let ordinariesUsed = 0
+  for (const bossName of STAGE_BOSS_NAMES) {
+    for (let i = 0; i < ORDINARY_PER_STAGE; i += 1) {
+      const name = ORDINARY_OPPONENT_NAMES[ordinariesUsed]
+      if (name === undefined) break
+      encounters.push({
+        name,
+        kind: OpponentKind.Ordinary,
+        health: ORDINARY_HEALTH_BASE + ORDINARY_HEALTH_STEP * ordinariesUsed,
+      })
+      ordinariesUsed += 1
+    }
+    encounters.push({
+      name: bossName,
+      kind: OpponentKind.Boss,
+      health: Math.round(
+        (ORDINARY_HEALTH_BASE + ORDINARY_HEALTH_STEP * ordinariesUsed) * BOSS_HEALTH_MULTIPLIER,
+      ),
+    })
+  }
+  return encounters
+}
+
+/**
+ * THE run's sequence — AC2's "the same source the run itself reads", literally rather than
+ * approximately. Its length IS the run's length, its `kind` positions decide the stages,
+ * and its `health` figures are what QUARRY_ENCOUNTER_HEALTH projects.
+ *
+ * MUST stay declared above QUARRY_ENCOUNTER_HEALTH: that projection reads this at module
+ * init, and a forward reference evaluates as `undefined` and throws on `.map`.
+ *
+ * Still a plain array. Replacing the builder with twenty-five explicit literals later is a
+ * local edit with no consumer change.
+ */
+export const RUN_ENCOUNTERS: readonly RunEncounterConfig[] = buildRunEncounters()
+
+// The Quarry's health, one entry per encounter, in run order — now a PROJECTION of
+// RUN_ENCOUNTERS rather than a hand-written literal (DLR-85). A second array beside the
+// roster is the source that drifts: a fourth name with only three healths would render a
+// fourth node for a fight that throws the moment the player reached it.
+// Opens 10, 14, 18 exactly as it did before DLR-85.
+// UNIT: health points, indexed 0..n-1 by encounter.
+export const QUARRY_ENCOUNTER_HEALTH: readonly Health[] = RUN_ENCOUNTERS.map((e) => e.health)
+
+/**
+ * THE range guard for the run's sequence, in one place. Throws a `RangeError` rather than
+ * returning `undefined` for the reason this module already gave: an out-of-range index
+ * becomes `NaN` on the first subtraction and vanishes from a health bar with no error
+ * logged anywhere. A bad index is a caller bug.
+ */
+export function runEncounterAt(index: number): RunEncounterConfig {
+  const encounter = RUN_ENCOUNTERS[index]
+  if (encounter === undefined) {
     throw new RangeError(
-      `No Quarry health configured for encounter ${index} (${QUARRY_ENCOUNTER_HEALTH.length} configured)`,
+      `No opponent configured for encounter ${index} (${RUN_ENCOUNTERS.length} configured)`,
     )
   }
-  return health
+  return encounter
+}
+
+/** Unchanged signature and behaviour; the guard now lives in `runEncounterAt` so it is
+ *  stated once rather than twice. */
+export function quarryHealthForEncounter(index: number): Health {
+  return runEncounterAt(index).health
 }
 
 // Health restored to the player entering the next encounter. NEW TO DLR-65 — the epic states
@@ -66,13 +197,11 @@ export const ENCOUNTERS_PER_RUN = QUARRY_ENCOUNTER_HEALTH.length
 // UNIT: slots available to the player, for the whole run.
 export const CHEAT_SLOT_COUNT = 2
 
-// DLR-83 AC3 — how many Cheats a run opens with. PLACEHOLDER VALUE: the ticket requires the grant
-// come from configuration and says cards are granted free "so they can be played with", but names
-// no number. 2 fills both slots so the mechanic is exercisable in a play session.
-// THE VALUE IS THE DEVELOPER'S — see this contract's tasks.md, "Developer decides or observes".
+// DLR-83 AC3 — how many Cheats a run opens with. SET BY THE DEVELOPER 2026-08-17, down from 2:
+// a run should start empty-handed, with Cheats earned or bought rather than granted free.
 // Must be 0..CHEAT_SLOT_COUNT; `grantCheats` throws outside that range rather than clamping.
 // UNIT: Cheat cards granted once, at the start of a run.
-export const RUN_STARTING_CHEATS = 2
+export const RUN_STARTING_CHEATS = 0
 
 // DLR-84 AC1 — what beating an opponent pays. TRANSCRIBED FROM THE TICKET (developer's
 // specification, 2026-08-15), not chosen here. Credited by `recordEncounter`, which is the one

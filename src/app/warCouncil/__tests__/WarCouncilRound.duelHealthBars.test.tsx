@@ -11,6 +11,7 @@ import {
   huntFixture,
   makeRound,
   maxHealthFixture,
+  quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
 
@@ -29,7 +30,7 @@ function lcg(seed: number): () => number {
   }
 }
 
-function healthMeter(name: 'Your health' | 'The Quarry’s health') {
+function healthMeter(name: 'Your health' | typeof quarryLabelFixture) {
   return screen.getByRole('meter', { name })
 }
 
@@ -43,6 +44,7 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
         encounter={encounterFixture}
         maxHealth={maxHealthFixture}
         runLabel={runLabelFixture}
+        quarryLabel={quarryLabelFixture}
         cheats={[]}
         coins={coinsFixture}
         onComplete={onComplete}
@@ -61,14 +63,14 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
     function resolveIfShown(action: () => void) {
       const before = {
         player: healthMeter('Your health').getAttribute('aria-valuenow'),
-        quarry: healthMeter('The Quarry’s health').getAttribute('aria-valuenow'),
+        quarry: healthMeter(quarryLabelFixture).getAttribute('aria-valuenow'),
       }
       action()
       if (screen.queryByText(/take the trick/i)) {
         tricksResolved += 1
         const after = {
           player: healthMeter('Your health').getAttribute('aria-valuenow'),
-          quarry: healthMeter('The Quarry’s health').getAttribute('aria-valuenow'),
+          quarry: healthMeter(quarryLabelFixture).getAttribute('aria-valuenow'),
         }
         if (after.player !== before.player || after.quarry !== before.quarry) {
           eventsObserved += 1
@@ -168,6 +170,7 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
         encounter={encounterFixture}
         maxHealth={maxHealthFixture}
         runLabel={runLabelFixture}
+        quarryLabel={quarryLabelFixture}
         cheats={[]}
         coins={coinsFixture}
         onComplete={onComplete}
@@ -206,6 +209,7 @@ describe('WarCouncilRound — the Quarry’s at-risk preview (DLR-86)', () => {
         encounter={encounterFixture}
         maxHealth={maxHealthFixture}
         runLabel={runLabelFixture}
+        quarryLabel={quarryLabelFixture}
         cheats={[]}
         coins={coinsFixture}
         onComplete={vi.fn()}
@@ -278,7 +282,7 @@ describe('WarCouncilRound — the Quarry’s at-risk preview (DLR-86)', () => {
     // bank × multiplier clamped by the Quarry's own row length — derived from the rendered
     // meter, never a restated literal, so a config retune cannot make this test lie.
     playUntilStreak(container)
-    const meter = screen.getByRole('meter', { name: 'The Quarry’s health' })
+    const meter = screen.getByRole('meter', { name: quarryLabelFixture })
     const atRisk = quarryHearts(container, 'atRisk').length
     expect(atRisk).toBeGreaterThan(0)
     expect(meter.getAttribute('aria-valuetext')).toContain(`${atRisk} at risk.`)

@@ -85,6 +85,165 @@ needs one and this reading is revisited.
 free option: whether a playtester reports the declaration as a read or a coin flip. If the coin-flip
 report survives even after this reordering, the lever doesn't fix what it was reached for.
 
+### Abilities as game-permanent unlocks, archetype decks, and challenge runs
+
+**What it is.** Raised 2026-08-17, deliberately parked Raw — _"flag this as an idea for now and we'll
+get back to it later, it could help with the shape."_ Three connected moves, in order of ambition:
+
+1. **Abilities move from printed to game-permanent.** Today the six odd-rank abilities are fixed
+   properties of the deck, chosen by nobody — a rung the persistence ladder calls _printed_. The base
+   deck would instead ship with only the **Swan (1)** live, and the player unlocks the rest across
+   runs, switching them on from a home menu. Two exits on placement: **dormant slots with fixed
+   homes** (a rank keeps its identity forever; you unlock whether it is switched on — costs almost
+   nothing, since it is today's deck with abilities asleep) or **free placement across the odd ranks**
+   (richer — the Witch on rank 1 makes your worst card a trump-maker — but pays in UI and in Quarry
+   logic, because a mapping that changes per run has to be taught on screen and played by the AI).
+2. **Archetype decks.** Pre-built decks that each express a play style — a poison deck, a punching
+   deck — introduced as the Quarry sets escalate, so a later set is fought under different rules
+   rather than merely against more health.
+3. **Player-built decks, and challenge runs.** Eventually the player assembles their own; and "win
+   with deck X" becomes a challenge-run frame, which is where the replay spine would come from.
+
+**The spitballed poison example, recorded because two parts of it are structurally new.** An ability
+that swaps the decree and makes decree cards poisonous; another card that protects its holder from
+poison merely by being **in hand**; poison that does **not** land immediately but resolves on the
+**next** hand, giving both sides a window to heal it.
+
+- **Delayed, telegraphed, answerable damage does not exist in this game yet.** Every damage source
+  today is immediate — lose a trick, take it. A threat that lands next hand creates a three-beat arc
+  across hands (threat → response window → resolution) that both sides can see and both sides can
+  answer. This is the strongest single element in the proposal and it is separable from everything
+  else here.
+- **A card that works while held fills the empty rung.** The persistence ladder's **fight-long** rung
+  is unoccupied. A protective card that does its work by sitting in your hand is fight-long, granted
+  by the deal rather than bought — which means the empty rung may get filled by cards rather than by
+  a new purchase system.
+
+**Two pieces already in the deck, waiting.** **Treasure (7)** and **Poison (8)** are both named cards
+with **no rule attached** — furnished empty slots. The poison spitball lands on the second by name.
+Note the grammar clash to resolve if it is taken: every ability in the game today is on an **odd**
+rank, and 8 is even.
+
+**Problem it reaches for.** The game currently has nothing on the game-permanent rung, no
+between-run reason to return, and one Quarry that plays identically every fight. This proposes to
+fill all three from content that already exists, which is why it is worth taking seriously despite
+its size.
+
+**The symmetric reading, recorded first because it was the initial analysis.** Both sides draw from
+the same 33-card deck, so an ability installed on a rank is an ability the **Quarry gets too**, on
+roughly half those cards. Under that reading, unlocking cannot inflate the player's strength — it
+changes what the game _is_ this run, symmetrically, which is the "options, not power" cell
+`hybrid-design.md` §7 wanted and could not populate. The fork it implied was whether an _archetype_
+is the player's loadout or the **match's rules** — with a shared deck, picking the poison deck makes
+the match poisonous for both sides, so the fantasy is stage-select rather than class-select.
+
+**Superseded 2026-08-17 by the developer's framing, which is asymmetric and better.** The shape they
+described is: **the player starts with only the Swan (1) live, and the Quarry has the full deck from
+the first run.** Abilities are unlocked **per side** — the same physical card does something in the
+Quarry's hand and nothing in the player's until that ability is unlocked. Runs unlock the standard
+deck's abilities one at a time until **beating the boss completes it**, at which point a **second
+deck** (working name: Fire) opens with its own ability set, and the ladder repeats.
+
+Three consequences, and the first is the reason to prefer this shape:
+
+- **The ceiling is parity, so power creep is impossible by construction.** The player is not growing
+  past the content; they are growing **up to** it. The end state of a full unlock is a symmetric
+  game, not a player advantage. This is the exact inverse of the Dead Cells bargain §7 rejects, and
+  it answers that rejection more cleanly than any bound or cap could — there is nothing to bound.
+- **It reframes unlocking as a shrinking handicap rather than a growing bank**, which also gives
+  every unlock a legible meaning: you did not get stronger, you got *the thing the Quarry already
+  had*.
+- **A second deck restarts the ladder with real identity.** A deck is six abilities, not one
+  modifier, so each new deck is a far bigger unlock than a Balatro deck and gives the run structure
+  **acts** — which the flat fight sequence currently lacks.
+
+**The open problem in this shape, and it is a scheduling choice rather than a wall.** The teaching
+curve and the power curve now point in **opposite directions**. Starting with one ability is an
+excellent way to teach the game — the drip is the whole virtue — but pairing it with a full-ability
+opponent means the newest player faces **maximum incoming complexity with minimum outgoing agency**,
+at the exact moment they understand least. Abilities are mostly disruption; facing six while holding
+one means the game is chaotic at you and you cannot be chaotic back. The two effects are separable:
+the Quarry could unlock **alongside** the player, which keeps the entire teaching benefit and drops
+the handicap, at the cost of losing the "the Quarry already had it" meaning above. Cheap to flip in
+either direction; the developer's call, after play.
+
+**A legibility cost this shape adds.** The same card face means two different things depending on who
+holds it. The screen has to carry that, and the skull read gets harder — a Fox in the Quarry's hand
+is live while yours is inert.
+
+**Draw-rate arithmetic, so the base deck is not assumed featureless.** Three cards per rank in 33. In
+a six-card hand the player holds at least one **Swan** in **≈46%** of hands (`C(30,6)/C(33,6) =
+0.536` for none, so 0.464 for at least one). With all six odd ranks live — today's deck — the chance
+of holding at least one ability card is **≈99.5%**. So the unlock path is a real texture ramp from
+"occasionally something happens" to "always something happens".
+
+**A connection worth keeping.** That ramp also answers §5's open question — _whether the abilities
+survive a six-card hand_, where ability-free hands are currently normal "by default rather than by
+decision". Under this idea, sparse early hands stop being an accident and become the designed early
+game.
+
+**Collision to note, not a conflict.** **Forage** already lists a card's **ability** as one of the
+four things it may edit. The home menu would set the deck's baseline abilities and Forage would move
+them within a run — the same verb on two rungs of the ladder, which is a clean division of labour
+rather than a duplication.
+
+**Status.** **Raw, deliberately.** The developer's read is that it is a strong idea that "could help
+with the shape" and that it wants a **play test to see how it feels** before it is costed. Nothing
+here is adopted; the placement fork and the shared-deck framing fork are both open and both the
+developer's.
+
+### Delayed damage with a response window — a threat that lands next hand
+
+**What it is.** Split out on 2026-08-17 at the developer's request, from the archetype-deck entry
+above, because **it needs none of that structure and can be tested alone.** A damage source that does
+not resolve when it is inflicted. It is applied now, it is visible to both sides, and it lands at the
+start of the **next** hand — so between infliction and resolution there is a window in which either
+side can act to reduce or cancel it. The originating spitball was poison: a card that poisons, and a
+separate card that answers poison by being held or played.
+
+**Problem it reaches for.** Every damage source in the game today is **immediate** — a trick is lost
+and the health comes off. Nothing can be seen coming and nothing can be answered. This adds a
+three-beat structure the game does not have anywhere:
+
+1. **Threat** — the damage is inflicted and displayed, unresolved.
+2. **Window** — one hand in which either side may answer it.
+3. **Resolution** — whatever is left lands.
+
+That middle beat is the whole point. It creates a decision whose subject is a consequence you can
+already see, which is the one thing pending damage on the health bar gestures at but does not
+actually make answerable.
+
+**Why it is worth separating from its parent.** It requires no unlock system, no archetype deck, no
+home menu and no new currency. In its cheapest form it is one status, one display, and one answer —
+testable inside the current deck by giving the effect to a rank that already exists and does nothing.
+**Poison (8)** is a named card with **no rule attached**, which is exactly where the spitball put it.
+The grammar clash to resolve is that every ability in the game today sits on an **odd** rank, and 8
+is even.
+
+**Where it sits on the persistence ladder.** The threat itself is **one-time use** in effect but
+**fight-long** in reach — inflicted once, resolving a hand later. The answer to it, if it works by
+being **held** rather than played, is squarely **fight-long**, which is the ladder's empty rung. That
+makes this idea a candidate occupant of the empty rung without inventing a purchase system for it.
+
+**What to watch, and it is the obvious failure.** If answering the threat is always correct and always
+available, the window is not a decision — it is a chore with an extra click, and the net effect is
+that the damage simply never happens. The interesting version needs the answer to **cost** something:
+it occupies a card slot, or it competes with a trick you wanted to take, or it only partly cancels.
+Conversely if the answer is rarely drawn, the delay is pure notification and the mechanic reduces to
+immediate damage announced early.
+
+**A second thing to watch, from the shared deck.** Both sides draw from the same 33 cards, so
+whatever inflicts the threat and whatever answers it are **both available to the Quarry**. A poison
+the Quarry can also apply and also cure is a different mechanic from one the player owns, and the
+Quarry's AI has to be able to use the window or the symmetry is nominal only.
+
+**Cost in new rules.** One status that persists across a hand boundary, one place to show it, and one
+rule for answering it. Cheap by the standards of everything else in this file — but note it is the
+first thing in the game that would carry state **between** hands within a fight, which is a genuinely
+new kind of object.
+
+**Status.** **Raw.** Split out to be testable on its own; nothing adopted.
+
 ---
 
 ## Worth costing
@@ -1225,6 +1384,128 @@ an intervention on an existing quantity rather than a new one.
    which is the failure mode a five-visit shop is most exposed to.
 5. **Health as wages.** If it is taken, measure whether players start declining risky lines to hoard
    currency. That is the slippery slope showing up as caution rather than as power.
+
+---
+
+### The buff persistence ladder — a shared vocabulary for classifying any new mechanic
+
+**Status: Worth costing.** Opened 2026-08-17 at the developer's request, after a Balatro session
+raised the cross-run question: _"we should categorise the buffs in a language we can both understand,
+so when I come up with an idea it falls into one of these categories."_ This entry is a
+**classification scheme, not a mechanic** — it costs zero new rules and decides nothing. Every
+example below is invented to illustrate a rung; none is a proposal, and no number in one is a chosen
+value.
+
+#### The question it answers
+
+A buff has three independent properties, and the design has vocabulary for only two of them. The
+shop entry above owns both of those: **what it intervenes on** (the bank, the multiplier, or which
+tricks you take — anything else is a third channel) and **how it scales** (rate purchases multiply
+the `n²` coefficient, flat purchases add a linear term). The missing third is **how long it lasts**,
+and it is the one that sets what a thing is worth to buy. Answer all three and most of the balancing
+question answers itself.
+
+#### The four rungs
+
+**One-time use.** You hold a charge, you spend it, the effect resolves, it is gone. The decision it
+creates is _when_ — never _whether_, because the player always wants the effect eventually. That
+makes it the natural home for anything strong enough that having it always-on would be broken.
+Scarcity does the balancing, so the tuning knob is how many you hold and how easily one is replaced.
+
+> _Example — **Turncoat**._ Spend it as you commit a card, and that card's suit becomes the new trump
+> for the rest of the hand. Enormous, obviously worth having, and the whole game of it is nerve:
+> burn it on trick two to rescue a bad opening, or hold to trick ten when you can see what the Quarry
+> has left. Built from the Fox's shape rather than a new device.
+
+**Fight-long.** It switches on when a hand begins and expires when the hand ends. The decision it
+creates is _commitment_ — chosen with the decree turned and your opening thirteen in hand, then lived
+with for the whole hand. Buffs here can safely be larger than a one-time use, because they are paid
+for by the hands where the board does not suit them.
+
+> _Example — **Quarry's Trail**._ At the start of a hand you name a suit. Tricks you take in it climb
+> the bank faster; tricks you lose in it break the streak and cost extra health. You are reading your
+> own thirteen against the decree and betting on a lane, and a hand where the Quarry holds the top of
+> your named suit is a hand you chose to make harder.
+
+**Run-permanent.** It lands once and keeps working until the run ends. This is the build. Everything
+on this rung accumulates with everything else on it, so by the last fight the player is operating a
+machine they assembled rather than the one they started with — the feeling that makes a run a run
+rather than a series of matches. The decision it creates is _direction_: each pick narrows what the
+rest of the run is about. **Spending something to reach this rung does not move it off the rung** —
+what places a buff here is how long the change lasts, not how it was paid for. Forage is the
+intended occupant and is the clearest case of exactly that: a budget spent down, buying edits that
+persist to the end of the run.
+
+> _Example — **Keen Eye**._ For the rest of the run, skulls show one more band of rank detail than
+> they otherwise would. It never fires, never triggers, never asks anything — it quietly improves
+> every read for the remainder of the run. Included because it is not a card edit: this rung is
+> wider than deck-editing.
+
+**Game-permanent.** It survives the run ending. Two entirely different shapes live here and choosing
+between them is a design decision, not a detail:
+
+- **Stacking** — every unlock applies at once and forever, so the game measurably eases the longer it
+  is played. Dead Cells: starting health, flask charges, forge quality and runes all live
+  simultaneously.
+- **Pick-one** — unlocks enter a list the player chooses exactly one from at the start of a run, so
+  the pool grows and the power does not. Balatro's decks: a two-hundred-hour player still starts with
+  one modifier, same as a fresh one.
+
+> _Example, stacking — **Trophies**._ Every tenth Quarry felled raises starting health by two,
+> permanently and cumulatively, across all future runs.
+>
+> _Example, pick-one — **Hunting Grounds**._ One ground chosen per run: one starts you holding a
+> Cheat, one starts you with Forage budget already banked, one keeps the decree face-down until
+> trick three. Finishing runs unlocks more grounds; you still take exactly one, forever.
+
+`hybrid-design.md` §7 rejects **stacking** for the growth-class reason and leaves **pick-one** open.
+That distinction is the whole reason Balatro can hand out real starting power without dissolving its
+own test — see the corrected reading in `balatro.md` §1.11.
+
+#### Cutting across all four — number or rule?
+
+A **number-buff** moves a value and hands you a dial you can turn in any increment. A **rule-buff**
+suspends or rewrites something the game otherwise forces on you; it is binary, so its size cannot be
+tuned, only its frequency.
+
+> _Example of the pair._ Making a Keys 6 worth 8 is a number — too strong and it becomes 7, too weak
+> and it becomes 9. Lifting follow-suit is a rule; there is no two-thirds of a follow-suit break, so
+> the only adjustable quantity is how many the player gets. This is why the open question on Cheats
+> is "one or two" and can never be finer.
+
+Any idea can sit on any rung, but **rule-buffs should get scarcer as they climb** — a rule that can
+be broken permanently and for free is not a rule any more.
+
+#### The shape this replaced, and why
+
+The first cut was three buckets: single-use, run-permanent, game-permanent. It breaks on the first
+real object in the game. A Cheat is one use and then gone, and it also rides in its slot from fight
+to fight for the whole run — both at once. The cause is two independent questions stacked into one
+list: _is the token consumed when used_, and _how long does the change it makes last_. They come
+apart in every direction — a Balatro Tarot is consumed instantly and its enhancement lasts the run; a
+Joker is never consumed and also lasts the run. Only the second question makes a ladder; the first is
+a property each rung can carry either way.
+
+`hybrid-design.md` §4's two-layer table has the same conflation in miniature — its **Persists**
+column reads "For the run" for Forage and "Spent on use" for Snare, which are answers to different
+questions. That is a documentation fix to make if this scheme is adopted, not an argument against
+either layer.
+
+#### Where The Hunt sits, as an inventory
+
+One-time use is occupied. Fight-long is **empty**. Run-permanent is designed and unbuilt. Game-
+permanent is deliberately empty with the pick-one door open. Two of four rungs are unclaimed, and
+fight-long is the one that costs nothing in the cross-run argument.
+
+#### What would prove this wrong
+
+1. **A buff that will not classify.** If a mechanic the design wants lands on no rung, or on two, the
+   ladder is the wrong axis and the write-up should be corrected rather than the mechanic bent.
+2. **The rungs not pricing differently.** If a fight-long buff and a run-permanent buff end up worth
+   the same in coins, duration is not doing economic work and the scheme is decoration.
+3. **Fight-long staying empty on contact.** If every candidate for that rung reads better as
+   one-time-use or as run-permanent, the empty cell is empty for a reason and should be recorded as
+   discarded rather than as an opportunity.
 
 ---
 

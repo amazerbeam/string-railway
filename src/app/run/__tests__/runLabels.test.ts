@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { RunOutcome } from '../../../hunt'
 import {
   CONTINUE_ANYWAY_LABEL,
-  CONTINUE_LABEL,
   NEW_RUN_LABEL,
   NEXT_FIGHT_LABEL,
   SHOP_LABEL,
   VISIT_SHOP_LABEL,
+  fightLabel,
+  runGoalText,
   runHeadline,
+  runPositionLabel,
   runProgressText,
   runVerdictDetail,
   tricksTakenText,
@@ -23,36 +25,36 @@ describe('runProgressText (AC6)', () => {
 
 describe('runHeadline (AC5)', () => {
   it('distinguishes winning the last fight from winning an intermediate one', () => {
-    const intermediate = runHeadline(RunOutcome.InProgress)
-    const final = runHeadline(RunOutcome.Won)
+    const intermediate = runHeadline(RunOutcome.InProgress, undefined)
+    const final = runHeadline(RunOutcome.Won, undefined)
     expect(final).not.toBe(intermediate)
     expect(final).toContain('WIN')
   })
 
   it('names losing distinctly from either win', () => {
-    const lost = runHeadline(RunOutcome.Lost)
-    expect(lost).not.toBe(runHeadline(RunOutcome.Won))
-    expect(lost).not.toBe(runHeadline(RunOutcome.InProgress))
+    const lost = runHeadline(RunOutcome.Lost, undefined)
+    expect(lost).not.toBe(runHeadline(RunOutcome.Won, undefined))
+    expect(lost).not.toBe(runHeadline(RunOutcome.InProgress, undefined))
   })
 
-  it('names no Quarry — the roster is DLR-85’s', () => {
+  it('names no Quarry when no opponent is known', () => {
     for (const outcome of Object.values(RunOutcome)) {
-      expect(runHeadline(outcome)).not.toMatch(/monarch|quarry/i)
+      expect(runHeadline(outcome, undefined)).not.toMatch(/monarch|quarry/i)
     }
   })
 })
 
 describe('runVerdictDetail', () => {
   it('names the fight that is waiting when the run continues', () => {
-    expect(runVerdictDetail(RunOutcome.InProgress, 0, 3, 7)).toContain('Fight 2 of 3')
+    expect(runVerdictDetail(RunOutcome.InProgress, 0, 3, 7, undefined)).toContain('Fight 2 of 3')
   })
 
   it('names the fight the player went down on when the run is lost', () => {
-    expect(runVerdictDetail(RunOutcome.Lost, 2, 3, 0)).toContain('3 of 3')
+    expect(runVerdictDetail(RunOutcome.Lost, 2, 3, 0, undefined)).toContain('3 of 3')
   })
 
   it('states the run length when the run is won', () => {
-    expect(runVerdictDetail(RunOutcome.Won, 2, 3, 2)).toContain('3')
+    expect(runVerdictDetail(RunOutcome.Won, 2, 3, 2, undefined)).toContain('3')
   })
 })
 
@@ -68,11 +70,10 @@ describe('control labels', () => {
     expect(NEXT_FIGHT_LABEL).not.toBe(NEW_RUN_LABEL)
   })
 
-  it('names all six controls mutually distinctly, so a role query never matches two', () => {
+  it('names all five controls mutually distinctly, so a role query never matches two', () => {
     const labels = [
       NEXT_FIGHT_LABEL,
       NEW_RUN_LABEL,
-      CONTINUE_LABEL,
       SHOP_LABEL,
       VISIT_SHOP_LABEL,
       CONTINUE_ANYWAY_LABEL,
@@ -86,5 +87,37 @@ describe('unspentCoinsText', () => {
     expect(unspentCoinsText(1)).toContain('1 coin')
     expect(unspentCoinsText(1)).not.toContain('1 coins')
     expect(unspentCoinsText(2)).toContain('2 coins')
+  })
+})
+
+describe('naming (DLR-85)', () => {
+  it('names a continue control after its opponent', () => {
+    expect(fightLabel('Cillian')).toBe('Fight Cillian')
+  })
+
+  it('states the goal from the configured length', () => {
+    expect(runGoalText(25)).toBe('Beat all 25')
+  })
+
+  it('names the opponent just beaten in the headline', () => {
+    expect(runHeadline(RunOutcome.InProgress, 'Aoife')).toBe('Aoife defeated')
+  })
+
+  it('falls back to the generic headline with no name', () => {
+    expect(runHeadline(RunOutcome.InProgress, undefined)).toBe('FIGHT WON')
+  })
+
+  it('keeps the terminal headlines about the run, not one opponent', () => {
+    expect(runHeadline(RunOutcome.Won, 'Diarmuid')).toBe('YOU WIN')
+    expect(runHeadline(RunOutcome.Lost, 'Aoife')).toBe('YOU LOSE')
+  })
+
+  it('names the coming opponent in the verdict detail', () => {
+    expect(runVerdictDetail(RunOutcome.InProgress, 0, 25, 7, 'Cillian')).toContain('Cillian')
+    expect(runVerdictDetail(RunOutcome.InProgress, 0, 25, 7, 'Cillian')).toContain('Fight 2 of 25')
+  })
+
+  it('names the opponent in the felt’s position readout', () => {
+    expect(runPositionLabel(0, 25, 'Aoife')).toBe('Fight 1 of 25 — Aoife')
   })
 })

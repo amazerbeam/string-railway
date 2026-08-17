@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   advanceRun,
+  beatenCount,
   buyFromShop,
   canAdvanceRun,
   recordEncounter,
@@ -249,6 +250,50 @@ describe('buyFromShop (DLR-84)', () => {
     const before = JSON.stringify(run)
     expect(() => buyFromShop(run, ShopItem.Cheat)).toThrow(/notEnoughCoins/)
     expect(JSON.stringify(run)).toBe(before)
+  })
+})
+
+describe('beatenCount (DLR-85)', () => {
+  it('counts nothing beaten on a fresh run', () => {
+    expect(beatenCount(startRun())).toBe(0)
+  })
+
+  it('counts the current encounter as beaten once the player has won it', () => {
+    const run = startRun()
+    const won = recordEncounter(
+      run,
+      { ...run.encounter, health: { ...run.encounter.health, [DuelSide.Quarry]: 0 },
+        winner: DuelSide.Player },
+      run.cheats,
+    )
+    expect(won.encounterIndex).toBe(0)
+    expect(beatenCount(won)).toBe(1)
+  })
+
+  it('does not count a live encounter as beaten after advancing', () => {
+    const run = startRun()
+    const won = recordEncounter(
+      run,
+      { ...run.encounter, health: { ...run.encounter.health, [DuelSide.Quarry]: 0 },
+        winner: DuelSide.Player },
+      run.cheats,
+    )
+    expect(beatenCount(advanceRun(won))).toBe(1)
+  })
+
+  it('counts every encounter on a won run', () => {
+    let run = startRun()
+    for (let i = 0; i < run.encounterCount; i += 1) {
+      run = recordEncounter(
+        run,
+        { ...run.encounter, health: { ...run.encounter.health, [DuelSide.Quarry]: 0 },
+          winner: DuelSide.Player },
+        run.cheats,
+      )
+      if (run.outcome === RunOutcome.InProgress) run = advanceRun(run)
+    }
+    expect(run.outcome).toBe(RunOutcome.Won)
+    expect(beatenCount(run)).toBe(run.encounterCount)
   })
 })
 

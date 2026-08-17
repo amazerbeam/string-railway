@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85
 
 ## Responsibility
 
@@ -19,9 +19,10 @@ the App-mode/manual-trick-entry scaffolding that once bridged War Council into t
 `WarCouncilMountProps` and documented separately in
 [../war-council-ui/README.md](../war-council-ui/README.md).
 
-**`src/app/run/` is the run verdict and shop screens**, added by DLR-82 and DLR-84 and documented
+**`src/app/run/` is the run layer's own screens**, added by DLR-82, DLR-84 and DLR-85 and documented
 separately in [../run-ui/README.md](../run-ui/README.md) — the full-viewport surface shown whenever
-a fight or the run resolves, and the shop the player may enter from it.
+a fight or the run resolves, the shop the player may enter from it, and (DLR-85) the path screen that
+serves both as the start screen before fight one and as the map reached between fights.
 
 Outside those two subfolders this module contains no runtime logic at all — only the two type
 declarations in `warCouncilMount.ts`. `src/App.tsx` and `src/app/dealerForRound.ts` do the actual
@@ -94,8 +95,10 @@ components — are tabulated in [../war-council-ui/README.md](../war-council-ui/
 - [`App.tsx` as the run driver, and `dealerForRound`](run-driver.md) — the four pieces of state and
   why the hand counter never resets, what replaced `SLICE_ENCOUNTER_INDEX` and `MAX_HEALTH` and why
   the Quarry's denominator had to become per-render, the three click-handler transitions, why there
-  is no effect in the file at all, and the felt-versus-verdict render switch (DLR-71, DLR-80,
-  DLR-82).
+  is no effect in the file at all, the felt-versus-verdict render switch, and — since DLR-85 — the
+  widened `RunPhase` union, the roster reads that make this the only file naming an opponent, the two
+  `RunPathScreen` mounts, and the one line of `handleNewRun` that is the whole of AC10 (DLR-71,
+  DLR-80, DLR-82, DLR-84, DLR-85).
 
 **The historical shape, for orientation:** through DLR-71 this file held a round number, the dealt
 `RoundState` and a single live `EncounterState`, with a module-scope `SLICE_ENCOUNTER_INDEX = 0`
@@ -128,9 +131,23 @@ that constant and the module-scope `MAX_HEALTH` beside it are **deleted**, not r
   - **No Forage step between Hunts.** A currency and a shop **do** exist since DLR-84 — the driver
     holds a three-state `between` phase (verdict / warned / shop) and mounts `ShopPanel` from it —
     but Forage is untouched and `FORAGE_BUDGET_PER_ENCOUNTER` still has no consumer.
-  - **No stages, gimmicks, or boss.** The run is a flat sequence; every opponent plays identically
-    and differs only in health.
+  - **Stages and bosses exist as SHAPE, not as behaviour** (DLR-85). The run is twenty-five fights
+    grouped into **five stages of four ordinary opponents and a boss**, and the driver draws that shape
+    on a start screen and a between-fights map. But **every opponent still plays identically** and
+    differs only in health and name: a "boss" is a filled block on the map and a bigger health figure,
+    with no power, no gimmick and no rule-break. Diarmuid is intended to ignore follow-suit; that is a
+    later ticket's, and nothing about it is built.
   - **No persistence.** A page reload starts a new run; nothing is saved.
+- **The driver opens on a start screen and returns to one on a loss** (DLR-85). `App.tsx`'s phase union
+  widened from DLR-84's `BetweenPhase` (verdict / warned / shop) to `RunPhase` carrying `Start` and
+  `Map` as well, and `handleNewRun` now sets `RunPhase.Start` rather than dropping straight into fight
+  one. Folding the start screen into the same union cost **no new state variable** and made "in the shop
+  before the run began" unrepresentable for free. See [the run driver](run-driver.md).
+- **`App.tsx` is approaching reducer territory, and was deliberately not converted** (DLR-85). It is 262
+  lines (from 208) and holds five `useState` calls plus the widened `RunPhase`. That is still inside the
+  400-line budget and `react-frontend`'s reducer guidance is not yet breached, but **the next ticket that
+  adds a surface here should probably convert the driver to a reducer.** Doing it inside DLR-85 would
+  have buried that ticket's diff, so it is flagged rather than left as a surprise.
 - **No way to reach a standalone/manual-entry test harness.** DLR-47 deleted
   `TestModeVanguardHost.tsx`, `TrickEntryForm.tsx`, `appMode.ts`, and `isValidTricksWon` along with
   the rest of the Vanguard UI — there is currently no manual-entry mechanism at all, campaign or

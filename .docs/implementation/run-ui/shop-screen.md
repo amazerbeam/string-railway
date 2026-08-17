@@ -61,10 +61,16 @@ cells matched the approved mockup and reads better to a screen reader — one la
 enumerating three pairs, rather than one sentence to parse. The `purseText` helper it replaced was
 removed rather than left exported and unread.
 
-**The opponent's name is "The Monarch" on every fight, and that is correct today.**
-`QUARRY_CHARACTERS` holds one entry and `SLICE_QUARRY_CHARACTER` is fixed for the run.
-`nextOpponentText` already handles an `undefined` name, so DLR-85's roster needs no signature change
-here — only the copy.
+**The opponent's name is the real one since DLR-85, and the change needed no signature.** This
+paragraph previously read "the name is 'The Monarch' on every fight, and that is correct today" — it was
+not correct for long. `App.tsx` now feeds `nextOpponentName` from `RUN_ENCOUNTERS` rather than from
+`quarryCharacterInfo(SLICE_QUARRY_CHARACTER)`, so the shop announces whoever is actually next. That was
+a **defect fix**, not a copy change: the old expression printed "The Monarch" on every fight of the run.
+
+`ShopPanelProps` is unchanged — `nextOpponentName: string | undefined` already existed and
+`nextOpponentText` already handled the `undefined` case — which is the prediction this file made and the
+one thing about it that held. **The leave button also names the opponent now**: `fightLabel(name)`,
+falling back to `NEXT_FIGHT_LABEL` when no name is known.
 
 ## Copy quotes no number
 

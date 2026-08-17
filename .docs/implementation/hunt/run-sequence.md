@@ -47,6 +47,7 @@ is over" is what stops a screen and a transition disagreeing about it.
 | `startRun(playerHealth?)`             | Builds fight 0 at `PLAYER_START_HEALTH`, `outcome: InProgress`, **0 coins**, and the configured Cheat grant |
 | `recordEncounter(run, enc, cheats)`   | Adopts the encounter a hand reported upward, **credits `COINS_PER_ENCOUNTER_WIN` on a player win**, and **re-derives the outcome** — the AC4/AC5 decision point |
 | `canAdvanceRun(run)`                  | `outcome === InProgress && encounter.winner === Player` — "the Quarry is down and another fight remains" |
+| `beatenCount(run)`                    | How many fights are behind the player, as one integer — `encounterIndex + (winner === Player ? 1 : 0)` (DLR-85) |
 | `advanceRun(run)`                     | Opens the next fight on the carried health, or throws                                                 |
 | `shopStockFor(run, maxPlayerHealth?)` | Projects the run into the four figures the shop's rules need (DLR-84)                                 |
 | `buyFromShop(run, item, max?)`        | Deducts a price and mints a Cheat or heals with a clamp, or throws (DLR-84)                           |
@@ -113,7 +114,22 @@ spent on the way.
 
 ## Run length has exactly one source of truth
 
-`QUARRY_ENCOUNTER_HEALTH` is now `[10, 14, 18]` — three entries, rising, not all equal — and
+**Since DLR-85 that source is `RUN_ENCOUNTERS`, and it holds twenty-five entries.**
+`QUARRY_ENCOUNTER_HEALTH` is a projection of it (`RUN_ENCOUNTERS.map((e) => e.health)`) and
+`ENCOUNTERS_PER_RUN` is still that array's length — so the chain is
+`RUN_ENCOUNTERS.length → QUARRY_ENCOUNTER_HEALTH.length → ENCOUNTERS_PER_RUN`, one fact stated once and
+projected twice. The run is **four ordinary opponents then a stage boss, five times over**, closing on
+Diarmuid. See [the roster and the derived path](run-path-and-the-roster.md).
+
+Nothing in `run.ts` changed for that. `startRun` reads `QUARRY_ENCOUNTER_HEALTH.length` exactly as it
+did, and every length-coupled spec in `run.test.ts` was already written relative to
+`encounterCount` rather than to a literal `3` — the loop at `run.test.ts:78` now iterates twenty-four
+times instead of two and passes unchanged. **Zero test edits were required by the length increase**,
+which is what made shipping the full run nearly free.
+
+The history below is DLR-82's and still worth knowing, because it is why the derivation exists at all.
+
+`QUARRY_ENCOUNTER_HEALTH` was `[10, 14, 18]` — three entries, rising, not all equal — and
 `ENCOUNTERS_PER_RUN` was redefined as `QUARRY_ENCOUNTER_HEALTH.length` rather than remaining a
 free-standing `5`.
 
@@ -130,6 +146,11 @@ that this is the arithmetic working — the answer is the shop and the flask in 
 raising `PLAYER_START_HEALTH`**, which DLR-82 explicitly forbids as a response. **DLR-84 built the
 shop half of that answer and deliberately left the curve alone**, so whether 4 health a fight
 actually closes the gap is now a question a play session can answer.
+
+**DLR-85 widened that placeholder rather than resolving it.** The curve is now twenty-five entries
+generated from three tunables instead of three literals, and the run is expected to be lost in stage
+one or two — Oisín holds 86 and Diarmuid 135. The ruling is unchanged: the answer is the shop and later
+stories, not a bigger starting bar.
 
 ## Purity
 
