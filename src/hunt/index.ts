@@ -22,13 +22,16 @@ export {
   QUARRY_ENCOUNTER_HEALTH,
   quarryHealthForEncounter,
   ENCOUNTER_PLAYER_RESTORE,
-  SIMULTANEOUS_DEPLETION_WINNER,
   CHEAT_SLOT_COUNT,
   RUN_STARTING_CHEATS,
   COINS_PER_ENCOUNTER_WIN,
   CHEAT_PRICE,
   HEAL_PRICE,
   HEAL_HEALTH_RESTORED,
+  ENVENOM_PRICE,
+  ENVENOM_QUARRY_DAMAGE,
+  ENVENOM_PLAYER_DAMAGE,
+  POISON_GUARD_PRICE,
   OpponentKind,
   RUN_ENCOUNTERS,
   ORDINARY_OPPONENT_NAMES,
@@ -46,10 +49,30 @@ export { PathNodeStatus, runPath } from './runPath'
 export type { CheatCard, CheatCardId } from './cheats'
 export { grantCheats, addCheat, removeCheat, hasCheat } from './cheats'
 
-export { startEncounter, applyDamage, isEncounterResolved } from './encounter'
+export {
+  startEncounter,
+  applyDamage,
+  isEncounterResolved,
+  NO_PENDING_ENVENOM,
+  hasPendingEnvenom,
+  queueEnvenom,
+} from './encounter'
 
 export type { ShopStock } from './shop'
-export { ShopItem, SHOP_ITEMS, PurchaseRefusal, priceOf, refusalFor, canBuyAnything } from './shop'
+export {
+  ShopItem,
+  SHOP_ITEMS,
+  ShopCategory,
+  SHOP_CATEGORIES,
+  SHOP_ITEMS_BY_CATEGORY,
+  UNCATEGORISED_SHOP_ITEMS,
+  PurchaseRefusal,
+  priceOf,
+  categoryOf,
+  isShopCategoryAvailable,
+  refusalFor,
+  canBuyAnything,
+} from './shop'
 
 export type { RunState } from './run'
 export {

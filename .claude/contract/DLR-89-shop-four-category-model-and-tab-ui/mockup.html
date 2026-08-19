@@ -1,0 +1,722 @@
+<title>Shop Ladder</title>
+
+<style>
+  /* ── DLR-89 mockup ────────────────────────────────────────────────────────
+     Layout + interaction validation only. NOT source, NOT shippable.
+     Palette and type are the app's own tokens, transcribed from
+     src/app/warCouncil/warCouncil.css so the proportions read truthfully.
+     Deliberately single-theme: this stands in for a game screen, which
+     commits to one look. Every colour is painted explicitly.
+     ───────────────────────────────────────────────────────────────────────── */
+  :root {
+    --wc-felt: #16241f;
+    --wc-felt-lip: #0a1211;
+    --wc-felt-line: #2b4038;
+    --wc-parchment: #e9e1cd;
+    --wc-brass: #c99a4e;
+    --wc-brass-dim: #7d6132;
+    --wc-chalk: #cdd6d2;
+    --wc-chalk-dim: #6f7d78;
+    --wc-alarm: #d1705f;
+    --wc-hp-secure-fill: #cc3f4a;
+    --wc-hp-broken: #3a4a52;
+    --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100svh;
+    background: radial-gradient(70% 80% at 50% 40%, #1d2f28 0%, var(--wc-felt) 55%, #101b18 100%);
+    color: var(--wc-chalk);
+    font-family: var(--wc-sans);
+    overflow: hidden;
+  }
+
+  /* .run-shell — the existing full-viewport, no-scroll shell */
+  .run-shell {
+    height: 100svh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(0.6rem, 2vmin, 1.4rem);
+    padding-bottom: max(clamp(0.6rem, 2vmin, 1.4rem), env(safe-area-inset-bottom));
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .shop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.5rem, 1.8vmin, 1.1rem);
+    text-align: center;
+    max-width: 42rem;
+    width: 100%;
+  }
+
+  .shop-title {
+    font-family: var(--wc-serif);
+    font-size: clamp(1.4rem, 5vmin, 2.6rem);
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin: 0;
+    color: var(--wc-brass);
+    text-wrap: balance;
+  }
+
+  .shop-next {
+    margin: 0;
+    font-size: clamp(0.8rem, 2vmin, 1rem);
+    line-height: 1.5;
+  }
+
+  .shop-purse {
+    display: flex;
+    gap: clamp(1rem, 5vmin, 3rem);
+    padding: 0.5rem clamp(0.9rem, 3vmin, 1.6rem);
+    border-top: 1px solid var(--wc-brass-dim);
+    border-bottom: 1px solid var(--wc-brass-dim);
+  }
+
+  .shop-purse-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .shop-purse-label,
+  .shop-item-price {
+    font-size: clamp(0.55rem, 1.2vmin, 0.68rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+  }
+
+  .shop-purse-value {
+    font-family: var(--wc-serif);
+    font-size: clamp(1rem, 3vmin, 1.6rem);
+    color: var(--wc-parchment);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .shop-health {
+    --shop-heart-size: clamp(1.1rem, 3.2vmin, 1.8rem);
+    display: flex;
+    align-items: center;
+    gap: clamp(0.6rem, 2vmin, 1.1rem);
+    flex-wrap: wrap;
+    padding: 0.5rem clamp(0.9rem, 3vmin, 1.6rem);
+    border-bottom: 1px solid var(--wc-brass-dim);
+  }
+
+  .shop-hearts {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.16rem, 0.6vmin, 0.3rem);
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .shop-heart {
+    flex: 0 1 var(--shop-heart-size);
+    aspect-ratio: 1;
+    min-width: 0;
+    line-height: 0;
+  }
+
+  .shop-heart svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .shop-heart[data-state='whole'] {
+    color: var(--wc-hp-secure-fill);
+  }
+  .shop-heart[data-state='broken'] {
+    color: var(--wc-hp-broken);
+  }
+
+  /* ── NEW IN DLR-89 — the tablist ─────────────────────────────────────────── */
+  .shop-tabs {
+    display: flex;
+    gap: clamp(0.25rem, 1vmin, 0.5rem);
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .shop-tab {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0.5rem clamp(0.4rem, 1.6vmin, 0.9rem);
+    border: 1px solid var(--wc-brass-dim);
+    border-radius: 4px 4px 0 0;
+    border-bottom-width: 2px;
+    background: none;
+    color: var(--wc-chalk-dim);
+    font-family: var(--wc-sans);
+    font-size: clamp(0.62rem, 1.5vmin, 0.8rem);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  /* Selected reads in FORM as well as tone — a brass underline and a lifted fill,
+     so a greyscale screenshot still shows which shelf is open. */
+  .shop-tab[aria-selected='true'] {
+    color: var(--wc-brass);
+    border-color: var(--wc-brass);
+    border-bottom-color: var(--wc-brass);
+    background: #ffffff0d;
+  }
+
+  /* Refused reads as refused in form, not colour — the SAME dashed-edge, no-fill
+     treatment .shop-item:disabled already uses. */
+  .shop-tab[aria-disabled='true'] {
+    cursor: not-allowed;
+    border-style: dashed;
+    border-color: var(--wc-chalk-dim);
+    color: var(--wc-chalk-dim);
+    background: none;
+  }
+
+  .shop-tab:focus-visible {
+    outline: 2px solid var(--wc-parchment);
+    outline-offset: 2px;
+  }
+
+  @media (hover: hover) {
+    .shop-tab:not([aria-disabled='true']):hover {
+      border-color: var(--wc-parchment);
+      color: var(--wc-parchment);
+    }
+  }
+
+  .shop-tab:not([aria-disabled='true']):active {
+    transform: translateY(1px);
+  }
+
+  /* The ONE scoped scroll region on this screen. The catalogue is unbounded; the
+     viewport is not. Purse, health, tabs and the leave control stay outside it,
+     so nothing a purchase decision needs can scroll out of reach.
+     PLACEHOLDER bound — the developer's to retune. */
+  .shop-panel {
+    width: 100%;
+    border: 1px solid var(--wc-brass-dim);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    padding: clamp(0.6rem, 2.2vmin, 1.1rem);
+    box-sizing: border-box;
+    max-height: clamp(8rem, 34vmin, 20rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .shop-panel:focus-visible {
+    outline: 2px solid var(--wc-parchment);
+    outline-offset: 2px;
+  }
+
+  .shop-empty {
+    margin: 0;
+    padding: clamp(0.8rem, 3vmin, 1.6rem) 0;
+    font-size: clamp(0.72rem, 1.8vmin, 0.88rem);
+    color: var(--wc-chalk-dim);
+    font-style: italic;
+  }
+
+  /* Heal's own block, OUTSIDE the tabs — it has no duration, so it is not on the ladder. */
+  .shop-aside {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .shop-aside-label {
+    font-size: clamp(0.55rem, 1.2vmin, 0.68rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+    text-align: left;
+  }
+  /* ── end new ─────────────────────────────────────────────────────────────── */
+
+  /* Item count drives the column count, so a long shelf packs instead of
+     stretching two columns down the page. The minmax() floor is a PLACEHOLDER
+     the developer owns. Replaces the old hard repeat(2, …) and makes the
+     max-width: 30rem single-column media query redundant. */
+  .shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+    gap: clamp(0.6rem, 2.4vmin, 1.2rem);
+    width: 100%;
+  }
+
+  .shop-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 44px;
+    padding: clamp(0.7rem, 2.4vmin, 1.3rem) clamp(0.7rem, 2vmin, 1.2rem);
+    border: 1px solid var(--wc-brass);
+    border-radius: 4px;
+    background: #ffffff08;
+    color: var(--wc-chalk);
+    font-family: var(--wc-sans);
+    cursor: pointer;
+    touch-action: manipulation;
+    text-align: center;
+  }
+
+  .shop-item:disabled {
+    cursor: not-allowed;
+    border-style: dashed;
+    border-color: var(--wc-chalk-dim);
+    background: none;
+    color: var(--wc-chalk-dim);
+  }
+
+  .shop-item:focus-visible {
+    outline: 2px solid var(--wc-parchment);
+    outline-offset: 2px;
+  }
+
+  @media (hover: hover) {
+    .shop-item:not(:disabled):hover {
+      border-color: var(--wc-parchment);
+    }
+  }
+
+  .shop-item:not(:disabled):active {
+    transform: translateY(1px);
+  }
+
+  .shop-item-name {
+    font-family: var(--wc-serif);
+    font-size: clamp(0.95rem, 2.6vmin, 1.35rem);
+    letter-spacing: 0.04em;
+    color: var(--wc-brass);
+  }
+
+  .shop-item:disabled .shop-item-name {
+    color: var(--wc-chalk-dim);
+  }
+
+  .shop-item-blurb {
+    font-size: clamp(0.7rem, 1.8vmin, 0.86rem);
+    line-height: 1.4;
+  }
+
+  .shop-refusal {
+    margin: 0;
+    min-height: 1.4em;
+    font-size: clamp(0.68rem, 1.7vmin, 0.82rem);
+    color: var(--wc-alarm);
+  }
+
+  .shop-hint {
+    margin: 0;
+    font-size: clamp(0.68rem, 1.7vmin, 0.82rem);
+    color: var(--wc-chalk-dim);
+  }
+
+  .run-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .run-btn {
+    min-height: 44px;
+    padding: 0.6rem clamp(1rem, 4vmin, 2rem);
+    border: 1px solid var(--wc-brass);
+    border-radius: 4px;
+    background: none;
+    color: var(--wc-brass);
+    font-family: var(--wc-serif);
+    font-size: clamp(0.85rem, 2.2vmin, 1.1rem);
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .run-btn.is-primary {
+    background: #c99a4e1a;
+  }
+
+  .run-btn:focus-visible {
+    outline: 2px solid var(--wc-parchment);
+    outline-offset: 2px;
+  }
+
+  /* ── mockup chrome — not part of the screen ──────────────────────────────── */
+  .mk-bar {
+    position: fixed;
+    inset: 0 0 auto 0;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    padding: 0.4rem 0.7rem;
+    background: #0a1211e6;
+    border-bottom: 1px solid var(--wc-felt-line);
+    font-size: 0.7rem;
+    color: var(--wc-chalk-dim);
+  }
+
+  .mk-tag {
+    font-family: var(--wc-serif);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--wc-brass-dim);
+  }
+
+  .mk-bar button {
+    min-height: 28px;
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--wc-brass-dim);
+    border-radius: 3px;
+    background: none;
+    color: var(--wc-chalk);
+    font-family: var(--wc-sans);
+    font-size: 0.7rem;
+    cursor: pointer;
+  }
+
+  .mk-bar button:focus-visible {
+    outline: 2px solid var(--wc-parchment);
+    outline-offset: 2px;
+  }
+
+  .mk-log {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+    color: var(--wc-parchment);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+</style>
+
+<div class="mk-bar">
+  <span class="mk-tag">Mockup · DLR-89</span>
+  <span>Placeholder data. Click a tab, arrow between tabs, press Escape.</span>
+  <span style="color: var(--wc-brass-dim)">Fill the shelf to judge a long list.</span>
+  <button type="button" id="mk-toggle">Show a refused purchase</button>
+  <button type="button" id="mk-fill">Fill the shelf (9 items)</button>
+  <span class="mk-log" id="mk-log" role="status">—</span>
+</div>
+
+<svg width="0" height="0" style="position: absolute" aria-hidden="true">
+  <symbol id="heart-whole" viewBox="0 0 24 24">
+    <path
+      d="M12 21s-8-5.2-8-11a4.6 4.6 0 0 1 8-3 4.6 4.6 0 0 1 8 3c0 5.8-8 11-8 11z"
+      fill="currentColor"
+    />
+  </symbol>
+  <symbol id="heart-broken" viewBox="0 0 24 24">
+    <path
+      d="M12 21s-8-5.2-8-11a4.6 4.6 0 0 1 8-3 4.6 4.6 0 0 1 8 3c0 5.8-8 11-8 11z"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+    />
+    <path d="M12 7l-2.4 4h4L11 16" fill="none" stroke="currentColor" stroke-width="1.6" />
+  </symbol>
+</svg>
+
+<div class="run-shell">
+  <div class="shop" id="shop">
+    <h1 class="shop-title">Between fights</h1>
+    <p class="shop-next">Next up — The Monarch. Fight 2 of 5.</p>
+
+    <div class="shop-purse" role="group" aria-label="Your purse and health">
+      <span class="shop-purse-cell">
+        <span class="shop-purse-label">Coins</span>
+        <span class="shop-purse-value">3</span>
+      </span>
+      <span class="shop-purse-cell">
+        <span class="shop-purse-label">Cheat slots</span>
+        <span class="shop-purse-value">1 / 2</span>
+      </span>
+    </div>
+
+    <div
+      class="shop-health"
+      role="meter"
+      aria-valuenow="6"
+      aria-valuemin="0"
+      aria-valuemax="10"
+      aria-label="Health 6 of 10"
+    >
+      <span class="shop-purse-label">Health</span>
+      <span class="shop-hearts" id="hearts" aria-hidden="true"></span>
+      <span class="shop-purse-value">6 / 10</span>
+    </div>
+
+    <!-- The tablist. One tab stop for the whole widget; arrows move within it.
+         The four tab buttons are the ONLY buttons in this container — the panel
+         and its purchase controls sit outside it, or arrow keys would walk
+         into them. -->
+    <div class="shop-tabs" role="tablist" aria-label="What lasts how long" id="tabs"></div>
+
+    <!-- Only the selected category's panel is rendered. -->
+    <div class="shop-panel" id="panel" role="tabpanel" tabindex="0"></div>
+
+    <!-- Heal, outside the tabs: an instant transfer with no duration, so it is
+         not on the ladder at all. -->
+    <div class="shop-aside">
+      <span class="shop-aside-label">Also for sale</span>
+      <div class="shop-grid">
+        <div>
+          <button type="button" class="shop-item" id="heal-btn">
+            <span class="shop-item-name">Heal</span>
+            <span class="shop-item-blurb"
+              >Restore 4 health, now. Anything over your maximum is lost.</span
+            >
+            <span class="shop-item-price">1 coin</span>
+          </button>
+          <p class="shop-refusal" role="status" id="heal-refusal"></p>
+        </div>
+      </div>
+    </div>
+
+    <p class="shop-hint">Buy nothing and carry the coin if you would rather.</p>
+
+    <div class="run-actions">
+      <button type="button" class="run-btn is-primary" id="leave-btn">Fight The Monarch</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Fake catalogue, standing in for src/hunt/shop.ts ─────────────────────
+  const CATEGORIES = [
+    { id: 'oneTimeUse', label: 'One-time use', available: true },
+    { id: 'fightLong', label: 'Fight-long', available: true },
+    { id: 'runPermanent', label: 'Run-permanent', available: true },
+    { id: 'gamePermanent', label: 'Game-permanent', available: false },
+  ]
+
+  // Only Cheat is categorised today. Heal is deliberately absent — it renders
+  // outside the tabs. The three new items land in the empty rungs later.
+  const ITEMS_BY_CATEGORY = {
+    oneTimeUse: [
+      {
+        name: 'Cheat',
+        blurb: 'A card for a slot. Play it later to ignore follow-suit.',
+        price: '2 coins',
+      },
+    ],
+    fightLong: [],
+    runPermanent: [],
+    gamePermanent: [],
+  }
+
+  // Stand-in for a shelf that has actually filled up — the developer's stated
+  // expectation is that every one of these lists gets long. Names are nonsense
+  // on purpose; only the density and the scroll behaviour are being judged.
+  const CROWD = [
+    { name: 'Envenom', blurb: 'Poison a card in your hand.', price: '2 coins' },
+    { name: 'Marked Deck', blurb: 'See the next telegraph one trick early.', price: '3 coins' },
+    { name: 'Loaded Die', blurb: 'Re-roll one skull draw this hand.', price: '2 coins' },
+    { name: 'Second Wind', blurb: 'Redraw your hand once.', price: '3 coins' },
+    { name: 'Tin Whistle', blurb: 'Force the Quarry to lead.', price: '1 coin' },
+    { name: 'Chalk Line', blurb: 'Ignore follow-suit for one trick.', price: '2 coins' },
+    { name: 'Fools Gold', blurb: 'Double the next coin you earn.', price: '2 coins' },
+    { name: 'Lantern', blurb: 'Reveal one card of the Quarry hand.', price: '1 coin' },
+  ]
+
+  const COMING_SOON = 'Coming soon.'
+  const EMPTY = 'Nothing on this shelf yet.'
+
+  let selected = 'oneTimeUse'
+  let focusIndex = 0
+  let showRefused = false
+  let filled = false
+
+  const tabsEl = document.getElementById('tabs')
+  const panelEl = document.getElementById('panel')
+  const logEl = document.getElementById('mk-log')
+
+  function log(message) {
+    logEl.textContent = message
+  }
+
+  const tabId = (id) => `shop-tab-${id}`
+  const panelId = (id) => `shop-panel-${id}`
+
+  function renderHearts() {
+    const host = document.getElementById('hearts')
+    host.innerHTML = ''
+    for (let i = 0; i < 10; i++) {
+      const whole = i < 6
+      const span = document.createElement('span')
+      span.className = 'shop-heart'
+      span.dataset.state = whole ? 'whole' : 'broken'
+      span.innerHTML = `<svg><use href="#heart-${whole ? 'whole' : 'broken'}"></use></svg>`
+      host.append(span)
+    }
+  }
+
+  function renderTabs() {
+    tabsEl.innerHTML = ''
+    CATEGORIES.forEach((category, index) => {
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'shop-tab'
+      button.id = tabId(category.id)
+      button.setAttribute('role', 'tab')
+      button.setAttribute('aria-controls', panelId(category.id))
+      button.setAttribute('aria-selected', String(category.id === selected))
+      // Roving tabindex: exactly one tab stop for the whole widget.
+      button.tabIndex = index === focusIndex ? 0 : -1
+      button.textContent = category.label
+
+      if (!category.available) {
+        // aria-disabled, NOT the disabled attribute: a native disabled button
+        // leaves the tab order AND arrow traversal, so the keyboard user never
+        // learns the fourth rung exists — which is the whole point of showing it.
+        button.setAttribute('aria-disabled', 'true')
+        button.setAttribute('aria-label', `${category.label} — ${COMING_SOON}`)
+      }
+
+      button.addEventListener('click', () => {
+        focusIndex = index
+        if (!category.available) {
+          log(`Refused: ${category.label} — ${COMING_SOON}`)
+          renderTabs()
+          return
+        }
+        selected = category.id
+        log(`Selected shelf: ${category.label}`)
+        renderTabs()
+        renderPanel()
+      })
+
+      tabsEl.append(button)
+
+      if (!category.available) {
+        const reason = document.createElement('p')
+        reason.className = 'shop-refusal'
+        reason.setAttribute('role', 'status')
+        reason.style.flexBasis = '100%'
+        reason.style.marginTop = '0.25rem'
+        reason.textContent = COMING_SOON
+        tabsEl.append(reason)
+      }
+    })
+  }
+
+  function renderPanel() {
+    const category = CATEGORIES.find((c) => c.id === selected)
+    const base = ITEMS_BY_CATEGORY[selected]
+    const items = filled && category.available ? [...base, ...CROWD] : base
+    panelEl.id = 'panel'
+    panelEl.setAttribute('aria-labelledby', tabId(selected))
+
+    if (items.length === 0) {
+      panelEl.innerHTML = `<p class="shop-empty">${EMPTY}</p>`
+      return
+    }
+
+    const grid = document.createElement('div')
+    grid.className = 'shop-grid'
+
+    items.forEach((item) => {
+      const cell = document.createElement('div')
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'shop-item'
+      button.innerHTML = `
+        <span class="shop-item-name">${item.name}</span>
+        <span class="shop-item-blurb">${item.blurb}</span>
+        <span class="shop-item-price">${item.price}</span>`
+
+      const reason = document.createElement('p')
+      reason.className = 'shop-refusal'
+      reason.setAttribute('role', 'status')
+
+      if (showRefused) {
+        button.disabled = true
+        button.setAttribute('aria-label', `${item.name} — ${item.price} — Both Cheat slots are full.`)
+        reason.textContent = 'Both Cheat slots are full.'
+      } else {
+        button.setAttribute('aria-label', `${item.name} — ${item.price}`)
+        button.addEventListener('click', () => log(`Bought ${item.name} — placeholder, no state changes`))
+      }
+
+      cell.append(button, reason)
+      grid.append(cell)
+    })
+
+    panelEl.innerHTML = ''
+    panelEl.append(grid)
+  }
+
+  // Arrow / Home / End move focus among the tabs. Activation stays manual, so
+  // arrowing onto the refused tab does not try to select it.
+  tabsEl.addEventListener('keydown', (event) => {
+    const last = CATEGORIES.length - 1
+    let next = null
+
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (focusIndex + 1) % CATEGORIES.length
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp')
+      next = (focusIndex - 1 + CATEGORIES.length) % CATEGORIES.length
+    else if (event.key === 'Home') next = 0
+    else if (event.key === 'End') next = last
+
+    if (next === null) return
+    event.preventDefault()
+    focusIndex = next
+    renderTabs()
+    tabsEl.querySelectorAll('button')[focusIndex].focus()
+    log(`Focus: ${CATEGORIES[focusIndex].label}`)
+  })
+
+  // Escape is owned by the shop container ALONE and fires exactly once. The
+  // tablist deliberately does not also handle it — two handlers would call
+  // advanceRun twice and silently skip a fight.
+  document.getElementById('shop').addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') log('Escape → left for the next fight (fires once)')
+  })
+
+  document
+    .getElementById('heal-btn')
+    .addEventListener('click', () => log('Bought Heal — placeholder, no state changes'))
+  document
+    .getElementById('leave-btn')
+    .addEventListener('click', () => log('Fight The Monarch — placeholder'))
+
+  document.getElementById('mk-toggle').addEventListener('click', (event) => {
+    showRefused = !showRefused
+    event.currentTarget.textContent = showRefused
+      ? 'Show an available purchase'
+      : 'Show a refused purchase'
+    log(showRefused ? 'Refused purchase shown — compare with the refused tab' : 'Purchase available')
+    renderPanel()
+  })
+
+  document.getElementById('mk-fill').addEventListener('click', (event) => {
+    filled = !filled
+    event.currentTarget.textContent = filled ? 'Empty the shelf' : 'Fill the shelf (9 items)'
+    log(
+      filled
+        ? 'Shelf filled — the panel scrolls, the screen does not. Purse, tabs and Next fight stay put.'
+        : 'Shelf back to one item',
+    )
+    renderPanel()
+  })
+
+  renderHearts()
+  renderTabs()
+  renderPanel()
+</script>

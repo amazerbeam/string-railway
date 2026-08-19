@@ -28,6 +28,9 @@ export function dealRound(dealer: PlayerSide, rng: () => number): RoundState {
     trumpSuit: decree.suit,
     tricksWon: { [PlayerSide.Player]: 0, [PlayerSide.Cpu]: 0 },
     skulledCards: assignSkulls(cpuHand, rng),
+    // DLR-90 — a fresh deal carries no marks. Written here rather than defaulted on the type, so
+    // `RoundState` stays a total shape with no optional field for a reader to forget about.
+    envenomedCards: [],
     bank: 0,
     multiplier: 0,
     lastResolution: null,

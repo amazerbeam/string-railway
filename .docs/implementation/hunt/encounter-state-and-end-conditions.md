@@ -6,7 +6,8 @@ state that **outlives a single `RoundState`** — before it, nothing in the prog
 about a finished Hunt.
 
 It shipped with **no caller at all** — complete, tested, and reachable only from Vitest. **DLR-71
-wired it up**, and **DLR-80 changed when it fires and who owns it.**
+wired it up**, **DLR-80 changed when it fires and who owns it**, and **DLR-91 changed the order in
+which it settles the two bars.**
 
 Damage used to land once per Hunt, on a confirmation press, with `App.tsx` holding the
 `EncounterState` and the reducer holding a nullable applied copy. Since DLR-80 the **reducer owns the
@@ -22,13 +23,15 @@ is `ENCOUNTER_PLAYER_RESTORE`, which still has no consumer.
 ### The state — `EncounterState`
 
 An **encounter** is a sequence of Hunts fought until one bar empties (§5). `EncounterState` in
-`types.ts` holds exactly three fields and nothing else:
+`types.ts` holds exactly four fields and nothing else — three since DLR-70, and `pendingEnvenom`
+since DLR-90:
 
 ```ts
 export interface EncounterState {
   readonly health: Readonly<Record<DuelSide, Health>>
   readonly damageEventsApplied: number
   readonly winner: DuelSide | null
+  readonly pendingEnvenom: IncomingDamage // DLR-90
 }
 ```
 
@@ -40,9 +43,11 @@ rather than writing a second projection routine that could drift from this one.
 encounter — see [No Hunt cap](#no-hunt-cap) below.
 
 **`winner` is `DuelSide | null`, not a three-value outcome union.** `null` while the encounter is
-live; `Player` means the encounter is won; `Quarry` means the run ends. The shape was chosen because
-`SIMULTANEOUS_DEPLETION_WINNER` is *already* typed `DuelSide` and *already* named winner — so the
-tie case is a direct read of the constant rather than a translation onto a second vocabulary. A
+live; `Player` means the encounter is won; `Quarry` means the run ends. The shape was originally chosen because
+`SIMULTANEOUS_DEPLETION_WINNER` was *already* typed `DuelSide` and *already* named winner, so the tie
+case was a direct read of the constant rather than a translation onto a second vocabulary. **DLR-91
+deleted that constant and the tie with it, and the shape is unchanged** — two reachable values and a
+`null` is what `resolveWinner` still returns. A
 `'won' | 'lost' | 'live'` union would read more directly at a render call site, which is DLR-71's
 concern and not yet written; if it turns out awkward there, adding a derived helper is cheaper than
 changing this type, and nothing serialises it.
@@ -51,6 +56,16 @@ changing this type, and nothing serialises it.
 side it is applied to**, never by the side that dealt it. That is `HuntOutcome.incoming`'s convention
 carried deliberately across the module boundary, so the crossing is performed exactly once and on
 the other side of it (see [`incomingFrom`](../war-council/bank-and-cash-out.md)).
+
+**`pendingEnvenom` reuses that exact type** rather than inventing a parallel one — damage owed to each
+side at the resolution of the **next trick** (DLR-91 D1; DLR-90 paid it at the next hand's deal),
+keyed the same way. `startEncounter` seeds it to zeros and
+`applyDamage` carries it through untouched, because a trick's own damage neither pays nor cancels a
+booking — the clearing is `roundReducer.ts`'s `applyResolution`, one level up. Everything about the queue, its payment and why it lives here rather than on `RunState` is in
+[Envenom — the held charge, the delayed-hit queue, and where it is paid](envenom-and-the-delayed-hit.md);
+the one thing worth knowing while reading *this* file is that **the encounter boundary is what discards
+a queued hit**, and it does so through `startEncounter`'s seed rather than through any explicit clear
+step.
 
 ### Starting one — `startEncounter`
 
@@ -76,14 +91,26 @@ without mutating module state.
 order**:
 
 1. **Refuse an already-resolved encounter**, and refuse damage that is not a finite non-negative
-   number (both `RangeError` — see [Four refusals](#four-refusals)).
-2. **Deplete both bars.**
-3. **Resolve the winner** from the depleted pair.
+   number — **both sides' figures, always**, including on the path that will not subtract the
+   player's (both `RangeError` — see [Four refusals](#four-refusals)).
+2. **Deplete the Quarry's bar.**
+3. **Deplete the player's bar only if the Quarry survived.**
+4. **Resolve the winner** from the resulting pair.
 
-**Both bars are depleted before either is inspected**, and that ordering is load-bearing rather than
-tidy. Inspecting after the first subtraction would end the encounter early and make the
-simultaneous-depletion case **unreachable** — §9's dated tie ruling would be dead code that no test
-could reach.
+**Steps 2 and 3 are ordered, and the order is the rule** (DLR-91, decision D7). A Quarry that goes
+down to this event ends the encounter, and the player takes **nothing** from it — the killing blow is
+its own protection, so a cash-out that empties the Quarry's bar spares the player the hit that would
+have landed alongside it.
+
+That replaced DLR-70's deplete-both-then-inspect, which existed for the opposite reason: it kept the
+simultaneous case reachable so §9's dated tie ruling stayed live code. **The developer overturned that
+ruling on 2026-08-19**, and the tie is now unreachable by construction rather than decided by a
+constant — so `SIMULTANEOUS_DEPLETION_WINNER` was deleted rather than pointed at the new winner. A
+config key nothing reads is a tunable that silently does nothing, which is worse than having none.
+
+Note the guard that did **not** move: `assertApplicable` still runs on the player's incoming figure
+even when the Quarry goes down and that figure is never subtracted. Skipping it would let a
+poisoned `NaN` pass unexamined on exactly the branch that ignores it.
 
 Damage arrives as two plain numbers keyed by `DuelSide`, already pointed at the bar each depletes, so
 this function **does not invert anything and cannot get it backwards**. That is the whole reason
@@ -117,22 +144,26 @@ only three fields and `deplete` is the sole writer to `health`, there is nowhere
 for a carried surplus to live — so the equality is a structural proof, not a spot check. When overkill
 conversion is eventually designed, `deplete` is the one function that changes.
 
-### The three end conditions — `resolveWinner`
+### The two end conditions — `resolveWinner`
 
-Module-private, reading both already-depleted bars:
+Module-private, reading the bars `applyDamage` has already depleted Quarry-first:
 
-| State of the bars                  | `winner`                        | Means                  |
-| ---------------------------------- | ------------------------------- | ---------------------- |
-| Only the Quarry's is empty         | `DuelSide.Player`               | the encounter is won   |
-| Only the player's is empty         | `DuelSide.Quarry`               | the run ends           |
-| **Both, on the same Hunt**         | `SIMULTANEOUS_DEPLETION_WINNER` | the player loses (§5, §9) |
-| Neither                            | `null`                          | the encounter continues |
+| State of the bars          | `winner`          | Means                   |
+| -------------------------- | ----------------- | ----------------------- |
+| The Quarry's is empty      | `DuelSide.Player` | the encounter is won    |
+| The player's is empty      | `DuelSide.Quarry` | the run ends            |
+| Neither                    | `null`            | the encounter continues |
 
-**The tie reads the config constant rather than returning `DuelSide.Quarry` directly.** That keeps
-§9's dated ruling (2026-08-11 — the player loses) attributable from the code, and means overturning it
-is an edit to `config.ts` alone. The spec asserts the *rule* by comparing against the constant, while
-`__tests__/config.test.ts` remains the single assertion of its *value* — so the two cannot drift into
-agreeing about different things.
+**There is no tie branch, and there is no constant to read.** Because `applyDamage` leaves the
+player's health untouched whenever the Quarry goes down, both-bars-empty is not a state this function
+can be handed — so the Quarry's row is tested first and a mutual kill resolves as a **player win**.
+§9's dated ruling that the player loses the tie (2026-08-11) was overturned on 2026-08-19, and
+`SIMULTANEOUS_DEPLETION_WINNER` — the constant it had been implemented as — was deleted with it.
+
+The specs moved the same way: `__tests__/encounter.test.ts` now pins the rule directly (a Quarry
+killed by an event spares the player its damage; a Quarry that survives does not; a non-finite figure
+aimed at the player is still refused on the Quarry-down path), and `__tests__/config.test.ts` no
+longer has a value to assert.
 
 The comparison is `<= 0` rather than `=== 0`, deliberately. `deplete` makes zero the only reachable
 floor today, so the two are equivalent right now; the inequality is what survives a future path that
@@ -173,8 +204,10 @@ configuration. No epsilon is needed anywhere: the clamp compares against exact `
 > throw survived DLR-80, and it now matters more than it did: damage lands per trick, so the resolved
 > state is reachable **mid-hand** rather than only between Hunts. `roundReducer`'s `applyResolution`
 > helper therefore **guards ahead of it** — it returns the encounter unchanged if
-> `isEncounterResolved` is already true, and also if the resolution carries neither a cash-out nor a
-> hit (an all-zero event would otherwise bump `damageEventsApplied` for nothing). Guarding rather
+> `isEncounterResolved` is already true, and skips the `applyDamage` call when the whole
+> `incomingFrom` record is zero (an all-zero event would otherwise bump `damageEventsApplied` for
+> nothing). **Since DLR-91 that record sums the poison paid at this trick as well as the trick's own
+> damage**, so it is the one place to look for what a resolution actually costs. Guarding rather
 > than catching is deliberate: a throw escaping a reducer during an event handler unmounts the tree.
 > `canAct` carries the same check, so play stops rather than queueing taps into a finished fight.
 
@@ -187,6 +220,13 @@ rule it is — a 23-Hunt encounter runs to completion without refusing, well pas
 candidate range of 3–5.
 
 ### How long an encounter actually runs
+
+> **The table below is DLR-70's, computed against a retired health regime.** It reasons from a
+> 1,350-point player bar and Quarry bars in the hundreds; `PLAYER_START_HEALTH` is **10** today and
+> `QUARRY_ENCOUNTER_HEALTH[0]` is **10** (PT-002). Read it for the *shape* of the distribution and for
+> the `P = H` boundary argument, not for any figure in it — and note that its "both bars deplete
+> simultaneously" premise no longer holds either (DLR-91). The specs that replaced it derive every
+> figure from the configured totals rather than from literals.
 
 DLR-70's spec pins the shape of the distribution with hand-computed damage constants rather than
 simulated tricks — which is what turns the slowest case into 23 integer subtractions instead of 299
@@ -216,12 +256,12 @@ wins on Hunt 4, 6 tricks loses on Hunt 4, an exact mirror. That is `P = H` doing
 is the stall §11 is watching for, and it is now measurable rather than predicted.
 
 > **One figure in the acceptance criteria needed a reading, and the spec pins both.** §9's "wins on
-> Hunt 4 with 486 left" is the player's health **entering** Hunt 4 (`1350 − 3 × 288`). Because both
-> bars deplete simultaneously, the player is on **198** at the moment the Quarry's bar empties on Hunt
-> 4. Both numbers are correct about different instants, and the spec asserts both — 486 after three
-> applications, 198 and `winner === Player` after the fourth. If 486 was meant as the post-victory
-> figure, it is `hybrid-design.md` §9's wording that wants amending, not the code. **The developer's
-> to settle.**
+> Hunt 4 with 486 left" is the player's health **entering** Hunt 4 (`1350 − 3 × 288`). Under DLR-70's
+> deplete-both rule the player was on **198** at the moment the Quarry's bar emptied, and the spec
+> asserted both instants. **DLR-91's Quarry-first sequencing collapses the two into one figure**: the
+> Hunt that empties the Quarry's bar no longer touches the player, so the player finishes on the 486
+> they entered it with, and §9's wording is now simply correct. The distinction this note was written
+> to draw is gone, and the spec no longer asserts 198.
 
 ### What this module deliberately does not do
 

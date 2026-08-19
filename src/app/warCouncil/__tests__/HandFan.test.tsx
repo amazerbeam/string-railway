@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Suit } from '../../../warCouncil'
 import HandFan from '../HandFan'
@@ -21,6 +21,8 @@ function renderFan(overrides = {}) {
       hint="Follow their lead"
       rejected={false}
       promptOpen={false}
+      envenomedCards={[]}
+      envenomArmed={false}
       onTap={onTap}
       onCancel={onCancel}
       {...overrides}
@@ -89,5 +91,35 @@ describe('HandFan', () => {
     // group itself becomes unreachable by role — the same effect a screen reader gets.
     expect(screen.queryByRole('group', { name: /hand/i })).toBeNull()
     expect(document.querySelector('.wc-fan')?.getAttribute('aria-hidden')).toBe('true')
+  })
+
+  it('announces a card in envenomedCards as poisoned (DLR-90 AC2)', () => {
+    renderFan({ envenomedCards: [card(Suit.Bells, 7)] })
+    expect(screen.getByRole('button', { name: '7 of Bells, poisoned' })).toBeDefined()
+  })
+
+  it('disables an illegal card as today when envenomArmed is false', () => {
+    renderFan({ envenomArmed: false })
+    expect(screen.getByRole('button', { name: '7 of Bells' })).toHaveProperty('disabled', true)
+  })
+
+  it('makes every card tappable while envenomArmed, including an illegal one (DLR-90 AC2)', () => {
+    const { onTap } = renderFan({ envenomArmed: true })
+    const illegal = screen.getByRole('button', { name: '7 of Bells' })
+    expect(illegal).toHaveProperty('disabled', false)
+    illegal.click()
+    expect(onTap).toHaveBeenCalledWith(card(Suit.Bells, 7))
+  })
+
+  it('lets the roving tabindex reach an illegal card by arrow key while envenomArmed', () => {
+    // Otherwise a keyboard-only player could never reach the very card the item exists to mark.
+    // legal=[Moons 11] (the default fixture), so both Bells 7 and Keys 3 are illegal to PLAY —
+    // arrow-key movement must still land on them while armed.
+    renderFan({ envenomArmed: true })
+    const group = screen.getByRole('group', { name: /hand/i })
+    fireEvent.keyDown(group, { key: 'ArrowRight' })
+    const fox = screen.getByRole('button', { name: '3 of Keys (Fox)' })
+    expect(fox.getAttribute('tabindex')).toBe('0')
+    expect(document.activeElement).toBe(fox)
   })
 })

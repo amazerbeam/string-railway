@@ -121,15 +121,27 @@ function App() {
   }
 
   function handleComplete(result: WarCouncilRoundResult) {
-    const next = recordEncounter(run, result.encounter, result.cheats)
-    setRun(next)
-    if (isEncounterResolved(next.encounter)) {
+    const recorded = recordEncounter(
+      run,
+      result.encounter,
+      result.cheats,
+      result.envenomCharges,
+      result.poisonGuardHeld,
+    )
+    setRun(recorded)
+    if (isEncounterResolved(recorded.encounter)) {
       setTricks({
         taken: result.finalState.tricksWon[PlayerSide.Player],
         lost: result.finalState.tricksWon[PlayerSide.Cpu],
       })
-      return // The verdict is next, not another hand.
+      // The verdict is next, not another hand. D5 — any queued poison is discarded, because
+      // `advanceRun` and `startRun` both re-seed the encounter through `startEncounter`.
+      return
     }
+    // D1 — nothing is owed at a hand boundary any more. Poison is paid by `applyResolution` at the
+    // trick that resolves it, so an unresolved hand simply deals the next one. Any poison booked by
+    // this hand's last trick rides on `encounter.pendingEnvenom` into the next hand's first trick,
+    // which is D5's carry half.
     dealNextHand()
   }
 
@@ -211,10 +223,14 @@ function App() {
         playerHearts={playerBar.hearts}
         cheatCount={run.cheats.length}
         cheatSlotCount={CHEAT_SLOT_COUNT}
+        envenomCharges={run.envenomCharges}
+        poisonGuardHeld={run.poisonGuardHeld}
         nextOpponentName={nextName}
         progressText={runProgressText(run.encounterIndex + 1, run.encounterCount)}
         refusals={{
           [ShopItem.Cheat]: refusalFor(stock, ShopItem.Cheat),
+          [ShopItem.Envenom]: refusalFor(stock, ShopItem.Envenom),
+          [ShopItem.PoisonGuard]: refusalFor(stock, ShopItem.PoisonGuard),
           [ShopItem.Heal]: refusalFor(stock, ShopItem.Heal),
         }}
         onBuy={handleBuy}
@@ -255,6 +271,8 @@ function App() {
       runLabel={runPositionLabel(run.encounterIndex, run.encounterCount, currentName)}
       cheats={run.cheats}
       coins={run.coins}
+      envenomCharges={run.envenomCharges}
+      poisonGuardHeld={run.poisonGuardHeld}
       quarryLabel={quarryHealthLabel(currentName)}
       onComplete={handleComplete}
     />

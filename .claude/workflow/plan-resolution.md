@@ -29,14 +29,14 @@ This file deliberately lives outside `.claude/contract/`, so archiving or cleari
 
 ```
 slug        := ( jira-key "-" kebab-title ) | ( iso-date "-" kebab-title )
-jira-key    := [A-Z][A-Z0-9]+ "-" [0-9]+          e.g. SCRUM-8
+jira-key    := [A-Z][A-Z0-9]+ "-" [0-9]+          e.g. DLR-8
 iso-date    := YYYY "-" MM "-" DD                 e.g. 2026-07-29
 kebab-title := [a-z0-9]+ ( "-" [a-z0-9]+ )*       lowercase ASCII only
 constraint  := total length <= 60 characters
 collision   := if .claude/contract/<slug>/ already exists, append "-2", then "-3", …
 ```
 
-Prefer the Jira key when the work has one; fall back to the planning date. This project tracks the prototype in the `SCRUM` project on Jira (the epic is SCRUM-1), so most plans take the key branch — `SCRUM-8-scaffold-vite-app`. The key makes the plan folder traceable to its ticket; the date prefix sorts chronologically, so where dates are used the newest plan is last in a directory listing.
+Prefer the Jira key when the work has one; fall back to the planning date. This project tracks the prototype in the `DLR` project on Jira (the epic is DLR-1), so most plans take the key branch — `DLR-8-scaffold-vite-app`. The key makes the plan folder traceable to its ticket; the date prefix sorts chronologically, so where dates are used the newest plan is last in a directory listing.
 
 ## Resolving the target plan
 

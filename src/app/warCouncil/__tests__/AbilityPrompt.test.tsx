@@ -101,4 +101,25 @@ describe('AbilityPrompt', () => {
     fireEvent.click(screen.getByRole('button', { name: '2 of Moons' }))
     expect(onChoose).toHaveBeenCalledWith({ kind: 'woodcutterDiscard', discard: drawnCard })
   })
+
+  it('announces a marked hand card offered as a Fox exchange as poisoned (DLR-90 AC2)', () => {
+    renderFoxPrompt({ envenomedCards: [card(Suit.Bells, 7)] })
+    expect(screen.getByRole('button', { name: '7 of Bells, poisoned' })).toBeDefined()
+  })
+
+  it('announces a marked hand card offered as a Woodcutter discard as poisoned (DLR-90 AC2)', () => {
+    const onChoose = vi.fn()
+    render(
+      <AbilityPrompt
+        card={card(Suit.Bells, 5)}
+        decree={DECREE}
+        hand={HAND}
+        drawnCard={null}
+        envenomedCards={[card(Suit.Keys, 8)]}
+        onChoose={onChoose}
+        onCancel={vi.fn()}
+      />,
+    )
+    expect(screen.getByRole('button', { name: '8 of Keys, poisoned' })).toBeDefined()
+  })
 })

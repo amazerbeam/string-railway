@@ -32,6 +32,16 @@ export interface WarCouncilMountProps {
    *  index, or a `RunState`. Required, not optional, so the compiler enumerates every mount site
    *  rather than letting one silently fall back to the generic wording. */
   readonly quarryLabel: string
+  /** DLR-90 AC2 — Envenom charges held at the START of this hand. The same contract `cheats` above
+   *  documents: an opening figure the reducer owns for the hand's life and hands back through
+   *  `WarCouncilRoundResult`. REQUIRED rather than optional so the compiler enumerates every mount
+   *  site instead of letting one silently render an inert plate. */
+  readonly envenomCharges: number
+  /** DLR-91 AC4 — whether a Poison Guard is held at the START of this hand. The same contract
+   *  `envenomCharges` above documents: an opening figure the reducer owns for the hand's life and
+   *  hands back through `WarCouncilRoundResult`. REQUIRED rather than optional so the compiler
+   *  enumerates every mount site instead of letting one silently fight without its insurance. */
+  readonly poisonGuardHeld: boolean
   readonly onComplete: (result: WarCouncilRoundResult) => void
 }
 
@@ -51,4 +61,11 @@ export interface WarCouncilRoundResult {
   /** AC7 — the Cheats still held after this hand. One fewer for each Cheat spent; the run adopts
    *  it through `recordEncounter`'s third parameter. */
   readonly cheats: readonly CheatCard[]
+  /** DLR-90 AC2 — the charges still held after this hand. One fewer for each card marked; the run
+   *  adopts it through `recordEncounter`'s fourth parameter. */
+  readonly envenomCharges: number
+  /** DLR-91 AC4 — whether the Guard is still held after this hand. `false` once it has fired; the
+   *  run adopts it through `recordEncounter`'s fifth parameter, which also clears it when the
+   *  encounter resolved. */
+  readonly poisonGuardHeld: boolean
 }

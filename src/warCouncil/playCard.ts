@@ -2,7 +2,8 @@ import { HAND_SIZE } from '../hunt'
 import { applyFoxExchange, applyWoodcutterDraw, nextLeaderAfterTrick } from './abilities'
 import { resolveTrickBank } from './bank'
 import { containsCard, removeCard, sameCard } from './cardUtils'
-import { legalMoves, type LegalMoveOptions } from './legalMoves'
+import { legalMoves, type PlayCardOptions } from './legalMoves'
+import { trickIsEnvenomed } from './envenom'
 import { resolveTrickWinner } from './resolveTrick'
 import { trickIsSkulled } from './skulls'
 import {
@@ -24,7 +25,7 @@ export function playCard(
   side: PlayerSide,
   card: Card,
   choice?: AbilityChoice,
-  options?: LegalMoveOptions,
+  options?: PlayCardOptions,
 ): PlayCardResult {
   if (state.phase === RoundPhase.Complete) {
     return { ok: false, reason: IllegalMoveReason.RoundComplete }
@@ -101,13 +102,20 @@ export function playCard(
   const tricksWon = { ...next.tricksWon, [winner]: next.tricksWon[winner] + 1 }
   const finalTrick = tricksPlayed === HAND_SIZE
 
-  // Every rule AC4-AC9 states lives in `resolveTrickBank`; this function decides nothing about
-  // the outcome, it only reports who won and whether the trick was mined.
+  // Every rule AC4-AC9 states lives in `resolveTrickBank`, DLR-90's AC5 with them, and DLR-91's
+  // D1/D3 too; this function decides nothing about the outcome, it only reports the facts. The
+  // three poison facts arrive from the caller for the reason `PlayCardOptions` documents.
   const lastResolution = resolveTrickBank(
     { bank: next.bank, multiplier: next.multiplier },
-    winner === PlayerSide.Player,
-    trickIsSkulled(next.skulledCards, completedTrick),
-    finalTrick,
+    {
+      playerWon: winner === PlayerSide.Player,
+      skullTrick: trickIsSkulled(next.skulledCards, completedTrick),
+      finalTrick,
+      envenomTrick: trickIsEnvenomed(next.envenomedCards, completedTrick),
+      poisonToPlayer: options?.poisonToPlayer ?? 0,
+      poisonToQuarry: options?.poisonToQuarry ?? 0,
+      poisonGuarded: options?.poisonGuarded ?? false,
+    },
   )
 
   return {

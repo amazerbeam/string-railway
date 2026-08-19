@@ -1,7 +1,8 @@
 import {
+  ENVENOM_PLAYER_DAMAGE,
+  ENVENOM_QUARRY_DAMAGE,
   PLAYER_START_HEALTH,
   quarryHealthForEncounter,
-  SIMULTANEOUS_DEPLETION_WINNER,
 } from './config'
 import {
   DuelSide,
@@ -40,7 +41,15 @@ export function startEncounter(
     },
     damageEventsApplied: 0,
     winner: null,
+    pendingEnvenom: NO_PENDING_ENVENOM,
   }
+}
+
+/** Nothing owed. Shared and only ever spread from, never assigned into — its `IncomingDamage`
+ *  type is deeply `readonly`, the same discipline `duelHealthBars.ts`'s `NO_BREAKING` uses. */
+export const NO_PENDING_ENVENOM: IncomingDamage = {
+  [DuelSide.Player]: 0,
+  [DuelSide.Quarry]: 0,
 }
 
 /**
@@ -48,8 +57,10 @@ export function startEncounter(
  * hand. `incoming` is already keyed by the side it depletes (`incomingFrom` performs that
  * crossing), so this function does not invert anything and cannot get it backwards.
  *
- * Both bars are depleted BEFORE either is inspected. Resolving after the first subtraction
- * would make AC4's simultaneous case unreachable and §9's tie ruling dead code.
+ * D7 — Quarry FIRST, then the player, and a Quarry that goes down means the player takes no
+ * damage from this event. Replaces DLR-70's deplete-both-then-inspect, which existed to keep the
+ * simultaneous case reachable; the developer overturned §9's tie ruling on 2026-08-19 and the tie
+ * is now unreachable by construction.
  *
  * Returns a new state; the input is never mutated. That is what lets a caller preview an event
  * by applying it to a copy, rather than writing a second projection routine that could drift
@@ -64,15 +75,27 @@ export function applyDamage(encounter: EncounterState, incoming: IncomingDamage)
   assertApplicable(incoming[DuelSide.Player], DuelSide.Player)
   assertApplicable(incoming[DuelSide.Quarry], DuelSide.Quarry)
 
+  // D7 — the Quarry FIRST. A Quarry that goes down to this event ends the encounter, and the
+  // player takes nothing from it: the killing blow is its own protection. Replaces DLR-70's
+  // deplete-both-then-inspect, which existed only to keep the simultaneous case reachable —
+  // the developer overturned §9's tie ruling on 2026-08-19 and the tie is now unreachable by
+  // construction rather than decided by a constant.
+  const quarryHealth = deplete(encounter.health[DuelSide.Quarry], incoming[DuelSide.Quarry])
+  const quarryDown = quarryHealth <= 0
+  const playerHealth = quarryDown
+    ? encounter.health[DuelSide.Player]
+    : deplete(encounter.health[DuelSide.Player], incoming[DuelSide.Player])
+
   const health = {
-    [DuelSide.Player]: deplete(encounter.health[DuelSide.Player], incoming[DuelSide.Player]),
-    [DuelSide.Quarry]: deplete(encounter.health[DuelSide.Quarry], incoming[DuelSide.Quarry]),
+    [DuelSide.Player]: playerHealth,
+    [DuelSide.Quarry]: quarryHealth,
   }
 
   return {
     health,
     damageEventsApplied: encounter.damageEventsApplied + 1,
     winner: resolveWinner(health),
+    pendingEnvenom: encounter.pendingEnvenom,
   }
 }
 
@@ -80,6 +103,41 @@ export function applyDamage(encounter: EncounterState, incoming: IncomingDamage)
  *  condition cannot disagree about it. */
 export function isEncounterResolved(encounter: EncounterState): boolean {
   return encounter.winner !== null
+}
+
+/** Whether anything is owed. ONE statement, so a queue check and a payment cannot disagree.
+ *  Also the predicate D6 (2026-08-19) reserves: Apply Damage must be disabled while poison is
+ *  pending. That control does not exist yet — version-4-scope.md §3 — so this has no caller for
+ *  that purpose today and is kept deliberately rather than re-derived then. */
+export function hasPendingEnvenom(encounter: EncounterState): boolean {
+  return (
+    encounter.pendingEnvenom[DuelSide.Player] > 0 || encounter.pendingEnvenom[DuelSide.Quarry] > 0
+  )
+}
+
+/** D2 — the amount owed depends on WHICH SIDE will pay it. Stated here, once, beside the booking:
+ *  a caller that had to choose the figure itself is a caller that can choose the wrong one. */
+function envenomDamageFor(target: DuelSide): Damage {
+  return target === DuelSide.Player ? ENVENOM_PLAYER_DAMAGE : ENVENOM_QUARRY_DAMAGE
+}
+
+/**
+ * D1/D3 — book poison against one side, to be paid at the resolution of the NEXT TRICK.
+ *
+ * ACCUMULATES rather than overwrites (D4), so two bookings against one side sum. Returns the
+ * encounter UNCHANGED when it is already resolved — a hit must never be carried into a fight that
+ * is over. NEVER throws: the reducer calls this during an event handler, and a throw there
+ * unmounts the tree.
+ */
+export function queueEnvenom(encounter: EncounterState, target: DuelSide): EncounterState {
+  if (isEncounterResolved(encounter)) return encounter
+  return {
+    ...encounter,
+    pendingEnvenom: {
+      ...encounter.pendingEnvenom,
+      [target]: encounter.pendingEnvenom[target] + envenomDamageFor(target),
+    },
+  }
 }
 
 /**
@@ -96,28 +154,19 @@ function deplete(current: Health, damage: Damage): Health {
 }
 
 /**
- * AC4's three cases, over bars that have already been depleted.
+ * D7's two cases, over bars already depleted Quarry-first.
  *
- * The tie reads `SIMULTANEOUS_DEPLETION_WINNER` rather than returning `DuelSide.Quarry`
- * directly, so §9's dated ruling (2026-08-11 — the player loses) stays attributable from the
- * code and is overturned by editing `config.ts` alone.
+ * There is no tie branch and no `SIMULTANEOUS_DEPLETION_WINNER`: `applyDamage` leaves the player's
+ * health untouched whenever the Quarry goes down, so both-bars-empty is unreachable. §9's dated
+ * ruling (2026-08-11 — the player loses) was overturned by the developer on 2026-08-19.
  *
- * `<= 0` rather than `=== 0` states AC4's own wording. `deplete` makes zero the only reachable
+ * `<= 0` rather than `=== 0` states the rule's own wording. `deplete` makes zero the only reachable
  * floor today, so the two are equivalent; the comparison survives a future path that does not
  * clamp.
  */
 function resolveWinner(health: Readonly<Record<DuelSide, Health>>): DuelSide | null {
-  const playerDown = health[DuelSide.Player] <= 0
-  const quarryDown = health[DuelSide.Quarry] <= 0
-  if (playerDown && quarryDown) {
-    return SIMULTANEOUS_DEPLETION_WINNER
-  }
-  if (quarryDown) {
-    return DuelSide.Player
-  }
-  if (playerDown) {
-    return DuelSide.Quarry
-  }
+  if (health[DuelSide.Quarry] <= 0) return DuelSide.Player
+  if (health[DuelSide.Player] <= 0) return DuelSide.Quarry
   return null
 }
 

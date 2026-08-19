@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { applyDamage, isEncounterResolved, startEncounter } from '../encounter'
-import {
-  PLAYER_START_HEALTH,
-  quarryHealthForEncounter,
-  QUARRY_ENCOUNTER_HEALTH,
-  SIMULTANEOUS_DEPLETION_WINNER,
-} from '../config'
+import { PLAYER_START_HEALTH, quarryHealthForEncounter, QUARRY_ENCOUNTER_HEALTH } from '../config'
 import { DuelSide, type IncomingDamage } from '../types'
 
 /** Keyed by the side the damage is APPLIED TO, matching `IncomingDamage`. */
@@ -66,16 +61,38 @@ describe('applyDamage — the end conditions (AC4)', () => {
     expect(after.winner).toBe(DuelSide.Quarry)
   })
 
-  it('both bars empty on the same damage event -> the configured tie winner takes it', () => {
-    const after = applyDamage(
-      startEncounter(0),
-      damage(PLAYER_START_HEALTH, quarryHealthForEncounter(0)),
-    )
-    expect(after.health[DuelSide.Player]).toBe(0)
+  it('D7 — a Quarry killed by this event spares the player its damage entirely', () => {
+    const encounter = startEncounter(0, 3)
+    const quarryHealth = encounter.health[DuelSide.Quarry]
+    const after = applyDamage(encounter, {
+      [DuelSide.Player]: 99,
+      [DuelSide.Quarry]: quarryHealth,
+    })
     expect(after.health[DuelSide.Quarry]).toBe(0)
-    // Compared against the constant, not against a literal 'quarry': config.test.ts is the
-    // single assertion of the VALUE, this is the assertion of the RULE, so the two cannot drift.
-    expect(after.winner).toBe(SIMULTANEOUS_DEPLETION_WINNER)
+    expect(after.health[DuelSide.Player]).toBe(3)
+    expect(after.winner).toBe(DuelSide.Player)
+  })
+
+  it('D7 — a Quarry that survives lets the player take the damage', () => {
+    const encounter = startEncounter(0, 10)
+    const after = applyDamage(encounter, { [DuelSide.Player]: 4, [DuelSide.Quarry]: 1 })
+    expect(after.health[DuelSide.Player]).toBe(6)
+    expect(after.winner).toBeNull()
+  })
+
+  it('D7 — the player still goes down when the Quarry survives the same event', () => {
+    const encounter = startEncounter(0, 2)
+    const after = applyDamage(encounter, { [DuelSide.Player]: 2, [DuelSide.Quarry]: 1 })
+    expect(after.health[DuelSide.Player]).toBe(0)
+    expect(after.winner).toBe(DuelSide.Quarry)
+  })
+
+  it('D7 — a non-finite figure aimed at the player is still refused on the Quarry-down path', () => {
+    const encounter = startEncounter(0, 5)
+    const quarryHealth = encounter.health[DuelSide.Quarry]
+    expect(() =>
+      applyDamage(encounter, { [DuelSide.Player]: Number.NaN, [DuelSide.Quarry]: quarryHealth }),
+    ).toThrow(RangeError)
   })
 
   it('resolves the moment a bar empties, even on a single event', () => {

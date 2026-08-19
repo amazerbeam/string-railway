@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, Suit, TrickOutcome } from '../../../warCouncil'
-import type { ResolvedTrick } from '../roundReducer'
+import type { ResolvedTrick } from '../roundUiState'
 import TrickWell from '../TrickWell'
 
 afterEach(cleanup)
@@ -21,6 +21,9 @@ const resolvedTrick: ResolvedTrick = {
     bank: 0,
     multiplier: 0,
     cashedAtHandEnd: false,
+    envenomTarget: null,
+    poisonToQuarry: 0,
+    poisonGuardSpent: false,
   },
 }
 
@@ -69,5 +72,32 @@ describe('TrickWell — a resolved trick', () => {
       />,
     )
     expect(screen.getByText(/They take the trick/)).toBeDefined()
+  })
+
+  it('announces the marked card as poisoned (DLR-90 AC2)', () => {
+    render(
+      <TrickWell
+        currentTrick={[]}
+        resolvedTrick={resolvedTrick}
+        envenomedCards={[{ suit: Suit.Bells, rank: 7 }]}
+        quarryToLead={false}
+        onCarryOn={vi.fn()}
+      />,
+    )
+    expect(screen.getByRole('button', { name: /7 of Bells, poisoned/i })).toBeDefined()
+  })
+
+  it('announces a card carrying both a skull and the mark, both wordings present', () => {
+    render(
+      <TrickWell
+        currentTrick={[]}
+        resolvedTrick={resolvedTrick}
+        skulledCards={[{ suit: Suit.Bells, rank: 7 }]}
+        envenomedCards={[{ suit: Suit.Bells, rank: 7 }]}
+        quarryToLead={false}
+        onCarryOn={vi.fn()}
+      />,
+    )
+    expect(screen.getByRole('button', { name: /7 of Bells, skulled, poisoned/i })).toBeDefined()
   })
 })

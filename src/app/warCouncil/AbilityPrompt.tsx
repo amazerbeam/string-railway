@@ -1,4 +1,10 @@
-import { AbilityChoiceKind, CardRank, type AbilityChoice, type Card } from '../../warCouncil'
+import {
+  AbilityChoiceKind,
+  CardRank,
+  isEnvenomed,
+  type AbilityChoice,
+  type Card,
+} from '../../warCouncil'
 import { cardAccessibleName, cardKey } from './labels'
 import PlayingCard from './PlayingCard'
 import { useRovingTabIndex } from './useRovingTabIndex'
@@ -8,6 +14,9 @@ interface AbilityPromptProps {
   readonly decree: Card
   readonly hand: readonly Card[] // hand minus the armed card
   readonly drawnCard: Card | null // drawPile[0] for Woodcutter, null for Fox
+  /** DLR-90 AC2 — a marked card offered as a Fox exchange or Woodcutter discard still announces
+   *  its own poison. Defaults to `[]` for `TrickWell`'s `skulledCards`-style reason. */
+  readonly envenomedCards?: readonly Card[]
   readonly onChoose: (choice: AbilityChoice) => void
   readonly onCancel: () => void
 }
@@ -32,6 +41,7 @@ export default function AbilityPrompt({
   decree,
   hand,
   drawnCard,
+  envenomedCards = [],
   onChoose,
   onCancel,
 }: AbilityPromptProps) {
@@ -90,6 +100,7 @@ export default function AbilityPrompt({
               key={cardKey(handCard)}
               card={handCard}
               variant="hand"
+              envenomed={isEnvenomed(envenomedCards, handCard)}
               tabIndex={index === tabStopIndex ? 0 : -1}
               onTap={() => onChoose({ kind: AbilityChoiceKind.FoxExchange, handCard })}
             />
@@ -130,6 +141,7 @@ export default function AbilityPrompt({
             <PlayingCard
               card={drawnCard}
               variant="hand"
+              envenomed={isEnvenomed(envenomedCards, drawnCard)}
               tabIndex={tabStopIndex === 0 ? 0 : -1}
               onTap={() =>
                 onChoose({ kind: AbilityChoiceKind.WoodcutterDiscard, discard: drawnCard })
@@ -142,6 +154,7 @@ export default function AbilityPrompt({
             key={cardKey(handCard)}
             card={handCard}
             variant="hand"
+            envenomed={isEnvenomed(envenomedCards, handCard)}
             tabIndex={index + handOffset === tabStopIndex ? 0 : -1}
             onTap={() => onChoose({ kind: AbilityChoiceKind.WoodcutterDiscard, discard: handCard })}
           />

@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { CHEAT_SLOT_COUNT } from '../../../hunt'
 import CheatSlots from '../CheatSlots'
 import { CHEAT_EMPTY_SLOT_LABEL, CHEAT_RAIL_LABEL, cheatAccessibleName } from '../labels'
-import { CheatStage } from '../roundReducer'
+import { CheatStage } from '../roundUiState'
 
 afterEach(cleanup)
 
@@ -27,7 +27,13 @@ describe('CheatSlots', () => {
   it('reports a tap with the card id it belongs to', () => {
     const onTap = vi.fn()
     render(
-      <CheatSlots cheats={[{ id: 7 }]} selection={null} interactive onTap={onTap} onCancel={noop} />,
+      <CheatSlots
+        cheats={[{ id: 7 }]}
+        selection={null}
+        interactive
+        onTap={onTap}
+        onCancel={noop}
+      />,
     )
     fireEvent.click(screen.getByRole('button', { name: cheatAccessibleName(null) }))
     expect(onTap).toHaveBeenCalledWith(7)

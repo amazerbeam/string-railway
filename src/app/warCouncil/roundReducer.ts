@@ -8,132 +8,42 @@ import {
   commitQuarryMove,
   containsCard,
   currentTurn,
+  envenomCard,
   incomingFrom,
+  isEnvenomed,
   legalMoves,
   playCard,
   sameCard,
   type AbilityChoice,
   type Card,
-  type IllegalMoveReason,
+  type PlayCardOptions,
   type TrickCard,
   type TrickResolution,
   type WarCouncilState,
 } from '../../warCouncil'
 import {
   applyDamage,
+  DuelSide,
   hasCheat,
+  hasPendingEnvenom,
   isEncounterResolved,
+  NO_PENDING_ENVENOM,
+  queueEnvenom,
   removeCheat,
-  type CheatCard,
   type CheatCardId,
   type EncounterState,
 } from '../../hunt'
-
-export interface ResolvedTrick {
-  readonly cards: readonly TrickCard[] // [lead, follow] — the engine's load-bearing order
-  readonly winner: PlayerSide
-  /** What the trick did to the bank, the streak and both bars. */
-  readonly resolution: TrickResolution
-}
-
-export const CheatStage = {
-  /** One click — a selection, no rule effect. AC4's guard against a single misclick. */
-  Poised: 'poised',
-  /** Two clicks — follow-suit is lifted for the next committed card. AC5. */
-  Armed: 'armed',
-} as const
-export type CheatStage = (typeof CheatStage)[keyof typeof CheatStage]
-
-/** ONE field, not two nullables: `poised` and `armed` are stages of a single selection, and two
- *  nullable fields would admit the invalid pair "poised AND armed". */
-export interface CheatSelection {
-  readonly id: CheatCardId
-  readonly stage: CheatStage
-}
-
-export interface RoundUiState {
-  readonly round: WarCouncilState
-  readonly armed: Card | null // tapped once, lifted, awaiting its second tap
-  readonly prompt: Card | null // a Fox or Woodcutter awaiting its AbilityChoice
-  readonly resolvedTrick: ResolvedTrick | null // held on screen until CarryOn
-  readonly rejection: IllegalMoveReason | null // the player's own illegal move — recoverable
-  readonly cpuFault: CpuFault | null // a corrupt CPU turn — a bug, shown not swallowed
-  /** The live encounter. Never null: seeded from the mount's prop and updated in place as each
-   *  trick resolves, because AC6 and AC8 make the cash-out automatic and mid-hand. Replaces the
-   *  nullable `applied`, which existed only to model "the player has pressed Apply". */
-  readonly encounter: EncounterState
-  /** This hand's OPENING encounter, frozen at mount and never written again — the baseline the
-   *  hand-over panel's tally is a delta against.
-   *
-   *  It is state rather than the mount's `encounter` prop deliberately. On the hand that ends the
-   *  encounter, `App` sets its own encounter from `onComplete` and then returns early WITHOUT
-   *  changing the `key` that would remount this component — so the prop becomes the live value
-   *  underneath a panel that is still on screen, and a prop-based delta silently collapses to
-   *  zero. Freezing the baseline here makes the tally independent of anything the parent does
-   *  after the hand is over. */
-  readonly openingEncounter: EncounterState
-  /** AC1/AC3 — the run's held Cheats, mirrored from the mount's opening prop and updated in place
-   *  as `commit` spends one. Run state carried for the life of the hand — see
-   *  `warCouncilMount.ts`'s `WarCouncilMountProps.cheats` for the same contract `encounter` above
-   *  already documents. */
-  readonly cheats: readonly CheatCard[]
-  /** The hand's OWN transient — dies on remount, never touches `RunState`. `null` when nothing is
-   *  selected. */
-  readonly cheatSelection: CheatSelection | null
-}
-
-export interface RoundUiSeed {
-  readonly round: WarCouncilState
-  readonly encounter: EncounterState
-  readonly cheats: readonly CheatCard[]
-}
-
-// `chooseCpuMove` throws rather than returning a rejection when the CPU has no legal
-// move (`lowestCard([])` is `undefined`, then `card.rank` throws), so the reducer guards
-// before calling it and names that case separately from a `playCard` rejection.
-export type CpuFault = IllegalMoveReason | 'noLegalMove'
-
-export const RoundUiActionKind = {
-  TapCard: 'tapCard',
-  ChooseAbility: 'chooseAbility',
-  CancelSelection: 'cancelSelection',
-  CarryOn: 'carryOn',
-  TapCheat: 'tapCheat',
-  CancelCheat: 'cancelCheat',
-} as const
-export type RoundUiActionKind = (typeof RoundUiActionKind)[keyof typeof RoundUiActionKind]
-
-export type RoundUiAction =
-  | { readonly kind: typeof RoundUiActionKind.TapCard; readonly card: Card }
-  | { readonly kind: typeof RoundUiActionKind.ChooseAbility; readonly choice: AbilityChoice }
-  | { readonly kind: typeof RoundUiActionKind.CancelSelection }
-  | { readonly kind: typeof RoundUiActionKind.CarryOn }
-  | { readonly kind: typeof RoundUiActionKind.TapCheat; readonly id: CheatCardId }
-  | { readonly kind: typeof RoundUiActionKind.CancelCheat }
-
-/** Still a pure restructuring of its seed, so StrictMode's double-invocation of the lazy
- *  `useReducer` initialiser recomputes an identical value. */
-export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
-  return {
-    round: seed.round,
-    armed: null,
-    prompt: null,
-    resolvedTrick: null,
-    rejection: null,
-    cpuFault: null,
-    encounter: seed.encounter,
-    openingEncounter: seed.encounter,
-    cheats: seed.cheats,
-    cheatSelection: null,
-  }
-}
-
-/** `true` when the next committed card should ignore follow-suit. EXPORTED so the mount computes
- *  its `legal` set from the SAME predicate the reducer commits with — two readings of "is the
- *  Cheat armed" is exactly how a fan's greying and a rejection reason drift apart. */
-export function cheatArmed(state: RoundUiState): boolean {
-  return state.cheatSelection?.stage === CheatStage.Armed
-}
+import {
+  cheatArmed,
+  CheatStage,
+  envenomArmed,
+  EnvenomStage,
+  RoundUiActionKind,
+  type CpuFault,
+  type ResolvedTrick,
+  type RoundUiAction,
+  type RoundUiState,
+} from './roundUiState'
 
 export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundUiState {
   switch (action.kind) {
@@ -149,6 +59,10 @@ export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundU
       return handleTapCheat(state, action.id)
     case RoundUiActionKind.CancelCheat:
       return clearCheat(state)
+    case RoundUiActionKind.TapEnvenom:
+      return handleTapEnvenom(state)
+    case RoundUiActionKind.CancelEnvenom:
+      return state.envenomStage === null ? state : { ...state, envenomStage: null }
   }
 }
 
@@ -172,6 +86,11 @@ function canAct(state: RoundUiState): boolean {
 function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
   if (!canAct(state)) {
     return state
+  }
+
+  // AC2 — while armed, a hand-card tap MARKS rather than plays.
+  if (envenomArmed(state)) {
+    return commitEnvenom(state, tapped)
   }
 
   if (state.armed && sameCard(state.armed, tapped)) {
@@ -198,7 +117,10 @@ function handleTapCheat(state: RoundUiState, id: CheatCardId): RoundUiState {
   }
   const current = state.cheatSelection
   if (current === null || current.id !== id) {
-    return { ...state, cheatSelection: { id, stage: CheatStage.Poised } }
+    // Arming a Cheat reinterprets the same hand-card tap Envenom does, so the two selections
+    // cannot coexist — clear a held Envenom selection here for the same reason `handleTapEnvenom`
+    // clears `cheatSelection` on its own poise branch.
+    return { ...state, cheatSelection: { id, stage: CheatStage.Poised }, envenomStage: null }
   }
   const stage = current.stage === CheatStage.Poised ? CheatStage.Armed : null
   return stage === null ? clearCheat(state) : { ...state, cheatSelection: { id, stage } }
@@ -213,6 +135,57 @@ function clearCheat(state: RoundUiState): RoundUiState {
   const stillLegal =
     state.armed === null || containsCard(legalMoves(state.round, PlayerSide.Player), state.armed)
   return { ...state, cheatSelection: null, armed: stillLegal ? state.armed : null }
+}
+
+/**
+ * AC2 — three outcomes on one control, mirroring `handleTapCheat`. Nothing selected poises; poised
+ * arms; armed gives the charge back UNSPENT.
+ *
+ * Poising clears the Cheat selection and any card armed-to-play: both reinterpret a hand-card tap,
+ * so allowing two at once makes the next tap ambiguous.
+ */
+function handleTapEnvenom(state: RoundUiState): RoundUiState {
+  if (!canAct(state) || state.envenomCharges <= 0) {
+    return state
+  }
+  if (state.envenomStage === null) {
+    return { ...state, envenomStage: EnvenomStage.Poised, cheatSelection: null, armed: null }
+  }
+  if (state.envenomStage === EnvenomStage.Poised) {
+    return { ...state, envenomStage: EnvenomStage.Armed }
+  }
+  return { ...state, envenomStage: null }
+}
+
+/**
+ * AC2 — spend one charge to mark the tapped card.
+ *
+ * Guards membership, the existing mark, and the charge count BEFORE calling `envenomCard`, which
+ * throws on the first two: a reducer must not throw, because a throw during an event handler
+ * unmounts the tree. Exactly the shape `handleTapCheat` uses when it checks `hasCheat` before
+ * `removeCheat`. A guard that fails clears the selection rather than half-applying it, so the
+ * player is never left armed with no visible cause.
+ *
+ * Legality is deliberately NOT checked: marking is not a move, and the whole point of the item is
+ * marking a card the player expects to lose with.
+ */
+function commitEnvenom(state: RoundUiState, tapped: Card): RoundUiState {
+  const hand = state.round.hands[PlayerSide.Player]
+  if (
+    state.envenomCharges <= 0 ||
+    !containsCard(hand, tapped) ||
+    isEnvenomed(state.round.envenomedCards, tapped)
+  ) {
+    return { ...state, envenomStage: null }
+  }
+  return {
+    ...state,
+    round: envenomCard(state.round, PlayerSide.Player, tapped),
+    envenomCharges: state.envenomCharges - 1,
+    envenomStage: null,
+    armed: null,
+    rejection: null,
+  }
 }
 
 /**
@@ -249,29 +222,53 @@ function handleCarryOn(state: RoundUiState): RoundUiState {
 }
 
 /**
- * AC6/AC8 — one trick's damage, applied once, as it happens.
+ * D1 — what a resolving trick owes from EARLIER tricks, read off the encounter's queue.
  *
- * Skips `applyDamage` entirely when the trick neither cashed nor hit: an all-zero event would
- * bump `damageEventsApplied` for nothing. Guards `isEncounterResolved` rather than catching the
- * `RangeError` it would otherwise throw — a throw inside a reducer during an event handler
- * unmounts the tree.
+ * One statement, read by both `playCard` call sites: the player's follow in `commit` and the
+ * Quarry's in `advanceQuarryFollow`. Two readings of "what is pending" is exactly how a hit gets
+ * paid twice or skipped.
+ */
+function poisonOptions(state: RoundUiState): PlayCardOptions {
+  return {
+    poisonToPlayer: state.encounter.pendingEnvenom[DuelSide.Player],
+    poisonToQuarry: state.encounter.pendingEnvenom[DuelSide.Quarry],
+    poisonGuarded: state.poisonGuardHeld,
+  }
+}
+
+/**
+ * One trick's whole effect on the encounter, in the one place it is stated: the trick's own damage,
+ * D1's poison paid from an EARLIER trick, and this trick's own mark booked for the NEXT one.
+ *
+ * ORDER IS LOAD-BEARING, for the reason DLR-90 gave and one more. The damage lands FIRST, so
+ * `queueEnvenom` then refuses a resolved encounter — a hit must never be carried into a fight that
+ * is already over (D5's discard half at a fight boundary). And the queue is cleared BEFORE the new
+ * booking, so a trick that both pays a poison and carries a mark does not have its own mark wiped
+ * by the clear.
+ *
+ * The all-zero skip avoids bumping `damageEventsApplied` for nothing, but does not return early: a
+ * REPLACED clean loss (DLR-90 AC5) is an all-zero event that still owes a booking.
  */
 function applyResolution(encounter: EncounterState, resolution: TrickResolution): EncounterState {
   if (isEncounterResolved(encounter)) return encounter
-  if (resolution.cashOut === 0 && resolution.damageToPlayer === 0) return encounter
-  return applyDamage(encounter, incomingFrom(resolution))
+  const incoming = incomingFrom(resolution)
+  const paid =
+    incoming[DuelSide.Player] === 0 && incoming[DuelSide.Quarry] === 0
+      ? encounter
+      : applyDamage(encounter, incoming)
+  const cleared = hasPendingEnvenom(paid) ? { ...paid, pendingEnvenom: NO_PENDING_ENVENOM } : paid
+  return resolution.envenomTarget === null
+    ? cleared
+    : queueEnvenom(cleared, resolution.envenomTarget)
 }
 
 /** Commits `cardToPlay` for the player, then advances the opponent when the player led. */
 function commit(state: RoundUiState, cardToPlay: Card, choice?: AbilityChoice): RoundUiState {
   const armedCheat = cheatArmed(state) ? state.cheatSelection : null
-  const result = playCard(
-    state.round,
-    PlayerSide.Player,
-    cardToPlay,
-    choice,
-    armedCheat ? { ignoreFollowSuit: true } : undefined,
-  )
+  const result = playCard(state.round, PlayerSide.Player, cardToPlay, choice, {
+    ...poisonOptions(state),
+    ...(armedCheat ? { ignoreFollowSuit: true } : {}),
+  })
   if (!result.ok) {
     // A rejection is NOT a commit (AC7), so the Cheat survives and stays armed — the player can
     // try another card without paying twice.
@@ -298,14 +295,20 @@ function commit(state: RoundUiState, cardToPlay: Card, choice?: AbilityChoice): 
     encounter,
     cheats,
     cheatSelection: null,
+    envenomStage: null,
+    // AC4 — consumed exactly when it suppressed a reset, which `resolveTrickBank` decided. The
+    // reducer does not re-derive "did the Guard matter" — that would be a second reading of one
+    // rule, and the two would drift.
+    poisonGuardHeld: resolvedTrick?.resolution.poisonGuardSpent ? false : state.poisonGuardHeld,
   }
 
   if (resolvedTrick) {
     return settled
   }
 
-  // The player led — advance the opponent in the same commit.
-  const advanced = advanceQuarryFollow(result.state)
+  // The player led — advance the opponent in the same commit. `settled`, not `state`, so the
+  // Quarry's follow reads the queue as the player's own commit left it.
+  const advanced = advanceQuarryFollow(result.state, poisonOptions(settled))
   return {
     ...settled,
     round: advanced.round,
@@ -314,6 +317,9 @@ function commit(state: RoundUiState, cardToPlay: Card, choice?: AbilityChoice): 
     encounter: advanced.resolvedTrick
       ? applyResolution(settled.encounter, advanced.resolvedTrick.resolution)
       : settled.encounter,
+    poisonGuardHeld: advanced.resolvedTrick?.resolution.poisonGuardSpent
+      ? false
+      : settled.poisonGuardHeld,
   }
 }
 
@@ -342,14 +348,14 @@ function deriveResolvedTrick(
  * `chooseCpuMove`'s chosen card to derive the resolved trick's reveal. Guards `legalMoves`
  * before calling `chooseCpuMove`, which throws on an empty legal set.
  */
-function advanceQuarryFollow(round: WarCouncilState): CpuAdvanceResult {
+function advanceQuarryFollow(round: WarCouncilState, options: PlayCardOptions): CpuAdvanceResult {
   const legal = legalMoves(round, QUARRY_SIDE)
   if (legal.length === 0) {
     return { round, resolvedTrick: null, cpuFault: 'noLegalMove' }
   }
 
   const move = chooseCpuMove(round, QUARRY_SIDE)
-  const result = playCard(round, QUARRY_SIDE, move.card, move.choice)
+  const result = playCard(round, QUARRY_SIDE, move.card, move.choice, options)
   if (!result.ok) {
     return { round, resolvedTrick: null, cpuFault: result.reason }
   }

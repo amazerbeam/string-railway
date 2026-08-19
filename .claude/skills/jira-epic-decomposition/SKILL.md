@@ -1,6 +1,6 @@
 ---
 name: jira-epic-decomposition
-description: Decompose a Jira epic into a sequenced, dependency-linked set of child Story/Task tickets, write the breakdown to a tasks file, then create every ticket in Jira. Use when the user gives an epic key or URL and wants it broken down, says break down this epic, decompose SCRUM-18 into tickets, turn this epic into a task list, or wants the full child-ticket tree scaffolded from an epic in one pass.
+description: Decompose a Jira epic into a sequenced, dependency-linked set of child Story/Task tickets, write the breakdown to a tasks file, then create every ticket in Jira. Use when the user gives an epic key or URL and wants it broken down, says break down this epic, decompose DLR-18 into tickets, turn this epic into a task list, or wants the full child-ticket tree scaffolded from an epic in one pass.
 allowed-tools: Read, Grep, Glob, Write, Skill, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getJiraIssue, mcp__atlassian__getVisibleJiraProjects, mcp__atlassian__getJiraProjectIssueTypesMetadata, mcp__atlassian__getIssueLinkTypes, mcp__atlassian__searchJiraIssuesUsingJql
 metadata:
   type: automation
@@ -15,9 +15,9 @@ get a populated backlog" skill.
 
 ## When to Use This Skill
 
-- The developer gives a Jira epic key or URL (`SCRUM-18`, `https://.../browse/SCRUM-18`) and wants
+- The developer gives a Jira epic key or URL (`DLR-18`, `https://.../browse/DLR-18`) and wants
   it broken into child tickets.
-- "Break down this epic", "decompose SCRUM-18 into tickets", "turn this epic into a task list",
+- "Break down this epic", "decompose DLR-18 into tickets", "turn this epic into a task list",
   "scaffold the child tickets for X".
 - Not for editing or transitioning an existing ticket — that's `management-jira` directly.
 - Not for planning an implementation contract for code already scoped to one ticket — that's
@@ -45,7 +45,7 @@ after this skill was written. See `.claude/rules/README.md` for the index.
 
 ### Phase 1 — Resolve the epic (Check)
 
-1. Accept a bare key (`SCRUM-18`) or a full URL and extract the key.
+1. Accept a bare key (`DLR-18`) or a full URL and extract the key.
 2. Resolve the Atlassian cloud ID via `getAccessibleAtlassianResources` — same resolution
    `management-jira` uses; if more than one site is accessible, ask which one before continuing.
 3. Fetch the epic with `getJiraIssue` (`fields: ["*all"]`, `responseContentFormat: "markdown"`).
@@ -191,8 +191,8 @@ silently inverts the whole dependency graph.
 
 ## Example
 
-`/jira-epic-decomposition SCRUM-18` → resolve the epic, read the two design docs its description
+`/jira-epic-decomposition DLR-18` → resolve the epic, read the two design docs its description
 references, notice it needs foundational scaffolding + two rules engines + two CPU opponents + four
 UI surfaces + a polish pass + deploy + sign-off, write all eighteen tickets with full templates and
-a dependency graph to `.claude/contract/SCRUM-18-epic-breakdown/tasks.md`, show the developer the
+a dependency graph to `.claude/contract/DLR-18-epic-breakdown/tasks.md`, show the developer the
 list, and on their go-ahead create all eighteen in Jira with every Blocks link wired.

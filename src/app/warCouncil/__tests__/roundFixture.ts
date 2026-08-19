@@ -42,6 +42,7 @@ export function makeRound(overrides: Partial<WarCouncilState> = {}): WarCouncilS
     trumpSuit: Suit.Bells,
     tricksWon: { [PlayerSide.Player]: 0, [PlayerSide.Cpu]: 0 },
     skulledCards: [],
+    envenomedCards: [],
     bank: 0,
     multiplier: 0,
     lastResolution: null,
@@ -82,6 +83,14 @@ export const runLabelFixture = 'Fight 1 of 3'
 
 /** A fixed purse for component specs (DLR-84 AC2). */
 export const coinsFixture = 2
+
+/** A fixed Envenom charge count for component specs (DLR-90 AC2) — one held, enough to exercise
+ *  the stage cycle without a spec needing to track a second one down. */
+export const envenomChargesFixture = 1
+
+/** A fixed Poison Guard reading for component specs (DLR-91 AC4) — unheld, so a spec that does not
+ *  exercise the Guard is not accidentally exercising it. */
+export const poisonGuardHeldFixture = false
 
 /** A fixed, NAMED Quarry bar label for component specs. Deliberately not the generic
  *  `HEALTH_BAR_LABEL[Quarry]` wording, so a spec querying the bar by name proves the threaded

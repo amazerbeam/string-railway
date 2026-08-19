@@ -18,12 +18,20 @@ export interface RunState {
   readonly cheats: readonly CheatCard[] // DLR-83
   readonly nextCheatId: CheatCardId // DLR-83
   readonly coins: Coins // DLR-84
+  readonly envenomCharges: number // DLR-90
+  readonly poisonGuardHeld: boolean // DLR-91
 }
 ```
 
-The last three fields arrived after the original four, and all three are carried across a fight
-boundary by the `...run` spread `advanceRun` already had — neither ticket needed a line for the
-carry. See [Cheats](cheats-and-slots.md) and [Coins and the shop](coins-and-the-shop.md).
+The last five fields arrived after the original four, and every one of them is carried across a fight
+boundary by the `...run` spread `advanceRun` already had — no ticket needed a line for the carry. See
+[Cheats](cheats-and-slots.md), [Coins and the shop](coins-and-the-shop.md),
+[Envenom](envenom-and-the-delayed-hit.md) and [Poison Guard](poison-guard.md).
+
+**`poisonGuardHeld` is the one field that is carried and then deliberately cleared.** It has to be
+run-level to survive the `advanceRun` that opens the fight it was bought for, and it has to end when
+that fight does — so `recordEncounter` passes it through a private `guardAfter` rather than adopting it
+verbatim. That pairing is what makes "fight-long" a duration rather than a label.
 
 **It holds no separate player-health field, and that is the design decision worth knowing.** The
 health a player carries is `encounter.health[DuelSide.Player]` — read out of the encounter that
@@ -45,7 +53,7 @@ is over" is what stops a screen and a transition disagreeing about it.
 | Function                              | Does                                                                                                 |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `startRun(playerHealth?)`             | Builds fight 0 at `PLAYER_START_HEALTH`, `outcome: InProgress`, **0 coins**, and the configured Cheat grant |
-| `recordEncounter(run, enc, cheats)`   | Adopts the encounter a hand reported upward, **credits `COINS_PER_ENCOUNTER_WIN` on a player win**, and **re-derives the outcome** — the AC4/AC5 decision point |
+| `recordEncounter(run, enc, cheats, envenomCharges, poisonGuardHeld)` | Adopts the encounter a hand reported upward, **credits `COINS_PER_ENCOUNTER_WIN` on a player win**, and **re-derives the outcome** — the AC4/AC5 decision point. The fifth argument goes through `guardAfter`, not straight onto the run |
 | `canAdvanceRun(run)`                  | `outcome === InProgress && encounter.winner === Player` — "the Quarry is down and another fight remains" |
 | `beatenCount(run)`                    | How many fights are behind the player, as one integer — `encounterIndex + (winner === Player ? 1 : 0)` (DLR-85) |
 | `advanceRun(run)`                     | Opens the next fight on the carried health, or throws                                                 |
@@ -78,10 +86,15 @@ function outcomeFor(encounterIndex, encounterCount, encounter): RunOutcome {
 ```
 
 **The Quarry check comes before the last-fight check, deliberately.** The player going down ends
-the run wherever it happens — including on the final fight, and including the simultaneous-depletion
-tie that `applyDamage` has already resolved to the Quarry through
-`SIMULTANEOUS_DEPLETION_WINNER`. Winning the last fight is the only path to `Won`; winning any
-other leaves the run `InProgress` with the next fight waiting on the player.
+the run wherever it happens, including on the final fight. Winning the last fight is the only path to
+`Won`; winning any other leaves the run `InProgress` with the next fight waiting on the player.
+
+**There is no longer a simultaneous case for this function to inherit.** DLR-70 through DLR-90 relied on
+`applyDamage` having already resolved a mutual kill to the Quarry through
+`SIMULTANEOUS_DEPLETION_WINNER`; DLR-91 deleted that constant and made `applyDamage` spare the player
+whenever the Quarry goes down, so a mutual kill arrives here as a **player win** and this ordering
+simply never sees the case. See
+[the encounter state and the end conditions](encounter-state-and-end-conditions.md).
 
 ### Both refusals throw rather than returning the run unchanged
 
@@ -152,6 +165,17 @@ generated from three tunables instead of three literals, and the run is expected
 one or two — Oisín holds 86 and Diarmuid 135. The ruling is unchanged: the answer is the shop and later
 stories, not a bigger starting bar.
 
+### DLR-91 deleted a transition rather than adding one
+
+`beginNextHand` used to sit in the table above — DLR-90's payment point for a queued Envenom hit, and
+the only total, throw-free transition in this module. **DLR-91 deleted it**, because poison is now paid
+at the resolution of the next trick rather than at the deal of the next hand, and that payment happens
+one layer up in `roundReducer.ts`. `App.tsx` lost its call and the downstream resolution re-check that
+followed it in the same change. The consequence worth knowing: `recordEncounter` is once again the
+**only** transition here that adopts a hand's end state, which is why `guardAfter` is a named function
+rather than an inline ternary. See
+[Envenom — the held charge, the delayed-hit queue, and where it is paid](envenom-and-the-delayed-hit.md).
+
 ## Purity
 
 `run.ts` sits inside the lint-enforced `src/hunt/**` boundary and stays there: it imports only
@@ -160,4 +184,5 @@ one of them already inside the pure tree. It holds no JSX and touches no DOM glo
 with plain function-in/value-out assertions under the `node` Vitest project
 (`src/hunt/__tests__/run.test.ts`), with no renderer — including a spec that drives a whole run to
 `Won` through `advanceRun`/`recordEncounter`, and one that pins immutability by `JSON.stringify`
-comparison across a transition.
+comparison across a transition. Poison Guard's own specs live in `src/hunt/__tests__/poisonGuard.test.ts`
+rather than here: `run.test.ts` was already at 343 lines.

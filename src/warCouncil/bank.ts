@@ -1,4 +1,4 @@
-import { DAMAGE_PER_HIT, DuelSide, type IncomingDamage } from '../hunt'
+import { DAMAGE_PER_HIT, DuelSide, type Damage, type IncomingDamage } from '../hunt'
 
 /** §3.2's four rows. Named rather than a pair of booleans at every branch, so the rule reads
  *  out of the code the way it reads out of the design's table. */
@@ -28,6 +28,46 @@ export interface TrickResolution extends BankState {
   /** Which rule produced `cashOut` — AC8's end-of-hand cash rather than AC6/AC7's. Display only:
    *  the two can never both be non-zero, because a hit resets the bank to 0 first. */
   readonly cashedAtHandEnd: boolean
+  /** DLR-90 AC3/AC6 — the side owed the poison figure for that side (`ENVENOM_QUARRY_DAMAGE` or
+   *  `ENVENOM_PLAYER_DAMAGE`) at the start of the next hand, or `null` when the trick carried no
+   *  mark. Keyed by the side the damage will be APPLIED TO, and typed
+   *  `DuelSide` rather than `PlayerSide` deliberately: this module is already THE one crossing
+   *  between the two vocabularies (see `incomingFrom` below), so the reducer receives a side it
+   *  hands straight to `queueEnvenom` with no second crossing to get backwards. */
+  readonly envenomTarget: DuelSide | null
+  /** D1 — carried through so `incomingFrom` sums it into the Quarry's total. Display-safe: this is
+   *  the figure paid at THIS trick, not one booked by it — that is `envenomTarget`. */
+  readonly poisonToQuarry: Damage
+  /** AC4 — the Guard fired and suppressed a reset, so the reducer must spend it. `true` only when
+   *  poison was actually owed to the player at this trick AND a Guard was held. */
+  readonly poisonGuardSpent: boolean
+}
+
+/**
+ * The seven facts about a completed trick that decide its whole effect on the bank, the streak and
+ * both bars.
+ *
+ * A parameter object rather than positional booleans, introduced on DLR-90 when the fourth became a
+ * fifth: `resolveTrickBank(START, true, false, false, false)` is unreadable at the call site, and a
+ * transposed pair of booleans type-checks cleanly and produces plausible numbers.
+ */
+export interface TrickFacts {
+  readonly playerWon: boolean
+  /** Any card played into the trick carries a skull (§3.2). */
+  readonly skullTrick: boolean
+  /** The last trick of the hand, so AC8's end-of-hand cash applies. */
+  readonly finalTrick: boolean
+  /** DLR-90 AC3 — any card played into the trick carries the Envenom mark. */
+  readonly envenomTrick: boolean
+  /** D1/D3 — poison owed to the PLAYER from an earlier trick, being paid at this one. 0 when none.
+   *  Non-zero makes this trick a hit for the cash-out's purposes even if the player won it. */
+  readonly poisonToPlayer: Damage
+  /** D1 — poison owed to the QUARRY from an earlier trick, being paid at this one. 0 when none.
+   *  Never touches the bank: the Quarry has no streak to lose. */
+  readonly poisonToQuarry: Damage
+  /** DLR-91 AC4 — a Poison Guard is held, so poison must NOT force the cash-out. Gates the poison
+   *  trigger only, never the trick's own hit: a 1-coin item does not insure against every loss. */
+  readonly poisonGuarded: boolean
 }
 
 /** §3.2's table as a total function. The skull inverts the trick: on a clean trick you want to
@@ -57,25 +97,36 @@ export function isTaken(outcome: TrickOutcome): boolean {
  *
  * `finalTrick` folds AC8 in rather than modelling it as a second event. That is safe because
  * exactly one of the two cash-outs can ever fire: a hit sets bank and multiplier to zero, so
- * AC8's subsequent `0 × 0` is zero; a take leaves exactly one bank to cash. The result is one
- * damage application per trick, with `cashedAtHandEnd` recording which rule paid out.
+ * AC8's subsequent `0 × 0` is zero; a take leaves exactly one bank to cash — and DLR-90's AC5
+ * REPLACED clean loss now leaves neither cash-out firing, so the bank stands untouched for
+ * `finalTrick` or a later trick to cash instead. The result is at most one damage application per
+ * trick, with `cashedAtHandEnd` recording which rule paid out.
  *
  * Pure arithmetic over two integer counters — there is no division anywhere here, so no epsilon is
  * needed and no `NaN` is producible from the inputs this takes.
  */
-export function resolveTrickBank(
-  before: BankState,
-  playerWon: boolean,
-  skullTrick: boolean,
-  finalTrick: boolean,
-): TrickResolution {
-  const outcome = trickOutcomeFor(playerWon, skullTrick)
+export function resolveTrickBank(before: BankState, trick: TrickFacts): TrickResolution {
+  const outcome = trickOutcomeFor(trick.playerWon, trick.skullTrick)
 
   let bank = before.bank
   let multiplier = before.multiplier
   let bankAdded = 0
   let cashOut = 0
-  let damageToPlayer = 0
+
+  // AC5 — REPLACED, not added to. A marked trick the Quarry won CLEANLY costs the player nothing:
+  // no health lost, and the bank and multiplier survive uncashed even though this is a loss by the
+  // normal rules. That is the item's whole point — it gives a card the player already expects to
+  // lose with a reason to be played instead of being dead weight.
+  //
+  // Keyed on `CleanLoss` rather than on "the Quarry won" DELIBERATELY: a Dodge is also a trick the
+  // Quarry won, and it is one the player BANKS, so treating every Quarry win as replaced would zero
+  // a `bankAdded` the player had already earned. `CleanLoss` is the only outcome where a Quarry win
+  // costs the player anything, so it is the only one with something to replace.
+  //
+  // AC6 needs no counterpart and gets none: a marked trick the player wins is already a `CleanWin`
+  // and falls through to the ordinary branch below, banking 1 and climbing the multiplier. The
+  // delayed hit is symmetric because `envenomTarget` follows the WINNER, not a mirrored rule.
+  const replaced = trick.envenomTrick && outcome === TrickOutcome.CleanLoss
 
   if (isTaken(outcome)) {
     // PT-002 — the bank counts TRICKS, not card values. Both terms climb by exactly 1 per trick
@@ -85,15 +136,30 @@ export function resolveTrickBank(
     bankAdded = 1
     bank += bankAdded
     multiplier += 1
-  } else {
+  }
+
+  // TWO sources of a hit since D1/D3. `trickHit` is the pre-existing one — a clean loss or a skull
+  // win, unless DLR-90's AC5 replaced it. Poison is the new one, and it reaches the SAME branch
+  // rather than getting a rule of its own: that is what makes "poison behaves like any other
+  // damage" true in code instead of asserted in a comment.
+  const trickHit = !isTaken(outcome) && !replaced
+  // AC4 — a held Guard suppresses the POISON trigger only.
+  const poisonResets = trick.poisonToPlayer > 0 && !trick.poisonGuarded
+
+  // Owed whether or not the streak resets: a Guard buys back the streak, never the health.
+  // D2's 2-or-3 is this line — the poison alone on a trick the player won, plus DAMAGE_PER_HIT
+  // on one they also lost.
+  const damageToPlayer = (trickHit ? DAMAGE_PER_HIT : 0) + trick.poisonToPlayer
+
+  if (trickHit || poisonResets) {
+    // A1 — the win above has already banked, so a won-but-poisoned trick cashes the LARGER figure.
     cashOut = bank * multiplier
-    damageToPlayer = DAMAGE_PER_HIT
     bank = 0
     multiplier = 0
   }
 
-  const handEndCash = finalTrick ? bank * multiplier : 0
-  if (finalTrick) {
+  const handEndCash = trick.finalTrick ? bank * multiplier : 0
+  if (trick.finalTrick) {
     cashOut += handEndCash
     bank = 0
     multiplier = 0
@@ -107,20 +173,26 @@ export function resolveTrickBank(
     bank,
     multiplier,
     cashedAtHandEnd: handEndCash > 0,
+    // The PHYSICAL winner of a marked trick, crossed to `DuelSide` here and only here.
+    envenomTarget: trick.envenomTrick
+      ? trick.playerWon
+        ? DuelSide.Player
+        : DuelSide.Quarry
+      : null,
+    poisonToQuarry: trick.poisonToQuarry,
+    poisonGuardSpent: trick.poisonToPlayer > 0 && trick.poisonGuarded,
   }
 }
 
 /**
- * THE one `PlayerSide` -> `DuelSide` crossing, replacing the retired `duelSideDamage`.
- *
- * Keyed by the side the damage is APPLIED TO: the player eats `damageToPlayer`, the Quarry eats
- * `cashOut`. Existing as one function is the point — a call site building this record by hand is
- * one transposition away from depleting the wrong bar, type-checking cleanly, and producing
- * plausible numbers indefinitely.
+ * THE one `PlayerSide` -> `DuelSide` crossing. Keyed by the side the damage is APPLIED TO: the
+ * player eats `damageToPlayer`, the Quarry eats its cash-out PLUS any poison paid at this trick.
+ * Summing here rather than at the call site keeps that the only crossing — a caller assembling
+ * this record by hand is one transposition from depleting the wrong bar forever.
  */
 export function incomingFrom(resolution: TrickResolution): IncomingDamage {
   return {
     [DuelSide.Player]: resolution.damageToPlayer,
-    [DuelSide.Quarry]: resolution.cashOut,
+    [DuelSide.Quarry]: resolution.cashOut + resolution.poisonToQuarry,
   }
 }

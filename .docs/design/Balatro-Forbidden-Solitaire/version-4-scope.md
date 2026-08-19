@@ -23,38 +23,54 @@ The existing Cheat keeps its slot unchanged — a held charge, spent once, the d
 *whether*.
 
 **New: poison a chosen card (placeholder name: *Envenom*), 2 coins.** Pick one card in your hand; it
-becomes poisoned. The next time that card is played into a trick, **whoever wins that trick takes 4
-damage at the start of the following hand** rather than immediately — the delayed-hit shape
-`ideas.md`'s "response window" entry proposed, re-anchored to the trick's outcome rather than a
-capture pile, since capture piles no longer exist in the current rules. The 4 is not arbitrary: it's
-the same figure the doc already uses for "one fight's worth of damage" (`the-hunt.md` §9) and for the
-shop's own Heal, so poison's damage reads on a scale the player already knows rather than a new one.
+becomes poisoned. The next time that card is played into a trick, whoever wins that trick owes
+damage. **D1–D4, decided 2026-08-19, replacing this subsection's original timing and figure:**
+
+- **Damage is paid at the resolution of the *next trick*, not at the opening of the hand after
+  this one.** This subsection originally timed the payment to that later hand's very first moment —
+  changed because a hit paid at a hand boundary arrives after `resolveTrickBank` has already cashed
+  and zeroed the streak for that hand, so it could never interact with the bank at all. Paying it at
+  the next trick's own resolution is what lets poison behave like any other hit — see below.
+- **The two sides no longer share one figure: 4 to the Quarry, 2 to the player.** The player's figure
+  is halved because a hit landing on the player also forces the streak's cash-out (D3, next), which
+  the Quarry has no equivalent of — the Quarry has no bank to lose, so its figure stays at the
+  original 4, the same figure the doc already uses for "one fight's worth of damage" (`the-hunt.md`
+  §9) and for the shop's own Heal.
+- **Poison damage to the player behaves as any other damage does: the bank cashes out into the
+  Quarry and both counters reset.** The original text's "replaced, not added to" no-cost-loss
+  treatment is gone along with the capture-pile framing it was reasoning from — a poisoned trick the
+  Quarry wins now costs the player the ordinary per-trick hit exactly as an unpoisoned loss would,
+  and a poisoned trick the *player* wins still owes the delayed poison hit at the next trick,
+  cashing the streak out even though the trick itself was a win.
+- **Pending poison accumulates rather than overwriting, and it carries or discards at the two
+  boundaries that matter.** Two bookings against the same side sum. A poisoned final trick's owed
+  damage carries into the next hand, since the queue is paid at a trick's resolution regardless of
+  which hand that trick falls in; it is discarded outright if the fight or the run ends first, since
+  a fresh encounter re-seeds the queue to nothing.
+
 Priced at twice Poison Guard's cost, below, because unlike Guard this is a guaranteed, unconditional
 hit rather than insurance against a risk.
 
-**When the Quarry wins the poisoned trick, the trick's normal outcome for the player is replaced, not
-added to:** no health is lost and the bank/multiplier survive instead of resetting, while the Quarry
-still takes the delayed hit next hand. This is a deliberate no-cost sacrifice — the point is to give a
-card the player already expects to lose with (a Swan, a stray low card) a reason to be played instead
-of being dead weight in the hand.
-
-This is symmetric by construction rather than by a second rule: the delayed hit already targets
-whichever side wins the trick, so a poisoned card played into a trick the *player* wins instead lands
-that same delayed damage on the player next hand — the one way this can still cost something. The
-"no cost for losing" half doesn't need a mirrored Quarry-side rule to stay fair: the Quarry was never
-charged anything for losing a single trick in the first place, so there's nothing on its side left to
-waive.
-
 ### Fight-long — new item: *Poison Guard*, 1 coin
 
-Active for one hand. The next time the delayed poison hit lands on the player — from a poisoned card
-they ended up winning the trick with — the health is still lost but the bank and multiplier do not
-reset. This is the only way poison currently costs the player anything, so it's also the only case
-this item needs to cover; it's live from the moment poison ships, not waiting on a future Quarry-side
-power. Reuses the reset-protection math already costed for the shop, scoped specifically to the
-poison backfire rather than every hit. Priced level with the shop's Heal — both are a 1-coin-for-4-HP
-trade, just run in opposite directions (Heal buys HP back after the fact, Guard buys it back before
-the backfire happens).
+**D7's revised sequencing (below) made this subsection's original one-hand duration wrong on its own
+terms — a fight-long item that expired after a single hand was never coherent — so this is revised
+to match its own heading: active for the whole fight it was bought for, not one hand of it.** The
+next time the player's own poison lands on them, the health is still lost but the bank and
+multiplier do not reset — the Guard
+buys back the streak, never the health. This is the only way poison currently costs the player
+anything, so it's also the only case this item needs to cover; it's live from the moment poison
+ships, not waiting on a future Quarry-side power. Reuses the reset-protection math already costed for
+the shop, scoped specifically to the poison backfire rather than every hit. Priced level with the
+shop's Heal — both are a 1-coin-for-4-HP trade, just run in opposite directions (Heal buys HP back
+after the fact, Guard buys it back before the backfire happens).
+
+**D8, accepted 2026-08-19: holding a Guard can now cost the player health it would otherwise have
+dodged.** Because the Guard suppresses the poison hit's cash-out, a Quarry that would have died to
+that cash-out (under D7's Quarry-first sequencing, below) instead survives — and the player, who
+would have taken nothing from an event that kills the Quarry, now takes the 2 health the Guard didn't
+stop. This is an accepted consequence of buying insurance against the streak reset, not a bug: the
+Guard was never sold as insurance against the health, only against the bank.
 
 ### Run-permanent — new item: *Whetstone* (placeholder name), 4 coins
 
@@ -100,6 +116,12 @@ player *is* hit before choosing to apply, the automatic cash-out that already ex
 of `bank × multiplier` instead of the full amount — the missing cost that turns this from a button
 with no wrong answer into a real press-your-luck decision (see `ideas.md` → "A player-triggered
 cash-out," sharpened here).
+
+**D6, decided 2026-08-19, ahead of this control being built: Apply Damage must be disabled while
+poison is pending.** A player able to cash the bank out on demand while a poison hit is still owed
+could apply damage to dodge the interaction between the two systems in a way neither was designed
+to allow for; the control's implementation must read the pending-poison predicate before it commits
+to anything, not just the two-thirds/one-third split above.
 
 ## 4. Quick-kill payout
 

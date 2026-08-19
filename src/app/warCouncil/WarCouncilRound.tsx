@@ -3,6 +3,7 @@ import { DuelSide, isEncounterResolved, quarryCharacterInfo } from '../../hunt'
 import {
   CardRank,
   incomingFrom,
+  isEnvenomed,
   PlayerSide,
   RoundPhase,
   currentTurn,
@@ -19,27 +20,17 @@ import BankMeter from './BankMeter'
 import CheatSlots from './CheatSlots'
 import DecreePile from './DecreePile'
 import { duelHealthBars, NO_BREAKING, projectedFromStreak } from './duelHealthBars'
+import EnvenomCharge from './EnvenomCharge'
 import HandFan from './HandFan'
 import { sortHandForDisplay } from './handOrder'
 import { previewQuarryIntent } from './intentPreview'
 import IntentTelegraph from './IntentTelegraph'
-import {
-  cardAccessibleName,
-  CHEAT_ARMED_HINT,
-  CHEAT_POISED_HINT,
-  ILLEGAL_MOVE_MESSAGE,
-} from './labels'
 import QuarryDossier from './QuarryDossier'
 import QuarryShape from './QuarryShape'
+import { deriveHint } from './roundHint'
 import RoundOverPanel from './RoundOverPanel'
-import {
-  cheatArmed,
-  CheatStage,
-  createRoundUiState,
-  roundReducer,
-  RoundUiActionKind,
-  type RoundUiState,
-} from './roundReducer'
+import { roundReducer } from './roundReducer'
+import { cheatArmed, createRoundUiState, envenomArmed, RoundUiActionKind } from './roundUiState'
 import RoundStatusBand from './RoundStatusBand'
 import { SuitSymbolSheet } from './SuitMark'
 import TrickWell from './TrickWell'
@@ -48,6 +39,7 @@ import './warCouncilCards.css'
 import './warCouncilHunt.css'
 import './warCouncilHealthBars.css'
 import './warCouncilHand.css'
+import './warCouncilEnvenom.css'
 
 /**
  * The round mount, implementing SCRUM-37's `WarCouncilMountProps`. Owns exactly one piece of
@@ -81,11 +73,13 @@ export default function WarCouncilRound({
   cheats,
   coins,
   quarryLabel,
+  envenomCharges,
+  poisonGuardHeld,
   onComplete,
 }: WarCouncilMountProps) {
   const [ui, dispatch] = useReducer(
     roundReducer,
-    { round: initialState, encounter, cheats },
+    { round: initialState, encounter, cheats, envenomCharges, poisonGuardHeld },
     createRoundUiState,
   )
 
@@ -191,7 +185,13 @@ export default function WarCouncilRound({
    */
   function handleCarryOn() {
     if (encounterOver) {
-      onComplete({ finalState: ui.round, encounter: ui.encounter, cheats: ui.cheats })
+      onComplete({
+        finalState: ui.round,
+        encounter: ui.encounter,
+        cheats: ui.cheats,
+        envenomCharges: ui.envenomCharges,
+        poisonGuardHeld: ui.poisonGuardHeld,
+      })
       return
     }
     if (ui.resolvedTrick !== null || quarryToLead) {
@@ -199,7 +199,13 @@ export default function WarCouncilRound({
       return
     }
     if (roundComplete) {
-      onComplete({ finalState: ui.round, encounter: ui.encounter, cheats: ui.cheats })
+      onComplete({
+        finalState: ui.round,
+        encounter: ui.encounter,
+        cheats: ui.cheats,
+        envenomCharges: ui.envenomCharges,
+        poisonGuardHeld: ui.poisonGuardHeld,
+      })
     }
   }
 
@@ -225,6 +231,7 @@ export default function WarCouncilRound({
         currentTrick={ui.round.currentTrick}
         resolvedTrick={ui.resolvedTrick}
         skulledCards={ui.round.skulledCards}
+        envenomedCards={ui.round.envenomedCards}
         quarryToLead={quarryToLead}
         onCarryOn={handleCarryOn}
       />
@@ -244,6 +251,7 @@ export default function WarCouncilRound({
         decree={ui.round.decree}
         hand={displayHand.filter((c) => !sameCard(c, promptCard))}
         drawnCard={promptCard.rank === CardRank.Woodcutter ? (ui.round.drawPile[0] ?? null) : null}
+        envenomedCards={ui.round.envenomedCards}
         onChoose={(choice) => dispatch({ kind: RoundUiActionKind.ChooseAbility, choice })}
         onCancel={handleCancel}
       />
@@ -254,6 +262,7 @@ export default function WarCouncilRound({
         currentTrick={ui.round.currentTrick}
         resolvedTrick={null}
         skulledCards={ui.round.skulledCards}
+        envenomedCards={ui.round.envenomedCards}
         quarryToLead={quarryToLead}
         onCarryOn={handleCarryOn}
       />
@@ -296,6 +305,7 @@ export default function WarCouncilRound({
             decree={ui.round.decree}
             trumpSuit={ui.round.trumpSuit}
             drawPileCount={ui.round.drawPile.length}
+            envenomed={isEnvenomed(ui.round.envenomedCards, ui.round.decree)}
           />
           <div className="wc-felt-rail-split" aria-hidden="true" />
           <CheatSlots
@@ -304,6 +314,13 @@ export default function WarCouncilRound({
             interactive={interactive}
             onTap={(id) => dispatch({ kind: RoundUiActionKind.TapCheat, id })}
             onCancel={() => dispatch({ kind: RoundUiActionKind.CancelCheat })}
+          />
+          <EnvenomCharge
+            charges={ui.envenomCharges}
+            stage={ui.envenomStage}
+            interactive={interactive}
+            onTap={() => dispatch({ kind: RoundUiActionKind.TapEnvenom })}
+            onCancel={() => dispatch({ kind: RoundUiActionKind.CancelEnvenom })}
           />
         </div>
         <div className="wc-table-inner">{felt}</div>
@@ -316,25 +333,11 @@ export default function WarCouncilRound({
         hint={hint}
         rejected={ui.rejection !== null}
         promptOpen={ui.prompt !== null}
+        envenomedCards={ui.round.envenomedCards}
+        envenomArmed={envenomArmed(ui)}
         onTap={handleTap}
         onCancel={handleCancel}
       />
     </div>
   )
-}
-
-/** Priority mirrors the mockup's hint cascade: a rejection or an armed card
- * always says the most specific thing; otherwise the hint names whose turn
- * it is to lead or follow. */
-function deriveHint(ui: RoundUiState, interactive: boolean, quarryToLead: boolean): string {
-  if (ui.rejection) return ILLEGAL_MOVE_MESSAGE[ui.rejection]
-  if (ui.prompt) return 'Choose what the card does'
-  if (ui.resolvedTrick) return 'Trick resolved'
-  if (quarryToLead) return 'They are choosing their lead'
-  if (ui.armed) return `Tap ${cardAccessibleName(ui.armed)} again to play it`
-  if (ui.cheatSelection) {
-    return ui.cheatSelection.stage === CheatStage.Armed ? CHEAT_ARMED_HINT : CHEAT_POISED_HINT
-  }
-  if (interactive) return ui.round.currentTrick.length > 0 ? 'Follow their lead' : 'Your lead'
-  return ''
 }

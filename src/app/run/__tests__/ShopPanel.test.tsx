@@ -1,11 +1,19 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { PurchaseRefusal, ShopItem } from '../../../hunt'
+import { PurchaseRefusal, SHOP_CATEGORIES, ShopCategory, ShopItem } from '../../../hunt'
 import { HeartState } from '../../warCouncil/duelHealthBars'
 import ShopPanel from '../ShopPanel'
 import { fightLabel } from '../runLabels'
-import { shopItemAccessibleName } from '../shopLabels'
+import {
+  PURCHASE_REFUSAL_MESSAGE,
+  SHOP_CATEGORY_EMPTY,
+  SHOP_CATEGORY_LABEL,
+  SHOP_ENVENOM_LABEL,
+  SHOP_GUARD_HELD,
+  SHOP_GUARD_NONE,
+  shopItemAccessibleName,
+} from '../shopLabels'
 
 afterEach(cleanup)
 
@@ -22,6 +30,8 @@ const baseProps = {
   playerHearts: heartsAt6of10,
   cheatCount: 1,
   cheatSlotCount: 2,
+  envenomCharges: 2,
+  poisonGuardHeld: false,
   nextOpponentName: 'The Monarch',
   progressText: 'Fight 2 of 3.',
   onBuy: vi.fn(),
@@ -30,6 +40,8 @@ const baseProps = {
 
 const noRefusals: Readonly<Record<ShopItem, PurchaseRefusal | null>> = {
   [ShopItem.Cheat]: null,
+  [ShopItem.Envenom]: null,
+  [ShopItem.PoisonGuard]: null,
   [ShopItem.Heal]: null,
 }
 
@@ -110,6 +122,39 @@ describe('ShopPanel', () => {
     expect(screen.getByRole('group', { name: /purse/i }).textContent).toContain('1 / 2')
   })
 
+  it('states the Envenom charges held in the purse group (DLR-90 AC1)', () => {
+    // A value distinct from every other purse figure in `baseProps` (coins 3, cheatCount 1,
+    // cheatSlotCount 2), so this cannot pass by coincidentally matching a sibling cell.
+    render(<ShopPanel {...baseProps} envenomCharges={5} refusals={noRefusals} />)
+    const cell = screen.getByText(SHOP_ENVENOM_LABEL).closest('.shop-purse-cell')
+    expect(cell?.textContent).toContain('5')
+  })
+
+  it('renders Envenom on the one-time-use shelf beside the Cheat, priced from priceOf', () => {
+    render(<ShopPanel {...baseProps} refusals={noRefusals} />)
+    expect(
+      screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Envenom, null) }),
+    ).toBeTruthy()
+  })
+
+  it('fires onBuy with ShopItem.Envenom when its control is clicked', () => {
+    const onBuy = vi.fn()
+    render(<ShopPanel {...baseProps} refusals={noRefusals} onBuy={onBuy} />)
+    fireEvent.click(
+      screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Envenom, null) }),
+    )
+    expect(onBuy).toHaveBeenCalledWith(ShopItem.Envenom)
+  })
+
+  it('disables a refused Envenom card, folding the refusal into its accessible name', () => {
+    const refusals = { ...noRefusals, [ShopItem.Envenom]: PurchaseRefusal.NotEnoughCoins }
+    render(<ShopPanel {...baseProps} refusals={refusals} />)
+    const button = screen.getByRole('button', {
+      name: shopItemAccessibleName(ShopItem.Envenom, PurchaseRefusal.NotEnoughCoins),
+    })
+    expect(button).toHaveProperty('disabled', true)
+  })
+
   it('fires onLeave on Escape', () => {
     const onLeave = vi.fn()
     const { container } = render(
@@ -123,5 +168,99 @@ describe('ShopPanel', () => {
   it('renders without crashing when the next opponent has no configured name', () => {
     render(<ShopPanel {...baseProps} nextOpponentName={undefined} refusals={noRefusals} />)
     expect(screen.getByRole('button', { name: 'Next fight' })).toBeTruthy()
+  })
+
+  it('renders the four category tabs with one-time use open by default (AC3/AC5)', () => {
+    render(<ShopPanel {...baseProps} refusals={noRefusals} />)
+    expect(screen.getAllByRole('tab')).toHaveLength(SHOP_CATEGORIES.length)
+    expect(screen.getByRole('tab', { selected: true }).textContent).toBe(
+      SHOP_CATEGORY_LABEL[ShopCategory.OneTimeUse],
+    )
+    expect(
+      screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Cheat, null) }),
+    ).toBeTruthy()
+  })
+
+  it('renders the Heal outside the tabs, so it is there whichever shelf is open (AC2/AC3)', () => {
+    render(<ShopPanel {...baseProps} refusals={noRefusals} />)
+    const heal = screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Heal, null) })
+    expect(screen.getByRole('tabpanel').contains(heal)).toBe(false)
+
+    fireEvent.click(screen.getByRole('tab', { name: SHOP_CATEGORY_LABEL[ShopCategory.FightLong] }))
+    expect(
+      screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Heal, null) }),
+    ).toBeTruthy()
+  })
+
+  it('states an empty shelf rather than rendering a blank panel (AC5)', () => {
+    render(<ShopPanel {...baseProps} refusals={noRefusals} />)
+    fireEvent.click(
+      screen.getByRole('tab', { name: SHOP_CATEGORY_LABEL[ShopCategory.RunPermanent] }),
+    )
+    expect(screen.getByText(SHOP_CATEGORY_EMPTY)).toBeTruthy()
+    expect(
+      screen.queryByRole('button', { name: shopItemAccessibleName(ShopItem.Cheat, null) }),
+    ).toBeNull()
+  })
+
+  it('switching shelves moves the Cheat out of the panel and back (AC3)', () => {
+    render(<ShopPanel {...baseProps} refusals={noRefusals} />)
+    const shelf = (category: ShopCategory) =>
+      screen.getByRole('tab', { name: SHOP_CATEGORY_LABEL[category] })
+
+    fireEvent.click(shelf(ShopCategory.FightLong))
+    expect(
+      screen.queryByRole('button', { name: shopItemAccessibleName(ShopItem.Cheat, null) }),
+    ).toBeNull()
+
+    fireEvent.click(shelf(ShopCategory.OneTimeUse))
+    expect(
+      screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Cheat, null) }),
+    ).toBeTruthy()
+  })
+
+  it('ties the open panel to its own tab for a screen reader', () => {
+    render(<ShopPanel {...baseProps} refusals={noRefusals} />)
+    const panel = screen.getByRole('tabpanel')
+    const openTab = screen.getByRole('tab', { selected: true })
+    expect(panel.getAttribute('aria-labelledby')).toBe(openTab.id)
+    expect(openTab.getAttribute('aria-controls')).toBe(panel.id)
+  })
+
+  it('fires onLeave exactly once on Escape, not twice, now the tablist is inside the shop', () => {
+    const onLeave = vi.fn()
+    const { container } = render(
+      <ShopPanel {...baseProps} refusals={noRefusals} onLeave={onLeave} />,
+    )
+    fireEvent.keyDown(container.querySelector('.shop-tabs') as Element, { key: 'Escape' })
+    expect(onLeave).toHaveBeenCalledTimes(1)
+  })
+
+  it('DLR-91 — states whether a Guard is held, in words', () => {
+    const { rerender } = render(<ShopPanel {...baseProps} refusals={noRefusals} />)
+    expect(screen.getByText(SHOP_GUARD_NONE)).toBeTruthy()
+    rerender(<ShopPanel {...baseProps} poisonGuardHeld refusals={noRefusals} />)
+    expect(screen.getByText(SHOP_GUARD_HELD)).toBeTruthy()
+  })
+
+  it('DLR-91 AC1 — the Guard is on the Fight-long shelf, not the default one', () => {
+    render(<ShopPanel {...baseProps} refusals={noRefusals} />)
+    const name = shopItemAccessibleName(ShopItem.PoisonGuard, null)
+    expect(screen.queryByRole('button', { name })).toBeNull()
+    fireEvent.click(screen.getByRole('tab', { name: SHOP_CATEGORY_LABEL[ShopCategory.FightLong] }))
+    expect(screen.getByRole('button', { name })).toBeTruthy()
+  })
+
+  it('DLR-91 AC3 — a refused Guard is disabled with its reason in the document', () => {
+    const refusals = { ...noRefusals, [ShopItem.PoisonGuard]: PurchaseRefusal.GuardAlreadyActive }
+    render(<ShopPanel {...baseProps} poisonGuardHeld refusals={refusals} />)
+    fireEvent.click(screen.getByRole('tab', { name: SHOP_CATEGORY_LABEL[ShopCategory.FightLong] }))
+    const button = screen.getByRole('button', {
+      name: shopItemAccessibleName(ShopItem.PoisonGuard, PurchaseRefusal.GuardAlreadyActive),
+    })
+    expect(button).toHaveProperty('disabled', true)
+    expect(
+      screen.getByText(PURCHASE_REFUSAL_MESSAGE[PurchaseRefusal.GuardAlreadyActive]),
+    ).toBeTruthy()
   })
 })

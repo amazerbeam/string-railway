@@ -1,6 +1,6 @@
 import { CHEAT_SLOT_COUNT, type CheatCard, type CheatCardId } from '../../hunt'
 import { CHEAT_EMPTY_SLOT_LABEL, CHEAT_RAIL_LABEL, cheatAccessibleName } from './labels'
-import { CheatStage, type CheatSelection } from './roundReducer'
+import { CheatStage, type CheatSelection } from './roundUiState'
 import './warCouncilCheats.css'
 
 interface CheatSlotsProps {

@@ -14,6 +14,10 @@ interface PlayingCardProps {
    *  hand fan never does — skulls are the Quarry's foreknowledge, not the player's own) passes
    *  it explicitly. */
   readonly skulled?: boolean
+  /** DLR-90 AC2 — a card carrying the Envenom mark. Defaults to `false` so every existing call
+   *  site keeps compiling; a caller that knows the card's state passes it. The SAME rendering path
+   *  as `skulled` — one more conditional `<span>` in one component, not a second component. */
+  readonly envenomed?: boolean
   readonly tabIndex?: number
   readonly style?: CSSProperties
   readonly onTap?: (card: Card) => void
@@ -34,6 +38,7 @@ export default function PlayingCard({
   illegal = false,
   winner = false,
   skulled = false,
+  envenomed = false,
   tabIndex,
   style,
   onTap,
@@ -60,7 +65,7 @@ export default function PlayingCard({
       style={style}
       disabled={condensed || illegal}
       tabIndex={condensed ? -1 : tabIndex}
-      aria-label={cardAccessibleName(card, skulled)}
+      aria-label={cardAccessibleName(card, { skulled, envenomed })}
       aria-pressed={armed ? true : undefined}
       onClick={() => onTap?.(card)}
     >
@@ -71,6 +76,11 @@ export default function PlayingCard({
       {skulled && (
         <span className="wc-skull-mark" aria-hidden="true">
           ☠
+        </span>
+      )}
+      {envenomed && (
+        <span className="wc-venom-mark" aria-hidden="true">
+          ⚗
         </span>
       )}
       <span className={`wc-card-pip${hasAbility ? '' : ' wc-is-blank'}`} aria-hidden="true" />

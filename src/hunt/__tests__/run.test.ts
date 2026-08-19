@@ -9,7 +9,7 @@ import {
   shopStockFor,
   startRun,
 } from '../run'
-import { applyDamage } from '../encounter'
+import { applyDamage, NO_PENDING_ENVENOM } from '../encounter'
 import {
   CHEAT_PRICE,
   COINS_PER_ENCOUNTER_WIN,
@@ -28,9 +28,16 @@ const damage = (toPlayer: number, toQuarry: number): IncomingDamage => ({
   [DuelSide.Quarry]: toQuarry,
 })
 
-/** Beat the Quarry of the encounter `run` is on, leaving the player on `playerLoss` less health. */
+/**
+ * Beat the Quarry of the encounter `run` is on, leaving the player on `playerLoss` less health.
+ *
+ * Two events, not one: D7 spares the player entirely on an event that empties the Quarry's bar,
+ * so a single simultaneous event would leave `playerLoss` unapplied. The loss lands first, on an
+ * event that does not touch the Quarry; the killing blow follows as its own event.
+ */
 function winEncounter(encounter: EncounterState, playerLoss = 0): EncounterState {
-  return applyDamage(encounter, damage(playerLoss, encounter.health[DuelSide.Quarry]))
+  const wounded = playerLoss > 0 ? applyDamage(encounter, damage(playerLoss, 0)) : encounter
+  return applyDamage(wounded, damage(0, wounded.health[DuelSide.Quarry]))
 }
 
 describe('startRun (AC1)', () => {
@@ -57,18 +64,30 @@ describe('startRun (AC1)', () => {
       expect(() => startRun(health)).toThrow(RangeError)
     }
   })
+
+  it('opens holding no Poison Guard (DLR-91 AC2)', () => {
+    expect(startRun().poisonGuardHeld).toBe(false)
+  })
 })
 
 describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
   it('stays in progress while the fight is live', () => {
     const run = startRun()
     const hit = applyDamage(run.encounter, damage(1, 1))
-    expect(recordEncounter(run, hit, run.cheats).outcome).toBe(RunOutcome.InProgress)
+    expect(recordEncounter(run, hit, run.cheats, run.envenomCharges, false).outcome).toBe(
+      RunOutcome.InProgress,
+    )
   })
 
   it('stays in progress when an intermediate fight is won — the next one is waiting', () => {
     const run = startRun()
-    const after = recordEncounter(run, winEncounter(run.encounter), run.cheats)
+    const after = recordEncounter(
+      run,
+      winEncounter(run.encounter),
+      run.cheats,
+      run.envenomCharges,
+      false,
+    )
     expect(after.outcome).toBe(RunOutcome.InProgress)
     expect(after.encounter.winner).toBe(DuelSide.Player)
     expect(canAdvanceRun(after)).toBe(true)
@@ -77,9 +96,17 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
   it('ends the run as WON when the final fight is won (AC5)', () => {
     let run = startRun()
     for (let i = 0; i < run.encounterCount - 1; i += 1) {
-      run = advanceRun(recordEncounter(run, winEncounter(run.encounter), run.cheats))
+      run = advanceRun(
+        recordEncounter(run, winEncounter(run.encounter), run.cheats, run.envenomCharges, false),
+      )
     }
-    const final = recordEncounter(run, winEncounter(run.encounter), run.cheats)
+    const final = recordEncounter(
+      run,
+      winEncounter(run.encounter),
+      run.cheats,
+      run.envenomCharges,
+      false,
+    )
     expect(final.encounterIndex).toBe(final.encounterCount - 1)
     expect(final.outcome).toBe(RunOutcome.Won)
     expect(canAdvanceRun(final)).toBe(false)
@@ -88,7 +115,7 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
   it('ends the run as LOST the moment the player is down, whatever the position (AC4)', () => {
     const run = startRun()
     const dead = applyDamage(run.encounter, damage(PLAYER_START_HEALTH, 0))
-    const after = recordEncounter(run, dead, run.cheats)
+    const after = recordEncounter(run, dead, run.cheats, run.envenomCharges, false)
     expect(after.outcome).toBe(RunOutcome.Lost)
     expect(canAdvanceRun(after)).toBe(false)
   })
@@ -99,29 +126,39 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
       run,
       applyDamage(run.encounter, damage(PLAYER_START_HEALTH, 0)),
       run.cheats,
+      run.envenomCharges,
+      false,
     )
-    expect(() => recordEncounter(lost, lost.encounter, lost.cheats)).toThrow(RangeError)
+    expect(() =>
+      recordEncounter(lost, lost.encounter, lost.cheats, lost.envenomCharges, false),
+    ).toThrow(RangeError)
   })
 })
 
 describe('recordEncounter — the payout (AC1)', () => {
   it('credits COINS_PER_ENCOUNTER_WIN the moment the player wins the encounter', () => {
     const run = startRun()
-    const after = recordEncounter(run, winEncounter(run.encounter), run.cheats)
+    const after = recordEncounter(
+      run,
+      winEncounter(run.encounter),
+      run.cheats,
+      run.envenomCharges,
+      false,
+    )
     expect(after.coins).toBe(run.coins + COINS_PER_ENCOUNTER_WIN)
   })
 
   it('credits nothing while the encounter is still live', () => {
     const run = startRun()
     const hit = applyDamage(run.encounter, damage(1, 1))
-    const after = recordEncounter(run, hit, run.cheats)
+    const after = recordEncounter(run, hit, run.cheats, run.envenomCharges, false)
     expect(after.coins).toBe(run.coins)
   })
 
   it('credits nothing when the Quarry wins', () => {
     const run = startRun()
     const dead = applyDamage(run.encounter, damage(PLAYER_START_HEALTH, 0))
-    const after = recordEncounter(run, dead, run.cheats)
+    const after = recordEncounter(run, dead, run.cheats, run.envenomCharges, false)
     expect(after.coins).toBe(run.coins)
   })
 })
@@ -130,7 +167,15 @@ describe('advanceRun — the carry (AC3)', () => {
   it('carries the health the player finished on, restoring nothing', () => {
     const run = startRun()
     const loss = 3
-    const next = advanceRun(recordEncounter(run, winEncounter(run.encounter, loss), run.cheats))
+    const next = advanceRun(
+      recordEncounter(
+        run,
+        winEncounter(run.encounter, loss),
+        run.cheats,
+        run.envenomCharges,
+        false,
+      ),
+    )
     expect(next.encounterIndex).toBe(1)
     expect(next.encounter.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH - loss)
     expect(next.encounter.health[DuelSide.Quarry]).toBe(quarryHealthForEncounter(1))
@@ -138,7 +183,9 @@ describe('advanceRun — the carry (AC3)', () => {
 
   it('opens the next fight unresolved, with its own damage counter at zero', () => {
     const run = startRun()
-    const next = advanceRun(recordEncounter(run, winEncounter(run.encounter, 2), run.cheats))
+    const next = advanceRun(
+      recordEncounter(run, winEncounter(run.encounter, 2), run.cheats, run.envenomCharges, false),
+    )
     expect(next.encounter.winner).toBeNull()
     expect(next.encounter.damageEventsApplied).toBe(0)
     expect(next.outcome).toBe(RunOutcome.InProgress)
@@ -153,13 +200,21 @@ describe('advanceRun — the carry (AC3)', () => {
       live,
       applyDamage(live.encounter, damage(PLAYER_START_HEALTH, 0)),
       live.cheats,
+      live.envenomCharges,
+      false,
     )
     expect(() => advanceRun(lost)).toThrow(RangeError)
   })
 
   it('never mutates the run it was handed', () => {
     const run = startRun()
-    const won = recordEncounter(run, winEncounter(run.encounter, 4), run.cheats)
+    const won = recordEncounter(
+      run,
+      winEncounter(run.encounter, 4),
+      run.cheats,
+      run.envenomCharges,
+      false,
+    )
     const before = JSON.stringify(won)
     advanceRun(won)
     expect(JSON.stringify(won)).toBe(before)
@@ -167,7 +222,13 @@ describe('advanceRun — the carry (AC3)', () => {
 
   it('carries the coin balance across a fight boundary untouched', () => {
     const run = startRun()
-    const won = recordEncounter(run, winEncounter(run.encounter), run.cheats)
+    const won = recordEncounter(
+      run,
+      winEncounter(run.encounter),
+      run.cheats,
+      run.envenomCharges,
+      false,
+    )
     const next = advanceRun(won)
     expect(next.coins).toBe(won.coins)
   })
@@ -182,7 +243,13 @@ describe('Cheats on RunState (DLR-83 AC3)', () => {
 
   it('carries the slots across a fight boundary untouched (AC3)', () => {
     const run = startRun()
-    const won = recordEncounter(run, winEncounter(run.encounter), [{ id: 2 }])
+    const won = recordEncounter(
+      run,
+      winEncounter(run.encounter),
+      [{ id: 2 }],
+      run.envenomCharges,
+      false,
+    )
     const next = advanceRun(won)
     expect(next.cheats).toEqual([{ id: 2 }])
     expect(next.nextCheatId).toBe(won.nextCheatId)
@@ -191,7 +258,7 @@ describe('Cheats on RunState (DLR-83 AC3)', () => {
   it('adopts a spend reported by the hand', () => {
     const run = startRun()
     const hit = applyDamage(run.encounter, damage(1, 1))
-    const after = recordEncounter(run, hit, [])
+    const after = recordEncounter(run, hit, [], run.envenomCharges, false)
     expect(after.cheats).toEqual([])
   })
 })
@@ -262,9 +329,15 @@ describe('beatenCount (DLR-85)', () => {
     const run = startRun()
     const won = recordEncounter(
       run,
-      { ...run.encounter, health: { ...run.encounter.health, [DuelSide.Quarry]: 0 },
-        winner: DuelSide.Player },
+      {
+        ...run.encounter,
+        health: { ...run.encounter.health, [DuelSide.Quarry]: 0 },
+        winner: DuelSide.Player,
+        pendingEnvenom: NO_PENDING_ENVENOM,
+      },
       run.cheats,
+      run.envenomCharges,
+      false,
     )
     expect(won.encounterIndex).toBe(0)
     expect(beatenCount(won)).toBe(1)
@@ -274,9 +347,15 @@ describe('beatenCount (DLR-85)', () => {
     const run = startRun()
     const won = recordEncounter(
       run,
-      { ...run.encounter, health: { ...run.encounter.health, [DuelSide.Quarry]: 0 },
-        winner: DuelSide.Player },
+      {
+        ...run.encounter,
+        health: { ...run.encounter.health, [DuelSide.Quarry]: 0 },
+        winner: DuelSide.Player,
+        pendingEnvenom: NO_PENDING_ENVENOM,
+      },
       run.cheats,
+      run.envenomCharges,
+      false,
     )
     expect(beatenCount(advanceRun(won))).toBe(1)
   })
@@ -286,9 +365,15 @@ describe('beatenCount (DLR-85)', () => {
     for (let i = 0; i < run.encounterCount; i += 1) {
       run = recordEncounter(
         run,
-        { ...run.encounter, health: { ...run.encounter.health, [DuelSide.Quarry]: 0 },
-          winner: DuelSide.Player },
+        {
+          ...run.encounter,
+          health: { ...run.encounter.health, [DuelSide.Quarry]: 0 },
+          winner: DuelSide.Player,
+          pendingEnvenom: NO_PENDING_ENVENOM,
+        },
         run.cheats,
+        run.envenomCharges,
+        false,
       )
       if (run.outcome === RunOutcome.InProgress) run = advanceRun(run)
     }
@@ -298,7 +383,7 @@ describe('beatenCount (DLR-85)', () => {
 })
 
 describe('shopStockFor (DLR-84)', () => {
-  it('projects the four figures the shop rules need', () => {
+  it('projects the five figures the shop rules need', () => {
     const run = { ...startRun(), coins: 3 }
     const stock = shopStockFor(run)
     expect(stock).toEqual({
@@ -306,6 +391,7 @@ describe('shopStockFor (DLR-84)', () => {
       cheatCount: run.cheats.length,
       playerHealth: run.encounter.health[DuelSide.Player],
       maxPlayerHealth: PLAYER_START_HEALTH,
+      poisonGuardHeld: run.poisonGuardHeld,
     })
   })
 })

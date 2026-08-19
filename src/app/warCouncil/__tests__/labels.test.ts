@@ -22,7 +22,7 @@ import {
   SUIT_NAME,
   TRICK_OUTCOME_MESSAGE,
 } from '../labels'
-import { CheatStage } from '../roundReducer'
+import { CheatStage } from '../roundUiState'
 
 describe('cardAccessibleName', () => {
   it('names an ability-bearing rank', () => {
@@ -33,12 +33,32 @@ describe('cardAccessibleName', () => {
     expect(cardAccessibleName({ suit: Suit.Bells, rank: 7 })).toBe('7 of Bells')
   })
 
-  it('appends a skulled suffix when told the card is skulled', () => {
-    expect(cardAccessibleName({ suit: Suit.Bells, rank: 4 }, true)).toBe('4 of Bells, skulled')
+  it('defaults to no marks, so every existing call site keeps compiling unchanged', () => {
+    expect(cardAccessibleName({ suit: Suit.Bells, rank: 4 })).toBe('4 of Bells')
   })
 
-  it('defaults to not skulled, so every existing call site keeps compiling unchanged', () => {
-    expect(cardAccessibleName({ suit: Suit.Bells, rank: 4 })).toBe('4 of Bells')
+  it('names a skulled card', () => {
+    expect(cardAccessibleName({ suit: Suit.Bells, rank: 4 }, { skulled: true })).toBe(
+      '4 of Bells, skulled',
+    )
+  })
+
+  it('names a poisoned card', () => {
+    expect(cardAccessibleName({ suit: Suit.Bells, rank: 4 }, { envenomed: true })).toBe(
+      '4 of Bells, poisoned',
+    )
+  })
+
+  it('names a card carrying both marks, skull first', () => {
+    expect(
+      cardAccessibleName({ suit: Suit.Bells, rank: 4 }, { skulled: true, envenomed: true }),
+    ).toBe('4 of Bells, skulled, poisoned')
+  })
+
+  it('names a named rank with a mark, keeping the rank name before the marks', () => {
+    expect(cardAccessibleName({ suit: Suit.Keys, rank: 3 }, { envenomed: true })).toBe(
+      '3 of Keys (Fox), poisoned',
+    )
   })
 })
 

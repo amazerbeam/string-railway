@@ -50,6 +50,20 @@ export interface RunState {
    *  by `buyFromShop`, and carried through `advanceRun` untouched by the spread. NEVER persisted:
    *  the ticket puts cross-run carry-over out of scope. */
   readonly coins: Coins
+  /** DLR-90 AC2 — Envenom charges held, bought in the shop and carried across every fight by
+   *  `advanceRun`'s spread. A COUNT, not a list of objects like `cheats`: unlike a Cheat, a charge
+   *  has no identity to spend by name — the card it marks IS the identity, and it lives on
+   *  `RoundState.envenomedCards`. No cap; the price is the limiter. NEVER persisted, exactly as
+   *  `coins` above. */
+  readonly envenomCharges: number
+  /** DLR-91 AC2 — a bought-but-unspent Poison Guard. Run-level like `coins` rather than on
+   *  `EncounterState`, and that placement is load-bearing: the shop is reachable only AFTER an
+   *  encounter resolves and BEFORE `advanceRun` runs, and `advanceRun` re-seeds the encounter
+   *  through `startEncounter` — so a flag on the encounter would be bought onto the finished fight
+   *  and destroyed by the very transition that opens the fight it was bought for. Carried by
+   *  `advanceRun`'s spread and cleared by `guardAfter` when that fight resolves, which is what
+   *  makes "fight-long" a real duration. NEVER persisted, exactly as `coins` above. */
+  readonly poisonGuardHeld: boolean
 }
 
 /**
@@ -68,6 +82,8 @@ export function startRun(playerHealth: Health = PLAYER_START_HEALTH): RunState {
     cheats: grantCheats(RUN_STARTING_CHEATS, 1),
     nextCheatId: RUN_STARTING_CHEATS + 1,
     coins: 0,
+    envenomCharges: 0,
+    poisonGuardHeld: false,
   }
 }
 
@@ -78,14 +94,23 @@ export function startRun(playerHealth: Health = PLAYER_START_HEALTH): RunState {
  * Refuses a run that has already ended: recording onto a finished run would silently resurrect
  * it, and there is no legitimate caller — the driver stops handing hands to a finished run.
  *
- * `cheats` (DLR-83) is REQUIRED: the hand owns the Cheats for its lifetime and hands the
- * survivors back through `WarCouncilRoundResult`. A second transition the caller must remember
- * to make beside this one is the transition that eventually gets forgotten.
+ * `cheats` (DLR-83) and `envenomCharges` (DLR-90 AC2) are both REQUIRED: the hand owns each for
+ * its lifetime and hands the survivors back through `WarCouncilRoundResult`. A second transition
+ * the caller must remember to make beside this one is the transition that eventually gets
+ * forgotten.
+ *
+ * `poisonGuardHeld` (DLR-91 AC2/AC4) is REQUIRED for the same reason — the hand owns it for its
+ * whole life and hands the survivor back through `WarCouncilRoundResult`. It is passed through
+ * `guardAfter`, not adopted verbatim: the Guard does not outlive the fight it was bought for, and
+ * this is the ONE transition that adopts a hand's end state, so it is the one place that rule can
+ * be enforced.
  */
 export function recordEncounter(
   run: RunState,
   encounter: EncounterState,
   cheats: readonly CheatCard[],
+  envenomCharges: number,
+  poisonGuardHeld: boolean,
 ): RunState {
   if (run.outcome !== RunOutcome.InProgress) {
     throw new RangeError(
@@ -99,6 +124,8 @@ export function recordEncounter(
     ...run,
     encounter,
     cheats,
+    envenomCharges,
+    poisonGuardHeld: guardAfter(encounter, poisonGuardHeld),
     coins: wonThisEncounter ? run.coins + COINS_PER_ENCOUNTER_WIN : run.coins,
     outcome: outcomeFor(run.encounterIndex, run.encounterCount, encounter),
   }
@@ -156,6 +183,7 @@ export function shopStockFor(
     cheatCount: run.cheats.length,
     playerHealth: run.encounter.health[DuelSide.Player],
     maxPlayerHealth,
+    poisonGuardHeld: run.poisonGuardHeld,
   }
 }
 
@@ -190,33 +218,43 @@ export function buyFromShop(
     )
   }
   const paid = { ...run, coins: run.coins - priceOf(item) }
-  if (item === ShopItem.Cheat) {
-    return {
-      ...paid,
-      cheats: addCheat(run.cheats, { id: run.nextCheatId }),
-      nextCheatId: run.nextCheatId + 1,
-    }
-  }
-  return {
-    ...paid,
-    encounter: {
-      ...run.encounter,
-      health: {
-        ...run.encounter.health,
-        // THE clamp, and therefore also the single place overheal is discarded (AC4).
-        [DuelSide.Player]: Math.min(
-          maxPlayerHealth,
-          run.encounter.health[DuelSide.Player] + HEAL_HEALTH_RESTORED,
-        ),
-      },
-    },
+  // A `switch` with no `default`, so a FOURTH item is a compile error here rather than an item
+  // that silently does whatever the last branch happened to do. That is not hypothetical: before
+  // DLR-90 this function returned the heal unconditionally as its fallback, so adding Envenom
+  // without this restructuring would have healed the player and type-checked cleanly.
+  switch (item) {
+    case ShopItem.Cheat:
+      return {
+        ...paid,
+        cheats: addCheat(run.cheats, { id: run.nextCheatId }),
+        nextCheatId: run.nextCheatId + 1,
+      }
+    case ShopItem.Envenom:
+      return { ...paid, envenomCharges: run.envenomCharges + 1 }
+    case ShopItem.PoisonGuard:
+      return { ...paid, poisonGuardHeld: true }
+    case ShopItem.Heal:
+      return {
+        ...paid,
+        encounter: {
+          ...run.encounter,
+          health: {
+            ...run.encounter.health,
+            // THE clamp, and therefore also the single place overheal is discarded (DLR-84 AC4).
+            [DuelSide.Player]: Math.min(
+              maxPlayerHealth,
+              run.encounter.health[DuelSide.Player] + HEAL_HEALTH_RESTORED,
+            ),
+          },
+        },
+      }
   }
 }
 
 /**
  * AC4 before AC5, deliberately: the player being down ends the run wherever it happens, including
- * on the final fight, and including the simultaneous-depletion tie that `applyDamage` has already
- * resolved to the Quarry via `SIMULTANEOUS_DEPLETION_WINNER`.
+ * on the final fight. There is no longer a simultaneous case to rule on — D7 (2026-08-19) makes
+ * `applyDamage` spare the player whenever the Quarry goes down, so a mutual kill is a player win.
  */
 function outcomeFor(
   encounterIndex: number,
@@ -226,4 +264,15 @@ function outcomeFor(
   if (!isEncounterResolved(encounter)) return RunOutcome.InProgress
   if (encounter.winner === DuelSide.Quarry) return RunOutcome.Lost
   return encounterIndex === encounterCount - 1 ? RunOutcome.Won : RunOutcome.InProgress
+}
+
+/**
+ * AC2 — ONE statement of "a Guard does not outlive the fight it was bought for".
+ *
+ * A named function rather than an inline ternary deliberately: `recordEncounter` is the only
+ * transition that adopts a hand's end state today, but a second one is exactly the kind of thing
+ * that gets added without remembering to clear this, and a named rule is what a reviewer finds.
+ */
+function guardAfter(encounter: EncounterState, held: boolean): boolean {
+  return isEncounterResolved(encounter) ? false : held
 }

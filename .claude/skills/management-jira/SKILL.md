@@ -1,6 +1,6 @@
 ---
 name: management-jira
-description: Create and manage Jira tickets. Use when creating any Jira issue — epics, stories, tasks, or bugs — or when transitioning, commenting on, or updating existing tickets. Triggered by phrases like create a ticket, add to Jira, log a bug, create a story, raise a task, move SCRUM-12 to Coding, close out SCRUM-12, log a status update on the ticket, or after a commit or PR lands.
+description: Create and manage Jira tickets. Use when creating any Jira issue — epics, stories, tasks, or bugs — or when transitioning, commenting on, or updating existing tickets. Triggered by phrases like create a ticket, add to Jira, log a bug, create a story, raise a task, move DLR-12 to Coding, close out DLR-12, log a status update on the ticket, or after a commit or PR lands.
 allowed-tools: Read, PowerShell(git log:*), PowerShell(git rev-parse:*), PowerShell(gh pr view:*), mcp__claude_ai_Atlassian_Rovo__getAccessibleAtlassianResources, mcp__claude_ai_Atlassian_Rovo__getVisibleJiraProjects, mcp__claude_ai_Atlassian_Rovo__getJiraIssue, mcp__claude_ai_Atlassian_Rovo__searchJiraIssuesUsingJql, mcp__claude_ai_Atlassian_Rovo__createJiraIssue, mcp__claude_ai_Atlassian_Rovo__createIssueLink, mcp__claude_ai_Atlassian_Rovo__getIssueLinkTypes, mcp__claude_ai_Atlassian_Rovo__getTransitionsForJiraIssue, mcp__claude_ai_Atlassian_Rovo__transitionJiraIssue, mcp__claude_ai_Atlassian_Rovo__addCommentToJiraIssue, mcp__claude_ai_Atlassian_Rovo__editJiraIssue, mcp__claude_ai_Atlassian_Rovo__getJiraProjectIssueTypesMetadata, mcp__claude_ai_Atlassian_Rovo__getJiraIssueTypeMetaWithFields
 metadata:
   type: automation
@@ -31,14 +31,25 @@ before proceeding.
 
 ---
 
-## The SCRUM status model
+## The DLR status model
 
-This file is the **single owner** of what each `SCRUM` status means. The
+This file is the **single owner** of what each `DLR` status means. The
 `/fb-*` commands reference this section; they do not restate it.
 
-`SCRUM` ("DeLorean 1.21") is a team-managed project whose six statuses mirror
+`DLR` ("DeLorean 1.21") is a team-managed project whose six statuses mirror
 the `/fb-*` contract pipeline, so the board tracks the contract rather than
 being maintained by hand:
+
+> **The key was `SCRUM` and is now `DLR`.** Same project (id `10000`), renamed —
+> issue **numbers were preserved**, so a historical `SCRUM-32` is today's
+> `DLR-32`, and Jira still resolves the old key as an alias. Contract folders
+> written before the rename (`DLR-44`, `DLR-45`, `DLR-46`, `DLR-47`, `DLR-65`)
+> still quote `SCRUM-<n>` keys in their prose; that is a **record of what was
+> true when written and must not be rewritten** — read them through this
+> mapping. Every *live* instruction across `.claude/` was corrected on
+> 2026-08-18. This site also holds a second project, `MPP` ("My Pantry Plan"),
+> which is nothing to do with this repository — `DLR` is the only project the
+> `/fb-*` pipeline touches.
 
 | Status | Category | Set when | `tasks.md` `^Status:` |
 |---|---|---|---|
@@ -102,7 +113,7 @@ Rules that apply to all five:
 - **Never fail the command on a Jira error.** Surface it and continue — a
   contract must not be blocked by an unreachable ticket tracker.
 - **Skip silently when there is no ticket.** Derive the key from the plan slug
-  (`SCRUM-<n>-*`); a date-branch slug has no key, so do nothing.
+  (`DLR-<n>-*`); a date-branch slug has no key, so do nothing.
 - **No-op when already in the target status**, and tolerate skipped
   predecessors — transitions are any → any, so `/fb-apply` on a `To Do` ticket
   goes straight to `Coding`.
@@ -110,7 +121,7 @@ Rules that apply to all five:
   hardcoding: still call `getTransitionsForJiraIssue` and read the id from the
   response. A literal transition id in any file is a defect.
 
-Everything *outside* this table — a human saying "move SCRUM-5 to Coding" —
+Everything *outside* this table — a human saying "move DLR-5 to Coding" —
 is Workflow B and still requires explicit confirmation.
 
 ---
@@ -417,7 +428,7 @@ the instance.
 
 Use when transitioning a ticket's status or posting a status comment — for
 example after a commit lands, a PR is opened or merged, or the user says
-"move SCRUM-12 to Coding" / "close out SCRUM-12" / "log a status update".
+"move DLR-12 to Coding" / "close out DLR-12" / "log a status update".
 
 ### Phase 1 — Identify the ticket
 
@@ -440,7 +451,7 @@ Do not summarise the ticket description back to the ticket.
 Show the proposed comment and transition together before doing anything:
 
 ```
-Proposed update for SCRUM-12:
+Proposed update for DLR-12:
 
   Transition: Planned → Coding
   Comment:
@@ -452,7 +463,7 @@ Apply?
 ```
 
 This confirmation applies to **ad-hoc** transitions only. The five pipeline
-transitions in *The SCRUM status model* run automatically and skip this step.
+transitions in *The DLR status model* run automatically and skip this step.
 
 On explicit confirmation, call `addCommentToJiraIssue` then
 `transitionJiraIssue`. Comment first — if the transition fails, the comment
@@ -510,7 +521,7 @@ wrote that; do not echo it back.
 | Testing Type | Mandatory for Test tickets — fixed dropdown; always read live `allowedValues` from `getJiraIssueTypeMetaWithFields`, never hardcode the option list |
 | Related tickets | Ask, then use Relates or Blocks/is blocked by links post-creation |
 | Transitions | Always resolve transition **ids** live from `getTransitionsForJiraIssue` — never hardcode an id |
-| Auto-transition | Ad-hoc transitions need explicit user confirmation. The five pipeline transitions in *The SCRUM status model* are pre-authorised and automatic |
+| Auto-transition | Ad-hoc transitions need explicit user confirmation. The five pipeline transitions in *The DLR status model* are pre-authorised and automatic |
 | Blocked work | Flag the card; never invent a `Blocked` status |
 | Instance | Resolve the site and cloud ID via `getAccessibleAtlassianResources`; ask if more than one is accessible |
 

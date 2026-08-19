@@ -107,7 +107,7 @@ export interface RunState {
 | Key                   | Value | Status                                                                                                                                                                     |
 | --------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `CHEAT_SLOT_COUNT`    | `2`   | **Transcribed, not chosen.** The ticket says "exactly two" twice and defends the cap at length. It is a key so the number is stated once — **not** so it is easy to raise.  |
-| `RUN_STARTING_CHEATS` | `2`   | **Placeholder — the developer's.** The ticket requires the grant come from configuration and names no number. `2` fills both slots so the mechanic is exercisable at all.   |
+| `RUN_STARTING_CHEATS` | `0`   | **The developer's, set 2026-08-17, down from 2** — a run opens empty-handed and every Cheat is bought. The ticket requires the grant come from configuration and names no number. `2` fills both slots so the mechanic is exercisable at all.   |
 
 The cap is worth understanding before anyone widens it. Refusing tricks is exactly what the skull
 exists to punish — "take every trick" is only wrong because some tricks are traps — so an unbounded

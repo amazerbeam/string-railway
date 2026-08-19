@@ -114,7 +114,7 @@ driven by the module's actual size and shape, not by an ambition to look organiz
 # <Module display name> — `src/<folder>/`
 
 **Status:** scaffold | partial | implemented
-**Built by:** SCRUM-19, SCRUM-21, ...
+**Built by:** DLR-19, DLR-21, ...
 
 ## Responsibility
 [1-2 sentences: what this module owns and why it's separate from its neighbors]
@@ -148,7 +148,7 @@ here instead of leaving the reader to wonder.]
 # <Module display name> — `src/<folder>/`
 
 **Status:** scaffold | partial | implemented
-**Built by:** SCRUM-19, SCRUM-21, ...
+**Built by:** DLR-19, DLR-21, ...
 
 ## Responsibility
 [same as unsplit]

@@ -7,13 +7,41 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(0.7rem, 2.4vmin, 1.5rem);
+  /* Was clamp(0.7rem, 2.4vmin, 1.5rem) — tightened so the purse/health/tabs/panel/aside/hint/
+     leave-button stack (nine rows, eight gaps) actually fits an ~800px-tall viewport instead of
+     running off the bottom of `.run-shell`'s non-scrolling, `overflow: hidden` box. Still a
+     PLACEHOLDER the developer owns. */
+  gap: clamp(0.3rem, 1vmin, 0.6rem);
   text-align: center;
   max-width: 42rem;
   width: 100%;
+  /* DLR-89 residual-clipping fix, take 2. `max-height: 100%` was inert: `.shop`'s containing
+     block is `.run-shell`'s grid ROW, and a grid row's height is itself resolved from its
+     content (`.shop`) rather than handed down as a definite length — a percentage `max-height`
+     against an indefinite containing block resolves to `none`, so the cap never engaged, and
+     QA measured `.shop` rendering at its full ~694px content height inside a 644px box, clipped
+     by `.run-shell`'s `overflow: hidden`.
+     Fixed by computing the cap directly against the viewport instead of depending on
+     `.run-shell`'s row to resolve anything: `.run-shell` (`run.css`) is `height: 100dvh` with
+     `padding: clamp(1rem, 4vmin, 3rem)` on every side, so its available content box is exactly
+     `100dvh` minus that padding twice over. Both operands are viewport-relative lengths, so this
+     `calc()` always resolves to a real pixel figure — the one property `100%` didn't have.
+     Kept in `clamp(1rem, 4vmin, 3rem)` terms rather than a hardcoded pixel figure so this cap
+     cannot silently drift from `.run-shell`'s actual padding if that clamp is ever retuned; `dvh`
+     matches `.run-shell`'s own unit rather than `vh`, so both agree on the same viewport metric.
+     `height` stays `auto` below, so a roomy viewport still sizes `.shop` from content and keeps
+     it vertically centred — only a viewport short enough to hit the cap makes `.shop-panel`
+     (its one `flex: 1 1 auto; min-height: 0` child) give up space. */
+  max-height: calc(100dvh - 2 * clamp(1rem, 4vmin, 3rem));
+  height: auto;
+  box-sizing: border-box;
 }
 
 .shop-title {
+  /* DLR-89 residual-clipping fix — fixed chrome holds its own size rather than being asked to
+     shrink when `.shop` is capped to the shell's available height (see `.shop`'s comment above).
+     `.shop-panel` is the one child that yields. */
+  flex: 0 0 auto;
   font-family: var(--wc-serif);
   font-size: clamp(1.6rem, 6vmin, 3rem);
   letter-spacing: 0.06em;
@@ -23,6 +51,7 @@
 }
 
 .shop-next {
+  flex: 0 0 auto;
   margin: 0;
   font-size: clamp(0.85rem, 2.2vmin, 1.05rem);
   line-height: 1.5;
@@ -31,9 +60,13 @@
 /* The purse row: coins and Cheat slots, anchored above the choice, always visible (AC10).
    Health moved out to `.shop-health` below, where it has room for a countable heart row. */
 .shop-purse {
+  /* DLR-89 residual-clipping fix — see `.shop-title`'s comment above. */
+  flex: 0 0 auto;
   display: flex;
   gap: clamp(1rem, 5vmin, 3rem);
-  padding: 0.55rem clamp(0.9rem, 3vmin, 1.6rem);
+  /* Vertical padding was 0.55rem — tightened for the same viewport-fit reason as `.shop`'s gap
+     above. Still the developer's to retune. */
+  padding: 0.3rem clamp(0.9rem, 3vmin, 1.6rem);
   border-top: 1px solid var(--wc-brass-dim);
   border-bottom: 1px solid var(--wc-brass-dim);
 }
@@ -66,11 +99,15 @@
   /* Declared here rather than in `warCouncil.css`'s `:root` block deliberately: that file sits at
      exactly its 400-line budget, and this token is only ever read on this screen. */
   --shop-heart-size: clamp(1.4rem, 4vmin, 2.2rem);
+  /* DLR-89 residual-clipping fix — see `.shop-title`'s comment above. */
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: clamp(0.6rem, 2vmin, 1.1rem);
   flex-wrap: wrap;
-  padding: 0.55rem clamp(0.9rem, 3vmin, 1.6rem);
+  /* Vertical padding was 0.55rem — tightened for the same viewport-fit reason as `.shop`'s gap
+     above. Still the developer's to retune. */
+  padding: 0.3rem clamp(0.9rem, 3vmin, 1.6rem);
   border-bottom: 1px solid var(--wc-brass-dim);
 }
 
@@ -107,9 +144,89 @@
   color: var(--wc-hp-broken);
 }
 
+/* The category tablist (DLR-89). Transcribed from this contract's `mockup.html`. */
+.shop-tabs {
+  /* DLR-89 residual-clipping fix — see `.shop`'s and `.shop-title`'s comments above. This is
+     `.shop`'s direct flex child (the tablist plus its coming-soon reason line), so it needs its
+     own `flex: 0 0 auto` the same as the other fixed chrome. */
+  flex: 0 0 auto;
+  display: flex;
+  gap: clamp(0.25rem, 1vmin, 0.5rem);
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.shop-tab {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.5rem clamp(0.4rem, 1.6vmin, 0.9rem);
+  border: 1px solid var(--wc-brass-dim);
+  border-bottom-width: 2px;
+  border-radius: 4px 4px 0 0;
+  background: none;
+  color: var(--wc-chalk-dim);
+  font-family: var(--wc-sans);
+  font-size: clamp(0.62rem, 1.5vmin, 0.8rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Selected reads in FORM as well as tone — a brass edge and a lifted fill, so a greyscale
+   screenshot still shows which shelf is open. `game-ux`'s no-colour-alone floor. */
+.shop-tab[aria-selected='true'] {
+  color: var(--wc-brass);
+  border-color: var(--wc-brass);
+  background: #ffffff0d;
+}
+
+/* Refused reads as refused in form: the SAME dashed edge and absent fill `.shop-item:disabled`
+   uses. Hung off the `aria-disabled` attribute rather than a state class, so the styling cannot
+   drift from the attribute that actually refuses activation. */
+.shop-tab[aria-disabled='true'] {
+  cursor: not-allowed;
+  border-style: dashed;
+  border-color: var(--wc-chalk-dim);
+  color: var(--wc-chalk-dim);
+  background: none;
+}
+
+.shop-tab:focus-visible {
+  outline: 2px solid var(--wc-parchment);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .shop-tab:not([aria-disabled='true']):hover {
+    border-color: var(--wc-parchment);
+    color: var(--wc-parchment);
+  }
+}
+
+.shop-tab:not([aria-disabled='true']):active {
+  transform: translateY(1px);
+}
+
+/* The coming-soon sentence sits on its own line under the row rather than in a tab. It adds a
+   full row's height even though it is only really read when the refused tab has focus, so its
+   own spacing and type size are tightened below `.shop-refusal`'s to keep that row cheap —
+   still a PLACEHOLDER the developer owns. */
+.shop-tabs-reason {
+  flex-basis: 100%;
+  margin-top: 0.15rem;
+  font-size: clamp(0.6rem, 1.3vmin, 0.72rem);
+}
+
+/* Item count drives the column count, so a long shelf packs instead of stretching two columns
+   down the page — every list in this shop is expected to grow. The `minmax()` floor is a
+   PLACEHOLDER tuning value the developer owns: it sets how narrow a card may get before the grid
+   drops a column. `min(100%, …)` keeps a single card from overflowing a narrow viewport. */
 .shop-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
   gap: clamp(0.6rem, 2.4vmin, 1.2rem);
   width: 100%;
 }
@@ -118,9 +235,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  /* Padding was clamp(0.9rem, 3vmin, 1.6rem) clamp(0.7rem, 2vmin, 1.2rem) and this gap was
+     0.5rem — both tightened for viewport fit (see `.shop`'s gap above); `min-height: 44px` is
+     the untouched accessibility floor. Still the developer's to retune. */
+  gap: 0.3rem;
   min-height: 44px;
-  padding: clamp(0.9rem, 3vmin, 1.6rem) clamp(0.7rem, 2vmin, 1.2rem);
+  padding: clamp(0.45rem, 1.4vmin, 0.8rem) clamp(0.6rem, 1.8vmin, 1rem);
   border: 1px solid var(--wc-brass);
   border-radius: 4px;
   background: #ffffff08;
@@ -178,22 +298,90 @@
   color: var(--wc-chalk-dim);
 }
 
-/* AC6 — the reason is a sentence on the face of the screen, never a silent no-op. */
+/* AC6 — the reason is a sentence on the face of the screen, never a silent no-op.
+   `min-height` was 1.4em — tightened for viewport fit (see `.shop`'s gap above); still enough to
+   hold one line without the row jumping height when a refusal appears. */
 .shop-refusal {
   margin: 0;
-  min-height: 1.4em;
+  min-height: 1.1em;
   font-size: clamp(0.7rem, 1.8vmin, 0.85rem);
   color: var(--wc-alarm);
 }
 
 .shop-hint {
+  /* DLR-89 residual-clipping fix — see `.shop-title`'s comment above. */
+  flex: 0 0 auto;
   margin: 0;
   font-size: clamp(0.7rem, 1.8vmin, 0.85rem);
   color: var(--wc-chalk-dim);
 }
 
-@media (max-width: 30rem) {
-  .shop-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
+/* DLR-89 residual-clipping fix. `.run-actions` (`run.css`) holds the leave-and-continue button —
+   the control this whole fix is about keeping on screen. Scoped to `.shop`'s own child rather
+   than edited in `run.css`, which other screens share and this contract does not touch. */
+.shop > .run-actions {
+  flex: 0 0 auto;
+}
+
+/* The open shelf. THE ONE SCOPED SCROLL REGION on this screen: `game-ux` forbids the page
+   scrolling, and the catalogue is unbounded while the viewport is not — so the overflow is scoped
+   here, and the purse, health, tabs, hint and leave control all stay outside it and stay visible.
+
+   DLR-89 residual-clipping fix: this is now the ONE flex child of `.shop` allowed to shrink.
+   `flex: 1 1 auto` lets it absorb whatever main-axis space is left once every fixed-chrome
+   sibling (title, next, purse, health, tabs, aside, hint, leave button) has taken its own size —
+   `min-height: 0` is the load-bearing half of that: without it a flex item refuses to shrink
+   below its own content height no matter what `flex-shrink` says, which is exactly why the
+   previous, non-flex version of this rule could not yield and the leave button stayed clipped.
+   `max-height` used to be `clamp(6rem, 20vmin, 10rem)` — that `6rem` (96px) lower bound was a
+   floor a plain block could never shrink below either way. It's now a pure upper cap with no
+   floor at all (`min(20vmin, 10rem)`, same preferred/max behaviour as before), so the panel can
+   shrink arbitrarily small — down to 0 if a viewport is ever short enough to demand it — rather
+   than holding a minimum size that competes with the leave button for the space beneath it.
+   `padding` is unchanged from the previous pass and is still a PLACEHOLDER the developer owns, as
+   is the `max-height` cap's own vmin/rem multipliers. */
+.shop-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: clamp(0.35rem, 1.2vmin, 0.6rem);
+  border: 1px solid var(--wc-brass-dim);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: min(20vmin, 10rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.shop-panel:focus-visible {
+  outline: 2px solid var(--wc-parchment);
+  outline-offset: 2px;
+}
+
+/* AC5 — a rung whose items have not shipped yet says so. */
+.shop-empty {
+  margin: 0;
+  padding: clamp(0.8rem, 3vmin, 1.6rem) 0;
+  font-size: clamp(0.72rem, 1.8vmin, 0.88rem);
+  color: var(--wc-chalk-dim);
+  font-style: italic;
+}
+
+/* The Heal's own block, outside the ladder. */
+.shop-aside {
+  /* DLR-89 residual-clipping fix — see `.shop-title`'s comment above. */
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.shop-aside-label {
+  font-size: clamp(0.55rem, 1.2vmin, 0.68rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+  text-align: left;
 }

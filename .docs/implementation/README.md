@@ -26,11 +26,11 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                     |
 | --------------------- | ------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, PT-001, PT-002 |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85                       |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, PT-002                             |
-| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85                                                                                                                               |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, PT-001, PT-002 |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, PT-001, PT-002 |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91       |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, PT-002             |
+| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91                                                                                                               |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, PT-001, PT-002 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -190,8 +190,9 @@ two-click arm.
 parameter so the compiler enumerates every site rather than letting one silently drop a spend. And
 `addCheat` and `nextCheatId` both ship **unread by production code** — the first states the cap once,
 the second stops a spent id being re-issued as a colliding React key. Both are DLR-84's foundations;
-**do not delete them as dead code.** How many Cheats a run starts with is a labelled placeholder and
-the developer's.
+**do not delete them as dead code.** How many Cheats a run starts with is the developer's, and it has
+moved: `RUN_STARTING_CHEATS` was 2 when DLR-83 shipped and is **0** since 2026-08-17, so a run opens
+empty-handed and every Cheat is bought.
 
 **DLR-84 gave the run an economy, and it is the first ticket where a decision costs something.**
 Beating a Quarry now pays **1 coin**, carried across the whole run and shown on the felt beside the
@@ -259,6 +260,125 @@ per-stage node list unstyled, so the path rendered as a 5×5 vertical grid inste
 **every one of the 633 tests passed**, because `jsdom` has no layout engine. It was found by reading
 `getComputedStyle` and twenty-five bounding boxes in Chrome, and fixing it is what revealed the AC11 crop
 that the broken-but-more-compact layout had been hiding.
+
+**DLR-89 gave the shop the shape of the game it is going to be, using only the two items it already
+had.** The flat two-item list became a **four-rung persistence-length ladder** — one-time use,
+fight-long, run-permanent, game-permanent — drawn as four tabs. The Cheat sits on the first rung;
+fight-long and run-permanent are **empty and say so** ("Nothing on this shelf yet."); game-permanent is
+**shown and refused** as "Coming soon.", because nothing is designed for it and hiding it would hide
+the shape. The heal moved **outside the ladder entirely**, in its own labelled block: it is an instant
+transfer with no duration, so no rung is the honest answer for it. Nothing about pricing, refusals or
+purchasing changed, and the evidence is that **all eleven pre-existing shop-screen tests pass
+unedited**.
+
+The structural point is where the ladder lives. The rungs, the item→rung assignment, the two
+groupings and **which rung refuses** are all plain TypeScript in `src/hunt/shop.ts`, inside the
+lint-enforced no-React boundary. So adding an item is **one `ShopItem` member, one `priceOf` case and
+one `categoryOf` case** — and it appears on the correct shelf with no UI edit at all. That is the
+property the three follow-on item tickets (Envenom, Poison Guard, Whetstone) are built on. The
+component asks `isShopCategoryAvailable` rather than naming `GamePermanent`, and "empty" and "refused"
+are kept as **two separate facts** — conflating them would have started refusing fight-long until its
+item shipped. Start at [hunt/coins-and-the-shop.md](hunt/coins-and-the-shop.md) for the ladder, or
+[run-ui/shop-screen.md](run-ui/shop-screen.md) for the tablist and its keyboard contract.
+
+**It is the second contract in a row that a real browser caught and the tests could not**, and this
+one took three attempts. The added tab row pushed the shop's content past `100dvh`, and `.run-shell`
+is `overflow: hidden` — so **the leave button was clipped off the bottom of the screen**, leaving the
+only way out of the shop an undocumented `Escape`. All 671 tests passed throughout. Shaving seven
+spacing values closed most of the gap but still clipped at 1024×768 and 1280×720; `max-height: 100%`
+on `.shop` was then a **silent no-op**, because that percentage never resolved against a
+`place-items: center` grid row — computed style reported the literal string `"100%"`. What worked was a
+**definite** cap, `calc(100dvh - 2 * clamp(1rem, 4vmin, 3rem))`, with `.shop-panel` as the only
+`flex: 1 1 auto; min-height: 0` child so it absorbs the slack and scrolls. The lesson worth carrying:
+a percentage `max-height` is not a viewport cap, and "the mechanism is correct" is not the same claim
+as "the mechanism engages".
+
+**DLR-90 gave the player something to do with a card they expected to throw away, and it is the first
+effect in this game that resolves later than the thing that caused it.** A third shop item — **Envenom**,
+2 coins, on the one-time-use shelf DLR-89 built — buys a charge you carry across fights. On the felt, a
+plate beside the Cheat rail arms it in two taps, and a third tap on a card in your hand **poisons** that
+card. Play it, and the trick resolves by the normal rules; **damage then lands on whoever won that
+trick** — at the deal of the next hand as DLR-90 shipped it, and **at the resolution of the next trick
+since DLR-91**. The rule that makes it worth buying is the one the design doc
+singles out: **a poisoned trick the Quarry wins cleanly costs you nothing at all** — no health, and your
+bank and multiplier survive uncashed instead of resetting. Win it yourself and the hit lands on **you**
+instead — 2 rather than the Quarry's 4 since DLR-91, and it cashes your streak out with it.
+
+Four structural points are worth carrying forward. **The queue lives on `EncounterState` and is shaped
+like the damage it will become** — an `IncomingDamage` per-side accumulator, the exact type `applyDamage`
+already consumes — so both discard rules are free: `startEncounter` seeds it to zeros, and every fight
+and run boundary routes through `startEncounter`. There was **no explicit clear step
+anywhere** as DLR-90 shipped it, which was the point, because a clear step is what a later ticket forgets
+to call — DLR-91's retiming added one, in the reducer, guarded so the common path allocates nothing.
+**DLR-90 paid the hit with one pure function at the run layer**, `beginNextHand`, total and throw-free
+alone in that module; **DLR-91 deleted it**, because the payment moved into the resolving trick.
+**The player-side case needs no branch**: the hit follows the winner, so the plumbing stays symmetric
+even though the amounts no longer are. And **the marker is engine state**, because the
+preserved-bank rule is a bank rule — honouring it from the UI layer would mean the reducer re-deriving
+rules `resolveTrickBank` owns.
+
+Start at [hunt/envenom-and-the-delayed-hit.md](hunt/envenom-and-the-delayed-hit.md) for the queue and its
+single payment point, [war-council/the-envenom-mark.md](war-council/the-envenom-mark.md) for the marker
+and the replaced clean loss, or
+[war-council-ui/envenom-charge-and-the-mark.md](war-council-ui/envenom-charge-and-the-mark.md) for the
+plate, the mark and the reducer split.
+
+**It carried three refactors and fixed one latent defect, none of which an acceptance criterion asked
+for.** `resolveTrickBank`'s four positional booleans became a `TrickFacts` object, because a fifth would
+have left the call reading `(START, true, false, false, false)` and **a transposed pair type-checks
+cleanly** on the function that decides both health bars. `cardAccessibleName`'s `skulled` boolean became a
+`marks` object, for the same reason on the surface a player who cannot see the card depends on. And
+`roundReducer.ts` — at **382 of its 400-line budget before a line of this work landed** — was split into
+`roundUiState.ts` and `roundHint.ts` as pure moves, which incidentally gave `deriveHint` its first unit
+test after six branches of living inside a component. The defect: **`buyFromShop` returned the heal as an
+unconditional fallback**, so a third item would have healed the player and type-checked cleanly. It is now
+an exhaustive `switch` with no `default`.
+
+**DLR-91 moved poison to where it can actually bite, resequenced every damage event in the game, and
+sold insurance against the result.** Three changes in one contract, and the middle one is the widest.
+**First**, poison stopped being a hit paid quietly at the next deal and became a hit paid at the **next
+trick's resolution**, folded into that trick's own damage — 4 to the Quarry, **2** to the player, and for
+the player it forces the same cash-out any other hit forces, so a streak in progress is spent at a moment
+you did not choose. **Second**, all damage is now applied **Quarry-first**: a cash-out that kills the
+Quarry spares the player the hit that would have landed alongside it, so a mutual kill is a **player
+win** — which overturned a dated design ruling that the player *loses* it, and deleted the constant that
+ruling had been implemented as. **Third**, the shop's empty **fight-long** shelf got its first item: a
+1-coin **Poison Guard**, bought between fights, live for exactly the next fight, that lets you take
+poison's 2 health without losing the streak. Spent the first time it fires, gone when the fight ends
+either way.
+
+Two structural points are the ones to carry forward. **The payment crossed a module boundary, and the
+direction it crossed matters**: the queue is `EncounterState`'s in `src/hunt/`, the streak is
+`RoundState`'s in `src/warCouncil/`, and `hunt` may not learn what a `RoundState` is — so the reducer,
+which holds both, hands the pending figures *into* `playCard` through a widened `PlayCardOptions` rather
+than anything reaching the other way. And **the new reset is a second trigger on one branch, not a second
+rule**: poison owed to the player reaches the same `cashOut = bank × multiplier` statement a lost trick
+reaches, which is what makes "poison behaves like any other damage" true in code instead of asserted in a
+comment.
+
+**One accepted oddity shipped with it, knowingly.** Because the Guard suppresses the cash-out, a Quarry
+that would have died to that cash-out survives — and under Quarry-first sequencing a surviving Quarry
+means the player takes the 2 they would otherwise have dodged. **So holding a Guard can cost you
+health**, the correct play is sometimes not to hold one, and there is no UI hint. The developer accepted
+that as a real decision rather than smoothing it out.
+
+Start at [hunt/poison-guard.md](hunt/poison-guard.md) for the flag and its lifetime,
+[hunt/encounter-state-and-end-conditions.md](hunt/encounter-state-and-end-conditions.md) for the
+Quarry-first sequencing and the two remaining end conditions,
+[war-council/bank-and-cash-out.md](war-council/bank-and-cash-out.md) for the two sources of a hit, or
+[war-council-ui/envenom-charge-and-the-mark.md](war-council-ui/envenom-charge-and-the-mark.md) for
+`applyResolution`'s pay → clear → re-book ordering.
+
+**Three reviewers independently caught the same gap, and it is the one worth remembering.** `DecreePile`'s
+`envenomed` prop was built correctly in one task and **never passed at its mount** in the next — so a
+marked card the Fox exchanged into the decree silently lost both its badge and its "poisoned" accessible
+name, on a plate that renders continuously through the hand. Every unit test passed, because the prop
+itself was always right. The regression test now drives the **reachable** path — mark, lead the Fox,
+exchange, assert the decree still announces it — rather than the prop, which is the only version of that
+test that would have failed against the defect. A second reviewer found the mirror of it inside the
+reducer: `commit()` cleared `cheatSelection` and not `envenomStage`, so poising Envenom and playing an
+ordinary card left the stage stuck and quietly ate one of the three taps the misclick guard exists to
+require.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

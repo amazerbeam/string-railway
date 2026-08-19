@@ -1,21 +1,55 @@
-import { CHEAT_PRICE, CHEAT_SLOT_COUNT, HEAL_PRICE } from './config'
+import {
+  CHEAT_PRICE,
+  CHEAT_SLOT_COUNT,
+  ENVENOM_PRICE,
+  HEAL_PRICE,
+  POISON_GUARD_PRICE,
+} from './config'
 import type { Coins, Health } from './types'
 
 export const ShopItem = {
   Cheat: 'cheat',
+  Envenom: 'envenom',
+  PoisonGuard: 'poisonGuard',
   Heal: 'heal',
 } as const
 export type ShopItem = (typeof ShopItem)[keyof typeof ShopItem]
 
-/** AC3 — exactly two, in the order the screen renders them. THE statement of the catalogue: a
- *  screen maps this, it never lists the two items itself. */
-export const SHOP_ITEMS: readonly ShopItem[] = [ShopItem.Cheat, ShopItem.Heal]
+/** DLR-91 — four now. THE statement of the catalogue: a screen maps this, it never lists the
+ *  items itself. The Heal stays LAST because `UNCATEGORISED_SHOP_ITEMS` derives from this order. */
+export const SHOP_ITEMS: readonly ShopItem[] = [
+  ShopItem.Cheat,
+  ShopItem.Envenom,
+  ShopItem.PoisonGuard,
+  ShopItem.Heal,
+]
+
+/** The persistence-length ladder (version-4-scope.md §1) — named after the design doc's own rungs
+ *  rather than Balatro's deck / Joker / consumable, since this game has no deck-building layer for
+ *  those names to mean anything against. An `as const` map, not an `enum`: `erasableSyntaxOnly`. */
+export const ShopCategory = {
+  OneTimeUse: 'oneTimeUse',
+  FightLong: 'fightLong',
+  RunPermanent: 'runPermanent',
+  GamePermanent: 'gamePermanent',
+} as const
+export type ShopCategory = (typeof ShopCategory)[keyof typeof ShopCategory]
+
+/** AC3 — the four rungs in the order the screen renders them. THE statement of tab order: a
+ *  screen maps this, it never lists the categories itself. */
+export const SHOP_CATEGORIES: readonly ShopCategory[] = [
+  ShopCategory.OneTimeUse,
+  ShopCategory.FightLong,
+  ShopCategory.RunPermanent,
+  ShopCategory.GamePermanent,
+]
 
 /** Why a purchase cannot be made. A reason CODE, not a sentence — `src/hunt/` holds no
  *  user-facing copy; `src/app/run/shopLabels.ts` maps these to words. */
 export const PurchaseRefusal = {
   SlotsFull: 'slotsFull',
   AlreadyFullHealth: 'alreadyFullHealth',
+  GuardAlreadyActive: 'guardAlreadyActive',
   NotEnoughCoins: 'notEnoughCoins',
 } as const
 export type PurchaseRefusal = (typeof PurchaseRefusal)[keyof typeof PurchaseRefusal]
@@ -27,6 +61,8 @@ export interface ShopStock {
   readonly cheatCount: number
   readonly playerHealth: Health
   readonly maxPlayerHealth: Health
+  /** DLR-91 AC3 — a bought-but-unspent Guard is already held. Only one can be active at a time. */
+  readonly poisonGuardHeld: boolean
 }
 
 /** Total over `ShopItem`, so adding a third item is a compile error here rather than an
@@ -35,10 +71,65 @@ export function priceOf(item: ShopItem): Coins {
   switch (item) {
     case ShopItem.Cheat:
       return CHEAT_PRICE
+    case ShopItem.Envenom:
+      return ENVENOM_PRICE
+    case ShopItem.PoisonGuard:
+      return POISON_GUARD_PRICE
     case ShopItem.Heal:
       return HEAL_PRICE
   }
 }
+
+/**
+ * AC2 — which rung an item sits on. Total over `ShopItem` like `priceOf`, so a new item is a
+ * compile error here rather than an item that quietly appears in no tab.
+ *
+ * `null` is the Heal's REAL answer, not a missing one: it is an instant transfer with no duration,
+ * so it sits outside the ladder entirely rather than being forced onto a rung (design doc §1,
+ * "What isn't touched"). Its one caller handles the `null` explicitly.
+ */
+export function categoryOf(item: ShopItem): ShopCategory | null {
+  switch (item) {
+    case ShopItem.Cheat:
+      return ShopCategory.OneTimeUse
+    // DLR-90 AC1: the one-time-use rung, which DLR-89 built for exactly this.
+    case ShopItem.Envenom:
+      return ShopCategory.OneTimeUse
+    // DLR-91 AC1 — the fight-long rung, which DLR-89 built and left empty for exactly this.
+    case ShopItem.PoisonGuard:
+      return ShopCategory.FightLong
+    case ShopItem.Heal:
+      return null
+  }
+}
+
+/**
+ * Whether a rung can be sold from at all. `GamePermanent` is shown and REFUSED rather than hidden,
+ * so the shape of the full ladder reads before every rung is filled (design doc §1).
+ *
+ * Deliberately NOT "is this rung empty": fight-long and run-permanent are both empty today and
+ * both perfectly selectable. Reading refusal off a zero-length array would start refusing them too,
+ * and would silently stop refusing game-permanent the moment its first item shipped.
+ */
+export function isShopCategoryAvailable(category: ShopCategory): boolean {
+  return category !== ShopCategory.GamePermanent
+}
+
+/** Derived once, at module load, from `SHOP_ITEMS` + `categoryOf` — so the catalogue is still
+ *  stated exactly once, adding an item needs no UI edit, and switching tabs never re-scans a
+ *  catalogue that is expected to get long. Total over `ShopCategory`, so a fifth rung is a compile
+ *  error rather than an `undefined` a tab would render as nothing. */
+export const SHOP_ITEMS_BY_CATEGORY: Readonly<Record<ShopCategory, readonly ShopItem[]>> = {
+  [ShopCategory.OneTimeUse]: itemsOnRung(ShopCategory.OneTimeUse),
+  [ShopCategory.FightLong]: itemsOnRung(ShopCategory.FightLong),
+  [ShopCategory.RunPermanent]: itemsOnRung(ShopCategory.RunPermanent),
+  [ShopCategory.GamePermanent]: itemsOnRung(ShopCategory.GamePermanent),
+}
+
+/** The items on no rung — `[Heal]` today. Rendered outside the tabs (AC2/AC3). */
+export const UNCATEGORISED_SHOP_ITEMS: readonly ShopItem[] = SHOP_ITEMS.filter(
+  (item) => categoryOf(item) === null,
+)
 
 /**
  * THE single statement of whether a purchase is available (AC6/AC7), read by `buyFromShop`
@@ -58,6 +149,9 @@ export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | 
   if (item === ShopItem.Heal && stock.playerHealth >= stock.maxPlayerHealth) {
     return PurchaseRefusal.AlreadyFullHealth
   }
+  if (item === ShopItem.PoisonGuard && stock.poisonGuardHeld) {
+    return PurchaseRefusal.GuardAlreadyActive
+  }
   if (!Number.isFinite(stock.coins) || stock.coins < priceOf(item)) {
     return PurchaseRefusal.NotEnoughCoins
   }
@@ -72,4 +166,8 @@ export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | 
  */
 export function canBuyAnything(stock: ShopStock): boolean {
   return SHOP_ITEMS.some((item) => refusalFor(stock, item) === null)
+}
+
+function itemsOnRung(category: ShopCategory): readonly ShopItem[] {
+  return SHOP_ITEMS.filter((item) => categoryOf(item) === category)
 }

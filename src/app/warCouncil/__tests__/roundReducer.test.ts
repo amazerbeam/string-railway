@@ -15,16 +15,16 @@ import {
   type WarCouncilState,
 } from '../../../warCouncil'
 import { HAND_SIZE, startEncounter, type CheatCard, type EncounterState } from '../../../hunt'
+import { roundReducer } from '../roundReducer'
 import {
   cheatArmed,
   CheatStage,
   createRoundUiState,
-  roundReducer,
   RoundUiActionKind,
   type ResolvedTrick,
   type RoundUiState,
-} from '../roundReducer'
-import { card, makeRound } from './roundFixture'
+} from '../roundUiState'
+import { card, envenomChargesFixture, makeRound } from './roundFixture'
 
 const tap = (c: Parameters<typeof card>[0] extends never ? never : ReturnType<typeof card>) =>
   ({ kind: RoundUiActionKind.TapCard, card: c }) as const
@@ -37,7 +37,13 @@ function uiFrom(
   encounter: EncounterState = startEncounter(0),
   cheats: readonly CheatCard[] = [],
 ): RoundUiState {
-  return createRoundUiState({ round, encounter, cheats })
+  return createRoundUiState({
+    round,
+    encounter,
+    cheats,
+    envenomCharges: envenomChargesFixture,
+    poisonGuardHeld: false,
+  })
 }
 
 // A deterministic RNG, duplicated here to match the same local pattern the engine's own
@@ -116,6 +122,9 @@ describe('CarryOn commits a pending Quarry lead', () => {
         bank: 1,
         multiplier: 1,
         cashedAtHandEnd: false,
+        envenomTarget: null,
+        poisonToQuarry: 0,
+        poisonGuardSpent: false,
       },
     }
     let ui: RoundUiState = { ...uiFrom(round), resolvedTrick: heldReveal }

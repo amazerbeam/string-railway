@@ -69,6 +69,20 @@ export interface RoundState {
    *  every state spread thereafter, so a skull cannot appear or vanish mid-hand. A card that
    *  changes hands keeps its skull, which is what `trickIsSkulled` tests against. */
   readonly skulledCards: readonly Card[]
+  /** DLR-90 AC2 — cards the player has marked with Envenom this hand. Written by `envenomCard`
+   *  and carried by every state spread thereafter, exactly as `skulledCards` above is, so a mark
+   *  cannot appear or vanish mid-hand and a card that changes hands keeps it — which is what
+   *  `trickIsEnvenomed` tests against.
+   *
+   *  A WHOLLY SEPARATE list from `skulledCards`, and nothing whatever to do with
+   *  `CardRank.Poison`: the-hunt.md §1 records that rank 8's name is an ordinary card with no rule
+   *  and no connection to the skull. That is why nothing in this feature is called `poison`.
+   *
+   *  Hand-scoped by construction: `dealRound` rebuilds this, so a mark cannot leak into the next
+   *  hand. With `HAND_SIZE` cards and that many tricks every dealt card is played, so a mark
+   *  normally resolves in the hand it was made — the exception being a card the Woodcutter buries
+   *  or the Fox exchanges away and never takes back, which simply wastes the charge. */
+  readonly envenomedCards: readonly Card[]
   /** AC4/AC5 — the number of tricks taken in a row since the last cash-out. Only ever climbs
    *  until it cashes, which is the property the retired pending-damage figure lacked. */
   readonly bank: number

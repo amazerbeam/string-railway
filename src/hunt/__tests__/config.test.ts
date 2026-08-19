@@ -9,7 +9,6 @@ import {
   QUARRY_ENCOUNTER_HEALTH,
   quarryHealthForEncounter,
   ENCOUNTER_PLAYER_RESTORE,
-  SIMULTANEOUS_DEPLETION_WINNER,
   HAND_SIZE,
   SKULL_DENSITY,
   SKULL_WEIGHTS_UNIFORM,
@@ -24,13 +23,16 @@ import {
   CHEAT_PRICE,
   HEAL_PRICE,
   HEAL_HEALTH_RESTORED,
+  ENVENOM_PRICE,
+  ENVENOM_QUARRY_DAMAGE,
+  ENVENOM_PLAYER_DAMAGE,
+  POISON_GUARD_PRICE,
   OpponentKind,
   ORDINARY_OPPONENT_NAMES,
   STAGE_BOSS_NAMES,
   RUN_ENCOUNTERS,
   runEncounterAt,
 } from '../config'
-import { DuelSide } from '../types'
 import { quarryCharacterInfo } from '../quarryCharacters'
 
 describe('Forage and run-length constants', () => {
@@ -66,10 +68,6 @@ describe('health, restore, and the depletion ruling (AC5, AC8)', () => {
   it('restores no health entering the next encounter, as a tunable rather than a hardcoded 0', () => {
     expect(ENCOUNTER_PLAYER_RESTORE).toBe(0)
     expect(Number.isFinite(ENCOUNTER_PLAYER_RESTORE)).toBe(true)
-  })
-
-  it('names the simultaneous-depletion winner as data — §5/§9: the player loses', () => {
-    expect(SIMULTANEOUS_DEPLETION_WINNER).toBe(DuelSide.Quarry)
   })
 
   it('throws rather than returning undefined for an encounter it has no health for', () => {
@@ -132,6 +130,39 @@ describe('DLR-84 shop tunables', () => {
     expect(HEAL_HEALTH_RESTORED).toBeGreaterThan(0)
     expect(Number.isFinite(HEAL_HEALTH_RESTORED)).toBe(true)
     expect(HEAL_HEALTH_RESTORED).toBeLessThanOrEqual(PLAYER_START_HEALTH)
+  })
+})
+
+describe('Envenom constants (DLR-90 AC1, AC4; DLR-91 D2)', () => {
+  it('prices Envenom at the transcribed 2 coins', () => {
+    expect(ENVENOM_PRICE).toBe(2)
+  })
+
+  it('sets the Quarry’s delayed hit to the transcribed 4', () => {
+    expect(ENVENOM_QUARRY_DAMAGE).toBe(4)
+  })
+
+  it('sets the player’s delayed hit to the developer-chosen 2 — half the Quarry’s', () => {
+    expect(ENVENOM_PLAYER_DAMAGE).toBe(2)
+    expect(ENVENOM_PLAYER_DAMAGE).toBe(ENVENOM_QUARRY_DAMAGE / 2)
+  })
+
+  // Not a tautology: version-4-scope.md justifies the 4 by pointing at the Heal, so a future edit
+  // that moves one without deciding about the other should surface here rather than silently
+  // decoupling a figure the design doc tied together.
+  it('matches the shop’s Heal, which is where the design doc took the Quarry figure from', () => {
+    expect(ENVENOM_QUARRY_DAMAGE).toBe(HEAL_HEALTH_RESTORED)
+  })
+
+  it('costs more than the Cheat, per the design doc’s pricing argument', () => {
+    expect(ENVENOM_PRICE).toBeGreaterThan(CHEAT_PRICE)
+  })
+})
+
+describe('Poison Guard price (DLR-91 AC1)', () => {
+  it('prices the Poison Guard at a positive whole number of coins', () => {
+    expect(Number.isInteger(POISON_GUARD_PRICE)).toBe(true)
+    expect(POISON_GUARD_PRICE).toBeGreaterThan(0)
   })
 })
 

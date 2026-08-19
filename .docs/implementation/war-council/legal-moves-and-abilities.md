@@ -35,6 +35,27 @@ the **whole hand** instead. `playCard` threads the same options into its own `le
 single body change — so the legal set and the rejection reason cannot disagree, which is the
 invariant `playCard` already existed to hold.
 
+**DLR-91 widened `playCard`'s parameter without widening `legalMoves`'s**, and the shape of that is
+worth knowing before adding a third caller:
+
+```ts
+export interface PlayCardOptions extends LegalMoveOptions {
+  readonly poisonToPlayer?: Damage
+  readonly poisonToQuarry?: Damage
+  readonly poisonGuarded?: boolean
+}
+playCard(state, side, card, choice?, options?: PlayCardOptions)
+```
+
+`playCard`'s fifth parameter retyped from `LegalMoveOptions` to `PlayCardOptions`; `legalMoves` still
+takes the narrower type, and **`extends` is what lets one object satisfy both**, so `playCard` threads
+the same value it was handed into its own `legalMoves` call with no projection step. The three new
+fields are **not** legality at all — they are the poison owed at this trick, which `playCard` forwards
+into `TrickFacts` and reads no further. They travel on this parameter because the queue lives on
+`EncounterState` and `src/hunt/` must not learn what a `RoundState` is; the reducer holds both and is
+the only caller that supplies them. See
+[the bank and the cash-out](bank-and-cash-out.md).
+
 Three properties fall out of that shape, and each replaces a guard someone could later delete:
 
 - **The Monarch narrowing is untouched by construction, not by a check.** `legalMoves` reaches the
@@ -62,7 +83,10 @@ One incidental change worth knowing when reading the file: the Monarch branch's 
 renamed `monarchOptions` so it no longer shadows the new parameter. Its logic is unchanged.
 
 **For future contributors: `LegalMoveOptions` is the only sanctioned way to bypass a legality rule,
-and only the player's call sites may pass it.** A second mechanism is how AC10 stops being true.
+and only the player's call sites may pass it.** A second mechanism is how AC10 stops being true. Note
+that `PlayCardOptions` extends it and carries fields that are **not** legality bypasses — adding a
+legality field there rather than to `LegalMoveOptions` would put a bypass on a type `legalMoves` reads
+under a name suggesting it does not.
 The holding, arming and spending of a Cheat are not here — see
 [../hunt/cheats-and-slots.md](../hunt/cheats-and-slots.md) for the card and the cap, and
 [../war-council-ui/interaction-and-state.md](../war-council-ui/interaction-and-state.md) for the

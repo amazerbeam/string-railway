@@ -1,8 +1,8 @@
 import type { MouseEvent } from 'react'
-import { isSkulled, PlayerSide, type Card, type TrickCard } from '../../warCouncil'
+import { isEnvenomed, isSkulled, PlayerSide, type Card, type TrickCard } from '../../warCouncil'
 import { cardAccessibleName } from './labels'
 import PlayingCard from './PlayingCard'
-import type { ResolvedTrick } from './roundReducer'
+import type { ResolvedTrick } from './roundUiState'
 
 // Copy, not an engine string leaking into the UI — "Them" is never PlayerSide.Cpu rendered raw.
 const SIDE_LABEL: Readonly<Record<PlayerSide, string>> = {
@@ -17,6 +17,9 @@ interface TrickWellProps {
    *  `[]` so a caller that predates this (there is none left after this task, but the pattern
    *  matches `cardAccessibleName`'s own default) keeps compiling. */
   readonly skulledCards?: readonly Card[]
+  /** DLR-90 AC2 — once a marked card is face up here, it announces its own poison. Defaults to
+   *  `[]` for `skulledCards`' own stated reason. */
+  readonly envenomedCards?: readonly Card[]
   readonly quarryToLead: boolean
   readonly onCarryOn: () => void
 }
@@ -32,6 +35,7 @@ export default function TrickWell({
   currentTrick,
   resolvedTrick,
   skulledCards = [],
+  envenomedCards = [],
   quarryToLead,
   onCarryOn,
 }: TrickWellProps) {
@@ -67,6 +71,7 @@ export default function TrickWell({
                 variant="table"
                 winner={played.side === resolvedTrick.winner}
                 skulled={isSkulled(skulledCards, played.card)}
+                envenomed={isEnvenomed(envenomedCards, played.card)}
               />
             </span>
           ))}
@@ -106,6 +111,7 @@ export default function TrickWell({
               card={led.card}
               variant="table"
               skulled={isSkulled(skulledCards, led.card)}
+              envenomed={isEnvenomed(envenomedCards, led.card)}
             />
           </span>
         </div>

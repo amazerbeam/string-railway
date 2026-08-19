@@ -95,7 +95,13 @@ a rank or a health total at a call site.
 | `PLAYER_START_HEALTH` | `10` | **provisional** — set from play 2026-08-14 |
 | `QUARRY_ENCOUNTER_HEALTH` | `[10]` | **provisional** — set by the developer 2026-08-14 (PT-002) |
 | `ENCOUNTER_PLAYER_RESTORE` | `0` | not built, still no consumer |
-| `SIMULTANEOUS_DEPLETION_WINNER` | `DuelSide.Quarry` | settled |
+
+**`SIMULTANEOUS_DEPLETION_WINNER` used to sit in that table and no longer exists.** DLR-91 resequenced
+`applyDamage` to deplete the Quarry first, so a Quarry killed by an event spares the player that
+event's damage entirely — a mutual kill is a **player win**, and the simultaneous case the constant
+ruled on is unreachable by construction. It was deleted rather than pointed at the new winner, because a
+config key with no reader is a tunable that silently does nothing. See
+[the encounter state and the end conditions](encounter-state-and-end-conditions.md).
 
 **The two totals stopped being asymmetric when the bank stopped counting card values.** Until PT-002
 the Quarry's health lived in the hundreds because it absorbed a rank-sum `bank × multiplier` — a hand

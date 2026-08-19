@@ -4,8 +4,68 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-08-17**. Everything below is reachable in
+Last reviewed against the code and the design on **2026-08-19**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
+
+> **A mutual kill is now yours, and you can buy insurance against your own poison — DLR-91,
+> 2026-08-19.** Three changes landed together, and the first one is easy to miss because it is a
+> **reordering**: when an event would empty both bars, **the Quarry's is settled first and you take no
+> damage from that event at all**. So a cash-out that kills the Quarry saves you the hit that would have
+> landed with it, and a mutual kill is a **win**. It used to be a loss.
+>
+> **Second, poison now lands at the resolution of the next trick, not at the deal of the next hand** — and
+> when it lands on you it **cashes out your streak** exactly as any other damage does, so a run you were
+> building is spent at a moment you did not choose. The amounts are no longer the same on both sides: **4
+> against the Quarry, 2 against you.**
+>
+> **Third, the fight-long shelf finally has something on it: a Poison Guard, 1 coin.** Buy it between
+> fights and it is live for **exactly the next fight**. The first time your own poison lands on you, you
+> still lose the 2 health but **your streak survives** — and the Guard is spent, whether or not there was a
+> streak worth saving. It is gone when the fight ends either way, and you may only hold one at a time.
+> See [section 4](#4-playing-a-trick), [section 7](#7-the-four-outcomes-the-bank-and-the-streak),
+> [section 8](#8-damage-and-the-duel) and [section 10](#10-between-hands-and-the-run).
+> **Engine and screen landed together.**
+>
+> **One consequence was accepted rather than smoothed out**: because the Guard suppresses the cash-out, a
+> Quarry that would have died to that cash-out survives — so under the new ordering, **holding a Guard can
+> cost you health.** The correct play is sometimes not to hold one, and nothing on screen warns you.
+> Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
+
+> **You can poison a card, and the trick it wins pays for it — DLR-90, 2026-08-19.**
+> The shop sells a third thing: **Envenom**, 2 coins, on the one-time-use shelf. It is not spent when you
+> buy it — it is a **charge you carry across fights**, and you spend it during a hand. A plate in the felt
+> rail beneath the Cheat rail takes **two taps to arm**, and then **a tap on any card in your hand poisons
+> it** — including a card that would be illegal to play, because marking is not a move. Play that card and
+> **the trick resolves by the normal rules**: the same side wins it, and it banks the same. Then, **at the
+> next trick's resolution, whoever won the poisoned trick takes the damage** (DLR-90 paid it at the deal of
+> the next hand; DLR-91 retimed it).
+>
+> **The reason it is worth 2 coins is what happens when you lose the trick.** A poisoned trick the Quarry
+> wins **cleanly costs you nothing at all** — no health lost, and your bank and multiplier **survive
+> uncashed** rather than resetting. So a card you expected to throw away becomes a free strike. If you win
+> the poisoned trick instead, it is an ordinary clean win and **the damage lands on you** — **2, not 4**,
+> and it cashes out your streak with it. **If the fight ends before the hit is paid, the queued damage is
+> thrown away.** See [section 4](#4-playing-a-trick) and
+> [section 7](#7-the-four-outcomes-the-bank-and-the-streak). **Engine and screen landed together.**
+>
+> **Nothing on screen tells you the delayed damage landed.** Hearts simply disappear mid-hand — 2 of them,
+> on a bar of 10 — and your streak vanishes with them, with no line, no flash and no announcement naming
+> the cause. Pending poison is invisible on the felt and so is a held Guard. No rule required a surface and
+> choosing one is a judgement call, so none was invented. It is recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved), and it is the thing most likely to read as a bug
+> in a play session.
+
+> **The shop has four shelves now — DLR-89, 2026-08-18.** What the shop *sells* has not changed, but
+> how you browse it has: the two items are laid out on a **four-shelf ladder sorted by how long a
+> purchase lasts** — **one-time use**, **fight-long**, **run-permanent**, **game-permanent** — and you
+> open one shelf at a time. The **Cheat** is on one-time use, which is the shelf you arrive on and the
+> only one holding anything. Fight-long and run-permanent are **empty and say so**, and can still be
+> opened. **Game-permanent cannot be opened**: it is drawn with a dashed edge and states "Coming
+> soon.", shown deliberately so the shape of the finished shop is visible before the items that fill
+> it exist. The **heal is on no shelf**, in its own "Also for sale" block below them, because an
+> instant transfer has no duration to sort on. Arrow keys move between the shelves, the refused one
+> included. See [section 10](#10-between-hands-and-the-run). **Engine and screen landed together, and
+> no price, refusal or purchase changed.**
 
 > **The run is twenty-five fights and you can see all of them — DLR-85, 2026-08-17.** The game now
 > **opens on a start screen** showing the whole run as one horizontal path: a short **tick** for each of
@@ -45,8 +105,8 @@ the app today except where a rule is marked **[not built]**.
 > would have been forced to take can be refused. The next card you commit **spends** that Cheat and
 > empties its slot; the slots carry across fights like health does. It lifts **follow-suit only** —
 > the led-Monarch narrowing still binds — and the Quarry gets nothing. See
-> [section 4](#4-playing-a-trick). **Engine and screen landed together.** A run starts with two, and
-> since DLR-84 you can buy more.
+> [section 4](#4-playing-a-trick). **Engine and screen landed together.** A run started with two when
+> this landed; **since 2026-08-17 it starts with none** and every Cheat is bought (DLR-84).
 
 > **The game is a run now — DLR-82, 2026-08-15.** *(Superseded on length by DLR-85 above: the run is
 > twenty-five fights, not three. Everything else here still holds.)* Three fights in order, against
@@ -303,7 +363,7 @@ constraint in a suit once you hold none of that suit at all.
 
 ### Cheats — refusing a trick follow-suit would force on you
 
-**[settled]** — the procedure; **how many Cheats a run starts with** is **[open]**, below.
+**[settled]** — the procedure; **how many Cheats a run starts with** is **[provisional]**, below.
 
 You hold **two Cheat slots**. A Cheat is a card you hold, not a counter: each is one use, and
 spending one frees its slot. The slots sit beside the decree and are on screen for the whole hand,
@@ -334,17 +394,71 @@ is not a commitment.
 **The Quarry holds no Cheats and can never break follow-suit.** This is a thing the player can do
 that the opponent cannot — the first such asymmetry in the game.
 
-#### How many you get — **[open]**
+#### How many you get — **[provisional]**
 
-A run **starts with two**, filling both slots, and that number is a placeholder chosen so the
-mechanic can be exercised at all. **Whose decision:** the developer's — one would make _when_ to
-spend it a sharper question from the first fight, which is the question this mechanic exists to
-raise.
+A run **starts with none**, and every Cheat you ever hold is bought at the shop. That was **set by the
+developer on 2026-08-17**, down from two: a run should open empty-handed, with Cheats earned rather than
+granted. **Whose decision:** the developer's, and it has already moved once — which is why it is
+provisional rather than settled. The permitted range is none up to the slot count.
+
+> **The practical consequence is that the first fight has no Cheat in it at all**, and cannot: the
+> earliest you can hold one is after the first fight is won and a coin is spent. So "when do I spend it",
+> the question this mechanic exists to raise, does not arise until fight two at the earliest.
 
 **Since 2026-08-16 you can also buy them.** A Cheat costs 1 coin at the shop between fights, and
 goes into a free slot ([section 10](#10-between-hands-and-the-run)). You still hold no more than
 two at once: with both slots full the shop refuses the purchase and says so. So a run's total supply
 is two at a time, replenished for a coin whenever you have spent one.
+
+### Envenom — poisoning a card before you play it
+
+**[settled]** — the procedure; **the price and the damage** are **[provisional]**, below, and
+**whether three taps to mark a card feels right** is **[open]**.
+
+You hold some number of **Envenom charges**, bought at the shop for 2 coins each and carried across
+fights exactly as Cheats and health are. **There is no cap** — coins are the only limit — and a plate in
+the felt rail beneath the Cheat rail shows how many you hold for the whole hand, whether that is any or
+none.
+
+**Spending one takes three taps.**
+
+1. **The first tap on the plate selects it.** Nothing changes yet. This is the same misclick guard the
+   Cheat has, and it is here for a stronger reason: **the mark cannot be taken back.**
+2. **The second tap arms it.** Every card in your hand becomes tappable — **including cards that are
+   illegal to play**, which is the point, because the item exists to give a card you expect to lose with
+   a reason to be played.
+3. **The third tap is on a card in your hand, and poisons it.** One charge is spent, and the card is
+   marked from then on.
+
+**A third tap on the plate instead gives the charge back**, unspent. So does pressing Escape. Nothing is
+spent until you tap a card.
+
+**A poisoned card is marked wherever it renders** — in your hand, in the trick once you have played it,
+in an ability prompt that offers it, and on the decree if the Fox exchanges it there. The mark is
+announced as part of the card's name, so it does not depend on seeing the glyph.
+
+**Arming Envenom and arming a Cheat are mutually exclusive.** Both change what a tap on a hand card
+means, so tapping either control clears the other, and arming Envenom also drops a card you had armed to
+play.
+
+**Playing a poisoned card changes nothing about the trick itself.** The same side wins it by the same
+rules, and it banks the same. What it adds is a **delayed hit** owed to **whichever side won that
+trick**, paid when the **next** trick resolves — **4 if the Quarry won it, 2 if you did.** Section 7
+states what the trick's own outcome does and what the hit does to your streak, and section 8 states when
+the damage lands.
+
+**You may poison more than one card in a hand** if you hold more than one charge, and the hits accumulate
+— on either side, or on both.
+
+> **A poisoned card can leave your hand without ever being played, and the charge is simply wasted.** The
+> Woodcutter can bury it on the bottom of the draw pile, and the Fox can exchange it into the decree and
+> you may never take it back. Nothing warns you and nothing refunds you.
+
+#### How many taps it should take — **[open]**
+
+Three taps to mark, then the usual two to play the card. The alternative is arming in one tap, which
+makes marking two — but puts an **irreversible** mark one misclick away. **Whose decision:** the
+developer's, after playing it.
 
 ---
 
@@ -362,7 +476,7 @@ does nothing either.
 | 3    | **Fox**        | On playing it, you **may** exchange the decree card for a card from your hand. The exchanged card becomes the new decree, and its suit becomes the new trump suit. You may decline. |
 | 5    | **Woodcutter** | On playing it, **draw the top card of the draw pile**, then put **one card** from your hand — the drawn card or one you already held — on the **bottom** of the pile.               |
 | 7    | **Treasure**   | **No effect at all.** A named card with no rule attached.                                                                                                                           |
-| 8    | **Poison**     | **No effect at all.** A named card with no rule attached. It has nothing to do with skulls.                                                                                         |
+| 8    | **Poison**     | **No effect at all.** A named card with no rule attached. It has nothing to do with skulls — **and nothing to do with Envenom's poisoned cards** (section 4), a second collision on this name.                                                                                         |
 | 9    | **Witch**      | If a trick contains **exactly one** Witch, that Witch counts as trump when the winner is decided. **Two Witches cancel** — neither is treated as trump.                             |
 | 11   | **Monarch**    | Narrows the follower's legal play — see section 4.                                                                                                                                  |
 
@@ -447,6 +561,88 @@ Three things happen at once:
 
 A clean loss and eating a skull are **identical in every respect** but their name.
 
+### A poisoned trick the Quarry wins cleanly costs you nothing — **[settled]**
+
+Since 2026-08-19 there is **one exception** to the paragraph above, and it is the whole reason Envenom
+(section 4) is worth buying.
+
+If a **poisoned** card was played into the trick **and** the outcome would have been a **clean loss**, the
+outcome is **replaced rather than added to**:
+
+- you take **no damage**;
+- your bank does **not** cash out;
+- your bank and your multiplier **both survive**, at the values they already held.
+
+You still lose the trick, and the Quarry still leads next. You simply pay nothing for it — and your streak
+carries on as though the trick had not happened. **The Quarry still takes the delayed 4 damage** when the
+next trick resolves (section 8).
+
+**It applies to a clean loss only, and that is deliberate.** A **dodge** is also a trick the Quarry won,
+but a dodge is one you **bank** — so there is nothing there to replace, and treating it as replaced would
+delete a bank you had already earned. A dodge on a poisoned trick therefore banks exactly as it always
+does, *and* queues the delayed hit against the Quarry.
+
+**Winning a poisoned trick is an ordinary win, with no exception at all.** A clean win banks 1 and climbs
+the multiplier; **eating a skull still costs you the damage and still cashes and resets your bank**, on
+top of the delayed hit landing on you at the next trick. Nothing about poison softens a skull you chose to
+eat — and neither does a Poison Guard, which covers the delayed hit alone.
+
+> **The skull case is the harshest available reading, and no design document covers it.** Poison waives
+> only the Quarry-win case; nothing says it should also waive a skull. So a poisoned trick you win that is
+> *also* a skull trick costs you the skull's damage now **and** 2 more at the next trick. Confirming that, or
+> deciding the mark should suppress that case too, is the developer's — it is recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
+
+> **A dodge on a poisoned trick is a free bonus, and nobody designed it.** You bank the trick, keep your
+> streak, and the Quarry takes 4 at the next trick — for a card you played expecting to lose with it. It falls out
+> of the two rules above rather than from a decision, and it is recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
+
+**On the sixth trick, a preserved bank still cashes.** If the replaced clean loss is the last trick of the
+hand, the bank that survived it cashes at the end of the hand under the ordinary rule below — there is
+something left to pay, precisely because the loss did not reset it.
+
+### Poison landing on you cashes out your streak — **[settled]**; the amounts are **[provisional]**
+
+Since 2026-08-19 there is a **second** way your streak can end, and it is not a trick you lost.
+
+When poison you owe (section 4) lands on **you**, it behaves like any other damage you take: you lose the
+health, your bank **cashes out** at the current multiplier into the Quarry, and bank and multiplier both
+**reset to zero**. It makes no difference whether you won or lost the trick that the poison was paid at.
+
+- **On a trick you also lost, the two add up.** You take 1 for the trick plus 2 for the poison — **3**,
+  and one cash-out, not two.
+- **On a trick you won, the trick banks first and then the poison cashes it.** So a streak of four that
+  wins the fifth trick while poisoned cashes **25**, not 16: the trick was won, so it counts, and then the
+  poison spends it.
+- **The Quarry has no equivalent.** Poison landing on the Quarry is health and nothing else; the Quarry
+  holds no bank and no streak to lose.
+
+**This is why the two amounts differ.** Your 2 is half the Quarry's 4 (both figures and their status: section 8) because your side of the hit also
+takes the streak, which is often worth far more than the health (`hybrid-design.md` version-4-scope §1).
+
+> **The moment you cannot choose is the whole point.** Every other cash-out in the game is triggered by a
+> trick you played into. This one is triggered by a trick you played **two moves ago**, and it fires
+> whatever you do next — so a streak in progress is spent at a moment you did not pick. Whether that reads
+> as tension or as an ambush is recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
+
+### A Poison Guard buys back the streak, not the health — **[settled]**; its price and the amount it lets through are **[provisional]**
+
+If you are holding a **Poison Guard** (section 10) when your own poison lands on you:
+
+- you still take the **2 damage**;
+- your bank and your multiplier **survive**, at the values they already held;
+- the Guard is **spent** — even if your bank was zero and there was nothing to save.
+
+It covers that one case and nothing else. **A trick you simply lose still cashes and resets your streak
+while a Guard is held, and does not consume it**; so does eating a skull. A Guard is not a shield against
+damage and never was: a 1-coin item that insured against every hit in the game would remove the reason
+losing a trick matters.
+
+**It does nothing at all when the poison lands on the Quarry**, because that case already costs you
+nothing.
+
 ### The bank
 
 **The bank only ever climbs** until it cashes. It is **the number of tricks you have taken** since the
@@ -518,7 +714,7 @@ Both sides hold **health**, and the encounter ends when either total reaches zer
 | Damage to the player, per event    | **1**, every time — **[settled]**                             |
 | Health restored on winning a fight | **None** — **[not built]**, and nothing reads the tunable yet |
 | Health restored by buying a heal   | **4**, clamped to your maximum — **[provisional]** (DLR-84)   |
-| Both bars emptying together        | **The player loses**                                          |
+| Both bars emptying together        | **The player wins** — since 2026-08-19                        |
 
 **There is exactly one source of healing in the game, and you have to pay for it.** Winning a fight
 restores nothing automatically; the only way health comes back is buying a heal at the shop between
@@ -572,18 +768,7 @@ with the printed ranks adding noise around it.
 **[settled]**
 
 Damage is applied **as each trick resolves**, not once at the end. A trick that deals damage moves
-both bars immediately: yours by 1, the Quarry's by the cash-out.
-
-**Both bars are depleted before either is checked.** Then:
-
-| After the damage lands         | Outcome                    |
-| ------------------------------ | -------------------------- |
-| Only the Quarry's bar is empty | **You win the encounter.** |
-| Only your bar is empty         | **The run ends.**          |
-| **Both, on the same event**    | **You lose.**              |
-| Neither                        | Play continues.            |
-
-That both bars settle simultaneously is what makes the third row reachable at all.
+both bars: yours by 1, the Quarry's by the cash-out.
 
 **An encounter can therefore end on trick 3.** When it does, the hand **stops where it is** — the
 remaining tricks are not played, and the outcome is stated in place of the table.
@@ -593,6 +778,33 @@ remaining tricks are not played, and the outcome is stated in place of the table
 > confirmation anywhere. Whether a hand being cut off in the middle feels abrupt is recorded under
 > [Known tensions](#known-tensions-recorded-not-resolved).
 
+### The Quarry's bar is settled first, and a Quarry that dies spares you — **[settled]**
+
+Since 2026-08-19 the two bars are **not** settled together. The order is fixed:
+
+1. **The Quarry's bar takes its damage.**
+2. **If that emptied it, the encounter is over and you take no damage from this event at all.**
+3. Otherwise your bar takes its damage.
+
+| After the damage lands   | Outcome                    |
+| ------------------------ | -------------------------- |
+| The Quarry's bar is empty | **You win the encounter.** |
+| Your bar is empty         | **The run ends.**          |
+| Neither                   | Play continues.            |
+
+**So a killing blow is its own protection.** Cash out enough to empty the Quarry on a trick that would
+also have cost you your last health, and you win — the hit that would have killed you is simply never
+applied. There is no third row and no tie: both bars cannot be empty at once.
+
+> **This overturned a dated ruling: the player used to lose a mutual kill** (decided 2026-08-11, reversed
+> 2026-08-19). Both bars were depleted before either was checked, and a tie went to the Quarry. See
+> `hybrid-design.md` §9, which records the reversal rather than the argument for it.
+
+> **It applies to all damage, not only to poison.** The reordering was made for poison's sake and then
+> deliberately generalised, so there is one rule about which bar settles first rather than one per source.
+> Nothing was retuned in response — **no health total, damage figure or Quarry curve moved** — so the game
+> is measurably easier at exactly the moments that used to be fatal. That is a choice, not a side effect.
+
 **Surplus damage is discarded.** Damage past a depleted bar is not carried, banked, or converted.
 Cashing 36 into a bar with 4 left is exactly the same as cashing 4. **Health is never negative** — a
 bar stops at zero.
@@ -600,6 +812,54 @@ bar stops at zero.
 > **This is no longer a rare edge case.** With the Quarry at 10 and a good hand paying up to 36, more
 > than a third of all damage dealt is thrown away. Paying the surplus back as currency is a stated
 > intention and is **[not built]** — see [section 10](#10-between-hands-and-the-run).
+
+### A poisoned trick's damage lands at the resolution of the next trick — **[settled]**; its amounts are **[provisional]**
+
+One kind of damage does **not** land when the trick that caused it resolves. A poisoned card
+(section 4) books damage **against whichever side won the trick it was played into**, and that damage is
+paid **as part of the next trick's own damage** instead — folded in, not applied as a second event.
+
+- It hits the **Quarry** if the Quarry won the trick, and **you** if you won it — but **not for the same
+  amount**: **4 against the Quarry, 2 against you.**
+- **Your share cashes out your streak**, exactly as damage from a lost trick does, unless you are holding
+  a Poison Guard. Section 7 states that rule; the Quarry has no counterpart to it.
+- Two poisoned tricks both land, on either side or on both, and the amounts add up.
+- It goes through the same clamp as every other damage: a bar stops at zero and the surplus is discarded.
+  It is also subject to the Quarry-first ordering above.
+- **It can kill.** A delayed hit that empties a bar ends the fight, and ends the run if the bar was
+  yours — exactly as any other killing blow does.
+- **A poisoned trick that is the last of a hand carries over**: the hit is paid at the first trick of the
+  next hand, because nothing happens at a hand boundary.
+- **If the fight ends before the hit is paid, the queued damage is discarded.** It is never carried into
+  the next fight, and never into the next run. That includes the case where the poisoned trick's own
+  cash-out is what ended the fight.
+
+**The Quarry's 4** is the same figure as one fight's worth of damage and as the shop's heal,
+deliberately, so poison reads on a scale you already know — it is transcribed from the design doc. **Your
+own 2** is a separate, smaller figure the developer chose on 2026-08-19, halved because your side of the
+hit also takes the streak. Whether 2-and-3 is the right size only shows in play, which is why the amounts
+are **[provisional]** while the timing is settled.
+
+> **The timing moved once already.** Until 2026-08-19 the hit landed at the **deal of the next hand**,
+> which meant it could not interact with a streak at all — a hand boundary already cashes everything.
+> Moving it inside the hand is what gave it teeth. See `hybrid-design.md` version-4-scope §1.
+
+> **Two poisoned cards in the SAME trick still owe only one hit.** A trick is either poisoned or it is
+> not; nothing counts how many marked cards were in it. Separate poisoned tricks do stack. Recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
+
+> **Nothing on screen tells you it landed.** Hearts disappear mid-hand and your streak vanishes with them,
+> with nothing naming the cause — and you were never shown that poison was pending in the first place. On
+> a player bar of 10 that is 20% of your health plus a streak, and it is the change in this game most
+> likely to be read as a bug. Recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
+
+### Applying damage cannot be delayed while poison is pending — **[not built]**
+
+The design decided (2026-08-19) that the unbuilt **Apply Damage** control must be **disabled while poison
+is pending**, so a player cannot dodge a booked hit by declining to advance. **Nothing enforces this**,
+because Apply Damage does not exist yet — there is no control to disable. Recorded here so the ticket that
+builds it does not re-decide the question. See `hybrid-design.md` version-4-scope §3.
 
 ### What closing a hand takes
 
@@ -871,27 +1131,90 @@ and offers the shop or the fight again. If nothing is affordable — you have no
 are full and you are at full health — you are not stopped, because there would be nothing to stop
 for. Backing out of that prompt returns you to the verdict without doing either.
 
-### What the shop sells — **[settled]**; both prices are **[provisional]**
+### What the shop sells — **[settled]**; every price is **[provisional]**
 
-Exactly **two** things, **1 coin** each:
+Exactly **four** things:
 
-| Buy         | You get                                                                          |
-| ----------- | -------------------------------------------------------------------------------- |
-| **Cheat**   | One Cheat card into a free slot (section 4)                                      |
-| **Heal**    | **4 health**, immediately, and never above your maximum — the excess is lost     |
+| Buy              | Costs   | You get                                                                       |
+| ---------------- | ------- | ----------------------------------------------------------------------------- |
+| **Cheat**        | 1 coin  | One Cheat card into a free slot (section 4)                                   |
+| **Envenom**      | 2 coins | One charge to poison a card with, held until you spend it (section 4)         |
+| **Poison Guard** | 1 coin  | For **the next fight only**: the first time your own poison lands on you, your streak survives it (section 7) |
+| **Heal**         | 1 coin  | **4 health**, immediately, and never above your maximum — the excess is lost  |
+
+**Envenom arrived on 2026-08-19 and is the only thing in the shop costing more than a coin** — twice the
+Cheat, because it is a guaranteed unconditional hit rather than a rule-break you may not need. **It is not
+spent when you buy it**: what you buy is a charge you carry into the fight and spend during a hand.
+
+**There is no cap on Envenom charges.** Unlike a Cheat, which has nowhere to go once both slots are full,
+you may buy as many as you can afford — so the only refusal it can raise is not having the coins.
+
+**Poison Guard arrived the same day, and it is the first purchase with a duration rather than a use.** It
+is priced level with the heal, because both are a coin against roughly 4 health of value run in opposite
+directions. Three things about it are the rules:
+
+- **It is live for exactly the fight you bought it for** — not the rest of the run, and not until you
+  spend it. Leave the shop, fight, and when that fight ends the Guard is gone whether it fired or not.
+- **You may hold only one at a time.** Buying a second while one is unspent is refused with the reason
+  stated, rather than stacking or silently replacing it (see the refusals below).
+- **It is spent the first time it fires** — the first time your own poison lands on you — and spent even
+  if your bank was empty and there was nothing for it to save.
 
 The screen states which opponent is coming next, and shows your coins, your health against its
-maximum, and how many Cheat slots you are holding while you choose.
+maximum, how many Cheat slots you are holding, how many Envenom charges you hold, and whether a Poison
+Guard is **Held** or **None**, while you choose.
+
+### The shop is laid out as four shelves, by how long a purchase lasts — **[settled]**
+
+Since 2026-08-18 the shop is organised into **four shelves**, browsed one at a time, named for **how
+long what you buy stays with you**:
+
+| Shelf              | What belongs on it                                    | Holds today            |
+| ------------------ | ----------------------------------------------------- | ---------------------- |
+| **One-time use**   | Spent when you use it                                 | The **Cheat**, the **Envenom** charge |
+| **Fight-long**     | Lasts the rest of the current fight                   | The **Poison Guard**   |
+| **Run-permanent**  | Lasts the rest of the run                             | *nothing yet*          |
+| **Game-permanent** | Carries between runs                                  | *nothing — and refused* |
+
+**One-time use is open when you arrive**, and it holds two things since 2026-08-19. **Fight-long stopped
+being empty the same day**, with the Poison Guard on it. Run-permanent is **empty and says so** —
+"Nothing on this shelf yet." — and you can still open it. **Game-permanent cannot be opened at all**: it is shown, marked out with a dashed edge, and
+states **"Coming soon."** It is deliberately visible rather than hidden, so the shape of the finished
+shop reads before the things that fill it exist (`hybrid-design.md` version-4-scope §1).
+
+**The heal is not on any shelf.** It sits in its own block below them, headed "Also for sale", and it
+is there whichever shelf you have open. A heal is an instant transfer with no duration, so none of the
+four rungs is an honest answer for it.
+
+Nothing about what is for sale, what it costs, or what refuses a purchase changed when the shelves
+arrived — that was a **rearrangement**. **The shelves then earned their keep twice**: Envenom appeared on
+the one-time-use shelf, and the Poison Guard filled the fight-long shelf, each with no change to the shop
+screen beyond one readout.
+
+> **The four names are this game's own, not Balatro's.** The obvious borrowing would be deck / Joker /
+> consumable, and it was refused: this game has no deck-building layer for those words to mean
+> anything against, so the shelves are named for the property they actually sort on.
+
+**Switching shelves works from the keyboard**: the four are one stop in the tab order, and the arrow
+keys move between them — including onto the refused shelf, which announces why it cannot be opened
+rather than being skipped over silently.
 
 **You may buy nothing**, and the screen says so. **You may buy more than once in a visit** while you
 still have the coins — two heals in one visit is eight health if you have the room and the money.
 
-**A purchase you cannot make is refused with the reason on the screen**, never silently. Three
+**A purchase you cannot make is refused with the reason on the screen**, never silently. Four
 things can refuse one:
 
 - **Both Cheat slots are full** — a Cheat has nowhere to go.
 - **You are already at full health** — a heal would do nothing at all, so it is not sold to you.
+- **You are already holding a Poison Guard** — only one may be held at a time.
 - **You do not have the coins.**
+
+**Envenom can only ever raise the last.** There is no cap on charges held, so nothing else can refuse it
+— and full Cheat slots do not, because that is the Cheat's own cap and not a shared one.
+
+Each of the first three belongs to **one** item and to no other: a full Cheat slot never refuses a heal, a
+held Guard never refuses a Cheat.
 
 When more than one applies, the shop names the one that will still be true when the money
 arrives — full slots rather than an empty purse.
@@ -902,7 +1225,9 @@ arrives — full slots rather than an empty purse.
 > still costs a coin — only the wholly wasted purchase is refused.
 
 **Leaving the shop starts the next fight**, with everything you bought already in effect: the health
-you healed to, the Cheats in your slots, and whatever coins you did not spend.
+you healed to, the Cheats in your slots, the Envenom charges you hold, any Poison Guard, and whatever
+coins you did not spend. **The Guard is the one purchase that expires**: it lasts that fight and no
+longer.
 
 ### Which fight you are on, and who you are fighting — **[settled]**
 
@@ -920,13 +1245,23 @@ too, alongside who is coming next.
   was that overkill (section 8) becomes currency; the coin you actually get is a **flat payment for
   winning a fight** instead, and nothing reads overkill. That flat payout is the part of the
   intention that shipped.
-- **Anything in the shop that raises the player's damage** — **[not built]**. The stated intention
-  is that upgrades are what make the `n × n` payout scale past the early game; the shop currently
-  sells survivability and a rule-break, and nothing touching the bank, the multiplier or damage. A
+- **Anything in the shop that raises the player's damage — HALF BUILT since 2026-08-19.** Envenom deals
+  a flat **4 damage** to the Quarry when the Quarry wins the trick it is played into, which is the first
+  purchasable damage in the game — but it is a **fixed one-off hit**, not a multiplier on anything. The
+  stated intention is that upgrades are what make the `n × n` payout scale past the early game, and
+  **nothing grows the bank or the multiplier yet**: Envenom's clean-loss rule and the Poison Guard both
+  *preserve* a streak rather than growing one. A
   card's **value** is one of the four things Forage may edit, and since 2026-08-14 a card's rank
   decides only who wins a trick — it feeds no scoring at all (section 7).
-- **Any third item, a price curve, rerolls, or a rotating shelf** — **[not built]**. The shop shows
-  the same two things at the same two prices on every visit.
+- **A price curve or rerolls** — **[not built]**. The shop shows the same **four** things at the same
+  four prices on every visit. **Two items shipped on 2026-08-19** — Envenom onto the one-time-use shelf and
+  the Poison Guard onto fight-long — so this entry is narrower than it was: **Whetstone** is the item still
+  to come, on its own ticket, and only run-permanent is still empty. A **rotating** shelf — a different
+  selection each visit — is still **[not built]** and is a separate idea from the four fixed shelves.
+- **Anything at all on the game-permanent shelf** — **[not built]**, and **nothing is designed for it**.
+  The shelf is shown and refused precisely so that this gap is visible rather than hidden.
+  `hybrid-design.md` version-4-scope §1 explicitly declines to design it yet, and **carrying anything
+  between runs would be the first persistence this game has** — nothing is saved today.
 - **Anything in the shop that reduces skull density** — **[not built]**, and ruled out rather than
   merely absent. The skull is the game's only inversion (section 7), and selling a way past it would
   remove the reason taking every trick is not simply correct.
@@ -1012,7 +1347,44 @@ shape is decided.
 One row per rule area. `Where enforced` is a pointer for checking this document has not gone stale —
 the mechanics themselves are documented in `../implementation/`.
 
-> **Where the last contract stands, 2026-08-17 (DLR-85).** Engine and screen landed together: the start
+> **Where the last contract stands, 2026-08-19 (DLR-91).** Engine and screen landed together, and QA
+> confirmed the whole of it in a browser: the retimed poison, the two amounts, the streak cashing out when
+> poison lands on you, the Quarry-first ordering that spares you a mutual kill, the Poison Guard on the
+> fight-long shelf, its purchase, its refusal, and the purse cell that says whether one is held are **all
+> reachable by playing right now**. **One row below is `not built` by design decision rather than
+> oversight**: Apply Damage must be disabled while poison is pending, and Apply Damage does not exist yet.
+> **Two rows stay `not built` from DLR-90 and were deliberately not addressed** — nothing announces the
+> delayed hit landing, and nothing shows a held Guard during a fight, so poison is legible only through its
+> effects. **One accepted oddity shipped knowingly**: a held Guard suppresses the cash-out, so a Quarry that
+> would have died to that cash-out survives and you take damage you would otherwise have dodged. The
+> developer confirmed that as a real decision when the consequence was put to them. **Nothing was retuned**
+> in response to mutual kills now favouring the player.
+
+> **Where DLR-90 stood, 2026-08-19.** Engine and screen landed together: the third
+> shop item, the charge carried across fights, the felt-rail plate, the three-tap arm-and-mark, the mark on
+> all four surfaces a card renders on, the replaced clean loss and the delayed hit at the next deal are
+> **all reachable by playing right now**. **Two rows below are `open` and both are the developer's**:
+> whether three taps to mark is right, and whether a poisoned trick you win that is *also* a skull trick
+> should still cost the skull. One row is **`not built` and deliberately so** — nothing announces that the
+> delayed damage landed, because no rule required it and choosing the surface is a judgement call. **Two
+> residuals were found in review rather than shipped**: the decree pile's mark was built and never wired at
+> its mount, and the reducer's commit path cleared a poised Cheat but not a poised Envenom. Both now have
+> regression tests that drive the reachable path rather than the field. **Not verified by playing:** QA
+> could not earn 2 coins in five full playthroughs, so the whole purchase-to-payoff loop is proven by a
+> mounted-component test against the real component tree and **not yet by a hand on a mouse.**
+
+> **Where DLR-89 stood, 2026-08-18.** Engine and screen landed together: the four
+> shelves, the item→shelf assignment, the stated empty shelves and the refused game-permanent tab are
+> **all reachable by playing right now**. **No rule about what the shop sells, what it costs, or what
+> refuses a purchase moved** — the eleven pre-existing shop-screen specs pass unedited, which is the
+> evidence for that. Three rows below are **`not built`** and are the point rather than an oversight:
+> nothing is designed for the game-permanent shelf, and two shelves are empty until Envenom, Poison
+> Guard and Whetstone land on their own tickets. One **known residual**: after clicking a shelf with the
+> mouse, the very next arrow-key press can move from the previously-focused shelf rather than the one
+> just clicked; it corrects itself on the next `Home`/`End`. Logged, not fixed — the fix means changing
+> a hook three screens share.
+
+> **Where DLR-85 stood, 2026-08-17.** Engine and screen landed together: the start
 > screen, the map, the twenty-five-fight run and the naming across four surfaces are **all reachable by
 > playing right now** — none of it is enforced-but-unreachable. **One row below is marked `NOT MET`** —
 > the path does not fit a viewport narrower than about 1088px and crops silently — and it is a defect
@@ -1036,11 +1408,11 @@ the mechanics themselves are documented in `../implementation/`.
 | Follow-suit, led-Monarch narrowing            | settled                          | `src/warCouncil/legalMoves.ts` — `legalMoves`, `monarchFollowSet`                                                                | —                                                       |
 | An armed Cheat lifts follow-suit only         | settled — since DLR-83           | `src/warCouncil/legalMoves.ts` — `LegalMoveOptions.ignoreFollowSuit`, read after the Monarch branch returns; threaded by `playCard.ts` | —                                                 |
 | Two Cheat slots, one card each                | settled                          | `src/hunt/config.ts` — `CHEAT_SLOT_COUNT`; the cap is stated once, in `src/hunt/cheats.ts` — `addCheat`                          | —                                                       |
-| Two clicks to arm, a third to give it back    | settled                          | `src/app/warCouncil/roundReducer.ts` — `TapCheat`, `CancelCheat`, `cheatArmed`; rendered by `CheatSlots.tsx`                     | Developer — whether arming feels like a detour          |
+| Two clicks to arm, a third to give it back    | settled                          | `src/app/warCouncil/roundUiState.ts` — `TapCheat`, `CancelCheat`, `cheatArmed` (moved there by DLR-90); handled in `roundReducer.ts`, rendered by `CheatSlots.tsx`                     | Developer — whether arming feels like a detour          |
 | Committing while armed spends the Cheat       | settled                          | `src/app/warCouncil/roundReducer.ts` — `commit`; removal in `src/hunt/cheats.ts` — `removeCheat`                                 | Developer — whether spending it on an already-legal card is right |
 | A refused play does not spend the Cheat       | settled                          | `src/app/warCouncil/roundReducer.ts` — `commit`'s rejection branch returns before the removal                                    | —                                                       |
 | Cheats carried fight to fight                 | settled                          | `src/hunt/run.ts` — `RunState.cheats`; `advanceRun`'s spread carries it, `recordEncounter` adopts the hand's survivors           | —                                                       |
-| Cheats a run starts with (2)                  | **open** — a placeholder         | `src/hunt/config.ts` — `RUN_STARTING_CHEATS`; granted by `src/hunt/cheats.ts` — `grantCheats`                                    | **Developer** — 1 sharpens the "when" question          |
+| Cheats a run starts with (0)                  | **provisional** — set 2026-08-17 | `src/hunt/config.ts` — `RUN_STARTING_CHEATS`, **0** since 2026-08-17 (was 2); granted by `src/hunt/cheats.ts` — `grantCheats`, which throws outside `0..CHEAT_SLOT_COUNT` rather than clamping | **Developer** — it has moved once already; every Cheat is now bought |
 | The Quarry holds no Cheats                    | settled                          | nothing to enforce — the bypass is an argument the Quarry's call sites never pass; a grep guards the absence                     | —                                                       |
 | Buying a Cheat (1 coin, into a free slot)     | settled — since DLR-84           | `src/hunt/run.ts` — `buyFromShop` calls `addCheat` and advances `nextCheatId`; priced by `src/hunt/config.ts` — `CHEAT_PRICE`    | Developer — the price                                   |
 | Selling or replacing a Cheat                  | **not built**                    | nothing — the shop only adds                                                                                                     | Developer — a later ticket                              |
@@ -1061,8 +1433,9 @@ the mechanics themselves are documented in `../implementation/`.
 | Damage applied per trick, mid-hand            | settled                          | `src/hunt/encounter.ts` — `applyDamage`; called per resolution by `src/app/warCouncil/roundReducer.ts`                           | —                                                       |
 | The seat → side crossing, once                | settled                          | `src/warCouncil/bank.ts` — `incomingFrom`                                                                                        | —                                                       |
 | Health never negative; surplus discarded      | settled                          | `src/hunt/encounter.ts` — `deplete`, the single clamp                                                                            | —                                                       |
-| Both bars settle before either is checked     | settled                          | `src/hunt/encounter.ts` — `applyDamage` depletes both, then `resolveWinner`                                                      | —                                                       |
-| Simultaneous depletion → player loses         | settled                          | `src/hunt/config.ts` — `SIMULTANEOUS_DEPLETION_WINNER`; read by `resolveWinner`                                                  | —                                                       |
+| The Quarry's bar settles first                | settled — since 2026-08-19       | `src/hunt/encounter.ts` — `applyDamage` depletes the Quarry, then the player **only if the Quarry survived**       | —                                                       |
+| A mutual kill is a player win                 | settled — **overturns a 2026-08-11 ruling** | `src/hunt/encounter.ts` — `resolveWinner` has no tie branch and no constant to read; a Quarry-down event never touches the player, so the case is unreachable. `SIMULTANEOUS_DEPLETION_WINNER` was **deleted** | — (the reversal is recorded in `hybrid-design.md` §9) |
+| Poison pending must lock Apply Damage         | **not built**                    | nothing — Apply Damage does not exist, so there is no control to disable; `src/hunt/encounter.ts` keeps `hasPendingEnvenom` exported and uncalled for that purpose | **Developer** — the version-4 §3 ticket |
 | An encounter can end mid-hand, and play stops | settled                          | `src/app/warCouncil/roundReducer.ts` — the `isEncounterResolved` guard in `canAct`                                               | Developer — whether it feels abrupt                     |
 | Health carried hand to hand                   | settled                          | `src/app/warCouncil/roundReducer.ts` owns the live `EncounterState`; `src/App.tsx` carries it between hands                      | —                                                       |
 | No cap on hands per encounter                 | settled — deliberately none      | no cap key exists to read                                                                                                        | Developer, if the tail stalls                           |
@@ -1082,7 +1455,15 @@ the mechanics themselves are documented in `../implementation/`.
 | Between-encounter restore (none, automatic)   | **not built** — deliberately     | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE`; still **no consumer**, and DLR-82 forbade adding one. A grep guards it        | Developer — the flask stories own it                    |
 | Winning a fight pays 1 coin                   | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `COINS_PER_ENCOUNTER_WIN`; credited by `src/hunt/run.ts` — `recordEncounter`, the single payout site      | Developer — transcribed, not derived                    |
 | Coins carry across the run, and are on screen | settled — since DLR-84           | `src/hunt/run.ts` — `RunState.coins`, carried by `advanceRun`'s spread; drawn by `src/app/warCouncil/RoundStatusBand.tsx`'s `.wc-coins` plate | —                                          |
-| The shop, and its exactly two items           | settled — since DLR-84           | `src/hunt/shop.ts` — `SHOP_ITEMS`; rendered by `src/app/run/ShopPanel.tsx`, which maps it rather than listing the items          | —                                                       |
+| The shop, and its exactly four items          | settled — since DLR-84           | `src/hunt/shop.ts` — `SHOP_ITEMS`, unchanged in order by DLR-89 and widened by DLR-90 and DLR-91; rendered by `src/app/run/ShopPanel.tsx`, which reads the groupings below rather than listing the items | —                                     |
+| Four shelves, by how long a purchase lasts    | settled — since DLR-89           | `src/hunt/shop.ts` — `ShopCategory` and `SHOP_CATEGORIES` (which fixes the order); drawn by `src/app/run/ShopCategoryTabs.tsx`   | Developer — the four labels are placeholder copy         |
+| Which shelf an item sits on                   | settled — since DLR-89           | `src/hunt/shop.ts` — `categoryOf`, an exhaustive `switch`; grouped once at module load into `SHOP_ITEMS_BY_CATEGORY`             | —                                                       |
+| The heal is on no shelf at all                | settled — since DLR-89           | `src/hunt/shop.ts` — `categoryOf` returns `null` for it, collected by `UNCATEGORISED_SHOP_ITEMS`; rendered outside the tabs      | —                                                       |
+| One-time use is the shelf you arrive on       | settled — since DLR-89           | `src/app/run/ShopPanel.tsx` — the `useState` initial value; deliberately **not** persisted across visits                          | Developer — whether the shelf should survive re-entry    |
+| An empty shelf says it is empty               | settled — since DLR-89           | `src/app/run/shopLabels.ts` — `SHOP_CATEGORY_EMPTY`; branched on in `ShopPanel.tsx` when the shelf holds nothing                 | Developer — the wording                                 |
+| Game-permanent is shown and refused           | settled — since DLR-89           | `src/hunt/shop.ts` — `isShopCategoryAvailable`, false only for that rung; the tab carries `aria-disabled` and states `SHOP_CATEGORY_COMING_SOON` | Developer — the wording, and `aria-disabled` vs native `disabled` |
+| What is on the game-permanent shelf           | **not built** — nothing designed  | nothing — no item maps to that rung, and version-4-scope §1 declines to design one                                              | **Developer — a later ticket**                          |
+| Shelves switchable from the keyboard          | settled — since DLR-89           | `src/app/warCouncil/useRovingTabIndex.ts`, reused by `ShopCategoryTabs.tsx` — one tab stop, arrows within it, manual activation   | —                                                       |
 | The shop is opt-in, reached from the verdict  | settled — the developer's ruling | `src/App.tsx` — the `RunPhase` union (was `BetweenPhase`; DLR-85 widened it with `Start` and `Map`); controls in `src/app/run/RunOutcomePanel.tsx` | Developer — whether the three controls read at a glance |
 | Continue warns when something is affordable   | settled                          | `src/hunt/shop.ts` — `canBuyAnything`, `some()` over `refusalFor`; raised by `src/App.tsx`'s `handleContinue`                    | **Developer** — safety net or nag; a threshold is one line |
 | Backing out of the warning takes no action    | settled                          | `src/app/run/RunOutcomePanel.tsx` — `onDismissWarning` on the swapped block's `Escape`                                           | Developer — whether it should mean "continue anyway"    |
@@ -1123,6 +1504,39 @@ the mechanics themselves are documented in `../implementation/`.
 | Every opponent plays identically              | settled — health and name only   | nothing to enforce — no game rule reads `OpponentKind` or an opponent's name; `SLICE_QUARRY_CHARACTER` is still the one *character* the felt shows | Developer — powers are a final-boss ticket   |
 | The health bar names the opponent             | settled — since 2026-08-17        | `src/app/warCouncil/labels.ts` — `quarryHealthLabel(name)`; threaded from `src/App.tsx` as a pre-worded string, like `runLabel`. `HEALTH_BAR_LABEL[Quarry]` is now only the unnamed fallback | Developer — the possessive wording |
 | The dossier still says "The Monarch"          | **open** — the remaining seam     | `src/hunt/quarryCharacters.ts` — `QUARRY_CHARACTERS`; rendered by `src/app/warCouncil/QuarryDossier.tsx`, with "What the Quarry holds" beside it | **Developer** — accept the seam for a release, or pull the follow-on in |
+| Envenom — a charge bought, not spent on buying | settled — since DLR-90 | `src/hunt/run.ts` — `RunState.envenomCharges`, credited by `buyFromShop`'s `ShopItem.Envenom` arm and carried by `advanceRun`'s spread | — |
+| Its price (2 coins) | **provisional** — transcribed | `src/hunt/config.ts` — `ENVENOM_PRICE`; read by `priceOf` | Developer — from `version-4-scope.md`, not derived; **unmeasured in play** |
+| No cap on charges held | settled | `src/hunt/shop.ts` — `refusalFor` has **no** Envenom clause, so it falls through to the coin check | Developer — a cap is a key, one clause and one code |
+| Three taps to mark: select, arm, then a card | **open** — a feel question | `src/app/warCouncil/roundUiState.ts` — `EnvenomStage`; cycled by `roundReducer.ts`'s `handleTapEnvenom`, drawn by `EnvenomCharge.tsx` | **Developer** — one tap to arm makes marking two, but puts an irreversible mark one misclick away |
+| A third tap on the plate refunds the charge | settled | `src/app/warCouncil/roundReducer.ts` — `handleTapEnvenom`'s third branch; `CancelEnvenom` and `Escape` do the same | — |
+| Every card in hand is markable while armed | settled — including illegal ones | `src/app/warCouncil/HandFan.tsx` — `illegal` and `isFocusable` both widen under `envenomArmed`, so the tappable and focusable sets cannot drift | — |
+| Marking is not a move, and never plays a card | settled | `src/app/warCouncil/roundReducer.ts` — `handleTapCard` routes to `commitEnvenom` before the play branch | — |
+| Envenom and a Cheat cannot both be armed | settled | `src/app/warCouncil/roundReducer.ts` — each poise branch clears the other's selection, and `commit`'s `settled` object clears both | — |
+| The mark is drawn wherever the card renders | settled — all four surfaces | `src/app/warCouncil/PlayingCard.tsx` — the `envenomed` prop; threaded by `HandFan`, `TrickWell`, `AbilityPrompt` and `DecreePile` (the last **fixed in review**, having been built and never passed) | Developer — the glyph and its colour are placeholders |
+| A poisoned trick resolves by the normal rules | settled | `src/warCouncil/playCard.ts` — it reports `trickIsEnvenomed` as a fact and judges none of it; the winner and the bank are decided as ever | — |
+| A poisoned clean loss is replaced, not added to | settled | `src/warCouncil/bank.ts` — `resolveTrickBank`'s `replaced` flag skips the hit half, so damage and cash-out stay 0 and bank/multiplier pass through | — |
+| …and a **dodge** is deliberately not replaced | settled — the outcome, not the winner | `src/warCouncil/bank.ts` — keyed on `TrickOutcome.CleanLoss`; a Dodge is a Quarry win the player **banks**, so replacing it would delete an earned bank | Developer — the free-bonus interaction it creates |
+| A poisoned skull trick you win still costs it | settled — the harshest reading | nothing suppresses it — the override waives only the clean loss, so `SkullWin` resolves in full | **Developer** — no design document covers this case |
+| The delayed hit follows the trick's winner | settled — no branch, but **no longer symmetric** | `src/warCouncil/bank.ts` — `TrickResolution.envenomTarget`, typed `DuelSide` because this module is already the one seat → side crossing | — |
+| Its amount — 4 to the Quarry, 2 to the player | **provisional** — split 2026-08-19 | `src/hunt/config.ts` — `ENVENOM_QUARRY_DAMAGE` (4, transcribed) and `ENVENOM_PLAYER_DAMAGE` (2, **the developer's own**); which side owes which is decided once by `encounter.ts`'s private `envenomDamageFor`, read by `queueEnvenom` | **Developer** — the player-side figure is a choice, not a transcription, and 2-and-3 is unmeasured in play |
+| It lands at the resolution of the NEXT trick | settled — retimed 2026-08-19 | `src/app/warCouncil/roundReducer.ts` — `poisonOptions` reads `encounter.pendingEnvenom` into `playCard`, and `applyResolution` pays, clears and re-books in that order; folded into the trick's own damage by `src/warCouncil/bank.ts` — `resolveTrickBank`. It landed at the next hand's deal until this date | — |
+| A poisoned last trick carries into the next hand | settled | `src/hunt/types.ts` — the queue hangs off `EncounterState`, which outlives a hand; nothing at a hand boundary reads or clears it | — |
+| Your share of the hit cashes out your streak | settled — since 2026-08-19 | `src/warCouncil/bank.ts` — `resolveTrickBank`'s cash-out branch has a **second trigger**, `poisonToPlayer > 0 && !poisonGuarded`, reaching the same statement a lost trick reaches | — |
+| A poisoned trick you win banks BEFORE it cashes | settled — a chosen reading | `src/warCouncil/bank.ts` — the `isTaken` climb runs above the cash-out branch, so a streak of 4 winning trick 5 cashes 25 rather than 16 | Developer — reversing it is one line, and a different feel |
+| The Quarry's share never touches a bank | settled | `src/warCouncil/bank.ts` — `poisonToQuarry` rides on `TrickResolution` and is summed into the Quarry's total by `incomingFrom`; the Quarry holds no bank or multiplier at all | — |
+| Two poisoned tricks both land | settled | `src/hunt/types.ts` — `EncounterState.pendingEnvenom` is a per-side `IncomingDamage` **accumulator**, not a single side | — |
+| Two marks in ONE trick still owe one hit | settled — a predicate, not a count | `src/warCouncil/envenom.ts` — `trickIsEnvenomed` is a boolean over the trick | Developer — a count instead of a predicate is a small follow-up |
+| A delayed hit can kill, and end the run | settled | `src/hunt/encounter.ts` — the hit goes through the same `applyDamage`/`resolveWinner` as any other damage, and `src/hunt/run.ts` — `outcomeFor` re-derives the run's end from the result | — |
+| A queued hit dies with the fight | settled | `src/hunt/encounter.ts` — `startEncounter` seeds `pendingEnvenom` to zeros and `advanceRun`/`startRun` both route through it; `queueEnvenom` also refuses a resolved encounter | — |
+| Nothing announces the delayed hit landing | **not built** — deliberately | nothing — hearts and the streak simply drop mid-hand, and nothing showed the poison was pending either | **Developer** — a mount prop plus a hint line (~15 lines), or a beat on the status band |
+| Poison Guard — bought, and live for one fight | settled — since 2026-08-19 | `src/hunt/run.ts` — `RunState.poisonGuardHeld`, set by `buyFromShop`, carried by `advanceRun`'s spread and cleared by the private `guardAfter` the moment the encounter resolves | — |
+| Its price (1 coin) | **provisional** — transcribed | `src/hunt/config.ts` — `POISON_GUARD_PRICE`; read by `priceOf`. Its own key, level with `HEAL_PRICE` | Developer — from `version-4-scope.md`, not derived; **unmeasured in play** |
+| It sits on the fight-long shelf | settled — since 2026-08-19 | `src/hunt/shop.ts` — `categoryOf` returns `ShopCategory.FightLong`; `SHOP_ITEMS_BY_CATEGORY` derives the shelf at module load, so the screen needed no edit | — |
+| Only one may be held at a time | settled | `src/hunt/shop.ts` — `PurchaseRefusal.GuardAlreadyActive`, returned by `refusalFor` before the coin check; worded by `src/app/run/shopLabels.ts` | Developer — a count instead of a flag is a small change |
+| It suppresses the poison reset only | settled | `src/warCouncil/bank.ts` — `poisonGuarded` gates the poison trigger and not `trickHit`, so a lost trick still resets the streak and does not spend the Guard | — |
+| It is spent whenever it fires, streak or not | settled — AC4 read literally | `src/warCouncil/bank.ts` — `TrickResolution.poisonGuardSpent`; flipped by `src/app/warCouncil/roundReducer.ts` at both settle points | — |
+| It does nothing on the Quarry-side hit | settled | nothing to enforce — `poisonGuarded` is read only against `poisonToPlayer` | — |
+| Nothing shows a held Guard during a fight | **not built** — deliberately | nothing — `src/app/run/ShopPanel.tsx`'s purse cell is its only surface, and the felt renders none of it | **Developer** — the same call as the announcement row above |
 | Snare (in-hand edits)                         | **open**, blocked                | —                                                                                                                                | Needs a cost before it's viable                         |
 
 ### The redesign landed whole — DLR-80 closed 2026-08-13
@@ -1243,7 +1657,8 @@ game plays exactly as it did the day before — the bypass is an argument nobody
 **Engine and screen landed together.** The slots are on the felt beside the decree, the two-click arm
 is on the card itself, and the strongest signal that a Cheat is live is the hand fan un-greying.
 
-**What the developer owns:** how many Cheats a run starts with (2 is a placeholder), every word of
+**What the developer owns:** how many Cheats a run starts with (2 when this shipped; **set to 0 on
+2026-08-17**), every word of
 the new copy, the slots' size and spacing, whether arming feels like a detour now the slots sit by
 the decree rather than by the hand — and the design question the ticket itself raised and deferred:
 **whether holding a Cheat changes how a hand is played before it is spent.**
@@ -1323,8 +1738,128 @@ including whether `Fight Aoife` or `Begin run` is the right thing on the start s
 ticks and a block read as five stages **without counting**; and whether the two coexisting rosters are
 tolerable for a release.
 
+### The shop got its shelves — DLR-89, 2026-08-18
+
+**A rearrangement, not a rule change.** The shop's two items were laid out on a **four-shelf ladder
+sorted by how long a purchase lasts** — one-time use, fight-long, run-permanent, game-permanent — browsed
+one shelf at a time. The Cheat is on one-time use, the shelf you arrive on. Fight-long and run-permanent
+are empty and say so. Game-permanent cannot be opened and states "Coming soon.". The heal left the
+shelves entirely for its own "Also for sale" block, because an instant transfer has no duration to sort
+on.
+
+**Nothing a player can buy, pay, or be refused changed**, and that was the constraint the whole ticket
+was built around: the eleven existing shop-screen specs pass **unedited**, which is the evidence. What
+changed is what the shop *looks like it will become* — the empty shelves are the point, not a gap, and
+the refused fourth one exists so that the finished shape reads before the items that fill it do.
+
+Two decisions worth recording. **The four names are this game's own** rather than Balatro's deck /
+Joker / consumable, because there is no deck-building layer here for those words to sort against. And
+the refused shelf is **marked out but still reachable by keyboard** rather than genuinely disabled: a
+truly disabled control leaves both the tab order and the arrow keys, so the one shelf whose entire job
+is to announce that something is coming would never reach the player it is announcing to.
+
+**What the developer owns:** every one of the four shelf labels, the "Coming soon." and "Nothing on this
+shelf yet." sentences, and the "Also for sale" heading — all placeholder copy; whether the refused shelf
+should be genuinely `disabled` instead (reversible in one attribute); whether the open shelf should stay
+selected when you leave and come back (it does not today); how much of a shelf is visible before it
+scrolls; and **whether the screen still reads well now it is the tallest it has ever been** — the fix
+for it fitting was a real defect fix, but the resulting tightness is an eye question.
+
+### Envenom landed — DLR-90, 2026-08-19
+
+> **Read this as a record of what DLR-90 shipped, not as the rules.** DLR-91 retimed the hit to the
+> resolution of the **next trick**, split the amount (**4** to the Quarry, **2** to the player), and made
+> the player's share **cash out the streak**. Sections 4, 7 and 8 above are current; this section is not.
+
+**The first effect in this game that resolves later than the thing that caused it.** A third shop item at
+2 coins buys a charge you carry across fights; three taps during a hand mark a card in your own hand; the
+trick that card is played into resolves by the normal rules; and **4 damage lands on whoever won that
+trick at the deal of the next hand.** Engine and screen landed together, and the whole loop is reachable
+by playing.
+
+**The rule that makes it worth buying is a subtraction, not an addition.** A poisoned trick the Quarry
+wins **cleanly** costs the player nothing — no damage, and the bank and multiplier survive uncashed
+instead of resetting. That is what turns a card you expected to throw away into a free strike. Win the
+poisoned trick yourself and the 4 lands on **you**, which is the symmetric case rather than a penalty:
+the hit follows the trick's winner, so there is no mirrored rule anywhere.
+
+**Two readings were chosen where the ticket was ambiguous, and both are recorded rather than buried.**
+The override is keyed on the trick's **outcome** (a clean loss) rather than on **which side won**,
+because a *dodge* is also a Quarry win and it is one the player banks — the literal reading would have
+deleted an earned bank. And a poisoned trick you win that is *also* a skull trick **still costs you the
+skull**, which is the harshest available reading of a case no design document covers.
+
+**The discard rules cost nothing to enforce, which was the point of where the queue lives.** It sits on
+the encounter rather than the run, and the encounter's own opening seeds it to zeros — so a queued hit
+cannot cross a fight and cannot cross a run. (DLR-90 also had it discarded at a **hand** boundary, because
+that was where it was paid; under DLR-91 a hit booked on a hand's last trick **carries** into the next
+hand's first trick instead.)
+
+**What the developer owns:** whether **2 coins** is right against a 1-coin Cheat and 1 coin a fight;
+whether **4 damage** is right; whether **three taps** to mark reads as deliberate or as fiddly; whether
+the felt rail reads well with a second plate on it; whether the mark is legible at a glance and whether
+it stays legible on a card also carrying a skull; the `⚗` glyph and its colour; every word of placeholder
+copy; whether charges should have a **cap** (built as: no cap, coins are the limiter); whether the skull
+reading above should stand; and — the largest one — **whether the delayed hit needs to announce itself.**
+
+**It has not been played end to end.** QA drove the shop, the inert plate, the purse cell and the
+`buyFromShop` fix in a real browser, but **could not earn 2 coins in five full playthroughs** before
+dying — which is a datum about the price and the difficulty rather than about the item. The
+purchase-to-payoff loop is proven by a mounted-component test against the real component tree with real
+DOM events, and not yet by a hand on a mouse.
+
 ### Known tensions, recorded not resolved
 
+- **Holding a Poison Guard can cost you health, which is the opposite of how insurance reads** (new
+  2026-08-19, DLR-91; **accepted, not open**). The Guard suppresses the poison-driven cash-out — so the
+  cash-out does not happen — so a Quarry that would have died to it **survives**. And under the
+  Quarry-first ordering (section 8), a Quarry that survives is a Quarry that lets your damage through. So
+  there are positions where **buying the Guard strictly loses you 2 health** you would otherwise have
+  dodged, and the correct play is not to hold one. Nothing on screen hints at it and no hint is designed.
+  The developer accepted this as a real decision rather than smoothing it out — *"that's fine, this is
+  just a play test for buying items from the shop."* **The cheapest measurement is whether it ever bites
+  you and whether you notice why.**
+- **Poison is legible only through its effects, and DLR-91 made that worse before it made it better**
+  (new 2026-08-19, DLR-90; **sharpened by DLR-91**). Three things are invisible: **pending poison** never
+  appears on the felt, a **held Guard** never appears during a fight, and **the moment poison fires** shows
+  as hearts disappearing plus a streak that vanished, with nothing naming the cause. When the hit landed at
+  the deal of the next hand that was survivable, because the drop coincided with a visible boundary.
+  Landing it **mid-hand** removes even that, and it now takes a streak with it — so the single most
+  expensive event in a hand is also the least explained. No rule required a surface and choosing one is a
+  judgement call, so none was invented. The costed options are **one mount prop plus a line in the hint
+  cascade** (~15 lines) or **a beat on the status band**. Until one lands, the mechanic is at its least
+  legible exactly when it matters most.
+- **Two poisoned cards in one trick owe one hit, and that is a predicate rather than a decision** (new
+  2026-08-19, DLR-91). Poison stacks across *separate* poisoned tricks, which is the case the developer was
+  asked about and answered. But a trick is only ever "poisoned or not" — nothing counts the marks in it — so
+  spending two charges on two cards that meet in the same trick wastes one. Whether that should owe double
+  is a count instead of a predicate, and a small follow-up either way.
+- **A cash-out that kills the Quarry is now strictly better than it was, and nothing was retuned** (new
+  2026-08-19, DLR-91). Mutual kills used to lose the run; they now win the fight. That makes the game
+  measurably easier at exactly the moments that were previously fatal, and no health total, damage figure
+  or Quarry curve moved in response — by decision, so that it is a choice rather than a side effect. **The
+  measurement is whether a fight ever felt like it should have killed you and did not.**
+- **A dodge on a poisoned trick is a free bonus nobody designed** (new 2026-08-19, DLR-90). Poison waives
+  the *clean loss*, deliberately, because a dodge is a Quarry win the player **banks** and replacing it
+  would delete an earned bank. The consequence is that poisoning a card and then dodging with it **banks
+  the trick, keeps the streak, and still bills the Quarry 4** — strictly better than either outcome alone,
+  for a card played expecting to lose. It falls out of two correct rules rather than from a decision.
+  Whether that is a nice discovery or an accident to close is unjudged.
+- **Two prices now compete for the same coin, and one of them was already predicted to win** (new
+  2026-08-19, DLR-90). DLR-84 already recorded the expectation that **Heal is bought every visit**,
+  because a guaranteed 4 health beats a rule-break you may not need. Envenom is **twice the price** of
+  either existing item, and QA could not reach 2 coins in five playthroughs. So the item most likely to
+  go unbought is the one that just shipped, and the fix — if it needs one — is a price rather than a
+  mechanic. **`ENVENOM_PRICE` and `HEAL_PRICE` are separate keys**, so it is one line either way.
+- **The shop screen is at the edge of its viewport, and getting there took three attempts** (new
+  2026-08-18, DLR-89). The tab row pushed the shop's content past the height of the window, and because
+  the shell crops rather than scrolls, **the button that leaves the shop was drawn off the bottom of the
+  screen** — leaving `Escape`, which is nowhere on screen, as the only way out. It is fixed, and now sits
+  on screen with room to spare at every size measured (including one narrower than any originally
+  tested). But the shop now spends its whole height budget: the shelf itself yields space and scrolls to
+  keep the exit visible, and at a short window that shelf shows part of one card. **Every list in this
+  shop is expected to grow**, so the next few items will press on this again. The tension is that the
+  screen's structure is now correct while its proportions are unjudged.
 - **The path is cropped, not scrolled, and nothing tells you** (new 2026-08-17, DLR-85). Below roughly
   1088px of width the opponents at the end of the run are not drawn at all — 21 of 25 at 1024×768, 14 of
   25 at a phone width, where the title and the button are cut off too. The shell is `overflow: hidden`, so

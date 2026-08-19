@@ -1,5 +1,5 @@
 import { type CSSProperties } from 'react'
-import { containsCard, sameCard, type Card } from '../../warCouncil'
+import { containsCard, isEnvenomed, sameCard, type Card } from '../../warCouncil'
 import { fanPlacement } from './fanLayout'
 import { cardKey } from './labels'
 import PlayingCard from './PlayingCard'
@@ -13,6 +13,15 @@ interface HandFanProps {
   readonly hint: string
   readonly rejected: boolean
   readonly promptOpen: boolean
+  /** DLR-90 AC2 — the marks, so the fan can draw them. Passed rather than derived: this component
+   *  computes nothing about a card's state, exactly as it takes `legal` from the engine rather
+   *  than comparing suits itself. */
+  readonly envenomedCards: readonly Card[]
+  /** DLR-90 AC2 — a hand-card tap MARKS rather than plays. While true, every held card is a valid
+   *  target INCLUDING one illegal to play: marking is not a move, and the item exists precisely to
+   *  give a card the player expects to lose with a reason to be played. Read from the reducer's own
+   *  `envenomArmed` predicate, never re-derived here. */
+  readonly envenomArmed: boolean
   readonly onTap: (card: Card) => void
   readonly onCancel: () => void
 }
@@ -41,13 +50,17 @@ export default function HandFan({
   hint,
   rejected,
   promptOpen,
+  envenomedCards,
+  envenomArmed,
   onTap,
   onCancel,
 }: HandFanProps) {
   // Guards against `containsCard(legal, undefined)` — safe today only because `interactive`
   // is always false once `hand.length === 0`, and cheap enough not to rely on that staying true.
+  // While envenomArmed, every held card is a valid target — including one illegal to play — so
+  // the `containsCard` term drops out rather than gating focusability a second way.
   const isFocusable = (index: number) =>
-    hand[index] !== undefined && interactive && containsCard(legal, hand[index])
+    hand[index] !== undefined && interactive && (envenomArmed || containsCard(legal, hand[index]))
 
   const { groupRef, tabStopIndex, handleKeyDown } = useRovingTabIndex(
     hand.length,
@@ -71,7 +84,10 @@ export default function HandFan({
         // thing from "this card is an illegal choice", and the stylesheet suppresses the
         // illegal grey inside it for that reason. Purely presentational: every card is
         // `disabled` either way, so nothing about behaviour or the accessible tree changes.
-        className={`wc-fan${interactive ? '' : ' wc-is-inert'}`}
+        // `wc-is-marking` is the same idea for DLR-90's own mode — presentational only,
+        // changing nothing about behaviour or the accessible tree, so the stylesheet can
+        // distinguish "pick a card to poison" from ordinary play.
+        className={`wc-fan${interactive ? '' : ' wc-is-inert'}${envenomArmed ? ' wc-is-marking' : ''}`}
         role="group"
         aria-label="Your hand"
         // While a Fox/Woodcutter prompt is open, AbilityPrompt renders every remaining hand
@@ -103,7 +119,8 @@ export default function HandFan({
               card={card}
               variant="hand"
               armed={isArmed}
-              illegal={!interactive || !containsCard(legal, card)}
+              illegal={!interactive || (!envenomArmed && !containsCard(legal, card))}
+              envenomed={isEnvenomed(envenomedCards, card)}
               tabIndex={index === tabStopIndex ? 0 : -1}
               style={style}
               onTap={onTap}

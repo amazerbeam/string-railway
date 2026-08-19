@@ -1,4 +1,4 @@
-import { QuarryCharacter, DuelSide, type Health, type Damage, type Coins } from './types'
+import { QuarryCharacter, type Health, type Damage, type Coins } from './types'
 
 // §5 "Player health" — DECIDED, and small on purpose: Balatro tracks 4 hands and 3 discards as
 // integers held in the head against score requirements in the hundreds and thousands, and §5
@@ -175,11 +175,6 @@ export function quarryHealthForEncounter(index: number): Health {
 // UNIT: health points, added once between encounters. VALUE: the developer's.
 export const ENCOUNTER_PLAYER_RESTORE: Health = 0
 
-// §5 / §9 "Simultaneous depletion" — DECIDED 2026-08-11: both bars empty on the same Hunt and
-// the player loses. Data rather than a hardcoded branch, so DLR-65 T5 reads an attributed
-// ruling instead of an unexplained `if`.
-export const SIMULTANEOUS_DEPLETION_WINNER: DuelSide = DuelSide.Quarry
-
 // §9 "Forage budget per encounter" — decided, provisional (developer decision,
 // 2026-08-09 per DLR-48 AC3): 4 edits.
 export const FORAGE_BUDGET_PER_ENCOUNTER = 4
@@ -221,6 +216,35 @@ export const HEAL_PRICE: Coins = 1
 // and `ENCOUNTER_PLAYER_RESTORE` above stays deliberately unread.
 // UNIT: health points, added once on purchase.
 export const HEAL_HEALTH_RESTORED: Health = 4
+
+// DLR-90 AC1 — the Envenom price. TRANSCRIBED from version-4-scope.md's own heading ("2 coins"),
+// which prices it at twice Poison Guard's cost because unlike Guard this is a guaranteed,
+// unconditional hit rather than insurance against a risk. NOT chosen here and NOT a tuning value
+// open today. A separate key from CHEAT_PRICE and HEAL_PRICE for the reason those two are already
+// separate: re-pricing one item must not move another.
+// UNIT: coins per purchase.
+export const ENVENOM_PRICE: Coins = 2
+
+// DLR-91 D2 (2026-08-19) — poison's two figures. TWO keys, not one shared number: the player-side
+// hit is HALVED because it also forces the streak's cash-out (D3), which the Quarry has no
+// equivalent of. A single shared key is the bug that type-checks, reads correctly, and pays the
+// wrong side. Renamed from ENVENOM_DAMAGE for exactly that reason — a bare name sitting beside
+// ENVENOM_PLAYER_DAMAGE is an invitation to reach for the wrong one.
+//
+// The Quarry's 4 is TRANSCRIBED from version-4-scope.md §1: "the same figure the doc already uses
+// for 'one fight's worth of damage' (the-hunt.md §9) and for the shop's own Heal".
+// The player's 2 is DEVELOPER-CHOSEN, 2026-08-19. Not transcribed and not an open tuning value.
+// UNIT: health points, applied once, to one side, at the resolution of the next trick.
+export const ENVENOM_QUARRY_DAMAGE: Damage = 4
+export const ENVENOM_PLAYER_DAMAGE: Damage = 2
+
+// DLR-91 AC1 — TRANSCRIBED from version-4-scope.md §1's own heading ("Fight-long — new item:
+// Poison Guard, 1 coin"), which prices it level with HEAL_PRICE because both are a 1-coin-for-4-HP
+// trade run in opposite directions. NOT chosen here and NOT an open tuning value. Its own key for
+// the reason CHEAT_PRICE and HEAL_PRICE are already separate: re-pricing one item must not move
+// another.
+// UNIT: coins per purchase.
+export const POISON_GUARD_PRICE: Coins = 1
 
 export const TelegraphFidelity = {
   Suit: 'suit', // narrowest — only the lead suit is telegraphed

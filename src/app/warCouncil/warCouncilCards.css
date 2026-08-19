@@ -132,6 +132,28 @@
   line-height: 1;
 }
 
+/* DLR-90/AC2: the Envenom mark, once a marked card is face up. Bottom-left — the ONE corner the
+   rank (top-left), the skull (top-right) and the pip (bottom-right) leave free, so a card carrying
+   both marks stays legible. A ringed badge rather than a bare tinted glyph, per `game-ux`'s
+   "state reads without motion or colour alone": the ring is the form signal, the fill colour is
+   secondary. PLACEHOLDER glyph and hue — the developer's to retune. */
+.wc-card .wc-venom-mark {
+  position: absolute;
+  bottom: calc(var(--wc-card-w) * 0.07);
+  left: calc(var(--wc-card-w) * 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--wc-card-w) * 0.24);
+  height: calc(var(--wc-card-w) * 0.24);
+  border-radius: 50%;
+  border: 2px solid var(--wc-parchment);
+  background: #4a7c3a;
+  color: var(--wc-parchment);
+  font-size: calc(var(--wc-card-w) * 0.13);
+  line-height: 1;
+}
+
 /* An ability marker, not a printed name — "WOODCUTTER" cannot fit at this width
    without becoming unreadable. The rank identifies which ability; the full name
    lives in the accessible label and in the hint under the hand. */

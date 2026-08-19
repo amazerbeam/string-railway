@@ -32,7 +32,7 @@ The alignment check happens in `plan.md` Part 1, not at the gate. A best-effort 
 
 **This is the first action `/fb-plan` takes.** The board must show the work in flight from the moment planning starts, not once the plan folder exists — a developer looking at the board mid-planning should never see the card still in `To Do`.
 
-Nothing here depends on the slug. Scan `$ARGUMENTS` and the primed brief for a `SCRUM-<n>` key: the developer named a ticket, pasted one, or referenced a spec that cites one. If you find one, invoke the `management-jira` skill and transition that issue to `Planning` — automatically, no confirmation prompt. Read *The SCRUM status model* in that skill for the rules: resolve the transition id live, report the move in one line, and never fail this command over a Jira error. Transitions are any → any, so a card in `To Do` moves straight to `Planning`.
+Nothing here depends on the slug. Scan `$ARGUMENTS` and the primed brief for a `DLR-<n>` key: the developer named a ticket, pasted one, or referenced a spec that cites one. If you find one, invoke the `management-jira` skill and transition that issue to `Planning` — automatically, no confirmation prompt. Read *The DLR status model* in that skill for the rules: resolve the transition id live, report the move in one line, and never fail this command over a Jira error. Transitions are any → any, so a card in `To Do` moves straight to `Planning`.
 
 Skip silently when the brief carries no key — that work will get a date-branch slug in Step 1.7 and has no card to move. Do not create a ticket to have something to transition; `/fb-plan` plans, it does not open work.
 
@@ -118,7 +118,7 @@ Capture findings in `plan.md` Part 1 under **"Config and persisted-shape audit"*
 
 Plans are folders, not loose files — several plans coexist under `.claude/contract/`, and a new plan must never overwrite an existing one.
 
-Read `.claude/workflow/plan-resolution.md` and follow **Plan slug grammar**. This project has a Jira project (`SCRUM`), so **prefer the Jira key** when the work has one — `SCRUM-8-scaffold-vite-app`. Fall back to today's date plus a kebab-case title when it does not. Lowercase title, 60 characters max.
+Read `.claude/workflow/plan-resolution.md` and follow **Plan slug grammar**. This project has a Jira project (`DLR`), so **prefer the Jira key** when the work has one — `DLR-8-scaffold-vite-app`. Fall back to today's date plus a kebab-case title when it does not. Lowercase title, 60 characters max.
 
 Then:
 
@@ -127,7 +127,7 @@ Then:
 3. If the session was primed with a spec from `.claude/contract/specs/`, **move** it to `<plan>/spec.md` so the plan folder carries its own upstream input, and cite it in Part 1 → Task reference. If the brief came from a Jira ticket, cite the issue key and paste its acceptance criteria into Part 1 → Task reference — the plan folder must stand alone after `/clear`.
 4. State the chosen slug in chat when you hand off in Step 3 — it is the developer's cue to rename the folder now, while it is cheap. A rename must also update the `Plan folder:` line the Step 2 template writes into `plan.md`, or that line names a path that no longer exists; and `specs` and `archive` are reserved names a plan folder may not take, since resolution skips both and the plan would become permanently undiscoverable.
 
-The ticket is already in `Planning` — Step 0.5 moved it before this folder existed. If the slug you just derived carries a `SCRUM-<n>` key that Step 0.5 did not find in the brief, transition it now and say that the move was late.
+The ticket is already in `Planning` — Step 0.5 moved it before this folder existed. If the slug you just derived carries a `DLR-<n>` key that Step 0.5 did not find in the brief, transition it now and say that the move was late.
 
 ## Step 2: Produce the plan — write plan.md
 
@@ -302,7 +302,7 @@ If the runtime cannot present `AskUserQuestion` (non-interactive session), state
 
 **Ordering — this is the whole point of the step.** Step 3 sends you here before it presents anything, and you come back to Step 3 to present the plan and the mockup together under one approval gate. This section carries no gate of its own; the numbering is historical, kept so cross-references stay valid. Never present `plan.md` for approval, gate it, and *then* produce a mockup: the gate's question promises `tasks.md` next, and a mockup arriving after it makes that promise false.
 
-`plan.md` is written and self-reviewed at this point; the mockup is downstream of it, not a new design decision. Do not use this step to invent visuals `plan.md` didn't already call for — if `plan.md` Part 1 → Assumptions made already picked the CSS/text-based card/token default (the SCRUM-32 pattern), the mockup follows that; it does not go looking for art.
+`plan.md` is written and self-reviewed at this point; the mockup is downstream of it, not a new design decision. Do not use this step to invent visuals `plan.md` didn't already call for — if `plan.md` Part 1 → Assumptions made already picked the CSS/text-based card/token default (the DLR-32 pattern), the mockup follows that; it does not go looking for art.
 
 1. **Build one self-contained file**, `<plan>/mockup.html` — static HTML, inline `<style>`, inline `<script>`. No build step, no framework, no import of this project's real components or styles. It exists to validate layout and interaction before real code is written, not to be shipped or reused as source.
 2. **Cover every surface `plan.md` Part 1 → In scope claims this ticket renders**, populated with obviously-fake placeholder data (hard-coded hand of cards, a fake board, a fake score) — enough to judge layout and information density, nothing that needs to be real.
@@ -557,7 +557,7 @@ Fix issues inline. No need to re-review after fixing — just fix and continue t
 
 ## Step 5: Final hand off
 
-`tasks.md` now exists at `Status: PLANNED`, so **move the ticket `Planning → Planned`** — automatically, no confirmation prompt. Same rules as Step 0.5: invoke `management-jira`, resolve the transition id live per *The SCRUM status model*, skip silently when the slug carries no `SCRUM-<n>` key, and never fail this command over a Jira error.
+`tasks.md` now exists at `Status: PLANNED`, so **move the ticket `Planning → Planned`** — automatically, no confirmation prompt. Same rules as Step 0.5: invoke `management-jira`, resolve the transition id live per *The DLR status model*, skip silently when the slug carries no `DLR-<n>` key, and never fail this command over a Jira error.
 
 Then present in chat:
 
@@ -565,7 +565,7 @@ Then present in chat:
 2. **Phase summary**: one line per phase naming the phase and what it delivers
 3. Reminder of the approved skills to invoke during execution (from `plan.md` Part 2)
 4. **Everything the developer owns personally** — every tuning value still to choose, every ambiguous rule reading, any dependency needing approval, and every behaviour that can only be judged by running the app, with what to look for
-5. **Jira**: the transition performed, e.g. `SCRUM-12 → Planned`. Say so plainly if it was skipped or failed
+5. **Jira**: the transition performed, e.g. `DLR-12 → Planned`. Say so plainly if it was skipped or failed
 6. **Mockup**: if Step 3.5 ran, confirm `<plan>/mockup.html` exists and was approved at Step 3's gate, and which tasks cite it. Say so plainly if it was skipped (non-UI work) or left unconfirmed (non-interactive session, or the `Artifact` tool unavailable)
 
 Then tell the developer:

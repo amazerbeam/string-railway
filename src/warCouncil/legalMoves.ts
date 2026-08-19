@@ -1,3 +1,4 @@
+import type { Damage } from '../hunt'
 import { cardsOfSuit, highestOfSuit, sameCard } from './cardUtils'
 import { CardRank, type Card, type PlayerSide, type RoundState, type Suit } from './types'
 
@@ -32,6 +33,21 @@ export function monarchFollowSet(hand: readonly Card[], suit: Suit): readonly Ca
  */
 export interface LegalMoveOptions {
   readonly ignoreFollowSuit?: boolean
+}
+
+/**
+ * What `playCard` needs beyond the legality question. EXTENDS `LegalMoveOptions` so the same object
+ * still satisfies `legalMoves` with no second parameter to keep in step.
+ *
+ * The poison figures are handed IN rather than read: the pending queue lives on `EncounterState` in
+ * `src/hunt/`, the bank rules live on `RoundState` here, and `src/hunt/` must never learn about
+ * `RoundState` — `hunt/types.ts` documents that cycle. The reducer holds both and is the one place
+ * they can meet.
+ */
+export interface PlayCardOptions extends LegalMoveOptions {
+  readonly poisonToPlayer?: Damage
+  readonly poisonToQuarry?: Damage
+  readonly poisonGuarded?: boolean
 }
 
 /**

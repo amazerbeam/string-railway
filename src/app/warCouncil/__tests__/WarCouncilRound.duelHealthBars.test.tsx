@@ -2,15 +2,17 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { dealRound, PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
-import { DAMAGE_PER_HIT, DuelSide, HAND_SIZE, quarryHealthForEncounter } from '../../../hunt'
+import { DAMAGE_PER_HIT, DuelSide, HAND_SIZE } from '../../../hunt'
 import WarCouncilRound from '../WarCouncilRound'
 import {
   card,
   coinsFixture,
   encounterFixture,
+  envenomChargesFixture,
   huntFixture,
   makeRound,
   maxHealthFixture,
+  poisonGuardHeldFixture,
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
@@ -47,6 +49,8 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
         quarryLabel={quarryLabelFixture}
         cheats={[]}
         coins={coinsFixture}
+        envenomCharges={envenomChargesFixture}
+        poisonGuardHeld={poisonGuardHeldFixture}
         onComplete={onComplete}
       />,
     )
@@ -150,15 +154,31 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
     // resolves — it switches to the run verdict instead — so that reproduction no longer applies.
     // What still matters: the deciding trick gets its own reveal like any other, and the SAME tap
     // that clears it reports the finished encounter upward with the correct figures.
+    //
+    // DLR-91/D7 — a single trick that both damages the player AND empties the Quarry is no longer
+    // reachable as one event: the Quarry depletes FIRST, and a Quarry that goes down on an event
+    // spares the player that event's damage. This is now driven as TWO tricks, the same split
+    // `run.test.ts`'s `winEncounter` helper uses for the pure-function case: trick A is a clean
+    // loss the player takes DAMAGE_PER_HIT for, non-lethal to the Quarry (bank/multiplier are both
+    // zero, so it cashes nothing); trick B is the killing blow ALONE, a clean win for the player
+    // (so `damageToPlayer` is zero) whose forced end-of-hand cash-out (AC8) still empties the
+    // Quarry's bar. The Quarry's starting health is set low (1) for this fixture specifically so
+    // trick B's modest, organically-built bank (1 × 1) is enough to finish it without needing an
+    // implausible run of prior wins — the health total does not have to be the real encounter-0
+    // figure to prove the point, since only the two damage DELTAS are asserted.
+    const startingEncounter = {
+      ...encounterFixture,
+      health: { ...encounterFixture.health, [DuelSide.Quarry]: 1 },
+    }
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
-      bank: 4,
-      multiplier: 4,
-      tricksPlayed: HAND_SIZE - 1,
+      bank: 0,
+      multiplier: 0,
+      tricksPlayed: HAND_SIZE - 2,
       hands: {
-        [PlayerSide.Player]: [card(Suit.Bells, 2)],
-        [PlayerSide.Cpu]: [card(Suit.Bells, 9)],
+        [PlayerSide.Player]: [card(Suit.Bells, 2), card(Suit.Moons, 11)],
+        [PlayerSide.Cpu]: [card(Suit.Bells, 9), card(Suit.Moons, 10)],
       },
       currentTrick: [],
     })
@@ -167,21 +187,37 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
       <WarCouncilRound
         initialState={round}
         hunt={huntFixture}
-        encounter={encounterFixture}
+        encounter={startingEncounter}
         maxHealth={maxHealthFixture}
         runLabel={runLabelFixture}
         quarryLabel={quarryLabelFixture}
         cheats={[]}
         coins={coinsFixture}
+        envenomCharges={envenomChargesFixture}
+        poisonGuardHeld={poisonGuardHeldFixture}
         onComplete={onComplete}
       />,
     )
 
-    // The player leads the 2, the Quarry follows the higher card of the lead suit and takes it —
-    // a clean loss, cashing 4 × 4 = 16 into a 10-health Quarry, which empties the bar outright.
+    // Trick A — the player leads the 2, the Quarry follows the higher card of the lead suit and
+    // takes it: a clean loss, costing the player DAMAGE_PER_HIT and cashing nothing (bank and
+    // multiplier both start at zero).
     const bells2 = screen.getByRole('button', { name: '2 of Bells' })
     fireEvent.click(bells2)
     fireEvent.click(bells2)
+
+    // Clears trick A's reveal and — in the same dispatch — commits the Quarry's own lead for
+    // trick B, since it is now the Quarry's turn with an empty trick on the table.
+    const tapToCarryOn = screen.getByRole('button', { name: /tap the table to carry on/i })
+    fireEvent.click(tapToCarryOn)
+
+    // Trick B — the player follows the Quarry's led 10 with the Moons 11 and takes it cleanly, so
+    // `damageToPlayer` is zero for this event. It is the hand's sixth and final trick, so AC8
+    // forces bank × multiplier (1 × 1, from this single win) to cash regardless of the outcome —
+    // the killing blow, alone.
+    const moons11 = screen.getByRole('button', { name: '11 of Moons (Monarch)' })
+    fireEvent.click(moons11)
+    fireEvent.click(moons11)
 
     // The deciding trick's own reveal — no terminal panel any more (encounterOver widens this
     // same control's click target, so the tap that clears the reveal also reports upward).
@@ -190,11 +226,10 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
 
     expect(onComplete).toHaveBeenCalledTimes(1)
     const { encounter } = onComplete.mock.calls[0][0]
-    // Surplus is discarded, so the Quarry's delta is its whole bar, not the 16 that was cashed.
-    expect(encounterFixture.health[DuelSide.Quarry] - encounter.health[DuelSide.Quarry]).toBe(
-      quarryHealthForEncounter(0),
+    expect(startingEncounter.health[DuelSide.Quarry] - encounter.health[DuelSide.Quarry]).toBe(
+      startingEncounter.health[DuelSide.Quarry],
     )
-    expect(encounterFixture.health[DuelSide.Player] - encounter.health[DuelSide.Player]).toBe(
+    expect(startingEncounter.health[DuelSide.Player] - encounter.health[DuelSide.Player]).toBe(
       DAMAGE_PER_HIT,
     )
   })
@@ -212,6 +247,8 @@ describe('WarCouncilRound — the Quarry’s at-risk preview (DLR-86)', () => {
         quarryLabel={quarryLabelFixture}
         cheats={[]}
         coins={coinsFixture}
+        envenomCharges={envenomChargesFixture}
+        poisonGuardHeld={poisonGuardHeldFixture}
         onComplete={vi.fn()}
       />,
     )

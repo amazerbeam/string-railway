@@ -10,6 +10,7 @@ function baseState(overrides: Partial<RoundState> = {}): RoundState {
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
     skulledCards: [],
+    envenomedCards: [],
     bank: 0,
     multiplier: 0,
     lastResolution: null,

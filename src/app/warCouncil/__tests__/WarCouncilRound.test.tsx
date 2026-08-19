@@ -10,15 +10,17 @@ import {
 } from '../../../hunt'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
 import { cardAccessibleName, cheatAccessibleName } from '../labels'
-import { CheatStage } from '../roundReducer'
+import { CheatStage } from '../roundUiState'
 import WarCouncilRound from '../WarCouncilRound'
 import {
   card,
   coinsFixture,
   encounterFixture,
+  envenomChargesFixture,
   huntFixture,
   makeRound,
   maxHealthFixture,
+  poisonGuardHeldFixture,
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
@@ -42,6 +44,8 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       quarryLabel={quarryLabelFixture}
       cheats={overrides.cheats ?? []}
       coins={overrides.coins ?? coinsFixture}
+      envenomCharges={overrides.envenomCharges ?? envenomChargesFixture}
+      poisonGuardHeld={overrides.poisonGuardHeld ?? poisonGuardHeldFixture}
       onComplete={overrides.onComplete ?? vi.fn()}
     />,
   )

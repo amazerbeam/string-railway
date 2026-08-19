@@ -10,7 +10,7 @@ import {
 } from '../../warCouncil'
 import { DuelSide } from '../../hunt'
 import type { HealthBarView } from './duelHealthBars'
-import { CheatStage } from './roundReducer'
+import { CheatStage, EnvenomStage } from './roundUiState'
 
 export const SUIT_NAME: Readonly<Record<Suit, string>> = {
   [Suit.Bells]: 'Bells',
@@ -26,15 +26,29 @@ export const RANK_NAME: Readonly<Record<number, string>> = {
   [CardRank.Monarch]: 'Monarch',
 }
 
-/** `skulled` defaults to `false` so every existing call site — none of which yet knows whether
- *  the card it names carries a skull — keeps compiling unchanged; a caller that does know passes
- *  it explicitly. */
-export function cardAccessibleName(card: Card, skulled = false): string {
+/** Which markers a card is carrying. An OBJECT rather than positional booleans: DLR-90 added a
+ *  second marker, and `cardAccessibleName(card, true, false)` is one transposition away from
+ *  announcing the wrong one — on the exact surface a player who cannot see the card depends on. */
+export interface CardMarks {
+  readonly skulled?: boolean
+  readonly envenomed?: boolean
+}
+
+/** `marks` is optional so every call site that names an unmarked card keeps compiling unchanged;
+ *  a caller that knows a card's markers passes them. Skull before poison, matching the order the
+ *  two marks are drawn in. PLACEHOLDER COPY, as this file's rest is. */
+export function cardAccessibleName(card: Card, marks: CardMarks = {}): string {
   const base = `${card.rank} of ${SUIT_NAME[card.suit]}`
   const named = RANK_NAME[card.rank]
   const name = named ? `${base} (${named})` : base
-  return skulled ? `${name}, skulled` : name
+  const suffix = [marks.skulled && 'skulled', marks.envenomed && 'poisoned']
+    .filter(Boolean)
+    .join(', ')
+  return suffix ? `${name}, ${suffix}` : name
 }
+
+/** The mark's own label, beside `SKULL_MARK_LABEL`. PLACEHOLDER copy. */
+export const VENOM_MARK_LABEL = 'Poisoned'
 
 /** A stable React list key for a card — suit and rank never repeat within one hand or pile. */
 export function cardKey(card: Card): string {
@@ -171,3 +185,21 @@ export function cheatAccessibleName(stage: CheatStage | null): string {
  *  are. Distinct from `runLabels.ts`'s `SHOP_COINS_LABEL`: each file owns its own surface's
  *  copy, so the felt and the shop can be reworded independently. */
 export const COINS_PLATE_LABEL = 'Coins'
+
+/** The Envenom plate's copy (DLR-90). PLACEHOLDER — the wording is the developer's, exactly as
+ *  `CHEAT_RAIL_LABEL` and the rest of this file are. */
+export const ENVENOM_RAIL_LABEL = 'Envenom'
+export const ENVENOM_EMPTY_LABEL = 'No Envenom held'
+export const ENVENOM_POISED_HINT = 'Tap Envenom again to arm it'
+export const ENVENOM_ARMED_HINT = 'Pick a card in your hand to poison'
+
+/** The plate's accessible name. The three stages MUST differ, and the count is in the name rather
+ *  than only in the glyph — `getByRole('button', { name })` is how the spec tells them apart, and
+ *  a player who cannot see the plate needs to know how many are held. */
+export function envenomAccessibleName(stage: EnvenomStage | null, charges: number): string {
+  if (charges <= 0) return ENVENOM_EMPTY_LABEL
+  const held = `${ENVENOM_RAIL_LABEL}, ${charges} held`
+  if (stage === EnvenomStage.Armed) return `${held}, armed`
+  if (stage === EnvenomStage.Poised) return `${held}, selected`
+  return held
+}

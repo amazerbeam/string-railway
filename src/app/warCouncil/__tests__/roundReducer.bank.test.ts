@@ -16,13 +16,9 @@ import {
   startEncounter,
   type EncounterState,
 } from '../../../hunt'
-import {
-  createRoundUiState,
-  roundReducer,
-  RoundUiActionKind,
-  type RoundUiState,
-} from '../roundReducer'
-import { card, makeRound } from './roundFixture'
+import { roundReducer } from '../roundReducer'
+import { createRoundUiState, RoundUiActionKind, type RoundUiState } from '../roundUiState'
+import { card, envenomChargesFixture, makeRound } from './roundFixture'
 
 // The bank cash-out specs (AC6/AC8) — carved into their own file for the same reason DLR-71's
 // own splits exist in this codebase: `roundReducer.test.ts` crossed the 400-line budget once
@@ -38,7 +34,13 @@ function uiFrom(
   round: WarCouncilState,
   encounter: EncounterState = startEncounter(0),
 ): RoundUiState {
-  return createRoundUiState({ round, encounter, cheats: [] })
+  return createRoundUiState({
+    round,
+    encounter,
+    cheats: [],
+    envenomCharges: envenomChargesFixture,
+    poisonGuardHeld: false,
+  })
 }
 
 describe('the bank cash-out — AC6/AC8, applied mid-hand as it happens', () => {

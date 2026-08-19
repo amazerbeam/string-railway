@@ -98,7 +98,7 @@ Only once the developer agrees, work through the four steps below. Nothing is de
 2. Create `.claude/contract/archive/` if it does not exist.
 3. Check `.claude/contract/archive/<slug>/` **before** moving. If it already exists, stop and report it, or archive to `<slug>-2` (then `-3`, …) — on Windows, moving a folder onto an existing folder of the same name nests it as `archive/<slug>/<slug>/` instead of merging. Once the target is free, **move** the whole plan folder to `.claude/contract/archive/<slug>/` — `plan.md`, `tasks.md`, `pr-description.md`, and `spec.md` if present. Move, never copy: a path that is live in two places drifts.
 4. Confirm `.claude/contract/<slug>/` no longer exists, that `.claude/contract/archive/<slug>/plan.md` is the file you just moved (same size and content as the plan you summarised — a pre-existing archived copy would satisfy a bare existence check), and that `.claude/contract/archive/<slug>/<slug>/` does **not** exist.
-5. **Move the ticket to `Done`.** The contract is archived, which is exactly what `Done` means here — `Ready for Test` covers the window before it. If the slug carries a `SCRUM-<n>` key, invoke `management-jira` and transition that issue automatically; the developer's confirmation above covered this step. Only do it when the archive status is `COMPLETE` — for a `PARTIAL` archive, leave the ticket where it is and flag it, because unfinished work must not read as shipped. Resolve the transition id live, skip silently when there is no key, and never fail the clean-up over a Jira error. See *The SCRUM status model*.
+5. **Move the ticket to `Done`.** The contract is archived, which is exactly what `Done` means here — `Ready for Test` covers the window before it. If the slug carries a `DLR-<n>` key, invoke `management-jira` and transition that issue automatically; the developer's confirmation above covered this step. Only do it when the archive status is `COMPLETE` — for a `PARTIAL` archive, leave the ticket where it is and flag it, because unfinished work must not read as shipped. Resolve the transition id live, skip silently when there is no key, and never fail the clean-up over a Jira error. See *The DLR status model*.
 
 Other plan folders are untouched — archiving one plan never affects another. Before writing the Step 8 output, enumerate them for the "Other plans still active" line: run the discovery step from `.claude/workflow/plan-resolution.md` over `.claude/contract/` and list each remaining plan's slug and status.
 
@@ -130,7 +130,7 @@ Other plan folders are untouched — archiving one plan never affects another. B
 - [`corrections.md` moved to `.claude/lessons/<slug>.md` | "No corrections logged"]
 
 ### Jira
-- [The transition performed, e.g. `SCRUM-12 Ready for Test → Done` — or the flag added for a PARTIAL archive, or plainly that it was skipped or failed]
+- [The transition performed, e.g. `DLR-12 Ready for Test → Done` — or the flag added for a PARTIAL archive, or plainly that it was skipped or failed]
 
 ### Developer Work Still Outstanding
 - [any tuning value still a placeholder, ambiguous rule reading still unresolved, dependency still unapproved, or behaviour never judged by playing — or "None"]

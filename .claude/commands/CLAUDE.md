@@ -12,7 +12,7 @@ The root `CLAUDE.md` warns that a fact restated in five files gets updated in fo
 | Where code lives, runner commands, correctness traps | `.claude/workflow/web-project.md` |
 | Slug grammar, how a command picks *which* plan | `.claude/workflow/plan-resolution.md` |
 | React/TypeScript conventions, architectural boundaries (if any) | `.claude/skills/react-frontend/SKILL.md` |
-| Jira status meanings and which transitions are automatic | `.claude/skills/management-jira/SKILL.md` → *The SCRUM status model* |
+| Jira status meanings and which transitions are automatic | `.claude/skills/management-jira/SKILL.md` → *The DLR status model* |
 | Project-wide domain rules | `.claude/rules/` (see its `README.md`) |
 
 **Reference, never copy.** A command names the file or skill and instructs a Read. Pasting a skill's conventions into a command creates a second source of truth that silently rots — this is the single most common defect in this directory.

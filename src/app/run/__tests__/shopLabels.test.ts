@@ -1,11 +1,29 @@
 import { describe, expect, it } from 'vitest'
-import { HEAL_HEALTH_RESTORED, PurchaseRefusal, SHOP_ITEMS, ShopItem } from '../../../hunt'
+import {
+  ENVENOM_PLAYER_DAMAGE,
+  ENVENOM_QUARRY_DAMAGE,
+  HEAL_HEALTH_RESTORED,
+  PurchaseRefusal,
+  SHOP_CATEGORIES,
+  SHOP_ITEMS,
+  ShopCategory,
+  ShopItem,
+} from '../../../hunt'
 import {
   nextOpponentText,
   priceText,
   PURCHASE_REFUSAL_MESSAGE,
+  SHOP_ASIDE_LABEL,
+  SHOP_CATEGORY_COMING_SOON,
+  SHOP_CATEGORY_EMPTY,
+  SHOP_CATEGORY_LABEL,
+  SHOP_GUARD_HELD,
+  SHOP_GUARD_LABEL,
+  SHOP_GUARD_NONE,
   SHOP_ITEM_BLURB,
   SHOP_ITEM_NAME,
+  SHOP_TABLIST_LABEL,
+  shopCategoryAccessibleName,
   shopItemAccessibleName,
 } from '../shopLabels'
 
@@ -33,6 +51,11 @@ describe('shopLabels', () => {
     expect(SHOP_ITEM_BLURB[ShopItem.Heal]).toContain(String(HEAL_HEALTH_RESTORED))
   })
 
+  it('interpolates both Envenom figures into the blurb rather than quoting a literal', () => {
+    expect(SHOP_ITEM_BLURB[ShopItem.Envenom]).toContain(String(ENVENOM_QUARRY_DAMAGE))
+    expect(SHOP_ITEM_BLURB[ShopItem.Envenom]).toContain(String(ENVENOM_PLAYER_DAMAGE))
+  })
+
   it('gives an item a different accessible name when it carries a refusal', () => {
     const available = shopItemAccessibleName(ShopItem.Heal, null)
     const refused = shopItemAccessibleName(ShopItem.Heal, PurchaseRefusal.NotEnoughCoins)
@@ -54,5 +77,37 @@ describe('shopLabels', () => {
   it('prices an item from configuration', () => {
     expect(priceText(ShopItem.Cheat)).toBeTruthy()
     expect(priceText(ShopItem.Heal)).toBeTruthy()
+  })
+
+  it('labels every ShopCategory member, with no duplicate labels', () => {
+    const labels = SHOP_CATEGORIES.map((category) => SHOP_CATEGORY_LABEL[category])
+    expect(labels).toHaveLength(SHOP_CATEGORIES.length)
+    expect(new Set(labels).size).toBe(labels.length)
+    for (const label of labels) {
+      expect(label.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('states the tablist label, the aside label, the coming-soon reason and the empty shelf', () => {
+    for (const copy of [
+      SHOP_TABLIST_LABEL,
+      SHOP_ASIDE_LABEL,
+      SHOP_CATEGORY_COMING_SOON,
+      SHOP_CATEGORY_EMPTY,
+      SHOP_GUARD_LABEL,
+      SHOP_GUARD_HELD,
+      SHOP_GUARD_NONE,
+    ]) {
+      expect(typeof copy).toBe('string')
+      expect(copy.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('folds the coming-soon reason into a refused tab’s accessible name (AC4)', () => {
+    const open = shopCategoryAccessibleName(ShopCategory.GamePermanent, true)
+    const refused = shopCategoryAccessibleName(ShopCategory.GamePermanent, false)
+    expect(refused).not.toBe(open)
+    expect(refused).toContain(SHOP_CATEGORY_COMING_SOON)
+    expect(open).not.toContain(SHOP_CATEGORY_COMING_SOON)
   })
 })

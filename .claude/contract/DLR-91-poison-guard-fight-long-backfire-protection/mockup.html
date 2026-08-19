@@ -1,0 +1,375 @@
+<title>Poison Guard Shelf</title>
+<style>
+  :root {
+    --ink: #f2ece0;
+    --ink-dim: #b8ae9c;
+    --felt: #1d2b24;
+    --felt-deep: #14201a;
+    --card: #26362e;
+    --card-edge: #3d5247;
+    --gold: #d9b45b;
+    --danger: #c96a5a;
+    --guard: #7fa8c9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100svh;
+    background: var(--felt-deep);
+    color: var(--ink);
+    font: 16px/1.45 "Iowan Old Style", Palatino, Georgia, serif;
+  }
+  .note {
+    max-width: 62rem;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 0;
+    color: var(--ink-dim);
+    font-size: 0.9rem;
+  }
+  .note strong { color: var(--gold); }
+  .note code {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.85em;
+    color: var(--ink);
+  }
+
+  /* --- The shop shell: mirrors ShopPanel's real structure, not a redesign. --- */
+  .run-shell {
+    max-width: 62rem;
+    margin: 0 auto;
+    padding: 1.25rem;
+  }
+  .shop {
+    background: var(--felt);
+    border: 1px solid var(--card-edge);
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+  }
+  .shop-title { margin: 0 0 0.25rem; font-size: 1.5rem; letter-spacing: 0.02em; }
+  .shop-next { margin: 0 0 1rem; color: var(--ink-dim); font-size: 0.95rem; }
+
+  .shop-purse {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .shop-purse-cell {
+    flex: 1 1 8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.5rem 0.7rem;
+    background: var(--felt-deep);
+    border: 1px solid var(--card-edge);
+    border-radius: 0.3rem;
+  }
+  .shop-purse-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--ink-dim);
+  }
+  .shop-purse-value { font-size: 1.15rem; }
+  /* The new cell. Outlined so it is findable in this mockup only — the real one reuses the
+     existing purse classes with no new CSS. */
+  .is-new { outline: 1px dashed var(--guard); outline-offset: 2px; }
+
+  .shop-health {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.7rem;
+    margin-bottom: 1rem;
+    background: var(--felt-deep);
+    border: 1px solid var(--card-edge);
+    border-radius: 0.3rem;
+  }
+  .shop-hearts { letter-spacing: 0.1em; color: var(--danger); }
+  .shop-health .shop-purse-value { margin-left: auto; }
+
+  .shop-tabs { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+  .shop-tab {
+    appearance: none;
+    min-height: 44px;
+    padding: 0.55rem 0.9rem;
+    background: transparent;
+    color: var(--ink-dim);
+    border: 1px solid var(--card-edge);
+    border-bottom-color: transparent;
+    border-radius: 0.3rem 0.3rem 0 0;
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .shop-tab[aria-selected="true"] { background: var(--card); color: var(--ink); }
+  .shop-tab[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+  .shop-tab:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  .shop-panel {
+    padding: 1rem;
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    border-radius: 0 0.3rem 0.3rem 0.3rem;
+  }
+  .shop-empty { margin: 0; color: var(--ink-dim); font-style: italic; }
+
+  .shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 0.75rem;
+  }
+  .shop-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+    min-height: 44px;
+    padding: 0.85rem;
+    text-align: left;
+    background: var(--felt);
+    color: var(--ink);
+    border: 1px solid var(--card-edge);
+    border-radius: 0.35rem;
+    font: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .shop-item:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .shop-item:disabled { opacity: 0.45; cursor: not-allowed; }
+  @media (hover: hover) {
+    .shop-item:not(:disabled):hover { border-color: var(--gold); }
+  }
+  .shop-item:not(:disabled):active { border-color: var(--gold); }
+  .shop-item-name { font-size: 1.1rem; }
+  .shop-item-blurb { font-size: 0.86rem; color: var(--ink-dim); }
+  .shop-item-price { font-size: 0.9rem; color: var(--gold); }
+  .shop-refusal { margin: 0.3rem 0 0; min-height: 1.3em; font-size: 0.82rem; color: var(--danger); }
+
+  .shop-aside { margin-top: 1rem; }
+  .shop-aside-label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--ink-dim);
+  }
+  .shop-hint { margin: 1rem 0 0; color: var(--ink-dim); font-size: 0.85rem; }
+  .run-actions { margin-top: 1rem; }
+  .run-btn {
+    min-height: 44px;
+    padding: 0.6rem 1.2rem;
+    background: var(--gold);
+    color: #22190a;
+    border: none;
+    border-radius: 0.3rem;
+    font: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .run-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .log {
+    max-width: 62rem;
+    margin: 0 auto 2rem;
+    padding: 0 1.25rem;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.8rem;
+    color: var(--ink-dim);
+    white-space: pre-wrap;
+  }
+</style>
+
+<p class="note">
+  <strong>DLR-91 mockup — placeholder data, no engine.</strong> This is the existing DLR-89 shop screen
+  with the two things this contract adds: the <strong>Fight-long</strong> shelf now holds an item instead of
+  reading <em>"Nothing on this shelf yet"</em>, and a third purse cell shows whether a Guard is held
+  (dashed outline, this mockup only). Click <em>Poison Guard</em> to buy it — the cell flips to
+  <code>Held</code>, the coin is spent, and the card goes disabled with the
+  <code>GuardAlreadyActive</code> refusal stated beneath it. Layout, classes and copy follow
+  <code>ShopPanel.tsx</code> and <code>shopLabels.ts</code>; nothing here is a redesign.
+</p>
+
+<div class="run-shell">
+  <div class="shop">
+    <h1 class="shop-title">Between fights</h1>
+    <p class="shop-next">Next up — The Woodcutter. Fight 2 of 25.</p>
+
+    <div class="shop-purse" role="group" aria-label="Your purse and health">
+      <span class="shop-purse-cell">
+        <span class="shop-purse-label">Coins</span>
+        <span class="shop-purse-value" id="coins">3</span>
+      </span>
+      <span class="shop-purse-cell">
+        <span class="shop-purse-label">Cheat slots</span>
+        <span class="shop-purse-value">1 / 2</span>
+      </span>
+      <span class="shop-purse-cell">
+        <span class="shop-purse-label">Envenom held</span>
+        <span class="shop-purse-value">2</span>
+      </span>
+      <span class="shop-purse-cell is-new">
+        <span class="shop-purse-label">Poison Guard</span>
+        <span class="shop-purse-value" id="guard">None</span>
+      </span>
+    </div>
+
+    <div class="shop-health" role="meter" aria-valuenow="6" aria-valuemin="0" aria-valuemax="10"
+         aria-label="Health 6 of 10">
+      <span class="shop-purse-label">Health</span>
+      <span class="shop-hearts" aria-hidden="true">♥♥♥♥♥♥♡♡♡♡</span>
+      <span class="shop-purse-value">6 / 10</span>
+    </div>
+
+    <div class="shop-tabs" role="tablist" aria-label="What lasts how long">
+      <button type="button" class="shop-tab" role="tab" aria-selected="false" data-shelf="oneTimeUse">One-time use</button>
+      <button type="button" class="shop-tab" role="tab" aria-selected="true" data-shelf="fightLong">Fight-long</button>
+      <button type="button" class="shop-tab" role="tab" aria-selected="false" data-shelf="runPermanent">Run-permanent</button>
+      <button type="button" class="shop-tab" role="tab" aria-selected="false" aria-disabled="true" data-shelf="gamePermanent">Game-permanent</button>
+    </div>
+
+    <div class="shop-panel" role="tabpanel" aria-label="Fight-long" id="panel"></div>
+
+    <div class="shop-aside">
+      <span class="shop-aside-label">Also for sale</span>
+      <div class="shop-grid">
+        <div>
+          <button type="button" class="shop-item" onclick="log('Heal bought — placeholder, no engine')">
+            <span class="shop-item-name">Heal</span>
+            <span class="shop-item-blurb">Restore 4 health, now. Anything over your maximum is lost.</span>
+            <span class="shop-item-price">1 coin</span>
+          </button>
+          <p class="shop-refusal" role="status"></p>
+        </div>
+      </div>
+    </div>
+
+    <p class="shop-hint">Buy nothing and carry the coin if you would rather.</p>
+
+    <div class="run-actions">
+      <button type="button" class="run-btn" onclick="log('Fight The Woodcutter — advanceRun; the Guard carries into this fight')">
+        Fight The Woodcutter
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="log" id="log">Click something.</div>
+
+<script>
+  var coins = 3;
+  var guardHeld = false;
+
+  var SHELVES = {
+    oneTimeUse: [
+      { id: 'cheat', name: 'Cheat', price: 1,
+        blurb: 'A card for a slot. Play it later to ignore follow-suit.' },
+      { id: 'envenom', name: 'Envenom', price: 2,
+        blurb: 'Poison a card in your hand. The winner of the trick it is played into takes damage at the next trick — 4 for the Quarry, 2 for you, and yours cashes out your streak.' },
+    ],
+    fightLong: [
+      { id: 'poisonGuard', name: 'Poison Guard', price: 1,
+        blurb: 'Insurance for one fight. The next time your own poison lands on you, you still take the 2 but your streak survives.' },
+    ],
+    runPermanent: [],
+    gamePermanent: [],
+  };
+
+  var selected = 'fightLong';
+
+  function log(line) {
+    document.getElementById('log').textContent = line;
+  }
+
+  // Mirrors refusalFor's real ordering: the item-specific reason comes BEFORE the coin check.
+  function refusalFor(item) {
+    if (item.id === 'poisonGuard' && guardHeld) return 'You are already holding a Poison Guard.';
+    if (coins < item.price) return 'You do not have the coins for this.';
+    return null;
+  }
+
+  function buy(item) {
+    var refusal = refusalFor(item);
+    if (refusal !== null) { log('Refused: ' + refusal); return; }
+    coins -= item.price;
+    if (item.id === 'poisonGuard') {
+      guardHeld = true;
+      log('Bought Poison Guard for 1 coin. poisonGuardHeld = true — it survives advanceRun into the next fight, then clears when that fight ends.');
+    } else {
+      log('Bought ' + item.name + ' for ' + item.price + ' coin(s) — placeholder, no engine.');
+    }
+    render();
+  }
+
+  function render() {
+    document.getElementById('coins').textContent = coins;
+    document.getElementById('guard').textContent = guardHeld ? 'Held' : 'None';
+
+    var panel = document.getElementById('panel');
+    panel.innerHTML = '';
+    panel.setAttribute('aria-label', document.querySelector('[data-shelf="' + selected + '"]').textContent);
+
+    if (selected === 'gamePermanent') {
+      var soon = document.createElement('p');
+      soon.className = 'shop-empty';
+      soon.textContent = 'Coming soon.';
+      panel.appendChild(soon);
+      return;
+    }
+
+    var items = SHELVES[selected];
+    if (items.length === 0) {
+      var empty = document.createElement('p');
+      empty.className = 'shop-empty';
+      empty.textContent = 'Nothing on this shelf yet.';
+      panel.appendChild(empty);
+      return;
+    }
+
+    var grid = document.createElement('div');
+    grid.className = 'shop-grid';
+    items.forEach(function (item) {
+      var refusal = refusalFor(item);
+      var wrap = document.createElement('div');
+
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'shop-item';
+      btn.disabled = refusal !== null;
+      btn.setAttribute('aria-label',
+        item.name + ' — ' + item.price + ' coin' + (item.price === 1 ? '' : 's') +
+        (refusal ? ' — ' + refusal : ''));
+      btn.onclick = function () { buy(item); };
+      btn.innerHTML =
+        '<span class="shop-item-name">' + item.name + '</span>' +
+        '<span class="shop-item-blurb">' + item.blurb + '</span>' +
+        '<span class="shop-item-price">' + item.price + ' coin' + (item.price === 1 ? '' : 's') + '</span>';
+
+      var why = document.createElement('p');
+      why.className = 'shop-refusal';
+      why.setAttribute('role', 'status');
+      why.textContent = refusal === null ? '' : refusal;
+
+      wrap.appendChild(btn);
+      wrap.appendChild(why);
+      grid.appendChild(wrap);
+    });
+    panel.appendChild(grid);
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('.shop-tab'), function (tab) {
+    tab.onclick = function () {
+      Array.prototype.forEach.call(document.querySelectorAll('.shop-tab'), function (t) {
+        t.setAttribute('aria-selected', String(t === tab));
+      });
+      selected = tab.getAttribute('data-shelf');
+      log('Shelf: ' + tab.textContent);
+      render();
+    };
+  });
+
+  render();
+</script>

@@ -67,7 +67,18 @@ export interface EncounterState {
    *  AC8), so a Hunt-shaped counter would be wrong on its face. NOT a cap. */
   readonly damageEventsApplied: number
   /** `null` while the encounter is live. `Player` — the encounter is won; `Quarry` — the run
-   *  ends. Typed `DuelSide` so the simultaneous-depletion tie is a direct read of
-   *  `SIMULTANEOUS_DEPLETION_WINNER` rather than a translation onto a second vocabulary. */
+   *  ends. Typed `DuelSide` so a screen reads the winning side directly rather than translating
+   *  onto a second vocabulary. Since D7 (2026-08-19) a Quarry killed by an event spares the
+   *  player that event's damage, so `Quarry` here means the player went down alone. */
   readonly winner: DuelSide | null
+  /** DLR-90 AC3/AC4/AC7 — damage owed to each side at the START OF THE NEXT HAND, keyed by the
+   *  side it is APPLIED TO, exactly as `IncomingDamage` is and for exactly its reason: the
+   *  `PlayerSide` -> `DuelSide` crossing is performed once, in `bank.ts`, and a dealer-keyed
+   *  record would let a caller deplete the wrong bar and produce plausible numbers forever.
+   *
+   *  An ACCUMULATOR rather than a single side, so two marked tricks in one hand — or one on each
+   *  side — need no second field and no branch. `startEncounter` seeds it to zeros, which is what
+   *  discards it at an encounter boundary (AC7) with no explicit clear step to forget; that is
+   *  why this lives here and not on `RunState`. */
+  readonly pendingEnvenom: IncomingDamage
 }

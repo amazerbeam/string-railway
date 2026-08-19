@@ -1,0 +1,1454 @@
+<title>The Poisoned Card</title>
+
+<style>
+  /* ------------------------------------------------------------------
+     DLR-90 mockup. Deliberately single-theme: this is a game felt, and
+     the felt is dark in the shipped app. Every colour is painted
+     explicitly so the page holds on either host ground.
+     Not the real stylesheet, not the real components — a layout and
+     interaction reference only.
+     ------------------------------------------------------------------ */
+  :root {
+    --ground: #0d1714;
+    --felt: #16302a;
+    --felt-edge: #0a1512;
+    --plate: #1e3b33;
+    --plate-line: #2c5449;
+    --bone: #cfd8d2;
+    --bone-dim: #8ba39a;
+    --card-face: #f2ece0;
+    --card-ink: #1d1815;
+    --gold: #d9a94a;
+    --venom: #9ad74f;
+    --wound: #c8553d;
+    --bells: #c8873c;
+    --keys: #6f92b8;
+    --moons: #9b7cb8;
+
+    --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+    --sans: ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif;
+    --mono: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--bone);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    padding: 24px 20px 64px;
+  }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  /* ---------- page furniture ---------- */
+
+  .masthead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 16px;
+    border-bottom: 1px solid var(--plate-line);
+    padding-bottom: 14px;
+  }
+  .masthead h1 {
+    font-family: var(--serif);
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .masthead .key {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    color: var(--venom);
+    text-transform: uppercase;
+  }
+  .masthead p {
+    margin: 0;
+    flex: 1 1 100%;
+    max-width: 66ch;
+    color: var(--bone-dim);
+  }
+
+  .screens {
+    display: flex;
+    gap: 8px;
+  }
+  .screens button {
+    font: inherit;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+    background: transparent;
+    border: 1px solid var(--plate-line);
+    border-radius: 2px;
+    padding: 9px 16px;
+    min-height: 44px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .screens button[aria-pressed='true'] {
+    color: var(--ground);
+    background: var(--venom);
+    border-color: var(--venom);
+    font-weight: 600;
+  }
+  .screens button:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  section[hidden] {
+    display: none;
+  }
+
+  h2.zone {
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+    margin: 0 0 10px;
+    font-weight: 600;
+  }
+
+  /* ---------- the felt shell ---------- */
+
+  .shell {
+    background: var(--felt);
+    border: 1px solid var(--felt-edge);
+    border-radius: 4px;
+    display: grid;
+    grid-template-columns: 190px 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      'band band'
+      'rail table'
+      'hand hand';
+    min-height: 560px;
+    overflow: hidden;
+  }
+
+  .band {
+    grid-area: band;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 20px;
+    padding: 12px 16px;
+    background: var(--felt-edge);
+    border-bottom: 1px solid var(--plate-line);
+  }
+  .band .fight {
+    font-family: var(--serif);
+    font-size: 0.95rem;
+  }
+  .band .spacer {
+    flex: 1;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+  }
+  .bar .name {
+    color: var(--bone-dim);
+    letter-spacing: 0.04em;
+  }
+  .hearts {
+    display: flex;
+    gap: 2px;
+  }
+  .heart {
+    width: 13px;
+    height: 13px;
+    border-radius: 3px 3px 5px 5px;
+    background: var(--wound);
+  }
+  .heart[data-state='gone'] {
+    background: transparent;
+    border: 1px solid #4a3a36;
+  }
+  .heart[data-state='venom'] {
+    background: var(--venom);
+  }
+  .bar .num {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.78rem;
+  }
+
+  .coins {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- left rail: dossier + consumables ---------- */
+
+  .rail {
+    grid-area: rail;
+    border-right: 1px solid var(--plate-line);
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .plate {
+    background: var(--plate);
+    border: 1px solid var(--plate-line);
+    border-radius: 3px;
+    padding: 10px;
+  }
+  .plate-label {
+    display: block;
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+    margin-bottom: 8px;
+  }
+
+  .decree {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .decree .note {
+    font-size: 0.72rem;
+    color: var(--bone-dim);
+  }
+
+  .slots {
+    display: flex;
+    gap: 8px;
+  }
+  .slot {
+    width: 34px;
+    height: 46px;
+    min-width: 34px;
+    border-radius: 3px;
+    border: 1px dashed #3d6a5d;
+    background: transparent;
+    cursor: default;
+    padding: 0;
+  }
+  .slot.held {
+    border: 1px solid var(--gold);
+    border-style: solid;
+    background: #2d4f44;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .slot.held.poised {
+    box-shadow: inset 0 0 0 2px var(--gold);
+  }
+  .slot.held.armed {
+    box-shadow: inset 0 0 0 2px var(--gold);
+    transform: translateY(-4px);
+    border-style: double;
+    border-width: 3px;
+  }
+  .slot:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  /* the Envenom charge plate — the new control */
+  .venom-plate {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .venom-btn {
+    font: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    border-radius: 3px;
+    border: 1px solid var(--venom);
+    background: #23422e;
+    color: var(--venom);
+    cursor: pointer;
+    touch-action: manipulation;
+    padding: 0;
+  }
+  .venom-btn[disabled] {
+    border-color: #3d6a5d;
+    border-style: dashed;
+    background: transparent;
+    color: #4f6b60;
+    cursor: default;
+  }
+  /* Stage reads in FORM as well as colour: poised gets an inset ring,
+     armed lifts and doubles its border. A static screenshot still tells
+     the three states apart. */
+  .venom-btn.poised {
+    box-shadow: inset 0 0 0 2px var(--venom);
+  }
+  .venom-btn.armed {
+    box-shadow: inset 0 0 0 2px var(--venom);
+    border-width: 3px;
+    border-style: double;
+    transform: translateY(-4px);
+  }
+  .venom-btn:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .venom-btn .glyph {
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+  .venom-btn .count {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .venom-plate .note {
+    font-size: 0.72rem;
+    color: var(--bone-dim);
+    max-width: 90px;
+  }
+
+  .meter {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .meter b {
+    color: var(--gold);
+  }
+
+  /* ---------- centre: the trick well ---------- */
+
+  .table {
+    grid-area: table;
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+  .well {
+    min-height: 132px;
+    width: 100%;
+    max-width: 420px;
+    border: 1px dashed #2c5449;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    padding: 12px;
+  }
+  .played {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+  .played .side {
+    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+  }
+  .played.winner .side {
+    color: var(--gold);
+  }
+  .table-line {
+    margin: 0;
+    text-align: center;
+    font-family: var(--serif);
+    font-size: 1rem;
+    max-width: 44ch;
+    text-wrap: balance;
+  }
+  .table-line .em {
+    color: var(--venom);
+  }
+  .resolve {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+  .resolve button,
+  .flat {
+    font: inherit;
+    font-size: 0.82rem;
+    color: var(--bone);
+    background: var(--plate);
+    border: 1px solid var(--plate-line);
+    border-radius: 2px;
+    padding: 10px 14px;
+    min-height: 44px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .resolve button:hover,
+  .flat:hover {
+    border-color: var(--venom);
+  }
+  .resolve button:focus-visible,
+  .flat:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .resolve button[disabled],
+  .flat[disabled] {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .resolve button[disabled]:hover,
+  .flat[disabled]:hover {
+    border-color: var(--plate-line);
+  }
+
+  /* ---------- bottom: the hand ---------- */
+
+  .hand-zone {
+    grid-area: hand;
+    border-top: 1px solid var(--plate-line);
+    background: var(--felt-edge);
+    padding: 10px 16px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .hint {
+    margin: 0;
+    font-size: 0.85rem;
+    min-height: 1.4em;
+    color: var(--bone-dim);
+  }
+  .hint.live {
+    color: var(--gold);
+  }
+  .hint.venom {
+    color: var(--venom);
+    font-weight: 600;
+  }
+  .fan {
+    display: flex;
+    justify-content: center;
+    padding-top: 8px;
+  }
+
+  /* ---------- the card ---------- */
+
+  .card {
+    position: relative;
+    width: 62px;
+    height: 88px;
+    min-width: 62px;
+    border-radius: 4px;
+    background: var(--card-face);
+    color: var(--card-ink);
+    border: 1px solid #b3a894;
+    font-family: var(--serif);
+    padding: 5px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform 0.12s ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card,
+    .venom-btn,
+    .slot {
+      transition: none;
+    }
+  }
+  .fan .card {
+    margin-left: -14px;
+  }
+  .fan .card:first-child {
+    margin-left: 0;
+  }
+  .card .rank {
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .card .suit {
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #6d6357;
+  }
+  .card .named {
+    margin-top: auto;
+    font-size: 0.6rem;
+    color: #6d6357;
+  }
+  .card[data-suit='bells'] .rank {
+    color: var(--bells);
+  }
+  .card[data-suit='keys'] .rank {
+    color: var(--keys);
+  }
+  .card[data-suit='moons'] .rank {
+    color: var(--moons);
+  }
+  .card.condensed {
+    width: 48px;
+    height: 68px;
+    min-width: 48px;
+    cursor: default;
+  }
+  .card.condensed .rank {
+    font-size: 0.95rem;
+  }
+  .card.illegal {
+    filter: grayscale(0.7);
+    opacity: 0.5;
+    cursor: default;
+  }
+  .card.armed {
+    transform: translateY(-16px);
+    box-shadow: 0 0 0 2px var(--gold);
+  }
+  .card.winner {
+    box-shadow: 0 0 0 2px var(--gold);
+  }
+  .card.pickable {
+    filter: none;
+    opacity: 1;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px var(--venom);
+  }
+  .card:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  /* The venom mark. Bottom-left; the skull mark sits top-right, so a
+     card carrying BOTH is still legible. Form (a ringed badge) as well
+     as colour. */
+  .mark {
+    position: absolute;
+    font-size: 0.72rem;
+    line-height: 1;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .mark.venom {
+    bottom: 4px;
+    left: 4px;
+    background: #2c4a1c;
+    color: var(--venom);
+    border: 1px solid var(--venom);
+  }
+  .mark.skull {
+    top: 4px;
+    right: 4px;
+    color: #45403a;
+    border: 1px solid #45403a;
+  }
+
+  /* ---------- state readout ---------- */
+
+  .readout {
+    background: #0a1512;
+    border: 1px solid var(--plate-line);
+    border-radius: 4px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    overflow-x: auto;
+  }
+  .readout h3 {
+    font-family: var(--sans);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+    margin: 0 0 10px;
+  }
+  .readout dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 18px;
+  }
+  .readout dt {
+    color: var(--bone-dim);
+  }
+  .readout dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .readout dd.hot {
+    color: var(--venom);
+  }
+  .readout dd.warn {
+    color: var(--gold);
+  }
+
+  /* ---------- shop ---------- */
+
+  .shop {
+    background: var(--felt);
+    border: 1px solid var(--felt-edge);
+    border-radius: 4px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .shop h3 {
+    font-family: var(--serif);
+    font-size: 1.35rem;
+    margin: 0;
+  }
+  .shop .next {
+    margin: 0;
+    color: var(--bone-dim);
+    font-size: 0.88rem;
+  }
+  .purse {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .purse-cell {
+    background: var(--plate);
+    border: 1px solid var(--plate-line);
+    border-radius: 3px;
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 108px;
+  }
+  .purse-cell .lbl {
+    font-size: 0.63rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+  }
+  .purse-cell .val {
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .purse-cell.new {
+    border-color: var(--venom);
+  }
+  .purse-cell.new .val {
+    color: var(--venom);
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    border-bottom: 1px solid var(--plate-line);
+  }
+  .tabs button {
+    font: inherit;
+    font-size: 0.82rem;
+    color: var(--bone-dim);
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 3px 3px 0 0;
+    padding: 10px 14px;
+    min-height: 44px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .tabs button[aria-selected='true'] {
+    color: var(--bone);
+    background: var(--plate);
+    border-color: var(--plate-line);
+    font-weight: 600;
+  }
+  .tabs button[disabled] {
+    opacity: 0.45;
+    cursor: default;
+  }
+  .tabs button:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  .shelf {
+    min-height: 132px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .shelf .empty {
+    color: var(--bone-dim);
+    font-size: 0.88rem;
+    margin: 0;
+  }
+  .item {
+    font: inherit;
+    text-align: left;
+    flex: 1 1 220px;
+    max-width: 300px;
+    background: var(--plate);
+    border: 1px solid var(--plate-line);
+    border-radius: 3px;
+    padding: 14px;
+    color: var(--bone);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .item:hover {
+    border-color: var(--venom);
+  }
+  .item[disabled] {
+    opacity: 0.45;
+    cursor: default;
+  }
+  .item[disabled]:hover {
+    border-color: var(--plate-line);
+  }
+  .item:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .item .nm {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+  }
+  .item .blurb {
+    font-size: 0.8rem;
+    color: var(--bone-dim);
+  }
+  .item .price {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--gold);
+  }
+  .item.venom .nm {
+    color: var(--venom);
+  }
+  .refusal {
+    font-size: 0.75rem;
+    color: var(--wound);
+    min-height: 1.2em;
+    margin: 0;
+  }
+  .aside-lbl {
+    font-size: 0.65rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+  }
+
+  /* ---------- notes ---------- */
+
+  .notes {
+    border-top: 1px solid var(--plate-line);
+    padding-top: 18px;
+    max-width: 72ch;
+  }
+  .notes h2 {
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+    margin: 0 0 10px;
+  }
+  .notes ul {
+    margin: 0;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .notes code {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    color: var(--venom);
+  }
+  .notes strong {
+    color: var(--bone);
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <h1>The Poisoned Card</h1>
+    <span class="key">DLR-90 · mockup</span>
+    <p>
+      Layout and interaction reference for Envenom — the 2-coin one-time-use consumable, the
+      pick-a-card-to-poison mode on the fight screen, and the hit that lands a hand later. Placeholder
+      data and placeholder copy throughout. The state readout under each screen is here so the rule can
+      be checked, not just the look.
+    </p>
+  </header>
+
+  <div class="screens" role="group" aria-label="Which screen">
+    <button type="button" id="tab-fight" aria-pressed="true">Fight screen</button>
+    <button type="button" id="tab-shop" aria-pressed="false">Shop</button>
+  </div>
+
+  <!-- ============================ FIGHT ============================ -->
+  <section id="screen-fight" aria-label="Fight screen mockup">
+    <h2 class="zone">Fight screen — the felt, with the Envenom charge in the left rail</h2>
+
+    <div class="shell">
+      <div class="band">
+        <span class="fight">Fight 3 of 25 — Niamh</span>
+        <span class="coins" id="band-coins">◎ 2</span>
+        <span class="spacer"></span>
+        <span class="bar">
+          <span class="name">Your health</span>
+          <span class="hearts" id="hearts-player"></span>
+          <span class="num" id="num-player">10 / 10</span>
+        </span>
+        <span class="bar">
+          <span class="name">Niamh’s health</span>
+          <span class="hearts" id="hearts-quarry"></span>
+          <span class="num" id="num-quarry">18 / 18</span>
+        </span>
+      </div>
+
+      <div class="rail">
+        <div class="plate">
+          <span class="plate-label">Decree</span>
+          <div class="decree">
+            <div class="card condensed" data-suit="keys">
+              <span class="rank">6</span>
+              <span class="suit">Keys</span>
+            </div>
+            <span class="note">Keys are trump. 20 in the pile.</span>
+          </div>
+        </div>
+
+        <div class="plate">
+          <span class="plate-label">Cheats</span>
+          <div class="slots">
+            <button type="button" class="slot held" id="cheat-slot" aria-label="Cheat, held"></button>
+            <span class="slot" aria-label="Empty Cheat slot"></span>
+          </div>
+        </div>
+
+        <!-- NEW: the Envenom charge plate -->
+        <div class="plate">
+          <span class="plate-label">Envenom</span>
+          <div class="venom-plate">
+            <button type="button" class="venom-btn" id="venom-btn">
+              <span class="glyph" aria-hidden="true">⚗</span>
+              <span class="count" id="venom-count">×1</span>
+            </button>
+            <span class="note" id="venom-note">Tap to select</span>
+          </div>
+        </div>
+
+        <div class="plate">
+          <span class="plate-label">Bank</span>
+          <div class="meter">
+            <span>tricks <b id="m-bank">3</b></span>
+            <span>× mult <b id="m-mult">3</b></span>
+            <span>= <b id="m-cash">9</b> dmg</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="table">
+        <div class="well" id="well">
+          <p class="table-line" id="well-empty">They led the 6 of Keys. Follow, or poison a card first.</p>
+        </div>
+        <p class="table-line" id="table-line">
+          Trick 4 of 6. Your bank is <b>3 × 3</b> — a clean loss here cashes it and costs you a heart.
+        </p>
+        <div class="resolve">
+          <button type="button" id="btn-quarry" disabled>
+            Play it — the Quarry takes the trick
+          </button>
+          <button type="button" id="btn-player" disabled>Play it — you take the trick</button>
+          <button type="button" id="btn-deal" disabled>Deal the next hand</button>
+          <button type="button" id="btn-reset" class="flat">Reset</button>
+        </div>
+      </div>
+
+      <div class="hand-zone">
+        <p class="hint" id="hint">Follow their lead</p>
+        <div class="fan" id="fan" role="group" aria-label="Your hand"></div>
+      </div>
+    </div>
+
+    <div class="readout" style="margin-top: 14px">
+      <h3>What the state would hold</h3>
+      <dl>
+        <dt>RunState.envenomCharges</dt>
+        <dd id="r-charges">1</dd>
+        <dt>RoundState.envenomedCards</dt>
+        <dd id="r-marked">[]</dd>
+        <dt>RoundUiState.envenomStage</dt>
+        <dd id="r-stage">null</dd>
+        <dt>RoundState.bank × multiplier</dt>
+        <dd id="r-bank">3 × 3</dd>
+        <dt>TrickResolution.outcome</dt>
+        <dd id="r-outcome">—</dd>
+        <dt>TrickResolution.envenomTarget</dt>
+        <dd id="r-target">null</dd>
+        <dt>EncounterState.pendingEnvenom</dt>
+        <dd id="r-pending">{ player: 0, quarry: 0 }</dd>
+        <dt>Health — player / quarry</dt>
+        <dd id="r-health">10 / 18</dd>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ============================ SHOP ============================ -->
+  <section id="screen-shop" hidden aria-label="Shop mockup">
+    <h2 class="zone">Shop — Envenom on the one-time-use shelf, beside the existing Cheat</h2>
+
+    <div class="shop">
+      <h3>Between fights</h3>
+      <p class="next">Next up — Niamh. Fight 3 of 25.</p>
+
+      <div class="purse" role="group" aria-label="Your purse and health">
+        <span class="purse-cell">
+          <span class="lbl">Coins</span>
+          <span class="val" id="s-coins">4</span>
+        </span>
+        <span class="purse-cell">
+          <span class="lbl">Cheat slots</span>
+          <span class="val" id="s-cheats">1 / 2</span>
+        </span>
+        <span class="purse-cell new">
+          <span class="lbl">Envenom held</span>
+          <span class="val" id="s-venom">1</span>
+        </span>
+        <span class="purse-cell">
+          <span class="lbl">Health</span>
+          <span class="val">10 / 10</span>
+        </span>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="What lasts how long">
+        <button type="button" role="tab" aria-selected="true">One-time use</button>
+        <button type="button" role="tab" aria-selected="false">Fight-long</button>
+        <button type="button" role="tab" aria-selected="false">Run-permanent</button>
+        <button type="button" role="tab" aria-selected="false" disabled>
+          Game-permanent — Coming soon.
+        </button>
+      </div>
+
+      <div class="shelf" role="tabpanel">
+        <div>
+          <button type="button" class="item" id="buy-cheat">
+            <span class="nm">Cheat</span>
+            <span class="blurb">A card for a slot. Play it later to ignore follow-suit.</span>
+            <span class="price">1 coin</span>
+          </button>
+          <p class="refusal" id="ref-cheat"></p>
+        </div>
+        <div>
+          <button type="button" class="item venom" id="buy-venom">
+            <span class="nm">Envenom</span>
+            <span class="blurb">
+              Poison a card in your hand. Whoever wins the trick it is played into takes 4 damage next
+              hand.
+            </span>
+            <span class="price">2 coins</span>
+          </button>
+          <p class="refusal" id="ref-venom"></p>
+        </div>
+      </div>
+
+      <span class="aside-lbl">Also for sale</span>
+      <div class="shelf" style="min-height: 0">
+        <div>
+          <button type="button" class="item" id="buy-heal" disabled>
+            <span class="nm">Heal</span>
+            <span class="blurb">Restore 4 health, now. Anything over your maximum is lost.</span>
+            <span class="price">1 coin</span>
+          </button>
+          <p class="refusal">You are already at full health.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="notes">
+    <h2>What to click, and what should happen</h2>
+    <ul>
+      <li>
+        <strong>Shop:</strong> buy <strong>Envenom</strong> twice. Coins fall by 2 each time, <em>Envenom
+        held</em> climbs, and the third attempt refuses with the ordinary
+        <code>NotEnoughCoins</code> reason — there is <strong>no cap</strong> on charges held, which is a
+        decision to confirm.
+      </li>
+      <li>
+        <strong>Fight, arming:</strong> tap the <code>⚗</code> plate once → <em>selected</em>; twice →
+        <em>armed</em>, and the hint changes to “Pick a card in your hand to poison”. A third tap gives the
+        charge back unspent. That is the Cheat's own three-tap shape — <strong>the cost to judge</strong>.
+      </li>
+      <li>
+        <strong>Fight, marking:</strong> while armed, <strong>every</strong> card becomes tappable —
+        including the four greyed out as illegal to play. That is the point: the Swan you expect to lose
+        with is exactly what you want to poison. Tap one and it takes the <code>⚗</code> badge.
+      </li>
+      <li>
+        <strong>Fight, AC5:</strong> with a card marked, press <em>the Quarry takes the trick</em>. The
+        trick resolves, the marked card shows its badge in the well — and the readout shows
+        <strong>no damage and the bank standing at 3 × 3</strong> rather than cashed. That is the whole
+        point of the item.
+      </li>
+      <li>
+        <strong>Fight, AC6:</strong> reset, mark again, press <em>you take the trick</em>. Bank climbs to
+        4 × 4 as an ordinary clean win, and <code>pendingEnvenom</code> is booked against
+        <strong>you</strong> instead.
+      </li>
+      <li>
+        <strong>Fight, AC4:</strong> then press <em>Deal the next hand</em>. The 4 lands, the hearts drop,
+        and <code>pendingEnvenom</code> clears. <strong>Note what is missing:</strong> nothing on screen
+        says why — the hearts just start lower. That gap is a decision for you.
+      </li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  // ---------------------------------------------------------------
+  // Fake state. Not the reducer — just enough to make the interaction
+  // real and to show what the reducer would be holding.
+  // ---------------------------------------------------------------
+  const ENVENOM_DAMAGE = 4
+  const ENVENOM_PRICE = 2
+
+  const HAND = [
+    { rank: 1, suit: 'bells', named: 'Swan', legal: false },
+    { rank: 4, suit: 'bells', named: '', legal: false },
+    { rank: 9, suit: 'keys', named: 'Witch', legal: true },
+    { rank: 11, suit: 'keys', named: 'Monarch', legal: true },
+    { rank: 2, suit: 'moons', named: '', legal: false },
+    { rank: 8, suit: 'moons', named: '', legal: false },
+  ]
+  const SUIT_NAME = { bells: 'Bells', keys: 'Keys', moons: 'Moons' }
+
+  const FRESH = {
+    charges: 1,
+    stage: null, // null | 'poised' | 'armed'
+    marked: null, // index into HAND
+    armedCard: null, // index into HAND
+    played: null, // { winner: 'player' | 'quarry' }
+    bank: 3,
+    mult: 3,
+    pending: { player: 0, quarry: 0 },
+    health: { player: 10, quarry: 18 },
+    max: { player: 10, quarry: 18 },
+    landed: null, // { side, amount } for the hand just dealt
+    coins: 2,
+  }
+  let s = structuredClone(FRESH)
+
+  const shop = { coins: 4, venom: 1, cheats: 1 }
+
+  const $ = (id) => document.getElementById(id)
+  const cardName = (c) =>
+    `${c.rank} of ${SUIT_NAME[c.suit]}${c.named ? ` (${c.named})` : ''}`
+
+  // ---------------------------------------------------------------
+  // Screens
+  // ---------------------------------------------------------------
+  function showScreen(which) {
+    const fight = which === 'fight'
+    $('tab-fight').setAttribute('aria-pressed', String(fight))
+    $('tab-shop').setAttribute('aria-pressed', String(!fight))
+    $('screen-fight').hidden = !fight
+    $('screen-shop').hidden = fight
+  }
+  $('tab-fight').addEventListener('click', () => showScreen('fight'))
+  $('tab-shop').addEventListener('click', () => showScreen('shop'))
+
+  // ---------------------------------------------------------------
+  // The hand
+  // ---------------------------------------------------------------
+  function cardEl(card, index, opts) {
+    const el = document.createElement(opts.condensed ? 'div' : 'button')
+    if (!opts.condensed) el.type = 'button'
+    el.className = 'card' + (opts.condensed ? ' condensed' : '')
+    el.dataset.suit = card.suit
+    if (opts.illegal) el.classList.add('illegal')
+    if (opts.pickable) el.classList.add('pickable')
+    if (opts.armed) el.classList.add('armed')
+    if (opts.winner) el.classList.add('winner')
+
+    const marks = []
+    if (opts.marked) marks.push('poisoned')
+    el.innerHTML =
+      `<span class="rank">${card.rank}</span>` +
+      `<span class="suit">${SUIT_NAME[card.suit]}</span>` +
+      (card.named ? `<span class="named">${card.named}</span>` : '') +
+      (opts.marked ? `<span class="mark venom" aria-hidden="true">⚗</span>` : '')
+
+    el.setAttribute(
+      'aria-label',
+      cardName(card) + (marks.length ? ', ' + marks.join(', ') : ''),
+    )
+    if (!opts.condensed) {
+      el.tabIndex = index === 0 ? 0 : -1
+      el.disabled = Boolean(opts.disabled)
+      el.addEventListener('click', () => tapCard(index))
+    }
+    return el
+  }
+
+  function renderFan() {
+    const fan = $('fan')
+    fan.textContent = ''
+    const marking = s.stage === 'armed'
+    HAND.forEach((card, i) => {
+      const isMarked = s.marked === i
+      const illegal = !card.legal && !marking
+      fan.appendChild(
+        cardEl(card, i, {
+          illegal,
+          pickable: marking && !isMarked,
+          armed: s.armedCard === i,
+          marked: isMarked,
+          disabled: illegal || s.played !== null,
+        }),
+      )
+    })
+  }
+
+  function tapCard(index) {
+    if (s.played !== null) return
+    if (s.stage === 'armed') {
+      // Mark it. One charge spent, selection cleared, any armed-to-play card dropped.
+      if (s.charges <= 0 || s.marked === index) {
+        s.stage = null
+        return render()
+      }
+      s.marked = index
+      s.charges -= 1
+      s.stage = null
+      s.armedCard = null
+      return render()
+    }
+    if (!HAND[index].legal) return
+    s.armedCard = s.armedCard === index ? null : index
+    render()
+  }
+
+  // ---------------------------------------------------------------
+  // The Envenom charge — null → poised → armed → null
+  // ---------------------------------------------------------------
+  $('venom-btn').addEventListener('click', () => {
+    if (s.charges <= 0 || s.played !== null) return
+    if (s.stage === null) {
+      s.stage = 'poised'
+      s.armedCard = null // marking and playing are mutually exclusive
+    } else if (s.stage === 'poised') {
+      s.stage = 'armed'
+    } else {
+      s.stage = null
+    }
+    render()
+  })
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && s.stage !== null) {
+      s.stage = null
+      render()
+    }
+  })
+
+  // ---------------------------------------------------------------
+  // Resolving the marked trick — the two AC cases
+  // ---------------------------------------------------------------
+  function resolve(winner) {
+    if (s.marked === null || s.played !== null) return
+    s.played = { winner }
+    if (winner === 'player') {
+      // AC6 — an ordinary clean win. Nothing about poison changes it.
+      s.bank += 1
+      s.mult += 1
+      s.pending.player += ENVENOM_DAMAGE
+    } else {
+      // AC5 — the outcome is REPLACED. No damage, bank and multiplier survive
+      // uncashed even though this was a clean loss by the normal rules.
+      s.pending.quarry += ENVENOM_DAMAGE
+    }
+    render()
+  }
+  $('btn-quarry').addEventListener('click', () => resolve('quarry'))
+  $('btn-player').addEventListener('click', () => resolve('player'))
+
+  // ---------------------------------------------------------------
+  // AC4 — the hit lands at the deal of the next hand
+  // ---------------------------------------------------------------
+  $('btn-deal').addEventListener('click', () => {
+    const owed = { ...s.pending }
+    s.health.player = Math.max(0, s.health.player - owed.player)
+    s.health.quarry = Math.max(0, s.health.quarry - owed.quarry)
+    s.pending = { player: 0, quarry: 0 }
+    s.landed = owed
+    s.played = null
+    s.marked = null
+    s.armedCard = null
+    s.bank = 0
+    s.mult = 0
+    render()
+  })
+
+  $('btn-reset').addEventListener('click', () => {
+    s = structuredClone(FRESH)
+    render()
+  })
+
+  // ---------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------
+  function hearts(container, current, max, venomAmount) {
+    container.textContent = ''
+    for (let i = 0; i < max; i += 1) {
+      const h = document.createElement('span')
+      h.className = 'heart'
+      if (i >= current) h.dataset.state = 'gone'
+      else if (venomAmount > 0 && i >= current - venomAmount) h.dataset.state = 'venom'
+      container.appendChild(h)
+    }
+  }
+
+  function renderWell() {
+    const well = $('well')
+    well.textContent = ''
+    if (s.played === null) {
+      const p = document.createElement('p')
+      p.className = 'table-line'
+      p.textContent = 'They led the 6 of Keys. Follow, or poison a card first.'
+      well.appendChild(p)
+      return
+    }
+    const theirs = { rank: 6, suit: 'keys', named: '' }
+    const mine = HAND[s.marked]
+    const pair = [
+      { card: theirs, side: 'Them', mine: false },
+      { card: mine, side: 'You', mine: true },
+    ]
+    pair.forEach((entry) => {
+      const wrapEl = document.createElement('span')
+      wrapEl.className =
+        'played' +
+        ((s.played.winner === 'player') === entry.mine ? ' winner' : '')
+      const side = document.createElement('span')
+      side.className = 'side'
+      side.textContent = entry.side
+      wrapEl.appendChild(side)
+      wrapEl.appendChild(
+        cardEl(entry.card, -1, {
+          condensed: true,
+          marked: entry.mine,
+          winner: (s.played.winner === 'player') === entry.mine,
+        }),
+      )
+      well.appendChild(wrapEl)
+    })
+  }
+
+  function renderLine() {
+    const line = $('table-line')
+    if (s.landed) {
+      const who =
+        s.landed.player > 0 && s.landed.quarry > 0
+          ? 'Both bars'
+          : s.landed.player > 0
+            ? 'You'
+            : 'Niamh'
+      const amount = Math.max(s.landed.player, s.landed.quarry)
+      line.innerHTML = amount
+        ? `New hand dealt. <span class="em">${who} took ${amount} from the poison.</span> Nothing on screen said so — that is the gap to decide about.`
+        : 'New hand dealt. Nothing was owed.'
+      return
+    }
+    if (s.played) {
+      line.innerHTML =
+        s.played.winner === 'quarry'
+          ? `They take the trick — but <span class="em">the poison replaced the loss</span>. No heart lost, and your bank still stands at <b>${s.bank} × ${s.mult}</b>. Niamh owes ${ENVENOM_DAMAGE} next hand.`
+          : `You take the trick — an ordinary clean win, bank now <b>${s.bank} × ${s.mult}</b>. <span class="em">You</span> owe ${ENVENOM_DAMAGE} next hand.`
+      return
+    }
+    line.innerHTML = `Trick 4 of 6. Your bank is <b>${s.bank} × ${s.mult}</b> — a clean loss here cashes it and costs you a heart.`
+  }
+
+  function renderHint() {
+    const hint = $('hint')
+    hint.className = 'hint'
+    if (s.played) {
+      hint.textContent = 'Trick resolved'
+    } else if (s.stage === 'armed') {
+      hint.textContent = 'Pick a card in your hand to poison'
+      hint.classList.add('venom')
+    } else if (s.stage === 'poised') {
+      hint.textContent = 'Tap Envenom again to arm it'
+      hint.classList.add('venom')
+    } else if (s.armedCard !== null) {
+      hint.textContent = `Tap ${cardName(HAND[s.armedCard])} again to play it`
+      hint.classList.add('live')
+    } else {
+      hint.textContent = 'Follow their lead'
+    }
+  }
+
+  function render() {
+    // charge plate
+    const btn = $('venom-btn')
+    btn.classList.toggle('poised', s.stage === 'poised')
+    btn.classList.toggle('armed', s.stage === 'armed')
+    btn.disabled = s.charges <= 0 || s.played !== null
+    $('venom-count').textContent = `×${s.charges}`
+    btn.setAttribute(
+      'aria-label',
+      s.charges === 0
+        ? 'No Envenom held'
+        : `Envenom, ${s.charges} held${s.stage ? `, ${s.stage === 'armed' ? 'armed' : 'selected'}` : ''}`,
+    )
+    btn.setAttribute('aria-pressed', String(s.stage === 'armed'))
+    $('venom-note').textContent =
+      s.charges === 0
+        ? 'None held'
+        : s.stage === 'armed'
+          ? 'Pick a card'
+          : s.stage === 'poised'
+            ? 'Tap again to arm'
+            : 'Tap to select'
+
+    // bars
+    hearts($('hearts-player'), s.health.player, s.max.player, s.pending.player)
+    hearts($('hearts-quarry'), Math.round(s.health.quarry / 2), Math.round(s.max.quarry / 2), 0)
+    $('num-player').textContent = `${s.health.player} / ${s.max.player}`
+    $('num-quarry').textContent = `${s.health.quarry} / ${s.max.quarry}`
+    $('band-coins').textContent = `◎ ${s.coins}`
+
+    // bank meter
+    $('m-bank').textContent = s.bank
+    $('m-mult').textContent = s.mult
+    $('m-cash').textContent = s.bank * s.mult
+
+    // felt
+    renderFan()
+    renderWell()
+    renderLine()
+    renderHint()
+
+    // controls
+    const canResolve = s.marked !== null && s.played === null
+    $('btn-quarry').disabled = !canResolve
+    $('btn-player').disabled = !canResolve
+    $('btn-deal').disabled = s.played === null
+
+    // readout
+    $('r-charges').textContent = s.charges
+    $('r-marked').textContent =
+      s.marked === null ? '[]' : `[ ${HAND[s.marked].rank} of ${SUIT_NAME[HAND[s.marked].suit]} ]`
+    $('r-marked').className = s.marked === null ? '' : 'hot'
+    $('r-stage').textContent = s.stage === null ? 'null' : `EnvenomStage.${s.stage}`
+    $('r-stage').className = s.stage === null ? '' : 'hot'
+    $('r-bank').textContent = `${s.bank} × ${s.mult} = ${s.bank * s.mult}`
+    $('r-bank').className = s.played && s.played.winner === 'quarry' ? 'warn' : ''
+    $('r-outcome').textContent = s.played
+      ? s.played.winner === 'quarry'
+        ? 'CleanLoss — replaced (no damage, bank preserved)'
+        : 'CleanWin — ordinary'
+      : '—'
+    $('r-outcome').className = s.played ? 'hot' : ''
+    $('r-target').textContent = s.played
+      ? s.played.winner === 'quarry'
+        ? 'DuelSide.Quarry'
+        : 'DuelSide.Player'
+      : 'null'
+    $('r-pending').textContent = `{ player: ${s.pending.player}, quarry: ${s.pending.quarry} }`
+    $('r-pending').className =
+      s.pending.player || s.pending.quarry ? 'hot' : ''
+    $('r-health').textContent = `${s.health.player} / ${s.health.quarry}`
+  }
+
+  // ---------------------------------------------------------------
+  // Shop
+  // ---------------------------------------------------------------
+  function renderShop() {
+    $('s-coins').textContent = shop.coins
+    $('s-venom').textContent = shop.venom
+    $('s-cheats').textContent = `${shop.cheats} / 2`
+
+    const venomRefused = shop.coins < ENVENOM_PRICE
+    $('buy-venom').disabled = venomRefused
+    $('ref-venom').textContent = venomRefused ? 'You do not have the coins for this.' : ''
+    $('buy-venom').setAttribute(
+      'aria-label',
+      `Envenom — 2 coins${venomRefused ? ' — You do not have the coins for this.' : ''}`,
+    )
+
+    const cheatRefused = shop.cheats >= 2 || shop.coins < 1
+    $('buy-cheat').disabled = cheatRefused
+    $('ref-cheat').textContent =
+      shop.cheats >= 2
+        ? 'Both Cheat slots are full.'
+        : shop.coins < 1
+          ? 'You do not have the coins for this.'
+          : ''
+  }
+
+  $('buy-venom').addEventListener('click', () => {
+    if (shop.coins < ENVENOM_PRICE) return
+    shop.coins -= ENVENOM_PRICE
+    shop.venom += 1
+    s.charges += 1
+    s.coins = shop.coins
+    renderShop()
+    render()
+  })
+  $('buy-cheat').addEventListener('click', () => {
+    if (shop.cheats >= 2 || shop.coins < 1) return
+    shop.coins -= 1
+    shop.cheats += 1
+    s.coins = shop.coins
+    renderShop()
+    render()
+  })
+
+  render()
+  renderShop()
+</script>
