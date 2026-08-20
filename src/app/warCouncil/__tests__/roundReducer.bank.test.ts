@@ -61,8 +61,9 @@ describe('the bank cash-out — AC6/AC8, applied mid-hand as it happens', () => 
     ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanLoss)
-    expect(ui.resolvedTrick?.resolution.cashOut).toBe(4)
-    expect(ui.encounter.health[DuelSide.Quarry]).toBe(quarryHealthForEncounter(0) - 4)
+    // DLR-94 AC4 — a forced hit pays two-thirds of 2 x 2, floored: 2.
+    expect(ui.resolvedTrick?.resolution.cashOut).toBe(2)
+    expect(ui.encounter.health[DuelSide.Quarry]).toBe(quarryHealthForEncounter(0) - 2)
     expect(ui.encounter.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH - DAMAGE_PER_HIT)
   })
 

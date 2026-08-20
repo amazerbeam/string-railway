@@ -8,16 +8,25 @@
  * and `roundReducer.ts` is the transition function nothing but the mount needs. Nothing here
  * decides anything.
  */
-import type {
-  AbilityChoice,
-  Card,
-  IllegalMoveReason,
+import {
+  currentTurn,
   PlayerSide,
-  TrickCard,
-  TrickResolution,
-  WarCouncilState,
+  RoundPhase,
+  type AbilityChoice,
+  type ApplyDamageStock,
+  type Card,
+  type IllegalMoveReason,
+  type TrickCard,
+  type TrickResolution,
+  type WarCouncilState,
 } from '../../warCouncil'
-import type { CheatCard, CheatCardId, EncounterState } from '../../hunt'
+import {
+  hasPendingEnvenom,
+  isEncounterResolved,
+  type CheatCard,
+  type CheatCardId,
+  type EncounterState,
+} from '../../hunt'
 
 export interface ResolvedTrick {
   readonly cards: readonly TrickCard[] // [lead, follow] — the engine's load-bearing order
@@ -96,6 +105,13 @@ export interface RoundUiState {
    *  prop. Read-only for the hand's whole life: no action ever writes it, because a hand cannot
    *  spend or change a Whetstone — only the shop between hands can. */
   readonly bankClimbBonus: number
+  /** DLR-94 — the Apply Damage plate has been tapped once and awaits its confirming second tap.
+   *  The hand's OWN transient: dies on remount, never touches `RunState`.
+   *
+   *  A single BOOLEAN rather than `EnvenomStage`'s two-stage union, deliberately. Envenom needs
+   *  two stages because its armed state waits for a THIRD tap on a hand card; Apply Damage's
+   *  second tap IS the action, so "poised" is the only state there is to be in. */
+  readonly applyPoised: boolean
 }
 
 export interface RoundUiSeed {
@@ -121,6 +137,8 @@ export const RoundUiActionKind = {
   CancelCheat: 'cancelCheat',
   TapEnvenom: 'tapEnvenom',
   CancelEnvenom: 'cancelEnvenom',
+  TapApplyDamage: 'tapApplyDamage',
+  CancelApplyDamage: 'cancelApplyDamage',
 } as const
 export type RoundUiActionKind = (typeof RoundUiActionKind)[keyof typeof RoundUiActionKind]
 
@@ -133,6 +151,8 @@ export type RoundUiAction =
   | { readonly kind: typeof RoundUiActionKind.CancelCheat }
   | { readonly kind: typeof RoundUiActionKind.TapEnvenom }
   | { readonly kind: typeof RoundUiActionKind.CancelEnvenom }
+  | { readonly kind: typeof RoundUiActionKind.TapApplyDamage }
+  | { readonly kind: typeof RoundUiActionKind.CancelApplyDamage }
 
 /** Still a pure restructuring of its seed, so StrictMode's double-invocation of the lazy
  *  `useReducer` initialiser recomputes an identical value. */
@@ -152,6 +172,7 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     envenomStage: null,
     poisonGuardHeld: seed.poisonGuardHeld,
     bankClimbBonus: seed.bankClimbBonus,
+    applyPoised: false,
   }
 }
 
@@ -167,4 +188,37 @@ export function cheatArmed(state: RoundUiState): boolean {
  *  Envenom armed" is exactly how a greyed card and a reducer branch drift apart. */
 export function envenomArmed(state: RoundUiState): boolean {
   return state.envenomStage === EnvenomStage.Armed
+}
+
+/** The felt is waiting on the player's own card — nothing is held, nothing is prompting, the
+ *  engine has not faulted, the hand and the fight are both still live, and it is their turn.
+ *
+ *  EXPORTED and moved here from `roundReducer.ts` on DLR-94, because `WarCouncilRound.tsx` was
+ *  recomputing the identical six clauses inline as `interactive`. Two readings of one gate is how
+ *  a greyed control and a reducer branch drift apart — the same reason `cheatArmed` and
+ *  `envenomArmed` below are exported rather than recomputed in the component. */
+export function canAct(state: RoundUiState): boolean {
+  return (
+    state.round.phase !== RoundPhase.Complete &&
+    !isEncounterResolved(state.encounter) &&
+    state.resolvedTrick === null &&
+    state.prompt === null &&
+    state.cpuFault === null &&
+    currentTurn(state.round) === PlayerSide.Player
+  )
+}
+
+/** The plain values `applyDamageRefusalFor` needs, assembled in ONE place so the reducer's guard
+ *  and the plate's disabled state cannot read availability differently.
+ *
+ *  This is where the app layer's shape is translated into the pure module's — `hasPendingEnvenom`
+ *  and `canAct` are read HERE and nowhere else, which is what lets `voluntaryCashOut.ts` take four
+ *  plain values and stay ignorant of both `EncounterState` and `RoundUiState`. */
+export function applyDamageStock(state: RoundUiState): ApplyDamageStock {
+  return {
+    bank: state.round.bank,
+    multiplier: state.round.multiplier,
+    poisonPending: hasPendingEnvenom(state.encounter),
+    canAct: canAct(state),
+  }
 }

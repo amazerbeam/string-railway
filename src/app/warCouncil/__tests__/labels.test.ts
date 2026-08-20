@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ApplyDamageRefusal,
   IllegalMoveReason,
   QuarryIntentStance,
   Suit,
@@ -8,6 +9,8 @@ import {
 } from '../../../warCouncil'
 import { DuelSide } from '../../../hunt'
 import {
+  applyDamageAccessibleName,
+  APPLY_DAMAGE_REFUSAL_MESSAGE,
   cardAccessibleName,
   cheatAccessibleName,
   quarryHealthLabel,
@@ -216,5 +219,30 @@ describe('quarryHealthLabel', () => {
   it('stays distinct from the player bar, which is what a spec queries them by', () => {
     expect(quarryHealthLabel('Aoife')).not.toBe(HEALTH_BAR_LABEL[DuelSide.Player])
     expect(quarryHealthLabel(undefined)).not.toBe(HEALTH_BAR_LABEL[DuelSide.Player])
+  })
+})
+
+describe('applyDamageAccessibleName — DLR-94', () => {
+  it('names the figure the apply would deal', () => {
+    expect(applyDamageAccessibleName(9, false, null)).toMatch(/9 to the Quarry/)
+  })
+
+  it('gives the three readings three different names', () => {
+    const live = applyDamageAccessibleName(9, false, null)
+    const poised = applyDamageAccessibleName(9, true, null)
+    const refused = applyDamageAccessibleName(0, false, ApplyDamageRefusal.EmptyBank)
+    expect(new Set([live, poised, refused]).size).toBe(3)
+  })
+
+  it('puts the reason in the name of a refused control, not only in the styling', () => {
+    expect(applyDamageAccessibleName(0, false, ApplyDamageRefusal.PoisonPending)).toContain(
+      APPLY_DAMAGE_REFUSAL_MESSAGE[ApplyDamageRefusal.PoisonPending],
+    )
+  })
+
+  it('a refusal outranks a poise — a stranded poise must never sound available', () => {
+    expect(applyDamageAccessibleName(9, true, ApplyDamageRefusal.NotYourMove)).toMatch(
+      /unavailable/,
+    )
   })
 })

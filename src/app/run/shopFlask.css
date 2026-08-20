@@ -19,69 +19,30 @@
   text-align: left;
 }
 
-/* DLR-93 AC6 — the flask's own zone, between the health meter and the ladder. `flex: 0 0 auto`
-   like `.shop-aside`, so it takes its natural height and `.shop-panel` remains the ONE region on
-   this screen allowed to scroll. A dashed edge rather than the solid one every priced surface
-   uses: `game-ux` requires state to read in FORM, not colour alone, so a greyscale screenshot
-   still separates the free thing from the paid ones.
-   Every colour, spacing and size figure here is a PLACEHOLDER transcribed from this contract's
-   `mockup.html` — the developer's UX design supersedes it. */
-.shop-flask {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: clamp(0.5rem, 1.8vmin, 1rem);
-  width: 100%;
-  box-sizing: border-box;
-  padding: clamp(0.35rem, 1.3vmin, 0.7rem) clamp(0.5rem, 1.6vmin, 0.9rem);
-  border: 1px dashed var(--wc-brass);
-  border-radius: 4px;
-}
-
-/* ≥44px per `react-frontend`'s input floor — the icon is small, the target is not. */
-.shop-flask-btn {
-  display: flex;
-  align-items: center;
-  gap: clamp(0.4rem, 1.4vmin, 0.75rem);
-  min-height: 44px;
-  padding: 0.4rem 0.9rem;
-  border: 1px solid var(--wc-brass);
-  border-radius: 4px;
-  background: transparent;
-  color: var(--wc-parchment);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-@media (hover: hover) {
-  .shop-flask-btn:hover:not(:disabled) {
-    background: rgba(201, 154, 78, 0.16);
-  }
-}
-
-.shop-flask-btn:active:not(:disabled) {
-  transform: translateY(1px);
-}
-
-.shop-flask-btn:focus-visible {
-  outline: 2px solid var(--wc-parchment);
-  outline-offset: 2px;
-}
-
-/* Dotted, not merely dimmer — the disabled state reads without colour. */
-.shop-flask-btn:disabled {
-  border-style: dotted;
-  border-color: var(--wc-chalk-dim);
-  color: var(--wc-chalk-dim);
-  cursor: not-allowed;
+/* DLR-93 AC6, redesigned mid-fix on this ticket (developer direction): the flask no longer has its
+   own full-width row between the health meter and the ladder — that whole row was most of the
+   vertical-fit problem this ticket exists to solve. It now lives in `ShopPanel.tsx` as one row of
+   `.shop-list--extras` (`shopItems.css`), sharing a row with the Heal card, styled as a
+   `.shop-list-item` with the `.is-flask` modifier below. Distinctness from the priced Heal is no
+   longer carried by DISTANCE (the developer overruled that) — it is carried entirely by the
+   labelling this modifier does not touch: the `Free`/`No coin` tag and the visible charge count
+   read where every priced row instead carries `.shop-item-price`, and the dashed rule below reads
+   free-vs-paid in FORM too, not colour alone, per `game-ux`.
+   The wrapping `role="group" aria-label={SHOP_FLASK_GROUP_LABEL}` still lives in `ShopPanel.tsx` —
+   `ShopPanel.test.tsx` asserts the flask is grouped "apart from the priced items" and that holds
+   at the accessibility-tree level regardless of where the group sits visually.
+   Every colour, spacing and size figure here is a PLACEHOLDER the developer owns. */
+.shop-list-item.is-flask {
+  /* A dashed rule where every priced row uses a solid one — same device `.shop-tab`'s refused
+     state and `.shop-item:disabled` already use, reused here for the same reason: FREE reads as
+     free without depending on the tag being read first. */
+  border-bottom-style: dashed;
 }
 
 .shop-flask-icon {
   flex: 0 0 auto;
-  width: clamp(1.3rem, 3.4vmin, 1.9rem);
-  height: clamp(1.3rem, 3.4vmin, 1.9rem);
+  width: clamp(1rem, 2.4vmin, 1.4rem);
+  height: clamp(1rem, 2.4vmin, 1.4rem);
 }
 
 /* `stroke-width` set here, not on the paths, so it reaches the cloned symbol through `<use>`. */
@@ -92,30 +53,23 @@
   stroke-width: 1.5;
 }
 
-.shop-flask-btn:disabled .shop-flask-icon svg {
+.shop-list-item:disabled .shop-flask-icon svg {
   opacity: 0.55;
 }
 
-.shop-flask-text {
+/* Where every `.shop-list-item` carries a single `.shop-item-price` at the row's far end, the
+   flask carries this two-line tag instead: the free/no-coin badge above the charge count, both
+   pinned to the same far end via `margin-left: auto`. */
+.shop-flask-tag {
+  flex: 0 0 auto;
+  margin-left: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  align-items: flex-end;
+  gap: 0.15rem;
 }
 
-.shop-flask-name {
-  font-size: clamp(0.74rem, 1.9vmin, 0.94rem);
-  letter-spacing: 0.05em;
-}
-
-.shop-flask-charges {
-  font-size: clamp(0.56rem, 1.3vmin, 0.7rem);
-  color: var(--wc-chalk-dim);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Where every `.shop-item` carries `.shop-item-price`, the flask carries this. */
 .shop-flask-free {
-  flex: 0 0 auto;
   padding: 0.1rem 0.4rem;
   border: 1px solid currentColor;
   border-radius: 2px;
@@ -124,29 +78,10 @@
   text-transform: uppercase;
 }
 
-.shop-flask-side {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.shop-flask-blurb {
-  margin: 0;
+.shop-flask-charges {
   font-size: clamp(0.56rem, 1.3vmin, 0.7rem);
   color: var(--wc-chalk-dim);
-  line-height: 1.35;
-}
-
-/* Reserves its line so the layout does not jump when a refusal appears — the same discipline
-   `.shop-refusal` uses. */
-.shop-flask-refusal {
-  margin: 0;
-  min-height: 1em;
-  font-size: clamp(0.56rem, 1.3vmin, 0.7rem);
-  font-style: italic;
-  color: var(--wc-brass);
+  font-variant-numeric: tabular-nums;
 }
 
 .shop-purse-cell.is-flask .shop-purse-value {

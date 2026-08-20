@@ -39,7 +39,7 @@ observer, or `AbortController` in the module and therefore no cleanup to omit.
 
 ### The trick winner is derived, never recomputed by the UI
 
-`roundReducer.ts`'s `deriveResolvedTrick(before, after, playedCard)` never calls `resolveTrickWinner`
+`quarryAdvance.ts`'s `deriveResolvedTrick(before, after, playedCard)` (in `roundReducer.ts` until DLR-94 moved it) never calls `resolveTrickWinner`
 itself — doing so would require choosing a trump suit, which is a rules question this layer must not
 answer. This is possible only because `playCard` already applies `resolveTrickWinner` internally and
 returns the _result_ of that decision in the new state — `roundReducer` reads the consequence rather
@@ -88,7 +88,7 @@ call the same `handleCarryOn`, and dispatching `CarryOn` a second time is a safe
 
 ### The deciding trick is held exactly like every other
 
-`roundReducer.ts`'s `commit` and `advanceQuarryFollow` set `resolvedTrick` and, on the **sixth** trick
+`roundReducer.ts`'s `commit` and `quarryAdvance.ts`'s `advanceQuarryFollow` (moved there by DLR-94) set `resolvedTrick` and, on the **sixth** trick
 (`HAND_SIZE`, thirteen before DLR-80), `phase: RoundPhase.Complete` in the same transition — both
 become true at once. An earlier version of `WarCouncilRound.tsx` branched on `roundComplete`
 **first**, so `RoundOverPanel` replaced the deciding trick instantly and the player never saw which

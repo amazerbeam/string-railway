@@ -11,11 +11,6 @@ import {
   ENCOUNTER_PLAYER_RESTORE,
   HAND_SIZE,
   SKULL_DENSITY,
-  SKULL_WEIGHTS_UNIFORM,
-  SKULL_WEIGHTS_RAMP,
-  SKULL_WEIGHTS_HUMP,
-  SKULL_WEIGHTS_AMBUSH,
-  SKULL_RANK_WEIGHTS,
   DAMAGE_PER_HIT,
   CHEAT_SLOT_COUNT,
   RUN_STARTING_CHEATS,
@@ -35,6 +30,13 @@ import {
   RUN_ENCOUNTERS,
   runEncounterAt,
 } from '../config'
+import {
+  SKULL_WEIGHTS_UNIFORM,
+  SKULL_WEIGHTS_RAMP,
+  SKULL_WEIGHTS_HUMP,
+  SKULL_WEIGHTS_AMBUSH,
+  SKULL_RANK_WEIGHTS,
+} from '../skullWeights'
 import { quarryCharacterInfo } from '../quarryCharacters'
 
 describe('Forage and run-length constants', () => {

@@ -130,19 +130,25 @@ export default function ShopPanel({
   const [selectedCategory, setSelectedCategory] = useState<ShopCategory>(ShopCategory.OneTimeUse)
   const itemsOnShelf = SHOP_ITEMS_BY_CATEGORY[selectedCategory]
 
+  // One row per item — a plain list rather than a card grid (developer correction, mid-fix on
+  // this ticket): the name and blurb read left-to-right on the row's face, with the price pinned
+  // to its far end, per `shopItems.css`'s `.shop-list-item`.
   function renderItem(item: ShopItem) {
     const refusal = refusals[item]
     return (
       <div key={item}>
         <button
           type="button"
-          className="shop-item"
+          className="shop-list-item"
           disabled={refusal !== null}
           onClick={() => onBuy(item)}
           aria-label={shopItemAccessibleName(item, refusal)}
         >
-          <span className="shop-item-name">{SHOP_ITEM_NAME[item]}</span>
-          <span className="shop-item-blurb">{SHOP_ITEM_BLURB[item]}</span>
+          <span className="shop-list-item-main">
+            <span className="shop-item-name">{SHOP_ITEM_NAME[item]}</span>
+            {' — '}
+            <span className="shop-item-blurb">{SHOP_ITEM_BLURB[item]}</span>
+          </span>
           <span className="shop-item-price">{priceText(item)}</span>
         </button>
         <p className="shop-refusal" role="status">
@@ -220,41 +226,6 @@ export default function ShopPanel({
           </span>
         </div>
 
-        {/* AC6 — the flask's own zone: beneath the health it restores, above the ladder, and
-            nowhere near `Also for sale`, where the PRICED Heal lives. Distinctness is structural
-            rather than cosmetic — a different zone, no price line, an icon-led control where every
-            shop item is a text card, and a `Free` tag where they carry a price. Layout per this
-            contract's `mockup.html`; every CSS figure there is a placeholder the developer's UX
-            design supersedes. */}
-        <div className="shop-flask" role="group" aria-label={SHOP_FLASK_GROUP_LABEL}>
-          <button
-            type="button"
-            className="shop-flask-btn"
-            disabled={flaskRefusal !== null}
-            onClick={onDrinkFlask}
-            aria-label={flaskAccessibleName(
-              flaskCharges,
-              flaskHealAmount(maxPlayerHealth),
-              flaskRefusal,
-            )}
-          >
-            <span className="shop-flask-icon" aria-hidden="true">
-              <FlaskMark />
-            </span>
-            <span className="shop-flask-text">
-              <span className="shop-flask-name">{SHOP_FLASK_LABEL}</span>
-              <span className="shop-flask-charges">{flaskChargesText(flaskCharges)}</span>
-            </span>
-            <span className="shop-flask-free">{SHOP_FLASK_NO_COIN}</span>
-          </button>
-          <span className="shop-flask-side">
-            <p className="shop-flask-blurb">{flaskBlurbText(flaskHealAmount(maxPlayerHealth))}</p>
-            <p className="shop-flask-refusal" role="status">
-              {flaskRefusal === null ? '' : FLASK_REFUSAL_MESSAGE[flaskRefusal]}
-            </p>
-          </span>
-        </div>
-
         <ShopCategoryTabs selected={selectedCategory} onSelect={setSelectedCategory} />
 
         {/* Only the selected rung's panel is rendered, per the WAI-ARIA tabs pattern. The panel is
@@ -272,15 +243,53 @@ export default function ShopPanel({
             // AC5 — stated, so an empty shelf cannot be mistaken for a broken one.
             <p className="shop-empty">{SHOP_CATEGORY_EMPTY}</p>
           ) : (
-            <div className="shop-grid">{itemsOnShelf.map(renderItem)}</div>
+            <div className="shop-list">{itemsOnShelf.map(renderItem)}</div>
           )}
         </div>
 
         {/* AC2/AC3 — the Heal is an instant transfer with no duration, so it is not on the ladder
-            and does not live in a tab. Same grid, because this list will grow too. */}
+            and does not live in a tab. AC6 (DLR-93) — the flask now shares this row with the Heal
+            (developer direction, mid-fix on this ticket): `.shop-list--extras` lays the two side
+            by side, wrapping to a stack once the column is too narrow to hold both. The flask
+            keeps its OWN accessible group (`role="group"`, `SHOP_FLASK_GROUP_LABEL`) so it still
+            reads as apart from the priced items to a screen reader even though it now sits
+            visually beside one — `ShopPanel.test.tsx` asserts exactly that. */}
         <div className="shop-aside">
           <span className="shop-aside-label">{SHOP_ASIDE_LABEL}</span>
-          <div className="shop-grid">{UNCATEGORISED_SHOP_ITEMS.map(renderItem)}</div>
+          <div className="shop-list shop-list--extras">
+            <div role="group" aria-label={SHOP_FLASK_GROUP_LABEL}>
+              <button
+                type="button"
+                className="shop-list-item is-flask"
+                disabled={flaskRefusal !== null}
+                onClick={onDrinkFlask}
+                aria-label={flaskAccessibleName(
+                  flaskCharges,
+                  flaskHealAmount(maxPlayerHealth),
+                  flaskRefusal,
+                )}
+              >
+                <span className="shop-flask-icon" aria-hidden="true">
+                  <FlaskMark />
+                </span>
+                <span className="shop-list-item-main">
+                  <span className="shop-item-name">{SHOP_FLASK_LABEL}</span>
+                  {' — '}
+                  <span className="shop-item-blurb">
+                    {flaskBlurbText(flaskHealAmount(maxPlayerHealth))}
+                  </span>
+                </span>
+                <span className="shop-flask-tag">
+                  <span className="shop-flask-free">{SHOP_FLASK_NO_COIN}</span>
+                  <span className="shop-flask-charges">{flaskChargesText(flaskCharges)}</span>
+                </span>
+              </button>
+              <p className="shop-refusal" role="status">
+                {flaskRefusal === null ? '' : FLASK_REFUSAL_MESSAGE[flaskRefusal]}
+              </p>
+            </div>
+            {UNCATEGORISED_SHOP_ITEMS.map(renderItem)}
+          </div>
         </div>
 
         <p className="shop-hint">{SHOP_NOTHING_TO_BUY_HINT}</p>

@@ -306,94 +306,19 @@ export const HAND_SIZE = 6
 // UNIT: proportion of the CPU's dealt hand, 0..1.
 export const SKULL_DENSITY = 0.3
 
-/**
- * How likely each rank is to carry a skull, keyed by rank. Weight 0 means never; a higher weight
- * means likelier. Only the RATIOS matter — the absolute scale is arbitrary, so a curve can be
- * re-shaped without renormalising it.
- *
- * Replaces the old rank-floor rule: "never rank 1" is now expressed as `1: 0` in every curve
- * rather than as a separate minimum-rank constant, so the rule is stated once.
- * UNIT: relative weight per rank, >= 0, unitless.
- */
-export type SkullRankWeights = Readonly<Record<number, number>>
-
-// Every eligible rank equally likely — the behaviour before PT-001. NOT ACTIVE: kept as the
-// reference point a play-test compares a shaped curve against.
-export const SKULL_WEIGHTS_UNIFORM: SkullRankWeights = {
-  1: 0,
-  2: 1,
-  3: 1,
-  4: 1,
-  5: 1,
-  6: 1,
-  7: 1,
-  8: 1,
-  9: 1,
-  10: 1,
-  11: 1,
-}
-
-// Weight climbs with rank, so skulls land on high cards. NOT ACTIVE. High skulls mostly WIN their
-// own trick, and a skull trick the Quarry wins is a dodge for the player — so this is the gentlest
-// curve, not the harshest. Transcribed from the developer's sketch as `weight = rank - 1`.
-export const SKULL_WEIGHTS_RAMP: SkullRankWeights = {
-  1: 0,
-  2: 1,
-  3: 2,
-  4: 3,
-  5: 4,
-  6: 5,
-  7: 6,
-  8: 7,
-  9: 8,
-  10: 9,
-  11: 10,
-}
-
-// ACTIVE (see SKULL_RANK_WEIGHTS). Weight on the middle ranks, where the player's own card decides
-// who takes the trick: their skulled 6 loses to a 9 and beats a 4, so the outcome is the player's
-// choice rather than the deal's. The extremes are deliberately light — a very low skull is one the
-// Quarry can only lose with, so it is dumped into a trick the player has already won and eaten with
-// no counterplay; a very high skull wins its own trick, which is a dodge the player did not earn.
-export const SKULL_WEIGHTS_HUMP: SkullRankWeights = {
-  1: 0,
-  2: 2,
-  3: 5,
-  4: 8,
-  5: 10,
-  6: 10,
-  7: 8,
-  8: 5,
-  9: 2,
-  10: 1,
-  11: 1,
-}
-
-// The ramp mirrored: weight on low cards. NOT ACTIVE, and the harshest curve — a low skull is one
-// the Quarry can only lose with, so most of these are eaten with no counterplay.
-export const SKULL_WEIGHTS_AMBUSH: SkullRankWeights = {
-  1: 0,
-  2: 10,
-  3: 9,
-  4: 8,
-  5: 7,
-  6: 6,
-  7: 5,
-  8: 4,
-  9: 3,
-  10: 2,
-  11: 1,
-}
-
-// The curve in force. CHANGE THIS ONE REFERENCE to play-test a different shape.
-// Set to HUMP by the developer on 2026-08-14, from a rendered comparison of all four curves and a
-// 300,000-hand simulation of the per-rank skull rates each produces.
-//
-// The three inactive curves above are exported and unused ON PURPOSE — they are the difficulty and
-// variety lever for later opponents, so a boss can be differentiated by its skull curve rather than
-// by a rule-break. DO NOT DELETE THEM AS DEAD CODE. See `ideas.md` → "Worth costing".
-export const SKULL_RANK_WEIGHTS: SkullRankWeights = SKULL_WEIGHTS_HUMP
-
 // §5 "Damage to the player" — 1, every time they take damage (AC10). SETTLED.
 // UNIT: health points per damage event.
 export const DAMAGE_PER_HIT: Damage = 1
+
+// version-4-scope §3 / DLR-94 AC4 — a FORCED cash-out (a hit the player did not choose) pays this
+// fraction of `bank × multiplier`. A cash-out the player CHOSE (`voluntaryCashOut.ts`) and the
+// end-of-hand one both pay in full; this is the "you got caught before you applied" cost, and it
+// is what makes Apply Damage a decision rather than a button with no wrong answer.
+// SETTLED by the design on 2026-08-19. UNIT: dimensionless ratio, numerator over denominator.
+//
+// TWO CONSTANTS RATHER THAN ONE FLOAT, and that is arithmetic rather than style. `2 / 3` is
+// 0.6666666666666666, so `3 * (2 / 3)` is 1.9999999999999998 and floors to 1 where the rule says
+// 2 — wrong for every multiple of 3. Keeping them separate lets `forcedCashValue` multiply before
+// it divides, so the dividend is an exact integer.
+export const FORCED_CASH_OUT_NUMERATOR: number = 2
+export const FORCED_CASH_OUT_DENOMINATOR: number = 3

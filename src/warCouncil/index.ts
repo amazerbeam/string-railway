@@ -24,7 +24,22 @@ export { playCard } from './playCard'
 export { assignSkulls, isSkulled, skullableCards, suitShape, trickIsSkulled } from './skulls'
 export { isEnvenomed, trickIsEnvenomed, envenomCard } from './envenom'
 export type { SuitShape } from './skulls'
-export { incomingFrom, isTaken, resolveTrickBank, TrickOutcome, trickOutcomeFor } from './bank'
+export {
+  cashValue,
+  forcedCashValue,
+  incomingFrom,
+  isTaken,
+  resolveTrickBank,
+  TrickOutcome,
+  trickOutcomeFor,
+} from './bank'
 export type { BankState, TrickFacts, TrickResolution } from './bank'
+export {
+  ApplyDamageRefusal,
+  applyDamageRefusalFor,
+  cashBankNow,
+  incomingFromCashOut,
+} from './voluntaryCashOut'
+export type { ApplyDamageStock, VoluntaryCashOut } from './voluntaryCashOut'
 export { chooseCpuMove, commitQuarryMove, quarryIntent, QuarryIntentStance } from './cpuPlayer'
 export type { CpuMove, QuarryIntent } from './cpuPlayer'

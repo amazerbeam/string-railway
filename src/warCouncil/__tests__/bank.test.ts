@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { DAMAGE_PER_HIT, DuelSide } from '../../hunt'
 import {
+  cashValue,
+  forcedCashValue,
   incomingFrom,
   isTaken,
   resolveTrickBank,
@@ -65,7 +67,7 @@ describe('resolveTrickBank', () => {
   it('a clean loss cashes bank × multiplier and resets both', () => {
     const r = resolveTrickBank({ bank: 3, multiplier: 3 }, facts())
     expect(r.outcome).toBe(TrickOutcome.CleanLoss)
-    expect(r.cashOut).toBe(9)
+    expect(r.cashOut).toBe(6)
     expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
     expect(r.bank).toBe(0)
     expect(r.multiplier).toBe(0)
@@ -104,13 +106,13 @@ describe('resolveTrickBank', () => {
 
   it('AC8 — a sixth trick that takes damage cashes once, not twice', () => {
     const r = resolveTrickBank({ bank: 2, multiplier: 2 }, facts({ finalTrick: true }))
-    expect(r.cashOut).toBe(4)
+    expect(r.cashOut).toBe(2)
     expect(r.cashedAtHandEnd).toBe(false)
     expect(r.bank).toBe(0)
     expect(r.multiplier).toBe(0)
   })
 
-  it('pays n × n across a whole unbroken streak — 1, 4, 9, 16, 25, 36', () => {
+  it('a forced hit pays two-thirds of n × n across a whole unbroken streak — 0, 2, 6, 10, 16, 24', () => {
     const payouts: number[] = []
     let state = { bank: 0, multiplier: 0 }
     for (let n = 1; n <= 6; n++) {
@@ -118,15 +120,15 @@ describe('resolveTrickBank', () => {
       state = { bank: taken.bank, multiplier: taken.multiplier }
       payouts.push(resolveTrickBank(state, facts()).cashOut)
     }
-    expect(payouts).toEqual([1, 4, 9, 16, 25, 36])
+    expect(payouts).toEqual([0, 2, 6, 10, 16, 24])
   })
 
   it.each([
-    { bonus: 0, payouts: [1, 4, 9, 16, 25, 36] },
-    { bonus: 1, payouts: [2, 8, 18, 32, 50, 72] },
-    { bonus: 2, payouts: [3, 12, 27, 48, 75, 108] },
+    { bonus: 0, payouts: [0, 2, 6, 10, 16, 24] },
+    { bonus: 1, payouts: [1, 5, 12, 21, 33, 48] },
+    { bonus: 2, payouts: [2, 8, 18, 32, 50, 72] },
   ])(
-    'DLR-92 AC2/AC7 — a bank-climb bonus of $bonus pays (1 + bonus) × n² across a streak',
+    'DLR-92 AC2/AC7 + DLR-94 AC4 — a bank-climb bonus of $bonus pays two-thirds of (1 + bonus) × n² when the streak is caught',
     ({ bonus, payouts }) => {
       const got: number[] = []
       let state = { bank: 0, multiplier: 0 }
@@ -140,12 +142,8 @@ describe('resolveTrickBank', () => {
   )
 
   it('DLR-92 AC4 — one copy banks 2 a trick and two copies bank 3', () => {
-    expect(resolveTrickBank(START, facts({ playerWon: true, bankClimbBonus: 1 })).bankAdded).toBe(
-      2,
-    )
-    expect(resolveTrickBank(START, facts({ playerWon: true, bankClimbBonus: 2 })).bankAdded).toBe(
-      3,
-    )
+    expect(resolveTrickBank(START, facts({ playerWon: true, bankClimbBonus: 1 })).bankAdded).toBe(2)
+    expect(resolveTrickBank(START, facts({ playerWon: true, bankClimbBonus: 2 })).bankAdded).toBe(3)
   })
 
   it('DLR-92 AC5 — the multiplier climbs by exactly 1 whatever the bonus', () => {
@@ -161,7 +159,7 @@ describe('resolveTrickBank', () => {
   it('DLR-92 — a bonus is never added to a trick that is not taken', () => {
     const r = resolveTrickBank({ bank: 3, multiplier: 3 }, facts({ bankClimbBonus: 4 }))
     expect(r.bankAdded).toBe(0)
-    expect(r.cashOut).toBe(9)
+    expect(r.cashOut).toBe(6)
   })
 
   it('DLR-92 — a bonus that is not a positive integer floors to the bare rule', () => {
@@ -171,12 +169,25 @@ describe('resolveTrickBank', () => {
       expect(Number.isFinite(r.bank)).toBe(true)
     }
   })
+
+  it('AC5 — the end-of-hand cash-out still pays IN FULL, unlike a forced hit', () => {
+    // The SAME streak, cashed two ways: caught on a lost trick, versus surviving to the sixth.
+    const streak: BankState = { bank: 3, multiplier: 3 }
+    const caught = resolveTrickBank(streak, facts())
+    const survived = resolveTrickBank(streak, facts({ playerWon: true, finalTrick: true }))
+
+    expect(caught.cashOut).toBe(6) // two-thirds of 9
+    expect(caught.cashedAtHandEnd).toBe(false)
+    // The win banks first, so the sixth trick cashes 4 x 4 = 16 — in full, not two-thirds (10).
+    expect(survived.cashOut).toBe(16)
+    expect(survived.cashedAtHandEnd).toBe(true)
+  })
 })
 
 describe('incomingFrom', () => {
   it('keys damage by the side it depletes', () => {
     const r = resolveTrickBank({ bank: 3, multiplier: 3 }, facts())
-    expect(incomingFrom(r)).toEqual({ [DuelSide.Player]: 1, [DuelSide.Quarry]: 9 })
+    expect(incomingFrom(r)).toEqual({ [DuelSide.Player]: 1, [DuelSide.Quarry]: 6 })
   })
 
   it('is all zeroes for a trick that neither cashed nor hit', () => {
@@ -241,7 +252,7 @@ describe('resolveTrickBank — a marked trick (DLR-90 AC3, AC5, AC6)', () => {
     )
     expect(r.outcome).toBe(TrickOutcome.SkullWin)
     expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
-    expect(r.cashOut).toBe(9)
+    expect(r.cashOut).toBe(6)
     expect(r.envenomTarget).toBe(DuelSide.Player)
   })
 
@@ -265,7 +276,7 @@ describe('resolveTrickBank — poison retimed to the trick that pays it (DLR-91 
     const r = resolveTrickBank(before, facts({ playerWon: true, poisonToPlayer: 2 }))
     // A1 — the win banks FIRST, so the cash-out is 5 x 5, not 4 x 4.
     expect(r.bankAdded).toBe(1)
-    expect(r.cashOut).toBe(25)
+    expect(r.cashOut).toBe(16)
     expect(r.bank).toBe(0)
     expect(r.multiplier).toBe(0)
     // D2 — 2 on a trick the player won: no DAMAGE_PER_HIT, only the poison.
@@ -275,7 +286,7 @@ describe('resolveTrickBank — poison retimed to the trick that pays it (DLR-91 
   it('D2 — a trick the player loses while poisoned costs the trick’s damage AND the poison', () => {
     const r = resolveTrickBank({ bank: 3, multiplier: 3 }, facts({ poisonToPlayer: 2 }))
     expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT + 2)
-    expect(r.cashOut).toBe(9)
+    expect(r.cashOut).toBe(6)
     expect(r.multiplier).toBe(0)
   })
 
@@ -315,7 +326,7 @@ describe('resolveTrickBank — the Poison Guard (DLR-91 AC4/AC5, A4/A5)', () => 
       { bank: 4, multiplier: 4 },
       facts({ playerWon: false, poisonToPlayer: 0, poisonGuarded: true }),
     )
-    expect(r.cashOut).toBe(16)
+    expect(r.cashOut).toBe(10)
     expect(r.multiplier).toBe(0)
     expect(r.poisonGuardSpent).toBe(false)
   })
@@ -347,5 +358,37 @@ describe('resolveTrickBank — the Poison Guard (DLR-91 AC4/AC5, A4/A5)', () => 
       facts({ playerWon: true, poisonToPlayer: 2, poisonGuarded: true }),
     )
     expect(r.poisonGuardSpent).toBe(true)
+  })
+})
+
+describe('cashValue and forcedCashValue — DLR-94 AC4', () => {
+  it('cashValue is the plain product', () => {
+    expect(cashValue(3, 3)).toBe(9)
+    expect(cashValue(5, 5)).toBe(25)
+    expect(cashValue(0, 0)).toBe(0)
+  })
+
+  it('forcedCashValue pays two-thirds, rounded DOWN so the Quarry is never overpaid', () => {
+    expect(forcedCashValue(3, 3)).toBe(6) // 9 -> 6 exactly
+    expect(forcedCashValue(2, 2)).toBe(2) // 4 -> 2.66 -> 2
+    expect(forcedCashValue(5, 5)).toBe(16) // 25 -> 16.66 -> 16
+    expect(forcedCashValue(1, 1)).toBe(0) // 1 -> 0.66 -> 0
+  })
+
+  // The regression the float form produces: `3 * (2 / 3)` is 1.9999999999999998, which floors to
+  // 1. Multiplying by the numerator BEFORE dividing keeps the dividend an exact integer.
+  it('is exact on every multiple of three, where a float fraction loses one', () => {
+    for (const product of [3, 6, 9, 12, 15, 30, 300]) {
+      expect(forcedCashValue(1, product)).toBe((product * 2) / 3)
+      expect(Math.floor(product * (2 / 3))).toBeLessThanOrEqual(forcedCashValue(1, product))
+    }
+  })
+
+  it('floors a degenerate bank or multiplier to zero rather than propagating it', () => {
+    for (const bad of [Number.NaN, -1, 1.5, Number.POSITIVE_INFINITY]) {
+      expect(cashValue(bad, 3)).toBe(0)
+      expect(forcedCashValue(bad, 3)).toBe(0)
+      expect(forcedCashValue(3, bad)).toBe(0)
+    }
   })
 })

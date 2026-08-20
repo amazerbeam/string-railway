@@ -1,15 +1,15 @@
 import {
+  applyDamageRefusalFor,
+  cashBankNow,
   CardRank,
   PlayerSide,
   QUARRY_SIDE,
   RoundPhase,
-  TrickOutcome,
-  chooseCpuMove,
-  commitQuarryMove,
   containsCard,
   currentTurn,
   envenomCard,
   incomingFrom,
+  incomingFromCashOut,
   isEnvenomed,
   legalMoves,
   playCard,
@@ -19,7 +19,6 @@ import {
   type PlayCardOptions,
   type TrickCard,
   type TrickResolution,
-  type WarCouncilState,
 } from '../../warCouncil'
 import {
   applyDamage,
@@ -34,16 +33,17 @@ import {
   type EncounterState,
 } from '../../hunt'
 import {
+  applyDamageStock,
+  canAct,
   cheatArmed,
   CheatStage,
   envenomArmed,
   EnvenomStage,
   RoundUiActionKind,
-  type CpuFault,
-  type ResolvedTrick,
   type RoundUiAction,
   type RoundUiState,
 } from './roundUiState'
+import { advanceQuarryFollow, advanceQuarryLead, deriveResolvedTrick } from './quarryAdvance'
 
 export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundUiState {
   switch (action.kind) {
@@ -63,24 +63,11 @@ export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundU
       return handleTapEnvenom(state)
     case RoundUiActionKind.CancelEnvenom:
       return state.envenomStage === null ? state : { ...state, envenomStage: null }
+    case RoundUiActionKind.TapApplyDamage:
+      return handleTapApplyDamage(state)
+    case RoundUiActionKind.CancelApplyDamage:
+      return state.applyPoised ? { ...state, applyPoised: false } : state
   }
-}
-
-interface CpuAdvanceResult {
-  readonly round: WarCouncilState
-  readonly resolvedTrick: ResolvedTrick | null
-  readonly cpuFault: CpuFault | null
-}
-
-function canAct(state: RoundUiState): boolean {
-  return (
-    state.round.phase !== RoundPhase.Complete &&
-    !isEncounterResolved(state.encounter) &&
-    state.resolvedTrick === null &&
-    state.prompt === null &&
-    state.cpuFault === null &&
-    currentTurn(state.round) === PlayerSide.Player
-  )
 }
 
 function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
@@ -155,6 +142,45 @@ function handleTapEnvenom(state: RoundUiState): RoundUiState {
     return { ...state, envenomStage: EnvenomStage.Armed }
   }
   return { ...state, envenomStage: null }
+}
+
+/**
+ * DLR-94 AC1/AC2 — three outcomes on one control, mirroring `handleTapEnvenom`'s shape. A refusal
+ * changes nothing; nothing poised poises; poised COMMITS. There is no third stage: unlike Envenom,
+ * this control's second tap IS the action rather than a prelude to a hand-card tap.
+ *
+ * Asks `applyDamageRefusalFor` on BOTH taps, not just the first. The felt can change under a
+ * poised plate — a poison booking lands, a reveal is held, the turn passes — and re-reading is what
+ * stops a poise made while the control was live from committing after it stopped being. D6
+ * (version-4-scope §3) asks for exactly this: the control must read the pending-poison predicate
+ * "before it commits to anything".
+ *
+ * AC3 needs no code here. `cashBankNow` returns the round with only `bank` and `multiplier` moved,
+ * `resolvedTrick` stays null, and nothing writes `lastResolution` — so no reveal is held, the felt
+ * never enters its waiting state, and the player's next tap plays their card by the ordinary rules.
+ *
+ * Poising does NOT clear the Cheat or Envenom selection, and they do not clear it. Those two
+ * reinterpret the next hand-card tap and therefore cannot coexist; this one reinterprets nothing,
+ * so a player may poise a Cheat and apply damage in either order without losing either.
+ */
+function handleTapApplyDamage(state: RoundUiState): RoundUiState {
+  if (applyDamageRefusalFor(applyDamageStock(state)) !== null) {
+    // A refusal drops a held poise rather than leaving it stranded, and never half-applies. The
+    // reason is already on the plate's face, so the player is never left with no visible cause.
+    return state.applyPoised ? { ...state, applyPoised: false } : state
+  }
+  if (!state.applyPoised) {
+    return { ...state, applyPoised: true }
+  }
+
+  const { state: round, cashOut } = cashBankNow(state.round)
+  // Guarded for the reason `applyResolution` guards: `applyDamage` THROWS on an already-resolved
+  // encounter, and a reducer must not throw — a throw during an event handler unmounts the tree.
+  // Unreachable in practice, since a resolved encounter already fails `canAct`.
+  const encounter = isEncounterResolved(state.encounter)
+    ? state.encounter
+    : applyDamage(state.encounter, incomingFromCashOut(cashOut))
+  return { ...state, round, encounter, applyPoised: false }
 }
 
 /**
@@ -323,68 +349,4 @@ function commit(state: RoundUiState, cardToPlay: Card, choice?: AbilityChoice): 
       ? false
       : settled.poisonGuardHeld,
   }
-}
-
-/** A trick resolved iff the engine wrote a `lastResolution` on `after` — the definitive signal
- *  now that the bank, not `tricksWon`, is what changed. The physical winner is recovered from
- *  the outcome itself (`CleanWin`/`SkullWin` favour the player, `Dodge`/`CleanLoss` favour the
- *  Quarry) rather than by diffing `tricksWon`, which `resolveTrickBank` already consulted once. */
-function deriveResolvedTrick(
-  before: WarCouncilState,
-  after: WarCouncilState,
-  playedCard: TrickCard,
-): ResolvedTrick | null {
-  const resolution = after.lastResolution
-  if (resolution === null) {
-    return null
-  }
-  const winner =
-    resolution.outcome === TrickOutcome.CleanWin || resolution.outcome === TrickOutcome.SkullWin
-      ? PlayerSide.Player
-      : PlayerSide.Cpu
-  return { cards: [before.currentTrick[0], playedCard], winner, resolution }
-}
-
-/**
- * Commits the Quarry's *follow* — the answer to a lead already on the table — needing
- * `chooseCpuMove`'s chosen card to derive the resolved trick's reveal. Guards `legalMoves`
- * before calling `chooseCpuMove`, which throws on an empty legal set.
- */
-function advanceQuarryFollow(round: WarCouncilState, options: PlayCardOptions): CpuAdvanceResult {
-  const legal = legalMoves(round, QUARRY_SIDE)
-  if (legal.length === 0) {
-    return { round, resolvedTrick: null, cpuFault: 'noLegalMove' }
-  }
-
-  const move = chooseCpuMove(round, QUARRY_SIDE)
-  const result = playCard(round, QUARRY_SIDE, move.card, move.choice, options)
-  if (!result.ok) {
-    return { round, resolvedTrick: null, cpuFault: result.reason }
-  }
-
-  const playedCard: TrickCard = { side: QUARRY_SIDE, card: move.card }
-  return {
-    round: result.state,
-    resolvedTrick: deriveResolvedTrick(round, result.state, playedCard),
-    cpuFault: null,
-  }
-}
-
-/**
- * Commits a Quarry *lead* through the engine's own `commitQuarryMove` — the commit half of
- * the split DLR-52 introduced for exactly this. A lead never completes a trick, so there is
- * no resolved reveal to derive and no need to know which card was chosen.
- *
- * Keeps `advanceQuarryFollow`'s empty-legal-set guard: `commitQuarryMove` reaches
- * `chooseCpuCard`, whose `lowestCard([])` would throw rather than return a rejection.
- */
-function advanceQuarryLead(round: WarCouncilState): CpuAdvanceResult {
-  if (legalMoves(round, QUARRY_SIDE).length === 0) {
-    return { round, resolvedTrick: null, cpuFault: 'noLegalMove' }
-  }
-  const result = commitQuarryMove(round)
-  if (!result.ok) {
-    return { round, resolvedTrick: null, cpuFault: result.reason }
-  }
-  return { round: result.state, resolvedTrick: null, cpuFault: null }
 }

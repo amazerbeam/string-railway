@@ -242,6 +242,25 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* DLR-94 — the reduced figure the same streak pays if the player is caught before applying.
+   Dimmer than `.wc-bank-cash` and marked with a caret, so the pair reads as full-versus-reduced
+   without relying on colour alone. */
+.wc-bank-forced {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-bank-forced::before {
+  content: '↓ ';
+  color: var(--wc-alarm);
+}
+
+.wc-bank-forced b {
+  color: var(--wc-parchment);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Take vs. hit is carried by this copy and by the class below — never by colour alone. */
 .wc-bank-last {
   margin: 0.4rem 0 0;

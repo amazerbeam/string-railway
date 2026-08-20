@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { IllegalMoveReason, PlayerSide, Suit, TrickOutcome } from '../../../warCouncil'
 import {
+  APPLY_DAMAGE_POISED_HINT,
   cardAccessibleName,
   CHEAT_ARMED_HINT,
   CHEAT_POISED_HINT,
@@ -132,5 +133,15 @@ describe('deriveHint — the cascade’s own priority order', () => {
 
   it('a non-interactive state with nothing selected returns the empty string', () => {
     expect(deriveHint(baseUi(), false, false)).toBe('')
+  })
+
+  it('DLR-94 — a poised Apply plate says so', () => {
+    expect(deriveHint(baseUi({ applyPoised: true }), true, false)).toBe(APPLY_DAMAGE_POISED_HINT)
+  })
+
+  it('DLR-94 — but a held reveal or a rejection still outranks it', () => {
+    expect(
+      deriveHint(baseUi({ applyPoised: true, resolvedTrick: someResolvedTrick }), false, false),
+    ).toBe('Trick resolved')
   })
 })

@@ -39,4 +39,16 @@ describe('BankMeter', () => {
     render(<BankMeter bank={0} multiplier={0} lastResolution={null} />)
     expect(screen.getByRole('region', { name: 'Tricks and Multiplier' })).toBeTruthy()
   })
+
+  it('DLR-94 — shows what the streak pays if the player is hit before applying', () => {
+    render(<BankMeter bank={3} multiplier={3} lastResolution={null} />)
+    // 3 x 3 = 9 in full; two-thirds of 9, floored, is 6.
+    expect(screen.getByLabelText(/cashes for 9, or 6 if you are hit first/i)).toBeTruthy()
+  })
+
+  it('DLR-94 — the reduced figure is on the face of the readout, not behind a hover', () => {
+    const { container } = render(<BankMeter bank={5} multiplier={5} lastResolution={null} />)
+    // 5 x 5 = 25; two-thirds floored is 16.
+    expect(container.querySelector('.wc-bank-forced')?.textContent).toContain('16')
+  })
 })

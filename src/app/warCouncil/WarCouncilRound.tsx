@@ -1,7 +1,8 @@
 import { useReducer, type ReactNode } from 'react'
 import { DuelSide, isEncounterResolved, quarryCharacterInfo } from '../../hunt'
 import {
-  CardRank,
+  applyDamageRefusalFor,
+  cashValue,
   incomingFrom,
   isEnvenomed,
   PlayerSide,
@@ -11,11 +12,13 @@ import {
   quarryIntent,
   sameCard,
   suitShape,
+  CardRank,
   type Card,
   type QuarryIntent,
 } from '../../warCouncil'
 import type { WarCouncilMountProps } from '../warCouncilMount'
 import AbilityPrompt from './AbilityPrompt'
+import ApplyDamagePlate from './ApplyDamagePlate'
 import BankMeter from './BankMeter'
 import CheatSlots from './CheatSlots'
 import DecreePile from './DecreePile'
@@ -30,7 +33,14 @@ import QuarryShape from './QuarryShape'
 import { deriveHint } from './roundHint'
 import RoundOverPanel from './RoundOverPanel'
 import { roundReducer } from './roundReducer'
-import { cheatArmed, createRoundUiState, envenomArmed, RoundUiActionKind } from './roundUiState'
+import {
+  applyDamageStock,
+  canAct,
+  cheatArmed,
+  createRoundUiState,
+  envenomArmed,
+  RoundUiActionKind,
+} from './roundUiState'
 import RoundStatusBand from './RoundStatusBand'
 import { SuitSymbolSheet } from './SuitMark'
 import TrickWell from './TrickWell'
@@ -41,6 +51,7 @@ import './warCouncilHunt.css'
 import './warCouncilHealthBars.css'
 import './warCouncilHand.css'
 import './warCouncilEnvenom.css'
+import './warCouncilApplyDamage.css'
 
 /**
  * The round mount, implementing SCRUM-37's `WarCouncilMountProps`. Owns exactly one piece of
@@ -87,13 +98,11 @@ export default function WarCouncilRound({
 
   const encounterOver = isEncounterResolved(ui.encounter)
   const roundComplete = ui.round.phase === RoundPhase.Complete
-  const interactive =
-    !roundComplete &&
-    !encounterOver &&
-    ui.resolvedTrick === null &&
-    ui.prompt === null &&
-    ui.cpuFault === null &&
-    currentTurn(ui.round) === PlayerSide.Player
+  // The SAME predicate the reducer gates on — moved to `roundUiState.ts` on DLR-94, where
+  // `cheatArmed` and `envenomArmed` already live, because this component and `roundReducer.ts`
+  // were computing the identical six clauses separately. Two readings of one gate is how a greyed
+  // control and a reducer branch drift apart.
+  const interactive = canAct(ui)
 
   // The SAME predicate the reducer commits with (`cheatArmed`), not a second reading of the
   // selection — two readings is how the fan's greying and a rejection reason drift apart.
@@ -102,6 +111,11 @@ export default function WarCouncilRound({
     PlayerSide.Player,
     cheatArmed(ui) ? { ignoreFollowSuit: true } : undefined,
   )
+
+  // DLR-94 — both derived, no new state. `applyDamageRefusalFor` is the one statement of
+  // availability, so the plate's disabled state and `handleTapApplyDamage`'s guard cannot disagree.
+  const applyRefusal = applyDamageRefusalFor(applyDamageStock(ui))
+  const applyCash = cashValue(ui.round.bank, ui.round.multiplier)
 
   // Both bars read straight off the reducer. Two derivations, no new state:
   //
@@ -323,6 +337,13 @@ export default function WarCouncilRound({
             interactive={interactive}
             onTap={() => dispatch({ kind: RoundUiActionKind.TapEnvenom })}
             onCancel={() => dispatch({ kind: RoundUiActionKind.CancelEnvenom })}
+          />
+          <ApplyDamagePlate
+            cashValue={applyCash}
+            poised={ui.applyPoised}
+            refusal={applyRefusal}
+            onTap={() => dispatch({ kind: RoundUiActionKind.TapApplyDamage })}
+            onCancel={() => dispatch({ kind: RoundUiActionKind.CancelApplyDamage })}
           />
         </div>
         <div className="wc-table-inner">{felt}</div>

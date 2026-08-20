@@ -1,4 +1,4 @@
-import { isTaken, type TrickResolution } from '../../warCouncil'
+import { cashValue, forcedCashValue, isTaken, type TrickResolution } from '../../warCouncil'
 import { TRICKS_LABEL, MULTIPLIER_LABEL, TRICK_OUTCOME_MESSAGE } from './labels'
 
 interface BankMeterProps {
@@ -19,7 +19,12 @@ interface BankMeterProps {
  * colour alone.
  */
 export default function BankMeter({ bank, multiplier, lastResolution }: BankMeterProps) {
-  const cash = bank * multiplier
+  const cash = cashValue(bank, multiplier)
+  // DLR-94 AC4 — what the same streak pays if the player is caught before applying. Computed
+  // through `forcedCashValue` rather than restated as a fraction, so this copy cannot drift from
+  // the configured constants. It is on the face of the readout rather than behind a hover because
+  // it is precisely the number the new decision needs (`game-ux`).
+  const forced = forcedCashValue(bank, multiplier)
   const taken = lastResolution ? isTaken(lastResolution.outcome) : null
   const lastLine = lastResolution
     ? TRICK_OUTCOME_MESSAGE[lastResolution.outcome]
@@ -40,7 +45,7 @@ export default function BankMeter({ bank, multiplier, lastResolution }: BankMete
       </p>
       <p
         className="wc-bank-figures"
-        aria-label={`${TRICKS_LABEL} ${bank}, ${MULTIPLIER_LABEL} ${multiplier}, cashes for ${cash}`}
+        aria-label={`${TRICKS_LABEL} ${bank}, ${MULTIPLIER_LABEL} ${multiplier}, cashes for ${cash}, or ${forced} if you are hit first`}
       >
         <span className="wc-bank-num" aria-hidden="true">
           {bank}
@@ -54,6 +59,9 @@ export default function BankMeter({ bank, multiplier, lastResolution }: BankMete
       </p>
       <p className="wc-bank-cash" aria-hidden="true">
         Cashes for <b>{cash}</b>
+      </p>
+      <p className="wc-bank-forced" aria-hidden="true">
+        If you&rsquo;re hit first: <b>{forced}</b>
       </p>
       <p className={lastClassName}>{lastLine}</p>
     </section>

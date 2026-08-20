@@ -26,11 +26,11 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                     |
 | --------------------- | ------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, PT-001, PT-002 |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, PT-001, PT-002 |
 | `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, PT-002 |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, PT-002 |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, PT-001, PT-002 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, PT-001, PT-002 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -467,12 +467,44 @@ preserved verbatim:
 - `WarCouncilRound.test.tsx` 402 → **237**, carving `WarCouncilRound.telegraph.test.tsx` (86) and
   `WarCouncilRound.readouts.test.tsx` (177).
 
-**No file under `src/` is at 400 lines or above.** `src/hunt/config.ts` at **399** is the one to watch:
-under budget, deliberately not split, and with room for nothing.
+**No file under `src/` is at 400 lines or above.** `src/hunt/config.ts` sat at **399** after this
+contract — under budget, and with room for nothing. DLR-94 was the ticket that needed that room and
+took the split instead (below).
 
 Start at [hunt/the-flask.md](hunt/the-flask.md) for the rules, the two transcribed tunables and the
 boss refill, or [run-ui/the-flask-control.md](run-ui/the-flask-control.md) for the control and how it
 is kept unmistakable from the thing you pay for.
+
+## Latest — DLR-94, the cash-out the player chooses (2026-08-20)
+
+Until now the bank cashed on exactly two events, both of them things that *happened* to the player: a
+hit, and the sixth trick arriving. DLR-94 added a third that the player **chooses** — **Apply Damage**
+spends the streak into the Quarry in full, at no cost in health, and leaves the trick mid-flight so play
+carries on by the ordinary rules. Its counterpart is that the automatic cash-out got **worse**: a hit the
+player did not choose now pays only **two-thirds** of `bank × multiplier`, floored. The end-of-hand
+cash-out is untouched and still pays in full. That turns a growing bank into a bet rather than a number
+the game spends for you at the worst moment.
+
+**Three structural points are worth knowing beyond the mechanic.**
+
+- **This is the codebase's first fractional rule, and the fraction is two constants rather than one
+  float.** `2 / 3` is `0.6666666666666666`, so `3 * (2 / 3)` is `1.9999999999999998` and floors to 1
+  where the rule says 2 — wrong for every multiple of 3. `forcedCashValue` multiplies by the numerator
+  *before* dividing, keeping the dividend an exact integer at the only division involved. The next
+  fractional rule should follow the same pattern; a single float constant reintroduces the bug.
+- **Availability is one predicate read twice.** `applyDamageRefusalFor` is the single statement of
+  whether the control is live — the reducer asks it before committing and the plate asks it to disable
+  itself and print the reason. It is also **re-asked on the confirming second tap**, which is what stops
+  a poise made while the control was live from committing after a poison booking has landed under it.
+- **Two files were split to make room, both pure moves.** `src/hunt/config.ts` 413 → **324**, carving
+  `skullWeights.ts` (93); and `roundReducer.ts` 390 → **352**, carving `quarryAdvance.ts` (96). Neither
+  changed a public name or a barrel surface, and every pre-existing spec passed unedited through both.
+
+Start at [war-council/voluntary-cash-out.md](war-council/voluntary-cash-out.md) for the rule and why it
+is not a fifth `TrickOutcome`, [war-council/bank-and-cash-out.md](war-council/bank-and-cash-out.md) for
+the two rates and the arithmetic, or
+[war-council-ui/apply-damage-plate.md](war-council-ui/apply-damage-plate.md) for the plate, the two-tap
+grammar and the extraction that had to come first.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

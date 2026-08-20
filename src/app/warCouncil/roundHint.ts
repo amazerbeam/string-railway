@@ -1,4 +1,5 @@
 import {
+  APPLY_DAMAGE_POISED_HINT,
   cardAccessibleName,
   CHEAT_ARMED_HINT,
   CHEAT_POISED_HINT,
@@ -21,6 +22,10 @@ export function deriveHint(ui: RoundUiState, interactive: boolean, quarryToLead:
   if (ui.prompt) return 'Choose what the card does'
   if (ui.resolvedTrick) return 'Trick resolved'
   if (quarryToLead) return 'They are choosing their lead'
+  // Above `ui.armed` deliberately: a poised plate is the more specific thing to say, and unlike
+  // the Cheat and Envenom selections it can legitimately coexist with an armed card, because it
+  // does not reinterpret the next hand-card tap.
+  if (ui.applyPoised) return APPLY_DAMAGE_POISED_HINT
   if (ui.armed) return `Tap ${cardAccessibleName(ui.armed)} again to play it`
   if (ui.envenomStage) {
     return ui.envenomStage === EnvenomStage.Armed ? ENVENOM_ARMED_HINT : ENVENOM_POISED_HINT

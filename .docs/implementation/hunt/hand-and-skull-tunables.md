@@ -5,6 +5,11 @@ Part of [Hunt](README.md).
 Every number DLR-80's loop turns on is a named export in `config.ts`, carrying its unit, its design
 citation, and whose decision the value is. Nothing in the loop reads a literal at its point of use.
 
+**Since DLR-94 the skull-weight curves live in `skullWeights.ts` rather than `config.ts`** — the
+`SkullRankWeights` type, the four shipped curves and `SKULL_RANK_WEIGHTS` moved verbatim when adding
+two constants would have pushed `config.ts` past the project's 400-line ceiling. Nothing about the
+curves themselves changed, and the barrel exports are identical, so no consumer moved with them.
+
 This file replaced `scoring-tunables.md`, which documented the two Standing multiplier tables, the
 per-declaration card-value accessor, and rank inversion. **All of that was deleted by DLR-80** — see
 [what went](#what-dlr-80-deleted-from-this-module) at the foot.
@@ -17,6 +22,32 @@ per-declaration card-value accessor, and rank inversion. **All of that was delet
 | `SKULL_DENSITY` | `0.3` | proportion of the Quarry's dealt hand, 0..1 | settled |
 | `SKULL_RANK_WEIGHTS` | `SKULL_WEIGHTS_HUMP` | relative weight per rank, ≥ 0, unitless | provisional (PT-001) |
 | `DAMAGE_PER_HIT` | `1` | health points per damage event | settled |
+
+## The forced cash-out fraction — DLR-94
+
+| Key | Value | Unit | Status |
+| --- | --- | --- | --- |
+| `FORCED_CASH_OUT_NUMERATOR` | `2` | dimensionless ratio, over the denominator | settled (version-4-scope §3) |
+| `FORCED_CASH_OUT_DENOMINATOR` | `3` | dimensionless ratio | settled (version-4-scope §3) |
+
+The fraction of `bank × multiplier` a **forced** cash-out pays — a hit the player did not choose. A
+cash-out the player chose, and the end-of-hand one, both pay in full; the reduction is the "you got
+caught before you applied" cost, and it is what makes Apply Damage a decision rather than a button with
+no wrong answer.
+
+**Settled, and transcribed rather than chosen here** — the design fixed two-thirds on 2026-08-19. No
+test hard-codes the ratio independently of these two keys, so retuning it is a config edit plus the
+derived figures in `bank.test.ts`.
+
+**Two constants rather than one float, and that is a correctness measure.** `2 / 3` is
+`0.6666666666666666`, so `3 * (2 / 3)` is `1.9999999999999998` and floors to **1** where the rule says
+2 — wrong for every multiple of 3. Keeping numerator and denominator apart lets
+`src/warCouncil/bank.ts`'s `forcedCashValue` multiply before it divides, so the dividend is an exact
+integer at the only division involved. **This is the first fractional rule in the codebase, and the
+pattern the next one should follow.**
+
+Their only reader anywhere in `src/` is `forcedCashValue`. See
+[the bank and the cash-out](../war-council/bank-and-cash-out.md).
 
 `SKULL_MIN_RANK` was the fourth key here until **PT-001** absorbed it into the weight curves — see
 [the rank curve](#the-rank-curve-replaced-the-rank-floor-pt-001) below.

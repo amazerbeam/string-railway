@@ -7,6 +7,23 @@ player follows, stated once, in playing order.
 Last reviewed against the code and the design on **2026-08-20**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
 
+> **You can cash your streak yourself now, and being caught pays less — DLR-94, 2026-08-20.** Until
+> now the bank only ever cashed when you were hit, or when the sixth trick arrived; you never chose the
+> moment. Now you do. Before you commit a card, you may **apply damage**: the bank cashes at the current
+> multiplier into the Quarry **in full**, both counters reset, and it costs you **no health** (section 7).
+>
+> **And the automatic cash-out got worse, which is the whole point.** A hit you did not choose — a clean
+> loss, a skull you ate, or poison landing on you — now pays only **two-thirds** of `bank × multiplier`,
+> rounded down. So a six-trick streak is worth **36** if you cash it yourself and **24** if you are caught
+> holding it. The end-of-hand cash-out is **untouched** and still pays in full.
+>
+> That turns a growing bank into a bet rather than a number the game spends for you at the worst moment:
+> take the certain full value now, or push the streak and risk being paid a third less. **Engine and screen
+> landed together**, and QA drove the poise-then-commit through a real browser.
+>
+> **It is locked while poison is pending**, which is the design decision recorded here as `[not built]`
+> since 2026-08-19 and enforced from today (section 8).
+
 > **You have a flask, and it is free — DLR-93, 2026-08-20.** Everything that has ever restored your
 > health cost a coin. Now one does not: you carry a **flask**, and drinking it restores **60% of your
 > maximum health** — **6** on today's bar of 10 — immediately, with anything over your maximum thrown
@@ -594,10 +611,20 @@ A clean win and a dodge are **identical in every respect** but their name.
 Three things happen at once:
 
 1. You take **1 damage**. Always exactly 1, whatever the cards were worth.
-2. Your bank **cashes out**: `bank × multiplier` is dealt to the Quarry's health.
+2. Your bank **cashes out at a reduced rate**: **two-thirds of `bank × multiplier`, rounded down**, is
+   dealt to the Quarry's health.
 3. The bank and the multiplier both **reset to zero**.
 
 A clean loss and eating a skull are **identical in every respect** but their name.
+
+**The two-thirds is the cost of being caught, and it is the only cash-out that pays it.** Since
+2026-08-20 you can cash the bank yourself, in full, whenever it is your move (below) — so a hit you did
+not choose pays less than one you did. Applying yourself and the end-of-hand cash both pay the **whole**
+`bank × multiplier`; a clean loss, an eaten skull and poison landing on you all pay **two-thirds of it**.
+See `hybrid-design.md` version-4-scope §3.
+
+**It always rounds down**, so the Quarry is never paid more than the rule says by a rounding artefact. A
+streak worth 1 therefore pays **nothing at all** when it is caught, and a streak worth 4 pays 2.
 
 ### A poisoned trick the Quarry wins cleanly costs you nothing — **[settled]**
 
@@ -648,11 +675,16 @@ When poison you owe (section 4) lands on **you**, it behaves like any other dama
 health, your bank **cashes out** at the current multiplier into the Quarry, and bank and multiplier both
 **reset to zero**. It makes no difference whether you won or lost the trick that the poison was paid at.
 
+**It is a hit you did not choose, so it cashes at the reduced two-thirds rate** like every other forced
+cash-out (above). Poison is the case this document calls "the moment you cannot choose", which is exactly
+what the reduction charges for — paying it in full would make being poisoned the *cheapest* way to lose a
+streak, which inverts the item the rule sits beside.
+
 - **On a trick you also lost, the two add up.** You take 1 for the trick plus 2 for the poison — **3**,
   and one cash-out, not two.
 - **On a trick you won, the trick banks first and then the poison cashes it.** So a streak of four that
-  wins the fifth trick while poisoned cashes **25**, not 16: the trick was won, so it counts, and then the
-  poison spends it.
+  wins the fifth trick while poisoned cashes on a bank of five rather than four — **16**, not 10: the
+  trick was won, so it counts, and then the poison spends it at two-thirds.
 - **The Quarry has no equivalent.** Poison landing on the Quarry is health and nothing else; the Quarry
   holds no bank and no streak to lose.
 
@@ -700,14 +732,20 @@ it starts at zero each time it resets, and any damage you take resets it.
 The bank and the multiplier climb together — by exactly one each, per trick taken — so while a streak
 runs they are the same number, and a cash-out is worth its square:
 
-| Tricks taken in a row | 1   | 2   | 3   | 4   | 5   | 6   |
-| --------------------- | --- | --- | --- | --- | --- | --- |
-| **Cashes for**        | 1   | 4   | 9   | 16  | 25  | 36  |
+| Tricks taken in a row              | 1   | 2   | 3   | 4   | 5   | 6   |
+| ---------------------------------- | --- | --- | --- | --- | --- | --- |
+| **Cashed by you, or at hand's end** | 1   | 4   | 9   | 16  | 25  | 36  |
+| **Caught holding it** — two-thirds, rounded down | 0 | 2 | 6 | 10 | 16 | 24 |
+
+**The top row is what the streak is worth; the bottom row is what it pays if you are caught.** Which row
+you land on is a decision you make, not a dice roll: cash it yourself at any point when it is your move
+(below) and you take the top row. The gap between the rows is the price of pushing one trick further.
 
 A whole hand taken in one unbroken run pays **36**. One loss in the middle of that same hand costs far
-more than a sixth of it: taking three, losing the fourth, then taking the last two pays **9 + 4 = 13**.
-So **where** your losses fall matters more than how many you take, and a loss in the middle of a hand
-is worse than one at either end.
+more than a sixth of it: taking three, losing the fourth, then taking the last two pays **6 + 4 = 10** —
+the first streak was caught and paid two-thirds, the second survived to the end of the hand and paid in
+full. So **where** your losses fall matters more than how many you take, and a loss in the middle of a
+hand is worse than one at either end.
 
 That is the table with an empty shop. **A Whetstone changes the first row of the arithmetic and not the
 second** — see below.
@@ -723,6 +761,11 @@ climbs by exactly 1 per trick taken — so a streak of _n_ cashes `(1 + copies) 
 | **Cashes for** — no Whetstone | 1 | 4 | 9 | 16 | 25 | 36 |
 | **one Whetstone**     | 2   | 8   | 18  | 32  | 50  | 72  |
 | **two Whetstones**    | 3   | 12  | 27  | 48  | 75  | 108 |
+
+Those are the figures for a streak you cash yourself or carry to the end of the hand. **Being caught takes
+two-thirds of whichever row you are on**, rounded down — so one Whetstone pays 1, 5, 12, 21, 33, 48 when
+the streak is caught, and two pay 2, 8, 18, 32, 50, 72. The Whetstone raises what you stand to lose at the
+same rate as what you stand to win.
 
 **It multiplies the whole curve rather than shifting it**, so it is worth most on the hands you were
 already playing well: one copy doubles a six-trick hand from 36 to 72, but a lone taken trick only goes
@@ -756,12 +799,46 @@ the multiplier yet.**
 > _readable_ or merely as _flat_ is the open question, and it is recorded under
 > [Known tensions](#known-tensions-recorded-not-resolved).
 
+### Applying damage — cashing your streak when you choose to — **[settled]** since 2026-08-20
+
+**Before you commit a card, you may cash your bank yourself.** It pays the **full** `bank × multiplier`
+into the Quarry's health, resets bank and multiplier to zero, and **costs you no health at all**.
+
+- **It is available whenever your own card is the next thing to be played** — on your lead, and on your
+  follow to a lead already on the table. Not during a trick's reveal, not while an ability is prompting,
+  and not on the Quarry's move.
+- **It takes two taps.** The first poises the control; the second spends the streak. The cash-out cannot
+  be undone, so a single misclick must not be able to spend a hand's work. Pressing `Escape`, or tapping
+  away, cancels a poise.
+- **It is refused, with the reason stated on the control**, when your bank is empty, when a poison hit is
+  still owed (below), or when it is not your move.
+- **The trick then proceeds exactly as normal.** You still play your card, it still resolves by the
+  ordinary rules — just against a bank and multiplier of zero. Applying damage is not a turn, and it does
+  not skip, end or replace anything.
+
+**It is a third kind of cash-out**, alongside the forced one and the end-of-hand one, and the only one
+you choose the moment of. It is what makes the two-thirds penalty a decision rather than a tax: the
+streak is worth its full square the whole time you are holding it, and being caught is what costs you a
+third of it.
+
+**It can win the fight.** A cash-out large enough to empty the Quarry's health ends the encounter there,
+the same as any other damage — and you take nothing for it.
+
+> **The hearts simply drop.** A trick that takes damage breaks the Quarry's hearts with a visible beat,
+> because a trick resolved. A voluntary apply resolves no trick, so there is no beat to hang it on and the
+> hearts fall without one. Whether that reads as abrupt is recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
+
 ### At the end of the sixth trick, the bank cashes
 
 **[settled]**
 
 When the sixth trick resolves, the bank **cashes out at the current multiplier** and both reset —
 whatever the sixth trick itself did.
+
+**It pays in full**, and since 2026-08-20 that is worth stating outright rather than leaving implied: the
+sixth trick merely arriving is not being caught, so the two-thirds reduction does not apply to it. Only a
+hit you did not choose pays the reduced rate.
 
 In practice exactly one cash-out can ever fire on the sixth trick, never two: if the sixth trick was
 one you took, the end-of-hand cash pays out the bank it just added to; if the sixth trick took damage,
@@ -925,12 +1002,16 @@ are **[provisional]** while the timing is settled.
 > likely to be read as a bug. Recorded under
 > [Known tensions](#known-tensions-recorded-not-resolved).
 
-### Applying damage cannot be delayed while poison is pending — **[not built]**
+### Applying damage cannot be delayed while poison is pending — **[settled]** since 2026-08-20
 
-The design decided (2026-08-19) that the unbuilt **Apply Damage** control must be **disabled while poison
-is pending**, so a player cannot dodge a booked hit by declining to advance. **Nothing enforces this**,
-because Apply Damage does not exist yet — there is no control to disable. Recorded here so the ticket that
-builds it does not re-decide the question. See `hybrid-design.md` version-4-scope §3.
+The design decided (2026-08-19) that **Apply Damage** (section 7) must be **disabled while poison is
+pending**, so a player cannot dodge a booked hit by cashing out ahead of it. **It is now enforced.** The
+control is refused, and says so, while a poison hit is owed to either side — and the refusal is re-checked
+on the confirming second tap, not only on the first, so a poise made while the control was live cannot
+commit after a booking has landed under it. See `hybrid-design.md` version-4-scope §3.
+
+**A poison hit owed to the Quarry locks it too, not only one owed to you.** The rule reads the pending
+queue rather than your side of it, which is the stricter reading of the two.
 
 ### What closing a hand takes
 
@@ -1036,11 +1117,12 @@ design document, not from this section.
 | The Quarry's next-trick intent      | **Telegraphed** before you commit — the suit it is about to play, plus its stance: **leading**, or, when it is following you, **pressing** (this card takes the trick) or **ducking** (it does not). Never the exact card. |
 | The Quarry's trick count            | Public                                                                                                                                                                                                                     |
 | The Quarry's character and its rule | Always on screen                                                                                                                                                                                                           |
-| **Your tricks and your multiplier** | **Open — on screen throughout** as two separate figures, plus what the streak would cash for now.                                                                                                                         |
+| **Your tricks and your multiplier** | **Open — on screen throughout** as two separate figures, plus **both** cash-out figures since DLR-94: what the streak pays if you cash it yourself, and what it pays if you are hit first.                                  |
+| **Whether you can apply damage now** | **Open — on the control itself** (section 7). When it is refused, the reason is printed on its face rather than hidden behind a hover, and the figure it would deal is on the plate.                                       |
 | What the last trick did             | **Stated** — which of the four outcomes it was, and what it cost or banked.                                                                                                                                                |
 | **Your Cheat slots**                | **Open — two frames beside the decree**, filled or empty, all hand. A selected Cheat and an armed one differ in frame as well as tone, and the hint line names which state you are in (section 4).                          |
 | **Your coins**                      | **Open — a plate on the status band**, beside the fight counter, all hand. Also stated on the verdict and throughout the shop (section 10).                                                                                 |
-| **Both sides' health**              | **Open — two rows of hearts**, one heart per health point against each side's own maximum. The Quarry's row is **named after the opponent** — "Aoife's health" (since 2026-08-17). The hearts a trick just took break as it resolves. While a streak is banked, the Quarry's last _bank × multiplier_ standing hearts flash as a preview of what cashing right now would take.                                                                                                                                    |
+| **Both sides' health**              | **Open — two rows of hearts**, one heart per health point against each side's own maximum. The Quarry's row is **named after the opponent** — "Aoife's health" (since 2026-08-17). The hearts a trick just took break as it resolves. While a streak is banked, the Quarry's last _bank × multiplier_ standing hearts flash as a preview of what cashing right now would take. **That preview shows the FULL figure and deliberately still does, since DLR-94** — you can realise it on demand, so the full figure is what the streak is genuinely worth to you; the reduced figure sits beside the bank readout instead of competing with this one on the same bar. |
 
 The telegraph's fidelity — suit only, or suit and stance — is **[provisional]**; it currently shows
 both.
@@ -1499,7 +1581,24 @@ the mechanics themselves are documented in `../implementation/`.
 > the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
 > a `RunState` field and a transition in the same breath means exactly that.
 
-> **Where the last contract stands, 2026-08-20 (DLR-93).** Engine and screen landed together, and QA
+> **Where the last contract stands, 2026-08-20 (DLR-94).** Engine and screen landed together, and QA drove
+> it end to end in a real browser: the plate on the felt rail, the poise, the commit paying the **full**
+> `bank × multiplier` with the player's hearts untouched, the bank readout zeroing, the trick carrying on
+> and resolving normally afterwards, and the empty-bank refusal with its reason **on screen** are **all
+> reachable by playing right now** — none of it is enforced-but-unreachable. **One row above graduated from
+> `not built`**: poison pending now locks the control, which had been recorded as a design decision since
+> 2026-08-19 with nothing to enforce it. **The two-thirds fraction is `settled`, not `provisional`** — it is
+> transcribed from version-4-scope §3 rather than chosen here, and no test hard-codes it independently of
+> the two constants. **Two readings in this contract were the planner's rather than the ticket's**, both
+> recorded and both the developer's to overturn: that a **poison** hit pays the reduced rate like any other
+> forced hit (the ticket enumerated only a clean loss and an eaten skull), and that the control is available
+> on a **follow** as well as on a lead. **All of the control's copy is placeholder**, as every label in that
+> file is. **Nothing was retuned** in response to forced cash-outs paying a third less: no health total,
+> damage figure, price or opponent curve moved. **What has not been measured is whether the choice is a real
+> one** — whether players cash early or push, and whether two taps is right, are both only answerable by
+> playing. Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
+
+> **Where DLR-93 stands, 2026-08-20.** Engine and screen landed together, and QA
 > drove the drink end to end in a real browser: the charge on the run, the 6-health restore, the clamp
 > that discards overheal, both refusals with their reasons on screen, the boss refill, the
 > ordinary-kill non-refill, the potion button and the purse cell are **all reachable by playing right
@@ -1579,8 +1678,8 @@ the mechanics themselves are documented in `../implementation/`.
 | Hand size and trick count (6)                 | settled                          | `src/hunt/config.ts` — `HAND_SIZE`; sliced in `src/warCouncil/deal.ts`, ends the hand in `playCard.ts`                           | —                                                       |
 | First dealer, alternation                     | provisional                      | `src/app/dealerForRound.ts`                                                                                                      | Developer                                               |
 | Skull density (~30%, 2 of 6)                  | settled                          | `src/hunt/config.ts` — `SKULL_DENSITY`; applied by `src/warCouncil/skulls.ts` — `assignSkulls`                                   | —                                                       |
-| Skulls never on rank 1                        | settled                          | `src/hunt/config.ts` — every `SKULL_WEIGHTS_*` curve sets rank `1: 0`; filtered by `src/warCouncil/skulls.ts` — `skullableCards` | —                                                       |
-| Skull rank curve (hump — mid-ranks heaviest)  | **provisional**                  | `src/hunt/config.ts` — `SKULL_RANK_WEIGHTS`; drawn against by `src/warCouncil/skulls.ts` — `weightedDraw`                        | Developer, after playing                                |
+| Skulls never on rank 1                        | settled                          | `src/hunt/skullWeights.ts` (moved out of `config.ts` by DLR-94) — every `SKULL_WEIGHTS_*` curve sets rank `1: 0`; filtered by `src/warCouncil/skulls.ts` — `skullableCards` | —                                                       |
+| Skull rank curve (hump — mid-ranks heaviest)  | **provisional**                  | `src/hunt/skullWeights.ts` (moved out of `config.ts` by DLR-94) — `SKULL_RANK_WEIGHTS`; drawn against by `src/warCouncil/skulls.ts` — `weightedDraw`                        | Developer, after playing                                |
 | A curve per opponent                          | **not built**                    | nothing — `SKULL_RANK_WEIGHTS` is one module-level curve; the other three are exported and unread                                | Developer — a later ticket                              |
 | Skulls assigned to the Quarry's deal only     | settled                          | `src/warCouncil/deal.ts` — `assignSkulls(cpuHand, rng)`; the draw pile is never skulled                                          | —                                                       |
 | A trick is skulled if any card in it is       | settled                          | `src/warCouncil/skulls.ts` — `trickIsSkulled`                                                                                    | Developer — whether it should die with a Fox exchange   |
@@ -1611,8 +1710,15 @@ the mechanics themselves are documented in `../implementation/`.
 | A bank climb that is not a positive integer is ignored | settled — since DLR-92  | `src/warCouncil/bank.ts` — `resolveTrickBank` floors the bonus to 0 unless `Number.isInteger` and `> 0`, so a spoiled figure degrades to the bare rule rather than reaching a health bar | —                       |
 | The bank, and that it only climbs             | settled                          | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                    | —                                                       |
 | The streak multiplier, and its reset          | settled                          | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                    | —                                                       |
-| Cash-out on damage (`bank × multiplier`)      | settled                          | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                    | —                                                       |
-| Cash-out at the end of the sixth trick        | settled                          | `src/warCouncil/bank.ts` — `resolveTrickBank`'s `finalTrick` fold                                                                | —                                                       |
+| Cash-out on damage, at **two-thirds** rounded down | settled — since DLR-94      | `src/warCouncil/bank.ts` — `forcedCashValue`, the only reader of `FORCED_CASH_OUT_NUMERATOR`/`_DENOMINATOR` in `src/hunt/config.ts`; `resolveTrickBank`'s forced branch calls it for every forced hit, poison included | —                                     |
+| The fraction is a numerator over a denominator, not a float | settled — since DLR-94 | `src/hunt/config.ts` — two constants, multiplied before dividing in `forcedCashValue`, because `x * (2 / 3)` floors wrong on every multiple of 3; pinned by `bank.test.ts`'s multiples-of-three spec | —                                 |
+| Cash-out at the end of the sixth trick, **in full** | settled                    | `src/warCouncil/bank.ts` — `resolveTrickBank`'s `finalTrick` fold calls `cashValue`, deliberately not `forcedCashValue`; pinned by `bank.test.ts`'s AC5 spec, which cashes one streak both ways | —                          |
+| One statement of what a streak is worth       | settled — since DLR-94           | `src/warCouncil/bank.ts` — `cashValue`; all three cash-outs compute through it, so they cannot disagree about what they are a share of | —                                                       |
+| Applying damage — full payout, both counters reset, no health cost | settled — since DLR-94 | `src/warCouncil/voluntaryCashOut.ts` — `cashBankNow` zeroes only bank and multiplier; `incomingFromCashOut` keys the player's share to a hard 0. Committed by `src/app/warCouncil/roundReducer.ts` — `handleTapApplyDamage` | —                     |
+| The trick carries on afterwards               | settled — since DLR-94           | nothing to enforce — `cashBankNow` returns the round with `currentTrick`, `phase`, `leader` and both hands untouched, and writes no `lastResolution`, so the ordinary play path resumes | —                                  |
+| One statement of whether Apply Damage is live | settled — since DLR-94           | `src/warCouncil/voluntaryCashOut.ts` — `applyDamageRefusalFor`, read by both the reducer's guard and the plate's disabled state; `src/app/warCouncil/roundUiState.ts` — `applyDamageStock` is the one place the app's shape is translated for it | —      |
+| Two taps to spend a streak, `Escape` to cancel | settled — the grammar; the tap count is **provisional** | `src/app/warCouncil/roundUiState.ts` — `RoundUiState.applyPoised`, a hand-transient boolean; `ApplyDamagePlate.tsx` carries `aria-pressed` and the `Escape` handler | **Developer** — whether two taps is right, or one. Only felt by playing |
+| The reduced figure is shown beside the full one | settled — since DLR-94          | `src/app/warCouncil/BankMeter.tsx` — computes it through `forcedCashValue` rather than restating the fraction, so the copy cannot drift from the constants | —                                                       |
 | Damage to the player = 1 per event            | settled                          | `src/hunt/config.ts` — `DAMAGE_PER_HIT`                                                                                          | —                                                       |
 | Player health (10)                            | **provisional** — set 2026-08-14 | `src/hunt/config.ts` — `PLAYER_START_HEALTH`                                                                                     | Developer, after playing                                |
 | Quarry health (10)                            | **provisional** — set 2026-08-14 | `src/hunt/config.ts` — `QUARRY_ENCOUNTER_HEALTH`                                                                                 | Developer, after playing                                |
@@ -1621,7 +1727,7 @@ the mechanics themselves are documented in `../implementation/`.
 | Health never negative; surplus discarded      | settled                          | `src/hunt/encounter.ts` — `deplete`, the single clamp                                                                            | —                                                       |
 | The Quarry's bar settles first                | settled — since 2026-08-19       | `src/hunt/encounter.ts` — `applyDamage` depletes the Quarry, then the player **only if the Quarry survived**       | —                                                       |
 | A mutual kill is a player win                 | settled — **overturns a 2026-08-11 ruling** | `src/hunt/encounter.ts` — `resolveWinner` has no tie branch and no constant to read; a Quarry-down event never touches the player, so the case is unreachable. `SIMULTANEOUS_DEPLETION_WINNER` was **deleted** | — (the reversal is recorded in `hybrid-design.md` §9) |
-| Poison pending must lock Apply Damage         | **not built**                    | nothing — Apply Damage does not exist, so there is no control to disable; `src/hunt/encounter.ts` keeps `hasPendingEnvenom` exported and uncalled for that purpose | **Developer** — the version-4 §3 ticket |
+| Poison pending locks Apply Damage             | settled — since DLR-94           | `src/warCouncil/voluntaryCashOut.ts` — `applyDamageRefusalFor` returns `PoisonPending`; the predicate is `src/hunt/encounter.ts` — `hasPendingEnvenom`, which reads **both** sides of the queue. Re-asked on the confirming tap, so a booking landing under a poise stops the commit | — |
 | An encounter can end mid-hand, and play stops | settled                          | `src/app/warCouncil/roundReducer.ts` — the `isEncounterResolved` guard in `canAct`                                               | Developer — whether it feels abrupt                     |
 | Health carried hand to hand                   | settled                          | `src/app/warCouncil/roundReducer.ts` owns the live `EncounterState`; `src/App.tsx` carries it between hands                      | —                                                       |
 | No cap on hands per encounter                 | settled — deliberately none      | no cap key exists to read                                                                                                        | Developer, if the tail stalls                           |
@@ -1719,7 +1825,7 @@ the mechanics themselves are documented in `../implementation/`.
 | Its amount — 4 to the Quarry, 2 to the player | **provisional** — split 2026-08-19 | `src/hunt/config.ts` — `ENVENOM_QUARRY_DAMAGE` (4, transcribed) and `ENVENOM_PLAYER_DAMAGE` (2, **the developer's own**); which side owes which is decided once by `encounter.ts`'s private `envenomDamageFor`, read by `queueEnvenom` | **Developer** — the player-side figure is a choice, not a transcription, and 2-and-3 is unmeasured in play |
 | It lands at the resolution of the NEXT trick | settled — retimed 2026-08-19 | `src/app/warCouncil/roundReducer.ts` — `poisonOptions` reads `encounter.pendingEnvenom` into `playCard`, and `applyResolution` pays, clears and re-books in that order; folded into the trick's own damage by `src/warCouncil/bank.ts` — `resolveTrickBank`. It landed at the next hand's deal until this date | — |
 | A poisoned last trick carries into the next hand | settled | `src/hunt/types.ts` — the queue hangs off `EncounterState`, which outlives a hand; nothing at a hand boundary reads or clears it | — |
-| Your share of the hit cashes out your streak | settled — since 2026-08-19 | `src/warCouncil/bank.ts` — `resolveTrickBank`'s cash-out branch has a **second trigger**, `poisonToPlayer > 0 && !poisonGuarded`, reaching the same statement a lost trick reaches | — |
+| Your share of the hit cashes out your streak | settled — since 2026-08-19, at **two-thirds** since DLR-94 | `src/warCouncil/bank.ts` — `resolveTrickBank`'s cash-out branch has a **second trigger**, `poisonToPlayer > 0 && !poisonGuarded`, reaching the same statement a lost trick reaches — and therefore the same `forcedCashValue` reduction | Developer — the reading that poison pays the reduced rate rather than full |
 | A poisoned trick you win banks BEFORE it cashes | settled — a chosen reading | `src/warCouncil/bank.ts` — the `isTaken` climb runs above the cash-out branch, so a streak of 4 winning trick 5 cashes 25 rather than 16 | Developer — reversing it is one line, and a different feel |
 | The Quarry's share never touches a bank | settled | `src/warCouncil/bank.ts` — `poisonToQuarry` rides on `TrickResolution` and is summed into the Quarry's total by `incomingFrom`; the Quarry holds no bank or multiplier at all | — |
 | Two poisoned tricks both land | settled | `src/hunt/types.ts` — `EncounterState.pendingEnvenom` is a per-side `IncomingDamage` **accumulator**, not a single side | — |
@@ -2039,6 +2145,30 @@ around it. Recorded under [Known tensions](#known-tensions-recorded-not-resolved
 
 ### Known tensions, recorded not resolved
 
+- **Apply Damage may have no wrong answer, which is the one thing it was built to avoid** (new
+  2026-08-20, DLR-94). The two-thirds penalty exists to make holding a streak a bet. But the reduction is
+  a *flat* third at every streak length, while the risk of being caught is not flat — it rises with each
+  trick you push. If the honest play turns out to be "cash whenever the plate is live", the control is a
+  chore rather than a decision, and the fraction is the dial. **The cheapest measurement is whether you
+  ever deliberately hold a bank past a trick you could have cashed it on**, and why. Nothing here has been
+  played yet.
+- **Two taps to spend a streak, on a rail where two other controls also take two taps** (new 2026-08-20,
+  DLR-94). The poise stage guards an irreversible cash-out against a misclick, and it matches the Cheat
+  and Envenom grammar. But Apply Damage is not a per-trick reflex, so the tap cost barely compounds —
+  which cuts both ways: it is cheap to keep, and it is also the reason one tap would be safe enough. Only
+  felt by playing.
+- **A poison hit now pays a third less than it used to, and poison was already the harshest thing in the
+  game** (new 2026-08-20, DLR-94). The planner's reading — that poison reaches the same forced branch and
+  so pays the same reduced rate — is defensible and is what shipped. Its consequence is that the moment
+  the rules call "the moment you cannot choose" also became the moment you are paid least for. Whether
+  that compounds poison's existing reputation as the change most likely to read as a bug is unmeasured.
+- **The Quarry's hearts drop with no beat on a voluntary apply** (new 2026-08-20, DLR-94). A trick that
+  takes damage breaks hearts visibly; a voluntary apply resolves no trick, so there is nothing for the
+  breaking frame to read off and the hearts simply fall. Functionally correct, possibly abrupt, and the
+  fix is a second breaking-damage source rather than a tweak.
+- **The felt rail now carries three plates** (new 2026-08-20, DLR-94). Cheats, Envenom and Apply Damage
+  share one column. QA confirmed the page does not scroll at 1920×1080, 1440×900 or 1280×720, which is
+  the checkable half; whether it *reads* as crowded at a short viewport is not, and is the developer's eye.
 - **The flask is the answer to a run recorded as unwinnable, and the run has not been played with it
   in** (new 2026-08-20, DLR-93). DLR-82 named the flask as part of the fix and refused to build it
   early; it is now built, and **the curve it was meant to answer was deliberately left untouched**. Five

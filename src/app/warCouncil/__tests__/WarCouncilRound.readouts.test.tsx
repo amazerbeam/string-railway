@@ -119,8 +119,9 @@ describe('WarCouncilRound', () => {
     expect(Number(healthMeter('Your health').getAttribute('aria-valuenow'))).toBe(
       PLAYER_START_HEALTH - DAMAGE_PER_HIT,
     )
+    // DLR-94 AC4 — a forced hit pays two-thirds of 2 x 2, floored: 2.
     expect(Number(healthMeter(quarryLabelFixture).getAttribute('aria-valuenow'))).toBe(
-      quarryHealthForEncounter(0) - 4,
+      quarryHealthForEncounter(0) - 2,
     )
   })
 

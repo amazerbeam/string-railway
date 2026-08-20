@@ -36,7 +36,9 @@
      matches `.run-shell`'s own unit rather than `vh`, so both agree on the same viewport metric.
      `height` stays `auto` below, so a roomy viewport still sizes `.shop` from content and keeps
      it vertically centred — only a viewport short enough to hit the cap makes `.shop-panel`
-     (its one `flex: 1 1 auto; min-height: 0` child) give up space. */
+     (its one `flex: 1 1 auto` child) give up space. Follow-up (this ticket): `.shop-panel` now
+     carries a readability-floor `min-height` instead of `min-height: 0` — see `shopItems.css` for
+     why, and for the flask-row-removal and list-not-grid changes that keep that floor met. */
   max-height: calc(100dvh - 2 * clamp(1rem, 4vmin, 3rem));
   height: auto;
   box-sizing: border-box;

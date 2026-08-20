@@ -24,9 +24,17 @@ from the run's Whetstone count. `multiplier += 1` is untouched, so a streak of _
 [how the bonus gets here](#how-the-bonus-reaches-a-pure-module-without-a-runstate-import) below, which is
 the part of DLR-92 worth reading before changing anything.
 
-Nothing here imports React or touches the DOM; it imports only `DAMAGE_PER_HIT`, `DuelSide` and
-`IncomingDamage` from `src/hunt/`. **It reads no card at all** — PT-002 removed the last one, and
-with it the `TrickCard` import.
+**DLR-94 split the cash-out into two rates and named the arithmetic they share.** Until 2026-08-20 every
+cash-out paid the plain `bank × multiplier`. Now `cashValue` states that product once, and
+`forcedCashValue` reduces it to a configured fraction — two-thirds, floored — for the branch a player did
+**not** choose. The forced branch calls the second; the `finalTrick` fold calls the first; and the new
+voluntary cash-out in [`voluntaryCashOut.ts`](voluntary-cash-out.md) calls the first too. Three call
+sites, one product, and the asymmetry visible in two lines rather than inferred from a comment.
+
+Nothing here imports React or touches the DOM; it imports `DAMAGE_PER_HIT`, `DuelSide`,
+`IncomingDamage` and — since DLR-94 — `FORCED_CASH_OUT_NUMERATOR` / `FORCED_CASH_OUT_DENOMINATOR` from
+`src/hunt/`. **It reads no card at all** — PT-002 removed the last one, and with it the `TrickCard`
+import.
 
 ## The four outcomes — `trickOutcomeFor` and `isTaken`
 
@@ -94,8 +102,44 @@ because this module is already the one place that crossing happens.
 is owned), the bank climbs by it, and the multiplier increments **by exactly 1 regardless**. No damage in
 either direction from the trick itself.
 
-**On a hit** — `cashOut` becomes `bank × multiplier`, `damageToPlayer` picks up `DAMAGE_PER_HIT`, and
-both running figures reset to zero.
+**On a hit** — `cashOut` becomes **`forcedCashValue(bank, multiplier)`** (DLR-94; two-thirds of the
+product, floored — it was the plain product until 2026-08-20), `damageToPlayer` picks up
+`DAMAGE_PER_HIT`, and both running figures reset to zero.
+
+**On the sixth trick** — the `finalTrick` fold calls **`cashValue`**, deliberately not `forcedCashValue`:
+the end-of-hand cash pays in full. That asymmetry is the whole of DLR-94's rule change and is pinned by a
+spec that cashes one identical streak both ways.
+
+### The two rates — `cashValue` and `forcedCashValue` (DLR-94)
+
+```ts
+cashValue(bank, multiplier): number        // the plain product
+forcedCashValue(bank, multiplier): number  // that product, reduced and floored
+```
+
+`cashValue` is **the** statement of what a streak is worth, so the three cash-outs the game now has —
+one the player chose, the end of the hand, and a forced hit's reduced share — cannot disagree about what
+they are a share *of*. It floors a non-integer, non-positive, `NaN` or infinite input to `0` rather than
+propagating it, for the reason `bankAdded`'s own guard gives: this figure feeds damage, then a rendered
+heart row, so a `NaN` would vanish into a health bar with nothing logged.
+
+`forcedCashValue` is the only reader of `FORCED_CASH_OUT_NUMERATOR` and `FORCED_CASH_OUT_DENOMINATOR`
+anywhere in `src/`.
+
+**It multiplies before it divides, and that is arithmetic rather than style.** The obvious form —
+`Math.floor(x * (2 / 3))` — is wrong for a whole class of inputs, because `2 / 3` is
+`0.6666666666666666`, so `3 * (2 / 3)` is `1.9999999999999998` and floors to **1** where the rule says
+2. Every multiple of three is wrong by one. Taking the numerator first keeps the dividend an exact
+integer at what is the only division in the file, and `Math.floor` then rounds down as the rule
+requires — the Quarry is never overpaid by a rounding artefact. `bank.test.ts` pins this directly, over
+every multiple of three up to 300.
+
+It throws a named `RangeError` on a non-positive or non-finite denominator rather than returning `NaN`,
+exactly as `flaskHealAmount` and `duelHealthBars` throw on theirs. Both figures are configured integers,
+so this is a guard rather than a path a player reaches.
+
+**This is the codebase's first fractional rule**, and the numerator/denominator pair is the pattern the
+next one should follow. A single float constant reintroduces the bug above.
 
 ### The purchasable climb — DLR-92
 

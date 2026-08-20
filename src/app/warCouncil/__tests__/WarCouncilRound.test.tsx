@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
-import { HAND_SIZE } from '../../../hunt'
+import { HAND_SIZE, quarryHealthForEncounter } from '../../../hunt'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
 import WarCouncilRound from '../WarCouncilRound'
 import {
@@ -20,6 +20,10 @@ import {
 } from './roundFixture'
 
 afterEach(cleanup)
+
+function healthMeter(name: 'Your health' | typeof quarryLabelFixture) {
+  return screen.getByRole('meter', { name })
+}
 
 /**
  * Renders `WarCouncilRound` with the shared fixtures, letting any prop be overridden per test.
@@ -228,6 +232,37 @@ describe('WarCouncilRound', () => {
     expect(document.activeElement).toBe(carryOn)
     fireEvent.click(carryOn)
     expect(screen.queryByRole('button', { name: /tap the table to carry on/i })).toBeNull()
+  })
+
+  it('DLR-94 — applying cashes the streak into the Quarry at no cost, and the hand plays on', () => {
+    const round = makeRound({
+      leader: PlayerSide.Player,
+      trumpSuit: Suit.Keys,
+      bank: 3,
+      multiplier: 3,
+      hands: {
+        [PlayerSide.Player]: [card(Suit.Bells, 2)],
+        [PlayerSide.Cpu]: [card(Suit.Bells, 9)],
+      },
+      currentTrick: [],
+    })
+    renderRound({ initialState: round })
+
+    const plate = () => screen.getByRole('button', { name: /apply damage/i })
+    const playerBefore = healthMeter('Your health').getAttribute('aria-valuenow')
+
+    fireEvent.click(plate()) // poise
+    fireEvent.click(plate()) // commit
+
+    expect(Number(healthMeter(quarryLabelFixture).getAttribute('aria-valuenow'))).toBe(
+      quarryHealthForEncounter(0) - 9,
+    )
+    expect(healthMeter('Your health').getAttribute('aria-valuenow')).toBe(playerBefore)
+    expect(screen.getByLabelText(/cashes for 0\b/i)).toBeTruthy()
+
+    // AC3 — the card is still there to play, and the plate is now refused for want of a bank.
+    expect((plate() as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByRole('button', { name: '2 of Bells' })).toBeTruthy()
   })
 })
 

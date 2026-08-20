@@ -1,4 +1,5 @@
 import {
+  ApplyDamageRefusal,
   CardRank,
   IllegalMoveReason,
   QuarryIntentStance,
@@ -202,4 +203,34 @@ export function envenomAccessibleName(stage: EnvenomStage | null, charges: numbe
   if (stage === EnvenomStage.Armed) return `${held}, armed`
   if (stage === EnvenomStage.Poised) return `${held}, selected`
   return held
+}
+
+/** The Apply Damage plate's copy (DLR-94). PLACEHOLDER — the wording is the developer's, exactly
+ *  as `ENVENOM_RAIL_LABEL` and the rest of this file are. */
+export const APPLY_DAMAGE_RAIL_LABEL = 'Apply'
+export const APPLY_DAMAGE_POISED_HINT = 'Tap Apply again to cash your streak'
+
+/** Why the control is dark, in the player's words. A total `Record`, so a fourth refusal reason is
+ *  a compile error here rather than an `undefined` sentence under a disabled button. */
+export const APPLY_DAMAGE_REFUSAL_MESSAGE: Readonly<Record<ApplyDamageRefusal, string>> = {
+  [ApplyDamageRefusal.EmptyBank]: 'No streak to cash — take a trick first.',
+  [ApplyDamageRefusal.PoisonPending]:
+    'A poison hit is still owed — you cannot apply until it lands.',
+  [ApplyDamageRefusal.NotYourMove]: 'Not your move yet.',
+}
+
+/** The plate's accessible name. The three readings — live, poised, refused — MUST differ:
+ *  `getByRole('button', { name })` is how the spec tells them apart, and a player who cannot see
+ *  the dimming learns the reason from here or not at all. The figure is in the name rather than
+ *  only in the glyph, for the reason `envenomAccessibleName` carries its count. */
+export function applyDamageAccessibleName(
+  cashValue: number,
+  poised: boolean,
+  refusal: ApplyDamageRefusal | null,
+): string {
+  if (refusal !== null) {
+    return `${APPLY_DAMAGE_RAIL_LABEL} Damage, unavailable — ${APPLY_DAMAGE_REFUSAL_MESSAGE[refusal]}`
+  }
+  const base = `${APPLY_DAMAGE_RAIL_LABEL} Damage, ${cashValue} to the Quarry`
+  return poised ? `${base} — tap again to confirm` : base
 }

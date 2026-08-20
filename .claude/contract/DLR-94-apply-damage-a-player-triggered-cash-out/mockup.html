@@ -1,0 +1,2343 @@
+<title>Apply Damage Plate</title>
+
+<!-- DLR-94 mockup. The screen below is the REAL felt: every stylesheet from
+     src/app/warCouncil/ is inlined verbatim and the DOM matches the components
+     one-for-one. Only two things are new, both marked NEW:
+       1. .wc-apply-rail  — the Apply Damage plate, third on the felt rail
+       2. .wc-bank-forced — the reduced figure on the bank readout
+     The fixed panel bottom-right is a test harness, NOT part of the screen. -->
+
+<style>
+/* War Council — the full-viewport round shell, the status band, the felt,
+   and the hand container. Tokens, layout, and copy are transcribed from the
+   approved mockup (.claude/contract/SCRUM-28-war-council-ui/mockup.html);
+   the token table is restated authoritatively in plan.md Part 2 -> Data
+   shapes.
+
+   This file exceeded the 400-line budget as one stylesheet, so the card
+   face, the ability prompt, and the round-over panel live in the sibling
+   `warCouncilCards.css`, and (DLR-82) the hand's own rules live in
+   `warCouncilHand.css` — import all three from the mount component.
+   The decree/draw pile and the table itself split further into
+   `warCouncilTable.css` (DLR-93 400-line pass) — import it alongside
+   the rest; it shares this file's `:root` tokens. */
+
+:root {
+  --wc-chamber: #0c1013;
+  --wc-chamber-lift: #141a1f;
+  --wc-felt: #16241f;
+  --wc-felt-lip: #0a1211;
+  --wc-felt-line: #2b4038;
+  --wc-parchment: #e9e1cd;
+  --wc-parchment-shade: #d3c8ae;
+  --wc-ink: #191610;
+  --wc-ink-soft: #5c5443;
+  --wc-brass: #c99a4e;
+  --wc-brass-dim: #7d6132;
+  --wc-chalk: #cdd6d2;
+  --wc-chalk-dim: #6f7d78;
+  --wc-alarm: #d1705f;
+
+  --wc-bells: #c9873f;
+  --wc-keys: #5f93a8;
+  --wc-moons: #9c7cb8;
+
+  /* The mined-card green. Deliberately a sickly yellow-green rather than a felt green — it must
+     not read as "the table" — and light enough to carry the dark skull glyph at full contrast.
+     Not a suit colour: it names a card's *state*, which is why it sits apart from the three
+     above. The developer's to retune. */
+  --wc-poison: #8fb04e;
+  --wc-poison-edge: #5c7a2e;
+
+  --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --wc-card-w: clamp(2.9rem, 6.2vmin, 4.3rem);
+  --wc-plate-card-w: clamp(2.3rem, 4.6vmin, 3.2rem);
+
+  /* DLR-71 — the duel health bars. Every value below is a placeholder transcribed from
+     `.claude/contract/DLR-71-two-health-bars-with-pending-damage/mockup.html` (and, for the six
+     heart-row tokens, `.claude/contract/DLR-86-hearts-with-pending-cash-preview/mockup.html`) and
+     is the developer's to retune; the visual polish ticket owns them. */
+  --wc-hp-secure-fill: #cc3f4a;
+  --wc-hp-pending-fill: #8b9a94;
+  --wc-hp-lethal-edge: #d1705f;
+  --wc-hp-height: clamp(0.7rem, 1.7vmin, 1.05rem);
+  --wc-hp-heart-size: clamp(0.95rem, 2.3vmin, 1.45rem);
+  --wc-hp-heart-gap: 0.18rem;
+  --wc-hp-broken: #3a4a52;
+  --wc-hp-atrisk-opacity: 0.55;
+  --wc-hp-break-ms: 520ms;
+  --wc-hp-flash-ms: 900ms;
+}
+
+/* ---------- the shell: one full-viewport grid, never scrolls ---------- */
+
+.wc-shell,
+.wc-shell * {
+  box-sizing: border-box;
+}
+
+.wc-shell {
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(10rem, 17vw) 1fr;
+  grid-template-areas:
+    'status  status'
+    'dossier table'
+    'hand    hand';
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  color-scheme: dark;
+  background: radial-gradient(120% 80% at 50% 0%, #17202700 0%, #060809 100%), var(--wc-chamber);
+  color: var(--wc-chalk);
+  font-family: var(--wc-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Re-homed verbatim from the now-deleted Standing-track sheet it used to live in alone
+   (DLR-80) — the project's sole screen-reader-only utility, so it lives beside the shell
+   rules rather than with any one readout that happens to use it today. */
+.wc-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Every `SuitMark` carries this class alongside whatever its call site passes. The symbols in
+   `SuitSymbolSheet` deliberately set no `strokeWidth` attribute, so this is the one place the
+   default glyph weight is stated — and because `stroke-width` inherits, it reaches the paths
+   inside each `<use>` shadow tree. A call site that needs a heavier mark overrides it on its own
+   class; see `.wc-shape-card-mark` in `warCouncilHunt.css`. */
+.wc-suit-mark {
+  stroke-width: 1.7;
+}
+
+/* ---------- status band ---------- */
+
+.wc-status {
+  grid-area: status;
+  display: flex;
+  /* DLR-71: the mirrored health-bar pair now flexes to fill the band rather than sitting
+     pinned at the two ends, so `align-items: center` (not `flex-start`) and `flex-wrap: nowrap`
+     replace the old `justify-content: space-between` — the narrow-viewport block still wraps. */
+  align-items: center;
+  flex-wrap: nowrap;
+  /* vmin, not vw — vw includes scrollbar width and overflows horizontally. */
+  gap: clamp(0.5rem, 2vmin, 2rem);
+  padding: clamp(0.5rem, 1.6vmin, 1rem) clamp(0.6rem, 2.2vmin, 1.6rem);
+}
+
+.wc-plate {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.4rem, 1.2vmin, 0.75rem);
+  background: var(--wc-chamber-lift);
+  border: 1px solid #232c33;
+  border-radius: 2px;
+  padding: clamp(0.35rem, 1vmin, 0.6rem) clamp(0.5rem, 1.4vmin, 0.85rem);
+}
+
+.wc-plate-label {
+  font-size: clamp(0.52rem, 1.1vmin, 0.64rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* DLR-82 AC6 — the run position, edge-anchored beside the opponent plate rather than drifting
+   toward the centre, which game-ux names as the mistake that cramps the play area. DLR-84 AC2
+   — `.wc-coins` joins this selector, not a second block, so the two plates share one rule and
+   this file (already tight on budget, see `.wc-pile` below) stays under it. */
+.wc-run,
+.wc-coins {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: clamp(0.35rem, 1vmin, 0.6rem) clamp(0.5rem, 1.4vmin, 0.85rem);
+  background: var(--wc-chamber-lift);
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.wc-run-value {
+  font-family: var(--wc-serif);
+  font-size: clamp(0.85rem, 2.1vmin, 1.15rem);
+  color: var(--wc-brass);
+  line-height: 1;
+}
+
+.wc-stack {
+  display: flex;
+}
+
+.wc-stack-back {
+  width: clamp(0.85rem, 1.9vmin, 1.2rem);
+  height: clamp(1.3rem, 2.9vmin, 1.8rem);
+  border-radius: 1px;
+  background: repeating-linear-gradient(-45deg, #2c3a42 0 2px, #1e282e 2px 4px);
+  border: 1px solid #3a4a53;
+  margin-left: -0.35rem;
+}
+
+.wc-stack-back:first-child {
+  margin-left: 0;
+}
+
+.wc-score {
+  display: flex;
+  align-items: stretch;
+  background: var(--wc-chamber-lift);
+  border: 1px solid #232c33;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.wc-score-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: clamp(0.3rem, 0.9vmin, 0.5rem) clamp(0.7rem, 2vmin, 1.25rem);
+}
+
+.wc-score-cell + .wc-score-cell {
+  border-left: 1px solid #232c33;
+}
+
+.wc-score-cell.wc-is-lead {
+  background: #1b2229;
+}
+
+.wc-score-side {
+  font-size: clamp(0.52rem, 1.1vmin, 0.64rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+  font-weight: 600;
+}
+
+.wc-score-value {
+  font-family: var(--wc-serif);
+  font-size: clamp(1.15rem, 3vmin, 1.75rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-chalk);
+}
+
+.wc-score-cell.wc-is-lead .wc-score-value {
+  color: var(--wc-brass);
+}
+
+.wc-trump-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--wc-serif);
+  font-size: clamp(0.72rem, 1.7vmin, 0.95rem);
+  color: var(--wc-brass);
+  white-space: nowrap;
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 2px;
+  padding: 0.15rem 0.45rem;
+  background: #c99a4e14;
+}
+
+.wc-trump-mark-icon {
+  width: clamp(0.85rem, 2vmin, 1.1rem);
+  height: clamp(0.85rem, 2vmin, 1.1rem);
+}
+
+/* ---------- decree + draw pile, and the table itself: moved to `warCouncilTable.css`
+   (DLR-93 400-line pass) — import it alongside this file from the mount component. */
+
+/* ---------- hand: moved to `warCouncilHand.css` (DLR-82) — the `.wc-run` status-band block
+   pushed this file over the 400-line budget, and the hand's own rules were the cleanest split.
+   Import both from the mount component; the hand rules share this file's `:root` tokens. ---------- */
+/* The decree/draw pile and the table itself — split out of `warCouncil.css` at the 400-line
+   budget (DLR-93). Shares that file's `:root` tokens; import both from the mount component,
+   after `warCouncil.css` so the cascade order matches the original undivided file. */
+
+/* ---------- decree + draw pile: on the felt, where they physically sit ---------- */
+
+.wc-pile {
+  /* grid-column, justify-self, align-self and padding MOVE to `.wc-felt-rail`, declared in
+     warCouncilCheats.css — this file is 2 lines under the 400-line budget and cannot take a
+     new block. Nothing else about the pile changes and it renders identically. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.2rem, 0.7vmin, 0.4rem);
+}
+
+.wc-pile-cards {
+  position: relative;
+  display: flex;
+  padding: 0 0.45rem 0.3rem 0;
+}
+
+.wc-pile-back {
+  position: absolute;
+  width: var(--wc-plate-card-w);
+  aspect-ratio: 2 / 3;
+  border-radius: clamp(2px, 0.5vmin, 4px);
+  background: repeating-linear-gradient(-45deg, #2c3a42 0 2px, #1e282e 2px 4px);
+  box-shadow: 0 0 0 1px #00000055;
+}
+
+.wc-pile-back.wc-b1 {
+  top: -5px;
+  left: 7px;
+}
+
+.wc-pile-back.wc-b2 {
+  top: -2.5px;
+  left: 3.5px;
+}
+
+.wc-pile-cards .wc-card {
+  position: relative;
+  z-index: 2;
+}
+
+/* ---------- the table ---------- */
+
+.wc-table {
+  grid-area: table;
+  position: relative;
+  margin: 0 clamp(0.5rem, 2vmin, 1.5rem);
+  border-radius: clamp(0.5rem, 2vmin, 1.5rem);
+  background: radial-gradient(60% 70% at 50% 45%, #1d2f28 0%, var(--wc-felt) 55%, #101b18 100%);
+  box-shadow:
+    inset 0 0 0 1px var(--wc-felt-line),
+    inset 0 0 0 clamp(4px, 1vmin, 9px) var(--wc-felt-lip),
+    inset 0 clamp(8px, 2vmin, 18px) clamp(20px, 5vmin, 40px) #00000066;
+  display: grid;
+  /* Spacer columns keep the trick centred on the felt while the pile stays clear of it. */
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  justify-items: center;
+  min-height: 0;
+  cursor: default;
+}
+
+.wc-table.wc-is-waiting {
+  cursor: pointer;
+}
+
+.wc-table-inner {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.4rem, 1.5vmin, 1rem);
+  padding: clamp(0.5rem, 2vmin, 1.5rem);
+  text-align: center;
+}
+
+/* The well: a faint table marking showing where cards land. */
+.wc-trick-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.6rem, 2.4vmin, 1.75rem);
+  min-width: calc(var(--wc-plate-card-w) * 3.6);
+  min-height: calc(var(--wc-plate-card-w) * 1.9);
+  padding: clamp(0.3rem, 1vmin, 0.6rem);
+  border-radius: clamp(3px, 0.8vmin, 6px);
+  box-shadow: inset 0 0 0 1px #ffffff0d;
+}
+
+.wc-played {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.2rem, 0.7vmin, 0.4rem);
+}
+
+.wc-played-side {
+  font-size: clamp(0.52rem, 1.1vmin, 0.64rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+  font-weight: 600;
+}
+
+.wc-played.wc-is-winner .wc-played-side {
+  color: var(--wc-brass);
+}
+
+.wc-table-line {
+  font-family: var(--wc-serif);
+  font-size: clamp(0.85rem, 2.1vmin, 1.15rem);
+  color: var(--wc-chalk);
+  margin: 0;
+  max-width: 40ch;
+}
+
+.wc-table-hint {
+  font-size: clamp(0.62rem, 1.35vmin, 0.78rem);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--wc-brass-dim);
+  font-weight: 600;
+  margin: 0;
+}
+
+.wc-table.wc-is-waiting .wc-table-hint {
+  color: var(--wc-brass);
+  animation: wc-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes wc-pulse {
+  50% {
+    opacity: 0.42;
+  }
+}
+
+.wc-fault {
+  font-family: var(--wc-sans);
+  font-size: clamp(0.7rem, 1.6vmin, 0.85rem);
+  color: var(--wc-alarm);
+  border: 1px solid var(--wc-alarm);
+  border-radius: 2px;
+  padding: 0.4rem 0.7rem;
+  margin: 0;
+  max-width: 44ch;
+}
+/* War Council — the card face, the ability prompt, and the round-over panel.
+   Sibling to `warCouncil.css`, split out because the combined stylesheet
+   exceeded the 400-line budget; import both from the mount component.
+   Tokens are defined once in `warCouncil.css` and apply globally once both
+   sheets are loaded — nothing here redeclares `:root`. */
+
+/* ---------- ability prompt: on the table, not a modal ---------- */
+
+.wc-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.35rem, 1.2vmin, 0.7rem);
+}
+
+.wc-prompt-row {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(0.25rem, 0.9vmin, 0.5rem);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.wc-drawn-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  margin-right: clamp(0.3rem, 1.2vmin, 0.7rem);
+}
+
+.wc-drawn-tag {
+  font-size: clamp(0.5rem, 1.05vmin, 0.6rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--wc-brass);
+  font-weight: 700;
+}
+
+.wc-decline {
+  font: inherit;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.68rem, 1.45vmin, 0.8rem);
+  min-height: 44px;
+  padding: 0 clamp(0.6rem, 1.8vmin, 1.1rem);
+  background: transparent;
+  color: var(--wc-chalk);
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 2px;
+  cursor: pointer;
+  touch-action: manipulation;
+  align-self: center;
+}
+
+/* ---------- the card ---------- */
+
+.wc-card {
+  font: inherit;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: var(--wc-card-w);
+  aspect-ratio: 2 / 3;
+  padding: clamp(0.18rem, 0.7vmin, 0.4rem) 0;
+  background: linear-gradient(168deg, var(--wc-parchment) 0%, var(--wc-parchment-shade) 100%);
+  color: var(--wc-ink);
+  /* AC7 (2/2)/DLR-80: the border reads the `--wc-suit` custom property the `.wc-suit-*` rules
+     below set — the same property the centred `SuitMark` reads via its own `color`, so the
+     suit reads twice (edge and symbol) and never from colour alone. One declaration covers all
+     three suits; `--wc-ink-soft` is the fallback for a card rendered with no suit class. */
+  border: 2px solid var(--wc-suit, var(--wc-ink-soft));
+  border-radius: clamp(2px, 0.5vmin, 4px);
+  box-shadow:
+    0 0 0 1px #00000055,
+    0 clamp(2px, 0.6vmin, 5px) clamp(6px, 1.6vmin, 14px) #00000070;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    transform 0.13s ease-out,
+    box-shadow 0.13s ease-out;
+}
+
+/* The rank is a corner index, in the top-left, the way a real card prints it — so a fanned
+   hand stays readable when each card covers all but the leading edge of the one behind it.
+   Absolute like the suit and the pip, so all three corner marks are placed rather than
+   flowed. Both the offsets and the size are the developer's to retune. */
+.wc-card-rank {
+  position: absolute;
+  top: calc(var(--wc-card-w) * 0.06);
+  left: calc(var(--wc-card-w) * 0.1);
+  font-family: var(--wc-serif);
+  font-size: calc(var(--wc-card-w) * 0.34);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-ink);
+}
+
+/* DLR-80: the suit mark moved from a bottom-left corner index to centred and large — the
+   card's dominant mark, so the suit reads at a glance across a fanned hand and a condensed
+   table card alike. `color` reads the same `--wc-suit` property the border does (AC7/game-ux's
+   state-without-colour rule: the suit is legible from the symbol alone even if the border's
+   hue is indistinguishable). */
+.wc-card-suit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(var(--wc-card-w) * 0.56);
+  height: calc(var(--wc-card-w) * 0.56);
+  color: var(--wc-suit, var(--wc-ink-soft));
+}
+
+/* DLR-80/AC3: the skull on a face-up mined card. A dark disc under a light glyph, so it reads
+   over any of the three suit colours and survives greyscale — the colour is never the signal,
+   the disc-plus-glyph form is. Sized and positioned against the card in `PlayingCard`'s own
+   context; the shape readout below repositions the identical mark inline instead. */
+.wc-card .wc-skull-mark {
+  position: absolute;
+  top: calc(var(--wc-card-w) * 0.07);
+  right: calc(var(--wc-card-w) * 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--wc-card-w) * 0.24);
+  height: calc(var(--wc-card-w) * 0.24);
+  border-radius: 50%;
+  background: var(--wc-ink);
+  color: var(--wc-parchment);
+  font-size: calc(var(--wc-card-w) * 0.13);
+  line-height: 1;
+}
+
+/* DLR-90/AC2: the Envenom mark, once a marked card is face up. Bottom-left — the ONE corner the
+   rank (top-left), the skull (top-right) and the pip (bottom-right) leave free, so a card carrying
+   both marks stays legible. A ringed badge rather than a bare tinted glyph, per `game-ux`'s
+   "state reads without motion or colour alone": the ring is the form signal, the fill colour is
+   secondary. PLACEHOLDER glyph and hue — the developer's to retune. */
+.wc-card .wc-venom-mark {
+  position: absolute;
+  bottom: calc(var(--wc-card-w) * 0.07);
+  left: calc(var(--wc-card-w) * 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--wc-card-w) * 0.24);
+  height: calc(var(--wc-card-w) * 0.24);
+  border-radius: 50%;
+  border: 2px solid var(--wc-parchment);
+  background: #4a7c3a;
+  color: var(--wc-parchment);
+  font-size: calc(var(--wc-card-w) * 0.13);
+  line-height: 1;
+}
+
+/* An ability marker, not a printed name — "WOODCUTTER" cannot fit at this width
+   without becoming unreadable. The rank identifies which ability; the full name
+   lives in the accessible label and in the hint under the hand. */
+.wc-card-pip {
+  position: absolute;
+  right: calc(var(--wc-card-w) * 0.11);
+  bottom: calc(var(--wc-card-w) * 0.11);
+  width: calc(var(--wc-card-w) * 0.12);
+  height: calc(var(--wc-card-w) * 0.12);
+  border-radius: 50%;
+  background: var(--wc-brass-dim);
+  opacity: 0.85;
+}
+
+.wc-card-pip.wc-is-blank {
+  background: transparent;
+}
+
+.wc-card.wc-suit-bells {
+  --wc-suit: var(--wc-bells);
+}
+.wc-card.wc-suit-keys {
+  --wc-suit: var(--wc-keys);
+}
+.wc-card.wc-suit-moons {
+  --wc-suit: var(--wc-moons);
+}
+
+/* cards on the table or the pile are condensed — a record, not a choice */
+.wc-card.wc-is-played {
+  width: var(--wc-plate-card-w);
+  cursor: default;
+  box-shadow:
+    0 0 0 1px #00000055,
+    0 2px 8px #00000060;
+}
+
+.wc-card.wc-is-played.wc-is-winner {
+  box-shadow:
+    0 0 0 2px var(--wc-brass),
+    0 2px 12px #00000070;
+}
+
+.wc-card.wc-is-plate {
+  width: var(--wc-plate-card-w);
+  cursor: default;
+}
+
+.wc-card.wc-is-illegal {
+  filter: grayscale(0.75) brightness(0.62);
+  cursor: not-allowed;
+}
+
+/* The grey means "this card is not a legal choice" — it only carries that meaning against
+   legal siblings. When the WHOLE hand is inert (during the Quarry's turn, while a trick is
+   held, or while a prompt is open) every card is illegal, so greying them all singles out
+   nothing and just reads as a dead hand — at exactly the moment the player most needs to read
+   the hand clearly. So the filter is suppressed while the fan is inert; the cards stay
+   `disabled` and unliftable regardless, and the hint line above the fan is what says why
+   nothing is tappable. `not-allowed` goes too: nothing here is being refused, it is just not
+   your turn yet. */
+.wc-fan.wc-is-inert .wc-card.wc-is-illegal {
+  filter: none;
+  cursor: default;
+}
+
+.wc-card.wc-is-armed {
+  box-shadow:
+    0 0 0 2px var(--wc-brass),
+    0 clamp(6px, 1.6vmin, 14px) clamp(10px, 2.6vmin, 22px) #00000090;
+}
+
+/* The base placement — rotation and lift from `fanPlacement`, carried in via the two
+   `--wc-fan-*` custom properties `HandFan` sets inline. This is the ONLY rule that reads
+   `--wc-fan-lift`: hover/active/armed below replace it outright with a flat lift value
+   rather than adding to it, exactly as the approved mockup's own stylesheet does. Keeping
+   `transform` itself out of the inline style is what lets these rules take effect at all —
+   an inline `style.transform` always beats an external rule with no `!important`. */
+.wc-fan .wc-card {
+  transform: var(--wc-fan-lift, translateY(0%)) var(--wc-fan-rot, rotate(0deg));
+}
+
+@media (hover: hover) {
+  .wc-fan .wc-card:not(.wc-is-illegal):hover {
+    transform: translateY(-9%) var(--wc-fan-rot, rotate(0deg));
+  }
+}
+
+.wc-fan .wc-card:not(.wc-is-illegal):active {
+  transform: translateY(-5%) var(--wc-fan-rot, rotate(0deg));
+}
+
+.wc-fan .wc-card.wc-is-armed,
+.wc-fan .wc-card.wc-is-armed:hover {
+  transform: translateY(-20%) rotate(0deg) scale(1.05);
+  z-index: 20;
+}
+
+:is(.wc-card, .wc-decline, .wc-is-carry-on):focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 2px;
+  z-index: 30;
+}
+
+/* The resolved trick's own keyboard-reachable carry-on control (Critical accessibility fix:
+   nothing else is focusable while a trick is held, since every hand card is disabled). Padding
+   plus a matching negative margin grows the hit area toward the ≥44px floor without changing
+   the element's visual footprint — the text still renders at `.wc-table-hint`'s own size.
+   This is now a native `<button>` rather than a `<span role="button">` — `font-family`,
+   `background`, and `border` are reset to neutral values (not new visual values of their own)
+   so the browser's default button chrome doesn't reappear around what is still meant to read
+   as plain hint text; `.wc-table-hint`'s own font-size/weight/letter-spacing/color are
+   untouched since this rule never sets the `font` shorthand. */
+.wc-is-carry-on {
+  font-family: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  padding: 0.6rem 0.9rem;
+  margin: -0.6rem -0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-card {
+    transition: none;
+  }
+}
+
+/* ---------- round over ---------- */
+
+.wc-over {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.4rem, 1.4vmin, 0.9rem);
+}
+
+.wc-over h2 {
+  font-family: var(--wc-serif);
+  font-size: clamp(1.2rem, 3.4vmin, 2rem);
+  font-weight: 600;
+  margin: 0;
+  color: var(--wc-brass);
+}
+
+.wc-tally {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.wc-tally th,
+.wc-tally td {
+  padding: 0.22rem clamp(0.6rem, 2vmin, 1.4rem);
+  border-bottom: 1px solid var(--wc-felt-line);
+  font-size: clamp(0.7rem, 1.6vmin, 0.85rem);
+  text-align: left;
+}
+
+.wc-tally th {
+  font-size: clamp(0.52rem, 1.1vmin, 0.62rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+  font-weight: 600;
+}
+
+.wc-tally td:last-child {
+  font-family: var(--wc-serif);
+  font-size: clamp(0.95rem, 2.4vmin, 1.3rem);
+  color: var(--wc-brass);
+}
+/* War Council — the Hunt screen's readouts: the dossier zone (the Quarry's card and the
+   intent telegraph). Sibling to `warCouncil.css` and `warCouncilCards.css`, split out because
+   the shell stylesheet is at its 400-line budget; import both from the mount component.
+   Tokens are defined once in `warCouncil.css` and apply globally once that sheet is
+   loaded — nothing here redeclares `:root`. Selectors and values are transcribed from the
+   approved mockup (`.claude/contract/DLR-53-hunt-screen/mockup.html`) — no new colour
+   token is introduced (AC8; visual polish itself is T15's).
+
+   The status band's old Standing readout, the end-of-Hunt Spoils-times-Standing equation
+   panel and its two-sided layout, and the two sibling sheets that once held the declare gate
+   and the Standing track were all retired on DLR-80 along with the declaration and the
+   Standing multiplier they scored — none of that machinery has a place in the bank-and-skull
+   loop that replaced it. */
+
+/* ---------- the dossier zone: the Quarry's card, then the telegraph ---------- */
+
+.wc-dossier {
+  grid-area: dossier;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0 clamp(0.5rem, 1.6vmin, 1rem) clamp(0.5rem, 1.6vmin, 1rem)
+    clamp(0.6rem, 2.2vmin, 1.6rem);
+  /* The zone most likely to break the no-scroll guarantee: a long rule-break sentence must
+     never be allowed to force the grid wider than the viewport. */
+  min-width: 0;
+  overflow: hidden;
+}
+
+.wc-dossier-card {
+  background: var(--wc-chamber-lift);
+  border: 1px solid #23303a;
+  border-left: 3px solid var(--wc-brass-dim);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.7rem;
+}
+
+.wc-dossier-eyebrow {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-dossier-name {
+  font-family: var(--wc-serif);
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: var(--wc-parchment);
+  margin: 0.1rem 0 0.35rem;
+}
+
+.wc-dossier-tricks {
+  margin-top: 0.45rem;
+  font-size: 0.72rem;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-dossier-tricks b {
+  font-family: var(--wc-serif);
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--wc-parchment);
+}
+
+/* ---------- the shape readout (DLR-80, AC11): what the Quarry holds, never a rank ---------- */
+
+.wc-shape {
+  background: var(--wc-chamber-lift);
+  border: 1px solid #23303a;
+  border-left: 3px solid var(--wc-brass-dim);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.7rem;
+}
+
+.wc-shape-eyebrow {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--wc-chalk-dim);
+  margin: 0 0 0.3rem;
+}
+
+.wc-shape-row {
+  display: grid;
+  /* The suit-name column is fixed rather than `auto` so the card tiles start at the same x on
+     every row — a ragged left edge makes three tallies of different lengths hard to compare. */
+  grid-template-columns: 1.1rem 3.1rem 1fr;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0;
+  font-size: 0.78rem;
+}
+
+.wc-shape-row + .wc-shape-row {
+  border-top: 1px dashed #232d33;
+}
+
+.wc-shape-pip {
+  width: 0.95rem;
+  height: 0.95rem;
+  display: block;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-shape-row.wc-suit-bells .wc-shape-pip {
+  color: var(--wc-bells);
+}
+.wc-shape-row.wc-suit-keys .wc-shape-pip {
+  color: var(--wc-keys);
+}
+.wc-shape-row.wc-suit-moons .wc-shape-pip {
+  color: var(--wc-moons);
+}
+
+.wc-shape-suit {
+  color: var(--wc-chalk);
+}
+
+/* One tile per card held. Wraps rather than overflowing: at HAND_SIZE 6 a single suit can hold
+   six, which will not fit this column on a narrow viewport. */
+.wc-shape-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.22rem;
+  min-height: 1.62rem;
+  align-items: center;
+}
+
+.wc-shape-none {
+  font-size: 0.68rem;
+  color: var(--wc-chalk-dim);
+}
+
+/* A miniature of the card face rather than a bare glyph, so the readout and the table share a
+   visual vocabulary — a white face, a suit-tinted border, and a centred suit mark, exactly as
+   `.wc-card` is built. Deliberately far too small to carry a rank, which is the point: there is
+   no room to leak one.
+
+   The border reads the same `--wc-suit` custom property the mark's `color` does, so the suit
+   reads twice (edge and symbol) and never from colour alone — the card face's own AC7 rule,
+   applied at this size. */
+.wc-shape-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 1.22rem;
+  height: 1.62rem;
+  border-radius: 0.18rem;
+  border: 1px solid var(--wc-suit, var(--wc-ink-soft));
+  background: #fff;
+  color: var(--wc-suit, var(--wc-ink-soft));
+}
+
+/* Nearly filling the tile, and at a heavier weight than the default 1.7. Both are needed: scaling
+   an SVG scales its stroke too, but a mark this small still lands on sub-pixel strokes that the
+   renderer washes out to grey — the extra weight is what keeps the three suits distinguishable at
+   a glance rather than merely present. */
+.wc-shape-card-mark {
+  width: 0.92rem;
+  height: 0.92rem;
+  display: block;
+  stroke-width: 2.6;
+}
+
+/* The mined tile takes the poison green and a dark skull. It is still the same card shape at the
+   same size, so it reads as "this card, marked" rather than as a different kind of object.
+   The colour is never the *only* signal — the skull's shape carries it too, so the row still
+   parses in greyscale and under any colour-blindness. */
+.wc-shape-card-skulled {
+  background: var(--wc-poison, #8fb04e);
+  border-color: var(--wc-poison-edge, #5c7a2e);
+  color: var(--wc-ink, #191610);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.wc-shape-row.wc-suit-bells .wc-shape-card {
+  --wc-suit: var(--wc-bells);
+}
+.wc-shape-row.wc-suit-keys .wc-shape-card {
+  --wc-suit: var(--wc-keys);
+}
+.wc-shape-row.wc-suit-moons .wc-shape-card {
+  --wc-suit: var(--wc-moons);
+}
+
+/* ---------- the bank meter (DLR-80, AC4/AC5/AC8/AC9) ---------- */
+
+.wc-bank {
+  background: var(--wc-chamber-lift);
+  border: 1px solid #23303a;
+  border-left: 3px solid var(--wc-brass-dim);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.7rem;
+}
+
+.wc-bank-eyebrow {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--wc-chalk-dim);
+  margin: 0 0 0.3rem;
+}
+
+.wc-bank-figures {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.wc-bank-num {
+  font-family: var(--wc-serif);
+  font-size: 1.5rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-brass);
+}
+
+.wc-bank-op {
+  color: var(--wc-chalk-dim);
+  font-size: 1rem;
+}
+
+.wc-bank-mult {
+  font-family: var(--wc-serif);
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-parchment);
+}
+
+.wc-bank-cash {
+  margin: 0.3rem 0 0;
+  font-size: 0.72rem;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-bank-cash b {
+  color: var(--wc-parchment);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Take vs. hit is carried by this copy and by the class below — never by colour alone. */
+.wc-bank-last {
+  margin: 0.4rem 0 0;
+  padding-top: 0.4rem;
+  border-top: 1px solid #232d33;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-bank-last.wc-is-take {
+  color: var(--wc-brass);
+}
+
+.wc-bank-last.wc-is-hit {
+  color: var(--wc-alarm);
+}
+
+/* ---------- the intent telegraph ---------- */
+
+.wc-telegraph {
+  background: #101a20;
+  border: 1px dashed var(--wc-keys);
+  border-radius: 0.4rem;
+  padding: 0.55rem 0.7rem;
+}
+
+/* Live vs. speculative vs. empty carry their own border style — never colour alone. */
+.wc-telegraph.wc-is-speculative {
+  border-style: dotted;
+}
+
+.wc-telegraph.wc-telegraph-empty {
+  border-color: #2b3a44;
+  border-style: solid;
+}
+
+.wc-telegraph-eyebrow {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-telegraph-line {
+  font-family: var(--wc-serif);
+  font-size: 0.98rem;
+  color: var(--wc-parchment);
+  margin: 0.2rem 0 0;
+  line-height: 1.3;
+}
+
+.wc-telegraph-mark {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  vertical-align: -0.1em;
+  margin-right: 0.3em;
+  color: var(--wc-brass);
+}
+
+/* ---------- narrow/short collapse — AC5 on a phone or a short laptop window ---------- */
+
+@media (max-width: 44rem), (max-height: 34rem) {
+  .wc-shell {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'status'
+      'dossier'
+      'table'
+      'hand';
+    grid-template-rows: auto auto 1fr auto;
+  }
+
+  .wc-dossier {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* .wc-status (defined in warCouncil.css) holds .wc-plate and .wc-score in a row with no
+     wrap; at this width their combined min-content widths exceed the viewport. */
+  .wc-status {
+    flex-wrap: wrap;
+  }
+
+  /* DLR-71 review pass: the `.wc-hp { flex: 1 1 40% }` rule that stood here was deleted as
+     unreachable — `warCouncilHealthBars.css` is imported AFTER this sheet and carries the
+     identical selector at identical specificity inside its own copy of this same breakpoint, so
+     that later rule always won and this copy never painted anything. The rule's one home is now
+     `warCouncilHealthBars.css`; do not re-add it here. */
+
+  /* A static end-of-round readout — the hand-over panel (`RoundOverPanel`) — can still exceed
+     the felt's available height at a phone-sized or short-laptop window: `.wc-table` (in
+     warCouncil.css) centres `.wc-table-inner` at its own content height at every viewport, and
+     `.wc-shell` clips rather than scrolls, so past this floor the panel was rendered but
+     permanently unreachable. This is a readout read after a hand is decided, not a moment
+     being played, so the shell's no-scroll rule's own stated exception applies (`game-ux`
+     SKILL.md: "if some region genuinely must scroll, scope the overflow to that region and say
+     why"). Stretching `.wc-table-inner` to the row's own height and re-centring its content
+     with `justify-content` reproduces the centred look pixel-for-pixel whenever content still
+     fits — every other felt state at this breakpoint already fits and is visually unaffected;
+     only the overflowing case gains a scrollbar. No new size, colour or spacing value is
+     introduced. */
+  .wc-table-inner {
+    align-self: stretch;
+    min-height: 0;
+    /* flex-start, NOT center: a centred scroll container clips overflowing content symmetrically
+       and `scrollTop` cannot go negative, so the top of a tall panel becomes unreachable at any
+       scroll position. The cost is that the felt's content top-aligns rather than centring at
+       these sizes; that visual change is the developer's to accept. */
+    justify-content: flex-start;
+    overflow-y: auto;
+  }
+}
+/* War Council — the duel's two health bars, each a row of discrete heart glyphs (DLR-86, replacing
+   DLR-71's percentage-width track) with the Quarry's row previewing the live streak as its last
+   `bank × multiplier` standing hearts, dimmed and flashing (hybrid-design.md §6).
+
+   The SIXTH stylesheet. `warCouncilHunt.css` stood at 307 lines and a full bar surface — the heart
+   row, its four states, two `@keyframes`, the lethal treatment, its reduced-motion suppression and
+   its own narrow-viewport block — would have carried it past the 400-line budget, which is the
+   same forced split that produced the fourth and fifth sheets. Imported from the mount AFTER
+   `warCouncilHunt.css`. Tokens live in `warCouncil.css`; nothing here redeclares `:root`.
+
+   Carries its own copy of the `@media (max-width: 44rem), (max-height: 34rem)` breakpoint —
+   the same duplication a sibling sheet's own narrow-viewport block already made. The VALUE
+   lives in more than one file as a result — a multi-file edit if the threshold is ever tuned,
+   and the split's one real drift risk. */
+
+.wc-hp {
+  flex: 1 1 8rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.wc-hp-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.wc-hp[data-side='quarry'] .wc-hp-head {
+  flex-direction: row-reverse;
+}
+
+.wc-hp-who {
+  font-size: clamp(0.52rem, 1.1vmin, 0.64rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-hp-num {
+  font-family: var(--wc-serif);
+  font-size: clamp(0.8rem, 1.7vmin, 1rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-parchment);
+}
+
+/* The row. Depletion runs toward the CENTRE of the screen: the player's hearts fill from the
+   left, the Quarry's from the right. row-reverse is the whole of the mirror, exactly as it was
+   for the track this replaces.
+
+   `nowrap` plus `min-width: 0` is load-bearing: the top band is an `auto` row of the no-scroll
+   shell, so a wrapping heart row would grow the band rather than the hearts shrinking. At
+   QUARRY_ENCOUNTER_HEALTH's third entry this row holds 18 glyphs. */
+.wc-hp-hearts {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--wc-hp-heart-gap);
+  min-width: 0;
+  height: var(--wc-hp-height);
+}
+
+.wc-hp[data-side='quarry'] .wc-hp-hearts {
+  flex-direction: row-reverse;
+}
+
+.wc-hp-heart {
+  flex: 0 1 var(--wc-hp-heart-size);
+  min-width: 0.34rem;
+  aspect-ratio: 1;
+  display: block;
+}
+
+.wc-hp-heart svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* The four resting states — AC6, and AC7's guarantee that nothing is lost when motion stops.
+   Shape carries the reading before colour does: `whole` and `broken` bind to two different
+   <symbol>s (solid versus cracked outline), so the row still separates in greyscale. Opacity
+   and the animations below are reinforcement, never the only signal. */
+.wc-hp-heart[data-state='whole'] {
+  color: var(--wc-hp-secure-fill);
+}
+
+.wc-hp-heart[data-state='atRisk'] {
+  color: var(--wc-hp-pending-fill);
+  opacity: var(--wc-hp-atrisk-opacity);
+  animation: wc-hp-flash var(--wc-hp-flash-ms) ease-in-out infinite alternate;
+}
+
+.wc-hp-heart[data-state='breaking'] {
+  color: var(--wc-hp-lethal-edge);
+  animation: wc-hp-break var(--wc-hp-break-ms) ease-out 1 both;
+}
+
+.wc-hp-heart[data-state='broken'] {
+  color: var(--wc-hp-broken);
+}
+
+/* The break runs ONCE on the state's arrival and never retriggers: health only decreases, so a
+   given index can never re-enter `breaking`. */
+@keyframes wc-hp-break {
+  0% {
+    transform: scale(1) rotate(0deg);
+    color: var(--wc-hp-secure-fill);
+  }
+  22% {
+    transform: scale(1.28) rotate(-9deg);
+    color: var(--wc-hp-lethal-edge);
+  }
+  55% {
+    transform: scale(0.88) rotate(7deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    color: var(--wc-hp-broken);
+  }
+}
+
+@keyframes wc-hp-flash {
+  from {
+    opacity: var(--wc-hp-atrisk-opacity);
+    transform: scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.09);
+  }
+}
+
+/* Lethal reads without colour: a hard rule under the whole row. */
+.wc-hp-hearts.wc-is-lethal {
+  box-shadow: inset 0 -2px 0 0 var(--wc-hp-lethal-edge);
+}
+
+/* ---------- the between-hands panel's single control. The terminal branch this block also
+   served was deleted on DLR-82: a resolved encounter is now the run verdict's. ---------- */
+
+.wc-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ---------- the narrow / short collapse — same breakpoint value as the other sheets ---------- */
+
+@media (max-width: 44rem), (max-height: 34rem) {
+  .wc-hp {
+    flex: 1 1 40%;
+  }
+}
+
+/* AC7 — motion off, state intact. Every one of the four states is already carried by symbol
+   shape, colour and opacity at rest, so switching the animations off costs no information;
+   `breaking` keeps its lethal-edge colour, which the keyframe would otherwise have landed on. */
+@media (prefers-reduced-motion: reduce) {
+  .wc-hp-heart[data-state='atRisk'],
+  .wc-hp-heart[data-state='breaking'] {
+    animation: none;
+  }
+
+  .wc-hp-heart[data-state='breaking'] {
+    color: var(--wc-hp-lethal-edge);
+  }
+}
+/* The player's own hand — split out of `warCouncil.css` (DLR-82) to keep that file under the
+   400-line budget after the `.wc-run` status-band block pushed it over. Import alongside
+   `warCouncil.css` from the mount component; both share that file's `:root` tokens. */
+
+/* ---------- hand ---------- */
+
+.wc-hand {
+  grid-area: hand;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.15rem, 0.8vmin, 0.5rem);
+  padding: clamp(0.3rem, 1.2vmin, 0.8rem) clamp(0.5rem, 2vmin, 1.5rem)
+    clamp(0.5rem, 1.8vmin, 1.1rem);
+}
+
+.wc-hand-hint {
+  font-size: clamp(0.58rem, 1.25vmin, 0.72rem);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+  font-weight: 600;
+  min-height: 1.2em;
+  text-align: center;
+}
+
+.wc-hand-hint.wc-is-live {
+  color: var(--wc-brass);
+}
+
+.wc-hand-hint.wc-is-reject {
+  color: var(--wc-alarm);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  font-size: clamp(0.68rem, 1.45vmin, 0.82rem);
+}
+
+/* Rotation and lift push pixels outside the layout box, and the shell clips
+   overflow — so reserve the room explicitly rather than letting cards crop. */
+.wc-fan {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(var(--wc-card-w) * 1.5 + 2.1rem);
+  padding: 1.3rem 0 0.6rem;
+}
+/* The felt-left plate: the decree pile and the Cheat slots as ONE object, not two near
+   each other (developer's red-line, 2026-08-16). Takes the three positioning properties
+   `.wc-pile` used to carry itself, so the trick stays centred in `.wc-table`'s middle column. */
+.wc-felt-rail {
+  grid-column: 1;
+  justify-self: start;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.35rem, 1.2vmin, 0.7rem);
+  padding: clamp(0.5rem, 2vmin, 1.5rem);
+}
+
+/* The hairline that makes the two registers read as one plate rather than two objects. */
+.wc-felt-rail-split {
+  width: 78%;
+  height: 1px;
+  background: linear-gradient(90deg, #ffffff00, #ffffff26, #ffffff00);
+}
+
+/* DLR-83 — the Cheat slot's frame, sized just under the decree pile's card so the pair of
+   slots lines up with it. Declared here rather than in warCouncil.css's `:root` for the
+   budget reason above; a custom property resolves the same from any loaded sheet.
+   PLACEHOLDER BOUNDS: the developer's to retune. */
+:root {
+  --wc-cheat-slot-w: clamp(2rem, 4vmin, 2.8rem);
+}
+
+/* ---------- the Cheat rail: the second register of the felt-left plate ---------- */
+.wc-cheat-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.2rem, 0.7vmin, 0.4rem);
+}
+
+/* Side by side, not stacked: the felt column is height-constrained, and a PAIR reads as
+   "two slots" where a vertical stack reads as a list. Same width as the pile above. */
+.wc-cheat-slots {
+  display: flex;
+  flex-direction: row;
+  gap: clamp(0.2rem, 0.7vmin, 0.4rem);
+}
+
+/* Every slot is the same frame. Form carries the state, not colour alone:
+   empty = dashed faint, held = solid dim, poised = dashed brass, armed = solid brass +
+   lift + corner tick. */
+.wc-cheat-slot {
+  width: var(--wc-cheat-slot-w);
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  aspect-ratio: 2 / 3;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: none;
+  font-family: var(--wc-serif);
+  position: relative;
+  touch-action: manipulation;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.wc-cheat-slot.is-empty {
+  border: 1px dashed var(--wc-chalk-dim);
+  opacity: 0.55;
+}
+
+.wc-cheat-slot.is-held {
+  border: 1px solid var(--wc-brass-dim);
+  background: linear-gradient(160deg, #2a2418 0%, #1a1710 100%);
+  color: var(--wc-brass);
+  cursor: pointer;
+}
+
+.wc-cheat-slot.is-poised {
+  border: 2px dashed var(--wc-brass);
+  transform: translateY(-3px);
+}
+
+.wc-cheat-slot.is-armed {
+  border: 2px solid var(--wc-brass);
+  background: linear-gradient(160deg, #453718 0%, #2b2311 100%);
+  transform: translateY(-7px);
+  box-shadow:
+    0 0 0 1px #c99a4e55,
+    0 5px 14px #000a;
+}
+
+/* A second, non-colour signal on the armed slot: a filled corner notch. */
+.wc-cheat-slot.is-armed::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--wc-brass);
+  border-radius: 50%;
+}
+
+.wc-cheat-slot:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .wc-cheat-slot.is-held:hover {
+    filter: brightness(1.15);
+  }
+}
+
+.wc-cheat-slot.is-held:active {
+  filter: brightness(0.9);
+}
+/* The Envenom plate — a SIBLING of the Cheat rail in the felt-left plate (DLR-90), not a
+   generalisation of it: independent copy, independent component, so retuning one never risks
+   the other. Mirrors `warCouncilCheats.css`'s selectors and tokens so the two rails read as one
+   family of controls. */
+
+.wc-envenom-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.2rem, 0.7vmin, 0.4rem);
+}
+
+/* Same frame the Cheat slot uses — form carries the state, not colour alone: held = solid dim,
+   poised = dashed brass, armed = solid brass + lift + corner tick. Sized to at least 44x44px
+   (react-frontend's hit-area floor) via the Cheat slot's own minimums. */
+.wc-envenom-plate {
+  width: var(--wc-cheat-slot-w);
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  aspect-ratio: 2 / 3;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--wc-brass-dim);
+  background: linear-gradient(160deg, #2a2418 0%, #1a1710 100%);
+  color: var(--wc-brass);
+  font-family: var(--wc-serif);
+  position: relative;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.wc-envenom-glyph {
+  font-size: clamp(0.9rem, 2.2vmin, 1.2rem);
+  line-height: 1;
+}
+
+.wc-envenom-count {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: clamp(0.5rem, 1.1vmin, 0.62rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-envenom-plate:disabled {
+  border-style: dashed;
+  opacity: 0.55;
+  cursor: default;
+}
+
+.wc-envenom-plate.is-poised {
+  border: 2px dashed var(--wc-brass);
+  transform: translateY(-3px);
+}
+
+.wc-envenom-plate.is-armed {
+  border: 2px solid var(--wc-brass);
+  background: linear-gradient(160deg, #453718 0%, #2b2311 100%);
+  transform: translateY(-7px);
+  box-shadow:
+    0 0 0 1px #c99a4e55,
+    0 5px 14px #000a;
+}
+
+/* A second, non-colour signal on the armed plate: a filled corner notch, matching the Cheat
+   slot's own armed tick. */
+.wc-envenom-plate.is-armed::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--wc-brass);
+  border-radius: 50%;
+}
+
+.wc-envenom-plate:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .wc-envenom-plate:not(:disabled):hover {
+    filter: brightness(1.15);
+  }
+}
+
+.wc-envenom-plate:not(:disabled):active {
+  filter: brightness(0.9);
+}
+
+/* ============================================================================
+   NEW — warCouncilApplyDamage.css (DLR-94)
+   Mirrors warCouncilEnvenom.css's selectors and tokens so the three rail
+   controls read as one family. No .is-armed block: this control has no armed
+   stage, because its second tap IS the action.
+   ============================================================================ */
+
+.wc-apply-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.2rem, 0.7vmin, 0.4rem);
+}
+
+.wc-apply-plate {
+  width: var(--wc-cheat-slot-w);
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  aspect-ratio: 2 / 3;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--wc-brass-dim);
+  background: linear-gradient(160deg, #2a2418 0%, #1a1710 100%);
+  color: var(--wc-brass);
+  font-family: var(--wc-serif);
+  position: relative;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.wc-apply-glyph {
+  font-size: clamp(0.9rem, 2.2vmin, 1.2rem);
+  line-height: 1;
+}
+
+.wc-apply-figure {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: clamp(0.5rem, 1.1vmin, 0.62rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-apply-plate:disabled {
+  border-style: dashed;
+  opacity: 0.55;
+  cursor: default;
+}
+
+.wc-apply-plate.is-poised {
+  border: 2px dashed var(--wc-brass);
+  transform: translateY(-3px);
+}
+
+/* A second, non-colour signal on the poised plate: a filled corner notch,
+   matching the Cheat slot's own armed tick. */
+.wc-apply-plate.is-poised::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--wc-brass);
+  border-radius: 50%;
+}
+
+.wc-apply-plate:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .wc-apply-plate:not(:disabled):hover {
+    filter: brightness(1.15);
+  }
+}
+
+.wc-apply-plate:not(:disabled):active {
+  filter: brightness(0.9);
+}
+
+/* The refusal sentence, on the face of the control. game-ux forbids putting
+   anything a decision needs behind hover, and touch has no hover — so this is
+   rendered text, never a title attribute. Width-capped to the rail so a long
+   sentence wraps instead of widening the felt's rail column. */
+.wc-apply-refusal {
+  margin: 0;
+  max-width: 7rem;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.5rem, 1.1vmin, 0.62rem);
+  line-height: 1.35;
+  text-align: center;
+  color: var(--wc-alarm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-apply-plate {
+    transition: none;
+  }
+}
+
+/* NEW — the reduced figure on the bank readout. Dimmer than .wc-bank-cash and
+   marked with a caret, so the pair reads as full-versus-reduced without
+   relying on colour alone. Belongs in warCouncilHunt.css beside .wc-bank-cash. */
+.wc-bank-forced {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-bank-forced::before {
+  content: '↓ ';
+  color: var(--wc-alarm);
+}
+
+.wc-bank-forced b {
+  color: var(--wc-parchment);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================================
+   The test harness — NOT part of the screen. Fixed overlay so the felt below
+   stays pixel-accurate.
+   ============================================================================ */
+
+.mk-harness {
+  position: fixed;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.55rem 0.7rem;
+  background: #0b0f12f2;
+  border: 1px dashed var(--wc-brass-dim);
+  border-radius: 4px;
+  font-family: var(--wc-sans);
+  font-size: 0.68rem;
+  color: var(--wc-chalk-dim);
+  max-width: 15rem;
+}
+
+.mk-harness[data-open='false'] > *:not(.mk-toggle) {
+  display: none;
+}
+
+.mk-harness label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+}
+
+.mk-harness button {
+  font-family: var(--wc-sans);
+  font-size: 0.66rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 3px;
+  border: 1px solid var(--wc-brass-dim);
+  background: #1a1710;
+  color: var(--wc-brass);
+  cursor: pointer;
+}
+
+.mk-harness button:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 2px;
+}
+
+.mk-title {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--wc-brass);
+}
+
+.mk-log {
+  margin: 0;
+  max-height: 6rem;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  line-height: 1.45;
+  font-size: 0.64rem;
+  color: var(--wc-chalk-dim);
+  border-top: 1px solid #232d33;
+  padding-top: 0.35rem;
+}
+</style>
+
+<div class="wc-shell">
+  <!-- SuitSymbolSheet — verbatim from SuitMark.tsx -->
+  <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+    <symbol id="s-bells" viewBox="0 0 24 24">
+      <path d="M6.8 16.4v-4.6a5.2 5.2 0 0 1 10.4 0v4.6M4.6 16.4h14.8M12 6.6V4.6M10.2 19.1a1.9 1.9 0 0 0 3.6 0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
+    </symbol>
+    <symbol id="s-keys" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-linecap="round">
+        <circle cx="12" cy="7.2" r="3.5" />
+        <path d="M12 10.7V20M12 14.6h3.1M12 17.6h2.3" />
+      </g>
+    </symbol>
+    <symbol id="s-moons" viewBox="0 0 24 24">
+      <path d="M15.3 3.9a8.2 8.2 0 1 0 3.9 11.8 6.7 6.7 0 0 1-3.9-11.8z" fill="none" stroke="currentColor" stroke-linejoin="round" />
+    </symbol>
+  </svg>
+
+  <!-- RoundStatusBand -->
+  <header class="wc-status">
+    <div class="wc-plate">
+      <span class="wc-plate-label">Opponent</span>
+      <span class="wc-stack" aria-hidden="true" id="oppStack"></span>
+      <span class="wc-plate-label" id="oppHeld">4 held</span>
+    </div>
+    <div class="wc-run">
+      <span class="wc-plate-label">Run</span>
+      <span class="wc-run-value">Fight 1 of 21</span>
+    </div>
+    <div class="wc-coins">
+      <span class="wc-plate-label">Coins</span>
+      <span class="wc-run-value">2</span>
+    </div>
+
+    <!-- DuelHealthBars: HeartSymbolSheet, player bar, centre trio, quarry bar -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+      <symbol id="hp-heart" viewBox="0 0 24 24">
+        <path d="M12 20.4 4.5 13a4.9 4.9 0 0 1 7.5-6.2A4.9 4.9 0 0 1 19.5 13Z" fill="currentColor" stroke="currentColor" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="hp-heart-broken" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M12 20.4 4.5 13a4.9 4.9 0 0 1 7.5-6.2A4.9 4.9 0 0 1 19.5 13Z" />
+          <path d="M12 6.1 9.9 10.4l3.4 1.6-2.6 2.9 2 1.9" />
+        </g>
+      </symbol>
+    </svg>
+
+    <div class="wc-hp" data-side="player">
+      <div class="wc-hp-head">
+        <span class="wc-hp-who">Your health</span>
+        <span class="wc-hp-num" id="playerNum">10 / 10</span>
+      </div>
+      <div class="wc-hp-hearts" id="playerHearts" role="meter" aria-label="Your health"
+           aria-valuemin="0" aria-valuemax="10" aria-valuenow="10"></div>
+    </div>
+
+    <div class="wc-score" role="group" aria-label="Tricks won">
+      <span class="wc-score-cell"><span class="wc-score-side">You</span><span class="wc-score-value" id="youTricks">0</span></span>
+      <span class="wc-score-cell"><span class="wc-score-side">Trick</span><span class="wc-score-value" id="trickNo">1</span></span>
+      <span class="wc-score-cell"><span class="wc-score-side">Them</span><span class="wc-score-value" id="themTricks">0</span></span>
+    </div>
+
+    <div class="wc-hp" data-side="quarry">
+      <div class="wc-hp-head">
+        <span class="wc-hp-who">Aoife&rsquo;s health</span>
+        <span class="wc-hp-num" id="quarryNum">10 / 10</span>
+      </div>
+      <div class="wc-hp-hearts" id="quarryHearts" role="meter" aria-label="Aoife&rsquo;s health"
+           aria-valuemin="0" aria-valuemax="10" aria-valuenow="10"></div>
+    </div>
+  </header>
+
+  <!-- the dossier column -->
+  <aside class="wc-dossier">
+    <section class="wc-dossier-card" aria-label="The Quarry: Aoife">
+      <span class="wc-dossier-eyebrow" aria-hidden="true">The Quarry</span>
+      <h2 class="wc-dossier-name">Aoife</h2>
+      <p class="wc-dossier-tricks">Tricks taken <b id="dossierTricks">0</b></p>
+    </section>
+
+    <section class="wc-shape">
+      <p class="wc-shape-eyebrow" aria-hidden="true">What the Quarry holds</p>
+      <div class="wc-shape-row wc-suit-bells">
+        <svg class="wc-suit-mark wc-shape-pip" aria-hidden="true"><use href="#s-bells" /></svg>
+        <span class="wc-shape-suit">Bells</span>
+        <span class="wc-shape-cards">
+          <span class="wc-shape-card" aria-hidden="true"><svg class="wc-suit-mark wc-shape-card-mark"><use href="#s-bells" /></svg></span>
+        </span>
+      </div>
+      <div class="wc-shape-row wc-suit-keys">
+        <svg class="wc-suit-mark wc-shape-pip" aria-hidden="true"><use href="#s-keys" /></svg>
+        <span class="wc-shape-suit">Keys</span>
+        <span class="wc-shape-cards">
+          <span class="wc-shape-card" aria-hidden="true"><svg class="wc-suit-mark wc-shape-card-mark"><use href="#s-keys" /></svg></span>
+        </span>
+      </div>
+      <div class="wc-shape-row wc-suit-moons">
+        <svg class="wc-suit-mark wc-shape-pip" aria-hidden="true"><use href="#s-moons" /></svg>
+        <span class="wc-shape-suit">Moons</span>
+        <span class="wc-shape-cards">
+          <span class="wc-shape-card" aria-hidden="true"><svg class="wc-suit-mark wc-shape-card-mark"><use href="#s-moons" /></svg></span>
+          <span class="wc-shape-card wc-shape-card-skulled" aria-hidden="true">&#9760;</span>
+        </span>
+      </div>
+    </section>
+
+    <!-- BankMeter — the .wc-bank-forced line is NEW -->
+    <section class="wc-bank" aria-label="Tricks and Multiplier">
+      <p class="wc-bank-eyebrow" aria-hidden="true">Tricks</p>
+      <p class="wc-bank-figures" id="bankFigures" aria-label="">
+        <span class="wc-bank-num" aria-hidden="true" id="bankNum">3</span>
+        <span class="wc-bank-op" aria-hidden="true">&times;</span>
+        <span class="wc-bank-mult" aria-hidden="true" id="bankMult">3</span>
+      </p>
+      <p class="wc-bank-cash" aria-hidden="true">Cashes for <b id="cashFull">9</b></p>
+      <p class="wc-bank-forced" aria-hidden="true">If you&rsquo;re hit first: <b id="cashForced">6</b></p>
+      <p class="wc-bank-last" id="bankLast">Take tricks. Make them eat the skulls.</p>
+    </section>
+
+    <div class="wc-telegraph wc-telegraph-empty" role="status" aria-label="The Quarry has no intent to read yet.">
+      <span class="wc-telegraph-eyebrow" aria-hidden="true">Their intent</span>
+      <p class="wc-telegraph-line" aria-hidden="true" id="telegraphLine">Waiting on your lead.</p>
+    </div>
+  </aside>
+
+  <!-- the felt -->
+  <section class="wc-table" aria-live="polite">
+    <div class="wc-felt-rail">
+      <!-- DecreePile -->
+      <div class="wc-pile">
+        <span class="wc-plate-label">Decree</span>
+        <span class="wc-pile-cards">
+          <span class="wc-pile-back wc-b1" aria-hidden="true"></span>
+          <span class="wc-pile-back wc-b2" aria-hidden="true"></span>
+          <button type="button" class="wc-card wc-suit-bells wc-is-plate" disabled tabindex="-1" aria-label="10 of Bells">
+            <span class="wc-card-rank" aria-hidden="true">10</span>
+            <svg class="wc-suit-mark wc-card-suit" aria-hidden="true"><use href="#s-bells" /></svg>
+            <span class="wc-card-pip wc-is-blank" aria-hidden="true"></span>
+          </button>
+        </span>
+        <span class="wc-trump-mark">
+          <svg class="wc-suit-mark wc-trump-mark-icon" aria-hidden="true"><use href="#s-bells" /></svg>
+          Bells is trump
+        </span>
+        <span class="wc-plate-label">6 in the pile</span>
+      </div>
+
+      <div class="wc-felt-rail-split" aria-hidden="true"></div>
+
+      <!-- CheatSlots -->
+      <div class="wc-cheat-rail" role="group" aria-label="Cheats">
+        <span class="wc-plate-label">Cheats</span>
+        <div class="wc-cheat-slots">
+          <button type="button" class="wc-cheat-slot is-held" aria-pressed="false" aria-label="Cheat, held"></button>
+          <span class="wc-cheat-slot is-empty" aria-label="Empty Cheat slot"></span>
+        </div>
+      </div>
+
+      <!-- EnvenomCharge -->
+      <div class="wc-envenom-rail" role="group" aria-label="Envenom">
+        <span class="wc-plate-label">Envenom</span>
+        <button type="button" class="wc-envenom-plate" aria-pressed="false" aria-label="Envenom, 1 held">
+          <span class="wc-envenom-glyph" aria-hidden="true">&#9879;</span>
+          <span class="wc-envenom-count" aria-hidden="true">1</span>
+        </button>
+      </div>
+
+      <!-- NEW — ApplyDamagePlate -->
+      <div class="wc-apply-rail" role="group" aria-label="Apply" id="applyRail">
+        <span class="wc-plate-label">Apply</span>
+        <button type="button" class="wc-apply-plate" id="applyPlate" aria-pressed="false" aria-label="">
+          <span class="wc-apply-glyph" aria-hidden="true">&#10515;</span>
+          <span class="wc-apply-figure" aria-hidden="true" id="applyFigure">9</span>
+        </button>
+        <p class="wc-apply-refusal" id="applyRefusal" hidden></p>
+      </div>
+    </div>
+
+    <!-- TrickWell -->
+    <div class="wc-table-inner">
+      <div class="wc-trick-row" id="trickRow"></div>
+      <p class="wc-table-line" id="tableLine">The table is yours &mdash; lead.</p>
+    </div>
+  </section>
+
+  <!-- HandFan renders a bare fragment: the hint and the fan are direct grid
+       children of .wc-shell. There is no .wc-hand wrapper in the real app. -->
+  <p class="wc-hand-hint" id="handHint" aria-live="polite">Your lead</p>
+  <div class="wc-fan" id="fan" role="group" aria-label="Your hand"></div>
+</div>
+
+<div class="mk-harness" data-open="true" id="harness">
+  <button type="button" class="mk-toggle" id="toggleHarness">Hide harness</button>
+  <span class="mk-title">Harness &mdash; not the screen</span>
+  <label><input type="checkbox" id="poisonToggle" /> poison pending (D6)</label>
+  <label><input type="checkbox" id="turnToggle" /> not your move</label>
+  <button type="button" id="resetBtn">Reset &mdash; bank 3 &times; 3</button>
+  <button type="button" id="streakBtn">Run streak up &mdash; 5 &times; 5</button>
+  <pre class="mk-log" id="log">Bank 3 x 3. Cashes for 9, or 6 if you are hit first.</pre>
+</div>
+
+<script>
+  // ---- constants, mirroring src/hunt/config.ts ----
+  const PLAYER_START_HEALTH = 10
+  const QUARRY_HEALTH_0 = 10
+  const FORCED_CASH_OUT_NUMERATOR = 2
+  const FORCED_CASH_OUT_DENOMINATOR = 3
+  const HAND_SIZE = 6
+
+  // ---- bank.ts ----
+  function cashValue(bank, multiplier) {
+    if (!Number.isInteger(bank) || !Number.isInteger(multiplier) || bank <= 0 || multiplier <= 0) {
+      return 0
+    }
+    return bank * multiplier
+  }
+  // Multiply BEFORE dividing: `x * (2/3)` floors every multiple of 3 one short.
+  function forcedCashValue(bank, multiplier) {
+    return Math.floor(
+      (cashValue(bank, multiplier) * FORCED_CASH_OUT_NUMERATOR) / FORCED_CASH_OUT_DENOMINATOR,
+    )
+  }
+
+  // ---- voluntaryCashOut.ts ----
+  const ApplyDamageRefusal = {
+    EmptyBank: 'emptyBank',
+    PoisonPending: 'poisonPending',
+    NotYourMove: 'notYourMove',
+  }
+  const APPLY_DAMAGE_REFUSAL_MESSAGE = {
+    emptyBank: 'No streak to cash — take a trick first.',
+    poisonPending: 'A poison hit is still owed — you cannot apply until it lands.',
+    notYourMove: 'Not your move yet.',
+  }
+  function applyDamageRefusalFor(stock) {
+    if (!stock.canAct) return ApplyDamageRefusal.NotYourMove
+    if (stock.poisonPending) return ApplyDamageRefusal.PoisonPending
+    if (cashValue(stock.bank, stock.multiplier) <= 0) return ApplyDamageRefusal.EmptyBank
+    return null
+  }
+  function applyDamageAccessibleName(cash, poised, refusal) {
+    if (refusal !== null) return 'Apply Damage, unavailable — ' + APPLY_DAMAGE_REFUSAL_MESSAGE[refusal]
+    const base = 'Apply Damage, ' + cash + ' to the Quarry'
+    return poised ? base + ' — tap again to confirm' : base
+  }
+
+  // ---- fanLayout.ts ----
+  const FAN_ROTATION_STEP_DEG = 2.1
+  const FAN_LIFT_FACTOR = 0.13
+  const FAN_OVERLAP_PX = { loose: -4, medium: -10, tight: -18 }
+  function fanPlacement(index, count, armed) {
+    const spread = count > 1 ? index - (count - 1) / 2 : 0
+    const overlapPx =
+      index === 0 ? 0 : count > 9 ? FAN_OVERLAP_PX.tight : count > 6 ? FAN_OVERLAP_PX.medium : FAN_OVERLAP_PX.loose
+    return {
+      rotateDeg: spread * FAN_ROTATION_STEP_DEG,
+      liftPct: Math.abs(spread) ** 2 * FAN_LIFT_FACTOR,
+      overlapPx,
+      zIndex: armed ? 20 : index,
+    }
+  }
+
+  // ---- labels.ts ----
+  const SUIT_NAME = { bells: 'Bells', keys: 'Keys', moons: 'Moons' }
+  const RANK_NAME = { 1: 'Swan', 3: 'Fox', 5: 'Woodcutter', 9: 'Witch', 11: 'Monarch' }
+  function cardAccessibleName(c) {
+    const base = c.rank + ' of ' + SUIT_NAME[c.suit]
+    return RANK_NAME[c.rank] ? base + ' (' + RANK_NAME[c.rank] + ')' : base
+  }
+
+  // ---- state ----
+  const START_HAND = [
+    { suit: 'bells', rank: 2 },
+    { suit: 'bells', rank: 7 },
+    { suit: 'keys', rank: 3 },
+    { suit: 'keys', rank: 8 },
+    { suit: 'moons', rank: 5 },
+    { suit: 'moons', rank: 11 },
+  ]
+
+  let state = null
+  function reset(bank, multiplier) {
+    state = {
+      bank: bank,
+      multiplier: multiplier,
+      playerHealth: PLAYER_START_HEALTH,
+      quarryHealth: QUARRY_HEALTH_0,
+      hand: START_HAND.slice(),
+      armed: null,
+      applyPoised: false,
+      tricksPlayed: 0,
+      youTricks: 0,
+      themTricks: 0,
+      lastLine: 'Take tricks. Make them eat the skulls.',
+      lastClass: '',
+      tableLine: 'The table is yours — lead.',
+      trick: null,
+    }
+  }
+  reset(3, 3)
+
+  const el = (id) => document.getElementById(id)
+  const canAct = () => !el('turnToggle').checked && state.quarryHealth > 0 && state.playerHealth > 0
+  const stock = () => ({
+    bank: state.bank,
+    multiplier: state.multiplier,
+    poisonPending: el('poisonToggle').checked,
+    canAct: canAct(),
+  })
+
+  function log(line) {
+    el('log').textContent = line + '\n' + el('log').textContent
+  }
+
+  // ---- duelHealthBars.ts + DuelHealthBars.tsx ----
+  function renderHearts(node, current, max, secure) {
+    node.replaceChildren()
+    for (let i = 0; i < max; i++) {
+      const stateName = i < secure ? 'whole' : i < current ? 'atRisk' : 'broken'
+      const span = document.createElement('span')
+      span.className = 'wc-hp-heart'
+      span.dataset.state = stateName
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      svg.setAttribute('aria-hidden', 'true')
+      svg.setAttribute('focusable', 'false')
+      const use = document.createElementNS('http://www.w3.org/2000/svg', 'use')
+      use.setAttribute('href', stateName === 'broken' ? '#hp-heart-broken' : '#hp-heart')
+      svg.append(use)
+      span.append(svg)
+      node.append(span)
+    }
+    node.setAttribute('aria-valuenow', String(current))
+    node.setAttribute('aria-valuemax', String(max))
+  }
+
+  // ---- PlayingCard.tsx ----
+  function cardButton(c, opts) {
+    const b = document.createElement('button')
+    b.type = 'button'
+    const cls = ['wc-card', 'wc-suit-' + c.suit]
+    if (opts.variant === 'table') cls.push('wc-is-played')
+    if (opts.illegal) cls.push('wc-is-illegal')
+    if (opts.armed) cls.push('wc-is-armed')
+    if (opts.winner) cls.push('wc-is-winner')
+    b.className = cls.join(' ')
+    b.disabled = opts.variant === 'table' || opts.illegal
+    b.tabIndex = opts.variant === 'table' ? -1 : opts.tabIndex
+    b.setAttribute('aria-label', cardAccessibleName(c))
+    if (opts.armed) b.setAttribute('aria-pressed', 'true')
+    if (opts.style) Object.assign(b.style, opts.style)
+
+    const rank = document.createElement('span')
+    rank.className = 'wc-card-rank'
+    rank.setAttribute('aria-hidden', 'true')
+    rank.textContent = String(c.rank)
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    svg.setAttribute('class', 'wc-suit-mark wc-card-suit')
+    svg.setAttribute('aria-hidden', 'true')
+    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use')
+    use.setAttribute('href', '#s-' + c.suit)
+    svg.append(use)
+
+    const pip = document.createElement('span')
+    pip.className = 'wc-card-pip' + (RANK_NAME[c.rank] ? '' : ' wc-is-blank')
+    pip.setAttribute('aria-hidden', 'true')
+
+    b.append(rank, svg, pip)
+    if (opts.onTap) b.addEventListener('click', () => opts.onTap(c))
+    return b
+  }
+
+  // ---- render ----
+  function render() {
+    const cash = cashValue(state.bank, state.multiplier)
+    const forced = forcedCashValue(state.bank, state.multiplier)
+    const refusal = applyDamageRefusalFor(stock())
+    const interactive = canAct() && state.trick === null
+
+    // bank meter
+    el('bankNum').textContent = state.bank
+    el('bankMult').textContent = state.multiplier
+    el('cashFull').textContent = cash
+    el('cashForced').textContent = forced
+    el('bankFigures').setAttribute(
+      'aria-label',
+      'Tricks ' + state.bank + ', Multiplier ' + state.multiplier +
+        ', cashes for ' + cash + ', or ' + forced + ' if you are hit first',
+    )
+    el('bankLast').textContent = state.lastLine
+    el('bankLast').className = 'wc-bank-last' + (state.lastClass ? ' ' + state.lastClass : '')
+
+    // apply plate
+    const plate = el('applyPlate')
+    const poised = state.applyPoised && refusal === null
+    plate.disabled = refusal !== null
+    plate.className = 'wc-apply-plate' + (poised ? ' is-poised' : '')
+    plate.setAttribute('aria-pressed', String(poised))
+    plate.setAttribute('aria-label', applyDamageAccessibleName(cash, state.applyPoised, refusal))
+    el('applyFigure').textContent = cash
+    const refusalNode = el('applyRefusal')
+    refusalNode.hidden = refusal === null
+    refusalNode.textContent = refusal === null ? '' : APPLY_DAMAGE_REFUSAL_MESSAGE[refusal]
+
+    // health bars — the at-risk preview is projectedFromStreak, i.e. the FULL figure
+    el('playerNum').textContent = state.playerHealth + ' / ' + PLAYER_START_HEALTH
+    el('quarryNum').textContent = state.quarryHealth + ' / ' + QUARRY_HEALTH_0
+    renderHearts(el('playerHearts'), state.playerHealth, PLAYER_START_HEALTH, state.playerHealth)
+    renderHearts(
+      el('quarryHearts'),
+      state.quarryHealth,
+      QUARRY_HEALTH_0,
+      Math.max(0, state.quarryHealth - cash),
+    )
+
+    // status trio
+    el('youTricks').textContent = state.youTricks
+    el('themTricks').textContent = state.themTricks
+    el('trickNo').textContent = Math.min(state.tricksPlayed + 1, HAND_SIZE)
+    el('dossierTricks').textContent = state.themTricks
+    el('oppHeld').textContent = state.hand.length + ' held'
+    el('oppStack').replaceChildren()
+    for (let i = 0; i < state.hand.length; i++) {
+      const s = document.createElement('span')
+      s.className = 'wc-stack-back'
+      el('oppStack').append(s)
+    }
+
+    // the well
+    el('tableLine').textContent = state.tableLine
+    const row = el('trickRow')
+    row.replaceChildren()
+    if (state.trick) {
+      state.trick.forEach((played) => {
+        const wrap = document.createElement('span')
+        wrap.className = 'wc-played' + (played.winner ? ' wc-is-winner' : '')
+        const side = document.createElement('span')
+        side.className = 'wc-played-side'
+        side.textContent = played.side
+        wrap.append(side, cardButton(played.card, { variant: 'table', winner: played.winner }))
+        row.append(wrap)
+      })
+    }
+
+    // the hint
+    const hint = el('handHint')
+    if (state.trick) {
+      hint.textContent = 'Trick resolved'
+      hint.className = 'wc-hand-hint'
+    } else if (state.applyPoised && refusal === null) {
+      hint.textContent = 'Tap Apply again to cash your streak'
+      hint.className = 'wc-hand-hint wc-is-live'
+    } else if (state.armed) {
+      hint.textContent = 'Tap ' + cardAccessibleName(state.armed) + ' again to play it'
+      hint.className = 'wc-hand-hint wc-is-live'
+    } else {
+      hint.textContent = interactive ? 'Your lead' : ''
+      hint.className = 'wc-hand-hint'
+    }
+
+    // the fan
+    const fan = el('fan')
+    fan.className = 'wc-fan' + (interactive ? '' : ' wc-is-inert')
+    fan.replaceChildren()
+    state.hand.forEach((c, i) => {
+      const isArmed = state.armed !== null && state.armed.suit === c.suit && state.armed.rank === c.rank
+      const p = fanPlacement(i, state.hand.length, isArmed)
+      fan.append(
+        cardButton(c, {
+          variant: 'hand',
+          armed: isArmed,
+          illegal: !interactive,
+          tabIndex: i === 0 ? 0 : -1,
+          style: {
+            marginLeft: p.overlapPx + 'px',
+            zIndex: String(p.zIndex),
+          },
+          onTap: tapCard,
+        }),
+      )
+      const justAdded = fan.lastElementChild
+      justAdded.style.setProperty('--wc-fan-rot', 'rotate(' + p.rotateDeg + 'deg)')
+      justAdded.style.setProperty('--wc-fan-lift', 'translateY(' + p.liftPct + '%)')
+    })
+  }
+
+  // ---- the reducer ----
+  function tapApply() {
+    const refusal = applyDamageRefusalFor(stock())
+    if (refusal !== null) {
+      if (state.applyPoised) state.applyPoised = false
+      log('Refused: ' + APPLY_DAMAGE_REFUSAL_MESSAGE[refusal])
+      render()
+      return
+    }
+    if (!state.applyPoised) {
+      state.applyPoised = true
+      log('Apply poised — one more tap commits it.')
+      render()
+      return
+    }
+    const cash = cashValue(state.bank, state.multiplier)
+    state.quarryHealth = Math.max(0, state.quarryHealth - cash)
+    state.bank = 0
+    state.multiplier = 0
+    state.applyPoised = false
+    state.lastLine = 'You applied ' + cash + '. No damage to you.'
+    state.lastClass = 'wc-is-take'
+    log('Applied ' + cash + ' to the Quarry. Bank and multiplier reset; you took nothing.')
+    log('The trick is still live — play your card.')
+    render()
+  }
+
+  function tapCard(c) {
+    if (state.trick) return
+    if (state.applyPoised) {
+      state.applyPoised = false
+      log('Apply cancelled — you tapped a card instead.')
+    }
+    const isArmed = state.armed && state.armed.suit === c.suit && state.armed.rank === c.rank
+    if (!isArmed) {
+      state.armed = c
+      render()
+      return
+    }
+    // Stub: the played card always loses the trick, so the forced cash-out is visible.
+    const full = cashValue(state.bank, state.multiplier)
+    const forced = forcedCashValue(state.bank, state.multiplier)
+    state.quarryHealth = Math.max(0, state.quarryHealth - forced)
+    state.playerHealth = Math.max(0, state.playerHealth - 1)
+    state.hand = state.hand.filter((x) => !(x.suit === c.suit && x.rank === c.rank))
+    state.trick = [
+      { side: 'You', card: c, winner: false },
+      { side: 'Them', card: { suit: c.suit, rank: 9 }, winner: true },
+    ]
+    state.tableLine = 'They take the trick.'
+    state.lastLine = 'Clean trick lost. 1 damage — the streak cashes ' + forced + '.'
+    state.lastClass = 'wc-is-hit'
+    state.bank = 0
+    state.multiplier = 0
+    state.armed = null
+    state.tricksPlayed += 1
+    state.themTricks += 1
+    log(
+      'Lost the trick. Forced cash-out paid ' + forced + ' — two-thirds of ' + full +
+        ', floored. You took 1.',
+    )
+    log('Click the felt to carry on.')
+    render()
+  }
+
+  function carryOn() {
+    if (!state.trick) return
+    state.trick = null
+    state.tableLine = 'The table is yours — lead.'
+    render()
+  }
+
+  // ---- wiring ----
+  el('applyPlate').addEventListener('click', (e) => {
+    e.stopPropagation()
+    tapApply()
+  })
+  el('applyRail').addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && state.applyPoised) {
+      state.applyPoised = false
+      log('Escape — Apply cancelled, nothing spent.')
+      render()
+    }
+  })
+  document.querySelector('.wc-table').addEventListener('click', carryOn)
+  document.querySelector('.wc-cheat-rail').addEventListener('click', (e) => {
+    e.stopPropagation()
+    log('Cheat rail — out of scope for DLR-94.')
+  })
+  document.querySelector('.wc-envenom-rail').addEventListener('click', (e) => {
+    e.stopPropagation()
+    log('Envenom plate — out of scope for DLR-94.')
+  })
+
+  el('poisonToggle').addEventListener('change', () => {
+    if (el('poisonToggle').checked) state.applyPoised = false
+    render()
+  })
+  el('turnToggle').addEventListener('change', () => {
+    if (el('turnToggle').checked) state.applyPoised = false
+    render()
+  })
+  el('resetBtn').addEventListener('click', () => {
+    reset(3, 3)
+    log('Reset — bank 3 x 3, cashes for 9 or 6 if hit first.')
+    render()
+  })
+  el('streakBtn').addEventListener('click', () => {
+    reset(5, 5)
+    log('Streak run up to 5 x 5 — cashes for 25, or 16 if you are hit first.')
+    render()
+  })
+  el('toggleHarness').addEventListener('click', () => {
+    const h = el('harness')
+    const open = h.dataset.open === 'true'
+    h.dataset.open = open ? 'false' : 'true'
+    el('toggleHarness').textContent = open ? 'Harness' : 'Hide harness'
+  })
+
+  render()
+</script>

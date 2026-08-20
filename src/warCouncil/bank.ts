@@ -1,4 +1,11 @@
-import { DAMAGE_PER_HIT, DuelSide, type Damage, type IncomingDamage } from '../hunt'
+import {
+  DAMAGE_PER_HIT,
+  DuelSide,
+  FORCED_CASH_OUT_DENOMINATOR,
+  FORCED_CASH_OUT_NUMERATOR,
+  type Damage,
+  type IncomingDamage,
+} from '../hunt'
 
 /** §3.2's four rows. Named rather than a pair of booleans at every branch, so the rule reads
  *  out of the code the way it reads out of the design's table. */
@@ -97,6 +104,49 @@ export function isTaken(outcome: TrickOutcome): boolean {
 }
 
 /**
+ * The figure a bank of `bank` at a multiplier of `multiplier` is worth IN FULL — the plain
+ * product. THE one statement of it, so the three cash-outs this game now has (a voluntary apply,
+ * the end of the hand, and a forced hit's reduced share) cannot disagree about what they are a
+ * share OF.
+ *
+ * Floors a non-integer, non-positive, NaN or infinite input to 0 rather than propagating it, for
+ * the reason `bankAdded`'s own guard below states: this figure feeds damage, then a rendered heart
+ * row, so a NaN would vanish into a health bar with nothing logged anywhere
+ * (`web-project.md` → "NaN propagates silently"). Every real input is a non-negative integer, so
+ * this is a guard rather than a live path.
+ */
+export function cashValue(bank: number, multiplier: number): number {
+  if (!Number.isInteger(bank) || !Number.isInteger(multiplier) || bank <= 0 || multiplier <= 0) {
+    return 0
+  }
+  return bank * multiplier
+}
+
+/**
+ * DLR-94 AC4 — what a FORCED cash-out pays: `cashValue` reduced to the configured fraction and
+ * rounded DOWN, so the Quarry is never overpaid by a rounding artefact.
+ *
+ * MULTIPLIES BEFORE IT DIVIDES, which is load-bearing rather than stylistic. `x * (2 / 3)` is
+ * `x * 0.6666666666666666`, so `3 * (2 / 3)` is `1.9999999999999998` and floors to 1 where the
+ * rule says 2 — wrong for every multiple of 3. Taking the numerator first keeps the dividend an
+ * exact integer at what is the only division in this file.
+ *
+ * Throws on a non-positive or non-finite denominator rather than returning `NaN`, exactly as
+ * `flaskHealAmount` and `duelHealthBars` throw on theirs. Both figures are configured integers, so
+ * this is a guard, not a path a player reaches.
+ */
+export function forcedCashValue(bank: number, multiplier: number): number {
+  if (!Number.isFinite(FORCED_CASH_OUT_DENOMINATOR) || FORCED_CASH_OUT_DENOMINATOR <= 0) {
+    throw new RangeError(
+      `Cannot reduce a cash-out by a denominator of ${FORCED_CASH_OUT_DENOMINATOR}: it must be a positive finite number`,
+    )
+  }
+  return Math.floor(
+    (cashValue(bank, multiplier) * FORCED_CASH_OUT_NUMERATOR) / FORCED_CASH_OUT_DENOMINATOR,
+  )
+}
+
+/**
  * One trick's whole effect on the bank, the streak, and both health bars.
  *
  * `finalTrick` folds AC8 in rather than modelling it as a second event. That is safe because
@@ -165,12 +215,24 @@ export function resolveTrickBank(before: BankState, trick: TrickFacts): TrickRes
 
   if (trickHit || poisonResets) {
     // A1 — the win above has already banked, so a won-but-poisoned trick cashes the LARGER figure.
-    cashOut = bank * multiplier
+    //
+    // DLR-94 AC4 — but a hit the player did not CHOOSE pays only the configured fraction of it.
+    // That reduction is the whole cost that makes Apply Damage (`voluntaryCashOut.ts`) a decision:
+    // cash the streak yourself for its full worth, or push it and be paid a share when caught.
+    //
+    // POISON REACHES THIS BRANCH TOO, and deliberately (`plan.md` → Assumptions). D3's poison hit
+    // is the case the-hunt.md calls "the moment you cannot choose" — precisely what the reduction
+    // is charging for. Paying poison in full would make being poisoned the CHEAPEST way to lose a
+    // streak, which inverts the item this rule sits beside.
+    cashOut = forcedCashValue(bank, multiplier)
     bank = 0
     multiplier = 0
   }
 
-  const handEndCash = trick.finalTrick ? bank * multiplier : 0
+  // AC5 — UNCHANGED, and deliberately so: the end-of-hand cash pays IN FULL. The reduction above
+  // is specifically the "you got caught before you chose to apply" cost, and the sixth trick
+  // simply arriving is not being caught.
+  const handEndCash = trick.finalTrick ? cashValue(bank, multiplier) : 0
   if (trick.finalTrick) {
     cashOut += handEndCash
     bank = 0
