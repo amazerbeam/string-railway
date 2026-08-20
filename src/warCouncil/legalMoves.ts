@@ -48,6 +48,10 @@ export interface PlayCardOptions extends LegalMoveOptions {
   readonly poisonToPlayer?: Damage
   readonly poisonToQuarry?: Damage
   readonly poisonGuarded?: boolean
+  /** DLR-92 AC4 — the bank-climb bonus in force for this hand. Handed IN for the reason this
+   *  interface's docblock already gives: it is a run figure and `src/warCouncil/` must not learn
+   *  `RunState`. Absent means 0, so the Quarry's own call sites stay untouched. */
+  readonly bankClimbBonus?: number
 }
 
 /**

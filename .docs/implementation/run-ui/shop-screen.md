@@ -43,13 +43,22 @@ rather than a `useCallback` — there is no profiling evidence for memoising it.
 
 ## The four shelves — DLR-89
 
-**The ladder paid off at DLR-90 and again at DLR-91, and this is the evidence.** Envenom — the shop's
+**The ladder paid off at DLR-90, again at DLR-91, and a third time at DLR-92 — and this is the evidence.**
+Envenom — the shop's
 third item — appeared on the one-time-use shelf beside the Cheat with **no change to this module's item
 rendering at all**: one `ShopItem` member, one `priceOf` case and one `categoryOf` case in
 `src/hunt/shop.ts`, all inside the lint-enforced no-React boundary. **Poison Guard then filled the
 previously empty fight-long shelf on exactly the same three lines**, so a shelf that had rendered
-`SHOP_CATEGORY_EMPTY` started rendering an item with no branch edited here. The only edit in either
-ticket was a purse cell. That was the property DLR-89 was built for, and it has now held twice.
+`SHOP_CATEGORY_EMPTY` started rendering an item with no branch edited here. **The Whetstone then did the
+same to run-permanent**, the last openable shelf that was still empty. The only edit in any of the three
+tickets was a purse cell. That was the property DLR-89 was built for, and it has now held three times.
+
+**One consequence of the third payoff is worth stating, because it is a coverage change rather than a code
+change.** `SHOP_CATEGORY_EMPTY`'s branch below is now **correct but unreachable by playing**: every shelf a
+player can open holds an item, and the only empty rung is the refused game-permanent one, which cannot be
+selected. DLR-92 repointed the component spec that used to reach that branch through the run-permanent tab —
+it now asserts the Whetstone card renders there instead — and the branch itself was kept, because the next
+shelf added will need it. The wording's own `shopLabels` spec still covers the string.
 
 `ShopCategoryTabs.tsx` owns a `role="tablist"` over `SHOP_CATEGORIES`, and `ShopPanel` renders the
 one `role="tabpanel"` for whichever shelf is open. **Only the selected panel is mounted**, per the
@@ -132,9 +141,15 @@ is exactly how DLR-91's `GuardAlreadyActive` ("You are already holding a Poison 
 
 ## The purse row states everything a purchase decision needs
 
-**Five** labelled cells inside one `role="group"`: coins, health as `current / maximum`, Cheat slots as
-`held / total`, Envenom charges held (DLR-90), and — since DLR-91 — the Poison Guard as **"Held" or
-"None"**. Above them, `nextOpponentText` names who is coming and which fight it is.
+**Five** labelled cells inside one `role="group"`: coins, Cheat slots as `held / total`, Envenom charges
+held (DLR-90), the Poison Guard as **"Held" or "None"** (DLR-91), and — since DLR-92 — **Whetstones held**.
+Above them, `nextOpponentText` names who is coming and which fight it is.
+
+**Health is not one of them**, though it reads as part of the same block and reuses the same
+`.shop-purse-label` / `.shop-purse-value` classes. It is a sibling `.shop-health` row carrying its own
+`role="meter"` with `aria-valuenow`/`min`/`max`, because it is the figure a Heal is bought *against* and
+takes the full width to be counted at a glance. Corrected 2026-08-19: this section previously counted it
+inside the group and so reported one cell too many.
 
 The Envenom cell is **a count with no denominator**, unlike the Cheat slots' `held / total`, and that
 asymmetry is honest rather than an oversight: there is no cap on charges held, so there is no total to
@@ -142,9 +157,17 @@ show. The Guard's cell is a third shape again — **words, not a number** — be
 at a time, so a count would only ever read 0 or 1. Stating it in words also satisfies `game-ux`'s rule
 that no state read only in colour: `SHOP_GUARD_HELD` / `SHOP_GUARD_NONE` are literal strings.
 
-**Both cells reuse the existing `.shop-purse-cell` / `.shop-purse-label` / `.shop-purse-value` classes,
-so `shop.css` has needed no change for either item** — and because neither adds an interactive control,
-the tablist's single tab stop and the screen's tab order are untouched. The cell exists because AC3
+**The Whetstone cell takes the Envenom shape, not the Guard's**, and for the same reason Envenom did: it
+stacks without a cap, so there is a count to show and no total to show it against. **No acceptance criterion
+asked for this cell** — it was added because stacking is the item's whole point and `game-ux`'s floor puts
+state a decision needs on the face of the screen: a player weighing a second copy needs to see they own one.
+It is the row’s fifth cell, and `.shop-purse` is a `display: flex` with `gap` and no fixed column count, so
+**`shop.css` needed no change for it** — the third item in a row to cost no CSS. Whether five cells still read
+well at a glance is the developer's eye, not a test's.
+
+**All three cells reuse the existing `.shop-purse-cell` / `.shop-purse-label` / `.shop-purse-value` classes,
+so `shop.css` has needed no change for any of the three items** — and because none adds an interactive
+control, the tablist's single tab stop and the screen's tab order are untouched. The cell exists because AC3
 refuses a second purchase, and a refusal whose cause is invisible reads as a broken button.
 
 The row was a single run-on sentence until the DLR-84 review; splitting it into three label+value

@@ -222,17 +222,19 @@ function handleCarryOn(state: RoundUiState): RoundUiState {
 }
 
 /**
- * D1 — what a resolving trick owes from EARLIER tricks, read off the encounter's queue.
+ * Every `PlayCardOptions` field a resolving trick needs: D1's poison owed from EARLIER tricks, read
+ * off the encounter's queue, plus DLR-92 AC4's bank-climb bonus, mirrored straight from state.
  *
  * One statement, read by both `playCard` call sites: the player's follow in `commit` and the
  * Quarry's in `advanceQuarryFollow`. Two readings of "what is pending" is exactly how a hit gets
- * paid twice or skipped.
+ * paid twice or skipped, or a bonus applies to one side's follow and not the other's.
  */
-function poisonOptions(state: RoundUiState): PlayCardOptions {
+function playOptions(state: RoundUiState): PlayCardOptions {
   return {
     poisonToPlayer: state.encounter.pendingEnvenom[DuelSide.Player],
     poisonToQuarry: state.encounter.pendingEnvenom[DuelSide.Quarry],
     poisonGuarded: state.poisonGuardHeld,
+    bankClimbBonus: state.bankClimbBonus,
   }
 }
 
@@ -266,7 +268,7 @@ function applyResolution(encounter: EncounterState, resolution: TrickResolution)
 function commit(state: RoundUiState, cardToPlay: Card, choice?: AbilityChoice): RoundUiState {
   const armedCheat = cheatArmed(state) ? state.cheatSelection : null
   const result = playCard(state.round, PlayerSide.Player, cardToPlay, choice, {
-    ...poisonOptions(state),
+    ...playOptions(state),
     ...(armedCheat ? { ignoreFollowSuit: true } : {}),
   })
   if (!result.ok) {
@@ -308,7 +310,7 @@ function commit(state: RoundUiState, cardToPlay: Card, choice?: AbilityChoice): 
 
   // The player led — advance the opponent in the same commit. `settled`, not `state`, so the
   // Quarry's follow reads the queue as the player's own commit left it.
-  const advanced = advanceQuarryFollow(result.state, poisonOptions(settled))
+  const advanced = advanceQuarryFollow(result.state, playOptions(settled))
   return {
     ...settled,
     round: advanced.round,

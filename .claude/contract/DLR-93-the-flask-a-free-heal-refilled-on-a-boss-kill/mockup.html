@@ -1,0 +1,582 @@
+<title>Flask in the Shop</title>
+<style>
+  :root {
+    --wc-felt: #16241f;
+    --wc-felt-lip: #0a1211;
+    --wc-felt-line: #2b4038;
+    --wc-parchment: #e9e1cd;
+    --wc-brass: #c99a4e;
+    --wc-brass-dim: #7d6132;
+    --wc-chalk: #cdd6d2;
+    --wc-chalk-dim: #6f7d78;
+    --flask-glass: #7fc9a8;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--wc-felt-lip);
+    color: var(--wc-chalk);
+    font-family: 'Iowan Old Style', Georgia, serif;
+  }
+
+  /* ── The no-scroll shell. `svh`, never `vh`; overflow scoped to one region. ───────── */
+  .run-shell {
+    height: 100svh;
+    width: 100%;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 46rem) 1fr;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+    background: radial-gradient(60% 70% at 50% 40%, #1d2f28 0%, var(--wc-felt) 55%, #101b18 100%);
+  }
+
+  .shop {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.3rem, 1.1vmin, 0.7rem);
+    padding: clamp(0.6rem, 2.2vmin, 1.4rem);
+    min-height: 0;
+  }
+
+  .shop-title {
+    flex: 0 0 auto;
+    margin: 0;
+    font-size: clamp(1rem, 3.4vmin, 1.7rem);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--wc-parchment);
+  }
+
+  .shop-next {
+    flex: 0 0 auto;
+    margin: 0;
+    font-size: clamp(0.66rem, 1.6vmin, 0.82rem);
+    color: var(--wc-chalk-dim);
+  }
+
+  /* ── Purse row. The flask charge cell sits here beside Envenom / Guard / Whetstones,
+       so the zero-charge refusal has a visible cause with no hover. ─────────────────── */
+  .shop-purse {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(0.4rem, 1.6vmin, 1.1rem);
+    width: 100%;
+    padding: clamp(0.35rem, 1.2vmin, 0.6rem);
+    border: 1px solid var(--wc-brass-dim);
+    border-radius: 4px;
+  }
+
+  .shop-purse-cell { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+
+  .shop-purse-label {
+    font-size: clamp(0.5rem, 1.1vmin, 0.62rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+  }
+
+  .shop-purse-value {
+    font-size: clamp(0.8rem, 2vmin, 1.05rem);
+    color: var(--wc-parchment);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .shop-purse-cell.is-flask .shop-purse-value { color: var(--flask-glass); }
+
+  /* ── Health meter. The flask block sits immediately beneath it. ──────────────────── */
+  .shop-health {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: clamp(0.4rem, 1.5vmin, 0.9rem);
+    width: 100%;
+    padding: clamp(0.3rem, 1.1vmin, 0.55rem) clamp(0.5rem, 1.6vmin, 0.9rem);
+    border: 1px solid var(--wc-felt-line);
+    border-radius: 4px;
+  }
+
+  .shop-hearts { display: flex; gap: 0.18rem; flex: 1 1 auto; }
+
+  .shop-heart {
+    width: clamp(0.7rem, 2vmin, 1.05rem);
+    height: clamp(0.7rem, 2vmin, 1.05rem);
+    color: #c8555a;
+  }
+
+  .shop-heart[data-state='broken'] { color: var(--wc-chalk-dim); }
+  .shop-heart svg { width: 100%; height: 100%; display: block; }
+
+  /* ── THE FLASK BLOCK ─────────────────────────────────────────────────────────────
+     AC6's distinctness is structural, not cosmetic:
+       · its own zone, beneath the health it restores, above the tablist
+       · nowhere near `Also for sale`, which is where the priced Heal lives
+       · a FREE tag where every shop card carries a price line
+       · an icon-led button; every shop item is a text card
+     Every colour, spacing and size figure below is a PLACEHOLDER — the developer's UX
+     design supersedes this file wholesale. ──────────────────────────────────────────── */
+  .shop-flask {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: clamp(0.5rem, 1.8vmin, 1rem);
+    width: 100%;
+    padding: clamp(0.35rem, 1.3vmin, 0.7rem) clamp(0.5rem, 1.6vmin, 0.9rem);
+    border: 1px dashed var(--flask-glass);
+    border-radius: 4px;
+    background: rgba(127, 201, 168, 0.05);
+  }
+
+  .shop-flask-label {
+    font-size: clamp(0.5rem, 1.1vmin, 0.62rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--flask-glass);
+    writing-mode: horizontal-tb;
+  }
+
+  .shop-flask-btn {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.4rem, 1.4vmin, 0.75rem);
+    min-height: 44px;
+    padding: 0.4rem 0.9rem;
+    border: 1px solid var(--flask-glass);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--flask-glass);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  @media (hover: hover) {
+    .shop-flask-btn:hover:not(:disabled) { background: rgba(127, 201, 168, 0.16); }
+  }
+
+  .shop-flask-btn:active:not(:disabled) { transform: translateY(1px); }
+  .shop-flask-btn:focus-visible { outline: 2px solid var(--wc-parchment); outline-offset: 2px; }
+
+  .shop-flask-btn:disabled {
+    border-style: dotted;
+    border-color: var(--wc-chalk-dim);
+    color: var(--wc-chalk-dim);
+    cursor: not-allowed;
+  }
+
+  /* The potion glyph. 44px-tall button, glyph sized inside it. */
+  .shop-flask-icon { width: clamp(1.3rem, 3.4vmin, 1.9rem); height: clamp(1.3rem, 3.4vmin, 1.9rem); }
+  .shop-flask-icon svg { width: 100%; height: 100%; display: block; }
+  .shop-flask-btn:disabled .shop-flask-icon { opacity: 0.55; }
+
+  .shop-flask-text { display: flex; flex-direction: column; gap: 0.1rem; }
+  .shop-flask-name { font-size: clamp(0.74rem, 1.9vmin, 0.94rem); letter-spacing: 0.05em; }
+
+  .shop-flask-charges {
+    font-size: clamp(0.56rem, 1.3vmin, 0.7rem);
+    color: var(--wc-chalk-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Where every shop card carries a price, the flask carries this. */
+  .shop-flask-free {
+    padding: 0.1rem 0.4rem;
+    border: 1px solid var(--flask-glass);
+    border-radius: 2px;
+    font-size: clamp(0.5rem, 1.1vmin, 0.6rem);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--flask-glass);
+  }
+
+  .shop-flask-btn:disabled .shop-flask-free { border-color: var(--wc-chalk-dim); color: var(--wc-chalk-dim); }
+
+  .shop-flask-side { flex: 1 1 auto; display: flex; flex-direction: column; gap: 0.15rem; }
+
+  .shop-flask-blurb {
+    margin: 0;
+    font-size: clamp(0.56rem, 1.3vmin, 0.7rem);
+    color: var(--wc-chalk-dim);
+    line-height: 1.35;
+  }
+
+  .shop-flask-refusal {
+    margin: 0;
+    min-height: 1em;
+    font-size: clamp(0.56rem, 1.3vmin, 0.7rem);
+    font-style: italic;
+    color: #d8a05e;
+  }
+
+  /* ── Tablist + shelf, unchanged from what is on disk. ───────────────────────────── */
+  .shop-tabs { flex: 0 0 auto; display: flex; width: 100%; }
+
+  .shop-tab {
+    flex: 1 1 0;
+    min-height: 44px;
+    padding: 0.35rem;
+    border: 1px solid var(--wc-brass-dim);
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    background: transparent;
+    color: var(--wc-chalk-dim);
+    font: inherit;
+    font-size: clamp(0.56rem, 1.3vmin, 0.72rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .shop-tab[aria-selected='true'] { color: var(--wc-parchment); background: rgba(201, 154, 78, 0.14); }
+  .shop-tab:disabled { color: #47524e; cursor: not-allowed; }
+  .shop-tab:focus-visible { outline: 2px solid var(--wc-parchment); outline-offset: -2px; }
+
+  /* The ONE region on this screen allowed to scroll. */
+  .shop-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    padding: clamp(0.35rem, 1.2vmin, 0.6rem);
+    border: 1px solid var(--wc-brass-dim);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    max-height: min(20vmin, 10rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .shop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.4rem; }
+
+  .shop-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-height: 44px;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--wc-brass-dim);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--wc-chalk);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .shop-item:disabled { border-style: dotted; color: var(--wc-chalk-dim); cursor: not-allowed; }
+  .shop-item:focus-visible { outline: 2px solid var(--wc-parchment); outline-offset: 2px; }
+  .shop-item-name { font-size: clamp(0.72rem, 1.8vmin, 0.9rem); color: var(--wc-parchment); }
+  .shop-item:disabled .shop-item-name { color: var(--wc-chalk-dim); }
+  .shop-item-blurb { font-size: clamp(0.54rem, 1.2vmin, 0.66rem); color: var(--wc-chalk-dim); line-height: 1.3; }
+  .shop-item-price { font-size: clamp(0.58rem, 1.3vmin, 0.72rem); color: var(--wc-brass); letter-spacing: 0.1em; }
+  .shop-refusal { margin: 0.15rem 0 0; min-height: 1em; font-size: 0.6rem; font-style: italic; color: #d8a05e; }
+
+  .shop-aside { flex: 0 0 auto; width: 100%; display: flex; flex-direction: column; gap: 0.3rem; }
+
+  .shop-aside-label {
+    font-size: clamp(0.5rem, 1.1vmin, 0.62rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+  }
+
+  .shop-hint { flex: 0 0 auto; margin: 0; font-size: clamp(0.54rem, 1.2vmin, 0.66rem); font-style: italic; color: var(--wc-chalk-dim); }
+
+  .run-actions { flex: 0 0 auto; display: flex; gap: 0.5rem; }
+
+  .run-btn {
+    min-height: 44px;
+    padding: 0.5rem 1.2rem;
+    border: 1px solid var(--wc-brass-dim);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--wc-chalk);
+    font: inherit;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .run-btn.is-primary { border-color: var(--wc-brass); color: var(--wc-parchment); background: rgba(201, 154, 78, 0.16); }
+  .run-btn:focus-visible { outline: 2px solid var(--wc-parchment); outline-offset: 2px; }
+
+  /* ── Mockup-only state switcher. Not part of the shipped screen. ────────────────── */
+  .mock-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.7rem;
+    background: #0a1211ee;
+    border-top: 1px solid var(--wc-brass-dim);
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 0.66rem;
+    color: var(--wc-chalk-dim);
+  }
+
+  .mock-bar button {
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--wc-brass-dim);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--wc-chalk);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .mock-bar button:focus-visible { outline: 2px solid var(--wc-parchment); outline-offset: 2px; }
+  .mock-log { color: var(--flask-glass); }
+</style>
+
+<div class="run-shell">
+  <div class="shop" id="shop">
+    <!-- Symbol sheet: mounted ONCE, exactly as HeartSymbolSheet / FlaskSymbolSheet will be. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+      <symbol id="hp-heart" viewBox="0 0 24 24">
+        <path
+          d="M12 20.4 4.5 13a4.9 4.9 0 0 1 7.5-6.2A4.9 4.9 0 0 1 19.5 13Z"
+          fill="currentColor" stroke="currentColor" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="hp-heart-broken" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M12 20.4 4.5 13a4.9 4.9 0 0 1 7.5-6.2A4.9 4.9 0 0 1 19.5 13Z" />
+          <path d="M12 6.1 9.9 10.4l3.4 1.6-2.6 2.9 2 1.9" />
+        </g>
+      </symbol>
+      <!-- PLACEHOLDER potion path, superseded by the developer's UX design. A stoppered
+           flask: distinct in SILHOUETTE from the heart, so the two never read as the same
+           thing at a glance and neither depends on colour. -->
+      <symbol id="shop-flask-potion" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M10 2.8h4v3.1l3.1 4.4a6.2 6.2 0 1 1-10.2 0L10 5.9Z" />
+          <path d="M8.1 14.4a6.2 6.2 0 0 0 7.8 0" />
+          <path d="M9.4 2.8h5.2" />
+        </g>
+        <circle cx="10.4" cy="17" r="1.05" fill="currentColor" />
+        <circle cx="13.7" cy="18.4" r="0.75" fill="currentColor" />
+      </symbol>
+    </svg>
+
+    <h1 class="shop-title">Between fights</h1>
+    <p class="shop-next">Next up — Cillian. Fight 2 of 25</p>
+
+    <div class="shop-purse" role="group" aria-label="Your purse and health">
+      <span class="shop-purse-cell">
+        <span class="shop-purse-label">Coins</span><span class="shop-purse-value">2</span>
+      </span>
+      <span class="shop-purse-cell">
+        <span class="shop-purse-label">Cheat slots</span><span class="shop-purse-value">0 / 2</span>
+      </span>
+      <span class="shop-purse-cell">
+        <span class="shop-purse-label">Envenom held</span><span class="shop-purse-value">0</span>
+      </span>
+      <span class="shop-purse-cell">
+        <span class="shop-purse-label">Poison Guard</span><span class="shop-purse-value">None</span>
+      </span>
+      <span class="shop-purse-cell">
+        <span class="shop-purse-label">Whetstones held</span><span class="shop-purse-value">0</span>
+      </span>
+      <!-- NEW: the charge count, visible with no hover, so the zero-charge refusal has a cause. -->
+      <span class="shop-purse-cell is-flask">
+        <span class="shop-purse-label">Flask</span>
+        <span class="shop-purse-value" id="purseCharges">1 charge</span>
+      </span>
+    </div>
+
+    <div class="shop-health" role="meter" aria-valuenow="4" aria-valuemin="0" aria-valuemax="10"
+         id="healthMeter" aria-label="Health 4 of 10">
+      <span class="shop-purse-label">Health</span>
+      <span class="shop-hearts" aria-hidden="true" id="hearts"></span>
+      <span class="shop-purse-value" id="healthValue">4 / 10</span>
+    </div>
+
+    <!-- ═══ THE FLASK ═══ its own zone, beneath the health it restores, far from the price list -->
+    <div class="shop-flask" role="group" aria-label="Your flask">
+      <span class="shop-flask-label">Free</span>
+      <button type="button" class="shop-flask-btn" id="flaskBtn" onclick="drinkFlask()">
+        <span class="shop-flask-icon" aria-hidden="true">
+          <svg><use href="#shop-flask-potion" /></svg>
+        </span>
+        <span class="shop-flask-text">
+          <span class="shop-flask-name">Drink the flask</span>
+          <span class="shop-flask-charges" id="btnCharges">1 charge · restores 6</span>
+        </span>
+        <span class="shop-flask-free">No coin</span>
+      </button>
+      <span class="shop-flask-side">
+        <p class="shop-flask-blurb">
+          Restores 6 health, now. Anything over your maximum is lost. Refills when you beat a stage boss.
+        </p>
+        <p class="shop-flask-refusal" role="status" id="flaskRefusal"></p>
+      </span>
+    </div>
+
+    <div class="shop-tabs" role="tablist" aria-label="What lasts how long">
+      <button type="button" class="shop-tab" role="tab" aria-selected="true" onclick="pickTab(this)">One-time use</button>
+      <button type="button" class="shop-tab" role="tab" aria-selected="false" onclick="pickTab(this)">Fight-long</button>
+      <button type="button" class="shop-tab" role="tab" aria-selected="false" onclick="pickTab(this)">Run-permanent</button>
+      <button type="button" class="shop-tab" role="tab" aria-selected="false" disabled>Game-permanent</button>
+    </div>
+
+    <div class="shop-panel" role="tabpanel" tabindex="0">
+      <div class="shop-grid">
+        <div>
+          <button type="button" class="shop-item" onclick="log('bought a Cheat')">
+            <span class="shop-item-name">Cheat</span>
+            <span class="shop-item-blurb">A card for a slot. Play it later to ignore follow-suit.</span>
+            <span class="shop-item-price">1 coin</span>
+          </button>
+          <p class="shop-refusal" role="status"></p>
+        </div>
+        <div>
+          <button type="button" class="shop-item" onclick="log('bought Envenom')">
+            <span class="shop-item-name">Envenom</span>
+            <span class="shop-item-blurb">Poison a card in your hand. The winner of its trick takes damage at the next trick.</span>
+            <span class="shop-item-price">2 coins</span>
+          </button>
+          <p class="shop-refusal" role="status"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- The PRICED Heal stays exactly where it is — three zones away from the flask. -->
+    <div class="shop-aside">
+      <span class="shop-aside-label">Also for sale</span>
+      <div class="shop-grid">
+        <div>
+          <button type="button" class="shop-item" id="healBtn" onclick="buyHeal()">
+            <span class="shop-item-name">Heal</span>
+            <span class="shop-item-blurb">Restore 4 health, now. Anything over your maximum is lost.</span>
+            <span class="shop-item-price">1 coin</span>
+          </button>
+          <p class="shop-refusal" role="status" id="healRefusal"></p>
+        </div>
+      </div>
+    </div>
+
+    <p class="shop-hint">Buy nothing and carry the coin if you would rather.</p>
+
+    <div class="run-actions">
+      <button type="button" class="run-btn is-primary" onclick="log('left for Fight Cillian')">Fight Cillian</button>
+    </div>
+  </div>
+</div>
+
+<div class="mock-bar">
+  <strong>Mockup states:</strong>
+  <button type="button" onclick="setState(1, 4)">1 charge · 4/10 health</button>
+  <button type="button" onclick="setState(0, 4)">0 charges · 4/10 (NoCharges)</button>
+  <button type="button" onclick="setState(1, 10)">1 charge · 10/10 (AlreadyFullHealth)</button>
+  <button type="button" onclick="setState(1, 8)">1 charge · 8/10 (overheal clipped)</button>
+  <button type="button" onclick="bossKill()">Simulate a stage-boss kill (refill)</button>
+  <span class="mock-log" id="log">Placeholder data. Not the shipped visual — the UX design supersedes it.</span>
+</div>
+
+<script>
+  // Mirrors src/hunt/config.ts's two new keys and PLAYER_START_HEALTH.
+  var FLASK_STARTING_CHARGES = 1;
+  var FLASK_HEAL_PERCENT = 0.6;
+  var MAX_HEALTH = 10;
+  var HEAL_HEALTH_RESTORED = 4;
+
+  var charges = 1;
+  var health = 4;
+
+  // Mirrors flask.ts's flaskHealAmount / flaskRefusalFor, so the mockup's enable-disable
+  // behaviour is the same rule the engine will state — not a second reading of it.
+  function flaskHealAmount() { return Math.round(MAX_HEALTH * FLASK_HEAL_PERCENT); }
+
+  function flaskRefusalFor() {
+    if (charges <= 0) return 'You have no flask charge left. Beat a stage boss to refill it.';
+    if (health >= MAX_HEALTH) return 'You are already at full health.';
+    return null;
+  }
+
+  function log(msg) { document.getElementById('log').textContent = msg; }
+
+  function render() {
+    var hearts = '';
+    for (var i = 0; i < MAX_HEALTH; i++) {
+      var whole = i < health;
+      hearts +=
+        '<span class="shop-heart" data-state="' + (whole ? 'whole' : 'broken') + '">' +
+        '<svg><use href="#' + (whole ? 'hp-heart' : 'hp-heart-broken') + '" /></svg></span>';
+    }
+    document.getElementById('hearts').innerHTML = hearts;
+    document.getElementById('healthValue').textContent = health + ' / ' + MAX_HEALTH;
+    var meter = document.getElementById('healthMeter');
+    meter.setAttribute('aria-valuenow', String(health));
+    meter.setAttribute('aria-label', 'Health ' + health + ' of ' + MAX_HEALTH);
+
+    var chargeText = charges + (charges === 1 ? ' charge' : ' charges');
+    document.getElementById('purseCharges').textContent = chargeText;
+    document.getElementById('btnCharges').textContent = chargeText + ' · restores ' + flaskHealAmount();
+
+    var refusal = flaskRefusalFor();
+    var btn = document.getElementById('flaskBtn');
+    btn.disabled = refusal !== null;
+    btn.setAttribute(
+      'aria-label',
+      'Drink the flask — free — ' + chargeText + ', restores ' + flaskHealAmount() +
+        (refusal === null ? '' : ' — ' + refusal)
+    );
+    document.getElementById('flaskRefusal').textContent = refusal === null ? '' : refusal;
+
+    var healRefused = health >= MAX_HEALTH;
+    document.getElementById('healBtn').disabled = healRefused;
+    document.getElementById('healRefusal').textContent = healRefused ? 'You are already at full health.' : '';
+  }
+
+  function drinkFlask() {
+    if (flaskRefusalFor() !== null) return; // mirrors handleDrinkFlask's no-op guard
+    var before = health;
+    charges -= 1;
+    health = Math.min(MAX_HEALTH, health + flaskHealAmount()); // THE shared clamp
+    var lost = before + flaskHealAmount() - health;
+    log('Drank the flask: ' + before + ' → ' + health + (lost > 0 ? ' (' + lost + ' overheal discarded)' : '') +
+        ', ' + charges + ' charge(s) left');
+    render();
+  }
+
+  function buyHeal() {
+    var before = health;
+    health = Math.min(MAX_HEALTH, health + HEAL_HEALTH_RESTORED); // same clamp, paid path
+    log('Bought the paid Heal for 1 coin: ' + before + ' → ' + health);
+    render();
+  }
+
+  function bossKill() {
+    charges = FLASK_STARTING_CHARGES;
+    log('Stage boss beaten — flask refilled to ' + charges + '. (An ordinary kill would change nothing.)');
+    render();
+  }
+
+  function setState(c, h) {
+    charges = c;
+    health = h;
+    log('State set: ' + c + ' charge(s), ' + h + '/' + MAX_HEALTH + ' health');
+    render();
+  }
+
+  function pickTab(el) {
+    var tabs = document.querySelectorAll('.shop-tab');
+    for (var i = 0; i < tabs.length; i++) tabs[i].setAttribute('aria-selected', 'false');
+    el.setAttribute('aria-selected', 'true');
+    log('opened the ' + el.textContent + ' shelf');
+  }
+
+  render();
+</script>

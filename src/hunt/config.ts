@@ -246,6 +246,15 @@ export const ENVENOM_PLAYER_DAMAGE: Damage = 2
 // UNIT: coins per purchase.
 export const POISON_GUARD_PRICE: Coins = 1
 
+// DLR-92 AC1 — the Whetstone's price. TRANSCRIBED from version-4-scope.md §1's own heading
+// ("Run-permanent — new item: Whetstone (placeholder name), 4 coins"), which prices it as "the
+// shop's one real splurge": four times a Heal, and reachable early only via the quick-kill payout
+// rather than by grinding 1-coin fight wins. NOT chosen here and NOT an open tuning value. Its own
+// key for the reason every other item's price already has one: re-pricing one item must not move
+// another.
+// UNIT: coins per purchase.
+export const WHETSTONE_PRICE: Coins = 4
+
 export const TelegraphFidelity = {
   Suit: 'suit', // narrowest — only the lead suit is telegraphed
   SuitAndStance: 'suitAndStance', // §4's stated default — suit plus pressing/ducking

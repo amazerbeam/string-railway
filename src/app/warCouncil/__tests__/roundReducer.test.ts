@@ -43,6 +43,7 @@ function uiFrom(
     cheats,
     envenomCharges: envenomChargesFixture,
     poisonGuardHeld: false,
+    bankClimbBonus: 0,
   })
 }
 

@@ -32,6 +32,7 @@ export {
   ENVENOM_QUARRY_DAMAGE,
   ENVENOM_PLAYER_DAMAGE,
   POISON_GUARD_PRICE,
+  WHETSTONE_PRICE,
   OpponentKind,
   RUN_ENCOUNTERS,
   ORDINARY_OPPONENT_NAMES,
@@ -84,6 +85,7 @@ export {
   beatenCount,
   shopStockFor,
   buyFromShop,
+  bankClimbBonusFor,
 } from './run'
 
 export type { QuarryCharacterInfo } from './quarryCharacters'

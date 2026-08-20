@@ -7,6 +7,22 @@ player follows, stated once, in playing order.
 Last reviewed against the code and the design on **2026-08-19**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
 
+> **The bank's climb is now something you can buy — DLR-92, 2026-08-19.** Until now a taken trick banked
+> **1**, always, and a streak of _n_ cashed exactly `n × n`. The shop's run-permanent shelf — empty since it
+> was built — now sells a **Whetstone** for 4 coins, and **each one you own adds 1 to what every taken trick
+> banks, for the rest of the run**. It **stacks**: two of them bank 3 a trick. So a streak of _n_ now cashes
+> `(1 + copies) × n²`, and a whole hand taken unbroken pays 36 with none, 72 with one, 108 with two.
+>
+> **The multiplier is untouched** — it still climbs by exactly 1 per trick taken, and the twin item that
+> would raise *it* instead is deliberately a later ticket rather than half of this one. This is the first
+> purchase in the game that **grows** a reward rather than protecting one, and the first that lasts the
+> whole run rather than a fight or a use.
+>
+> **Not yet seen in play.** The purchase and the buff are both live and reachable, but a 4-coin item against
+> 1 coin a fight put it out of reach of every QA run attempted — so the `+2` has been proven against the
+> engine and **not yet watched on screen**. Recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
+
 > **A mutual kill is now yours, and you can buy insurance against your own poison — DLR-91,
 > 2026-08-19.** Three changes landed together, and the first one is easy to miss because it is a
 > **reordering**: when an event would empty both bars, **the Quarry's is settled first and you take no
@@ -645,8 +661,9 @@ nothing.
 
 ### The bank
 
-**The bank only ever climbs** until it cashes. It is **the number of tricks you have taken** since the
-last cash-out — one per trick, whatever the cards in it were.
+**The bank only ever climbs** until it cashes. It counts **the tricks you have taken** since the last
+cash-out — whatever the cards in them were. A taken trick adds **1**, plus **1 for every Whetstone you
+own** (section 10); with none, the bank is simply the number of tricks taken.
 
 **The cards you take are worth nothing in themselves.** A trick of two 11s and a trick of two 2s bank
 exactly the same: one. Ranks decide who _wins_ a trick (section 6) and nothing else.
@@ -656,7 +673,7 @@ exactly the same: one. Ranks decide who _wins_ a trick (section 6) and nothing e
 **The multiplier is the number of tricks you have taken in a row.** Clean wins and dodges both count;
 it starts at zero each time it resets, and any damage you take resets it.
 
-### So a streak of _n_ cashes `n × n`
+### So a streak of _n_ cashes `n × n` — with nothing bought
 
 The bank and the multiplier climb together — by exactly one each, per trick taken — so while a streak
 runs they are the same number, and a cash-out is worth its square:
@@ -670,9 +687,39 @@ more than a sixth of it: taking three, losing the fourth, then taking the last t
 So **where** your losses fall matters more than how many you take, and a loss in the middle of a hand
 is worse than one at either end.
 
-The two terms are shown separately on screen rather than as one number, and they are kept separate in
-the rules for the same reason: an item that raises the multiplier without adding tricks is a thing
-this game intends to have. Nothing does it yet.
+That is the table with an empty shop. **A Whetstone changes the first row of the arithmetic and not the
+second** — see below.
+
+### A Whetstone raises what every taken trick banks, for the rest of the run — **[settled]**; its price is **[provisional]**
+
+Each **Whetstone** you own (bought on the run-permanent shelf, section 10) adds **1** to what a taken
+trick banks. **They stack**: with two, every taken trick banks 3. The multiplier is untouched — it still
+climbs by exactly 1 per trick taken — so a streak of _n_ cashes `(1 + copies) × n²`:
+
+| Tricks taken in a row | 1   | 2   | 3   | 4   | 5   | 6   |
+| --------------------- | --- | --- | --- | --- | --- | --- |
+| **Cashes for** — no Whetstone | 1 | 4 | 9 | 16 | 25 | 36 |
+| **one Whetstone**     | 2   | 8   | 18  | 32  | 50  | 72  |
+| **two Whetstones**    | 3   | 12  | 27  | 48  | 75  | 108 |
+
+**It multiplies the whole curve rather than shifting it**, so it is worth most on the hands you were
+already playing well: one copy doubles a six-trick hand from 36 to 72, but a lone taken trick only goes
+from 1 to 2. It rewards the long streak you were already chasing rather than changing which trick you
+want.
+
+**It is permanent for the run and never spent.** There is no charge to use, nothing to arm, and nothing
+that consumes it — once bought it applies to every taken trick of every remaining fight. It is the first
+purchase in the game with that duration, and the first that **grows** a reward rather than preserving one.
+
+**Only the bank moves.** The multiplier's climb is deliberately untouched, and an item that raises *it*
+instead is a stated future addition rather than part of this one — the two terms are shown separately on
+screen and kept separate in the rules precisely so one can be bought without the other. **Nothing raises
+the multiplier yet.**
+
+> **The engine tolerates a nonsensical figure rather than breaking on it.** A bank climb that is not a
+> whole number above zero is ignored and the bare `+1` rule applies. This cannot happen in play — the
+> count only ever grows by one at a time — but the bank feeds a health bar, and a spoiled number there
+> would empty a bar with nothing said. It fails back to the plain rule instead.
 
 > **This replaced `Spoils × Standing`, and the shape of the reward is the point of the change.** The
 > old equation was scored once, at the end of thirteen tricks, off a multiplier table read from the
@@ -1133,13 +1180,14 @@ for. Backing out of that prompt returns you to the verdict without doing either.
 
 ### What the shop sells — **[settled]**; every price is **[provisional]**
 
-Exactly **four** things:
+Exactly **five** things:
 
 | Buy              | Costs   | You get                                                                       |
 | ---------------- | ------- | ----------------------------------------------------------------------------- |
 | **Cheat**        | 1 coin  | One Cheat card into a free slot (section 4)                                   |
 | **Envenom**      | 2 coins | One charge to poison a card with, held until you spend it (section 4)         |
 | **Poison Guard** | 1 coin  | For **the next fight only**: the first time your own poison lands on you, your streak survives it (section 7) |
+| **Whetstone**    | 4 coins | For **the rest of the run**: every trick you take banks **1 more**. Stacks with itself (section 7) |
 | **Heal**         | 1 coin  | **4 health**, immediately, and never above your maximum — the excess is lost  |
 
 **Envenom arrived on 2026-08-19 and is the only thing in the shop costing more than a coin** — twice the
@@ -1160,9 +1208,18 @@ directions. Three things about it are the rules:
 - **It is spent the first time it fires** — the first time your own poison lands on you — and spent even
   if your bank was empty and there was nothing for it to save.
 
+**The Whetstone arrived on 2026-08-19 and is by some way the most expensive thing in the shop** — four
+coins, against one coin per fight won. That is deliberate: it is the shop's one real splurge, and on flat
+fight winnings alone it costs most of a short run. Three things about it are the rules:
+
+- **It lasts the rest of the run**, not a fight and not a use. Nothing spends it and nothing expires it.
+- **You may buy it as many times as you can afford**, and each copy adds another +1 to the bank's climb.
+  There is no cap — the price is the only limiter, so the only refusal it can raise is not having the coins.
+- **It changes the bank's climb only.** The multiplier is untouched (section 7).
+
 The screen states which opponent is coming next, and shows your coins, your health against its
-maximum, how many Cheat slots you are holding, how many Envenom charges you hold, and whether a Poison
-Guard is **Held** or **None**, while you choose.
+maximum, how many Cheat slots you are holding, how many Envenom charges you hold, whether a Poison
+Guard is **Held** or **None**, and how many Whetstones you own, while you choose.
 
 ### The shop is laid out as four shelves, by how long a purchase lasts — **[settled]**
 
@@ -1173,23 +1230,28 @@ long what you buy stays with you**:
 | ------------------ | ----------------------------------------------------- | ---------------------- |
 | **One-time use**   | Spent when you use it                                 | The **Cheat**, the **Envenom** charge |
 | **Fight-long**     | Lasts the rest of the current fight                   | The **Poison Guard**   |
-| **Run-permanent**  | Lasts the rest of the run                             | *nothing yet*          |
+| **Run-permanent**  | Lasts the rest of the run                             | The **Whetstone**      |
 | **Game-permanent** | Carries between runs                                  | *nothing — and refused* |
 
-**One-time use is open when you arrive**, and it holds two things since 2026-08-19. **Fight-long stopped
-being empty the same day**, with the Poison Guard on it. Run-permanent is **empty and says so** —
-"Nothing on this shelf yet." — and you can still open it. **Game-permanent cannot be opened at all**: it is shown, marked out with a dashed edge, and
+**One-time use is open when you arrive**, and it holds two things since 2026-08-19. **Fight-long and
+run-permanent both stopped being empty the same day** — the Poison Guard on the first, the Whetstone on
+the second — so **three of the four shelves now hold something**. **Game-permanent cannot be opened at
+all**: it is shown, marked out with a dashed edge, and
 states **"Coming soon."** It is deliberately visible rather than hidden, so the shape of the finished
 shop reads before the things that fill it exist (`hybrid-design.md` version-4-scope §1).
+
+> **"Nothing on this shelf yet." is now unreachable by playing.** Every shelf you can open holds an item,
+> and the one that is empty is also the one that is refused — so the wording exists for the next shelf to
+> be added rather than for anything a player can currently see.
 
 **The heal is not on any shelf.** It sits in its own block below them, headed "Also for sale", and it
 is there whichever shelf you have open. A heal is an instant transfer with no duration, so none of the
 four rungs is an honest answer for it.
 
 Nothing about what is for sale, what it costs, or what refuses a purchase changed when the shelves
-arrived — that was a **rearrangement**. **The shelves then earned their keep twice**: Envenom appeared on
-the one-time-use shelf, and the Poison Guard filled the fight-long shelf, each with no change to the shop
-screen beyond one readout.
+arrived — that was a **rearrangement**. **The shelves then earned their keep three times**: Envenom
+appeared on the one-time-use shelf, the Poison Guard filled the fight-long shelf, and the Whetstone filled
+run-permanent — each with no change to the shop screen beyond one readout.
 
 > **The four names are this game's own, not Balatro's.** The obvious borrowing would be deck / Joker /
 > consumable, and it was refused: this game has no deck-building layer for those words to mean
@@ -1210,8 +1272,9 @@ things can refuse one:
 - **You are already holding a Poison Guard** — only one may be held at a time.
 - **You do not have the coins.**
 
-**Envenom can only ever raise the last.** There is no cap on charges held, so nothing else can refuse it
-— and full Cheat slots do not, because that is the Cheat's own cap and not a shared one.
+**Envenom and the Whetstone can only ever raise the last.** Neither has a cap — charges and Whetstones
+alike are limited only by the purse — so nothing else can refuse either, and full Cheat slots do not,
+because that is the Cheat's own cap and not a shared one.
 
 Each of the first three belongs to **one** item and to no other: a full Cheat slot never refuses a heal, a
 held Guard never refuses a Cheat.
@@ -1225,9 +1288,10 @@ arrives — full slots rather than an empty purse.
 > still costs a coin — only the wholly wasted purchase is refused.
 
 **Leaving the shop starts the next fight**, with everything you bought already in effect: the health
-you healed to, the Cheats in your slots, the Envenom charges you hold, any Poison Guard, and whatever
-coins you did not spend. **The Guard is the one purchase that expires**: it lasts that fight and no
-longer.
+you healed to, the Cheats in your slots, the Envenom charges you hold, any Poison Guard, every Whetstone
+you own, and whatever coins you did not spend. **The Guard is the one purchase that expires**: it lasts
+that fight and no longer. **The Whetstone is at the other extreme** — it survives every remaining fight of
+the run.
 
 ### Which fight you are on, and who you are fighting — **[settled]**
 
@@ -1245,19 +1309,26 @@ too, alongside who is coming next.
   was that overkill (section 8) becomes currency; the coin you actually get is a **flat payment for
   winning a fight** instead, and nothing reads overkill. That flat payout is the part of the
   intention that shipped.
-- **Anything in the shop that raises the player's damage — HALF BUILT since 2026-08-19.** Envenom deals
-  a flat **4 damage** to the Quarry when the Quarry wins the trick it is played into, which is the first
-  purchasable damage in the game — but it is a **fixed one-off hit**, not a multiplier on anything. The
-  stated intention is that upgrades are what make the `n × n` payout scale past the early game, and
-  **nothing grows the bank or the multiplier yet**: Envenom's clean-loss rule and the Poison Guard both
-  *preserve* a streak rather than growing one. A
+- **Anything in the shop that raises the player's damage — MOSTLY BUILT since 2026-08-19.** Two purchases
+  now do it, in different ways. Envenom deals a flat **4 damage** to the Quarry when the Quarry wins the
+  trick it is played into — a **fixed one-off hit**, not a multiplier on anything. **The Whetstone is the
+  scaling one**: it raises what every taken trick banks, permanently, so it multiplies the whole `n × n`
+  curve rather than adding to it once. The stated intention was that upgrades are what make the payout
+  scale past the early game, and **that half is now built for the bank**.
+  **What is still missing is the multiplier's side of it** — nothing raises the multiplier's climb; a twin
+  to the Whetstone that does is named as the natural next addition (`hybrid-design.md` version-4-scope §1)
+  and is **[not built]**. Envenom's clean-loss rule and the Poison Guard both still *preserve* a streak
+  rather than growing one. A
   card's **value** is one of the four things Forage may edit, and since 2026-08-14 a card's rank
   decides only who wins a trick — it feeds no scoring at all (section 7).
-- **A price curve or rerolls** — **[not built]**. The shop shows the same **four** things at the same
-  four prices on every visit. **Two items shipped on 2026-08-19** — Envenom onto the one-time-use shelf and
-  the Poison Guard onto fight-long — so this entry is narrower than it was: **Whetstone** is the item still
-  to come, on its own ticket, and only run-permanent is still empty. A **rotating** shelf — a different
-  selection each visit — is still **[not built]** and is a separate idea from the four fixed shelves.
+- **A price curve or rerolls** — **[not built]**. The shop shows the same **five** things at the same
+  five prices on every visit. **Three items shipped on 2026-08-19** — Envenom onto the one-time-use shelf,
+  the Poison Guard onto fight-long and the Whetstone onto run-permanent — so **every shelf a player can open
+  now holds something**, and the only empty one is the refused game-permanent shelf below. A **rotating**
+  shelf — a different selection each visit — is still **[not built]** and is a separate idea from the four
+  fixed shelves. **A price that climbs with each copy bought** is the specific version of this that the
+  Whetstone raises, since it is the first item that stacks without limit: there is none, and the flat 4
+  coins is what a second copy costs too.
 - **Anything at all on the game-permanent shelf** — **[not built]**, and **nothing is designed for it**.
   The shelf is shown and refused precisely so that this gap is visible rather than hidden.
   `hybrid-design.md` version-4-scope §1 explicitly declines to design it yet, and **carrying anything
@@ -1347,7 +1418,19 @@ shape is decided.
 One row per rule area. `Where enforced` is a pointer for checking this document has not gone stale —
 the mechanics themselves are documented in `../implementation/`.
 
-> **Where the last contract stands, 2026-08-19 (DLR-91).** Engine and screen landed together, and QA
+> **Where the last contract stands, 2026-08-19 (DLR-92).** Engine and screen landed together: the
+> Whetstone on the run-permanent shelf, its 4-coin price, its stacking purchase, the purse cell counting how
+> many you own, the coins-only refusal, and the bank's raised climb are **all reachable by playing right
+> now** — none of it is enforced-but-unreachable. **The multiplier's twin item is `not built` by decision
+> rather than oversight**: the design names it as the natural next addition and the ticket refused to build
+> both under one item. **One thing was verified against the engine and not on screen**: QA reached the shop
+> but never accumulated the 4 coins to buy a Whetstone in two full runs, so the `+2`-a-trick climb is pinned
+> by a spec against the same function the browser calls and has **not yet been watched happening**. That is
+> the item's price meeting a 1-coin-a-fight income, which is itself the datum — recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved). **Nothing was retuned** in response to the bank's
+> ceiling tripling: no health total, damage figure or Quarry curve moved.
+
+> **Where DLR-91 stood, 2026-08-19.** Engine and screen landed together, and QA
 > confirmed the whole of it in a browser: the retimed poison, the two amounts, the streak cashing out when
 > poison lands on you, the Quarry-first ordering that spares you a mutual kill, the Poison Guard on the
 > fight-long shelf, its purchase, its refusal, and the purse cell that says whether one is held are **all
@@ -1379,7 +1462,8 @@ the mechanics themselves are documented in `../implementation/`.
 > refuses a purchase moved** — the eleven pre-existing shop-screen specs pass unedited, which is the
 > evidence for that. Three rows below are **`not built`** and are the point rather than an oversight:
 > nothing is designed for the game-permanent shelf, and two shelves are empty until Envenom, Poison
-> Guard and Whetstone land on their own tickets. One **known residual**: after clicking a shelf with the
+> Guard and Whetstone land on their own tickets. **(All three have since landed — DLR-90, DLR-91 and
+> DLR-92, all on 2026-08-19 — so only the game-permanent shelf is still empty.)** One **known residual**: after clicking a shelf with the
 > mouse, the very next arrow-key press can move from the previously-focused shelf rather than the one
 > just clicked; it corrects itself on the next `Home`/`End`. Logged, not fixed — the fix means changing
 > a hook three screens share.
@@ -1421,8 +1505,13 @@ the mechanics themselves are documented in `../implementation/`.
 | Trick resolution, Witch-as-trump              | settled                          | `src/warCouncil/resolveTrick.ts`                                                                                                 | —                                                       |
 | Winner leads next, Swan's exception           | settled                          | `src/warCouncil/playCard.ts`, `abilities.ts`                                                                                     | —                                                       |
 | The four outcomes                             | settled                          | `src/warCouncil/bank.ts` — `trickOutcomeFor`, `isTaken`                                                                          | —                                                       |
-| Cards have no value; the bank counts tricks   | settled — since PT-002           | `src/warCouncil/bank.ts` — `resolveTrickBank` banks a literal 1 per trick taken; it reads no card at all, and no value function exists | —                                                  |
-| A streak of _n_ cashes `n × n`                | settled                          | `src/warCouncil/bank.ts` — both terms climb by 1 per take, so the product is a square; pinned by `bank.test.ts`'s `[1,4,9,16,25,36]` spec | —                                               |
+| Cards have no value; the bank counts tricks   | settled — since PT-002           | `src/warCouncil/bank.ts` — `resolveTrickBank` banks `1` per trick taken plus the run's bank-climb bonus (DLR-92); it reads no card at all, and no value function exists | —                          |
+| A streak of _n_ cashes `n × n` with nothing bought | settled                     | `src/warCouncil/bank.ts` — both terms climb by 1 per take when no Whetstone is owned, so the product is a square; pinned by `bank.test.ts`'s `[1,4,9,16,25,36]` spec, which DLR-92 left unedited | —                     |
+| A Whetstone adds 1 to the bank's climb, and stacks | settled — since DLR-92      | `src/warCouncil/bank.ts` — `resolveTrickBank` reads `TrickFacts.bankClimbBonus`; the count lives on `src/hunt/run.ts` — `RunState.whetstones`, and `bankClimbBonusFor` is the one statement of "+1 per copy" | —                |
+| The Whetstone's price (4 coins)               | **provisional** — set 2026-08-19 | `src/hunt/config.ts` — `WHETSTONE_PRICE`; charged by `src/hunt/shop.ts` — `priceOf`                                               | **Developer** — transcribed from the design doc, and never yet afforded in a QA run |
+| Whetstones carried fight to fight             | settled — since DLR-92           | `src/hunt/run.ts` — `RunState.whetstones`, carried by `advanceRun`'s and `recordEncounter`'s spread, exactly as `coins` is        | —                                                       |
+| Nothing raises the multiplier's climb         | **not built** — by decision      | nothing — `resolveTrickBank`'s `multiplier += 1` takes no bonus, and no `ShopItem` maps to one                                    | **Developer — the twin item, a later ticket**           |
+| A bank climb that is not a positive integer is ignored | settled — since DLR-92  | `src/warCouncil/bank.ts` — `resolveTrickBank` floors the bonus to 0 unless `Number.isInteger` and `> 0`, so a spoiled figure degrades to the bare rule rather than reaching a health bar | —                       |
 | The bank, and that it only climbs             | settled                          | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                    | —                                                       |
 | The streak multiplier, and its reset          | settled                          | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                    | —                                                       |
 | Cash-out on damage (`bank × multiplier`)      | settled                          | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                    | —                                                       |
@@ -1440,7 +1529,7 @@ the mechanics themselves are documented in `../implementation/`.
 | Health carried hand to hand                   | settled                          | `src/app/warCouncil/roundReducer.ts` owns the live `EncounterState`; `src/App.tsx` carries it between hands                      | —                                                       |
 | No cap on hands per encounter                 | settled — deliberately none      | no cap key exists to read                                                                                                        | Developer, if the tail stalls                           |
 | Tricks and multiplier on screen throughout    | settled                          | `src/app/warCouncil/BankMeter.tsx`; wording in `labels.ts` — `TRICKS_LABEL`, `MULTIPLIER_LABEL`                                  | Developer — the wording and the visual values           |
-| The two terms stay separately addressable     | settled — an affordance, unused  | `src/warCouncil/bank.ts` — `bank` and `multiplier` are two fields; nothing moves them apart yet                                  | —                                                       |
+| The two terms stay separately addressable     | settled — **and used since DLR-92** | `src/warCouncil/bank.ts` — `bank` and `multiplier` are two fields, and the Whetstone moves only the first; the affordance PT-002 kept them apart for is now load-bearing                                  | —                                                       |
 | Surplus damage paid back as money             | **not built**                    | nothing reads overkill — the coin is a flat payment for winning, not a share of the cash-out                                     | Developer — a later ticket                              |
 | Both sides' health on screen                  | settled                          | `src/app/warCouncil/DuelHealthBars.tsx`, `duelHealthBars.ts`, `HeartMark.tsx` — one heart per point since DLR-86                 | Developer — whether 10 (and 18) hearts read well        |
 | The Quarry's hearts preview the banked streak | **provisional**                  | `src/app/warCouncil/duelHealthBars.ts` — `projectedFromStreak`; styling in `warCouncilHealthBars.css`                            | Developer — whether it reads as pending or as spent     |
@@ -1455,12 +1544,12 @@ the mechanics themselves are documented in `../implementation/`.
 | Between-encounter restore (none, automatic)   | **not built** — deliberately     | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE`; still **no consumer**, and DLR-82 forbade adding one. A grep guards it        | Developer — the flask stories own it                    |
 | Winning a fight pays 1 coin                   | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `COINS_PER_ENCOUNTER_WIN`; credited by `src/hunt/run.ts` — `recordEncounter`, the single payout site      | Developer — transcribed, not derived                    |
 | Coins carry across the run, and are on screen | settled — since DLR-84           | `src/hunt/run.ts` — `RunState.coins`, carried by `advanceRun`'s spread; drawn by `src/app/warCouncil/RoundStatusBand.tsx`'s `.wc-coins` plate | —                                          |
-| The shop, and its exactly four items          | settled — since DLR-84           | `src/hunt/shop.ts` — `SHOP_ITEMS`, unchanged in order by DLR-89 and widened by DLR-90 and DLR-91; rendered by `src/app/run/ShopPanel.tsx`, which reads the groupings below rather than listing the items | —                                     |
+| The shop, and its exactly five items          | settled — since DLR-84           | `src/hunt/shop.ts` — `SHOP_ITEMS`, unchanged in order by DLR-89 and widened by DLR-90, DLR-91 and DLR-92 (the Whetstone inserted before `Heal`, which must stay last); rendered by `src/app/run/ShopPanel.tsx`, which reads the groupings below rather than listing the items | —              |
 | Four shelves, by how long a purchase lasts    | settled — since DLR-89           | `src/hunt/shop.ts` — `ShopCategory` and `SHOP_CATEGORIES` (which fixes the order); drawn by `src/app/run/ShopCategoryTabs.tsx`   | Developer — the four labels are placeholder copy         |
 | Which shelf an item sits on                   | settled — since DLR-89           | `src/hunt/shop.ts` — `categoryOf`, an exhaustive `switch`; grouped once at module load into `SHOP_ITEMS_BY_CATEGORY`             | —                                                       |
 | The heal is on no shelf at all                | settled — since DLR-89           | `src/hunt/shop.ts` — `categoryOf` returns `null` for it, collected by `UNCATEGORISED_SHOP_ITEMS`; rendered outside the tabs      | —                                                       |
 | One-time use is the shelf you arrive on       | settled — since DLR-89           | `src/app/run/ShopPanel.tsx` — the `useState` initial value; deliberately **not** persisted across visits                          | Developer — whether the shelf should survive re-entry    |
-| An empty shelf says it is empty               | settled — since DLR-89           | `src/app/run/shopLabels.ts` — `SHOP_CATEGORY_EMPTY`; branched on in `ShopPanel.tsx` when the shelf holds nothing                 | Developer — the wording                                 |
+| An empty shelf says it is empty               | settled — **unreachable since DLR-92** | `src/app/run/shopLabels.ts` — `SHOP_CATEGORY_EMPTY`; branched on in `ShopPanel.tsx` when the shelf holds nothing. Every openable shelf now holds an item, so no player can see this | Developer — whether the wording is still worth keeping |
 | Game-permanent is shown and refused           | settled — since DLR-89           | `src/hunt/shop.ts` — `isShopCategoryAvailable`, false only for that rung; the tab carries `aria-disabled` and states `SHOP_CATEGORY_COMING_SOON` | Developer — the wording, and `aria-disabled` vs native `disabled` |
 | What is on the game-permanent shelf           | **not built** — nothing designed  | nothing — no item maps to that rung, and version-4-scope §1 declines to design one                                              | **Developer — a later ticket**                          |
 | Shelves switchable from the keyboard          | settled — since DLR-89           | `src/app/warCouncil/useRovingTabIndex.ts`, reused by `ShopCategoryTabs.tsx` — one tab stop, arrows within it, manual activation   | —                                                       |
@@ -1468,6 +1557,7 @@ the mechanics themselves are documented in `../implementation/`.
 | Continue warns when something is affordable   | settled                          | `src/hunt/shop.ts` — `canBuyAnything`, `some()` over `refusalFor`; raised by `src/App.tsx`'s `handleContinue`                    | **Developer** — safety net or nag; a threshold is one line |
 | Backing out of the warning takes no action    | settled                          | `src/app/run/RunOutcomePanel.tsx` — `onDismissWarning` on the swapped block's `Escape`                                           | Developer — whether it should mean "continue anyway"    |
 | Both prices (1 coin each)                     | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `CHEAT_PRICE`, `HEAL_PRICE`, deliberately two keys                                                        | **Developer** — if Heal wins every visit, the Cheat is mispriced |
+| Buying a Whetstone (4 coins, no cap, stacks)   | settled — since DLR-92           | `src/hunt/run.ts` — `buyFromShop`'s `Whetstone` case increments `RunState.whetstones`; `src/hunt/shop.ts` — `refusalFor` needed no clause, so only `NotEnoughCoins` can refuse it | Developer — the price, and whether stacking wants a cap |
 | A heal restores 4, clamped, surplus discarded | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `HEAL_HEALTH_RESTORED`; the `Math.min` in `src/hunt/run.ts` — `buyFromShop` is the single clamp           | Developer — the amount                                  |
 | A heal is the only healing in the game        | settled                          | `src/hunt/run.ts` — `buyFromShop` is the sole writer that raises player health; no flask and no rest site exist                  | —                                                       |
 | A refused purchase states its reason          | settled                          | `src/hunt/shop.ts` — `refusalFor`; worded by `src/app/run/shopLabels.ts` — `PURCHASE_REFUSAL_MESSAGE`                            | Developer — the wording                                 |
@@ -1810,6 +1900,28 @@ DOM events, and not yet by a hand on a mouse.
 
 ### Known tensions, recorded not resolved
 
+- **The strongest item in the shop costs four times what a fight pays, and nobody has yet bought one**
+  (new 2026-08-19, DLR-92). A Whetstone is 4 coins against **1 coin per fight won**, so on flat winnings it
+  is four fights of saving while the run is expected to end in its first or second stage. QA played two full
+  runs, reached the shop, and **never got past 2 coins** — which is the same wall DLR-90 hit at 2 coins for
+  Envenom, one item further out. The design's answer is the **quick-kill payout** (a fast fight paying more
+  than a coin), which is a separate ticket and **is not built** — so today the item is priced for an income
+  that does not exist yet. The consequence worth naming: **the shop's most interesting purchase is
+  currently its least reachable**, and the two cheap items already predicted to win every visit sit in front
+  of it. `WHETSTONE_PRICE` is its own key, so re-pricing is one line — but the honest fix is probably the
+  payout, not the price.
+- **Stacking has no cap and no price curve, so a long run's ceiling is unbounded** (new 2026-08-19,
+  DLR-92). Each copy adds another +1 flat, at the same flat 4 coins, and nothing limits how many you own.
+  Three copies quadruple the whole cash-out curve — a six-trick hand pays 144. Whether that is the intended
+  power fantasy or a curve that breaks the late run only shows in a run long enough to afford several, which
+  **no session has reached**. The two levers are a cap (a `refusalFor` clause and a reason code) or a price
+  that climbs per copy; neither is built and neither is designed.
+- **Nothing on the felt says the bank is climbing faster** (new 2026-08-19, DLR-92). The bank meter shows
+  the running total and the multiplier, so a player who owns two Whetstones sees the bank jump by 3 a trick
+  with **nothing naming why** — the only surface stating what they own is the shop's purse cell, which is
+  not on screen during a fight. This is the same shape of gap already recorded for poison and the Poison
+  Guard below, and it is now the third item whose effect is legible only through its consequences. No rule
+  required a readout, so none was invented.
 - **Holding a Poison Guard can cost you health, which is the opposite of how insurance reads** (new
   2026-08-19, DLR-91; **accepted, not open**). The Guard suppresses the poison-driven cash-out — so the
   cash-out does not happen — so a Quarry that would have died to it **survives**. And under the

@@ -26,6 +26,7 @@ import {
   SHOP_PURSE_GROUP_LABEL,
   SHOP_SLOTS_LABEL,
   SHOP_TITLE,
+  SHOP_WHETSTONE_LABEL,
   shopItemAccessibleName,
   shopPanelId,
   shopTabId,
@@ -53,6 +54,9 @@ interface ShopPanelProps {
   /** DLR-91 AC3 — whether a Guard is already held. A boolean, not a count like `envenomCharges`:
    *  only one can be active at a time, which is what the refusal enforces. */
   readonly poisonGuardHeld: boolean
+  /** DLR-92 AC2 — Whetstones owned, so the player can see what they already hold before buying
+   *  another. A count with no denominator, exactly as `envenomCharges`: there is no cap. */
+  readonly whetstones: number
   /** AC10 — the coming opponent's display name, `undefined` while the roster has no entry.
    *  Also names the leave control (AC8, DLR-85): `Fight <name>` when known, `NEXT_FIGHT_LABEL`
    *  otherwise. */
@@ -90,6 +94,7 @@ export default function ShopPanel({
   cheatSlotCount,
   envenomCharges,
   poisonGuardHeld,
+  whetstones,
   nextOpponentName,
   progressText,
   refusals,
@@ -156,6 +161,10 @@ export default function ShopPanel({
             <span className="shop-purse-value">
               {poisonGuardHeld ? SHOP_GUARD_HELD : SHOP_GUARD_NONE}
             </span>
+          </span>
+          <span className="shop-purse-cell">
+            <span className="shop-purse-label">{SHOP_WHETSTONE_LABEL}</span>
+            <span className="shop-purse-value">{whetstones}</span>
           </span>
         </div>
 

@@ -8,6 +8,7 @@ import {
   SHOP_ITEMS,
   ShopCategory,
   ShopItem,
+  WHETSTONE_PRICE,
 } from '../../../hunt'
 import {
   nextOpponentText,
@@ -54,6 +55,11 @@ describe('shopLabels', () => {
   it('interpolates both Envenom figures into the blurb rather than quoting a literal', () => {
     expect(SHOP_ITEM_BLURB[ShopItem.Envenom]).toContain(String(ENVENOM_QUARRY_DAMAGE))
     expect(SHOP_ITEM_BLURB[ShopItem.Envenom]).toContain(String(ENVENOM_PLAYER_DAMAGE))
+  })
+
+  it('DLR-92 — blurbs the Whetstone as stacking, without quoting a price', () => {
+    expect(SHOP_ITEM_BLURB[ShopItem.Whetstone]).toContain('stack')
+    expect(SHOP_ITEM_BLURB[ShopItem.Whetstone]).not.toContain(String(WHETSTONE_PRICE))
   })
 
   it('gives an item a different accessible name when it carries a refusal', () => {

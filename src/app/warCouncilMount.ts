@@ -42,6 +42,13 @@ export interface WarCouncilMountProps {
    *  hands back through `WarCouncilRoundResult`. REQUIRED rather than optional so the compiler
    *  enumerates every mount site instead of letting one silently fight without its insurance. */
   readonly poisonGuardHeld: boolean
+  /** DLR-92 AC4 — the bank-climb bonus in force for this hand, ALREADY RESOLVED from the run's
+   *  Whetstone count by `bankClimbBonusFor`. A number, not a `RunState` and not an item count: the
+   *  card layer renders a run figure and must not learn what bought it. REQUIRED rather than
+   *  optional so the compiler enumerates every mount site instead of letting one silently fight
+   *  without the buff. Unlike `envenomCharges` and `poisonGuardHeld` it does NOT come back on
+   *  `WarCouncilRoundResult` — a hand cannot spend it. */
+  readonly bankClimbBonus: number
   readonly onComplete: (result: WarCouncilRoundResult) => void
 }
 

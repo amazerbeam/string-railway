@@ -1,0 +1,360 @@
+<title>Whetstone Shelf</title>
+<style>
+  :root {
+    --ink: #f2ede4;
+    --dim: #a89f90;
+    --felt: #12211c;
+    --card: #1c2f28;
+    --edge: #35513f;
+    --gold: #d9a94c;
+    --hot: #c8553d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100svh;
+    background: var(--felt);
+    color: var(--ink);
+    font: 16px/1.45 ui-sans-serif, system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+  .note {
+    max-width: 62rem;
+    width: 100%;
+    background: #0d1a16;
+    border: 1px dashed var(--edge);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    font-size: 0.85rem;
+    color: var(--dim);
+  }
+  .note b { color: var(--gold); }
+  .shop {
+    width: 100%;
+    max-width: 62rem;
+    background: #16241f;
+    border: 1px solid var(--edge);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem 1.5rem;
+  }
+  h1 { font-size: 1.5rem; margin: 0 0 0.25rem; }
+  .next { color: var(--dim); margin: 0 0 1rem; font-size: 0.9rem; }
+  .purse {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .cell {
+    flex: 1 1 8rem;
+    background: var(--card);
+    border: 1px solid var(--edge);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
+    display: flex;
+    flex-direction: column;
+  }
+  .cell.is-new { border-color: var(--gold); }
+  .label { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
+  .value { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+  .health {
+    background: var(--card);
+    border: 1px solid var(--edge);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .hearts { letter-spacing: 0.15em; color: var(--hot); }
+  .tabs { display: flex; gap: 0.4rem; border-bottom: 1px solid var(--edge); }
+  .tab {
+    appearance: none;
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    color: var(--dim);
+    font: inherit;
+    padding: 0.7rem 1rem;
+    min-height: 44px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+  }
+  .tab[aria-selected='true'] {
+    background: var(--card);
+    border-color: var(--edge);
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .tab[aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
+  .tab:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .shelf { padding: 1rem 0; min-height: 9rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.75rem; }
+  .item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    text-align: left;
+    background: var(--card);
+    border: 1px solid var(--edge);
+    border-radius: 10px;
+    padding: 0.85rem;
+    color: inherit;
+    font: inherit;
+    min-height: 44px;
+    cursor: pointer;
+  }
+  .item:hover { border-color: var(--gold); }
+  .item:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .item:disabled { opacity: 0.5; cursor: not-allowed; border-style: dashed; }
+  .item-name { font-weight: 600; }
+  .item-blurb { font-size: 0.82rem; color: var(--dim); }
+  .item-price { color: var(--gold); font-variant-numeric: tabular-nums; }
+  .refusal { min-height: 1.2rem; font-size: 0.78rem; color: var(--hot); margin: 0.3rem 0 0; }
+  .empty { color: var(--dim); font-style: italic; }
+  .aside { border-top: 1px solid var(--edge); padding-top: 1rem; }
+  .aside-label { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
+  .actions { margin-top: 1.25rem; }
+  .primary {
+    appearance: none;
+    background: var(--gold);
+    color: #16241f;
+    border: none;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 700;
+    padding: 0.8rem 1.4rem;
+    min-height: 44px;
+    cursor: pointer;
+  }
+  .felt {
+    width: 100%;
+    max-width: 62rem;
+    background: #16241f;
+    border: 1px solid var(--edge);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+  }
+  .bankrow { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: stretch; }
+  .streak { width: 100%; margin-top: 0.75rem; font-size: 0.85rem; color: var(--dim); }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 0.35rem 0.5rem; border-bottom: 1px solid #24382f; }
+  th:first-child, td:first-child { text-align: left; }
+  tbody tr.is-live td { color: var(--gold); }
+</style>
+
+<div class="note">
+  <b>DLR-92 mockup — placeholder data, not the real app.</b> Two surfaces: the shop's
+  <b>run-permanent shelf</b> (now holding its first item) and the fight-side arithmetic the purchase
+  changes. Click the shelf tabs, click <b>Whetstone</b> repeatedly to watch the count stack and the
+  coins drain, and watch the streak table below re-compute. Copy is placeholder — the name
+  &ldquo;Whetstone&rdquo; is the developer's call.
+</div>
+
+<div class="shop">
+  <h1>Between fights</h1>
+  <p class="next">Next up &mdash; Saoirse. Fight 5 of 25.</p>
+
+  <div class="purse" role="group" aria-label="Your purse and health">
+    <span class="cell"><span class="label">Coins</span><span class="value" id="coins">6</span></span>
+    <span class="cell"><span class="label">Cheat slots</span><span class="value">1 / 2</span></span>
+    <span class="cell"><span class="label">Envenom held</span><span class="value">0</span></span>
+    <span class="cell"><span class="label">Poison Guard</span><span class="value">None</span></span>
+    <span class="cell is-new"
+      ><span class="label">Whetstones held</span><span class="value" id="held">0</span></span
+    >
+  </div>
+
+  <div class="health">
+    <span class="label">Health</span>
+    <span class="hearts" aria-hidden="true">&#9829;&#9829;&#9829;&#9829;&#9829;&#9829;&#9825;&#9825;&#9825;&#9825;</span>
+    <span class="value">6 / 10</span>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="What lasts how long">
+    <button class="tab" role="tab" aria-selected="false" onclick="showShelf('oneTimeUse', this)">
+      One-time use
+    </button>
+    <button class="tab" role="tab" aria-selected="false" onclick="showShelf('fightLong', this)">
+      Fight-long
+    </button>
+    <button class="tab" role="tab" aria-selected="true" onclick="showShelf('runPermanent', this)">
+      Run-permanent
+    </button>
+    <button class="tab" role="tab" aria-selected="false" aria-disabled="true" onclick="comingSoon()">
+      Game-permanent
+    </button>
+  </div>
+
+  <div class="shelf" role="tabpanel" aria-label="Run-permanent">
+    <div class="grid" id="shelf"></div>
+    <p class="refusal" id="refusal"></p>
+  </div>
+
+  <div class="aside">
+    <span class="aside-label">Also for sale</span>
+    <div class="grid" style="margin-top: 0.5rem">
+      <button class="item" onclick="say('Heal bought — placeholder')">
+        <span class="item-name">Heal</span>
+        <span class="item-blurb">Restore 4 health, now. Anything over your maximum is lost.</span>
+        <span class="item-price">1 coin</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="primary" onclick="say('Leaving for the next fight — placeholder')">
+      Fight Saoirse
+    </button>
+  </div>
+</div>
+
+<div class="felt">
+  <h1 style="font-size: 1.15rem">What it does on the felt</h1>
+  <div class="bankrow">
+    <span class="cell"><span class="label">Banked this streak</span><span class="value" id="bank">0</span></span>
+    <span class="cell"><span class="label">Multiplier</span><span class="value" id="mult">0</span></span>
+    <span class="cell is-new"><span class="label">Bank climb per trick</span><span class="value" id="climb">1</span></span>
+  </div>
+  <div class="streak">
+    <table>
+      <thead>
+        <tr>
+          <th>Unbroken streak</th>
+          <th>Bank</th>
+          <th>Multiplier</th>
+          <th>Cashes for</th>
+        </tr>
+      </thead>
+      <tbody id="streakBody"></tbody>
+    </table>
+    <p>
+      The multiplier column never changes &mdash; that is the twin item deliberately left for later.
+      Only the bank column moves.
+    </p>
+  </div>
+</div>
+
+<script>
+  var coins = 6
+  var held = 0
+
+  var SHELVES = {
+    oneTimeUse: [
+      { name: 'Cheat', blurb: 'A card for a slot. Play it later to ignore follow-suit.', price: 1 },
+      {
+        name: 'Envenom',
+        blurb:
+          'Poison a card in your hand. The winner of the trick it is played into takes damage at the next trick.',
+        price: 2,
+      },
+    ],
+    fightLong: [
+      {
+        name: 'Poison Guard',
+        blurb:
+          'Insurance for one fight. The next time your own poison lands on you, your streak survives.',
+        price: 1,
+      },
+    ],
+    runPermanent: [
+      {
+        name: 'Whetstone',
+        blurb: 'Every trick you take banks one more, for the rest of the run. Buy it again to stack it.',
+        price: 4,
+        buy: true,
+      },
+    ],
+  }
+
+  function say(msg) {
+    document.getElementById('refusal').textContent = msg
+  }
+
+  function comingSoon() {
+    say('Coming soon.')
+  }
+
+  function showShelf(key, tab) {
+    var tabs = document.querySelectorAll('.tab')
+    for (var i = 0; i < tabs.length; i++) tabs[i].setAttribute('aria-selected', 'false')
+    if (tab) tab.setAttribute('aria-selected', 'true')
+    var shelf = document.getElementById('shelf')
+    shelf.innerHTML = ''
+    say('')
+    var items = SHELVES[key] || []
+    if (items.length === 0) {
+      shelf.innerHTML = '<p class="empty">Nothing on this shelf yet.</p>'
+      return
+    }
+    items.forEach(function (item) {
+      var btn = document.createElement('button')
+      btn.className = 'item'
+      var refused = coins < item.price
+      btn.disabled = refused
+      btn.setAttribute(
+        'aria-label',
+        item.name +
+          ' — ' +
+          item.price +
+          ' coin' +
+          (item.price === 1 ? '' : 's') +
+          (refused ? ' — You do not have the coins for this.' : '')
+      )
+      btn.innerHTML =
+        '<span class="item-name">' +
+        item.name +
+        '</span><span class="item-blurb">' +
+        item.blurb +
+        '</span><span class="item-price">' +
+        item.price +
+        ' coin' +
+        (item.price === 1 ? '' : 's') +
+        '</span>'
+      btn.onclick = function () {
+        if (refused) return
+        coins -= item.price
+        if (item.buy) held += 1
+        render()
+        showShelf(key, document.querySelector('.tab[aria-selected="true"]'))
+        say(item.buy ? item.name + ' bought — you now hold ' + held + '.' : item.name + ' bought.')
+      }
+      shelf.appendChild(btn)
+    })
+  }
+
+  function render() {
+    document.getElementById('coins').textContent = coins
+    document.getElementById('held').textContent = held
+    var climb = 1 + held
+    document.getElementById('climb').textContent = climb
+    document.getElementById('bank').textContent = climb
+    document.getElementById('mult').textContent = 1
+    var rows = ''
+    for (var n = 1; n <= 6; n++) {
+      rows +=
+        '<tr class="' +
+        (n === 6 ? 'is-live' : '') +
+        '"><td>' +
+        n +
+        ' trick' +
+        (n === 1 ? '' : 's') +
+        '</td><td>' +
+        n * climb +
+        '</td><td>' +
+        n +
+        '</td><td>' +
+        n * climb * n +
+        '</td></tr>'
+    }
+    document.getElementById('streakBody').innerHTML = rows
+  }
+
+  render()
+  showShelf('runPermanent', document.querySelector('.tab[aria-selected="true"]'))
+</script>

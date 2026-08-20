@@ -26,11 +26,11 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                     |
 | --------------------- | ------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, PT-001, PT-002 |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91       |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, PT-002             |
-| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91                                                                                                               |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, PT-001, PT-002 |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, PT-001, PT-002 |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92 |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, PT-002 |
+| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, PT-001, PT-002 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -275,7 +275,9 @@ The structural point is where the ladder lives. The rungs, the item→rung assig
 groupings and **which rung refuses** are all plain TypeScript in `src/hunt/shop.ts`, inside the
 lint-enforced no-React boundary. So adding an item is **one `ShopItem` member, one `priceOf` case and
 one `categoryOf` case** — and it appears on the correct shelf with no UI edit at all. That is the
-property the three follow-on item tickets (Envenom, Poison Guard, Whetstone) are built on. The
+property the three follow-on item tickets were built on, and **all three have now shipped** — Envenom
+(DLR-90), Poison Guard (DLR-91) and the Whetstone (DLR-92), every one at that cost, so the prediction held
+three times for three different shelves. The
 component asks `isShopCategoryAvailable` rather than naming `GamePermanent`, and "empty" and "refused"
 are kept as **two separate facts** — conflating them would have started refusing fight-long until its
 item shipped. Start at [hunt/coins-and-the-shop.md](hunt/coins-and-the-shop.md) for the ladder, or
@@ -379,6 +381,45 @@ test that would have failed against the defect. A second reviewer found the mirr
 reducer: `commit()` cleared `cheatSelection` and not `envenomStage`, so poising Envenom and playing an
 ordinary card left the stage stuck and quietly ate one of the three taps the misclick guard exists to
 require.
+
+**DLR-92 made the bank's climb something you can buy, and it is the first purchase that grows a reward
+rather than protecting one.** The shop's run-permanent shelf — built empty by DLR-89 and empty ever since —
+now sells a **Whetstone** for 4 coins, and each one owned adds 1 to what every taken trick banks, for the
+rest of the run. **It stacks**: two of them bank 3 a trick. Because the multiplier still climbs by exactly 1,
+a streak of _n_ now cashes `(1 + copies) × n²` — so one copy doubles a full six-trick hand from 36 to 72,
+and it is worth most on exactly the hands you were already playing well.
+
+**The interesting part is architectural, not arithmetic.** `resolveTrickBank` is a pure function in
+`src/warCouncil/` that must not know what a run is, and the count lives on `RunState` in `src/hunt/`. The
+route taken is the one DLR-91 established for the Poison Guard: widen `PlayCardOptions` with a **plain
+number**, let the reducer — which holds both halves — assemble it, and name the field `bankClimbBonus`
+rather than a Whetstone count so the card layer never learns a shop item's name. A contract-phase grep
+enforces that `src/warCouncil/` names neither `Whetstone` nor `RunState` in code. The one crossing is a
+single line in `App.tsx`, and it calls `bankClimbBonusFor(run)` rather than passing the count through, so the
+rule "+1 per copy" is stated in `src/hunt/run.ts` where a reviewer looks for it instead of in a JSX prop.
+
+**A prediction this documentation made was wrong, and the correction is the useful part.**
+`bank-and-cash-out.md` had recorded that "a later item granting bonus bank would add to `bank` rather than
+redefine a trick's worth". The item that arrived does the opposite — it redefines a trick's worth, precisely
+so the gain scales with the streak rather than being a flat top-up worth the same on a one-trick streak as on
+a six-trick one. The old prediction is left in place beside the correction.
+
+**The ladder paid off for the third time, and the DLR-89 obligation it did not discharge is now on record.**
+Adding the Whetstone cost one `ShopItem` member, one `priceOf` case, one `categoryOf` case, one
+`buyFromShop` case and one purse cell — no item-rendering change at all. But DLR-89 had named a roving
+tabindex for shop item cards as an obligation on "the three follow-on item tickets", and **none of the three
+discharged it**: each added its item to a *different* shelf, so no single ticket ever faced a five-card panel.
+That is the exact failure DLR-89 predicted, happening as described.
+
+**Not seen in play, and that is the finding.** QA drove the app, confirmed the shelf sells it, the purse
+counts it, and the refusal is exact — but **never accumulated the 4 coins to buy one** in two full runs, so
+the `+2`-a-trick climb is proven against the engine and has not been watched happening. At 1 coin a fight
+against a 4-coin price, the shop's most interesting purchase is currently its least reachable; the design's
+answer is the **quick-kill payout**, which is a separate ticket and is not built.
+
+Start at [hunt/coins-and-the-shop.md](hunt/coins-and-the-shop.md) for the purchase and
+`bankClimbBonusFor`, or [war-council/bank-and-cash-out.md](war-council/bank-and-cash-out.md) for the
+arithmetic, the four-layer route, and the floor-to-0 guard that keeps a spoiled figure out of a health bar.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

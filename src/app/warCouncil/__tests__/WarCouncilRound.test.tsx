@@ -13,6 +13,7 @@ import { cardAccessibleName, cheatAccessibleName } from '../labels'
 import { CheatStage } from '../roundUiState'
 import WarCouncilRound from '../WarCouncilRound'
 import {
+  bankClimbBonusFixture,
   card,
   coinsFixture,
   encounterFixture,
@@ -46,6 +47,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       coins={overrides.coins ?? coinsFixture}
       envenomCharges={overrides.envenomCharges ?? envenomChargesFixture}
       poisonGuardHeld={overrides.poisonGuardHeld ?? poisonGuardHeldFixture}
+      bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
       onComplete={overrides.onComplete ?? vi.fn()}
     />,
   )

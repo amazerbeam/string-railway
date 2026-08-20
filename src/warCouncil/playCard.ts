@@ -115,6 +115,7 @@ export function playCard(
       poisonToPlayer: options?.poisonToPlayer ?? 0,
       poisonToQuarry: options?.poisonToQuarry ?? 0,
       poisonGuarded: options?.poisonGuarded ?? false,
+      bankClimbBonus: options?.bankClimbBonus ?? 0,
     },
   )
 

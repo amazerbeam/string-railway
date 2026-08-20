@@ -8,6 +8,7 @@ import { ENVENOM_ARMED_HINT, ENVENOM_EMPTY_LABEL, envenomAccessibleName } from '
 import { EnvenomStage } from '../roundUiState'
 import WarCouncilRound from '../WarCouncilRound'
 import {
+  bankClimbBonusFixture,
   card,
   coinsFixture,
   encounterFixture,
@@ -37,6 +38,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       coins={overrides.coins ?? coinsFixture}
       envenomCharges={overrides.envenomCharges ?? envenomChargesFixture}
       poisonGuardHeld={overrides.poisonGuardHeld ?? poisonGuardHeldFixture}
+      bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
       onComplete={overrides.onComplete ?? vi.fn()}
     />,
   )

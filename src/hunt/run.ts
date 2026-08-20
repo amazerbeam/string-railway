@@ -64,6 +64,13 @@ export interface RunState {
    *  `advanceRun`'s spread and cleared by `guardAfter` when that fight resolves, which is what
    *  makes "fight-long" a real duration. NEVER persisted, exactly as `coins` above. */
   readonly poisonGuardHeld: boolean
+  /** DLR-92 AC2/AC3 — Whetstones owned. A COUNT, not a flag: each copy stacks, and the price is
+   *  the only limiter. Run-level like `coins` rather than on `EncounterState`, and carried by
+   *  `advanceRun`'s and `recordEncounter`'s spread — a run-permanent buff that reset at a fight
+   *  boundary would be a fight-long one. Unlike `cheats`, `envenomCharges` and `poisonGuardHeld`
+   *  it is NEVER handed back by a hand, because a hand cannot spend one. NEVER persisted, exactly
+   *  as `coins` above. */
+  readonly whetstones: number
 }
 
 /**
@@ -84,6 +91,7 @@ export function startRun(playerHealth: Health = PLAYER_START_HEALTH): RunState {
     coins: 0,
     envenomCharges: 0,
     poisonGuardHeld: false,
+    whetstones: 0,
   }
 }
 
@@ -188,6 +196,17 @@ export function shopStockFor(
 }
 
 /**
+ * DLR-92 AC2 — THE statement of "each Whetstone adds +1 to the bank's per-trick climb", so the
+ * rule is stated once rather than at whichever wiring site happens to need it. `App` reads this
+ * and hands the RESULT to the card layer as a plain number, which is what keeps `src/warCouncil/`
+ * free of `RunState` (AC4). The multiplier-side twin named as future scope would contribute its
+ * own figure through a sibling of this function, never by reinterpreting this one.
+ */
+export function bankClimbBonusFor(run: RunState): number {
+  return run.whetstones
+}
+
+/**
  * AC4/AC5/AC7 — the purchase. Throws a `RangeError` naming the `PurchaseRefusal` rather than
  * returning the run unchanged: a silent no-op is exactly the "took payment for nothing" failure
  * `cheats.ts`'s `addCheat` already refuses to allow. Reaching the throw is a driver bug, because
@@ -233,6 +252,8 @@ export function buyFromShop(
       return { ...paid, envenomCharges: run.envenomCharges + 1 }
     case ShopItem.PoisonGuard:
       return { ...paid, poisonGuardHeld: true }
+    case ShopItem.Whetstone:
+      return { ...paid, whetstones: run.whetstones + 1 }
     case ShopItem.Heal:
       return {
         ...paid,

@@ -9,8 +9,9 @@ a call into `src/hunt/run.ts`, and every number is read from configuration.
 
 **Since DLR-85 it also owns the run's shape on screen**: it opens on a start screen rather than on fight
 one, mounts a map between fights, is the **only** file that reads the opponent roster, and returns to the
-start screen when a run is lost. It is 262 lines (from 208) and holds five `useState` calls — still inside
-the 400-line budget, but the next surface added here should probably convert it to a reducer.
+start screen when a run is lost. It is **286 lines** at DLR-92 (from 208 at DLR-82, 262 at DLR-85) and holds five `useState` calls — still inside
+the 400-line budget, but the next surface added here should probably convert it to a reducer. The three
+DLR-90/91/92 item tickets each cost it two or three prop lines and no new state.
 
 ## The state
 
@@ -151,6 +152,27 @@ rather than `RunPhase.Verdict`, so **losing a run returns to the start screen** 
 straight into fight one. "Starting again resets the path" then follows **by construction** rather than by
 a second reset step: `startRun()` returns `encounterIndex: 0` with a fresh encounter, so `beatenCount` is
 0 and every node on the map is `Upcoming` again. Nothing clears the path, because nothing owns it.
+
+**DLR-92 added two props and NO argument, which is the notable part.** The Whetstone count is a run figure
+the card layer needs and **cannot change**, so it goes down and never comes back: the shop gains
+`whetstones={run.whetstones}` plus a fifth `refusals` entry, and the mount gains
+
+```tsx
+bankClimbBonus={bankClimbBonusFor(run)}
+```
+
+**That line is the whole crossing between the run and the card layer, and the shape of it is deliberate.**
+It hands over a **number**, not a `RunState` and not an item count, so `src/warCouncil/` never learns what a
+Whetstone is — a contract-phase grep enforces that the card layer names neither `Whetstone` nor `RunState` in
+code. And it calls `bankClimbBonusFor` rather than passing `run.whetstones` straight through, so the rule
+"+1 per copy" lives in `src/hunt/run.ts` where a reviewer looks for it rather than in a JSX prop where nobody
+would.
+
+`recordEncounter`'s signature was **left alone**, and that is the point: `whetstones` rides its `...run`
+spread exactly as `coins` does, because unlike the Cheats, the charges and the Guard, a hand has no way to
+spend one. So the five-parameter call below did **not** become a six-parameter call, and the `HandOutcome`
+refactor it predicts is still owed at the next *spendable* run figure rather than at the next figure of any
+kind.
 
 **DLR-91 added the fifth argument and two more props, exactly as DLR-90 predicted.**
 `recordEncounter` takes the Poison Guard the hand finished holding — `result.poisonGuardHeld`, through
@@ -303,7 +325,7 @@ if (encounterOver) {
     warning={phase === RunPhase.Warned} onShop={…} onContinue={handleContinue}
     beatenName={currentName} nextName={nextName} onMap={() => setPhase(RunPhase.Map)} … />
 }
-return <WarCouncilRound key={hand} … runLabel={runPositionLabel(run.encounterIndex, run.encounterCount, currentName)} coins={run.coins} onComplete={handleComplete} />
+return <WarCouncilRound key={hand} … runLabel={runPositionLabel(run.encounterIndex, run.encounterCount, currentName)} coins={run.coins} bankClimbBonus={bankClimbBonusFor(run)} onComplete={handleComplete} />
 ```
 
 The shop branch sits **before** the verdict branch, so the two cannot both match, and the map branch sits

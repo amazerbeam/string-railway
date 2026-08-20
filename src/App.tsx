@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   advanceRun,
+  bankClimbBonusFor,
   beatenCount,
   buyFromShop,
   canAdvanceRun,
@@ -225,12 +226,14 @@ function App() {
         cheatSlotCount={CHEAT_SLOT_COUNT}
         envenomCharges={run.envenomCharges}
         poisonGuardHeld={run.poisonGuardHeld}
+        whetstones={run.whetstones}
         nextOpponentName={nextName}
         progressText={runProgressText(run.encounterIndex + 1, run.encounterCount)}
         refusals={{
           [ShopItem.Cheat]: refusalFor(stock, ShopItem.Cheat),
           [ShopItem.Envenom]: refusalFor(stock, ShopItem.Envenom),
           [ShopItem.PoisonGuard]: refusalFor(stock, ShopItem.PoisonGuard),
+          [ShopItem.Whetstone]: refusalFor(stock, ShopItem.Whetstone),
           [ShopItem.Heal]: refusalFor(stock, ShopItem.Heal),
         }}
         onBuy={handleBuy}
@@ -273,6 +276,7 @@ function App() {
       coins={run.coins}
       envenomCharges={run.envenomCharges}
       poisonGuardHeld={run.poisonGuardHeld}
+      bankClimbBonus={bankClimbBonusFor(run)}
       quarryLabel={quarryHealthLabel(currentName)}
       onComplete={handleComplete}
     />

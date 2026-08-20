@@ -7,11 +7,11 @@ import ShopPanel from '../ShopPanel'
 import { fightLabel } from '../runLabels'
 import {
   PURCHASE_REFUSAL_MESSAGE,
-  SHOP_CATEGORY_EMPTY,
   SHOP_CATEGORY_LABEL,
   SHOP_ENVENOM_LABEL,
   SHOP_GUARD_HELD,
   SHOP_GUARD_NONE,
+  SHOP_WHETSTONE_LABEL,
   shopItemAccessibleName,
 } from '../shopLabels'
 
@@ -32,6 +32,7 @@ const baseProps = {
   cheatSlotCount: 2,
   envenomCharges: 2,
   poisonGuardHeld: false,
+  whetstones: 0,
   nextOpponentName: 'The Monarch',
   progressText: 'Fight 2 of 3.',
   onBuy: vi.fn(),
@@ -42,6 +43,7 @@ const noRefusals: Readonly<Record<ShopItem, PurchaseRefusal | null>> = {
   [ShopItem.Cheat]: null,
   [ShopItem.Envenom]: null,
   [ShopItem.PoisonGuard]: null,
+  [ShopItem.Whetstone]: null,
   [ShopItem.Heal]: null,
 }
 
@@ -192,15 +194,19 @@ describe('ShopPanel', () => {
     ).toBeTruthy()
   })
 
-  it('states an empty shelf rather than rendering a blank panel (AC5)', () => {
+  it('DLR-92 — the run-permanent shelf sells the Whetstone', () => {
     render(<ShopPanel {...baseProps} refusals={noRefusals} />)
     fireEvent.click(
       screen.getByRole('tab', { name: SHOP_CATEGORY_LABEL[ShopCategory.RunPermanent] }),
     )
-    expect(screen.getByText(SHOP_CATEGORY_EMPTY)).toBeTruthy()
     expect(
-      screen.queryByRole('button', { name: shopItemAccessibleName(ShopItem.Cheat, null) }),
-    ).toBeNull()
+      screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Whetstone, null) }),
+    ).toBeTruthy()
+  })
+
+  it('DLR-92 — shows how many Whetstones are held', () => {
+    render(<ShopPanel {...baseProps} whetstones={2} refusals={noRefusals} />)
+    expect(screen.getByText(SHOP_WHETSTONE_LABEL)).toBeTruthy()
   })
 
   it('switching shelves moves the Cheat out of the panel and back (AC3)', () => {

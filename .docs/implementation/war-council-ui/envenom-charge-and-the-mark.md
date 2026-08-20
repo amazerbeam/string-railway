@@ -129,11 +129,17 @@ return resolution.envenomTarget === null ? cleared : queueEnvenom(cleared, resol
   `damageToPlayer` separately, because the Quarry's total is a sum of two sources since DLR-91 and
   reading one of them would miss a poison-only event.
 
-**Where the pending figures come from is the other half of the change.** A `poisonOptions(state)` helper
-projects `state.encounter.pendingEnvenom` and `state.poisonGuardHeld` into a `PlayCardOptions`, and it is
+**Where the pending figures come from is the other half of the change.** A helper projects
+`state.encounter.pendingEnvenom` and `state.poisonGuardHeld` into a `PlayCardOptions`, and it is
 read by **both** `playCard` call sites — the player's follow in `commit` and the Quarry's in
 `advanceQuarryFollow`. One statement of "what is pending", because two readings is exactly how a hit gets
-paid twice or skipped. `commit` and the CPU-advance path each also set
+paid twice or skipped.
+
+> **It was called `poisonOptions` until DLR-92 renamed it `playOptions`.** That ticket added
+> `bankClimbBonus` — a run figure that has nothing to do with poison — and a non-poison field inside a
+> function called `poisonOptions` is the naming drift a reviewer finds a month later. The rename touched both
+> call sites and changed no behaviour; the helper is now the one place every `PlayCardOptions` field is
+> assembled, which is what it should have been named for from the start. `commit` and the CPU-advance path each also set
 `poisonGuardHeld: resolution.poisonGuardSpent ? false : state.poisonGuardHeld` — **the Guard is spent at
 both settle points**, and the reducer never re-derives whether the Guard mattered, because
 `resolveTrickBank` already reported it. See [Poison Guard](../hunt/poison-guard.md).

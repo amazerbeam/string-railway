@@ -5,6 +5,7 @@ import { dealRound, PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
 import { DAMAGE_PER_HIT, DuelSide, HAND_SIZE } from '../../../hunt'
 import WarCouncilRound from '../WarCouncilRound'
 import {
+  bankClimbBonusFixture,
   card,
   coinsFixture,
   encounterFixture,
@@ -51,6 +52,7 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
         coins={coinsFixture}
         envenomCharges={envenomChargesFixture}
         poisonGuardHeld={poisonGuardHeldFixture}
+        bankClimbBonus={bankClimbBonusFixture}
         onComplete={onComplete}
       />,
     )
@@ -195,6 +197,7 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
         coins={coinsFixture}
         envenomCharges={envenomChargesFixture}
         poisonGuardHeld={poisonGuardHeldFixture}
+        bankClimbBonus={bankClimbBonusFixture}
         onComplete={onComplete}
       />,
     )
@@ -249,6 +252,7 @@ describe('WarCouncilRound — the Quarry’s at-risk preview (DLR-86)', () => {
         coins={coinsFixture}
         envenomCharges={envenomChargesFixture}
         poisonGuardHeld={poisonGuardHeldFixture}
+        bankClimbBonus={bankClimbBonusFixture}
         onComplete={vi.fn()}
       />,
     )

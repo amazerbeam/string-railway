@@ -12,7 +12,7 @@ import {
 
 const START: BankState = { bank: 0, multiplier: 0 }
 
-/** The seven facts, defaulted to an ordinary unmarked non-final unpoisoned trick. */
+/** The eight facts, defaulted to an ordinary unmarked non-final unpoisoned trick. */
 const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
   playerWon: false,
   skullTrick: false,
@@ -21,6 +21,7 @@ const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
   poisonToPlayer: 0,
   poisonToQuarry: 0,
   poisonGuarded: false,
+  bankClimbBonus: 0,
   ...over,
 })
 
@@ -118,6 +119,57 @@ describe('resolveTrickBank', () => {
       payouts.push(resolveTrickBank(state, facts()).cashOut)
     }
     expect(payouts).toEqual([1, 4, 9, 16, 25, 36])
+  })
+
+  it.each([
+    { bonus: 0, payouts: [1, 4, 9, 16, 25, 36] },
+    { bonus: 1, payouts: [2, 8, 18, 32, 50, 72] },
+    { bonus: 2, payouts: [3, 12, 27, 48, 75, 108] },
+  ])(
+    'DLR-92 AC2/AC7 — a bank-climb bonus of $bonus pays (1 + bonus) × n² across a streak',
+    ({ bonus, payouts }) => {
+      const got: number[] = []
+      let state = { bank: 0, multiplier: 0 }
+      for (let n = 1; n <= 6; n++) {
+        const taken = resolveTrickBank(state, facts({ playerWon: true, bankClimbBonus: bonus }))
+        state = { bank: taken.bank, multiplier: taken.multiplier }
+        got.push(resolveTrickBank(state, facts({ bankClimbBonus: bonus })).cashOut)
+      }
+      expect(got).toEqual(payouts)
+    },
+  )
+
+  it('DLR-92 AC4 — one copy banks 2 a trick and two copies bank 3', () => {
+    expect(resolveTrickBank(START, facts({ playerWon: true, bankClimbBonus: 1 })).bankAdded).toBe(
+      2,
+    )
+    expect(resolveTrickBank(START, facts({ playerWon: true, bankClimbBonus: 2 })).bankAdded).toBe(
+      3,
+    )
+  })
+
+  it('DLR-92 AC5 — the multiplier climbs by exactly 1 whatever the bonus', () => {
+    for (const bonus of [0, 1, 5]) {
+      const r = resolveTrickBank(
+        { bank: 4, multiplier: 2 },
+        facts({ playerWon: true, bankClimbBonus: bonus }),
+      )
+      expect(r.multiplier).toBe(3)
+    }
+  })
+
+  it('DLR-92 — a bonus is never added to a trick that is not taken', () => {
+    const r = resolveTrickBank({ bank: 3, multiplier: 3 }, facts({ bankClimbBonus: 4 }))
+    expect(r.bankAdded).toBe(0)
+    expect(r.cashOut).toBe(9)
+  })
+
+  it('DLR-92 — a bonus that is not a positive integer floors to the bare rule', () => {
+    for (const bonus of [Number.NaN, -1, 1.5, Number.POSITIVE_INFINITY]) {
+      const r = resolveTrickBank(START, facts({ playerWon: true, bankClimbBonus: bonus }))
+      expect(r.bankAdded).toBe(1)
+      expect(Number.isFinite(r.bank)).toBe(true)
+    }
   })
 })
 

@@ -44,7 +44,7 @@ export interface TrickResolution extends BankState {
 }
 
 /**
- * The seven facts about a completed trick that decide its whole effect on the bank, the streak and
+ * The eight facts about a completed trick that decide its whole effect on the bank, the streak and
  * both bars.
  *
  * A parameter object rather than positional booleans, introduced on DLR-90 when the fourth became a
@@ -68,6 +68,10 @@ export interface TrickFacts {
   /** DLR-91 AC4 — a Poison Guard is held, so poison must NOT force the cash-out. Gates the poison
    *  trigger only, never the trick's own hit: a 1-coin item does not insure against every loss. */
   readonly poisonGuarded: boolean
+  /** DLR-92 AC4 — extra bank added by a TAKEN trick, on top of the trick's own 1. A plain number
+   *  handed in, never a run figure read: this module must not learn what bought it, which is why
+   *  it is not called a Whetstone count. 0 is the bare rule. The MULTIPLIER is unaffected (AC5). */
+  readonly bankClimbBonus: number
 }
 
 /** §3.2's table as a total function. The skull inverts the trick: on a clean trick you want to
@@ -129,12 +133,20 @@ export function resolveTrickBank(before: BankState, trick: TrickFacts): TrickRes
   const replaced = trick.envenomTrick && outcome === TrickOutcome.CleanLoss
 
   if (isTaken(outcome)) {
-    // PT-002 — the bank counts TRICKS, not card values. Both terms climb by exactly 1 per trick
-    // taken, so a streak of n cashes n × n: 1, 4, 9, 16, 25, 36 across a six-trick hand.
-    // Not a config key: 1 is what counting a trick means, and a later item that grants bonus
-    // bank adds to `bank` rather than redefining a trick's worth.
-    bankAdded = 1
+    // PT-002 — the bank counts TRICKS, not card values, so the base is 1 and that is not a config
+    // key: 1 is what counting a trick means. DLR-92 AC4 adds the run's bank-climb bonus on top,
+    // so a streak of n now cashes (1 + bonus) × n².
+    //
+    // Floored to 0 unless it is a positive integer. `bankAdded` feeds `bank`, then `bank ×
+    // multiplier`, then damage, then a rendered heart row — so a NaN or a fraction would vanish
+    // into a health bar with nothing logged (`web-project.md` → "NaN propagates silently"). It
+    // degrades to the bare pre-DLR-92 rule rather than throwing, because mid-trick is the wrong
+    // place to abort a hand.
+    const bonus =
+      Number.isInteger(trick.bankClimbBonus) && trick.bankClimbBonus > 0 ? trick.bankClimbBonus : 0
+    bankAdded = 1 + bonus
     bank += bankAdded
+    // AC5 — UNCHANGED, and deliberately so: the multiplier-side twin is a separate future item.
     multiplier += 1
   }
 

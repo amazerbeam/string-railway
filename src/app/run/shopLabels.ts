@@ -27,6 +27,10 @@ export const SHOP_ENVENOM_LABEL = 'Envenom held'
  *  cause. PLACEHOLDER copy. Words rather than a colour or a glyph alone, per `game-ux`'s "state
  *  reads without motion or colour alone" — a static screenshot still says which it is. */
 export const SHOP_GUARD_LABEL = 'Poison Guard'
+/** DLR-92 — the purse cell for Whetstones owned, so a player deciding on another copy can see what
+ *  they already hold. A count with no denominator, exactly as `SHOP_ENVENOM_LABEL`: there is no cap.
+ *  PLACEHOLDER copy. */
+export const SHOP_WHETSTONE_LABEL = 'Whetstones held'
 export const SHOP_GUARD_HELD = 'Held'
 export const SHOP_GUARD_NONE = 'None'
 export const SHOP_NOTHING_TO_BUY_HINT = 'Buy nothing and carry the coin if you would rather.'
@@ -36,6 +40,7 @@ export const SHOP_ITEM_NAME: Readonly<Record<ShopItem, string>> = {
   [ShopItem.Cheat]: 'Cheat',
   [ShopItem.Envenom]: 'Envenom',
   [ShopItem.PoisonGuard]: 'Poison Guard', // PLACEHOLDER copy — the developer's call.
+  [ShopItem.Whetstone]: 'Whetstone', // PLACEHOLDER copy — the developer's call
   [ShopItem.Heal]: 'Heal',
 }
 
@@ -45,6 +50,8 @@ export const SHOP_ITEM_BLURB: Readonly<Record<ShopItem, string>> = {
   [ShopItem.Cheat]: 'A card for a slot. Play it later to ignore follow-suit.',
   [ShopItem.Envenom]: `Poison a card in your hand. The winner of the trick it is played into takes damage at the next trick — ${ENVENOM_QUARRY_DAMAGE} for the Quarry, ${ENVENOM_PLAYER_DAMAGE} for you, and yours cashes out your streak.`,
   [ShopItem.PoisonGuard]: `Insurance for one fight. The next time your own poison lands on you, you still take the ${ENVENOM_PLAYER_DAMAGE} but your streak survives.`, // PLACEHOLDER copy
+  [ShopItem.Whetstone]:
+    'Every trick you take banks one more, for the rest of the run. Buy it again to stack it.', // PLACEHOLDER copy
   [ShopItem.Heal]: `Restore ${HEAL_HEALTH_RESTORED} health, now. Anything over your maximum is lost.`,
 }
 

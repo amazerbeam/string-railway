@@ -2,8 +2,9 @@ Part of [Hunt](README.md).
 
 # Coins and the shop — the run's economy, and the one predicate that guards it
 
-`src/hunt/shop.ts` (DLR-84) is the game's first economy. It is deliberately tiny: a four-item
-catalogue — two as DLR-84 shipped it, a third at DLR-90 and a fourth at DLR-91 — a price lookup, and
+`src/hunt/shop.ts` (DLR-84) is the game's first economy. It is deliberately tiny: a five-item
+catalogue — two as DLR-84 shipped it, a third at DLR-90, a fourth at DLR-91 and a fifth at DLR-92 — a
+price lookup, and
 **one predicate** that decides whether a purchase may be made. The
 purchase itself lives next door in `run.ts`, because spending changes a run and this module is not
 allowed to know what a run is.
@@ -52,10 +53,11 @@ export const ShopItem = {
   Cheat: 'cheat',
   Envenom: 'envenom', // DLR-90
   PoisonGuard: 'poisonGuard', // DLR-91
+  Whetstone: 'whetstone', // DLR-92
   Heal: 'heal',
 } as const
 export const SHOP_ITEMS: readonly ShopItem[] = [
-  ShopItem.Cheat, ShopItem.Envenom, ShopItem.PoisonGuard, ShopItem.Heal,
+  ShopItem.Cheat, ShopItem.Envenom, ShopItem.PoisonGuard, ShopItem.Whetstone, ShopItem.Heal,
 ]
 
 export const PurchaseRefusal = {
@@ -68,7 +70,7 @@ export const PurchaseRefusal = {
 
 `SHOP_ITEMS` is the single statement of the catalogue — the screen **maps** it and never lists the
 items itself, so a new item appears on screen without the component being edited. That prediction has
-now been tested twice, by DLR-90 and DLR-91, and held both times.
+now been tested **three times**, by DLR-90, DLR-91 and DLR-92, and held every time.
 
 **`Heal` stays last in `SHOP_ITEMS` on purpose**: `UNCATEGORISED_SHOP_ITEMS` derives from this array's
 order, and the heal is the only member with no category. `SHOP_ITEMS` is also a plain array, so nothing
@@ -112,6 +114,8 @@ export function categoryOf(item: ShopItem): ShopCategory | null {
       return ShopCategory.OneTimeUse
     case ShopItem.PoisonGuard: // DLR-91 — the fight-long shelf's first item
       return ShopCategory.FightLong
+    case ShopItem.Whetstone: // DLR-92 — the run-permanent shelf's first item
+      return ShopCategory.RunPermanent
     case ShopItem.Heal:
       return null
   }
@@ -159,11 +163,17 @@ export function isShopCategoryAvailable(category: ShopCategory): boolean {
 ```
 
 `GamePermanent` is **shown and refused** rather than hidden, so the shape of the full ladder reads
-before every rung is filled. This is deliberately a separate fact from emptiness: run-permanent is
-still empty today and perfectly selectable, and fight-long was too **until DLR-91 put Poison Guard on
-it** — which needed no change here, because availability was never read off a shelf's length. Reading refusal off a zero-length
-array would start refusing those two as well, and would silently *stop* refusing game-permanent the
-moment its first item shipped.
+before every rung is filled. This is deliberately a separate fact from emptiness: **fight-long and
+run-permanent were both empty and both perfectly selectable until DLR-91 and DLR-92 filled them** — neither
+of which needed a change here, because availability was never read off a shelf's length. Reading refusal off
+a zero-length array would have started refusing those two as well, and would silently *stop* refusing
+game-permanent the moment its first item shipped.
+
+**Since DLR-92 the distinction is doing less visible work and more structural work.** Every rung that can
+be opened now holds an item, so `isShopCategoryAvailable` and "is this shelf empty" no longer disagree about
+anything a player can reach — the one empty rung is also the refused one. The separation still matters for
+the next rung added, and `SHOP_CATEGORY_EMPTY`'s branch in `ShopPanel.tsx` is now **correct but
+unreachable by playing**; see [the shop screen](../run-ui/shop-screen.md).
 
 Nothing about pricing, refusals or the purchase path changed — DLR-89 added a grouping and no rule.
 
@@ -247,6 +257,8 @@ switch (item) {
     return { ...paid, envenomCharges: run.envenomCharges + 1 }
   case ShopItem.PoisonGuard: // DLR-91
     return { ...paid, poisonGuardHeld: true }
+  case ShopItem.Whetstone: // DLR-92 — a count, not a flag: it stacks
+    return { ...paid, whetstones: run.whetstones + 1 }
   case ShopItem.Heal:
     return { ...paid, encounter: { ...run.encounter, health: { ...run.encounter.health,
       [DuelSide.Player]: Math.min(maxPlayerHealth, run.encounter.health[DuelSide.Player] + HEAL_HEALTH_RESTORED) } } }
@@ -266,6 +278,13 @@ fix, and it landed as one added `case` and nothing else.**
 falls through both item-specific guards to the coin check, because there is no cap on charges held.
 The Cheat's `SlotsFull` refusal exists because `CHEAT_SLOT_COUNT` is a designed cap. See
 [Envenom — the held charge, the delayed-hit queue, and where it is paid](envenom-and-the-delayed-hit.md).
+
+**The Whetstone is the same case, and DLR-92 added nothing to `refusalFor` either.** Stacking is uncapped
+by design — the design doc prices it as the limiter — so `NotEnoughCoins` is the only refusal it can raise,
+`ShopStock` gained no field, and `PurchaseRefusal` gained no code. It is the second item to arrive as
+**exactly one `ShopItem` member, one `priceOf` case, one `categoryOf` case and one `buyFromShop` case**, with
+the screen following for free. A cap, if one is ever wanted, is a config key, one `refusalFor` clause and one
+reason code — the same shape the Envenom entry above already costs out.
 
 **Poison Guard is the opposite case, and it does need one.** Only one may be held at a time, so a
 second purchase while one is unspent is refused with `GuardAlreadyActive` rather than silently
@@ -296,6 +315,30 @@ laid that counter down for: re-issuing a spent card's id would collide as a Reac
 ticket `nextCheatId` never advanced past the opening grant, and its contract flagged that as
 possibly not worth its place — it is now load-bearing.
 
+**A Whetstone is a count on `RunState`, and `bankClimbBonusFor` is the one statement of what a copy buys.**
+
+```ts
+readonly whetstones: number            // RunState — seeded 0 by startRun, +1 per purchase
+
+export function bankClimbBonusFor(run: RunState): number {
+  return run.whetstones
+}
+```
+
+The field is a **count, not a flag**, because the item stacks — modelling it as a boolean was named in the
+ticket as the specific thing not to do. It follows `envenomCharges`' precedent for an uncapped run-level
+figure, and like `coins` it is carried across a fight boundary by `advanceRun`'s and `recordEncounter`'s
+existing spread, so **the carry needed no code**. Unlike `cheats`, `envenomCharges` and `poisonGuardHeld` it
+is **never handed back by a hand** — a hand cannot spend a Whetstone — so `recordEncounter`'s signature did
+not grow a sixth parameter and nothing in the round layer can write it.
+
+`bankClimbBonusFor` is a one-line function and earns its place: it is where "+1 per copy" is stated, so that
+rule does not end up encoded at the JSX wiring site in `App.tsx` that happens to need it, and it is where the
+multiplier twin's own figure would be added. It is also the **whole of this module's contribution to the
+card layer** — `src/warCouncil/` receives its return value as a plain number called `bankClimbBonus` and
+never learns the word Whetstone. See
+[the bank, the streak, and the cash-out](../war-council/bank-and-cash-out.md) for the rest of the route.
+
 `maxPlayerHealth` is a **defaulted parameter** on both `shopStockFor` and `buyFromShop`
 (`= PLAYER_START_HEALTH`), matching `startEncounter`/`startRun`'s injectable pattern so a spec varies
 the clamp without mutating module state. `buyFromShop` validates it (`Number.isFinite` and `> 0`)
@@ -315,7 +358,21 @@ player-side hit is deliberately smaller, because it *also* forces the streak's c
 | `CHEAT_PRICE` | `1` | coins per purchase |
 | `HEAL_PRICE` | `1` | coins per purchase |
 | `POISON_GUARD_PRICE` | `1` | coins per purchase (DLR-91) |
+| `WHETSTONE_PRICE` | `4` | coins per purchase (DLR-92) |
 | `HEAL_HEALTH_RESTORED` | `4` | health points, added once, before the clamp |
+
+**`WHETSTONE_PRICE = 4` is transcribed from `version-4-scope.md` §1's own heading** — "priced as the shop's
+one real splurge" — and is the only price in the shop above 2 coins. The design's reasoning, not arithmetic
+done here: on flat win income (1 coin a fight, against a run expected to end in its first or second stage)
+it eats most of a short attempt, and the intended way to reach it early is the **quick-kill payout**, which
+is a separate ticket and **is not built**. So the item is currently priced for an income that does not exist
+yet, which is why the price is `provisional` in `the-hunt.md` rather than settled. QA reached the shop in two
+full runs and never got past 2 coins.
+
+**There is deliberately no key for the per-copy `+1`.** DLR-92's ticket names exactly one new key, and the
+bonus per copy is the item's *definition* rather than a tunable — the same reasoning `bank.ts` already uses
+to keep its `bankAdded = 1` out of configuration. An item granting +2 a copy would be a different item. The
+rule is stated once, in `bankClimbBonusFor` below.
 
 **`POISON_GUARD_PRICE` is its own key rather than a reuse of `HEAL_PRICE`**, for the reason those two
 are already separate: re-pricing one item must not move another. It is priced level with the heal
@@ -345,6 +402,8 @@ and `./cheats`, both already inside the lint-enforced `src/hunt/**` tree, so the
 
 Nothing here is persisted. Coins die on reload with the rest of `RunState`, which the ticket puts
 out of scope — but it means the first ticket to add a save file inherits a `coins` field with no
-migration story, and since DLR-90/DLR-91 an `envenomCharges` count and a `poisonGuardHeld` flag beside
-it. Every shape change made here is free **today** and becomes a migration the first time a run is
-saved.
+migration story, and since DLR-90/DLR-91/DLR-92 an `envenomCharges` count, a `poisonGuardHeld` flag and a
+`whetstones` count beside it. Every shape change made here is free **today** and becomes a migration the
+first time a run is saved. **Four free `RunState` widenings have now been taken**, which is worth noting
+because the window is still open only by accident of nothing being saved yet — DLR-92's audit checked for a
+store and found none.

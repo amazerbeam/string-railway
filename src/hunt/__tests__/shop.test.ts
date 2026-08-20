@@ -5,6 +5,7 @@ import {
   ENVENOM_PRICE,
   HEAL_PRICE,
   POISON_GUARD_PRICE,
+  WHETSTONE_PRICE,
 } from '../config'
 import {
   canBuyAnything,
@@ -33,11 +34,12 @@ const baseStock = (over: Partial<ShopStock> = {}): ShopStock => ({
 const stock = baseStock
 
 describe('SHOP_ITEMS', () => {
-  it('holds exactly the four members, one-time use first', () => {
+  it('holds exactly the five members, one-time use first, Heal last (DLR-92)', () => {
     expect(SHOP_ITEMS).toEqual([
       ShopItem.Cheat,
       ShopItem.Envenom,
       ShopItem.PoisonGuard,
+      ShopItem.Whetstone,
       ShopItem.Heal,
     ])
   })
@@ -58,6 +60,10 @@ describe('priceOf', () => {
 
   it('reads POISON_GUARD_PRICE for the Poison Guard', () => {
     expect(priceOf(ShopItem.PoisonGuard)).toBe(POISON_GUARD_PRICE)
+  })
+
+  it('DLR-92 AC1 — prices the Whetstone from WHETSTONE_PRICE', () => {
+    expect(priceOf(ShopItem.Whetstone)).toBe(WHETSTONE_PRICE)
   })
 })
 
@@ -187,6 +193,10 @@ describe('categoryOf', () => {
     expect(categoryOf(ShopItem.PoisonGuard)).toBe(ShopCategory.FightLong)
   })
 
+  it('DLR-92 AC1 — puts the Whetstone on the run-permanent rung', () => {
+    expect(categoryOf(ShopItem.Whetstone)).toBe(ShopCategory.RunPermanent)
+  })
+
   it('answers for every SHOP_ITEMS member, so no item is silently unassigned', () => {
     for (const item of SHOP_ITEMS) {
       const category = categoryOf(item)
@@ -213,8 +223,8 @@ describe('SHOP_ITEMS_BY_CATEGORY', () => {
     expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.FightLong]).toEqual([ShopItem.PoisonGuard])
   })
 
-  it('leaves run-permanent and game-permanent empty until their items ship (AC5)', () => {
-    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([])
+  it('DLR-92 — sells the Whetstone alone on the run-permanent rung; game-permanent stays empty', () => {
+    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([ShopItem.Whetstone])
     expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.GamePermanent]).toEqual([])
   })
 

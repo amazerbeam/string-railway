@@ -40,6 +40,7 @@ describe('the queue write (AC3/AC6)', () => {
       cheats: [],
       envenomCharges: 1,
       poisonGuardHeld: false,
+      bankClimbBonus: 0,
     })
     ui = roundReducer(ui, tapEnvenom)
     ui = roundReducer(ui, tapEnvenom)
@@ -76,6 +77,7 @@ describe('the queue write (AC3/AC6)', () => {
       cheats: [],
       envenomCharges: 1,
       poisonGuardHeld: false,
+      bankClimbBonus: 0,
     })
     ui = roundReducer(ui, tapEnvenom)
     ui = roundReducer(ui, tapEnvenom)
@@ -108,6 +110,7 @@ describe('the queue write (AC3/AC6)', () => {
       cheats: [],
       envenomCharges: 1,
       poisonGuardHeld: false,
+      bankClimbBonus: 0,
     })
     const target = card(Suit.Bells, 9)
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
@@ -139,6 +142,7 @@ describe('the queue write (AC3/AC6)', () => {
       cheats: [],
       envenomCharges: 1,
       poisonGuardHeld: false,
+      bankClimbBonus: 0,
     })
     ui = roundReducer(ui, tapEnvenom)
     ui = roundReducer(ui, tapEnvenom)
@@ -172,6 +176,7 @@ describe('D1 — poison is paid at the trick that resolves it, not at the next h
       cheats: [],
       envenomCharges: 1,
       poisonGuardHeld: false,
+      bankClimbBonus: 0,
     })
     const target = card(Suit.Bells, 9)
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target }) // arms to play
@@ -202,6 +207,7 @@ describe('D1 — poison is paid at the trick that resolves it, not at the next h
       cheats: [],
       envenomCharges: 1,
       poisonGuardHeld: false,
+      bankClimbBonus: 0,
     })
 
     // Trick 1 — pays the queued poison and clears it.
@@ -244,6 +250,7 @@ describe('DLR-91 AC4 — the Poison Guard through the reducer', () => {
       cheats: [],
       envenomCharges: 0,
       poisonGuardHeld: true,
+      bankClimbBonus: 0,
     })
 
     const target = card(Suit.Bells, 9)
@@ -281,6 +288,7 @@ describe('DLR-91 AC4 — the Poison Guard through the reducer', () => {
       cheats: [],
       envenomCharges: 0,
       poisonGuardHeld: true,
+      bankClimbBonus: 0,
     })
 
     // Trick 1 — the Guard suppresses the reset and is spent.

@@ -75,11 +75,12 @@ export default function WarCouncilRound({
   quarryLabel,
   envenomCharges,
   poisonGuardHeld,
+  bankClimbBonus,
   onComplete,
 }: WarCouncilMountProps) {
   const [ui, dispatch] = useReducer(
     roundReducer,
-    { round: initialState, encounter, cheats, envenomCharges, poisonGuardHeld },
+    { round: initialState, encounter, cheats, envenomCharges, poisonGuardHeld, bankClimbBonus },
     createRoundUiState,
   )
 

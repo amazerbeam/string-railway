@@ -92,6 +92,10 @@ export interface RoundUiState {
    *  resolved trick reports `poisonGuardSpent`. Run state carried for the life of the hand, the
    *  same contract `cheats` and `envenomCharges` document. */
   readonly poisonGuardHeld: boolean
+  /** DLR-92 AC4 — the bank-climb bonus in force for this hand, mirrored from the mount's opening
+   *  prop. Read-only for the hand's whole life: no action ever writes it, because a hand cannot
+   *  spend or change a Whetstone — only the shop between hands can. */
+  readonly bankClimbBonus: number
 }
 
 export interface RoundUiSeed {
@@ -100,6 +104,7 @@ export interface RoundUiSeed {
   readonly cheats: readonly CheatCard[]
   readonly envenomCharges: number
   readonly poisonGuardHeld: boolean
+  readonly bankClimbBonus: number
 }
 
 // `chooseCpuMove` throws rather than returning a rejection when the CPU has no legal
@@ -146,6 +151,7 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     envenomCharges: seed.envenomCharges,
     envenomStage: null,
     poisonGuardHeld: seed.poisonGuardHeld,
+    bankClimbBonus: seed.bankClimbBonus,
   }
 }
 

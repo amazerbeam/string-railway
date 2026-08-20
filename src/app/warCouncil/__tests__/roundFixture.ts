@@ -92,6 +92,10 @@ export const envenomChargesFixture = 1
  *  exercise the Guard is not accidentally exercising it. */
 export const poisonGuardHeldFixture = false
 
+/** A fixed bank-climb bonus for component specs (DLR-92 AC4) — zero, so a spec that does not
+ *  exercise the buff is not accidentally exercising it. */
+export const bankClimbBonusFixture = 0
+
 /** A fixed, NAMED Quarry bar label for component specs. Deliberately not the generic
  *  `HEALTH_BAR_LABEL[Quarry]` wording, so a spec querying the bar by name proves the threaded
  *  label is what reaches the meter rather than the fallback. */

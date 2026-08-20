@@ -4,6 +4,7 @@ import {
   ENVENOM_PRICE,
   HEAL_PRICE,
   POISON_GUARD_PRICE,
+  WHETSTONE_PRICE,
 } from './config'
 import type { Coins, Health } from './types'
 
@@ -11,16 +12,18 @@ export const ShopItem = {
   Cheat: 'cheat',
   Envenom: 'envenom',
   PoisonGuard: 'poisonGuard',
+  Whetstone: 'whetstone',
   Heal: 'heal',
 } as const
 export type ShopItem = (typeof ShopItem)[keyof typeof ShopItem]
 
-/** DLR-91 — four now. THE statement of the catalogue: a screen maps this, it never lists the
+/** DLR-92 — five now. THE statement of the catalogue: a screen maps this, it never lists the
  *  items itself. The Heal stays LAST because `UNCATEGORISED_SHOP_ITEMS` derives from this order. */
 export const SHOP_ITEMS: readonly ShopItem[] = [
   ShopItem.Cheat,
   ShopItem.Envenom,
   ShopItem.PoisonGuard,
+  ShopItem.Whetstone,
   ShopItem.Heal,
 ]
 
@@ -75,6 +78,8 @@ export function priceOf(item: ShopItem): Coins {
       return ENVENOM_PRICE
     case ShopItem.PoisonGuard:
       return POISON_GUARD_PRICE
+    case ShopItem.Whetstone:
+      return WHETSTONE_PRICE
     case ShopItem.Heal:
       return HEAL_PRICE
   }
@@ -98,6 +103,9 @@ export function categoryOf(item: ShopItem): ShopCategory | null {
     // DLR-91 AC1 — the fight-long rung, which DLR-89 built and left empty for exactly this.
     case ShopItem.PoisonGuard:
       return ShopCategory.FightLong
+    // DLR-92 AC1 — the run-permanent rung, which DLR-89 built and left empty for exactly this.
+    case ShopItem.Whetstone:
+      return ShopCategory.RunPermanent
     case ShopItem.Heal:
       return null
   }

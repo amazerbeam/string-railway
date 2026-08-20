@@ -1,7 +1,7 @@
 # Run verdict and shop UI — `src/app/run/`
 
 **Status:** implemented
-**Built by:** DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91
+**Built by:** DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92
 
 ## Responsibility
 
@@ -17,7 +17,9 @@ The full-viewport surfaces the run layer owns, and every user-visible string it 
   for the next fight. Since DLR-85 that control **names the next opponent** rather than reading
   `Next fight`. Since DLR-89 the purchases sit in a **four-tab persistence-length ladder** — one-time
   use, fight-long, run-permanent, game-permanent — with the last shown and refused as "Coming soon",
-  two shelves stating they are empty, and the heal outside the ladder entirely.
+  and the heal outside the ladder entirely. **Since DLR-92 the first three shelves all hold something**
+  (the Cheat and Envenom, the Poison Guard, and the Whetstone), so no shelf a player can open states that
+  it is empty.
 - **The path** (DLR-85) — one component, `RunPathScreen`, serving **two** surfaces: the start screen
   before fight one, and the map reached between fights. Inside it `RunMap` draws the whole run as one
   horizontal line — a tick per ordinary opponent, a block per stage boss, every node named, beaten
@@ -204,17 +206,24 @@ file's header.
   `onLeave` would have fired `advanceRun` twice from one keypress. A spec now guards that it fires
   exactly once.
 - **The item cards inside a shop panel have no roving tabindex, and that becomes a `game-ux` breach
-  once a shelf holds about five cards** (DLR-89). One card sits in a panel today, so building the
-  mechanism now would be speculative and untestable against real behaviour — but the shelves are
-  expected to grow, so this is a **named obligation on the three follow-on item tickets**, not a
-  closed question. The mechanism already exists in `useRovingTabIndex` and `.shop-panel` is the right
-  container to attach it to. Building it now costs one component test and removes the chance that
-  three separate item tickets each assume another one did it.
-- **Two shop shelves are empty by design, pending their items** (DLR-89, narrowed by DLR-91):
-  run-permanent states "Nothing on this shelf yet." and is selectable; game-permanent is refused with
-  "Coming soon." and nothing is designed for it at all. **Fight-long is no longer one of them** — DLR-91
-  put **Poison Guard** on it, at the cost of one purse cell and no item-rendering change whatsoever, which
-  is the second time the ladder has paid off. **Whetstone** is the item still to come, on its own ticket.
+  once a shelf holds about five cards** (DLR-89; **all three follow-on item tickets have now shipped without
+  it**). The deepest shelf holds **two** cards today — one-time use, since Envenom joined the Cheat — so the
+  breach is still not live, but the named obligation DLR-89 placed on DLR-90, DLR-91 and DLR-92 was
+  discharged by none of them: each added an item to a *different* shelf, so no single ticket ever faced a
+  five-card panel and the mechanism stayed speculative at each one. That is worth recording as the exact
+  failure DLR-89 predicted — "three separate item tickets each assume another one did it" — happening as
+  described. It is now an obligation on the **fourth** item to land on an already-occupied shelf. The
+  mechanism already exists in `useRovingTabIndex` and `.shop-panel` is the right container to attach it to.
+- **One shop shelf is empty by design, and it is the one that is refused** (DLR-89, narrowed by DLR-91 and
+  closed out by DLR-92): game-permanent states "Coming soon.", cannot be opened, and nothing is designed for
+  it at all. **Fight-long and run-permanent are both no longer empty** — DLR-91 put **Poison Guard** on the
+  first and DLR-92 the **Whetstone** on the second, each at the cost of one purse cell and no item-rendering
+  change whatsoever, which is the second and third time the ladder has paid off. The consequence worth
+  knowing: **`SHOP_CATEGORY_EMPTY` is now unreachable by playing**, since every openable shelf holds an item.
+  The branch and its wording were kept for the next shelf added, but the component spec that used to reach it
+  through the run-permanent tab was repointed to assert the Whetstone card instead — so the string is covered
+  by its `shopLabels` spec and the branch by nothing. Whether the wording still earns its place is the
+  developer's call.
 - **Whether the shop's tightened spacing reads as intentional rather than squeezed** (DLR-89). Closing
   the viewport-clipping defect meant tightening seven spacing values and letting `.shop-panel` shrink
   to as little as 63px at a 600px-tall viewport, where it shows part of one card and scrolls. The

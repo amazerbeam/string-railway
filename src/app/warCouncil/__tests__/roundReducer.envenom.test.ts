@@ -45,6 +45,7 @@ function seededUi(charges = envenomChargesFixture) {
     cheats: [{ id: 1 }],
     envenomCharges: charges,
     poisonGuardHeld: false,
+    bankClimbBonus: 0,
   })
 }
 
@@ -95,6 +96,7 @@ describe('TapEnvenom respects the same canAct gate the Cheat uses', () => {
       cheats: [],
       envenomCharges: 1,
       poisonGuardHeld: false,
+      bankClimbBonus: 0,
     })
     expect(roundReducer(ui, tapEnvenom)).toBe(ui)
   })
@@ -132,6 +134,7 @@ describe('marking (AC2)', () => {
       cheats: [],
       envenomCharges: 1,
       poisonGuardHeld: false,
+      bankClimbBonus: 0,
     })
     ui = roundReducer(ui, tapEnvenom)
     ui = roundReducer(ui, tapEnvenom)

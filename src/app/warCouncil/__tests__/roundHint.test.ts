@@ -29,6 +29,7 @@ function baseUi(overrides: Partial<RoundUiState> = {}): RoundUiState {
       cheats: [],
       envenomCharges: envenomChargesFixture,
       poisonGuardHeld: false,
+      bankClimbBonus: 0,
     }),
     ...overrides,
   }

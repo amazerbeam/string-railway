@@ -17,6 +17,13 @@ streak of _n_ cashes exactly `n × n`.
 `damageToPlayer` is now computed outside the cash-out branch and `incomingFrom` sums two sources into
 the Quarry's total.
 
+**DLR-92 made the per-trick climb purchasable.** `bankAdded` was the literal `1` from PT-002 until
+2026-08-19; it is now `1 + bonus`, where the bonus is a plain number handed in on `TrickFacts` and sourced
+from the run's Whetstone count. `multiplier += 1` is untouched, so a streak of _n_ cashes
+`(1 + bonus) × n²`. **This module still knows nothing about a shop, an item, or a `RunState`** — see
+[how the bonus gets here](#how-the-bonus-reaches-a-pure-module-without-a-runstate-import) below, which is
+the part of DLR-92 worth reading before changing anything.
+
 Nothing here imports React or touches the DOM; it imports only `DAMAGE_PER_HIT`, `DuelSide` and
 `IncomingDamage` from `src/hunt/`. **It reads no card at all** — PT-002 removed the last one, and
 with it the `TrickCard` import.
@@ -47,7 +54,8 @@ The pairing is exact: `CleanWin` and `Dodge` are identical in every respect but 
 ```ts
 resolveTrickBank(before, trick: TrickFacts): TrickResolution
 // TrickFacts = { playerWon, skullTrick, finalTrick, envenomTrick,
-//                poisonToPlayer, poisonToQuarry, poisonGuarded }   // the last three: DLR-91
+//                poisonToPlayer, poisonToQuarry, poisonGuarded,   // DLR-91
+//                bankClimbBonus }                                  // DLR-92
 ```
 
 The three DLR-91 facts are **the poison owed from an earlier trick, being paid at this one** — a
@@ -82,11 +90,75 @@ stays 0, and `bank`/`multiplier` pass through untouched rather than resetting. `
 gained `envenomTarget: DuelSide | null` — the side owed the delayed hit, crossed to `DuelSide` here
 because this module is already the one place that crossing happens.
 
-**On a taken trick** — `bankAdded` is **1**, the bank climbs by it, and the multiplier increments. No
-damage in either direction from the trick itself.
+**On a taken trick** — `bankAdded` is **`1 + bankClimbBonus`** (DLR-92; the bonus is `0` unless a Whetstone
+is owned), the bank climbs by it, and the multiplier increments **by exactly 1 regardless**. No damage in
+either direction from the trick itself.
 
 **On a hit** — `cashOut` becomes `bank × multiplier`, `damageToPlayer` picks up `DAMAGE_PER_HIT`, and
 both running figures reset to zero.
+
+### The purchasable climb — DLR-92
+
+```ts
+const bonus =
+  Number.isInteger(trick.bankClimbBonus) && trick.bankClimbBonus > 0 ? trick.bankClimbBonus : 0
+bankAdded = 1 + bonus
+bank += bankAdded
+multiplier += 1   // UNCHANGED — deliberately
+```
+
+Three decisions in five lines, and each was made against a live alternative:
+
+- **The bonus multiplies the curve rather than adding to a cash-out.** Because it lands on the *per-trick*
+  climb and the multiplier still counts tricks, the product is `(1 + bonus) × n²` — so one copy doubles a
+  six-trick hand from 36 to 72 and two triple it to 108, while a lone taken trick only moves 1 → 2. The
+  alternative — a flat bonus added to `bank` once per cash-out — was what this doc previously *predicted*
+  a bonus-bank item would do (see the note under `n × n` below); it would have been worth the same on a
+  one-trick streak as on a six-trick one, which is the opposite of what the design wanted.
+- **The multiplier's climb was left alone**, and that is the ticket's scope boundary rather than an
+  omission. A twin item raising `multiplier`'s climb instead is named as the natural next addition in
+  `version-4-scope.md` §1, and building both under one item was explicitly refused. `bank.test.ts` pins
+  the multiplier at exactly `+1` across bonuses 0, 1 and 5 so the boundary cannot erode quietly.
+- **A bonus that is not a positive integer floors to 0 rather than throwing.** `bankAdded` feeds `bank`,
+  then `bank × multiplier`, then `incomingFrom`, then a rendered heart row — so a `NaN` or a fraction would
+  empty a health bar with nothing logged anywhere, which is exactly the trap `web-project.md` names.
+  Degrading to the bare pre-DLR-92 rule is the safe failure; throwing mid-trick would abort a hand over a
+  figure the player cannot see. `Number.isInteger` rejects `NaN`, `Infinity` and `1.5` in one test, and
+  the `> 0` guard rejects negatives — all four are pinned by a spec.
+
+### How the bonus reaches a pure module without a `RunState` import
+
+The count lives on `RunState` in `src/hunt/run.ts` and this module must never learn what a run is. The
+route is the one DLR-91 established for `poisonGuarded`, followed exactly:
+
+```
+RunState.whetstones
+  → bankClimbBonusFor(run)              src/hunt/run.ts — the one statement of "+1 per copy"
+  → <WarCouncilRound bankClimbBonus>    src/App.tsx — THE crossing, and it is a number
+  → RoundUiSeed → RoundUiState          src/app/warCouncil/roundUiState.ts
+  → playOptions(state)                  src/app/warCouncil/roundReducer.ts
+  → PlayCardOptions.bankClimbBonus      src/warCouncil/legalMoves.ts (optional, `?? 0`)
+  → TrickFacts.bankClimbBonus           src/warCouncil/playCard.ts (required)
+  → here
+```
+
+**The field is called `bankClimbBonus`, not a Whetstone count, and that naming is the boundary.**
+`src/warCouncil/` contains zero code references to `Whetstone` or `RunState` — a grep in the contract's
+final phase enforces it, excluding comment lines because two docblocks here and in `legalMoves.ts` name
+both words precisely to explain why the boundary exists. The practical payoff: "Whetstone" is placeholder
+copy the developer may rename, and a rename touches `src/hunt/` and `shopLabels.ts` only.
+
+**Required on `TrickFacts`, optional on `PlayCardOptions`** — the same split the three poison facts already
+use. Required on the facts object so the compiler enumerates every producer (there is exactly one:
+`playCard.ts`); optional on the options object so the Quarry's call sites, which pass nothing, needed no
+edit. The widening cost two edits in total rather than thirty-one, because all 30 spec call sites build
+their facts through one `facts()` factory.
+
+**`RoundUiState.bankClimbBonus` is read-only for the hand's whole life** and is deliberately *not* returned
+on `WarCouncilRoundResult`, unlike `envenomCharges` and `poisonGuardHeld`. A hand cannot spend a Whetstone,
+so handing it back would invite a second writer for a value that never changes. `recordEncounter`'s
+signature did not grow; `whetstones` rides `advanceRun`'s and `recordEncounter`'s existing `...run` spread
+exactly as `coins` does.
 
 ### Two sources of a hit since DLR-91, one branch
 
@@ -126,20 +198,31 @@ that would be a second reading of one rule. See [Poison Guard](../hunt/poison-gu
 
 ### Why `n × n` falls out of the two counters (PT-002)
 
-The equation was never edited. Because a taken trick now climbs **both** terms by exactly 1, the two
-are equal for as long as a streak runs — so `bank × multiplier` on a streak of length _n_ is `n × n`:
-**1, 4, 9, 16, 25, 36** across a six-trick hand. The compounding is the multiplier's, as before; what
-changed is that the additive term stopped being a source of variance the player could not control.
+The equation was never edited. Because a taken trick climbs **both** terms by exactly 1 **when nothing is
+bought**, the two are equal for as long as a streak runs — so `bank × multiplier` on a streak of length _n_
+is `n × n`: **1, 4, 9, 16, 25, 36** across a six-trick hand. The compounding is the multiplier's, as
+before; what changed at PT-002 is that the additive term stopped being a source of variance the player
+could not control. **Since DLR-92 a Whetstone breaks the equality deliberately** — the bank climbs faster
+than the multiplier, and the product becomes `(1 + bonus) × n²`.
 
-The `1` is a **literal, not a config key**, and that is deliberate. 1 is what counting a trick means,
-and a later item granting bonus bank would add to `bank` rather than redefine a trick's worth. The
-comment above it in `bank.ts` says so, so the next reader does not "fix" it into configuration.
+The `1` is still a **literal, not a config key**, and that is deliberate: 1 is what counting a trick
+means. **DLR-92 added no key for the bonus either** — "+1 per copy" is the item's definition, stated once in
+`bankClimbBonusFor`, and an item granting +2 a copy would be a different item rather than a retuning of
+this one. The comment above the arithmetic in `bank.ts` says so, so the next reader does not "fix" either
+number into configuration.
 
-**`bank` and `multiplier` remain two independent fields**, even though they now hold the same number
-for the whole of a streak. Collapsing them into one counter would have been the obvious
-simplification and was rejected: the planned one-time-use **"+1 ×"** item needs a term the shop can
-push without touching the trick count, and the two-field shape is what keeps that buildable without
-restructuring this function.
+> **This section used to predict the wrong shape, and DLR-92 is the correction.** It read: "a later item
+> granting bonus bank would add to `bank` rather than redefine a trick's worth." The item that arrived does
+> the opposite — it redefines a trick's worth, precisely so the gain scales with the streak instead of
+> being a flat top-up. The prediction is left here rather than deleted because *why* it was wrong is the
+> useful part: a flat addition is worth the same on a one-trick streak as on a six-trick one, and the
+> design wanted the reward for a long streak to grow.
+
+**`bank` and `multiplier` remain two independent fields**, and DLR-92 is what that shape was being kept
+for. Collapsing them into one counter would have been the obvious simplification and was rejected twice:
+first speculatively, for a planned **"+1 ×"** item, and now for real — the Whetstone pushes `bank` without
+touching the trick count, which needed **no restructuring of this function at all**. The multiplier twin,
+when it lands, uses the other half of the same affordance.
 
 > **The engine field is still named `bank` though it now holds a trick count.** Renaming it
 > (`streakTricks`, say) would touch this file, `playCard.ts`, `types.ts`, `deal.ts`,
@@ -160,10 +243,11 @@ worth stating because it is what the design rests on:
 
 - If the trick was a **hit**, it has already set `bank` and `multiplier` to zero, so the subsequent
   end-of-hand cash of `0 × 0` is zero.
-- If the trick was **taken**, `bankAdded` is 1 — so the bank is non-zero and there is exactly one
+- If the trick was **taken**, `bankAdded` is at least 1 — so the bank is non-zero and there is exactly one
   bank to cash. (Before PT-002 the same step read "the sum of two card ranks, and every rank is at
-  least 1". The argument survived the change to a trick count unaltered, because both forms are
-  strictly positive.)
+  least 1". The argument survived the change to a trick count unaltered, and survived DLR-92's
+  `1 + bonus` for the same reason: **all three forms are strictly positive**, which is the only property
+  it ever needed. The floor-to-0 guard on the bonus is what keeps that true of the third.)
 
 The result is **one damage application per trick**, with no ordering question, and `cashedAtHandEnd`
 recording which rule actually paid out so the UI can still say why. It is display-only; the two can
@@ -171,14 +255,25 @@ never both be non-zero.
 
 ### Numeric safety
 
-There is **no division anywhere in this module**, and DLR-91 added none. Both figures are integers incremented by 1, and the
-cash-out is one multiplication of two non-negative integers — so the classic `NaN` source is absent,
-no epsilon is needed, and none is invented. `applyDamage`'s own non-finite/negative guard downstream
-is therefore a backstop against a bad caller, not against this arithmetic.
+There is **no division anywhere in this module**, and neither DLR-91 nor DLR-92 added any. The multiplier is
+an integer incremented by 1, the bank by a positive integer, and the cash-out is one multiplication of two
+non-negative integers — so the classic `NaN` source is absent, no epsilon is needed, and none is invented.
+`applyDamage`'s own non-finite/negative guard downstream is therefore a backstop against a bad caller, not
+against this arithmetic.
 
-PT-002 strictly narrowed the range rather than widening it: the largest cash-out producible is now
-**36** — a six-trick unbroken streak — where the rank sum could reach the high hundreds. Nothing here
-approaches the safe-integer limit from either direction.
+**DLR-92 is the first change to introduce a number this module does not compute itself**, and that is why
+it carries the only explicit input guard in the file. Every other figure here is derived from booleans and
+its own previous value; `bankClimbBonus` arrives from four layers away, so it is validated rather than
+trusted — floored to 0 unless it is a positive integer. The failure it prevents is specific: a `NaN` bonus
+would make `bankAdded`, then `bank`, then `cashOut`, then a heart row all `NaN`, and a `NaN` renders as
+nothing and logs nothing.
+
+PT-002 strictly narrowed the range rather than widening it: the largest cash-out producible with an empty
+shop is **36** — a six-trick unbroken streak — where the rank sum could reach the high hundreds. **DLR-92
+reopened the ceiling, and left it unbounded in principle**: with `w` Whetstones owned a full hand pays
+`(1 + w) × 36`, and nothing caps `w` but the purse. In practice the run pays 1 coin a fight against a
+4-coin price, so `w` is small; but the safe-integer limit is now a function of how long a run lasts rather
+than a fixed 36, and a cap — if one is ever wanted — belongs in `refusalFor`, not here.
 
 DLR-91's additions are three property reads and a boolean per resolved trick, at most six tricks a
 hand. `poisonToPlayer > 0` is `false` for `NaN`, so a poisoned figure **fails safe by not firing the
@@ -212,8 +307,8 @@ received.
 `playCard.ts` calls it once, when a trick completes, and writes the result onto
 `RoundState.lastResolution`. `playCard` decides nothing about the outcome itself — it reports who won
 (`resolveTrickWinner`), whether the trick was skulled (`trickIsSkulled`) and whether it carried a mark
-(`trickIsEnvenomed`), and forwards the three poison facts it was handed through `PlayCardOptions`. All
-seven go into the `TrickFacts` literal; every rule stays here.
+(`trickIsEnvenomed`), and forwards the three poison facts **and DLR-92's bank-climb bonus** it was handed
+through `PlayCardOptions`. All **eight** go into the `TrickFacts` literal; every rule stays here.
 
 The rejected alternative was computing the outcome in the reducer from a before/after `RoundState`
 diff, which is how the trick's *winner* used to be re-derived. That would have put the game's central
@@ -239,6 +334,18 @@ design's worked rank-sum hand and its `[0, 0, 0, 129, 0, 44]` sequence. It walks
 asking after each take what a hit would have cashed, and asserts the payouts are exactly
 `[1, 4, 9, 16, 25, 36]`. It is the spec that would catch either term silently ceasing to climb per
 trick, and the one to read first to see what this module is now for.
+
+**DLR-92 left that spec byte-for-byte unedited** — its ticket required it — and added a parameterised
+sibling beside it instead. The new `it.each` table walks the same streak at bonuses 0, 1 and 2 and asserts
+`[1,4,9,16,25,36]`, `[2,8,18,32,50,72]` and `[3,12,27,48,75,108]`; the `bonus: 0` row is a deliberate
+duplicate of the headline spec's numbers, so the table itself proves the new code path collapses to the old
+rule. The only change to the file's pre-existing content was **one line on the shared `facts()` factory**
+(`bankClimbBonus: 0`), which is what let a required field widen without touching 30 call sites.
+
+Three further DLR-92 specs guard the boundaries rather than the arithmetic: the multiplier is pinned at
+exactly `+1` across bonuses 0, 1 and 5 (the scope boundary against the twin item); a bonus on a trick that
+was **not** taken adds nothing and cashes the un-bonused bank (the bonus lives inside the `isTaken` branch);
+and `NaN`, `-1`, `1.5` and `Infinity` each floor to the bare `bankAdded === 1` with `bank` still finite.
 
 The `finalTrick` fold's own trap is worth knowing before editing that spec: **a take increments both
 terms before the fold computes its product**, so the fixture that cashes 4 on a taken sixth trick is
