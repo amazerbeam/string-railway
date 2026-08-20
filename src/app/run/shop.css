@@ -1,7 +1,12 @@
 /* The shop screen's own rules (DLR-84). Transcribed from
    `.claude/contract/DLR-84-earn-coins-and-buy-a-cheat-or-a-heal/mockup.html`'s `.shop-*` block.
    Reuses `.run-shell` and `.run-btn` from `run.css` unchanged — nothing here redefines them.
-   Every clamp() bound and every hue below is the DEVELOPER'S to retune. */
+   Every clamp() bound and every hue below is the DEVELOPER'S to retune.
+
+   Split across three files at the 400-line budget (see also `shopItems.css`, `shopFlask.css`):
+   this file holds the shell/layout — the outer container, title, purse, health, and category
+   tabs. All three are imported together, in this order, from `ShopPanel.tsx`, so the cascade
+   order matches this file's original undivided form exactly. */
 
 .shop {
   display: flex;
@@ -229,159 +234,4 @@
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
   gap: clamp(0.6rem, 2.4vmin, 1.2rem);
   width: 100%;
-}
-
-.shop-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  /* Padding was clamp(0.9rem, 3vmin, 1.6rem) clamp(0.7rem, 2vmin, 1.2rem) and this gap was
-     0.5rem — both tightened for viewport fit (see `.shop`'s gap above); `min-height: 44px` is
-     the untouched accessibility floor. Still the developer's to retune. */
-  gap: 0.3rem;
-  min-height: 44px;
-  padding: clamp(0.45rem, 1.4vmin, 0.8rem) clamp(0.6rem, 1.8vmin, 1rem);
-  border: 1px solid var(--wc-brass);
-  border-radius: 4px;
-  background: #ffffff08;
-  color: var(--wc-chalk);
-  font-family: var(--wc-sans);
-  cursor: pointer;
-  touch-action: manipulation;
-  text-align: center;
-}
-
-/* Refused reads as refused in FORM, not only in colour: a dashed edge and no fill. */
-.shop-item:disabled {
-  cursor: not-allowed;
-  border-style: dashed;
-  border-color: var(--wc-chalk-dim);
-  background: none;
-  color: var(--wc-chalk-dim);
-}
-
-.shop-item:focus-visible {
-  outline: 2px solid var(--wc-parchment);
-  outline-offset: 2px;
-}
-
-@media (hover: hover) {
-  .shop-item:not(:disabled):hover {
-    border-color: var(--wc-parchment);
-  }
-}
-
-.shop-item:not(:disabled):active {
-  transform: translateY(1px);
-}
-
-.shop-item-name {
-  font-family: var(--wc-serif);
-  font-size: clamp(1.05rem, 3vmin, 1.5rem);
-  letter-spacing: 0.04em;
-  color: var(--wc-brass);
-}
-
-.shop-item:disabled .shop-item-name {
-  color: var(--wc-chalk-dim);
-}
-
-.shop-item-blurb {
-  font-size: clamp(0.75rem, 1.9vmin, 0.9rem);
-  line-height: 1.4;
-}
-
-.shop-item-price {
-  font-size: clamp(0.55rem, 1.2vmin, 0.68rem);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--wc-chalk-dim);
-}
-
-/* AC6 — the reason is a sentence on the face of the screen, never a silent no-op.
-   `min-height` was 1.4em — tightened for viewport fit (see `.shop`'s gap above); still enough to
-   hold one line without the row jumping height when a refusal appears. */
-.shop-refusal {
-  margin: 0;
-  min-height: 1.1em;
-  font-size: clamp(0.7rem, 1.8vmin, 0.85rem);
-  color: var(--wc-alarm);
-}
-
-.shop-hint {
-  /* DLR-89 residual-clipping fix — see `.shop-title`'s comment above. */
-  flex: 0 0 auto;
-  margin: 0;
-  font-size: clamp(0.7rem, 1.8vmin, 0.85rem);
-  color: var(--wc-chalk-dim);
-}
-
-/* DLR-89 residual-clipping fix. `.run-actions` (`run.css`) holds the leave-and-continue button —
-   the control this whole fix is about keeping on screen. Scoped to `.shop`'s own child rather
-   than edited in `run.css`, which other screens share and this contract does not touch. */
-.shop > .run-actions {
-  flex: 0 0 auto;
-}
-
-/* The open shelf. THE ONE SCOPED SCROLL REGION on this screen: `game-ux` forbids the page
-   scrolling, and the catalogue is unbounded while the viewport is not — so the overflow is scoped
-   here, and the purse, health, tabs, hint and leave control all stay outside it and stay visible.
-
-   DLR-89 residual-clipping fix: this is now the ONE flex child of `.shop` allowed to shrink.
-   `flex: 1 1 auto` lets it absorb whatever main-axis space is left once every fixed-chrome
-   sibling (title, next, purse, health, tabs, aside, hint, leave button) has taken its own size —
-   `min-height: 0` is the load-bearing half of that: without it a flex item refuses to shrink
-   below its own content height no matter what `flex-shrink` says, which is exactly why the
-   previous, non-flex version of this rule could not yield and the leave button stayed clipped.
-   `max-height` used to be `clamp(6rem, 20vmin, 10rem)` — that `6rem` (96px) lower bound was a
-   floor a plain block could never shrink below either way. It's now a pure upper cap with no
-   floor at all (`min(20vmin, 10rem)`, same preferred/max behaviour as before), so the panel can
-   shrink arbitrarily small — down to 0 if a viewport is ever short enough to demand it — rather
-   than holding a minimum size that competes with the leave button for the space beneath it.
-   `padding` is unchanged from the previous pass and is still a PLACEHOLDER the developer owns, as
-   is the `max-height` cap's own vmin/rem multipliers. */
-.shop-panel {
-  flex: 1 1 auto;
-  min-height: 0;
-  width: 100%;
-  box-sizing: border-box;
-  padding: clamp(0.35rem, 1.2vmin, 0.6rem);
-  border: 1px solid var(--wc-brass-dim);
-  border-top: none;
-  border-radius: 0 0 4px 4px;
-  max-height: min(20vmin, 10rem);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.shop-panel:focus-visible {
-  outline: 2px solid var(--wc-parchment);
-  outline-offset: 2px;
-}
-
-/* AC5 — a rung whose items have not shipped yet says so. */
-.shop-empty {
-  margin: 0;
-  padding: clamp(0.8rem, 3vmin, 1.6rem) 0;
-  font-size: clamp(0.72rem, 1.8vmin, 0.88rem);
-  color: var(--wc-chalk-dim);
-  font-style: italic;
-}
-
-/* The Heal's own block, outside the ladder. */
-.shop-aside {
-  /* DLR-89 residual-clipping fix — see `.shop-title`'s comment above. */
-  flex: 0 0 auto;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.shop-aside-label {
-  font-size: clamp(0.55rem, 1.2vmin, 0.68rem);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--wc-chalk-dim);
-  text-align: left;
 }

@@ -19,7 +19,8 @@ import {
  * sequence anything. Running the encounters in order is `src/hunt/run.ts`'s (DLR-82), which calls
  * this function once per fight and passes the health the player carried out of the last one. Any
  * restore between them (`ENCOUNTER_PLAYER_RESTORE`) remains DELIBERATELY UNREAD — DLR-82 forbids
- * wiring it in, and the flask stories own it.
+ * wiring it in, and DLR-93 landed the flask WITHOUT it: the flask is a separate, player-triggered
+ * between-fights heal (`run.ts`'s `drinkFlask`), not this tunable finally being wired in.
  *
  * `playerHealth` is a defaulted parameter rather than something the function closes over — the
  * same injectable pattern this module's other configuration-derived values use — so a spec can

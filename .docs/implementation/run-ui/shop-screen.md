@@ -248,13 +248,22 @@ handler rather than from an effect.
 
 ## Layout
 
-`shop.css` transcribes each contract's `mockup.html` — `.shop-title`, `.shop-next`, `.shop-purse` and
+The shop's CSS transcribes each contract's `mockup.html` — `.shop-title`, `.shop-next`, `.shop-purse` and
 its cells, `.shop-grid`, `.shop-item`, `.shop-item-price`, `.shop-refusal`, `.shop-hint` (DLR-84),
-plus `.shop-tabs`, `.shop-tab`, `.shop-panel`, `.shop-empty`, `.shop-aside` (DLR-89). Every
+plus `.shop-tabs`, `.shop-tab`, `.shop-panel`, `.shop-empty`, `.shop-aside` (DLR-89), and the
+`.shop-flask*` block (DLR-93). Every
 `clamp()` bound and every hue in it is a tuning value the developer owns, marked as such in the
 file's header exactly as `run.css`'s is. `.shop-item` and `.shop-tab` both carry `min-height: 44px`,
 `:focus-visible` outlines rather than bare `:focus`, and hover guarded by `@media (hover: hover)` and
 paired with `:active`.
+
+**It ships as three sheets since DLR-93, not one** — `shop.css` (the shell, the purse and health row,
+the tablist, the grid definition), `shopItems.css` (the item cards, the refusal and hint copy, the
+scoped-scroll `.shop-panel`, `.shop-empty`) and `shopFlask.css` (`.shop-aside` and the flask block).
+`ShopPanel.tsx` imports them in that order, which is the order the declarations sat in when they were
+one file, so the cascade is unchanged. The split was a pure move forced by the 400-line budget — see
+[the module README](README.md#rules--invariants-enforced) for the measurement history. When adding a
+rule, the sheet is chosen by what the rule styles, not by which file has room.
 
 **Two states hang off the attribute that actually causes them**, so styling cannot drift from
 behaviour: the refused purchase off `.shop-item:disabled`, and the refused tab off

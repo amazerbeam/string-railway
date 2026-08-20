@@ -4,8 +4,30 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-08-19**. Everything below is reachable in
+Last reviewed against the code and the design on **2026-08-20**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
+
+> **You have a flask, and it is free — DLR-93, 2026-08-20.** Everything that has ever restored your
+> health cost a coin. Now one does not: you carry a **flask**, and drinking it restores **60% of your
+> maximum health** — **6** on today's bar of 10 — immediately, with anything over your maximum thrown
+> away. It costs nothing.
+>
+> **It holds one charge, and a charge comes back only from a stage boss.** Beat one of the five bosses
+> and your flask is full again, whether you had drunk it or not. Beating an ordinary opponent does
+> nothing for it. So across a full twenty-five-fight run there are **five flasks to drink**, and never
+> two in hand at once.
+>
+> **You drink it from the shop screen, and it is not for sale.** It sits in its own block above the four
+> shelves — a potion button with no price on it, marked `Free` and `No coin`, as far from the priced
+> Heal as the screen allows. It is refused, with the reason on screen, when your flask is empty or when
+> you are already at full health. See [section 8](#8-damage-and-the-duel) and
+> [section 10](#10-between-hands-and-the-run). **Engine and screen landed together, and the drink was
+> driven end to end in a browser.**
+>
+> **Nothing was retuned around it.** No health total, price or opponent curve moved, and the automatic
+> between-fight restore that has sat unwired since DLR-82 is *still* unwired — that ticket forbade it
+> "until the flask is designed", and designing the flask turned out not to change the answer. A restore
+> the game hands you and a charge you choose to spend are different things.
 
 > **The bank's climb is now something you can buy — DLR-92, 2026-08-19.** Until now a taken trick banked
 > **1**, always, and a streak of _n_ cashed exactly `n × n`. The shop's run-permanent shelf — empty since it
@@ -761,12 +783,14 @@ Both sides hold **health**, and the encounter ends when either total reaches zer
 | Damage to the player, per event    | **1**, every time — **[settled]**                             |
 | Health restored on winning a fight | **None** — **[not built]**, and nothing reads the tunable yet |
 | Health restored by buying a heal   | **4**, clamped to your maximum — **[provisional]** (DLR-84)   |
+| Health restored by drinking the flask | **60% of your maximum** — **6** today, clamped — **[provisional]** (DLR-93) |
 | Both bars emptying together        | **The player wins** — since 2026-08-19                        |
 
-**There is exactly one source of healing in the game, and you have to pay for it.** Winning a fight
-restores nothing automatically; the only way health comes back is buying a heal at the shop between
-fights, for a coin ([section 10](#10-between-hands-and-the-run)). There is no flask and no rest
-site.
+**There are two sources of healing in the game, and only one of them costs money.** Winning a fight
+restores nothing automatically. Health comes back by **buying a heal** at the shop for a coin, or by
+**drinking your flask**, which is free and limited to the charge you are carrying
+([section 10](#10-between-hands-and-the-run)). Both clamp to your maximum and throw the excess away.
+There is still no rest site, and nothing at all restores health during a fight.
 
 **The two numbers are now the same, and they were not before.** The Quarry's total sat in the
 hundreds for as long as the bank summed card values and a hand dealt about 84. Once the bank counted
@@ -1079,8 +1103,10 @@ nothing about how a fight is played: there is no stage gimmick, no reward for fi
 happens between stages that does not happen between any two fights. What a stage does is make the run's
 length legible.
 
-- **Your health carries from fight to fight, and nothing restores it.** You begin the next fight on
-  exactly the health you finished the last one on. There is no rest, no heal, and no flask.
+- **Your health carries from fight to fight, and nothing restores it on its own.** You begin the next
+  fight on exactly the health you finished the last one on. Nothing is given back for winning, and
+  there is no rest site. **What you can do between fights is spend for it**: buy a heal for a coin, or
+  drink your flask for nothing — both below, and both only ever by your choosing.
 - **Beating a Quarry does not end the session.** The fight resolves, you are told **by name** that you
   beat them, and you choose to go on to the next one.
 - **Your health emptying ends the run**, wherever it happens — including on the last fight. No
@@ -1092,6 +1118,8 @@ length legible.
   spent in fight one is still gone in fight two; one held is still held. They are granted once, at
   the start of the run, and are replenished only by buying one.
 - **Your coins carry too**, and nothing takes them away but spending them.
+- **Your flask carries as well**, and it is the one thing in the run that is **given back** rather than
+  only spent — a stage-boss kill refills it. See below.
 
 > **Deviation from the base game.** There is no 21-point match and no symmetric contest. A run is
 > one-directional: you accumulate damage and never recover it, and the only question is how far you
@@ -1119,10 +1147,12 @@ is** — it is the one number in the change nobody has decided. Whether a formul
 also open: twenty-five editable numbers is the alternative, and swapping to it changes nothing else.
 
 > **This run is not winnable, and that is the arithmetic working rather than a fault.** A fight costs the
-> player roughly four health, the player starts with **ten**, and the only healing in the game is 4 health
-> for a coin at one coin a fight. Expect to lose in the first or second stage. DLR-82 already recorded
-> that the answer is the shop and later upgrades, and that **raising the player's starting health is
-> explicitly the wrong response**. The practical consequence: **`YOU WIN` is effectively unreachable in
+> player roughly four health and the player starts with **ten**. The healing available is 4 health for a
+> coin at one coin a fight, plus — since 2026-08-20 — a **free 6 from the flask, once per stage**, which
+> is real but small against opponents ending at 135. Expect to lose in the first or second stage. DLR-82
+> already recorded that the answer is the shop and later upgrades, and that **raising the player's
+> starting health is explicitly the wrong response**. Both named answers have now shipped and **neither
+> has been played against this curve**. The practical consequence: **`YOU WIN` is effectively unreachable in
 > play**, so checking that screen needs the run temporarily shortened.
 
 ### The run's length — **[settled]**
@@ -1293,6 +1323,47 @@ you own, and whatever coins you did not spend. **The Guard is the one purchase t
 that fight and no longer. **The Whetstone is at the other extreme** — it survives every remaining fight of
 the run.
 
+### The flask — a free heal you carry, refilled by a stage boss — **[settled]**; both its figures are **[provisional]**
+
+Since 2026-08-20 you carry a **flask**. It is on the shop screen but it is **not for sale**: it costs
+nothing, and what limits it is charges rather than coins.
+
+- **Drinking it restores 60% of your maximum health, immediately** — **6** on today's bar of 10.
+  Anything above your maximum is thrown away, exactly as a bought heal's excess is.
+- **You hold one charge**, and drinking spends it.
+- **Beating a stage boss fills it back to one charge** — whether you had drunk it or not, so there is
+  never a second charge banked and never a boss kill that does nothing for it. **Beating an ordinary
+  opponent does not refill it.** Across a full run that is **five flasks**, one per stage.
+- **You may only drink it between fights**, on the same shop screen and under the same conditions the
+  shop itself is reachable. There is no way to drink it mid-hand.
+- **It is refused, with the reason on the screen, in exactly two cases**: your flask is empty, or you
+  are already at full health. An empty flask is named first when both are true, because that is the
+  one still true after the next hit. Nothing else can refuse it — there is no coin check, because
+  there is no price.
+
+**It is deliberately unmistakable for the shop's paid heal**, and none of the ways it is marked out is
+a colour. It sits in a block of its own **above the four shelves** and far from the "Also for sale"
+block the heal lives in; it is a **potion button with an icon** where every purchase is a text card;
+it carries the words **"Free"** and **"No coin"** where they carry a price; and the purse row gains a
+cell stating how many charges you hold. The wording of all of it is placeholder, and **"Flask" itself
+is not a settled name** (`hybrid-design.md` version-4-scope §2).
+
+**The two figures, and who owns them:**
+
+| Figure                            | Value | Status                                                                                   |
+| --------------------------------- | ----- | ---------------------------------------------------------------------------------------- |
+| What one drink restores           | **60% of maximum** (6 today) | **[provisional]** — transcribed from the design, never played |
+| Charges the flask holds, and refills to | **1** | **[provisional]** — the design defers re-tuning it "only if it plays too thin" |
+
+**Whose decision:** the developer's, both of them, and neither is a number anyone has chosen here —
+they are transcribed from `hybrid-design.md` version-4-scope §2. The charge count and the refill are
+**one number, not two**, so raising it would give a boss kill more back as well.
+
+> **Deviation from the base game.** *The Fox in the Forest* has no health, so it has nothing to
+> restore and nothing to carry between deals. The flask exists because this game's run is one
+> unrefilled bar across twenty-five fights, and it is the second of the two answers to that — the shop
+> being the first.
+
 ### Which fight you are on, and who you are fighting — **[settled]**
 
 Shown throughout play, beside the opponent's plate: **`Fight 1 of 25 — Aoife`**. Until 2026-08-17 it read
@@ -1336,9 +1407,12 @@ too, alongside who is coming next.
 - **Anything in the shop that reduces skull density** — **[not built]**, and ruled out rather than
   merely absent. The skull is the game's only inversion (section 7), and selling a way past it would
   remove the reason taking every trick is not simply correct.
-- **A restore between fights** — **[not built]**, and deliberately so. The tunable exists and is
-  read by nothing; wiring it in was explicitly forbidden until the flask is designed. **The shop's
-  heal is not this** — it costs a coin and you must choose it.
+- **An *automatic* restore between fights** — **[not built]**, and deliberately so. The tunable exists
+  and is read by nothing; wiring it in was forbidden until the flask was designed. **The flask has
+  since been designed and built (2026-08-20) and the tunable is still unwired** — that is a decision,
+  not an oversight, because a restore the game performs on you is a different mechanic from a charge
+  you choose to spend. **Neither the shop's heal nor the flask is this**: one costs a coin, the other
+  costs a charge, and both need you to choose them.
 - **Coins carrying between runs** — **[not built]**. A new run starts at zero.
 - **Different Quarries — HALF BUILT.** The twenty-five opponents now have **names of their own**
   (section 9), and the map, the verdict, the shop and the fight counter all use them. But **every opponent
@@ -1418,7 +1492,30 @@ shape is decided.
 One row per rule area. `Where enforced` is a pointer for checking this document has not gone stale —
 the mechanics themselves are documented in `../implementation/`.
 
-> **Where the last contract stands, 2026-08-19 (DLR-92).** Engine and screen landed together: the
+> **A note on two file names, 2026-08-20.** `src/hunt/run.ts` was split by DLR-93 when it crossed this
+> project's file-size ceiling. It keeps the run's **shape** — `RunState`, `startRun`, and the
+> projections — while the **transitions** (`recordEncounter`, `advanceRun`, `buyFromShop`,
+> `drinkFlask` and their private helpers) moved to `src/hunt/runTransitions.ts` and are re-exported from
+> the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
+> a `RunState` field and a transition in the same breath means exactly that.
+
+> **Where the last contract stands, 2026-08-20 (DLR-93).** Engine and screen landed together, and QA
+> drove the drink end to end in a real browser: the charge on the run, the 6-health restore, the clamp
+> that discards overheal, both refusals with their reasons on screen, the boss refill, the
+> ordinary-kill non-refill, the potion button and the purse cell are **all reachable by playing right
+> now** — none of it is enforced-but-unreachable. **Both of the flask's figures are `provisional` and
+> both are transcribed rather than chosen**: the 60% comes from the design doc, and the single charge is
+> a number the design explicitly defers re-tuning ("revisit only if it plays too thin"), which is why it
+> is not `open`. **One row below stays `not built` by decision rather than oversight**: the automatic
+> between-fight restore. DLR-82 forbade wiring it in "until the flask is designed", and the flask being
+> designed did not change the answer — its row's "who decides" column said the flask stories owned it,
+> and that has been corrected rather than left to read as an outstanding task. **Nothing was retuned**:
+> no health total, price or opponent curve moved in response to a free heal entering the run. **What has
+> not been measured is the only thing that matters about it** — whether five flasks across
+> twenty-five fights changes how far a run gets. Recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
+
+> **Where DLR-92 stood, 2026-08-19.** Engine and screen landed together: the
 > Whetstone on the run-permanent shelf, its 4-coin price, its stacking purchase, the purse cell counting how
 > many you own, the coins-only refusal, and the bank's raised climb are **all reachable by playing right
 > now** — none of it is enforced-but-unreachable. **The multiplier's twin item is `not built` by decision
@@ -1498,7 +1595,7 @@ the mechanics themselves are documented in `../implementation/`.
 | Cheats carried fight to fight                 | settled                          | `src/hunt/run.ts` — `RunState.cheats`; `advanceRun`'s spread carries it, `recordEncounter` adopts the hand's survivors           | —                                                       |
 | Cheats a run starts with (0)                  | **provisional** — set 2026-08-17 | `src/hunt/config.ts` — `RUN_STARTING_CHEATS`, **0** since 2026-08-17 (was 2); granted by `src/hunt/cheats.ts` — `grantCheats`, which throws outside `0..CHEAT_SLOT_COUNT` rather than clamping | **Developer** — it has moved once already; every Cheat is now bought |
 | The Quarry holds no Cheats                    | settled                          | nothing to enforce — the bypass is an argument the Quarry's call sites never pass; a grep guards the absence                     | —                                                       |
-| Buying a Cheat (1 coin, into a free slot)     | settled — since DLR-84           | `src/hunt/run.ts` — `buyFromShop` calls `addCheat` and advances `nextCheatId`; priced by `src/hunt/config.ts` — `CHEAT_PRICE`    | Developer — the price                                   |
+| Buying a Cheat (1 coin, into a free slot)     | settled — since DLR-84           | `src/hunt/runTransitions.ts` — `buyFromShop` calls `addCheat` and advances `nextCheatId`; priced by `src/hunt/config.ts` — `CHEAT_PRICE`    | Developer — the price                                   |
 | Selling or replacing a Cheat                  | **not built**                    | nothing — the shop only adds                                                                                                     | Developer — a later ticket                              |
 | Odd-rank abilities                            | settled                          | `src/warCouncil/abilities.ts`, `resolveTrick.ts`                                                                                 | —                                                       |
 | Whether abilities survive six-card hands      | **open**                         | nothing — abilities are unchanged and ability-free hands are accepted                                                            | Developer, after playtest                               |
@@ -1541,8 +1638,8 @@ the mechanics themselves are documented in `../implementation/`.
 | What any character's power is                 | **not built** — undecided        | —                                                                                                                                | **Developer — a final-boss ticket, not every opponent** |
 | Telegraph fidelity                            | provisional                      | `src/hunt/config.ts` — `TELEGRAPH_FIDELITY`                                                                                      | Developer, after playtest                               |
 | Rank 8's name ("Poison")                      | **open** — misleading            | `src/app/warCouncil/labels.ts` — `RANK_NAME`                                                                                     | Developer                                               |
-| Between-encounter restore (none, automatic)   | **not built** — deliberately     | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE`; still **no consumer**, and DLR-82 forbade adding one. A grep guards it        | Developer — the flask stories own it                    |
-| Winning a fight pays 1 coin                   | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `COINS_PER_ENCOUNTER_WIN`; credited by `src/hunt/run.ts` — `recordEncounter`, the single payout site      | Developer — transcribed, not derived                    |
+| Between-encounter restore (none, automatic)   | **not built** — by decision      | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE`; still **no consumer** after DLR-93. A grep in DLR-82's, DLR-84's and DLR-93's final verification guards it | **Developer** — the flask has now shipped *without* wiring this, so it is a separate decision rather than a story waiting to land |
+| Winning a fight pays 1 coin                   | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `COINS_PER_ENCOUNTER_WIN`; credited by `src/hunt/runTransitions.ts` — `recordEncounter`, the single payout site      | Developer — transcribed, not derived                    |
 | Coins carry across the run, and are on screen | settled — since DLR-84           | `src/hunt/run.ts` — `RunState.coins`, carried by `advanceRun`'s spread; drawn by `src/app/warCouncil/RoundStatusBand.tsx`'s `.wc-coins` plate | —                                          |
 | The shop, and its exactly five items          | settled — since DLR-84           | `src/hunt/shop.ts` — `SHOP_ITEMS`, unchanged in order by DLR-89 and widened by DLR-90, DLR-91 and DLR-92 (the Whetstone inserted before `Heal`, which must stay last); rendered by `src/app/run/ShopPanel.tsx`, which reads the groupings below rather than listing the items | —              |
 | Four shelves, by how long a purchase lasts    | settled — since DLR-89           | `src/hunt/shop.ts` — `ShopCategory` and `SHOP_CATEGORIES` (which fixes the order); drawn by `src/app/run/ShopCategoryTabs.tsx`   | Developer — the four labels are placeholder copy         |
@@ -1557,9 +1654,20 @@ the mechanics themselves are documented in `../implementation/`.
 | Continue warns when something is affordable   | settled                          | `src/hunt/shop.ts` — `canBuyAnything`, `some()` over `refusalFor`; raised by `src/App.tsx`'s `handleContinue`                    | **Developer** — safety net or nag; a threshold is one line |
 | Backing out of the warning takes no action    | settled                          | `src/app/run/RunOutcomePanel.tsx` — `onDismissWarning` on the swapped block's `Escape`                                           | Developer — whether it should mean "continue anyway"    |
 | Both prices (1 coin each)                     | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `CHEAT_PRICE`, `HEAL_PRICE`, deliberately two keys                                                        | **Developer** — if Heal wins every visit, the Cheat is mispriced |
-| Buying a Whetstone (4 coins, no cap, stacks)   | settled — since DLR-92           | `src/hunt/run.ts` — `buyFromShop`'s `Whetstone` case increments `RunState.whetstones`; `src/hunt/shop.ts` — `refusalFor` needed no clause, so only `NotEnoughCoins` can refuse it | Developer — the price, and whether stacking wants a cap |
-| A heal restores 4, clamped, surplus discarded | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `HEAL_HEALTH_RESTORED`; the `Math.min` in `src/hunt/run.ts` — `buyFromShop` is the single clamp           | Developer — the amount                                  |
-| A heal is the only healing in the game        | settled                          | `src/hunt/run.ts` — `buyFromShop` is the sole writer that raises player health; no flask and no rest site exist                  | —                                                       |
+| Buying a Whetstone (4 coins, no cap, stacks)   | settled — since DLR-92           | `src/hunt/runTransitions.ts` — `buyFromShop`'s `Whetstone` case increments `RunState.whetstones`; `src/hunt/shop.ts` — `refusalFor` needed no clause, so only `NotEnoughCoins` can refuse it | Developer — the price, and whether stacking wants a cap |
+| A heal restores 4, clamped, surplus discarded | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `HEAL_HEALTH_RESTORED`; the clamp moved into `src/hunt/runTransitions.ts` — the private `healedBy`, shared with the flask since DLR-93 | Developer — the amount                                  |
+| Health is raised in exactly one place         | settled — since DLR-93           | `src/hunt/runTransitions.ts` — `healedBy` is the sole writer that raises player health, read by `buyFromShop`'s `Heal` arm and by `drinkFlask`; overheal is discarded there and nowhere else | —                                                       |
+| Two sources of healing, one of them free      | settled — since DLR-93           | the paid Heal in `src/hunt/shop.ts` / `buyFromShop`, and the flask in `src/hunt/flask.ts` / `drinkFlask`. No rest site exists, and nothing restores health during a fight | —                                                       |
+| The flask — one charge, drunk by choice, free | settled — since DLR-93           | `src/hunt/run.ts` — `RunState.flaskCharges`, seeded by `startRun` and carried by `advanceRun`'s and `recordEncounter`'s spreads; spent by `src/hunt/runTransitions.ts` — `drinkFlask`. It is **not** a `ShopItem`, so no price or shelf exists for it | —                                                       |
+| What one drink restores (60% of maximum)      | **provisional** — set 2026-08-20 | `src/hunt/config.ts` — `FLASK_HEAL_PERCENT`, a proportion in 0..1; the amount is computed by `src/hunt/flask.ts` — `flaskHealAmount`, its only reader | **Developer** — transcribed from `hybrid-design.md` version-4-scope §2, never played |
+| Charges held, and the figure a boss refills to | **provisional** — set 2026-08-20 | `src/hunt/config.ts` — `FLASK_STARTING_CHARGES`, **one key for both** so the run's full-flask figure is stated once | **Developer** — the design defers re-tuning it "only if it plays too thin", so it is deferred rather than undecided |
+| A stage-boss kill refills it; an ordinary kill does not | settled — since DLR-93  | `src/hunt/runTransitions.ts` — the private `flaskAfter`, inside `recordEncounter` (not `advanceRun`, which never runs for the final fight of a won run); it reads `runEncounterAt(...).kind === OpponentKind.Boss` | —                                                       |
+| The refill is unconditional on what you held  | settled — since DLR-93           | `src/hunt/runTransitions.ts` — `flaskAfter` returns the configured figure rather than incrementing, so 0 and 1 both become 1 and no second charge can bank | —                                                       |
+| Drinking is refused, empty flask named first  | settled — since DLR-93           | `src/hunt/flask.ts` — `flaskRefusalFor` tests charges before full health, mirroring `refusalFor`'s durable-reason-first order; worded by `src/app/run/shopLabels.ts` — `FLASK_REFUSAL_MESSAGE` | Developer — the wording                                 |
+| It can only be drunk between fights           | settled — since DLR-93           | `src/App.tsx` — the control renders only under `RunPhase.Shop`; `drinkFlask` also throws on an unresolved encounter, so a driver bug is loud rather than a mid-hand heal | —                                                       |
+| It is never sold, and never on a shelf        | settled — since DLR-93           | nothing to enforce — no `ShopItem` member exists for it, so `priceOf`, `categoryOf` and `PurchaseRefusal` are untouched; the control is a separate block in `src/app/run/ShopPanel.tsx` | —                                                       |
+| Free reads as free, without colour            | settled — since DLR-93           | `src/app/run/shopLabels.ts` — `SHOP_FLASK_FREE_TAG` / `SHOP_FLASK_NO_COIN` as words, an icon-led button rather than a text card, its own zone above the tablist, and a purse cell counting charges | Developer — every word of it is placeholder, and "Flask" is an unsettled name |
+| Nothing shows the flask during a fight        | **not built** — deliberately     | nothing — the shop screen is its only surface, exactly as with the Poison Guard and the Whetstone                                 | **Developer** — the same call as the two rows like it   |
 | A refused purchase states its reason          | settled                          | `src/hunt/shop.ts` — `refusalFor`; worded by `src/app/run/shopLabels.ts` — `PURCHASE_REFUSAL_MESSAGE`                            | Developer — the wording                                 |
 | The durable reason wins over the coin check   | settled                          | `src/hunt/shop.ts` — `refusalFor` tests slots and health **before** the balance                                                  | —                                                       |
 | A heal at full health is refused, not sold    | settled — this game's own rule   | `src/hunt/shop.ts` — `PurchaseRefusal.AlreadyFullHealth`; the ticket did not state it                                            | Developer — selling it and discarding is the alternative |
@@ -1568,10 +1676,10 @@ the mechanics themselves are documented in `../implementation/`.
 | Nothing in the shop reduces skull density     | settled — ruled out              | nothing to enforce — no key, no item, and no code path touches `SKULL_DENSITY` or the curves                                     | —                                                       |
 | Coins carrying between runs                   | **not built**                    | nothing is persisted anywhere; `startRun` seeds `coins: 0`                                                                       | Developer — a later ticket                              |
 | Forage                                        | **not built**                    | `src/hunt/config.ts` — `FORAGE_BUDGET_PER_ENCOUNTER` (no consumer)                                                               | Developer — budget is provisional                       |
-| The run — a sequence of encounters            | settled — since DLR-82           | `src/hunt/run.ts` — `RunState`, `startRun`, `advanceRun`; driven by `src/App.tsx`                                                | —                                                       |
-| Health carried fight to fight, no restore     | settled                          | `src/hunt/run.ts` — `advanceRun` passes `encounter.health[Player]` into `startEncounter`                                         | —                                                       |
-| Your health emptying ends the run             | settled                          | `src/hunt/run.ts` — `outcomeFor` checks the Quarry's win before the last-fight case                                             | —                                                       |
-| Winning the last fight wins the run           | settled                          | `src/hunt/run.ts` — `outcomeFor`'s `encounterIndex === encounterCount - 1`                                                       | —                                                       |
+| The run — a sequence of encounters            | settled — since DLR-82           | `src/hunt/run.ts` — `RunState`, `startRun`; `src/hunt/runTransitions.ts` — `advanceRun`; driven by `src/App.tsx`                                                | —                                                       |
+| Health carried fight to fight, no restore     | settled                          | `src/hunt/runTransitions.ts` — `advanceRun` passes `encounter.health[Player]` into `startEncounter`                                         | —                                                       |
+| Your health emptying ends the run             | settled                          | `src/hunt/runTransitions.ts` — `outcomeFor` checks the Quarry's win before the last-fight case                                             | —                                                       |
+| Winning the last fight wins the run           | settled                          | `src/hunt/runTransitions.ts` — `outcomeFor`'s `encounterIndex === encounterCount - 1`                                                       | —                                                       |
 | The opponents' health (10…86; bosses 39…135)  | **provisional** — set 2026-08-17 | `src/hunt/config.ts` — generated by `buildRunEncounters` from `ORDINARY_HEALTH_BASE` (10), `ORDINARY_HEALTH_STEP` (4) and `BOSS_HEALTH_MULTIPLIER` (1.5); projected into `QUARRY_ENCOUNTER_HEALTH` | **Developer** — the multiplier is the one number nobody chose, and whether a formula beats 25 literals is open |
 | The run is not winnable as configured         | **provisional** — accepted       | nothing to enforce — Oisín holds 86 and Diarmuid 135 against a `PLAYER_START_HEALTH` of 10; DLR-82 ruled the answer is the shop, **not** a bigger bar | Developer — `YOU WIN` is unreachable in play until the curve or the upgrades move |
 | Run length (25)                               | settled — derived, not chosen    | `src/hunt/config.ts` — `ENCOUNTERS_PER_RUN` is `QUARRY_ENCOUNTER_HEALTH.length`, itself a projection of `RUN_ENCOUNTERS`          | — (add a roster name to add a fight)                    |
@@ -1594,7 +1702,7 @@ the mechanics themselves are documented in `../implementation/`.
 | Every opponent plays identically              | settled — health and name only   | nothing to enforce — no game rule reads `OpponentKind` or an opponent's name; `SLICE_QUARRY_CHARACTER` is still the one *character* the felt shows | Developer — powers are a final-boss ticket   |
 | The health bar names the opponent             | settled — since 2026-08-17        | `src/app/warCouncil/labels.ts` — `quarryHealthLabel(name)`; threaded from `src/App.tsx` as a pre-worded string, like `runLabel`. `HEALTH_BAR_LABEL[Quarry]` is now only the unnamed fallback | Developer — the possessive wording |
 | The dossier still says "The Monarch"          | **open** — the remaining seam     | `src/hunt/quarryCharacters.ts` — `QUARRY_CHARACTERS`; rendered by `src/app/warCouncil/QuarryDossier.tsx`, with "What the Quarry holds" beside it | **Developer** — accept the seam for a release, or pull the follow-on in |
-| Envenom — a charge bought, not spent on buying | settled — since DLR-90 | `src/hunt/run.ts` — `RunState.envenomCharges`, credited by `buyFromShop`'s `ShopItem.Envenom` arm and carried by `advanceRun`'s spread | — |
+| Envenom — a charge bought, not spent on buying | settled — since DLR-90 | `src/hunt/run.ts` — `RunState.envenomCharges`, credited by `runTransitions.ts`'s `buyFromShop`'s `ShopItem.Envenom` arm and carried by `advanceRun`'s spread | — |
 | Its price (2 coins) | **provisional** — transcribed | `src/hunt/config.ts` — `ENVENOM_PRICE`; read by `priceOf` | Developer — from `version-4-scope.md`, not derived; **unmeasured in play** |
 | No cap on charges held | settled | `src/hunt/shop.ts` — `refusalFor` has **no** Envenom clause, so it falls through to the coin check | Developer — a cap is a key, one clause and one code |
 | Three taps to mark: select, arm, then a card | **open** — a feel question | `src/app/warCouncil/roundUiState.ts` — `EnvenomStage`; cycled by `roundReducer.ts`'s `handleTapEnvenom`, drawn by `EnvenomCharge.tsx` | **Developer** — one tap to arm makes marking two, but puts an irreversible mark one misclick away |
@@ -1616,10 +1724,10 @@ the mechanics themselves are documented in `../implementation/`.
 | The Quarry's share never touches a bank | settled | `src/warCouncil/bank.ts` — `poisonToQuarry` rides on `TrickResolution` and is summed into the Quarry's total by `incomingFrom`; the Quarry holds no bank or multiplier at all | — |
 | Two poisoned tricks both land | settled | `src/hunt/types.ts` — `EncounterState.pendingEnvenom` is a per-side `IncomingDamage` **accumulator**, not a single side | — |
 | Two marks in ONE trick still owe one hit | settled — a predicate, not a count | `src/warCouncil/envenom.ts` — `trickIsEnvenomed` is a boolean over the trick | Developer — a count instead of a predicate is a small follow-up |
-| A delayed hit can kill, and end the run | settled | `src/hunt/encounter.ts` — the hit goes through the same `applyDamage`/`resolveWinner` as any other damage, and `src/hunt/run.ts` — `outcomeFor` re-derives the run's end from the result | — |
+| A delayed hit can kill, and end the run | settled | `src/hunt/encounter.ts` — the hit goes through the same `applyDamage`/`resolveWinner` as any other damage, and `src/hunt/runTransitions.ts` — `outcomeFor` re-derives the run's end from the result | — |
 | A queued hit dies with the fight | settled | `src/hunt/encounter.ts` — `startEncounter` seeds `pendingEnvenom` to zeros and `advanceRun`/`startRun` both route through it; `queueEnvenom` also refuses a resolved encounter | — |
 | Nothing announces the delayed hit landing | **not built** — deliberately | nothing — hearts and the streak simply drop mid-hand, and nothing showed the poison was pending either | **Developer** — a mount prop plus a hint line (~15 lines), or a beat on the status band |
-| Poison Guard — bought, and live for one fight | settled — since 2026-08-19 | `src/hunt/run.ts` — `RunState.poisonGuardHeld`, set by `buyFromShop`, carried by `advanceRun`'s spread and cleared by the private `guardAfter` the moment the encounter resolves | — |
+| Poison Guard — bought, and live for one fight | settled — since 2026-08-19 | `src/hunt/run.ts` — `RunState.poisonGuardHeld`, set by `runTransitions.ts`'s `buyFromShop`, carried by `advanceRun`'s spread and cleared by its private `guardAfter` the moment the encounter resolves | — |
 | Its price (1 coin) | **provisional** — transcribed | `src/hunt/config.ts` — `POISON_GUARD_PRICE`; read by `priceOf`. Its own key, level with `HEAL_PRICE` | Developer — from `version-4-scope.md`, not derived; **unmeasured in play** |
 | It sits on the fight-long shelf | settled — since 2026-08-19 | `src/hunt/shop.ts` — `categoryOf` returns `ShopCategory.FightLong`; `SHOP_ITEMS_BY_CATEGORY` derives the shelf at module load, so the screen needed no edit | — |
 | Only one may be held at a time | settled | `src/hunt/shop.ts` — `PurchaseRefusal.GuardAlreadyActive`, returned by `refusalFor` before the coin check; worded by `src/app/run/shopLabels.ts` | Developer — a count instead of a flag is a small change |
@@ -1898,8 +2006,66 @@ dying — which is a datum about the price and the difficulty rather than about 
 purchase-to-payoff loop is proven by a mounted-component test against the real component tree with real
 DOM events, and not yet by a hand on a mouse.
 
+### The flask landed — DLR-93, 2026-08-20
+
+**What a player does now that they did not before:** heals **without paying for it**. Every restore in
+this game has cost a coin since the shop existed; the flask costs a charge instead, and a charge comes
+back for beating a stage boss. So the run now has a resource that is *earned by progress* rather than
+by income — the first one, and the only thing in the run that is given back rather than only spent.
+
+**What it changes about a decision:** the shop's heal has always competed with everything else for the
+same coin, and DLR-84 predicted it would win every visit. The flask does not compete with anything. What
+it introduces instead is a **holding decision** — a full flask is worth 6 health whenever you want it,
+so drinking early to top up a small gap wastes most of it, and the refusal at full health is the only
+part of that the game enforces for you.
+
+**What is gone:** nothing. No rule was removed or replaced, and the paid heal is untouched in price,
+amount, refusal and placement.
+
+**Engine and screen landed together**, and the drink was driven end to end in a browser rather than
+proven only against the engine — which is not how the last three item tickets went, because none of
+them could be afforded in a QA run. A free item cannot have that problem.
+
+**What the developer owns:** whether **60%** is the right size; whether **one charge per stage** is
+enough (the design defers this until it plays too thin); whether the potion glyph and the flask block
+read at final size; whether the free-versus-paid separation actually lands at a glance; every word of
+the placeholder copy; and **whether "Flask" is the name**.
+
+**What has not been measured is the point of it.** The flask exists to answer a run recorded as
+unwinnable, and nobody has yet played a run with it in. Five drinks of 6 across twenty-five fights
+against opponents ending at 135 is a real change that may still be far too small, and **nothing else
+was retuned in response** — deliberately, so the measurement is of the flask rather than of a rebalance
+around it. Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
+
 ### Known tensions, recorded not resolved
 
+- **The flask is the answer to a run recorded as unwinnable, and the run has not been played with it
+  in** (new 2026-08-20, DLR-93). DLR-82 named the flask as part of the fix and refused to build it
+  early; it is now built, and **the curve it was meant to answer was deliberately left untouched**. Five
+  drinks of 6 health across twenty-five fights, against a fight costing roughly four and opponents
+  ending at 135, is a real change that may still be nowhere near large enough — or, coming free on top
+  of a 4-health heal for a coin, may be more than intended. **Nobody has played it yet**, so the honest
+  measurement is unchanged from DLR-82's: *how far does a run get*. Until someone takes it, this is the
+  single most consequential unknown in the game.
+- **A free heal has no cost to weigh, so the only decision it carries is when** (new 2026-08-20,
+  DLR-93). Every other thing you can spend competes for the same coin; the flask competes with nothing.
+  The one real choice it offers is **timing** — drink at 9 of 10 and five of the six points are thrown
+  away, and the game only stops you at exactly full. Whether that reads as a meaningful judgement call
+  or as a button you press whenever it lights up is a play observation. **The cheapest measurement is
+  whether you ever deliberately hold a full flask into a fight**; if not, the charge is functionally
+  automatic and might as well be the between-fight restore that is still ruled out.
+- **The flask is invisible during the fight it might save you in** (new 2026-08-20, DLR-93). Its charge
+  count is on the shop screen and nowhere else, so a player deciding whether to push on cannot see
+  whether they have one in hand — and the moment they most want to know is mid-fight, when it is
+  unreachable anyway. This is the **fourth** item whose state is legible only where it is bought, after
+  the Poison Guard, the Whetstone and pending poison. No rule required a readout, so none was invented,
+  but the pattern is now a habit rather than a one-off.
+- **A boss kill refills to exactly one, so a boss beaten on a full flask gives nothing** (new
+  2026-08-20, DLR-93). The refill sets the count rather than adding to it, deliberately — there is
+  never a second charge banked. The consequence is a small perverse incentive: drinking a nearly-wasted
+  flask *before* a boss fight is strictly better than carrying a full one into it, since the refill
+  would otherwise be worth nothing. Whether that is a nice bit of planning or an accident to close is
+  unjudged, and it is the same shape as the Poison Guard's accepted oddity below.
 - **The strongest item in the shop costs four times what a fight pays, and nobody has yet bought one**
   (new 2026-08-19, DLR-92). A Whetstone is 4 coins against **1 coin per fight won**, so on flat winnings it
   is four fights of saving while the run is expected to end in its first or second stage. QA played two full
@@ -2051,8 +2217,11 @@ DOM events, and not yet by a hand on a mouse.
   flask exist to close. **Updated 2026-08-16, DLR-84: the shop now exists and the curve was left
   alone deliberately.** A coin a fight buys back 4 health, against a fight costing about four — so a
   player spending everything on health roughly breaks even, and the gap is closed only if they were
-  going to win anyway. Upgrades and the flask are still absent, and the two obvious rule changes
-  (raise starting health, wire up the between-fight restore) remain explicitly ruled out. The honest
+  going to win anyway. **Updated 2026-08-20, DLR-93: the flask now exists too, and the curve was
+  again left alone deliberately** — a free 6 health once per stage is the second of the two named
+  answers landing, and the two obvious rule changes (raise starting health, wire up the automatic
+  between-fight restore) remain explicitly ruled out. Upgrades that raise the player's damage are
+  partly built (Envenom, the Whetstone) and both are priced out of reach on today's income. The honest
   measurement is still *how far* a run gets, but it is now a measurement of the economy rather than
   of its absence. The cheapest disproof that
   something is wrong rather than merely unfinished: if fight two is routinely unreachable rather than

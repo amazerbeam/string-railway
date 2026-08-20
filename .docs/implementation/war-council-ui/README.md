@@ -144,9 +144,10 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
 ## How it works
 
 - [Layout and styling](layout-and-styling.md) — the full-viewport shell, the `dvh` vs `svh`
-  choice, the stylesheet split and the 400-line budget that caused every one of them (six sheets at
-  its peak, **four** since DLR-80 deleted two), where `.wc-sr-only` was re-homed to, and how the
-  fan's transform is composed in CSS rather than written whole from React.
+  choice, the stylesheet split and the 400-line budget that caused every one of them (**seven** sheets
+  today, after DLR-93 carved `warCouncilTable.css` out), which sheet owns which zone, where
+  `.wc-sr-only` was re-homed to, and how the fan's transform is composed in CSS rather than written
+  whole from React.
 - [The duel's health bars](duel-health-bars.md) — the mirrored opposed pair and the one CSS
   declaration that is the whole of the mirror, **why DLR-80 retired the pending segment** and what
   replaced it, what the ~54× rescale to 25 health means for how the bar reads, and the pure geometry
@@ -231,6 +232,8 @@ though both currently read "Coins".
 > having no room. The two plates render identically, so sharing one rule is more DRY than the
 > contract's literal instruction and the review judged it the better call. **The file now sits at
 > exactly 400 lines and has zero headroom**: the next rule added to it must split the sheet first.
+> **DLR-93's remediation pass did exactly that** — the decree/draw pile and `.wc-table` rules moved
+> verbatim into `warCouncilTable.css` (151 lines), leaving `warCouncil.css` at **258**.
 
 ### A third stylesheet split
 
@@ -239,6 +242,27 @@ budget. The pre-existing hand/fan rules were moved out into a new sibling,
 `warCouncilHand.css` (46 lines), imported from `WarCouncilRound.tsx` alongside the other sheets —
 the same pattern the file had already used twice before. Content only moved; no rule changed. See
 [Layout and styling](layout-and-styling.md) for the full split history.
+
+### The felt's spec files
+
+`WarCouncilRound.tsx` is covered by **five** spec files, not one. It reached that shape the same way
+the stylesheets did — by the 400-line budget, twice.
+
+| File | Covers |
+|---|---|
+| `WarCouncilRound.test.tsx` (237) | the core: hand rendering and ordering, legality, the trump readout and the Fox exchange, tap-twice play, live trick counts, hand completion and the mid-hand cash-out, keyboard reach of the carry-on control |
+| `WarCouncilRound.telegraph.test.tsx` (86) | DLR-93: the intent telegraph — the previewed lead, the previewed answer to an armed card, `Escape` clearing the speculative reading, and the keyboard path to "Let them lead" |
+| `WarCouncilRound.readouts.test.tsx` (177) | DLR-93: the readouts — both health bars, the purse plate, the shape and bank readouts, what a clean take and a lost clean trick do to the bars, and the Cheat-slot interaction that makes a forbidden card playable |
+| `WarCouncilRound.envenom.test.tsx` | DLR-90: the mounted felt's Envenom cases |
+| `WarCouncilRound.duelHealthBars.test.tsx` | DLR-71/DLR-86: the mounted felt's health-display cases |
+
+DLR-90 carved the Envenom file out because the original had **no headroom at 398 lines**; DLR-93's
+remediation pass found it at **402**, over the ceiling, and split it three ways. **Every `it(...)` body
+moved verbatim** — no assertion was weakened, merged or deleted, and the test count is unchanged. Each
+file carries its own local `renderRound` helper, following the precedent
+`WarCouncilRound.envenom.test.tsx` already set; `roundFixture.ts` was deliberately **not** made the
+home for it, because pure node-environment `.test.ts` specs import that fixture and adding React and
+testing-library helpers to it would break the DOM/node project boundary.
 
 ## Rules & invariants enforced
 

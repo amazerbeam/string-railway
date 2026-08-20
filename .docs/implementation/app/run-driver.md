@@ -103,7 +103,10 @@ fought) and the verdict's headline after it (the opponent just beaten). Those ar
 encounter** — `recordEncounter` does not advance `encounterIndex` — so one derivation serves both
 without an off-by-one.
 
-## The three transitions, all click handlers
+## The transitions, all click handlers
+
+**Four since DLR-93** — `handleComplete`, `handleContinue`, `handleBuy` and `handleDrinkFlask`. There
+is still no effect anywhere in the file.
 
 ```tsx
 function handleComplete(result: WarCouncilRoundResult) {
@@ -296,6 +299,27 @@ fields — which is what keeps the single-predicate discipline intact. The whole
 and idempotent, so StrictMode's development double-invocation of the updater recomputes an identical
 value.
 
+### The drink handler is the same shape, for the same reason (DLR-93)
+
+```ts
+function handleDrinkFlask() {
+  setRun((r) => (flaskRefusalFor(flaskStockFor(r)) !== null ? r : drinkFlask(r)))
+}
+```
+
+`handleBuy` with a different predicate and a different transition — deliberately identical in shape,
+because the race is identical. `disabled` only lands on the render *after* a drink, so a double-click
+or a fast repeated key-activation would otherwise reach `drinkFlask` with the charge already spent and
+hit its deliberate throw, white-screening an app with no error boundary. Re-deriving `flaskRefusalFor`
+against whichever run the updater actually sees turns the second activation into a no-op.
+
+It is a **second reading of the exported `flaskRefusalFor`**, not a re-derivation from raw fields — the
+same single-predicate discipline, and the reason the disabled button and the throw cannot disagree.
+`ShopPanel` receives the refusal as a prop from the same expression evaluated during render.
+
+The unresolved-encounter guard inside `drinkFlask` is unreachable from here by construction:
+`ShopPanel` is mounted only under `RunPhase.Shop`, which is only reachable once `encounterOver`.
+
 **There is no `useEffect` anywhere in this file, and that is load-bearing rather than incidental.**
 Every transition above is a callback fired from a control, so there is no listener, timer,
 observer, `requestAnimationFrame` or `AbortController` introduced and nothing to release. React
@@ -318,7 +342,8 @@ if (encounterOver && phase === RunPhase.Map) {        // DLR-85 — same compone
     actionLabel={MAP_BACK_LABEL} onAction={() => setPhase(RunPhase.Verdict)} />
 }
 if (encounterOver && phase === RunPhase.Shop) {
-  return <ShopPanel coins={run.coins} nextOpponentName={nextName} refusals={{ … refusalFor(stock, item) … }} onBuy={handleBuy} onLeave={leaveForNextFight} … />
+  return <ShopPanel coins={run.coins} nextOpponentName={nextName} refusals={{ … refusalFor(stock, item) … }} onBuy={handleBuy} onLeave={leaveForNextFight}
+    flaskCharges={run.flaskCharges} flaskRefusal={flaskRefusalFor(flaskStockFor(run))} onDrinkFlask={handleDrinkFlask} … />   // DLR-93
 }
 if (encounterOver) {
   return <RunOutcomePanel outcome={run.outcome} canContinue={canAdvanceRun(run)} coins={run.coins}

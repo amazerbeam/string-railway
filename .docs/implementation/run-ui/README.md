@@ -1,7 +1,7 @@
 # Run verdict and shop UI — `src/app/run/`
 
 **Status:** implemented
-**Built by:** DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92
+**Built by:** DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93
 
 ## Responsibility
 
@@ -19,7 +19,9 @@ The full-viewport surfaces the run layer owns, and every user-visible string it 
   use, fight-long, run-permanent, game-permanent — with the last shown and refused as "Coming soon",
   and the heal outside the ladder entirely. **Since DLR-92 the first three shelves all hold something**
   (the Cheat and Envenom, the Poison Guard, and the Whetstone), so no shelf a player can open states that
-  it is empty.
+  it is empty. **Since DLR-93 this screen also carries the one thing on it that is not for sale** — the
+  **flask**, a free charge-limited heal drunk from a potion-icon button in its own zone above the ladder.
+  See [the flask control](the-flask-control.md).
 - **The path** (DLR-85) — one component, `RunPathScreen`, serving **two** surfaces: the start screen
   before fight one, and the map reached between fights. Inside it `RunMap` draws the whole run as one
   horizontal line — a tick per ordinary opponent, a block per stage boss, every node named, beaten
@@ -68,6 +70,9 @@ from `App.tsx`.
 | `SHOP_ITEM_NAME`, `SHOP_ITEM_BLURB`, `PURCHASE_REFUSAL_MESSAGE` | The catalogue's copy and the three refusal sentences. All three `Record`s are **total over their union**, so a new item or reason code is a compile error here (DLR-84)          | `shopLabels.ts` |
 | `priceText`, `shopItemAccessibleName`, `nextOpponentText` | Prices read from `priceOf` and never quoted; the accessible name folds in the refusal; the opponent line reads sensibly with an `undefined` name (DLR-84)                              | `shopLabels.ts` |
 | `SHOP_TITLE`, `SHOP_COINS_LABEL`, `SHOP_HEALTH_LABEL`, `SHOP_SLOTS_LABEL`, `SHOP_PURSE_GROUP_LABEL`, `SHOP_NOTHING_TO_BUY_HINT` | The shop's fixed strings (DLR-84)                                                          | `shopLabels.ts` |
+| `FlaskMark`, `FlaskSymbolSheet`                            | The potion glyph, on `HeartMark.tsx`'s `<symbol>`/`<use>` pattern: a `FLASK_SYMBOL_ID` map so the id is written in exactly two places, `currentColor` throughout, `aria-hidden` on the glyph, and the sheet **mounted once** by `ShopPanel`. Its silhouette differs from the heart's, not just its colour. Every `d` value is a placeholder from the contract's mockup (DLR-93) | `FlaskMark.tsx` |
+| `SHOP_FLASK_GROUP_LABEL`, `SHOP_FLASK_LABEL`, `SHOP_FLASK_FREE_TAG`, `SHOP_FLASK_NO_COIN` | The flask block's group label, the control's name, and the two words that say **free** where every shop card carries a price — words rather than a colour or a glyph alone, so a static screenshot still reads free-and-limited (DLR-93) | `shopLabels.ts` |
+| `flaskBlurbText`, `flaskChargesText`, `flaskAccessibleName`, `FLASK_REFUSAL_MESSAGE` | What the flask does (from the **computed** figure, never a quoted `6`), the charge count pluralised so it reads at 0 / 1 / any deferred ceiling, the control's accessible name with the refusal folded in, and the two refusal sentences as a `Record` **total over `FlaskRefusal`** (DLR-93) | `shopLabels.ts` |
 
 **All copy in both files is placeholder — the developer's to rewrite**, marked as such in each
 file's header.
@@ -83,6 +88,11 @@ file's header.
   contract (DLR-84); plus the **four-shelf tablist**, why the refused rung is `aria-disabled` rather
   than `disabled`, the `Escape` double-fire trap the tablist had to be designed around, and the
   **viewport-clipping defect and the two fixes that did not work** (DLR-89).
+- [The flask control](the-flask-control.md) — why a free heal sits on the shop screen without being a
+  shop item, the zone it occupies and the five structural (never colour) differences from the priced
+  Heal, the sixth purse cell, the three channels a refusal reads through, and the potion glyph
+  (DLR-93). Kept separate from the shop screen below **because the flask is deliberately not a
+  purchase** — none of `SHOP_ITEMS`, `priceOf`, `categoryOf` or `PurchaseRefusal` knows about it.
 - [The run map, and the one screen that serves both the start and the map](run-map-and-the-path-screen.md)
   — why one component serves two surfaces, the `ol > li > ol > li` nesting and why it has to be that,
   the path as a status display with zero tab stops, how the three states read without colour, the AC3
@@ -125,8 +135,15 @@ file's header.
   `warCouncil/labels.ts`'s convention. Each surface owns its own file, so the felt and the shop can
   be reworded independently.
 - **No tuning value is quoted.** Prices come from `priceOf`, the heal figure is interpolated from
-  `HEAL_HEALTH_RESTORED`; a final-verification grep guards it.
-- **No `100vh` / `100vw`** anywhere in `run.css`, `shop.css` or `runMap.css`; a final-verification grep
+  `HEAL_HEALTH_RESTORED`, and the flask's figure from `flaskHealAmount(maxPlayerHealth)` — the engine's
+  own pure function, called rather than reimplemented, so no component multiplies by
+  `FLASK_HEAL_PERCENT` and no literal `0.6` or `6` exists under `src/app/`. A final-verification grep
+  guards it.
+- **The flask's availability is derived by the driver, never here** (DLR-93). `flaskRefusal` arrives as
+  a prop from `flaskRefusalFor(flaskStockFor(run))` — the same predicate `drinkFlask` throws on — so the
+  disabled button and the thrown `RangeError` cannot disagree, exactly as with the five shop items.
+- **No `100vh` / `100vw`** anywhere in `run.css`, `shop.css`, `shopItems.css`, `shopFlask.css` or
+  `runMap.css`; a final-verification grep
   guards it. **Fitting inside that shell is a separate matter from declaring it, and the path does not
   currently fit** — see Deferred.
 - **`.shop-panel` is the module's one scoped scroll region**, and it is justified rather than
@@ -141,17 +158,46 @@ file's header.
   red.
 - Component tests query by **accessible role and label** (`getByRole('button', { name })`,
   `getByRole('group', { name })`), per this project's testing posture. No `data-testid` exists here.
-- File sizes, measured after DLR-89 with `(Get-Content <file>).Count`: `run.css` 173,
-  `RunOutcomePanel.tsx` 175, `runMap.css` 168, **`shop.css` 387**, `ShopPanel.tsx` 202,
-  `ShopCategoryTabs.tsx` 92, `runLabels.ts` 112, `RunPathScreen.tsx` 56, `RunMap.tsx` 65,
-  `shopLabels.ts` 95 — all under the 400-line budget, but **`shop.css` is now within 13 lines of it**.
-  It carries heavy explanatory comments and per-state selectors for two surfaces' worth of rules; the
-  next contract to add to it should expect to split it rather than squeeze. Measure with
-  `(Get-Content <file>).Count`, never `Measure-Object -Line`, which drops blank lines and has hidden a
-  real breach on this project before.
+- File sizes, re-measured after DLR-93's remediation pass with `(Get-Content <file>).Count`:
+  **`shop.css` 237**, `ShopPanel.tsx` 294, `run.css` 173, `shopLabels.ts` 172, `runMap.css` 168,
+  `RunOutcomePanel.tsx` 175, `shopFlask.css` 154, `shopItems.css` 140, `runLabels.ts` 112,
+  `ShopCategoryTabs.tsx` 92, `RunMap.tsx` 65, `RunPathScreen.tsx` 56, `FlaskMark.tsx` 50. **Every file
+  in this module is under the project's 400-line blocking ceiling.**
+
+  > **`shop.css`'s breach is closed, and the history is worth keeping.** DLR-89 measured the sheet at
+  > 387 and this doc predicted "the next contract to add to it should expect to split it rather than
+  > squeeze"; DLR-90, DLR-91, DLR-92 and DLR-93 each added to it instead and none re-measured, which
+  > carried it to **521** — over the ceiling and undetected for four tickets. DLR-93's remediation pass
+  > split it along the seam this doc had already named, taking it to **237**. Content only moved; no
+  > declaration, value or selector changed, and `ShopPanel.tsx` imports the three sheets in the
+  > original cascade order so specificity is unaffected. Measure with `(Get-Content <file>).Count`,
+  > never `Measure-Object -Line`, which drops blank lines and is what hid this breach.
+
+- **The shop ships as three stylesheets, not one**, split by DLR-93 and imported by `ShopPanel.tsx` in
+  cascade order — `shop.css`, then `shopItems.css`, then `shopFlask.css`. Which sheet owns what:
+  | Sheet | Owns |
+  |---|---|
+  | `shop.css` (237) | the shell and its layout — `.shop`, `.shop-title`, `.shop-next`, the `.shop-purse` row and its cells, the health/hearts readout, the `.shop-tabs` tablist, and the `.shop-grid` definition |
+  | `shopItems.css` (140) | the catalogue — `.shop-item` and its price, `.shop-refusal` and `.shop-hint`, the scoped-scroll `.shop-panel`, and `.shop-empty` |
+  | `shopFlask.css` (154) | the two blocks that are not shelf items — `.shop-aside` (the paid Heal) and DLR-93's `.shop-flask*` block, plus `.shop-purse-cell.is-flask` |
 
 ## Deferred / not yet implemented
 
+- **The flask's visual treatment is entirely placeholder, and the developer's UX design supersedes it
+  wholesale** (DLR-93). The potion `<path>` data is transcribed from the contract's `mockup.html`,
+  exactly as `HeartMark.tsx` marks its own heart paths; every figure in `shopFlask.css`'s `.shop-flask*`
+  block — spacing, icon size bounds, the disabled treatment — is unchosen. **Whether the free/paid
+  separation reads at a glance** is the AC6 question only an eye at final rendered size can answer, and
+  it was explicitly listed as the developer's rather than tested.
+- **Whether "Flask" is the shipped name** (DLR-93). It sits on `version-4-scope.md`'s open-names list
+  beside Envenom, Poison Guard and Whetstone, and every string in `shopLabels.ts`'s flask block is
+  placeholder copy.
+- **The flask block added a row to a screen already at its height budget** (DLR-93). DLR-89 recorded
+  that "every list in this shop is expected to grow" and that the screen spends its whole height; the
+  flask is a new `flex: 0 0 auto` band between the health meter and the tablist, so it takes its space
+  out of `.shop-panel`'s scroll cap. **`.shop-panel`'s `max-height: min(20vmin, 10rem)` may want
+  re-tuning as a result, and that number is the developer's** — the contract said so and QA reported
+  the fit at named viewport sizes so the measurement exists before the choice is made.
 - **The trick bars are not in play order** — the engine keeps no per-trick history. See
   [the verdict panel](verdict-panel.md).
 - **The bars show the deciding hand only**, not the whole fight; no per-fight trick accumulator

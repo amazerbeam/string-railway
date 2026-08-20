@@ -7,6 +7,10 @@ Part of [Hunt](README.md).
 `run.ts` owns **the sequence of fights** and the health carried through them. It is the module
 that turned the app from "one encounter, then a dead end" into a run a player can lose.
 
+**Since DLR-93 it is two files, not one** — `run.ts` holds the run's *shape*, `runTransitions.ts`
+holds its *transitions*. The split has its own section at the foot of this file; everything before it
+describes the run regardless of which of the two a name sits in.
+
 ## What a run is
 
 ```ts
@@ -20,13 +24,22 @@ export interface RunState {
   readonly coins: Coins // DLR-84
   readonly envenomCharges: number // DLR-90
   readonly poisonGuardHeld: boolean // DLR-91
+  readonly whetstones: number // DLR-92
+  readonly flaskCharges: number // DLR-93
 }
 ```
 
-The last five fields arrived after the original four, and every one of them is carried across a fight
+The last seven fields arrived after the original four, and every one of them is carried across a fight
 boundary by the `...run` spread `advanceRun` already had — no ticket needed a line for the carry. See
 [Cheats](cheats-and-slots.md), [Coins and the shop](coins-and-the-shop.md),
-[Envenom](envenom-and-the-delayed-hit.md) and [Poison Guard](poison-guard.md).
+[Envenom](envenom-and-the-delayed-hit.md), [Poison Guard](poison-guard.md) and
+[the flask](the-flask.md).
+
+**Three of them are handed back by a hand at the end of a fight, and three are not.** `cheats`,
+`envenomCharges` and `poisonGuardHeld` are owned by the hand for its lifetime and returned through
+`WarCouncilRoundResult`, so `recordEncounter` takes them as required parameters. `whetstones` and
+`flaskCharges` are not: a hand cannot spend a Whetstone or drink the flask, so there is nothing to
+hand back and `recordEncounter` reads both off the run it was given.
 
 **`poisonGuardHeld` is the one field that is carried and then deliberately cleared.** It has to be
 run-level to survive the `advanceRun` that opens the fight it was bought for, and it has to end when
@@ -53,12 +66,15 @@ is over" is what stops a screen and a transition disagreeing about it.
 | Function                              | Does                                                                                                 |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `startRun(playerHealth?)`             | Builds fight 0 at `PLAYER_START_HEALTH`, `outcome: InProgress`, **0 coins**, and the configured Cheat grant |
-| `recordEncounter(run, enc, cheats, envenomCharges, poisonGuardHeld)` | Adopts the encounter a hand reported upward, **credits `COINS_PER_ENCOUNTER_WIN` on a player win**, and **re-derives the outcome** — the AC4/AC5 decision point. The fifth argument goes through `guardAfter`, not straight onto the run |
+| `recordEncounter(run, enc, cheats, envenomCharges, poisonGuardHeld)` | Adopts the encounter a hand reported upward, **credits `COINS_PER_ENCOUNTER_WIN` on a player win**, **refills the flask through `flaskAfter` if the opponent just beaten was a stage boss** (DLR-93), and **re-derives the outcome** — the AC4/AC5 decision point. The fifth argument goes through `guardAfter`, not straight onto the run |
 | `canAdvanceRun(run)`                  | `outcome === InProgress && encounter.winner === Player` — "the Quarry is down and another fight remains" |
 | `beatenCount(run)`                    | How many fights are behind the player, as one integer — `encounterIndex + (winner === Player ? 1 : 0)` (DLR-85) |
 | `advanceRun(run)`                     | Opens the next fight on the carried health, or throws                                                 |
 | `shopStockFor(run, maxPlayerHealth?)` | Projects the run into the four figures the shop's rules need (DLR-84)                                 |
-| `buyFromShop(run, item, max?)`        | Deducts a price and mints a Cheat or heals with a clamp, or throws (DLR-84)                           |
+| `buyFromShop(run, item, max?)`        | Deducts a price and mints a Cheat or heals through the shared `healedBy` clamp, or throws (DLR-84)     |
+| `flaskStockFor(run, maxPlayerHealth?)` | Projects the run into the three figures the flask's rules need — `shopStockFor`'s sibling (DLR-93)   |
+| `drinkFlask(run, max?)`               | Spends one flask charge and restores through the same `healedBy` clamp, or throws — twice over (DLR-93) |
+| `bankClimbBonusFor(run)`              | `run.whetstones` — the one statement of "+1 to the bank's climb per copy owned" (DLR-92)               |
 
 **`recordEncounter` is the run's single payout point as well as its single outcome point**, and for
 the same reason: it is already the one place a fight is known to have been won, and the driver stops
@@ -116,14 +132,18 @@ encounter: startEncounter(encounterIndex, run.encounter.health[DuelSide.Player])
 ```
 
 Nothing is restored on the way through. `ENCOUNTER_PLAYER_RESTORE` is **deliberately not read
-here** — DLR-82 forbids wiring it in, and the flask stories own it. A grep in that contract's final
-verification confirms the constant still has no production consumer, and DLR-84's did the same.
+here** — DLR-82 forbade wiring it in until the flask was designed. **The flask has since been designed
+and built (DLR-93), and the constant is still read by nothing**: the two are different mechanics, an
+automatic restore being something the game does to you and the flask something you choose to spend.
+A grep in DLR-82's, DLR-84's and DLR-93's final verifications each confirmed the constant has no
+production consumer.
 
-**DLR-84's heal is not an exception to that.** It restores health *between* fights, but it does so
-by writing into the resolved encounter's `health[Player]` at the moment of purchase — which is the
-figure this carry then reads — rather than by adding a restore step to `advanceRun`. The carry
-itself is untouched: it still takes whatever the last fight ended on, whether or not a coin was
-spent on the way.
+**Neither DLR-84's paid heal nor DLR-93's flask is an exception to that.** Both restore health
+*between* fights, and both do it by writing into the resolved encounter's `health[Player]` — the
+figure this carry then reads — rather than by adding a restore step to `advanceRun`. Since DLR-93 they
+share one private writer, `healedBy`, so the clamp and the discarded overheal are stated once for both
+(see [the flask](the-flask.md)). The carry itself is untouched: it still takes whatever the last fight
+ended on, whether or not a coin was spent or a charge drunk on the way.
 
 ## Run length has exactly one source of truth
 
@@ -157,8 +177,9 @@ requires at least three entries, rising, not all the same); the numbers are the 
 contract's own risk note predicts the player losing around fight three at these numbers and states
 that this is the arithmetic working — the answer is the shop and the flask in later stories, **not
 raising `PLAYER_START_HEALTH`**, which DLR-82 explicitly forbids as a response. **DLR-84 built the
-shop half of that answer and deliberately left the curve alone**, so whether 4 health a fight
-actually closes the gap is now a question a play session can answer.
+shop half of that answer and DLR-93 the flask half, and both deliberately left the curve alone**, so
+whether 4 health a fight plus a free 6 per stage boss actually closes the gap is now a question a play
+session can answer. Nothing was retuned in response to either.
 
 **DLR-85 widened that placeholder rather than resolving it.** The curve is now twenty-five entries
 generated from three tunables instead of three literals, and the run is expected to be lost in stage
@@ -176,11 +197,51 @@ followed it in the same change. The consequence worth knowing: `recordEncounter`
 rather than an inline ternary. See
 [Envenom — the held charge, the delayed-hit queue, and where it is paid](envenom-and-the-delayed-hit.md).
 
+## The split into `run.ts` and `runTransitions.ts` — DLR-93
+
+**This was a mid-run remediation, not a planned refactor.** DLR-93's plan predicted `run.ts` growing
+from 299 lines to roughly 360 and named the contingency in writing: *"if a later flask story pushes it
+over, the split is `run.ts` → a run-transitions module, not a suppression."* It went over inside the
+same contract. The developer approved the split, it ran as its own Phase 2.5, and the result is the
+two files on disk today.
+
+| File                 | Holds                                                                                              |
+| -------------------- | -------------------------------------------------------------------------------------------------- |
+| `run.ts`             | The run's **shape** and its projections — `RunState`, `RunOutcome`, `startRun`, `canAdvanceRun`, `beatenCount`, `shopStockFor`, `flaskStockFor`, `bankClimbBonusFor` |
+| `runTransitions.ts`  | The run's **transitions** — `recordEncounter`, `advanceRun`, `buyFromShop`, `drinkFlask`, and the private helpers only they use: `outcomeFor`, `guardAfter`, `healedBy`, `flaskAfter` |
+
+The line drawn is **a function that produces a new `RunState` versus one that only reads an existing
+one.** `canAdvanceRun` and `beatenCount` stayed with the shape despite being logic, because they answer
+questions about a run rather than advancing it.
+
+**It was a pure move.** No expression, name or signature differs from what `run.ts` held before, and
+no test was edited: `run.ts` re-exports all four transitions on its last line, so every existing
+importer — `src/hunt/index.ts`, the `run.*.test.ts` specs, `src/App.tsx` through the barrel — kept
+working untouched.
+
+### The circular import is real, inert, and was verified rather than assumed
+
+`run.ts` re-exports from `./runTransitions`, and `runTransitions.ts` imports `RunState`,
+`RunOutcome`, `canAdvanceRun`, `shopStockFor` and `flaskStockFor` back from `./run`. That is a genuine
+cycle in the module graph.
+
+**It is sound because nothing crosses it at module-evaluation time.** Every one of those names is
+either a type (erased entirely) or read **inside a function body**, which does not run until a
+transition is called — by which point both modules are fully evaluated. There is no module-level
+`const` in either file initialised from the other. Two reviewers checked this independently on the
+final round; the failure it would otherwise produce is a `TDZ`/`undefined` at import time, which is
+loud rather than silent.
+
+**The rule this creates for future edits:** a top-level expression in `runTransitions.ts` that reads
+anything from `./run` — a derived constant, a frozen lookup table built at load — turns an inert cycle
+into a crash. Keep the cross-module reads inside function bodies.
+
 ## Purity
 
 `run.ts` sits inside the lint-enforced `src/hunt/**` boundary and stays there: it imports only
 `./config`, `./encounter`, `./types` and — since DLR-83 and DLR-84 — `./cheats` and `./shop`, every
-one of them already inside the pure tree. It holds no JSX and touches no DOM global. It is unit-tested
+one of them already inside the pure tree. `runTransitions.ts` is inside the same boundary and adds
+`./flask` (DLR-93) to that list. It holds no JSX and touches no DOM global. It is unit-tested
 with plain function-in/value-out assertions under the `node` Vitest project
 (`src/hunt/__tests__/run.test.ts`), with no renderer — including a spec that drives a whole run to
 `Won` through `advanceRun`/`recordEncounter`, and one that pins immutability by `JSON.stringify`

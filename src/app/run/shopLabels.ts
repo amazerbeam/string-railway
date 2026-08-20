@@ -1,11 +1,13 @@
 import {
   ENVENOM_PLAYER_DAMAGE,
   ENVENOM_QUARRY_DAMAGE,
+  FlaskRefusal,
   HEAL_HEALTH_RESTORED,
   priceOf,
   PurchaseRefusal,
   ShopCategory,
   ShopItem,
+  type Health,
 } from '../../hunt'
 
 /**
@@ -121,3 +123,50 @@ export function shopCategoryAccessibleName(category: ShopCategory, available: bo
  *  string-bound duplicate no compiler can check — the exact trap `web-project.md` names. */
 export const shopTabId = (category: ShopCategory) => `shop-tab-${category}`
 export const shopPanelId = (category: ShopCategory) => `shop-panel-${category}`
+
+/* ── DLR-93, the flask. ALL PLACEHOLDER COPY, exactly as everything above it. The heal figure and
+   the charge count are always INTERPOLATED from the engine, never quoted, so re-tuning
+   `FLASK_HEAL_PERCENT` or `FLASK_STARTING_CHARGES` cannot leave the screen reading a number the
+   engine no longer uses. ─────────────────────────────────────────────────────────────────────── */
+
+/** The block's accessible group label — `game-ux` puts the group label on the container. */
+export const SHOP_FLASK_GROUP_LABEL = 'Your flask'
+
+/** The control's own name. PLACEHOLDER copy — and "Flask" itself is on `version-4-scope.md`'s
+ *  open-names list beside Envenom, Poison Guard and Whetstone. */
+export const SHOP_FLASK_LABEL = 'Drink the flask'
+
+/** AC6 — the flask's answer to every shop card's price line. Words, not a colour or a glyph alone,
+ *  so a static screenshot still says free-and-limited rather than paid-and-unlimited. */
+export const SHOP_FLASK_FREE_TAG = 'Free'
+export const SHOP_FLASK_NO_COIN = 'No coin'
+
+/** AC2/AC5 — what the flask does, from the COMPUTED figure. PLACEHOLDER copy. */
+export function flaskBlurbText(healAmount: Health): string {
+  return `Restore ${healAmount} health, now. Anything over your maximum is lost. Refills when you beat a stage boss.`
+}
+
+/** The charge count, in words. Reads sensibly at 0, 1, and any deferred higher ceiling. */
+export function flaskChargesText(charges: number): string {
+  return `${charges} charge${charges === 1 ? '' : 's'}`
+}
+
+/** AC3 — the reason, in words. Total over `FlaskRefusal`, so a third reason code is a compile
+ *  error here rather than a blank sentence on screen — exactly what `PURCHASE_REFUSAL_MESSAGE`
+ *  guarantees for a purchase. */
+export const FLASK_REFUSAL_MESSAGE: Readonly<Record<FlaskRefusal, string>> = {
+  [FlaskRefusal.NoCharges]: 'Your flask is empty. Beat a stage boss to refill it.',
+  [FlaskRefusal.AlreadyFullHealth]: 'You are already at full health.',
+}
+
+/** The control's accessible name — folds in the refusal so a screen-reader user hears WHY it is
+ *  disabled without hunting for the sentence beside it, and states FREE so it is never heard as a
+ *  purchase (AC6). Mirrors `shopItemAccessibleName`. */
+export function flaskAccessibleName(
+  charges: number,
+  healAmount: Health,
+  refusal: FlaskRefusal | null,
+): string {
+  const base = `${SHOP_FLASK_LABEL} — ${SHOP_FLASK_FREE_TAG} — ${flaskChargesText(charges)}, restores ${healAmount}`
+  return refusal === null ? base : `${base} — ${FLASK_REFUSAL_MESSAGE[refusal]}`
+}

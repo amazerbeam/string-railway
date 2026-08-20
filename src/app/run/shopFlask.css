@@ -1,0 +1,154 @@
+/* The shop screen's Heal aside and Flask block — split out of `shop.css` at the 400-line budget.
+   See that file's header for the split's rationale and import order. */
+
+/* The Heal's own block, outside the ladder. */
+.shop-aside {
+  /* DLR-89 residual-clipping fix — see `.shop-title`'s comment above (in `shop.css`). */
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.shop-aside-label {
+  font-size: clamp(0.55rem, 1.2vmin, 0.68rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+  text-align: left;
+}
+
+/* DLR-93 AC6 — the flask's own zone, between the health meter and the ladder. `flex: 0 0 auto`
+   like `.shop-aside`, so it takes its natural height and `.shop-panel` remains the ONE region on
+   this screen allowed to scroll. A dashed edge rather than the solid one every priced surface
+   uses: `game-ux` requires state to read in FORM, not colour alone, so a greyscale screenshot
+   still separates the free thing from the paid ones.
+   Every colour, spacing and size figure here is a PLACEHOLDER transcribed from this contract's
+   `mockup.html` — the developer's UX design supersedes it. */
+.shop-flask {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: clamp(0.5rem, 1.8vmin, 1rem);
+  width: 100%;
+  box-sizing: border-box;
+  padding: clamp(0.35rem, 1.3vmin, 0.7rem) clamp(0.5rem, 1.6vmin, 0.9rem);
+  border: 1px dashed var(--wc-brass);
+  border-radius: 4px;
+}
+
+/* ≥44px per `react-frontend`'s input floor — the icon is small, the target is not. */
+.shop-flask-btn {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.4rem, 1.4vmin, 0.75rem);
+  min-height: 44px;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--wc-brass);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--wc-parchment);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+@media (hover: hover) {
+  .shop-flask-btn:hover:not(:disabled) {
+    background: rgba(201, 154, 78, 0.16);
+  }
+}
+
+.shop-flask-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.shop-flask-btn:focus-visible {
+  outline: 2px solid var(--wc-parchment);
+  outline-offset: 2px;
+}
+
+/* Dotted, not merely dimmer — the disabled state reads without colour. */
+.shop-flask-btn:disabled {
+  border-style: dotted;
+  border-color: var(--wc-chalk-dim);
+  color: var(--wc-chalk-dim);
+  cursor: not-allowed;
+}
+
+.shop-flask-icon {
+  flex: 0 0 auto;
+  width: clamp(1.3rem, 3.4vmin, 1.9rem);
+  height: clamp(1.3rem, 3.4vmin, 1.9rem);
+}
+
+/* `stroke-width` set here, not on the paths, so it reaches the cloned symbol through `<use>`. */
+.shop-flask-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  stroke-width: 1.5;
+}
+
+.shop-flask-btn:disabled .shop-flask-icon svg {
+  opacity: 0.55;
+}
+
+.shop-flask-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.shop-flask-name {
+  font-size: clamp(0.74rem, 1.9vmin, 0.94rem);
+  letter-spacing: 0.05em;
+}
+
+.shop-flask-charges {
+  font-size: clamp(0.56rem, 1.3vmin, 0.7rem);
+  color: var(--wc-chalk-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Where every `.shop-item` carries `.shop-item-price`, the flask carries this. */
+.shop-flask-free {
+  flex: 0 0 auto;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  font-size: clamp(0.5rem, 1.1vmin, 0.6rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.shop-flask-side {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.shop-flask-blurb {
+  margin: 0;
+  font-size: clamp(0.56rem, 1.3vmin, 0.7rem);
+  color: var(--wc-chalk-dim);
+  line-height: 1.35;
+}
+
+/* Reserves its line so the layout does not jump when a refusal appears — the same discipline
+   `.shop-refusal` uses. */
+.shop-flask-refusal {
+  margin: 0;
+  min-height: 1em;
+  font-size: clamp(0.56rem, 1.3vmin, 0.7rem);
+  font-style: italic;
+  color: var(--wc-brass);
+}
+
+.shop-purse-cell.is-flask .shop-purse-value {
+  font-variant-numeric: tabular-nums;
+}

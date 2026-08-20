@@ -6,7 +6,10 @@ import {
   buyFromShop,
   canAdvanceRun,
   canBuyAnything,
+  drinkFlask,
   DuelSide,
+  flaskRefusalFor,
+  flaskStockFor,
   isEncounterResolved,
   PLAYER_START_HEALTH,
   quarryHealthForEncounter,
@@ -178,6 +181,18 @@ function App() {
     setRun((r) => (refusalFor(shopStockFor(r), item) !== null ? r : buyFromShop(r, item)))
   }
 
+  // AC2/AC3 — the FUNCTIONAL updater, mirroring `handleBuy` exactly and for the same reason: the
+  // refusal is RE-DERIVED inside the updater against whichever run this call actually sees, not
+  // read from the render's stale closure. `disabled` only takes effect on the render FOLLOWING a
+  // drink, so a double-click or a fast repeated key-activation would otherwise reach `drinkFlask`
+  // with the charge already spent and hit its deliberate throw. No-op instead, so `flaskRefusalFor`
+  // stays the only source of truth and that throw stays reachable only from a genuine driver bug.
+  // `drinkFlask` is pure, so StrictMode's development double-invocation recomputes an identical
+  // value.
+  function handleDrinkFlask() {
+    setRun((r) => (flaskRefusalFor(flaskStockFor(r)) !== null ? r : drinkFlask(r)))
+  }
+
   function handleNewRun() {
     const fresh = startRun()
     setRun(fresh)
@@ -227,6 +242,9 @@ function App() {
         envenomCharges={run.envenomCharges}
         poisonGuardHeld={run.poisonGuardHeld}
         whetstones={run.whetstones}
+        flaskCharges={run.flaskCharges}
+        flaskRefusal={flaskRefusalFor(flaskStockFor(run))}
+        onDrinkFlask={handleDrinkFlask}
         nextOpponentName={nextName}
         progressText={runProgressText(run.encounterIndex + 1, run.encounterCount)}
         refusals={{

@@ -1,14 +1,25 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { PurchaseRefusal, SHOP_CATEGORIES, ShopCategory, ShopItem } from '../../../hunt'
+import {
+  FlaskRefusal,
+  flaskHealAmount,
+  PurchaseRefusal,
+  SHOP_CATEGORIES,
+  ShopCategory,
+  ShopItem,
+} from '../../../hunt'
 import { HeartState } from '../../warCouncil/duelHealthBars'
 import ShopPanel from '../ShopPanel'
 import { fightLabel } from '../runLabels'
 import {
+  flaskAccessibleName,
+  flaskChargesText,
+  FLASK_REFUSAL_MESSAGE,
   PURCHASE_REFUSAL_MESSAGE,
   SHOP_CATEGORY_LABEL,
   SHOP_ENVENOM_LABEL,
+  SHOP_FLASK_GROUP_LABEL,
   SHOP_GUARD_HELD,
   SHOP_GUARD_NONE,
   SHOP_WHETSTONE_LABEL,
@@ -35,6 +46,9 @@ const baseProps = {
   whetstones: 0,
   nextOpponentName: 'The Monarch',
   progressText: 'Fight 2 of 3.',
+  flaskCharges: 1,
+  flaskRefusal: null as FlaskRefusal | null,
+  onDrinkFlask: vi.fn(),
   onBuy: vi.fn(),
   onLeave: vi.fn(),
 }
@@ -268,5 +282,68 @@ describe('ShopPanel', () => {
     expect(
       screen.getByText(PURCHASE_REFUSAL_MESSAGE[PurchaseRefusal.GuardAlreadyActive]),
     ).toBeTruthy()
+  })
+})
+
+describe('ShopPanel — the flask (DLR-93)', () => {
+  it('renders the drink control enabled, queried by its accessible name', () => {
+    render(<ShopPanel {...baseProps} refusals={noRefusals} />)
+    const btn = screen.getByRole('button', {
+      name: flaskAccessibleName(1, flaskHealAmount(10), null),
+    })
+    expect((btn as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it('fires onDrinkFlask exactly once per click', () => {
+    const onDrinkFlask = vi.fn()
+    render(<ShopPanel {...baseProps} onDrinkFlask={onDrinkFlask} refusals={noRefusals} />)
+    fireEvent.click(
+      screen.getByRole('button', { name: flaskAccessibleName(1, flaskHealAmount(10), null) }),
+    )
+    expect(onDrinkFlask).toHaveBeenCalledTimes(1)
+  })
+
+  it('disables the control and states the reason at zero charges', () => {
+    const onDrinkFlask = vi.fn()
+    render(
+      <ShopPanel
+        {...baseProps}
+        flaskCharges={0}
+        flaskRefusal={FlaskRefusal.NoCharges}
+        onDrinkFlask={onDrinkFlask}
+        refusals={noRefusals}
+      />,
+    )
+    const btn = screen.getByRole('button', {
+      name: flaskAccessibleName(0, flaskHealAmount(10), FlaskRefusal.NoCharges),
+    })
+    expect((btn as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText(FLASK_REFUSAL_MESSAGE[FlaskRefusal.NoCharges])).toBeTruthy()
+    fireEvent.click(btn)
+    expect(onDrinkFlask).not.toHaveBeenCalled()
+  })
+
+  it('disables the control and states the reason at full health', () => {
+    render(
+      <ShopPanel
+        {...baseProps}
+        playerHealth={10}
+        flaskRefusal={FlaskRefusal.AlreadyFullHealth}
+        refusals={noRefusals}
+      />,
+    )
+    expect(screen.getByText(FLASK_REFUSAL_MESSAGE[FlaskRefusal.AlreadyFullHealth])).toBeTruthy()
+  })
+
+  // AC6 / `game-ux` — the charge count is on the face of the screen, not behind hover, so the
+  // zero-charge refusal has a visible cause.
+  it('shows the charge count outside the control as well as in it', () => {
+    render(<ShopPanel {...baseProps} flaskCharges={0} refusals={noRefusals} />)
+    expect(screen.getAllByText(flaskChargesText(0)).length).toBeGreaterThan(0)
+  })
+
+  it('groups the flask under its own accessible label, apart from the priced items', () => {
+    render(<ShopPanel {...baseProps} refusals={noRefusals} />)
+    expect(screen.getByRole('group', { name: SHOP_FLASK_GROUP_LABEL })).toBeTruthy()
   })
 })

@@ -27,6 +27,8 @@ import {
   ENVENOM_QUARRY_DAMAGE,
   ENVENOM_PLAYER_DAMAGE,
   POISON_GUARD_PRICE,
+  FLASK_STARTING_CHARGES,
+  FLASK_HEAL_PERCENT,
   OpponentKind,
   ORDINARY_OPPONENT_NAMES,
   STAGE_BOSS_NAMES,
@@ -234,5 +236,25 @@ describe('RUN_ENCOUNTERS (DLR-85)', () => {
   it('throws a RangeError for an index past the configured run', () => {
     expect(() => runEncounterAt(RUN_ENCOUNTERS.length)).toThrow(RangeError)
     expect(() => runEncounterAt(-1)).toThrow(RangeError)
+  })
+})
+
+describe('DLR-93 — the flask (AC1, AC2)', () => {
+  it('opens a run with exactly one charge, as a key rather than a literal', () => {
+    expect(FLASK_STARTING_CHARGES).toBe(1)
+    expect(Number.isInteger(FLASK_STARTING_CHARGES)).toBe(true)
+    expect(FLASK_STARTING_CHARGES).toBeGreaterThan(0)
+  })
+
+  it('restores a proportion of maximum health, not a 0..100 percentage', () => {
+    expect(FLASK_HEAL_PERCENT).toBe(0.6)
+    expect(FLASK_HEAL_PERCENT).toBeGreaterThan(0)
+    expect(FLASK_HEAL_PERCENT).toBeLessThanOrEqual(1)
+  })
+
+  it('is a bigger heal than the shop pays for, at the current maximum', () => {
+    expect(Math.round(PLAYER_START_HEALTH * FLASK_HEAL_PERCENT)).toBeGreaterThan(
+      HEAL_HEALTH_RESTORED,
+    )
   })
 })

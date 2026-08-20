@@ -32,14 +32,20 @@ because **card rotation and lift are transforms, which do not affect layout size
 reserved room the fan's visual pixels spill outside its box and the shell's `overflow: hidden` crops
 them. The fix is to reserve the room, never to loosen the overflow.
 
-The styling ships as **five** stylesheets since DLR-82, not one: `warCouncil.css` (tokens, the shell
-grid, the status band including DLR-82's `.wc-run` readout, the felt/table, and — re-homed by
-DLR-80 — the `.wc-sr-only` utility), `warCouncilCards.css` (the card face, the ability prompt, and
-the hand-over panel), `warCouncilHunt.css` (the dossier zone, the telegraph, and DLR-80's
-`.wc-shape*` and `.wc-bank*` readouts), `warCouncilHealthBars.css` (DLR-71: the duel's two health
-displays — rewritten by DLR-86 from a bar surface into the heart rows, their four `[data-state]`
-rules, the two `@keyframes`, and the reduced-motion block), and `warCouncilHand.css` (DLR-82: the
-hand container and the fan).
+The styling ships as **seven** stylesheets, not one, all imported by `WarCouncilRound.tsx` in cascade
+order:
+
+| Sheet | Owns |
+|---|---|
+| `warCouncil.css` (258) | the `:root` tokens, the shell grid, the status band including DLR-82's `.wc-run` readout, and — re-homed by DLR-80 — the `.wc-sr-only` utility |
+| `warCouncilTable.css` (151) | DLR-93: the decree and draw pile, and the whole `.wc-table` block — the felt itself |
+| `warCouncilCards.css` | the card face, the ability prompt, and the hand-over panel |
+| `warCouncilHunt.css` | the dossier zone, the telegraph, and DLR-80's `.wc-shape*` and `.wc-bank*` readouts |
+| `warCouncilHealthBars.css` | DLR-71: the duel's two health displays — rewritten by DLR-86 from a bar surface into the heart rows, their four `[data-state]` rules, the two `@keyframes`, and the reduced-motion block |
+| `warCouncilHand.css` | DLR-82: the hand container and the fan |
+| `warCouncilEnvenom.css` | DLR-90: the Envenom charge readout and its mark |
+
+The felt used to live in `warCouncil.css` alongside the shell; DLR-93 moved it out (see below).
 
 > **DLR-86 retired this module's one inline-style mechanism, and the reasoning is worth keeping
 > rather than the mechanism.** `DuelHealthBars.tsx` used to write bar geometry into a `--w` custom
@@ -49,6 +55,14 @@ hand container and the fan).
 > to communicate at all**, so the component now writes no inline style anywhere and the hazard is
 > designed out rather than guarded against. The rule that survives: any future need for a per-heart
 > value comes back through a custom property, never through `style={…}`.
+
+> **DLR-93 split the seventh out, for the same reason as every split before it.** `warCouncil.css` had
+> sat at **exactly 400 lines** — the blocking budget, with zero headroom — since DLR-84, and DLR-93's
+> remediation pass moved the decree/draw pile and the `.wc-table` block out verbatim into
+> `warCouncilTable.css` (151 lines), leaving `warCouncil.css` at **258**. Every declaration was
+> preserved byte-for-byte and `WarCouncilRound.tsx` imports the new sheet immediately after
+> `warCouncil.css`, so the cascade is unchanged. The seam chosen was the shell/tokens versus the table
+> surface, which is the one seam the file already read as.
 
 > **DLR-82 split the fifth out, for the same reason as every split before it.** Adding the `.wc-run`
 > block pushed `warCouncil.css` to **431 lines**, past the 400-line ceiling. The hand/fan rules moved

@@ -13,7 +13,10 @@ deliberate and stated in [§7](#7-why-this-goes-before-the-rest-of-version-4).
 
 The player is regularly given a decision that is not a decision. The developer hit it in play on
 2026-08-19 and screenshotted it; the numbers below come from 1,500 seeded runs driven through the
-real engine and reducer (`src/__tests__/sim.test.ts`, best available player policy).
+real engine and reducer, driven by a temporary headless harness (best available player policy). **That
+harness has since been deleted** — it was self-labelled as delete-after-use and was removed by DLR-93's
+remediation pass, where it was the sole cause of the repo's typecheck errors and of a failing production
+build. The figures below stand as measured; reproducing them means rebuilding the harness.
 
 Measured over 32,919 follows:
 
@@ -283,7 +286,9 @@ question for the discard** — pre-lead — and the two should almost certainly 
 
 ## 8. What to measure once it is built
 
-The harness at `src/__tests__/sim.test.ts` produces all of these in about two seconds.
+A headless harness driving the real engine and reducer produces all of these in about two seconds. The
+one used for the figures above was deleted on DLR-93 (it was explicitly temporary), so measuring these
+again means writing it back — it is not on disk today.
 
 1. **Forced-hit rate**, against today's 30.5% of follows. If it does not move, the discard is not
    reaching the problem.

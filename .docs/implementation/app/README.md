@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93
 
 ## Responsibility
 
@@ -125,9 +125,12 @@ that constant and the module-scope `MAX_HEALTH` beside it are **deleted**, not r
   a `RunState`, three fights run in order on one health bar that is never restored, winning advances
   and losing ends the run, and a full-screen verdict states which of the three happened. What
   remains deliberately absent here is narrower than "the loop":
-  - **No between-encounter restore.** `ENCOUNTER_PLAYER_RESTORE` still has **no consumer**, and
-    DLR-82 explicitly forbade wiring it in — the flask stories own it. A final-verification grep
-    guards the absence.
+  - **No *automatic* between-encounter restore.** `ENCOUNTER_PLAYER_RESTORE` still has **no
+    consumer**. DLR-82 forbade wiring it in until the flask was designed; **DLR-93 designed and built
+    the flask and still did not wire it**, because a restore the game performs for you and a charge
+    you choose to spend are different mechanics. A final-verification grep guards the absence, re-run
+    by all three contracts. The driver *does* now hold a player-triggered heal — `handleDrinkFlask`,
+    reached only from `RunPhase.Shop`.
   - **No Forage step between Hunts.** A currency and a shop **do** exist since DLR-84 — the driver
     holds a three-state `between` phase (verdict / warned / shop) and mounts `ShopPanel` from it —
     but Forage is untouched and `FORAGE_BUDGET_PER_ENCOUNTER` still has no consumer.
@@ -143,11 +146,13 @@ that constant and the module-scope `MAX_HEALTH` beside it are **deleted**, not r
   `Map` as well, and `handleNewRun` now sets `RunPhase.Start` rather than dropping straight into fight
   one. Folding the start screen into the same union cost **no new state variable** and made "in the shop
   before the run began" unrepresentable for free. See [the run driver](run-driver.md).
-- **`App.tsx` is approaching reducer territory, and was deliberately not converted** (DLR-85). It is 262
-  lines (from 208) and holds five `useState` calls plus the widened `RunPhase`. That is still inside the
-  400-line budget and `react-frontend`'s reducer guidance is not yet breached, but **the next ticket that
-  adds a surface here should probably convert the driver to a reducer.** Doing it inside DLR-85 would
-  have buried that ticket's diff, so it is flagged rather than left as a surprise.
+- **`App.tsx` is approaching reducer territory, and was deliberately not converted** (DLR-85,
+  **still true and closer after DLR-93**). It is **304** lines — 262 at DLR-85, 208 before that — and
+  holds five `useState` calls plus the widened `RunPhase`. That is still inside the 400-line budget and
+  `react-frontend`'s reducer guidance is not yet breached, but **the next ticket that adds a surface
+  here should probably convert the driver to a reducer.** DLR-93 added a fourth click-handler
+  transition (`handleDrinkFlask`) and three props to the `ShopPanel` mount without adding state, which
+  is why it did not force the question; the ticket after it may not be so cheap.
 - **No way to reach a standalone/manual-entry test harness.** DLR-47 deleted
   `TestModeVanguardHost.tsx`, `TrickEntryForm.tsx`, `appMode.ts`, and `isValidTricksWon` along with
   the rest of the Vanguard UI — there is currently no manual-entry mechanism at all, campaign or

@@ -27,10 +27,10 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | Module                | Doc                                         | Status      | Built by                                                                                                                                     |
 | --------------------- | ------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, PT-001, PT-002 |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92 |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93 |
 | `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, PT-002 |
-| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, PT-001, PT-002 |
+| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, PT-001, PT-002 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -163,11 +163,15 @@ beat, one tap replaces two, and a full-screen verdict — [run-ui/](run-ui/READM
 `ENCOUNTER_OUTCOME`, `.wc-terminal` and `RoundOverPanel`'s `winner` prop went with the branch.
 
 **Two things were deliberately not wired, and one of them still is not.**
-`ENCOUNTER_PLAYER_RESTORE` remains exported and **unread** — DLR-82 forbade wiring it in, DLR-84 did
-not touch it, and a grep guards the absence. The currency and the shop it also lacked **arrived at
-DLR-84** (below). The curve's second and third values are a **documented placeholder**: the ticket
-predicts the player losing around fight three at these numbers and calls that the arithmetic
-working, with the shop and the flask as the answer rather than a bigger health bar.
+`ENCOUNTER_PLAYER_RESTORE` remains exported and **unread** — DLR-82 forbade wiring it in until the
+flask was designed, DLR-84 did not touch it, and **DLR-93 built the flask and still did not wire it**,
+because a restore the game performs for you is not the same mechanic as a charge you choose to spend.
+A grep in each of those contracts guards the absence. The currency and the shop it also lacked
+**arrived at DLR-84**, and the flask itself **at DLR-93** (both below). The curve's second and third
+values are a **documented placeholder**: the ticket predicts the player losing around fight three at
+these numbers and calls that the arithmetic working, with the shop and the flask as the answer rather
+than a bigger health bar — **both halves of that answer have now shipped, and neither has been played
+against the curve.**
 
 **DLR-83 gave the player the first thing they can do that the Quarry cannot.** Follow-suit could not
 be broken by anything, at any price — so the worst tricks to lose were the ones there was no legal way
@@ -220,9 +224,11 @@ race it closes.
 **Two things it also closed.** `addCheat` and `nextCheatId` finally have production readers, so the
 "do not delete as dead code" warning above is discharged. And `run-ui/` outgrew a single file and was
 split into [verdict-panel.md](run-ui/verdict-panel.md) and
-[shop-screen.md](run-ui/shop-screen.md). **One thing it left at a hard edge**: `warCouncil.css` now
-sits at **exactly 400 lines**, the blocking budget, reached by merging the coins plate into `.wc-run`'s
-selector rather than duplicating the block. The next rule added to that file must split it first.
+[shop-screen.md](run-ui/shop-screen.md). **One thing it left at a hard edge**: `warCouncil.css` was taken to
+**exactly 400 lines**, the blocking budget, by merging the coins plate into `.wc-run`'s selector rather
+than duplicating the block — and it stayed there with zero headroom until DLR-93's remediation pass
+split the decree/draw pile and `.wc-table` rules out into `warCouncilTable.css` (151 lines), leaving
+`warCouncil.css` at **258**.
 
 **DLR-85 gave the run a visible shape, and it is the first ticket where the game shows you how far there
 is to go.** The app now opens on a **start screen** rather than on fight one: the whole run drawn as a
@@ -420,6 +426,53 @@ answer is the **quick-kill payout**, which is a separate ticket and is not built
 Start at [hunt/coins-and-the-shop.md](hunt/coins-and-the-shop.md) for the purchase and
 `bankClimbBonusFor`, or [war-council/bank-and-cash-out.md](war-council/bank-and-cash-out.md) for the
 arithmetic, the four-layer route, and the floor-to-0 guard that keeps a spoiled figure out of a health bar.
+
+**DLR-93 gave the player a heal they do not have to pay for — 2026-08-20.** The **flask** is one charge
+of run state restoring **60% of maximum health** (6 at today's 10), clamped with overheal discarded,
+refused with a stated reason at zero charges or at full health, and **refilled to one charge every time
+a stage boss is beaten** — never on an ordinary kill. It is drunk from the shop screen, the surface
+already reachable only between fights, through a potion-icon button in its own zone above the shelf
+ladder and nowhere near the priced Heal. **Engine and screen landed together and QA drove the drink
+end to end in a real browser.**
+
+**It is deliberately not a shop item**, and that is the whole design: `priceOf` and `categoryOf` are
+total over `ShopItem`, so membership would demand a price it has not got and a shelf it does not sit
+on — and would put it on a shelf beside priced cards, which is the confusion its acceptance criteria
+exist to prevent. It gets its own reason-code union, its own copy block and its own zone instead.
+
+**Two structural changes are worth knowing beyond the mechanic.** `healedBy` is now **the single writer
+that raises player health**, shared by the paid Heal and the flask, so overheal is discarded in exactly
+one place and any future healing mechanic goes through it rather than beside it. And **`run.ts` was
+split**: the run's transitions moved to `runTransitions.ts` when the file crossed the 400-line ceiling
+mid-contract, leaving `run.ts` holding the run's shape and projections, with a deliberate and verified
+inert circular import between the two.
+
+**`ENCOUNTER_PLAYER_RESTORE` is still read by nothing**, which is the point rather than an oversight:
+DLR-82 forbade wiring it in *until the flask was designed*, and the flask being designed did not change
+the answer. Two prose comments in `src/` that asserted no flask existed were corrected, not deleted.
+
+**DLR-93 then paid off the repo's accumulated file-size debt, on the developer's explicit instruction
+that anything at 400+ lines be fixed inside the ticket even if it stretched the scope.** No behaviour
+changed — it was one deletion and three pure splits, every declaration and every `it(...)` body
+preserved verbatim:
+
+- `src/__tests__/sim.test.ts` (464 lines), a self-labelled temporary headless play harness writing to a
+  stale scratchpad path, was **deleted**. It was the sole cause of the repo's only three typecheck
+  errors and the sole reason `npm run build` failed; both gates are now green. Its removal took its own
+  four tests with it (880 → 876) and changed no other count. The design figures it produced are still
+  cited in [`.docs/design/…/the-discard.md`](../design/Balatro-Forbidden-Solitaire/the-discard.md),
+  which now says the harness is gone.
+- `shop.css` 521 → **237**, carving `shopItems.css` (140) and `shopFlask.css` (154).
+- `warCouncil.css` 400 → **258**, carving `warCouncilTable.css` (151).
+- `WarCouncilRound.test.tsx` 402 → **237**, carving `WarCouncilRound.telegraph.test.tsx` (86) and
+  `WarCouncilRound.readouts.test.tsx` (177).
+
+**No file under `src/` is at 400 lines or above.** `src/hunt/config.ts` at **399** is the one to watch:
+under budget, deliberately not split, and with room for nothing.
+
+Start at [hunt/the-flask.md](hunt/the-flask.md) for the rules, the two transcribed tunables and the
+boss refill, or [run-ui/the-flask-control.md](run-ui/the-flask-control.md) for the control and how it
+is kept unmistakable from the thing you pay for.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

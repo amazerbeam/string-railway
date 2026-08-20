@@ -245,7 +245,9 @@ something to buy while every purchase card on the shop screen is greyed out.
 
 ## `buyFromShop` — the purchase
 
-`run.ts` composes: consult `refusalFor`, throw if it is non-null, otherwise deduct and apply.
+`runTransitions.ts` composes (it lived in `run.ts` until DLR-93 split the transitions out — see
+[the run](run-sequence.md)): consult `refusalFor`, throw if it is non-null, otherwise deduct and
+apply.
 
 ```ts
 const paid = { ...run, coins: run.coins - priceOf(item) }
@@ -259,11 +261,17 @@ switch (item) {
     return { ...paid, poisonGuardHeld: true }
   case ShopItem.Whetstone: // DLR-92 — a count, not a flag: it stacks
     return { ...paid, whetstones: run.whetstones + 1 }
-  case ShopItem.Heal:
-    return { ...paid, encounter: { ...run.encounter, health: { ...run.encounter.health,
-      [DuelSide.Player]: Math.min(maxPlayerHealth, run.encounter.health[DuelSide.Player] + HEAL_HEALTH_RESTORED) } } }
+  case ShopItem.Heal: // DLR-93 — the clamp moved into the shared `healedBy`, byte-identical result
+    return healedBy(paid, HEAL_HEALTH_RESTORED, maxPlayerHealth)
 }
 ```
+
+**The Heal branch inlined its own `Math.min` until DLR-93**, and its comment called itself "THE clamp,
+and therefore also the single place overheal is discarded". Once the flask healed too, that sentence
+was only true if the expression moved — so it did, into a private `healedBy(run, restored, max)` that
+both callers read. The paid Heal's behaviour is unchanged for identical inputs, which the existing
+heal specs in `run.test.ts` and `shop.test.ts` prove by passing unedited. See
+[the flask](the-flask.md).
 
 **DLR-90 restructured that tail, and it was hiding a real defect.** Until the third item arrived the
 function branched `if (item === ShopItem.Cheat) { … }` and then **returned the heal unconditionally**
@@ -387,9 +395,12 @@ one-line change if the two prices are two keys.
 is positive, finite, and no larger than `PLAYER_START_HEALTH`. A test asserting `1` would turn a
 one-line re-price into a two-line one, which is the opposite of what the keys are for.
 
-`HEAL_HEALTH_RESTORED` is the **only source of healing in the game**. There is no flask and no rest
-site, and `ENCOUNTER_PLAYER_RESTORE` beside it stays deliberately unread — DLR-82 forbade wiring it
-in and DLR-84 did not.
+`HEAL_HEALTH_RESTORED` is **no longer the only source of healing in the game** — DLR-93 landed the
+**flask**, a free charge-limited heal restoring a proportion of the maximum rather than a flat figure,
+drunk from this same screen but deliberately not a `ShopItem`. It is still the only healing you
+**pay** for. There is still no rest site, and `ENCOUNTER_PLAYER_RESTORE` beside both stays deliberately
+unread — DLR-82 forbade wiring it in, and neither DLR-84 nor DLR-93 did. See
+[the flask](the-flask.md).
 
 ## Purity
 

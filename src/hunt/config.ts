@@ -212,10 +212,30 @@ export const CHEAT_PRICE: Coins = 1
 export const HEAL_PRICE: Coins = 1
 
 // DLR-84 AC4 — health restored by one Heal, BEFORE the clamp to PLAYER_START_HEALTH. TRANSCRIBED.
-// The ONLY source of healing in the game: the ticket states there is no flask and no rest site,
-// and `ENCOUNTER_PLAYER_RESTORE` above stays deliberately unread.
+// No longer the only source of healing: DLR-93 landed the flask below, a FREE charge-limited heal
+// sized as a proportion of the maximum rather than a flat figure. There is still no rest site, and
+// `ENCOUNTER_PLAYER_RESTORE` above stays deliberately unread — the flask is a separate,
+// player-triggered mechanic, not that tunable finally being wired in.
 // UNIT: health points, added once on purchase.
 export const HEAL_HEALTH_RESTORED: Health = 4
+
+// DLR-93 AC1 — how many flask charges a run opens with, and the figure a stage-boss kill refills
+// to. TRANSCRIBED from version-4-scope.md §2 ("Carried as a single charge ... refilled to one
+// charge each time a stage boss is beaten"). NOT an open tuning value: the epic explicitly defers
+// re-tuning the charge count ("revisit only if it plays too thin"). ONE key rather than a separate
+// refill figure, because the run's full-flask amount is one number — a second key beside it is the
+// one that gets raised without the other.
+// UNIT: flask charges.
+export const FLASK_STARTING_CHARGES = 1
+
+// DLR-93 AC2 — the proportion of MAXIMUM health one flask restores, before the clamp. TRANSCRIBED
+// from version-4-scope.md §2 ("Restores 60% of the player's maximum health — 6 points at today's
+// provisional 10"). A PROPORTION in 0..1, exactly like SKULL_DENSITY below, NOT a 0..100
+// percentage — AC2's formula is Math.round(maxPlayerHealth * FLASK_HEAL_PERCENT).
+// Deliberately a percentage of the maximum rather than a flat figure like HEAL_HEALTH_RESTORED
+// above: it must stay an emergency heal if PLAYER_START_HEALTH moves again, as it already has once.
+// UNIT: proportion of maximum health, 0..1.
+export const FLASK_HEAL_PERCENT = 0.6
 
 // DLR-90 AC1 — the Envenom price. TRANSCRIBED from version-4-scope.md's own heading ("2 coins"),
 // which prices it at twice Poison Guard's cost because unlike Guard this is a guaranteed,

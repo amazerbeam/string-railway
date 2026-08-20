@@ -76,9 +76,11 @@ Quarry's from `quarryHealthForEncounter(encounterIndex)`. No `1350` and no `1600
 
 **`encounterIndex` selects a bar; it sequences nothing.** Running the encounters in order is
 [`run.ts`'s](run-sequence.md) (DLR-82), which calls `startEncounter` once per fight and passes the
-health the player carried out of the last one. Any restore between them
-(`ENCOUNTER_PLAYER_RESTORE`) remains **deliberately unread** by both modules — DLR-82 forbids
-wiring it in, and the flask stories own it.
+health the player carried out of the last one. Any **automatic** restore between them
+(`ENCOUNTER_PLAYER_RESTORE`) remains **deliberately unread** by both modules — DLR-82 forbade wiring
+it in until the flask was designed, and **DLR-93 designed and built the flask without touching it**.
+The flask is a player-triggered between-fights heal, not that tunable finally being wired in; see
+[the flask](the-flask.md).
 
 `playerHealth` is a **defaulted parameter** rather than something the function closes over — the same
 injectable pattern this codebase uses for every tunable — and which `assignSkulls`'s `density` and

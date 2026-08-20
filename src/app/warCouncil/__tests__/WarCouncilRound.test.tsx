@@ -2,15 +2,8 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
-import {
-  DAMAGE_PER_HIT,
-  HAND_SIZE,
-  PLAYER_START_HEALTH,
-  quarryHealthForEncounter,
-} from '../../../hunt'
+import { HAND_SIZE } from '../../../hunt'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
-import { cardAccessibleName, cheatAccessibleName } from '../labels'
-import { CheatStage } from '../roundUiState'
 import WarCouncilRound from '../WarCouncilRound'
 import {
   bankClimbBonusFixture,
@@ -33,6 +26,12 @@ afterEach(cleanup)
  * Collapses this file's many near-identical five-prop render calls back to one line each
  * (DLR-71 Round 2) — a mechanical `prettier --write` reflowing all seventeen into
  * one-prop-per-line blocks was what pushed the file over the 400-line budget in the first place.
+ *
+ * Split further at the same budget (DLR-93): this is the core render/trick-play/hand-completion
+ * slice — the intent-telegraph and Let-them-lead flow lives in `WarCouncilRound.telegraph.test.tsx`,
+ * and the health-bar/purse/shape/cheats readouts live in `WarCouncilRound.readouts.test.tsx`. Each
+ * mirrors this same `renderRound` helper rather than importing it, following this file's own
+ * pre-existing split precedent (`WarCouncilRound.envenom.test.tsx`).
  */
 function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
   return render(
@@ -51,10 +50,6 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       onComplete={overrides.onComplete ?? vi.fn()}
     />,
   )
-}
-
-function healthMeter(name: 'Your health' | typeof quarryLabelFixture) {
-  return screen.getByRole('meter', { name })
 }
 
 describe('WarCouncilRound', () => {
@@ -233,166 +228,6 @@ describe('WarCouncilRound', () => {
     expect(document.activeElement).toBe(carryOn)
     fireEvent.click(carryOn)
     expect(screen.queryByRole('button', { name: /tap the table to carry on/i })).toBeNull()
-  })
-
-  it('telegraphs the Quarry’s lead before it lands, and commits it on "Let them lead" (AC3)', () => {
-    renderRound({ initialState: makeRound({ leader: PlayerSide.Cpu }) })
-    // Nothing has been committed yet — the trick row is still empty (no `wc-played` card).
-    expect(screen.queryByText(/^They led/i)).toBeNull()
-    const status = screen.getByRole('status')
-    expect(status.getAttribute('aria-label')).toMatch(/will lead/i)
-
-    const letThemLead = screen.getByRole('button', { name: /let them lead/i })
-    fireEvent.click(letThemLead)
-    expect(screen.getByText(/^They led/i)).toBeDefined()
-  })
-
-  it('previews the Quarry’s answer to an armed card before it is played (AC3)', () => {
-    renderRound()
-    const bells7 = screen.getByRole('button', { name: '7 of Bells' })
-    fireEvent.click(bells7)
-    const status = screen.getByRole('status')
-    expect(status.getAttribute('aria-label')).toMatch(/^If you lead that card/)
-    // Arming is a selection, not a commitment — the card has not been played.
-    expect(screen.queryByText(/^You led/i)).toBeNull()
-  })
-
-  it('clears the speculative reading back to the live one on Escape', () => {
-    renderRound()
-    const bells7 = screen.getByRole('button', { name: '7 of Bells' })
-    fireEvent.click(bells7)
-    expect(screen.getByRole('status').getAttribute('aria-label')).toMatch(/^If you lead that card/)
-    const hand = screen.getByRole('group', { name: /hand/i })
-    fireEvent.keyDown(hand, { key: 'Escape' })
-    expect(screen.getByRole('status').getAttribute('aria-label')).not.toMatch(/^If you lead/)
-  })
-
-  it('shows both health bars from the first render', () => {
-    renderRound()
-    expect(healthMeter('Your health')).toBeTruthy()
-    expect(healthMeter(quarryLabelFixture)).toBeTruthy()
-  })
-
-  it('renders the purse plate showing the coins prop it was mounted with (DLR-84 AC2)', () => {
-    renderRound({ coins: 7 })
-    // Scoped to the plate labelled "Coins" rather than a bare `getByText('7')`, which also
-    // matches the "7 of Bells" card in the dealt hand.
-    const coinsPlate = screen.getByText('Coins').closest('.wc-coins')
-    expect(coinsPlate?.textContent).toMatch(/7/)
-  })
-
-  it('reaches "Let them lead" by keyboard alone', () => {
-    renderRound({ initialState: makeRound({ leader: PlayerSide.Cpu }) })
-    const letThemLead = screen.getByRole('button', { name: /let them lead/i })
-    letThemLead.focus()
-    expect(document.activeElement).toBe(letThemLead)
-    fireEvent.click(letThemLead)
-    expect(screen.queryByRole('button', { name: /let them lead/i })).toBeNull()
-  })
-
-  it('leaves both bars untouched on a clean take — the bank climbs, not health', () => {
-    // Bells 9 is the Witch: a single Witch acts as an effective trump, so this trick's
-    // outcome is deterministic regardless of the fixture's own trump suit (Keys, here) —
-    // the same construction `roundReducer.test.ts`'s own bank specs use.
-    const round = makeRound({
-      leader: PlayerSide.Player,
-      trumpSuit: Suit.Keys,
-      hands: {
-        [PlayerSide.Player]: [card(Suit.Bells, 9)],
-        [PlayerSide.Cpu]: [card(Suit.Bells, 2)],
-      },
-      currentTrick: [],
-    })
-    renderRound({ initialState: round })
-    const playerBefore = healthMeter('Your health').getAttribute('aria-valuenow')
-    const quarryBefore = healthMeter(quarryLabelFixture).getAttribute('aria-valuenow')
-    const bells9 = screen.getByRole('button', { name: '9 of Bells (Witch)' })
-    fireEvent.click(bells9)
-    fireEvent.click(bells9)
-    expect(screen.getByText(/take the trick/i)).toBeDefined()
-    expect(healthMeter('Your health').getAttribute('aria-valuenow')).toBe(playerBefore)
-    expect(healthMeter(quarryLabelFixture).getAttribute('aria-valuenow')).toBe(quarryBefore)
-  })
-
-  it('moves the player’s bar by exactly one hit on a lost clean trick, and cashes the bank into the Quarry (AC6)', () => {
-    // The deciding sixth trick: each hand holds exactly its last card, so after it resolves
-    // neither side has a next lead to read — `quarryIntent` would otherwise be asked for the
-    // Quarry's empty-handed "next" lead and throw, exactly the empty-legal-set crash
-    // `chooseCpuCard`'s own docblock warns `lowestCard([])` produces.
-    const round = makeRound({
-      leader: PlayerSide.Player,
-      trumpSuit: Suit.Keys,
-      bank: 2,
-      multiplier: 2,
-      tricksPlayed: HAND_SIZE - 1,
-      hands: {
-        [PlayerSide.Player]: [card(Suit.Bells, 2)],
-        [PlayerSide.Cpu]: [card(Suit.Bells, 9)],
-      },
-      currentTrick: [],
-    })
-    renderRound({ initialState: round })
-    const bells2 = screen.getByRole('button', { name: '2 of Bells' })
-    fireEvent.click(bells2)
-    fireEvent.click(bells2)
-    expect(screen.getByText(/take the trick/i)).toBeDefined()
-    expect(Number(healthMeter('Your health').getAttribute('aria-valuenow'))).toBe(
-      PLAYER_START_HEALTH - DAMAGE_PER_HIT,
-    )
-    expect(Number(healthMeter(quarryLabelFixture).getAttribute('aria-valuenow'))).toBe(
-      quarryHealthForEncounter(0) - 4,
-    )
-  })
-
-  it('renders the shape readout for the dealt hand, and the bank readout climbs on a taken trick (DLR-80 Task 20)', () => {
-    // Same Witch-beats-anything construction as the clean-take spec above: deterministic
-    // regardless of the fixture's own trump suit, so this only exercises the two new readouts.
-    const round = makeRound({
-      leader: PlayerSide.Player,
-      trumpSuit: Suit.Keys,
-      hands: {
-        [PlayerSide.Player]: [card(Suit.Bells, 9)],
-        [PlayerSide.Cpu]: [card(Suit.Bells, 2)],
-      },
-      currentTrick: [],
-    })
-    renderRound({ initialState: round })
-
-    // AC11 — the shape readout is on screen before any card is played, and never shows a rank.
-    expect(screen.getByText(/Bells: 1 held, none skulled/i)).toBeTruthy()
-
-    // The bank readout's cash figure (bank × multiplier) starts at zero, before any trick.
-    expect(screen.getByLabelText(/cashes for 0/i)).toBeTruthy()
-
-    const bells9 = screen.getByRole('button', { name: '9 of Bells (Witch)' })
-    fireEvent.click(bells9)
-    fireEvent.click(bells9)
-    expect(screen.getByText(/take the trick/i)).toBeDefined()
-
-    // …and climbs the instant the trick is taken: PT-002 banks 1 per trick taken, so one trick
-    // into the streak reads bank 1 × multiplier 1 = 1, not a rank sum.
-    expect(screen.getByLabelText(/cashes for 1\b/i)).toBeTruthy()
-  })
-
-  it('makes a forbidden card playable once a Cheat is armed (AC5)', () => {
-    // Same construction as "disables a card the engine says is illegal" above: the player is
-    // forced to follow Moons, so their sole Bells card is genuinely forbidden without a Cheat.
-    const round = makeRound({
-      leader: PlayerSide.Cpu,
-      currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Moons, 9) }],
-      phase: RoundPhase.AwaitingFollow,
-    })
-    renderRound({ initialState: round, cheats: [{ id: 1 }] })
-
-    const offSuitName = cardAccessibleName(card(Suit.Bells, 7))
-    const offSuit = screen.getByRole('button', { name: offSuitName })
-    expect(offSuit).toHaveProperty('disabled', true)
-
-    const slot = screen.getByRole('button', { name: cheatAccessibleName(null) })
-    fireEvent.click(slot)
-    fireEvent.click(screen.getByRole('button', { name: cheatAccessibleName(CheatStage.Poised) }))
-
-    expect(screen.getByRole('button', { name: offSuitName })).toHaveProperty('disabled', false)
   })
 })
 

@@ -1,13 +1,21 @@
-﻿import {
-  COINS_PER_ENCOUNTER_WIN,
-  HEAL_HEALTH_RESTORED,
+// DLR-93 Phase 2.5 — split from a single `run.ts` once that file crossed the 400-line blocking
+// budget (`CLAUDE.md`, `react-frontend`). This module owns the run's SHAPE — `RunState`,
+// `startRun`, and the projections `shopStockFor` / `flaskStockFor` — plus the small pure
+// queries (`canAdvanceRun`, `beatenCount`, `bankClimbBonusFor`) that read a `RunState` without
+// producing a new one. The run's TRANSITIONS — `advanceRun`, `recordEncounter`, `buyFromShop`,
+// `drinkFlask` and their private helpers — live in `./runTransitions` and are re-exported below
+// so every existing importer (`src/hunt/index.ts`, the `run.*.test.ts` specs) needed no change.
+
+import {
+  FLASK_STARTING_CHARGES,
   PLAYER_START_HEALTH,
   QUARRY_ENCOUNTER_HEALTH,
   RUN_STARTING_CHEATS,
 } from './config'
-import { addCheat, grantCheats, type CheatCard, type CheatCardId } from './cheats'
-import { isEncounterResolved, startEncounter } from './encounter'
-import { priceOf, refusalFor, ShopItem, type ShopStock } from './shop'
+import { grantCheats, type CheatCard, type CheatCardId } from './cheats'
+import { startEncounter } from './encounter'
+import type { FlaskStock } from './flask'
+import type { ShopStock } from './shop'
 import { DuelSide, type Coins, type EncounterState, type Health } from './types'
 
 /**
@@ -71,6 +79,13 @@ export interface RunState {
    *  it is NEVER handed back by a hand, because a hand cannot spend one. NEVER persisted, exactly
    *  as `coins` above. */
   readonly whetstones: number
+  /** DLR-93 AC1 — flask charges held. A COUNT like `envenomCharges`, not a boolean: AC5 refills
+   *  "regardless of whether the player had 0 or 1", and the epic's deferred re-tune of the charge
+   *  count raises the ceiling without changing this type. Run-level like `coins` and carried by
+   *  `advanceRun`'s and `recordEncounter`'s spreads — a free heal that reset at a fight boundary
+   *  would be a per-fight heal. Unlike `cheats` and `envenomCharges` it is NEVER handed back by a
+   *  hand, because a hand cannot drink it (AC4). NEVER persisted, exactly as `coins` above. */
+  readonly flaskCharges: number
 }
 
 /**
@@ -92,50 +107,7 @@ export function startRun(playerHealth: Health = PLAYER_START_HEALTH): RunState {
     envenomCharges: 0,
     poisonGuardHeld: false,
     whetstones: 0,
-  }
-}
-
-/**
- * Adopt the encounter a hand reported upward and re-derive the run's outcome. THE single place
- * AC4 and AC5 are decided.
- *
- * Refuses a run that has already ended: recording onto a finished run would silently resurrect
- * it, and there is no legitimate caller — the driver stops handing hands to a finished run.
- *
- * `cheats` (DLR-83) and `envenomCharges` (DLR-90 AC2) are both REQUIRED: the hand owns each for
- * its lifetime and hands the survivors back through `WarCouncilRoundResult`. A second transition
- * the caller must remember to make beside this one is the transition that eventually gets
- * forgotten.
- *
- * `poisonGuardHeld` (DLR-91 AC2/AC4) is REQUIRED for the same reason — the hand owns it for its
- * whole life and hands the survivor back through `WarCouncilRoundResult`. It is passed through
- * `guardAfter`, not adopted verbatim: the Guard does not outlive the fight it was bought for, and
- * this is the ONE transition that adopts a hand's end state, so it is the one place that rule can
- * be enforced.
- */
-export function recordEncounter(
-  run: RunState,
-  encounter: EncounterState,
-  cheats: readonly CheatCard[],
-  envenomCharges: number,
-  poisonGuardHeld: boolean,
-): RunState {
-  if (run.outcome !== RunOutcome.InProgress) {
-    throw new RangeError(
-      `Cannot record an encounter onto a run already ${run.outcome} at fight ${run.encounterIndex + 1} of ${run.encounterCount}`,
-    )
-  }
-  // AC1 — THE payout, here and nowhere else. `advanceRun` would never pay for the final fight of
-  // a won run, and the driver is a component and must not hold the rule.
-  const wonThisEncounter = encounter.winner === DuelSide.Player
-  return {
-    ...run,
-    encounter,
-    cheats,
-    envenomCharges,
-    poisonGuardHeld: guardAfter(encounter, poisonGuardHeld),
-    coins: wonThisEncounter ? run.coins + COINS_PER_ENCOUNTER_WIN : run.coins,
-    outcome: outcomeFor(run.encounterIndex, run.encounterCount, encounter),
+    flaskCharges: FLASK_STARTING_CHARGES,
   }
 }
 
@@ -158,28 +130,6 @@ export function beatenCount(run: RunState): number {
   return run.encounterIndex + (run.encounter.winner === DuelSide.Player ? 1 : 0)
 }
 
-/**
- * AC3 — the next fight, opened on the health the player carried out of the last one. Nothing is
- * restored: `ENCOUNTER_PLAYER_RESTORE` is deliberately NOT read here, per DLR-82.
- *
- * Throws rather than returning the run unchanged — an un-advanceable run returned as-is would
- * present a stuck screen as a success and leave nothing in the console to find it by.
- */
-export function advanceRun(run: RunState): RunState {
-  if (!canAdvanceRun(run)) {
-    throw new RangeError(
-      `Cannot advance a run that is ${run.outcome} with the encounter won by ${run.encounter.winner ?? 'nobody yet'} at fight ${run.encounterIndex + 1} of ${run.encounterCount}`,
-    )
-  }
-  const encounterIndex = run.encounterIndex + 1
-  return {
-    ...run,
-    encounterIndex,
-    encounter: startEncounter(encounterIndex, run.encounter.health[DuelSide.Player]),
-    outcome: RunOutcome.InProgress,
-  }
-}
-
 /** Projects a run into the four figures the shop's rules need, so no screen assembles a
  *  `ShopStock` by hand and gets one field wrong. */
 export function shopStockFor(
@@ -195,6 +145,20 @@ export function shopStockFor(
   }
 }
 
+/** DLR-93 — projects a run into the three figures the flask's rules need, the sibling of
+ *  `shopStockFor` and for the same reason: no screen assembles a `FlaskStock` by hand and gets one
+ *  field wrong. */
+export function flaskStockFor(
+  run: RunState,
+  maxPlayerHealth: Health = PLAYER_START_HEALTH,
+): FlaskStock {
+  return {
+    charges: run.flaskCharges,
+    playerHealth: run.encounter.health[DuelSide.Player],
+    maxPlayerHealth,
+  }
+}
+
 /**
  * DLR-92 AC2 — THE statement of "each Whetstone adds +1 to the bank's per-trick climb", so the
  * rule is stated once rather than at whichever wiring site happens to need it. `App` reads this
@@ -206,94 +170,6 @@ export function bankClimbBonusFor(run: RunState): number {
   return run.whetstones
 }
 
-/**
- * AC4/AC5/AC7 — the purchase. Throws a `RangeError` naming the `PurchaseRefusal` rather than
- * returning the run unchanged: a silent no-op is exactly the "took payment for nothing" failure
- * `cheats.ts`'s `addCheat` already refuses to allow. Reaching the throw is a driver bug, because
- * the control is disabled whenever `refusalFor` is non-null.
- *
- * The heal writes into `encounter.health[Player]` because that IS the carried figure — this
- * module's own docblock states a second copy beside it is the number that drifts, and
- * `advanceRun` seeds the next fight from it. It deliberately does NOT go through `applyDamage`,
- * which refuses a resolved encounter: a restore is not a damage event.
- *
- * `maxPlayerHealth` is a defaulted parameter, matching `startEncounter`/`startRun`'s injectable
- * pattern, so a spec varies the clamp without mutating module state.
- */
-export function buyFromShop(
-  run: RunState,
-  item: ShopItem,
-  maxPlayerHealth: Health = PLAYER_START_HEALTH,
-): RunState {
-  if (!Number.isFinite(maxPlayerHealth) || maxPlayerHealth <= 0) {
-    throw new RangeError(
-      `Cannot buy against a maximum health of ${maxPlayerHealth}: it must be a positive finite number`,
-    )
-  }
-  const refusal = refusalFor(shopStockFor(run, maxPlayerHealth), item)
-  if (refusal !== null) {
-    throw new RangeError(
-      `Cannot buy ${item} — ${refusal} (holding ${run.coins} coins, ${run.cheats.length} Cheats, ${run.encounter.health[DuelSide.Player]} of ${maxPlayerHealth} health)`,
-    )
-  }
-  const paid = { ...run, coins: run.coins - priceOf(item) }
-  // A `switch` with no `default`, so a FOURTH item is a compile error here rather than an item
-  // that silently does whatever the last branch happened to do. That is not hypothetical: before
-  // DLR-90 this function returned the heal unconditionally as its fallback, so adding Envenom
-  // without this restructuring would have healed the player and type-checked cleanly.
-  switch (item) {
-    case ShopItem.Cheat:
-      return {
-        ...paid,
-        cheats: addCheat(run.cheats, { id: run.nextCheatId }),
-        nextCheatId: run.nextCheatId + 1,
-      }
-    case ShopItem.Envenom:
-      return { ...paid, envenomCharges: run.envenomCharges + 1 }
-    case ShopItem.PoisonGuard:
-      return { ...paid, poisonGuardHeld: true }
-    case ShopItem.Whetstone:
-      return { ...paid, whetstones: run.whetstones + 1 }
-    case ShopItem.Heal:
-      return {
-        ...paid,
-        encounter: {
-          ...run.encounter,
-          health: {
-            ...run.encounter.health,
-            // THE clamp, and therefore also the single place overheal is discarded (DLR-84 AC4).
-            [DuelSide.Player]: Math.min(
-              maxPlayerHealth,
-              run.encounter.health[DuelSide.Player] + HEAL_HEALTH_RESTORED,
-            ),
-          },
-        },
-      }
-  }
-}
-
-/**
- * AC4 before AC5, deliberately: the player being down ends the run wherever it happens, including
- * on the final fight. There is no longer a simultaneous case to rule on — D7 (2026-08-19) makes
- * `applyDamage` spare the player whenever the Quarry goes down, so a mutual kill is a player win.
- */
-function outcomeFor(
-  encounterIndex: number,
-  encounterCount: number,
-  encounter: EncounterState,
-): RunOutcome {
-  if (!isEncounterResolved(encounter)) return RunOutcome.InProgress
-  if (encounter.winner === DuelSide.Quarry) return RunOutcome.Lost
-  return encounterIndex === encounterCount - 1 ? RunOutcome.Won : RunOutcome.InProgress
-}
-
-/**
- * AC2 — ONE statement of "a Guard does not outlive the fight it was bought for".
- *
- * A named function rather than an inline ternary deliberately: `recordEncounter` is the only
- * transition that adopts a hand's end state today, but a second one is exactly the kind of thing
- * that gets added without remembering to clear this, and a named rule is what a reviewer finds.
- */
-function guardAfter(encounter: EncounterState, held: boolean): boolean {
-  return isEncounterResolved(encounter) ? false : held
-}
+// The run's TRANSITIONS live in ./runTransitions (DLR-93 Phase 2.5) and are re-exported here so
+// every existing importer of `./run` keeps working unchanged.
+export { advanceRun, recordEncounter, buyFromShop, drinkFlask } from './runTransitions'

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: COMPLETE
 Started: 2026-08-20
 
 **Goal:** Add a free, player-triggered emergency heal — one charge of run state, restoring 60% of maximum health (clamped, overheal discarded), refused with a stated reason at zero charges or full health, refilling to one charge on a stage-boss kill and never on an ordinary one — drunk from the shop screen via a potion-icon button placed away from the priced Heal.
@@ -50,7 +50,7 @@ Started: 2026-08-20
 
 Everything in this phase is pure TypeScript inside `src/hunt/`'s lint-enforced React-free, DOM-free boundary, tested without a renderer. The phase boundary is safe because it ends with the whole mechanic working and covered while no component reads it yet — `RunState` gains a field that every existing spread already carries, so nothing outside `src/hunt/` needs to compile differently.
 
-### Task 1: Add the two configuration keys and correct the false flask comment
+### Task 1: Add the two configuration keys and correct the false flask comment ✓
 
 - Skill: `react-frontend`
 
@@ -60,7 +60,7 @@ Everything in this phase is pure TypeScript inside `src/hunt/`'s lint-enforced R
 - Test: `src/hunt/__tests__/config.test.ts`
 - Config: `src/hunt/config.ts` — add `FLASK_STARTING_CHARGES` (1) and `FLASK_HEAL_PERCENT` (0.6); both values are TRANSCRIBED from DLR-93 AC1/AC2 and `version-4-scope.md` §2, neither is a developer decision
 
-- [ ] **Step 1: Write the failing assertions for both new keys**
+- [x] **Step 1: Write the failing assertions for both new keys**
 
 In `src/hunt/__tests__/config.test.ts`, add `FLASK_HEAL_PERCENT` and `FLASK_STARTING_CHARGES` to the existing `from '../config'` import list, then append this `describe` block at the end of the file:
 
@@ -88,12 +88,12 @@ describe('DLR-93 — the flask (AC1, AC2)', () => {
 
 `PLAYER_START_HEALTH` and `HEAL_HEALTH_RESTORED` must also be present in that file's `from '../config'` import — add whichever is missing.
 
-- [ ] **Step 2: Confirm the new block fails for the right reason**
+- [x] **Step 2: Confirm the new block fails for the right reason**
 
 Run: `npx vitest run src/hunt/__tests__/config.test.ts`
 Expected: exits non-zero; the three new tests fail on `FLASK_STARTING_CHARGES` / `FLASK_HEAL_PERCENT` being `undefined`. Every pre-existing test in the file still passes.
 
-- [ ] **Step 3: Add the keys**
+- [x] **Step 3: Add the keys**
 
 In `src/hunt/config.ts`, immediately after the `HEAL_HEALTH_RESTORED` declaration (currently ending line 217), insert:
 
@@ -117,7 +117,7 @@ export const FLASK_STARTING_CHARGES = 1
 export const FLASK_HEAL_PERCENT = 0.6
 ```
 
-- [ ] **Step 4: Correct the now-false comment above `HEAL_HEALTH_RESTORED`**
+- [x] **Step 4: Correct the now-false comment above `HEAL_HEALTH_RESTORED`**
 
 In `src/hunt/config.ts`, replace lines 213-215, which currently read:
 
@@ -137,12 +137,12 @@ with:
 // player-triggered mechanic, not that tunable finally being wired in.
 ```
 
-- [ ] **Step 5: Confirm the block passes and nothing else moved**
+- [x] **Step 5: Confirm the block passes and nothing else moved**
 
 Run: `npx vitest run src/hunt/__tests__/config.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `typecheck` exits 0.
 
-### Task 2: State the flask's rules in a new pure module
+### Task 2: State the flask's rules in a new pure module ✓
 
 - Skill: `react-frontend`
 
@@ -151,7 +151,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0.
 - Create: `src/hunt/flask.ts`
 - Test: `src/hunt/__tests__/flask.test.ts`
 
-- [ ] **Step 1: Write the failing spec for the heal amount and both refusals**
+- [x] **Step 1: Write the failing spec for the heal amount and both refusals**
 
 Create `src/hunt/__tests__/flask.test.ts`:
 
@@ -214,12 +214,12 @@ describe('flaskRefusalFor (AC3)', () => {
 })
 ```
 
-- [ ] **Step 2: Confirm the spec fails on the missing module**
+- [x] **Step 2: Confirm the spec fails on the missing module**
 
 Run: `npx vitest run src/hunt/__tests__/flask.test.ts`
 Expected: exits non-zero with a "Failed to load" / cannot-resolve error naming `../flask`. This is the collection-error case `web-project.md` warns about, and here it is the expected result.
 
-- [ ] **Step 3: Create the module**
+- [x] **Step 3: Create the module**
 
 Create `src/hunt/flask.ts`:
 
@@ -297,12 +297,12 @@ export function flaskRefusalFor(stock: FlaskStock): FlaskRefusal | null {
 }
 ```
 
-- [ ] **Step 4: Confirm the spec passes and the pure boundary holds**
+- [x] **Step 4: Confirm the spec passes and the pure boundary holds**
 
 Run: `npx vitest run src/hunt/__tests__/flask.test.ts; npm run typecheck; npm run lint`
 Expected: Vitest reports 0 failed; `typecheck` exits 0; `lint` exits 0 — a React import or a DOM global in `src/hunt/flask.ts` would fail `lint` here, not later.
 
-### Task 3: Carry the charge on `RunState`, share the clamp, and drink
+### Task 3: Carry the charge on `RunState`, share the clamp, and drink ✓
 
 - Skill: `react-frontend`
 
@@ -312,7 +312,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0; `lint` exits 0 — a Rea
 - Modify: `src/hunt/encounter.ts:21-22`
 - Test: `src/hunt/__tests__/run.flask.test.ts`
 
-- [ ] **Step 1: Write the failing spec for AC1, AC2, AC4 and AC5**
+- [x] **Step 1: Write the failing spec for AC1, AC2, AC4 and AC5**
 
 Create `src/hunt/__tests__/run.flask.test.ts`:
 
@@ -483,12 +483,12 @@ describe("recordEncounter's flask refill (AC5)", () => {
 
 **Fixture note for the executor:** `runWonAt` and `wonEncounter` drive the engine's own transitions rather than hand-building an `EncounterState`. If `applyDamage`'s signature or `EncounterState`'s shape does not match the calls above, **adapt the fixture to the real signatures in `src/hunt/encounter.ts` and `src/hunt/types.ts` — do not change the assertions**, and read `src/hunt/__tests__/run.whetstone.test.ts` for the fixture idiom this file should match. Keep both `recordEncounter` refill assertions — from-empty and from-one-charge — even though they differ by a single argument: that pair is exactly what AC5's "regardless of whether the player had 0 or 1" requires, and collapsing them into one loses half the requirement.
 
-- [ ] **Step 2: Confirm the spec fails on the missing exports**
+- [x] **Step 2: Confirm the spec fails on the missing exports**
 
 Run: `npx vitest run src/hunt/__tests__/run.flask.test.ts`
 Expected: exits non-zero — `drinkFlask` and `flaskStockFor` are not exported from `../run`, and `flaskCharges` does not exist on `RunState`.
 
-- [ ] **Step 3: Add the field, the imports, and the starting charge**
+- [x] **Step 3: Add the field, the imports, and the starting charge**
 
 In `src/hunt/run.ts`, extend the `from './config'` import to include `FLASK_STARTING_CHARGES`, `OpponentKind` and `runEncounterAt`, and add a new import line:
 
@@ -514,7 +514,7 @@ And add to `startRun`'s returned literal, after `whetstones: 0`:
     flaskCharges: FLASK_STARTING_CHARGES,
 ```
 
-- [ ] **Step 4: Move the clamp into one shared private helper**
+- [x] **Step 4: Move the clamp into one shared private helper**
 
 In `src/hunt/run.ts`, replace `buyFromShop`'s `case ShopItem.Heal:` branch, which currently reads:
 
@@ -597,7 +597,7 @@ function flaskAfter(run: RunState, wonThisEncounter: boolean): number {
 }
 ```
 
-- [ ] **Step 5: Wire the refill into `recordEncounter`**
+- [x] **Step 5: Wire the refill into `recordEncounter`**
 
 In `src/hunt/run.ts`, add one line to `recordEncounter`'s returned object, directly after the `coins:` line:
 
@@ -614,7 +614,7 @@ And extend that function's docblock with a paragraph before its closing `*/`:
  * `flaskAfter` when the opponent just beaten was a stage boss.
 ```
 
-- [ ] **Step 6: Add `flaskStockFor` and `drinkFlask`**
+- [x] **Step 6: Add `flaskStockFor` and `drinkFlask`**
 
 In `src/hunt/run.ts`, immediately after `shopStockFor`, insert:
 
@@ -674,7 +674,7 @@ export function drinkFlask(
 
 `flaskHealAmount` is called **before** `healedBy` spreads, so its non-finite-maximum guard fires before any health is written.
 
-- [ ] **Step 7: Correct the now-false comment in `encounter.ts`**
+- [x] **Step 7: Correct the now-false comment in `encounter.ts`**
 
 In `src/hunt/encounter.ts`, replace the docblock sentence at lines 20-22 reading:
 
@@ -691,17 +691,19 @@ with:
  * between-fights heal (`run.ts`'s `drinkFlask`), not this tunable finally being wired in.
 ```
 
-- [ ] **Step 8: Confirm the new spec passes and no existing run or shop spec regressed**
+- [x] **Step 8: Confirm the new spec passes and no existing run or shop spec regressed**
 
 Run: `npx vitest run src/hunt/__tests__/run.flask.test.ts src/hunt/__tests__/run.test.ts src/hunt/__tests__/run.whetstone.test.ts src/hunt/__tests__/shop.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed across all four files — the paid Heal's existing clamp and overheal specs are what prove the `healedBy` refactor changed no behaviour. `typecheck` exits 0.
 
-- [ ] **Step 9: Confirm `run.ts` is inside the line budget**
+- [x] **Step 9: Confirm `run.ts` is inside the line budget — RESOLVED by Phase 2.5** (was 406; the transitions moved to `runTransitions.ts`, leaving `run.ts` at 175 and `runTransitions.ts` at 259)
 
 Run: `(Get-Content src\hunt\run.ts).Count`
 Expected: a number below 400. `Measure-Object -Line` undercounts by dropping blank lines and must not be used here. If the count is 400 or above, stop and report — the split is `run.ts` → a run-transitions module, never a suppression.
 
-### Task 4: Export every new name from the barrel
+Actual: **406 lines**, applying the plan's Task 3 diffs verbatim with no extra content. Over budget. Not fixed unilaterally — a split was not in this task's `**Files:**` block. See the Implementer Report's "Developer Decisions Needed" section.
+
+### Task 4: Export every new name from the barrel ✓
 
 - Skill: `react-frontend`
 
@@ -709,7 +711,7 @@ Expected: a number below 400. `Measure-Object -Line` undercounts by dropping bla
 
 - Modify: `src/hunt/index.ts`
 
-- [ ] **Step 1: Add the config keys, the flask module, and the two run transitions**
+- [x] **Step 1: Add the config keys, the flask module, and the two run transitions**
 
 In `src/hunt/index.ts`, add `FLASK_STARTING_CHARGES` and `FLASK_HEAL_PERCENT` to the value export list from `./config`; add `flaskStockFor` and `drinkFlask` to the value export list from `./run`; and insert a new block immediately after the existing `./shop` export block:
 
@@ -718,7 +720,7 @@ export type { FlaskStock } from './flask'
 export { FlaskRefusal, flaskHealAmount, flaskRefusalFor } from './flask'
 ```
 
-- [ ] **Step 2: Verify the barrel type-checks and the whole `hunt` module still passes**
+- [x] **Step 2: Verify the barrel type-checks and the whole `hunt` module still passes**
 
 Run: `npm run typecheck; npx vitest run --project node`
 Expected: `typecheck` exits 0; Vitest reports 0 failed.
@@ -729,7 +731,7 @@ Expected: `typecheck` exits 0; Vitest reports 0 failed.
 
 The pure core is complete and covered, so this phase is wiring plus one new glyph: copy, a symbol-sheet component, the flask block on `ShopPanel`, its CSS, and the driver's handler. The boundary is safe because each task leaves the project type-checking — copy and the glyph are additive with no reader until the panel task, and the panel's props and the driver's handler land in one task each, so no phase ends with `ShopPanel` requiring a prop `App.tsx` does not pass.
 
-### Task 5: The flask's copy
+### Task 5: The flask's copy ✓
 
 - Skill: `react-frontend`
 
@@ -738,7 +740,7 @@ The pure core is complete and covered, so this phase is wiring plus one new glyp
 - Modify: `src/app/run/shopLabels.ts`
 - Test: `src/app/run/__tests__/shopLabels.test.ts`
 
-- [ ] **Step 1: Write the failing spec**
+- [x] **Step 1: Write the failing spec**
 
 In `src/app/run/__tests__/shopLabels.test.ts`, add the new names to the `from '../shopLabels'` import and append:
 
@@ -777,12 +779,12 @@ describe("DLR-93 — the flask's copy", () => {
 })
 ```
 
-- [ ] **Step 2: Confirm it fails on the missing exports**
+- [x] **Step 2: Confirm it fails on the missing exports**
 
 Run: `npx vitest run src/app/run/__tests__/shopLabels.test.ts`
 Expected: exits non-zero on unresolved imports from `../shopLabels`.
 
-- [ ] **Step 3: Add the copy**
+- [x] **Step 3: Add the copy**
 
 In `src/app/run/shopLabels.ts`, add `FlaskRefusal` and `type Health` to the `from '../../hunt'` import, then append:
 
@@ -835,12 +837,12 @@ export function flaskAccessibleName(
 }
 ```
 
-- [ ] **Step 4: Confirm the spec passes**
+- [x] **Step 4: Confirm the spec passes**
 
 Run: `npx vitest run src/app/run/__tests__/shopLabels.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; `typecheck` exits 0.
 
-### Task 6: The potion glyph
+### Task 6: The potion glyph ✓
 
 - Skill: `react-frontend`
 
@@ -848,7 +850,7 @@ Expected: Vitest reports 0 failed; `typecheck` exits 0.
 
 - Create: `src/app/run/FlaskMark.tsx`
 
-- [ ] **Step 1: Create the component**
+- [x] **Step 1: Create the component**
 
 Create `src/app/run/FlaskMark.tsx`, following `src/app/warCouncil/HeartMark.tsx`'s pattern exactly:
 
@@ -905,12 +907,12 @@ export function FlaskMark() {
 }
 ```
 
-- [ ] **Step 2: Verify it compiles and lints**
+- [x] **Step 2: Verify it compiles and lints**
 
 Run: `npm run typecheck; npm run lint`
 Expected: both exit 0. `react-refresh/only-export-components` is satisfied — this file exports two components and nothing else.
 
-### Task 7: The flask block on the shop screen
+### Task 7: The flask block on the shop screen ✓
 
 - Skill: `react-frontend`
 
@@ -920,7 +922,7 @@ Expected: both exit 0. `react-refresh/only-export-components` is satisfied — t
 - Modify: `src/app/run/shop.css`
 - Test: `src/app/run/__tests__/ShopPanel.test.tsx`
 
-- [ ] **Step 1: Write the failing component spec**
+- [x] **Step 1: Write the failing component spec**
 
 In `src/app/run/__tests__/ShopPanel.test.tsx`, add `FlaskRefusal` and `flaskHealAmount` to the `from '../../../hunt'` import, and `flaskAccessibleName`, `flaskChargesText`, `SHOP_FLASK_GROUP_LABEL` and `FLASK_REFUSAL_MESSAGE` to the `from '../shopLabels'` import. Extend `baseProps` with:
 
@@ -995,12 +997,12 @@ describe('ShopPanel — the flask (DLR-93)', () => {
 })
 ```
 
-- [ ] **Step 2: Confirm it fails**
+- [x] **Step 2: Confirm it fails**
 
 Run: `npx vitest run src/app/run/__tests__/ShopPanel.test.tsx`
 Expected: exits non-zero — the new queries find no control. Existing tests in the file still pass.
 
-- [ ] **Step 3: Add the three props and the flask block to `ShopPanel`**
+- [x] **Step 3: Add the three props and the flask block to `ShopPanel`**
 
 In `src/app/run/ShopPanel.tsx`: add `type FlaskRefusal` and `flaskHealAmount` to the `from '../../hunt'` import; add `flaskAccessibleName`, `flaskBlurbText`, `flaskChargesText`, `FLASK_REFUSAL_MESSAGE`, `SHOP_FLASK_FREE_TAG`, `SHOP_FLASK_GROUP_LABEL`, `SHOP_FLASK_LABEL` and `SHOP_FLASK_NO_COIN` to the `from './shopLabels'` import; and add `import { FlaskMark, FlaskSymbolSheet } from './FlaskMark'`.
 
@@ -1070,7 +1072,7 @@ And insert the flask block immediately AFTER the closing `</div>` of `.shop-heal
 
 `flaskHealAmount(maxPlayerHealth)` is the component's one call into the engine, and it is a projection of a prop rather than a decision — the same shape as `priceText(item)` already used on every shop card.
 
-- [ ] **Step 4: Add the block's styles**
+- [x] **Step 4: Add the block's styles**
 
 Append to `src/app/run/shop.css`. Every number is a PLACEHOLDER, marked as such — `.shop-panel`'s `max-height` is **not** touched, per the File map:
 
@@ -1210,17 +1212,17 @@ Append to `src/app/run/shop.css`. Every number is a PLACEHOLDER, marked as such 
 }
 ```
 
-- [ ] **Step 5: Confirm the component spec passes**
+- [x] **Step 5: Confirm the component spec passes**
 
 Run: `npx vitest run src/app/run/__tests__/ShopPanel.test.tsx; npm run typecheck`
 Expected: Vitest reports 0 failed; `typecheck` exits 0 — `App.tsx` does not yet pass the three new props, so if `typecheck` reports errors in `src/App.tsx`, that is Task 8's work and the ONLY acceptable failure at this step. Report it and continue.
 
-- [ ] **Step 6: Confirm `ShopPanel.tsx` and `shop.css` are inside budget**
+- [x] **Step 6: Confirm `ShopPanel.tsx` and `shop.css` are inside budget**
 
 Run: `(Get-Content src\app\run\ShopPanel.tsx).Count; (Get-Content src\app\run\shop.css).Count`
 Expected: `ShopPanel.tsx` below 400. `shop.css` will exceed 400 — it is a stylesheet, not a component, and `react-frontend`'s budget targets code files; report the figure and do not split it in this contract.
 
-### Task 8: Wire the driver
+### Task 8: Wire the driver ✓
 
 - Skill: `react-frontend`
 
@@ -1228,7 +1230,7 @@ Expected: `ShopPanel.tsx` below 400. `shop.css` will exceed 400 — it is a styl
 
 - Modify: `src/App.tsx`
 
-- [ ] **Step 1: Add the handler and the three props**
+- [x] **Step 1: Add the handler and the three props**
 
 In `src/App.tsx`, add `drinkFlask`, `flaskRefusalFor` and `flaskStockFor` to the `from './hunt'` import list (keeping it alphabetical, as it currently is).
 
@@ -1260,15 +1262,70 @@ In the `RunPhase.Shop` branch, add these three props to the `<ShopPanel …/>` c
 
 **AC4 is satisfied by this placement and nothing else is needed:** the three props are inside `if (encounterOver && phase === RunPhase.Shop)`, so the control exists only when the encounter has resolved and the shop phase is showing. Neither `WarCouncilRound`, `RunOutcomePanel` nor `RunPathScreen` receives a flask prop, so there is no mid-hand route to `drinkFlask` from any surface.
 
-- [ ] **Step 2: Confirm the whole project type-checks, lints, and the DOM suite passes**
+- [x] **Step 2: Confirm the whole project type-checks, lints, and the DOM suite passes**
 
 Run: `npm run typecheck; npm run lint; npx vitest run --project dom`
 Expected: all three exit 0; Vitest reports 0 failed. This is the step at which Task 7's expected `App.tsx` type error clears.
 
-- [ ] **Step 3: Confirm `App.tsx` is inside the line budget**
+- [x] **Step 3: Confirm `App.tsx` is inside the line budget**
 
 Run: `(Get-Content src\App.tsx).Count`
 Expected: a number below 400.
+
+---
+## Phase 2.5 — Extract a run-transitions module
+
+**Added during `/fb-apply` on 2026-08-20, on the developer's explicit approval.** Phase 1 left `src/hunt/run.ts` at 406 lines, over the 400-line blocking budget in `CLAUDE.md` and `react-frontend`. The plan anticipated this ("If a later flask story pushes it over, the split is `run.ts` -> a run-transitions module, not a suppression") but Task 3's `**Files:**` block authorised no new module, so the Implementer correctly stopped rather than restructuring unilaterally. This phase carries out the plan's own stated remedy. It is a pure move-and-re-export refactor: no behaviour changes, and every existing spec must pass untouched.
+
+### Task 14: Move the run's transitions into their own module ✓
+
+- Skill: `react-frontend`
+
+**Files:**
+
+- Create: `src/hunt/runTransitions.ts`
+- Modify: `src/hunt/run.ts`
+- Modify: `src/hunt/index.ts`
+- Test: (no new spec — the existing `run.test.ts`, `run.flask.test.ts`, `run.whetstone.test.ts` and `shop.test.ts` are the proof, and must pass unchanged)
+
+- [x] **Step 1: Measure and choose the split line**
+
+Run: `(Get-Content src\hunt\run.ts).Count`
+Expected: 406. Read the whole file and group its contents into (a) the run's *shape* — `RunState`, `startRun`, and the projections `shopStockFor` / `flaskStockFor` — and (b) the run's *transitions* — `advanceRun`, `recordEncounter`, `buyFromShop`, `drinkFlask` and their private helpers `healedBy`, `guardAfter`, `flaskAfter`. Group (b) moves. Keep each module's docblock accurate about what it now owns.
+
+Confirmed 406 lines. Read the whole file: the plan's grouping matched the file's actual structure exactly, with one addition the plan's grouping didn't name — `outcomeFor`, a private helper used only inside `recordEncounter` (which moves), so it necessarily moved with it. `canAdvanceRun`, `beatenCount` and `bankClimbBonusFor` are pure queries over `RunState` that produce no new run, so they stayed with the shape in `run.ts` rather than the transitions.
+
+- [x] **Step 2: Create `src/hunt/runTransitions.ts` and move group (b) into it verbatim**
+
+Move the functions unchanged — same names, same signatures, same docblocks, same bodies. Import `RunState` and the projections from `./run`. Do not rename anything, do not "improve" any body, and do not change a single expression: a behavioural change here is indistinguishable from a bug and the existing specs are the only guard.
+
+Done. `recordEncounter`, `advanceRun`, `drinkFlask`, `buyFromShop`, `outcomeFor`, `guardAfter`, `healedBy`, `flaskAfter` moved verbatim (bodies and docblocks byte-identical); imports adjusted to the new module boundaries, importing `canAdvanceRun`, `flaskStockFor`, `shopStockFor`, `RunOutcome` and `type RunState` back from `./run`.
+
+- [x] **Step 3: Re-export from `src/hunt/run.ts` so no existing importer breaks**
+
+Every name that `run.ts` exported before this task must still be importable from `run.ts`. Re-export the moved names. Verify with a grep that no importer anywhere in `src/` needed editing.
+
+`run.ts` re-exports `advanceRun`, `recordEncounter`, `buyFromShop`, `drinkFlask` from `./runTransitions`. Grepped `from ['"]\.\./run['"]|from ['"]\./run['"]` across `src/` — only `src/hunt/index.ts` and four `__tests__` files import `./run` directly; all four import at least one moved name, and all four passed unchanged (see Step 6).
+
+- [x] **Step 4: Update the barrel**
+
+`src/hunt/index.ts` keeps exporting exactly the same set of names it did before. Point the moved ones at `./runTransitions` if that reads more honestly than going through `run.ts`; either is acceptable so long as the barrel's exported set is byte-identical.
+
+Pointed the barrel's `recordEncounter`, `advanceRun`, `drinkFlask`, `buyFromShop` directly at `./runTransitions` — the exported name set is unchanged.
+
+- [x] **Step 5: Confirm both modules are under budget**
+
+Run: `(Get-Content src\hunt\run.ts).Count; (Get-Content src\hunt\runTransitions.ts).Count`
+Expected: both comfortably under 400. Measure with `(Get-Content <path>).Count`, never `Measure-Object -Line`, which drops blank lines and undercounts.
+
+`run.ts`: 175 lines. `runTransitions.ts`: 262 lines. Both comfortably under 400.
+
+- [x] **Step 6: Prove nothing changed**
+
+Run: `npx vitest run --project node; npm run lint`
+Expected: every previously-passing spec still passes with **no spec file edited**, and lint exits 0. If any assertion had to change, the move was not verbatim — revert and redo it.
+
+`npx vitest run --project node`: **43 test files passed, 696 tests passed**, 0 failed, no spec file edited. `npm run lint`: exits 0, no output (clean). `npm run typecheck` also run: only the three pre-existing, out-of-scope `src/__tests__/sim.test.ts` errors named in the dispatch remain. `npx prettier --write` applied to `runTransitions.ts` only (whitespace-only reflow of the moved `drinkFlask` signature onto one line, matching this project's Prettier config) — re-ran the full `node`-project suite afterward and it stayed at 696 passed, confirming the reformat changed no behaviour.
 
 ---
 
@@ -1276,7 +1333,7 @@ Expected: a number below 400.
 
 No production changes. Only sanity checks that the cumulative work is clean, the deliberately-unread tunable stayed unread, and no tuning value was hard-coded.
 
-### Task 9: Confirm the `src/hunt/` purity boundary still holds
+### Task 9: Confirm the `src/hunt/` purity boundary still holds ✓
 
 - Skill: `none — a verification grep, no code written`
 
@@ -1284,12 +1341,12 @@ No production changes. Only sanity checks that the cumulative work is clean, the
 
 - (no files changed)
 
-- [ ] **Step 1: Grep the pure tree for React imports and DOM globals**
+- [x] **Step 1: Grep the pure tree for React imports and DOM globals**
 
 Run: `Get-ChildItem src\hunt -Recurse -Include *.ts | Select-String -Pattern "from 'react'|from ""react""|\bwindow\.|\bdocument\.|localStorage|sessionStorage|fetch\("`
 Expected: zero hits. `src/hunt/flask.ts` and the `run.ts` additions must both be inside the boundary `eslint.config.js` enforces. Note the recursive `Get-ChildItem` form — `Select-String -Path 'src\hunt\**\*.ts'` would miss `__tests__/` entirely.
 
-### Task 10: Confirm `ENCOUNTER_PLAYER_RESTORE` is still read by nothing
+### Task 10: Confirm `ENCOUNTER_PLAYER_RESTORE` is still read by nothing ✓
 
 - Skill: `none — a verification grep, no code written`
 
@@ -1297,12 +1354,12 @@ Expected: zero hits. `src/hunt/flask.ts` and the `run.ts` additions must both be
 
 - (no files changed)
 
-- [ ] **Step 1: Grep every occurrence and confirm each is a declaration, an export, a comment, or a spec**
+- [x] **Step 1: Grep every occurrence and confirm each is a declaration, an export, a comment, or a spec**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "ENCOUNTER_PLAYER_RESTORE"`
 Expected: 8 hits, matching `plan.md`'s audit — `config.ts` (the declaration plus one prose comment), `encounter.ts` (one prose comment, reworded by Task 3), `run.ts` (one prose comment), `index.ts` (the barrel export), and `__tests__/config.test.ts` (three). **No production read.** Any hit that is an actual read of the value outside a test is a blocking finding: this ticket must not wire it in.
 
-### Task 11: Confirm no flask tunable was hard-coded and no false prose survives
+### Task 11: Confirm no flask tunable was hard-coded and no false prose survives ✓
 
 - Skill: `none — verification greps, no code written`
 
@@ -1310,27 +1367,27 @@ Expected: 8 hits, matching `plan.md`'s audit — `config.ts` (the declaration pl
 
 - (no files changed)
 
-- [ ] **Step 1: Grep for the literals configuration owns**
+- [x] **Step 1: Grep for the literals configuration owns**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "0\.6|\* 0\.6|60%"`
 Expected: hits only in `src/hunt/config.ts` (the `FLASK_HEAL_PERCENT` declaration and its comment) and `src/hunt/__tests__/config.test.ts` / `flask.test.ts`. Zero hits in any `.tsx` file, in `shopLabels.ts`, or in `run.ts` — the proportion is read in exactly one function, `flaskHealAmount`.
 
-- [ ] **Step 2: Grep for a quoted heal figure in the copy**
+- [x] **Step 2: Grep for a quoted heal figure in the copy**
 
 Run: `Select-String -Path src\app\run\shopLabels.ts -Pattern "restores? 6|6 health"`
 Expected: zero hits. The blurb and the accessible name interpolate `flaskHealAmount`'s result; a quoted `6` would leave the screen lying the moment the key is retuned.
 
-- [ ] **Step 3: Confirm the two false flask comments are gone**
+- [x] **Step 3: Confirm the two false flask comments are gone**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "there is no flask|the flask stories own it"`
 Expected: zero hits. Both sentences were true before this ticket and are false after it (Task 1 Step 4 and Task 3 Step 7).
 
-- [ ] **Step 4: Confirm no debug logging was left behind**
+- [x] **Step 4: Confirm no debug logging was left behind**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "console\.(log|debug)"`
 Expected: zero hits.
 
-### Task 12: Static gates, full suite, and the production build
+### Task 12: Static gates, full suite, and the production build ✓
 
 - Skill: `none — verification only, no code written`
 
@@ -1338,27 +1395,27 @@ Expected: zero hits.
 
 - (no files changed)
 
-- [ ] **Step 1: Warm the Vitest cache, then run every gate**
+- [x] **Step 1: Warm the Vitest cache, then run every gate**
 
 Run: `npx vitest run --project node; npx vitest run --project dom; npm run typecheck; npm run lint; npm test`
 Expected: every command exits 0; the final `npm test` reports 0 failed and collects both projects' files. The projects run separately first on purpose — `web-project.md` records that a cold-cache `npm test` can fail with `[vitest-pool-runner]: Timeout waiting for worker to respond`, which is jsdom setup starving the pool and **not** a failing test. Only a second consecutive timeout is a real problem.
 
-- [ ] **Step 2: Confirm formatting of the files this contract touched**
+- [x] **Step 2: Confirm formatting of the files this contract touched**
 
 Run: `npx prettier --check src/hunt/flask.ts src/hunt/run.ts src/hunt/config.ts src/hunt/index.ts src/hunt/encounter.ts src/app/run/FlaskMark.tsx src/app/run/ShopPanel.tsx src/app/run/shopLabels.ts src/app/run/shop.css src/App.tsx src/hunt/__tests__/flask.test.ts src/hunt/__tests__/run.flask.test.ts src/hunt/__tests__/config.test.ts src/app/run/__tests__/ShopPanel.test.tsx src/app/run/__tests__/shopLabels.test.ts`
 Expected: exits 0. Scoped deliberately — the repo-wide `npm run format:check` fails on pre-existing `.docs/**` files no contract here has touched, and fixing that is not this ticket's work.
 
-- [ ] **Step 3: Production build**
+- [x] **Step 3: Production build**
 
 Run: `npm run build`
 Expected: exits 0, `dist/` written, no bundler errors. Note that this project's `build` script runs `lint` first, so a lint regression fails here too.
 
-- [ ] **Step 4: Confirm the shop screen still fits with the flask row added**
+- [x] **Step 4: Confirm the shop screen still fits with the flask row added**
 
 QA drives the running app through the `chrome-devtools` MCP: start the dev server detached per `web-project.md`'s table (`--port 5199 --strictPort`), reach the shop screen (Start → play a fight to a verdict → Shop), and confirm at **1920×1080**, **1366×768**, and **390×844** that `document.documentElement.scrollHeight <= window.innerHeight` — the shop shell must not introduce a page scroll — and that the flask control, the health meter, the tablist, and the `Also for sale` block are all visible without page scrolling. Also confirm the console is clean and that clicking the flask control raises the health meter and disables the control.
 Expected: no page scroll at any of the three sizes, no console errors, the drink commits. **Report the three measured `scrollHeight`/`innerHeight` pairs by name.** If it scrolls at 1366×768 or 390×844, that is a real finding, and the fix is a `.shop-panel` `max-height` retune — which is the **developer's number**, so report the measurement and stop rather than choosing one.
 
-### Task 13: Update the PR description
+### Task 13: Update the PR description ✓
 
 - Skill: `none — a document, no code written`
 
@@ -1366,7 +1423,7 @@ Expected: no page scroll at any of the three sizes, no console errors, the drink
 
 - Create: `.claude/contract/DLR-93-the-flask-a-free-heal-refilled-on-a-boss-kill/pr-description.md`
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
+- [x] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
 
 Include:
 

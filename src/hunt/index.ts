@@ -33,6 +33,8 @@ export {
   ENVENOM_PLAYER_DAMAGE,
   POISON_GUARD_PRICE,
   WHETSTONE_PRICE,
+  FLASK_STARTING_CHARGES,
+  FLASK_HEAL_PERCENT,
   OpponentKind,
   RUN_ENCOUNTERS,
   ORDINARY_OPPONENT_NAMES,
@@ -75,18 +77,23 @@ export {
   canBuyAnything,
 } from './shop'
 
+export type { FlaskStock } from './flask'
+export { FlaskRefusal, flaskHealAmount, flaskRefusalFor } from './flask'
+
 export type { RunState } from './run'
 export {
   RunOutcome,
   startRun,
-  recordEncounter,
   canAdvanceRun,
-  advanceRun,
   beatenCount,
   shopStockFor,
-  buyFromShop,
+  flaskStockFor,
   bankClimbBonusFor,
 } from './run'
+
+// DLR-93 Phase 2.5 — the run's transitions moved to `./runTransitions`; the barrel's exported set
+// is unchanged.
+export { recordEncounter, advanceRun, drinkFlask, buyFromShop } from './runTransitions'
 
 export type { QuarryCharacterInfo } from './quarryCharacters'
 export { QUARRY_CHARACTERS, quarryCharacterInfo } from './quarryCharacters'

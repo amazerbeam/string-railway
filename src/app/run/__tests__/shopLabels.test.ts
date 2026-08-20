@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   ENVENOM_PLAYER_DAMAGE,
   ENVENOM_QUARRY_DAMAGE,
+  FlaskRefusal,
+  flaskHealAmount,
   HEAL_HEALTH_RESTORED,
   PurchaseRefusal,
   SHOP_CATEGORIES,
@@ -11,6 +13,10 @@ import {
   WHETSTONE_PRICE,
 } from '../../../hunt'
 import {
+  flaskAccessibleName,
+  flaskBlurbText,
+  flaskChargesText,
+  FLASK_REFUSAL_MESSAGE,
   nextOpponentText,
   priceText,
   PURCHASE_REFUSAL_MESSAGE,
@@ -115,5 +121,38 @@ describe('shopLabels', () => {
     expect(refused).not.toBe(open)
     expect(refused).toContain(SHOP_CATEGORY_COMING_SOON)
     expect(open).not.toContain(SHOP_CATEGORY_COMING_SOON)
+  })
+})
+
+describe("DLR-93 — the flask's copy", () => {
+  it('names a sentence for every refusal code, so none renders blank', () => {
+    for (const refusal of Object.values(FlaskRefusal)) {
+      expect(FLASK_REFUSAL_MESSAGE[refusal].length).toBeGreaterThan(0)
+    }
+    expect(Object.keys(FLASK_REFUSAL_MESSAGE)).toHaveLength(Object.values(FlaskRefusal).length)
+  })
+
+  it('interpolates the computed heal figure rather than quoting a number', () => {
+    expect(flaskBlurbText(flaskHealAmount(10))).toContain('6')
+    expect(flaskBlurbText(flaskHealAmount(20))).toContain('12')
+  })
+
+  it('words the charge count singularly and plurally', () => {
+    expect(flaskChargesText(1)).toContain('1')
+    expect(flaskChargesText(1)).not.toMatch(/charges/)
+    expect(flaskChargesText(0)).toMatch(/charges/)
+    expect(flaskChargesText(2)).toMatch(/charges/)
+  })
+
+  it('folds the refusal into the accessible name, and omits it when available', () => {
+    const available = flaskAccessibleName(1, 6, null)
+    expect(available).not.toContain(FLASK_REFUSAL_MESSAGE[FlaskRefusal.NoCharges])
+    expect(flaskAccessibleName(0, 6, FlaskRefusal.NoCharges)).toContain(
+      FLASK_REFUSAL_MESSAGE[FlaskRefusal.NoCharges],
+    )
+  })
+
+  it('says free in the accessible name, so it is never heard as a purchase', () => {
+    expect(flaskAccessibleName(1, 6, null).toLowerCase()).toContain('free')
   })
 })

@@ -159,7 +159,8 @@ by role and label: the frame count with an empty list and a partial one, head-fi
 reporting its card's id, the armed slot's distinct name and `aria-pressed`, `Escape` reaching
 `onCancel`, and the disabled state when the felt is not interactive.
 
-The assertion that ties the rail to the rules is in `WarCouncilRound.test.tsx`: a genuinely off-suit
+The assertion that ties the rail to the rules is in `WarCouncilRound.readouts.test.tsx` (it lived in
+`WarCouncilRound.test.tsx` until DLR-93 split that file): a genuinely off-suit
 card is confirmed **disabled**, two clicks arm a Cheat, and the same card is then **enabled**. The
 off-suit card's name is built with `cardAccessibleName` against the fixture's own hand rather than
 hard-coded, and its illegality was verified empirically rather than assumed — two earlier phases of

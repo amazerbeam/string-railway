@@ -221,7 +221,8 @@ Measured with `(Get-Content <path>).Count`: `roundReducer.ts` 359, `roundUiState
 `roundHint.ts` 33, `WarCouncilRound.tsx` 340, `EnvenomCharge.tsx` 67, `warCouncilEnvenom.css` 97 — all
 inside the 400-line budget, and the split is what bought the room.
 
-Two spec files sit at the edge and are worth knowing before appending to either:
-`WarCouncilRound.test.tsx` at **398** has no headroom at all, and `roundReducer.envenom.test.ts` is at
-365. That is why DLR-90's mounted-felt cases went into a new file,
-`WarCouncilRound.envenom.test.tsx`, rather than onto the end of the existing one.
+`WarCouncilRound.test.tsx` sat at **398** with no headroom at all, which is why DLR-90's mounted-felt
+cases went into a new file, `WarCouncilRound.envenom.test.tsx`, rather than onto the end of the
+existing one. **DLR-93's remediation pass then split the original three ways** — see
+[the felt's spec files](README.md#the-felts-spec-files). `roundReducer.envenom.test.ts` is still at
+365 and is the file to watch next.

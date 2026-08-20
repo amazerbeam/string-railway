@@ -1,14 +1,20 @@
 import { useState } from 'react'
 import {
+  flaskHealAmount,
   SHOP_ITEMS_BY_CATEGORY,
   ShopCategory,
   ShopItem,
   UNCATEGORISED_SHOP_ITEMS,
   type Coins,
+  type FlaskRefusal,
   type Health,
   type PurchaseRefusal,
 } from '../../hunt'
 import {
+  flaskAccessibleName,
+  flaskBlurbText,
+  flaskChargesText,
+  FLASK_REFUSAL_MESSAGE,
   nextOpponentText,
   priceText,
   PURCHASE_REFUSAL_MESSAGE,
@@ -16,6 +22,10 @@ import {
   SHOP_CATEGORY_EMPTY,
   SHOP_COINS_LABEL,
   SHOP_ENVENOM_LABEL,
+  SHOP_FLASK_FREE_TAG,
+  SHOP_FLASK_GROUP_LABEL,
+  SHOP_FLASK_LABEL,
+  SHOP_FLASK_NO_COIN,
   SHOP_GUARD_HELD,
   SHOP_GUARD_LABEL,
   SHOP_GUARD_NONE,
@@ -33,10 +43,13 @@ import {
 } from './shopLabels'
 import { fightLabel, NEXT_FIGHT_LABEL } from './runLabels'
 import ShopCategoryTabs from './ShopCategoryTabs'
+import { FlaskMark, FlaskSymbolSheet } from './FlaskMark'
 import { HeartMark, HeartSymbolSheet } from '../warCouncil/HeartMark'
 import { HeartState } from '../warCouncil/duelHealthBars'
 import './run.css'
 import './shop.css'
+import './shopItems.css'
+import './shopFlask.css'
 
 interface ShopPanelProps {
   readonly coins: Coins
@@ -57,6 +70,13 @@ interface ShopPanelProps {
   /** DLR-92 AC2 — Whetstones owned, so the player can see what they already hold before buying
    *  another. A count with no denominator, exactly as `envenomCharges`: there is no cap. */
   readonly whetstones: number
+  /** DLR-93 AC1 — charges held, so the refusal at zero has a visible cause without hover. A count
+   *  with no denominator, exactly as `envenomCharges`: the epic defers raising the ceiling. */
+  readonly flaskCharges: number
+  /** Derived by the driver from `flaskRefusalFor` — never re-derived here, exactly as `refusals`.
+   *  `null` means the flask can be drunk. */
+  readonly flaskRefusal: FlaskRefusal | null
+  readonly onDrinkFlask: () => void
   /** AC10 — the coming opponent's display name, `undefined` while the roster has no entry.
    *  Also names the leave control (AC8, DLR-85): `Fight <name>` when known, `NEXT_FIGHT_LABEL`
    *  otherwise. */
@@ -95,6 +115,9 @@ export default function ShopPanel({
   envenomCharges,
   poisonGuardHeld,
   whetstones,
+  flaskCharges,
+  flaskRefusal,
+  onDrinkFlask,
   nextOpponentName,
   progressText,
   refusals,
@@ -138,6 +161,7 @@ export default function ShopPanel({
         }}
       >
         <HeartSymbolSheet />
+        <FlaskSymbolSheet />
         <h1 className="shop-title">{SHOP_TITLE}</h1>
         <p className="shop-next">{nextOpponentText(nextOpponentName, progressText)}</p>
 
@@ -166,6 +190,10 @@ export default function ShopPanel({
             <span className="shop-purse-label">{SHOP_WHETSTONE_LABEL}</span>
             <span className="shop-purse-value">{whetstones}</span>
           </span>
+          <span className="shop-purse-cell is-flask">
+            <span className="shop-purse-label">{SHOP_FLASK_FREE_TAG}</span>
+            <span className="shop-purse-value">{flaskChargesText(flaskCharges)}</span>
+          </span>
         </div>
 
         {/* The health readout is a row of its own rather than a purse cell: it is what a heal is
@@ -189,6 +217,41 @@ export default function ShopPanel({
           </span>
           <span className="shop-purse-value">
             {playerHealth} / {maxPlayerHealth}
+          </span>
+        </div>
+
+        {/* AC6 — the flask's own zone: beneath the health it restores, above the ladder, and
+            nowhere near `Also for sale`, where the PRICED Heal lives. Distinctness is structural
+            rather than cosmetic — a different zone, no price line, an icon-led control where every
+            shop item is a text card, and a `Free` tag where they carry a price. Layout per this
+            contract's `mockup.html`; every CSS figure there is a placeholder the developer's UX
+            design supersedes. */}
+        <div className="shop-flask" role="group" aria-label={SHOP_FLASK_GROUP_LABEL}>
+          <button
+            type="button"
+            className="shop-flask-btn"
+            disabled={flaskRefusal !== null}
+            onClick={onDrinkFlask}
+            aria-label={flaskAccessibleName(
+              flaskCharges,
+              flaskHealAmount(maxPlayerHealth),
+              flaskRefusal,
+            )}
+          >
+            <span className="shop-flask-icon" aria-hidden="true">
+              <FlaskMark />
+            </span>
+            <span className="shop-flask-text">
+              <span className="shop-flask-name">{SHOP_FLASK_LABEL}</span>
+              <span className="shop-flask-charges">{flaskChargesText(flaskCharges)}</span>
+            </span>
+            <span className="shop-flask-free">{SHOP_FLASK_NO_COIN}</span>
+          </button>
+          <span className="shop-flask-side">
+            <p className="shop-flask-blurb">{flaskBlurbText(flaskHealAmount(maxPlayerHealth))}</p>
+            <p className="shop-flask-refusal" role="status">
+              {flaskRefusal === null ? '' : FLASK_REFUSAL_MESSAGE[flaskRefusal]}
+            </p>
           </span>
         </div>
 
