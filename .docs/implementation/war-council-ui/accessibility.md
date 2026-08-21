@@ -49,6 +49,16 @@ newly-focused card is already `document.activeElement` and the `contains` check 
 only the `tabindex` attribute. The attribute-only version passed throughout, which is exactly why the
 defect went undetected by every test and was found only by QA driving the app in a real browser.
 
+**DLR-97 gave the prompt's mount a visible entrance, orthogonal to the focus fix above.** Before this
+pass `.wc-prompt` had no transition at all — it appeared instantly, which the developer's own
+playtest note called jarring ("it's jarring when the card moves up beside the selectable cards").
+`warCouncilCards.css` now gives `.wc-prompt` a `wc-prompt-enter` `@keyframes` (fade + `translateY`
+rise) that plays automatically on mount, timed by a new `--wc-prompt-enter-ms` token (180ms,
+`warCouncil.css`'s `:root`), with a `prefers-reduced-motion: reduce` guard. This is CSS-only and adds
+no component state — `.wc-prompt` already only exists while a choice is being made, so a
+mount-triggered keyframe needed nothing beyond the class it already has. It does not touch the
+`attachGroup`/roving-tabindex mechanism documented above; the two are independent.
+
 ### The Hunt readouts each carry their own accessible name
 
 The dossier readouts are bare numbers whose meaning lives in a separate visual key element, which a

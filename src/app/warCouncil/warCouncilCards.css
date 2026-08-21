@@ -11,6 +11,24 @@
   flex-direction: column;
   align-items: center;
   gap: clamp(0.35rem, 1.2vmin, 0.7rem);
+  animation: wc-prompt-enter var(--wc-prompt-enter-ms) ease-out both;
+}
+
+@keyframes wc-prompt-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-prompt {
+    animation: none;
+  }
 }
 
 .wc-prompt-row {
@@ -148,7 +166,7 @@
   height: calc(var(--wc-card-w) * 0.24);
   border-radius: 50%;
   border: 2px solid var(--wc-parchment);
-  background: #4a7c3a;
+  background: var(--wc-poison-edge);
   color: var(--wc-parchment);
   font-size: calc(var(--wc-card-w) * 0.13);
   line-height: 1;

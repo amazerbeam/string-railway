@@ -271,6 +271,20 @@ behaviour: the refused purchase off `.shop-item:disabled`, and the refused tab o
 fill — because `game-ux` forbids a state that reads only in colour. The selected tab likewise gets a
 brass edge and a lifted fill, not just a hue.
 
+**DLR-97 polished the tablist and both list rows.** `.shop-tab` gained a `transition` (colour,
+border-colour, background-colour, transform) reading the shared `--wc-ui-transition-ms` token — it
+previously snapped between every state with no transition at all. The selected tab's lift became a
+literal `transform: translateY(-1px)` on top of its existing brass edge and fill. The refused tab
+gained a small `🔒` glyph via `::after`, decorative-only (its accessible name already states the
+reason separately through `shopCategoryAccessibleName`), so "Coming Soon" reads as a considered
+dead-end rather than a disabled control that broke — and `SHOP_CATEGORY_COMING_SOON` itself was
+reworded from a generic refusal sentence to "Locked for now — game-permanent items are still being
+designed." `.shop-list-item` (the priced rows) got the same `--wc-ui-transition-ms` transition on
+background-colour/border-colour/transform. The flask's icon (`.shop-flask-icon`, in
+[the flask control](the-flask-control.md)) gained a `transform` transition on the same token plus a
+`@media (hover: hover)`-guarded `scale(1.08)` hover lift. All CSS-only; no accessible name, prop, or
+refusal condition changed anywhere in this pass.
+
 ### Built for a long shelf, and the one region allowed to scroll
 
 Every list on this screen is expected to grow, so DLR-89 replaced `.shop-grid`'s hard

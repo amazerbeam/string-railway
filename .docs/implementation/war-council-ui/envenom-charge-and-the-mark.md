@@ -218,7 +218,7 @@ stated priority regardless of that unreachability, because the cascade's order i
 ## Budgets
 
 Measured with `(Get-Content <path>).Count`: `roundReducer.ts` 359, `roundUiState.ts` 158,
-`roundHint.ts` 33, `WarCouncilRound.tsx` 340, `EnvenomCharge.tsx` 67, `warCouncilEnvenom.css` 97 — all
+`roundHint.ts` 33, `WarCouncilRound.tsx` 340, `EnvenomCharge.tsx` 67, `warCouncilEnvenom.css` 104 — all
 inside the 400-line budget, and the split is what bought the room.
 
 `WarCouncilRound.test.tsx` sat at **398** with no headroom at all, which is why DLR-90's mounted-felt
@@ -226,3 +226,19 @@ cases went into a new file, `WarCouncilRound.envenom.test.tsx`, rather than onto
 existing one. **DLR-93's remediation pass then split the original three ways** — see
 [the felt's spec files](README.md#the-felts-spec-files). `roundReducer.envenom.test.ts` is still at
 365 and is the file to watch next.
+
+## DLR-97 — the plate's polish pass
+
+Three CSS-only changes to `warCouncilEnvenom.css`, none touching the arm/mark logic above. The
+plate's `filter` (its hover brightness) gained a transition reading the shared
+`--wc-ui-transition-ms` token (140ms, `warCouncil.css`'s `:root`), matching the `transform`/
+`box-shadow` pair it already transitioned. The file was missing the `prefers-reduced-motion: reduce`
+guard `.wc-apply-plate` and `.wc-card` already carried; it now has one. And the plate's
+`aspect-ratio` moved from `2 / 3` (identical to `.wc-card`'s own ratio) to `4 / 3` with
+`border-radius: 10px` — a `game-ux` "consistency" fix, done in lockstep with the Cheat slot and the
+Apply Damage plate (see [cheat-slots.md](cheat-slots.md) and
+[apply-damage-plate.md](apply-damage-plate.md)) so the three felt-rail plates stay one family and
+none of them still reads as a fourth playing card beside the decree pile. Separately, the on-card
+venom mark (`.wc-venom-mark` in `warCouncilCards.css`) had its fill changed from an untied
+`#4a7c3a` hex to `var(--wc-poison-edge)`, tying it to the same poison token pair the rest of the felt
+already reads.

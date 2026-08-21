@@ -47,6 +47,10 @@
   cursor: pointer;
   touch-action: manipulation;
   text-align: left;
+  transition:
+    background-color var(--wc-ui-transition-ms) ease,
+    border-color var(--wc-ui-transition-ms) ease,
+    transform var(--wc-ui-transition-ms) ease;
 }
 
 /* Refused reads as refused in FORM, not only in colour: a dashed rule and no fill. */

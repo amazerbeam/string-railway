@@ -59,6 +59,16 @@
   --wc-hp-atrisk-opacity: 0.55;
   --wc-hp-break-ms: 520ms;
   --wc-hp-flash-ms: 900ms;
+  /* DLR-97 — shared hover/active/state-change duration for controls that previously had no
+     transition at all (shop tabs, shop list rows) or an untransitioned filter (the felt-rail
+     plates' hover brightness). Matches the felt-rail plates' existing 140ms transform/box-shadow
+     pace so both screens' controls move at one shared speed. Developer's to retune. */
+  --wc-ui-transition-ms: 140ms;
+  /* DLR-97 follow-up — named durations for the two mount-triggered entrance/swap keyframes
+     below, so neither is a magic number repeated across warCouncilCards.css and
+     warCouncilTable.css. Developer's to retune. */
+  --wc-prompt-enter-ms: 180ms;
+  --wc-decree-swap-ms: 220ms;
 }
 
 /* ---------- the shell: one full-viewport grid, never scrolls ---------- */

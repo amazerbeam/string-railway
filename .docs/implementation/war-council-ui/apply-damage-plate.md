@@ -164,3 +164,14 @@ a disabled button.
 - `__tests__/WarCouncilRound.test.tsx` — the whole thing end to end through the rendered felt: poise,
   commit, the Quarry's hearts down by the full figure, the player's untouched, the bank zeroed, the
   plate now refused, and the card still there to play.
+
+## DLR-97 — the plate's polish pass
+
+Two CSS-only changes to `warCouncilApplyDamage.css`, matching the identical fix applied to the
+Envenom plate the same phase (see
+[the Envenom plate's own note](envenom-charge-and-the-mark.md#dlr-97-the-plates-polish-pass)):
+the plate's `filter` (its hover brightness) gained a transition reading the shared
+`--wc-ui-transition-ms` token, alongside the `transform`/`box-shadow` pair it already transitioned.
+And its `aspect-ratio` moved from `2 / 3` to `4 / 3` with `border-radius: 10px`, done in lockstep with
+the Cheat slot and the Envenom plate so all three felt-rail plates stay one shape family, distinct
+from `.wc-card`'s silhouette. No prop, refusal string, or accessible-name computation changed.

@@ -62,7 +62,7 @@ describe('TrickWell — a resolved trick', () => {
     expect(screen.queryByText(/Claiming credits/)).toBeNull()
   })
 
-  it('names the winning side', () => {
+  it('names the winning side, and reports the cash-out and damage figures (DLR-97 Task 16)', () => {
     render(
       <TrickWell
         currentTrick={[]}
@@ -72,6 +72,8 @@ describe('TrickWell — a resolved trick', () => {
       />,
     )
     expect(screen.getByText(/They take the trick/)).toBeDefined()
+    expect(screen.getByText(/They take 20\./)).toBeDefined()
+    expect(screen.getByText(/You take 1\./)).toBeDefined()
   })
 
   it('announces the marked card as poisoned (DLR-90 AC2)', () => {

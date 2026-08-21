@@ -17,8 +17,8 @@
   width: var(--wc-cheat-slot-w);
   min-width: 2.75rem;
   min-height: 2.75rem;
-  aspect-ratio: 2 / 3;
-  border-radius: 5px;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
   display: grid;
   place-items: center;
   padding: 0;
@@ -31,7 +31,8 @@
   touch-action: manipulation;
   transition:
     transform 140ms ease,
-    box-shadow 140ms ease;
+    box-shadow 140ms ease,
+    filter var(--wc-ui-transition-ms) ease;
 }
 
 .wc-envenom-glyph {
@@ -94,4 +95,10 @@
 
 .wc-envenom-plate:not(:disabled):active {
   filter: brightness(0.9);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-envenom-plate {
+    transition: none;
+  }
 }

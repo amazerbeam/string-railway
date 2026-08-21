@@ -34,7 +34,7 @@ export default function DecreePile({
       <span className="wc-pile-cards">
         <span className="wc-pile-back wc-b1" aria-hidden="true" />
         <span className="wc-pile-back wc-b2" aria-hidden="true" />
-        <PlayingCard card={decree} variant="pile" envenomed={envenomed} />
+        <PlayingCard key={`${decree.suit}-${decree.rank}`} card={decree} variant="pile" envenomed={envenomed} />
       </span>
       <span className="wc-trump-mark">
         <SuitMark suit={trumpSuit} className="wc-trump-mark-icon" />

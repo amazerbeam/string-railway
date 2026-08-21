@@ -99,7 +99,8 @@ export const SHOP_CATEGORY_LABEL: Readonly<Record<ShopCategory, string>> = {
 export const SHOP_TABLIST_LABEL = 'What lasts how long'
 
 /** AC4 — the refused rung's stated reason. Nothing is designed for game-permanent yet. */
-export const SHOP_CATEGORY_COMING_SOON = 'Coming soon.'
+export const SHOP_CATEGORY_COMING_SOON =
+  'Locked for now — game-permanent items are still being designed.'
 
 /** AC5 — a rung whose items have not shipped yet. Stated, so an empty shelf cannot be mistaken
  *  for a broken one. */

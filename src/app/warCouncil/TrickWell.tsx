@@ -76,7 +76,12 @@ export default function TrickWell({
             </span>
           ))}
         </div>
-        <p className="wc-table-line">{winnerLabel} take the trick.</p>
+        <p className="wc-table-line">
+          {winnerLabel} take the trick.
+          {resolvedTrick.resolution.cashOut > 0 && ` They take ${resolvedTrick.resolution.cashOut}.`}
+          {resolvedTrick.resolution.damageToPlayer > 0 &&
+            ` You take ${resolvedTrick.resolution.damageToPlayer}.`}
+        </p>
         <button type="button" className="wc-table-hint wc-is-carry-on" onClick={handleHintClick}>
           Tap the table to carry on
         </button>

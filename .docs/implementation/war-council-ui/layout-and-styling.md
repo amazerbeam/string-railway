@@ -37,8 +37,8 @@ order:
 
 | Sheet | Owns |
 |---|---|
-| `warCouncil.css` (258) | the `:root` tokens, the shell grid, the status band including DLR-82's `.wc-run` readout, and — re-homed by DLR-80 — the `.wc-sr-only` utility |
-| `warCouncilTable.css` (151) | DLR-93: the decree and draw pile, and the whole `.wc-table` block — the felt itself |
+| `warCouncil.css` (268) | the `:root` tokens, the shell grid, the status band including DLR-82's `.wc-run` readout, and — re-homed by DLR-80 — the `.wc-sr-only` utility |
+| `warCouncilTable.css` (172) | DLR-93: the decree and draw pile, and the whole `.wc-table` block — the felt itself |
 | `warCouncilCards.css` | the card face, the ability prompt, and the hand-over panel |
 | `warCouncilHunt.css` | the dossier zone, the telegraph, and DLR-80's `.wc-shape*` and `.wc-bank*` readouts |
 | `warCouncilHealthBars.css` | DLR-71: the duel's two health displays — rewritten by DLR-86 from a bar surface into the heart rows, their four `[data-state]` rules, the two `@keyframes`, and the reduced-motion block |
@@ -46,6 +46,19 @@ order:
 | `warCouncilEnvenom.css` | DLR-90: the Envenom charge readout and its mark |
 
 The felt used to live in `warCouncil.css` alongside the shell; DLR-93 moved it out (see below).
+
+**DLR-97 added three named motion-duration tokens to `warCouncil.css`'s `:root`**, alongside the
+pre-existing `--wc-hp-break-ms`/`--wc-hp-flash-ms` pair: `--wc-ui-transition-ms` (140ms — the shared
+hover/active/state-change duration for controls that previously snapped: the shop tabs, the shop
+list rows, and the felt-rail plates' hover `filter`), `--wc-prompt-enter-ms` (180ms — the ability
+prompt's mount entrance) and `--wc-decree-swap-ms` (220ms — the decree pile's swap crossfade). Every
+surface this pass touched reads one of the three by `var()` rather than repeating a literal duration;
+see [the Envenom plate's polish-pass note](envenom-charge-and-the-mark.md#dlr-97-the-plates-polish-pass),
+[the ability prompt's entrance note](accessibility.md#dlr-97-gave-the-prompts-mount-a-visible-entrance-orthogonal-to-the-focus-fix-above),
+and [the decree swap's crossfade note](interaction-and-state.md#dlr-97-the-decree-swap-now-visibly-crossfades)
+for where each is consumed. All three are the developer's to retune by eye; none is a placeholder
+pending a decision — DLR-97 shipped considered first-pass values per this project's "ship rough,
+then tune by feel" convention.
 
 > **DLR-86 retired this module's one inline-style mechanism, and the reasoning is worth keeping
 > rather than the mechanism.** `DuelHealthBars.tsx` used to write bar geometry into a `--w` custom

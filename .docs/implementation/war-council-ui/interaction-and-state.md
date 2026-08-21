@@ -191,3 +191,16 @@ through `ILLEGAL_MOVE_MESSAGE` and `HandFan` renders it in an `aria-live="polite
 
 This is what makes the "rejected" half of the acceptance criteria real rather than a re-implemented
 check: the reducer arms anything in hand and lets `playCard` adjudicate.
+
+### DLR-97 — the decree swap now visibly crossfades
+
+Before this pass a Fox exchange swapped the decree pile's rendered card with no transition at all —
+"it happens all in one motion, hard to tell anything happened" was the playtest note. The fix adds a
+`key={`${decree.suit}-${decree.rank}`}` prop to the `PlayingCard` `DecreePile` renders, so React
+remounts it exactly when the decree itself genuinely changes (never on an unrelated re-render
+elsewhere in the tree, since `suit`+`rank` uniquely identifies a card). `warCouncilTable.css` gives
+`.wc-pile-cards .wc-card` a `wc-decree-swap` `@keyframes` (fade + scale from `0.92`) that plays on
+every such remount, timed by `--wc-decree-swap-ms` (220ms), with a `prefers-reduced-motion: reduce`
+guard. This is a presentational remount hint read by the reconciler, not new component state — no
+`useEffect`, no timer, and `PlayingCard` itself is a stateless presentational component, so nothing
+is lost by the remount.

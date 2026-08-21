@@ -106,6 +106,18 @@ The card face was re-laid in the same pass — the suit mark centred and enlarge
 the top-left, and the border taking the suit's colour through a `--wc-suit` custom property. **The
 suit therefore reads twice**, as a symbol and as an edge, so it never depends on colour alone.
 
+### The trick-resolution sentence names its own figure
+
+**DLR-97** closed a "hard to tell if I did damage or took damage" playtest note by having
+`TrickWell.tsx`'s resolution `<p className="wc-table-line">` read the two fields `bank.ts` already
+computes onto `ResolvedTrick.resolution` — `cashOut` and `damageToPlayer` — and append a clause
+naming whichever is non-zero: "They take N." when `cashOut > 0`, "You take N." when
+`damageToPlayer > 0`. Neither field is new; this is a prop-read added to an existing sentence, not a
+new derivation, so `roundReducer.ts` and `bank.ts` are untouched. Recognition over recall was the
+`game-ux` heuristic: the health-bar break animation fires in the status band while the resolved
+trick sits at the felt centre, so naming the figure at the point of resolution closes the gap
+between the two zones without needing a new transient UI state.
+
 ### The telegraph has two readings, and never both at once
 
 Unchanged by DLR-80. The Quarry's next-trick intent must be readable *before* the player commits,

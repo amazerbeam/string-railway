@@ -180,6 +180,11 @@
   text-transform: uppercase;
   cursor: pointer;
   touch-action: manipulation;
+  transition:
+    color var(--wc-ui-transition-ms) ease,
+    border-color var(--wc-ui-transition-ms) ease,
+    background-color var(--wc-ui-transition-ms) ease,
+    transform var(--wc-ui-transition-ms) ease;
 }
 
 /* Selected reads in FORM as well as tone — a brass edge and a lifted fill, so a greyscale
@@ -188,6 +193,7 @@
   color: var(--wc-brass);
   border-color: var(--wc-brass);
   background: #ffffff0d;
+  transform: translateY(-1px);
 }
 
 /* Refused reads as refused in form: the SAME dashed edge and absent fill `.shop-item:disabled`
@@ -199,6 +205,13 @@
   border-color: var(--wc-chalk-dim);
   color: var(--wc-chalk-dim);
   background: none;
+}
+
+.shop-tab[aria-disabled='true']::after {
+  content: '🔒';
+  margin-left: 0.4em;
+  font-size: 0.85em;
+  opacity: 0.65;
 }
 
 .shop-tab:focus-visible {

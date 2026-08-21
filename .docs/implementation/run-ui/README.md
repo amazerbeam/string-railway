@@ -1,7 +1,7 @@
 # Run verdict and shop UI — `src/app/run/`
 
 **Status:** implemented
-**Built by:** DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95
+**Built by:** DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97
 
 ## Responsibility
 
@@ -178,9 +178,9 @@ file's header.
   cascade order — `shop.css`, then `shopItems.css`, then `shopFlask.css`. Which sheet owns what:
   | Sheet | Owns |
   |---|---|
-  | `shop.css` (237) | the shell and its layout — `.shop`, `.shop-title`, `.shop-next`, the `.shop-purse` row and its cells, the health/hearts readout, the `.shop-tabs` tablist, and the `.shop-grid` definition |
-  | `shopItems.css` (140) | the catalogue — `.shop-item` and its price, `.shop-refusal` and `.shop-hint`, the scoped-scroll `.shop-panel`, and `.shop-empty` |
-  | `shopFlask.css` (154) | the two blocks that are not shelf items — `.shop-aside` (the paid Heal) and DLR-93's `.shop-flask*` block, plus `.shop-purse-cell.is-flask` |
+  | `shop.css` (252) | the shell and its layout — `.shop`, `.shop-title`, `.shop-next`, the `.shop-purse` row and its cells, the health/hearts readout, the `.shop-tabs` tablist, and the `.shop-grid` definition |
+  | `shopItems.css` (190) | the catalogue — `.shop-item` and its price, `.shop-refusal` and `.shop-hint`, the scoped-scroll `.shop-panel`, and `.shop-empty` |
+  | `shopFlask.css` (96) | the two blocks that are not shelf items — `.shop-aside` (the paid Heal) and DLR-93's `.shop-flask*` block, plus `.shop-purse-cell.is-flask` |
 
 ## Deferred / not yet implemented
 
