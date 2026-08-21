@@ -75,4 +75,10 @@ export interface WarCouncilRoundResult {
    *  run adopts it through `recordEncounter`'s fifth parameter, which also clears it when the
    *  encounter resolved. */
   readonly poisonGuardHeld: boolean
+  /** DLR-95 AC2 — how many cards were left in the player's hand at the instant the encounter
+   *  resolved, or `null` when this hand did not resolve it. Frozen by the reducer at that
+   *  transition rather than read off the live hand here — see `RoundUiState.unplayedAtResolve`
+   *  for why the two are not interchangeable. The run consumes it through `recordEncounter`'s
+   *  sixth parameter. */
+  readonly unplayedAtResolve: number | null
 }

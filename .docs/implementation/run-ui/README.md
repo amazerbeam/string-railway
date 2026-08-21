@@ -1,7 +1,7 @@
 # Run verdict and shop UI — `src/app/run/`
 
 **Status:** implemented
-**Built by:** DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93
+**Built by:** DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95
 
 ## Responsibility
 
@@ -81,8 +81,9 @@ file's header.
 
 - [The verdict panel](verdict-panel.md) — the three outcomes and how they read without colour, the
   `Continue` / `Shop` pair and why the shop is opt-in, the unspent-coin warning as an in-place swap
-  rather than a modal, the grouped trick bars and why they cannot be chronological, and the shell
-  (DLR-82, DLR-84).
+  rather than a modal, the grouped trick bars and why they cannot be chronological, **the reward line
+  naming what the win paid and why it is gated on the outcome rather than on `canContinue`**, and the
+  shell (DLR-82, DLR-84, DLR-95).
 - [The shop screen](shop-screen.md) — why it computes nothing and what the `refusals` prop buys, the
   three ways a refusal reads, the purse row, why no price is ever a literal, and the keyboard
   contract (DLR-84); plus the **four-shelf tablist**, why the refused rung is `aria-disabled` rather

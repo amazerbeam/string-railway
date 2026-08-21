@@ -10,6 +10,7 @@ import {
   SHOP_LABEL,
   VISIT_SHOP_LABEL,
   fightLabel,
+  rewardText,
 } from '../runLabels'
 
 afterEach(cleanup)
@@ -28,6 +29,8 @@ const baseProps = {
   beatenName: undefined,
   nextName: 'Cillian',
   onMap: vi.fn(),
+  quickKillPayout: 10,
+  winCoins: 1,
 }
 
 describe('RunOutcomePanel — the three verdicts (AC2, AC4, AC5)', () => {
@@ -73,7 +76,11 @@ describe('RunOutcomePanel — the three verdicts (AC2, AC4, AC5)', () => {
 
   it('states which fight of the run the verdict belongs to (AC6)', () => {
     render(<RunOutcomePanel {...baseProps} outcome={RunOutcome.InProgress} canContinue />)
-    expect(screen.getByRole('status').textContent).toContain('of 3')
+    // DLR-95 — the reward line is also a `role="status"` region, so this queries all of them
+    // rather than assuming there is exactly one.
+    expect(screen.getAllByRole('status').some((el) => el.textContent?.includes('of 3'))).toBe(
+      true,
+    )
   })
 
   it('draws one bar per trick of the deciding hand, marked taken or lost', () => {
@@ -195,5 +202,35 @@ describe('RunOutcomePanel — naming and the map control (DLR-85)', () => {
     render(<RunOutcomePanel {...baseProps} canContinue={false} outcome={RunOutcome.Lost} />)
     expect(screen.queryByRole('button', { name: MAP_LABEL })).toBeNull()
     expect(screen.getByRole('button', { name: NEW_RUN_LABEL })).toBeTruthy()
+  })
+})
+
+describe('RunOutcomePanel — the quick-kill receipt (DLR-95 AC6)', () => {
+  it('names both payouts on a won fight', () => {
+    render(<RunOutcomePanel {...baseProps} outcome={RunOutcome.InProgress} canContinue />)
+    expect(screen.getByText(rewardText(1, 10))).toBeTruthy()
+  })
+
+  it('names the flat coin alone when the taper paid nothing (AC5)', () => {
+    render(
+      <RunOutcomePanel
+        {...baseProps}
+        quickKillPayout={0}
+        outcome={RunOutcome.InProgress}
+        canContinue
+      />,
+    )
+    expect(screen.getByText(rewardText(1, 0))).toBeTruthy()
+  })
+
+  it('shows the receipt on the final fight of a won run, where canContinue is false', () => {
+    render(<RunOutcomePanel {...baseProps} outcome={RunOutcome.Won} canContinue={false} />)
+    expect(screen.getByText(rewardText(1, 10))).toBeTruthy()
+  })
+
+  it('shows no receipt at all on a lost run', () => {
+    render(<RunOutcomePanel {...baseProps} outcome={RunOutcome.Lost} canContinue={false} />)
+    expect(screen.queryByText(rewardText(1, 10))).toBeNull()
+    expect(screen.queryByText(rewardText(1, 0))).toBeNull()
   })
 })

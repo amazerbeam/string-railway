@@ -46,6 +46,34 @@ import {
 import { advanceQuarryFollow, advanceQuarryLead, deriveResolvedTrick } from './quarryAdvance'
 
 export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundUiState {
+  return captureUnplayed(applyAction(state, action))
+}
+
+/**
+ * DLR-95 AC2 — ONE site for "how many cards were left when the Quarry went down", rather than one
+ * at each of the three places an encounter can currently become resolved (`handleTapApplyDamage`,
+ * and `commit`'s two `applyResolution` calls). A fourth way to end a fight — and this file has
+ * gained one per ticket for four tickets running — is covered for free.
+ *
+ * Writes exactly once: the first transition after which the encounter reads resolved and the field
+ * is still `null`. The null check IS the "has this already been captured" test, which is why no
+ * `before` state is needed and why this stays a pure function of one argument — so the reducer as
+ * a whole stays pure and StrictMode's development double-dispatch recomputes an identical value.
+ *
+ * Deliberately NOT gated on the winner. A hand that ends with the PLAYER down also freezes the
+ * figure; `recordEncounter` is what decides no payout is owed, because deciding that here would be
+ * a second reading of a rule `src/hunt/` already owns.
+ */
+function captureUnplayed(next: RoundUiState): RoundUiState {
+  if (next.unplayedAtResolve !== null || !isEncounterResolved(next.encounter)) {
+    return next
+  }
+  return { ...next, unplayedAtResolve: next.round.hands[PlayerSide.Player].length }
+}
+
+/** Every action's own transition. Private since DLR-95: `roundReducer` above is the exported
+ *  entry point, and it runs this function's result through `captureUnplayed`. */
+function applyAction(state: RoundUiState, action: RoundUiAction): RoundUiState {
   switch (action.kind) {
     case RoundUiActionKind.TapCard:
       return handleTapCard(state, action.card)

@@ -207,6 +207,7 @@ export default function WarCouncilRound({
         cheats: ui.cheats,
         envenomCharges: ui.envenomCharges,
         poisonGuardHeld: ui.poisonGuardHeld,
+        unplayedAtResolve: ui.unplayedAtResolve,
       })
       return
     }
@@ -221,6 +222,7 @@ export default function WarCouncilRound({
         cheats: ui.cheats,
         envenomCharges: ui.envenomCharges,
         poisonGuardHeld: ui.poisonGuardHeld,
+        unplayedAtResolve: ui.unplayedAtResolve,
       })
     }
   }

@@ -1,7 +1,7 @@
 # War Council — `src/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, PT-001, PT-002
+**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, PT-001, PT-002
 
 ## Responsibility
 
@@ -71,6 +71,22 @@ end-of-hand fold deliberately keeps paying in full. **It is not a fifth `TrickOu
 are worth reading before anyone tries to make it one — see
 [the voluntary cash-out](voluntary-cash-out.md). It is also the codebase's **first fractional rule**;
 the numerator/denominator pair in `src/hunt/config.ts` is a correctness measure, not a style choice.
+
+**DLR-96 added no code, only proof that DLR-89 through DLR-95 actually compose.** It is a verification
+ticket against the seven run-economy tickets above, not a feature — a static audit of every shared
+interface (`bank.ts`'s three cash-out paths, `RunState`'s fields, the three refusal unions) found the
+composition already correct, so the ticket's whole deliverable is the test that makes the specific
+claim below checkable rather than merely asserted in a docblock:
+`src/warCouncil/__tests__/bank.integration.test.ts` buys two Whetstones through the real
+`buyFromShop`, reads the resulting `bankClimbBonusFor`, drives it through three real
+`resolveTrickBank` calls, and asserts a forced hit's `forcedCashValue` reads the **boosted** bank
+`resolveTrickBank`'s own docblock already described — not the bare figure a Whetstone-free run would
+produce. A companion test, `src/hunt/__tests__/run.integration.test.ts`, does the equivalent for
+every epic-added `RunState` field at once (see [../hunt/README.md](../hunt/README.md)). A live
+five-touchpoint browser playthrough (all four shop categories, a flask drink, a voluntary Apply
+Damage, and a quick-kill payout) found nothing beyond what the static audit already confirmed; a
+stage-boss kill and its flask refill were not reached live and remain a developer judgement call
+rather than a defect.
 
 ## Key types & exports
 

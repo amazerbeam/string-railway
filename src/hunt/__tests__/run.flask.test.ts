@@ -131,6 +131,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
       at.cheats,
       at.envenomCharges,
       at.poisonGuardHeld,
+      null,
     )
     expect(recorded.flaskCharges).toBe(FLASK_STARTING_CHARGES)
   })
@@ -143,6 +144,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
       at.cheats,
       at.envenomCharges,
       at.poisonGuardHeld,
+      null,
     )
     expect(recorded.flaskCharges).toBe(FLASK_STARTING_CHARGES)
   })
@@ -155,6 +157,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
       at.cheats,
       at.envenomCharges,
       at.poisonGuardHeld,
+      null,
     )
     expect(recorded.flaskCharges).toBe(0)
   })
@@ -174,7 +177,14 @@ describe("recordEncounter's flask refill (AC5)", () => {
         [DuelSide.Quarry]: 0,
       })
     }
-    const recorded = recordEncounter(at, lost, at.cheats, at.envenomCharges, at.poisonGuardHeld)
+    const recorded = recordEncounter(
+      at,
+      lost,
+      at.cheats,
+      at.envenomCharges,
+      at.poisonGuardHeld,
+      null,
+    )
     expect(recorded.flaskCharges).toBe(0)
   })
 })

@@ -228,13 +228,16 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
     fireEvent.click(carryOn)
 
     expect(onComplete).toHaveBeenCalledTimes(1)
-    const { encounter } = onComplete.mock.calls[0][0]
+    const { encounter, unplayedAtResolve } = onComplete.mock.calls[0][0]
     expect(startingEncounter.health[DuelSide.Quarry] - encounter.health[DuelSide.Quarry]).toBe(
       startingEncounter.health[DuelSide.Quarry],
     )
     expect(startingEncounter.health[DuelSide.Player] - encounter.health[DuelSide.Player]).toBe(
       DAMAGE_PER_HIT,
     )
+    // DLR-95 AC2 — the killing blow is this hand's last trick, so nothing is left unplayed. The
+    // 0 is the figure a quick-kill payout would be computed from, not an absence of one.
+    expect(unplayedAtResolve).toBe(0)
   })
 })
 

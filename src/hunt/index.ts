@@ -38,6 +38,7 @@ export {
   ENVENOM_PLAYER_DAMAGE,
   POISON_GUARD_PRICE,
   WHETSTONE_PRICE,
+  QUICK_KILL_TIER_MULTIPLIERS,
   FLASK_STARTING_CHARGES,
   FLASK_HEAL_PERCENT,
   OpponentKind,
@@ -84,6 +85,9 @@ export {
 
 export type { FlaskStock } from './flask'
 export { FlaskRefusal, flaskHealAmount, flaskRefusalFor } from './flask'
+
+export type { QuickKill } from './quickKill'
+export { quickKillTierMultiplier, quickKillPayout } from './quickKill'
 
 export type { RunState } from './run'
 export {

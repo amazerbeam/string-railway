@@ -112,6 +112,16 @@ export interface RoundUiState {
    *  two stages because its armed state waits for a THIRD tap on a hand card; Apply Damage's
    *  second tap IS the action, so "poised" is the only state there is to be in. */
   readonly applyPoised: boolean
+  /** DLR-95 AC2 — the player's hand size at the FIRST transition after which the encounter reads
+   *  resolved, frozen from then on. `null` until then, and `null` for a hand that never ends the
+   *  fight.
+   *
+   *  FROZEN rather than re-derived at `onComplete` time, and that is load-bearing. The live hand
+   *  length happens to give the same answer today only because `canAct` goes false once the
+   *  encounter resolves, so nothing further can be played — correctness that rests on an unrelated
+   *  predicate staying false is correctness that breaks silently. The same reasoning
+   *  `openingEncounter` above already documents. */
+  readonly unplayedAtResolve: number | null
 }
 
 export interface RoundUiSeed {
@@ -173,6 +183,7 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     poisonGuardHeld: seed.poisonGuardHeld,
     bankClimbBonus: seed.bankClimbBonus,
     applyPoised: false,
+    unplayedAtResolve: null,
   }
 }
 

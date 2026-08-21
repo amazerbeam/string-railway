@@ -108,5 +108,28 @@ export const CONTINUE_ANYWAY_LABEL = 'Continue anyway'
 /** The warning sentence. Takes the balance so it names what is being left behind; the driver
  *  decides WHETHER to warn (`canBuyAnything`), this only decides the words. */
 export function unspentCoinsText(coins: Coins): string {
-  return `You still have ${coins} coin${coins === 1 ? '' : 's'} to spend.`
+  return `You still have ${coinsText(coins)} to spend.`
 }
+
+/** `1 coin` / `3 coins`. ONE statement of the plural, so two readouts of the same purse cannot
+ *  disagree about it. */
+export function coinsText(coins: Coins): string {
+  return `${coins} coin${coins === 1 ? '' : 's'}`
+}
+
+/**
+ * DLR-95 AC1/AC6 — what the win paid, with the two payouts NAMED SEPARATELY so a quick kill never
+ * reads as the flat coin having grown. AC1 is additive (developer, 2026-08-20), which is why this
+ * is two clauses rather than one figure.
+ *
+ * The quick-kill clause is omitted entirely at 0 — AC5's taper read as copy, so a slow fight's
+ * verdict does not advertise a mechanic that paid it nothing.
+ *
+ * PLACEHOLDER COPY, exactly as this file's header states all of it is.
+ */
+export function rewardText(winCoins: Coins, quickKillPayout: Coins): string {
+  const flat = `Fight won +${coinsText(winCoins)}`
+  return quickKillPayout > 0 ? `${flat} · ${QUICK_KILL_LABEL} +${coinsText(quickKillPayout)}` : flat
+}
+
+export const QUICK_KILL_LABEL = 'Quick kill'

@@ -13,6 +13,61 @@ card itself, per `game-ux`'s tap-cost rule.
 `TapCard` is ignored outright when it is not the player's turn, or when `resolvedTrick`, `prompt`,
 or `cpuFault` is set, or the round is complete.
 
+### The exported reducer is a wrapper, and that is where cross-cutting observations go — DLR-95
+
+Since DLR-95 `roundReducer` is no longer the `switch` itself. The switch became a **private
+`applyAction`**, and the export is a two-line wrapper:
+
+```ts
+export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundUiState {
+  return captureUnplayed(applyAction(state, action))
+}
+```
+
+The exported name, signature and behaviour are unchanged — this was a restructuring, not a
+behaviour change, and every pre-existing reducer test passed untouched through it.
+
+What it buys is a place to state a rule of the form *"after every transition, observe X"* exactly
+once. DLR-95 needed the player's hand size **at the instant the Quarry's bar empties**, to price the
+quick-kill payout. An encounter can currently become resolved in three different places —
+`handleTapApplyDamage`, and `commit`'s two `applyResolution` calls — so writing the capture at each
+would have been three copies of one rule, and the fourth way to end a fight (this file has gained
+one per ticket for four tickets running) would have silently missed it.
+
+`captureUnplayed` writes the figure exactly once: the first transition after which the encounter
+reads resolved and the field is still `null`.
+
+```ts
+function captureUnplayed(next: RoundUiState): RoundUiState {
+  if (next.unplayedAtResolve !== null || !isEncounterResolved(next.encounter)) {
+    return next
+  }
+  return { ...next, unplayedAtResolve: next.round.hands[PlayerSide.Player].length }
+}
+```
+
+Three properties are load-bearing:
+
+- **The null check IS the "already captured?" test**, which is why no `before` state is needed and
+  why this stays a pure function of one argument. The reducer as a whole therefore stays pure, and
+  StrictMode's development double-dispatch recomputes an identical value rather than double-writing.
+- **It is deliberately not gated on the winner.** A hand that ends with the *player* down freezes
+  the figure too. `recordEncounter` decides no payout is owed, because deciding that here would be a
+  second reading of a rule `src/hunt/` already owns.
+- **The figure is frozen, not re-derived at `onComplete` time.** Reading the live hand length when
+  the round reports upward happens to give the same answer today — but only because `canAct` goes
+  false once the encounter resolves, so nothing further can be played. Correctness that rests on an
+  unrelated predicate staying false is correctness that breaks silently. This is the same reasoning
+  `openingEncounter` in `roundUiState.ts` already documents.
+
+`RoundUiState.unplayedAtResolve` is `number | null`, seeded `null` by `createRoundUiState`; `null`
+means "this hand did not end the fight" and is a legitimate value rather than a failure — which is
+why it is not a defaulted `0`, a value that would read correctly and pay wrong. A remount re-seeds
+it to `null`, which is correct: a remount is a new hand. It rides up to the driver through
+`WarCouncilRoundResult.unplayedAtResolve`, set from `ui.unplayedAtResolve` in both of
+`handleCarryOn`'s `onComplete` literals. See
+[../hunt/quick-kill-payout.md](../hunt/quick-kill-payout.md) for what the run does with it.
+
 ### The module has no effect at all
 
 Every state transition is either the lazy `useReducer` initializer (`createRoundUiState`, called

@@ -275,6 +275,22 @@ export const POISON_GUARD_PRICE: Coins = 1
 // UNIT: coins per purchase.
 export const WHETSTONE_PRICE: Coins = 4
 
+// DLR-95 AC2 — the quick-kill payout's tier curve: COINS PER CARD left unplayed, indexed by
+// (hand of the fight − 1). TRANSCRIBED from version-4-scope.md §4 ("×2 in the first hand, ×1 in
+// the second, ×0.5 in the third, ×0 from the fourth on"), which marks the curve "Confirmed as
+// final" — NOT an open tuning value.
+//
+// A hand beyond this array's length pays 0, which IS AC5's taper: the array's LENGTH is the rule,
+// so extending or shortening the curve is one edit here and no code change. ONE key rather than a
+// separate coins-per-card rate beside it — the ×1 second-hand tier IS the design's "1 coin per
+// card" base, and two numbers that must multiply out to the documented figure is the pair that
+// drifts.
+//
+// All three values are exactly representable in binary, so `cards × multiplier` is exact and this
+// needs none of the numerator/denominator treatment FORCED_CASH_OUT_* required below.
+// UNIT: coins per card left unplayed in the player's hand at the kill.
+export const QUICK_KILL_TIER_MULTIPLIERS: readonly number[] = [2, 1, 0.5]
+
 export const TelegraphFidelity = {
   Suit: 'suit', // narrowest — only the lead suit is telegraphed
   SuitAndStance: 'suitAndStance', // §4's stated default — suit plus pressing/ducking

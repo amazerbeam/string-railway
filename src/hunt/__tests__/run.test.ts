@@ -1,26 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import {
-  advanceRun,
-  beatenCount,
-  buyFromShop,
-  canAdvanceRun,
-  recordEncounter,
-  RunOutcome,
-  shopStockFor,
-  startRun,
-} from '../run'
+import { advanceRun, beatenCount, canAdvanceRun, recordEncounter, RunOutcome, startRun } from '../run'
 import { applyDamage, NO_PENDING_ENVENOM } from '../encounter'
 import {
-  CHEAT_PRICE,
   COINS_PER_ENCOUNTER_WIN,
-  HEAL_HEALTH_RESTORED,
-  HEAL_PRICE,
   PLAYER_START_HEALTH,
   QUARRY_ENCOUNTER_HEALTH,
   quarryHealthForEncounter,
   RUN_STARTING_CHEATS,
 } from '../config'
-import { ShopItem } from '../shop'
 import { DuelSide, type EncounterState, type IncomingDamage } from '../types'
 
 const damage = (toPlayer: number, toQuarry: number): IncomingDamage => ({
@@ -74,7 +61,7 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
   it('stays in progress while the fight is live', () => {
     const run = startRun()
     const hit = applyDamage(run.encounter, damage(1, 1))
-    expect(recordEncounter(run, hit, run.cheats, run.envenomCharges, false).outcome).toBe(
+    expect(recordEncounter(run, hit, run.cheats, run.envenomCharges, false, null).outcome).toBe(
       RunOutcome.InProgress,
     )
   })
@@ -87,6 +74,7 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      null,
     )
     expect(after.outcome).toBe(RunOutcome.InProgress)
     expect(after.encounter.winner).toBe(DuelSide.Player)
@@ -97,7 +85,14 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
     let run = startRun()
     for (let i = 0; i < run.encounterCount - 1; i += 1) {
       run = advanceRun(
-        recordEncounter(run, winEncounter(run.encounter), run.cheats, run.envenomCharges, false),
+        recordEncounter(
+          run,
+          winEncounter(run.encounter),
+          run.cheats,
+          run.envenomCharges,
+          false,
+          null,
+        ),
       )
     }
     const final = recordEncounter(
@@ -106,6 +101,7 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      null,
     )
     expect(final.encounterIndex).toBe(final.encounterCount - 1)
     expect(final.outcome).toBe(RunOutcome.Won)
@@ -115,7 +111,7 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
   it('ends the run as LOST the moment the player is down, whatever the position (AC4)', () => {
     const run = startRun()
     const dead = applyDamage(run.encounter, damage(PLAYER_START_HEALTH, 0))
-    const after = recordEncounter(run, dead, run.cheats, run.envenomCharges, false)
+    const after = recordEncounter(run, dead, run.cheats, run.envenomCharges, false, null)
     expect(after.outcome).toBe(RunOutcome.Lost)
     expect(canAdvanceRun(after)).toBe(false)
   })
@@ -128,9 +124,10 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      null,
     )
     expect(() =>
-      recordEncounter(lost, lost.encounter, lost.cheats, lost.envenomCharges, false),
+      recordEncounter(lost, lost.encounter, lost.cheats, lost.envenomCharges, false, null),
     ).toThrow(RangeError)
   })
 })
@@ -144,6 +141,7 @@ describe('recordEncounter — the payout (AC1)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      null,
     )
     expect(after.coins).toBe(run.coins + COINS_PER_ENCOUNTER_WIN)
   })
@@ -151,14 +149,14 @@ describe('recordEncounter — the payout (AC1)', () => {
   it('credits nothing while the encounter is still live', () => {
     const run = startRun()
     const hit = applyDamage(run.encounter, damage(1, 1))
-    const after = recordEncounter(run, hit, run.cheats, run.envenomCharges, false)
+    const after = recordEncounter(run, hit, run.cheats, run.envenomCharges, false, null)
     expect(after.coins).toBe(run.coins)
   })
 
   it('credits nothing when the Quarry wins', () => {
     const run = startRun()
     const dead = applyDamage(run.encounter, damage(PLAYER_START_HEALTH, 0))
-    const after = recordEncounter(run, dead, run.cheats, run.envenomCharges, false)
+    const after = recordEncounter(run, dead, run.cheats, run.envenomCharges, false, null)
     expect(after.coins).toBe(run.coins)
   })
 })
@@ -174,6 +172,7 @@ describe('advanceRun — the carry (AC3)', () => {
         run.cheats,
         run.envenomCharges,
         false,
+        null,
       ),
     )
     expect(next.encounterIndex).toBe(1)
@@ -184,7 +183,14 @@ describe('advanceRun — the carry (AC3)', () => {
   it('opens the next fight unresolved, with its own damage counter at zero', () => {
     const run = startRun()
     const next = advanceRun(
-      recordEncounter(run, winEncounter(run.encounter, 2), run.cheats, run.envenomCharges, false),
+      recordEncounter(
+        run,
+        winEncounter(run.encounter, 2),
+        run.cheats,
+        run.envenomCharges,
+        false,
+        null,
+      ),
     )
     expect(next.encounter.winner).toBeNull()
     expect(next.encounter.damageEventsApplied).toBe(0)
@@ -202,6 +208,7 @@ describe('advanceRun — the carry (AC3)', () => {
       live.cheats,
       live.envenomCharges,
       false,
+      null,
     )
     expect(() => advanceRun(lost)).toThrow(RangeError)
   })
@@ -214,6 +221,7 @@ describe('advanceRun — the carry (AC3)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      null,
     )
     const before = JSON.stringify(won)
     advanceRun(won)
@@ -228,6 +236,7 @@ describe('advanceRun — the carry (AC3)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      null,
     )
     const next = advanceRun(won)
     expect(next.coins).toBe(won.coins)
@@ -249,6 +258,7 @@ describe('Cheats on RunState (DLR-83 AC3)', () => {
       [{ id: 2 }],
       run.envenomCharges,
       false,
+      null,
     )
     const next = advanceRun(won)
     expect(next.cheats).toEqual([{ id: 2 }])
@@ -258,65 +268,8 @@ describe('Cheats on RunState (DLR-83 AC3)', () => {
   it('adopts a spend reported by the hand', () => {
     const run = startRun()
     const hit = applyDamage(run.encounter, damage(1, 1))
-    const after = recordEncounter(run, hit, [], run.envenomCharges, false)
+    const after = recordEncounter(run, hit, [], run.envenomCharges, false, null)
     expect(after.cheats).toEqual([])
-  })
-})
-
-describe('buyFromShop (DLR-84)', () => {
-  it('mints a fresh id for a bought Cheat, so a spent card cannot be re-issued', () => {
-    const run = { ...startRun(), coins: 5, cheats: [] }
-    const bought = buyFromShop(run, ShopItem.Cheat)
-    expect(bought.nextCheatId).toBe(run.nextCheatId + 1)
-    expect(bought.cheats.map((c) => c.id)).toContain(run.nextCheatId)
-  })
-
-  it('deducts CHEAT_PRICE on a Cheat purchase', () => {
-    const run = { ...startRun(), coins: 5, cheats: [] }
-    const bought = buyFromShop(run, ShopItem.Cheat)
-    expect(bought.coins).toBe(run.coins - CHEAT_PRICE)
-  })
-
-  it('deducts HEAL_PRICE and raises player health by HEAL_HEALTH_RESTORED on a Heal purchase', () => {
-    const run = { ...startRun(1), coins: 5 }
-    const healed = buyFromShop(run, ShopItem.Heal)
-    expect(healed.coins).toBe(run.coins - HEAL_PRICE)
-    expect(healed.encounter.health[DuelSide.Player]).toBe(1 + HEAL_HEALTH_RESTORED)
-  })
-
-  it('discards overheal rather than exceeding the maximum (AC4)', () => {
-    const run = { ...startRun(9), coins: 5 }
-    const healed = buyFromShop(run, ShopItem.Heal, 10)
-    expect(healed.encounter.health[DuelSide.Player]).toBe(10)
-  })
-
-  it('allows buying twice in one visit when the coins allow (AC8)', () => {
-    const run = { ...startRun(1), coins: 5, cheats: [] }
-    const once = buyFromShop(run, ShopItem.Heal, 10)
-    const twice = buyFromShop(once, ShopItem.Cheat)
-    expect(twice.coins).toBe(run.coins - HEAL_PRICE - CHEAT_PRICE)
-    expect(twice.cheats.length).toBe(run.cheats.length + 1)
-  })
-
-  it('throws a RangeError naming SlotsFull and leaves the run unmodified', () => {
-    const run = { ...startRun(), coins: 5, cheats: [{ id: 100 }, { id: 101 }] }
-    const before = JSON.stringify(run)
-    expect(() => buyFromShop(run, ShopItem.Cheat)).toThrow(/slotsFull/)
-    expect(JSON.stringify(run)).toBe(before)
-  })
-
-  it('throws a RangeError naming AlreadyFullHealth and leaves the run unmodified', () => {
-    const run = { ...startRun(10), coins: 5 }
-    const before = JSON.stringify(run)
-    expect(() => buyFromShop(run, ShopItem.Heal, 10)).toThrow(/alreadyFullHealth/)
-    expect(JSON.stringify(run)).toBe(before)
-  })
-
-  it('throws a RangeError naming NotEnoughCoins and leaves the run unmodified', () => {
-    const run = { ...startRun(), coins: 0, cheats: [] }
-    const before = JSON.stringify(run)
-    expect(() => buyFromShop(run, ShopItem.Cheat)).toThrow(/notEnoughCoins/)
-    expect(JSON.stringify(run)).toBe(before)
   })
 })
 
@@ -338,6 +291,7 @@ describe('beatenCount (DLR-85)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      null,
     )
     expect(won.encounterIndex).toBe(0)
     expect(beatenCount(won)).toBe(1)
@@ -356,6 +310,7 @@ describe('beatenCount (DLR-85)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      null,
     )
     expect(beatenCount(advanceRun(won))).toBe(1)
   })
@@ -374,24 +329,11 @@ describe('beatenCount (DLR-85)', () => {
         run.cheats,
         run.envenomCharges,
         false,
+        null,
       )
       if (run.outcome === RunOutcome.InProgress) run = advanceRun(run)
     }
     expect(run.outcome).toBe(RunOutcome.Won)
     expect(beatenCount(run)).toBe(run.encounterCount)
-  })
-})
-
-describe('shopStockFor (DLR-84)', () => {
-  it('projects the five figures the shop rules need', () => {
-    const run = { ...startRun(), coins: 3 }
-    const stock = shopStockFor(run)
-    expect(stock).toEqual({
-      coins: 3,
-      cheatCount: run.cheats.length,
-      playerHealth: run.encounter.health[DuelSide.Player],
-      maxPlayerHealth: PLAYER_START_HEALTH,
-      poisonGuardHeld: run.poisonGuardHeld,
-    })
   })
 })

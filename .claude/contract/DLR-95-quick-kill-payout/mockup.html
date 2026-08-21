@@ -1,0 +1,380 @@
+<title>Quick-Kill Verdict</title>
+
+<style>
+  /* DLR-95 mockup. Deliberately SINGLE-THEME: this is a dark game surface, so it commits to one
+     visual world and paints its own ground rather than following the viewer's theme. Every token
+     below is transcribed from the live `warCouncil.css` :root and `run.css` — this mockup must
+     look like the screen it is changing, not like a new design. */
+  :root {
+    --wc-chamber: #0c1013;
+    --wc-parchment: #e9e1cd;
+    --wc-ink: #191610;
+    --wc-brass: #c99a4e;
+    --wc-brass-dim: #7d6132;
+    --wc-chalk: #cdd6d2;
+    --wc-chalk-dim: #6f7d78;
+    --wc-alarm: #d1705f;
+    --wc-poison: #8fb04e;
+    --wc-poison-edge: #5c7a2e;
+    --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    margin: 0;
+    background: var(--wc-chamber);
+    color: var(--wc-chalk);
+    font-family: var(--wc-sans);
+    color-scheme: dark;
+  }
+
+  /* --- the real screen, transcribed from run.css --- */
+
+  .run-shell {
+    height: 100dvh;
+    width: 100%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    padding: clamp(1rem, 4vmin, 3rem);
+    background: radial-gradient(120% 80% at 50% 40%, #172027 0%, #050708 100%), var(--wc-chamber);
+  }
+
+  .run-verdict {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.7rem, 2.4vmin, 1.6rem);
+    text-align: center;
+    max-width: 34rem;
+  }
+
+  .run-rule {
+    width: clamp(6rem, 30vmin, 16rem);
+    height: 2px;
+    background: var(--wc-brass-dim);
+  }
+  .run-verdict[data-verdict='won'] .run-rule {
+    height: 8px;
+    background: none;
+    border-top: 2px solid var(--wc-brass);
+    border-bottom: 2px solid var(--wc-brass);
+  }
+  .run-verdict[data-verdict='lost'] .run-rule {
+    height: 6px;
+    background: repeating-linear-gradient(-45deg, #ffffff26 0 3px, #00000026 3px 6px);
+  }
+
+  .run-headline {
+    font-family: var(--wc-serif);
+    font-size: clamp(2.6rem, 12vmin, 7rem);
+    line-height: 0.95;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin: 0;
+    color: var(--wc-brass);
+    text-wrap: balance;
+  }
+  .run-verdict[data-verdict='won'] .run-headline { color: var(--wc-poison); }
+  .run-verdict[data-verdict='lost'] .run-headline { color: var(--wc-alarm); }
+
+  .run-detail {
+    margin: 0;
+    font-size: clamp(0.85rem, 2.2vmin, 1.05rem);
+    line-height: 1.5;
+  }
+
+  .run-tricks { display: flex; flex-direction: column; align-items: center; gap: 0.45rem; }
+
+  .run-tricks-label,
+  .run-carry,
+  .run-position,
+  .run-reward {
+    margin: 0;
+    font-size: clamp(0.55rem, 1.2vmin, 0.68rem);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* THE NEW LINE (AC6). Same label scale as the carried-health row it sits above, so it reads as
+     one of the verdict's receipts rather than as a new kind of thing — but bracketed by a thin
+     rule and given the mined-card green on its quick-kill half, so a payout that fired is legible
+     at a glance and, crucially, in greyscale: the words themselves differ, the separator is a
+     middot, and nothing here depends on hue alone. */
+  .run-reward {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid #ffffff14;
+    border-radius: 3px;
+    background: #ffffff08;
+  }
+  .run-reward .rw-flat { color: var(--wc-chalk-dim); }
+  .run-reward .rw-sep { color: var(--wc-brass-dim); }
+  .run-reward .rw-quick { color: var(--wc-poison); font-weight: 600; }
+
+  .run-bars { display: flex; gap: clamp(0.2rem, 0.8vmin, 0.45rem); }
+  .run-trick {
+    width: clamp(1.6rem, 6vmin, 3rem);
+    height: clamp(0.5rem, 1.6vmin, 0.85rem);
+    border-radius: 1px;
+    background: var(--wc-poison);
+    border: 1px solid var(--wc-poison-edge);
+  }
+  .run-trick.is-lost {
+    background-color: var(--wc-alarm);
+    background-image: repeating-linear-gradient(-45deg, #00000040 0 3px, #ffffff1a 3px 6px);
+    border-color: #7d3a30;
+  }
+
+  .run-actions {
+    display: flex;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 0.4rem;
+  }
+
+  .run-btn {
+    font-family: var(--wc-sans);
+    font-size: clamp(0.8rem, 2vmin, 0.95rem);
+    letter-spacing: 0.08em;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.7rem 1.6rem;
+    border-radius: 3px;
+    border: 1px solid var(--wc-brass);
+    background: transparent;
+    color: var(--wc-brass);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .run-btn.is-primary { background: var(--wc-brass); color: var(--wc-ink); font-weight: 600; }
+  .run-btn:focus-visible { outline: 2px solid var(--wc-parchment); outline-offset: 2px; }
+  @media (hover: hover) { .run-btn:hover { border-color: var(--wc-parchment); } }
+  .run-btn:active { transform: translateY(1px); }
+
+  /* --- mockup-only scaffolding. Deliberately styled as a lab bench, NOT as game chrome, so it
+         cannot be mistaken for something the ticket ships. --- */
+
+  .bench {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.9rem;
+    background: #05070896;
+    backdrop-filter: blur(6px);
+    border-top: 1px dashed var(--wc-brass-dim);
+    font-size: 0.72rem;
+  }
+  .bench-label {
+    color: var(--wc-chalk-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-right: 0.3rem;
+  }
+  .bench button {
+    font-family: var(--wc-sans);
+    font-size: 0.72rem;
+    min-height: 44px;
+    padding: 0.4rem 0.8rem;
+    border-radius: 3px;
+    border: 1px dashed var(--wc-brass-dim);
+    background: transparent;
+    color: var(--wc-chalk);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .bench button[aria-pressed='true'] {
+    border-style: solid;
+    border-color: var(--wc-poison);
+    color: var(--wc-poison);
+  }
+  .bench button:focus-visible { outline: 2px solid var(--wc-parchment); outline-offset: 2px; }
+  .bench-sum {
+    margin-left: auto;
+    color: var(--wc-chalk-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .bench-sum b { color: var(--wc-poison); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="run-shell">
+  <div class="run-verdict" id="verdict" data-verdict="fightWon">
+    <div class="run-rule" aria-hidden="true"></div>
+    <h1 class="run-headline" id="headline">Aoife defeated</h1>
+    <p class="run-detail" id="detail" role="status">
+      Fight 2 of 25 — Cillian — is waiting, and you carry 9 health into it.
+    </p>
+
+    <div class="run-tricks" role="group" id="tricksGroup" aria-label="Tricks taken — 1 of 1.">
+      <span class="run-tricks-label" id="tricksLabel">Tricks taken · 1 of 1</span>
+      <span class="run-bars" id="bars" aria-hidden="true"></span>
+    </div>
+
+    <!-- THE NEW LINE. Hidden entirely on a lost run and on any verdict that paid nothing. -->
+    <p class="run-reward" id="reward" role="status">
+      <span class="rw-flat">Fight won +1 coin</span>
+      <span class="rw-sep" aria-hidden="true">·</span>
+      <span class="rw-quick">Quick kill +10 coins</span>
+    </p>
+
+    <p class="run-carry" id="carry">Carried health — 9 · 11 coins</p>
+
+    <div class="run-actions" id="actions">
+      <button type="button" class="run-btn is-primary" onclick="say('Fight Cillian')">
+        Fight Cillian
+      </button>
+      <button type="button" class="run-btn" onclick="say('Shop')">Shop</button>
+      <button type="button" class="run-btn" onclick="say('Map')">Map</button>
+    </div>
+
+    <p class="run-position" id="position">Fight 1 of 25</p>
+  </div>
+</div>
+
+<div class="bench">
+  <span class="bench-label">Kill scenario</span>
+  <button type="button" data-case="0" aria-pressed="true">Hand 1 · 5 left ·2</button>
+  <button type="button" data-case="1" aria-pressed="false">Hand 2 · 4 left ·1</button>
+  <button type="button" data-case="2" aria-pressed="false">Hand 3 · 5 left ·0.5</button>
+  <button type="button" data-case="3" aria-pressed="false">Hand 4 · 5 left ·0</button>
+  <button type="button" data-case="4" aria-pressed="false">Run won (hand 1)</button>
+  <button type="button" data-case="5" aria-pressed="false">Run lost</button>
+  <span class="bench-sum" id="sum"></span>
+</div>
+
+<script>
+  // Placeholder data only. The tier curve is the one config key this ticket adds; the arithmetic
+  // here mirrors quickKillPayout() so the mockup's figures are the figures the code will produce.
+  var TIERS = [2, 1, 0.5]
+  function tier(handOfFight) {
+    return handOfFight >= 1 && handOfFight <= TIERS.length ? TIERS[handOfFight - 1] : 0
+  }
+  function payout(unplayed, handOfFight) {
+    return Math.floor(unplayed * tier(handOfFight))
+  }
+  function coins(n) {
+    return n + ' coin' + (n === 1 ? '' : 's')
+  }
+
+  var WIN_COIN = 1
+
+  var CASES = [
+    {
+      verdict: 'fightWon', hand: 1, unplayed: 5, taken: 1, lost: 0, health: 9, purse: 11,
+      headline: 'Aoife defeated',
+      detail: 'Fight 2 of 25 — Cillian — is waiting, and you carry 9 health into it.',
+      position: 'Fight 1 of 25', paid: true,
+    },
+    {
+      verdict: 'fightWon', hand: 2, unplayed: 4, taken: 4, lost: 2, health: 7, purse: 6,
+      headline: 'Cillian defeated',
+      detail: 'Fight 3 of 25 — Niamh — is waiting, and you carry 7 health into it.',
+      position: 'Fight 2 of 25', paid: true,
+    },
+    {
+      verdict: 'fightWon', hand: 3, unplayed: 5, taken: 3, lost: 3, health: 5, purse: 4,
+      headline: 'Niamh defeated',
+      detail: 'Fight 4 of 25 — Eoin — is waiting, and you carry 5 health into it.',
+      position: 'Fight 3 of 25', paid: true,
+    },
+    {
+      verdict: 'fightWon', hand: 4, unplayed: 5, taken: 2, lost: 4, health: 3, purse: 2,
+      headline: 'Eoin defeated',
+      detail: 'Fight 5 of 25 — Saoirse — is waiting, and you carry 3 health into it.',
+      position: 'Fight 4 of 25', paid: true,
+    },
+    {
+      verdict: 'won', hand: 1, unplayed: 6, taken: 1, lost: 0, health: 4, purse: 21,
+      headline: 'YOU WIN',
+      detail: 'Every Quarry is down. You took all 25 fights and finished on 4 health.',
+      position: 'Fight 25 of 25', paid: true,
+    },
+    {
+      verdict: 'lost', hand: 3, unplayed: 2, taken: 1, lost: 5, health: 0, purse: 3,
+      headline: 'YOU LOSE',
+      detail: 'You went down on fight 12 of 25. The run ends here.',
+      position: 'Fight 12 of 25', paid: false,
+    },
+  ]
+
+  function render(index) {
+    var c = CASES[index]
+    var quick = c.paid ? payout(c.unplayed, c.hand) : 0
+
+    document.getElementById('verdict').setAttribute('data-verdict', c.verdict)
+    document.getElementById('headline').textContent = c.headline
+    document.getElementById('detail').textContent = c.detail
+    document.getElementById('position').textContent = c.position
+    document.getElementById('carry').textContent =
+      'Carried health — ' + c.health + ' · ' + coins(c.purse)
+
+    var label = 'Tricks taken · ' + c.taken + ' of ' + (c.taken + c.lost)
+    document.getElementById('tricksLabel').textContent = label
+    document.getElementById('tricksGroup').setAttribute(
+      'aria-label',
+      'Tricks taken — ' + c.taken + ' of ' + (c.taken + c.lost) + '.',
+    )
+    var bars = document.getElementById('bars')
+    bars.innerHTML = ''
+    for (var i = 0; i < c.taken + c.lost; i++) {
+      var b = document.createElement('span')
+      b.className = 'run-trick' + (i < c.taken ? '' : ' is-lost')
+      bars.appendChild(b)
+    }
+
+    // The reward line: absent entirely on a lost run; the quick-kill clause absent at 0, so a
+    // slow win never advertises a mechanic that paid nothing (AC5's taper, read as copy).
+    var reward = document.getElementById('reward')
+    if (!c.paid) {
+      reward.style.display = 'none'
+    } else {
+      reward.style.display = 'flex'
+      reward.innerHTML =
+        '<span class="rw-flat">Fight won +' + coins(WIN_COIN) + '</span>' +
+        (quick > 0
+          ? '<span class="rw-sep" aria-hidden="true">·</span>' +
+            '<span class="rw-quick">Quick kill +' + coins(quick) + '</span>'
+          : '')
+    }
+
+    document.getElementById('sum').innerHTML =
+      'hand ' + c.hand + ' · ' + c.unplayed + ' unplayed · tier ×' + tier(c.hand) +
+      ' → quick kill <b>' + quick + '</b> + flat ' + WIN_COIN
+  }
+
+  var buttons = document.querySelectorAll('.bench button[data-case]')
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      buttons.forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b === btn))
+      })
+      render(Number(btn.getAttribute('data-case')))
+    })
+  })
+
+  function say(what) {
+    var sum = document.getElementById('sum')
+    var held = sum.innerHTML
+    sum.textContent = '“' + what + '” pressed — this mockup goes nowhere.'
+    setTimeout(function () {
+      sum.innerHTML = held
+    }, 1400)
+  }
+
+  render(0)
+</script>

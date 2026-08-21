@@ -53,6 +53,7 @@ describe('buyFromShop — Whetstone (DLR-92)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      null,
     )
     expect(advanceRun(won).whetstones).toBe(2)
   })

@@ -8,6 +8,7 @@ import {
   SHOP_LABEL,
   VISIT_SHOP_LABEL,
   fightLabel,
+  rewardText,
   runHeadline,
   runProgressText,
   runVerdictDetail,
@@ -60,6 +61,12 @@ interface RunOutcomePanelProps {
   readonly nextName: string | undefined
   /** AC9 — opens the run map. The third control beside DLR-84's Continue and Shop. */
   readonly onMap: () => void
+  /** DLR-95 AC6 — what the quick kill paid, straight off `RunState.lastQuickKillPayout`. `0` when
+   *  it did not fire, in which case the line names the flat coin alone. */
+  readonly quickKillPayout: Coins
+  /** DLR-95 AC1 — the flat per-win coin, HANDED IN rather than imported, so this panel keeps its
+   *  documented "computes NOTHING" property and reads no configuration of its own. */
+  readonly winCoins: Coins
 }
 
 /**
@@ -96,6 +103,8 @@ export default function RunOutcomePanel({
   beatenName,
   nextName,
   onMap,
+  quickKillPayout,
+  winCoins,
 }: RunOutcomePanelProps) {
   const verdict = canContinue ? 'fightWon' : outcome
   const bars = [
@@ -125,6 +134,11 @@ export default function RunOutcomePanel({
             ))}
           </span>
         </div>
+        {outcome === RunOutcome.Lost ? null : (
+          <p className="run-reward" role="status">
+            {rewardText(winCoins, quickKillPayout)}
+          </p>
+        )}
         <p className="run-carry">
           {CARRIED_HEALTH_LABEL} — {carriedHealth} · {coins} coin{coins === 1 ? '' : 's'}
         </p>

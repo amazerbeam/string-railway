@@ -23,9 +23,10 @@ readonly coins: Coins
 ```
 
 `startRun` seeds it to `0`. `advanceRun` carries it across a fight boundary through the spread it
-already had, so the carry needed no code. Exactly one thing credits it.
+already had, so the carry needed no code. Exactly one transition credits it — since DLR-95 with two
+terms rather than one.
 
-### The payout has one site, and it is `recordEncounter`
+### The crediting has one site, and it is `recordEncounter`
 
 ```ts
 const wonThisEncounter = encounter.winner === DuelSide.Player
@@ -33,10 +34,19 @@ return {
   ...run,
   encounter,
   cheats,
-  coins: wonThisEncounter ? run.coins + COINS_PER_ENCOUNTER_WIN : run.coins,
+  coins: wonThisEncounter ? run.coins + COINS_PER_ENCOUNTER_WIN + quickKill : run.coins,
   outcome: outcomeFor(run.encounterIndex, run.encounterCount, encounter),
 }
 ```
+
+**Two payouts, one site.** DLR-84 shipped this as the flat `COINS_PER_ENCOUNTER_WIN` alone; DLR-95
+added the **quick-kill payout** beside it in the same expression, so a fast win now pays more than a
+slow one. The two are **additive** — a reading the developer resolved on 2026-08-20, and one that
+must not be "simplified" back into a replacement, because the quick kill tapers to zero from the
+fourth hand of a fight and the flat coin is what stops a long win paying literally nothing. What
+gets credited is still decided in exactly one place; only *how much* gained a second term.
+`quickKill` is computed just above this return, and the rule behind it belongs to
+[the quick-kill payout](quick-kill-payout.md) rather than to this file.
 
 `recordEncounter` was already the one place a fight's outcome is derived, it already refuses a run
 that has ended, and the driver stops feeding it hands once an encounter resolves — so the credit
@@ -362,7 +372,7 @@ player-side hit is deliberately smaller, because it *also* forces the streak's c
 
 | Key | Value | Unit |
 | --- | --- | --- |
-| `COINS_PER_ENCOUNTER_WIN` | `1` | coins, credited once per encounter won |
+| `COINS_PER_ENCOUNTER_WIN` | `1` | coins, credited once per encounter won — the **flat** term; since DLR-95 the quick-kill payout is added to it |
 | `CHEAT_PRICE` | `1` | coins per purchase |
 | `HEAL_PRICE` | `1` | coins per purchase |
 | `POISON_GUARD_PRICE` | `1` | coins per purchase (DLR-91) |

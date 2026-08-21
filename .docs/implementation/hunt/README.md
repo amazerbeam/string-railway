@@ -1,7 +1,7 @@
 # Hunt — `src/hunt/`
 
 **Status:** partial
-**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, PT-001, PT-002
+**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, PT-001, PT-002
 
 ## Responsibility
 
@@ -149,6 +149,38 @@ interface, `LOSE_CREDITS_PER_HUNT` and the `Demand` type alias all went; `Hunt` 
 required fields to `{ quarry }`; and `Score` was renamed `Damage`. `Hunt` and `Damage` both survive
 DLR-80 unchanged.
 
+**DLR-95 gave the run's economy its first variable payout, and it is the ticket that put a second
+clock on the run.** Until it landed, a win paid a flat coin whether it took one trick or five hands.
+`quickKill.ts` is a new pure module — a `QuickKill` input shape, a tier lookup into a new
+`QUICK_KILL_TIER_MULTIPLIERS` curve, and `quickKillPayout`, which is **the one place `Math.floor` is
+applied to this figure** so a fractional tier can never reach `Coins`. The state it needed is the
+interesting part: `RunState` gained **`handOfFight`**, a second and differently-scoped hand counter,
+because `App.tsx`'s existing `hand` is run-global — it is React's remount `key` and
+`dealerForRound`'s parity source, so it can never reset, and the ticket forbade repurposing it. The
+counter lives on the run rather than in the driver precisely so its reset is **structural**:
+`startRun` and `advanceRun` are the two functions that start an encounter, so neither a callback nor
+a future driver has to remember it. `recordEncounter` gained a **required sixth parameter** — the
+same enumerate-every-call-site idiom `cheats`, `envenomCharges` and `poisonGuardHeld` each arrived
+by — and now credits `COINS_PER_ENCOUNTER_WIN + quickKill` **additively**, a reading the developer
+resolved on 2026-08-20 and one a later reader must not "simplify" back into a replacement. A second
+new field, `lastQuickKillPayout`, is the receipt the verdict renders. This module still never learns
+what a hand of cards is: the count arrives as a plain `number`, observed a layer up. See
+[The quick-kill payout](quick-kill-payout.md).
+
+**DLR-96 added no code to this module either — it verifies that DLR-89 through DLR-95's run-economy
+fields survive a fight boundary together, not one at a time.** `src/hunt/__tests__/run.integration.test.ts`
+builds one `RunState` with every epic-added field populated at once (`coins`, `cheats`, `nextCheatId`,
+`envenomCharges`, `poisonGuardHeld`, `whetstones`, `flaskCharges`, `handOfFight`, `lastQuickKillPayout`),
+resolves a winning encounter through `recordEncounter`, then calls `advanceRun`, and asserts which
+figures carry (the run-scoped ones — `cheats`, `nextCheatId`, `whetstones`, `flaskCharges`, `coins` at
+its exact post-win value) and which reset (the encounter-scoped ones — `handOfFight` back to 1,
+`encounter.winner` to `null`, `poisonGuardHeld` cleared by `guardAfter`, `lastQuickKillPayout`
+recomputed rather than carried). Every prior single-field test (`run.whetstone.test.ts`,
+`run.flask.test.ts`, `envenom.test.ts`, `poisonGuard.test.ts`, `run.quickKill.test.ts`) already
+covered its own field in isolation; this is the first test proving they all survive the same
+transition together. A live playthrough additionally confirmed a real Whetstone purchase, a flask
+drink, a voluntary Apply Damage, and a quick-kill payout in the running app with zero console errors.
+
 **The skull-weight curves moved out of `config.ts` on DLR-94, and nothing else about them changed.**
 Adding the two forced-cash-out constants would have pushed `config.ts` to roughly 413 lines, over this
 project's hard 400-line ceiling, so the `SkullRankWeights` type, the four shipped curves and
@@ -209,7 +241,11 @@ code.
 | `CHEAT_SLOT_COUNT`                                    | `2` — slots the player holds, for the whole run. **Transcribed from the ticket, not chosen**: it says "exactly two" twice and defends the cap at length. A key so the number is stated once, **not** so it is easy to raise (DLR-83)                                                                                                                                                                                                                                                                                                                                           | `config.ts`           |
 | `RUN_STARTING_CHEATS`                                 | `0` — Cheats granted once, at the start of a run; **set to 0 by the developer on 2026-08-17, down from 2**, so a run opens empty-handed and every Cheat is bought. **A labelled placeholder, and the developer's to choose**: the ticket requires the grant come from configuration and names no number; `2` fills both slots so the mechanic is exercisable. Must stay within `0..CHEAT_SLOT_COUNT` — `grantCheats` throws outside it rather than clamping (DLR-83)                                                                                                                                                                                                                            | `config.ts`           |
 | `Coins`                                               | A bare `number` alias — the run's spendable currency. A whole number, never fractional and never negative: `buyFromShop` refuses a purchase it cannot pay for rather than going below zero (DLR-84)                                                                                                                                                                                                                                                                                                                                                                            | `types.ts`            |
-| `COINS_PER_ENCOUNTER_WIN`                             | `1` — what beating an opponent pays. **Transcribed from the ticket**, not chosen. Credited by `recordEncounter`, the one place a fight is known to have been won (DLR-84)                                                                                                                                                                                                                                                                                                                                                                                                     | `config.ts`           |
+| `COINS_PER_ENCOUNTER_WIN`                             | `1` — the **flat** part of what beating an opponent pays. **Transcribed from the ticket**, not chosen. Credited by `recordEncounter`, the one place a fight is known to have been won (DLR-84). **Since DLR-95 it is no longer the whole payout**: a won fight pays this *plus* the quick-kill payout, additively — its own value is unchanged                                                                                                                                                                                                                                                                                                                                                                                                     | `config.ts`           |
+| `QUICK_KILL_TIER_MULTIPLIERS`                         | `[2, 1, 0.5]` — **coins per card left unplayed**, indexed by (hand of the fight − 1). **Transcribed** from `version-4-scope.md` §4, which marks the curve "Confirmed as final" — not an open tuning value. A hand past the array's end pays `0`, so **the array's LENGTH is the taper rule** and re-shaping the curve is one edit here with no code change. One key rather than a separate coins-per-card rate beside it: the ×1 second-hand tier **is** the design's "1 coin per card" base (DLR-95)                                                                                                                                                                                                                                                                                                                                                                                                     | `config.ts`           |
+| `QuickKill`                                           | `{ unplayedCards, handOfFight }` — the payout rule's whole input, and the sibling of `FlaskStock` and `ShopStock` for their stated reason: this module owns the rule and must not learn the run's shape or the card layer's. `handOfFight` is **1-based** (DLR-95)                                                                                                                                                                                                                                                                                                                                                                                                     | `quickKill.ts`        |
+| `quickKillTierMultiplier`                             | `(handOfFight) => number` — **THE** only reader of `QUICK_KILL_TIER_MULTIPLIERS`. Returns `0` past the curve's end, which is the design's deliberate taper rather than an error. Throws a `RangeError` on a hand number that is not a positive integer, rather than indexing with it — a fractional or `NaN` index yields `undefined`, becomes `NaN` on the multiply, and lands in `coins` where it renders as nothing and logs nothing (DLR-95)                                                                                                                                                                                                                                                                                                                                                                                                     | `quickKill.ts`        |
+| `quickKillPayout`                                     | `(kill) => Coins` — **THE** only place `Math.floor` is applied to this figure, so the ×0.5 tier's half-coin can never reach `Coins`, which `types.ts` documents as never fractional. Floors rather than rounds so the artefact never falls in the player's favour, the direction `forcedCashValue` already floors in. Needs **no** numerator/denominator split: `2`, `1` and `0.5` are all exactly representable in binary, unlike `FORCED_CASH_OUT`'s `2/3` (DLR-95)                                                                                                                                                                                                                                                                                                                                                                                                     | `quickKill.ts`        |
 | `CHEAT_PRICE`, `HEAL_PRICE`                           | `1` each — the shop's two prices. Both transcribed, and **deliberately two keys rather than one shared price**: the ticket predicts the player buying Heal every visit and names re-pricing the Cheat as the answer, which is only one line if they are separate (DLR-84)                                                                                                                                                                                                                                                                                                     | `config.ts`           |
 | `HEAL_HEALTH_RESTORED`                                | `4` — health restored by one Heal, **before** the clamp to `PLAYER_START_HEALTH`. Transcribed. **No longer the only source of healing**: DLR-93 landed the flask, a free charge-limited heal sized as a proportion of the maximum. There is still no rest site, and `ENCOUNTER_PLAYER_RESTORE` stays deliberately unread beside both (DLR-84, DLR-93)                                                                                                                                                                                                                                                                                                                    | `config.ts`           |
 | `FLASK_STARTING_CHARGES`                              | `1` — charges a run opens with, **and the figure a stage-boss kill refills to**. One key rather than two, so the run's full-flask amount is stated once. **Transcribed** from `version-4-scope.md` §2 and DLR-93 AC1; the epic explicitly defers re-tuning it ("revisit only if it plays too thin") (DLR-93)                                                                                                                                                                                                                                                                                                                                                             | `config.ts`           |
@@ -222,7 +258,7 @@ code.
 | `drinkFlask`                                          | `(run, maxPlayerHealth = PLAYER_START_HEALTH) => RunState` — spend one charge and restore through the **shared** `healedBy` clamp. Throws separately on an unresolved encounter (a between-fights action reached mid-hand is a driver bug) and on a non-null refusal (DLR-93)                                                                                                                                                                                                                                                                                                                                                                                              | `runTransitions.ts`   |
 | `ENVENOM_PRICE`, `ENVENOM_QUARRY_DAMAGE`, `ENVENOM_PLAYER_DAMAGE` | `2` coins, and **4 health against the Quarry / 2 against the player**. DLR-90 shipped one shared `ENVENOM_DAMAGE = 4`; **DLR-91 split it on 2026-08-19, so the hit is no longer symmetric** — its own comment states why a shared key was rejected: "the bug that type-checks, reads correctly, and pays the wrong side". The price and the Quarry's 4 are **transcribed** from `version-4-scope.md`; **the player's 2 is the developer's own choice**, halved because that side's hit **also** forces the streak's cash-out, which the Quarry has no equivalent of. No figure is written as a literal outside this file — both shop blurbs interpolate the keys | `config.ts` |
 | `POISON_GUARD_PRICE`                                  | `1` coin — the fight-long shelf's first item (DLR-91). **Transcribed** from `version-4-scope.md` §1's own heading, which prices it level with `HEAL_PRICE` because both are a 1-coin-for-4-health trade run in opposite directions. Its own key for the reason `CHEAT_PRICE` and `HEAL_PRICE` are already separate: re-pricing one item must not move another | `config.ts` |
-| `WHETSTONE_PRICE`                                     | `4` coins — the run-permanent shelf's first item (DLR-92), and the most expensive thing in the shop by a factor of two. **Transcribed** from `version-4-scope.md` §1's own heading, which prices it as "the shop's one real splurge": four fights' flat winnings, reachable early only via the quick-kill payout that is **not built yet**. Its own key, for the reason every other price already has one | `config.ts` |
+| `WHETSTONE_PRICE`                                     | `4` coins — the run-permanent shelf's first item (DLR-92), and the most expensive thing in the shop by a factor of two. **Transcribed** from `version-4-scope.md` §1's own heading, which prices it as "the shop's one real splurge": four fights' flat winnings, reachable early only via the quick-kill payout — **which DLR-95 has now built**, so the income the price was sized against exists. Its own key, for the reason every other price already has one | `config.ts` |
 | `bankClimbBonusFor`                                   | `(run) => number` — **THE statement of "each Whetstone adds +1 to the bank's per-trick climb"** (DLR-92), returning `run.whetstones`. A named function rather than the identity read inlined at its one call site, so the rule is stated where a reviewer looks for it rather than in a JSX prop, and so the multiplier twin named as future scope has somewhere to contribute. **This is the whole of the run's contribution to the card layer**: `App.tsx` passes its return value as a plain number, which is what keeps `src/warCouncil/` free of `RunState` | `run.ts` |
 | `ShopItem`, `SHOP_ITEMS`                              | The **four**-member catalogue — `Cheat` / `Envenom` / `PoisonGuard` / `Heal` — and the ordered list of it, in that order (Heal stays last because `UNCATEGORISED_SHOP_ITEMS` derives from this array). **THE statement of what the shop sells** (DLR-84). Grouped rather than edited by DLR-89 — the screen reads the groupings below rather than mapping this flat — and **widened by DLR-90 and again by DLR-91**, which is where the DLR-89 ladder paid off twice: one `ShopItem` member, one `priceOf` case and one `categoryOf` case put Envenom on the one-time-use shelf and then Poison Guard on the previously empty **fight-long** shelf, each with **no UI edit at all**. `SHOP_ITEMS` is a plain array, so nothing forces a new member into it — `shop.test.ts` exists for that | `shop.ts` |
 | `ShopCategory`, `SHOP_CATEGORIES`                     | The **persistence-length ladder** — `OneTimeUse` / `FightLong` / `RunPermanent` / `GamePermanent` — and the ordered list fixing tab order. An `as const` map, not an `enum`, because `erasableSyntaxOnly` is on. Named after the design doc's rungs rather than Balatro's deck / Joker / consumable, since this game has no deck-building layer (DLR-89)                                                                                                                                                                                                                        | `shop.ts`             |
@@ -287,10 +323,17 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   position without a stage count anywhere in it, the `+ 1` inside `beatenCount`, and the three guards
   that throw (DLR-85).
 - [Coins and the shop — the run's economy, and the one predicate that guards it](coins-and-the-shop.md)
-  — the coin and its single payout site, the five-item catalogue and its four refusal codes, why
+  — the coin and the flat per-win payout (**no longer the only one — see the quick kill below**), the
+  five-item catalogue and its four refusal codes, why
   `ShopStock` is not a `RunState`, the `refusalFor` convention and its four readers, the purchase
   and its clamp, **the Whetstone's stacking count and `bankClimbBonusFor`**, and the transcribed tunables
   (DLR-84, DLR-90, DLR-91, DLR-92).
+- [The quick-kill payout — paying for how fast a fight ended](quick-kill-payout.md) — the
+  `floor(cards × tier)` rule and the `[2, 1, 0.5]` curve, why the array's **length** is the taper, where
+  the single `Math.floor` lives and which way it rounds, why the float multiply needs no
+  numerator/denominator split, **`handOfFight` as a second counter and why it lives on the run rather
+  than in the driver**, the additive credit and the developer decision behind it, why the sixth parameter
+  is required rather than defaulted, and the receipt written on every call including losses (DLR-95).
 - [Envenom — the held charge, the delayed-hit queue, and where it is paid](envenom-and-the-delayed-hit.md)
   — the three pieces of state at three lifetimes and why none of them needed a new container, the
   per-side queue and why it is not a `DuelSide | null`, `queueEnvenom`'s never-throw contract and its
@@ -325,16 +368,28 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   writer that raises player health** (the paid Heal and the flask both go through it, so overheal is
   discarded in exactly one place — DLR-93 AC2), and `flaskAfter` / `guardAfter` state the flask's
   boss refill and the Guard's expiry as named functions rather than inline ternaries. A future heal
-  that writes its own `Math.min` beside `healedBy` re-opens the drift DLR-93 closed.
-- **File-size budget** — measured after DLR-93 with `(Get-Content <file>).Count`: **`config.ts` 399**,
-  `runTransitions.ts` 259, `encounter.ts` 190, `shop.ts` 181, `run.ts` 175, `index.ts` 99, `runPath.ts`
-  88, `types.ts` 84, `flask.ts` 71, `cheats.ts` 58. **`config.ts` is one line under the 400-line
-  blocking ceiling** — the next contract to add a tunable must split it rather than squeeze, and the
-  natural seam is the run's roster and health curve away from the hand's and the shop's numbers.
-  DLR-93's remediation pass, which split every file that was *over* the ceiling, deliberately left this
-  one alone: 399 is under budget, and splitting a file that is not in breach is churn.
-  **This is the only file-size debt still outstanding in the repo** — no file under `src/` is at 400
-  lines or above.
+  that writes its own `Math.min` beside `healedBy` re-opens the drift DLR-93 closed. **DLR-95 added a
+  third to the same group**: `handOfFightAfter` is the one statement of "a fight that continues moves
+  on to its next hand; a fight that ended stays on the hand it ended in, and `advanceRun` is what
+  resets it". A named function rather than an inline ternary for the group's stated reason — a second
+  transition adopting a hand's end state is exactly what gets added without remembering the rule, and
+  a named rule is what a reviewer finds.
+- **`Math.floor` on a coin figure is applied once, at the point the figure is computed** (DLR-95).
+  `quickKillPayout` is the only place the quick-kill payout is floored, so the ×0.5 tier's half-coin
+  cannot reach `Coins` — which `types.ts` documents as whole and never fractional — regardless of
+  which caller credits it. A caller that floors its own copy is the drift this closes before it opens.
+- **File-size budget** — measured after DLR-95 with `(Get-Content <file>).Count`: `config.ts` **340**,
+  `runTransitions.ts` 296, `run.ts` 199, `encounter.ts` 190, `shop.ts` 181, `index.ts` 108, `runPath.ts`
+  88, `types.ts` 84, `flask.ts` 71, `quickKill.ts` 61, `cheats.ts` 58. **`config.ts`'s squeeze is over**:
+  DLR-93 left it at 399, one line under the blocking ceiling, and this doc warned that the next contract
+  to add a tunable would have to split it. DLR-94 pre-empted that by moving the skull-weight curves out
+  to `skullWeights.ts`, so DLR-95's `QUICK_KILL_TIER_MULTIPLIERS` landed in a file with 60 lines of room.
+  **No file under `src/` is at 400 lines or above.** The budget pressure DLR-95 actually met was in the
+  *tests*: `run.test.ts` sat at 397, and appending a sixth argument to its 21 `recordEncounter` calls —
+  most of which Prettier formats multi-line — would have breached the ceiling. The contract split the
+  file in the same phase rather than handing the breach back, moving the `buyFromShop` and `shopStockFor`
+  blocks verbatim into a new `run.shop.test.ts` (339 and 82 lines afterwards) and following the existing
+  `run.flask.test.ts` / `run.whetstone.test.ts` sibling convention.
   `run.ts` is the one file that got *smaller*: DLR-93 pushed it past 400 mid-run and the remediation
   was the transitions split described in [the run](run-sequence.md), not a suppression. Historical,
   measured after DLR-84: `config.ts` 217, `run.ts` 216, `encounter.ts` 140,
@@ -469,13 +524,15 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   refused to build both under one item. The affordance is ready — `bank` and `multiplier` are two fields
   and only the first takes a bonus — so the twin is a `ShopItem` member, a price key, and a second figure
   threaded the way `bankClimbBonus` already is.
-- **`WHETSTONE_PRICE = 4` is transcribed, and priced for income that does not exist yet** (DLR-92). It
-  comes from `version-4-scope.md` §1's heading. The design's own plan for making it reachable early is the
-  **quick-kill payout** — a fast fight paying more than the flat coin — which is a separate ticket and is
-  **not built**. So today the shop's strongest item costs four fights of saving in a run expected to end in
-  its first or second stage, and **QA never afforded one in two full runs**. That is the same wall DLR-90
-  hit at 2 coins for Envenom, one item further out. Re-pricing is one line; the honest fix is probably the
-  payout.
+- **`WHETSTONE_PRICE = 4` is transcribed, and the income it was priced for now EXISTS but is unplayed**
+  (DLR-92, DLR-95). It comes from `version-4-scope.md` §1's heading. The design's own plan for making it
+  reachable early was the **quick-kill payout**, and **DLR-95 built it** — so the wall DLR-92 recorded
+  (four fights of saving in a run expected to end in its first or second stage; **QA never afforded one in
+  two full runs**) should have moved. By how much is now a **play-session question, not an arithmetic one**:
+  a first-hand kill with a full hand pays up to 12 from the payout plus the flat coin, against a price of 4.
+  **DLR-95 deliberately re-tuned no price.** What to watch: how many purchases are affordable at the first
+  shop visit after a fast opening fight. Re-pricing remains one line if it turns out to be too generous
+  rather than too mean.
 - **Whetstone stacking has no cap and no price curve** (DLR-92). Each copy adds another flat +1 at the same
   flat 4 coins, so the cash-out ceiling is a function of how long a run lasts rather than a fixed number —
   three copies quadruple the curve and a six-trick hand pays 144. `refusalFor` needed no clause, which is

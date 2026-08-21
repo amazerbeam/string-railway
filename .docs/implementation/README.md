@@ -26,11 +26,11 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                     |
 | --------------------- | ------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, PT-001, PT-002 |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, PT-002 |
-| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, PT-001, PT-002 |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, PT-001, PT-002 |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95 |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, PT-002 |
+| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, PT-001, PT-002 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -421,7 +421,8 @@ That is the exact failure DLR-89 predicted, happening as described.
 counts it, and the refusal is exact — but **never accumulated the 4 coins to buy one** in two full runs, so
 the `+2`-a-trick climb is proven against the engine and has not been watched happening. At 1 coin a fight
 against a 4-coin price, the shop's most interesting purchase is currently its least reachable; the design's
-answer is the **quick-kill payout**, which is a separate ticket and is not built.
+answer is the **quick-kill payout** — **built at DLR-95** (below), which is the ticket that should make the
+Whetstone reachable. Whether it now over-corrects is a play-session question nobody has answered yet.
 
 Start at [hunt/coins-and-the-shop.md](hunt/coins-and-the-shop.md) for the purchase and
 `bankClimbBonusFor`, or [war-council/bank-and-cash-out.md](war-council/bank-and-cash-out.md) for the
@@ -475,7 +476,7 @@ Start at [hunt/the-flask.md](hunt/the-flask.md) for the rules, the two transcrib
 boss refill, or [run-ui/the-flask-control.md](run-ui/the-flask-control.md) for the control and how it
 is kept unmistakable from the thing you pay for.
 
-## Latest — DLR-94, the cash-out the player chooses (2026-08-20)
+**DLR-94, the cash-out the player chooses (2026-08-20)**
 
 Until now the bank cashed on exactly two events, both of them things that *happened* to the player: a
 hit, and the sixth trick arriving. DLR-94 added a third that the player **chooses** — **Apply Damage**
@@ -505,6 +506,30 @@ is not a fifth `TrickOutcome`, [war-council/bank-and-cash-out.md](war-council/ba
 the two rates and the arithmetic, or
 [war-council-ui/apply-damage-plate.md](war-council-ui/apply-damage-plate.md) for the plate, the two-tap
 grammar and the extraction that had to come first.
+
+## Latest — DLR-96, the integration pass (2026-08-21)
+
+DLR-89 through DLR-95 each built one piece of the run economy — the four-rung shop, Envenom, Poison
+Guard, the Whetstone, the flask, Apply Damage and the quick-kill payout — largely in isolation. DLR-96
+added no feature: it is a verification ticket that plays the whole economy at once and writes the
+composition-level tests the individual tickets had no reason to write, because each spans code two
+different tickets touched.
+
+A static audit of every shared interface — `bank.ts`'s three cash-out paths, `RunState`'s fields, the
+three refusal unions, `config.ts`'s exported constants — found the composition **already correct**
+everywhere the ticket asked it to check. The deliverable is therefore two tests that make that claim
+checkable rather than merely asserted in a docblock:
+[war-council/README.md](war-council/README.md) covers the Whetstone-plus-forced-hit composition test,
+and [hunt/README.md](hunt/README.md) covers the combined `RunState` field-survival test.
+
+A live five-touchpoint browser playthrough (via `chrome-devtools` MCP) additionally confirmed, in the
+running app: all four shop categories (Cheat, Envenom, Poison Guard, Whetstone), a flask drink, a
+voluntary Apply Damage, and a quick-kill payout — every one with zero console errors. **One touchpoint
+was not reached live**: a stage-boss kill and its flask refill, across two independent play sessions —
+the boss holds far more health than an ordinary fight, and neither session's hands were strong enough
+to clear it. That branch's logic (`runTransitions.ts`'s `flaskAfter`) is unchanged and not itself
+suspected of a defect; it remains an open developer judgement call — accept the static trace, or play
+to a boss once by hand — rather than a code defect this ticket could fix.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

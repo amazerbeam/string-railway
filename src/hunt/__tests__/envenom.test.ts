@@ -126,7 +126,7 @@ describe('buyFromShop — Envenom (AC1, AC2)', () => {
 describe('recordEncounter and advanceRun — the charge is run state (AC2)', () => {
   it('adopts the charge count the hand handed back', () => {
     const run = buyFromShop(funded(3), ShopItem.Envenom)
-    const after = recordEncounter(run, run.encounter, run.cheats, 0, false)
+    const after = recordEncounter(run, run.encounter, run.cheats, 0, false, null)
     expect(after.envenomCharges).toBe(0)
   })
 
@@ -142,6 +142,7 @@ describe('recordEncounter and advanceRun — the charge is run state (AC2)', () 
       run.cheats,
       run.envenomCharges,
       false,
+      null,
     )
     expect(advanceRun(won).envenomCharges).toBe(1)
   })
@@ -163,6 +164,7 @@ describe('the queue never crosses a boundary (AC7)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      null,
     )
     // The booking survives onto the recorded run — and dies the moment the next fight opens.
     expect(advanceRun(won).encounter.pendingEnvenom).toEqual(NO_PENDING_ENVENOM)

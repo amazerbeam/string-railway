@@ -112,6 +112,7 @@ is still no effect anywhere in the file.
 function handleComplete(result: WarCouncilRoundResult) {
   const recorded = recordEncounter(
     run, result.encounter, result.cheats, result.envenomCharges, result.poisonGuardHeld,
+    result.unplayedAtResolve,
   )
   setRun(recorded)
   if (isEncounterResolved(recorded.encounter)) {
@@ -188,6 +189,28 @@ private `guardAfter`, so a Guard dies with the fight it was bought for. See
 So DLR-90's note now reads as a warning met rather than a prediction: this is a **five-parameter call
 carrying four hand-returned run figures**, and the right answer at the sixth is a single `HandOutcome`
 object rather than a seventh parameter.
+
+**DLR-95 added the sixth argument and did NOT take that advice — deliberately, and it is recorded here
+as accepted debt rather than an oversight.** `recordEncounter` now takes `result.unplayedAtResolve`:
+how many cards were left in the player's hand at the instant the encounter resolved, or `null` when
+this hand did not resolve it. Collapsing the trailing five parameters into an options object would
+have touched all 31 existing test call sites *more* invasively than appending one argument did, and
+that is a wider refactor than the ticket. **The prediction stands, one position later**: at a seventh
+figure, the answer is the `HandOutcome` object, not a seventh position.
+
+The driver passes the figure **straight through without inspecting it** — whether a payout is owed,
+and how much, are both `src/hunt/`'s to decide. Two props go down beside it,
+`quickKillPayout={run.lastQuickKillPayout}` and `winCoins={COINS_PER_ENCOUNTER_WIN}`, the second
+handed in rather than imported by the panel so `RunOutcomePanel` keeps reading no configuration of
+its own.
+
+**No new `useState` and no new effect.** The hand-within-fight counter this feature needs lives on
+`RunState` as `handOfFight`, not here — deliberately, because putting it beside the existing `hand`
+would have scattered its reset across `leaveForNextFight`, `handleNewRun` and `handleComplete`'s
+continuation branch, and the fourth callback added later is the one that forgets. **The run-global
+`hand` above is untouched**: it remains React's remount `key` and `dealerForRound`'s parity source,
+and the ticket explicitly forbade repurposing it. See
+[../hunt/quick-kill-payout.md](../hunt/quick-kill-payout.md).
 
 **DLR-90 added the fourth argument and two props.** `recordEncounter` takes the Envenom charges a hand
 finished with — `result.envenomCharges`, through the same `WarCouncilRoundResult` round trip `encounter`

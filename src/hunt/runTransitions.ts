@@ -18,8 +18,9 @@ import {
 import { addCheat, type CheatCard } from './cheats'
 import { isEncounterResolved, startEncounter } from './encounter'
 import { flaskHealAmount, flaskRefusalFor } from './flask'
+import { quickKillPayout } from './quickKill'
 import { priceOf, refusalFor, ShopItem } from './shop'
-import { DuelSide, type EncounterState, type Health } from './types'
+import { DuelSide, type Coins, type EncounterState, type Health } from './types'
 import { canAdvanceRun, flaskStockFor, RunOutcome, shopStockFor, type RunState } from './run'
 
 /**
@@ -44,6 +45,11 @@ import { canAdvanceRun, flaskStockFor, RunOutcome, shopStockFor, type RunState }
  * `poisonGuardHeld`, a hand cannot spend or grant a flask charge (AC4 makes it a between-fights
  * action), so there is nothing for a hand to hand back. It is read off `run` and refilled by
  * `flaskAfter` when the opponent just beaten was a stage boss.
+ *
+ * `unplayedCards` (DLR-95 AC2) is REQUIRED, not defaulted, for the reason `cheats` and
+ * `envenomCharges` above are: the compiler must enumerate every call site. A defaulted `null`
+ * would pay 0 forever the first time a driver forgot to thread the figure through, and would do it
+ * silently. `null` is the legitimate value for a hand that did not end the fight.
  */
 export function recordEncounter(
   run: RunState,
@@ -51,6 +57,7 @@ export function recordEncounter(
   cheats: readonly CheatCard[],
   envenomCharges: number,
   poisonGuardHeld: boolean,
+  unplayedCards: number | null,
 ): RunState {
   if (run.outcome !== RunOutcome.InProgress) {
     throw new RangeError(
@@ -60,13 +67,26 @@ export function recordEncounter(
   // AC1 — THE payout, here and nowhere else. `advanceRun` would never pay for the final fight of
   // a won run, and the driver is a component and must not hold the rule.
   const wonThisEncounter = encounter.winner === DuelSide.Player
+  // DLR-95 AC1 — ADDITIVE, settled by the developer 2026-08-20: a win pays the flat coin AND the
+  // quick kill. The alternative reading (this payout REPLACING the flat coin) would make a
+  // fourth-hand kill pay literally nothing for winning a fight, which is the outcome the taper is
+  // explicitly designed to avoid. Do not "simplify" the sum below back into a replacement.
+  //
+  // `run.handOfFight` is the hand just PLAYED — `handOfFightAfter` has not run yet — so it is the
+  // hand the kill landed in, which is the figure AC2 scales by.
+  const quickKill: Coins =
+    wonThisEncounter && unplayedCards !== null
+      ? quickKillPayout({ unplayedCards, handOfFight: run.handOfFight })
+      : 0
   return {
     ...run,
     encounter,
     cheats,
     envenomCharges,
     poisonGuardHeld: guardAfter(encounter, poisonGuardHeld),
-    coins: wonThisEncounter ? run.coins + COINS_PER_ENCOUNTER_WIN : run.coins,
+    coins: wonThisEncounter ? run.coins + COINS_PER_ENCOUNTER_WIN + quickKill : run.coins,
+    lastQuickKillPayout: quickKill,
+    handOfFight: handOfFightAfter(run, encounter),
     flaskCharges: flaskAfter(run, wonThisEncounter),
     outcome: outcomeFor(run.encounterIndex, run.encounterCount, encounter),
   }
@@ -91,6 +111,7 @@ export function advanceRun(run: RunState): RunState {
     encounterIndex,
     encounter: startEncounter(encounterIndex, run.encounter.health[DuelSide.Player]),
     outcome: RunOutcome.InProgress,
+    handOfFight: 1,
   }
 }
 
@@ -209,6 +230,22 @@ function outcomeFor(
  */
 function guardAfter(encounter: EncounterState, held: boolean): boolean {
   return isEncounterResolved(encounter) ? false : held
+}
+
+/**
+ * DLR-95 AC3 — ONE statement of "a fight that continues moves on to its next hand; a fight that
+ * ended stays on the hand it ended in, and `advanceRun` is what resets it".
+ *
+ * A named function rather than an inline ternary, following `guardAfter` and `flaskAfter`
+ * immediately above and for their reason: a second transition adopting a hand's end state is
+ * exactly the kind of thing that gets added without remembering this rule, and a named rule is
+ * what a reviewer finds.
+ *
+ * Holding the counter still on the deciding hand — rather than incrementing past it — is what lets
+ * the verdict and any later reader say which hand the kill landed in.
+ */
+function handOfFightAfter(run: RunState, encounter: EncounterState): number {
+  return isEncounterResolved(encounter) ? run.handOfFight : run.handOfFight + 1
 }
 
 /**

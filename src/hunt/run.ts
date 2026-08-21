@@ -86,6 +86,28 @@ export interface RunState {
    *  would be a per-fight heal. Unlike `cheats` and `envenomCharges` it is NEVER handed back by a
    *  hand, because a hand cannot drink it (AC4). NEVER persisted, exactly as `coins` above. */
   readonly flaskCharges: number
+  /** DLR-95 AC3 — which hand OF THE CURRENT FIGHT is being played. 1-BASED: a fight's first hand
+   *  is 1.
+   *
+   *  DISTINCT from `App.tsx`'s `hand`, which AC3 forbids repurposing: that one is monotonic across
+   *  the WHOLE run because it is React's remount `key` and feeds `dealerForRound`'s parity, so it
+   *  can never reset. This one must reset at every fight boundary and answers a different
+   *  question.
+   *
+   *  Lives on the run rather than in the driver because AC3's requirement is a reset "whenever a
+   *  new encounter starts", and `startRun`/`advanceRun` are exactly the two functions that start
+   *  one — which makes the reset structural instead of something three separate callbacks have to
+   *  remember. `recordEncounter` advances it. NEVER persisted, exactly as `coins` above. */
+  readonly handOfFight: number
+  /** DLR-95 AC6 — the receipt: what the quick-kill payout paid for the encounter just recorded, so
+   *  the verdict renders a figure the run RECORDED rather than re-deriving the rule from state a
+   *  component would have to hold in parallel. `RunOutcomePanel` computes nothing, and this is
+   *  what keeps that true.
+   *
+   *  Written on EVERY `recordEncounter`, `0` included — a field written only on a win is the field
+   *  that shows the last fight's payout on this one's verdict. NEVER persisted, exactly as `coins`
+   *  above. */
+  readonly lastQuickKillPayout: Coins
 }
 
 /**
@@ -108,6 +130,8 @@ export function startRun(playerHealth: Health = PLAYER_START_HEALTH): RunState {
     poisonGuardHeld: false,
     whetstones: 0,
     flaskCharges: FLASK_STARTING_CHARGES,
+    handOfFight: 1,
+    lastQuickKillPayout: 0,
   }
 }
 

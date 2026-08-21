@@ -42,6 +42,50 @@ the run is over. The panel's only internal derivation is `const verdict = canCon
 : outcome` — the fourth display case the three-value `RunOutcome` union does not carry, because
 "fight won with another waiting" is `InProgress` with the Quarry down.
 
+## The reward line names what the win paid — DLR-95
+
+Until DLR-95 a win paid one coin and the verdict never said so. The quick-kill payout made the
+figure variable — a fast kill can pay several coins, a slow one none — and a coin reward a player
+cannot see the reason for reads as arbitrary. So the panel gained one `<p className="run-reward"
+role="status">` above the existing `.run-carry` line:
+
+```
+Fight won +1 coin · Quick kill +10 coins
+```
+
+Four decisions are worth keeping:
+
+- **Two clauses, not one figure.** The flat coin and the quick kill are named separately, so a quick
+  kill never reads as the flat coin having grown. That the two are additive at all is a developer
+  decision from 2026-08-20 — see [../hunt/quick-kill-payout.md](../hunt/quick-kill-payout.md).
+- **The quick-kill clause is omitted entirely at zero**, rather than shown as `+0 coins`. That is the
+  design's taper read as copy: a slow fight's verdict does not advertise a mechanic that paid it
+  nothing.
+- **It is gated on the outcome, not on `canContinue`.** The line renders on any non-lost verdict,
+  because the **final fight of a won run pays a quick kill too** and `canContinue` is false there. A
+  lost run shows no reward line at all, and a spec pins that absence.
+- **The panel still computes nothing.** Both figures arrive as props — `quickKillPayout` straight off
+  `RunState.lastQuickKillPayout`, and `winCoins` **handed in rather than imported**, so the panel
+  reads no configuration of its own. The wording lives in `runLabels.ts`'s `rewardText(winCoins,
+  quickKillPayout)`, and the plural in a single `coinsText` helper that `unspentCoinsText` was
+  re-pointed at in the same ticket, so two readouts of the same purse cannot disagree about it.
+
+`game-ux`'s floor is met cheaply: it is one more line in a centred column that already sizes with
+`clamp()`, it adds **no interactive control** and therefore no tap cost and no tab stop, and it is
+distinguishable in greyscale because the words themselves differ — `.run-reward` is bracketed by a
+border rather than merely tinted, following `.run-warning`'s precedent, so the tint reinforces the
+state rather than carrying it.
+
+> **The copy is placeholder**, exactly as `runLabels.ts`'s own header states all of its copy is.
+> Whether the line should also name *why* — how many cards were left, which hand it was — is a
+> developer call that was flagged rather than decided; the richer form costs two more `RunState`
+> fields to carry the count and the hand number.
+
+> **Adding a second `role="status"` node broke a query, not a behaviour.** A pre-existing spec used
+> `getByRole('status')` to find the fight-position line; with the reward line present that match is
+> ambiguous. It was switched to the `getAllByRole('status').some(...)` pattern already used elsewhere
+> in the same file. Worth knowing before adding a third live region to this panel.
+
 ## Two forward controls, and the shop is opt-in
 
 **DLR-84 replaced the single `Next fight` control with a `Continue` / `Shop` pair**, on the

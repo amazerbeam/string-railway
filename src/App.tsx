@@ -6,6 +6,7 @@ import {
   buyFromShop,
   canAdvanceRun,
   canBuyAnything,
+  COINS_PER_ENCOUNTER_WIN,
   drinkFlask,
   DuelSide,
   flaskRefusalFor,
@@ -131,6 +132,7 @@ function App() {
       result.cheats,
       result.envenomCharges,
       result.poisonGuardHeld,
+      result.unplayedAtResolve,
     )
     setRun(recorded)
     if (isEncounterResolved(recorded.encounter)) {
@@ -270,6 +272,8 @@ function App() {
         tricks={tricks}
         canContinue={canAdvanceRun(run)}
         coins={run.coins}
+        quickKillPayout={run.lastQuickKillPayout}
+        winCoins={COINS_PER_ENCOUNTER_WIN}
         warning={phase === RunPhase.Warned}
         onShop={() => setPhase(RunPhase.Shop)}
         onContinue={handleContinue}

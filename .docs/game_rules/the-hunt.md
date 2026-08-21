@@ -4,8 +4,15 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-08-20**. Everything below is reachable in
+Last reviewed against the code and the design on **2026-08-21**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
+
+> **Killing quickly now pays — DLR-95, 2026-08-21.** Winning a fight used to pay one coin whether it
+> took a single trick or five hands. It still pays that coin, and now it pays **another for every card
+> still unplayed in your hand** when the Quarry goes down — doubled if you killed them in the fight's
+> first hand, halved in the third, and nothing from the fourth hand on (section 10). The two payments
+> **add**; the flat coin is what stops a long win paying nothing at all. Engine and screen landed
+> together and the verdict names both payments, so this is playable right now.
 
 > **You can cash your streak yourself now, and being caught pays less — DLR-94, 2026-08-20.** Until
 > now the bank only ever cashed when you were hit, or when the sixth trick arrived; you never chose the
@@ -1266,14 +1273,47 @@ look at the map. From a finished run there is one: start a new run.
 
 ### Winning a fight pays a coin — **[settled]**; the amount is **[provisional]**
 
-Beating a Quarry pays you **1 coin**. It is paid at the moment the fight is won, and only then —
-nothing else in the game pays anything. Overkill damage pays nothing, taking tricks pays nothing,
-and health remaining pays nothing.
+Beating a Quarry pays you **1 coin**, whatever else happens. It is paid at the moment the fight is
+won. Overkill damage pays nothing and health remaining pays nothing.
 
 Coins **carry for the whole run** and are on screen throughout: on a plate beside the fight counter
 while you play, on the verdict, and in the shop while you choose. They do not survive a new run.
 
 **Whose decision:** the developer's — 1 coin a fight is transcribed from the ticket, not derived.
+
+### Killing quickly pays more, on top of that coin — **[settled]** since 2026-08-21
+
+Ending a fight fast pays you **a coin for every card still unplayed in your hand** at the instant the
+Quarry's health reaches zero, multiplied by which hand **of that fight** you killed them in:
+
+| You kill them in the fight's… | Each unplayed card pays | A kill with five cards left pays |
+| ----------------------------- | ----------------------- | -------------------------------- |
+| **first hand**                | 2 coins                 | 10                               |
+| **second hand**               | 1 coin                  | 5                                |
+| **third hand**                | half a coin             | 2                                |
+| **fourth hand or later**      | nothing                 | 0                                |
+
+Two things about the arithmetic. **A fraction is always rounded down** — a third-hand kill with five
+cards left pays 2, not 2.5 — so the rounding never falls in your favour. And **the count is taken
+after the killing card has left your hand**: winning on the first trick of the first hand leaves five
+of your six, which is where the ten-coin figure above comes from.
+
+**This is paid on top of the coin for winning, not instead of it.** So the worst this can do is pay
+you nothing extra: a fight that drags to its fourth hand still pays the flat coin for having won it.
+
+Killing on the last trick of a hand pays nothing from this, however early that hand was — there is
+nothing left unplayed to count. The reward is for ending it *early*, not merely for ending it.
+
+The verdict names both payments separately when this one fires — `Fight won +1 coin · Quick kill
++10 coins` — and says nothing about it when it paid nothing.
+
+> This is the first thing in the game that pays a **variable** amount. Before it, every win paid the
+> same coin whether it took one trick or five hands.
+
+**Whose decision:** the curve is settled — version-4-scope §4 marks it final, and the values are
+transcribed rather than chosen. **That the two payments add rather than replace one another** was
+the developer's call, made 2026-08-20. Whether the shop is now too cheap against this income is an
+open play-session question — see [Known tensions](#known-tensions-recorded-not-resolved).
 
 ### Between fights you choose: go on, visit the shop, or look at the map — **[settled]**
 
@@ -1459,9 +1499,11 @@ too, alongside who is coming next.
   **decree**. The budget is **4 edits per encounter** (**[provisional]**). **[not built]** — nothing
   reads the budget. **The player holds no skulls of their own**, and Forage could not add any.
 - **Surplus cash-out damage paid back as money** — **[not built]**. The intention stated at PT-002
-  was that overkill (section 8) becomes currency; the coin you actually get is a **flat payment for
-  winning a fight** instead, and nothing reads overkill. That flat payout is the part of the
-  intention that shipped.
+  was that overkill (section 8) becomes currency, and nothing reads overkill to this day. What
+  shipped in its place is a payment for **speed** rather than for surplus: the flat coin for winning,
+  plus the quick-kill payout counted from your **unplayed cards** (section 10). Both reward ending a
+  fight decisively, but neither reads the damage you overshot by. Deliberately a different mechanic,
+  not this one built late.
 - **Anything in the shop that raises the player's damage — MOSTLY BUILT since 2026-08-19.** Two purchases
   now do it, in different ways. Envenom deals a flat **4 damage** to the Quarry when the Quarry wins the
   trick it is played into — a **fixed one-off hit**, not a multiplier on anything. **The Whetstone is the
@@ -1581,7 +1623,22 @@ the mechanics themselves are documented in `../implementation/`.
 > the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
 > a `RunState` field and a transition in the same breath means exactly that.
 
-> **Where the last contract stands, 2026-08-20 (DLR-94).** Engine and screen landed together, and QA drove
+> **Where the last contract stands, 2026-08-21 (DLR-95).** Engine and screen landed together, and QA
+> drove it end to end in a real browser: a first-hand kill with two cards still in hand paid **+4**
+> beside the flat **+1**, the verdict read `FIGHT WON +1 COIN · QUICK KILL +4 COINS`, and the purse
+> moved 0 → 5 — so the figure on screen and the jump in the purse agree, and **all of it is reachable
+> by playing right now**. A lost run correctly shows no reward line at all. **The curve is `settled`,
+> not `provisional`** — version-4-scope §4 marks it final and the values are transcribed, not chosen
+> here. **One reading was the developer's and is recorded as theirs**: that the quick kill **adds to**
+> the flat coin rather than replacing it (2026-08-20), which is what stops a fourth-hand win paying
+> literally nothing. **All of the reward line's copy is placeholder**, as every label in that file is,
+> and whether it should also name *why* — how many cards, which hand — was flagged rather than
+> decided. **Nothing was retuned**: no price, health total or damage figure moved in response to the
+> new income, and `WHETSTONE_PRICE` in particular is untouched. **What has not been measured is
+> whether the economy still holds** at up to 13 coins a fight against a 4-coin item. Recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
+
+> **Where DLR-94 stands, 2026-08-20.** Engine and screen landed together, and QA drove
 > it end to end in a real browser: the plate on the felt rail, the poise, the commit paying the **full**
 > `bank × multiplier` with the player's hearts untouched, the bank readout zeroing, the trick carrying on
 > and resolving normally afterwards, and the empty-bank refusal with its reason **on screen** are **all
@@ -1733,7 +1790,7 @@ the mechanics themselves are documented in `../implementation/`.
 | No cap on hands per encounter                 | settled — deliberately none      | no cap key exists to read                                                                                                        | Developer, if the tail stalls                           |
 | Tricks and multiplier on screen throughout    | settled                          | `src/app/warCouncil/BankMeter.tsx`; wording in `labels.ts` — `TRICKS_LABEL`, `MULTIPLIER_LABEL`                                  | Developer — the wording and the visual values           |
 | The two terms stay separately addressable     | settled — **and used since DLR-92** | `src/warCouncil/bank.ts` — `bank` and `multiplier` are two fields, and the Whetstone moves only the first; the affordance PT-002 kept them apart for is now load-bearing                                  | —                                                       |
-| Surplus damage paid back as money             | **not built**                    | nothing reads overkill — the coin is a flat payment for winning, not a share of the cash-out                                     | Developer — a later ticket                              |
+| Surplus damage paid back as money             | **not built**                    | nothing reads overkill — winning pays a flat coin plus a payout counted from unplayed cards, neither a share of the cash-out     | Developer — a later ticket                              |
 | Both sides' health on screen                  | settled                          | `src/app/warCouncil/DuelHealthBars.tsx`, `duelHealthBars.ts`, `HeartMark.tsx` — one heart per point since DLR-86                 | Developer — whether 10 (and 18) hearts read well        |
 | The Quarry's hearts preview the banked streak | **provisional**                  | `src/app/warCouncil/duelHealthBars.ts` — `projectedFromStreak`; styling in `warCouncilHealthBars.css`                            | Developer — whether it reads as pending or as spent     |
 | The hand-over tally (between hands only)      | settled                          | `src/app/warCouncil/RoundOverPanel.tsx` — its terminal branch was **deleted** by DLR-82; a resolved fight is the verdict's       | Developer — whether losing the felt's tally costs anything |
@@ -1745,7 +1802,12 @@ the mechanics themselves are documented in `../implementation/`.
 | Telegraph fidelity                            | provisional                      | `src/hunt/config.ts` — `TELEGRAPH_FIDELITY`                                                                                      | Developer, after playtest                               |
 | Rank 8's name ("Poison")                      | **open** — misleading            | `src/app/warCouncil/labels.ts` — `RANK_NAME`                                                                                     | Developer                                               |
 | Between-encounter restore (none, automatic)   | **not built** — by decision      | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE`; still **no consumer** after DLR-93. A grep in DLR-82's, DLR-84's and DLR-93's final verification guards it | **Developer** — the flask has now shipped *without* wiring this, so it is a separate decision rather than a story waiting to land |
-| Winning a fight pays 1 coin                   | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `COINS_PER_ENCOUNTER_WIN`; credited by `src/hunt/runTransitions.ts` — `recordEncounter`, the single payout site      | Developer — transcribed, not derived                    |
+| Winning a fight pays 1 coin                   | **provisional** — set 2026-08-16 | `src/hunt/config.ts` — `COINS_PER_ENCOUNTER_WIN`; credited by `src/hunt/runTransitions.ts` — `recordEncounter`, the single crediting site      | Developer — transcribed, not derived                    |
+| A quick kill pays per unplayed card           | **settled** — 2026-08-21          | `src/hunt/quickKill.ts` — `quickKillPayout`, the one place the fraction is floored; curve in `src/hunt/config.ts` — `QUICK_KILL_TIER_MULTIPLIERS`  | — transcribed from version-4-scope §4, marked final     |
+| The two payments add rather than replace      | **settled** — 2026-08-20          | `src/hunt/runTransitions.ts` — `recordEncounter` credits `COINS_PER_ENCOUNTER_WIN + quickKill` in one expression                              | — the developer resolved it; do not collapse the sum    |
+| Which hand of the fight the kill landed in    | **settled**                       | `src/hunt/run.ts` — `RunState.handOfFight`, 1-based; advanced and reset by `src/hunt/runTransitions.ts` — `handOfFightAfter` and `advanceRun` | —                                                       |
+| The unplayed count is taken at the kill       | **settled**                       | `src/app/warCouncil/roundReducer.ts` — `captureUnplayed`, frozen at the resolving transition, not re-read later                                | —                                                       |
+| The verdict names what the win paid           | **settled**                       | `src/app/run/RunOutcomePanel.tsx` — the `.run-reward` line; wording in `src/app/run/runLabels.ts` — `rewardText`                              | Developer — all of the copy is placeholder              |
 | Coins carry across the run, and are on screen | settled — since DLR-84           | `src/hunt/run.ts` — `RunState.coins`, carried by `advanceRun`'s spread; drawn by `src/app/warCouncil/RoundStatusBand.tsx`'s `.wc-coins` plate | —                                          |
 | The shop, and its exactly five items          | settled — since DLR-84           | `src/hunt/shop.ts` — `SHOP_ITEMS`, unchanged in order by DLR-89 and widened by DLR-90, DLR-91 and DLR-92 (the Whetstone inserted before `Heal`, which must stay last); rendered by `src/app/run/ShopPanel.tsx`, which reads the groupings below rather than listing the items | —              |
 | Four shelves, by how long a purchase lasts    | settled — since DLR-89           | `src/hunt/shop.ts` — `ShopCategory` and `SHOP_CATEGORIES` (which fixes the order); drawn by `src/app/run/ShopCategoryTabs.tsx`   | Developer — the four labels are placeholder copy         |
@@ -2145,6 +2207,25 @@ around it. Recorded under [Known tensions](#known-tensions-recorded-not-resolved
 
 ### Known tensions, recorded not resolved
 
+- **The shop was priced for an income that has just arrived, and nobody has played against it** (new
+  2026-08-21, DLR-95). The Whetstone costs 4 coins and was priced against exactly this payout — the
+  design's own answer to "the shop's best item is unreachable", after QA never afforded one in two
+  full runs at 1 coin a fight. A first-hand kill can now pay up to 13 coins in a single fight. So the
+  wall has moved, and the open question flipped direction: whether the shop is now **too cheap**
+  rather than too dear. **No price was retuned.** The cheapest measurement is how many purchases are
+  affordable at the first shop visit after a fast opening fight.
+- **The reward is largest exactly when you needed it least** (new 2026-08-21, DLR-95). The payout
+  counts cards you did **not** have to play, so it pays most for the fights that were already
+  comfortable, and nothing for the grinding ones where coins would help most. That is the intended
+  shape — it is a reward for decisive play, not a rubber band — but it compounds: a good run gets
+  richer and a bad one stays poor. Whether that reads as a satisfying skill payoff or as a
+  rich-get-richer spiral is a play question, not an arithmetic one.
+- **"Kill on the last trick" pays nothing, and it may not feel like a taper** (new 2026-08-21,
+  DLR-95). Winning on a hand's final trick leaves nothing unplayed, so it pays zero from this
+  mechanic even in the fight's **first** hand — the tier was ×2, and twice nothing is nothing. That is
+  the rule working as written, but it is the case most likely to read as the reward having failed to
+  fire rather than as having been earned at zero. The verdict omits the clause entirely at zero,
+  which helps; whether it is enough is unmeasured.
 - **Apply Damage may have no wrong answer, which is the one thing it was built to avoid** (new
   2026-08-20, DLR-94). The two-thirds penalty exists to make holding a streak a bet. But the reduction is
   a *flat* third at every streak length, while the risk of being caught is not flat — it rises with each

@@ -1,0 +1,524 @@
+<title>The Composition Audit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --pine-50: #F5F1E6;
+    --pine-100: #FFFFFF;
+    --pine-900: #1D2A21;
+    --pine-600: #5C6B5E;
+    --pine-border: #DCD5C2;
+    --gold: #8A6A14;
+    --gold-soft: #F0E6C8;
+    --brick: #8B3A3A;
+    --brick-soft: #F3E3DF;
+    --sage-chip: #E4EBE0;
+    --sage-chip-ink: #3C5240;
+
+    --font-display: 'Fraunces', ui-serif, Georgia, 'Times New Roman', serif;
+    --font-body: 'Source Sans 3', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+    --bg: var(--pine-50);
+    --surface: var(--pine-100);
+    --ink: var(--pine-900);
+    --muted: var(--pine-600);
+    --border: var(--pine-border);
+    --accent: var(--gold);
+    --accent-soft: var(--gold-soft);
+    --attention: var(--brick);
+    --attention-soft: var(--brick-soft);
+    --chip: var(--sage-chip);
+    --chip-ink: var(--sage-chip-ink);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101B15;
+      --surface: #17251D;
+      --ink: #EAE6D6;
+      --muted: #93A594;
+      --border: #2C3D30;
+      --accent: #D4AF37;
+      --accent-soft: #2C2712;
+      --attention: #D08277;
+      --attention-soft: #3A2320;
+      --chip: #223228;
+      --chip-ink: #A9C2AA;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #101B15;
+    --surface: #17251D;
+    --ink: #EAE6D6;
+    --muted: #93A594;
+    --border: #2C3D30;
+    --accent: #D4AF37;
+    --accent-soft: #2C2712;
+    --attention: #D08277;
+    --attention-soft: #3A2320;
+    --chip: #223228;
+    --chip-ink: #A9C2AA;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 4.5rem) clamp(1.25rem, 4vw, 1.5rem) 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.75rem;
+  }
+
+  /* ---- Masthead ---- */
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding-bottom: 1.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .eyebrow-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.04em;
+    padding: 0.32rem 0.7rem;
+    border-radius: 999px;
+    background: var(--chip);
+    color: var(--chip-ink);
+    white-space: nowrap;
+  }
+
+  .status-chip::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--chip-ink);
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(2.1rem, 5vw, 2.9rem);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .dek {
+    font-size: 1.08rem;
+    color: var(--muted);
+    max-width: 58ch;
+    margin: 0;
+  }
+
+  /* ---- Section rhythm ---- */
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.5rem;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  p { margin: 0; max-width: 66ch; }
+  .prose { display: flex; flex-direction: column; gap: 0.85rem; }
+  .prose p { color: var(--ink); }
+  strong { font-weight: 600; }
+
+  /* ---- Verdict banner ---- */
+  .verdict {
+    display: flex;
+    align-items: baseline;
+    gap: 1.1rem;
+    padding: 1.4rem 1.5rem;
+    background: var(--accent-soft);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .verdict-mark {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 2.4rem;
+    color: var(--accent);
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .verdict-text {
+    font-size: 1.05rem;
+    color: var(--ink);
+  }
+  .verdict-text b { font-family: var(--font-display); font-weight: 600; }
+
+  /* ---- Stat row ---- */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .stat {
+    background: var(--surface);
+    padding: 1.1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .stat-value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .stat-label {
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  /* ---- Two-column ledger ---- */
+  .ledger {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .ledger-col {
+    background: var(--surface);
+    padding: 1.35rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+  .ledger-col h3 {
+    margin: 0;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.92rem;
+  }
+  .ledger-col.true h3 { color: var(--sage-chip-ink, var(--ink)); }
+  .ledger-col.open h3 { color: var(--attention); }
+  .ledger-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+  .ledger-list li {
+    font-size: 0.92rem;
+    color: var(--ink);
+    padding-left: 1.1rem;
+    position: relative;
+    line-height: 1.45;
+  }
+  .true .ledger-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--sage-chip-ink);
+    font-weight: 600;
+  }
+  .open .ledger-list li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--attention);
+    font-weight: 600;
+  }
+  .ledger-list .sub {
+    display: block;
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 0.15rem;
+  }
+
+  @media (max-width: 600px) {
+    .ledger { grid-template-columns: 1fr; }
+  }
+
+  /* ---- Q&A callout ---- */
+  .qa-block {
+    border-left: 3px solid var(--accent);
+    padding: 0.2rem 0 0.2rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .qa-q {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--ink);
+  }
+  .qa-a { color: var(--muted); font-size: 0.96rem; }
+
+  /* ---- Deliverables list ---- */
+  .deliverables {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-top: 1px solid var(--border);
+  }
+  .deliverable {
+    display: grid;
+    grid-template-columns: 1.6rem 1fr;
+    gap: 0.9rem;
+    padding: 0.95rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .deliverable-num {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--accent);
+    padding-top: 0.15rem;
+  }
+  .deliverable-body { display: flex; flex-direction: column; gap: 0.15rem; }
+  .deliverable-title { font-weight: 600; font-size: 0.98rem; }
+  .deliverable-sub { color: var(--muted); font-size: 0.88rem; }
+  .tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    background: var(--chip);
+    color: var(--chip-ink);
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+  .tag.conditional { background: var(--attention-soft); color: var(--attention); }
+  .tag.done { background: var(--sage-chip); color: var(--sage-chip-ink); }
+
+  /* ---- Next step ---- */
+  .next {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding: 1.6rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .next-label {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  code, .code-line {
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+    background: var(--chip);
+    color: var(--chip-ink);
+    padding: 0.55rem 0.8rem;
+    border-radius: 6px;
+    display: inline-block;
+    width: fit-content;
+  }
+
+  footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  footer .path { font-family: var(--font-mono); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .page { animation: rise 0.5s ease-out; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <div class="eyebrow-row">
+      <span class="eyebrow">Strings &amp; Stations · The Hunt</span>
+      <span class="status-chip">Complete — gates green, one item for the developer</span>
+    </div>
+    <h1>The Composition Audit</h1>
+    <p class="dek">DLR-96 checked whether seven independently-built run-economy features — the shop, poison, poison guard, Whetstone, the flask, Apply Damage, and the quick-kill payout — actually work as one system. Executed 2026-08-21.</p>
+  </header>
+
+  <div class="verdict">
+    <span class="verdict-mark">✓</span>
+    <p class="verdict-text">No defect found, in either pass. The static audit's finding held under live play: <b>every path this run actually exercised composed correctly</b> — zero console errors, every control disabled exactly when its refusal rule said it should. Two of the five touchpoints (a boss-kill flask refill, a quick kill) weren't reached in this session's live play; their rules are independently proven by test, but not yet watched happen on screen.</p>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><span class="stat-value">957</span><span class="stat-label">tests passing, 0 failed</span></div>
+    <div class="stat"><span class="stat-value">0</span><span class="stat-label">typecheck errors</span></div>
+    <div class="stat"><span class="stat-value">0</span><span class="stat-label">lint issues</span></div>
+    <div class="stat"><span class="stat-value">0</span><span class="stat-label">console errors, live</span></div>
+  </div>
+
+  <section>
+    <span class="section-label">What actually happened</span>
+    <div class="prose">
+      <p>The plan's static read found nothing to fix, and it still holds: no code in this batch of seven tickets changed. Two composition tests were written — one proves a Whetstone-boosted bank feeds the forced-hit penalty, the other proves every run-carried figure survives a fight boundary together, not one field at a time — and both pass. The full gate stack (typecheck, lint, both Vitest projects, the unfiltered suite, the production build) is clean.</p>
+      <p>The live playthrough is the one piece worth reading carefully. Three ordinary hands were played end-to-end against a real dev server. Every shop purchase that came up — a Cheat, an Envenom, a Poison Guard — committed correctly and the refusal copy was exactly right when coins ran short. The flask was drunk, then correctly refused once its charges emptied. A voluntary Apply Damage cashed out the bank and reset it in one transition, refusal copy reappearing immediately after. Not one console error surfaced across roughly thirteen minutes of play. What didn't come up in three attempts: a Whetstone purchase specifically (coins never reached its price before a run ended), a stage-boss kill with its flask refill, and a quick kill. Those three rules are already covered by unit tests — none of this session's play contradicts them — but nobody has watched them fire in the browser yet.</p>
+    </div>
+  </section>
+
+  <section>
+    <span class="section-label">State of the audit, resolved</span>
+    <div class="ledger">
+      <div class="ledger-col true">
+        <h3>Confirmed, live and by test</h3>
+        <ul class="ledger-list">
+          <li>The Whetstone/forced-hit composition test passes — the boosted bank, not the bare one, feeds the penalty, exactly as read from <code style="padding:0.1em 0.4em;">bank.ts</code>.</li>
+          <li>The run-state survival test passes — every new field carries or resets correctly, all populated at once, across one fight boundary.</li>
+          <li>Three shop categories, a flask drink, and a voluntary Apply Damage all committed correctly live, with zero console errors.</li>
+          <li>No config key duplication, no refusal-union mismatch — the audit's other findings held with nothing left to fix.</li>
+        </ul>
+      </div>
+      <div class="ledger-col open">
+        <h3>Proven by test, not yet watched live</h3>
+        <ul class="ledger-list">
+          <li>A live Whetstone purchase.<span class="sub">Coins never reached the 4-coin price in three runs — a coverage gap, not a refusal that misfired; the tile correctly showed itself disabled.</span></li>
+          <li>A stage-boss kill and its flask refill.<span class="sub">The boss holds far more health than an ordinary fight; three hands weren't strong enough to clear it.</span></li>
+          <li>A quick-kill payout.<span class="sub">Needs a win with cards still unplayed — a specific hand shape three scripted runs didn't happen to produce.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <span class="section-label">The question on the table</span>
+    <div class="qa-block">
+      <p class="qa-q">"Can the game actually be won?"</p>
+      <p class="qa-a">Yes, watched directly for the parts that came up: three fights were played to a clean win with the economy behaving correctly the whole way. The two highest-value moments — a boss kill and a quick kill — weren't reached in this session, so "the whole run, start to finish, including its two best rewards" is still resting on unit tests rather than a hand on the controls. That's the one open item below.</p>
+    </div>
+  </section>
+
+  <section>
+    <span class="section-label">One item for the developer</span>
+    <div class="prose">
+      <p><strong>Is three attempts (~13 minutes) enough live coverage to close AC1, or should someone play further to actually reach a boss kill and a quick kill?</strong> Nothing found in this session suggests either would misbehave — the logic both depend on is independently tested — but neither has been watched happen on screen. No payout figure looked surprising in anything that was observed; there is nothing here to flag as a number worth retuning.</p>
+    </div>
+  </section>
+
+  <section>
+    <span class="section-label">What this ticket delivered</span>
+    <div class="deliverables">
+      <div class="deliverable">
+        <span class="deliverable-num">01</span>
+        <div class="deliverable-body">
+          <span class="deliverable-title">Whetstone / forced-hit composition test<span class="tag done">passing</span></span>
+          <span class="deliverable-sub">Proves the boosted bank, not the bare one, feeds the penalty.</span>
+        </div>
+      </div>
+      <div class="deliverable">
+        <span class="deliverable-num">02</span>
+        <div class="deliverable-body">
+          <span class="deliverable-title">Run-state survival test<span class="tag done">passing</span></span>
+          <span class="deliverable-sub">Every carried figure populated at once, checked across a fight boundary.</span>
+        </div>
+      </div>
+      <div class="deliverable">
+        <span class="deliverable-num">03</span>
+        <div class="deliverable-body">
+          <span class="deliverable-title">Live playthrough<span class="tag done">3 of 5 touchpoints confirmed</span></span>
+          <span class="deliverable-sub">Shop purchases, flask drink, voluntary Apply Damage — all correct, zero console errors. Boss-kill refill and quick kill not yet reached live.</span>
+        </div>
+      </div>
+      <div class="deliverable">
+        <span class="deliverable-num">04</span>
+        <div class="deliverable-body">
+          <span class="deliverable-title">Fix, only if the playthrough found one<span class="tag done">nothing found</span></span>
+          <span class="deliverable-sub">No genuine interface mismatch turned up in what was played — no code changed this ticket.</span>
+        </div>
+      </div>
+      <div class="deliverable">
+        <span class="deliverable-num">05</span>
+        <div class="deliverable-body">
+          <span class="deliverable-title">Clean gates &amp; a build<span class="tag done">all green</span></span>
+          <span class="deliverable-sub">Typecheck, lint, both Vitest projects, the full 957-test suite, and a production build — all passed.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="next">
+    <span class="next-label">Next step</span>
+    <p>All five acceptance criteria are met on what this session could observe. The one open call is whether to accept the current live coverage or extend the playthrough to reach a boss kill and a quick kill by hand.</p>
+    <span class="code-line">/fb-archive DLR-96-integration-pass</span>
+  </div>
+
+  <footer>
+    <span>DLR-96 · Integration pass</span>
+    <span class="path">.claude/contract/DLR-96-integration-pass/</span>
+  </footer>
+
+</div>

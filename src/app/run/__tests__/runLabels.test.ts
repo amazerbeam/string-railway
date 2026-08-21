@@ -12,6 +12,7 @@ import {
   runPositionLabel,
   runProgressText,
   runVerdictDetail,
+  rewardText,
   tricksTakenText,
   unspentCoinsText,
 } from '../runLabels'
@@ -87,6 +88,20 @@ describe('unspentCoinsText', () => {
     expect(unspentCoinsText(1)).toContain('1 coin')
     expect(unspentCoinsText(1)).not.toContain('1 coins')
     expect(unspentCoinsText(2)).toContain('2 coins')
+  })
+})
+
+describe('rewardText (DLR-95 AC1, AC6)', () => {
+  it('names both payouts when the quick kill fired', () => {
+    expect(rewardText(1, 10)).toBe('Fight won +1 coin · Quick kill +10 coins')
+  })
+
+  it('drops the quick-kill clause entirely when it paid nothing (AC5)', () => {
+    expect(rewardText(1, 0)).toBe('Fight won +1 coin')
+  })
+
+  it('singularises a one-coin quick kill', () => {
+    expect(rewardText(1, 1)).toBe('Fight won +1 coin · Quick kill +1 coin')
   })
 })
 
