@@ -338,3 +338,13 @@ export const DAMAGE_PER_HIT: Damage = 1
 // it divides, so the dividend is an exact integer.
 export const FORCED_CASH_OUT_NUMERATOR: number = 2
 export const FORCED_CASH_OUT_DENOMINATOR: number = 3
+
+// DLR-100 D4/D5 (the-discard.md) — the discard's two figures. BOTH PROVISIONAL, the developer's
+// values set 2026-08-19, explicitly expected to move after play — the design doc's own words:
+// "ship it, play it, move it." Two separate keys, not one shared number, because they answer
+// different questions — how many TIMES per fight vs how BIG one throw can be — and retuning one
+// must not accidentally move the other.
+// UNIT: DISCARDS_PER_FIGHT — discard actions per fight, reset by advanceRun at every fight
+// boundary. MAX_CARDS_PER_DISCARD — cards per single discard action.
+export const DISCARDS_PER_FIGHT = 3
+export const MAX_CARDS_PER_DISCARD = 3

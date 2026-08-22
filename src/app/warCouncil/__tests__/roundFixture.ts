@@ -1,5 +1,6 @@
 import { PlayerSide, RoundPhase, Suit, type Card, type WarCouncilState } from '../../../warCouncil'
 import {
+  DISCARDS_PER_FIGHT,
   DuelSide,
   PLAYER_START_HEALTH,
   QuarryCharacter,
@@ -95,6 +96,10 @@ export const poisonGuardHeldFixture = false
 /** A fixed bank-climb bonus for component specs (DLR-92 AC4) — zero, so a spec that does not
  *  exercise the buff is not accidentally exercising it. */
 export const bankClimbBonusFixture = 0
+
+/** A fixed discard budget for component specs (DLR-100 AC5) — the full per-fight allotment, so a
+ *  spec that does not exercise the discard is not accidentally starting mid-budget. */
+export const discardsRemainingFixture = DISCARDS_PER_FIGHT
 
 /** A fixed, NAMED Quarry bar label for component specs. Deliberately not the generic
  *  `HEALTH_BAR_LABEL[Quarry]` wording, so a spec querying the bar by name proves the threaded

@@ -5,6 +5,7 @@ import { roundReducer } from '../roundReducer'
 import { createRoundUiState, RoundUiActionKind, type RoundUiSeed } from '../roundUiState'
 import {
   bankClimbBonusFixture,
+  discardsRemainingFixture,
   encounterFixture,
   envenomChargesFixture,
   makeRound,
@@ -26,6 +27,7 @@ function seedOneTapKill(quarryHealth: number): RoundUiSeed {
     envenomCharges: envenomChargesFixture,
     poisonGuardHeld: poisonGuardHeldFixture,
     bankClimbBonus: bankClimbBonusFixture,
+    discardsRemaining: discardsRemainingFixture,
   }
 }
 

@@ -1,7 +1,7 @@
 # War Council — `src/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, PT-001, PT-002
+**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, PT-001, PT-002
 
 ## Responsibility
 
@@ -88,6 +88,21 @@ Damage, and a quick-kill payout) found nothing beyond what the static audit alre
 stage-boss kill and its flask refill were not reached live and remain a developer judgement call
 rather than a defect.
 
+**DLR-100 added a fifth standalone mechanic module beside `voluntaryCashOut.ts`, and it is the first
+one that generalises an existing convention rather than inventing a new one.** `discard.ts` swaps 1
+to `MAX_CARDS_PER_DISCARD` cards from a hand for the same count off the front of `drawPile`,
+appending the discarded cards to its back — `applyWoodcutterDraw`'s own one-card
+"draw one, bury one on the bottom" convention, generalised to n. It follows `voluntaryCashOut.ts`'s
+shape exactly: a `DiscardRefusal` `as const` reason-code map, a `DiscardStock` interface of plain
+values, a `discardRefusalFor(stock)` predicate read by both the reducer's guard and the rail
+control's disabled state, and an `applyDiscard` that throws on a violated precondition the reducer
+already checked — never on a UI-reachable path. This module's whole contribution is the swap and its
+refusal; the budget it draws down lives on `RunState` in `src/hunt/` (see
+[../hunt/the-discard-budget.md](../hunt/the-discard-budget.md)), and the moment it may be spent is
+computed in `src/app/warCouncil/roundUiState.ts`, because that predicate reads `RoundUiState` fields
+(`resolvedTrick`, `prompt`, `cpuFault`) with no meaning inside `RoundState`. See
+[The discard — the swap and its refusal](the-discard.md).
+
 ## Key types & exports
 
 | Export                                                                       | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | File                    |
@@ -123,6 +138,8 @@ rather than a defect.
 | `chooseCpuMove`, `CpuMove`                                                   | Composes the three sub-decisions into one `{ card, choice? }` move                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `cpuPlayer.ts`          |
 | `quarryIntent`, `QuarryIntent`, `QuarryIntentStance`                         | The telegraph's preview of the Quarry's next move (DLR-52) — `{ suit, stance? }` or `null` when there is no move to describe; never the exact card, and `stance` is `Leading`/`Pressing`/`Ducking`                                                                                                                                                                                                                                                                                                                                                                                                       | `cpuPlayer.ts`          |
 | `commitQuarryMove`                                                           | Plays the move `quarryIntent` previewed (DLR-52) — a guarded pass-through over the unmodified `chooseCpuMove` + `playCard`, returning `playCard`'s `PlayCardResult` unchanged                                                                                                                                                                                                                                                                                                                                                                                                                            | `cpuPlayer.ts`          |
+| `DiscardRefusal`, `DiscardStock`, `discardRefusalFor`                        | **DLR-100.** The reason-code union — `NotAvailable` / `NoDiscardsRemaining` / `EmptySelection`, checked in that order (`windowOpen` first, mirroring `applyDamageRefusalFor`'s own ordering); the four plain values (`discardsRemaining`, `selecting`, `selectionSize`, `windowOpen`) the rule needs and nothing else, assembled by `roundUiState.ts`'s `discardStock` rather than passed a `RoundUiState`; and **THE** single statement of availability, read by both the reducer's guard and the rail control's disabled state so the two cannot drift                                            | `discard.ts`            |
+| `applyDiscard`                                                               | **DLR-100.** The swap: `n` cards off `side`'s hand, the same `n` off the FRONT of `drawPile`, the discarded cards appended to its BACK — `applyWoodcutterDraw`'s convention generalised from one card to n. `drawPile.length` is invariant across the call. Throws a `RangeError` on a count outside `1..MAX_CARDS_PER_DISCARD` or a card not held by `side`, on a violated precondition the reducer already checked — reachable only from a driver bug, never a UI-reachable path. **Guards a third case added in the post-review fix pass**: `discarded.length > drawPile.length`, defensive against a pile drained below the discard size | `discard.ts`            |
 
 ## How it works
 
@@ -172,6 +189,10 @@ rather than a defect.
   how `quarryIntent` previews the Quarry's next move as a suit-and-stance shape without revealing
   the card, why both new entry points guard their own preconditions, and where the telegraph's
   fidelity is configured.
+- [The discard — the swap and its refusal](the-discard.md) — `applyDiscard`'s bottom-of-pile
+  generalisation of `applyWoodcutterDraw`, why `drawPile.length` is invariant across the call, the
+  three refusal reasons and their ordering, why `windowOpen` is computed a layer up rather than here,
+  and the defensive third throw guard added in the post-review fix pass (DLR-100).
 
 ## Rules & invariants enforced
 
@@ -238,6 +259,11 @@ RoundPhase.AwaitingLead`), so the two can never disagree.
 
 ## Deferred / not yet implemented
 
+- **The discard's overlap with the Cheat is untouched, by design doc §6's own "open" ruling**
+  (DLR-100). Both mechanics change what is playable, but through different levers — the Cheat lifts
+  follow-suit on a committed card, the discard replaces cards before a trick starts — and this ticket
+  built the discard without revisiting how the two interact. Nothing here forbids holding both
+  active in the same fight; whether that combination wants a rule of its own is undecided.
 - **Nothing raises the multiplier's climb, and that is DLR-92's stated scope boundary** rather than an
   oversight. `resolveTrickBank`'s `multiplier += 1` takes no bonus and no `ShopItem` maps to one; a spec pins
   the multiplier at exactly `+1` across three bonus values so the boundary cannot erode quietly. The twin

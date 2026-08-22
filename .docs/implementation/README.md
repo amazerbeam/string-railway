@@ -26,11 +26,11 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                     |
 | --------------------- | ------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, PT-001, PT-002 |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, PT-002 |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, PT-001, PT-002 |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100 |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, PT-002 |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, PT-001, PT-002 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, PT-001, PT-002 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -507,7 +507,7 @@ the two rates and the arithmetic, or
 [war-council-ui/apply-damage-plate.md](war-council-ui/apply-damage-plate.md) for the plate, the two-tap
 grammar and the extraction that had to come first.
 
-## Latest — DLR-96, the integration pass (2026-08-21)
+## DLR-96, the integration pass (2026-08-21)
 
 DLR-89 through DLR-95 each built one piece of the run economy — the four-rung shop, Envenom, Poison
 Guard, the Whetstone, the flask, Apply Damage and the quick-kill payout — largely in isolation. DLR-96
@@ -530,6 +530,46 @@ the boss holds far more health than an ordinary fight, and neither session's han
 to clear it. That branch's logic (`runTransitions.ts`'s `flaskAfter`) is unchanged and not itself
 suspected of a defect; it remains an open developer judgement call — accept the static trace, or play
 to a boss once by hand — rather than a code defect this ticket could fix.
+
+## Latest — DLR-100, the discard (2026-08-22)
+
+**DLR-100 gave the player a between-tricks action, and it is the first control in this codebase
+built to be available while the turn gate every other control reads is false.** Before a trick's
+first card is laid — including before the Quarry's own lead, so the player can act on "What the
+Quarry holds" rather than on a lead already visible — you may now **discard** 1 to 3 cards from hand
+and draw the same number blind off the top of the draw pile, with the discarded cards going to the
+pile's bottom. Hand size never changes; there is no new discard pile and no reshuffle rule, reusing
+the Woodcutter's existing draw-to-bottom convention generalised from one card to n. A fight gives 3
+discards, chainable within one gap, carried across the hands within a fight on `RunState`, and the
+Quarry gets none.
+
+**The structural point is `discardWindowOpen`.** Cheat, Envenom and Apply Damage all gate on
+`canAct`, which requires it to be the player's own turn. The discard's acceptance criteria ask for a
+moment `canAct` cannot reach — the gap where the Quarry is about to lead but the trick has not
+started — so `roundUiState.ts` gained a second, deliberately independent gate, and `WarCouncilRound.tsx`
+computes a second `interactive` value (`handInteractive`) read by `HandFan` alone, while every other
+rail control keeps reading the unchanged one. It is the one predicate in the codebase built this way
+on purpose, and the codebase's own note for whoever builds the next consumable that needs the same
+reach: read it rather than inventing a second version.
+
+**Two defects were found and closed before this reached review.** A mid-implementation guard-ordering
+bug let the rail **open** during the pre-lead gap while silently swallowing every attempt to select a
+card inside it, because the new reducer branch sat behind the existing turn guard rather than ahead
+of it — the ticket's own headline case looked like it worked while actually being dead on arrival,
+caught and fixed in the same implementation pass. A post-review finding closed a second gap: tapping
+the felt background while a selection was open used to silently drop it and advance the Quarry's lead
+underneath — `handleCarryOn` now refuses to do that while a selection is open.
+
+**Both new tunables are transcribed, not chosen** — `DISCARDS_PER_FIGHT` and `MAX_CARDS_PER_DISCARD`,
+both 3, both the developer's provisional values from the design doc's own "ship it, play it, move it"
+instruction. Engine and screen landed together, and QA drove the whole loop — opening, chaining, all
+three refusals, and the pre-lead window itself — end to end in a real browser.
+
+Start at [hunt/the-discard-budget.md](hunt/the-discard-budget.md) for the third per-fight resource and
+the `recordEncounter` widening (and the seven-call-site planning gap it exposed),
+[war-council/the-discard.md](war-council/the-discard.md) for the pure swap and its refusal, or
+[war-council-ui/discard-plate-and-selection.md](war-council-ui/discard-plate-and-selection.md) for
+`discardWindowOpen`, the rail control, the hand fan's third mode, and both defects.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

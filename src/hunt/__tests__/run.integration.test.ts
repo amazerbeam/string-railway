@@ -32,6 +32,7 @@ describe('DLR-96 AC2 — every epic-added RunState field survives advanceRun cor
       populated.cheats,
       populated.envenomCharges,
       populated.poisonGuardHeld,
+      populated.discardsRemaining,
       null,
     )
 

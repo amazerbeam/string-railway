@@ -42,6 +42,11 @@ export interface WarCouncilMountProps {
    *  hands back through `WarCouncilRoundResult`. REQUIRED rather than optional so the compiler
    *  enumerates every mount site instead of letting one silently fight without its insurance. */
   readonly poisonGuardHeld: boolean
+  /** DLR-100 AC5 — discards remaining at the START of this hand. Same contract as `envenomCharges`
+   *  above: an opening figure the reducer owns for the hand's life and hands back through
+   *  `WarCouncilRoundResult`. REQUIRED rather than optional so the compiler enumerates every mount
+   *  site instead of letting one silently render an inert rail. */
+  readonly discardsRemaining: number
   /** DLR-92 AC4 — the bank-climb bonus in force for this hand, ALREADY RESOLVED from the run's
    *  Whetstone count by `bankClimbBonusFor`. A number, not a `RunState` and not an item count: the
    *  card layer renders a run figure and must not learn what bought it. REQUIRED rather than
@@ -75,6 +80,9 @@ export interface WarCouncilRoundResult {
    *  run adopts it through `recordEncounter`'s fifth parameter, which also clears it when the
    *  encounter resolved. */
   readonly poisonGuardHeld: boolean
+  /** DLR-100 AC5 — discards remaining after this hand. One fewer for each discard spent; the run
+   *  adopts it through `recordEncounter`'s sixth parameter. */
+  readonly discardsRemaining: number
   /** DLR-95 AC2 — how many cards were left in the player's hand at the instant the encounter
    *  resolved, or `null` when this hand did not resolve it. Frozen by the reducer at that
    *  transition rather than read off the live hand here — see `RoundUiState.unplayedAtResolve`

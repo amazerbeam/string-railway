@@ -17,7 +17,7 @@ import {
 } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
 import { createRoundUiState, RoundUiActionKind, type RoundUiState } from '../roundUiState'
-import { card, envenomChargesFixture, makeRound } from './roundFixture'
+import { card, discardsRemainingFixture, envenomChargesFixture, makeRound } from './roundFixture'
 
 const tapApply = { kind: RoundUiActionKind.TapApplyDamage } as const
 const cancelApply = { kind: RoundUiActionKind.CancelApplyDamage } as const
@@ -33,6 +33,7 @@ function uiFrom(
     envenomCharges: envenomChargesFixture,
     poisonGuardHeld: false,
     bankClimbBonus: 0,
+    discardsRemaining: discardsRemainingFixture,
   })
 }
 

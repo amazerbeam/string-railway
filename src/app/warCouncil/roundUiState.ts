@@ -15,6 +15,7 @@ import {
   type AbilityChoice,
   type ApplyDamageStock,
   type Card,
+  type DiscardStock,
   type IllegalMoveReason,
   type TrickCard,
   type TrickResolution,
@@ -122,6 +123,16 @@ export interface RoundUiState {
    *  predicate staying false is correctness that breaks silently. The same reasoning
    *  `openingEncounter` above already documents. */
   readonly unplayedAtResolve: number | null
+  /** DLR-100 AC5 — mirrored from the mount's opening prop, decremented on each committed discard.
+   *  Run state carried for the life of the hand — the same contract `cheats` and `envenomCharges`
+   *  document. */
+  readonly discardsRemaining: number
+  /** DLR-100 — the hand's OWN transient: dies on remount, never touches `RunState`. `null` when
+   *  the discard rail is closed; an array (possibly empty) while it is open, holding the hand
+   *  cards currently toggled in. ONE field rather than a boolean-plus-array pair, for
+   *  `CheatSelection`'s stated reason: two independent fields would admit "closed but holding a
+   *  stale selection". */
+  readonly discardSelection: readonly Card[] | null
 }
 
 export interface RoundUiSeed {
@@ -131,6 +142,7 @@ export interface RoundUiSeed {
   readonly envenomCharges: number
   readonly poisonGuardHeld: boolean
   readonly bankClimbBonus: number
+  readonly discardsRemaining: number
 }
 
 // `chooseCpuMove` throws rather than returning a rejection when the CPU has no legal
@@ -149,6 +161,8 @@ export const RoundUiActionKind = {
   CancelEnvenom: 'cancelEnvenom',
   TapApplyDamage: 'tapApplyDamage',
   CancelApplyDamage: 'cancelApplyDamage',
+  TapDiscard: 'tapDiscard',
+  CancelDiscard: 'cancelDiscard',
 } as const
 export type RoundUiActionKind = (typeof RoundUiActionKind)[keyof typeof RoundUiActionKind]
 
@@ -163,6 +177,8 @@ export type RoundUiAction =
   | { readonly kind: typeof RoundUiActionKind.CancelEnvenom }
   | { readonly kind: typeof RoundUiActionKind.TapApplyDamage }
   | { readonly kind: typeof RoundUiActionKind.CancelApplyDamage }
+  | { readonly kind: typeof RoundUiActionKind.TapDiscard }
+  | { readonly kind: typeof RoundUiActionKind.CancelDiscard }
 
 /** Still a pure restructuring of its seed, so StrictMode's double-invocation of the lazy
  *  `useReducer` initialiser recomputes an identical value. */
@@ -184,6 +200,8 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     bankClimbBonus: seed.bankClimbBonus,
     applyPoised: false,
     unplayedAtResolve: null,
+    discardsRemaining: seed.discardsRemaining,
+    discardSelection: null,
   }
 }
 
@@ -231,5 +249,37 @@ export function applyDamageStock(state: RoundUiState): ApplyDamageStock {
     multiplier: state.round.multiplier,
     poisonPending: hasPendingEnvenom(state.encounter),
     canAct: canAct(state),
+  }
+}
+
+/** `true` once the mode is open — mirrors `envenomArmed`'s "is a hand-card tap reinterpreted" role,
+ *  but for a MULTI-card selection rather than a single armed target. */
+export function discardSelecting(state: RoundUiState): boolean {
+  return state.discardSelection !== null
+}
+
+/** AC1 — the moment the action is available, independent of whose turn it is. Deliberately does
+ *  NOT read `canAct`/`currentTurn`: this is what reaches the Quarry-to-lead gap, where `canAct` is
+ *  false because the Quarry, not the player, is next to move — but the trick has not started. */
+export function discardWindowOpen(state: RoundUiState): boolean {
+  return (
+    state.round.phase !== RoundPhase.Complete &&
+    !isEncounterResolved(state.encounter) &&
+    state.round.currentTrick.length === 0 &&
+    state.resolvedTrick === null &&
+    state.prompt === null &&
+    state.cpuFault === null
+  )
+}
+
+/** The plain values `discardRefusalFor` needs, assembled in ONE place so the reducer's guard and
+ *  the rail control's disabled state cannot read availability differently — the same discipline
+ *  `applyDamageStock` above documents. */
+export function discardStock(state: RoundUiState): DiscardStock {
+  return {
+    discardsRemaining: state.discardsRemaining,
+    selecting: discardSelecting(state),
+    selectionSize: state.discardSelection?.length ?? 0,
+    windowOpen: discardWindowOpen(state),
   }
 }

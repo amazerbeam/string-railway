@@ -61,9 +61,10 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
   it('stays in progress while the fight is live', () => {
     const run = startRun()
     const hit = applyDamage(run.encounter, damage(1, 1))
-    expect(recordEncounter(run, hit, run.cheats, run.envenomCharges, false, null).outcome).toBe(
-      RunOutcome.InProgress,
-    )
+    expect(
+      recordEncounter(run, hit, run.cheats, run.envenomCharges, false, run.discardsRemaining, null)
+        .outcome,
+    ).toBe(RunOutcome.InProgress)
   })
 
   it('stays in progress when an intermediate fight is won — the next one is waiting', () => {
@@ -74,6 +75,7 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      run.discardsRemaining,
       null,
     )
     expect(after.outcome).toBe(RunOutcome.InProgress)
@@ -91,6 +93,7 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
           run.cheats,
           run.envenomCharges,
           false,
+          run.discardsRemaining,
           null,
         ),
       )
@@ -101,6 +104,7 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      run.discardsRemaining,
       null,
     )
     expect(final.encounterIndex).toBe(final.encounterCount - 1)
@@ -111,7 +115,15 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
   it('ends the run as LOST the moment the player is down, whatever the position (AC4)', () => {
     const run = startRun()
     const dead = applyDamage(run.encounter, damage(PLAYER_START_HEALTH, 0))
-    const after = recordEncounter(run, dead, run.cheats, run.envenomCharges, false, null)
+    const after = recordEncounter(
+      run,
+      dead,
+      run.cheats,
+      run.envenomCharges,
+      false,
+      run.discardsRemaining,
+      null,
+    )
     expect(after.outcome).toBe(RunOutcome.Lost)
     expect(canAdvanceRun(after)).toBe(false)
   })
@@ -124,10 +136,19 @@ describe('recordEncounter — the outcome boundaries (AC4, AC5)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      run.discardsRemaining,
       null,
     )
     expect(() =>
-      recordEncounter(lost, lost.encounter, lost.cheats, lost.envenomCharges, false, null),
+      recordEncounter(
+        lost,
+        lost.encounter,
+        lost.cheats,
+        lost.envenomCharges,
+        false,
+        lost.discardsRemaining,
+        null,
+      ),
     ).toThrow(RangeError)
   })
 })
@@ -141,6 +162,7 @@ describe('recordEncounter — the payout (AC1)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      run.discardsRemaining,
       null,
     )
     expect(after.coins).toBe(run.coins + COINS_PER_ENCOUNTER_WIN)
@@ -149,14 +171,30 @@ describe('recordEncounter — the payout (AC1)', () => {
   it('credits nothing while the encounter is still live', () => {
     const run = startRun()
     const hit = applyDamage(run.encounter, damage(1, 1))
-    const after = recordEncounter(run, hit, run.cheats, run.envenomCharges, false, null)
+    const after = recordEncounter(
+      run,
+      hit,
+      run.cheats,
+      run.envenomCharges,
+      false,
+      run.discardsRemaining,
+      null,
+    )
     expect(after.coins).toBe(run.coins)
   })
 
   it('credits nothing when the Quarry wins', () => {
     const run = startRun()
     const dead = applyDamage(run.encounter, damage(PLAYER_START_HEALTH, 0))
-    const after = recordEncounter(run, dead, run.cheats, run.envenomCharges, false, null)
+    const after = recordEncounter(
+      run,
+      dead,
+      run.cheats,
+      run.envenomCharges,
+      false,
+      run.discardsRemaining,
+      null,
+    )
     expect(after.coins).toBe(run.coins)
   })
 })
@@ -172,6 +210,7 @@ describe('advanceRun — the carry (AC3)', () => {
         run.cheats,
         run.envenomCharges,
         false,
+        run.discardsRemaining,
         null,
       ),
     )
@@ -189,6 +228,7 @@ describe('advanceRun — the carry (AC3)', () => {
         run.cheats,
         run.envenomCharges,
         false,
+        run.discardsRemaining,
         null,
       ),
     )
@@ -208,6 +248,7 @@ describe('advanceRun — the carry (AC3)', () => {
       live.cheats,
       live.envenomCharges,
       false,
+      live.discardsRemaining,
       null,
     )
     expect(() => advanceRun(lost)).toThrow(RangeError)
@@ -221,6 +262,7 @@ describe('advanceRun — the carry (AC3)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      run.discardsRemaining,
       null,
     )
     const before = JSON.stringify(won)
@@ -236,6 +278,7 @@ describe('advanceRun — the carry (AC3)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      run.discardsRemaining,
       null,
     )
     const next = advanceRun(won)
@@ -258,6 +301,7 @@ describe('Cheats on RunState (DLR-83 AC3)', () => {
       [{ id: 2 }],
       run.envenomCharges,
       false,
+      run.discardsRemaining,
       null,
     )
     const next = advanceRun(won)
@@ -268,7 +312,15 @@ describe('Cheats on RunState (DLR-83 AC3)', () => {
   it('adopts a spend reported by the hand', () => {
     const run = startRun()
     const hit = applyDamage(run.encounter, damage(1, 1))
-    const after = recordEncounter(run, hit, [], run.envenomCharges, false, null)
+    const after = recordEncounter(
+      run,
+      hit,
+      [],
+      run.envenomCharges,
+      false,
+      run.discardsRemaining,
+      null,
+    )
     expect(after.cheats).toEqual([])
   })
 })
@@ -291,6 +343,7 @@ describe('beatenCount (DLR-85)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      run.discardsRemaining,
       null,
     )
     expect(won.encounterIndex).toBe(0)
@@ -310,6 +363,7 @@ describe('beatenCount (DLR-85)', () => {
       run.cheats,
       run.envenomCharges,
       false,
+      run.discardsRemaining,
       null,
     )
     expect(beatenCount(advanceRun(won))).toBe(1)
@@ -329,6 +383,7 @@ describe('beatenCount (DLR-85)', () => {
         run.cheats,
         run.envenomCharges,
         false,
+        run.discardsRemaining,
         null,
       )
       if (run.outcome === RunOutcome.InProgress) run = advanceRun(run)

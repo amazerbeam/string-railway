@@ -41,5 +41,7 @@ export {
   incomingFromCashOut,
 } from './voluntaryCashOut'
 export type { ApplyDamageStock, VoluntaryCashOut } from './voluntaryCashOut'
+export { DiscardRefusal, discardRefusalFor, applyDiscard } from './discard'
+export type { DiscardStock } from './discard'
 export { chooseCpuMove, commitQuarryMove, quarryIntent, QuarryIntentStance } from './cpuPlayer'
 export type { CpuMove, QuarryIntent } from './cpuPlayer'

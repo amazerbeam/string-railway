@@ -4,8 +4,16 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-08-21**. Everything below is reachable in
+Last reviewed against the code and the design on **2026-08-22**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
+
+> **You can now swap cards from your hand between tricks — DLR-100, 2026-08-22.** Before a trick's
+> first card is laid — including before the Quarry has led, so you can act on "What the Quarry
+> holds" rather than on a lead already visible — you may **discard** 1 to 3 cards and draw the same
+> number blind off the top of the draw pile. Hand size never changes, and discards go to the
+> **bottom** of the pile, reusing the Woodcutter's own convention. A fight gives you **3** discards,
+> chainable within one gap, and the Quarry gets none. Engine and screen landed together and QA drove
+> the whole loop — including the pre-lead window — end to end in a real browser (section 4).
 
 > **Killing quickly now pays — DLR-95, 2026-08-21.** Winning a fight used to pay one coin whether it
 > took a single trick or five hands. It still pays that coin, and now it pays **another for every card
@@ -521,6 +529,49 @@ the damage lands.
 Three taps to mark, then the usual two to play the card. The alternative is arming in one tap, which
 makes marking two — but puts an **irreversible** mark one misclick away. **Whose decision:** the
 developer's, after playing it.
+
+### The Discard — swapping cards from hand between tricks
+
+**[settled]** — the procedure; **how many discards a fight gives you, and how many cards one throw
+can hold** are both **[provisional]**, below.
+
+Before a trick's first card is laid, you may **discard** — throw away 1 to 3 cards from your hand
+and draw the same number blind off the top of the draw pile. Hand size never changes. Nothing about
+the drawn cards is shown before you commit; you find out what you got by looking at your new hand.
+
+**The moment this is available reaches one step further back than every other rail control.**
+Cheats and Envenom only ever open while it is your own turn to act. A discard also opens **before
+the Quarry has led** — while you are looking at "What the Quarry holds" and the trick has not yet
+started — so you can throw against the shape you can see rather than against a lead already on the
+table. It is never available mid-trick, and never while a trick's reveal is still on screen.
+
+**Discarded cards go to the bottom of the draw pile** — the same convention the Woodcutter's ability
+already uses for one card, generalised here to as many as you throw at once. There is no separate
+discard pile and no reshuffle: the pile dealt every hand is large enough that discarding cannot run
+it dry, however you spend the budget.
+
+**You may chain discards.** Nothing stops you throwing, looking at what arrived, and throwing again
+in the same gap before a trick, up to however many discards you have left for the fight. Each throw
+costs one from the budget and spends a separate tap on the rail control to re-open the selection —
+there is no single continuous "keep throwing" mode.
+
+**The draw is blind.** You do not see the pile before you commit, and nothing guarantees the cards
+you draw escape the suit you are trying to get away from — you are trading a known problem for an
+unknown hand, not fixing it on demand.
+
+**The Quarry never discards.** It plays by exactly your rules in every other respect, and this is not
+one of them — the discard is the player's alone.
+
+**Attempting to discard when none of the fight's budget remains, with nothing selected, or at a
+moment it is not available is refused with a reason on screen**, the same disabled-with-reason
+convention every other rail control uses.
+
+#### How many discards you get, and how many cards one throw can hold — **[provisional]**
+
+A fight gives you **3** discards, and one throw can hold up to **3** cards. Both figures are the
+developer's, set 2026-08-19, and both are explicitly a first guess rather than a considered choice —
+the design's own instruction for them is "ship it, play it, move it." The budget resets at the start
+of every fight and carries across every hand within it, the same way Cheats and Envenom charges do.
 
 ---
 
@@ -1298,6 +1349,12 @@ cards left pays 2, not 2.5 — so the rounding never falls in your favour. And *
 after the killing card has left your hand**: winning on the first trick of the first hand leaves five
 of your six, which is where the ten-coin figure above comes from.
 
+> **The ten-coin figure is the formula's own worked example, not a claim that trick one can kill
+> anyone** (DLR-98, 2026-08-22). No ordinary opponent's health is low enough for a first trick's bank
+> (at most 1, since no prior trick exists to have built it higher) to end the fight — the figure
+> illustrates the arithmetic, and is genuinely reachable later in a hand or fight once the bank has
+> climbed. Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
+
 **This is paid on top of the coin for winning, not instead of it.** So the worst this can do is pay
 you nothing extra: a fight that drags to its fourth hand still pays the flat coin for having won it.
 
@@ -1623,6 +1680,23 @@ the mechanics themselves are documented in `../implementation/`.
 > the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
 > a `RunState` field and a transition in the same breath means exactly that.
 
+> **Where DLR-100 stands, 2026-08-22.** Engine and screen landed together, and QA drove the whole
+> loop end to end in a real browser: opening the rail, toggling cards in and out of the selection up
+> to the 3-card cap, committing a swap, chaining a second one in the same gap, the three refusals
+> with their reasons on screen, and — the one genuinely new gate in the codebase — opening the
+> selection **before the Quarry's own lead**, are all reachable by playing right now. **Both figures
+> are `provisional` and both are transcribed rather than chosen**: `DISCARDS_PER_FIGHT = 3` and
+> `MAX_CARDS_PER_DISCARD = 3` come from the design doc's own "ship it, play it, move it" instruction.
+> A mid-implementation defect was found and fixed before review: the reducer's first cut let a
+> discard **open** during the pre-lead gap but not accept a card **into** it, because the new branch
+> sat behind the existing `canAct` guard rather than ahead of it — closed by reordering the two
+> checks, with a test covering the full pre-lead open → toggle → commit path. The post-review pass
+> added one further guard: tapping the felt background while a selection was open used to silently
+> orphan it by advancing the Quarry's lead underneath it; `handleCarryOn` now refuses to do that
+> while a selection is open. **Nothing was retuned**: no other tunable moved in response to a third
+> per-fight resource entering the run. **What has not been measured is whether three throws of three
+> a fight is enough, too many, or right** — that is a play question, not an arithmetic one.
+
 > **Where the last contract stands, 2026-08-21 (DLR-95).** Engine and screen landed together, and QA
 > drove it end to end in a real browser: a first-hand kill with two cards still in hand paid **+4**
 > beside the flat **+1**, the verdict read `FIGHT WON +1 COIN · QUICK KILL +4 COINS`, and the purse
@@ -1903,6 +1977,16 @@ the mechanics themselves are documented in `../implementation/`.
 | It is spent whenever it fires, streak or not | settled — AC4 read literally | `src/warCouncil/bank.ts` — `TrickResolution.poisonGuardSpent`; flipped by `src/app/warCouncil/roundReducer.ts` at both settle points | — |
 | It does nothing on the Quarry-side hit | settled | nothing to enforce — `poisonGuarded` is read only against `poisonToPlayer` | — |
 | Nothing shows a held Guard during a fight | **not built** — deliberately | nothing — `src/app/run/ShopPanel.tsx`'s purse cell is its only surface, and the felt renders none of it | **Developer** — the same call as the announcement row above |
+| The discard — swap 1 to 3 cards for the same count off the pile | settled — since DLR-100 | `src/warCouncil/discard.ts` — `applyDiscard`; committed by `src/app/warCouncil/discardHandlers.ts` — `handleTapDiscard` | — |
+| Discards go to the bottom of the pile; no discard pile, no reshuffle | settled — since DLR-100 | `src/warCouncil/discard.ts` — `applyDiscard`'s `drawPile` splice, generalising `applyWoodcutterDraw`'s one-card convention to n | — |
+| Available before a trick's first card, including before the Quarry's own lead | settled — since DLR-100 | `src/app/warCouncil/roundUiState.ts` — `discardWindowOpen`, the one predicate in the codebase deliberately independent of `canAct`/`currentTurn` | — |
+| Never available mid-trick, or while a reveal is held | settled — since DLR-100 | `src/app/warCouncil/roundUiState.ts` — `discardWindowOpen` requires `currentTrick.length === 0` and `resolvedTrick === null` | — |
+| Chaining — more than one discard in the same gap | settled — since DLR-100 | `src/app/warCouncil/discardHandlers.ts` — `handleTapDiscard`'s open/commit toggle; each chained throw is a separate tap on the rail | Developer — whether a second tap per throw is worth the friction |
+| The draw is blind | settled — since DLR-100 | nothing to enforce — no component renders `drawPile`'s contents anywhere in the felt | — |
+| The Quarry never discards | settled — since DLR-100 | nothing to enforce — `applyDiscard` is called only by `handleTapDiscard`, always with `PlayerSide.Player`; a grep guards the absence | — |
+| Discards per fight (3), cards per throw (3) | **provisional** — set 2026-08-19 | `src/hunt/config.ts` — `DISCARDS_PER_FIGHT`, `MAX_CARDS_PER_DISCARD` | **Developer** — transcribed from the design doc's "ship it, play it, move it," unplayed |
+| Discards carried hand to hand, reset fight to fight | settled — since DLR-100 | `src/hunt/run.ts` — `RunState.discardsRemaining`, seeded by `startRun`; `src/hunt/runTransitions.ts` — `advanceRun` resets it, `recordEncounter` adopts the hand's survivor | — |
+| A refused discard states its reason | settled — since DLR-100 | `src/warCouncil/discard.ts` — `DiscardRefusal`, `discardRefusalFor`; worded by `src/app/warCouncil/labels.ts` — `DISCARD_REFUSAL_MESSAGE` | Developer — the wording |
 | Snare (in-hand edits)                         | **open**, blocked                | —                                                                                                                                | Needs a cost before it's viable                         |
 
 ### The redesign landed whole — DLR-80 closed 2026-08-13
@@ -2205,8 +2289,74 @@ against opponents ending at 135 is a real change that may still be far too small
 was retuned in response** — deliberately, so the measurement is of the flask rather than of a rebalance
 around it. Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
 
+### The Discard landed — DLR-100, 2026-08-22
+
+**What a player does now that they did not before:** turns a forced trick they can see coming into
+a read they can act on. The "What the Quarry holds" panel already told you what was about to arrive;
+until now there was nothing to do about it but play it out. A discard lets you throw the cards you
+do not want and draw blind — including going void in a suit outright, which frees you from
+follow-suit in it for the rest of the hand.
+
+**What makes it structurally different from Cheat and Envenom, its two siblings on the felt rail:**
+both of those only ever open on your own turn. A discard also opens **before the Quarry has led** —
+the one moment in the game where the player may act while `canAct` reads false, because the trick
+has not started even though it is not technically your turn yet. That required one new predicate,
+`discardWindowOpen`, built deliberately independent of the turn check every other control reads, and
+the codebase's own note for future contributors: the next consumable that needs the same reach should
+read this predicate rather than invent a second version.
+
+**What's reused rather than invented:** the swap generalises the Woodcutter's own one-card
+"draw one, bury one on the bottom" convention to n cards, so there is no new discard pile and no
+reshuffle rule to build or to get wrong — the 20-card pile already dealt every hand cannot be
+emptied by any legal sequence of discards.
+
+**Two defects were found and closed before this reached the developer.** The first was structural:
+the reducer's initial cut let the rail **open** a selection during the pre-lead gap but silently
+swallowed every attempt to **add a card to it**, because the new branch was placed behind the
+existing turn guard rather than ahead of it — so the ticket's own headline case looked like it
+worked (the rail opened) while actually being dead on arrival (nothing could be selected). Found and
+fixed inside the same implementation pass, with a test that exercises the full pre-lead sequence
+rather than only the open. The second, found at review: tapping the felt background — the same tap
+that carries a resolved trick forward — while a discard selection was open used to silently drop
+that selection and advance the Quarry's lead underneath it. `handleCarryOn` now refuses to do that
+while a selection is open, so the two interactions cannot collide.
+
+**Engine and screen landed together**, and QA drove the rail, the selection, a commit, a chain of two
+throws in the same gap, all three refusals, and the pre-lead window itself end to end in a real
+browser.
+
+**What the developer owns:** whether **3 discards a fight** and **3 cards a throw** are right; whether
+a second tap per chained throw is worth the friction against letting the rail stay open after a
+commit; every word of the placeholder copy; the discard-selected marker's glyph and colour; and the
+rail's own glyph, now that the felt carries a fourth plate.
+
+**What has not been measured is the point of it.** Nobody has yet played a fight leaning on the
+discard to dodge a telegraphed suit, so whether three throws of three cards actually changes how a
+forced trick reads at the table — rather than merely existing as a rule — is unmeasured. Recorded
+under [Known tensions](#known-tensions-recorded-not-resolved).
+
 ### Known tensions, recorded not resolved
 
+- **A first-trick kill can never pay the ten-coin figure the payout table itself shows** (new
+  2026-08-22, DLR-98). DLR-98's verification pass tried to reproduce "first hand, one trick, five
+  cards left, pays 10" live and found the state unreachable: at that exact instant no prior trick
+  has resolved, so the most a bank can be worth is 1 (bank 1 × multiplier 1), far short of even the
+  lowest ordinary opponent's 10 health (`ORDINARY_HEALTH_BASE`) — confirmed empirically (Apply
+  Damage cashing the only bank available left Aoife at 9/10, not dead) and by the health curve
+  (`ORDINARY_HEALTH_STEP` only ever adds to that floor). The payout formula itself is correct and its
+  regression test passes; the gap is that the table's own headline example describes an outcome the
+  shipped health curve never permits on a fight's first trick. Three ways to close it — lower the
+  opening opponent's health so the example is reachable, restate the example against a hand where it
+  actually occurs (a later trick, once the bank has climbed), or give the first trick an additional
+  damage source — and choosing between them is the developer's call, not this document's.
+- **The felt rail now carries a fourth plate, and the discard's two figures are both a first guess**
+  (new 2026-08-22, DLR-100). `DISCARDS_PER_FIGHT` and `MAX_CARDS_PER_DISCARD` are both 3, both
+  transcribed, and both explicitly expected to move after play rather than being a considered
+  balance — the design's own instruction is "ship it, play it, move it." Whether re-arming a chained
+  throw with a second tap reads as deliberate pacing or as friction is the same open question Cheat
+  and Envenom's own tap counts already carry, now asked a third time on the same rail. No session has
+  yet leaned on the discard to dodge a telegraphed suit, so whether it changes how a forced trick
+  reads at the table is unmeasured.
 - **The shop was priced for an income that has just arrived, and nobody has played against it** (new
   2026-08-21, DLR-95). The Whetstone costs 4 coins and was priced against exactly this payout — the
   design's own answer to "the shop's best item is unreachable", after QA never afforded one in two

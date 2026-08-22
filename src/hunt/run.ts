@@ -7,6 +7,7 @@
 // so every existing importer (`src/hunt/index.ts`, the `run.*.test.ts` specs) needed no change.
 
 import {
+  DISCARDS_PER_FIGHT,
   FLASK_STARTING_CHARGES,
   PLAYER_START_HEALTH,
   QUARRY_ENCOUNTER_HEALTH,
@@ -99,6 +100,13 @@ export interface RunState {
    *  one — which makes the reset structural instead of something three separate callbacks have to
    *  remember. `recordEncounter` advances it. NEVER persisted, exactly as `coins` above. */
   readonly handOfFight: number
+  /** DLR-100 AC5 — the discard's per-fight budget. Carried across every hand within a fight,
+   *  exactly as `cheats` and `envenomCharges` are — NOT on `EncounterState`, which `advanceRun`
+   *  re-seeds. Reset to `DISCARDS_PER_FIGHT` by `startRun` and by `advanceRun`; carried through
+   *  `recordEncounter`'s spread otherwise, because the hand owns it for its life and hands the
+   *  survivor back through `WarCouncilRoundResult`, exactly as `cheats` and `envenomCharges` do.
+   *  NEVER persisted, exactly as `coins` above. */
+  readonly discardsRemaining: number
   /** DLR-95 AC6 — the receipt: what the quick-kill payout paid for the encounter just recorded, so
    *  the verdict renders a figure the run RECORDED rather than re-deriving the rule from state a
    *  component would have to hold in parallel. `RunOutcomePanel` computes nothing, and this is
@@ -131,6 +139,7 @@ export function startRun(playerHealth: Health = PLAYER_START_HEALTH): RunState {
     whetstones: 0,
     flaskCharges: FLASK_STARTING_CHARGES,
     handOfFight: 1,
+    discardsRemaining: DISCARDS_PER_FIGHT,
     lastQuickKillPayout: 0,
   }
 }

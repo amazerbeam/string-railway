@@ -21,7 +21,18 @@ function wonRunWithCoins(coins: number) {
     [DuelSide.Player]: 0,
     [DuelSide.Quarry]: run.encounter.health[DuelSide.Quarry],
   })
-  return { ...recordEncounter(run, killed, run.cheats, run.envenomCharges, false, null), coins }
+  return {
+    ...recordEncounter(
+      run,
+      killed,
+      run.cheats,
+      run.envenomCharges,
+      false,
+      run.discardsRemaining,
+      null,
+    ),
+    coins,
+  }
 }
 
 describe('Poison Guard purchase (AC1/AC3)', () => {
@@ -63,6 +74,7 @@ describe('Poison Guard lifetime (AC2)', () => {
       fighting.cheats,
       fighting.envenomCharges,
       true,
+      fighting.discardsRemaining,
       null,
     )
     expect(after.poisonGuardHeld).toBe(false)
@@ -80,6 +92,7 @@ describe('Poison Guard lifetime (AC2)', () => {
       fighting.cheats,
       fighting.envenomCharges,
       true,
+      fighting.discardsRemaining,
       null,
     )
     expect(after.poisonGuardHeld).toBe(true)

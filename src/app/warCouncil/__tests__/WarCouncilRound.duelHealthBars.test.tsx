@@ -8,6 +8,7 @@ import {
   bankClimbBonusFixture,
   card,
   coinsFixture,
+  discardsRemainingFixture,
   encounterFixture,
   envenomChargesFixture,
   huntFixture,
@@ -53,6 +54,7 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
         envenomCharges={envenomChargesFixture}
         poisonGuardHeld={poisonGuardHeldFixture}
         bankClimbBonus={bankClimbBonusFixture}
+        discardsRemaining={discardsRemainingFixture}
         onComplete={onComplete}
       />,
     )
@@ -198,6 +200,7 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
         envenomCharges={envenomChargesFixture}
         poisonGuardHeld={poisonGuardHeldFixture}
         bankClimbBonus={bankClimbBonusFixture}
+        discardsRemaining={discardsRemainingFixture}
         onComplete={onComplete}
       />,
     )
@@ -256,6 +259,7 @@ describe('WarCouncilRound — the Quarry’s at-risk preview (DLR-86)', () => {
         envenomCharges={envenomChargesFixture}
         poisonGuardHeld={poisonGuardHeldFixture}
         bankClimbBonus={bankClimbBonusFixture}
+        discardsRemaining={discardsRemainingFixture}
         onComplete={vi.fn()}
       />,
     )

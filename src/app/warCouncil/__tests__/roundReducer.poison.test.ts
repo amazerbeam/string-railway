@@ -11,7 +11,7 @@ import {
 } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
 import { createRoundUiState, RoundUiActionKind } from '../roundUiState'
-import { card, makeRound } from './roundFixture'
+import { card, discardsRemainingFixture, makeRound } from './roundFixture'
 
 // The Envenom queue's own behaviour — booking a mark against the winner of a marked trick, and
 // (DLR-91 D1/D3/D5) paying it at the NEXT trick's resolution rather than at the next hand's deal.
@@ -41,6 +41,7 @@ describe('the queue write (AC3/AC6)', () => {
       envenomCharges: 1,
       poisonGuardHeld: false,
       bankClimbBonus: 0,
+      discardsRemaining: discardsRemainingFixture,
     })
     ui = roundReducer(ui, tapEnvenom)
     ui = roundReducer(ui, tapEnvenom)
@@ -78,6 +79,7 @@ describe('the queue write (AC3/AC6)', () => {
       envenomCharges: 1,
       poisonGuardHeld: false,
       bankClimbBonus: 0,
+      discardsRemaining: discardsRemainingFixture,
     })
     ui = roundReducer(ui, tapEnvenom)
     ui = roundReducer(ui, tapEnvenom)
@@ -111,6 +113,7 @@ describe('the queue write (AC3/AC6)', () => {
       envenomCharges: 1,
       poisonGuardHeld: false,
       bankClimbBonus: 0,
+      discardsRemaining: discardsRemainingFixture,
     })
     const target = card(Suit.Bells, 9)
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
@@ -143,6 +146,7 @@ describe('the queue write (AC3/AC6)', () => {
       envenomCharges: 1,
       poisonGuardHeld: false,
       bankClimbBonus: 0,
+      discardsRemaining: discardsRemainingFixture,
     })
     ui = roundReducer(ui, tapEnvenom)
     ui = roundReducer(ui, tapEnvenom)
@@ -177,6 +181,7 @@ describe('D1 — poison is paid at the trick that resolves it, not at the next h
       envenomCharges: 1,
       poisonGuardHeld: false,
       bankClimbBonus: 0,
+      discardsRemaining: discardsRemainingFixture,
     })
     const target = card(Suit.Bells, 9)
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target }) // arms to play
@@ -208,6 +213,7 @@ describe('D1 — poison is paid at the trick that resolves it, not at the next h
       envenomCharges: 1,
       poisonGuardHeld: false,
       bankClimbBonus: 0,
+      discardsRemaining: discardsRemainingFixture,
     })
 
     // Trick 1 — pays the queued poison and clears it.
@@ -251,6 +257,7 @@ describe('DLR-91 AC4 — the Poison Guard through the reducer', () => {
       envenomCharges: 0,
       poisonGuardHeld: true,
       bankClimbBonus: 0,
+      discardsRemaining: discardsRemainingFixture,
     })
 
     const target = card(Suit.Bells, 9)
@@ -289,6 +296,7 @@ describe('DLR-91 AC4 — the Poison Guard through the reducer', () => {
       envenomCharges: 0,
       poisonGuardHeld: true,
       bankClimbBonus: 0,
+      discardsRemaining: discardsRemainingFixture,
     })
 
     // Trick 1 — the Guard suppresses the reset and is spent.

@@ -5,6 +5,8 @@ import {
   cardAccessibleName,
   CHEAT_ARMED_HINT,
   CHEAT_POISED_HINT,
+  DISCARD_READY_HINT,
+  DISCARD_SELECT_HINT,
   ENVENOM_ARMED_HINT,
   ENVENOM_POISED_HINT,
   ILLEGAL_MOVE_MESSAGE,
@@ -17,7 +19,13 @@ import {
   type ResolvedTrick,
   type RoundUiState,
 } from '../roundUiState'
-import { card, encounterFixture, envenomChargesFixture, makeRound } from './roundFixture'
+import {
+  card,
+  discardsRemainingFixture,
+  encounterFixture,
+  envenomChargesFixture,
+  makeRound,
+} from './roundFixture'
 
 // `deriveHint` reads only the fields overridden below plus the two positional flags — everything
 // else in the base state is inert as far as this cascade is concerned, so one fixture serves
@@ -31,6 +39,7 @@ function baseUi(overrides: Partial<RoundUiState> = {}): RoundUiState {
       envenomCharges: envenomChargesFixture,
       poisonGuardHeld: false,
       bankClimbBonus: 0,
+      discardsRemaining: discardsRemainingFixture,
     }),
     ...overrides,
   }
@@ -143,5 +152,12 @@ describe('deriveHint — the cascade’s own priority order', () => {
     expect(
       deriveHint(baseUi({ applyPoised: true, resolvedTrick: someResolvedTrick }), false, false),
     ).toBe('Trick resolved')
+  })
+
+  it('DLR-100 — an open discard selection reports select-vs-ready, and beats the Quarry’s pending lead', () => {
+    const selecting = baseUi({ discardSelection: [] })
+    const ready = baseUi({ discardSelection: [card(Suit.Bells, 7)] })
+    expect(deriveHint(selecting, true, true)).toBe(DISCARD_SELECT_HINT)
+    expect(deriveHint(ready, true, true)).toBe(DISCARD_READY_HINT)
   })
 })

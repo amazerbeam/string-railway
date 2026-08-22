@@ -3,6 +3,7 @@ import { DuelSide, isEncounterResolved, quarryCharacterInfo } from '../../hunt'
 import {
   applyDamageRefusalFor,
   cashValue,
+  discardRefusalFor,
   incomingFrom,
   isEnvenomed,
   PlayerSide,
@@ -22,6 +23,7 @@ import ApplyDamagePlate from './ApplyDamagePlate'
 import BankMeter from './BankMeter'
 import CheatSlots from './CheatSlots'
 import DecreePile from './DecreePile'
+import DiscardPlate from './DiscardPlate'
 import { duelHealthBars, NO_BREAKING, projectedFromStreak } from './duelHealthBars'
 import EnvenomCharge from './EnvenomCharge'
 import HandFan from './HandFan'
@@ -38,6 +40,8 @@ import {
   canAct,
   cheatArmed,
   createRoundUiState,
+  discardSelecting,
+  discardStock,
   envenomArmed,
   RoundUiActionKind,
 } from './roundUiState'
@@ -52,6 +56,7 @@ import './warCouncilHealthBars.css'
 import './warCouncilHand.css'
 import './warCouncilEnvenom.css'
 import './warCouncilApplyDamage.css'
+import './warCouncilDiscard.css'
 
 /**
  * The round mount, implementing SCRUM-37's `WarCouncilMountProps`. Owns exactly one piece of
@@ -87,12 +92,21 @@ export default function WarCouncilRound({
   quarryLabel,
   envenomCharges,
   poisonGuardHeld,
+  discardsRemaining,
   bankClimbBonus,
   onComplete,
 }: WarCouncilMountProps) {
   const [ui, dispatch] = useReducer(
     roundReducer,
-    { round: initialState, encounter, cheats, envenomCharges, poisonGuardHeld, bankClimbBonus },
+    {
+      round: initialState,
+      encounter,
+      cheats,
+      envenomCharges,
+      poisonGuardHeld,
+      discardsRemaining,
+      bankClimbBonus,
+    },
     createRoundUiState,
   )
 
@@ -116,6 +130,11 @@ export default function WarCouncilRound({
   // availability, so the plate's disabled state and `handleTapApplyDamage`'s guard cannot disagree.
   const applyRefusal = applyDamageRefusalFor(applyDamageStock(ui))
   const applyCash = cashValue(ui.round.bank, ui.round.multiplier)
+
+  // DLR-100 — mirrors `applyRefusal` above. `handInteractive` keeps the fan tappable during the
+  // Quarry-to-lead gap, where `interactive` is false but a selection may still be open or opening.
+  const discardRefusal = discardRefusalFor(discardStock(ui))
+  const handInteractive = interactive || discardSelecting(ui)
 
   // Both bars read straight off the reducer. Two derivations, no new state:
   //
@@ -207,6 +226,7 @@ export default function WarCouncilRound({
         cheats: ui.cheats,
         envenomCharges: ui.envenomCharges,
         poisonGuardHeld: ui.poisonGuardHeld,
+        discardsRemaining: ui.discardsRemaining,
         unplayedAtResolve: ui.unplayedAtResolve,
       })
       return
@@ -222,6 +242,7 @@ export default function WarCouncilRound({
         cheats: ui.cheats,
         envenomCharges: ui.envenomCharges,
         poisonGuardHeld: ui.poisonGuardHeld,
+        discardsRemaining: ui.discardsRemaining,
         unplayedAtResolve: ui.unplayedAtResolve,
       })
     }
@@ -347,6 +368,14 @@ export default function WarCouncilRound({
             onTap={() => dispatch({ kind: RoundUiActionKind.TapApplyDamage })}
             onCancel={() => dispatch({ kind: RoundUiActionKind.CancelApplyDamage })}
           />
+          <DiscardPlate
+            discardsRemaining={ui.discardsRemaining}
+            selecting={discardSelecting(ui)}
+            selectionSize={ui.discardSelection?.length ?? 0}
+            refusal={discardRefusal}
+            onTap={() => dispatch({ kind: RoundUiActionKind.TapDiscard })}
+            onCancel={() => dispatch({ kind: RoundUiActionKind.CancelDiscard })}
+          />
         </div>
         <div className="wc-table-inner">{felt}</div>
       </section>
@@ -354,12 +383,14 @@ export default function WarCouncilRound({
         hand={displayHand}
         legal={legal}
         armed={ui.armed}
-        interactive={interactive}
+        interactive={handInteractive}
         hint={hint}
         rejected={ui.rejection !== null}
         promptOpen={ui.prompt !== null}
         envenomedCards={ui.round.envenomedCards}
         envenomArmed={envenomArmed(ui)}
+        discardSelecting={discardSelecting(ui)}
+        discardSelection={ui.discardSelection ?? []}
         onTap={handleTap}
         onCancel={handleCancel}
       />

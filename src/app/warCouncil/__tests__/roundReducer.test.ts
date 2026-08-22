@@ -24,7 +24,7 @@ import {
   type ResolvedTrick,
   type RoundUiState,
 } from '../roundUiState'
-import { card, envenomChargesFixture, makeRound } from './roundFixture'
+import { card, discardsRemainingFixture, envenomChargesFixture, makeRound } from './roundFixture'
 
 const tap = (c: Parameters<typeof card>[0] extends never ? never : ReturnType<typeof card>) =>
   ({ kind: RoundUiActionKind.TapCard, card: c }) as const
@@ -44,6 +44,7 @@ function uiFrom(
     envenomCharges: envenomChargesFixture,
     poisonGuardHeld: false,
     bankClimbBonus: 0,
+    discardsRemaining: discardsRemainingFixture,
   })
 }
 

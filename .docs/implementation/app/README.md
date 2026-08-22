@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100
 
 ## Responsibility
 
@@ -34,8 +34,8 @@ import React, and `src/app/warCouncil/` does.
 
 | Export                  | Purpose                                                                                                                                                                                                                   | File                 |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState`, a required `hunt: Hunt` (DLR-53), a required `encounter: EncounterState` and `maxHealth` (DLR-71), a required `runLabel: string` (DLR-82), a required `cheats` (DLR-83) and a required `coins: Coins` (DLR-84) in; `onComplete` out | `warCouncilMount.ts` |
-| `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + `encounter`, the `EncounterState` **after** this Hunt's damage was applied (DLR-71)                                                                            | `warCouncilMount.ts` |
+| `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState`, a required `hunt: Hunt` (DLR-53), a required `encounter: EncounterState` and `maxHealth` (DLR-71), a required `runLabel: string` (DLR-82), a required `cheats` (DLR-83), a required `coins: Coins` (DLR-84) and a required `discardsRemaining: number` (DLR-100) in; `onComplete` out | `warCouncilMount.ts` |
+| `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + `encounter`, the `EncounterState` **after** this Hunt's damage was applied (DLR-71); also carries the survivors of every hand-owned run resource, including `discardsRemaining` since DLR-100                                                                            | `warCouncilMount.ts` |
 
 DLR-53 added `hunt: Hunt` as a **required** field — `src/hunt`'s own pairing, widened by DLR-63 to
 `{ quarry, demand, loseCredits }` and then **narrowed by DLR-67 to `{ quarry }`** when the Demand and
@@ -64,6 +64,15 @@ receives **a number** — not a `RunState`, and not a projection it could grow i
 run-state consumer. Required rather than optional for the usual reason, and it earned that
 immediately: the compiler enumerated all four mount sites (`App.tsx` plus one render helper and
 three JSX mounts in the component specs) rather than letting one silently render a blank plate.
+
+**DLR-100 added `discardsRemaining: number`, following `envenomCharges`'s precedent rather than a
+new pattern.** `App.tsx`'s `<WarCouncilRound>` JSX gained `discardsRemaining={run.discardsRemaining}`
+and `handleComplete`'s `recordEncounter` call gained `result.discardsRemaining` as its sixth
+argument, between `result.poisonGuardHeld` and `result.unplayedAtResolve`. Widening
+`recordEncounter`'s signature surfaced a wider set of call sites than the contract's own audit
+predicted — six pre-existing `src/hunt/__tests__/` files still on the old six-argument form, beyond
+`App.tsx` — all fixed inline in the same task. See
+[../hunt/the-discard-budget.md](../hunt/the-discard-budget.md).
 
 **`encounter` is no longer constant for the hand.** Until DLR-80 health changed only at trick 13, so
 the prop was a fixed input for the whole round. Since DLR-80 the prop **seeds** the reducer, which

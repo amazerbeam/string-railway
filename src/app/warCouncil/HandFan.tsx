@@ -22,6 +22,12 @@ interface HandFanProps {
    *  give a card the player expects to lose with a reason to be played. Read from the reducer's own
    *  `envenomArmed` predicate, never re-derived here. */
   readonly envenomArmed: boolean
+  /** DLR-100 — the discard selection is open. Mirrors `envenomArmed`'s role: while true, every
+   *  held card is a valid tap target, including one illegal to play, because discarding is not a
+   *  move. Read from the reducer's own `discardSelecting` predicate, never re-derived here. */
+  readonly discardSelecting: boolean
+  /** DLR-100 — the cards currently toggled into the open selection, so the fan can mark them. */
+  readonly discardSelection: readonly Card[]
   readonly onTap: (card: Card) => void
   readonly onCancel: () => void
 }
@@ -52,15 +58,20 @@ export default function HandFan({
   promptOpen,
   envenomedCards,
   envenomArmed,
+  discardSelecting,
+  discardSelection,
   onTap,
   onCancel,
 }: HandFanProps) {
   // Guards against `containsCard(legal, undefined)` — safe today only because `interactive`
   // is always false once `hand.length === 0`, and cheap enough not to rely on that staying true.
-  // While envenomArmed, every held card is a valid target — including one illegal to play — so
-  // the `containsCard` term drops out rather than gating focusability a second way.
+  // While envenomArmed or discardSelecting, every held card is a valid target — including one
+  // illegal to play — so the `containsCard` term drops out rather than gating focusability a
+  // second way.
   const isFocusable = (index: number) =>
-    hand[index] !== undefined && interactive && (envenomArmed || containsCard(legal, hand[index]))
+    hand[index] !== undefined &&
+    interactive &&
+    (envenomArmed || discardSelecting || containsCard(legal, hand[index]))
 
   const { groupRef, tabStopIndex, handleKeyDown } = useRovingTabIndex(
     hand.length,
@@ -87,7 +98,7 @@ export default function HandFan({
         // `wc-is-marking` is the same idea for DLR-90's own mode — presentational only,
         // changing nothing about behaviour or the accessible tree, so the stylesheet can
         // distinguish "pick a card to poison" from ordinary play.
-        className={`wc-fan${interactive ? '' : ' wc-is-inert'}${envenomArmed ? ' wc-is-marking' : ''}`}
+        className={`wc-fan${interactive ? '' : ' wc-is-inert'}${envenomArmed ? ' wc-is-marking' : ''}${discardSelecting ? ' wc-is-discarding' : ''}`}
         role="group"
         aria-label="Your hand"
         // While a Fox/Woodcutter prompt is open, AbilityPrompt renders every remaining hand
@@ -119,8 +130,11 @@ export default function HandFan({
               card={card}
               variant="hand"
               armed={isArmed}
-              illegal={!interactive || (!envenomArmed && !containsCard(legal, card))}
+              illegal={
+                !interactive || (!envenomArmed && !discardSelecting && !containsCard(legal, card))
+              }
               envenomed={isEnvenomed(envenomedCards, card)}
+              discardSelected={containsCard(discardSelection, card)}
               tabIndex={index === tabStopIndex ? 0 : -1}
               style={style}
               onTap={onTap}

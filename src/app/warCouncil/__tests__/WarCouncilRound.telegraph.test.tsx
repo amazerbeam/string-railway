@@ -7,6 +7,7 @@ import WarCouncilRound from '../WarCouncilRound'
 import {
   bankClimbBonusFixture,
   coinsFixture,
+  discardsRemainingFixture,
   encounterFixture,
   envenomChargesFixture,
   huntFixture,
@@ -37,6 +38,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       envenomCharges={overrides.envenomCharges ?? envenomChargesFixture}
       poisonGuardHeld={overrides.poisonGuardHeld ?? poisonGuardHeldFixture}
       bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
+      discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
       onComplete={overrides.onComplete ?? vi.fn()}
     />,
   )

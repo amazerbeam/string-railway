@@ -132,6 +132,7 @@ function App() {
       result.cheats,
       result.envenomCharges,
       result.poisonGuardHeld,
+      result.discardsRemaining,
       result.unplayedAtResolve,
     )
     setRun(recorded)
@@ -298,6 +299,7 @@ function App() {
       coins={run.coins}
       envenomCharges={run.envenomCharges}
       poisonGuardHeld={run.poisonGuardHeld}
+      discardsRemaining={run.discardsRemaining}
       bankClimbBonus={bankClimbBonusFor(run)}
       quarryLabel={quarryHealthLabel(currentName)}
       onComplete={handleComplete}

@@ -8,42 +8,27 @@ import {
   containsCard,
   currentTurn,
   envenomCard,
-  incomingFrom,
   incomingFromCashOut,
   isEnvenomed,
   legalMoves,
-  playCard,
   sameCard,
-  type AbilityChoice,
   type Card,
-  type PlayCardOptions,
-  type TrickCard,
-  type TrickResolution,
 } from '../../warCouncil'
-import {
-  applyDamage,
-  DuelSide,
-  hasCheat,
-  hasPendingEnvenom,
-  isEncounterResolved,
-  NO_PENDING_ENVENOM,
-  queueEnvenom,
-  removeCheat,
-  type CheatCardId,
-  type EncounterState,
-} from '../../hunt'
+import { applyDamage, hasCheat, isEncounterResolved, type CheatCardId } from '../../hunt'
 import {
   applyDamageStock,
   canAct,
-  cheatArmed,
   CheatStage,
+  discardSelecting,
   envenomArmed,
   EnvenomStage,
   RoundUiActionKind,
   type RoundUiAction,
   type RoundUiState,
 } from './roundUiState'
-import { advanceQuarryFollow, advanceQuarryLead, deriveResolvedTrick } from './quarryAdvance'
+import { advanceQuarryLead } from './quarryAdvance'
+import { handleCancelDiscard, handleTapDiscard, toggleDiscardCard } from './discardHandlers'
+import { commit } from './commitHandlers'
 
 export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundUiState {
   return captureUnplayed(applyAction(state, action))
@@ -95,14 +80,21 @@ function applyAction(state: RoundUiState, action: RoundUiAction): RoundUiState {
       return handleTapApplyDamage(state)
     case RoundUiActionKind.CancelApplyDamage:
       return state.applyPoised ? { ...state, applyPoised: false } : state
+    case RoundUiActionKind.TapDiscard:
+      return handleTapDiscard(state)
+    case RoundUiActionKind.CancelDiscard:
+      return handleCancelDiscard(state)
   }
 }
 
 function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
+  // DLR-100 — NOT `canAct`-gated (mirrors `discardWindowOpen`); must precede the guard below.
+  if (discardSelecting(state)) {
+    return toggleDiscardCard(state, tapped)
+  }
   if (!canAct(state)) {
     return state
   }
-
   // AC2 — while armed, a hand-card tap MARKS rather than plays.
   if (envenomArmed(state)) {
     return commitEnvenom(state, tapped)
@@ -127,7 +119,7 @@ function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
  * reducer during an event handler unmounts the tree.
  */
 function handleTapCheat(state: RoundUiState, id: CheatCardId): RoundUiState {
-  if (!canAct(state) || !hasCheat(state.cheats, id)) {
+  if (!canAct(state) || discardSelecting(state) || !hasCheat(state.cheats, id)) {
     return state
   }
   const current = state.cheatSelection
@@ -135,7 +127,12 @@ function handleTapCheat(state: RoundUiState, id: CheatCardId): RoundUiState {
     // Arming a Cheat reinterprets the same hand-card tap Envenom does, so the two selections
     // cannot coexist — clear a held Envenom selection here for the same reason `handleTapEnvenom`
     // clears `cheatSelection` on its own poise branch.
-    return { ...state, cheatSelection: { id, stage: CheatStage.Poised }, envenomStage: null }
+    return {
+      ...state,
+      cheatSelection: { id, stage: CheatStage.Poised },
+      envenomStage: null,
+      discardSelection: null,
+    }
   }
   const stage = current.stage === CheatStage.Poised ? CheatStage.Armed : null
   return stage === null ? clearCheat(state) : { ...state, cheatSelection: { id, stage } }
@@ -160,11 +157,17 @@ function clearCheat(state: RoundUiState): RoundUiState {
  * so allowing two at once makes the next tap ambiguous.
  */
 function handleTapEnvenom(state: RoundUiState): RoundUiState {
-  if (!canAct(state) || state.envenomCharges <= 0) {
+  if (!canAct(state) || discardSelecting(state) || state.envenomCharges <= 0) {
     return state
   }
   if (state.envenomStage === null) {
-    return { ...state, envenomStage: EnvenomStage.Poised, cheatSelection: null, armed: null }
+    return {
+      ...state,
+      envenomStage: EnvenomStage.Poised,
+      cheatSelection: null,
+      armed: null,
+      discardSelection: null,
+    }
   }
   if (state.envenomStage === EnvenomStage.Poised) {
     return { ...state, envenomStage: EnvenomStage.Armed }
@@ -261,7 +264,11 @@ function handleCarryOn(state: RoundUiState): RoundUiState {
     cleared.round.phase === RoundPhase.Complete ||
     isEncounterResolved(cleared.encounter) ||
     currentTurn(cleared.round) !== QUARRY_SIDE ||
-    cleared.round.currentTrick.length > 0
+    cleared.round.currentTrick.length > 0 ||
+    // DLR-100 fix pass — a discard selection open during the Quarry-to-lead gap must be finished
+    // or cancelled before the felt's ambient "tap to carry on" gesture is allowed to advance the
+    // lead again. Mirrors `handleTapCard`'s discard-first ordering: discarding takes priority.
+    discardSelecting(cleared)
   ) {
     return cleared
   }
@@ -275,106 +282,7 @@ function handleCarryOn(state: RoundUiState): RoundUiState {
   }
 }
 
-/**
- * Every `PlayCardOptions` field a resolving trick needs: D1's poison owed from EARLIER tricks, read
- * off the encounter's queue, plus DLR-92 AC4's bank-climb bonus, mirrored straight from state.
- *
- * One statement, read by both `playCard` call sites: the player's follow in `commit` and the
- * Quarry's in `advanceQuarryFollow`. Two readings of "what is pending" is exactly how a hit gets
- * paid twice or skipped, or a bonus applies to one side's follow and not the other's.
- */
-function playOptions(state: RoundUiState): PlayCardOptions {
-  return {
-    poisonToPlayer: state.encounter.pendingEnvenom[DuelSide.Player],
-    poisonToQuarry: state.encounter.pendingEnvenom[DuelSide.Quarry],
-    poisonGuarded: state.poisonGuardHeld,
-    bankClimbBonus: state.bankClimbBonus,
-  }
-}
-
-/**
- * One trick's whole effect on the encounter, in the one place it is stated: the trick's own damage,
- * D1's poison paid from an EARLIER trick, and this trick's own mark booked for the NEXT one.
- *
- * ORDER IS LOAD-BEARING, for the reason DLR-90 gave and one more. The damage lands FIRST, so
- * `queueEnvenom` then refuses a resolved encounter — a hit must never be carried into a fight that
- * is already over (D5's discard half at a fight boundary). And the queue is cleared BEFORE the new
- * booking, so a trick that both pays a poison and carries a mark does not have its own mark wiped
- * by the clear.
- *
- * The all-zero skip avoids bumping `damageEventsApplied` for nothing, but does not return early: a
- * REPLACED clean loss (DLR-90 AC5) is an all-zero event that still owes a booking.
- */
-function applyResolution(encounter: EncounterState, resolution: TrickResolution): EncounterState {
-  if (isEncounterResolved(encounter)) return encounter
-  const incoming = incomingFrom(resolution)
-  const paid =
-    incoming[DuelSide.Player] === 0 && incoming[DuelSide.Quarry] === 0
-      ? encounter
-      : applyDamage(encounter, incoming)
-  const cleared = hasPendingEnvenom(paid) ? { ...paid, pendingEnvenom: NO_PENDING_ENVENOM } : paid
-  return resolution.envenomTarget === null
-    ? cleared
-    : queueEnvenom(cleared, resolution.envenomTarget)
-}
-
-/** Commits `cardToPlay` for the player, then advances the opponent when the player led. */
-function commit(state: RoundUiState, cardToPlay: Card, choice?: AbilityChoice): RoundUiState {
-  const armedCheat = cheatArmed(state) ? state.cheatSelection : null
-  const result = playCard(state.round, PlayerSide.Player, cardToPlay, choice, {
-    ...playOptions(state),
-    ...(armedCheat ? { ignoreFollowSuit: true } : {}),
-  })
-  if (!result.ok) {
-    // A rejection is NOT a commit (AC7), so the Cheat survives and stays armed — the player can
-    // try another card without paying twice.
-    return { ...state, armed: null, prompt: null, rejection: result.reason }
-  }
-
-  // AC7 — consumed on ANY successful commit while armed, even if the card was legal anyway.
-  // No "was it needed" check: that would put a legality judgement in the reducer that
-  // `legalMoves` already owns, and would make arming free.
-  const cheats = armedCheat ? removeCheat(state.cheats, armedCheat.id) : state.cheats
-
-  const playedCard: TrickCard = { side: PlayerSide.Player, card: cardToPlay }
-  const resolvedTrick = deriveResolvedTrick(state.round, result.state, playedCard)
-  const encounter = resolvedTrick
-    ? applyResolution(state.encounter, resolvedTrick.resolution)
-    : state.encounter
-  const settled: RoundUiState = {
-    ...state,
-    round: result.state,
-    armed: null,
-    prompt: null,
-    rejection: null,
-    resolvedTrick,
-    encounter,
-    cheats,
-    cheatSelection: null,
-    envenomStage: null,
-    // AC4 — consumed exactly when it suppressed a reset, which `resolveTrickBank` decided. The
-    // reducer does not re-derive "did the Guard matter" — that would be a second reading of one
-    // rule, and the two would drift.
-    poisonGuardHeld: resolvedTrick?.resolution.poisonGuardSpent ? false : state.poisonGuardHeld,
-  }
-
-  if (resolvedTrick) {
-    return settled
-  }
-
-  // The player led — advance the opponent in the same commit. `settled`, not `state`, so the
-  // Quarry's follow reads the queue as the player's own commit left it.
-  const advanced = advanceQuarryFollow(result.state, playOptions(settled))
-  return {
-    ...settled,
-    round: advanced.round,
-    resolvedTrick: advanced.resolvedTrick,
-    cpuFault: advanced.cpuFault,
-    encounter: advanced.resolvedTrick
-      ? applyResolution(settled.encounter, advanced.resolvedTrick.resolution)
-      : settled.encounter,
-    poisonGuardHeld: advanced.resolvedTrick?.resolution.poisonGuardSpent
-      ? false
-      : settled.poisonGuardHeld,
-  }
-}
+// `commit` (the player's own commit, folding a trick's resolution into the encounter and
+// advancing the Quarry's follow when the player led) now lives in `commitHandlers.ts` — split out
+// in the DLR-100 fix pass alongside this file's Quarry-to-lead-gap guard, the same reason
+// `discardHandlers.ts` and `quarryAdvance.ts` were split out before it.

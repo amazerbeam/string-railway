@@ -18,7 +18,7 @@ import {
 } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
 import { createRoundUiState, RoundUiActionKind, type RoundUiState } from '../roundUiState'
-import { card, envenomChargesFixture, makeRound } from './roundFixture'
+import { card, discardsRemainingFixture, envenomChargesFixture, makeRound } from './roundFixture'
 
 // The bank cash-out specs (AC6/AC8) — carved into their own file for the same reason DLR-71's
 // own splits exist in this codebase: `roundReducer.test.ts` crossed the 400-line budget once
@@ -41,6 +41,7 @@ function uiFrom(
     envenomCharges: envenomChargesFixture,
     poisonGuardHeld: false,
     bankClimbBonus: 0,
+    discardsRemaining: discardsRemainingFixture,
   })
 }
 

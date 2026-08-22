@@ -131,6 +131,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
       at.cheats,
       at.envenomCharges,
       at.poisonGuardHeld,
+      at.discardsRemaining,
       null,
     )
     expect(recorded.flaskCharges).toBe(FLASK_STARTING_CHARGES)
@@ -144,6 +145,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
       at.cheats,
       at.envenomCharges,
       at.poisonGuardHeld,
+      at.discardsRemaining,
       null,
     )
     expect(recorded.flaskCharges).toBe(FLASK_STARTING_CHARGES)
@@ -157,6 +159,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
       at.cheats,
       at.envenomCharges,
       at.poisonGuardHeld,
+      at.discardsRemaining,
       null,
     )
     expect(recorded.flaskCharges).toBe(0)
@@ -183,6 +186,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
       at.cheats,
       at.envenomCharges,
       at.poisonGuardHeld,
+      at.discardsRemaining,
       null,
     )
     expect(recorded.flaskCharges).toBe(0)

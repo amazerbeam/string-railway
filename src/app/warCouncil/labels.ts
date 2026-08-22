@@ -1,6 +1,7 @@
 import {
   ApplyDamageRefusal,
   CardRank,
+  DiscardRefusal,
   IllegalMoveReason,
   QuarryIntentStance,
   Suit,
@@ -9,7 +10,7 @@ import {
   type QuarryIntent,
   type SuitShape,
 } from '../../warCouncil'
-import { DuelSide } from '../../hunt'
+import { DuelSide, MAX_CARDS_PER_DISCARD } from '../../hunt'
 import type { HealthBarView } from './duelHealthBars'
 import { CheatStage, EnvenomStage } from './roundUiState'
 
@@ -233,4 +234,37 @@ export function applyDamageAccessibleName(
   }
   const base = `${APPLY_DAMAGE_RAIL_LABEL} Damage, ${cashValue} to the Quarry`
   return poised ? `${base} — tap again to confirm` : base
+}
+
+/** The discard rail's copy (DLR-100). PLACEHOLDER — the wording is the developer's, exactly as
+ *  `CHEAT_RAIL_LABEL`/`ENVENOM_RAIL_LABEL`/`APPLY_DAMAGE_RAIL_LABEL` above are. */
+export const DISCARD_RAIL_LABEL = 'Discard'
+export const DISCARD_SELECT_HINT = `Pick up to ${MAX_CARDS_PER_DISCARD} cards to discard`
+export const DISCARD_READY_HINT = 'Tap Discard again to swap them'
+
+/** Why the control is dark, in the player's words. A total `Record`, so a fourth refusal reason is
+ *  a compile error here rather than an `undefined` sentence under a disabled button — the same
+ *  discipline `APPLY_DAMAGE_REFUSAL_MESSAGE` above already sets. */
+export const DISCARD_REFUSAL_MESSAGE: Readonly<Record<DiscardRefusal, string>> = {
+  [DiscardRefusal.NotAvailable]: 'Not available yet.',
+  [DiscardRefusal.NoDiscardsRemaining]: 'No discards left this fight.',
+  [DiscardRefusal.EmptySelection]: 'Select a card to discard.',
+}
+
+/** The rail's accessible name. The readings — held, selecting, ready, refused — MUST differ:
+ *  `getByRole('button', { name })` is how the spec tells them apart. */
+export function discardAccessibleName(
+  discardsRemaining: number,
+  selecting: boolean,
+  selectionSize: number,
+  refusal: DiscardRefusal | null,
+): string {
+  if (refusal !== null) {
+    return `${DISCARD_RAIL_LABEL}, unavailable — ${DISCARD_REFUSAL_MESSAGE[refusal]}`
+  }
+  const held = `${DISCARD_RAIL_LABEL}, ${discardsRemaining} left`
+  if (!selecting) return held
+  return selectionSize > 0
+    ? `${held}, ${selectionSize} selected — tap to swap`
+    : `${held}, selecting`
 }

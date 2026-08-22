@@ -7,7 +7,13 @@ import {
   RoundUiActionKind,
   type ResolvedTrick,
 } from '../roundUiState'
-import { card, encounterFixture, envenomChargesFixture, makeRound } from './roundFixture'
+import {
+  card,
+  discardsRemainingFixture,
+  encounterFixture,
+  envenomChargesFixture,
+  makeRound,
+} from './roundFixture'
 
 // The mark/arm mechanics of the Envenom control itself — the stage cycle, the mutual-exclusion
 // with a Cheat selection, and marking a card. The queue's booking and next-trick payment moved to
@@ -46,6 +52,7 @@ function seededUi(charges = envenomChargesFixture) {
     envenomCharges: charges,
     poisonGuardHeld: false,
     bankClimbBonus: 0,
+    discardsRemaining: discardsRemainingFixture,
   })
 }
 
@@ -97,6 +104,7 @@ describe('TapEnvenom respects the same canAct gate the Cheat uses', () => {
       envenomCharges: 1,
       poisonGuardHeld: false,
       bankClimbBonus: 0,
+      discardsRemaining: discardsRemainingFixture,
     })
     expect(roundReducer(ui, tapEnvenom)).toBe(ui)
   })
@@ -135,6 +143,7 @@ describe('marking (AC2)', () => {
       envenomCharges: 1,
       poisonGuardHeld: false,
       bankClimbBonus: 0,
+      discardsRemaining: discardsRemainingFixture,
     })
     ui = roundReducer(ui, tapEnvenom)
     ui = roundReducer(ui, tapEnvenom)

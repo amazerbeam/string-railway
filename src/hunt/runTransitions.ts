@@ -9,6 +9,7 @@
 
 import {
   COINS_PER_ENCOUNTER_WIN,
+  DISCARDS_PER_FIGHT,
   FLASK_STARTING_CHARGES,
   HEAL_HEALTH_RESTORED,
   OpponentKind,
@@ -46,10 +47,16 @@ import { canAdvanceRun, flaskStockFor, RunOutcome, shopStockFor, type RunState }
  * action), so there is nothing for a hand to hand back. It is read off `run` and refilled by
  * `flaskAfter` when the opponent just beaten was a stage boss.
  *
- * `unplayedCards` (DLR-95 AC2) is REQUIRED, not defaulted, for the reason `cheats` and
- * `envenomCharges` above are: the compiler must enumerate every call site. A defaulted `null`
- * would pay 0 forever the first time a driver forgot to thread the figure through, and would do it
- * silently. `null` is the legitimate value for a hand that did not end the fight.
+ * `discardsRemaining` (DLR-100 AC5) is the sixth parameter and REQUIRED for the same reason
+ * `cheats`, `envenomCharges`, and `poisonGuardHeld` are: the hand owns it for its lifetime and
+ * hands the survivor back through `WarCouncilRoundResult`. Carried through the returned spread
+ * unchanged — `advanceRun`, not this function, resets it at the fight boundary.
+ *
+ * `unplayedCards` (DLR-95 AC2) is REQUIRED, not defaulted, as the seventh parameter, for the
+ * reason `cheats` and `envenomCharges` above are: the compiler must enumerate every call site. A
+ * defaulted `null` would pay 0 forever the first time a driver forgot to thread the figure
+ * through, and would do it silently. `null` is the legitimate value for a hand that did not end
+ * the fight.
  */
 export function recordEncounter(
   run: RunState,
@@ -57,6 +64,7 @@ export function recordEncounter(
   cheats: readonly CheatCard[],
   envenomCharges: number,
   poisonGuardHeld: boolean,
+  discardsRemaining: number,
   unplayedCards: number | null,
 ): RunState {
   if (run.outcome !== RunOutcome.InProgress) {
@@ -83,6 +91,7 @@ export function recordEncounter(
     encounter,
     cheats,
     envenomCharges,
+    discardsRemaining,
     poisonGuardHeld: guardAfter(encounter, poisonGuardHeld),
     coins: wonThisEncounter ? run.coins + COINS_PER_ENCOUNTER_WIN + quickKill : run.coins,
     lastQuickKillPayout: quickKill,
@@ -112,6 +121,7 @@ export function advanceRun(run: RunState): RunState {
     encounter: startEncounter(encounterIndex, run.encounter.health[DuelSide.Player]),
     outcome: RunOutcome.InProgress,
     handOfFight: 1,
+    discardsRemaining: DISCARDS_PER_FIGHT,
   }
 }
 

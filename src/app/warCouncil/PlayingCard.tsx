@@ -18,6 +18,11 @@ interface PlayingCardProps {
    *  site keeps compiling; a caller that knows the card's state passes it. The SAME rendering path
    *  as `skulled` — one more conditional `<span>` in one component, not a second component. */
   readonly envenomed?: boolean
+  /** DLR-100 — a card currently toggled into the open discard selection. Defaults to `false` so
+   *  every existing call site keeps compiling; a caller that knows the state passes it. The SAME
+   *  rendering path as `skulled`/`envenomed` — one more conditional `<span>`, not a second
+   *  component. */
+  readonly discardSelected?: boolean
   readonly tabIndex?: number
   readonly style?: CSSProperties
   readonly onTap?: (card: Card) => void
@@ -39,6 +44,7 @@ export default function PlayingCard({
   winner = false,
   skulled = false,
   envenomed = false,
+  discardSelected = false,
   tabIndex,
   style,
   onTap,
@@ -54,6 +60,7 @@ export default function PlayingCard({
     illegal && 'wc-is-illegal',
     armed && 'wc-is-armed',
     winner && 'wc-is-winner',
+    discardSelected && 'wc-is-discard-selected',
   ]
     .filter(Boolean)
     .join(' ')
@@ -66,7 +73,7 @@ export default function PlayingCard({
       disabled={condensed || illegal}
       tabIndex={condensed ? -1 : tabIndex}
       aria-label={cardAccessibleName(card, { skulled, envenomed })}
-      aria-pressed={armed ? true : undefined}
+      aria-pressed={armed || discardSelected ? true : undefined}
       onClick={() => onTap?.(card)}
     >
       <span className="wc-card-rank" aria-hidden="true">
@@ -81,6 +88,11 @@ export default function PlayingCard({
       {envenomed && (
         <span className="wc-venom-mark" aria-hidden="true">
           ⚗
+        </span>
+      )}
+      {discardSelected && (
+        <span className="wc-discard-mark" aria-hidden="true">
+          ✕
         </span>
       )}
       <span className={`wc-card-pip${hasAbility ? '' : ' wc-is-blank'}`} aria-hidden="true" />

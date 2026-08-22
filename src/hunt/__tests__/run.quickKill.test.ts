@@ -24,6 +24,7 @@ function playAnotherHand(run: ReturnType<typeof startRun>) {
     run.cheats,
     run.envenomCharges,
     run.poisonGuardHeld,
+    run.discardsRemaining,
     null,
   )
 }
@@ -47,6 +48,7 @@ describe('handOfFight — the hand-within-encounter counter (AC3)', () => {
       second.cheats,
       second.envenomCharges,
       second.poisonGuardHeld,
+      second.discardsRemaining,
       3,
     )
     expect(won.handOfFight).toBe(2)
@@ -60,6 +62,7 @@ describe('handOfFight — the hand-within-encounter counter (AC3)', () => {
       third.cheats,
       third.envenomCharges,
       third.poisonGuardHeld,
+      third.discardsRemaining,
       0,
     )
     expect(advanceRun(won).handOfFight).toBe(1)
@@ -76,6 +79,7 @@ describe('recordEncounter — the quick-kill payout (AC1, AC2, AC4, AC5)', () =>
       run.cheats,
       run.envenomCharges,
       run.poisonGuardHeld,
+      run.discardsRemaining,
       unplayedCards,
     )
   }
@@ -108,6 +112,7 @@ describe('recordEncounter — the quick-kill payout (AC1, AC2, AC4, AC5)', () =>
       run.cheats,
       run.envenomCharges,
       run.poisonGuardHeld,
+      run.discardsRemaining,
       null,
     )
     expect(won.lastQuickKillPayout).toBe(0)
@@ -117,7 +122,15 @@ describe('recordEncounter — the quick-kill payout (AC1, AC2, AC4, AC5)', () =>
   it('pays nothing at all when the player is the one who went down', () => {
     const run = startRun()
     const dead = applyDamage(run.encounter, damage(PLAYER_START_HEALTH, 0))
-    const lost = recordEncounter(run, dead, run.cheats, run.envenomCharges, run.poisonGuardHeld, 6)
+    const lost = recordEncounter(
+      run,
+      dead,
+      run.cheats,
+      run.envenomCharges,
+      run.poisonGuardHeld,
+      run.discardsRemaining,
+      6,
+    )
     expect(lost.lastQuickKillPayout).toBe(0)
     expect(lost.coins).toBe(0)
   })

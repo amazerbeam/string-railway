@@ -23,6 +23,8 @@ function renderFan(overrides = {}) {
       promptOpen={false}
       envenomedCards={[]}
       envenomArmed={false}
+      discardSelecting={false}
+      discardSelection={[]}
       onTap={onTap}
       onCancel={onCancel}
       {...overrides}
@@ -121,5 +123,29 @@ describe('HandFan', () => {
     const fox = screen.getByRole('button', { name: '3 of Keys (Fox)' })
     expect(fox.getAttribute('tabindex')).toBe('0')
     expect(document.activeElement).toBe(fox)
+  })
+
+  it('makes every card tappable while discardSelecting, including an illegal one (DLR-100)', () => {
+    const { onTap } = renderFan({ discardSelecting: true })
+    const illegal = screen.getByRole('button', { name: '7 of Bells' })
+    expect(illegal).toHaveProperty('disabled', false)
+    illegal.click()
+    expect(onTap).toHaveBeenCalledWith(card(Suit.Bells, 7))
+  })
+
+  it('lets the roving tabindex reach an illegal card by arrow key while discardSelecting', () => {
+    renderFan({ discardSelecting: true })
+    const group = screen.getByRole('group', { name: /hand/i })
+    fireEvent.keyDown(group, { key: 'ArrowRight' })
+    const fox = screen.getByRole('button', { name: '3 of Keys (Fox)' })
+    expect(fox.getAttribute('tabindex')).toBe('0')
+    expect(document.activeElement).toBe(fox)
+  })
+
+  it('marks a card present in discardSelection with the discard treatment', () => {
+    renderFan({ discardSelecting: true, discardSelection: [card(Suit.Bells, 7)] })
+    const marked = screen.getByRole('button', { name: '7 of Bells' })
+    expect(marked.className).toContain('wc-is-discard-selected')
+    expect(marked.querySelector('.wc-discard-mark')).not.toBeNull()
   })
 })
