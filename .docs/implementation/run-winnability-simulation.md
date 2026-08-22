@@ -145,6 +145,6 @@ entirely at fight 0 now land mostly around **fight 3–4** instead.
 original "0/900 wins" headline was measuring a broken test harness on its opening fight, not a rigged
 one. It does **not** establish that the run is winnable, or close to it, once a player is actually
 surviving long enough to reach the later stages — see the exchange-ratio argument in
-`version-5-scope.md` §0 for why the deeper-run gap is a separate, larger question this fix does not
+`../design/Balatro-Forbidden-Solitaire/version-5-developer-idea.md` for why the deeper-run gap is a separate, larger question this fix does not
 answer. As before: not an exhaustive search, and the strategies used here are "reasonable and
 tool-using," not provably optimal.

@@ -1,16 +1,32 @@
 # Version 5 — Developer Idea: The Buff Loadout, Slot Draws, and a Delayed Apply Damage
 
-Captured 2026-08-22, from a live design conversation. **This is the developer's own idea, mid-shape —
-not committed scope like [`version-5-scope.md`](./version-5-scope.md).** Several numbers below are
-still open. Treat this the way `ideas.md` treats a strong entry: worth building toward, not yet a
-queued ticket.
+Captured 2026-08-22, from a live design conversation. **This is the single document for this
+direction.** An earlier, separate `version-5-scope.md` covered a smaller first pass at the same
+release (scrapping Poison Guard, renaming Envenom to Timebomb, a first take on a hand-long shelf and
+a run-permanent catch-up item, and Diarmuid's ignore-follow-suit rule) — that doc is retired now that
+this idea has superseded most of its shop structure, and its still-live pieces are folded in below so
+nothing is lost:
 
-**Two lanes `version-5-scope.md` explicitly paused have both been reopened by this idea, on its own
-logic, and the developer has now lifted both pauses.** Choosing which slot machine to pull from (§3)
+- **Poison Guard is scrapped** — stays scrapped; nothing in this document brings it back.
+- **Envenom is renamed Timebomb** — carried forward as one of the buffs in §1/§3.
+- **Diarmuid (the final boss) is meant to ignore follow-suit**, mirroring the player's own Cheat —
+  unaffected by anything in this document, still owed, still unbuilt. Worth stating plainly: with Cheat
+  now able to reach a three-trick duration at gold tier (§3), an ignore-follow-suit Diarmuid up against
+  a player holding a long Cheat is worth a second look once both exist.
+- **Graft (branding a card skull-immune) was cut** — it doesn't reduce the Quarry's skull count, it
+  relocates one about 6% of the time, usually toward a worse rank. Stays cut.
+- **Chisel (permanently removing a card from the 33) stays deferred** — the deal logic assumes a fixed
+  33-card pool, and shrinking it needs its own costed pass before this or any other deck-modification
+  idea ships.
+
+Several numbers below are still open. Treat this the way `ideas.md` treats a strong entry: worth
+building toward, not yet a queued ticket.
+
+**Two lanes were explicitly paused in the earlier scope doc, and both got reopened by this idea on its
+own logic — the developer has now lifted both pauses.** Choosing which slot machine to pull from (§3)
 is this cycle's answer to "choice under scarcity." The Vault (§8) is this cycle's answer to
-cross-run meta-progression. Both were paused for a reason — neither was designed yet — and both got
-designed anyway, by following where the buff-loadout idea actually led rather than by deciding up
-front to build them.
+cross-run meta-progression. Neither was designed on purpose; both fell out of following where the
+buff-loadout idea actually led.
 
 ## 0. The problem this answers
 
@@ -36,9 +52,17 @@ under this idea, both become ordinary buff cards, owned and drawn the same way e
 pile is. This is a real simplification — one shared interaction model instead of three parallel ones
 — but it isn't a demotion: the developer's own example (see a suit imbalance in the "what the Quarry
 holds" readout — "they have 3 Bells, I have none" — and pop the Cheat right then) confirms these stay
-**reactive**, held in the pile and sprung mid-hand in response to what's actually happening, not
-locked in during a pre-hand-only pick. Whether *every* buff card behaves this way, or only some, is
-still open — see §4.
+**reactive**, held in the pile and sprung in response to what's actually happening, not locked in once
+for the whole hand up front.
+
+**Confirmed timing rule: a buff must be applied before that trick's first card is laid.** This isn't a
+once-per-hand lock — Apply Buff opens again before every trick within the hand, so the player can
+reconsider what to bring based on how the hand has gone so far, but the choice for a given trick has to
+land before that trick's own card is committed, the same as it does for every other buff. This is also
+the exact timing the discard window already uses — `the-hunt.md` describes it as open "before a
+trick's first card is laid — including before the Quarry's own lead" — so Apply Buff doesn't need a new
+gate built for it; it reuses `discardWindowOpen`'s existing timing rather than inventing a second
+version of the same rule.
 
 Buffs are bought once from the shop and owned permanently, the way a Whetstone purchase is — but
 unlike Whetstone, owning a buff doesn't make it always-on. Each hand, the player chooses which owned
@@ -46,6 +70,15 @@ buffs to bring, spending AP per buff (the working example is 3 AP each), and can
 budget allows. That splits *owning* a thing from *using* a thing into two separate decisions — the
 mechanism that makes Balatro's shop feel like deck-building rather than shopping, reused here through
 this game's own vocabulary instead of copied wholesale as a Joker system.
+
+**Build note: AP should be implemented so it can be switched off cleanly.** This is a genuinely new
+resource layered on top of the whole card game, and the developer wants a real way to back out of it
+if it doesn't play well — not by ripping the system out, but by however cheap a single toggle can make
+that. Concretely: every AP cost (a buff, and Apply Damage — see §2) should read from one place, the way
+`applyDamageRefusalFor` is already the single statement of whether that control is live rather than a
+rule re-derived at each call site. Whatever that place is, flipping it off should make every action
+available with no AP cost at all, rather than requiring each caller to be found and patched
+individually.
 
 Example buffs given in the original conversation, verbatim:
 
@@ -59,9 +92,9 @@ constrain the Quarry's choice directly — and needs its own costing pass before
 imagine it being disproportionately strong.
 
 **AP capacity is itself a run-permanent purchase** — the developer's own confirmed answer: a shop item
-grants **+5 AP**, the same shape as Whetstone raising the bank's climb. So the loadout genuinely grows
-over a run rather than staying fixed, which is a second progression axis sitting alongside the always-on
-passives (Whetstone, and the Bulwark idea from `version-5-scope.md`).
+grants **+5 AP**, the same shape Whetstone used to raise the bank's climb. So the loadout genuinely
+grows over a run rather than staying fixed. See §7 for the shelf this sits on and what else was
+considered for it.
 
 **Health-buffing is deliberately deferred**, on the developer's own instinct — build the AP economy
 first, and design a purchasable max-health increase separately once that instinct can be checked
@@ -72,6 +105,10 @@ free, isn't obviously the same thing — but the same argument plausibly still a
 resolving explicitly before this ships, not assumed away because the money changes hands differently.
 
 ## 2. Apply Damage becomes a real bet
+
+**Pressing Apply Damage costs Action Points too**, the same as activating a buff does — it isn't a free
+action sitting outside the AP economy, it competes for the same budget as everything else in the
+loadout. The exact cost is open; nothing so far fixes it at 3 AP the way the buff working example does.
 
 Pressing Apply Damage no longer cashes the bank instantly. By default, the payment is **queued** and
 resolves after the current trick plus the next trick's resolution — a one-trick delay — and **taking
@@ -119,12 +156,13 @@ silver, **+5** at gold, but Cheat and Timebomb each tier along a different axis 
   a higher tier strictly better to pull, same 2-health risk either way), or does it keep today's 2:1
   ratio and scale both sides together (bigger reward, proportionally costlier backfire)? Not urgent,
   but worth deciding before real numbers go on it.
+- **Shield's tier is a count of blue hearts** — see §7a for the redesigned mechanic. Bronze adds 1,
+  silver 2, gold 3.
 
-**Choosing a machine before pulling reopens something `version-5-scope.md` explicitly paused** —
-choice between differently-weighted offers is the "choice under scarcity" gap that scope doc named as
-future-build, not this cycle. This might be exactly the right vehicle for that gap once it arrived on
-its own terms, or it might be worth keeping separate from this idea entirely. That's a real decision
-point, not a foregone conclusion, and it's flagged here rather than resolved.
+**Choosing a machine before pulling is this cycle's answer to "choice under scarcity."** Which build
+axis a player lands on now depends on which machine they play and what the reels give them, rather than
+a fixed menu always purchasable if affordable — see §7 for what's actually left to draw, now that
+Whetstone-style build items have been pared back.
 
 ## 4. What's still open
 
@@ -140,11 +178,32 @@ point, not a foregone conclusion, and it's flagged here rather than resolved.
   for.** These are very different economies and the rest of this document assumes the former; it's
   worth confirming explicitly rather than by default.
 - **The opponent-forced-card buff's power level** — flagged in §1, not costed here.
-- **Whether *every* buff card is reactive (held and sprung mid-hand, like Cheat) or whether some are
-  genuinely pre-hand-only picks** (a hand-shaping choice made in the Apply Buff phase before a card is
-  played). §1 confirms Cheat-like cards stay reactive; it doesn't settle whether the whole pile works
-  that way.
+- **The starting buff pile's size and tier mix.** §8 says a run begins with "a small number" of buff
+  cards rather than empty-handed, and never puts a figure on it or says what tier they arrive at. Both
+  need answering together: a pile of four bronze cards and a pile of four gold ones are different games
+  from the first fight. The Vault's tier purchases (§8) imply a low default, but the default itself is
+  unwritten.
+- **The starting AP pool.** The shop's capacity item grants **+5 AP** and the working activation cost is
+  **3 AP** a buff — but nothing states what the player begins a run with, and `+5` means nothing without
+  it. At 3 AP a buff, a starting pool of 5 is one buff a hand with 2 stranded; 6 is exactly two. This
+  compounds with the bullet above: four owned buffs against 3 AP is a real choice, against 12 AP it
+  isn't one at all.
+- **When AP refreshes.** §1 says buffs are activated "each hand," which reads as a per-hand budget that
+  resets at the deal — but it is never said outright, and a per-fight or per-run pool would be a
+  different economy entirely. The AP-refund reward template (§5) only makes sense against one of these
+  readings.
+- **Whether AP cost scales with tier.** Effects are tiered carefully throughout §3; what a tier *costs
+  to bring* is never asked. A gold Cheat — three tricks with follow-suit off — activating for the same
+  3 AP as its bronze version is a very different loadout economy from tier-priced activation.
+- **How a per-hand budget meets a per-trick window.** §4's resolved note opens Apply Buff before every
+  trick, while §1 frames AP as a per-hand allowance. Drawing one budget down across up to six windows is
+  its own decision — spend early, or hold reserve for a trick that goes wrong — and neither section
+  addresses it. The two rules were written into the same section and don't quite meet.
 - **The max-health purchase**, deliberately not designed here — see §1's closing note.
+
+**Resolved:** every buff is applied per-trick, before that trick's card is laid, reusing the discard
+window's existing timing (§1) — not a once-per-hand pre-lock. This closes the reactive-vs-pre-hand
+question this section used to carry open.
 
 ## 5. Draft card templates — **TO BE REVIEWED, not committed**
 
@@ -181,11 +240,14 @@ several entries want a second look before anything is built from them.
 | Flat damage bonus | +1 / +3 / +5 damage | The default reward, matches the worked Bells example from §3 |
 | Coin bonus | +2 / +5 / +10 coins | Turns a card into an income lever rather than a combat one |
 | AP refund | Refund 1 / 2 / 3 AP | Lets a loadout partly pay for itself — could combo dangerously with the "for every other buff" synergy condition above; worth flagging together |
-| Ward this trick | No health lost this trick / this hand / this fight | A tiered version of the Ledger idea from `version-5-scope.md`'s abilities pass — same shape, different acquisition route |
+| Ward this trick | No health lost this trick / this hand / this fight | A narrower, single-trick cousin of Shield's blue hearts (§7a) — same idea, smaller and cheaper |
 | Force a legal card from the opponent | Choose 1 card / mark 2 in advance / mark for the whole hand | Your own example — the strongest and least-costed template here; a gold tier on this one especially needs its own pass before it ships |
 | Extra discard | +1 / +2 discards this fight | Reuses `the-discard-budget.md`'s existing resource rather than inventing a new one |
-| Multiplier boost | +1 / +2 / +3 to the streak's climb | Overlaps with Whetstone and `version-5-scope.md`'s Bulwark — needs a pass to make sure this doesn't quietly become a third way to buy the same axis |
 | Peek the draw pile | See the next 1 / 3 / 5 cards | An information reward rather than a numeric one — cheap to build, untested as a *reward* rather than a passive readout |
+
+**Multiplier boost, dropped.** A template scaling the streak's climb directly would have overlapped
+with Whetstone — see §7 for why Whetstone itself is currently out of the shop rather than folded into
+this pool.
 
 ### A few combined worked examples
 
@@ -218,37 +280,53 @@ apply to, live, rather than the player having to remember what they activated an
 themselves. Cheap in spirit (it's a readout, not a rule), though real to build once the buff pile can
 contain conditions layered several deep on the same card.
 
-## 7. The run-permanent shelf splits: capacity, fixed; builds, random
+## 7. The shop, pared down: capacity plus the buff list, everything else held back
 
-The run-permanent shelf no longer holds Whetstone-style build items directly. Two kinds of purchase
-now live in two different places:
+**The shop currently sells exactly three things: the buff list (drawn through the slot machine, §3),
+a Health purchase, and an AP purchase.** Everything else previously drafted for this release —
+Whetstone, Reflex, the discard-budget increase, the odds-raising purchase — is **removed from the
+shop for now, on the developer's explicit call, so this pared-down version can be tested before
+anything else is added back.** None of it is deleted from the design, and once any of it is actually
+implemented in code, the same rule applies going forward: pull it from the shop's purchasable list,
+never delete the underlying mechanic, so bringing it back later costs nothing.
 
-**Fixed, always on the shelf, costly:** pure capacity, where there's no strategic differentiation in
-buying it — more is simply better, and nobody would ever choose less. Confirmed for this list:
+**Two items are cut outright, not held back** — a different thing from the paragraph above:
 
-- **Health** — a permanent increase to max health. Still deliberately undesigned (§1) pending the
-  DLR-82 question about whether this runs into the same argument that ruled out raising starting
-  health.
-- **AP capacity** — the existing +5 AP purchase from §1.
+- **Berserk** (double damage dealt and taken for a hand) — removed from the design entirely.
+- **Bulwark** (the stacking run-permanent hit-absorption count originally proposed as this release's
+  catch-up item) — also removed entirely, superseded by Shield's redesign below, which does the same
+  job through a different, more visible mechanism.
 
-Two more candidates were raised and checked against the same test. **Discard budget** (a permanent
-+1-per-fight increase) passes it — pure capacity, no build-differentiation — and is a real candidate
-for this shelf. **Cheat slot count does not**, and shouldn't be added even though it looks like the
-same shape at a glance: `config.ts` records an explicit, deliberate decision that `CHEAT_SLOT_COUNT` is
-capped at 2 "not so it is easy to raise" — an uncapped Cheat count was argued, at the time, to remove
-the skull's status as the only thing stopping "take every trick" from being correct. That's a decided
-constraint on record, not an oversight to fix.
+### 7a. Shield, redesigned — blue hearts on the health bar
 
-A further candidate, not yet decided either way: **raising the odds a specific card shows up** in the
-slot machine's pool, bought with otherwise-idle leftover coin. It passes the same capacity test — there's
-no build choice in wanting better odds — so if it's built, it belongs here, on the fixed shelf,
-**not** inside the slot machine itself (using the machine to bias the machine would be circular).
+Shield no longer works as a hidden per-hand counter. Instead, activating it adds **blue hearts**
+directly onto the player's health bar for that hand — a visible, distinct pip type, separate from the
+ordinary red hearts. Two hard rules: **blue hearts cannot be healed or restored** by anything (Heal,
+the flask, or otherwise) once lost, and they **do not stack** — re-activating Shield a later hand
+resets to the tier's count, it doesn't add on top of hearts already there. The tier sets how many:
+bronze adds **1**, silver **2**, gold **3**.
 
-**Random, drawn through the slot machine (§3), not purchased directly:** the actual build-differentiating
-items — Whetstone, Bulwark (`version-5-scope.md` §4), and Reflex (the Quarry skill-nerf from the earlier
-abilities pass) all move here. This is what resolves "choice under scarcity" for this shelf: which build
-axis you land on now depends on which machine you play and what the reels give you, rather than a fixed
-menu you can always just buy from if you can afford it.
+This keeps the actual goal Bulwark was built for — dividing what you take, the way Whetstone used to
+multiply what you deal — but makes the cost and the protection both fully visible on the felt instead
+of living in an invisible counter, which is exactly the kind of legibility fix §6's card preview is
+also built around.
+
+### What's on the shelf now, plainly stated
+
+- **Fixed shop, always purchasable, costly:** Health (permanent max-health increase — still
+  deliberately undesigned per §1's DLR-82 note) and AP capacity (+5 AP).
+- **The buff list, drawn through the slot machine:** Cheat, Timebomb, Shield, and the templated
+  condition/reward cards from §5.
+- **Held back from the shop, kept in reserve once built:** Whetstone, Reflex, the discard-budget
+  increase, the odds-raising purchase (Vault-funded or otherwise).
+- **Cut, not held back:** Berserk, Bulwark, Graft, Poison Guard.
+- **Superseded, not built:** a suit-specific run-long item bought directly from the store (the
+  original working example was "Bells +2 multiplier") was part of the earliest version of this idea,
+  before the shelf split above existed. It was never explicitly cut, but nothing build-differentiating
+  is directly purchasable any more — Whetstone itself moved to held-back-and-slot-drawn on the same
+  logic — so a direct-buy suit scaler doesn't have a shop slot to sit in as this document currently
+  stands. Worth an explicit call on whether it's dead or whether it wants reintroducing as one of the
+  templated cards in §5 instead.
 
 ## 8. The Vault — cross-run meta-progression, pause lifted
 
@@ -266,8 +344,8 @@ Two confirmed uses, both anchored to what a player might actually want after lik
   fight of the next run.
 
 **This is also the concrete fix for the first-fight problem**, and a stronger one than anything tried
-so far: a fresh run starts with a **small number of buff cards already in the player's pile**, not
-empty-handed. The one thing already tested here — `RUN_STARTING_CHEATS` raised from 0 to 1 — was
+so far: a fresh run starts with **4 buff cards already in the player's pile**, not empty-handed. The
+one thing already tested here — `RUN_STARTING_CHEATS` raised from 0 to 1 — was
 measured directly and made no difference to the fight-zero death rate (see the simulation doc's
 2026-08-22 addendum): a single narrow escape hatch isn't the same as an actual small toolkit from turn
 one. Starting with a handful of real buff cards, and the ability to bias which ones show up via the
@@ -278,3 +356,21 @@ either, and should be before it's trusted.
 whether it should be visible during a run as a coming attraction or only revealed at death, and
 whether raising a card's odds and buying it directly into the starting pile are two separate spends or
 the same upgrade path at different price points.
+
+## 9. The UI needs a full pass, not a patch
+
+Everything above changes enough about how a hand is actually played that the existing screens can't
+just absorb it piecemeal. The felt rails documented in `war-council-ui/` today — separate Cheat slots,
+a separate Envenom plate, a separate discard plate, a separate Apply Damage plate — are being replaced
+by one four-button bar (§1). The health bar needs to render a second pip type that behaves differently
+from the first (§7a's blue hearts). The shop screen needs to show a slot machine with a machine choice
+and a three-reel pull instead of a fixed list (§3, §7). Cards need a live win/lose readout that updates
+as buffs are applied (§6). And the run's meta-progression (§8) needs a screen of its own that doesn't
+exist today at all — something shown at a run's end, distinct from the verdict panel, where Vault
+currency gets spent.
+
+This is flagged here rather than designed here — it's a `game-ux` and `react-frontend` question once
+this direction is actually being built, not a `game-designer` one. But it's worth stating plainly now,
+before anyone assumes the current screens mostly survive: they don't. Nearly every surface this game
+has shipped so far — the dossier, the felt rail, the shop, the health bar — is touched by something in
+this document.
