@@ -571,5 +571,14 @@ the `recordEncounter` widening (and the seven-call-site planning gap it exposed)
 [war-council-ui/discard-plate-and-selection.md](war-council-ui/discard-plate-and-selection.md) for
 `discardWindowOpen`, the rail control, the hand fan's third mode, and both defects.
 
+## Investigation — run-winnability simulation (2026-08-22)
+
+Not tied to a ticket: 900 simulated full runs, driving `src/hunt/**` and `src/warCouncil/**`
+directly with no browser, answered "is the run currently winnable, and if not, why not" fresh
+rather than trusting the three-ticket-stale full-run data DLR-92 left on record. Result: 0 wins;
+roughly half of all runs die on the very first, exactly-matched fight. See
+[run-winnability-simulation.md](run-winnability-simulation.md) for what was played, how, and the
+full results.
+
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

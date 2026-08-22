@@ -192,11 +192,13 @@ export const ENCOUNTERS_PER_RUN = QUARRY_ENCOUNTER_HEALTH.length
 // UNIT: slots available to the player, for the whole run.
 export const CHEAT_SLOT_COUNT = 2
 
-// DLR-83 AC3 — how many Cheats a run opens with. SET BY THE DEVELOPER 2026-08-17, down from 2:
-// a run should start empty-handed, with Cheats earned or bought rather than granted free.
+// DLR-83 AC3 set this to 0 on 2026-08-17: a run should start empty-handed, with Cheats earned or
+// bought rather than granted free. RAISED BACK TO 1 by the developer on 2026-08-22, to test whether
+// a tool available before fight one's coin-gated catch-up (see run-winnability-simulation.md) moves
+// the run's win rate at all.
 // Must be 0..CHEAT_SLOT_COUNT; `grantCheats` throws outside that range rather than clamping.
 // UNIT: Cheat cards granted once, at the start of a run.
-export const RUN_STARTING_CHEATS = 0
+export const RUN_STARTING_CHEATS = 1
 
 // DLR-84 AC1 — what beating an opponent pays. TRANSCRIBED FROM THE TICKET (developer's
 // specification, 2026-08-15), not chosen here. Credited by `recordEncounter`, which is the one
