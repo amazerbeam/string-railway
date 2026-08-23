@@ -1,4 +1,4 @@
-import { QuarryCharacter, type Health, type Damage, type Coins, type ActionPoints } from './types'
+import { QuarryCharacter, type Health, type Damage, type Coins } from './types'
 
 // §5 "Player health" — DECIDED, and small on purpose: Balatro tracks 4 hands and 3 discards as
 // integers held in the head against score requirements in the hundreds and thousands, and §5
@@ -357,29 +357,16 @@ export const FORCED_CASH_OUT_DENOMINATOR: number = 3
 export const DISCARDS_PER_FIGHT = 3
 export const MAX_CARDS_PER_DISCARD = 3
 
-// DLR-104 AC1 — a single flag such that flipping it off makes every AP-gated action free,
-// with no consuming code writing its own bypass (see actionPoints.ts's apCostFor).
-// DEVELOPER DECISION: defaults true so the module is exercisable in its own tests; flip to
-// false at any time before a consumer lands with no other code change required.
-// UNIT: on/off.
-export const AP_ENABLED = true
-
-// DLR-104 AC1 — the player's opening AP pool, and what a perHand refresh resets to.
-// DEVELOPER-CHOSEN PLACEHOLDER pending the first playtest — no consumer exists yet (AC4), so
-// this number has never been played against.
-// UNIT: action points.
-export const STARTING_AP: ActionPoints = 6
-
-// DLR-104 AC1 — when the AP pool resets. An ENUM-SHAPED CONSTANT, not a boolean: the
-// ticket's own risk note is explicit that a boolean here is what forces a refactor the day a
-// playtest wants per-fight or per-run pooling instead of per-hand. `erasableSyntaxOnly` rules
-// out a real TypeScript `enum` (tsconfig.app.json) — this is the same `as const` shape
-// TelegraphFidelity above already uses.
-export const ApRefreshCadence = {
-  PerHand: 'perHand',
-} as const
-export type ApRefreshCadence = (typeof ApRefreshCadence)[keyof typeof ApRefreshCadence]
-
-// §1's "each hand" framing / the game-designer consult's recommended default, per the epic
-// breakdown's T1.
-export const AP_REFRESH_CADENCE: ApRefreshCadence = ApRefreshCadence.PerHand
+// DLR-108 — the AP tunables moved to `./apConfig` when this file reached its 400-line blocking
+// budget, the same split `run.ts` → `runTransitions.ts` already made. Re-exported here so every
+// existing importer (`actionPoints.ts`, `index.ts`, the specs) resolves unchanged.
+export {
+  AP_ENABLED,
+  STARTING_AP,
+  ApRefreshCadence,
+  AP_REFRESH_CADENCE,
+  MAX_REFUND_PER_HAND,
+  MAX_MULTIPLIER_BONUS_PER_HAND,
+  MAX_FLAT_DAMAGE_BONUS_PER_HAND,
+  MAX_COIN_BONUS_PER_HAND,
+} from './apConfig'

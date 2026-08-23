@@ -57,6 +57,10 @@ export {
   STARTING_AP,
   ApRefreshCadence,
   AP_REFRESH_CADENCE,
+  MAX_REFUND_PER_HAND,
+  MAX_MULTIPLIER_BONUS_PER_HAND,
+  MAX_FLAT_DAMAGE_BONUS_PER_HAND,
+  MAX_COIN_BONUS_PER_HAND,
   OpponentKind,
   RUN_ENCOUNTERS,
   ORDINARY_OPPONENT_NAMES,
@@ -74,14 +78,22 @@ export { PathNodeStatus, runPath } from './runPath'
 export type { CheatCard, CheatCardId } from './cheats'
 export { grantCheats, addCheat, removeCheat, hasCheat } from './cheats'
 
-export type { Buff, BuffId, BuffCondition, BuffReward } from './buffs'
+export type { Buff, BuffId, BuffCondition, BuffReward, BuffTarget } from './buffs'
 export {
   BuffTier,
   BuffKind,
   BuffRewardAxis,
+  BuffCadence,
+  BuffTargetSuit,
+  BUFF_CADENCE,
+  BUFF_TARGET_RANK_MIN,
+  BUFF_TARGET_RANK_MAX,
   UNASSIGNED_BUFF_CONDITION,
   UNASSIGNED_BUFF_REWARD,
   ACTIVATED_BUFF_CONDITION,
+  buffTargetSuitOf,
+  buffTargetRankOf,
+  isValidBuffTarget,
   seedStartingBuffPile,
 } from './buffs'
 
@@ -95,6 +107,40 @@ export {
   cheatDurationTricksOf,
   timebombDamageOf,
 } from './buffCatalog'
+
+export type { BuffCostAxis } from './buffCosts'
+export {
+  AP_COST_MIN,
+  AP_COST_MAX,
+  REWARD_BASE,
+  CONDITION_MODIFIER,
+  CONSUMABLE_AP_COST,
+  buffApCost,
+  apCostOf,
+  isConditionFamily,
+  isConsumableKind,
+} from './buffCosts'
+
+export type { BuffBonusAccrual } from './buffAccrual'
+export {
+  EMPTY_BUFF_ACCRUAL,
+  startHandAccrual,
+  accrualCapFor,
+  accrueAxisBonus,
+  overlapBonusFor,
+  resolveFiredBuffs,
+} from './buffAccrual'
+
+export type { BuffActivationStock, BuffActivationState } from './buffActivation'
+export {
+  BuffActivationRefusal,
+  startBuffActivation,
+  buffActivationRefusalFor,
+  buffActivationStockFor,
+  activateBuff,
+  openBuffWindow,
+  refreshBuffsForNewHand,
+} from './buffActivation'
 
 export {
   startEncounter,

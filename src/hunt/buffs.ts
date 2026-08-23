@@ -14,11 +14,34 @@ export type BuffTier = (typeof BuffTier)[keyof typeof BuffTier]
  * `Unassigned` is what `seedStartingBuffPile` mints: the run's opening pile is still placeholder
  * content (DLR-105 AC4), and naming that keeps it obviously placeholder rather than silently
  * turning the four opening buffs into Cheats.
+ *
+ * DLR-108/DLR-111 finding 1 — the 11 shipping condition families and 5 consumables the authored
+ * v1 list needs, appended below the three pre-existing members which are UNCHANGED. `Unassigned`,
+ * `Cheat` and `Timebomb` keep their exact string values, so every existing equality check
+ * (`buffCatalog.ts`, the two test files) still passes with no edit of its own.
  */
 export const BuffKind = {
   Unassigned: 'unassigned',
   Cheat: 'cheat',
   Timebomb: 'timebomb',
+  // 11 shipping condition families (DLR-111 finding 1)
+  Taker: 'taker',
+  Feeder: 'feeder',
+  MarkOfRank: 'markOfRank',
+  Sidestep: 'sidestep',
+  Glutton: 'glutton',
+  Hoarder: 'hoarder',
+  Unbloodied: 'unbloodied',
+  DebtCollector: 'debtCollector',
+  Keepsake: 'keepsake',
+  Miser: 'miser',
+  Cornered: 'cornered',
+  // 5 consumables
+  Ward: 'ward',
+  Puppeteer: 'puppeteer',
+  SecondThoughts: 'secondThoughts',
+  Foresight: 'foresight',
+  Spyglass: 'spyglass',
 } as const
 export type BuffKind = (typeof BuffKind)[keyof typeof BuffKind]
 
@@ -26,22 +49,81 @@ export type BuffKind = (typeof BuffKind)[keyof typeof BuffKind]
  *  lint-enforced DOM-free and must stay deterministic, exactly as `CheatCardId` already is. */
 export type BuffId = number
 
-/** AC1's three known reward axes — the tier-scaled quantity varies PER CARD, not a fixed
- *  "damage" field. Closed union deliberately: this is exactly what AC1's own risk note asks
- *  to be reviewed before this ticket is marked done. A fourth axis is a type change for
- *  whichever later ticket needs it. */
+/**
+ * AC1's three known reward axes, widened by DLR-108/DLR-111 finding 2's 8 more. The three
+ * pre-existing members are UNCHANGED. Blade deliberately maps onto the existing `magnitude` axis
+ * rather than a new `flatDamage` one — `magnitude` is already the flat-damage axis on the tiered
+ * ladder, and a synonym would give one quantity two names.
+ */
 export const BuffRewardAxis = {
   Magnitude: 'magnitude',
   DurationTricks: 'durationTricks',
   HeartCount: 'heartCount',
+  Coins: 'coins',
+  ApRefund: 'apRefund',
+  Multiplier: 'multiplier',
+  CardsRevealed: 'cardsRevealed',
+  CandidatesEliminated: 'candidatesEliminated',
+  DiscardCharges: 'discardCharges',
+  DamageAbsorbed: 'damageAbsorbed',
+  None: 'none',
 } as const
 export type BuffRewardAxis = (typeof BuffRewardAxis)[keyof typeof BuffRewardAxis]
 
+/**
+ * Hunt-local suit vocabulary. Identical values to `src/warCouncil/types.ts`'s `Suit`, which
+ * `src/hunt/` cannot import — `src/warCouncil/` already imports `src/hunt/`, and the reverse edge
+ * is the cycle both modules' comments already call out. A test in `buffs.test.ts` pins the two
+ * unions together member-for-member, so the two cannot drift silently even though they cannot
+ * share a declaration.
+ */
+export const BuffTargetSuit = {
+  Bells: 'bells',
+  Keys: 'keys',
+  Moons: 'moons',
+} as const
+export type BuffTargetSuit = (typeof BuffTargetSuit)[keyof typeof BuffTargetSuit]
+
+// DLR-111 finding 3 — the closed bound `target.rank` is validated against. A plain `number`
+// bound by these two constants rather than an eleven-member literal union: `src/warCouncil/
+// types.ts` already keeps `RANKS` as `readonly number[]`, and an eleven-member union here would be
+// the only place in the codebase that models a rank differently.
+export const BUFF_TARGET_RANK_MIN = 1
+export const BUFF_TARGET_RANK_MAX = 11
+
+/** Present only on suit- or rank-parameterised families (DLR-111 finding 3) — e.g. Bell-Taker
+ *  (`suit`) or Mark of the 9 (`rank`). Optional because most families need neither. */
+export interface BuffTarget {
+  readonly suit?: BuffTargetSuit
+  readonly rank?: number
+}
+
 /** A data-only descriptor — no evaluator. AC4 defers activation logic to a later ticket;
  *  `kind` is an open string because the real condition catalog (design doc §5) is explicitly
- *  "TO BE REVIEWED, not committed." */
+ *  "TO BE REVIEWED, not committed." `target` is a DLR-108/DLR-111 finding 3 addition, optional so
+ *  every existing `BuffCondition` value (`UNASSIGNED_BUFF_CONDITION`, `ACTIVATED_BUFF_CONDITION`)
+ *  stays valid unchanged. */
 export interface BuffCondition {
   readonly kind: string
+  readonly target?: BuffTarget
+}
+
+/** Whether `target`'s rank (if present) falls within `BUFF_TARGET_RANK_MIN..BUFF_TARGET_RANK_MAX`.
+ *  A target with no rank at all is valid — most targets are suit-only. */
+export function isValidBuffTarget(target: BuffTarget): boolean {
+  if (target.rank === undefined) return true
+  return target.rank >= BUFF_TARGET_RANK_MIN && target.rank <= BUFF_TARGET_RANK_MAX
+}
+
+/** The suit a buff's condition targets, or `null` if it targets none. Reads
+ *  `buff.condition.target?.suit` so a consumer never reaches into the payload directly. */
+export function buffTargetSuitOf(buff: Buff): BuffTargetSuit | null {
+  return buff.condition.target?.suit ?? null
+}
+
+/** The rank a buff's condition targets, or `null` if it targets none. */
+export function buffTargetRankOf(buff: Buff): number | null {
+  return buff.condition.target?.rank ?? null
 }
 
 /** The tier-scaled payoff. `axis` names WHICH quantity this buff's tier scales (magnitude,
@@ -61,6 +143,46 @@ export interface Buff {
   readonly tier: BuffTier
   readonly condition: BuffCondition
   readonly reward: BuffReward
+}
+
+/** DLR-124 R4 — how often a family fires. `Event` families fire once per trick their condition is
+ *  true on, `Threshold` families fire once per hand on the first trick their condition becomes
+ *  true, `Terminal` fires once at hand end, and `Activated` cards (Cheat, Timebomb, the five
+ *  consumables) fire on player action rather than a condition at all. */
+export const BuffCadence = {
+  Event: 'event',
+  Threshold: 'threshold',
+  Terminal: 'terminal',
+  Activated: 'activated',
+} as const
+export type BuffCadence = (typeof BuffCadence)[keyof typeof BuffCadence]
+
+/**
+ * DLR-124 R4 / DLR-111's *Firing cadence* table, transcribed. `Record`-typed over every
+ * `BuffKind` — including `Unassigned`, mapped to `Activated` as the closest-shaped bucket for
+ * placeholder content that never actually fires — so a member added to `BuffKind` later fails to
+ * compile at this table rather than silently classifying as `undefined`.
+ */
+export const BUFF_CADENCE: Readonly<Record<BuffKind, BuffCadence>> = {
+  [BuffKind.Unassigned]: BuffCadence.Activated,
+  [BuffKind.Cheat]: BuffCadence.Activated,
+  [BuffKind.Timebomb]: BuffCadence.Activated,
+  [BuffKind.Taker]: BuffCadence.Event,
+  [BuffKind.Feeder]: BuffCadence.Event,
+  [BuffKind.MarkOfRank]: BuffCadence.Event,
+  [BuffKind.Sidestep]: BuffCadence.Event,
+  [BuffKind.Glutton]: BuffCadence.Event,
+  [BuffKind.DebtCollector]: BuffCadence.Event,
+  [BuffKind.Hoarder]: BuffCadence.Threshold,
+  [BuffKind.Unbloodied]: BuffCadence.Threshold,
+  [BuffKind.Miser]: BuffCadence.Threshold,
+  [BuffKind.Cornered]: BuffCadence.Threshold,
+  [BuffKind.Keepsake]: BuffCadence.Terminal,
+  [BuffKind.Ward]: BuffCadence.Activated,
+  [BuffKind.Puppeteer]: BuffCadence.Activated,
+  [BuffKind.SecondThoughts]: BuffCadence.Activated,
+  [BuffKind.Foresight]: BuffCadence.Activated,
+  [BuffKind.Spyglass]: BuffCadence.Activated,
 }
 
 /**

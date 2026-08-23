@@ -24,14 +24,14 @@ invariants, Deferred — and links out to one file per mechanic once the module 
 couple worth a standalone answer. A thin module stays a single `README.md`; nothing forces a split
 before it earns one. See the skill's own SKILL.md for the split threshold and per-module template.
 
-| Module                | Doc                                         | Status      | Built by                                                                                                                                     |
-| --------------------- | ------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, PT-001, PT-002 |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, PT-002 |
-| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-127, PT-001, PT-002 |
-| `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106 |
+| Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                              |
+| --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, PT-001, PT-002                                                                         |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100                                                                                                       |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, PT-002                                                                                   |
+| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97                                                                                                                                                                                                        |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-127, PT-001, PT-002 |
+| `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                               |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -352,7 +352,7 @@ trick's resolution**, folded into that trick's own damage — 4 to the Quarry, *
 the player it forces the same cash-out any other hit forces, so a streak in progress is spent at a moment
 you did not choose. **Second**, all damage is now applied **Quarry-first**: a cash-out that kills the
 Quarry spares the player the hit that would have landed alongside it, so a mutual kill is a **player
-win** — which overturned a dated design ruling that the player *loses* it, and deleted the constant that
+win** — which overturned a dated design ruling that the player _loses_ it, and deleted the constant that
 ruling had been implemented as. **Third**, the shop's empty **fight-long** shelf got its first item: a
 1-coin **Poison Guard**, bought between fights, live for exactly the next fight, that lets you take
 poison's 2 health without losing the streak. Spent the first time it fires, gone when the fight ends
@@ -361,7 +361,7 @@ either way.
 Two structural points are the ones to carry forward. **The payment crossed a module boundary, and the
 direction it crossed matters**: the queue is `EncounterState`'s in `src/hunt/`, the streak is
 `RoundState`'s in `src/warCouncil/`, and `hunt` may not learn what a `RoundState` is — so the reducer,
-which holds both, hands the pending figures *into* `playCard` through a widened `PlayCardOptions` rather
+which holds both, hands the pending figures _into_ `playCard` through a widened `PlayCardOptions` rather
 than anything reaching the other way. And **the new reset is a second trigger on one branch, not a second
 rule**: poison owed to the player reaches the same `cashOut = bank × multiplier` statement a lost trick
 reaches, which is what makes "poison behaves like any other damage" true in code instead of asserted in a
@@ -417,7 +417,7 @@ a six-trick one. The old prediction is left in place beside the correction.
 Adding the Whetstone cost one `ShopItem` member, one `priceOf` case, one `categoryOf` case, one
 `buyFromShop` case and one purse cell — no item-rendering change at all. But DLR-89 had named a roving
 tabindex for shop item cards as an obligation on "the three follow-on item tickets", and **none of the three
-discharged it**: each added its item to a *different* shelf, so no single ticket ever faced a five-card panel.
+discharged it**: each added its item to a _different_ shelf, so no single ticket ever faced a five-card panel.
 That is the exact failure DLR-89 predicted, happening as described.
 
 **Not seen in play, and that is the finding.** QA drove the app, confirmed the shelf sells it, the purse
@@ -452,7 +452,7 @@ mid-contract, leaving `run.ts` holding the run's shape and projections, with a d
 inert circular import between the two.
 
 **`ENCOUNTER_PLAYER_RESTORE` is still read by nothing**, which is the point rather than an oversight:
-DLR-82 forbade wiring it in *until the flask was designed*, and the flask being designed did not change
+DLR-82 forbade wiring it in _until the flask was designed_, and the flask being designed did not change
 the answer. Two prose comments in `src/` that asserted no flask existed were corrected, not deleted.
 
 **DLR-93 then paid off the repo's accumulated file-size debt, on the developer's explicit instruction
@@ -481,7 +481,7 @@ is kept unmistakable from the thing you pay for.
 
 **DLR-94, the cash-out the player chooses (2026-08-20)**
 
-Until now the bank cashed on exactly two events, both of them things that *happened* to the player: a
+Until now the bank cashed on exactly two events, both of them things that _happened_ to the player: a
 hit, and the sixth trick arriving. DLR-94 added a third that the player **chooses** — **Apply Damage**
 spends the streak into the Quarry in full, at no cost in health, and leaves the trick mid-flight so play
 carries on by the ordinary rules. Its counterpart is that the automatic cash-out got **worse**: a hit the
@@ -494,7 +494,7 @@ the game spends for you at the worst moment.
 - **This is the codebase's first fractional rule, and the fraction is two constants rather than one
   float.** `2 / 3` is `0.6666666666666666`, so `3 * (2 / 3)` is `1.9999999999999998` and floors to 1
   where the rule says 2 — wrong for every multiple of 3. `forcedCashValue` multiplies by the numerator
-  *before* dividing, keeping the dividend an exact integer at the only division involved. The next
+  _before_ dividing, keeping the dividend an exact integer at the only division involved. The next
   fractional rule should follow the same pattern; a single float constant reintroduces the bug.
 - **Availability is one predicate read twice.** `applyDamageRefusalFor` is the single statement of
   whether the control is live — the reducer asks it before committing and the plate asks it to disable
@@ -657,7 +657,7 @@ already bans the DOM inside `src/warCouncil/**` and `src/hunt/**`.
 `EncounterState` field reads or writes through the store; its own 29 specs are its only caller. The
 Vault (`version-5-developer-idea.md` §8) is the first intended consumer and is DLR-113's — its
 currency, exchange rate and purchase shapes remain open. `.docs/game_rules/the-hunt.md` records no
-change: this ticket added a storage *capability*, not a rule — no player-facing procedure, legal
+change: this ticket added a storage _capability_, not a rule — no player-facing procedure, legal
 move, or scoring term moved, and a page reload still starts a new run exactly as it did before.
 Start at [persistence/](persistence/README.md) for the envelope, the four-check read path, and why
 `browserLocalStorage()` is the only function in the codebase allowed to name the global.
@@ -669,7 +669,7 @@ changed.** `buyFromShop`'s Envenom branch is `{ ...paid, envenomCharges: run.env
 and has never touched `cheats`. What was red was `envenom.test.ts :: "does NOT add a Cheat"`, whose
 `expect(after.cheats).toEqual([])` is an **absolute** assertion built on a fixture that derives from
 `startRun()` — so when `RUN_STARTING_CHEATS` moved `0 → 1` in commit `ccc07ec`, the assertion began
-failing on the run's *opening grant* rather than on anything the purchase did. The sibling
+failing on the run's _opening grant_ rather than on anything the purchase did. The sibling
 `run.shop.test.ts` never went red because its fixtures write `cheats: []` explicitly.
 
 **The fix went into the spec, and made it stronger rather than merely green.** The assertion now
@@ -685,7 +685,7 @@ every shop item (Cheat, Envenom, Poison Guard, Whetstone, Heal) and for `drinkFl
 quietly grants a second thing" fails for any future branch, not just this one.
 `.docs/game_rules/the-hunt.md` records no change: nothing a player may do, must do, or is scored on
 moved, and no tunable's value changed. Start at [hunt/README.md](hunt/README.md) →
-*Rules & invariants enforced* for the purchase-isolation rule and the assert-against-the-pre-value
+_Rules & invariants enforced_ for the purchase-isolation rule and the assert-against-the-pre-value
 lesson.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.

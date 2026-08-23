@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 4/22 (18%) — done: 4 shipped, 0 blocked (+1 out-of-band shipped) | now: DLR-124 "Design: cost the passive buff-stacking resolution rule" (5/22) — fb-plan starting
+**Progress:** 5/22 (23%) — done: 5 shipped, 0 blocked (+1 out-of-band shipped) | now: DLR-108 "Buff activation flow and tiered AP costs" (6/22) — fb-plan starting
 
 ## Run order
 
@@ -1138,3 +1138,145 @@ Left alone, per the contract's own rule. This is evidence, not an assumption.
 - **Follow-up not opened, flagged instead:** the UI for showing a stacked resolution.
   `version-5-developer-idea.md` §6 already records that an unattributable loadout is one the player
   cannot learn to build; a five-buff overlap resolving in five ordered steps makes that harder.
+
+## Coordinator decisions — DLR-124 reconciliation
+
+- **A written proposal of the developer's was rejected outright, and I pushed it.** This is the
+  most significant call of the run so far. `ideas.md` proposed stacking multipliers of
+  2 → 12, 3 → 36, 5 → 125 built on "avg reward each: 3, 4, 5". The agent rejected it on
+  **definition, not magnitude**: a fired buff pays on one of four axes — Blade (damage), Purse
+  (coins), Second Wind (AP), Momentum (multiplier) — which are four different units with no
+  exchange rate between them. There is no scalar "average reward" for the game to average, so
+  the three figures describe a quantity the game cannot produce. A rule with no defined operand
+  cannot be tuned into one, so no counter-figure was offered for it either. Accepted because
+  the reasoning is about what the game can represent rather than about taste — but it is the
+  developer's own idea, overturned by an agent, and it is the first thing the end-of-run review
+  should look at.
+- **Accepted seven decided rules (R1–R7) in place of a menu.** Per-axis resolution; contributions
+  **add** within an axis; order **Second Wind → Momentum → cash-out product → Blade → Purse**;
+  three firing cadences (event / threshold / terminal); an Overlap Bonus of **`+(k−1)` Momentum**
+  on a linear basis; and four per-hand caps.
+- **Accepted four cap values, all agent-chosen:** `MAX_MULTIPLIER_BONUS_PER_HAND` 6,
+  `MAX_FLAT_DAMAGE_BONUS_PER_HAND` 12, `MAX_COIN_BONUS_PER_HAND` 10, `MAX_REFUND_PER_HAND` 6.
+  Counters reset **per hand, not on a hit**.
+- **The ceiling introduces no unblessed number.** The worst case found was not the one the
+  ticket names: a re-firing gold suit-Taker on Momentum plus a gold Mark, 9 AP total, pays
+  **186 uncapped** against Diarmuid's 135 — every opponent one-shot on hand one. Capped it pays
+  `6 × (6+6) = 72`, which is *exactly* the one-Whetstone perfect hand `the-hunt.md` already
+  prints. That coincidence is the strongest evidence the caps are in the right place.
+- Worked hand for the review: 11 AP, seven buffs → **37 damage** against **13 unbuffed** (2.85×),
+  where the rejected rule would have paid **123 on trick three**.
+
+### A defect in DLR-111's list, found by DLR-124
+
+**`Keepsake` may be unfireable.** Its condition is "hold a card of suit S at hand's end", which
+may be unreachable if the hand is always empty by then. Reported, deliberately not papered over
+— no rewording was invented for it. Three Purse cards depend on the answer.
+
+### Two corrections the agent caught in its own dispatch, neither applied silently
+
+- My dispatch mis-priced gold `Bell-Taker (Momentum)` at 6 AP; it is 5.
+- An `ideas.md` #12 vs card-list #13 numbering difference was described rather than silently
+  equated.
+
+
+---
+
+## DLR-108 — Buff activation flow and tiered AP costs
+
+Contract: `.claude/contract/DLR-108-buff-activation-flow-and-tiered-ap-costs/`.
+First code ticket for the buff system. Sources read before planning and cited rather than
+re-derived: DLR-111's `v1-buff-card-list.md` (78 templates, the cost formula, the seven
+consumable prices, the firing cadences) and DLR-124's `hybrid-design.md` §5 stacking rule
+R1-R7 plus `.docs/implementation/hunt/buff-pile.md`.
+
+### Gates auto-handled, per this run's dispatch
+
+- **Plan approval gate: auto-approved, not shown to the developer.** Every open question below
+  took the plan's stated default.
+- **Mockup gate: not applicable, and nothing was auto-approved unseen.** Step 1.5b classified
+  this as pure-logic + config work — no `.tsx` surface is created or modified except a pure
+  projection function added to `roundUiState.ts`, which renders nothing. `/fb-plan`'s own rule
+  is to skip the mockup silently for non-UI work, so no mockup was built and none was skipped
+  unseen.
+
+### Divergences from DLR-111's list and DLR-124's rule
+
+1. **From the Jira ticket's AC2, not from DLR-111 — deliberate, and the important one.**
+   AC2 specifies `BUFF_ACTIVATION_COST = { bronze: 3, silver: 5, gold: 8 }`. That is **not
+   shipped.** AC2 predates DLR-111, and a single tier table cannot price a list where cost
+   depends on family and reward axis as well as tier. DLR-111's
+   `clamp(REWARD_BASE[axis][tier] + CONDITION_MODIFIER[family], 1, 6)` ships instead, exactly
+   as this run's dispatch requires. Concretely one number the ticket names moves: **gold Cheat
+   is 7 AP, DLR-111's figure, not 8.** The developer should confirm or reverse.
+
+2. **From DLR-111 finding 3's recommendation that `BuffCondition.target.suit` be typed as
+   `Suit`.** `src/hunt/` cannot import `src/warCouncil/` — warCouncil already imports hunt and
+   the reverse edge is a cycle both modules' own comments name. A hunt-local `BuffTargetSuit`
+   carries identical string values, and a test pins it member-for-member against warCouncil's
+   `Suit` so the two cannot drift silently. The alternative — moving `Suit` down into
+   `src/hunt/` — is a wider change than this ticket should make unasked.
+
+3. **Reward-axis naming, a narrowing of DLR-111 finding 2 rather than a disagreement.** Finding
+   2 lists eight new axes. Blade (flat damage) is mapped onto the **existing** `magnitude` axis
+   rather than a new `flatDamage` one, because `magnitude` is already the flat-damage axis on
+   the tiered ladder and a synonym would give one quantity two names. The other eight land as
+   listed.
+
+4. **Nothing diverges from DLR-124.** R1 (per-axis), R2 (add within an axis), R3's five-step
+   order, R4's cadences, R5's linear `k-1` Overlap Bonus drawn from the Momentum cap, R6's four
+   caps and its reset-per-hand-NOT-on-a-hit asymmetry, and R7 are all transcribed. R6's
+   asymmetry is enforced structurally: `buffAccrual.ts` ships `startHandAccrual()` and
+   deliberately ships **no** per-hit reset function at all, so the obvious wrong reading has no
+   function to call.
+
+### Plan defaults taken without a pause (each would normally have stopped the pipeline)
+
+- **`apCost` is a derived lookup (`apCostOf(buff)` over two tables), not a field on `Buff`.**
+  DLR-111 finding 4 offers both shapes and recommends the lookup; a field would turn a
+  two-table retune into 78 construction sites that can drift from the table they came from.
+  The dispatch named the missing field as gap 4 — the gap (authored costs having no home in
+  code) is closed either way. Confirm before DLR-112 mints buffs from a reel, since a
+  per-card discounted price would need a field.
+- **`apCostOf` throws `RangeError` on `BuffKind.Unassigned`** rather than returning a number —
+  `buffCatalog.ts`'s existing discipline. A placeholder with a plausible price is the bug that
+  type-checks.
+- **`target.rank` is a plain `number` bounded by `BUFF_TARGET_RANK_MIN`/`MAX` (1-11)**, not an
+  eleven-member literal union — `src/warCouncil/types.ts` already models `RANKS` as
+  `readonly number[]`.
+- **`BuffKind` member names** are camelCase of DLR-111's family words; `markOfRank`, not
+  `markOfThe`, because the rank lives in `target`. Long Fall reserved, not added.
+- **`src/hunt/config.ts` was at 385 of a 400-line blocking budget.** Split in-ticket per this
+  project's rule: the AP tunable block moved to a new `src/hunt/apConfig.ts` and is re-exported
+  from `config.ts`, so no importer changed. The four new cap keys live in the new file.
+- **`BuffActivationState` (pool + this trick's activations) is a pure value with no home on
+  `RunState` or `RoundUiState`.** DLR-104 shipped AP with no state anywhere; a per-hand budget
+  given a run-lifetime home would collide with whichever ticket wires the felt.
+- **Activating the same buff twice for one trick is refused (`AlreadyActive`).** Not stated in
+  any source. R7's "a player mistake is legitimate" covers paying for a card that cannot fire,
+  not paying twice for one card.
+- **AC1 is satisfied by not building a gate.** `buffActivationStock` in `roundUiState.ts` feeds
+  `windowOpen` from the existing `discardWindowOpen`, exactly as `discardStock` does.
+- **R3's five-step resolution order is documented and reflected in `resolveFiredBuffs`'s
+  internal ordering, but not wired into the live cash-out** (`bank.ts` /
+  `voluntaryCashOut.ts`). Nothing in `src/` reads a buff yet, so reordering the shipped damage
+  path would be a change nobody can observe. Expect dead-but-tested code — the same
+  intermediate state `buffCatalog.ts` already documents.
+
+### Carried forward untouched, by instruction
+
+- `Keepsake` may be unfireable in a full six-trick hand (DLR-124's finding).
+- `Ward` silver/gold buy nothing while `DAMAGE_PER_HIT = 1`; DLR-111 suggests deleting those
+  two rows rather than retuning them.
+- The Cheat/Timebomb duplication (live felt mechanic vs the inert `buffCatalog.ts`
+  representation) — DLR-129 retires it. This ticket built against `buffCatalog.ts` and added
+  nothing to the Envenom name.
+
+### Every number the developer still owns
+
+`REWARD_BASE` (1/2/3 · 2/3/4 · 1/1/1 · 2/3/5), `CONDITION_MODIFIER` (0 / +1 / -1 by family),
+all seven `CONSUMABLE_AP_COST` rows, and the four caps `MAX_REFUND_PER_HAND = 6`,
+`MAX_MULTIPLIER_BONUS_PER_HAND = 6`, `MAX_FLAT_DAMAGE_BONUS_PER_HAND = 12`,
+`MAX_COIN_BONUS_PER_HAND = 10`. Every one is agent-chosen on DLR-111/DLR-124 under those
+tickets' own tuning-value overrides and **has never been played**. Retuning the whole 78-card
+pool is an edit to two tables.

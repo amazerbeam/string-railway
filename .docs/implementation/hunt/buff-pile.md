@@ -28,7 +28,7 @@ type the compiler enforces rather than a convention a later ticket might drift f
 is a type change for whichever later ticket needs it.
 
 **`BuffReward` models one axis/value pair, not a list.** The design doc's own §5 flags stacking two
-reward templates on one tier as itself an open question ("whether tiers should stack *two* reward
+reward templates on one tier as itself an open question ("whether tiers should stack _two_ reward
 templates rather than scale one is itself an open question") — closing that question here, ahead of
 any ticket that actually needs a stacked reward, would have been inventing an answer this module has
 no authority to give.
@@ -51,10 +51,18 @@ copy that could drift.
 > `BuffRewardAxis` needs eight more axes, `Buff` needs an `apCost` field it does not have, and
 > `BuffCondition`'s payload-free `{ kind: string }` cannot express the suit- and rank-parameterised
 > families without an optional `target`. Those four are DLR-108's and DLR-112's to close.
+>
+> **DLR-108 closed all four on 2026-08-23.** `BuffKind` now carries 19 members, `BuffRewardAxis` 11,
+> `BuffCondition` an optional `target`, and the AP cost has a home — as a **derived lookup**
+> (`apCostOf`) over two retunable tables rather than as a field on `Buff`, which is the shape the
+> list itself recommended. The pile's _content_ is unaffected: `seedStartingBuffPile` still mints
+> `UNASSIGNED_BUFF_CONDITION`/`UNASSIGNED_BUFF_REWARD`, because nothing draws a real card into it
+> yet (DLR-112's). See
+> [Buff activation and the tiered AP costs](buff-activation-and-ap-costs.md).
 
 > **DLR-124 added a fifth gap on 2026-08-23, and it is state rather than shape.** The hand-wide
 > stacking rule — what happens when several equipped buffs fire on the same trick — is now decided
-> and argued at `hybrid-design.md` §5 → *Resolving several buffs on one trick*. Resolving it needs a
+> and argued at `hybrid-design.md` §5 → _Resolving several buffs on one trick_. Resolving it needs a
 > **per-hand accrual** (`multiplierBonus`, `flatDamageBonus`, `coinBonus`, `apRefunded`), each
 > clamped at its own cap. That is **state on the hand, not a field on `Buff`** — the same distinction
 > this note already draws for `apCost` — and it **resets per hand and NOT on a hit**, which is the
@@ -62,6 +70,14 @@ copy that could drift.
 > boundary, alongside the four cap constants (`MAX_REFUND_PER_HAND`, `MAX_MULTIPLIER_BONUS_PER_HAND`,
 > `MAX_FLAT_DAMAGE_BONUS_PER_HAND`, `MAX_COIN_BONUS_PER_HAND`) that DLR-108 must create in
 > `config.ts`. Still no reader in `src/`, so the placeholder content above is unaffected.
+>
+> **DLR-108 built it, and put the four constants in `src/hunt/apConfig.ts` rather than `config.ts`
+> — a difference of file, not of reach**: `config.ts` re-exports all four, so every consumer and
+> `index.ts` see them exactly where this note said they would be. The split happened because
+> `config.ts` had reached its 400-line blocking budget. `BuffBonusAccrual` lives in
+> `src/hunt/buffAccrual.ts`, and the reset-per-hand-**not**-on-a-hit asymmetry survived intact:
+> `startHandAccrual()` is the module's only exported reset, and no per-hit reset function was
+> written at all. Still no reader in `src/`.
 
 **The pile is carried through `advanceRun`/`recordEncounter` with no explicit parameter, following
 `whetstones` rather than `cheats`.** `cheats` is an explicit, required parameter to `recordEncounter`

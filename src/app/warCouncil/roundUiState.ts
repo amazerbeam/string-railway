@@ -22,8 +22,12 @@ import {
   type WarCouncilState,
 } from '../../warCouncil'
 import {
+  apCostOf,
   hasPendingEnvenom,
   isEncounterResolved,
+  type Buff,
+  type BuffActivationState,
+  type BuffActivationStock,
   type CheatCard,
   type CheatCardId,
   type EncounterState,
@@ -281,5 +285,21 @@ export function discardStock(state: RoundUiState): DiscardStock {
     selecting: discardSelecting(state),
     selectionSize: state.discardSelection?.length ?? 0,
     windowOpen: discardWindowOpen(state),
+  }
+}
+
+/** AC1 — the Apply Buff window is the DISCARD window. No second timing gate is built: this reads
+ *  `discardWindowOpen` and nothing else, exactly as `discardStock` above does, so the two actions
+ *  cannot disagree about when the felt is between tricks. */
+export function buffActivationStock(
+  state: RoundUiState,
+  activation: BuffActivationState,
+  buff: Buff,
+): BuffActivationStock {
+  return {
+    windowOpen: discardWindowOpen(state),
+    apPool: activation.apPool,
+    apCost: apCostOf(buff),
+    alreadyActive: activation.activatedThisTrick.includes(buff.id),
   }
 }

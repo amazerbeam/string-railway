@@ -39,6 +39,16 @@ including, per AC1, the reveal that ends a hand.
 future consumable control that also needs to be available before the Quarry's lead should read
 `discardWindowOpen` rather than inventing a second version.
 
+> **DLR-108 took that advice literally, and it is the whole of that ticket's AC1.** Buff activation
+> is available in exactly the same window, so **no second timing gate was built**:
+> `buffActivationStock(state, activation, buff)` sits beside `discardStock` in `roundUiState.ts` and
+> feeds its `windowOpen` field from `discardWindowOpen(state)`, reading nothing else off the round.
+> Its test asserts the two agree **on the same state object** rather than against a fixed boolean,
+> which is what makes the claim checkable rather than merely stated. There is **no felt-rail Apply
+> Buff control yet** — the projection has no caller in `src/`, deliberately (that button is a later
+> ticket's). See [hunt/buff-activation-and-ap-costs.md](../hunt/buff-activation-and-ap-costs.md) for
+> the rule behind it.
+
 ## The selection
 
 `RoundUiState.discardSelection: readonly Card[] | null` — `null` means closed, an array (possibly
