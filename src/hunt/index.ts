@@ -29,6 +29,7 @@ export {
   ENCOUNTER_PLAYER_RESTORE,
   CHEAT_SLOT_COUNT,
   RUN_STARTING_CHEATS,
+  STARTING_BUFF_COUNT,
   COINS_PER_ENCOUNTER_WIN,
   CHEAT_PRICE,
   HEAL_PRICE,
@@ -63,6 +64,15 @@ export { PathNodeStatus, runPath } from './runPath'
 
 export type { CheatCard, CheatCardId } from './cheats'
 export { grantCheats, addCheat, removeCheat, hasCheat } from './cheats'
+
+export type { Buff, BuffId, BuffCondition, BuffReward } from './buffs'
+export {
+  BuffTier,
+  BuffRewardAxis,
+  UNASSIGNED_BUFF_CONDITION,
+  UNASSIGNED_BUFF_REWARD,
+  seedStartingBuffPile,
+} from './buffs'
 
 export {
   startEncounter,

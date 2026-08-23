@@ -30,7 +30,7 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100 |
 | `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, PT-002 |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-104, PT-001, PT-002 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-104, DLR-105, PT-001, PT-002 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -580,7 +580,7 @@ roughly half of all runs die on the very first, exactly-matched fight. See
 [run-winnability-simulation.md](run-winnability-simulation.md) for what was played, how, and the
 full results.
 
-## Latest — DLR-104, Action Points (2026-08-23)
+## DLR-104, Action Points (2026-08-23)
 
 **DLR-104 shipped a resource with nothing spending it yet.** A new pure module,
 `src/hunt/actionPoints.ts`, adds a starting AP pool (`STARTING_AP`, a developer-chosen placeholder
@@ -598,6 +598,34 @@ a consumer needs is theirs to add, not this one's. Start at
 [hunt/action-points.md](hunt/action-points.md) for the toggle's single-read-site shape, the
 enum-shaped refresh cadence and its presently-dead non-`PerHand` branch, and the two developer
 decisions the ticket carries (`STARTING_AP`, `AP_ENABLED`'s default).
+
+## Latest — DLR-105, Buff pile data model (2026-08-23)
+
+**DLR-105 gave the run a second object type owned across its whole life, and it is the shape three
+other mechanics will fold into.** A new pure module, `src/hunt/buffs.ts`, adds `Buff` — an identity,
+a `bronze`/`silver`/`gold` tier, a `BuffCondition` descriptor, and a `BuffReward` descriptor whose
+**axis** varies per card (`magnitude` for the design doc's Bells example, `durationTricks` for
+Cheat, `heartCount` for Shield) rather than a fixed "damage" field. That closed union is a direct
+answer to the ticket's own stated risk — hard-coding "tier = magnitude" would have forced a rework
+the day Cheat's and Shield's tickets tried to fold in.
+
+**`RunState` gained an owned pile and a monotonic id minter, following `whetstones` rather than
+`cheats`.** `buffs: readonly Buff[]` and `nextBuffId` are seeded by `seedStartingBuffPile` at
+`startRun` (`STARTING_BUFF_COUNT = 4`, transcribed from the ticket and the design doc's §8, all
+bronze) and carried through `advanceRun`/`recordEncounter`'s existing `{ ...run, ... }` spreads with
+**no explicit parameter** — unlike `cheats`, nothing in this ticket spends or replaces a buff
+mid-hand, so there is nothing for a hand to hand back yet. The buff pile also has **no capacity
+cap**, unlike Cheat's `CHEAT_SLOT_COUNT` — a deliberate scope decision, not an oversight; nothing in
+the ticket or the design doc states one.
+
+**The seeded buffs carry inert placeholder content, on purpose.** `UNASSIGNED_BUFF_CONDITION` /
+`UNASSIGNED_BUFF_REWARD` (`{ kind: 'unassigned' }`, `{ axis: magnitude, value: 0 }`) fill every
+starting buff's `condition`/`reward`, because the real card catalog is explicitly "TO BE REVIEWED,
+not committed" in the design doc (§5) and belongs to a separate, not-yet-authored ticket. Nothing
+in this ticket reads or evaluates a buff's `condition`/`reward` — no activation logic, no UI, no
+slot-machine draw, per the ticket's own AC4. Start at [hunt/buff-pile.md](hunt/buff-pile.md) for the
+type's four fields, the placeholder-content decision, why the pile follows `whetstones` rather than
+`cheats`, and the three axes AC1 named by name.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

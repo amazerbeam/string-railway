@@ -12,7 +12,9 @@ import {
   PLAYER_START_HEALTH,
   QUARRY_ENCOUNTER_HEALTH,
   RUN_STARTING_CHEATS,
+  STARTING_BUFF_COUNT,
 } from './config'
+import { seedStartingBuffPile, type Buff, type BuffId } from './buffs'
 import { grantCheats, type CheatCard, type CheatCardId } from './cheats'
 import { startEncounter } from './encounter'
 import type { FlaskStock } from './flask'
@@ -116,6 +118,13 @@ export interface RunState {
    *  that shows the last fight's payout on this one's verdict. NEVER persisted, exactly as `coins`
    *  above. */
   readonly lastQuickKillPayout: Coins
+  /** DLR-105 AC2/AC3 — the player's owned buff pile, seeded at `startRun` and carried through
+   *  every `advanceRun`/`recordEncounter` spread untouched — no explicit parameter, mirroring
+   *  `whetstones` rather than `cheats`, because no consumer in this ticket spends or replaces a
+   *  buff mid-hand (that is T5's job). NEVER persisted across runs, exactly as `coins` is not. */
+  readonly buffs: readonly Buff[]
+  /** The next id to mint — monotonic, never reused, mirroring `nextCheatId`. */
+  readonly nextBuffId: BuffId
 }
 
 /**
@@ -141,6 +150,8 @@ export function startRun(playerHealth: Health = PLAYER_START_HEALTH): RunState {
     handOfFight: 1,
     discardsRemaining: DISCARDS_PER_FIGHT,
     lastQuickKillPayout: 0,
+    buffs: seedStartingBuffPile(STARTING_BUFF_COUNT, 1),
+    nextBuffId: STARTING_BUFF_COUNT + 1,
   }
 }
 

@@ -178,11 +178,6 @@ Whetstone-style build items have been pared back.
   for.** These are very different economies and the rest of this document assumes the former; it's
   worth confirming explicitly rather than by default.
 - **The opponent-forced-card buff's power level** — flagged in §1, not costed here.
-- **The starting buff pile's size and tier mix.** §8 says a run begins with "a small number" of buff
-  cards rather than empty-handed, and never puts a figure on it or says what tier they arrive at. Both
-  need answering together: a pile of four bronze cards and a pile of four gold ones are different games
-  from the first fight. The Vault's tier purchases (§8) imply a low default, but the default itself is
-  unwritten.
 - **The starting AP pool.** The shop's capacity item grants **+5 AP** and the working activation cost is
   **3 AP** a buff — but nothing states what the player begins a run with, and `+5` means nothing without
   it. At 3 AP a buff, a starting pool of 5 is one buff a hand with 2 stranded; 6 is exactly two. This
@@ -204,6 +199,13 @@ Whetstone-style build items have been pared back.
 **Resolved:** every buff is applied per-trick, before that trick's card is laid, reusing the discard
 window's existing timing (§1) — not a once-per-hand pre-lock. This closes the reactive-vs-pre-hand
 question this section used to carry open.
+
+**Also resolved:** the starting buff pile is **4 cards, all bronze** (§8). The count is the
+developer's, and matches DLR-103's own Approach; bronze is the floor the Vault's tier purchase sells
+upward from. Note what this does *not* settle — **which** four cards, or whether they are fixed, drawn,
+or Vault-chosen, is still open and belongs with §8's remaining questions. It also leaves the starting
+**AP** pool unanswered, which is the bullet immediately below: four owned buffs are only a choice if the
+budget cannot activate all four.
 
 ## 5. Draft card templates — **TO BE REVIEWED, not committed**
 
@@ -244,6 +246,7 @@ several entries want a second look before anything is built from them.
 | Force a legal card from the opponent | Choose 1 card / mark 2 in advance / mark for the whole hand | Your own example — the strongest and least-costed template here; a gold tier on this one especially needs its own pass before it ships |
 | Extra discard | +1 / +2 discards this fight | Reuses `the-discard-budget.md`'s existing resource rather than inventing a new one |
 | Peek the draw pile | See the next 1 / 3 / 5 cards | An information reward rather than a numeric one — cheap to build, untested as a *reward* rather than a passive readout |
+| Read a suit (the Spyglass) | Candidates listed / 2 ruled out / 4 ruled out | The other information reward, and the one that tiers by *narrowing* rather than by magnitude — see §5a, which also carries the two collisions it has to answer |
 
 **Multiplier boost, dropped.** A template scaling the streak's climb directly would have overlapped
 with Whetstone — see §7 for why Whetstone itself is currently out of the shop rather than folded into
@@ -270,6 +273,74 @@ already exist elsewhere in this scope, and whether "lose the next N tricks" need
 it's buildable at all, since it's the one template that requires tracking a goal across multiple
 future tricks rather than judging the one just played.
 
+## 5a. The Spyglass — a tiered read on one suit
+
+**The idea.** Playing this buff names a suit and shows the player **which cards of that suit the Quarry
+could still be holding**. The worked case: the shape readout says they hold 3 Bells, you hold 2 of your
+own, so the Spyglass lays out the Bells that are unaccounted for. **Each tier crosses more of them
+off** — the ladder is not a bigger number, it is a *shorter list*, because a shorter list is a
+sharper read. The top tier rules out the most, so the player learns the most about what the Quarry
+does **not** have. (The name is a placeholder; it sits alongside Cheat, Timebomb and Shield as a
+one-word instrument.)
+
+**Why this is a strong entry.** Every other buff in this document changes an outcome — more damage,
+more coins, a heart back, a rule bent. This one changes *what the player knows*, and the game's whole
+skill ceiling is built on reading an opponent whose hand is hidden. §5's reward grid already gestures
+at this with "Peek the draw pile" and flags it as untested as a reward rather than a passive readout;
+the Spyglass is the same instinct pointed at the half of the game that actually decides tricks.
+
+### What the player already knows, and what this adds
+
+This matters because it decides which tier is doing real work. A suit holds **11 cards**. The player can
+already account for their own hand and everything played, and the shape readout already tells them
+**how many** of that suit the Quarry holds. So the unaccounted cards of a suit split, invisibly, between
+**the Quarry's hand** and **the draw pile** — and the player's real question is never "which Bells
+exist" but "which of these are in *their* hand rather than buried in the pile".
+
+- **Bronze is recall, not intelligence.** Listing every candidate tells a perfect-memory player nothing
+  they could not have derived — it just stops them having to hold it in their head. That is a real
+  gain (recognition beats recall, and this project's UX standard says so), but it is not information.
+- **Silver and gold are intelligence.** Crossing a candidate off states something the player could not
+  have worked out: that a specific rank is *not* in the Quarry's hand. This is the first thing in the
+  game to say anything at rank level about the hidden hand.
+
+Placeholder ladder, every figure open: **bronze** lists the candidates and crosses nothing off;
+**silver** rules out **2**; **gold** rules out **4**.
+
+### Two collisions that have to be answered before this is buildable
+
+**1. It presses directly on the skull secret, and gold presses hardest.** `the-hunt.md` states the
+split as settled design: the readouts give suit and count and **never a rank**, because "counting suits
+is bookkeeping and reading ranks is judgement". The Spyglass does not break that on its own — but
+combined with the skull count it can. If the readout says two of their three Bells are skulled and the
+Spyglass narrows their three Bells to exactly three known ranks, the player has deduced *which ranks
+carry skulls* without ever being told. **The elimination count must stop short of full determination**,
+and "how far short" is the number that makes this card safe or broken. That is a costing pass, not a
+detail.
+
+**2. A read goes stale, because hands change mid-hand.** The Woodcutter draws and buries, the discard
+window swaps up to three cards a gap, and either can move a card between the Quarry's hand and the pile
+after the read was taken. So a card crossed off at trick one may be in their hand at trick four. Three
+possible answers, and they are genuinely different cards: the read is **a snapshot** at the moment it
+fires (cheapest, and honest about being a snapshot); it is **live** and updates as the hand changes
+(strongest, and quietly the most expensive to build); or it is a snapshot that is **visibly marked
+stale** the moment a draw or a swap invalidates it. The third is probably right and is certainly the
+most legible, but it is the developer's call.
+
+### The rest of what is open
+
+- **Whether it is a buff card or a rank tier.** Drafted here as a buff card, since it is activated at a
+  moment of the player's choosing and that is what the buff pile is for. A Fox or Witch tier could
+  plausibly carry it instead.
+- **Whether it reads one suit or all three.** One suit is the drafted version and the stronger card —
+  choosing *which* suit to look at is the decision, and a card that shows everything has no decision
+  in it.
+- **How long it lasts.** One trick, the rest of the hand, or until it goes stale per collision 2.
+- **What it costs in AP**, and whether an information buff should cost the same as a damage one.
+- **How it is shown.** A suit's 11 ranks laid out with the impossible ones struck through is the
+  obvious treatment, but it is a new panel on a felt that §6a is also asking for room on, and nothing
+  about its placement is decided here.
+
 ## 6. The card preview — making the loadout's cost visible
 
 Once buffs are applied for the hand, looking at any card in hand shows two numbers: the damage if it
@@ -280,10 +351,83 @@ apply to, live, rather than the player having to remember what they activated an
 themselves. Cheap in spirit (it's a readout, not a rule), though real to build once the buff pile can
 contain conditions layered several deep on the same card.
 
-## 7. The shop, pared down: capacity plus the buff list, everything else held back
 
-**The shop currently sells exactly three things: the buff list (drawn through the slot machine, §3),
-a Health purchase, and an AP purchase.** Everything else previously drafted for this release —
+### 6a. The tally — what the trick actually dealt, and what it actually paid
+
+§6 forecasts; this reports. The preview above answers *what would this card do*, and it stops the
+moment the card is committed — after which the player has no account of what happened. That gap gets
+much worse under this release, because damage and coins stop having one source each.
+
+**Damage to the Quarry will arrive from four places at once:** the streak cash-out (`bank ×
+multiplier`, in full when applied, two-thirds when caught), flat buff bonuses that fired on their
+condition, Timebomb's delayed hit, and a tiered Poison rank if §7b ships that row. **Coins will arrive
+from three:** the flat fight win, the quick-kill payout, and any buff carrying a coin reward. Today
+each of those is a single number the player can attribute without help. After this release, a player
+who sees the Quarry drop 14 hearts has no way to tell whether the loadout earned it or the streak did
+— and a loadout you cannot attribute is one you cannot learn to build, which is the §0 complaint
+displaced one layer up.
+
+**What the readout has to answer**, in the order a player asks it:
+
+1. How much damage did that trick just deal, in total?
+2. Which of my active buffs contributed, and how much each?
+3. How many coins am I up this hand, beyond the fight's flat payment?
+
+Question 2 is the one nothing on the felt answers today, and it is the whole reason for the section.
+
+#### Two ways to carry it, differing in kind
+
+**Option A — transient attribution at the point of resolution.** As the trick resolves, each
+contributing source names itself and its figure beside the trick it came from, then clears: `Bells win
++2`, `Streak ×4 +16`, `Timebomb +4`. Nothing permanent is added to the screen.
+
+- *Cost:* no standing screen area; one timing value (how long a line holds) which is the developer's.
+- *Risk:* it is gone by the time a player looks up. A source that fires on a trick the player was not
+  watching closely is a source they never learn about — and it is exactly the wrong failure for the
+  question this is meant to answer.
+- *What settles it:* watching whether a player can name what paid them after a hand.
+
+**Option B — a standing tally anchored to the player's own edge.** A small block beside the loadout
+bar holding this hand's running totals — damage dealt, coins earned — each expandable to its
+per-source breakdown, persisting until the hand ends.
+
+- *Cost:* permanent screen area on the side of the felt that is already carrying the hand, the loadout
+  bar and the health rows.
+- *Risk:* two of them. It competes with the cards for attention, which this project's own UX floor says
+  chrome must not do; and the coin half **duplicates the purse plate already on the status band**, so
+  two coin figures would sit on one screen meaning different things.
+- *What settles it:* whether the felt has the room at a short viewport once the loadout bar exists —
+  a browser question, not a test one.
+
+**They compound rather than clash**, and that is the likely answer: A tells the player *why* at the
+moment it happens, B tells them *how much, so far* whenever they look. The one genuine collision is
+the coin total, and it resolves in the existing plate's favour — the purse is already there and
+already correct, so the tally should show **coins earned this hand**, framed as a delta, rather than a
+second running purse.
+
+#### Constraints this readout inherits
+
+- **It costs zero taps.** It is a readout on the most-repeated moment in the game; anything that has to
+  be opened will not be.
+- **Nothing decision-relevant is hover-only.** Touch has no hover, and the breakdown is the payload.
+- **Not colour or motion alone.** A `+2` that only exists as an animation fails a paused screen, a
+  screenshot, and `prefers-reduced-motion` alike.
+- **Status stays at the edges.** The felt's centre belongs to the cards; a tally drifting inward is the
+  named mistake in this project's layout standard.
+- **Whether it fits is checked in a browser at named viewport sizes**, by QA. No component test can
+  prove it, since jsdom has no layout engine.
+
+#### Not decided here
+
+Placement bounds, how long a transient line holds, glyphs, colour and every word of the copy are the
+developer's, as is the call on whether B earns its screen area at all. This section deliberately
+picks none of them.
+
+## 7. The shop, pared down: capacity, the buff list, and tiered rank abilities
+
+**The shop currently sells exactly four things: the buff list (drawn through the slot machine, §3),
+a Health purchase, an AP purchase, and the tiered rank abilities that refill the run-permanent shelf
+(§7b).** Everything else previously drafted for this release —
 Whetstone, Reflex, the discard-budget increase, the odds-raising purchase — is **removed from the
 shop for now, on the developer's explicit call, so this pared-down version can be tested before
 anything else is added back.** None of it is deleted from the design, and once any of it is actually
@@ -311,10 +455,111 @@ multiply what you deal — but makes the cost and the protection both fully visi
 of living in an invisible counter, which is exactly the kind of legibility fix §6's card preview is
 also built around.
 
+### 7b. The run-permanent shelf, refilled — tiered rank abilities
+
+Paring the shop back (§7) left the **run-permanent category almost empty**: Whetstone, Reflex, the
+discard-budget increase and the odds-raising purchase all went to reserve, and what remained on that
+shelf was AP capacity alone. This is the developer's answer to that hole, and it's a good one because
+it invents no new object — it upgrades things the player already handles every hand.
+
+**The deck's named ranks get tiers, and the tiers are sold in the shop.** The named cards are
+**Swan (1), Fox (3), Woodcutter (5), Treasure (7), Poison (8), Witch (9) and Monarch (11)**; each
+ability gains a bronze / silver / gold ladder, and buying a step is a **run-permanent** purchase that
+applies to every copy of that rank the player holds for the rest of the run.
+
+Three properties make this fit the hole better than Whetstone did:
+
+- **It's build-defining without being a number.** Whetstone multiplied the bank; these change what a
+  card *does*, so two runs that bought different ladders play differently rather than scoring
+  differently.
+- **It reuses the tier vocabulary already established in §3.** Bronze/silver/gold means the same thing
+  here as it does on a buff card, so the shop teaches one ladder, not two.
+- **It pays off the deal the player was already dealt.** Every hand already contains named ranks; an
+  upgrade is felt immediately rather than waiting for the right buff to be drawn.
+
+**The purchase applies to the player only.** The Quarry plays the same 33-card deck under the same
+rules — `the-hunt.md` records "the Quarry has no powers… it plays by exactly the player's rules, with
+no exceptions" — so a tiered Woodcutter in the player's hand and an untiered one in the Quarry's is
+the **first asymmetry the deck itself has ever carried**. That is almost certainly the right call, and
+it's the opposite of the DLR-81 decision that stripped character powers, so it should be made
+deliberately rather than by omission.
+
+#### Draft tier ladders — **TO BE REVIEWED, not committed**
+
+Bronze is today's printed ability in every row, so buying nothing leaves the game exactly as it plays
+now. Every magnitude below is a placeholder.
+
+| Rank | Bronze (today) | Silver | Gold | Notes |
+|---|---|---|---|---|
+| **Swan (1)** | Losing side with a Swan leads the next trick | On a **clean loss** — not an eaten skull — your **multiplier survives the hit** and you still lead | As silver, and the **bank survives too**: no cash-out, the streak simply carries on | The developer’s own upgrade, drafted below. Bronze already owns “lose and lead”, so the tiers add the streak half; gold is deliberately the poison exception’s shape and wants the same scrutiny |
+| **Fox (3)** | May exchange the decree for a card in hand | May **look at the top card of the draw pile first**, and exchange from it instead | May exchange **without giving a card up** — the decree changes, hand size holds | Tiers along information, then cost — the gold step is a free trump-suit swap and wants hard costing |
+| **Woodcutter (5)** | Draw 1, bury 1 on the bottom | **Draw 2**, bury 1 | **Draw 3**, bury 1 | Tiers on choice width, not card advantage — hand size never changes, so this stays a reshaping tool |
+| **Treasure (7)** | No effect at all | **+2 coins** if it's in a trick you win | **+5 coins**, win or lose | Currently a blank card; this makes it an income lever and finally earns its name |
+| **Poison (8)** | No effect at all | Winning a trick containing it queues **1** delayed damage to the Quarry | Queues **3** | Also currently blank. **Name collision warning:** `the-hunt.md` flags that rank 8 has nothing to do with skulls *or* Envenom/Timebomb; giving it a delayed hit deliberately collapses that distinction, which is either a welcome tidy-up or a third meaning on the same word |
+| **Witch (9)** | Sole Witch counts as trump | **Two Witches no longer cancel** — yours still counts | Counts as trump **and as the highest card of the trump suit** | The developer's list omitted this rank — see the open questions below |
+| **Monarch (11)** | Led Monarch narrows the follower to their Swan or highest of that suit | Narrows to their **highest only** — the Swan escape closes | Narrows for the **next trick as well** | The only ability that constrains the opponent, so it's the most likely to be overtuned; a gold Monarch is close to two dictated tricks |
+
+**The Swan row, in full — the developer's own upgrade.** Today a hit does three things at once
+(`the-hunt.md` §7): 1 damage, the bank cashes at **two-thirds** of `bank × multiplier`, and bank and
+multiplier both **reset to zero**. This upgrade unpicks that bundle. You still take the damage and the
+bank still cashes — but the **multiplier survives**, so the streak you had built isn't erased by one
+lost trick, and you **lead the next trick** rather than handing the Quarry the lead as a loser normally
+does. In one line: *take the hit, keep the climb, keep the initiative.*
+
+Three reasons this sits well where it's drafted:
+
+- **It's the Swan's own job, extended.** The Swan already hands the lead to the loser — the only card
+  in the deck that does — so "and you deal first" is the printed ability, not a new rule. The tiers add
+  the streak half to a card that already owns the tempo half.
+- **The exclusion is already a rule the game states.** "If not into a skull" maps exactly onto the
+  existing clean-loss / eaten-skull split, which §7 of `the-hunt.md` treats as two distinct outcomes.
+  It also keeps the skull as the one hit nothing insures against — the same boundary §0 is trying to
+  protect.
+- **The shape already exists in code.** The poisoned-clean-loss exception (`the-hunt.md` §7) already
+  lets a bank and a multiplier "both survive, at the values they already held" through a lost trick.
+  This is that mechanism with a different trigger, which is why the gold step — bank survives too — is
+  drafted as it is, and why it needs the same scrutiny: at gold this is the poison exception fired by a
+  card the player can simply hold.
+
+**Two things to settle before it's buildable:**
+
+- **"Next hand" or next trick?** The upgrade was described as keeping the multiplier "for the next
+  hand". Drafted above as *the multiplier survives the hit and keeps climbing within the hand*, since
+  the multiplier is a within-hand streak and the end-of-hand cash-out clears it. If a multiplier
+  genuinely **carrying across the hand boundary** was meant, that's a much larger change — it makes a
+  streak a fight-long asset rather than a hand-long one, and every number in §7 of `the-hunt.md` was
+  tuned against the hand-long reading.
+- **Whether the bank cashes on the way through.** Silver as drafted still pays the Quarry two-thirds
+  and resets the bank; only the multiplier is spared. That's the conservative reading, and it means the
+  purchase protects the *rate* rather than the *pot*. Gold spares both.
+
+#### What this section still needs answering
+
+- **What "+5 per ability" actually prices.** Read here as **5 coins per tier step** — so a rank taken
+  from bronze to gold costs 10 coins in total, twice a Whetstone, which is deliberately steep for a
+  permanent that never expires. Two other readings weren't ruled out: a flat 5 coins for the whole
+  ladder, or an escalating 5 / 10 / 15. This is a tuning value and therefore the developer's call —
+  the 5-a-step reading is used above only so the rest of the section has something concrete to argue
+  with.
+- **The Witch (9) was not in the developer's list** — 1, 3, 5, 7, 8, 11 were named. Since it's the one
+  remaining odd rank with a live ability, its omission reads as a slip rather than a decision, and it's
+  drafted in above on that assumption. Say so plainly if the Witch is meant to stay untierable.
+- **Treasure and Poison have no ability to tier.** Every other row upgrades something printed on the
+  card; these two rows invent an ability outright and then tier it. That's a bigger design step than
+  the rest of the section and could ship separately from it.
+- **Whether a tier is bought or pulled.** §3 puts buffs behind the slot machine; this shelf is drafted
+  as a fixed, always-purchasable list, on the grounds that a run-permanent the player is *building
+  toward* shouldn't be down to the reels. Worth confirming, since it makes the shop two different kinds
+  of thing at once.
+- **How this meets the Vault (§8).** A player who liked a gold Woodcutter has an obvious thing to want
+  banked across runs. The Vault currently only knows about buff cards.
+
 ### What's on the shelf now, plainly stated
 
 - **Fixed shop, always purchasable, costly:** Health (permanent max-health increase — still
   deliberately undesigned per §1's DLR-82 note) and AP capacity (+5 AP).
+- **The run-permanent shelf:** tiered abilities for the deck's named ranks — Swan, Fox, Woodcutter,
+  Treasure, Poison, Witch and Monarch — bronze/silver/gold, player-side only (§7b).
 - **The buff list, drawn through the slot machine:** Cheat, Timebomb, Shield, and the templated
   condition/reward cards from §5.
 - **Held back from the shop, kept in reserve once built:** Whetstone, Reflex, the discard-budget
@@ -344,7 +589,10 @@ Two confirmed uses, both anchored to what a player might actually want after lik
   fight of the next run.
 
 **This is also the concrete fix for the first-fight problem**, and a stronger one than anything tried
-so far: a fresh run starts with **4 buff cards already in the player's pile**, not empty-handed. The
+so far: a fresh run starts with **4 buff cards already in the player's pile**, not empty-handed, and
+**all four arrive at bronze**. Bronze is the floor the Vault sells upward from — a starting pile that
+already held silver or gold would leave the Vault's tier purchase with nothing to buy on the run that
+matters most — so the default is the cheapest tier and the meta-currency is what raises it. The
 one thing already tested here — `RUN_STARTING_CHEATS` raised from 0 to 1 — was
 measured directly and made no difference to the fight-zero death rate (see the simulation doc's
 2026-08-22 addendum): a single narrow escape hatch isn't the same as an actual small toolkit from turn

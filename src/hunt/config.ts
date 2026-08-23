@@ -200,6 +200,12 @@ export const CHEAT_SLOT_COUNT = 2
 // UNIT: Cheat cards granted once, at the start of a run.
 export const RUN_STARTING_CHEATS = 1
 
+// DLR-105 AC3 — the run's opening buff-pile size, all bronze. TRANSCRIBED from the ticket's AC3
+// and design doc §8 ("a fresh run starts with 4 buff cards already in the player's pile... all
+// four arrive at bronze") — not chosen here.
+// UNIT: buffs granted once, at the start of a run, all at BuffTier.Bronze.
+export const STARTING_BUFF_COUNT = 4
+
 // DLR-84 AC1 — what beating an opponent pays. TRANSCRIBED FROM THE TICKET (developer's
 // specification, 2026-08-15), not chosen here. Credited by `recordEncounter`, which is the one
 // place a fight is known to have been won.

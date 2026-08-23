@@ -1,0 +1,181 @@
+DLR-111 — v1 Buff Card List Review
+====================================
+Card taxonomy settled this session: three buckets —
+  GOALS          — achieved over the course of a hand (bank, survive, apply-damage, etc.)
+  APPLY-TO-CARD  — attached by the player to a specific card in hand at play time
+  UTILITIES /
+  CONSUMABLES    — one-shot, used immediately, no trigger condition
+
+Cross-product rule (confirmed): every printed condition template generates one
+card PER combination of (suit or rank, if applicable) x (each reward listed
+under it). Apply-to-card and consumable templates are single generic cards —
+not multiplied by suit/rank, since targeting/suit is chosen by the player at
+play time or use time, not printed.
+
+
+CONDITION TEMPLATES
+====================================
+
+1. Win a trick with suit S                                         [GOAL]
+   Ship: YES — 3 suits x 4 rewards = 12 cards
+   Rewards: Flat damage (+1/+3/+5), Coin (+2/+5/+10), AP refund (1/2/3),
+            Multiplier (+2/+3/+5)
+
+2. Lose a trick with suit S                                        [GOAL]
+   Ship: YES — 3 suits x 4 rewards = 12 cards
+   Rewards: same four as #1
+
+3. Win a trick with rank R                                         [GOAL]
+   Ship: YES — ~11 ranks x 2 rewards = 22 cards
+   Rewards: Flat damage (+1/+3/+5), Multiplier (+2/+3/+5)
+
+4. Dodge a skull with this card                                    [APPLY-TO-CARD]
+   Ship: YES — ONE generic card. Player attaches it to a chosen card in hand
+   at play time; suit/rank is not printed.
+   Rewards: Flat damage (+1/+3/+5), Multiplier (+2/+3/+5)
+
+5. Eat a skull with this card                                      [APPLY-TO-CARD]
+   Ship: YES — ONE generic card, same targeting rule as #4.
+   Rewards: Flat damage (+1/+3/+5), Coin (+2/+5/+10), AP refund (1/2/3),
+            Multiplier (+2/+3/+5)
+
+6. Reach a bank of N this hand                                     [GOAL]
+   Ship: YES
+   N = 2 / 3 / 4, mapped directly to bronze/silver/gold (N is the tier axis,
+   not a separate multiplier against the reward list).
+   Rewards: Flat damage, Coin, AP refund, Multiplier (per file — confirm which
+   subset if not all four)
+
+7. Survive N tricks without a hit                                  [GOAL]
+   Ship: YES
+   N = 2 / 3 / 4 (same pattern as #6)
+   Rewards: Flat damage, Coin, AP refund, Multiplier
+
+8. Lose the next N tricks                                          [GOAL]
+   Ship: DEFERRED. Reason: needs a UI answer for tracking a pending
+   multi-trick goal that hasn't been designed yet; out of this ticket's time
+   budget. (Recorded in DLR-111 AC3.)
+
+9. Apply Damage this hand                                          [GOAL]
+   Ship: YES, no N — boolean trigger.
+   Mechanic note: player selects this buff before playing the hand as a
+   prediction; if they end up pressing Apply Damage (or a pending effect like
+   a timebomb resolves) during the hand, they collect the reward.
+   Rewards: Flat damage, Coin, AP refund, Multiplier
+
+10. Hold a card of suit S at hand's end                            [GOAL]
+    Ship: YES — 3 suits x 1 reward = 3 cards (coin-only, deliberately — damage
+    is worthless at hand's end; this rewards predicting which cards go unused
+    for shop currency).
+    Reward: Coin bonus (+2/+5/+10) only
+
+11. Have >= N coins                                                [GOAL]
+    Ship: YES
+    N = 5 / 10 / 20. Rewards not spending in the shop.
+    Rewards: Flat damage (+1/+3/+5), Multiplier (+2/+3/+5)
+
+12. Be below %N health                                             [GOAL]
+    Ship: YES
+    Thresholds: 60% / 45% / 33% — INVERTED, lower health = higher reward tier
+    (comeback-flavoured desperation buff).
+    Rewards: Flat damage (+1/+3/+5), Multiplier (+2/+3/+5)
+
+13. (synergy) For every other buff active this hand
+    Ship: NO. Superseded-by-or-coexists-with the passive-buff-stacking idea —
+    unresolved, see Open Questions below.
+
+14. (synergy) If you also hold a gold-tier card
+    Ship: NO.
+
+15. (synergy) If bank >= 2x multiplier
+    Ship: NO.
+
+16. (combo) Two co-triggering conditions on the same play
+    Ship as own template: NO. Whether it folds into passive-stacking instead
+    is still open — see Open Questions.
+
+
+REWARD TEMPLATES — master tier list (kept as reference; per-condition lists
+above point back to these numbers)
+====================================
+
+1. Flat damage bonus         — SHIP — +1 / +3 / +5
+2. Coin bonus                 — SHIP — +2 / +5 / +10
+3. AP refund                  — SHIP — 1 / 2 / 3
+                                 MAX_REFUND_PER_HAND — TBD, needs a tuning
+                                 pass (not blocking the list itself, per AC4)
+4. +1 multiplier               — SHIP — +2 / +3 / +5
+                                 (Whetstone confirmed removed — this reward
+                                 is reopened, no longer blocked by overlap)
+
+
+UTILITIES / CONSUMABLES — cards used immediately, one-shot, no trigger
+====================================
+
+1. Protect N damage
+   Ship: YES. Tiers: 1 / 3 / 5 (bronze/silver/gold)
+   Mechanic: single-use shield. Absorbs up to N on the NEXT hit taken, then
+   is consumed regardless of whether the hit was fully absorbed. If incoming
+   damage <= N, player takes 0 and the guard breaks. If incoming damage > N,
+   player takes (incoming - N) and the guard breaks. (Note: CPU currently only
+   deals 1 damage, so tiers above 1 are forward-looking.)
+
+2. Force a legal card from the opponent
+   Ship: YES (overrides DLR-111's original AC2 exclusion — see ticket update,
+   2026-08-23. Reclassified from a repeatable buff reward to a one-shot
+   consumable, which resolves the original costing concern by bounding it to
+   a single use.)
+   Tiers: SINGLE TIER ONLY — one card, one force, no bronze/silver/gold ladder.
+   Mechanic: play before playing your own card; from the opponent's legal
+   moves, choose which card they are forced to play. Hidden cards stay
+   hidden — but a revealed skull card can be routed around by forcing a
+   non-skull legal move instead.
+
+3. Extra discard
+   Ship: YES. Tiers: +1 / +2 / +3
+
+4. Peek the draw pile
+   Ship: YES. Tiers: 1 / 3 / 5 cards
+
+5. Read a suit (the Spyglass)
+   Ship: YES. ONE generic card — suit is picked by the player at use time,
+   not printed.
+   Tiers: rules out 1 / 2 / 3 cards of the chosen suit (narrows the
+   candidate list rather than scaling a number — see design doc §5a).
+   Worked example: player holds 3 Bells, opponent holds 2 more (already
+   observed at 3, 4, 5 played) — 6 candidates remain (6b-11b). Tier 1 rules
+   out 1 of the 6 at random, tier 2 rules out 2, tier 3 rules out 3.
+
+
+COMBINED WORKED EXAMPLES TO WRITE (per AC1)
+====================================
+Still to draft once this file is transcribed into the actual v1 list:
+- Bronze:
+- Silver:
+- Gold:
+- Consumable example (Protect, Force-a-card, Spyglass):
+
+
+OPEN QUESTIONS — NOT YET RESOLVED
+====================================
+1. Passive buff stacking (sum rewards of co-triggering buffs, multiply by
+   count that fired) — in scope for v1, or its own follow-up ticket? See
+   ideas.md Raw section, added 2026-08-23. Still Raw / not costed.
+2. If stacking ships: multiply by count of buffs fired, or count of
+   co-triggering pairs? Scale very differently (linear vs. combinatorial).
+3. Does stacking need a cap, or is an occasional big number the intended feel?
+4. Whether combo template #16 folds into passive-stacking once that's
+   resolved, or stays permanently excluded either way.
+5. #6/#7 reward lists say "all four" rewards — confirm that's intended versus
+   a narrower subset, since bank/survive feel more like coin-only or
+   damage-only fits than the full four (not blocking, just worth a second
+   look before final transcription).
+6. AP refund MAX_REFUND_PER_HAND — needs an actual number before ship,
+   tuning-pass item.
+
+
+TICKET STATUS
+====================================
+DLR-111 updated 2026-08-23: scope now explicitly covers condition templates +
+consumable items; AC2 rewritten (force-a-card ships as consumable); AC3
+rewritten (lose-next-N-tricks deferred with reason).

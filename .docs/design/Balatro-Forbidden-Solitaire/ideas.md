@@ -244,6 +244,47 @@ new kind of object.
 
 **Status.** **Raw.** Split out to be testable on its own; nothing adopted.
 
+### Passive buff stacking — co-triggering buffs sum then multiply by count
+
+**What it is.** Raised 2026-08-23, during DLR-111's buff-card-list review. Not a per-card template —
+a hand-wide resolution rule. Whenever more than one equipped buff's condition fires on the same play,
+their individual rewards are summed, then the sum is multiplied by the number of buffs that fired.
+Worked example given: three buffs co-trigger ("win with Bells," "win with a 9," "Apply Damage this
+hand"), their rewards sum to 12, and ×3 (the count that fired) gives 36.
+
+**Problem it reaches for.** It would replace two things already in §5's synergy-condition set rather
+than sit beside them: template #12 ("for every other buff active this hand") is a weaker, single-card
+version of the same idea, and the separately-discussed "combo" template (co-triggering suit/rank
+conditions, e.g. Bells + a 9) is just this rule applied to the narrow two-card case. If overlap always
+resolves this way, neither needs to exist as its own card — it becomes how the game resolves any
+overlap, automatically.
+
+**The blocking risk, computed in-thread.** The multiplier is (sum of rewards fired) × (count of buffs
+fired), and both factors grow together as a run progresses — more buffs equipped *and* higher-tier
+buffs (bigger individual rewards) both push the total up at once, which reads as quadratic rather than
+linear growth:
+
+| Buffs firing | Avg reward each | Sum | × count | Total |
+| --- | --- | --- | --- | --- |
+| 2 | 3 | 6 | ×2 | 12 |
+| 3 | 4 | 12 | ×3 | 36 |
+| 5 | 5 | 25 | ×5 | 125 |
+
+This is the same shape of risk DLR-111's AC4 already flags for AP-refund stacked with "every other
+buff active" — self-reinforcing — except this version would apply to *every* hand where buffs overlap,
+not one specifically-costed card combo, so it is a bigger lever to get tuned wrong.
+
+**Two open questions before this can be costed for real.** (1) Is the multiplier "number of buffs that
+fired" (as worked above) or "number of co-triggering *pairs*" — the two scale very differently, linear
+versus combinatorial. (2) Is the escalation a rare jackpot moment (intended, wants no cap) or a
+steady-state expectation late-run (needs one)? Neither is answered yet.
+
+**Cost in new rules.** One resolution rule, but it is a global one that touches every buff in the v1
+list rather than a single new card, so it is not cheap to get wrong.
+
+**Status.** **Raw.** Not costed. DLR-111's v1 list should note where this rule would apply to each
+card if it is taken, but should not assume it ships.
+
 ---
 
 ## Worth costing
