@@ -26,9 +26,11 @@ master tier list, kept once and referenced by every template below.
 | AP refund | 1 | 2 | 3 |
 | +1 multiplier | +2 | +3 | +5 |
 
-`MAX_REFUND_PER_HAND` (AP refund cap, required by DLR-111 AC4): **6**. The reasoning, and the fact
-that this is a design-document figure rather than a `config.ts` key yet, are in
-[MAX_REFUND_PER_HAND](#max_refund_per_hand) below.
+`MAX_REFUND_PER_HAND` (AP refund cap, required by DLR-111 AC4): **6**. DLR-124 added three more —
+`MAX_MULTIPLIER_BONUS_PER_HAND`, `MAX_FLAT_DAMAGE_BONUS_PER_HAND` and `MAX_COIN_BONUS_PER_HAND`, one
+per remaining reward axis. All four values, their derivations, and the fact that these are
+design-document figures rather than `config.ts` keys yet, are in
+[The four per-hand caps](#the-four-per-hand-caps) below.
 
 ## How a card is named
 
@@ -175,10 +177,10 @@ formula above applied to that family's modifier — transcribed, not re-derived 
 | 10 | Keepsake | Hold a card of suit S at hand's end | Goal | Purse only (deliberate — damage is worthless at hand's end) | 3 suits × 1 = **3** |
 | 11 | Miser | Have at least N coins (N = 5/10/20) | Goal | Blade, Momentum | 1 × 2 = **2** |
 | 12 | Cornered | Be below N% health (60/45/33%, inverted — lower health, higher reward) | Goal | Blade, Momentum | 1 × 2 = **2** |
-| 13 | — | (synergy) For every other buff active this hand | — | — | **NOT SHIPPING** |
-| 14 | — | (synergy) If you also hold a gold-tier card | — | — | **NOT SHIPPING** |
-| 15 | — | (synergy) If bank ≥ 2× multiplier | — | — | **NOT SHIPPING** |
-| 16 | — | (combo) Two co-triggering conditions on the same play | — | — | **NOT SHIPPING** as its own template |
+| 13 | — | (synergy) For every other buff active this hand | — | — | **NOT SHIPPING — superseded by DLR-124** |
+| 14 | — | (synergy) If you also hold a gold-tier card | — | — | **NOT SHIPPING — still excluded, own reason (DLR-124)** |
+| 15 | — | (synergy) If bank ≥ 2× multiplier | — | — | **NOT SHIPPING — killed by DLR-124** |
+| 16 | — | (combo) Two co-triggering conditions on the same play | — | — | **SUPERSEDED** by DLR-124's Overlap Bonus |
 
 **Condition template subtotal: 12 + 12 + 22 + 2 + 4 + 4 + 4 + 4 + 3 + 2 + 2 = 71 distinct card
 templates.**
@@ -244,6 +246,19 @@ arrival cannot be priced as if it always fires.
 is usually above 60% of `PLAYER_START_HEALTH = 10`, so most hands this card does nothing, and the
 hands where it fires are the hands they were losing anyway.
 
+### Firing cadence
+
+How often a template fires is decided by DLR-124's R4 and is a property of its **family**, not of its
+reward. Transcribed here because it is what the AP costs above are calibrated against; the argument
+for it — including why event families fire per trick rather than once a hand — is in
+`hybrid-design.md` §5 → *Resolving several buffs on one trick — the stacking rule*, R4.
+
+| Cadence | Families | Fires |
+|---|---|---|
+| **Event** | Taker, Feeder, Mark of the *R*, Sidestep, Glutton, Debt Collector | Once per trick on which the condition is true — so possibly many times in a hand |
+| **Threshold** | Hoarder, Unbloodied, Miser, Cornered | Once per hand, on the trick where the condition first becomes true |
+| **Terminal** | Keepsake | Once, at the moment the hand ends |
+
 ### #8 deferred
 
 **Long Fall** — "Lose the next N tricks" — needs a UI answer for tracking a pending multi-trick goal
@@ -252,12 +267,39 @@ not dropped — revisit once a UI answer exists (DLR-111 AC3). It is **not coste
 card whose interaction model is undesigned would be guesswork, and the family word is reserved so
 the name is waiting when the template returns.
 
-### #13–16 held back
+### #13–16 resolved against the stacking rule (DLR-124)
 
-The three synergy conditions and the co-trigger combo template are held back from v1 pending the
-**passive buff stacking** idea (see `ideas.md` Raw section, added 2026-08-23, and its own follow-up
-ticket) — if that resolution rule ships, it likely supersedes all four rather than coexisting with
-them. Tracked separately so T8 doesn't have to wait on it.
+These four were previously "held back pending" the passive buff stacking idea. **That ticket has
+run.** The hand-wide resolution rule is decided and argued in `hybrid-design.md` §5 → *Resolving
+several buffs on one trick — the stacking rule*; each of the four now carries a permanent verdict
+rather than a hold, and none is left ambiguous.
+
+**#13 `For every other buff active this hand` — superseded, permanently excluded.** The **Overlap
+Bonus** is the hand-wide version of exactly this, done once as a rule rather than as a card, so the
+template would now be a second home for a fact the rule already owns. It is also worse than the rule
+on its own terms: #13 counts buffs **active** — which the player simply buys with AP — where the
+Overlap Bonus counts buffs **fired**, which requires the conditions to actually come true. Paying for
+width with **no condition risk** is precisely the self-reinforcing loop DLR-111 AC4 flags.
+
+**#14 `If you also hold a gold-tier card` — still excluded, for an independent reason that has
+nothing to do with the stacking rule.** It is a **doubler on a reward** rather than an overlap rule,
+and doubling is the one operation R2 forbids. Separately, it references another card's *tier* rather
+than a game event, which makes it unreadable at the point of play — the player cannot see it fire.
+
+**#15 `If bank ≥ 2× multiplier` — killed permanently, because it is arithmetically dead.** Per
+`the-hunt.md` §7 ("The bank", "The streak multiplier", and the Whetstone table) a taken trick banks
+`1 + Whetstone copies` while the multiplier climbs by exactly 1, so after *n* taken tricks
+`bank = (1 + copies) × n` and `multiplier = n`. The condition `bank ≥ 2 × multiplier` therefore
+reduces to `copies ≥ 1`: **never true with no Whetstone, always true with one.** It is a
+Whetstone-ownership check wearing a condition's clothes — not a condition at all, at any tier, in any
+hand.
+
+**#16 the co-trigger combo template — superseded.** It is the `k = 2` case of the Overlap Bonus,
+which is now a rule rather than a card.
+
+**The v1 pool therefore stays at 78.** No template count moves, and **DLR-112 is unblocked with a
+permanent answer rather than a hold** — the hold is lifted in both directions: none of the four
+returns under a later reading of the stacking rule, because the stacking rule is the reading.
 
 ---
 
@@ -350,7 +392,24 @@ as separate pool entries), except Puppeteer, which is single-tier only.
 
 ---
 
-## MAX_REFUND_PER_HAND
+## The four per-hand caps
+
+Each of the four reward axes accrues under its own named per-hand cap. Contributions past a cap are
+clipped and lost. The three added by DLR-124 are argued in `hybrid-design.md` §5 → *Resolving several
+buffs on one trick — the stacking rule*, R6; the arguments are **cited, not reproduced here**.
+
+| Constant | Value | Unit | Derivation |
+|---|---|---|---|
+| `MAX_REFUND_PER_HAND` | 6 | action points per hand | `STARTING_AP` — a hand can at most double its budget (unchanged; full reasoning below) |
+| `MAX_MULTIPLIER_BONUS_PER_HAND` | 6 | multiplier points per hand | the natural six-trick multiplier ceiling, so bought multiplier can at most *double* the earned one |
+| `MAX_FLAT_DAMAGE_BONUS_PER_HAND` | 12 | damage per hand | one third of a perfect hand's 36, so Blade can *finish* a hand and never *replace* the streak |
+| `MAX_COIN_BONUS_PER_HAND` | 10 | coins per hand | one gold Purse — the largest single coin reward the master tier list authorises; coins are the only run-permanent axis, so stacking never pays more than the best single card on it |
+
+`MAX_MULTIPLIER_BONUS_PER_HAND = 6` is the identical move that set `MAX_REFUND_PER_HAND = STARTING_AP`
+— a ceiling equal to what the hand earns unaided, so a bought axis can double the natural one and no
+more.
+
+### `MAX_REFUND_PER_HAND` — the original figure, reasoning unchanged
 
 **`MAX_REFUND_PER_HAND` = 6 AP.** This satisfies DLR-111 AC4, which requires the AP-refund reward to
 ship with a named, retunable cap stated alongside it.
@@ -362,29 +421,46 @@ refund-carrying buffs can fire on the same trick, and the design doc's §5 table
 refund reward as one that "could combo dangerously with the 'for every other buff' synergy
 condition" — a synergy family this list holds back but does not delete.
 
-Two things this figure is **not**. It is not a `config.ts` key: **DLR-108 is the ticket that creates
-it**, and this document only states the value it should be created with. And it has **not been
-played** — it is reasoned from the shape of the failure it prevents, not measured, and it is the
-developer's to move.
+### Two things all four figures are not
+
+They are **not `config.ts` keys**: **DLR-108 is the ticket that creates all four**, and this document
+only states the values they should be created with. And **none has been played** — each is reasoned
+from the shape of the failure it prevents, not measured, and each is the developer's to move. The
+three new ones are **agent-chosen**, under DLR-124's sprint-run override of `CLAUDE.md`'s
+tuning-value pause, on the same footing as the AP costs in *The cost model* above; the register
+naming every one of them is `hybrid-design.md` §5's closing *Every number here is the developer's to
+move*.
 
 ## Open items — resolutions
 
 The draft carried six open items forward. Each is resolved below, with the reading taken.
 
-**1. Passive buff stacking — unresolved here, stays its own ticket.** The hand-wide resolution rule
-(sum co-triggering buffs' rewards, multiply by the count that fired) is still Raw and uncosted in
-`ideas.md`. It is a rules change, not a content decision, so it does not belong in a card list.
+Items 1–4 were left open here on DLR-111 because they were parameters of a rule that had not shipped.
+**DLR-124 shipped it**, and all four are now closed against it.
 
-**2. Whether stacking multiplies by buffs fired or by co-triggering pairs — unresolved here,** for
-the same reason: it is a parameter of a rule that has not shipped, and the two scale very
-differently (linear against combinatorial).
+**1. Passive buff stacking — decided, on DLR-124.** The hand-wide resolution rule is per-axis and
+additive, resolved in a five-step order per trick, bounded by four per-hand caps, with a linear
+Overlap Bonus. It lives in `hybrid-design.md` §5 → *Resolving several buffs on one trick — the
+stacking rule*, R1–R7. It is still a rules change rather than a content decision, which is why the
+rule lives there and only its consequences for card content live here.
 
-**3. Whether stacking needs a cap — unresolved here,** for the same reason. Noted only that
-`MAX_REFUND_PER_HAND` above is the *AP* cap and answers none of this.
+**2. Whether stacking multiplies by buffs fired or by co-triggering pairs — the basis is the count of
+buffs fired, linear.** Pairs is `k(k−1)/2`, which at the AP-affordable `k = 6` pays 15 Momentum from
+the bonus alone — two and a half times the entire natural six-trick multiplier ceiling — and grows as
+the square of exactly what the shop's `+5 AP` capacity item sells. The argument is in
+`hybrid-design.md` §5's R5.
 
-**4. Whether combo template #16 folds into passive stacking — stays excluded either way.** It does
-not ship in v1 under either resolution, so the question does not gate this list; it gates the
-stacking ticket.
+**3. Whether stacking needs a cap — yes, and there are four,** in
+[The four per-hand caps](#the-four-per-hand-caps) above. The previous text's observation still holds
+and is now the reason there are four rather than one: `MAX_REFUND_PER_HAND` is the *AP* cap and
+answers none of the rest, so `MAX_MULTIPLIER_BONUS_PER_HAND`, `MAX_FLAT_DAMAGE_BONUS_PER_HAND` and
+`MAX_COIN_BONUS_PER_HAND` answer the other three axes.
+
+**4. Whether combo template #16 folds into passive stacking — it is superseded, not merely still
+excluded.** That is the distinction this item asked for and could not make on DLR-111. #16 is the
+`k = 2` case of the Overlap Bonus, so the rule does its job; it does not return under any later
+reading. See [#13–16 resolved against the stacking rule (DLR-124)](#1316-resolved-against-the-stacking-rule-dlr-124)
+above, where #13 is likewise superseded and #14 and #15 stay excluded for their own reasons.
 
 **5. `MAX_REFUND_PER_HAND` — resolved to 6,** in the section above.
 
@@ -401,7 +477,7 @@ four.**
 > templates for a readability intuition rather than an arithmetic problem. **The developer should
 > confirm or reverse this**; it is a reversal of their own flag, not an agreement with it.
 
-## The three weakest items on this list
+## The four weakest items on this list
 
 Start a review here. These are the rows the author has least confidence in, and each fails for a
 different reason.
@@ -425,6 +501,20 @@ spending — and the shop is the run's only progression lever, so the card is as
 out of the game's one meta system in exchange for a per-hand bonus. This is a structural awkwardness
 rather than a costing one, and **no AP price fixes it**; the discount it carries makes it cheap, not
 coherent. Flagged for deletion at the developer's discretion.
+
+**`Keepsake` may be unfireable in an ordinary hand — a defect found on DLR-124, not a rewording
+proposed.** Classifying `Keepsake` as the one **terminal** family (above) forced the question of what
+"at hand's end" actually contains. With `HAND_SIZE = 6` and six tricks, the player's hand is **empty**
+by the time the hand ends — every card has been played — so "hold a card of suit S at hand's end" is
+false in every hand that runs its full six tricks. The only state that satisfies it is an encounter
+that stops early (`the-hunt.md` §8, "Damage lands per trick, and an encounter can end mid-hand"),
+which is a hand the player has just won or lost outright. That makes all **three** `Keepsake`
+templates near-dead and, worse, dead in a way the card face does not admit — it reads as a normal
+goal. It is priced at coin's flat base on the reasoning that holding a card "costs you the option of
+playing that card", and that price assumes a hand in which holding one back is possible. **This
+contract states the defect and invents no replacement**: the template's wording is the developer's,
+and the fix could be a reworded condition, a different end-of-hand instant, or deleting the three
+rows — three different games, and not an agent's call.
 
 ---
 
@@ -510,7 +600,40 @@ the closer fit to how this document is written — the cost model is a formula o
 not 78 independent facts, and a lookup keeps it that way so retuning stays a two-number change.
 
 Whichever shape wins, **`MAX_REFUND_PER_HAND = 6` belongs in `src/hunt/config.ts`** with the other
-tunables, not inline at a call site.
+tunables, not inline at a call site — as do the three caps DLR-124 added beside it.
+
+### 5. Missing state — the stacking rule needs a per-hand accrual
+
+DLR-124's resolution rule needs one piece of state no current type carries: **four per-hand running
+totals**, one per reward axis, each clamped at its cap —
+
+```ts
+/** Per-hand running totals, reset when a hand begins. NOT a field on `Buff`. */
+interface BuffBonusAccrual {
+  readonly multiplierBonus: number // clamped at MAX_MULTIPLIER_BONUS_PER_HAND
+  readonly flatDamageBonus: number // clamped at MAX_FLAT_DAMAGE_BONUS_PER_HAND
+  readonly coinBonus: number //       clamped at MAX_COIN_BONUS_PER_HAND
+  readonly apRefunded: number //      clamped at MAX_REFUND_PER_HAND
+}
+```
+
+Three properties of it, each of which is the kind of thing that gets lost in translation:
+
+**It is state on the hand, not a field on `Buff`.** This is the same distinction finding 4 above
+draws for `apCost` and it is drawn the same way: a `Buff` is the card the player owns, and how much
+of an axis's cap has been consumed *this hand* is not a property of that card. Two copies of the same
+card share one accrual, and the accrual outlives neither.
+
+**It resets per hand and NOT on a hit.** A hit resets the multiplier itself to zero (`the-hunt.md`
+§7) and **does not refund the cap** — a player who has spent all 6 of their Momentum bonus and then
+takes a hit restarts the streak with no bonus left for the rest of the hand. That asymmetry is the
+whole containment mechanism: without it the cap is a per-streak allowance refreshed by the very event
+the player is trying to avoid, and a hand containing three hits would pay three full pools. "Reset
+the buff state when the streak resets" is the obvious reading and the wrong one.
+
+**It belongs in `src/hunt/**`,** behind the pure-core ESLint boundary that tree already carries, so
+the whole rule stays unit-testable with no renderer. It is **DLR-108's to build**, alongside the four
+`config.ts` keys.
 
 ### Cheat and Timebomb currently exist twice
 

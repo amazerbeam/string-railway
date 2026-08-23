@@ -244,47 +244,6 @@ new kind of object.
 
 **Status.** **Raw.** Split out to be testable on its own; nothing adopted.
 
-### Passive buff stacking — co-triggering buffs sum then multiply by count
-
-**What it is.** Raised 2026-08-23, during DLR-111's buff-card-list review. Not a per-card template —
-a hand-wide resolution rule. Whenever more than one equipped buff's condition fires on the same play,
-their individual rewards are summed, then the sum is multiplied by the number of buffs that fired.
-Worked example given: three buffs co-trigger ("win with Bells," "win with a 9," "Apply Damage this
-hand"), their rewards sum to 12, and ×3 (the count that fired) gives 36.
-
-**Problem it reaches for.** It would replace two things already in §5's synergy-condition set rather
-than sit beside them: template #12 ("for every other buff active this hand") is a weaker, single-card
-version of the same idea, and the separately-discussed "combo" template (co-triggering suit/rank
-conditions, e.g. Bells + a 9) is just this rule applied to the narrow two-card case. If overlap always
-resolves this way, neither needs to exist as its own card — it becomes how the game resolves any
-overlap, automatically.
-
-**The blocking risk, computed in-thread.** The multiplier is (sum of rewards fired) × (count of buffs
-fired), and both factors grow together as a run progresses — more buffs equipped *and* higher-tier
-buffs (bigger individual rewards) both push the total up at once, which reads as quadratic rather than
-linear growth:
-
-| Buffs firing | Avg reward each | Sum | × count | Total |
-| --- | --- | --- | --- | --- |
-| 2 | 3 | 6 | ×2 | 12 |
-| 3 | 4 | 12 | ×3 | 36 |
-| 5 | 5 | 25 | ×5 | 125 |
-
-This is the same shape of risk DLR-111's AC4 already flags for AP-refund stacked with "every other
-buff active" — self-reinforcing — except this version would apply to *every* hand where buffs overlap,
-not one specifically-costed card combo, so it is a bigger lever to get tuned wrong.
-
-**Two open questions before this can be costed for real.** (1) Is the multiplier "number of buffs that
-fired" (as worked above) or "number of co-triggering *pairs*" — the two scale very differently, linear
-versus combinatorial. (2) Is the escalation a rare jackpot moment (intended, wants no cap) or a
-steady-state expectation late-run (needs one)? Neither is answered yet.
-
-**Cost in new rules.** One resolution rule, but it is a global one that touches every buff in the v1
-list rather than a single new card, so it is not cheap to get wrong.
-
-**Status.** **Raw.** Not costed. DLR-111's v1 list should note where this rule would apply to each
-card if it is taken, but should not assume it ships.
-
 ---
 
 ## Worth costing
@@ -1757,6 +1716,89 @@ is exactly what pending damage (visible mid-Hunt) and §6's disaster/slow-leak f
 the new tables. The specific 816-point cliff and the self-correcting "high cards get spent early"
 argument were computed against the old single table and are not carried forward; the finding's
 shape is what was promoted, not its numbers.
+
+### Passive buff stacking — became `hybrid-design.md` §5's stacking rule, 2026-08-23 — the ×count arithmetic rejected, the intent kept
+
+One line on what changed in the trip: the **intent** survives whole and the **arithmetic** does not.
+The entry is reproduced below exactly as it sat in Raw, per this file's own rule that an idea is
+killed with its reason attached rather than deleted — everything from "What it is" to "Cost in new
+rules" is the original text, including the growth table that turned out to be the defect. The
+resolution follows it.
+
+**What it is.** Raised 2026-08-23, during DLR-111's buff-card-list review. Not a per-card template —
+a hand-wide resolution rule. Whenever more than one equipped buff's condition fires on the same play,
+their individual rewards are summed, then the sum is multiplied by the number of buffs that fired.
+Worked example given: three buffs co-trigger ("win with Bells," "win with a 9," "Apply Damage this
+hand"), their rewards sum to 12, and ×3 (the count that fired) gives 36.
+
+**Problem it reaches for.** It would replace two things already in §5's synergy-condition set rather
+than sit beside them: template #12 ("for every other buff active this hand") is a weaker, single-card
+version of the same idea, and the separately-discussed "combo" template (co-triggering suit/rank
+conditions, e.g. Bells + a 9) is just this rule applied to the narrow two-card case. If overlap always
+resolves this way, neither needs to exist as its own card — it becomes how the game resolves any
+overlap, automatically.
+
+**The blocking risk, computed in-thread.** The multiplier is (sum of rewards fired) × (count of buffs
+fired), and both factors grow together as a run progresses — more buffs equipped *and* higher-tier
+buffs (bigger individual rewards) both push the total up at once, which reads as quadratic rather than
+linear growth:
+
+| Buffs firing | Avg reward each | Sum | × count | Total |
+| --- | --- | --- | --- | --- |
+| 2 | 3 | 6 | ×2 | 12 |
+| 3 | 4 | 12 | ×3 | 36 |
+| 5 | 5 | 25 | ×5 | 125 |
+
+This is the same shape of risk DLR-111's AC4 already flags for AP-refund stacked with "every other
+buff active" — self-reinforcing — except this version would apply to *every* hand where buffs overlap,
+not one specifically-costed card combo, so it is a bigger lever to get tuned wrong.
+
+**Two open questions before this can be costed for real.** (1) Is the multiplier "number of buffs that
+fired" (as worked above) or "number of co-triggering *pairs*" — the two scale very differently, linear
+versus combinatorial. (2) Is the escalation a rare jackpot moment (intended, wants no cap) or a
+steady-state expectation late-run (needs one)? Neither is answered yet.
+
+**Cost in new rules.** One resolution rule, but it is a global one that touches every buff in the v1
+list rather than a single new card, so it is not cheap to get wrong.
+
+#### The resolution, 2026-08-23 (DLR-124)
+
+**What was rejected, and why.** "Sum the rewards fired, then multiply by the count" has nothing to
+sum. A fired buff pays on exactly one of four axes — Blade (flat damage), Purse (coins), Second Wind
+(action points), Momentum (multiplier points) — and those are four different units with four
+different consumers and no exchange rate between any pair of them. The "avg reward each" column in
+the table above is therefore a quantity the game cannot produce, and the 2→12 / 3→36 / 5→125 figures
+inherit the defect: **rejected on definition, before magnitude.** It fails on magnitude as well. Read
+onto the multiplier — the most generous coherent reading, since the rule as written names no axis at
+all — an ordinary eleven-AP, five-sevenths-bronze loadout pays **123 damage on trick three of hand
+one** against a 34-health opponent. That figure also disposes of open question (2) for the original
+shape: a rule paying 123 on trick three is not a rare jackpot anyone could choose to leave uncapped.
+
+**What replaced it.** A per-axis, additive, ordered, capped resolution, argued as R1–R7. Each fired
+buff pays into its own axis and nowhere else; within an axis, contributions add; a trick resolves in
+the order Second Wind → Momentum → the cash-out product → Blade → Purse; a trick on which `k ≥ 2`
+buffs fire adds an **Overlap Bonus** of `k − 1` to the Momentum axis; and four named per-hand caps
+bound the four axes. Why addition rather than multiplication or take-the-highest, why the order is
+forced rather than chosen, where each cap value comes from, and the worked hand that checks all of
+it are in `hybrid-design.md` §5 → *Resolving several buffs on one trick — the stacking rule*, and
+are deliberately not repeated here.
+
+**Both open questions are answered, and the two templates this entry named are gone.** On (1) the
+basis is the **count of buffs fired, linear** — pairs is `k(k−1)/2`, which at the AP-affordable
+`k = 6` pays 15 Momentum from the bonus alone, two and a half times the whole natural multiplier
+ceiling, and grows as the square of the very thing the shop sells. On (2) it is treated as a
+**steady-state expectation and capped**, four times over, one cap per axis. And this entry's own
+prediction that the rule would replace two synergy templates rather than sit beside them held:
+`v1-buff-card-list.md` → *#13–16 resolved against the stacking rule (DLR-124)* supersedes both
+permanently — the "for every other buff active this hand" template and the co-trigger combo
+template, numbered #13 and #16 there — while #14 and #15 stay excluded for independent reasons that
+have nothing to do with stacking.
+
+**What is still the developer's.** The four cap values, the Overlap Bonus magnitude, and the
+event / threshold / terminal firing cadence were all chosen by an agent under DLR-124's sprint-run
+override of `CLAUDE.md`'s tuning-value pause, not by the developer. Each is listed again with what
+it trades off in the register closing that subsection, *Every number here is the developer's to
+move*; none is a `config.ts` key yet and none has been played.
 
 <!-- ### <title> — became `hybrid-design.md` §N, <date>. One line on what changed in the trip. -->
 

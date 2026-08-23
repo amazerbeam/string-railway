@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 3/22 (14%) — done: 3 shipped, 0 blocked (+1 out-of-band shipped) | now: DLR-111 "Design: author the v1 buff card list" (4/22) — fb-plan starting
+**Progress:** 4/22 (18%) — done: 4 shipped, 0 blocked (+1 out-of-band shipped) | now: DLR-124 "Design: cost the passive buff-stacking resolution rule" (5/22) — fb-plan starting
 
 ## Run order
 
@@ -881,3 +881,260 @@ Also recorded in the doc: DLR-107's deferred AC3 leaves Cheat and Timebomb exist
   bands feel right in a hand is exactly the question only the developer can answer.
 - **`.docs/game_rules/the-hunt.md` was not touched**, correctly — every card here is `[not built]`,
   and that file is the ruleset, not a design backlog.
+
+## Coordinator decisions — DLR-111 reconciliation
+
+- **78 AP costs and `MAX_REFUND_PER_HAND = 6` were chosen by an agent, not by the developer.**
+  This is the single largest concentration of unapproved tuning in the run. Accepted because
+  the ticket's whole deliverable is content and the run's pause override covers exactly this,
+  but the review burden is real. Mitigated two ways, both of which held: the costs derive from
+  a **two-table formula** (`REWARD_BASE[axis][tier] + CONDITION_MODIFIER[family]`, clamped
+  1–6), so retuning all 78 is a two-table edit rather than 78 edits; and the agent marked them
+  as agent-chosen **inside the design document**, not only in this log, so a later reader
+  cannot mistake them for settled.
+- **Accepted a correction to the ticket's own premise.** The draft's pool total of 76 was
+  wrong: Cheat and Timebomb were missing, though design §1 folds both into the buff pile and
+  `buffCatalog.ts` already mints them. The list ships at **78 templates**.
+- **Accepted the overturning of a developer note.** Open item 5 — the developer flagged
+  Hoarder/Unbloodied's four-reward lists as "worth a second look"; the doc keeps all four and
+  argues the case in a blockquote rather than folding the change in silently. The one place
+  this run contradicts a written note of the developer's, so it is called out here and in the
+  doc.
+- **Accepted the docs-only reviewer skip.** No `src/` path in the file map, so the reviewer
+  trio was not dispatched, per the standing docs-only precedent. All four gates ran in full
+  regardless: 1089/1089, baseline held exactly, `git status --porcelain src` empty.
+- **`npm run format:check` is not clean** for the design doc — but 58 `.md` files fail
+  repo-wide and did at HEAD too. Pre-existing, not one of the four gates, not this ticket's.
+
+### Four shape gaps DLR-108 and DLR-112 inherit (grep-verified)
+
+Carried into both later prompts so neither rediscovers them:
+
+1. `BuffKind` has 3 members; the authored list needs ~16.
+2. `BuffRewardAxis` has 3; needs 8 more.
+3. `BuffCondition`'s payload-free `{ kind: string }` **cannot** express the suit- and
+   rank-parameterised families. Recommendation on record: an optional `target`.
+4. **`Buff` has no `apCost` field at all** (0 grep hits). That is DLR-108's first job.
+
+## Developer input mid-run — "Envenom has been replaced by Timebomb"
+
+Confirmed against the code at `2b33332`, and it changes the vocabulary for the rest of the run.
+
+- **Timebomb is canonical. Envenom is the legacy name.** `TIMEBOMB_DAMAGE[bronze]` reads
+  `ENVENOM_QUARRY_DAMAGE` (4) and `ENVENOM_PLAYER_DAMAGE` (2) rather than restating them, so
+  the two are the same mechanic and the same figures by construction — not two mechanics.
+- **The rename has only reached the new representation.** Timebomb: 5 files, all under
+  `src/hunt/`, **read by nothing**. Envenom: 20 files, doing all the live work — the shop
+  panel and labels, the felt, the round reducer, the health bars.
+- **DLR-129 raised** to own the rename and the de-duplication in one place. Without it the
+  rename would happen piecemeal across DLR-108, DLR-112, DLR-114 and DLR-116. It is scoped as
+  rename-and-de-duplicate only, no behaviour or tuning change, and it carries the open copy
+  question: the health bar currently announces "10 of 10. 4 poisoned." — whether Timebomb
+  keeps poison vocabulary is a copy judgement and stays the developer's.
+- **Every remaining ticket prompt now states that Timebomb is canonical**, so nothing new is
+  built against the Envenom name.
+- **Consequence for already-shipped work:** DLR-101 (`2c8f6bc`) shipped in the old vocabulary
+  — the pending-poison hearts and the "4 poisoned" announcement. Functionally correct, wrong
+  word. DLR-129 covers it.
+- **Consequence for DLR-127's open questions:** both were phrased as "Envenom"; read them as
+  "Timebomb". The answers are unchanged and the purchase-isolation test guards either way.
+
+
+## DLR-124 — Design: cost the passive buff-stacking resolution rule
+
+Docs-only. Slug `DLR-124-cost-the-passive-buff-stacking-rule`. Three design documents edited, two
+implementation docs cross-referenced, **zero `src/` files**. Pulled ahead of DLR-108 and DLR-125,
+both of which consume this rule.
+
+### The headline: the proposal was rejected on *definition*, not on magnitude
+
+The ticket asked whether "sum the rewards fired, then multiply by the count that fired" should ship.
+It cannot ship, because **there is no scalar to sum**. A fired buff pays on exactly one of four axes
+— Blade (flat damage), Purse (coins), Second Wind (AP), Momentum (multiplier) — four different units
+with four different consumers and no exchange rate anywhere in the design. The `ideas.md` growth
+table's "avg reward each: 3, 4, 5" column is a quantity the game cannot produce, so `2 → 12`,
+`3 → 36` and `5 → 125` all inherit the defect. Every downstream figure in that table is unsound.
+
+It fails on magnitude too — 123 damage on trick three of hand one, computed below — but that is a
+consequence of the first failure, not an independent finding. **A rule with no defined operand
+cannot be tuned into one**, which is why no amount of cap-picking would have rescued the original
+shape. This was not visible from the ticket text; it only appears once the four reward axes are read
+side by side.
+
+### The rule that replaced it
+
+| | Rule |
+|---|---|
+| **R1** | Resolution is **per-axis**. Four independent accumulators; no interaction across axes. |
+| **R2** | Within an axis, contributions **add**. |
+| **R3** | Per-trick order: **Second Wind → Momentum → the cash-out product → Blade → Purse.** |
+| **R4** | Firing cadence: **event** / **threshold** / **terminal** (see below). |
+| **R5** | **Overlap Bonus:** `k ≥ 2` buffs firing on a trick adds `+(k − 1)` Momentum. |
+| **R6** | Four per-hand caps. **The cap counters reset per hand and NOT on a hit.** |
+| **R7** | Contradictions are **structurally impossible in v1**; no buff ever cancels another. |
+
+### Every number chosen, with its one-line justification
+
+All are **agent-chosen under this run's override of `CLAUDE.md`'s tuning-value pause**, and all are
+marked as agent-chosen *inside the design document*, not only here — same mitigation DLR-111 used.
+
+- **`MAX_MULTIPLIER_BONUS_PER_HAND = 6`** — the natural six-trick multiplier ceiling, so bought
+  multiplier can at most *double* the earned one. Identical reasoning to DLR-111's
+  `MAX_REFUND_PER_HAND = STARTING_AP`, so the project gains no new principle, just a second use of
+  one it already has.
+- **`MAX_FLAT_DAMAGE_BONUS_PER_HAND = 12`** — one third of a perfect hand's 36, so Blade can
+  *finish* a hand and never *replace* the streak.
+- **`MAX_COIN_BONUS_PER_HAND = 10`** — one gold Purse, the largest single coin reward the master tier
+  list authorises. Coins are the only run-permanent axis, so coin inflation is the one stacking
+  failure losing the hand cannot undo; stacking therefore never pays more than the best single card.
+- **`MAX_REFUND_PER_HAND = 6`** — unchanged from DLR-111, restated so all four sit together.
+- **Overlap Bonus = `k − 1` Momentum, linear** — this is the ticket's AC1 answer. Rejected
+  alternative: co-triggering **pairs**, `k(k−1)/2`, which at the AP-affordable `k = 6` yields 15 from
+  the bonus *alone* — two and a half times the entire natural multiplier ceiling — and grows as the
+  square of exactly what the shop's `+5 AP` capacity item sells.
+- **The bonus draws from the same pool as Momentum buffs**, rather than getting its own cap. Chosen
+  because the consequence is desirable: a Momentum-heavy loadout has already spent the cap and gets
+  no bonus, so the bonus is worth most to a **wide, mixed** loadout — which is the behaviour the
+  original idea was reaching for.
+- **Resolution order** — presented as *forced*, not chosen: `v1-buff-card-list.md` prices multiplier
+  above flat damage (2/3/5 vs 1/2/3) **because** one is multiplied by the bank and the other is not.
+  Momentum before the product and Blade after it is the only order consistent with that shipped
+  pricing. Any other order silently re-costs the pool.
+- **Firing cadence** — **event** (Taker, Feeder, Mark of the R, Sidestep, Glutton, Debt Collector:
+  once per qualifying trick, many times a hand), **threshold** (Hoarder, Unbloodied, Miser, Cornered:
+  once per hand on first crossing), **terminal** (Keepsake: at hand's end). Per-trick firing was taken
+  because once-per-hand would make gold `Bell-Taker` at 5 AP strictly worse than bronze
+  `Mark of the 9` at 1 AP, and because DLR-111 already prices Feeder *higher* on the stated grounds
+  that "it fires close to every hand" — the shipped cost model already assumes repeat firing.
+
+### The worked example's result
+
+Seven buffs at exactly 11 AP (capacity item bought), 34-health Quarry, six tricks. Trick 1 fires
+`k = 4` → Momentum pool 5/6; trick 2's Overlap Bonus caps it at 6/6; trick 3's `Sidestep (Momentum)`
+is **clipped to 0**; trick 4 applies damage for `3 × 9 = 27` plus `+6` Blade **added after the
+product** = 33; trick 6 cashes `2 × 2 = 4`.
+
+| | Total damage |
+|---|---|
+| **This rule** | **37** (+5 coins, 2 AP refunded) |
+| Unbuffed, same six tricks | **13** — so the loadout returns **2.85×** on 11 AP |
+| The rejected ×count rule | **123 on trick three**, encounter already over |
+
+### The most dangerous degenerate case, and how the rule contains it
+
+**It is not the one the ticket names.** The ticket worried about several *different* buffs on one
+trick; that case is bounded by the AP budget. The real exposure is **one buff firing on every
+trick**: a gold `Bell-Taker (Momentum)` at 5 AP plus a gold `Mark of the 9 (Momentum)` at 4 AP — a
+**9-AP loadout**, inside the 11 AP the capacity item allows — on a hand holding four Bells.
+
+- **Uncapped:** `+5 × 4` firings plus `+5` = `+25` Momentum → `6 × (6 + 25) =` **186 damage**.
+  Diarmuid, the run's final boss, holds **135**. That one-shots every opponent in the game, on hand
+  one, from two cards.
+- **Contained by `MAX_MULTIPLIER_BONUS_PER_HAND = 6`:** `6 × (6 + 6) =` **72** — *exactly* the
+  one-Whetstone perfect hand `the-hunt.md` §7 already prints in its own table. **The ceiling
+  introduces no figure the design has not already blessed**; it declines to exceed a maximum the game
+  already has. That is the strongest single argument in the document.
+
+The containment has a second half that must survive into code: **a hit zeroes the multiplier and
+does not refund the cap.** Without that asymmetry the cap is a speed bump rather than a ceiling.
+
+Secondary corner, since the dispatch named it: `Mark of the R` is 22 templates deep, but **a winning
+card has exactly one rank**, so at most **two** Marks fire on any trick (that rank's Blade and
+Momentum crossings). The family's depth is pool breadth, not stack depth — and the same logic bounds
+Taker and Feeder to one suit per trick. The 22 was never a stacking exposure.
+
+### Templates #13–16 reconciled (AC4) — pool stays at 78, DLR-112 unblocked
+
+- **#13** `for every other buff active this hand` — **superseded, permanently excluded.** It counts
+  buffs *active* (bought with AP) where the rule counts buffs *fired*; paying for width with no
+  condition risk is exactly the self-reinforcing loop DLR-111 AC4 flags.
+- **#14** `if you also hold a gold-tier card` — **still excluded, independent reason.** A doubler, and
+  doubling is the one operation R2 forbids; it also reads a card's *tier* rather than a game event.
+- **#15** `if bank ≥ 2× multiplier` — **killed permanently: it is arithmetically dead.** Per
+  `the-hunt.md` §7 the bank climbs by `1 + Whetstone copies` per taken trick and the multiplier by
+  exactly 1, so `bank = (1 + copies) × n` and `multiplier = n`, and the condition reduces to
+  `copies ≥ 1` — never true with no Whetstone, always true with one. **It is a Whetstone-ownership
+  check wearing a condition's clothes.** Worth flagging loudly: this template survived a full design
+  pass looking like a condition.
+- **#16** the co-trigger combo — **superseded**; it is the `k = 2` case of the Overlap Bonus.
+
+### Plan defaults taken (no gate presented — unattended run)
+
+- **Plan approval gate not presented.** All open questions took the plan's own stated default.
+- **Mockup gate: not applicable** — the work is not UI-classified, so no mockup was built and none was
+  auto-approved unseen.
+- **Skill confirmation not presented**; the classifier's list (`game-designer` only) was taken as-is.
+  `react-frontend` deliberately absent — no `src/` path in the file map.
+- **Docs-only reviewer skip taken**, per the standing precedent: no `src/` path, so code-evaluator,
+  defender and QA were not dispatched. All four gates ran in full regardless.
+- **Default taken: fixing the proposal's undefined arithmetic is in scope**, not a scope expansion —
+  a rule that cannot be evaluated cannot be costed.
+- **Default taken: a buff activated for a hand stays live for the rest of it** (`version-5-developer-idea.md`
+  §1 says "for that hand"). Load-bearing — it is what makes repeat-firing, and therefore the cap,
+  necessary.
+- **Default taken: AP is the only bound on simultaneous buffs** — grep-verified, zero hits for
+  `LOADOUT`/`EQUIP_SLOTS`/`loadout` under `src/`. Worst case is 11 AP with the capacity item.
+- **Default taken: three files, not a fourth new one.** `ideas.md` owns the status move,
+  `hybrid-design.md` the argument, `v1-buff-card-list.md` the reconciliation.
+
+### Two corrections caught mid-run, both by the implementer, neither applied silently
+
+1. **The dispatch mis-priced a card.** It cited gold `Bell-Taker (Momentum)` at **6 AP**; the AP table
+   prices Taker/Momentum at 2/3/**5**, so gold is **5 AP** (6 is *Feeder*/Momentum's gold). Corrected
+   to 5, which makes the degenerate loadout 9 AP rather than 10 and therefore makes the case against
+   an uncapped rule slightly *stronger*. Recorded as a visible blockquote in the document.
+2. **A numbering difference between two documents, deliberately not "fixed".** `ideas.md` calls the
+   "for every other buff active this hand" template **#12** (the `version-5-developer-idea.md` §5 grid
+   numbering); `v1-buff-card-list.md` calls it **#13** (its own table numbering). Both are correct in
+   their own document. The new text describes both superseded templates by description and attributes
+   the numbering to the document it belongs to, rather than asserting an equivalence on agent
+   authority.
+
+### A defect found in a *shipped* template, reported not fixed
+
+**`Keepsake` may be unfireable.** "Hold a card of suit S at hand's end" — but with `HAND_SIZE = 6`
+and six tricks the player's hand is **empty** when the hand ends, so the condition can only be true
+when an encounter ends mid-hand (`the-hunt.md` §8). That makes all **three** `Keepsake` templates
+near-dead. Recorded as a fourth entry in `v1-buff-card-list.md`'s weakest-items section. **No
+rewording was invented** — the three exits (reword the condition, move the end-of-hand instant,
+delete the templates) are three different games, and that is the developer's call.
+
+### Gates — all four green, on a zero-code diff
+
+| Gate | Result |
+|---|---|
+| `npm run typecheck` | exit 0 |
+| `npm run lint` | exit 0 |
+| `npm test` | **1089 passed / 1089**, 86 files, 0 failed — baseline held exactly |
+| `npm run build` | exit 0, `dist/` written (259.09 kB js, 37.95 kB css) |
+
+`git status --porcelain` → **zero paths beginning `src/`**, as the file map requires.
+
+`npm run format:check` fails repo-wide on ~58 pre-existing `.md` files, as before this run. Scoped:
+all three design documents **also failed `npx prettier --check` at `2b33332`, before this contract
+touched them** — verified by checking each out from that commit into a scratch dir and re-running.
+Left alone, per the contract's own rule. This is evidence, not an assumption.
+
+### Coordinator decisions — DLR-124
+
+- **`.docs/game_rules/the-hunt.md` was NOT touched, and the reason is checkable rather than
+  asserted.** That file carries **zero** Version-5 content — 0 grep hits for "Action Point", "buff
+  pile", "buff loadout", "Apply Buff". Stating how several buffs resolve, in a ruleset that never
+  says a buff exists, would require first writing the entire V5 layer into it — a decision far
+  outside this contract. Consistent with DLR-111's identical call one ticket ago.
+- **Two implementation docs *were* updated**, which is the non-obvious half. `hunt/buff-pile.md`'s
+  DLR-111 note enumerates the four shape gaps DLR-108 must close; DLR-124 adds a **fifth**, and it is
+  *state* rather than shape — a per-hand accrual (`multiplierBonus`, `flatDamageBonus`, `coinBonus`,
+  `apRefunded`) held on the hand, **not** a field on `Buff`, resetting per hand and **not** on a hit.
+  `hunt/README.md` got the matching one-line pointer. Neither gained a `Built by: DLR-124` entry,
+  correctly — this contract built no code.
+- **The largest review burden is the three new caps** (6 / 12 / 10) plus the Overlap Bonus magnitude
+  and the cadence rule. Mitigated the same two ways DLR-111 was: each derives from a stated principle
+  rather than being picked, and each is named as agent-chosen *inside the design document*.
+- **The cadence rule is the second-largest lever and it is a rule, not a number.** Flipping every
+  family to once-per-hand would remove the need for the multiplier cap entirely — and would
+  contradict DLR-111's shipped pricing. Reversing it means re-deriving the cost model, so it is worth
+  the developer's attention before DLR-108 builds against it.
+- **Follow-up not opened, flagged instead:** the UI for showing a stacked resolution.
+  `version-5-developer-idea.md` §6 already records that an unattributable loadout is one the player
+  cannot learn to build; a five-buff overlap resolving in five ordered steps makes that harder.

@@ -681,6 +681,399 @@ since §6 names the declaration free option as the design's largest open problem
 answer that directly is a live alternative to one built to answer this section's escalation
 question. Both are design readings, not tuning values; the choice is the developer's.
 
+### Resolving several buffs on one trick — the stacking rule
+
+> **Agent-chosen, 2026-08-23, under DLR-124's sprint-run override of the tuning-value pause.**
+> Every number in this subsection — the four per-hand caps, the Overlap Bonus magnitude, and the
+> firing cadence that decides how often any of them is paid — was chosen by the agent writing this
+> section, not by the developer. `CLAUDE.md`'s normal pause condition puts tuning values with the
+> developer; DLR-124's dispatch explicitly overrode that pause for this unattended run and required
+> the numbers be chosen and justified so DLR-108 and DLR-125 are not blocked on them. The *shape* of
+> the rule — per-axis, additive, ordered, capped — is argued from arithmetic and from
+> `v1-buff-card-list.md`'s shipped cost model; the *magnitudes* are a first pass to be argued with.
+> Every one of them is listed again, with what it trades off, in
+> [Every number here is the developer's to move](#every-number-here-is-the-developers-to-move).
+
+**The question this answers.** Buffs are bought per hand and several of them can be true at once. A
+player holding `Bell-Taker (Blade)`, `Mark of the 9 (Blade)` and `Bell-Taker (Second Wind)` who wins
+a trick with the 9 of Bells has fired three cards on one trick, and until now the design had no
+statement of what that pays. The proposal in `ideas.md` was **sum the rewards fired, then multiply by
+the count that fired**. That proposal is rejected here, and what replaces it is R1–R7 below.
+
+#### 1. "Sum the rewards" has no arithmetic to sum
+
+The `ideas.md` entry's growth table reads `2 buffs → 12`, `3 → 36`, `5 → 125`, off a column headed
+"avg reward each: 3, 4, 5". **No such quantity exists.** Per `v1-buff-card-list.md`'s reward master
+tier list, a fired buff pays on exactly one of four axes, and the four are different units:
+
+| Axis | Suffix | Unit | Where it lands |
+|---|---|---|---|
+| Flat damage | Blade | damage | added to a cash-out, once |
+| Coin | Purse | coins | the run's wallet, permanently |
+| AP refund | Second Wind | action points | this hand's activation budget |
+| Multiplier | Momentum | multiplier points | multiplied by the bank when it cashes |
+
+Adding `+5 damage`, `+10 coins` and `3 AP` into `18` is a category error — three quantities with
+three different consumers, none convertible into another at any stated rate, and the design has never
+had an exchange rate between them (§2's "one shared object, no exchange rate" argument is the reason
+it does not). So the "avg reward each" column is a number the game cannot produce, and every figure
+in the 2→12 / 3→36 / 5→125 table inherits the defect.
+
+**The verdict, for the record: the ×count proposal is rejected on definition, before it is rejected
+on magnitude.** It is also rejected on magnitude — the [worked hand](#a-worked-hand) below computes
+what it would actually pay on an ordinary bronze-heavy loadout, and the answer is 123 damage on trick
+three of hand one against a 34-health opponent — but that second rejection is a consequence of the
+first, not an independent finding. A rule with no defined operand cannot be tuned into one.
+
+The salvage was considered and discarded: declare one canonical axis for the multiplier to act on, so
+"sum the rewards" means "sum the Blade contributions" and the count multiplies that. It fails because
+`v1-buff-card-list.md`'s cost model prices each axis separately and *against its own consumer* —
+multiplier costs more than flat damage because it is multiplied by the bank, coin costs more than
+flat damage because it is run-permanent. Nominating one axis as the one that stacks silently re-prices
+every card on the other three across the whole 78-template list, which is a re-costing of the entire
+pool disguised as a resolution rule.
+
+#### 2. R1–R2 — resolution is per-axis, and within an axis contributions add
+
+**R1. Every fired buff pays into its own axis and nowhere else.** Four independent accumulators, one
+per axis, held for the duration of the hand. A trick that fires a Blade card and a Momentum card
+moves two counters and creates no interaction between them.
+
+**R2. Within an axis, contributions add.** Two Blade cards firing on one trick pay the sum of their
+two flat-damage figures. That is the whole combination rule.
+
+Two alternatives were available and both are rejected by name.
+
+**Multiply, rejected.** The Momentum axis feeds a cash-out that is *already* a product — `the-hunt.md`
+§7 cashes the bank as `bank × multiplier`, and the bank and multiplier climb together, so an unbought
+streak of *n* already pays `n²`. A multiplicative Momentum stack makes the payout cubic in the thing
+the shop sells, which is the failure the `ideas.md` proposal exhibits in a different costume.
+
+**Take-the-highest, rejected.** Paying only the largest contribution on an axis makes the second card
+on that axis worth exactly nothing. A player holding two Blade cards is holding one Blade card and one
+piece of dead paper they paid AP for, so a **wide** loadout becomes strictly worse than a **tall** one
+at every AP budget — which deletes the point of a loadout system, and this epic exists to build a
+loadout system. In Meier's terms it is a dominant option: buy the highest tier on one axis, never
+diversify, and the choice stops being a choice.
+
+Addition is what is left, and it is also the only one of the three that a player can do in their head
+while looking at the felt.
+
+#### 3. R3 — the resolution order, which is forced rather than chosen
+
+**R3. A trick resolves its buffs in five steps, in this order:**
+
+| # | Step | Why here |
+|---|---|---|
+| 1 | **Second Wind** — refund AP | So refunded AP is spendable at the *next* trick's Apply Buff window and never retroactively at this one |
+| 2 | **Momentum** — add to the multiplier | So a cash-out on this trick cashes at the buffed multiplier |
+| 3 | **The cash-out product** — `bank × multiplier` | The existing rule, untouched |
+| 4 | **Blade** — add flat damage to the result | So flat damage is never multiplied by the bank |
+| 5 | **Purse** — add coins | Last, because coins never affect this hand at all |
+
+**This order is not a preference, it is forced by a costing decision that has already shipped.**
+`v1-buff-card-list.md` → *Why multiplier and coin cost more than flat damage* prices the multiplier
+bases at 2/3/5 against flat damage's 1/2/3, and the stated reason is precisely that one gets multiplied
+by the bank and the other does not. Put Blade inside the product and a bronze `+1 damage` at a bank of
+3 becomes worth 3 rather than 1, and the entire price gap the cost model argues for evaporates — the
+document would be charging a premium for a property the resolution order had quietly given away for
+free. Put Momentum after the product and a Momentum card cannot affect the cash-out it was bought for.
+Any order other than the one above contradicts a shipped pricing decision somewhere. Cited, not
+restated: the arithmetic lives in that section.
+
+Two smaller consequences worth stating so nobody has to rediscover them:
+
+- **Step 1 is deliberately not "spend it now".** Second Wind resolving first means the refund is in
+  the pool before the next window opens, not that the current trick gets a second activation. The
+  alternative — a refund the player can immediately re-spend on the trick that generated it — is a
+  loop, and it is the loop `MAX_REFUND_PER_HAND` exists to bound.
+- **Step 4 lands after `the-hunt.md` §7's two-thirds floor.** When a streak is *caught* rather than
+  cashed, §7 already reduces it to two-thirds, rounded down. Blade is added to whatever number that
+  rule produced. Buffs therefore never interact with that rounding, and the floor never has a
+  fractional buff figure to round.
+
+#### 4. R4 — firing cadence: event, threshold, terminal
+
+**R4. Each family fires on one of three cadences.**
+
+| Cadence | Families | Fires |
+|---|---|---|
+| **Event** | Taker, Feeder, Mark of the *R*, Sidestep, Glutton, Debt Collector | Once per trick on which the condition is true — so many times in a hand |
+| **Threshold** | Hoarder, Unbloodied, Miser, Cornered | Once per hand, on the trick where the condition first becomes true |
+| **Terminal** | Keepsake | Once, at the moment the hand ends |
+
+The split follows the conditions' own grammar. An event family names something that *happens* on a
+trick and can happen again; a threshold family names a level that is *reached* and, once reached,
+stays reached, so paying it per trick would pay for standing still; Keepsake names a state at a single
+instant that has no other instants to check.
+
+**Why event families really do fire per trick, rather than once a hand.** The flat alternative —
+every family pays once per hand — is simpler and is wrong, because the shipped cost model has already
+been calibrated against repeat firing. `v1-buff-card-list.md` prices Feeder a point *above* Taker at
+every cell on the explicit grounds that "you can always throw away a trick in a suit you hold, so it
+fires close to every hand" — reliability is the thing being paid for, and reliability only has a price
+if firing repeatedly has value. Under once-per-hand the pricing inverts into an absurdity: a gold
+`Bell-Taker (Momentum)` at **5 AP** pays `+5` once, and a bronze `Mark of the 9 (Momentum)` at **1 AP**
+pays `+2` once, so five times the price buys two and a half times the reward — and the bronze card is
+strictly the better buy at any AP budget above one. Per-trick firing is what makes the ladder mean
+anything.
+
+#### 5. R5 — the Overlap Bonus
+
+**R5. On a trick where `k ≥ 2` buffs fire, add `k − 1` to the Momentum axis**, drawn from the same
+`MAX_MULTIPLIER_BONUS_PER_HAND` pool as Momentum cards themselves.
+
+This is where the original idea's intent survives. The `ideas.md` entry was reaching for something
+real — an overlap should feel like an event, not like two unrelated payouts that happened to land on
+the same trick — and the Overlap Bonus is that feeling, priced as a rule rather than as arithmetic on
+an undefined quantity.
+
+**The basis is the count of buffs fired, linear — not pairs.** Pairs is `k(k−1)/2`, and at `k = 6`,
+which is affordable the moment the shop's `+5 AP` capacity item is bought, the pairs basis pays 15
+Momentum *from the bonus alone* — two and a half times the entire natural six-trick multiplier ceiling
+of 6, from no card's printed reward at all. Worse, it grows as the **square** of exactly the quantity
+the shop sells: buying AP capacity would buy quadratic multiplier, which makes one shop item the only
+purchase in the game worth making. Linear `k − 1` grows at the same rate as the thing the player is
+buying, which is the property a bonus on a purchased quantity has to have.
+
+**Sharing the Momentum pool is a design decision, not an implementation shortcut, and it is the best
+property the rule has.** A tall Momentum loadout has already spent `MAX_MULTIPLIER_BONUS_PER_HAND` on
+its own cards, so its Overlap Bonus is clipped to nothing — it gets no reward for width because it did
+not build width. A **wide, mixed** loadout — a Blade card, a Purse card, a Second Wind card firing
+together — has an empty Momentum pool and collects the whole bonus. So the Overlap Bonus pays most to
+precisely the loadout the original idea was trying to reward, and pays nothing to the one that was
+already winning. The [worked hand](#a-worked-hand) shows both halves of that: the bonus carries tricks
+1 and 2, and is clipped to zero on trick 3.
+
+#### 6. R6 — the four per-hand caps
+
+**R6. Each axis accrues under a named per-hand cap.** Contributions past the cap are clipped to it and
+lost; nothing is banked for later.
+
+| Constant | Value | Unit | Status |
+|---|---|---|---|
+| `MAX_REFUND_PER_HAND` | 6 | action points per hand | Unchanged — restated from `v1-buff-card-list.md` |
+| `MAX_MULTIPLIER_BONUS_PER_HAND` | 6 | multiplier points per hand | New, agent-chosen |
+| `MAX_FLAT_DAMAGE_BONUS_PER_HAND` | 12 | damage per hand | New, agent-chosen |
+| `MAX_COIN_BONUS_PER_HAND` | 10 | coins per hand | New, agent-chosen |
+
+Each is derived from the ceiling of the thing it bounds, one line each:
+
+- **`MAX_MULTIPLIER_BONUS_PER_HAND = 6`** is the natural six-trick multiplier ceiling, so bought
+  multiplier can at most **double** the earned one. This is the identical move `v1-buff-card-list.md`
+  made setting `MAX_REFUND_PER_HAND = STARTING_AP` — "a hand can at most double its budget."
+- **`MAX_FLAT_DAMAGE_BONUS_PER_HAND = 12`** is one third of a perfect hand's 36 (`the-hunt.md` §7),
+  so Blade can **finish** a hand and never **replace** the streak. A flat-damage cap at or above 36
+  would make the streak optional, and the streak is the game.
+- **`MAX_COIN_BONUS_PER_HAND = 10`** is one gold Purse — the largest single coin reward the master
+  tier list authorises. Coins are the only **run-permanent** axis, so coin inflation is the one
+  stacking failure that losing the hand cannot undo; stacking therefore never pays more on coins than
+  the single best card on that axis already would.
+
+**The load-bearing asymmetry: the cap counters reset per hand, and NOT on a hit.** A hit resets the
+multiplier itself to zero, per `the-hunt.md` §7, and it **does not refund the cap**. A player who has
+spent all 6 of their Momentum bonus, then takes a hit, restarts their streak from zero with no bonus
+left to spend for the rest of the hand. Without that asymmetry the cap is not a cap at all — it is a
+per-streak allowance, refreshed by the very event the player is trying to avoid, and a hand containing
+three hits would pay three full pools. **That asymmetry is the entire containment mechanism, and it
+must survive into DLR-108's implementation intact.** It is the single most likely thing on this page
+to be lost in translation, because "reset the buff state when the streak resets" is the obvious and
+wrong reading.
+
+#### 7. R7 — contradictions cannot occur in v1
+
+**R7. No buff on the v1 list can contradict another, and no buff ever cancels another.**
+
+This is a structural claim rather than a rule, and it holds for two reasons that are both properties
+of the shipped pool. First, **no template on the 78-card list has a negative or preventive effect** —
+every reward on the master tier list is a non-negative addition to one of four axes, and no condition
+suppresses another card. Second, **a trick is won or lost but never both**, so no two conditions on
+the same trick can be simultaneously true in mutually exclusive senses. A condition that is false
+simply does not fire; there is no reward-stage disagreement to adjudicate, and therefore no error path
+to write.
+
+A player holding both `Bell-Taker` and `Bell-Feeder` has not created a contradiction. Exactly one of
+them fires on any Bells trick and the other stays silent — the player has simply paid AP for a card
+that could not fire this trick. **That is a player mistake, and it is a legitimate one to be allowed
+to make.**
+
+Two forward constraints follow, and they are the reason this rule is worth writing down rather than
+leaving implicit:
+
+- **Any future buff whose reward is negative, or whose effect suppresses another buff, must be
+  re-costed against this rule before it ships.** R2's addition and R6's clipping both assume
+  non-negative operands; a negative contribution turns "clip at the cap" into a question about
+  ordering that has no answer here.
+- **An apply-to-card conflict is refused at attachment time, not resolved at reward time.** `Sidestep`
+  and `Glutton` attached to the same card would demand that one card both dodge and eat the same
+  skull. The attachment is refused when the player tries to make it, where they can see it and choose
+  again — so no reward-stage error path exists at all.
+
+#### What this asks of DLR-108
+
+The rule needs one piece of state the current types do not have: a **per-hand accrual**, reset when a
+hand begins, holding the four running totals R6 clamps. It is state on the hand, and it is emphatically
+**not** a field on `Buff` — a `Buff` is a card the player owns, and how much of a cap that card's axis
+has consumed this hand is not a property of the card.
+
+```ts
+/** Per-hand running totals, reset when a hand begins — NOT a field on `Buff`. */
+interface BuffBonusAccrual {
+  readonly multiplierBonus: number // clamped at MAX_MULTIPLIER_BONUS_PER_HAND
+  readonly flatDamageBonus: number // clamped at MAX_FLAT_DAMAGE_BONUS_PER_HAND
+  readonly coinBonus: number //       clamped at MAX_COIN_BONUS_PER_HAND
+  readonly apRefunded: number //      clamped at MAX_REFUND_PER_HAND
+}
+```
+
+Three notes on where it goes and what it costs:
+
+- **It belongs in `src/hunt/**`,** behind the pure-core ESLint boundary that tree already carries — no
+  React import, no DOM access — so the whole resolution pipeline stays unit-testable without a
+  renderer. Every one of R1–R7 is a function from a trick outcome and an accrual to a new accrual, and
+  none of it needs a screen.
+- **The naive loop is correct and no memoisation is warranted.** Resolution runs at most six times a
+  hand (six tricks) against at most eleven active buffs, so the worst case is 66 condition checks per
+  hand. There is nothing here to optimise and a cache would be a bug surface bought with no
+  measurement, which the project's conventions forbid outright.
+- **Nothing can produce `NaN`.** Every operand is an integer, combined by addition and then an integer
+  clamp. There is no division anywhere in R1–R7, so there is no divisor to guard — the same property
+  `v1-buff-card-list.md` states for the AP cost formula, and for the same reason: a spoiled number here
+  feeds a health bar and would empty it with nothing said.
+
+The four cap constants belong in `src/hunt/config.ts` with the other tunables, not inline at a call
+site. **None of the four is a `config.ts` key today — DLR-108 creates all four.**
+
+#### The worst case is not the one the ticket names
+
+DLR-124 asks about several *different* buffs landing on one trick. That case is bounded by how many
+cards fit in an AP budget. The genuinely dangerous case is one buff firing on **every trick**, and it
+is why R6 exists.
+
+Take a persistent suit-Taker on the Momentum axis, re-firing on each trick it wins: a gold
+`Bell-Taker (Momentum)` at **5 AP** plus a gold `Mark of the 9 (Momentum)` at **4 AP** — a 9 AP
+loadout, comfortably inside the 11 AP the shop's `+5 AP` capacity item allows, with 2 AP to spare.
+Deal that player a hand holding four Bells and let them win with all four.
+
+| | Momentum bonus accrued | Cash-out at a full bank of 6 and a natural multiplier of 6 |
+|---|---|---|
+| **Uncapped** | `+5 × 4` firings `= +20`, plus `+5` from the Mark `= +25` | `6 × (6 + 25) =` **186** |
+| **Capped at `MAX_MULTIPLIER_BONUS_PER_HAND = 6`** | `+6` | `6 × (6 + 6) =` **72** |
+
+**Diarmuid, the run's final boss, holds 135.** The uncapped figure one-shots every opponent in the
+run, on hand one, from a loadout of two cards.
+
+The capped figure is the argument for the cap, and it is stronger than it looks: **72 is exactly the
+one-Whetstone perfect hand `the-hunt.md` §7 already prints in its Whetstone table.** The ceiling this
+rule introduces is a number the design has already blessed as a legitimate best case, reached by an
+already-shipped route. The cap does not invent a new maximum for the game; it declines to exceed the
+one the game already has.
+
+**The secondary corner, since `Mark of the R` is 22 templates deep.** A player could in principle own
+many Marks — but **a winning card has exactly one rank**, so on any single trick at most **two** Marks
+can fire: that rank's Blade crossing and its Momentum crossing. The family's depth is **pool breadth,
+not stack depth**, and the same logic bounds Taker and Feeder to one suit's worth per trick, since a
+trick is won or lost in exactly one suit. The 22 is a variety number for DLR-112's draw pool, not a
+stacking exposure.
+
+#### A worked hand
+
+Everything above, run once end to end on an ordinary hand. Seven buffs at **exactly 11 AP** — the
+whole budget, with the shop's `+5 AP` capacity item bought. Every cost is `v1-buff-card-list.md`'s AP
+table and every reward its master tier list.
+
+| Card | Tier | AP | Reward |
+|---|---|---|---|
+| `Mark of the 9 (Momentum)` | bronze | 1 | +2 multiplier |
+| `Mark of the 9 (Blade)` | bronze | 1 | +1 damage |
+| `Bell-Taker (Blade)` | bronze | 1 | +1 damage |
+| `Bell-Taker (Second Wind)` | bronze | 1 | refund 1 AP |
+| `Sidestep (Momentum)` | bronze | 1 | +2 multiplier |
+| `Hoarder (Purse)` | silver | 3 | reach a bank of 3 this hand → +5 coins |
+| `Debt Collector (Blade)` | silver | 3 | Apply Damage this hand → +3 damage |
+
+**Opponent:** an ordinary Quarry holding **34** health — `ORDINARY_HEALTH_BASE 10 +
+ORDINARY_HEALTH_STEP 4 × 6`, from `src/hunt/config.ts`.
+**Hand:** 9 of Bells, 4 of Bells, 11 of Keys, 7 of Moons, 2 of Moons, 5 of Keys.
+`Sidestep (Momentum)` is attached to the 11 of Keys.
+
+**Trick 1 — wins with the 9 of Bells.** Four buffs fire (`k = 4`): `Mark of the 9 (Momentum)` +2 M,
+`Mark of the 9 (Blade)` +1 B, `Bell-Taker (Blade)` +1 B, `Bell-Taker (Second Wind)` +1 AP. Overlap
+Bonus `k − 1 = +3` M. Pools: Momentum **5/6**, Blade **2/12**, refund **1/6**, coins 0/10. Bank 1,
+multiplier `1 + 5 = 6`.
+
+**Trick 2 — wins with the 4 of Bells.** Two fire (`k = 2`) — both Bell-Takers. The Marks are event
+conditions and there is no 9 on this trick, so they stay silent. Overlap Bonus `+1` M, taking Momentum
+to **6/6 — cap reached**. Blade **3/12**, refund **2/6**. Bank 2, multiplier `2 + 6 = 8`.
+
+**Trick 3 — wins with the 11 of Keys, dodging a revealed skull.** Two fire (`k = 2`):
+`Sidestep (Momentum)` pays `+2` M, **clipped to 0**; `Hoarder (Purse)` fires as the bank reaches 3 —
+threshold cadence, so this is its only firing all hand — paying +5 coins, **5/10**. The Overlap Bonus's
+`+1` M is **clipped** too. Bank 3, multiplier `3 + 6 = 9`. Worth pausing on: a cash-out here would be
+`3 × 9 = 27` against an unbuffed 9 — **and 36 without the cap**, which is a whole perfect hand's worth
+of damage delivered on trick three.
+
+**Trick 4 — the player presses Apply Damage before committing a card.** The cash-out is `3 × 9 = 27`,
+paid in **full** because it is voluntary (`the-hunt.md` §7). `Debt Collector (Blade)` fires on that
+press; `k = 1`, so no Overlap Bonus. Blade takes `+3` → **6/12**. Per R3 step 4 the Blade total is
+added **after** the product: `27 + 6 = 33` damage. Bank and multiplier reset — and **the Momentum pool
+stays spent at 6/6 and does not refill**, which is R6's asymmetry doing its job on a voluntary reset
+exactly as it would on a hit. Quarry **34 → 1**.
+
+**Trick 5 — wins with the 7 of Moons.** `k = 0`. Bank 1, multiplier 1.
+
+**Trick 6 — wins with the 5 of Keys.** `k = 0`. Bank 2, multiplier 2. The sixth trick cashes at hand's
+end: `2 × 2 = 4`. The Quarry dies.
+
+**Result: 37 damage (33 + 4), +5 coins, 2 AP refunded — for 11 AP of buffs.**
+
+Two counterfactuals, computed on the same six tricks:
+
+| | Trick 4 cash-out | Hand's-end cash-out | Total damage |
+|---|---|---|---|
+| **This rule** | `3 × 9 = 27`, `+6` Blade → 33 | `2 × 2 = 4` | **37** |
+| **Unbuffed** | `3 × 3 = 9` | `2 × 2 = 4` | **13** |
+| **The rejected ×count rule** | 123 **on trick 3**, before the player chooses anything | — | encounter already over |
+
+**Against no buffs at all, the loadout multiplied output 2.85× for 11 AP.** That is what an
+eleven-point investment should look like: decisive, visible, and not a different game.
+
+**The rejected rule, computed on the same hand.** Reading the summed rewards onto the multiplier is the
+most generous *coherent* reading available, since the rule as written names no axis at all: trick 1
+pays `(2 + 1 + 1 + 1) × 4 = 20`; trick 2 pays `(1 + 1) × 2 = 4`; trick 3 pays `(2 + 5) × 2 = 14`. The
+multiplier entering trick 3 is therefore `3 + 38 = 41` against a bank of 3 — **123 damage on trick
+three of hand one**, from a loadout that is five-sevenths bronze. The 34-health Quarry is dead before
+the player has made a single interesting decision, and Diarmuid's 135 very nearly is.
+
+#### Every number here is the developer's to move
+
+Naming the agent-chosen figures rather than burying them, per `v1-buff-card-list.md`'s precedent:
+
+- **`MAX_MULTIPLIER_BONUS_PER_HAND = 6`** — trades a contained ceiling (72, a figure the design
+  already prints) against ever feeling an uncapped jackpot. This is the largest lever on the page.
+- **`MAX_FLAT_DAMAGE_BONUS_PER_HAND = 12`** — trades "Blade can finish a hand" against "Blade can
+  replace the streak". Raise it and flat damage starts competing with playing well.
+- **`MAX_COIN_BONUS_PER_HAND = 10`** — trades shop-progression pace against coin inflation on the only
+  run-permanent axis. It is the cap whose failure is least visible in a single session and least
+  reversible across a run.
+- **The Overlap Bonus at `k − 1`, drawn from the Momentum pool** — trades a clean, readable reward for
+  width against the fact that a Momentum-heavy loadout feels it not at all. Giving it its own separate
+  cap is the live alternative, and it is a different design, not a retune.
+- **The event / threshold / terminal cadence** — trades a cost model that already assumes repeat
+  firing against a multiplier that then needs capping. Flipping every family to once-per-hand would
+  remove the need for the multiplier cap and contradict `v1-buff-card-list.md`'s shipped pricing. This
+  is the second-largest lever, and it is a rule rather than a number.
+
+The same two caveats `v1-buff-card-list.md` attaches to `MAX_REFUND_PER_HAND` apply to all four caps.
+**None of them is a `config.ts` key yet — DLR-108 creates all four.** And **none of them has been
+played**: each is reasoned from the shape of the failure it prevents, not measured.
+
+> **One transcription correction, recorded rather than silently applied.** DLR-124's dispatch cited a
+> gold `Bell-Taker (Momentum)` at **6 AP** in two places. `v1-buff-card-list.md`'s AP table prices
+> Taker/Momentum at 2/3/**5**, so gold is **5 AP**; 6 is Feeder/Momentum's gold. The figure is used at
+> 5 above, which makes the degenerate loadout cost 9 AP rather than 10 and therefore makes the case
+> against an uncapped rule slightly *stronger*, not weaker. Neither argument's conclusion moves.
+
 ---
 
 ## 6. Catch-up

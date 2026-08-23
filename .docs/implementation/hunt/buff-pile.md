@@ -52,6 +52,17 @@ copy that could drift.
 > `BuffCondition`'s payload-free `{ kind: string }` cannot express the suit- and rank-parameterised
 > families without an optional `target`. Those four are DLR-108's and DLR-112's to close.
 
+> **DLR-124 added a fifth gap on 2026-08-23, and it is state rather than shape.** The hand-wide
+> stacking rule — what happens when several equipped buffs fire on the same trick — is now decided
+> and argued at `hybrid-design.md` §5 → *Resolving several buffs on one trick*. Resolving it needs a
+> **per-hand accrual** (`multiplierBonus`, `flatDamageBonus`, `coinBonus`, `apRefunded`), each
+> clamped at its own cap. That is **state on the hand, not a field on `Buff`** — the same distinction
+> this note already draws for `apCost` — and it **resets per hand and NOT on a hit**, which is the
+> rule's whole containment mechanism. It belongs in `src/hunt/**` behind the existing pure-core
+> boundary, alongside the four cap constants (`MAX_REFUND_PER_HAND`, `MAX_MULTIPLIER_BONUS_PER_HAND`,
+> `MAX_FLAT_DAMAGE_BONUS_PER_HAND`, `MAX_COIN_BONUS_PER_HAND`) that DLR-108 must create in
+> `config.ts`. Still no reader in `src/`, so the placeholder content above is unaffected.
+
 **The pile is carried through `advanceRun`/`recordEncounter` with no explicit parameter, following
 `whetstones` rather than `cheats`.** `cheats` is an explicit, required parameter to `recordEncounter`
 because a hand can spend a Cheat mid-fight and must hand the survivor back; `whetstones` needs no

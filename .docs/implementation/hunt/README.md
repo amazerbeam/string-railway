@@ -549,6 +549,10 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   `.docs/design/Balatro-Forbidden-Solitaire/v1-buff-card-list.md` — 78 named, AP-costed card
   templates. It has no reader in `src/` yet, so the placeholder content above is unchanged and
   still correct; what it settles is the target shape DLR-108 and DLR-112 must build toward.
+  **DLR-124 followed on the same day** with the hand-wide stacking rule (`hybrid-design.md` §5 →
+  *Resolving several buffs on one trick*), which adds a fifth thing DLR-108 must build: a per-hand
+  accrual with four capped running totals, held on the hand rather than on `Buff`. See
+  [buff-pile.md](buff-pile.md) for the detail. Still no reader in `src/`.
 - **The buff pile has no capacity cap, and whether it should get one is undecided.** Nothing in
   DLR-105, design doc §3, or §8 states a cap — §8 calls it "a growing pool," and the closest
   existing precedent is the uncapped `whetstones` count, not the capped `cheats`. Adding one later
