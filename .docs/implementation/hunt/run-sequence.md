@@ -22,8 +22,8 @@ export interface RunState {
   readonly cheats: readonly CheatCard[] // DLR-83
   readonly nextCheatId: CheatCardId // DLR-83
   readonly coins: Coins // DLR-84
-  readonly envenomCharges: number // DLR-90
-  readonly poisonGuardHeld: boolean // DLR-91
+  readonly timebombCharges: number // DLR-90
+  readonly blastGuardHeld: boolean // DLR-91
   readonly whetstones: number // DLR-92
   readonly flaskCharges: number // DLR-93
 }
@@ -32,16 +32,16 @@ export interface RunState {
 The last seven fields arrived after the original four, and every one of them is carried across a fight
 boundary by the `...run` spread `advanceRun` already had — no ticket needed a line for the carry. See
 [Cheats](cheats-and-slots.md), [Coins and the shop](coins-and-the-shop.md),
-[Envenom](envenom-and-the-delayed-hit.md), [Poison Guard](poison-guard.md) and
+[Timebomb](timebomb-and-the-delayed-hit.md), [Blast Guard](blast-guard.md) and
 [the flask](the-flask.md).
 
 **Three of them are handed back by a hand at the end of a fight, and three are not.** `cheats`,
-`envenomCharges` and `poisonGuardHeld` are owned by the hand for its lifetime and returned through
+`timebombCharges` and `blastGuardHeld` are owned by the hand for its lifetime and returned through
 `WarCouncilRoundResult`, so `recordEncounter` takes them as required parameters. `whetstones` and
 `flaskCharges` are not: a hand cannot spend a Whetstone or drink the flask, so there is nothing to
 hand back and `recordEncounter` reads both off the run it was given.
 
-**`poisonGuardHeld` is the one field that is carried and then deliberately cleared.** It has to be
+**`blastGuardHeld` is the one field that is carried and then deliberately cleared.** It has to be
 run-level to survive the `advanceRun` that opens the fight it was bought for, and it has to end when
 that fight does — so `recordEncounter` passes it through a private `guardAfter` rather than adopting it
 verbatim. That pairing is what makes "fight-long" a duration rather than a label.
@@ -66,7 +66,7 @@ is over" is what stops a screen and a transition disagreeing about it.
 | Function                              | Does                                                                                                 |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `startRun(playerHealth?)`             | Builds fight 0 at `PLAYER_START_HEALTH`, `outcome: InProgress`, **0 coins**, and the configured Cheat grant |
-| `recordEncounter(run, enc, cheats, envenomCharges, poisonGuardHeld)` | Adopts the encounter a hand reported upward, **credits `COINS_PER_ENCOUNTER_WIN` on a player win**, **refills the flask through `flaskAfter` if the opponent just beaten was a stage boss** (DLR-93), and **re-derives the outcome** — the AC4/AC5 decision point. The fifth argument goes through `guardAfter`, not straight onto the run |
+| `recordEncounter(run, enc, cheats, timebombCharges, blastGuardHeld)` | Adopts the encounter a hand reported upward, **credits `COINS_PER_ENCOUNTER_WIN` on a player win**, **refills the flask through `flaskAfter` if the opponent just beaten was a stage boss** (DLR-93), and **re-derives the outcome** — the AC4/AC5 decision point. The fifth argument goes through `guardAfter`, not straight onto the run |
 | `canAdvanceRun(run)`                  | `outcome === InProgress && encounter.winner === Player` — "the Quarry is down and another fight remains" |
 | `beatenCount(run)`                    | How many fights are behind the player, as one integer — `encounterIndex + (winner === Player ? 1 : 0)` (DLR-85) |
 | `advanceRun(run)`                     | Opens the next fight on the carried health, or throws                                                 |
@@ -188,14 +188,14 @@ stories, not a bigger starting bar.
 
 ### DLR-91 deleted a transition rather than adding one
 
-`beginNextHand` used to sit in the table above — DLR-90's payment point for a queued Envenom hit, and
-the only total, throw-free transition in this module. **DLR-91 deleted it**, because poison is now paid
+`beginNextHand` used to sit in the table above — DLR-90's payment point for a queued Timebomb hit, and
+the only total, throw-free transition in this module. **DLR-91 deleted it**, because Timebomb is now paid
 at the resolution of the next trick rather than at the deal of the next hand, and that payment happens
 one layer up in `roundReducer.ts`. `App.tsx` lost its call and the downstream resolution re-check that
 followed it in the same change. The consequence worth knowing: `recordEncounter` is once again the
 **only** transition here that adopts a hand's end state, which is why `guardAfter` is a named function
 rather than an inline ternary. See
-[Envenom — the held charge, the delayed-hit queue, and where it is paid](envenom-and-the-delayed-hit.md).
+[Timebomb — the held charge, the delayed-hit queue, and where it is paid](timebomb-and-the-delayed-hit.md).
 
 ## The split into `run.ts` and `runTransitions.ts` — DLR-93
 
@@ -245,5 +245,5 @@ one of them already inside the pure tree. `runTransitions.ts` is inside the same
 with plain function-in/value-out assertions under the `node` Vitest project
 (`src/hunt/__tests__/run.test.ts`), with no renderer — including a spec that drives a whole run to
 `Won` through `advanceRun`/`recordEncounter`, and one that pins immutability by `JSON.stringify`
-comparison across a transition. Poison Guard's own specs live in `src/hunt/__tests__/poisonGuard.test.ts`
+comparison across a transition. Blast Guard's own specs live in `src/hunt/__tests__/blastGuard.test.ts`
 rather than here: `run.test.ts` was already at 343 lines.

@@ -69,11 +69,11 @@ describe('quickKillPayout (AC2, AC4, AC7)', () => {
     }
   })
 
-  it('refuses a negative or non-finite card count rather than poisoning the purse', () => {
+  it('refuses a negative or non-finite card count rather than corrupting the purse', () => {
     expect(() => quickKillPayout({ unplayedCards: -1, handOfFight: 1 })).toThrow(RangeError)
     expect(() => quickKillPayout({ unplayedCards: Number.NaN, handOfFight: 1 })).toThrow(RangeError)
-    expect(() => quickKillPayout({ unplayedCards: Number.POSITIVE_INFINITY, handOfFight: 1 })).toThrow(
-      RangeError,
-    )
+    expect(() =>
+      quickKillPayout({ unplayedCards: Number.POSITIVE_INFINITY, handOfFight: 1 }),
+    ).toThrow(RangeError)
   })
 })

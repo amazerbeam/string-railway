@@ -35,7 +35,7 @@ export interface TrickResolution extends BankState {
   /** Which rule produced `cashOut` — AC8's end-of-hand cash rather than AC6/AC7's. Display only:
    *  the two can never both be non-zero, because a hit resets the bank to 0 first. */
   readonly cashedAtHandEnd: boolean
-  /** DLR-90 AC3/AC6 — the side owed the poison figure for that side (`TIMEBOMB_QUARRY_DAMAGE` or
+  /** DLR-90 AC3/AC6 — the side owed the Timebomb figure for that side (`TIMEBOMB_QUARRY_DAMAGE` or
    *  `TIMEBOMB_PLAYER_DAMAGE`) at the start of the next hand, or `null` when the trick carried no
    *  mark. Keyed by the side the damage will be APPLIED TO, and typed
    *  `DuelSide` rather than `PlayerSide` deliberately: this module is already THE one crossing
@@ -44,10 +44,10 @@ export interface TrickResolution extends BankState {
   readonly timebombTarget: DuelSide | null
   /** D1 — carried through so `incomingFrom` sums it into the Quarry's total. Display-safe: this is
    *  the figure paid at THIS trick, not one booked by it — that is `timebombTarget`. */
-  readonly poisonToQuarry: Damage
+  readonly timebombToQuarry: Damage
   /** AC4 — the Guard fired and suppressed a reset, so the reducer must spend it. `true` only when
-   *  poison was actually owed to the player at this trick AND a Guard was held. */
-  readonly poisonGuardSpent: boolean
+   *  Timebomb was actually owed to the player at this trick AND a Guard was held. */
+  readonly blastGuardSpent: boolean
 }
 
 /**
@@ -66,15 +66,15 @@ export interface TrickFacts {
   readonly finalTrick: boolean
   /** DLR-90 AC3 — any card played into the trick carries the Timebomb mark. */
   readonly timebombTrick: boolean
-  /** D1/D3 — poison owed to the PLAYER from an earlier trick, being paid at this one. 0 when none.
+  /** D1/D3 — Timebomb owed to the PLAYER from an earlier trick, being paid at this one. 0 when none.
    *  Non-zero makes this trick a hit for the cash-out's purposes even if the player won it. */
-  readonly poisonToPlayer: Damage
-  /** D1 — poison owed to the QUARRY from an earlier trick, being paid at this one. 0 when none.
+  readonly timebombToPlayer: Damage
+  /** D1 — Timebomb owed to the QUARRY from an earlier trick, being paid at this one. 0 when none.
    *  Never touches the bank: the Quarry has no streak to lose. */
-  readonly poisonToQuarry: Damage
-  /** DLR-91 AC4 — a Poison Guard is held, so poison must NOT force the cash-out. Gates the poison
+  readonly timebombToQuarry: Damage
+  /** DLR-91 AC4 — a Blast Guard is held, so Timebomb must NOT force the cash-out. Gates the Timebomb
    *  trigger only, never the trick's own hit: a 1-coin item does not insure against every loss. */
-  readonly poisonGuarded: boolean
+  readonly blastGuarded: boolean
   /** DLR-92 AC4 — extra bank added by a TAKEN trick, on top of the trick's own 1. A plain number
    *  handed in, never a run figure read: this module must not learn what bought it, which is why
    *  it is not called a Whetstone count. 0 is the bare rule. The MULTIPLIER is unaffected (AC5). */
@@ -201,28 +201,28 @@ export function resolveTrickBank(before: BankState, trick: TrickFacts): TrickRes
   }
 
   // TWO sources of a hit since D1/D3. `trickHit` is the pre-existing one — a clean loss or a skull
-  // win, unless DLR-90's AC5 replaced it. Poison is the new one, and it reaches the SAME branch
-  // rather than getting a rule of its own: that is what makes "poison behaves like any other
+  // win, unless DLR-90's AC5 replaced it. Timebomb is the new one, and it reaches the SAME branch
+  // rather than getting a rule of its own: that is what makes "Timebomb behaves like any other
   // damage" true in code instead of asserted in a comment.
   const trickHit = !isTaken(outcome) && !replaced
-  // AC4 — a held Guard suppresses the POISON trigger only.
-  const poisonResets = trick.poisonToPlayer > 0 && !trick.poisonGuarded
+  // AC4 — a held Guard suppresses the TIMEBOMB trigger only.
+  const timebombResets = trick.timebombToPlayer > 0 && !trick.blastGuarded
 
   // Owed whether or not the streak resets: a Guard buys back the streak, never the health.
-  // D2's 2-or-3 is this line — the poison alone on a trick the player won, plus DAMAGE_PER_HIT
+  // D2's 2-or-3 is this line — the Timebomb alone on a trick the player won, plus DAMAGE_PER_HIT
   // on one they also lost.
-  const damageToPlayer = (trickHit ? DAMAGE_PER_HIT : 0) + trick.poisonToPlayer
+  const damageToPlayer = (trickHit ? DAMAGE_PER_HIT : 0) + trick.timebombToPlayer
 
-  if (trickHit || poisonResets) {
-    // A1 — the win above has already banked, so a won-but-poisoned trick cashes the LARGER figure.
+  if (trickHit || timebombResets) {
+    // A1 — the win above has already banked, so a won-but-primed trick cashes the LARGER figure.
     //
     // DLR-94 AC4 — but a hit the player did not CHOOSE pays only the configured fraction of it.
     // That reduction is the whole cost that makes Apply Damage (`voluntaryCashOut.ts`) a decision:
     // cash the streak yourself for its full worth, or push it and be paid a share when caught.
     //
-    // POISON REACHES THIS BRANCH TOO, and deliberately (`plan.md` → Assumptions). D3's poison hit
+    // TIMEBOMB REACHES THIS BRANCH TOO, and deliberately (`plan.md` → Assumptions). D3's Timebomb hit
     // is the case the-hunt.md calls "the moment you cannot choose" — precisely what the reduction
-    // is charging for. Paying poison in full would make being poisoned the CHEAPEST way to lose a
+    // is charging for. Paying Timebomb in full would make being primed the CHEAPEST way to lose a
     // streak, which inverts the item this rule sits beside.
     cashOut = forcedCashValue(bank, multiplier)
     bank = 0
@@ -253,20 +253,20 @@ export function resolveTrickBank(before: BankState, trick: TrickFacts): TrickRes
         ? DuelSide.Player
         : DuelSide.Quarry
       : null,
-    poisonToQuarry: trick.poisonToQuarry,
-    poisonGuardSpent: trick.poisonToPlayer > 0 && trick.poisonGuarded,
+    timebombToQuarry: trick.timebombToQuarry,
+    blastGuardSpent: trick.timebombToPlayer > 0 && trick.blastGuarded,
   }
 }
 
 /**
  * THE one `PlayerSide` -> `DuelSide` crossing. Keyed by the side the damage is APPLIED TO: the
- * player eats `damageToPlayer`, the Quarry eats its cash-out PLUS any poison paid at this trick.
+ * player eats `damageToPlayer`, the Quarry eats its cash-out PLUS any Timebomb paid at this trick.
  * Summing here rather than at the call site keeps that the only crossing — a caller assembling
  * this record by hand is one transposition from depleting the wrong bar forever.
  */
 export function incomingFrom(resolution: TrickResolution): IncomingDamage {
   return {
     [DuelSide.Player]: resolution.damageToPlayer,
-    [DuelSide.Quarry]: resolution.cashOut + resolution.poisonToQuarry,
+    [DuelSide.Quarry]: resolution.cashOut + resolution.timebombToQuarry,
   }
 }

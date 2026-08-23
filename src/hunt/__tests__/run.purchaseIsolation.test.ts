@@ -5,7 +5,7 @@ import { buyFromShop, drinkFlask, startRun, type RunState } from '../run'
 import { ShopItem } from '../shop'
 import { DuelSide } from '../types'
 
-// DLR-127. The ticket reported that buying an Timebomb charge also granted a Cheat. It does not —
+// DLR-127. The ticket reported that buying a Timebomb charge also granted a Cheat. It does not —
 // `buyFromShop`'s Timebomb branch returns `{ ...paid, timebombCharges: run.timebombCharges + 1 }` and
 // never touches `cheats`; the red assertion was reading the run's OPENING Cheat grant. But "a
 // purchase quietly handed over something it did not charge for" is a real class of defect and had
@@ -87,11 +87,11 @@ describe('buyFromShop — one purchase changes exactly one thing, plus the coins
     ])
   })
 
-  it('Poison Guard: coins and the held flag — and nothing else', () => {
+  it('Blast Guard: coins and the held flag — and nothing else', () => {
     const before = hurtAndFunded(9)
-    expect(changedFields(before, buyFromShop(before, ShopItem.PoisonGuard))).toEqual([
+    expect(changedFields(before, buyFromShop(before, ShopItem.BlastGuard))).toEqual([
+      'blastGuardHeld',
       'coins',
-      'poisonGuardHeld',
     ])
   })
 
@@ -122,13 +122,13 @@ describe('drinkFlask — the sibling that is not a purchase', () => {
 describe('no purchase touches another item’s holding', () => {
   it('buying every item in turn leaves each holding at exactly what its own purchase set', () => {
     const opened = hurtAndFunded(20)
-    const all = [ShopItem.Cheat, ShopItem.Timebomb, ShopItem.PoisonGuard, ShopItem.Whetstone].reduce(
+    const all = [ShopItem.Cheat, ShopItem.Timebomb, ShopItem.BlastGuard, ShopItem.Whetstone].reduce(
       (run, item) => buyFromShop(run, item),
       opened,
     )
     expect(all.cheats).toHaveLength(opened.cheats.length + 1)
     expect(all.timebombCharges).toBe(1)
-    expect(all.poisonGuardHeld).toBe(true)
+    expect(all.blastGuardHeld).toBe(true)
     expect(all.whetstones).toBe(1)
     // The one the ticket is about, stated once more against a run that bought everything.
     expect(all.flaskCharges).toBe(opened.flaskCharges)

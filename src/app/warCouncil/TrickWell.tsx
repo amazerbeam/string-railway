@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react'
 import { isPrimed, isSkulled, PlayerSide, type Card, type TrickCard } from '../../warCouncil'
-import { cardAccessibleName, poisonBookedText } from './labels'
+import { cardAccessibleName, timebombBookedText } from './labels'
 import PlayingCard from './PlayingCard'
 import type { ResolvedTrick } from './roundUiState'
 
@@ -17,7 +17,7 @@ interface TrickWellProps {
    *  `[]` so a caller that predates this (there is none left after this task, but the pattern
    *  matches `cardAccessibleName`'s own default) keeps compiling. */
   readonly skulledCards?: readonly Card[]
-  /** DLR-90 AC2 — once a marked card is face up here, it announces its own poison. Defaults to
+  /** DLR-90 AC2 — once a marked card is face up here, it announces its own Timebomb. Defaults to
    *  `[]` for `skulledCards`' own stated reason. */
   readonly primedCards?: readonly Card[]
   readonly quarryToLead: boolean
@@ -83,9 +83,9 @@ export default function TrickWell({
           {resolvedTrick.resolution.damageToPlayer > 0 &&
             ` You take ${resolvedTrick.resolution.damageToPlayer}.`}
           {resolvedTrick.resolution.timebombTarget !== null && (
-            <span className="wc-poison-clause">
+            <span className="wc-timebomb-clause">
               {' '}
-              {poisonBookedText(resolvedTrick.resolution.timebombTarget)}
+              {timebombBookedText(resolvedTrick.resolution.timebombTarget)}
             </span>
           )}
         </p>

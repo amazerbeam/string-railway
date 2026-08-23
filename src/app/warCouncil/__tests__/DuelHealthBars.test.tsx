@@ -108,7 +108,10 @@ describe('DuelHealthBars', () => {
   it('previews the streak on the Quarry’s hearts and says so to a screen reader (AC3, AC6)', () => {
     const quarryMax = quarryHealthForEncounter(0)
     const current = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
-    const { container } = renderPair(current, projectedDepletion(current, 2, 2, NO_PENDING_TIMEBOMB))
+    const { container } = renderPair(
+      current,
+      projectedDepletion(current, 2, 2, NO_PENDING_TIMEBOMB),
+    )
     const quarry = container.querySelector('.wc-hp[data-side="quarry"]')
     expect(quarry?.querySelectorAll('[data-state="atRisk"]')).toHaveLength(4)
     expect(screen.getByRole('meter', { name: QUARRY_LABEL }).getAttribute('aria-valuetext')).toBe(
@@ -116,24 +119,24 @@ describe('DuelHealthBars', () => {
     )
   })
 
-  it('renders booked poison as doomed hearts and names the figure to a screen reader (DLR-101)', () => {
+  it('renders booked Timebomb as ticking hearts and names the figure to a screen reader (DLR-101)', () => {
     const quarryMax = quarryHealthForEncounter(0)
     const current = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
     const projected = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax - 4 }
     const { container } = render(
       <DuelHealthBars
         bars={duelHealthBars(current, projected, MAX, {
-          doomed: { [DuelSide.Player]: 0, [DuelSide.Quarry]: 4 },
+          ticking: { [DuelSide.Player]: 0, [DuelSide.Quarry]: 4 },
         })}
         centre={<span>trio</span>}
         quarryLabel={QUARRY_LABEL}
       />,
     )
     const quarry = container.querySelector('.wc-hp[data-side="quarry"]')
-    expect(quarry?.querySelectorAll('[data-state="doomed"]')).toHaveLength(4)
+    expect(quarry?.querySelectorAll('[data-state="ticking"]')).toHaveLength(4)
     expect(
       screen.getByRole('meter', { name: QUARRY_LABEL }).getAttribute('aria-valuetext'),
-    ).toContain('poisoned')
+    ).toContain('ticking')
   })
 
   it('binds each heart to the symbol its state calls for — a broken state is a different shape, not a colour (AC6)', () => {

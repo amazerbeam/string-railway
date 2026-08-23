@@ -102,12 +102,12 @@ describe('AbilityPrompt', () => {
     expect(onChoose).toHaveBeenCalledWith({ kind: 'woodcutterDiscard', discard: drawnCard })
   })
 
-  it('announces a marked hand card offered as a Fox exchange as poisoned (DLR-90 AC2)', () => {
+  it('announces a marked hand card offered as a Fox exchange as primed (DLR-90 AC2)', () => {
     renderFoxPrompt({ primedCards: [card(Suit.Bells, 7)] })
-    expect(screen.getByRole('button', { name: '7 of Bells, poisoned' })).toBeDefined()
+    expect(screen.getByRole('button', { name: '7 of Bells, primed' })).toBeDefined()
   })
 
-  it('announces a marked hand card offered as a Woodcutter discard as poisoned (DLR-90 AC2)', () => {
+  it('announces a marked hand card offered as a Woodcutter discard as primed (DLR-90 AC2)', () => {
     const onChoose = vi.fn()
     render(
       <AbilityPrompt
@@ -120,6 +120,6 @@ describe('AbilityPrompt', () => {
         onCancel={vi.fn()}
       />,
     )
-    expect(screen.getByRole('button', { name: '8 of Keys, poisoned' })).toBeDefined()
+    expect(screen.getByRole('button', { name: '8 of Keys, primed' })).toBeDefined()
   })
 })

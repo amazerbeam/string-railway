@@ -66,7 +66,7 @@ interface ShopPanelProps {
   readonly timebombCharges: number
   /** DLR-91 AC3 — whether a Guard is already held. A boolean, not a count like `timebombCharges`:
    *  only one can be active at a time, which is what the refusal enforces. */
-  readonly poisonGuardHeld: boolean
+  readonly blastGuardHeld: boolean
   /** DLR-92 AC2 — Whetstones owned, so the player can see what they already hold before buying
    *  another. A count with no denominator, exactly as `timebombCharges`: there is no cap. */
   readonly whetstones: number
@@ -113,7 +113,7 @@ export default function ShopPanel({
   cheatCount,
   cheatSlotCount,
   timebombCharges,
-  poisonGuardHeld,
+  blastGuardHeld,
   whetstones,
   flaskCharges,
   flaskRefusal,
@@ -189,7 +189,7 @@ export default function ShopPanel({
           <span className="shop-purse-cell">
             <span className="shop-purse-label">{SHOP_GUARD_LABEL}</span>
             <span className="shop-purse-value">
-              {poisonGuardHeld ? SHOP_GUARD_HELD : SHOP_GUARD_NONE}
+              {blastGuardHeld ? SHOP_GUARD_HELD : SHOP_GUARD_NONE}
             </span>
           </span>
           <span className="shop-purse-cell">

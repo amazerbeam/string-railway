@@ -246,14 +246,14 @@ export const FLASK_STARTING_CHARGES = 1
 export const FLASK_HEAL_PERCENT = 0.6
 
 // DLR-90 AC1 — the Timebomb price. TRANSCRIBED from version-4-scope.md's own heading ("2 coins"),
-// which prices it at twice Poison Guard's cost because unlike Guard this is a guaranteed,
+// which prices it at twice Blast Guard's cost because unlike Guard this is a guaranteed,
 // unconditional hit rather than insurance against a risk. NOT chosen here and NOT a tuning value
 // open today. A separate key from CHEAT_PRICE and HEAL_PRICE for the reason those two are already
 // separate: re-pricing one item must not move another.
 // UNIT: coins per purchase.
 export const TIMEBOMB_PRICE: Coins = 2
 
-// DLR-91 D2 (2026-08-19) — poison's two figures. TWO keys, not one shared number: the player-side
+// DLR-91 D2 (2026-08-19) — Timebomb's two figures. TWO keys, not one shared number: the player-side
 // hit is HALVED because it also forces the streak's cash-out (D3), which the Quarry has no
 // equivalent of. A single shared key is the bug that type-checks, reads correctly, and pays the
 // wrong side. Renamed from TIMEBOMB_DAMAGE for exactly that reason — a bare name sitting beside
@@ -267,12 +267,12 @@ export const TIMEBOMB_QUARRY_DAMAGE: Damage = 4
 export const TIMEBOMB_PLAYER_DAMAGE: Damage = 2
 
 // DLR-91 AC1 — TRANSCRIBED from version-4-scope.md §1's own heading ("Fight-long — new item:
-// Poison Guard, 1 coin"), which prices it level with HEAL_PRICE because both are a 1-coin-for-4-HP
+// Blast Guard, 1 coin"), which prices it level with HEAL_PRICE because both are a 1-coin-for-4-HP
 // trade run in opposite directions. NOT chosen here and NOT an open tuning value. Its own key for
 // the reason CHEAT_PRICE and HEAL_PRICE are already separate: re-pricing one item must not move
 // another.
 // UNIT: coins per purchase.
-export const POISON_GUARD_PRICE: Coins = 1
+export const BLAST_GUARD_PRICE: Coins = 1
 
 // DLR-92 AC1 — the Whetstone's price. TRANSCRIBED from version-4-scope.md §1's own heading
 // ("Run-permanent — new item: Whetstone (placeholder name), 4 coins"), which prices it as "the

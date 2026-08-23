@@ -89,9 +89,9 @@ export const coinsFixture = 2
  *  the stage cycle without a spec needing to track a second one down. */
 export const timebombChargesFixture = 1
 
-/** A fixed Poison Guard reading for component specs (DLR-91 AC4) — unheld, so a spec that does not
+/** A fixed Blast Guard reading for component specs (DLR-91 AC4) — unheld, so a spec that does not
  *  exercise the Guard is not accidentally exercising it. */
-export const poisonGuardHeldFixture = false
+export const blastGuardHeldFixture = false
 
 /** A fixed bank-climb bonus for component specs (DLR-92 AC4) — zero, so a spec that does not
  *  exercise the buff is not accidentally exercising it. */

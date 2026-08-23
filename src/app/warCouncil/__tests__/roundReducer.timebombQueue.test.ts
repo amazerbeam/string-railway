@@ -39,7 +39,7 @@ describe('the queue write (AC3/AC6)', () => {
       encounter,
       cheats: [],
       timebombCharges: 1,
-      poisonGuardHeld: false,
+      blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
     })
@@ -77,7 +77,7 @@ describe('the queue write (AC3/AC6)', () => {
       encounter: startEncounter(0),
       cheats: [],
       timebombCharges: 1,
-      poisonGuardHeld: false,
+      blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
     })
@@ -111,7 +111,7 @@ describe('the queue write (AC3/AC6)', () => {
       encounter: startEncounter(0),
       cheats: [],
       timebombCharges: 1,
-      poisonGuardHeld: false,
+      blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
     })
@@ -144,7 +144,7 @@ describe('the queue write (AC3/AC6)', () => {
       encounter: startEncounter(0),
       cheats: [],
       timebombCharges: 1,
-      poisonGuardHeld: false,
+      blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
     })
@@ -160,7 +160,7 @@ describe('the queue write (AC3/AC6)', () => {
   })
 })
 
-describe('D1 — poison is paid at the trick that resolves it, not at the next hand', () => {
+describe('D1 — a Timebomb is paid at the trick that resolves it, not at the next hand', () => {
   it('a mark booked at one trick is paid at the very next trick, not at the next hand', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
@@ -171,7 +171,7 @@ describe('D1 — poison is paid at the trick that resolves it, not at the next h
       },
       currentTrick: [],
     })
-    // The queue already owes the player poison BEFORE this trick is played — as if booked by an
+    // The queue already owes the player Timebomb BEFORE this trick is played — as if booked by an
     // earlier trick this hand — so this spec exercises payment, not booking.
     const owedEncounter = queueTimebomb(startEncounter(0), DuelSide.Player)
     let ui = createRoundUiState({
@@ -179,7 +179,7 @@ describe('D1 — poison is paid at the trick that resolves it, not at the next h
       encounter: owedEncounter,
       cheats: [],
       timebombCharges: 1,
-      poisonGuardHeld: false,
+      blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
     })
@@ -187,7 +187,7 @@ describe('D1 — poison is paid at the trick that resolves it, not at the next h
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target }) // arms to play
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target }) // commits
 
-    // A clean win: the trick itself costs nothing, so the whole drop is the poison paid HERE.
+    // A clean win: the trick itself costs nothing, so the whole drop is the Timebomb paid HERE.
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanWin)
     expect(ui.encounter.health[DuelSide.Player]).toBe(
       owedEncounter.health[DuelSide.Player] - TIMEBOMB_PLAYER_DAMAGE,
@@ -211,12 +211,12 @@ describe('D1 — poison is paid at the trick that resolves it, not at the next h
       encounter: owedEncounter,
       cheats: [],
       timebombCharges: 1,
-      poisonGuardHeld: false,
+      blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
     })
 
-    // Trick 1 — pays the queued poison and clears it.
+    // Trick 1 — pays the queued Timebomb and clears it.
     const first = card(Suit.Bells, 9)
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: first })
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: first })
@@ -235,8 +235,8 @@ describe('D1 — poison is paid at the trick that resolves it, not at the next h
   })
 })
 
-describe('DLR-91 AC4 — the Poison Guard through the reducer', () => {
-  it('a held Guard survives the poison hit and is spent, leaving the streak standing', () => {
+describe('DLR-91 AC4 — the Blast Guard through the reducer', () => {
+  it('a held Guard survives the Timebomb hit and is spent, leaving the streak standing', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
@@ -248,14 +248,14 @@ describe('DLR-91 AC4 — the Poison Guard through the reducer', () => {
       },
       currentTrick: [],
     })
-    // Poison already owed to the player, as if booked by an earlier trick this hand.
+    // Timebomb already owed to the player, as if booked by an earlier trick this hand.
     const owedEncounter = queueTimebomb(startEncounter(0), DuelSide.Player)
     let ui = createRoundUiState({
       round,
       encounter: owedEncounter,
       cheats: [],
       timebombCharges: 0,
-      poisonGuardHeld: true,
+      blastGuardHeld: true,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
     })
@@ -265,7 +265,7 @@ describe('DLR-91 AC4 — the Poison Guard through the reducer', () => {
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target }) // commits
 
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanWin)
-    expect(ui.resolvedTrick?.resolution.poisonGuardSpent).toBe(true)
+    expect(ui.resolvedTrick?.resolution.blastGuardSpent).toBe(true)
     // The health is still lost — the Guard buys back the streak, never the health.
     expect(ui.encounter.health[DuelSide.Player]).toBe(
       owedEncounter.health[DuelSide.Player] - TIMEBOMB_PLAYER_DAMAGE,
@@ -273,10 +273,10 @@ describe('DLR-91 AC4 — the Poison Guard through the reducer', () => {
     // The streak survives: an ordinary clean win still banks the trick, and no cash-out fired.
     expect(ui.round.bank).toBe(3)
     expect(ui.round.multiplier).toBe(3)
-    expect(ui.poisonGuardHeld).toBe(false)
+    expect(ui.blastGuardHeld).toBe(false)
   })
 
-  it('the Guard fires only once; a second poison hit in the same fight lands in full', () => {
+  it('the Guard fires only once; a second Timebomb hit in the same fight lands in full', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
@@ -294,7 +294,7 @@ describe('DLR-91 AC4 — the Poison Guard through the reducer', () => {
       encounter: owedEncounter,
       cheats: [],
       timebombCharges: 0,
-      poisonGuardHeld: true,
+      blastGuardHeld: true,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
     })
@@ -303,11 +303,11 @@ describe('DLR-91 AC4 — the Poison Guard through the reducer', () => {
     const first = card(Suit.Bells, 9)
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: first })
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: first })
-    expect(ui.poisonGuardHeld).toBe(false)
+    expect(ui.blastGuardHeld).toBe(false)
     expect(ui.round.bank).toBe(3)
     expect(ui.round.multiplier).toBe(3)
 
-    // A second poison hit lands this fight, with the Guard already spent — simulating a mark an
+    // A second Timebomb hit lands this fight, with the Guard already spent — simulating a mark an
     // earlier trick this hand booked, the same way `owedEncounter` above simulates the first.
     ui = { ...ui, encounter: queueTimebomb(ui.encounter, DuelSide.Player) }
     ui = roundReducer(ui, { kind: RoundUiActionKind.CarryOn })
@@ -317,10 +317,10 @@ describe('DLR-91 AC4 — the Poison Guard through the reducer', () => {
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: second })
 
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanWin)
-    expect(ui.resolvedTrick?.resolution.poisonGuardSpent).toBe(false)
+    expect(ui.resolvedTrick?.resolution.blastGuardSpent).toBe(false)
     // No Guard held this time — the streak cashes out and resets.
     expect(ui.round.bank).toBe(0)
     expect(ui.round.multiplier).toBe(0)
-    expect(ui.poisonGuardHeld).toBe(false)
+    expect(ui.blastGuardHeld).toBe(false)
   })
 })

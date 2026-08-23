@@ -23,7 +23,7 @@ is `ENCOUNTER_PLAYER_RESTORE`, which still has no consumer.
 ### The state — `EncounterState`
 
 An **encounter** is a sequence of Hunts fought until one bar empties (§5). `EncounterState` in
-`types.ts` holds exactly four fields and nothing else — three since DLR-70, and `pendingEnvenom`
+`types.ts` holds exactly four fields and nothing else — three since DLR-70, and `pendingTimebomb`
 since DLR-90:
 
 ```ts
@@ -31,7 +31,7 @@ export interface EncounterState {
   readonly health: Readonly<Record<DuelSide, Health>>
   readonly damageEventsApplied: number
   readonly winner: DuelSide | null
-  readonly pendingEnvenom: IncomingDamage // DLR-90
+  readonly pendingTimebomb: IncomingDamage // DLR-90
 }
 ```
 
@@ -57,12 +57,12 @@ side it is applied to**, never by the side that dealt it. That is `HuntOutcome.i
 carried deliberately across the module boundary, so the crossing is performed exactly once and on
 the other side of it (see [`incomingFrom`](../war-council/bank-and-cash-out.md)).
 
-**`pendingEnvenom` reuses that exact type** rather than inventing a parallel one — damage owed to each
+**`pendingTimebomb` reuses that exact type** rather than inventing a parallel one — damage owed to each
 side at the resolution of the **next trick** (DLR-91 D1; DLR-90 paid it at the next hand's deal),
 keyed the same way. `startEncounter` seeds it to zeros and
 `applyDamage` carries it through untouched, because a trick's own damage neither pays nor cancels a
 booking — the clearing is `roundReducer.ts`'s `applyResolution`, one level up. Everything about the queue, its payment and why it lives here rather than on `RunState` is in
-[Envenom — the held charge, the delayed-hit queue, and where it is paid](envenom-and-the-delayed-hit.md);
+[Timebomb — the held charge, the delayed-hit queue, and where it is paid](timebomb-and-the-delayed-hit.md);
 the one thing worth knowing while reading *this* file is that **the encounter boundary is what discards
 a queued hit**, and it does so through `startEncounter`'s seed rather than through any explicit clear
 step.
@@ -112,7 +112,7 @@ config key nothing reads is a tunable that silently does nothing, which is worse
 
 Note the guard that did **not** move: `assertApplicable` still runs on the player's incoming figure
 even when the Quarry goes down and that figure is never subtracted. Skipping it would let a
-poisoned `NaN` pass unexamined on exactly the branch that ignores it.
+primed `NaN` pass unexamined on exactly the branch that ignores it.
 
 Damage arrives as two plain numbers keyed by `DuelSide`, already pointed at the bar each depletes, so
 this function **does not invert anything and cannot get it backwards**. That is the whole reason
@@ -208,7 +208,7 @@ configuration. No epsilon is needed anywhere: the clamp compares against exact `
 > helper therefore **guards ahead of it** — it returns the encounter unchanged if
 > `isEncounterResolved` is already true, and skips the `applyDamage` call when the whole
 > `incomingFrom` record is zero (an all-zero event would otherwise bump `damageEventsApplied` for
-> nothing). **Since DLR-91 that record sums the poison paid at this trick as well as the trick's own
+> nothing). **Since DLR-91 that record sums the Timebomb paid at this trick as well as the trick's own
 > damage**, so it is the one place to look for what a resolution actually costs. Guarding rather
 > than catching is deliberate: a throw escaping a reducer during an event handler unmounts the tree.
 > `canAct` carries the same check, so play stops rather than queueing taps into a finished fight.

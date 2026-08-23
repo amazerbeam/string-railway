@@ -53,7 +53,7 @@ the Quarry's intent telegraphed before every commit, and an end panel. It is the
 DLR-71 put the **duel** on screen — two health bars as a mirrored opposed pair, health carried Hunt
 to Hunt, and an encounter that could finally end. **DLR-86 then replaced both bars with rows of
 countable hearts** that break as damage lands, and gave the Quarry's row a preview of what the banked
-streak would cash for. **DLR-101 added a fifth heart state** so a booked poison hit shows on whichever
+streak would cash for. **DLR-101 added a fifth heart state** so a booked Timebomb hit shows on whichever
 bar owes it — the readout the engine had been keeping a booking for since DLR-90 with nothing on the
 felt to show it. See
 [war-council-ui/duel-health-bars.md](war-council-ui/duel-health-bars.md).
@@ -284,8 +284,8 @@ The structural point is where the ladder lives. The rungs, the item→rung assig
 groupings and **which rung refuses** are all plain TypeScript in `src/hunt/shop.ts`, inside the
 lint-enforced no-React boundary. So adding an item is **one `ShopItem` member, one `priceOf` case and
 one `categoryOf` case** — and it appears on the correct shelf with no UI edit at all. That is the
-property the three follow-on item tickets were built on, and **all three have now shipped** — Envenom
-(DLR-90), Poison Guard (DLR-91) and the Whetstone (DLR-92), every one at that cost, so the prediction held
+property the three follow-on item tickets were built on, and **all three have now shipped** — Timebomb
+(DLR-90), Blast Guard (DLR-91) and the Whetstone (DLR-92), every one at that cost, so the prediction held
 three times for three different shelves. The
 component asks `isShopCategoryAvailable` rather than naming `GamePermanent`, and "empty" and "refused"
 are kept as **two separate facts** — conflating them would have started refusing fight-long until its
@@ -305,13 +305,13 @@ a percentage `max-height` is not a viewport cap, and "the mechanism is correct" 
 as "the mechanism engages".
 
 **DLR-90 gave the player something to do with a card they expected to throw away, and it is the first
-effect in this game that resolves later than the thing that caused it.** A third shop item — **Envenom**,
+effect in this game that resolves later than the thing that caused it.** A third shop item — **Timebomb**,
 2 coins, on the one-time-use shelf DLR-89 built — buys a charge you carry across fights. On the felt, a
-plate beside the Cheat rail arms it in two taps, and a third tap on a card in your hand **poisons** that
+plate beside the Cheat rail arms it in two taps, and a third tap on a card in your hand **Timebombs** that
 card. Play it, and the trick resolves by the normal rules; **damage then lands on whoever won that
 trick** — at the deal of the next hand as DLR-90 shipped it, and **at the resolution of the next trick
 since DLR-91**. The rule that makes it worth buying is the one the design doc
-singles out: **a poisoned trick the Quarry wins cleanly costs you nothing at all** — no health, and your
+singles out: **a primed trick the Quarry wins cleanly costs you nothing at all** — no health, and your
 bank and multiplier survive uncashed instead of resetting. Win it yourself and the hit lands on **you**
 instead — 2 rather than the Quarry's 4 since DLR-91, and it cashes your streak out with it.
 
@@ -328,10 +328,10 @@ even though the amounts no longer are. And **the marker is engine state**, becau
 preserved-bank rule is a bank rule — honouring it from the UI layer would mean the reducer re-deriving
 rules `resolveTrickBank` owns.
 
-Start at [hunt/envenom-and-the-delayed-hit.md](hunt/envenom-and-the-delayed-hit.md) for the queue and its
-single payment point, [war-council/the-envenom-mark.md](war-council/the-envenom-mark.md) for the marker
+Start at [hunt/timebomb-and-the-delayed-hit.md](hunt/timebomb-and-the-delayed-hit.md) for the queue and its
+single payment point, [war-council/the-timebomb-mark.md](war-council/the-timebomb-mark.md) for the marker
 and the replaced clean loss, or
-[war-council-ui/envenom-charge-and-the-mark.md](war-council-ui/envenom-charge-and-the-mark.md) for the
+[war-council-ui/timebomb-charge-and-the-mark.md](war-council-ui/timebomb-charge-and-the-mark.md) for the
 plate, the mark and the reducer split.
 
 **It carried three refactors and fixed one latent defect, none of which an acceptance criterion asked
@@ -345,17 +345,17 @@ test after six branches of living inside a component. The defect: **`buyFromShop
 unconditional fallback**, so a third item would have healed the player and type-checked cleanly. It is now
 an exhaustive `switch` with no `default`.
 
-**DLR-91 moved poison to where it can actually bite, resequenced every damage event in the game, and
+**DLR-91 moved Timebomb to where it can actually bite, resequenced every damage event in the game, and
 sold insurance against the result.** Three changes in one contract, and the middle one is the widest.
-**First**, poison stopped being a hit paid quietly at the next deal and became a hit paid at the **next
+**First**, Timebomb stopped being a hit paid quietly at the next deal and became a hit paid at the **next
 trick's resolution**, folded into that trick's own damage — 4 to the Quarry, **2** to the player, and for
 the player it forces the same cash-out any other hit forces, so a streak in progress is spent at a moment
 you did not choose. **Second**, all damage is now applied **Quarry-first**: a cash-out that kills the
 Quarry spares the player the hit that would have landed alongside it, so a mutual kill is a **player
 win** — which overturned a dated design ruling that the player _loses_ it, and deleted the constant that
 ruling had been implemented as. **Third**, the shop's empty **fight-long** shelf got its first item: a
-1-coin **Poison Guard**, bought between fights, live for exactly the next fight, that lets you take
-poison's 2 health without losing the streak. Spent the first time it fires, gone when the fight ends
+1-coin **Blast Guard**, bought between fights, live for exactly the next fight, that lets you take
+Timebomb's 2 health without losing the streak. Spent the first time it fires, gone when the fight ends
 either way.
 
 Two structural points are the ones to carry forward. **The payment crossed a module boundary, and the
@@ -363,8 +363,8 @@ direction it crossed matters**: the queue is `EncounterState`'s in `src/hunt/`, 
 `RoundState`'s in `src/warCouncil/`, and `hunt` may not learn what a `RoundState` is — so the reducer,
 which holds both, hands the pending figures _into_ `playCard` through a widened `PlayCardOptions` rather
 than anything reaching the other way. And **the new reset is a second trigger on one branch, not a second
-rule**: poison owed to the player reaches the same `cashOut = bank × multiplier` statement a lost trick
-reaches, which is what makes "poison behaves like any other damage" true in code instead of asserted in a
+rule**: Timebomb owed to the player reaches the same `cashOut = bank × multiplier` statement a lost trick
+reaches, which is what makes "Timebomb behaves like any other damage" true in code instead of asserted in a
 comment.
 
 **One accepted oddity shipped with it, knowingly.** Because the Guard suppresses the cash-out, a Quarry
@@ -373,21 +373,21 @@ means the player takes the 2 they would otherwise have dodged. **So holding a Gu
 health**, the correct play is sometimes not to hold one, and there is no UI hint. The developer accepted
 that as a real decision rather than smoothing it out.
 
-Start at [hunt/poison-guard.md](hunt/poison-guard.md) for the flag and its lifetime,
+Start at [hunt/blast-guard.md](hunt/blast-guard.md) for the flag and its lifetime,
 [hunt/encounter-state-and-end-conditions.md](hunt/encounter-state-and-end-conditions.md) for the
 Quarry-first sequencing and the two remaining end conditions,
 [war-council/bank-and-cash-out.md](war-council/bank-and-cash-out.md) for the two sources of a hit, or
-[war-council-ui/envenom-charge-and-the-mark.md](war-council-ui/envenom-charge-and-the-mark.md) for
+[war-council-ui/timebomb-charge-and-the-mark.md](war-council-ui/timebomb-charge-and-the-mark.md) for
 `applyResolution`'s pay → clear → re-book ordering.
 
 **Three reviewers independently caught the same gap, and it is the one worth remembering.** `DecreePile`'s
-`envenomed` prop was built correctly in one task and **never passed at its mount** in the next — so a
-marked card the Fox exchanged into the decree silently lost both its badge and its "poisoned" accessible
+`primed` prop was built correctly in one task and **never passed at its mount** in the next — so a
+marked card the Fox exchanged into the decree silently lost both its badge and its "primed" accessible
 name, on a plate that renders continuously through the hand. Every unit test passed, because the prop
 itself was always right. The regression test now drives the **reachable** path — mark, lead the Fox,
 exchange, assert the decree still announces it — rather than the prop, which is the only version of that
 test that would have failed against the defect. A second reviewer found the mirror of it inside the
-reducer: `commit()` cleared `cheatSelection` and not `envenomStage`, so poising Envenom and playing an
+reducer: `commit()` cleared `cheatSelection` and not `timebombStage`, so poising Timebomb and playing an
 ordinary card left the stage stuck and quietly ate one of the three taps the misclick guard exists to
 require.
 
@@ -400,7 +400,7 @@ and it is worth most on exactly the hands you were already playing well.
 
 **The interesting part is architectural, not arithmetic.** `resolveTrickBank` is a pure function in
 `src/warCouncil/` that must not know what a run is, and the count lives on `RunState` in `src/hunt/`. The
-route taken is the one DLR-91 established for the Poison Guard: widen `PlayCardOptions` with a **plain
+route taken is the one DLR-91 established for the Blast Guard: widen `PlayCardOptions` with a **plain
 number**, let the reducer — which holds both halves — assemble it, and name the field `bankClimbBonus`
 rather than a Whetstone count so the card layer never learns a shop item's name. A contract-phase grep
 enforces that `src/warCouncil/` names neither `Whetstone` nor `RunState` in code. The one crossing is a
@@ -499,7 +499,7 @@ the game spends for you at the worst moment.
 - **Availability is one predicate read twice.** `applyDamageRefusalFor` is the single statement of
   whether the control is live — the reducer asks it before committing and the plate asks it to disable
   itself and print the reason. It is also **re-asked on the confirming second tap**, which is what stops
-  a poise made while the control was live from committing after a poison booking has landed under it.
+  a poise made while the control was live from committing after a Timebomb booking has landed under it.
 - **Two files were split to make room, both pure moves.** `src/hunt/config.ts` 413 → **324**, carving
   `skullWeights.ts` (93); and `roundReducer.ts` 390 → **352**, carving `quarryAdvance.ts` (96). Neither
   changed a public name or a barrel surface, and every pre-existing spec passed unedited through both.
@@ -512,7 +512,7 @@ grammar and the extraction that had to come first.
 
 ## DLR-96, the integration pass (2026-08-21)
 
-DLR-89 through DLR-95 each built one piece of the run economy — the four-rung shop, Envenom, Poison
+DLR-89 through DLR-95 each built one piece of the run economy — the four-rung shop, Timebomb, Timebomb
 Guard, the Whetstone, the flask, Apply Damage and the quick-kill payout — largely in isolation. DLR-96
 added no feature: it is a verification ticket that plays the whole economy at once and writes the
 composition-level tests the individual tickets had no reason to write, because each spans code two
@@ -526,7 +526,7 @@ checkable rather than merely asserted in a docblock:
 and [hunt/README.md](hunt/README.md) covers the combined `RunState` field-survival test.
 
 A live five-touchpoint browser playthrough (via `chrome-devtools` MCP) additionally confirmed, in the
-running app: all four shop categories (Cheat, Envenom, Poison Guard, Whetstone), a flask drink, a
+running app: all four shop categories (Cheat, Timebomb, Blast Guard, Whetstone), a flask drink, a
 voluntary Apply Damage, and a quick-kill payout — every one with zero console errors. **One touchpoint
 was not reached live**: a stage-boss kill and its flask refill, across two independent play sessions —
 the boss holds far more health than an ordinary fight, and neither session's hands were strong enough
@@ -546,7 +546,7 @@ the Woodcutter's existing draw-to-bottom convention generalised from one card to
 discards, chainable within one gap, carried across the hands within a fight on `RunState`, and the
 Quarry gets none.
 
-**The structural point is `discardWindowOpen`.** Cheat, Envenom and Apply Damage all gate on
+**The structural point is `discardWindowOpen`.** Cheat, Timebomb and Apply Damage all gate on
 `canAct`, which requires it to be the player's own turn. The discard's acceptance criteria ask for a
 moment `canAct` cannot reach — the gap where the Quarry is about to lead but the trick has not
 started — so `roundUiState.ts` gained a second, deliberately independent gate, and `WarCouncilRound.tsx`
@@ -662,11 +662,11 @@ move, or scoring term moved, and a page reload still starts a new run exactly as
 Start at [persistence/](persistence/README.md) for the envelope, the four-check read path, and why
 `browserLocalStorage()` is the only function in the codebase allowed to name the global.
 
-## DLR-127, "buying Envenom also grants a Cheat" — the bug that wasn't (2026-08-23)
+## DLR-127, "buying Timebomb also grants a Cheat" — the bug that wasn't (2026-08-23)
 
 **DLR-127 was raised as a shop defect and turned out to be a stale assertion; no production code
-changed.** `buyFromShop`'s Envenom branch is `{ ...paid, envenomCharges: run.envenomCharges + 1 }`
-and has never touched `cheats`. What was red was `envenom.test.ts :: "does NOT add a Cheat"`, whose
+changed.** `buyFromShop`'s Timebomb branch is `{ ...paid, timebombCharges: run.timebombCharges + 1 }`
+and has never touched `cheats`. What was red was `timebomb.test.ts :: "does NOT add a Cheat"`, whose
 `expect(after.cheats).toEqual([])` is an **absolute** assertion built on a fixture that derives from
 `startRun()` — so when `RUN_STARTING_CHEATS` moved `0 → 1` in commit `ccc07ec`, the assertion began
 failing on the run's _opening grant_ rather than on anything the purchase did. The sibling
@@ -681,7 +681,7 @@ a tautology on the next retune.
 **The sibling purchases named in the ticket were checked and none shares the defect, because there
 is no defect** — and that answer is now a test rather than a reading of a `switch`.
 `src/hunt/__tests__/run.purchaseIsolation.test.ts` asserts the exact `RunState` changed-field set for
-every shop item (Cheat, Envenom, Poison Guard, Whetstone, Heal) and for `drinkFlask`, so "a purchase
+every shop item (Cheat, Timebomb, Blast Guard, Whetstone, Heal) and for `drinkFlask`, so "a purchase
 quietly grants a second thing" fails for any future branch, not just this one.
 `.docs/game_rules/the-hunt.md` records no change: nothing a player may do, must do, or is scored on
 moved, and no tunable's value changed. Start at [hunt/README.md](hunt/README.md) →

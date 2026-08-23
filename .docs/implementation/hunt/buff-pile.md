@@ -108,6 +108,6 @@ owned-pile persistence, and nothing else.
 **Since DLR-107, T4 has partly landed and this paragraph needs one correction.** Cheat and Timebomb
 now have a `Buff` representation and their tier tables — but still no consumer: nothing evaluates a
 condition, applies a reward, or reads the pile. The felt continues to drive the old bespoke Cheat and
-Envenom state machines, so the two mechanics currently exist twice over. See
+Timebomb state machines, so the two mechanics currently exist twice over. See
 [Cheat and Timebomb as buff-pile objects](cheat-and-timebomb-buffs.md) for why that duplication is
 deliberate and what ends it.

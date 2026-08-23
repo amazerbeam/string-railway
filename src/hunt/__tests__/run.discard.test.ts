@@ -1,6 +1,6 @@
 // DLR-100 Phase 2 — the discard's per-fight budget on `RunState`, seeded by `startRun`, reset by
 // `advanceRun`, and carried through `recordEncounter` exactly as `cheats`/`timebombCharges`/
-// `poisonGuardHeld` already are. Follows `run.flask.test.ts`/`run.whetstone.test.ts`'s own shape:
+// `blastGuardHeld` already are. Follows `run.flask.test.ts`/`run.whetstone.test.ts`'s own shape:
 // a local, minimal duplicate of `run.test.ts`'s helpers rather than an import, because importing
 // one `.test.ts` module from another re-executes its top-level `describe` calls and silently
 // duplicates every test in that file.
@@ -44,7 +44,7 @@ describe("recordEncounter's discardsRemaining parameter (DLR-100 AC5)", () => {
       wonEncounter(run.encounter, MAX),
       run.cheats,
       run.timebombCharges,
-      run.poisonGuardHeld,
+      run.blastGuardHeld,
       spent,
       null,
     )
@@ -59,7 +59,7 @@ describe("recordEncounter's discardsRemaining parameter (DLR-100 AC5)", () => {
       run.encounter, // still unresolved — no card play modelled here, matching handOfFight's own precedent
       run.cheats,
       run.timebombCharges,
-      run.poisonGuardHeld,
+      run.blastGuardHeld,
       spent,
       null,
     )
@@ -76,7 +76,7 @@ describe('advanceRun (DLR-100 AC5)', () => {
       wonEncounter(run.encounter, MAX),
       run.cheats,
       run.timebombCharges,
-      run.poisonGuardHeld,
+      run.blastGuardHeld,
       spent,
       null,
     )

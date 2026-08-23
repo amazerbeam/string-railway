@@ -40,7 +40,7 @@ function uiFrom(
     encounter,
     cheats: [],
     timebombCharges: timebombChargesFixture,
-    poisonGuardHeld: false,
+    blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining,
   })

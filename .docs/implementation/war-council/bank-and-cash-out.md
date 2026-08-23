@@ -11,7 +11,7 @@ rounding, and the once-per-Hunt damage application.
 banks **1 per trick taken**, so both terms of the cash-out equation are the streak length and a
 streak of _n_ cashes exactly `n × n`.
 
-**DLR-91 then gave the reset a second trigger** — poison owed to the player at this trick — reaching the
+**DLR-91 then gave the reset a second trigger** — Timebomb owed to the player at this trick — reaching the
 **same** branch a lost trick reaches rather than getting a rule of its own. The four outcomes, the
 `finalTrick` fold and `incomingFrom`'s job are all still as DLR-80 left them; what moved is that
 `damageToPlayer` is now computed outside the cash-out branch and `incomingFrom` sums two sources into
@@ -61,16 +61,16 @@ The pairing is exact: `CleanWin` and `Dodge` are identical in every respect but 
 
 ```ts
 resolveTrickBank(before, trick: TrickFacts): TrickResolution
-// TrickFacts = { playerWon, skullTrick, finalTrick, envenomTrick,
-//                poisonToPlayer, poisonToQuarry, poisonGuarded,   // DLR-91
+// TrickFacts = { playerWon, skullTrick, finalTrick, timebombTrick,
+//                timebombToPlayer, timebombToQuarry, blastGuarded,   // DLR-91
 //                bankClimbBonus }                                  // DLR-92
 ```
 
-The three DLR-91 facts are **the poison owed from an earlier trick, being paid at this one** — a
-`Damage` per side, `0` when nothing is owed — plus whether a Poison Guard is held. They are handed in
+The three DLR-91 facts are **the Timebomb owed from an earlier trick, being paid at this one** — a
+`Damage` per side, `0` when nothing is owed — plus whether a Blast Guard is held. They are handed in
 rather than fetched: the pending queue lives on `EncounterState` in `src/hunt/`, `src/hunt/` must not
 learn what a `RoundState` is, and the reducer is the one place that holds both. See
-[the delayed hit](../hunt/envenom-and-the-delayed-hit.md).
+[the delayed hit](../hunt/timebomb-and-the-delayed-hit.md).
 
 One call decides everything a trick does. `before` is the running `{ bank, multiplier }`; the return
 is a `TrickResolution` carrying the new pair plus what the trick did to get there.
@@ -86,16 +86,16 @@ converted; it is a **call-shape change with no behaviour change**, and the evide
 pre-existing assertion in `bank.test.ts` holds unedited through it.
 
 **One rule was added with that fifth fact**, and it is the only way a lost trick can cost the player
-nothing — see [the Envenom mark](the-envenom-mark.md) for why it is keyed on the *outcome* rather than
+nothing — see [the Timebomb mark](the-timebomb-mark.md) for why it is keyed on the *outcome* rather than
 on which side won:
 
 ```ts
-const replaced = trick.envenomTrick && outcome === TrickOutcome.CleanLoss
+const replaced = trick.timebombTrick && outcome === TrickOutcome.CleanLoss
 ```
 
 When `replaced` is true the hit half below is skipped entirely, so `damageToPlayer` stays 0, `cashOut`
 stays 0, and `bank`/`multiplier` pass through untouched rather than resetting. `TrickResolution` also
-gained `envenomTarget: DuelSide | null` — the side owed the delayed hit, crossed to `DuelSide` here
+gained `timebombTarget: DuelSide | null` — the side owed the delayed hit, crossed to `DuelSide` here
 because this module is already the one place that crossing happens.
 
 **On a taken trick** — `bankAdded` is **`1 + bankClimbBonus`** (DLR-92; the bonus is `0` unless a Whetstone
@@ -173,7 +173,7 @@ Three decisions in five lines, and each was made against a live alternative:
 ### How the bonus reaches a pure module without a `RunState` import
 
 The count lives on `RunState` in `src/hunt/run.ts` and this module must never learn what a run is. The
-route is the one DLR-91 established for `poisonGuarded`, followed exactly:
+route is the one DLR-91 established for `blastGuarded`, followed exactly:
 
 ```
 RunState.whetstones
@@ -192,14 +192,14 @@ final phase enforces it, excluding comment lines because two docblocks here and 
 both words precisely to explain why the boundary exists. The practical payoff: "Whetstone" is placeholder
 copy the developer may rename, and a rename touches `src/hunt/` and `shopLabels.ts` only.
 
-**Required on `TrickFacts`, optional on `PlayCardOptions`** — the same split the three poison facts already
+**Required on `TrickFacts`, optional on `PlayCardOptions`** — the same split the three Timebomb facts already
 use. Required on the facts object so the compiler enumerates every producer (there is exactly one:
 `playCard.ts`); optional on the options object so the Quarry's call sites, which pass nothing, needed no
 edit. The widening cost two edits in total rather than thirty-one, because all 30 spec call sites build
 their facts through one `facts()` factory.
 
 **`RoundUiState.bankClimbBonus` is read-only for the hand's whole life** and is deliberately *not* returned
-on `WarCouncilRoundResult`, unlike `envenomCharges` and `poisonGuardHeld`. A hand cannot spend a Whetstone,
+on `WarCouncilRoundResult`, unlike `timebombCharges` and `blastGuardHeld`. A hand cannot spend a Whetstone,
 so handing it back would invite a second writer for a value that never changes. `recordEncounter`'s
 signature did not grow; `whetstones` rides `advanceRun`'s and `recordEncounter`'s existing `...run` spread
 exactly as `coins` does.
@@ -208,12 +208,12 @@ exactly as `coins` does.
 
 ```ts
 const trickHit = !isTaken(outcome) && !replaced          // the pre-existing one
-const poisonResets = trick.poisonToPlayer > 0 && !trick.poisonGuarded  // the new one
+const timebombResets = trick.timebombToPlayer > 0 && !trick.blastGuarded  // the new one
 
 // Owed whether or not the streak resets: a Guard buys back the streak, never the health.
-const damageToPlayer = (trickHit ? DAMAGE_PER_HIT : 0) + trick.poisonToPlayer
+const damageToPlayer = (trickHit ? DAMAGE_PER_HIT : 0) + trick.timebombToPlayer
 
-if (trickHit || poisonResets) {
+if (trickHit || timebombResets) {
   cashOut = bank * multiplier
   bank = 0
   multiplier = 0
@@ -222,23 +222,23 @@ if (trickHit || poisonResets) {
 
 Three things about that shape are the decisions, and each was chosen against a plausible alternative:
 
-- **Poison reaches the same branch rather than a branch of its own.** That is what makes "poison
+- **Timebomb reaches the same branch rather than a branch of its own.** That is what makes "Timebomb
   behaves like any other damage" true *in code* instead of asserted in a comment — one statement of
   what a reset is, so the two triggers cannot drift into meaning different things.
 - **`damageToPlayer` moved out of the cash-out branch.** The health is owed whether or not the streak
   resets, which is what lets a held Guard suppress the reset without also cancelling the hit. The
-  arithmetic is `2` on a trick the player won while poisoned and `3` on one they also lost — that sum is
+  arithmetic is `2` on a trick the player won while primed and `3` on one they also lost — that sum is
   the whole of it, with no third case.
-- **A win banks first, then the poison cashes it.** The `isTaken` climb above runs before this branch,
-  so a streak of 4 winning trick 5 while poisoned cashes **25**, not 16. The alternative — poison landing
+- **A win banks first, then the Timebomb cashes it.** The `isTaken` climb above runs before this branch,
+  so a streak of 4 winning trick 5 while primed cashes **25**, not 16. The alternative — Timebomb landing
   before the climb — is a one-line change and a different feel; this reading was chosen because the trick
   *was* won so it should count, and because the streak visibly climbing and then dying is what makes the
-  poison legible as the cause. It is the one sub-decision the developer was not asked about.
+  Timebomb legible as the cause. It is the one sub-decision the developer was not asked about.
 
-`TrickResolution` gained two fields with it: **`poisonToQuarry`**, carried through so `incomingFrom` can
-sum it, and **`poisonGuardSpent`** (`poisonToPlayer > 0 && poisonGuarded`), which reports that the Guard
+`TrickResolution` gained two fields with it: **`timebombToQuarry`**, carried through so `incomingFrom` can
+sum it, and **`blastGuardSpent`** (`timebombToPlayer > 0 && blastGuarded`), which reports that the Guard
 actually fired so the reducer can flip the run's flag rather than re-deriving "did the Guard matter" —
-that would be a second reading of one rule. See [Poison Guard](../hunt/poison-guard.md).
+that would be a second reading of one rule. See [Blast Guard](../hunt/blast-guard.md).
 
 ### Why `n × n` falls out of the two counters (PT-002)
 
@@ -320,7 +320,7 @@ reopened the ceiling, and left it unbounded in principle**: with `w` Whetstones 
 than a fixed 36, and a cap — if one is ever wanted — belongs in `refusalFor`, not here.
 
 DLR-91's additions are three property reads and a boolean per resolved trick, at most six tricks a
-hand. `poisonToPlayer > 0` is `false` for `NaN`, so a poisoned figure **fails safe by not firing the
+hand. `timebombToPlayer > 0` is `false` for `NaN`, so a primed figure **fails safe by not firing the
 Guard** rather than by spending it silently; `applyDamage`'s own non-finite guard downstream still
 refuses the figure itself.
 
@@ -335,10 +335,10 @@ incomingFrom(resolution): IncomingDamage
 
 The program's only `PlayerSide` → `DuelSide` translation, replacing the retired `duelSideDamage`. It
 is keyed by the side the damage is **applied to**: the player eats `damageToPlayer`, the Quarry eats
-`cashOut` **plus any poison paid at this trick** (DLR-91).
+`cashOut` **plus any Timebomb paid at this trick** (DLR-91).
 
 Summing the Quarry's two sources *here* rather than at the call site is what keeps this the only
-crossing. A reducer that added the poison itself after receiving the record would be a second place
+crossing. A reducer that added the Timebomb itself after receiving the record would be a second place
 that decides which bar a figure depletes.
 
 Existing as one function is the point. A call site building this record by hand is one transposition
@@ -351,7 +351,7 @@ received.
 `playCard.ts` calls it once, when a trick completes, and writes the result onto
 `RoundState.lastResolution`. `playCard` decides nothing about the outcome itself — it reports who won
 (`resolveTrickWinner`), whether the trick was skulled (`trickIsSkulled`) and whether it carried a mark
-(`trickIsEnvenomed`), and forwards the three poison facts **and DLR-92's bank-climb bonus** it was handed
+(`trickIsPrimed`), and forwards the three Timebomb facts **and DLR-92's bank-climb bonus** it was handed
 through `PlayCardOptions`. All **eight** go into the `TrickFacts` literal; every rule stays here.
 
 The rejected alternative was computing the outcome in the reducer from a before/after `RoundState`
@@ -368,10 +368,10 @@ describes and be shown against the next one.
 "cashes once, not twice" case), and the two equality pairs — a dodge against a clean win, eating a
 skull against losing a clean trick — which are what pin the four outcomes to two behaviours.
 
-`bank.test.ts` also pins DLR-91's additions: the 2-or-3 arithmetic on a poisoned trick won and lost, a
-poisoned win cashing the **larger** figure because the win banked first, a held Guard suppressing the
-poison reset while still paying the health, a Guard **not** suppressing a lost trick's own reset and not
-being spent by it, and `incomingFrom` summing the Quarry's cash-out with its poison.
+`bank.test.ts` also pins DLR-91's additions: the 2-or-3 arithmetic on a primed trick won and lost, a
+primed win cashing the **larger** figure because the win banked first, a held Guard suppressing the
+Timebomb reset while still paying the health, a Guard **not** suppressing a lost trick's own reset and not
+being spent by it, and `incomingFrom` summing the Quarry's cash-out with its Timebomb.
 
 **The headline spec is `pays n × n across a whole unbroken streak`** (PT-002), which replaced the
 design's worked rank-sum hand and its `[0, 0, 0, 129, 0, 44]` sequence. It walks a streak from 1 to 6,

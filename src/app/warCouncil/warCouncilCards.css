@@ -155,7 +155,7 @@
    both marks stays legible. A ringed badge rather than a bare tinted glyph, per `game-ux`'s
    "state reads without motion or colour alone": the ring is the form signal, the fill colour is
    secondary. PLACEHOLDER glyph and hue — the developer's to retune. */
-.wc-card .wc-venom-mark {
+.wc-card .wc-primed-mark {
   position: absolute;
   bottom: calc(var(--wc-card-w) * 0.07);
   left: calc(var(--wc-card-w) * 0.08);
@@ -166,7 +166,7 @@
   height: calc(var(--wc-card-w) * 0.24);
   border-radius: 50%;
   border: 2px solid var(--wc-parchment);
-  background: var(--wc-poison-edge);
+  background: var(--wc-timebomb-edge);
   color: var(--wc-parchment);
   font-size: calc(var(--wc-card-w) * 0.13);
   line-height: 1;

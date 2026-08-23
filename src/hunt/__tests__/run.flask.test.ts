@@ -130,7 +130,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
       wonEncounter(at.encounter, 3),
       at.cheats,
       at.timebombCharges,
-      at.poisonGuardHeld,
+      at.blastGuardHeld,
       at.discardsRemaining,
       null,
     )
@@ -144,7 +144,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
       wonEncounter(at.encounter, 3),
       at.cheats,
       at.timebombCharges,
-      at.poisonGuardHeld,
+      at.blastGuardHeld,
       at.discardsRemaining,
       null,
     )
@@ -158,7 +158,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
       wonEncounter(at.encounter, 3),
       at.cheats,
       at.timebombCharges,
-      at.poisonGuardHeld,
+      at.blastGuardHeld,
       at.discardsRemaining,
       null,
     )
@@ -185,7 +185,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
       lost,
       at.cheats,
       at.timebombCharges,
-      at.poisonGuardHeld,
+      at.blastGuardHeld,
       at.discardsRemaining,
       null,
     )

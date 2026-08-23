@@ -14,15 +14,15 @@ import {
 
 const START: BankState = { bank: 0, multiplier: 0 }
 
-/** The eight facts, defaulted to an ordinary unmarked non-final unpoisoned trick. */
+/** The eight facts, defaulted to an ordinary unmarked non-final unprimed trick. */
 const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
   playerWon: false,
   skullTrick: false,
   finalTrick: false,
   timebombTrick: false,
-  poisonToPlayer: 0,
-  poisonToQuarry: 0,
-  poisonGuarded: false,
+  timebombToPlayer: 0,
+  timebombToQuarry: 0,
+  blastGuarded: false,
   bankClimbBonus: 0,
   ...over,
 })
@@ -270,83 +270,83 @@ describe('resolveTrickBank — a marked trick (DLR-90 AC3, AC5, AC6)', () => {
   })
 })
 
-describe('resolveTrickBank — poison retimed to the trick that pays it (DLR-91 D1/D3)', () => {
-  it('D3 — poison owed to the player cashes the streak out and resets it, even on a trick they won', () => {
+describe('resolveTrickBank — Timebomb retimed to the trick that pays it (DLR-91 D1/D3)', () => {
+  it('D3 — Timebomb owed to the player cashes the streak out and resets it, even on a trick they won', () => {
     const before = { bank: 4, multiplier: 4 }
-    const r = resolveTrickBank(before, facts({ playerWon: true, poisonToPlayer: 2 }))
+    const r = resolveTrickBank(before, facts({ playerWon: true, timebombToPlayer: 2 }))
     // A1 — the win banks FIRST, so the cash-out is 5 x 5, not 4 x 4.
     expect(r.bankAdded).toBe(1)
     expect(r.cashOut).toBe(16)
     expect(r.bank).toBe(0)
     expect(r.multiplier).toBe(0)
-    // D2 — 2 on a trick the player won: no DAMAGE_PER_HIT, only the poison.
+    // D2 — 2 on a trick the player won: no DAMAGE_PER_HIT, only the Timebomb.
     expect(r.damageToPlayer).toBe(2)
   })
 
-  it('D2 — a trick the player loses while poisoned costs the trick’s damage AND the poison', () => {
-    const r = resolveTrickBank({ bank: 3, multiplier: 3 }, facts({ poisonToPlayer: 2 }))
+  it('D2 — a trick the player loses while primed costs the trick’s damage AND the Timebomb', () => {
+    const r = resolveTrickBank({ bank: 3, multiplier: 3 }, facts({ timebombToPlayer: 2 }))
     expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT + 2)
     expect(r.cashOut).toBe(6)
     expect(r.multiplier).toBe(0)
   })
 
-  it('D1 — poison owed to the Quarry never touches the player’s streak', () => {
+  it('D1 — Timebomb owed to the Quarry never touches the player’s streak', () => {
     const r = resolveTrickBank(
       { bank: 2, multiplier: 2 },
-      facts({ playerWon: true, poisonToQuarry: 4 }),
+      facts({ playerWon: true, timebombToQuarry: 4 }),
     )
     expect(r.bank).toBe(3)
     expect(r.multiplier).toBe(3)
     expect(r.damageToPlayer).toBe(0)
-    expect(r.poisonToQuarry).toBe(4)
+    expect(r.timebombToQuarry).toBe(4)
   })
 
-  it('D1 — incomingFrom sums the Quarry’s cash-out and its poison into one figure', () => {
-    const r = resolveTrickBank({ bank: 2, multiplier: 2 }, facts({ poisonToQuarry: 4 }))
+  it('D1 — incomingFrom sums the Quarry’s cash-out and its Timebomb into one figure', () => {
+    const r = resolveTrickBank({ bank: 2, multiplier: 2 }, facts({ timebombToQuarry: 4 }))
     expect(incomingFrom(r)[DuelSide.Quarry]).toBe(r.cashOut + 4)
     expect(incomingFrom(r)[DuelSide.Player]).toBe(DAMAGE_PER_HIT)
   })
 })
 
-describe('resolveTrickBank — the Poison Guard (DLR-91 AC4/AC5, A4/A5)', () => {
+describe('resolveTrickBank — the Blast Guard (DLR-91 AC4/AC5, A4/A5)', () => {
   it('AC4 — a held Guard leaves the streak standing but does not refund the health', () => {
     const r = resolveTrickBank(
       { bank: 4, multiplier: 4 },
-      facts({ playerWon: true, poisonToPlayer: 2, poisonGuarded: true }),
+      facts({ playerWon: true, timebombToPlayer: 2, blastGuarded: true }),
     )
     expect(r.bank).toBe(5)
     expect(r.multiplier).toBe(5)
     expect(r.cashOut).toBe(0)
     expect(r.damageToPlayer).toBe(2)
-    expect(r.poisonGuardSpent).toBe(true)
+    expect(r.blastGuardSpent).toBe(true)
   })
 
   it('A4 — a Guard does NOT save the streak from the trick’s own hit, and is not spent by it', () => {
     const r = resolveTrickBank(
       { bank: 4, multiplier: 4 },
-      facts({ playerWon: false, poisonToPlayer: 0, poisonGuarded: true }),
+      facts({ playerWon: false, timebombToPlayer: 0, blastGuarded: true }),
     )
     expect(r.cashOut).toBe(10)
     expect(r.multiplier).toBe(0)
-    expect(r.poisonGuardSpent).toBe(false)
+    expect(r.blastGuardSpent).toBe(false)
   })
 
-  it('A5 — a Guard is not spent on a trick that owed the player no poison', () => {
+  it('A5 — a Guard is not spent on a trick that owed the player no Timebomb', () => {
     const r = resolveTrickBank(
       { bank: 1, multiplier: 1 },
-      facts({ playerWon: true, poisonToPlayer: 0, poisonToQuarry: 4, poisonGuarded: true }),
+      facts({ playerWon: true, timebombToPlayer: 0, timebombToQuarry: 4, blastGuarded: true }),
     )
-    expect(r.poisonGuardSpent).toBe(false)
+    expect(r.blastGuardSpent).toBe(false)
   })
 
-  it('AC5 — a Guard does nothing to poison owed to the Quarry', () => {
+  it('AC5 — a Guard does nothing to Timebomb owed to the Quarry', () => {
     const guarded = facts({
       playerWon: true,
-      poisonToPlayer: 0,
-      poisonToQuarry: 4,
-      poisonGuarded: true,
+      timebombToPlayer: 0,
+      timebombToQuarry: 4,
+      blastGuarded: true,
     })
-    const bare = { ...guarded, poisonGuarded: false }
+    const bare = { ...guarded, blastGuarded: false }
     expect(incomingFrom(resolveTrickBank({ bank: 0, multiplier: 0 }, guarded))).toEqual(
       incomingFrom(resolveTrickBank({ bank: 0, multiplier: 0 }, bare)),
     )
@@ -355,9 +355,9 @@ describe('resolveTrickBank — the Poison Guard (DLR-91 AC4/AC5, A4/A5)', () => 
   it('AC4 — a Guard fires and is spent even with no streak in progress', () => {
     const r = resolveTrickBank(
       { bank: 0, multiplier: 0 },
-      facts({ playerWon: true, poisonToPlayer: 2, poisonGuarded: true }),
+      facts({ playerWon: true, timebombToPlayer: 2, blastGuarded: true }),
     )
-    expect(r.poisonGuardSpent).toBe(true)
+    expect(r.blastGuardSpent).toBe(true)
   })
 })
 

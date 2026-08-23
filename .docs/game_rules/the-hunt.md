@@ -7,23 +7,23 @@ player follows, stated once, in playing order.
 Last reviewed against the code and the design on **2026-08-23**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
 
-> **You can see a poison hit coming now — DLR-101, 2026-08-23.** Poisoning a card books damage that
+> **You can see a Timebomb hit coming now — DLR-101, 2026-08-23.** Priming a card books damage that
 > lands at the next trick's resolution, and until today **nothing on the felt showed the booking
-> existed**: a poisoned trick was lost, 4 damage was correctly owed by the Quarry, and its row still
+> existed**: a primed trick was lost, 4 damage was correctly owed by the Quarry, and its row still
 > showed every heart standing. Now the hearts the booked hit has already claimed are **drawn
 > differently from the hearts a streak merely threatens** — on **either** bar, whichever side owes
 > it — and they stay that way until the hit lands. The reading is spoken as well as drawn: the bar's
 > value now names the two figures **separately**, so damage nothing can stop is never described as
 > merely "at risk". And **the trick that books a hit says so as it resolves**, naming the side and
-> the amount. No rule changed — the amounts, the timing, and everything a poisoned trick does are
+> the amount. No rule changed — the amounts, the timing, and everything a primed trick does are
 > exactly as they were (sections 4, 7 and 8).
 >
-> **A held Poison Guard is still invisible**, and that seam is sharper than it was: you can now see
-> poison booked against you that a Guard you are carrying may cancel, and nothing on screen says you
+> **A held Blast Guard is still invisible**, and that seam is sharper than it was: you can now see
+> Timebomb booked against you that a Guard you are carrying may cancel, and nothing on screen says you
 > are carrying it. Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
 >
 > **Nobody has looked at it yet.** This landed in an unattended run that skipped its approval gates,
-> the choice to draw booked poison as its own state rather than reusing the at-risk one was made by
+> the choice to draw booked Timebomb as its own state rather than reusing the at-risk one was made by
 > default rather than decided, the copy is placeholder, and **the hearts were never seen painting in
 > a real browser** — they are proven by tests, not by looking. All of that is the developer's to
 > confirm, and it is why the rows below are marked `[provisional]`.
@@ -49,7 +49,7 @@ the app today except where a rule is marked **[not built]**.
 > multiplier into the Quarry **in full**, both counters reset, and it costs you **no health** (section 7).
 >
 > **And the automatic cash-out got worse, which is the whole point.** A hit you did not choose — a clean
-> loss, a skull you ate, or poison landing on you — now pays only **two-thirds** of `bank × multiplier`,
+> loss, a skull you ate, or Timebomb landing on you — now pays only **two-thirds** of `bank × multiplier`,
 > rounded down. So a six-trick streak is worth **36** if you cash it yourself and **24** if you are caught
 > holding it. The end-of-hand cash-out is **untouched** and still pays in full.
 >
@@ -57,7 +57,7 @@ the app today except where a rule is marked **[not built]**.
 > take the certain full value now, or push the streak and risk being paid a third less. **Engine and screen
 > landed together**, and QA drove the poise-then-commit through a real browser.
 >
-> **It is locked while poison is pending**, which is the design decision recorded here as `[not built]`
+> **It is locked while Timebomb is pending**, which is the design decision recorded here as `[not built]`
 > since 2026-08-19 and enforced from today (section 8).
 
 > **You have a flask, and it is free — DLR-93, 2026-08-20.** Everything that has ever restored your
@@ -98,19 +98,19 @@ the app today except where a rule is marked **[not built]**.
 > engine and **not yet watched on screen**. Recorded under
 > [Known tensions](#known-tensions-recorded-not-resolved).
 
-> **A mutual kill is now yours, and you can buy insurance against your own poison — DLR-91,
+> **A mutual kill is now yours, and you can buy insurance against your own Timebomb — DLR-91,
 > 2026-08-19.** Three changes landed together, and the first one is easy to miss because it is a
 > **reordering**: when an event would empty both bars, **the Quarry's is settled first and you take no
 > damage from that event at all**. So a cash-out that kills the Quarry saves you the hit that would have
 > landed with it, and a mutual kill is a **win**. It used to be a loss.
 >
-> **Second, poison now lands at the resolution of the next trick, not at the deal of the next hand** — and
+> **Second, Timebomb now lands at the resolution of the next trick, not at the deal of the next hand** — and
 > when it lands on you it **cashes out your streak** exactly as any other damage does, so a run you were
 > building is spent at a moment you did not choose. The amounts are no longer the same on both sides: **4
 > against the Quarry, 2 against you.**
 >
-> **Third, the fight-long shelf finally has something on it: a Poison Guard, 1 coin.** Buy it between
-> fights and it is live for **exactly the next fight**. The first time your own poison lands on you, you
+> **Third, the fight-long shelf finally has something on it: a Blast Guard, 1 coin.** Buy it between
+> fights and it is live for **exactly the next fight**. The first time your own Timebomb lands on you, you
 > still lose the 2 health but **your streak survives** — and the Guard is spent, whether or not there was a
 > streak worth saving. It is gone when the fight ends either way, and you may only hold one at a time.
 > See [section 4](#4-playing-a-trick), [section 7](#7-the-four-outcomes-the-bank-and-the-streak),
@@ -122,26 +122,26 @@ the app today except where a rule is marked **[not built]**.
 > cost you health.** The correct play is sometimes not to hold one, and nothing on screen warns you.
 > Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
 
-> **You can poison a card, and the trick it wins pays for it — DLR-90, 2026-08-19.**
-> The shop sells a third thing: **Envenom**, 2 coins, on the one-time-use shelf. It is not spent when you
+> **You can prime a card, and the trick it wins pays for it — DLR-90, 2026-08-19.**
+> The shop sells a third thing: **Timebomb**, 2 coins, on the one-time-use shelf. It is not spent when you
 > buy it — it is a **charge you carry across fights**, and you spend it during a hand. A plate in the felt
-> rail beneath the Cheat rail takes **two taps to arm**, and then **a tap on any card in your hand poisons
+> rail beneath the Cheat rail takes **two taps to arm**, and then **a tap on any card in your hand Timebombs
 > it** — including a card that would be illegal to play, because marking is not a move. Play that card and
 > **the trick resolves by the normal rules**: the same side wins it, and it banks the same. Then, **at the
-> next trick's resolution, whoever won the poisoned trick takes the damage** (DLR-90 paid it at the deal of
+> next trick's resolution, whoever won the primed trick takes the damage** (DLR-90 paid it at the deal of
 > the next hand; DLR-91 retimed it).
 >
-> **The reason it is worth 2 coins is what happens when you lose the trick.** A poisoned trick the Quarry
+> **The reason it is worth 2 coins is what happens when you lose the trick.** A primed trick the Quarry
 > wins **cleanly costs you nothing at all** — no health lost, and your bank and multiplier **survive
 > uncashed** rather than resetting. So a card you expected to throw away becomes a free strike. If you win
-> the poisoned trick instead, it is an ordinary clean win and **the damage lands on you** — **2, not 4**,
+> the primed trick instead, it is an ordinary clean win and **the damage lands on you** — **2, not 4**,
 > and it cashes out your streak with it. **If the fight ends before the hit is paid, the queued damage is
 > thrown away.** See [section 4](#4-playing-a-trick) and
 > [section 7](#7-the-four-outcomes-the-bank-and-the-streak). **Engine and screen landed together.**
 >
 > **Nothing on screen tells you the delayed damage landed.** Hearts simply disappear mid-hand — 2 of them,
 > on a bar of 10 — and your streak vanishes with them, with no line, no flash and no announcement naming
-> the cause. **Since 2026-08-23 you are at least told the hit is coming**: pending poison is drawn on the
+> the cause. **Since 2026-08-23 you are at least told the hit is coming**: pending Timebomb is drawn on the
 > bar that owes it and named by the trick that books it. **A held Guard is still invisible**, and so is
 > the moment of landing itself. No rule required either surface and choosing one is a judgement call, so
 > neither was invented. Recorded under
@@ -292,16 +292,16 @@ Seven ranks carry a name, and the name is what the rules refer to:
 | 3    | **Fox**        |
 | 5    | **Woodcutter** |
 | 7    | **Treasure**   |
-| 8    | **Poison**     |
+| 8    | **Timebomb**     |
 | 9    | **Witch**      |
 | 11   | **Monarch**    |
 
 There are no other cards. The base game's three expansion modules — special cards, goal cards, and
-the Poison-8 swap — are not in this game (see
-[What this game does not have](#11-what-this-game-does-not-have)). The **Poison** name sits on the
+the Timebomb-8 swap — are not in this game (see
+[What this game does not have](#11-what-this-game-does-not-have)). The **Timebomb** name sits on the
 ordinary rank 8 of all three suits, not on a separate module card.
 
-> **The Poison name is now actively misleading, and that is a known problem.** The skull (section 3)
+> **The Timebomb name is now actively misleading, and that is a known problem.** The skull (section 3)
 > is a **separate marker** that can sit on any rank from 2 upward — it is not rank 8, and rank 8 has
 > nothing to do with it. Play-test 2 §6 Q3 records renaming rank 8 as an open question. It is
 > recorded under [Known tensions](#known-tensions-recorded-not-resolved).
@@ -502,12 +502,12 @@ goes into a free slot ([section 10](#10-between-hands-and-the-run)). You still h
 two at once: with both slots full the shop refuses the purchase and says so. So a run's total supply
 is two at a time, replenished for a coin whenever you have spent one.
 
-### Envenom — poisoning a card before you play it
+### Timebomb — priming a card before you play it
 
 **[settled]** — the procedure; **the price and the damage** are **[provisional]**, below, and
 **whether three taps to mark a card feels right** is **[open]**.
 
-You hold some number of **Envenom charges**, bought at the shop for 2 coins each and carried across
+You hold some number of **Timebomb charges**, bought at the shop for 2 coins each and carried across
 fights exactly as Cheats and health are. **There is no cap** — coins are the only limit — and a plate in
 the felt rail beneath the Cheat rail shows how many you hold for the whole hand, whether that is any or
 none.
@@ -519,35 +519,35 @@ none.
 2. **The second tap arms it.** Every card in your hand becomes tappable — **including cards that are
    illegal to play**, which is the point, because the item exists to give a card you expect to lose with
    a reason to be played.
-3. **The third tap is on a card in your hand, and poisons it.** One charge is spent, and the card is
+3. **The third tap is on a card in your hand, and Timebombs it.** One charge is spent, and the card is
    marked from then on.
 
 **A third tap on the plate instead gives the charge back**, unspent. So does pressing Escape. Nothing is
 spent until you tap a card.
 
-**A poisoned card is marked wherever it renders** — in your hand, in the trick once you have played it,
+**A primed card is marked wherever it renders** — in your hand, in the trick once you have played it,
 in an ability prompt that offers it, and on the decree if the Fox exchanges it there. The mark is
 announced as part of the card's name, so it does not depend on seeing the glyph.
 
-**Arming Envenom and arming a Cheat are mutually exclusive.** Both change what a tap on a hand card
-means, so tapping either control clears the other, and arming Envenom also drops a card you had armed to
+**Arming Timebomb and arming a Cheat are mutually exclusive.** Both change what a tap on a hand card
+means, so tapping either control clears the other, and arming Timebomb also drops a card you had armed to
 play.
 
-**Playing a poisoned card changes nothing about the trick itself.** The same side wins it by the same
+**Playing a primed card changes nothing about the trick itself.** The same side wins it by the same
 rules, and it banks the same. What it adds is a **delayed hit** owed to **whichever side won that
 trick**, paid when the **next** trick resolves — **4 if the Quarry won it, 2 if you did.** Section 7
 states what the trick's own outcome does and what the hit does to your streak, and section 8 states when
 the damage lands.
 
-**You may poison more than one card in a hand** if you hold more than one charge, and the hits accumulate
+**You may Timebomb more than one card in a hand** if you hold more than one charge, and the hits accumulate
 — on either side, or on both.
 
-**Once a poisoned card has been played and its trick resolved, the hit it booked is shown.** The trick
+**Once a primed card has been played and its trick resolved, the hit it booked is shown.** The trick
 says who owes it and how much as it resolves, and the hearts the hit has already claimed are drawn
 distinctly on that side's row until it lands (section 8). Before that — while the card is only marked —
 nothing yet owes anything, so there is nothing to show.
 
-> **A poisoned card can leave your hand without ever being played, and the charge is simply wasted.** The
+> **A primed card can leave your hand without ever being played, and the charge is simply wasted.** The
 > Woodcutter can bury it on the bottom of the draw pile, and the Fox can exchange it into the decree and
 > you may never take it back. Nothing warns you and nothing refunds you.
 
@@ -567,7 +567,7 @@ and draw the same number blind off the top of the draw pile. Hand size never cha
 the drawn cards is shown before you commit; you find out what you got by looking at your new hand.
 
 **The moment this is available reaches one step further back than every other rail control.**
-Cheats and Envenom only ever open while it is your own turn to act. A discard also opens **before
+Cheats and Timebomb only ever open while it is your own turn to act. A discard also opens **before
 the Quarry has led** — while you are looking at "What the Quarry holds" and the trick has not yet
 started — so you can throw against the shape you can see rather than against a lead already on the
 table. It is never available mid-trick, and never while a trick's reveal is still on screen.
@@ -598,7 +598,7 @@ convention every other rail control uses.
 A fight gives you **3** discards, and one throw can hold up to **3** cards. Both figures are the
 developer's, set 2026-08-19, and both are explicitly a first guess rather than a considered choice —
 the design's own instruction for them is "ship it, play it, move it." The budget resets at the start
-of every fight and carries across every hand within it, the same way Cheats and Envenom charges do.
+of every fight and carries across every hand within it, the same way Cheats and Timebomb charges do.
 
 ---
 
@@ -616,7 +616,7 @@ does nothing either.
 | 3    | **Fox**        | On playing it, you **may** exchange the decree card for a card from your hand. The exchanged card becomes the new decree, and its suit becomes the new trump suit. You may decline.            |
 | 5    | **Woodcutter** | On playing it, **draw the top card of the draw pile**, then put **one card** from your hand — the drawn card or one you already held — on the **bottom** of the pile.                          |
 | 7    | **Treasure**   | **No effect at all.** A named card with no rule attached.                                                                                                                                      |
-| 8    | **Poison**     | **No effect at all.** A named card with no rule attached. It has nothing to do with skulls — **and nothing to do with Envenom's poisoned cards** (section 4), a second collision on this name. |
+| 8    | **Timebomb**     | **No effect at all.** A named card with no rule attached. It has nothing to do with skulls — **and nothing to do with Timebomb's primed cards** (section 4), a second collision on this name. |
 | 9    | **Witch**      | If a trick contains **exactly one** Witch, that Witch counts as trump when the winner is decided. **Two Witches cancel** — neither is treated as trump.                                        |
 | 11   | **Monarch**    | Narrows the follower's legal play — see section 4.                                                                                                                                             |
 
@@ -705,18 +705,18 @@ A clean loss and eating a skull are **identical in every respect** but their nam
 **The two-thirds is the cost of being caught, and it is the only cash-out that pays it.** Since
 2026-08-20 you can cash the bank yourself, in full, whenever it is your move (below) — so a hit you did
 not choose pays less than one you did. Applying yourself and the end-of-hand cash both pay the **whole**
-`bank × multiplier`; a clean loss, an eaten skull and poison landing on you all pay **two-thirds of it**.
+`bank × multiplier`; a clean loss, an eaten skull and Timebomb landing on you all pay **two-thirds of it**.
 See `hybrid-design.md` version-4-scope §3.
 
 **It always rounds down**, so the Quarry is never paid more than the rule says by a rounding artefact. A
 streak worth 1 therefore pays **nothing at all** when it is caught, and a streak worth 4 pays 2.
 
-### A poisoned trick the Quarry wins cleanly costs you nothing — **[settled]**
+### A primed trick the Quarry wins cleanly costs you nothing — **[settled]**
 
-Since 2026-08-19 there is **one exception** to the paragraph above, and it is the whole reason Envenom
+Since 2026-08-19 there is **one exception** to the paragraph above, and it is the whole reason Timebomb
 (section 4) is worth buying.
 
-If a **poisoned** card was played into the trick **and** the outcome would have been a **clean loss**, the
+If a **primed** card was played into the trick **and** the outcome would have been a **clean loss**, the
 outcome is **replaced rather than added to**:
 
 - you take **no damage**;
@@ -729,21 +729,21 @@ next trick resolves (section 8).
 
 **It applies to a clean loss only, and that is deliberate.** A **dodge** is also a trick the Quarry won,
 but a dodge is one you **bank** — so there is nothing there to replace, and treating it as replaced would
-delete a bank you had already earned. A dodge on a poisoned trick therefore banks exactly as it always
+delete a bank you had already earned. A dodge on a primed trick therefore banks exactly as it always
 does, _and_ queues the delayed hit against the Quarry.
 
-**Winning a poisoned trick is an ordinary win, with no exception at all.** A clean win banks 1 and climbs
+**Winning a primed trick is an ordinary win, with no exception at all.** A clean win banks 1 and climbs
 the multiplier; **eating a skull still costs you the damage and still cashes and resets your bank**, on
-top of the delayed hit landing on you at the next trick. Nothing about poison softens a skull you chose to
-eat — and neither does a Poison Guard, which covers the delayed hit alone.
+top of the delayed hit landing on you at the next trick. Nothing about Timebomb softens a skull you chose to
+eat — and neither does a Blast Guard, which covers the delayed hit alone.
 
-> **The skull case is the harshest available reading, and no design document covers it.** Poison waives
-> only the Quarry-win case; nothing says it should also waive a skull. So a poisoned trick you win that is
+> **The skull case is the harshest available reading, and no design document covers it.** Timebomb waives
+> only the Quarry-win case; nothing says it should also waive a skull. So a primed trick you win that is
 > _also_ a skull trick costs you the skull's damage now **and** 2 more at the next trick. Confirming that, or
 > deciding the mark should suppress that case too, is the developer's — it is recorded under
 > [Known tensions](#known-tensions-recorded-not-resolved).
 
-> **A dodge on a poisoned trick is a free bonus, and nobody designed it.** You bank the trick, keep your
+> **A dodge on a primed trick is a free bonus, and nobody designed it.** You bank the trick, keep your
 > streak, and the Quarry takes 4 at the next trick — for a card you played expecting to lose with it. It falls out
 > of the two rules above rather than from a decision, and it is recorded under
 > [Known tensions](#known-tensions-recorded-not-resolved).
@@ -752,25 +752,25 @@ eat — and neither does a Poison Guard, which covers the delayed hit alone.
 hand, the bank that survived it cashes at the end of the hand under the ordinary rule below — there is
 something left to pay, precisely because the loss did not reset it.
 
-### Poison landing on you cashes out your streak — **[settled]**; the amounts are **[provisional]**
+### Timebomb landing on you cashes out your streak — **[settled]**; the amounts are **[provisional]**
 
 Since 2026-08-19 there is a **second** way your streak can end, and it is not a trick you lost.
 
-When poison you owe (section 4) lands on **you**, it behaves like any other damage you take: you lose the
+When Timebomb you owe (section 4) lands on **you**, it behaves like any other damage you take: you lose the
 health, your bank **cashes out** at the current multiplier into the Quarry, and bank and multiplier both
-**reset to zero**. It makes no difference whether you won or lost the trick that the poison was paid at.
+**reset to zero**. It makes no difference whether you won or lost the trick that the Timebomb was paid at.
 
 **It is a hit you did not choose, so it cashes at the reduced two-thirds rate** like every other forced
-cash-out (above). Poison is the case this document calls "the moment you cannot choose", which is exactly
-what the reduction charges for — paying it in full would make being poisoned the _cheapest_ way to lose a
+cash-out (above). Timebomb is the case this document calls "the moment you cannot choose", which is exactly
+what the reduction charges for — paying it in full would make being primed the _cheapest_ way to lose a
 streak, which inverts the item the rule sits beside.
 
-- **On a trick you also lost, the two add up.** You take 1 for the trick plus 2 for the poison — **3**,
+- **On a trick you also lost, the two add up.** You take 1 for the trick plus 2 for the Timebomb — **3**,
   and one cash-out, not two.
-- **On a trick you won, the trick banks first and then the poison cashes it.** So a streak of four that
-  wins the fifth trick while poisoned cashes on a bank of five rather than four — **16**, not 10: the
-  trick was won, so it counts, and then the poison spends it at two-thirds.
-- **The Quarry has no equivalent.** Poison landing on the Quarry is health and nothing else; the Quarry
+- **On a trick you won, the trick banks first and then the Timebomb cashes it.** So a streak of four that
+  wins the fifth trick while primed cashes on a bank of five rather than four — **16**, not 10: the
+  trick was won, so it counts, and then the Timebomb spends it at two-thirds.
+- **The Quarry has no equivalent.** Timebomb landing on the Quarry is health and nothing else; the Quarry
   holds no bank and no streak to lose.
 
 **This is why the two amounts differ.** Your 2 is half the Quarry's 4 (both figures and their status: section 8) because your side of the hit also
@@ -782,9 +782,9 @@ takes the streak, which is often worth far more than the health (`hybrid-design.
 > as tension or as an ambush is recorded under
 > [Known tensions](#known-tensions-recorded-not-resolved).
 
-### A Poison Guard buys back the streak, not the health — **[settled]**; its price and the amount it lets through are **[provisional]**
+### A Blast Guard buys back the streak, not the health — **[settled]**; its price and the amount it lets through are **[provisional]**
 
-If you are holding a **Poison Guard** (section 10) when your own poison lands on you:
+If you are holding a **Blast Guard** (section 10) when your own Timebomb lands on you:
 
 - you still take the **2 damage**;
 - your bank and your multiplier **survive**, at the values they already held;
@@ -795,7 +795,7 @@ while a Guard is held, and does not consume it**; so does eating a skull. A Guar
 damage and never was: a 1-coin item that insured against every hit in the game would remove the reason
 losing a trick matters.
 
-**It does nothing at all when the poison lands on the Quarry**, because that case already costs you
+**It does nothing at all when the Timebomb lands on the Quarry**, because that case already costs you
 nothing.
 
 ### The bank
@@ -895,7 +895,7 @@ into the Quarry's health, resets bank and multiplier to zero, and **costs you no
 - **It takes two taps.** The first poises the control; the second spends the streak. The cash-out cannot
   be undone, so a single misclick must not be able to spend a hand's work. Pressing `Escape`, or tapping
   away, cancels a poise.
-- **It is refused, with the reason stated on the control**, when your bank is empty, when a poison hit is
+- **It is refused, with the reason stated on the control**, when your bank is empty, when a Timebomb hit is
   still owed (below), or when it is not your move.
 - **The trick then proceeds exactly as normal.** You still play your card, it still resolves by the
   ordinary rules — just against a bank and multiplier of zero. Applying damage is not a turn, and it does
@@ -1033,7 +1033,7 @@ applied. There is no third row and no tie: both bars cannot be empty at once.
 > 2026-08-19). Both bars were depleted before either was checked, and a tie went to the Quarry. See
 > `hybrid-design.md` §9, which records the reversal rather than the argument for it.
 
-> **It applies to all damage, not only to poison.** The reordering was made for poison's sake and then
+> **It applies to all damage, not only to Timebomb.** The reordering was made for Timebomb's sake and then
 > deliberately generalised, so there is one rule about which bar settles first rather than one per source.
 > Nothing was retuned in response — **no health total, damage figure or Quarry curve moved** — so the game
 > is measurably easier at exactly the moments that used to be fatal. That is a choice, not a side effect.
@@ -1046,29 +1046,29 @@ bar stops at zero.
 > than a third of all damage dealt is thrown away. Paying the surplus back as currency is a stated
 > intention and is **[not built]** — see [section 10](#10-between-hands-and-the-run).
 
-### A poisoned trick's damage lands at the resolution of the next trick — **[settled]**; its amounts are **[provisional]**
+### A primed trick's damage lands at the resolution of the next trick — **[settled]**; its amounts are **[provisional]**
 
-One kind of damage does **not** land when the trick that caused it resolves. A poisoned card
+One kind of damage does **not** land when the trick that caused it resolves. A primed card
 (section 4) books damage **against whichever side won the trick it was played into**, and that damage is
 paid **as part of the next trick's own damage** instead — folded in, not applied as a second event.
 
 - It hits the **Quarry** if the Quarry won the trick, and **you** if you won it — but **not for the same
   amount**: **4 against the Quarry, 2 against you.**
 - **Your share cashes out your streak**, exactly as damage from a lost trick does, unless you are holding
-  a Poison Guard. Section 7 states that rule; the Quarry has no counterpart to it.
-- Two poisoned tricks both land, on either side or on both, and the amounts add up.
+  a Blast Guard. Section 7 states that rule; the Quarry has no counterpart to it.
+- Two primed tricks both land, on either side or on both, and the amounts add up.
 - It goes through the same clamp as every other damage: a bar stops at zero and the surplus is discarded.
   It is also subject to the Quarry-first ordering above.
 - **It can kill.** A delayed hit that empties a bar ends the fight, and ends the run if the bar was
   yours — exactly as any other killing blow does.
-- **A poisoned trick that is the last of a hand carries over**: the hit is paid at the first trick of the
+- **A primed trick that is the last of a hand carries over**: the hit is paid at the first trick of the
   next hand, because nothing happens at a hand boundary.
 - **If the fight ends before the hit is paid, the queued damage is discarded.** It is never carried into
-  the next fight, and never into the next run. That includes the case where the poisoned trick's own
+  the next fight, and never into the next run. That includes the case where the primed trick's own
   cash-out is what ended the fight.
 
 **The Quarry's 4** is the same figure as one fight's worth of damage and as the shop's heal,
-deliberately, so poison reads on a scale you already know — it is transcribed from the design doc. **Your
+deliberately, so Timebomb reads on a scale you already know — it is transcribed from the design doc. **Your
 own 2** is a separate, smaller figure the developer chose on 2026-08-19, halved because your side of the
 hit also takes the streak. Whether 2-and-4 is the right size only shows in play, which is why the amounts
 are **[provisional]** while the timing is settled.
@@ -1077,8 +1077,8 @@ are **[provisional]** while the timing is settled.
 > which meant it could not interact with a streak at all — a hand boundary already cashes everything.
 > Moving it inside the hand is what gave it teeth. See `hybrid-design.md` version-4-scope §1.
 
-> **Two poisoned cards in the SAME trick still owe only one hit.** A trick is either poisoned or it is
-> not; nothing counts how many marked cards were in it. Separate poisoned tricks do stack. Recorded under
+> **Two primed cards in the SAME trick still owe only one hit.** A trick is either primed or it is
+> not; nothing counts how many marked cards were in it. Separate primed tricks do stack. Recorded under
 > [Known tensions](#known-tensions-recorded-not-resolved).
 
 > **You are shown the hit is coming, but not the moment it lands.** Since 2026-08-23 the health rows
@@ -1093,11 +1093,11 @@ are **[provisional]** while the timing is settled.
 
 The hearts a booked hit will take are drawn as **standing but claimed**, distinct from both an
 untouched heart and a heart the banked streak merely threatens, and they sit **nearest the depleting
-edge** of the two — poison lands first and cannot be avoided, while a streak preview evaporates if the
+edge** of the two — Timebomb lands first and cannot be avoided, while a streak preview evaporates if the
 streak breaks. The bar's spoken value states the two figures as separate readings rather than summing
 them. Both bars use it; the streak preview remains the Quarry's alone.
 
-It is `[provisional]` for three reasons, all of them the developer's: **whether booked poison deserves
+It is `[provisional]` for three reasons, all of them the developer's: **whether booked Timebomb deserves
 its own reading at all** rather than reusing the at-risk one was decided by default in an unattended
 run rather than chosen; the tone it is drawn at is a placeholder nobody picked; and **it has never been
 seen on screen** — it is proven by tests, not by looking. Whether the row still separates at a glance
@@ -1105,15 +1105,15 @@ at the third fight's eighteen hearts, with a streak preview and a booked hit on 
 question that decides it. See `hybrid-design.md` version-4-scope §1 for the mechanic; the readout
 itself answers to no design section, because none covers it.
 
-### Applying damage cannot be delayed while poison is pending — **[settled]** since 2026-08-20
+### Applying damage cannot be delayed while Timebomb is pending — **[settled]** since 2026-08-20
 
-The design decided (2026-08-19) that **Apply Damage** (section 7) must be **disabled while poison is
+The design decided (2026-08-19) that **Apply Damage** (section 7) must be **disabled while Timebomb is
 pending**, so a player cannot dodge a booked hit by cashing out ahead of it. **It is now enforced.** The
-control is refused, and says so, while a poison hit is owed to either side — and the refusal is re-checked
+control is refused, and says so, while a Timebomb hit is owed to either side — and the refusal is re-checked
 on the confirming second tap, not only on the first, so a poise made while the control was live cannot
 commit after a booking has landed under it. See `hybrid-design.md` version-4-scope §3.
 
-**A poison hit owed to the Quarry locks it too, not only one owed to you.** The rule reads the pending
+**A Timebomb hit owed to the Quarry locks it too, not only one owed to you.** The rule reads the pending
 queue rather than your side of it, which is the stricter reading of the two.
 
 ### What closing a hand takes
@@ -1226,10 +1226,10 @@ design document, not from this section.
 | **Your Cheat slots**                  | **Open — two frames beside the decree**, filled or empty, all hand. A selected Cheat and an armed one differ in frame as well as tone, and the hint line names which state you are in (section 4).                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | **Your coins**                        | **Open — a plate on the status band**, beside the fight counter, all hand. Also stated on the verdict and throughout the shop (section 10).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Both sides' health**                | **Open — two rows of hearts**, one heart per health point against each side's own maximum. The Quarry's row is **named after the opponent** — "Aoife's health" (since 2026-08-17). The hearts a trick just took break as it resolves. While a streak is banked, the Quarry's last _bank × multiplier_ standing hearts flash as a preview of what cashing right now would take. **That preview shows the FULL figure and deliberately still does, since DLR-94** — you can realise it on demand, so the full figure is what the streak is genuinely worth to you; the reduced figure sits beside the bank readout instead of competing with this one on the same bar. |
-| **Poison booked against either side** | **Open — on the bar that owes it, since 2026-08-23.** The hearts a booked hit has already claimed are drawn distinctly from both untouched hearts and the streak's flashing preview, on **your** row as well as the Quarry's, and the bar's spoken value names the poisoned figure separately from the at-risk one. The reading is **[provisional]** (section 8).                                                                                                                                                                                                                                                                                                    |
-| **The trick that books a poison hit** | **Stated as it resolves, since 2026-08-23** — which side owes the hit and how much. It is **transient**: the line lives on the held trick and goes when you tap to carry on, so the bar is the durable signal and this is the announcement.                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **The moment a poison hit lands**     | **Hidden** — the hearts break and the streak goes with nothing naming the cause (section 8).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| **A Poison Guard you are holding**    | **Hidden** during a fight — the shop's purse is its only surface, and nothing on the felt says you are carrying one (section 7).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **Timebomb booked against either side** | **Open — on the bar that owes it, since 2026-08-23.** The hearts a booked hit has already claimed are drawn distinctly from both untouched hearts and the streak's flashing preview, on **your** row as well as the Quarry's, and the bar's spoken value names the primed figure separately from the at-risk one. The reading is **[provisional]** (section 8).                                                                                                                                                                                                                                                                                                    |
+| **The trick that books a Timebomb hit** | **Stated as it resolves, since 2026-08-23** — which side owes the hit and how much. It is **transient**: the line lives on the held trick and goes when you tap to carry on, so the bar is the durable signal and this is the announcement.                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **The moment a Timebomb hit lands**     | **Hidden** — the hearts break and the streak goes with nothing naming the cause (section 8).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| **A Blast Guard you are holding**    | **Hidden** during a fight — the shop's purse is its only surface, and nothing on the felt says you are carrying one (section 7).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 The telegraph's fidelity — suit only, or suit and stance — is **[provisional]**; it currently shows
 both.
@@ -1443,19 +1443,19 @@ Exactly **five** things:
 | Buy              | Costs   | You get                                                                                                       |
 | ---------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
 | **Cheat**        | 1 coin  | One Cheat card into a free slot (section 4)                                                                   |
-| **Envenom**      | 2 coins | One charge to poison a card with, held until you spend it (section 4)                                         |
-| **Poison Guard** | 1 coin  | For **the next fight only**: the first time your own poison lands on you, your streak survives it (section 7) |
+| **Timebomb**      | 2 coins | One charge to prime a card with, held until you spend it (section 4)                                         |
+| **Blast Guard** | 1 coin  | For **the next fight only**: the first time your own Timebomb lands on you, your streak survives it (section 7) |
 | **Whetstone**    | 4 coins | For **the rest of the run**: every trick you take banks **1 more**. Stacks with itself (section 7)            |
 | **Heal**         | 1 coin  | **4 health**, immediately, and never above your maximum — the excess is lost                                  |
 
-**Envenom arrived on 2026-08-19 and is the only thing in the shop costing more than a coin** — twice the
+**Timebomb arrived on 2026-08-19 and is the only thing in the shop costing more than a coin** — twice the
 Cheat, because it is a guaranteed unconditional hit rather than a rule-break you may not need. **It is not
 spent when you buy it**: what you buy is a charge you carry into the fight and spend during a hand.
 
-**There is no cap on Envenom charges.** Unlike a Cheat, which has nowhere to go once both slots are full,
+**There is no cap on Timebomb charges.** Unlike a Cheat, which has nowhere to go once both slots are full,
 you may buy as many as you can afford — so the only refusal it can raise is not having the coins.
 
-**Poison Guard arrived the same day, and it is the first purchase with a duration rather than a use.** It
+**Blast Guard arrived the same day, and it is the first purchase with a duration rather than a use.** It
 is priced level with the heal, because both are a coin against roughly 4 health of value run in opposite
 directions. Three things about it are the rules:
 
@@ -1463,7 +1463,7 @@ directions. Three things about it are the rules:
   spend it. Leave the shop, fight, and when that fight ends the Guard is gone whether it fired or not.
 - **You may hold only one at a time.** Buying a second while one is unspent is refused with the reason
   stated, rather than stacking or silently replacing it (see the refusals below).
-- **It is spent the first time it fires** — the first time your own poison lands on you — and spent even
+- **It is spent the first time it fires** — the first time your own Timebomb lands on you — and spent even
   if your bank was empty and there was nothing for it to save.
 
 **The Whetstone arrived on 2026-08-19 and is by some way the most expensive thing in the shop** — four
@@ -1476,7 +1476,7 @@ fight winnings alone it costs most of a short run. Three things about it are the
 - **It changes the bank's climb only.** The multiplier is untouched (section 7).
 
 The screen states which opponent is coming next, and shows your coins, your health against its
-maximum, how many Cheat slots you are holding, how many Envenom charges you hold, whether a Poison
+maximum, how many Cheat slots you are holding, how many Timebomb charges you hold, whether a Timebomb
 Guard is **Held** or **None**, and how many Whetstones you own, while you choose.
 
 ### The shop is laid out as four shelves, by how long a purchase lasts — **[settled]**
@@ -1486,13 +1486,13 @@ long what you buy stays with you**:
 
 | Shelf              | What belongs on it                  | Holds today                           |
 | ------------------ | ----------------------------------- | ------------------------------------- |
-| **One-time use**   | Spent when you use it               | The **Cheat**, the **Envenom** charge |
-| **Fight-long**     | Lasts the rest of the current fight | The **Poison Guard**                  |
+| **One-time use**   | Spent when you use it               | The **Cheat**, the **Timebomb** charge |
+| **Fight-long**     | Lasts the rest of the current fight | The **Blast Guard**                  |
 | **Run-permanent**  | Lasts the rest of the run           | The **Whetstone**                     |
 | **Game-permanent** | Carries between runs                | _nothing — and refused_               |
 
 **One-time use is open when you arrive**, and it holds two things since 2026-08-19. **Fight-long and
-run-permanent both stopped being empty the same day** — the Poison Guard on the first, the Whetstone on
+run-permanent both stopped being empty the same day** — the Blast Guard on the first, the Whetstone on
 the second — so **three of the four shelves now hold something**. **Game-permanent cannot be opened at
 all**: it is shown, marked out with a dashed edge, and
 states **"Coming soon."** It is deliberately visible rather than hidden, so the shape of the finished
@@ -1507,8 +1507,8 @@ is there whichever shelf you have open. A heal is an instant transfer with no du
 four rungs is an honest answer for it.
 
 Nothing about what is for sale, what it costs, or what refuses a purchase changed when the shelves
-arrived — that was a **rearrangement**. **The shelves then earned their keep three times**: Envenom
-appeared on the one-time-use shelf, the Poison Guard filled the fight-long shelf, and the Whetstone filled
+arrived — that was a **rearrangement**. **The shelves then earned their keep three times**: Timebomb
+appeared on the one-time-use shelf, the Blast Guard filled the fight-long shelf, and the Whetstone filled
 run-permanent — each with no change to the shop screen beyond one readout.
 
 > **The four names are this game's own, not Balatro's.** The obvious borrowing would be deck / Joker /
@@ -1527,10 +1527,10 @@ things can refuse one:
 
 - **Both Cheat slots are full** — a Cheat has nowhere to go.
 - **You are already at full health** — a heal would do nothing at all, so it is not sold to you.
-- **You are already holding a Poison Guard** — only one may be held at a time.
+- **You are already holding a Blast Guard** — only one may be held at a time.
 - **You do not have the coins.**
 
-**Envenom and the Whetstone can only ever raise the last.** Neither has a cap — charges and Whetstones
+**Timebomb and the Whetstone can only ever raise the last.** Neither has a cap — charges and Whetstones
 alike are limited only by the purse — so nothing else can refuse either, and full Cheat slots do not,
 because that is the Cheat's own cap and not a shared one.
 
@@ -1546,7 +1546,7 @@ arrives — full slots rather than an empty purse.
 > still costs a coin — only the wholly wasted purchase is refused.
 
 **Leaving the shop starts the next fight**, with everything you bought already in effect: the health
-you healed to, the Cheats in your slots, the Envenom charges you hold, any Poison Guard, every Whetstone
+you healed to, the Cheats in your slots, the Timebomb charges you hold, any Blast Guard, every Whetstone
 you own, and whatever coins you did not spend. **The Guard is the one purchase that expires**: it lasts
 that fight and no longer. **The Whetstone is at the other extreme** — it survives every remaining fight of
 the run.
@@ -1611,20 +1611,20 @@ too, alongside who is coming next.
   fight decisively, but neither reads the damage you overshot by. Deliberately a different mechanic,
   not this one built late.
 - **Anything in the shop that raises the player's damage — MOSTLY BUILT since 2026-08-19.** Two purchases
-  now do it, in different ways. Envenom deals a flat **4 damage** to the Quarry when the Quarry wins the
+  now do it, in different ways. Timebomb deals a flat **4 damage** to the Quarry when the Quarry wins the
   trick it is played into — a **fixed one-off hit**, not a multiplier on anything. **The Whetstone is the
   scaling one**: it raises what every taken trick banks, permanently, so it multiplies the whole `n × n`
   curve rather than adding to it once. The stated intention was that upgrades are what make the payout
   scale past the early game, and **that half is now built for the bank**.
   **What is still missing is the multiplier's side of it** — nothing raises the multiplier's climb; a twin
   to the Whetstone that does is named as the natural next addition (`hybrid-design.md` version-4-scope §1)
-  and is **[not built]**. Envenom's clean-loss rule and the Poison Guard both still _preserve_ a streak
+  and is **[not built]**. Timebomb's clean-loss rule and the Blast Guard both still _preserve_ a streak
   rather than growing one. A
   card's **value** is one of the four things Forage may edit, and since 2026-08-14 a card's rank
   decides only who wins a trick — it feeds no scoring at all (section 7).
 - **A price curve or rerolls** — **[not built]**. The shop shows the same **five** things at the same
-  five prices on every visit. **Three items shipped on 2026-08-19** — Envenom onto the one-time-use shelf,
-  the Poison Guard onto fight-long and the Whetstone onto run-permanent — so **every shelf a player can open
+  five prices on every visit. **Three items shipped on 2026-08-19** — Timebomb onto the one-time-use shelf,
+  the Blast Guard onto fight-long and the Whetstone onto run-permanent — so **every shelf a player can open
   now holds something**, and the only empty one is the refused game-permanent shelf below. A **rotating**
   shelf — a different selection each visit — is still **[not built]** and is a separate idea from the four
   fixed shelves. **A price that climbs with each copy bought** is the specific version of this that the
@@ -1703,7 +1703,7 @@ Two tables: what the base game had, and what this game itself had until 2026-08-
 | **13-card hands, 13 tricks**      | **Dropped.** Six and six (section 2).                                                                                                                                                               |
 | **Goal cards (16)**               | **Dropped.** A second scoring channel.                                                                                                                                                              |
 | **Special cards (9)**             | **Dropped as cards.** The _unsuited_ concept is kept as the grammar for a Forage suit edit.                                                                                                         |
-| **The Poison-8 swap**             | **Dropped entirely.** Rank 8 is an ordinary card that happens to be named — and the skull is a separate marker with no connection to it (section 3).                                                |
+| **The Timebomb-8 swap**             | **Dropped entirely.** Rank 8 is an ordinary card that happens to be named — and the skull is a separate marker with no connection to it (section 3).                                                |
 | **The Treasure's point**          | **Dropped.** Rank 7 has no rule.                                                                                                                                                                    |
 | **The end-of-round points table** | **Dropped entirely.** Its bands were repurposed into the Standing multiplier, which has since been deleted too (below). Nothing of it survives.                                                     |
 
@@ -1762,18 +1762,18 @@ the mechanics themselves are documented in `../implementation/`.
 
 > **Where DLR-101 stands, 2026-08-23.** It changed **no rule** — no amount, no timing, no procedure.
 > It is entirely a readout for a booking the engine has kept since DLR-90, so everything it added is
-> reachable by playing right now and nothing about how poison behaves moved. **What it is not is
+> reachable by playing right now and nothing about how Timebomb behaves moved. **What it is not is
 > confirmed.** It ran in an unattended sprint run that skipped the plan-approval and mockup gates, so
-> the ticket's own open design question — whether booked poison reuses the at-risk reading or gets its
+> the ticket's own open design question — whether booked Timebomb reuses the at-risk reading or gets its
 > own — was answered by the plan's **default** rather than decided; the tone it is drawn at is an
 > explicit placeholder; and all of its wording is placeholder. **It was never seen painting in a real
 > browser**: reaching a booked hit live needs a shop visit to buy a charge, which the verification pass
 > could not complete, so the readout is proven by tests and by exercising the real derivations against
 > the live-served code — good evidence for the figures, none at all for the appearance. Its rows are
 > `provisional` for exactly that reason, and the four judgements are recorded under
-> [Known tensions](#known-tensions-recorded-not-resolved). **A held Poison Guard was scoped out and is
+> [Known tensions](#known-tensions-recorded-not-resolved). **A held Blast Guard was scoped out and is
 > still invisible.** Unrelated to this contract but sitting in the same area: one test in
-> `src/hunt/__tests__/envenom.test.ts` fails and was confirmed to fail identically before the contract,
+> `src/hunt/__tests__/timebomb.test.ts` fails and was confirmed to fail identically before the contract,
 > so it belongs to neither this ticket nor this document's rules.
 
 > **Where DLR-100 stands, 2026-08-22.** Engine and screen landed together, and QA drove the whole
@@ -1813,11 +1813,11 @@ the mechanics themselves are documented in `../implementation/`.
 > `bank × multiplier` with the player's hearts untouched, the bank readout zeroing, the trick carrying on
 > and resolving normally afterwards, and the empty-bank refusal with its reason **on screen** are **all
 > reachable by playing right now** — none of it is enforced-but-unreachable. **One row above graduated from
-> `not built`**: poison pending now locks the control, which had been recorded as a design decision since
+> `not built`**: Timebomb pending now locks the control, which had been recorded as a design decision since
 > 2026-08-19 with nothing to enforce it. **The two-thirds fraction is `settled`, not `provisional`** — it is
 > transcribed from version-4-scope §3 rather than chosen here, and no test hard-codes it independently of
 > the two constants. **Two readings in this contract were the planner's rather than the ticket's**, both
-> recorded and both the developer's to overturn: that a **poison** hit pays the reduced rate like any other
+> recorded and both the developer's to overturn: that a **Timebomb** hit pays the reduced rate like any other
 > forced hit (the ticket enumerated only a clean loss and an eaten skull), and that the control is available
 > on a **follow** as well as on a lead. **All of the control's copy is placeholder**, as every label in that
 > file is. **Nothing was retuned** in response to forced cash-outs paying a third less: no health total,
@@ -1854,13 +1854,13 @@ the mechanics themselves are documented in `../implementation/`.
 > ceiling tripling: no health total, damage figure or Quarry curve moved.
 
 > **Where DLR-91 stood, 2026-08-19.** Engine and screen landed together, and QA
-> confirmed the whole of it in a browser: the retimed poison, the two amounts, the streak cashing out when
-> poison lands on you, the Quarry-first ordering that spares you a mutual kill, the Poison Guard on the
+> confirmed the whole of it in a browser: the retimed Timebomb, the two amounts, the streak cashing out when
+> Timebomb lands on you, the Quarry-first ordering that spares you a mutual kill, the Blast Guard on the
 > fight-long shelf, its purchase, its refusal, and the purse cell that says whether one is held are **all
 > reachable by playing right now**. **One row below is `not built` by design decision rather than
-> oversight**: Apply Damage must be disabled while poison is pending, and Apply Damage does not exist yet.
+> oversight**: Apply Damage must be disabled while Timebomb is pending, and Apply Damage does not exist yet.
 > **Two rows stay `not built` from DLR-90 and were deliberately not addressed** — nothing announces the
-> delayed hit landing, and nothing shows a held Guard during a fight, so poison is legible only through its
+> delayed hit landing, and nothing shows a held Guard during a fight, so Timebomb is legible only through its
 > effects. **One accepted oddity shipped knowingly**: a held Guard suppresses the cash-out, so a Quarry that
 > would have died to that cash-out survives and you take damage you would otherwise have dodged. The
 > developer confirmed that as a real decision when the consequence was put to them. **Nothing was retuned**
@@ -1870,11 +1870,11 @@ the mechanics themselves are documented in `../implementation/`.
 > shop item, the charge carried across fights, the felt-rail plate, the three-tap arm-and-mark, the mark on
 > all four surfaces a card renders on, the replaced clean loss and the delayed hit at the next deal are
 > **all reachable by playing right now**. **Two rows below are `open` and both are the developer's**:
-> whether three taps to mark is right, and whether a poisoned trick you win that is _also_ a skull trick
+> whether three taps to mark is right, and whether a primed trick you win that is _also_ a skull trick
 > should still cost the skull. One row is **`not built` and deliberately so** — nothing announces that the
 > delayed damage landed, because no rule required it and choosing the surface is a judgement call. **Two
 > residuals were found in review rather than shipped**: the decree pile's mark was built and never wired at
-> its mount, and the reducer's commit path cleared a poised Cheat but not a poised Envenom. Both now have
+> its mount, and the reducer's commit path cleared a poised Cheat but not a poised Timebomb. Both now have
 > regression tests that drive the reachable path rather than the field. **Not verified by playing:** QA
 > could not earn 2 coins in five full playthroughs, so the whole purchase-to-payoff loop is proven by a
 > mounted-component test against the real component tree and **not yet by a hand on a mouse.**
@@ -1884,7 +1884,7 @@ the mechanics themselves are documented in `../implementation/`.
 > **all reachable by playing right now**. **No rule about what the shop sells, what it costs, or what
 > refuses a purchase moved** — the eleven pre-existing shop-screen specs pass unedited, which is the
 > evidence for that. Three rows below are **`not built`** and are the point rather than an oversight:
-> nothing is designed for the game-permanent shelf, and two shelves are empty until Envenom, Poison
+> nothing is designed for the game-permanent shelf, and two shelves are empty until Timebomb, Timebomb
 > Guard and Whetstone land on their own tickets. **(All three have since landed — DLR-90, DLR-91 and
 > DLR-92, all on 2026-08-19 — so only the game-permanent shelf is still empty.)** One **known residual**: after clicking a shelf with the
 > mouse, the very next arrow-key press can move from the previously-focused shelf rather than the one
@@ -1937,7 +1937,7 @@ the mechanics themselves are documented in `../implementation/`.
 | A bank climb that is not a positive integer is ignored                        | settled — since DLR-92                                     | `src/warCouncil/bank.ts` — `resolveTrickBank` floors the bonus to 0 unless `Number.isInteger` and `> 0`, so a spoiled figure degrades to the bare rule rather than reaching a health bar                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                              |
 | The bank, and that it only climbs                                             | settled                                                    | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                                                                                                                                                                                                                                                                      | —                                                                                                                                                                                                                                                                                                              |
 | The streak multiplier, and its reset                                          | settled                                                    | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                                                                                                                                                                                                                                                                      | —                                                                                                                                                                                                                                                                                                              |
-| Cash-out on damage, at **two-thirds** rounded down                            | settled — since DLR-94                                     | `src/warCouncil/bank.ts` — `forcedCashValue`, the only reader of `FORCED_CASH_OUT_NUMERATOR`/`_DENOMINATOR` in `src/hunt/config.ts`; `resolveTrickBank`'s forced branch calls it for every forced hit, poison included                                                                                                                                                             | —                                                                                                                                                                                                                                                                                                              |
+| Cash-out on damage, at **two-thirds** rounded down                            | settled — since DLR-94                                     | `src/warCouncil/bank.ts` — `forcedCashValue`, the only reader of `FORCED_CASH_OUT_NUMERATOR`/`_DENOMINATOR` in `src/hunt/config.ts`; `resolveTrickBank`'s forced branch calls it for every forced hit, Timebomb included                                                                                                                                                             | —                                                                                                                                                                                                                                                                                                              |
 | The fraction is a numerator over a denominator, not a float                   | settled — since DLR-94                                     | `src/hunt/config.ts` — two constants, multiplied before dividing in `forcedCashValue`, because `x * (2 / 3)` floors wrong on every multiple of 3; pinned by `bank.test.ts`'s multiples-of-three spec                                                                                                                                                                               | —                                                                                                                                                                                                                                                                                                              |
 | Cash-out at the end of the sixth trick, **in full**                           | settled                                                    | `src/warCouncil/bank.ts` — `resolveTrickBank`'s `finalTrick` fold calls `cashValue`, deliberately not `forcedCashValue`; pinned by `bank.test.ts`'s AC5 spec, which cashes one streak both ways                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                              |
 | One statement of what a streak is worth                                       | settled — since DLR-94                                     | `src/warCouncil/bank.ts` — `cashValue`; all three cash-outs compute through it, so they cannot disagree about what they are a share of                                                                                                                                                                                                                                             | —                                                                                                                                                                                                                                                                                                              |
@@ -1954,7 +1954,7 @@ the mechanics themselves are documented in `../implementation/`.
 | Health never negative; surplus discarded                                      | settled                                                    | `src/hunt/encounter.ts` — `deplete`, the single clamp                                                                                                                                                                                                                                                                                                                              | —                                                                                                                                                                                                                                                                                                              |
 | The Quarry's bar settles first                                                | settled — since 2026-08-19                                 | `src/hunt/encounter.ts` — `applyDamage` depletes the Quarry, then the player **only if the Quarry survived**                                                                                                                                                                                                                                                                       | —                                                                                                                                                                                                                                                                                                              |
 | A mutual kill is a player win                                                 | settled — **overturns a 2026-08-11 ruling**                | `src/hunt/encounter.ts` — `resolveWinner` has no tie branch and no constant to read; a Quarry-down event never touches the player, so the case is unreachable. `SIMULTANEOUS_DEPLETION_WINNER` was **deleted**                                                                                                                                                                     | — (the reversal is recorded in `hybrid-design.md` §9)                                                                                                                                                                                                                                                          |
-| Poison pending locks Apply Damage                                             | settled — since DLR-94                                     | `src/warCouncil/voluntaryCashOut.ts` — `applyDamageRefusalFor` returns `PoisonPending`; the predicate is `src/hunt/encounter.ts` — `hasPendingEnvenom`, which reads **both** sides of the queue. Re-asked on the confirming tap, so a booking landing under a poise stops the commit                                                                                               | —                                                                                                                                                                                                                                                                                                              |
+| Timebomb pending locks Apply Damage                                             | settled — since DLR-94                                     | `src/warCouncil/voluntaryCashOut.ts` — `applyDamageRefusalFor` returns `TimebombPending`; the predicate is `src/hunt/encounter.ts` — `hasPendingTimebomb`, which reads **both** sides of the queue. Re-asked on the confirming tap, so a booking landing under a poise stops the commit                                                                                               | —                                                                                                                                                                                                                                                                                                              |
 | An encounter can end mid-hand, and play stops                                 | settled                                                    | `src/app/warCouncil/roundReducer.ts` — the `isEncounterResolved` guard in `canAct`                                                                                                                                                                                                                                                                                                 | Developer — whether it feels abrupt                                                                                                                                                                                                                                                                            |
 | Health carried hand to hand                                                   | settled                                                    | `src/app/warCouncil/roundReducer.ts` owns the live `EncounterState`; `src/App.tsx` carries it between hands                                                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                              |
 | No cap on hands per encounter                                                 | settled — deliberately none                                | no cap key exists to read                                                                                                                                                                                                                                                                                                                                                          | Developer, if the tail stalls                                                                                                                                                                                                                                                                                  |
@@ -1962,10 +1962,10 @@ the mechanics themselves are documented in `../implementation/`.
 | The two terms stay separately addressable                                     | settled — **and used since DLR-92**                        | `src/warCouncil/bank.ts` — `bank` and `multiplier` are two fields, and the Whetstone moves only the first; the affordance PT-002 kept them apart for is now load-bearing                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                              |
 | Surplus damage paid back as money                                             | **not built**                                              | nothing reads overkill — winning pays a flat coin plus a payout counted from unplayed cards, neither a share of the cash-out                                                                                                                                                                                                                                                       | Developer — a later ticket                                                                                                                                                                                                                                                                                     |
 | Both sides' health on screen                                                  | settled                                                    | `src/app/warCouncil/DuelHealthBars.tsx`, `duelHealthBars.ts`, `HeartMark.tsx` — one heart per point since DLR-86; assembled for the round screen by `roundBars.ts` since DLR-101                                                                                                                                                                                                   | Developer — whether 10 (and 18) hearts read well                                                                                                                                                                                                                                                               |
-| The Quarry's hearts preview the banked streak                                 | **provisional**                                            | `src/app/warCouncil/duelHealthBars.ts` — `projectedDepletion` (named `projectedFromStreak` until DLR-101 renamed it and taught it about booked poison; the streak half of its reading is unchanged); styling in `warCouncilHealthBars.css`                                                                                                                                         | Developer — whether it reads as pending or as spent                                                                                                                                                                                                                                                            |
-| Booked poison is drawn on the bar that owes it                                | **provisional** — since DLR-101, 2026-08-23                | `src/app/warCouncil/duelHealthBars.ts` — the fifth `HeartState`, `Doomed`, and the `doomed` overlay clamped to the pending band; fed by `roundBars.ts` from `encounter.pendingEnvenom`; `projectedDepletion` subtracts it from **both** sides and floors both at zero; styling in `warCouncilHealthBars.css` (`[data-state='doomed']`) over `--wc-hp-doomed-*` in `warCouncil.css` | **Developer** — three things: whether booked poison deserves its own reading at all (decided by default in an unattended run, not chosen), the placeholder `--wc-hp-doomed-opacity` and the green-on-green fill, and whether five readings still separate on an 18-heart row. **Never seen in a live browser** |
-| The bar names poison separately from at-risk                                  | **provisional** — copy is placeholder                      | `src/app/warCouncil/labels.ts` — `healthBarValueText` reads `pending - doomed` for the at-risk clause and `doomed` for the poisoned one, omitting either at zero                                                                                                                                                                                                                   | Developer — the wording                                                                                                                                                                                                                                                                                        |
-| The trick that books a hit names it                                           | **provisional** — copy is placeholder                      | `src/app/warCouncil/TrickWell.tsx` renders a `.wc-poison-clause` when `resolution.envenomTarget` is non-null; wording from `src/app/warCouncil/labels.ts` — `poisonBookedText`, which reads the amount from `src/hunt`'s `envenomDamageFor` rather than choosing between the two constants                                                                                         | Developer — the wording, and whether a line that vanishes on the carry-on tap is the right place for it                                                                                                                                                                                                        |
+| The Quarry's hearts preview the banked streak                                 | **provisional**                                            | `src/app/warCouncil/duelHealthBars.ts` — `projectedDepletion` (named `projectedFromStreak` until DLR-101 renamed it and taught it about booked Timebomb; the streak half of its reading is unchanged); styling in `warCouncilHealthBars.css`                                                                                                                                         | Developer — whether it reads as pending or as spent                                                                                                                                                                                                                                                            |
+| Booked Timebomb is drawn on the bar that owes it                                | **provisional** — since DLR-101, 2026-08-23                | `src/app/warCouncil/duelHealthBars.ts` — the fifth `HeartState`, `Ticking`, and the `ticking` overlay clamped to the pending band; fed by `roundBars.ts` from `encounter.pendingTimebomb`; `projectedDepletion` subtracts it from **both** sides and floors both at zero; styling in `warCouncilHealthBars.css` (`[data-state='ticking']`) over `--wc-hp-ticking-*` in `warCouncil.css` | **Developer** — three things: whether booked Timebomb deserves its own reading at all (decided by default in an unattended run, not chosen), the placeholder `--wc-hp-ticking-opacity` and the green-on-green fill, and whether five readings still separate on an 18-heart row. **Never seen in a live browser** |
+| The bar names Timebomb separately from at-risk                                  | **provisional** — copy is placeholder                      | `src/app/warCouncil/labels.ts` — `healthBarValueText` reads `pending - ticking` for the at-risk clause and `ticking` for the primed one, omitting either at zero                                                                                                                                                                                                                   | Developer — the wording                                                                                                                                                                                                                                                                                        |
+| The trick that books a hit names it                                           | **provisional** — copy is placeholder                      | `src/app/warCouncil/TrickWell.tsx` renders a `.wc-timebomb-clause` when `resolution.timebombTarget` is non-null; wording from `src/app/warCouncil/labels.ts` — `timebombBookedText`, which reads the amount from `src/hunt`'s `timebombDamageFor` rather than choosing between the two constants                                                                                         | Developer — the wording, and whether a line that vanishes on the carry-on tap is the right place for it                                                                                                                                                                                                        |
 | The hand-over tally (between hands only)                                      | settled                                                    | `src/app/warCouncil/RoundOverPanel.tsx` — its terminal branch was **deleted** by DLR-82; a resolved fight is the verdict's                                                                                                                                                                                                                                                         | Developer — whether losing the felt's tally costs anything                                                                                                                                                                                                                                                     |
 | The Quarry dumps skulls into losing tricks                                    | settled                                                    | `src/warCouncil/cpuPlayer.ts` — `chooseCpuCard`'s first branch                                                                                                                                                                                                                                                                                                                     | —                                                                                                                                                                                                                                                                                                              |
 | The Quarry's **lead** ignores skulls                                          | settled — deliberately minimal                             | `src/warCouncil/cpuPlayer.ts` — the lead branch is unchanged                                                                                                                                                                                                                                                                                                                       | Developer — the obvious next CPU change                                                                                                                                                                                                                                                                        |
@@ -1973,7 +1973,7 @@ the mechanics themselves are documented in `../implementation/`.
 | Quarry character = a name only                                                | settled                                                    | `src/hunt/quarryCharacters.ts` — `QuarryCharacterInfo` has no rule field                                                                                                                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                              |
 | What any character's power is                                                 | **not built** — undecided                                  | —                                                                                                                                                                                                                                                                                                                                                                                  | **Developer — a final-boss ticket, not every opponent**                                                                                                                                                                                                                                                        |
 | Telegraph fidelity                                                            | provisional                                                | `src/hunt/config.ts` — `TELEGRAPH_FIDELITY`                                                                                                                                                                                                                                                                                                                                        | Developer, after playtest                                                                                                                                                                                                                                                                                      |
-| Rank 8's name ("Poison")                                                      | **open** — misleading                                      | `src/app/warCouncil/labels.ts` — `RANK_NAME`                                                                                                                                                                                                                                                                                                                                       | Developer                                                                                                                                                                                                                                                                                                      |
+| Rank 8's name ("Timebomb")                                                      | **open** — misleading                                      | `src/app/warCouncil/labels.ts` — `RANK_NAME`                                                                                                                                                                                                                                                                                                                                       | Developer                                                                                                                                                                                                                                                                                                      |
 | Between-encounter restore (none, automatic)                                   | **not built** — by decision                                | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE`; still **no consumer** after DLR-93. A grep in DLR-82's, DLR-84's and DLR-93's final verification guards it                                                                                                                                                                                                                      | **Developer** — the flask has now shipped _without_ wiring this, so it is a separate decision rather than a story waiting to land                                                                                                                                                                              |
 | Winning a fight pays 1 coin                                                   | **provisional** — set 2026-08-16                           | `src/hunt/config.ts` — `COINS_PER_ENCOUNTER_WIN`; credited by `src/hunt/runTransitions.ts` — `recordEncounter`, the single crediting site                                                                                                                                                                                                                                          | Developer — transcribed, not derived                                                                                                                                                                                                                                                                           |
 | A quick kill pays per unplayed card                                           | **settled** — 2026-08-21                                   | `src/hunt/quickKill.ts` — `quickKillPayout`, the one place the fraction is floored; curve in `src/hunt/config.ts` — `QUICK_KILL_TIER_MULTIPLIERS`                                                                                                                                                                                                                                  | — transcribed from version-4-scope §4, marked final                                                                                                                                                                                                                                                            |
@@ -2008,7 +2008,7 @@ the mechanics themselves are documented in `../implementation/`.
 | It can only be drunk between fights                                           | settled — since DLR-93                                     | `src/App.tsx` — the control renders only under `RunPhase.Shop`; `drinkFlask` also throws on an unresolved encounter, so a driver bug is loud rather than a mid-hand heal                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                              |
 | It is never sold, and never on a shelf                                        | settled — since DLR-93                                     | nothing to enforce — no `ShopItem` member exists for it, so `priceOf`, `categoryOf` and `PurchaseRefusal` are untouched; the control is a separate block in `src/app/run/ShopPanel.tsx`                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                              |
 | Free reads as free, without colour                                            | settled — since DLR-93                                     | `src/app/run/shopLabels.ts` — `SHOP_FLASK_FREE_TAG` / `SHOP_FLASK_NO_COIN` as words, an icon-led button rather than a text card, its own zone above the tablist, and a purse cell counting charges                                                                                                                                                                                 | Developer — every word of it is placeholder, and "Flask" is an unsettled name                                                                                                                                                                                                                                  |
-| Nothing shows the flask during a fight                                        | **not built** — deliberately                               | nothing — the shop screen is its only surface, exactly as with the Poison Guard and the Whetstone                                                                                                                                                                                                                                                                                  | **Developer** — the same call as the two rows like it                                                                                                                                                                                                                                                          |
+| Nothing shows the flask during a fight                                        | **not built** — deliberately                               | nothing — the shop screen is its only surface, exactly as with the Blast Guard and the Whetstone                                                                                                                                                                                                                                                                                  | **Developer** — the same call as the two rows like it                                                                                                                                                                                                                                                          |
 | A refused purchase states its reason                                          | settled                                                    | `src/hunt/shop.ts` — `refusalFor`; worded by `src/app/run/shopLabels.ts` — `PURCHASE_REFUSAL_MESSAGE`                                                                                                                                                                                                                                                                              | Developer — the wording                                                                                                                                                                                                                                                                                        |
 | The durable reason wins over the coin check                                   | settled                                                    | `src/hunt/shop.ts` — `refusalFor` tests slots and health **before** the balance                                                                                                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                              |
 | A heal at full health is refused, not sold                                    | settled — this game's own rule                             | `src/hunt/shop.ts` — `PurchaseRefusal.AlreadyFullHealth`; the ticket did not state it                                                                                                                                                                                                                                                                                              | Developer — selling it and discarding is the alternative                                                                                                                                                                                                                                                       |
@@ -2037,47 +2037,47 @@ the mechanics themselves are documented in `../implementation/`.
 | Nothing on the path is clickable                                              | settled — no route choice                                  | `src/app/run/RunMap.tsx` — an `<ol>` of `<li>`s with zero tab stops, pinned by a spec; branching is out of scope                                                                                                                                                                                                                                                                   | Developer — if route choice is ever wanted                                                                                                                                                                                                                                                                     |
 | **The path fits the viewport**                                                | **NOT MET** — crops below ~1088px                          | `src/app/run/run.css` — `.run-shell` is `overflow: hidden`, so the path is **cropped, not scrolled**: 21/25 nodes at 1024×768, 14/25 at 500×844                                                                                                                                                                                                                                    | **Developer** — name size, name angle, or a scrolling path region                                                                                                                                                                                                                                              |
 | Losing returns to the start screen                                            | settled — since DLR-85                                     | `src/App.tsx` — `handleNewRun` sets `RunPhase.Start`; the path resets by construction, because `startRun` returns `encounterIndex: 0`                                                                                                                                                                                                                                              | —                                                                                                                                                                                                                                                                                                              |
-| Forward controls name their opponent                                          | settled — since DLR-85                                     | `src/app/run/runLabels.ts` — `fightLabel`, one function read by the start screen, the verdict and the shop; `CONTINUE_LABEL` was deleted                                                                                                                                                                                                                                           | Developer — the wording                                                                                                                                                                                                                                                                                        |
+| Forward controls name their opponent                                          | settled — since DLR-85                                     | `src/app/run/runLabels.ts` — `fightLabel`, one function read by the start screen, the verdict and the shop; `CONTINUE_ANYWAY_LABEL` was deleted                                                                                                                                                                                                                                           | Developer — the wording                                                                                                                                                                                                                                                                                        |
 | The end-of-fight verdict screen                                               | settled                                                    | `src/app/run/RunOutcomePanel.tsx`; copy in `src/app/run/runLabels.ts`                                                                                                                                                                                                                                                                                                              | Developer — all wording, and whether it reads as unmissable                                                                                                                                                                                                                                                    |
 | The verdict names the opponent just beaten                                    | settled — since DLR-85                                     | `src/app/run/runLabels.ts` — `runHeadline(outcome, beatenName)`; only the intermediate-win case takes a name, so `YOU WIN`/`YOU LOSE` stay run-level                                                                                                                                                                                                                               | Developer — whether "<name> defeated" lands as a win                                                                                                                                                                                                                                                           |
 | Which fight, and against whom                                                 | settled — named since DLR-85                               | `src/app/run/runLabels.ts` — `runPositionLabel`, built on `runProgressText`; rendered by `src/app/warCouncil/RoundStatusBand.tsx`'s `.wc-run` block                                                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                              |
 | Every opponent plays identically                                              | settled — health and name only                             | nothing to enforce — no game rule reads `OpponentKind` or an opponent's name; `SLICE_QUARRY_CHARACTER` is still the one _character_ the felt shows                                                                                                                                                                                                                                 | Developer — powers are a final-boss ticket                                                                                                                                                                                                                                                                     |
 | The health bar names the opponent                                             | settled — since 2026-08-17                                 | `src/app/warCouncil/labels.ts` — `quarryHealthLabel(name)`; threaded from `src/App.tsx` as a pre-worded string, like `runLabel`. `HEALTH_BAR_LABEL[Quarry]` is now only the unnamed fallback                                                                                                                                                                                       | Developer — the possessive wording                                                                                                                                                                                                                                                                             |
 | The dossier still says "The Monarch"                                          | **open** — the remaining seam                              | `src/hunt/quarryCharacters.ts` — `QUARRY_CHARACTERS`; rendered by `src/app/warCouncil/QuarryDossier.tsx`, with "What the Quarry holds" beside it                                                                                                                                                                                                                                   | **Developer** — accept the seam for a release, or pull the follow-on in                                                                                                                                                                                                                                        |
-| Envenom — a charge bought, not spent on buying                                | settled — since DLR-90                                     | `src/hunt/run.ts` — `RunState.envenomCharges`, credited by `runTransitions.ts`'s `buyFromShop`'s `ShopItem.Envenom` arm and carried by `advanceRun`'s spread                                                                                                                                                                                                                       | —                                                                                                                                                                                                                                                                                                              |
-| Its price (2 coins)                                                           | **provisional** — transcribed                              | `src/hunt/config.ts` — `ENVENOM_PRICE`; read by `priceOf`                                                                                                                                                                                                                                                                                                                          | Developer — from `version-4-scope.md`, not derived; **unmeasured in play**                                                                                                                                                                                                                                     |
-| No cap on charges held                                                        | settled                                                    | `src/hunt/shop.ts` — `refusalFor` has **no** Envenom clause, so it falls through to the coin check                                                                                                                                                                                                                                                                                 | Developer — a cap is a key, one clause and one code                                                                                                                                                                                                                                                            |
-| Three taps to mark: select, arm, then a card                                  | **open** — a feel question                                 | `src/app/warCouncil/roundUiState.ts` — `EnvenomStage`; cycled by `roundReducer.ts`'s `handleTapEnvenom`, drawn by `EnvenomCharge.tsx`                                                                                                                                                                                                                                              | **Developer** — one tap to arm makes marking two, but puts an irreversible mark one misclick away                                                                                                                                                                                                              |
-| A third tap on the plate refunds the charge                                   | settled                                                    | `src/app/warCouncil/roundReducer.ts` — `handleTapEnvenom`'s third branch; `CancelEnvenom` and `Escape` do the same                                                                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                                                                                              |
-| Every card in hand is markable while armed                                    | settled — including illegal ones                           | `src/app/warCouncil/HandFan.tsx` — `illegal` and `isFocusable` both widen under `envenomArmed`, so the tappable and focusable sets cannot drift                                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                              |
-| Marking is not a move, and never plays a card                                 | settled                                                    | `src/app/warCouncil/roundReducer.ts` — `handleTapCard` routes to `commitEnvenom` before the play branch                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                              |
-| Envenom and a Cheat cannot both be armed                                      | settled                                                    | `src/app/warCouncil/roundReducer.ts` — each poise branch clears the other's selection, and `commit`'s `settled` object clears both                                                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                                                                                              |
-| The mark is drawn wherever the card renders                                   | settled — all four surfaces                                | `src/app/warCouncil/PlayingCard.tsx` — the `envenomed` prop; threaded by `HandFan`, `TrickWell`, `AbilityPrompt` and `DecreePile` (the last **fixed in review**, having been built and never passed)                                                                                                                                                                               | Developer — the glyph and its colour are placeholders                                                                                                                                                                                                                                                          |
-| A poisoned trick resolves by the normal rules                                 | settled                                                    | `src/warCouncil/playCard.ts` — it reports `trickIsEnvenomed` as a fact and judges none of it; the winner and the bank are decided as ever                                                                                                                                                                                                                                          | —                                                                                                                                                                                                                                                                                                              |
-| A poisoned clean loss is replaced, not added to                               | settled                                                    | `src/warCouncil/bank.ts` — `resolveTrickBank`'s `replaced` flag skips the hit half, so damage and cash-out stay 0 and bank/multiplier pass through                                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                                                                                              |
+| Timebomb — a charge bought, not spent on buying                                | settled — since DLR-90                                     | `src/hunt/run.ts` — `RunState.timebombCharges`, credited by `runTransitions.ts`'s `buyFromShop`'s `ShopItem.Timebomb` arm and carried by `advanceRun`'s spread                                                                                                                                                                                                                       | —                                                                                                                                                                                                                                                                                                              |
+| Its price (2 coins)                                                           | **provisional** — transcribed                              | `src/hunt/config.ts` — `TIMEBOMB_PRICE`; read by `priceOf`                                                                                                                                                                                                                                                                                                                          | Developer — from `version-4-scope.md`, not derived; **unmeasured in play**                                                                                                                                                                                                                                     |
+| No cap on charges held                                                        | settled                                                    | `src/hunt/shop.ts` — `refusalFor` has **no** Timebomb clause, so it falls through to the coin check                                                                                                                                                                                                                                                                                 | Developer — a cap is a key, one clause and one code                                                                                                                                                                                                                                                            |
+| Three taps to mark: select, arm, then a card                                  | **open** — a feel question                                 | `src/app/warCouncil/roundUiState.ts` — `TimebombStage`; cycled by `roundReducer.ts`'s `handleTapTimebomb`, drawn by `TimebombCharge.tsx`                                                                                                                                                                                                                                              | **Developer** — one tap to arm makes marking two, but puts an irreversible mark one misclick away                                                                                                                                                                                                              |
+| A third tap on the plate refunds the charge                                   | settled                                                    | `src/app/warCouncil/roundReducer.ts` — `handleTapTimebomb`'s third branch; `CancelTimebomb` and `Escape` do the same                                                                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                                                                                              |
+| Every card in hand is markable while armed                                    | settled — including illegal ones                           | `src/app/warCouncil/HandFan.tsx` — `illegal` and `isFocusable` both widen under `timebombArmed`, so the tappable and focusable sets cannot drift                                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                              |
+| Marking is not a move, and never plays a card                                 | settled                                                    | `src/app/warCouncil/roundReducer.ts` — `handleTapCard` routes to `commitTimebomb` before the play branch                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                              |
+| Timebomb and a Cheat cannot both be armed                                      | settled                                                    | `src/app/warCouncil/roundReducer.ts` — each poise branch clears the other's selection, and `commit`'s `settled` object clears both                                                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                                                                                              |
+| The mark is drawn wherever the card renders                                   | settled — all four surfaces                                | `src/app/warCouncil/PlayingCard.tsx` — the `primed` prop; threaded by `HandFan`, `TrickWell`, `AbilityPrompt` and `DecreePile` (the last **fixed in review**, having been built and never passed)                                                                                                                                                                               | Developer — the glyph and its colour are placeholders                                                                                                                                                                                                                                                          |
+| A primed trick resolves by the normal rules                                 | settled                                                    | `src/warCouncil/playCard.ts` — it reports `trickIsPrimed` as a fact and judges none of it; the winner and the bank are decided as ever                                                                                                                                                                                                                                          | —                                                                                                                                                                                                                                                                                                              |
+| A primed clean loss is replaced, not added to                               | settled                                                    | `src/warCouncil/bank.ts` — `resolveTrickBank`'s `replaced` flag skips the hit half, so damage and cash-out stay 0 and bank/multiplier pass through                                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                                                                                              |
 | …and a **dodge** is deliberately not replaced                                 | settled — the outcome, not the winner                      | `src/warCouncil/bank.ts` — keyed on `TrickOutcome.CleanLoss`; a Dodge is a Quarry win the player **banks**, so replacing it would delete an earned bank                                                                                                                                                                                                                            | Developer — the free-bonus interaction it creates                                                                                                                                                                                                                                                              |
-| A poisoned skull trick you win still costs it                                 | settled — the harshest reading                             | nothing suppresses it — the override waives only the clean loss, so `SkullWin` resolves in full                                                                                                                                                                                                                                                                                    | **Developer** — no design document covers this case                                                                                                                                                                                                                                                            |
-| The delayed hit follows the trick's winner                                    | settled — no branch, but **no longer symmetric**           | `src/warCouncil/bank.ts` — `TrickResolution.envenomTarget`, typed `DuelSide` because this module is already the one seat → side crossing                                                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                              |
-| Its amount — 4 to the Quarry, 2 to the player                                 | **provisional** — split 2026-08-19                         | `src/hunt/config.ts` — `ENVENOM_QUARRY_DAMAGE` (4, transcribed) and `ENVENOM_PLAYER_DAMAGE` (2, **the developer's own**); which side owes which is decided once by `encounter.ts`'s `envenomDamageFor`, read by `queueEnvenom` and — since DLR-101, which exported it — by the felt's copy layer                                                                                   | **Developer** — the player-side figure is a choice, not a transcription, and 2-and-4 is unmeasured in play                                                                                                                                                                                                     |
-| It lands at the resolution of the NEXT trick                                  | settled — retimed 2026-08-19                               | `src/app/warCouncil/roundReducer.ts` — `poisonOptions` reads `encounter.pendingEnvenom` into `playCard`, and `applyResolution` pays, clears and re-books in that order; folded into the trick's own damage by `src/warCouncil/bank.ts` — `resolveTrickBank`. It landed at the next hand's deal until this date                                                                     | —                                                                                                                                                                                                                                                                                                              |
-| A poisoned last trick carries into the next hand                              | settled                                                    | `src/hunt/types.ts` — the queue hangs off `EncounterState`, which outlives a hand; nothing at a hand boundary reads or clears it                                                                                                                                                                                                                                                   | —                                                                                                                                                                                                                                                                                                              |
-| Your share of the hit cashes out your streak                                  | settled — since 2026-08-19, at **two-thirds** since DLR-94 | `src/warCouncil/bank.ts` — `resolveTrickBank`'s cash-out branch has a **second trigger**, `poisonToPlayer > 0 && !poisonGuarded`, reaching the same statement a lost trick reaches — and therefore the same `forcedCashValue` reduction                                                                                                                                            | Developer — the reading that poison pays the reduced rate rather than full                                                                                                                                                                                                                                     |
-| A poisoned trick you win banks BEFORE it cashes                               | settled — a chosen reading                                 | `src/warCouncil/bank.ts` — the `isTaken` climb runs above the cash-out branch, so a streak of 4 winning trick 5 cashes 25 rather than 16                                                                                                                                                                                                                                           | Developer — reversing it is one line, and a different feel                                                                                                                                                                                                                                                     |
-| The Quarry's share never touches a bank                                       | settled                                                    | `src/warCouncil/bank.ts` — `poisonToQuarry` rides on `TrickResolution` and is summed into the Quarry's total by `incomingFrom`; the Quarry holds no bank or multiplier at all                                                                                                                                                                                                      | —                                                                                                                                                                                                                                                                                                              |
-| Two poisoned tricks both land                                                 | settled                                                    | `src/hunt/types.ts` — `EncounterState.pendingEnvenom` is a per-side `IncomingDamage` **accumulator**, not a single side                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                              |
-| Two marks in ONE trick still owe one hit                                      | settled — a predicate, not a count                         | `src/warCouncil/envenom.ts` — `trickIsEnvenomed` is a boolean over the trick                                                                                                                                                                                                                                                                                                       | Developer — a count instead of a predicate is a small follow-up                                                                                                                                                                                                                                                |
+| A primed skull trick you win still costs it                                 | settled — the harshest reading                             | nothing suppresses it — the override waives only the clean loss, so `SkullWin` resolves in full                                                                                                                                                                                                                                                                                    | **Developer** — no design document covers this case                                                                                                                                                                                                                                                            |
+| The delayed hit follows the trick's winner                                    | settled — no branch, but **no longer symmetric**           | `src/warCouncil/bank.ts` — `TrickResolution.timebombTarget`, typed `DuelSide` because this module is already the one seat → side crossing                                                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                              |
+| Its amount — 4 to the Quarry, 2 to the player                                 | **provisional** — split 2026-08-19                         | `src/hunt/config.ts` — `TIMEBOMB_QUARRY_DAMAGE` (4, transcribed) and `TIMEBOMB_PLAYER_DAMAGE` (2, **the developer's own**); which side owes which is decided once by `encounter.ts`'s `timebombDamageFor`, read by `queueTimebomb` and — since DLR-101, which exported it — by the felt's copy layer                                                                                   | **Developer** — the player-side figure is a choice, not a transcription, and 2-and-4 is unmeasured in play                                                                                                                                                                                                     |
+| It lands at the resolution of the NEXT trick                                  | settled — retimed 2026-08-19                               | `src/app/warCouncil/roundReducer.ts` — `TimebombOptions` reads `encounter.pendingTimebomb` into `playCard`, and `applyResolution` pays, clears and re-books in that order; folded into the trick's own damage by `src/warCouncil/bank.ts` — `resolveTrickBank`. It landed at the next hand's deal until this date                                                                     | —                                                                                                                                                                                                                                                                                                              |
+| A primed last trick carries into the next hand                              | settled                                                    | `src/hunt/types.ts` — the queue hangs off `EncounterState`, which outlives a hand; nothing at a hand boundary reads or clears it                                                                                                                                                                                                                                                   | —                                                                                                                                                                                                                                                                                                              |
+| Your share of the hit cashes out your streak                                  | settled — since 2026-08-19, at **two-thirds** since DLR-94 | `src/warCouncil/bank.ts` — `resolveTrickBank`'s cash-out branch has a **second trigger**, `timebombToPlayer > 0 && !blastGuarded`, reaching the same statement a lost trick reaches — and therefore the same `forcedCashValue` reduction                                                                                                                                            | Developer — the reading that Timebomb pays the reduced rate rather than full                                                                                                                                                                                                                                     |
+| A primed trick you win banks BEFORE it cashes                               | settled — a chosen reading                                 | `src/warCouncil/bank.ts` — the `isTaken` climb runs above the cash-out branch, so a streak of 4 winning trick 5 cashes 25 rather than 16                                                                                                                                                                                                                                           | Developer — reversing it is one line, and a different feel                                                                                                                                                                                                                                                     |
+| The Quarry's share never touches a bank                                       | settled                                                    | `src/warCouncil/bank.ts` — `timebombToQuarry` rides on `TrickResolution` and is summed into the Quarry's total by `incomingFrom`; the Quarry holds no bank or multiplier at all                                                                                                                                                                                                      | —                                                                                                                                                                                                                                                                                                              |
+| Two primed tricks both land                                                 | settled                                                    | `src/hunt/types.ts` — `EncounterState.pendingTimebomb` is a per-side `IncomingDamage` **accumulator**, not a single side                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                              |
+| Two marks in ONE trick still owe one hit                                      | settled — a predicate, not a count                         | `src/warCouncil/timebomb.ts` — `trickIsPrimed` is a boolean over the trick                                                                                                                                                                                                                                                                                                       | Developer — a count instead of a predicate is a small follow-up                                                                                                                                                                                                                                                |
 | A delayed hit can kill, and end the run                                       | settled                                                    | `src/hunt/encounter.ts` — the hit goes through the same `applyDamage`/`resolveWinner` as any other damage, and `src/hunt/runTransitions.ts` — `outcomeFor` re-derives the run's end from the result                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                              |
-| A queued hit dies with the fight                                              | settled                                                    | `src/hunt/encounter.ts` — `startEncounter` seeds `pendingEnvenom` to zeros and `advanceRun`/`startRun` both route through it; `queueEnvenom` also refuses a resolved encounter                                                                                                                                                                                                     | —                                                                                                                                                                                                                                                                                                              |
-| Pending poison has a surface                                                  | settled — since DLR-101, 2026-08-23                        | `src/app/warCouncil/duelHealthBars.ts`, `roundBars.ts`, `labels.ts`, `TrickWell.tsx` — see the four rows above. **No engine change**: every figure is derived from `encounter.pendingEnvenom`                                                                                                                                                                                      | —                                                                                                                                                                                                                                                                                                              |
+| A queued hit dies with the fight                                              | settled                                                    | `src/hunt/encounter.ts` — `startEncounter` seeds `pendingTimebomb` to zeros and `advanceRun`/`startRun` both route through it; `queueTimebomb` also refuses a resolved encounter                                                                                                                                                                                                     | —                                                                                                                                                                                                                                                                                                              |
+| Pending Timebomb has a surface                                                  | settled — since DLR-101, 2026-08-23                        | `src/app/warCouncil/duelHealthBars.ts`, `roundBars.ts`, `labels.ts`, `TrickWell.tsx` — see the four rows above. **No engine change**: every figure is derived from `encounter.pendingTimebomb`                                                                                                                                                                                      | —                                                                                                                                                                                                                                                                                                              |
 | Nothing announces the delayed hit **landing**                                 | **not built** — deliberately                               | nothing — the claimed hearts break and the streak drops mid-hand with nothing naming the cause. The booking is now shown in advance, which is the half DLR-101 closed                                                                                                                                                                                                              | **Developer** — a beat on the status band, or a line in the hint cascade                                                                                                                                                                                                                                       |
-| Nothing shows a held Poison Guard during a fight                              | **not built** — scoped out of DLR-101                      | nothing — `RunState.poisonGuardHeld` reaches the shop's purse cell and no felt surface                                                                                                                                                                                                                                                                                             | **Developer** — sharper now that poison booked against you is visible and the Guard that may cancel it is not                                                                                                                                                                                                  |
-| Poison Guard — bought, and live for one fight                                 | settled — since 2026-08-19                                 | `src/hunt/run.ts` — `RunState.poisonGuardHeld`, set by `runTransitions.ts`'s `buyFromShop`, carried by `advanceRun`'s spread and cleared by its private `guardAfter` the moment the encounter resolves                                                                                                                                                                             | —                                                                                                                                                                                                                                                                                                              |
-| Its price (1 coin)                                                            | **provisional** — transcribed                              | `src/hunt/config.ts` — `POISON_GUARD_PRICE`; read by `priceOf`. Its own key, level with `HEAL_PRICE`                                                                                                                                                                                                                                                                               | Developer — from `version-4-scope.md`, not derived; **unmeasured in play**                                                                                                                                                                                                                                     |
+| Nothing shows a held Blast Guard during a fight                              | **not built** — scoped out of DLR-101                      | nothing — `RunState.blastGuardHeld` reaches the shop's purse cell and no felt surface                                                                                                                                                                                                                                                                                             | **Developer** — sharper now that Timebomb booked against you is visible and the Guard that may cancel it is not                                                                                                                                                                                                  |
+| Blast Guard — bought, and live for one fight                                 | settled — since 2026-08-19                                 | `src/hunt/run.ts` — `RunState.blastGuardHeld`, set by `runTransitions.ts`'s `buyFromShop`, carried by `advanceRun`'s spread and cleared by its private `guardAfter` the moment the encounter resolves                                                                                                                                                                             | —                                                                                                                                                                                                                                                                                                              |
+| Its price (1 coin)                                                            | **provisional** — transcribed                              | `src/hunt/config.ts` — `BLAST_GUARD_PRICE`; read by `priceOf`. Its own key, level with `HEAL_PRICE`                                                                                                                                                                                                                                                                               | Developer — from `version-4-scope.md`, not derived; **unmeasured in play**                                                                                                                                                                                                                                     |
 | It sits on the fight-long shelf                                               | settled — since 2026-08-19                                 | `src/hunt/shop.ts` — `categoryOf` returns `ShopCategory.FightLong`; `SHOP_ITEMS_BY_CATEGORY` derives the shelf at module load, so the screen needed no edit                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                              |
 | Only one may be held at a time                                                | settled                                                    | `src/hunt/shop.ts` — `PurchaseRefusal.GuardAlreadyActive`, returned by `refusalFor` before the coin check; worded by `src/app/run/shopLabels.ts`                                                                                                                                                                                                                                   | Developer — a count instead of a flag is a small change                                                                                                                                                                                                                                                        |
-| It suppresses the poison reset only                                           | settled                                                    | `src/warCouncil/bank.ts` — `poisonGuarded` gates the poison trigger and not `trickHit`, so a lost trick still resets the streak and does not spend the Guard                                                                                                                                                                                                                       | —                                                                                                                                                                                                                                                                                                              |
-| It is spent whenever it fires, streak or not                                  | settled — AC4 read literally                               | `src/warCouncil/bank.ts` — `TrickResolution.poisonGuardSpent`; flipped by `src/app/warCouncil/roundReducer.ts` at both settle points                                                                                                                                                                                                                                               | —                                                                                                                                                                                                                                                                                                              |
-| It does nothing on the Quarry-side hit                                        | settled                                                    | nothing to enforce — `poisonGuarded` is read only against `poisonToPlayer`                                                                                                                                                                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                              |
+| It suppresses the Timebomb reset only                                           | settled                                                    | `src/warCouncil/bank.ts` — `blastGuarded` gates the Timebomb trigger and not `trickHit`, so a lost trick still resets the streak and does not spend the Guard                                                                                                                                                                                                                       | —                                                                                                                                                                                                                                                                                                              |
+| It is spent whenever it fires, streak or not                                  | settled — AC4 read literally                               | `src/warCouncil/bank.ts` — `TrickResolution.blastGuardSpent`; flipped by `src/app/warCouncil/roundReducer.ts` at both settle points                                                                                                                                                                                                                                               | —                                                                                                                                                                                                                                                                                                              |
+| It does nothing on the Quarry-side hit                                        | settled                                                    | nothing to enforce — `blastGuarded` is read only against `timebombToPlayer`                                                                                                                                                                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                              |
 | Nothing shows a held Guard during a fight                                     | **not built** — deliberately                               | nothing — `src/app/run/ShopPanel.tsx`'s purse cell is its only surface, and the felt renders none of it                                                                                                                                                                                                                                                                            | **Developer** — the same call as the announcement row above                                                                                                                                                                                                                                                    |
 | The discard — swap 1 to 3 cards for the same count off the pile               | settled — since DLR-100                                    | `src/warCouncil/discard.ts` — `applyDiscard`; committed by `src/app/warCouncil/discardHandlers.ts` — `handleTapDiscard`                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                              |
 | Discards go to the bottom of the pile; no discard pile, no reshuffle          | settled — since DLR-100                                    | `src/warCouncil/discard.ts` — `applyDiscard`'s `drawPile` splice, generalising `applyWoodcutterDraw`'s one-card convention to n                                                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                              |
@@ -2317,7 +2317,7 @@ selected when you leave and come back (it does not today); how much of a shelf i
 scrolls; and **whether the screen still reads well now it is the tallest it has ever been** — the fix
 for it fitting was a real defect fix, but the resulting tightness is an eye question.
 
-### Envenom landed — DLR-90, 2026-08-19
+### Timebomb landed — DLR-90, 2026-08-19
 
 > **Read this as a record of what DLR-90 shipped, not as the rules.** DLR-91 retimed the hit to the
 > resolution of the **next trick**, split the amount (**4** to the Quarry, **2** to the player), and made
@@ -2329,16 +2329,16 @@ trick that card is played into resolves by the normal rules; and **4 damage land
 trick at the deal of the next hand.** Engine and screen landed together, and the whole loop is reachable
 by playing.
 
-**The rule that makes it worth buying is a subtraction, not an addition.** A poisoned trick the Quarry
+**The rule that makes it worth buying is a subtraction, not an addition.** A primed trick the Quarry
 wins **cleanly** costs the player nothing — no damage, and the bank and multiplier survive uncashed
 instead of resetting. That is what turns a card you expected to throw away into a free strike. Win the
-poisoned trick yourself and the 4 lands on **you**, which is the symmetric case rather than a penalty:
+primed trick yourself and the 4 lands on **you**, which is the symmetric case rather than a penalty:
 the hit follows the trick's winner, so there is no mirrored rule anywhere.
 
 **Two readings were chosen where the ticket was ambiguous, and both are recorded rather than buried.**
 The override is keyed on the trick's **outcome** (a clean loss) rather than on **which side won**,
 because a _dodge_ is also a Quarry win and it is one the player banks — the literal reading would have
-deleted an earned bank. And a poisoned trick you win that is _also_ a skull trick **still costs you the
+deleted an earned bank. And a primed trick you win that is _also_ a skull trick **still costs you the
 skull**, which is the harshest available reading of a case no design document covers.
 
 **The discard rules cost nothing to enforce, which was the point of where the queue lives.** It sits on
@@ -2399,7 +2399,7 @@ until now there was nothing to do about it but play it out. A discard lets you t
 do not want and draw blind — including going void in a suit outright, which frees you from
 follow-suit in it for the rest of the hand.
 
-**What makes it structurally different from Cheat and Envenom, its two siblings on the felt rail:**
+**What makes it structurally different from Cheat and Timebomb, its two siblings on the felt rail:**
 both of those only ever open on your own turn. A discard also opens **before the Quarry has led** —
 the one moment in the game where the player may act while `canAct` reads false, because the trick
 has not started even though it is not technically your turn yet. That required one new predicate,
@@ -2456,7 +2456,7 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
   transcribed, and both explicitly expected to move after play rather than being a considered
   balance — the design's own instruction is "ship it, play it, move it." Whether re-arming a chained
   throw with a second tap reads as deliberate pacing or as friction is the same open question Cheat
-  and Envenom's own tap counts already carry, now asked a third time on the same rail. No session has
+  and Timebomb's own tap counts already carry, now asked a third time on the same rail. No session has
   yet leaned on the discard to dodge a telegraphed suit, so whether it changes how a forced trick
   reads at the table is unmeasured.
 - **The shop was priced for an income that has just arrived, and nobody has played against it** (new
@@ -2505,19 +2505,19 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
   played yet.
 - **Two taps to spend a streak, on a rail where two other controls also take two taps** (new 2026-08-20,
   DLR-94). The poise stage guards an irreversible cash-out against a misclick, and it matches the Cheat
-  and Envenom grammar. But Apply Damage is not a per-trick reflex, so the tap cost barely compounds —
+  and Timebomb grammar. But Apply Damage is not a per-trick reflex, so the tap cost barely compounds —
   which cuts both ways: it is cheap to keep, and it is also the reason one tap would be safe enough. Only
   felt by playing.
-- **A poison hit now pays a third less than it used to, and poison was already the harshest thing in the
-  game** (new 2026-08-20, DLR-94). The planner's reading — that poison reaches the same forced branch and
+- **A Timebomb hit now pays a third less than it used to, and Timebomb was already the harshest thing in the
+  game** (new 2026-08-20, DLR-94). The planner's reading — that Timebomb reaches the same forced branch and
   so pays the same reduced rate — is defensible and is what shipped. Its consequence is that the moment
   the rules call "the moment you cannot choose" also became the moment you are paid least for. Whether
-  that compounds poison's existing reputation as the change most likely to read as a bug is unmeasured.
+  that compounds Timebomb's existing reputation as the change most likely to read as a bug is unmeasured.
 - **The Quarry's hearts drop with no beat on a voluntary apply** (new 2026-08-20, DLR-94). A trick that
   takes damage breaks hearts visibly; a voluntary apply resolves no trick, so there is nothing for the
   breaking frame to read off and the hearts simply fall. Functionally correct, possibly abrupt, and the
   fix is a second breaking-damage source rather than a tweak.
-- **The felt rail now carries three plates** (new 2026-08-20, DLR-94). Cheats, Envenom and Apply Damage
+- **The felt rail now carries three plates** (new 2026-08-20, DLR-94). Cheats, Timebomb and Apply Damage
   share one column. QA confirmed the page does not scroll at 1920×1080, 1440×900 or 1280×720, which is
   the checkable half; whether it _reads_ as crowded at a short viewport is not, and is the developer's eye.
 - **The flask is the answer to a run recorded as unwinnable, and the run has not been played with it
@@ -2539,19 +2539,19 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
   count is on the shop screen and nowhere else, so a player deciding whether to push on cannot see
   whether they have one in hand — and the moment they most want to know is mid-fight, when it is
   unreachable anyway. This is the **fourth** item whose state is legible only where it is bought, after
-  the Poison Guard, the Whetstone and pending poison. No rule required a readout, so none was invented,
+  the Blast Guard, the Whetstone and pending Timebomb. No rule required a readout, so none was invented,
   but the pattern is now a habit rather than a one-off.
 - **A boss kill refills to exactly one, so a boss beaten on a full flask gives nothing** (new
   2026-08-20, DLR-93). The refill sets the count rather than adding to it, deliberately — there is
   never a second charge banked. The consequence is a small perverse incentive: drinking a nearly-wasted
   flask _before_ a boss fight is strictly better than carrying a full one into it, since the refill
   would otherwise be worth nothing. Whether that is a nice bit of planning or an accident to close is
-  unjudged, and it is the same shape as the Poison Guard's accepted oddity below.
+  unjudged, and it is the same shape as the Blast Guard's accepted oddity below.
 - **The strongest item in the shop costs four times what a fight pays, and nobody has yet bought one**
   (new 2026-08-19, DLR-92). A Whetstone is 4 coins against **1 coin per fight won**, so on flat winnings it
   is four fights of saving while the run is expected to end in its first or second stage. QA played two full
   runs, reached the shop, and **never got past 2 coins** — which is the same wall DLR-90 hit at 2 coins for
-  Envenom, one item further out. The design's answer is the **quick-kill payout** (a fast fight paying more
+  Timebomb, one item further out. The design's answer is the **quick-kill payout** (a fast fight paying more
   than a coin), which is a separate ticket and **is not built** — so today the item is priced for an income
   that does not exist yet. The consequence worth naming: **the shop's most interesting purchase is
   currently its least reachable**, and the two cheap items already predicted to win every visit sit in front
@@ -2566,11 +2566,11 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
 - **Nothing on the felt says the bank is climbing faster** (new 2026-08-19, DLR-92). The bank meter shows
   the running total and the multiplier, so a player who owns two Whetstones sees the bank jump by 3 a trick
   with **nothing naming why** — the only surface stating what they own is the shop's purse cell, which is
-  not on screen during a fight. This is the same shape of gap already recorded for poison and the Poison
+  not on screen during a fight. This is the same shape of gap already recorded for Timebomb and the Timebomb
   Guard below, and it is now the third item whose effect is legible only through its consequences. No rule
   required a readout, so none was invented.
-- **Holding a Poison Guard can cost you health, which is the opposite of how insurance reads** (new
-  2026-08-19, DLR-91; **accepted, not open**). The Guard suppresses the poison-driven cash-out — so the
+- **Holding a Blast Guard can cost you health, which is the opposite of how insurance reads** (new
+  2026-08-19, DLR-91; **accepted, not open**). The Guard suppresses the Timebomb-driven cash-out — so the
   cash-out does not happen — so a Quarry that would have died to it **survives**. And under the
   Quarry-first ordering (section 8), a Quarry that survives is a Quarry that lets your damage through. So
   there are positions where **buying the Guard strictly loses you 2 health** you would otherwise have
@@ -2578,23 +2578,23 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
   The developer accepted this as a real decision rather than smoothing it out — _"that's fine, this is
   just a play test for buying items from the shop."_ **The cheapest measurement is whether it ever bites
   you and whether you notice why.**
-- **Poison is legible only through its effects — one of the three blind spots is closed, two are not**
+- **Timebomb is legible only through its effects — one of the three blind spots is closed, two are not**
   (new 2026-08-19, DLR-90; **sharpened by DLR-91**; **narrowed by DLR-101, 2026-08-23**). Three things
-  were invisible: **pending poison** never appeared on the felt, a **held Guard** never appears during a
-  fight, and **the moment poison fires** shows as hearts disappearing plus a streak that vanished, with
+  were invisible: **pending Timebomb** never appeared on the felt, a **held Guard** never appears during a
+  fight, and **the moment Timebomb fires** shows as hearts disappearing plus a streak that vanished, with
   nothing naming the cause. **DLR-101 closed the first**: a booked hit is now drawn on the bar that owes
   it and named by the trick that books it. The other two stand. The Guard is now the _sharper_ of them,
-  because you can see poison booked against you and cannot see the thing that may cancel it. And the
+  because you can see Timebomb booked against you and cannot see the thing that may cancel it. And the
   landing is still the single most expensive event in a hand and still the least explained — though it
   is no longer a surprise, only unnarrated. The costed options for it are unchanged: **a line in the hint
   cascade** (~15 lines) or **a beat on the status band**.
-- **The whole poison readout was shipped without anyone looking at it** (new 2026-08-23, DLR-101). It
+- **The whole Timebomb readout was shipped without anyone looking at it** (new 2026-08-23, DLR-101). It
   landed in an unattended run that skipped both the plan-approval and the mockup gate, and four
   judgements went with it. **The ticket's own open design question was answered by default**: whether
-  booked poison reuses the at-risk reading or gets its own was to be decided at the mockup gate, and
+  booked Timebomb reuses the at-risk reading or gets its own was to be decided at the mockup gate, and
   the plan's default — its own reading — stands unconfirmed. **The tone it is drawn at is a placeholder
   nobody chose**, picked only to sit between the at-risk treatment and a solid heart. **Whether it reads
-  against the felt at all** — it reuses the poison mark's own green, on a green table — is unjudged.
+  against the felt at all** — it reuses the Timebomb mark's own green, on a green table — is unjudged.
   **All the new wording is placeholder.** Reverting to a shared reading is deliberately cheap, which is
   the mitigation, not an argument that it should stand.
 - **Five readings on one row of hearts may be one too many** (new 2026-08-23, DLR-101). The Quarry's
@@ -2603,7 +2603,7 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
   hit standing on that row at the same time, which is exactly when telling them apart matters most. The
   measurement is cheap and has one right answer: play a third fight with a booked hit and a live streak
   and say whether the bands separate.
-- **The poison readout has never been seen painting in a browser** (new 2026-08-23, DLR-101). Reaching
+- **The Timebomb readout has never been seen painting in a browser** (new 2026-08-23, DLR-101). Reaching
   it live needs a shop visit to buy a charge, and the verification pass could not get there; the state
   was proven by tests and by calling the real derivations against the live-served code. That is good
   evidence the numbers are right and **no evidence about what it looks like**, which is precisely what
@@ -2613,9 +2613,9 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
   the durable signal and the line is the transient one, which is the intended division — but if the bar's
   reading does not land on its own, the announcement that would have explained it is already gone. Only
   judgeable by playing.
-- **Two poisoned cards in one trick owe one hit, and that is a predicate rather than a decision** (new
-  2026-08-19, DLR-91). Poison stacks across _separate_ poisoned tricks, which is the case the developer was
-  asked about and answered. But a trick is only ever "poisoned or not" — nothing counts the marks in it — so
+- **Two primed cards in one trick owe one hit, and that is a predicate rather than a decision** (new
+  2026-08-19, DLR-91). Timebomb stacks across _separate_ primed tricks, which is the case the developer was
+  asked about and answered. But a trick is only ever "primed or not" — nothing counts the marks in it — so
   spending two charges on two cards that meet in the same trick wastes one. Whether that should owe double
   is a count instead of a predicate, and a small follow-up either way.
 - **A cash-out that kills the Quarry is now strictly better than it was, and nothing was retuned** (new
@@ -2623,18 +2623,18 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
   measurably easier at exactly the moments that were previously fatal, and no health total, damage figure
   or Quarry curve moved in response — by decision, so that it is a choice rather than a side effect. **The
   measurement is whether a fight ever felt like it should have killed you and did not.**
-- **A dodge on a poisoned trick is a free bonus nobody designed** (new 2026-08-19, DLR-90). Poison waives
+- **A dodge on a primed trick is a free bonus nobody designed** (new 2026-08-19, DLR-90). Timebomb waives
   the _clean loss_, deliberately, because a dodge is a Quarry win the player **banks** and replacing it
-  would delete an earned bank. The consequence is that poisoning a card and then dodging with it **banks
+  would delete an earned bank. The consequence is that priming a card and then dodging with it **banks
   the trick, keeps the streak, and still bills the Quarry 4** — strictly better than either outcome alone,
   for a card played expecting to lose. It falls out of two correct rules rather than from a decision.
   Whether that is a nice discovery or an accident to close is unjudged.
 - **Two prices now compete for the same coin, and one of them was already predicted to win** (new
   2026-08-19, DLR-90). DLR-84 already recorded the expectation that **Heal is bought every visit**,
-  because a guaranteed 4 health beats a rule-break you may not need. Envenom is **twice the price** of
+  because a guaranteed 4 health beats a rule-break you may not need. Timebomb is **twice the price** of
   either existing item, and QA could not reach 2 coins in five playthroughs. So the item most likely to
   go unbought is the one that just shipped, and the fix — if it needs one — is a price rather than a
-  mechanic. **`ENVENOM_PRICE` and `HEAL_PRICE` are separate keys**, so it is one line either way.
+  mechanic. **`TIMEBOMB_PRICE` and `HEAL_PRICE` are separate keys**, so it is one line either way.
 - **The shop screen is at the edge of its viewport, and getting there took three attempts** (new
   2026-08-18, DLR-89). The tab row pushed the shop's content past the height of the window, and because
   the shell crops rather than scrolls, **the button that leaves the shop was drawn off the bottom of the
@@ -2727,7 +2727,7 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
   again left alone deliberately** — a free 6 health once per stage is the second of the two named
   answers landing, and the two obvious rule changes (raise starting health, wire up the automatic
   between-fight restore) remain explicitly ruled out. Upgrades that raise the player's damage are
-  partly built (Envenom, the Whetstone) and both are priced out of reach on today's income. The honest
+  partly built (Timebomb, the Whetstone) and both are priced out of reach on today's income. The honest
   measurement is still _how far_ a run gets, but it is now a measurement of the economy rather than
   of its absence. The cheapest disproof that
   something is wrong rather than merely unfinished: if fight two is routinely unreachable rather than
@@ -2816,7 +2816,7 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
   segment, reintroduced deliberately and in a different grammar — dimmed and flashing rather than
   solid, Quarry-side only, and never touching the stated current-of-max figure. The measurement is
   cheap and has one right answer: ask a player mid-hand what the flashing hearts will do.
-- **Rank 8 is still called "Poison" and now means nothing at all** (new 2026-08-13, play-test 2 §6
+- **Rank 8 is still called "Timebomb" and now means nothing at all** (new 2026-08-13, play-test 2 §6
   Q3). It has no play-time ability and no scoring intervention, and the skull is a _separate_ marker
   — so the name actively suggests a connection that does not exist. It will read as a bug in the
   play-test.

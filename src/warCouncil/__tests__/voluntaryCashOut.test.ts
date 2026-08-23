@@ -12,7 +12,7 @@ import { PlayerSide, RoundPhase, Suit, type RoundState } from '../types'
 const stock = (over: Partial<ApplyDamageStock> = {}): ApplyDamageStock => ({
   bank: 3,
   multiplier: 3,
-  poisonPending: false,
+  timebombPending: false,
   canAct: true,
   ...over,
 })
@@ -51,9 +51,9 @@ describe('applyDamageRefusalFor — AC1 and D6', () => {
     )
   })
 
-  it('D6 — refuses while a poison hit is still owed', () => {
-    expect(applyDamageRefusalFor(stock({ poisonPending: true }))).toBe(
-      ApplyDamageRefusal.PoisonPending,
+  it('D6 — refuses while a Timebomb hit is still owed', () => {
+    expect(applyDamageRefusalFor(stock({ timebombPending: true }))).toBe(
+      ApplyDamageRefusal.TimebombPending,
     )
   })
 
@@ -62,13 +62,13 @@ describe('applyDamageRefusalFor — AC1 and D6', () => {
   })
 
   // The order is the reason that will still be true after the next trick banks — `flaskRefusalFor`
-  // states the same discipline. Getting it backwards tells a poisoned player to go take a trick.
-  it('names the move gate first, then poison, then the bank', () => {
-    expect(applyDamageRefusalFor(stock({ bank: 0, poisonPending: true, canAct: false }))).toBe(
+  // states the same discipline. Getting it backwards tells a primed player to go take a trick.
+  it('names the move gate first, then Timebomb, then the bank', () => {
+    expect(applyDamageRefusalFor(stock({ bank: 0, timebombPending: true, canAct: false }))).toBe(
       ApplyDamageRefusal.NotYourMove,
     )
-    expect(applyDamageRefusalFor(stock({ bank: 0, poisonPending: true }))).toBe(
-      ApplyDamageRefusal.PoisonPending,
+    expect(applyDamageRefusalFor(stock({ bank: 0, timebombPending: true }))).toBe(
+      ApplyDamageRefusal.TimebombPending,
     )
   })
 

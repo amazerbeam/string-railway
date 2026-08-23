@@ -175,7 +175,7 @@ the slot empty.
 
 One CSS-only change to `warCouncilCheats.css`: `.wc-cheat-slot`'s `aspect-ratio` moved from `2 / 3`
 (identical to `.wc-card`'s own ratio) to `4 / 3` with `border-radius: 10px`. The Cheat slot is the
-established sibling both the Envenom plate and the Apply Damage plate say they mirror, so this was
+established sibling both the Timebomb plate and the Apply Damage plate say they mirror, so this was
 the first of the three felt-rail plates reshaped, and the other two followed identically the same
-phase — see [the Envenom plate's note](envenom-charge-and-the-mark.md#dlr-97-the-plates-polish-pass)
+phase — see [the Timebomb plate's note](timebomb-charge-and-the-mark.md#dlr-97-the-plates-polish-pass)
 for the `game-ux` "consistency" reasoning. No selection logic or reducer wiring changed.

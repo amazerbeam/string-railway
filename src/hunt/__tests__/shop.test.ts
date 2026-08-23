@@ -4,7 +4,7 @@ import {
   CHEAT_SLOT_COUNT,
   TIMEBOMB_PRICE,
   HEAL_PRICE,
-  POISON_GUARD_PRICE,
+  BLAST_GUARD_PRICE,
   WHETSTONE_PRICE,
 } from '../config'
 import {
@@ -28,7 +28,7 @@ const baseStock = (over: Partial<ShopStock> = {}): ShopStock => ({
   cheatCount: 0,
   playerHealth: 6,
   maxPlayerHealth: 10,
-  poisonGuardHeld: false,
+  blastGuardHeld: false,
   ...over,
 })
 const stock = baseStock
@@ -38,7 +38,7 @@ describe('SHOP_ITEMS', () => {
     expect(SHOP_ITEMS).toEqual([
       ShopItem.Cheat,
       ShopItem.Timebomb,
-      ShopItem.PoisonGuard,
+      ShopItem.BlastGuard,
       ShopItem.Whetstone,
       ShopItem.Heal,
     ])
@@ -58,8 +58,8 @@ describe('priceOf', () => {
     expect(priceOf(ShopItem.Timebomb)).toBe(TIMEBOMB_PRICE)
   })
 
-  it('reads POISON_GUARD_PRICE for the Poison Guard', () => {
-    expect(priceOf(ShopItem.PoisonGuard)).toBe(POISON_GUARD_PRICE)
+  it('reads BLAST_GUARD_PRICE for the Blast Guard', () => {
+    expect(priceOf(ShopItem.BlastGuard)).toBe(BLAST_GUARD_PRICE)
   })
 
   it('DLR-92 AC1 — prices the Whetstone from WHETSTONE_PRICE', () => {
@@ -121,20 +121,20 @@ describe('refusalFor — Timebomb (DLR-90)', () => {
   })
 })
 
-describe('refusalFor — Poison Guard (DLR-91 AC1/AC3)', () => {
+describe('refusalFor — Blast Guard (DLR-91 AC1/AC3)', () => {
   it('AC3 — refuses a Guard while one is held, and says which reason', () => {
-    const held = { ...baseStock(), coins: 9, poisonGuardHeld: true }
-    expect(refusalFor(held, ShopItem.PoisonGuard)).toBe(PurchaseRefusal.GuardAlreadyActive)
+    const held = { ...baseStock(), coins: 9, blastGuardHeld: true }
+    expect(refusalFor(held, ShopItem.BlastGuard)).toBe(PurchaseRefusal.GuardAlreadyActive)
   })
 
   it('AC3 — the held Guard outranks the coin check, so the reason survives the coin arriving', () => {
-    const broke = { ...baseStock(), coins: 0, poisonGuardHeld: true }
-    expect(refusalFor(broke, ShopItem.PoisonGuard)).toBe(PurchaseRefusal.GuardAlreadyActive)
+    const broke = { ...baseStock(), coins: 0, blastGuardHeld: true }
+    expect(refusalFor(broke, ShopItem.BlastGuard)).toBe(PurchaseRefusal.GuardAlreadyActive)
   })
 
   it('AC1 — sells a Guard when none is held and the coins are there', () => {
-    const ready = { ...baseStock(), coins: POISON_GUARD_PRICE, poisonGuardHeld: false }
-    expect(refusalFor(ready, ShopItem.PoisonGuard)).toBeNull()
+    const ready = { ...baseStock(), coins: BLAST_GUARD_PRICE, blastGuardHeld: false }
+    expect(refusalFor(ready, ShopItem.BlastGuard)).toBeNull()
   })
 })
 
@@ -189,8 +189,8 @@ describe('categoryOf', () => {
     expect(categoryOf(ShopItem.Timebomb)).toBe(ShopCategory.OneTimeUse)
   })
 
-  it('shelves the Poison Guard on the fight-long rung (DLR-91 AC1)', () => {
-    expect(categoryOf(ShopItem.PoisonGuard)).toBe(ShopCategory.FightLong)
+  it('shelves the Blast Guard on the fight-long rung (DLR-91 AC1)', () => {
+    expect(categoryOf(ShopItem.BlastGuard)).toBe(ShopCategory.FightLong)
   })
 
   it('DLR-92 AC1 — puts the Whetstone on the run-permanent rung', () => {
@@ -219,8 +219,8 @@ describe('SHOP_ITEMS_BY_CATEGORY', () => {
     ])
   })
 
-  it('puts the Poison Guard alone on the fight-long rung (DLR-91 AC1)', () => {
-    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.FightLong]).toEqual([ShopItem.PoisonGuard])
+  it('puts the Blast Guard alone on the fight-long rung (DLR-91 AC1)', () => {
+    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.FightLong]).toEqual([ShopItem.BlastGuard])
   })
 
   it('DLR-92 — sells the Whetstone alone on the run-permanent rung; game-permanent stays empty', () => {

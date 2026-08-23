@@ -20,7 +20,7 @@ was left in `src/`; `git status --porcelain` was confirmed clean both times.
 `startRun` / `recordEncounter` / `advanceRun` / `buyFromShop` / `drinkFlask`
 (`src/hunt/runTransitions.ts`, `src/hunt/run.ts`), `dealRound` / `playCard` / `chooseCpuMove` /
 `cashBankNow` (`src/warCouncil/deal.ts`, `playCard.ts`, `cpuPlayer.ts`, `voluntaryCashOut.ts`),
-`envenomCard` (`src/warCouncil/envenom.ts`), `applyDiscard` (`src/warCouncil/discard.ts`),
+`primeCard` (`src/warCouncil/timebomb.ts`), `applyDiscard` (`src/warCouncil/discard.ts`),
 `addCheat` / `removeCheat` / `hasCheat` (`src/hunt/cheats.ts`), `legalMoves` called with
 `{ ignoreFollowSuit: true }` when a Cheat was armed (`src/warCouncil/legalMoves.ts`).
 
@@ -32,7 +32,7 @@ decisions — the same logic the game already uses to drive its opponent. Betwee
 the flask whenever charged and healed (bought a Heal at ≤70% health), then spent any coin surplus
 on Whetstones. Two cash-out policies were compared: **hoard** (never voluntarily Apply Damage) and
 **eager** (cash out once bank value ≥2, plus a low-health safety valve). No Cheats, no discards, no
-Envenom, no Poison Guard were used in this pass.
+Timebomb, no Blast Guard were used in this pass.
 
 **Result: 0/120 wins**, both policies. Death histogram (hoard, n=60): fight 0 — 30 runs, fight 1 —
 15, fight 2 — 14, fight 3 — 1. Player health eroded ~2.65 HP/hand against ~3.06–3.10 HP/hand dealt
@@ -42,7 +42,7 @@ to the Quarry — a real but thin ~15% edge, nowhere near enough buffer against 
 ## Pass 2 — full toolkit (900 runs, 6 configurations)
 
 Pass 1 used only two of the run's available tools (Heal, Whetstone). This pass rebuilt the harness
-to actually use Cheats, the discard budget, Envenom, and Poison Guard, wired through their real
+to actually use Cheats, the discard budget, Timebomb, and Blast Guard, wired through their real
 exported functions, and re-ran 150 full runs per configuration:
 
 | Config | What was added | Win rate | Avg fights survived | Best single run | p90 |
@@ -51,15 +51,15 @@ exported functions, and re-ran 150 full runs per configuration:
 | B | + Cheats (spent only when ordinary follow-suit has no winner and an off-suit trump would win) | 0/150 | 1.13 | 5 | 3 |
 | C1 | + Discard, dumping **high**-ranked cards | 0/150 | 0.96 | 8 | 2 |
 | C2 | + Discard, dumping **low**-ranked cards (a re-roll gamble) | 0/150 | 1.35 | 6 | 3 |
-| D | + Envenom + Poison Guard (marked only when the follow was a predicted loss) | 0/150 | 1.14 | 5 | 3 |
-| E | Full toolkit together (Cheats + Envenom + Guard + discard-low) | 0/150 | 1.25 | 5 | 3 |
+| D | + Timebomb + Blast Guard (marked only when the follow was a predicted loss) | 0/150 | 1.14 | 5 | 3 |
+| E | Full toolkit together (Cheats + Timebomb + Guard + discard-low) | 0/150 | 1.25 | 5 | 3 |
 
 **No configuration produced a single win across 900 runs.** The best single run of the entire
 investigation reached fight 8 of 25 (still stage 2, before the second stage boss).
 
 **Why the extra tools barely moved the needle:** a fresh run starts with `RUN_STARTING_CHEATS = 0`
-and `0` Envenom charges — both are bought, not granted, and `COINS_PER_ENCOUNTER_WIN = 1` against
-`CHEAT_PRICE = 1` / `ENVENOM_PRICE = 2` means even a single win barely buys one charge. Since 34% of
+and `0` Timebomb charges — both are bought, not granted, and `COINS_PER_ENCOUNTER_WIN = 1` against
+`CHEAT_PRICE = 1` / `TIMEBOMB_PRICE = 2` means even a single win barely buys one charge. Since 34% of
 runs die on encounter 0 alone and 69% are dead by encounter 1, most runs are over before there is
 ever a shop visit to spend on these tools at all. The discard budget is the one tool free from turn
 one (`DISCARDS_PER_FIGHT = 3`, no purchase needed) and was the only lever that measurably helped —

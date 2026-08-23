@@ -104,7 +104,7 @@ export function playCard(
 
   // Every rule AC4-AC9 states lives in `resolveTrickBank`, DLR-90's AC5 with them, and DLR-91's
   // D1/D3 too; this function decides nothing about the outcome, it only reports the facts. The
-  // three poison facts arrive from the caller for the reason `PlayCardOptions` documents.
+  // three Timebomb facts arrive from the caller for the reason `PlayCardOptions` documents.
   const lastResolution = resolveTrickBank(
     { bank: next.bank, multiplier: next.multiplier },
     {
@@ -112,9 +112,9 @@ export function playCard(
       skullTrick: trickIsSkulled(next.skulledCards, completedTrick),
       finalTrick,
       timebombTrick: trickIsPrimed(next.primedCards, completedTrick),
-      poisonToPlayer: options?.poisonToPlayer ?? 0,
-      poisonToQuarry: options?.poisonToQuarry ?? 0,
-      poisonGuarded: options?.poisonGuarded ?? false,
+      timebombToPlayer: options?.timebombToPlayer ?? 0,
+      timebombToQuarry: options?.timebombToQuarry ?? 0,
+      blastGuarded: options?.blastGuarded ?? false,
       bankClimbBonus: options?.bankClimbBonus ?? 0,
     },
   )

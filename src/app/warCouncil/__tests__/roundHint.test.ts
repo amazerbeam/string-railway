@@ -37,7 +37,7 @@ function baseUi(overrides: Partial<RoundUiState> = {}): RoundUiState {
       encounter: encounterFixture,
       cheats: [],
       timebombCharges: timebombChargesFixture,
-      poisonGuardHeld: false,
+      blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
     }),
@@ -60,8 +60,8 @@ const someResolvedTrick: ResolvedTrick = {
     multiplier: 1,
     cashedAtHandEnd: false,
     timebombTarget: null,
-    poisonToQuarry: 0,
-    poisonGuardSpent: false,
+    timebombToQuarry: 0,
+    blastGuardSpent: false,
   },
 }
 

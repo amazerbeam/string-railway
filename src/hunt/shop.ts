@@ -3,7 +3,7 @@ import {
   CHEAT_SLOT_COUNT,
   TIMEBOMB_PRICE,
   HEAL_PRICE,
-  POISON_GUARD_PRICE,
+  BLAST_GUARD_PRICE,
   WHETSTONE_PRICE,
 } from './config'
 import type { Coins, Health } from './types'
@@ -11,7 +11,7 @@ import type { Coins, Health } from './types'
 export const ShopItem = {
   Cheat: 'cheat',
   Timebomb: 'timebomb',
-  PoisonGuard: 'poisonGuard',
+  BlastGuard: 'blastGuard',
   Whetstone: 'whetstone',
   Heal: 'heal',
 } as const
@@ -22,7 +22,7 @@ export type ShopItem = (typeof ShopItem)[keyof typeof ShopItem]
 export const SHOP_ITEMS: readonly ShopItem[] = [
   ShopItem.Cheat,
   ShopItem.Timebomb,
-  ShopItem.PoisonGuard,
+  ShopItem.BlastGuard,
   ShopItem.Whetstone,
   ShopItem.Heal,
 ]
@@ -65,7 +65,7 @@ export interface ShopStock {
   readonly playerHealth: Health
   readonly maxPlayerHealth: Health
   /** DLR-91 AC3 — a bought-but-unspent Guard is already held. Only one can be active at a time. */
-  readonly poisonGuardHeld: boolean
+  readonly blastGuardHeld: boolean
 }
 
 /** Total over `ShopItem`, so adding a third item is a compile error here rather than an
@@ -76,8 +76,8 @@ export function priceOf(item: ShopItem): Coins {
       return CHEAT_PRICE
     case ShopItem.Timebomb:
       return TIMEBOMB_PRICE
-    case ShopItem.PoisonGuard:
-      return POISON_GUARD_PRICE
+    case ShopItem.BlastGuard:
+      return BLAST_GUARD_PRICE
     case ShopItem.Whetstone:
       return WHETSTONE_PRICE
     case ShopItem.Heal:
@@ -101,7 +101,7 @@ export function categoryOf(item: ShopItem): ShopCategory | null {
     case ShopItem.Timebomb:
       return ShopCategory.OneTimeUse
     // DLR-91 AC1 — the fight-long rung, which DLR-89 built and left empty for exactly this.
-    case ShopItem.PoisonGuard:
+    case ShopItem.BlastGuard:
       return ShopCategory.FightLong
     // DLR-92 AC1 — the run-permanent rung, which DLR-89 built and left empty for exactly this.
     case ShopItem.Whetstone:
@@ -148,7 +148,7 @@ export const UNCATEGORISED_SHOP_ITEMS: readonly ShopItem[] = SHOP_ITEMS.filter(
  * the slots are the reason that will still be true when the coin arrives.
  *
  * A non-finite balance refuses rather than passing the comparison — `NaN >= 1` is `false`, which
- * would otherwise read as "not enough coins" by accident and hide a poisoned figure.
+ * would otherwise read as "not enough coins" by accident and hide a corrupted figure.
  */
 export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | null {
   if (item === ShopItem.Cheat && stock.cheatCount >= CHEAT_SLOT_COUNT) {
@@ -157,7 +157,7 @@ export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | 
   if (item === ShopItem.Heal && stock.playerHealth >= stock.maxPlayerHealth) {
     return PurchaseRefusal.AlreadyFullHealth
   }
-  if (item === ShopItem.PoisonGuard && stock.poisonGuardHeld) {
+  if (item === ShopItem.BlastGuard && stock.blastGuardHeld) {
     return PurchaseRefusal.GuardAlreadyActive
   }
   if (!Number.isFinite(stock.coins) || stock.coins < priceOf(item)) {

@@ -24,11 +24,11 @@ export const SHOP_COINS_LABEL = 'Coins'
 export const SHOP_HEALTH_LABEL = 'Health'
 export const SHOP_SLOTS_LABEL = 'Cheat slots'
 /** DLR-90 — the purse cell for held Timebomb charges. PLACEHOLDER copy. */
-export const SHOP_TIMEBOMB_LABEL = 'Timebomb held'
+export const SHOP_TIMEBOMB_LABEL = 'Timebombs held'
 /** DLR-91 AC3 — the purse cell for a held Guard, so the refusal on a second purchase has a visible
  *  cause. PLACEHOLDER copy. Words rather than a colour or a glyph alone, per `game-ux`'s "state
  *  reads without motion or colour alone" — a static screenshot still says which it is. */
-export const SHOP_GUARD_LABEL = 'Poison Guard'
+export const SHOP_GUARD_LABEL = 'Blast Guard'
 /** DLR-92 — the purse cell for Whetstones owned, so a player deciding on another copy can see what
  *  they already hold. A count with no denominator, exactly as `SHOP_TIMEBOMB_LABEL`: there is no cap.
  *  PLACEHOLDER copy. */
@@ -41,7 +41,7 @@ export const SHOP_PURSE_GROUP_LABEL = 'Your purse and health'
 export const SHOP_ITEM_NAME: Readonly<Record<ShopItem, string>> = {
   [ShopItem.Cheat]: 'Cheat',
   [ShopItem.Timebomb]: 'Timebomb',
-  [ShopItem.PoisonGuard]: 'Poison Guard', // PLACEHOLDER copy — the developer's call.
+  [ShopItem.BlastGuard]: 'Blast Guard', // PLACEHOLDER copy — the developer's call.
   [ShopItem.Whetstone]: 'Whetstone', // PLACEHOLDER copy — the developer's call
   [ShopItem.Heal]: 'Heal',
 }
@@ -50,8 +50,8 @@ export const SHOP_ITEM_NAME: Readonly<Record<ShopItem, string>> = {
  *  does not leave the screen quoting a number the engine no longer uses. */
 export const SHOP_ITEM_BLURB: Readonly<Record<ShopItem, string>> = {
   [ShopItem.Cheat]: 'A card for a slot. Play it later to ignore follow-suit.',
-  [ShopItem.Timebomb]: `Poison a card in your hand. The winner of the trick it is played into takes damage at the next trick — ${TIMEBOMB_QUARRY_DAMAGE} for the Quarry, ${TIMEBOMB_PLAYER_DAMAGE} for you, and yours cashes out your streak.`,
-  [ShopItem.PoisonGuard]: `Insurance for one fight. The next time your own poison lands on you, you still take the ${TIMEBOMB_PLAYER_DAMAGE} but your streak survives.`, // PLACEHOLDER copy
+  [ShopItem.Timebomb]: `Prime a card in your hand. The winner of the trick it is played into takes the blast at the next trick — ${TIMEBOMB_QUARRY_DAMAGE} for the Quarry, ${TIMEBOMB_PLAYER_DAMAGE} for you, and yours cashes out your streak.`,
+  [ShopItem.BlastGuard]: `Insurance for one fight. The next time your own Timebomb detonates on you, you still take the ${TIMEBOMB_PLAYER_DAMAGE} but your streak survives.`, // PLACEHOLDER copy
   [ShopItem.Whetstone]:
     'Every trick you take banks one more, for the rest of the run. Buy it again to stack it.', // PLACEHOLDER copy
   [ShopItem.Heal]: `Restore ${HEAL_HEALTH_RESTORED} health, now. Anything over your maximum is lost.`,
@@ -62,7 +62,7 @@ export const SHOP_ITEM_BLURB: Readonly<Record<ShopItem, string>> = {
 export const PURCHASE_REFUSAL_MESSAGE: Readonly<Record<PurchaseRefusal, string>> = {
   [PurchaseRefusal.SlotsFull]: 'Both Cheat slots are full.',
   [PurchaseRefusal.AlreadyFullHealth]: 'You are already at full health.',
-  [PurchaseRefusal.GuardAlreadyActive]: 'You are already holding a Poison Guard.',
+  [PurchaseRefusal.GuardAlreadyActive]: 'You are already holding a Blast Guard.',
   [PurchaseRefusal.NotEnoughCoins]: 'You do not have the coins for this.',
 }
 
@@ -134,7 +134,7 @@ export const shopPanelId = (category: ShopCategory) => `shop-panel-${category}`
 export const SHOP_FLASK_GROUP_LABEL = 'Your flask'
 
 /** The control's own name. PLACEHOLDER copy — and "Flask" itself is on `version-4-scope.md`'s
- *  open-names list beside Timebomb, Poison Guard and Whetstone. */
+ *  open-names list beside Timebomb, Blast Guard and Whetstone. */
 export const SHOP_FLASK_LABEL = 'Drink the flask'
 
 /** AC6 — the flask's answer to every shop card's price line. Words, not a colour or a glyph alone,

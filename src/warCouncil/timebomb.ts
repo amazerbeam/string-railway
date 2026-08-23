@@ -2,8 +2,8 @@ import { containsCard } from './cardUtils'
 import type { Card, PlayerSide, RoundState, TrickCard } from './types'
 
 /**
- * The Timebomb marker. A SEPARATE module from `skulls.ts` on purpose: DLR-90 states poison is a
- * wholly separate marker from a skull, and two markers sharing a helper is how they stop being
+ * The Timebomb marker. A SEPARATE module from `skulls.ts` on purpose: DLR-90 states the Timebomb
+ * is a wholly separate marker from a skull, and two markers sharing a helper is how they stop being
  * separate. Nothing here reads `skulledCards` and nothing there reads `primedCards`.
  */
 
@@ -20,10 +20,7 @@ export function isPrimed(primedCards: readonly Card[], card: Card): boolean {
  * hand, so a marked card can be played by either side within one hand. Testing the trick survives
  * that path with no special case.
  */
-export function trickIsPrimed(
-  primedCards: readonly Card[],
-  trick: readonly TrickCard[],
-): boolean {
+export function trickIsPrimed(primedCards: readonly Card[], trick: readonly TrickCard[]): boolean {
   return trick.some((play) => isPrimed(primedCards, play.card))
 }
 
@@ -38,11 +35,11 @@ export function trickIsPrimed(
 export function primeCard(state: RoundState, side: PlayerSide, card: Card): RoundState {
   if (!containsCard(state.hands[side], card)) {
     throw new RangeError(
-      `Cannot poison the ${card.rank} of ${card.suit} — it is not in the ${side}'s hand`,
+      `Cannot prime the ${card.rank} of ${card.suit} — it is not in the ${side}'s hand`,
     )
   }
   if (isPrimed(state.primedCards, card)) {
-    throw new RangeError(`The ${card.rank} of ${card.suit} is already poisoned`)
+    throw new RangeError(`The ${card.rank} of ${card.suit} is already primed`)
   }
   return { ...state, primedCards: [...state.primedCards, card] }
 }

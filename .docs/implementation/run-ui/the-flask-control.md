@@ -111,4 +111,4 @@ the screen's tab order is otherwise unchanged.
 `SHOP_FLASK_GROUP_LABEL`, `SHOP_FLASK_LABEL`, `SHOP_FLASK_FREE_TAG`, `SHOP_FLASK_NO_COIN`,
 `flaskBlurbText`, `flaskChargesText` and both `FLASK_REFUSAL_MESSAGE` sentences are all the
 developer's to rewrite — and **"Flask" itself is on `version-4-scope.md`'s open-names list**, beside
-Envenom, Poison Guard and Whetstone.
+Timebomb, Blast Guard and Whetstone.

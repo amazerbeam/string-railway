@@ -23,8 +23,8 @@ const resolvedTrick: ResolvedTrick = {
     multiplier: 0,
     cashedAtHandEnd: false,
     timebombTarget: null,
-    poisonToQuarry: 0,
-    poisonGuardSpent: false,
+    timebombToQuarry: 0,
+    blastGuardSpent: false,
   },
 }
 
@@ -77,7 +77,7 @@ describe('TrickWell — a resolved trick', () => {
     expect(screen.getByText(/You take 1\./)).toBeDefined()
   })
 
-  it('announces the marked card as poisoned (DLR-90 AC2)', () => {
+  it('announces the marked card as primed (DLR-90 AC2)', () => {
     render(
       <TrickWell
         currentTrick={[]}
@@ -87,7 +87,7 @@ describe('TrickWell — a resolved trick', () => {
         onCarryOn={vi.fn()}
       />,
     )
-    expect(screen.getByRole('button', { name: /7 of Bells, poisoned/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /7 of Bells, primed/i })).toBeDefined()
   })
 
   it('announces a card carrying both a skull and the mark, both wordings present', () => {
@@ -101,18 +101,18 @@ describe('TrickWell — a resolved trick', () => {
         onCarryOn={vi.fn()}
       />,
     )
-    expect(screen.getByRole('button', { name: /7 of Bells, skulled, poisoned/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /7 of Bells, skulled, primed/i })).toBeDefined()
   })
 
-  it('names a booked hit and its target when the trick just set poison (DLR-101)', () => {
-    const poisoned: ResolvedTrick = {
+  it('names a booked hit and its target when the trick just booked a Timebomb (DLR-101)', () => {
+    const primed: ResolvedTrick = {
       ...resolvedTrick,
       resolution: { ...resolvedTrick.resolution, timebombTarget: DuelSide.Quarry },
     }
     render(
       <TrickWell
         currentTrick={[]}
-        resolvedTrick={poisoned}
+        resolvedTrick={primed}
         quarryToLead={false}
         onCarryOn={vi.fn()}
       />,
@@ -128,7 +128,7 @@ describe('TrickWell — a resolved trick', () => {
     ).toBeDefined()
   })
 
-  it('renders no poison clause when nothing was booked this trick', () => {
+  it('renders no Timebomb clause when nothing was booked this trick', () => {
     render(
       <TrickWell
         currentTrick={[]}
@@ -137,6 +137,6 @@ describe('TrickWell — a resolved trick', () => {
         onCarryOn={vi.fn()}
       />,
     )
-    expect(screen.queryByText(/Poison set/)).toBeNull()
+    expect(screen.queryByText(/Timebomb ticking/)).toBeNull()
   })
 })

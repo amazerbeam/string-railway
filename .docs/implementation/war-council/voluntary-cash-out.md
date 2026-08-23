@@ -26,7 +26,7 @@ incomingFromCashOut(cashOut: number): IncomingDamage
 `applyDamageRefusalFor` is **the** single statement of whether the control is live. The reducer asks it
 before it commits anything, and the plate asks it to disable itself and print the reason. Two readings of
 one rule, never two rules — a greyed control and a reducer branch that decide availability separately is
-exactly how the two drift apart, which is the same reason `cheatArmed` and `envenomArmed` are exported
+exactly how the two drift apart, which is the same reason `cheatArmed` and `timebombArmed` are exported
 from `roundUiState.ts` rather than recomputed in the component.
 
 It returns a reason **code**, not a sentence: this module holds no user-facing copy, and
@@ -37,12 +37,12 @@ becomes a compile error there rather than an `undefined` sentence under a disabl
 | Reason | Means |
 | --- | --- |
 | `NotYourMove` | The felt is not waiting on the player's card — a reveal is held, a prompt is open, the engine faulted, the hand or the fight is over, or it is the Quarry's turn. |
-| `PoisonPending` | A booked poison hit has not landed yet (design decision D6). |
+| `TimebombPending` | A booked Timebomb hit has not landed yet (design decision D6). |
 | `EmptyBank` | Nothing banked, so there is nothing to cash. |
 
 **The order is deliberate and is tested.** `NotYourMove` first because it is true of the whole felt
-rather than of this control; `PoisonPending` before `EmptyBank` for `flaskRefusalFor`'s stated reason —
-report the reason that will still be true after the next trick banks. Telling a poisoned player with an
+rather than of this control; `TimebombPending` before `EmptyBank` for `flaskRefusalFor`'s stated reason —
+report the reason that will still be true after the next trick banks. Telling a primed player with an
 empty bank to go and take a trick would be actively wrong.
 
 A non-integer or non-positive bank or multiplier refuses rather than passing the comparison. `NaN > 0` is
@@ -56,7 +56,7 @@ the guard is stated once.
 interface ApplyDamageStock {
   readonly bank: number
   readonly multiplier: number
-  readonly poisonPending: boolean
+  readonly timebombPending: boolean
   readonly canAct: boolean
 }
 ```
@@ -64,7 +64,7 @@ interface ApplyDamageStock {
 Four plain values, never an `EncounterState` or a `RoundUiState`. This module owns the rule and must not
 learn the shape of the layer that calls it — the same discipline `FlaskStock` and `ShopStock` document.
 `src/app/warCouncil/roundUiState.ts`'s `applyDamageStock` is the single place the app's shape is
-translated into this one, which is where `hasPendingEnvenom(encounter)` and `canAct(state)` are read.
+translated into this one, which is where `hasPendingTimebomb(encounter)` and `canAct(state)` are read.
 
 ### `cashBankNow` — and what it deliberately does not touch
 
@@ -117,7 +117,7 @@ ticket asked for: a distinct resolution path over the same arithmetic.
 ## What the tests pin
 
 `src/warCouncil/__tests__/voluntaryCashOut.test.ts` — 13 specs covering the refusal ordering (including
-the three-way case where all three reasons are true at once), the pending-poison lock-out, the degenerate
+the three-way case where all three reasons are true at once), the pending-Timebomb lock-out, the degenerate
 bank, the full payout, the zeroed counters, the zero player damage, the untouched trick/phase/leader/hands,
 the untouched `lastResolution` in both the null and carried cases, non-mutation of the input round, and
 that calling it on an empty bank is safe rather than an error.

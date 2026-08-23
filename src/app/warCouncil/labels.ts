@@ -37,20 +37,18 @@ export interface CardMarks {
 }
 
 /** `marks` is optional so every call site that names an unmarked card keeps compiling unchanged;
- *  a caller that knows a card's markers passes them. Skull before poison, matching the order the
+ *  a caller that knows a card's markers passes them. Skull before Timebomb, matching the order the
  *  two marks are drawn in. PLACEHOLDER COPY, as this file's rest is. */
 export function cardAccessibleName(card: Card, marks: CardMarks = {}): string {
   const base = `${card.rank} of ${SUIT_NAME[card.suit]}`
   const named = RANK_NAME[card.rank]
   const name = named ? `${base} (${named})` : base
-  const suffix = [marks.skulled && 'skulled', marks.primed && 'poisoned']
-    .filter(Boolean)
-    .join(', ')
+  const suffix = [marks.skulled && 'skulled', marks.primed && 'primed'].filter(Boolean).join(', ')
   return suffix ? `${name}, ${suffix}` : name
 }
 
 /** The mark's own label, beside `SKULL_MARK_LABEL`. PLACEHOLDER copy. */
-export const VENOM_MARK_LABEL = 'Poisoned'
+export const PRIMED_MARK_LABEL = 'Primed'
 
 /** A stable React list key for a card — suit and rank never repeat within one hand or pile. */
 export function cardKey(card: Card): string {
@@ -111,21 +109,21 @@ export function quarryHealthLabel(name: string | undefined): string {
  * DLR-86 AC6's one sentence, for a reader who cannot see the row.
  *
  * The current-of-max reading is byte-identical to DLR-80's whenever `pending` is 0, and the
- * at-risk clause is byte-identical to DLR-86's whenever `doomed` is 0 — which is every shape the
+ * at-risk clause is byte-identical to DLR-86's whenever `ticking` is 0 — which is every shape the
  * earlier assertions pin.
  *
  * DLR-101 splits the two clauses because they are two different claims. "At risk" is conditional
- * and evaporates if the streak breaks; "poisoned" is committed and lands at the next trick. A
+ * and evaporates if the streak breaks; "ticking" is committed and lands at the next trick. A
  * meter that calls a booked hit "at risk" is less true than its own picture, which this file's
  * own standard says is worse than having no picture at all. Placeholder copy: the wording is the
  * developer's.
  */
 export function healthBarValueText(view: HealthBarView): string {
   const standing = `${view.current} of ${view.max}.`
-  const atRiskOnly = view.pending - view.doomed
+  const atRiskOnly = view.pending - view.ticking
   const atRisk = atRiskOnly > 0 ? ` ${atRiskOnly} at risk.` : ''
-  const poisoned = view.doomed > 0 ? ` ${view.doomed} poisoned.` : ''
-  const body = `${standing}${atRisk}${poisoned}`
+  const ticking = view.ticking > 0 ? ` ${view.ticking} ticking.` : ''
+  const body = `${standing}${atRisk}${ticking}`
   return view.lethal ? `${body} Lethal.` : body
 }
 
@@ -201,18 +199,18 @@ export const COINS_PLATE_LABEL = 'Coins'
 export const TIMEBOMB_RAIL_LABEL = 'Timebomb'
 export const TIMEBOMB_EMPTY_LABEL = 'No Timebomb held'
 export const TIMEBOMB_POISED_HINT = 'Tap Timebomb again to arm it'
-export const TIMEBOMB_ARMED_HINT = 'Pick a card in your hand to poison'
+export const TIMEBOMB_ARMED_HINT = 'Pick a card in your hand to prime'
 
 /** DLR-101 — the reveal's clause for a hit this trick just BOOKED, as distinct from one it paid.
  *  Names the side and the amount, which the Apply Damage refusal (the only prior trace of a
  *  booked hit anywhere in the UI) named neither of. The figure comes from `timebombDamageFor`,
  *  its single owner, so this copy cannot pick the wrong constant. PLACEHOLDER copy, as this
  *  file's rest is. */
-export function poisonBookedText(target: DuelSide): string {
+export function timebombBookedText(target: DuelSide): string {
   const amount = timebombDamageFor(target)
   return target === DuelSide.Player
-    ? `Poison set — you take ${amount} at the next trick.`
-    : `Poison set — they take ${amount} at the next trick.`
+    ? `Timebomb ticking — you take ${amount} at the next trick.`
+    : `Timebomb ticking — they take ${amount} at the next trick.`
 }
 
 /** The plate's accessible name. The three stages MUST differ, and the count is in the name rather
@@ -235,8 +233,8 @@ export const APPLY_DAMAGE_POISED_HINT = 'Tap Apply again to cash your streak'
  *  a compile error here rather than an `undefined` sentence under a disabled button. */
 export const APPLY_DAMAGE_REFUSAL_MESSAGE: Readonly<Record<ApplyDamageRefusal, string>> = {
   [ApplyDamageRefusal.EmptyBank]: 'No streak to cash — take a trick first.',
-  [ApplyDamageRefusal.PoisonPending]:
-    'A poison hit is still owed — you cannot apply until it lands.',
+  [ApplyDamageRefusal.TimebombPending]:
+    'A Timebomb is still ticking — you cannot apply until it detonates.',
   [ApplyDamageRefusal.NotYourMove]: 'Not your move yet.',
 }
 

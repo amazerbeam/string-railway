@@ -14,7 +14,7 @@ import {
   huntFixture,
   makeRound,
   maxHealthFixture,
-  poisonGuardHeldFixture,
+  blastGuardHeldFixture,
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
@@ -52,7 +52,7 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
         cheats={[]}
         coins={coinsFixture}
         timebombCharges={timebombChargesFixture}
-        poisonGuardHeld={poisonGuardHeldFixture}
+        blastGuardHeld={blastGuardHeldFixture}
         bankClimbBonus={bankClimbBonusFixture}
         discardsRemaining={discardsRemainingFixture}
         onComplete={onComplete}
@@ -198,7 +198,7 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
         cheats={[]}
         coins={coinsFixture}
         timebombCharges={timebombChargesFixture}
-        poisonGuardHeld={poisonGuardHeldFixture}
+        blastGuardHeld={blastGuardHeldFixture}
         bankClimbBonus={bankClimbBonusFixture}
         discardsRemaining={discardsRemainingFixture}
         onComplete={onComplete}
@@ -257,7 +257,7 @@ describe('WarCouncilRound — the Quarry’s at-risk preview (DLR-86)', () => {
         cheats={[]}
         coins={coinsFixture}
         timebombCharges={timebombChargesFixture}
-        poisonGuardHeld={poisonGuardHeldFixture}
+        blastGuardHeld={blastGuardHeldFixture}
         bankClimbBonus={bankClimbBonusFixture}
         discardsRemaining={discardsRemainingFixture}
         onComplete={vi.fn()}

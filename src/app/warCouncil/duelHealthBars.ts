@@ -13,9 +13,9 @@ export interface HealthBarView {
   readonly secure: Health
   /** Health at risk but not yet lost — the lighter segment, carved out of current health. */
   readonly pending: Damage
-  /** DLR-101 — the committed subset of `pending`: booked poison, clamped to the band. At-risk
-   *  alone is `pending - doomed`. */
-  readonly doomed: Damage
+  /** DLR-101 — the committed subset of `pending`: booked Timebomb, clamped to the band. At-risk
+   *  alone is `pending - ticking`. */
+  readonly ticking: Damage
   readonly current: Health
   readonly max: Health
   /** Exactly `max` entries, ordered from this side's anchored edge inward. Replaces the two
@@ -33,13 +33,13 @@ export interface HealthBarView {
  *
  * The VALUES are written straight into the DOM as `data-state`, so they are string-bound: this map
  * and `warCouncilHealthBars.css`'s attribute selectors are the only two places they may be
- * written. A rename here type-checks cleanly and renders an unstyled heart. `Doomed` was added on
- * DLR-101 for a standing heart that booked poison has already claimed.
+ * written. A rename here type-checks cleanly and renders an unstyled heart. `Ticking` was added on
+ * DLR-101 for a standing heart that booked Timebomb has already claimed.
  */
 export const HeartState = {
   Whole: 'whole',
   AtRisk: 'atRisk',
-  Doomed: 'doomed',
+  Ticking: 'ticking',
   Breaking: 'breaking',
   Broken: 'broken',
 } as const
@@ -60,15 +60,15 @@ export const NO_BREAKING: Readonly<Record<DuelSide, Damage>> = {
 export interface HealthBarOverlays {
   /** The damage of the event currently on screen — the `breaking` hearts (DLR-86 AC2). */
   readonly breaking?: Readonly<Record<DuelSide, Damage>>
-  /** DLR-101 — poison already booked against each side, i.e. `encounter.pendingTimebomb` passed
+  /** DLR-101 — Timebomb already booked against each side, i.e. `encounter.pendingTimebomb` passed
    *  through unchanged. COMMITTED, unlike the streak preview: it lands at the resolution of the
    *  next trick and nothing on the felt stops it, which is why it gets its own heart state
    *  rather than reusing `atRisk`. */
-  readonly doomed?: Readonly<Record<DuelSide, Damage>>
+  readonly ticking?: Readonly<Record<DuelSide, Damage>>
 }
 
 /**
- * AC3's streak preview, plus DLR-101's booked poison — the two things that will deplete a bar
+ * AC3's streak preview, plus DLR-101's booked Timebomb — the two things that will deplete a bar
  * without another card being played.
  *
  * RENAMED from `projectedFromStreak` on DLR-101. The old name described half of what this now
@@ -78,7 +78,7 @@ export interface HealthBarOverlays {
  * The `Math.max(0, …)` floor is NOT a second damage clamp: `applyDamage` remains DLR-70's single
  * clamp point and this function never feeds it. The floor exists solely to uphold
  * `duelHealthBars`'s documented `projected <= current` precondition, which a negative projection
- * would violate and turn into a negative `pending`. It now covers BOTH sides, because poison is
+ * would violate and turn into a negative `pending`. It now covers BOTH sides, because Timebomb is
  * booked symmetrically while the streak only ever depletes the Quarry.
  *
  * Surplus is discarded by the heart row's own length rather than here, which is what keeps AC5's
@@ -88,13 +88,13 @@ export function projectedDepletion(
   current: Readonly<Record<DuelSide, Health>>,
   bank: number,
   multiplier: number,
-  pendingPoison: Readonly<Record<DuelSide, Damage>>,
+  pendingTimebombs: Readonly<Record<DuelSide, Damage>>,
 ): Readonly<Record<DuelSide, Health>> {
   return {
-    [DuelSide.Player]: Math.max(0, current[DuelSide.Player] - pendingPoison[DuelSide.Player]),
+    [DuelSide.Player]: Math.max(0, current[DuelSide.Player] - pendingTimebombs[DuelSide.Player]),
     [DuelSide.Quarry]: Math.max(
       0,
-      current[DuelSide.Quarry] - bank * multiplier - pendingPoison[DuelSide.Quarry],
+      current[DuelSide.Quarry] - bank * multiplier - pendingTimebombs[DuelSide.Quarry],
     ),
   }
 }
@@ -116,7 +116,7 @@ export function projectedDepletion(
  * `overlays.breaking` is the damage dealt by the event currently on screen, already keyed by the
  * side it depletes — `incomingFrom` performed that crossing before this module ever sees it. It
  * defaults to `NO_BREAKING` so every existing call site compiles unchanged; only a caller that
- * wants a "breaking" heart passes it. `overlays.doomed` is DLR-101's booked poison, defaulting to
+ * wants a "breaking" heart passes it. `overlays.ticking` is DLR-101's booked Timebomb, defaulting to
  * `NO_PENDING_TIMEBOMB`.
  *
  * Returns an ARRAY, which is what makes §6's net-only fallback (AC8) a one-line change here —
@@ -139,7 +139,7 @@ export function duelHealthBars(
   overlays: HealthBarOverlays = {},
 ): readonly HealthBarView[] {
   const breaking = overlays.breaking ?? NO_BREAKING
-  const doomedBySide = overlays.doomed ?? NO_PENDING_TIMEBOMB
+  const tickingBySide = overlays.ticking ?? NO_PENDING_TIMEBOMB
 
   return BAR_ORDER.map((side) => {
     const sideMax = max[side]
@@ -152,25 +152,25 @@ export function duelHealthBars(
     const secure = projected[side]
     const pending = current[side] - secure
     const broke = breaking[side]
-    // The ONE clamp on booked poison, and the only arithmetic this function performs on it.
-    // `pending` is non-negative by the upheld precondition, so `doomed` is too.
-    const doomed = Math.min(doomedBySide[side], pending)
+    // The ONE clamp on booked Timebomb, and the only arithmetic this function performs on it.
+    // `pending` is non-negative by the upheld precondition, so `ticking` is too.
+    const ticking = Math.min(tickingBySide[side], pending)
     // The innermost standing heart the streak's conditional preview reaches. Below it the band is
-    // committed: poison lands at the next trick and nothing on the felt stops it.
-    const atRiskEnd = current[side] - doomed
+    // committed: Timebomb lands at the next trick and nothing on the felt stops it.
+    const atRiskEnd = current[side] - ticking
 
     return {
       side,
       secure,
       pending,
-      doomed,
+      ticking,
       current: current[side],
       max: sideMax,
       lethal: pending > 0 && secure <= 0,
       hearts: Array.from({ length: sideMax }, (_, i) => {
         if (i < secure) return HeartState.Whole
         if (i < atRiskEnd) return HeartState.AtRisk
-        if (i < current[side]) return HeartState.Doomed
+        if (i < current[side]) return HeartState.Ticking
         if (i < current[side] + broke) return HeartState.Breaking
         return HeartState.Broken
       }),

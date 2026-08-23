@@ -65,10 +65,10 @@ run-state consumer. Required rather than optional for the usual reason, and it e
 immediately: the compiler enumerated all four mount sites (`App.tsx` plus one render helper and
 three JSX mounts in the component specs) rather than letting one silently render a blank plate.
 
-**DLR-100 added `discardsRemaining: number`, following `envenomCharges`'s precedent rather than a
+**DLR-100 added `discardsRemaining: number`, following `timebombCharges`'s precedent rather than a
 new pattern.** `App.tsx`'s `<WarCouncilRound>` JSX gained `discardsRemaining={run.discardsRemaining}`
 and `handleComplete`'s `recordEncounter` call gained `result.discardsRemaining` as its sixth
-argument, between `result.poisonGuardHeld` and `result.unplayedAtResolve`. Widening
+argument, between `result.blastGuardHeld` and `result.unplayedAtResolve`. Widening
 `recordEncounter`'s signature surfaced a wider set of call sites than the contract's own audit
 predicted — six pre-existing `src/hunt/__tests__/` files still on the old six-argument form, beyond
 `App.tsx` — all fixed inline in the same task. See

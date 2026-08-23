@@ -39,15 +39,15 @@ export interface LegalMoveOptions {
  * What `playCard` needs beyond the legality question. EXTENDS `LegalMoveOptions` so the same object
  * still satisfies `legalMoves` with no second parameter to keep in step.
  *
- * The poison figures are handed IN rather than read: the pending queue lives on `EncounterState` in
+ * The Timebomb figures are handed IN rather than read: the pending queue lives on `EncounterState` in
  * `src/hunt/`, the bank rules live on `RoundState` here, and `src/hunt/` must never learn about
  * `RoundState` — `hunt/types.ts` documents that cycle. The reducer holds both and is the one place
  * they can meet.
  */
 export interface PlayCardOptions extends LegalMoveOptions {
-  readonly poisonToPlayer?: Damage
-  readonly poisonToQuarry?: Damage
-  readonly poisonGuarded?: boolean
+  readonly timebombToPlayer?: Damage
+  readonly timebombToQuarry?: Damage
+  readonly blastGuarded?: boolean
   /** DLR-92 AC4 — the bank-climb bonus in force for this hand. Handed IN for the reason this
    *  interface's docblock already gives: it is a run figure and `src/warCouncil/` must not learn
    *  `RunState`. Absent means 0, so the Quarry's own call sites stay untouched. */

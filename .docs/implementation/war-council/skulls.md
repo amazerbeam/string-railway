@@ -79,7 +79,7 @@ Three degenerate cases are handled rather than assumed away:
 - **A rank missing from the table reads as zero, never as `NaN`.** Every one of the three lookup
   sites coerces through an explicit `?? 0`. `Record<number, number>` cannot force all eleven keys to
   be present, so a curve that omits a rank type-checks cleanly; this makes the omission mean
-  "unskullable" instead of poisoning the running total.
+  "unskullable" instead of corrupting the running total.
 - **Running out of candidates returns fewer than asked**, silently and correctly — the same posture
   as `assignSkulls`'s clamp.
 

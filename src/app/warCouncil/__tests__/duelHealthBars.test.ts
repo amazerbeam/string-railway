@@ -20,8 +20,14 @@ const FULL: Readonly<Record<DuelSide, Health>> = {
 }
 
 function at(side: DuelSide, current: Health, breaking = 0) {
-  const health = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryHealthForEncounter(0), ...{ [side]: current } }
-  const views = duelHealthBars(health, health, MAX, { breaking: { ...NO_BREAKING, [side]: breaking } })
+  const health = {
+    [DuelSide.Player]: PLAYER_START_HEALTH,
+    [DuelSide.Quarry]: quarryHealthForEncounter(0),
+    ...{ [side]: current },
+  }
+  const views = duelHealthBars(health, health, MAX, {
+    breaking: { ...NO_BREAKING, [side]: breaking },
+  })
   return views.find((v) => v.side === side)!
 }
 
@@ -79,7 +85,9 @@ describe('duelHealthBars — one heart per health point, counted from max', () =
   })
 
   it('is all whole at full health with nothing banked and nothing breaking', () => {
-    expect(at(DuelSide.Player, PLAYER_START_HEALTH).hearts.every((h) => h === HeartState.Whole)).toBe(true)
+    expect(
+      at(DuelSide.Player, PLAYER_START_HEALTH).hearts.every((h) => h === HeartState.Whole),
+    ).toBe(true)
   })
 
   it('paints the hearts past current as broken, in order, from the anchored edge inward', () => {
@@ -105,12 +113,14 @@ describe('duelHealthBars — one heart per health point, counted from max', () =
   })
 })
 
-describe('projectedDepletion — AC3’s preview plus DLR-101’s booked poison', () => {
+describe('projectedDepletion — AC3’s preview plus DLR-101’s booked Timebomb', () => {
   const quarryMax = quarryHealthForEncounter(0)
   const full = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
 
   it('leaves the player untouched — the streak only ever threatens the Quarry', () => {
-    expect(projectedDepletion(full, 3, 3, NO_PENDING_TIMEBOMB)[DuelSide.Player]).toBe(PLAYER_START_HEALTH)
+    expect(projectedDepletion(full, 3, 3, NO_PENDING_TIMEBOMB)[DuelSide.Player]).toBe(
+      PLAYER_START_HEALTH,
+    )
   })
 
   it('takes bank × multiplier off the Quarry’s projection', () => {
@@ -123,7 +133,11 @@ describe('projectedDepletion — AC3’s preview plus DLR-101’s booked poison'
 
   it('AC5 — a reset streak previews nothing at all', () => {
     expect(projectedDepletion(full, 0, 0, NO_PENDING_TIMEBOMB)[DuelSide.Quarry]).toBe(quarryMax)
-    const [, quarry] = duelHealthBars(full, projectedDepletion(full, 0, 0, NO_PENDING_TIMEBOMB), MAX)
+    const [, quarry] = duelHealthBars(
+      full,
+      projectedDepletion(full, 0, 0, NO_PENDING_TIMEBOMB),
+      MAX,
+    )
     expect(quarry.pending).toBe(0)
     expect(quarry.hearts.some((h) => h === HeartState.AtRisk)).toBe(false)
   })
@@ -131,16 +145,18 @@ describe('projectedDepletion — AC3’s preview plus DLR-101’s booked poison'
   it('AC3 — a live streak marks that many of the Quarry’s hearts at risk, and no more', () => {
     const projected = projectedDepletion(full, 3, 3, NO_PENDING_TIMEBOMB)
     const [, quarry] = duelHealthBars(full, projected, MAX)
-    expect(quarry.hearts.filter((h) => h === HeartState.AtRisk)).toHaveLength(Math.min(9, quarryMax))
+    expect(quarry.hearts.filter((h) => h === HeartState.AtRisk)).toHaveLength(
+      Math.min(9, quarryMax),
+    )
     expect(quarry.lethal).toBe(9 >= quarryMax)
   })
 })
 
-describe('DLR-101 — booked poison on the projection and the row', () => {
+describe('DLR-101 — booked Timebomb on the projection and the row', () => {
   const quarryMax = quarryHealthForEncounter(0)
   const full = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
 
-  it('subtracts the Quarry’s booked poison as well as the streak', () => {
+  it('subtracts the Quarry’s booked Timebomb as well as the streak', () => {
     const projected = projectedDepletion(full, 2, 2, {
       [DuelSide.Player]: 0,
       [DuelSide.Quarry]: TIMEBOMB_QUARRY_DAMAGE,
@@ -148,7 +164,7 @@ describe('DLR-101 — booked poison on the projection and the row', () => {
     expect(projected[DuelSide.Quarry]).toBe(quarryMax - 4 - TIMEBOMB_QUARRY_DAMAGE)
   })
 
-  it('subtracts the player’s booked poison, which the streak never touches', () => {
+  it('subtracts the player’s booked Timebomb, which the streak never touches', () => {
     const projected = projectedDepletion(full, 3, 3, {
       [DuelSide.Player]: TIMEBOMB_PLAYER_DAMAGE,
       [DuelSide.Quarry]: 0,
@@ -165,13 +181,13 @@ describe('DLR-101 — booked poison on the projection and the row', () => {
     expect(projected[DuelSide.Quarry]).toBe(0)
   })
 
-  it('marks the innermost standing hearts `doomed`, with at-risk outside them', () => {
+  it('marks the innermost standing hearts `ticking`, with at-risk outside them', () => {
     const current = { [DuelSide.Player]: 10, [DuelSide.Quarry]: 10 }
     const projected = { [DuelSide.Player]: 10, [DuelSide.Quarry]: 3 }
     const [, quarry] = duelHealthBars(current, projected, MAX, {
-      doomed: { [DuelSide.Player]: 0, [DuelSide.Quarry]: 4 },
+      ticking: { [DuelSide.Player]: 0, [DuelSide.Quarry]: 4 },
     })
-    expect(quarry.doomed).toBe(4)
+    expect(quarry.ticking).toBe(4)
     expect(quarry.pending).toBe(7)
     expect(quarry.hearts.slice(0, 3)).toEqual([
       HeartState.Whole,
@@ -184,21 +200,21 @@ describe('DLR-101 — booked poison on the projection and the row', () => {
       HeartState.AtRisk,
     ])
     expect(quarry.hearts.slice(6, 10)).toEqual([
-      HeartState.Doomed,
-      HeartState.Doomed,
-      HeartState.Doomed,
-      HeartState.Doomed,
+      HeartState.Ticking,
+      HeartState.Ticking,
+      HeartState.Ticking,
+      HeartState.Ticking,
     ])
   })
 
-  it('clamps `doomed` to the pending band, so overkill leaves no trace', () => {
+  it('clamps `ticking` to the pending band, so overkill leaves no trace', () => {
     const current = { [DuelSide.Player]: 2, [DuelSide.Quarry]: 10 }
     const projected = { [DuelSide.Player]: 0, [DuelSide.Quarry]: 10 }
     const [player] = duelHealthBars(current, projected, MAX, {
-      doomed: { [DuelSide.Player]: 99, [DuelSide.Quarry]: 0 },
+      ticking: { [DuelSide.Player]: 99, [DuelSide.Quarry]: 0 },
     })
-    expect(player.doomed).toBe(2)
-    expect(player.hearts.filter((s) => s === HeartState.Doomed)).toHaveLength(2)
+    expect(player.ticking).toBe(2)
+    expect(player.hearts.filter((s) => s === HeartState.Ticking)).toHaveLength(2)
     expect(player.lethal).toBe(true)
   })
 
@@ -208,6 +224,6 @@ describe('DLR-101 — booked poison on the projection and the row', () => {
     const [, withOverlay] = duelHealthBars(current, projected, MAX, {})
     const [, withNone] = duelHealthBars(current, projected, MAX)
     expect(withOverlay.hearts).toEqual(withNone.hearts)
-    expect(withNone.doomed).toBe(0)
+    expect(withNone.ticking).toBe(0)
   })
 })

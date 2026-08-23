@@ -4,7 +4,7 @@ import {
   applyDamage,
   buyFromShop,
   DuelSide,
-  POISON_GUARD_PRICE,
+  BLAST_GUARD_PRICE,
   PurchaseRefusal,
   recordEncounter,
   refusalFor,
@@ -35,35 +35,35 @@ function wonRunWithCoins(coins: number) {
   }
 }
 
-describe('Poison Guard purchase (AC1/AC3)', () => {
+describe('Blast Guard purchase (AC1/AC3)', () => {
   it('AC1 — buying one spends the price and holds the Guard', () => {
-    const bought = buyFromShop(wonRunWithCoins(3), ShopItem.PoisonGuard)
-    expect(bought.poisonGuardHeld).toBe(true)
-    expect(bought.coins).toBe(3 - POISON_GUARD_PRICE)
+    const bought = buyFromShop(wonRunWithCoins(3), ShopItem.BlastGuard)
+    expect(bought.blastGuardHeld).toBe(true)
+    expect(bought.coins).toBe(3 - BLAST_GUARD_PRICE)
   })
 
   it('AC3 — a second purchase is refused rather than stacking or overwriting', () => {
-    const bought = buyFromShop(wonRunWithCoins(3), ShopItem.PoisonGuard)
-    expect(refusalFor(shopStockFor(bought), ShopItem.PoisonGuard)).toBe(
+    const bought = buyFromShop(wonRunWithCoins(3), ShopItem.BlastGuard)
+    expect(refusalFor(shopStockFor(bought), ShopItem.BlastGuard)).toBe(
       PurchaseRefusal.GuardAlreadyActive,
     )
-    expect(() => buyFromShop(bought, ShopItem.PoisonGuard)).toThrow(RangeError)
-    expect(bought.coins).toBe(3 - POISON_GUARD_PRICE)
+    expect(() => buyFromShop(bought, ShopItem.BlastGuard)).toThrow(RangeError)
+    expect(bought.coins).toBe(3 - BLAST_GUARD_PRICE)
   })
 
   it('a fresh run holds no Guard', () => {
-    expect(startRun(10).poisonGuardHeld).toBe(false)
+    expect(startRun(10).blastGuardHeld).toBe(false)
   })
 })
 
-describe('Poison Guard lifetime (AC2)', () => {
+describe('Blast Guard lifetime (AC2)', () => {
   it('AC2 — survives the advanceRun that opens the fight it was bought for', () => {
-    const bought = buyFromShop(wonRunWithCoins(3), ShopItem.PoisonGuard)
-    expect(advanceRun(bought).poisonGuardHeld).toBe(true)
+    const bought = buyFromShop(wonRunWithCoins(3), ShopItem.BlastGuard)
+    expect(advanceRun(bought).blastGuardHeld).toBe(true)
   })
 
   it('AC2 — is gone once that fight resolves, spent or not', () => {
-    const fighting = advanceRun(buyFromShop(wonRunWithCoins(3), ShopItem.PoisonGuard))
+    const fighting = advanceRun(buyFromShop(wonRunWithCoins(3), ShopItem.BlastGuard))
     const killed = applyDamage(fighting.encounter, {
       [DuelSide.Player]: 0,
       [DuelSide.Quarry]: fighting.encounter.health[DuelSide.Quarry],
@@ -77,11 +77,11 @@ describe('Poison Guard lifetime (AC2)', () => {
       fighting.discardsRemaining,
       null,
     )
-    expect(after.poisonGuardHeld).toBe(false)
+    expect(after.blastGuardHeld).toBe(false)
   })
 
   it('AC2 — survives a hand that does NOT resolve the fight', () => {
-    const fighting = advanceRun(buyFromShop(wonRunWithCoins(3), ShopItem.PoisonGuard))
+    const fighting = advanceRun(buyFromShop(wonRunWithCoins(3), ShopItem.BlastGuard))
     const scratched = applyDamage(fighting.encounter, {
       [DuelSide.Player]: 1,
       [DuelSide.Quarry]: 1,
@@ -95,6 +95,6 @@ describe('Poison Guard lifetime (AC2)', () => {
       fighting.discardsRemaining,
       null,
     )
-    expect(after.poisonGuardHeld).toBe(true)
+    expect(after.blastGuardHeld).toBe(true)
   })
 })

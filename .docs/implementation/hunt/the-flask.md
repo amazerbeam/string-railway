@@ -68,7 +68,7 @@ rounds for the reason `config.ts`'s boss-health projection rounds: a fractional 
 heart row that renders whole hearts.
 
 It **throws a `RangeError`** on a non-positive or non-finite maximum rather than returning `NaN`. A
-`NaN` heal would poison the `Math.min` in the clamp, land in `encounter.health`, and vanish from the
+`NaN` heal would corrupt the `Math.min` in the clamp, land in `encounter.health`, and vanish from the
 health bar with nothing logged anywhere.
 
 ### `flaskRefusalFor` — the one statement of "can this be drunk"
@@ -87,7 +87,7 @@ return null
 empty flask at full health, the empty flask is the reason that will still be true after the next hit.
 
 **A non-finite charge count refuses rather than passing the comparison.** `NaN <= 0` is `false`, which
-would otherwise read as "a charge in hand" and present a poisoned figure as a drinkable flask — the
+would otherwise read as "a charge in hand" and present a primed figure as a drinkable flask — the
 same guard `refusalFor` puts on `stock.coins`.
 
 **There is no third reason code for "mid-hand".** Availability between fights is a driver-level gate
@@ -176,12 +176,12 @@ gates the whole expression.
 readonly flaskCharges: number   // DLR-93
 ```
 
-- **A count** for the same reason `envenomCharges` is one: AC5 refills "regardless of whether the
+- **A count** for the same reason `timebombCharges` is one: AC5 refills "regardless of whether the
   player had 0 or 1", and the deferred re-tune of the charge count raises the ceiling without changing
   this type.
 - **Run-level**, like `coins`, and carried by both `advanceRun`'s and `recordEncounter`'s spreads. A
   free heal that reset at a fight boundary would be a per-fight heal.
-- **Never handed back by a hand**, unlike `cheats`, `envenomCharges` and `poisonGuardHeld` — a hand
+- **Never handed back by a hand**, unlike `cheats`, `timebombCharges` and `blastGuardHeld` — a hand
   cannot drink the flask (AC4), so there is nothing for `WarCouncilRoundResult` to return and
   `recordEncounter` takes no flask parameter.
 - **Never persisted**, exactly as `coins` is not. Nothing in this project is saved.
@@ -208,4 +208,4 @@ Vitest project — `src/hunt/__tests__/flask.test.ts` for the two exported funct
 `src/hunt/__tests__/run.flask.test.ts` for the charge on `RunState`, the drink-and-clamp, both
 refusals, the boss refill and the ordinary-kill non-refill (AC7's six cases). The flask's specs live
 in their own two files rather than joining `run.test.ts`, which was already at 343 lines — the same
-call `poisonGuard.test.ts` made.
+call `blastGuard.test.ts` made.

@@ -86,7 +86,7 @@ export default function PlayingCard({
         </span>
       )}
       {primed && (
-        <span className="wc-venom-mark" aria-hidden="true">
+        <span className="wc-primed-mark" aria-hidden="true">
           ⚗
         </span>
       )}

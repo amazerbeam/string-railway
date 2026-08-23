@@ -90,7 +90,7 @@ export default function WarCouncilRound({
   coins,
   quarryLabel,
   timebombCharges,
-  poisonGuardHeld,
+  blastGuardHeld,
   discardsRemaining,
   bankClimbBonus,
   onComplete,
@@ -102,7 +102,7 @@ export default function WarCouncilRound({
       encounter,
       cheats,
       timebombCharges,
-      poisonGuardHeld,
+      blastGuardHeld,
       discardsRemaining,
       bankClimbBonus,
     },
@@ -135,7 +135,7 @@ export default function WarCouncilRound({
   const discardRefusal = discardRefusalFor(discardStock(ui))
   const handInteractive = interactive || discardSelecting(ui)
 
-  // DLR-101 — the whole assembly, including the booked-poison band, lives in `roundBars.ts`.
+  // DLR-101 — the whole assembly, including the booked-Timebomb band, lives in `roundBars.ts`.
   const bars = barsForRound(ui, maxHealth)
 
   const shape = suitShape(ui.round.hands[PlayerSide.Cpu], ui.round.skulledCards)
@@ -206,7 +206,7 @@ export default function WarCouncilRound({
         encounter: ui.encounter,
         cheats: ui.cheats,
         timebombCharges: ui.timebombCharges,
-        poisonGuardHeld: ui.poisonGuardHeld,
+        blastGuardHeld: ui.blastGuardHeld,
         discardsRemaining: ui.discardsRemaining,
         unplayedAtResolve: ui.unplayedAtResolve,
       })
@@ -222,7 +222,7 @@ export default function WarCouncilRound({
         encounter: ui.encounter,
         cheats: ui.cheats,
         timebombCharges: ui.timebombCharges,
-        poisonGuardHeld: ui.poisonGuardHeld,
+        blastGuardHeld: ui.blastGuardHeld,
         discardsRemaining: ui.discardsRemaining,
         unplayedAtResolve: ui.unplayedAtResolve,
       })

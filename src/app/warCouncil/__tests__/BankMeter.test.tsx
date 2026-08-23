@@ -15,8 +15,8 @@ const cleanLoss: TrickResolution = {
   multiplier: 0,
   cashedAtHandEnd: false,
   timebombTarget: null,
-  poisonToQuarry: 0,
-  poisonGuardSpent: false,
+  timebombToQuarry: 0,
+  blastGuardSpent: false,
 }
 
 describe('BankMeter', () => {

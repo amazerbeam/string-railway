@@ -37,11 +37,11 @@ export interface WarCouncilMountProps {
    *  `WarCouncilRoundResult`. REQUIRED rather than optional so the compiler enumerates every mount
    *  site instead of letting one silently render an inert plate. */
   readonly timebombCharges: number
-  /** DLR-91 AC4 — whether a Poison Guard is held at the START of this hand. The same contract
+  /** DLR-91 AC4 — whether a Blast Guard is held at the START of this hand. The same contract
    *  `timebombCharges` above documents: an opening figure the reducer owns for the hand's life and
    *  hands back through `WarCouncilRoundResult`. REQUIRED rather than optional so the compiler
    *  enumerates every mount site instead of letting one silently fight without its insurance. */
-  readonly poisonGuardHeld: boolean
+  readonly blastGuardHeld: boolean
   /** DLR-100 AC5 — discards remaining at the START of this hand. Same contract as `timebombCharges`
    *  above: an opening figure the reducer owns for the hand's life and hands back through
    *  `WarCouncilRoundResult`. REQUIRED rather than optional so the compiler enumerates every mount
@@ -51,7 +51,7 @@ export interface WarCouncilMountProps {
    *  Whetstone count by `bankClimbBonusFor`. A number, not a `RunState` and not an item count: the
    *  card layer renders a run figure and must not learn what bought it. REQUIRED rather than
    *  optional so the compiler enumerates every mount site instead of letting one silently fight
-   *  without the buff. Unlike `timebombCharges` and `poisonGuardHeld` it does NOT come back on
+   *  without the buff. Unlike `timebombCharges` and `blastGuardHeld` it does NOT come back on
    *  `WarCouncilRoundResult` — a hand cannot spend it. */
   readonly bankClimbBonus: number
   readonly onComplete: (result: WarCouncilRoundResult) => void
@@ -79,7 +79,7 @@ export interface WarCouncilRoundResult {
   /** DLR-91 AC4 — whether the Guard is still held after this hand. `false` once it has fired; the
    *  run adopts it through `recordEncounter`'s fifth parameter, which also clears it when the
    *  encounter resolved. */
-  readonly poisonGuardHeld: boolean
+  readonly blastGuardHeld: boolean
   /** DLR-100 AC5 — discards remaining after this hand. One fewer for each discard spent; the run
    *  adopts it through `recordEncounter`'s sixth parameter. */
   readonly discardsRemaining: number

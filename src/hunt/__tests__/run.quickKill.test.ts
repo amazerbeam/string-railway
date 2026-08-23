@@ -23,7 +23,7 @@ function playAnotherHand(run: ReturnType<typeof startRun>) {
     applyDamage(run.encounter, damage(1, 1)),
     run.cheats,
     run.timebombCharges,
-    run.poisonGuardHeld,
+    run.blastGuardHeld,
     run.discardsRemaining,
     null,
   )
@@ -47,7 +47,7 @@ describe('handOfFight — the hand-within-encounter counter (AC3)', () => {
       winEncounter(second.encounter),
       second.cheats,
       second.timebombCharges,
-      second.poisonGuardHeld,
+      second.blastGuardHeld,
       second.discardsRemaining,
       3,
     )
@@ -61,7 +61,7 @@ describe('handOfFight — the hand-within-encounter counter (AC3)', () => {
       winEncounter(third.encounter),
       third.cheats,
       third.timebombCharges,
-      third.poisonGuardHeld,
+      third.blastGuardHeld,
       third.discardsRemaining,
       0,
     )
@@ -78,7 +78,7 @@ describe('recordEncounter — the quick-kill payout (AC1, AC2, AC4, AC5)', () =>
       winEncounter(run.encounter),
       run.cheats,
       run.timebombCharges,
-      run.poisonGuardHeld,
+      run.blastGuardHeld,
       run.discardsRemaining,
       unplayedCards,
     )
@@ -111,7 +111,7 @@ describe('recordEncounter — the quick-kill payout (AC1, AC2, AC4, AC5)', () =>
       winEncounter(run.encounter),
       run.cheats,
       run.timebombCharges,
-      run.poisonGuardHeld,
+      run.blastGuardHeld,
       run.discardsRemaining,
       null,
     )
@@ -127,7 +127,7 @@ describe('recordEncounter — the quick-kill payout (AC1, AC2, AC4, AC5)', () =>
       dead,
       run.cheats,
       run.timebombCharges,
-      run.poisonGuardHeld,
+      run.blastGuardHeld,
       run.discardsRemaining,
       6,
     )

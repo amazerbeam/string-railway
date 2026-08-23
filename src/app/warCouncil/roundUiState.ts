@@ -103,9 +103,9 @@ export interface RoundUiState {
    *  No id, unlike `CheatSelection` — charges are fungible, and the card marked is the identity. */
   readonly timebombStage: TimebombStage | null
   /** DLR-91 AC4 — mirrored from the mount's opening prop and flipped to `false` the moment a
-   *  resolved trick reports `poisonGuardSpent`. Run state carried for the life of the hand, the
+   *  resolved trick reports `blastGuardSpent`. Run state carried for the life of the hand, the
    *  same contract `cheats` and `timebombCharges` document. */
-  readonly poisonGuardHeld: boolean
+  readonly blastGuardHeld: boolean
   /** DLR-92 AC4 — the bank-climb bonus in force for this hand, mirrored from the mount's opening
    *  prop. Read-only for the hand's whole life: no action ever writes it, because a hand cannot
    *  spend or change a Whetstone — only the shop between hands can. */
@@ -144,7 +144,7 @@ export interface RoundUiSeed {
   readonly encounter: EncounterState
   readonly cheats: readonly CheatCard[]
   readonly timebombCharges: number
-  readonly poisonGuardHeld: boolean
+  readonly blastGuardHeld: boolean
   readonly bankClimbBonus: number
   readonly discardsRemaining: number
 }
@@ -200,7 +200,7 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     cheatSelection: null,
     timebombCharges: seed.timebombCharges,
     timebombStage: null,
-    poisonGuardHeld: seed.poisonGuardHeld,
+    blastGuardHeld: seed.blastGuardHeld,
     bankClimbBonus: seed.bankClimbBonus,
     applyPoised: false,
     unplayedAtResolve: null,
@@ -251,7 +251,7 @@ export function applyDamageStock(state: RoundUiState): ApplyDamageStock {
   return {
     bank: state.round.bank,
     multiplier: state.round.multiplier,
-    poisonPending: hasPendingTimebomb(state.encounter),
+    timebombPending: hasPendingTimebomb(state.encounter),
     canAct: canAct(state),
   }
 }

@@ -95,9 +95,9 @@ describe('HandFan', () => {
     expect(document.querySelector('.wc-fan')?.getAttribute('aria-hidden')).toBe('true')
   })
 
-  it('announces a card in primedCards as poisoned (DLR-90 AC2)', () => {
+  it('announces a card in primedCards as primed (DLR-90 AC2)', () => {
     renderFan({ primedCards: [card(Suit.Bells, 7)] })
-    expect(screen.getByRole('button', { name: '7 of Bells, poisoned' })).toBeDefined()
+    expect(screen.getByRole('button', { name: '7 of Bells, primed' })).toBeDefined()
   })
 
   it('disables an illegal card as today when timebombArmed is false', () => {

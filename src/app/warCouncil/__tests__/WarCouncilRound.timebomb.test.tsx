@@ -17,7 +17,7 @@ import {
   huntFixture,
   makeRound,
   maxHealthFixture,
-  poisonGuardHeldFixture,
+  blastGuardHeldFixture,
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
@@ -38,7 +38,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       cheats={overrides.cheats ?? []}
       coins={overrides.coins ?? coinsFixture}
       timebombCharges={overrides.timebombCharges ?? timebombChargesFixture}
-      poisonGuardHeld={overrides.poisonGuardHeld ?? poisonGuardHeldFixture}
+      blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
       bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
       onComplete={overrides.onComplete ?? vi.fn()}
@@ -80,7 +80,7 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
     expect(scoreboard.textContent).toMatch(/You0/)
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
-    expect(screen.getByRole('button', { name: '7 of Bells, poisoned' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '7 of Bells, primed' })).toBeTruthy()
     // The trick did not move — marking is not a move.
     expect(scoreboard.textContent).toMatch(/You0/)
   })
@@ -99,7 +99,7 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
     fireEvent.click(timebombPlate(TimebombStage.Poised))
     expect(screen.getByRole('button', { name: '7 of Bells' })).toHaveProperty('disabled', false)
     fireEvent.click(screen.getByRole('button', { name: '7 of Bells' }))
-    expect(screen.getByRole('button', { name: '7 of Bells, poisoned' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '7 of Bells, primed' })).toBeTruthy()
   })
 
   it('gives the charge back unspent on a third click', () => {
@@ -162,7 +162,7 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
     fireEvent.click(timebombPlate(TimebombStage.Poised))
     const bells2 = screen.getByRole('button', { name: '2 of Bells' })
     fireEvent.click(bells2)
-    const markedBells2 = screen.getByRole('button', { name: '2 of Bells, poisoned' })
+    const markedBells2 = screen.getByRole('button', { name: '2 of Bells, primed' })
     fireEvent.click(markedBells2)
     fireEvent.click(markedBells2)
 
@@ -194,17 +194,17 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
     fireEvent.click(timebombPlate(null))
     fireEvent.click(timebombPlate(TimebombStage.Poised))
     fireEvent.click(screen.getByRole('button', { name: '2 of Bells' }))
-    expect(screen.getByRole('button', { name: '2 of Bells, poisoned' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '2 of Bells, primed' })).toBeTruthy()
 
     // Lead the Fox, then exchange the marked card into the decree.
     const fox = screen.getByRole('button', { name: '3 of Keys (Fox)' })
     fireEvent.click(fox)
     fireEvent.click(fox)
-    fireEvent.click(screen.getByRole('button', { name: '2 of Bells, poisoned' }))
+    fireEvent.click(screen.getByRole('button', { name: '2 of Bells, primed' }))
 
     // The decree pile — not the hand fan, which no longer holds this card — must still announce
     // the mark. Exactly one match: the marked card left the hand when it became the decree.
-    expect(screen.getByRole('button', { name: '2 of Bells, poisoned' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '2 of Bells, primed' })).toBeTruthy()
   })
 
   it('reports onComplete with timebombCharges reflecting what was spent', () => {
@@ -222,7 +222,7 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
     fireEvent.click(timebombPlate(TimebombStage.Poised))
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
-    const marked = screen.getByRole('button', { name: '7 of Bells, poisoned' })
+    const marked = screen.getByRole('button', { name: '7 of Bells, primed' })
     fireEvent.click(marked)
     fireEvent.click(marked)
 

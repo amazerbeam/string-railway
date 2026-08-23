@@ -19,28 +19,28 @@ describe('PlayingCard', () => {
 
   it('carries no mark wording when unmarked', () => {
     render(<PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" />)
-    expect(screen.queryByRole('button', { name: /poisoned/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /primed/i })).toBeNull()
   })
 
-  it('renders the mark and names a poisoned card as poisoned', () => {
+  it('renders the mark and names a primed card as primed', () => {
     const { container } = render(
       <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" primed />,
     )
-    expect(screen.getByRole('button', { name: /poisoned/i })).toBeTruthy()
-    expect(container.querySelector('.wc-venom-mark')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /primed/i })).toBeTruthy()
+    expect(container.querySelector('.wc-primed-mark')).toBeTruthy()
   })
 
-  it('announces both marks on a card carrying skull and poison together', () => {
+  it('announces both marks on a card carrying skull and Timebomb together', () => {
     render(<PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" skulled primed />)
-    const button = screen.getByRole('button', { name: /skulled, poisoned/i })
+    const button = screen.getByRole('button', { name: /skulled, primed/i })
     expect(button).toBeTruthy()
   })
 
-  it('renders the poison mark as aria-hidden, so it is announced once through the name', () => {
+  it('renders the Timebomb mark as aria-hidden, so it is announced once through the name', () => {
     const { container } = render(
       <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" primed />,
     )
-    const mark = container.querySelector('.wc-venom-mark')
+    const mark = container.querySelector('.wc-primed-mark')
     expect(mark?.getAttribute('aria-hidden')).toBe('true')
   })
 

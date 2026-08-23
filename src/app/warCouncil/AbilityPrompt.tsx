@@ -15,7 +15,7 @@ interface AbilityPromptProps {
   readonly hand: readonly Card[] // hand minus the armed card
   readonly drawnCard: Card | null // drawPile[0] for Woodcutter, null for Fox
   /** DLR-90 AC2 — a marked card offered as a Fox exchange or Woodcutter discard still announces
-   *  its own poison. Defaults to `[]` for `TrickWell`'s `skulledCards`-style reason. */
+   *  its own Timebomb. Defaults to `[]` for `TrickWell`'s `skulledCards`-style reason. */
   readonly primedCards?: readonly Card[]
   readonly onChoose: (choice: AbilityChoice) => void
   readonly onCancel: () => void

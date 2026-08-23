@@ -33,7 +33,7 @@ defensive against a pile drained below the discard size — unreachable at today
 design doc's own arithmetic already rules the case out) but consistent with this module's discipline
 of never trusting a caller's arithmetic where a cheap check closes the gap. All three throws are
 reachable only from a driver bug: the reducer (`src/app/warCouncil/discardHandlers.ts`) guards every
-precondition before calling, exactly as `envenomCard` and `cheats.ts`'s `addCheat` already do — a
+precondition before calling, exactly as `primeCard` and `cheats.ts`'s `addCheat` already do — a
 reducer must not throw, because a throw during an event handler unmounts the tree.
 
 ## The refusal

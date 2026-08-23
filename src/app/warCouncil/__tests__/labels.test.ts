@@ -47,21 +47,21 @@ describe('cardAccessibleName', () => {
     )
   })
 
-  it('names a poisoned card', () => {
+  it('names a primed card', () => {
     expect(cardAccessibleName({ suit: Suit.Bells, rank: 4 }, { primed: true })).toBe(
-      '4 of Bells, poisoned',
+      '4 of Bells, primed',
     )
   })
 
   it('names a card carrying both marks, skull first', () => {
-    expect(
-      cardAccessibleName({ suit: Suit.Bells, rank: 4 }, { skulled: true, primed: true }),
-    ).toBe('4 of Bells, skulled, poisoned')
+    expect(cardAccessibleName({ suit: Suit.Bells, rank: 4 }, { skulled: true, primed: true })).toBe(
+      '4 of Bells, skulled, primed',
+    )
   })
 
   it('names a named rank with a mark, keeping the rank name before the marks', () => {
     expect(cardAccessibleName({ suit: Suit.Keys, rank: 3 }, { primed: true })).toBe(
-      '3 of Keys (Fox), poisoned',
+      '3 of Keys (Fox), primed',
     )
   })
 })
@@ -129,7 +129,7 @@ describe('healthBarValueText — the current total against the max (DLR-80)', ()
     side: DuelSide.Player,
     secure: 20,
     pending: 0,
-    doomed: 0,
+    ticking: 0,
     current: 20,
     max: 25,
     hearts: [],
@@ -157,32 +157,32 @@ describe('healthBarValueText — the current total against the max (DLR-80)', ()
   })
 })
 
-describe('healthBarValueText — DLR-101’s committed-poison clause', () => {
+describe('healthBarValueText — DLR-101’s committed-Timebomb clause', () => {
   const MAX = { [DuelSide.Player]: 10, [DuelSide.Quarry]: 10 }
   const CURRENT = { [DuelSide.Player]: 10, [DuelSide.Quarry]: 10 }
 
-  it('names the poisoned figure separately from what the streak still puts at risk', () => {
+  it('names the ticking figure separately from what the streak still puts at risk', () => {
     const [view] = duelHealthBars(CURRENT, { ...CURRENT, [DuelSide.Player]: 3 }, MAX, {
-      doomed: { [DuelSide.Player]: 4, [DuelSide.Quarry]: 0 },
+      ticking: { [DuelSide.Player]: 4, [DuelSide.Quarry]: 0 },
     })
     expect(view.pending).toBe(7)
-    expect(view.doomed).toBe(4)
-    expect(healthBarValueText(view)).toBe('10 of 10. 3 at risk. 4 poisoned.')
+    expect(view.ticking).toBe(4)
+    expect(healthBarValueText(view)).toBe('10 of 10. 3 at risk. 4 ticking.')
   })
 
   it('is byte-identical to the pre-DLR-101 string when nothing is booked', () => {
     const [view] = duelHealthBars(CURRENT, { ...CURRENT, [DuelSide.Player]: 4 }, MAX)
-    expect(view.doomed).toBe(0)
+    expect(view.ticking).toBe(0)
     expect(healthBarValueText(view)).toBe('10 of 10. 6 at risk.')
   })
 
   it('omits the at-risk clause entirely when the whole pending band is booked', () => {
     const [view] = duelHealthBars(CURRENT, { ...CURRENT, [DuelSide.Player]: 6 }, MAX, {
-      doomed: { [DuelSide.Player]: 4, [DuelSide.Quarry]: 0 },
+      ticking: { [DuelSide.Player]: 4, [DuelSide.Quarry]: 0 },
     })
     expect(view.pending).toBe(4)
-    expect(view.doomed).toBe(4)
-    expect(healthBarValueText(view)).toBe('10 of 10. 4 poisoned.')
+    expect(view.ticking).toBe(4)
+    expect(healthBarValueText(view)).toBe('10 of 10. 4 ticking.')
   })
 })
 
@@ -266,8 +266,8 @@ describe('applyDamageAccessibleName — DLR-94', () => {
   })
 
   it('puts the reason in the name of a refused control, not only in the styling', () => {
-    expect(applyDamageAccessibleName(0, false, ApplyDamageRefusal.PoisonPending)).toContain(
-      APPLY_DAMAGE_REFUSAL_MESSAGE[ApplyDamageRefusal.PoisonPending],
+    expect(applyDamageAccessibleName(0, false, ApplyDamageRefusal.TimebombPending)).toContain(
+      APPLY_DAMAGE_REFUSAL_MESSAGE[ApplyDamageRefusal.TimebombPending],
     )
   })
 

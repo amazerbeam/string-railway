@@ -61,13 +61,13 @@ because `advanceRun` does not run after it.
 ```ts
 export const ShopItem = {
   Cheat: 'cheat',
-  Envenom: 'envenom', // DLR-90
-  PoisonGuard: 'poisonGuard', // DLR-91
+  Timebomb: 'timebomb', // DLR-90
+  BlastGuard: 'blastGuard', // DLR-91
   Whetstone: 'whetstone', // DLR-92
   Heal: 'heal',
 } as const
 export const SHOP_ITEMS: readonly ShopItem[] = [
-  ShopItem.Cheat, ShopItem.Envenom, ShopItem.PoisonGuard, ShopItem.Whetstone, ShopItem.Heal,
+  ShopItem.Cheat, ShopItem.Timebomb, ShopItem.BlastGuard, ShopItem.Whetstone, ShopItem.Heal,
 ]
 
 export const PurchaseRefusal = {
@@ -120,9 +120,9 @@ An `as const` map rather than an `enum`, because `erasableSyntaxOnly` is on. `SH
 export function categoryOf(item: ShopItem): ShopCategory | null {
   switch (item) {
     case ShopItem.Cheat:
-    case ShopItem.Envenom: // DLR-90
+    case ShopItem.Timebomb: // DLR-90
       return ShopCategory.OneTimeUse
-    case ShopItem.PoisonGuard: // DLR-91 — the fight-long shelf's first item
+    case ShopItem.BlastGuard: // DLR-91 — the fight-long shelf's first item
       return ShopCategory.FightLong
     case ShopItem.Whetstone: // DLR-92 — the run-permanent shelf's first item
       return ShopCategory.RunPermanent
@@ -195,7 +195,7 @@ export interface ShopStock {
   readonly cheatCount: number
   readonly playerHealth: Health
   readonly maxPlayerHealth: Health
-  readonly poisonGuardHeld: boolean // DLR-91
+  readonly blastGuardHeld: boolean // DLR-91
 }
 ```
 
@@ -211,7 +211,7 @@ screen assembles a `ShopStock` by hand and gets one field wrong.
 export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | null {
   if (item === ShopItem.Cheat && stock.cheatCount >= CHEAT_SLOT_COUNT) return PurchaseRefusal.SlotsFull
   if (item === ShopItem.Heal && stock.playerHealth >= stock.maxPlayerHealth) return PurchaseRefusal.AlreadyFullHealth
-  if (item === ShopItem.PoisonGuard && stock.poisonGuardHeld) return PurchaseRefusal.GuardAlreadyActive // DLR-91
+  if (item === ShopItem.BlastGuard && stock.blastGuardHeld) return PurchaseRefusal.GuardAlreadyActive // DLR-91
   if (!Number.isFinite(stock.coins) || stock.coins < priceOf(item)) return PurchaseRefusal.NotEnoughCoins
   return null
 }
@@ -237,7 +237,7 @@ Two details in that function are defensive rather than cosmetic:
   Cheat reports `SlotsFull` — the reason that will still be true when the coin arrives, and
   therefore the more useful one to print. DLR-91's Guard clause was placed under the same rule.
 - **A non-finite balance refuses rather than passing the comparison.** `NaN >= 1` is `false`, which
-  would otherwise read as "not enough coins" *by accident* and hide a poisoned figure behind a
+  would otherwise read as "not enough coins" *by accident* and hide a primed figure behind a
   plausible-looking message.
 
 ### `canBuyAnything` is `some()` over it, never a second reading
@@ -265,10 +265,10 @@ const paid = { ...run, coins: run.coins - priceOf(item) }
 switch (item) {
   case ShopItem.Cheat:
     return { ...paid, cheats: addCheat(run.cheats, { id: run.nextCheatId }), nextCheatId: run.nextCheatId + 1 }
-  case ShopItem.Envenom:
-    return { ...paid, envenomCharges: run.envenomCharges + 1 }
-  case ShopItem.PoisonGuard: // DLR-91
-    return { ...paid, poisonGuardHeld: true }
+  case ShopItem.Timebomb:
+    return { ...paid, timebombCharges: run.timebombCharges + 1 }
+  case ShopItem.BlastGuard: // DLR-91
+    return { ...paid, blastGuardHeld: true }
   case ShopItem.Whetstone: // DLR-92 — a count, not a flag: it stacks
     return { ...paid, whetstones: run.whetstones + 1 }
   case ShopItem.Heal: // DLR-93 — the clamp moved into the shared `healedBy`, byte-identical result
@@ -285,31 +285,31 @@ heal specs in `run.test.ts` and `shop.test.ts` prove by passing unedited. See
 
 **DLR-90 restructured that tail, and it was hiding a real defect.** Until the third item arrived the
 function branched `if (item === ShopItem.Cheat) { … }` and then **returned the heal unconditionally**
-as its fallback — so adding Envenom without restructuring would have healed the player, silently, and
+as its fallback — so adding Timebomb without restructuring would have healed the player, silently, and
 type-checked cleanly. It is now exhaustive with no `default` and every arm returning, which makes a
 new item a compile error here rather than an item that quietly does whatever the last branch
 happened to do. QA confirmed the fix in a real browser as well as in the type system: buying a Heal
-raises health and leaves the Envenom count untouched. **DLR-91 was the first item to arrive after that
+raises health and leaves the Timebomb count untouched. **DLR-91 was the first item to arrive after that
 fix, and it landed as one added `case` and nothing else.**
 
-**Envenom needed no `refusalFor` clause**, and that is the correct rule rather than an omission — it
+**Timebomb needed no `refusalFor` clause**, and that is the correct rule rather than an omission — it
 falls through both item-specific guards to the coin check, because there is no cap on charges held.
 The Cheat's `SlotsFull` refusal exists because `CHEAT_SLOT_COUNT` is a designed cap. See
-[Envenom — the held charge, the delayed-hit queue, and where it is paid](envenom-and-the-delayed-hit.md).
+[Timebomb — the held charge, the delayed-hit queue, and where it is paid](timebomb-and-the-delayed-hit.md).
 
 **The Whetstone is the same case, and DLR-92 added nothing to `refusalFor` either.** Stacking is uncapped
 by design — the design doc prices it as the limiter — so `NotEnoughCoins` is the only refusal it can raise,
 `ShopStock` gained no field, and `PurchaseRefusal` gained no code. It is the second item to arrive as
 **exactly one `ShopItem` member, one `priceOf` case, one `categoryOf` case and one `buyFromShop` case**, with
 the screen following for free. A cap, if one is ever wanted, is a config key, one `refusalFor` clause and one
-reason code — the same shape the Envenom entry above already costs out.
+reason code — the same shape the Timebomb entry above already costs out.
 
-**Poison Guard is the opposite case, and it does need one.** Only one may be held at a time, so a
+**Blast Guard is the opposite case, and it does need one.** Only one may be held at a time, so a
 second purchase while one is unspent is refused with `GuardAlreadyActive` rather than silently
 overwriting or stacking — DLR-91 AC3 states that outright. The flag's lifetime is the part worth
 reading before touching it: it lives on `RunState` so it survives the `advanceRun` that opens the fight
 it was bought for, and a private `guardAfter` clears it when that fight resolves. See
-[Poison Guard](poison-guard.md).
+[Blast Guard](blast-guard.md).
 
 Four things about it are decisions rather than mechanics:
 
@@ -344,9 +344,9 @@ export function bankClimbBonusFor(run: RunState): number {
 ```
 
 The field is a **count, not a flag**, because the item stacks — modelling it as a boolean was named in the
-ticket as the specific thing not to do. It follows `envenomCharges`' precedent for an uncapped run-level
+ticket as the specific thing not to do. It follows `timebombCharges`' precedent for an uncapped run-level
 figure, and like `coins` it is carried across a fight boundary by `advanceRun`'s and `recordEncounter`'s
-existing spread, so **the carry needed no code**. Unlike `cheats`, `envenomCharges` and `poisonGuardHeld` it
+existing spread, so **the carry needed no code**. Unlike `cheats`, `timebombCharges` and `blastGuardHeld` it
 is **never handed back by a hand** — a hand cannot spend a Whetstone — so `recordEncounter`'s signature did
 not grow a sixth parameter and nothing in the round layer can write it.
 
@@ -360,14 +360,14 @@ never learns the word Whetstone. See
 `maxPlayerHealth` is a **defaulted parameter** on both `shopStockFor` and `buyFromShop`
 (`= PLAYER_START_HEALTH`), matching `startEncounter`/`startRun`'s injectable pattern so a spec varies
 the clamp without mutating module state. `buyFromShop` validates it (`Number.isFinite` and `> 0`)
-before doing anything, so a bad ceiling cannot silently poison a health bar.
+before doing anything, so a bad ceiling cannot silently Timebomb a health bar.
 
 ## The tunables
 
 Almost all of them are **transcribed**, not chosen here — the five below from DLR-84's ticket and the
-design doc, plus `ENVENOM_PRICE` (2 coins) and `ENVENOM_QUARRY_DAMAGE` (4 health) from
-`version-4-scope.md` at DLR-90. **One exception: `ENVENOM_PLAYER_DAMAGE` (2 health) is the developer's
-own choice**, added by DLR-91 on 2026-08-19 when the single `ENVENOM_DAMAGE` key was split — the
+design doc, plus `TIMEBOMB_PRICE` (2 coins) and `TIMEBOMB_QUARRY_DAMAGE` (4 health) from
+`version-4-scope.md` at DLR-90. **One exception: `TIMEBOMB_PLAYER_DAMAGE` (2 health) is the developer's
+own choice**, added by DLR-91 on 2026-08-19 when the single `TIMEBOMB_DAMAGE` key was split — the
 player-side hit is deliberately smaller, because it *also* forces the streak's cash-out.
 
 | Key | Value | Unit |
@@ -375,7 +375,7 @@ player-side hit is deliberately smaller, because it *also* forces the streak's c
 | `COINS_PER_ENCOUNTER_WIN` | `1` | coins, credited once per encounter won — the **flat** term; since DLR-95 the quick-kill payout is added to it |
 | `CHEAT_PRICE` | `1` | coins per purchase |
 | `HEAL_PRICE` | `1` | coins per purchase |
-| `POISON_GUARD_PRICE` | `1` | coins per purchase (DLR-91) |
+| `BLAST_GUARD_PRICE` | `1` | coins per purchase (DLR-91) |
 | `WHETSTONE_PRICE` | `4` | coins per purchase (DLR-92) |
 | `HEAL_HEALTH_RESTORED` | `4` | health points, added once, before the clamp |
 
@@ -392,7 +392,7 @@ bonus per copy is the item's *definition* rather than a tunable — the same rea
 to keep its `bankAdded = 1` out of configuration. An item granting +2 a copy would be a different item. The
 rule is stated once, in `bankClimbBonusFor` below.
 
-**`POISON_GUARD_PRICE` is its own key rather than a reuse of `HEAL_PRICE`**, for the reason those two
+**`BLAST_GUARD_PRICE` is its own key rather than a reuse of `HEAL_PRICE`**, for the reason those two
 are already separate: re-pricing one item must not move another. It is priced level with the heal
 because both are a 1-coin-for-4-health trade run in opposite directions — that is the design doc's
 reasoning, transcribed, not arithmetic done here.
@@ -423,7 +423,7 @@ and `./cheats`, both already inside the lint-enforced `src/hunt/**` tree, so the
 
 Nothing here is persisted. Coins die on reload with the rest of `RunState`, which the ticket puts
 out of scope — but it means the first ticket to add a save file inherits a `coins` field with no
-migration story, and since DLR-90/DLR-91/DLR-92 an `envenomCharges` count, a `poisonGuardHeld` flag and a
+migration story, and since DLR-90/DLR-91/DLR-92 an `timebombCharges` count, a `blastGuardHeld` flag and a
 `whetstones` count beside it. Every shape change made here is free **today** and becomes a migration the
 first time a run is saved. **Four free `RunState` widenings have now been taken**, which is worth noting
 because the window is still open only by accident of nothing being saved yet — DLR-92's audit checked for a

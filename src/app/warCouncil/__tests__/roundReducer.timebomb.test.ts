@@ -17,7 +17,7 @@ import {
 
 // The mark/arm mechanics of the Timebomb control itself — the stage cycle, the mutual-exclusion
 // with a Cheat selection, and marking a card. The queue's booking and next-trick payment moved to
-// `roundReducer.poison.test.ts` on DLR-91, splitting the file below the 400-line budget.
+// `roundReducer.Timebomb.test.ts` on DLR-91, splitting the file below the 400-line budget.
 
 // A held reveal, built directly rather than driven, for the `canAct` gate specs below — the same
 // construction `roundReducer.test.ts`'s own "clears a held reveal…" spec uses.
@@ -36,8 +36,8 @@ const heldReveal: ResolvedTrick = {
     multiplier: 1,
     cashedAtHandEnd: false,
     timebombTarget: null,
-    poisonToQuarry: 0,
-    poisonGuardSpent: false,
+    timebombToQuarry: 0,
+    blastGuardSpent: false,
   },
 }
 
@@ -50,7 +50,7 @@ function seededUi(charges = timebombChargesFixture) {
     encounter: encounterFixture,
     cheats: [{ id: 1 }],
     timebombCharges: charges,
-    poisonGuardHeld: false,
+    blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: discardsRemainingFixture,
   })
@@ -102,7 +102,7 @@ describe('TapTimebomb respects the same canAct gate the Cheat uses', () => {
       encounter: encounterFixture,
       cheats: [],
       timebombCharges: 1,
-      poisonGuardHeld: false,
+      blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
     })
@@ -141,7 +141,7 @@ describe('marking (AC2)', () => {
       encounter: encounterFixture,
       cheats: [],
       timebombCharges: 1,
-      poisonGuardHeld: false,
+      blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
     })

@@ -140,12 +140,12 @@
   max-width: 40ch;
 }
 
-/* DLR-101 — the reveal's poison clause, tinted with the same token the poison mark and the
-   `doomed` heart already use, so all three read as one state. Lives here rather than in
+/* DLR-101 — the reveal's Timebomb clause, tinted with the same token the Timebomb mark and the
+   `ticking` heart already use, so all three read as one state. Lives here rather than in
    `warCouncilHealthBars.css`: `.wc-table-line`, the paragraph this clause sits inside, is
    declared in this sheet, and this file has room under its 400-line budget. */
-.wc-poison-clause {
-  color: var(--wc-poison);
+.wc-timebomb-clause {
+  color: var(--wc-timebomb);
 }
 
 .wc-table-hint {

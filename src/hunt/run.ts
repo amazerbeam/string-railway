@@ -67,18 +67,18 @@ export interface RunState {
    *  `RoundState.primedCards`. No cap; the price is the limiter. NEVER persisted, exactly as
    *  `coins` above. */
   readonly timebombCharges: number
-  /** DLR-91 AC2 — a bought-but-unspent Poison Guard. Run-level like `coins` rather than on
+  /** DLR-91 AC2 — a bought-but-unspent Blast Guard. Run-level like `coins` rather than on
    *  `EncounterState`, and that placement is load-bearing: the shop is reachable only AFTER an
    *  encounter resolves and BEFORE `advanceRun` runs, and `advanceRun` re-seeds the encounter
    *  through `startEncounter` — so a flag on the encounter would be bought onto the finished fight
    *  and destroyed by the very transition that opens the fight it was bought for. Carried by
    *  `advanceRun`'s spread and cleared by `guardAfter` when that fight resolves, which is what
    *  makes "fight-long" a real duration. NEVER persisted, exactly as `coins` above. */
-  readonly poisonGuardHeld: boolean
+  readonly blastGuardHeld: boolean
   /** DLR-92 AC2/AC3 — Whetstones owned. A COUNT, not a flag: each copy stacks, and the price is
    *  the only limiter. Run-level like `coins` rather than on `EncounterState`, and carried by
    *  `advanceRun`'s and `recordEncounter`'s spread — a run-permanent buff that reset at a fight
-   *  boundary would be a fight-long one. Unlike `cheats`, `timebombCharges` and `poisonGuardHeld`
+   *  boundary would be a fight-long one. Unlike `cheats`, `timebombCharges` and `blastGuardHeld`
    *  it is NEVER handed back by a hand, because a hand cannot spend one. NEVER persisted, exactly
    *  as `coins` above. */
   readonly whetstones: number
@@ -144,7 +144,7 @@ export function startRun(playerHealth: Health = PLAYER_START_HEALTH): RunState {
     nextCheatId: RUN_STARTING_CHEATS + 1,
     coins: 0,
     timebombCharges: 0,
-    poisonGuardHeld: false,
+    blastGuardHeld: false,
     whetstones: 0,
     flaskCharges: FLASK_STARTING_CHARGES,
     handOfFight: 1,
@@ -185,7 +185,7 @@ export function shopStockFor(
     cheatCount: run.cheats.length,
     playerHealth: run.encounter.health[DuelSide.Player],
     maxPlayerHealth,
-    poisonGuardHeld: run.poisonGuardHeld,
+    blastGuardHeld: run.blastGuardHeld,
   }
 }
 

@@ -94,15 +94,15 @@
   animation: wc-hp-flash var(--wc-hp-flash-ms) ease-in-out infinite alternate;
 }
 
-/* DLR-101 — committed poison. STATIC, deliberately: `atRisk` flashes because it is conditional
+/* DLR-101 — committed Timebomb. STATIC, deliberately: `atRisk` flashes because it is conditional
    and evaporates if the streak is broken, while a booked hit lands at the next trick and nothing
    on the felt stops it. A flashing committed heart would say the wrong thing about certainty —
    and because it is static it needs no entry in the reduced-motion block below, and loses
-   nothing when motion is off. Shape still carries the reading before colour does: a doomed heart
+   nothing when motion is off. Shape still carries the reading before colour does: a ticking heart
    binds to the same solid <symbol> as a whole one, so it reads as STANDING, which it is. */
-.wc-hp-heart[data-state='doomed'] {
-  color: var(--wc-hp-doomed-fill);
-  opacity: var(--wc-hp-doomed-opacity);
+.wc-hp-heart[data-state='ticking'] {
+  color: var(--wc-hp-ticking-fill);
+  opacity: var(--wc-hp-ticking-opacity);
 }
 
 .wc-hp-heart[data-state='breaking'] {

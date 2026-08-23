@@ -41,10 +41,10 @@ describe('ApplyDamagePlate', () => {
     ).toBeTruthy()
   })
 
-  it('D6 — states the pending-poison reason rather than going quiet', () => {
-    renderPlate({ refusal: ApplyDamageRefusal.PoisonPending })
+  it('D6 — states the pending-Timebomb reason rather than going quiet', () => {
+    renderPlate({ refusal: ApplyDamageRefusal.TimebombPending })
     expect(
-      screen.getByText(APPLY_DAMAGE_REFUSAL_MESSAGE[ApplyDamageRefusal.PoisonPending]),
+      screen.getByText(APPLY_DAMAGE_REFUSAL_MESSAGE[ApplyDamageRefusal.TimebombPending]),
     ).toBeTruthy()
   })
 

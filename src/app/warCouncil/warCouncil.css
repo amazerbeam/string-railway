@@ -36,8 +36,8 @@
      not read as "the table" — and light enough to carry the dark skull glyph at full contrast.
      Not a suit colour: it names a card's *state*, which is why it sits apart from the three
      above. The developer's to retune. */
-  --wc-poison: #8fb04e;
-  --wc-poison-edge: #5c7a2e;
+  --wc-timebomb: #8fb04e;
+  --wc-timebomb-edge: #5c7a2e;
 
   --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
   --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -57,12 +57,12 @@
   --wc-hp-heart-gap: 0.18rem;
   --wc-hp-broken: #3a4a52;
   --wc-hp-atrisk-opacity: 0.55;
-  /* DLR-101 — the committed-poison heart. An ALIAS of the poison mark's own colour rather than a
+  /* DLR-101 — the committed-Timebomb heart. An ALIAS of the Timebomb mark's own colour rather than a
      new colour value: it ties the heart to the marker that caused it, and it means no tuning
      number was invented for it. The opacity is a PLACEHOLDER, picked only to sit clearly above
      --wc-hp-atrisk-opacity and clearly below solid — the developer owns the value. */
-  --wc-hp-doomed-fill: var(--wc-poison);
-  --wc-hp-doomed-opacity: 0.78;
+  --wc-hp-ticking-fill: var(--wc-timebomb);
+  --wc-hp-ticking-opacity: 0.78;
   --wc-hp-break-ms: 520ms;
   --wc-hp-flash-ms: 900ms;
   /* DLR-97 — shared hover/active/state-change duration for controls that previously had no

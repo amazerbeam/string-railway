@@ -1,5 +1,5 @@
 /**
- * The player's own commit — assembling the pending-poison/bank-climb options a resolving trick
+ * The player's own commit — assembling the pending-Timebomb/bank-climb options a resolving trick
  * needs, folding a trick's resolution into the encounter, and committing `cardToPlay` before
  * advancing the Quarry's follow when the player led — separated from the reducer that calls it.
  *
@@ -33,7 +33,7 @@ import { cheatArmed, type RoundUiState } from './roundUiState'
 import { advanceQuarryFollow, deriveResolvedTrick } from './quarryAdvance'
 
 /**
- * Every `PlayCardOptions` field a resolving trick needs: D1's poison owed from EARLIER tricks, read
+ * Every `PlayCardOptions` field a resolving trick needs: D1's Timebomb owed from EARLIER tricks, read
  * off the encounter's queue, plus DLR-92 AC4's bank-climb bonus, mirrored straight from state.
  *
  * One statement, read by both `playCard` call sites: the player's follow in `commit` and the
@@ -42,21 +42,21 @@ import { advanceQuarryFollow, deriveResolvedTrick } from './quarryAdvance'
  */
 function playOptions(state: RoundUiState): PlayCardOptions {
   return {
-    poisonToPlayer: state.encounter.pendingTimebomb[DuelSide.Player],
-    poisonToQuarry: state.encounter.pendingTimebomb[DuelSide.Quarry],
-    poisonGuarded: state.poisonGuardHeld,
+    timebombToPlayer: state.encounter.pendingTimebomb[DuelSide.Player],
+    timebombToQuarry: state.encounter.pendingTimebomb[DuelSide.Quarry],
+    blastGuarded: state.blastGuardHeld,
     bankClimbBonus: state.bankClimbBonus,
   }
 }
 
 /**
  * One trick's whole effect on the encounter, in the one place it is stated: the trick's own damage,
- * D1's poison paid from an EARLIER trick, and this trick's own mark booked for the NEXT one.
+ * D1's Timebomb paid from an EARLIER trick, and this trick's own mark booked for the NEXT one.
  *
  * ORDER IS LOAD-BEARING, for the reason DLR-90 gave and one more. The damage lands FIRST, so
  * `queueTimebomb` then refuses a resolved encounter — a hit must never be carried into a fight that
  * is already over (D5's discard half at a fight boundary). And the queue is cleared BEFORE the new
- * booking, so a trick that both pays a poison and carries a mark does not have its own mark wiped
+ * booking, so a trick that both pays a Timebomb and carries a mark does not have its own mark wiped
  * by the clear.
  *
  * The all-zero skip avoids bumping `damageEventsApplied` for nothing, but does not return early: a
@@ -69,7 +69,9 @@ function applyResolution(encounter: EncounterState, resolution: TrickResolution)
     incoming[DuelSide.Player] === 0 && incoming[DuelSide.Quarry] === 0
       ? encounter
       : applyDamage(encounter, incoming)
-  const cleared = hasPendingTimebomb(paid) ? { ...paid, pendingTimebomb: NO_PENDING_TIMEBOMB } : paid
+  const cleared = hasPendingTimebomb(paid)
+    ? { ...paid, pendingTimebomb: NO_PENDING_TIMEBOMB }
+    : paid
   return resolution.timebombTarget === null
     ? cleared
     : queueTimebomb(cleared, resolution.timebombTarget)
@@ -116,7 +118,7 @@ export function commit(
     // AC4 — consumed exactly when it suppressed a reset, which `resolveTrickBank` decided. The
     // reducer does not re-derive "did the Guard matter" — that would be a second reading of one
     // rule, and the two would drift.
-    poisonGuardHeld: resolvedTrick?.resolution.poisonGuardSpent ? false : state.poisonGuardHeld,
+    blastGuardHeld: resolvedTrick?.resolution.blastGuardSpent ? false : state.blastGuardHeld,
   }
 
   if (resolvedTrick) {
@@ -134,8 +136,8 @@ export function commit(
     encounter: advanced.resolvedTrick
       ? applyResolution(settled.encounter, advanced.resolvedTrick.resolution)
       : settled.encounter,
-    poisonGuardHeld: advanced.resolvedTrick?.resolution.poisonGuardSpent
+    blastGuardHeld: advanced.resolvedTrick?.resolution.blastGuardSpent
       ? false
-      : settled.poisonGuardHeld,
+      : settled.blastGuardHeld,
   }
 }

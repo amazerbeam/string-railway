@@ -31,7 +31,7 @@ function uiFrom(
     encounter,
     cheats: [],
     timebombCharges: timebombChargesFixture,
-    poisonGuardHeld: false,
+    blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: discardsRemainingFixture,
   })
@@ -64,7 +64,7 @@ describe('Apply Damage — the poise, and the refusals (AC1, D6)', () => {
     expect(ui.applyPoised).toBe(false)
   })
 
-  it('D6 — a pending poison hit cannot be poised past', () => {
+  it('D6 — a pending Timebomb hit cannot be poised past', () => {
     const owed = queueTimebomb(startEncounter(0), DuelSide.Player)
     const ui = roundReducer(uiFrom(streakRound(), owed), tapApply)
     expect(ui.applyPoised).toBe(false)
@@ -73,7 +73,7 @@ describe('Apply Damage — the poise, and the refusals (AC1, D6)', () => {
 
   // The felt can change under a poised plate. A poise made while the control was live must not
   // commit after it stopped being — which is D6's "read the predicate before it commits".
-  it('D6 — poison booked AFTER the poise still stops the commit, and drops the poise', () => {
+  it('D6 — Timebomb booked AFTER the poise still stops the commit, and drops the poise', () => {
     let ui = roundReducer(uiFrom(streakRound()), tapApply)
     expect(ui.applyPoised).toBe(true)
     ui = { ...ui, encounter: queueTimebomb(ui.encounter, DuelSide.Player) }

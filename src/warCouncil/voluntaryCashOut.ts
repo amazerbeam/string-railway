@@ -10,10 +10,10 @@ import type { RoundState } from './types'
 export const ApplyDamageRefusal = {
   /** AC1 — nothing banked, so there is nothing to cash. */
   EmptyBank: 'emptyBank',
-  /** D6 (version-4-scope §3, decided 2026-08-19) — a booked poison hit has not landed yet, and a
+  /** D6 (version-4-scope §3, decided 2026-08-19) — a booked Timebomb hit has not landed yet, and a
    *  player able to cash out on demand could otherwise dodge the interaction between the two
    *  systems entirely. */
-  PoisonPending: 'poisonPending',
+  TimebombPending: 'timebombPending',
   /** The felt is not waiting on the player's card — a trick reveal is held, an ability prompt is
    *  open, the Quarry is to move, or the hand is over. */
   NotYourMove: 'notYourMove',
@@ -29,8 +29,8 @@ export type ApplyDamageRefusal = (typeof ApplyDamageRefusal)[keyof typeof ApplyD
 export interface ApplyDamageStock {
   readonly bank: number
   readonly multiplier: number
-  /** Poison is owed to either side and has not been paid. */
-  readonly poisonPending: boolean
+  /** A Timebomb is owed to either side and has not been paid. */
+  readonly timebombPending: boolean
   /** The player's own card is the next thing to be committed. */
   readonly canAct: boolean
 }
@@ -43,8 +43,8 @@ export interface ApplyDamageStock {
  * from `roundUiState.ts` rather than recomputed in the component.
  *
  * `NotYourMove` comes FIRST because it is true of the whole felt rather than of this control, and
- * `PoisonPending` before `EmptyBank` for `flaskRefusalFor`'s stated reason: report the reason that
- * will still be true after the next trick banks. Telling a poisoned player with an empty bank to
+ * `TimebombPending` before `EmptyBank` for `flaskRefusalFor`'s stated reason: report the reason that
+ * will still be true after the next trick banks. Telling a primed player with an empty bank to
  * go and take a trick would be actively wrong.
  *
  * A non-integer or non-positive bank or multiplier refuses rather than passing the comparison.
@@ -53,7 +53,7 @@ export interface ApplyDamageStock {
  */
 export function applyDamageRefusalFor(stock: ApplyDamageStock): ApplyDamageRefusal | null {
   if (!stock.canAct) return ApplyDamageRefusal.NotYourMove
-  if (stock.poisonPending) return ApplyDamageRefusal.PoisonPending
+  if (stock.timebombPending) return ApplyDamageRefusal.TimebombPending
   if (cashValue(stock.bank, stock.multiplier) <= 0) return ApplyDamageRefusal.EmptyBank
   return null
 }

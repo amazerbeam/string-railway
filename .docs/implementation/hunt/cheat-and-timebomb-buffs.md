@@ -49,16 +49,16 @@ that AC requires: raising only the Quarry side makes a gold Timebomb a free upgr
 downside, which removes the very decision the mechanic exists to pose.
 
 What makes that resolution durable is that the table is **derived, not written out**.
-`TIMEBOMB_TIER_MULTIPLIER` multiplies both of the live figures — `ENVENOM_QUARRY_DAMAGE` (4) and
-`ENVENOM_PLAYER_DAMAGE` (2) from `config.ts` — through a private `timebombRow(tier)` helper, so the
+`TIMEBOMB_TIER_MULTIPLIER` multiplies both of the live figures — `TIMEBOMB_QUARRY_DAMAGE` (4) and
+`TIMEBOMB_PLAYER_DAMAGE` (2) from `config.ts` — through a private `timebombRow(tier)` helper, so the
 "multiply BOTH sides" rule is stated once and cannot be applied to one side by an edit. Two
 consequences follow, and both are the point:
 
 - **The 2:1 ratio holds as arithmetic**, not as three hand-typed pairs that could drift apart. The
-  spec asserts it algebraically at every tier (`row.quarry * ENVENOM_PLAYER_DAMAGE === row.player *
-  ENVENOM_QUARRY_DAMAGE`) rather than against literals.
+  spec asserts it algebraically at every tier (`row.quarry * TIMEBOMB_PLAYER_DAMAGE === row.player *
+  TIMEBOMB_QUARRY_DAMAGE`) rather than against literals.
 - **The bronze row *is* today's live pair, by construction rather than by coincidence.** Retuning
-  `ENVENOM_QUARRY_DAMAGE` moves this table with it. That is what makes the migration incapable of
+  `TIMEBOMB_QUARRY_DAMAGE` moves this table with it. That is what makes the migration incapable of
   silently diverging from the mechanic it migrates — the failure mode a migration split across
   tickets is most exposed to.
 
@@ -91,7 +91,7 @@ rule actually asks for — and `index.ts` re-exports them, so `import { CHEAT_DU
 '../hunt'` reads identically either way.
 
 Second, and more consequentially: **DLR-107's AC3 asked for the old two-click Cheat-slot
-(`CheatStage`) and three-tap Envenom-plate (`EnvenomStage`) state machines to be removed, and they
+(`CheatStage`) and three-tap Timebomb-plate (`TimebombStage`) state machines to be removed, and they
 were not.** AC3 gates removal on the new model being "proven equivalent", while the same ticket's
 Scope Boundaries put the felt-rail UI removal out of scope and state that the UI still points at the
 old mechanics. Both machines are live, reachable, tested code in `src/app/warCouncil/`. So **Cheat and

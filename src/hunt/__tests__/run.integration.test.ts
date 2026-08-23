@@ -12,7 +12,7 @@ describe('DLR-96 AC2 — every epic-added RunState field survives advanceRun cor
       cheats: [{ id: 100 }],
       nextCheatId: 101,
       timebombCharges: 2,
-      poisonGuardHeld: true,
+      blastGuardHeld: true,
       whetstones: 3,
       flaskCharges: 2,
       handOfFight: 4,
@@ -31,7 +31,7 @@ describe('DLR-96 AC2 — every epic-added RunState field survives advanceRun cor
       wonEncounter,
       populated.cheats,
       populated.timebombCharges,
-      populated.poisonGuardHeld,
+      populated.blastGuardHeld,
       populated.discardsRemaining,
       null,
     )
@@ -47,9 +47,9 @@ describe('DLR-96 AC2 — every epic-added RunState field survives advanceRun cor
     // reset, not a survival, and is asserted explicitly so the fixture's 5 doesn't mislead a reader.
     expect(recorded.lastQuickKillPayout).toBe(0)
 
-    // Fight-scoped-but-adopted-here: poisonGuardHeld clears because the encounter just resolved
+    // Fight-scoped-but-adopted-here: blastGuardHeld clears because the encounter just resolved
     // (guardAfter), exactly as DLR-91 AC2 documents.
-    expect(recorded.poisonGuardHeld).toBe(false)
+    expect(recorded.blastGuardHeld).toBe(false)
 
     const advanced = advanceRun(recorded)
 
@@ -64,6 +64,6 @@ describe('DLR-96 AC2 — every epic-added RunState field survives advanceRun cor
     // Encounter-scoped: reset at the new fight's start.
     expect(advanced.handOfFight).toBe(1)
     expect(advanced.encounter.winner).toBeNull()
-    expect(advanced.poisonGuardHeld).toBe(false)
+    expect(advanced.blastGuardHeld).toBe(false)
   })
 })

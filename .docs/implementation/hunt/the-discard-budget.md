@@ -7,12 +7,12 @@
 `discardsRemaining` is a `RunState` field counting how many times, for the current fight, the
 player may still spend a discard (`src/warCouncil/discard.ts` — see
 [../war-council/the-discard.md](../war-council/the-discard.md) for the swap itself). It follows the
-same wiring pattern `cheats`, `envenomCharges` and `poisonGuardHeld` already established: seeded by
+same wiring pattern `cheats`, `timebombCharges` and `blastGuardHeld` already established: seeded by
 `startRun`, reset by `advanceRun` at every fight boundary, and threaded through `recordEncounter` as
 a required parameter so the hand can hand its ending value back.
 
 **Its lifetime is a third shape, distinct from both existing patterns on `RunState`.** `whetstones`
-is never cleared — it stacks for the whole run. `poisonGuardHeld` is spent once and then cleared by
+is never cleared — it stacks for the whole run. `blastGuardHeld` is spent once and then cleared by
 `guardAfter` the moment its fight resolves. `discardsRemaining` is neither: it is **spent down
 within a fight and reset — not cleared — at every fight boundary**, so a fresh fight always opens
 with the full budget rather than with whatever was left over or with nothing at all.
@@ -39,22 +39,22 @@ in the contract's final verification confirmed every other hit across `src/` is 
 - `advanceRun`'s returned spread gains `discardsRemaining: DISCARDS_PER_FIGHT` beside `handOfFight:
   1` — a fresh fight resets the budget on the same line every other fight-scoped reset lives on.
 - `recordEncounter` widened to a **required seventh parameter overall** — its own sixth carried
-  figure — positioned between `poisonGuardHeld` and `unplayedCards`:
+  figure — positioned between `blastGuardHeld` and `unplayedCards`:
 
 ```ts
 export function recordEncounter(
   run: RunState,
   encounter: EncounterState,
   cheats: readonly CheatCard[],
-  envenomCharges: number,
-  poisonGuardHeld: boolean,
+  timebombCharges: number,
+  blastGuardHeld: boolean,
   discardsRemaining: number,
   unplayedCards: number | null,
 ): RunState
 ```
 
 Its returned spread carries `discardsRemaining` through unchanged, exactly as `cheats` and
-`envenomCharges` already do on the same line — the reset is `advanceRun`'s alone, never
+`timebombCharges` already do on the same line — the reset is `advanceRun`'s alone, never
 `recordEncounter`'s, matching how `handOfFight` is reset only by `advanceRun`/`startRun`.
 
 ## The planning gap this widening exposed
@@ -63,7 +63,7 @@ Every prior widening of `recordEncounter` (DLR-83, DLR-90, DLR-91, DLR-95) added
 parameter and updated its one production call site in `App.tsx`. DLR-100's own contract carried the
 same "one call site, in scope" claim in its config-and-persisted-shape audit — and it was wrong.
 Widening the signature surfaced **38** `TS2554` errors on the first typecheck: `App.tsx` plus **six**
-pre-existing test files across `src/hunt/__tests__/` (`envenom.test.ts`, `poisonGuard.test.ts`,
+pre-existing test files across `src/hunt/__tests__/` (`timebomb.test.ts`, `blastGuard.test.ts`,
 `run.flask.test.ts`, `run.integration.test.ts`, `run.quickKill.test.ts`, `run.test.ts`,
 `run.whetstone.test.ts`) still calling the old six-argument form. Every one was fixed inline in the
 same implementation pass — a required parameter is exactly the discipline that makes a gap like this

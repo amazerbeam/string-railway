@@ -111,16 +111,16 @@ is still no effect anywhere in the file.
 ```tsx
 function handleComplete(result: WarCouncilRoundResult) {
   const recorded = recordEncounter(
-    run, result.encounter, result.cheats, result.envenomCharges, result.poisonGuardHeld,
+    run, result.encounter, result.cheats, result.timebombCharges, result.blastGuardHeld,
     result.unplayedAtResolve,
   )
   setRun(recorded)
   if (isEncounterResolved(recorded.encounter)) {
     setTricks({ taken: …[Player], lost: …[Cpu] })
-    return // The verdict is next, not another hand. D5 — any queued poison is discarded, because
+    return // The verdict is next, not another hand. D5 — any queued Timebomb is discarded, because
            // advanceRun and startRun both re-seed the encounter through startEncounter.
   }
-  // D1 — nothing is owed at a hand boundary any more. Poison is paid by the reducer's
+  // D1 — nothing is owed at a hand boundary any more. Timebomb is paid by the reducer's
   // applyResolution at the trick that resolves it, so an unresolved hand simply deals the next one.
   dealNextHand()
 }
@@ -131,17 +131,17 @@ together because the second change is a deletion.
 
 DLR-90 moved the `setRun` call *inside* the branches, because the run being committed differed between
 them: a resolved encounter committed `recorded`, and a live one committed whatever a `beginNextHand`
-transition produced — the one place a queued Envenom hit was paid, at the deal of the next hand. A
+transition produced — the one place a queued Timebomb hit was paid, at the deal of the next hand. A
 delayed hit can be a killing blow, so the handler then had to **re-check resolution afterwards**,
 against the run that transition produced rather than the one recorded above, or it would deal a hand
 into an encounter that was already over.
 
-**DLR-91 deleted all of that.** Poison now lands at the resolution of the next trick, folded into that
+**DLR-91 deleted all of that.** Timebomb now lands at the resolution of the next trick, folded into that
 trick's own damage by `roundReducer.ts` — so by the time a hand reports upward there is nothing left
 owing, `beginNextHand` was deleted from `src/hunt/run.ts`, and the driver's call and its downstream
 re-check went with it. One `setRun` serves both branches again. The comment marking the *absence* stays,
 because "we deliberately do nothing at a hand boundary now" is invisible otherwise — and because a
-poison booked by the finished hand's last trick rides on `encounter.pendingEnvenom` into the next hand's
+Timebomb booked by the finished hand's last trick rides on `encounter.pendingTimebomb` into the next hand's
 first trick, which is D5's carry half and is easy to mistake for a leak.
 
 **The already-resolved branch still pays nothing and still needs no clear step.** `advanceRun` and
@@ -179,12 +179,12 @@ refactor it predicts is still owed at the next *spendable* run figure rather tha
 kind.
 
 **DLR-91 added the fifth argument and two more props, exactly as DLR-90 predicted.**
-`recordEncounter` takes the Poison Guard the hand finished holding — `result.poisonGuardHeld`, through
+`recordEncounter` takes the Blast Guard the hand finished holding — `result.blastGuardHeld`, through
 the same `WarCouncilRoundResult` round trip — and both the mount and the shop gain it on the way down
-(`poisonGuardHeld={run.poisonGuardHeld}`), plus a fourth `refusals` entry for the new item.
+(`blastGuardHeld={run.blastGuardHeld}`), plus a fourth `refusals` entry for the new item.
 **The fifth argument is the one that is not adopted verbatim**: `recordEncounter` passes it through a
 private `guardAfter`, so a Guard dies with the fight it was bought for. See
-[../hunt/poison-guard.md](../hunt/poison-guard.md).
+[../hunt/blast-guard.md](../hunt/blast-guard.md).
 
 So DLR-90's note now reads as a warning met rather than a prediction: this is a **five-parameter call
 carrying four hand-returned run figures**, and the right answer at the sixth is a single `HandOutcome`
@@ -212,10 +212,10 @@ continuation branch, and the fourth callback added later is the one that forgets
 and the ticket explicitly forbade repurposing it. See
 [../hunt/quick-kill-payout.md](../hunt/quick-kill-payout.md).
 
-**DLR-90 added the fourth argument and two props.** `recordEncounter` takes the Envenom charges a hand
-finished with — `result.envenomCharges`, through the same `WarCouncilRoundResult` round trip `encounter`
+**DLR-90 added the fourth argument and two props.** `recordEncounter` takes the Timebomb charges a hand
+finished with — `result.timebombCharges`, through the same `WarCouncilRoundResult` round trip `encounter`
 and `cheats` already used — and both the mount and the shop gain a count on the way down
-(`envenomCharges={run.envenomCharges}`). Required for the same reason the third is, below.
+(`timebombCharges={run.timebombCharges}`). Required for the same reason the third is, below.
 
 **DLR-83 added the third argument and one prop, and nothing else.** `recordEncounter` now takes the
 Cheats a hand finished with — `result.cheats`, arriving through the same `WarCouncilRoundResult`

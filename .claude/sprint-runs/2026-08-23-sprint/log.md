@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 6/22 (27%) — done: 6 shipped, 0 blocked (+2 out-of-band: 1 shipped, 1 PARTIAL) | now: HALTED — session limit, resets 18:30 Europe/Dublin
+**Progress:** 6/22 (27%) — done: 6 shipped, 0 blocked (+2 out-of-band: 1 shipped, 1 partial) | now: DLR-129 phase 2 "retire the poison vocabulary" (out-of-band) — resumed 19:24 after the session limit
 
 ## Run order
 
@@ -1363,9 +1363,225 @@ developer's to make or confirm.
 - The `.claude/contract/DLR-129-retire-the-envenom-name/` folder is left in place, uncommitted,
   for whoever resumes.
 
-## RUN HALTED — session limit
+## RUN HALTED — session limit (RESOLVED, resumed 19:24)
 
 The run stopped after 6 of 22 sprint tickets, at `e5c8210`. Not a pipeline failure and not a
 blocked ticket: the API session limit was reached. Resumption should start at **DLR-129 phase
 2**, then continue with **DLR-109 (7/22)**.
 
+
+## DLR-129 phase 2 — retire the poison vocabulary
+
+Resumed 19:24 after the session-limit halt, continuing the existing
+`.claude/contract/DLR-129-retire-the-envenom-name/` contract from its Phase 2. The plan and
+tasks file the dead agent left were **usable as written** — the per-identifier audit, the
+protected-name list and the before/after copy table were all complete — so nothing was
+re-planned. Phases 2, 3 and 4 were executed against it; the plan approval gate was not
+presented, per this run's standing instruction.
+
+### ⚠️ REVIEW THIS FIRST — the copy decision is the highest-priority item of the whole run
+
+Everything else this run has shipped is mechanical. **This is the one place an agent chose
+words the player reads.** The full before/after table below is deliberately complete so that
+reversing the decision is a find-and-replace, not an investigation.
+
+**A ticket that changes player-facing copy had its mockup gate skipped.** The developer has
+not seen any of the new wording on screen. That matters more here than on a normal UI ticket,
+because copy is exactly the thing the mockup gate exists to catch.
+
+### The decision: Timebomb takes its own fuse vocabulary; poison vocabulary is retired
+
+Each concept gets exactly one word, and no word does two jobs:
+
+| Concept | Word |
+|---|---|
+| the mechanic, and the shop item | **Timebomb** |
+| marking a card before you play it | **prime** / a **primed** card |
+| damage booked, unpreventable, landing next trick | **ticking** |
+| the hit landing | **detonates** |
+| the insurance item | **Blast Guard** (was Poison Guard) |
+
+**Why.** The mechanic is a single delayed detonation booked at one trick and paid at the next
+— a fuse, not a damage-over-time effect. "Poison" actively mis-signals: it implies recurring
+ticks and a curable condition. It also forced the player to hold two names for one thing the
+moment the felt rail said "Timebomb" and the health bar said "poisoned". And the `doomed`
+heart state (shipped at `2c8f6bc`) is precisely a bomb already ticking — booked damage nothing
+can stop — so `Ticking` is the word that describes what that heart actually means.
+
+**Rejected alternative: keep poison vocabulary under the Timebomb name.** It is cheaper —
+roughly 200 fewer string and comment edits — and it leaves `Poison Guard` untouched. It was
+rejected because it institutionalises exactly the two-names-for-one-mechanic split this ticket
+exists to close, and because it leaves the `doomed` heart, which shows damage that is already
+unpreventable, described by a word promising the opposite.
+
+**`Poison Guard` → `Blast Guard` is the single largest ripple** and the one most likely to be
+waved off. Reversing just that is a one-line copy revert plus the `BlastGuard`/`blastGuard*`
+identifier family; `Guard` was deliberately retained so `SHOP_GUARD_LABEL` and the
+`GuardAlreadyActive` refusal still read naturally.
+
+### The complete before/after table of every player-facing string
+
+"Before" is the **pre-DLR-129** value at `a1770f0`, so this table reverses the whole ticket,
+not just phase 2. Damage figures shown as `4`/`2` are interpolated from
+`TIMEBOMB_QUARRY_DAMAGE` / `TIMEBOMB_PLAYER_DAMAGE` and **did not change value**.
+
+| # | Site | Before | After |
+|---|---|---|---|
+| 1 | `shopLabels.ts` `SHOP_ENVENOM_LABEL` → `SHOP_TIMEBOMB_LABEL` | `Envenom held` | `Timebombs held` |
+| 2 | `shopLabels.ts` `SHOP_GUARD_LABEL` | `Poison Guard` | `Blast Guard` |
+| 3 | `shopLabels.ts` `SHOP_ITEM_NAME` | `Envenom` | `Timebomb` |
+| 4 | `shopLabels.ts` `SHOP_ITEM_NAME` | `Poison Guard` | `Blast Guard` |
+| 5 | `shopLabels.ts` Timebomb blurb | `Poison a card in your hand. The winner of the trick it is played into takes damage at the next trick — 4 for the Quarry, 2 for you, and yours cashes out your streak.` | `Prime a card in your hand. The winner of the trick it is played into takes the blast at the next trick — 4 for the Quarry, 2 for you, and yours cashes out your streak.` |
+| 6 | `shopLabels.ts` Guard blurb | `Insurance for one fight. The next time your own poison lands on you, you still take the 2 but your streak survives.` | `Insurance for one fight. The next time your own Timebomb detonates on you, you still take the 2 but your streak survives.` |
+| 7 | `shopLabels.ts` `GuardAlreadyActive` | `You are already holding a Poison Guard.` | `You are already holding a Blast Guard.` |
+| 8 | `labels.ts` `cardAccessibleName` mark suffix | `poisoned` | `primed` |
+| 9 | `labels.ts` `VENOM_MARK_LABEL` → `PRIMED_MARK_LABEL` | `Poisoned` | `Primed` |
+| 10 | `labels.ts` health-bar clause | `10 of 10. 4 poisoned.` | `10 of 10. 4 ticking.` |
+| 11 | `labels.ts` `ENVENOM_RAIL_LABEL` → `TIMEBOMB_RAIL_LABEL` | `Envenom` | `Timebomb` |
+| 12 | `labels.ts` `ENVENOM_EMPTY_LABEL` → `TIMEBOMB_EMPTY_LABEL` | `No Envenom held` | `No Timebomb held` |
+| 13 | `labels.ts` `ENVENOM_POISED_HINT` → `TIMEBOMB_POISED_HINT` | `Tap Envenom again to arm it` | `Tap Timebomb again to arm it` |
+| 14 | `labels.ts` `ENVENOM_ARMED_HINT` → `TIMEBOMB_ARMED_HINT` | `Pick a card in your hand to poison` | `Pick a card in your hand to prime` |
+| 15 | `labels.ts` `poisonBookedText` → `timebombBookedText` (player) | `Poison set — you take 2 at the next trick.` | `Timebomb ticking — you take 2 at the next trick.` |
+| 16 | `labels.ts` `timebombBookedText` (Quarry) | `Poison set — they take 4 at the next trick.` | `Timebomb ticking — they take 4 at the next trick.` |
+| 17 | `labels.ts` apply-damage refusal | `A poison hit is still owed — you cannot apply until it lands.` | `A Timebomb is still ticking — you cannot apply until it detonates.` |
+| 18 | `timebomb.ts` `RangeError` (not player-facing; changed for consistency) | `Cannot poison the {rank} of {suit} — it is not in the {side}'s hand` | `Cannot prime the {rank} of {suit} — it is not in the {side}'s hand` |
+| 19 | `timebomb.ts` `RangeError` | `The {rank} of {suit} is already poisoned` | `The {rank} of {suit} is already primed` |
+
+Row 11 also flows into the rail's composed accessible name, which now reads
+`Timebomb, 2 held, armed` (was `Envenom, 2 held, armed`).
+
+### Plan defaults taken, and decisions made in the developer's place
+
+Every one of these is reversible from the table above or from a single named identifier.
+
+- **The fuse lexicon itself**, and its five words. The plan's stated default; taken.
+- **`Poison Guard` → `Blast Guard`**, including `PoisonGuard` → `BlastGuard`,
+  `poisonGuardHeld`/`Spent`/`ed` → `blastGuard*`, and `POISON_GUARD_PRICE` →
+  `BLAST_GUARD_PRICE` (value still `1`).
+- **`Doomed` → `Ticking`**, moving the `HeartState` member, the `HealthBarView.ticking` field
+  and the `[data-state='ticking']` CSS selector together in one task, because the compiler sees
+  neither side of that binding.
+- **Row 1 pluralises: `Timebomb held` → `Timebombs held`.** Flagged by the code-evaluator as a
+  copy edit with no poison wording in it, riding along in a rename-only diff. **Kept**, because
+  it matches the sibling cell `SHOP_WHETSTONE_LABEL = 'Whetstones held'` and the count has no
+  cap — but it is the one row in this table that is not forced by the vocabulary decision, and
+  it is a clean one-character revert.
+- **Row 15/16 says "ticking", not "primed".** The plan's table proposed `Timebomb primed — you
+  take N at the next trick.`; the code-evaluator caught that this gives "primed" two jobs — the
+  card mark *and* the booked hit — while the health bar forty lines away already calls that
+  same state "ticking". Corrected to `Timebomb ticking`, so the reveal and the health bar
+  describe one state with one word.
+- **CSS colour tokens `--wc-poison`/`--wc-poison-edge` → `--wc-timebomb`/`--wc-timebomb-edge`.**
+  Not in the plan's list; renamed because the token names were pure poison vocabulary. **The
+  colour values `#8fb04e` and `#5c7a2e` did not change.** `warCouncilHunt.css`'s mined tile
+  reuses that token and now reads "the Timebomb green".
+- **`.docs/design/` was deliberately NOT swept.** Those are historical design records owned by
+  `game-designer`; rewriting them would falsify what was argued at the time.
+  `.docs/implementation/` and `.docs/game_rules/the-hunt.md` **were** swept, and four doc files
+  were `git mv`'d onto the new names.
+
+### The de-duplication clause — NOT delivered, deliberately
+
+The ticket's scope item 2 (make the live felt path consume `buffCatalog.ts` rather than a
+parallel representation) **was not done, and should not have been.** Verified this run: nothing
+under `src/app/` imports `buffCatalog`, `timebombBuff`, or `BuffKind`, and there is no buff-pile
+field on `RunState` or `RoundUiState`. Wiring the felt onto the catalog means introducing the
+buff pile, `BuffActivationState`, and AP spending into the live round state — a **behaviour
+change**, which this ticket's hard constraint forbids and which is DLR-114/DLR-116's work.
+
+What was closed is the **naming** duplication. The **representational** duplication survives.
+Because `TIMEBOMB_QUARRY_DAMAGE`/`TIMEBOMB_PLAYER_DAMAGE` remain the single source that
+`buffCatalog.ts`'s bronze row multiplies, the two representations still cannot diverge
+numerically — which is the property the duplication actually threatened.
+
+**DLR-129 is therefore left OPEN, not moved to Ready for Test.** The rename is complete; scope
+item 2 is not, and it belongs to DLR-114/DLR-116.
+
+### Reviewer findings and the fix pass
+
+One parallel dispatch, one fix pass, one verification round — the 2-round ceiling was not
+reached. Four findings were accepted and fixed:
+
+1. **A negative assertion had silently decoupled from live copy.** Both the defender and the
+   code-evaluator found it independently. `TrickWell.test.tsx` asserted
+   `queryByText(/Timebomb set/).toBeNull()` — but the live copy is `Timebomb ticking — …`, so
+   the string `"Timebomb set"` exists nowhere in the app. The test passed, and would have
+   passed even if the clause rendered on every trick. This is exactly the string-bound trap
+   `web-project.md` names, and no gate could see it. Re-coupled to `/Timebomb ticking/`.
+2. Rows 15/16 reworded from `primed` to `ticking` (above).
+3. `HandFan.tsx:100` — the blanket pass turned the verb "poison" into the noun "Timebomb"
+   ("pick a card to Timebomb"). Corrected to "pick a card to prime".
+4. **`src/hunt/__tests__/run.test.ts` crossed the 400-line budget** at **401 lines** — caused
+   by Prettier reflowing an import list the rename had lengthened, not by the rename's content.
+   Fixed in-ticket per CLAUDE.md rather than reported: the self-contained `beatenCount` block
+   (DLR-85's own question) was lifted into `src/hunt/__tests__/run.beatenCount.test.ts`,
+   leaving `run.test.ts` at 326 lines.
+
+**This is why the test-file count moved from 91 to 92 while the test count stayed at 1192.**
+No test was added, deleted, or weakened; one cohesive `describe` block moved files to clear a
+blocking line-budget breach.
+
+Two non-blocking notes were left alone, both pre-existing: `PRIMED_MARK_LABEL` is exported and
+unimported (dead before this rename too), and `Ward` silver/gold remain indistinguishable while
+`DAMAGE_PER_HIT = 1`.
+
+### Evidence that nothing but names and prose changed
+
+- `git diff HEAD -- src` is **440 insertions / 440 deletions** across the phase-2 diff before
+  the fix pass — perfectly symmetric.
+- Stripping every identifier from both sides of the diff leaves only Prettier line-wrapping
+  differences: **no numeric literal and no operator changed anywhere.**
+- `src/hunt/config.ts`'s diff is one renamed constant and three comment lines.
+  `TIMEBOMB_PRICE = 2`, `TIMEBOMB_QUARRY_DAMAGE = 4`, `TIMEBOMB_PLAYER_DAMAGE = 2`,
+  `BLAST_GUARD_PRICE = 1` all hold their pre-ticket values.
+- Test count identical at **1192**.
+
+### Protected names, confirmed surviving
+
+`CardRank.Poison` (rank 8 — the base game's card, no connection to this mechanic) in
+`src/warCouncil/types.ts`; and the four places "poison" is a metaphor rather than the mechanic:
+`src/hunt/flask.ts` (a `Math.min` clamp), `src/hunt/shop.ts` ("hide a poisoned figure"), and
+`src/hunt/__tests__/quickKill.test.ts` ("poisoning the purse"). After the sweep, `poison`
+appears in `src/` **only** at those sites.
+
+### What only the developer can judge
+
+- Whether the fuse lexicon is right at all, and whether `Blast Guard` should stay.
+- Whether `10 of 10. 4 ticking.` reads well in a screen reader mid-fight, and whether
+  `Timebomb ticking — you take 2 at the next trick.` lands on the reveal.
+- Whether `Timebombs held` should have stayed singular.
+- Whether `timebombDamageFor` (encounter side) sitting one preposition from `timebombDamageOf`
+  (buff side), both exported from `src/hunt/index.ts`, is tolerable until DLR-114/DLR-116
+  collapses them. Correct and compiling; confusing to read.
+
+### Late correction after the reviewer round
+
+Four "poison" metaphors unrelated to the mechanic (`src/hunt/flask.ts` x2, `src/hunt/shop.ts`,
+`src/hunt/__tests__/quickKill.test.ts`, plus their two mirrors in `.docs/implementation/`) were
+reworded to "corrupt"/"corrupted" rather than left as protected exceptions. The plan had
+protected them. **Deviating was the better call:** leaving a poison metaphor in a codebase that
+has just retired poison vocabulary is precisely the reading trap the ticket exists to remove,
+and it made the completeness grep ambiguous. `CardRank.Poison` (rank 8) is now the **only**
+occurrence of "poison" anywhere in `src/` — the audit is a clean binary.
+
+### Gates, final
+
+| Gate | Result |
+|---|---|
+| `npm run typecheck` | exit 0, no errors |
+| `npm run lint` | exit 0, no errors or warnings |
+| `npx vitest run` | **1192 passed of 1192**, 92 files |
+| `npm run build` | exit 0, `dist/` written, no bundler errors |
+| `npx prettier --check` (the 73 changed source files) | exit 0 |
+
+`npm run format:check` was not run as a gate — it fails on ~58 pre-existing `.md` files this
+contract never touched.
+
+**One live-verification gap, reported honestly.** QA drove the app at 1400x900 and confirmed the
+fight screen renders clean with no console error, the rail reads `TIMEBOMB` / `No Timebomb held`,
+no poison vocabulary appears in the accessibility tree, and `--wc-timebomb` resolves to
+`#8fb04e` rather than falling back. It did **not** reach the shop screen or a live `ticking`
+heart — both need fight 1 played to completion and a Timebomb bought and detonated. The unit
+specs cover both branches with fixture data, but nobody has seen `10 of 10. 4 ticking.` or the
+`Blast Guard` shop card rendered in a real browser. Worth thirty seconds of the developer's
+time alongside the copy review.

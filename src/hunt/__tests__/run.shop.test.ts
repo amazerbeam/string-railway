@@ -76,7 +76,7 @@ describe('shopStockFor (DLR-84)', () => {
       cheatCount: run.cheats.length,
       playerHealth: run.encounter.health[DuelSide.Player],
       maxPlayerHealth: PLAYER_START_HEALTH,
-      poisonGuardHeld: run.poisonGuardHeld,
+      blastGuardHeld: run.blastGuardHeld,
     })
   })
 })

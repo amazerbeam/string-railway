@@ -131,7 +131,7 @@ function App() {
       result.encounter,
       result.cheats,
       result.timebombCharges,
-      result.poisonGuardHeld,
+      result.blastGuardHeld,
       result.discardsRemaining,
       result.unplayedAtResolve,
     )
@@ -141,12 +141,12 @@ function App() {
         taken: result.finalState.tricksWon[PlayerSide.Player],
         lost: result.finalState.tricksWon[PlayerSide.Cpu],
       })
-      // The verdict is next, not another hand. D5 — any queued poison is discarded, because
+      // The verdict is next, not another hand. D5 — any queued Timebomb is discarded, because
       // `advanceRun` and `startRun` both re-seed the encounter through `startEncounter`.
       return
     }
-    // D1 — nothing is owed at a hand boundary any more. Poison is paid by `applyResolution` at the
-    // trick that resolves it, so an unresolved hand simply deals the next one. Any poison booked by
+    // D1 — nothing is owed at a hand boundary any more. A Timebomb is paid by `applyResolution` at the
+    // trick that resolves it, so an unresolved hand simply deals the next one. Any Timebomb booked by
     // this hand's last trick rides on `encounter.pendingTimebomb` into the next hand's first trick,
     // which is D5's carry half.
     dealNextHand()
@@ -243,7 +243,7 @@ function App() {
         cheatCount={run.cheats.length}
         cheatSlotCount={CHEAT_SLOT_COUNT}
         timebombCharges={run.timebombCharges}
-        poisonGuardHeld={run.poisonGuardHeld}
+        blastGuardHeld={run.blastGuardHeld}
         whetstones={run.whetstones}
         flaskCharges={run.flaskCharges}
         flaskRefusal={flaskRefusalFor(flaskStockFor(run))}
@@ -253,7 +253,7 @@ function App() {
         refusals={{
           [ShopItem.Cheat]: refusalFor(stock, ShopItem.Cheat),
           [ShopItem.Timebomb]: refusalFor(stock, ShopItem.Timebomb),
-          [ShopItem.PoisonGuard]: refusalFor(stock, ShopItem.PoisonGuard),
+          [ShopItem.BlastGuard]: refusalFor(stock, ShopItem.BlastGuard),
           [ShopItem.Whetstone]: refusalFor(stock, ShopItem.Whetstone),
           [ShopItem.Heal]: refusalFor(stock, ShopItem.Heal),
         }}
@@ -298,7 +298,7 @@ function App() {
       cheats={run.cheats}
       coins={run.coins}
       timebombCharges={run.timebombCharges}
-      poisonGuardHeld={run.poisonGuardHeld}
+      blastGuardHeld={run.blastGuardHeld}
       discardsRemaining={run.discardsRemaining}
       bankClimbBonus={bankClimbBonusFor(run)}
       quarryLabel={quarryHealthLabel(currentName)}

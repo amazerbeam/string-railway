@@ -97,7 +97,7 @@ export default function HandFan({
         // `disabled` either way, so nothing about behaviour or the accessible tree changes.
         // `wc-is-marking` is the same idea for DLR-90's own mode — presentational only,
         // changing nothing about behaviour or the accessible tree, so the stylesheet can
-        // distinguish "pick a card to poison" from ordinary play.
+        // distinguish "pick a card to prime" from ordinary play.
         className={`wc-fan${interactive ? '' : ' wc-is-inert'}${timebombArmed ? ' wc-is-marking' : ''}${discardSelecting ? ' wc-is-discarding' : ''}`}
         role="group"
         aria-label="Your hand"

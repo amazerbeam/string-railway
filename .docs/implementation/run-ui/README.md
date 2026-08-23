@@ -18,7 +18,7 @@ The full-viewport surfaces the run layer owns, and every user-visible string it 
   `Next fight`. Since DLR-89 the purchases sit in a **four-tab persistence-length ladder** — one-time
   use, fight-long, run-permanent, game-permanent — with the last shown and refused as "Coming soon",
   and the heal outside the ladder entirely. **Since DLR-92 the first three shelves all hold something**
-  (the Cheat and Envenom, the Poison Guard, and the Whetstone), so no shelf a player can open states that
+  (the Cheat and Timebomb, the Blast Guard, and the Whetstone), so no shelf a player can open states that
   it is empty. **Since DLR-93 this screen also carries the one thing on it that is not for sale** — the
   **flask**, a free charge-limited heal drunk from a potion-icon button in its own zone above the ladder.
   See [the flask control](the-flask-control.md).
@@ -191,7 +191,7 @@ file's header.
   separation reads at a glance** is the AC6 question only an eye at final rendered size can answer, and
   it was explicitly listed as the developer's rather than tested.
 - **Whether "Flask" is the shipped name** (DLR-93). It sits on `version-4-scope.md`'s open-names list
-  beside Envenom, Poison Guard and Whetstone, and every string in `shopLabels.ts`'s flask block is
+  beside Timebomb, Blast Guard and Whetstone, and every string in `shopLabels.ts`'s flask block is
   placeholder copy.
 - **The flask block added a row to a screen already at its height budget** (DLR-93). DLR-89 recorded
   that "every list in this shop is expected to grow" and that the screen spends its whole height; the
@@ -254,7 +254,7 @@ file's header.
   exactly once.
 - **The item cards inside a shop panel have no roving tabindex, and that becomes a `game-ux` breach
   once a shelf holds about five cards** (DLR-89; **all three follow-on item tickets have now shipped without
-  it**). The deepest shelf holds **two** cards today — one-time use, since Envenom joined the Cheat — so the
+  it**). The deepest shelf holds **two** cards today — one-time use, since Timebomb joined the Cheat — so the
   breach is still not live, but the named obligation DLR-89 placed on DLR-90, DLR-91 and DLR-92 was
   discharged by none of them: each added an item to a *different* shelf, so no single ticket ever faced a
   five-card panel and the mechanism stayed speculative at each one. That is worth recording as the exact
@@ -263,7 +263,7 @@ file's header.
   mechanism already exists in `useRovingTabIndex` and `.shop-panel` is the right container to attach it to.
 - **One shop shelf is empty by design, and it is the one that is refused** (DLR-89, narrowed by DLR-91 and
   closed out by DLR-92): game-permanent states "Coming soon.", cannot be opened, and nothing is designed for
-  it at all. **Fight-long and run-permanent are both no longer empty** — DLR-91 put **Poison Guard** on the
+  it at all. **Fight-long and run-permanent are both no longer empty** — DLR-91 put **Blast Guard** on the
   first and DLR-92 the **Whetstone** on the second, each at the cost of one purse cell and no item-rendering
   change whatsoever, which is the second and third time the ladder has paid off. The consequence worth
   knowing: **`SHOP_CATEGORY_EMPTY` is now unreachable by playing**, since every openable shelf holds an item.

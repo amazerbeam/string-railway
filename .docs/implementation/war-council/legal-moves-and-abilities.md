@@ -40,9 +40,9 @@ worth knowing before adding a third caller:
 
 ```ts
 export interface PlayCardOptions extends LegalMoveOptions {
-  readonly poisonToPlayer?: Damage
-  readonly poisonToQuarry?: Damage
-  readonly poisonGuarded?: boolean
+  readonly timebombToPlayer?: Damage
+  readonly timebombToQuarry?: Damage
+  readonly blastGuarded?: boolean
 }
 playCard(state, side, card, choice?, options?: PlayCardOptions)
 ```
@@ -50,7 +50,7 @@ playCard(state, side, card, choice?, options?: PlayCardOptions)
 `playCard`'s fifth parameter retyped from `LegalMoveOptions` to `PlayCardOptions`; `legalMoves` still
 takes the narrower type, and **`extends` is what lets one object satisfy both**, so `playCard` threads
 the same value it was handed into its own `legalMoves` call with no projection step. The three new
-fields are **not** legality at all — they are the poison owed at this trick, which `playCard` forwards
+fields are **not** legality at all — they are the Timebomb owed at this trick, which `playCard` forwards
 into `TrickFacts` and reads no further. They travel on this parameter because the queue lives on
 `EncounterState` and `src/hunt/` must not learn what a `RoundState` is; the reducer holds both and is
 the only caller that supplies them. See

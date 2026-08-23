@@ -9,7 +9,7 @@ import {
   encounterFixture,
   timebombChargesFixture,
   makeRound,
-  poisonGuardHeldFixture,
+  blastGuardHeldFixture,
 } from './roundFixture'
 
 /** A fight the player can end on demand: a banked streak worth exactly the Quarry's last health,
@@ -25,7 +25,7 @@ function seedOneTapKill(quarryHealth: number): RoundUiSeed {
     },
     cheats: [],
     timebombCharges: timebombChargesFixture,
-    poisonGuardHeld: poisonGuardHeldFixture,
+    blastGuardHeld: blastGuardHeldFixture,
     bankClimbBonus: bankClimbBonusFixture,
     discardsRemaining: discardsRemainingFixture,
   }

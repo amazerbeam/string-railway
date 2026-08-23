@@ -23,7 +23,7 @@ passed unedited through it. `roundReducer.ts` came out at 352 lines and `quarryA
 
 The one hazard in a move like this is the import list. Pruning it by eye over-pruned on the first
 attempt — `PlayerSide`, `QUARRY_SIDE`, `RoundPhase` and `currentTurn` are still used by
-`handleTapCheat`, `commitEnvenom`, `handleCarryOn` and `commit`, none of which moved. Lint is what
+`handleTapCheat`, `commitTimebomb`, `handleCarryOn` and `commit`, none of which moved. Lint is what
 catches this; it is worth running before assuming a move is clean.
 
 ## `canAct` moved, and that is the point of it
@@ -39,11 +39,11 @@ canAct(state) =
 ```
 
 Two readings of one gate is how a greyed control and a reducer branch drift apart — which is exactly
-the failure this contract had to avoid, and the same reason `cheatArmed` and `envenomArmed` already
+the failure this contract had to avoid, and the same reason `cheatArmed` and `timebombArmed` already
 live in that file rather than being recomputed in the component.
 
 Beside it, **`applyDamageStock`** is the single place the app layer's shape is translated into the pure
-module's: it is where `hasPendingEnvenom(encounter)` and `canAct(state)` are read, and it is what lets
+module's: it is where `hasPendingTimebomb(encounter)` and `canAct(state)` are read, and it is what lets
 `applyDamageRefusalFor` take four plain values and stay ignorant of both `EncounterState` and
 `RoundUiState`.
 
@@ -54,11 +54,11 @@ construction site is a compile error rather than an `undefined` — `createRound
 and it seeds `false`. `RoundUiSeed` is untouched: nothing about this control is run state, and a poise
 is a hand-transient that dies on remount. That is correct behaviour, not a limitation.
 
-**A single boolean rather than `EnvenomStage`'s two-stage union**, deliberately: Envenom needs a second
+**A single boolean rather than `TimebombStage`'s two-stage union**, deliberately: Timebomb needs a second
 stage because its armed state waits for a *third* tap on a hand card. Apply Damage's second tap **is**
 the action, so "poised" is the only state there is to be in.
 
-`handleTapApplyDamage` has three outcomes, mirroring `handleTapEnvenom`'s shape — a refusal changes
+`handleTapApplyDamage` has three outcomes, mirroring `handleTapTimebomb`'s shape — a refusal changes
 nothing, nothing poised poises, poised commits:
 
 ```ts
@@ -69,10 +69,10 @@ if (!state.applyPoised) return { ...state, applyPoised: true }
 ```
 
 **It asks the refusal predicate on BOTH taps, and that is load-bearing.** The felt can change under a
-poised plate — a poison booking lands, a reveal is held, the turn passes — and re-reading is what stops
+poised plate — a Timebomb booking lands, a reveal is held, the turn passes — and re-reading is what stops
 a poise made while the control was live from committing after it stopped being. Design decision D6 asks
-for exactly this: the control must read the pending-poison predicate *before it commits to anything*.
-There is a spec that books poison between the two taps and asserts the commit is refused and the poise
+for exactly this: the control must read the pending-Timebomb predicate *before it commits to anything*.
+There is a spec that books Timebomb between the two taps and asserts the commit is refused and the poise
 dropped.
 
 A refusal **drops a held poise** rather than leaving it stranded, and never half-applies. The reason is
@@ -88,13 +88,13 @@ is a guard rather than a live path.
 never enters its waiting state, and the player is simply looking at a zeroed `BankMeter` and a shorter
 Quarry heart row with their card still to play.
 
-**Poising does not clear a Cheat or an Envenom selection, and they do not clear it.** Those two
+**Poising does not clear a Cheat or an Timebomb selection, and they do not clear it.** Those two
 reinterpret the next hand-card tap and therefore cannot coexist; this one reinterprets nothing, so a
 player may poise a Cheat and apply damage in either order without losing either.
 
 ## The plate
 
-`ApplyDamagePlate.tsx` is a **sibling** of `CheatSlots` and `EnvenomCharge` rather than a
+`ApplyDamagePlate.tsx` is a **sibling** of `CheatSlots` and `TimebombCharge` rather than a
 generalisation of either — the three keep independent copy and independent components, so retuning one
 never risks the others. It is a pure render over props with two callbacks: **no effect, no listener, no
 timer**, and therefore no cleanup to write and nothing to leak on remount.
@@ -119,7 +119,7 @@ accessible names**, which is how the specs tell them apart (`getByRole('button',
 puts the figure in the name rather than only in the glyph. A refusal **outranks** a poise in the name,
 pinned by its own spec.
 
-`warCouncilApplyDamage.css` mirrors `warCouncilEnvenom.css`'s selectors and tokens so the three rail
+`warCouncilApplyDamage.css` mirrors `warCouncilTimebomb.css`'s selectors and tokens so the three rail
 controls read as one family — form-not-colour state (`:disabled` dashed and dimmed, `.is-poised` dashed
 brass with a lift and a corner notch), the ≥44px hit-area floor as an explicit `min-width`/`min-height`,
 `:focus-visible`, `@media (hover: hover)`, and `touch-action: manipulation`. The `.is-armed` block is
@@ -133,14 +133,14 @@ constants. It is on the face of the readout rather than behind a hover because i
 number the new decision needs.
 
 Its `aria-label` was **extended, not rewritten**: the `cashes for ${cash}` substring had to survive
-intact because `WarCouncilRound.envenom.test.tsx` matches on `/cashes for 6\b/i`. Props are unchanged.
+intact because `WarCouncilRound.timebomb.test.tsx` matches on `/cashes for 6\b/i`. Props are unchanged.
 
 **The at-risk heart preview deliberately still shows the FULL figure.** The projection and
 `duelHealthBars.ts` were untouched by DLR-94 — the recorded decision is that the player can realise the
 full figure on demand, so the full figure is what their streak is genuinely worth to them; the reduced
 figure belongs beside the button that avoids it, not competing with the full one on the Quarry's bar.
 _(DLR-101 later renamed `projectedFromStreak` to `projectedDepletion` and taught it about booked
-poison. **The full-figure decision above is untouched by that** — poison is a separate band with its
+Timebomb. **The full-figure decision above is untouched by that** — Timebomb is a separate band with its
 own heart state, and the streak's own preview still shows what cashing right now would take.)_
 
 ## All of the copy is placeholder
@@ -154,7 +154,7 @@ a disabled button.
 
 ## What the tests pin
 
-- `__tests__/roundReducer.applyDamage.test.ts` — the poise, all three refusals, the D6 race (poison
+- `__tests__/roundReducer.applyDamage.test.ts` — the poise, all three refusals, the D6 race (Timebomb
   booked *between* the two taps), cancel, the full payout, the zero player damage, the zeroed counters,
   the trick carrying on and resolving normally afterwards, a lethal cash-out ending the fight through
   the ordinary machinery, and a further tap on a resolved fight being inert rather than throwing.
@@ -171,10 +171,10 @@ a disabled button.
 ## DLR-97 — the plate's polish pass
 
 Two CSS-only changes to `warCouncilApplyDamage.css`, matching the identical fix applied to the
-Envenom plate the same phase (see
-[the Envenom plate's own note](envenom-charge-and-the-mark.md#dlr-97-the-plates-polish-pass)):
+Timebomb plate the same phase (see
+[the Timebomb plate's own note](timebomb-charge-and-the-mark.md#dlr-97-the-plates-polish-pass)):
 the plate's `filter` (its hover brightness) gained a transition reading the shared
 `--wc-ui-transition-ms` token, alongside the `transform`/`box-shadow` pair it already transitioned.
 And its `aspect-ratio` moved from `2 / 3` to `4 / 3` with `border-radius: 10px`, done in lockstep with
-the Cheat slot and the Envenom plate so all three felt-rail plates stay one shape family, distinct
+the Cheat slot and the Timebomb plate so all three felt-rail plates stay one shape family, distinct
 from `.wc-card`'s silhouette. No prop, refusal string, or accessible-name computation changed.

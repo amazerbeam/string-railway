@@ -42,7 +42,7 @@ function uiFrom(
     encounter,
     cheats,
     timebombCharges: timebombChargesFixture,
-    poisonGuardHeld: false,
+    blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: discardsRemainingFixture,
   })
@@ -125,8 +125,8 @@ describe('CarryOn commits a pending Quarry lead', () => {
         multiplier: 1,
         cashedAtHandEnd: false,
         timebombTarget: null,
-        poisonToQuarry: 0,
-        poisonGuardSpent: false,
+        timebombToQuarry: 0,
+        blastGuardSpent: false,
       },
     }
     let ui: RoundUiState = { ...uiFrom(round), resolvedTrick: heldReveal }

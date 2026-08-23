@@ -23,7 +23,7 @@ function makeSeed(overrides: Partial<WarCouncilState> = {}): RoundUiSeed {
     encounter: encounterFixture,
     cheats: [],
     timebombCharges: 0,
-    poisonGuardHeld: false,
+    blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: 2,
   }

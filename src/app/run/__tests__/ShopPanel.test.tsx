@@ -42,7 +42,7 @@ const baseProps = {
   cheatCount: 1,
   cheatSlotCount: 2,
   timebombCharges: 2,
-  poisonGuardHeld: false,
+  blastGuardHeld: false,
   whetstones: 0,
   nextOpponentName: 'The Monarch',
   progressText: 'Fight 2 of 3.',
@@ -56,7 +56,7 @@ const baseProps = {
 const noRefusals: Readonly<Record<ShopItem, PurchaseRefusal | null>> = {
   [ShopItem.Cheat]: null,
   [ShopItem.Timebomb]: null,
-  [ShopItem.PoisonGuard]: null,
+  [ShopItem.BlastGuard]: null,
   [ShopItem.Whetstone]: null,
   [ShopItem.Heal]: null,
 }
@@ -259,24 +259,24 @@ describe('ShopPanel', () => {
   it('DLR-91 — states whether a Guard is held, in words', () => {
     const { rerender } = render(<ShopPanel {...baseProps} refusals={noRefusals} />)
     expect(screen.getByText(SHOP_GUARD_NONE)).toBeTruthy()
-    rerender(<ShopPanel {...baseProps} poisonGuardHeld refusals={noRefusals} />)
+    rerender(<ShopPanel {...baseProps} blastGuardHeld refusals={noRefusals} />)
     expect(screen.getByText(SHOP_GUARD_HELD)).toBeTruthy()
   })
 
   it('DLR-91 AC1 — the Guard is on the Fight-long shelf, not the default one', () => {
     render(<ShopPanel {...baseProps} refusals={noRefusals} />)
-    const name = shopItemAccessibleName(ShopItem.PoisonGuard, null)
+    const name = shopItemAccessibleName(ShopItem.BlastGuard, null)
     expect(screen.queryByRole('button', { name })).toBeNull()
     fireEvent.click(screen.getByRole('tab', { name: SHOP_CATEGORY_LABEL[ShopCategory.FightLong] }))
     expect(screen.getByRole('button', { name })).toBeTruthy()
   })
 
   it('DLR-91 AC3 — a refused Guard is disabled with its reason in the document', () => {
-    const refusals = { ...noRefusals, [ShopItem.PoisonGuard]: PurchaseRefusal.GuardAlreadyActive }
-    render(<ShopPanel {...baseProps} poisonGuardHeld refusals={refusals} />)
+    const refusals = { ...noRefusals, [ShopItem.BlastGuard]: PurchaseRefusal.GuardAlreadyActive }
+    render(<ShopPanel {...baseProps} blastGuardHeld refusals={refusals} />)
     fireEvent.click(screen.getByRole('tab', { name: SHOP_CATEGORY_LABEL[ShopCategory.FightLong] }))
     const button = screen.getByRole('button', {
-      name: shopItemAccessibleName(ShopItem.PoisonGuard, PurchaseRefusal.GuardAlreadyActive),
+      name: shopItemAccessibleName(ShopItem.BlastGuard, PurchaseRefusal.GuardAlreadyActive),
     })
     expect(button).toHaveProperty('disabled', true)
     expect(

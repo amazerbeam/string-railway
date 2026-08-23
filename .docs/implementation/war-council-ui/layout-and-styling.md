@@ -43,7 +43,7 @@ order:
 | `warCouncilHunt.css` | the dossier zone, the telegraph, and DLR-80's `.wc-shape*` and `.wc-bank*` readouts |
 | `warCouncilHealthBars.css` | DLR-71: the duel's two health displays — rewritten by DLR-86 from a bar surface into the heart rows, their four `[data-state]` rules, the two `@keyframes`, and the reduced-motion block |
 | `warCouncilHand.css` | DLR-82: the hand container and the fan |
-| `warCouncilEnvenom.css` | DLR-90: the Envenom charge readout and its mark |
+| `warCouncilTimebomb.css` | DLR-90: the Timebomb charge readout and its mark |
 
 The felt used to live in `warCouncil.css` alongside the shell; DLR-93 moved it out (see below).
 
@@ -53,7 +53,7 @@ hover/active/state-change duration for controls that previously snapped: the sho
 list rows, and the felt-rail plates' hover `filter`), `--wc-prompt-enter-ms` (180ms — the ability
 prompt's mount entrance) and `--wc-decree-swap-ms` (220ms — the decree pile's swap crossfade). Every
 surface this pass touched reads one of the three by `var()` rather than repeating a literal duration;
-see [the Envenom plate's polish-pass note](envenom-charge-and-the-mark.md#dlr-97-the-plates-polish-pass),
+see [the Timebomb plate's polish-pass note](timebomb-charge-and-the-mark.md#dlr-97-the-plates-polish-pass),
 [the ability prompt's entrance note](accessibility.md#dlr-97-gave-the-prompts-mount-a-visible-entrance-orthogonal-to-the-focus-fix-above),
 and [the decree swap's crossfade note](interaction-and-state.md#dlr-97-the-decree-swap-now-visibly-crossfades)
 for where each is consumed. All three are the developer's to retune by eye; none is a placeholder

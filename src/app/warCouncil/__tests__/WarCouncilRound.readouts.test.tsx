@@ -22,7 +22,7 @@ import {
   huntFixture,
   makeRound,
   maxHealthFixture,
-  poisonGuardHeldFixture,
+  blastGuardHeldFixture,
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
@@ -45,7 +45,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       cheats={overrides.cheats ?? []}
       coins={overrides.coins ?? coinsFixture}
       timebombCharges={overrides.timebombCharges ?? timebombChargesFixture}
-      poisonGuardHeld={overrides.poisonGuardHeld ?? poisonGuardHeldFixture}
+      blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
       bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
       onComplete={overrides.onComplete ?? vi.fn()}

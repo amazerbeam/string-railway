@@ -35,7 +35,7 @@ export interface FlaskStock {
  * cannot reach a heart row that renders whole hearts.
  *
  * Throws on a non-positive or non-finite maximum rather than returning `NaN`. A `NaN` heal would
- * poison `Math.min` in the clamp, land in `encounter.health`, and vanish from the health bar with
+ * corrupt `Math.min` in the clamp, land in `encounter.health`, and vanish from the health bar with
  * nothing logged anywhere — the exact failure `web-project.md`'s numeric-safety trap names.
  */
 export function flaskHealAmount(maxPlayerHealth: Health): Health {
@@ -57,7 +57,7 @@ export function flaskHealAmount(maxPlayerHealth: Health): Health {
  * hit.
  *
  * A non-finite charge count refuses rather than passing the comparison. `NaN <= 0` is `false`,
- * which would otherwise read as "a charge in hand" and present a poisoned figure as a drinkable
+ * which would otherwise read as "a charge in hand" and present a corrupted figure as a drinkable
  * flask — the same guard `refusalFor` puts on `stock.coins`.
  */
 export function flaskRefusalFor(stock: FlaskStock): FlaskRefusal | null {

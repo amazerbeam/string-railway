@@ -114,17 +114,17 @@ either animation ran — which is what makes the reduced-motion guarantee struct
 second set of rules to keep in step. jsdom evaluates no media query, so this one is held by static
 review of the stylesheet rather than by a test.
 
-**DLR-101's `doomed` needed no reduced-motion entry at all, and that is the same guarantee reached
+**DLR-101's `ticking` needed no reduced-motion entry at all, and that is the same guarantee reached
 one step earlier.** It was four states until that ticket. A committed hit is static by decision —
 `atRisk` flashes because it is conditional and evaporates if the streak breaks — so there is no
 animation to suppress, and the state loses nothing when motion is off. It binds to the **solid**
 `<symbol>`, the same one `whole` uses, so it reads as *standing*, which it is; only fill and opacity
 separate it. **Whether it separates from `atRisk` and `whole` at a glance is unverified visually** —
-QA could not reach a live poisoned trick in a browser (see [README.md](README.md)'s Deferred list),
+QA could not reach a live primed trick in a browser (see [README.md](README.md)'s Deferred list),
 and the opacity that carries much of the distinction is an unchosen placeholder.
 
 **The meter's text was split rather than extended** (DLR-101). `healthBarValueText` now emits the
-booked figure as its own clause — `14 of 14. 3 at risk. 4 poisoned.` — instead of folding poison into
+booked figure as its own clause — `14 of 14. 3 at risk. 4 ticking.` — instead of folding Timebomb into
 the at-risk figure, for the reason above: the spoken text would otherwise have called *committed*
 damage "at risk", which is the picture-versus-text failure this section already names. Either clause
 is omitted at zero, so a bar with neither reads exactly as it did before. The wording is placeholder.

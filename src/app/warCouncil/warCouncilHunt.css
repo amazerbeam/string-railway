@@ -164,13 +164,13 @@
   stroke-width: 2.6;
 }
 
-/* The mined tile takes the poison green and a dark skull. It is still the same card shape at the
+/* The mined tile takes the Timebomb green and a dark skull. It is still the same card shape at the
    same size, so it reads as "this card, marked" rather than as a different kind of object.
    The colour is never the *only* signal — the skull's shape carries it too, so the row still
    parses in greyscale and under any colour-blindness. */
 .wc-shape-card-skulled {
-  background: var(--wc-poison, #8fb04e);
-  border-color: var(--wc-poison-edge, #5c7a2e);
+  background: var(--wc-timebomb, #8fb04e);
+  border-color: var(--wc-timebomb-edge, #5c7a2e);
   color: var(--wc-ink, #191610);
   font-size: 0.95rem;
   line-height: 1;

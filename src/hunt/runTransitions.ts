@@ -36,19 +36,19 @@ import { canAdvanceRun, flaskStockFor, RunOutcome, shopStockFor, type RunState }
  * the caller must remember to make beside this one is the transition that eventually gets
  * forgotten.
  *
- * `poisonGuardHeld` (DLR-91 AC2/AC4) is REQUIRED for the same reason — the hand owns it for its
+ * `blastGuardHeld` (DLR-91 AC2/AC4) is REQUIRED for the same reason — the hand owns it for its
  * whole life and hands the survivor back through `WarCouncilRoundResult`. It is passed through
  * `guardAfter`, not adopted verbatim: the Guard does not outlive the fight it was bought for, and
  * this is the ONE transition that adopts a hand's end state, so it is the one place that rule can
  * be enforced.
  *
  * `flaskCharges` (DLR-93 AC5) is NOT a parameter: unlike `cheats`, `timebombCharges` and
- * `poisonGuardHeld`, a hand cannot spend or grant a flask charge (AC4 makes it a between-fights
+ * `blastGuardHeld`, a hand cannot spend or grant a flask charge (AC4 makes it a between-fights
  * action), so there is nothing for a hand to hand back. It is read off `run` and refilled by
  * `flaskAfter` when the opponent just beaten was a stage boss.
  *
  * `discardsRemaining` (DLR-100 AC5) is the sixth parameter and REQUIRED for the same reason
- * `cheats`, `timebombCharges`, and `poisonGuardHeld` are: the hand owns it for its lifetime and
+ * `cheats`, `timebombCharges`, and `blastGuardHeld` are: the hand owns it for its lifetime and
  * hands the survivor back through `WarCouncilRoundResult`. Carried through the returned spread
  * unchanged — `advanceRun`, not this function, resets it at the fight boundary.
  *
@@ -63,7 +63,7 @@ export function recordEncounter(
   encounter: EncounterState,
   cheats: readonly CheatCard[],
   timebombCharges: number,
-  poisonGuardHeld: boolean,
+  blastGuardHeld: boolean,
   discardsRemaining: number,
   unplayedCards: number | null,
 ): RunState {
@@ -92,7 +92,7 @@ export function recordEncounter(
     cheats,
     timebombCharges,
     discardsRemaining,
-    poisonGuardHeld: guardAfter(encounter, poisonGuardHeld),
+    blastGuardHeld: guardAfter(encounter, blastGuardHeld),
     coins: wonThisEncounter ? run.coins + COINS_PER_ENCOUNTER_WIN + quickKill : run.coins,
     lastQuickKillPayout: quickKill,
     handOfFight: handOfFightAfter(run, encounter),
@@ -204,8 +204,8 @@ export function buyFromShop(
       }
     case ShopItem.Timebomb:
       return { ...paid, timebombCharges: run.timebombCharges + 1 }
-    case ShopItem.PoisonGuard:
-      return { ...paid, poisonGuardHeld: true }
+    case ShopItem.BlastGuard:
+      return { ...paid, blastGuardHeld: true }
     case ShopItem.Whetstone:
       return { ...paid, whetstones: run.whetstones + 1 }
     case ShopItem.Heal:

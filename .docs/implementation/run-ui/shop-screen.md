@@ -3,7 +3,7 @@ Part of [Run verdict UI](README.md).
 # The shop screen — four shelves, four purchases, and a refusal you can read
 
 `ShopPanel.tsx` (DLR-84, DLR-89) is the second full-viewport surface this module owns: the screen
-reached from the verdict's `Shop` control, selling a Cheat into a free slot, an Envenom charge, a Poison
+reached from the verdict's `Shop` control, selling a Cheat into a free slot, an Timebomb charge, a Timebomb
 Guard or a heal, each priced from configuration. Since DLR-89 they sit in a **four-tab
 persistence-length ladder** rather than a flat list — see [the tablist](#the-four-shelves--dlr-89).
 
@@ -44,10 +44,10 @@ rather than a `useCallback` — there is no profiling evidence for memoising it.
 ## The four shelves — DLR-89
 
 **The ladder paid off at DLR-90, again at DLR-91, and a third time at DLR-92 — and this is the evidence.**
-Envenom — the shop's
+Timebomb — the shop's
 third item — appeared on the one-time-use shelf beside the Cheat with **no change to this module's item
 rendering at all**: one `ShopItem` member, one `priceOf` case and one `categoryOf` case in
-`src/hunt/shop.ts`, all inside the lint-enforced no-React boundary. **Poison Guard then filled the
+`src/hunt/shop.ts`, all inside the lint-enforced no-React boundary. **Blast Guard then filled the
 previously empty fight-long shelf on exactly the same three lines**, so a shelf that had rendered
 `SHOP_CATEGORY_EMPTY` started rendering an item with no branch edited here. **The Whetstone then did the
 same to run-permanent**, the last openable shelf that was still empty. The only edit in any of the three
@@ -136,13 +136,13 @@ AC6 asks that the screen *say why* rather than fail silently. It says so three t
 
 The sentences themselves are `PURCHASE_REFUSAL_MESSAGE`, a `Record` **total over `PurchaseRefusal`**
 — a new reason code is a compile error in `shopLabels.ts` rather than a blank sentence on screen, which
-is exactly how DLR-91's `GuardAlreadyActive` ("You are already holding a Poison Guard.") was enumerated.
+is exactly how DLR-91's `GuardAlreadyActive` ("You are already holding a Blast Guard.") was enumerated.
 `shopLabels.test.ts` iterates the union, so its coverage widened with no edit.
 
 ## The purse row states everything a purchase decision needs
 
-**Five** labelled cells inside one `role="group"`: coins, Cheat slots as `held / total`, Envenom charges
-held (DLR-90), the Poison Guard as **"Held" or "None"** (DLR-91), and — since DLR-92 — **Whetstones held**.
+**Five** labelled cells inside one `role="group"`: coins, Cheat slots as `held / total`, Timebomb charges
+held (DLR-90), the Blast Guard as **"Held" or "None"** (DLR-91), and — since DLR-92 — **Whetstones held**.
 Above them, `nextOpponentText` names who is coming and which fight it is.
 
 **Health is not one of them**, though it reads as part of the same block and reuses the same
@@ -151,13 +151,13 @@ Above them, `nextOpponentText` names who is coming and which fight it is.
 takes the full width to be counted at a glance. Corrected 2026-08-19: this section previously counted it
 inside the group and so reported one cell too many.
 
-The Envenom cell is **a count with no denominator**, unlike the Cheat slots' `held / total`, and that
+The Timebomb cell is **a count with no denominator**, unlike the Cheat slots' `held / total`, and that
 asymmetry is honest rather than an oversight: there is no cap on charges held, so there is no total to
 show. The Guard's cell is a third shape again — **words, not a number** — because only one can be held
 at a time, so a count would only ever read 0 or 1. Stating it in words also satisfies `game-ux`'s rule
 that no state read only in colour: `SHOP_GUARD_HELD` / `SHOP_GUARD_NONE` are literal strings.
 
-**The Whetstone cell takes the Envenom shape, not the Guard's**, and for the same reason Envenom did: it
+**The Whetstone cell takes the Timebomb shape, not the Guard's**, and for the same reason Timebomb did: it
 stacks without a cap, so there is a count to show and no total to show it against. **No acceptance criterion
 asked for this cell** — it was added because stacking is the item's whole point and `game-ux`'s floor puts
 state a decision needs on the face of the screen: a player weighing a second copy needs to see they own one.
@@ -189,10 +189,10 @@ falling back to `NEXT_FIGHT_LABEL` when no name is known.
 ## Copy quotes no number
 
 Every price comes from `priceText`, which reads `priceOf`; the heal blurb interpolates
-`HEAL_HEALTH_RESTORED`, and Envenom's interpolates **both** `ENVENOM_QUARRY_DAMAGE` and
-`ENVENOM_PLAYER_DAMAGE` — it was one shared `ENVENOM_DAMAGE` until DLR-91 split the key, and rewriting
+`HEAL_HEALTH_RESTORED`, and Timebomb's interpolates **both** `TIMEBOMB_QUARRY_DAMAGE` and
+`TIMEBOMB_PLAYER_DAMAGE` — it was one shared `TIMEBOMB_DAMAGE` until DLR-91 split the key, and rewriting
 that blurb was the highest-risk line of the rename, because it is user-facing copy quoting a figure that
-now differs by side. The Guard's blurb interpolates `ENVENOM_PLAYER_DAMAGE` too, since what it insures is
+now differs by side. The Guard's blurb interpolates `TIMEBOMB_PLAYER_DAMAGE` too, since what it insures is
 that specific hit. **No figure is quoted as a literal anywhere in this module**, so re-tuning a key
 cannot leave the screen advertising a number the engine no longer uses. A grep in each contract's final
 verification checks exactly this, and `shopLabels.test.ts` asserts each blurb contains

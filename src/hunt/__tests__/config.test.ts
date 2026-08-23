@@ -21,7 +21,7 @@ import {
   TIMEBOMB_PRICE,
   TIMEBOMB_QUARRY_DAMAGE,
   TIMEBOMB_PLAYER_DAMAGE,
-  POISON_GUARD_PRICE,
+  BLAST_GUARD_PRICE,
   FLASK_STARTING_CHARGES,
   FLASK_HEAL_PERCENT,
   OpponentKind,
@@ -167,10 +167,10 @@ describe('Timebomb constants (DLR-90 AC1, AC4; DLR-91 D2)', () => {
   })
 })
 
-describe('Poison Guard price (DLR-91 AC1)', () => {
-  it('prices the Poison Guard at a positive whole number of coins', () => {
-    expect(Number.isInteger(POISON_GUARD_PRICE)).toBe(true)
-    expect(POISON_GUARD_PRICE).toBeGreaterThan(0)
+describe('Blast Guard price (DLR-91 AC1)', () => {
+  it('prices the Blast Guard at a positive whole number of coins', () => {
+    expect(Number.isInteger(BLAST_GUARD_PRICE)).toBe(true)
+    expect(BLAST_GUARD_PRICE).toBeGreaterThan(0)
   })
 })
 

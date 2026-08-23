@@ -11,7 +11,7 @@ reach a moment every other control's gate cannot.
 
 ## The gate: `discardWindowOpen`
 
-Every other rail control — `CheatSlots`, `EnvenomCharge`, `ApplyDamagePlate` — gates on `canAct`,
+Every other rail control — `CheatSlots`, `TimebombCharge`, `ApplyDamagePlate` — gates on `canAct`,
 which requires `currentTurn === PlayerSide.Player`. The discard's acceptance criteria ask for
 something narrower and, at the same time, wider: available before a trick's first card, **including
 before the Quarry's own lead** — the moment `currentTurn` names the Quarry, the trick has not
@@ -79,8 +79,8 @@ discipline `applyDamageStock` documents — the reducer's guard and the plate's 
 
 `handleTapDiscard`, `handleCancelDiscard` and `toggleDiscardCard` (`discardHandlers.ts`):
 
-- **Not selecting, refusal null → OPEN.** Clears any Cheat/Envenom selection and any armed card —
-  mutual exclusion mirroring `handleTapEnvenom`'s own.
+- **Not selecting, refusal null → OPEN.** Clears any Cheat/Timebomb selection and any armed card —
+  mutual exclusion mirroring `handleTapTimebomb`'s own.
 - **Selecting, refusal null → COMMIT.** The only way that combination is reachable is a non-empty
   selection, so this branch calls `applyDiscard` and decrements `discardsRemaining`.
 - **Refused → no-op.**
@@ -91,14 +91,14 @@ stale-selection drop).
 
 `handleTapCard` gains a first branch — `if (discardSelecting(state)) return toggleDiscardCard(state,
 tapped)` — checked **before** `handleTapCard`'s existing `!canAct(state)` early return.
-`handleTapCheat` and `handleTapEnvenom` each gain `discardSelecting(state)` to their opening guard,
+`handleTapCheat` and `handleTapTimebomb` each gain `discardSelecting(state)` to their opening guard,
 and their poising branches gain `discardSelection: null` beside the selections they already clear —
 the same mutual exclusion in the other direction.
 
 ### The mid-implementation ordering defect
 
 Task 13's dispatch instruction placed the new `handleTapCard` branch "ahead of the existing
-`envenomArmed` check" — which, read literally, still left it **behind** the pre-existing `if
+`timebombArmed` check" — which, read literally, still left it **behind** the pre-existing `if
 (!canAct(state)) return state` guard at the top of the function. `canAct` is false throughout the
 Quarry-to-lead gap `discardWindowOpen` is built to reach, so the practical effect was: `TapDiscard`
 could **open** the selection during that gap (`discardWindowOpen` does not check `canAct`), but a
@@ -123,21 +123,21 @@ A commit closes the selection (`discardSelection: null`); chaining is simply tap
 again. `discardWindowOpen` stays `true` after a commit — nothing about the round's own turn state
 changed — so nothing prevents an immediate re-open with the fresh hand. This was a deliberate choice
 over an auto-reopening continuous mode: an explicit re-arm after seeing the new hand is a smaller,
-more predictable interaction, and it matches the arm/spend/re-arm shape Cheat and Envenom already
+more predictable interaction, and it matches the arm/spend/re-arm shape Cheat and Timebomb already
 use. Whether the extra tap per chained throw is worth the friction is unplayed (see
 [README.md](README.md)'s Deferred section).
 
 ## The hand fan and the card marker
 
 `HandFan` gained `discardSelecting`/`discardSelection` props. `isFocusable` and the `illegal`
-expression each gain `|| discardSelecting` beside their existing `envenomArmed` clause — a second
+expression each gain `|| discardSelecting` beside their existing `timebombArmed` clause — a second
 instance of the same "every held card is a valid tap target, including one illegal to play" relaxation,
 not a new concept. `WarCouncilRound.tsx` computes `handInteractive = interactive ||
 discardSelecting(ui)` and passes it to `HandFan` alone, so the fan stays interactive during the
 Quarry-to-lead gap even though every other control on the rail reads the unchanged `interactive`.
 
 `PlayingCard` gained `discardSelected?: boolean`, defaulting to `false`, rendering a third
-conditional marker span alongside `skulled`/`envenomed` in the same component and the same
+conditional marker span alongside `skulled`/`primed` in the same component and the same
 `className` cascade, and folding into `aria-pressed` — `armed` and `discardSelected` never coexist,
 since arming a card to play and selecting it for discard are mutually exclusive modes.
 

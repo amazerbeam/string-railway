@@ -59,7 +59,7 @@
 }
 
 .run-verdict[data-verdict='won'] .run-headline {
-  color: var(--wc-poison);
+  color: var(--wc-timebomb);
 }
 
 .run-verdict[data-verdict='lost'] .run-headline {
@@ -115,8 +115,8 @@
   width: clamp(1.6rem, 6vmin, 3rem);
   height: clamp(0.5rem, 1.6vmin, 0.85rem);
   border-radius: 1px;
-  background: var(--wc-poison);
-  border: 1px solid var(--wc-poison-edge);
+  background: var(--wc-timebomb);
+  border: 1px solid var(--wc-timebomb-edge);
 }
 
 .run-trick.is-lost {
