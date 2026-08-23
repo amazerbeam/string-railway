@@ -46,6 +46,7 @@ Tickets share one branch and can touch overlapping files, so process them **one 
 - **At the plan approval gate: do not pause.** Pick the plan's own stated default reading for every open rule/tuning question — this project's convention is that a documented plan default is pre-approved, not a stall point. Record every such default chosen as a bullet under this ticket's heading in the shared log file (path given in the prompt).
 - **Skip the mockup approval gate entirely** for UI-classified work — proceed straight to `tasks.md` generation without pausing for it. Note in the log that the mockup was auto-approved unseen, so the end-of-run review knows to actually look at the UI.
 - Run `Skill: fb-apply` for the resulting slug.
+- **Browser QA is deferred for the whole run** — see "Deferred browser QA" below. Tell the agent explicitly: run every other gate as normal, skip the live browser pass, and state in its report what a browser would have needed to check.
 - Any assumption made anywhere in the run that would normally have paused the pipeline (a design reading, a tuning value, a dependency choice, an ambiguous rule interpretation) gets appended to the log under this ticket's heading — not just gate overrides.
 - If the implementer/reviewers hit the pipeline's own 2-round fix ceiling and the ticket is still red: **do not commit broken code.** Report back `BLOCKED` with what's failing; leave the working tree as-is for the coordinator to inspect.
 - If green: commit locally with a message that states what changed and why (ticket key + summary in the subject, a short body on the actual change) — **do not push**. The coordinator pushes after checking the result.
@@ -58,12 +59,25 @@ Tickets share one branch and can touch overlapping files, so process them **one 
 - **Then update the counter, always** — pushed, blocked or skipped, a reconciled ticket advances the numerator. Rewrite the log header's `**Progress:**` line in place (one line, not an append-only history) and print the same figure to the terminal.
 - Only after reconciling one ticket does the loop spawn the next agent — this is what keeps the branch from ever having two tickets' uncommitted work on it at once.
 
+### Deferred browser QA — a run-level policy
+
+`/fb-apply` already gates the browser pass on reachability per ticket. A sprint run goes one step further and **defers the browser pass across the entire run**, because a sprint has something a single ticket does not: a natural batch point at the end, where the surfaces several tickets built can be looked at together, in the state they will actually ship in.
+
+- Every ticket in the run skips the live browser pass. All other gates run unchanged — typecheck, lint, the **full unit suite**, and the build, every ticket, every time. The unit suite is what stands between the run and a silent regression across fifteen stacked tickets; it is never deferred.
+- Each ticket's agent records **what a browser would have checked** — the surface, the state, the thing that should be visible. These accumulate into the batch.
+- At wrap-up, run **one** browser pass over the accumulated list, on the finished branch. Keep it to what only a real browser can answer: CSS custom properties resolving rather than silently falling back, layout not scrolling or cropping at the target viewport, a clean console. Everything else the unit suite already asserts.
+
+**State the cost of this plainly in the log header, because it is real:** nothing is looked at until the end, so a layout defect in an early ticket is found with later tickets stacked on top of it. That trade is worth taking when most of the run is bottom-up work with no reachable surface, and worth refusing when the run is mostly UI tickets building on each other. **Decide which it is at preflight, from the actual ticket list, and record the decision and the reasoning in the log header.**
+
+If the project has a headless driver that can play the game without a browser, prefer it as the per-ticket end-to-end signal — it reaches deep states (a fight played out, an item bought and used) that browser tooling typically cannot, in milliseconds, deterministically.
+
 ### Phase 4: Wrap-up
 
 - No `/fb-archive` — this developer doesn't archive contracts; leave `.claude/contract/<slug>/` in place.
 - Set the counter to `N/N (100%)` in both the log header and the terminal — the run is complete whether or not every ticket shipped; blocked tickets are counted as reconciled, not as outstanding progress.
 - Print a summary: tickets shipped and pushed, tickets blocked, tickets excluded at preflight, and the log file path.
-- End with an explicit callout that every UI-classified ticket in the shipped list had its mockup gate skipped and still needs an eyes-on look — this run only validated function, never feel, per this project's own pause-condition rule.
+- **Run the deferred browser pass** over the accumulated list from every ticket, once, on the finished branch. Report what it checked and what it found. If it was skipped entirely, say so and say why.
+- End with an explicit callout that every UI-classified ticket in the shipped list had its mockup gate skipped and still needs an eyes-on look — this run only validated function, never feel, per this project's own pause-condition rule. Name every surface the deferred browser pass could not reach, so the developer knows exactly what no process in this run has ever seen.
 
 ## Progress counter
 
@@ -101,6 +115,7 @@ Progress: 4/12 (33%) — done: 3 shipped, 1 blocked | now: DLR-107 "Draw pool wi
 - Never push a ticket that didn't reach green within the pipeline's normal 2-round fix ceiling. Overriding the *approval* gates is in scope for this skill; overriding the *quality* gate is not.
 - Never touch a ticket whose files already show local uncommitted changes at preflight — that's the developer's in-progress work, not this run's to claim.
 - Never report a percentage that outruns the reconciliations — a counter that counts a ticket as done before its push or block is recorded will, on a crash mid-run, tell the developer work landed that never did.
+- **Deferring the browser pass is not deferring the gates.** Typecheck, lint, the full unit suite and the build run on every ticket without exception. A run that defers the unit suite has stopped being a pipeline.
 - Every gate override and assumption is logged with enough detail that the developer's end-of-run pass is a real review, not a rubber stamp — a log entry that just says "approved plan" without saying what was assumed is not sufficient.
 
 ## Shared rules (read on demand)

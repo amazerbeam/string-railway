@@ -212,7 +212,36 @@ Keep dispatching the Implementer phase by phase until every phase in `tasks.md` 
 
 ## Step 5: Final Review — Parallel (Code-Evaluator + Defender + QA)
 
-Once every phase is implemented, spawn all 3 reviewers **in a single message with multiple Agent tool calls** so they run concurrently. Pass each reviewer the **complete cumulative changed-files log from all phases** (built across Step 4) and the full task list from `tasks.md`.
+Once every phase is implemented, spawn the reviewers **in a single message with multiple Agent tool calls** so they run concurrently. Pass each reviewer the **complete cumulative changed-files log from all phases** (built across Step 4) and the full task list from `tasks.md`.
+
+### 5.0 — How many reviewers, and what they read
+
+**Classify the diff first, then dispatch.** Three reviewers cold-starting on the same files in parallel is the single largest cost in this pipeline — measured at roughly a third of a ticket's tokens. Pay it where it buys something.
+
+| Diff contains | Dispatch |
+|---|---|
+| Any change to production logic under `src/` — a component, a reducer, a hook, engine code, a type that shapes behaviour | **All three.** The full trio, as ever. |
+| Test files only | **Code-Evaluator alone.** |
+| Docs only, no `src/` path in the file map | **None.** The standing docs-only precedent; run the four gates and proceed. |
+| Config or tooling only (`eslint.config.js`, `tsconfig`, `vite.config`, CI) | **Defender alone** — the risk here is a silently disabled boundary, not code quality. |
+| A pure rename with no behaviour change, verified by an unchanged test count | **Code-Evaluator alone.** |
+
+Two rules that keep this honest:
+
+- **When the classification is arguable, dispatch all three.** The saving is not worth a missed defect, and "it is only a rename" is exactly what a behaviour change smuggled into a rename looks like.
+- **A single-reviewer dispatch is still a dispatch.** Record which reviewers ran and why in the Summary. A ticket that reports "reviewers approved" without saying how many ran is under-reporting.
+
+### 5.0.1 — Give reviewers the diff, not the repo
+
+Every reviewer prompt below must open with the **actual diff**, not just a list of paths. Produce it once, before dispatching, and paste the same text into each prompt:
+
+```
+git diff <base-sha>..HEAD -- <paths from the changed-files log>
+```
+
+Where `<base-sha>` is the commit the contract started from. If the diff exceeds what is sensible to paste, include the diff for every file under 400 changed lines and list the rest by path with a one-line summary of what changed in each.
+
+A reviewer given only paths re-reads whole files to work out what moved; a reviewer given the diff reads what actually changed and spends its budget on judging it. Reviewers may still open any file they need — this sets the starting point, it does not fence them in.
 
 ### 5.1 — Code-Evaluator (`subagent_type: "code-evaluator"`)
 
@@ -278,6 +307,16 @@ Apply your full defensive checklist — including §11 Shared-Surface Contract /
 
 ### Runtime surface (for Step 4.5 — live browser verification)
 [State whether this contract changed anything observable in the running app: a component, the reducer, a hook, a configuration file or its loader, meaningful styling, or pure logic that feeds what renders. If it did, say what the developer should be able to *see* working, and name the seed the contract specifies if there is one. If it changed nothing observable — a test-only task, a script or CI edit, a type-only refactor — say so, so QA can record the skip in one line rather than starting a server for nothing.]
+
+**REACHABILITY GATE — decide this before dispatching QA, and state the verdict here.**
+
+The browser pass runs **only if a player can actually reach what changed**. Ask one question: from a cold start of the app, can a person navigate to a surface where this change is visible?
+
+- **No — nothing this contract added has an importer, an owner, a route, or a rendered surface.** Skip the browser pass entirely. Say so in one line. Do **not** spend a browser session confirming that unreachable code is unreachable. This is the normal case for bottom-up work: engine modules, types, catalogs and reducers land long before anything renders them.
+- **Yes, but only behind states the tooling cannot drive to** (a shop that needs a fight finished for coins, a state that needs several turns of play). Run the browser pass for what *is* reachable, and record the rest as MANUAL VERIFICATION NEEDED with the exact interaction required. **Do not substitute calling live modules directly and present it as a browser verification** — say plainly that the surface was never seen rendered.
+- **Yes, plainly reachable.** Run the browser pass as normal.
+
+When the browser pass does run, keep it to what only a real browser can answer: **CSS custom properties resolving rather than silently falling back, layout not scrolling or cropping at the target viewport, and a clean console.** Those are genuine bug classes invisible to typecheck, lint and the unit suite. Re-deriving behaviour that the unit tests already assert is not what the session is for.
 
 ### Delegated Final-Verification Commands
 [Paste verbatim the `Run:` / `Expected:` pairs from the contract's closing `Final verification` phase that the Implementer left unticked — typically the unfiltered `npm test`, `npm run build`, and any grep audits it delegated. If none, say "none delegated".]
@@ -423,7 +462,9 @@ Present:
 
 - **The Jira move to `Coding` is the first action, not a formality.** It happens in Step 1 the moment the slug resolves — before the contract files are read, before preflight, before any dispatch. A run that reaches the Implementer with the card still in `Planned` is a defect in this command's ordering.
 - **Implementer runs through every phase first** — do NOT invoke Code-Evaluator, Defender, or QA between phases. The Implementer carries quality through every phase (writing AND running tests as tasks dictate); reviewers see the full result.
-- **Reviewers run once, at the very end, in a single Agent dispatch** — always spawn all 3 in a single message so they execute concurrently. Never per-phase, never sequentially.
+- **Reviewers run once, at the very end, in a single Agent dispatch** — spawn every reviewer the Step 5.0 table calls for in a single message so they execute concurrently. Never per-phase, never sequentially. **How many** comes from the diff classification, not from habit: production logic gets all three, narrower diffs get fewer, and an arguable case gets all three.
+- **Reviewers are given the diff, not just a path list** (Step 5.0.1). Three agents re-reading whole files in parallel is where this pipeline's tokens actually go.
+- **The browser pass is gated on reachability, not on habit** (the Reachability Gate in QA's prompt). If a player cannot navigate to what changed, QA skips the browser and says so in one line. Bottom-up work lands unreachable for many tickets at a time, and confirming that unreachable code is unreachable buys nothing.
 - **Combined feedback to the Implementer** — all 3 reviewer reports are merged into a single Implementer prompt for the fix pass, never sent one reviewer at a time.
 - **Agents have isolated context** — pass everything they need in the prompt; do not assume any agent remembers prior phases or prior dispatches.
 - **The orchestrator manages state** — track the cumulative changed-files log across phases, fix-round counters, and residual issues.
