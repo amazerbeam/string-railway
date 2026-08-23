@@ -56,5 +56,27 @@ export default defineConfig([
       ],
     },
   },
+  {
+    // Flat config replaces (never merges) same-key rule options when two config
+    // objects match the same file. src/warCouncil/** and src/hunt/** already carry
+    // their own, fuller no-restricted-globals override above (which also bans
+    // localStorage/sessionStorage). They must stay ignored here, or this block's
+    // narrower options would silently overwrite that override's DOM bans.
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/persistence/browserStorage.ts', 'src/warCouncil/**', 'src/hunt/**'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'localStorage',
+          message: 'Go through src/persistence — see .claude/rules/save-data-versioning.md.',
+        },
+        {
+          name: 'sessionStorage',
+          message: 'Go through src/persistence — see .claude/rules/save-data-versioning.md.',
+        },
+      ],
+    },
+  },
   eslintConfigPrettier,
 ])

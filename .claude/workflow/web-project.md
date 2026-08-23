@@ -6,7 +6,7 @@ Change a path or a command **here only**. A runner stated in five files gets upd
 
 **Conventions are not here.** How to write the code — component structure, hooks, state management, configuration-driven values, component budgets, testing posture — belongs to `.claude/skills/react-frontend/SKILL.md` and its `references/engineering-standards.md`. This file owns paths, commands, and the traps that decide whether a *verification* is trustworthy.
 
-> **Status: the retained POC is on disk** — `src/` holds 57 source files across five modules and 20 test files. The layout and script names below are the ones actually on disk. **`package.json` remains the authority on script names** — Read it before writing a `Run:` step. Correct anything wrong *here*, and the whole pipeline follows.
+> **Status: the retained POC is on disk** — `src/` holds 81 source files across six modules and 84 test files. The layout and script names below are the ones actually on disk. **`package.json` remains the authority on script names** — Read it before writing a `Run:` step. Correct anything wrong *here*, and the whole pipeline follows.
 
 ## Layout
 
@@ -24,10 +24,11 @@ Change a path or a command **here only**. A runner stated in five files gets upd
   .gitattributes          text=auto eol=lf — Windows working tree, Ubuntu CI
   .nvmrc                  the single source of the Node version
   .github/workflows/      ci.yml — install, lint, typecheck, test, build
-  src/                    57 source files across five modules, 20 test files
+  src/                    81 source files across six modules, 84 test files
     app/                  React screens and the app shell
     warCouncil/           the card-layer engine
     hunt/                 the Hunt configuration module and domain types
+    persistence/          cross-run save storage — the only tree that touches localStorage
     styles/               plain CSS
     __tests__/            Vitest specs
     App.tsx  main.tsx     root component and Vite mount point
@@ -42,6 +43,8 @@ Change a path or a command **here only**. A runner stated in five files gets upd
 This project enforces a pure-core boundary — no React import, no DOM access — on `src/warCouncil/**` and `src/hunt/**` via an ESLint override in `eslint.config.js` combining `no-restricted-imports` and `no-restricted-globals`. Extend that block's `files` array, don't paste a second copy, when a future pure-logic tree earns the same protection.
 
 `.claude/skills/react-frontend/SKILL.md` carries the paste-back version of that override, ready to adapt to whatever module name the next prototype chooses. Do not plan a verification grep against a directory that does not exist — add one only once a boundary is actually established, and name it after whatever the plan calls that tree.
+
+`src/persistence/**` is deliberately **not** added to the pure-core override above — it imports no React either, but the shape of its boundary is different: rather than banning the DOM entirely, it confines one specific global (`localStorage` / `sessionStorage`) to one specific file. That is a second, separate `no-restricted-globals` block in `eslint.config.js`, scoped to `src/**/*.{ts,tsx}` with `ignores: ['src/persistence/browserStorage.ts', 'src/warCouncil/**', 'src/hunt/**']`. `browserStorage.ts` is exempt because it must legitimately touch `localStorage`, the one thing the rule bans everywhere else. The other two entries are there for a different and non-obvious reason: **ESLint flat config replaces, never merges, same-key rule options when two config objects match the same file.** Because this block is listed after the pure-core block and `src/**` also matches those two trees, without these ignores its narrow storage-only option list would silently overwrite the pure-core override's full DOM ban — `window`, `document`, `fetch` and the rest would stop being restricted there, with `npm run lint` still exiting 0. That regression was shipped and caught on DLR-106. Do not remove those two ignores; the pure-core block already bans storage in those trees, so nothing is lost by them. `npm run lint` enforces this across the whole `src/` tree, not just within `persistence/**`, because the failure this guards against — some future screen calling `localStorage` directly instead of going through `createSaveStore` — can happen anywhere. `.claude/rules/save-data-versioning.md` remains the document that explains why this module's shape is what it is; the boundary itself is lint-enforced, not grep-enforced.
 
 ## Verification commands
 

@@ -29,8 +29,8 @@ When adding a new skill, audit this folder first and wire any matching rules int
 
 ## Index
 
-*(empty — no rules written yet)*
+- [`save-data-versioning.md`](save-data-versioning.md) — how anything that survives a run is keyed, enveloped, versioned, and rejected when it cannot be read. Enforce on any ticket that persists a value.
 
-This folder was created because all five `/fb-*` commands and the `implementer`, `code-evaluator`, `defender`, and `qa` agents instruct a scan of this README before touching related work. An empty index is correct for a project with no domain rules yet; the scan simply finds nothing and proceeds.
+This folder was created because all five `/fb-*` commands and the `implementer`, `code-evaluator`, `defender`, and `qa` agents instruct a scan of this README before touching related work.
 
-There are no candidate first rules yet, either — this repository currently holds an empty prototype scaffold with no domain constraints worth stating once. The folder is correctly empty until the next prototype has project-wide constraints more than one workflow could trip over; write the first rule file then, following the five-section shape above.
+DLR-106 wrote the first rule when `src/persistence/` introduced the project's first persisted shape — a change touching storage keys and persisted field names that more than one queued ticket (DLR-113, DLR-118, DLR-123) will depend on. The five-section shape above, with its reject conditions, is the pattern for the next one.

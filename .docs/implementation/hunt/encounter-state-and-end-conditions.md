@@ -280,7 +280,8 @@ is the stall §11 is watching for, and it is now measurable rather than predicte
   stops a caller passing one where the other belongs. Branding them would catch it at compile time and
   would churn every existing `HuntDamage` consumer — flagged as a known soft spot, not fixed.
 
-**Nothing is persisted, and that window is currently open at zero cost.** There is no `localStorage`,
-no `JSON.parse`/`JSON.stringify`, and no save file anywhere in `src/`, so `EncounterState`'s shape can
-change freely today. **The first thing that serialises it closes that window** — this note is what a
-later change should look for.
+**`EncounterState` itself is still not persisted, and that window is currently open at zero cost.**
+DLR-106 added a generic save module, [`src/persistence/`](../persistence/README.md), but nothing in
+it names `EncounterState` or reads/writes through it — no field of this module's state round-trips
+through `JSON.parse`/`JSON.stringify` today, so its shape can still change freely. **The first thing
+that serialises it closes that window** — this note is what a later change should look for.

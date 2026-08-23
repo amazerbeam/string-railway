@@ -31,6 +31,7 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, PT-002 |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97 |
 | `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, PT-001, PT-002 |
+| `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -628,6 +629,35 @@ in this ticket reads or evaluates a buff's `condition`/`reward` — no activatio
 slot-machine draw, per the ticket's own AC4. Start at [hunt/buff-pile.md](hunt/buff-pile.md) for the
 type's four fields, the placeholder-content decision, why the pile follows `whetstones` rather than
 `cheats`, and the three axes AC1 named by name.
+
+## DLR-106, cross-run persistent storage layer (2026-08-23)
+
+**DLR-106 gave the codebase its first shared save mechanism, and shipped it with no consumer.**
+A new top-level module, `src/persistence/`, wraps `localStorage` behind a typed
+`read()`/`write()`/`clear()` triple scoped to this game's own key namespace
+(`strings-and-stations:<section>`), with every stored payload wrapped in a versioned envelope
+(`{ version, data }`) from day one. A read never throws: it reports one of five named
+outcomes — `Loaded`, `Empty`, `Corrupt`, `VersionMismatch`, `Unavailable` — and returns the
+caller's default value alongside every one of them, so a blocked, empty, or foreign-schema store
+never looks indistinguishable from a successful read.
+
+**It is new architecture with no precedent in this codebase, and it wrote the project's first
+shared rule to hold its shape.** `.claude/rules/save-data-versioning.md` fixes the key grammar
+(`saveKeyFor` is the only function allowed to compose one), requires the envelope, requires a
+`SAVE_SCHEMA_VERSION` bump on any breaking payload change, and forbids both a bare `localStorage`
+call outside `src/persistence/browserStorage.ts` and a cast that bypasses the caller's
+`isValidData` guard — the last of those is lint-enforced across the whole `src/` tree via a second
+`no-restricted-globals` override in `eslint.config.js`, distinct from the pure-core boundary that
+already bans the DOM inside `src/warCouncil/**` and `src/hunt/**`.
+
+**Nothing consumes it yet, on purpose (DLR-106 AC4).** No screen, reducer, or `RunState`/
+`EncounterState` field reads or writes through the store; its own 29 specs are its only caller. The
+Vault (`version-5-developer-idea.md` §8) is the first intended consumer and is DLR-113's — its
+currency, exchange rate and purchase shapes remain open. `.docs/game_rules/the-hunt.md` records no
+change: this ticket added a storage *capability*, not a rule — no player-facing procedure, legal
+move, or scoring term moved, and a page reload still starts a new run exactly as it did before.
+Start at [persistence/](persistence/README.md) for the envelope, the four-check read path, and why
+`browserLocalStorage()` is the only function in the codebase allowed to name the global.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).
