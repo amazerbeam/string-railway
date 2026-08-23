@@ -4,7 +4,6 @@ import {
   applyDamageRefusalFor,
   cashValue,
   discardRefusalFor,
-  incomingFrom,
   isEnvenomed,
   PlayerSide,
   RoundPhase,
@@ -24,7 +23,6 @@ import BankMeter from './BankMeter'
 import CheatSlots from './CheatSlots'
 import DecreePile from './DecreePile'
 import DiscardPlate from './DiscardPlate'
-import { duelHealthBars, NO_BREAKING, projectedFromStreak } from './duelHealthBars'
 import EnvenomCharge from './EnvenomCharge'
 import HandFan from './HandFan'
 import { sortHandForDisplay } from './handOrder'
@@ -32,6 +30,7 @@ import { previewQuarryIntent } from './intentPreview'
 import IntentTelegraph from './IntentTelegraph'
 import QuarryDossier from './QuarryDossier'
 import QuarryShape from './QuarryShape'
+import { barsForRound } from './roundBars'
 import { deriveHint } from './roundHint'
 import RoundOverPanel from './RoundOverPanel'
 import { roundReducer } from './roundReducer'
@@ -136,26 +135,8 @@ export default function WarCouncilRound({
   const discardRefusal = discardRefusalFor(discardStock(ui))
   const handInteractive = interactive || discardSelecting(ui)
 
-  // Both bars read straight off the reducer. Two derivations, no new state:
-  //
-  //  · the AT-RISK preview (AC3) is `projectedFromStreak` over `bank` and `multiplier`, which the
-  //    engine already writes on every trick — it resets itself when they reset (AC5), because it
-  //    is a view of them rather than a copy.
-  //  · the BREAKING hearts (AC2) are the damage of the trick currently held on screen.
-  //    `roundReducer` never applies damage without setting `resolvedTrick` in the same transition
-  //    (`commit` calls `applyResolution` only when `deriveResolvedTrick` returned one), so the
-  //    held reveal IS the damage event. Reading it rather than diffing a remembered previous
-  //    health keeps this a pure function of committed state — no effect, no StrictMode hazard —
-  //    and ties the crack to the cards that caused it, which is F2's whole finding.
-  //
-  // AC4 needs no code: a cash-out zeroes bank and multiplier and sets `resolvedTrick` in ONE
-  // transition, so the same hearts at the same indices go atRisk → breaking in one render.
-  const bars = duelHealthBars(
-    ui.encounter.health,
-    projectedFromStreak(ui.encounter.health, ui.round.bank, ui.round.multiplier),
-    maxHealth,
-    ui.resolvedTrick ? incomingFrom(ui.resolvedTrick.resolution) : NO_BREAKING,
-  )
+  // DLR-101 — the whole assembly, including the booked-poison band, lives in `roundBars.ts`.
+  const bars = barsForRound(ui, maxHealth)
 
   const shape = suitShape(ui.round.hands[PlayerSide.Cpu], ui.round.skulledCards)
 

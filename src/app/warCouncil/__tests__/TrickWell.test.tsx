@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, Suit, TrickOutcome } from '../../../warCouncil'
+import { DuelSide, ENVENOM_QUARRY_DAMAGE } from '../../../hunt'
 import type { ResolvedTrick } from '../roundUiState'
 import TrickWell from '../TrickWell'
 
@@ -101,5 +102,41 @@ describe('TrickWell — a resolved trick', () => {
       />,
     )
     expect(screen.getByRole('button', { name: /7 of Bells, skulled, poisoned/i })).toBeDefined()
+  })
+
+  it('names a booked hit and its target when the trick just set poison (DLR-101)', () => {
+    const poisoned: ResolvedTrick = {
+      ...resolvedTrick,
+      resolution: { ...resolvedTrick.resolution, envenomTarget: DuelSide.Quarry },
+    }
+    render(
+      <TrickWell
+        currentTrick={[]}
+        resolvedTrick={poisoned}
+        quarryToLead={false}
+        onCarryOn={vi.fn()}
+      />,
+    )
+    expect(
+      screen.getByText(
+        (_, node) =>
+          node?.tagName === 'P' &&
+          Boolean(
+            node.textContent?.includes(`they take ${ENVENOM_QUARRY_DAMAGE} at the next trick`),
+          ),
+      ),
+    ).toBeDefined()
+  })
+
+  it('renders no poison clause when nothing was booked this trick', () => {
+    render(
+      <TrickWell
+        currentTrick={[]}
+        resolvedTrick={resolvedTrick}
+        quarryToLead={false}
+        onCarryOn={vi.fn()}
+      />,
+    )
+    expect(screen.queryByText(/Poison set/)).toBeNull()
   })
 })

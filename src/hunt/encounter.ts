@@ -117,8 +117,11 @@ export function hasPendingEnvenom(encounter: EncounterState): boolean {
 }
 
 /** D2 — the amount owed depends on WHICH SIDE will pay it. Stated here, once, beside the booking:
- *  a caller that had to choose the figure itself is a caller that can choose the wrong one. */
-function envenomDamageFor(target: DuelSide): Damage {
+ *  a caller that had to choose the figure itself is a caller that can choose the wrong one.
+ *  EXPORTED on DLR-101: the copy layer needs the figure for the reveal's poison clause, and a
+ *  caller that chose between the two constants itself is a caller that can choose the wrong one
+ *  — the same reason this function exists at all. */
+export function envenomDamageFor(target: DuelSide): Damage {
   return target === DuelSide.Player ? ENVENOM_PLAYER_DAMAGE : ENVENOM_QUARRY_DAMAGE
 }
 

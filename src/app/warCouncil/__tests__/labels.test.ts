@@ -25,6 +25,7 @@ import {
   SUIT_NAME,
   TRICK_OUTCOME_MESSAGE,
 } from '../labels'
+import { duelHealthBars } from '../duelHealthBars'
 import { CheatStage } from '../roundUiState'
 
 describe('cardAccessibleName', () => {
@@ -128,6 +129,7 @@ describe('healthBarValueText — the current total against the max (DLR-80)', ()
     side: DuelSide.Player,
     secure: 20,
     pending: 0,
+    doomed: 0,
     current: 20,
     max: 25,
     hearts: [],
@@ -152,6 +154,35 @@ describe('healthBarValueText — the current total against the max (DLR-80)', ()
     expect(healthBarValueText({ ...base, secure: 0, pending: 20, lethal: true })).toBe(
       '20 of 25. 20 at risk. Lethal.',
     )
+  })
+})
+
+describe('healthBarValueText — DLR-101’s committed-poison clause', () => {
+  const MAX = { [DuelSide.Player]: 10, [DuelSide.Quarry]: 10 }
+  const CURRENT = { [DuelSide.Player]: 10, [DuelSide.Quarry]: 10 }
+
+  it('names the poisoned figure separately from what the streak still puts at risk', () => {
+    const [view] = duelHealthBars(CURRENT, { ...CURRENT, [DuelSide.Player]: 3 }, MAX, {
+      doomed: { [DuelSide.Player]: 4, [DuelSide.Quarry]: 0 },
+    })
+    expect(view.pending).toBe(7)
+    expect(view.doomed).toBe(4)
+    expect(healthBarValueText(view)).toBe('10 of 10. 3 at risk. 4 poisoned.')
+  })
+
+  it('is byte-identical to the pre-DLR-101 string when nothing is booked', () => {
+    const [view] = duelHealthBars(CURRENT, { ...CURRENT, [DuelSide.Player]: 4 }, MAX)
+    expect(view.doomed).toBe(0)
+    expect(healthBarValueText(view)).toBe('10 of 10. 6 at risk.')
+  })
+
+  it('omits the at-risk clause entirely when the whole pending band is booked', () => {
+    const [view] = duelHealthBars(CURRENT, { ...CURRENT, [DuelSide.Player]: 6 }, MAX, {
+      doomed: { [DuelSide.Player]: 4, [DuelSide.Quarry]: 0 },
+    })
+    expect(view.pending).toBe(4)
+    expect(view.doomed).toBe(4)
+    expect(healthBarValueText(view)).toBe('10 of 10. 4 poisoned.')
   })
 })
 

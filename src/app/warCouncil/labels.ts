@@ -10,7 +10,7 @@ import {
   type QuarryIntent,
   type SuitShape,
 } from '../../warCouncil'
-import { DuelSide, MAX_CARDS_PER_DISCARD } from '../../hunt'
+import { DuelSide, envenomDamageFor, MAX_CARDS_PER_DISCARD } from '../../hunt'
 import type { HealthBarView } from './duelHealthBars'
 import { CheatStage, EnvenomStage } from './roundUiState'
 
@@ -108,17 +108,25 @@ export function quarryHealthLabel(name: string | undefined): string {
 }
 
 /**
- * AC6's one sentence, for a reader who cannot see the row.
+ * DLR-86 AC6's one sentence, for a reader who cannot see the row.
  *
- * The current-of-max reading is byte-identical to DLR-80's whenever `pending` is 0, which is every
- * shape the pre-DLR-86 assertions pin. The at-risk clause exists because DLR-86 gives a sighted
- * player a preview of what the streak would cash for, and a meter whose text is less true than its
- * picture is worse than one with no picture. Placeholder copy: the wording is the developer's.
+ * The current-of-max reading is byte-identical to DLR-80's whenever `pending` is 0, and the
+ * at-risk clause is byte-identical to DLR-86's whenever `doomed` is 0 — which is every shape the
+ * earlier assertions pin.
+ *
+ * DLR-101 splits the two clauses because they are two different claims. "At risk" is conditional
+ * and evaporates if the streak breaks; "poisoned" is committed and lands at the next trick. A
+ * meter that calls a booked hit "at risk" is less true than its own picture, which this file's
+ * own standard says is worse than having no picture at all. Placeholder copy: the wording is the
+ * developer's.
  */
 export function healthBarValueText(view: HealthBarView): string {
   const standing = `${view.current} of ${view.max}.`
-  const atRisk = view.pending > 0 ? ` ${view.pending} at risk.` : ''
-  return view.lethal ? `${standing}${atRisk} Lethal.` : `${standing}${atRisk}`
+  const atRiskOnly = view.pending - view.doomed
+  const atRisk = atRiskOnly > 0 ? ` ${atRiskOnly} at risk.` : ''
+  const poisoned = view.doomed > 0 ? ` ${view.doomed} poisoned.` : ''
+  const body = `${standing}${atRisk}${poisoned}`
+  return view.lethal ? `${body} Lethal.` : body
 }
 
 export const FINISH_ROUND_LABEL = 'Deal the next Hunt'
@@ -194,6 +202,18 @@ export const ENVENOM_RAIL_LABEL = 'Envenom'
 export const ENVENOM_EMPTY_LABEL = 'No Envenom held'
 export const ENVENOM_POISED_HINT = 'Tap Envenom again to arm it'
 export const ENVENOM_ARMED_HINT = 'Pick a card in your hand to poison'
+
+/** DLR-101 — the reveal's clause for a hit this trick just BOOKED, as distinct from one it paid.
+ *  Names the side and the amount, which the Apply Damage refusal (the only prior trace of a
+ *  booked hit anywhere in the UI) named neither of. The figure comes from `envenomDamageFor`,
+ *  its single owner, so this copy cannot pick the wrong constant. PLACEHOLDER copy, as this
+ *  file's rest is. */
+export function poisonBookedText(target: DuelSide): string {
+  const amount = envenomDamageFor(target)
+  return target === DuelSide.Player
+    ? `Poison set — you take ${amount} at the next trick.`
+    : `Poison set — they take ${amount} at the next trick.`
+}
 
 /** The plate's accessible name. The three stages MUST differ, and the count is in the name rather
  *  than only in the glyph — `getByRole('button', { name })` is how the spec tells them apart, and

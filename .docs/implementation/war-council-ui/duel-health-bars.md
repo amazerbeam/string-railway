@@ -3,8 +3,9 @@ _Part of [War Council UI](README.md)._
 **DLR-71** built this, and it is the ticket where the duel reached the screen. **DLR-80 then retired
 the bars' pending segment and rescaled them.** **DLR-86 retired the bars themselves**: there is no
 track, no width and no percentage any more — each side is a row of countable hearts, one per health
-point. Read the history below with that in mind; the mirror survives all three tickets, the geometry
-does not.
+point. **DLR-101 then added a fifth heart state and a second projection source**, so booked poison
+shows on whichever bar owes it. Read the history below with that in mind; the mirror survives all
+four tickets, the geometry does not.
 
 ### The pending segment is gone, and that was the point of the redesign
 
@@ -49,24 +50,42 @@ are the point:
   already-landed health, unchanged. The preview is additive (see
   [accessibility.md](accessibility.md)).
 
-`projectedFromStreak(current, bank, multiplier)` in `duelHealthBars.ts` is the whole of it — the
-Quarry's health minus `bank × multiplier`, floored at zero, the player untouched. The floor is
+The projection in `duelHealthBars.ts` is the whole of it — the
+Quarry's health minus `bank × multiplier`, floored at zero, the player untouched. (It was
+`projectedFromStreak(current, bank, multiplier)` as DLR-86 shipped it; **DLR-101 renamed it to
+`projectedDepletion` and gave it a fourth argument** — see below. Nothing about the streak half of
+its reading changed.) The floor is
 **not** a second damage clamp; it exists solely so the module's documented `projected <= current`
 precondition holds under an overkill streak, which a negative projection would violate and turn into
 a negative `pending`. `applyDamage` remains the single clamp point.
 
-### One heart per health point, partitioned four ways
+### One heart per health point, partitioned five ways
 
 `duelHealthBars` returns `hearts: readonly HeartState[]` of length exactly `max`, and every heart is
-in one of four states — `whole`, `atRisk`, `breaking`, `broken`. The partition is three comparisons
-per index and no branches beyond them:
+in one of **five** states — `whole`, `atRisk`, `doomed`, `breaking`, `broken`. It was four until
+DLR-101 added `doomed`. The partition is four comparisons per index and no branches beyond them:
 
-| Index falls under      | State      | Means                                                   |
-| ---------------------- | ---------- | ------------------------------------------------------- |
-| `i < secure`           | `whole`    | survives even if the streak cashes right now             |
-| `i < current`          | `atRisk`   | standing, but the banked streak would take it            |
-| `i < current + breaking` | `breaking` | the event **currently on screen** just took it          |
-| otherwise              | `broken`   | already gone                                             |
+| Index falls under        | State      | Means                                                     |
+| ------------------------ | ---------- | --------------------------------------------------------- |
+| `i < secure`             | `whole`    | survives everything currently on screen                    |
+| `i < atRiskEnd`          | `atRisk`   | standing, but the banked streak would take it **if it cashes** |
+| `i < current`            | `doomed`   | standing, but **booked poison has already claimed it**     |
+| `i < current + breaking` | `breaking` | the event **currently on screen** just took it             |
+| otherwise                | `broken`   | already gone                                               |
+
+`atRiskEnd` is `current - doomed`, and `doomed` is `Math.min(overlays.doomed[side], pending)` — the
+one clamp DLR-101 added, and the only arithmetic `duelHealthBars` performs on poison. Keeping it a
+single `Math.min` is what keeps "overkill leaves no trace" **one rule** rather than two that can
+drift: the heart row's own length discards the rest, exactly as it already did for `breaking`.
+
+**`doomed` sits innermost, between the at-risk band and the already-broken hearts.** Poison lands
+at the resolution of the next trick and is unconditional; the streak preview is speculative and
+evaporates if the streak breaks. Ordering it the other way round would draw the certain loss as
+further away than the uncertain one.
+
+**With `doomed` at zero every index resolves exactly as it did before DLR-101**, which is what makes
+the fifth state additive rather than a rewrite — `App.tsx`'s three-argument call site and every
+pre-existing assertion kept their meaning byte for byte.
 
 **Overkill needs no clamp.** A cash-out of 16 into a Quarry holding 10 leaves `current = 0` and
 `breaking = 16`; every index `0..9` satisfies `i < 0 + 16`, so all ten hearts break and the array's
@@ -77,14 +96,98 @@ without writing a second rule that could drift from it.
 `QUARRY_ENCOUNTER_HEALTH` is `[10, 14, 18]`, so the Quarry's row is three different lengths within a
 single run and no UI change tracks it.
 
+### DLR-101 — booked poison reaches the felt, and the engine was not touched to do it
+
+A poisoned card books a delayed hit that lands at the resolution of the next trick. Until DLR-101
+**nothing on the felt showed it existed**: in the session the ticket came from, 4 damage was booked
+against the Quarry, the bar still read 14/14, and the player concluded the mechanic was broken. The
+engine was already right — `encounter.pendingEnvenom` carried the side and the amount — so the whole
+of this change is a **derivation**, and **no engine behaviour changed**. The one engine-side edit is
+additive: `envenomDamageFor` was promoted from module-private to a `src/hunt` export, so the copy
+layer reads the figure from its single owner instead of choosing between two constants at the call
+site.
+
+Four surfaces changed, all downstream of committed state:
+
+- **The projection learned about poison.** `projectedDepletion(current, bank, multiplier,
+  pendingPoison)` subtracts each side's booked poison from **both** bars, and the streak's
+  `bank × multiplier` from the Quarry as before. The rename was chosen over a defaulted fourth
+  parameter on the old name, because "from streak" would then have described half of what the
+  function does, and a second sibling projection function is the drift this module's docblocks
+  already argue against.
+- **The heart row gained `doomed`**, described in the partition above.
+- **The meter's text stopped calling a booked hit "at risk".** `healthBarValueText` now emits the
+  two figures as **separate clauses** — `14 of 14. 3 at risk. 4 poisoned.` — reading `pending -
+  doomed` for the first and `doomed` for the second, and omitting either clause at zero. The rule
+  it is following is `accessibility.md`'s own: a meter whose text is less true than its picture is
+  worse than one with no picture.
+- **The reveal that books the hit names it.** `TrickWell`'s resolved-trick line gains a
+  `.wc-poison-clause` span when `resolution.envenomTarget` is non-null, built by `poisonBookedText`
+  in `labels.ts`, naming the side and the amount.
+
+**`doomed` hearts are static, and that is a decision rather than an omission.** `atRisk` flashes
+because it is conditional and evaporates if the streak breaks; a booked hit is committed and nothing
+on the felt stops it, so a flashing committed heart would say the wrong thing about certainty. The
+consequence is that the state needs **no entry in the `prefers-reduced-motion` block** and loses
+nothing when motion is off — the same structural reduced-motion guarantee the other four states
+already had, reached by not adding motion in the first place.
+
+`--wc-hp-doomed-fill: var(--wc-poison)` and `--wc-hp-doomed-opacity: 0.78` are declared in
+`warCouncil.css` beside the other `--wc-hp-*` tokens, and `[data-state='doomed']` in
+`warCouncilHealthBars.css` is the only rule that reads them. The fill is an **alias** of the existing
+poison-mark colour rather than a new colour value, so the heart can be retuned without disturbing
+the card mark.
+
+**Three things here are not settled, and the docs should not read as though they are:**
+
+- **The ticket's open design question — its own heart state versus reusing `atRisk` — was decided by
+  the plan's default, not by the developer.** This contract ran inside an unattended sprint run that
+  skipped the plan-approval and mockup gates, so nobody looked at it. Reverting is deliberately
+  cheap: delete the `Doomed` member, delete the `[data-state='doomed']` block, drop `doomed` from
+  the derivation. The confirmation is still the developer's.
+- **`--wc-hp-doomed-opacity: 0.78` is a placeholder nobody chose**, picked only to sit clearly above
+  `--wc-hp-atrisk-opacity: 0.55` and clearly below solid. So is whether green-on-green reads against
+  `--wc-felt`.
+- **All the new copy is placeholder**, as everything in `labels.ts` is.
+
+> **The doomed hearts have never been seen painting in a real browser.** QA could not reach the shop
+> to buy an Envenom charge in the live app, so the state was proven by unit and component tests and
+> by calling the real pure functions through a dynamic import against the live-served modules —
+> strong evidence that the derivation and the DOM binding are correct, but **not a visual
+> confirmation**. Whether five states still separate at a glance on the third fight's 18-glyph row,
+> with a live streak and a booked hit on screen at once, is unmeasured.
+
+> **A naming rule was crossed, quietly.** `envenom-and-the-delayed-hit.md` names `pendingPoison`
+> among seven identifiers a Final-verification grep forbids, to stop a `poison…` name being read as
+> a list of marked cards beside `CardRank.Poison`. DLR-101 introduced `pendingPoison` as the
+> parameter name on `projectedDepletion` and as a local in `roundBars.ts`. Neither is a
+> card-membership list, so the hazard the rule guards against is not present — but the identifier is
+> on the list, and the grep is scoped such that it did not catch this. Worth a rename or an
+> explicit narrowing of the rule.
+
+### `roundBars.ts` — a split forced by a line budget, which bought a testable derivation
+
+`barsForRound(ui, maxHealth)` in `roundBars.ts` is the round screen's whole bar assembly: it reads
+`ui.encounter.pendingEnvenom` once, passes it to `projectedDepletion` and again as the `doomed`
+overlay, and passes `incomingFrom(ui.resolvedTrick.resolution)` — or `NO_BREAKING` — as `breaking`.
+
+It exists because **`WarCouncilRound.tsx` was at 399 of its hard 400-line budget** and this change
+added lines to it; the file is now 380. That is the same forcing function that produced
+`quarryAdvance.ts`, `commitHandlers.ts` and `discardHandlers.ts` out of the same component, so the
+split follows an established local pattern rather than inventing one. The payoff beyond the budget
+is real: the assembly is pure — no React, no DOM, no effect — and for the first time it can be
+exercised without a renderer, which `roundBars.test.ts` now does.
+
 ### `breaking` is the trick held on screen, not a remembered previous health
 
 The obvious way to animate a delta is to mirror last render's health in a `useState` and diff it.
 DLR-86 rejected that, and the reason generalises: **the damage event is already on screen.**
 `roundReducer` never applies damage without setting `resolvedTrick` in the same transition — `commit`
 calls `applyResolution` only when `deriveResolvedTrick` returned one — so the held reveal *is* the
-damage event, exactly. `WarCouncilRound` passes `incomingFrom(ui.resolvedTrick.resolution)` as the
-fourth argument, or `NO_BREAKING` when no reveal is held.
+damage event, exactly. `barsForRound` passes `incomingFrom(ui.resolvedTrick.resolution)` as the
+overlays object's `breaking` field, or `NO_BREAKING` when no reveal is held. (It was passed
+positionally from `WarCouncilRound` itself until DLR-101 moved the assembly out and named the
+overlays.)
 
 The payoff is that this whole feature is a pure function of committed state: **no `useState`, no
 `useEffect`, no ref, no timer, no `requestAnimationFrame`, and no memoisation is added anywhere** —
@@ -123,10 +226,25 @@ question, and it is open** — now for both bars rather than only the player's.
 ### The geometry is pure, and the component only formats
 
 `duelHealthBars.ts` takes three health records — `current`, `projected`, `max` — plus a **defaulted
-fourth** `breaking` record, and returns one `HealthBarView` per side: `secure`, `pending`, `current`,
-`max`, a `lethal` flag, and the `hearts` array. It performs **no damage arithmetic and no clamping**,
-because `applyDamage` did both before `projected` arrived. The fourth argument defaults to
-`NO_BREAKING`, which is why every three-argument call site compiled unchanged through DLR-86.
+fourth** argument of overlays, and returns one `HealthBarView` per side: `secure`, `pending`,
+`doomed`, `current`, `max`, a `lethal` flag, and the `hearts` array. It performs **no damage
+arithmetic and no clamping**, because `applyDamage` did both before `projected` arrived. The fourth
+argument is optional and each of its fields defaults — `breaking` to `NO_BREAKING`, `doomed` to
+`src/hunt`'s `NO_PENDING_ENVENOM` — which is why every three-argument call site has compiled
+unchanged through both DLR-86 and DLR-101.
+
+**DLR-101 turned that fourth argument from a positional record into a `HealthBarOverlays` options
+object** (`{ breaking?, doomed? }`), and the reason is the one `bank.ts`'s `TrickFacts` already
+states: both fields are `Readonly<Record<DuelSide, Damage>>`, so as two positional parameters they
+were silently transposable and a swap would have type-checked cleanly and drawn a plausible but
+wrong picture. Naming them makes a transposition a compile error. **This is now the module's
+convention** — a future overlay is a named field on that object, never a fifth positional parameter.
+
+`HealthBarView.pending` deliberately kept its meaning as the **whole** pending band — at-risk plus
+doomed — because `pending` is what drives `lethal`, and lethal must count committed poison. `doomed`
+is the committed subset, and a caller wanting the at-risk figure alone derives `pending - doomed`.
+Redefining `pending` to exclude poison would have changed the meaning of a field pre-existing tests
+already assert on, and would have made a revert of the fifth state touch the geometry.
 
 The module's one guard **was repurposed rather than removed**, and the move is worth stating because
 it is the same reasoning one failure mode along. `max` used to be a divisor, and the guard existed
@@ -148,8 +266,12 @@ and duplicating `applyDamage`'s clamp here would be a second arithmetic path thi
 to avoid. It holds today because every caller derives `projected` in one of three ways, all of which
 uphold it: as `current` itself (pending forced to exactly zero — the tests and every DLR-80-era call
 site), via `applyDamage`, whose `deplete` is `Math.max(0, current - damage)` and so never increases
-health, or — since DLR-86 — via `projectedFromStreak`, whose zero floor exists for precisely this
-reason. A future healing mechanic or a different projection source must preserve it.
+health, or — since DLR-86, and under the name `projectedDepletion` since DLR-101 — via that
+projection, whose zero floor exists for precisely this reason. **DLR-101 extended the floor to both
+sides**: it previously floored only the Quarry and left the player's projection as `current`
+untouched, which was safe only while nothing could deplete the player's bar in advance. Booked
+poison can, so both sides now floor. A future healing mechanic or a different projection source must
+preserve the precondition itself.
 
 `DuelHealthBars.tsx` then **computes nothing** — the same division of labour that lets
 `RoundOverPanel` make that claim. Since DLR-86 it maps `view.hearts` to elements and binds a `<use

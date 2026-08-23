@@ -1,4 +1,13 @@
-export type { Hunt, Quarry, Damage, Health, IncomingDamage, EncounterState, Coins, ActionPoints } from './types'
+export type {
+  Hunt,
+  Quarry,
+  Damage,
+  Health,
+  IncomingDamage,
+  EncounterState,
+  Coins,
+  ActionPoints,
+} from './types'
 export { QuarryCharacter, DuelSide } from './types'
 
 export type { SkullRankWeights } from './skullWeights'
@@ -81,6 +90,7 @@ export {
   NO_PENDING_ENVENOM,
   hasPendingEnvenom,
   queueEnvenom,
+  envenomDamageFor,
 } from './encounter'
 
 export type { ShopStock } from './shop'

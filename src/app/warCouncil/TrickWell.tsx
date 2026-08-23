@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react'
 import { isEnvenomed, isSkulled, PlayerSide, type Card, type TrickCard } from '../../warCouncil'
-import { cardAccessibleName } from './labels'
+import { cardAccessibleName, poisonBookedText } from './labels'
 import PlayingCard from './PlayingCard'
 import type { ResolvedTrick } from './roundUiState'
 
@@ -78,9 +78,16 @@ export default function TrickWell({
         </div>
         <p className="wc-table-line">
           {winnerLabel} take the trick.
-          {resolvedTrick.resolution.cashOut > 0 && ` They take ${resolvedTrick.resolution.cashOut}.`}
+          {resolvedTrick.resolution.cashOut > 0 &&
+            ` They take ${resolvedTrick.resolution.cashOut}.`}
           {resolvedTrick.resolution.damageToPlayer > 0 &&
             ` You take ${resolvedTrick.resolution.damageToPlayer}.`}
+          {resolvedTrick.resolution.envenomTarget !== null && (
+            <span className="wc-poison-clause">
+              {' '}
+              {poisonBookedText(resolvedTrick.resolution.envenomTarget)}
+            </span>
+          )}
         </p>
         <button type="button" className="wc-table-hint wc-is-carry-on" onClick={handleHintClick}>
           Tap the table to carry on

@@ -1,8 +1,13 @@
 /** @vitest-environment jsdom */
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { DuelSide, PLAYER_START_HEALTH, quarryHealthForEncounter } from '../../../hunt'
-import { duelHealthBars, projectedFromStreak } from '../duelHealthBars.ts'
+import {
+  DuelSide,
+  NO_PENDING_ENVENOM,
+  PLAYER_START_HEALTH,
+  quarryHealthForEncounter,
+} from '../../../hunt'
+import { duelHealthBars, projectedDepletion, type HealthBarOverlays } from '../duelHealthBars.ts'
 import DuelHealthBars from '../DuelHealthBars.tsx'
 import { HEALTH_BAR_LABEL, quarryHealthLabel } from '../labels'
 
@@ -26,9 +31,10 @@ function renderPair(
   projected: Record<DuelSide, number>,
   breaking?: Record<DuelSide, number>,
 ) {
+  const overlays: HealthBarOverlays = breaking ? { breaking } : {}
   return render(
     <DuelHealthBars
-      bars={duelHealthBars(current, projected, MAX, breaking)}
+      bars={duelHealthBars(current, projected, MAX, overlays)}
       centre={<span>trio</span>}
       quarryLabel={QUARRY_LABEL}
     />,
@@ -102,12 +108,32 @@ describe('DuelHealthBars', () => {
   it('previews the streak on the Quarry’s hearts and says so to a screen reader (AC3, AC6)', () => {
     const quarryMax = quarryHealthForEncounter(0)
     const current = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
-    const { container } = renderPair(current, projectedFromStreak(current, 2, 2))
+    const { container } = renderPair(current, projectedDepletion(current, 2, 2, NO_PENDING_ENVENOM))
     const quarry = container.querySelector('.wc-hp[data-side="quarry"]')
     expect(quarry?.querySelectorAll('[data-state="atRisk"]')).toHaveLength(4)
     expect(screen.getByRole('meter', { name: QUARRY_LABEL }).getAttribute('aria-valuetext')).toBe(
       `${quarryMax} of ${quarryMax}. 4 at risk.`,
     )
+  })
+
+  it('renders booked poison as doomed hearts and names the figure to a screen reader (DLR-101)', () => {
+    const quarryMax = quarryHealthForEncounter(0)
+    const current = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
+    const projected = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax - 4 }
+    const { container } = render(
+      <DuelHealthBars
+        bars={duelHealthBars(current, projected, MAX, {
+          doomed: { [DuelSide.Player]: 0, [DuelSide.Quarry]: 4 },
+        })}
+        centre={<span>trio</span>}
+        quarryLabel={QUARRY_LABEL}
+      />,
+    )
+    const quarry = container.querySelector('.wc-hp[data-side="quarry"]')
+    expect(quarry?.querySelectorAll('[data-state="doomed"]')).toHaveLength(4)
+    expect(
+      screen.getByRole('meter', { name: QUARRY_LABEL }).getAttribute('aria-valuetext'),
+    ).toContain('poisoned')
   })
 
   it('binds each heart to the symbol its state calls for — a broken state is a different shape, not a colour (AC6)', () => {

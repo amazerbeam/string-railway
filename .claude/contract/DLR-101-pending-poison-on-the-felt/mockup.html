@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DLR-101 — pending poison on the felt</title>
+    <style>
+      :root {
+        --wc-chamber: #0c1013;
+        --wc-chamber-lift: #141a1f;
+        --wc-felt: #16241f;
+        --wc-felt-line: #2b4038;
+        --wc-parchment: #e9e1cd;
+        --wc-chalk: #cdd6d2;
+        --wc-chalk-dim: #6f7d78;
+        --wc-brass: #c99a4e;
+        --wc-poison: #8fb04e;
+        --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --wc-serif: Georgia, 'Book Antiqua', serif;
+
+        --wc-hp-secure-fill: #cc3f4a;
+        --wc-hp-pending-fill: #8b9a94;
+        --wc-hp-lethal-edge: #d1705f;
+        --wc-hp-broken: #3a4a52;
+        --wc-hp-atrisk-opacity: 0.55;
+        --wc-hp-doomed-fill: var(--wc-poison);
+        --wc-hp-doomed-opacity: 0.78;
+        --wc-hp-heart-size: 1.3rem;
+        --wc-hp-heart-gap: 0.18rem;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--wc-chamber);
+        color: var(--wc-chalk);
+        font-family: var(--wc-sans);
+        padding: 1.25rem;
+      }
+      h1 { font-family: var(--wc-serif); font-size: 1.1rem; color: var(--wc-brass); margin: 0 0 0.25rem; }
+      .note { color: var(--wc-chalk-dim); font-size: 0.8rem; margin: 0 0 1rem; max-width: 60ch; }
+
+      .band {
+        display: flex;
+        align-items: flex-end;
+        gap: 1rem;
+        background: var(--wc-chamber-lift);
+        border: 1px solid var(--wc-felt-line);
+        border-radius: 0.35rem;
+        padding: 0.7rem 0.9rem;
+      }
+      .wc-hp { flex: 1 1 8rem; min-width: 0; display: flex; flex-direction: column; gap: 0.22rem; }
+      .wc-hp[data-side='quarry'] .wc-hp-head { flex-direction: row-reverse; }
+      .wc-hp[data-side='quarry'] .wc-hp-hearts { flex-direction: row-reverse; }
+      .wc-hp-head { display: flex; align-items: baseline; gap: 0.5rem; white-space: nowrap; }
+      .wc-hp-who { font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: var(--wc-chalk-dim); }
+      .wc-hp-num { font-family: var(--wc-serif); font-variant-numeric: tabular-nums; color: var(--wc-parchment); }
+      .wc-hp-hearts { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--wc-hp-heart-gap); min-width: 0; }
+      .wc-hp-heart { flex: 0 1 var(--wc-hp-heart-size); min-width: 0.34rem; aspect-ratio: 1; display: block; }
+      .wc-hp-heart svg { width: 100%; height: 100%; display: block; }
+
+      .wc-hp-heart[data-state='whole'] { color: var(--wc-hp-secure-fill); }
+      .wc-hp-heart[data-state='atRisk'] {
+        color: var(--wc-hp-pending-fill);
+        opacity: var(--wc-hp-atrisk-opacity);
+        animation: wc-hp-flash 900ms ease-in-out infinite alternate;
+      }
+      /* THE NEW STATE — committed, so it does not flash. */
+      .wc-hp-heart[data-state='doomed'] { color: var(--wc-hp-doomed-fill); opacity: var(--wc-hp-doomed-opacity); }
+      .wc-hp-heart[data-state='breaking'] { color: var(--wc-hp-lethal-edge); }
+      .wc-hp-heart[data-state='broken'] { color: var(--wc-hp-broken); }
+      @keyframes wc-hp-flash { from { opacity: var(--wc-hp-atrisk-opacity); transform: scale(1); } to { opacity: 1; transform: scale(1.09); } }
+      @media (prefers-reduced-motion: reduce) { .wc-hp-heart[data-state='atRisk'] { animation: none; } }
+
+      .wc-score { display: flex; gap: 0.9rem; font-family: var(--wc-serif); color: var(--wc-parchment); }
+      .wc-score span { display: block; text-align: center; }
+      .wc-score em { display: block; font-style: normal; font-size: 0.55rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--wc-chalk-dim); }
+
+      .felt {
+        margin-top: 1rem;
+        background: var(--wc-felt);
+        border: 1px solid var(--wc-felt-line);
+        border-radius: 0.35rem;
+        padding: 1.1rem;
+        text-align: center;
+      }
+      .wc-table-line { font-family: var(--wc-serif); color: var(--wc-parchment); margin: 0 0 0.6rem; }
+      .wc-poison-clause { color: var(--wc-poison); }
+      .controls { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+      button {
+        min-height: 44px; min-width: 44px; padding: 0.5rem 0.9rem;
+        background: transparent; color: var(--wc-brass);
+        border: 1px solid var(--wc-brass); border-radius: 0.25rem;
+        font-family: var(--wc-serif); font-size: 0.85rem; cursor: pointer;
+        touch-action: manipulation;
+      }
+      button:focus-visible { outline: 2px solid var(--wc-brass); outline-offset: 2px; }
+      @media (hover: hover) { button:hover { background: #ffffff14; } }
+      button:active { background: #ffffff22; }
+      .sr { margin-top: 0.9rem; font-size: 0.78rem; color: var(--wc-chalk-dim); font-family: ui-monospace, monospace; }
+      .legend { margin-top: 1rem; display: flex; gap: 1.1rem; flex-wrap: wrap; font-size: 0.75rem; color: var(--wc-chalk-dim); align-items: center; }
+      .legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+      .swatch { width: 1rem; height: 1rem; display: inline-block; }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+      <symbol id="hp-heart" viewBox="0 0 24 24">
+        <path d="M12 20.4 4.5 13a4.9 4.9 0 0 1 7.5-6.2A4.9 4.9 0 0 1 19.5 13Z" fill="currentColor" stroke="currentColor" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="hp-heart-broken" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M12 20.4 4.5 13a4.9 4.9 0 0 1 7.5-6.2A4.9 4.9 0 0 1 19.5 13Z" />
+          <path d="M12 6.1 9.9 10.4l3.4 1.6-2.6 2.9 2 1.9" />
+        </g>
+      </symbol>
+    </svg>
+
+    <h1>DLR-101 — pending poison on the felt</h1>
+    <p class="note">
+      Placeholder data. The green hearts are the proposed fifth <code>data-state="doomed"</code>:
+      committed poison, static (it does not flash, because nothing stops it). The grey flashing hearts are
+      the existing conditional <code>atRisk</code> streak preview. Doomed sits innermost, nearest the
+      already-broken hearts. Click the buttons to move between the states this ticket must render.
+    </p>
+
+    <div class="band">
+      <div class="wc-hp" data-side="player">
+        <div class="wc-hp-head"><span class="wc-hp-who">Your health</span><span class="wc-hp-num" id="player-num">9 / 10</span></div>
+        <div class="wc-hp-hearts" id="player-hearts" role="meter" aria-label="Your health"></div>
+      </div>
+      <div class="wc-score">
+        <span><em>You</em>1</span><span><em>Trick</em>2</span><span><em>Them</em>1</span>
+      </div>
+      <div class="wc-hp" data-side="quarry">
+        <div class="wc-hp-head"><span class="wc-hp-who">Cillian's health</span><span class="wc-hp-num" id="quarry-num">14 / 14</span></div>
+        <div class="wc-hp-hearts" id="quarry-hearts" role="meter" aria-label="Cillian's health"></div>
+      </div>
+    </div>
+
+    <div class="felt">
+      <p class="wc-table-line" id="reveal">They take the trick. You take 1.</p>
+      <button type="button" onclick="alert('Tap the table to carry on')">Tap the table to carry on</button>
+    </div>
+
+    <div class="controls">
+      <button type="button" onclick="setScenario('clean')">Clean trick (no poison, no streak)</button>
+      <button type="button" onclick="setScenario('streak')">Streak only — 3 at risk on the Quarry</button>
+      <button type="button" onclick="setScenario('poisonQuarry')">The bug: 4 poison booked on the Quarry</button>
+      <button type="button" onclick="setScenario('both')">Both — 3 at risk + 4 poisoned</button>
+      <button type="button" onclick="setScenario('poisonPlayer')">2 poison booked on the player</button>
+      <button type="button" onclick="setScenario('lethal')">Poison would empty the player's bar</button>
+    </div>
+
+    <p class="sr" id="sr-text"></p>
+
+    <div class="legend">
+      <span><span class="swatch" style="background: var(--wc-hp-secure-fill)"></span> whole</span>
+      <span><span class="swatch" style="background: var(--wc-hp-pending-fill); opacity: 0.55"></span> atRisk (flashing, conditional)</span>
+      <span><span class="swatch" style="background: var(--wc-hp-doomed-fill); opacity: 0.78"></span> doomed (static, committed)</span>
+      <span><span class="swatch" style="background: var(--wc-hp-broken)"></span> broken</span>
+    </div>
+
+    <script>
+      // Mirrors the planned derivation exactly — see plan.md Part 2 → Approach.
+      function hearts(current, max, streak, poison) {
+        const secure = Math.max(0, current - streak - poison)
+        const pending = current - secure
+        const doomed = Math.min(poison, pending)
+        const out = []
+        for (let i = 0; i < max; i++) {
+          if (i < secure) out.push('whole')
+          else if (i < current - doomed) out.push('atRisk')
+          else if (i < current) out.push('doomed')
+          else out.push('broken')
+        }
+        return { states: out, secure, pending, doomed, lethal: pending > 0 && secure <= 0 }
+      }
+
+      function paint(id, numId, current, max, streak, poison) {
+        const view = hearts(current, max, streak, poison)
+        const row = document.getElementById(id)
+        row.innerHTML = view.states
+          .map(
+            (s) =>
+              '<span class="wc-hp-heart" data-state="' +
+              s +
+              '"><svg aria-hidden="true" focusable="false"><use href="#' +
+              (s === 'broken' ? 'hp-heart-broken' : 'hp-heart') +
+              '"></use></svg></span>',
+          )
+          .join('')
+        row.style.boxShadow = view.lethal ? 'inset 0 -2px 0 0 var(--wc-hp-lethal-edge)' : 'none'
+        document.getElementById(numId).textContent = current + ' / ' + max
+        const atRisk = view.pending - view.doomed
+        let text = current + ' of ' + max + '.'
+        if (atRisk > 0) text += ' ' + atRisk + ' at risk.'
+        if (view.doomed > 0) text += ' ' + view.doomed + ' poisoned.'
+        if (view.lethal) text += ' Lethal.'
+        row.setAttribute('aria-valuetext', text)
+        return text
+      }
+
+      const SCENARIOS = {
+        clean: { p: [9, 10, 0, 0], q: [14, 14, 0, 0], reveal: 'They take the trick. You take 1.' },
+        streak: { p: [9, 10, 0, 0], q: [14, 14, 3, 0], reveal: 'You take the trick.' },
+        poisonQuarry: {
+          p: [9, 10, 0, 0],
+          q: [14, 14, 0, 4],
+          reveal: 'They take the trick. You take 1.',
+          poison: 'Poison set — they take 4 at the next trick.',
+        },
+        both: {
+          p: [9, 10, 0, 0],
+          q: [14, 14, 3, 4],
+          reveal: 'You take the trick.',
+          poison: 'Poison set — they take 4 at the next trick.',
+        },
+        poisonPlayer: {
+          p: [9, 10, 0, 2],
+          q: [14, 14, 0, 0],
+          reveal: 'They take the trick. You take 1.',
+          poison: 'Poison set — you take 2 at the next trick.',
+        },
+        lethal: {
+          p: [2, 10, 0, 2],
+          q: [14, 14, 0, 0],
+          reveal: 'They take the trick. You take 1.',
+          poison: 'Poison set — you take 2 at the next trick.',
+        },
+      }
+
+      function setScenario(name) {
+        const s = SCENARIOS[name]
+        const pText = paint('player-hearts', 'player-num', s.p[0], s.p[1], s.p[2], s.p[3])
+        const qText = paint('quarry-hearts', 'quarry-num', s.q[0], s.q[1], s.q[2], s.q[3])
+        const reveal = document.getElementById('reveal')
+        reveal.innerHTML =
+          s.reveal + (s.poison ? ' <span class="wc-poison-clause">' + s.poison + '</span>' : '')
+        document.getElementById('sr-text').textContent =
+          'meter aria-valuetext — player: "' + pText + '"  |  quarry: "' + qText + '"'
+      }
+
+      setScenario('poisonQuarry')
+    </script>
+  </body>
+</html>

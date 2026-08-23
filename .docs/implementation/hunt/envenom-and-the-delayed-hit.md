@@ -77,10 +77,17 @@ uses. It is the one new module-level object in the feature.
 returns a new encounter — `ENVENOM_QUARRY_DAMAGE` (4) against the Quarry, `ENVENOM_PLAYER_DAMAGE` (2)
 against the player, since DLR-91 split the single key. It was one shared figure as DLR-90 shipped it.
 
-**Which figure is chosen once, in a private `envenomDamageFor(target)` beside the booking** (D2). That
+**Which figure is chosen once, in `envenomDamageFor(target)` beside the booking** (D2). That
 placement is the point: a caller that had to pick the amount itself is a caller that can pick the wrong
 one, and two keys whose names differ by one word is exactly the shape of a bug that type-checks, reads
 correctly, and pays the wrong side. Nothing outside this file names either key.
+
+**It was module-private until DLR-101, which promoted it to a `src/hunt` export** — a purely additive
+change, with `queueEnvenom` still its only internal caller. The reason is the same argument one layer
+out: the felt's copy layer now names the booked amount on the trick that books it, and a copy layer
+choosing between `ENVENOM_QUARRY_DAMAGE` and `ENVENOM_PLAYER_DAMAGE` at the call site is exactly the
+caller this function exists to prevent. `labels.ts`'s `poisonBookedText` reads it. **This is the only
+engine-side change DLR-101 made**, and no behaviour moved with it.
 
 Two properties are deliberate:
 
@@ -129,10 +136,12 @@ carries the record through untouched. Nothing here decides *when* the hit lands 
 
 `hasPendingEnvenom` is exported as the one statement of "is anything owed", so a queue check and a
 payment cannot disagree about whether there is work to do. The reducer reads it to decide whether the
-queue needs clearing after a payment. **It has a second, reserved purpose with no caller today** —
-D6 (2026-08-19) decided that Apply Damage must be disabled while poison is pending, and Apply Damage
-does not exist yet, so the predicate is kept waiting rather than re-derived by that ticket. Nothing in
-`src/` enforces D6.
+queue needs clearing after a payment. **Its second, reserved purpose acquired a caller at DLR-94** —
+D6 (2026-08-19) decided that Apply Damage must be disabled while poison is pending, and when DLR-91
+shipped there was no such control, so the predicate was kept waiting rather than re-derived by a later
+ticket. DLR-94 built the control and read this predicate: `src/warCouncil/voluntaryCashOut.ts`'s
+`applyDamageRefusalFor` returns `PoisonPending`, re-asked on the confirming second tap. It reads
+**both** sides of the queue, so a hit owed to the Quarry locks the control too.
 
 ## The charge — bought, carried, spent
 
@@ -218,6 +227,41 @@ tickets call it and it reads better than "envenomed". A Final-verification grep
 checks the specific forbidden identifiers (`poisonedCards`, `pendingPoison`, `poisonTrick`,
 `poisonTarget`, `isPoisoned`, `poisonCard`, `PoisonStage`) rather than the word, so it cannot match
 the legitimate copy or the card rank.
+
+> **`pendingPoison` is now in `src/` anyway, introduced by DLR-101 and not caught.** It is the
+> parameter name on `projectedDepletion` in `src/app/warCouncil/duelHealthBars.ts` and a local in
+> `roundBars.ts`, and in both places it holds `encounter.pendingEnvenom` — a per-side damage record,
+> not a card-membership list, so the confusion with `CardRank.Poison` the rule guards against is not
+> actually present. The identifier is still on the forbidden list, and the grep did not run over
+> `src/app/`, so this is a real gap between the rule as written and the rule as enforced. Either
+> rename the two occurrences to `pendingEnvenom`, or narrow the rule to the case it is about — a
+> list of marked cards. Recorded rather than fixed, because it is a naming decision.
+
+## The queue has a readout now — DLR-101
+
+Everything above describes a booking the player could not see. Until DLR-101 that was literally true:
+**nothing on the felt showed a pending hit existed, who owed it, or how much it was for.** A session
+on the second fight lost a poisoned trick cleanly, 4 damage was correctly booked against the Quarry,
+the bar read 14/14, and the player concluded the mechanic was broken.
+
+The readout is entirely downstream of this module — it derives from `pendingEnvenom` and stores
+nothing — so **no part of this file's behaviour changed**. What exists now: the health bars carry
+booked poison as a distinguished standing heart on whichever side owes it, on **both** bars, and the
+trick reveal that books a hit names the side and the amount. See
+[the duel's health bars](../war-council-ui/duel-health-bars.md) for the derivation, the fifth heart
+state, and the several things about it nobody has yet looked at.
+
+**A held Poison Guard remains invisible during a fight**, which is now a sharper seam than it was:
+the player can see poison booked against them that a Guard they are holding may cancel, and nothing
+says the Guard is there. See [Poison Guard](poison-guard.md).
+
+> **A pre-existing failure in this area, not caused by the above.**
+> `src/hunt/__tests__/envenom.test.ts :: 'does NOT add a Cheat'` fails, and it failed **identically
+> on the pre-DLR-101 tree** — confirmed by stashing that contract's diff and re-running. It asserts
+> that buying an Envenom charge leaves `cheats` an empty array. Nothing in DLR-101 touches
+> `buyFromShop`, the shop, or `cheats`. It is recorded here because it sits in the envenom area this
+> file covers, and because an unattributed red test is the kind of thing a later ticket wastes a
+> round rediscovering. Whose it is, is still open.
 
 ## Purity
 

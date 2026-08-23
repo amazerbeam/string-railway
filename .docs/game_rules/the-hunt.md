@@ -4,8 +4,29 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-08-22**. Everything below is reachable in
+Last reviewed against the code and the design on **2026-08-23**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
+
+> **You can see a poison hit coming now — DLR-101, 2026-08-23.** Poisoning a card books damage that
+> lands at the next trick's resolution, and until today **nothing on the felt showed the booking
+> existed**: a poisoned trick was lost, 4 damage was correctly owed by the Quarry, and its row still
+> showed every heart standing. Now the hearts the booked hit has already claimed are **drawn
+> differently from the hearts a streak merely threatens** — on **either** bar, whichever side owes
+> it — and they stay that way until the hit lands. The reading is spoken as well as drawn: the bar's
+> value now names the two figures **separately**, so damage nothing can stop is never described as
+> merely "at risk". And **the trick that books a hit says so as it resolves**, naming the side and
+> the amount. No rule changed — the amounts, the timing, and everything a poisoned trick does are
+> exactly as they were (sections 4, 7 and 8).
+>
+> **A held Poison Guard is still invisible**, and that seam is sharper than it was: you can now see
+> poison booked against you that a Guard you are carrying may cancel, and nothing on screen says you
+> are carrying it. Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
+>
+> **Nobody has looked at it yet.** This landed in an unattended run that skipped its approval gates,
+> the choice to draw booked poison as its own state rather than reusing the at-risk one was made by
+> default rather than decided, the copy is placeholder, and **the hearts were never seen painting in
+> a real browser** — they are proven by tests, not by looking. All of that is the developer's to
+> confirm, and it is why the rows below are marked `[provisional]`.
 
 > **You can now swap cards from your hand between tricks — DLR-100, 2026-08-22.** Before a trick's
 > first card is laid — including before the Quarry has led, so you can act on "What the Quarry
@@ -120,10 +141,11 @@ the app today except where a rule is marked **[not built]**.
 >
 > **Nothing on screen tells you the delayed damage landed.** Hearts simply disappear mid-hand — 2 of them,
 > on a bar of 10 — and your streak vanishes with them, with no line, no flash and no announcement naming
-> the cause. Pending poison is invisible on the felt and so is a held Guard. No rule required a surface and
-> choosing one is a judgement call, so none was invented. It is recorded under
-> [Known tensions](#known-tensions-recorded-not-resolved), and it is the thing most likely to read as a bug
-> in a play session.
+> the cause. **Since 2026-08-23 you are at least told the hit is coming**: pending poison is drawn on the
+> bar that owes it and named by the trick that books it. **A held Guard is still invisible**, and so is
+> the moment of landing itself. No rule required either surface and choosing one is a judgement call, so
+> neither was invented. Recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
 
 > **The shop has four shelves now — DLR-89, 2026-08-18.** What the shop *sells* has not changed, but
 > how you browse it has: the two items are laid out on a **four-shelf ladder sorted by how long a
@@ -519,6 +541,11 @@ the damage lands.
 
 **You may poison more than one card in a hand** if you hold more than one charge, and the hits accumulate
 — on either side, or on both.
+
+**Once a poisoned card has been played and its trick resolved, the hit it booked is shown.** The trick
+says who owes it and how much as it resolves, and the hearts the hit has already claimed are drawn
+distinctly on that side's row until it lands (section 8). Before that — while the card is only marked —
+nothing yet owes anything, so there is nothing to show.
 
 > **A poisoned card can leave your hand without ever being played, and the charge is simply wasted.** The
 > Woodcutter can bury it on the bottom of the draw pile, and the Fox can exchange it into the decree and
@@ -1043,7 +1070,7 @@ paid **as part of the next trick's own damage** instead — folded in, not appli
 **The Quarry's 4** is the same figure as one fight's worth of damage and as the shop's heal,
 deliberately, so poison reads on a scale you already know — it is transcribed from the design doc. **Your
 own 2** is a separate, smaller figure the developer chose on 2026-08-19, halved because your side of the
-hit also takes the streak. Whether 2-and-3 is the right size only shows in play, which is why the amounts
+hit also takes the streak. Whether 2-and-4 is the right size only shows in play, which is why the amounts
 are **[provisional]** while the timing is settled.
 
 > **The timing moved once already.** Until 2026-08-19 the hit landed at the **deal of the next hand**,
@@ -1054,11 +1081,29 @@ are **[provisional]** while the timing is settled.
 > not; nothing counts how many marked cards were in it. Separate poisoned tricks do stack. Recorded under
 > [Known tensions](#known-tensions-recorded-not-resolved).
 
-> **Nothing on screen tells you it landed.** Hearts disappear mid-hand and your streak vanishes with them,
-> with nothing naming the cause — and you were never shown that poison was pending in the first place. On
-> a player bar of 10 that is 20% of your health plus a streak, and it is the change in this game most
-> likely to be read as a bug. Recorded under
+> **You are shown the hit is coming, but not the moment it lands.** Since 2026-08-23 the health rows
+> draw the hearts a booked hit has already claimed, on whichever side owes it, and the trick that books
+> one names the side and the amount as it resolves — so the damage is no longer a surprise. **What is
+> still unannounced is the landing itself**: at the next trick's resolution those hearts simply break
+> along with everything else that trick took, and your streak goes with them, with nothing naming the
+> cause. On a player bar of 10 that is 20% of your health plus a streak. Recorded under
 > [Known tensions](#known-tensions-recorded-not-resolved).
+
+**What the bar shows while a hit is booked — [provisional]**
+
+The hearts a booked hit will take are drawn as **standing but claimed**, distinct from both an
+untouched heart and a heart the banked streak merely threatens, and they sit **nearest the depleting
+edge** of the two — poison lands first and cannot be avoided, while a streak preview evaporates if the
+streak breaks. The bar's spoken value states the two figures as separate readings rather than summing
+them. Both bars use it; the streak preview remains the Quarry's alone.
+
+It is `[provisional]` for three reasons, all of them the developer's: **whether booked poison deserves
+its own reading at all** rather than reusing the at-risk one was decided by default in an unattended
+run rather than chosen; the tone it is drawn at is a placeholder nobody picked; and **it has never been
+seen on screen** — it is proven by tests, not by looking. Whether the row still separates at a glance
+at the third fight's eighteen hearts, with a streak preview and a booked hit on it at once, is the
+question that decides it. See `hybrid-design.md` version-4-scope §1 for the mechanic; the readout
+itself answers to no design section, because none covers it.
 
 ### Applying damage cannot be delayed while poison is pending — **[settled]** since 2026-08-20
 
@@ -1181,6 +1226,10 @@ design document, not from this section.
 | **Your Cheat slots**                | **Open — two frames beside the decree**, filled or empty, all hand. A selected Cheat and an armed one differ in frame as well as tone, and the hint line names which state you are in (section 4).                          |
 | **Your coins**                      | **Open — a plate on the status band**, beside the fight counter, all hand. Also stated on the verdict and throughout the shop (section 10).                                                                                 |
 | **Both sides' health**              | **Open — two rows of hearts**, one heart per health point against each side's own maximum. The Quarry's row is **named after the opponent** — "Aoife's health" (since 2026-08-17). The hearts a trick just took break as it resolves. While a streak is banked, the Quarry's last _bank × multiplier_ standing hearts flash as a preview of what cashing right now would take. **That preview shows the FULL figure and deliberately still does, since DLR-94** — you can realise it on demand, so the full figure is what the streak is genuinely worth to you; the reduced figure sits beside the bank readout instead of competing with this one on the same bar. |
+| **Poison booked against either side** | **Open — on the bar that owes it, since 2026-08-23.** The hearts a booked hit has already claimed are drawn distinctly from both untouched hearts and the streak's flashing preview, on **your** row as well as the Quarry's, and the bar's spoken value names the poisoned figure separately from the at-risk one. The reading is **[provisional]** (section 8). |
+| **The trick that books a poison hit** | **Stated as it resolves, since 2026-08-23** — which side owes the hit and how much. It is **transient**: the line lives on the held trick and goes when you tap to carry on, so the bar is the durable signal and this is the announcement. |
+| **The moment a poison hit lands**   | **Hidden** — the hearts break and the streak goes with nothing naming the cause (section 8). |
+| **A Poison Guard you are holding**  | **Hidden** during a fight — the shop's purse is its only surface, and nothing on the felt says you are carrying one (section 7). |
 
 The telegraph's fidelity — suit only, or suit and stance — is **[provisional]**; it currently shows
 both.
@@ -1680,6 +1729,22 @@ the mechanics themselves are documented in `../implementation/`.
 > the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
 > a `RunState` field and a transition in the same breath means exactly that.
 
+> **Where DLR-101 stands, 2026-08-23.** It changed **no rule** — no amount, no timing, no procedure.
+> It is entirely a readout for a booking the engine has kept since DLR-90, so everything it added is
+> reachable by playing right now and nothing about how poison behaves moved. **What it is not is
+> confirmed.** It ran in an unattended sprint run that skipped the plan-approval and mockup gates, so
+> the ticket's own open design question — whether booked poison reuses the at-risk reading or gets its
+> own — was answered by the plan's **default** rather than decided; the tone it is drawn at is an
+> explicit placeholder; and all of its wording is placeholder. **It was never seen painting in a real
+> browser**: reaching a booked hit live needs a shop visit to buy a charge, which the verification pass
+> could not complete, so the readout is proven by tests and by exercising the real derivations against
+> the live-served code — good evidence for the figures, none at all for the appearance. Its rows are
+> `provisional` for exactly that reason, and the four judgements are recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved). **A held Poison Guard was scoped out and is
+> still invisible.** Unrelated to this contract but sitting in the same area: one test in
+> `src/hunt/__tests__/envenom.test.ts` fails and was confirmed to fail identically before the contract,
+> so it belongs to neither this ticket nor this document's rules.
+
 > **Where DLR-100 stands, 2026-08-22.** Engine and screen landed together, and QA drove the whole
 > loop end to end in a real browser: opening the rail, toggling cards in and out of the selection up
 > to the 3-card cap, committing a swap, chaining a second one in the same gap, the three refusals
@@ -1865,8 +1930,11 @@ the mechanics themselves are documented in `../implementation/`.
 | Tricks and multiplier on screen throughout    | settled                          | `src/app/warCouncil/BankMeter.tsx`; wording in `labels.ts` — `TRICKS_LABEL`, `MULTIPLIER_LABEL`                                  | Developer — the wording and the visual values           |
 | The two terms stay separately addressable     | settled — **and used since DLR-92** | `src/warCouncil/bank.ts` — `bank` and `multiplier` are two fields, and the Whetstone moves only the first; the affordance PT-002 kept them apart for is now load-bearing                                  | —                                                       |
 | Surplus damage paid back as money             | **not built**                    | nothing reads overkill — winning pays a flat coin plus a payout counted from unplayed cards, neither a share of the cash-out     | Developer — a later ticket                              |
-| Both sides' health on screen                  | settled                          | `src/app/warCouncil/DuelHealthBars.tsx`, `duelHealthBars.ts`, `HeartMark.tsx` — one heart per point since DLR-86                 | Developer — whether 10 (and 18) hearts read well        |
-| The Quarry's hearts preview the banked streak | **provisional**                  | `src/app/warCouncil/duelHealthBars.ts` — `projectedFromStreak`; styling in `warCouncilHealthBars.css`                            | Developer — whether it reads as pending or as spent     |
+| Both sides' health on screen                  | settled                          | `src/app/warCouncil/DuelHealthBars.tsx`, `duelHealthBars.ts`, `HeartMark.tsx` — one heart per point since DLR-86; assembled for the round screen by `roundBars.ts` since DLR-101 | Developer — whether 10 (and 18) hearts read well        |
+| The Quarry's hearts preview the banked streak | **provisional**                  | `src/app/warCouncil/duelHealthBars.ts` — `projectedDepletion` (named `projectedFromStreak` until DLR-101 renamed it and taught it about booked poison; the streak half of its reading is unchanged); styling in `warCouncilHealthBars.css` | Developer — whether it reads as pending or as spent     |
+| Booked poison is drawn on the bar that owes it | **provisional** — since DLR-101, 2026-08-23 | `src/app/warCouncil/duelHealthBars.ts` — the fifth `HeartState`, `Doomed`, and the `doomed` overlay clamped to the pending band; fed by `roundBars.ts` from `encounter.pendingEnvenom`; `projectedDepletion` subtracts it from **both** sides and floors both at zero; styling in `warCouncilHealthBars.css` (`[data-state='doomed']`) over `--wc-hp-doomed-*` in `warCouncil.css` | **Developer** — three things: whether booked poison deserves its own reading at all (decided by default in an unattended run, not chosen), the placeholder `--wc-hp-doomed-opacity` and the green-on-green fill, and whether five readings still separate on an 18-heart row. **Never seen in a live browser** |
+| The bar names poison separately from at-risk | **provisional** — copy is placeholder | `src/app/warCouncil/labels.ts` — `healthBarValueText` reads `pending - doomed` for the at-risk clause and `doomed` for the poisoned one, omitting either at zero | Developer — the wording |
+| The trick that books a hit names it | **provisional** — copy is placeholder | `src/app/warCouncil/TrickWell.tsx` renders a `.wc-poison-clause` when `resolution.envenomTarget` is non-null; wording from `src/app/warCouncil/labels.ts` — `poisonBookedText`, which reads the amount from `src/hunt`'s `envenomDamageFor` rather than choosing between the two constants | Developer — the wording, and whether a line that vanishes on the carry-on tap is the right place for it |
 | The hand-over tally (between hands only)      | settled                          | `src/app/warCouncil/RoundOverPanel.tsx` — its terminal branch was **deleted** by DLR-82; a resolved fight is the verdict's       | Developer — whether losing the felt's tally costs anything |
 | The Quarry dumps skulls into losing tricks    | settled                          | `src/warCouncil/cpuPlayer.ts` — `chooseCpuCard`'s first branch                                                                   | —                                                       |
 | The Quarry's **lead** ignores skulls          | settled — deliberately minimal   | `src/warCouncil/cpuPlayer.ts` — the lead branch is unchanged                                                                     | Developer — the obvious next CPU change                 |
@@ -1958,7 +2026,7 @@ the mechanics themselves are documented in `../implementation/`.
 | …and a **dodge** is deliberately not replaced | settled — the outcome, not the winner | `src/warCouncil/bank.ts` — keyed on `TrickOutcome.CleanLoss`; a Dodge is a Quarry win the player **banks**, so replacing it would delete an earned bank | Developer — the free-bonus interaction it creates |
 | A poisoned skull trick you win still costs it | settled — the harshest reading | nothing suppresses it — the override waives only the clean loss, so `SkullWin` resolves in full | **Developer** — no design document covers this case |
 | The delayed hit follows the trick's winner | settled — no branch, but **no longer symmetric** | `src/warCouncil/bank.ts` — `TrickResolution.envenomTarget`, typed `DuelSide` because this module is already the one seat → side crossing | — |
-| Its amount — 4 to the Quarry, 2 to the player | **provisional** — split 2026-08-19 | `src/hunt/config.ts` — `ENVENOM_QUARRY_DAMAGE` (4, transcribed) and `ENVENOM_PLAYER_DAMAGE` (2, **the developer's own**); which side owes which is decided once by `encounter.ts`'s private `envenomDamageFor`, read by `queueEnvenom` | **Developer** — the player-side figure is a choice, not a transcription, and 2-and-3 is unmeasured in play |
+| Its amount — 4 to the Quarry, 2 to the player | **provisional** — split 2026-08-19 | `src/hunt/config.ts` — `ENVENOM_QUARRY_DAMAGE` (4, transcribed) and `ENVENOM_PLAYER_DAMAGE` (2, **the developer's own**); which side owes which is decided once by `encounter.ts`'s `envenomDamageFor`, read by `queueEnvenom` and — since DLR-101, which exported it — by the felt's copy layer | **Developer** — the player-side figure is a choice, not a transcription, and 2-and-4 is unmeasured in play |
 | It lands at the resolution of the NEXT trick | settled — retimed 2026-08-19 | `src/app/warCouncil/roundReducer.ts` — `poisonOptions` reads `encounter.pendingEnvenom` into `playCard`, and `applyResolution` pays, clears and re-books in that order; folded into the trick's own damage by `src/warCouncil/bank.ts` — `resolveTrickBank`. It landed at the next hand's deal until this date | — |
 | A poisoned last trick carries into the next hand | settled | `src/hunt/types.ts` — the queue hangs off `EncounterState`, which outlives a hand; nothing at a hand boundary reads or clears it | — |
 | Your share of the hit cashes out your streak | settled — since 2026-08-19, at **two-thirds** since DLR-94 | `src/warCouncil/bank.ts` — `resolveTrickBank`'s cash-out branch has a **second trigger**, `poisonToPlayer > 0 && !poisonGuarded`, reaching the same statement a lost trick reaches — and therefore the same `forcedCashValue` reduction | Developer — the reading that poison pays the reduced rate rather than full |
@@ -1968,7 +2036,9 @@ the mechanics themselves are documented in `../implementation/`.
 | Two marks in ONE trick still owe one hit | settled — a predicate, not a count | `src/warCouncil/envenom.ts` — `trickIsEnvenomed` is a boolean over the trick | Developer — a count instead of a predicate is a small follow-up |
 | A delayed hit can kill, and end the run | settled | `src/hunt/encounter.ts` — the hit goes through the same `applyDamage`/`resolveWinner` as any other damage, and `src/hunt/runTransitions.ts` — `outcomeFor` re-derives the run's end from the result | — |
 | A queued hit dies with the fight | settled | `src/hunt/encounter.ts` — `startEncounter` seeds `pendingEnvenom` to zeros and `advanceRun`/`startRun` both route through it; `queueEnvenom` also refuses a resolved encounter | — |
-| Nothing announces the delayed hit landing | **not built** — deliberately | nothing — hearts and the streak simply drop mid-hand, and nothing showed the poison was pending either | **Developer** — a mount prop plus a hint line (~15 lines), or a beat on the status band |
+| Pending poison has a surface | settled — since DLR-101, 2026-08-23 | `src/app/warCouncil/duelHealthBars.ts`, `roundBars.ts`, `labels.ts`, `TrickWell.tsx` — see the four rows above. **No engine change**: every figure is derived from `encounter.pendingEnvenom` | — |
+| Nothing announces the delayed hit **landing** | **not built** — deliberately | nothing — the claimed hearts break and the streak drops mid-hand with nothing naming the cause. The booking is now shown in advance, which is the half DLR-101 closed | **Developer** — a beat on the status band, or a line in the hint cascade |
+| Nothing shows a held Poison Guard during a fight | **not built** — scoped out of DLR-101 | nothing — `RunState.poisonGuardHeld` reaches the shop's purse cell and no felt surface | **Developer** — sharper now that poison booked against you is visible and the Guard that may cancel it is not |
 | Poison Guard — bought, and live for one fight | settled — since 2026-08-19 | `src/hunt/run.ts` — `RunState.poisonGuardHeld`, set by `runTransitions.ts`'s `buyFromShop`, carried by `advanceRun`'s spread and cleared by its private `guardAfter` the moment the encounter resolves | — |
 | Its price (1 coin) | **provisional** — transcribed | `src/hunt/config.ts` — `POISON_GUARD_PRICE`; read by `priceOf`. Its own key, level with `HEAL_PRICE` | Developer — from `version-4-scope.md`, not derived; **unmeasured in play** |
 | It sits on the fight-long shelf | settled — since 2026-08-19 | `src/hunt/shop.ts` — `categoryOf` returns `ShopCategory.FightLong`; `SHOP_ITEMS_BY_CATEGORY` derives the shelf at module load, so the screen needed no edit | — |
@@ -2458,16 +2528,41 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
   The developer accepted this as a real decision rather than smoothing it out — *"that's fine, this is
   just a play test for buying items from the shop."* **The cheapest measurement is whether it ever bites
   you and whether you notice why.**
-- **Poison is legible only through its effects, and DLR-91 made that worse before it made it better**
-  (new 2026-08-19, DLR-90; **sharpened by DLR-91**). Three things are invisible: **pending poison** never
-  appears on the felt, a **held Guard** never appears during a fight, and **the moment poison fires** shows
-  as hearts disappearing plus a streak that vanished, with nothing naming the cause. When the hit landed at
-  the deal of the next hand that was survivable, because the drop coincided with a visible boundary.
-  Landing it **mid-hand** removes even that, and it now takes a streak with it — so the single most
-  expensive event in a hand is also the least explained. No rule required a surface and choosing one is a
-  judgement call, so none was invented. The costed options are **one mount prop plus a line in the hint
-  cascade** (~15 lines) or **a beat on the status band**. Until one lands, the mechanic is at its least
-  legible exactly when it matters most.
+- **Poison is legible only through its effects — one of the three blind spots is closed, two are not**
+  (new 2026-08-19, DLR-90; **sharpened by DLR-91**; **narrowed by DLR-101, 2026-08-23**). Three things
+  were invisible: **pending poison** never appeared on the felt, a **held Guard** never appears during a
+  fight, and **the moment poison fires** shows as hearts disappearing plus a streak that vanished, with
+  nothing naming the cause. **DLR-101 closed the first**: a booked hit is now drawn on the bar that owes
+  it and named by the trick that books it. The other two stand. The Guard is now the *sharper* of them,
+  because you can see poison booked against you and cannot see the thing that may cancel it. And the
+  landing is still the single most expensive event in a hand and still the least explained — though it
+  is no longer a surprise, only unnarrated. The costed options for it are unchanged: **a line in the hint
+  cascade** (~15 lines) or **a beat on the status band**.
+- **The whole poison readout was shipped without anyone looking at it** (new 2026-08-23, DLR-101). It
+  landed in an unattended run that skipped both the plan-approval and the mockup gate, and four
+  judgements went with it. **The ticket's own open design question was answered by default**: whether
+  booked poison reuses the at-risk reading or gets its own was to be decided at the mockup gate, and
+  the plan's default — its own reading — stands unconfirmed. **The tone it is drawn at is a placeholder
+  nobody chose**, picked only to sit between the at-risk treatment and a solid heart. **Whether it reads
+  against the felt at all** — it reuses the poison mark's own green, on a green table — is unjudged.
+  **All the new wording is placeholder.** Reverting to a shared reading is deliberately cheap, which is
+  the mitigation, not an argument that it should stand.
+- **Five readings on one row of hearts may be one too many** (new 2026-08-23, DLR-101). The Quarry's
+  third-fight row is **eighteen** hearts in a band that shrinks the glyphs to fit — measured at 11.5px
+  square at 1366×768 when there were four readings — and a hand can have a streak preview and a booked
+  hit standing on that row at the same time, which is exactly when telling them apart matters most. The
+  measurement is cheap and has one right answer: play a third fight with a booked hit and a live streak
+  and say whether the bands separate.
+- **The poison readout has never been seen painting in a browser** (new 2026-08-23, DLR-101). Reaching
+  it live needs a shop visit to buy a charge, and the verification pass could not get there; the state
+  was proven by tests and by calling the real derivations against the live-served code. That is good
+  evidence the numbers are right and **no evidence about what it looks like**, which is precisely what
+  the three entries above turn on. The first play session is the measurement.
+- **The line announcing a booked hit disappears when you tap to carry on** (new 2026-08-23, DLR-101).
+  It sits on the held resolved trick, so a player tapping through quickly may never read it. The bar is
+  the durable signal and the line is the transient one, which is the intended division — but if the bar's
+  reading does not land on its own, the announcement that would have explained it is already gone. Only
+  judgeable by playing.
 - **Two poisoned cards in one trick owe one hit, and that is a predicate rather than a decision** (new
   2026-08-19, DLR-91). Poison stacks across *separate* poisoned tricks, which is the case the developer was
   asked about and answered. But a trick is only ever "poisoned or not" — nothing counts the marks in it — so

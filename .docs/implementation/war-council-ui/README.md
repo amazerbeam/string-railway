@@ -1,7 +1,7 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, PT-002
+**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, PT-002
 
 ## Responsibility
 
@@ -128,11 +128,12 @@ window. See
 | `canAct`                                                                                            | **Moved here from `roundReducer.ts` by DLR-94, and exported.** The six-clause gate that says the felt is waiting on the player's own card. `WarCouncilRound.tsx`'s `interactive` was an inline copy of it; both now read this one. Same discipline as `cheatArmed` / `envenomArmed`. **DLR-100 is the first ticket to deliberately NOT route a new control through this gate**: the discard reads `discardWindowOpen` instead, because `canAct` requires `currentTurn === Player` and the Quarry-to-lead gap the discard must reach is exactly the moment that is false | `roundUiState.ts` |
 | `applyDamageStock`                                                                                  | **DLR-94.** The four plain values `applyDamageRefusalFor` needs, assembled in **one** place so the reducer's guard and the plate's disabled state cannot read availability differently. This is where `hasPendingEnvenom(encounter)` and `canAct(state)` are read — and reading them here is what lets the pure module stay ignorant of both `EncounterState` and `RoundUiState` | `roundUiState.ts` |
 | `deriveResolvedTrick`, `advanceQuarryFollow`, `advanceQuarryLead`, `CpuAdvanceResult`               | **Moved out of `roundReducer.ts` by DLR-94** to buy the budget room for the Apply Damage handler — the Quarry's half of a commit, which talks to `cpuPlayer` and `playCard` and decides nothing about the player's own state, so it never needs to know what a `RoundUiState` is. A **pure move**: every pre-existing reducer spec passed unedited | `quarryAdvance.ts` |
-| `duelHealthBars`                                                                                    | Pure: three health records (current / projected / maximum) → one `HealthBarView` per side, `player` first. **No damage arithmetic and no clamping** — `applyDamage` did both first. Since DLR-80 every caller passes the same record as `current` and `projected`, because damage has already landed by render time. Throws `RangeError` on a non-positive or non-finite `max` rather than emitting a `NaN` width. React-free and DOM-free, so it runs in the `node` project | `duelHealthBars.ts`    |
+| `duelHealthBars`                                                                                    | Pure: three health records (current / projected / maximum) plus an optional `HealthBarOverlays` → one `HealthBarView` per side, `player` first. **No damage arithmetic and no clamping** — `applyDamage` did both first. Since DLR-80 every caller passes the same record as `current` and `projected`, because damage has already landed by render time; DLR-101's projection is the first that does not. Throws `RangeError` on a `max` that is not a positive integer rather than drawing a wrong-length row. React-free and DOM-free, so it runs in the `node` project | `duelHealthBars.ts`    |
+| `barsForRound`                                                                                      | **DLR-101, new module.** `(ui, maxHealth) => readonly HealthBarView[]` — the round screen's whole bar assembly: the streak projection, the booked-poison overlay read off `ui.encounter.pendingEnvenom`, and the breaking overlay read off the held reveal. **A forced split**: `WarCouncilRound.tsx` was at 399 of its 400-line budget and this change added lines (it is now 380), the same forcing function that produced `quarryAdvance.ts`, `commitHandlers.ts` and `discardHandlers.ts`. Pure — no React, no DOM, no effect — so the assembly is directly testable without a renderer for the first time | `roundBars.ts`         |
 | `QuarryShape`                                                                                       | **DLR-80** — the per-suit shape-and-skull readout. Renders the `SuitShape[]` it is handed and computes nothing; skulls draw as repeated glyphs rather than a digit, and each row carries an `aria-label` from `suitShapeRowText`                                                                                                                                                                                                                                             | `QuarryShape.tsx`      |
 | `BankMeter`                                                                                         | **DLR-80** — the bank, the streak, and their product as the figure this streak would cash for, plus `TRICK_OUTCOME_MESSAGE` for the last trick. The product is computed here because it is display-only; `resolveTrickBank` owns the cash-out that lands                                                                                                                                                                                                                     | `BankMeter.tsx`        |
-| `HealthBarView`                                                                                     | `{ side, secure, pending, current, max, securePct, pendingPct, lethal }` — one bar, ready to render. `securePct + pendingPct === current / max × 100` exactly (DLR-71)                                                                                                                                                                                                                                                                                                       | `duelHealthBars.ts`    |
-| `HEALTH_BAR_LABEL`, `quarryHealthLabel`, `healthBarValueText`                                       | Each bar's accessible name and its value sentence. **DLR-80 rewrote `healthBarValueText`** to drop its pending branch — no pending figure exists any more. **`quarryHealthLabel(name)` was added after DLR-85**: the Quarry bar now reads `Aoife’s health`, so `HEALTH_BAR_LABEL[Quarry]` is only the fallback for an unnamed opponent, and the player's side is unchanged — it needs nothing from the run                                                                                                                                                                                                                                                                                                                    | `labels.ts`            |
+| `HealthBarView`                                                                                      | `{ side, secure, pending, doomed, current, max, hearts, lethal }` — one bar, ready to render. `securePct`/`pendingPct` were **deleted by DLR-86**: a row of fixed-size glyphs has no width to communicate and nothing divides by `max` any more. `pending` is the WHOLE pending band and drives `lethal`; `doomed` (DLR-101) is its committed subset, so at-risk alone is `pending - doomed` | `duelHealthBars.ts`    |
+| `HEALTH_BAR_LABEL`, `quarryHealthLabel`, `healthBarValueText`, `poisonBookedText`                    | Each bar's accessible name and its value sentence, plus the reveal's poison clause. **DLR-80 rewrote `healthBarValueText`** to drop its pending branch; **DLR-86 gave it one again** and **DLR-101 split it into separate clauses** — `14 of 14. 3 at risk. 4 poisoned.` — because a meter that calls a booked hit "at risk" is less true than its own picture. Either clause is omitted at zero. **`quarryHealthLabel(name)` was added after DLR-85**: the Quarry bar reads `Aoife’s health`, so `HEALTH_BAR_LABEL[Quarry]` is only the fallback for an unnamed opponent. `poisonBookedText(target)` (DLR-101) names the side and the amount on the trick that books a hit, reading the figure from `src/hunt`'s `envenomDamageFor` rather than choosing between two constants here. **All of it is placeholder copy — the developer's** | `labels.ts`            |
 | `FINISH_ROUND_LABEL`                                                                                | The hand-over panel's single control. **DLR-80 deleted `APPLY_DAMAGE_LABEL`** with the two-stage commit; **DLR-82 deleted `ENCOUNTER_OUTCOME`** with the terminal branch that was its only reader — a resolved encounter is now the run verdict's, not the felt's                                                                                                                                                                                            | `labels.ts`            |
 | `sortHandForDisplay`                                                                                | Pure: a **copy** of the hand in display order — longest suit first, `ALL_SUITS` as the tie-break, ascending rank within a suit (DLR-63 AC6). React-free and DOM-free, so it runs in the `node` project                                                                                                                                                                                                                                                                       | `handOrder.ts`         |
 | `CpuFault`                                                                                          | `IllegalMoveReason \| 'noLegalMove'` — a corrupt CPU turn, shown rather than swallowed                                                                                                                                                                                                                                                                                                                                                                                       | `roundUiState.ts`     |
@@ -152,7 +153,7 @@ window. See
 | `SuitSymbolSheet`, `SuitMark`                                                                       | The three inline `<symbol>` definitions, mounted once, and a `<use>` reference to one of them                                                                                                                                                                                                                                                                                                                                                                                | `SuitMark.tsx`         |
 | `PlayingCard`                                                                                       | One card in three renderings via `variant: 'hand' \| 'table' \| 'pile'`. Carries **three optional boolean markers** — `skulled` (DLR-80), `envenomed` (DLR-90) and `discardSelected` (DLR-100) — as three conditional `<span>`s in the **same component and the same `className` cascade**, not a second rendering path. All three marks are `aria-hidden`, announced once through the accessible name instead. `discardSelected` defaults to `false` so every existing call site kept compiling, and folds into `aria-pressed` alongside `armed` — the two states never coexist, since arming a card to play and selecting it for discard are mutually exclusive modes | `PlayingCard.tsx` |
 | `HeartSymbolSheet`, `HeartMark`                                                                     | **DLR-86.** The two heart `<symbol>` definitions — a solid heart and a cracked outline — mounted once, and a `<use>` reference to one of them. Same pattern as `SuitMark.tsx`, including the id map                                                                                                                                                                                                                                                                          | `HeartMark.tsx`        |
-| `HeartState`, `NO_BREAKING`, `projectedFromStreak`                                                  | **DLR-86.** The four readings a heart can carry (`whole` / `atRisk` / `breaking` / `broken`, written into the DOM as `data-state`); the zero-damage record `duelHealthBars` defaults its fourth argument to; and the Quarry's health as the banked streak would leave it                                                                                                                                                                                                     | `duelHealthBars.ts`    |
+| `HeartState`, `NO_BREAKING`, `HealthBarOverlays`, `projectedDepletion`                              | **DLR-86, extended by DLR-101.** The **five** readings a heart can carry (`whole` / `atRisk` / `doomed` / `breaking` / `broken`, written into the DOM as `data-state`); the zero-damage record the `breaking` overlay defaults to; the options object that carries `breaking` and `doomed` so two same-typed records cannot be transposed; and the projection — the Quarry's health as the banked streak would leave it, **minus each side's booked poison from both bars**, each floored at zero. `projectedDepletion` was `projectedFromStreak` until DLR-101 renamed it | `duelHealthBars.ts`    |
 
 The zone components — `RoundStatusBand`, `DecreePile`, `TrickWell`, `HandFan`, `AbilityPrompt`,
 `RoundOverPanel` — are each a default export consumed only by `WarCouncilRound.tsx`. DLR-53 added
@@ -203,8 +204,11 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
   whole from React.
 - [The duel's health bars](duel-health-bars.md) — the mirrored opposed pair and the one CSS
   declaration that is the whole of the mirror, **why DLR-80 retired the pending segment** and what
-  replaced it, what the ~54× rescale to 25 health means for how the bar reads, and the pure geometry
-  helper that computes no damage and does no clamping.
+  replaced it, what the ~54× rescale to 25 health means for how the bar reads, the pure geometry
+  helper that computes no damage and does no clamping, and — since DLR-101 — **the fifth heart
+  state that puts booked poison on the felt**, the projection that subtracts it from both bars, the
+  overlays object that stopped two same-typed records being transposable, and the `roundBars.ts`
+  split a line budget forced.
 - [Interaction and state](interaction-and-state.md) — tap-twice-to-play, the reducer's no-effect
   design, **the exported reducer as a wrapper over a private `applyAction` and where a
   "observe after every transition" rule goes** (DLR-95), how a held trick's winner is derived rather
@@ -375,10 +379,16 @@ testing-library helpers to it would break the DOM/node project boundary.
   type-checks cleanly and renders nothing. **DLR-86's `HeartMark.tsx` inherits the rule verbatim**
   for `hp-heart` and `hp-heart-broken` via `HEART_SYMBOL_ID`; a mistyped id there renders an empty
   `<svg>` with no console error anywhere.
-- **`HeartState`'s four values are a second string-bound surface of the same kind**, written straight
-  into the DOM as `data-state` and matched by attribute selectors in `warCouncilHealthBars.css`. The
-  `as const` map and the stylesheet are the only two places they may be written — including the
-  camelCase in `atRisk`.
+- **`HeartState`'s five values are a second string-bound surface of the same kind** (four until
+  DLR-101 added `doomed`), written straight into the DOM as `data-state` and matched by attribute
+  selectors in `warCouncilHealthBars.css`. The `as const` map and the stylesheet are the only two
+  places they may be written — including the camelCase in `atRisk`. A rename type-checks cleanly and
+  renders an unstyled heart.
+- **`duelHealthBars`'s overlays arrive as a named object, never as positional records** (DLR-101).
+  `breaking` and `doomed` are both `Readonly<Record<DuelSide, Damage>>`, so as positional arguments
+  a transposition would have type-checked and drawn a plausible but wrong picture — `bank.ts`'s
+  `TrickFacts` exists for the same reason. A future overlay is a field on `HealthBarOverlays`, not a
+  fifth parameter.
 - **`DuelHealthBars.tsx` writes no inline style at all, and that is a guarantee rather than an
   omission.** Until DLR-86 it split bar geometry through a `--w` custom property specifically because
   an inline `width` out-ranks an external rule carrying no `!important`, which would have silently
@@ -389,6 +399,28 @@ testing-library helpers to it would break the DOM/node project boundary.
 
 ## Deferred / not yet implemented
 
+- **Booked poison is on the felt, and none of it has been looked at by a human** (DLR-101). The
+  contract ran inside an unattended sprint run that skipped both the plan-approval and the mockup
+  gate, so four things are open and all four are the developer's: the ticket's own **open design
+  question** — whether pending poison gets its own heart state or reuses `atRisk` — was decided by
+  the plan's default (its own `doomed` state) and is unconfirmed; **`--wc-hp-doomed-opacity: 0.78`
+  is a placeholder nobody chose**, picked only to sit above `--wc-hp-atrisk-opacity: 0.55` and below
+  solid; whether **green-on-green** reads against `--wc-felt` is unjudged; and **all the new copy is
+  placeholder**. Reverting the fifth state is deliberately cheap — the enum member, the CSS block,
+  and `doomed` out of the derivation — because `pending` was kept as the total band.
+- **The `doomed` hearts have never been seen painting in a live browser** (DLR-101). QA could not
+  reach the shop to buy an Envenom charge, so the state was proven by unit and component tests and
+  by driving the real pure functions through a dynamic import against the live-served modules.
+  That is strong evidence for the derivation and the DOM binding, and **no evidence at all about
+  what it looks like**. Whether five states still separate at a glance on the third fight's
+  18-glyph row — with a live streak and a booked hit on screen together — is the unmeasured risk of
+  the decision above.
+- **The reveal's poison clause is transient, and the bar readout is the durable one** (DLR-101). The
+  clause lives on the held resolved trick and disappears on the tap that carries on, so a player
+  tapping through fast may never see it. Only judgeable by playing.
+- **A held Poison Guard is still invisible during a fight**, scoped out of DLR-101 per the ticket.
+  It is now a sharper seam than it was: the player can see poison booked against them that a Guard
+  they are holding may cancel, and nothing on the felt says the Guard is there. Worth a follow-up.
 - **The felt rail now carries four plates, and no task widened the room for it beyond a stylesheet
   stub** (DLR-100). `DiscardPlate` joins `CheatSlots`, `EnvenomCharge` and `ApplyDamagePlate` on the
   same column; `warCouncilDiscard.css`'s `clamp()` bounds and colour are placeholder, transcribed

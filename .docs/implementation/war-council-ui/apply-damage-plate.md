@@ -135,10 +135,13 @@ number the new decision needs.
 Its `aria-label` was **extended, not rewritten**: the `cashes for ${cash}` substring had to survive
 intact because `WarCouncilRound.envenom.test.tsx` matches on `/cashes for 6\b/i`. Props are unchanged.
 
-**The at-risk heart preview deliberately still shows the FULL figure.** `projectedFromStreak` and
-`duelHealthBars.ts` are untouched — the recorded decision is that the player can realise the full figure
-on demand, so the full figure is what their streak is genuinely worth to them; the reduced figure
-belongs beside the button that avoids it, not competing with the full one on the Quarry's bar.
+**The at-risk heart preview deliberately still shows the FULL figure.** The projection and
+`duelHealthBars.ts` were untouched by DLR-94 — the recorded decision is that the player can realise the
+full figure on demand, so the full figure is what their streak is genuinely worth to them; the reduced
+figure belongs beside the button that avoids it, not competing with the full one on the Quarry's bar.
+_(DLR-101 later renamed `projectedFromStreak` to `projectedDepletion` and taught it about booked
+poison. **The full-figure decision above is untouched by that** — poison is a separate band with its
+own heart state, and the streak's own preview still shows what cashing right now would take.)_
 
 ## All of the copy is placeholder
 
