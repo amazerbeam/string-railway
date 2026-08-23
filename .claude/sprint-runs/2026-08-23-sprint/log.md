@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 6/22 (27%) — done: 6 shipped, 0 blocked (+2 out-of-band: 1 shipped, 1 partial) | now: DLR-129 phase 2 "retire the poison vocabulary" (out-of-band) — resumed 19:24 after the session limit
+**Progress:** 6/22 (27%) — done: 6 shipped, 0 blocked (+2 out-of-band shipped, DLR-129 naming complete / de-dup outstanding) | now: DLR-109 "Delayed Apply Damage payout" (7/22)
 
 ## Run order
 
@@ -1585,3 +1585,105 @@ heart — both need fight 1 played to completion and a Timebomb bought and deton
 specs cover both branches with fixture data, but nobody has seen `10 of 10. 4 ticking.` or the
 `Blast Guard` shop card rendered in a real browser. Worth thirty seconds of the developer's
 time alongside the copy review.
+
+## Coordinator decisions — DLR-129 phase 2 reconciliation
+
+- **Pushed `6ba6224`. The single highest-review-priority commit of the run:** an agent chose
+  the words the player reads, and the mockup gate was skipped, so **nobody has seen this
+  wording on screen.** Timebomb took a fuse lexicon and poison vocabulary is retired — one
+  word per concept: **Timebomb** (mechanic/item), **prime/primed** (marking a card),
+  **ticking** (booked unpreventable damage), **detonates** (the hit landing), and
+  `Poison Guard` → **`Blast Guard`**. The full 19-row before/after table is in the agent's own
+  log section; "before" is the pre-DLR-129 value at `a1770f0`, so reversing the whole ticket
+  is a find-and-replace, exactly as required.
+- The reasoning accepted: the mechanic is one delayed detonation booked at one trick and paid
+  at the next — a fuse, not damage over time. "Poison" implies recurring ticks and a curable
+  condition, and it forced two names for one thing the moment the rail said Timebomb and the
+  bar said poisoned. The rejected alternative (keep poison words under the Timebomb name) was
+  ~200 fewer edits but institutionalises the split the ticket exists to close.
+- **Two rows to look at first:** `Timebombs held` was pluralised to match `Whetstones held` —
+  the one row not forced by the decision, and a one-character revert. And whether
+  **`Blast Guard`** is the right name at all.
+- **Accepted an in-ticket 400-line fix.** `run.test.ts` hit **401 lines** because Prettier
+  reflowed an import list the rename had lengthened. The self-contained `beatenCount` block
+  moved to its own spec, leaving `run.test.ts` at 326. This is why the file count moved 91 → 92
+  while the test count stayed **exactly 1192**. No test was added, deleted or weakened.
+- **Accepted the de-duplication being left undone, and it is the right call.** Nothing under
+  `src/app/` imports `buffCatalog`, `timebombBuff` or `BuffKind`, and there is no buff-pile
+  field on `RunState` or `RoundUiState`. Wiring the felt onto the catalog needs the buff pile,
+  `BuffActivationState` and AP spending in live round state — a behaviour change, which this
+  ticket forbids. **The naming duplication is closed; the representational one survives** and
+  belongs to DLR-114/DLR-116. Both representations still read the same two constants, so they
+  cannot diverge numerically.
+- **DLR-129 left in Coding, NOT moved to Ready for Test**, with a Jira comment recording
+  precisely what remains. It is counted as out-of-band shipped for the naming work only.
+- **Live-verification gap, reported honestly.** QA drove the app at 1400×900: fight screen
+  clean, no console errors, rail reads `TIMEBOMB` / `No Timebomb held`, no poison vocabulary
+  anywhere in the accessibility tree, `--wc-timebomb` resolves to `#8fb04e` rather than
+  falling back. It did **not** reach the shop or a live `ticking` heart — both need fight 1
+  played out and a Timebomb bought and detonated. So **`10 of 10. 4 ticking.` and the
+  `Blast Guard` card have never been seen rendered.**
+
+### Carried into DLR-114 / DLR-116
+
+`timebombDamageFor` (encounter side) now sits one preposition from `timebombDamageOf` (buff
+side), both exported from `src/hunt/index.ts`. Correct and compiling; confusing to read.
+Whichever ticket wires the felt onto the catalog should collapse them.
+
+## Mid-run workflow change — developer decision, applies from ticket 8 onward
+
+Prompted by a token/value audit of the run so far. The measured facts behind it:
+
+- **Reviewer trio ≈ a third of a ticket's tokens.** Docs-only tickets, where the trio is not
+  dispatched, cost 211k and 250k. Full-trio tickets cost 387k, 325k and 309k. Roughly 110k per
+  ticket, spent on three agents cold-starting on the same files in parallel.
+- **The browser pass has found zero defects in eight tickets** and has never triggered a fix
+  round. All three issues that caused a fix pass this run came from the code-evaluator.
+- **Two causes, only one benign.** Five of eight tickets had no reachable surface — the buff
+  system is being built bottom-up. The two that were reachable were checked shallowly because
+  QA **cannot play the game deep enough**: coins only arrive on finishing a fight, so it could
+  never buy a Timebomb. `10 of 10. 4 ticking.` and the `Blast Guard` card have never been seen
+  rendered by any process.
+- **Tool calls are nearly free.** DLR-101 made 747 tool calls against DLR-108's 96, for 60k
+  more tokens. Browser QA is expensive in wall clock, not tokens.
+
+### What changed, committed as `ab211dc`
+
+**`.claude/commands/fb-apply.md`** — applies to every future `/fb-apply`, sprint run or not:
+- **Step 5.0, reviewer scaling by diff risk.** Production logic → all three. Test-only or a
+  verified pure rename → Code-Evaluator alone. Config/tooling only → Defender alone (the risk
+  there is a silently disabled boundary, which this run hit once). Docs-only → none.
+  **An arguable classification dispatches all three.**
+- **Step 5.0.1, reviewers get the diff, not a path list.**
+- **A hard Reachability Gate on QA's browser pass**, with an explicit prohibition on calling
+  live modules directly and presenting it as browser verification.
+
+**`.claude/skills/sprint-coder/SKILL.md`** — run-level policy on top:
+- **Browser QA deferred across a whole run** to one batch pass at wrap-up, each ticket
+  recording what a browser would have checked.
+- **The unit suite, typecheck, lint and build are never deferred** — stated as a Safety rule.
+- Preflight must now decide whether deferral suits the actual ticket list and record why.
+
+### The cost of this, stated plainly
+
+**Nothing gets looked at until DLR-119.** That covers the four tickets which first make buffs
+visible — DLR-114's loadout bar, DLR-116's shop, DLR-117's card preview, DLR-118's Vault
+screen. A layout defect in DLR-114 will be found with three screens built on top of it. The
+developer accepted this trade knowingly; it is recorded here because it is the run's largest
+deliberate blind spot.
+
+### DLR-130 raised — the headless run simulator
+
+The developer intends a **balance pass at the end of the epic** to find out whether the game is
+winnable at all. Every number it will examine was chosen by an agent during this run and none
+has been played. DLR-130 builds the instrument: a seeded, deterministic `npm run sim` script
+that plays N runs and prints win rate and distributions, with a pluggable policy seam and
+reusable deep-state fixtures.
+
+Scoped explicitly to **ship the instrument, not the readings** — it retunes nothing. It is
+slotted **before DLR-119/120/121** and before the balance pass. It also closes the QA gap
+above: a headless driver reaches a finished fight, a bought Timebomb and a detonation in
+milliseconds, which is exactly what browser tooling could not do.
+
+**Counted as out-of-band; the denominator stays 22.**
+

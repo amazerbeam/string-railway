@@ -71,7 +71,7 @@ Node and npm are on `PATH`. Nothing here needs a machine-specific `$env:` variab
 Four failure modes that are **not** code defects:
 
 - **Vitest watch mode hangs forever.** Always use the `run` subcommand (`npx vitest run`, or `npm test -- --run`). A test command silent for a minute is in watch mode, not running a slow suite.
-- **`npm run dev` never returns** — it is a server. Never run it in the foreground. The QA agent is the one exception and starts it *detached* to drive the app through the `chrome-devtools` MCP (`.claude/agents/qa.md` → Step 4.5); judging what it looks and feels like is still the developer's.
+- **`npm run dev` never returns** — it is a server. Never run it in the foreground. The QA agent is the one exception, and only on a **requested** browser pass: it starts the server *detached* to drive the app through the `chrome-devtools` MCP (`.claude/agents/qa.md` → Step 4.5). **That pass is opt-in and off by default** — on an ordinary `/fb-apply` no server starts at all. Judging what it looks and feels like is the developer's either way.
 - **Missing `node_modules`** surfaces as `'vite' is not recognized` or `Cannot find module`. Run `npm ci`; do not edit source in response.
 - **A TypeScript error in a test file is not a failing test** — Vitest reports a transform/collection error and that file's tests never run. Check for it before concluding anything about coverage.
 
@@ -108,7 +108,11 @@ The pipeline is the substantive structure in this repo. It is not a suggestion �
 
 **The pause condition.** Some answers live in a human's eyes and hands. Reaching one of these stops the pipeline — the developer decides, then work resumes:
 
-Visual and copy judgement · approving a new dependency · anything needing *judgement* of the app running · any tuning or design value that is the developer's to choose. QA drives the app in a real browser now, so a functional question with a right answer is QA's, not a pause; a question of feel is still a pause.
+Visual and copy judgement · approving a new dependency · anything needing *judgement* of the app running · any tuning or design value that is the developer's to choose.
+
+**The browser pass is opt-in and off by default** (`/fb-apply <slug> --browser`, or ask for it in the invocation). This shifts where the line falls: with no browser pass, a functional question that is only answerable at runtime routes to the developer with the exact interaction and expected outcome — that is correct, not a shortfall. When a browser pass *was* requested, a functional question with a right answer is QA's and filing it as manual verification is under-verification. A question of feel is always a pause, either way.
+
+Whether or not a browser pass runs, QA always records **what a browser would have checked**, so the developer's eyes-on list is an agenda rather than an open-ended hunt.
 
 Nobody in this pipeline decides a tuning value or a design reading on their own authority.
 

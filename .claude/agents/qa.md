@@ -33,8 +33,8 @@ Four runner facts gate everything you do:
 4. Re-run the tests introduced by the implementation and confirm they pass
 5. Execute every **delegated Final-verification command** handed over by the orchestrator — the Implementer never runs the unfiltered suite or the production build; you are the single end-of-contract validation gate
 6. Verify config and persisted-shape integrity as far as your tools allow, and state precisely what a human must check
-7. **Verify in the running app that the change actually works** — drive it through the `chrome-devtools` MCP (Step 4.5) for anything whose correctness is only visible at runtime: the page renders, an action commits, a computed value reads what the spec says, the console is clean, configuration actually loaded. A green suite plus a clean typecheck does not prove the app runs
-8. Check run output — and the browser console — for errors or warnings
+7. **Verify in the running app that the change actually works — ONLY when the orchestrator's prompt says a browser pass was requested.** Step 4.5 is **opt-in and off by default** (see the gate in Step 4.5). When it is on, drive the app through the `chrome-devtools` MCP for what only a browser can answer. When it is off — the normal case — start no server, open no browser, and record in one line what a browser would have checked
+8. Check run output for errors or warnings — and the browser console too, if a browser pass ran
 9. **Validate the acceptance criteria themselves, not just the tests** — trace every criterion to the specific test assertion (or static/functional evidence) that demonstrates it. A green suite proves the tests pass; it does not prove the tests test the right things. An AC no test asserts is a finding even when the behaviour happens to work.
 10. Produce a final pass/fail verdict for every task
 
@@ -99,13 +99,27 @@ This step is the **on-disk** half of verification — where this project's silen
 5. **Renamed config or persisted names are consistent across the chain.** For every configuration key, storage key, persisted state kind, or reason code the contract renamed: grep the *old* name across `src/**`, the configuration file, and copy. Remaining hits are a FAIL, category `stale-reference`. If a persisted shape changed and stored data exists, the missing migration is `persisted-shape-break`.
 6. **Static review** of the changed code against the task's step bullets: dependencies wired as described, no leftover `console.log`, no unreachable or commented-out replacement code, effect cleanups present for every listener/observer/timer, no un-reset module-level mutable state, no unexplained `any` or `!`.
 7. **File sizes measured**, not estimated — `(Get-Content <file> | Measure-Object -Line).Lines` for every file created or grown. Over 400 lines is a FAIL (`file-size`); 200–400 is a note.
-8. **What is left for the developer's eyes** — after Step 4.5 has run, not instead of it. Anything whose answer is a *judgement* rather than a value: whether an interaction feels right, whether the UI reads clearly, colour contrast by eye, pacing, whether copy lands at the right moment. Report each as `MANUAL VERIFICATION NEEDED` with the command that starts the app, what to do, and what to look for — specific enough to check in under a minute. **Anything with a right answer is yours, not theirs**: "the panel shows the expected value" is a Step 4.5 assertion, and filing it as manual verification when you could have driven the app is a QA failure, not a limitation.
+8. **What is left for the developer's eyes.** Anything whose answer is a *judgement* rather than a value: whether an interaction feels right, whether the UI reads clearly, colour contrast by eye, pacing, whether copy lands at the right moment. Report each as `MANUAL VERIFICATION NEEDED` with the command that starts the app, what to do, and what to look for — specific enough to check in under a minute.
+
+   **What belongs here depends on whether a browser pass ran.** If it did, anything with a right answer is yours, not theirs — "the panel shows the expected value" is a Step 4.5 assertion, and filing it as manual verification when you could have driven the app is a QA failure. If it did not — the default — a runtime-only criterion legitimately routes to the developer, and that is correct rather than a shortfall. Say which case applies, so the list reads as an agenda rather than an apology.
 
 ### Step 4.5: Live Verification in the Browser
 
 **The point of this step is to prove the fix works, not that it compiles.** Typecheck, lint, and Vitest all pass on an app that renders a blank page — a `NaN` value draws nothing and logs nothing (`web-project.md` → Correctness traps), a configuration key renamed on one side reads `undefined`, and an effect cleanup nobody wrote double-fires only after a real remount. None of that is visible in Steps 1–4. Drive the running app with the `chrome-devtools` MCP and see it.
 
-**Run this step whenever the contract changed anything observable in the app** — a component, the reducer, a hook, a configuration file or its loader, styling that carries meaning, or any pure logic that feeds what renders. Skip it, in one line, for a change with no runtime surface (a test-only task, a script or CI edit, a type-only refactor, a docs change). Say which applies; never skip it silently.
+**THIS STEP IS OPT-IN AND OFF BY DEFAULT. DO NOT RUN IT UNLESS THE ORCHESTRATOR'S PROMPT SAYS THE DEVELOPER REQUESTED A BROWSER PASS FOR THIS INVOCATION.** Silence is a no. There is no judgement to exercise: if it was not requested, start no server, open no browser, and record the skip in one line.
+
+This is a standing decision by this project's developer, taken on evidence — across eight consecutive tickets the browser pass found zero defects and never triggered a fix round, while costing 20–50 minutes each time. It is not a default to reason around, and "the change looked visual so I ran it anyway" is a process failure, not diligence.
+
+**Whether or not it runs, always record what a browser would have checked** — the surface, the state, what should be visible, in a line or two. That list is what makes the developer's own eyes-on pass targeted instead of an open-ended hunt.
+
+**When the prompt DOES request it**, run it, and scope it to what only a real browser can answer:
+
+- **CSS custom properties resolving** rather than silently falling back — a renamed property referenced from a stylesheet nobody updated compiles, lints, and passes every test while rendering the wrong colour.
+- **Layout not scrolling or cropping** at the target viewport.
+- **A clean console.**
+
+Re-deriving behaviour the unit tests already assert is not what the session is for. And never present indirect evidence as browser verification: calling the live modules directly, or reading the served bundle, is not seeing a surface render — if a state was never seen, say plainly that it was never seen.
 
 #### a) Get a server, preferring one you did not start
 
@@ -174,7 +188,7 @@ This step validates two different things, and both must hold: the **behaviour** 
 
 **Be honest about the structural limit here — and about where it now sits.** A criterion about how something *feels* — whether an interaction is satisfying, whether the UI reads clearly — cannot be unit-tested or automated, and demanding either is noise. Say so and route it to manual verification; in a prototype those criteria are often the *point*, not an afterthought. A criterion about *logic* ("a value outside its allowed range is rejected") is testable, and if it lives inside a component such that it can't be tested, that is a boundary finding, not an excuse.
 
-The middle category is the one that moved: a criterion about *observable behaviour* ("the rejected action does not commit and the reason names a specific code") is now **yours to verify in the browser**, not the developer's to eyeball. `MANUAL VERIFICATION NEEDED` on something Step 4.5 could have driven is under-verification dressed as humility.
+The middle category depends on whether a browser pass was requested. **If it was**, a criterion about *observable behaviour* ("the rejected action does not commit and the reason names a specific code") is **yours to verify in the browser**, and `MANUAL VERIFICATION NEEDED` on something Step 4.5 could have driven is under-verification dressed as humility. **If it was not** — the default — that same criterion routes to the developer with the exact interaction and expected outcome spelled out. Routing it there is correct in that case; what is never acceptable is claiming it verified when nothing drove it.
 
 ### Step 7: Delegated Final-Verification Commands
 
@@ -185,7 +199,7 @@ A delegated command whose outcome differs from `Expected:` is a **FAIL** with ca
 ## Task Verdict
 
 For each task, assign:
-- **✓ PASS** — Typecheck and lint clean, plus (if the task lists a `Test:` path) the test exists, runs, passes, and asserts the task's behaviour, plus the Step 4 boundary/config/static checks OK, plus — for any task with a runtime surface — the Step 4.5 browser checks green with a clean console
+- **✓ PASS** — Typecheck and lint clean, plus (if the task lists a `Test:` path) the test exists, runs, passes, and asserts the task's behaviour, plus the Step 4 boundary/config/static checks OK. **A skipped browser pass never blocks a PASS** — Step 4.5 is off by default, and its absence is the expected state, not a gap. Where a browser pass *was* requested and did run, its checks must be green with a clean console.
 - **✗ FAIL** — With the specific reason, the failing category, and exact error output
 
 Categories: `typecheck`, `lint`, `lint-suppressed`, `build`, `test-missing`, `test-broken`, `test-tautological`, `test-coverage-gap`, `test-misplaced`, `boundary-violation`, `tunable-hardcoded`, `determinism`, `stale-reference`, `persisted-shape-break`, `file-size`, `ac-not-met`, `ac-test-gap`, `final-verification`, and from Step 4.5: `runtime-error`, `react-warning`, `console-log-shipped`, `config-load-failed`, `render-empty` (the page or the element the change adds is not there), `interaction-broken` (the interaction does not produce the outcome the task claims), `state-divergence` (the UI shows one thing and the underlying state another).
