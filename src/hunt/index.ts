@@ -1,4 +1,4 @@
-export type { Hunt, Quarry, Damage, Health, IncomingDamage, EncounterState, Coins } from './types'
+export type { Hunt, Quarry, Damage, Health, IncomingDamage, EncounterState, Coins, ActionPoints } from './types'
 export { QuarryCharacter, DuelSide } from './types'
 
 export type { SkullRankWeights } from './skullWeights'
@@ -43,6 +43,10 @@ export {
   FLASK_HEAL_PERCENT,
   DISCARDS_PER_FIGHT,
   MAX_CARDS_PER_DISCARD,
+  AP_ENABLED,
+  STARTING_AP,
+  ApRefreshCadence,
+  AP_REFRESH_CADENCE,
   OpponentKind,
   RUN_ENCOUNTERS,
   ORDINARY_OPPONENT_NAMES,
@@ -108,3 +112,11 @@ export { recordEncounter, advanceRun, drinkFlask, buyFromShop } from './runTrans
 
 export type { QuarryCharacterInfo } from './quarryCharacters'
 export { QUARRY_CHARACTERS, quarryCharacterInfo } from './quarryCharacters'
+
+export {
+  apCostGiven,
+  apCostFor,
+  canAffordAp,
+  spendAp,
+  refreshActionPointsForNewHand,
+} from './actionPoints'

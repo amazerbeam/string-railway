@@ -1,7 +1,7 @@
 # Hunt — `src/hunt/`
 
 **Status:** partial
-**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, PT-001, PT-002
+**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-104, PT-001, PT-002
 
 ## Responsibility
 
@@ -210,6 +210,18 @@ outside this module, in the engine, for the same reason the Cheat's bypass does:
 the budget, not the swap. See
 [The discard budget](the-discard-budget.md).
 
+**DLR-104 gave this module a resource with no consumer yet.** `actionPoints.ts` is a new
+standalone, pure module — a starting pool, a per-hand refresh rule, and cost/spend primitives —
+shipped two tickets ahead of anything that spends against it (T5 buff activation, T6 Apply
+Damage). No `RunState`/`EncounterState` field carries a live AP pool; that is explicitly the next
+ticket's to add. The ticket's real substance is the toggle's shape: `AP_ENABLED` is read in exactly
+one place, `apCostFor`, and `canAffordAp`/`spendAp` both route through it rather than re-checking
+the flag — mirroring `src/warCouncil/voluntaryCashOut.ts`'s `applyDamageRefusalFor`, so no future
+consumer ever writes its own enabled/disabled branch. `ApRefreshCadence` follows `TelegraphFidelity`'s
+`as const` enum-shape rather than a boolean, on purpose: the ticket's own risk note says a boolean
+here is what forces a refactor the day a playtest wants per-fight or per-run pooling instead of
+per-hand. See [Action Points — the toggle, the refresh rule, and why there is still no consumer](action-points.md).
+
 ## Key types & exports
 
 | Export                                                | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | File                  |
@@ -298,6 +310,14 @@ the budget, not the swap. See
 | `TelegraphFidelity`                                   | `as const` union of the two telegraph levels: `Suit`, `SuitAndStance` (DLR-52)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `config.ts`           |
 | `TELEGRAPH_FIDELITY`                                  | `SuitAndStance` — how much of the Quarry's next move the telegraph reveals (§4); consumed by `src/warCouncil/cpuPlayer.ts`'s `quarryIntent` (DLR-52)                                                                                                                                                                                                                                                                                                                                                                                                                             | `config.ts`           |
 | `SLICE_QUARRY_CHARACTER`                              | `Monarch` — the slice's Quarry, and **an identity label only**: it selects a name for the dossier and has no mechanical effect (DLR-81). Not a tuning value; forced by the one character with a `QUARRY_CHARACTERS` entry. Exists as a key so a later ticket has one place to change (DLR-53)                                                                                                                                                                                                                                                                                    | `config.ts`           |
+| `ActionPoints`                                        | A bare `number` alias — the resource buff activation (T5) and Apply Damage (T6) will draw against. Never fractional or negative in practice: `spendAp` refuses rather than going below zero, exactly as `Coins` does for coins (DLR-104)                                                                                                                                                                                                                                                                                                                                        | `types.ts`            |
+| `AP_ENABLED`                                          | `true` — **the single flag** such that flipping it off makes every AP-gated action free, with no consuming code writing its own bypass (see `apCostFor` below). **Developer decision**: defaults `true` so the module is exercisable in its own tests; a one-line flip at any time before a consumer lands (DLR-104)                                                                                                                                                                                                                                                            | `config.ts`           |
+| `STARTING_AP`                                         | `6` — the player's opening AP pool, and what a `perHand` refresh resets to. **Developer-chosen placeholder**: no consumer exists yet (AC4), so this number has never been played against (DLR-104)                                                                                                                                                                                                                                                                                                                                                                               | `config.ts`           |
+| `ApRefreshCadence`, `AP_REFRESH_CADENCE`              | `as const`-shaped enum (currently one member, `PerHand`) and the cadence in force. **Enum-shaped rather than a boolean on purpose**: the ticket's risk note is explicit that a boolean is what forces a refactor the day a playtest wants per-fight or per-run pooling instead of per-hand (DLR-104)                                                                                                                                                                                                                                                                             | `config.ts`           |
+| `apCostGiven`                                         | `(cost, enabled) => ActionPoints` — the toggle's decision logic, taking `enabled` as an explicit parameter so both branches are directly unit-testable against `AP_ENABLED`'s current value. Exists purely as a testing seam; `apCostFor` below is the only caller a real consumer should ever use (DLR-104)                                                                                                                                                                                                                                                                    | `actionPoints.ts`     |
+| `apCostFor`                                           | `(cost) => ActionPoints` — **THE single statement of what a cost actually is once `AP_ENABLED` is taken into account.** The only place `AP_ENABLED` is read; every future AP-gated consumer calls this instead of checking the flag itself, mirroring `src/warCouncil/voluntaryCashOut.ts`'s `applyDamageRefusalFor` (DLR-104)                                                                                                                                                                                                                                                  | `actionPoints.ts`     |
+| `canAffordAp`, `spendAp`                              | `(pool, cost) => boolean` / `=> ActionPoints` — both route through `apCostFor` rather than re-checking `AP_ENABLED`. `spendAp` throws a `RangeError` rather than clamping to zero on an unaffordable spend, mirroring `cheats.ts`'s `removeCheat` (DLR-104)                                                                                                                                                                                                                                                                                                                      | `actionPoints.ts`     |
+| `refreshActionPointsForNewHand`                       | `(currentAp) => ActionPoints` — the pool's value at the top of a new hand. Returns `STARTING_AP` when the cadence is `PerHand`; any other cadence value passes `currentAp` through untouched, a presently-dead branch that is what lets a later cadence be a config entry rather than a type change (DLR-104)                                                                                                                                                                                                                                                                   | `actionPoints.ts`     |
 
 `index.ts` re-exports every symbol above as a barrel, split into `export type {...}` / `export
 {...}` groups — the same pattern `src/warCouncil/index.ts` already uses. One exception is worth
@@ -372,6 +392,11 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   (spent-then-cleared), the two transcribed tunables and why they are separate keys, `recordEncounter`'s
   widening to a required seventh parameter, and the seven-call-site planning gap the widening exposed
   and closed in the same task (DLR-100).
+- [Action Points — the toggle, the refresh rule, and why there is still no consumer](action-points.md)
+  — the single-read-site toggle (`apCostFor`) and why `apCostGiven` exists only as a testing seam,
+  the enum-shaped refresh cadence and its presently-dead non-`PerHand` branch, `spendAp`'s throw
+  instead of clamp, and the two developer-decided placeholders (`STARTING_AP`, `AP_ENABLED`'s
+  default) carried by a ticket with no consumer yet (DLR-104).
 
 ## Rules & invariants enforced
 
@@ -402,10 +427,11 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   `quickKillPayout` is the only place the quick-kill payout is floored, so the ×0.5 tier's half-coin
   cannot reach `Coins` — which `types.ts` documents as whole and never fractional — regardless of
   which caller credits it. A caller that floors its own copy is the drift this closes before it opens.
-- **File-size budget** — measured after DLR-100 with `(Get-Content <file>).Count`: `config.ts` **350**,
-  `runTransitions.ts` **306**, `run.ts` **208**, `encounter.ts` 190, `shop.ts` 181, `index.ts` 108, `runPath.ts`
-  88, `types.ts` 84, `flask.ts` 71, `quickKill.ts` 61, `cheats.ts` 58. Two new keys and one new `RunState`
-  field were the whole of DLR-100's growth here — both still comfortably under the 400-line ceiling.
+- **File-size budget** — measured after DLR-104 with `(Get-Content <file>).Count`: `config.ts` **379**,
+  `runTransitions.ts` **306**, `run.ts` **208**, `index.ts` **122**, `encounter.ts` 190, `shop.ts` 181, `runPath.ts`
+  88, `types.ts` 89, `flask.ts` 71, `quickKill.ts` 61, `actionPoints.ts` 55, `cheats.ts` 58. Four new
+  config keys, one new type, and the new `actionPoints.ts` module were the whole of DLR-104's growth
+  here — `config.ts` is the closest to the ceiling of any file in this module, still 21 lines under it.
   **`config.ts`'s squeeze is over**:
   DLR-93 left it at 399, one line under the blocking ceiling, and this doc warned that the next contract
   to add a tunable would have to split it. DLR-94 pre-empted that by moving the skull-weight curves out
@@ -433,6 +459,11 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
 
 ## Deferred / not yet implemented
 
+- **Action Points has zero consumers.** `actionPoints.ts` and its four config keys ship standalone
+  (DLR-104, AC4) — no `RunState`/`EncounterState` field carries a live AP pool, nothing calls
+  `spendAp` or `canAffordAp`, and `refreshActionPointsForNewHand` is called by nothing. Wiring a
+  cost into buff activation (T5) and Apply Damage (T6), and adding the pool field a consumer needs,
+  are both explicitly out of scope for this ticket and land in those two.
 - **The discard is BUILT, engine and screen together, and both its figures are unplayed** (DLR-100).
   `DISCARDS_PER_FIGHT = 3` and `MAX_CARDS_PER_DISCARD = 3` are both transcribed from the design doc's
   own "ship it, play it, move it" instruction rather than chosen here — the same status every other

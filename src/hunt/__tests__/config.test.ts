@@ -29,6 +29,10 @@ import {
   STAGE_BOSS_NAMES,
   RUN_ENCOUNTERS,
   runEncounterAt,
+  AP_ENABLED,
+  STARTING_AP,
+  ApRefreshCadence,
+  AP_REFRESH_CADENCE,
 } from '../config'
 import {
   SKULL_WEIGHTS_UNIFORM,
@@ -258,5 +262,24 @@ describe('DLR-93 — the flask (AC1, AC2)', () => {
     expect(Math.round(PLAYER_START_HEALTH * FLASK_HEAL_PERCENT)).toBeGreaterThan(
       HEAL_HEALTH_RESTORED,
     )
+  })
+})
+
+describe('Action Points (DLR-104 AC1)', () => {
+  it('starts with a positive, finite, whole-number pool', () => {
+    expect(Number.isInteger(STARTING_AP)).toBe(true)
+    expect(STARTING_AP).toBeGreaterThan(0)
+  })
+
+  it('defaults AP_ENABLED to a real boolean, not a truthy placeholder', () => {
+    expect(typeof AP_ENABLED).toBe('boolean')
+  })
+
+  it('defaults the refresh cadence to perHand, the game-designer-recommended default', () => {
+    expect(AP_REFRESH_CADENCE).toBe(ApRefreshCadence.PerHand)
+  })
+
+  it('names the cadence as an enum-shaped constant, not a boolean', () => {
+    expect(Object.values(ApRefreshCadence)).toContain('perHand')
   })
 })

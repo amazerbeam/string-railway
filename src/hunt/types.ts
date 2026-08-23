@@ -37,6 +37,11 @@ export type Health = number
  *  negative — `buyFromShop` refuses a purchase it cannot pay for rather than going below zero. */
 export type Coins = number
 
+/** DLR-104 AC1 — the resource buff activation (T5) and Apply Damage (T6) will draw against.
+ *  A whole number, never fractional or negative in practice — spendAp in actionPoints.ts
+ *  refuses rather than going below zero, exactly as Coins already does for coins. */
+export type ActionPoints = number
+
 /** One six-trick hand — the inner loop. Every trick's outcome cashes into the bank or into
  *  damage (§3.2, §10). Narrowed on DLR-80: the declaration, the Standing multiplier and the
  *  card-value schemes are all retired along with the round they scored. */

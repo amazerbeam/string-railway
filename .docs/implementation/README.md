@@ -30,7 +30,7 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100 |
 | `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, PT-002 |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, PT-001, PT-002 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-104, PT-001, PT-002 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -531,7 +531,7 @@ to clear it. That branch's logic (`runTransitions.ts`'s `flaskAfter`) is unchang
 suspected of a defect; it remains an open developer judgement call — accept the static trace, or play
 to a boss once by hand — rather than a code defect this ticket could fix.
 
-## Latest — DLR-100, the discard (2026-08-22)
+## DLR-100, the discard (2026-08-22)
 
 **DLR-100 gave the player a between-tricks action, and it is the first control in this codebase
 built to be available while the turn gate every other control reads is false.** Before a trick's
@@ -579,6 +579,25 @@ rather than trusting the three-ticket-stale full-run data DLR-92 left on record.
 roughly half of all runs die on the very first, exactly-matched fight. See
 [run-winnability-simulation.md](run-winnability-simulation.md) for what was played, how, and the
 full results.
+
+## Latest — DLR-104, Action Points (2026-08-23)
+
+**DLR-104 shipped a resource with nothing spending it yet.** A new pure module,
+`src/hunt/actionPoints.ts`, adds a starting AP pool (`STARTING_AP`, a developer-chosen placeholder
+of 6), a per-hand refresh rule keyed off an enum-shaped `AP_REFRESH_CADENCE` rather than a boolean,
+and cost/afford/spend primitives that route every cost through a single toggle-reading function,
+`apCostFor`. Its whole design point is that no future consumer will ever write its own
+`if (AP_ENABLED) …` branch — flipping `AP_ENABLED` off in `config.ts` makes every AP-gated action
+free with zero other code change, the same shape `src/warCouncil/voluntaryCashOut.ts`'s
+`applyDamageRefusalFor` already established for Apply Damage.
+
+**Nothing consumes it.** No `RunState`/`EncounterState` field holds a live AP pool, no UI reads it,
+and no existing action costs AP — that is explicitly this ticket's scope fence (AC4). Buff
+activation (T5) and Apply Damage (T6) are the two tickets that will spend against it, and the field
+a consumer needs is theirs to add, not this one's. Start at
+[hunt/action-points.md](hunt/action-points.md) for the toggle's single-read-site shape, the
+enum-shaped refresh cadence and its presently-dead non-`PerHand` branch, and the two developer
+decisions the ticket carries (`STARTING_AP`, `AP_ENABLED`'s default).
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).
