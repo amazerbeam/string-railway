@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 2/22 (9%) — done: 2 shipped, 0 blocked | now: DLR-127 "Buying Envenom also grants a Cheat" (out-of-band) — fb-plan starting
+**Progress:** 2/22 (9%) — done: 2 shipped, 0 blocked (+1 out-of-band shipped) | now: DLR-107 "Migrate Cheat and Timebomb into the ordinary buff pile" (3/22) — fb-plan starting
 
 ## Run order
 
@@ -490,3 +490,202 @@ all three in parallel" is what `/fb-apply` Step 6 says.
 `.docs/game_rules/the-hunt.md` was checked and **not** edited: the contract changed two Vitest specs
 and nothing a player may do, must do, or is scored on. `.docs/implementation/hunt/README.md` and the
 top-level index gained the purchase-isolation invariant and the assert-against-the-pre-value lesson.
+
+## Coordinator decisions — DLR-127 reconciliation
+
+- **The ticket I raised was wrong, and the agent refuted it rather than obeying it.** DLR-127
+  asserted a production defect: that `buyFromShop` bundles a Cheat with an Envenom purchase.
+  It does not — its Envenom branch never touches `cheats`. The test began failing when
+  `RUN_STARTING_CHEATS` moved `0 → 1` in commit `ccc07ec`, so a fixture derived from
+  `startRun()` no longer had an empty `cheats` array. Stale assertion, not a bug. Pushed as a
+  test-only change; **no production file was modified**. Recorded here because the DLR-101
+  agent reported it as a defect, the coordinator raised a Jira Bug on that report, and both
+  were wrong — the transcript should not read as though a real bug was fixed.
+- **Accepted a skipped reviewer re-dispatch.** The fix pass was a whitespace-only Prettier
+  reformat of one test file with two reviewers already at zero issues; the agent re-ran all
+  four gates directly instead of re-dispatching three reviewers. Proportionate.
+- **New baseline for the rest of the run: the suite is fully green, 1072/1072, 0 failures.**
+  The "ignore the known pre-existing failure" instruction is withdrawn from all later ticket
+  prompts. Any failure a later agent sees is now its own.
+
+### Open questions this raised, for the end-of-run review
+
+1. **Is an Envenom purchase meant to bundle a Cheat?** If yes, this ticket fixed the wrong
+   file and `buyFromShop` is what needs changing.
+2. **Should a run open holding a Cheat?** `RUN_STARTING_CHEATS = 1`. The alternative diagnosis
+   is that this tuning value is the defect and the original assertion was right all along.
+
+## DLR-107 — Migrate Cheat and Timebomb into the ordinary buff pile
+
+**Result: GREEN.** Contract `.claude/contract/DLR-107-migrate-cheat-and-timebomb-into-the-buff-pile/`,
+3 phases / 8 tasks, all ticked. All three reviewers approved on round 1 — Code-Evaluator `APPROVED`,
+Defender `APPROVED` (0 Critical / 0 Warning / 0 Info), QA `ALL PASSED`. **Zero fix rounds used** of
+the two available.
+
+### Gate results
+
+- `npm run typecheck` — exit 0, zero errors
+- `npm run lint` — exit 0, zero errors, zero warnings
+- `npm test` — exit 0, **`Test Files 86 passed (86)`, `Tests 1089 passed (1089)`, 0 failed**
+  (baseline was 1072/85; delta is +1 file and +17 tests — 16 new in `buffCatalog.test.ts`, 1 appended
+  to `buffs.test.ts`)
+- `npm run build` — exit 0, `dist/` written, built in 176ms, no bundler errors
+- `npx prettier --check` on the five contract files — exit 0
+- Pure-core boundary grep over `src/hunt` — 0 hits
+- Bronze row not a literal (`quarry: 4|player: 2` in `buffCatalog.ts`) — 0 hits, derived as intended
+
+### Files
+
+Three production files, two spec files, no UI file, no `.tsx` file:
+
+- `src/hunt/buffs.ts` — modified. `BuffKind` (`unassigned`/`cheat`/`timebomb`),
+  `ACTIVATED_BUFF_CONDITION`, a **required** `kind` field on `Buff`, and `kind: BuffKind.Unassigned`
+  on the seeded placeholders.
+- `src/hunt/buffCatalog.ts` — created, 156 lines. `TimebombDamage`, `CHEAT_DURATION_TRICKS`,
+  `TIMEBOMB_TIER_MULTIPLIER`, `TIMEBOMB_DAMAGE` (derived via a private `timebombRow`), `cheatBuff`,
+  `timebombBuff`, `cheatDurationTricksOf`, `timebombDamageOf`.
+- `src/hunt/index.ts` — modified, barrel exports.
+- `src/hunt/__tests__/buffs.test.ts` — modified. Three literal shape assertions widened for `kind`;
+  one new case pinning `BuffKind`'s member set.
+- `src/hunt/__tests__/buffCatalog.test.ts` — created, 16 cases.
+
+### Approval gate — what was auto-approved, and no mockup
+
+The `/fb-plan` `AskUserQuestion` gate was **overridden**, per this run's standing instruction.
+`plan.md` was self-reviewed but never shown to the developer, and `tasks.md` carries a note saying so.
+**No mockup was built or auto-approved unseen** — Step 1.5's classification found no UI component in
+scope (Pure logic + Config and tunables only), the contract touches no `.tsx` file, and Step 3.5
+therefore did not run. Nothing visual went unreviewed because nothing visual was produced.
+
+### Behaviour changes the migration forced — the important section
+
+**None reached a player. That is the headline, and it is deliberate rather than lucky.**
+
+1. **Cheat's live behaviour is unchanged.** Old: `LegalMoveOptions.ignoreFollowSuit` lifts follow-suit
+   for exactly one committed card, armed through the felt's two-click `CheatStage` ritual. New: still
+   exactly that. `CHEAT_DURATION_TRICKS[bronze] = 1` is the buff-pile statement *of that same rule*,
+   and a test asserts it. Silver (2 tricks) and gold (3 tricks) exist as data with **no consumer** —
+   nothing in `src/` activates a buff or mints a non-bronze one outside a test.
+2. **Timebomb/Envenom's live damage is unchanged.** Old: `ENVENOM_QUARRY_DAMAGE = 4` /
+   `ENVENOM_PLAYER_DAMAGE = 2`, applied by `envenomDamageFor` through the three-tap `EnvenomStage`
+   ritual. New: still exactly that. `TIMEBOMB_DAMAGE[bronze]` **reads those two constants** rather
+   than restating 4 and 2, so the bronze row is today's live pair by construction; a test asserts the
+   equality against the constants, not against literals, so retuning the live mechanic moves the table
+   with it instead of reddening the spec.
+3. **When Cheat/Timebomb can be held, drawn, activated or paid for did not change at all.** No shop
+   branch, no `RunState` field, and no purchase shape moved — `run.purchaseIsolation.test.ts` was left
+   completely untouched and stayed green, which is the evidence rather than the claim. Buying a Cheat
+   still grants a `CheatCard`; buying Envenom still increments `envenomCharges`. Neither puts anything
+   in the buff pile.
+4. **One real structural change, and it is to a type rather than to play.** `Buff` gained a
+   **required** `kind` field. That is a widening of a data model DLR-105 shipped four days ago, so
+   every construction site had to name one — one production site (`seedStartingBuffPile`) and three
+   literal test assertions, all changed in the same task. It is free today because the buff pile is
+   **not persisted**; after DLR-113 (the Vault) the same change would need a `SAVE_SCHEMA_VERSION`
+   bump.
+
+**The one thing the developer must actually look at: Cheat and Timebomb now exist twice.** The live
+bespoke mechanic the felt drives, and an inert `Buff` representation nothing reads. That is the
+intended intermediate state of a migration split across tickets — but it is real, and it lasts until
+the activation ticket (DLR-103 T5) and the UI ticket land.
+
+### Plan defaults taken instead of pausing
+
+Every one of these would normally have been an `AskUserQuestion` at the plan gate.
+
+1. **AC3 — removing the old state machines — was deliberately NOT done.** The ticket contradicts
+   itself: AC3 says remove the two-click `CheatStage` and three-tap `EnvenomStage` machines "once
+   their behavior is proven equivalent", while the same ticket's Scope Boundaries say "the felt-rail
+   UI removal — this ticket is engine-only, UI still points at the old mechanics until the UI ticket
+   lands". Default taken: **the Scope Boundaries clause wins**, because it is the specific one and
+   because nothing activates a buff, so no equivalence can be exercised end to end. Deleting live,
+   tested UI the ticket forbids touching would have been an unrequested behaviour change. **This is
+   the single largest deviation from the ticket as written and the first thing to sanity-check.**
+2. **AC4's "ported" was read as *additive equivalence coverage*, not *rewritten*.** The live Cheat and
+   Envenom specs cover mechanics that are still live and still correct; rewriting them against a path
+   nothing executes would have deleted real coverage and replaced it with none. Default taken: leave
+   them untouched and add assertions that each new tier table's bronze row equals today's live figure
+   **by reference to the constants**. QA confirmed the live specs in `src/app/warCouncil/__tests__/`
+   remain green and untouched.
+3. **`Buff` gained a `kind` identity field, because DLR-105 shipped none.** DLR-105's AC1 said
+   "identity", but the type it shipped has `id`/`tier`/`condition`/`reward` and nothing naming which
+   card a buff is. Without this, AC1 and AC2 are literally unstatable. Default taken: a closed
+   `as const` map, separate from `condition.kind` (which describes a *trigger*, not an identity).
+   **This is a change to another ticket's data model** and the developer may prefer the discriminator
+   live elsewhere — cheap to red-line now, expensive once the slot machine and the Vault both
+   construct buffs.
+4. **`TIMEBOMB_TIER_MULTIPLIER = { bronze: 1, silver: 2, gold: 3 }` — AN UNCHOSEN TUNING VALUE.**
+   Neither the ticket nor design doc §3 states Timebomb's tier magnitudes; §3 says only "Timebomb's
+   tier is damage" and leaves the numbers open. Normally this is a hard pause — a tuning value is
+   never an agent's to choose. Default taken under the run's override: 1/2/3, from the only tier
+   curves the sources *do* state (AC1's Cheat duration, and §3's Shield bullet, both 1/2/3). **It
+   yields 4/8/12 to the Quarry and 2/4/6 to the player.** A gold Timebomb costing the player 6 of a
+   10-point bar is a large self-inflicted hit and may want a flatter curve. One place to change it.
+5. **AC2's open question resolved to "scale both sides on the 2:1 ratio"** — the reading AC2 itself
+   names as the default, so this is transcription rather than a choice. Recorded in a comment beside
+   the table as AC2 requires, *and* enforced structurally: the multiplier is applied to both
+   `ENVENOM_*_DAMAGE` figures through one helper, so the ratio holds as arithmetic rather than as
+   three hand-typed pairs. The rejected reading (raise only the Quarry side) is refuted in that
+   comment — it would make a gold Timebomb a free upgrade with no added downside.
+6. **The tier tables live in `src/hunt/buffCatalog.ts`, not `src/hunt/config.ts`.** Every other
+   tunable in this module is in `config.ts` — but `config.ts` measures 385 lines against a blocking
+   400-line budget and these tables plus AC2's required comments need ~40. Default taken: a
+   topic-scoped constants-plus-factories module, re-exported through the barrel so no consumer can
+   tell the difference. The alternative was a budget breach or an arbitrary mid-file split of
+   `config.ts` this ticket has no other reason to make.
+7. **`ACTIVATED_BUFF_CONDITION`'s `'activated'` string** enters a condition-catalog vocabulary design
+   doc §5 explicitly does not own yet. `BuffCondition.kind` is an open string by DLR-105's design so
+   this costs nothing structurally, but whoever authors the real catalog (DLR-103 T7a) should know the
+   name is taken.
+8. **Timebomb's `BuffReward` stayed single-axis.** Its reward carries only the Quarry-side figure
+   (`axis: magnitude`); the paired player figure comes back from `timebombDamageOf`. Widening
+   `BuffReward` to a pair would reopen a shape decision DLR-105 made explicitly and defended, and §5
+   itself defers the multi-value-reward question. Worth a second look when the slot machine needs to
+   render a Timebomb's payoff from `reward` alone.
+9. **No shop, purchase, or `RunState` change.** "Migrate into the pile" could be read as "buying a
+   Cheat now puts a `Buff` in the pile". Default taken: **no**. Nothing activates a buff yet, so the
+   pile entry would be inert while the `CheatCard`/`envenomCharges` it replaced were still what the
+   game actually spends — the player would own two representations of one thing, with only one of them
+   working. It would also have changed the exact changed-field sets `run.purchaseIsolation.test.ts`
+   asserts, which is precisely the silent purchase-shape change that test exists to catch.
+
+### `.claude/rules/save-data-versioning.md` — checked, does not fire
+
+Confirmed by the plan's audit and independently by the Defender: nothing this ticket touches is
+persisted. `RunState.buffs` is in-memory only (DLR-105); grep for `buff` under `src/persistence/**`
+returns 0 hits; no `localStorage`/`sessionStorage` reference was added; no key was composed by
+concatenation; no envelope was written. `SAVE_SCHEMA_VERSION` stays at 1. **Noted as a timing risk
+rather than a clean pass:** adding a required field to `Buff` is free *only* because the pile is not
+saved yet. DLR-113 (the Vault) closes that window, and the same change after it would be a versioned
+one.
+
+### Docs
+
+- `.docs/implementation/hunt/cheat-and-timebomb-buffs.md` — **created**. The `BuffKind` field and why
+  it is separate from `condition.kind`, the Cheat duration table and its gold-tier warning, how
+  `TIMEBOMB_DAMAGE` derives so neither the ratio nor the bronze row can drift, the throwing readers,
+  the module-init ordering trap, the two deliberate non-decisions, and the unchosen multiplier.
+- `.docs/implementation/hunt/buff-pile.md` — **updated**. Its "`Buff` has four fields" claim and its
+  closing "nothing here has a consumer yet" paragraph were both made stale by this ticket; both now
+  say what is actually true and link to the new file.
+- `.docs/implementation/hunt/README.md` and `.docs/implementation/README.md` — **updated**. `DLR-107`
+  appended to both `Built by` lines (checked together, since a half-applied edit there is the common
+  failure), eight new `Key types & exports` rows, and a new How-it-works index entry.
+- **`.docs/game_rules/the-hunt.md` was checked and deliberately NOT edited.** DLR-107 changed no
+  procedure, no scoring rule, no number any rule states, and graduated no `[not built]` rule: Cheat's
+  live rule (one card's follow-suit lift) and Envenom's live figures (4 to the Quarry, 2 to the
+  player) are both unchanged, and the new tier tables have no consumer, so no player can reach a
+  silver or gold tier of either. Its Status register names no file this contract renamed or deleted.
+
+### Deviations from the pipeline worth seeing
+
+- **`pr-description.md` (Task 8) was written by the orchestrator rather than dispatched to the
+  Implementer.** It is a plan-folder prose document with `Skill: none`, not source code, and it needed
+  the verification numbers QA had just produced. Flagged because "all code changes go through the
+  Implementer" is the standing rule; no code was involved.
+- **Phase 3's greps and gates (Tasks 5-7) were delegated to QA rather than run by the Implementer**,
+  which is what `/fb-apply` prescribes for the unfiltered suite and the build. QA ran all of them and
+  quoted real output, including reporting **3** hits on the `'timebomb'|'activated'` bare-string grep
+  where the contract predicted 2 — the third being the member-set pinning assertion the contract
+  itself specifies verbatim, not a call site binding by string. Reported honestly rather than rounded
+  to the expected number.

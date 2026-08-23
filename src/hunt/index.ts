@@ -77,11 +77,24 @@ export { grantCheats, addCheat, removeCheat, hasCheat } from './cheats'
 export type { Buff, BuffId, BuffCondition, BuffReward } from './buffs'
 export {
   BuffTier,
+  BuffKind,
   BuffRewardAxis,
   UNASSIGNED_BUFF_CONDITION,
   UNASSIGNED_BUFF_REWARD,
+  ACTIVATED_BUFF_CONDITION,
   seedStartingBuffPile,
 } from './buffs'
+
+export type { TimebombDamage } from './buffCatalog'
+export {
+  CHEAT_DURATION_TRICKS,
+  TIMEBOMB_TIER_MULTIPLIER,
+  TIMEBOMB_DAMAGE,
+  cheatBuff,
+  timebombBuff,
+  cheatDurationTricksOf,
+  timebombDamageOf,
+} from './buffCatalog'
 
 export {
   startEncounter,

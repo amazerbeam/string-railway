@@ -7,7 +7,10 @@ activates, and persists identically, instead of three (and counting) bespoke mec
 ticket ships only the type and the pile's persistence; nothing yet draws, activates, or renders a
 buff.
 
-**`Buff` has four fields, and the fourth is the one the ticket's own risk note singled out.**
+**`Buff` had four fields as DLR-105 shipped it, and the fourth is the one that ticket's own risk
+note singled out.** (DLR-107 later added a fifth, `kind` — the identity field described in
+[Cheat and Timebomb as buff-pile objects](cheat-and-timebomb-buffs.md). The four below are
+unchanged by it.)
 `id` (`BuffId`, minted from `RunState.nextBuffId`, never `Math.random()` — `src/hunt/` must stay
 deterministic, exactly as `CheatCardId` already is) and `tier` (`BuffTier`, `bronze`/`silver`/`gold`)
 are unremarkable. `condition` (`BuffCondition`, `{ kind: string }`) is data only — no evaluator,
@@ -64,3 +67,10 @@ or applies a `BuffReward`; no slot machine exists to draw a real card into the p
 migration onto this pile, Shield's redesign onto it, and the slot-machine draw are three separate,
 later tickets (DLR-103's T4, T7, T8) — this ticket is exactly what it says it is: the type, and the
 owned-pile persistence, and nothing else.
+
+**Since DLR-107, T4 has partly landed and this paragraph needs one correction.** Cheat and Timebomb
+now have a `Buff` representation and their tier tables — but still no consumer: nothing evaluates a
+condition, applies a reward, or reads the pile. The felt continues to drive the old bespoke Cheat and
+Envenom state machines, so the two mechanics currently exist twice over. See
+[Cheat and Timebomb as buff-pile objects](cheat-and-timebomb-buffs.md) for why that duplication is
+deliberate and what ends it.
