@@ -1,7 +1,7 @@
 # Hunt — `src/hunt/`
 
 **Status:** partial
-**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, PT-001, PT-002
+**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-127, PT-001, PT-002
 
 ## Responsibility
 
@@ -462,6 +462,29 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   `quickKillPayout` is the only place the quick-kill payout is floored, so the ×0.5 tier's half-coin
   cannot reach `Coins` — which `types.ts` documents as whole and never fractional — regardless of
   which caller credits it. A caller that floors its own copy is the drift this closes before it opens.
+- **Purchase isolation: one transition writes exactly its own fields, plus `coins`** (DLR-127).
+  `buyFromShop`'s `switch` already encoded this — no `default`, one branch per `ShopItem`, each
+  returning `{ ...paid, <its own field> }` — but nothing checked it, and DLR-127 was raised on the
+  belief that the Envenom branch also granted a Cheat. It does not.
+  `src/hunt/__tests__/run.purchaseIsolation.test.ts` now enforces the rule for every item at once: a
+  local `changedFields(before, after)` helper reference-diffs (`Object.is`) the top-level `RunState`
+  keys, and each case asserts an **exact** changed-field set — Cheat `['cheats','coins',
+  'nextCheatId']`, Envenom `['coins','envenomCharges']`, Poison Guard `['coins','poisonGuardHeld']`,
+  Whetstone `['coins','whetstones']`, Heal `['coins','encounter']`, and `drinkFlask`
+  `['encounter','flaskCharges']`. Reference equality is exact here **because** every transition in
+  `runTransitions.ts` is an immutable spread, so a field a transition did not write is the very same
+  object; the helper's own honesty is tested first, including a case that catches a field rebuilt to
+  an equal value. An exact set rather than a spot-check is what makes it catch a `RunState` field
+  added later and written by accident.
+- **A spec asserting an absolute `RunState` field is asserting the opening loadout too** (DLR-127).
+  `envenom.test.ts`'s `does NOT add a Cheat` read `expect(after.cheats).toEqual([])` and went red the
+  moment `RUN_STARTING_CHEATS` moved `0 → 1`, because its fixture builds on `startRun()` and the run
+  now opens holding a Cheat — it had been failing on the opening grant, not on the purchase, for two
+  commits. It now binds `before`/`after` and asserts `after.cheats` is both `toEqual` and `toBe`
+  `before.cheats`, guarded by `expect(before.cheats).toHaveLength(RUN_STARTING_CHEATS)` so the check
+  cannot degenerate into `expect([]).toEqual([])` if that key is retuned again. The sibling fixtures
+  in `run.shop.test.ts` avoid the trap the other way, by writing `cheats: []` explicitly. **Assert
+  against the pre-transition value, not an absolute one.**
 - **File-size budget** — measured after DLR-104 with `(Get-Content <file>).Count`: `config.ts` **379**,
   `runTransitions.ts` **306**, `run.ts` **208**, `index.ts` **122**, `encounter.ts` 190, `shop.ts` 181, `runPath.ts`
   88, `types.ts` 89, `flask.ts` 71, `quickKill.ts` 61, `actionPoints.ts` 55, `cheats.ts` 58. Four new

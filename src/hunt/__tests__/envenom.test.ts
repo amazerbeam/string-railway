@@ -5,6 +5,7 @@ import {
   ENVENOM_QUARRY_DAMAGE,
   PLAYER_START_HEALTH,
   quarryHealthForEncounter,
+  RUN_STARTING_CHEATS,
 } from '../config'
 import {
   applyDamage,
@@ -110,7 +111,19 @@ describe('buyFromShop — Envenom (AC1, AC2)', () => {
   })
 
   it('does NOT add a Cheat', () => {
-    expect(buyFromShop(funded(3), ShopItem.Envenom).cheats).toEqual([])
+    const before = funded(3)
+    // Non-vacuity guard (DLR-127): the original assertion was `toEqual([])`, which silently
+    // stopped testing anything the moment `RUN_STARTING_CHEATS` moved 0 -> 1 and the run began
+    // opening with a Cheat in hand — it then failed on the OPENING GRANT rather than on
+    // anything the purchase did. Asserting the fixture actually holds Cheats keeps the check
+    // below meaningful whatever that key is retuned to.
+    expect(before.cheats).toHaveLength(RUN_STARTING_CHEATS)
+    const after = buyFromShop(before, ShopItem.Envenom)
+    // Stronger than the original on three counts: it fails on a Cheat ADDED (all the original
+    // caught), on a Cheat REMOVED, and on the list being needlessly rebuilt — the Envenom branch
+    // spreads `run`, so an untouched `cheats` must be the very same array.
+    expect(after.cheats).toEqual(before.cheats)
+    expect(after.cheats).toBe(before.cheats)
   })
 
   it('stacks, because there is no cap', () => {

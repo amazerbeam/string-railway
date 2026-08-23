@@ -30,7 +30,7 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100 |
 | `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, PT-002 |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, PT-001, PT-002 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-127, PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106 |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
@@ -658,6 +658,32 @@ change: this ticket added a storage *capability*, not a rule — no player-facin
 move, or scoring term moved, and a page reload still starts a new run exactly as it did before.
 Start at [persistence/](persistence/README.md) for the envelope, the four-check read path, and why
 `browserLocalStorage()` is the only function in the codebase allowed to name the global.
+
+## DLR-127, "buying Envenom also grants a Cheat" — the bug that wasn't (2026-08-23)
+
+**DLR-127 was raised as a shop defect and turned out to be a stale assertion; no production code
+changed.** `buyFromShop`'s Envenom branch is `{ ...paid, envenomCharges: run.envenomCharges + 1 }`
+and has never touched `cheats`. What was red was `envenom.test.ts :: "does NOT add a Cheat"`, whose
+`expect(after.cheats).toEqual([])` is an **absolute** assertion built on a fixture that derives from
+`startRun()` — so when `RUN_STARTING_CHEATS` moved `0 → 1` in commit `ccc07ec`, the assertion began
+failing on the run's *opening grant* rather than on anything the purchase did. The sibling
+`run.shop.test.ts` never went red because its fixtures write `cheats: []` explicitly.
+
+**The fix went into the spec, and made it stronger rather than merely green.** The assertion now
+binds `before`/`after` and requires `after.cheats` to be both deep-equal and reference-identical to
+`before.cheats` — catching an added Cheat (all the original caught), a removed one, and a needless
+rebuild — guarded by a non-vacuity check against `RUN_STARTING_CHEATS` so it cannot silently become
+a tautology on the next retune.
+
+**The sibling purchases named in the ticket were checked and none shares the defect, because there
+is no defect** — and that answer is now a test rather than a reading of a `switch`.
+`src/hunt/__tests__/run.purchaseIsolation.test.ts` asserts the exact `RunState` changed-field set for
+every shop item (Cheat, Envenom, Poison Guard, Whetstone, Heal) and for `drinkFlask`, so "a purchase
+quietly grants a second thing" fails for any future branch, not just this one.
+`.docs/game_rules/the-hunt.md` records no change: nothing a player may do, must do, or is scored on
+moved, and no tunable's value changed. Start at [hunt/README.md](hunt/README.md) →
+*Rules & invariants enforced* for the purchase-isolation rule and the assert-against-the-pre-value
+lesson.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).
