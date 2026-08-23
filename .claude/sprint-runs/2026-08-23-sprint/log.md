@@ -1687,3 +1687,135 @@ milliseconds, which is exactly what browser tooling could not do.
 
 **Counted as out-of-band; the denominator stays 22.**
 
+
+## DLR-109 — Delayed Apply Damage payout
+
+Contract: `.claude/contract/DLR-109-delayed-apply-damage-payout/`. Epic DLR-103, label `engine`.
+Apply Damage stops being an instant, free, risk-free cash-out: it costs AP and queues its payout
+for a delay, damage during the window wipes it, and the quick-kill card count freezes at press
+time.
+
+### Gates auto-passed, and what went unseen
+
+- **Plan approval gate auto-approved.** No `AskUserQuestion` was presented. Every open question
+  took `plan.md`'s stated default; all of them are listed below.
+- **No mockup was built and none went to the developer.** The ticket is `engine`-classified and
+  the implementation touches **no `.tsx` file at all** — the two new refusal sentences surface
+  through the `APPLY_DAMAGE_REFUSAL_MESSAGE` map `ApplyDamagePlate.tsx` already reads. So the
+  mockup step was correctly skipped rather than skipped-and-unseen; there was no UI to draw.
+- **The browser pass was NOT run.** `.claude/commands/fb-apply.md` was changed at `ab211dc`, one
+  commit into this run, to make the live browser pass **opt-in and off by default** — a standing
+  developer decision taken on evidence. This ticket IS player-reachable, so under the older rule
+  it would have had one. It did not. See "What the developer must look at" below.
+
+### Plan defaults taken — every one a design reading the developer would normally settle
+
+1. **"Delay" is counted in trick *resolutions*, and the trick in flight counts as the first one.**
+   `APPLY_DAMAGE_DELAY_TRICKS = 1` means "one whole trick *beyond* the trick the press happened
+   in", so a press queues `delay + 1 = 2` resolutions. That is AC2's "the current trick plus the
+   next trick" read literally. A buff setting the value to `0` shortens it to the single earliest
+   possible landing — the resolution of the trick the press happened in. The press always happens
+   inside or immediately before a trick, so "no delay at all" is not expressible as a trick count;
+   defining the constant as *additional* tricks is what makes AC5's `-1` and `= 0` both meaningful.
+2. **The payout never crosses a hand boundary — an outstanding payout lands at the resolution of
+   the hand's final trick.** The two alternatives are both worse: dropping it makes a trick-6
+   press a pure loss of bank and AP with no counterplay, a dead zone at the moment the bank is
+   biggest; carrying it into the next hand contradicts the hand-scoped reset this is meant to
+   mirror (bank and multiplier are per-hand) and would put a stale press-time card count against a
+   different hand. Surviving to the end of the hand *is* surviving, so it pays. **This makes a
+   late press meaningfully safer than an early one, which is the opposite of the usual risk
+   curve** — worth a playtest of trick-5 and trick-6 presses specifically.
+3. **A second press is refused while a payout is outstanding**, via a new
+   `ApplyDamageRefusal.PayoutPending`. A second press would need a second countdown and a second
+   press-time snapshot. This removes a "double down" line some players will look for.
+4. **AC3's "taking damage" means the player's health actually decreased**, enforced inside
+   `applyDamage` — the module's single clamp point — so no caller can route damage around it. A
+   zero-damage event does not wipe; a Blast-Guard-suppressed streak reset does not wipe unless
+   health still fell.
+5. **A queued payout is dropped, not paid, if the encounter resolves first.**
+6. **`apPool` lives on `RoundUiState`, not `RunState`**, seeded at mount through
+   `refreshActionPointsForNewHand`. `AP_REFRESH_CADENCE` is `PerHand` and `App.tsx` already
+   remounts the felt per hand (`key={hand}`), so a mount *is* the per-hand refresh. Right today;
+   wrong the day the cadence becomes per-fight or per-run. DLR-114/DLR-116 may move it.
+7. **`pendingApplyPayout` lives on `EncounterState`**, as AC2 names explicitly, even though it is
+   hand-scoped in practice — that is what lets the AC3 wipe live inside `applyDamage`.
+8. **Both tunables sit in `apConfig.ts`, not `config.ts`.** `config.ts` was at 372 of its 400-line
+   blocking budget. `APPLY_DAMAGE_DELAY_TRICKS` is not an AP figure but sits beside the AP cost
+   because they are one control's pair of tunables.
+9. **No UI was added**, per the ticket's explicit scope boundary. Deliberate, and it has a cost —
+   see below.
+
+### The resolution order when a payout AND a ticking Timebomb are both outstanding
+
+Stated explicitly because this is exactly where an ordering bug hides. `applyResolution` in
+`commitHandlers.ts` is now **four steps, and the order is load-bearing**:
+
+1. the trick's own damage — which already folds in any Timebomb detonating this trick, via
+   `playOptions` — is applied;
+2. the paid Timebomb queue is cleared;
+3. this trick's own prime is booked for the next trick;
+4. **the queued Apply Damage payout ticks, and lands if it is due.**
+
+**Step 4 is LAST.** Because AC3's wipe lives inside `applyDamage`, step 1 has already nulled
+`pendingApplyPayout` on any trick that cost the player health — so **a Timebomb detonating against
+the player on the trick a payout was due DESTROYS that payout. The bomb wins.** That falls out of
+AC3 rather than being a fifth rule, and putting the tick any earlier would let a player dodge AC3
+by timing. Both halves are asserted in `roundReducer.delayedApply.test.ts` — the payout is
+destroyed *and* the Timebomb's own damage lands normally.
+
+The reverse case cannot arise: `applyDamageRefusalFor` already refuses a press while a Timebomb is
+ticking, so the only reachable overlap is prime-during-the-window, not press-during-a-tick.
+**This will feel severe the first time a primed card eats a large banked cash-out.**
+
+### What "Apply Damage happened" now means for `Debt Collector`
+
+`Debt Collector` (4 cards in `v1-buff-card-list.md`) fires on "Apply Damage this hand" and is
+directly downstream of this ticket. This ticket does not author it, but it does settle what the
+phrase can mean, and there are now **two distinct moments** where there was one:
+
+- **The press** — AP is spent, bank and multiplier are zeroed, `pendingApplyPayout` becomes
+  non-null. Observable as `hasPendingApplyPayout(encounter)`.
+- **The landing** — a trick or more later, when the Quarry actually takes the damage. Observable
+  only as the transition where `pendingApplyPayout` goes non-null to null *with* damage dealt.
+
+**The reading this ticket takes, and that `Debt Collector` should adopt: "Apply Damage happened"
+means THE PRESS.** Three reasons. It is the moment the player made the decision and paid for it,
+which is what the buff rewards. It is the only one of the two guaranteed to occur — a landing can
+be wiped by AC3, and a condition that silently fails to fire because the player got hit is a
+condition players cannot reason about. And it is already directly observable from a predicate that
+exists (`hasPendingApplyPayout`), whereas the landing leaves no state that outlives it.
+
+**This is an agent decision, not the developer's, and nothing in code enforces it yet** — no buff
+reads either signal today. Whoever builds `Debt Collector` should either adopt this or overturn it
+deliberately; if they overturn it, the landing needs a durable marker added, because right now it
+leaves no trace.
+
+### Assumptions that would normally have paused the pipeline
+
+- Every numbered default above.
+- **`APPLY_DAMAGE_AP_COST = 3` and `APPLY_DAMAGE_DELAY_TRICKS = 1` were transcribed, not chosen** —
+  the ticket supplies both and flags the AP cost open per §2. Neither has ever been played. Against
+  `STARTING_AP = 6` the cost allows at most two presses a hand before buffs draw on the same pool.
+- **`applyResolution`'s return type widened** from `EncounterState` to a `{ encounter,
+  unplayedAtPress }` record so it could carry AC4's snapshot. The rejected alternative was a second
+  permanent `EncounterState` field to model a single transition. A reviewer may reasonably prefer
+  the other trade.
+- **One file was edited that the contract's file map did not list.**
+  `src/app/warCouncil/__tests__/roundReducer.quickKill.test.ts` broke legitimately — its
+  `seedOneTrickKill` fixture drove its kill through two `TapApplyDamage` taps, the exact instant-
+  cash mechanism this ticket replaces. The Phase 4 implementer rewrote the seed to drive an
+  ordinary trick cash-out instead, preserving DLR-95 AC2's actual intent (`captureUnplayed`
+  freezing on the first resolved transition) independent of Apply Damage's timing. Flagged to all
+  three reviewers as the highest-value thing to check. **A planner gap, not implementer
+  overreach** — the audit spotted `applyDamage.test.ts` and missed its sibling.
+
+### What the developer must look at themselves
+
+- **The complete absence of feedback that a payout is in the air.** The ticket puts this UI out of
+  scope and the implementation honours that — so a player presses Apply, watches the bank zero,
+  watches the Quarry's health *not move*, and is told nothing. The refusal sentence only appears if
+  they press again. **This is the single most important thing to look at, and a follow-up UI ticket
+  is very likely warranted.**
+- **AP is invisible too.** `apPool` now exists and is spent, but nothing renders it, so an
+  `InsufficientAp` refusal reads as the button dying for no visible reason.
+- Both tunables, and the three design readings above (hand-end flush, one-at-a-time, Timebomb-wins).

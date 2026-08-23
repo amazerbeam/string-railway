@@ -11,8 +11,10 @@
  */
 import {
   incomingFrom,
+  incomingFromCashOut,
   playCard,
   PlayerSide,
+  RoundPhase,
   type AbilityChoice,
   type Card,
   type PlayCardOptions,
@@ -27,6 +29,7 @@ import {
   NO_PENDING_TIMEBOMB,
   queueTimebomb,
   removeCheat,
+  tickApplyPayout,
   type EncounterState,
 } from '../../hunt'
 import { cheatArmed, type RoundUiState } from './roundUiState'
@@ -50,20 +53,39 @@ function playOptions(state: RoundUiState): PlayCardOptions {
 }
 
 /**
- * One trick's whole effect on the encounter, in the one place it is stated: the trick's own damage,
- * D1's Timebomb paid from an EARLIER trick, and this trick's own mark booked for the NEXT one.
+ * One trick's whole effect on the encounter, in the one place it is stated. FOUR steps, and the
+ * ORDER IS LOAD-BEARING (DLR-109 adds the fourth):
  *
- * ORDER IS LOAD-BEARING, for the reason DLR-90 gave and one more. The damage lands FIRST, so
- * `queueTimebomb` then refuses a resolved encounter — a hit must never be carried into a fight that
- * is already over (D5's discard half at a fight boundary). And the queue is cleared BEFORE the new
- * booking, so a trick that both pays a Timebomb and carries a mark does not have its own mark wiped
- * by the clear.
+ *   1. the trick's own damage — which already folds in any Timebomb detonating this trick, via
+ *      `playOptions` — is applied;
+ *   2. the paid Timebomb queue is cleared;
+ *   3. this trick's own prime is booked for the next trick;
+ *   4. the queued Apply Damage payout ticks, and lands if it is due.
  *
- * The all-zero skip avoids bumping `damageEventsApplied` for nothing, but does not return early: a
- * REPLACED clean loss (DLR-90 AC5) is an all-zero event that still owes a booking.
+ * Step 4 is LAST, and that is the whole ordering rule when a payout and a ticking Timebomb are
+ * both outstanding. Because AC3's wipe lives inside `applyDamage`, step 1 has already set
+ * `pendingApplyPayout` to `null` on any trick that cost the player health — so a Timebomb
+ * detonating against the player on the trick a payout was due DESTROYS that payout. Putting the
+ * tick anywhere earlier would let a player dodge AC3 by timing, which is the one thing the
+ * criterion exists to prevent.
+ *
+ * The all-zero skip on step 1 avoids bumping `damageEventsApplied` for nothing, but does not
+ * return early: a REPLACED clean loss (DLR-90 AC5) is an all-zero event that still owes a booking.
  */
-function applyResolution(encounter: EncounterState, resolution: TrickResolution): EncounterState {
-  if (isEncounterResolved(encounter)) return encounter
+interface FoldedResolution {
+  readonly encounter: EncounterState
+  /** DLR-109 AC4 — the press-time unplayed count, and ONLY when a DELAYED payout is what resolved
+   *  the encounter. `null` on every other path, including a kill by ordinary trick damage, which
+   *  `captureUnplayed` still handles off the live hand. */
+  readonly unplayedAtPress: number | null
+}
+
+function applyResolution(
+  encounter: EncounterState,
+  resolution: TrickResolution,
+  handEnding: boolean,
+): FoldedResolution {
+  if (isEncounterResolved(encounter)) return { encounter, unplayedAtPress: null }
   const incoming = incomingFrom(resolution)
   const paid =
     incoming[DuelSide.Player] === 0 && incoming[DuelSide.Quarry] === 0
@@ -72,9 +94,35 @@ function applyResolution(encounter: EncounterState, resolution: TrickResolution)
   const cleared = hasPendingTimebomb(paid)
     ? { ...paid, pendingTimebomb: NO_PENDING_TIMEBOMB }
     : paid
-  return resolution.timebombTarget === null
+  const booked =
+    resolution.timebombTarget === null ? cleared : queueTimebomb(cleared, resolution.timebombTarget)
+  return settleApplyPayout(booked, handEnding)
+}
+
+/**
+ * The payout half of `applyResolution`, split out so the four-step order above reads as four
+ * steps. Ticks the queue and, when a payout comes due, deals it through `incomingFromCashOut` —
+ * the ONE sanctioned `PlayerSide -> DuelSide` crossing for this figure — guarding
+ * `isEncounterResolved` for the reason `applyResolution` already guards it: a dead Quarry needs no
+ * further damage, and a dead player has already wiped the payout via AC3.
+ */
+function settleApplyPayout(encounter: EncounterState, handEnding: boolean): FoldedResolution {
+  const tick = tickApplyPayout(encounter.pendingApplyPayout, handEnding)
+  if (tick.due === null) {
+    // A no-payout trick allocates nothing: `tick.pending` is `null`, equal to the field it came
+    // from, so the input object is returned untouched rather than a spread copy of itself.
+    return tick.pending === encounter.pendingApplyPayout
+      ? { encounter, unplayedAtPress: null }
+      : { encounter: { ...encounter, pendingApplyPayout: tick.pending }, unplayedAtPress: null }
+  }
+  const cleared: EncounterState = { ...encounter, pendingApplyPayout: null }
+  const settled = isEncounterResolved(cleared)
     ? cleared
-    : queueTimebomb(cleared, resolution.timebombTarget)
+    : applyDamage(cleared, incomingFromCashOut(tick.due.cashOut))
+  return {
+    encounter: settled,
+    unplayedAtPress: isEncounterResolved(settled) ? tick.due.unplayedAtPress : null,
+  }
 }
 
 /** Commits `cardToPlay` for the player, then advances the opponent when the player led. */
@@ -101,9 +149,13 @@ export function commit(
 
   const playedCard: TrickCard = { side: PlayerSide.Player, card: cardToPlay }
   const resolvedTrick = deriveResolvedTrick(state.round, result.state, playedCard)
-  const encounter = resolvedTrick
-    ? applyResolution(state.encounter, resolvedTrick.resolution)
-    : state.encounter
+  const folded = resolvedTrick
+    ? applyResolution(
+        state.encounter,
+        resolvedTrick.resolution,
+        result.state.phase === RoundPhase.Complete,
+      )
+    : null
   const settled: RoundUiState = {
     ...state,
     round: result.state,
@@ -111,7 +163,11 @@ export function commit(
     prompt: null,
     rejection: null,
     resolvedTrick,
-    encounter,
+    encounter: folded ? folded.encounter : state.encounter,
+    // DLR-109 AC4 — a DELAYED payout's press-time count, threaded in ONLY when nothing has
+    // already frozen this field. The null check IS `captureUnplayed`'s "has this already been
+    // captured" test, so this line and that function must never fight over the field.
+    unplayedAtResolve: state.unplayedAtResolve ?? folded?.unplayedAtPress ?? null,
     cheats,
     cheatSelection: null,
     timebombStage: null,
@@ -128,14 +184,20 @@ export function commit(
   // The player led — advance the opponent in the same commit. `settled`, not `state`, so the
   // Quarry's follow reads the queue as the player's own commit left it.
   const advanced = advanceQuarryFollow(result.state, playOptions(settled))
+  const quarryFolded = advanced.resolvedTrick
+    ? applyResolution(
+        settled.encounter,
+        advanced.resolvedTrick.resolution,
+        advanced.round.phase === RoundPhase.Complete,
+      )
+    : null
   return {
     ...settled,
     round: advanced.round,
     resolvedTrick: advanced.resolvedTrick,
     cpuFault: advanced.cpuFault,
-    encounter: advanced.resolvedTrick
-      ? applyResolution(settled.encounter, advanced.resolvedTrick.resolution)
-      : settled.encounter,
+    encounter: quarryFolded ? quarryFolded.encounter : settled.encounter,
+    unplayedAtResolve: settled.unplayedAtResolve ?? quarryFolded?.unplayedAtPress ?? null,
     blastGuardHeld: advanced.resolvedTrick?.resolution.blastGuardSpent
       ? false
       : settled.blastGuardHeld,

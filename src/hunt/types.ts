@@ -1,3 +1,5 @@
+import type { PendingApplyPayout } from './applyDamagePayout'
+
 export const QuarryCharacter = {
   Swan: 'swan',
   Fox: 'fox',
@@ -86,4 +88,10 @@ export interface EncounterState {
    *  discards it at an encounter boundary (AC7) with no explicit clear step to forget; that is
    *  why this lives here and not on `RunState`. */
   readonly pendingTimebomb: IncomingDamage
+  /** DLR-109 AC2 — a cash-out pressed but not yet dealt, or `null`. Sibling of `pendingTimebomb`
+   *  above and seeded `null` by `startEncounter`, which is what discards it at an encounter
+   *  boundary with no explicit clear step to forget. Wiped inside `applyDamage`, the module's
+   *  single clamp point, whenever the player actually loses health or the encounter resolves
+   *  (AC3) — no other function in this module writes it. NOT PERSISTED. */
+  readonly pendingApplyPayout: PendingApplyPayout | null
 }

@@ -1,7 +1,7 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, PT-002
+**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, PT-002
 
 ## Responsibility
 
@@ -73,7 +73,8 @@ an `ApplyDamagePlate` beside the Timebomb plate with a **two-tap** poise-then-co
 not `TimebombStage`'s two stages — its second tap _is_ the action), a reducer commit that re-asks the
 refusal predicate on **both** taps so a poise cannot survive the felt changing under it, and a second
 figure on `BankMeter` showing what the streak pays if the player is caught. The at-risk heart preview
-deliberately still shows the full figure. See
+deliberately still shows the full figure. **DLR-109 changed what the committing tap does — it now
+spends AP and queues the payout rather than dealing it — with no `.tsx` file touched.** See
 [The Apply Damage plate, and the extraction that had to come first](apply-damage-plate.md).
 
 It sits under `src/app/` rather than beside the engine for a hard reason: `eslint.config.js`'s
@@ -233,8 +234,10 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
   and the reducer stop reading one gate two ways; the single-boolean poise and why it is not
   `TimebombStage`'s two-stage union; **why the refusal is re-asked on the second tap** and the race it
   closes; the `isEncounterResolved` guard that stops a reducer throwing; the plate's `stopPropagation`
-  and its `Escape` on the wrapper rather than the button; and `BankMeter`'s second figure, computed
-  rather than restated (DLR-94).
+  and its `Escape` on the wrapper rather than the button; `BankMeter`'s second figure, computed
+  rather than restated; and — since DLR-109 — **what the commit itself now does**: spends AP and
+  queues the payout on `EncounterState` instead of dealing it, with the plate's own component
+  untouched (DLR-94, DLR-109).
 - [The dossier readouts and the telegraph](hunt-readouts-and-telegraph.md) — the `hunt` prop, the
   **shape readout** and why it cannot leak a rank, the **bank meter** and why the bank replaced the
   pending segment, the skull mark on a played card, the telegraph's two readings and why the Quarry's

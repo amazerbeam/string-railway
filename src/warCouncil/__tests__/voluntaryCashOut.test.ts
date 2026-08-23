@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DuelSide } from '../../hunt'
+import { APPLY_DAMAGE_AP_COST, DuelSide, STARTING_AP } from '../../hunt'
 import {
   ApplyDamageRefusal,
   applyDamageRefusalFor,
@@ -13,6 +13,8 @@ const stock = (over: Partial<ApplyDamageStock> = {}): ApplyDamageStock => ({
   bank: 3,
   multiplier: 3,
   timebombPending: false,
+  payoutPending: false,
+  apPool: STARTING_AP,
   canAct: true,
   ...over,
 })
@@ -77,6 +79,56 @@ describe('applyDamageRefusalFor — AC1 and D6', () => {
       expect(applyDamageRefusalFor(stock({ bank: bad }))).toBe(ApplyDamageRefusal.EmptyBank)
       expect(applyDamageRefusalFor(stock({ multiplier: bad }))).toBe(ApplyDamageRefusal.EmptyBank)
     }
+  })
+
+  it('DLR-109 — refuses while a pressed cash-out is still in the air', () => {
+    expect(applyDamageRefusalFor(stock({ payoutPending: true }))).toBe(
+      ApplyDamageRefusal.PayoutPending,
+    )
+  })
+
+  it('DLR-109 AC1 — refuses when the AP pool cannot cover the press', () => {
+    expect(applyDamageRefusalFor(stock({ apPool: APPLY_DAMAGE_AP_COST - 1 }))).toBe(
+      ApplyDamageRefusal.InsufficientAp,
+    )
+  })
+
+  // DLR-109 — the five-clause order is load-bearing: NotYourMove → TimebombPending →
+  // PayoutPending → InsufficientAp → EmptyBank. Walking it down from every reason true at once
+  // confirms each clause yields to the one before it, in order.
+  it('DLR-109 — walks all five refusal clauses in order', () => {
+    const everyReason = stock({
+      canAct: false,
+      timebombPending: true,
+      payoutPending: true,
+      apPool: 0,
+      bank: 0,
+      multiplier: 0,
+    })
+    expect(applyDamageRefusalFor(everyReason)).toBe(ApplyDamageRefusal.NotYourMove)
+    expect(applyDamageRefusalFor({ ...everyReason, canAct: true })).toBe(
+      ApplyDamageRefusal.TimebombPending,
+    )
+    expect(
+      applyDamageRefusalFor({ ...everyReason, canAct: true, timebombPending: false }),
+    ).toBe(ApplyDamageRefusal.PayoutPending)
+    expect(
+      applyDamageRefusalFor({
+        ...everyReason,
+        canAct: true,
+        timebombPending: false,
+        payoutPending: false,
+      }),
+    ).toBe(ApplyDamageRefusal.InsufficientAp)
+    expect(
+      applyDamageRefusalFor({
+        ...everyReason,
+        canAct: true,
+        timebombPending: false,
+        payoutPending: false,
+        apPool: STARTING_AP,
+      }),
+    ).toBe(ApplyDamageRefusal.EmptyBank)
   })
 })
 

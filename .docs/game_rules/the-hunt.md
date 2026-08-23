@@ -7,6 +7,28 @@ player follows, stated once, in playing order.
 Last reviewed against the code and the design on **2026-08-23**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
 
+> **Applying damage now costs you and makes you wait — DLR-109, 2026-08-23.** Until today, applying
+> damage cashed your streak into the Quarry **instantly**, at no cost, the moment you confirmed the
+> press. It now costs **action points** to press, and the cash-out no longer lands there and then: it
+> is **queued**, and lands at the resolution of a later trick — the current trick plus one more.
+> **Taking damage while it is in the air wipes it to nothing**, exactly as an ordinary hit already
+> wipes your bank and multiplier. If the killing blow is the delayed payout rather than a trick you
+> won outright, the coins that pay for how fast the fight ended still count the cards in your hand
+> **at the moment you pressed**, not at the moment it lands (section 7).
+>
+> **Only one payout may be in the air at a time**, and a second press is refused while one is still
+> owed. And if a Timebomb hit lands on you the same trick a payout was due, **the Timebomb wins**: the
+> payout is destroyed along with your bank, the same as any other hit that catches you holding a
+> streak (sections 4, 7, 8).
+>
+> **Nothing on the felt tells you a payout is in the air.** You press, the bank zeroes, the Quarry's
+> health does not move, and nothing says why until either it lands or you press again and read the
+> refusal. **None of this has been played.** The AP cost, the one-trick delay, whether an outstanding
+> payout should survive to a hand's last trick rather than being lost, whether one payout at a time is
+> right, and whether a Timebomb beating a payout feels fair are all recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved), and the rule below is marked
+> `[provisional]` for exactly this reason.
+
 > **You can see a Timebomb hit coming now — DLR-101, 2026-08-23.** Priming a card books damage that
 > lands at the next trick's resolution, and until today **nothing on the felt showed the booking
 > existed**: a primed trick was lost, 4 damage was correctly owed by the Quarry, and its row still
@@ -884,34 +906,65 @@ the multiplier yet.**
 > _readable_ or merely as _flat_ is the open question, and it is recorded under
 > [Known tensions](#known-tensions-recorded-not-resolved).
 
-### Applying damage — cashing your streak when you choose to — **[settled]** since 2026-08-20
+### Applying damage — cashing your streak when you choose to — **[provisional]** since 2026-08-23
 
 **Before you commit a card, you may cash your bank yourself.** It pays the **full** `bank × multiplier`
-into the Quarry's health, resets bank and multiplier to zero, and **costs you no health at all**.
+into the Quarry's health and resets bank and multiplier to zero — **but not instantly**, and not for
+free.
 
 - **It is available whenever your own card is the next thing to be played** — on your lead, and on your
   follow to a lead already on the table. Not during a trick's reveal, not while an ability is prompting,
   and not on the Quarry's move.
-- **It takes two taps.** The first poises the control; the second spends the streak. The cash-out cannot
+- **It takes two taps.** The first poises the control; the second spends the streak. The commit cannot
   be undone, so a single misclick must not be able to spend a hand's work. Pressing `Escape`, or tapping
   away, cancels a poise.
-- **It is refused, with the reason stated on the control**, when your bank is empty, when a Timebomb hit is
-  still owed (below), or when it is not your move.
+- **It costs action points to press** — `APPLY_DAMAGE_AP_COST`, spent whether or not the payout it
+  buys ever lands, and not refunded if it is later wiped (below). Nothing on the felt currently shows
+  how many action points you have.
+- **The cash-out does not land where you press it.** It is **queued** rather than dealt, and pays out
+  at the resolution of a later trick — the trick you pressed in, plus one more. Only one such payout
+  may be in the air at a time: a second press is refused while one is still owed.
+- **Taking damage while it is in the air wipes it to nothing.** Any hit that costs you health — a
+  clean loss, an eaten skull, or a Timebomb landing on you — destroys a queued payout exactly as it
+  already resets an unspent bank and multiplier. If a Timebomb hit and a due payout land on the same
+  trick, **the Timebomb wins**: the payout is destroyed along with everything else that trick's damage
+  would have reset.
+- **A payout still owed when your hand's last trick resolves lands anyway**, rather than being lost at
+  the hand boundary. It never survives past that trick, and it never crosses into a fresh encounter or
+  a fresh run.
+- **It is refused, with the reason stated on the control**, when your bank is empty, when you cannot
+  afford the action-point cost, when a payout from an earlier press is still owed, when a Timebomb hit
+  is still owed (below), or when it is not your move.
 - **The trick then proceeds exactly as normal.** You still play your card, it still resolves by the
-  ordinary rules — just against a bank and multiplier of zero. Applying damage is not a turn, and it does
-  not skip, end or replace anything.
+  ordinary rules — the bank and multiplier read zero from the moment you pressed, whether or not the
+  payout has landed yet. Applying damage is not a turn, and it does not skip, end or replace anything.
+- **If the payout is what lands the killing blow**, the coins it pays for how fast the fight ended
+  (section 10) count the cards left in your hand **at the moment you pressed**, not at the moment the
+  payout lands — so playing a card during the wait does not quietly shrink that payment.
 
 **It is a third kind of cash-out**, alongside the forced one and the end-of-hand one, and the only one
 you choose the moment of. It is what makes the two-thirds penalty a decision rather than a tax: the
 streak is worth its full square the whole time you are holding it, and being caught is what costs you a
 third of it.
 
-**It can win the fight.** A cash-out large enough to empty the Quarry's health ends the encounter there,
-the same as any other damage — and you take nothing for it.
+**It can win the fight** — when the payout lands, not when you press. A payout large enough to empty
+the Quarry's health ends the encounter at that resolution, the same as any other damage, and you take
+nothing for it.
 
-> **The hearts simply drop.** A trick that takes damage breaks the Quarry's hearts with a visible beat,
-> because a trick resolved. A voluntary apply resolves no trick, so there is no beat to hang it on and the
-> hearts fall without one. Whether that reads as abrupt is recorded under
+> **Nothing shows a payout is in the air.** You press, the bank zeroes, and the Quarry's health does
+> not move — there is currently no readout, no countdown, and no indication anywhere on the felt that a
+> cash-out is still coming, until either it lands or a second press is refused with a stated reason.
+> Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
+>
+> **The hearts simply drop, whenever the payout lands.** A trick that takes damage breaks the Quarry's
+> hearts with a visible beat, because a trick resolved. A payout landing resolves no trick of its own,
+> so there is no beat to hang it on and the hearts fall without one — the same reading DLR-94 recorded
+> for the instant version, now also true of the moment a delayed payout lands. Whether that reads as
+> abrupt is recorded under [Known tensions](#known-tensions-recorded-not-resolved).
+>
+> **None of this has been played.** The action-point cost, the one-trick delay, the hand-end flush, the
+> one-payout-at-a-time rule, and the Timebomb-wins ordering were all built under an unattended sprint
+> run with no developer confirmation — see the callout near the top of this document and
 > [Known tensions](#known-tensions-recorded-not-resolved).
 
 ### At the end of the sixth trick, the bank cashes
@@ -1105,7 +1158,7 @@ at the third fight's eighteen hearts, with a streak preview and a booked hit on 
 question that decides it. See `hybrid-design.md` version-4-scope §1 for the mechanic; the readout
 itself answers to no design section, because none covers it.
 
-### Applying damage cannot be delayed while Timebomb is pending — **[settled]** since 2026-08-20
+### Applying damage cannot be pressed while Timebomb is pending — **[settled]** since 2026-08-20
 
 The design decided (2026-08-19) that **Apply Damage** (section 7) must be **disabled while Timebomb is
 pending**, so a player cannot dodge a booked hit by cashing out ahead of it. **It is now enforced.** The
@@ -1115,6 +1168,11 @@ commit after a booking has landed under it. See `hybrid-design.md` version-4-sco
 
 **A Timebomb hit owed to the Quarry locks it too, not only one owed to you.** The rule reads the pending
 queue rather than your side of it, which is the stricter reading of the two.
+
+> **Since 2026-08-23, the control is refused for two further reasons, in this order**: an earlier
+> press's payout still owed (**[provisional]**, DLR-109), and an action-point pool that will not cover
+> the press (**[provisional]**, DLR-109). The full order a refusal is chosen in is: not your move, a
+> Timebomb hit pending, an earlier payout still owed, too few action points, then an empty bank.
 
 ### What closing a hand takes
 
@@ -1760,6 +1818,20 @@ the mechanics themselves are documented in `../implementation/`.
 > the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
 > a `RunState` field and a transition in the same breath means exactly that.
 
+> **Where DLR-109 stands, 2026-08-23.** Apply Damage costs `APPLY_DAMAGE_AP_COST` action points and
+> queues its payout instead of dealing it, landing `APPLY_DAMAGE_DELAY_TRICKS + 1` trick resolutions
+> later; taking damage in the meantime wipes it, at the same clamp point an ordinary hit already
+> resets the bank through. **Both figures — the AP cost and the delay — are transcribed from the
+> ticket and NEVER PLAYED.** Three further readings were taken by an agent under an unattended sprint
+> run with no developer confirmation: that an outstanding payout lands at a hand's final trick rather
+> than being lost, that only one payout may be queued at a time, and that a Timebomb detonating on the
+> same trick a payout is due destroys the payout. **All rows this ticket touches are `provisional`**
+> for that reason — none is a reading anyone has played or confirmed. **No `.tsx` file changed**, so
+> nothing on the felt shows a payout is in the air or shows the AP pool at all; both are recorded
+> under [Known tensions](#known-tensions-recorded-not-resolved) as the single things most worth a
+> developer's look in the running app. Buff activation (DLR-108) remains unreachable; this ticket adds
+> no second AP-spending mechanism, and both consumers draw on the same `actionPoints.ts` functions.
+
 > **Where DLR-101 stands, 2026-08-23.** It changed **no rule** — no amount, no timing, no procedure.
 > It is entirely a readout for a booking the engine has kept since DLR-90, so everything it added is
 > reachable by playing right now and nothing about how Timebomb behaves moved. **What it is not is
@@ -1941,9 +2013,17 @@ the mechanics themselves are documented in `../implementation/`.
 | The fraction is a numerator over a denominator, not a float                   | settled — since DLR-94                                     | `src/hunt/config.ts` — two constants, multiplied before dividing in `forcedCashValue`, because `x * (2 / 3)` floors wrong on every multiple of 3; pinned by `bank.test.ts`'s multiples-of-three spec                                                                                                                                                                               | —                                                                                                                                                                                                                                                                                                              |
 | Cash-out at the end of the sixth trick, **in full**                           | settled                                                    | `src/warCouncil/bank.ts` — `resolveTrickBank`'s `finalTrick` fold calls `cashValue`, deliberately not `forcedCashValue`; pinned by `bank.test.ts`'s AC5 spec, which cashes one streak both ways                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                              |
 | One statement of what a streak is worth                                       | settled — since DLR-94                                     | `src/warCouncil/bank.ts` — `cashValue`; all three cash-outs compute through it, so they cannot disagree about what they are a share of                                                                                                                                                                                                                                             | —                                                                                                                                                                                                                                                                                                              |
-| Applying damage — full payout, both counters reset, no health cost            | settled — since DLR-94                                     | `src/warCouncil/voluntaryCashOut.ts` — `cashBankNow` zeroes only bank and multiplier; `incomingFromCashOut` keys the player's share to a hard 0. Committed by `src/app/warCouncil/roundReducer.ts` — `handleTapApplyDamage`                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                              |
-| The trick carries on afterwards                                               | settled — since DLR-94                                     | nothing to enforce — `cashBankNow` returns the round with `currentTrick`, `phase`, `leader` and both hands untouched, and writes no `lastResolution`, so the ordinary play path resumes                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                              |
-| One statement of whether Apply Damage is live                                 | settled — since DLR-94                                     | `src/warCouncil/voluntaryCashOut.ts` — `applyDamageRefusalFor`, read by both the reducer's guard and the plate's disabled state; `src/app/warCouncil/roundUiState.ts` — `applyDamageStock` is the one place the app's shape is translated for it                                                                                                                                   | —                                                                                                                                                                                                                                                                                                              |
+| An action-point pool, refreshed each hand, with a first reachable spend       | settled — since DLR-104, reachable since DLR-109            | `src/hunt/apConfig.ts` — `STARTING_AP` (6), `AP_ENABLED`; `src/app/warCouncil/roundUiState.ts` — `RoundUiState.apPool`, seeded through `src/hunt/actionPoints.ts` — `refreshActionPointsForNewHand` at mount. Not rendered anywhere                                                                                                                                                | **Developer** — `STARTING_AP` is unplayed, and the pool has no felt-side readout                                                                                                                                                                                                                              |
+| Applying damage — full figure, both counters reset, no health cost            | settled — since DLR-94                                     | `src/warCouncil/voluntaryCashOut.ts` — `cashBankNow` zeroes only bank and multiplier; `incomingFromCashOut` keys the player's share to a hard 0                                                                                                                                                                                                                                     | —                                                                                                                                                                                                                                                                                                              |
+| Applying damage queues rather than deals, and costs AP                        | **provisional** — since DLR-109                             | `src/hunt/apConfig.ts` — `APPLY_DAMAGE_AP_COST` (3); `src/hunt/applyDamagePayout.ts` — `queueApplyPayout`; committed by `src/app/warCouncil/roundReducer.ts` — `handleTapApplyDamage`, which spends through `src/hunt/actionPoints.ts` — `spendAp`                                                                                                                                | **Developer** — both the AP cost and never played                                                                                                                                                                                                                                                              |
+| The payout lands one trick beyond the press's own                             | **provisional** — since DLR-109                             | `src/hunt/apConfig.ts` — `APPLY_DAMAGE_DELAY_TRICKS` (1); `src/hunt/applyDamagePayout.ts` — `applyDamageDelayTricks`, `tickApplyPayout`; settled by `src/app/warCouncil/commitHandlers.ts` — `applyResolution`'s fourth step                                                                                                                                                       | **Developer** — the delay figure, never played                                                                                                                                                                                                                                                                 |
+| Taking damage while a payout is in the air wipes it                           | settled — since DLR-109                                    | `src/hunt/encounter.ts` — `applyDamage`'s single clamp point clears `pendingApplyPayout` whenever the player's health actually falls, or the encounter resolves                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                              |
+| A Timebomb hit on the same trick a payout is due destroys the payout          | **provisional** — since DLR-109                             | `src/app/warCouncil/commitHandlers.ts` — `applyResolution` settles the payout LAST, after the trick's own damage (which already folds in a detonating Timebomb) has already wiped `pendingApplyPayout`                                                                                                                                                                            | **Developer** — a design reading, never played                                                                                                                                                                                                                                                                |
+| Only one payout may be queued at a time                                       | **provisional** — since DLR-109                             | `src/hunt/encounter.ts` — `queueApplyDamagePayout` returns the encounter unchanged when one is already queued                                                                                                                                                                                                                                                                       | **Developer** — a design reading, never played                                                                                                                                                                                                                                                                |
+| A payout still owed at the hand's last trick lands there rather than being lost | **provisional** — since DLR-109                           | `src/hunt/applyDamagePayout.ts` — `tickApplyPayout`'s `handEnding` parameter                                                                                                                                                                                                                                                                                                         | **Developer** — a design reading, never played                                                                                                                                                                                                                                                                |
+| A deferred kill's coin payout counts the hand size at the press, not the landing | settled — since DLR-109                                  | `src/hunt/applyDamagePayout.ts` — `PendingApplyPayout.unplayedAtPress`, frozen at `queueApplyPayout`; folded into `unplayedAtResolve` by `src/app/warCouncil/commitHandlers.ts` — `commit`, only when that field is still unset                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                              |
+| The trick carries on afterwards                                               | settled — since DLR-94                                     | nothing to enforce — `cashBankNow` returns the round with `currentTrick`, `phase`, `leader` and both hands untouched, and writes no `lastResolution`, so the ordinary play path resumes; still true with the cash-out itself deferred (DLR-109)                                                                                                                                   | —                                                                                                                                                                                                                                                                                                              |
+| One statement of whether Apply Damage is live                                 | settled — since DLR-94, widened DLR-109                    | `src/warCouncil/voluntaryCashOut.ts` — `applyDamageRefusalFor`, five clauses since DLR-109 (`NotYourMove → TimebombPending → PayoutPending → InsufficientAp → EmptyBank`), read by both the reducer's guard and the plate's disabled state; `src/app/warCouncil/roundUiState.ts` — `applyDamageStock` is the one place the app's shape is translated for it                       | —                                                                                                                                                                                                                                                                                                              |
 | Two taps to spend a streak, `Escape` to cancel                                | settled — the grammar; the tap count is **provisional**    | `src/app/warCouncil/roundUiState.ts` — `RoundUiState.applyPoised`, a hand-transient boolean; `ApplyDamagePlate.tsx` carries `aria-pressed` and the `Escape` handler                                                                                                                                                                                                                | **Developer** — whether two taps is right, or one. Only felt by playing                                                                                                                                                                                                                                        |
 | The reduced figure is shown beside the full one                               | settled — since DLR-94                                     | `src/app/warCouncil/BankMeter.tsx` — computes it through `forcedCashValue` rather than restating the fraction, so the copy cannot drift from the constants                                                                                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                              |
 | Damage to the player = 1 per event                                            | settled                                                    | `src/hunt/config.ts` — `DAMAGE_PER_HIT`                                                                                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                              |
@@ -2439,6 +2519,24 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
 
 ### Known tensions, recorded not resolved
 
+- **Applying damage now has a wait and a cost, and nothing on the felt says so** (new 2026-08-23,
+  DLR-109). Pressing it zeroes the bank and spends action points, but the Quarry's health does not
+  move and nothing indicates a payout is still coming — a player watching the felt sees a control that
+  appears to do nothing until the payout lands one or more tricks later, or until a second press
+  explains itself through the `PayoutPending` refusal sentence. The action-point pool itself is
+  equally invisible, so an `InsufficientAp` refusal will read as the button dying for no visible
+  reason. This is the single thing most worth a developer's look in the running app, and the ticket
+  scoped a UI answer out on purpose.
+- **Every figure and every reading behind the delay is an agent's guess under an unattended sprint
+  run, not a played decision** (new 2026-08-23, DLR-109). `APPLY_DAMAGE_AP_COST = 3` (against
+  `STARTING_AP = 6`, at most two presses a hand before any buff draws on the same pool) and
+  `APPLY_DAMAGE_DELAY_TRICKS = 1` (one trick of exposure on a six-trick hand) are both transcribed
+  from the ticket and unplayed. Three further readings were taken by the plan rather than the
+  developer: that an outstanding payout lands at a hand's final trick rather than being lost, that
+  only one payout may be queued at a time (ruling out a "double down" line of play some players will
+  look for), and that a detonating Timebomb beats a due payout on the same resolution — which means a
+  primed card can now eat a large banked cash-out, and will likely feel severe the first time it
+  happens. None of the five has been played.
 - **A first-trick kill can never pay the ten-coin figure the payout table itself shows** (new
   2026-08-22, DLR-98). DLR-98's verification pass tried to reproduce "first hand, one trick, five
   cards left, pays 10" live and found the state unreachable: at that exact instant no prior trick

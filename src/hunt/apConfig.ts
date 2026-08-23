@@ -43,3 +43,21 @@ export const MAX_MULTIPLIER_BONUS_PER_HAND = 6
 export const MAX_FLAT_DAMAGE_BONUS_PER_HAND = 12
 // UNIT: coins per hand.
 export const MAX_COIN_BONUS_PER_HAND = 10
+
+// DLR-109 — Apply Damage's two tunables. They live here rather than in `config.ts` because that
+// file is at 372 of its 400-line blocking budget and this file is already its sanctioned overflow.
+// `APPLY_DAMAGE_DELAY_TRICKS` is not an AP figure; it sits beside the AP cost because the two are
+// one control's pair of tunables and splitting them across two files to satisfy a filename would
+// be worse.
+
+// AC1 — what one Apply Damage press costs. Transcribed from the ticket, which sets this default
+// and flags it OPEN per §2 of the design doc. NEVER PLAYED — the developer's to move.
+// UNIT: action points per press.
+export const APPLY_DAMAGE_AP_COST: ActionPoints = 3
+
+// AC2/AC5 — how many WHOLE TRICKS BEYOND the trick the press happened in a queued payout must
+// survive. `1` is AC2's "the current trick plus the next trick": a press queues
+// `APPLY_DAMAGE_DELAY_TRICKS + 1` trick resolutions. Deliberately NOT typed `ActionPoints` — it
+// counts tricks, not points. Read only through `applyDamageDelayTricks`, never as a literal.
+// NEVER PLAYED. UNIT: tricks.
+export const APPLY_DAMAGE_DELAY_TRICKS = 1

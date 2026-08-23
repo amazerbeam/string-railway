@@ -1,7 +1,7 @@
 # War Council — `src/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, PT-001, PT-002
+**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, PT-001, PT-002
 
 ## Responsibility
 
@@ -71,6 +71,15 @@ end-of-hand fold deliberately keeps paying in full. **It is not a fifth `TrickOu
 are worth reading before anyone tries to make it one — see
 [the voluntary cash-out](voluntary-cash-out.md). It is also the codebase's **first fractional rule**;
 the numerator/denominator pair in `src/hunt/config.ts` is a correctness measure, not a style choice.
+
+**DLR-109 gave this rule a cost and a delay, though `voluntaryCashOut.ts`'s own arithmetic is
+unchanged.** `cashBankNow` and `incomingFromCashOut` still compute the same figures they always did;
+what changed is that the reducer now **queues** the result instead of dealing it in the same
+transition, and the committing press costs `APPLY_DAMAGE_AP_COST` action points. This module's
+contribution is the availability half: `applyDamageRefusalFor` grew two clauses, `PayoutPending` and
+`InsufficientAp`, extending the existing single-source-of-truth pattern rather than adding a second
+one. The delay, the landing, and the wipe-on-damage rule live in `src/hunt/`'s
+[delayed Apply Damage payout](../hunt/delayed-apply-damage-payout.md).
 
 **DLR-96 added no code, only proof that DLR-89 through DLR-95 actually compose.** It is a verification
 ticket against the seven run-economy tickets above, not a feature — a static audit of every shared
@@ -174,8 +183,9 @@ computed in `src/app/warCouncil/roundUiState.ts`, because that predicate reads `
   paying in full (DLR-94).
 - [Applying damage — the cash-out the player chooses](voluntary-cash-out.md) — `cashBankNow` and what it
   pointedly does **not** touch, the one availability predicate both the reducer and the plate read,
-  the refusal ordering and why it is that way round, `ApplyDamageStock`'s four plain values, and why
-  this is its own module rather than a fifth `TrickOutcome` (DLR-94).
+  the refusal ordering and why it is that way round, `ApplyDamageStock`'s six plain values, why
+  this is its own module rather than a fifth `TrickOutcome`, and — since DLR-109 — the AP cost and
+  the two new refusal codes for a queued payout still in the air (DLR-94, DLR-109).
 - [The Timebomb mark, and the clean loss it replaces](the-timebomb-mark.md) — `primedCards` and why
   it mirrors `skulledCards` field for field, why `timebomb.ts` is a separate module from `skulls.ts`
   rather than a shared marker list, `primeCard`'s throw and why the reducer makes it safe, **the

@@ -7,8 +7,11 @@ import {
   type WarCouncilState,
 } from '../../../warCouncil'
 import {
+  APPLY_DAMAGE_AP_COST,
+  applyDamage,
   DuelSide,
   PLAYER_START_HEALTH,
+  STARTING_AP,
   isEncounterResolved,
   queueTimebomb,
   quarryHealthForEncounter,
@@ -92,10 +95,14 @@ describe('Apply Damage — the poise, and the refusals (AC1, D6)', () => {
   })
 })
 
-describe('Apply Damage — the commit (AC2, AC3)', () => {
-  it('AC2 — the second tap pays the FULL bank × multiplier into the Quarry', () => {
+describe('Apply Damage — the commit (AC1, AC2, AC3)', () => {
+  // DLR-109 — the second tap no longer pays anything in this transition. It QUEUES the frozen
+  // cash-out on the encounter instead; `commitHandlers.ts`'s `applyResolution` settles it a trick
+  // or more later. `roundReducer.delayedApply.test.ts` covers the settlement itself.
+  it('AC2 — the second tap QUEUES the FULL bank × multiplier rather than paying it', () => {
     const ui = apply(uiFrom(streakRound()))
-    expect(ui.encounter.health[DuelSide.Quarry]).toBe(quarryHealthForEncounter(0) - 9)
+    expect(ui.encounter.health[DuelSide.Quarry]).toBe(quarryHealthForEncounter(0))
+    expect(ui.encounter.pendingApplyPayout).toMatchObject({ cashOut: 9 })
   })
 
   it('AC2 — and costs the player nothing', () => {
@@ -110,6 +117,14 @@ describe('Apply Damage — the commit (AC2, AC3)', () => {
     expect(ui.applyPoised).toBe(false)
   })
 
+  it('AC1 — the committing tap spends APPLY_DAMAGE_AP_COST; the poising tap spends nothing', () => {
+    const poised = roundReducer(uiFrom(streakRound()), tapApply)
+    expect(poised.apPool).toBe(STARTING_AP)
+
+    const committed = roundReducer(poised, tapApply)
+    expect(committed.apPool).toBe(STARTING_AP - APPLY_DAMAGE_AP_COST)
+  })
+
   it('AC3 — no trick is resolved, so no reveal is held and the hand stays live', () => {
     const ui = apply(uiFrom(streakRound()))
     expect(ui.resolvedTrick).toBeNull()
@@ -118,7 +133,7 @@ describe('Apply Damage — the commit (AC2, AC3)', () => {
     expect(ui.round.currentTrick).toEqual([])
   })
 
-  it('AC3 — the player then plays their card by the ordinary rules, against a zeroed bank', () => {
+  it('AC3 — the player then plays their card by the ordinary rules, against a zeroed bank, and taking the hit wipes the queued payout', () => {
     let ui = apply(
       uiFrom(
         makeRound({
@@ -134,29 +149,38 @@ describe('Apply Damage — the commit (AC2, AC3)', () => {
         }),
       ),
     )
-    const quarryAfterApply = ui.encounter.health[DuelSide.Quarry]
+    expect(ui.encounter.pendingApplyPayout).toMatchObject({ cashOut: 9 })
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: card(Suit.Bells, 2) })
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: card(Suit.Bells, 2) })
 
     // The trick is lost, but the bank was already spent — so the forced cash-out pays nothing.
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanLoss)
     expect(ui.resolvedTrick?.resolution.cashOut).toBe(0)
-    expect(ui.encounter.health[DuelSide.Quarry]).toBe(quarryAfterApply)
+    // AC3 — the player lost health on this trick, so the queued payout is wiped, not ticked down.
+    expect(ui.encounter.pendingApplyPayout).toBeNull()
+    expect(ui.encounter.health[DuelSide.Quarry]).toBe(quarryHealthForEncounter(0))
     expect(ui.encounter.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH - 1)
   })
 
-  it('cashing out a lethal streak ends the fight through the ordinary machinery', () => {
+  it('queuing a lethal streak does not end the fight — the payout is queued, not paid', () => {
     const ui = apply(uiFrom(makeRound({ leader: PlayerSide.Player, bank: 500, multiplier: 2 })))
-    expect(isEncounterResolved(ui.encounter)).toBe(true)
-    expect(ui.encounter.health[DuelSide.Quarry]).toBe(0)
-    // AC2 holds even on the killing blow: the player took nothing for it.
+    expect(isEncounterResolved(ui.encounter)).toBe(false)
+    expect(ui.encounter.health[DuelSide.Quarry]).toBe(quarryHealthForEncounter(0))
+    // AC2 holds on the eventual killing blow too: the player took nothing for pressing.
     expect(ui.encounter.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH)
+    expect(ui.encounter.pendingApplyPayout).toMatchObject({ cashOut: 1000 })
   })
 
   it('a further tap on a resolved fight is inert rather than throwing', () => {
-    const settled = apply(
-      uiFrom(makeRound({ leader: PlayerSide.Player, bank: 500, multiplier: 2 })),
-    )
+    const resolved = applyDamage(startEncounter(0), {
+      [DuelSide.Player]: 0,
+      [DuelSide.Quarry]: quarryHealthForEncounter(0),
+    })
+    // Already frozen, as it would be by the transition that actually resolved the fight —
+    // `captureUnplayed` writes this field once, and this fixture skips straight to "after that",
+    // so it must not still read `null` or `captureUnplayed` would fire a second time here and the
+    // identity check below would fail for a reason unrelated to what this test is proving.
+    const settled = { ...uiFrom(makeRound({ leader: PlayerSide.Player }), resolved), unplayedAtResolve: 0 }
     expect(roundReducer(settled, tapApply)).toBe(settled)
   })
 })

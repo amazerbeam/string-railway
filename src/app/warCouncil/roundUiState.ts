@@ -23,8 +23,12 @@ import {
 } from '../../warCouncil'
 import {
   apCostOf,
+  hasPendingApplyPayout,
   hasPendingTimebomb,
   isEncounterResolved,
+  refreshActionPointsForNewHand,
+  STARTING_AP,
+  type ActionPoints,
   type Buff,
   type BuffActivationState,
   type BuffActivationStock,
@@ -137,6 +141,10 @@ export interface RoundUiState {
    *  `CheatSelection`'s stated reason: two independent fields would admit "closed but holding a
    *  stale selection". */
   readonly discardSelection: readonly Card[] | null
+  /** DLR-109 AC1 — the hand's action-point pool. Seeded at mount through
+   *  `refreshActionPointsForNewHand`, because `App.tsx` remounts the felt per hand (`key={hand}`),
+   *  so a mount IS the per-hand refresh. Spent only through `spendAp`. */
+  readonly apPool: ActionPoints
 }
 
 export interface RoundUiSeed {
@@ -206,6 +214,7 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     unplayedAtResolve: null,
     discardsRemaining: seed.discardsRemaining,
     discardSelection: null,
+    apPool: refreshActionPointsForNewHand(STARTING_AP),
   }
 }
 
@@ -252,6 +261,8 @@ export function applyDamageStock(state: RoundUiState): ApplyDamageStock {
     bank: state.round.bank,
     multiplier: state.round.multiplier,
     timebombPending: hasPendingTimebomb(state.encounter),
+    payoutPending: hasPendingApplyPayout(state.encounter),
+    apPool: state.apPool,
     canAct: canAct(state),
   }
 }

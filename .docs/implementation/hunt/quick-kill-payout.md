@@ -164,3 +164,29 @@ taken **after** the killing trick's own card has left the player's hand. `playCa
 before the trick resolves, so a first-trick kill leaves 5 of `HAND_SIZE` 6 — which is what makes
 "a first-hand, one-trick kill with five cards left pays 10 coins" come out right. That figure is
 pinned as a regression test in `quickKill.test.ts`.
+
+## Two sources of the unplayed count, since DLR-109
+
+Until DLR-109 there was exactly one way for a kill to happen: a trick's own damage emptied the
+Quarry's bar, and `captureUnplayed` (`src/app/warCouncil/roundReducer.ts`) froze the player's live
+hand length at that same transition. **Apply Damage's payout now delays the kill by a trick or
+more** (see [the delayed Apply Damage payout](delayed-apply-damage-payout.md)), which means the hand
+can shrink between the press and the landing — a card played during the delay window would otherwise
+silently under-count the hand that actually earned the kill.
+
+The count therefore has two sources, chosen at the moment the encounter actually resolves:
+
+- **An ordinary kill** — a trick's own damage, a booked Timebomb detonating, or any other immediate
+  path — is still counted by `captureUnplayed` off the **live** hand at the resolving transition,
+  unchanged from before DLR-109.
+- **A delayed kill** — a queued Apply Damage payout landing and emptying the bar — is counted by the
+  payout's own **frozen** `unplayedAtPress`, snapshotted at the press rather than recalculated at the
+  delayed resolution. `applyResolution` in `src/app/warCouncil/commitHandlers.ts` reports this figure
+  only when the payout it just settled is what resolved the encounter; `commit` folds it into
+  `RoundUiState.unplayedAtResolve` **only when that field is still `null`**, so it can never overwrite
+  a value `captureUnplayed` already wrote and the two readers can never race.
+
+Both paths write the same field, `unplayedAtResolve`, and `recordEncounter`'s `unplayedCards`
+parameter still cannot tell which source produced its value — nor does it need to: the whole point
+of freezing `unplayedAtPress` at the press is that a deferred killing blow pays for the hand that
+earned it, exactly as an immediate one always has.

@@ -1,4 +1,10 @@
-import { DuelSide, type IncomingDamage } from '../hunt'
+import {
+  APPLY_DAMAGE_AP_COST,
+  canAffordAp,
+  DuelSide,
+  type ActionPoints,
+  type IncomingDamage,
+} from '../hunt'
 import { cashValue } from './bank'
 import type { RoundState } from './types'
 
@@ -14,6 +20,10 @@ export const ApplyDamageRefusal = {
    *  player able to cash out on demand could otherwise dodge the interaction between the two
    *  systems entirely. */
   TimebombPending: 'timebombPending',
+  /** DLR-109 — a pressed cash-out is still in the air. One at a time. */
+  PayoutPending: 'payoutPending',
+  /** DLR-109 AC1 — the hand's AP pool does not cover `APPLY_DAMAGE_AP_COST`. */
+  InsufficientAp: 'insufficientAp',
   /** The felt is not waiting on the player's card — a trick reveal is held, an ability prompt is
    *  open, the Quarry is to move, or the hand is over. */
   NotYourMove: 'notYourMove',
@@ -31,6 +41,10 @@ export interface ApplyDamageStock {
   readonly multiplier: number
   /** A Timebomb is owed to either side and has not been paid. */
   readonly timebombPending: boolean
+  /** DLR-109 — a cash-out is already queued and undelivered. */
+  readonly payoutPending: boolean
+  /** DLR-109 AC1 — the hand's remaining action points. */
+  readonly apPool: ActionPoints
   /** The player's own card is the next thing to be committed. */
   readonly canAct: boolean
 }
@@ -43,9 +57,13 @@ export interface ApplyDamageStock {
  * from `roundUiState.ts` rather than recomputed in the component.
  *
  * `NotYourMove` comes FIRST because it is true of the whole felt rather than of this control, and
- * `TimebombPending` before `EmptyBank` for `flaskRefusalFor`'s stated reason: report the reason that
- * will still be true after the next trick banks. Telling a primed player with an empty bank to
- * go and take a trick would be actively wrong.
+ * `TimebombPending` before `PayoutPending` before `InsufficientAp` before `EmptyBank` for
+ * `flaskRefusalFor`'s stated reason: report the reason that will still be true after the next
+ * trick banks. Telling a primed player with an empty bank to go and take a trick would be
+ * actively wrong. `EmptyBank` stays LAST of the five because it is the one reason that stops
+ * being true after the next trick banks; `InsufficientAp` precedes it because AP refreshes only
+ * per hand and therefore outlives a trick — a player who cannot afford the press now still cannot
+ * afford it once the bank climbs.
  *
  * A non-integer or non-positive bank or multiplier refuses rather than passing the comparison.
  * `NaN > 0` is `false`, but a fractional bank would otherwise present a fractional cash-out as
@@ -54,6 +72,8 @@ export interface ApplyDamageStock {
 export function applyDamageRefusalFor(stock: ApplyDamageStock): ApplyDamageRefusal | null {
   if (!stock.canAct) return ApplyDamageRefusal.NotYourMove
   if (stock.timebombPending) return ApplyDamageRefusal.TimebombPending
+  if (stock.payoutPending) return ApplyDamageRefusal.PayoutPending
+  if (!canAffordAp(stock.apPool, APPLY_DAMAGE_AP_COST)) return ApplyDamageRefusal.InsufficientAp
   if (cashValue(stock.bank, stock.multiplier) <= 0) return ApplyDamageRefusal.EmptyBank
   return null
 }

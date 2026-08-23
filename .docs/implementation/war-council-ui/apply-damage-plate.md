@@ -7,6 +7,13 @@ Quarry on demand, at no cost in health. The rule is entirely in
 [`voluntaryCashOut.ts`](../war-council/voluntary-cash-out.md); everything here is presentation and
 sequencing.
 
+> **DLR-109 changed the commit itself, and no `.tsx` file changed to do it.** The two-tap grammar,
+> the plate's component, its copy, and its CSS are exactly as this page describes below. What moved
+> is `handleTapApplyDamage`'s commit branch and the trick-resolution ordering behind it — see
+> [What the commit does now — since DLR-109](#what-the-commit-does-now--since-dlr-109) at the foot of
+> this page, and [the delayed Apply Damage payout](../hunt/delayed-apply-damage-payout.md) for the
+> mechanic itself.
+
 ## The extraction that had to come first
 
 `roundReducer.ts` stood at **390 of its 400-line budget** and could not take a new handler. So the
@@ -78,15 +85,18 @@ dropped.
 A refusal **drops a held poise** rather than leaving it stranded, and never half-applies. The reason is
 already on the plate's face, so the player is never left with an inert control and no visible cause.
 
-The commit itself is three statements: `cashBankNow`, then `applyDamage` through `incomingFromCashOut`,
-then clear the poise. It is **guarded by `isEncounterResolved`** for the reason `applyResolution` guards:
+**Before DLR-109, the commit was three statements: `cashBankNow`, then `applyDamage` through
+`incomingFromCashOut`, then clear the poise** — see
+[What the commit does now](#what-the-commit-does-now--since-dlr-109) below for what replaced it. It
+was, and is still, **guarded by `isEncounterResolved`** for the reason `applyResolution` guards:
 `applyDamage` *throws* on an already-resolved encounter, and a throw inside a reducer during an event
 handler unmounts the tree. Unreachable in practice — a resolved encounter already fails `canAct` — so it
 is a guard rather than a live path.
 
 **`resolvedTrick` stays `null` and nothing writes `lastResolution`**, so no reveal is held, the felt
 never enters its waiting state, and the player is simply looking at a zeroed `BankMeter` and a shorter
-Quarry heart row with their card still to play.
+Quarry heart row with their card still to play — **still true since DLR-109**, because the payout
+lands at a later trick's own resolution, not at the press.
 
 **Poising does not clear a Cheat or an Timebomb selection, and they do not clear it.** Those two
 reinterpret the next hand-card tap and therefore cannot coexist; this one reinterprets nothing, so a
@@ -154,10 +164,16 @@ a disabled button.
 
 ## What the tests pin
 
-- `__tests__/roundReducer.applyDamage.test.ts` — the poise, all three refusals, the D6 race (Timebomb
-  booked *between* the two taps), cancel, the full payout, the zero player damage, the zeroed counters,
-  the trick carrying on and resolving normally afterwards, a lethal cash-out ending the fight through
-  the ordinary machinery, and a further tap on a resolved fight being inert rather than throwing.
+- `__tests__/roundReducer.applyDamage.test.ts` — the poise, the refusals (all five since DLR-109), the
+  D6 race (Timebomb booked *between* the two taps), cancel, the trick carrying on and resolving
+  normally afterwards, and a further tap on a resolved fight being inert rather than throwing.
+  **Since DLR-109** its assertions on the committing tap changed direction: the Quarry's health no
+  longer drops in the same transition, `encounter.pendingApplyPayout` holds the frozen `cashOut`
+  instead, and `apPool` falls by `APPLY_DAMAGE_AP_COST` on the commit and not on the poise.
+- `__tests__/roundReducer.delayedApply.test.ts` (new, DLR-109) — the landing after
+  `APPLY_DAMAGE_DELAY_TRICKS + 1` resolutions, the AC3 wipe, the AC4 press-time snapshot surviving a
+  card played during the delay window, the Timebomb-wins ordering on a shared resolution, and the
+  hand-end flush.
 - `__tests__/ApplyDamagePlate.test.tsx` — live and tappable, disabled with the reason on its face, the
   D6 reason stated rather than going quiet, `aria-pressed` and the class together, never reading as
   poised while refused, `Escape`, and the click not reaching the felt behind it.
@@ -178,3 +194,43 @@ the plate's `filter` (its hover brightness) gained a transition reading the shar
 And its `aspect-ratio` moved from `2 / 3` to `4 / 3` with `border-radius: 10px`, done in lockstep with
 the Cheat slot and the Timebomb plate so all three felt-rail plates stay one shape family, distinct
 from `.wc-card`'s silhouette. No prop, refusal string, or accessible-name computation changed.
+
+## What the commit does now — since DLR-109
+
+**No `.tsx` file changed.** The plate, its copy, its CSS, and the two-tap grammar above are exactly
+as this page already describes; what changed is `handleTapApplyDamage`'s commit branch, in
+`roundReducer.ts`:
+
+```ts
+const { state: round, cashOut } = cashBankNow(state.round)
+const payout = queueApplyPayout(cashOut, state.round.hands[PlayerSide.Player].length)
+return {
+  ...state,
+  round,
+  encounter: queueApplyDamagePayout(state.encounter, payout),
+  apPool: spendAp(state.apPool, APPLY_DAMAGE_AP_COST),
+  applyPoised: false,
+}
+```
+
+`cashBankNow` still zeroes bank and multiplier in the same transition as before — the bank readout
+still visibly drops the instant the second tap lands. What no longer happens on this transition is
+the cash-out itself: instead of `applyDamage(state.encounter, incomingFromCashOut(cashOut))`, the
+figure and the press-time hand size are frozen into a `PendingApplyPayout` and handed to the
+encounter's queue, and `APPLY_DAMAGE_AP_COST` is spent from the hand's `apPool` — **not refunded** if
+the payout is later wiped. `captureUnplayed` no longer fires on this transition at all, because the
+press no longer resolves the encounter; a **delayed** kill's unplayed count instead comes from the
+payout's own frozen `unplayedAtPress`, threaded through `commit` in `commitHandlers.ts`. See
+[the delayed Apply Damage payout](../hunt/delayed-apply-damage-payout.md) for the queue, the
+four-step trick-resolution order that settles it, and both new refusal codes
+(`PayoutPending`, `InsufficientAp`) the two-tap grammar above now also has to be refused by.
+
+**The refusal check on both taps is unchanged in shape and now guards more.** `applyDamageRefusalFor`
+is still asked before the poise and re-asked on the commit, for the same D6 race this page already
+describes — it now can also return `PayoutPending` (a payout from an earlier press is still in the
+air) or `InsufficientAp` (the hand's `apPool` will not cover the cost). Both render through the
+plate's existing `APPLY_DAMAGE_REFUSAL_MESSAGE` map with no component change.
+
+**`apPool` has no felt-side readout.** It is spent and refused against, but nothing on the rail shows
+its value, so an `InsufficientAp` refusal will read as the button dying for no visible reason — the
+same gap `hunt/action-points.md` records for the resource generally.

@@ -61,6 +61,8 @@ export {
   MAX_MULTIPLIER_BONUS_PER_HAND,
   MAX_FLAT_DAMAGE_BONUS_PER_HAND,
   MAX_COIN_BONUS_PER_HAND,
+  APPLY_DAMAGE_AP_COST,
+  APPLY_DAMAGE_DELAY_TRICKS,
   OpponentKind,
   RUN_ENCOUNTERS,
   ORDINARY_OPPONENT_NAMES,
@@ -150,7 +152,16 @@ export {
   hasPendingTimebomb,
   queueTimebomb,
   timebombDamageFor,
+  hasPendingApplyPayout,
+  queueApplyDamagePayout,
 } from './encounter'
+
+export type {
+  PendingApplyPayout,
+  ApplyDamageDelayModifiers,
+  ApplyPayoutTick,
+} from './applyDamagePayout'
+export { applyDamageDelayTricks, queueApplyPayout, tickApplyPayout } from './applyDamagePayout'
 
 export type { ShopStock } from './shop'
 export {

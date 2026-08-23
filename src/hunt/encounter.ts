@@ -11,6 +11,7 @@ import {
   type Health,
   type IncomingDamage,
 } from './types'
+import type { PendingApplyPayout } from './applyDamagePayout'
 
 /**
  * AC1 — a fresh encounter, both bars read from DLR-66's configured totals.
@@ -43,6 +44,7 @@ export function startEncounter(
     damageEventsApplied: 0,
     winner: null,
     pendingTimebomb: NO_PENDING_TIMEBOMB,
+    pendingApplyPayout: null,
   }
 }
 
@@ -92,11 +94,20 @@ export function applyDamage(encounter: EncounterState, incoming: IncomingDamage)
     [DuelSide.Quarry]: quarryHealth,
   }
 
+  const winner = resolveWinner(health)
+  // DLR-109 AC3 — THE single enforcement point, deliberately here rather than at a call site.
+  // Every damage path in this codebase funnels through this function, so a queued payout cannot
+  // survive a hit by taking a route that forgot to check. A resolved encounter drops it too: a
+  // dead Quarry needs no further damage, and a dead player has already been wiped by the same
+  // line.
+  const playerLostHealth = playerHealth < encounter.health[DuelSide.Player]
+
   return {
     health,
     damageEventsApplied: encounter.damageEventsApplied + 1,
-    winner: resolveWinner(health),
+    winner,
     pendingTimebomb: encounter.pendingTimebomb,
+    pendingApplyPayout: playerLostHealth || winner !== null ? null : encounter.pendingApplyPayout,
   }
 }
 
@@ -114,6 +125,25 @@ export function hasPendingTimebomb(encounter: EncounterState): boolean {
   return (
     encounter.pendingTimebomb[DuelSide.Player] > 0 || encounter.pendingTimebomb[DuelSide.Quarry] > 0
   )
+}
+
+/** Whether a pressed cash-out is still in the air. ONE statement, so the refusal and the tick
+ *  cannot disagree — the discipline `hasPendingTimebomb` already sets. */
+export function hasPendingApplyPayout(encounter: EncounterState): boolean {
+  return encounter.pendingApplyPayout !== null
+}
+
+/**
+ * AC2 — hold `payout` against the encounter. Returns the encounter UNCHANGED when it is already
+ * resolved or when one is already queued (the plan's one-at-a-time rule). NEVER throws: the
+ * reducer calls this during an event handler, and a throw there unmounts the tree.
+ */
+export function queueApplyDamagePayout(
+  encounter: EncounterState,
+  payout: PendingApplyPayout,
+): EncounterState {
+  if (isEncounterResolved(encounter) || hasPendingApplyPayout(encounter)) return encounter
+  return { ...encounter, pendingApplyPayout: payout }
 }
 
 /** D2 — the amount owed depends on WHICH SIDE will pay it. Stated here, once, beside the booking:

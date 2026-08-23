@@ -236,7 +236,7 @@ describe('WarCouncilRound', () => {
     expect(screen.queryByRole('button', { name: /tap the table to carry on/i })).toBeNull()
   })
 
-  it('DLR-94 — applying cashes the streak into the Quarry at no cost, and the hand plays on', () => {
+  it('DLR-109 — applying QUEUES the streak at no cost rather than cashing it instantly, and the hand plays on', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
@@ -256,14 +256,20 @@ describe('WarCouncilRound', () => {
     fireEvent.click(plate()) // poise
     fireEvent.click(plate()) // commit
 
+    // DLR-109 — the commit no longer lands in this transition: it is queued and lands at a
+    // later trick resolution (see `roundReducer.delayedApply.test.ts` for the landing itself).
     expect(Number(healthMeter(quarryLabelFixture).getAttribute('aria-valuenow'))).toBe(
-      quarryHealthForEncounter(0) - 9,
+      quarryHealthForEncounter(0),
     )
     expect(healthMeter('Your health').getAttribute('aria-valuenow')).toBe(playerBefore)
+    // AC2 — the bank and multiplier are still spent in this transition, even though the
+    // payout itself has not landed yet.
     expect(screen.getByLabelText(/cashes for 0\b/i)).toBeTruthy()
 
-    // AC3 — the card is still there to play, and the plate is now refused for want of a bank.
-    expect((plate() as HTMLButtonElement).disabled).toBe(true)
+    // AC3 — the card is still there to play, and the plate is now refused because the queued
+    // payout is still in the air, not because the bank is empty.
+    expect(plate()).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: /still in the air/i })).toBeTruthy()
     expect(screen.getByRole('button', { name: '2 of Bells' })).toBeTruthy()
   })
 })

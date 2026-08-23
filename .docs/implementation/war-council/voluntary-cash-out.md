@@ -6,6 +6,16 @@ Part of [War Council](README.md).
 by a decision rather than by an event. It spends the current streak into the Quarry **in full**, resets
 both counters, and costs the player no health.
 
+> **DLR-109 changed what pressing it actually does, though nothing in this file's own rule moved.**
+> `cashBankNow` and `incomingFromCashOut` below are unchanged — they still compute the full figure and
+> the seat crossing exactly as DLR-94 shipped them. What changed is what the reducer does with the
+> result: the committing press now **queues** `cashBankNow`'s output on `EncounterState.pendingApplyPayout`
+> instead of dealing it through `applyDamage` in the same transition, and costs `APPLY_DAMAGE_AP_COST`
+> action points to do so. This file gained the availability half of that change — two new refusal
+> codes and two new `ApplyDamageStock` fields, documented below — but the landing itself, the delay,
+> and the wipe-on-damage rule live in
+> [the delayed Apply Damage payout](../hunt/delayed-apply-damage-payout.md).
+
 It exists as its own small module rather than as a branch of `bank.ts` because it is not a trick
 outcome — see [why it is not a fifth `TrickOutcome`](#why-it-is-not-a-fifth-trickoutcome) below, which
 is the part worth reading before changing anything here.
@@ -38,12 +48,19 @@ becomes a compile error there rather than an `undefined` sentence under a disabl
 | --- | --- |
 | `NotYourMove` | The felt is not waiting on the player's card — a reveal is held, a prompt is open, the engine faulted, the hand or the fight is over, or it is the Quarry's turn. |
 | `TimebombPending` | A booked Timebomb hit has not landed yet (design decision D6). |
+| `PayoutPending` | A pressed cash-out is already queued and undelivered — one at a time (DLR-109). |
+| `InsufficientAp` | The hand's AP pool does not cover `APPLY_DAMAGE_AP_COST` (DLR-109 AC1). |
 | `EmptyBank` | Nothing banked, so there is nothing to cash. |
 
-**The order is deliberate and is tested.** `NotYourMove` first because it is true of the whole felt
-rather than of this control; `TimebombPending` before `EmptyBank` for `flaskRefusalFor`'s stated reason —
+**The order is deliberate and is tested — five clauses since DLR-109.**
+`NotYourMove → TimebombPending → PayoutPending → InsufficientAp → EmptyBank`. `NotYourMove` first
+because it is true of the whole felt rather than of this control; `TimebombPending` before
+`PayoutPending` before `InsufficientAp` before `EmptyBank` for `flaskRefusalFor`'s stated reason —
 report the reason that will still be true after the next trick banks. Telling a primed player with an
-empty bank to go and take a trick would be actively wrong.
+empty bank to go and take a trick would be actively wrong. **`EmptyBank` stays last of the five**
+because it is the one reason that stops being true after the next trick banks; **`InsufficientAp`
+precedes it** because AP refreshes only per hand and therefore outlives a trick — a player who cannot
+afford the press now still cannot afford it once the bank climbs.
 
 A non-integer or non-positive bank or multiplier refuses rather than passing the comparison. `NaN > 0` is
 already `false`, but a fractional bank would otherwise present a fractional cash-out as applicable — and
@@ -57,14 +74,19 @@ interface ApplyDamageStock {
   readonly bank: number
   readonly multiplier: number
   readonly timebombPending: boolean
+  readonly payoutPending: boolean   // DLR-109
+  readonly apPool: ActionPoints     // DLR-109 AC1
   readonly canAct: boolean
 }
 ```
 
-Four plain values, never an `EncounterState` or a `RoundUiState`. This module owns the rule and must not
+Six plain values, never an `EncounterState` or a `RoundUiState`. This module owns the rule and must not
 learn the shape of the layer that calls it — the same discipline `FlaskStock` and `ShopStock` document.
 `src/app/warCouncil/roundUiState.ts`'s `applyDamageStock` is the single place the app's shape is
-translated into this one, which is where `hasPendingTimebomb(encounter)` and `canAct(state)` are read.
+translated into this one, which is where `hasPendingTimebomb(encounter)`, `hasPendingApplyPayout(encounter)`
+(DLR-109), and `canAct(state)` are read. **`payoutPending` and `apPool` were added as required fields**,
+which made every construction site — the interface, the predicate, this one builder, and the test
+factory — a compile error until all four moved together.
 
 ### `cashBankNow` — and what it deliberately does not touch
 
@@ -116,8 +138,13 @@ ticket asked for: a distinct resolution path over the same arithmetic.
 
 ## What the tests pin
 
-`src/warCouncil/__tests__/voluntaryCashOut.test.ts` — 13 specs covering the refusal ordering (including
-the three-way case where all three reasons are true at once), the pending-Timebomb lock-out, the degenerate
-bank, the full payout, the zeroed counters, the zero player damage, the untouched trick/phase/leader/hands,
-the untouched `lastResolution` in both the null and carried cases, non-mutation of the input round, and
-that calling it on an empty bank is safe rather than an error.
+`src/warCouncil/__tests__/voluntaryCashOut.test.ts` covers the refusal ordering (including the
+pending-Timebomb lock-out and, since DLR-109, the queued-payout lock-out and the AP-shortfall case,
+walked down the full five-clause order from every reason true at once), the degenerate bank, the full
+payout, the zeroed counters, the zero player damage, the untouched trick/phase/leader/hands, the
+untouched `lastResolution` in both the null and carried cases, non-mutation of the input round, and
+that calling it on an empty bank is safe rather than an error. The queueing behaviour itself — that a
+committing press no longer deals damage in the same transition — is pinned in
+`src/app/warCouncil/__tests__/roundReducer.applyDamage.test.ts` and
+`roundReducer.delayedApply.test.ts`, not here: this file's own rule (the figure, the seat crossing,
+the untouched trick) is unchanged by DLR-109.

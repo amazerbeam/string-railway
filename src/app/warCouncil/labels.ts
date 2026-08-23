@@ -235,6 +235,9 @@ export const APPLY_DAMAGE_REFUSAL_MESSAGE: Readonly<Record<ApplyDamageRefusal, s
   [ApplyDamageRefusal.EmptyBank]: 'No streak to cash — take a trick first.',
   [ApplyDamageRefusal.TimebombPending]:
     'A Timebomb is still ticking — you cannot apply until it detonates.',
+  [ApplyDamageRefusal.PayoutPending]:
+    'Your last Apply is still in the air — it lands when the next trick resolves.',
+  [ApplyDamageRefusal.InsufficientAp]: 'Not enough action points to apply.',
   [ApplyDamageRefusal.NotYourMove]: 'Not your move yet.',
 }
 

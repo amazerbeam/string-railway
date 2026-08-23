@@ -8,13 +8,20 @@ import {
   containsCard,
   currentTurn,
   primeCard,
-  incomingFromCashOut,
   isPrimed,
   legalMoves,
   sameCard,
   type Card,
 } from '../../warCouncil'
-import { applyDamage, hasCheat, isEncounterResolved, type CheatCardId } from '../../hunt'
+import {
+  APPLY_DAMAGE_AP_COST,
+  hasCheat,
+  isEncounterResolved,
+  queueApplyDamagePayout,
+  queueApplyPayout,
+  spendAp,
+  type CheatCardId,
+} from '../../hunt'
 import {
   applyDamageStock,
   canAct,
@@ -193,6 +200,15 @@ function handleTapTimebomb(state: RoundUiState): RoundUiState {
  * Poising does NOT clear the Cheat or Timebomb selection, and they do not clear it. Those two
  * reinterpret the next hand-card tap and therefore cannot coexist; this one reinterprets nothing,
  * so a player may poise a Cheat and apply damage in either order without losing either.
+ *
+ * DLR-109 — the committing tap no longer resolves anything. It spends `APPLY_DAMAGE_AP_COST`
+ * through `spendAp`, the only subtraction path, and QUEUES the cash-out instead of dealing it —
+ * `applyResolution` in `commitHandlers.ts` settles it a trick or more later, LAST, after the
+ * trick's own damage and the Timebomb book/clear. The AP is spent at the moment of the press and
+ * is NOT refunded if the queued payout is later wiped by AC3's damage-during-the-window rule.
+ * `captureUnplayed` no longer fires on this transition — the press no longer resolves the
+ * encounter, so there is nothing for it to capture here; a DELAYED kill's press-time hand size is
+ * threaded instead through `settleApplyPayout`'s `unplayedAtPress`.
  */
 function handleTapApplyDamage(state: RoundUiState): RoundUiState {
   if (applyDamageRefusalFor(applyDamageStock(state)) !== null) {
@@ -205,13 +221,25 @@ function handleTapApplyDamage(state: RoundUiState): RoundUiState {
   }
 
   const { state: round, cashOut } = cashBankNow(state.round)
-  // Guarded for the reason `applyResolution` guards: `applyDamage` THROWS on an already-resolved
-  // encounter, and a reducer must not throw — a throw during an event handler unmounts the tree.
-  // Unreachable in practice, since a resolved encounter already fails `canAct`.
-  const encounter = isEncounterResolved(state.encounter)
-    ? state.encounter
-    : applyDamage(state.encounter, incomingFromCashOut(cashOut))
-  return { ...state, round, encounter, applyPoised: false }
+  // Guarded for `applyResolution`'s stated reason: a resolved encounter must never be written to,
+  // and a reducer must not throw. Unreachable in practice — a resolved encounter already fails
+  // `canAct`, so `applyDamageRefusalFor` returned `NotYourMove` above.
+  if (isEncounterResolved(state.encounter)) {
+    return { ...state, applyPoised: false }
+  }
+  // AC2 — the press no longer deals anything. It freezes the figure and the press-time hand size
+  // (AC4) and hands both to the encounter's queue; `applyResolution` settles it a trick or more
+  // later. AC1 — the cost is spent through `spendAp`, the ONLY subtraction path, so `AP_ENABLED`
+  // is honoured with no bypass written here. `spendAp` throws on an unaffordable spend and the
+  // `InsufficientAp` refusal above is what guarantees this line never reaches that.
+  const payout = queueApplyPayout(cashOut, state.round.hands[PlayerSide.Player].length)
+  return {
+    ...state,
+    round,
+    encounter: queueApplyDamagePayout(state.encounter, payout),
+    apPool: spendAp(state.apPool, APPLY_DAMAGE_AP_COST),
+    applyPoised: false,
+  }
 }
 
 /**

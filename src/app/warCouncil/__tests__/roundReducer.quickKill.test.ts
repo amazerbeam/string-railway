@@ -1,28 +1,45 @@
 import { describe, expect, it } from 'vitest'
-import { PlayerSide } from '../../../warCouncil'
-import { DuelSide, isEncounterResolved } from '../../../hunt'
+import { PlayerSide, Suit } from '../../../warCouncil'
+import { DuelSide, isEncounterResolved, startEncounter } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
 import { createRoundUiState, RoundUiActionKind, type RoundUiSeed } from '../roundUiState'
 import {
   bankClimbBonusFixture,
-  discardsRemainingFixture,
-  encounterFixture,
-  timebombChargesFixture,
-  makeRound,
   blastGuardHeldFixture,
+  card,
+  discardsRemainingFixture,
+  makeRound,
+  timebombChargesFixture,
 } from './roundFixture'
 
-/** A fight the player can end on demand: a banked streak worth exactly the Quarry's last health,
- *  with the full six-card hand still undealt onto the table. Tapping Apply Damage twice cashes it
- *  and empties the Quarry's bar with every card still in hand — the cleanest expression of "at the
- *  instant the Quarry's health reaches zero". */
-function seedOneTapKill(quarryHealth: number): RoundUiSeed {
+/**
+ * A fight the player can end on demand through an ORDINARY trick: a banked streak sized to
+ * comfortably exceed the Quarry's remaining health. Losing the led Swan cashes the streak into
+ * the Quarry and empties its bar mid-hand — the same construction
+ * `roundReducer.bank.test.ts`'s "stops accepting taps" spec uses.
+ *
+ * DLR-109 — this file used to trigger its kill through two Apply Damage taps. Apply Damage now
+ * QUEUES a delayed payout rather than dealing damage in the same transition as the press, so that
+ * construction no longer produces a kill here at all; that payout's own capture of the unplayed
+ * count is `roundReducer.delayedApply.test.ts`'s AC4 case. This file goes back to testing
+ * `captureUnplayed` (DLR-95 AC2) through the mechanism it actually generalises over — an ordinary
+ * trick's cash-out — so it stays independent of Apply Damage's own timing.
+ */
+function seedOneTrickKill(): RoundUiSeed {
   return {
-    round: makeRound({ bank: quarryHealth, multiplier: 1 }),
-    encounter: {
-      ...encounterFixture,
-      health: { ...encounterFixture.health, [DuelSide.Quarry]: quarryHealth },
-    },
+    round: makeRound({
+      leader: PlayerSide.Player,
+      trumpSuit: Suit.Keys,
+      bank: 500,
+      multiplier: 2,
+      tricksPlayed: 2,
+      hands: {
+        [PlayerSide.Player]: [card(Suit.Bells, 1), card(Suit.Keys, 4)],
+        [PlayerSide.Cpu]: [card(Suit.Bells, 8), card(Suit.Keys, 5)],
+      },
+      currentTrick: [],
+    }),
+    encounter: startEncounter(0),
     cheats: [],
     timebombCharges: timebombChargesFixture,
     blastGuardHeld: blastGuardHeldFixture,
@@ -31,38 +48,35 @@ function seedOneTapKill(quarryHealth: number): RoundUiSeed {
   }
 }
 
-const applyDamage = { kind: RoundUiActionKind.TapApplyDamage } as const
+const tap = (c: ReturnType<typeof card>) => ({ kind: RoundUiActionKind.TapCard, card: c }) as const
 
 describe('roundReducer — capturing the unplayed count at the kill (DLR-95 AC2)', () => {
   it('holds null while the encounter is still live', () => {
-    const state = createRoundUiState(seedOneTapKill(4))
+    const state = createRoundUiState(seedOneTrickKill())
+    expect(isEncounterResolved(state.encounter)).toBe(false)
     expect(state.unplayedAtResolve).toBeNull()
-
-    // One tap only POISES the plate — nothing has been cashed and nothing has died.
-    const poised = roundReducer(state, applyDamage)
-    expect(isEncounterResolved(poised.encounter)).toBe(false)
-    expect(poised.unplayedAtResolve).toBeNull()
   })
 
   it('freezes the player’s hand size on the transition that empties the Quarry’s bar', () => {
-    const state = createRoundUiState(seedOneTapKill(4))
-    const handSize = state.round.hands[PlayerSide.Player].length
+    const state = createRoundUiState(seedOneTrickKill())
+    const led = card(Suit.Bells, 1)
+    // The played card is already gone from the hand by the transition `captureUnplayed` reads.
+    const expectedUnplayed = state.round.hands[PlayerSide.Player].length - 1
 
-    const killed = roundReducer(roundReducer(state, applyDamage), applyDamage)
+    const killed = roundReducer(roundReducer(state, tap(led)), tap(led))
 
     expect(isEncounterResolved(killed.encounter)).toBe(true)
     expect(killed.encounter.health[DuelSide.Quarry]).toBe(0)
-    expect(killed.unplayedAtResolve).toBe(handSize)
+    expect(killed.unplayedAtResolve).toBe(expectedUnplayed)
   })
 
   it('never overwrites the captured figure on a later dispatch', () => {
-    const state = createRoundUiState(seedOneTapKill(4))
-    const killed = roundReducer(roundReducer(state, applyDamage), applyDamage)
+    const state = createRoundUiState(seedOneTrickKill())
+    const led = card(Suit.Bells, 1)
+    const killed = roundReducer(roundReducer(state, tap(led)), tap(led))
     const captured = killed.unplayedAtResolve
 
-    const later = roundReducer(roundReducer(killed, applyDamage), {
-      kind: RoundUiActionKind.CarryOn,
-    })
+    const later = roundReducer(killed, { kind: RoundUiActionKind.CarryOn })
     expect(later.unplayedAtResolve).toBe(captured)
   })
 })

@@ -66,4 +66,21 @@ subtraction path, so `AP_ENABLED` is honoured with no bypass written anywhere �
 per-hand cadence a single fact rather than two. The `PerHand` branch is therefore live code now
 rather than dead. What is still missing is **ownership**: `BuffActivationState` carries the pool as
 a pure value with no home on `RunState` or `RoundUiState`, so nothing outside the tests constructs
-one. Apply Damage's own AP cost remains unbuilt, and its figure remains explicitly undecided.
+one.
+
+## DLR-109 — Apply Damage is the first real consumer
+
+**AP finally has a reachable consumer.** `APPLY_DAMAGE_AP_COST` (`3`, `src/hunt/apConfig.ts`, beside
+`APPLY_DAMAGE_DELAY_TRICKS`) is spent through `spendAp` on every committing Apply Damage press, and
+refused through `canAffordAp` before the press can commit — the same two functions this module
+always intended a consumer to call, with no bypass written at the call site. `apPool` now has a real
+home: `RoundUiState`, seeded per hand through `refreshActionPointsForNewHand` at mount (`App.tsx`
+remounts the felt per hand, so mount **is** the per-hand refresh) rather than on `RunState`. Buff
+activation's own `BuffActivationState` still has no such home — DLR-108's activation flow remains
+unreachable, and this ticket adds no second AP-spending mechanism: both consumers draw on the same
+`actionPoints.ts` functions. See
+[the delayed Apply Damage payout](delayed-apply-damage-payout.md) for the full mechanic, and
+[the voluntary cash-out](../war-council/voluntary-cash-out.md) for the widened refusal predicate.
+
+`apPool` is **invisible** — nothing renders it, so an `InsufficientAp` refusal reads as the button
+dying for no visible reason. Recorded as a follow-up worth a developer's look in the running app.

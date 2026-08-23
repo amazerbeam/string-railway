@@ -26,11 +26,11 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                              |
 | --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, PT-001, PT-002                                                                         |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, PT-001, PT-002                                                                |
 | `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100                                                                                                       |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, PT-002                                                                                   |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, PT-002                                                                          |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97                                                                                                                                                                                                        |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-127, PT-001, PT-002 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-127, PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                               |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
@@ -687,6 +687,50 @@ quietly grants a second thing" fails for any future branch, not just this one.
 moved, and no tunable's value changed. Start at [hunt/README.md](hunt/README.md) →
 _Rules & invariants enforced_ for the purchase-isolation rule and the assert-against-the-pre-value
 lesson.
+
+## DLR-109, the delayed Apply Damage payout (2026-08-23)
+
+**Apply Damage stopped being a free, instant, risk-free cash-out.** Pressing it now costs
+`APPLY_DAMAGE_AP_COST` (3 action points) and **queues** the payout instead of dealing it — the cash
+lands `APPLY_DAMAGE_DELAY_TRICKS + 1` trick resolutions later (1 beyond the press's own trick) rather
+than in the same reducer transition as the press. Taking damage during that window wipes the queued
+payout to nothing, enforced at `applyDamage`'s single clamp point in `src/hunt/encounter.ts` — the
+same discipline that already made an ordinary hit's bank/multiplier reset undodgeable. A new pure
+module, `src/hunt/applyDamagePayout.ts`, is this game's **second** effect that resolves later than
+the thing that caused it, deliberately reusing Timebomb's queue-on-`EncounterState` shape
+(`hunt/timebomb-and-the-delayed-hit.md`) rather than inventing a second mechanism — and it is a
+sibling of Timebomb, never a synonym: a payout is *queued* and *lands*, never *primed*, *ticking*, or
+*detonating*.
+
+**The ordering inside `applyResolution` is the ticket's substance.** A trick resolution is now four
+steps — the trick's own damage, the Timebomb queue clear, the new prime booking, and the Apply
+Damage payout's tick — and the payout settles **last**. Because the wipe lives inside `applyDamage`,
+a trick that costs the player health has already cleared `pendingApplyPayout` by the time the tick
+runs, so **a Timebomb detonating against the player on the trick a payout was due destroys that
+payout** — a consequence of the wipe rule and the order, not a fifth rule. The quick-kill
+unplayed-card count, previously read off the live hand at every kill, now has **two sources**: the
+live hand for an ordinary kill, and the payout's own frozen `unplayedAtPress` for a delayed one, so a
+card played during the delay window can no longer silently under-count the hand that earned a
+deferred kill.
+
+Availability extends the existing `applyDamageRefusalFor` in `src/warCouncil/voluntaryCashOut.ts`
+with two clauses — `PayoutPending` and `InsufficientAp` — rather than adding a second refusal path,
+in the order `NotYourMove → TimebombPending → PayoutPending → InsufficientAp → EmptyBank`. `apPool`,
+the AP resource DLR-104 shipped with no consumer, finally has one: it lives on `RoundUiState`, seeded
+per hand through `refreshActionPointsForNewHand` at mount. **No `.tsx` file changed** — the two new
+refusal codes render through the plate's existing total refusal-message map, so nothing on screen
+tells a player a payout is in the air, which the ticket scopes out by design.
+
+**Three design readings behind this mechanic were taken by an agent under an unattended sprint run,
+not played or developer-approved**: an outstanding payout lands at the resolution of a hand's final
+trick rather than being lost (the hand-end flush); only one payout may be queued at a time; and a
+detonating Timebomb beats a due payout on the same resolution. `.docs/game_rules/the-hunt.md` marks
+the Apply Damage rule `[provisional]` for exactly this reason, and both new tunables — the 3-AP cost
+and the 1-trick delay — are transcribed from the ticket and have never been played. Start at
+[hunt/delayed-apply-damage-payout.md](hunt/delayed-apply-damage-payout.md) for the mechanic and the
+ordering rule, [hunt/quick-kill-payout.md](hunt/quick-kill-payout.md#two-sources-of-the-unplayed-count-since-dlr-109)
+for the two-source count, or [war-council/voluntary-cash-out.md](war-council/voluntary-cash-out.md)
+for the widened refusal predicate.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

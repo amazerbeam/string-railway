@@ -2,12 +2,21 @@ Part of [Hunt](README.md).
 
 # Timebomb — the held charge, the delayed-hit queue, and where it is paid
 
-DLR-90, retimed by DLR-91. The third shop item, and the first effect in this game that resolves
-**later than the thing that caused it**. Every other consequence in the codebase lands in the same
-statement that decides it: a trick's damage is applied by the resolution that computed it, a heal is
-applied by the purchase that bought it. Timebomb books a hit against a side and pays it **at the
-resolution of the next trick**, which means the module needs somewhere to keep it in the meantime and
-exactly one place to settle it.
+DLR-90, retimed by DLR-91. The third shop item, and **for two tickets** the only effect in this game
+that resolves **later than the thing that caused it**. Every other consequence in the codebase lands
+in the same statement that decides it: a trick's damage is applied by the resolution that computed
+it, a heal is applied by the purchase that bought it. Timebomb books a hit against a side and pays it
+**at the resolution of the next trick**, which means the module needs somewhere to keep it in the
+meantime and exactly one place to settle it.
+
+> **DLR-109 gave this mechanic a sibling, and the two must not be confused.** Apply Damage's payout
+> (`applyDamagePayout.ts`) now delays its own cash-out by a trick or more, reusing this module's
+> queue-on-`EncounterState` shape deliberately rather than inventing a second one — but it is **not**
+> a Timebomb: it is *queued* and *lands*, never *primed*, *ticking*, or *detonating*. The two queues
+> also interact once: because Apply Damage's wipe rule lives inside `applyDamage`, a Timebomb that
+> detonates against the player on the same trick a payout was due destroys that payout. See
+> [the delayed Apply Damage payout](delayed-apply-damage-payout.md) for the full mechanic and the
+> ordering rule that produces that interaction.
 
 The mark itself is not here — it lives on `RoundState` and is written by
 [`src/warCouncil/timebomb.ts`](../war-council/the-timebomb-mark.md). This file owns the two things

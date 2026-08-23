@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { applyDamage, isEncounterResolved, startEncounter } from '../encounter'
+import {
+  applyDamage,
+  hasPendingApplyPayout,
+  isEncounterResolved,
+  queueApplyDamagePayout,
+  startEncounter,
+} from '../encounter'
 import { PLAYER_START_HEALTH, quarryHealthForEncounter, QUARRY_ENCOUNTER_HEALTH } from '../config'
 import { DuelSide, type IncomingDamage } from '../types'
+import { queueApplyPayout } from '../applyDamagePayout'
 
 /** Keyed by the side the damage is APPLIED TO, matching `IncomingDamage`. */
 function damage(toPlayer: number, toQuarry: number): IncomingDamage {
@@ -16,6 +23,7 @@ describe('startEncounter — both bars come from the configured totals (AC1)', (
     expect(encounter.damageEventsApplied).toBe(0)
     expect(encounter.winner).toBeNull()
     expect(isEncounterResolved(encounter)).toBe(false)
+    expect(encounter.pendingApplyPayout).toBeNull()
   })
 
   it('lets quarryHealthForEncounter’s RangeError surface on an out-of-range index', () => {
@@ -184,5 +192,59 @@ describe('applyDamage — resolves over repeated events, derived from the config
     expect(end.winner).toBe(DuelSide.Player)
     expect(end.damageEventsApplied).toBe(quarryHealth)
     expect(end.damageEventsApplied).toBeGreaterThan(5)
+  })
+})
+
+describe('queueApplyDamagePayout — the one-at-a-time rule (DLR-109 AC2)', () => {
+  it('holds a payout on a live encounter', () => {
+    const encounter = startEncounter(0)
+    const payout = queueApplyPayout(9, 4)
+    const after = queueApplyDamagePayout(encounter, payout)
+    expect(after.pendingApplyPayout).toBe(payout)
+    expect(hasPendingApplyPayout(after)).toBe(true)
+  })
+
+  it('returns the encounter unchanged when one is already queued', () => {
+    const queued = queueApplyDamagePayout(startEncounter(0), queueApplyPayout(9, 4))
+    const after = queueApplyDamagePayout(queued, queueApplyPayout(2, 1))
+    expect(after).toBe(queued)
+  })
+
+  it('returns the encounter unchanged when it is already resolved', () => {
+    const resolved = applyDamage(startEncounter(0), damage(0, quarryHealthForEncounter(0)))
+    const after = queueApplyDamagePayout(resolved, queueApplyPayout(9, 4))
+    expect(after).toBe(resolved)
+  })
+})
+
+describe('applyDamage — DLR-109 AC3, the payout wipes at the single clamp point', () => {
+  it('a non-zero hit to the player wipes a queued payout to null', () => {
+    const queued = queueApplyDamagePayout(startEncounter(0, 10), queueApplyPayout(9, 4))
+    const after = applyDamage(queued, damage(1, 0))
+    expect(after.pendingApplyPayout).toBeNull()
+  })
+
+  it('an all-zero incoming event preserves the queued payout', () => {
+    const queued = queueApplyDamagePayout(startEncounter(0, 10), queueApplyPayout(9, 4))
+    const after = applyDamage(queued, damage(0, 0))
+    expect(after.pendingApplyPayout).toBe(queued.pendingApplyPayout)
+  })
+
+  it('damage to the Quarry only preserves the queued payout', () => {
+    const queued = queueApplyDamagePayout(startEncounter(0, 10), queueApplyPayout(9, 4))
+    const after = applyDamage(queued, damage(0, 1))
+    expect(after.pendingApplyPayout).toBe(queued.pendingApplyPayout)
+  })
+
+  it('an encounter that resolves — either side — leaves the payout null', () => {
+    const queuedOnPlayerWin = queueApplyDamagePayout(startEncounter(0, 10), queueApplyPayout(9, 4))
+    const playerWins = applyDamage(queuedOnPlayerWin, damage(0, quarryHealthForEncounter(0)))
+    expect(playerWins.winner).toBe(DuelSide.Player)
+    expect(playerWins.pendingApplyPayout).toBeNull()
+
+    const queuedOnQuarryWin = queueApplyDamagePayout(startEncounter(0, 1), queueApplyPayout(9, 4))
+    const quarryWins = applyDamage(queuedOnQuarryWin, damage(1, 0))
+    expect(quarryWins.winner).toBe(DuelSide.Quarry)
+    expect(quarryWins.pendingApplyPayout).toBeNull()
   })
 })
