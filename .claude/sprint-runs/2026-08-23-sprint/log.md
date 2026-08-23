@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 7/22 (32%) — done: 7 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-110 "Shield redesign: blue hearts on the health bar" (8/22) — first ticket under the new reviewer/QA rules
+**Progress:** 8/22 (36%) — done: 8 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-112 "Slot-machine buff draw and templated buff pool" (9/22)
 
 ## Run order
 
@@ -1981,3 +1981,219 @@ field does not trust the wrong number.
   has no consumer outside `src/persistence/`, so `save-data-versioning.md` does not bind this diff.
   The first ticket that persists `EncounterState` inherits `shieldHearts` as a field an old record
   must default.
+
+## Coordinator decisions — DLR-110 reconciliation
+
+- **Accepted the central design call: a blue heart is worth 1 point, not 1 whole hit.** This is
+  what keeps Shield distinct from Ward, which absorbs a whole hit and breaks. Ward was left
+  untouched and its tier defect unfixed, correctly.
+- Accepted the rest of the shield model, all agent-decided: **player-only** (a scalar, not a
+  side-keyed record); **does not stack and sets downward** (bronze after gold leaves 1);
+  **survives a hand, dies at the encounter boundary**; **absorbs before red health inside
+  `applyDamage`**, the single funnel, so no route can bypass it; **a dead Quarry spends no blue
+  heart**.
+- **A second undesigned rule fell out, and it cuts against DLR-109.** A **fully absorbed hit
+  does not destroy a queued Apply Damage payout** — it follows from DLR-109's existing
+  `playerLostHealth` predicate, and is tested both ways. So the bomb wins *unless* a shield eats
+  the whole hit. Nobody designed that interaction; it emerged from two tickets meeting. Flagged
+  as a developer decision.
+- **Numbers nobody chose:** `CONSUMABLE_AP_COST[Shield]` = **2/3/4**, forced rather than
+  chosen — adding `BuffKind.Shield` obliges a price because `apCostOf` throws on an unpriced
+  kind. Shipped with an explicit "NOBODY CHOSE THESE NUMBERS" comment in the source, which is
+  the right way to do it. `SHIELD_HEARTS` 1/2/3 is transcribed from the ticket, not chosen. No
+  colour, glyph or opacity was chosen — none was needed.
+- **The DLR-110 / DLR-115 boundary needed no judgement.** The titles mislead; the bodies are
+  exact complements. DLR-110's out-of-scope is "rendering the second pip type on screen";
+  DLR-115's is "the absorption-order rule itself (engine ticket)". **Nothing of DLR-115 was
+  absorbed** — no `HeartState` member, no `duelHealthBars.ts` edit, no CSS, no `.tsx` — and QA
+  verified the absences against the diff rather than taking the claim on trust.
+- **No mockup went unseen, because none was called for.** With no `.tsx` in the file map this
+  was not a UI ticket. Worth recording precisely, since every other UI-ish ticket this run has
+  an auto-approved-unseen mockup against its name and this one genuinely does not.
+- Suite 1220 → **1259 (+39), 96 files, 0 failures.** Browser pass not requested, not run, and
+  its absence blocked nothing — the new rule working as intended.
+
+### Carried into DLR-115 (ticket 12), already left as a handoff comment on the ticket
+
+- The `game-ux` ruling: blue hearts are **two orthogonal dimensions — pip *type* × pip
+  *state*** — not a sixth peer state on one row. That is what keeps the crowded bar legible.
+- **A latent defect DLR-115 inherits:** `projectedDepletion` knows nothing about
+  `shieldHearts`, so **the ticking-Timebomb preview will lie once a shield exists.**
+
+### Time-critical decision the coordinator is taking, since the developer has not
+
+DLR-108 flagged that `apCost`-as-a-derived-lookup must become a **field** on `Buff` if the slot
+machine ever needs a per-card *discounted* price — cheap now, expensive once a reel mints
+buffs. DLR-112 is next and would settle it by accident. **Decision: keep the lookup.** Nothing
+in DLR-112's description calls for per-card discounting, the two-table formula is the property
+that makes the whole 78-card pool retunable in one edit, and a discount can later be added as
+an optional per-instance override without unpicking the formula. DLR-112 is being told to keep
+the lookup and to report back rather than improvise if it genuinely cannot.
+
+## DLR-112 — Slot-machine buff draw and templated buff pool
+
+**GREEN.** Suite 1259 → **1318 (+59), 100 files, 0 failures.** typecheck 0, lint 0, build 0 (135ms).
+Five new files in `src/hunt/` — `seededRng.ts` (46), `slotConfig.ts` (33), `buffTemplates.ts` (190),
+`slotWeights.ts` (137), `slotMachine.ts` (195) — plus additive re-exports in `index.ts` (264) and
+four new spec files. Every file inside the 400-line budget, measured with `(Get-Content).Count`
+after Prettier.
+
+### The coordinator's `apCost` decision held, and cost nothing
+
+**`apCost` stayed a derived lookup.** Nothing in this ticket wanted per-card pricing, so the
+decision was never even under strain — the slot machine mints ordinary `Buff` objects and
+`apCostOf` prices them unchanged. The 78-card pool is still retunable by editing `REWARD_BASE` and
+`CONDITION_MODIFIER` alone. No field was added to `Buff`; `buffs.ts`, `buffCosts.ts`,
+`buffCatalog.ts` and `config.ts` are untouched.
+
+**The same shape decision got reused, deliberately.** The four tier-parameterised *condition*
+thresholds (Hoarder N = 2/3/4, Unbloodied N = 2/3/4, Miser N = 5/10/20, Cornered N% = 60/45/33) are
+the identical class of fact — a property of `(family, tier)`, not of a card — so they ship as
+`CONDITION_THRESHOLD`, a lookup, rather than as a new field on `BuffCondition`. That also avoids
+inventing a second descriptor shape ahead of DLR-125, which AC4 forbids.
+
+### Plan defaults taken (gate auto-approved, nothing developer-confirmed)
+
+- **The drawable pool is the 71 condition templates; the 7 consumables are excluded.** DLR-126 was
+  checked live and is still `To Do`, and the ticket forbids pre-empting it. This is also what the
+  ticket's own scope update instructs. **AC6 is therefore deliberately unimplemented** — QA
+  confirmed the absence is real (every one of the 71 templates satisfies `isConditionFamily`) rather
+  than an oversight.
+- **Both machines draw the same 71-template pool, differing only in weights.** Two disjoint
+  hand-picked lists would have re-decided which cards ship, which AC4 forbids.
+- **Tier-parameterised thresholds as a lookup** (above).
+- **`BuffCondition.kind` is the `BuffKind` string itself** — `BUFF_CADENCE` is already keyed on it.
+- **Nothing is persisted.** A strip is a pure function of `(runSeed, machineId, visitIndex)` via
+  `slotSeedFor`, so it is recomputed, never stored. **The rename window `v1-buff-card-list.md` warns
+  closes "the moment DLR-112 writes a drawn buff into a save" deliberately stays open** — `BuffKind`
+  and `BuffRewardAxis` members are still free to rename. DLR-113 (Vault) is the queued consumer that
+  will actually close it.
+- **No mockup was called for.** The file map contains no `.tsx` and this ticket renders nothing —
+  worth stating precisely, since most tickets this run carry an auto-approved-unseen mockup and
+  this one genuinely does not.
+
+### The draw model, and every rate with its justification
+
+**Two dials, kept orthogonal — the central design decision.** Weighting decides *which 8 templates
+sit on a machine's strip*; the spin is **flat uniform over those 8**. This mirrors `assignSkulls`,
+which already keeps `density` (how many) orthogonal to `weights` (which ranks). The argument for
+putting all the weight in the strip draw and none in the spin: a player can see the eight symbols
+and compute their own odds, where a hidden per-symbol weight cannot be read. A slot machine whose
+posted strip lies about its odds is the one thing the fantasy cannot survive.
+
+| Dial | Value | Where it came from |
+|---|---|---|
+| Reels | 3 | AC2's match rules are stated over exactly three |
+| Symbols per reel | 8 (`REEL_POOL_SIZE`) | **Transcribed from AC3**, not chosen here |
+| Strip draw | **without** replacement | AC3 says "how many **distinct** buffs" |
+| Spin | **with** replacement, flat uniform | matches are impossible without replacement |
+| Free pulls per visit | 1 (`SLOT_FREE_PULLS_PER_VISIT`) | **Transcribed from AC5** |
+| Reroll price | 1 coin (`SLOT_REROLL_PRICE`) | **Transcribed from AC5** |
+| Reroll cap | none — the coin balance is the cap | agent default; a second cap is a second scarcity rule over one resource |
+| Reroll semantics | re-spins the same strip, does **not** redraw the 8 | agent default; see below |
+
+**Tier distribution falls out of the match rules — there is no second rarity roll anywhere.**
+Flat over 8 symbols: **P(three match) = 8/512 = 1/64 = 1.6%**, **P(exactly two match) = 168/512 =
+32.8%**, **P(all different) = 336/512 = 65.6%**. Expected cards per pull =
+`0.656x3 + 0.328x2 + 0.016x1` = **2.64**. Per-card the bronze:silver:gold ratio is about
+**147 : 21 : 1**. Gold is genuinely rare without any rarity mechanic existing.
+
+**Can a template repeat?** Not on the strip (8 distinct). Yes on the spin — that is what makes a
+match possible at all.
+
+**Weighted by condition family, NOT flat — and this is the call most worth arguing with.** A flat
+uniform draw over 71 templates is a legitimate v1 and I considered shipping it. It is rejected
+because `Mark of the R` is **22 of 71 templates = 31%**, so a flat strip would be nearly a third
+rank-conditioned purely from that family fanning out over eleven ranks — the pool's narrowest,
+lowest-agency card would dominate every machine on a fan-out artefact rather than on design intent.
+Weights are **normalised per family**, so a family's share of a strip equals its stated weight
+regardless of how many templates it contains: `familyWeight x axisWeight / familyAxisTotal`.
+**Going flat is a one-line change** — set every weight to `1`.
+
+Resulting family shares (Mark-of-rank falls from a flat 31.0% to 11.5% / 4.2%):
+
+| Family | Cadence | Skirmisher (w/26) | Strongbox (w/24) |
+|---|---|---|---|
+| Taker | Event | 5 → 19.2% | 2 → 8.3% |
+| Feeder | Event | 4 → 15.4% | 2 → 8.3% |
+| Glutton | Event | 4 → 15.4% | 2 → 8.3% |
+| Mark of the *R* | Event | 3 → 11.5% | 1 → 4.2% |
+| Debt Collector | Event | 3 → 11.5% | 2 → 8.3% |
+| Sidestep | Event | 2 → 7.7% | 1 → 4.2% |
+| Hoarder | Threshold | 1 → 3.8% | 5 → 20.8% |
+| Unbloodied | Threshold | 1 → 3.8% | 4 → 16.7% |
+| Miser | Threshold | 1 → 3.8% | 2 → 8.3% |
+| Cornered | Threshold | 1 → 3.8% | 2 → 8.3% |
+| Keepsake | Terminal | 1 → 3.8% | 1 → 4.2% |
+
+**AC1's two leans, stated as numbers:** Skirmisher is **80.8% Event-cadence** (pays inside a hand);
+Strongbox is **58.3% Threshold/Terminal** (hand-shaped goals). Axis weights sharpen it —
+Skirmisher `Blade 3 / Momentum 3 / Second Wind 2 / Purse 1`, Strongbox `Purse 4 / Second Wind 3 /
+Blade 1 / Momentum 1` — because DLR-111 names coins as the one **run-permanent** reward, which is
+what makes Strongbox the permanent-upgrade machine rather than just a slower one.
+
+**A reroll re-spins the strip rather than redrawing it.** Not stated in the ticket, so it is the
+agent's reading: it is what a physical slot machine does, it gives the machine an identity the
+player can plan against, and under the alternative the free pull would be strictly worse than
+banking the coin. **Reversible, and the developer's to overturn.**
+
+### How determinism is guaranteed
+
+`Math.random()` appears **nowhere as an executable call in `src/hunt/`** — QA read all 7 grep hits
+individually and every one is docblock prose stating the ban. Threading is the convention
+`dealRound` / `shuffle` / `assignSkulls` already set: **`rng: Rng` is an explicit parameter on every
+function that consumes randomness**, never module state, so nothing survives HMR or leaks between
+tests in one file. `createSeededRng` is mulberry32 with 32-bit integer state held in a closure — two
+calls with the same seed produce two independent generators, verified by direct execution.
+`slotSeedFor(runSeed, machineId, visitIndex)` folds the machine's **index** in `SLOT_MACHINE_IDS`
+(not its id string) through `mixSeed`, so machines and visits cannot collide. Reproducibility is
+asserted directly: same seed → identical strip, identical spin, identical pull; different seed →
+different. **DLR-130's balance simulator can run this headlessly today.**
+
+### Ward and Keepsake — both appeared, handled differently
+
+- **Ward never enters the pool.** It is a consumable, and AC6 is deferred to DLR-126, so the known
+  silver/gold defect (indistinguishable from bronze while `DAMAGE_PER_HIT = 1`) is not reachable
+  here. When DLR-126 admits consumables, DLR-111's standing recommendation applies: if
+  `DAMAGE_PER_HIT` never moves, **delete** those two rows rather than retune them.
+- **Keepsake does enter the pool, at the floor weight (1) on both machines.** All three Keepsake
+  templates may be unfireable — with `HAND_SIZE = 6` and six tricks the player's hand is empty at
+  hand's end, so "hold a card of suit S at hand's end" is false in every hand that runs its course.
+  `v1-buff-card-list.md` states the fix "is not an agent's call". **Weighting to the floor rather
+  than to zero is the reversible middle**: it keeps the defect visible on the board instead of
+  hiding it behind a silent exclusion. **The developer must decide** — reword the condition,
+  redefine the end-of-hand instant, or delete the three rows. Three different games.
+- **Miser also carries a DLR-111 flag** ("fights the shop" — it pays for *not* spending) and is
+  weighted below the other threshold families on the machine whose whole lean is run-permanent
+  value. Flagged there for deletion at the developer's discretion.
+
+### The Defender's `Unassigned` warning — checked, not applicable here
+
+`apCostOf` throws `RangeError` on `BuffKind.Unassigned` and `seedStartingBuffPile` mints four of
+them into `RunState.buffs`. **Nothing in this diff calls `apCostOf` over a pile** — every buff minted
+here comes from a `BuffTemplate`, whose `kind` is `BuffConditionKind` by the type system, so it is
+priceable by construction. **The warning still binds whoever wires `RunState.buffs` into
+`buffActivationStock`** — it was not discharged by this ticket, only sidestepped.
+
+### One real defect the reviewers caught, fixed in a single round
+
+Defender found that `spinReels` on an empty strip computes `reel[-1]` and hands `resolvePull` three
+`undefined`s, surfacing as an opaque `TypeError` on `symbol.id` instead of a domain error.
+Unreachable today, but **one bad edit to `slotWeights.ts` away** — and the plan itself invites that
+edit by framing "go flat" as a one-line change. Fixed by making `drawReelPool` **throw `RangeError`
+on a short strip**, naming the weight tables as the likely cause.
+
+The fix took a shape worth recording: rather than introduce `vi.mock` to test the throw — **there is
+zero mocking anywhere in this codebase** and one test is a bad reason to start — `drawReelPool`'s
+weight function became a **defaulted parameter**, exactly as `assignSkulls` already defaults
+`density` and `weights` "so a curve can be tested without mutating module state". That made the
+guard directly testable **and** happens to be the injection point **DLR-113's Vault-driven odds
+adjustment** will need. Three tests added. Code-Evaluator and QA both returned clean with zero
+findings; Defender's two remaining items were Info-only (documented, not code changes).
+
+### What a browser would have checked: nothing
+
+Not requested, not run, and genuinely inapplicable — this contract adds zero `.tsx` and zero
+render surface. QA reached the same conclusion independently. The real judgement is a balance
+simulation (DLR-130) and a play session, both of which the seeded RNG exists to enable.
+

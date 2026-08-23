@@ -217,3 +217,48 @@ export {
   spendAp,
   refreshActionPointsForNewHand,
 } from './actionPoints'
+
+export type { Rng } from './seededRng'
+export { createSeededRng, mixSeed } from './seededRng'
+
+export {
+  SlotMachineId,
+  SLOT_MACHINE_IDS,
+  REEL_COUNT,
+  REEL_POOL_SIZE,
+  SLOT_FREE_PULLS_PER_VISIT,
+  SLOT_REROLL_PRICE,
+} from './slotConfig'
+
+export type { SlotFamilyWeights, SlotAxisWeights } from './slotWeights'
+export {
+  SLOT_FAMILY_WEIGHTS,
+  SLOT_AXIS_WEIGHTS,
+  templateWeightFor,
+  weightedDrawWithoutReplacement,
+} from './slotWeights'
+
+export type { BuffTemplate, BuffThresholdFamily } from './buffTemplates'
+export {
+  REWARD_TIER_VALUE,
+  CONDITION_THRESHOLD,
+  BUFF_TEMPLATES,
+  BUFF_TEMPLATE_COUNT,
+  templatesForFamily,
+  mintFromTemplate,
+  conditionThresholdOf,
+} from './buffTemplates'
+
+export type { SlotMachine, SlotAward, SlotPull, SlotVisitStock } from './slotMachine'
+export {
+  SlotOutcome,
+  SlotPullRefusal,
+  slotSeedFor,
+  drawReelPool,
+  spinReels,
+  resolvePull,
+  pullMachine,
+  mintPullAwards,
+  pullPriceFor,
+  slotPullRefusalFor,
+} from './slotMachine'
