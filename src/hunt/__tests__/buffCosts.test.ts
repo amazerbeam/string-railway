@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { cheatBuff, timebombBuff } from '../buffCatalog'
-import { AP_COST_MAX, AP_COST_MIN, CONSUMABLE_AP_COST, apCostOf, buffApCost } from '../buffCosts'
+import { cheatBuff, shieldBuff, timebombBuff } from '../buffCatalog'
+import {
+  AP_COST_MAX,
+  AP_COST_MIN,
+  CONSUMABLE_AP_COST,
+  apCostOf,
+  buffApCost,
+  isConsumableKind,
+} from '../buffCosts'
 import { BuffKind, BuffRewardAxis, BuffTier } from '../buffs'
 
 const { Bronze, Silver, Gold } = BuffTier
@@ -133,7 +140,7 @@ describe('the clamp bites at both ends', () => {
   })
 })
 
-describe('CONSUMABLE_AP_COST — the seven off-curve prices', () => {
+describe('CONSUMABLE_AP_COST — the eight off-curve prices', () => {
   it('ward is flat at 2', () => {
     expect(CONSUMABLE_AP_COST[BuffKind.Ward]).toEqual({ bronze: 2, silver: 2, gold: 2 })
   })
@@ -160,6 +167,20 @@ describe('CONSUMABLE_AP_COST — the seven off-curve prices', () => {
 
   it('timebomb is flat at 2', () => {
     expect(CONSUMABLE_AP_COST[BuffKind.Timebomb]).toEqual({ bronze: 2, silver: 2, gold: 2 })
+  })
+
+  // DLR-110 — 2/3/4 is a DEVELOPER DECISION nobody has made; no source document prices Shield.
+  // Pinned so the placeholder cannot drift silently, not because the figures are settled.
+  it('shield is 2/3/4 — a placeholder ladder, see the table’s own comment', () => {
+    expect(CONSUMABLE_AP_COST[BuffKind.Shield]).toEqual({ bronze: 2, silver: 3, gold: 4 })
+  })
+
+  it('DLR-110 — Shield is a consumable kind, so apCostOf can price it', () => {
+    expect(isConsumableKind(BuffKind.Shield)).toBe(true)
+  })
+
+  it('DLR-110 — apCostOf prices a Shield buff rather than throwing on an unpriced kind', () => {
+    expect(apCostOf(shieldBuff(Silver, 3))).toBe(3)
   })
 })
 

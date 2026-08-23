@@ -7,13 +7,14 @@ import type { ActionPoints } from './types'
  *
  * `apCost = clamp(REWARD_BASE[axis][tier] + CONDITION_MODIFIER[family], AP_COST_MIN, AP_COST_MAX)`
  * for the eleven condition families, and a flat `CONSUMABLE_AP_COST[kind][tier]` lookup for the
- * seven consumable/activated cards, whose prices DLR-111 sets off-curve for stated reasons (Ward
- * and Timebomb flat because their tier is paid in something other than AP; Cheat's gold
- * deliberately above `STARTING_AP`).
+ * eight consumable/activated cards. DLR-111 sources seven of those eight and sets them off-curve
+ * for stated reasons (Ward and Timebomb flat because their tier is paid in something other than
+ * AP; Cheat's gold deliberately above `STARTING_AP`). The eighth, Shield, is NOT DLR-111's — see
+ * the `CONSUMABLE_AP_COST` table's own comment on that row for where its figures came from.
  *
- * EVERY FIGURE BELOW IS DLR-111'S, agent-chosen under that ticket's sprint-run tuning-value
- * override, never played against a real hand, and retunable by editing `REWARD_BASE` and
- * `CONDITION_MODIFIER` alone (or `CONSUMABLE_AP_COST` for the off-curve seven) — nothing else in
+ * EVERY FIGURE BELOW EXCEPT SHIELD'S IS DLR-111'S, agent-chosen under that ticket's sprint-run
+ * tuning-value override, never played against a real hand, and retunable by editing `REWARD_BASE`
+ * and `CONDITION_MODIFIER` alone (or `CONSUMABLE_AP_COST` for the off-curve rows) — nothing else in
  * this module needs to change to retune the whole 78-card v1 pool.
  *
  * AC2's `BUFF_ACTIVATION_COST = { bronze: 3, silver: 5, gold: 8 }` is deliberately NOT shipped.
@@ -47,7 +48,7 @@ export type BuffConditionKind =
   | typeof BuffKind.Miser
   | typeof BuffKind.Cornered
 
-/** Cheat, Timebomb and the 5 consumables — priced off the formula entirely. */
+/** Cheat, Timebomb, Shield and the 5 consumables — priced off the formula entirely. */
 export type BuffConsumableKind =
   | typeof BuffKind.Cheat
   | typeof BuffKind.Timebomb
@@ -56,6 +57,7 @@ export type BuffConsumableKind =
   | typeof BuffKind.SecondThoughts
   | typeof BuffKind.Foresight
   | typeof BuffKind.Spyglass
+  | typeof BuffKind.Shield
 
 // DLR-111 → The formula. UNIT: action points, per tier, before the condition modifier.
 export const REWARD_BASE: Readonly<Record<BuffCostAxis, Readonly<Record<BuffTier, number>>>> = {
@@ -97,6 +99,14 @@ export const CONSUMABLE_AP_COST: Readonly<
   [BuffKind.Spyglass]: { [BuffTier.Bronze]: 2, [BuffTier.Silver]: 3, [BuffTier.Gold]: 4 },
   [BuffKind.Cheat]: { [BuffTier.Bronze]: 3, [BuffTier.Silver]: 5, [BuffTier.Gold]: 7 },
   [BuffKind.Timebomb]: { [BuffTier.Bronze]: 2, [BuffTier.Silver]: 2, [BuffTier.Gold]: 2 },
+  // DLR-110 — NOBODY CHOSE THESE NUMBERS. No source document prices Shield: `v1-buff-card-list.md`
+  // has no Shield row, and design §7a states the heart counts but no cost. The ladder shape is
+  // copied from `SecondThoughts`/`Spyglass`. A price row is FORCED by adding `BuffKind.Shield` —
+  // `apCostOf` throws on an unpriced kind — so the choice could not be deferred, only made
+  // invisibly or made visibly. Made visibly. Shield's activation cost is out of DLR-110's scope;
+  // this is the type system's minimum, not a costing pass. Nothing player-reachable mints a
+  // Shield yet, so no player can pay this today. UNIT: action points.
+  [BuffKind.Shield]: { [BuffTier.Bronze]: 2, [BuffTier.Silver]: 3, [BuffTier.Gold]: 4 },
 }
 
 const CONDITION_FAMILY_KINDS: ReadonlySet<BuffKind> = new Set(
@@ -112,7 +122,7 @@ export function isConditionFamily(kind: BuffKind): kind is BuffConditionKind {
   return CONDITION_FAMILY_KINDS.has(kind)
 }
 
-/** Whether `kind` is one of the 7 consumable/activated cards priced through `CONSUMABLE_AP_COST`. */
+/** Whether `kind` is one of the 8 consumable/activated cards priced through `CONSUMABLE_AP_COST`. */
 export function isConsumableKind(kind: BuffKind): kind is BuffConsumableKind {
   return CONSUMABLE_KINDS.has(kind)
 }

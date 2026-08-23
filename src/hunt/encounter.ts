@@ -12,6 +12,13 @@ import {
   type IncomingDamage,
 } from './types'
 import type { PendingApplyPayout } from './applyDamagePayout'
+import {
+  NO_SHIELD_HEARTS,
+  absorbWithShield,
+  shieldHeartsForTier,
+  type ShieldAbsorption,
+} from './shield'
+import type { BuffTier } from './buffs'
 
 /**
  * AC1 — a fresh encounter, both bars read from DLR-66's configured totals.
@@ -45,6 +52,7 @@ export function startEncounter(
     winner: null,
     pendingTimebomb: NO_PENDING_TIMEBOMB,
     pendingApplyPayout: null,
+    shieldHearts: NO_SHIELD_HEARTS,
   }
 }
 
@@ -85,9 +93,20 @@ export function applyDamage(encounter: EncounterState, incoming: IncomingDamage)
   // construction rather than decided by a constant.
   const quarryHealth = deplete(encounter.health[DuelSide.Quarry], incoming[DuelSide.Quarry])
   const quarryDown = quarryHealth <= 0
+  // DLR-110 AC4 — blue hearts take the player's damage BEFORE red health does, and only the
+  // remainder reaches `deplete`. Inside this function deliberately: `applyDamage` is the single
+  // damage funnel (DLR-70) and a shield that only works on the routes that remembered to check
+  // is exactly the bug DLR-109 AC3's enforcement point argues against.
+  //
+  // A Quarry that goes down spends NO blue hearts: D7 already gives the player zero damage from
+  // that event, so the shield is carried through untouched rather than absorbing a hit that never
+  // landed.
+  const absorption: ShieldAbsorption = quarryDown
+    ? { absorbed: 0, throughToHealth: 0, shieldHeartsRemaining: encounter.shieldHearts }
+    : absorbWithShield(encounter.shieldHearts, incoming[DuelSide.Player])
   const playerHealth = quarryDown
     ? encounter.health[DuelSide.Player]
-    : deplete(encounter.health[DuelSide.Player], incoming[DuelSide.Player])
+    : deplete(encounter.health[DuelSide.Player], absorption.throughToHealth)
 
   const health = {
     [DuelSide.Player]: playerHealth,
@@ -100,6 +119,11 @@ export function applyDamage(encounter: EncounterState, incoming: IncomingDamage)
   // survive a hit by taking a route that forgot to check. A resolved encounter drops it too: a
   // dead Quarry needs no further damage, and a dead player has already been wiped by the same
   // line.
+  //
+  // DLR-110 — a hit FULLY ABSORBED by blue hearts leaves red health untouched, so this stays
+  // false and the queued payout survives. Deliberate (`plan.md` Part 1 → Assumptions made): the
+  // payout loss is the price of taking a hit, and a shield that ate the hit did its job. A
+  // partially-absorbed hit that still drops red health destroys it exactly as before.
   const playerLostHealth = playerHealth < encounter.health[DuelSide.Player]
 
   return {
@@ -108,6 +132,7 @@ export function applyDamage(encounter: EncounterState, incoming: IncomingDamage)
     winner,
     pendingTimebomb: encounter.pendingTimebomb,
     pendingApplyPayout: playerLostHealth || winner !== null ? null : encounter.pendingApplyPayout,
+    shieldHearts: absorption.shieldHeartsRemaining,
   }
 }
 
@@ -172,6 +197,35 @@ export function queueTimebomb(encounter: EncounterState, target: DuelSide): Enco
       [target]: encounter.pendingTimebomb[target] + timebombDamageFor(target),
     },
   }
+}
+
+/**
+ * AC2 — activating Shield SETS the player's blue hearts to `tier`'s count. It does NOT add to
+ * hearts already standing, and it sets DOWNWARD too: a bronze Shield after a gold one leaves 1,
+ * not 3. Design doc §7a — "they do not stack; re-activating Shield a later hand resets to the
+ * tier's count, it doesn't add on top of hearts already there."
+ *
+ * The contrast with `queueTimebomb` immediately above is deliberate and is the thing to preserve
+ * under a later edit: Timebomb ACCUMULATES (D4), Shield RESETS. Two adjacent functions with
+ * opposite rules is exactly the pair that gets "made consistent" by mistake.
+ *
+ * Returns the encounter UNCHANGED when it is already resolved — protection must never be granted
+ * in a fight that is over. Never throws for any `BuffTier`: the reducer calls this during an event
+ * handler, and a throw there unmounts the tree. `SHIELD_HEARTS` is total over the union, so
+ * `shieldHeartsForTier`'s guard is unreachable from here except through a cast — the guard is not
+ * dead code, it is the check that makes this guarantee hold. (`queueTimebomb` immediately above
+ * throws under no circumstances at all; this one's guarantee is over the type, not absolute.)
+ */
+export function activateShield(encounter: EncounterState, tier: BuffTier): EncounterState {
+  if (isEncounterResolved(encounter)) return encounter
+  return { ...encounter, shieldHearts: shieldHeartsForTier(tier) }
+}
+
+/** Whether any blue heart is standing. ONE statement, so a rule and a reading cannot disagree —
+ *  the discipline `hasPendingTimebomb` sets. DLR-115 reads this to decide whether to draw any
+ *  shield pip at all. */
+export function hasShieldHearts(encounter: EncounterState): boolean {
+  return encounter.shieldHearts > 0
 }
 
 /**

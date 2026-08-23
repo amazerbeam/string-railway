@@ -59,11 +59,11 @@ describe('seedStartingBuffPile', () => {
   })
 })
 
-describe('BuffKind (DLR-108/DLR-111 finding 1 — widened to 19 members)', () => {
-  it('carries all 19 members, pairwise distinct', () => {
+describe('BuffKind (DLR-108/DLR-111 finding 1 — widened to 20 members on DLR-110)', () => {
+  it('carries all 20 members, pairwise distinct', () => {
     const values = Object.values(BuffKind)
-    expect(values).toHaveLength(19)
-    expect(new Set(values).size).toBe(19)
+    expect(values).toHaveLength(20)
+    expect(new Set(values).size).toBe(20)
   })
 
   it('carries the three pre-existing members unchanged', () => {
@@ -92,6 +92,10 @@ describe('BuffKind (DLR-108/DLR-111 finding 1 — widened to 19 members)', () =>
     expect(BuffKind.SecondThoughts).toBe('secondThoughts')
     expect(BuffKind.Foresight).toBe('foresight')
     expect(BuffKind.Spyglass).toBe('spyglass')
+  })
+
+  it('DLR-110 — carries Shield', () => {
+    expect(BuffKind.Shield).toBe('shield')
   })
 })
 
@@ -184,7 +188,7 @@ describe('BUFF_CADENCE — DLR-124 R4’s classification, transcribed', () => {
     expect(BUFF_CADENCE[BuffKind.Keepsake]).toBe(BuffCadence.Terminal)
   })
 
-  it('classifies Cheat, Timebomb, and the five consumables as activated', () => {
+  it('classifies Cheat, Timebomb, Shield and the five consumables as activated', () => {
     for (const kind of [
       BuffKind.Cheat,
       BuffKind.Timebomb,
@@ -193,8 +197,19 @@ describe('BUFF_CADENCE — DLR-124 R4’s classification, transcribed', () => {
       BuffKind.SecondThoughts,
       BuffKind.Foresight,
       BuffKind.Spyglass,
+      BuffKind.Shield,
     ]) {
       expect(BUFF_CADENCE[kind]).toBe(BuffCadence.Activated)
     }
+  })
+
+  // The table's `Readonly<Record<BuffKind, BuffCadence>>` type already forces totality at compile
+  // time; this asserts it at runtime too, so a member added with a cast cannot slip through as
+  // `undefined`.
+  it('is total over every BuffKind member', () => {
+    for (const kind of Object.values(BuffKind)) {
+      expect(BUFF_CADENCE[kind]).toBeDefined()
+    }
+    expect(Object.keys(BUFF_CADENCE)).toHaveLength(Object.values(BuffKind).length)
   })
 })

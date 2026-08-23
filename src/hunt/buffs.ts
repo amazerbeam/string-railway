@@ -42,6 +42,8 @@ export const BuffKind = {
   SecondThoughts: 'secondThoughts',
   Foresight: 'foresight',
   Spyglass: 'spyglass',
+  // DLR-110 — design doc §7a puts Shield alongside Cheat and Timebomb as an activated card.
+  Shield: 'shield',
 } as const
 export type BuffKind = (typeof BuffKind)[keyof typeof BuffKind]
 
@@ -183,6 +185,8 @@ export const BUFF_CADENCE: Readonly<Record<BuffKind, BuffCadence>> = {
   [BuffKind.SecondThoughts]: BuffCadence.Activated,
   [BuffKind.Foresight]: BuffCadence.Activated,
   [BuffKind.Spyglass]: BuffCadence.Activated,
+  // DLR-110 — the player pulls Shield; it has no trigger.
+  [BuffKind.Shield]: BuffCadence.Activated,
 }
 
 /**

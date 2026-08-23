@@ -94,4 +94,13 @@ export interface EncounterState {
    *  single clamp point, whenever the player actually loses health or the encounter resolves
    *  (AC3) — no other function in this module writes it. NOT PERSISTED. */
   readonly pendingApplyPayout: PendingApplyPayout | null
+  /** DLR-110 — the player's blue hearts (design doc §7a). A second pool of hit points that is
+   *  NOT part of `health`, cannot be restored by any heal path, and is spent before red health
+   *  (AC4). A scalar rather than a `Record<DuelSide, Health>` because only the player can hold
+   *  them — a side-keyed field would model a Quarry shield nothing can create and every reader
+   *  would have to handle, unlike `pendingTimebomb`, which is side-keyed because Timebomb
+   *  genuinely hits both sides. Seeded to `NO_SHIELD_HEARTS` by `startEncounter`, which is what
+   *  clears it at an encounter boundary with no explicit clear step to forget — the reason
+   *  `pendingTimebomb` and `pendingApplyPayout` live here too. NOT PERSISTED. */
+  readonly shieldHearts: Health
 }

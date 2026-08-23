@@ -7,6 +7,8 @@ import {
   cheatDurationTricksOf,
   timebombBuff,
   timebombDamageOf,
+  shieldBuff,
+  shieldHeartsOf,
 } from '../buffCatalog'
 import {
   ACTIVATED_BUFF_CONDITION,
@@ -125,6 +127,41 @@ describe('the readers refuse a buff of the wrong kind rather than answering', ()
 
   it('names the kind it was actually given, so the message identifies the caller bug', () => {
     expect(() => timebombDamageOf(cheatBuff(BuffTier.Bronze, 1))).toThrow(/cheat/)
+  })
+})
+
+describe('shieldBuff (DLR-110)', () => {
+  it('mints a Shield on the heartCount axis with the caller’s id and the activated condition', () => {
+    const buff = shieldBuff(BuffTier.Silver, 7)
+    expect(buff.kind).toBe(BuffKind.Shield)
+    expect(buff.id).toBe(7)
+    expect(buff.tier).toBe(BuffTier.Silver)
+    expect(buff.condition).toBe(ACTIVATED_BUFF_CONDITION)
+    expect(buff.reward.axis).toBe(BuffRewardAxis.HeartCount)
+  })
+
+  it('AC2 — carries the tier’s blue-heart count, 1 / 2 / 3', () => {
+    expect(shieldBuff(BuffTier.Bronze, 1).reward.value).toBe(1)
+    expect(shieldBuff(BuffTier.Silver, 2).reward.value).toBe(2)
+    expect(shieldBuff(BuffTier.Gold, 3).reward.value).toBe(3)
+  })
+})
+
+describe('shieldHeartsOf (DLR-110)', () => {
+  it('reads back the figure the buff was minted with, at every tier', () => {
+    expect(shieldHeartsOf(shieldBuff(BuffTier.Bronze, 1))).toBe(1)
+    expect(shieldHeartsOf(shieldBuff(BuffTier.Silver, 2))).toBe(2)
+    expect(shieldHeartsOf(shieldBuff(BuffTier.Gold, 3))).toBe(3)
+  })
+
+  it('throws on a Cheat rather than granting a shield off the wrong card', () => {
+    expect(() => shieldHeartsOf(cheatBuff(BuffTier.Gold, 1))).toThrow(RangeError)
+    expect(() => shieldHeartsOf(cheatBuff(BuffTier.Gold, 1))).toThrow(/cheat/)
+  })
+
+  it('throws on a Timebomb', () => {
+    expect(() => shieldHeartsOf(timebombBuff(BuffTier.Gold, 2))).toThrow(RangeError)
+    expect(() => shieldHeartsOf(timebombBuff(BuffTier.Gold, 2))).toThrow(/timebomb/)
   })
 })
 

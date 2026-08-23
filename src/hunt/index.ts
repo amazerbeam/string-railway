@@ -106,9 +106,14 @@ export {
   TIMEBOMB_DAMAGE,
   cheatBuff,
   timebombBuff,
+  shieldBuff,
   cheatDurationTricksOf,
   timebombDamageOf,
+  shieldHeartsOf,
 } from './buffCatalog'
+
+export type { ShieldAbsorption } from './shield'
+export { SHIELD_HEARTS, NO_SHIELD_HEARTS, absorbWithShield, shieldHeartsForTier } from './shield'
 
 export type { BuffCostAxis } from './buffCosts'
 export {
@@ -154,6 +159,8 @@ export {
   timebombDamageFor,
   hasPendingApplyPayout,
   queueApplyDamagePayout,
+  activateShield,
+  hasShieldHearts,
 } from './encounter'
 
 export type {

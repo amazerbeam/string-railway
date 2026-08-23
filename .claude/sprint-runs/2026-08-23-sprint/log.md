@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 6/22 (27%) — done: 6 shipped, 0 blocked (+2 out-of-band shipped, DLR-129 naming complete / de-dup outstanding) | now: DLR-109 "Delayed Apply Damage payout" (7/22)
+**Progress:** 7/22 (32%) — done: 7 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-110 "Shield redesign: blue hearts on the health bar" (8/22) — first ticket under the new reviewer/QA rules
 
 ## Run order
 
@@ -1819,3 +1819,165 @@ leaves no trace.
 - **AP is invisible too.** `apPool` now exists and is spent, but nothing renders it, so an
   `InsufficientAp` refusal reads as the button dying for no visible reason.
 - Both tunables, and the three design readings above (hand-end flush, one-at-a-time, Timebomb-wins).
+
+## Coordinator decisions — DLR-109 reconciliation
+
+- **The new opt-in browser rule took effect mid-ticket and the agent applied it correctly.**
+  `ab211dc` landed one commit into DLR-109's run. The work *is* player-reachable, so under the
+  old rule it would have had a browser pass; under the new one it did not, and QA recorded what
+  a browser would have checked instead. Exactly the intended behaviour. **Ticket 8 onward is
+  the first fully clean run under the new reviewer-scaling and opt-in-QA rules.**
+- **Accepted the delay semantics.** `APPLY_DAMAGE_DELAY_TRICKS = 1` means one whole trick
+  *beyond* the trick the press happened in, so a press queues two trick resolutions — the
+  ticket's "current trick plus the next trick". Three agent-chosen readings on top, all
+  unplayed: the payout **never crosses a hand boundary** (still owed at the final trick, it
+  lands there), **one payout at a time**, and it is **dropped rather than paid** if the
+  encounter resolves first.
+- **Accepted the resolution order, including a rule with real teeth.** `applyResolution` is
+  now: trick damage (which already folds in a detonating Timebomb) → clear paid Timebomb queue
+  → book this trick's prime → **payout ticks last**. Because the wipe lives inside
+  `applyDamage`, step 1 has already nulled the payout on any trick that cost the player health.
+  **So a Timebomb detonating against the player destroys a payout due at that same resolution
+  — the bomb wins.** Both halves asserted. The reverse cannot arise: the refusal already blocks
+  a press while a Timebomb is ticking.
+- **Accepted the `Debt Collector` reading, and it binds four unwritten cards.** There are now
+  two moments where there was one — the press and the landing. **"Apply Damage happened" means
+  THE PRESS**: it is when the decision was made and paid for, it is the only one guaranteed to
+  occur (a landing can be wiped), and it is observable via `hasPendingApplyPayout`, whereas the
+  landing leaves no durable trace. **Unenforced in code.** Whoever builds those four cards
+  should adopt it or deliberately overturn it — overturning needs a marker added for the
+  landing.
+- **Accepted two spec rewrites outside the contract's file map.**
+  `roundReducer.quickKill.test.ts` and `WarCouncilRound.test.tsx` drove their scenarios through
+  the instant-cash mechanism this ticket replaced, and broke legitimately. Both were rewritten
+  and both rewrites were scrutinised by a reviewer specifically for weakened coverage; both
+  judged honest. Logged because "nothing outside the file map may be touched" is normally hard.
+- Suite 1192 → **1220 (+28), 94 files, 0 failures.** One QA fix round, ceiling not exceeded.
+
+### DLR-119 scope extended by comment, rather than a new ticket
+
+DLR-109's top gap is that **nothing tells the player a payout is in the air** — press Apply,
+the bank zeroes, the Quarry's health does not move, and no signal explains why. Two related
+gaps land in the same place: **AP is unrendered**, so `InsufficientAp` reads as the button
+dying for no reason; and **a payout destroyed by a Timebomb is destroyed silently**.
+
+Added as a comment to DLR-119 (the visual and UX pass over exactly these surfaces) rather than
+raised as a fourth out-of-band ticket, to avoid ticket sprawl. If it turns out to need engine
+work rather than presentation, it splits out then.
+
+
+## DLR-110 — Shield redesign: blue hearts on the health bar
+
+GREEN. Suite **1220 → 1259 (+39), 96 files (+2), 0 failures.** typecheck / lint / test / build all
+exit 0. One reviewer round, one combined fix pass, one verification round — ceiling not reached.
+All three reviewers ran (the diff changes production engine logic): Code-Evaluator ISSUES FOUND
+(4 minor, all documentation/test-fidelity), Defender APPROVED, QA ALL PASSED.
+
+### The DLR-110 / DLR-115 boundary — and it needed no judgement
+
+**The two tickets are exact complements and I absorbed none of DLR-115.** DLR-110 is labelled
+`engine` and its own out-of-scope line says "rendering the second pip type on screen"; DLR-115 is
+labelled `ui`/`playable` and its out-of-scope line says "the absorption-order rule itself (engine
+ticket)". The titles mislead — "blue hearts on the health bar" sounds visual — but the descriptions
+do not. **This diff contains no `.tsx`, no `.css`, no `HeartState` member, and no edit to
+`duelHealthBars.ts`.** DLR-115 still has to build every pixel of it. QA confirmed the absences
+against the diff rather than taking my word for it.
+
+Consequently **this was not a UI ticket and no mockup was called for** — `/fb-plan` Step 3.5 fires
+only for work touching a `.tsx` surface, `App.tsx`, or a `use*` hook, and skips silently otherwise.
+So there is no unseen mockup; there is no mockup. Recorded because the run's instruction assumed
+one would exist.
+
+### The shield rules I decided — all of these are normally the developer's
+
+- **A blue heart is a temporary hit point worth 1 damage, not an absorb-one-hit token.** 3 damage
+  into 2 blue hearts consumes both and lets 1 through. §7a's goal is "dividing what you take";
+  per-point absorption divides, whole-hit absorption negates. **This is also what keeps Shield
+  distinct from `Ward`**, which the v1 list defines as "absorbs up to N on the next hit, then breaks
+  regardless" — Ward is per-hit and self-destructs, Shield is per-point and persists. **Ward's code
+  was not touched and its known tier defect was not fixed.**
+- **Blue hearts are the player's only** — `shieldHearts` is a scalar on `EncounterState`, not a
+  `Record<DuelSide, Health>`. A side-keyed field would model a Quarry shield nothing can create.
+- **They do not stack, and they set DOWNWARD.** Bronze after gold leaves 1, not 3 and not 4.
+- **They survive a hand and die with the encounter.** §7a says "for that hand" in one sentence and
+  "re-activating Shield a later hand resets to the tier's count" in the next; the second only makes
+  sense if hearts survive into a later hand. Living on `EncounterState` means `startEncounter`
+  reseeds them with no explicit clear step to forget. **If they should expire at hand end it is a
+  one-line change; if they should survive a whole fight, `shieldHearts` moves to `RunState`. Worth
+  deciding before DLR-115 renders them.**
+- **Blue hearts absorb before red health** (AC4), inside `applyDamage` — the single damage funnel —
+  so no route can bypass the shield. `deplete` remains the single clamp point.
+- **A hit FULLY ABSORBED by blue hearts does not destroy a queued Apply Damage payout.** This falls
+  out of DLR-109's existing `playerLostHealth` predicate rather than a new branch, and it is tested
+  in both directions. **It is a second, undesigned benefit of holding a shield and it cuts against
+  DLR-109's "a Timebomb detonating against the player destroys a payout at that resolution" —**
+  a shield now also protects a cash-out. A partially-absorbed hit that still drops red health
+  destroys the payout exactly as before.
+- **A dead Quarry spends no blue heart.** D7 already gives the player zero damage from an event that
+  kills the Quarry, so the shield is carried through untouched rather than absorbing a hit that
+  never landed.
+- **A player cannot be killed while a blue heart stands.** Falls out of absorption preceding
+  `deplete`; asserted at the boundary with player health at 1.
+
+### Numbers nobody chose
+
+- **`CONSUMABLE_AP_COST[Shield]` = bronze 2 / silver 3 / gold 4.** No source document prices Shield —
+  `v1-buff-card-list.md` has no Shield row and §7a states heart counts but no cost. The ladder shape
+  is copied from `SecondThoughts`/`Spyglass`. **The row is *forced* by adding `BuffKind.Shield`**
+  (`apCostOf` throws on an unpriced kind), so the choice could not be deferred, only made invisibly
+  or made visibly. Made visibly, with a "NOBODY CHOSE THESE NUMBERS" comment in `buffCosts.ts`.
+  Nothing player-reachable mints a Shield yet, so no player can pay it today.
+- `SHIELD_HEARTS = { bronze: 1, silver: 2, gold: 3 }` is **transcribed** from §7a and AC2, not chosen.
+- **No colour, glyph, or opacity was chosen** — this ticket renders nothing, deliberately.
+
+### `game-ux`'s ruling, recorded for DLR-115 rather than acted on here
+
+The row already carries five states and has never been seen at 14–18 glyphs with a streak and a
+booked hit at once. A sixth *flat* state is above the point where a row reads at a glance. The
+ruling: **do not add a sixth peer state — model the row as two orthogonal dimensions**, pip *type*
+(shield vs health) and pip *state*, where a shield pip can only ever be whole, breaking or broken.
+That caps what can be on screen at once and satisfies the hard floor's "state reads without motion
+or colour alone", which a blue-vs-red colour swap alone would fail. **The glyph and colour are the
+developer's and must be routed, not invented** — `--wc-hp-doomed-opacity: 0.78` is the precedent for
+an agent-chosen value never seen against a full row.
+
+### Two things DLR-115 inherits — added as a comment on that ticket
+
+1. **`projectedDepletion` in `duelHealthBars.ts` knows nothing about `shieldHearts`.** The moment
+   anything grants a shield, the ticking-Timebomb preview will show red hearts about to break that
+   the shield would in fact absorb — a preview contradicting what `applyDamage` actually does.
+   **Latent, not a live regression** (nothing outside `src/hunt/`'s tests calls `activateShield`),
+   and outside this ticket's file map. DLR-115 must route the player-side projection through
+   `absorbWithShield` rather than adding a second absorption rule beside it.
+2. **A blue heart can be fractional.** Under `DAMAGE_ROUNDING = None` a half-point hit legitimately
+   leaves 1.5 blue hearts, and the engine handles it. DLR-115 needs a rule for drawing half a pip.
+
+### Plan defaults taken at the auto-approved gate
+
+Every *Assumptions made* bullet above, plus: the mechanic split three ways (`shield.ts` pure
+arithmetic / `encounter.ts` transitions / `buffCatalog.ts` representation); `SHIELD_HEARTS` in
+`shield.ts` beside `CHEAT_DURATION_TRICKS`'s precedent rather than in `config.ts`; and
+**`BuffKind.Shield` added even though nothing mints one** — the same intermediate state DLR-107 left
+Cheat and Timebomb in, because AC2 requires an activation and an activation requires a card.
+
+### A planner error worth carrying forward
+
+**`plan.md`'s config audit undercounted `EncounterState` construction sites — it said one
+(`startEncounter`), there are two.** `applyDamage`'s return is also an object literal and it writes
+`damageEventsApplied:`, so the plan's own grep should have caught it. The Implementer hit it as a
+typecheck failure exactly where the contract predicted, and fixed it properly rather than casting.
+**The audit bullet has been corrected in `plan.md`** so the next ticket that adds an `EncounterState`
+field does not trust the wrong number.
+
+### Still open, and what the developer must look at
+
+- **Nothing is visible.** A browser would render a health bar identical to today's, because no reader
+  of `encounter.shieldHearts` exists yet. The browser pass was not requested and was not run; QA
+  recorded the same. **The first thing worth looking at is DLR-115.**
+- The four rules above marked as the developer's: absorb-1-point-vs-1-hit (settle by playing a gold
+  Timebomb's 6 damage into 3 blue hearts and judging whether the shield *helped* or *negated*), how
+  long a blue heart lives, whether a fully-absorbed hit should spare a payout, and Shield's AP price.
+- **The persistence window is still open.** `EncounterState` is not persisted and `createSaveStore`
+  has no consumer outside `src/persistence/`, so `save-data-versioning.md` does not bind this diff.
+  The first ticket that persists `EncounterState` inherits `shieldHearts` as a field an old record
+  must default.

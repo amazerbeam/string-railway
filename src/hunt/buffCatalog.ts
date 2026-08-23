@@ -7,7 +7,8 @@ import {
   type BuffId,
 } from './buffs'
 import { TIMEBOMB_PLAYER_DAMAGE, TIMEBOMB_QUARRY_DAMAGE } from './config'
-import type { Damage } from './types'
+import { shieldHeartsForTier } from './shield'
+import type { Damage, Health } from './types'
 
 /**
  * DLR-107 — Cheat and Timebomb as ordinary `Buff` objects, per design doc §1 ("both become ordinary
@@ -115,6 +116,40 @@ export function timebombBuff(tier: BuffTier, id: BuffId): Buff {
     condition: ACTIVATED_BUFF_CONDITION,
     reward: { axis: BuffRewardAxis.Magnitude, value: TIMEBOMB_DAMAGE[tier].quarry },
   }
+}
+
+/** DLR-110 — mint a Shield buff at `tier`. On the `heartCount` axis `buffs.ts` and
+ *  `.docs/implementation/hunt/buff-pile.md` already name as Shield's. `id` is the caller's, minted
+ *  from `RunState.nextBuffId` exactly as `cheatBuff`'s is; this module never invents one.
+ *
+ *  Reads the tier table through `shieldHeartsForTier` rather than re-indexing `SHIELD_HEARTS`, so
+ *  one tier has exactly one answer. */
+export function shieldBuff(tier: BuffTier, id: BuffId): Buff {
+  return {
+    id,
+    kind: BuffKind.Shield,
+    tier,
+    condition: ACTIVATED_BUFF_CONDITION,
+    reward: { axis: BuffRewardAxis.HeartCount, value: shieldHeartsForTier(tier) },
+  }
+}
+
+/**
+ * Blue hearts this Shield buff grants. Reads `buff.reward.value` — the figure the buff was MINTED
+ * with — rather than re-indexing the tier table, so one object has exactly one answer, the rule
+ * `cheatDurationTricksOf` sets.
+ *
+ * THROWS on a buff of any other kind rather than returning a number, for that function's reason and
+ * a sharper version of it: a Cheat's duration and a Timebomb's damage are also small integers, so a
+ * swallowed version would grant a plausible-looking shield off the wrong card.
+ */
+export function shieldHeartsOf(buff: Buff): Health {
+  if (buff.kind !== BuffKind.Shield) {
+    throw new RangeError(
+      `Buff ${buff.id} is a ${buff.kind}, not a Shield — it grants no blue hearts`,
+    )
+  }
+  return buff.reward.value
 }
 
 /**
