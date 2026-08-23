@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { envenomCard, isEnvenomed, trickIsEnvenomed } from '../envenom'
+import { primeCard, isPrimed, trickIsPrimed } from '../timebomb'
 import { PlayerSide, Suit, type Card, type RoundState, type TrickCard } from '../types'
 import { dealRound } from '../deal'
 
@@ -9,20 +9,20 @@ const played = (side: PlayerSide, c: Card): TrickCard => ({ side, card: c })
 /** A real dealt hand, so the specs cannot drift from what `dealRound` actually produces. */
 const dealt = (): RoundState => dealRound(PlayerSide.Cpu, () => 0.5)
 
-describe('isEnvenomed', () => {
+describe('isPrimed', () => {
   it('matches on suit AND rank together', () => {
     const marked = [card(Suit.Bells, 4)]
-    expect(isEnvenomed(marked, card(Suit.Bells, 4))).toBe(true)
-    expect(isEnvenomed(marked, card(Suit.Keys, 4))).toBe(false)
-    expect(isEnvenomed(marked, card(Suit.Bells, 5))).toBe(false)
+    expect(isPrimed(marked, card(Suit.Bells, 4))).toBe(true)
+    expect(isPrimed(marked, card(Suit.Keys, 4))).toBe(false)
+    expect(isPrimed(marked, card(Suit.Bells, 5))).toBe(false)
   })
 
   it('is false against an empty list', () => {
-    expect(isEnvenomed([], card(Suit.Bells, 4))).toBe(false)
+    expect(isPrimed([], card(Suit.Bells, 4))).toBe(false)
   })
 })
 
-describe('trickIsEnvenomed (AC3)', () => {
+describe('trickIsPrimed (AC3)', () => {
   const marked = [card(Suit.Bells, 4)]
 
   it('is true when the player’s card carries the mark', () => {
@@ -30,12 +30,12 @@ describe('trickIsEnvenomed (AC3)', () => {
       played(PlayerSide.Cpu, card(Suit.Keys, 6)),
       played(PlayerSide.Player, card(Suit.Bells, 4)),
     ]
-    expect(trickIsEnvenomed(marked, trick)).toBe(true)
+    expect(trickIsPrimed(marked, trick)).toBe(true)
   })
 
   it('is true when the mark arrived on the opponent’s card — it tests the trick, not a seat', () => {
     const trick = [played(PlayerSide.Cpu, card(Suit.Bells, 4))]
-    expect(trickIsEnvenomed(marked, trick)).toBe(true)
+    expect(trickIsPrimed(marked, trick)).toBe(true)
   })
 
   it('is false for a trick of unmarked cards', () => {
@@ -43,30 +43,30 @@ describe('trickIsEnvenomed (AC3)', () => {
       played(PlayerSide.Cpu, card(Suit.Keys, 6)),
       played(PlayerSide.Player, card(Suit.Keys, 9)),
     ]
-    expect(trickIsEnvenomed(marked, trick)).toBe(false)
+    expect(trickIsPrimed(marked, trick)).toBe(false)
   })
 
   it('is false for an empty trick', () => {
-    expect(trickIsEnvenomed(marked, [])).toBe(false)
+    expect(trickIsPrimed(marked, [])).toBe(false)
   })
 })
 
-describe('envenomCard (AC2)', () => {
+describe('primeCard (AC2)', () => {
   it('opens every dealt hand with no marks', () => {
-    expect(dealt().envenomedCards).toEqual([])
+    expect(dealt().primedCards).toEqual([])
   })
 
   it('marks a card held by that side', () => {
     const state = dealt()
     const target = state.hands[PlayerSide.Player][0]
-    const after = envenomCard(state, PlayerSide.Player, target)
-    expect(after.envenomedCards).toEqual([target])
-    expect(isEnvenomed(after.envenomedCards, target)).toBe(true)
+    const after = primeCard(state, PlayerSide.Player, target)
+    expect(after.primedCards).toEqual([target])
+    expect(isPrimed(after.primedCards, target)).toBe(true)
   })
 
   it('leaves the hand, the skulls and the bank untouched', () => {
     const state = dealt()
-    const after = envenomCard(state, PlayerSide.Player, state.hands[PlayerSide.Player][0])
+    const after = primeCard(state, PlayerSide.Player, state.hands[PlayerSide.Player][0])
     expect(after.hands).toEqual(state.hands)
     expect(after.skulledCards).toEqual(state.skulledCards)
     expect(after.bank).toBe(state.bank)
@@ -75,31 +75,31 @@ describe('envenomCard (AC2)', () => {
 
   it('never mutates its input', () => {
     const state = dealt()
-    envenomCard(state, PlayerSide.Player, state.hands[PlayerSide.Player][0])
-    expect(state.envenomedCards).toEqual([])
+    primeCard(state, PlayerSide.Player, state.hands[PlayerSide.Player][0])
+    expect(state.primedCards).toEqual([])
   })
 
   it('accumulates a second mark', () => {
     const state = dealt()
     const [first, second] = state.hands[PlayerSide.Player]
-    const twice = envenomCard(
-      envenomCard(state, PlayerSide.Player, first),
+    const twice = primeCard(
+      primeCard(state, PlayerSide.Player, first),
       PlayerSide.Player,
       second,
     )
-    expect(twice.envenomedCards).toEqual([first, second])
+    expect(twice.primedCards).toEqual([first, second])
   })
 
   it('throws when the card is not in that side’s hand', () => {
     const state = dealt()
     const theirs = state.hands[PlayerSide.Cpu][0]
-    expect(() => envenomCard(state, PlayerSide.Player, theirs)).toThrow(RangeError)
+    expect(() => primeCard(state, PlayerSide.Player, theirs)).toThrow(RangeError)
   })
 
   it('throws rather than double-marking, so a charge cannot be spent for nothing', () => {
     const state = dealt()
     const target = state.hands[PlayerSide.Player][0]
-    const once = envenomCard(state, PlayerSide.Player, target)
-    expect(() => envenomCard(once, PlayerSide.Player, target)).toThrow(RangeError)
+    const once = primeCard(state, PlayerSide.Player, target)
+    expect(() => primeCard(once, PlayerSide.Player, target)).toThrow(RangeError)
   })
 })

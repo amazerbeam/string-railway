@@ -6,7 +6,7 @@ import {
   type Buff,
   type BuffId,
 } from './buffs'
-import { ENVENOM_PLAYER_DAMAGE, ENVENOM_QUARRY_DAMAGE } from './config'
+import { TIMEBOMB_PLAYER_DAMAGE, TIMEBOMB_QUARRY_DAMAGE } from './config'
 import type { Damage } from './types'
 
 /**
@@ -15,14 +15,14 @@ import type { Damage } from './types'
  *
  * This module ships REPRESENTATION ONLY. Nothing here activates a buff, spends one, or reads the
  * pile — activation is DLR-103 T5's, and the felt-rail UI still drives the old bespoke mechanics
- * (`CheatStage` in `app/warCouncil/roundUiState.ts`, `EnvenomStage` beside it), which this ticket's
+ * (`CheatStage` in `app/warCouncil/roundUiState.ts`, `TimebombStage` beside it), which this ticket's
  * Scope Boundaries explicitly leave in place. So Cheat and Timebomb currently exist twice: the live
  * mechanic, and this inert representation. That is the intended intermediate state of a migration
  * split across tickets, not an oversight.
  */
 
 /** A Timebomb's two figures at one tier. A PAIR, not one number, for the reason `config.ts` already
- *  gives for `ENVENOM_QUARRY_DAMAGE` and `ENVENOM_PLAYER_DAMAGE` being two keys: the player's hit
+ *  gives for `TIMEBOMB_QUARRY_DAMAGE` and `TIMEBOMB_PLAYER_DAMAGE` being two keys: the player's hit
  *  is deliberately smaller because it ALSO forces the streak's cash-out, and a single shared figure
  *  is the bug that type-checks, reads correctly, and pays the wrong side. */
 export interface TimebombDamage {
@@ -77,7 +77,7 @@ export const TIMEBOMB_TIER_MULTIPLIER: Readonly<Record<BuffTier, number>> = {
  * three pairs of numbers that could drift apart under an edit.
  *
  * It also means the bronze row IS today's live pair by construction rather than by coincidence —
- * retuning `ENVENOM_QUARRY_DAMAGE` moves this table with it, which is what makes the migration
+ * retuning `TIMEBOMB_QUARRY_DAMAGE` moves this table with it, which is what makes the migration
  * incapable of silently diverging from the mechanic it migrates.
  *
  * Both operands are integers and the multipliers are integers, so every product is exact — this
@@ -150,7 +150,7 @@ export function timebombDamageOf(buff: Buff): TimebombDamage {
  *  BOTH sides" rule is stated once and cannot be applied to one side by mistake. */
 function timebombRow(tier: BuffTier): TimebombDamage {
   return {
-    quarry: ENVENOM_QUARRY_DAMAGE * TIMEBOMB_TIER_MULTIPLIER[tier],
-    player: ENVENOM_PLAYER_DAMAGE * TIMEBOMB_TIER_MULTIPLIER[tier],
+    quarry: TIMEBOMB_QUARRY_DAMAGE * TIMEBOMB_TIER_MULTIPLIER[tier],
+    player: TIMEBOMB_PLAYER_DAMAGE * TIMEBOMB_TIER_MULTIPLIER[tier],
   }
 }

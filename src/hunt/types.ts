@@ -85,5 +85,5 @@ export interface EncounterState {
    *  side — need no second field and no branch. `startEncounter` seeds it to zeros, which is what
    *  discards it at an encounter boundary (AC7) with no explicit clear step to forget; that is
    *  why this lives here and not on `RunState`. */
-  readonly pendingEnvenom: IncomingDamage
+  readonly pendingTimebomb: IncomingDamage
 }

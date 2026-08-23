@@ -130,7 +130,7 @@ function App() {
       run,
       result.encounter,
       result.cheats,
-      result.envenomCharges,
+      result.timebombCharges,
       result.poisonGuardHeld,
       result.discardsRemaining,
       result.unplayedAtResolve,
@@ -147,7 +147,7 @@ function App() {
     }
     // D1 — nothing is owed at a hand boundary any more. Poison is paid by `applyResolution` at the
     // trick that resolves it, so an unresolved hand simply deals the next one. Any poison booked by
-    // this hand's last trick rides on `encounter.pendingEnvenom` into the next hand's first trick,
+    // this hand's last trick rides on `encounter.pendingTimebomb` into the next hand's first trick,
     // which is D5's carry half.
     dealNextHand()
   }
@@ -242,7 +242,7 @@ function App() {
         playerHearts={playerBar.hearts}
         cheatCount={run.cheats.length}
         cheatSlotCount={CHEAT_SLOT_COUNT}
-        envenomCharges={run.envenomCharges}
+        timebombCharges={run.timebombCharges}
         poisonGuardHeld={run.poisonGuardHeld}
         whetstones={run.whetstones}
         flaskCharges={run.flaskCharges}
@@ -252,7 +252,7 @@ function App() {
         progressText={runProgressText(run.encounterIndex + 1, run.encounterCount)}
         refusals={{
           [ShopItem.Cheat]: refusalFor(stock, ShopItem.Cheat),
-          [ShopItem.Envenom]: refusalFor(stock, ShopItem.Envenom),
+          [ShopItem.Timebomb]: refusalFor(stock, ShopItem.Timebomb),
           [ShopItem.PoisonGuard]: refusalFor(stock, ShopItem.PoisonGuard),
           [ShopItem.Whetstone]: refusalFor(stock, ShopItem.Whetstone),
           [ShopItem.Heal]: refusalFor(stock, ShopItem.Heal),
@@ -297,7 +297,7 @@ function App() {
       runLabel={runPositionLabel(run.encounterIndex, run.encounterCount, currentName)}
       cheats={run.cheats}
       coins={run.coins}
-      envenomCharges={run.envenomCharges}
+      timebombCharges={run.timebombCharges}
       poisonGuardHeld={run.poisonGuardHeld}
       discardsRemaining={run.discardsRemaining}
       bankClimbBonus={bankClimbBonusFor(run)}

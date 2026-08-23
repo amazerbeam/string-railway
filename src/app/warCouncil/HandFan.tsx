@@ -1,5 +1,5 @@
 import { type CSSProperties } from 'react'
-import { containsCard, isEnvenomed, sameCard, type Card } from '../../warCouncil'
+import { containsCard, isPrimed, sameCard, type Card } from '../../warCouncil'
 import { fanPlacement } from './fanLayout'
 import { cardKey } from './labels'
 import PlayingCard from './PlayingCard'
@@ -16,13 +16,13 @@ interface HandFanProps {
   /** DLR-90 AC2 — the marks, so the fan can draw them. Passed rather than derived: this component
    *  computes nothing about a card's state, exactly as it takes `legal` from the engine rather
    *  than comparing suits itself. */
-  readonly envenomedCards: readonly Card[]
+  readonly primedCards: readonly Card[]
   /** DLR-90 AC2 — a hand-card tap MARKS rather than plays. While true, every held card is a valid
    *  target INCLUDING one illegal to play: marking is not a move, and the item exists precisely to
    *  give a card the player expects to lose with a reason to be played. Read from the reducer's own
-   *  `envenomArmed` predicate, never re-derived here. */
-  readonly envenomArmed: boolean
-  /** DLR-100 — the discard selection is open. Mirrors `envenomArmed`'s role: while true, every
+   *  `timebombArmed` predicate, never re-derived here. */
+  readonly timebombArmed: boolean
+  /** DLR-100 — the discard selection is open. Mirrors `timebombArmed`'s role: while true, every
    *  held card is a valid tap target, including one illegal to play, because discarding is not a
    *  move. Read from the reducer's own `discardSelecting` predicate, never re-derived here. */
   readonly discardSelecting: boolean
@@ -56,8 +56,8 @@ export default function HandFan({
   hint,
   rejected,
   promptOpen,
-  envenomedCards,
-  envenomArmed,
+  primedCards,
+  timebombArmed,
   discardSelecting,
   discardSelection,
   onTap,
@@ -65,13 +65,13 @@ export default function HandFan({
 }: HandFanProps) {
   // Guards against `containsCard(legal, undefined)` — safe today only because `interactive`
   // is always false once `hand.length === 0`, and cheap enough not to rely on that staying true.
-  // While envenomArmed or discardSelecting, every held card is a valid target — including one
+  // While timebombArmed or discardSelecting, every held card is a valid target — including one
   // illegal to play — so the `containsCard` term drops out rather than gating focusability a
   // second way.
   const isFocusable = (index: number) =>
     hand[index] !== undefined &&
     interactive &&
-    (envenomArmed || discardSelecting || containsCard(legal, hand[index]))
+    (timebombArmed || discardSelecting || containsCard(legal, hand[index]))
 
   const { groupRef, tabStopIndex, handleKeyDown } = useRovingTabIndex(
     hand.length,
@@ -98,7 +98,7 @@ export default function HandFan({
         // `wc-is-marking` is the same idea for DLR-90's own mode — presentational only,
         // changing nothing about behaviour or the accessible tree, so the stylesheet can
         // distinguish "pick a card to poison" from ordinary play.
-        className={`wc-fan${interactive ? '' : ' wc-is-inert'}${envenomArmed ? ' wc-is-marking' : ''}${discardSelecting ? ' wc-is-discarding' : ''}`}
+        className={`wc-fan${interactive ? '' : ' wc-is-inert'}${timebombArmed ? ' wc-is-marking' : ''}${discardSelecting ? ' wc-is-discarding' : ''}`}
         role="group"
         aria-label="Your hand"
         // While a Fox/Woodcutter prompt is open, AbilityPrompt renders every remaining hand
@@ -131,9 +131,9 @@ export default function HandFan({
               variant="hand"
               armed={isArmed}
               illegal={
-                !interactive || (!envenomArmed && !discardSelecting && !containsCard(legal, card))
+                !interactive || (!timebombArmed && !discardSelecting && !containsCard(legal, card))
               }
-              envenomed={isEnvenomed(envenomedCards, card)}
+              primed={isPrimed(primedCards, card)}
               discardSelected={containsCard(discardSelection, card)}
               tabIndex={index === tabStopIndex ? 0 : -1}
               style={style}

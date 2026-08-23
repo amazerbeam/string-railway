@@ -1,9 +1,9 @@
-/* The Envenom plate — a SIBLING of the Cheat rail in the felt-left plate (DLR-90), not a
+/* The Timebomb plate — a SIBLING of the Cheat rail in the felt-left plate (DLR-90), not a
    generalisation of it: independent copy, independent component, so retuning one never risks
    the other. Mirrors `warCouncilCheats.css`'s selectors and tokens so the two rails read as one
    family of controls. */
 
-.wc-envenom-rail {
+.wc-timebomb-rail {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -13,7 +13,7 @@
 /* Same frame the Cheat slot uses — form carries the state, not colour alone: held = solid dim,
    poised = dashed brass, armed = solid brass + lift + corner tick. Sized to at least 44x44px
    (react-frontend's hit-area floor) via the Cheat slot's own minimums. */
-.wc-envenom-plate {
+.wc-timebomb-plate {
   width: var(--wc-cheat-slot-w);
   min-width: 2.75rem;
   min-height: 2.75rem;
@@ -35,12 +35,12 @@
     filter var(--wc-ui-transition-ms) ease;
 }
 
-.wc-envenom-glyph {
+.wc-timebomb-glyph {
   font-size: clamp(0.9rem, 2.2vmin, 1.2rem);
   line-height: 1;
 }
 
-.wc-envenom-count {
+.wc-timebomb-count {
   position: absolute;
   bottom: 2px;
   right: 4px;
@@ -49,18 +49,18 @@
   color: var(--wc-chalk-dim);
 }
 
-.wc-envenom-plate:disabled {
+.wc-timebomb-plate:disabled {
   border-style: dashed;
   opacity: 0.55;
   cursor: default;
 }
 
-.wc-envenom-plate.is-poised {
+.wc-timebomb-plate.is-poised {
   border: 2px dashed var(--wc-brass);
   transform: translateY(-3px);
 }
 
-.wc-envenom-plate.is-armed {
+.wc-timebomb-plate.is-armed {
   border: 2px solid var(--wc-brass);
   background: linear-gradient(160deg, #453718 0%, #2b2311 100%);
   transform: translateY(-7px);
@@ -71,7 +71,7 @@
 
 /* A second, non-colour signal on the armed plate: a filled corner notch, matching the Cheat
    slot's own armed tick. */
-.wc-envenom-plate.is-armed::after {
+.wc-timebomb-plate.is-armed::after {
   content: '';
   position: absolute;
   top: -4px;
@@ -82,23 +82,23 @@
   border-radius: 50%;
 }
 
-.wc-envenom-plate:focus-visible {
+.wc-timebomb-plate:focus-visible {
   outline: 2px solid var(--wc-brass);
   outline-offset: 3px;
 }
 
 @media (hover: hover) {
-  .wc-envenom-plate:not(:disabled):hover {
+  .wc-timebomb-plate:not(:disabled):hover {
     filter: brightness(1.15);
   }
 }
 
-.wc-envenom-plate:not(:disabled):active {
+.wc-timebomb-plate:not(:disabled):active {
   filter: brightness(0.9);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .wc-envenom-plate {
+  .wc-timebomb-plate {
     transition: none;
   }
 }

@@ -8,7 +8,7 @@ const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
   playerWon: false,
   skullTrick: false,
   finalTrick: false,
-  envenomTrick: false,
+  timebombTrick: false,
   poisonToPlayer: 0,
   poisonToQuarry: 0,
   poisonGuarded: false,

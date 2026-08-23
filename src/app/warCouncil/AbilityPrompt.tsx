@@ -1,7 +1,7 @@
 import {
   AbilityChoiceKind,
   CardRank,
-  isEnvenomed,
+  isPrimed,
   type AbilityChoice,
   type Card,
 } from '../../warCouncil'
@@ -16,7 +16,7 @@ interface AbilityPromptProps {
   readonly drawnCard: Card | null // drawPile[0] for Woodcutter, null for Fox
   /** DLR-90 AC2 — a marked card offered as a Fox exchange or Woodcutter discard still announces
    *  its own poison. Defaults to `[]` for `TrickWell`'s `skulledCards`-style reason. */
-  readonly envenomedCards?: readonly Card[]
+  readonly primedCards?: readonly Card[]
   readonly onChoose: (choice: AbilityChoice) => void
   readonly onCancel: () => void
 }
@@ -41,7 +41,7 @@ export default function AbilityPrompt({
   decree,
   hand,
   drawnCard,
-  envenomedCards = [],
+  primedCards = [],
   onChoose,
   onCancel,
 }: AbilityPromptProps) {
@@ -100,7 +100,7 @@ export default function AbilityPrompt({
               key={cardKey(handCard)}
               card={handCard}
               variant="hand"
-              envenomed={isEnvenomed(envenomedCards, handCard)}
+              primed={isPrimed(primedCards, handCard)}
               tabIndex={index === tabStopIndex ? 0 : -1}
               onTap={() => onChoose({ kind: AbilityChoiceKind.FoxExchange, handCard })}
             />
@@ -141,7 +141,7 @@ export default function AbilityPrompt({
             <PlayingCard
               card={drawnCard}
               variant="hand"
-              envenomed={isEnvenomed(envenomedCards, drawnCard)}
+              primed={isPrimed(primedCards, drawnCard)}
               tabIndex={tabStopIndex === 0 ? 0 : -1}
               onTap={() =>
                 onChoose({ kind: AbilityChoiceKind.WoodcutterDiscard, discard: drawnCard })
@@ -154,7 +154,7 @@ export default function AbilityPrompt({
             key={cardKey(handCard)}
             card={handCard}
             variant="hand"
-            envenomed={isEnvenomed(envenomedCards, handCard)}
+            primed={isPrimed(primedCards, handCard)}
             tabIndex={index + handOffset === tabStopIndex ? 0 : -1}
             onTap={() => onChoose({ kind: AbilityChoiceKind.WoodcutterDiscard, discard: handCard })}
           />

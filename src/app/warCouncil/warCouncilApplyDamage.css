@@ -1,6 +1,6 @@
-/* The Apply Damage plate — a SIBLING of the Cheat rail and the Envenom plate on the felt rail
+/* The Apply Damage plate — a SIBLING of the Cheat rail and the Timebomb plate on the felt rail
    (DLR-94), not a generalisation of either: independent copy, independent component, so retuning
-   one never risks the others. Mirrors `warCouncilEnvenom.css`'s selectors and tokens so the three
+   one never risks the others. Mirrors `warCouncilTimebomb.css`'s selectors and tokens so the three
    rail controls read as one family. No `.is-armed` block: this control has no armed stage —
    its second tap IS the action. */
 
@@ -11,7 +11,7 @@
   gap: clamp(0.2rem, 0.7vmin, 0.4rem);
 }
 
-/* Same frame the Envenom plate uses — form carries the state, not colour alone: held = solid
+/* Same frame the Timebomb plate uses — form carries the state, not colour alone: held = solid
    dim, poised = dashed brass + lift + corner tick. Sized to at least 44x44px (react-frontend's
    hit-area floor) via the Cheat slot's own minimums. */
 .wc-apply-plate {

@@ -1,6 +1,6 @@
 import {
-  ENVENOM_PLAYER_DAMAGE,
-  ENVENOM_QUARRY_DAMAGE,
+  TIMEBOMB_PLAYER_DAMAGE,
+  TIMEBOMB_QUARRY_DAMAGE,
   PLAYER_START_HEALTH,
   quarryHealthForEncounter,
 } from './config'
@@ -42,13 +42,13 @@ export function startEncounter(
     },
     damageEventsApplied: 0,
     winner: null,
-    pendingEnvenom: NO_PENDING_ENVENOM,
+    pendingTimebomb: NO_PENDING_TIMEBOMB,
   }
 }
 
 /** Nothing owed. Shared and only ever spread from, never assigned into — its `IncomingDamage`
  *  type is deeply `readonly`, the same discipline `duelHealthBars.ts`'s `NO_BREAKING` uses. */
-export const NO_PENDING_ENVENOM: IncomingDamage = {
+export const NO_PENDING_TIMEBOMB: IncomingDamage = {
   [DuelSide.Player]: 0,
   [DuelSide.Quarry]: 0,
 }
@@ -96,7 +96,7 @@ export function applyDamage(encounter: EncounterState, incoming: IncomingDamage)
     health,
     damageEventsApplied: encounter.damageEventsApplied + 1,
     winner: resolveWinner(health),
-    pendingEnvenom: encounter.pendingEnvenom,
+    pendingTimebomb: encounter.pendingTimebomb,
   }
 }
 
@@ -110,9 +110,9 @@ export function isEncounterResolved(encounter: EncounterState): boolean {
  *  Also the predicate D6 (2026-08-19) reserves: Apply Damage must be disabled while poison is
  *  pending. That control does not exist yet — version-4-scope.md §3 — so this has no caller for
  *  that purpose today and is kept deliberately rather than re-derived then. */
-export function hasPendingEnvenom(encounter: EncounterState): boolean {
+export function hasPendingTimebomb(encounter: EncounterState): boolean {
   return (
-    encounter.pendingEnvenom[DuelSide.Player] > 0 || encounter.pendingEnvenom[DuelSide.Quarry] > 0
+    encounter.pendingTimebomb[DuelSide.Player] > 0 || encounter.pendingTimebomb[DuelSide.Quarry] > 0
   )
 }
 
@@ -121,8 +121,8 @@ export function hasPendingEnvenom(encounter: EncounterState): boolean {
  *  EXPORTED on DLR-101: the copy layer needs the figure for the reveal's poison clause, and a
  *  caller that chose between the two constants itself is a caller that can choose the wrong one
  *  — the same reason this function exists at all. */
-export function envenomDamageFor(target: DuelSide): Damage {
-  return target === DuelSide.Player ? ENVENOM_PLAYER_DAMAGE : ENVENOM_QUARRY_DAMAGE
+export function timebombDamageFor(target: DuelSide): Damage {
+  return target === DuelSide.Player ? TIMEBOMB_PLAYER_DAMAGE : TIMEBOMB_QUARRY_DAMAGE
 }
 
 /**
@@ -133,13 +133,13 @@ export function envenomDamageFor(target: DuelSide): Damage {
  * is over. NEVER throws: the reducer calls this during an event handler, and a throw there
  * unmounts the tree.
  */
-export function queueEnvenom(encounter: EncounterState, target: DuelSide): EncounterState {
+export function queueTimebomb(encounter: EncounterState, target: DuelSide): EncounterState {
   if (isEncounterResolved(encounter)) return encounter
   return {
     ...encounter,
-    pendingEnvenom: {
-      ...encounter.pendingEnvenom,
-      [target]: encounter.pendingEnvenom[target] + envenomDamageFor(target),
+    pendingTimebomb: {
+      ...encounter.pendingTimebomb,
+      [target]: encounter.pendingTimebomb[target] + timebombDamageFor(target),
     },
   }
 }

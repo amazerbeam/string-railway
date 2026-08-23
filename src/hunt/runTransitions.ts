@@ -31,7 +31,7 @@ import { canAdvanceRun, flaskStockFor, RunOutcome, shopStockFor, type RunState }
  * Refuses a run that has already ended: recording onto a finished run would silently resurrect
  * it, and there is no legitimate caller — the driver stops handing hands to a finished run.
  *
- * `cheats` (DLR-83) and `envenomCharges` (DLR-90 AC2) are both REQUIRED: the hand owns each for
+ * `cheats` (DLR-83) and `timebombCharges` (DLR-90 AC2) are both REQUIRED: the hand owns each for
  * its lifetime and hands the survivors back through `WarCouncilRoundResult`. A second transition
  * the caller must remember to make beside this one is the transition that eventually gets
  * forgotten.
@@ -42,18 +42,18 @@ import { canAdvanceRun, flaskStockFor, RunOutcome, shopStockFor, type RunState }
  * this is the ONE transition that adopts a hand's end state, so it is the one place that rule can
  * be enforced.
  *
- * `flaskCharges` (DLR-93 AC5) is NOT a parameter: unlike `cheats`, `envenomCharges` and
+ * `flaskCharges` (DLR-93 AC5) is NOT a parameter: unlike `cheats`, `timebombCharges` and
  * `poisonGuardHeld`, a hand cannot spend or grant a flask charge (AC4 makes it a between-fights
  * action), so there is nothing for a hand to hand back. It is read off `run` and refilled by
  * `flaskAfter` when the opponent just beaten was a stage boss.
  *
  * `discardsRemaining` (DLR-100 AC5) is the sixth parameter and REQUIRED for the same reason
- * `cheats`, `envenomCharges`, and `poisonGuardHeld` are: the hand owns it for its lifetime and
+ * `cheats`, `timebombCharges`, and `poisonGuardHeld` are: the hand owns it for its lifetime and
  * hands the survivor back through `WarCouncilRoundResult`. Carried through the returned spread
  * unchanged — `advanceRun`, not this function, resets it at the fight boundary.
  *
  * `unplayedCards` (DLR-95 AC2) is REQUIRED, not defaulted, as the seventh parameter, for the
- * reason `cheats` and `envenomCharges` above are: the compiler must enumerate every call site. A
+ * reason `cheats` and `timebombCharges` above are: the compiler must enumerate every call site. A
  * defaulted `null` would pay 0 forever the first time a driver forgot to thread the figure
  * through, and would do it silently. `null` is the legitimate value for a hand that did not end
  * the fight.
@@ -62,7 +62,7 @@ export function recordEncounter(
   run: RunState,
   encounter: EncounterState,
   cheats: readonly CheatCard[],
-  envenomCharges: number,
+  timebombCharges: number,
   poisonGuardHeld: boolean,
   discardsRemaining: number,
   unplayedCards: number | null,
@@ -90,7 +90,7 @@ export function recordEncounter(
     ...run,
     encounter,
     cheats,
-    envenomCharges,
+    timebombCharges,
     discardsRemaining,
     poisonGuardHeld: guardAfter(encounter, poisonGuardHeld),
     coins: wonThisEncounter ? run.coins + COINS_PER_ENCOUNTER_WIN + quickKill : run.coins,
@@ -193,7 +193,7 @@ export function buyFromShop(
   const paid = { ...run, coins: run.coins - priceOf(item) }
   // A `switch` with no `default`, so a FOURTH item is a compile error here rather than an item
   // that silently does whatever the last branch happened to do. That is not hypothetical: before
-  // DLR-90 this function returned the heal unconditionally as its fallback, so adding Envenom
+  // DLR-90 this function returned the heal unconditionally as its fallback, so adding Timebomb
   // without this restructuring would have healed the player and type-checked cleanly.
   switch (item) {
     case ShopItem.Cheat:
@@ -202,8 +202,8 @@ export function buyFromShop(
         cheats: addCheat(run.cheats, { id: run.nextCheatId }),
         nextCheatId: run.nextCheatId + 1,
       }
-    case ShopItem.Envenom:
-      return { ...paid, envenomCharges: run.envenomCharges + 1 }
+    case ShopItem.Timebomb:
+      return { ...paid, timebombCharges: run.timebombCharges + 1 }
     case ShopItem.PoisonGuard:
       return { ...paid, poisonGuardHeld: true }
     case ShopItem.Whetstone:

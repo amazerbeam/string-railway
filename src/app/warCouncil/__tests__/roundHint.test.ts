@@ -7,15 +7,15 @@ import {
   CHEAT_POISED_HINT,
   DISCARD_READY_HINT,
   DISCARD_SELECT_HINT,
-  ENVENOM_ARMED_HINT,
-  ENVENOM_POISED_HINT,
+  TIMEBOMB_ARMED_HINT,
+  TIMEBOMB_POISED_HINT,
   ILLEGAL_MOVE_MESSAGE,
 } from '../labels'
 import { deriveHint } from '../roundHint'
 import {
   CheatStage,
   createRoundUiState,
-  EnvenomStage,
+  TimebombStage,
   type ResolvedTrick,
   type RoundUiState,
 } from '../roundUiState'
@@ -23,7 +23,7 @@ import {
   card,
   discardsRemainingFixture,
   encounterFixture,
-  envenomChargesFixture,
+  timebombChargesFixture,
   makeRound,
 } from './roundFixture'
 
@@ -36,7 +36,7 @@ function baseUi(overrides: Partial<RoundUiState> = {}): RoundUiState {
       round: makeRound(),
       encounter: encounterFixture,
       cheats: [],
-      envenomCharges: envenomChargesFixture,
+      timebombCharges: timebombChargesFixture,
       poisonGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
@@ -59,7 +59,7 @@ const someResolvedTrick: ResolvedTrick = {
     bank: 1,
     multiplier: 1,
     cashedAtHandEnd: false,
-    envenomTarget: null,
+    timebombTarget: null,
     poisonToQuarry: 0,
     poisonGuardSpent: false,
   },
@@ -111,19 +111,19 @@ describe('deriveHint — the cascade’s own priority order', () => {
     expect(deriveHint(armed, true, false)).toBe(CHEAT_ARMED_HINT)
   })
 
-  it('an Envenom selection reports its stage, and beats a Cheat selection held at the same time', () => {
-    const poised = baseUi({ envenomStage: EnvenomStage.Poised })
-    const armed = baseUi({ envenomStage: EnvenomStage.Armed })
-    expect(deriveHint(poised, true, false)).toBe(ENVENOM_POISED_HINT)
-    expect(deriveHint(armed, true, false)).toBe(ENVENOM_ARMED_HINT)
+  it('an Timebomb selection reports its stage, and beats a Cheat selection held at the same time', () => {
+    const poised = baseUi({ timebombStage: TimebombStage.Poised })
+    const armed = baseUi({ timebombStage: TimebombStage.Armed })
+    expect(deriveHint(poised, true, false)).toBe(TIMEBOMB_POISED_HINT)
+    expect(deriveHint(armed, true, false)).toBe(TIMEBOMB_ARMED_HINT)
 
     // The reducer makes this pair unreachable, but the cascade's stated priority is pinned
     // regardless of whether the state that exercises it can occur today.
     const both = baseUi({
-      envenomStage: EnvenomStage.Armed,
+      timebombStage: TimebombStage.Armed,
       cheatSelection: { id: 1, stage: CheatStage.Poised },
     })
-    expect(deriveHint(both, true, false)).toBe(ENVENOM_ARMED_HINT)
+    expect(deriveHint(both, true, false)).toBe(TIMEBOMB_ARMED_HINT)
   })
 
   it('an interactive state names lead-vs-follow, distinctly', () => {

@@ -11,7 +11,7 @@ describe('DLR-96 AC2 — every epic-added RunState field survives advanceRun cor
       coins: 7,
       cheats: [{ id: 100 }],
       nextCheatId: 101,
-      envenomCharges: 2,
+      timebombCharges: 2,
       poisonGuardHeld: true,
       whetstones: 3,
       flaskCharges: 2,
@@ -30,7 +30,7 @@ describe('DLR-96 AC2 — every epic-added RunState field survives advanceRun cor
       populated,
       wonEncounter,
       populated.cheats,
-      populated.envenomCharges,
+      populated.timebombCharges,
       populated.poisonGuardHeld,
       populated.discardsRemaining,
       null,
@@ -39,7 +39,7 @@ describe('DLR-96 AC2 — every epic-added RunState field survives advanceRun cor
     // Run-scoped: carried by recordEncounter's spread, untouched by the transition itself.
     expect(recorded.cheats).toBe(populated.cheats)
     expect(recorded.whetstones).toBe(3)
-    expect(recorded.envenomCharges).toBe(2)
+    expect(recorded.timebombCharges).toBe(2)
     expect(recorded.nextCheatId).toBe(101)
 
     // lastQuickKillPayout is NOT carried — it is overwritten by every recordEncounter call to the
@@ -55,7 +55,7 @@ describe('DLR-96 AC2 — every epic-added RunState field survives advanceRun cor
 
     // Run-permanent: survives the fight boundary untouched.
     expect(advanced.whetstones).toBe(3)
-    expect(advanced.envenomCharges).toBe(2)
+    expect(advanced.timebombCharges).toBe(2)
     expect(advanced.nextCheatId).toBe(101)
     expect(advanced.coins).toBe(populated.coins + COINS_PER_ENCOUNTER_WIN)
     expect(advanced.cheats).toBe(recorded.cheats)

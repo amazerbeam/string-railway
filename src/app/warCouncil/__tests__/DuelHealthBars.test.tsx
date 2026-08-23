@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   DuelSide,
-  NO_PENDING_ENVENOM,
+  NO_PENDING_TIMEBOMB,
   PLAYER_START_HEALTH,
   quarryHealthForEncounter,
 } from '../../../hunt'
@@ -108,7 +108,7 @@ describe('DuelHealthBars', () => {
   it('previews the streak on the Quarry’s hearts and says so to a screen reader (AC3, AC6)', () => {
     const quarryMax = quarryHealthForEncounter(0)
     const current = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
-    const { container } = renderPair(current, projectedDepletion(current, 2, 2, NO_PENDING_ENVENOM))
+    const { container } = renderPair(current, projectedDepletion(current, 2, 2, NO_PENDING_TIMEBOMB))
     const quarry = container.querySelector('.wc-hp[data-side="quarry"]')
     expect(quarry?.querySelectorAll('[data-state="atRisk"]')).toHaveLength(4)
     expect(screen.getByRole('meter', { name: QUARRY_LABEL }).getAttribute('aria-valuetext')).toBe(

@@ -7,9 +7,9 @@ import {
   RoundPhase,
   containsCard,
   currentTurn,
-  envenomCard,
+  primeCard,
   incomingFromCashOut,
-  isEnvenomed,
+  isPrimed,
   legalMoves,
   sameCard,
   type Card,
@@ -20,8 +20,8 @@ import {
   canAct,
   CheatStage,
   discardSelecting,
-  envenomArmed,
-  EnvenomStage,
+  timebombArmed,
+  TimebombStage,
   RoundUiActionKind,
   type RoundUiAction,
   type RoundUiState,
@@ -72,10 +72,10 @@ function applyAction(state: RoundUiState, action: RoundUiAction): RoundUiState {
       return handleTapCheat(state, action.id)
     case RoundUiActionKind.CancelCheat:
       return clearCheat(state)
-    case RoundUiActionKind.TapEnvenom:
-      return handleTapEnvenom(state)
-    case RoundUiActionKind.CancelEnvenom:
-      return state.envenomStage === null ? state : { ...state, envenomStage: null }
+    case RoundUiActionKind.TapTimebomb:
+      return handleTapTimebomb(state)
+    case RoundUiActionKind.CancelTimebomb:
+      return state.timebombStage === null ? state : { ...state, timebombStage: null }
     case RoundUiActionKind.TapApplyDamage:
       return handleTapApplyDamage(state)
     case RoundUiActionKind.CancelApplyDamage:
@@ -96,8 +96,8 @@ function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
     return state
   }
   // AC2 — while armed, a hand-card tap MARKS rather than plays.
-  if (envenomArmed(state)) {
-    return commitEnvenom(state, tapped)
+  if (timebombArmed(state)) {
+    return commitTimebomb(state, tapped)
   }
 
   if (state.armed && sameCard(state.armed, tapped)) {
@@ -124,13 +124,13 @@ function handleTapCheat(state: RoundUiState, id: CheatCardId): RoundUiState {
   }
   const current = state.cheatSelection
   if (current === null || current.id !== id) {
-    // Arming a Cheat reinterprets the same hand-card tap Envenom does, so the two selections
-    // cannot coexist — clear a held Envenom selection here for the same reason `handleTapEnvenom`
+    // Arming a Cheat reinterprets the same hand-card tap Timebomb does, so the two selections
+    // cannot coexist — clear a held Timebomb selection here for the same reason `handleTapTimebomb`
     // clears `cheatSelection` on its own poise branch.
     return {
       ...state,
       cheatSelection: { id, stage: CheatStage.Poised },
-      envenomStage: null,
+      timebombStage: null,
       discardSelection: null,
     }
   }
@@ -156,28 +156,28 @@ function clearCheat(state: RoundUiState): RoundUiState {
  * Poising clears the Cheat selection and any card armed-to-play: both reinterpret a hand-card tap,
  * so allowing two at once makes the next tap ambiguous.
  */
-function handleTapEnvenom(state: RoundUiState): RoundUiState {
-  if (!canAct(state) || discardSelecting(state) || state.envenomCharges <= 0) {
+function handleTapTimebomb(state: RoundUiState): RoundUiState {
+  if (!canAct(state) || discardSelecting(state) || state.timebombCharges <= 0) {
     return state
   }
-  if (state.envenomStage === null) {
+  if (state.timebombStage === null) {
     return {
       ...state,
-      envenomStage: EnvenomStage.Poised,
+      timebombStage: TimebombStage.Poised,
       cheatSelection: null,
       armed: null,
       discardSelection: null,
     }
   }
-  if (state.envenomStage === EnvenomStage.Poised) {
-    return { ...state, envenomStage: EnvenomStage.Armed }
+  if (state.timebombStage === TimebombStage.Poised) {
+    return { ...state, timebombStage: TimebombStage.Armed }
   }
-  return { ...state, envenomStage: null }
+  return { ...state, timebombStage: null }
 }
 
 /**
- * DLR-94 AC1/AC2 — three outcomes on one control, mirroring `handleTapEnvenom`'s shape. A refusal
- * changes nothing; nothing poised poises; poised COMMITS. There is no third stage: unlike Envenom,
+ * DLR-94 AC1/AC2 — three outcomes on one control, mirroring `handleTapTimebomb`'s shape. A refusal
+ * changes nothing; nothing poised poises; poised COMMITS. There is no third stage: unlike Timebomb,
  * this control's second tap IS the action rather than a prelude to a hand-card tap.
  *
  * Asks `applyDamageRefusalFor` on BOTH taps, not just the first. The felt can change under a
@@ -190,7 +190,7 @@ function handleTapEnvenom(state: RoundUiState): RoundUiState {
  * `resolvedTrick` stays null, and nothing writes `lastResolution` — so no reveal is held, the felt
  * never enters its waiting state, and the player's next tap plays their card by the ordinary rules.
  *
- * Poising does NOT clear the Cheat or Envenom selection, and they do not clear it. Those two
+ * Poising does NOT clear the Cheat or Timebomb selection, and they do not clear it. Those two
  * reinterpret the next hand-card tap and therefore cannot coexist; this one reinterprets nothing,
  * so a player may poise a Cheat and apply damage in either order without losing either.
  */
@@ -217,7 +217,7 @@ function handleTapApplyDamage(state: RoundUiState): RoundUiState {
 /**
  * AC2 — spend one charge to mark the tapped card.
  *
- * Guards membership, the existing mark, and the charge count BEFORE calling `envenomCard`, which
+ * Guards membership, the existing mark, and the charge count BEFORE calling `primeCard`, which
  * throws on the first two: a reducer must not throw, because a throw during an event handler
  * unmounts the tree. Exactly the shape `handleTapCheat` uses when it checks `hasCheat` before
  * `removeCheat`. A guard that fails clears the selection rather than half-applying it, so the
@@ -226,20 +226,20 @@ function handleTapApplyDamage(state: RoundUiState): RoundUiState {
  * Legality is deliberately NOT checked: marking is not a move, and the whole point of the item is
  * marking a card the player expects to lose with.
  */
-function commitEnvenom(state: RoundUiState, tapped: Card): RoundUiState {
+function commitTimebomb(state: RoundUiState, tapped: Card): RoundUiState {
   const hand = state.round.hands[PlayerSide.Player]
   if (
-    state.envenomCharges <= 0 ||
+    state.timebombCharges <= 0 ||
     !containsCard(hand, tapped) ||
-    isEnvenomed(state.round.envenomedCards, tapped)
+    isPrimed(state.round.primedCards, tapped)
   ) {
-    return { ...state, envenomStage: null }
+    return { ...state, timebombStage: null }
   }
   return {
     ...state,
-    round: envenomCard(state.round, PlayerSide.Player, tapped),
-    envenomCharges: state.envenomCharges - 1,
-    envenomStage: null,
+    round: primeCard(state.round, PlayerSide.Player, tapped),
+    timebombCharges: state.timebombCharges - 1,
+    timebombStage: null,
     armed: null,
     rejection: null,
   }

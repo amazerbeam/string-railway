@@ -61,12 +61,12 @@ export interface RunState {
    *  by `buyFromShop`, and carried through `advanceRun` untouched by the spread. NEVER persisted:
    *  the ticket puts cross-run carry-over out of scope. */
   readonly coins: Coins
-  /** DLR-90 AC2 — Envenom charges held, bought in the shop and carried across every fight by
+  /** DLR-90 AC2 — Timebomb charges held, bought in the shop and carried across every fight by
    *  `advanceRun`'s spread. A COUNT, not a list of objects like `cheats`: unlike a Cheat, a charge
    *  has no identity to spend by name — the card it marks IS the identity, and it lives on
-   *  `RoundState.envenomedCards`. No cap; the price is the limiter. NEVER persisted, exactly as
+   *  `RoundState.primedCards`. No cap; the price is the limiter. NEVER persisted, exactly as
    *  `coins` above. */
-  readonly envenomCharges: number
+  readonly timebombCharges: number
   /** DLR-91 AC2 — a bought-but-unspent Poison Guard. Run-level like `coins` rather than on
    *  `EncounterState`, and that placement is load-bearing: the shop is reachable only AFTER an
    *  encounter resolves and BEFORE `advanceRun` runs, and `advanceRun` re-seeds the encounter
@@ -78,15 +78,15 @@ export interface RunState {
   /** DLR-92 AC2/AC3 — Whetstones owned. A COUNT, not a flag: each copy stacks, and the price is
    *  the only limiter. Run-level like `coins` rather than on `EncounterState`, and carried by
    *  `advanceRun`'s and `recordEncounter`'s spread — a run-permanent buff that reset at a fight
-   *  boundary would be a fight-long one. Unlike `cheats`, `envenomCharges` and `poisonGuardHeld`
+   *  boundary would be a fight-long one. Unlike `cheats`, `timebombCharges` and `poisonGuardHeld`
    *  it is NEVER handed back by a hand, because a hand cannot spend one. NEVER persisted, exactly
    *  as `coins` above. */
   readonly whetstones: number
-  /** DLR-93 AC1 — flask charges held. A COUNT like `envenomCharges`, not a boolean: AC5 refills
+  /** DLR-93 AC1 — flask charges held. A COUNT like `timebombCharges`, not a boolean: AC5 refills
    *  "regardless of whether the player had 0 or 1", and the epic's deferred re-tune of the charge
    *  count raises the ceiling without changing this type. Run-level like `coins` and carried by
    *  `advanceRun`'s and `recordEncounter`'s spreads — a free heal that reset at a fight boundary
-   *  would be a per-fight heal. Unlike `cheats` and `envenomCharges` it is NEVER handed back by a
+   *  would be a per-fight heal. Unlike `cheats` and `timebombCharges` it is NEVER handed back by a
    *  hand, because a hand cannot drink it (AC4). NEVER persisted, exactly as `coins` above. */
   readonly flaskCharges: number
   /** DLR-95 AC3 — which hand OF THE CURRENT FIGHT is being played. 1-BASED: a fight's first hand
@@ -103,10 +103,10 @@ export interface RunState {
    *  remember. `recordEncounter` advances it. NEVER persisted, exactly as `coins` above. */
   readonly handOfFight: number
   /** DLR-100 AC5 — the discard's per-fight budget. Carried across every hand within a fight,
-   *  exactly as `cheats` and `envenomCharges` are — NOT on `EncounterState`, which `advanceRun`
+   *  exactly as `cheats` and `timebombCharges` are — NOT on `EncounterState`, which `advanceRun`
    *  re-seeds. Reset to `DISCARDS_PER_FIGHT` by `startRun` and by `advanceRun`; carried through
    *  `recordEncounter`'s spread otherwise, because the hand owns it for its life and hands the
-   *  survivor back through `WarCouncilRoundResult`, exactly as `cheats` and `envenomCharges` do.
+   *  survivor back through `WarCouncilRoundResult`, exactly as `cheats` and `timebombCharges` do.
    *  NEVER persisted, exactly as `coins` above. */
   readonly discardsRemaining: number
   /** DLR-95 AC6 — the receipt: what the quick-kill payout paid for the encounter just recorded, so
@@ -143,7 +143,7 @@ export function startRun(playerHealth: Health = PLAYER_START_HEALTH): RunState {
     cheats: grantCheats(RUN_STARTING_CHEATS, 1),
     nextCheatId: RUN_STARTING_CHEATS + 1,
     coins: 0,
-    envenomCharges: 0,
+    timebombCharges: 0,
     poisonGuardHeld: false,
     whetstones: 0,
     flaskCharges: FLASK_STARTING_CHARGES,

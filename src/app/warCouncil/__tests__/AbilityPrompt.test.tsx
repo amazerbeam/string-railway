@@ -103,7 +103,7 @@ describe('AbilityPrompt', () => {
   })
 
   it('announces a marked hand card offered as a Fox exchange as poisoned (DLR-90 AC2)', () => {
-    renderFoxPrompt({ envenomedCards: [card(Suit.Bells, 7)] })
+    renderFoxPrompt({ primedCards: [card(Suit.Bells, 7)] })
     expect(screen.getByRole('button', { name: '7 of Bells, poisoned' })).toBeDefined()
   })
 
@@ -115,7 +115,7 @@ describe('AbilityPrompt', () => {
         decree={DECREE}
         hand={HAND}
         drawnCard={null}
-        envenomedCards={[card(Suit.Keys, 8)]}
+        primedCards={[card(Suit.Keys, 8)]}
         onChoose={onChoose}
         onCancel={vi.fn()}
       />,

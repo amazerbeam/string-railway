@@ -20,7 +20,7 @@ import { discardStock, type RoundUiState } from './roundUiState'
 
 /**
  * DLR-100 — three outcomes on one control. Not selecting, refusal null → OPEN (clearing any Cheat
- * or Envenom selection and any armed card, mutual exclusion mirroring `handleTapEnvenom`'s own).
+ * or Timebomb selection and any armed card, mutual exclusion mirroring `handleTapTimebomb`'s own).
  * Selecting, refusal null → the only way that happens is a non-empty selection, so COMMIT through
  * `applyDiscard` and decrement the budget. Refused → no-op, matching `handleTapApplyDamage`'s own
  * shape.
@@ -34,7 +34,7 @@ export function handleTapDiscard(state: RoundUiState): RoundUiState {
       ...state,
       discardSelection: [],
       cheatSelection: null,
-      envenomStage: null,
+      timebombStage: null,
       armed: null,
     }
   }
@@ -47,7 +47,7 @@ export function handleTapDiscard(state: RoundUiState): RoundUiState {
   }
 }
 
-/** AC9 — close the selection without spending, mirroring `clearCheat`'s and `CancelEnvenom`'s own
+/** AC9 — close the selection without spending, mirroring `clearCheat`'s and `CancelTimebomb`'s own
  *  shape. */
 export function handleCancelDiscard(state: RoundUiState): RoundUiState {
   return state.discardSelection === null ? state : { ...state, discardSelection: null }

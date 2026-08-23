@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import {
-  ENVENOM_PLAYER_DAMAGE,
-  ENVENOM_PRICE,
-  ENVENOM_QUARRY_DAMAGE,
+  TIMEBOMB_PLAYER_DAMAGE,
+  TIMEBOMB_PRICE,
+  TIMEBOMB_QUARRY_DAMAGE,
   PLAYER_START_HEALTH,
   quarryHealthForEncounter,
   RUN_STARTING_CHEATS,
 } from '../config'
 import {
   applyDamage,
-  hasPendingEnvenom,
+  hasPendingTimebomb,
   isEncounterResolved,
-  NO_PENDING_ENVENOM,
-  queueEnvenom,
+  NO_PENDING_TIMEBOMB,
+  queueTimebomb,
   startEncounter,
 } from '../encounter'
 import { advanceRun, buyFromShop, recordEncounter, startRun } from '../run'
@@ -20,56 +20,56 @@ import { ShopItem } from '../shop'
 import { DuelSide } from '../types'
 
 describe('startEncounter — the queue opens empty (AC7)', () => {
-  it('seeds pendingEnvenom to zeros on both sides', () => {
-    expect(startEncounter(0).pendingEnvenom).toEqual(NO_PENDING_ENVENOM)
+  it('seeds pendingTimebomb to zeros on both sides', () => {
+    expect(startEncounter(0).pendingTimebomb).toEqual(NO_PENDING_TIMEBOMB)
   })
 
   it('reports nothing pending', () => {
-    expect(hasPendingEnvenom(startEncounter(0))).toBe(false)
+    expect(hasPendingTimebomb(startEncounter(0))).toBe(false)
   })
 })
 
-describe('queueEnvenom — booking the hit (AC3)', () => {
+describe('queueTimebomb — booking the hit (AC3)', () => {
   it('D2 — books the Quarry’s figure against the Quarry and the player’s against the player', () => {
     const base = startEncounter(0, 10)
-    expect(queueEnvenom(base, DuelSide.Quarry).pendingEnvenom[DuelSide.Quarry]).toBe(
-      ENVENOM_QUARRY_DAMAGE,
+    expect(queueTimebomb(base, DuelSide.Quarry).pendingTimebomb[DuelSide.Quarry]).toBe(
+      TIMEBOMB_QUARRY_DAMAGE,
     )
-    expect(queueEnvenom(base, DuelSide.Player).pendingEnvenom[DuelSide.Player]).toBe(
-      ENVENOM_PLAYER_DAMAGE,
+    expect(queueTimebomb(base, DuelSide.Player).pendingTimebomb[DuelSide.Player]).toBe(
+      TIMEBOMB_PLAYER_DAMAGE,
     )
   })
 
   it('books nothing against the untargeted side', () => {
-    const queued = queueEnvenom(startEncounter(0), DuelSide.Quarry)
-    expect(queued.pendingEnvenom[DuelSide.Player]).toBe(0)
-    const queuedPlayer = queueEnvenom(startEncounter(0), DuelSide.Player)
-    expect(queuedPlayer.pendingEnvenom[DuelSide.Quarry]).toBe(0)
+    const queued = queueTimebomb(startEncounter(0), DuelSide.Quarry)
+    expect(queued.pendingTimebomb[DuelSide.Player]).toBe(0)
+    const queuedPlayer = queueTimebomb(startEncounter(0), DuelSide.Player)
+    expect(queuedPlayer.pendingTimebomb[DuelSide.Quarry]).toBe(0)
   })
 
   it('D4 — two bookings against one side sum rather than replacing', () => {
-    const once = queueEnvenom(startEncounter(0), DuelSide.Player)
-    expect(queueEnvenom(once, DuelSide.Player).pendingEnvenom[DuelSide.Player]).toBe(
-      ENVENOM_PLAYER_DAMAGE * 2,
+    const once = queueTimebomb(startEncounter(0), DuelSide.Player)
+    expect(queueTimebomb(once, DuelSide.Player).pendingTimebomb[DuelSide.Player]).toBe(
+      TIMEBOMB_PLAYER_DAMAGE * 2,
     )
   })
 
   it('accumulates, so two marked tricks in one hand both land', () => {
-    const twice = queueEnvenom(queueEnvenom(startEncounter(0), DuelSide.Quarry), DuelSide.Quarry)
-    expect(twice.pendingEnvenom[DuelSide.Quarry]).toBe(ENVENOM_QUARRY_DAMAGE * 2)
+    const twice = queueTimebomb(queueTimebomb(startEncounter(0), DuelSide.Quarry), DuelSide.Quarry)
+    expect(twice.pendingTimebomb[DuelSide.Quarry]).toBe(TIMEBOMB_QUARRY_DAMAGE * 2)
   })
 
   it('books both sides independently', () => {
-    const both = queueEnvenom(queueEnvenom(startEncounter(0), DuelSide.Quarry), DuelSide.Player)
-    expect(both.pendingEnvenom).toEqual({
-      [DuelSide.Player]: ENVENOM_PLAYER_DAMAGE,
-      [DuelSide.Quarry]: ENVENOM_QUARRY_DAMAGE,
+    const both = queueTimebomb(queueTimebomb(startEncounter(0), DuelSide.Quarry), DuelSide.Player)
+    expect(both.pendingTimebomb).toEqual({
+      [DuelSide.Player]: TIMEBOMB_PLAYER_DAMAGE,
+      [DuelSide.Quarry]: TIMEBOMB_QUARRY_DAMAGE,
     })
   })
 
   it('does not touch health, and does not count as a damage event', () => {
     const fresh = startEncounter(0)
-    const queued = queueEnvenom(fresh, DuelSide.Quarry)
+    const queued = queueTimebomb(fresh, DuelSide.Quarry)
     expect(queued.health).toEqual(fresh.health)
     expect(queued.damageEventsApplied).toBe(fresh.damageEventsApplied)
   })
@@ -80,33 +80,33 @@ describe('queueEnvenom — booking the hit (AC3)', () => {
       [DuelSide.Quarry]: quarryHealthForEncounter(0),
     })
     expect(isEncounterResolved(dead)).toBe(true)
-    expect(queueEnvenom(dead, DuelSide.Quarry)).toBe(dead)
+    expect(queueTimebomb(dead, DuelSide.Quarry)).toBe(dead)
   })
 
   it('never mutates its input', () => {
     const fresh = startEncounter(0)
-    queueEnvenom(fresh, DuelSide.Quarry)
-    expect(fresh.pendingEnvenom).toEqual(NO_PENDING_ENVENOM)
+    queueTimebomb(fresh, DuelSide.Quarry)
+    expect(fresh.pendingTimebomb).toEqual(NO_PENDING_TIMEBOMB)
   })
 })
 
 /** A run holding `coins`, at fight 0. */
 const funded = (coins: number) => ({ ...startRun(), coins })
 
-describe('buyFromShop — Envenom (AC1, AC2)', () => {
+describe('buyFromShop — Timebomb (AC1, AC2)', () => {
   it('opens a run with no charges held', () => {
-    expect(startRun().envenomCharges).toBe(0)
+    expect(startRun().timebombCharges).toBe(0)
   })
 
   it('credits a charge and debits the price', () => {
-    const after = buyFromShop(funded(3), ShopItem.Envenom)
-    expect(after.envenomCharges).toBe(1)
-    expect(after.coins).toBe(3 - ENVENOM_PRICE)
+    const after = buyFromShop(funded(3), ShopItem.Timebomb)
+    expect(after.timebombCharges).toBe(1)
+    expect(after.coins).toBe(3 - TIMEBOMB_PRICE)
   })
 
   it('does NOT heal — the regression the third item exposed', () => {
     const hurt = { ...funded(3), encounter: startEncounter(0, PLAYER_START_HEALTH - 3) }
-    const after = buyFromShop(hurt, ShopItem.Envenom)
+    const after = buyFromShop(hurt, ShopItem.Timebomb)
     expect(after.encounter.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH - 3)
   })
 
@@ -118,27 +118,27 @@ describe('buyFromShop — Envenom (AC1, AC2)', () => {
     // anything the purchase did. Asserting the fixture actually holds Cheats keeps the check
     // below meaningful whatever that key is retuned to.
     expect(before.cheats).toHaveLength(RUN_STARTING_CHEATS)
-    const after = buyFromShop(before, ShopItem.Envenom)
+    const after = buyFromShop(before, ShopItem.Timebomb)
     // Stronger than the original on three counts: it fails on a Cheat ADDED (all the original
-    // caught), on a Cheat REMOVED, and on the list being needlessly rebuilt — the Envenom branch
+    // caught), on a Cheat REMOVED, and on the list being needlessly rebuilt — the Timebomb branch
     // spreads `run`, so an untouched `cheats` must be the very same array.
     expect(after.cheats).toEqual(before.cheats)
     expect(after.cheats).toBe(before.cheats)
   })
 
   it('stacks, because there is no cap', () => {
-    const twice = buyFromShop(buyFromShop(funded(10), ShopItem.Envenom), ShopItem.Envenom)
-    expect(twice.envenomCharges).toBe(2)
+    const twice = buyFromShop(buyFromShop(funded(10), ShopItem.Timebomb), ShopItem.Timebomb)
+    expect(twice.timebombCharges).toBe(2)
   })
 
   it('throws rather than taking payment it cannot honour', () => {
-    expect(() => buyFromShop(funded(ENVENOM_PRICE - 1), ShopItem.Envenom)).toThrow(RangeError)
+    expect(() => buyFromShop(funded(TIMEBOMB_PRICE - 1), ShopItem.Timebomb)).toThrow(RangeError)
   })
 })
 
 describe('recordEncounter and advanceRun — the charge is run state (AC2)', () => {
   it('adopts the charge count the hand handed back', () => {
-    const run = buyFromShop(funded(3), ShopItem.Envenom)
+    const run = buyFromShop(funded(3), ShopItem.Timebomb)
     const after = recordEncounter(
       run,
       run.encounter,
@@ -148,11 +148,11 @@ describe('recordEncounter and advanceRun — the charge is run state (AC2)', () 
       run.discardsRemaining,
       null,
     )
-    expect(after.envenomCharges).toBe(0)
+    expect(after.timebombCharges).toBe(0)
   })
 
   it('carries an unspent charge across a fight boundary', () => {
-    const run = buyFromShop(funded(3), ShopItem.Envenom)
+    const run = buyFromShop(funded(3), ShopItem.Timebomb)
     const won = recordEncounter(
       run,
       {
@@ -161,12 +161,12 @@ describe('recordEncounter and advanceRun — the charge is run state (AC2)', () 
         winner: DuelSide.Player,
       },
       run.cheats,
-      run.envenomCharges,
+      run.timebombCharges,
       false,
       run.discardsRemaining,
       null,
     )
-    expect(advanceRun(won).envenomCharges).toBe(1)
+    expect(advanceRun(won).timebombCharges).toBe(1)
   })
 })
 
@@ -175,7 +175,7 @@ describe('the queue never crosses a boundary (AC7)', () => {
     const run = startRun()
     const won = recordEncounter(
       run,
-      queueEnvenom(
+      queueTimebomb(
         {
           ...run.encounter,
           health: { ...run.encounter.health, [DuelSide.Quarry]: 0 },
@@ -184,23 +184,23 @@ describe('the queue never crosses a boundary (AC7)', () => {
         DuelSide.Quarry,
       ),
       run.cheats,
-      run.envenomCharges,
+      run.timebombCharges,
       false,
       run.discardsRemaining,
       null,
     )
     // The booking survives onto the recorded run — and dies the moment the next fight opens.
-    expect(advanceRun(won).encounter.pendingEnvenom).toEqual(NO_PENDING_ENVENOM)
+    expect(advanceRun(won).encounter.pendingTimebomb).toEqual(NO_PENDING_TIMEBOMB)
   })
 
   it('is discarded by startRun, so nothing crosses a run boundary', () => {
-    expect(startRun().encounter.pendingEnvenom).toEqual(NO_PENDING_ENVENOM)
+    expect(startRun().encounter.pendingTimebomb).toEqual(NO_PENDING_TIMEBOMB)
   })
 
   it('D5 — a queued hit does not survive the fight it was booked in', () => {
-    const owed = queueEnvenom(startEncounter(0, 10), DuelSide.Player)
-    expect(hasPendingEnvenom(owed)).toBe(true)
+    const owed = queueTimebomb(startEncounter(0, 10), DuelSide.Player)
+    expect(hasPendingTimebomb(owed)).toBe(true)
     // A fresh encounter re-seeds the queue to zeros, which is the discard with no explicit step.
-    expect(hasPendingEnvenom(startEncounter(1, owed.health[DuelSide.Player]))).toBe(false)
+    expect(hasPendingTimebomb(startEncounter(1, owed.health[DuelSide.Player]))).toBe(false)
   })
 })

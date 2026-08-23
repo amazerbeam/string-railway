@@ -9,7 +9,7 @@ interface DecreePileProps {
   readonly drawPileCount: number
   /** DLR-90 AC2 — the Fox can exchange a marked card into the decree, so this is a place a marked
    *  card renders. Defaults to `false` so every existing call site keeps compiling unchanged. */
-  readonly envenomed?: boolean
+  readonly primed?: boolean
 }
 
 /**
@@ -26,7 +26,7 @@ export default function DecreePile({
   decree,
   trumpSuit,
   drawPileCount,
-  envenomed = false,
+  primed = false,
 }: DecreePileProps) {
   return (
     <div className="wc-pile">
@@ -34,7 +34,7 @@ export default function DecreePile({
       <span className="wc-pile-cards">
         <span className="wc-pile-back wc-b1" aria-hidden="true" />
         <span className="wc-pile-back wc-b2" aria-hidden="true" />
-        <PlayingCard key={`${decree.suit}-${decree.rank}`} card={decree} variant="pile" envenomed={envenomed} />
+        <PlayingCard key={`${decree.suit}-${decree.rank}`} card={decree} variant="pile" primed={primed} />
       </span>
       <span className="wc-trump-mark">
         <SuitMark suit={trumpSuit} className="wc-trump-mark-icon" />

@@ -24,21 +24,21 @@ describe('PlayingCard', () => {
 
   it('renders the mark and names a poisoned card as poisoned', () => {
     const { container } = render(
-      <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" envenomed />,
+      <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" primed />,
     )
     expect(screen.getByRole('button', { name: /poisoned/i })).toBeTruthy()
     expect(container.querySelector('.wc-venom-mark')).toBeTruthy()
   })
 
   it('announces both marks on a card carrying skull and poison together', () => {
-    render(<PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" skulled envenomed />)
+    render(<PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" skulled primed />)
     const button = screen.getByRole('button', { name: /skulled, poisoned/i })
     expect(button).toBeTruthy()
   })
 
   it('renders the poison mark as aria-hidden, so it is announced once through the name', () => {
     const { container } = render(
-      <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" envenomed />,
+      <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" primed />,
     )
     const mark = container.querySelector('.wc-venom-mark')
     expect(mark?.getAttribute('aria-hidden')).toBe('true')

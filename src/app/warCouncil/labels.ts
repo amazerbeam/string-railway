@@ -10,9 +10,9 @@ import {
   type QuarryIntent,
   type SuitShape,
 } from '../../warCouncil'
-import { DuelSide, envenomDamageFor, MAX_CARDS_PER_DISCARD } from '../../hunt'
+import { DuelSide, timebombDamageFor, MAX_CARDS_PER_DISCARD } from '../../hunt'
 import type { HealthBarView } from './duelHealthBars'
-import { CheatStage, EnvenomStage } from './roundUiState'
+import { CheatStage, TimebombStage } from './roundUiState'
 
 export const SUIT_NAME: Readonly<Record<Suit, string>> = {
   [Suit.Bells]: 'Bells',
@@ -33,7 +33,7 @@ export const RANK_NAME: Readonly<Record<number, string>> = {
  *  announcing the wrong one — on the exact surface a player who cannot see the card depends on. */
 export interface CardMarks {
   readonly skulled?: boolean
-  readonly envenomed?: boolean
+  readonly primed?: boolean
 }
 
 /** `marks` is optional so every call site that names an unmarked card keeps compiling unchanged;
@@ -43,7 +43,7 @@ export function cardAccessibleName(card: Card, marks: CardMarks = {}): string {
   const base = `${card.rank} of ${SUIT_NAME[card.suit]}`
   const named = RANK_NAME[card.rank]
   const name = named ? `${base} (${named})` : base
-  const suffix = [marks.skulled && 'skulled', marks.envenomed && 'poisoned']
+  const suffix = [marks.skulled && 'skulled', marks.primed && 'poisoned']
     .filter(Boolean)
     .join(', ')
   return suffix ? `${name}, ${suffix}` : name
@@ -196,20 +196,20 @@ export function cheatAccessibleName(stage: CheatStage | null): string {
  *  copy, so the felt and the shop can be reworded independently. */
 export const COINS_PLATE_LABEL = 'Coins'
 
-/** The Envenom plate's copy (DLR-90). PLACEHOLDER — the wording is the developer's, exactly as
+/** The Timebomb plate's copy (DLR-90). PLACEHOLDER — the wording is the developer's, exactly as
  *  `CHEAT_RAIL_LABEL` and the rest of this file are. */
-export const ENVENOM_RAIL_LABEL = 'Envenom'
-export const ENVENOM_EMPTY_LABEL = 'No Envenom held'
-export const ENVENOM_POISED_HINT = 'Tap Envenom again to arm it'
-export const ENVENOM_ARMED_HINT = 'Pick a card in your hand to poison'
+export const TIMEBOMB_RAIL_LABEL = 'Timebomb'
+export const TIMEBOMB_EMPTY_LABEL = 'No Timebomb held'
+export const TIMEBOMB_POISED_HINT = 'Tap Timebomb again to arm it'
+export const TIMEBOMB_ARMED_HINT = 'Pick a card in your hand to poison'
 
 /** DLR-101 — the reveal's clause for a hit this trick just BOOKED, as distinct from one it paid.
  *  Names the side and the amount, which the Apply Damage refusal (the only prior trace of a
- *  booked hit anywhere in the UI) named neither of. The figure comes from `envenomDamageFor`,
+ *  booked hit anywhere in the UI) named neither of. The figure comes from `timebombDamageFor`,
  *  its single owner, so this copy cannot pick the wrong constant. PLACEHOLDER copy, as this
  *  file's rest is. */
 export function poisonBookedText(target: DuelSide): string {
-  const amount = envenomDamageFor(target)
+  const amount = timebombDamageFor(target)
   return target === DuelSide.Player
     ? `Poison set — you take ${amount} at the next trick.`
     : `Poison set — they take ${amount} at the next trick.`
@@ -218,16 +218,16 @@ export function poisonBookedText(target: DuelSide): string {
 /** The plate's accessible name. The three stages MUST differ, and the count is in the name rather
  *  than only in the glyph — `getByRole('button', { name })` is how the spec tells them apart, and
  *  a player who cannot see the plate needs to know how many are held. */
-export function envenomAccessibleName(stage: EnvenomStage | null, charges: number): string {
-  if (charges <= 0) return ENVENOM_EMPTY_LABEL
-  const held = `${ENVENOM_RAIL_LABEL}, ${charges} held`
-  if (stage === EnvenomStage.Armed) return `${held}, armed`
-  if (stage === EnvenomStage.Poised) return `${held}, selected`
+export function timebombAccessibleName(stage: TimebombStage | null, charges: number): string {
+  if (charges <= 0) return TIMEBOMB_EMPTY_LABEL
+  const held = `${TIMEBOMB_RAIL_LABEL}, ${charges} held`
+  if (stage === TimebombStage.Armed) return `${held}, armed`
+  if (stage === TimebombStage.Poised) return `${held}, selected`
   return held
 }
 
 /** The Apply Damage plate's copy (DLR-94). PLACEHOLDER — the wording is the developer's, exactly
- *  as `ENVENOM_RAIL_LABEL` and the rest of this file are. */
+ *  as `TIMEBOMB_RAIL_LABEL` and the rest of this file are. */
 export const APPLY_DAMAGE_RAIL_LABEL = 'Apply'
 export const APPLY_DAMAGE_POISED_HINT = 'Tap Apply again to cash your streak'
 
@@ -243,7 +243,7 @@ export const APPLY_DAMAGE_REFUSAL_MESSAGE: Readonly<Record<ApplyDamageRefusal, s
 /** The plate's accessible name. The three readings — live, poised, refused — MUST differ:
  *  `getByRole('button', { name })` is how the spec tells them apart, and a player who cannot see
  *  the dimming learns the reason from here or not at all. The figure is in the name rather than
- *  only in the glyph, for the reason `envenomAccessibleName` carries its count. */
+ *  only in the glyph, for the reason `timebombAccessibleName` carries its count. */
 export function applyDamageAccessibleName(
   cashValue: number,
   poised: boolean,
@@ -257,7 +257,7 @@ export function applyDamageAccessibleName(
 }
 
 /** The discard rail's copy (DLR-100). PLACEHOLDER — the wording is the developer's, exactly as
- *  `CHEAT_RAIL_LABEL`/`ENVENOM_RAIL_LABEL`/`APPLY_DAMAGE_RAIL_LABEL` above are. */
+ *  `CHEAT_RAIL_LABEL`/`TIMEBOMB_RAIL_LABEL`/`APPLY_DAMAGE_RAIL_LABEL` above are. */
 export const DISCARD_RAIL_LABEL = 'Discard'
 export const DISCARD_SELECT_HINT = `Pick up to ${MAX_CARDS_PER_DISCARD} cards to discard`
 export const DISCARD_READY_HINT = 'Tap Discard again to swap them'

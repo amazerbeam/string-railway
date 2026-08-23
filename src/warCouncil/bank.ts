@@ -35,15 +35,15 @@ export interface TrickResolution extends BankState {
   /** Which rule produced `cashOut` — AC8's end-of-hand cash rather than AC6/AC7's. Display only:
    *  the two can never both be non-zero, because a hit resets the bank to 0 first. */
   readonly cashedAtHandEnd: boolean
-  /** DLR-90 AC3/AC6 — the side owed the poison figure for that side (`ENVENOM_QUARRY_DAMAGE` or
-   *  `ENVENOM_PLAYER_DAMAGE`) at the start of the next hand, or `null` when the trick carried no
+  /** DLR-90 AC3/AC6 — the side owed the poison figure for that side (`TIMEBOMB_QUARRY_DAMAGE` or
+   *  `TIMEBOMB_PLAYER_DAMAGE`) at the start of the next hand, or `null` when the trick carried no
    *  mark. Keyed by the side the damage will be APPLIED TO, and typed
    *  `DuelSide` rather than `PlayerSide` deliberately: this module is already THE one crossing
    *  between the two vocabularies (see `incomingFrom` below), so the reducer receives a side it
-   *  hands straight to `queueEnvenom` with no second crossing to get backwards. */
-  readonly envenomTarget: DuelSide | null
+   *  hands straight to `queueTimebomb` with no second crossing to get backwards. */
+  readonly timebombTarget: DuelSide | null
   /** D1 — carried through so `incomingFrom` sums it into the Quarry's total. Display-safe: this is
-   *  the figure paid at THIS trick, not one booked by it — that is `envenomTarget`. */
+   *  the figure paid at THIS trick, not one booked by it — that is `timebombTarget`. */
   readonly poisonToQuarry: Damage
   /** AC4 — the Guard fired and suppressed a reset, so the reducer must spend it. `true` only when
    *  poison was actually owed to the player at this trick AND a Guard was held. */
@@ -64,8 +64,8 @@ export interface TrickFacts {
   readonly skullTrick: boolean
   /** The last trick of the hand, so AC8's end-of-hand cash applies. */
   readonly finalTrick: boolean
-  /** DLR-90 AC3 — any card played into the trick carries the Envenom mark. */
-  readonly envenomTrick: boolean
+  /** DLR-90 AC3 — any card played into the trick carries the Timebomb mark. */
+  readonly timebombTrick: boolean
   /** D1/D3 — poison owed to the PLAYER from an earlier trick, being paid at this one. 0 when none.
    *  Non-zero makes this trick a hit for the cash-out's purposes even if the player won it. */
   readonly poisonToPlayer: Damage
@@ -179,8 +179,8 @@ export function resolveTrickBank(before: BankState, trick: TrickFacts): TrickRes
   //
   // AC6 needs no counterpart and gets none: a marked trick the player wins is already a `CleanWin`
   // and falls through to the ordinary branch below, banking 1 and climbing the multiplier. The
-  // delayed hit is symmetric because `envenomTarget` follows the WINNER, not a mirrored rule.
-  const replaced = trick.envenomTrick && outcome === TrickOutcome.CleanLoss
+  // delayed hit is symmetric because `timebombTarget` follows the WINNER, not a mirrored rule.
+  const replaced = trick.timebombTrick && outcome === TrickOutcome.CleanLoss
 
   if (isTaken(outcome)) {
     // PT-002 — the bank counts TRICKS, not card values, so the base is 1 and that is not a config
@@ -248,7 +248,7 @@ export function resolveTrickBank(before: BankState, trick: TrickFacts): TrickRes
     multiplier,
     cashedAtHandEnd: handEndCash > 0,
     // The PHYSICAL winner of a marked trick, crossed to `DuelSide` here and only here.
-    envenomTarget: trick.envenomTrick
+    timebombTarget: trick.timebombTrick
       ? trick.playerWon
         ? DuelSide.Player
         : DuelSide.Quarry

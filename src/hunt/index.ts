@@ -43,9 +43,9 @@ export {
   CHEAT_PRICE,
   HEAL_PRICE,
   HEAL_HEALTH_RESTORED,
-  ENVENOM_PRICE,
-  ENVENOM_QUARRY_DAMAGE,
-  ENVENOM_PLAYER_DAMAGE,
+  TIMEBOMB_PRICE,
+  TIMEBOMB_QUARRY_DAMAGE,
+  TIMEBOMB_PLAYER_DAMAGE,
   POISON_GUARD_PRICE,
   WHETSTONE_PRICE,
   QUICK_KILL_TIER_MULTIPLIERS,
@@ -146,10 +146,10 @@ export {
   startEncounter,
   applyDamage,
   isEncounterResolved,
-  NO_PENDING_ENVENOM,
-  hasPendingEnvenom,
-  queueEnvenom,
-  envenomDamageFor,
+  NO_PENDING_TIMEBOMB,
+  hasPendingTimebomb,
+  queueTimebomb,
+  timebombDamageFor,
 } from './encounter'
 
 export type { ShopStock } from './shop'

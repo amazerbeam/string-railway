@@ -14,13 +14,13 @@ interface PlayingCardProps {
    *  hand fan never does — skulls are the Quarry's foreknowledge, not the player's own) passes
    *  it explicitly. */
   readonly skulled?: boolean
-  /** DLR-90 AC2 — a card carrying the Envenom mark. Defaults to `false` so every existing call
+  /** DLR-90 AC2 — a card carrying the Timebomb mark. Defaults to `false` so every existing call
    *  site keeps compiling; a caller that knows the card's state passes it. The SAME rendering path
    *  as `skulled` — one more conditional `<span>` in one component, not a second component. */
-  readonly envenomed?: boolean
+  readonly primed?: boolean
   /** DLR-100 — a card currently toggled into the open discard selection. Defaults to `false` so
    *  every existing call site keeps compiling; a caller that knows the state passes it. The SAME
-   *  rendering path as `skulled`/`envenomed` — one more conditional `<span>`, not a second
+   *  rendering path as `skulled`/`primed` — one more conditional `<span>`, not a second
    *  component. */
   readonly discardSelected?: boolean
   readonly tabIndex?: number
@@ -43,7 +43,7 @@ export default function PlayingCard({
   illegal = false,
   winner = false,
   skulled = false,
-  envenomed = false,
+  primed = false,
   discardSelected = false,
   tabIndex,
   style,
@@ -72,7 +72,7 @@ export default function PlayingCard({
       style={style}
       disabled={condensed || illegal}
       tabIndex={condensed ? -1 : tabIndex}
-      aria-label={cardAccessibleName(card, { skulled, envenomed })}
+      aria-label={cardAccessibleName(card, { skulled, primed })}
       aria-pressed={armed || discardSelected ? true : undefined}
       onClick={() => onTap?.(card)}
     >
@@ -85,7 +85,7 @@ export default function PlayingCard({
           ☠
         </span>
       )}
-      {envenomed && (
+      {primed && (
         <span className="wc-venom-mark" aria-hidden="true">
           ⚗
         </span>

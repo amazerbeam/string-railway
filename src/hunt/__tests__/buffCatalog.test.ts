@@ -15,7 +15,7 @@ import {
   BuffTier,
   seedStartingBuffPile,
 } from '../buffs'
-import { ENVENOM_PLAYER_DAMAGE, ENVENOM_QUARRY_DAMAGE } from '../config'
+import { TIMEBOMB_PLAYER_DAMAGE, TIMEBOMB_QUARRY_DAMAGE } from '../config'
 
 describe('CHEAT_DURATION_TRICKS (AC1)', () => {
   it('is the transcribed 1 / 2 / 3 table', () => {
@@ -37,10 +37,10 @@ describe('CHEAT_DURATION_TRICKS (AC1)', () => {
 describe('TIMEBOMB_DAMAGE (AC2)', () => {
   // AC4's equivalence assertion: bronze IS today's live pair. Asserted against the CONSTANTS, not
   // against 4 and 2, so retuning the live mechanic moves this with it rather than reddening here.
-  it('bronze is exactly the live Envenom pair, so the migration changes nothing', () => {
+  it('bronze is exactly the live Timebomb pair, so the migration changes nothing', () => {
     expect(TIMEBOMB_DAMAGE[BuffTier.Bronze]).toEqual({
-      quarry: ENVENOM_QUARRY_DAMAGE,
-      player: ENVENOM_PLAYER_DAMAGE,
+      quarry: TIMEBOMB_QUARRY_DAMAGE,
+      player: TIMEBOMB_PLAYER_DAMAGE,
     })
   })
 
@@ -53,15 +53,15 @@ describe('TIMEBOMB_DAMAGE (AC2)', () => {
   it('holds the live 2:1 Quarry-to-player ratio at every tier', () => {
     for (const tier of Object.values(BuffTier)) {
       const row = TIMEBOMB_DAMAGE[tier]
-      expect(row.quarry * ENVENOM_PLAYER_DAMAGE).toBe(row.player * ENVENOM_QUARRY_DAMAGE)
+      expect(row.quarry * TIMEBOMB_PLAYER_DAMAGE).toBe(row.player * TIMEBOMB_QUARRY_DAMAGE)
     }
   })
 
   it('is the tier multiplier applied to both of the live figures', () => {
     for (const tier of Object.values(BuffTier)) {
       expect(TIMEBOMB_DAMAGE[tier]).toEqual({
-        quarry: ENVENOM_QUARRY_DAMAGE * TIMEBOMB_TIER_MULTIPLIER[tier],
-        player: ENVENOM_PLAYER_DAMAGE * TIMEBOMB_TIER_MULTIPLIER[tier],
+        quarry: TIMEBOMB_QUARRY_DAMAGE * TIMEBOMB_TIER_MULTIPLIER[tier],
+        player: TIMEBOMB_PLAYER_DAMAGE * TIMEBOMB_TIER_MULTIPLIER[tier],
       })
     }
   })
@@ -103,8 +103,8 @@ describe('timebombBuff (AC2)', () => {
 
   it('bronze owes exactly the live pair (AC4)', () => {
     expect(timebombDamageOf(timebombBuff(BuffTier.Bronze, 1))).toEqual({
-      quarry: ENVENOM_QUARRY_DAMAGE,
-      player: ENVENOM_PLAYER_DAMAGE,
+      quarry: TIMEBOMB_QUARRY_DAMAGE,
+      player: TIMEBOMB_PLAYER_DAMAGE,
     })
   })
 })

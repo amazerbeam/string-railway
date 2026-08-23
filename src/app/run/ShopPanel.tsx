@@ -21,7 +21,7 @@ import {
   SHOP_ASIDE_LABEL,
   SHOP_CATEGORY_EMPTY,
   SHOP_COINS_LABEL,
-  SHOP_ENVENOM_LABEL,
+  SHOP_TIMEBOMB_LABEL,
   SHOP_FLASK_FREE_TAG,
   SHOP_FLASK_GROUP_LABEL,
   SHOP_FLASK_LABEL,
@@ -63,15 +63,15 @@ interface ShopPanelProps {
   readonly cheatSlotCount: number
   /** DLR-90 AC2 — charges held, so the player can see what they already own before buying another.
    *  A count with no denominator, unlike `cheatCount` / `cheatSlotCount`: there is no cap. */
-  readonly envenomCharges: number
-  /** DLR-91 AC3 — whether a Guard is already held. A boolean, not a count like `envenomCharges`:
+  readonly timebombCharges: number
+  /** DLR-91 AC3 — whether a Guard is already held. A boolean, not a count like `timebombCharges`:
    *  only one can be active at a time, which is what the refusal enforces. */
   readonly poisonGuardHeld: boolean
   /** DLR-92 AC2 — Whetstones owned, so the player can see what they already hold before buying
-   *  another. A count with no denominator, exactly as `envenomCharges`: there is no cap. */
+   *  another. A count with no denominator, exactly as `timebombCharges`: there is no cap. */
   readonly whetstones: number
   /** DLR-93 AC1 — charges held, so the refusal at zero has a visible cause without hover. A count
-   *  with no denominator, exactly as `envenomCharges`: the epic defers raising the ceiling. */
+   *  with no denominator, exactly as `timebombCharges`: the epic defers raising the ceiling. */
   readonly flaskCharges: number
   /** Derived by the driver from `flaskRefusalFor` — never re-derived here, exactly as `refusals`.
    *  `null` means the flask can be drunk. */
@@ -112,7 +112,7 @@ export default function ShopPanel({
   playerHearts,
   cheatCount,
   cheatSlotCount,
-  envenomCharges,
+  timebombCharges,
   poisonGuardHeld,
   whetstones,
   flaskCharges,
@@ -183,8 +183,8 @@ export default function ShopPanel({
             </span>
           </span>
           <span className="shop-purse-cell">
-            <span className="shop-purse-label">{SHOP_ENVENOM_LABEL}</span>
-            <span className="shop-purse-value">{envenomCharges}</span>
+            <span className="shop-purse-label">{SHOP_TIMEBOMB_LABEL}</span>
+            <span className="shop-purse-value">{timebombCharges}</span>
           </span>
           <span className="shop-purse-cell">
             <span className="shop-purse-label">{SHOP_GUARD_LABEL}</span>

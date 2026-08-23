@@ -2,14 +2,14 @@ import { containsCard } from './cardUtils'
 import type { Card, PlayerSide, RoundState, TrickCard } from './types'
 
 /**
- * The Envenom marker. A SEPARATE module from `skulls.ts` on purpose: DLR-90 states poison is a
+ * The Timebomb marker. A SEPARATE module from `skulls.ts` on purpose: DLR-90 states poison is a
  * wholly separate marker from a skull, and two markers sharing a helper is how they stop being
- * separate. Nothing here reads `skulledCards` and nothing there reads `envenomedCards`.
+ * separate. Nothing here reads `skulledCards` and nothing there reads `primedCards`.
  */
 
 /** Membership by suit and rank together, which identifies a card uniquely across the deck. */
-export function isEnvenomed(envenomedCards: readonly Card[], card: Card): boolean {
-  return containsCard(envenomedCards, card)
+export function isPrimed(primedCards: readonly Card[], card: Card): boolean {
+  return containsCard(primedCards, card)
 }
 
 /**
@@ -20,11 +20,11 @@ export function isEnvenomed(envenomedCards: readonly Card[], card: Card): boolea
  * hand, so a marked card can be played by either side within one hand. Testing the trick survives
  * that path with no special case.
  */
-export function trickIsEnvenomed(
-  envenomedCards: readonly Card[],
+export function trickIsPrimed(
+  primedCards: readonly Card[],
   trick: readonly TrickCard[],
 ): boolean {
-  return trick.some((play) => isEnvenomed(envenomedCards, play.card))
+  return trick.some((play) => isPrimed(primedCards, play.card))
 }
 
 /**
@@ -35,14 +35,14 @@ export function trickIsEnvenomed(
  * made. The reducer guards BOTH conditions before calling — a reducer must not throw, because a
  * throw during an event handler unmounts the tree — so reaching either throw is a driver bug.
  */
-export function envenomCard(state: RoundState, side: PlayerSide, card: Card): RoundState {
+export function primeCard(state: RoundState, side: PlayerSide, card: Card): RoundState {
   if (!containsCard(state.hands[side], card)) {
     throw new RangeError(
       `Cannot poison the ${card.rank} of ${card.suit} — it is not in the ${side}'s hand`,
     )
   }
-  if (isEnvenomed(state.envenomedCards, card)) {
+  if (isPrimed(state.primedCards, card)) {
     throw new RangeError(`The ${card.rank} of ${card.suit} is already poisoned`)
   }
-  return { ...state, envenomedCards: [...state.envenomedCards, card] }
+  return { ...state, primedCards: [...state.primedCards, card] }
 }

@@ -3,7 +3,7 @@ import { applyFoxExchange, applyWoodcutterDraw, nextLeaderAfterTrick } from './a
 import { resolveTrickBank } from './bank'
 import { containsCard, removeCard, sameCard } from './cardUtils'
 import { legalMoves, type PlayCardOptions } from './legalMoves'
-import { trickIsEnvenomed } from './envenom'
+import { trickIsPrimed } from './timebomb'
 import { resolveTrickWinner } from './resolveTrick'
 import { trickIsSkulled } from './skulls'
 import {
@@ -111,7 +111,7 @@ export function playCard(
       playerWon: winner === PlayerSide.Player,
       skullTrick: trickIsSkulled(next.skulledCards, completedTrick),
       finalTrick,
-      envenomTrick: trickIsEnvenomed(next.envenomedCards, completedTrick),
+      timebombTrick: trickIsPrimed(next.primedCards, completedTrick),
       poisonToPlayer: options?.poisonToPlayer ?? 0,
       poisonToQuarry: options?.poisonToQuarry ?? 0,
       poisonGuarded: options?.poisonGuarded ?? false,

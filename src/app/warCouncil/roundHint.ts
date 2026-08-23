@@ -5,11 +5,11 @@ import {
   CHEAT_POISED_HINT,
   DISCARD_READY_HINT,
   DISCARD_SELECT_HINT,
-  ENVENOM_ARMED_HINT,
-  ENVENOM_POISED_HINT,
+  TIMEBOMB_ARMED_HINT,
+  TIMEBOMB_POISED_HINT,
   ILLEGAL_MOVE_MESSAGE,
 } from './labels'
-import { CheatStage, EnvenomStage, type RoundUiState } from './roundUiState'
+import { CheatStage, TimebombStage, type RoundUiState } from './roundUiState'
 
 /** Priority mirrors the mockup's hint cascade: a rejection or an armed card
  * always says the most specific thing; otherwise the hint names whose turn
@@ -32,12 +32,12 @@ export function deriveHint(ui: RoundUiState, interactive: boolean, quarryToLead:
   }
   if (quarryToLead) return 'They are choosing their lead'
   // Above `ui.armed` deliberately: a poised plate is the more specific thing to say, and unlike
-  // the Cheat and Envenom selections it can legitimately coexist with an armed card, because it
+  // the Cheat and Timebomb selections it can legitimately coexist with an armed card, because it
   // does not reinterpret the next hand-card tap.
   if (ui.applyPoised) return APPLY_DAMAGE_POISED_HINT
   if (ui.armed) return `Tap ${cardAccessibleName(ui.armed)} again to play it`
-  if (ui.envenomStage) {
-    return ui.envenomStage === EnvenomStage.Armed ? ENVENOM_ARMED_HINT : ENVENOM_POISED_HINT
+  if (ui.timebombStage) {
+    return ui.timebombStage === TimebombStage.Armed ? TIMEBOMB_ARMED_HINT : TIMEBOMB_POISED_HINT
   }
   if (ui.cheatSelection) {
     return ui.cheatSelection.stage === CheatStage.Armed ? CHEAT_ARMED_HINT : CHEAT_POISED_HINT

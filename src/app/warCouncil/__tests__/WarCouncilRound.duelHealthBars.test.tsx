@@ -10,7 +10,7 @@ import {
   coinsFixture,
   discardsRemainingFixture,
   encounterFixture,
-  envenomChargesFixture,
+  timebombChargesFixture,
   huntFixture,
   makeRound,
   maxHealthFixture,
@@ -51,7 +51,7 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
         quarryLabel={quarryLabelFixture}
         cheats={[]}
         coins={coinsFixture}
-        envenomCharges={envenomChargesFixture}
+        timebombCharges={timebombChargesFixture}
         poisonGuardHeld={poisonGuardHeldFixture}
         bankClimbBonus={bankClimbBonusFixture}
         discardsRemaining={discardsRemainingFixture}
@@ -197,7 +197,7 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
         quarryLabel={quarryLabelFixture}
         cheats={[]}
         coins={coinsFixture}
-        envenomCharges={envenomChargesFixture}
+        timebombCharges={timebombChargesFixture}
         poisonGuardHeld={poisonGuardHeldFixture}
         bankClimbBonus={bankClimbBonusFixture}
         discardsRemaining={discardsRemainingFixture}
@@ -256,7 +256,7 @@ describe('WarCouncilRound — the Quarry’s at-risk preview (DLR-86)', () => {
         quarryLabel={quarryLabelFixture}
         cheats={[]}
         coins={coinsFixture}
-        envenomCharges={envenomChargesFixture}
+        timebombCharges={timebombChargesFixture}
         poisonGuardHeld={poisonGuardHeldFixture}
         bankClimbBonus={bankClimbBonusFixture}
         discardsRemaining={discardsRemainingFixture}

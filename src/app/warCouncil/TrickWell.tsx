@@ -1,5 +1,5 @@
 import type { MouseEvent } from 'react'
-import { isEnvenomed, isSkulled, PlayerSide, type Card, type TrickCard } from '../../warCouncil'
+import { isPrimed, isSkulled, PlayerSide, type Card, type TrickCard } from '../../warCouncil'
 import { cardAccessibleName, poisonBookedText } from './labels'
 import PlayingCard from './PlayingCard'
 import type { ResolvedTrick } from './roundUiState'
@@ -19,7 +19,7 @@ interface TrickWellProps {
   readonly skulledCards?: readonly Card[]
   /** DLR-90 AC2 — once a marked card is face up here, it announces its own poison. Defaults to
    *  `[]` for `skulledCards`' own stated reason. */
-  readonly envenomedCards?: readonly Card[]
+  readonly primedCards?: readonly Card[]
   readonly quarryToLead: boolean
   readonly onCarryOn: () => void
 }
@@ -35,7 +35,7 @@ export default function TrickWell({
   currentTrick,
   resolvedTrick,
   skulledCards = [],
-  envenomedCards = [],
+  primedCards = [],
   quarryToLead,
   onCarryOn,
 }: TrickWellProps) {
@@ -71,7 +71,7 @@ export default function TrickWell({
                 variant="table"
                 winner={played.side === resolvedTrick.winner}
                 skulled={isSkulled(skulledCards, played.card)}
-                envenomed={isEnvenomed(envenomedCards, played.card)}
+                primed={isPrimed(primedCards, played.card)}
               />
             </span>
           ))}
@@ -82,10 +82,10 @@ export default function TrickWell({
             ` They take ${resolvedTrick.resolution.cashOut}.`}
           {resolvedTrick.resolution.damageToPlayer > 0 &&
             ` You take ${resolvedTrick.resolution.damageToPlayer}.`}
-          {resolvedTrick.resolution.envenomTarget !== null && (
+          {resolvedTrick.resolution.timebombTarget !== null && (
             <span className="wc-poison-clause">
               {' '}
-              {poisonBookedText(resolvedTrick.resolution.envenomTarget)}
+              {poisonBookedText(resolvedTrick.resolution.timebombTarget)}
             </span>
           )}
         </p>
@@ -123,7 +123,7 @@ export default function TrickWell({
               card={led.card}
               variant="table"
               skulled={isSkulled(skulledCards, led.card)}
-              envenomed={isEnvenomed(envenomedCards, led.card)}
+              primed={isPrimed(primedCards, led.card)}
             />
           </span>
         </div>

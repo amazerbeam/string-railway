@@ -18,9 +18,9 @@ import {
   CHEAT_PRICE,
   HEAL_PRICE,
   HEAL_HEALTH_RESTORED,
-  ENVENOM_PRICE,
-  ENVENOM_QUARRY_DAMAGE,
-  ENVENOM_PLAYER_DAMAGE,
+  TIMEBOMB_PRICE,
+  TIMEBOMB_QUARRY_DAMAGE,
+  TIMEBOMB_PLAYER_DAMAGE,
   POISON_GUARD_PRICE,
   FLASK_STARTING_CHARGES,
   FLASK_HEAL_PERCENT,
@@ -141,29 +141,29 @@ describe('DLR-84 shop tunables', () => {
   })
 })
 
-describe('Envenom constants (DLR-90 AC1, AC4; DLR-91 D2)', () => {
-  it('prices Envenom at the transcribed 2 coins', () => {
-    expect(ENVENOM_PRICE).toBe(2)
+describe('Timebomb constants (DLR-90 AC1, AC4; DLR-91 D2)', () => {
+  it('prices Timebomb at the transcribed 2 coins', () => {
+    expect(TIMEBOMB_PRICE).toBe(2)
   })
 
   it('sets the Quarry’s delayed hit to the transcribed 4', () => {
-    expect(ENVENOM_QUARRY_DAMAGE).toBe(4)
+    expect(TIMEBOMB_QUARRY_DAMAGE).toBe(4)
   })
 
   it('sets the player’s delayed hit to the developer-chosen 2 — half the Quarry’s', () => {
-    expect(ENVENOM_PLAYER_DAMAGE).toBe(2)
-    expect(ENVENOM_PLAYER_DAMAGE).toBe(ENVENOM_QUARRY_DAMAGE / 2)
+    expect(TIMEBOMB_PLAYER_DAMAGE).toBe(2)
+    expect(TIMEBOMB_PLAYER_DAMAGE).toBe(TIMEBOMB_QUARRY_DAMAGE / 2)
   })
 
   // Not a tautology: version-4-scope.md justifies the 4 by pointing at the Heal, so a future edit
   // that moves one without deciding about the other should surface here rather than silently
   // decoupling a figure the design doc tied together.
   it('matches the shop’s Heal, which is where the design doc took the Quarry figure from', () => {
-    expect(ENVENOM_QUARRY_DAMAGE).toBe(HEAL_HEALTH_RESTORED)
+    expect(TIMEBOMB_QUARRY_DAMAGE).toBe(HEAL_HEALTH_RESTORED)
   })
 
   it('costs more than the Cheat, per the design doc’s pricing argument', () => {
-    expect(ENVENOM_PRICE).toBeGreaterThan(CHEAT_PRICE)
+    expect(TIMEBOMB_PRICE).toBeGreaterThan(CHEAT_PRICE)
   })
 })
 

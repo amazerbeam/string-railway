@@ -14,7 +14,7 @@ function stateWith(
     trumpSuit: 'bells',
     tricksWon: { player: 0, cpu: 0 },
     skulledCards: [],
-    envenomedCards: [],
+    primedCards: [],
     bank: 0,
     multiplier: 0,
     lastResolution: null,

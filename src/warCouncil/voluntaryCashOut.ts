@@ -39,7 +39,7 @@ export interface ApplyDamageStock {
  * THE single statement of whether Apply Damage is available — read by the reducer before it
  * commits anything, and by the plate to disable itself and print the reason. Two readings of one
  * rule, never two rules: a greyed control and a reducer branch that decide availability separately
- * is exactly how the two drift apart, which is why `cheatArmed` and `envenomArmed` are exported
+ * is exactly how the two drift apart, which is why `cheatArmed` and `timebombArmed` are exported
  * from `roundUiState.ts` rather than recomputed in the component.
  *
  * `NotYourMove` comes FIRST because it is true of the whole felt rather than of this control, and

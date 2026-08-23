@@ -48,19 +48,19 @@ describe('cardAccessibleName', () => {
   })
 
   it('names a poisoned card', () => {
-    expect(cardAccessibleName({ suit: Suit.Bells, rank: 4 }, { envenomed: true })).toBe(
+    expect(cardAccessibleName({ suit: Suit.Bells, rank: 4 }, { primed: true })).toBe(
       '4 of Bells, poisoned',
     )
   })
 
   it('names a card carrying both marks, skull first', () => {
     expect(
-      cardAccessibleName({ suit: Suit.Bells, rank: 4 }, { skulled: true, envenomed: true }),
+      cardAccessibleName({ suit: Suit.Bells, rank: 4 }, { skulled: true, primed: true }),
     ).toBe('4 of Bells, skulled, poisoned')
   })
 
   it('names a named rank with a mark, keeping the rank name before the marks', () => {
-    expect(cardAccessibleName({ suit: Suit.Keys, rank: 3 }, { envenomed: true })).toBe(
+    expect(cardAccessibleName({ suit: Suit.Keys, rank: 3 }, { primed: true })).toBe(
       '3 of Keys (Fox), poisoned',
     )
   })

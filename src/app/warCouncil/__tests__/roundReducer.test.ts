@@ -24,7 +24,7 @@ import {
   type ResolvedTrick,
   type RoundUiState,
 } from '../roundUiState'
-import { card, discardsRemainingFixture, envenomChargesFixture, makeRound } from './roundFixture'
+import { card, discardsRemainingFixture, timebombChargesFixture, makeRound } from './roundFixture'
 
 const tap = (c: Parameters<typeof card>[0] extends never ? never : ReturnType<typeof card>) =>
   ({ kind: RoundUiActionKind.TapCard, card: c }) as const
@@ -41,7 +41,7 @@ function uiFrom(
     round,
     encounter,
     cheats,
-    envenomCharges: envenomChargesFixture,
+    timebombCharges: timebombChargesFixture,
     poisonGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: discardsRemainingFixture,
@@ -124,7 +124,7 @@ describe('CarryOn commits a pending Quarry lead', () => {
         bank: 1,
         multiplier: 1,
         cashedAtHandEnd: false,
-        envenomTarget: null,
+        timebombTarget: null,
         poisonToQuarry: 0,
         poisonGuardSpent: false,
       },

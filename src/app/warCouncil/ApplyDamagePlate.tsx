@@ -21,10 +21,10 @@ interface ApplyDamagePlateProps {
 
 /**
  * DLR-94 AC1 — the felt-rail plate for the Apply Damage action, a SIBLING of `CheatSlots` and
- * `EnvenomCharge` rather than a generalisation of either: the three controls keep independent copy
+ * `TimebombCharge` rather than a generalisation of either: the three controls keep independent copy
  * and independent components, so retuning one never risks the others.
  *
- * `onClick` STOPS PROPAGATION for the load-bearing reason `EnvenomCharge.tsx`'s does: this mounts
+ * `onClick` STOPS PROPAGATION for the load-bearing reason `TimebombCharge.tsx`'s does: this mounts
  * inside `.wc-table`, which fires `handleCarryOn` on click whenever the felt is waiting — so
  * without it, poising the plate while a trick reveal is held would also clear the reveal and
  * commit the Quarry's lead as a side effect.

@@ -32,17 +32,17 @@ export interface WarCouncilMountProps {
    *  index, or a `RunState`. Required, not optional, so the compiler enumerates every mount site
    *  rather than letting one silently fall back to the generic wording. */
   readonly quarryLabel: string
-  /** DLR-90 AC2 — Envenom charges held at the START of this hand. The same contract `cheats` above
+  /** DLR-90 AC2 — Timebomb charges held at the START of this hand. The same contract `cheats` above
    *  documents: an opening figure the reducer owns for the hand's life and hands back through
    *  `WarCouncilRoundResult`. REQUIRED rather than optional so the compiler enumerates every mount
    *  site instead of letting one silently render an inert plate. */
-  readonly envenomCharges: number
+  readonly timebombCharges: number
   /** DLR-91 AC4 — whether a Poison Guard is held at the START of this hand. The same contract
-   *  `envenomCharges` above documents: an opening figure the reducer owns for the hand's life and
+   *  `timebombCharges` above documents: an opening figure the reducer owns for the hand's life and
    *  hands back through `WarCouncilRoundResult`. REQUIRED rather than optional so the compiler
    *  enumerates every mount site instead of letting one silently fight without its insurance. */
   readonly poisonGuardHeld: boolean
-  /** DLR-100 AC5 — discards remaining at the START of this hand. Same contract as `envenomCharges`
+  /** DLR-100 AC5 — discards remaining at the START of this hand. Same contract as `timebombCharges`
    *  above: an opening figure the reducer owns for the hand's life and hands back through
    *  `WarCouncilRoundResult`. REQUIRED rather than optional so the compiler enumerates every mount
    *  site instead of letting one silently render an inert rail. */
@@ -51,7 +51,7 @@ export interface WarCouncilMountProps {
    *  Whetstone count by `bankClimbBonusFor`. A number, not a `RunState` and not an item count: the
    *  card layer renders a run figure and must not learn what bought it. REQUIRED rather than
    *  optional so the compiler enumerates every mount site instead of letting one silently fight
-   *  without the buff. Unlike `envenomCharges` and `poisonGuardHeld` it does NOT come back on
+   *  without the buff. Unlike `timebombCharges` and `poisonGuardHeld` it does NOT come back on
    *  `WarCouncilRoundResult` — a hand cannot spend it. */
   readonly bankClimbBonus: number
   readonly onComplete: (result: WarCouncilRoundResult) => void
@@ -75,7 +75,7 @@ export interface WarCouncilRoundResult {
   readonly cheats: readonly CheatCard[]
   /** DLR-90 AC2 — the charges still held after this hand. One fewer for each card marked; the run
    *  adopts it through `recordEncounter`'s fourth parameter. */
-  readonly envenomCharges: number
+  readonly timebombCharges: number
   /** DLR-91 AC4 — whether the Guard is still held after this hand. `false` once it has fired; the
    *  run adopts it through `recordEncounter`'s fifth parameter, which also clears it when the
    *  encounter resolved. */

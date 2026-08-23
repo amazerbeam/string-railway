@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   DuelSide,
-  ENVENOM_PLAYER_DAMAGE,
-  ENVENOM_QUARRY_DAMAGE,
-  NO_PENDING_ENVENOM,
+  TIMEBOMB_PLAYER_DAMAGE,
+  TIMEBOMB_QUARRY_DAMAGE,
+  NO_PENDING_TIMEBOMB,
   PLAYER_START_HEALTH,
   quarryHealthForEncounter,
   type Health,
@@ -110,26 +110,26 @@ describe('projectedDepletion — AC3’s preview plus DLR-101’s booked poison'
   const full = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
 
   it('leaves the player untouched — the streak only ever threatens the Quarry', () => {
-    expect(projectedDepletion(full, 3, 3, NO_PENDING_ENVENOM)[DuelSide.Player]).toBe(PLAYER_START_HEALTH)
+    expect(projectedDepletion(full, 3, 3, NO_PENDING_TIMEBOMB)[DuelSide.Player]).toBe(PLAYER_START_HEALTH)
   })
 
   it('takes bank × multiplier off the Quarry’s projection', () => {
-    expect(projectedDepletion(full, 2, 2, NO_PENDING_ENVENOM)[DuelSide.Quarry]).toBe(quarryMax - 4)
+    expect(projectedDepletion(full, 2, 2, NO_PENDING_TIMEBOMB)[DuelSide.Quarry]).toBe(quarryMax - 4)
   })
 
   it('floors at zero so the module’s projected <= current precondition holds under overkill', () => {
-    expect(projectedDepletion(full, 9, 9, NO_PENDING_ENVENOM)[DuelSide.Quarry]).toBe(0)
+    expect(projectedDepletion(full, 9, 9, NO_PENDING_TIMEBOMB)[DuelSide.Quarry]).toBe(0)
   })
 
   it('AC5 — a reset streak previews nothing at all', () => {
-    expect(projectedDepletion(full, 0, 0, NO_PENDING_ENVENOM)[DuelSide.Quarry]).toBe(quarryMax)
-    const [, quarry] = duelHealthBars(full, projectedDepletion(full, 0, 0, NO_PENDING_ENVENOM), MAX)
+    expect(projectedDepletion(full, 0, 0, NO_PENDING_TIMEBOMB)[DuelSide.Quarry]).toBe(quarryMax)
+    const [, quarry] = duelHealthBars(full, projectedDepletion(full, 0, 0, NO_PENDING_TIMEBOMB), MAX)
     expect(quarry.pending).toBe(0)
     expect(quarry.hearts.some((h) => h === HeartState.AtRisk)).toBe(false)
   })
 
   it('AC3 — a live streak marks that many of the Quarry’s hearts at risk, and no more', () => {
-    const projected = projectedDepletion(full, 3, 3, NO_PENDING_ENVENOM)
+    const projected = projectedDepletion(full, 3, 3, NO_PENDING_TIMEBOMB)
     const [, quarry] = duelHealthBars(full, projected, MAX)
     expect(quarry.hearts.filter((h) => h === HeartState.AtRisk)).toHaveLength(Math.min(9, quarryMax))
     expect(quarry.lethal).toBe(9 >= quarryMax)
@@ -143,17 +143,17 @@ describe('DLR-101 — booked poison on the projection and the row', () => {
   it('subtracts the Quarry’s booked poison as well as the streak', () => {
     const projected = projectedDepletion(full, 2, 2, {
       [DuelSide.Player]: 0,
-      [DuelSide.Quarry]: ENVENOM_QUARRY_DAMAGE,
+      [DuelSide.Quarry]: TIMEBOMB_QUARRY_DAMAGE,
     })
-    expect(projected[DuelSide.Quarry]).toBe(quarryMax - 4 - ENVENOM_QUARRY_DAMAGE)
+    expect(projected[DuelSide.Quarry]).toBe(quarryMax - 4 - TIMEBOMB_QUARRY_DAMAGE)
   })
 
   it('subtracts the player’s booked poison, which the streak never touches', () => {
     const projected = projectedDepletion(full, 3, 3, {
-      [DuelSide.Player]: ENVENOM_PLAYER_DAMAGE,
+      [DuelSide.Player]: TIMEBOMB_PLAYER_DAMAGE,
       [DuelSide.Quarry]: 0,
     })
-    expect(projected[DuelSide.Player]).toBe(PLAYER_START_HEALTH - ENVENOM_PLAYER_DAMAGE)
+    expect(projected[DuelSide.Player]).toBe(PLAYER_START_HEALTH - TIMEBOMB_PLAYER_DAMAGE)
   })
 
   it('floors both sides at zero, so `projected <= current` still holds', () => {

@@ -4,7 +4,7 @@ import {
   applyDamageRefusalFor,
   cashValue,
   discardRefusalFor,
-  isEnvenomed,
+  isPrimed,
   PlayerSide,
   RoundPhase,
   currentTurn,
@@ -23,7 +23,7 @@ import BankMeter from './BankMeter'
 import CheatSlots from './CheatSlots'
 import DecreePile from './DecreePile'
 import DiscardPlate from './DiscardPlate'
-import EnvenomCharge from './EnvenomCharge'
+import TimebombCharge from './TimebombCharge'
 import HandFan from './HandFan'
 import { sortHandForDisplay } from './handOrder'
 import { previewQuarryIntent } from './intentPreview'
@@ -41,7 +41,7 @@ import {
   createRoundUiState,
   discardSelecting,
   discardStock,
-  envenomArmed,
+  timebombArmed,
   RoundUiActionKind,
 } from './roundUiState'
 import RoundStatusBand from './RoundStatusBand'
@@ -53,7 +53,7 @@ import './warCouncilCards.css'
 import './warCouncilHunt.css'
 import './warCouncilHealthBars.css'
 import './warCouncilHand.css'
-import './warCouncilEnvenom.css'
+import './warCouncilTimebomb.css'
 import './warCouncilApplyDamage.css'
 import './warCouncilDiscard.css'
 
@@ -89,7 +89,7 @@ export default function WarCouncilRound({
   cheats,
   coins,
   quarryLabel,
-  envenomCharges,
+  timebombCharges,
   poisonGuardHeld,
   discardsRemaining,
   bankClimbBonus,
@@ -101,7 +101,7 @@ export default function WarCouncilRound({
       round: initialState,
       encounter,
       cheats,
-      envenomCharges,
+      timebombCharges,
       poisonGuardHeld,
       discardsRemaining,
       bankClimbBonus,
@@ -112,7 +112,7 @@ export default function WarCouncilRound({
   const encounterOver = isEncounterResolved(ui.encounter)
   const roundComplete = ui.round.phase === RoundPhase.Complete
   // The SAME predicate the reducer gates on — moved to `roundUiState.ts` on DLR-94, where
-  // `cheatArmed` and `envenomArmed` already live, because this component and `roundReducer.ts`
+  // `cheatArmed` and `timebombArmed` already live, because this component and `roundReducer.ts`
   // were computing the identical six clauses separately. Two readings of one gate is how a greyed
   // control and a reducer branch drift apart.
   const interactive = canAct(ui)
@@ -205,7 +205,7 @@ export default function WarCouncilRound({
         finalState: ui.round,
         encounter: ui.encounter,
         cheats: ui.cheats,
-        envenomCharges: ui.envenomCharges,
+        timebombCharges: ui.timebombCharges,
         poisonGuardHeld: ui.poisonGuardHeld,
         discardsRemaining: ui.discardsRemaining,
         unplayedAtResolve: ui.unplayedAtResolve,
@@ -221,7 +221,7 @@ export default function WarCouncilRound({
         finalState: ui.round,
         encounter: ui.encounter,
         cheats: ui.cheats,
-        envenomCharges: ui.envenomCharges,
+        timebombCharges: ui.timebombCharges,
         poisonGuardHeld: ui.poisonGuardHeld,
         discardsRemaining: ui.discardsRemaining,
         unplayedAtResolve: ui.unplayedAtResolve,
@@ -251,7 +251,7 @@ export default function WarCouncilRound({
         currentTrick={ui.round.currentTrick}
         resolvedTrick={ui.resolvedTrick}
         skulledCards={ui.round.skulledCards}
-        envenomedCards={ui.round.envenomedCards}
+        primedCards={ui.round.primedCards}
         quarryToLead={quarryToLead}
         onCarryOn={handleCarryOn}
       />
@@ -271,7 +271,7 @@ export default function WarCouncilRound({
         decree={ui.round.decree}
         hand={displayHand.filter((c) => !sameCard(c, promptCard))}
         drawnCard={promptCard.rank === CardRank.Woodcutter ? (ui.round.drawPile[0] ?? null) : null}
-        envenomedCards={ui.round.envenomedCards}
+        primedCards={ui.round.primedCards}
         onChoose={(choice) => dispatch({ kind: RoundUiActionKind.ChooseAbility, choice })}
         onCancel={handleCancel}
       />
@@ -282,7 +282,7 @@ export default function WarCouncilRound({
         currentTrick={ui.round.currentTrick}
         resolvedTrick={null}
         skulledCards={ui.round.skulledCards}
-        envenomedCards={ui.round.envenomedCards}
+        primedCards={ui.round.primedCards}
         quarryToLead={quarryToLead}
         onCarryOn={handleCarryOn}
       />
@@ -325,7 +325,7 @@ export default function WarCouncilRound({
             decree={ui.round.decree}
             trumpSuit={ui.round.trumpSuit}
             drawPileCount={ui.round.drawPile.length}
-            envenomed={isEnvenomed(ui.round.envenomedCards, ui.round.decree)}
+            primed={isPrimed(ui.round.primedCards, ui.round.decree)}
           />
           <div className="wc-felt-rail-split" aria-hidden="true" />
           <CheatSlots
@@ -335,12 +335,12 @@ export default function WarCouncilRound({
             onTap={(id) => dispatch({ kind: RoundUiActionKind.TapCheat, id })}
             onCancel={() => dispatch({ kind: RoundUiActionKind.CancelCheat })}
           />
-          <EnvenomCharge
-            charges={ui.envenomCharges}
-            stage={ui.envenomStage}
+          <TimebombCharge
+            charges={ui.timebombCharges}
+            stage={ui.timebombStage}
             interactive={interactive}
-            onTap={() => dispatch({ kind: RoundUiActionKind.TapEnvenom })}
-            onCancel={() => dispatch({ kind: RoundUiActionKind.CancelEnvenom })}
+            onTap={() => dispatch({ kind: RoundUiActionKind.TapTimebomb })}
+            onCancel={() => dispatch({ kind: RoundUiActionKind.CancelTimebomb })}
           />
           <ApplyDamagePlate
             cashValue={applyCash}
@@ -368,8 +368,8 @@ export default function WarCouncilRound({
         hint={hint}
         rejected={ui.rejection !== null}
         promptOpen={ui.prompt !== null}
-        envenomedCards={ui.round.envenomedCards}
-        envenomArmed={envenomArmed(ui)}
+        primedCards={ui.round.primedCards}
+        timebombArmed={timebombArmed(ui)}
         discardSelecting={discardSelecting(ui)}
         discardSelection={ui.discardSelection ?? []}
         onTap={handleTap}

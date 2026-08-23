@@ -7,7 +7,7 @@ import {
   bankClimbBonusFixture,
   discardsRemainingFixture,
   encounterFixture,
-  envenomChargesFixture,
+  timebombChargesFixture,
   makeRound,
   poisonGuardHeldFixture,
 } from './roundFixture'
@@ -24,7 +24,7 @@ function seedOneTapKill(quarryHealth: number): RoundUiSeed {
       health: { ...encounterFixture.health, [DuelSide.Quarry]: quarryHealth },
     },
     cheats: [],
-    envenomCharges: envenomChargesFixture,
+    timebombCharges: timebombChargesFixture,
     poisonGuardHeld: poisonGuardHeldFixture,
     bankClimbBonus: bankClimbBonusFixture,
     discardsRemaining: discardsRemainingFixture,

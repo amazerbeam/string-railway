@@ -150,7 +150,7 @@
   line-height: 1;
 }
 
-/* DLR-90/AC2: the Envenom mark, once a marked card is face up. Bottom-left — the ONE corner the
+/* DLR-90/AC2: the Timebomb mark, once a marked card is face up. Bottom-left — the ONE corner the
    rank (top-left), the skull (top-right) and the pip (bottom-right) leave free, so a card carrying
    both marks stays legible. A ringed badge rather than a bare tinted glyph, per `game-ux`'s
    "state reads without motion or colour alone": the ring is the form signal, the fill colour is

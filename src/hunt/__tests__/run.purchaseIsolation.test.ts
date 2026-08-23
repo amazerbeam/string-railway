@@ -5,11 +5,11 @@ import { buyFromShop, drinkFlask, startRun, type RunState } from '../run'
 import { ShopItem } from '../shop'
 import { DuelSide } from '../types'
 
-// DLR-127. The ticket reported that buying an Envenom charge also granted a Cheat. It does not —
-// `buyFromShop`'s Envenom branch returns `{ ...paid, envenomCharges: run.envenomCharges + 1 }` and
+// DLR-127. The ticket reported that buying an Timebomb charge also granted a Cheat. It does not —
+// `buyFromShop`'s Timebomb branch returns `{ ...paid, timebombCharges: run.timebombCharges + 1 }` and
 // never touches `cheats`; the red assertion was reading the run's OPENING Cheat grant. But "a
 // purchase quietly handed over something it did not charge for" is a real class of defect and had
-// no guard at all, so this file adds one for every item at once rather than for Envenom alone.
+// no guard at all, so this file adds one for every item at once rather than for Timebomb alone.
 //
 // Each case asserts the EXACT set of `RunState` fields a transition writes. An exact set, not a
 // spot-check, is what makes this catch the next one: a branch that starts writing a field nobody
@@ -79,11 +79,11 @@ describe('buyFromShop — one purchase changes exactly one thing, plus the coins
     ])
   })
 
-  it('Envenom: coins and the charge count — and NOTHING else (the DLR-127 report)', () => {
+  it('Timebomb: coins and the charge count — and NOTHING else (the DLR-127 report)', () => {
     const before = hurtAndFunded(9)
-    expect(changedFields(before, buyFromShop(before, ShopItem.Envenom))).toEqual([
+    expect(changedFields(before, buyFromShop(before, ShopItem.Timebomb))).toEqual([
       'coins',
-      'envenomCharges',
+      'timebombCharges',
     ])
   })
 
@@ -122,12 +122,12 @@ describe('drinkFlask — the sibling that is not a purchase', () => {
 describe('no purchase touches another item’s holding', () => {
   it('buying every item in turn leaves each holding at exactly what its own purchase set', () => {
     const opened = hurtAndFunded(20)
-    const all = [ShopItem.Cheat, ShopItem.Envenom, ShopItem.PoisonGuard, ShopItem.Whetstone].reduce(
+    const all = [ShopItem.Cheat, ShopItem.Timebomb, ShopItem.PoisonGuard, ShopItem.Whetstone].reduce(
       (run, item) => buyFromShop(run, item),
       opened,
     )
     expect(all.cheats).toHaveLength(opened.cheats.length + 1)
-    expect(all.envenomCharges).toBe(1)
+    expect(all.timebombCharges).toBe(1)
     expect(all.poisonGuardHeld).toBe(true)
     expect(all.whetstones).toBe(1)
     // The one the ticket is about, stated once more against a run that bought everything.

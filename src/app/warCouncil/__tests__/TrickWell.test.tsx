@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, Suit, TrickOutcome } from '../../../warCouncil'
-import { DuelSide, ENVENOM_QUARRY_DAMAGE } from '../../../hunt'
+import { DuelSide, TIMEBOMB_QUARRY_DAMAGE } from '../../../hunt'
 import type { ResolvedTrick } from '../roundUiState'
 import TrickWell from '../TrickWell'
 
@@ -22,7 +22,7 @@ const resolvedTrick: ResolvedTrick = {
     bank: 0,
     multiplier: 0,
     cashedAtHandEnd: false,
-    envenomTarget: null,
+    timebombTarget: null,
     poisonToQuarry: 0,
     poisonGuardSpent: false,
   },
@@ -82,7 +82,7 @@ describe('TrickWell — a resolved trick', () => {
       <TrickWell
         currentTrick={[]}
         resolvedTrick={resolvedTrick}
-        envenomedCards={[{ suit: Suit.Bells, rank: 7 }]}
+        primedCards={[{ suit: Suit.Bells, rank: 7 }]}
         quarryToLead={false}
         onCarryOn={vi.fn()}
       />,
@@ -96,7 +96,7 @@ describe('TrickWell — a resolved trick', () => {
         currentTrick={[]}
         resolvedTrick={resolvedTrick}
         skulledCards={[{ suit: Suit.Bells, rank: 7 }]}
-        envenomedCards={[{ suit: Suit.Bells, rank: 7 }]}
+        primedCards={[{ suit: Suit.Bells, rank: 7 }]}
         quarryToLead={false}
         onCarryOn={vi.fn()}
       />,
@@ -107,7 +107,7 @@ describe('TrickWell — a resolved trick', () => {
   it('names a booked hit and its target when the trick just set poison (DLR-101)', () => {
     const poisoned: ResolvedTrick = {
       ...resolvedTrick,
-      resolution: { ...resolvedTrick.resolution, envenomTarget: DuelSide.Quarry },
+      resolution: { ...resolvedTrick.resolution, timebombTarget: DuelSide.Quarry },
     }
     render(
       <TrickWell
@@ -122,7 +122,7 @@ describe('TrickWell — a resolved trick', () => {
         (_, node) =>
           node?.tagName === 'P' &&
           Boolean(
-            node.textContent?.includes(`they take ${ENVENOM_QUARRY_DAMAGE} at the next trick`),
+            node.textContent?.includes(`they take ${TIMEBOMB_QUARRY_DAMAGE} at the next trick`),
           ),
       ),
     ).toBeDefined()

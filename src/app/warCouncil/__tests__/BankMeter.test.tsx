@@ -14,7 +14,7 @@ const cleanLoss: TrickResolution = {
   bank: 0,
   multiplier: 0,
   cashedAtHandEnd: false,
-  envenomTarget: null,
+  timebombTarget: null,
   poisonToQuarry: 0,
   poisonGuardSpent: false,
 }

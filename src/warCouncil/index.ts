@@ -22,7 +22,7 @@ export type { LegalMoveOptions, PlayCardOptions } from './legalMoves'
 export { resolveTrickWinner } from './resolveTrick'
 export { playCard } from './playCard'
 export { assignSkulls, isSkulled, skullableCards, suitShape, trickIsSkulled } from './skulls'
-export { isEnvenomed, trickIsEnvenomed, envenomCard } from './envenom'
+export { isPrimed, trickIsPrimed, primeCard } from './timebomb'
 export type { SuitShape } from './skulls'
 export {
   cashValue,

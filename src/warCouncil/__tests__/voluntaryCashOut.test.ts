@@ -28,7 +28,7 @@ function round(over: Partial<RoundState> = {}): RoundState {
     trumpSuit: Suit.Keys,
     tricksWon: { [PlayerSide.Player]: 1, [PlayerSide.Cpu]: 2 },
     skulledCards: [],
-    envenomedCards: [],
+    primedCards: [],
     bank: 3,
     multiplier: 3,
     lastResolution: null,

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   CHEAT_PRICE,
   CHEAT_SLOT_COUNT,
-  ENVENOM_PRICE,
+  TIMEBOMB_PRICE,
   HEAL_PRICE,
   POISON_GUARD_PRICE,
   WHETSTONE_PRICE,
@@ -37,7 +37,7 @@ describe('SHOP_ITEMS', () => {
   it('holds exactly the five members, one-time use first, Heal last (DLR-92)', () => {
     expect(SHOP_ITEMS).toEqual([
       ShopItem.Cheat,
-      ShopItem.Envenom,
+      ShopItem.Timebomb,
       ShopItem.PoisonGuard,
       ShopItem.Whetstone,
       ShopItem.Heal,
@@ -54,8 +54,8 @@ describe('priceOf', () => {
     expect(priceOf(ShopItem.Heal)).toBe(HEAL_PRICE)
   })
 
-  it('reads ENVENOM_PRICE for Envenom', () => {
-    expect(priceOf(ShopItem.Envenom)).toBe(ENVENOM_PRICE)
+  it('reads TIMEBOMB_PRICE for Timebomb', () => {
+    expect(priceOf(ShopItem.Timebomb)).toBe(TIMEBOMB_PRICE)
   })
 
   it('reads POISON_GUARD_PRICE for the Poison Guard', () => {
@@ -108,16 +108,16 @@ describe('refusalFor', () => {
   })
 })
 
-describe('refusalFor — Envenom (DLR-90)', () => {
+describe('refusalFor — Timebomb (DLR-90)', () => {
   it('refuses only for coins: there is no cap on charges held', () => {
-    expect(refusalFor(stock({ coins: ENVENOM_PRICE }), ShopItem.Envenom)).toBeNull()
-    expect(refusalFor(stock({ coins: ENVENOM_PRICE - 1 }), ShopItem.Envenom)).toBe(
+    expect(refusalFor(stock({ coins: TIMEBOMB_PRICE }), ShopItem.Timebomb)).toBeNull()
+    expect(refusalFor(stock({ coins: TIMEBOMB_PRICE - 1 }), ShopItem.Timebomb)).toBe(
       PurchaseRefusal.NotEnoughCoins,
     )
   })
 
   it('is unaffected by full Cheat slots, which are the Cheat’s cap and not a shared one', () => {
-    expect(refusalFor(stock({ cheatCount: CHEAT_SLOT_COUNT }), ShopItem.Envenom)).toBeNull()
+    expect(refusalFor(stock({ cheatCount: CHEAT_SLOT_COUNT }), ShopItem.Timebomb)).toBeNull()
   })
 })
 
@@ -185,8 +185,8 @@ describe('categoryOf', () => {
     expect(categoryOf(ShopItem.Heal)).toBeNull()
   })
 
-  it('shelves Envenom on the one-time-use rung (AC1)', () => {
-    expect(categoryOf(ShopItem.Envenom)).toBe(ShopCategory.OneTimeUse)
+  it('shelves Timebomb on the one-time-use rung (AC1)', () => {
+    expect(categoryOf(ShopItem.Timebomb)).toBe(ShopCategory.OneTimeUse)
   })
 
   it('shelves the Poison Guard on the fight-long rung (DLR-91 AC1)', () => {
@@ -215,7 +215,7 @@ describe('SHOP_ITEMS_BY_CATEGORY', () => {
   it('puts both one-time-use items on that rung, in catalogue order', () => {
     expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.OneTimeUse]).toEqual([
       ShopItem.Cheat,
-      ShopItem.Envenom,
+      ShopItem.Timebomb,
     ])
   })
 

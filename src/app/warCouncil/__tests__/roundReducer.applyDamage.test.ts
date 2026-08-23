@@ -10,14 +10,14 @@ import {
   DuelSide,
   PLAYER_START_HEALTH,
   isEncounterResolved,
-  queueEnvenom,
+  queueTimebomb,
   quarryHealthForEncounter,
   startEncounter,
   type EncounterState,
 } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
 import { createRoundUiState, RoundUiActionKind, type RoundUiState } from '../roundUiState'
-import { card, discardsRemainingFixture, envenomChargesFixture, makeRound } from './roundFixture'
+import { card, discardsRemainingFixture, timebombChargesFixture, makeRound } from './roundFixture'
 
 const tapApply = { kind: RoundUiActionKind.TapApplyDamage } as const
 const cancelApply = { kind: RoundUiActionKind.CancelApplyDamage } as const
@@ -30,7 +30,7 @@ function uiFrom(
     round,
     encounter,
     cheats: [],
-    envenomCharges: envenomChargesFixture,
+    timebombCharges: timebombChargesFixture,
     poisonGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: discardsRemainingFixture,
@@ -65,7 +65,7 @@ describe('Apply Damage — the poise, and the refusals (AC1, D6)', () => {
   })
 
   it('D6 — a pending poison hit cannot be poised past', () => {
-    const owed = queueEnvenom(startEncounter(0), DuelSide.Player)
+    const owed = queueTimebomb(startEncounter(0), DuelSide.Player)
     const ui = roundReducer(uiFrom(streakRound(), owed), tapApply)
     expect(ui.applyPoised).toBe(false)
     expect(ui.round.bank).toBe(3)
@@ -76,7 +76,7 @@ describe('Apply Damage — the poise, and the refusals (AC1, D6)', () => {
   it('D6 — poison booked AFTER the poise still stops the commit, and drops the poise', () => {
     let ui = roundReducer(uiFrom(streakRound()), tapApply)
     expect(ui.applyPoised).toBe(true)
-    ui = { ...ui, encounter: queueEnvenom(ui.encounter, DuelSide.Player) }
+    ui = { ...ui, encounter: queueTimebomb(ui.encounter, DuelSide.Player) }
     ui = roundReducer(ui, tapApply)
     expect(ui.applyPoised).toBe(false)
     expect(ui.round.bank).toBe(3)

@@ -86,7 +86,7 @@ describe('drinkFlask (AC2, AC3, AC4)', () => {
     const after = drinkFlask(run, MAX)
     expect(after.coins).toBe(run.coins)
     expect(after.cheats).toBe(run.cheats)
-    expect(after.envenomCharges).toBe(run.envenomCharges)
+    expect(after.timebombCharges).toBe(run.timebombCharges)
     expect(after.whetstones).toBe(run.whetstones)
     expect(after.encounter.health[DuelSide.Quarry]).toBe(run.encounter.health[DuelSide.Quarry])
   })
@@ -129,7 +129,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
       at,
       wonEncounter(at.encounter, 3),
       at.cheats,
-      at.envenomCharges,
+      at.timebombCharges,
       at.poisonGuardHeld,
       at.discardsRemaining,
       null,
@@ -143,7 +143,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
       at,
       wonEncounter(at.encounter, 3),
       at.cheats,
-      at.envenomCharges,
+      at.timebombCharges,
       at.poisonGuardHeld,
       at.discardsRemaining,
       null,
@@ -157,7 +157,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
       at,
       wonEncounter(at.encounter, 3),
       at.cheats,
-      at.envenomCharges,
+      at.timebombCharges,
       at.poisonGuardHeld,
       at.discardsRemaining,
       null,
@@ -184,7 +184,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
       at,
       lost,
       at.cheats,
-      at.envenomCharges,
+      at.timebombCharges,
       at.poisonGuardHeld,
       at.discardsRemaining,
       null,

@@ -19,7 +19,7 @@ const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
   playerWon: false,
   skullTrick: false,
   finalTrick: false,
-  envenomTrick: false,
+  timebombTrick: false,
   poisonToPlayer: 0,
   poisonToQuarry: 0,
   poisonGuarded: false,
@@ -200,7 +200,7 @@ describe('resolveTrickBank — a marked trick (DLR-90 AC3, AC5, AC6)', () => {
   const streak = { bank: 3, multiplier: 3 }
 
   it('AC5 — a clean loss the Quarry won costs no health and does not cash the bank', () => {
-    const r = resolveTrickBank(streak, facts({ envenomTrick: true }))
+    const r = resolveTrickBank(streak, facts({ timebombTrick: true }))
     expect(r.outcome).toBe(TrickOutcome.CleanLoss)
     expect(r.damageToPlayer).toBe(0)
     expect(r.cashOut).toBe(0)
@@ -209,17 +209,17 @@ describe('resolveTrickBank — a marked trick (DLR-90 AC3, AC5, AC6)', () => {
   })
 
   it('AC5 — the bank does not CLIMB either; the trick is replaced, not taken', () => {
-    expect(resolveTrickBank(streak, facts({ envenomTrick: true })).bankAdded).toBe(0)
+    expect(resolveTrickBank(streak, facts({ timebombTrick: true })).bankAdded).toBe(0)
   })
 
   it('AC5 — the Quarry is the side owed the delayed hit', () => {
-    expect(resolveTrickBank(streak, facts({ envenomTrick: true })).envenomTarget).toBe(
+    expect(resolveTrickBank(streak, facts({ timebombTrick: true })).timebombTarget).toBe(
       DuelSide.Quarry,
     )
   })
 
   it('AC6 — a marked trick the player won is an ORDINARY clean win, with no special branch', () => {
-    const marked = resolveTrickBank(streak, facts({ playerWon: true, envenomTrick: true }))
+    const marked = resolveTrickBank(streak, facts({ playerWon: true, timebombTrick: true }))
     const plain = resolveTrickBank(streak, facts({ playerWon: true }))
     expect(marked.outcome).toBe(TrickOutcome.CleanWin)
     expect(marked.bank).toBe(plain.bank)
@@ -231,33 +231,33 @@ describe('resolveTrickBank — a marked trick (DLR-90 AC3, AC5, AC6)', () => {
 
   it('AC6 — and the player is the side owed the delayed hit', () => {
     expect(
-      resolveTrickBank(streak, facts({ playerWon: true, envenomTrick: true })).envenomTarget,
+      resolveTrickBank(streak, facts({ playerWon: true, timebombTrick: true })).timebombTarget,
     ).toBe(DuelSide.Player)
   })
 
   it('leaves a DODGE alone — the Quarry won it, but the player BANKS it', () => {
-    const marked = resolveTrickBank(streak, facts({ skullTrick: true, envenomTrick: true }))
+    const marked = resolveTrickBank(streak, facts({ skullTrick: true, timebombTrick: true }))
     const plain = resolveTrickBank(streak, facts({ skullTrick: true }))
     expect(marked.outcome).toBe(TrickOutcome.Dodge)
     expect(marked.bankAdded).toBe(1)
     expect(marked.bank).toBe(plain.bank)
     expect(marked.multiplier).toBe(plain.multiplier)
-    expect(marked.envenomTarget).toBe(DuelSide.Quarry)
+    expect(marked.timebombTarget).toBe(DuelSide.Quarry)
   })
 
   it('still charges a SKULL the player chose to eat, on top of the delayed hit', () => {
     const r = resolveTrickBank(
       streak,
-      facts({ playerWon: true, skullTrick: true, envenomTrick: true }),
+      facts({ playerWon: true, skullTrick: true, timebombTrick: true }),
     )
     expect(r.outcome).toBe(TrickOutcome.SkullWin)
     expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
     expect(r.cashOut).toBe(6)
-    expect(r.envenomTarget).toBe(DuelSide.Player)
+    expect(r.timebombTarget).toBe(DuelSide.Player)
   })
 
   it('AC5 on the final trick — the PRESERVED bank still cashes at hand end', () => {
-    const r = resolveTrickBank(streak, facts({ envenomTrick: true, finalTrick: true }))
+    const r = resolveTrickBank(streak, facts({ timebombTrick: true, finalTrick: true }))
     expect(r.cashOut).toBe(9)
     expect(r.cashedAtHandEnd).toBe(true)
     expect(r.damageToPlayer).toBe(0)
@@ -265,8 +265,8 @@ describe('resolveTrickBank — a marked trick (DLR-90 AC3, AC5, AC6)', () => {
   })
 
   it('reports no target on an unmarked trick', () => {
-    expect(resolveTrickBank(streak, facts()).envenomTarget).toBeNull()
-    expect(resolveTrickBank(streak, facts({ playerWon: true })).envenomTarget).toBeNull()
+    expect(resolveTrickBank(streak, facts()).timebombTarget).toBeNull()
+    expect(resolveTrickBank(streak, facts({ playerWon: true })).timebombTarget).toBeNull()
   })
 })
 

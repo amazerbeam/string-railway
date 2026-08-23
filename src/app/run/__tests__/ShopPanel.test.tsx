@@ -18,7 +18,7 @@ import {
   FLASK_REFUSAL_MESSAGE,
   PURCHASE_REFUSAL_MESSAGE,
   SHOP_CATEGORY_LABEL,
-  SHOP_ENVENOM_LABEL,
+  SHOP_TIMEBOMB_LABEL,
   SHOP_FLASK_GROUP_LABEL,
   SHOP_GUARD_HELD,
   SHOP_GUARD_NONE,
@@ -41,7 +41,7 @@ const baseProps = {
   playerHearts: heartsAt6of10,
   cheatCount: 1,
   cheatSlotCount: 2,
-  envenomCharges: 2,
+  timebombCharges: 2,
   poisonGuardHeld: false,
   whetstones: 0,
   nextOpponentName: 'The Monarch',
@@ -55,7 +55,7 @@ const baseProps = {
 
 const noRefusals: Readonly<Record<ShopItem, PurchaseRefusal | null>> = {
   [ShopItem.Cheat]: null,
-  [ShopItem.Envenom]: null,
+  [ShopItem.Timebomb]: null,
   [ShopItem.PoisonGuard]: null,
   [ShopItem.Whetstone]: null,
   [ShopItem.Heal]: null,
@@ -138,35 +138,35 @@ describe('ShopPanel', () => {
     expect(screen.getByRole('group', { name: /purse/i }).textContent).toContain('1 / 2')
   })
 
-  it('states the Envenom charges held in the purse group (DLR-90 AC1)', () => {
+  it('states the Timebomb charges held in the purse group (DLR-90 AC1)', () => {
     // A value distinct from every other purse figure in `baseProps` (coins 3, cheatCount 1,
     // cheatSlotCount 2), so this cannot pass by coincidentally matching a sibling cell.
-    render(<ShopPanel {...baseProps} envenomCharges={5} refusals={noRefusals} />)
-    const cell = screen.getByText(SHOP_ENVENOM_LABEL).closest('.shop-purse-cell')
+    render(<ShopPanel {...baseProps} timebombCharges={5} refusals={noRefusals} />)
+    const cell = screen.getByText(SHOP_TIMEBOMB_LABEL).closest('.shop-purse-cell')
     expect(cell?.textContent).toContain('5')
   })
 
-  it('renders Envenom on the one-time-use shelf beside the Cheat, priced from priceOf', () => {
+  it('renders Timebomb on the one-time-use shelf beside the Cheat, priced from priceOf', () => {
     render(<ShopPanel {...baseProps} refusals={noRefusals} />)
     expect(
-      screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Envenom, null) }),
+      screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Timebomb, null) }),
     ).toBeTruthy()
   })
 
-  it('fires onBuy with ShopItem.Envenom when its control is clicked', () => {
+  it('fires onBuy with ShopItem.Timebomb when its control is clicked', () => {
     const onBuy = vi.fn()
     render(<ShopPanel {...baseProps} refusals={noRefusals} onBuy={onBuy} />)
     fireEvent.click(
-      screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Envenom, null) }),
+      screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Timebomb, null) }),
     )
-    expect(onBuy).toHaveBeenCalledWith(ShopItem.Envenom)
+    expect(onBuy).toHaveBeenCalledWith(ShopItem.Timebomb)
   })
 
-  it('disables a refused Envenom card, folding the refusal into its accessible name', () => {
-    const refusals = { ...noRefusals, [ShopItem.Envenom]: PurchaseRefusal.NotEnoughCoins }
+  it('disables a refused Timebomb card, folding the refusal into its accessible name', () => {
+    const refusals = { ...noRefusals, [ShopItem.Timebomb]: PurchaseRefusal.NotEnoughCoins }
     render(<ShopPanel {...baseProps} refusals={refusals} />)
     const button = screen.getByRole('button', {
-      name: shopItemAccessibleName(ShopItem.Envenom, PurchaseRefusal.NotEnoughCoins),
+      name: shopItemAccessibleName(ShopItem.Timebomb, PurchaseRefusal.NotEnoughCoins),
     })
     expect(button).toHaveProperty('disabled', true)
   })

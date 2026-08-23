@@ -12,7 +12,7 @@ interface DiscardPlateProps {
 }
 
 /**
- * DLR-100 AC1/AC9 — the felt-rail plate for the discard, a SIBLING of `CheatSlots`, `EnvenomCharge`
+ * DLR-100 AC1/AC9 — the felt-rail plate for the discard, a SIBLING of `CheatSlots`, `TimebombCharge`
  * and `ApplyDamagePlate` rather than a generalisation of any of them: the four controls keep
  * independent copy and independent components, so retuning one never risks the others.
  *

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DAMAGE_PER_HIT, DuelSide } from '../../hunt'
-import { envenomCard } from '../envenom'
+import { primeCard } from '../timebomb'
 import { playCard } from '../playCard'
 import { PlayerSide, RoundPhase, Suit, type Card, type RoundState } from '../types'
 
@@ -23,7 +23,7 @@ function stateWith(overrides: Partial<RoundState>): RoundState {
     trumpSuit: Suit.Bells,
     tricksWon: { player: 0, cpu: 0 },
     skulledCards: [],
-    envenomedCards: [],
+    primedCards: [],
     bank: 0,
     multiplier: 0,
     lastResolution: null,
@@ -53,12 +53,12 @@ describe('playCard — a marked trick reaches the bank rule (DLR-90 AC3)', () =>
 
   it('reports the target on the resolution, and replaces a clean loss', () => {
     // The player follows with a card that loses cleanly, having marked it first.
-    const marked = envenomCard(baseWithBank, PlayerSide.Player, losingFollowCard)
+    const marked = primeCard(baseWithBank, PlayerSide.Player, losingFollowCard)
     const result = playCard(marked, PlayerSide.Player, losingFollowCard)
     expect(result.ok).toBe(true)
     if (!result.ok) return
     const resolution = result.state.lastResolution
-    expect(resolution?.envenomTarget).toBe(DuelSide.Quarry)
+    expect(resolution?.timebombTarget).toBe(DuelSide.Quarry)
     expect(resolution?.damageToPlayer).toBe(0)
     expect(result.state.bank).toBe(marked.bank)
     expect(result.state.multiplier).toBe(marked.multiplier)
@@ -68,14 +68,14 @@ describe('playCard — a marked trick reaches the bank rule (DLR-90 AC3)', () =>
     const result = playCard(baseWithBank, PlayerSide.Player, losingFollowCard)
     expect(result.ok).toBe(true)
     if (!result.ok) return
-    expect(result.state.lastResolution?.envenomTarget).toBeNull()
+    expect(result.state.lastResolution?.timebombTarget).toBeNull()
     expect(result.state.lastResolution?.damageToPlayer).toBe(DAMAGE_PER_HIT)
   })
 
   it('carries the mark through the state spread, so it survives the trick', () => {
-    const marked = envenomCard(baseWithBank, PlayerSide.Player, losingFollowCard)
+    const marked = primeCard(baseWithBank, PlayerSide.Player, losingFollowCard)
     const result = playCard(marked, PlayerSide.Player, losingFollowCard)
     if (!result.ok) return
-    expect(result.state.envenomedCards).toEqual(marked.envenomedCards)
+    expect(result.state.primedCards).toEqual(marked.primedCards)
   })
 })

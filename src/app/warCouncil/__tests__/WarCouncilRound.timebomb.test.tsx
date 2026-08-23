@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
 import { HAND_SIZE } from '../../../hunt'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
-import { ENVENOM_ARMED_HINT, ENVENOM_EMPTY_LABEL, envenomAccessibleName } from '../labels'
-import { EnvenomStage } from '../roundUiState'
+import { TIMEBOMB_ARMED_HINT, TIMEBOMB_EMPTY_LABEL, timebombAccessibleName } from '../labels'
+import { TimebombStage } from '../roundUiState'
 import WarCouncilRound from '../WarCouncilRound'
 import {
   bankClimbBonusFixture,
@@ -13,7 +13,7 @@ import {
   coinsFixture,
   discardsRemainingFixture,
   encounterFixture,
-  envenomChargesFixture,
+  timebombChargesFixture,
   huntFixture,
   makeRound,
   maxHealthFixture,
@@ -37,7 +37,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       quarryLabel={quarryLabelFixture}
       cheats={overrides.cheats ?? []}
       coins={overrides.coins ?? coinsFixture}
-      envenomCharges={overrides.envenomCharges ?? envenomChargesFixture}
+      timebombCharges={overrides.timebombCharges ?? timebombChargesFixture}
       poisonGuardHeld={overrides.poisonGuardHeld ?? poisonGuardHeldFixture}
       bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
@@ -46,36 +46,36 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
   )
 }
 
-function envenomPlate(stage: EnvenomStage | null, charges = envenomChargesFixture) {
-  return screen.getByRole('button', { name: envenomAccessibleName(stage, charges) })
+function timebombPlate(stage: TimebombStage | null, charges = timebombChargesFixture) {
+  return screen.getByRole('button', { name: timebombAccessibleName(stage, charges) })
 }
 
-describe('WarCouncilRound — the Envenom rail (DLR-90)', () => {
+describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
   it('renders the charge plate in the felt rail with its held name', () => {
     renderRound()
-    expect(envenomPlate(null)).toBeTruthy()
+    expect(timebombPlate(null)).toBeTruthy()
   })
 
   it('renders inert rather than vanishing at zero charges', () => {
-    renderRound({ envenomCharges: 0 })
-    const empty = screen.getByRole('button', { name: ENVENOM_EMPTY_LABEL })
+    renderRound({ timebombCharges: 0 })
+    const empty = screen.getByRole('button', { name: TIMEBOMB_EMPTY_LABEL })
     expect(empty).toHaveProperty('disabled', true)
   })
 
   it('arms on the second click, reporting the armed hint and aria-pressed true', () => {
     renderRound()
-    const plate = envenomPlate(null)
+    const plate = timebombPlate(null)
     fireEvent.click(plate)
-    fireEvent.click(envenomPlate(EnvenomStage.Poised))
-    const armed = envenomPlate(EnvenomStage.Armed)
+    fireEvent.click(timebombPlate(TimebombStage.Poised))
+    const armed = timebombPlate(TimebombStage.Armed)
     expect(armed.getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByText(ENVENOM_ARMED_HINT)).toBeTruthy()
+    expect(screen.getByText(TIMEBOMB_ARMED_HINT)).toBeTruthy()
   })
 
   it('marks the tapped hand card and leaves the trick unplayed once armed', () => {
     renderRound()
-    fireEvent.click(envenomPlate(null))
-    fireEvent.click(envenomPlate(EnvenomStage.Poised))
+    fireEvent.click(timebombPlate(null))
+    fireEvent.click(timebombPlate(TimebombStage.Poised))
     const scoreboard = screen.getByRole('group', { name: /tricks won/i })
     expect(scoreboard.textContent).toMatch(/You0/)
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
@@ -95,8 +95,8 @@ describe('WarCouncilRound — the Envenom rail (DLR-90)', () => {
     const offSuit = screen.getByRole('button', { name: '7 of Bells' })
     expect(offSuit).toHaveProperty('disabled', true)
 
-    fireEvent.click(envenomPlate(null))
-    fireEvent.click(envenomPlate(EnvenomStage.Poised))
+    fireEvent.click(timebombPlate(null))
+    fireEvent.click(timebombPlate(TimebombStage.Poised))
     expect(screen.getByRole('button', { name: '7 of Bells' })).toHaveProperty('disabled', false)
     fireEvent.click(screen.getByRole('button', { name: '7 of Bells' }))
     expect(screen.getByRole('button', { name: '7 of Bells, poisoned' })).toBeTruthy()
@@ -104,19 +104,19 @@ describe('WarCouncilRound — the Envenom rail (DLR-90)', () => {
 
   it('gives the charge back unspent on a third click', () => {
     renderRound()
-    fireEvent.click(envenomPlate(null))
-    fireEvent.click(envenomPlate(EnvenomStage.Poised))
-    fireEvent.click(envenomPlate(EnvenomStage.Armed))
-    expect(screen.queryByText(ENVENOM_ARMED_HINT)).toBeNull()
-    expect(envenomPlate(null)).toBeTruthy()
+    fireEvent.click(timebombPlate(null))
+    fireEvent.click(timebombPlate(TimebombStage.Poised))
+    fireEvent.click(timebombPlate(TimebombStage.Armed))
+    expect(screen.queryByText(TIMEBOMB_ARMED_HINT)).toBeNull()
+    expect(timebombPlate(null)).toBeTruthy()
   })
 
   it('cancels the selection on Escape', () => {
     renderRound()
-    fireEvent.click(envenomPlate(null))
-    const poised = envenomPlate(EnvenomStage.Poised)
+    fireEvent.click(timebombPlate(null))
+    const poised = timebombPlate(TimebombStage.Poised)
     fireEvent.keyDown(poised.closest('[role="group"]') as Element, { key: 'Escape' })
-    expect(envenomPlate(null)).toBeTruthy()
+    expect(timebombPlate(null)).toBeTruthy()
   })
 
   it('is disabled while a trick reveal is held, and does not clear the reveal on click (stopPropagation)', () => {
@@ -128,7 +128,7 @@ describe('WarCouncilRound — the Envenom rail (DLR-90)', () => {
     fireEvent.click(bells7)
     expect(screen.getByText(/take the trick/i)).toBeDefined()
 
-    const plate = envenomPlate(null)
+    const plate = timebombPlate(null)
     expect(plate).toHaveProperty('disabled', true)
     fireEvent.click(plate)
     // The reveal is still on screen — a click on the disabled plate must not have bubbled to
@@ -158,8 +158,8 @@ describe('WarCouncilRound — the Envenom rail (DLR-90)', () => {
     expect(screen.getByLabelText(/cashes for 6\b/i)).toBeTruthy()
 
     // Mark the 2 of Bells, then play it.
-    fireEvent.click(envenomPlate(null))
-    fireEvent.click(envenomPlate(EnvenomStage.Poised))
+    fireEvent.click(timebombPlate(null))
+    fireEvent.click(timebombPlate(TimebombStage.Poised))
     const bells2 = screen.getByRole('button', { name: '2 of Bells' })
     fireEvent.click(bells2)
     const markedBells2 = screen.getByRole('button', { name: '2 of Bells, poisoned' })
@@ -177,7 +177,7 @@ describe('WarCouncilRound — the Envenom rail (DLR-90)', () => {
   it('threads a marked card into the decree when the Fox exchanges it in (regression — DecreePile wiring)', () => {
     // The reachable path the DecreePile-wiring defect actually hides behind: mark a card, then
     // give it away via the Fox so it BECOMES the decree. A prop-only test on `DecreePile` cannot
-    // catch this — the bug was in `WarCouncilRound` never passing `envenomed` at its mount, not in
+    // catch this — the bug was in `WarCouncilRound` never passing `primed` at its mount, not in
     // `DecreePile` itself.
     const round = makeRound({
       leader: PlayerSide.Player,
@@ -190,9 +190,9 @@ describe('WarCouncilRound — the Envenom rail (DLR-90)', () => {
     })
     renderRound({ initialState: round })
 
-    // Mark the 2 of Bells with Envenom.
-    fireEvent.click(envenomPlate(null))
-    fireEvent.click(envenomPlate(EnvenomStage.Poised))
+    // Mark the 2 of Bells with Timebomb.
+    fireEvent.click(timebombPlate(null))
+    fireEvent.click(timebombPlate(TimebombStage.Poised))
     fireEvent.click(screen.getByRole('button', { name: '2 of Bells' }))
     expect(screen.getByRole('button', { name: '2 of Bells, poisoned' })).toBeTruthy()
 
@@ -207,7 +207,7 @@ describe('WarCouncilRound — the Envenom rail (DLR-90)', () => {
     expect(screen.getByRole('button', { name: '2 of Bells, poisoned' })).toBeTruthy()
   })
 
-  it('reports onComplete with envenomCharges reflecting what was spent', () => {
+  it('reports onComplete with timebombCharges reflecting what was spent', () => {
     const onComplete = vi.fn()
     const round = makeRound({
       tricksPlayed: HAND_SIZE - 1,
@@ -218,8 +218,8 @@ describe('WarCouncilRound — the Envenom rail (DLR-90)', () => {
     })
     renderRound({ initialState: round, onComplete })
 
-    fireEvent.click(envenomPlate(null))
-    fireEvent.click(envenomPlate(EnvenomStage.Poised))
+    fireEvent.click(timebombPlate(null))
+    fireEvent.click(timebombPlate(TimebombStage.Poised))
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
     const marked = screen.getByRole('button', { name: '7 of Bells, poisoned' })
@@ -230,6 +230,6 @@ describe('WarCouncilRound — the Envenom rail (DLR-90)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Deal the next Hunt' }))
 
     expect(onComplete).toHaveBeenCalledTimes(1)
-    expect(onComplete.mock.calls[0][0].envenomCharges).toBe(envenomChargesFixture - 1)
+    expect(onComplete.mock.calls[0][0].timebombCharges).toBe(timebombChargesFixture - 1)
   })
 })

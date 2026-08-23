@@ -1,7 +1,7 @@
 import {
   CHEAT_PRICE,
   CHEAT_SLOT_COUNT,
-  ENVENOM_PRICE,
+  TIMEBOMB_PRICE,
   HEAL_PRICE,
   POISON_GUARD_PRICE,
   WHETSTONE_PRICE,
@@ -10,7 +10,7 @@ import type { Coins, Health } from './types'
 
 export const ShopItem = {
   Cheat: 'cheat',
-  Envenom: 'envenom',
+  Timebomb: 'timebomb',
   PoisonGuard: 'poisonGuard',
   Whetstone: 'whetstone',
   Heal: 'heal',
@@ -21,7 +21,7 @@ export type ShopItem = (typeof ShopItem)[keyof typeof ShopItem]
  *  items itself. The Heal stays LAST because `UNCATEGORISED_SHOP_ITEMS` derives from this order. */
 export const SHOP_ITEMS: readonly ShopItem[] = [
   ShopItem.Cheat,
-  ShopItem.Envenom,
+  ShopItem.Timebomb,
   ShopItem.PoisonGuard,
   ShopItem.Whetstone,
   ShopItem.Heal,
@@ -74,8 +74,8 @@ export function priceOf(item: ShopItem): Coins {
   switch (item) {
     case ShopItem.Cheat:
       return CHEAT_PRICE
-    case ShopItem.Envenom:
-      return ENVENOM_PRICE
+    case ShopItem.Timebomb:
+      return TIMEBOMB_PRICE
     case ShopItem.PoisonGuard:
       return POISON_GUARD_PRICE
     case ShopItem.Whetstone:
@@ -98,7 +98,7 @@ export function categoryOf(item: ShopItem): ShopCategory | null {
     case ShopItem.Cheat:
       return ShopCategory.OneTimeUse
     // DLR-90 AC1: the one-time-use rung, which DLR-89 built for exactly this.
-    case ShopItem.Envenom:
+    case ShopItem.Timebomb:
       return ShopCategory.OneTimeUse
     // DLR-91 AC1 — the fight-long rung, which DLR-89 built and left empty for exactly this.
     case ShopItem.PoisonGuard:

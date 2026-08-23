@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  ENVENOM_PLAYER_DAMAGE,
-  ENVENOM_QUARRY_DAMAGE,
+  TIMEBOMB_PLAYER_DAMAGE,
+  TIMEBOMB_QUARRY_DAMAGE,
   FlaskRefusal,
   flaskHealAmount,
   HEAL_HEALTH_RESTORED,
@@ -58,9 +58,9 @@ describe('shopLabels', () => {
     expect(SHOP_ITEM_BLURB[ShopItem.Heal]).toContain(String(HEAL_HEALTH_RESTORED))
   })
 
-  it('interpolates both Envenom figures into the blurb rather than quoting a literal', () => {
-    expect(SHOP_ITEM_BLURB[ShopItem.Envenom]).toContain(String(ENVENOM_QUARRY_DAMAGE))
-    expect(SHOP_ITEM_BLURB[ShopItem.Envenom]).toContain(String(ENVENOM_PLAYER_DAMAGE))
+  it('interpolates both Timebomb figures into the blurb rather than quoting a literal', () => {
+    expect(SHOP_ITEM_BLURB[ShopItem.Timebomb]).toContain(String(TIMEBOMB_QUARRY_DAMAGE))
+    expect(SHOP_ITEM_BLURB[ShopItem.Timebomb]).toContain(String(TIMEBOMB_PLAYER_DAMAGE))
   })
 
   it('DLR-92 — blurbs the Whetstone as stacking, without quoting a price', () => {

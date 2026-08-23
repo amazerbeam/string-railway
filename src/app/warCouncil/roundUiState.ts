@@ -3,7 +3,7 @@
  * reducer operates ON, separated from the reducer that operates on it.
  *
  * Split out of `roundReducer.ts` on DLR-90: that file had reached 382 of its 400-line budget
- * before Envenom's handlers were written. The seam is deliberate rather than arbitrary — this file
+ * before Timebomb's handlers were written. The seam is deliberate rather than arbitrary — this file
  * is what a COMPONENT imports (the state shape, the action kinds, the predicates it renders from),
  * and `roundReducer.ts` is the transition function nothing but the mount needs. Nothing here
  * decides anything.
@@ -23,7 +23,7 @@ import {
 } from '../../warCouncil'
 import {
   apCostOf,
-  hasPendingEnvenom,
+  hasPendingTimebomb,
   isEncounterResolved,
   type Buff,
   type BuffActivationState,
@@ -55,15 +55,15 @@ export interface CheatSelection {
   readonly stage: CheatStage
 }
 
-/** AC2 — the two stages of one Envenom selection, mirroring `CheatStage` exactly because AC2 asks
+/** AC2 — the two stages of one Timebomb selection, mirroring `CheatStage` exactly because AC2 asks
  *  for the Cheat's arm/commit shape rather than a new interaction grammar. */
-export const EnvenomStage = {
+export const TimebombStage = {
   /** One tap — a selection, no effect. The misclick guard: the mark is irreversible. */
   Poised: 'poised',
   /** Two taps — the next tapped hand card is MARKED rather than played. */
   Armed: 'armed',
 } as const
-export type EnvenomStage = (typeof EnvenomStage)[keyof typeof EnvenomStage]
+export type TimebombStage = (typeof TimebombStage)[keyof typeof TimebombStage]
 
 export interface RoundUiState {
   readonly round: WarCouncilState
@@ -96,15 +96,15 @@ export interface RoundUiState {
   readonly cheatSelection: CheatSelection | null
   /** AC2 — charges held, mirrored from the mount's opening prop and decremented as a card is
    *  marked. Run state carried for the life of the hand — the same contract `cheats` documents. */
-  readonly envenomCharges: number
+  readonly timebombCharges: number
   /** The hand's OWN transient — dies on remount, never touches `RunState`. ONE nullable field
    *  rather than two booleans, for `CheatSelection`'s stated reason: `poised` and `armed` are
    *  stages of one selection and two fields would admit the invalid pair "poised AND armed".
    *  No id, unlike `CheatSelection` — charges are fungible, and the card marked is the identity. */
-  readonly envenomStage: EnvenomStage | null
+  readonly timebombStage: TimebombStage | null
   /** DLR-91 AC4 — mirrored from the mount's opening prop and flipped to `false` the moment a
    *  resolved trick reports `poisonGuardSpent`. Run state carried for the life of the hand, the
-   *  same contract `cheats` and `envenomCharges` document. */
+   *  same contract `cheats` and `timebombCharges` document. */
   readonly poisonGuardHeld: boolean
   /** DLR-92 AC4 — the bank-climb bonus in force for this hand, mirrored from the mount's opening
    *  prop. Read-only for the hand's whole life: no action ever writes it, because a hand cannot
@@ -113,7 +113,7 @@ export interface RoundUiState {
   /** DLR-94 — the Apply Damage plate has been tapped once and awaits its confirming second tap.
    *  The hand's OWN transient: dies on remount, never touches `RunState`.
    *
-   *  A single BOOLEAN rather than `EnvenomStage`'s two-stage union, deliberately. Envenom needs
+   *  A single BOOLEAN rather than `TimebombStage`'s two-stage union, deliberately. Timebomb needs
    *  two stages because its armed state waits for a THIRD tap on a hand card; Apply Damage's
    *  second tap IS the action, so "poised" is the only state there is to be in. */
   readonly applyPoised: boolean
@@ -128,7 +128,7 @@ export interface RoundUiState {
    *  `openingEncounter` above already documents. */
   readonly unplayedAtResolve: number | null
   /** DLR-100 AC5 — mirrored from the mount's opening prop, decremented on each committed discard.
-   *  Run state carried for the life of the hand — the same contract `cheats` and `envenomCharges`
+   *  Run state carried for the life of the hand — the same contract `cheats` and `timebombCharges`
    *  document. */
   readonly discardsRemaining: number
   /** DLR-100 — the hand's OWN transient: dies on remount, never touches `RunState`. `null` when
@@ -143,7 +143,7 @@ export interface RoundUiSeed {
   readonly round: WarCouncilState
   readonly encounter: EncounterState
   readonly cheats: readonly CheatCard[]
-  readonly envenomCharges: number
+  readonly timebombCharges: number
   readonly poisonGuardHeld: boolean
   readonly bankClimbBonus: number
   readonly discardsRemaining: number
@@ -161,8 +161,8 @@ export const RoundUiActionKind = {
   CarryOn: 'carryOn',
   TapCheat: 'tapCheat',
   CancelCheat: 'cancelCheat',
-  TapEnvenom: 'tapEnvenom',
-  CancelEnvenom: 'cancelEnvenom',
+  TapTimebomb: 'tapTimebomb',
+  CancelTimebomb: 'cancelTimebomb',
   TapApplyDamage: 'tapApplyDamage',
   CancelApplyDamage: 'cancelApplyDamage',
   TapDiscard: 'tapDiscard',
@@ -177,8 +177,8 @@ export type RoundUiAction =
   | { readonly kind: typeof RoundUiActionKind.CarryOn }
   | { readonly kind: typeof RoundUiActionKind.TapCheat; readonly id: CheatCardId }
   | { readonly kind: typeof RoundUiActionKind.CancelCheat }
-  | { readonly kind: typeof RoundUiActionKind.TapEnvenom }
-  | { readonly kind: typeof RoundUiActionKind.CancelEnvenom }
+  | { readonly kind: typeof RoundUiActionKind.TapTimebomb }
+  | { readonly kind: typeof RoundUiActionKind.CancelTimebomb }
   | { readonly kind: typeof RoundUiActionKind.TapApplyDamage }
   | { readonly kind: typeof RoundUiActionKind.CancelApplyDamage }
   | { readonly kind: typeof RoundUiActionKind.TapDiscard }
@@ -198,8 +198,8 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     openingEncounter: seed.encounter,
     cheats: seed.cheats,
     cheatSelection: null,
-    envenomCharges: seed.envenomCharges,
-    envenomStage: null,
+    timebombCharges: seed.timebombCharges,
+    timebombStage: null,
     poisonGuardHeld: seed.poisonGuardHeld,
     bankClimbBonus: seed.bankClimbBonus,
     applyPoised: false,
@@ -218,9 +218,9 @@ export function cheatArmed(state: RoundUiState): boolean {
 
 /** `true` when the next tapped hand card should be MARKED rather than played. EXPORTED so the
  *  mount's tappability and the reducer's branch read the SAME predicate — two readings of "is
- *  Envenom armed" is exactly how a greyed card and a reducer branch drift apart. */
-export function envenomArmed(state: RoundUiState): boolean {
-  return state.envenomStage === EnvenomStage.Armed
+ *  Timebomb armed" is exactly how a greyed card and a reducer branch drift apart. */
+export function timebombArmed(state: RoundUiState): boolean {
+  return state.timebombStage === TimebombStage.Armed
 }
 
 /** The felt is waiting on the player's own card — nothing is held, nothing is prompting, the
@@ -229,7 +229,7 @@ export function envenomArmed(state: RoundUiState): boolean {
  *  EXPORTED and moved here from `roundReducer.ts` on DLR-94, because `WarCouncilRound.tsx` was
  *  recomputing the identical six clauses inline as `interactive`. Two readings of one gate is how
  *  a greyed control and a reducer branch drift apart — the same reason `cheatArmed` and
- *  `envenomArmed` below are exported rather than recomputed in the component. */
+ *  `timebombArmed` below are exported rather than recomputed in the component. */
 export function canAct(state: RoundUiState): boolean {
   return (
     state.round.phase !== RoundPhase.Complete &&
@@ -244,19 +244,19 @@ export function canAct(state: RoundUiState): boolean {
 /** The plain values `applyDamageRefusalFor` needs, assembled in ONE place so the reducer's guard
  *  and the plate's disabled state cannot read availability differently.
  *
- *  This is where the app layer's shape is translated into the pure module's — `hasPendingEnvenom`
+ *  This is where the app layer's shape is translated into the pure module's — `hasPendingTimebomb`
  *  and `canAct` are read HERE and nowhere else, which is what lets `voluntaryCashOut.ts` take four
  *  plain values and stay ignorant of both `EncounterState` and `RoundUiState`. */
 export function applyDamageStock(state: RoundUiState): ApplyDamageStock {
   return {
     bank: state.round.bank,
     multiplier: state.round.multiplier,
-    poisonPending: hasPendingEnvenom(state.encounter),
+    poisonPending: hasPendingTimebomb(state.encounter),
     canAct: canAct(state),
   }
 }
 
-/** `true` once the mode is open — mirrors `envenomArmed`'s "is a hand-card tap reinterpreted" role,
+/** `true` once the mode is open — mirrors `timebombArmed`'s "is a hand-card tap reinterpreted" role,
  *  but for a MULTI-card selection rather than a single armed target. */
 export function discardSelecting(state: RoundUiState): boolean {
   return state.discardSelection !== null

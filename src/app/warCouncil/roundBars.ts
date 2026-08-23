@@ -23,7 +23,7 @@ import type { RoundUiState } from './roundUiState'
  *  · the AT-RISK preview (DLR-86 AC3) is the streak over `bank` and `multiplier`, which the engine
  *    already writes on every trick — it resets itself when they reset (AC5), because it is a view
  *    of them rather than a copy.
- *  · the DOOMED hearts (DLR-101) are `encounter.pendingEnvenom`, which the engine books when a
+ *  · the DOOMED hearts (DLR-101) are `encounter.pendingTimebomb`, which the engine books when a
  *    marked trick resolves and clears when it pays. Read rather than remembered, for the same
  *    reason: a copy would need an effect, and an effect would need to survive StrictMode.
  *  · the BREAKING hearts (DLR-86 AC2) are the damage of the trick currently held on screen.
@@ -39,7 +39,7 @@ export function barsForRound(
   ui: RoundUiState,
   maxHealth: Readonly<Record<DuelSide, Health>>,
 ): readonly HealthBarView[] {
-  const pendingPoison = ui.encounter.pendingEnvenom
+  const pendingPoison = ui.encounter.pendingTimebomb
   return duelHealthBars(
     ui.encounter.health,
     projectedDepletion(ui.encounter.health, ui.round.bank, ui.round.multiplier, pendingPoison),

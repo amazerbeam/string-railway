@@ -1,4 +1,4 @@
-import { DuelSide, NO_PENDING_ENVENOM, type Damage, type Health } from '../../hunt'
+import { DuelSide, NO_PENDING_TIMEBOMB, type Damage, type Health } from '../../hunt'
 
 /** The two sides, in the order the mirror draws them. Player anchors the left edge, the Quarry
  *  the right, and both deplete toward the centre. */
@@ -60,7 +60,7 @@ export const NO_BREAKING: Readonly<Record<DuelSide, Damage>> = {
 export interface HealthBarOverlays {
   /** The damage of the event currently on screen — the `breaking` hearts (DLR-86 AC2). */
   readonly breaking?: Readonly<Record<DuelSide, Damage>>
-  /** DLR-101 — poison already booked against each side, i.e. `encounter.pendingEnvenom` passed
+  /** DLR-101 — poison already booked against each side, i.e. `encounter.pendingTimebomb` passed
    *  through unchanged. COMMITTED, unlike the streak preview: it lands at the resolution of the
    *  next trick and nothing on the felt stops it, which is why it gets its own heart state
    *  rather than reusing `atRisk`. */
@@ -117,7 +117,7 @@ export function projectedDepletion(
  * side it depletes — `incomingFrom` performed that crossing before this module ever sees it. It
  * defaults to `NO_BREAKING` so every existing call site compiles unchanged; only a caller that
  * wants a "breaking" heart passes it. `overlays.doomed` is DLR-101's booked poison, defaulting to
- * `NO_PENDING_ENVENOM`.
+ * `NO_PENDING_TIMEBOMB`.
  *
  * Returns an ARRAY, which is what makes §6's net-only fallback (AC8) a one-line change here —
  * return a single view whose `pending` is the net — rather than a rewrite in the component.
@@ -139,7 +139,7 @@ export function duelHealthBars(
   overlays: HealthBarOverlays = {},
 ): readonly HealthBarView[] {
   const breaking = overlays.breaking ?? NO_BREAKING
-  const doomedBySide = overlays.doomed ?? NO_PENDING_ENVENOM
+  const doomedBySide = overlays.doomed ?? NO_PENDING_TIMEBOMB
 
   return BAR_ORDER.map((side) => {
     const sideMax = max[side]
