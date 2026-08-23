@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 5/22 (23%) — done: 5 shipped, 0 blocked (+1 out-of-band shipped) | now: DLR-108 "Buff activation flow and tiered AP costs" (6/22) — fb-plan starting
+**Progress:** 6/22 (27%) — done: 6 shipped, 0 blocked (+2 out-of-band: 1 shipped, 1 PARTIAL) | now: HALTED — session limit, resets 18:30 Europe/Dublin
 
 ## Run order
 
@@ -1280,3 +1280,92 @@ all seven `CONSUMABLE_AP_COST` rows, and the four caps `MAX_REFUND_PER_HAND = 6`
 `MAX_COIN_BONUS_PER_HAND = 10`. Every one is agent-chosen on DLR-111/DLR-124 under those
 tickets' own tuning-value overrides and **has never been played**. Retuning the whole 78-card
 pool is an edit to two tables.
+
+## Coordinator decisions — DLR-108 reconciliation
+
+- **Accepted a divergence from the ticket's own AC2.** DLR-108 specified a flat
+  `BUFF_ACTIVATION_COST = {3,5,8}`. Not shipped: that constant predates DLR-111, and cost now
+  depends on family and reward axis as well as tier. The constant name has zero hits in
+  `src/`, so nothing was broken by omitting it. **One named number moves: gold Cheat is 7 AP,
+  not 8.** Confirm or reverse.
+- **Accepted `apCost` as a derived lookup, not a field on `Buff`.** `apCostOf(buff)` computes
+  over `REWARD_BASE` + `CONDITION_MODIFIER`, clamped 1–6, with `CONSUMABLE_AP_COST` for the
+  seven off-curve cards. This is what makes retuning the pool a two-table edit, and the test
+  checks DLR-111's published table cell by cell. **Time-critical:** if DLR-112's slot machine
+  ever needs a per-card discounted price, this must become a field instead — decide before
+  DLR-112 mints buffs from a reel.
+- **Accepted a deliberate type duplication.** `target.suit` is a hunt-local `BuffTargetSuit`,
+  not `warCouncil`'s `Suit`, because `src/hunt/` cannot import `src/warCouncil/` without a
+  cycle. Same values, pinned member-for-member by a test. The alternative is moving `Suit`
+  down into `src/hunt/`.
+- **Accepted a narrowing of DLR-111's finding 2:** Blade maps onto the existing `magnitude`
+  axis rather than a new `flatDamage` one, to avoid two names for one quantity.
+- **No divergence from DLR-124.** R1–R7 transcribed. R6's reset-per-hand-not-on-a-hit
+  asymmetry is enforced structurally — `startHandAccrual()` is the only reset and no per-hit
+  reset function exists, asserted against the module's own export surface.
+- **The 400-line breach was fixed in-ticket, not reported.** `config.ts` was 385/400; split
+  into `apConfig.ts` with a re-export, now 372.
+- Shape gaps closed: `BuffKind` 3 → 19, `BuffRewardAxis` 3 → 11, `BuffCondition.target` added
+  as optional `{ suit?, rank? }` (expressing 49 parameterised templates without 33 extra
+  `BuffKind` members), `apCost` as above. `BuffKind`'s widening is purely additive — there is
+  no `switch` on it anywhere in `src/`, verified independently by the Defender.
+- **Nothing added is reachable in the app.** No buff is drawn, no condition evaluated, no
+  button activates one; `BuffActivationState` has no owner. QA correctly skipped live
+  verification. The buff system is being built bottom-up and first becomes visible at DLR-114
+  and DLR-116.
+
+### Forward note carried into later prompts
+
+When a later ticket wires `RunState.buffs` into `buffActivationStock`, the seeded
+`Unassigned` placeholders will hit `apCostOf`'s `RangeError` unless that UI filters them
+first. Raised by the Defender; carried into DLR-114 and DLR-116.
+
+## DLR-129 — Retire the Envenom name (out-of-band) — PARTIAL, phase 1 of 2
+
+**The agent driving this ticket died mid-run on a session limit** (resets 18:30 Europe/Dublin),
+after reporting phase 1 green and dispatching phase 2. It wrote no log section, so this
+section is the coordinator's, written from the working tree and from gates it ran itself.
+
+### What landed — commit `e5c8210`, pushed
+
+Phase 1, the identifier rename, is **complete**: `grep -rni "envenom" src` over every `.ts`
+and `.tsx` returns **0 files**. Four files moved with `git mv` so history follows:
+`EnvenomCharge.tsx` → `TimebombCharge.tsx` and its spec, plus
+`roundReducer.envenom.test.ts` → `roundReducer.timebomb.test.ts`,
+`roundReducer.poison.test.ts` → `roundReducer.timebombQueue.test.ts`, and
+`WarCouncilRound.envenom.test.tsx` → `WarCouncilRound.timebomb.test.tsx`.
+96 paths in total; the agent reported 953 substitutions. The bronze damage constants keep
+their values and gain matching names — **no number changed value.**
+
+### What did not land
+
+**Phase 2, the poison vocabulary, never ran.** `poison` still appears in **73 files**,
+including four CSS files and the player-facing strings. The health bar still announces
+**"10 of 10. 4 poisoned."** and the `doomed` heart state shipped at `2c8f6bc` is untouched.
+
+**The copy decision the ticket asked for was never made.** Whether Timebomb keeps poison
+vocabulary or takes its own (ticking / fuse / detonation) is still open, and is still the
+developer's to make or confirm.
+
+### Coordinator decisions
+
+- **Committed and pushed a knowingly partial ticket.** The alternative was leaving 96 modified
+  paths and four uncommitted renames sitting on the branch across a session boundary, which is
+  the one state this run must never rest in. The ticket's own dispatch anticipated this: *"a
+  clean partial is worth more than a behaviour change smuggled into a rename."* The commit
+  message states plainly that phase 2 is outstanding.
+- **Verified all four gates myself rather than trusting the dead agent's last message.**
+  typecheck exit 0 · lint exit 0 · vitest **91 files, 1192 tests, 0 failures** · build exit 0.
+  The test count is **identical to the pre-rename baseline**, which is the strongest available
+  evidence a pure rename did not change behaviour.
+- **DLR-129 is NOT transitioned to Ready for Test** and is not counted as shipped. It stays
+  open for phase 2.
+- The `.claude/contract/DLR-129-retire-the-envenom-name/` folder is left in place, uncommitted,
+  for whoever resumes.
+
+## RUN HALTED — session limit
+
+The run stopped after 6 of 22 sprint tickets, at `e5c8210`. Not a pipeline failure and not a
+blocked ticket: the API session limit was reached. Resumption should start at **DLR-129 phase
+2**, then continue with **DLR-109 (7/22)**.
+
