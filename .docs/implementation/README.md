@@ -623,8 +623,11 @@ the ticket or the design doc states one.
 
 **The seeded buffs carry inert placeholder content, on purpose.** `UNASSIGNED_BUFF_CONDITION` /
 `UNASSIGNED_BUFF_REWARD` (`{ kind: 'unassigned' }`, `{ axis: magnitude, value: 0 }`) fill every
-starting buff's `condition`/`reward`, because the real card catalog is explicitly "TO BE REVIEWED,
-not committed" in the design doc (§5) and belongs to a separate, not-yet-authored ticket. Nothing
+starting buff's `condition`/`reward`, because the real card catalog was explicitly "TO BE REVIEWED,
+not committed" in the design doc (§5) and belonged to a separate ticket. That ticket (DLR-111)
+landed on 2026-08-23 — the v1 list is authored at
+`.docs/design/Balatro-Forbidden-Solitaire/v1-buff-card-list.md` — but nothing in `src/` reads it
+yet, so the placeholder content below is unchanged and still correct. Nothing
 in this ticket reads or evaluates a buff's `condition`/`reward` — no activation logic, no UI, no
 slot-machine draw, per the ticket's own AC4. Start at [hunt/buff-pile.md](hunt/buff-pile.md) for the
 type's four fields, the placeholder-content decision, why the pile follows `whetstones` rather than

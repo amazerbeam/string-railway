@@ -37,10 +37,20 @@ no authority to give.
 `UNASSIGNED_BUFF_CONDITION` (`{ kind: 'unassigned' }`) and `UNASSIGNED_BUFF_REWARD` (`{ axis:
 magnitude, value: 0 }`) fill every buff `seedStartingBuffPile` mints. The real card catalog — which
 condition/reward pairings actually exist, at what magnitudes — is explicitly deferred to DLR-103's
-T7a, a design-only ticket not yet done, and since nothing in this ticket reads or evaluates a buff's
+T7a, a design-only ticket, and since nothing in this ticket reads or evaluates a buff's
 `condition`/`reward` (AC4), there was nothing this ticket could correctly guess at. The two constants
 are exported so the seed function and its own test share one literal rather than each hard-coding a
 copy that could drift.
+
+> **T7a landed on 2026-08-23 (DLR-111), and the placeholder content is still correct.** The v1
+> catalog is now authored — 78 named, AP-costed card templates at
+> `.docs/design/Balatro-Forbidden-Solitaire/v1-buff-card-list.md`. Nothing in `src/` reads it yet,
+> so `seedStartingBuffPile` still mints `UNASSIGNED_BUFF_CONDITION`/`UNASSIGNED_BUFF_REWARD` and
+> that remains the right content for a pile with no consumer. What the list changes is that the
+> shape gaps are now known rather than open: `BuffKind` needs one member per template family,
+> `BuffRewardAxis` needs eight more axes, `Buff` needs an `apCost` field it does not have, and
+> `BuffCondition`'s payload-free `{ kind: string }` cannot express the suit- and rank-parameterised
+> families without an optional `target`. Those four are DLR-108's and DLR-112's to close.
 
 **The pile is carried through `advanceRun`/`recordEncounter` with no explicit parameter, following
 `whetstones` rather than `cheats`.** `cheats` is an explicit, required parameter to `recordEncounter`

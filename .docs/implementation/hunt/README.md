@@ -238,8 +238,9 @@ replaces a buff mid-hand. The buff pile also has **no capacity cap**, unlike `CH
 deliberate scope decision recorded in the ticket's plan, not an oversight. The four seeded buffs
 carry deliberately inert placeholder content (`UNASSIGNED_BUFF_CONDITION` / `UNASSIGNED_BUFF_REWARD`
 — `{ kind: 'unassigned' }`, `{ axis: magnitude, value: 0 }`), because the real card catalog is
-explicitly "TO BE REVIEWED, not committed" (design doc §5) and belongs to a separate, not-yet-authored
-ticket; nothing in this ticket reads or evaluates a buff's `condition`/`reward` at all. See
+explicitly "TO BE REVIEWED, not committed" (design doc §5) and belonged to a separate ticket —
+DLR-111, which landed 2026-08-23 and authored the v1 list without giving it a reader in `src/`;
+nothing in this ticket reads or evaluates a buff's `condition`/`reward` at all. See
 [The buff pile — the type, the placeholder seed, and why it follows `whetstones`](buff-pile.md).
 
 ## Key types & exports
@@ -543,7 +544,11 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   later tickets (DLR-103's T4, T7, T8); this ticket only shipped the shape and the persistence. The
   four buffs a fresh run starts with all carry `UNASSIGNED_BUFF_CONDITION`/`UNASSIGNED_BUFF_REWARD`
   — inert, not a preview of the real catalog — because the design doc's own card-template list (§5)
-  is explicitly "TO BE REVIEWED, not committed" and authoring it is DLR-103's T7a, not this ticket's.
+  was explicitly "TO BE REVIEWED, not committed" and authoring it was DLR-103's T7a, not this
+  ticket's. **T7a landed on 2026-08-23 (DLR-111):** the v1 catalog is authored at
+  `.docs/design/Balatro-Forbidden-Solitaire/v1-buff-card-list.md` — 78 named, AP-costed card
+  templates. It has no reader in `src/` yet, so the placeholder content above is unchanged and
+  still correct; what it settles is the target shape DLR-108 and DLR-112 must build toward.
 - **The buff pile has no capacity cap, and whether it should get one is undecided.** Nothing in
   DLR-105, design doc §3, or §8 states a cap — §8 calls it "a growing pool," and the closest
   existing precedent is the uncapped `whetstones` count, not the capped `cheats`. Adding one later

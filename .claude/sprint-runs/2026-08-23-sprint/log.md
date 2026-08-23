@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 2/22 (9%) — done: 2 shipped, 0 blocked (+1 out-of-band shipped) | now: DLR-107 "Migrate Cheat and Timebomb into the ordinary buff pile" (3/22) — fb-plan starting
+**Progress:** 3/22 (14%) — done: 3 shipped, 0 blocked (+1 out-of-band shipped) | now: DLR-111 "Design: author the v1 buff card list" (4/22) — fb-plan starting
 
 ## Run order
 
@@ -689,3 +689,195 @@ one.
   where the contract predicted 2 — the third being the member-set pinning assertion the contract
   itself specifies verbatim, not a call site binding by string. Reported honestly rather than rounded
   to the expected number.
+
+## Coordinator decisions — DLR-107 reconciliation
+
+- **Accepted the AC3 deferral, and it leaves a seam every later ticket must know about.**
+  DLR-107 contradicts itself: AC3 says remove the old `CheatStage`/`EnvenomStage` machines,
+  while its own Scope Boundaries put the felt-rail UI removal out of scope. The agent took the
+  specific clause over the general one, which is the right reading. **Consequence: Cheat and
+  Timebomb now exist twice** — the live mechanic the felt actually drives, and an inert `Buff`
+  representation in `buffCatalog.ts` that nothing reads yet. Pushed deliberately. Every later
+  ticket in this run that touches buffs is being told which of the two is live, so the
+  duplication is retired by a ticket that owns it rather than by accident.
+- **Accepted an unchosen tuning value.** `TIMEBOMB_TIER_MULTIPLIER = {bronze 1, silver 2,
+  gold 3}` — neither the ticket nor hybrid-design §3 states Timebomb's tier magnitudes, so
+  this would normally be a hard pause. It yields 4/8/12 Quarry-side and 2/4/6 player-side,
+  meaning **a gold Timebomb costs the player 6 of a 10-point bar**. Flagged for the developer:
+  a flatter curve may be wanted. Bronze is safe by construction — it reads the existing
+  `ENVENOM_QUARRY_DAMAGE` / `ENVENOM_PLAYER_DAMAGE` constants rather than restating 4 and 2.
+- **Accepted a widening of the DLR-105 model:** `Buff` gained a required `kind` discriminator,
+  without which AC1/AC2 were unstatable. Free today only because the pile is not yet persisted
+  — **after DLR-113 this would need a schema bump** under the new save-data rule. Whether
+  `kind` is the right home for the discriminator is cheap to change now and expensive once the
+  slot machine (DLR-112) and the Vault (DLR-113) both construct buffs.
+- No player-visible behaviour changed. `run.purchaseIsolation.test.ts` was left untouched and
+  stayed green; no `.tsx` file was modified.
+
+
+---
+
+## DLR-111 — Design: author the v1 buff card list
+
+**Slug:** `DLR-111-author-v1-buff-card-list` · **Status:** GREEN · **Label:** `design` (docs-only, zero `src/` diff)
+
+Pulled ahead of DLR-108 and DLR-112 deliberately: both consume this list, and building either
+against a placeholder would bake the placeholder in.
+
+**What was already on disk.** The developer had already done the hard half at `d412b58`:
+`v1-buff-card-list.md` (103 lines) plus `DLR-111-v1-buff-list-review.txt` settle *which* templates
+ship, their reward pairings, their tier magnitudes and the three-category taxonomy. Those were
+treated as inputs, not questions. This ticket added the layer DLR-108/DLR-112 actually need: a name
+and an AP cost for every card, `MAX_REFUND_PER_HAND`, and a statement of where the list fits
+`buffCatalog.ts`. The doc went 103 → 531 lines.
+
+### Plan defaults taken (gate overridden, nothing developer-confirmed)
+
+- **Plan approval gate auto-approved unseen.** `tasks.md` carries the note.
+- **No mockup was built or auto-approved** — the work is non-UI, so Step 3.5 skipped silently. Nothing
+  was approved sight-unseen on the UI side.
+- **Reviewer trio not dispatched.** No `src/` path in the file map — the standing docs-only precedent.
+  The four gates were still run in full (below).
+- **Skill classified `game-designer`, not `react-frontend`** — the legitimate non-code case.
+- **`game-designer`'s "never pick a tuning value" rule was deliberately deviated from**, per this run's
+  override. Every chosen number is marked *agent-chosen, 2026-08-23* inside the document so a later
+  reader cannot mistake it for a developer decision the way §9's Decided rows read.
+- **Open items resolved:** passive buff stacking → stays a separate ticket; combo template #16 → stays
+  excluded either way; `MAX_REFUND_PER_HAND` → **6**; Hoarder/Unbloodied keep all four rewards.
+- **Cheat and Timebomb were added to the list.** Absent from the developer's draft, but design doc §1
+  folds both into the buff pile and `buffCatalog.ts` already mints them. The draft's pool total of
+  **76 was wrong**; it is **78**.
+
+### The cost model — one formula, two small tables
+
+`apCost = clamp(REWARD_BASE[axis][tier] + CONDITION_MODIFIER[family], 1, 6)`
+
+Retuning all 78 costs is a two-table edit, not 78 edits. Calibrated against `STARTING_AP = 6` per
+hand and the design doc's own `3 AP` working figure for one standard buff.
+
+| REWARD_BASE | bronze | silver | gold |
+|---|---|---|---|
+| Blade (flat damage) | 1 | 2 | 3 |
+| Purse (coin) | 2 | 3 | 4 |
+| Second Wind (AP refund) | 1 | 1 | 1 |
+| Momentum (multiplier) | 2 | 3 | 5 |
+
+Multiplier and coin carry a surcharge over flat damage as a **derived** consequence, not a
+preference: the bank counts tricks and the multiplier climbs 1 per trick taken, cashing as their
+product, so at a typical bank of 3 a `+2 multiplier` is worth ~6 damage where `+1 damage` is worth 1.
+
+The condition modifier is a **discount for unreliability**, not a surcharge for difficulty — a card
+that fires most hands is worth more AP than one that rarely fires.
+
+### Every card and every number chosen
+
+Condition families (71 templates). Costs read bronze/silver/gold.
+
+| Family | Condition | Mod | Blade | Purse | Second Wind | Momentum | Cards |
+|---|---|---|---|---|---|---|---|
+| Taker | Win a trick with suit S | 0 | 1/2/3 | 2/3/4 | 1/1/1 | 2/3/5 | 12 |
+| Feeder | Lose a trick with suit S | +1 | 2/3/4 | 3/4/5 | 2/2/2 | 3/4/6 | 12 |
+| Mark of the *R* | Win a trick with rank R | −1 | 1/1/2 | — | — | 1/2/4 | 22 |
+| Sidestep | Dodge a skull with this card | −1 | 1/1/2 | — | — | 1/2/4 | 2 |
+| Glutton | Eat a skull with this card | 0 | 1/2/3 | 2/3/4 | 1/1/1 | 2/3/5 | 4 |
+| Hoarder | Reach a bank of N (2/3/4) | 0 | 1/2/3 | 2/3/4 | 1/1/1 | 2/3/5 | 4 |
+| Unbloodied | Survive N tricks unhit (2/3/4) | 0 | 1/2/3 | 2/3/4 | 1/1/1 | 2/3/5 | 4 |
+| Long Fall | Lose the next N tricks | — | — | — | — | — | **DEFERRED** (AC3) |
+| Debt Collector | Apply Damage this hand | +1 | 2/3/4 | 3/4/5 | 2/2/2 | 3/4/6 | 4 |
+| Keepsake | Hold suit S at hand's end | 0 | — | 2/3/4 | — | — | 3 |
+| Miser | Have >= N coins (5/10/20) | −1 | 1/1/2 | — | — | 1/2/4 | 2 |
+| Cornered | Below N% health (60/45/33) | −1 | 1/1/2 | — | — | 1/2/4 | 2 |
+
+Reward tier magnitudes are the **developer's**, unchanged: Blade +1/+3/+5 · Purse +2/+5/+10 ·
+Second Wind 1/2/3 · Momentum +2/+3/+5. Suits are Bells/Keys/Moons; ranks 1–11.
+
+Consumables and activated cards (7 templates).
+
+| Card | Effect | Tiers | AP cost |
+|---|---|---|---|
+| Ward | Single-use shield, absorbs up to N on the next hit | 1/3/5 absorbed | **2/2/2** (flat) |
+| Puppeteer | Pick which of the opponent's legal moves they must play | single tier | **4** |
+| Second Thoughts | Extra discard charges this fight | +1/+2/+3 | 2/3/4 |
+| Foresight | Peek the draw pile | 1/3/5 cards | 1/2/3 |
+| Spyglass | Rule out N candidates of a chosen suit | 1/2/3 ruled out | 2/3/4 |
+| Cheat | Follow-suit lifted for N tricks | 1/2/3 tricks | **3/5/7** |
+| Timebomb | Delayed hit, Quarry vs player | 4/8/12 vs 2/4/6 | **2/2/2** (flat) |
+
+`MAX_REFUND_PER_HAND` = **6** — equal to `STARTING_AP`, so a hand can at most double its budget and
+a refund chain cannot fund unbounded activations. Satisfies AC4. Design-doc figure only; DLR-108
+creates the `config.ts` key.
+
+**Three off-curve prices, each a design claim rather than arithmetic.** Ward is flat because
+`DAMAGE_PER_HIT = 1` makes absorbing 1, 3 or 5 the same outcome, so charging more taxes the player
+for a better reel that buys nothing. Gold Cheat at **7 AP is above the 6-AP starting budget on
+purpose** — unplayable until the `+5 AP` capacity item is bought, which is the costing pass design
+doc §3 asked for on "three tricks of no-follow-suit is close to a guaranteed run of wins". Timebomb
+is flat because its tier price is paid in health (2/4/6 of a 10-point bar).
+
+**No disagreement with `TIMEBOMB_TIER_MULTIPLIER = {1,2,3}`.** Stated explicitly in the doc, as this
+run's dispatch required. The flat AP price is precisely what keeps the whole tier cost in the health
+figures rather than billing the same escalation twice.
+
+### The three least-confident items — start the review here
+
+1. **Ward silver and gold.** Effect-identical to bronze while `DAMAGE_PER_HIT = 1`. If that constant
+   never moves, **delete these two rows** rather than retune them. The weakest items on the list.
+2. **Bronze `Second Wind` is net-zero by construction.** The developer's refund ladder is 1/2/3 and
+   the cheapest activation is 1 AP, so a bronze Second Wind refunds exactly what it cost — a null
+   card. Kept as the pool's deliberate floor card because that preserves a developer-set ladder;
+   raising the ladder to **2/3/4** is the better card and is the developer's to take.
+3. **Miser (>= N coins) fights the shop.** It pays an in-hand reward for a run-long behaviour — not
+   spending — and the shop is the run's only progression lever. Structural, not a costing problem;
+   no AP price fixes it. Candidate for deletion.
+
+### The one place this contradicts a developer note
+
+**Open item 5 was overturned, deliberately and visibly.** The review file flags Hoarder's and
+Unbloodied's four-reward lists as "worth a second look". The document keeps all four and argues why
+(both are hand-shaped goals; a Hoarder paying multiplier compounds with the bank that earned it),
+and flags the overturn in a blockquote rather than folding it in silently. The developer's call to
+confirm or reverse.
+
+### Shape gaps DLR-108 and DLR-112 inherit
+
+Verified by grep, not asserted. Three are ordinary widenings; one is a genuine misfit; one is a
+field that does not exist.
+
+1. `BuffKind` holds exactly **3** members today (`Unassigned`/`Cheat`/`Timebomb`); it needs one per
+   template family — 11 condition families + 5 consumables.
+2. `BuffRewardAxis` holds exactly **3**; it needs eight more (`Coins`, `ApRefund`, `Multiplier`,
+   `CardsRevealed`, `CandidatesEliminated`, `DiscardCharges`, `DamageAbsorbed`, `None`). DLR-105's
+   own comment already anticipates this. `BuffTier` fits unchanged.
+3. **Genuine misfit:** `BuffCondition` is `{ readonly kind: string }` with **no payload**, but
+   Taker/Feeder/Keepsake are suit-parameterised and Mark-of-rank is rank-parameterised. The doc
+   recommends an optional `target?: { suit?; rank? }` over baking 33 variants into `BuffKind`.
+4. **`Buff` carries no `apCost` at all** — **0 hits** in `buffs.ts` and `buffCatalog.ts` (the only
+   `src/` hits are `apCostFor`/`apCostGiven` in `actionPoints.ts`). Every number authored here has
+   no home on the type today. **DLR-108's first job.**
+
+Also recorded in the doc: DLR-107's deferred AC3 leaves Cheat and Timebomb existing twice, and
+**this list targets the `buffCatalog.ts` representation**, not the live felt mechanic.
+
+### Gates — all four green, on a zero-code diff
+
+| Gate | Result |
+|---|---|
+| `npm run typecheck` | exit 0 |
+| `npm run lint` | exit 0 |
+| `npm test` | **1089 passed / 1089**, 86 files, 0 failed — baseline held exactly |
+| `npm run build` | exit 0, `dist/` written (259.09 kB js, 37.95 kB css) |
+
+`git status --porcelain src` → no output, as the file map requires.
+
+### Coordinator decisions — DLR-111
+
+- **Every one of the 78 AP costs is an agent-chosen tuning value.** Under `CLAUDE.md`'s normal pause
+  condition all 78 are the developer's. This run overrides that pause and required they be chosen
+  and justified, so they were. They are marked agent-chosen *inside the document itself*, not only
+  here — the failure mode worth guarding against is a later reader treating them as settled.
+- **Card names are copy and have had no tonal review.** Blade / Purse / Second Wind / Momentum plus
+  twelve family words are functional identifiers first, offered rather than settled.
+- **Nothing on this list has been played.** Every figure is reasoned, not measured. Whether the cost
+  bands feel right in a hand is exactly the question only the developer can answer.
+- **`.docs/game_rules/the-hunt.md` was not touched**, correctly — every card here is `[not built]`,
+  and that file is the ruleset, not a design backlog.
