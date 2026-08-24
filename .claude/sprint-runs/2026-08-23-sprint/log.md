@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 11/22 (50%) — done: 11 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-115 "Health bar: rendering blue hearts" (12/22) — HALFWAY
+**Progress:** 12/22 (55%) — done: 12 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-116 "Shop screen: slot machine and pared-down purchasable list" (13/22)
 
 ## Run order
 
@@ -2756,3 +2756,70 @@ No server started, no browser opened — the pass is off by default and was not 
 
 - **The config audit undercounted `HealthBarView` construction sites, 0 vs 1.** `plan.md` asserted "Test files that build a bar view by hand: none found — every test goes through `duelHealthBars()`." `labels.test.ts` had a hand-built fixture and it broke typecheck the moment the two fields became required. Caught by the Phase 1 agent, reported rather than silently worked around, fixed in Phase 2 where the file was in scope. **This is the third consecutive ticket to hit the same class** — DLR-114 was 2 vs 11, DLR-110 was 1 vs 2. The coordinator was already fixing `/fb-plan`'s audit step; this is another data point for it.
 - **A grep in the plan's own verification phase was arithmetically wrong** (expected 6 `wc-hp-shield` hits, actual 8 — the planner forgot the `.wc-hp-shield-run` class name and double-counted a `var()` usage). Reported, not silently reconciled. The check's actual purpose — all three property names spelled identically in both files — was met.
+
+## Coordinator decisions — DLR-115 reconciliation
+
+Suite 1453 → **1474, 112 files, 0 failures.** Two rounds of two used; reviewers ended APPROVED.
+
+- **The named failure mode did not happen.** `HeartState` still has **exactly five members**; a
+  new `PipType = { Health, Shield }` sits beside it. **The array a pip lives in is its type; the
+  shared `HeartState` value is its state.** Both reach the DOM as `data-type` + `data-state`,
+  and every pre-existing `.wc-hp-heart[data-state=…]` selector was re-qualified with
+  `[data-type='health']`, including both `prefers-reduced-motion` entries. Shield pips produce
+  only `Whole` and `Ticking` — a spent blue heart stops being drawn, so `Breaking`/`Broken` are
+  structurally unreachable rather than dead branches.
+- **Accepted the glyph decision, which is better than the brief asked for.** A **shield
+  pentagon, not a blue heart** — a blue heart beside a red one is a colour swap that dies in
+  greyscale. The cluster sits inboard of the red run, past the graveyard.
+- **`projectedDepletion` is fixed and the shield rule was not re-derived.** A required 5th
+  `shieldHearts` parameter, deliberately **not defaulted** — a default lets a caller silently
+  reintroduce the lie — routed through `absorbWithShield`. Both reviewers grepped for an inline
+  `Math.min(shield, …)` and found none. Tested with a shield, without (`NO_SHIELD_HEARTS` →
+  byte-identical), partial, and the Quarry's untouched path, plus a `RangeError` guard exercised
+  by `it.each([-1, NaN, +Infinity])`.
+- **The spoken form now reads:** `"10 of 10."` + `" 2 shielded."` or `" 2 shielded, 1 of them
+  ticking."` + `" 3 at risk."` + `" 4 ticking."` + `" Lethal."` — standing → shielded → at risk
+  → ticking → lethal. `aria-valuenow`/`valuemax` stay **red-only**, so a shielded 10/10 player
+  never reports 12. The worst case is asserted verbatim so its length is on the record:
+  **`'10 of 10. 2 shielded, 1 of them ticking. 6 at risk. 4 ticking. Lethal.'`** — the agent's
+  own note is the right one: **judge whether anyone listens to that.**
+- **Numbers nobody chose:** `--wc-hp-shield-fill: #4f8fc0`, `--wc-hp-shield-ticking-opacity:
+  0.78`, `--wc-hp-shield-gap: 0.5rem`. The agent flagged that the opacity **copies** the ticking
+  opacity, and that two unseen numbers agreeing is a reason to tune them together rather than
+  evidence either is right. Mockup generated and **unseen**.
+
+### Two uncomfortable truths, reported rather than buried
+
+- **No blue pip is reachable in play and nobody has seen one.** Nothing calls `activateShield`
+  from the app layer; QA filed AC2's live half as blocked. An eyes-on look needs a temporary
+  devtools override, because no seed reaches a non-zero shield.
+- **The `breaking` overlay over-draws when a shield *partially* absorbs a landed hit.** The
+  absorbed amount is not recoverable without `ResolvedTrick` recording it. Documented in
+  `roundBars.ts`, unreachable today, **visible the moment Shield is wired**.
+
+### `/fb-plan` fixed by the coordinator — a third-consecutive planning defect
+
+Three tickets in a row undercounted **construction sites** of a changed shape:
+`RoundUiSeed` 2-vs-11 (DLR-114), `EncounterState` 1-vs-2 (DLR-110), `HealthBarView` 0-vs-1
+(DLR-115). Each surfaced as a typecheck failure mid-implementation, on work the plan had already
+declared scoped.
+
+The common cause is now named in the command: **grepping a type's name does not find the
+literals that construct it.** Most construction sites are unannotated object literals — test
+fixtures, inline `return { … }`, default-state constants — invisible to a search for the type
+name and visible only to `tsc`, one file at a time. Step 1.6 gains **check 7**: grep the type
+name *and* a distinctive required field name, report `<type>: N annotated, M construction sites
+(K in specs)`, and treat the larger figure as real. Step 3's checklist now requires both counts.
+
+A second, smaller fix in the same edit: DLR-115 also found a verification grep in its plan whose
+**arithmetic was simply wrong** (6 stated, 8 actual) — a check that would have passed while
+proving nothing. The command now states that quoted counts must match what the command printed.
+
+Nine tickets remained when this landed, so fixing the command beat filing an issue about it.
+
+### Doc gap for DLR-121 (verification)
+
+**`src/hunt/shield.ts` (DLR-110) has no `.docs/implementation/` entry at all**, and
+`hasShieldHearts`'s docblock claims DLR-115 reads it, which it does not. Flagged by the
+doc-writer; left for the verification ticket rather than patched blind here.
+

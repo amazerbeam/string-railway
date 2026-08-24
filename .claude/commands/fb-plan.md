@@ -111,8 +111,20 @@ Use `Grep`, `Glob`, and `Read` against the real files. Confirm:
 4. **Every consumer of a changed exported constant or predicate is enumerated.** A predicate that feeds both validation *and* a derived calculation — "some callers may be affected" is not an audit; a count is.
 5. **Names align across the chain**: configuration key ↔ its TypeScript type ↔ any `src/constants/` entry ↔ the reader ↔ copy that quotes the number ↔ test fixtures. Several of these bind by string, so the compiler will not catch a mismatch. Any mismatch found is an in-scope defect.
 6. **Any architectural boundary the plan establishes is not crossed.** Run the boundary grep from `web-project.md`, if one applies, and confirm the design does not require a DOM global or a React import inside a tree meant to stay pure. A design that does is a design to change, not a lint rule to disable.
+7. **Every CONSTRUCTION SITE of a changed shape is counted — and counted by field, not by type name.** When a task adds a required field to a type, or widens one, every place that *builds* an object of that shape must change. **Grepping the type's name does not find them.** Most construction sites are object literals with no type annotation at all: test fixtures, inline `return { … }` expressions, default-state constants, factory helpers. They are invisible to a search for `RoundUiSeed` and they break only at `tsc`, one file at a time, long after the plan claimed there were two of them.
+
+   Do this instead, and quote both numbers:
+
+   - Grep for the **type name** — this finds annotations and imports.
+   - Grep for a **distinctive required field name** of the shape (or two, if one is generic) — this finds the literals. `Grep` with `output_mode: "count"` over `src/**` including `__tests__`.
+
+   Report as `<type>: N annotated sites, M construction sites (K of them in specs)`. When the two counts differ, **the larger one is the real number** and every one of those sites belongs in a task's `**Files:**` block.
+
+   **This check exists because its absence has bitten repeatedly, always the same way:** an audit reported 2 construction sites of `RoundUiSeed` and there were 11; 1 of `EncounterState` and there were 2, the second being a `return` literal; 0 of `HealthBarView` and there was 1, a hand-built fixture in a spec. Each surfaced as a typecheck failure mid-implementation, on work the plan had already declared scoped. An undercount here is not a tidy-up detail — it is a phase boundary where the app does not compile.
 
 Capture findings in `plan.md` Part 1 under **"Config and persisted-shape audit"**, one bullet per check, quoting real counts and real key names. An audit that paraphrases instead of quoting has not been done.
+
+**Arithmetic in an audit is a claim, and claims get checked.** If a bullet states a hit count, a sum, or a ratio, it must match what the command actually printed — a plan that says "6 hits" over a grep returning 8 has produced a verification step that will pass while proving nothing. Re-read the output before quoting it.
 
 ## Step 1.7: Create the plan folder
 
@@ -215,7 +227,7 @@ Before handing off for approval, review `plan.md` against the brief. No subagent
 2. **Structural completeness:** Exactly two `##` parts and fourteen `###` sections, in the template's order — counting only headings **outside** fenced code blocks. A plan that documents a markdown template embeds headings inside a fence; those belong to the example, not to the document, and a naive `Select-String '^## '` count will fail on them. Each is filled or carries an explicit one-line skip justification. No heading inside a section is a `###`.
 3. **Placeholder scan:** No `TBD`, `TODO`, `implement later`, "appropriate error handling", empty `mermaid` fences, or empty sections. Fix every hit.
 4. **Assumptions ↔ design alignment:** Every assumption in Part 1 that constrains a technical decision is reflected in Part 2 → Approach or Risks and judgement calls. Assumptions that influence nothing are noise — drop them. No assumption invents a tuning value.
-5. **Audit (when Step 1.6 ran):** The audit section reports a finding for every check performed, with real counts. Every renamed key with non-zero hits has every hit accounted for in a task.
+5. **Audit (when Step 1.6 ran):** The audit section reports a finding for every check performed, with real counts. Every renamed key with non-zero hits has every hit accounted for in a task. **Every changed shape reports both an annotated-site count and a construction-site count** (Step 1.6 check 7), and the larger figure is the one the tasks cover.
 6. **Skill list honesty:** Every skill named in Part 2 resolves to a real `.claude/skills/<name>/SKILL.md`. No invented skills, and no `none` on a task that writes TypeScript.
 7. **Rule compliance:** No reject condition from any applicable `.claude/rules/` file is tripped by the design.
 8. **Spec fidelity:** Every behaviour the plan describes either cites the specification the brief names or is flagged as new. No rule is re-derived, and no prior documented decision is silently overturned — that is a developer call, raised in Risks.
