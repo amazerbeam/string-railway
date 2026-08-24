@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 19/22 (86%) — done: 19 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-130 "Headless run simulator" (out-of-band, before the closing three)
+**Progress:** 19/22 (86%) — done: 19 shipped, 0 blocked (+3 out-of-band shipped) | now: DLR-131 "ErrorBoundary" (out-of-band), then DLR-119/120/121 to close
 
 ## Run order
 
@@ -4281,3 +4281,207 @@ they cannot be distorting these figures in either direction. `Keepsake` remains 
 Whether `baselinePolicy` is the player they want measured; `BASELINE_CASH_AT_MULTIPLIER` (3);
 and — separately from this ticket — **what the 0% win rate means**, which is the balance pass this
 instrument was built for and which has not been run.
+
+## Coordinator decisions — DLR-130 reconciliation, and THE HEADLINE FINDING OF THE RUN
+
+Suite 1765 → **1783, 137 files, 0 failures.** Committed `352547d`, pushed. **No file under
+`src/hunt/`, `src/warCouncil/`, `src/vault/` or `src/app/` was touched** — the instrument is
+built entirely beside the game, in a new `src/sim/` tree, with **no new dependency**.
+
+### The game is currently unwinnable — 0 wins in 200 runs
+
+The agent reported 0/20. **The coordinator re-ran it at the full 200 to avoid calling a verdict
+on a small sample.** `npm run sim -- --runs 200 --seed 1`:
+
+```
+Outcomes   won: 0  lost: 200  stalled: 0  win rate: 0.0%
+Fights     mean fight reached: 0.44  max: 3  mean fights won: 0.44
+Hands      mean hands per encounter: 4.57  max in one encounter: 15
+Damage     to Quarry — mean 2.17, median 2, p90 6, max 18
+           to player — mean 2.64, median 3, p90 4, max 6
+Economy    coins earned 0.82  spent 0.68  slot pulls 0.44  buffs owned at end 5.15
+Buffs/AP   activations 0.88/hand  AP spent 2.33/hand  Apply Damage 0.41/hand
+Faults     none.  stalled runs: 0
+```
+
+**The player loses the per-hand exchange: 2.17 dealt against 2.64 taken.** That is a deficit, not
+variance, and it is why the mean run ends before fight one is finished — `mean fight reached:
+0.44`. It is consistent with the pre-V5 passes recorded in
+`.docs/implementation/run-winnability-simulation.md` (0/120 and 0/150), so **the V5 buff work has
+not moved the needle**.
+
+**Nothing was retuned, by anyone.** The ticket was scoped to ship the instrument, not the
+readings, and that held. Three caveats before this is read as a verdict:
+
+1. **It is conditional on the baseline policy**, which is a deliberately simple player: cards via
+   `chooseCpuMove` seated on the player, buffs activated cheapest-AP-first, Apply Damage pressed
+   at multiplier ≥ 3 or on the last window with a bank, **never discards, never marks a Timebomb,
+   never arms a Cheat**. A better cash-out discipline alone could move the result.
+2. **`mean buff activations per hand: 0.88`** — the buff system this whole epic built is barely
+   being exercised by this player. The economy line explains why: **0.82 coins earned and 0.44
+   slot pulls per run.** The player cannot afford the system.
+3. **`NoEffectYet` refusals: 0**, so the five unreachable consumables never reached the offer and
+   are not skewing these figures.
+
+**This is the developer's balance pass to run, and the instrument now exists for it.** The single
+most useful next measurement is the same 200 runs against a policy that discards and uses
+Timebombs, to separate "the numbers are wrong" from "the baseline player is bad".
+
+### Build notes
+
+- `npm run sim -- --runs 200 --seed 7`; defaults `--runs 200 --seed 1 --policy baseline`.
+  Runner is `vite build --ssr` + `node`, **no TypeScript-loader dependency**. **Always
+  terminates** — the `npm run dev` trap was explicitly avoided.
+- **Determinism verified by the agent**: two identical invocations produce byte-identical output.
+  Argument validation is real — `--seed 3.5`, `--seed 1e400`, `--runs 0`, a bare `--runs`,
+  `--bogus 1` and `--policy nonesuch` each exit 1 naming the fault.
+- **A policy is swappable** by implementing `SimPolicy` (4 pure methods) and adding it to
+  `POLICIES`. The driver re-asks the engine's own refusal predicate before every dispatch, so a
+  careless policy cannot crash a batch.
+- Optional future convenience the developer may approve: adding `tsx` so `npm run sim` starts
+  instantly rather than rebuilding. **A new dependency is a developer decision and was not
+  taken.**
+
+
+---
+
+## DLR-131 — ErrorBoundary (out-of-band)
+
+Raised mid-run after DLR-118's review caught a live crash path, and slotted in before DLR-119/120/121
+because those three exercise the whole app end to end. Ran unattended: plan gate auto-taken, mockup
+gate skipped, no browser pass.
+
+### The counts, re-measured
+
+The ticket was raised on a measurement taken at `04eae28` — **72 throw sites across 28 files**. Several
+tickets landed in between, so it was re-measured at `352547d` before planning:
+
+- `grep -rn "throw new" src --include=*.ts --include=*.tsx | wc -l` → **98**, across **37 files**.
+- `grep -rn "ErrorBoundary|componentDidCatch|getDerivedStateFromError" src | wc -l` → **3**, and all
+  three are prose: docblocks in `buffEvaluation.ts:60`, `encounter.ts:267` and `encounterDeck.ts:79`
+  that each assert "no `ErrorBoundary` exists (DLR-131)". So the real boundary count was **zero**, as
+  the ticket said — the throw count had simply grown by 26 sites and 9 files since it was written.
+
+All three of those docblocks became false the moment this landed and were corrected in the same
+contract, comment prose only, zero behavioural diff.
+
+### The root-versus-per-screen decision, and the argument for it
+
+**Root-only.** One boundary, around `<App />` in `src/main.tsx`, inside `<StrictMode>`. Not per screen,
+not both. The argument is structural rather than a preference:
+
+1. **A per-screen boundary would not have caught the crash that prompted the ticket.** React runs a
+   `useState` functional updater *during the render of the component that owns that state*. DLR-116 and
+   DLR-118 deliberately moved the shop's and the Vault's spend guards inside those updaters. So when
+   `buyFromShop` or `buyOddsBoost` throws, it throws while React is rendering **`App`** — not while it
+   is rendering `ShopPanel` or `VaultScreen`. A boundary around each screen sits strictly below `App`
+   and is structurally incapable of catching it. The Defender independently verified this claim against
+   `App.tsx`'s actual `setRun(r => ...)` call sites rather than taking it on trust.
+2. **A per-screen boundary could not honestly offer to keep the run.** Every piece of run state —
+   `run`, `hand`, `dealt`, `tricks`, `phase` — lives in `App`; the five screens are pure views of it. A
+   screen that throws during render throws *because of* that state, so re-entering it with the same
+   state re-throws at once. The only recovery available would be "back out of this screen", which for a
+   crashing fight means abandoning the fight — the same loss as a root reset, dressed up as a rescue.
+   Shipping both would have meant shipping one fallback that tells the truth and one that does not.
+3. Two smaller factors closed it: `App.tsx` is at **394 lines against a blocking 400**, and wrapping its
+   six early-return JSX branches would have cost ~12 lines and forced a split whose only motivation was
+   a boundary already argued to be the wrong shape. And a root boundary reaches three things no
+   per-screen one can: a throw in `App`'s own render body, one in `useVault`'s lazy `useState`
+   initialiser as it reads and validates `localStorage`, and one in `useShopSlot`'s per-render strip
+   derivation.
+
+**Stated honestly alongside it, in the code and in the docs:** an error boundary does *not* catch a
+throw inside an event handler, a `setTimeout`, a rejected promise, or its own fallback render. A click
+handler that computes *before* calling `setState` still escapes to `window.onerror` and still blanks the
+screen. That is not a gap papered over — it is a second argument for the in-the-updater guard convention
+DLR-116/118 established, and the two are documented next to each other so neither drifts.
+
+### What the fallback offers, and what it deliberately does not promise
+
+A full-viewport `<main role="alert">` panel: a heading, two sentences, the caught error's one-line
+`.message` as technical detail (`.stack` is never read), and two controls.
+
+- **"Start a new run"** clears the boundary's `error` state. React already destroyed the failed subtree
+  when it swapped to the fallback, so clearing it mounts `App` fresh — a new run, Vault re-read from
+  storage. **"Reload the page"** calls `window.location.reload()`, for the case where a remount
+  re-crashes on the same input.
+- **It says the in-progress run is lost, and offers no way to resume it.** The run is in memory only;
+  there is no save format for it and inventing one was explicitly out of scope.
+- **It says Vault progress "should still be there", not "is safe".** `useVault`'s `commit` writes through
+  `saveVault` before it sets state, so banked progress is on disk — but a write can come back
+  `SaveWriteOutcome.Rejected` on a quota error or in private browsing, and the Vault screen is the
+  surface that already reports that. The hedge is deliberate; both reviewers checked the copy against
+  `saveStore.ts` and agreed it claims exactly what the code can back.
+
+### Plan defaults taken unattended (each was a stated default, not an invention)
+
+1. Root-only rather than per-screen or both — argued above.
+2. Show `error.message` on the panel, never `error.stack`. Invaluable in a prototype, wrong in a shipped
+   game. **The developer should confirm they want it now and note it as something to gate later.**
+3. Two controls (restart primary, reload secondary) rather than one.
+4. `getDerivedStateFromError` implemented; **`componentDidCatch` deliberately absent** — React already
+   prints the error and component stack, there is no telemetry sink, and an empty override or a duplicate
+   log would both be worse than the omission. Stated in the docblock so it reads as a decision.
+5. Copy in `src/app/errorLabels.ts` rather than inline, matching `runLabels.ts` / `vaultLabels.ts`.
+6. No test for `errorLabels.ts` itself — string constants with no logic, exercised through the component
+   spec.
+7. Boundary inside `<StrictMode>`, not outside — the double-render is exactly when a render-phase throw
+   should be caught.
+8. `src/app/index.ts` untouched; `main.tsx` imports by full path, per the NTFS `./app` vs `App.tsx`
+   collision documented at `src/App.tsx:41-45`.
+
+### The mockup went UNSEEN
+
+`.claude/contract/DLR-131-add-an-errorboundary/mockup.html` was generated and **nobody looked at it**. The
+fallback is a visible surface and its proportions, palette, contrast and control placement are unreviewed.
+`errorBoundary.css` transcribes it and carries a header comment saying every colour and size is the
+developer's to retune, plus why it deliberately does *not* reuse `warCouncil.css`'s `--wc-*` tokens (the
+boundary mounts above every screen; depending on one screen's private tokens would break exactly when
+that screen is the thing that crashed).
+
+### What a browser would have checked — this list matters more than usual
+
+A fallback that renders wrong is invisible to jsdom. Nothing here was seen rendered:
+
+- That the panel is centred and fits the viewport without scrolling. `body` has `overflow: hidden`, so if
+  the panel overflowed there would be **no way to reach either control**. A `max-height: 100%;
+  overflow-y: auto` was added to `.error-fallback__panel` for exactly this (Defender's info item), but
+  whether a `display: grid; place-items: center` parent with one `auto` row actually scrolls rather than
+  clips is grid-track-sizing behaviour that is correct on paper and unverifiable without a rendered DOM.
+- That the hard-coded palette stays legible under **both** light and dark system settings. The CSS declares
+  `color-scheme: light dark` but every colour value is static, so nothing actually changes under a light
+  preference — precisely the kind of thing only a real browser under each OS setting can judge.
+- That both controls are genuinely >=44px on screen (not merely `min-height`/`min-width` in the stylesheet)
+  and show the `:focus-visible` ring on keyboard Tab, not on mouse click.
+- That "Reload the page" actually reloads.
+- That a long `error.message` wraps inside the detail block via `overflow-wrap: anywhere` rather than
+  overflowing the 38rem panel.
+
+### Reviewers and gates
+
+Production UI diff, so all three ran. Round 1: Code-Evaluator **APPROVED**, Defender **APPROVED**
+(0 critical, 0 warning, 2 info), QA **FAILURES FOUND** — one `npx prettier --check` violation in
+`ErrorBoundary.tsx` (an over-expanded JSX button). Fixed, plus Defender's panel-overflow info item and a
+comment explaining the palette choice. Round 2 QA: **ALL PASSED**. Two rounds, the ceiling not exceeded.
+
+Final gates: `npm run typecheck` 0 · `npm run lint` 0 · `npm test` **138 files, 1789 passed, 0 failed**
+(baseline 1783 + this ticket's 6) · `npm run build` 0.
+
+### Confirmation on the throws
+
+**Not one existing throw was weakened, removed, moved, or converted to a silent return.** Verified two
+ways: `throw new` across `src/` excluding the new spec is exactly **98**, unchanged from the pre-contract
+measurement; and `git diff -- src | Select-String "^[+-].*throw"` returns hits only as the *word* "throw"
+inside the three rewritten docblocks, with no `throw` statement changed anywhere. `src/App.tsx` is still
+**394 lines** and was not touched.
+
+### Open for the developer
+
+- The fallback copy — every string is an unapproved default, especially how much `ERROR_FALLBACK_VAULT`
+  should hedge.
+- Whether `error.message` belongs on a player-facing panel at all, now and later.
+- The root-only decision itself (the alternative forces an `App.tsx` split).
+- `role="alert"` on a full-page `<main>` — Defender's second info item. It overrides the landmark role
+  with a live-region role on a panel containing two buttons; a screen-reader ergonomics judgement, not a
+  functional break.
+- The panel, seen in a real browser, against the list above.

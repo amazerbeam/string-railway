@@ -27,7 +27,7 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                                                |
 | --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, PT-001, PT-002                                                                                  |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125 |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131 |
 | `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, PT-002                                                                          |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118 |
 | `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-112, DLR-113, DLR-114, DLR-116, DLR-125, DLR-126, DLR-127, PT-001, PT-002 |
@@ -792,7 +792,7 @@ door-versus-window split and the AP unification,
 `activatableBuffs` and where the activation state now lives, or
 [app/README.md](app/README.md) for the `buffs` mount prop and why it is one-way.
 
-## Latest — DLR-125, buffs that actually pay (2026-08-24)
+## DLR-125, buffs that actually pay (2026-08-24)
 
 **DLR-125 is the ticket that made the buff system a system.** DLR-124 had settled the stacking rule
 and DLR-108 had built the accrual it needs — but `buffAccrual.ts` shipped with **no caller**, so a
@@ -841,6 +841,49 @@ the hand's bookkeeping and the two load-bearing orderings.
 
 **One gap it opened by succeeding:** nothing on the felt announces a firing, so a player sees a
 larger number with no cause named. That is the developer's to judge and someone's to fix.
+
+## Latest — DLR-131, the ErrorBoundary (2026-08-24)
+
+**`src/` throws deliberately and often — 98 `throw new` sites across 37 files at this ticket's
+start — and until now nothing caught any of them.** DLR-131 adds one class component,
+`src/app/ErrorBoundary.tsx`, mounted around `<App />` in `src/main.tsx` inside `<StrictMode>`. Not
+one existing `throw` was touched: this is a net under the throws, not a softer floor. The component
+is the **only class in `src/`**, because `getDerivedStateFromError`/`componentDidCatch` have no hook
+equivalent in React 19 — there is no function-component way to write an error boundary at all.
+
+**Root-only, not per-screen, and the reason is structural rather than a preference.** React runs a
+`useState` functional updater during the render of the component that *owns* that state, and
+DLR-116/DLR-118 deliberately moved the shop's and the Vault's spend guards *inside* those
+updaters — so when `buyFromShop` or `buyOddsBoost` throws, it throws while React is rendering
+`App`, above every screen. A boundary placed around any one screen sits below `App` in the tree and
+cannot catch that throw. A per-screen boundary also could not honestly offer to keep the run: every
+piece of run state lives in `App`, the screens are pure views of it, so clearing a screen-level
+boundary and re-entering with the same state re-throws at once — the only "recovery" it could offer
+is abandoning the fight, the same loss as a root reset dressed up as a rescue. `App.tsx` staying
+untouched at its existing line count was a secondary factor, not the deciding one.
+
+**What the fallback promises, and what it deliberately does not.** A full-viewport `role="alert"`
+panel states plainly that the in-memory run is lost, that Vault progress is written through
+`saveVault` on every `commit` and *should* still be there — "should", not "is", because a write can
+return `SaveWriteOutcome.Rejected` on a quota error or in private browsing, which the Vault screen
+already reports separately — and shows the caught error's one-line `message` (never `.stack`) as
+technical detail. Two controls: clearing the boundary's `error` state remounts `App` fresh (a new
+run, Vault re-read from storage); reloading the page is the fallback for a remount that re-crashes
+on the same input.
+
+**What it does not catch, stated so nobody assumes otherwise.** An error boundary catches a throw in
+render, in a lifecycle method, or in a constructor beneath it — never a throw inside an event
+handler, a `setTimeout`, a rejected promise, or its own fallback render. Those still escape to
+`window.onerror` and still blank the screen. That is a second argument for the in-the-updater guard
+convention DLR-116 and DLR-118 established: a guard written *outside* the updater it protects is
+exactly the code path this boundary cannot reach. Three docblocks that asserted "no `ErrorBoundary`
+exists (DLR-131)" — the reason three functions in `src/hunt/` and `src/warCouncil/` stay
+throw-free or keep a guard — were corrected in the same contract to state the boundary's actual
+limits instead; the guards themselves are untouched.
+
+Start at [app/error-boundary.md](app/error-boundary.md) for the component, the mount, and the full
+root-versus-per-screen argument. `.docs/game_rules/the-hunt.md` is **not** touched: this ticket adds
+a recovery mechanism, not a game rule — nothing a player may do, must do, or is scored on moved.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

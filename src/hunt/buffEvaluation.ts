@@ -57,8 +57,9 @@ export interface BuffTrickContext {
  *  twelfth family added to `buffCosts.ts` fails to compile HERE rather than silently never
  *  firing. Every Activated kind and `BuffKind.Unassigned` return `false` through the guard
  *  above the switch — a card that did not fire, which R7 calls a legitimate player mistake, not
- *  an error. NEVER THROWS: no `ErrorBoundary` exists (DLR-131) and this runs inside a reducer
- *  dispatch. */
+ *  an error. NEVER THROWS: a root `ErrorBoundary` now exists (DLR-131), but it catches a
+ *  render-phase throw and replaces the whole app with a fallback — it is a net, not a licence
+ *  for this function to throw, and this runs inside a reducer dispatch. */
 export function buffFires(buff: Buff, ctx: BuffTrickContext): boolean {
   if (!isConditionFamily(buff.kind)) return false
   const suit = buffTargetSuitOf(buff)

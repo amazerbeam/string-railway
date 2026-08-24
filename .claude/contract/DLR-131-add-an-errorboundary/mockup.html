@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DLR-131 — ErrorBoundary fallback mockup</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #14100e;
+        --panel: #1f1a17;
+        --edge: #3a302a;
+        --ink: #f2e9e1;
+        --muted: #b7a79a;
+        --alarm: #d9744a;
+        --action: #2c2420;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: system-ui, 'Segoe UI', sans-serif;
+        line-height: 1.5;
+        background: var(--bg);
+        color: var(--ink);
+      }
+      .error-fallback {
+        height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 1.5rem;
+      }
+      .error-fallback__panel {
+        width: min(38rem, 100%);
+        border: 1px solid var(--edge);
+        border-top: 3px solid var(--alarm);
+        border-radius: 0.5rem;
+        background: var(--panel);
+        padding: 2rem;
+      }
+      .error-fallback__title {
+        margin: 0 0 1rem;
+        font-size: 1.6rem;
+        letter-spacing: 0.01em;
+      }
+      .error-fallback__body {
+        margin: 0 0 0.85rem;
+        color: var(--ink);
+      }
+      .error-fallback__body--quiet {
+        color: var(--muted);
+      }
+      .error-fallback__detail {
+        margin: 1.25rem 0 1.75rem;
+        padding: 0.75rem 0.9rem;
+        border-left: 3px solid var(--alarm);
+        background: #00000033;
+        font-family: ui-monospace, 'Cascadia Mono', monospace;
+        font-size: 0.85rem;
+        color: var(--muted);
+        overflow-wrap: anywhere;
+      }
+      .error-fallback__detail-label {
+        display: block;
+        font-family: system-ui, sans-serif;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--alarm);
+        margin-bottom: 0.35rem;
+      }
+      .error-fallback__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+      .error-fallback__action {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0.7rem 1.4rem;
+        border: 1px solid var(--edge);
+        border-radius: 0.35rem;
+        background: var(--action);
+        color: var(--ink);
+        font: inherit;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+      .error-fallback__action--primary {
+        background: var(--alarm);
+        border-color: var(--alarm);
+        color: #1a1210;
+        font-weight: 600;
+      }
+      .error-fallback__action:focus-visible {
+        outline: 2px solid var(--ink);
+        outline-offset: 2px;
+      }
+      @media (hover: hover) {
+        .error-fallback__action:hover {
+          filter: brightness(1.15);
+        }
+      }
+      .error-fallback__action:active {
+        transform: translateY(1px);
+      }
+      .note {
+        position: fixed;
+        inset: auto 0 0 0;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.72rem;
+        color: var(--muted);
+        background: #00000066;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="error-fallback" role="alert">
+      <div class="error-fallback__panel">
+        <h1 class="error-fallback__title">Something went wrong</h1>
+        <p class="error-fallback__body">
+          The Hunt hit an error it could not recover from, and the run you were in has been lost.
+        </p>
+        <p class="error-fallback__body error-fallback__body--quiet">
+          Vault progress is written to storage as you bank it, so anything already banked should
+          still be there. Nothing else carries between runs.
+        </p>
+        <p class="error-fallback__detail">
+          <span class="error-fallback__detail-label">What went wrong</span>
+          RangeError: apCostOf: no AP price for buff kind "unassigned"
+        </p>
+        <div class="error-fallback__actions">
+          <button
+            type="button"
+            class="error-fallback__action error-fallback__action--primary"
+            onclick="alert('Start a new run — clears the boundary error state, App remounts fresh, Vault re-read from storage.')"
+          >
+            Start a new run
+          </button>
+          <button
+            type="button"
+            class="error-fallback__action"
+            onclick="alert('Reload the page — window.location.reload().')"
+          >
+            Reload the page
+          </button>
+        </div>
+      </div>
+    </main>
+    <p class="note">
+      DLR-131 mockup — placeholder error text. Both controls are clickable stubs. This mockup was
+      generated in an unattended run and went UNSEEN by the developer.
+    </p>
+  </body>
+</html>

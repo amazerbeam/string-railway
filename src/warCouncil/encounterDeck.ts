@@ -75,8 +75,9 @@ export interface DealPile {
  * `closeHand` conserves all 33, so the draw pile at a hand's start is exactly 33, 20 or 7, and 7
  * reshuffles back to 33. Kept for `shieldHeartsForTier`'s stated reason — the guard is not dead
  * code, it is the check that makes that guarantee hold — and reachable only from a genuine driver
- * bug or a hand-built fixture. Deliberately NOT on any event-handler commit path: `src/` has no
- * ErrorBoundary (DLR-131), so an escaping throw would blank the screen.
+ * bug or a hand-built fixture. Deliberately NOT on any event-handler commit path: a root
+ * `ErrorBoundary` now exists (DLR-131), so an escaping throw replaces the app with the fallback
+ * panel rather than blanking the screen — but that is still a run lost, so the guard here stays.
  */
 export function dealPileFor(deck: EncounterDeck, rng: Rng): DealPile {
   if (deck.drawPile.length >= CARDS_PER_DEAL) {

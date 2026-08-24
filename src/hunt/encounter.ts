@@ -263,8 +263,9 @@ export function hasShieldHearts(encounter: EncounterState): boolean {
  * Returns the encounter UNCHANGED when it is already resolved — protection must never be granted
  * in a fight that is over. Never throws for any `BuffTier`: `WARD_ABSORPTION` is total over the
  * union, so `wardAbsorptionForTier`'s guard is unreachable from here except through a cast. That
- * matters because the reducer calls this during an event handler, and DLR-131 records zero
- * `ErrorBoundary` against 72 throw sites — a throw here blanks the screen.
+ * matters because the reducer calls this during an event handler: a root `ErrorBoundary` now
+ * exists (DLR-131), so an escaping throw replaces the app with the fallback panel rather than
+ * blanking the screen — but that is still a run lost, so the guard here stays.
  */
 export function activateWard(encounter: EncounterState, tier: BuffTier): EncounterState {
   if (isEncounterResolved(encounter)) return encounter

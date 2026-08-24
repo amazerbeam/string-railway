@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131
 
 ## Responsibility
 
@@ -24,8 +24,10 @@ separately in [../run-ui/README.md](../run-ui/README.md) — the full-viewport s
 a fight or the run resolves, the shop the player may enter from it, and (DLR-85) the path screen that
 serves both as the start screen before fight one and as the map reached between fights.
 
-Outside those two subfolders this module contains no runtime logic at all — only the two type
-declarations in `warCouncilMount.ts`. `src/App.tsx` and `src/app/dealerForRound.ts` do the actual
+Outside those two subfolders this module held no runtime logic at all — only the two type
+declarations in `warCouncilMount.ts` — until DLR-131 added `ErrorBoundary.tsx`, `errorLabels.ts` and
+`errorBoundary.css` directly under `src/app/`: the app's one root-mounted recovery surface, documented
+at [error-boundary.md](error-boundary.md). `src/App.tsx` and `src/app/dealerForRound.ts` do the actual
 mount wiring (see _How it works_ below) — `src/App.tsx` lives at the project root, not inside this
 folder. This module has no pure-core ESLint boundary and does not need one — it is expected to
 import React, and `src/app/warCouncil/` does.
@@ -36,6 +38,8 @@ import React, and `src/app/warCouncil/` does.
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
 | `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState`, a required `hunt: Hunt` (DLR-53), a required `encounter: EncounterState` and `maxHealth` (DLR-71), a required `runLabel: string` (DLR-82), a required `cheats` (DLR-83), a required `coins: Coins` (DLR-84), a required `discardsRemaining: number` (DLR-100) and a required `buffs: readonly Buff[]` (DLR-114) in; `onComplete` out | `warCouncilMount.ts` |
 | `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + `encounter`, the `EncounterState` **after** this Hunt's damage was applied (DLR-71); also carries the survivors of every hand-owned run resource, including `discardsRemaining` since DLR-100 and, since DLR-125, `coinsEarned: Coins` — the Purse coins this hand's fired buffs earned, already clipped at `MAX_COIN_BONUS_PER_HAND` by the accrual, required, with both construction sites in `WarCouncilRound.tsx`                                                                                                                                | `warCouncilMount.ts` |
+| `ErrorBoundary` (default) | DLR-131 — the only class in `src/`. Catches a render/lifecycle throw beneath it, `getDerivedStateFromError` normalises whatever was thrown into an `Error`, `render` returns `children` untouched while `state.error` is `null` and a full-viewport fallback panel otherwise. No `componentDidCatch` — React already logs the error and its component stack, and `console.log`/`console.debug` are forbidden in shipped code. | `ErrorBoundary.tsx` |
+| `ERROR_FALLBACK_*` (six constants) | Every string the fallback renders — title, the two body sentences (run lost / Vault should still be there), the detail label, and the two control labels — following `runLabels.ts`/`vaultLabels.ts`'s named-constant pattern. | `errorLabels.ts` |
 
 DLR-53 added `hunt: Hunt` as a **required** field — `src/hunt`'s own pairing, widened by DLR-63 to
 `{ quarry, demand, loseCredits }` and then **narrowed by DLR-67 to `{ quarry }`** when the Demand and
@@ -126,6 +130,10 @@ components — are tabulated in [../war-council-ui/README.md](../war-council-ui/
   `RunPathScreen` mounts, and the one line of `handleNewRun` that is the whole of AC10 (DLR-71,
   DLR-80, DLR-82, DLR-84, DLR-85).
 
+- [The `ErrorBoundary`](error-boundary.md) — where it is mounted and why root-only, why it is the
+  only class in `src/`, what it does not catch, and what the fallback promises and refuses to
+  promise about the run and the Vault.
+
 **DLR-125 added one argument to a call the driver already makes.** `App.tsx` now passes
 `result.coinsEarned` as `recordEncounter`'s **optional eighth** parameter, `buffCoinsEarned` — the
 Purse coins a hand's fired buffs earned. The driver performs no arithmetic on it and applies no
@@ -146,6 +154,10 @@ that constant and the module-scope `MAX_HEALTH` beside it are **deleted**, not r
   React), and none was added to it.
 - No lint rule is suppressed anywhere in the module, and there is no `any` and no module-level
   mutable state.
+- **`ErrorBoundary` is the only class in `src/`, and must stay one** (DLR-131) —
+  `getDerivedStateFromError`/`componentDidCatch` have no hook equivalent in React 19, so converting
+  the file to a function component would silently delete the mechanism while still type-checking,
+  linting, and rendering. See [error-boundary.md](error-boundary.md).
 - `src/app/warCouncil/`'s own invariants — no effect at all in `WarCouncilRound`, the reducer, the
   roving tabindex, the two `cpuFault` cases — are listed in
   [../war-council-ui/README.md](../war-council-ui/README.md).

@@ -346,10 +346,13 @@ previous one's result.
 `RangeError` on a refused purchase, and the disabled state that would normally prevent one only
 lands on the render _after_ the first click. A rapid double-click on the last affordable purchase —
 the second free Cheat slot, or an only-just-affordable Heal — would otherwise reach the throw, and
-**there is no error boundary in this app**, so it would white-screen rather than reject the
-purchase. Re-deriving against whichever run the updater actually sees turns that second click into a
-no-op. This was found by the DLR-84 defender review and verified live afterwards: two rapid clicks
-on Heal deduct one coin and heal once.
+(before DLR-131) there was no error boundary anywhere in this app, so it would have white-screened
+rather than rejected the purchase. Re-deriving against whichever run the updater actually sees turns
+that second click into a no-op regardless — the guard is the fix, the root `ErrorBoundary` DLR-131
+later added is a backstop underneath it, not a substitute for it. This was found by the DLR-84
+defender review and verified live afterwards: two rapid clicks on Heal deduct one coin and heal
+once. See [error-boundary.md](error-boundary.md) for why this exact updater shape is the reason the
+boundary had to be mounted at the root rather than per screen.
 
 Note that it is a **third reading of the exported `refusalFor`**, not a re-derivation from raw
 fields — which is what keeps the single-predicate discipline intact. The whole expression stays pure
@@ -367,8 +370,10 @@ function handleDrinkFlask() {
 `handleBuy` with a different predicate and a different transition — deliberately identical in shape,
 because the race is identical. `disabled` only lands on the render _after_ a drink, so a double-click
 or a fast repeated key-activation would otherwise reach `drinkFlask` with the charge already spent and
-hit its deliberate throw, white-screening an app with no error boundary. Re-deriving `flaskRefusalFor`
-against whichever run the updater actually sees turns the second activation into a no-op.
+hit its deliberate throw. Re-deriving `flaskRefusalFor` against whichever run the updater actually
+sees turns the second activation into a no-op before it ever reaches the throw — the same guard-inside-
+the-updater discipline that is, since DLR-131, also why a root `ErrorBoundary` can catch this class of
+throw at all (see [error-boundary.md](error-boundary.md)).
 
 It is a **second reading of the exported `flaskRefusalFor`**, not a re-derivation from raw fields — the
 same single-predicate discipline, and the reason the disabled button and the throw cannot disagree.
