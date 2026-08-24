@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 18/22 (82%) — done: 18 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-126 "Engine: consumable-item activation flow" (19/22)
+**Progress:** 19/22 (86%) — done: 19 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-130 "Headless run simulator" (out-of-band, before the closing three)
 
 ## Run order
 
@@ -4083,3 +4083,201 @@ the next hit lands; and that a Second Thoughts visibly raises the discard counte
 
 The `'Not usable yet.'` copy is a placeholder — the `Record` type forces a row, and it is unreachable
 in play. Visual and copy judgement is the developer's.
+
+## Coordinator decisions — DLR-126 reconciliation
+
+Suite 1702 → **1765, 133 files, 0 failures.** All three reviewers, **zero findings** from both
+code-evaluator and defender.
+
+- **The preflight overlap flag was half right, and the agent said so precisely.** DLR-108's
+  generic activation flow was complete and **reused unchanged** — no parallel mechanism was
+  built. What did not exist was **anything making a consumable one-shot**: all five had a kind, a
+  cadence, a price and a label — **20 references outside tests, zero behaviour.** Activating a
+  Ward spent 2 AP, recorded the id, had it wiped at the next trick boundary and did nothing; the
+  card could be re-bought every trick forever. That is exactly the honest-remainder outcome the
+  dispatch asked for.
+- **AC4 shipped 2-of-5 by design.** Puppeteer, Foresight and Spyglass each need a screen that
+  does not exist, so they are **refused rather than burned for nothing** — the right failure mode.
+
+### The `Ward` defect does not exist, and the run had been repeating it
+
+**Correction to the record.** DLR-111 reported Ward's silver/gold tiers as indistinguishable
+because it absorbs 1/3/5 hits while `DAMAGE_PER_HIT = 1`, and recommended deleting the upper
+rows. That premise **does not survive the code**: `bank.ts:258` computes
+`damageToPlayer = (trickHit ? DAMAGE_PER_HIT : 0) + trick.timebombToPlayer`, and
+`TIMEBOMB_DAMAGE`'s player column is **2/4/6** — so a hit is 1, **or 3/5/7 when a Timebomb
+detonates against the player**. Silver and gold Ward are the only cover for exactly those cases.
+
+**Kept all three tiers. Deleted nothing. Retuned nothing. `DAMAGE_PER_HIT` untouched.**
+`the-hunt.md` still carried the superseded "delete the two upper rows" claim; it was corrected
+with the evidence. This is the first time in the run that a finding carried forward through six
+tickets was **disproved rather than inherited**.
+
+### A reachability gap worth knowing before the closing tickets
+
+**No template mints a consumable** — `grep -c "BuffKind.Ward" src/hunt/buffTemplates.ts` → **0**.
+So not one path added by this ticket is reachable by playing, and a browser would have checked
+nothing. The consumables exist, are tested and are correct; the reel simply cannot produce them.
+Whether that is intended for v1 or an omission in DLR-112's pool is the developer's call, and it
+is the kind of thing **DLR-120's integration pass should catch**.
+
+### Carried forward
+
+- **`timebombDamageFor` / `timebombDamageOf` still not collapsed** — Timebomb is deliberately
+  excluded from `isConsumableItem` and its `commitTimebomb` path is untouched. The nomination
+  moves on again; it has now outlived four tickets.
+- **`Keepsake` unaffected and still dead. `Miser` unaffected.** ErrorBoundary risk unchanged —
+  new throw sites were added, each traced by the defender as unreachable from the reducer.
+- **A fourth construction-site undercount**, this time caught by the new check's absence in an
+  already-written plan: `BuffActivationStock` claimed 2, had **7**. The compiler caught it at
+  first typecheck and it cost one round — the failure mode `f45d66e` was written to prevent.
+
+### Developer's own list
+
+Ward's silver/gold rows (the distinguishing case is **self-inflicted damage** — the fix, if any,
+is a wider damage spread or a retire, not a Ward change); the `'Not usable yet.'` copy; **Ward
+absorbing ahead of blue hearts and replacing rather than stacking** — both readings with no
+source behind them; and Puppeteer's `BeforeOwnCard` window, declared but opened by no reducer.
+
+
+---
+
+## DLR-130 — Headless run simulator (out-of-band)
+
+Raised mid-run, planned and applied out of sprint order: after ticket 19 of 22, before the closing
+three (DLR-119, DLR-120, DLR-121). The developer's balance pass needs an instrument, and DLR-123
+had just removed the last `Math.random()` from the deal path — which is what made a reproducible
+deal and reshuffle possible for the first time, and this ticket possible at all.
+
+**GREEN.** typecheck 0 · lint 0 · `npm test` 137 files / **1783 passed** / 0 failed (baseline
+133 / 1765; the delta is exactly this contract's four new spec files) · `npm run build` 0.
+Reviewers: defender APPROVED (0 critical, 0 warning); code-evaluator and QA each found one issue
+and it was the same one — two files not Prettier-clean. One whitespace-only fix pass, re-verified,
+done. One review round, not two.
+
+### The plan gate was auto-approved — every default taken, listed
+
+No `AskUserQuestion` was presented (unattended run). These are the plan's stated defaults that
+stood in for a developer answer:
+
+- **The driver lives in a new `src/sim/`**, not in `src/app/` or `scripts/` — it is pure logic with
+  real invariants (determinism, termination), so it belongs where Vitest can reach it.
+- **`src/sim/` imports `src/app/warCouncil/`, and the plan says so out loud.** `applyResolution`'s
+  four-step damage/Timebomb/payout fold and `handleTapBuff`'s activation-plus-consumable-spend live
+  in the app layer despite being React-free. A driver that skipped them would measure a game nobody
+  plays. The coupling is one-directional; the pure core gained no import.
+- **The runner is `vite build --ssr` + `node`, not a TypeScript loader.** Node 24's native
+  type-stripping cannot resolve this repo's extensionless imports, and `tsx` / `vite-node` /
+  `ts-node` are all absent and would each be a dependency approval — a pause. Vite is already a
+  devDependency. **This was verified working with a throwaway probe before the plan was written**,
+  not assumed: the probe dealt a hand, played all six tricks through `roundReducer`, and exited.
+- **The CLI sits outside `src/`** (`scripts/sim.ts` plus a new `tsconfig.scripts.json`) so `process`
+  is available without adding `@types/node` to `tsconfig.app.json`, which would change global
+  typings for the whole app tree to save one small project file.
+- **The baseline's card choice reuses `chooseCpuMove` seated on the player.** The engine's own
+  shipped heuristic — deterministic, always legal, and describable in one sentence, which matters
+  because the policy has to be written down.
+- **Simulated runs play with an empty Vault** — `drawReelPool`, not `drawVaultReelPool`. No
+  starting grants, no odds adjustment. Keeps `src/sim/` clear of the persistence tree.
+- **The three termination caps are safety rails, not tuning values.** `MAX_ACTIONS_PER_HAND` 400,
+  `MAX_HANDS_PER_FIGHT` 40, `MAX_SHOP_ACTIONS_PER_VISIT` 40 — each an order of magnitude above
+  anything reachable, each surfacing as a reported `stalled` run, which is a bug signal and is kept
+  rigorously distinct from `lost`.
+- **`BASELINE_CASH_AT_MULTIPLIER = 3`** — a *policy* parameter, deliberately not in
+  `src/hunt/config.ts`. Flagged to the developer as the knob with the most leverage over the
+  printed damage figures.
+- **An unknown `--policy` exits 1** naming the known names rather than falling back to the
+  baseline, because a silent fallback would attribute one policy's numbers to another.
+
+### What the developer runs, and what it prints
+
+```
+npm run sim -- --runs 200 --seed 7
+```
+
+Defaults `--runs 200 --seed 1 --policy baseline`. It rebuilds (a few seconds) and **always exits**.
+It prints outcomes and win rate, fights reached and won, hands per encounter, the damage
+distribution per hand to each side (mean/median/p90/max), the economy (coins earned and spent, slot
+pulls, buffs held at the end), buff and AP usage per hand, and faults. Every division guards its
+divisor and prints `n/a` rather than `NaN`.
+
+### Exactly what the baseline policy does
+
+Stated here as well as in the module docblock, because **every number the tool prints is
+conditional on it**:
+
+- **Cards** — `chooseCpuMove(round, PlayerSide.Player)`: lead the lowest legal card; when
+  following, the lowest legal card that would *lose* and carries a skull, else the lowest that
+  would *win*, else the lowest legal card. Fox and Woodcutter choices come from the same call.
+- **Buffs** — at every between-tricks window, activates every offered buff whose refusal is `null`,
+  cheapest AP first, while the pool would still cover `APPLY_DAMAGE_AP_COST`.
+- **Apply Damage** — presses when the refusal is `null` and either the multiplier has reached 3 or
+  it is the hand's last window with a non-empty bank.
+- **Never** discards, marks a Timebomb, or arms a Cheat — none is on `SHOP_ITEMS`' shelf.
+- **Shop** — free pulls first, then Heal (only below max health) then AP capacity, Swan tier, Witch
+  tier while affordable, then the flask.
+
+Swap it by implementing `SimPolicy` (four pure methods), adding it to `POLICIES`, and passing
+`--policy <name>`. The driver treats every policy answer as advisory — it re-asks the engine's own
+refusal predicate before every dispatch — so a careless future policy cannot crash a batch.
+
+### OBSERVATION — what the simulator actually reported. Nothing was retuned.
+
+`npm run sim -- --runs 20 --seed 7`:
+
+```
+Outcomes   won: 0  lost: 20  stalled: 0  win rate: 0.0%
+Fights     mean fight reached: 0.60  max fight reached: 2  mean fights won: 0.60
+Hands      mean hands per encounter: 4.85  max hands in one encounter: 10
+Damage     to Quarry — mean 2.39, median 2, p90 6, max 13
+           to player — mean 2.59, median 3, p90 4, max 6
+Economy    coins earned 1.00  spent 0.75  slot pulls 0.60  buffs held at end 5.50
+Buffs/AP   activations 1.08/hand  AP spent 2.76/hand  Apply Damage presses 0.42/hand
+           NoEffectYet refusals: 0
+Faults     none.  stalled runs: 0
+```
+
+**The player loses the per-hand exchange — 2.39 dealt against 2.59 taken.** That is not variance,
+it is a deficit, and it is why the mean run ends before fight one is finished. This is consistent
+with `.docs/implementation/run-winnability-simulation.md`'s pre-V5 passes (0/120 and 0/150), which
+were run before buffs, Apply Damage or the AP pool existed.
+
+**Nothing was changed on the strength of it, and nothing should be until the developer runs it.**
+Two things that must be said before anyone reads it as a verdict: the figure is conditional on the
+baseline policy above — a better cash-out discipline alone could move it — and it is 20 runs, not
+200. The ticket ships the instrument; the readings are the developer's pass.
+
+**Known-dead content, measured rather than assumed:** `NoEffectYet` refusals came back **0**, which
+means the five unreachable consumables never even reached the offer — no template mints one, so
+they cannot be distorting these figures in either direction. `Keepsake` remains dead and
+`Long Fall` was never shipped; neither is separately counted, and neither is fixed here.
+
+### Worth knowing for the closing three tickets
+
+- **The fixtures are the other half of this ticket and the one DLR-119/120/121 will actually use.**
+  `fixtureRunAfterFirstFight`, `fixtureHandWithPrimedTimebomb` and `fixtureHandWithStackedBuffs`
+  are deterministic values importable from a `.test.tsx`. Browser QA has never reached any of these
+  states, because coins only arrive when a fight is finished — a component assertion against a
+  stacked multi-buff hand is now a two-line import rather than an impossibility.
+- **`fixtureRunAfterFirstFight` needs a bounded seed search to find a first-fight win**, because of
+  the win rate above. The cap is 50 and exhaustion is a named `RangeError`, not a silent fallback.
+  If a later tuning change makes wins common, that search will simply stop needing its retries.
+- **A fifth construction-site undercount was avoided rather than repeated.** `/fb-plan` Step 1.6
+  check 7 was run properly this time: `RoundUiSeed` reported **8 annotated sites but 44 construction
+  sites** on the distinctive-field grep. The plan turned that into a requirement — the simulator
+  builds its seed through **one** shared helper — and both reviewers verified it held.
+- **The ESLint flat-config replacement trap was handled in one step, on purpose.** `src/sim/**` was
+  added to the pure-core block's `files` *and* to the later block's `ignores` in the same edit; the
+  defender independently proved the DOM ban fires with a scratch file rather than trusting the
+  comment. Applying only the first half would have left lint exiting 0 with no ban — the DLR-106
+  regression.
+- **One planning defect, found by the phase-1 implementer and corrected in `tasks.md`:** a
+  verification step expected "exactly two hits" from a grep that also matches the explanatory
+  comments the same task tells you to write. The real count is four. Fixed in the contract rather
+  than worked around in the check.
+
+### Developer's own list
+
+Whether `baselinePolicy` is the player they want measured; `BASELINE_CASH_AT_MULTIPLIER` (3);
+and — separately from this ticket — **what the 0% win rate means**, which is the balance pass this
+instrument was built for and which has not been run.

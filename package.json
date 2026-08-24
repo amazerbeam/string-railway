@@ -15,6 +15,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "sim": "vite build --ssr scripts/sim.ts --outDir dist-ssr --logLevel error && node dist-ssr/sim.js",
     "preview": "vite preview"
   },
   "dependencies": {

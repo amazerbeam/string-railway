@@ -148,3 +148,23 @@ surviving long enough to reach the later stages — see the exchange-ratio argum
 `../design/Balatro-Forbidden-Solitaire/version-5-developer-idea.md` for why the deeper-run gap is a separate, larger question this fix does not
 answer. As before: not an exhaustive search, and the strategies used here are "reasonable and
 tool-using," not provably optimal.
+
+---
+
+## Superseded as a method by DLR-130 — 2026-08-24
+
+Both passes above were run from a **temporary Vitest file deleted before each pass concluded**, so
+nothing about them was repeatable: the harness that produced these numbers no longer exists, and
+re-running the question meant rebuilding the driver from scratch.
+
+DLR-130 made that driver permanent. `src/sim/` (see [sim/](sim/README.md)) plays complete seeded
+runs over the same unmocked engine, plus the felt reducer this investigation's scratch harness
+skipped — so it now measures buff activation and the Apply Damage payout, which did not exist when
+the passes above were run. `npm run sim -- --runs 200 --seed 7` is the repeatable form of the
+question this file asked once.
+
+**The findings above stand and were not revisited.** They are pre-V5-buff-work data and remain the
+record of what was measured on 2026-08-22. The first observation from the permanent tool — 0/20
+wins at `--seed 7`, mean fight reached 0.60 — is consistent with them, and is likewise an
+observation: DLR-130 shipped the instrument, and the developer's balance pass is a separate
+exercise that had not run when this note was written.
