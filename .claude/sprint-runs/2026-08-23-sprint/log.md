@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 22/22 (100%) — done: 22 shipped, 0 blocked (+5 out-of-band shipped) | DLR-121 "Verification and sign-off" complete — the final ticket. Sprint closed.
+**Progress:** 22/22 (100%) — done: 22 shipped, 0 blocked (+5 out-of-band shipped) | RUN COMPLETE
 
 ## Run order
 
@@ -5618,4 +5618,76 @@ opt-in, off by default, not requested.
 
 **Plain statement:** no browser pass ran, no server was started, nothing in this epic has been
 seen by a human, and no tuning value was changed by this ticket.
+
+## Coordinator decisions — DLR-121 reconciliation. RUN COMPLETE.
+
+Suite **1808 of 1808, 139 files, 0 failures — identical to baseline**, which is what a
+verification ticket should do. Committed `74be634`, pushed. **Only 7 comment lines of `src/`
+changed in the whole ticket.**
+
+### The Definition of Done: 7 MET · 4 PARTIAL · 1 NOT MET
+
+| # | Verdict | Evidence |
+|---|---|---|
+| 1 AP economy | **MET** | `AP_ENABLED` sole toggle; `spendAp` sole subtraction path |
+| 2 Cheat/Timebomb as cards | **MET** | DLR-132; `cheats.ts` and the rail deleted; both pinned reachable |
+| 3 Delayed Apply Damage | **MET** | resets on a hit at `encounter.ts:151`; quick-kill counted at the press |
+| 4 Shop contents | **PARTIAL** | health / AP-capacity / slot machine ✓; **rank ladders 2 of 7** |
+| 5 Shield | **NOT MET** | rules correct, but **`shieldBuff` has zero production callers** — no blue heart is ever drawn |
+| 6 Rank tiers | **PARTIAL** | mechanism fully correct; coverage 2 of 7 |
+| 7 Vault | **MET** | deposit, odds boost, starting tier |
+| 8 Starting pile | **PARTIAL** | `STARTING_BUFF_COUNT = 4`, but all four are `Unassigned` — **one activatable Cheat** |
+| 9 Card preview | **MET** | derived from the resolution path |
+| 10 Persistent deck | **MET** | both counts render; reshuffle announced in `role="status"` |
+| 11 UI pass | **PARTIAL** | **shop and Vault got prose, not a diff**; nothing rendered in a browser |
+| 12 Docs | **MET — as of this ticket** | arrived PARTIAL: no `shield.md`, six stale claims |
+
+**An honest NOT MET was the correct output and the agent gave it.** DoD 5 is the epic's own
+criterion failing on a technicality that matters: the shield rules are right, tested and
+documented, and **nothing calls them.**
+
+**Verified counts, replacing this log's own stale figures:** `throw new` **99** (both 98 and 102
+were wrong; none weakened) · **3** real `Math.random()` sites, all in `App.tsx`, **zero in the
+four pure trees** · **6** unreachable buff kinds · **10 of 12** condition families paying · **2**
+files ≥400 lines · sim **0 wins / 200**, 2.29 dealt against 2.64 taken, **0.0% of hands with no
+activatable buff**.
+
+**Balance untouched — `git diff` on both config files is empty.** DLR-132 removed the integration
+confound; the remaining deficit is a balance problem and it is the developer's.
+
+### Fixed four things, filed eight tickets
+
+**Fixed, each gated on a proving grep that ran first:** the false `hasShieldHearts`/DLR-115 claim ·
+the missing `shield.md` · **six falsified `the-hunt.md` claims** plus the Status-register row ·
+stale file counts in `web-project.md` and `CLAUDE.md`.
+
+**Filed:** **DLR-133** Shield unreachable · **DLR-134** 5 of 7 rank ladders · **DLR-135** starting
+pile · **DLR-136** consumables unreachable · **DLR-137** UI/eyes-on, carrying the full agenda ·
+**DLR-138** the two 418/402 spec files · **DLR-139** Keepsake/Long Fall · **DLR-140**
+`the-hunt.md` restructure.
+
+**It declined to split the two over-length spec files, and the reasoning is right:** splitting
+redistributes shared fixtures and `describe` scoping — real regression risk, zero behavioural
+gain, on **the one ticket whose entire value is that its evidence is trustworthy.** Filed as
+DLR-138 instead.
+
+### The consolidated eyes-on agenda — 24 items in 6 tiers, in DLR-137
+
+De-duplicated from DLR-119's eleven plus ~40 notes across 18 tickets, ordered by what breaks the
+game, **and stated with preconditions** — blue hearts, consumables, Blast Guard and Whetstone
+cannot be reached by play at all, and the shop needs `fixtureRunAfterFirstFight` because the win
+rate is 0.0%. That stops the developer hunting for things that are not there.
+
+### Two process findings for the run report
+
+- **A gap in the agent's own plan, caught by its implementer:** two further stale claims used
+  "tells you" rather than "announces", so the plan's four-bullet list missed them. The implementer
+  **reported rather than exceeding scope**; the agent authorised the fix and swept for a seventh.
+- **A real pipeline defect: subagents on this box have no `mcp__atlassian__*` tools**, so the
+  Phase 3 agent could not file its tickets. **It correctly refused to fabricate keys** and the
+  parent created all eight itself. Any future contract that dispatches Jira writes to a subagent
+  will fail the same way. Worth an `/fb-issue`.
+
+**Nothing in this epic has been seen by a human or a browser, and nothing in the hand-off claims
+otherwise** — QA specifically checked both documents for such a claim and found none.
 
