@@ -1,7 +1,7 @@
 # Headless run simulator — `src/sim/`
 
 **Status:** implemented
-**Built by:** DLR-130
+**Built by:** DLR-130, DLR-120
 
 ## Responsibility
 
@@ -19,12 +19,14 @@ imported by none of them.
 
 | Export                                                                     | Purpose                                                                                  | File                |
 | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------- |
-| `SimPolicy`                                                                | The simulated player: four pure decision points the driver asks and never trusts blindly | `types.ts`          |
+| `SimPolicy`                                                                | The simulated player: four required pure decision points plus two optional levers, all asked and none trusted blindly | `types.ts`          |
+| `CheatPlay`                                                                | A Cheat to arm and the off-suit card to play with it, named together                     | `types.ts`          |
 | `CardChoice`                                                               | A card plus its Fox/Woodcutter ability choice — `CpuMove`'s shape, so `chooseCpuMove` satisfies it | `types.ts`  |
 | `ShopAction`                                                               | One between-fights action a policy wants: `buy` / `pull` / `flask`                       | `types.ts`          |
 | `HandReport` / `RunReport` / `SimSummary` / `SimOptions`                   | What one hand, one run and one batch measured                                            | `types.ts`          |
 | `RunEnding`                                                                | `Won` / `Lost` / `Stalled` — `Stalled` is a driver bug, deliberately not a game outcome  | `types.ts`          |
-| `baselinePolicy`, `POLICIES`, `BASELINE_CASH_AT_MULTIPLIER`                | The one shipped player, the name registry `--policy` resolves against, and its one knob  | `baselinePolicy.ts` |
+| `baselinePolicy`, `maximalistPolicy`, `POLICIES`, `BASELINE_CASH_AT_MULTIPLIER` | The two shipped players, the name registry `--policy` resolves against, and the baseline's one knob | `baselinePolicy.ts` |
+| `mintableBuffKinds`, `unreachableBuffKinds`, `unshelvedShopItems`          | Which cards a player can actually obtain, derived from production data alone             | `reachability.ts`   |
 | `playHand`, `HandOutcome`                                                  | Drives one hand through `roundReducer` and returns the felt's own `WarCouncilRoundResult` | `playHand.ts`       |
 | `playRun`                                                                  | Drives one whole run: hands, `recordEncounter`, the shop visit, `advanceRun`             | `playRun.ts`        |
 | `simulate`                                                                 | The batch loop over N seeded runs                                                        | `simulate.ts`       |
@@ -84,33 +86,21 @@ It then loops, picking exactly **one** action per iteration in a fixed priority 
 `roundReducer.ts`'s own guards: a `cpuFault` aborts; a resolved encounter or a complete round ends
 the hand; a held trick reveal dispatches `CarryOn`; an open ability prompt dispatches
 `ChooseAbility`; a between-tricks window (`discardWindowOpen`, run once per `tricksPlayed`) offers
-the policy its buff activations and its Apply Damage press; `canAct` plays a card as two `TapCard`
+the policy its optional discard — at most once a hand, before the buffs, because a swap changes the
+hand the buff decision is made against — then its buff activations and its Apply Damage press;
+`canAct` offers the policy an optional Cheat-armed play and otherwise plays a card as two `TapCard`
 dispatches — arm, then commit, the real two-tap interaction; a Quarry-to-lead gap dispatches
 `CarryOn`; and anything else breaks as `stalled`. At the end it assembles the same
 `WarCouncilRoundResult` `WarCouncilRound.tsx`'s `handleCarryOn` reports upward.
 
-### The policy seam, and why every number depends on it
+### The two mechanics with their own files
 
-`SimPolicy` has four methods — `chooseCard`, `wantsApplyDamage`, `chooseBuffs`, `nextShopAction` —
-each pure, each returning a decision. The driver treats every answer as **advisory**: it re-asks
-the engine's own refusal predicate (`applyDamageRefusalFor`, `loadoutRefusalFor`, `refusalFor`,
-`slotPullRefusalFor`, `flaskRefusalFor`) before dispatching and silently skips a refused action. A
-policy therefore cannot make the driver throw, so a carelessly written future policy cannot crash a
-measurement batch.
-
-`baselinePolicy` (`baselinePolicy.ts`) is the one shipped implementation and its module docblock
-states its behaviour in full — read that file before reading any number this tool prints. In brief:
-cards come from `chooseCpuMove` seated on the player's side (the engine's own opponent heuristic);
-buffs are activated cheapest-AP-first at every between-tricks window while the pool would still
-cover `APPLY_DAMAGE_AP_COST`; Apply Damage is pressed when the multiplier reaches
-`BASELINE_CASH_AT_MULTIPLIER` (3) or on the hand's last window with a non-empty bank; it never
-discards, marks a Timebomb or arms a Cheat, because none of the three is on `SHOP_ITEMS`' shelf;
-and at the shop it takes the free pulls, then buys Heal → AP capacity → Swan tier → Witch tier
-while affordable, then drinks the flask.
-
-`BASELINE_CASH_AT_MULTIPLIER` is a **policy** parameter, not a game tunable — it deliberately does
-not live in `src/hunt/config.ts`, and it is the single knob with the most leverage over the printed
-damage figures.
+- [The policy seam, the two policies, and why every printed number depends on them](the-policy-seam.md)
+  — `SimPolicy`'s four required methods and two optional levers, why the levers are optional, how
+  `runDiscard` and `runCheatPlay` drive a multi-step ritual without leaving it half-open, and what
+  `baselinePolicy` and `maximalistPolicy` each actually do.
+- [The reachability audit](reachability-audit.md) — which cards the game declares against which a
+  player can obtain, why the spec pins today's gaps as passing assertions, and what it measured.
 
 ### What it prints
 
@@ -119,6 +109,15 @@ reached and won, hands per encounter, damage distribution per hand to each side 
 max), the economy (coins earned and spent, slot pulls, buffs owned at the end), buff and AP usage
 per hand, and faults. Every division guards its divisor and prints `n/a` on an empty sample rather
 than emitting `NaN`; percentiles read a sorted array by index and never interpolate.
+
+DLR-120 added three figures, and the first of them is the one the tool was ultimately built to
+produce. **`hands played holding NO activatable buff`** counts hands where
+`activatableBuffs(run.buffs)` was empty at the deal — read through the *production* predicate the
+loadout panel itself reads, so the simulator and the felt cannot disagree about what "holds a usable
+buff" means. It converts "the buff system is barely exercised" from an inference off an activations
+average into a direct measurement, and it is what separates a balance failure from an integration
+one. A **`Levers`** section reports mean discards and mean Cheats armed per run, so a policy that
+declares a lever but never actually pulls it is visible rather than assumed.
 
 `Stalled` is reported separately from `Lost` throughout, so a driver bug can never be read as a
 balance finding.
@@ -147,7 +146,10 @@ still prices Timebomb — DLR-116 pared it off the `SHOP_ITEMS` shelf, not out o
 - **Determinism.** No `Math.random()` anywhere in `src/sim/**` or `scripts/`. Every seed is folded
   by an existing helper — `mixSeed` for the run, `dealSeedFor` (via `dealHand`) for the deal,
   `slotSeedFor` / `spinSeedFor` for the strip and the spin. `chooseBuffs`' sort tiebreaks on
-  `buff.id`, which is monotonic and never reused, so the ordering is total.
+  `buff.id`, which is monotonic and never reused, and `maximalistPolicy`'s discard sort tiebreaks on
+  suit — both orderings are total, so no tie can resolve differently between two runs of the same
+  seed. Verified end to end rather than argued: two identical invocations produce byte-identical
+  output.
 - **Termination.** Every loop is bounded by one of `simConfig.ts`'s three caps, and hitting one is
   reported as `stalled` rather than absorbed. The run-level loop is structurally finite because
   `RunOutcome` leaves `InProgress` after a fixed encounter count or any loss.
@@ -160,9 +162,19 @@ still prices Timebomb — DLR-116 pared it off the `SHOP_ITEMS` shelf, not out o
 
 ## Deferred / not yet implemented
 
-- **Only one policy exists.** `POLICIES` holds `baseline` alone. A stronger player — one that
-  discards, uses a Cheat, or times its cash-out well — is a later ticket dropped in behind the same
-  interface; nothing in the driver needs to change to accept one.
+- **Two policies exist, and neither is a good card player.** `POLICIES` holds `baseline` and
+  `maximalist` (DLR-120), and both take their cards from `chooseCpuMove` seated on the player. A
+  policy that actually plays well — one that times its cash-out, or reasons about the decree — is a
+  later ticket dropped in behind the same interface; nothing in the driver needs to change to accept
+  one. Every damage figure this tool prints is conditional on that limitation.
+- **No policy can be given a starting buff pile.** `playRun` calls `startRun(PLAYER_START_HEALTH,
+  [], seed)`, and that second argument is DLR-113's `TemplateGrant[]` — already wired, always empty
+  here. Passing grants would measure the game with the buff system live from the first trick, which
+  is **the single highest-value measurement still missing** (see
+  [the reachability audit](reachability-audit.md)). DLR-120 deliberately did not add the flag: it is
+  one step from running the balance pass, which is the developer's.
+- **`Puppeteer`'s window is never opened.** No reducer opens `ConsumableTiming.BeforeOwnCard`, so the
+  driver has no window to offer it in even if a template ever mints one.
 - **No balancing was done here, and none should be read out of this module.** DLR-130 shipped the
   instrument, not the readings. The developer's balance pass is a separate exercise, and the
   first observation this tool recorded is in `../run-winnability-simulation.md`.

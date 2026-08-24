@@ -168,3 +168,42 @@ record of what was measured on 2026-08-22. The first observation from the perman
 wins at `--seed 7`, mean fight reached 0.60 — is consistent with them, and is likewise an
 observation: DLR-130 shipped the instrument, and the developer's balance pass is a separate
 exercise that had not run when this note was written.
+
+---
+
+## Re-asked with the permanent tool, and re-framed — DLR-120, 2026-08-24
+
+The question this file opened is now repeatable, and it was re-asked at scale: **1,600 runs**, 200
+each at seeds 1 / 7 / 42 / 99999, against **two** policies. `Faults: none` and `stalled runs: 0` in
+every batch. **Zero wins in all sixteen hundred.** The per-hand exchange is 2.07–2.21 dealt against
+2.58–2.73 taken — stable across every seed and both players, so a deficit rather than variance, and
+consistent with this file's own pre-V5 passes (0/120, 0/150).
+
+**The re-framing matters more than the repetition.** DLR-120 added one figure to the report, and it
+changes what the deficit above is a measurement *of*: **between 67% and 71% of all hands were played
+holding no activatable buff at all.** A run opens with four `Unassigned` placeholders that
+`activatableBuffs` filters out of every offer; the only route to a real card is the free pull at the
+shop; and the shop is reached only by **winning a fight**, which 55–60% of runs never do. So the
+2.17-against-2.64 exchange is not a reading of the tuned game falling ~20% short — it is a reading of
+the **pre-buff game**, which is the same game the two passes above measured before any of the V5 work
+existed. That the number has not moved is therefore not evidence that the buff work failed; it is
+evidence that the buff work is largely absent from the sample.
+
+A second policy, `maximalist`, was added to test the obvious alternative explanation — that the
+simulated player is simply not using what it has. It is `baselinePolicy` with identical card and buff
+play (asserted by reference) plus the two levers a run actually grants: the Swap budget and the one
+starting Cheat. Both fire on every run — about 4 discards, exactly 1.00 Cheats — and the exchange
+moves by roughly **0.02 damage a hand**. That is a useful negative result: the levers the player
+already holds are not the missing ingredient.
+
+**Nothing was retuned, by anyone.** The reading recorded here is that the 0-win result is an
+**integration** problem before it is a balance one, and that the balance question cannot be answered
+honestly until the acquisition surfaces sit somewhere a living player can reach them. The caveats are
+stated plainly: a ~20% deficit is wide enough that a balance component probably survives full
+reachability, and both policies take their cards from `chooseCpuMove`, so neither is a good player.
+
+**The single measurement still missing** is the cheapest one: `playRun` calls
+`startRun(PLAYER_START_HEALTH, [], seed)`, and that empty second argument is DLR-113's
+`TemplateGrant[]`. Passing grants measures the game with the buff system live from the first trick.
+DLR-120 deliberately did not add the flag — it is one step from running the balance pass, which is
+the developer's.

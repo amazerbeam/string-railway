@@ -49,6 +49,12 @@ export function formatSummary(summary: SimSummary): string {
   const faults = hands.filter((hand) => hand.fault !== null)
   const totalDeadCardRefusals = runs.reduce((sum, run) => sum + run.deadCardRefusals, 0)
 
+  const buffStarvedHands = hands.filter((hand) => hand.activatableBuffsHeld === 0).length
+  const discardsPerRun = runs.map((run) =>
+    run.hands.reduce((sum, hand) => sum + hand.discardsUsed, 0),
+  )
+  const cheatsPerRun = runs.map((run) => run.hands.reduce((sum, hand) => sum + hand.cheatsArmed, 0))
+
   const lines: string[] = [
     `Headless run simulator — policy: ${summary.policyName}, base seed: ${summary.baseSeed}, runs: ${runs.length}`,
     '',
@@ -70,6 +76,10 @@ export function formatSummary(summary: SimSummary): string {
     '',
     'Buffs and AP',
     `  mean buff activations per hand: ${mean(hands.map((hand) => hand.buffsActivated))}  mean AP spent per hand: ${mean(hands.map((hand) => hand.apSpent))}  mean Apply Damage presses per hand: ${mean(hands.map((hand) => hand.applyDamagePresses))}  NoEffectYet refusals: ${totalDeadCardRefusals}`,
+    `  hands played holding NO activatable buff: ${percent(buffStarvedHands, hands.length)}`,
+    '',
+    'Levers',
+    `  mean discards per run: ${mean(discardsPerRun)}  mean Cheats armed per run: ${mean(cheatsPerRun)}`,
     '',
     'Faults',
   ]

@@ -16,8 +16,15 @@ import type { BuffConditionKind, BuffCostAxis } from './buffCosts'
  * DLR-112 — the 71-template v1 condition-card pool, GENERATED at module load from two small
  * crossing tables rather than hand-listed. `.docs/design/Balatro-Forbidden-Solitaire/
  * v1-buff-card-list.md` → *Condition templates* is the authoritative table this file transcribes;
- * cited, never re-derived. The 7 consumable/activated templates are deliberately absent — AC6 is
- * DLR-126's to resolve and DLR-126 has not landed.
+ * cited, never re-derived. The 7 consumable/activated templates are still absent, and that is now
+ * a KNOWN GAP rather than a deferral: DLR-126 landed and resolved AC6 affirmatively — a consumable
+ * is an ordinary `Buff` and the draw mechanism needs no change — but no template was ever added, so
+ * `BuffKind.Ward` and its four siblings are unreachable by playing. DLR-120's
+ * `src/sim/__tests__/reachability.test.ts` pins that. Closing it is NOT a data edit:
+ * `BuffTemplate.kind` is typed `BuffConditionKind` and `axis` is typed `BuffCostAxis`, and a
+ * consumable has neither — it is priced through `CONSUMABLE_AP_COST` and pays in its effect. It
+ * also needs 14 slot weights nobody has chosen. The developer decides whether consumables ship in
+ * v1's reel.
  */
 
 /** One distinct card template — a (family, reward axis, optional parameter) crossing. Carries NO
@@ -109,8 +116,15 @@ function makeTemplate(
 }
 
 /** The v1 pool: exactly 71 condition templates. GENERATED from the crossing tables at module load,
- *  never hand-listed. The 7 consumable/activated templates are deliberately absent — AC6 is
- *  DLR-126's to resolve and DLR-126 has not landed. */
+ *  never hand-listed. The 7 consumable/activated templates are still absent, and that is now a
+ *  KNOWN GAP rather than a deferral: DLR-126 landed and resolved AC6 affirmatively — a consumable
+ *  is an ordinary `Buff` and the draw mechanism needs no change — but no template was ever added,
+ *  so `BuffKind.Ward` and its four siblings are unreachable by playing. DLR-120's
+ *  `src/sim/__tests__/reachability.test.ts` pins that. Closing it is NOT a data edit:
+ *  `BuffTemplate.kind` is typed `BuffConditionKind` and `axis` is typed `BuffCostAxis`, and a
+ *  consumable has neither — it is priced through `CONSUMABLE_AP_COST` and pays in its effect. It
+ *  also needs 14 slot weights nobody has chosen. The developer decides whether consumables ship in
+ *  v1's reel. */
 export const BUFF_TEMPLATES: readonly BuffTemplate[] = TEMPLATE_FAMILIES.flatMap(
   templatesForTemplateFamily,
 )

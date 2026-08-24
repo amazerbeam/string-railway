@@ -24,13 +24,39 @@
  * SHOP — takes the free slot pulls first, then buys in the fixed order Heal (only below maximum
  * health) -> AP capacity -> Swan tier -> Witch tier while each is affordable, then drinks the
  * flask if below maximum health with a charge in hand.
+ *
+ * DLR-120 — the second policy: `baselinePolicy`'s cards and buffs, VERBATIM, plus the two levers a
+ * run actually grants and the baseline never pulls. Card and buff play are deliberately identical
+ * so a difference in the printed figures is attributable to the levers rather than to card play.
+ *
+ * MAXIMALIST DISCARD — once per hand, on the first open between-tricks window, the lowest-ranked
+ * `MAX_CARDS_PER_DISCARD` cards, while `discardsRemaining > 0`. Discarding at EVERY window would
+ * spend the fight's whole `DISCARDS_PER_FIGHT` budget inside hand one, which measures the budget
+ * rather than exercising the swap. Every number in that sentence is an existing configuration
+ * constant read by name; this policy introduces none.
+ *
+ * MAXIMALIST CHEAT — the run's starting Cheat (`RUN_STARTING_CHEATS = 1`), armed ONLY where lifting
+ * follow-suit strictly widens the legal set, and then playing the highest-ranked card the widening
+ * admits. Fox and Woodcutter are excluded: both open an `AbilityChoice` prompt, and the driver
+ * answers a prompt from `chooseCpuMove`'s choice for a different card.
  */
-import { applyDamageRefusalFor, chooseCpuMove, PlayerSide, type RoundState } from '../warCouncil'
+import {
+  applyDamageRefusalFor,
+  CardRank,
+  chooseCpuMove,
+  containsCard,
+  discardRefusalFor,
+  legalMoves,
+  PlayerSide,
+  type Card,
+  type RoundState,
+} from '../warCouncil'
 import {
   apCostOf,
   APPLY_DAMAGE_AP_COST,
   flaskRefusalFor,
   flaskStockFor,
+  MAX_CARDS_PER_DISCARD,
   refusalFor,
   shopStockFor,
   ShopItem,
@@ -40,8 +66,13 @@ import {
   type RunState,
 } from '../hunt'
 import { loadoutRefusalFor } from '../app/warCouncil/buffHandlers'
-import { applyDamageStock, offeredBuffs, type RoundUiState } from '../app/warCouncil/roundUiState'
-import type { CardChoice, ShopAction, SimPolicy } from './types'
+import {
+  applyDamageStock,
+  discardStock,
+  offeredBuffs,
+  type RoundUiState,
+} from '../app/warCouncil/roundUiState'
+import type { CardChoice, CheatPlay, ShopAction, SimPolicy } from './types'
 
 /** A policy parameter, NOT a game tunable — see this module's docblock, "APPLY DAMAGE". The
  *  multiplier the baseline waits for before voluntarily cashing out. */
@@ -110,4 +141,43 @@ export const baselinePolicy: SimPolicy = {
   nextShopAction,
 }
 
-export const POLICIES: Readonly<Record<string, SimPolicy>> = { baseline: baselinePolicy }
+function chooseDiscard(ui: RoundUiState): readonly Card[] {
+  if (discardRefusalFor(discardStock(ui)) !== null) return []
+  const hand = ui.round.hands[PlayerSide.Player]
+  return [...hand]
+    .sort((a, b) => (a.rank !== b.rank ? a.rank - b.rank : a.suit.localeCompare(b.suit)))
+    .slice(0, MAX_CARDS_PER_DISCARD)
+}
+
+function wantsCheatPlay(ui: RoundUiState): CheatPlay | null {
+  const cheat = ui.cheats[0]
+  if (cheat === undefined) return null
+
+  const legal = legalMoves(ui.round, PlayerSide.Player)
+  const widened = legalMoves(ui.round, PlayerSide.Player, { ignoreFollowSuit: true })
+  if (widened.length <= legal.length) return null
+
+  const gained = widened.filter(
+    (card) =>
+      !containsCard(legal, card) && card.rank !== CardRank.Fox && card.rank !== CardRank.Woodcutter,
+  )
+  if (gained.length === 0) return null
+
+  const best = gained.reduce((highest, card) => (card.rank > highest.rank ? card : highest))
+  return { cheatId: cheat.id, card: best }
+}
+
+export const maximalistPolicy: SimPolicy = {
+  name: 'maximalist',
+  chooseCard,
+  wantsApplyDamage,
+  chooseBuffs,
+  nextShopAction,
+  chooseDiscard,
+  wantsCheatPlay,
+}
+
+export const POLICIES: Readonly<Record<string, SimPolicy>> = {
+  baseline: baselinePolicy,
+  maximalist: maximalistPolicy,
+}

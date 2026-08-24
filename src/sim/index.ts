@@ -4,7 +4,13 @@ export { simulate } from './simulate'
 export { formatSummary } from './report'
 export { playRun } from './playRun'
 export { playHand, type HandOutcome } from './playHand'
-export { baselinePolicy, POLICIES, BASELINE_CASH_AT_MULTIPLIER } from './baselinePolicy'
+export {
+  baselinePolicy,
+  maximalistPolicy,
+  POLICIES,
+  BASELINE_CASH_AT_MULTIPLIER,
+} from './baselinePolicy'
+export { mintableBuffKinds, unreachableBuffKinds, unshelvedShopItems } from './reachability'
 export { MAX_ACTIONS_PER_HAND, MAX_HANDS_PER_FIGHT, MAX_SHOP_ACTIONS_PER_VISIT } from './simConfig'
 export {
   fixtureRunAfterFirstFight,

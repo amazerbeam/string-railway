@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { FRESH_ENCOUNTER_DECK } from '../../warCouncil'
+import { FRESH_ENCOUNTER_DECK, PlayerSide, type Card } from '../../warCouncil'
 import { PLAYER_START_HEALTH, startRun } from '../../hunt'
 import { baselinePolicy } from '../baselinePolicy'
 import { playHand } from '../playHand'
+import type { CheatPlay, SimPolicy } from '../types'
 
 describe('playHand', () => {
   it('terminates cleanly for a hand from a fresh run', () => {
@@ -36,5 +37,73 @@ describe('playHand', () => {
     const outcome = playHand(run, 1, FRESH_ENCOUNTER_DECK, baselinePolicy)
     const resolvedEarly = outcome.result.finalState.tricksPlayed < 6
     expect(outcome.result.finalState.tricksPlayed === 6 || resolvedEarly).toBe(true)
+  })
+})
+
+describe('playHand — the optional levers', () => {
+  it('baselinePolicy (neither optional method) reports zero discards and zero Cheats, and its HandReport is otherwise unchanged', () => {
+    const run = startRun(PLAYER_START_HEALTH, [], 42)
+    const first = playHand(run, 1, FRESH_ENCOUNTER_DECK, baselinePolicy)
+    const second = playHand(run, 1, FRESH_ENCOUNTER_DECK, baselinePolicy)
+
+    expect(first.report.discardsUsed).toBe(0)
+    expect(first.report.cheatsArmed).toBe(0)
+    expect(second.report.damageToQuarry).toBe(first.report.damageToQuarry)
+    expect(second.report.damageToPlayer).toBe(first.report.damageToPlayer)
+    expect(second.report.tricksWon).toBe(first.report.tricksWon)
+    expect(second.report.buffsActivated).toBe(first.report.buffsActivated)
+    expect(second.report.apSpent).toBe(first.report.apSpent)
+    expect(second.report.applyDamagePresses).toBe(first.report.applyDamagePresses)
+  })
+
+  it('a policy discarding the first two hand cards commits exactly one discard for the whole hand, and the discarded cards leave the final hand', () => {
+    const run = startRun(PLAYER_START_HEALTH, [], 42)
+    let discarded: readonly Card[] = []
+    const policy: SimPolicy = {
+      ...baselinePolicy,
+      chooseDiscard: (ui) => {
+        if (discarded.length === 0) {
+          discarded = ui.round.hands[PlayerSide.Player].slice(0, 2)
+        }
+        return discarded
+      },
+    }
+
+    const outcome = playHand(run, 1, FRESH_ENCOUNTER_DECK, policy)
+
+    expect(outcome.report.discardsUsed).toBe(1)
+    const finalHand = outcome.result.finalState.hands[PlayerSide.Player]
+    for (const card of discarded) {
+      expect(finalHand).not.toContainEqual(card)
+    }
+  })
+
+  it('a policy that never wants to discard commits none and leaves discardsRemaining untouched', () => {
+    const run = startRun(PLAYER_START_HEALTH, [], 42)
+    const policy: SimPolicy = {
+      ...baselinePolicy,
+      chooseDiscard: () => [],
+    }
+
+    const outcome = playHand(run, 1, FRESH_ENCOUNTER_DECK, policy)
+
+    expect(outcome.report.discardsUsed).toBe(0)
+    expect(outcome.result.discardsRemaining).toBe(run.discardsRemaining)
+  })
+
+  it('a Cheat play naming a cheatId not held reports zero Cheats armed and leaves the held Cheats unchanged', () => {
+    const run = startRun(PLAYER_START_HEALTH, [], 42)
+    const policy: SimPolicy = {
+      ...baselinePolicy,
+      wantsCheatPlay: (ui): CheatPlay | null => {
+        const card = ui.round.hands[PlayerSide.Player][0]
+        return card === undefined ? null : { cheatId: -999, card }
+      },
+    }
+
+    const outcome = playHand(run, 1, FRESH_ENCOUNTER_DECK, policy)
+
+    expect(outcome.report.cheatsArmed).toBe(0)
+    expect(outcome.result.cheats).toStrictEqual(run.cheats)
   })
 })

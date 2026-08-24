@@ -4815,3 +4815,270 @@ tabindex they were deliberately outside of changes focus order for the whole pan
 
 The unobtainability finding above stands unchanged and is the more serious half.
 
+
+
+---
+
+## DLR-120 — Integration: one end-to-end run loop
+
+**GREEN.** typecheck 0 · lint 0 · `npm test` **1829 passed of 1829, 141 files, 0 failures**
+(baseline 1811 / 140) · `npm run build` 0, 153 modules. Reviewers: Code-Evaluator **APPROVED**
+(0 issues), Defender **APPROVED** (0 critical / 0 warning / 2 info), QA **FAILURES FOUND** — one
+finding, and it was Prettier on two files. **One round of a permitted two**; the fix was
+whitespace-only, so the re-review round was skipped — the same call DLR-125 and DLR-130 made.
+
+**The instruction was to find where twenty tickets do not fit together.** They do, in one specific
+and now-measured place, and this entry exists mostly to say where.
+
+### The headline: the 0-win result is an INTEGRATION problem before it is a balance one
+
+**Not one tuning value was touched.** The verdict is a reading, argued from numbers, handed over.
+
+The figure everyone has been looking at is the per-hand exchange — 2.17 dealt against 2.64 taken.
+This ticket added one line to the report, and it changes what that figure is a measurement *of*:
+
+> **`hands played holding NO activatable buff: 67.3% – 71.3%`**
+
+Across **1,600 runs** (200 each at seeds 1 / 7 / 42 / 99999, two policies), between two-thirds and
+seven-tenths of all hands were played with **nothing in the pile to activate**. Not "few buffs", not
+"cheap ones" — none. The chain, every link verified in code:
+
+1. `startRun()` seeds `STARTING_BUFF_COUNT = 4` cards and **every one is `BuffKind.Unassigned`**,
+   which `activatableBuffs` filters out before anything can be offered. `reachability.test.ts` case 8
+   pins `activatableBuffs(startRun().buffs).length === 0`.
+2. The only route to a real buff is the one free slot pull.
+3. `playRun`'s `visitShop` is reached **only** past `isEncounterResolved` **and** `canAdvanceRun` —
+   that is, **by winning a fight**.
+4. `mean fights won: 0.39 – 0.47`. Around **55–60% of runs end inside fight one.**
+
+**So every acquisition surface this epic built — the slot machine (DLR-112), the shop shelf
+(DLR-116 / DLR-122), the Vault's grants (DLR-113) — sits behind the fight that kills the player.**
+The build phase of a roguelike is gated behind the fight you cannot survive unbuilt. That is a wiring
+problem in the run's structure, not a magnitude problem in a table.
+
+Which means the pre-V5 passes in `run-winnability-simulation.md` (0/120, 0/150) and today's 0/1600
+are **not two readings of the same game that failed to move.** They are the same reading twice: both
+measure the pre-buff game, because for two hands in three that is still the game being played.
+**The V5 buff work has not "failed to move the needle" — it is largely absent from the sample.**
+
+**The counter-argument, recorded fairly:** a ~20% deficit is wide. Closing it on buffs alone needs
+them worth ~0.5 damage per hand across *every* hand, and they are held in about 32% of hands. There
+is probably a balance component underneath. The claim is not that the game is secretly balanced — it
+is that the deficit **cannot be attributed** while the systems meant to close it are missing from
+most of the sample, and that retuning against this number would be tuning the wrong game.
+
+**The decisive experiment, named and deliberately not run:** `playRun` calls
+`startRun(PLAYER_START_HEALTH, [], seed)` — that empty second argument is DLR-113's
+`TemplateGrant[]`, already wired. Passing grants measures the game with buffs live from trick one.
+**Not shipped here**, because a `--grants` flag is one step from running the balance pass, which is
+explicitly out of scope, and the reachability half of the verdict is conclusive without it.
+
+### This confirms, from the other direction, what the developer's own question found
+
+The coordinator's mid-run entry above ("Cheats and Timebombs should be folded into the buff cards")
+reached the same wall from a different angle and raised **DLR-132**. The two findings are the same
+defect measured twice, and they agree: the coordinator counted **routes** and found none; this ticket
+counted **hands** and found 67–71% of them empty. DLR-132 now owns closing it for Cheat and Timebomb.
+
+That also means seams 2, 3 and 4 below are **no longer unowned hand-overs** — they are DLR-132's
+brief, and this entry is the measurement behind it rather than a competing proposal.
+
+### What was built
+
+- **Two optional `SimPolicy` hooks** — `chooseDiscard?(ui)` and `wantsCheatPlay?(ui)` — driven from
+  `playHand` by `runDiscard` and `runCheatPlay`, each re-asking the engine's own refusal predicate
+  before every dispatch and cancelling rather than leaving a selection half-open.
+- **`maximalistPolicy`**, registered in `POLICIES`. Card play and buff play are `baselinePolicy`'s
+  **by reference** (asserted, not merely described), so any delta is attributable to the levers alone.
+- **`HandReport.activatableBuffsHeld` / `.discardsUsed` / `.cheatsArmed`**, the report line above, and
+  a `Levers` section.
+- **`src/sim/reachability.ts` plus an 8-case audit** deriving reachability from `BUFF_TEMPLATES`,
+  `SHOP_ITEMS` and `startRun()`, hand-listing nothing.
+
+### Every seam found — one fixed, six handed over (three of them now DLR-132's)
+
+1. **DLR-112 deferred to DLR-126; DLR-126 answered and never came back. FIXED (prose).**
+   `buffTemplates.ts` said, twice, *"AC6 is DLR-126's to resolve and DLR-126 has not landed."* It
+   landed and answered **affirmatively** — a consumable is an ordinary `Buff`, the draw mechanism
+   needs no change — but no template was ever added. The deferral had become a gap while still being
+   described as a deferral. Both docblocks corrected;
+   `.docs/implementation/hunt/the-slot-machine.md` carried the identical stale claim and was
+   corrected too.
+   **Not closed, and here is the cost:** `BuffTemplate.kind` is typed `BuffConditionKind`, `axis` is
+   typed `BuffCostAxis`, and **a consumable has neither**. Closing it needs the template shape
+   widened, `mintFromTemplate` branched, `slotOdds.ts` changed, and **14 slot weights nobody has
+   chosen**. A feature with a tuning pass inside it. **Developer's** — and note DLR-132 covers Cheat
+   and Timebomb but **not** the five consumables.
+2. **The reachability gap is EIGHT card kinds, not five.** The brief named five consumables.
+   Measured: Ward, Puppeteer, Second Thoughts, Foresight, Spyglass — **and Cheat, Timebomb and
+   Shield**. `cheatBuff`, `timebombBuff` and `shieldBuff` have **zero production callers**.
+   *(Cheat and Timebomb → DLR-132. Shield and the five consumables are still unowned.)*
+3. **DLR-107's migration was never finished, and it said what would finish it.** Its own log entry:
+   the intermediate state lasts *"until the activation ticket (DLR-103 T5) and the UI ticket land"*.
+   **DLR-108 and DLR-114 both landed.** Cheat and Timebomb still exist twice — the live bespoke
+   `CheatStage` / `TimebombStage` machines, and an inert `Buff` representation nothing reads.
+   *(→ DLR-132, which is exactly this consolidation.)*
+4. **DLR-116's pared shelf made four other tickets' work unobtainable.** `SHOP_ITEMS` is
+   `[ApCapacity, SwanTier, WitchTier, Heal]`; Cheat, Timebomb, Blast Guard and Whetstone are still
+   priced, still handled by `buyFromShop`, still tested, and unbuyable. With `startRun()` seeding
+   `timebombCharges: 0` / `blastGuardHeld: false` / `whetstones: 0`, **no play path produces a
+   Timebomb, a Blast Guard or a Whetstone.** Behind that sit **DLR-101, DLR-107, DLR-110 and
+   DLR-129** — an entire vocabulary retirement for a mechanic nobody can obtain.
+   *(Cheat and Timebomb → DLR-132. **Blast Guard and Whetstone are still unowned**, and DLR-132's
+   brief does not cover them — worth adding, or they stay unreachable after it lands.)*
+5. **The Cheat is the one reachable activated card, and only by accident of the seed** —
+   `RUN_STARTING_CHEATS = 1`. `maximalist` spends it on **1.00 of 1.00** runs; it always finds a use.
+6. **The acquisition surfaces sit behind the fight that kills the player** — the structural seam,
+   above. **This one is unowned and is the largest.** DLR-132 makes Cheat and Timebomb *drawable*;
+   it does not change the fact that the first draw happens after fight one.
+7. **`Keepsake` — and the answer to the brief's question is YES, the deck change makes it decidable.**
+   DLR-123 turned "hand's end" from an implicit remount into a **modelled event**: `closeHand` folds
+   the decree and both hands into the spent pile at a specific instant. There is now a real boundary
+   for the rule to name; before, there was not. Whether it should fire *there* is a rule call and
+   stays the developer's. **`Long Fall` confirmed absent** — no entry in `TEMPLATE_FAMILIES`. 10 of 12
+   families fire, 65 of 78 cards live.
+
+### Plan defaults taken (gate auto-approved, nothing developer-confirmed)
+
+1. **The simulator is the end-to-end evidence; no browser pass attempted.** Not requested, and jsdom
+   has no layout engine.
+2. **The two new `SimPolicy` methods are OPTIONAL, not required.** A required method forces
+   `baselinePolicy` to implement two refusals, turning its load-bearing docblock claim from "does not
+   consider it" into "considers it and declines" — changing what every figure it prints *means* while
+   changing none of them. **Verified it worked: seed 1 reproduces 2.17 / 2.64 / 0.44 / 0.88 / 0.82 to
+   the digit, and reports 0.00 on both new counters.**
+3. **`maximalist` holds card play and buff play identical to `baseline`** — otherwise the comparison
+   attributes a card-play difference to the levers.
+4. **Discard rule: once per hand, first open window, the lowest-ranked `MAX_CARDS_PER_DISCARD` cards
+   while a charge remains.** Every number an existing constant. Discarding at every window would spend
+   `DISCARDS_PER_FIGHT` inside hand one and measure the budget rather than exercise the swap.
+5. **Cheat rule: arm only where it STRICTLY widens the legal set**, then play the highest card the
+   widening admits. Arming and then playing a follow-suit-legal card spends it for nothing and would
+   report the Cheat as harmful rather than unexercised. Fox and Woodcutter excluded — both open an
+   `AbilityChoice` prompt the driver would answer from `chooseCpuMove`'s choice for a *different* card.
+6. **`activatableBuffsHeld` reads the PRODUCTION predicate** `activatableBuffs`, so the simulator and
+   the felt cannot disagree about what "holds a usable buff" means.
+7. **The audit lives in `src/sim/__tests__/`, not `src/hunt/__tests__/`** — reachability is a property
+   of the whole run, and no single module owns both halves.
+8. **The audit pins today's gaps as PASSING assertions**, each with a comment naming the gap and the
+   decision that clears it. DLR-125's `Keepsake` precedent. It reads oddly on purpose.
+9. **A `--grants` flag was NOT shipped** — see the headline.
+
+### Things worth carrying forward
+
+- **The construction-site check (`/fb-plan` Step 1.6 check 7) held again — 2 of 2, exactly.**
+  `HandReport`: 12 annotated sites, **1** construction site; `SimPolicy`: 13 annotated, **1**. And the
+  check's own documented failure mode fired and was caught during planning: the first-choice
+  distinctive field `applyDamagePresses:` returned **only declarations**, because the literal uses
+  shorthand. Switching to `damageToQuarry:` found the real site. **Grep a field that is actually
+  spelled with a colon in the literal** — shorthand properties are invisible to this check. That is
+  the second consecutive ticket the check has held on, after four undercounts.
+- **Every planner-asserted count held against the real code** — 71 templates, 11 mintable kinds, 8
+  unreachable, 20 `BuffKind` members partitioning exactly. The Phase 2 implementer verified each
+  before writing the assertion rather than after.
+- **A pre-existing 400-line breach nobody had measured**, found by widening Task 8's grep beyond the
+  contract's own files: `src/warCouncil/__tests__/playCard.test.ts` is **418** lines and
+  `src/warCouncil/__tests__/rankTiers.resolution.test.ts` is **402**. Both last touched by DLR-123
+  (`00349ce`); **neither is in this contract's diff.** Defender and QA independently agreed an
+  integration ticket should not be splitting two unrelated engine spec files. **Left for the
+  developer.**
+- **A Code-Evaluator claim corrected by the coordinator:** its report said `src/sim/` "isn't formally
+  under the ESLint boundary". It is — `eslint.config.js:30` in the pure-core block **and** line 85 in
+  the later block's `ignores`. It approved anyway, so nothing turned on it, but the record should be
+  right.
+- **Defender Info deliberately not actioned:** `chooseDiscard`'s tie-break uses
+  `a.suit.localeCompare(b.suit)`. Defender explicitly did *not* call it a determinism defect (the
+  suits are `bells` / `keys` / `moons`, lowercase ASCII with distinct first letters). Left alone
+  **specifically so the post-review diff stayed whitespace-only**, which is what justified skipping the
+  re-review round. A plain `<` would remove the theoretical locale dependency if anyone wants it.
+- **The `report.ts` Prettier fix was not the one QA described.** QA predicted the `cheatsPerRun` line
+  needed splitting; at this repo's `printWidth: 100` that line is exactly 100 characters and Prettier
+  considers it correct. The implementer reformatted what Prettier actually asked for and **said so**
+  rather than forcing QA's description through. Right instinct.
+
+### Gates, and the simulator output actually observed
+
+| Gate | Result |
+|---|---|
+| `npm run typecheck` | exit 0 |
+| `npm run lint` | exit 0, 0 warnings |
+| `npm test` | **1829 passed of 1829, 141 files, 0 failed** (baseline 1811 / 140) |
+| `npm run build` | exit 0, 153 modules |
+| `npx prettier --check` (11 contract files) | exit 0 after the fix pass |
+
+**baseline**, 200 runs each — seeds 1 / 7 / 42 / 99999: win rate **0.0%** in every batch; fight
+reached 0.44 / 0.46 / 0.41 / 0.39; to Quarry **2.17 / 2.15 / 2.07 / 2.13**; to player
+**2.64 / 2.67 / 2.61 / 2.70**; coins 0.82 / 0.78 / 0.75 / 0.60; **no activatable buff
+67.7% / 67.3% / 70.0% / 70.7%**; discards 0.00 and Cheats 0.00 (it implements neither hook — this is
+the regression check that the baseline was not perturbed).
+
+**maximalist**, same seeds: win rate **0.0%** in every batch; to Quarry **2.21 / 2.10 / 2.18 / 2.10**;
+to player **2.66 / 2.73 / 2.68 / 2.68**; **no activatable buff 67.4% / 71.3% / 66.7% / 69.4%**;
+**discards 4.09 / 3.91 / 4.06 / 3.94**; **Cheats 1.00 in every batch**.
+
+**`Faults: none` and `stalled runs: 0` in all eight batches.** `NoEffectYet` refusals **0** in every
+batch — the unreachable consumables never reach an offer, so they skew nothing in either direction.
+
+**Both levers fire on every single run and neither moves the result.** Mean dealt: baseline 2.13,
+maximalist 2.15. Mean taken: 2.66 against 2.69. **Pulling every lever a run actually grants is worth
+about +0.02 damage a hand.** That negative result is genuinely useful: the levers the player already
+holds are not the missing ingredient.
+
+Determinism: two identical `--runs 50 --seed 3 --policy maximalist` invocations produce a
+**byte-identical** file. An unknown policy still exits 1, and now names both.
+
+### Integrity
+
+`throw new` across `src/` = **102**, unchanged (the log's earlier 98 was stale; 102 is right).
+`Math.random()` = exactly 3 real call sites, all in `src/App.tsx`, all
+`Math.floor(Math.random() * 0x100000000)` feeding `startRun`; **zero in `src/sim/`**.
+`buffTemplates.ts`'s diff proved comment-prose-only. **`roundUiState.ts` (399), `App.tsx` (394) and
+`WarCouncilRound.tsx` (394) were not touched** — none is in the file map, and `roundUiState.ts` still
+has its one line of headroom. No `any`, no `console.log`, no module-level mutable state.
+
+### Docs
+
+`.docs/implementation/sim/` **split** (its README was 172 lines and this contract added more):
+`the-policy-seam.md` and `reachability-audit.md` created, README slimmed to an index for those two.
+`.docs/implementation/hunt/the-slot-machine.md` — stale "AC6 is DLR-126's" claim corrected.
+`.docs/implementation/run-winnability-simulation.md` — the 1,600-run observation and the re-framing
+appended. `.docs/implementation/README.md` — sim row updated; **`src/hunt/` deliberately NOT credited
+to DLR-120**, since no hunt behaviour was built.
+
+**`the-hunt.md` WAS updated, and the reason is worth reading.** No rule changed — but the audit
+falsified the document's own header claim. It said everything below is reachable *"except where a rule
+is marked [not built] — and except the blue hearts"*. **That exception list was incomplete by eight
+card kinds and three shop items.** The header now names the full set, says it is measured by an
+executable audit rather than estimated, and states plainly that **[settled] means the rule is decided,
+not that you can reach it** — two separate axes that had quietly merged. Two Known-tensions entries
+appended: the 67–71% measurement with the structural reading, and the settled-versus-reachable
+divergence.
+
+### What the developer must decide
+
+1. **Is the 0-win result balance or integration?** This ticket argues integration first and shows its
+   working. **Nothing was retuned.**
+2. **Do consumables ship in v1's reel?** 14 unchosen slot weights sit in the way. **DLR-132 does not
+   cover these five cards.**
+3. **Do Blast Guard and Whetstone come back to the shelf?** Also outside DLR-132's brief, and also
+   unobtainable today.
+4. **`Keepsake`** — now decidable against `closeHand`. **`Long Fall`** — author the template or retire
+   the family.
+5. **Is `maximalist` the player worth measuring**, and should its two levers be split for attribution?
+   (Five lines in `POLICIES`.)
+6. **Ward's silver/gold rows** are dead twice over until (3) is answered — their distinguishing case is
+   self-inflicted Timebomb damage, and a Timebomb is unobtainable.
+7. **The two pre-existing 418 / 402-line spec files.**
+8. **The structural question DLR-132 does not answer:** should a run start with real cards, or reach a
+   shop before its first fight?
+
+### What a browser would still check — this ticket closes NONE of it
+
+No `.tsx`, no stylesheet, no copy. DLR-119's agenda is unchanged and carried into `pr-description.md`
+§6: Apply Damage tappable at 390×844; the dossier inside `30dvh`; the armed card clearing the fan
+reserve at a wide viewport; **whether the shell crops at any of the four sizes** — `.wc-shell` is
+`overflow: hidden`, so the failure mode is a silent crop; custom properties resolving; the five-clause
+trick readout; `Lethal.`-first with a screen reader; the `ErrorBoundary` palette in light *and* dark.
+
+**One addition of this ticket's own, and it is cheap:** play one run and watch the loadout bar stay
+empty of anything activatable until you win a fight. The audit asserts it; nobody has seen it.

@@ -14,6 +14,7 @@ import {
   applyDamageRefusalFor,
   chooseCpuMove,
   currentTurn,
+  discardRefusalFor,
   PlayerSide,
   QUARRY_SIDE,
   RoundPhase,
@@ -22,11 +23,14 @@ import {
   type WarCouncilState,
 } from '../warCouncil'
 import {
+  activatableBuffs,
   apCapacityFor,
   bankClimbBonusFor,
   BuffActivationRefusal,
   DuelSide,
+  hasCheat,
   isEncounterResolved,
+  MAX_CARDS_PER_DISCARD,
   playerRankTiersFor,
   type RunState,
 } from '../hunt'
@@ -36,7 +40,10 @@ import { roundReducer } from '../app/warCouncil/roundReducer'
 import {
   applyDamageStock,
   canAct,
+  cheatArmed,
   createRoundUiState,
+  discardSelecting,
+  discardStock,
   discardWindowOpen,
   loadoutOpen,
   offeredBuffs,
@@ -76,6 +83,81 @@ export function seedFor(run: RunState, dealt: WarCouncilState): RoundUiSeed {
     apCapacity: apCapacityFor(run.apCapacityBonus),
     coins: run.coins,
   }
+}
+
+interface DiscardOutcome {
+  readonly ui: RoundUiState
+  /** `true` only when a swap actually committed and a budget charge was spent. */
+  readonly committed: boolean
+}
+
+/**
+ * One optional discard, in the same between-tricks window the buff activations use — `discardStock`
+ * and `buffActivationStock` read the SAME `discardWindowOpen` predicate, so there is no second
+ * timing gate to keep in step. Runs BEFORE the buff window because a swap changes the hand the buff
+ * decision is made against.
+ *
+ * Every dispatch is preceded by re-asking the engine's own refusal predicate, and any path that
+ * cannot commit cancels the selection rather than leaving it open — `runBuffWindow`'s own
+ * discipline, and load-bearing here because an open selection reinterprets the next hand-card tap.
+ */
+function runDiscard(initial: RoundUiState, policy: SimPolicy): DiscardOutcome {
+  if (policy.chooseDiscard === undefined) return { ui: initial, committed: false }
+  const wanted = policy.chooseDiscard(initial)
+  if (wanted.length === 0) return { ui: initial, committed: false }
+  if (discardRefusalFor(discardStock(initial)) !== null) return { ui: initial, committed: false }
+
+  let ui = roundReducer(initial, { kind: RoundUiActionKind.TapDiscard })
+  if (!discardSelecting(ui)) return { ui: initial, committed: false }
+
+  for (const card of wanted.slice(0, MAX_CARDS_PER_DISCARD)) {
+    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card })
+  }
+  if (discardRefusalFor(discardStock(ui)) !== null) {
+    return { ui: roundReducer(ui, { kind: RoundUiActionKind.CancelDiscard }), committed: false }
+  }
+
+  ui = roundReducer(ui, { kind: RoundUiActionKind.TapDiscard })
+  return { ui, committed: !discardSelecting(ui) }
+}
+
+interface CheatPlayOutcome {
+  readonly ui: RoundUiState
+  /** `true` only when the Cheat left `ui.cheats` — i.e. the card actually committed. */
+  readonly spent: boolean
+}
+
+/**
+ * One optional Cheat-armed play: two taps to poise and arm, then two to commit the card the policy
+ * named. Counted only when the Cheat actually LEFT the pile, which `commitHandlers.ts` does on the
+ * committing tap and only there.
+ *
+ * A play that does not commit — an illegal card, or a Fox/Woodcutter that opened a prompt instead —
+ * gives the Cheat back through `CancelCheat` and then clears any armed card through
+ * `CancelSelection`, so the caller's ordinary two-tap commit is not left racing a half-armed state.
+ */
+function runCheatPlay(initial: RoundUiState, policy: SimPolicy): CheatPlayOutcome {
+  const play = policy.wantsCheatPlay?.(initial) ?? null
+  if (play === null || !hasCheat(initial.cheats, play.cheatId)) {
+    return { ui: initial, spent: false }
+  }
+
+  let ui = roundReducer(initial, { kind: RoundUiActionKind.TapCheat, id: play.cheatId })
+  ui = roundReducer(ui, { kind: RoundUiActionKind.TapCheat, id: play.cheatId })
+  if (!cheatArmed(ui)) {
+    return { ui: initial, spent: false }
+  }
+
+  const before = ui.cheats.length
+  ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: play.card })
+  ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: play.card })
+  if (ui.cheats.length < before) {
+    return { ui, spent: true }
+  }
+
+  ui = roundReducer(ui, { kind: RoundUiActionKind.CancelCheat })
+  ui = roundReducer(ui, { kind: RoundUiActionKind.CancelSelection })
+  return { ui, spent: false }
 }
 
 interface WindowOutcome {
@@ -144,9 +226,16 @@ export function playHand(
   let buffsActivated = 0
   let applyDamagePresses = 0
   let deadCardRefusals = 0
+  let discardsUsed = 0
+  let cheatsArmed = 0
+  let discardedThisHand = false
   let stalled = false
   let fault: string | null = null
   let terminated = false
+
+  // The decisive statistic. Read through the PRODUCTION predicate rather than counting the pile,
+  // so this can never disagree with what the loadout panel offers.
+  const activatableBuffsHeld = activatableBuffs(run.buffs).length
 
   for (let i = 0; i < MAX_ACTIONS_PER_HAND; i += 1) {
     if (ui.cpuFault !== null) {
@@ -180,6 +269,14 @@ export function playHand(
 
     if (discardWindowOpen(ui) && windowKey !== ui.round.tricksPlayed) {
       windowKey = ui.round.tricksPlayed
+      if (!discardedThisHand) {
+        const discard = runDiscard(ui, policy)
+        ui = discard.ui
+        if (discard.committed) {
+          discardsUsed += 1
+          discardedThisHand = true
+        }
+      }
       const outcome = runBuffWindow(ui, policy)
       ui = outcome.ui
       buffsActivated += outcome.buffsActivated
@@ -189,6 +286,12 @@ export function playHand(
     }
 
     if (canAct(ui)) {
+      const cheat = runCheatPlay(ui, policy)
+      ui = cheat.ui
+      if (cheat.spent) {
+        cheatsArmed += 1
+        continue
+      }
       const move = policy.chooseCard(ui.round)
       heldChoice = move.choice
       ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: move.card }) // arm
@@ -230,6 +333,9 @@ export function playHand(
     apSpent: apCapacityFor(run.apCapacityBonus) - ui.buffActivation.apPool,
     applyDamagePresses,
     coinsFromBuffs: ui.buffHand.coinsEarned,
+    activatableBuffsHeld,
+    discardsUsed,
+    cheatsArmed,
     stalled,
     fault,
   }

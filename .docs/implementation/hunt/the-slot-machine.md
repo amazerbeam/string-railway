@@ -107,9 +107,17 @@ Awards are minted through `mintFromTemplate`, so every card the machine pays is 
 
 - **Only two machines exist** (`Skirmisher`, `Strongbox`) and their weight tables are
   `slotWeights.ts`'s, untouched by DLR-116.
-- **The 7 consumable/activated templates are still absent from `BUFF_TEMPLATES`** — AC6 is DLR-126's.
-  `Ward` is consequently **not in the reel pool**, and its silver and gold tiers remain
-  indistinguishable while `DAMAGE_PER_HIT = 1`.
+- **The 7 consumable/activated templates are still absent from `BUFF_TEMPLATES`, and this is now a
+  known gap rather than a deferral** (DLR-120). DLR-126 landed and answered AC6 **affirmatively** —
+  a consumable is an ordinary `Buff` and the draw mechanism needs no change at all — but no template
+  was ever added, so `Ward` and its four siblings are **not in the reel pool** and no play path can
+  produce one. `src/sim/__tests__/reachability.test.ts` pins that. Closing it is **not** a data edit:
+  `BuffTemplate.kind` is typed `BuffConditionKind` and `axis` is typed `BuffCostAxis`, and a
+  consumable has neither — it is priced through `CONSUMABLE_AP_COST` and pays in its effect. It also
+  needs 14 slot weights (7 kinds × 2 machines) nobody has chosen. Whether consumables ship in v1's
+  reel is the developer's call. (DLR-126 separately **disproved** the old claim that Ward's silver
+  and gold tiers are indistinguishable: `bank.ts` adds `trick.timebombToPlayer`, whose column is
+  2/4/6, so a hit is 1 **or** 3/5/7 — all three Ward rows ship.)
 - **`Keepsake` is unfireable in live play** and ships at floor weight, so a player can win a
   `Keepsake` card from a reel that never fires. It is a dud card, not a crash — `apCostOf` prices it
   fine. DLR-125 confirmed the defect rather than fixing it: see

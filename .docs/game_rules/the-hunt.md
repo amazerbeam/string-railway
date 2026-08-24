@@ -5,8 +5,21 @@ _The Fox in the Forest_. This document is the **rules as they currently stand**:
 player follows, stated once, in playing order.
 
 Last reviewed against the code and the design on **2026-08-24**. Everything below is reachable in
-the app today except where a rule is marked **[not built]** — and except the **blue hearts** of
-section 8, which are enforced, drawn, and unreachable because nothing grants one.
+the app today except where a rule is marked **[not built]** — and except the cards and guards listed
+here, every one of which is **decided, enforced and tested, yet cannot be obtained by playing**:
+
+- the **blue hearts** of section 8, because nothing grants one;
+- the five **items** of section 4 — Ward, Second Thoughts, Foresight, Spyglass, Puppeteer — because
+  nothing mints one into your pile, whatever the reel lands on;
+- a **Cheat**, a **Timebomb** or a **Shield** *as a card in your pile* (a Cheat as a **slot** is a
+  different thing and you do start every run holding one);
+- a **Timebomb charge**, a **Blast Guard** and a **Whetstone**, because the shop stopped selling all
+  three on 2026-08-24 — noted in full at section 10.
+
+That list is not an estimate. It is measured on every run by an executable audit added on
+2026-08-24, so a card leaving or joining it turns a test red rather than quietly changing what this
+paragraph should say. **A rule below being marked [settled] means the rule is decided, not that you
+can reach it** — the two are separate axes and this is the one that says which.
 
 > **A buff you pay for now pays you back — DLR-125, 2026-08-24.** Until today activating a buff spent
 > action points and did nothing: no condition was checked and no reward was ever paid. Both halves
@@ -3303,6 +3316,26 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
 
 ### Known tensions, recorded not resolved
 
+- **Most hands are played with no buff to activate at all, and that is now measured** (new
+  2026-08-24, DLR-120). Across 1,600 simulated runs at four seeds and two different players,
+  **between 67% and 71% of all hands were played holding nothing activatable**. A run opens with
+  four placeholder cards that are filtered out of every offer, and the only way to a real card is
+  the free pull at the shop — which you reach by **winning a fight**. Around 55–60% of runs end
+  inside the first one. So the build phase this game is built around sits behind the fight that
+  kills you, and the numbers everyone has been reading — 2.17 damage dealt against 2.64 taken, no
+  wins in 200 runs — are measurements of the game **without** its buffs, which is the same game the
+  pre-2026-08-23 passes measured. Pulling every lever a run actually grants (the Swap budget and the
+  starting Cheat, on every run) moved the exchange by about **0.02 damage a hand** — so the levers
+  you have are not the missing piece. **Whose decision:** the developer's, and it is a structural
+  one before it is a tuning one — whether a run should start with real cards, or reach a shop before
+  its first fight, or both. Nothing was retuned.
+- **A rule being settled and a rule being reachable came apart far enough to need saying** (new
+  2026-08-24, DLR-120). Eight of the game's twenty card kinds, plus three shop purchases and the
+  blue hearts, are decided, enforced, tested — and obtainable by no path. They are listed at the top
+  of this document and pinned by an audit that fails when the list changes. The tension is that a
+  document full of **[settled]** rules reads as a playable game, and for a third of the cards it
+  currently is not one. **Whose decision:** the developer's, per card — ship it, reach it, or retire
+  it.
 - **Buffs pay now, and nothing tells you when one paid** (new 2026-08-24, DLR-125). A fired buff
   changes the numbers and names no cause: the Quarry's health drops further than it should have, or
   your action-point pool is larger next window, and there is no line, flash or label saying which
