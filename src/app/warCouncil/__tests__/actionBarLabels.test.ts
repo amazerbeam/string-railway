@@ -27,6 +27,12 @@ describe('actionBarLabels', () => {
     expect(queuedPayoutText(payout(2))).toContain('2 tricks to go')
   })
 
+  it('DLR-119 — names the risk while the payout is queued', () => {
+    expect(queuedPayoutText(payout(2))).toBe(
+      'Payout queued: 12 damage, 2 tricks to go. Damage to you destroys it.',
+    )
+  })
+
   it('cardsAccessibleName names no selection when nothing is armed', () => {
     expect(cardsAccessibleName(null)).toContain('No card selected')
   })
@@ -44,6 +50,7 @@ describe('actionBarLabels', () => {
   it('applyDamageBarAccessibleName includes the queued sentence when a payout is pending', () => {
     const name = applyDamageBarAccessibleName(12, 3, false, null, payout(2))
     expect(name).toContain('2 tricks to go')
+    expect(name).toContain('Damage to you destroys it.')
   })
 
   it('applyBuffAccessibleName names the AP figure it is given', () => {

@@ -150,7 +150,7 @@ describe('healthBarValueText — the current total against the max (DLR-80)', ()
 
   it('says lethal rather than making the reader compare two numbers', () => {
     expect(healthBarValueText({ ...base, secure: 0, current: 0, lethal: true })).toBe(
-      '0 of 25. Lethal.',
+      'Lethal. 0 of 25.',
     )
   })
 
@@ -160,7 +160,7 @@ describe('healthBarValueText — the current total against the max (DLR-80)', ()
 
   it('says both when a live streak would empty the bar', () => {
     expect(healthBarValueText({ ...base, secure: 0, pending: 20, lethal: true })).toBe(
-      '20 of 25. 20 at risk. Lethal.',
+      'Lethal. 20 of 25. 20 at risk.',
     )
   })
 })
@@ -243,7 +243,7 @@ describe('healthBarValueText — DLR-115’s shield clause', () => {
         shielded: 2,
         shieldPips: [HeartState.Whole, HeartState.Ticking],
       }),
-    ).toBe('10 of 10. 2 shielded, 1 of them ticking. 6 at risk. 4 ticking. Lethal.')
+    ).toBe('Lethal. 10 of 10. 2 shielded, 1 of them ticking. 6 at risk. 4 ticking.')
   })
 })
 

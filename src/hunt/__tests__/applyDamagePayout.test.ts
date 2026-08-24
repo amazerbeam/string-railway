@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { APPLY_DAMAGE_DELAY_TRICKS } from '../config'
-import { applyDamageDelayTricks, queueApplyPayout, tickApplyPayout } from '../applyDamagePayout'
+import {
+  applyDamageDelayTricks,
+  queueApplyPayout,
+  tickApplyPayout,
+  PayoutOutcome,
+} from '../applyDamagePayout'
 
 describe('applyDamageDelayTricks', () => {
   it('AC5 — reads the configured delay when no modifier is supplied', () => {
@@ -62,5 +67,11 @@ describe('tickApplyPayout', () => {
   it('exactly one of pending and due is set — a payout is never both held and paid', () => {
     const tick = tickApplyPayout(queueApplyPayout(9, 4), false)
     expect(tick.pending === null).not.toBe(tick.due === null)
+  })
+})
+
+describe('PayoutOutcome', () => {
+  it('has exactly two members, so a third fate cannot be added without a compile error here', () => {
+    expect(Object.values(PayoutOutcome)).toEqual(['paid', 'destroyed'])
   })
 })

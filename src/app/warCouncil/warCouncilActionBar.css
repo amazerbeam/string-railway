@@ -7,10 +7,20 @@
 
 /* ---------- the bar: the shell's fourth grid row ---------- */
 
+/* DLR-119 — `flex-wrap: wrap`, and it is a REACHABILITY fix rather than a cosmetic one.
+   Each of the four items floors at `.wc-bar-btn`'s own `min-width: clamp(5.5rem, 14vmin, 8.5rem)`
+   — 88px below a 629px vmin — and a flex item's default `min-width: auto` stops it shrinking past
+   that. Four of them plus three `clamp(0.5rem, 2vmin, 1.25rem)` gaps (8px each at that size) plus
+   2 x 9.6px of clamped padding needs 395.2px. `.wc-shell` is `overflow: hidden`, so at a 390px
+   viewport Apply Damage was clipped away entirely — not scrolled off, GONE, with no way to reach
+   it by pointer or by scroll. Wrapping is a structural guarantee at any width and introduces no
+   new size number; shrinking the button floor would have been inventing a tuning value. The cost
+   is roughly 50-60px of extra `actions` row on a phone, which is the developer's to judge. */
 .wc-bar {
   grid-area: actions;
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: stretch;
   justify-content: center;
   gap: clamp(0.5rem, 2vmin, 1.25rem);

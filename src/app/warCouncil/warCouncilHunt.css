@@ -338,13 +338,24 @@
       'table'
       'hand'
       'actions';
-    grid-template-rows: auto auto 1fr auto auto;
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
   }
 
+  /* DLR-119 — bounded, and given its own scroll. At this breakpoint the dossier stops being a
+     narrow column and becomes a wrapping ROW of four panels (dossier card, shape readout, bank
+     meter, telegraph) with no ceiling on how tall it wraps. `.wc-shell` clips rather than scrolls
+     and its felt row is `minmax(0, 1fr)`, so the felt collapses to zero first and every further
+     pixel pushes the `hand` and `actions` rows off the bottom edge — the rows that hold every
+     control the player has. This is `game-ux`'s stated exception ("if some region genuinely must
+     scroll, scope the overflow to that region and say why"), and `.wc-table-inner` below already
+     carries an identical one for the same shell. `--wc-dossier-narrow-max` is a PLACEHOLDER and
+     its value is the developer's; see its declaration in `warCouncil.css`. */
   .wc-dossier {
     flex-direction: row;
     align-items: center;
     flex-wrap: wrap;
+    max-height: var(--wc-dossier-narrow-max);
+    overflow-y: auto;
   }
 
   /* .wc-status (defined in warCouncil.css) holds .wc-plate and .wc-score in a row with no

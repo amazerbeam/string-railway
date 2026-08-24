@@ -273,6 +273,7 @@ export default function WarCouncilRound({
         resolvedTrick={ui.resolvedTrick}
         skulledCards={ui.round.skulledCards}
         primedCards={ui.round.primedCards}
+        offeredBuffs={offered}
         quarryToLead={quarryToLead}
         onCarryOn={handleCarryOn}
       />
@@ -304,6 +305,7 @@ export default function WarCouncilRound({
         resolvedTrick={null}
         skulledCards={ui.round.skulledCards}
         primedCards={ui.round.primedCards}
+        offeredBuffs={offered}
         quarryToLead={quarryToLead}
         onCarryOn={handleCarryOn}
       />

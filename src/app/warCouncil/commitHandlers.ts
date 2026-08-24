@@ -27,10 +27,12 @@ import {
   hasPendingTimebomb,
   isEncounterResolved,
   NO_PENDING_TIMEBOMB,
+  PayoutOutcome,
   queueTimebomb,
   removeCheat,
   tickApplyPayout,
   type EncounterState,
+  type TrickPayoutEvent,
 } from '../../hunt'
 import { cheatArmed, type RoundUiState } from './roundUiState'
 import { buffHandInputFor } from './buffRoundState'
@@ -93,6 +95,9 @@ export interface FoldedResolution {
    *  the encounter. `null` on every other path, including a kill by ordinary trick damage, which
    *  `captureUnplayed` still handles off the live hand. */
   readonly unplayedAtPress: number | null
+  /** DLR-119 — what this fold did to a queued payout, for the felt to narrate. `null` when
+   *  nothing was queued. REQUIRED, not optional: an omitted field narrates nothing, silently. */
+  readonly payout: TrickPayoutEvent | null
 }
 
 /**
@@ -108,18 +113,26 @@ export function applyResolution(
   resolution: TrickResolution,
   handEnding: boolean,
 ): FoldedResolution {
-  if (isEncounterResolved(encounter)) return { encounter, unplayedAtPress: null }
+  if (isEncounterResolved(encounter)) return { encounter, unplayedAtPress: null, payout: null }
+  const queued = encounter.pendingApplyPayout
   const incoming = incomingFrom(resolution)
   const paid =
     incoming[DuelSide.Player] === 0 && incoming[DuelSide.Quarry] === 0
       ? encounter
       : applyDamage(encounter, incoming)
+  // DLR-109 resolution order, step 1: `applyDamage` nulls a queued payout when the player lost
+  // health or the encounter ended. Comparing the field across that call is the ONLY place the
+  // difference between "destroyed" and "not yet due" is visible — afterwards both read `null`.
+  const destroyed: TrickPayoutEvent | null =
+    queued !== null && paid.pendingApplyPayout === null
+      ? { outcome: PayoutOutcome.Destroyed, cashOut: queued.cashOut }
+      : null
   const cleared = hasPendingTimebomb(paid)
     ? { ...paid, pendingTimebomb: NO_PENDING_TIMEBOMB }
     : paid
   const booked =
     resolution.timebombTarget === null ? cleared : queueTimebomb(cleared, resolution.timebombTarget)
-  return settleApplyPayout(booked, handEnding)
+  return settleApplyPayout(booked, handEnding, destroyed)
 }
 
 /**
@@ -129,14 +142,22 @@ export function applyResolution(
  * `isEncounterResolved` for the reason `applyResolution` already guards it: a dead Quarry needs no
  * further damage, and a dead player has already wiped the payout via AC3.
  */
-function settleApplyPayout(encounter: EncounterState, handEnding: boolean): FoldedResolution {
+function settleApplyPayout(
+  encounter: EncounterState,
+  handEnding: boolean,
+  destroyed: TrickPayoutEvent | null,
+): FoldedResolution {
   const tick = tickApplyPayout(encounter.pendingApplyPayout, handEnding)
   if (tick.due === null) {
     // A no-payout trick allocates nothing: `tick.pending` is `null`, equal to the field it came
     // from, so the input object is returned untouched rather than a spread copy of itself.
     return tick.pending === encounter.pendingApplyPayout
-      ? { encounter, unplayedAtPress: null }
-      : { encounter: { ...encounter, pendingApplyPayout: tick.pending }, unplayedAtPress: null }
+      ? { encounter, unplayedAtPress: null, payout: destroyed }
+      : {
+          encounter: { ...encounter, pendingApplyPayout: tick.pending },
+          unplayedAtPress: null,
+          payout: destroyed,
+        }
   }
   const cleared: EncounterState = { ...encounter, pendingApplyPayout: null }
   const settled = isEncounterResolved(cleared)
@@ -145,6 +166,7 @@ function settleApplyPayout(encounter: EncounterState, handEnding: boolean): Fold
   return {
     encounter: settled,
     unplayedAtPress: isEncounterResolved(settled) ? tick.due.unplayedAtPress : null,
+    payout: { outcome: PayoutOutcome.Paid, cashOut: tick.due.cashOut },
   }
 }
 
@@ -185,7 +207,10 @@ export function commit(
     armed: null,
     prompt: null,
     rejection: null,
-    resolvedTrick,
+    resolvedTrick:
+      resolvedTrick !== null && folded !== null
+        ? { ...resolvedTrick, payout: folded.payout }
+        : resolvedTrick,
     encounter: folded ? folded.encounter : state.encounter,
     // DLR-109 AC4 — a DELAYED payout's press-time count, threaded in ONLY when nothing has
     // already frozen this field. The null check IS `captureUnplayed`'s "has this already been
@@ -217,7 +242,10 @@ export function commit(
   return {
     ...settled,
     round: advanced.round,
-    resolvedTrick: advanced.resolvedTrick,
+    resolvedTrick:
+      advanced.resolvedTrick !== null && quarryFolded !== null
+        ? { ...advanced.resolvedTrick, payout: quarryFolded.payout }
+        : advanced.resolvedTrick,
     cpuFault: advanced.cpuFault,
     encounter: quarryFolded ? quarryFolded.encounter : settled.encounter,
     unplayedAtResolve: settled.unplayedAtResolve ?? quarryFolded?.unplayedAtPress ?? null,

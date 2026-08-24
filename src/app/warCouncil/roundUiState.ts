@@ -40,6 +40,7 @@ import {
   type Coins,
   type EncounterState,
   type RankTierTable,
+  type TrickPayoutEvent,
 } from '../../hunt'
 import { startBuffHand, type BuffHandState } from './buffRoundState'
 
@@ -48,6 +49,11 @@ export interface ResolvedTrick {
   readonly winner: PlayerSide
   /** What the trick did to the bank, the streak and both bars. */
   readonly resolution: TrickResolution
+  /** DLR-119 — what the fold that produced this trick's damage did to a queued Apply Damage
+   *  payout. `null` on every trick that neither settled nor destroyed one. Set by `commit`, which
+   *  is where the fold happens; `deriveResolvedTrick` runs BEFORE the fold and always writes
+   *  `null`. */
+  readonly payout: TrickPayoutEvent | null
 }
 
 export const CheatStage = {

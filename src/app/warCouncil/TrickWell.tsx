@@ -1,6 +1,9 @@
 import type { MouseEvent } from 'react'
+import { PayoutOutcome, type Buff } from '../../hunt'
 import { isPrimed, isSkulled, PlayerSide, type Card, type TrickCard } from '../../warCouncil'
+import { buffFiredText } from './buffFiredLabels'
 import { cardAccessibleName, timebombBookedText } from './labels'
+import { payoutEventText } from './payoutLabels'
 import PlayingCard from './PlayingCard'
 import type { ResolvedTrick } from './roundUiState'
 
@@ -20,6 +23,10 @@ interface TrickWellProps {
   /** DLR-90 AC2 — once a marked card is face up here, it announces its own Timebomb. Defaults to
    *  `[]` for `skulledCards`' own stated reason. */
   readonly primedCards?: readonly Card[]
+  /** DLR-119 — the pile this trick's `firedBuffIds` are resolved against. Defaults to `[]`, the
+   *  same defaulting `skulledCards` and `primedCards` already carry, so a caller that predates
+   *  this keeps compiling and simply narrates nothing. */
+  readonly offeredBuffs?: readonly Buff[]
   readonly quarryToLead: boolean
   readonly onCarryOn: () => void
 }
@@ -36,6 +43,7 @@ export default function TrickWell({
   resolvedTrick,
   skulledCards = [],
   primedCards = [],
+  offeredBuffs = [],
   quarryToLead,
   onCarryOn,
 }: TrickWellProps) {
@@ -56,6 +64,8 @@ export default function TrickWell({
 
   if (resolvedTrick) {
     const winnerLabel = resolvedTrick.winner === PlayerSide.Player ? 'You' : 'They'
+    const firedText = buffFiredText(resolvedTrick.resolution.firedBuffIds, offeredBuffs)
+    const payoutText = payoutEventText(resolvedTrick.payout)
 
     return (
       <>
@@ -89,6 +99,14 @@ export default function TrickWell({
             </span>
           )}
         </p>
+        {firedText !== null && <p className="wc-buff-fired">{firedText}</p>}
+        {payoutText !== null && (
+          <p
+            className={`wc-payout-line${resolvedTrick.payout?.outcome === PayoutOutcome.Destroyed ? ' wc-is-destroyed' : ''}`}
+          >
+            {payoutText}
+          </p>
+        )}
         <button type="button" className="wc-table-hint wc-is-carry-on" onClick={handleHintClick}>
           Tap the table to carry on
         </button>

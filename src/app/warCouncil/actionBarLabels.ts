@@ -12,6 +12,7 @@ import {
   APPLY_DAMAGE_REFUSAL_MESSAGE,
   cardAccessibleName,
 } from './labels'
+import { PAYOUT_QUEUE_RISK_HINT } from './payoutLabels'
 
 export const ACTION_BAR_LABEL = 'Actions'
 export const APPLY_BUFF_LABEL = 'Apply Buff'
@@ -41,11 +42,13 @@ export function cardsAccessibleName(armed: Card | null): string {
   return `${CARDS_LABEL} — play the ${cardAccessibleName(armed)}`
 }
 
-/** `Payout queued: 12 damage, 2 tricks to go.` — AC5's indicator. `null` when nothing is queued. */
+/** `Payout queued: 12 damage, 2 tricks to go. Damage to you destroys it.` — AC5's indicator, plus
+ *  DLR-119's risk clause: the queue's whole hazard is that a hit wipes it, and saying so only
+ *  after it has happened is too late to change a decision. `null` when nothing is queued. */
 export function queuedPayoutText(pending: PendingApplyPayout | null): string | null {
   if (pending === null) return null
   const tricks = pending.resolutionsOwed === 1 ? 'trick' : 'tricks'
-  return `Payout queued: ${pending.cashOut} damage, ${pending.resolutionsOwed} ${tricks} to go.`
+  return `Payout queued: ${pending.cashOut} damage, ${pending.resolutionsOwed} ${tricks} to go. ${PAYOUT_QUEUE_RISK_HINT}`
 }
 
 /** `Apply Damage — cash 12 for 3 action points.` — AC5's cost on the face, plus the poise hint,

@@ -131,6 +131,7 @@ describe('CarryOn commits a pending Quarry lead', () => {
         buffAccrual: null,
         firedBuffIds: [],
       },
+      payout: null,
     }
     let ui: RoundUiState = { ...uiFrom(round), resolvedTrick: heldReveal }
     ui = roundReducer(ui, carryOn)

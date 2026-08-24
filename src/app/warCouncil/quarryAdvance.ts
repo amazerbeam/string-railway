@@ -45,7 +45,7 @@ export function deriveResolvedTrick(
     resolution.outcome === TrickOutcome.CleanWin || resolution.outcome === TrickOutcome.SkullWin
       ? PlayerSide.Player
       : PlayerSide.Cpu
-  return { cards: [before.currentTrick[0], playedCard], winner, resolution }
+  return { cards: [before.currentTrick[0], playedCard], winner, resolution, payout: null }
 }
 
 /**

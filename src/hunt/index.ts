@@ -224,8 +224,14 @@ export type {
   PendingApplyPayout,
   ApplyDamageDelayModifiers,
   ApplyPayoutTick,
+  TrickPayoutEvent,
 } from './applyDamagePayout'
-export { applyDamageDelayTricks, queueApplyPayout, tickApplyPayout } from './applyDamagePayout'
+export {
+  applyDamageDelayTricks,
+  queueApplyPayout,
+  tickApplyPayout,
+  PayoutOutcome,
+} from './applyDamagePayout'
 
 export type { ShopStock } from './shop'
 export {

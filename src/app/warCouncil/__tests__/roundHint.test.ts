@@ -66,6 +66,7 @@ const someResolvedTrick: ResolvedTrick = {
     buffAccrual: null,
     firedBuffIds: [],
   },
+  payout: null,
 }
 
 describe('deriveHint — the cascade’s own priority order', () => {

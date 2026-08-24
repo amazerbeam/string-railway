@@ -140,6 +140,32 @@
   max-width: 40ch;
 }
 
+/* DLR-119 — the two clauses that name what the engine just did: which buffs fired (with the
+   Overlap Bonus after them) and what became of a queued Apply Damage payout. Quieter than
+   `.wc-table-line`, which still owns the trick's own outcome. No new token is invented — every
+   colour here is one of `warCouncil.css`'s existing `:root` values, and both sizes copy
+   `.wc-table-hint`'s own clamp. A destroyed payout takes the alarm colour AND a distinct
+   sentence, so the reading never depends on colour alone. */
+.wc-buff-fired,
+.wc-payout-line {
+  margin: 0.25rem 0 0;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.62rem, 1.35vmin, 0.78rem);
+  line-height: 1.35;
+}
+
+.wc-buff-fired {
+  color: var(--wc-brass);
+}
+
+.wc-payout-line {
+  color: var(--wc-chalk-dim);
+}
+
+.wc-payout-line.wc-is-destroyed {
+  color: var(--wc-alarm);
+}
+
 /* DLR-101 — the reveal's Timebomb clause, tinted with the same token the Timebomb mark and the
    `ticking` heart already use, so all three read as one state. Lives here rather than in
    `warCouncilHealthBars.css`: `.wc-table-line`, the paragraph this clause sits inside, is

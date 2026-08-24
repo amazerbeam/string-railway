@@ -10,6 +10,33 @@ export interface PendingApplyPayout {
   readonly unplayedAtPress: number
 }
 
+/**
+ * DLR-119 — which of the two things a trick resolution did to a queued payout. Declared here
+ * because it names `PendingApplyPayout`'s two terminal fates and nothing else.
+ *
+ * REPORTING ONLY. Nothing branches on this value: it exists so the felt can narrate an outcome
+ * the engine already decided, and DLR-119 is a presentation-only ticket. After the fold, "paid"
+ * and "destroyed" are indistinguishable — both leave `pendingApplyPayout: null` — which is
+ * exactly why the distinction has to be captured at the point it is made rather than re-derived
+ * from two encounter snapshots.
+ */
+export const PayoutOutcome = {
+  /** The delay ran out, or the hand ended, and the frozen `cashOut` was dealt to the Quarry. */
+  Paid: 'paid',
+  /** Damage to the player wiped it before it could land — DLR-109's resolution order, step 1
+   *  nulls the payout before step 4 would pay it. The bomb wins, by design. */
+  Destroyed: 'destroyed',
+} as const
+export type PayoutOutcome = (typeof PayoutOutcome)[keyof typeof PayoutOutcome]
+
+/** What one trick resolution did to a queued payout. `null` wherever nothing was queued. */
+export interface TrickPayoutEvent {
+  readonly outcome: PayoutOutcome
+  /** The payout's own frozen `cashOut`, captured BEFORE the field was nulled — it is not
+   *  recoverable afterwards. UNIT: damage. */
+  readonly cashOut: number
+}
+
 /** AC5's hook. Both fields are optional and every caller today passes nothing. */
 export interface ApplyDamageDelayModifiers {
   /** Buffs that SHORTEN the delay. Summed by the caller; clamped at 0 here. */

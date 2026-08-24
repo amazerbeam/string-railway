@@ -41,6 +41,7 @@ const heldReveal: ResolvedTrick = {
     buffAccrual: null,
     firedBuffIds: [],
   },
+  payout: null,
 }
 
 const tapTimebomb = { kind: RoundUiActionKind.TapTimebomb } as const

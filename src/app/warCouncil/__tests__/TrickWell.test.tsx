@@ -2,9 +2,23 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, Suit, TrickOutcome } from '../../../warCouncil'
-import { DuelSide, TIMEBOMB_QUARRY_DAMAGE } from '../../../hunt'
+import {
+  BuffTier,
+  DuelSide,
+  mintFromTemplate,
+  PayoutOutcome,
+  TIMEBOMB_QUARRY_DAMAGE,
+  templateById,
+  type Buff,
+} from '../../../hunt'
 import type { ResolvedTrick } from '../roundUiState'
 import TrickWell from '../TrickWell'
+
+// Same construction idiom as `buffRoundState.test.ts`'s own `buff` helper.
+const buff = (id: string, tier: BuffTier, buffId: number): Buff =>
+  mintFromTemplate(templateById(id)!, tier, buffId)
+
+const taker = buff('taker:bells:multiplier', BuffTier.Bronze, 1)
 
 afterEach(cleanup)
 
@@ -28,6 +42,7 @@ const resolvedTrick: ResolvedTrick = {
     buffAccrual: null,
     firedBuffIds: [],
   },
+  payout: null,
 }
 
 describe('TrickWell — a resolved trick', () => {
@@ -140,5 +155,81 @@ describe('TrickWell — a resolved trick', () => {
       />,
     )
     expect(screen.queryByText(/Timebomb ticking/)).toBeNull()
+  })
+})
+
+describe('TrickWell — DLR-119 clauses', () => {
+  it('names a fired buff when its id resolves against the offered pile', () => {
+    const fired: ResolvedTrick = {
+      ...resolvedTrick,
+      resolution: { ...resolvedTrick.resolution, firedBuffIds: [taker.id] },
+    }
+    render(
+      <TrickWell
+        currentTrick={[]}
+        resolvedTrick={fired}
+        offeredBuffs={[taker]}
+        quarryToLead={false}
+        onCarryOn={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('Bell-Taker (Momentum): +2 multiplier.')).toBeDefined()
+  })
+
+  it('narrates nothing when the fired id cannot be resolved against an empty offered pile', () => {
+    const fired: ResolvedTrick = {
+      ...resolvedTrick,
+      resolution: { ...resolvedTrick.resolution, firedBuffIds: [taker.id] },
+    }
+    render(
+      <TrickWell
+        currentTrick={[]}
+        resolvedTrick={fired}
+        offeredBuffs={[]}
+        quarryToLead={false}
+        onCarryOn={vi.fn()}
+      />,
+    )
+    expect(screen.queryByText(/Bell-Taker/)).toBeNull()
+  })
+
+  it('reports a settled payout', () => {
+    const paid: ResolvedTrick = {
+      ...resolvedTrick,
+      payout: { outcome: PayoutOutcome.Paid, cashOut: 12 },
+    }
+    render(
+      <TrickWell currentTrick={[]} resolvedTrick={paid} quarryToLead={false} onCarryOn={vi.fn()} />,
+    )
+    expect(screen.getByText('Your queued 12 lands.')).toBeDefined()
+  })
+
+  it('reports a destroyed payout', () => {
+    const destroyed: ResolvedTrick = {
+      ...resolvedTrick,
+      payout: { outcome: PayoutOutcome.Destroyed, cashOut: 12 },
+    }
+    render(
+      <TrickWell
+        currentTrick={[]}
+        resolvedTrick={destroyed}
+        quarryToLead={false}
+        onCarryOn={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('The hit destroyed your queued 12.')).toBeDefined()
+  })
+
+  it('renders neither clause when nothing fired and nothing was queued', () => {
+    render(
+      <TrickWell
+        currentTrick={[]}
+        resolvedTrick={resolvedTrick}
+        quarryToLead={false}
+        onCarryOn={vi.fn()}
+      />,
+    )
+    expect(screen.queryByText(/lands\.|destroyed your queued/)).toBeNull()
+    expect(screen.queryByText(/Momentum\)/)).toBeNull()
   })
 })

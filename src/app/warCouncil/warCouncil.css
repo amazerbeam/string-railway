@@ -82,6 +82,13 @@
      warCouncilTable.css. Developer's to retune. */
   --wc-prompt-enter-ms: 180ms;
   --wc-decree-swap-ms: 220ms;
+  /* DLR-119 — the ceiling on `.wc-dossier` at the narrow/short breakpoint, where it collapses
+     from a column into a wrapping ROW of four unbounded panels and becomes the one term that can
+     push the `hand` and `actions` rows out of a shell that clips rather than scrolls. NOBODY HAS
+     CHOSEN THIS NUMBER: it is a PLACEHOLDER sized to keep the dossier under a third of a phone
+     screen so status + dossier + hand + actions cannot crowd the felt to zero. The developer owns
+     it, and only a browser at 390x844 settles it. UNIT: dynamic viewport height. */
+  --wc-dossier-narrow-max: 30dvh;
 }
 
 /* ---------- the shell: one full-viewport grid, never scrolls ---------- */
@@ -96,7 +103,13 @@
   width: 100%;
   overflow: hidden;
   display: grid;
-  grid-template-rows: auto 1fr auto auto;
+  /* DLR-119 — `minmax(0, 1fr)`, not bare `1fr`. A `1fr` track's automatic minimum is its content's
+     min-content size; `.wc-table` currently carries `min-height: 0` (warCouncilTable.css) which
+     suppresses that, but the guarantee then depends on a rule in a different file. Stating it on
+     the track means the felt yields first — which is what must happen, because this shell is
+     `overflow: hidden` and whatever does not fit is clipped from the BOTTOM, i.e. from the rows
+     holding every control. */
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   grid-template-columns: minmax(10rem, 17vw) 1fr;
   grid-template-areas:
     'status  status'

@@ -128,6 +128,10 @@ export function quarryHealthLabel(name: string | undefined): string {
  * drift this module avoids elsewhere. "of them" disambiguates the shield's ticking count from the
  * red row's own ticking count below it; without it, "2 shielded, 1 ticking. 3 ticking." reads as
  * two unrelated ticking figures rather than one figure nested inside the other.
+ *
+ * DLR-119 moves `Lethal.` from the end of the sentence to the front: it is the one fact that
+ * changes what the player does next, and it was arriving after four descriptive clauses. The
+ * four descriptive clauses keep their existing order behind it — this is a re-order, not a rewrite.
  */
 export function healthBarValueText(view: HealthBarView): string {
   const standing = `${view.current} of ${view.max}.`
@@ -142,7 +146,13 @@ export function healthBarValueText(view: HealthBarView): string {
   const atRisk = atRiskOnly > 0 ? ` ${atRiskOnly} at risk.` : ''
   const ticking = view.ticking > 0 ? ` ${view.ticking} ticking.` : ''
   const body = `${standing}${shielded}${atRisk}${ticking}`
-  return view.lethal ? `${body} Lethal.` : body
+  // DLR-119 — `Lethal.` LEADS. The worst case on the record was
+  // `10 of 10. 2 shielded, 1 of them ticking. 6 at risk. 4 ticking. Lethal.` — five clauses, with
+  // the one fact that changes what the player does next arriving last. Nothing is dropped: every
+  // clause is load-bearing state and the four descriptive ones keep their outermost-to-innermost
+  // order. The defect was ordering, not length. Whether the sentence should also be SHORTENED is
+  // a copy judgement and remains the developer's.
+  return view.lethal ? `Lethal. ${body}` : body
 }
 
 export const FINISH_ROUND_LABEL = 'Deal the next Hunt'

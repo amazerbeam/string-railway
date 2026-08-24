@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 19/22 (86%) — done: 19 shipped, 0 blocked (+3 out-of-band shipped) | now: DLR-131 "ErrorBoundary" (out-of-band), then DLR-119/120/121 to close
+**Progress:** 19/22 (86%) — done: 19 shipped, 0 blocked (+4 out-of-band shipped) | now: DLR-119 "Full visual and UX pass" (20/22) — the closing three begin
 
 ## Run order
 
@@ -4485,3 +4485,214 @@ inside the three rewritten docblocks, with no `throw` statement changed anywhere
   with a live-region role on a panel containing two buttons; a screen-reader ergonomics judgement, not a
   functional break.
 - The panel, seen in a real browser, against the list above.
+
+## Coordinator decisions — DLR-131 reconciliation
+
+Suite 1783 → **1789, 138 files, 0 failures.** Committed `c760f78`, pushed.
+
+- **The ticket's own measurement was stale, and the agent said so.** At `04eae28` the coordinator
+  counted 72 throw sites across 28 files. At `352547d` it is **98 across 37** — 26 more added by
+  four tickets in between. The three `ErrorBoundary` grep hits were **docblocks naming this very
+  ticket**, so "zero real boundaries" held.
+- **Root-only, and the argument is decisive rather than a preference.** React runs a `useState`
+  functional updater **during the render of the component that owns the state**. DLR-116 and
+  DLR-118 deliberately moved the shop's and Vault's spend guards *inside* those updaters — so
+  when `buyFromShop` or `buyOddsBoost` throws, it throws while React is rendering **`App`**, above
+  every screen. **A per-screen boundary sits below `App` and is structurally incapable of catching
+  the exact crash that prompted this ticket.** The Defender verified that against `App.tsx`'s real
+  call sites rather than taking it on trust. Two supporting reasons: all run state lives in `App`,
+  so a screen-level fallback could only offer "back out of this screen" — for a crashing fight,
+  the same loss as a root reset, dressed as a rescue; and wrapping `App.tsx`'s six early returns
+  would have cost ~12 lines against a **394/400** budget, forcing a split motivated by a boundary
+  already argued wrong.
+- **The fallback does not promise what it cannot deliver.** It says the run is lost, and that
+  Vault progress written through `saveVault` **"should" still be there — not "is"**, because a
+  write can return `SaveWriteOutcome.Rejected`. It shows `error.message`, never `.stack`. Two
+  controls: start a new run, or reload. **It offers no way to resume the in-progress run and does
+  not pretend to** — the run is in memory only.
+- **No existing throw was weakened, verified independently by the coordinator.** The three engine
+  files it touched (`buffEvaluation.ts`, `encounter.ts`, `encounterDeck.ts`) are **comment prose
+  only**: every changed line containing the word "throw" is inside a rewritten docblock, and each
+  now records that the boundary exists **and that the guard stays anyway** — "that is still a run
+  lost, so the guard here stays." That is the right conclusion to draw from a net.
+- `src/App.tsx` untouched, still 394. The boundary wraps at `main.tsx`.
+
+### What a browser would have checked — and why this one genuinely matters
+
+**`body` has `overflow: hidden`, so an overflowing fallback panel would put both escape controls
+out of reach** — the failure mode of the thing whose entire job is to be the last resort. A
+`max-height` / `overflow-y` was added for exactly this, but whether a `place-items: center` grid
+row scrolls or clips is **unverifiable statically**. Also unseen: the static palette's legibility
+under light *and* dark system settings, both controls being truly ≥44px with `:focus-visible` on
+Tab only, whether "Reload the page" reloads, and whether a long message wraps. Mockup **unseen**.
+
+**Developer decisions open:** all fallback copy; **whether `error.message` belongs on a
+player-facing panel at all**; the root-only call itself; and the Defender's `role="alert"`-on-
+`<main>` screen-reader ergonomics note.
+
+
+---
+
+## DLR-119 — Full visual and UX pass
+
+**GREEN.** typecheck 0 · lint 0 · `npm test` **1811 passed of 1811, 140 files, 0 failures**
+(baseline 1789 / 138) · build 0, 153 modules. Reviewers: Code-Evaluator **APPROVED**, Defender
+**APPROVED** (0 critical / 0 warning / 1 info), QA **ALL PASSED**. **One round, of a permitted two.**
+Contract: `.claude/contract/DLR-119-full-visual-and-ux-pass/`.
+
+**This is the ticket where nineteen tickets of browser debt came due, and it was paid down without a
+browser.** The rule for the run held: the pass is opt-in, off by default, and was not requested. No
+server was started and no browser was opened. Every layout claim below is **arithmetic against the
+real stylesheets**, recorded as arithmetic, and section 7 of `pr-description.md` is the prioritised
+list of what still needs the developer's eyes.
+
+### Gates auto-passed, and what went unseen
+
+- **Plan approval gate auto-approved.** No `AskUserQuestion` presented. `tasks.md` carries the note.
+- **The mockup went UNSEEN.** `.claude/contract/DLR-119-full-visual-and-ux-pass/mockup.html` was
+  generated because the pipeline calls for one on a UI ticket, was not published as an Artifact, and
+  nobody looked at it. It is interactive — it toggles the action bar between wrapping and today's
+  clipping `nowrap`, toggles the buff-fired clause, and toggles the payout between landed and
+  destroyed, at both 1024 and 390 wide.
+- **Skill confirmation not presented.** `react-frontend` + `game-ux` loaded; no developer override.
+
+### Plan defaults taken, every one
+
+1. **"Unusable or unreachable" outranks everything; taste was not attempted.** Priorities 1 and 2 of
+   the ticket's own four shipped properly; priority 3 got one fix; priority 4 was not attempted.
+2. **The narration lands on the resolved-trick readout**, inside `.wc-table`'s existing
+   `aria-live="polite"` — not a new panel, not a toast. Costs no grid row on a budget that is this
+   ticket's own first risk, and needs no state, no timer and therefore no effect cleanup.
+3. **`TrickPayoutEvent` is derived inside `applyResolution`**, not by comparing two encounter
+   snapshots in the component. Rejected alternative recorded in `plan.md`.
+4. **`ResolvedTrick.payout` and `FoldedResolution.payout` are REQUIRED, not optional** — an optional
+   field lets a future construction site silently narrate nothing.
+5. **`.wc-bar` gets `flex-wrap: wrap` and no new size number.**
+6. **`--wc-dossier-narrow-max: 30dvh`** ships as a documented PLACEHOLDER, routed to the developer.
+   **The only tuning value this ticket introduces.**
+7. **`.wc-fan`'s `0.4` multiplier is DERIVED, not chosen** — `0.20 × 1.5` (armed lift × aspect) +
+   `0.025 × 1.5` (armed scale) + `sin(5.25°)/2` (max fan rotation, from `FAN_ROTATION_STEP_DEG`) =
+   `0.384`, rounded up.
+8. **`Lethal.` moves to the front rather than the sentence being shortened.** Ordering was the
+   defect, not length.
+9. **All new copy is placeholder**, as every string on this screen already is.
+
+### What was fixed
+
+**Layout — three reachability defects, all statically provable.**
+
+1. **The action bar was cropping its own last control, and this is the sharpest thing in the
+   ticket.** `.wc-bar` was `nowrap`; four items each floored at `.wc-bar-btn`'s `min-width` of 88px,
+   plus three 8px gaps and 2×9.6px padding, needs **395.2px against a 390px viewport**. `.wc-shell`
+   is `overflow: hidden`, so **Apply Damage was not scrolled off — it was gone**, unreachable by
+   pointer, touch or scroll. Fixed by wrapping, which is structural and invents no number.
+2. **The narrow/short stack could push the control rows out.** At that breakpoint `.wc-dossier`
+   becomes a wrapping row of four unbounded panels; the felt row collapses to zero first and the
+   excess then pushes `hand` and `actions` off the bottom. Bounded by the new token with its own
+   scoped `overflow-y: auto` — `game-ux`'s stated exception, the same one `.wc-table-inner` already
+   uses. Both `.wc-shell` rules now say `minmax(0, 1fr)` so the guarantee stops depending on a
+   `min-height: 0` in a different file.
+3. **The fan's reserve did not scale with what it reserved for** — a fixed `1.3rem` (20.8px) against
+   an overflow that scales with `--wc-card-w`. At the token's upper bound the armed card needed
+   27.5px and **was clipping**. Now `calc(var(--wc-card-w) * 0.4)`, which also returns 2.2px to the
+   hand row at the lower bound — a small repayment on the 7-12px DLR-117 spent.
+
+**Narration — both scope additions closed.**
+
+4. **A queued payout is no longer silent.** `PayoutOutcome` / `TrickPayoutEvent` in
+   `applyDamagePayout.ts`; `applyResolution` captures `pendingApplyPayout` before `applyDamage` and
+   compares after — **the one point where "destroyed" and "not yet due" are distinguishable**, since
+   after the fold both read `null`. The felt now says `Your queued 12 lands.` or
+   `The hit destroyed your queued 12.`
+5. **The queued sentence names its own risk while the payout is still in the air** —
+   `Damage to you destroys it.` Saying so only after it has happened is too late to change a
+   decision.
+6. **Buffs firing are announced**, with the **Overlap Bonus named and its figure taken from
+   `overlapBonusFor`** — `k − 1` is never re-derived.
+7. **`healthBarValueText` leads with `Lethal.`** The worst case now reads
+   `Lethal. 10 of 10. 2 shielded, 1 of them ticking. 6 at risk. 4 ticking.` Nothing was dropped.
+
+**AP was already rendered, and the ticket's comment was out of date on that point.** DLR-114's
+action bar shows `{ap} AP · {n} held` on Apply Buff and `{cash} for 3 AP` on Apply Damage, and
+`APPLY_DAMAGE_REFUSAL_MESSAGE[InsufficientAp]` already puts "Not enough action points to apply." on
+the control's own face. The real remaining gap was the queued payout's silence, which is fixed.
+
+### One defect the coordinator found and fixed by hand, after the phase returned
+
+The Phase 3 implementer **reported rather than reconciled** that the task's own code block joined
+buff clauses on a bare space, producing
+`Bell-Taker (Momentum): +2 multiplier Key-Feeder (Momentum): +2 multiplier …` for three buffs —
+unparseable, and **the multi-buff case is the only one that matters**, since `overlapBonusFor` pays
+nothing below two. That was a planner defect in the coordinator's own code block. Fixed to a `'. '`
+join, plus a private `resolveFired` helper so `firedBuffNames` and `buffFiredText` share one
+id-resolution. Both reviewers then scrutinised the hand fix and passed it.
+
+### The construction-site check finally held
+
+**`ResolvedTrick`: 10 annotated sites, 5 construction sites, all in specs — and it was exactly 5.**
+The Phase 2 implementer confirmed no sixth, and the Defender re-verified independently. **This is
+the first ticket in the run where that audit was not an undercount**, after DLR-114 (2 vs 11),
+DLR-110 (1 vs 2) and DLR-115 (0 vs 1). The `/fb-plan` Step 1.6 check 7 fix is working; the trick was
+grepping the distinctive required field `resolution:` and then discarding the parameter/property
+declarations by hand. Worth noting the trap it navigates: `PendingApplyPayout` carries a field
+**also** called `unplayedAtPress`, so a naive field grep for `FoldedResolution` finds the wrong type.
+
+### Two record-keeping defects QA found, neither introduced here
+
+- **The `throw new` baseline in this log is wrong.** `tasks.md` expected **98**, taken from DLR-131's
+  entry. QA checked out `c760f78` in a temporary detached worktree and measured **102** there, and
+  confirmed `git diff c760f78 -- src` has zero added or removed `throw new` lines. The invariant that
+  matters holds. **Use 102, not 98, next time this baseline is quoted.**
+- **DLR-129's vocabulary retirement has five files left.** `poison` still appears in
+  `src/hunt/rankTiers.ts` (`TieredRank.Poison`) and in comment prose in `src/vault/vaultOdds.ts`,
+  `src/vault/vaultState.ts`, `src/warCouncil/bank.ts` and `src/warCouncil/types.ts`. None is touched
+  by this contract and none renders to the UI — a pre-existing gap, not a regression.
+
+### What was deliberately left, and why
+
+- **Every unseen tuning value, untouched.** `--wc-hp-shield-fill`, `--wc-hp-shield-ticking-opacity`,
+  `--wc-hp-shield-gap`, the card-damage strip's ~9.3px clamp, `vault.css`'s nine properties,
+  `shopSlot.css`, `errorBoundary.css`. All the developer's, none invented.
+- **Balance.** 0 wins in 200 simulated runs (DLR-130). **Not one value was retuned.**
+- **DLR-117's AC1** — hiding the always-visible per-card readout until a buff is active. A visual
+  judgement, which is exactly why DLR-125 declined it, and why this ticket declines it too.
+- **The shop and the Vault.** Their stylesheets build on `run.css`'s `.run-shell` and share nothing
+  with `warCouncilHunt.css`; their open items are density, palette and copy, none statically
+  determinable. **AC1's review of those two is prose in `pr-description.md`, not a diff.** If the
+  developer expected changes there, that expectation is unmet and it is stated plainly.
+- **Three non-visual findings met and named so they are not re-found:** `Keepsake` is dead (3 Purse
+  cards pay nothing); **no template mints a consumable**, so Ward / Second Thoughts / Puppeteer /
+  Foresight / Spyglass are unreachable by play; `Miser` fights the shop.
+
+### The ErrorBoundary risk, closed by reading rather than by looking
+
+`body` has `overflow: hidden`, so an overflowing fallback would put **both escape controls out of
+reach**. It does not overflow: `.error-fallback` is `place-items: center` with a single implicit
+`auto` row in a container of definite `100dvh`; `align-content` defaults to `stretch` for grid, so
+the track fills the padded viewport, `max-height: 100%` therefore resolves against a **definite**
+track, and `overflow-y: auto` scrolls inside the panel. **The static palette under light vs dark
+system settings is still unseen.**
+
+### What a browser would have checked — this list IS the developer's agenda
+
+Full prioritised version in `pr-description.md` section 7. The top four, at **1280×800 / 1024×768 /
+1366×768 / 390×844**:
+
+1. **Is Apply Damage tappable at 390×844** now the bar wraps — the one control this ticket made
+   reachable, never rendered.
+2. **Does the narrow dossier fit inside `30dvh`**, and do `hand` and `actions` survive. **The only
+   value this ticket asks the developer to choose.**
+3. **Does the armed card clear the reserve at a wide viewport**, where `--wc-card-w` hits `4.3rem`
+   and the old fixed value was clipping.
+4. **Does the whole shell crop at any of the four sizes.** The arithmetic says 349px of 768 in auto
+   rows with 419px left for the felt. **The run's oldest debt, never rendered once.**
+
+Then: do the new custom properties resolve rather than falling back; does a trick carrying outcome +
+Timebomb + two buffs + a payout render five sentences that fit; do the two new sentences land as
+copy; does `Lethal.`-first work with a screen reader; is the console clean.
+
+### Line budgets, and one file now at the edge
+
+`roundUiState.ts` **399**, `warCouncilHunt.css` **395**, `WarCouncilRound.tsx` **394**, `labels.ts`
+**389** — none breached. **`roundUiState.ts` has one line of headroom: the next field added to
+`ResolvedTrick` or `RoundUiState` forces a split.** All three reviewers flagged the same thing.

@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DLR-119 — layout and narration pass</title>
+    <style>
+      :root {
+        --wc-chamber: #0c1013;
+        --wc-chamber-lift: #141a1f;
+        --wc-felt: #16241f;
+        --wc-felt-lip: #0a1211;
+        --wc-felt-line: #2b4038;
+        --wc-parchment: #e9e1cd;
+        --wc-brass: #c99a4e;
+        --wc-brass-dim: #7d6132;
+        --wc-chalk: #cdd6d2;
+        --wc-chalk-dim: #6f7d78;
+        --wc-alarm: #d1705f;
+        --wc-serif: 'Palatino Linotype', Palatino, Georgia, serif;
+        --wc-sans: system-ui, 'Segoe UI', sans-serif;
+        --wc-card-w: 3.4rem;
+        --wc-dossier-narrow-max: 30dvh;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #05070a;
+        color: var(--wc-chalk);
+        font-family: var(--wc-sans);
+        padding: 1rem;
+      }
+      h1 {
+        font-family: var(--wc-serif);
+        font-size: 1.1rem;
+        color: var(--wc-brass);
+        margin: 0 0 0.25rem;
+      }
+      .note {
+        font-size: 0.78rem;
+        color: var(--wc-chalk-dim);
+        margin: 0 0 0.9rem;
+        max-width: 62rem;
+        line-height: 1.45;
+      }
+      .controls {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .controls button {
+        font: inherit;
+        font-size: 0.78rem;
+        min-height: 44px;
+        padding: 0 0.9rem;
+        border: 1px solid var(--wc-brass-dim);
+        border-radius: 6px;
+        background: #1a1710;
+        color: var(--wc-brass);
+        cursor: pointer;
+      }
+      .controls button[aria-pressed='true'] {
+        border: 2px dashed var(--wc-brass);
+      }
+
+      /* ---- the framed shell, standing in for 100dvh ---- */
+      .frame {
+        border: 1px dashed #33414a;
+        border-radius: 6px;
+        padding: 0.4rem;
+        display: inline-block;
+        max-width: 100%;
+        overflow: auto;
+      }
+      .frame-caption {
+        font-size: 0.7rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--wc-chalk-dim);
+        margin-bottom: 0.35rem;
+      }
+      .wc-shell {
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto auto;
+        grid-template-columns: minmax(9rem, 17%) 1fr;
+        grid-template-areas: 'status status' 'dossier table' 'hand hand' 'actions actions';
+        background: radial-gradient(120% 80% at 50% 0%, #17202700 0%, #060809 100%), var(--wc-chamber);
+      }
+      .frame[data-size='wide'] .wc-shell {
+        width: 1024px;
+        height: 620px;
+      }
+      .frame[data-size='narrow'] .wc-shell {
+        width: 390px;
+        height: 620px;
+        grid-template-columns: 1fr;
+        grid-template-areas: 'status' 'dossier' 'table' 'hand' 'actions';
+        grid-template-rows: auto minmax(0, auto) minmax(0, 1fr) auto auto;
+      }
+
+      .wc-status {
+        grid-area: status;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.6rem 0.9rem;
+        flex-wrap: nowrap;
+      }
+      .frame[data-size='narrow'] .wc-status {
+        flex-wrap: wrap;
+      }
+      .hp {
+        flex: 1 1 8rem;
+        min-width: 0;
+      }
+      .hp-who {
+        font-size: 0.58rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--wc-chalk-dim);
+      }
+      .pips {
+        display: flex;
+        gap: 0.18rem;
+        flex-wrap: nowrap;
+        margin-top: 0.2rem;
+      }
+      .pip {
+        width: 0.95rem;
+        height: 0.95rem;
+        border-radius: 3px 3px 6px 6px;
+        background: #cc3f4a;
+        flex: 0 1 0.95rem;
+      }
+      .pip.shield {
+        background: #4f8fc0;
+        clip-path: polygon(50% 0, 100% 30%, 82% 100%, 18% 100%, 0 30%);
+        border-radius: 0;
+      }
+      .shield-run {
+        display: flex;
+        gap: 0.18rem;
+        margin-inline-start: 0.5rem;
+      }
+
+      .wc-dossier {
+        grid-area: dossier;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        padding: 0 0.7rem 0.7rem 0.9rem;
+        min-width: 0;
+        overflow: hidden;
+      }
+      .frame[data-size='narrow'] .wc-dossier {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        max-height: var(--wc-dossier-narrow-max);
+        overflow-y: auto;
+      }
+      .panel {
+        background: #141a1f;
+        border: 1px solid #23303a;
+        border-left: 3px solid var(--wc-brass-dim);
+        border-radius: 4px;
+        padding: 0.5rem 0.6rem;
+        font-size: 0.72rem;
+      }
+      .panel b {
+        color: var(--wc-parchment);
+        font-family: var(--wc-serif);
+        font-weight: 400;
+      }
+
+      .wc-table {
+        grid-area: table;
+        position: relative;
+        margin: 0 0.9rem;
+        border-radius: 0.9rem;
+        min-height: 0;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(60% 70% at 50% 45%, #1d2f28 0%, var(--wc-felt) 55%, #101b18 100%);
+        box-shadow:
+          inset 0 0 0 1px var(--wc-felt-line),
+          inset 0 0 0 6px var(--wc-felt-lip);
+        text-align: center;
+        padding: 0.8rem;
+      }
+      .wc-table-line {
+        font-family: var(--wc-serif);
+        font-size: 0.9rem;
+        color: var(--wc-parchment);
+        margin: 0.5rem 0 0;
+        line-height: 1.35;
+      }
+      /* The two lines this ticket adds. */
+      .wc-buff-fired {
+        margin: 0.3rem 0 0;
+        font-size: 0.76rem;
+        color: var(--wc-brass);
+        font-family: var(--wc-sans);
+      }
+      .wc-payout-line {
+        margin: 0.2rem 0 0;
+        font-size: 0.76rem;
+        font-family: var(--wc-sans);
+        color: var(--wc-chalk-dim);
+      }
+      .wc-payout-line.destroyed {
+        color: var(--wc-alarm);
+      }
+      .trick-row {
+        display: flex;
+        gap: 1.2rem;
+        justify-content: center;
+      }
+      .tcard {
+        width: 2.6rem;
+        aspect-ratio: 2/3;
+        border-radius: 3px;
+        background: linear-gradient(168deg, #e9e1cd, #d3c8ae);
+        border: 2px solid #5f93a8;
+        color: #191610;
+        font-family: var(--wc-serif);
+        display: grid;
+        place-items: center;
+      }
+
+      .wc-hand {
+        grid-area: hand;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.5rem 0.9rem 0.7rem;
+      }
+      .wc-hand-hint {
+        font-size: 0.62rem;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        color: var(--wc-brass);
+        min-height: 1.2em;
+      }
+      /* L3 — the reserve, expressed off --wc-card-w rather than a fixed 1.3rem. */
+      .wc-fan {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: calc(var(--wc-card-w) * 0.4) 0 0.6rem;
+      }
+      .fan-slot {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: calc(var(--wc-card-w) * 0.04);
+      }
+      .fan-slot + .fan-slot {
+        margin-left: -4px;
+      }
+      .hcard {
+        width: var(--wc-card-w);
+        aspect-ratio: 2/3;
+        border-radius: 3px;
+        border: 2px solid #c9873f;
+        background: linear-gradient(168deg, #e9e1cd, #d3c8ae);
+        color: #191610;
+        font-family: var(--wc-serif);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+      }
+      .hcard.armed {
+        transform: translateY(-20%) scale(1.05);
+        box-shadow: 0 0 0 2px var(--wc-brass);
+      }
+      .dmg {
+        font-size: calc(var(--wc-card-w) * 0.2);
+        color: var(--wc-chalk-dim);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* L1 — the fix: the bar wraps instead of clipping its last control. */
+      .wc-bar {
+        grid-area: actions;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: center;
+        gap: 0.6rem;
+        padding: 0.6rem 0.9rem;
+        background: var(--wc-chamber-lift);
+        border-top: 1px solid #232c33;
+      }
+      .wc-bar.broken {
+        flex-wrap: nowrap;
+      }
+      .bar-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.2rem;
+      }
+      .bar-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.15rem;
+        min-width: 5.5rem;
+        min-height: 2.75rem;
+        padding: 0.4rem 0.6rem;
+        border-radius: 8px;
+        border: 1px solid var(--wc-brass-dim);
+        background: linear-gradient(160deg, #2a2418 0%, #1a1710 100%);
+        color: var(--wc-brass);
+        font-family: var(--wc-serif);
+        cursor: pointer;
+      }
+      .bar-btn:focus-visible {
+        outline: 2px solid var(--wc-brass);
+        outline-offset: 3px;
+      }
+      .bar-label {
+        font-size: 0.8rem;
+      }
+      .bar-figure {
+        font-size: 0.6rem;
+        color: var(--wc-chalk-dim);
+        font-variant-numeric: tabular-nums;
+      }
+      .bar-queued {
+        margin: 0;
+        max-width: 9rem;
+        font-family: var(--wc-sans);
+        font-size: 0.58rem;
+        line-height: 1.35;
+        text-align: center;
+        color: var(--wc-chalk-dim);
+      }
+      .legend {
+        font-size: 0.72rem;
+        color: var(--wc-chalk-dim);
+        margin: 0.6rem 0 1.4rem;
+        max-width: 62rem;
+        line-height: 1.5;
+      }
+      .legend b {
+        color: var(--wc-brass);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>DLR-119 — layout reachability and the two narration gaps</h1>
+    <p class="note">
+      Placeholder data throughout. Two framed shells stand in for a <code>100dvh</code> grid at
+      1024&times;620 and 390&times;620. The three toggles below change what the shells show. This
+      mockup was generated because the pipeline calls for one on a UI ticket; the approval gate was
+      skipped for this run and <strong>nobody has looked at it</strong>.
+    </p>
+
+    <div class="controls">
+      <button type="button" id="t-wrap" aria-pressed="true">Action bar: wrapping (the fix)</button>
+      <button type="button" id="t-fired" aria-pressed="true">Trick: buffs fired</button>
+      <button type="button" id="t-payout" aria-pressed="false">Payout: destroyed / landed</button>
+    </div>
+
+    <div class="frame" data-size="wide">
+      <div class="frame-caption">1024 &times; 620 — the wide layout</div>
+      <div class="wc-shell" id="shell-wide"></div>
+    </div>
+
+    <p class="legend">
+      <b>L1</b> — at 390px the four bar buttons floor at 88px each: 4&times;88 + 3&times;8 gaps +
+      19.2px padding = <b>395.2px against a 390px viewport</b>. Turn wrapping off and watch Apply
+      Damage leave the shell; <code>overflow: hidden</code> means it is gone, not scrollable to.
+      <b>L2</b> — the dossier is capped at <code>--wc-dossier-narrow-max</code> so it cannot push
+      the hand and action rows off the bottom. <b>L3</b> — the fan's top reserve is
+      <code>calc(var(--wc-card-w) * 0.4)</code>, so the armed card's <code>-20%</code> lift stays
+      inside it at every card size rather than at only the small ones.
+    </p>
+
+    <div class="frame" data-size="narrow">
+      <div class="frame-caption">390 &times; 620 — the narrow / short collapse</div>
+      <div class="wc-shell" id="shell-narrow"></div>
+    </div>
+
+    <p class="legend">
+      Click any hand card to arm it (watch the top of the lifted card against the reserve). Click a
+      bar button to see its stub fire. The two new sentences on the felt are
+      <b>&ldquo;Taker of Bells fired: +1 Momentum. Overlap Bonus +2 Momentum.&rdquo;</b> and the
+      payout line beneath it.
+    </p>
+
+    <script>
+      const state = { wrap: true, fired: true, payout: false }
+
+      function hand() {
+        return [
+          ['7', 'W6 L1'],
+          ['3', 'W2 L1'],
+          ['9', 'W9 L1'],
+          ['A', '~W4 L1'],
+          ['5', 'W4 L1'],
+          ['J', 'W7 L1'],
+        ]
+          .map(
+            ([r, d], i) =>
+              `<span class="fan-slot"><button type="button" class="hcard" data-i="${i}">${r}</button><span class="dmg">${d}</span></span>`,
+          )
+          .join('')
+      }
+
+      function bar() {
+        const queued = state.payout
+          ? '<p class="bar-queued">Payout queued: 12 damage, 1 trick to go. Damage to you destroys it.</p>'
+          : ''
+        const btn = (label, figure) =>
+          `<div class="bar-item"><button type="button" class="bar-btn"><span class="bar-label">${label}</span><span class="bar-figure">${figure}</span></button>${label === 'Apply Damage' ? queued : ''}</div>`
+        return (
+          `<nav class="wc-bar${state.wrap ? '' : ' broken'}" aria-label="Actions">` +
+          btn('Apply Buff', '4 AP &middot; 3 held') +
+          btn('Cards', '7 of Bells') +
+          btn('Swap', '2 left') +
+          btn('Apply Damage', '12 for 3 AP') +
+          '</nav>'
+        )
+      }
+
+      function felt() {
+        const firedLine = state.fired
+          ? '<p class="wc-buff-fired">Taker of Bells fired: +1 Momentum. Overlap Bonus +2 Momentum.</p>'
+          : ''
+        const payoutLine = state.payout
+          ? '<p class="wc-payout-line destroyed">The hit destroyed your queued 12.</p>'
+          : '<p class="wc-payout-line">Your queued 12 lands.</p>'
+        return (
+          '<div class="trick-row"><span class="tcard">7</span><span class="tcard">K</span></div>' +
+          '<p class="wc-table-line">You take the trick. They take 4. You take 1.</p>' +
+          firedLine +
+          payoutLine
+        )
+      }
+
+      function shell() {
+        return (
+          '<div class="wc-status">' +
+          '<div class="hp"><span class="hp-who">You</span><div class="pips">' +
+          '<span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span>' +
+          '<span class="shield-run"><span class="pip shield"></span><span class="pip shield"></span></span>' +
+          '</div></div>' +
+          '<div class="hp"><span class="hp-who">Quarry</span><div class="pips">' +
+          Array.from({ length: 12 }, () => '<span class="pip"></span>').join('') +
+          '</div></div>' +
+          '</div>' +
+          '<aside class="wc-dossier">' +
+          '<div class="panel">Quarry<br /><b>The Toll-Keeper</b><br />Tricks won: 2</div>' +
+          '<div class="panel">What they hold<br /><b>Bells 2 &middot; Keys 3 &middot; Moons 1</b></div>' +
+          '<div class="panel">Bank<br /><b>4 &times; 3</b><br />Cash on apply: <b>12</b></div>' +
+          '<div class="panel">Intent<br /><b>They mean to take this one.</b></div>' +
+          '</aside>' +
+          '<section class="wc-table" aria-live="polite">' +
+          '<div>' +
+          felt() +
+          '</div></section>' +
+          '<div class="wc-hand"><span class="wc-hand-hint">Your lead</span><div class="wc-fan">' +
+          hand() +
+          '</div></div>' +
+          bar()
+        )
+      }
+
+      function render() {
+        document.getElementById('shell-wide').innerHTML = shell()
+        document.getElementById('shell-narrow').innerHTML = shell()
+        document.querySelectorAll('.hcard').forEach((card) => {
+          card.addEventListener('click', () => {
+            const on = card.classList.contains('armed')
+            card.closest('.wc-fan').querySelectorAll('.hcard').forEach((c) => c.classList.remove('armed'))
+            if (!on) card.classList.add('armed')
+          })
+        })
+        document.querySelectorAll('.bar-btn').forEach((b) => {
+          b.addEventListener('click', () => {
+            alert(b.querySelector('.bar-label').textContent + ' — stub')
+          })
+        })
+      }
+
+      function toggle(id, key, onLabel, offLabel) {
+        const el = document.getElementById(id)
+        el.addEventListener('click', () => {
+          state[key] = !state[key]
+          el.setAttribute('aria-pressed', String(state[key]))
+          el.textContent = state[key] ? onLabel : offLabel
+          render()
+        })
+      }
+
+      toggle('t-wrap', 'wrap', 'Action bar: wrapping (the fix)', 'Action bar: nowrap (today — clips)')
+      toggle('t-fired', 'fired', 'Trick: buffs fired', 'Trick: no buff fired')
+      toggle('t-payout', 'payout', 'Payout: destroyed by the hit', 'Payout: landed')
+
+      render()
+    </script>
+  </body>
+</html>

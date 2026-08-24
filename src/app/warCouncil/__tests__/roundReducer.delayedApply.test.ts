@@ -232,3 +232,114 @@ describe('Hand end — a payout still owed when the final trick resolves', () =>
     )
   })
 })
+
+describe('DLR-119 — the resolved trick reports what happened to the queued payout', () => {
+  it('a trick that settles a due payout reports it paid, for the frozen cashOut', () => {
+    const round = makeRound({
+      leader: PlayerSide.Player,
+      trumpSuit: Suit.Bells,
+      bank: 3,
+      multiplier: 3,
+      hands: {
+        [PlayerSide.Player]: [card(Suit.Bells, 11), card(Suit.Keys, 11)],
+        [PlayerSide.Cpu]: [card(Suit.Bells, 2), card(Suit.Keys, 6)],
+      },
+      currentTrick: [],
+    })
+    let ui = uiFrom(round)
+    const startQuarryHealth = ui.encounter.health[DuelSide.Quarry]
+
+    ui = roundReducer(ui, tapApply)
+    ui = roundReducer(ui, tapApply)
+
+    // Trick 1 — a clean win: nothing settles or dies, so this trick reports no payout event.
+    ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
+    ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
+    expect(ui.resolvedTrick?.payout).toBeNull()
+
+    ui = roundReducer(ui, carryOn)
+
+    // Trick 2 — the payout comes due at THIS resolution and lands.
+    ui = roundReducer(ui, tap(card(Suit.Keys, 11)))
+    ui = roundReducer(ui, tap(card(Suit.Keys, 11)))
+    expect(ui.resolvedTrick?.payout).toEqual({ outcome: 'paid', cashOut: 9 })
+    expect(ui.encounter.health[DuelSide.Quarry]).toBe(startQuarryHealth - 9)
+  })
+
+  it('a trick that damages the player while a payout is queued reports it destroyed, and the Quarry never falls', () => {
+    const round = makeRound({
+      leader: PlayerSide.Player,
+      trumpSuit: Suit.Keys,
+      bank: 3,
+      multiplier: 3,
+      hands: {
+        [PlayerSide.Player]: [card(Suit.Bells, 2)],
+        [PlayerSide.Cpu]: [card(Suit.Bells, 9)],
+      },
+      currentTrick: [],
+    })
+    let ui = uiFrom(round)
+    const startQuarryHealth = ui.encounter.health[DuelSide.Quarry]
+
+    ui = roundReducer(ui, tapApply)
+    ui = roundReducer(ui, tapApply)
+
+    ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
+    ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
+
+    expect(ui.resolvedTrick?.payout).toEqual({ outcome: 'destroyed', cashOut: 9 })
+    expect(ui.encounter.health[DuelSide.Quarry]).toBe(startQuarryHealth)
+  })
+
+  it('a trick with nothing queued reports payout: null', () => {
+    const round = makeRound({
+      leader: PlayerSide.Player,
+      trumpSuit: Suit.Bells,
+      hands: {
+        [PlayerSide.Player]: [card(Suit.Bells, 11)],
+        [PlayerSide.Cpu]: [card(Suit.Bells, 2)],
+      },
+      currentTrick: [],
+    })
+    let ui = uiFrom(round)
+
+    ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
+    ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
+
+    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanWin)
+    expect(ui.resolvedTrick?.payout).toBeNull()
+  })
+
+  it('reports the payout outcome without changing a single figure the fold already produced', () => {
+    // Same seed, same trick, before and after DLR-119: `encounter.health` on both sides,
+    // `pendingApplyPayout`, `pendingTimebomb` and `unplayedAtPress` must all be byte-identical to
+    // the values this file already asserts. `payout` is REPORTING — nothing branches on it.
+    const round = makeRound({
+      leader: PlayerSide.Player,
+      trumpSuit: Suit.Bells,
+      hands: {
+        [PlayerSide.Player]: [card(Suit.Bells, 11)],
+        [PlayerSide.Cpu]: [card(Suit.Bells, 2)],
+      },
+      currentTrick: [],
+    })
+    const owed = queueTimebomb(startEncounter(0), DuelSide.Player)
+    const encounter: EncounterState = {
+      ...owed,
+      pendingApplyPayout: { cashOut: 9, unplayedAtPress: 1, resolutionsOwed: 1 },
+    }
+    let ui = uiFrom(round, encounter)
+    const startQuarryHealth = ui.encounter.health[DuelSide.Quarry]
+
+    ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
+    ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
+
+    // Every figure the AC3 ordering test already asserts, unchanged.
+    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanWin)
+    expect(ui.encounter.pendingApplyPayout).toBeNull()
+    expect(ui.encounter.health[DuelSide.Quarry]).toBe(startQuarryHealth)
+    expect(ui.encounter.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH - TIMEBOMB_PLAYER_DAMAGE)
+    // AND the new reporting field, additive on top.
+    expect(ui.resolvedTrick?.payout).toEqual({ outcome: 'destroyed', cashOut: 9 })
+  })
+})

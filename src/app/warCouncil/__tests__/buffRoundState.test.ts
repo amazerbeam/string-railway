@@ -62,6 +62,7 @@ function withResolved(
     cards: [],
     winner: PlayerSide.Player,
     resolution: { ...RESOLUTION, ...over, firedBuffIds },
+    payout: null,
   }
   return { ...ui, resolvedTrick }
 }
