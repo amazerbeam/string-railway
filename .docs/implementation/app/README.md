@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116
 
 ## Responsibility
 
@@ -32,10 +32,10 @@ import React, and `src/app/warCouncil/` does.
 
 ## Key types & exports
 
-| Export                  | Purpose                                                                                                                                                                                                                   | File                 |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| Export                  | Purpose                                                                                                                                                                                                                                                                                                                                                                                 | File                 |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
 | `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState`, a required `hunt: Hunt` (DLR-53), a required `encounter: EncounterState` and `maxHealth` (DLR-71), a required `runLabel: string` (DLR-82), a required `cheats` (DLR-83), a required `coins: Coins` (DLR-84), a required `discardsRemaining: number` (DLR-100) and a required `buffs: readonly Buff[]` (DLR-114) in; `onComplete` out | `warCouncilMount.ts` |
-| `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + `encounter`, the `EncounterState` **after** this Hunt's damage was applied (DLR-71); also carries the survivors of every hand-owned run resource, including `discardsRemaining` since DLR-100                                                                            | `warCouncilMount.ts` |
+| `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + `encounter`, the `EncounterState` **after** this Hunt's damage was applied (DLR-71); also carries the survivors of every hand-owned run resource, including `discardsRemaining` since DLR-100                                                                                                                                | `warCouncilMount.ts` |
 
 DLR-53 added `hunt: Hunt` as a **required** field — `src/hunt`'s own pairing, widened by DLR-63 to
 `{ quarry, demand, loseCredits }` and then **narrowed by DLR-67 to `{ quarry }`** when the Demand and
@@ -151,11 +151,11 @@ that constant and the module-scope `MAX_HEALTH` beside it are **deleted**, not r
   a `RunState`, three fights run in order on one health bar that is never restored, winning advances
   and losing ends the run, and a full-screen verdict states which of the three happened. What
   remains deliberately absent here is narrower than "the loop":
-  - **No *automatic* between-encounter restore.** `ENCOUNTER_PLAYER_RESTORE` still has **no
+  - **No _automatic_ between-encounter restore.** `ENCOUNTER_PLAYER_RESTORE` still has **no
     consumer**. DLR-82 forbade wiring it in until the flask was designed; **DLR-93 designed and built
     the flask and still did not wire it**, because a restore the game performs for you and a charge
     you choose to spend are different mechanics. A final-verification grep guards the absence, re-run
-    by all three contracts. The driver *does* now hold a player-triggered heal — `handleDrinkFlask`,
+    by all three contracts. The driver _does_ now hold a player-triggered heal — `handleDrinkFlask`,
     reached only from `RunPhase.Shop`.
   - **No Forage step between Hunts.** A currency and a shop **do** exist since DLR-84 — the driver
     holds a three-state `between` phase (verdict / warned / shop) and mounts `ShopPanel` from it —

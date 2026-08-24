@@ -1,4 +1,5 @@
 import {
+  AP_CAPACITY_PRICE,
   CHEAT_PRICE,
   CHEAT_SLOT_COUNT,
   TIMEBOMB_PRICE,
@@ -14,18 +15,16 @@ export const ShopItem = {
   BlastGuard: 'blastGuard',
   Whetstone: 'whetstone',
   Heal: 'heal',
+  ApCapacity: 'apCapacity', // DLR-116 AC2
 } as const
 export type ShopItem = (typeof ShopItem)[keyof typeof ShopItem]
 
-/** DLR-92 — five now. THE statement of the catalogue: a screen maps this, it never lists the
- *  items itself. The Heal stays LAST because `UNCATEGORISED_SHOP_ITEMS` derives from this order. */
-export const SHOP_ITEMS: readonly ShopItem[] = [
-  ShopItem.Cheat,
-  ShopItem.Timebomb,
-  ShopItem.BlastGuard,
-  ShopItem.Whetstone,
-  ShopItem.Heal,
-]
+/** DLR-116 AC2/AC3 — what the shop OFFERS, pared to the two fixed, always-purchasable items.
+ *  The `ShopItem` union above keeps every member and `priceOf` / `categoryOf` / `refusalFor` /
+ *  `buyFromShop` stay TOTAL over it, so no mechanic is deleted — only this list changed. Cheat,
+ *  Timebomb, Blast Guard and Whetstone are still priced, still buyable by a caller, and still
+ *  tested; they are simply not on the shelf while this pared-down version is played. */
+export const SHOP_ITEMS: readonly ShopItem[] = [ShopItem.ApCapacity, ShopItem.Heal]
 
 /** The persistence-length ladder (version-4-scope.md §1) — named after the design doc's own rungs
  *  rather than Balatro's deck / Joker / consumable, since this game has no deck-building layer for
@@ -82,6 +81,8 @@ export function priceOf(item: ShopItem): Coins {
       return WHETSTONE_PRICE
     case ShopItem.Heal:
       return HEAL_PRICE
+    case ShopItem.ApCapacity:
+      return AP_CAPACITY_PRICE
   }
 }
 
@@ -108,6 +109,9 @@ export function categoryOf(item: ShopItem): ShopCategory | null {
       return ShopCategory.RunPermanent
     case ShopItem.Heal:
       return null
+    // DLR-116 AC2 — the raise lasts the run, exactly as Whetstone's does.
+    case ShopItem.ApCapacity:
+      return ShopCategory.RunPermanent
   }
 }
 
@@ -169,8 +173,10 @@ export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | 
 /**
  * Whether ANY item is purchasable right now — `some()` over `refusalFor`, never a second reading
  * of the rules. THE predicate the verdict's `Continue` warning fires on: a player holding a coin
- * with full slots and full health has nothing to stop for, and a warning they cannot act on is
- * noise.
+ * at full health has nothing to stop for (AP capacity has no cap, so a coin always buys it), and a
+ * warning they cannot act on is noise. (`SHOP_ITEMS` above is `ApCapacity` and `Heal` only —
+ * DLR-116 pared `Cheat` out of the fixed shelf, so "full slots" no longer participates in this
+ * predicate at all.)
  */
 export function canBuyAnything(stock: ShopStock): boolean {
   return SHOP_ITEMS.some((item) => refusalFor(stock, item) === null)

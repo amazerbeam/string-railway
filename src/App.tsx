@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   advanceRun,
+  apCapacityFor,
   bankClimbBonusFor,
   beatenCount,
   buyFromShop,
@@ -23,7 +24,6 @@ import {
   shopStockFor,
   SLICE_QUARRY_CHARACTER,
   startRun,
-  CHEAT_SLOT_COUNT,
   type Hunt,
 } from './hunt'
 import { useVault } from './app/vault/useVault'
@@ -41,6 +41,7 @@ import { dealerForRound } from './app/dealerForRound'
 import RunOutcomePanel, { type TrickTally } from './app/run/RunOutcomePanel'
 import ShopPanel from './app/run/ShopPanel'
 import RunPathScreen from './app/run/RunPathScreen'
+import { useShopSlot } from './app/run/useShopSlot'
 import {
   fightLabel,
   runGoalText,
@@ -85,7 +86,12 @@ type RunPhase = (typeof RunPhase)[keyof typeof RunPhase]
  * across a fight boundary keeps the dealer alternating naturally.
  */
 function App() {
-  const [run, setRun] = useState(startRun)
+  // DLR-116 — `runSeed` is the ONLY `Math.random()` in the whole seed path, and it sits here, in
+  // the driver, for the same reason `dealRound(…, Math.random)` already does: `src/hunt/` may not
+  // call `Math.random()`, so the driver chooses the seed once and hands it to `startRun`.
+  const [run, setRun] = useState(() =>
+    startRun(PLAYER_START_HEALTH, [], Math.floor(Math.random() * 0x100000000)),
+  )
   const [hand, setHand] = useState(1)
   const [dealt, setDealt] = useState<WarCouncilState>(() =>
     dealRound(dealerForRound(1), Math.random),
@@ -96,6 +102,11 @@ function App() {
   const [tricks, setTricks] = useState<TrickTally>(NO_TRICKS)
   const [phase, setPhase] = useState<RunPhase>(RunPhase.Start)
   const { vault, commit } = useVault()
+
+  // DLR-116 — called UNCONDITIONALLY at the top level, never inside the `RunPhase.Shop` branch: a
+  // hook called conditionally is a hooks-order violation. Cheap when the shop is not showing —
+  // one derivation of a strip, no state churn.
+  const { view: slotView, selectMachine, pull } = useShopSlot(run, vault, setRun)
 
   const encounterOver = isEncounterResolved(run.encounter)
 
@@ -213,7 +224,9 @@ function App() {
   // consumption from double-firing under StrictMode. Being a callback rather than an effect,
   // there is nothing for StrictMode to double-fire in the first place.
   function handleBeginRun() {
-    setRun(startRun(PLAYER_START_HEALTH, vault.startingGrants))
+    setRun(
+      startRun(PLAYER_START_HEALTH, vault.startingGrants, Math.floor(Math.random() * 0x100000000)),
+    )
     if (vault.startingGrants.length > 0) {
       commit(clearStartingGrants(vault))
     }
@@ -221,7 +234,7 @@ function App() {
   }
 
   function handleNewRun() {
-    const fresh = startRun()
+    const fresh = startRun(PLAYER_START_HEALTH, [], Math.floor(Math.random() * 0x100000000))
     setRun(fresh)
     setPhase(RunPhase.Start)
     setTricks(NO_TRICKS)
@@ -261,14 +274,10 @@ function App() {
     return (
       <ShopPanel
         coins={run.coins}
+        apCapacity={apCapacityFor(run.apCapacityBonus)}
         playerHealth={run.encounter.health[DuelSide.Player]}
         maxPlayerHealth={PLAYER_START_HEALTH}
         playerHearts={playerBar.hearts}
-        cheatCount={run.cheats.length}
-        cheatSlotCount={CHEAT_SLOT_COUNT}
-        timebombCharges={run.timebombCharges}
-        blastGuardHeld={run.blastGuardHeld}
-        whetstones={run.whetstones}
         flaskCharges={run.flaskCharges}
         flaskRefusal={flaskRefusalFor(flaskStockFor(run))}
         onDrinkFlask={handleDrinkFlask}
@@ -280,9 +289,11 @@ function App() {
           [ShopItem.BlastGuard]: refusalFor(stock, ShopItem.BlastGuard),
           [ShopItem.Whetstone]: refusalFor(stock, ShopItem.Whetstone),
           [ShopItem.Heal]: refusalFor(stock, ShopItem.Heal),
+          [ShopItem.ApCapacity]: refusalFor(stock, ShopItem.ApCapacity),
         }}
         onBuy={handleBuy}
         onLeave={leaveForNextFight}
+        slot={{ ...slotView, onSelectMachine: selectMachine, onPull: pull }}
       />
     )
   }
@@ -326,6 +337,7 @@ function App() {
       discardsRemaining={run.discardsRemaining}
       buffs={run.buffs}
       bankClimbBonus={bankClimbBonusFor(run)}
+      apCapacity={apCapacityFor(run.apCapacityBonus)}
       quarryLabel={quarryHealthLabel(currentName)}
       onComplete={handleComplete}
     />

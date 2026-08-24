@@ -1,4 +1,13 @@
-import type { Buff, CheatCard, Coins, DuelSide, EncounterState, Health, Hunt } from '../hunt'
+import type {
+  ActionPoints,
+  Buff,
+  CheatCard,
+  Coins,
+  DuelSide,
+  EncounterState,
+  Health,
+  Hunt,
+} from '../hunt'
 import type { WarCouncilState } from '../warCouncil'
 
 export interface WarCouncilMountProps {
@@ -61,6 +70,10 @@ export interface WarCouncilMountProps {
    *  without the buff. Unlike `timebombCharges` and `blastGuardHeld` it does NOT come back on
    *  `WarCouncilRoundResult` — a hand cannot spend it. */
   readonly bankClimbBonus: number
+  /** DLR-116 — the per-hand AP pool including capacity bought in the shop. OPTIONAL and defaulted
+   *  to STARTING_AP so every existing seed fixture reproduces the pre-DLR-116 pool exactly; the
+   *  driver passes apCapacityFor(run.apCapacityBonus). */
+  readonly apCapacity?: ActionPoints
   readonly onComplete: (result: WarCouncilRoundResult) => void
 }
 

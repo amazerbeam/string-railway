@@ -20,6 +20,7 @@ import { grantCheats, type CheatCard, type CheatCardId } from './cheats'
 import { startEncounter } from './encounter'
 import type { FlaskStock } from './flask'
 import type { ShopStock } from './shop'
+import type { SlotVisitStock } from './slotMachine'
 import { DuelSide, type Coins, type EncounterState, type Health } from './types'
 
 /**
@@ -126,6 +127,19 @@ export interface RunState {
   readonly buffs: readonly Buff[]
   /** The next id to mint — monotonic, never reused, mirroring `nextCheatId`. */
   readonly nextBuffId: BuffId
+  /** DLR-116 — the run's reproducibility anchor. Chosen by the DRIVER and passed in, never by
+   *  this tree: `src/hunt/` may not call `Math.random()`. Every strip and spin in the run is
+   *  recomputed from this seed, `slotSeedFor`/`spinSeedFor`, never stored. NEVER persisted,
+   *  exactly as `coins` above. */
+  readonly runSeed: number
+  /** DLR-116 AC2 — action points bought this run, `AP_CAPACITY_STEP` per purchase. A COUNT of
+   *  purchases, not a point total — `apCapacityFor` owns the multiplication. NEVER persisted,
+   *  exactly as `coins` above. */
+  readonly apCapacityBonus: number
+  /** DLR-116 — pulls taken at THIS shop visit, feeding `pullPriceFor` and the spin seed. Reset by
+   *  `advanceRun` at the fight boundary, exactly as `discardsRemaining` is. NEVER persisted,
+   *  exactly as `coins` above. */
+  readonly slotPullsThisVisit: number
 }
 
 /**
@@ -142,6 +156,7 @@ export interface RunState {
 export function startRun(
   playerHealth: Health = PLAYER_START_HEALTH,
   grants: readonly TemplateGrant[] = [],
+  runSeed: number = 1,
 ): RunState {
   const granted = mintGrants(grants, STARTING_BUFF_COUNT + 1)
   return {
@@ -161,6 +176,9 @@ export function startRun(
     lastQuickKillPayout: 0,
     buffs: [...seedStartingBuffPile(STARTING_BUFF_COUNT, 1), ...granted],
     nextBuffId: STARTING_BUFF_COUNT + 1 + granted.length,
+    runSeed,
+    apCapacityBonus: 0,
+    slotPullsThisVisit: 0,
   }
 }
 
@@ -210,6 +228,13 @@ export function flaskStockFor(
     playerHealth: run.encounter.health[DuelSide.Player],
     maxPlayerHealth,
   }
+}
+
+/** DLR-116 — projects a run into the two figures the pull-cost rule needs, the sibling of
+ *  `shopStockFor` and `flaskStockFor` and for the same reason: no screen assembles a
+ *  `SlotVisitStock` by hand and gets one field wrong. */
+export function slotVisitStockFor(run: RunState): SlotVisitStock {
+  return { coins: run.coins, pullsThisVisit: run.slotPullsThisVisit }
 }
 
 /**

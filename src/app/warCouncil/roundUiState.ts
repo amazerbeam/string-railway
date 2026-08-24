@@ -28,6 +28,8 @@ import {
   hasPendingTimebomb,
   isEncounterResolved,
   startBuffActivation,
+  STARTING_AP,
+  type ActionPoints,
   type Buff,
   type BuffActivationState,
   type BuffActivationStock,
@@ -177,6 +179,10 @@ export interface RoundUiSeed {
   readonly bankClimbBonus: number
   readonly discardsRemaining: number
   readonly buffs: readonly Buff[]
+  /** DLR-116 — the per-hand AP pool including capacity bought in the shop. OPTIONAL and defaulted
+   *  to STARTING_AP so every existing seed fixture reproduces the pre-DLR-116 pool exactly; the
+   *  driver passes apCapacityFor(run.apCapacityBonus). */
+  readonly apCapacity?: ActionPoints
 }
 
 // `chooseCpuMove` throws rather than returning a rejection when the CPU has no legal
@@ -243,7 +249,7 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     discardsRemaining: seed.discardsRemaining,
     discardSelection: null,
     buffs: seed.buffs,
-    buffActivation: startBuffActivation(),
+    buffActivation: startBuffActivation(seed.apCapacity ?? STARTING_AP),
     loadout: null,
   }
 }

@@ -105,6 +105,14 @@ migration onto this pile, Shield's redesign onto it, and the slot-machine draw a
 later tickets (DLR-103's T4, T7, T8) — this ticket is exactly what it says it is: the type, and the
 owned-pile persistence, and nothing else.
 
+**Since DLR-116 the first sentence of that paragraph is no longer true, and the correction is the
+point of this note.** The pile now has a real producer: the shop's slot machine mints priced buffs
+straight onto `RunState.buffs` through `pullSlotMachine` (see
+[the slot machine](the-slot-machine.md)), and DLR-114's loadout bar reads them. What is still true is
+the *second* half — nothing evaluates a `BuffCondition` or applies a `BuffReward`, so a drawn card can
+be held and activated and pays nothing. The machine filling the pile with real content is what turns
+that gap from theoretical into visible.
+
 **Since DLR-107, T4 has partly landed and this paragraph needs one correction.** Cheat and Timebomb
 now have a `Buff` representation and their tier tables — but still no consumer: nothing evaluates a
 condition, applies a reward, or reads the pile. The felt continues to drive the old bespoke Cheat and

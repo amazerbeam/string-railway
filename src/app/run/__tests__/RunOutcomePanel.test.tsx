@@ -78,9 +78,7 @@ describe('RunOutcomePanel — the three verdicts (AC2, AC4, AC5)', () => {
     render(<RunOutcomePanel {...baseProps} outcome={RunOutcome.InProgress} canContinue />)
     // DLR-95 — the reward line is also a `role="status"` region, so this queries all of them
     // rather than assuming there is exactly one.
-    expect(screen.getAllByRole('status').some((el) => el.textContent?.includes('of 3'))).toBe(
-      true,
-    )
+    expect(screen.getAllByRole('status').some((el) => el.textContent?.includes('of 3'))).toBe(true)
   })
 
   it('draws one bar per trick of the deciding hand, marked taken or lost', () => {

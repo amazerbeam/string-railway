@@ -73,6 +73,13 @@ export function slotSeedFor(runSeed: number, machineId: SlotMachineId, visitInde
   return mixSeed(runSeed, machineIndex, visitIndex)
 }
 
+/** DLR-116 — the seed for pull number `pullIndex` on an ALREADY-DRAWN strip. Folds the pull index
+ *  into the strip's own seed, so a paid reroll re-spins the SAME strip rather than redrawing it —
+ *  the rule `drawReelPool`'s own comment states. Pure; no `Math.random()`. */
+export function spinSeedFor(stripSeed: number, pullIndex: number): number {
+  return mixSeed(stripSeed, pullIndex)
+}
+
 /**
  * AC1/AC3 — draws `REEL_POOL_SIZE` distinct templates onto one machine's strip, weighted by that
  * machine's family and axis tables.

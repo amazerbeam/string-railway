@@ -1,0 +1,179 @@
+/* The slot machine section of the shop screen (DLR-116). Layout reference: this contract's
+   `mockup.html`, `.slot` section. Imported from `ShopPanel.tsx` after `shopFlask.css`, so the
+   cascade order matches the import order — see `shop.css`'s header for that convention.
+
+   Only `.shop-slot-*` rules live here; `.shop-refusal` is reused from `shopItems.css` rather than
+   duplicated, exactly as the priced-item rows and the flask row already share it.
+
+   Every clamp() bound and every colour below is a PLACEHOLDER the developer owns — none of them
+   has been played. No `100vh`, no `100vw` anywhere, per `game-ux`'s hard floor. */
+
+.shop-slot {
+  /* DLR-89's residual-clipping fix pattern (`shop.css`) — fixed chrome holds its own size rather
+     than being asked to shrink when `.shop` is capped to the shell's available height. The strip
+     below is the one region in this section allowed to give up space instead. */
+  flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.3rem, 1vmin, 0.5rem);
+  padding: clamp(0.3rem, 1vmin, 0.5rem);
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 4px;
+  text-align: left;
+}
+
+.shop-slot-machines {
+  display: flex;
+  gap: clamp(0.3rem, 1vmin, 0.6rem);
+  justify-content: center;
+}
+
+.shop-slot-machine {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.4rem clamp(0.4rem, 1.6vmin, 0.8rem);
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 4px;
+  background: none;
+  color: var(--wc-chalk);
+  font-family: var(--wc-sans);
+  font-size: clamp(0.78rem, 1.8vmin, 0.95rem);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    color var(--wc-ui-transition-ms) ease,
+    border-color var(--wc-ui-transition-ms) ease,
+    background-color var(--wc-ui-transition-ms) ease,
+    transform var(--wc-ui-transition-ms) ease;
+}
+
+/* Selected reads in FORM as well as tone — a thicker brass edge and a lifted fill plus the arrow
+   glyph below, so a greyscale screenshot still shows which machine is chosen. `game-ux`'s
+   no-colour-alone floor, the same device `.shop-tab[aria-selected='true']` already uses. */
+.shop-slot-machine[aria-checked='true'] {
+  border-width: 2px;
+  border-color: var(--wc-brass);
+  background: #ffffff0d;
+  color: var(--wc-brass);
+}
+
+.shop-slot-machine[aria-checked='true']::before {
+  content: '▸ ';
+}
+
+.shop-slot-machine:focus-visible {
+  outline: 2px solid var(--wc-parchment);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .shop-slot-machine:not([aria-checked='true']):hover {
+    border-color: var(--wc-parchment);
+    color: var(--wc-parchment);
+  }
+}
+
+.shop-slot-machine:active {
+  transform: translateY(1px);
+}
+
+.shop-slot-odds {
+  margin: 0;
+  font-size: clamp(0.68rem, 1.6vmin, 0.82rem);
+  color: var(--wc-chalk-dim);
+}
+
+/* The ONE scoped scroll region in this section, mirroring `.shop-panel`'s own justification in
+   `shopItems.css`: eight strip rows against a bounded height, with the purse, health, chooser,
+   odds line and pull control all staying outside it and staying visible. `game-ux` forbids the
+   page scrolling; it does not forbid one bounded region owning its own overflow. */
+.shop-slot-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.2rem, 0.8vmin, 0.35rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: clamp(6rem, 20vmin, 9rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.shop-slot-symbol {
+  padding: 0.2rem 0.4rem;
+  border: 1px dashed var(--wc-brass-dim);
+  border-radius: 4px;
+  font-size: clamp(0.68rem, 1.5vmin, 0.8rem);
+  line-height: 1.3;
+}
+
+.shop-slot-pull {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.shop-slot-pull-button {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0.5rem clamp(0.8rem, 2.4vmin, 1.4rem);
+  border: 1px solid var(--wc-brass);
+  border-radius: 4px;
+  background: #ffffff0d;
+  color: var(--wc-chalk);
+  font-family: var(--wc-sans);
+  font-size: clamp(0.85rem, 2vmin, 1rem);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    opacity var(--wc-ui-transition-ms) ease,
+    transform var(--wc-ui-transition-ms) ease;
+}
+
+.shop-slot-pull-button:disabled {
+  cursor: not-allowed;
+  border-style: dashed;
+  border-color: var(--wc-chalk-dim);
+  opacity: 0.55;
+}
+
+.shop-slot-pull-button:focus-visible {
+  outline: 2px solid var(--wc-parchment);
+  outline-offset: 2px;
+}
+
+.shop-slot-pull-button:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+.shop-slot-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: clamp(0.72rem, 1.7vmin, 0.85rem);
+}
+
+.shop-slot-no-pull {
+  margin: 0;
+  color: var(--wc-chalk-dim);
+  font-style: italic;
+}
+
+.shop-slot-outcome {
+  margin: 0;
+  font-family: var(--wc-serif);
+  color: var(--wc-brass);
+}
+
+.shop-slot-result-symbols,
+.shop-slot-awards {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}

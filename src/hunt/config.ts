@@ -219,6 +219,12 @@ export const COINS_PER_ENCOUNTER_WIN: Coins = 1
 export const CHEAT_PRICE: Coins = 1
 export const HEAL_PRICE: Coins = 1
 
+// DLR-116 — what one AP-capacity purchase costs. A separate key from HEAL_PRICE for the reason
+// CHEAT_PRICE and HEAL_PRICE are already separate: re-pricing one item must not move another.
+// VALUE UNCHOSEN — a documented placeholder, NEVER PLAYED. The developer's to move.
+// UNIT: coins per purchase.
+export const AP_CAPACITY_PRICE: Coins = 3
+
 // DLR-84 AC4 — health restored by one Heal, BEFORE the clamp to PLAYER_START_HEALTH. TRANSCRIBED.
 // No longer the only source of healing: DLR-93 landed the flask below, a FREE charge-limited heal
 // sized as a proportion of the maximum rather than a flat figure. There is still no rest site, and
@@ -371,4 +377,5 @@ export {
   MAX_COIN_BONUS_PER_HAND,
   APPLY_DAMAGE_AP_COST,
   APPLY_DAMAGE_DELAY_TRICKS,
+  AP_CAPACITY_STEP,
 } from './apConfig'

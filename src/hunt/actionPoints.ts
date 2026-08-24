@@ -1,4 +1,10 @@
-import { AP_ENABLED, AP_REFRESH_CADENCE, ApRefreshCadence, STARTING_AP } from './config'
+import {
+  AP_CAPACITY_STEP,
+  AP_ENABLED,
+  AP_REFRESH_CADENCE,
+  ApRefreshCadence,
+  STARTING_AP,
+} from './config'
 import type { ActionPoints } from './types'
 
 /**
@@ -46,10 +52,31 @@ export function spendAp(pool: ActionPoints, cost: ActionPoints): ActionPoints {
  * today; any other cadence value passes `currentAp` through untouched rather than throwing,
  * which is the shape the ticket's own risk note asks for so a later cadence (per-fight,
  * per-run) needs a new config entry and a new branch here, not a type change.
+ *
+ * DLR-116 note: this hard-resets to plain `STARTING_AP` and is NOT capacity-aware — it does not
+ * read `apCapacityFor`/`apCapacityBonus`. That is dead code in production today only because
+ * `App.tsx` remounts the felt per hand (`key={hand}`), so `createRoundUiState`'s
+ * `startBuffActivation(seed.apCapacity ?? STARTING_AP)` is the real per-hand reset path and this
+ * function is never actually called on the live per-hand transition. If a future refactor stops
+ * remounting per hand, this function becomes live again and will silently drop purchased AP
+ * capacity unless it is made capacity-aware first.
  */
 export function refreshActionPointsForNewHand(currentAp: ActionPoints): ActionPoints {
   if (AP_REFRESH_CADENCE === ApRefreshCadence.PerHand) {
     return STARTING_AP
   }
   return currentAp
+}
+
+// actionPoints.ts — THE statement of the per-hand pool once bought capacity is counted.
+/**
+ * DLR-116 AC2 — `bonus` is a COUNT of purchases, not a point total; `AP_CAPACITY_STEP` is the
+ * one place the multiplication happens. A negative or non-finite `bonus` returns `STARTING_AP`
+ * rather than producing a `NaN` pool — a `NaN` pool renders nothing and logs nothing.
+ */
+export function apCapacityFor(bonus: number): ActionPoints {
+  if (!Number.isFinite(bonus) || bonus < 0) {
+    return STARTING_AP
+  }
+  return STARTING_AP + AP_CAPACITY_STEP * bonus
 }

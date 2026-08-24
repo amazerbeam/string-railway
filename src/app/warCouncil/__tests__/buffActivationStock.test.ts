@@ -6,6 +6,7 @@ import {
   startBuffActivation,
   BuffTier,
   STARTING_AP,
+  AP_CAPACITY_STEP,
   type BuffActivationState,
 } from '../../../hunt'
 import {
@@ -101,5 +102,17 @@ describe('DLR-114 — the felt has exactly one AP pool', () => {
     const state = createRoundUiState(makeSeed())
     expect(state.buffActivation.apPool).toBe(STARTING_AP)
     expect(state.buffActivation.activatedThisTrick).toEqual([])
+  })
+})
+
+describe('DLR-116 — apCapacity threads into the opening pool', () => {
+  it('a seed with no apCapacity opens the hand at STARTING_AP', () => {
+    const state = createRoundUiState(makeSeed())
+    expect(state.buffActivation.apPool).toBe(STARTING_AP)
+  })
+
+  it('a seed with apCapacity opens the hand at exactly that pool', () => {
+    const state = createRoundUiState({ ...makeSeed(), apCapacity: STARTING_AP + AP_CAPACITY_STEP })
+    expect(state.buffActivation.apPool).toBe(STARTING_AP + AP_CAPACITY_STEP)
   })
 })

@@ -2823,3 +2823,134 @@ Nine tickets remained when this landed, so fixing the command beat filing an iss
 `hasShieldHearts`'s docblock claims DLR-115 reads it, which it does not. Flagged by the
 doc-writer; left for the verification ticket rather than patched blind here.
 
+## DLR-116 — Shop screen: slot machine and pared-down purchasable list
+
+**GREEN.** typecheck 0 · lint 0 · **1503 passed of 1503, 116 files, 0 failed** (baseline 1474/112) ·
+build exit 0. Reviewers: all three, round 1 → Code-Evaluator ISSUES, Defender ISSUES (0 critical, 2
+warning), QA ALL PASSED; one combined fix pass; verification round → both re-reviewers APPROVED.
+
+**This is the ticket where a player can first pull a reel.** DLR-112 built the draw engine and
+nothing rendered it; DLR-113 gave it a Vault odds seam with no caller. Both are now reachable, and
+the slot machine is the first route to a real buff card inside a run.
+
+### The four judgement calls, and why each went the way it did
+
+- **"Pared-down" cut the entire priced catalogue except Health and AP capacity — and took the
+  four-shelf tab ladder with it.** AC2 says "exactly Health and AP capacity"; Cheat, Timebomb and
+  Blast Guard are not on AC3's named removal list but are excluded by that word, so they went too.
+  `ShopCategoryTabs.tsx` and its spec were **deleted**: a four-rung ladder over three empty rungs is
+  chrome, and the vertical space it freed is what funds the slot section on a short viewport.
+  **Nothing mechanical was deleted.** `SHOP_ITEMS` shrank to `[ApCapacity, Heal]` while the
+  `ShopItem` union kept all six members and `priceOf` / `categoryOf` / `refusalFor` / `buyFromShop`
+  stayed **total** over it — asserted, not asserted-about: `shop.test.ts` iterates
+  `Object.values(ShopItem)`. The convention this introduces, worth remembering: **`SHOP_ITEMS` is
+  what the shop offers; `ShopItem` is everything the game prices.** The flask stayed — it costs no
+  coin, so it is not on the purchasable list AC2 constrains, and this is the only screen it is
+  reachable from.
+- **The odds ARE surfaced, and derived rather than transcribed.** The strip renders face-up as eight
+  named cards and the screen states gold 1.6% / silver+bronze 32.8% / three bronze 65.6% / 2.64 cards
+  a pull. DLR-112 chose a flat-uniform spin *expressly* so a player can read the strip and compute
+  their own odds; hiding them throws away the reason the model has that shape. All four figures come
+  from a new pure `src/hunt/slotOdds.ts` derived from `REEL_COUNT` / `REEL_POOL_SIZE` — a retuned
+  `REEL_POOL_SIZE` moves the posted odds automatically instead of leaving the screen quoting 1.6%
+  forever. The general formula was checked against DLR-112's stated figures before planning and
+  reproduces them exactly.
+- **An unaffordable pull is disabled and explained, never hidden.** The button stays rendered with
+  the reason in a `role="status"` line beneath and folded into its accessible name; the strip and the
+  odds stay readable, so a player can see what they are saving for.
+- **A drawn buff goes STRAIGHT to the pile — no choose-one gate.** Two reasons, and the first is
+  arithmetic: 2.64 cards a pull is a per-pull *yield* that only holds if every award lands, so a
+  choose-one would have quietly made the real yield 1.0 and invalidated DLR-130's balance simulator.
+  The second is `game-ux`: a reroll re-spins the same strip with no cap, so a confirm step would be a
+  second click on the screen's most repeated action. One tap to pull, no confirmation.
+
+### Plan defaults taken automatically (the gate was auto-approved, non-interactive)
+
+- Visit index is **`run.encounterIndex`** — the shop is reachable once per resolved encounter, so it
+  is already a monotonic per-visit integer. No field added. Pleasant consequence: shop → map → shop
+  returns to the *same* strip, which is correct.
+- Spin seed is `spinSeedFor(stripSeed, pullIndex)` with `pullIndex = run.slotPullsThisVisit`, so a
+  paid reroll re-spins the same strip rather than redrawing it. Asserted directly.
+- `RunState.runSeed` is a **defaulted third parameter of `startRun`** (fixed seed `1`), chosen in
+  `App.tsx` with the one `Math.random()` in the whole seed path.
+- `apCapacity` is an **optional** field on `RoundUiSeed` / `WarCouncilMountProps`, defaulting to
+  `STARTING_AP`. Optional because the required sibling `bankClimbBonus` has **30 construction sites
+  across 25 files** — a required field would have rewritten thirty fixtures for a two-line thread.
+  Zero fixtures changed.
+- `ShopItem.ApCapacity`'s category is `RunPermanent` — truthful, though nothing renders categories.
+- `AP_CAPACITY_STEP = 5` is transcribed from AC2, not chosen.
+
+### Numbers nobody chose
+
+- **`AP_CAPACITY_PRICE = 3` — never played, the developer's.** It trades directly against the
+  machine's 1-coin reroll: too low it dominates the visit, too high AP capacity is decoration. What
+  settles it: one run to fight 3, counting the pulls forgone to buy it.
+- Every `clamp()` bound and hue in the new `shopSlot.css` is a placeholder, marked as such.
+- **Mockup generated and unseen.**
+
+### The construction-site check (`/fb-plan` Step 1.6 check 7) earned its keep immediately
+
+Counted by field, not by type name, exactly as the command now requires:
+`RunState` — 62 type-name hits, **1** construction site (`startRun`'s literal), cross-checked against
+`nextCheatId` and `lastQuickKillPayout`. `RoundUiSeed` — 8 annotated, **30** construction sites
+across 25 files, found by grepping `bankClimbBonus`. **That second count is what changed the design**:
+it is the reason `apCapacity` shipped optional rather than required, and no phase hit a typecheck
+failure. Three consecutive prior tickets did.
+
+### What the reviewers caught
+
+- **Code-Evaluator:** the `ShopPanel` rewrite orphaned `.shop-panel` / `.shop-empty` in
+  `shopItems.css` and `.shop-aside` / `.shop-aside-label` / `.shop-purse-cell.is-flask` in
+  `shopFlask.css` — live going in, dead coming out, and both files sat outside the task's file list.
+  Its ruling is the right one to keep: *the file list is a planning artifact, not a licence to leave
+  dead CSS behind.* Fixed.
+- **Defender, warning 1 — the real one.** `useShopSlot`'s `pull()` *looked* like the stale-closure
+  guard `handleBuy` and `handleDrinkFlask` use, and was not: it checked the refusal and committed from
+  **the same closed-over `run`**, not a functional update, while its comment claimed otherwise. Safe
+  only because everything downstream is a pure function of `run` and the pull index — an accidental
+  safety net. `onRun` is now a functional updater and `App.tsx` passes `setRun` straight into it.
+- **Defender, warning 2 — a shared-surface miss.** `run.purchaseIsolation.test.ts` exists precisely
+  to catch a `buyFromShop` branch writing an unnamed field, and the new `ApCapacity` branch was never
+  added to it because that file was outside the task list. Added; asserts `changedFields` equals
+  exactly `['apCapacityBonus', 'coins']`.
+- Two stale doc comments fixed (`canBuyAnything` still claimed "full slots" participates;
+  `refreshActionPointsForNewHand` is not capacity-aware and is dead only because `App.tsx` remounts
+  the felt per hand — noted so a future refactor does not silently drop bought AP).
+
+### Open items touched, and how
+
+- **`Keepsake` may be unfireable** — it can now be *won* from a reel. It is a dud card, not a crash:
+  `run.slot.test.ts` asserts every minted award satisfies `isPricedBuff`, so `apCostOf` never throws.
+- **`Ward` is not in the reel pool** and its silver/gold are indistinguishable at `DAMAGE_PER_HIT = 1`
+  — untouched, still DLR-126's.
+- **`Miser` fights the shop, and this screen made it worse.** An uncapped 1-coin reroll is now the
+  strongest coin sink in the game, and the machine that pays you for hoarding coins is the machine
+  asking you to spend them. Recorded in `the-hunt.md` → Known tensions; not patched with UI.
+- **DLR-119's three `.wc-shell` risks: the shop shares none of that CSS.** It builds on `run.css`'s
+  `.run-shell` only — `warCouncilHunt.css` is untouched in either direction.
+
+### The browser pass did not run, and here is precisely what it would have checked
+
+Not requested. No server started, no browser opened. A browser would have checked:
+
+- **Does the screen fit, at 1280×800, 1024×768, 1366×768 and 390×844** — no page scroll, nothing
+  cropped, the leave button reachable by mouse. This is the one that matters: `shop.css` carries a
+  documented history of clipping at nine rows, and **DLR-116 moved both sides of that budget at
+  once** — removed four purse cells, the tablist, the tabpanel and the aside heading; added a chooser,
+  an odds line, an **eight-row strip**, a pull control and a result group. jsdom has no layout engine,
+  so nothing in 1503 passing tests speaks to it.
+- **Do the new `shopSlot.css` custom properties resolve**, or silently fall back to an inherited
+  value — the bug class that compiles, lints and passes every test while rendering the wrong thing.
+- **A clean console** on load, after choosing a machine, after a pull, and on a second visit to the
+  shop (remount safety for the hook's two `useState` values).
+- **A real pull on each machine**: first free, second at 1 coin, the three symbols and the awards at
+  their tiers, and the won cards showing up in the loadout bar on the next hand.
+- **The chooser by real keyboard** — arrow keys select, one tab stop, selection legible without
+  colour.
+- **The odds line's actual wording on screen**, for the clarity-versus-clutter call.
+
+### For the developer's eyes
+
+`AP_CAPACITY_PRICE`. The viewport fit at the four sizes above. Whether four odds figures is the right
+density (fallback: drop the expected-cards-per-pull figure). Whether one tap to pull, with no confirm,
+feels right. And the Miser tension, which is a design fork rather than a bug.

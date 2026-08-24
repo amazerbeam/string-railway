@@ -6,7 +6,7 @@
 ## Responsibility
 
 Owns the layer **above** a run: a currency that outlives one, and the two things it buys. A run is
-`src/hunt/`'s; the Vault reads a run's *end* state and steers the *next* one. It is the game's first
+`src/hunt/`'s; the Vault reads a run's _end_ state and steers the _next_ one. It is the game's first
 persisted state of any kind — `src/vault/vaultStore.ts` is the first consumer
 [`src/persistence/`](../persistence/README.md) has ever had.
 
@@ -18,28 +18,28 @@ imports `vault` — the same shape `warCouncil → hunt` already has.
 
 ## Key types & exports
 
-| Export | Purpose | File |
-|---|---|---|
-| `VAULT_EXCHANGE_RATE` | `10` — leftover coin per 1 Vault currency. **TRANSCRIBED from DLR-113 AC1**, not chosen | `vaultConfig.ts` |
-| `VAULT_ODDS_BOOST_PRICE` | `1` — currency per odds-boost stack. **AGENT-CHOSEN, unplayed** | `vaultConfig.ts` |
-| `VAULT_ODDS_BOOST_MAX_STACKS` | `3` — the cap, and the anti-determinism guard on the reel: uncapped, a boosted template's weight could be driven arbitrarily high and DLR-112's readable posted strip would collapse into a near-certainty. **AGENT-CHOSEN** | `vaultConfig.ts` |
-| `VAULT_ODDS_BOOST_STEP` | `1` — additive multiplier per stack; `weight × (1 + STEP × stacks)`. **AGENT-CHOSEN** | `vaultConfig.ts` |
-| `VAULT_STARTING_TIER_PRICE` | `{ bronze: 2, silver: 5, gold: 10 }` — **AGENT-CHOSEN but DERIVED** from `REWARD_TIER_VALUE[BuffRewardAxis.Coins]`'s existing 2/5/10 ladder, so the Vault charges the same bronze:silver:gold ratio the game already states a tier is worth | `vaultConfig.ts` |
-| `VaultState` | `{ balance, oddsBoosts, startingGrants }` — **both** the in-memory shape and the persisted payload | `vaultState.ts` |
-| `EMPTY_VAULT` | balance 0, no boosts, no grants — the value every failed read returns | `vaultState.ts` |
-| `isValidVaultState` | the mandatory shape guard, all-or-nothing over a whole payload | `vaultState.ts` |
-| `reconcileVault`, `VaultReconciliation` | the separate **domain** pass, and its `{ vault, droppedCount }` result | `vaultState.ts` |
-| `TemplateGrant` | `{ templateId, tier }` — re-exported from `src/hunt/buffTemplates.ts`, which owns it | `vaultState.ts` |
-| `depositLeftoverCoin` | AC1 — credits `floor(coin / VAULT_EXCHANGE_RATE)` | `vaultEconomy.ts` |
-| `VaultSpendRefusal` | `notEnoughCurrency` / `unknownTemplate` / `boostMaxed` — reason **codes**, never sentences | `vaultEconomy.ts` |
-| `oddsBoostRefusalFor`, `buyOddsBoost` | AC2 — the predicate and the spend | `vaultEconomy.ts` |
-| `startingTierRefusalFor`, `buyStartingTier` | AC3 — the predicate and the spend | `vaultEconomy.ts` |
-| `clearStartingGrants` | empties the grant queue; balance and boosts untouched | `vaultEconomy.ts` |
-| `boostMultiplierFor` | `1 + STEP × stacks`, clamped; `1` for an unboosted **or unknown** id | `vaultOdds.ts` |
-| `vaultReelWeightFor` | the `weightOf` function `drawReelPool` already accepts | `vaultOdds.ts` |
-| `drawVaultReelPool` | the one call a future slot screen makes | `vaultOdds.ts` |
-| `VAULT_SAVE_SECTION` | `'vault'` — the key suffix handed to `saveKeyFor`, never concatenated at a call site | `vaultStore.ts` |
-| `createVaultStore`, `loadVault`, `saveVault`, `VaultLoad` | the persistence surface, and the only place in `src/vault/` that knows there is any | `vaultStore.ts` |
+| Export                                                    | Purpose                                                                                                                                                                                                                                     | File              |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| `VAULT_EXCHANGE_RATE`                                     | `10` — leftover coin per 1 Vault currency. **TRANSCRIBED from DLR-113 AC1**, not chosen                                                                                                                                                     | `vaultConfig.ts`  |
+| `VAULT_ODDS_BOOST_PRICE`                                  | `1` — currency per odds-boost stack. **AGENT-CHOSEN, unplayed**                                                                                                                                                                             | `vaultConfig.ts`  |
+| `VAULT_ODDS_BOOST_MAX_STACKS`                             | `3` — the cap, and the anti-determinism guard on the reel: uncapped, a boosted template's weight could be driven arbitrarily high and DLR-112's readable posted strip would collapse into a near-certainty. **AGENT-CHOSEN**                | `vaultConfig.ts`  |
+| `VAULT_ODDS_BOOST_STEP`                                   | `1` — additive multiplier per stack; `weight × (1 + STEP × stacks)`. **AGENT-CHOSEN**                                                                                                                                                       | `vaultConfig.ts`  |
+| `VAULT_STARTING_TIER_PRICE`                               | `{ bronze: 2, silver: 5, gold: 10 }` — **AGENT-CHOSEN but DERIVED** from `REWARD_TIER_VALUE[BuffRewardAxis.Coins]`'s existing 2/5/10 ladder, so the Vault charges the same bronze:silver:gold ratio the game already states a tier is worth | `vaultConfig.ts`  |
+| `VaultState`                                              | `{ balance, oddsBoosts, startingGrants }` — **both** the in-memory shape and the persisted payload                                                                                                                                          | `vaultState.ts`   |
+| `EMPTY_VAULT`                                             | balance 0, no boosts, no grants — the value every failed read returns                                                                                                                                                                       | `vaultState.ts`   |
+| `isValidVaultState`                                       | the mandatory shape guard, all-or-nothing over a whole payload                                                                                                                                                                              | `vaultState.ts`   |
+| `reconcileVault`, `VaultReconciliation`                   | the separate **domain** pass, and its `{ vault, droppedCount }` result                                                                                                                                                                      | `vaultState.ts`   |
+| `TemplateGrant`                                           | `{ templateId, tier }` — re-exported from `src/hunt/buffTemplates.ts`, which owns it                                                                                                                                                        | `vaultState.ts`   |
+| `depositLeftoverCoin`                                     | AC1 — credits `floor(coin / VAULT_EXCHANGE_RATE)`                                                                                                                                                                                           | `vaultEconomy.ts` |
+| `VaultSpendRefusal`                                       | `notEnoughCurrency` / `unknownTemplate` / `boostMaxed` — reason **codes**, never sentences                                                                                                                                                  | `vaultEconomy.ts` |
+| `oddsBoostRefusalFor`, `buyOddsBoost`                     | AC2 — the predicate and the spend                                                                                                                                                                                                           | `vaultEconomy.ts` |
+| `startingTierRefusalFor`, `buyStartingTier`               | AC3 — the predicate and the spend                                                                                                                                                                                                           | `vaultEconomy.ts` |
+| `clearStartingGrants`                                     | empties the grant queue; balance and boosts untouched                                                                                                                                                                                       | `vaultEconomy.ts` |
+| `boostMultiplierFor`                                      | `1 + STEP × stacks`, clamped; `1` for an unboosted **or unknown** id                                                                                                                                                                        | `vaultOdds.ts`    |
+| `vaultReelWeightFor`                                      | the `weightOf` function `drawReelPool` already accepts                                                                                                                                                                                      | `vaultOdds.ts`    |
+| `drawVaultReelPool`                                       | the one call a future slot screen makes                                                                                                                                                                                                     | `vaultOdds.ts`    |
+| `VAULT_SAVE_SECTION`                                      | `'vault'` — the key suffix handed to `saveKeyFor`, never concatenated at a call site                                                                                                                                                        | `vaultStore.ts`   |
+| `createVaultStore`, `loadVault`, `saveVault`, `VaultLoad` | the persistence surface, and the only place in `src/vault/` that knows there is any                                                                                                                                                         | `vaultStore.ts`   |
 
 `index.ts` re-exports all of the above, types then values, mirroring `src/hunt/index.ts`'s barrel.
 
@@ -79,8 +79,9 @@ its stated weight. `drawVaultReelPool(vault, machineId, rng)` is the one-call wr
 `Math.random()`-free as `src/hunt/`.
 
 At the cap the multiplier is **×4**, which moves one template from roughly 11% of appearing on a
-strip to roughly a third. There is **no production caller yet**: DLR-112 shipped the slot engine with
-no screen, so the boost is exercised by tests only.
+strip to roughly a third. **DLR-116 gave it its first production caller**: the shop's slot screen
+draws every strip through `drawVaultReelPool`, so a boosted reel is now something a player actually
+sees. (Until then the boost was exercised by tests only.)
 
 ### Two guards, deliberately separate: shape then domain
 
@@ -92,7 +93,7 @@ its other boosts; every number is checked with `Number.isSafeInteger`.
 
 `reconcileVault` is a **domain** pass over an already shape-valid payload. It resolves every
 `templateId` through `templateById`, drops boosts and grants this build has no template for, clamps
-stacks down to `VAULT_ODDS_BOOST_MAX_STACKS`, and returns a `droppedCount`. A clamped stack is *not*
+stacks down to `VAULT_ODDS_BOOST_MAX_STACKS`, and returns a `droppedCount`. A clamped stack is _not_
 counted as dropped — that entry survives, just smaller.
 
 The split is what stops the half-load the save-data rule forbids: a shape failure loses the whole
@@ -119,7 +120,7 @@ bump from. That window is now closed — the next shape change is a real migrati
 
 A bought starting card is stored as `{ templateId, tier }` — the minimal pair `mintFromTemplate`
 needs — and the live `Buff` is minted fresh at run start. DLR-107 recorded that widening `Buff` with
-a required `kind` was free *only* while the buff pile was unpersisted, and named this ticket as the
+a required `kind` was free _only_ while the buff pile was unpersisted, and named this ticket as the
 point that stops being true. It does not: `Buff` stays free to gain fields forever, because no
 version of it is on disk. Storing the coordinates instead of the card also means retuning
 `REWARD_TIER_VALUE` reaches every existing save for free, where a persisted reward value would leave
@@ -155,8 +156,10 @@ ticket, from "NOT persisted" to "PERSISTED as of DLR-113".
   call. Today a player can neither see a balance nor spend anything: `buyOddsBoost` and
   `buyStartingTier` have **no production caller at all**. Only the two automatic paths are reachable
   — the deposit on death and the claim at run start, both wired in `App.tsx`.
-- **No live surface for a boosted reel.** `drawVaultReelPool` has no production caller either,
-  because DLR-112's slot engine has no screen. AC2 is realised structurally and proven by tests.
+- ~~**No live surface for a boosted reel.**~~ **Closed by DLR-116.** `drawVaultReelPool` is called by
+  `src/app/run/useShopSlot.ts` on every render of the shop's slot section, so AC2 is now realised in
+  play as well as structurally. `buyOddsBoost` still has no caller — a player cannot yet *earn* a
+  boost — so the composed path is live while the way to stock it is not.
 - **No mid-run display of Vault currency** — deferred by the ticket, which reveals it at run end only.
 - **No migration**, and nothing to migrate: one schema version has ever existed.
 - **No carried conversion remainder**, and no Vault credit on a **won** run — both deliberate, see

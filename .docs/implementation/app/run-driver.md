@@ -23,12 +23,32 @@ const [tricks, setTricks] = useState<TrickTally>(NO_TRICKS)
 const [phase, setPhase] = useState<RunPhase>(RunPhase.Start) // DLR-84, widened DLR-85
 ```
 
+**DLR-116 made the first line seeded, and added one hook beside these five.** `startRun` gained a
+third parameter, `runSeed`, and this driver is where it is chosen:
+`startRun(PLAYER_START_HEALTH, [], Math.floor(Math.random() * 0x100000000))`, at all three call sites
+(the lazy initialiser, `handleBeginRun`, `handleNewRun`). **That is the only `Math.random()` in the
+seed path**, and it is here rather than in `src/hunt/` because that whole tree must stay reproducible
+for DLR-130's balance simulator — the same reason `dealRound(…, Math.random)` on the line above has
+always lived in this file. Everything downstream of `runSeed` — every reel strip, every spin — is a
+pure function of it.
+
+`useShopSlot(run, vault, setRun)` is called **unconditionally at the top level**, never inside the
+`phase === RunPhase.Shop` branch: a conditionally-called hook is a hooks-order violation. It costs one
+bounded strip draw per render even while the shop is not showing, which is deliberate and cheap. It
+takes `setRun` directly because its `onRun` parameter is typed as a functional updater — the same
+stale-closure discipline `handleBuy` and `handleDrinkFlask` already follow, and a review round on
+DLR-116 is what forced it to actually be one rather than merely to look like one.
+
+`apCapacityFor(run.apCapacityBonus)` goes to **two** places: the shop's purse cell, and
+`<WarCouncilRound apCapacity={…}>`, where it seeds the hand's action-point pool through an optional
+`RoundUiSeed.apCapacity` field defaulting to `STARTING_AP`.
+
 **DLR-85 renamed `between`/`setBetween` to `phase`/`setPhase` and opened it on `RunPhase.Start`.** The
 app therefore no longer opens on fight one — it opens on the start screen. Five `useState` calls, the
 same as before: the start screen and the map cost **no new state variable**, which is the whole
 argument for widening the union rather than adding a boolean beside it.
 
-`run` replaced the separate `encounter` state DLR-71 introduced — the encounter now lives *inside*
+`run` replaced the separate `encounter` state DLR-71 introduced — the encounter now lives _inside_
 `RunState`, so there is one owner rather than two things to keep in step.
 
 **`hand` is monotonic across the whole run and is never reset per fight.** It is React's remount
@@ -67,7 +87,7 @@ tracked separately.
 
 `HUNT` survives at module scope, correctly: it is built purely from `SLICE_QUARRY_CHARACTER` and
 holds no per-run state. **DLR-85 left it there deliberately.** The roster it added names opponents on
-every *run-level* surface, but the fight screen's dossier is out of that ticket's scope, so every
+every _run-level_ surface, but the fight screen's dossier is out of that ticket's scope, so every
 fight still faces the same character on the felt while the map, the verdict, the shop and the status
 band all name the real opponent.
 
@@ -82,7 +102,9 @@ const stages = runPath(beaten)
 const goalText = runGoalText(run.encounterCount)
 const currentName = runEncounterAt(run.encounterIndex).name
 const nextName =
-  run.encounterIndex + 1 < run.encounterCount ? runEncounterAt(run.encounterIndex + 1).name : undefined
+  run.encounterIndex + 1 < run.encounterCount
+    ? runEncounterAt(run.encounterIndex + 1).name
+    : undefined
 ```
 
 Three things about this are load-bearing:
@@ -129,7 +151,7 @@ function handleComplete(result: WarCouncilRoundResult) {
 **DLR-90 restructured this handler and DLR-91 simplified it back**, and the pair is worth reading
 together because the second change is a deletion.
 
-DLR-90 moved the `setRun` call *inside* the branches, because the run being committed differed between
+DLR-90 moved the `setRun` call _inside_ the branches, because the run being committed differed between
 them: a resolved encounter committed `recorded`, and a live one committed whatever a `beginNextHand`
 transition produced — the one place a queued Timebomb hit was paid, at the deal of the next hand. A
 delayed hit can be a killing blow, so the handler then had to **re-check resolution afterwards**,
@@ -139,7 +161,7 @@ into an encounter that was already over.
 **DLR-91 deleted all of that.** Timebomb now lands at the resolution of the next trick, folded into that
 trick's own damage by `roundReducer.ts` — so by the time a hand reports upward there is nothing left
 owing, `beginNextHand` was deleted from `src/hunt/run.ts`, and the driver's call and its downstream
-re-check went with it. One `setRun` serves both branches again. The comment marking the *absence* stays,
+re-check went with it. One `setRun` serves both branches again. The comment marking the _absence_ stays,
 because "we deliberately do nothing at a hand boundary now" is invisible otherwise — and because a
 Timebomb booked by the finished hand's last trick rides on `encounter.pendingTimebomb` into the next hand's
 first trick, which is D5's carry half and is easy to mistake for a leak.
@@ -175,7 +197,7 @@ would.
 `recordEncounter`'s signature was **left alone**, and that is the point: `whetstones` rides its `...run`
 spread exactly as `coins` does, because unlike the Cheats, the charges and the Guard, a hand has no way to
 spend one. So the five-parameter call below did **not** become a six-parameter call, and the `HandOutcome`
-refactor it predicts is still owed at the next *spendable* run figure rather than at the next figure of any
+refactor it predicts is still owed at the next _spendable_ run figure rather than at the next figure of any
 kind.
 
 **DLR-91 added the fifth argument and two more props, exactly as DLR-90 predicted.**
@@ -194,7 +216,7 @@ object rather than a seventh parameter.
 as accepted debt rather than an oversight.** `recordEncounter` now takes `result.unplayedAtResolve`:
 how many cards were left in the player's hand at the instant the encounter resolved, or `null` when
 this hand did not resolve it. Collapsing the trailing five parameters into an options object would
-have touched all 31 existing test call sites *more* invasively than appending one argument did, and
+have touched all 31 existing test call sites _more_ invasively than appending one argument did, and
 that is a wider refactor than the ticket. **The prediction stands, one position later**: at a seventh
 figure, the answer is the `HandOutcome` object, not a seventh position.
 
@@ -308,9 +330,9 @@ Two things are going on here and both are deliberate.
 same stale `run` and lose a purchase — React applies queued updaters in sequence, each seeing the
 previous one's result.
 
-**The inner refusal re-check** is what stops that same sequence *throwing*. `buyFromShop` throws a
+**The inner refusal re-check** is what stops that same sequence _throwing_. `buyFromShop` throws a
 `RangeError` on a refused purchase, and the disabled state that would normally prevent one only
-lands on the render *after* the first click. A rapid double-click on the last affordable purchase —
+lands on the render _after_ the first click. A rapid double-click on the last affordable purchase —
 the second free Cheat slot, or an only-just-affordable Heal — would otherwise reach the throw, and
 **there is no error boundary in this app**, so it would white-screen rather than reject the
 purchase. Re-deriving against whichever run the updater actually sees turns that second click into a
@@ -331,7 +353,7 @@ function handleDrinkFlask() {
 ```
 
 `handleBuy` with a different predicate and a different transition — deliberately identical in shape,
-because the race is identical. `disabled` only lands on the render *after* a drink, so a double-click
+because the race is identical. `disabled` only lands on the render _after_ a drink, so a double-click
 or a fast repeated key-activation would otherwise reach `drinkFlask` with the charge already spent and
 hit its deliberate throw, white-screening an app with no error boundary. Re-deriving `flaskRefusalFor`
 against whichever run the updater actually sees turns the second activation into a no-op.

@@ -1,14 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  AP_CAPACITY_STEP,
   TIMEBOMB_PLAYER_DAMAGE,
   TIMEBOMB_QUARRY_DAMAGE,
   FlaskRefusal,
   flaskHealAmount,
   HEAL_HEALTH_RESTORED,
   PurchaseRefusal,
-  SHOP_CATEGORIES,
-  SHOP_ITEMS,
-  ShopCategory,
   ShopItem,
   WHETSTONE_PRICE,
 } from '../../../hunt'
@@ -20,17 +18,8 @@ import {
   nextOpponentText,
   priceText,
   PURCHASE_REFUSAL_MESSAGE,
-  SHOP_ASIDE_LABEL,
-  SHOP_CATEGORY_COMING_SOON,
-  SHOP_CATEGORY_EMPTY,
-  SHOP_CATEGORY_LABEL,
-  SHOP_GUARD_HELD,
-  SHOP_GUARD_LABEL,
-  SHOP_GUARD_NONE,
   SHOP_ITEM_BLURB,
   SHOP_ITEM_NAME,
-  SHOP_TABLIST_LABEL,
-  shopCategoryAccessibleName,
   shopItemAccessibleName,
 } from '../shopLabels'
 
@@ -47,8 +36,11 @@ describe('shopLabels', () => {
     }
   })
 
-  it('names every SHOP_ITEMS member, and the two names differ', () => {
-    for (const item of SHOP_ITEMS) {
+  // AC3 — every ShopItem member keeps a name, whether or not it is on SHOP_ITEMS today. Total
+  // over the whole union, not over SHOP_ITEMS, so "not deleted from the codebase" is proved
+  // directly rather than by proxy.
+  it('names every ShopItem member, whole union, no duplicate blank', () => {
+    for (const item of Object.values(ShopItem)) {
       expect(SHOP_ITEM_NAME[item]).toBeTruthy()
     }
     expect(SHOP_ITEM_NAME[ShopItem.Cheat]).not.toBe(SHOP_ITEM_NAME[ShopItem.Heal])
@@ -66,6 +58,10 @@ describe('shopLabels', () => {
   it('DLR-92 — blurbs the Whetstone as stacking, without quoting a price', () => {
     expect(SHOP_ITEM_BLURB[ShopItem.Whetstone]).toContain('stack')
     expect(SHOP_ITEM_BLURB[ShopItem.Whetstone]).not.toContain(String(WHETSTONE_PRICE))
+  })
+
+  it('DLR-116 — interpolates AP_CAPACITY_STEP into the AP-capacity blurb, never a literal', () => {
+    expect(SHOP_ITEM_BLURB[ShopItem.ApCapacity]).toContain(String(AP_CAPACITY_STEP))
   })
 
   it('gives an item a different accessible name when it carries a refusal', () => {
@@ -89,38 +85,7 @@ describe('shopLabels', () => {
   it('prices an item from configuration', () => {
     expect(priceText(ShopItem.Cheat)).toBeTruthy()
     expect(priceText(ShopItem.Heal)).toBeTruthy()
-  })
-
-  it('labels every ShopCategory member, with no duplicate labels', () => {
-    const labels = SHOP_CATEGORIES.map((category) => SHOP_CATEGORY_LABEL[category])
-    expect(labels).toHaveLength(SHOP_CATEGORIES.length)
-    expect(new Set(labels).size).toBe(labels.length)
-    for (const label of labels) {
-      expect(label.length).toBeGreaterThan(0)
-    }
-  })
-
-  it('states the tablist label, the aside label, the coming-soon reason and the empty shelf', () => {
-    for (const copy of [
-      SHOP_TABLIST_LABEL,
-      SHOP_ASIDE_LABEL,
-      SHOP_CATEGORY_COMING_SOON,
-      SHOP_CATEGORY_EMPTY,
-      SHOP_GUARD_LABEL,
-      SHOP_GUARD_HELD,
-      SHOP_GUARD_NONE,
-    ]) {
-      expect(typeof copy).toBe('string')
-      expect(copy.length).toBeGreaterThan(0)
-    }
-  })
-
-  it('folds the coming-soon reason into a refused tab’s accessible name (AC4)', () => {
-    const open = shopCategoryAccessibleName(ShopCategory.GamePermanent, true)
-    const refused = shopCategoryAccessibleName(ShopCategory.GamePermanent, false)
-    expect(refused).not.toBe(open)
-    expect(refused).toContain(SHOP_CATEGORY_COMING_SOON)
-    expect(open).not.toContain(SHOP_CATEGORY_COMING_SOON)
+    expect(priceText(ShopItem.ApCapacity)).toBeTruthy()
   })
 })
 

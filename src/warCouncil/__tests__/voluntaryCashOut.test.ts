@@ -109,9 +109,9 @@ describe('applyDamageRefusalFor — AC1 and D6', () => {
     expect(applyDamageRefusalFor({ ...everyReason, canAct: true })).toBe(
       ApplyDamageRefusal.TimebombPending,
     )
-    expect(
-      applyDamageRefusalFor({ ...everyReason, canAct: true, timebombPending: false }),
-    ).toBe(ApplyDamageRefusal.PayoutPending)
+    expect(applyDamageRefusalFor({ ...everyReason, canAct: true, timebombPending: false })).toBe(
+      ApplyDamageRefusal.PayoutPending,
+    )
     expect(
       applyDamageRefusalFor({
         ...everyReason,

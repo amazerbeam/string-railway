@@ -82,11 +82,7 @@ describe('primeCard (AC2)', () => {
   it('accumulates a second mark', () => {
     const state = dealt()
     const [first, second] = state.hands[PlayerSide.Player]
-    const twice = primeCard(
-      primeCard(state, PlayerSide.Player, first),
-      PlayerSide.Player,
-      second,
-    )
+    const twice = primeCard(primeCard(state, PlayerSide.Player, first), PlayerSide.Player, second)
     expect(twice.primedCards).toEqual([first, second])
   })
 

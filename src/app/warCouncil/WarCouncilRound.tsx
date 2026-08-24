@@ -95,6 +95,7 @@ export default function WarCouncilRound({
   discardsRemaining,
   bankClimbBonus,
   buffs,
+  apCapacity,
   onComplete,
 }: WarCouncilMountProps) {
   const [ui, dispatch] = useReducer(
@@ -108,6 +109,7 @@ export default function WarCouncilRound({
       discardsRemaining,
       bankClimbBonus,
       buffs,
+      apCapacity,
     },
     createRoundUiState,
   )

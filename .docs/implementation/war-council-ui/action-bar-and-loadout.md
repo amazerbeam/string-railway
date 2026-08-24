@@ -86,7 +86,7 @@ function openWindowOnTrickResolved(prev: RoundUiState, next: RoundUiState): Roun
 
 That is DLR-108 AC4's per-trick activation boundary, applied at the one transition where a trick
 actually resolves — the `null` → non-null edge of `resolvedTrick`. It deliberately does **not** key on
-"the current trick is empty": a buff is activated *while* the trick is empty (that is what
+"the current trick is empty": a buff is activated _while_ the trick is empty (that is what
 `discardWindowOpen` means), so an empty-trick rule would erase every activation the instant it was
 made. Two arguments and pure, so StrictMode's development double dispatch recomputes an identical
 value — the same property `captureUnplayed` beside it relies on. `openBuffWindow` clears
@@ -96,9 +96,9 @@ value — the same property `captureUnplayed` beside it relies on. `openBuffWind
 
 Two different questions, two different gates, and the separation is load-bearing:
 
-| Question | Gate | Where |
-|---|---|---|
-| May the panel be **opened**? | `loadoutDoorOpen(state) = discardWindowOpen(state) \|\| canAct(state)` | `buffHandlers.ts` |
+| Question                         | Gate                                                                                            | Where                        |
+| -------------------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------- |
+| May the panel be **opened**?     | `loadoutDoorOpen(state) = discardWindowOpen(state) \|\| canAct(state)`                          | `buffHandlers.ts`            |
 | May a **buff row** be activated? | `buffActivationRefusalFor(buffActivationStock(...))`, whose `windowOpen` is `discardWindowOpen` | `src/hunt/buffActivation.ts` |
 
 The reason the door is wider: **Cheat and Timebomb moved inside the panel**. Before DLR-114 both were
@@ -167,7 +167,7 @@ exist. See [hunt/buff-activation-and-ap-costs.md](../hunt/buff-activation-and-ap
 unions — `BUFF_FAMILY_WORD`, `BUFF_CONDITION_SENTENCE`, `BUFF_REWARD_SUFFIX` — with the eleven
 condition families' words, sentences and the four reward suffixes (Blade / Purse / Second Wind /
 Momentum) taken verbatim from `.docs/design/Balatro-Forbidden-Solitaire/v1-buff-card-list.md` →
-*How a card is named*. Keying over the closed unions means a `BuffKind` added later fails to compile
+_How a card is named_. Keying over the closed unions means a `BuffKind` added later fails to compile
 here rather than rendering `undefined`. The activated/consumable kinds and `Unassigned` have no row in
 that document, so their words are this ticket's own placeholder copy.
 
@@ -219,15 +219,17 @@ control now lives. `labels.ts`'s label functions were kept and are reused by the
 - **A buff's condition is never evaluated and its reward is never paid.** `buffAccrual.ts`
   (`resolveFiredBuffs`, `accrueAxisBonus`, `overlapBonusFor`) still has no caller anywhere in `src/`.
   Activating a condition-family buff spends AP and does nothing else. Deliberately out of scope.
-- **On a fresh run with an empty Vault the buff list is empty.** `startRun` seeds four `Unassigned`
-  placeholders and `activatableBuffs` filters every one of them out, so the panel shows only the
-  relocated Cheat slots and Timebomb charge. Real priced buffs reach the pile only through Vault
-  grants (`mintGrants`); `slotMachine.ts` is still unwired into a run.
+- **On a fresh run with an empty Vault the buff list opens empty — and fills at the first shop.**
+  `startRun` seeds four `Unassigned` placeholders and `activatableBuffs` filters every one of them
+  out, so the panel shows only the relocated Cheat slots and Timebomb charge until the player pulls a
+  reel. **DLR-116 wired `slotMachine.ts` into the shop**, so priced buffs now reach the pile through a
+  pull as well as through Vault grants (`mintGrants`) — roughly 2.6 cards per pull, one pull free per
+  visit. Activating one still pays nothing, per the bullet above.
 - **Cheat and Timebomb still run on their own bespoke state.** `CheatStage` / `TimebombStage` and
   their reducer branches were **relocated, not rewritten** — they do not run on `buffCatalog.ts`, and
   `timebombDamageOf` still has no caller. DLR-129's `timebombDamageFor` / `timebombDamageOf` collapse
-  therefore did not happen here: this contract wires the felt onto the *pile* and the *activation
-  flow*, not onto the catalog, so the rename would have had no behaviour behind it. The nomination
+  therefore did not happen here: this contract wires the felt onto the _pile_ and the _activation
+  flow_, not onto the catalog, so the rename would have had no behaviour behind it. The nomination
   belongs to whichever ticket replaces `commitTimebomb` with `activateBuff(timebombBuff(...))`.
 
 ## What the tests pin

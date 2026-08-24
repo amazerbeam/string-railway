@@ -110,6 +110,14 @@ describe('buyFromShop — one purchase changes exactly one thing, plus the coins
       'encounter',
     ])
   })
+
+  it('AP Capacity: coins and the capacity bonus — and nothing else (DLR-116)', () => {
+    const before = hurtAndFunded(9)
+    expect(changedFields(before, buyFromShop(before, ShopItem.ApCapacity))).toEqual([
+      'apCapacityBonus',
+      'coins',
+    ])
+  })
 })
 
 describe('drinkFlask — the sibling that is not a purchase', () => {

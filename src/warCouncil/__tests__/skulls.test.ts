@@ -129,9 +129,7 @@ describe('assignSkulls', () => {
 
   it('only ever skulls cards drawn from the hand it was given', () => {
     const skulls = assignSkulls(HAND, lcg(9))
-    expect(skulls.every((s) => HAND.some((c) => c.suit === s.suit && c.rank === s.rank))).toBe(
-      true,
-    )
+    expect(skulls.every((s) => HAND.some((c) => c.suit === s.suit && c.rank === s.rank))).toBe(true)
   })
 
   it('is deterministic for one rng sequence', () => {

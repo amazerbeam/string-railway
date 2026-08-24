@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DLR-116 shop mockup</title>
+    <style>
+      :root {
+        --ink: #f2ece1;
+        --dim: #a99e8c;
+        --bg: #14110d;
+        --panel: #211c15;
+        --edge: #3d3427;
+        --gold: #e0b352;
+        --silver: #c9cdd4;
+        --bronze: #b07a4a;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.4 system-ui, sans-serif; }
+      .run-shell { height: 100dvh; width: 100%; overflow: hidden; display: grid; place-items: center; padding: clamp(1rem, 4vmin, 3rem); }
+      .shop { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; max-width: 46rem; max-height: calc(100dvh - 2 * clamp(1rem, 4vmin, 3rem)); text-align: center; }
+      h1 { font-size: 1.3rem; margin: 0; }
+      .next { color: var(--dim); margin: 0; font-size: 0.85rem; }
+      .purse { display: flex; justify-content: center; gap: 1.5rem; background: var(--panel); border: 1px solid var(--edge); border-radius: 0.5rem; padding: 0.4rem 0.8rem; }
+      .purse b { display: block; font-size: 0.7rem; color: var(--dim); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+      .slot { border: 1px solid var(--edge); border-radius: 0.5rem; padding: 0.6rem; background: var(--panel); display: flex; flex-direction: column; gap: 0.5rem; min-height: 0; }
+      .legend { font-size: 0.7rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.06em; text-align: left; }
+      .machines { display: flex; gap: 0.5rem; justify-content: center; }
+      .machine { flex: 1; padding: 0.5rem; min-height: 44px; border-radius: 0.4rem; border: 1px solid var(--edge); background: #191510; color: var(--ink); cursor: pointer; }
+      .machine[aria-checked='true'] { border-color: var(--gold); border-width: 2px; background: #2b2317; }
+      .machine[aria-checked='true']::before { content: '\25B8  '; }
+      .odds { font-size: 0.78rem; color: var(--dim); }
+      .strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.25rem; overflow-y: auto; text-align: left; font-size: 0.78rem; max-height: 9rem; }
+      .strip li { list-style: none; padding: 0.2rem 0.4rem; border: 1px dashed var(--edge); border-radius: 0.3rem; }
+      .reels { display: flex; gap: 0.5rem; justify-content: center; }
+      .reel { flex: 1; border: 1px solid var(--edge); border-radius: 0.4rem; padding: 0.4rem; font-size: 0.75rem; background: #191510; min-height: 3.2rem; }
+      .awards { text-align: left; font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.2rem; }
+      .tier { font-weight: 700; }
+      .tier.gold { color: var(--gold); } .tier.silver { color: var(--silver); } .tier.bronze { color: var(--bronze); }
+      .list { display: flex; flex-direction: column; gap: 0.3rem; }
+      .item { display: flex; gap: 0.5rem; align-items: center; text-align: left; min-height: 44px; padding: 0.4rem 0.7rem; border-radius: 0.4rem; border: 1px solid var(--edge); background: var(--panel); color: var(--ink); cursor: pointer; }
+      .item:disabled { opacity: 0.45; cursor: not-allowed; }
+      .item .main { flex: 1; }
+      .item .price { color: var(--gold); white-space: nowrap; }
+      .refusal { min-height: 1.1em; margin: 0; font-size: 0.75rem; color: #e08a6a; text-align: left; }
+      .primary { min-height: 44px; padding: 0.5rem 1.2rem; border-radius: 0.4rem; border: 1px solid var(--gold); background: #2b2317; color: var(--ink); cursor: pointer; font-size: 1rem; }
+      .pull { min-height: 44px; padding: 0.5rem 1.2rem; border-radius: 0.4rem; border: 1px solid var(--gold); background: #33280f; color: var(--ink); cursor: pointer; }
+      .pull:disabled { opacity: 0.45; cursor: not-allowed; border-color: var(--edge); }
+    </style>
+  </head>
+  <body>
+    <div class="run-shell">
+      <div class="shop">
+        <h1>Between fights</h1>
+        <p class="next">Next up &mdash; Slice. Fight 2 of 5.</p>
+
+        <div class="purse" role="group" aria-label="Your purse and health">
+          <span><b>Coins</b><span id="coins">4</span></span>
+          <span><b>Action points</b><span id="ap">6</span></span>
+          <span><b>Health</b>18 / 20</span>
+        </div>
+
+        <section class="slot" aria-label="The machines">
+          <p class="legend">The machines</p>
+          <div class="machines" role="radiogroup" aria-label="Choose a machine">
+            <button class="machine" role="radio" aria-checked="true" tabindex="0" onclick="choose(this)">Skirmisher</button>
+            <button class="machine" role="radio" aria-checked="false" tabindex="-1" onclick="choose(this)">Strongbox</button>
+          </div>
+
+          <p class="odds" id="odds">
+            8 symbols, 3 reels &mdash; three matching 1.6% (gold) &middot; two matching 32.8% (silver + bronze) &middot;
+            all different 65.6% (three bronze). 2.64 cards a pull on average.
+          </p>
+
+          <p class="legend">What is on this strip</p>
+          <ul class="strip" aria-label="What is on this strip">
+            <li>Bell-Taker (Momentum) &mdash; win a trick with Bells</li>
+            <li>Key-Feeder (Purse) &mdash; lose a trick with Keys</li>
+            <li>Mark of the 9 (Blade) &mdash; win a trick with a 9</li>
+            <li>Glutton (Second Wind) &mdash; eat a skull with this card</li>
+            <li>Hoarder (Blade) &mdash; reach a high bank this hand</li>
+            <li>Unbloodied (Purse) &mdash; survive several tricks without a hit</li>
+            <li>Cornered (Momentum) &mdash; be low on health</li>
+            <li>Moon-Keepsake (Purse) &mdash; hold a Moons card at hand's end</li>
+          </ul>
+
+          <div>
+            <button class="pull" id="pullBtn" onclick="pull()">Pull &mdash; Free</button>
+            <p class="refusal" id="pullRefusal" role="status"></p>
+          </div>
+
+          <div class="reels" id="reels" hidden>
+            <div class="reel">Bell-Taker (Momentum)</div>
+            <div class="reel">Bell-Taker (Momentum)</div>
+            <div class="reel">Cornered (Momentum)</div>
+          </div>
+          <div class="awards" id="awards" hidden>
+            <span><span class="tier silver">Silver</span> Bell-Taker (Momentum) &mdash; win a trick with Bells: +3 multiplier. 2 AP.</span>
+            <span><span class="tier bronze">Bronze</span> Cornered (Momentum) &mdash; be low on health: +2 multiplier. 1 AP.</span>
+          </div>
+        </section>
+
+        <div class="list">
+          <button class="item" onclick="buyAp()">
+            <span class="main"><strong>Action points</strong> &mdash; +5 action points a hand, for the rest of the run. Buy it again to stack it.</span>
+            <span class="price">3 coins</span>
+          </button>
+          <button class="item" onclick="alert('Heal +4')">
+            <span class="main"><strong>Heal</strong> &mdash; Restore 4 health, now. Anything over your maximum is lost.</span>
+            <span class="price">1 coin</span>
+          </button>
+          <button class="item" onclick="alert('Flask drunk')">
+            <span class="main"><strong>Drink the flask</strong> &mdash; Restore 10 health, now. Refills when you beat a stage boss.</span>
+            <span class="price">No coin &middot; 1 charge</span>
+          </button>
+        </div>
+
+        <div><button class="primary" onclick="alert('Fight Slice')">Fight Slice</button></div>
+      </div>
+    </div>
+
+    <script>
+      // Fake state only — this file validates layout and interaction, not logic.
+      let coins = 4,
+        pulls = 0;
+      function render() {
+        document.getElementById('coins').textContent = coins;
+        const price = pulls === 0 ? 0 : 1;
+        const btn = document.getElementById('pullBtn');
+        btn.textContent = price === 0 ? 'Pull — Free' : 'Pull — 1 coin';
+        const refused = price > 0 && coins < price;
+        btn.disabled = refused;
+        document.getElementById('pullRefusal').textContent = refused ? 'You do not have the coins for this.' : '';
+      }
+      function pull() {
+        const price = pulls === 0 ? 0 : 1;
+        coins -= price;
+        pulls += 1;
+        document.getElementById('reels').hidden = false;
+        document.getElementById('awards').hidden = false;
+        render();
+      }
+      function buyAp() {
+        if (coins < 3) return alert('Not enough coins');
+        coins -= 3;
+        document.getElementById('ap').textContent = Number(document.getElementById('ap').textContent) + 5;
+        render();
+      }
+      function choose(btn) {
+        document.querySelectorAll('.machine').forEach((m) => {
+          m.setAttribute('aria-checked', String(m === btn));
+          m.tabIndex = m === btn ? 0 : -1;
+        });
+        pulls = 0;
+        document.getElementById('reels').hidden = true;
+        document.getElementById('awards').hidden = true;
+        render();
+      }
+      document.querySelector('.machines').addEventListener('keydown', (e) => {
+        const tabs = [...document.querySelectorAll('.machine')];
+        if (tabs.length === 0) return; // guard the empty collection before indexing
+        const i = tabs.indexOf(document.activeElement);
+        if (i < 0) return;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+          const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+          next.focus();
+          choose(next);
+          e.preventDefault();
+        }
+      });
+      render();
+    </script>
+  </body>
+</html>

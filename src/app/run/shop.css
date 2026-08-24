@@ -4,9 +4,14 @@
    Every clamp() bound and every hue below is the DEVELOPER'S to retune.
 
    Split across three files at the 400-line budget (see also `shopItems.css`, `shopFlask.css`):
-   this file holds the shell/layout — the outer container, title, purse, health, and category
-   tabs. All three are imported together, in this order, from `ShopPanel.tsx`, so the cascade
-   order matches this file's original undivided form exactly. */
+   this file holds the shell/layout — the outer container, title, purse and health. All three are
+   imported together, in this order, from `ShopPanel.tsx`, so the cascade order matches this
+   file's original undivided form exactly.
+
+   DLR-116 — the `.shop-tabs` / `.shop-tab` / `.shop-panel` / `.shop-aside*` rule blocks that used
+   to live here went with `ShopCategoryTabs.tsx` and the "Also for sale" aside: two fixed
+   purchasable items need no ladder (AC2/AC3). The vertical space that widget and its tabpanel
+   used to occupy is what `.shop-slot` (`shopSlot.css`) now fills instead. */
 
 .shop {
   display: flex;
@@ -149,95 +154,6 @@
 .shop-heart[data-state='atRisk'],
 .shop-heart[data-state='breaking'] {
   color: var(--wc-hp-broken);
-}
-
-/* The category tablist (DLR-89). Transcribed from this contract's `mockup.html`. */
-.shop-tabs {
-  /* DLR-89 residual-clipping fix — see `.shop`'s and `.shop-title`'s comments above. This is
-     `.shop`'s direct flex child (the tablist plus its coming-soon reason line), so it needs its
-     own `flex: 0 0 auto` the same as the other fixed chrome. */
-  flex: 0 0 auto;
-  display: flex;
-  gap: clamp(0.25rem, 1vmin, 0.5rem);
-  width: 100%;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.shop-tab {
-  flex: 1 1 auto;
-  min-width: 0;
-  min-height: 44px;
-  padding: 0.5rem clamp(0.4rem, 1.6vmin, 0.9rem);
-  border: 1px solid var(--wc-brass-dim);
-  border-bottom-width: 2px;
-  border-radius: 4px 4px 0 0;
-  background: none;
-  color: var(--wc-chalk-dim);
-  font-family: var(--wc-sans);
-  font-size: clamp(0.62rem, 1.5vmin, 0.8rem);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  touch-action: manipulation;
-  transition:
-    color var(--wc-ui-transition-ms) ease,
-    border-color var(--wc-ui-transition-ms) ease,
-    background-color var(--wc-ui-transition-ms) ease,
-    transform var(--wc-ui-transition-ms) ease;
-}
-
-/* Selected reads in FORM as well as tone — a brass edge and a lifted fill, so a greyscale
-   screenshot still shows which shelf is open. `game-ux`'s no-colour-alone floor. */
-.shop-tab[aria-selected='true'] {
-  color: var(--wc-brass);
-  border-color: var(--wc-brass);
-  background: #ffffff0d;
-  transform: translateY(-1px);
-}
-
-/* Refused reads as refused in form: the SAME dashed edge and absent fill `.shop-item:disabled`
-   uses. Hung off the `aria-disabled` attribute rather than a state class, so the styling cannot
-   drift from the attribute that actually refuses activation. */
-.shop-tab[aria-disabled='true'] {
-  cursor: not-allowed;
-  border-style: dashed;
-  border-color: var(--wc-chalk-dim);
-  color: var(--wc-chalk-dim);
-  background: none;
-}
-
-.shop-tab[aria-disabled='true']::after {
-  content: '🔒';
-  margin-left: 0.4em;
-  font-size: 0.85em;
-  opacity: 0.65;
-}
-
-.shop-tab:focus-visible {
-  outline: 2px solid var(--wc-parchment);
-  outline-offset: 2px;
-}
-
-@media (hover: hover) {
-  .shop-tab:not([aria-disabled='true']):hover {
-    border-color: var(--wc-parchment);
-    color: var(--wc-parchment);
-  }
-}
-
-.shop-tab:not([aria-disabled='true']):active {
-  transform: translateY(1px);
-}
-
-/* The coming-soon sentence sits on its own line under the row rather than in a tab. It adds a
-   full row's height even though it is only really read when the refused tab has focus, so its
-   own spacing and type size are tightened below `.shop-refusal`'s to keep that row cheap —
-   still a PLACEHOLDER the developer owns. */
-.shop-tabs-reason {
-  flex-basis: 100%;
-  margin-top: 0.15rem;
-  font-size: clamp(0.6rem, 1.3vmin, 0.72rem);
 }
 
 /* Item count drives the column count, so a long shelf packs instead of stretching two columns

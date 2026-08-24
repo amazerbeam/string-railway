@@ -46,9 +46,11 @@ export interface BuffActivationState {
   readonly activatedThisTrick: readonly BuffId[]
 }
 
-/** A fresh per-hand activation state, pool at `STARTING_AP`, nothing activated yet. */
-export function startBuffActivation(): BuffActivationState {
-  return { apPool: STARTING_AP, activatedThisTrick: [] }
+/** A fresh per-hand activation state, pool at `capacity`, nothing activated yet. DLR-116 —
+ *  `capacity` defaults to `STARTING_AP`, reproducing the pre-DLR-116 value exactly, so every
+ *  existing call site is unchanged. */
+export function startBuffActivation(capacity: ActionPoints = STARTING_AP): BuffActivationState {
+  return { apPool: capacity, activatedThisTrick: [] }
 }
 
 /**

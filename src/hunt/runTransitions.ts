@@ -21,8 +21,16 @@ import { isEncounterResolved, startEncounter } from './encounter'
 import { flaskHealAmount, flaskRefusalFor } from './flask'
 import { quickKillPayout } from './quickKill'
 import { priceOf, refusalFor, ShopItem } from './shop'
+import { mintPullAwards, pullPriceFor, slotPullRefusalFor, type SlotPull } from './slotMachine'
 import { DuelSide, type Coins, type EncounterState, type Health } from './types'
-import { canAdvanceRun, flaskStockFor, RunOutcome, shopStockFor, type RunState } from './run'
+import {
+  canAdvanceRun,
+  flaskStockFor,
+  RunOutcome,
+  shopStockFor,
+  slotVisitStockFor,
+  type RunState,
+} from './run'
 
 /**
  * Adopt the encounter a hand reported upward and re-derive the run's outcome. THE single place
@@ -122,6 +130,10 @@ export function advanceRun(run: RunState): RunState {
     outcome: RunOutcome.InProgress,
     handOfFight: 1,
     discardsRemaining: DISCARDS_PER_FIGHT,
+    // DLR-116 — a shop visit is per resolved encounter, so the free pull returns at every fight
+    // boundary exactly as the discard budget does. `runSeed` and `apCapacityBonus` are carried by
+    // the spread above untouched.
+    slotPullsThisVisit: 0,
   }
 }
 
@@ -213,6 +225,38 @@ export function buyFromShop(
       // second one. Byte-identical result for identical inputs; the paid Heal's behaviour is
       // unchanged.
       return healedBy(paid, HEAL_HEALTH_RESTORED, maxPlayerHealth)
+    case ShopItem.ApCapacity:
+      // DLR-116 AC2 — a COUNT of purchases, not a point total; `apCapacityFor` owns the
+      // multiplication, so the step size (`AP_CAPACITY_STEP`) is stated exactly once.
+      return { ...paid, apCapacityBonus: run.apCapacityBonus + 1 }
+  }
+}
+
+/**
+ * DLR-116 — one pull, ALREADY RESOLVED by the caller. Taking a `SlotPull` rather than an `Rng`
+ * keeps this whole module randomness-free and keeps the seeding in exactly one place.
+ *
+ * Throws a `RangeError` naming the `SlotPullRefusal` rather than returning the run unchanged,
+ * exactly as `buyFromShop` and `drinkFlask` do: a silent no-op is the "spent the coin for nothing"
+ * failure this module refuses to allow. Reaching the throw is a driver bug — the control is
+ * disabled whenever `slotPullRefusalFor` is non-null.
+ *
+ * Every award is taken; there is no choose-one gate. DLR-112's expected 2.64 cards per pull is a
+ * per-pull YIELD that only holds if all of them land (`plan.md` Part 1 → Assumptions made).
+ */
+export function pullSlotMachine(run: RunState, pull: SlotPull): RunState {
+  const refusal = slotPullRefusalFor(slotVisitStockFor(run))
+  if (refusal !== null) {
+    throw new RangeError(
+      `Cannot pull the slot machine — ${refusal} (holding ${run.coins} coins, ${run.slotPullsThisVisit} pulls this visit)`,
+    )
+  }
+  return {
+    ...run,
+    coins: run.coins - pullPriceFor(run.slotPullsThisVisit),
+    slotPullsThisVisit: run.slotPullsThisVisit + 1,
+    buffs: [...run.buffs, ...mintPullAwards(pull, run.nextBuffId)],
+    nextBuffId: run.nextBuffId + pull.awards.length,
   }
 }
 

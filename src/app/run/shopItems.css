@@ -1,6 +1,11 @@
 /* The shop screen's item cards and shelves — split out of `shop.css` at the 400-line budget.
    See that file's header for the split's rationale and import order; this block covers the
-   catalogue grid's cards, the refusal/hint copy beneath it, and the scoped-scroll shelf panel. */
+   catalogue grid's cards, the refusal/hint copy beneath it, and the scoped-scroll shelf panel.
+
+   DLR-116 fix pass — the `.shop-panel` (the scoped-scroll shelf) and `.shop-empty` (an empty-rung
+   notice) rule blocks that used to live here were orphaned by this ticket's `ShopPanel.tsx`
+   rewrite: neither class is rendered anywhere any more, so both blocks were removed rather than
+   left as dead weight. */
 
 /* The shelf and the extras block are both a plain vertical list of rows (developer correction,
    mid-fix on this same ticket): a text list reads faster than a grid of bordered cards and is far
@@ -134,57 +139,4 @@
    than edited in `run.css`, which other screens share and this contract does not touch. */
 .shop > .run-actions {
   flex: 0 0 auto;
-}
-
-/* The open shelf. THE ONE SCOPED SCROLL REGION on this screen: `game-ux` forbids the page
-   scrolling, and the catalogue is unbounded while the viewport is not — so the overflow is scoped
-   here, and the purse, health, tabs, hint and leave control all stay outside it and stay visible.
-
-   DLR-89 residual-clipping fix: this is now the ONE flex child of `.shop` allowed to shrink.
-   `flex: 1 1 auto` lets it absorb whatever main-axis space is left once every fixed-chrome
-   sibling (title, next, purse, health, tabs, aside, hint, leave button) has taken its own size —
-   `min-height: 0` is the load-bearing half of that: without it a flex item refuses to shrink
-   below its own content height no matter what `flex-shrink` says, which is exactly why the
-   previous, non-flex version of this rule could not yield and the leave button stayed clipped.
-   Follow-up (this ticket): the `max-height: min(20vmin, 10rem)` this comment used to describe is
-   GONE. It was a blunt DLR-84-era cap left in place after the `.shop`/flex mechanism above already
-   governed this panel's size correctly — on a roomy viewport it did nothing but needlessly crush
-   the panel to ~160px even when the flex layout had room to give it far more, which is the crushed
-   "sliver" bug this ticket fixes. `flex: 1 1 auto` plus `min-height: 0` is the WHOLE sizing
-   mechanism now: this panel takes whatever main-axis space is left once every fixed-chrome sibling
-   (title, next, purse, health, tabs, aside, hint, leave button) has taken its own size, exactly as
-   the rest of this comment already described.
-   `min-height` below is a READABILITY FLOOR, not a hard requirement this panel is guaranteed to
-   get — it stops the panel being squeezed to an unreadable sliver on a viewport tight enough that
-   the fixed chrome and this floor together would exceed `.shop`'s own cap, which is also why the
-   redesign that moved the flask off its own row and turned the shelf into a plain list (see
-   `shop-list` above, `ShopPanel.tsx`) matters: it is what keeps the fixed-chrome total small
-   enough that this floor is actually met rather than merely aspirational. Sized in `vmin` so it
-   scales down at a short viewport rather than staying a fixed pixel figure. Every figure here is a
-   PLACEHOLDER the developer owns. */
-.shop-panel {
-  flex: 1 1 auto;
-  min-height: clamp(9rem, 20vmin, 13rem);
-  width: 100%;
-  box-sizing: border-box;
-  padding: clamp(0.3rem, 1vmin, 0.5rem);
-  border: 1px solid var(--wc-brass-dim);
-  border-top: none;
-  border-radius: 0 0 4px 4px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.shop-panel:focus-visible {
-  outline: 2px solid var(--wc-parchment);
-  outline-offset: 2px;
-}
-
-/* AC5 — a rung whose items have not shipped yet says so. */
-.shop-empty {
-  margin: 0;
-  padding: clamp(0.8rem, 3vmin, 1.6rem) 0;
-  font-size: clamp(0.72rem, 1.8vmin, 0.88rem);
-  color: var(--wc-chalk-dim);
-  font-style: italic;
 }

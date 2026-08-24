@@ -2,8 +2,7 @@ Part of [Hunt](README.md).
 
 # Coins and the shop — the run's economy, and the one predicate that guards it
 
-`src/hunt/shop.ts` (DLR-84) is the game's first economy. It is deliberately tiny: a five-item
-catalogue — two as DLR-84 shipped it, a third at DLR-90, a fourth at DLR-91 and a fifth at DLR-92 — a
+`src/hunt/shop.ts` (DLR-84) is the game's first economy. It is deliberately tiny: a catalogue, a
 price lookup, and
 **one predicate** that decides whether a purchase may be made. The
 purchase itself lives next door in `run.ts`, because spending changes a run and this module is not
@@ -44,7 +43,7 @@ added the **quick-kill payout** beside it in the same expression, so a fast win 
 slow one. The two are **additive** — a reading the developer resolved on 2026-08-20, and one that
 must not be "simplified" back into a replacement, because the quick kill tapers to zero from the
 fourth hand of a fight and the flat coin is what stops a long win paying literally nothing. What
-gets credited is still decided in exactly one place; only *how much* gained a second term.
+gets credited is still decided in exactly one place; only _how much_ gained a second term.
 `quickKill` is computed just above this return, and the rule behind it belongs to
 [the quick-kill payout](quick-kill-payout.md) rather than to this file.
 
@@ -65,10 +64,11 @@ export const ShopItem = {
   BlastGuard: 'blastGuard', // DLR-91
   Whetstone: 'whetstone', // DLR-92
   Heal: 'heal',
+  ApCapacity: 'apCapacity', // DLR-116
 } as const
-export const SHOP_ITEMS: readonly ShopItem[] = [
-  ShopItem.Cheat, ShopItem.Timebomb, ShopItem.BlastGuard, ShopItem.Whetstone, ShopItem.Heal,
-]
+
+// DLR-116 pared this to the two fixed items. The UNION above still holds all six.
+export const SHOP_ITEMS: readonly ShopItem[] = [ShopItem.ApCapacity, ShopItem.Heal]
 
 export const PurchaseRefusal = {
   SlotsFull: 'slotsFull',
@@ -79,14 +79,37 @@ export const PurchaseRefusal = {
 ```
 
 `SHOP_ITEMS` is the single statement of the catalogue — the screen **maps** it and never lists the
-items itself, so a new item appears on screen without the component being edited. That prediction has
-now been tested **three times**, by DLR-90, DLR-91 and DLR-92, and held every time.
+items itself, so a new item appears on screen without the component being edited. That prediction was
+tested **three times**, by DLR-90, DLR-91 and DLR-92, and held every time.
+
+**DLR-116 pared the offered list to two, and the distinction it drew is the one to remember:**
+
+> `SHOP_ITEMS` is **what the shop offers**. The `ShopItem` union is **everything the game prices.**
+
+Cheat, Timebomb, Blast Guard and Whetstone left the list; **none of their mechanics left the
+codebase.** `priceOf`, `categoryOf`, `refusalFor` and `buyFromShop` all stay **total over the union**,
+so each is still priced, still buyable by a caller, and still covered by `shop.test.ts` — which now
+also iterates `Object.values(ShopItem)` to assert exactly that. The consequence, stated plainly: until
+a later ticket re-offers them, **no screen sells those four.** That is what "pared down, tested before
+anything else is added back" asks for.
+
+`ApCapacity` is DLR-116's one new item — `AP_CAPACITY_PRICE` coins for `AP_CAPACITY_STEP` (5) action
+points a hand, for the rest of the run, stacking without a cap. It gained **no** `refusalFor` case,
+which is precisely what "fixed and always-purchasable" means: only the coin check can refuse it.
+`RunState.apCapacityBonus` counts purchases rather than points, and `apCapacityFor` owns the
+multiplication so the step is stated once.
 
 **`Heal` stays last in `SHOP_ITEMS` on purpose**: `UNCATEGORISED_SHOP_ITEMS` derives from this array's
 order, and the heal is the only member with no category. `SHOP_ITEMS` is also a plain array, so nothing
-forces a new `ShopItem` member into it — `shop.test.ts`'s deep-equality assertion is what does. Since
-DLR-89 it maps it **per shelf** rather than flat; see [the ladder](#the-persistence-length-ladder--dlr-89)
-below.
+forces a new `ShopItem` member into it — `shop.test.ts`'s deep-equality assertion is what does.
+
+**The four-rung ladder below is still the model, but no longer a widget.** DLR-116 deleted
+`ShopCategoryTabs.tsx`: two fixed items do not need a shelf ladder over a catalogue that is empty on
+three rungs. `ShopCategory`, `SHOP_CATEGORIES`, `categoryOf`, `SHOP_ITEMS_BY_CATEGORY`,
+`UNCATEGORISED_SHOP_ITEMS` and `isShopCategoryAvailable` all remain exported and tested, and
+`SHOP_ITEMS_BY_CATEGORY` now derives to `{ oneTimeUse: [], fightLong: [], runPermanent: [ApCapacity],
+gamePermanent: [] }`. A tab widget is not a mechanic, and the ladder is expected back once there is a
+catalogue to hang on it.
 
 A `PurchaseRefusal` is a **reason code, not a sentence**. `src/hunt/` holds no user-facing copy;
 `src/app/run/shopLabels.ts` maps each code to words, through a `Record` total over the union — so a new
@@ -125,6 +148,7 @@ export function categoryOf(item: ShopItem): ShopCategory | null {
     case ShopItem.BlastGuard: // DLR-91 — the fight-long shelf's first item
       return ShopCategory.FightLong
     case ShopItem.Whetstone: // DLR-92 — the run-permanent shelf's first item
+    case ShopItem.ApCapacity: // DLR-116 — truthfully run-permanent, though no shelf renders it
       return ShopCategory.RunPermanent
     case ShopItem.Heal:
       return null
@@ -137,7 +161,7 @@ an item that quietly appears on no shelf.
 
 **Heal's `null` is its answer, not a missing one.** A heal is an instant transfer with no duration, so
 it sits outside the ladder entirely rather than being forced onto a rung. The ticket's own acceptance
-criteria said both "every entry in `SHOP_ITEMS` carries a category" *and* "`Heal` carries no
+criteria said both "every entry in `SHOP_ITEMS` carries a category" _and_ "`Heal` carries no
 category" — literally contradictory, since Heal is a `SHOP_ITEMS` entry. The reading taken: the
 assignment is **total over `ShopItem`**, and Heal's assignment is `null`. `SHOP_ITEMS` itself is
 untouched, so `canBuyAnything` and the spec asserting the catalogue holds exactly two members both
@@ -147,7 +171,7 @@ keep working unchanged.
 
 ```ts
 export const SHOP_ITEMS_BY_CATEGORY: Readonly<Record<ShopCategory, readonly ShopItem[]>>
-export const UNCATEGORISED_SHOP_ITEMS: readonly ShopItem[]   // [Heal] — and only ever Heal so far
+export const UNCATEGORISED_SHOP_ITEMS: readonly ShopItem[] // [Heal] — and only ever Heal so far
 ```
 
 Both are computed from `SHOP_ITEMS` + `categoryOf` by a hoisted `itemsOnRung` helper — hoisted
@@ -176,14 +200,15 @@ export function isShopCategoryAvailable(category: ShopCategory): boolean {
 before every rung is filled. This is deliberately a separate fact from emptiness: **fight-long and
 run-permanent were both empty and both perfectly selectable until DLR-91 and DLR-92 filled them** — neither
 of which needed a change here, because availability was never read off a shelf's length. Reading refusal off
-a zero-length array would have started refusing those two as well, and would silently *stop* refusing
+a zero-length array would have started refusing those two as well, and would silently _stop_ refusing
 game-permanent the moment its first item shipped.
 
 **Since DLR-92 the distinction is doing less visible work and more structural work.** Every rung that can
 be opened now holds an item, so `isShopCategoryAvailable` and "is this shelf empty" no longer disagree about
 anything a player can reach — the one empty rung is also the refused one. The separation still matters for
-the next rung added, and `SHOP_CATEGORY_EMPTY`'s branch in `ShopPanel.tsx` is now **correct but
-unreachable by playing**; see [the shop screen](../run-ui/shop-screen.md).
+the next rung added, and `SHOP_CATEGORY_EMPTY` was **deleted outright by DLR-116** along with the tab widget that
+branched on it. The idea survives one screen over: `SLOT_NO_PULL_YET` states an empty slot result
+rather than leaving it blank, for exactly the reason the shelf sentence existed.
 
 Nothing about pricing, refusals or the purchase path changed — DLR-89 added a grouping and no rule.
 
@@ -209,10 +234,14 @@ screen assembles a `ShopStock` by hand and gets one field wrong.
 
 ```ts
 export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | null {
-  if (item === ShopItem.Cheat && stock.cheatCount >= CHEAT_SLOT_COUNT) return PurchaseRefusal.SlotsFull
-  if (item === ShopItem.Heal && stock.playerHealth >= stock.maxPlayerHealth) return PurchaseRefusal.AlreadyFullHealth
-  if (item === ShopItem.BlastGuard && stock.blastGuardHeld) return PurchaseRefusal.GuardAlreadyActive // DLR-91
-  if (!Number.isFinite(stock.coins) || stock.coins < priceOf(item)) return PurchaseRefusal.NotEnoughCoins
+  if (item === ShopItem.Cheat && stock.cheatCount >= CHEAT_SLOT_COUNT)
+    return PurchaseRefusal.SlotsFull
+  if (item === ShopItem.Heal && stock.playerHealth >= stock.maxPlayerHealth)
+    return PurchaseRefusal.AlreadyFullHealth
+  if (item === ShopItem.BlastGuard && stock.blastGuardHeld)
+    return PurchaseRefusal.GuardAlreadyActive // DLR-91
+  if (!Number.isFinite(stock.coins) || stock.coins < priceOf(item))
+    return PurchaseRefusal.NotEnoughCoins
   return null
 }
 ```
@@ -220,12 +249,12 @@ export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | 
 **This is the load-bearing arrangement of the whole ticket, and it is worth stating as a convention
 rather than as a detail.** One exported predicate is read by:
 
-| Reader | What it does with the answer |
-| --- | --- |
-| `buyFromShop` (`run.ts`) | throws a `RangeError` on a non-null result |
-| `handleBuy` (`src/App.tsx`) | no-ops inside the state updater on a non-null result |
-| the `refusals` prop `App.tsx` derives | greys the purchase control and prints the reason |
-| `canBuyAnything` (below) | `some()` over it, to decide whether the verdict warns |
+| Reader                                | What it does with the answer                          |
+| ------------------------------------- | ----------------------------------------------------- |
+| `buyFromShop` (`run.ts`)              | throws a `RangeError` on a non-null result            |
+| `handleBuy` (`src/App.tsx`)           | no-ops inside the state updater on a non-null result  |
+| the `refusals` prop `App.tsx` derives | greys the purchase control and prints the reason      |
+| `canBuyAnything` (below)              | `some()` over it, to decide whether the verdict warns |
 
 A component that re-derived "are the slots full" from `cheats.length` would be a second reading of a
 rule `cheats.ts` already owns, and the visible symptom would be an enabled button that throws. **No
@@ -233,11 +262,11 @@ call site re-derives a refusal from raw fields**; the reviewers checked this spe
 
 Two details in that function are defensive rather than cosmetic:
 
-- **Item-specific reasons come before the coin check.** With full slots *and* no coins, buying a
+- **Item-specific reasons come before the coin check.** With full slots _and_ no coins, buying a
   Cheat reports `SlotsFull` — the reason that will still be true when the coin arrives, and
   therefore the more useful one to print. DLR-91's Guard clause was placed under the same rule.
 - **A non-finite balance refuses rather than passing the comparison.** `NaN >= 1` is `false`, which
-  would otherwise read as "not enough coins" *by accident* and hide a primed figure behind a
+  would otherwise read as "not enough coins" _by accident_ and hide a primed figure behind a
   plausible-looking message.
 
 ### `canBuyAnything` is `some()` over it, never a second reading
@@ -264,7 +293,11 @@ const paid = { ...run, coins: run.coins - priceOf(item) }
 // DLR-90 — a `switch` with NO `default`, so a new item is a compile error here.
 switch (item) {
   case ShopItem.Cheat:
-    return { ...paid, cheats: addCheat(run.cheats, { id: run.nextCheatId }), nextCheatId: run.nextCheatId + 1 }
+    return {
+      ...paid,
+      cheats: addCheat(run.cheats, { id: run.nextCheatId }),
+      nextCheatId: run.nextCheatId + 1,
+    }
   case ShopItem.Timebomb:
     return { ...paid, timebombCharges: run.timebombCharges + 1 }
   case ShopItem.BlastGuard: // DLR-91
@@ -319,7 +352,7 @@ for nothing" failure `cheats.ts`'s `addCheat` already refuses to allow. Reaching
 rather than to be caught. The message names the item, the code, and the balance. There is no `catch`
 anywhere in the diff.
 
-**The heal writes into `encounter.health[DuelSide.Player]`, because that *is* the carried figure.**
+**The heal writes into `encounter.health[DuelSide.Player]`, because that _is_ the carried figure.**
 `run.ts`'s own docblock states that a second copy of player health beside the encounter is the
 number that drifts, and `advanceRun` seeds the next fight from this one. It deliberately does **not**
 go through `applyDamage`, which refuses a resolved encounter — and at the moment a purchase happens
@@ -368,16 +401,16 @@ Almost all of them are **transcribed**, not chosen here — the five below from 
 design doc, plus `TIMEBOMB_PRICE` (2 coins) and `TIMEBOMB_QUARRY_DAMAGE` (4 health) from
 `version-4-scope.md` at DLR-90. **One exception: `TIMEBOMB_PLAYER_DAMAGE` (2 health) is the developer's
 own choice**, added by DLR-91 on 2026-08-19 when the single `TIMEBOMB_DAMAGE` key was split — the
-player-side hit is deliberately smaller, because it *also* forces the streak's cash-out.
+player-side hit is deliberately smaller, because it _also_ forces the streak's cash-out.
 
-| Key | Value | Unit |
-| --- | --- | --- |
-| `COINS_PER_ENCOUNTER_WIN` | `1` | coins, credited once per encounter won — the **flat** term; since DLR-95 the quick-kill payout is added to it |
-| `CHEAT_PRICE` | `1` | coins per purchase |
-| `HEAL_PRICE` | `1` | coins per purchase |
-| `BLAST_GUARD_PRICE` | `1` | coins per purchase (DLR-91) |
-| `WHETSTONE_PRICE` | `4` | coins per purchase (DLR-92) |
-| `HEAL_HEALTH_RESTORED` | `4` | health points, added once, before the clamp |
+| Key                       | Value | Unit                                                                                                          |
+| ------------------------- | ----- | ------------------------------------------------------------------------------------------------------------- |
+| `COINS_PER_ENCOUNTER_WIN` | `1`   | coins, credited once per encounter won — the **flat** term; since DLR-95 the quick-kill payout is added to it |
+| `CHEAT_PRICE`             | `1`   | coins per purchase                                                                                            |
+| `HEAL_PRICE`              | `1`   | coins per purchase                                                                                            |
+| `BLAST_GUARD_PRICE`       | `1`   | coins per purchase (DLR-91)                                                                                   |
+| `WHETSTONE_PRICE`         | `4`   | coins per purchase (DLR-92)                                                                                   |
+| `HEAL_HEALTH_RESTORED`    | `4`   | health points, added once, before the clamp                                                                   |
 
 **`WHETSTONE_PRICE = 4` is transcribed from `version-4-scope.md` §1's own heading** — "priced as the shop's
 one real splurge" — and is the only price in the shop above 2 coins. The design's reasoning, not arithmetic
@@ -388,7 +421,7 @@ yet, which is why the price is `provisional` in `the-hunt.md` rather than settle
 full runs and never got past 2 coins.
 
 **There is deliberately no key for the per-copy `+1`.** DLR-92's ticket names exactly one new key, and the
-bonus per copy is the item's *definition* rather than a tunable — the same reasoning `bank.ts` already uses
+bonus per copy is the item's _definition_ rather than a tunable — the same reasoning `bank.ts` already uses
 to keep its `bankAdded = 1` out of configuration. An item granting +2 a copy would be a different item. The
 rule is stated once, in `bankClimbBonusFor` below.
 

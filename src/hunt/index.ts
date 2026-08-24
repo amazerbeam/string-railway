@@ -55,6 +55,8 @@ export {
   MAX_CARDS_PER_DISCARD,
   AP_ENABLED,
   STARTING_AP,
+  AP_CAPACITY_STEP,
+  AP_CAPACITY_PRICE,
   ApRefreshCadence,
   AP_REFRESH_CADENCE,
   MAX_REFUND_PER_HAND,
@@ -203,11 +205,18 @@ export {
   shopStockFor,
   flaskStockFor,
   bankClimbBonusFor,
+  slotVisitStockFor,
 } from './run'
 
 // DLR-93 Phase 2.5 — the run's transitions moved to `./runTransitions`; the barrel's exported set
 // is unchanged.
-export { recordEncounter, advanceRun, drinkFlask, buyFromShop } from './runTransitions'
+export {
+  recordEncounter,
+  advanceRun,
+  drinkFlask,
+  buyFromShop,
+  pullSlotMachine,
+} from './runTransitions'
 
 export type { QuarryCharacterInfo } from './quarryCharacters'
 export { QUARRY_CHARACTERS, quarryCharacterInfo } from './quarryCharacters'
@@ -218,6 +227,7 @@ export {
   canAffordAp,
   spendAp,
   refreshActionPointsForNewHand,
+  apCapacityFor,
 } from './actionPoints'
 
 export type { Rng } from './seededRng'
@@ -231,6 +241,8 @@ export {
   SLOT_FREE_PULLS_PER_VISIT,
   SLOT_REROLL_PRICE,
 } from './slotConfig'
+
+export { slotOutcomeOdds, awardCountFor, expectedCardsPerPull } from './slotOdds'
 
 export type { SlotFamilyWeights, SlotAxisWeights } from './slotWeights'
 export {
@@ -258,6 +270,7 @@ export {
   SlotOutcome,
   SlotPullRefusal,
   slotSeedFor,
+  spinSeedFor,
   drawReelPool,
   spinReels,
   resolvePull,

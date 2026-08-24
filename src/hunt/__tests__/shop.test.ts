@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  AP_CAPACITY_PRICE,
   CHEAT_PRICE,
   CHEAT_SLOT_COUNT,
   TIMEBOMB_PRICE,
@@ -34,14 +35,8 @@ const baseStock = (over: Partial<ShopStock> = {}): ShopStock => ({
 const stock = baseStock
 
 describe('SHOP_ITEMS', () => {
-  it('holds exactly the five members, one-time use first, Heal last (DLR-92)', () => {
-    expect(SHOP_ITEMS).toEqual([
-      ShopItem.Cheat,
-      ShopItem.Timebomb,
-      ShopItem.BlastGuard,
-      ShopItem.Whetstone,
-      ShopItem.Heal,
-    ])
+  it('holds exactly the two pared items — AP capacity then Heal (DLR-116 AC2)', () => {
+    expect(SHOP_ITEMS).toEqual([ShopItem.ApCapacity, ShopItem.Heal])
   })
 })
 
@@ -64,6 +59,16 @@ describe('priceOf', () => {
 
   it('DLR-92 AC1 — prices the Whetstone from WHETSTONE_PRICE', () => {
     expect(priceOf(ShopItem.Whetstone)).toBe(WHETSTONE_PRICE)
+  })
+
+  it('DLR-116 AC2 — prices AP capacity from AP_CAPACITY_PRICE', () => {
+    expect(priceOf(ShopItem.ApCapacity)).toBe(AP_CAPACITY_PRICE)
+  })
+
+  it('DLR-116 AC3 — still answers for all six ShopItem members, proving no mechanic is deleted', () => {
+    for (const item of Object.values(ShopItem)) {
+      expect(typeof priceOf(item)).toBe('number')
+    }
   })
 })
 
@@ -197,6 +202,10 @@ describe('categoryOf', () => {
     expect(categoryOf(ShopItem.Whetstone)).toBe(ShopCategory.RunPermanent)
   })
 
+  it('DLR-116 AC2 — puts AP capacity on the run-permanent rung', () => {
+    expect(categoryOf(ShopItem.ApCapacity)).toBe(ShopCategory.RunPermanent)
+  })
+
   it('answers for every SHOP_ITEMS member, so no item is silently unassigned', () => {
     for (const item of SHOP_ITEMS) {
       const category = categoryOf(item)
@@ -212,19 +221,13 @@ describe('SHOP_ITEMS_BY_CATEGORY', () => {
     }
   })
 
-  it('puts both one-time-use items on that rung, in catalogue order', () => {
-    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.OneTimeUse]).toEqual([
-      ShopItem.Cheat,
-      ShopItem.Timebomb,
-    ])
+  it('DLR-116 — the one-time-use and fight-long rungs are empty; those items are off the pared shelf', () => {
+    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.OneTimeUse]).toEqual([])
+    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.FightLong]).toEqual([])
   })
 
-  it('puts the Blast Guard alone on the fight-long rung (DLR-91 AC1)', () => {
-    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.FightLong]).toEqual([ShopItem.BlastGuard])
-  })
-
-  it('DLR-92 — sells the Whetstone alone on the run-permanent rung; game-permanent stays empty', () => {
-    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([ShopItem.Whetstone])
+  it('DLR-116 — sells AP capacity alone on the run-permanent rung; game-permanent stays empty', () => {
+    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([ShopItem.ApCapacity])
     expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.GamePermanent]).toEqual([])
   })
 

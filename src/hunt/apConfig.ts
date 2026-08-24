@@ -17,6 +17,10 @@ export const AP_ENABLED = true
 // UNIT: action points.
 export const STARTING_AP: ActionPoints = 6
 
+// DLR-116 AC2, TRANSCRIBED from the ticket ("+5 AP per purchase") — not a chosen value.
+// UNIT: action points added to the per-hand pool per purchase.
+export const AP_CAPACITY_STEP: ActionPoints = 5
+
 // DLR-104 AC1 — when the AP pool resets. An ENUM-SHAPED CONSTANT, not a boolean: the
 // ticket's own risk note is explicit that a boolean here is what forces a refactor the day a
 // playtest wants per-fight or per-run pooling instead of per-hand. `erasableSyntaxOnly` rules

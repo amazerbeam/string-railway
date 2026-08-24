@@ -1,23 +1,11 @@
-/* The shop screen's Heal aside and Flask block — split out of `shop.css` at the 400-line budget.
-   See that file's header for the split's rationale and import order. */
+/* The shop screen's Flask block — split out of `shop.css` at the 400-line budget. See that
+   file's header for the split's rationale and import order.
 
-/* The Heal's own block, outside the ladder. */
-.shop-aside {
-  /* DLR-89 residual-clipping fix — see `.shop-title`'s comment above (in `shop.css`). */
-  flex: 0 0 auto;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.shop-aside-label {
-  font-size: clamp(0.55rem, 1.2vmin, 0.68rem);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--wc-chalk-dim);
-  text-align: left;
-}
+   DLR-116 fix pass — the `.shop-aside`/`.shop-aside-label` (the Heal's old standalone block) and
+   `.shop-purse-cell.is-flask` rule blocks that used to live here were orphaned by this ticket's
+   `ShopPanel.tsx` rewrite: the Heal is now one row of `.shop-list`, not its own aside, and no
+   element ever carries `.shop-purse-cell` together with `.is-flask`. Both blocks were removed
+   rather than left as dead weight. */
 
 /* DLR-93 AC6, redesigned mid-fix on this ticket (developer direction): the flask no longer has its
    own full-width row between the health meter and the ladder — that whole row was most of the
@@ -88,9 +76,5 @@
 .shop-flask-charges {
   font-size: clamp(0.56rem, 1.3vmin, 0.7rem);
   color: var(--wc-chalk-dim);
-  font-variant-numeric: tabular-nums;
-}
-
-.shop-purse-cell.is-flask .shop-purse-value {
   font-variant-numeric: tabular-nums;
 }
