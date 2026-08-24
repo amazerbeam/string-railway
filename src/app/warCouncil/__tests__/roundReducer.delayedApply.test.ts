@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { PlayerSide, RoundPhase, Suit, TrickOutcome, type WarCouncilState } from '../../../warCouncil'
+import {
+  PlayerSide,
+  RoundPhase,
+  Suit,
+  TrickOutcome,
+  type WarCouncilState,
+} from '../../../warCouncil'
 import {
   APPLY_DAMAGE_DELAY_TRICKS,
   DuelSide,
@@ -36,6 +42,7 @@ function uiFrom(
     blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: discardsRemainingFixture,
+    buffs: [],
   })
 }
 

@@ -147,6 +147,8 @@ export {
   activateBuff,
   openBuffWindow,
   refreshBuffsForNewHand,
+  isPricedBuff,
+  activatableBuffs,
 } from './buffActivation'
 
 export {

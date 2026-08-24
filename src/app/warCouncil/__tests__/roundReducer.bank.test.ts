@@ -42,6 +42,7 @@ function uiFrom(
     blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: discardsRemainingFixture,
+    buffs: [],
   })
 }
 

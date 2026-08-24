@@ -3,10 +3,20 @@ Part of [Hunt](README.md).
 DLR-108 is the buff system's first code ticket. It closes the four shape gaps
 `v1-buff-card-list.md`'s _Code-shape alignment_ section names, ships that document's AP cost model
 as executable arithmetic, adds the per-hand accrual `hybrid-design.md` §5's stacking rule asks for,
-and builds the activation flow itself. **Nothing in `src/` calls any of it yet** — no reducer
-action, no component, no reader of `RunState.buffs`. That is the same deliberate intermediate state
-[Cheat and Timebomb as buff-pile objects](cheat-and-timebomb-buffs.md) already documents, and it is
-why this page describes a complete rule with no player able to reach it.
+and builds the activation flow itself. It shipped with **nothing in `src/` calling any of it** — no
+reducer action, no component, no reader of `RunState.buffs` — the same deliberate intermediate state
+[Cheat and Timebomb as buff-pile objects](cheat-and-timebomb-buffs.md) already documents.
+
+> **DLR-114 gave all of it a caller.** The felt's action bar's **Apply Buff** button opens a loadout
+> panel that reads `RunState.buffs` (threaded through as a required mount prop), prices every row with
+> `apCostOf`, disables each row through `buffActivationRefusalFor`, and commits through `activateBuff`
+> on a confirming second tap. `BuffActivationState` **has an owner now** —
+> `RoundUiState.buffActivation`, which replaced that state's separate `apPool` field so the hand has
+> one pool rather than two. `openBuffWindow` fires from the reducer on the transition that resolves a
+> trick. The two things this page describes that are **still uncalled** are `buffAccrual.ts` entirely
+> and `refreshBuffsForNewHand`; see the foot of this page. Read
+> [war-council-ui/action-bar-and-loadout.md](../war-council-ui/action-bar-and-loadout.md) for the
+> screen.
 
 ## The four shape gaps, and how each was closed
 
@@ -124,6 +134,11 @@ contributions, but **does not perform the cash-out step** — nothing in `src/` 
 reordering `bank.ts`'s live cash-out would be a change nobody can observe. Wiring it is a later
 ticket's.
 
+> **Still true after DLR-114, and this is the asymmetry not to smooth over.** `buffAccrual.ts` gained
+> no caller when the loadout became reachable. A player can now spend action points on a
+> condition-family buff and watch the pool fall — and **the condition is never evaluated and the
+> reward is never paid**. Activation is what DLR-114 made reachable; firing is a later ticket's.
+
 ## Activating a buff — the window, the spend, and the refusal
 
 `buffActivation.ts` follows the shape `voluntaryCashOut.ts`, `flask.ts` and `shop.ts` already set:
@@ -160,6 +175,45 @@ rather than one.** `openBuffWindow` clears `activatedThisTrick` and leaves `apPo
 `refreshActionPointsForNewHand` so a cadence change needs no edit here. A single "start the next
 trick" function that also reset the pool is precisely the bug the test suite exists to catch.
 
-`BuffActivationState` has **no owner** — it is a pure value with no home on `RunState` or
-`RoundUiState`. Whichever ticket builds the felt-rail button decides where it lives; giving a
-per-hand budget a run-lifetime home now would be the wrong answer written early.
+## `isPricedBuff` / `activatableBuffs` — the guard that keeps `RangeError` off a render — DLR-114
+
+`apCostOf` **throws** on `BuffKind.Unassigned`, and `startRun` seeds `STARTING_BUFF_COUNT` of exactly
+that. So the moment a screen was going to price an owned pile, something had to stand between the two.
+DLR-114 put it here, beside the function that throws, rather than in the component that would
+otherwise have had to remember it:
+
+```ts
+export function isPricedBuff(buff: Buff): boolean {
+  return isConsumableKind(buff.kind) || isConditionFamily(buff.kind)
+}
+
+export function activatableBuffs(buffs: readonly Buff[]): readonly Buff[] {
+  return buffs.filter(isPricedBuff)
+}
+```
+
+`isPricedBuff` is a **mirror of `buffApCost`'s own two branches, not a second rule** — it reads the
+same two membership predicates, so a kind added to either pricing table is admitted here
+automatically, and a kind added to neither is refused here rather than throwing at a render.
+`activatableBuffs` preserves order, because the pile's order is the player's mental order. Both are
+re-exported from `src/hunt/index.ts`; the felt reads them once, through `roundUiState.ts`'s
+`offeredBuffs`.
+
+The consequence worth stating plainly: **on a fresh run with an empty Vault, `activatableBuffs`
+returns nothing**, so the loadout panel offers no buffs at all and shows only the relocated Cheat and
+Timebomb controls. That is the placeholder pile being correctly filtered, not a failure.
+
+## Where the state lives now
+
+`BuffActivationState` **had no owner** as DLR-108 shipped it — a pure value with no home on
+`RunState` or `RoundUiState`, on the stated reasoning that whichever ticket built the button should
+decide, and that giving a per-hand budget a run-lifetime home early would be the wrong answer written
+early.
+
+**DLR-114 decided it, and the answer was `RoundUiState.buffActivation`** — hand-lifetime, seeded by
+`startBuffActivation()` in `createRoundUiState`, which **is** the per-hand refresh because `App.tsx`
+remounts the felt per hand. It is not on `RunState` and is not persisted. In the same move
+`RoundUiState.apPool` — DLR-109's separate copy of the same pool, which Apply Damage spent from — was
+**deleted**, so the felt has exactly one action-point number and divergence between the two spenders
+is unexpressible. `refreshBuffsForNewHand` remains the pure statement of the per-hand rule and remains
+uncalled, because a remount already performs it.

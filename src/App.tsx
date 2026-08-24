@@ -324,6 +324,7 @@ function App() {
       timebombCharges={run.timebombCharges}
       blastGuardHeld={run.blastGuardHeld}
       discardsRemaining={run.discardsRemaining}
+      buffs={run.buffs}
       bankClimbBonus={bankClimbBonusFor(run)}
       quarryLabel={quarryHealthLabel(currentName)}
       onComplete={handleComplete}

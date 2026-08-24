@@ -39,6 +39,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
       bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
+      buffs={overrides.buffs ?? []}
       onComplete={overrides.onComplete ?? vi.fn()}
     />,
   )

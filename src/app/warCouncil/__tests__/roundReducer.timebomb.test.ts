@@ -53,6 +53,7 @@ function seededUi(charges = timebombChargesFixture) {
     blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: discardsRemainingFixture,
+    buffs: [],
   })
 }
 
@@ -105,6 +106,7 @@ describe('TapTimebomb respects the same canAct gate the Cheat uses', () => {
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
+      buffs: [],
     })
     expect(roundReducer(ui, tapTimebomb)).toBe(ui)
   })
@@ -144,6 +146,7 @@ describe('marking (AC2)', () => {
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
+      buffs: [],
     })
     ui = roundReducer(ui, tapTimebomb)
     ui = roundReducer(ui, tapTimebomb)

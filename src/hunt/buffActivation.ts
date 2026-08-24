@@ -1,5 +1,5 @@
 import { canAffordAp, refreshActionPointsForNewHand, spendAp } from './actionPoints'
-import { apCostOf } from './buffCosts'
+import { apCostOf, isConditionFamily, isConsumableKind } from './buffCosts'
 import type { Buff, BuffId } from './buffs'
 import { STARTING_AP } from './apConfig'
 import type { ActionPoints } from './types'
@@ -123,4 +123,26 @@ export function openBuffWindow(state: BuffActivationState): BuffActivationState 
  */
 export function refreshBuffsForNewHand(state: BuffActivationState): BuffActivationState {
   return { apPool: refreshActionPointsForNewHand(state.apPool), activatedThisTrick: [] }
+}
+
+/**
+ * DLR-114 — whether `apCostOf` can price this buff. TRUE for the 11 condition families and the 8
+ * consumable/activated cards; FALSE for `BuffKind.Unassigned`, which `seedStartingBuffPile` mints
+ * and `buffApCost` throws a `RangeError` on.
+ *
+ * The predicate is a MIRROR of `buffApCost`'s own two branches rather than a second rule, so a
+ * kind added to one table is admitted here automatically and a kind added to neither is refused
+ * here rather than throwing at a render.
+ */
+export function isPricedBuff(buff: Buff): boolean {
+  return isConsumableKind(buff.kind) || isConditionFamily(buff.kind)
+}
+
+/**
+ * The subset of an owned pile that may be offered to the player. THE guard between
+ * `RunState.buffs` — which opens every run holding `STARTING_BUFF_COUNT` placeholders — and
+ * `apCostOf`'s `RangeError`. Order is preserved: the pile's order is the player's mental order.
+ */
+export function activatableBuffs(buffs: readonly Buff[]): readonly Buff[] {
+  return buffs.filter(isPricedBuff)
 }

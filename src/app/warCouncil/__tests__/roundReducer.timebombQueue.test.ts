@@ -42,6 +42,7 @@ describe('the queue write (AC3/AC6)', () => {
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
+      buffs: [],
     })
     ui = roundReducer(ui, tapTimebomb)
     ui = roundReducer(ui, tapTimebomb)
@@ -80,6 +81,7 @@ describe('the queue write (AC3/AC6)', () => {
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
+      buffs: [],
     })
     ui = roundReducer(ui, tapTimebomb)
     ui = roundReducer(ui, tapTimebomb)
@@ -114,6 +116,7 @@ describe('the queue write (AC3/AC6)', () => {
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
+      buffs: [],
     })
     const target = card(Suit.Bells, 9)
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
@@ -147,6 +150,7 @@ describe('the queue write (AC3/AC6)', () => {
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
+      buffs: [],
     })
     ui = roundReducer(ui, tapTimebomb)
     ui = roundReducer(ui, tapTimebomb)
@@ -182,6 +186,7 @@ describe('D1 — a Timebomb is paid at the trick that resolves it, not at the ne
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
+      buffs: [],
     })
     const target = card(Suit.Bells, 9)
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target }) // arms to play
@@ -214,6 +219,7 @@ describe('D1 — a Timebomb is paid at the trick that resolves it, not at the ne
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
+      buffs: [],
     })
 
     // Trick 1 — pays the queued Timebomb and clears it.
@@ -258,6 +264,7 @@ describe('DLR-91 AC4 — the Blast Guard through the reducer', () => {
       blastGuardHeld: true,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
+      buffs: [],
     })
 
     const target = card(Suit.Bells, 9)
@@ -297,6 +304,7 @@ describe('DLR-91 AC4 — the Blast Guard through the reducer', () => {
       blastGuardHeld: true,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
+      buffs: [],
     })
 
     // Trick 1 — the Guard suppresses the reset and is spent.

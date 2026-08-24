@@ -4,8 +4,42 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-08-23**. Everything below is reachable in
+Last reviewed against the code and the design on **2026-08-24**. Everything below is reachable in
 the app today except where a rule is marked **[not built]**.
+
+> **Every pre-trick decision now lives on one bar, and you can spend action points on a buff —
+> DLR-114, 2026-08-24.** The felt no longer has four separate plates scattered down its left edge. It
+> has **one action bar along the bottom of the screen**, carrying the four things you may do before you
+> commit a card: **Apply Buff**, **Cards**, **Swap** (yesterday's discard, renamed and relocated) and
+> **Apply Damage**. The bar is there for the whole hand: a control you cannot use right now is greyed
+> with the reason written on its own face, never removed. **Your Cheats and your Timebomb charges moved
+> inside Apply Buff** — they are one press further away than they were, and every rule about them is
+> otherwise identical.
+>
+> **Apply Buff is new, and it is the first time the buffs you own have appeared anywhere in a fight.**
+> It opens a panel listing every priced buff you hold, one glanceable line each — its name, what it
+> asks of you, what it pays, and what it costs in action points — plus how many action points you have
+> left. Tapping a line once poises it; tapping it again spends the points and activates it for the
+> coming trick. You may activate more than one. **A buff can only be activated between tricks**, but
+> the panel itself opens whenever you can act at all, so you can still reach a Cheat mid-trick — which
+> is the only moment a Cheat is worth anything (section 4).
+>
+> **The thing to know before you spend anything: an activated buff does nothing yet.** Its condition is
+> never checked and its reward is never paid. The points are spent and that is all that happens. That
+> half is **[not built]** and is a later ticket's; it is stated in section 4 rather than smoothed over,
+> because a rule that takes your resource and gives nothing back is exactly the rule a player needs
+> warning about.
+>
+> **Two things you could not see before are now on screen**: how many action points you hold, and — once
+> you press Apply Damage — that a payout is queued and how many tricks it still has to run (section 7).
+> Both close gaps this document had recorded under Known tensions since DLR-109.
+>
+> **Nobody has looked at any of it.** This landed in an unattended run that skipped both its approval
+> and its mockup gate and ran no browser. Four judgements were taken by default rather than decided —
+> that the bar greys rather than disappearing, that activation commits on a second tap with **no way to
+> un-activate**, that Apply Buff still opens when you can afford nothing, and that a buff is described
+> in one line — and **nothing has confirmed that a four-row screen still fits without scrolling**. All
+> of it is the developer's, and it is why the rows below carry the markers they do.
 
 > **Applying damage now costs you and makes you wait — DLR-109, 2026-08-23.** Until today, applying
 > damage cashed your streak into the Quarry **instantly**, at no cost, the moment you confirmed the
@@ -475,13 +509,100 @@ rather than the card; section 9 records why it was removed.
 Swan and your top card of a suit leaves you narrowed to your new highest; you are only free of the
 constraint in a suit once you hold none of that suit at all.
 
+### Everything you may do before you commit a card, in one place
+
+**[settled]** — since 2026-08-24; **whether four buttons in a row reads clearly** is **[open]**.
+
+Before you commit a card there are four things you may do, and all four are taken from **one bar
+along the bottom of the screen**:
+
+| Button           | What it does                                                                     |
+| ---------------- | -------------------------------------------------------------------------------- |
+| **Apply Buff**   | Opens your loadout: the buffs you own, your Cheats, and your Timebomb charges     |
+| **Cards**        | Plays the card you have selected. Greyed until you have selected one              |
+| **Swap**         | Throws cards from your hand and draws the same number blind (the discard, below)  |
+| **Apply Damage** | Cashes your banked streak into the Quarry (section 7)                             |
+
+**The bar is on screen for the whole hand and every button stays in the same place.** A button you
+cannot use right now is **greyed with its reason printed on its own face** — never removed, never
+explained only on hover. Selecting a card and pressing **Cards** does exactly what tapping the same
+card twice does; it is a second route to the same commit, not a different one.
+
+> **This replaced four separate plates down the felt's left edge.** Until 2026-08-24 the Cheat slots,
+> the Timebomb plate, the discard control and the Apply Damage control each had their own frame in
+> their own corner. Nothing about what any of them **does** changed in the move — what changed is that
+> you now find all four in the same row, and that Cheats and Timebomb charges live one press deeper,
+> behind **Apply Buff**.
+
+#### Buffs — spending action points before a trick
+
+**[settled]** — the procedure and the two-tap grammar, since 2026-08-24; **every action-point price**
+is **[provisional]**; **whether an activated buff ever pays anything** is **[not built]**.
+
+You hold a pool of **action points** — **6**, **[provisional]**, the developer's and never played —
+refreshed at the start of every hand and **not** refreshed between tricks. It is the same pool
+applying damage spends from (section 7): there is one number, and everything that costs action points
+draws it down.
+
+You also own a **pile of buffs**. Pressing **Apply Buff** opens it. Each priced buff you hold is one
+line: its name, the condition it asks of you, the reward it promises, and its price in action points.
+Above them sits the pool you have left.
+
+**Activating one takes two taps on its line.**
+
+1. **The first tap poises it.** Nothing is spent. This is the same misclick guard the Cheat and Apply
+   Damage already use.
+2. **The second tap spends the points** and activates the buff for the coming trick.
+
+**Pressing `Escape` closes the panel and drops any poise unspent**, as does pressing Apply Buff again.
+But **once the second tap lands there is no way to un-activate**: the points are gone, and nothing gives them back. Activating is therefore the decision.
+
+**You may activate more than one buff before the same trick**, and the panel stays open so you can.
+You may not activate the *same* buff twice in one trick — that is a duplicate payment, not stacking.
+Each activation lasts for one trick; the slate clears when that trick resolves, and the pool does not.
+
+**Activating is only available between tricks** — the same window the Swap uses, before a trick's
+first card is laid. Mid-trick every buff line is greyed, reading that it is not between tricks.
+
+> **The panel opens more often than its contents can be used, deliberately.** Apply Buff itself opens
+> whenever you can act at all, including while you are following a lead the Quarry has already
+> committed. That is because your **Cheats and Timebomb charges live inside it**, and mid-trick is
+> exactly when a Cheat is worth something — it is the moment follow-suit is binding you. So mid-trick:
+> the panel opens, the Cheat and Timebomb controls inside it work, and every buff line is greyed.
+
+**A line you cannot afford is greyed too, and says so — but the panel still opens when you can afford
+nothing at all.** Reading what you own and what it costs is how you plan the next trick.
+
+> **An activated buff currently does nothing but cost you.** Its condition is never checked and its
+> reward is never paid — **[not built]**. You can own a buff, read it, pay for it and watch your pool
+> fall, and no reward will ever arrive. This is a half-built mechanic stated honestly rather than
+> hidden: the activation half is real and the firing half is a later ticket's.
+
+> **On a fresh run you own no buffs the panel will show you.** A new run is seeded with placeholder
+> cards that have no condition, no reward and no price, and those are filtered out rather than shown
+> as empty lines — so until a real buff reaches your pile, Apply Buff shows only your Cheats and your
+> Timebomb charges. Nothing in a fight puts a real buff in your pile today; that comes from outside a
+> run. See [Not built](#not-built).
+
+##### What a buff costs — **[provisional]**
+
+Every price is read from the cost tables rather than printed on the card: a buff's price is derived
+from **what it rewards**, **how big that reward is**, and **how reliably its condition fires**, then
+clamped between 1 and 6 action points. The consumable cards are priced off that formula entirely, at
+a flat figure per tier. **Whose decision:** the developer's. Every figure in both tables was chosen by
+an agent, against a starting pool nobody has played, and the clearest thing to watch is the steep end
+— a gold Cheat is priced deliberately above a whole hand's budget.
+
 ### Cheats — refusing a trick follow-suit would force on you
 
 **[settled]** — the procedure; **how many Cheats a run starts with** is **[provisional]**, below.
 
 You hold **two Cheat slots**. A Cheat is a card you hold, not a counter: each is one use, and
-spending one frees its slot. The slots sit beside the decree and are on screen for the whole hand,
-whether they hold anything or not.
+spending one frees its slot. **Since 2026-08-24 the slots live inside Apply Buff** — press it and they
+are there, below your buffs, filled or empty. They are reachable at any moment you could act,
+including while you are following a lead the Quarry has already committed, which is the moment a
+Cheat is worth something. Until that date they sat beside the decree on the felt for the whole hand;
+nothing about arming or spending one changed with the move, only where you reach for it.
 
 **Playing a held Cheat takes two clicks on it.**
 
@@ -530,9 +651,10 @@ is two at a time, replenished for a coin whenever you have spent one.
 **whether three taps to mark a card feels right** is **[open]**.
 
 You hold some number of **Timebomb charges**, bought at the shop for 2 coins each and carried across
-fights exactly as Cheats and health are. **There is no cap** — coins are the only limit — and a plate in
-the felt rail beneath the Cheat rail shows how many you hold for the whole hand, whether that is any or
-none.
+fights exactly as Cheats and health are. **There is no cap** — coins are the only limit — and **since
+2026-08-24 the plate showing how many you hold lives inside Apply Buff**, beside the Cheat slots,
+whether that is any or none. Until that date it sat in the felt rail beneath the Cheats; nothing about
+priming a card changed with the move, only where you reach for it.
 
 **Spending one takes three taps.**
 
@@ -579,16 +701,20 @@ Three taps to mark, then the usual two to play the card. The alternative is armi
 makes marking two — but puts an **irreversible** mark one misclick away. **Whose decision:** the
 developer's, after playing it.
 
-### The Discard — swapping cards from hand between tricks
+### The Discard, on the bar as **Swap** — swapping cards from hand between tricks
 
 **[settled]** — the procedure; **how many discards a fight gives you, and how many cards one throw
 can hold** are both **[provisional]**, below.
+
+**Since 2026-08-24 this is the bar's third button, labelled Swap.** No rule below changed with the
+rename and the move; the button counts down the throws you have left and refuses with its reason on
+its own face exactly as the plate it replaced did.
 
 Before a trick's first card is laid, you may **discard** — throw away 1 to 3 cards from your hand
 and draw the same number blind off the top of the draw pile. Hand size never changes. Nothing about
 the drawn cards is shown before you commit; you find out what you got by looking at your new hand.
 
-**The moment this is available reaches one step further back than every other rail control.**
+**The moment this is available reaches one step further back than every other control on the bar.**
 Cheats and Timebomb only ever open while it is your own turn to act. A discard also opens **before
 the Quarry has led** — while you are looking at "What the Quarry holds" and the trick has not yet
 started — so you can throw against the shape you can see rather than against a lead already on the
@@ -601,7 +727,7 @@ it dry, however you spend the budget.
 
 **You may chain discards.** Nothing stops you throwing, looking at what arrived, and throwing again
 in the same gap before a trick, up to however many discards you have left for the fight. Each throw
-costs one from the budget and spends a separate tap on the rail control to re-open the selection —
+costs one from the budget and spends a separate press of **Swap** to re-open the selection —
 there is no single continuous "keep throwing" mode.
 
 **The draw is blind.** You do not see the pile before you commit, and nothing guarantees the cards
@@ -613,7 +739,7 @@ one of them — the discard is the player's alone.
 
 **Attempting to discard when none of the fight's budget remains, with nothing selected, or at a
 moment it is not available is refused with a reason on screen**, the same disabled-with-reason
-convention every other rail control uses.
+convention every other control on the bar uses.
 
 #### How many discards you get, and how many cards one throw can hold — **[provisional]**
 
@@ -918,12 +1044,15 @@ free.
 - **It takes two taps.** The first poises the control; the second spends the streak. The commit cannot
   be undone, so a single misclick must not be able to spend a hand's work. Pressing `Escape`, or tapping
   away, cancels a poise.
-- **It costs action points to press** — `APPLY_DAMAGE_AP_COST`, spent whether or not the payout it
-  buys ever lands, and not refunded if it is later wiped (below). Nothing on the felt currently shows
-  how many action points you have.
+- **It costs action points to press** — **3** of them, **[provisional]** and the developer's, out of
+  the pool of 6 you start each hand with (section 4). They are spent whether or not the payout they
+  buy ever lands, and are not refunded if it is later wiped (below). **Since 2026-08-24 the cost is
+  written on the button and the pool is on screen beside it.**
 - **The cash-out does not land where you press it.** It is **queued** rather than dealt, and pays out
   at the resolution of a later trick — the trick you pressed in, plus one more. Only one such payout
-  may be in the air at a time: a second press is refused while one is still owed.
+  may be in the air at a time: a second press is refused while one is still owed. **Since 2026-08-24
+  the queued payout is on screen** — how much it will deal and how many tricks it still has to run —
+  under the button that queued it, until it lands or is wiped.
 - **Taking damage while it is in the air wipes it to nothing.** Any hit that costs you health — a
   clean loss, an eaten skull, or a Timebomb landing on you — destroys a queued payout exactly as it
   already resets an unspent bank and multiplier. If a Timebomb hit and a due payout land on the same
@@ -951,10 +1080,12 @@ third of it.
 the Quarry's health ends the encounter at that resolution, the same as any other damage, and you take
 nothing for it.
 
-> **Nothing shows a payout is in the air.** You press, the bank zeroes, and the Quarry's health does
-> not move — there is currently no readout, no countdown, and no indication anywhere on the felt that a
-> cash-out is still coming, until either it lands or a second press is refused with a stated reason.
-> Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
+> ~~**Nothing shows a payout is in the air.**~~ **Fixed on 2026-08-24.** For one day it was true: you
+> pressed, the bank zeroed, the Quarry's health did not move, and nothing on the felt said a cash-out
+> was still coming until either it landed or a second press was refused. The bar now states the
+> queued figure and the tricks remaining, and states the action-point pool as well, so neither refusal
+> reads as a control dying for no reason. **Neither readout has been looked at by a human**, so
+> whether they are legible where they sit is unjudged.
 >
 > **The hearts simply drop, whenever the payout lands.** A trick that takes damage breaks the Quarry's
 > hearts with a visible beat, because a trick resolved. A payout landing resolves no trick of its own,
@@ -1279,14 +1410,18 @@ design document, not from this section.
 | The Quarry's trick count              | Public                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | The Quarry's character and its rule   | Always on screen                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | **Your tricks and your multiplier**   | **Open — on screen throughout** as two separate figures, plus **both** cash-out figures since DLR-94: what the streak pays if you cash it yourself, and what it pays if you are hit first.                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| **Whether you can apply damage now**  | **Open — on the control itself** (section 7). When it is refused, the reason is printed on its face rather than hidden behind a hover, and the figure it would deal is on the plate.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| **Whether you can apply damage now**  | **Open — on the control itself** (section 7). When it is refused, the reason is printed on its face rather than hidden behind a hover, and the figure it would deal is on the button. **Since 2026-08-24 its action-point cost is on the button too.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | What the last trick did               | **Stated** — which of the four outcomes it was, and what it cost or banked.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **Your Cheat slots**                  | **Open — two frames beside the decree**, filled or empty, all hand. A selected Cheat and an armed one differ in frame as well as tone, and the hint line names which state you are in (section 4).                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **Your Cheat slots**                  | **Open — two frames, since 2026-08-24 inside Apply Buff** rather than beside the decree, filled or empty. A selected Cheat and an armed one differ in frame as well as tone, and the hint line names which state you are in (section 4). One press further away than they used to be, which is unplayed.                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | **Your coins**                        | **Open — a plate on the status band**, beside the fight counter, all hand. Also stated on the verdict and throughout the shop (section 10).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Both sides' health**                | **Open — two rows of hearts**, one heart per health point against each side's own maximum. The Quarry's row is **named after the opponent** — "Aoife's health" (since 2026-08-17). The hearts a trick just took break as it resolves. While a streak is banked, the Quarry's last _bank × multiplier_ standing hearts flash as a preview of what cashing right now would take. **That preview shows the FULL figure and deliberately still does, since DLR-94** — you can realise it on demand, so the full figure is what the streak is genuinely worth to you; the reduced figure sits beside the bank readout instead of competing with this one on the same bar. |
 | **Timebomb booked against either side** | **Open — on the bar that owes it, since 2026-08-23.** The hearts a booked hit has already claimed are drawn distinctly from both untouched hearts and the streak's flashing preview, on **your** row as well as the Quarry's, and the bar's spoken value names the primed figure separately from the at-risk one. The reading is **[provisional]** (section 8).                                                                                                                                                                                                                                                                                                    |
 | **The trick that books a Timebomb hit** | **Stated as it resolves, since 2026-08-23** — which side owes the hit and how much. It is **transient**: the line lives on the held trick and goes when you tap to carry on, so the bar is the durable signal and this is the announcement.                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **The moment a Timebomb hit lands**     | **Hidden** — the hearts break and the streak goes with nothing naming the cause (section 8).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| **Your action points**                  | **Open since 2026-08-24 — on the Apply Buff button and again inside its panel**, all hand. It was invisible from the day it first cost you something (2026-08-23) until then, which made an unaffordable control read as a control that had simply died (section 4).  |
+| **The buffs you own, and what each costs** | **Open since 2026-08-24 — inside Apply Buff**, one line each: the name, the condition, the reward and the price. **The panel opens even when you can afford nothing**, on purpose: reading what you hold is how you plan. Placeholder cards you cannot use are not listed at all (section 4).  |
+| **That a cash-out is queued**           | **Open since 2026-08-24 — under the Apply Damage button**: the figure it will deal and how many tricks it still has to run. Hidden for the one day between the delay landing and this readout (section 7).  |
+| **Whether an activated buff did anything** | **Nothing to show — [not built].** No condition is ever checked and no reward is ever paid, so there is nothing to make visible yet (section 4).  |
 | **A Blast Guard you are holding**    | **Hidden** during a fight — the shop's purse is its only surface, and nothing on the felt says you are carrying one (section 7).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 The telegraph's fidelity — suit only, or suit and stance — is **[provisional]**; it currently shows
@@ -1662,6 +1797,16 @@ too, alongside who is coming next.
   dealt from, in exactly four ways — a card's **value**, its **ability**, its **suit**, and the
   **decree**. The budget is **4 edits per encounter** (**[provisional]**). **[not built]** — nothing
   reads the budget. **The player holds no skulls of their own**, and Forage could not add any.
+- **Any way to gain a real buff during a run** — **[not built]**. Since 2026-08-24 you can open your
+  loadout, read every priced buff you own, and spend action points activating one (section 4) — but
+  nothing inside a run ever puts a priced buff in your pile. A fresh run holds only placeholders,
+  which the loadout filters out, so the list is empty until something outside the run grants one. The
+  draw that would populate it is written and unwired.
+- **An activated buff's condition firing, and its reward being paid** — **[not built]**, and this is
+  the sharpest half-built edge in the game today. Activation is real: the points are spent and the
+  buff is marked active for the trick. Nothing then checks the condition and nothing pays the reward.
+  Recorded here rather than left implied because the mechanic **takes a resource and returns nothing**,
+  which is not a gap a player can infer from the screen.
 - **Surplus cash-out damage paid back as money** — **[not built]**. The intention stated at PT-002
   was that overkill (section 8) becomes currency, and nothing reads overkill to this day. What
   shipped in its place is a payment for **speed** rather than for surplus: the flat coin for winning,
@@ -1818,6 +1963,17 @@ the mechanics themselves are documented in `../implementation/`.
 > the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
 > a `RunState` field and a transition in the same breath means exactly that.
 
+> **Where DLR-114 stands, 2026-08-24.** **Live and reachable by a player:** the one action bar and
+> its four buttons; the loadout panel and every priced buff in it, named, described and costed; the
+> two-tap activation and the action points it spends; the relocated Cheat slots and Timebomb charges;
+> the action-point pool and the queued-payout readout. **Live in the engine but nothing a player can
+> reach:** a buff's condition firing and its reward being paid — `src/hunt/buffAccrual.ts` has no
+> caller, so activation costs points and produces nothing. **Also unreachable, for a different
+> reason:** on a fresh run every buff the pile holds is a placeholder and is filtered out, so the list
+> is empty until a real buff arrives from outside a run; nothing in a fight puts one there.
+> **Nothing on this screen has been seen in a browser** — the contract ran unattended with its browser
+> pass off, so the claim that a four-row shell does not scroll is untested at every viewport size.
+>
 > **Where DLR-109 stands, 2026-08-23.** Apply Damage costs `APPLY_DAMAGE_AP_COST` action points and
 > queues its payout instead of dealing it, landing `APPLY_DAMAGE_DELAY_TRICKS + 1` trick resolutions
 > later; taking damage in the meantime wipes it, at the same clamp point an ordinary hit already
@@ -1992,6 +2148,7 @@ the mechanics themselves are documented in `../implementation/`.
 | A refused play does not spend the Cheat                                       | settled                                                    | `src/app/warCouncil/roundReducer.ts` — `commit`'s rejection branch returns before the removal                                                                                                                                                                                                                                                                                      | —                                                                                                                                                                                                                                                                                                              |
 | Cheats carried fight to fight                                                 | settled                                                    | `src/hunt/run.ts` — `RunState.cheats`; `advanceRun`'s spread carries it, `recordEncounter` adopts the hand's survivors                                                                                                                                                                                                                                                             | —                                                                                                                                                                                                                                                                                                              |
 | Cheats a run starts with (0)                                                  | **provisional** — set 2026-08-17                           | `src/hunt/config.ts` — `RUN_STARTING_CHEATS`, **0** since 2026-08-17 (was 2); granted by `src/hunt/cheats.ts` — `grantCheats`, which throws outside `0..CHEAT_SLOT_COUNT` rather than clamping                                                                                                                                                                                     | **Developer** — it has moved once already; every Cheat is now bought                                                                                                                                                                                                                                           |
+| Cheats and Timebomb charges are reached through the loadout, not their own rails | settled — since DLR-114                                 | `src/app/warCouncil/BuffLoadoutPanel.tsx` mounts `CheatSlots.tsx` and `TimebombCharge.tsx`; `src/app/warCouncil/buffHandlers.ts` — `loadoutDoorOpen` is what gates reaching them. Both components and every reducer branch behind them are unchanged — relocated, not rewritten | **Developer** — whether one extra press before arming a Cheat reads as friction. Unplayed |
 | The Quarry holds no Cheats                                                    | settled                                                    | nothing to enforce — the bypass is an argument the Quarry's call sites never pass; a grep guards the absence                                                                                                                                                                                                                                                                       | —                                                                                                                                                                                                                                                                                                              |
 | Buying a Cheat (1 coin, into a free slot)                                     | settled — since DLR-84                                     | `src/hunt/runTransitions.ts` — `buyFromShop` calls `addCheat` and advances `nextCheatId`; priced by `src/hunt/config.ts` — `CHEAT_PRICE`                                                                                                                                                                                                                                           | Developer — the price                                                                                                                                                                                                                                                                                          |
 | Selling or replacing a Cheat                                                  | **not built**                                              | nothing — the shop only adds                                                                                                                                                                                                                                                                                                                                                       | Developer — a later ticket                                                                                                                                                                                                                                                                                     |
@@ -2013,7 +2170,8 @@ the mechanics themselves are documented in `../implementation/`.
 | The fraction is a numerator over a denominator, not a float                   | settled — since DLR-94                                     | `src/hunt/config.ts` — two constants, multiplied before dividing in `forcedCashValue`, because `x * (2 / 3)` floors wrong on every multiple of 3; pinned by `bank.test.ts`'s multiples-of-three spec                                                                                                                                                                               | —                                                                                                                                                                                                                                                                                                              |
 | Cash-out at the end of the sixth trick, **in full**                           | settled                                                    | `src/warCouncil/bank.ts` — `resolveTrickBank`'s `finalTrick` fold calls `cashValue`, deliberately not `forcedCashValue`; pinned by `bank.test.ts`'s AC5 spec, which cashes one streak both ways                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                              |
 | One statement of what a streak is worth                                       | settled — since DLR-94                                     | `src/warCouncil/bank.ts` — `cashValue`; all three cash-outs compute through it, so they cannot disagree about what they are a share of                                                                                                                                                                                                                                             | —                                                                                                                                                                                                                                                                                                              |
-| An action-point pool, refreshed each hand, with a first reachable spend       | settled — since DLR-104, reachable since DLR-109            | `src/hunt/apConfig.ts` — `STARTING_AP` (6), `AP_ENABLED`; `src/app/warCouncil/roundUiState.ts` — `RoundUiState.apPool`, seeded through `src/hunt/actionPoints.ts` — `refreshActionPointsForNewHand` at mount. Not rendered anywhere                                                                                                                                                | **Developer** — `STARTING_AP` is unplayed, and the pool has no felt-side readout                                                                                                                                                                                                                              |
+| An action-point pool, refreshed each hand, with a first reachable spend       | settled — since DLR-104, reachable since DLR-109, **one pool and on screen since DLR-114** | `src/hunt/apConfig.ts` — `STARTING_AP` (6), `AP_ENABLED`; `src/app/warCouncil/roundUiState.ts` — `RoundUiState.buffActivation`, seeded by `src/hunt/buffActivation.ts` — `startBuffActivation` at mount. DLR-114 **deleted** the separate `RoundUiState.apPool` so both spenders draw one pool. Rendered by `src/app/warCouncil/ActionBar.tsx` and `BuffLoadoutPanel.tsx` | **Developer** — `STARTING_AP` is unplayed, and nobody has looked at the readout |
+| Two things spend action points, and they spend the same pool                  | settled — since DLR-114                                    | `src/hunt/actionPoints.ts` — `spendAp`, the only subtraction path; called by `src/app/warCouncil/roundReducer.ts` — `handleTapApplyDamage` and by `src/hunt/buffActivation.ts` — `activateBuff`, both writing `RoundUiState.buffActivation.apPool`                                                                                                                                  | —                                                                                                                                                                                                                                                                                                            |
 | Applying damage — full figure, both counters reset, no health cost            | settled — since DLR-94                                     | `src/warCouncil/voluntaryCashOut.ts` — `cashBankNow` zeroes only bank and multiplier; `incomingFromCashOut` keys the player's share to a hard 0                                                                                                                                                                                                                                     | —                                                                                                                                                                                                                                                                                                              |
 | Applying damage queues rather than deals, and costs AP                        | **provisional** — since DLR-109                             | `src/hunt/apConfig.ts` — `APPLY_DAMAGE_AP_COST` (3); `src/hunt/applyDamagePayout.ts` — `queueApplyPayout`; committed by `src/app/warCouncil/roundReducer.ts` — `handleTapApplyDamage`, which spends through `src/hunt/actionPoints.ts` — `spendAp`                                                                                                                                | **Developer** — both the AP cost and never played                                                                                                                                                                                                                                                              |
 | The payout lands one trick beyond the press's own                             | **provisional** — since DLR-109                             | `src/hunt/apConfig.ts` — `APPLY_DAMAGE_DELAY_TRICKS` (1); `src/hunt/applyDamagePayout.ts` — `applyDamageDelayTricks`, `tickApplyPayout`; settled by `src/app/warCouncil/commitHandlers.ts` — `applyResolution`'s fourth step                                                                                                                                                       | **Developer** — the delay figure, never played                                                                                                                                                                                                                                                                 |
@@ -2024,7 +2182,7 @@ the mechanics themselves are documented in `../implementation/`.
 | A deferred kill's coin payout counts the hand size at the press, not the landing | settled — since DLR-109                                  | `src/hunt/applyDamagePayout.ts` — `PendingApplyPayout.unplayedAtPress`, frozen at `queueApplyPayout`; folded into `unplayedAtResolve` by `src/app/warCouncil/commitHandlers.ts` — `commit`, only when that field is still unset                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                              |
 | The trick carries on afterwards                                               | settled — since DLR-94                                     | nothing to enforce — `cashBankNow` returns the round with `currentTrick`, `phase`, `leader` and both hands untouched, and writes no `lastResolution`, so the ordinary play path resumes; still true with the cash-out itself deferred (DLR-109)                                                                                                                                   | —                                                                                                                                                                                                                                                                                                              |
 | One statement of whether Apply Damage is live                                 | settled — since DLR-94, widened DLR-109                    | `src/warCouncil/voluntaryCashOut.ts` — `applyDamageRefusalFor`, five clauses since DLR-109 (`NotYourMove → TimebombPending → PayoutPending → InsufficientAp → EmptyBank`), read by both the reducer's guard and the plate's disabled state; `src/app/warCouncil/roundUiState.ts` — `applyDamageStock` is the one place the app's shape is translated for it                       | —                                                                                                                                                                                                                                                                                                              |
-| Two taps to spend a streak, `Escape` to cancel                                | settled — the grammar; the tap count is **provisional**    | `src/app/warCouncil/roundUiState.ts` — `RoundUiState.applyPoised`, a hand-transient boolean; `ApplyDamagePlate.tsx` carries `aria-pressed` and the `Escape` handler                                                                                                                                                                                                                | **Developer** — whether two taps is right, or one. Only felt by playing                                                                                                                                                                                                                                        |
+| Two taps to spend a streak, `Escape` to cancel                                | settled — the grammar; the tap count is **provisional**    | `src/app/warCouncil/roundUiState.ts` — `RoundUiState.applyPoised`, a hand-transient boolean; since DLR-114 `src/app/warCouncil/ActionBar.tsx` carries `aria-pressed` and the `Escape` handler (`ApplyDamagePlate.tsx` was deleted)                                                                                                                                                  | **Developer** — whether two taps is right, or one. Only felt by playing                                                                                                                                                                                                                                        |
 | The reduced figure is shown beside the full one                               | settled — since DLR-94                                     | `src/app/warCouncil/BankMeter.tsx` — computes it through `forcedCashValue` rather than restating the fraction, so the copy cannot drift from the constants                                                                                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                              |
 | Damage to the player = 1 per event                                            | settled                                                    | `src/hunt/config.ts` — `DAMAGE_PER_HIT`                                                                                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                              |
 | Player health (10)                                                            | **provisional** — set 2026-08-14                           | `src/hunt/config.ts` — `PLAYER_START_HEALTH`                                                                                                                                                                                                                                                                                                                                       | Developer, after playing                                                                                                                                                                                                                                                                                       |
@@ -2097,7 +2255,19 @@ the mechanics themselves are documented in `../implementation/`.
 | Nothing in the shop reduces skull density                                     | settled — ruled out                                        | nothing to enforce — no key, no item, and no code path touches `SKULL_DENSITY` or the curves                                                                                                                                                                                                                                                                                       | —                                                                                                                                                                                                                                                                                                              |
 | Coins carrying between runs                                                   | **not built**                                              | nothing is persisted anywhere; `startRun` seeds `coins: 0`                                                                                                                                                                                                                                                                                                                         | Developer — a later ticket                                                                                                                                                                                                                                                                                     |
 | Forage                                                                        | **not built**                                              | `src/hunt/config.ts` — `FORAGE_BUDGET_PER_ENCOUNTER` (no consumer)                                                                                                                                                                                                                                                                                                                 | Developer — budget is provisional                                                                                                                                                                                                                                                                              |
-| Buff loadout — owning, pricing and activating a buff                          | **not built** — engine only, no screen and no caller       | `src/hunt/buffs.ts` (the card's shape), `src/hunt/buffCosts.ts` (the AP price), `src/hunt/buffActivation.ts` (the window, the spend, the three refusals), `src/hunt/buffAccrual.ts` (the four per-hand caps), `src/hunt/apConfig.ts` (`STARTING_AP` and all four `MAX_*_PER_HAND`); the window signal is `src/app/warCouncil/roundUiState.ts` — `discardWindowOpen`                | Developer — every AP price and all four caps are unplayed placeholders                                                                                                                                                                                                                                         |
+| One action bar carrying every pre-trick decision                              | settled — since DLR-114                                    | `src/app/warCouncil/ActionBar.tsx`, mounted by `src/app/warCouncil/WarCouncilRound.tsx` into the shell's fourth grid row (`src/app/warCouncil/warCouncil.css`, mirrored in `src/app/warCouncil/warCouncilHunt.css`'s narrow-viewport block). `ApplyDamagePlate.tsx` and `DiscardPlate.tsx` were deleted                                                                             | **Developer** — whether four buttons in a row reads clearly, and whether the fourth grid row still fits without scrolling. Never seen in a browser                                                                                                                                                             |
+| A control you cannot use greys with its reason, rather than disappearing      | settled — since DLR-114                                    | `src/app/warCouncil/ActionBar.tsx` — every button's `disabled` comes from a refusal predicate and the sentence renders on the control's own face; nothing on the bar is conditionally unmounted                                                                                                                                                                                    | **Developer** — taken as a default under an unattended run                                                                                                                                                                                                                                                    |
+| Owning and pricing a buff, and reading it on screen                           | settled — since DLR-114; **every price is provisional**    | `src/hunt/buffs.ts` (the card's shape), `src/hunt/buffCosts.ts` (the price formula and the two tables), `src/hunt/run.ts` — `RunState.buffs`, reaching the felt as `src/app/warCouncilMount.ts` — `WarCouncilMountProps.buffs`; worded by `src/app/warCouncil/buffLabels.ts` and rendered by `src/app/warCouncil/BuffLoadoutPanel.tsx`                                              | **Developer** — every AP price was chosen by an agent and none has been played                                                                                                                                                                                                                                |
+| Activating a buff — two taps, spending action points                          | settled — since DLR-114                                    | `src/hunt/buffActivation.ts` — `activateBuff`, spending through `src/hunt/actionPoints.ts` — `spendAp`; the two-tap stage is `src/app/warCouncil/buffHandlers.ts` — `handleTapBuff`, with the poise on `RoundUiState.loadout`                                                                                                                                                       | **Developer** — whether two taps is right here, the same open question Cheat, Timebomb and Apply Damage each carry                                                                                                                                                                                             |
+| There is no way to un-activate a buff                                         | settled — the engine ships no refund                       | nothing to enforce — `src/hunt/buffActivation.ts` exposes no removal path at all, and the absence is what makes sure one is never written in the UI                                                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                             |
+| More than one buff per trick; never the same buff twice                       | settled — since DLR-108, reachable since DLR-114           | `src/hunt/buffActivation.ts` — the pool is one number so stacking needs no rule, and `BuffActivationRefusal.AlreadyActive` refuses the duplicate                                                                                                                                                                                                                                   | —                                                                                                                                                                                                                                                                                                             |
+| A buff may only be activated between tricks                                   | settled — since DLR-108                                    | `src/hunt/buffActivation.ts` — `buffActivationRefusalFor`, fed `windowOpen` from `src/app/warCouncil/roundUiState.ts` — `discardWindowOpen`, the same signal the Swap reads. No second timing gate exists                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                             |
+| A trick's activations clear when that trick resolves; the pool does not       | settled — since DLR-108, fired since DLR-114               | `src/hunt/buffActivation.ts` — `openBuffWindow`, called by `src/app/warCouncil/roundReducer.ts` — `openWindowOnTrickResolved` on the transition that resolves a trick                                                                                                                                                                                                              | —                                                                                                                                                                                                                                                                                                             |
+| The loadout panel opens more widely than a buff row can be used               | settled — since DLR-114                                    | `src/app/warCouncil/buffHandlers.ts` — `loadoutDoorOpen`, deliberately `discardWindowOpen \|\| canAct`, because the Cheat slots and the Timebomb plate moved inside the panel and both must stay reachable mid-trick                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                             |
+| The panel opens even when you can afford nothing                              | settled — since DLR-114                                    | `src/app/warCouncil/buffHandlers.ts` — `loadoutBarRefusalFor` returns only `WindowClosed`; affordability is a per-row refusal inside                                                                                                                                                                                                                                               | **Developer** — taken as a default under an unattended run                                                                                                                                                                                                                                                    |
+| Placeholder buffs are filtered out rather than shown                          | settled — since DLR-114                                    | `src/hunt/buffActivation.ts` — `isPricedBuff` / `activatableBuffs`, read once through `src/app/warCouncil/roundUiState.ts` — `offeredBuffs`. `src/hunt/config.ts` — `STARTING_BUFF_COUNT` (4) placeholders are what a fresh run holds, so a fresh run's list is empty                                                                                                               | Developer — making the seeded pile real content is a content decision                                                                                                                                                                                                                                         |
+| **An activated buff's condition firing, and its reward being paid**           | **not built** — the resource is spent and nothing is given back | `src/hunt/buffAccrual.ts` (`resolveFiredBuffs`, `accrueAxisBonus`, `overlapBonusFor`) and the four per-hand ceilings in `src/hunt/apConfig.ts` all exist and have **no caller anywhere in `src/`**                                                                                                                                                                             | Developer — a later ticket. Until then activating a condition buff costs points and does nothing                                                                                                                                                                                                              |
+| A buff's description is one line, composed from a naming grammar              | settled — since DLR-114; the copy is **placeholder**       | `src/app/warCouncil/buffLabels.ts` — three `Record`s keyed over the closed kind and reward unions, transcribed from `.docs/design/Balatro-Forbidden-Solitaire/v1-buff-card-list.md`; the same string is the visible line and the accessible name                                                                                                                                     | **Developer** — the wording, and whether one line carries enough                                                                                                                                                                                                                                              |
 | The run — a sequence of encounters                                            | settled — since DLR-82                                     | `src/hunt/run.ts` — `RunState`, `startRun`; `src/hunt/runTransitions.ts` — `advanceRun`; driven by `src/App.tsx`                                                                                                                                                                                                                                                                   | —                                                                                                                                                                                                                                                                                                              |
 | Health carried fight to fight, no restore                                     | settled                                                    | `src/hunt/runTransitions.ts` — `advanceRun` passes `encounter.health[Player]` into `startEncounter`                                                                                                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                              |
 | Your health emptying ends the run                                             | settled                                                    | `src/hunt/runTransitions.ts` — `outcomeFor` checks the Quarry's win before the last-fight case                                                                                                                                                                                                                                                                                     | —                                                                                                                                                                                                                                                                                                              |
@@ -2519,8 +2689,41 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
 
 ### Known tensions, recorded not resolved
 
+- **You can now pay for a buff that does nothing** (new 2026-08-24, DLR-114). The loadout is the first
+  thing in this game that takes a resource and returns nothing at all: a condition-family buff can be
+  read, priced, poised and paid for, and its condition is never checked. The panel says so in its own
+  copy, and the copy is placeholder. Two risks worth separating — a player who does not read the
+  warning learns that buffs are worthless, and a player who does read it wonders why the button is
+  there. The alternative on record is a one-line change refusing to offer condition families at all
+  until they fire. **The developer's call**, and cheap either way.
+- **Nothing in a fight can put a real buff in your pile** (new 2026-08-24, DLR-114). A fresh run holds
+  four placeholders, which the panel correctly filters out — so on the first run a player ever plays,
+  Apply Buff shows an empty list and two relocated controls. Whatever the loadout is meant to feel
+  like, that is not it, and the fix is a separate ticket (the draw that populates the pile with real
+  cards). Until then the whole mechanic is judged on content that does not exist yet.
+- **The screen grew a fourth row and nobody has looked at it** (new 2026-08-24, DLR-114). The bar sits
+  below the hand fan in a shell that must never scroll, and the felt shrinks to make room. This
+  document already records three separate occasions when a layout change passed every test and
+  cropped something real in a browser — the shell hides overflow, so an overflow bug presents as an
+  invisibility bug. The cheapest measurement is the one QA has made before: measure each control's
+  own rectangle against the viewport at 1920×1080, 1366×768, 1024×640 and a phone portrait, rather
+  than only asking whether the page scrolls.
+- **Four judgements were taken by default rather than decided** (new 2026-08-24, DLR-114). That the
+  bar greys rather than disappearing; that activation commits on a second tap with **no way to
+  un-activate**; that Apply Buff opens even when nothing is affordable; and that a buff is described
+  in one glanceable line. Each is defensible and each is the developer's to overrule after playing.
+  The one with teeth is the second: a misclick past the poise stage costs points that nothing gives
+  back, and unlike Apply Damage there is no bank-zeroing to make the mistake obvious.
+- **Cheats are one press further away than they were, at the moment they matter** (new 2026-08-24,
+  DLR-114). Arming a Cheat now costs a press to open the loadout before the two clicks to arm — and
+  the moment a Cheat is worth anything is mid-trick, with a lead already on the table and a decision
+  waiting. Whether that reads as a drawer you open deliberately or as a fumble under pressure is
+  unplayed. Recorded rather than solved because the loadout is also what made a single consistent
+  action bar possible, and splitting Cheats back out would undo that.
 - **Applying damage now has a wait and a cost, and nothing on the felt says so** (new 2026-08-23,
-  DLR-109). Pressing it zeroes the bank and spends action points, but the Quarry's health does not
+  DLR-109; **the visibility half fixed 2026-08-24 by DLR-114** — the bar now states the queued payout
+  and the action-point pool, so what remains of this entry is whether the wait and the cost are the
+  right ones, and whether the two readouts are legible where they sit, which nobody has looked at). Pressing it zeroes the bank and spends action points, but the Quarry's health does not
   move and nothing indicates a payout is still coming — a player watching the felt sees a control that
   appears to do nothing until the payout lands one or more tricks later, or until a second press
   explains itself through the `PayoutPending` refusal sentence. The action-point pool itself is
@@ -2550,7 +2753,8 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
   actually occurs (a later trick, once the bank has climbed), or give the first trick an additional
   damage source — and choosing between them is the developer's call, not this document's.
 - **The felt rail now carries a fourth plate, and the discard's two figures are both a first guess**
-  (new 2026-08-22, DLR-100). `DISCARDS_PER_FIGHT` and `MAX_CARDS_PER_DISCARD` are both 3, both
+  (new 2026-08-22, DLR-100; **the crowding half is gone — DLR-114 retired the rail entirely on
+  2026-08-24 and moved all four controls onto one bar.** The tuning half stands unchanged.) `DISCARDS_PER_FIGHT` and `MAX_CARDS_PER_DISCARD` are both 3, both
   transcribed, and both explicitly expected to move after play rather than being a considered
   balance — the design's own instruction is "ship it, play it, move it." Whether re-arming a chained
   throw with a second tap reads as deliberate pacing or as friction is the same open question Cheat
@@ -2582,7 +2786,9 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
   every tier for exactly that reason. If a hit's damage never moves, the suggestion on record is to
   delete the two upper rows rather than retune them.
 - **Every AP price and every per-hand ceiling in the buff loadout was chosen by an agent and none
-  has been played** (new 2026-08-23, DLR-108). The four ceilings — 6 multiplier, 12 damage, 10
+  has been played** (new 2026-08-23, DLR-108; **a player can now actually pay these prices as of
+  2026-08-24, DLR-114** — so this stopped being a theoretical tuning question and became a live one,
+  while the ceilings remain unreachable because nothing pays a reward yet). The four ceilings — 6 multiplier, 12 damage, 10
   coins, 6 refunded AP — are each reasoned from the shape of the failure they prevent rather than
   measured, and the same is true of the whole cost formula. The single likeliest thing to feel wrong
   first is the steep end: a gold Cheat priced above a hand's entire budget is deliberately
@@ -2615,8 +2821,10 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
   takes damage breaks hearts visibly; a voluntary apply resolves no trick, so there is nothing for the
   breaking frame to read off and the hearts simply fall. Functionally correct, possibly abrupt, and the
   fix is a second breaking-damage source rather than a tweak.
-- **The felt rail now carries three plates** (new 2026-08-20, DLR-94). Cheats, Timebomb and Apply Damage
-  share one column. QA confirmed the page does not scroll at 1920×1080, 1440×900 or 1280×720, which is
+- **The felt rail now carries three plates** (new 2026-08-20, DLR-94; **the rail was retired on
+  2026-08-24 by DLR-114 and this specific crowding question is closed** — the same question is now
+  asked of a four-button bar in a new grid row, and nobody has looked at that either). Cheats,
+  Timebomb and Apply Damage shared one column. QA confirmed the page does not scroll at 1920×1080, 1440×900 or 1280×720, which is
   the checkable half; whether it _reads_ as crowded at a short viewport is not, and is the developer's eye.
 - **The flask is the answer to a run recorded as unwinnable, and the run has not been played with it
   in** (new 2026-08-20, DLR-93). DLR-82 named the flask as part of the fix and refused to build it

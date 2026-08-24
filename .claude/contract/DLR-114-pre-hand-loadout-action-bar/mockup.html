@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DLR-114 — Pre-hand loadout action bar</title>
+    <style>
+      :root {
+        --chamber: #0c1013;
+        --chamber-lift: #141a1f;
+        --felt: #16241f;
+        --felt-line: #2b4038;
+        --parchment: #e9e1cd;
+        --ink: #191610;
+        --brass: #c99a4e;
+        --brass-dim: #7d6132;
+        --chalk: #cdd6d2;
+        --chalk-dim: #6f7d78;
+        --alarm: #d1705f;
+        --serif: Georgia, 'Palatino Linotype', serif;
+        --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      .shell {
+        height: 100dvh;
+        width: 100%;
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: auto 1fr auto auto;
+        grid-template-columns: minmax(10rem, 17vw) 1fr;
+        grid-template-areas:
+          'status  status'
+          'dossier table'
+          'hand    hand'
+          'actions actions';
+        background: var(--chamber);
+        color: var(--chalk);
+        font-family: var(--sans);
+      }
+      .status { grid-area: status; display: flex; gap: 1.5rem; align-items: center;
+        padding: 0.6rem 1.2rem; border-bottom: 1px solid #232c33; }
+      .dossier { grid-area: dossier; padding: 0.8rem; border-right: 1px solid #232c33;
+        font-size: 0.75rem; color: var(--chalk-dim); }
+      .table { grid-area: table; background: var(--felt); display: grid; place-items: center;
+        position: relative; }
+      .rail { position: absolute; top: 0.6rem; left: 0.6rem; display: flex; gap: 0.6rem; }
+      .pile { width: 3.2rem; height: 4.4rem; border-radius: 4px; background: var(--parchment);
+        color: var(--ink); display: grid; place-items: center; font-family: var(--serif); }
+      .hand { grid-area: hand; display: flex; justify-content: center; gap: 0.4rem;
+        padding: 0.8rem; }
+      .card { width: 3.6rem; height: 5.2rem; border-radius: 5px; background: var(--parchment);
+        color: var(--ink); border: 1px solid #b5a888; display: grid; place-items: center;
+        font-family: var(--serif); font-size: 1.1rem; cursor: pointer;
+        transition: transform 140ms ease; }
+      .card[aria-pressed='true'] { transform: translateY(-0.7rem); box-shadow: 0 0 0 2px var(--brass); }
+
+      /* ---------- the action bar: the fourth grid row ---------- */
+      .bar { grid-area: actions; display: flex; gap: clamp(0.4rem, 1.4vmin, 0.9rem);
+        justify-content: center; align-items: stretch;
+        padding: clamp(0.4rem, 1.2vmin, 0.8rem) clamp(0.6rem, 2vmin, 1.4rem);
+        border-top: 1px solid var(--brass-dim); background: var(--chamber-lift); }
+      .bar-btn { flex: 1 1 0; max-width: 15rem; min-height: 2.75rem;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 0.15rem; padding: 0.5rem 0.7rem; border-radius: 8px;
+        border: 1px solid var(--brass-dim); background: linear-gradient(160deg, #2a2418, #1a1710);
+        color: var(--brass); font-family: var(--serif); font-size: 0.95rem;
+        cursor: pointer; touch-action: manipulation; }
+      .bar-btn:disabled { opacity: 0.42; cursor: not-allowed; border-style: dashed; }
+      .bar-btn[aria-pressed='true'] { border-style: dashed; border-color: var(--brass);
+        box-shadow: 0 0 0 1px var(--brass) inset; transform: translateY(-2px); }
+      .bar-sub { font-family: var(--sans); font-size: 0.62rem; letter-spacing: 0.08em;
+        text-transform: uppercase; color: var(--chalk-dim); }
+      .bar-note { font-family: var(--sans); font-size: 0.62rem; color: var(--alarm); }
+
+      /* ---------- the loadout panel ---------- */
+      .loadout { position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 0);
+        width: min(46rem, 94vw); max-height: 60dvh; overflow-y: auto;
+        background: var(--chamber-lift); border: 1px solid var(--brass-dim);
+        border-bottom: none; border-radius: 10px 10px 0 0; padding: 0.9rem 1rem; z-index: 5; }
+      .loadout h2 { margin: 0 0 0.2rem; font-family: var(--serif); font-size: 1rem;
+        color: var(--brass); font-weight: 400; }
+      .loadout-ap { font-size: 0.72rem; color: var(--chalk-dim); margin-bottom: 0.7rem; }
+      .row { width: 100%; text-align: left; display: block; padding: 0.55rem 0.7rem;
+        margin-bottom: 0.35rem; border-radius: 6px; border: 1px solid #2c3740;
+        background: #10151a; color: var(--chalk); font-family: var(--sans);
+        font-size: 0.82rem; cursor: pointer; }
+      .row:disabled { opacity: 0.45; cursor: not-allowed; border-style: dashed; }
+      .row[aria-pressed='true'] { border-style: dashed; border-color: var(--brass);
+        box-shadow: 0 0 0 1px var(--brass) inset; }
+      .row-refusal { display: block; font-size: 0.68rem; color: var(--alarm); margin-top: 0.15rem; }
+      .row-spent { display: block; font-size: 0.68rem; color: var(--chalk-dim); margin-top: 0.15rem; }
+      .held { display: flex; gap: 0.6rem; align-items: flex-end; margin-top: 0.8rem;
+        padding-top: 0.7rem; border-top: 1px solid #2c3740; }
+      .slot { width: 2.9rem; height: 2.9rem; border-radius: 8px; border: 1px solid var(--brass-dim);
+        background: linear-gradient(160deg, #2a2418, #1a1710); color: var(--brass);
+        display: grid; place-items: center; cursor: pointer; font-family: var(--serif); }
+      .slot.empty { border-style: dashed; opacity: 0.4; cursor: default; }
+      .caption { font-size: 0.6rem; color: var(--chalk-dim); letter-spacing: 0.1em;
+        text-transform: uppercase; display: block; margin-bottom: 0.25rem; }
+      .empty-msg { font-size: 0.78rem; color: var(--chalk-dim); font-style: italic; }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="status">
+        <span>Fight 2 of 5 — Aoife</span>
+        <span>Tricks 2 &ndash; 1</span>
+        <span>Bank 4 &times;3</span>
+        <span>Your health: 8 of 10. 4 ticking.</span>
+      </header>
+      <aside class="dossier">
+        <p>Aoife holds: Bells &times;2, Keys &times;1, Moons &times;3</p>
+        <p>Bank 4 &middot; Multiplier &times;3</p>
+        <p>Intent: presses</p>
+      </aside>
+      <section class="table">
+        <div class="rail"><div class="pile">Decree<br />7&#9679;</div></div>
+        <p style="color: #9fb0aa">The trick well &mdash; nothing played yet.</p>
+
+        <div class="loadout" id="loadout" role="dialog" aria-label="Your buffs" hidden>
+          <h2>Your buffs</h2>
+          <p class="loadout-ap" id="ap-line">4 action points left this hand.</p>
+          <div id="rows"></div>
+          <p class="empty-msg" id="empty" hidden>
+            No priced buffs held. Cheats and Timebomb charges are below.
+          </p>
+          <div class="held">
+            <div>
+              <span class="caption">Cheats</span>
+              <div style="display: flex; gap: 0.4rem">
+                <button class="slot" onclick="armHeld('Cheat')">&#9670;</button>
+                <span class="slot empty" aria-label="Empty Cheat slot"></span>
+              </div>
+            </div>
+            <div>
+              <span class="caption">Timebomb</span>
+              <button class="slot" onclick="armHeld('Timebomb')">&#9879;<sub>2</sub></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="hand" id="hand"></div>
+
+      <nav class="bar" role="group" aria-label="Actions">
+        <button class="bar-btn" id="btn-buff" aria-pressed="false" onclick="toggleLoadout()">
+          Apply Buff <span class="bar-sub" id="buff-sub">4 AP &middot; 3 held</span>
+        </button>
+        <button class="bar-btn" id="btn-cards" disabled onclick="playArmed()">
+          Cards <span class="bar-sub" id="cards-sub">No card selected</span>
+        </button>
+        <button class="bar-btn" id="btn-swap" aria-pressed="false" onclick="tapSwap()">
+          Swap <span class="bar-sub" id="swap-sub">2 left</span>
+        </button>
+        <button class="bar-btn" id="btn-apply" aria-pressed="false" onclick="tapApply()">
+          Apply Damage <span class="bar-sub" id="apply-sub">Cash 12 &middot; 3 AP</span>
+          <span class="bar-note" id="apply-note" hidden></span>
+        </button>
+      </nav>
+    </div>
+
+    <script>
+      const HAND = ['7●', '3●', 'J☗', '9☽', '2☗', 'Q☽']
+      const BUFFS = [
+        { id: 1, line: 'Bell-Taker (Momentum) — win a trick with Bells: +2 multiplier.', ap: 2 },
+        { id: 2, line: 'Moon-Feeder (Purse) — lose a trick with Moons: +3 coins.', ap: 4 },
+        { id: 3, line: 'Cornered (Blade) — be below 45% health: +2 damage.', ap: 5 },
+      ]
+      let ap = 4
+      let armed = null
+      let open = false
+      let poised = null
+      let spent = []
+      let swapping = false
+      let applyPoised = false
+      let queued = null
+
+      function renderHand() {
+        document.getElementById('hand').innerHTML = HAND.map(
+          (c, i) =>
+            `<button class="card" aria-pressed="${armed === i}" aria-label="${c}" onclick="tapCard(${i})">${c}</button>`,
+        ).join('')
+      }
+      function renderRows() {
+        const rows = BUFFS.map((b) => {
+          const already = spent.includes(b.id)
+          const poor = b.ap > ap
+          const off = already || poor || !open
+          const refusal = already
+            ? '<span class="row-spent">Already active this trick.</span>'
+            : poor
+              ? '<span class="row-refusal">Not enough action points.</span>'
+              : ''
+          const label = `${b.line} ${b.ap} AP.`
+          return `<button class="row" aria-pressed="${poised === b.id}" aria-label="${label}${poised === b.id ? ' Tap again to activate.' : ''}" ${already || poor ? 'disabled' : ''} onclick="tapBuff(${b.id})">${b.line} <strong>${b.ap} AP</strong>${refusal}</button>`
+        })
+        document.getElementById('rows').innerHTML = rows.join('')
+        document.getElementById('empty').hidden = BUFFS.length > 0
+        document.getElementById('ap-line').textContent = `${ap} action points left this hand.`
+      }
+      function renderBar() {
+        document.getElementById('btn-buff').setAttribute('aria-pressed', String(open))
+        document.getElementById('buff-sub').textContent = `${ap} AP · ${BUFFS.length} held`
+        const cards = document.getElementById('btn-cards')
+        cards.disabled = armed === null
+        cards.setAttribute('aria-pressed', String(armed !== null))
+        document.getElementById('cards-sub').textContent =
+          armed === null ? 'No card selected' : `Play the ${HAND[armed]}`
+        document.getElementById('btn-swap').setAttribute('aria-pressed', String(swapping))
+        document.getElementById('swap-sub').textContent = swapping ? 'Pick up to 2' : '2 left'
+        document.getElementById('btn-apply').setAttribute('aria-pressed', String(applyPoised))
+        document.getElementById('apply-sub').textContent = applyPoised
+          ? 'Tap again to cash'
+          : 'Cash 12 · 3 AP'
+        const note = document.getElementById('apply-note')
+        note.hidden = queued === null
+        if (queued !== null) {
+          note.textContent = `Payout queued: ${queued.cash} damage, ${queued.owed} ${queued.owed === 1 ? 'trick' : 'tricks'} to go.`
+        }
+        document.getElementById('loadout').hidden = !open
+      }
+      function render() { renderHand(); renderRows(); renderBar() }
+
+      function toggleLoadout() {
+        open = !open
+        if (open) { armed = null; swapping = false } else { poised = null }
+        render()
+      }
+      function tapBuff(id) {
+        const b = BUFFS.find((x) => x.id === id)
+        if (spent.includes(id) || b.ap > ap) { poised = null; return render() }
+        if (poised !== id) { poised = id; return render() }
+        ap -= b.ap
+        spent.push(id)
+        poised = null
+        render()
+      }
+      function armHeld(what) { open = false; poised = null; alert(what + ' armed — now tap a card in your hand.'); render() }
+      function tapCard(i) {
+        if (armed === i) { alert('Played the ' + HAND[i]); armed = null } else { armed = i; open = false }
+        render()
+      }
+      function playArmed() { if (armed !== null) { alert('Played the ' + HAND[armed]); armed = null; render() } }
+      function tapSwap() { open = false; swapping = !swapping; if (!swapping) alert('Swapped.'); render() }
+      function tapApply() {
+        open = false
+        if (!applyPoised) { applyPoised = true; return render() }
+        applyPoised = false
+        ap = Math.max(0, ap - 3)
+        queued = { cash: 12, owed: 2 }
+        render()
+      }
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { open = false; poised = null; applyPoised = false; swapping = false; render() }
+      })
+      render()
+    </script>
+  </body>
+</html>

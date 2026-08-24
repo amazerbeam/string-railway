@@ -325,14 +325,20 @@
 /* ---------- narrow/short collapse — AC5 on a phone or a short laptop window ---------- */
 
 @media (max-width: 44rem), (max-height: 34rem) {
+  /* Mirrors the base `.wc-shell` rule in `warCouncil.css` one column wide — that rule's
+     `grid-template-areas` carries an 'actions' row for the action bar (`.wc-bar` sets
+     `grid-area: actions`), and this override must keep the same set of named areas or the
+     bar falls out of its slot into implicit auto-placement. Maintain the two together: a row
+     added to one belongs in the other in the same change. */
   .wc-shell {
     grid-template-columns: 1fr;
     grid-template-areas:
       'status'
       'dossier'
       'table'
-      'hand';
-    grid-template-rows: auto auto 1fr auto;
+      'hand'
+      'actions';
+    grid-template-rows: auto auto 1fr auto auto;
   }
 
   .wc-dossier {

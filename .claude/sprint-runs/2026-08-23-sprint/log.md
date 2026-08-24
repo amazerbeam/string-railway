@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 8/22 (36%) — done: 8 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-112 "Slot-machine buff draw and templated buff pool" (9/22)
+**Progress:** 10/22 (45%) — done: 10 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-114 "Pre-hand loadout action bar" (11/22) — resumed 03:30 after the second session limit
 
 ## Run order
 
@@ -2197,3 +2197,406 @@ Not requested, not run, and genuinely inapplicable — this contract adds zero `
 render surface. QA reached the same conclusion independently. The real judgement is a balance
 simulation (DLR-130) and a play session, both of which the seeded RNG exists to enable.
 
+## Coordinator decisions — DLR-112 reconciliation
+
+- **Accepted the two-dial draw model, and it is the best-argued design call of the run.**
+  Weighting decides which 8 templates sit on a machine's strip; **the spin itself is flat
+  uniform over those 8.** The reasoning: a player can see the eight symbols and compute their
+  own odds, whereas a hidden per-symbol weight cannot be read — a machine whose posted strip
+  lies about its odds is the one thing the fantasy cannot survive. That is a real design
+  argument, not a coin flip dressed up.
+- **Accepted family weighting over a flat pool — the call most worth arguing with.** Flat over
+  71 templates is legitimate, and the agent considered and rejected it: `Mark of the R` is
+  **22 of 71 = 31%**, so a flat strip would be nearly a third rank-conditioned purely because
+  one family fans across eleven ranks. Weights normalise **per family**, so a family's share is
+  its stated weight rather than its template count, dropping Mark-of-rank to 11.5% / 4.2%.
+  **Going flat is a one-line change** if the developer disagrees.
+- **Tier distribution was not chosen — it falls out of the match rules.** There is no second
+  rarity roll: gold **1/64 = 1.6%**, silver **32.8%**, triple-bronze **65.6%**, expected **2.64
+  cards per pull**, bronze:silver:gold ≈ **147 : 21 : 1**. Worth knowing before retuning
+  anything: the tier curve is a consequence of "3 reels, 8 symbols", not an independent dial.
+- **Determinism held, which was the hard constraint.** No `Math.random()` anywhere in
+  `src/hunt/` — all 7 grep hits are docblocks stating the ban, each read individually rather
+  than counted. `rng: Rng` is an explicit parameter on every consumer, never module state;
+  `createSeededRng` is mulberry32. A strip is **recomputed** from
+  `slotSeedFor(runSeed, machineId, visitIndex)` rather than stored, so nothing is persisted and
+  the save-versioning rule stays inert. DLR-130's simulator and the balance pass are safe.
+- **`apCost` stayed a lookup.** The coordinator's decision held and the ticket never strained
+  it — so the two-table retune property survives into the reel.
+- **Accepted an agent reading not in the ticket:** a reroll **re-spins the same strip** rather
+  than redrawing it. Flagged as the developer's to overturn. Also transcribed, not chosen:
+  1 free pull per visit, 1 coin thereafter, **no reroll cap** — the coin balance is the cap.
+- **Accepted `Keepsake` shipping at floor weight rather than being excluded.** It may be
+  unfireable, but DLR-111 ruled the fix is not an agent's call — reword it, redefine the
+  end-of-hand instant, or delete the three rows. Shipping it at floor weight keeps the decision
+  the developer's while limiting the blast radius. **Ward never entered the pool** — it is a
+  consumable, AC6 is deferred to DLR-126, so its silver/gold defect is not reachable here.
+- Suite 1259 → **1318 (+59), 100 files, 0 failures.** One fix round; ceiling not approached.
+
+### A real defect caught in review, and a fix worth copying
+
+The Defender found that an **empty strip would make `spinReels` index `reel[-1]`** and surface
+as an opaque `TypeError` — unreachable today, but one bad weight edit away, and the plan itself
+invites exactly that edit. Guarded with a `RangeError` in `drawReelPool`.
+
+The fix is notable for what it refused: rather than introduce `vi.mock` to test it — **there is
+zero mocking in this codebase, and one test is a bad reason to start** — the weight function
+became a defaulted parameter, following `assignSkulls`'s existing convention. That happens to
+be exactly the injection point **DLR-113's Vault odds adjustment** will need, so the test-driven
+change bought the next ticket its seam.
+
+## DLR-113 — Vault: cross-run meta-progression
+
+**GREEN.** Typecheck 0, lint 0, **1403 passed of 1403 across 107 files, 0 failures** (baseline
+1318/100), build 0, contract-scoped `prettier --check` 0. One fix round; ceiling not approached.
+All three reviewers approved in round 2.
+
+**This is the first ticket in the project's history that persists anything.** `src/persistence/`
+shipped on DLR-106 with zero consumers; it now has exactly one, `src/vault/vaultStore.ts`. That
+cheap window — "nothing is on disk yet, so a shape change costs nothing" — is now closed.
+
+### What persists, what it costs, what it buys
+
+`VaultState = { balance, oddsBoosts, startingGrants }`, written under save section `'vault'`.
+
+- **Balance** — Vault currency. Credited **only on a run ending in death**, at
+  `floor(leftoverCoin / VAULT_EXCHANGE_RATE)`. Never on a win: AC1 says "a run ending in death",
+  and paying the Vault for a win would make the strongest players accumulate fastest, which is the
+  exact shape of a trivialised run 10.
+- **`oddsBoosts`** — `templateId -> stacks`. **Permanent** (AC2's "for future runs", plural).
+  Multiplies that template's weight in the slot-machine reel draw.
+- **`startingGrants`** — a queue of `{templateId, tier}`. **Consumed at the next run start.**
+
+### Every number, with its justification
+
+| Constant | Value | Register | Why |
+|---|---|---|---|
+| `VAULT_EXCHANGE_RATE` | 10 | **TRANSCRIBED** | AC1 states it outright. Not mine to choose. |
+| `VAULT_ODDS_BOOST_PRICE` | 1 | agent-chosen | The cheapest thing in the game, deliberately: it is the only purchase a single 10-coin death can afford, so the currency is never dead on arrival. |
+| `VAULT_ODDS_BOOST_MAX_STACKS` | 3 | agent-chosen | The anti-trivialisation cap. See the arithmetic below. |
+| `VAULT_ODDS_BOOST_STEP` | 1 | agent-chosen | Additive: `weight x (1 + step * stacks)`, so maxed = x4. |
+| `VAULT_STARTING_TIER_PRICE` | 2 / 5 / 10 | **DERIVED**, not invented | Exactly `REWARD_TIER_VALUE[Coins]`'s existing 2/5/10 bronze:silver:gold ladder. The game already states what a tier is worth; the Vault charges that rather than holding a second opinion. Retune them together. |
+
+**Where these sit between the two failure modes.**
+
+*Run 1 is not a punishment.* Nothing is gated. Every one of the 71 templates is reachable at
+balance 0, and the opening pile is still `STARTING_BUFF_COUNT = 4`. The Vault adds **steering**,
+never a stat — run 1 is the whole game with a randomised offer set, which is what a roguelike's
+run 1 should be.
+
+*Run 10 is not trivial.* Two levers. **The boost is capped at x4**: a template's chance of landing
+on a given 8-of-71 strip goes from roughly 11% to roughly a third — clearly felt, never guaranteed,
+and DLR-112's posted-strip fantasy survives. (Approximate: the exact figure moves with per-family
+normalisation.) **Grants are consumed on use**, so a gold card costs 10 currency — about 100
+leftover coin — *every run you want it*, and never becomes a permanent power floor. That
+consumption rule is the single most important lever in the ticket and the first thing to
+reconsider if progression feels flat.
+
+**One number I shipped as specified while flagging it loudly.** At today's economy
+(`COINS_PER_ENCOUNTER_WIN = 1`, shop prices 1–4) a run that dies at fight three plausibly holds
+**0–5 leftover coin, which converts to 0**. Rate 10 is transcribed from AC1 so I did not overturn
+it; I priced the cheapest purchase at 1 so a 10-coin death buys *something*. **The developer
+decides after playing** whether to lower the rate or raise coin income.
+
+### The persisted shape, and why it carries no `Buff`
+
+DLR-107 recorded that widening `Buff` with a required `kind` was free *only* because the buff pile
+was unpersisted — "after DLR-113 this would need a schema bump". **The answer is that it never
+lands.** A bought card is stored as `{ templateId, tier }` — the minimal pair `mintFromTemplate`
+needs — and the live `Buff` is minted fresh at run start. No domain type is ever on disk, so
+`Buff` stays free to widen forever. It also means retuning `REWARD_TIER_VALUE` reaches every
+existing save for free, where persisting the derived reward would have left old saves paying old
+numbers.
+
+`VaultState` is deliberately **one type**, in-memory and persisted, not a DTO pair — two shapes
+drift, one shape with a guard over it cannot. The cost is that every future field is a persisted
+field, which is the point: it forces the version question at the field.
+
+**`BuffTemplate.id` was documented "NOT persisted" by DLR-112. DLR-113 overturns that
+deliberately**, and fixed the statement where it is owned rather than leaving a comment
+contradicting the data. The id is now a persisted key and its format `<kind>[:<param>]:<axis>` is
+frozen — renaming a `BuffKind` or `BuffRewardAxis` **value** now orphans saved entries. Chosen over
+persisting `{kind, target, axis}` because the id admits one total, cheap guard (membership in
+`BUFF_TEMPLATES`) where coordinates would validate three vocabularies and then still have to search.
+
+### The unmigratable save — the question DLR-106 deferred to this ticket
+
+**Discarded, and the player starts fresh — but non-destructively.** `createSaveStore` already
+returns `VersionMismatch` / `Corrupt` paired with the default; `loadVault` passes both the empty
+vault *and* that outcome back, so DLR-118's screen can say "your Vault could not be read" instead
+of showing a silent zero.
+
+The read deliberately does **not** call `clear()`. A read must not destroy data, and leaving the
+bytes in place is what lets a future version write a migration for them; the record is simply
+replaced by the next write. Migration is the wrong answer at version 1 for a concrete reason:
+there is exactly one schema version in existence, so a migration function today would have no
+source shape to migrate *from* and would be untestable speculation. `SAVE_SCHEMA_VERSION` stays 1.
+
+The half-load is what the rule forbids, and the two-stage design is what avoids drifting into it:
+**`isValidVaultState` is a SHAPE guard** that accepts or rejects the whole payload, and
+**`reconcileVault` is a separate DOMAIN pass** over an already-valid payload that drops only
+entries naming templates this build no longer has, returning a count. Shape failure loses the save;
+domain drift loses the affected entries and **keeps the balance**.
+
+### The DLR-113 / DLR-118 boundary — my reading
+
+**DLR-113 is the mechanism; DLR-118 is the screen.** I shipped: the state, the store, both spend
+functions with their refusal predicates, the odds seam, grant minting, and the two wiring points
+that make it actually run (deposit when the run's outcome becomes `Lost`; claim grants when the
+Start screen's button begins a run). I built **no `.tsx`** — no balance display, no spend button,
+no navigation from the verdict flow. Those functions are what DLR-118's buttons will call.
+
+**I absorbed nothing of DLR-118's work.** The one thing worth knowing: the two spends have no way
+to be invoked in the app today, because invoking them is the screen's job. And a second: AC2's
+"re-applied on run start" has no *visible* surface, because DLR-112 shipped the slot engine with
+no screen either — `drawVaultReelPool` has no production caller yet and is exercised by tests only.
+That is structural, not a gap. Left DLR-118 a handoff comment on its Jira ticket.
+
+### Assorted, including one thing worth arguing with
+
+- **Grants being one-shot is a rule reading, not a transcription.** AC3 says "a future run's
+  starting pile", singular. If the developer meant permanent, the change is deleting one
+  `clearStartingGrants` call in `App.tsx` — and the meta becomes compounding.
+- **`Miser` and the Vault point the same way.** DLR-111 flagged Miser as "fighting the shop" by
+  rewarding unspent coins; the Vault also rewards unspent coin, so it **reinforces** the tension
+  rather than resolving it. Left alone deliberately — at rate 10, hoarding is still the weaker play
+  (10 coin buys 2 Whetstones and 2 Cheats now, versus 1 odds boost later). Worth watching.
+- `Keepsake` and `Ward` were not touched — neither is reachable from this ticket's diff.
+- **Determinism held.** `src/vault/` calls no random source; `drawVaultReelPool` threads `rng`
+  straight through. `src/vault/**` was added to the pure-core ESLint fence **and** to the storage
+  block's `ignores` — the second is load-bearing, because flat config *replaces* rather than merges
+  same-key rule options, the exact regression caught on DLR-106. The Defender probe-tested the
+  fence with a throwaway `window.location.href` file rather than trusting a green lint run.
+- **The one real defect review caught:** `commit` was discarding `saveVault`'s `SaveWriteOutcome`,
+  so a quota-exceeded or private-browsing write would silently diverge the in-memory vault from
+  disk — the one place in the contract a failure was computed then thrown away. Fixed with
+  `lastWriteOutcome` on `VaultHandle`, the write-side twin of `loadOutcome`. DLR-118 now has a
+  failure channel to render instead of inheriting a silent one.
+- **No browser pass** — not requested; none was run and none is claimed. What one would have
+  checked: the Start screen's "Fight &lt;name&gt;" button still advancing into the first fight (the only
+  behaviourally reachable change), a clean console on load and remount, and that the Vault balance
+  is held but rendered nowhere — which *is* the DLR-113/DLR-118 line.
+
+## Coordinator decisions — DLR-113 reconciliation (second session-limit recovery)
+
+**The agent hit the API session limit on the tail of its documentation pass** (reset 00:20;
+the run resumed at 03:30). Unlike the DLR-129 interruption, this one died with the ticket
+essentially finished — so the recovery was verification rather than salvage.
+
+- **Verified the state myself rather than trusting a dead agent.** Contract at **44/44 tasks,
+  `Status: COMPLETE`**; both module docs written (`vault/README.md`, `vault/saving-the-vault.md`);
+  the agent's own log section present. All four gates run by the coordinator: typecheck exit 0 ·
+  lint exit 0 · vitest **107 files, 1403 tests, 0 failures** (baseline 1318/100, so +85 tests,
+  +7 files) · build exit 0.
+- **Scope-checked against DLR-118 before committing**, because the tree showed `src/App.tsx`
+  modified and a new `src/app/vault/`. **DLR-118 was not absorbed**: `src/app/vault/` contains
+  `useVault.ts`, a hook, not a screen — there is no Vault `.tsx` component anywhere. `App.tsx`'s
+  change is the wiring only: leftover coin converts to Vault currency at the single place a
+  run's outcome is decided, and **only on a loss** (a win is its own reward), with `run.coins`
+  deliberately not zeroed because the verdict panel still reads it.
+- **The one piece of unfinished work was the implementation index**, which did not list the new
+  module. The coordinator added `src/vault/` and `src/app/vault/` rows to
+  `.docs/implementation/README.md` and committed the whole thing as `29e974f`.
+- **Jira moved to Ready for Test by the coordinator**, since the agent died before transitioning
+  it. Confirmed via `getJiraIssue` after the transition rather than assumed.
+
+### The run's own lesson, applied by a later ticket
+
+`eslint.config.js` adds `src/vault/**` to the pure-core boundary **and** lists it under
+`ignores` in the narrower `no-restricted-globals` block — because flat config replaces rather
+than merges same-key rule options. That is exactly the trap that silently disabled the
+`window`/`document`/`fetch` bans during DLR-106 earlier in this run, while `npm run lint` kept
+exiting 0 throughout. The agent's comment cites the reason. Worth recording: the correction
+propagated without anyone re-teaching it.
+
+
+## DLR-114 — Pre-hand loadout action bar
+
+**The ticket that makes the buff system reachable.** Ten tickets built it bottom-up and none of it
+was on screen: no buff was drawn into a hand, no condition was read, no button activated anything,
+and `BuffActivationState` had no owner. DLR-114 is the wiring. It also retires four felt-rail plates
+and puts a fourth row on a grid that must never scroll.
+
+**Gates:** typecheck exit 0 · lint exit 0 · vitest **112 files, 1453 tests, 0 failures** · build
+exit 0 · `prettier --check` (this contract's files) exit 0. Baseline was 107/1403; this contract
+deletes two component specs and adds seven, so 112/1453 is the expected arithmetic, not a drift.
+
+### Plan defaults taken (the gate was auto-approved, nobody saw the plan)
+
+Four judgement calls the ticket carries are normally the developer's. Each was decided in
+`plan.md` Part 1 → Assumptions made, and **each is theirs to overrule after playing it**:
+
+- **The bar is always mounted, for the whole hand, and never removed.** Controls grey with their
+  reason on their own face. A control that vanishes costs more than one that greys — the player
+  relearns where things are, and the layout reflows on a screen that must not scroll. Follows
+  `TimebombCharge`'s existing precedent ("the rail stays inert rather than absent at zero charges").
+- **Activation is reversible until the second tap and committing after it.** `activateBuff` spends
+  through `spendAp` and `activatedThisTrick` has no removal path — the engine ships no un-activate,
+  so inventing a refund here would be writing a rule `src/hunt/` does not own. The reversibility is
+  the poise stage instead: one tap poises, a second commits, `Escape` drops it unspent. That is the
+  grammar Cheat, Timebomb and Apply Damage already use, so the bar teaches one ritual, not a fifth.
+- **When the player can afford nothing, Apply Buff still opens.** The panel is where they read what
+  they own and what it costs; hiding it because it is momentarily unaffordable hides the information
+  the next decision needs. Only a closed window disables the button; individual rows grey with
+  `InsufficientAp` on their face.
+- **A buff's condition and reward are one glanceable line**, and that same string is the row's
+  accessible name so the sighted and screen-reader surfaces cannot drift:
+  `Bell-Taker (Momentum) — win a trick with Bells: +3 multiplier. 2 AP.` The family words, the four
+  reward suffixes and the twelve condition sentences are **transcribed** from
+  `v1-buff-card-list.md` → *How a card is named*, not invented. The eight activated/consumable
+  cards have no row in that table; their wording is this ticket's own placeholder copy, marked so.
+
+Two further defaults, taken for the same reason:
+
+- **Cheat and Timebomb moved *into* the loadout panel rather than being deleted.** AC1 requires the
+  separate rails to go, but their mechanics are live and player-reachable, and deleting their only
+  driver would be a regression the ticket does not ask for. Re-mounting the existing components
+  inside the panel satisfies "one place for every pre-trick decision" with no rule change.
+- **`ApplyDamagePlate` and `DiscardPlate` were deleted outright**, with their stylesheets and specs,
+  because the bar's own buttons fully supersede them. Their label functions in `labels.ts` survive
+  and are reused, so no copy was rewritten.
+
+**Mockup:** `.claude/contract/DLR-114-pre-hand-loadout-action-bar/mockup.html` was generated and
+**went unseen** — the gate was skipped per this run's override, and it was not published as an
+Artifact. It is a layout/interaction reference only; the developer has never looked at it.
+
+### The `Unassigned` placeholder trap, handled
+
+The defender warning raised twice against this ticket was real and would have fired. `startRun`
+seeds `STARTING_BUFF_COUNT = 4` buffs of `BuffKind.Unassigned`, and `apCostOf` **throws
+`RangeError`** on placeholder content by design. Wiring `RunState.buffs` into the felt without a
+filter puts that throw one render away from a player.
+
+Closed in the **pure layer**, not in JSX: `isPricedBuff(buff)` and `activatableBuffs(buffs)` in
+`src/hunt/buffActivation.ts`, mirroring `buffApCost`'s own two branches rather than restating them,
+so a kind added to either pricing table is admitted automatically. The felt reads it once through
+`offeredBuffs(state)` in `roundUiState.ts`, and both the panel's rows and `handleTapBuff`'s guard
+read that single statement. `buffActivation.priced.test.ts` pins it directly: every buff
+`seedStartingBuffPile` mints is rejected *and* asserted to throw from `apCostOf`; every buff the
+filter keeps is asserted not to.
+
+A second, sharper version of the same trap surfaced only under integration: `useRovingTabIndex`
+probes `isFocusable(0)` unconditionally even on an empty collection, so `refusalFor(buffs[0])` on an
+empty pile reached `apCostOf(undefined)` and crashed — invisible to the panel's own spec, which
+stubbed the refusal. Fixed with the `buffs[index] !== undefined` guard `HandFan` already documents.
+
+### One AP pool, not two
+
+The felt had **two** independent numbers both claiming to be the hand's action points:
+`RoundUiState.apPool`, which Apply Damage spent from, and `BuffActivationState.apPool`, which
+nothing spent from. They had never been observed to diverge because nothing had ever spent from the
+second. This is the first ticket that spends from both, so the field was deleted and replaced by
+`buffActivation: BuffActivationState`. Divergence is now unexpressible. `buffActivationStock.test.ts`
+pins the invariant: `buffActivationStock(...).apPool` and `applyDamageStock(...).apPool` resolve to
+the same figure.
+
+### A regression this ticket introduced, found and fixed inside it
+
+Relocating Cheat and Timebomb into the panel put them behind the Apply Buff button, which was gated
+on `discardWindowOpen` (`currentTrick.length === 0`). That is **structurally incompatible** with
+"the player is following a card the Quarry already led" — which is exactly when a Cheat has value,
+because it is the only moment a follow-suit restriction exists to break. Two pre-existing
+integration specs pinned that scenario; the Phase 5 implementer noticed, correctly refused to
+decide it, rewrote both specs to pin the narrowed behaviour, and flagged it.
+
+**Coordinator ruling: the door widens, the window does not.** `loadoutDoorOpen = discardWindowOpen
+|| canAct` gates *opening* the panel; `buffActivationRefusalFor` still gates *activating a row*.
+Opening the panel is not a game action — it is reaching for the drawer, and it must be available
+whenever the player can act at all. Mid-trick the panel now opens, Cheat and Timebomb inside it are
+live exactly as before DLR-114, and every buff row is disabled reading "Not between tricks." Both
+specs were restored to pinning the original behaviour and the regression-accepting comments deleted.
+This restores a pre-existing baseline rather than inventing anything, which is why it was not a
+developer pause.
+
+### Other decisions and findings worth carrying forward
+
+- **`timebombDamageFor` / `timebombDamageOf` were NOT collapsed.** DLR-129 nominated "whichever
+  ticket wires the felt onto the catalog". This one wires the felt onto the *pile* and the
+  *activation flow*, not onto `buffCatalog.ts`: the live Timebomb mechanic still runs on
+  `timebombDamageFor` reading `config.ts`, `timebombDamageOf` still has no caller, and
+  `CheatStage`/`TimebombStage` were relocated unchanged. Renaming here would be a rename with no
+  behaviour behind it, in a module otherwise outside this diff. **The nomination should move to the
+  ticket that actually replaces `commitTimebomb` with `activateBuff(timebombBuff(...))`.**
+- **The plan's config audit undercounted `RoundUiSeed`'s construction sites — 2 named, 11 real.**
+  Making `buffs` required broke nine further spec files at typecheck. The implementer fixed all of
+  them rather than leaving the build red, and flagged the audit methodology: it had searched for
+  component mount sites rather than direct `createRoundUiState` calls across `__tests__/`. Worth a
+  `/fb-issue` against the planning step.
+- **Defender caught a real layout defect no test could.** `warCouncilHunt.css` carries a
+  narrow/short-viewport override that redeclares `.wc-shell`'s `grid-template-areas`, and it was
+  never given the new `actions` row — so on a phone-sized or short-laptop window the bar fell out of
+  its slot into implicit auto-placement. It probably landed correctly by accident, being last in DOM
+  order, which is exactly what makes it fragile. Fixed, with a comment tying the two rules together.
+- **`ActionBar`'s `stopPropagation` docblock claimed to be load-bearing and was not** — the bar is a
+  *sibling* of `.wc-table`, not a descendant, so its clicks can never reach `handleCarryOn`.
+  `BuffLoadoutPanel`'s identical-looking stop genuinely is load-bearing. The claim was corrected
+  rather than the code removed, because the risk is a future reader deleting the panel's real stop
+  believing the bar's covers it.
+- **`roundControlsProps.ts` was not in the plan's file map.** It was split out mid-implementation
+  when `WarCouncilRound.tsx` measured 403 lines, three over the blocking budget — fixed in-ticket
+  as the rule requires. Code-Evaluator judged it a real seam rather than a line-count dodge, but
+  flagged its nine positional parameters (three of them same-shaped nullable refusals that transpose
+  silently); converted to named-field options objects in the fix pass.
+- **`CheatSlots` and `TimebombCharge` each needed `e.stopPropagation()` on their Escape handler**,
+  because nesting them inside the panel meant cancelling a selection also closed the whole panel.
+
+### Reviewers
+
+All three, given the diff is production UI and logic. Code-Evaluator ISSUES FOUND (2, both minor —
+the positional-parameter helper and an unexplained `as never` cast in a spec). Defender ISSUES FOUND
+(0 critical, 2 warnings — the media-query grid row, the false `stopPropagation` claim). QA **ALL
+PASSED**, no `ac-test-gap`, every AC traced to a test. One combined fix pass cleared all six items,
+plus the missing `pr-description.md` QA flagged. One round used of the two available.
+
+### No browser pass — and precisely what one would have checked
+
+**Not requested, so none was run and none is claimed.** This matters more here than on any prior
+ticket in this run: it is the first surface the buff system renders on, and **nobody will look at it
+until DLR-119**. jsdom has no layout engine, so nothing in the 1453 passing tests substitutes for
+any item below.
+
+1. **The shell still does not scroll with a fourth grid row** (`auto 1fr auto auto`) at 1280×800,
+   1024×768, 1366×768 and 390×844. The single highest-risk unverified claim in the ticket.
+2. **The narrow/short-viewport override actually places the bar** at ≤44rem wide or ≤34rem tall —
+   the defect Defender caught is fixed in CSS but has never been rendered.
+3. **The hand fan is not cropped or overlapped** by the bar at those short viewports.
+4. **The loadout panel's own scroll is contained** (`max-height` / `overflow-y`) and never leaks to
+   the page when the pile is large.
+5. **Every CSS custom property `warCouncilActionBar.css` references resolves** rather than silently
+   falling back — `--wc-brass`, `--wc-brass-dim`, `--wc-alarm`, `--wc-chalk`, `--wc-chalk-dim`,
+   `--wc-chamber-lift`, `--wc-serif`, `--wc-ui-transition-ms`. All are declared in `warCouncil.css`,
+   which the mount still imports, but a deleted stylesheet is exactly what breaks an import order.
+6. **No visual gap or stray divider survives** where the four plates sat. The `.wc-felt-rail-split`
+   rule and every `wc-apply-*` / `wc-discard-*` selector are gone by grep; only a browser confirms
+   there is no residue.
+7. **A clean console** on mount, on opening the loadout, on activating a buff, and on pressing
+   Apply Damage.
+8. **The queued-payout note is legible on the button's face** rather than clipped by its bounds.
+9. **The four bar buttons meet the 44×44px hit-area floor** at the smallest viewport.
+
+### What the developer must look at
+
+- **Does the bar feel like one ritual, or four buttons in a row?** Open Apply Buff, activate a buff,
+  arm a Cheat from inside the panel, Swap, then press Apply Damage twice. The whole ticket rests on
+  this reading and no test can answer it.
+- **Is two taps the right cost for activating a buff?** One tap is cheaper and irreversible.
+- **Should condition-family buffs be offered at all yet?** Activating one spends AP and does nothing
+  else — `buffAccrual.ts` still has no caller. A one-line change to `isPricedBuff` would hide them
+  until they fire.
+- **Should `seedStartingBuffPile` mint real content?** Until it does, a fresh run with an empty Vault
+  shows an **empty** buff list, and only the relocated Cheat and Timebomb rows. That is a content
+  decision, not this ticket's.
+- **Every value in `warCouncilActionBar.css` is a placeholder** copied from the sibling rail
+  stylesheets. The polish ticket owns them.
+- **The four AP figures behind the bar** (`STARTING_AP = 6`, `APPLY_DAMAGE_AP_COST = 3`, plus
+  `REWARD_BASE` and `CONSUMABLE_AP_COST`) are agent-chosen and have never been played. This is the
+  first surface that makes them visible; the first hand played against them is the first evidence.
+
+### Is the buff system genuinely reachable now?
+
+**Partly, and the plan says so rather than overclaiming.** A player can open the loadout, read every
+owned priced buff with its cost and condition, spend AP on it, and watch the pool fall — end to end,
+through the real reducer, pinned by `WarCouncilRound.actionBar.test.tsx`. But the pile a fresh run
+opens with is four `Unassigned` placeholders, which this ticket deliberately filters out, so real
+priced buffs appear only when the Vault granted templates. And an activated condition buff still
+pays nothing. What is reachable today is **activation**; **firing** is a later ticket's.

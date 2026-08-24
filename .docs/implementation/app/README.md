@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114
 
 ## Responsibility
 
@@ -34,7 +34,7 @@ import React, and `src/app/warCouncil/` does.
 
 | Export                  | Purpose                                                                                                                                                                                                                   | File                 |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState`, a required `hunt: Hunt` (DLR-53), a required `encounter: EncounterState` and `maxHealth` (DLR-71), a required `runLabel: string` (DLR-82), a required `cheats` (DLR-83), a required `coins: Coins` (DLR-84) and a required `discardsRemaining: number` (DLR-100) in; `onComplete` out | `warCouncilMount.ts` |
+| `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState`, a required `hunt: Hunt` (DLR-53), a required `encounter: EncounterState` and `maxHealth` (DLR-71), a required `runLabel: string` (DLR-82), a required `cheats` (DLR-83), a required `coins: Coins` (DLR-84), a required `discardsRemaining: number` (DLR-100) and a required `buffs: readonly Buff[]` (DLR-114) in; `onComplete` out | `warCouncilMount.ts` |
 | `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + `encounter`, the `EncounterState` **after** this Hunt's damage was applied (DLR-71); also carries the survivors of every hand-owned run resource, including `discardsRemaining` since DLR-100                                                                            | `warCouncilMount.ts` |
 
 DLR-53 added `hunt: Hunt` as a **required** field — `src/hunt`'s own pairing, widened by DLR-63 to
@@ -73,6 +73,23 @@ argument, between `result.blastGuardHeld` and `result.unplayedAtResolve`. Wideni
 predicted — six pre-existing `src/hunt/__tests__/` files still on the old six-argument form, beyond
 `App.tsx` — all fixed inline in the same task. See
 [../hunt/the-discard-budget.md](../hunt/the-discard-budget.md).
+
+**DLR-114 added `buffs: readonly Buff[]`, and it is the first prop of this family that does NOT come
+back on `WarCouncilRoundResult`.** `App.tsx`'s `<WarCouncilRound>` JSX gained `buffs={run.buffs}`, and
+that is the whole of the wiring — `handleComplete` and `recordEncounter` were untouched. The reason is
+a rule rather than an omission: **a hand spends action points, not cards**, so a hand cannot add to,
+remove from, or reorder the run's owned pile, and handing it back would invite a future writer to
+think it could. That makes it `bankClimbBonus`'s contract (mirrored in, never returned) rather than
+`cheats`' or `timebombCharges`' (mirrored in, spent, returned).
+
+It is **required** rather than optional for the usual reason, and that earned its place immediately:
+the compiler enumerated the one production mount site plus the round fixture and three
+`WarCouncilRound.*.test.tsx` files, rather than letting one silently render an empty loadout. The
+card layer receives the pile itself here rather than a pre-worded projection — unlike `runLabel` and
+`coins` — because the loadout panel must render one row per buff with its own price, which no single
+string or number can carry; the felt still cannot read or change `RunState`, and the pile it is handed
+is `readonly`. See
+[../war-council-ui/action-bar-and-loadout.md](../war-council-ui/action-bar-and-loadout.md).
 
 **`encounter` is no longer constant for the hand.** Until DLR-80 health changed only at trick 13, so
 the prop was a fixed input for the whole round. Since DLR-80 the prop **seeds** the reducer, which

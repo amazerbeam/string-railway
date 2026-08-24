@@ -55,6 +55,7 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
         blastGuardHeld={blastGuardHeldFixture}
         bankClimbBonus={bankClimbBonusFixture}
         discardsRemaining={discardsRemainingFixture}
+        buffs={[]}
         onComplete={onComplete}
       />,
     )
@@ -201,6 +202,7 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
         blastGuardHeld={blastGuardHeldFixture}
         bankClimbBonus={bankClimbBonusFixture}
         discardsRemaining={discardsRemainingFixture}
+        buffs={[]}
         onComplete={onComplete}
       />,
     )
@@ -260,6 +262,7 @@ describe('WarCouncilRound — the Quarry’s at-risk preview (DLR-86)', () => {
         blastGuardHeld={blastGuardHeldFixture}
         bankClimbBonus={bankClimbBonusFixture}
         discardsRemaining={discardsRemainingFixture}
+        buffs={[]}
         onComplete={vi.fn()}
       />,
     )

@@ -17,6 +17,7 @@ import {
   APPLY_DAMAGE_AP_COST,
   hasCheat,
   isEncounterResolved,
+  openBuffWindow,
   queueApplyDamagePayout,
   queueApplyPayout,
   spendAp,
@@ -35,10 +36,26 @@ import {
 } from './roundUiState'
 import { advanceQuarryLead } from './quarryAdvance'
 import { handleCancelDiscard, handleTapDiscard, toggleDiscardCard } from './discardHandlers'
+import { handleCancelLoadout, handleTapBuff, handleToggleLoadout } from './buffHandlers'
 import { commit } from './commitHandlers'
 
 export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundUiState {
-  return captureUnplayed(applyAction(state, action))
+  return openWindowOnTrickResolved(state, captureUnplayed(applyAction(state, action)))
+}
+
+/**
+ * DLR-114 — DLR-108 AC4's per-trick boundary, applied at the ONE transition where a trick actually
+ * resolves. `openBuffWindow` clears `activatedThisTrick` and leaves the pool untouched.
+ *
+ * Fires on the `null` -> non-null edge of `resolvedTrick`, NOT on "the current trick is empty": a
+ * buff is activated WHILE the trick is empty (that is what `discardWindowOpen` means), so an
+ * empty-trick rule would erase every activation the instant it was made. Two-argument and pure, so
+ * StrictMode's development double dispatch recomputes an identical value — the same property
+ * `captureUnplayed` beside it relies on.
+ */
+function openWindowOnTrickResolved(prev: RoundUiState, next: RoundUiState): RoundUiState {
+  if (prev.resolvedTrick !== null || next.resolvedTrick === null) return next
+  return { ...next, buffActivation: openBuffWindow(next.buffActivation) }
 }
 
 /**
@@ -91,6 +108,12 @@ function applyAction(state: RoundUiState, action: RoundUiAction): RoundUiState {
       return handleTapDiscard(state)
     case RoundUiActionKind.CancelDiscard:
       return handleCancelDiscard(state)
+    case RoundUiActionKind.ToggleLoadout:
+      return handleToggleLoadout(state)
+    case RoundUiActionKind.CancelLoadout:
+      return handleCancelLoadout(state)
+    case RoundUiActionKind.TapBuff:
+      return handleTapBuff(state, action.id)
   }
 }
 
@@ -237,7 +260,10 @@ function handleTapApplyDamage(state: RoundUiState): RoundUiState {
     ...state,
     round,
     encounter: queueApplyDamagePayout(state.encounter, payout),
-    apPool: spendAp(state.apPool, APPLY_DAMAGE_AP_COST),
+    buffActivation: {
+      ...state.buffActivation,
+      apPool: spendAp(state.buffActivation.apPool, APPLY_DAMAGE_AP_COST),
+    },
     applyPoised: false,
   }
 }

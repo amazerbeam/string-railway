@@ -19,9 +19,9 @@ interface TimebombChargeProps {
  * keep independent copy and independent components, so retuning one never risks the other.
  *
  * `onClick` STOPS PROPAGATION for the same load-bearing reason `CheatSlots.tsx`'s does: this
- * mounts inside `.wc-table`, which fires `handleCarryOn` on click whenever the felt is waiting —
- * so without it, arming a charge while a trick reveal is held would also clear the reveal and
- * commit the Quarry's lead as a side effect.
+ * mounts inside `.wc-table` (indirectly, via `BuffLoadoutPanel`), which fires `handleCarryOn` on
+ * click whenever the felt is waiting — so without it, arming a charge while a trick reveal is
+ * held would also clear the reveal and commit the Quarry's lead as a side effect.
  *
  * One control is far below `game-ux`'s roving-tabindex threshold, so it is a plain tab stop.
  * The rail stays inert rather than absent at zero charges — AC1's purse cell and this plate must
@@ -43,7 +43,14 @@ export default function TimebombCharge({
       aria-label={TIMEBOMB_RAIL_LABEL}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => {
-        if (e.key === 'Escape') onCancel()
+        // DLR-114 — `stopPropagation` here is new fallout from the relocation into
+        // `BuffLoadoutPanel`, mirroring the `onClick` stop two lines up for the identical reason:
+        // this rail now nests inside the panel's own `Escape`-closes-the-whole-panel handler, and
+        // without the stop, cancelling a Timebomb selection would ALSO close the panel around it.
+        if (e.key === 'Escape') {
+          e.stopPropagation()
+          onCancel()
+        }
       }}
     >
       <span className="wc-plate-label">{TIMEBOMB_RAIL_LABEL}</span>

@@ -13,6 +13,19 @@ card itself, per `game-ux`'s tap-cost rule.
 `TapCard` is ignored outright when it is not the player's turn, or when `resolvedTrick`, `prompt`,
 or `cpuFault` is set, or the round is complete.
 
+**DLR-114 gave the second tap a second home rather than a second action.** The action bar's **Cards**
+button is greyed while nothing is armed and highlighted once something is, and pressing it calls the
+same `handleTap(ui.armed)` the fan's own second tap calls — so committing a card is reachable from two
+places and is still exactly one entry in `RoundUiActionKind`.
+
+**The state shape changed underneath all of this on DLR-114**, and it is worth stating here because
+every transition reads it: `RoundUiState.apPool: ActionPoints` was **deleted** and replaced by
+`buffActivation: BuffActivationState`, whose own `apPool` is now the hand's single pool; `buffs:
+readonly Buff[]` (mirrored from the mount, never written by an action) and `loadout: LoadoutSelection
+| null` were added; and `RoundUiAction` gained three members — `ToggleLoadout`, `CancelLoadout` and
+`TapBuff { id: BuffId }`, the first payload-carrying action since `TapCheat`. `applyAction`'s `switch`
+is exhaustive and non-defaulted, so each of the three had to be handled or the build fails.
+
 ### The exported reducer is a wrapper, and that is where cross-cutting observations go — DLR-95
 
 Since DLR-95 `roundReducer` is no longer the `switch` itself. The switch became a **private
@@ -26,6 +39,22 @@ export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundU
 
 The exported name, signature and behaviour are unchanged — this was a restructuring, not a
 behaviour change, and every pre-existing reducer test passed untouched through it.
+
+**DLR-114 put a second observation in that same wrapper, which is the point of having one:**
+
+```ts
+export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundUiState {
+  return openWindowOnTrickResolved(state, captureUnplayed(applyAction(state, action)))
+}
+```
+
+`openWindowOnTrickResolved(prev, next)` fires `openBuffWindow` on the `null` → non-null edge of
+`resolvedTrick` — the per-trick buff-activation boundary. It takes **two** arguments where
+`captureUnplayed` takes one, because "a trick just resolved" is a transition rather than a property of
+the resulting state; it is still pure, so StrictMode's double dispatch recomputes an identical value.
+It deliberately does **not** key on "the current trick is empty", which would erase every activation
+the instant it was made. See
+[the action bar and the buff loadout](action-bar-and-loadout.md#the-per-trick-window-fires-when-a-trick-resolves-not-when-one-starts).
 
 What it buys is a place to state a rule of the form *"after every transition, observe X"* exactly
 once. DLR-95 needed the player's hand size **at the instant the Quarry's bar empties**, to price the

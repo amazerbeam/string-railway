@@ -22,16 +22,16 @@ import {
   type WarCouncilState,
 } from '../../warCouncil'
 import {
+  activatableBuffs,
   apCostOf,
   hasPendingApplyPayout,
   hasPendingTimebomb,
   isEncounterResolved,
-  refreshActionPointsForNewHand,
-  STARTING_AP,
-  type ActionPoints,
+  startBuffActivation,
   type Buff,
   type BuffActivationState,
   type BuffActivationStock,
+  type BuffId,
   type CheatCard,
   type CheatCardId,
   type EncounterState,
@@ -141,10 +141,31 @@ export interface RoundUiState {
    *  `CheatSelection`'s stated reason: two independent fields would admit "closed but holding a
    *  stale selection". */
   readonly discardSelection: readonly Card[] | null
-  /** DLR-109 AC1 — the hand's action-point pool. Seeded at mount through
-   *  `refreshActionPointsForNewHand`, because `App.tsx` remounts the felt per hand (`key={hand}`),
-   *  so a mount IS the per-hand refresh. Spent only through `spendAp`. */
-  readonly apPool: ActionPoints
+  /** DLR-114 — the run's owned buff pile at the START of this hand, mirrored from the mount's
+   *  prop. Run state carried for the life of the hand — the same contract `cheats` documents.
+   *  NEVER written by an action: a hand spends action points, not cards. */
+  readonly buffs: readonly Buff[]
+  /** DLR-114 — the hand's action-point pool AND this trick's activations, as one value.
+   *  REPLACES DLR-109's separate `apPool: ActionPoints`, which was a second number claiming to be
+   *  the same pool: Apply Damage spent from that one and `activateBuff` spends from this one, and
+   *  two pools diverge the first time one is spent without the other. Seeded by
+   *  `startBuffActivation()` at mount, which IS the per-hand refresh because `App.tsx` remounts
+   *  the felt per hand (`key={hand}`) — the identical argument the old `apPool` seed made. */
+  readonly buffActivation: BuffActivationState
+  /** DLR-114 — `null` when the loadout panel is closed; an object while it is open, holding the
+   *  buff awaiting its confirming second tap (or `null` for "open, nothing poised"). ONE nullable
+   *  field rather than a boolean-plus-id pair, for `CheatSelection`'s stated reason: two fields
+   *  would admit "closed but holding a stale poise". Mirrors `discardSelection`'s `null` / `[]`
+   *  shape exactly. The hand's OWN transient — dies on remount, never touches `RunState`. */
+  readonly loadout: LoadoutSelection | null
+}
+
+/** DLR-114 — `null` when the loadout panel is closed; an object (with `poised: null`) while it is
+ *  open. ONE nullable field rather than a boolean-plus-id pair, for `CheatSelection`'s stated
+ *  reason: two fields would admit "closed but holding a stale poise". Mirrors `discardSelection`'s
+ *  `null` / `[]` shape exactly. */
+export interface LoadoutSelection {
+  readonly poised: BuffId | null
 }
 
 export interface RoundUiSeed {
@@ -155,6 +176,7 @@ export interface RoundUiSeed {
   readonly blastGuardHeld: boolean
   readonly bankClimbBonus: number
   readonly discardsRemaining: number
+  readonly buffs: readonly Buff[]
 }
 
 // `chooseCpuMove` throws rather than returning a rejection when the CPU has no legal
@@ -175,6 +197,9 @@ export const RoundUiActionKind = {
   CancelApplyDamage: 'cancelApplyDamage',
   TapDiscard: 'tapDiscard',
   CancelDiscard: 'cancelDiscard',
+  ToggleLoadout: 'toggleLoadout',
+  CancelLoadout: 'cancelLoadout',
+  TapBuff: 'tapBuff',
 } as const
 export type RoundUiActionKind = (typeof RoundUiActionKind)[keyof typeof RoundUiActionKind]
 
@@ -191,6 +216,9 @@ export type RoundUiAction =
   | { readonly kind: typeof RoundUiActionKind.CancelApplyDamage }
   | { readonly kind: typeof RoundUiActionKind.TapDiscard }
   | { readonly kind: typeof RoundUiActionKind.CancelDiscard }
+  | { readonly kind: typeof RoundUiActionKind.ToggleLoadout }
+  | { readonly kind: typeof RoundUiActionKind.CancelLoadout }
+  | { readonly kind: typeof RoundUiActionKind.TapBuff; readonly id: BuffId }
 
 /** Still a pure restructuring of its seed, so StrictMode's double-invocation of the lazy
  *  `useReducer` initialiser recomputes an identical value. */
@@ -214,7 +242,9 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     unplayedAtResolve: null,
     discardsRemaining: seed.discardsRemaining,
     discardSelection: null,
-    apPool: refreshActionPointsForNewHand(STARTING_AP),
+    buffs: seed.buffs,
+    buffActivation: startBuffActivation(),
+    loadout: null,
   }
 }
 
@@ -262,9 +292,23 @@ export function applyDamageStock(state: RoundUiState): ApplyDamageStock {
     multiplier: state.round.multiplier,
     timebombPending: hasPendingTimebomb(state.encounter),
     payoutPending: hasPendingApplyPayout(state.encounter),
-    apPool: state.apPool,
+    apPool: state.buffActivation.apPool,
     canAct: canAct(state),
   }
+}
+
+/** `true` while the loadout panel is open — the sibling of `discardSelecting`, and read by both
+ *  the bar's `aria-pressed` and the reducer's mutual-exclusion guards so the two cannot disagree. */
+export function loadoutOpen(state: RoundUiState): boolean {
+  return state.loadout !== null
+}
+
+/** The buffs this hand may actually be offered: the owned pile with `BuffKind.Unassigned`
+ *  placeholder content filtered out by `activatableBuffs`, so `apCostOf`'s `RangeError` can never
+ *  reach a render. Stated ONCE here so the panel's rows and `handleTapBuff`'s guard cannot
+ *  disagree about which buffs exist. */
+export function offeredBuffs(state: RoundUiState): readonly Buff[] {
+  return activatableBuffs(state.buffs)
 }
 
 /** `true` once the mode is open — mirrors `timebombArmed`'s "is a hand-card tap reinterpreted" role,

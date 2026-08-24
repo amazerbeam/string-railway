@@ -48,6 +48,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
       bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
+      buffs={overrides.buffs ?? []}
       onComplete={overrides.onComplete ?? vi.fn()}
     />,
   )
@@ -55,6 +56,11 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
 
 function healthMeter(name: 'Your health' | typeof quarryLabelFixture) {
   return screen.getByRole('meter', { name })
+}
+
+/** DLR-114 — the Cheat rail relocated from the felt rail into the Apply Buff loadout panel. */
+function openLoadout() {
+  fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
 }
 
 describe('WarCouncilRound', () => {
@@ -160,6 +166,9 @@ describe('WarCouncilRound', () => {
   it('makes a forbidden card playable once a Cheat is armed (AC5)', () => {
     // Same construction as "disables a card the engine says is illegal" above: the player is
     // forced to follow Moons, so their sole Bells card is genuinely forbidden without a Cheat.
+    // The loadout panel opens through `loadoutDoorOpen` — canAct alone, since currentTrick is
+    // non-empty here — restoring the pre-DLR-114 reach: a Cheat is armed FOLLOWING a forced
+    // off-suit lead, the only moment breaking follow-suit has value.
     const round = makeRound({
       leader: PlayerSide.Cpu,
       currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Moons, 9) }],
@@ -171,6 +180,7 @@ describe('WarCouncilRound', () => {
     const offSuit = screen.getByRole('button', { name: offSuitName })
     expect(offSuit).toHaveProperty('disabled', true)
 
+    openLoadout()
     const slot = screen.getByRole('button', { name: cheatAccessibleName(null) })
     fireEvent.click(slot)
     fireEvent.click(screen.getByRole('button', { name: cheatAccessibleName(CheatStage.Poised) }))

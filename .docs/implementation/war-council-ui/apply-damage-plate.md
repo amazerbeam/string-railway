@@ -1,6 +1,19 @@
 Part of [War Council UI](README.md).
 
-# The Apply Damage plate, and the extraction that had to come first
+# Apply Damage — the two-tap cash-out, and the extraction that had to come first
+
+> **The plate this page is named for no longer exists — DLR-114 deleted it, and every rule below
+> survives it.** `ApplyDamagePlate.tsx` and `warCouncilApplyDamage.css` were removed with the felt
+> rail itself; Apply Damage is now the **fourth button on the action bar**, and it carries the same
+> two-tap poise-then-commit grammar, the same refusal-re-read on both taps, the same refusal sentence
+> on the control's own face, the same `aria-pressed`, the same `Escape` cancel, and the same
+> `APPLY_DAMAGE_REFUSAL_MESSAGE` map — `labels.ts`'s label functions were kept and reused rather than
+> rewritten, which is why no copy changed. Two things are genuinely new on the bar: the **AP cost is
+> now stated on the button's face** (`12 for 3 AP`), and a **queued payout is now visible**
+> (`Payout queued: 12 damage, 2 tricks to go.`) where before it was invisible. Read the sections below
+> as the rule and its history; read
+> [the action bar and the buff loadout](action-bar-and-loadout.md) for where the control now lives.
+> Where this page says "the plate", the bar's Apply Damage button is what does it today.
 
 DLR-94 added the felt's third rail control: a plate that cashes the player's banked streak into the
 Quarry on demand, at no cost in health. The rule is entirely in
@@ -104,7 +117,8 @@ player may poise a Cheat and apply damage in either order without losing either.
 
 ## The plate
 
-`ApplyDamagePlate.tsx` is a **sibling** of `CheatSlots` and `TimebombCharge` rather than a
+`ApplyDamagePlate.tsx` (deleted by DLR-114; every property below now belongs to the bar's own Apply
+Damage button) was a **sibling** of `CheatSlots` and `TimebombCharge` rather than a
 generalisation of either — the three keep independent copy and independent components, so retuning one
 never risks the others. It is a pure render over props with two callbacks: **no effect, no listener, no
 timer**, and therefore no cleanup to write and nothing to leak on remount.
@@ -129,8 +143,9 @@ accessible names**, which is how the specs tell them apart (`getByRole('button',
 puts the figure in the name rather than only in the glyph. A refusal **outranks** a poise in the name,
 pinned by its own spec.
 
-`warCouncilApplyDamage.css` mirrors `warCouncilTimebomb.css`'s selectors and tokens so the three rail
-controls read as one family — form-not-colour state (`:disabled` dashed and dimmed, `.is-poised` dashed
+`warCouncilApplyDamage.css` (**deleted by DLR-114** with the plate; `warCouncilActionBar.css`'s
+`.wc-bar-*` block carries the equivalent rules now) mirrored `warCouncilTimebomb.css`'s selectors and
+tokens so the three rail controls read as one family — form-not-colour state (`:disabled` dashed and dimmed, `.is-poised` dashed
 brass with a lift and a corner notch), the ≥44px hit-area floor as an explicit `min-width`/`min-height`,
 `:focus-visible`, `@media (hover: hover)`, and `touch-action: manipulation`. The `.is-armed` block is
 dropped: this control has no armed stage.
@@ -174,9 +189,12 @@ a disabled button.
   `APPLY_DAMAGE_DELAY_TRICKS + 1` resolutions, the AC3 wipe, the AC4 press-time snapshot surviving a
   card played during the delay window, the Timebomb-wins ordering on a shared resolution, and the
   hand-end flush.
-- `__tests__/ApplyDamagePlate.test.tsx` — live and tappable, disabled with the reason on its face, the
-  D6 reason stated rather than going quiet, `aria-pressed` and the class together, never reading as
-  poised while refused, `Escape`, and the click not reaching the felt behind it.
+- ~~`__tests__/ApplyDamagePlate.test.tsx`~~ — **deleted with the component by DLR-114.** Its coverage
+  moved to `__tests__/ActionBar.test.tsx` and `__tests__/WarCouncilRound.actionBar.test.tsx`, which
+  assert the same behaviours against the bar's button: live and tappable, disabled with the reason on
+  its face, the D6 reason stated rather than going quiet, `aria-pressed` and the class together, never
+  reading as poised while refused, and `Escape`. The suite's file and test totals fell against the
+  pre-DLR-114 baseline for this reason; it is a relocation, not a regression.
 - `__tests__/labels.test.ts` — the three distinct accessible names, the figure in the name, the reason
   in the name, and a refusal outranking a poise.
 - `__tests__/BankMeter.test.tsx` — the widened label and the reduced figure on the readout's face.
@@ -186,7 +204,8 @@ a disabled button.
 
 ## DLR-97 — the plate's polish pass
 
-Two CSS-only changes to `warCouncilApplyDamage.css`, matching the identical fix applied to the
+_(Recorded for its reasoning; the sheet itself went with the plate on DLR-114.)_ Two CSS-only changes
+to `warCouncilApplyDamage.css`, matching the identical fix applied to the
 Timebomb plate the same phase (see
 [the Timebomb plate's own note](timebomb-charge-and-the-mark.md#dlr-97-the-plates-polish-pass)):
 the plate's `filter` (its hover brightness) gained a transition reading the shared
@@ -208,10 +227,18 @@ return {
   ...state,
   round,
   encounter: queueApplyDamagePayout(state.encounter, payout),
-  apPool: spendAp(state.apPool, APPLY_DAMAGE_AP_COST),
+  apPool: spendAp(state.apPool, APPLY_DAMAGE_AP_COST),  // see the DLR-114 note below
   applyPoised: false,
 }
 ```
+
+> **Since DLR-114 that spend writes into a different field.** `RoundUiState.apPool` was **deleted**
+> and replaced by `buffActivation: BuffActivationState`, so the line above now reads
+> `buffActivation: { ...state.buffActivation, apPool: spendAp(state.buffActivation.apPool,
+> APPLY_DAMAGE_AP_COST) }` and `applyDamageStock` reads `state.buffActivation.apPool`. Nothing about
+> the rule changed — what changed is that this is now the **same** pool `activateBuff` spends from,
+> rather than one of two independent numbers both claiming to be the hand's action points. See
+> [the action bar and the buff loadout](action-bar-and-loadout.md#one-ap-pool-where-there-used-to-be-two).
 
 `cashBankNow` still zeroes bank and multiplier in the same transition as before — the bank readout
 still visibly drops the instant the second tap lands. What no longer happens on this transition is
@@ -231,6 +258,9 @@ describes — it now can also return `PayoutPending` (a payout from an earlier p
 air) or `InsufficientAp` (the hand's `apPool` will not cover the cost). Both render through the
 plate's existing `APPLY_DAMAGE_REFUSAL_MESSAGE` map with no component change.
 
-**`apPool` has no felt-side readout.** It is spent and refused against, but nothing on the rail shows
-its value, so an `InsufficientAp` refusal will read as the button dying for no visible reason — the
-same gap `hunt/action-points.md` records for the resource generally.
+~~**`apPool` has no felt-side readout.**~~ **Closed by DLR-114.** It was true from DLR-109 until then:
+the pool was spent and refused against with nothing on the rail showing its value, so an
+`InsufficientAp` refusal read as the button dying for no visible reason. The action bar now shows the
+pool on the Apply Buff button's face (`6 AP · 3 held`) and again inside the loadout panel
+(`6 action points left`), and Apply Damage's own button states its cost. Whether the figure is
+legible where it sits is a look-at-it question nobody has answered.

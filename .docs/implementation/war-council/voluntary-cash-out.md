@@ -86,7 +86,9 @@ learn the shape of the layer that calls it — the same discipline `FlaskStock` 
 translated into this one, which is where `hasPendingTimebomb(encounter)`, `hasPendingApplyPayout(encounter)`
 (DLR-109), and `canAct(state)` are read. **`payoutPending` and `apPool` were added as required fields**,
 which made every construction site — the interface, the predicate, this one builder, and the test
-factory — a compile error until all four moved together.
+factory — a compile error until all four moved together. **This interface was untouched by DLR-114**;
+only where the builder reads the pool from moved, from `state.apPool` to
+`state.buffActivation.apPool`, which is exactly the insulation the plain-values shape buys.
 
 ### `cashBankNow` — and what it deliberately does not touch
 
@@ -134,7 +136,9 @@ ticket asked for: a distinct resolution path over the same arithmetic.
 
 `src/app/warCouncil/roundReducer.ts` — `handleTapApplyDamage`, the only caller. See
 [interaction and state](../war-council-ui/interaction-and-state.md) for the two-tap grammar and
-[the Apply Damage plate](../war-council-ui/apply-damage-plate.md) for the control.
+[Apply Damage — the two-tap cash-out](../war-council-ui/apply-damage-plate.md) for the control, which
+since DLR-114 is the fourth button on the felt's
+[action bar](../war-council-ui/action-bar-and-loadout.md) rather than a felt-rail plate.
 
 ## What the tests pin
 

@@ -37,6 +37,7 @@ function uiFrom(
     blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: discardsRemainingFixture,
+    buffs: [],
   })
 }
 
@@ -119,10 +120,10 @@ describe('Apply Damage — the commit (AC1, AC2, AC3)', () => {
 
   it('AC1 — the committing tap spends APPLY_DAMAGE_AP_COST; the poising tap spends nothing', () => {
     const poised = roundReducer(uiFrom(streakRound()), tapApply)
-    expect(poised.apPool).toBe(STARTING_AP)
+    expect(poised.buffActivation.apPool).toBe(STARTING_AP)
 
     const committed = roundReducer(poised, tapApply)
-    expect(committed.apPool).toBe(STARTING_AP - APPLY_DAMAGE_AP_COST)
+    expect(committed.buffActivation.apPool).toBe(STARTING_AP - APPLY_DAMAGE_AP_COST)
   })
 
   it('AC3 — no trick is resolved, so no reveal is held and the hand stays live', () => {
@@ -180,7 +181,10 @@ describe('Apply Damage — the commit (AC1, AC2, AC3)', () => {
     // `captureUnplayed` writes this field once, and this fixture skips straight to "after that",
     // so it must not still read `null` or `captureUnplayed` would fire a second time here and the
     // identity check below would fail for a reason unrelated to what this test is proving.
-    const settled = { ...uiFrom(makeRound({ leader: PlayerSide.Player }), resolved), unplayedAtResolve: 0 }
+    const settled = {
+      ...uiFrom(makeRound({ leader: PlayerSide.Player }), resolved),
+      unplayedAtResolve: 0,
+    }
     expect(roundReducer(settled, tapApply)).toBe(settled)
   })
 })

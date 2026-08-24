@@ -41,6 +41,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
       bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
+      buffs={overrides.buffs ?? []}
       onComplete={overrides.onComplete ?? vi.fn()}
     />,
   )
@@ -50,20 +51,29 @@ function timebombPlate(stage: TimebombStage | null, charges = timebombChargesFix
   return screen.getByRole('button', { name: timebombAccessibleName(stage, charges) })
 }
 
+/** DLR-114 — Timebomb relocated from the felt rail into the Apply Buff loadout panel. Every
+ *  test below must open the panel before it can reach `timebombPlate`. */
+function openLoadout() {
+  fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
+}
+
 describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
-  it('renders the charge plate in the felt rail with its held name', () => {
+  it('renders the charge plate inside the opened loadout panel with its held name', () => {
     renderRound()
+    openLoadout()
     expect(timebombPlate(null)).toBeTruthy()
   })
 
   it('renders inert rather than vanishing at zero charges', () => {
     renderRound({ timebombCharges: 0 })
+    openLoadout()
     const empty = screen.getByRole('button', { name: TIMEBOMB_EMPTY_LABEL })
     expect(empty).toHaveProperty('disabled', true)
   })
 
   it('arms on the second click, reporting the armed hint and aria-pressed true', () => {
     renderRound()
+    openLoadout()
     const plate = timebombPlate(null)
     fireEvent.click(plate)
     fireEvent.click(timebombPlate(TimebombStage.Poised))
@@ -74,6 +84,7 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
 
   it('marks the tapped hand card and leaves the trick unplayed once armed', () => {
     renderRound()
+    openLoadout()
     fireEvent.click(timebombPlate(null))
     fireEvent.click(timebombPlate(TimebombStage.Poised))
     const scoreboard = screen.getByRole('group', { name: /tricks won/i })
@@ -86,6 +97,10 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
   })
 
   it('lets an illegal card be marked while armed', () => {
+    // The player is forced to follow Moons, so their sole Bells card is genuinely forbidden.
+    // The panel opens through `loadoutDoorOpen` — `canAct` alone, since `currentTrick` is
+    // non-empty here — restoring the pre-DLR-114 reach: Timebomb is armed FOLLOWING a forced
+    // off-suit lead, and marking is never itself a legality check either way.
     const round = makeRound({
       leader: PlayerSide.Cpu,
       currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Moons, 9) }],
@@ -95,6 +110,7 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
     const offSuit = screen.getByRole('button', { name: '7 of Bells' })
     expect(offSuit).toHaveProperty('disabled', true)
 
+    openLoadout()
     fireEvent.click(timebombPlate(null))
     fireEvent.click(timebombPlate(TimebombStage.Poised))
     expect(screen.getByRole('button', { name: '7 of Bells' })).toHaveProperty('disabled', false)
@@ -104,6 +120,7 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
 
   it('gives the charge back unspent on a third click', () => {
     renderRound()
+    openLoadout()
     fireEvent.click(timebombPlate(null))
     fireEvent.click(timebombPlate(TimebombStage.Poised))
     fireEvent.click(timebombPlate(TimebombStage.Armed))
@@ -113,6 +130,7 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
 
   it('cancels the selection on Escape', () => {
     renderRound()
+    openLoadout()
     fireEvent.click(timebombPlate(null))
     const poised = timebombPlate(TimebombStage.Poised)
     fireEvent.keyDown(poised.closest('[role="group"]') as Element, { key: 'Escape' })
@@ -121,8 +139,10 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
 
   it('is disabled while a trick reveal is held, and does not clear the reveal on click (stopPropagation)', () => {
     // Same construction as the base spec's own "plays a legal card" case: the fixture hand's
-    // one Bells card completes a trick against the fixture Cpu hand.
+    // one Bells card completes a trick against the fixture Cpu hand. The panel is opened BEFORE
+    // the trick resolves — opening it is refused once a reveal is held, same as Swap's own gate.
     renderRound()
+    openLoadout()
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
     fireEvent.click(bells7)
@@ -158,6 +178,7 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
     expect(screen.getByLabelText(/cashes for 6\b/i)).toBeTruthy()
 
     // Mark the 2 of Bells, then play it.
+    openLoadout()
     fireEvent.click(timebombPlate(null))
     fireEvent.click(timebombPlate(TimebombStage.Poised))
     const bells2 = screen.getByRole('button', { name: '2 of Bells' })
@@ -191,6 +212,7 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
     renderRound({ initialState: round })
 
     // Mark the 2 of Bells with Timebomb.
+    openLoadout()
     fireEvent.click(timebombPlate(null))
     fireEvent.click(timebombPlate(TimebombStage.Poised))
     fireEvent.click(screen.getByRole('button', { name: '2 of Bells' }))
@@ -218,6 +240,7 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
     })
     renderRound({ initialState: round, onComplete })
 
+    openLoadout()
     fireEvent.click(timebombPlate(null))
     fireEvent.click(timebombPlate(TimebombStage.Poised))
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })

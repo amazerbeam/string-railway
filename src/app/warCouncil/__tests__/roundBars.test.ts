@@ -21,6 +21,7 @@ function seededUi(encounter = encounterFixture) {
     blastGuardHeld: blastGuardHeldFixture,
     bankClimbBonus: bankClimbBonusFixture,
     discardsRemaining: discardsRemainingFixture,
+    buffs: [],
   })
 }
 

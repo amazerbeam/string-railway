@@ -1,0 +1,52 @@
+import { describe, expect, it } from 'vitest'
+import { Suit } from '../../../warCouncil'
+import type { PendingApplyPayout } from '../../../hunt'
+import {
+  applyBuffAccessibleName,
+  applyDamageBarAccessibleName,
+  cardsAccessibleName,
+  queuedPayoutText,
+} from '../actionBarLabels'
+
+const payout = (resolutionsOwed: number): PendingApplyPayout => ({
+  cashOut: 12,
+  resolutionsOwed,
+  unplayedAtPress: 3,
+})
+
+describe('actionBarLabels', () => {
+  it('queuedPayoutText is null when nothing is queued', () => {
+    expect(queuedPayoutText(null)).toBeNull()
+  })
+
+  it('reads "1 trick to go" for a single resolution owed', () => {
+    expect(queuedPayoutText(payout(1))).toContain('1 trick to go')
+  })
+
+  it('reads "2 tricks to go" for more than one resolution owed', () => {
+    expect(queuedPayoutText(payout(2))).toContain('2 tricks to go')
+  })
+
+  it('cardsAccessibleName names no selection when nothing is armed', () => {
+    expect(cardsAccessibleName(null)).toContain('No card selected')
+  })
+
+  it('cardsAccessibleName names the armed card', () => {
+    expect(cardsAccessibleName({ suit: Suit.Bells, rank: 7 })).toContain('7 of Bells')
+  })
+
+  it('applyDamageBarAccessibleName names the cash value and the AP cost', () => {
+    const name = applyDamageBarAccessibleName(12, 3, false, null, null)
+    expect(name).toContain('12')
+    expect(name).toContain('3')
+  })
+
+  it('applyDamageBarAccessibleName includes the queued sentence when a payout is pending', () => {
+    const name = applyDamageBarAccessibleName(12, 3, false, null, payout(2))
+    expect(name).toContain('2 tricks to go')
+  })
+
+  it('applyBuffAccessibleName names the AP figure it is given', () => {
+    expect(applyBuffAccessibleName(4, 2, false, true)).toContain('4')
+  })
+})

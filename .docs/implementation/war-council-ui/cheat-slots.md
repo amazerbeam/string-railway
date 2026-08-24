@@ -27,10 +27,25 @@ remains the unused rule it already was. The cost is that arming a Cheat is now a
 plate and back to the fan — if that reads as a detour in play, the contract's stated fix is a second
 affordance in the hand zone, **not** moving the plate back.
 
+> **DLR-114 moved them again, and this time off the felt entirely.** `CheatSlots` is now mounted
+> **inside `BuffLoadoutPanel`**, below a divider under the buff rows, reached by pressing **Apply
+> Buff** on the action bar. The component is byte-for-byte the one described below — same props, same
+> two-click arm, same `stopPropagation`, same `Escape`, same reducer branches — only its parent
+> changed. What changed with it is **what gates reaching it**: the panel's door is
+> `loadoutDoorOpen = discardWindowOpen || canAct`, deliberately wider than the buff rows' own
+> `discardWindowOpen` gate, precisely so a Cheat stays reachable while you are **following a lead the
+> Quarry has already committed** — which is the only moment breaking follow-suit is worth anything.
+> Gating the door on `discardWindowOpen` alone made that unreachable; the regression was found and
+> fixed inside DLR-114. See
+> [the action bar and the buff loadout](action-bar-and-loadout.md#the-panel-door-is-wider-than-the-activation-window-and-that-is-a-fix-rather-than-a-looseness).
+> The detour question above is therefore now asked one level deeper — a Cheat costs a press to open
+> the panel before the two clicks to arm — and is unplayed.
+
 #### `stopPropagation` on the rail is load-bearing, not defensive
 
 `.wc-table` carries an `onClick` that fires `handleCarryOn` whenever the felt is waiting. The slots
-now mount **inside** that element, so without intervention a click on a slot would bubble into it —
+mount **inside** that element — still true after DLR-114, since `BuffLoadoutPanel` also mounts inside
+`.wc-table` — so without intervention a click on a slot would bubble into it —
 and arming a Cheat while a trick reveal was being held would *also* clear the reveal and commit the
 Quarry's lead as a side effect. `.wc-cheat-rail` therefore carries
 `onClick={(e) => e.stopPropagation()}` on the **wrapper**, one handler rather than one per button.

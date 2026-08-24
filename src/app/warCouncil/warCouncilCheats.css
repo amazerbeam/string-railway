@@ -12,13 +12,6 @@
   padding: clamp(0.5rem, 2vmin, 1.5rem);
 }
 
-/* The hairline that makes the two registers read as one plate rather than two objects. */
-.wc-felt-rail-split {
-  width: 78%;
-  height: 1px;
-  background: linear-gradient(90deg, #ffffff00, #ffffff26, #ffffff00);
-}
-
 /* DLR-83 — the Cheat slot's frame, sized just under the decree pile's card so the pair of
    slots lines up with it. Declared here rather than in warCouncil.css's `:root` for the
    budget reason above; a custom property resolves the same from any loaded sheet.

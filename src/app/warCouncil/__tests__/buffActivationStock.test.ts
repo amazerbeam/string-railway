@@ -5,12 +5,14 @@ import {
   cheatBuff,
   startBuffActivation,
   BuffTier,
+  STARTING_AP,
   type BuffActivationState,
 } from '../../../hunt'
 import {
   createRoundUiState,
   discardWindowOpen,
   buffActivationStock,
+  applyDamageStock,
   type RoundUiSeed,
 } from '../roundUiState'
 import { makeRound, encounterFixture } from './roundFixture'
@@ -26,6 +28,7 @@ function makeSeed(overrides: Partial<WarCouncilState> = {}): RoundUiSeed {
     blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: 2,
+    buffs: [],
   }
 }
 
@@ -83,5 +86,20 @@ describe('buffActivationStock — AC1, fed by the existing discardWindowOpen', (
     const state = createRoundUiState(makeSeed())
     const activation: BuffActivationState = { apPool: 3, activatedThisTrick: [] }
     expect(buffActivationStock(state, activation, cheat).apPool).toBe(3)
+  })
+})
+
+describe('DLR-114 — the felt has exactly one AP pool', () => {
+  it('buffActivationStock reads the same pool applyDamageStock does', () => {
+    const state = createRoundUiState(makeSeed())
+    expect(buffActivationStock(state, state.buffActivation, cheat).apPool).toBe(
+      applyDamageStock(state).apPool,
+    )
+  })
+
+  it('the pool opens the hand at STARTING_AP with nothing activated', () => {
+    const state = createRoundUiState(makeSeed())
+    expect(state.buffActivation.apPool).toBe(STARTING_AP)
+    expect(state.buffActivation.activatedThisTrick).toEqual([])
   })
 })

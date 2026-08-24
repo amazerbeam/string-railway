@@ -19,7 +19,7 @@ taking damage in the meantime wipes it to nothing.
 | Piece | Lives on | Lifetime | Written by |
 | --- | --- | --- | --- |
 | `pendingApplyPayout` | `EncounterState` | one fight, until it lands or is wiped | `queueApplyDamagePayout`; settled and cleared by `applyResolution` |
-| `apPool` | `RoundUiState` | one hand | `refreshActionPointsForNewHand` at mount; spent by `spendAp` |
+| the AP pool — `RoundUiState.apPool` on DLR-109, **`RoundUiState.buffActivation.apPool` since DLR-114** | `RoundUiState` | one hand | seeded at mount (`refreshActionPointsForNewHand` on DLR-109, `startBuffActivation` since DLR-114); spent by `spendAp` |
 | `PendingApplyPayout`'s three fields (`cashOut`, `resolutionsOwed`, `unplayedAtPress`) | frozen inside the queued object itself | from the press to the landing | `queueApplyPayout`, never recomputed |
 
 `pendingApplyPayout` sits beside `pendingTimebomb` on `EncounterState` for the same reason
@@ -180,11 +180,18 @@ single builder in `roundUiState.ts`'s `applyDamageStock`, and the test factory) 
 until updated together. See [the voluntary cash-out](../war-council/voluntary-cash-out.md) for the
 predicate's full shape and its own history.
 
-`apPool` lives on `RoundUiState`, seeded per hand through `refreshActionPointsForNewHand` at mount —
-`App.tsx` remounts the felt per hand (`key={hand}`), so a mount **is** the per-hand refresh — not on
-`RunState`. That placement is right under today's `AP_REFRESH_CADENCE = PerHand`, and wrong the day
-the cadence becomes per-fight or per-run; DLR-114/DLR-116 may move it when the buff rail needs the
-same pool.
+The pool lives on `RoundUiState`, seeded at mount — `App.tsx` remounts the felt per hand
+(`key={hand}`), so a mount **is** the per-hand refresh — not on `RunState`. That placement is right
+under today's `AP_REFRESH_CADENCE = PerHand`, and wrong the day the cadence becomes per-fight or
+per-run.
+
+> **DLR-114 moved the field but not the placement.** The prediction above was half right: the buff
+> loadout did need the same pool, and rather than a second field it **deleted** `RoundUiState.apPool`
+> and replaced it with `buffActivation: BuffActivationState`, whose own `apPool` is now the one pool
+> both spenders draw on. `applyDamageStock` reads `state.buffActivation.apPool` and
+> `handleTapApplyDamage` writes `spendAp`'s result back into it. Still hand-lifetime, still on
+> `RoundUiState`, still not persisted — and now seeded by `startBuffActivation()` rather than
+> `refreshActionPointsForNewHand`, which is the same figure by a different route.
 
 ## What the reducer does now — `handleTapApplyDamage`
 
@@ -197,7 +204,7 @@ return {
   ...state,
   round,
   encounter: queueApplyDamagePayout(state.encounter, payout),
-  apPool: spendAp(state.apPool, APPLY_DAMAGE_AP_COST),
+  apPool: spendAp(state.apPool, APPLY_DAMAGE_AP_COST),  // now buffActivation.apPool — see above
   applyPoised: false,
 }
 ```
@@ -227,12 +234,15 @@ played or developer-approved: the hand-end flush, the one-at-a-time rule, and th
 ordering (all documented above, with their rationale). `.docs/game_rules/the-hunt.md` marks the whole
 Apply Damage rule `[provisional]` for exactly this reason, alongside both unplayed tunables.
 
-**Nothing on screen tells the player a payout is in the air.** The ticket scopes out any UI change —
-no new component, no change to `ApplyDamagePlate.tsx` or `WarCouncilRound.tsx` — so a player presses
-Apply, sees the bank zero, sees the Quarry's health not move, and is told nothing until they either
-wait for the payout to land or press again and read the `PayoutPending` refusal sentence. `apPool`
-is likewise invisible: nothing renders it, so an `InsufficientAp` refusal will read as the button
-dying for no visible reason. Both are recorded as the single thing most worth a developer looking at
+~~**Nothing on screen tells the player a payout is in the air.**~~ **True as DLR-109 shipped it,
+closed by DLR-114.** DLR-109 scoped out any UI change — no new component, no `.tsx` file touched — so
+a player pressed Apply, saw the bank zero, saw the Quarry's health not move, and was told nothing
+until either the payout landed or a second press was refused. DLR-114's action bar states both:
+`queuedPayoutText` renders `Payout queued: 12 damage, 2 tricks to go.` under the Apply Damage button
+whenever `pendingApplyPayout` is non-null, and the AP pool is on the Apply Buff button's face and in
+the loadout panel, so an `InsufficientAp` refusal no longer reads as a button dying for no reason.
+**Neither readout has been looked at by a human** — the contract that added them ran unattended with
+its browser pass off. Both are recorded as the single thing most worth a developer looking at
 in the running app; a follow-up UI ticket is likely.
 
 ## Purity

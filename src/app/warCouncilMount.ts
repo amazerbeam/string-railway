@@ -1,4 +1,4 @@
-import type { CheatCard, Coins, DuelSide, EncounterState, Health, Hunt } from '../hunt'
+import type { Buff, CheatCard, Coins, DuelSide, EncounterState, Health, Hunt } from '../hunt'
 import type { WarCouncilState } from '../warCouncil'
 
 export interface WarCouncilMountProps {
@@ -47,6 +47,13 @@ export interface WarCouncilMountProps {
    *  `WarCouncilRoundResult`. REQUIRED rather than optional so the compiler enumerates every mount
    *  site instead of letting one silently render an inert rail. */
   readonly discardsRemaining: number
+  /** DLR-114 — the run's owned buff pile at the START of this hand. The same contract `cheats`
+   *  above documents: an opening figure the reducer owns for the life of the hand. REQUIRED rather
+   *  than optional so the compiler enumerates every mount site instead of letting one silently
+   *  render an empty loadout. Unlike `cheats` and `timebombCharges` it does NOT come back on
+   *  `WarCouncilRoundResult` — a hand spends action points, not cards, so it cannot change the
+   *  pile. */
+  readonly buffs: readonly Buff[]
   /** DLR-92 AC4 — the bank-climb bonus in force for this hand, ALREADY RESOLVED from the run's
    *  Whetstone count by `bankClimbBonusFor`. A number, not a `RunState` and not an item count: the
    *  card layer renders a run figure and must not learn what bought it. REQUIRED rather than

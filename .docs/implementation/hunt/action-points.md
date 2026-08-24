@@ -73,8 +73,9 @@ one.
 **AP finally has a reachable consumer.** `APPLY_DAMAGE_AP_COST` (`3`, `src/hunt/apConfig.ts`, beside
 `APPLY_DAMAGE_DELAY_TRICKS`) is spent through `spendAp` on every committing Apply Damage press, and
 refused through `canAffordAp` before the press can commit — the same two functions this module
-always intended a consumer to call, with no bypass written at the call site. `apPool` now has a real
-home: `RoundUiState`, seeded per hand through `refreshActionPointsForNewHand` at mount (`App.tsx`
+always intended a consumer to call, with no bypass written at the call site. `apPool` got a real
+home: `RoundUiState` — the field is gone since DLR-114, see the next section — seeded per hand through
+`refreshActionPointsForNewHand` at mount (`App.tsx`
 remounts the felt per hand, so mount **is** the per-hand refresh) rather than on `RunState`. Buff
 activation's own `BuffActivationState` still has no such home — DLR-108's activation flow remains
 unreachable, and this ticket adds no second AP-spending mechanism: both consumers draw on the same
@@ -82,5 +83,26 @@ unreachable, and this ticket adds no second AP-spending mechanism: both consumer
 [the delayed Apply Damage payout](delayed-apply-damage-payout.md) for the full mechanic, and
 [the voluntary cash-out](../war-council/voluntary-cash-out.md) for the widened refusal predicate.
 
-`apPool` is **invisible** — nothing renders it, so an `InsufficientAp` refusal reads as the button
-dying for no visible reason. Recorded as a follow-up worth a developer's look in the running app.
+`apPool` was **invisible** as DLR-109 shipped it — nothing rendered it, so an `InsufficientAp` refusal
+read as the button dying for no visible reason.
+
+## DLR-114 — one pool, two spenders, and it is finally on screen
+
+Three things changed, none of them in this module:
+
+- **The two pools became one.** `RoundUiState.apPool` — DLR-109's field, above — was **deleted** and
+  replaced by `RoundUiState.buffActivation: BuffActivationState`, whose own `apPool` is now the hand's
+  single pool. Until DLR-114 the felt held two independent numbers both claiming to be the hand's
+  action points, and they had never been observed to diverge only because the second had no spender.
+  Apply Damage now spends from the same pool `activateBuff` spends from.
+- **`BuffActivationState` has an owner.** `startBuffActivation()` seeds it in `createRoundUiState`,
+  which **is** the per-hand refresh because `App.tsx` remounts the felt per hand — the identical
+  argument the retired `refreshActionPointsForNewHand(STARTING_AP)` seed already made.
+  `refreshBuffsForNewHand` therefore stays uncalled, correctly.
+- **The pool is rendered.** The action bar's Apply Buff button carries it on its face
+  (`6 AP · 3 held`), the loadout panel restates it (`6 action points left`), and Apply Damage's own
+  button states its cost. A refusal no longer reads as a control dying for no reason.
+
+Nothing about `actionPoints.ts` itself changed: both consumers still draw through `spendAp` and refuse
+through `canAffordAp`, with no bypass written at either call site. See
+[war-council-ui/action-bar-and-loadout.md](../war-council-ui/action-bar-and-loadout.md).

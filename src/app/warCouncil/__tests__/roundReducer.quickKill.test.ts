@@ -45,6 +45,7 @@ function seedOneTrickKill(): RoundUiSeed {
     blastGuardHeld: blastGuardHeldFixture,
     bankClimbBonus: bankClimbBonusFixture,
     discardsRemaining: discardsRemainingFixture,
+    buffs: [],
   }
 }
 

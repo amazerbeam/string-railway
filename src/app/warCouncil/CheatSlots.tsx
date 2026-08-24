@@ -20,9 +20,9 @@ interface CheatSlotsProps {
  * as the second register of the felt-left plate beneath the decree pile.
  *
  * `onClick` STOPS PROPAGATION, and that is load-bearing rather than defensive: this mounts inside
- * `.wc-table`, which fires `handleCarryOn` on click whenever the felt is waiting — so without it,
- * arming a Cheat while a trick reveal is held would also clear the reveal and commit the Quarry's
- * lead as a side effect.
+ * `.wc-table` (indirectly, via `BuffLoadoutPanel`), which fires `handleCarryOn` on click whenever
+ * the felt is waiting — so without it, arming a Cheat while a trick reveal is held would also
+ * clear the reveal and commit the Quarry's lead as a side effect.
  *
  * Two controls is below `game-ux`'s roving-tabindex threshold of about five, so these are plain
  * tab stops. `Escape` cancels, matching the hand fan's own keyboard contract.
@@ -43,7 +43,14 @@ export default function CheatSlots({
       aria-label={CHEAT_RAIL_LABEL}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => {
-        if (e.key === 'Escape') onCancel()
+        // DLR-114 — `stopPropagation` here is new fallout from the relocation into
+        // `BuffLoadoutPanel`, mirroring the `onClick` stop two lines up for the identical reason:
+        // this rail now nests inside the panel's own `Escape`-closes-the-whole-panel handler, and
+        // without the stop, cancelling a Cheat selection would ALSO close the panel around it.
+        if (e.key === 'Escape') {
+          e.stopPropagation()
+          onCancel()
+        }
       }}
     >
       <span className="wc-plate-label">{CHEAT_RAIL_LABEL}</span>

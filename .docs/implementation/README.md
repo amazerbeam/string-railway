@@ -27,10 +27,10 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                              |
 | --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, PT-001, PT-002                                                                |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100                                                                                                       |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, PT-002                                                                          |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114                                                                                              |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, PT-002                                                                 |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97                                                                                                                                                                                                        |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-127, PT-001, PT-002 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-114, DLR-127, PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                               |
 | `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113                                                                                                                                                                                                                                                                               |
 | `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113                                                                                                                                                                                                                                                                               |
@@ -509,8 +509,9 @@ the game spends for you at the worst moment.
 Start at [war-council/voluntary-cash-out.md](war-council/voluntary-cash-out.md) for the rule and why it
 is not a fifth `TrickOutcome`, [war-council/bank-and-cash-out.md](war-council/bank-and-cash-out.md) for
 the two rates and the arithmetic, or
-[war-council-ui/apply-damage-plate.md](war-council-ui/apply-damage-plate.md) for the plate, the two-tap
-grammar and the extraction that had to come first.
+[war-council-ui/apply-damage-plate.md](war-council-ui/apply-damage-plate.md) for the control, the
+two-tap grammar and the extraction that had to come first. (The plate itself was deleted by DLR-114;
+Apply Damage is now the fourth button on the felt's action bar, with the rule unchanged.)
 
 ## DLR-96, the integration pass (2026-08-21)
 
@@ -574,7 +575,8 @@ Start at [hunt/the-discard-budget.md](hunt/the-discard-budget.md) for the third 
 the `recordEncounter` widening (and the seven-call-site planning gap it exposed),
 [war-council/the-discard.md](war-council/the-discard.md) for the pure swap and its refusal, or
 [war-council-ui/discard-plate-and-selection.md](war-council-ui/discard-plate-and-selection.md) for
-`discardWindowOpen`, the rail control, the hand fan's third mode, and both defects.
+`discardWindowOpen`, the control, the hand fan's third mode, and both defects. (The plate itself was
+deleted by DLR-114; the discard is now the bar's **Swap** button, with the rules unchanged.)
 
 ## Investigation — run-winnability simulation (2026-08-22)
 
@@ -604,7 +606,7 @@ a consumer needs is theirs to add, not this one's. Start at
 enum-shaped refresh cadence and its presently-dead non-`PerHand` branch, and the two developer
 decisions the ticket carries (`STARTING_AP`, `AP_ENABLED`'s default).
 
-## Latest — DLR-105, Buff pile data model (2026-08-23)
+## DLR-105, Buff pile data model (2026-08-23)
 
 **DLR-105 gave the run a second object type owned across its whole life, and it is the shape three
 other mechanics will fold into.** A new pure module, `src/hunt/buffs.ts`, adds `Buff` — an identity,
@@ -717,11 +719,14 @@ deferred kill.
 
 Availability extends the existing `applyDamageRefusalFor` in `src/warCouncil/voluntaryCashOut.ts`
 with two clauses — `PayoutPending` and `InsufficientAp` — rather than adding a second refusal path,
-in the order `NotYourMove → TimebombPending → PayoutPending → InsufficientAp → EmptyBank`. `apPool`,
-the AP resource DLR-104 shipped with no consumer, finally has one: it lives on `RoundUiState`, seeded
-per hand through `refreshActionPointsForNewHand` at mount. **No `.tsx` file changed** — the two new
+in the order `NotYourMove → TimebombPending → PayoutPending → InsufficientAp → EmptyBank`. The AP
+resource DLR-104 shipped with no consumer finally has one: the pool lives on `RoundUiState`, seeded
+per hand at mount. **No `.tsx` file changed** — the two new
 refusal codes render through the plate's existing total refusal-message map, so nothing on screen
-tells a player a payout is in the air, which the ticket scopes out by design.
+told a player a payout was in the air, which the ticket scoped out by design. **DLR-114 closed that
+gap** (the bar now states a queued payout and renders the pool) and collapsed
+`RoundUiState.apPool` into `buffActivation.apPool`, so buff activation and Apply Damage spend from
+one number rather than two.
 
 **Three design readings behind this mechanic were taken by an agent under an unattended sprint run,
 not played or developer-approved**: an outstanding payout lands at the resolution of a hand's final
@@ -733,6 +738,45 @@ and the 1-trick delay — are transcribed from the ticket and have never been pl
 ordering rule, [hunt/quick-kill-payout.md](hunt/quick-kill-payout.md#two-sources-of-the-unplayed-count-since-dlr-109)
 for the two-source count, or [war-council/voluntary-cash-out.md](war-council/voluntary-cash-out.md)
 for the widened refusal predicate.
+
+## Latest — DLR-114, the pre-hand loadout action bar (2026-08-24)
+
+**DLR-114 is the ticket where ten tickets of bottom-up buff engineering finally became something a
+player can press.** It replaced the felt rail's four separate plates with **one action bar along the
+bottom of the screen** — Apply Buff, Cards, Swap, Apply Damage — added as the shell's own **fourth
+grid row**, always mounted and greying with its reason on each control's own face rather than
+disappearing. `ApplyDamagePlate.tsx`, `DiscardPlate.tsx` and their two stylesheets and two specs were
+deleted; `CheatSlots` and `TimebombCharge` were **relocated unchanged** into a new `BuffLoadoutPanel`
+that Apply Buff opens.
+
+**The integration it forced is the substantive part.** `RunState.buffs` reaches the card layer for
+the first time, as a required mount prop that deliberately does **not** come back on
+`WarCouncilRoundResult` — a hand spends action points, not cards. And the felt's **two** competing AP
+numbers became one: `RoundUiState.apPool` was **deleted** and replaced by `buffActivation:
+BuffActivationState`, so the pool Apply Damage spends from and the pool `activateBuff` spends from
+are the same pool. They had never been observed to diverge only because the second had no spender;
+this is the first contract that spends from both.
+
+Two interaction rules are genuinely new and are decided. **The panel door is wider than the
+activation window** — `loadoutDoorOpen = discardWindowOpen || canAct` gates *opening* the panel while
+`buffActivationRefusalFor` still gates *activating a row* — because Cheat and Timebomb moved inside
+and were reachable mid-trick before, which is exactly when a Cheat has value; that regression was
+found and fixed inside the ticket. And **activation is two-tap, reversible until the second tap and
+committing after**: there is no un-activate, because the engine ships none and inventing a refund in
+the UI would be writing a rule `src/hunt/` does not own.
+
+**Do not read this as "the buff system works now."** A buff's condition is **never evaluated** and its
+reward is **never paid** — `buffAccrual.ts` still has no caller, so activating a condition-family buff
+spends AP and does nothing else. `startRun` still seeds four `Unassigned` placeholders that
+`activatableBuffs` filters out, so a fresh run with an empty Vault shows an **empty** buff list and
+only the relocated Cheat and Timebomb controls; real priced buffs arrive only through Vault grants.
+And Cheat and Timebomb were relocated, not migrated — both still run on their own bespoke state, not
+on `buffCatalog.ts`. Start at
+[war-council-ui/action-bar-and-loadout.md](war-council-ui/action-bar-and-loadout.md) for the bar, the
+door-versus-window split and the AP unification,
+[hunt/buff-activation-and-ap-costs.md](hunt/buff-activation-and-ap-costs.md) for `isPricedBuff` /
+`activatableBuffs` and where the activation state now lives, or
+[app/README.md](app/README.md) for the `buffs` mount prop and why it is one-way.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

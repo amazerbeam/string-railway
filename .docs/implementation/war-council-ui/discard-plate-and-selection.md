@@ -1,18 +1,28 @@
-# The discard plate, the hand fan's third mode, and the pre-lead gate
+_Part of [War Council UI](README.md)._
 
-**Built by:** DLR-100
+# The discard (now Swap), the hand fan's third mode, and the pre-lead gate
+
+> **The plate this page is named for no longer exists — DLR-114 deleted it, and no rule below
+> changed.** `DiscardPlate.tsx` and `warCouncilDiscard.css` went with the felt rail; the control is
+> now the **third button on the action bar, labelled Swap**. It dispatches the same
+> `TapDiscard`/`CancelDiscard` actions, reads the same `discardRefusalFor(discardStock(ui))`, prints
+> the same `DISCARD_REFUSAL_MESSAGE` sentence on its own face, and reuses `discardAccessibleName`
+> unchanged — the copy was kept, not rewritten. The `discardWindowOpen` gate, the selection model, the
+> chaining behaviour, the hand fan's third mode and the `handleCarryOn` guard below are all exactly as
+> described. See [the action bar and the buff loadout](action-bar-and-loadout.md) for where the control
+> now lives; where this page says "the rail control", the bar's Swap button is what does it today.
 
 ## What it is
 
-The discard's UI half: a fourth felt-rail plate (`DiscardPlate.tsx`), a third selection mode on
+The discard's UI half: originally a fourth felt-rail plate (`DiscardPlate.tsx`), a third selection mode on
 `HandFan`, a third per-card marker on `PlayingCard`, the reducer wiring that opens, toggles, commits
 and cancels a multi-card selection, and the one predicate in this codebase deliberately built to
 reach a moment every other control's gate cannot.
 
 ## The gate: `discardWindowOpen`
 
-Every other rail control — `CheatSlots`, `TimebombCharge`, `ApplyDamagePlate` — gates on `canAct`,
-which requires `currentTurn === PlayerSide.Player`. The discard's acceptance criteria ask for
+Every other rail control — `CheatSlots`, `TimebombCharge`, and the Apply Damage plate — gated on
+`canAct`, which requires `currentTurn === PlayerSide.Player`. The discard's acceptance criteria ask for
 something narrower and, at the same time, wider: available before a trick's first card, **including
 before the Quarry's own lead** — the moment `currentTurn` names the Quarry, the trick has not
 started, and `canAct` therefore reads `false`.
@@ -44,10 +54,17 @@ future consumable control that also needs to be available before the Quarry's le
 > `buffActivationStock(state, activation, buff)` sits beside `discardStock` in `roundUiState.ts` and
 > feeds its `windowOpen` field from `discardWindowOpen(state)`, reading nothing else off the round.
 > Its test asserts the two agree **on the same state object** rather than against a fixed boolean,
-> which is what makes the claim checkable rather than merely stated. There is **no felt-rail Apply
-> Buff control yet** — the projection has no caller in `src/`, deliberately (that button is a later
-> ticket's). See [hunt/buff-activation-and-ap-costs.md](../hunt/buff-activation-and-ap-costs.md) for
-> the rule behind it.
+> which is what makes the claim checkable rather than merely stated. See
+> [hunt/buff-activation-and-ap-costs.md](../hunt/buff-activation-and-ap-costs.md) for the rule behind
+> it.
+>
+> **DLR-114 built that Apply Buff control, and it split the question in two.** A **buff row** is still
+> gated on exactly this signal — `discardWindowOpen`, no second timing gate, unchanged. But
+> **opening the panel** the rows sit in is gated on the wider `loadoutDoorOpen = discardWindowOpen ||
+> canAct`, because DLR-114 relocated `CheatSlots` and `TimebombCharge` inside that panel and both were
+> reachable mid-trick before. So mid-trick the panel opens, Cheat and Timebomb inside it are live, and
+> every buff row is disabled reading "Not between tricks." See
+> [the action bar and the buff loadout](action-bar-and-loadout.md#the-panel-door-is-wider-than-the-activation-window-and-that-is-a-fix-rather-than-a-looseness).
 
 ## The selection
 
@@ -93,7 +110,10 @@ stale-selection drop).
 tapped)` — checked **before** `handleTapCard`'s existing `!canAct(state)` early return.
 `handleTapCheat` and `handleTapTimebomb` each gain `discardSelecting(state)` to their opening guard,
 and their poising branches gain `discardSelection: null` beside the selections they already clear —
-the same mutual exclusion in the other direction.
+the same mutual exclusion in the other direction. **DLR-114 extended that set by one:**
+`handleToggleLoadout` clears `discardSelection` (along with `armed`, `cheatSelection` and
+`timebombStage`) on the way in, and arming a Cheat or Timebomb from inside the loadout panel closes
+the panel. Four modes reinterpret the next hand-card tap; two at once makes that tap ambiguous.
 
 ### The mid-implementation ordering defect
 
@@ -158,3 +178,8 @@ pure move, no behaviour changed. The post-review fix pass's `handleCarryOn` guar
 over 400 again; `commit` and its private `playOptions`/`applyResolution` helpers moved into a second
 new file, `commitHandlers.ts` (141 lines), the same precedent applied a second time in the same
 contract. `roundReducer.ts` is 288 lines after both splits.
+
+**DLR-114 applied the same precedent a third time**, in the same file family and for the same reason:
+the loadout's three transitions went into `buffHandlers.ts` beside `discardHandlers.ts` rather than
+onto `roundReducer.ts`, and the two new controls' prop objects went into `roundControlsProps.ts` the
+moment they pushed `WarCouncilRound.tsx` past 400.

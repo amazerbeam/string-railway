@@ -18,12 +18,11 @@ import {
 } from '../../warCouncil'
 import type { WarCouncilMountProps } from '../warCouncilMount'
 import AbilityPrompt from './AbilityPrompt'
-import ApplyDamagePlate from './ApplyDamagePlate'
+import ActionBar from './ActionBar'
 import BankMeter from './BankMeter'
-import CheatSlots from './CheatSlots'
+import { loadoutBarRefusalFor } from './buffHandlers'
+import BuffLoadoutPanel from './BuffLoadoutPanel'
 import DecreePile from './DecreePile'
-import DiscardPlate from './DiscardPlate'
-import TimebombCharge from './TimebombCharge'
 import HandFan from './HandFan'
 import { sortHandForDisplay } from './handOrder'
 import { previewQuarryIntent } from './intentPreview'
@@ -34,6 +33,7 @@ import { barsForRound } from './roundBars'
 import { deriveHint } from './roundHint'
 import RoundOverPanel from './RoundOverPanel'
 import { roundReducer } from './roundReducer'
+import { actionBarProps, buffLoadoutPanelProps } from './roundControlsProps'
 import {
   applyDamageStock,
   canAct,
@@ -41,6 +41,8 @@ import {
   createRoundUiState,
   discardSelecting,
   discardStock,
+  loadoutOpen,
+  offeredBuffs,
   timebombArmed,
   RoundUiActionKind,
 } from './roundUiState'
@@ -54,8 +56,7 @@ import './warCouncilHunt.css'
 import './warCouncilHealthBars.css'
 import './warCouncilHand.css'
 import './warCouncilTimebomb.css'
-import './warCouncilApplyDamage.css'
-import './warCouncilDiscard.css'
+import './warCouncilActionBar.css'
 
 /**
  * The round mount, implementing SCRUM-37's `WarCouncilMountProps`. Owns exactly one piece of
@@ -93,6 +94,7 @@ export default function WarCouncilRound({
   blastGuardHeld,
   discardsRemaining,
   bankClimbBonus,
+  buffs,
   onComplete,
 }: WarCouncilMountProps) {
   const [ui, dispatch] = useReducer(
@@ -105,6 +107,7 @@ export default function WarCouncilRound({
       blastGuardHeld,
       discardsRemaining,
       bankClimbBonus,
+      buffs,
     },
     createRoundUiState,
   )
@@ -134,6 +137,13 @@ export default function WarCouncilRound({
   // Quarry-to-lead gap, where `interactive` is false but a selection may still be open or opening.
   const discardRefusal = discardRefusalFor(discardStock(ui))
   const handInteractive = interactive || discardSelecting(ui)
+
+  // DLR-114 AC2 — the pile offered to the panel, and the ONE refusal the bar's own Apply Buff
+  // button reads. `loadoutBarRefusalFor` lives in `buffHandlers.ts` rather than inline here: it is
+  // its own small rule (a stand-in buff when the pile is non-empty, `discardWindowOpen` directly
+  // when it is not), not a value merely assembled from state.
+  const offered = offeredBuffs(ui)
+  const loadoutRefusal = loadoutBarRefusalFor(ui)
 
   // DLR-101 — the whole assembly, including the booked-Timebomb band, lives in `roundBars.ts`.
   const bars = barsForRound(ui, maxHealth)
@@ -327,37 +337,10 @@ export default function WarCouncilRound({
             drawPileCount={ui.round.drawPile.length}
             primed={isPrimed(ui.round.primedCards, ui.round.decree)}
           />
-          <div className="wc-felt-rail-split" aria-hidden="true" />
-          <CheatSlots
-            cheats={ui.cheats}
-            selection={ui.cheatSelection}
-            interactive={interactive}
-            onTap={(id) => dispatch({ kind: RoundUiActionKind.TapCheat, id })}
-            onCancel={() => dispatch({ kind: RoundUiActionKind.CancelCheat })}
-          />
-          <TimebombCharge
-            charges={ui.timebombCharges}
-            stage={ui.timebombStage}
-            interactive={interactive}
-            onTap={() => dispatch({ kind: RoundUiActionKind.TapTimebomb })}
-            onCancel={() => dispatch({ kind: RoundUiActionKind.CancelTimebomb })}
-          />
-          <ApplyDamagePlate
-            cashValue={applyCash}
-            poised={ui.applyPoised}
-            refusal={applyRefusal}
-            onTap={() => dispatch({ kind: RoundUiActionKind.TapApplyDamage })}
-            onCancel={() => dispatch({ kind: RoundUiActionKind.CancelApplyDamage })}
-          />
-          <DiscardPlate
-            discardsRemaining={ui.discardsRemaining}
-            selecting={discardSelecting(ui)}
-            selectionSize={ui.discardSelection?.length ?? 0}
-            refusal={discardRefusal}
-            onTap={() => dispatch({ kind: RoundUiActionKind.TapDiscard })}
-            onCancel={() => dispatch({ kind: RoundUiActionKind.CancelDiscard })}
-          />
         </div>
+        {loadoutOpen(ui) && (
+          <BuffLoadoutPanel {...buffLoadoutPanelProps({ ui, dispatch, offered, interactive })} />
+        )}
         <div className="wc-table-inner">{felt}</div>
       </section>
       <HandFan
@@ -374,6 +357,19 @@ export default function WarCouncilRound({
         discardSelection={ui.discardSelection ?? []}
         onTap={handleTap}
         onCancel={handleCancel}
+      />
+      <ActionBar
+        {...actionBarProps({
+          ui,
+          dispatch,
+          handleTap,
+          offered,
+          loadoutRefusal,
+          interactive,
+          applyCash,
+          applyRefusal,
+          discardRefusal,
+        })}
       />
     </div>
   )

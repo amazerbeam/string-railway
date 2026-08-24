@@ -7,13 +7,32 @@ _Part of [War Council UI](README.md)._
 padding. DLR-53 gave it a second column for the Quarry dossier zone:
 
 ```css
-grid-template-rows: auto 1fr auto;
+grid-template-rows: auto 1fr auto auto;
 grid-template-columns: minmax(10rem, 17vw) 1fr;
 grid-template-areas:
   'status  status'
   'dossier table'
-  'hand    hand';
+  'hand    hand'
+  'actions actions';
 ```
+
+**DLR-114 added the fourth row.** The shell was `auto 1fr auto` over three areas until the action bar
+replaced the felt rail's four plates; `.wc-bar` sets `grid-area: actions` in
+`warCouncilActionBar.css`. Only the `1fr` table row absorbs the difference — the bar's own height is
+`auto`, bounded by `clamp()` values copied from the sibling rail stylesheets, so **the felt shrinks to
+make room rather than the page growing**, which is exactly what the no-scroll floor requires. The
+alternative considered and rejected was overlaying the bar as a fixed-position strip on top of the
+hand: it would occlude hand cards at short viewports, which is the crop failure this page's own
+history records three times below.
+
+> **The narrow/short override must be maintained in lockstep, and the stylesheet says so.**
+> `warCouncilHunt.css`'s `@media (max-width: 44rem), (max-height: 34rem)` block re-declares
+> `.wc-shell`'s areas one column wide, so it carries **its own copy of the area names** — it now reads
+> `'status' 'dossier' 'table' 'hand' 'actions'` with `grid-template-rows: auto auto 1fr auto auto`.
+> A row added to one belongs in the other **in the same change**: a named area missing from the
+> override drops `.wc-bar` out of its slot into implicit auto-placement, silently, with no error
+> anywhere. This is the third duplication-across-the-breakpoint hazard this page records, and the only
+> one the stylesheet guards with an explicit comment.
 
 The dossier sits beside the felt rather than in a far corner because the telegraph inside it is read
 at the moment the decision is made. `dvh` rather than `vh` is deliberate: `100vh` measures
@@ -32,20 +51,31 @@ because **card rotation and lift are transforms, which do not affect layout size
 reserved room the fan's visual pixels spill outside its box and the shell's `overflow: hidden` crops
 them. The fix is to reserve the room, never to loosen the overflow.
 
-The styling ships as **seven** stylesheets, not one, all imported by `WarCouncilRound.tsx` in cascade
-order:
+The styling ships as **nine** stylesheets, not one, all imported by `WarCouncilRound.tsx` in cascade
+order (`warCouncilActionBar.css` is imported by `BuffLoadoutPanel.tsx` too, since the panel is the
+only other consumer of its `.wc-loadout-*` block):
 
 | Sheet | Owns |
 |---|---|
+| `warCouncilActionBar.css` | DLR-114: the whole action bar (`.wc-bar*`, including `grid-area: actions`) and the buff loadout panel (`.wc-loadout*`). Every size bound in it is a `clamp()` copied from the sibling rail sheets rather than a new number — placeholder, flagged for the polish ticket |
+| `warCouncilCheats.css` | DLR-83: the Cheat slots — since DLR-114 rendered inside the loadout panel rather than on the felt rail |
 | `warCouncil.css` (268) | the `:root` tokens, the shell grid, the status band including DLR-82's `.wc-run` readout, and — re-homed by DLR-80 — the `.wc-sr-only` utility |
 | `warCouncilTable.css` (172) | DLR-93: the decree and draw pile, and the whole `.wc-table` block — the felt itself |
 | `warCouncilCards.css` | the card face, the ability prompt, and the hand-over panel |
 | `warCouncilHunt.css` | the dossier zone, the telegraph, and DLR-80's `.wc-shape*` and `.wc-bank*` readouts |
 | `warCouncilHealthBars.css` | DLR-71: the duel's two health displays — rewritten by DLR-86 from a bar surface into the heart rows, their four `[data-state]` rules, the two `@keyframes`, and the reduced-motion block |
 | `warCouncilHand.css` | DLR-82: the hand container and the fan |
-| `warCouncilTimebomb.css` | DLR-90: the Timebomb charge readout and its mark |
+| `warCouncilTimebomb.css` | DLR-90: the Timebomb charge readout and its mark — since DLR-114 also rendered inside the loadout panel |
 
 The felt used to live in `warCouncil.css` alongside the shell; DLR-93 moved it out (see below).
+
+**DLR-114 is the first ticket to delete stylesheets rather than split one.** `warCouncilApplyDamage.css`
+and `warCouncilDiscard.css` went with the two plates they styled, and `warCouncilActionBar.css` (one
+new sheet) replaced both — so the family went from ten sheets to nine while gaining a surface. No
+`.wc-apply-*` or `.wc-discard-*` selector survives anywhere in `src/`; a grep in the contract's final
+verification proved no orphaned class reference was left behind, which matters because **a CSS class
+that binds by string and resolves to nothing fails silently**, the same hazard the `.wc-sr-only`
+re-homing below records.
 
 **DLR-97 added three named motion-duration tokens to `warCouncil.css`'s `:root`**, alongside the
 pre-existing `--wc-hp-break-ms`/`--wc-hp-flash-ms` pair: `--wc-ui-transition-ms` (140ms — the shared
@@ -123,7 +153,7 @@ the split has introduced. Consolidating it is its own ticket.
 > pointer comment naming the surviving rule's one home. Two copies of a breakpoint are a maintenance
 > cost; two copies of a _rule_ inside them is a bug that no test can see.
 
-`WarCouncilRound.tsx` imports **all five**, in that order, and importing only some leaves part of the
+`WarCouncilRound.tsx` imports **all of them**, in that order, and importing only some leaves part of the
 feature unstyled with no error anywhere — worth knowing before debugging a card that renders with no
 face, a shape or bank readout that renders as an undifferentiated run of text, or a health bar
 that renders as an empty box with no fill and no mirror. A Vite build fails loudly on a missing CSS
@@ -147,8 +177,8 @@ unreachable while every test still passed.
 ### The narrow/short collapse, and the bug it was written without
 
 `warCouncilHunt.css` closes with `@media (max-width: 44rem), (max-height: 34rem)`, which collapses
-the shell to a single column (`'status' 'dossier' 'table' 'hand'`) and turns `.wc-dossier` into a
-wrapping row. `.wc-dossier` also carries `min-width: 0` and `overflow: hidden` unconditionally, so no
+the shell to a single column (`'status' 'dossier' 'table' 'hand' 'actions'` since DLR-114 — four
+areas before it) and turns `.wc-dossier` into a wrapping row. `.wc-dossier` also carries `min-width: 0` and `overflow: hidden` unconditionally, so no
 long readout can force the grid wider than the viewport. (The specific overflow risk that motivated
 it — the Quarry's round-long rule-break sentence — is gone with the power itself as of DLR-81, but
 the guard stays: `.wc-dossier` still hosts the intent telegraph and the suit-shape rows.)

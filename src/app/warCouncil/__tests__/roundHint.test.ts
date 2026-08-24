@@ -40,6 +40,7 @@ function baseUi(overrides: Partial<RoundUiState> = {}): RoundUiState {
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
+      buffs: [],
     }),
     ...overrides,
   }

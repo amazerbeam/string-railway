@@ -1,0 +1,235 @@
+/* DLR-114 — the bar (`.wc-bar` / `.wc-bar-btn`) and the loadout panel it opens
+   (`.wc-loadout` / `.wc-loadout-row`). EVERY size bound below is a PLACEHOLDER copied from a
+   sibling rail stylesheet's own `clamp()` (`warCouncilCheats.css`, `warCouncilApplyDamage.css`,
+   `warCouncilDiscard.css`) rather than a new number, and the visual-polish ticket owns retuning
+   every one of them. No new colour token is invented — every colour here is one of `warCouncil.css`'s
+   existing `:root` tokens. */
+
+/* ---------- the bar: the shell's fourth grid row ---------- */
+
+.wc-bar {
+  grid-area: actions;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: center;
+  gap: clamp(0.5rem, 2vmin, 1.25rem);
+  padding: clamp(0.4rem, 1.4vmin, 0.9rem) clamp(0.6rem, 2vmin, 1.5rem);
+  background: var(--wc-chamber-lift);
+  border-top: 1px solid #232c33;
+}
+
+.wc-bar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.15rem, 0.5vmin, 0.3rem);
+}
+
+/* Form carries the state, not colour alone: live = solid dim, armed/open/selecting/poised =
+   dashed brass + lift, disabled = dashed + reduced opacity — the same grammar the felt-rail
+   plates this bar replaces already used. Sized to at least 44x44px (react-frontend's hit-area
+   floor). */
+.wc-bar-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-width: clamp(5.5rem, 14vmin, 8.5rem);
+  min-height: 2.75rem;
+  padding: clamp(0.35rem, 1vmin, 0.55rem) clamp(0.5rem, 1.6vmin, 0.9rem);
+  border-radius: 8px;
+  border: 1px solid var(--wc-brass-dim);
+  background: linear-gradient(160deg, #2a2418 0%, #1a1710 100%);
+  color: var(--wc-brass);
+  font-family: var(--wc-serif);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    filter var(--wc-ui-transition-ms) ease;
+}
+
+.wc-bar-btn-label {
+  font-size: clamp(0.68rem, 1.5vmin, 0.85rem);
+  letter-spacing: 0.04em;
+}
+
+.wc-bar-btn-figure {
+  font-size: clamp(0.52rem, 1.1vmin, 0.64rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-bar-btn:disabled {
+  border-style: dashed;
+  opacity: 0.55;
+  cursor: default;
+}
+
+.wc-bar-btn.is-open,
+.wc-bar-btn.is-armed,
+.wc-bar-btn.is-selecting,
+.wc-bar-btn.is-poised {
+  border: 2px dashed var(--wc-brass);
+  transform: translateY(-3px);
+}
+
+.wc-bar-btn:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .wc-bar-btn:not(:disabled):hover {
+    filter: brightness(1.15);
+  }
+}
+
+.wc-bar-btn:not(:disabled):active {
+  filter: brightness(0.9);
+}
+
+/* The refusal sentence and the queued-payout note, on the face of the control rather than
+   behind hover — `game-ux` forbids hiding anything a decision needs behind hover, and touch has
+   no hover at all. */
+.wc-bar-refusal,
+.wc-bar-queued {
+  margin: 0;
+  max-width: 9rem;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.5rem, 1.1vmin, 0.62rem);
+  line-height: 1.35;
+  text-align: center;
+}
+
+.wc-bar-refusal {
+  color: var(--wc-alarm);
+}
+
+.wc-bar-queued {
+  color: var(--wc-chalk-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-bar-btn {
+    transition: none;
+  }
+}
+
+/* ---------- the loadout panel Apply Buff opens ---------- */
+
+.wc-loadout {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.35rem, 1.2vmin, 0.7rem);
+  width: min(90%, 26rem);
+  max-height: 80%;
+  overflow-y: auto;
+  padding: clamp(0.6rem, 2vmin, 1.1rem);
+  border-radius: 10px;
+  border: 1px solid var(--wc-brass-dim);
+  background: var(--wc-chamber-lift);
+  box-shadow: 0 -6px 18px #000a;
+}
+
+.wc-loadout-ap {
+  margin: 0;
+  font-family: var(--wc-serif);
+  font-size: clamp(0.75rem, 1.8vmin, 0.95rem);
+  color: var(--wc-brass);
+}
+
+.wc-loadout-empty {
+  margin: 0;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.6rem, 1.3vmin, 0.74rem);
+  color: var(--wc-chalk-dim);
+  text-align: center;
+}
+
+.wc-loadout-rows {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.25rem, 0.8vmin, 0.45rem);
+  width: 100%;
+}
+
+.wc-loadout-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+/* Every buff's own line, per row — form carries the state, not colour alone: held = solid dim,
+   poised = dashed brass + lift, disabled = dashed + reduced opacity. */
+.wc-loadout-buff {
+  width: 100%;
+  padding: clamp(0.4rem, 1.2vmin, 0.6rem) clamp(0.5rem, 1.5vmin, 0.75rem);
+  border-radius: 6px;
+  border: 1px solid var(--wc-brass-dim);
+  background: linear-gradient(160deg, #2a2418 0%, #1a1710 100%);
+  color: var(--wc-chalk);
+  font-family: var(--wc-sans);
+  font-size: clamp(0.6rem, 1.3vmin, 0.74rem);
+  text-align: left;
+  line-height: 1.35;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.wc-loadout-buff.is-poised {
+  border: 2px dashed var(--wc-brass);
+  transform: translateY(-2px);
+}
+
+.wc-loadout-buff:disabled {
+  border-style: dashed;
+  opacity: 0.55;
+  cursor: default;
+}
+
+.wc-loadout-buff:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .wc-loadout-buff:not(:disabled):hover {
+    filter: brightness(1.15);
+  }
+}
+
+.wc-loadout-buff:not(:disabled):active {
+  filter: brightness(0.9);
+}
+
+.wc-loadout-refusal {
+  margin: 0;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.5rem, 1.1vmin, 0.62rem);
+  color: var(--wc-alarm);
+}
+
+.wc-loadout-divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, #ffffff00, #ffffff26, #ffffff00);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-loadout-buff {
+    transition: none;
+  }
+}

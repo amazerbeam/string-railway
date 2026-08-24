@@ -10,6 +10,17 @@ on. Plus the file split that had to happen before any of it could be written, be
 The rule the mark triggers is the engine's — see
 [the Timebomb mark](../war-council/the-timebomb-mark.md) — and the charge it spends is `src/hunt/`'s.
 
+> **DLR-114 retired the felt rail, and the plate moved inside the buff loadout panel.**
+> `TimebombCharge` is now mounted by `BuffLoadoutPanel`, below the buff rows and beside the relocated
+> `CheatSlots`, reached by pressing **Apply Buff** on the action bar. **The component, its props, the
+> three-tap sequence, the `Escape` refund, the mutual exclusion with the Cheat and every reducer
+> branch are unchanged** — only its parent is different. What changed is what gates reaching it: the
+> panel's door is `loadoutDoorOpen = discardWindowOpen || canAct`, deliberately wider than the buff
+> rows' own gate, so marking a card stays reachable on any of the player's own turns exactly as it was
+> before. Timebomb was **relocated, not migrated**: it still runs on `TimebombStage` and
+> `timebombDamageFor`, not on `src/hunt/buffCatalog.ts`, and `timebombDamageOf` still has no caller.
+> See [the action bar and the buff loadout](action-bar-and-loadout.md).
+
 **DLR-91 made this reducer the place Timebomb is actually paid**, which it was not before: the hit used to
 be settled at a hand boundary by `src/hunt/`'s `beginNextHand`, and both that function and the
 `applyPendingTimebomb` it called are now deleted. Nothing about the plate, the taps or the badge changed;
@@ -233,7 +244,8 @@ Three CSS-only changes to `warCouncilTimebomb.css`, none touching the arm/mark l
 plate's `filter` (its hover brightness) gained a transition reading the shared
 `--wc-ui-transition-ms` token (140ms, `warCouncil.css`'s `:root`), matching the `transform`/
 `box-shadow` pair it already transitioned. The file was missing the `prefers-reduced-motion: reduce`
-guard `.wc-apply-plate` and `.wc-card` already carried; it now has one. And the plate's
+guard `.wc-apply-plate` (in the since-deleted `warCouncilApplyDamage.css`) and `.wc-card` already
+carried; it now has one. And the plate's
 `aspect-ratio` moved from `2 / 3` (identical to `.wc-card`'s own ratio) to `4 / 3` with
 `border-radius: 10px` — a `game-ux` "consistency" fix, done in lockstep with the Cheat slot and the
 Apply Damage plate (see [cheat-slots.md](cheat-slots.md) and
