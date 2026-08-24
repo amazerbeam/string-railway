@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 19/22 (86%) — done: 19 shipped, 0 blocked (+4 out-of-band shipped) | now: DLR-119 "Full visual and UX pass" (20/22) — the closing three begin
+**Progress:** 20/22 (91%) — done: 20 shipped, 0 blocked (+4 out-of-band shipped) | now: DLR-120 "Integration: one end-to-end run loop" (21/22)
 
 ## Run order
 
@@ -4696,3 +4696,59 @@ copy; does `Lethal.`-first work with a screen reader; is the console clean.
 `roundUiState.ts` **399**, `warCouncilHunt.css` **395**, `WarCouncilRound.tsx` **394**, `labels.ts`
 **389** — none breached. **`roundUiState.ts` has one line of headroom: the next field added to
 `ResolvedTrick` or `RoundUiState` forces a split.** All three reviewers flagged the same thing.
+
+## Coordinator decisions — DLR-119 reconciliation
+
+Suite 1789 → **1811, 140 files, 0 failures.** All three reviewers, **one round of a permitted
+two**. Committed `3dc8895`, pushed.
+
+### The run's oldest debt was mis-stated, and the truth is worse
+
+**`.wc-shell` has `overflow: hidden` and cannot scroll.** Every prompt in this run — including
+every one the coordinator wrote — carried the risk forward as "the shell may scroll". It cannot.
+**The real failure mode is cropping**, which is worse, because a scroll is visible and a crop is
+silent: the felt collapses first and the excess pushes the control rows out of reach. The agent
+corrected the framing rather than answering the question as asked. **Now bounded by arithmetic,
+not proven absent** — that still needs eyes.
+
+- **The sharpest find of the ticket, and it was not a near-miss:** `.wc-bar` needed
+  **395.2px against a 390px viewport** (4×88 + 3×8 + 2×9.6). **Apply Damage was not scrolled
+  off — it was gone.** On the smallest target viewport, the button that cashes your streak did
+  not exist. Fixed by wrapping, with no invented number. Twenty tickets shipped over this.
+- **Fixed:** the action bar cropping Apply Damage; the narrow stack pushing control rows out; the
+  fan reserve clipping armed cards at wide viewports (**it *was* clipping at the upper bound** —
+  a real defect, not a hypothetical); payout landed/destroyed silence; the queued note not naming
+  its own risk; buffs firing unannounced, with the **Overlap Bonus now named from
+  `overlapBonusFor`** rather than restated; and `Lethal.` buried fifth in the spoken string.
+- **A stale claim corrected:** **AP was already rendered** by DLR-114. The "AP is unrendered"
+  note this run carried into three prompts was wrong.
+- **Left deliberately, and said so plainly:** every unseen tuning value (shield fill / opacity /
+  gap, the ~9.3px clamp, `vault.css`, `shopSlot.css`, `errorBoundary.css`) — **untouched, all the
+  developer's**; balance, **not one value retuned**; DLR-117's AC1, a visual judgement; and
+  priority 4 (taste), not attempted. The shop and Vault AC1 review is **prose, not a diff, and it
+  says so** rather than implying coverage it does not have.
+
+### Three notes beyond the ticket
+
+- **The construction-site audit was exactly right for the first time this run — 5 of 5**, after
+  three consecutive undercounts. `f45d66e`'s check 7 is working.
+- **QA found this log's own `throw new` baseline is wrong: 102, not 98.** The invariant (no throw
+  weakened) still holds; the count was stale. Recorded because this log is the run's evidence and
+  its numbers should be right.
+- **`roundUiState.ts` is at 399/400.** The next field added to it forces a split — DLR-120 and
+  DLR-121 should expect that.
+
+### The developer's top four, from the agent's own prioritised list of eleven (`pr-description.md` §7)
+
+1. **Is Apply Damage tappable at 390×844** now the bar wraps.
+2. **Does the dossier fit `30dvh`** — the one value this ticket asks the developer to choose.
+3. **Does the armed card clear the reserve** at a wide viewport.
+4. **Does the shell crop at any of the four sizes** — the run's oldest debt, still unrendered.
+
+### A self-reported planning defect, worth recording
+
+The DLR-119 agent's own Phase 3 task block **joined buff clauses on a bare space**, producing an
+unparseable run-on at three buffs — **exactly the failure the ticket exists to fix**. The
+implementer **reported rather than reconciled it**, the agent fixed it, and both reviewers then
+scrutinised the fix. That is the pipeline working: the instruction was wrong, and the executor
+said so instead of quietly complying.
