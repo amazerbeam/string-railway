@@ -225,6 +225,7 @@ export default function WarCouncilRound({
         timebombCharges: ui.timebombCharges,
         blastGuardHeld: ui.blastGuardHeld,
         discardsRemaining: ui.discardsRemaining,
+        buffs: ui.buffs,
         unplayedAtResolve: ui.unplayedAtResolve,
         coinsEarned: ui.buffHand.coinsEarned,
       })
@@ -242,6 +243,7 @@ export default function WarCouncilRound({
         timebombCharges: ui.timebombCharges,
         blastGuardHeld: ui.blastGuardHeld,
         discardsRemaining: ui.discardsRemaining,
+        buffs: ui.buffs,
         unplayedAtResolve: ui.unplayedAtResolve,
         coinsEarned: ui.buffHand.coinsEarned,
       })

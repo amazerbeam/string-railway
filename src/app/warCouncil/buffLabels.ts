@@ -148,6 +148,7 @@ export function buffLine(buff: Buff, apCost: ActionPoints): string {
 
 /** PLACEHOLDER copy, as this project's rest is. */
 export const BUFF_ACTIVATION_REFUSAL_MESSAGE: Readonly<Record<BuffActivationRefusal, string>> = {
+  [BuffActivationRefusal.NoEffectYet]: 'Not usable yet.',
   [BuffActivationRefusal.WindowClosed]: 'Not between tricks.',
   [BuffActivationRefusal.AlreadyActive]: 'Already active this trick.',
   [BuffActivationRefusal.InsufficientAp]: 'Not enough action points.',

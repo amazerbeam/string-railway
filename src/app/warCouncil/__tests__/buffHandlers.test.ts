@@ -1,13 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import { PlayerSide, Suit, type Card, type WarCouncilState } from '../../../warCouncil'
-import { apCostOf, BuffTier, cheatBuff, STARTING_AP } from '../../../hunt'
+import {
+  ACTIVATED_BUFF_CONDITION,
+  apCostOf,
+  BuffActivationRefusal,
+  BuffKind,
+  BuffRewardAxis,
+  BuffTier,
+  cheatBuff,
+  STARTING_AP,
+  WARD_ABSORPTION,
+  type Buff,
+} from '../../../hunt'
 import {
   createRoundUiState,
   loadoutOpen,
+  offeredBuffs,
   RoundUiActionKind,
   type RoundUiSeed,
 } from '../roundUiState'
-import { loadoutBarRefusalFor } from '../buffHandlers'
+import { loadoutBarRefusalFor, loadoutRefusalFor } from '../buffHandlers'
 import { roundReducer } from '../roundReducer'
 import { makeRound, encounterFixture } from './roundFixture'
 
@@ -144,5 +156,79 @@ describe('the per-trick activation window', () => {
     expect(played.resolvedTrick).not.toBeNull()
     expect(played.buffActivation.activatedThisTrick).toEqual([])
     expect(played.buffActivation.apPool).toBe(done.buffActivation.apPool)
+  })
+})
+
+// ── DLR-126 — spending a consumable item ────────────────────────────────────────────────────────
+
+function itemBuff(kind: BuffKind, tier: BuffTier, id: number): Buff {
+  return {
+    id,
+    kind,
+    tier,
+    condition: ACTIVATED_BUFF_CONDITION,
+    reward: { axis: BuffRewardAxis.None, value: 0 },
+  }
+}
+
+/** A felt whose pile is `buffs`, with the loadout panel already open. */
+function openWith(buffs: readonly Buff[]) {
+  return roundReducer(createRoundUiState({ ...seed(), buffs }), {
+    kind: RoundUiActionKind.ToggleLoadout,
+  })
+}
+
+/** Poise then commit — the two taps DLR-114's model requires. */
+function spend(state: ReturnType<typeof openWith>, id: number) {
+  const poised = roundReducer(state, { kind: RoundUiActionKind.TapBuff, id })
+  return roundReducer(poised, { kind: RoundUiActionKind.TapBuff, id })
+}
+
+describe('handleTapBuff — a consumable item leaves the pile at the spend', () => {
+  it('removes one Ward of a 2-count stack, spends its AP, and holds the absorption', () => {
+    const wards = [
+      itemBuff(BuffKind.Ward, BuffTier.Bronze, 10),
+      itemBuff(BuffKind.Ward, BuffTier.Bronze, 11),
+    ]
+    const after = spend(openWith(wards), 10)
+
+    expect(after.buffs.map((b) => b.id)).toEqual([11])
+    expect(after.buffActivation.apPool).toBe(STARTING_AP - apCostOf(wards[0]))
+    expect(after.encounter.wardAbsorbs).toBe(WARD_ABSORPTION[BuffTier.Bronze])
+    // The panel stays open — AC2 allows more than one activation per trick.
+    expect(loadoutOpen(after)).toBe(true)
+  })
+
+  it('a spent Ward cannot be re-activated on the next trick — the row is gone from the pile', () => {
+    const ward = itemBuff(BuffKind.Ward, BuffTier.Silver, 12)
+    const after = spend(openWith([ward]), 12)
+    expect(after.buffs).toHaveLength(0)
+    expect(offeredBuffs(after)).toHaveLength(0)
+  })
+
+  it('a Second Thoughts adds its charges to the fight’s discard budget and is consumed', () => {
+    const item = itemBuff(BuffKind.SecondThoughts, BuffTier.Gold, 13)
+    const before = openWith([item])
+    const after = spend(before, 13)
+
+    expect(after.discardsRemaining).toBe(before.discardsRemaining + 3)
+    expect(after.buffs).toHaveLength(0)
+    expect(after.encounter.wardAbsorbs).toBe(before.encounter.wardAbsorbs)
+  })
+
+  it('a Foresight is REFUSED — NoEffectYet — and costs neither AP nor the card', () => {
+    const item = itemBuff(BuffKind.Foresight, BuffTier.Bronze, 14)
+    const before = openWith([item])
+    expect(loadoutRefusalFor(before, item)).toBe(BuffActivationRefusal.NoEffectYet)
+
+    const after = spend(before, 14)
+    expect(after.buffs.map((b) => b.id)).toEqual([14])
+    expect(after.buffActivation.apPool).toBe(STARTING_AP)
+  })
+
+  it('a Cheat is activated but NOT consumed — an Activated card is not a one-shot item', () => {
+    const after = spend(openWith([cheat]), cheat.id)
+    expect(after.buffs.map((b) => b.id)).toEqual([cheat.id])
+    expect(after.buffActivation.activatedThisTrick).toEqual([cheat.id])
   })
 })

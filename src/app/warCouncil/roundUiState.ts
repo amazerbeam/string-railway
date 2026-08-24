@@ -23,7 +23,7 @@ import {
 } from '../../warCouncil'
 import {
   activatableBuffs,
-  apCostOf,
+  buffActivationStockFor,
   hasPendingApplyPayout,
   hasPendingTimebomb,
   isEncounterResolved,
@@ -377,16 +377,17 @@ export function discardStock(state: RoundUiState): DiscardStock {
 
 /** AC1 — the Apply Buff window is the DISCARD window. No second timing gate is built: this reads
  *  `discardWindowOpen` and nothing else, exactly as `discardStock` above does, so the two actions
- *  cannot disagree about when the felt is between tricks. */
+ *  cannot disagree about when the felt is between tricks.
+ *
+ *  DLR-126 — the stock's remaining four fields are DELEGATED to `buffActivationStockFor` rather
+ *  than restated here. This function previously built the literal itself, which meant a field
+ *  added to `BuffActivationStock` needed the same edit in two places and could be given two
+ *  different answers. The felt's only contribution is the window; everything else is
+ *  `src/hunt/`'s own state to read. */
 export function buffActivationStock(
   state: RoundUiState,
   activation: BuffActivationState,
   buff: Buff,
 ): BuffActivationStock {
-  return {
-    windowOpen: discardWindowOpen(state),
-    apPool: activation.apPool,
-    apCost: apCostOf(buff),
-    alreadyActive: activation.activatedThisTrick.includes(buff.id),
-  }
+  return buffActivationStockFor(activation, buff, discardWindowOpen(state))
 }

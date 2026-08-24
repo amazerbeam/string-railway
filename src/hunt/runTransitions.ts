@@ -17,6 +17,7 @@ import {
   runEncounterAt,
 } from './config'
 import { addCheat, type CheatCard } from './cheats'
+import type { Buff } from './buffs'
 import { isEncounterResolved, startEncounter } from './encounter'
 import { flaskHealAmount, flaskRefusalFor } from './flask'
 import { quickKillPayout } from './quickKill'
@@ -80,6 +81,12 @@ export function recordEncounter(
    *  call sites are unchanged; `App.tsx` is the only caller that passes it. Added to the same
    *  sum the win payout and the quick kill already feed, never as a second coin path. */
   buffCoinsEarned: Coins = 0,
+  /** DLR-126 — the owned buff pile after this hand, one fewer for each CONSUMABLE ITEM spent.
+   *  OPTIONAL and defaulted to `undefined` — which keeps `run.buffs` — so all 52 existing call
+   *  sites are unchanged; `App.tsx` is the only caller that passes it. `nextBuffId` is
+   *  DELIBERATELY untouched: ids are minted forward-only, and reissuing a spent card's id would
+   *  make two different cards indistinguishable to `activatedThisTrick` and `firedThisHand`. */
+  buffs?: readonly Buff[],
 ): RunState {
   if (run.outcome !== RunOutcome.InProgress) {
     throw new RangeError(
@@ -106,6 +113,7 @@ export function recordEncounter(
     cheats,
     timebombCharges,
     discardsRemaining,
+    buffs: buffs ?? run.buffs,
     blastGuardHeld: guardAfter(encounter, blastGuardHeld),
     // DLR-125 R3 step 5 — Purse coins are additive with the win payout and the quick kill, never
     // conditioned on `wonThisEncounter`: a buff's condition already decided whether it fired, and

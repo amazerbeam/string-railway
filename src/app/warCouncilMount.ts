@@ -60,9 +60,8 @@ export interface WarCouncilMountProps {
   /** DLR-114 — the run's owned buff pile at the START of this hand. The same contract `cheats`
    *  above documents: an opening figure the reducer owns for the life of the hand. REQUIRED rather
    *  than optional so the compiler enumerates every mount site instead of letting one silently
-   *  render an empty loadout. Unlike `cheats` and `timebombCharges` it does NOT come back on
-   *  `WarCouncilRoundResult` — a hand spends action points, not cards, so it cannot change the
-   *  pile. */
+   *  render an empty loadout. DLR-126 — it DOES come back on `WarCouncilRoundResult.buffs` now:
+   *  a hand spends consumable items as well as action points, so it can change the pile. */
   readonly buffs: readonly Buff[]
   /** DLR-92 AC4 — the bank-climb bonus in force for this hand, ALREADY RESOLVED from the run's
    *  Whetstone count by `bankClimbBonusFor`. A number, not a `RunState` and not an item count: the
@@ -113,6 +112,13 @@ export interface WarCouncilRoundResult {
   /** DLR-100 AC5 — discards remaining after this hand. One fewer for each discard spent; the run
    *  adopts it through `recordEncounter`'s sixth parameter. */
   readonly discardsRemaining: number
+  /** DLR-126 — the owned buff pile after this hand. One fewer for each CONSUMABLE ITEM spent; the
+   *  run adopts it through `recordEncounter`'s ninth parameter. The same contract `cheats` above
+   *  documents, and it reverses `WarCouncilMountProps.buffs`' own note that the pile "does NOT come
+   *  back on `WarCouncilRoundResult`" — that was true while a hand could only spend action points.
+   *  It can spend cards now. REQUIRED rather than optional so the compiler enumerates both
+   *  construction sites instead of letting one silently resurrect a spent consumable. */
+  readonly buffs: readonly Buff[]
   /** DLR-95 AC2 — how many cards were left in the player's hand at the instant the encounter
    *  resolved, or `null` when this hand did not resolve it. Frozen by the reducer at that
    *  transition rather than read off the live hand here — see `RoundUiState.unplayedAtResolve`

@@ -12,6 +12,7 @@ import {
   type Buff,
 } from '../../../hunt'
 import {
+  BUFF_ACTIVATION_REFUSAL_MESSAGE,
   BUFF_CONDITION_SENTENCE,
   BUFF_FAMILY_WORD,
   BUFF_REWARD_SUFFIX,
@@ -69,5 +70,13 @@ describe('buffLabels — one glanceable line', () => {
   it('appends the refusal reason to the accessible name so no control is dead without a cause', () => {
     const name = buffRowAccessibleName(bellTaker, 4, false, BuffActivationRefusal.InsufficientAp)
     expect(name).toContain('Not enough action points.')
+  })
+})
+
+describe('BUFF_ACTIVATION_REFUSAL_MESSAGE — DLR-126, every refusal has copy', () => {
+  it('carries a non-empty line for every member of BuffActivationRefusal', () => {
+    for (const refusal of Object.values(BuffActivationRefusal)) {
+      expect(BUFF_ACTIVATION_REFUSAL_MESSAGE[refusal].length).toBeGreaterThan(0)
+    }
   })
 })

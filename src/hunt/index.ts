@@ -156,18 +156,52 @@ export {
   resolveTrickBuffs,
 } from './buffEvaluation'
 
-export type { BuffActivationStock, BuffActivationState } from './buffActivation'
+export type {
+  BuffActivationStock,
+  BuffActivationState,
+  BuffActivationResult,
+} from './buffActivation'
 export {
   BuffActivationRefusal,
   startBuffActivation,
   buffActivationRefusalFor,
   buffActivationStockFor,
   activateBuff,
+  activateFromPile,
   openBuffWindow,
   refreshBuffsForNewHand,
   isPricedBuff,
   activatableBuffs,
 } from './buffActivation'
+
+// DLR-126 — the consumable model. `ConsumableTiming` and `ConsumableItemKind` are exported as both
+// a value and a type, the `as const` pattern `BuffTier` and `BuffKind` already use.
+export type {
+  ConsumableItemKind,
+  ConsumableEffect,
+  ConsumableStack,
+  WardAbsorption,
+} from './consumables'
+export {
+  ConsumableTiming,
+  CONSUMABLE_TIMING,
+  CONSUMABLE_EFFECT_LIVE,
+  WARD_ABSORPTION,
+  SECOND_THOUGHTS_CHARGES,
+  FORESIGHT_CARDS,
+  SPYGLASS_CANDIDATES,
+  PUPPETEER_FORCED_CARDS,
+  isConsumableItemKind,
+  isConsumableItem,
+  consumableTimingOf,
+  consumableEffectOf,
+  consumableEffectIsLive,
+  consumableStacks,
+  spendConsumable,
+  extraDiscardCharges,
+  absorbWithWard,
+  wardAbsorptionForTier,
+} from './consumables'
 
 export {
   startEncounter,
@@ -181,6 +215,9 @@ export {
   queueApplyDamagePayout,
   activateShield,
   hasShieldHearts,
+  NO_WARD,
+  activateWard,
+  hasWard,
 } from './encounter'
 
 export type {

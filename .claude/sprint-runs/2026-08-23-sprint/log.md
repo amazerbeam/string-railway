@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 17/22 (77%) — done: 17 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-125 "Engine: buff condition/reward evaluation framework" (18/22) — resumed 13:30 after the third session limit
+**Progress:** 18/22 (82%) — done: 18 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-126 "Engine: consumable-item activation flow" (19/22)
 
 ## Run order
 
@@ -3881,3 +3881,205 @@ buff fires; confirm the purse after the hand includes the Purse contribution; co
 console across a full hand and a remount. **And the one thing only a person can judge: nothing
 announces a buff firing.** A player sees a larger number with no cause named — a UX gap this ticket
 creates by making buffs work at all.
+
+## Coordinator decisions — DLR-125 reconciliation
+
+Suite 1655 → **1702, 131 files, 0 failures.** One reviewer round.
+
+**The buff system now actually works.** Eleven tickets built the pile, the costs, the draw, the
+loadout bar and the shop while `buffAccrual.ts` had no caller and an activated buff paid nothing.
+It pays now, on all four axes, and **one assertion proves it end to end**: the same trick resolved
+with `buffs: null` versus an activated bronze Bell-Taker, both through the real `applyResolution`,
+asserting a strictly larger Quarry health delta.
+
+- **10 of 12 families fire — 65 cards live.** Taker (12), Feeder (12), Mark of the *R* (22),
+  Sidestep (2), Glutton (4), Hoarder (4), Unbloodied (4), Debt Collector (4), Miser (2),
+  Cornered (2). All 8 Activated cards answer `false` to every condition by design.
+- **Two do not: Long Fall** (#8, never shipped — DLR-111 deferred it and no template is
+  generated) and **Keepsake** (#10, 3 Purse cards).
+- **DLR-117's AC3 was met in one line, exactly as designed.** `playOptions(state)` gained a
+  `buffs` field, so the preview's hypothetical resolution already carries the buffed multiplier
+  and Blade bonus. QA re-verified that `cardDamage.ts` still performs **no damage arithmetic of
+  its own** — R3's order, the four caps and the Overlap Bonus are inherited, never restated. This
+  is DLR-117's "compute nothing, read a real resolution" architecture paying for itself two
+  tickets later.
+- **AC1 (the visibility gate) deliberately left as a follow-up** — hiding an always-visible
+  readout is a visual judgement, not an agent's call. **Carried to DLR-119 by comment.**
+
+### `Keepsake` is now confirmed dead, not suspected
+
+It moved from *suspected* unfireable to **confirmed and pinned by a test**: the evaluator is
+correct, but the live path can never satisfy it. **Three Purse cards pay nothing.** The developer
+decides — redefine "hand's end" against DLR-123's now-persistent encounter deck, or retire the
+family. This has been open since DLR-111 and is now decidable.
+
+`Ward` is unmoved (an Activated consumable that never reaches the evaluator). **`Miser` now
+genuinely fights the shop** rather than theoretically — a balance call for the end-of-epic pass.
+
+### A rule reading the developer should check, one line to reverse
+
+The **Momentum/Blade spend-once-per-hand model is a reading, not a transcription** — DLR-124's R6
+does not say what happens across several cash-outs in one hand. One line in `bank.ts` reverses it.
+Also: **the Overlap Bonus fires on real play for the first time**, and nobody has seen it.
+
+### DLR-119 gains a second scope addition
+
+**Nothing announces a buff firing.** The player sees a bigger number with no cause named — a UX
+gap this ticket *created* by making buffs work. Added to DLR-119 alongside DLR-109's payout
+feedback gap; they are the same shape, namely the engine doing something meaningful that the
+screen does not narrate.
+
+### Two planner slips, both caught by the implementers rather than silently reconciled
+
+`tasks.md` Task 4 omitted `cardDamage.ts` from its Files block **despite `plan.md`'s own audit
+naming it**; and the R3 worked example could not be reproduced with two firing buffs **because
+the Overlap Bonus also fires** — the example itself was incomplete. Logged for the run report.
+
+
+---
+
+## DLR-126 — Engine: consumable-item activation flow
+
+**GREEN.** Slug `DLR-126-consumable-item-activation-flow`. No browser pass (opt-in, not requested).
+No mockup — the only `.tsx` edit in the file map is the two `onComplete({…})` literals a new
+required result field forces, so none was called for.
+
+### The overlap check DLR-108 was flagged for — most of it existed, and the ticket still had a real remainder
+
+Preflight flagged this as possibly already done by DLR-108. **The generic activation flow is indeed
+complete and was reused unchanged** — `activateBuff`, the `WindowClosed → AlreadyActive →
+InsufficientAp` refusal order, `apCostOf` as a derived two-table lookup, the per-trick
+(`openBuffWindow`) and per-hand (`refreshBuffsForNewHand`) resets, and DLR-114's poise/commit UI.
+Nothing of it was rebuilt.
+
+**What genuinely did not exist was anything that makes a consumable a consumable.** Confirmed by
+grep: all five consumables had a `BuffKind`, an `Activated` cadence, an AP price and UI copy —
+**20 hits outside tests, every one a name, a price, a cadence row or a label, and zero behaviour.**
+Concretely, before this ticket: activating a Ward spent 2 AP, recorded the id in
+`activatedThisTrick`, had that record wiped at the next trick boundary, and **did nothing at all** —
+the card stayed in the pile forever and could be re-bought every trick, indefinitely. That is the
+defect this ticket closed.
+
+DLR-125's premise is confirmed rather than refuted: `buffFires` returns `false` for every Activated
+kind and `firedBuffs` filters them out, so a consumable never reaches the evaluator **by design**.
+This ticket does not change that — a consumable's effect fires at the SPEND, not at trick
+resolution, because it has no condition to evaluate.
+
+### Built
+
+New `src/hunt/consumables.ts` (a leaf module — imports `./buffs` and `./types` only): the five
+one-shot kinds, each one's timing window, the four tier ladders transcribed from
+`v1-buff-card-list.md`, a typed `ConsumableEffect`, the counted-stack view, `spendConsumable`, and
+Ward's absorption arithmetic. `activateFromPile` in `buffActivation.ts` — the single call that
+spends AP *and* removes the card, so the two can never diverge. A new `NoEffectYet` refusal.
+**Ward wired live** on a new `EncounterState.wardAbsorbs`, absorbed inside `applyDamage` ahead of
+blue hearts. **Second Thoughts wired live** onto the discard budget. The spend rides up through
+`WarCouncilRoundResult.buffs` → `recordEncounter`'s new optional ninth parameter → `RunState.buffs`,
+so it survives the hand boundary and the felt's per-hand remount.
+
+**AC4 is partially delivered, by design and stated as such.** Puppeteer, Foresight and Spyglass ship
+with descriptor, price, timing and a refusal, but no effect: each needs a player-choice surface no
+screen provides. `CONSUMABLE_EFFECT_LIVE` is one boolean per card — the ticket that builds each
+surface flips its row and changes nothing else.
+
+### The four judgement calls this ticket carried
+
+- **When may a consumable be spent?** Four of five reuse `discardWindowOpen`, as AC2's first branch
+  invites. **Puppeteer does not** — DLR-111's worked example needs it to resolve after the Quarry
+  has led and before the player commits, which is the opposite of `currentTrick.length === 0`. It is
+  declared `ConsumableTiming.BeforeOwnCard`; **no reducer opens that window today**, and it is
+  additionally unspendable via `NoEffectYet`. The engine states the requirement rather than faking a
+  window.
+- **Is spending reversible?** **No, in the engine** — consistent with DLR-108, which has no
+  un-activate. Reversibility is entirely the UI's two-tap poise/commit, and `Escape` still drops a
+  poise. Once committed the card is gone for the rest of the run.
+- **Redundant at the moment of use?** **Allowed, and the item is consumed.** No consumable is ever
+  *provably* redundant — a Ward is only wasted if no hit lands, which is not knowable when it is
+  spent, and Second Thoughts has no budget ceiling. Refusing would need the engine to predict the
+  trick, and every refusal adds a "why is this greyed out?" the player cannot answer. Reading the
+  felt is the player's job. (`NoEffectYet` is the different rule: it refuses a card that can *never*
+  do anything in this build, not one that *might* do nothing this trick.)
+- **Spendable in response to something already booked?** **Yes.** Design §1 puts these cards in the
+  pile precisely to be sprung at what is actually happening, and a Ward spent between tricks against
+  a Timebomb already ticking is the clearest case. This turns out to be load-bearing rather than
+  incidental — see the Ward finding below.
+
+Two smaller defaults: **Ward SETS its absorption, downward too** (mirrors `activateShield` verbatim
+— two adjacent guards with opposite stacking rules is the pair a later edit "makes consistent" by
+mistake), and **Ward absorbs BEFORE blue hearts** (it perishes on contact, a blue heart does not, so
+spending the perishable pool first is the only order in which a Ward is worth more than the heart
+behind it). Both are readings with no source document behind them.
+
+### The `Ward` decision: kept all three rows, shipped 1/3/5, retuned nothing — and DLR-111's premise is not quite right
+
+DLR-111 recommended deleting the silver and gold rows on the grounds that `DAMAGE_PER_HIT = 1` makes
+absorbing 1, 3 and 5 the same outcome. **The code says otherwise.** `src/warCouncil/bank.ts:258`
+computes `damageToPlayer = (trickHit ? DAMAGE_PER_HIT : 0) + trick.timebombToPlayer`, and
+`TIMEBOMB_DAMAGE`'s player column is **2 / 4 / 6** — so a player hit is 1, **or 3 / 5 / 7 when a
+Timebomb detonates against them.** Silver and gold Ward are the only cards in the game that cover
+those. Deleting them would remove the only answer to the biggest hit the game can deal. All three
+rows ship, and `DAMAGE_PER_HIT` was not touched — it moves the whole game.
+
+**What is still the developer's:** the distinguishing case is *self-inflicted* — the player primed
+that Timebomb. If the Quarry never deals a multi-point hit, silver and gold Ward are close to dead
+content, and the fix is either a wider damage spread or a retire. That is a tuning read, not an
+engine one, and it is now decidable on evidence rather than on DLR-111's approximation.
+
+### The other open items, and how each moved
+
+- **`Keepsake` — unaffected, still dead.** A `Terminal` condition family, not a consumable. Nothing
+  here touches the evaluator, the accrual, or the definition of "hand's end". The developer still
+  owes the same call: redefine it against DLR-123's persistent deck, or retire the family.
+- **`Miser` — unaffected.** Nothing here spends or earns a coin. Still fights the shop.
+- **`ErrorBoundary` (DLR-131) — unchanged risk on a slightly larger surface.** This ticket adds
+  throw sites in `src/hunt/`, every one guarded at the reducer (`handleTapBuff` re-reads
+  `loadoutRefusalFor` on both taps, and `activateWard` is throw-free for every `BuffTier` exactly as
+  `activateShield` is), but the underlying gap is untouched.
+- **`timebombDamageFor` / `timebombDamageOf` — NOT collapsed; the nomination moves on.** It was
+  nominated for whichever ticket replaces `commitTimebomb` with `activateBuff`. That is not this
+  one: Timebomb is deliberately excluded from `isConsumableItem`, its bespoke `TimebombStage` path
+  is untouched, and collapsing it here would be an unrelated refactor inside a ticket about one-shot
+  items.
+- **The `Unassigned` trap — not hit.** Every pile read still goes through `offeredBuffs` →
+  `activatableBuffs`. No fourth filter was written.
+
+### AC5 answered: yes, consumables draw through the same reel/tier mechanism
+
+DLR-112's AC6 is resolved using this ticket's ownership model as the deciding constraint, and the
+answer needs **no change to DLR-112's mechanism**. A consumable is an ordinary `Buff` — id, kind,
+tier, condition, reward — minted the way `cheatBuff`/`timebombBuff`/`shieldBuff` mint theirs and
+held in the same `RunState.buffs`. It carries a real bronze/silver/gold ladder for a tiered reel to
+land on; Puppeteer is single-tier in the source and a reel handles that by minting bronze. AC1's
+counted "2x Protect 3" inventory is a **derived view** over that pile, not a second store, so there
+is nothing for the draw mechanism to learn. **What separates a consumable from a persistent buff is
+what happens at the SPEND, not what happens at the DRAW** — and the draw is all DLR-112 owns.
+
+### A planner slip, caught by the compiler at the first typecheck
+
+`plan.md`'s Step 1.6 audit counted **2** construction sites of `BuffActivationStock`. There were
+**7** — five more built by hand inside `src/hunt/__tests__/buffActivation.test.ts`, which the audit's
+`alreadyActive:` grep found only outside the spec tree. Exactly the check-7 failure mode the command
+documents. Cost: one typecheck round, no wasted phase. Worth noting that check 7's *design* worked —
+the field was required, so it failed loudly at `tsc` rather than silently.
+
+Separately, **one existing DLR-108 test genuinely changed behaviour and had to be updated**: it
+stacked a bronze Foresight then a bronze Ward against one AP pool, and Foresight is now refused with
+`NoEffectYet`. It was rewritten as a bronze Timebomb then a bronze Ward — two live cards, same
+subject (several activations drawing down one pool until the next cannot be afforded), and the
+change is commented in place so it does not read as a silently weakened assertion.
+
+### Nothing in this diff is player-reachable today
+
+No template mints a consumable — `grep -c "BuffKind.Ward" src/hunt/buffTemplates.ts` → **0**, and
+`seedStartingBuffPile` mints only `Unassigned`. So a browser could not exercise a single new path by
+playing, which is why the browser pass would have proved nothing. It becomes reachable when DLR-112
+lands.
+
+**What a browser would have checked, once a consumable can be minted:** that the loadout panel lists
+it with its AP price; that one tap poises and a second spends; that the row disappears after the
+spend and does **not** return on the next trick or the next hand; that a Foresight row reads
+`Not usable yet.` and cannot be committed; that a Ward's absorption shows on the health bars when
+the next hit lands; and that a Second Thoughts visibly raises the discard counter.
+
+The `'Not usable yet.'` copy is a placeholder — the `Record` type forces a row, and it is unreachable
+in play. Visual and copy judgement is the developer's.

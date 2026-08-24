@@ -17,6 +17,15 @@ section 8, which are enforced, drawn, and unreachable because nothing grants one
 > nothing** — the hold-a-suit condition cannot be true in a hand that runs its course — and **nothing
 > on screen tells you a buff fired**. Every threshold, reward and ceiling is an unplayed placeholder.
 
+> **Some cards are now spent rather than activated — DLR-126, 2026-08-24.** Five of the cards you
+> can own are **one-shot items**: using one costs action points as before, but it also **takes the
+> card out of your loadout for the rest of the run** (section 4). Until today nothing did that — a
+> Ward could be re-bought every trick, forever. **Two of the five actually do something**: a Ward
+> absorbs your next hit and then breaks, ahead of any blue heart; a Second Thoughts buys more Swaps
+> for the fight. The other three read **`Not usable yet.`** and cannot be spent at all, because each
+> needs a screen that does not exist. **All of it is engine-only and none of it is reachable** —
+> nothing mints an item yet, exactly as nothing mints a buff.
+
 > **Something now survives a run, and a lost run pays for it — DLR-118, 2026-08-24.** The **Vault**
 > has been in the code since 2026-08-23 with no way to reach it; today it got its screen. A run that
 > has ended offers **`Open the Vault`** beside `Start a new run`, and there you can see what your
@@ -598,7 +607,7 @@ Above them sits the pool you have left.
 2. **The second tap spends the points** and activates the buff for the coming trick.
 
 **Pressing `Escape` closes the panel and drops any poise unspent**, as does pressing Apply Buff again.
-But **once the second tap lands there is no way to un-activate**: the points are gone, and nothing gives them back. Activating is therefore the decision.
+But **once the second tap lands there is no way to un-activate**: the points are gone, and nothing gives them back — and if the card was a one-shot item, the card is gone too. Activating is therefore the decision.
 
 **You may activate more than one buff before the same trick**, and the panel stays open so you can.
 You may not activate the _same_ buff twice in one trick — that is a duplicate payment, not stacking.
@@ -624,6 +633,66 @@ nothing at all.** Reading what you own and what it costs is how you plan the nex
 > as empty lines — so until a real buff reaches your pile, Apply Buff shows only your Cheats and your
 > Timebomb charges. Nothing in a fight puts a real buff in your pile today; that comes from outside a
 > run. See [Not built](#not-built).
+
+##### Some cards are one-shot items, and using one spends the card — **[settled]** since 2026-08-24
+
+Five of the cards you can own are **items**, not buffs: a **Ward**, a **Puppeteer**, a **Second
+Thoughts**, a **Foresight** and a **Spyglass**. They have no condition and never pay on a trick.
+They do one thing, once, at the moment you use them — and then they are **gone from your loadout for
+the rest of the run**. Nothing brings one back, and there is no charge to refill.
+
+This is the whole of what separates an item from a buff you own. A Cheat, a Timebomb and a Shield
+are also used rather than triggered, but none of them leaves your loadout when you use it.
+
+**Using one costs action points exactly as activating a buff does, and it uses the same two taps** —
+the first poises, the second spends. **The second tap is the point of no return**: the points are
+gone and so is the card. `Escape` before that second tap costs you nothing.
+
+**You may use an item even when it turns out to have been wasted.** Nothing stops you warding a
+trick that never hits you, and nothing warns you. Whether the trick is worth guarding is the
+judgement the item exists to pose, and it is read off the felt, not off the button.
+
+**You may also use one against something already coming.** A Timebomb already ticking against you,
+a cash-out already booked — an item used between tricks is used against the felt as it stands, which
+is the point of holding it rather than spending it the moment you get it.
+
+**Four of the five are used between tricks**, the same window the Swap and the buff activation use.
+**Puppeteer is the exception**: steering what the Quarry plays only makes sense after they have led
+and before you commit your own card, which is the one moment that window is closed —
+**[provisional]**, and **[not built]**: there is no way to reach that moment today.
+
+| Item               | What it does                                     | Bronze / silver / gold | Status          |
+| ------------------ | ------------------------------------------------ | ---------------------- | --------------- |
+| **Ward**           | absorbs your next hit, then breaks                | **1 / 3 / 5** damage   | **[settled]**   |
+| **Second Thoughts**| more Swaps for the rest of this fight            | **+1 / +2 / +3**       | **[settled]**   |
+| **Foresight**      | look at the top of the draw pile                  | **1 / 3 / 5** cards    | **[not built]** |
+| **Spyglass**       | rule out cards of a suit you name                 | **1 / 2 / 3** cards    | **[not built]** |
+| **Puppeteer**      | choose which legal card the Quarry must play      | one card, no ladder    | **[not built]** |
+
+**The three marked [not built] cannot be used at all.** Their lines read **`Not usable yet.`** and
+the second tap does nothing — you are not allowed to burn a card that would do nothing. Every one of
+the three needs a screen that does not exist: a list of the Quarry's legal moves to pick from, a
+reveal of the draw pile, a place to see which cards have been ruled out.
+
+> **A Ward is not a blue heart, and holding both is not the same as holding two guards.** A blue
+> heart (section 8) is spent one point at a time and survives what it did not absorb. A **Ward
+> breaks on the next hit it meets, whether it swallowed the whole hit or only part of it** — a Ward
+> that absorbs 5 and a Ward that absorbs 1 are both gone after a hit of 1. If you hold both, **the
+> Ward is spent first** and only what gets past it reaches your blue hearts.
+>
+> Using a second Ward **replaces** the one you hold rather than adding to it, and replaces it
+> downward too: a bronze Ward held after a gold one guards 1, not 5. Like a blue heart, a Ward dies
+> at the end of a fight and does not carry into the next one.
+>
+> **A hit a Ward swallows whole cuts two ways, and the two are not the same.** It **does** save a
+> cash-out you have already pressed — that is only lost when red health actually drops, and a guard
+> that ate the hit did its job. But it **does not** extend an unhurt run of tricks: that counter
+> reads the damage the trick owed you, before any guard took it, so a warded trick still breaks the
+> streak. Blue hearts behave identically on both counts.
+
+> **Nothing puts one of these in your loadout yet.** The whole of this section is unreachable, for
+> the same reason the buff pile is: nothing in a fight or a shop mints an item. See
+> [Not built](#not-built).
 
 ##### What a buff costs — **[provisional]**
 
@@ -1470,6 +1539,10 @@ hearts first, one point each, and only the remainder reaches your red health. Th
 blue hearts consumes both and lets one through; it does not negate the hit.
 
 - **They are yours alone.** The Quarry never has any, and nothing in the game gives it one.
+- **A Ward is taken before they are** (**[settled]** since 2026-08-24). If you hold a Ward as well
+  (section 4), it absorbs first and only what gets past it reaches your blue hearts. The two are not
+  the same guard: a Ward breaks on the next hit it meets whether or not it swallowed the whole thing,
+  a blue heart is spent per point and survives the rest.
 - **They do not stack, and gaining them sets the count rather than adding to it** — including
   downward. A bronze grant after a gold one leaves you on 1, not 3. The counts are **1 blue heart at
   bronze, 2 at silver, 3 at gold** (**[provisional]** — transcribed from `hybrid-design.md` §7a and
@@ -2210,6 +2283,15 @@ too, alongside who is coming next.
   (section 10). A fresh run still opens holding only placeholders, which the loadout filters out, so
   the list is empty until your first shop. What remains unbuilt is the half below — the card you win
   still pays nothing when you fire it.
+- **Any way to gain a one-shot item** — **[not built]** (new 2026-08-24, DLR-126), and it is the
+  same shape as the blue-heart gap immediately below. Using an item is fully built: it costs points,
+  it takes the card out of your loadout permanently, and for a Ward or a Second Thoughts it does
+  what it says (section 4). **Nothing mints one.** No shop sells one, no fight drops one, and the
+  starting pile is placeholders. So the whole of it — the Ward's absorption, the extra Swaps, the
+  `Not usable yet.` lines on the other three — is unreachable and has never been seen by anyone.
+  What would change that is the same thing that would fill the buff pile: the card draw itself.
+  **Three of the five would still be unusable afterwards** — Puppeteer, Foresight and Spyglass each
+  need a screen that does not exist, and are refused rather than allowed to be burned for nothing.
 - **Any way to gain a blue heart** — **[not built]**, and it is a sharper gap than it looks. The rule
   is fully decided and fully enforced: blue hearts take your damage before red ones, they set rather
   than stack, they die at the end of a fight and no heal restores one (section 8), and since
@@ -2795,6 +2877,9 @@ the mechanics themselves are documented in `../implementation/`.
 | Holding a named suit at the hand's end | settled and **unsatisfiable in play** — the rule is enforced; the game gives it no instant | `src/hunt/buffEvaluation.ts` — the `keepsake` case, gated on the final trick and the suits left in hand; the hand is empty at that instant because six cards are played over six tricks. Pinned by an assertion in `src/hunt/__tests__/buffEvaluation.test.ts` | **Developer** — redefine "the hand's end" against the encounter deck, or retire the three cards |
 | **Long Fall** — the twelfth condition on the card list | **not built** — no card, no rule, nothing generates one | nothing to enforce — `src/hunt/buffTemplates.ts` generates no template for it; deferred by DLR-111 for want of a UI answer | **Developer** — the UI question it was deferred on is still open |
 | Anything on screen announcing that a buff fired | **not built** | nothing to enforce — the resolved trick records which buffs fired and no surface reads it | **Developer** — a UX gap created by making buffs pay |
+| **Using a one-shot item spends the card permanently**                            | settled — since DLR-126; **unreachable, because nothing mints an item**                                  | `src/hunt/consumables.ts` — `isConsumableItem`, `spendConsumable`, `consumableStacks`; spent through `activateFromPile` in `src/hunt/buffActivation.ts`, which is the only call `src/app/warCouncil/buffHandlers.ts` makes; carried out of the hand by `WarCouncilRoundResult.buffs` in `src/app/warCouncilMount.ts` into `recordEncounter`'s ninth parameter in `src/hunt/runTransitions.ts` | **Settled** — no open value                                                                                                                                                                                                                                                                                             |
+| **Which of the five items can be used at all, and in which window**              | three of five **not built**; Puppeteer's window **provisional**                                          | `src/hunt/consumables.ts` — `CONSUMABLE_EFFECT_LIVE` (one boolean per card) and `CONSUMABLE_TIMING`; refused as `NoEffectYet`, read first, in `buffActivationRefusalFor` in `src/hunt/buffActivation.ts`                                                                                                                                                                                     | **Whoever builds each screen** — Puppeteer needs a list of the Quarry's legal moves, Foresight a draw-pile reveal, Spyglass a ruled-out-candidates surface. No reducer opens Puppeteer's window                                                                                                                          |
+| **A Ward absorbing the next hit, ahead of blue hearts, then breaking regardless** | provisional — the ORDER against blue hearts is a reading, not a transcription; the 1/3/5 ladder is transcribed | `src/hunt/consumables.ts` — `WARD_ABSORPTION`, `absorbWithWard`; held on `EncounterState.wardAbsorbs` in `src/hunt/types.ts`, set by `activateWard` and spent inside `applyDamage` in `src/hunt/encounter.ts`, ahead of `absorbWithShield`                                                                                                                                                    | **Developer** — whether a Ward should be taken before or after a blue heart, whether a second Ward should stack rather than replace, and whether silver and gold Ward earn their rows at all (see Known tensions)                                                                                                        |
 | **An activated buff's condition firing, and its reward being paid**              | settled — since DLR-125; **every threshold and reward figure is provisional**                            | `src/hunt/buffEvaluation.ts` — `buffFires`, a total `switch` over the eleven condition families, gated so every consumable and every placeholder answers `false`; thresholds from `src/hunt/buffTemplates.ts` — `CONDITION_THRESHOLD`, reward figures from `REWARD_TIER_VALUE` in the same file; called from `src/warCouncil/bank.ts` — `resolveTrickBank`, which is also where the accrual in `src/hunt/buffAccrual.ts` is finally read | **Developer** — every threshold and every reward figure was chosen by an agent and none has been played                                                                                                                                                                                                                  |
 | A buff's description is one line, composed from a naming grammar                 | settled — since DLR-114; the copy is **placeholder**                                       | `src/app/warCouncil/buffLabels.ts` — three `Record`s keyed over the closed kind and reward unions, transcribed from `.docs/design/Balatro-Forbidden-Solitaire/v1-buff-card-list.md`; the same string is the visible line and the accessible name                                                                                                                                        | **Developer** — the wording, and whether one line carries enough                                                                                                                                                                                                                                                  |
 | The run — a sequence of encounters                                               | settled — since DLR-82                                                                     | `src/hunt/run.ts` — `RunState`, `startRun`; `src/hunt/runTransitions.ts` — `advanceRun`; driven by `src/App.tsx`                                                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
@@ -3377,10 +3462,16 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
   Only a fight that stops early satisfies it, which is a hand you have just won or lost outright.
   Three cards depend on the answer, and the fix could be a reworded condition, a different
   end-of-hand instant, or deleting the three — three different games, and the developer's call.
-  **Ward** absorbs up to 1, 3 or 5 of your next hit; a hit deals 1, so all three tiers are the same
-  outcome and the ladder teaches that gold means better and then lies. It is priced flat at 2 AP at
-  every tier for exactly that reason. If a hit's damage never moves, the suggestion on record is to
-  delete the two upper rows rather than retune them.
+  **Ward** was the second, and **on 2026-08-24 it turned out to be a narrower problem than it was
+  recorded as.** The claim was that a hit always deals 1, so absorbing 1, 3 or 5 are the same
+  outcome and the ladder lies about what gold buys — and the suggestion on record was to delete the
+  two upper rows. **A hit does not always deal 1.** A trick that also detonates a Timebomb against
+  you deals **3, 5 or 7**, and silver and gold Ward are the only things in the game that cover
+  those, so the upper rows were **kept** rather than deleted. What survives of the tension is
+  narrower and still real: that distinguishing case is one **you** caused by priming the Timebomb
+  yourself, so unless the Quarry ever lands a hit worth more than 1, the two upper rows are close to
+  dead content. The fix, if one is wanted, is a wider spread of damage, not a Ward retune — and
+  moving what a hit deals moves the whole game. Ward stays priced flat at 2 AP at every tier.
 - **Every AP price and every per-hand ceiling in the buff loadout was chosen by an agent and none
   has been played** (new 2026-08-23, DLR-108; **a player can now actually pay these prices as of
   2026-08-24, DLR-114** — so this stopped being a theoretical tuning question and became a live one;

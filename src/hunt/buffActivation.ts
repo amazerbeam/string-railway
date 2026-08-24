@@ -1,5 +1,6 @@
 import { canAffordAp, refreshActionPointsForNewHand, spendAp } from './actionPoints'
 import { apCostOf, isConditionFamily, isConsumableKind } from './buffCosts'
+import { consumableEffectIsLive, isConsumableItem, spendConsumable } from './consumables'
 import type { Buff, BuffId } from './buffs'
 import { STARTING_AP } from './apConfig'
 import type { ActionPoints } from './types'
@@ -10,6 +11,13 @@ import type { ActionPoints } from './types'
  * `src/hunt/flask.ts`'s `FlaskRefusal`.
  */
 export const BuffActivationRefusal = {
+  /** DLR-126 — the card can never do anything IN THIS BUILD: it is a consumable whose effect needs
+   *  a player-choice surface no screen provides (Puppeteer, Foresight, Spyglass). Read FIRST,
+   *  before every other refusal, because it is true of the CARD rather than of the felt — the
+   *  same reason `applyDamageRefusalFor` reports `NotYourMove` before a cost. NOT a redundancy
+   *  check: a Ward spent on a trick that turns out to be safe is a legitimate player mistake and
+   *  is allowed. See `consumables.ts`'s `CONSUMABLE_EFFECT_LIVE`. */
+  NoEffectYet: 'noEffectYet',
   /** AC1 — the felt is not between tricks; the discard/buff window `discardWindowOpen` already
    *  opens is closed. No new timing gate is built — this reads that same signal. */
   WindowClosed: 'windowClosed',
@@ -29,6 +37,9 @@ export type BuffActivationRefusal =
  * `buffActivationStock` builds it.
  */
 export interface BuffActivationStock {
+  /** DLR-126 — whether spending this card would do anything at all in this build. `false` only for
+   *  a consumable whose effect surface is not built yet; `true` for every other card. */
+  readonly effectLive: boolean
   readonly windowOpen: boolean
   readonly apPool: ActionPoints
   readonly apCost: ActionPoints
@@ -58,11 +69,14 @@ export function startBuffActivation(capacity: ActionPoints = STARTING_AP): BuffA
  * the plate's disabled state, so the two can never read availability differently (the same
  * discipline `applyDamageRefusalFor` sets).
  *
- * Order — `WindowClosed → AlreadyActive → InsufficientAp` — reports the reason true of the whole
- * felt before the reason true of this one card, exactly as `applyDamageRefusalFor` reports
- * `NotYourMove` first.
+ * Order — `NoEffectYet → WindowClosed → AlreadyActive → InsufficientAp` — reports the reason true
+ * of the CARD, then the reason true of the whole felt, then the reasons true of this card on this
+ * felt, exactly as `applyDamageRefusalFor` reports `NotYourMove` first. A Foresight is refused for
+ * having no effect even on a wide-open felt with a full pool, because opening the window would not
+ * make it usable.
  */
 export function buffActivationRefusalFor(stock: BuffActivationStock): BuffActivationRefusal | null {
+  if (!stock.effectLive) return BuffActivationRefusal.NoEffectYet
   if (!stock.windowOpen) return BuffActivationRefusal.WindowClosed
   if (stock.alreadyActive) return BuffActivationRefusal.AlreadyActive
   if (!canAffordAp(stock.apPool, stock.apCost)) return BuffActivationRefusal.InsufficientAp
@@ -78,6 +92,7 @@ export function buffActivationStockFor(
   windowOpen: boolean,
 ): BuffActivationStock {
   return {
+    effectLive: consumableEffectIsLive(buff),
     windowOpen,
     apPool: state.apPool,
     apCost: apCostOf(buff),
@@ -105,6 +120,41 @@ export function activateBuff(
   return {
     apPool: spendAp(state.apPool, stock.apCost),
     activatedThisTrick: [...state.activatedThisTrick, buff.id],
+  }
+}
+
+/** The pool AND the pile after one activation. A pair rather than two return values because the
+ *  two must move together: AP spent without the card removed is a duplicate-payment bug, and the
+ *  card removed without AP spent is a free spend. */
+export interface BuffActivationResult {
+  readonly activation: BuffActivationState
+  readonly buffs: readonly Buff[]
+}
+
+/**
+ * DLR-126 — THE one call the felt makes to activate anything. Spends AP through `activateBuff`
+ * above and, when the card is a one-shot CONSUMABLE ITEM, also removes it from the owned pile.
+ *
+ * Why one function rather than leaving the caller to make two calls: the failure mode of the split
+ * version is silent and permanent — AP spent, card kept, and the card back on the rail next trick,
+ * which is precisely the class of bug `activateBuff`'s own throw-rather-than-no-op contract exists
+ * to prevent. `activateBuff` runs FIRST, so a refused activation throws before the pile is touched
+ * and neither half lands.
+ *
+ * Cheat, Timebomb and Shield pass through with the pile UNCHANGED. They are `Activated` cards with
+ * their own live mechanics, not items held until used — see `consumables.ts`'s own docblock on why
+ * "consumable" is narrower here than `buffCosts.ts`'s pricing bucket of the same name.
+ */
+export function activateFromPile(
+  state: BuffActivationState,
+  buffs: readonly Buff[],
+  buff: Buff,
+  windowOpen: boolean,
+): BuffActivationResult {
+  const activation = activateBuff(state, buff, windowOpen)
+  return {
+    activation,
+    buffs: isConsumableItem(buff) ? spendConsumable(buffs, buff.id) : buffs,
   }
 }
 

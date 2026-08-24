@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { PlayerSide, RoundPhase, Suit, type Card, type WarCouncilState } from '../../../warCouncil'
 import {
+  ACTIVATED_BUFF_CONDITION,
   apCostOf,
+  BuffKind,
+  BuffRewardAxis,
   cheatBuff,
   startBuffActivation,
   BuffTier,
+  type Buff,
   STARTING_AP,
   AP_CAPACITY_STEP,
   type BuffActivationState,
@@ -114,5 +118,21 @@ describe('DLR-116 — apCapacity threads into the opening pool', () => {
   it('a seed with apCapacity opens the hand at exactly that pool', () => {
     const state = createRoundUiState({ ...makeSeed(), apCapacity: STARTING_AP + AP_CAPACITY_STEP })
     expect(state.buffActivation.apPool).toBe(STARTING_AP + AP_CAPACITY_STEP)
+  })
+})
+
+describe('buffActivationStock — DLR-126, effectLive is delegated to the card', () => {
+  it('reports a Cheat as live and a Foresight as not, on the same open felt', () => {
+    const state = createRoundUiState(makeSeed())
+    const foresight: Buff = {
+      id: 2,
+      kind: BuffKind.Foresight,
+      tier: BuffTier.Bronze,
+      condition: ACTIVATED_BUFF_CONDITION,
+      reward: { axis: BuffRewardAxis.None, value: 0 },
+    }
+    expect(discardWindowOpen(state)).toBe(true)
+    expect(buffActivationStock(state, startBuffActivation(), cheat).effectLive).toBe(true)
+    expect(buffActivationStock(state, startBuffActivation(), foresight).effectLive).toBe(false)
   })
 })

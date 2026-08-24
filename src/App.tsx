@@ -165,6 +165,7 @@ function App() {
       result.discardsRemaining,
       result.unplayedAtResolve,
       result.coinsEarned,
+      result.buffs,
     )
     setRun(recorded)
     if (isEncounterResolved(recorded.encounter)) {

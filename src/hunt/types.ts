@@ -103,4 +103,16 @@ export interface EncounterState {
    *  clears it at an encounter boundary with no explicit clear step to forget — the reason
    *  `pendingTimebomb` and `pendingApplyPayout` live here too. NOT PERSISTED. */
   readonly shieldHearts: Health
+  /** DLR-126 — a Ward held: how much damage it will absorb on the NEXT hit taken, after which it
+   *  BREAKS regardless of whether that hit was fully absorbed (`v1-buff-card-list.md` → *Ward*).
+   *  That "breaks regardless" is the whole difference from `shieldHearts` above, which is spent one
+   *  point at a time and survives with a remainder — the two are deliberately not one field.
+   *
+   *  A scalar rather than a `Record<DuelSide, Damage>` for `shieldHearts`' reason: only the player
+   *  can hold a Ward. Spent inside `applyDamage` BEFORE blue hearts, because a Ward perishes on
+   *  contact and a blue heart does not, so spending the perishable pool first is the only order
+   *  under which a Ward is ever worth more than the heart behind it. Seeded to `NO_WARD` by
+   *  `startEncounter`, which is what clears it at an encounter boundary with no explicit clear step
+   *  to forget. NOT PERSISTED. UNIT: damage. */
+  readonly wardAbsorbs: Damage
 }

@@ -7,6 +7,7 @@ import { ACTIVATED_BUFF_CONDITION, BuffKind, BuffRewardAxis, BuffTier, type Buff
 import {
   BuffActivationRefusal,
   activateBuff,
+  activateFromPile,
   buffActivationRefusalFor,
   buffActivationStockFor,
   openBuffWindow,
@@ -42,6 +43,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
   it('refuses InsufficientAp when the pool is below the cost', () => {
     expect(
       buffActivationRefusalFor({
+        effectLive: true,
         windowOpen: true,
         apPool: 1,
         apCost: 2,
@@ -53,6 +55,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
   it('refuses WindowClosed when the window is not open', () => {
     expect(
       buffActivationRefusalFor({
+        effectLive: true,
         windowOpen: false,
         apPool: 6,
         apCost: 2,
@@ -64,6 +67,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
   it('refuses AlreadyActive when the buff is already active this trick', () => {
     expect(
       buffActivationRefusalFor({
+        effectLive: true,
         windowOpen: true,
         apPool: 6,
         apCost: 2,
@@ -75,6 +79,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
   it('permits activation — null — when window is open, affordable, and not already active', () => {
     expect(
       buffActivationRefusalFor({
+        effectLive: true,
         windowOpen: true,
         apPool: 6,
         apCost: 2,
@@ -86,6 +91,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
   it('reports WindowClosed before InsufficientAp — a closed window is true of the whole felt', () => {
     expect(
       buffActivationRefusalFor({
+        effectLive: true,
         windowOpen: false,
         apPool: 0,
         apCost: 5,
@@ -93,22 +99,101 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
       }),
     ).toBe(BuffActivationRefusal.WindowClosed)
   })
+
+  it('DLR-126 — reports NoEffectYet before every other reason, because it is true of the CARD', () => {
+    expect(
+      buffActivationRefusalFor({
+        effectLive: false,
+        windowOpen: false,
+        apPool: 0,
+        apCost: 5,
+        alreadyActive: true,
+      }),
+    ).toBe(BuffActivationRefusal.NoEffectYet)
+  })
+
+  it('DLR-126 — refuses NoEffectYet even on a wide-open felt with a full pool', () => {
+    expect(
+      buffActivationRefusalFor({
+        effectLive: false,
+        windowOpen: true,
+        apPool: STARTING_AP,
+        apCost: 1,
+        alreadyActive: false,
+      }),
+    ).toBe(BuffActivationRefusal.NoEffectYet)
+  })
+})
+
+describe('buffActivationStockFor — DLR-126, effectLive comes off the card', () => {
+  it('reports a Foresight as not live and a Ward as live', () => {
+    const state = startBuffActivation()
+    expect(buffActivationStockFor(state, foresightBuff(BuffTier.Bronze, 1), true).effectLive).toBe(
+      false,
+    )
+    expect(buffActivationStockFor(state, wardBuff(BuffTier.Bronze, 2), true).effectLive).toBe(true)
+  })
+
+  it('reports every NON-consumable as live — NoEffectYet is about unbuilt consumable surfaces', () => {
+    const state = startBuffActivation()
+    expect(buffActivationStockFor(state, cheatBuff(BuffTier.Bronze, 3), true).effectLive).toBe(true)
+    expect(buffActivationStockFor(state, timebombBuff(BuffTier.Bronze, 4), true).effectLive).toBe(
+      true,
+    )
+  })
+})
+
+describe('activateFromPile — DLR-126, an activation that also SPENDS the card', () => {
+  it('removes a consumable item from the pile and spends its AP in one move', () => {
+    const ward = wardBuff(BuffTier.Bronze, 2)
+    const pile: readonly Buff[] = [wardBuff(BuffTier.Bronze, 1), ward]
+
+    const { activation, buffs } = activateFromPile(startBuffActivation(), pile, ward, true)
+
+    expect(activation.apPool).toBe(STARTING_AP - apCostOf(ward))
+    expect(activation.activatedThisTrick).toEqual([2])
+    expect(buffs.map((b) => b.id)).toEqual([1])
+    // The pile handed in is untouched — every transition in `src/hunt/` is pure.
+    expect(pile).toHaveLength(2)
+  })
+
+  it('leaves the pile UNCHANGED for a Cheat — an Activated card is not a one-shot item', () => {
+    const cheat = cheatBuff(BuffTier.Bronze, 3)
+    const pile: readonly Buff[] = [cheat]
+
+    const { activation, buffs } = activateFromPile(startBuffActivation(), pile, cheat, true)
+
+    expect(buffs).toEqual(pile)
+    expect(activation.activatedThisTrick).toEqual([3])
+  })
+
+  it('throws on a refused activation and leaves neither the pool nor the pile changed', () => {
+    const ward = wardBuff(BuffTier.Bronze, 2)
+    const pile: readonly Buff[] = [ward]
+
+    expect(() => activateFromPile(startBuffActivation(), pile, ward, false)).toThrow(RangeError)
+    expect(pile.map((b) => b.id)).toEqual([2])
+  })
 })
 
 describe('activateBuff — AC3, stacking several activations against one pool', () => {
-  it('spends a bronze Foresight then a bronze Ward against STARTING_AP, then refuses a gold Cheat', () => {
+  // DLR-126 — this test used to stack a bronze Foresight then a bronze Ward. Foresight is now
+  // refused with `NoEffectYet` (its effect needs a surface no screen provides), so the pair is a
+  // bronze Timebomb then a bronze Ward — two live cards at 2 AP each. The test's SUBJECT is
+  // unchanged: several activations drawing down one pool until the next one cannot be afforded.
+  it('spends a bronze Timebomb then a bronze Ward against STARTING_AP, then refuses a gold Cheat', () => {
     let state: BuffActivationState = startBuffActivation()
     expect(state.apPool).toBe(STARTING_AP)
 
-    const foresight = foresightBuff(BuffTier.Bronze, 1)
+    const timebomb = timebombBuff(BuffTier.Bronze, 1)
     const ward = wardBuff(BuffTier.Bronze, 2)
 
-    state = activateBuff(state, foresight, true)
-    expect(state.apPool).toBe(STARTING_AP - apCostOf(foresight))
+    state = activateBuff(state, timebomb, true)
+    expect(state.apPool).toBe(STARTING_AP - apCostOf(timebomb))
     expect(state.activatedThisTrick).toContain(1)
 
     state = activateBuff(state, ward, true)
-    expect(state.apPool).toBe(3)
+    expect(state.apPool).toBe(STARTING_AP - apCostOf(timebomb) - apCostOf(ward))
     expect(state.activatedThisTrick).toEqual([1, 2])
 
     const cheat = cheatBuff(BuffTier.Gold, 3)

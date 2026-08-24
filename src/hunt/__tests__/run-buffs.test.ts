@@ -132,3 +132,39 @@ describe('DLR-125 — Purse coins reach the run purse through recordEncounter', 
     expect(recorded.coins).toBe(run.coins + 3)
   })
 })
+
+describe('recordEncounter — DLR-126, the run adopts a pile a hand spent from', () => {
+  /** `recordEncounter`'s first eight arguments for a run that neither won nor lost this hand. */
+  const carry = (run: ReturnType<typeof startRun>) =>
+    [
+      run.encounter,
+      run.cheats,
+      run.timebombCharges,
+      run.blastGuardHeld,
+      run.discardsRemaining,
+      null,
+      0,
+    ] as const
+
+  it('adopts the shrunken pile when the ninth argument is passed', () => {
+    const run = startRun()
+    const shrunken = run.buffs.slice(1)
+
+    const recorded = recordEncounter(run, ...carry(run), shrunken)
+
+    expect(recorded.buffs).toEqual(shrunken)
+    expect(recorded.buffs).toHaveLength(run.buffs.length - 1)
+  })
+
+  it('keeps run.buffs untouched when the ninth argument is omitted — all 52 existing call sites', () => {
+    const run = startRun()
+    const recorded = recordEncounter(run, ...carry(run))
+    expect(recorded.buffs).toBe(run.buffs)
+  })
+
+  it('never decrements nextBuffId — a spent card’s id is not reissued', () => {
+    const run = startRun()
+    const recorded = recordEncounter(run, ...carry(run), run.buffs.slice(1))
+    expect(recorded.nextBuffId).toBe(run.nextBuffId)
+  })
+})

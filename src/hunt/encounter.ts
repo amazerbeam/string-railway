@@ -18,6 +18,7 @@ import {
   shieldHeartsForTier,
   type ShieldAbsorption,
 } from './shield'
+import { absorbWithWard, wardAbsorptionForTier, type WardAbsorption } from './consumables'
 import type { BuffTier } from './buffs'
 
 /**
@@ -53,8 +54,13 @@ export function startEncounter(
     pendingTimebomb: NO_PENDING_TIMEBOMB,
     pendingApplyPayout: null,
     shieldHearts: NO_SHIELD_HEARTS,
+    wardAbsorbs: NO_WARD,
   }
 }
+
+/** No Ward held. What `startEncounter` seeds — which is what clears a Ward at the encounter
+ *  boundary — and what a Ward that took a hit returns to. UNIT: damage. */
+export const NO_WARD: Damage = 0
 
 /** Nothing owed. Shared and only ever spread from, never assigned into — its `IncomingDamage`
  *  type is deeply `readonly`, the same discipline `duelHealthBars.ts`'s `NO_BREAKING` uses. */
@@ -101,9 +107,24 @@ export function applyDamage(encounter: EncounterState, incoming: IncomingDamage)
   // A Quarry that goes down spends NO blue hearts: D7 already gives the player zero damage from
   // that event, so the shield is carried through untouched rather than absorbing a hit that never
   // landed.
+  //
+  // DLR-126 — a held Ward absorbs BEFORE blue hearts do, and only ITS remainder reaches them. The
+  // order is deliberate: a Ward breaks on the next hit regardless of how much it ate, whereas a
+  // blue heart is spent one point at a time and survives with a remainder, so spending the
+  // perishable pool first is the only order under which a Ward is ever worth more than the heart
+  // behind it. Same `quarryDown` carve-out, for the identical reason.
+  const wardSplit: WardAbsorption = quarryDown
+    ? { absorbed: 0, throughToHealth: 0 }
+    : absorbWithWard(encounter.wardAbsorbs, incoming[DuelSide.Player])
+  // "Consumed regardless of whether the hit was fully absorbed" (`v1-buff-card-list.md` → *Ward*).
+  // A Ward is spent by TAKING PART IN A HIT, not by absorbing anything in particular — so a hit at
+  // or below N breaks it just as surely as one above N. A zero-damage event and a `quarryDown`
+  // event are not hits taken and leave it standing.
+  const wardAfter: Damage =
+    quarryDown || incoming[DuelSide.Player] === 0 ? encounter.wardAbsorbs : NO_WARD
   const absorption: ShieldAbsorption = quarryDown
     ? { absorbed: 0, throughToHealth: 0, shieldHeartsRemaining: encounter.shieldHearts }
-    : absorbWithShield(encounter.shieldHearts, incoming[DuelSide.Player])
+    : absorbWithShield(encounter.shieldHearts, wardSplit.throughToHealth)
   const playerHealth = quarryDown
     ? encounter.health[DuelSide.Player]
     : deplete(encounter.health[DuelSide.Player], absorption.throughToHealth)
@@ -133,6 +154,7 @@ export function applyDamage(encounter: EncounterState, incoming: IncomingDamage)
     pendingTimebomb: encounter.pendingTimebomb,
     pendingApplyPayout: playerLostHealth || winner !== null ? null : encounter.pendingApplyPayout,
     shieldHearts: absorption.shieldHeartsRemaining,
+    wardAbsorbs: wardAfter,
   }
 }
 
@@ -226,6 +248,33 @@ export function activateShield(encounter: EncounterState, tier: BuffTier): Encou
  *  shield pip at all. */
 export function hasShieldHearts(encounter: EncounterState): boolean {
   return encounter.shieldHearts > 0
+}
+
+/**
+ * DLR-126 — spending a Ward SETS the absorption `tier` grants. It does NOT add to a Ward already
+ * held, and it sets DOWNWARD too: a bronze Ward after a gold one leaves 1, not 5.
+ *
+ * The rule is copied from `activateShield` above rather than invented, and deliberately so: two
+ * guards with opposite stacking rules is exactly the pair a later edit "makes consistent" by
+ * mistake, and stacking guards is a costing question nobody has answered. Whether a second Ward
+ * should stack rather than replace is the developer's to overrule (`plan.md` Part 1 → Assumptions
+ * made).
+ *
+ * Returns the encounter UNCHANGED when it is already resolved — protection must never be granted
+ * in a fight that is over. Never throws for any `BuffTier`: `WARD_ABSORPTION` is total over the
+ * union, so `wardAbsorptionForTier`'s guard is unreachable from here except through a cast. That
+ * matters because the reducer calls this during an event handler, and DLR-131 records zero
+ * `ErrorBoundary` against 72 throw sites — a throw here blanks the screen.
+ */
+export function activateWard(encounter: EncounterState, tier: BuffTier): EncounterState {
+  if (isEncounterResolved(encounter)) return encounter
+  return { ...encounter, wardAbsorbs: wardAbsorptionForTier(tier) }
+}
+
+/** Whether a Ward is standing. ONE statement, so a rule and a reading cannot disagree — the
+ *  discipline `hasShieldHearts` immediately above sets. */
+export function hasWard(encounter: EncounterState): boolean {
+  return encounter.wardAbsorbs > 0
 }
 
 /**

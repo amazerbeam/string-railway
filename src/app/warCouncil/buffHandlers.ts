@@ -9,9 +9,12 @@
  * set.
  */
 import {
-  activateBuff,
+  activateFromPile,
+  activateWard,
   buffActivationRefusalFor,
   BuffActivationRefusal,
+  BuffKind,
+  extraDiscardCharges,
   type Buff,
   type BuffId,
 } from '../../hunt'
@@ -95,8 +98,12 @@ export function handleCancelLoadout(state: RoundUiState): RoundUiState {
 /**
  * Three outcomes on one row, mirroring `handleTapApplyDamage`'s shape. A refusal drops the poise
  * and changes nothing else; nothing poised (or a different buff poised) poises this one; the same
- * buff poised COMMITS through `activateBuff` and leaves the panel OPEN, because AC2 allows one or
- * more activations per trick.
+ * buff poised COMMITS through `activateFromPile` and leaves the panel OPEN, because AC2 allows one
+ * or more activations per trick.
+ *
+ * DLR-126 — the two-tap model IS the reversibility. There is no un-activate in the engine and a
+ * spent consumable is gone for the rest of the run, so the only chance to change your mind is
+ * before the second tap: `Escape` drops the poise, and the refusal is re-read on BOTH taps.
  *
  * The refusal is re-read on BOTH taps, for `handleTapApplyDamage`'s stated reason: the felt can
  * change under a poised row — the Quarry leads, a reveal is held — and re-reading is what stops a
@@ -108,9 +115,26 @@ export function handleTapBuff(state: RoundUiState, id: BuffId): RoundUiState {
   if (buff === undefined) return { ...state, loadout: { poised: null } }
   if (loadoutRefusalFor(state, buff) !== null) return { ...state, loadout: { poised: null } }
   if (state.loadout.poised !== id) return { ...state, loadout: { poised: id } }
+  // DLR-126 — `activateFromPile`, never `activateBuff`: a CONSUMABLE ITEM leaves the pile here and
+  // does not come back, which is the whole of what makes it one-shot. `buffs` is unchanged for a
+  // Cheat, a Timebomb or a Shield.
+  const { activation, buffs } = activateFromPile(
+    state.buffActivation,
+    state.buffs,
+    buff,
+    discardWindowOpen(state),
+  )
   return {
     ...state,
-    buffActivation: activateBuff(state.buffActivation, buff, discardWindowOpen(state)),
+    buffs,
+    buffActivation: activation,
+    // AC3 — the effect fires HERE, synchronously at the spend. A consumable has no condition and
+    // never reaches `buffEvaluation.ts`: `buffFires` returns false for every Activated kind and
+    // `firedBuffs` filters them out. Applying it at trick resolution would be applying it against
+    // a condition it does not have.
+    encounter:
+      buff.kind === BuffKind.Ward ? activateWard(state.encounter, buff.tier) : state.encounter,
+    discardsRemaining: state.discardsRemaining + extraDiscardCharges(buff),
     loadout: { poised: null },
   }
 }
