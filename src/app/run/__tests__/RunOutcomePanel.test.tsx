@@ -8,6 +8,7 @@ import {
   MAP_LABEL,
   NEW_RUN_LABEL,
   SHOP_LABEL,
+  VAULT_LABEL,
   VISIT_SHOP_LABEL,
   fightLabel,
   rewardText,
@@ -26,6 +27,7 @@ const baseProps = {
   onContinue: vi.fn(),
   onDismissWarning: vi.fn(),
   onNewRun: vi.fn(),
+  onVault: vi.fn(),
   beatenName: undefined,
   nextName: 'Cillian',
   onMap: vi.fn(),
@@ -56,6 +58,27 @@ describe('RunOutcomePanel — the three verdicts (AC2, AC4, AC5)', () => {
     expect(screen.queryByRole('button', { name: VISIT_SHOP_LABEL })).toBeNull()
     expect(screen.queryByRole('button', { name: CONTINUE_ANYWAY_LABEL })).toBeNull()
     expect(screen.getByRole('button', { name: NEW_RUN_LABEL })).toBeTruthy()
+  })
+
+  it('offers a control named Open the Vault on a terminal verdict, which calls onVault (DLR-118)', () => {
+    const onVault = vi.fn()
+    render(
+      <RunOutcomePanel
+        {...baseProps}
+        encounterIndex={2}
+        carriedHealth={0}
+        outcome={RunOutcome.Lost}
+        canContinue={false}
+        onVault={onVault}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: VAULT_LABEL }))
+    expect(onVault).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers NO Vault control while a run can still continue (DLR-118)', () => {
+    render(<RunOutcomePanel {...baseProps} outcome={RunOutcome.InProgress} canContinue />)
+    expect(screen.queryByRole('button', { name: VAULT_LABEL })).toBeNull()
   })
 
   it('heads a won run differently from a won intermediate fight (AC5)', () => {

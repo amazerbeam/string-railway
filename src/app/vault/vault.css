@@ -1,0 +1,126 @@
+/* DLR-118 — the Vault screen's INNER layout only. The screen mounts inside `run.css`'s existing
+   `.run-shell` (`100dvh` grid, safe-area padding, dark chamber background), so nothing here
+   repeats that shell: no second `100dvh` grid, no `100vh`, no `100vw` anywhere in this file.
+   Layout per this contract's `mockup.html` (unseen — layout reference only).
+   Every clamp() bound and every hue below is the DEVELOPER'S to retune. */
+
+.vault-screen {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.6rem, 2vmin, 1.2rem);
+  width: min(46rem, 100%);
+  max-height: 100%;
+  color: var(--wc-chalk);
+}
+
+.vault-title {
+  font-family: var(--wc-serif);
+  font-size: clamp(1.8rem, 7vmin, 3.4rem);
+  margin: 0;
+  letter-spacing: 0.08em;
+  color: var(--wc-brass);
+  text-align: center;
+}
+
+.vault-alert {
+  border: 1px dashed var(--wc-alarm);
+  color: var(--wc-alarm);
+  padding: clamp(0.5rem, 1.6vmin, 0.9rem) clamp(0.7rem, 2vmin, 1.1rem);
+  font-size: clamp(0.8rem, 2vmin, 0.95rem);
+  margin: 0;
+  border-radius: 3px;
+}
+
+.vault-ledger,
+.vault-spend {
+  border-top: 2px solid var(--wc-brass-dim);
+  padding-top: clamp(0.5rem, 1.6vmin, 0.9rem);
+}
+
+.vault-group-label {
+  font-size: clamp(0.55rem, 1.2vmin, 0.68rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+  display: block;
+  margin-bottom: clamp(0.3rem, 1vmin, 0.5rem);
+}
+
+.vault-deposit {
+  margin: 0 0 0.3rem;
+  font-size: clamp(0.85rem, 2.2vmin, 1.05rem);
+}
+
+.vault-balance {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.1rem, 3vmin, 1.5rem);
+  color: var(--wc-brass);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The one region this stylesheet allows its own scroll: the boost + queued-grant list is
+   unbounded in length (there is no cap on how many entries a returning player can accumulate),
+   so it is scoped overflow rather than something that could push the no-scroll shell taller. */
+.vault-holdings {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: clamp(0.78rem, 1.8vmin, 0.9rem);
+  color: var(--wc-chalk-dim);
+  max-height: clamp(4rem, 16vmin, 8rem);
+  overflow-y: auto;
+}
+
+.vault-choosers {
+  display: flex;
+  gap: clamp(0.5rem, 1.6vmin, 0.9rem);
+  flex-wrap: wrap;
+}
+
+.vault-chooser {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1 1 14rem;
+  font-size: clamp(0.7rem, 1.6vmin, 0.85rem);
+  color: var(--wc-chalk-dim);
+}
+
+.vault-chooser select {
+  min-height: 44px;
+  background: var(--wc-ink);
+  color: var(--wc-chalk);
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 3px;
+  padding: 0 0.6rem;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.85rem, 2vmin, 0.95rem);
+  touch-action: manipulation;
+}
+
+.vault-chooser select:focus-visible {
+  outline: 2px solid var(--wc-parchment);
+  outline-offset: 2px;
+}
+
+.vault-card-state {
+  margin: clamp(0.4rem, 1.2vmin, 0.6rem) 0;
+  font-size: clamp(0.78rem, 1.8vmin, 0.9rem);
+  color: var(--wc-chalk-dim);
+}
+
+.vault-buys {
+  display: flex;
+  gap: clamp(0.4rem, 1.2vmin, 0.6rem);
+  flex-wrap: wrap;
+}
+
+.vault-refusal {
+  margin: clamp(0.3rem, 1vmin, 0.5rem) 0 0;
+  font-size: clamp(0.78rem, 1.8vmin, 0.9rem);
+  color: var(--wc-alarm);
+  min-height: 1.2em;
+}
+
+/* Buy controls and the leave control reuse `.run-btn` / `.run-actions` from `run.css` verbatim
+   — the 44px hit area, `:focus-visible`, hover-wrapped, `:active` and `touch-action` treatment
+   all already live there, so this file does not redefine any of it. */

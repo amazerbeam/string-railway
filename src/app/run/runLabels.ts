@@ -92,6 +92,9 @@ export const CARRIED_HEALTH_LABEL = 'Carried health'
 export const NEXT_FIGHT_LABEL = 'Next fight'
 export const NEW_RUN_LABEL = 'Start a new run'
 
+/** DLR-118 — the terminal verdict's route to the Vault screen. PLACEHOLDER copy. */
+export const VAULT_LABEL = 'Open the Vault'
+
 /** The verdict's forward controls (DLR-84, developer's gate decision 2026-08-16). The shop is
  *  OPT-IN: the primary control goes to the fight, `Shop` goes to the shop. `NEXT_FIGHT_LABEL`
  *  above keeps its value and moves to the shop's own leave button, where it is literally true

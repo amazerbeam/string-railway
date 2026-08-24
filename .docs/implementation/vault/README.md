@@ -1,7 +1,7 @@
-# Vault — `src/vault/`
+# Vault — `src/vault/` and `src/app/vault/`
 
 **Status:** implemented
-**Built by:** DLR-113
+**Built by:** DLR-113, DLR-118
 
 ## Responsibility
 
@@ -43,7 +43,28 @@ imports `vault` — the same shape `warCouncil → hunt` already has.
 
 `index.ts` re-exports all of the above, types then values, mirroring `src/hunt/index.ts`'s barrel.
 
+### The React layer — `src/app/vault/` (DLR-118)
+
+`src/vault/` is pure and lint-fenced; everything that touches React lives in `src/app/vault/` and is
+documented in [the Vault screen](the-vault-screen.md).
+
+| Export                                                        | Purpose                                                                                       | File                |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------- |
+| `useVault`, `VaultHandle`, `VaultCommit`                      | the JSX-free glue: the store, the load outcome, the dropped count, the last write outcome, and `commit`, which since DLR-118 accepts a value **or** a `(prev) => next` updater | `useVault.ts`       |
+| `creditedFromRun`                                             | what THIS run paid in — loss-only, derived through `depositLeftoverCoin`, never a second division | `vaultRunCredit.ts` |
+| `VaultScreen`, `VaultScreenProps`                             | the screen itself, mounted from `App.tsx` on `RunPhase.Vault`                                   | `VaultScreen.tsx`   |
+| `vaultDepositText`, `vaultBalanceText`, `vaultDroppedText`, `VAULT_READ_PROBLEM`, `VAULT_WRITE_PROBLEM`, `VAULT_REFUSAL_MESSAGE`, and the rest | every user-facing string, all PLACEHOLDER copy, every figure interpolated from `vaultConfig.ts` | `vaultLabels.ts`    |
+
 ## How it works
+
+- [Saving the Vault](saving-the-vault.md) — the envelope, the two guards, and what happens to a save
+  this build cannot read.
+- [The Vault screen](the-vault-screen.md) — when the screen appears and what dismisses it, the
+  loss-only deposit rendered, every empty and failure state, the two-select card chooser, and why each
+  spend re-derives its refusal inside the commit updater.
+
+The sections below remain the module's own account of the pure economy; the two files above cover the
+persistence surface and the React layer in full.
 
 ### Deposit on death, and what the remainder does
 
@@ -152,14 +173,14 @@ ticket, from "NOT persisted" to "PERSISTED as of DLR-113".
 
 ## Deferred / not yet implemented
 
-- **No Vault screen — DLR-118 owns it.** This ticket shipped the functions that ticket's buttons will
-  call. Today a player can neither see a balance nor spend anything: `buyOddsBoost` and
-  `buyStartingTier` have **no production caller at all**. Only the two automatic paths are reachable
-  — the deposit on death and the claim at run start, both wired in `App.tsx`.
-- ~~**No live surface for a boosted reel.**~~ **Closed by DLR-116.** `drawVaultReelPool` is called by
-  `src/app/run/useShopSlot.ts` on every render of the shop's slot section, so AC2 is now realised in
-  play as well as structurally. `buyOddsBoost` still has no caller — a player cannot yet *earn* a
-  boost — so the composed path is live while the way to stock it is not.
+- ~~**No Vault screen — DLR-118 owns it.**~~ **Closed by DLR-118.** `src/app/vault/VaultScreen.tsx` is
+  mounted from `App.tsx` on `RunPhase.Vault`, reached from the terminal verdict's `Open the Vault`
+  control. `buyOddsBoost` and `buyStartingTier` both have production callers now, so a player can see
+  a balance and spend it. See [the Vault screen](the-vault-screen.md).
+- ~~**No live surface for a boosted reel.**~~ **Closed by DLR-116**, and the loop closed by DLR-118.
+  `drawVaultReelPool` is called by `src/app/run/useShopSlot.ts` on every render of the shop's slot
+  section, so a boosted reel is something a player sees; and since DLR-118 a player can *earn* the
+  boost that stocks it. The composed path is live end to end.
 - **No mid-run display of Vault currency** — deferred by the ticket, which reveals it at run end only.
 - **No migration**, and nothing to migrate: one schema version has ever existed.
 - **No carried conversion remainder**, and no Vault credit on a **won** run — both deliberate, see

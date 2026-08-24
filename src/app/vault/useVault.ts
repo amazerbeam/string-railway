@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   browserLocalStorage,
   type SaveStore,
@@ -7,6 +7,13 @@ import {
   SaveWriteOutcome,
 } from '../../persistence'
 import { createVaultStore, loadVault, saveVault, type VaultState } from '../../vault'
+
+/** DLR-118 — either the next vault value, or a function from the currently committed
+ *  vault to the next value. The updater form is the one to prefer: two `commit` calls made
+ *  back to back (a double-click, or a fast repeated key-activation) before React re-renders
+ *  each compute from the PREVIOUS commit's result rather than from the same stale render
+ *  closure, so neither purchase is lost. */
+export type VaultCommit = VaultState | ((prev: VaultState) => VaultState)
 
 export interface VaultHandle {
   readonly vault: VaultState
@@ -19,8 +26,12 @@ export interface VaultHandle {
    * Vault screen is the intended consumer; this hook itself renders no UI for it.
    */
   readonly lastWriteOutcome: SaveWriteOutcome | null
-  /** Writes through the store, then sets state. Never throws. */
-  commit(next: VaultState): void
+  /**
+   * Writes through the store, then sets state. Never throws. Accepts either a next `VaultState`
+   * or a `(prev) => next` updater — prefer the updater form, since the value form computes from
+   * the render's stale closure and a batched second call can silently REVERT the first.
+   */
+  commit(next: VaultCommit): void
 }
 
 /**
@@ -44,10 +55,20 @@ export function useVault(storage?: StorageLike | null): VaultHandle {
     lastWriteOutcome: null as SaveWriteOutcome | null,
   }))
 
-  function commit(next: VaultState): void {
-    const outcome = saveVault(store, next)
+  // DLR-118 — the live committed vault, so a `commit` fired twice before React re-renders
+  // (a double-click, or a fast repeated key-activation) computes the second purchase from the
+  // FIRST one's result rather than from the render's stale closure. Without it the second write
+  // silently REVERTS the first. Written only here, inside an event callback, so StrictMode's
+  // development double-invocation never touches it and no effect is needed to keep it in step —
+  // `commit` is the only writer of vault state in this hook.
+  const committed = useRef(load.vault)
+
+  function commit(next: VaultCommit): void {
+    const value = typeof next === 'function' ? next(committed.current) : next
+    committed.current = value
+    const outcome = saveVault(store, value)
     setLoad((prev) => ({
-      vault: next,
+      vault: value,
       outcome: prev.outcome,
       droppedCount: prev.droppedCount,
       lastWriteOutcome: outcome,

@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 13/22 (59%) — done: 13 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-117 "Live card preview: win/lose damage readout" (14/22)
+**Progress:** 14/22 (64%) — done: 14 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-118 "Vault end-of-run screen" (15/22)
 
 ## Run order
 
@@ -3074,3 +3074,208 @@ No server started, no browser opened. Unseen: (1) whether the added 7-12px makes
 ### Docs
 
 `.docs/implementation/war-council-ui/card-damage-preview.md` created; that module's README and the top-level index updated with DLR-117. `.docs/game_rules/the-hunt.md` **was** updated — this changes what a player is shown before committing, which §3/§4 own: a new §4 subsection, three Status-register rows (settled / provisional glyphs / **not built** buff contributions), two new Known tensions, and a dated in-progress note. Three of those four docs already failed repo-wide `prettier --check` before I touched them, so I left their formatting alone rather than churning them; only the new file was formatted.
+
+## Coordinator decisions — DLR-117 reconciliation
+
+Suite 1503 → **1526, 117 files, 0 failures.** Reviewers: all three, **one round, no fix pass** —
+the cleanest ticket of the run.
+
+- **The correctness argument is the best engineering of the run.** The preview **computes no
+  damage at all.** It hands a hypothetical `TrickResolution` to **`applyResolution`** — the same
+  fold the reducer commits real tricks through — and reads the health delta. Shield absorption,
+  the zero floor, D7 and the payout-wipe rule are all inherited rather than restated, and
+  `applyDamage`'s own docblock sanctions exactly this use. Verified two ways: greps confirming
+  no second `Math.min(shield, …)` and only three routes, plus a spec that reads its expected
+  figures off `forcedCashValue` / `cashValue` / `DAMAGE_PER_HIT` rather than hard-coding them.
+- **A free side benefit worth recording:** because a delta never needs the absorbed portion, the
+  preview is **immune to the live `breaking` over-draw defect**. The bug class this ticket was
+  most at risk of reintroducing — `projectedDepletion` lying about shields — is structurally
+  unreachable here.
+- **Accepted two unmet acceptance criteria, and the refusal was right.** AC3 (buff contributions
+  in the readout) and AC1 (the "once any buff is active" visibility gate) are **not built**,
+  because `buffAccrual.ts` still has no caller and an activated condition buff pays nothing. The
+  agent refused to print a bonus the resolution would not pay — printing it would have made the
+  readout lie, which is the one thing a preview must never do. **Carried to DLR-125 by Jira
+  comment**, along with the `timebombDamageFor`/`timebombDamageOf` collapse nomination.
+- **Every case where the readout is an estimate is on the record**, which is what makes it
+  trustworthy: when the player leads (the Quarry's card is face down and a skulled card
+  *inverts both figures*) it is marked `~` and italicised; a Timebomb this card would prime is
+  absent because booking costs no health now; overkill is truncated (`W6` into a Quarry on 4
+  means "enough"); and it never collapses to the branch that will actually happen, because that
+  would leak the Quarry's card past `TELEGRAPH_FIDELITY`.
+
+### It made DLR-119's problem slightly worse, deliberately and with the cost stated
+
+**~7–12px on the `hand` row.** No grid row was added, and the agent **declined to spend
+`.wc-fan`'s rotation reserve** to make it free, on the grounds that the reserve is DLR-119's
+surface to allocate. That is the right call, but the three open `.wc-shell` scroll/crop risks are
+now tighter than they were.
+
+Its own nomination for **most likely thing to be wrong: legibility at the smallest clamp,
+~9.3px.** Also unseen: whether `--wc-card-w` and `--wc-chalk-dim` resolve in `.wc-card-damage`,
+whether card overlap occludes a neighbour's strip, and a clean console watching for an
+`aria-describedby`-target-missing warning. Mockup published, **unseen**.
+
+
+## DLR-118 — Vault end-of-run screen
+
+**GREEN.** Commit `<SHA>` — `DLR-118: give the Vault its own end-of-run screen`. Contract:
+`.claude/contract/DLR-118-vault-end-of-run-screen/`. Reviewers: **all three** (production UI diff),
+two rounds; round 1 found two real defects, round 2 approved unanimously.
+
+### Gates
+
+| Gate | Result |
+| --- | --- |
+| `npm run typecheck` | exit 0 |
+| `npm run lint` | exit 0, no warnings, no suppression anywhere in the diff |
+| `npm test` | **1565 passed of 1565, 120 files, 0 failed** (baseline 1526/1526 across 117 — exactly +39 tests, +3 files) |
+| `npm run build` | exit 0, `dist/` written, no bundler errors |
+
+Scoped `npx prettier --check` on this contract's paths: clean. Repo-wide `format:check` was not run
+as a gate — it fails on ~58 pre-existing `.md` files that are not this contract's.
+
+Line budget after Prettier, measured with `(Get-Content <path>).Count`: `App.tsx` **365** (from 347),
+`VaultScreen.tsx` 258, `VaultScreen.test.tsx` 341, `vaultLabels.ts` 141, `vault.css` 126,
+`RunOutcomePanel.tsx` 198, `useVault.ts` 85. All under the blocking 400.
+
+### The mockup went UNSEEN
+
+`.claude/contract/DLR-118-vault-end-of-run-screen/mockup.html` was written to disk and **never shown
+to the developer** — the mockup gate was skipped for this run, and it was not published as an
+Artifact either. It carries a state-switcher covering all seven screen states and is a layout note
+only, not approved design. `Skill: game-ux` was invoked for the layout and again for the verdict's
+control row.
+
+### Plan defaults taken (no gate; every one is mine, not the developer's)
+
+1. **The screen sits BESIDE `RunOutcomePanel`, it does not replace it.** The verdict owns the outcome
+   and the trick tally; the ticket calls the new screen "distinct from the verdict panel". Replacing
+   it would have deleted DLR-82/85's three verdict states.
+2. **It appears at the end of a run, not a fight** — the `canAdvanceRun(run) === false` branch that
+   previously offered `Start a new run` alone.
+3. **It is one press away, not automatic.** `Open the Vault` is the new **primary** control there;
+   `Start a new run` is demoted to secondary beside it. A player who presses the secondary never sees
+   the Vault. **Worth judging in play — an unskippable interstitial after every death is a pacing
+   call and pacing is the developer's.**
+4. **What dismisses it:** one control plus `Escape`, both calling `handleNewRun`. No route back to the
+   verdict — the verdict is a report on a finished run (AC3).
+5. **It shows both earned-this-run and held-in-total.** AC1's "balance including the amount just
+   converted" is only meaningful if the conversion is stated separately from the total.
+6. **The converted amount is derived, not stored** — `creditedFromRun(outcome, coins)`, which works
+   only because `run.coins` is deliberately not zeroed. Avoids a sixth `useState` in the driver.
+7. **The conversion calls `depositLeftoverCoin(EMPTY_VAULT, coins)` rather than re-dividing by
+   `VAULT_EXCHANGE_RATE`** — the rate and its guards stay stated once, in `src/vault/`.
+8. **Two native `<select>`s, not two roving-tabindex radio groups.** 71 templates over 11 families;
+   a native listbox is one tab stop with platform-supplied arrow/Home/End/type-ahead and **no index
+   arithmetic to get wrong on an empty collection** — the `isFocusable(0)` shape that has bitten this
+   codebase three times. Costs one extra click: family, then card, then buy.
+9. **Cards are worded through `slotSymbolText`** from `slotLabels.ts`, so no fourth buff grammar was
+   written and the screen never calls `apCostOf` or handles a `Buff` — the `Unassigned` `RangeError`
+   is structurally unreachable here rather than merely avoided.
+10. **The currency is called a "mark"** (`VAULT_CURRENCY_SINGULAR`/`_PLURAL`). Placeholder copy, as
+    `shopLabels.ts` and `slotLabels.ts` mark their own. Leaving the balance unit-less reads
+    ambiguously beside coins. **The developer's word to choose.**
+11. **`useVault.commit` was widened to accept a `(prev) => next` updater.** Not in the brief; added
+    because the value form loses a batched second click. See "the defect this closed" below.
+12. **`SAVE_SCHEMA_VERSION` stays at 1** and no persisted shape changed — the screen only reads and
+    writes DLR-113's existing `VaultState`.
+
+### Every screen state defined
+
+| State | What it renders |
+| --- | --- |
+| **Lost run, coins at or above the rate** | the deposit line naming what this run paid in, plus the balance |
+| **Lost run, coins below the rate** | that nothing converted, quoting `VAULT_EXCHANGE_RATE` by interpolation |
+| **WINNING run** | that a won run pays nothing into the Vault — a win is its own reward. **No deposit, ever.** |
+| **First-ever run / empty Vault** | `VAULT_EMPTY_TEXT` in place of the holdings list, every buy control disabled with its refusal in its accessible name, and **no `role="alert"`** — a `SaveReadOutcome.Empty` read is not a failure |
+| **Save corrupt** | a `role="alert"` saying the record could not be read, that it has been **left on disk untouched**, and that this session starts from an empty Vault |
+| **Save version-mismatched** | the same, naming a different game version |
+| **Storage unavailable** | an alert saying the Vault works for this session but will not be remembered |
+| **Entries dropped by reconciliation** | `vaultDroppedText(n)`, how many saved entries this build has no template for |
+| **Write rejected / unavailable** | an alert saying the purchase could not be saved |
+| **Boost already at the cap** | that control disabled, `VAULT_REFUSAL_MESSAGE[BoostMaxed]` folded into its `aria-label` |
+| **Empty family (defensive)** | no card select rendered and every buy control disabled, guarded before any indexing |
+
+The corrupt / version-mismatch copy **renders DLR-113's decision rather than inventing one** — that
+ticket decided an unmigratable save is discarded non-destructively, left in place, and reported.
+`VAULT_READ_PROBLEM` and `VAULT_WRITE_PROBLEM` are `Readonly<Record<Union, string | null>>` **total
+over their unions**, so a sixth outcome is a compile error rather than a blank line.
+
+### The loss-only deposit rule, and how it was proved
+
+Rendered correctly. `App.tsx`'s `handleComplete` remains the single commit site, still gated on
+`recorded.outcome === RunOutcome.Lost`; **`run.coins` is never zeroed anywhere in the diff.** Three
+independent proofs:
+
+- `vaultRunCredit.test.ts` — 7 cases, including "credits NOTHING on a won run" at the same coin count
+  that credits 3 on a loss. Every expected figure computed from `VAULT_EXCHANGE_RATE`, never a literal.
+- `VaultScreen.test.tsx` case 2 — on a winning run the deposit line reads the non-lost sentence **and
+  `queryByText(lostSentence)` is null.** Both directions asserted.
+- Structural: `creditedFromRun` returns `0` for any non-`Lost` outcome before it reaches the
+  conversion at all, and the conversion is `depositLeftoverCoin`, not a second division.
+
+### The two defects review caught (round 1), both fixed
+
+- **Defender, CRITICAL.** `buyBoost`/`buyTier` derived their refusal from the **stale render-time
+  `handle.vault` outside** the commit updater, then called the throwing `buyOddsBoost` unconditionally
+  **inside** it. Two activations batched into one render both passed the same stale guard and the
+  second hit `vaultEconomy.ts`'s deliberate `RangeError` — and **there is no `ErrorBoundary` anywhere
+  in `src/`**, so it crashed to a blank screen. This is exactly the pattern DLR-116 already forced
+  `handleBuy`/`handleDrinkFlask` to adopt. Fixed by re-deriving inside the updater; two regression
+  tests compose the captured updater twice and assert both no-throw and a true no-op.
+- **Code-Evaluator.** Holdings were keyed by the rendered sentence, so two identical queued grants
+  (same template, same tier) collided. Fixed to `{ key, text }` pairs.
+- Also fixed, non-blocking: an unguarded `BUFF_FAMILIES[0]` beside an already-guarded lookup.
+
+### CSS ownership — the question DLR-119 needs answered
+
+**This screen shares CSS with `run.css` and shares NONE with `warCouncilHunt.css`.** It mounts inside
+`run.css`'s existing `.run-shell`, so there is still exactly one `100dvh` grid in the codebase, and
+`vault.css` styles only the inside of it — no second full-viewport shell, no `100vh`, no `100vw`.
+**DLR-119's three unverified layout risks therefore do not reach it**, and this ticket touched none
+of them. The holdings list is the one region given its own `overflow-y: auto` and a `max-height`,
+because the queued-grant list is unbounded.
+
+### What a browser would have checked — nobody looked
+
+No server was started and no browser was opened; the pass was not requested. jsdom has no layout
+engine, so **the no-scroll claim has never been seen by anything in this pipeline.**
+
+- **Does the screen fit without scrolling or cropping** inside `.run-shell` at **1280×800, 1024×768,
+  1366×768 and 390×844**? It is the densest surface this project has: title, alert, deposit line,
+  balance, holdings list, two selects and four buy controls, plus the leave control.
+- **Do `vault.css`'s custom properties resolve** — `--wc-brass`, `--wc-chalk`, `--wc-chalk-dim`,
+  `--wc-parchment`, `--wc-alarm`, `--wc-ink`, `--wc-brass-dim`, `--wc-sans`, `--wc-serif` — or does
+  the page silently fall back to browser defaults? A renamed custom property compiles, lints and
+  passes every test while rendering the wrong colour.
+- **Is the console clean**, and specifically **is the duplicate-React-key warning gone** now that
+  holdings key on identity? That warning only exists in a real React runtime.
+- **Each state seen live through a real `App.tsx` transition, not the isolated harness:** deposit on
+  a loss, nothing-deposited on a win, the empty Vault on a genuinely first run, and each of the four
+  save-failure alerts.
+- **Keyboard:** both selects and all four buy controls reachable with a visible `:focus-visible`
+  ring; `Escape` returning to the start screen cleanly; a second visit to the screen with no
+  StrictMode remount warnings.
+
+### Developer decisions outstanding
+
+- **All copy is placeholder**, including the currency noun "mark".
+- **Whether the Vault should be skippable**, or the verdict's only forward control.
+- **Whether family-then-card narrowing reads as focused or as hiding the catalogue** (71 templates).
+- **Every `clamp()` bound and hue in `vault.css`**, copied from `run.css`'s scale rather than chosen.
+- Non-blocking review nit left unfixed at the round-2 ceiling: `VaultScreen.tsx`'s comment on the
+  `FIRST_BUFF_FAMILY` guard claims it "mirrors `mintFromTemplate`'s throw-guard idiom"; the
+  Code-Evaluator notes that guard fires lazily at call time while this one fires at module import.
+  The code is right, the comment overclaims.
+
+### Docs
+
+`.docs/implementation/vault/the-vault-screen.md` created; `vault/README.md`, `run-ui/verdict-panel.md`,
+`app/run-driver.md`, `run-ui/README.md`, `app/README.md` and the top-level index updated.
+**`.docs/game_rules/the-hunt.md` was updated** — this contract changed a rule: the Vault became
+reachable, so section 10 gained four subsections (the Vault control on a finished verdict, what a
+lost run pays in, what it buys, and what happens when the save cannot be read), and nine Status
+register rows. Two pre-existing statements were **stale and are now fixed**: "a run that has ended
+offers `Start a new run` and nothing else", and "Persistence — nothing is saved", which had been
+wrong since DLR-113 and is now marked PARTLY BUILT.

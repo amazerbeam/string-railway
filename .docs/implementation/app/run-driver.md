@@ -259,11 +259,23 @@ const RunPhase = {
   Warned: 'warned',
   Shop: 'shop',
   Map: 'map', // DLR-85
+  Vault: 'vault', // DLR-118 — reachable ONLY from a terminal verdict
 } as const
 ```
 
 **A union rather than booleans beside each other, because "in the shop AND warned" is a state that must
 not exist.** It is declared at module scope beside `HUNT` and `NO_TRICKS`, and held in one `useState`.
+
+**DLR-118 added `Vault` and cost the driver no new state**, which is the whole argument for widening the
+union rather than adding a boolean beside it — the fourth run-level surface joins the map and the shop
+on the same variable. It also kept the whole `useVault` handle rather than destructuring two fields
+(`const vaultHandle = useVault()`, then `const { vault, commit } = vaultHandle`), so the screen receives
+the load outcome, the dropped count and the last write outcome without the driver naming any of them,
+and it **converted both `commit` call sites to the functional-updater form** —
+`commit((v) => depositLeftoverCoin(v, recorded.coins))` and `commit(clearStartingGrants)` — now that
+`useVault` accepts one. That is the same stale-closure discipline `handleBuy` and `handleDrinkFlask`
+already follow. The file went 347 -> 365 lines; the 400-line budget is close enough that the next
+surface added here should convert it to a reducer.
 
 **DLR-85 widened it from `BetweenPhase` and the argument extends unchanged**: folding the start screen in
 here makes **"in the shop before the run began" unrepresentable for free**, where a sixth `useState` would
@@ -390,10 +402,15 @@ if (encounterOver && phase === RunPhase.Shop) {
   return <ShopPanel coins={run.coins} nextOpponentName={nextName} refusals={{ … refusalFor(stock, item) … }} onBuy={handleBuy} onLeave={leaveForNextFight}
     flaskCharges={run.flaskCharges} flaskRefusal={flaskRefusalFor(flaskStockFor(run))} onDrinkFlask={handleDrinkFlask} … />   // DLR-93
 }
+if (encounterOver && phase === RunPhase.Vault) {      // DLR-118 — above the verdict branch
+  return <VaultScreen handle={vaultHandle} outcome={run.outcome}
+    leftoverCoins={run.coins} onLeave={handleNewRun} />
+}
 if (encounterOver) {
   return <RunOutcomePanel outcome={run.outcome} canContinue={canAdvanceRun(run)} coins={run.coins}
     warning={phase === RunPhase.Warned} onShop={…} onContinue={handleContinue}
-    beatenName={currentName} nextName={nextName} onMap={() => setPhase(RunPhase.Map)} … />
+    beatenName={currentName} nextName={nextName} onMap={() => setPhase(RunPhase.Map)}
+    onVault={() => setPhase(RunPhase.Vault)} … />                                        // DLR-118
 }
 return <WarCouncilRound key={hand} … runLabel={runPositionLabel(run.encounterIndex, run.encounterCount, currentName)} coins={run.coins} bankClimbBonus={bankClimbBonusFor(run)} onComplete={handleComplete} />
 ```

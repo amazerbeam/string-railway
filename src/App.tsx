@@ -27,6 +27,7 @@ import {
   type Hunt,
 } from './hunt'
 import { useVault } from './app/vault/useVault'
+import VaultScreen from './app/vault/VaultScreen'
 import { clearStartingGrants, depositLeftoverCoin } from './vault'
 import { dealRound, PlayerSide, type WarCouncilState } from './warCouncil'
 // Imported from `./app/warCouncilMount` directly, NOT from the `./app` barrel: `./app`
@@ -69,6 +70,8 @@ const RunPhase = {
   Warned: 'warned',
   Shop: 'shop',
   Map: 'map',
+  // DLR-118 — reachable ONLY from a terminal verdict's `Open the Vault` control.
+  Vault: 'vault',
 } as const
 type RunPhase = (typeof RunPhase)[keyof typeof RunPhase]
 
@@ -101,7 +104,8 @@ function App() {
   // hand's, which is the only figure that exists.
   const [tricks, setTricks] = useState<TrickTally>(NO_TRICKS)
   const [phase, setPhase] = useState<RunPhase>(RunPhase.Start)
-  const { vault, commit } = useVault()
+  const vaultHandle = useVault()
+  const { vault, commit } = vaultHandle
 
   // DLR-116 — called UNCONDITIONALLY at the top level, never inside the `RunPhase.Shop` branch: a
   // hook called conditionally is a hooks-order violation. Cheap when the shop is not showing —
@@ -161,7 +165,7 @@ function App() {
       // still reads it, and the Vault is never credited on a win (AC1 says "a run ending in
       // death" — a win is its own reward).
       if (recorded.outcome === RunOutcome.Lost) {
-        commit(depositLeftoverCoin(vault, recorded.coins))
+        commit((v) => depositLeftoverCoin(v, recorded.coins))
       }
       // The verdict is next, not another hand. D5 — any queued Timebomb is discarded, because
       // `advanceRun` and `startRun` both re-seed the encounter through `startEncounter`.
@@ -228,7 +232,7 @@ function App() {
       startRun(PLAYER_START_HEALTH, vault.startingGrants, Math.floor(Math.random() * 0x100000000)),
     )
     if (vault.startingGrants.length > 0) {
-      commit(clearStartingGrants(vault))
+      commit(clearStartingGrants)
     }
     setPhase(RunPhase.Verdict)
   }
@@ -298,6 +302,19 @@ function App() {
     )
   }
 
+  if (encounterOver && phase === RunPhase.Vault) {
+    // `run.coins` is NOT zeroed by the deposit — `handleComplete` leaves it for the verdict
+    // panel — so the screen re-derives what was banked rather than needing state for it.
+    return (
+      <VaultScreen
+        handle={vaultHandle}
+        outcome={run.outcome}
+        leftoverCoins={run.coins}
+        onLeave={handleNewRun}
+      />
+    )
+  }
+
   if (encounterOver) {
     return (
       <RunOutcomePanel
@@ -315,6 +332,7 @@ function App() {
         onContinue={handleContinue}
         onDismissWarning={() => setPhase(RunPhase.Verdict)}
         onNewRun={handleNewRun}
+        onVault={() => setPhase(RunPhase.Vault)}
         beatenName={currentName}
         nextName={nextName}
         onMap={() => setPhase(RunPhase.Map)}

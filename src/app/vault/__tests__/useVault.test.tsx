@@ -49,4 +49,29 @@ describe('useVault (DLR-113)', () => {
     expect(result.current.vault).toEqual(VAULT_WITH_BALANCE)
     expect(result.current.lastWriteOutcome).toBe(SaveWriteOutcome.Unavailable)
   })
+
+  it('commit accepts an updater that receives the currently committed vault', () => {
+    const { result } = renderHook(() => useVault(createMemoryStorage()))
+
+    act(() => {
+      result.current.commit(VAULT_WITH_BALANCE)
+    })
+
+    act(() => {
+      result.current.commit((prev) => ({ ...prev, balance: prev.balance + 5 }))
+    })
+
+    expect(result.current.vault).toEqual({ ...VAULT_WITH_BALANCE, balance: 12 })
+  })
+
+  it('two updater commits batched in one act() both land — the defect this closes', () => {
+    const { result } = renderHook(() => useVault(createMemoryStorage()))
+
+    act(() => {
+      result.current.commit((v) => ({ ...v, balance: v.balance + 1 }))
+      result.current.commit((v) => ({ ...v, balance: v.balance + 1 }))
+    })
+
+    expect(result.current.vault.balance).toBe(2)
+  })
 })

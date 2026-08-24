@@ -1,0 +1,189 @@
+<title>Vault Screen Mockup</title>
+<style>
+  :root {
+    --brass: #c9a227;
+    --brass-dim: #7a6418;
+    --chalk: #e8e3d6;
+    --alert: #d9743f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .run-shell {
+    height: 100dvh; width: 100%; overflow: hidden;
+    display: grid; place-items: center;
+    padding: clamp(1rem, 4vmin, 3rem);
+    background: radial-gradient(120% 80% at 50% 40%, #172027 0%, #050708 100%);
+    color: var(--chalk);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  .vault-screen {
+    display: flex; flex-direction: column;
+    gap: clamp(0.6rem, 2vmin, 1.2rem);
+    width: min(46rem, 100%); max-height: 100%;
+  }
+  .vault-title {
+    font-size: clamp(1.8rem, 7vmin, 3.4rem); margin: 0;
+    letter-spacing: 0.08em; color: var(--brass); text-align: center;
+  }
+  .vault-alert {
+    border: 1px dashed var(--alert); color: var(--alert);
+    padding: 0.6rem 0.9rem; font-size: 0.9rem; margin: 0;
+  }
+  .vault-ledger, .vault-spend {
+    border-top: 2px solid var(--brass-dim); padding-top: 0.7rem;
+  }
+  .vault-deposit { margin: 0 0 0.3rem; font-size: 1rem; }
+  .vault-balance { margin: 0 0 0.5rem; font-size: 1.3rem; color: var(--brass); }
+  .vault-holdings { margin: 0; padding-left: 1.1rem; font-size: 0.85rem; opacity: 0.85;
+    max-height: 6rem; overflow-y: auto; }
+  .vault-group-label { font-size: 0.75rem; letter-spacing: 0.14em;
+    text-transform: uppercase; opacity: 0.6; display: block; margin-bottom: 0.35rem; }
+  .vault-choosers { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+  .vault-chooser { display: flex; flex-direction: column; gap: 0.25rem; flex: 1 1 14rem; }
+  select { min-height: 44px; background: #10171c; color: var(--chalk);
+    border: 1px solid var(--brass-dim); padding: 0 0.6rem; font-size: 0.95rem; }
+  .vault-card-state { margin: 0.5rem 0; font-size: 0.85rem; opacity: 0.85; }
+  .vault-buys { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  button { min-height: 44px; min-width: 44px; padding: 0 1rem; cursor: pointer;
+    background: transparent; color: var(--chalk); border: 1px solid var(--brass-dim);
+    font-size: 0.95rem; touch-action: manipulation; }
+  button.is-primary { border-color: var(--brass); color: var(--brass); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .vault-refusal { margin: 0.4rem 0 0; font-size: 0.85rem; color: var(--alert); min-height: 1.2em; }
+  .run-actions { display: flex; justify-content: center; margin-top: 0.4rem; }
+  .state-switch { position: fixed; top: 0.5rem; left: 0.5rem; font-size: 0.75rem; }
+</style>
+
+<div class="state-switch">
+  <select id="stateSwitch" onchange="applyState(this.value)" aria-label="Mockup state">
+    <option value="loss">State: lost run, coins converted</option>
+    <option value="win">State: WON run, nothing deposited</option>
+    <option value="empty">State: first ever run, empty Vault</option>
+    <option value="short">State: lost run, too few coins</option>
+    <option value="corrupt">State: save could not be read</option>
+    <option value="unavailable">State: storage unavailable</option>
+    <option value="writefail">State: purchase could not be saved</option>
+  </select>
+</div>
+
+<div class="run-shell">
+  <div class="vault-screen" onkeydown="if(event.key==='Escape')alert('leave -> start screen')">
+    <h1 class="vault-title">The Vault</h1>
+
+    <p class="vault-alert" role="alert" id="alertLine" hidden></p>
+
+    <section class="vault-ledger" role="group" aria-label="This run and your Vault">
+      <span class="vault-group-label">This run and your Vault</span>
+      <p class="vault-deposit" role="status" id="depositLine">
+        37 leftover coins became 3 marks.
+      </p>
+      <p class="vault-balance" id="balanceLine">Vault balance &mdash; 5 marks</p>
+      <ul class="vault-holdings" id="holdings">
+        <li>Bell-Taker (Momentum) &mdash; odds raised 2 of 3</li>
+        <li>Glutton (Blade) &mdash; odds raised 1 of 3</li>
+        <li>Starting card queued: Silver &mdash; Hoarder (Purse)</li>
+      </ul>
+    </section>
+
+    <section class="vault-spend" role="group" aria-label="Spend">
+      <span class="vault-group-label">Spend</span>
+      <div class="vault-choosers">
+        <label class="vault-chooser">Card family
+          <select aria-label="Card family" onchange="alert('family: '+this.value)">
+            <option>Taker</option><option>Feeder</option><option>Mark of the</option>
+            <option>Sidestep</option><option>Glutton</option><option>Hoarder</option>
+            <option>Unbloodied</option><option>Debt Collector</option><option>Keepsake</option>
+            <option>Miser</option><option>Cornered</option>
+          </select>
+        </label>
+        <label class="vault-chooser">Card
+          <select aria-label="Card" onchange="alert('card: '+this.value)">
+            <option>Bell-Taker (Blade) &mdash; win a trick with Bells</option>
+            <option>Bell-Taker (Purse) &mdash; win a trick with Bells</option>
+            <option>Bell-Taker (Second Wind) &mdash; win a trick with Bells</option>
+            <option>Bell-Taker (Momentum) &mdash; win a trick with Bells</option>
+            <option>Key-Taker (Blade) &mdash; win a trick with Keys</option>
+          </select>
+        </label>
+      </div>
+
+      <p class="vault-card-state" id="cardState">Odds raised 2 of 3. It appears more often on a slot strip.</p>
+
+      <div class="vault-buys">
+        <button type="button" class="is-primary" id="boostBtn"
+          onclick="alert('buyOddsBoost(templateId)')">Raise the odds &mdash; 1 mark</button>
+        <button type="button" id="t1" onclick="alert('buyStartingTier(id, bronze)')">Bronze start &mdash; 2 marks</button>
+        <button type="button" id="t2" onclick="alert('buyStartingTier(id, silver)')">Silver start &mdash; 5 marks</button>
+        <button type="button" id="t3" onclick="alert('buyStartingTier(id, gold)')">Gold start &mdash; 10 marks</button>
+      </div>
+      <p class="vault-refusal" role="status" id="refusalLine"></p>
+    </section>
+
+    <div class="run-actions">
+      <button type="button" class="is-primary" onclick="alert('leave -> start screen')">
+        Start a new run
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function applyState(s) {
+    var alertLine = document.getElementById('alertLine')
+    var deposit = document.getElementById('depositLine')
+    var balance = document.getElementById('balanceLine')
+    var holdings = document.getElementById('holdings')
+    var refusal = document.getElementById('refusalLine')
+    var cardState = document.getElementById('cardState')
+    var buys = ['boostBtn', 't1', 't2', 't3']
+
+    alertLine.hidden = true
+    refusal.textContent = ''
+    cardState.textContent = 'Odds raised 2 of 3. It appears more often on a slot strip.'
+    buys.forEach(function (id) { document.getElementById(id).disabled = false })
+    holdings.innerHTML =
+      '<li>Bell-Taker (Momentum) — odds raised 2 of 3</li>' +
+      '<li>Glutton (Blade) — odds raised 1 of 3</li>' +
+      '<li>Starting card queued: Silver — Hoarder (Purse)</li>'
+    deposit.textContent = '37 leftover coins became 3 marks.'
+    balance.textContent = 'Vault balance — 5 marks'
+
+    function broke(msg) {
+      buys.forEach(function (id) { document.getElementById(id).disabled = true })
+      refusal.textContent = msg
+    }
+
+    if (s === 'win') {
+      deposit.textContent =
+        'A won run pays nothing into the Vault — its 37 coins stayed with the run.'
+    } else if (s === 'short') {
+      deposit.textContent = '4 leftover coins — not enough. 10 coins make 1 mark.'
+    } else if (s === 'empty') {
+      deposit.textContent = '4 leftover coins — not enough. 10 coins make 1 mark.'
+      balance.textContent = 'Vault balance — 0 marks'
+      holdings.innerHTML =
+        '<li>The Vault is empty. Nothing has been bought yet.</li>'
+      cardState.textContent = 'Odds not yet raised on this card.'
+      broke('You do not have the marks for that.')
+    } else if (s === 'corrupt') {
+      alertLine.hidden = false
+      alertLine.textContent =
+        'Your saved Vault could not be read, so this session starts from an empty Vault. ' +
+        'The old record is left on disk untouched and is replaced the next time you spend.'
+      balance.textContent = 'Vault balance — 0 marks'
+      holdings.innerHTML = '<li>The Vault is empty. Nothing has been bought yet.</li>'
+      broke('You do not have the marks for that.')
+    } else if (s === 'unavailable') {
+      alertLine.hidden = false
+      alertLine.textContent =
+        'This browser is not letting the game save. The Vault works for this session ' +
+        'but will not be remembered.'
+    } else if (s === 'writefail') {
+      alertLine.hidden = false
+      alertLine.textContent =
+        'That purchase could not be saved. It holds for this session but will not be remembered.'
+    }
+  }
+</script>

@@ -13,8 +13,8 @@ must still distinguish them. Four things differ, not just the hue:
 | State                     | Headline           | Rule above it        | Controls                                       |
 | ------------------------- | ------------------ | -------------------- | ---------------------------------------------- |
 | Fight won, more to come   | `Aoife defeated`   | single 2px rule      | `Fight Cillian`, `Shop` **and** `Map` (DLR-85) |
-| Run won                   | `YOU WIN`          | **double** rule      | `Start a new run`                              |
-| Run lost                  | `YOU LOSE`         | **hatched** rule     | `Start a new run`                              |
+| Run won                   | `YOU WIN`          | **double** rule      | `Open the Vault` **and** `Start a new run`     |
+| Run lost                  | `YOU LOSE`         | **hatched** rule     | `Open the Vault` **and** `Start a new run`     |
 
 **DLR-85 named the first row and added the third control.** The headline is
 `runHeadline(outcome, beatenName)` — the opponent just beaten, which is the one at `encounterIndex`
@@ -24,9 +24,16 @@ name:** `YOU WIN` and `YOU LOSE` keep DLR-82's wording, because a run-level verd
 rather than about one opponent, and the opponent is named in the supporting line instead.
 
 The `Map` control (`onMap`) opens the run's path — the same `RunPathScreen` the start screen uses. It
-sits **only on the first row**: a finished run offers `Start a new run` and nothing else, so there is no
-map from a won or lost verdict, and a spec pins that absence. See
+sits **only on the first row**: a finished run offers no map, and a spec pins that absence. See
 [the run map and the path screen](run-map-and-the-path-screen.md).
+
+**DLR-118 gave the two terminal rows a second control, and made it the primary.** `onVault` is a
+**required** prop, rendered only in the `!canContinue` branch: `Open the Vault` (`VAULT_LABEL` in
+`runLabels.ts`) first, `Start a new run` beside it. The mirror of the `Map` rule holds — **there is no
+Vault control while a run can still continue**, and a spec pins that absence too. Nothing in the
+`canContinue` branches changed. The Vault screen sits **beside** this panel rather than replacing it,
+because the verdict owns the outcome and the trick tally and the Vault screen has no business
+restating either; see [the Vault screen](../vault/the-vault-screen.md).
 
 > **The warned branch's labels were deliberately left alone.** `Visit the shop` / `Continue anyway` keep
 > their DLR-84 wording rather than being renamed to name the opponent, because a DLR-84 component spec

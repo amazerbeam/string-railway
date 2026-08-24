@@ -8,6 +8,17 @@ Last reviewed against the code and the design on **2026-08-24**. Everything belo
 the app today except where a rule is marked **[not built]** — and except the **blue hearts** of
 section 8, which are enforced, drawn, and unreachable because nothing grants one.
 
+> **Something now survives a run, and a lost run pays for it — DLR-118, 2026-08-24.** The **Vault**
+> has been in the code since 2026-08-23 with no way to reach it; today it got its screen. A run that
+> has ended offers **`Open the Vault`** beside `Start a new run`, and there you can see what your
+> death converted, what you hold in total, and spend it on two things that reach into your *next*
+> run (section 10). **Only a loss pays in** — a win is its own reward. This is also the first thing
+> in this game that is **saved between sessions**, so the bullet that used to say a reload starts
+> wholly fresh is no longer true. **Nothing on this screen has been seen in a browser**: the contract
+> ran unattended with its browser pass off and its mockup unseen, so whether it fits without
+> scrolling at any viewport size is untested, and every word of its copy — including the word "mark"
+> for the currency itself — is a placeholder the developer owns.
+
 > **Every card in your hand now prints what it would cost — DLR-117, 2026-08-24.** Under each card
 > sit two figures: what the Quarry takes if that card wins its trick, and what you take if it loses
 > (section 4). Both are live, both are always on screen, and both are computed by asking the game
@@ -1595,8 +1606,66 @@ that visits the shop. It shows the same path, with your progress on it:
 - **One control returns you to the verdict**, and `Escape` does the same. Looking at the map costs you
   nothing and commits you to nothing.
 
-The map is offered only **between** fights. A run that has ended offers `Start a new run` and nothing
-else.
+The map is offered only **between** fights. A run that has ended offers no map.
+
+### A run that has ended offers the Vault — **[settled]**
+
+**[settled]** — the procedure; every word of the copy is **[provisional]** and the developer's.
+
+When a run is over — won or lost — the verdict offers two things: **`Open the Vault`** first, and
+`Start a new run` beside it. **There is no Vault while a run can still continue**, and no way back to
+the verdict once you have opened it; the verdict is a report on a run that is finished. Leaving the
+Vault — by its own control or with `Escape` — starts the next run, exactly as the verdict's own
+control does.
+
+### The Vault: what a lost run pays in — **[settled]**
+
+**Only a lost run pays into the Vault.** Whatever coin you were still holding when you died converts;
+**a won run pays in nothing at all**, and the Vault screen says so rather than showing a blank. The
+coins are not taken away from the verdict's own tally — you can see both figures.
+
+- **10 leftover coins become 1 unit of Vault currency**, and the remainder is discarded rather than
+  carried. Die on 37 coins and you bank 3; die on 9 and you bank nothing, and the screen tells you
+  the shortfall rather than staying silent. **[provisional]** — the rate is transcribed from the
+  ticket and nobody has played it.
+- **The currency has no agreed name.** The screen calls it a "mark". **[open]** — placeholder copy,
+  the developer's word to choose.
+- **The Vault is the first thing in this game that is saved.** It survives closing the tab. Coins,
+  health, buffs and the run itself still do not. **[settled]**
+
+> **Not in the base game.** *The Fox in the Forest* is played in discrete games with nothing carried
+> between them. Everything in this section is this game's own.
+
+### The Vault: what it buys — **[settled]**, the prices **[provisional]**
+
+Two purchases, both aimed at a **future** run, both made only on this screen. You pick a card family,
+then a card within it, then spend.
+
+- **Raise a card's odds — 1 unit.** That card turns up more often on the slot machine's strip
+  (section 10's machine). It is **permanent**, it **stacks up to 3 times**, and nothing ever removes
+  a stack. At the cap the card is roughly four times as likely to appear on a strip — about a third of
+  strips rather than about one in nine. **[provisional]** — every one of those numbers was chosen by
+  an agent and has never been played.
+- **Buy a starting card — 2, 5 or 10 units for bronze, silver or gold.** It is queued, and the **next
+  run you start** begins with it already in your pile. It is **one-shot**: starting the run consumes
+  it. The three prices follow the same 2:5:10 ladder the game already uses for what a tier is worth.
+  **[provisional]** — same reason.
+- **Nothing is gated behind the Vault.** Every card is reachable at a balance of zero; the Vault only
+  changes how often one appears and what you begin holding.
+- **A purchase you cannot afford is refused with a reason**, and a card whose odds are already at the
+  cap says so — the same way the shop and the flask refuse. **[settled]**
+
+### The Vault: when the save cannot be read — **[settled]**
+
+A saved Vault that this build cannot read — corrupt, or written by a different version of the game —
+**is not silently replaced by a zero**. The screen says what happened and says that the unreadable
+record has been **left on disk untouched**; you play the session from an empty Vault, and the record
+is only overwritten the next time you actually spend. If the browser will not let the game save at
+all, the screen says the Vault works for this session but will not be remembered. If entries in a
+save refer to cards this version no longer has, the screen says how many were dropped.
+
+**A Vault you have never used is not a failure**, and is not reported as one — it simply says it is
+empty.
 
 > **The path does not currently fit a narrow viewport, and it crops rather than scrolls.** Below roughly
 > 1088px of width the opponents at the end of the run are simply not drawn — at a phone width barely half
@@ -2026,7 +2095,9 @@ too, alongside who is coming next.
   not an oversight, because a restore the game performs on you is a different mechanic from a charge
   you choose to spend. **Neither the shop's heal nor the flask is this**: one costs a coin, the other
   costs a charge, and both need you to choose them.
-- **Coins carrying between runs** — **[not built]**. A new run starts at zero.
+- **Coins carrying between runs** — **[not built]**. A new run starts at zero. What *does* carry is
+  the **Vault** (above): leftover coin converts on a death, at 10 to 1, into a separate currency that
+  buys into the next run. The coins themselves never survive.
 - **Different Quarries — HALF BUILT.** The twenty-five opponents now have **names of their own**
   (section 9), and the map, the verdict, the shop and the fight counter all use them. But **every opponent
   still plays identically** and differs only in health: no power, no gimmick, nothing it may do that
@@ -2068,7 +2139,10 @@ too, alongside who is coming next.
   bar. What exists is the pricing, the budget, the refusals and the ceilings, as tested code with
   no caller.
 
-- **Persistence.** Reloading the page starts a new run; nothing is saved.
+- **Persistence — PARTLY BUILT since DLR-118.** The **Vault** is saved and survives closing the tab
+  (above). **Nothing else is.** Reloading the page still starts a new run, at full health, with no
+  coins, no buffs and no progress along the path — the Vault's balance, its odds boosts and its
+  queued starting cards are the only things that come back.
 - **Snare** — an in-hand edit layer — is **[open]** and explicitly blocked: "raise the value of the
   card I am about to win with" is a dominant strategy until it has a cost.
 
@@ -2142,6 +2216,16 @@ the mechanics themselves are documented in `../implementation/`.
 > `drinkFlask` and their private helpers) moved to `src/hunt/runTransitions.ts` and are re-exported from
 > the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
 > a `RunState` field and a transition in the same breath means exactly that.
+
+> **Where DLR-118 stands, 2026-08-24.** **The Vault is now live end to end.** Its rules have been in
+> the engine since DLR-113 with **no production caller at all** — a player could neither see a balance
+> nor spend one — and this ticket built the screen that reaches them. Everything in the Vault rows
+> below is reachable today: the deposit on a death, the balance, both purchases, the refusals, and the
+> save-failure states. **What has not happened is anyone looking at it.** The contract ran unattended
+> with its browser pass off, so no viewport has been checked, and every sentence on the screen —
+> including the currency's name — is placeholder copy standing in for the developer's judgement. One
+> loop is now closed that DLR-116 left open: a boosted slot strip was already drawn, but until today
+> there was no way to *buy* the boost that stocks it.
 
 > **Where DLR-116 stands, 2026-08-24.** **Live and reachable by a player, for the first time:** the
 > slot machine. Choosing between the two machines, reading the eight-card strip and the posted odds,
@@ -2478,6 +2562,16 @@ the mechanics themselves are documented in `../implementation/`.
 | Buy nothing, or buy repeatedly while you can                                     | settled                                                                                    | nothing to enforce — leaving is always offered, and `buyFromShop` is a plain transition with no per-visit cap                                                                                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                                 |
 | Leaving the shop starts the next fight                                           | settled                                                                                    | `src/App.tsx` — `leaveForNextFight`, the one call to `advanceRun`, reached from all three forward controls                                                                                                                                                                                                                                                                              | Developer — whether `Escape` should do this                                                                                                                                                                                                                                                                       |
 | Nothing in the shop reduces skull density                                        | settled — ruled out                                                                        | nothing to enforce — no key, no item, and no code path touches `SKULL_DENSITY` or the curves                                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                                 |
+| The Vault is reachable, from a finished run only | settled - since DLR-118 | `src/App.tsx` - `RunPhase.Vault`, entered only from the `!canAdvanceRun` verdict branch; the control is `VAULT_LABEL` in `src/app/run/runLabels.ts`, rendered by `src/app/run/RunOutcomePanel.tsx`; the screen is `src/app/vault/VaultScreen.tsx` | Developer - whether it should be skippable, or the verdict's only forward control |
+| Only a lost run pays into the Vault | settled - since DLR-113, visible since DLR-118 | `src/App.tsx` - `handleComplete`, gated on `recorded.outcome === RunOutcome.Lost`, the one commit site; `run.coins` is deliberately never zeroed, and `src/app/vault/vaultRunCredit.ts` - `creditedFromRun` re-derives the figure for the screen by calling `depositLeftoverCoin` rather than dividing again | - |
+| 10 leftover coins make 1 unit, remainder discarded | **provisional** - transcribed, never played | `src/vault/vaultConfig.ts` - `VAULT_EXCHANGE_RATE`; applied by `src/vault/vaultEconomy.ts` - `depositLeftoverCoin`, which floors and guards `Number.isFinite` | **Developer** - transcribed from DLR-113's ticket, not chosen |
+| What the currency is called | **open** - placeholder copy | `src/app/vault/vaultLabels.ts` - `VAULT_CURRENCY_SINGULAR` / `_PLURAL`, currently "mark"/"marks" | **Developer** - the word |
+| Raising a card's odds: 1 unit, permanent, caps at 3 stacks | **provisional** - agent-chosen, never played | `src/vault/vaultConfig.ts` - `VAULT_ODDS_BOOST_PRICE`, `VAULT_ODDS_BOOST_MAX_STACKS`, `VAULT_ODDS_BOOST_STEP`; spent by `src/vault/vaultEconomy.ts` - `buyOddsBoost`, guarded by `oddsBoostRefusalFor`; reaches the strip by multiplication in `src/vault/vaultOdds.ts` - `vaultReelWeightFor` | **Developer** - all three figures |
+| Buying a starting card: 2 / 5 / 10 by tier, one-shot | **provisional** - agent-chosen, derived from the existing tier ladder | `src/vault/vaultConfig.ts` - `VAULT_STARTING_TIER_PRICE`; queued by `src/vault/vaultEconomy.ts` - `buyStartingTier`, consumed at run start by `clearStartingGrants` via `src/App.tsx`'s `handleBeginRun` | **Developer** - the three prices |
+| A refused Vault purchase states its reason | settled - since DLR-118 | `src/vault/vaultEconomy.ts` - `oddsBoostRefusalFor` / `startingTierRefusalFor` are the single statement of affordability, re-derived inside the commit updater so the deliberate `RangeError` stays unreachable; worded by `src/app/vault/vaultLabels.ts` - `VAULT_REFUSAL_MESSAGE` | Developer - the wording |
+| The Vault survives closing the tab; nothing else does | settled - since DLR-113, visible since DLR-118 | `src/vault/vaultStore.ts` at section `'vault'` through `saveKeyFor`, on `src/persistence/`'s `{version, data}` envelope at `SAVE_SCHEMA_VERSION = 1`; held by `src/app/vault/useVault.ts` | - |
+| An unreadable save is reported, not silently zeroed | settled - since DLR-118 | `src/app/vault/vaultLabels.ts` - `VAULT_READ_PROBLEM` / `VAULT_WRITE_PROBLEM`, total over `SaveReadOutcome` / `SaveWriteOutcome`; the record is left on disk untouched, per `src/vault/vaultStore.ts` - `loadVault`, which never calls `clear()` | Developer - the wording |
+| Vault currency shown during a run | **not built** - deferred by DLR-118's own ticket | nothing - the balance appears at run end only | Developer - whether a mid-run readout is wanted |
 | Coins carrying between runs                                                      | **not built**                                                                              | nothing is persisted anywhere; `startRun` seeds `coins: 0`                                                                                                                                                                                                                                                                                                                              | Developer — a later ticket                                                                                                                                                                                                                                                                                        |
 | Forage                                                                           | **not built**                                                                              | `src/hunt/config.ts` — `FORAGE_BUDGET_PER_ENCOUNTER` (no consumer)                                                                                                                                                                                                                                                                                                                      | Developer — budget is provisional                                                                                                                                                                                                                                                                                 |
 | One action bar carrying every pre-trick decision                                 | settled — since DLR-114                                                                    | `src/app/warCouncil/ActionBar.tsx`, mounted by `src/app/warCouncil/WarCouncilRound.tsx` into the shell's fourth grid row (`src/app/warCouncil/warCouncil.css`, mirrored in `src/app/warCouncil/warCouncilHunt.css`'s narrow-viewport block). `ApplyDamagePlate.tsx` and `DiscardPlate.tsx` were deleted                                                                                 | **Developer** — whether four buttons in a row reads clearly, and whether the fourth grid row still fits without scrolling. Never seen in a browser                                                                                                                                                                |

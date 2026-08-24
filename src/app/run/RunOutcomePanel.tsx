@@ -6,6 +6,7 @@ import {
   NEW_RUN_LABEL,
   NEXT_FIGHT_LABEL,
   SHOP_LABEL,
+  VAULT_LABEL,
   VISIT_SHOP_LABEL,
   fightLabel,
   rewardText,
@@ -53,6 +54,10 @@ interface RunOutcomePanelProps {
   /** Leaves the warning without advancing and without opening the shop — the `Escape` path. */
   readonly onDismissWarning: () => void
   readonly onNewRun: () => void
+  /** DLR-118 — the terminal verdict's route to the Vault screen. Rendered only in the
+   *  `!canContinue` branch, beside `onNewRun` — there is no Vault control while a run can
+   *  still continue. */
+  readonly onVault: () => void
   /** AC8 / the ticket's scope extension — the opponent just beaten, which names the
    *  headline. `undefined` falls back to DLR-82's generic `FIGHT WON`. */
   readonly beatenName: string | undefined
@@ -100,6 +105,7 @@ export default function RunOutcomePanel({
   onContinue,
   onDismissWarning,
   onNewRun,
+  onVault,
   beatenName,
   nextName,
   onMap,
@@ -144,7 +150,10 @@ export default function RunOutcomePanel({
         </p>
         {!canContinue ? (
           <div className="run-actions">
-            <button type="button" className="run-btn is-primary" onClick={onNewRun}>
+            <button type="button" className="run-btn is-primary" onClick={onVault}>
+              {VAULT_LABEL}
+            </button>
+            <button type="button" className="run-btn" onClick={onNewRun}>
               {NEW_RUN_LABEL}
             </button>
           </div>
