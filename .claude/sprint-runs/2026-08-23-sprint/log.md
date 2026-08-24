@@ -3119,7 +3119,7 @@ whether card overlap occludes a neighbour's strip, and a clean console watching 
 
 ## DLR-118 — Vault end-of-run screen
 
-**GREEN.** Commit `<SHA>` — `DLR-118: give the Vault its own end-of-run screen`. Contract:
+**GREEN.** Commit `e21e86c` — `DLR-118: give the Vault its own end-of-run screen`. Contract:
 `.claude/contract/DLR-118-vault-end-of-run-screen/`. Reviewers: **all three** (production UI diff),
 two rounds; round 1 found two real defects, round 2 approved unanimously.
 
