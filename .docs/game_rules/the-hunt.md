@@ -45,8 +45,9 @@ can reach it** — the two are separate axes and this is the one that says which
 > add up, each reward has a per-hand ceiling, and the four rewards land in a fixed order around the
 > cash-out — so a buff genuinely changes the damage you deal, the coins you bank and the action
 > points you have (section 4). The per-card `W/L` figures include them. **Three cards still pay
-> nothing** — the hold-a-suit condition cannot be true in a hand that runs its course — and **nothing
-> on screen tells you a buff fired**. Every threshold, reward and ceiling is an unplayed placeholder.
+> nothing** — the hold-a-suit condition cannot be true in a hand that runs its course. **A fired buff
+> is announced on screen — DLR-119, 2026-08-24** — the trick well names which card fired and what it
+> paid. Every threshold, reward and ceiling is an unplayed placeholder.
 
 > **Some cards are now spent rather than activated — DLR-126, 2026-08-24.** Five of the cards you
 > can own are **one-shot items**: using one costs action points as before, but it also **takes the
@@ -802,8 +803,8 @@ decided by the developer, and is the one most likely to move.
 > all three pay nothing.** The rule is enforced correctly; the game gives it no instant it can be
 > true in. Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
 
-> **Nothing on the screen tells you a buff fired.** The numbers come out larger and no cause is
-> named. Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
+> **A fired buff is now announced on screen — DLR-119, 2026-08-24.** The trick well names which card
+> fired and what it paid.
 
 ### Every card in your hand tells you what it would cost
 
@@ -2354,7 +2355,8 @@ too, alongside who is coming next.
   the condition or paid the reward. Both halves are now real, for eleven of the twelve conditions the
   card list names — see section 4, [What an activated buff pays](#what-an-activated-buff-pays). What
   remains unbuilt around it is small and named: the twelfth condition (**Long Fall**) has no card and
-  no rule in the app, and **nothing on screen announces that a buff fired**.
+  no rule in the app. **A fired buff is now announced on screen — DLR-119, 2026-08-24** — the trick
+  well names which card fired and what it paid.
 - **Surplus cash-out damage paid back as money** — **[not built]**. The intention stated at PT-002
   was that overkill (section 8) becomes currency, and nothing reads overkill to this day. What
   shipped in its place is a payment for **speed** rather than for surplus: the flat coin for winning,
@@ -2383,8 +2385,10 @@ too, alongside who is coming next.
   coins is what a second copy costs too.
 - **Anything at all on the game-permanent shelf** — **[not built]**, and **nothing is designed for it**.
   The shelf is shown and refused precisely so that this gap is visible rather than hidden.
-  `hybrid-design.md` version-4-scope §1 explicitly declines to design it yet, and **carrying anything
-  between runs would be the first persistence this game has** — nothing is saved today.
+  `hybrid-design.md` version-4-scope §1 explicitly declines to design it yet. **This is not the
+  first persistence this game has** — the Vault (below, and section 10) already carries leftover
+  coin between runs, through `src/persistence/`, since DLR-113/DLR-118 — but nothing on the
+  game-permanent shelf itself is designed to use it.
 - **Anything in the shop that reduces skull density** — **[not built]**, and ruled out rather than
   merely absent. The skull is the game's only inversion (section 7), and selling a way past it would
   remove the reason taking every trick is not simply correct.
@@ -2532,8 +2536,8 @@ the mechanics themselves are documented in `../implementation/`.
 > firing cadence, the additive stacking, the overlap bonus and the four per-hand ceilings are all
 > enforced. The per-card `W/L` readout includes buff contributions with no extra step. It is reachable
 > because DLR-114 built the loadout bar and DLR-116 built the machine that stocks the pile.
-> **Live in the engine but with nothing on screen:** the fact that a buff fired at all. Nothing names
-> the cause when a number comes out larger. **Enforced but unsatisfiable:** the hold-a-suit condition
+> **Live in the engine and on screen since DLR-119, 2026-08-24:** the fact that a buff fired at all —
+> the trick well names which card fired and what it paid. **Enforced but unsatisfiable:** the hold-a-suit condition
 > — the rule is correct and the game gives it no instant it can be true in, so three cards pay
 > nothing. **Not built at all:** Long Fall, the twelfth condition. **Nothing here has been played or
 > seen in a browser** — the contract ran unattended with its browser pass off, so every threshold,
@@ -2927,7 +2931,7 @@ the mechanics themselves are documented in `../implementation/`.
 | Coins a buff earns reach the run's purse, on a win and on a loss | settled — since DLR-125 | `src/app/warCouncilMount.ts` — `WarCouncilRoundResult.coinsEarned`, passed by `src/App.tsx` to `src/hunt/runTransitions.ts` — `recordEncounter`'s optional `buffCoinsEarned` parameter, added outside its won-this-encounter branch | — |
 | Holding a named suit at the hand's end | settled and **unsatisfiable in play** — the rule is enforced; the game gives it no instant | `src/hunt/buffEvaluation.ts` — the `keepsake` case, gated on the final trick and the suits left in hand; the hand is empty at that instant because six cards are played over six tricks. Pinned by an assertion in `src/hunt/__tests__/buffEvaluation.test.ts` | **Developer** — redefine "the hand's end" against the encounter deck, or retire the three cards |
 | **Long Fall** — the twelfth condition on the card list | **not built** — no card, no rule, nothing generates one | nothing to enforce — `src/hunt/buffTemplates.ts` generates no template for it; deferred by DLR-111 for want of a UI answer | **Developer** — the UI question it was deferred on is still open |
-| Anything on screen announcing that a buff fired | **not built** | nothing to enforce — the resolved trick records which buffs fired and no surface reads it | **Developer** — a UX gap created by making buffs pay |
+| Anything on screen announcing that a buff fired | settled — since DLR-119 | `src/app/warCouncil/buffFiredLabels.ts` — `buffFiredText`, read by `src/app/warCouncil/TrickWell.tsx` | — |
 | **Using a one-shot item spends the card permanently**                            | settled — since DLR-126; **unreachable, because nothing mints an item**                                  | `src/hunt/consumables.ts` — `isConsumableItem`, `spendConsumable`, `consumableStacks`; spent through `activateFromPile` in `src/hunt/buffActivation.ts`, which is the only call `src/app/warCouncil/buffHandlers.ts` makes; carried out of the hand by `WarCouncilRoundResult.buffs` in `src/app/warCouncilMount.ts` into `recordEncounter`'s ninth parameter in `src/hunt/runTransitions.ts` | **Settled** — no open value                                                                                                                                                                                                                                                                                             |
 | **Which of the five items can be used at all, and in which window**              | three of five **not built**; Puppeteer's window **provisional**                                          | `src/hunt/consumables.ts` — `CONSUMABLE_EFFECT_LIVE` (one boolean per card) and `CONSUMABLE_TIMING`; refused as `NoEffectYet`, read first, in `buffActivationRefusalFor` in `src/hunt/buffActivation.ts`                                                                                                                                                                                     | **Whoever builds each screen** — Puppeteer needs a list of the Quarry's legal moves, Foresight a draw-pile reveal, Spyglass a ruled-out-candidates surface. No reducer opens Puppeteer's window                                                                                                                          |
 | **A Ward absorbing the next hit, ahead of blue hearts, then breaking regardless** | provisional — the ORDER against blue hearts is a reading, not a transcription; the 1/3/5 ladder is transcribed | `src/hunt/consumables.ts` — `WARD_ABSORPTION`, `absorbWithWard`; held on `EncounterState.wardAbsorbs` in `src/hunt/types.ts`, set by `activateWard` and spent inside `applyDamage` in `src/hunt/encounter.ts`, ahead of `absorbWithShield`                                                                                                                                                    | **Developer** — whether a Ward should be taken before or after a blue heart, whether a second Ward should stack rather than replace, and whether silver and gold Ward earn their rows at all (see Known tensions)                                                                                                        |
@@ -3427,12 +3431,10 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
   document full of **[settled]** rules reads as a playable game, and for a third of the cards it
   currently is not one. **Whose decision:** the developer's, per card — ship it, reach it, or retire
   it.
-- **Buffs pay now, and nothing tells you when one paid** (new 2026-08-24, DLR-125). A fired buff
-  changes the numbers and names no cause: the Quarry's health drops further than it should have, or
-  your action-point pool is larger next window, and there is no line, flash or label saying which
-  card did it. It is a gap the ticket created by succeeding — the mechanic was invisible before
-  because it did nothing. The cheapest fix is an announcement at the trick that fired; whether it
-  wants to be on the card, on the bar or on the health row is the developer's.
+- ~~**Buffs pay now, and nothing tells you when one paid**~~ — **closed 2026-08-24, DLR-119.** DLR-125
+  created this gap by making a buff pay for the first time with nothing naming the cause; DLR-119
+  closed it two tickets later — the trick well now announces which card fired and what it paid, on
+  the felt itself.
 - **Three cards are confirmed dead rather than suspected dead** (new 2026-08-24, DLR-125, replacing
   half of the DLR-111 entry below). The hold-a-suit condition is now implemented and **verified
   unsatisfiable in an ordinary hand**: six cards over six tricks leaves an empty hand at the moment

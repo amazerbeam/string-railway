@@ -1,7 +1,7 @@
 # Hunt — `src/hunt/`
 
 **Status:** partial
-**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-112, DLR-113, DLR-114, DLR-116, DLR-125, DLR-126, DLR-127, DLR-132, PT-001, PT-002
+**Built by:** DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, PT-001, PT-002
 
 ## Responsibility
 
@@ -573,6 +573,11 @@ export already carries both meanings to consumers — `cpuPlayer.ts` imports `Te
   surviving the felt's per-hand remount through `recordEncounter`'s ninth parameter, why Ward's
   silver and gold rows were kept rather than deleted, and the resolution of DLR-112's AC6
   (DLR-126).
+- [Shield — non-stacking blue hearts, absorbed ahead of red health](shield.md) — the tier ladder
+  and its unit, `absorbWithShield`'s absorption order and why a blue heart is worth one point and
+  not one hit, `activateShield` **setting rather than adding**, the three writers that make it
+  non-healable, where Ward sits relative to it, and why no blue heart has ever been drawn by
+  anything in a real run (DLR-110, measured DLR-121).
 
 ## Rules & invariants enforced
 

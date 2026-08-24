@@ -243,8 +243,13 @@ export function activateShield(encounter: EncounterState, tier: BuffTier): Encou
 }
 
 /** Whether any blue heart is standing. ONE statement, so a rule and a reading cannot disagree —
- *  the discipline `hasPendingTimebomb` sets. DLR-115 reads this to decide whether to draw any
- *  shield pip at all. */
+ *  the discipline `hasPendingTimebomb` sets.
+ *
+ *  NO APP-LAYER CALLER TODAY (measured DLR-121). DLR-115's health bar derives its shield pips from
+ *  `encounter.shieldHearts` directly in `roundBars.ts`, not through this predicate — an earlier
+ *  version of this docblock claimed otherwise and was wrong. Kept exported rather than deleted:
+ *  it is the single statement of the rule, and the first reader that needs the question asked
+ *  rather than the field read should call this instead of re-deriving `> 0`. */
 export function hasShieldHearts(encounter: EncounterState): boolean {
   return encounter.shieldHearts > 0
 }

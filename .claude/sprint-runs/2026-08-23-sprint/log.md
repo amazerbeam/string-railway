@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 21/22 (95%) — done: 21 shipped, 0 blocked (+4 out-of-band shipped) | now: DLR-132 "Cheat and Timebomb as cards" (out-of-band), then DLR-121 to close
+**Progress:** 22/22 (100%) — done: 22 shipped, 0 blocked (+5 out-of-band shipped) | DLR-121 "Verification and sign-off" complete — the final ticket. Sprint closed.
 
 ## Run order
 
@@ -5315,3 +5315,307 @@ reachable at 7 AP with `buffCatalog.ts`'s own standing warning that three tricks
 is "close to a guaranteed run of wins" · the one-tier-per-hand Timebomb limitation · **the panel
 nobody has seen** (mockup gate skipped) · and the balance pass, which these figures moved and
 nobody tuned.
+
+## Coordinator decisions — DLR-132 reconciliation, and the balance question is now ANSWERED
+
+Suite **1808 of 1808, 139 files, 0 failures** — down from 1829/141 because the deleted rails took
+their specs with them. **113 files, +3,400 / −2,933, `src/` net −859.** Committed `c4b202d`,
+pushed. Reviewers all approved; QA's three findings were process gaps (docs, PR description,
+stale citations), not logic.
+
+### Reachability is fixed, and the game is still unwinnable — which settles the question
+
+| Measure | Before | After |
+|---|---|---|
+| **Hands holding no activatable buff** | **67.7%** | **0.0%** |
+| Buff activations per hand | 0.88 | **1.50** |
+| AP spent per hand | 2.33 | **4.35** |
+| **Win rate** | **0.0%** | **0.0%** |
+
+**Observation only — nothing was retuned.** DLR-120's finding was that the 0-win result measured
+the *pre-buff* game because the player never reached the systems. That defence is now gone: the
+player reaches them from trick one, activates buffs, spends AP — and **still never wins.**
+
+**So the remaining deficit is a balance problem, not an integration one.** DLR-120 hedged that "a
+balance component probably survives full reachability"; it does, and it is the whole of what is
+left. **This is the single most useful thing the run produced for the developer's balance pass:
+the confound has been removed.**
+
+### The shape problem, solved properly
+
+`BuffTemplate.kind` was `BuffConditionKind` and `axis` was `BuffCostAxis`; **an activated card has
+neither.** Solved with a **discriminated union tagged `form`** — `mintFromTemplate` switches on it
+and delegates to DLR-107's `cheatBuff` / `timebombBuff`, **which stop being inert after four
+tickets.** The rejected alternative (optional `axis`) type-checks but hides a `?? 0` in
+`templateWeightFor`, and **a silently-zero weight is a card in the pool that can never be drawn** —
+exactly the class of defect this ticket exists to fix.
+
+**Consumables did become trivially addable** — five literals, five mint branches, ten weights —
+and were **deliberately left out**, with the boundary now pinned by a test rather than a comment:
+`reachability.test.ts` asserts the five and Shield are *still* unreachable. That is the right way
+to leave scope on the table.
+
+### A defect caught that a naive fold would have shipped
+
+A failing test caught that **ordinary rows gate on `discardWindowOpen` while the retired widgets
+gated on `canAct`** — folding them in naively **would have made a Cheat unusable at the only trick
+it matters**, which is precisely the regression DLR-114 fixed once already with
+`loadoutDoorOpen = discardWindowOpen || canAct`. The same trap, caught by a test this time.
+
+### Other outcomes
+
+- **Throw count 102 → 99**, and the three deletions are exactly `cheats.ts`'s guards on a rail
+  that no longer exists. **No surviving throw weakened.**
+- **Focus order now lives in exactly one place** — one tab stop on the first activatable row,
+  arrows skipping refused rows, `Home`/`End`, wrap, `Escape` to close. Six tests pin it, including
+  **empty-pile and all-refused — the two shapes that reach `useRovingTabIndex`'s unconditional
+  `isFocusable(0)` probe that crashed during DLR-131.**
+- **`RUN_STARTING_CHEATS` keeps its name and value 1**, re-homed to seed a bronze Cheat *buff*,
+  behaviour bit-for-bit unchanged. The three `RunState` fields and `CHEAT_SLOT_COUNT` are deleted.
+  **The open question is now one integer.**
+- **`roundUiState.ts` shrank to 389**, so the mandated in-ticket split was skipped as churn and
+  re-scoped to a measurement. Correct call — the constraint was "do not breach 400", not "split
+  something".
+- **`timebombDamageFor` / `timebombDamageOf`**: the four-ticket-old nomination was finally this
+  ticket's to take.
+
+### Developer decisions
+
+Four **unapproved** slot weights (Skirmisher 3/3, Strongbox 1/1) · whether a run should open
+holding a Cheat · **the gold Cheat's price, now genuinely reachable at 7 AP** against
+`buffCatalog.ts`'s own warning that three tricks of no-follow-suit is "close to a guaranteed run
+of wins" · the one-tier-per-hand Timebomb limitation · **the panel nobody has seen** · the balance
+pass itself.
+
+Two process gaps worth an `/fb-issue`: the config audit missed `shop.ts`'s `CHEAT_SLOT_COUNT`
+import, and Task 13's grep missed seven stale `cheats.ts` citations.
+
+## DLR-121 — Verification and sign-off
+
+The epic's closing ticket: establish with evidence what is actually true about DLR-103's
+twelve-item Definition of Done, fix only documentation provably stale, file every shortfall as
+its own ticket, and hand the developer one consolidated eyes-on agenda. No code changed except
+one docblock comment (7 lines) in `src/hunt/encounter.ts`. **No tuning value was changed, no
+browser pass ran, no server was started, and nothing in this epic has been seen by a human.**
+
+### Verified counts (measured twice, zero drift)
+
+`npm run typecheck` exit 0 · `npm run lint` exit 0 · `npm test` **1808 passed of 1808, 139
+files, 0 failed** · `npm run build` exit 0, `dist/` written · `throw new` in `src/` **99** (the
+log's earlier 98 and 102 were both stale) · real `Math.random()` call sites **3, all in
+`src/App.tsx`**, 15 comment-prose hits in the four pure trees · files ≥400 lines: **2**, both
+pre-existing specs (`playCard.test.ts` 418, `rankTiers.resolution.test.ts` 402; headroom band
+`bank.test.ts` 398, `warCouncilHunt.css` 395) · unreachable `BuffKind`s **6** (Ward, Puppeteer,
+SecondThoughts, Foresight, Spyglass, Shield) · reachable since DLR-132: Cheat, Timebomb ·
+unshelved shop items: Cheat, Timebomb, BlastGuard, Whetstone · condition families **10 of 12
+pay, 11 of 12 evaluated** (Long Fall unbuilt; Keepsake evaluates but is structurally
+unfireable) · `npm run sim -- --runs 200 --seed 1` **0 wins/200**, 2.29 damage dealt vs 2.64
+taken, hands with no activatable buff **0.0%**, activations 1.50/hand, AP spent 4.35/hand,
+faults none, stalled 0 — matches DLR-132 exactly.
+
+### The twelve-item verdict — 7 MET · 4 PARTIAL · 1 NOT MET
+
+1. **MET** — AP economy. `AP_ENABLED` in `src/hunt/apConfig.ts` is the single toggle; `apCostFor`
+   honours it; `spendAp` is the only subtraction path; governs both buff activation and Apply
+   Damage.
+2. **MET** — Cheat and Timebomb are ordinary buff cards. DLR-132 deleted `cheats.ts` and its
+   two-slot rail; both mint from `ActivatedBuffTemplate`; `reachability.test.ts` asserts both
+   reachable. The 3 deleted throw sites were exactly the retired rail's guards.
+3. **MET** — Delayed Apply Damage. `applyDamageDelayTricks` is the single statement of the
+   delay, with `shortenBy`/`removeDelay` modifier paths. `encounter.ts:151` resets the pending
+   payout to `null` on any trick that costs the player health. `unplayedAtPress` resolves the
+   quick-kill counting question by capturing hand size at the press.
+4. **PARTIAL** — Shop contents. `SHOP_ITEMS` = `ApCapacity, SwanTier, WitchTier, Heal` plus
+   `SlotMachinePanel.tsx`. Health, AP capacity and the slot machine all present. **Rank abilities
+   are 2 of 7.** Whetstone stays in the `ShopItem` union but off the shelf — mechanic preserved.
+   Premise failure worth noting: "Reflex" and the discard-budget increase do not exist anywhere
+   in `src/` — that clause of the DoD never had a referent.
+5. **NOT MET** — Shield. Rules are correct and tested: non-stacking (`activateShield` SETS
+   rather than adds), non-healable (`shieldHearts` has exactly three writers — the seed, the
+   absorption result, and `activateShield`; no heal path writes it), per-tier via
+   `SHIELD_HEARTS`. **But `shieldBuff` has zero production callers and `activateShield` has no
+   app-layer caller, so `encounter.shieldHearts` is `0` for the whole of a real run and no blue
+   heart is ever drawn.** Pinned by `reachability.test.ts`. AC1 requires the check against the
+   running app, hence NOT MET rather than PARTIAL — a developer reading the DoD as being about
+   the mechanic rather than the reachable feature would call it MET; evidence recorded both ways.
+6. **PARTIAL** — Rank tiers. Mechanism fully correct: `tierForSide` in `rankTierRules.ts` is the
+   sole read path, returns `AbilityTier.Bronze` for any non-player side, `startRun` seeds
+   `ALL_BRONZE`. **Coverage is 2 of 7** — `TIERED_RANKS = [Swan, Witch]`; Fox, Woodcutter,
+   Treasure, Poison and Monarch have no ladder.
+7. **MET** — Vault. `depositLeftoverCoin` banks at death; `buyOddsBoost` and `buyStartingTier`
+   both exist with their own refusal predicates.
+8. **PARTIAL** — Starting pile. `STARTING_BUFF_COUNT = 4` is resolved and non-empty. **But 4 of
+   the 5 opening cards are `Unassigned` placeholders `activatableBuffs` filters out, leaving one
+   bronze Cheat (`RUN_STARTING_CHEATS = 1`).** DLR-103's scope text says the larger pile exists
+   "to address the first-fight problem" — four placeholders do not. Literal wording satisfied,
+   stated intent unmet.
+9. **MET** — Live card preview. `cardDamage.ts` derives the win/lose readout from the resolution
+   path, including buff contributions.
+10. **MET** — Persistent deck. `encounterDeck.ts` + `discard.ts`; `DecreePile.tsx` and
+    `DiscardPile.tsx` both render live counts in a `role="status"` region; reshuffle fires only
+    when the draw pile cannot cover a deal.
+11. **PARTIAL** — UI pass. DLR-119 changed the felt rail and health bar, fixing a genuinely
+    unreachable Apply Damage button at 390px. **But the shop and the Vault got a prose review,
+    not a diff — DLR-119's own PR description says so — and no surface in this epic has been
+    rendered in a browser.**
+12. **MET, as of this ticket.** Was PARTIAL on arrival: `src/hunt/shield.ts` had no
+    `.docs/implementation/` entry, and `the-hunt.md` carried six stale claims. Both closed in
+    Phase 2 — `shield.md` created (127 lines, with a Known defects section), six claims
+    corrected, Status-register row flipped `not built` → `settled — since DLR-119`.
+
+### Fixed versus filed
+
+**Fixed** (7 files, 114 insertions / 25 deletions; the only `src/` change is 7 comment lines):
+`src/hunt/encounter.ts`'s `hasShieldHearts` docblock (dropped the false DLR-115-reads-this
+claim) · `.docs/implementation/hunt/shield.md` created · `.docs/game_rules/the-hunt.md` (six
+falsified buff-fired/persistence claims, plus the Status-register row) ·
+`.claude/workflow/web-project.md` and `CLAUDE.md` (source-file counts corrected to 271 files /
+8 modules / 139 tests, and `CLAUDE.md`'s stale "rules folder is currently empty" dropped).
+
+**Filed — eight tickets created under epic DLR-103**, one per shortfall, per AC3. Each carries
+its problem statement, acceptance criteria and evidence so the developer does not re-derive it:
+
+- **DLR-133** — Shield is built, correct, and unreachable in a real run (DoD 5) — `engine`.
+- **DLR-134** — Five of seven rank ladders are unshipped; only Swan and Witch have tiers
+  (DoD 4, 6) — `engine`.
+- **DLR-135** — Starting pile is four `Unassigned` placeholders and one bronze Cheat, so the
+  first-fight intent is unmet (DoD 8) — `design`.
+- **DLR-136** — Five consumables are unreachable; no template mints Ward, Second Thoughts,
+  Puppeteer, Foresight or Spyglass, and 14 unchosen slot weights stand in the way — `engine`.
+- **DLR-137** — Shop and Vault got a prose review, not a UI pass, and nothing in the epic has
+  been rendered in a browser (DoD 11) — `ui`, `playable`. **Carries the full consolidated
+  eyes-on agenda.**
+- **DLR-138** — Two spec files (418 / 402 lines) breach the 400-line limit — `infra`.
+- **DLR-139** — `Keepsake` confirmed dead, `Long Fall` never shipped; three Purse cards pay
+  nothing — `design`.
+- **DLR-140** — `the-hunt.md` carries per-ticket changelog blockquotes `CLAUDE.md` forbids —
+  `design`.
+
+**A pipeline gap worth an `/fb-issue`, found here:** the Phase 3 implementer could not create
+any of these — **subagents on this box are not provisioned with the `mcp__atlassian__*` tools**,
+and every call returned "No such tool available". It correctly refused to fabricate ticket keys
+and reported the gap rather than papering over it. The orchestrator, which does hold those
+tools, created all eight. Any future contract that dispatches a Jira-writing task to a subagent
+will fail the same way.
+
+No ticket was raised for balance — it is the epic's largest hand-forward and is the
+developer's pass, not a task an agent could take.
+
+### The two over-length spec files
+
+`src/warCouncil/__tests__/playCard.test.ts` (418) and
+`src/warCouncil/__tests__/rankTiers.resolution.test.ts` (402), both pre-existing from DLR-123,
+both over the 400-line limit, **deliberately left unsplit.** Splitting a spec file redistributes
+shared fixtures and `describe` scoping — real regression risk for zero behavioural gain — on
+the one ticket whose entire value is that its evidence is trustworthy. Defender and QA
+independently reached the same conclusion during DLR-120. Filed as **DLR-138** rather than
+taken as a rider on a sign-off.
+
+### The consolidated eyes-on agenda
+
+Nothing in this epic has been seen by a human or a browser; jsdom has no layout engine, so none
+of the 1808 passing tests speaks to any item below. Viewports throughout: 1280×800, 1024×768,
+1366×768, 390×844.
+
+**Tier 1 — a control you cannot reach**
+1. Apply Damage tappable at 390×844 — `.wc-bar` needed 395.2px against a 390px viewport; fixed
+   by wrapping to two rows, never rendered. Does the two-row bar crowd the hand or felt?
+2. Does the shell crop at any of the four sizes? `.wc-shell` is `overflow: hidden`, so failure
+   is a silent crop, not a scroll. Bounded by arithmetic, never rendered.
+3. Does `.wc-dossier` fit inside `30dvh` at 390×844 and under 34rem tall, and do the `hand` and
+   `actions` rows survive? The only tuning value DLR-119 asks the developer to choose.
+4. The armed card's top edge at a wide viewport where `--wc-card-w` reaches 4.3rem — does it
+   clear the fan reserve? It *was* clipping.
+5. The four bar buttons meet the 44×44px hit floor at the smallest viewport.
+
+**Tier 2 — a screen that does not fit**
+6. The shop at all four sizes — `shop.css` has a documented clipping history and DLR-116 moved
+   both sides of the budget.
+7. The Vault at all four sizes — the densest surface in the project, inside `.run-shell`.
+8. The loadout panel's own scroll is contained and never leaks to the page — widened by Cheat
+   and Timebomb rows (DLR-132). The panel nobody has seen; its mockup gate was skipped.
+9. The felt rail with the Spent plate added does not crop.
+10. The ErrorBoundary fallback — centred, fits, scrolls inside its panel. `body` is
+    `overflow: hidden`, so an overflowing panel puts both escape controls out of reach.
+
+**Tier 3 — a value that silently does not resolve**
+11. Do the custom properties resolve rather than falling back? `warCouncilActionBar.css`
+    (`--wc-brass`, `--wc-brass-dim`, `--wc-alarm`, `--wc-chalk`, `--wc-chalk-dim`,
+    `--wc-chamber-lift`, `--wc-serif`, `--wc-ui-transition-ms`); `warCouncilHealthBars.css`
+    (`--wc-hp-shield-fill` should compute `rgb(79,143,192)`, `--wc-hp-shield-ticking-opacity`,
+    `--wc-hp-shield-gap`); `shopSlot.css`; `vault.css`'s nine; `errorBoundary.css`;
+    `--wc-dossier-narrow-max`. A name misspelled between two stylesheets compiles, lints and
+    passes all 1808 tests while rendering the wrong thing.
+12. Card-damage strip legibility at the smallest clamp — `--wc-card-w: 2.9rem` puts it at
+    ~9.3px, nominated as the single value most likely to be wrong.
+13. Does the fan's −4/−10/−18px overlap occlude an underlying card's strip?
+
+**Tier 4 — console and lifecycle**
+14. A clean console on load, after a StrictMode remount, on opening the loadout, on activating
+    a buff, after a trick that fires a buff, after Apply Damage, on machine change, on a pull,
+    on a second shop visit, and on the Vault. Watch for `aria-describedby`-target-missing
+    (DLR-117 composes ids per card with `useId()`) and the duplicate-React-key warning on Vault
+    holdings.
+
+**Tier 5 — readout and copy**
+15. The resolved-trick readout with every clause at once — win, cash, damage, book a Timebomb,
+    fire two buffs and settle a payout renders five stacked sentences. Does it fit?
+16. The two narration sentences as copy — does naming the Overlap Bonus earn its line? Does
+    "The hit destroyed your queued 12." land when it appears?
+17. "Lethal." leading the spoken health value, with a screen reader: "Lethal. 10 of 10. 2
+    shielded, 1 of them ticking. 6 at risk. 4 ticking." Should it also be shortened?
+18. Two `role="status"` live regions now on the felt — is that the right screen-reader
+    experience?
+19. All Vault copy is placeholder, including the currency noun "mark"; so is all new shop-card
+    copy, and "Not usable yet."
+
+**Tier 6 — feel and pacing (only a hand on a pointer answers these)**
+20. Does the action bar feel like one ritual or four buttons in a row? Open Apply Buff, activate
+    a buff, arm a Cheat from inside the panel, Swap, press Apply Damage twice.
+21. Is two taps the right cost to activate a buff? Is one tap with no confirm right for a slot
+    pull?
+22. Play hands 1 → 2 → 3 and watch draw read 20, 7, 20 while Spent climbs 0 → 13 → 26 and
+    resets at the reshuffle; confirm the notice fires exactly once at the hand-3 deal; confirm
+    no card face is ever visible in the Spent plate; confirm a Woodcutter bury and a hand-swap
+    in hand 2 do not move the Spent count.
+23. Is the Spent count legible at a glance without becoming the card-counting aid the ticket
+    forbids? Is the reshuffle notice loud enough to register, quiet enough not to interrupt?
+24. Keyboard: the machine chooser by arrow keys, one tab stop, selection legible without colour;
+    both Vault selects and all four buy controls reachable with a visible `:focus-visible` ring;
+    `Escape` returns cleanly.
+
+**Preconditions — cannot be reached by playing today; do not go hunting for these:** any blue
+heart/Shield pip (`shieldBuff` has zero production callers); any consumable (no template mints
+one); Blast Guard and Whetstone (off the shelf entirely); the `breaking` overlay over-draw
+(only visible once Shield is wired); reaching the shop by play (past `canAdvanceRun`, win rate
+0.0% — use `src/sim/fixtures.ts`'s `fixtureRunAfterFirstFight` instead).
+
+### Doc-currency check — one residue found and recorded, not fixed
+
+The post-review `implementation-doc-writer` pass verified all **89** unique `src/` paths in
+`the-hunt.md`'s Status register resolve to real files; the only apparent miss, `src/hunt/cheats.ts`,
+is a false positive — both citations correctly state the file no longer exists (DLR-132).
+`hasShieldHearts` appears in **zero** files under `.docs/`, so the corrected docblock claim had no
+cross-module echo, and `war-council-ui/duel-health-bars.md:303` independently corroborates the fix.
+Top-level and `hunt/` READMEs agree on `Built by` and `Status`.
+
+**Recorded, not fixed:** `.docs/implementation/hunt/README.md:42` still describes `cheats.ts` in the
+present tense inside its DLR-83 historical narrative, and the line-count tables at :644 and :660
+still list `cheats.ts` at 58 lines. This is residue from the gap DLR-132 itself flagged (its Task 13
+grep never included `cheats.ts`). It is self-correcting for a linear reader — line 281 of the same
+file records the deletion in full — and rewriting historical narrative in a 900-line cumulative doc
+is not the cheap-and-provable class this ticket authorised.
+
+### What was deliberately left
+
+**Balance. Not one value retuned.** 0 wins in 200 runs, 2.29 dealt vs 2.64 taken. DLR-132
+removed the integration confound — hands holding no activatable buff went 67.7% → 0.0%,
+activations 0.88 → 1.50, AP spent 2.33 → 4.35, and the win rate did not move. The remaining
+deficit is a balance problem and it is the developer's pass — the epic's largest hand-forward.
+`the-hunt.md`'s per-ticket changelog blockquotes (`CLAUDE.md` forbids them) — filed as **DLR-140** rather than restructured unasked. `CLAUDE.md` and `web-project.md`'s duplicated source-file
+counts — corrected in both, but the duplication itself left standing. No browser pass ran —
+opt-in, off by default, not requested.
+
+**Plain statement:** no browser pass ran, no server was started, nothing in this epic has been
+seen by a human, and no tuning value was changed by this ticket.
+

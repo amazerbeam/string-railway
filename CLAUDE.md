@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state — read this first
 
-**This is a Vite + React 19 + TypeScript prototype with a working POC on disk.** `src/` holds 53 source files across four modules — `app/` (React screens and the app shell), `warCouncil/` (the card-layer engine), `styles/`, and `__tests__/` — plus `App.tsx` and `main.tsx` at the root. 19 of those files are tests.
+**This is a Vite + React 19 + TypeScript prototype with a working POC on disk.** `src/` holds 271 source files across eight modules (measured DLR-121) — `app/` (React screens and the app shell), `warCouncil/` (the card-layer engine), `hunt/` (the Hunt configuration module and domain types), `persistence/` (cross-run save storage), `vault/` (cross-run meta-progression), `sim/` (the headless run simulator, lint-enforced pure), `styles/`, and `__tests__/` — plus `App.tsx` and `main.tsx` at the root. 139 of those files are tests.
 
 **The POC implements the project's previous design direction.** The live design is `.docs/design/Balatro-Forbidden-Solitaire/hybrid-design.md`. The POC code and its per-module record in `.docs/implementation/` are retained as a working reference — not as a description of where the game is going. The superseded direction's design documents, its art tree, and its build contracts were retired on DLR-45.
 
@@ -33,7 +33,7 @@ This project is deliberately organised so each fact is stated once. When somethi
 | Game design frameworks, designer research, the critique checklist | `.docs/design/design-principles.md` |
 | What the game's rules currently are, and which are still undecided | `.docs/game_rules/the-hunt.md` — see the three-doc split below |
 | How implemented code actually works — per-module mechanics, key types, enforced rules | `.claude/skills/implementation-doc-writer/SKILL.md`, output in `.docs/implementation/` |
-| Project-wide domain constraints | `.claude/rules/<topic>.md` — currently empty; see its `README.md` |
+| Project-wide domain constraints | `.claude/rules/<topic>.md`; see its `README.md` |
 
 A path or command restated in five files gets updated in four. The `/fb-*` commands and the four agents all reference these files rather than carrying copies — keep it that way. In particular, **do not restate the `react-frontend` skill's conventions in a plan or an agent prompt** — name the skill and let it be loaded.
 

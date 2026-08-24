@@ -6,7 +6,7 @@ Change a path or a command **here only**. A runner stated in five files gets upd
 
 **Conventions are not here.** How to write the code — component structure, hooks, state management, configuration-driven values, component budgets, testing posture — belongs to `.claude/skills/react-frontend/SKILL.md` and its `references/engineering-standards.md`. This file owns paths, commands, and the traps that decide whether a *verification* is trustworthy.
 
-> **Status: the retained POC is on disk** — `src/` holds 81 source files across six modules and 84 test files. The layout and script names below are the ones actually on disk. **`package.json` remains the authority on script names** — Read it before writing a `Run:` step. Correct anything wrong *here*, and the whole pipeline follows.
+> **Status: the retained POC is on disk** — `src/` holds 271 source files across eight modules and 139 test files (measured DLR-121). The layout and script names below are the ones actually on disk. **`package.json` remains the authority on script names** — Read it before writing a `Run:` step. Correct anything wrong *here*, and the whole pipeline follows.
 
 ## Layout
 
@@ -24,11 +24,13 @@ Change a path or a command **here only**. A runner stated in five files gets upd
   .gitattributes          text=auto eol=lf — Windows working tree, Ubuntu CI
   .nvmrc                  the single source of the Node version
   .github/workflows/      ci.yml — install, lint, typecheck, test, build
-  src/                    81 source files across six modules, 84 test files
+  src/                    271 source files across eight modules, 139 test files
     app/                  React screens and the app shell
     warCouncil/           the card-layer engine
     hunt/                 the Hunt configuration module and domain types
     persistence/          cross-run save storage — the only tree that touches localStorage
+    vault/                cross-run meta-progression
+    sim/                  the headless run simulator, lint-enforced pure
     styles/               plain CSS
     __tests__/            Vitest specs
     App.tsx  main.tsx     root component and Vite mount point
