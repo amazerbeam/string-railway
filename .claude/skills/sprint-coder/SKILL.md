@@ -104,6 +104,18 @@ Progress: 4/12 (33%) — done: 3 shipped, 1 blocked | now: DLR-107 "Draw pool wi
 | Each ticket reconciled (push / block / skip) | terminal + log header, rewritten in place |
 | Wrap-up | terminal + log header (`N/N (100%)`) |
 
+**When the developer asks "progress" (or "status", "progress?", "where are we"): reply with the counter line and NOTHING else.**
+
+One line. No summary table, no per-ticket recap, no list of what shipped, no restatement of open decisions, no "remaining tickets" section. The developer asking mid-run wants the number and what is running right now — they have the log for everything else, and a wall of text is the thing they are asking you to skip past.
+
+```
+Progress: 19/22 (86%) — done: 19 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-130 "Headless run simulator" (out-of-band) — running
+```
+
+Check the real state first (a quick `git log -1` and `git status --porcelain | wc -l` is enough) so the line is current rather than remembered — then print the line and stop. If a ticket has landed since the last emission and has not been reconciled yet, reconcile it first and report the new number; do not report a stale one to avoid the work.
+
+Adding a second line is only justified when something is *wrong* — a ticket is blocked, the tree is dirty in a way the developer must know about, or the run is halted. Then say that in one further sentence. Good news gets one line.
+
 **Rules that make it trustworthy:**
 
 - The log header holds **one** `**Progress:**` line, overwritten each time. A stack of stale progress lines is worse than none — the developer can't tell which is current.
