@@ -15,6 +15,7 @@ import {
   STARTING_BUFF_COUNT,
 } from './config'
 import { seedStartingBuffPile, type Buff, type BuffId } from './buffs'
+import { mintGrants, type TemplateGrant } from './buffTemplates'
 import { grantCheats, type CheatCard, type CheatCardId } from './cheats'
 import { startEncounter } from './encounter'
 import type { FlaskStock } from './flask'
@@ -133,8 +134,16 @@ export interface RunState {
  * `playerHealth` is a defaulted parameter rather than something this module closes over, matching
  * `startEncounter`'s own injectable pattern, so a spec varies it without mutating module state.
  * Its guard lives in `startEncounter`, which already refuses a non-positive or non-finite value.
+ *
+ * `grants` (DLR-113 AC3) is the Vault's bought starting cards, minted into the opening pile
+ * alongside the seeded placeholders. DEFAULTED to `[]`, so every existing call site is
+ * unchanged and a run started with no Vault behaves exactly as before.
  */
-export function startRun(playerHealth: Health = PLAYER_START_HEALTH): RunState {
+export function startRun(
+  playerHealth: Health = PLAYER_START_HEALTH,
+  grants: readonly TemplateGrant[] = [],
+): RunState {
+  const granted = mintGrants(grants, STARTING_BUFF_COUNT + 1)
   return {
     encounterIndex: 0,
     encounterCount: QUARRY_ENCOUNTER_HEALTH.length,
@@ -150,8 +159,8 @@ export function startRun(playerHealth: Health = PLAYER_START_HEALTH): RunState {
     handOfFight: 1,
     discardsRemaining: DISCARDS_PER_FIGHT,
     lastQuickKillPayout: 0,
-    buffs: seedStartingBuffPile(STARTING_BUFF_COUNT, 1),
-    nextBuffId: STARTING_BUFF_COUNT + 1,
+    buffs: [...seedStartingBuffPile(STARTING_BUFF_COUNT, 1), ...granted],
+    nextBuffId: STARTING_BUFF_COUNT + 1 + granted.length,
   }
 }
 

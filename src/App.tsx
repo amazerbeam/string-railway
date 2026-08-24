@@ -16,6 +16,7 @@ import {
   quarryHealthForEncounter,
   recordEncounter,
   refusalFor,
+  RunOutcome,
   runEncounterAt,
   runPath,
   ShopItem,
@@ -25,6 +26,8 @@ import {
   CHEAT_SLOT_COUNT,
   type Hunt,
 } from './hunt'
+import { useVault } from './app/vault/useVault'
+import { clearStartingGrants, depositLeftoverCoin } from './vault'
 import { dealRound, PlayerSide, type WarCouncilState } from './warCouncil'
 // Imported from `./app/warCouncilMount` directly, NOT from the `./app` barrel: `./app`
 // extensionless collides case-insensitively with this very file (`App.tsx`) on Windows —
@@ -92,6 +95,7 @@ function App() {
   // hand's, which is the only figure that exists.
   const [tricks, setTricks] = useState<TrickTally>(NO_TRICKS)
   const [phase, setPhase] = useState<RunPhase>(RunPhase.Start)
+  const { vault, commit } = useVault()
 
   const encounterOver = isEncounterResolved(run.encounter)
 
@@ -141,6 +145,13 @@ function App() {
         taken: result.finalState.tricksWon[PlayerSide.Player],
         lost: result.finalState.tricksWon[PlayerSide.Cpu],
       })
+      // AC1 — the run's outcome is decided right here, so this is the one place leftover coin
+      // converts to Vault currency. `run.coins` is deliberately NOT zeroed: the verdict panel
+      // still reads it, and the Vault is never credited on a win (AC1 says "a run ending in
+      // death" — a win is its own reward).
+      if (recorded.outcome === RunOutcome.Lost) {
+        commit(depositLeftoverCoin(vault, recorded.coins))
+      }
       // The verdict is next, not another hand. D5 — any queued Timebomb is discarded, because
       // `advanceRun` and `startRun` both re-seed the encounter through `startEncounter`.
       return
@@ -196,6 +207,19 @@ function App() {
     setRun((r) => (flaskRefusalFor(flaskStockFor(r)) !== null ? r : drinkFlask(r)))
   }
 
+  // The Start screen's action button is the single structural place a run begins: `App.tsx`
+  // already routes both the initial mount and `handleNewRun` through `RunPhase.Start`, so
+  // consuming grants here — rather than in a lazy `useState` initialiser — is what keeps the
+  // consumption from double-firing under StrictMode. Being a callback rather than an effect,
+  // there is nothing for StrictMode to double-fire in the first place.
+  function handleBeginRun() {
+    setRun(startRun(PLAYER_START_HEALTH, vault.startingGrants))
+    if (vault.startingGrants.length > 0) {
+      commit(clearStartingGrants(vault))
+    }
+    setPhase(RunPhase.Verdict)
+  }
+
   function handleNewRun() {
     const fresh = startRun()
     setRun(fresh)
@@ -212,7 +236,7 @@ function App() {
         stages={stages}
         goalText={goalText}
         actionLabel={fightLabel(currentName)}
-        onAction={() => setPhase(RunPhase.Verdict)}
+        onAction={handleBeginRun}
       />
     )
   }

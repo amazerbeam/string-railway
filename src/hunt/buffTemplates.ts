@@ -24,7 +24,12 @@ import type { BuffConditionKind, BuffCostAxis } from './buffCosts'
  *  tier: the tier is decided at draw time by the reel-match rules. Carries NO `apCost`: that stays
  *  a derived lookup through `apCostOf`, per the coordinator's standing decision. */
 export interface BuffTemplate {
-  /** Stable identifier, `<kind>[:<param>]:<axis>` — e.g. `taker:bells:magnitude`. NOT persisted. */
+  /** Stable identifier, `<kind>[:<param>]:<axis>` — e.g. `taker:bells:magnitude`. PERSISTED as
+   *  of DLR-113: the Vault stores boosts and grants by this id, so the FORMAT is frozen and a
+   *  renamed `BuffKind` or `BuffRewardAxis` value orphans saved entries. `reconcileVault` drops
+   *  an id it cannot resolve rather than corrupting anything, but the currency spent on it is
+   *  gone — a future rename must ship a migration. (Was documented "NOT persisted" by DLR-112;
+   *  DLR-113 overturned that deliberately, see that ticket's plan.md → Approach.) */
   readonly id: string
   readonly kind: BuffConditionKind
   readonly axis: BuffCostAxis
@@ -113,6 +118,41 @@ export const BUFF_TEMPLATE_COUNT: number = BUFF_TEMPLATES.length
 
 export function templatesForFamily(kind: BuffConditionKind): readonly BuffTemplate[] {
   return BUFF_TEMPLATES.filter((template) => template.kind === kind)
+}
+
+/** One bought card, as coordinates rather than as a `Buff`. Declared HERE and not in
+ *  `src/vault/`: hunt owns how a template becomes a card, and declaring it in vault would force
+ *  the reverse import edge. DLR-113 persists this pair — and deliberately nothing else — so no
+ *  domain type is ever on disk and `Buff` stays free to widen (DLR-107's note lands nowhere). */
+export interface TemplateGrant {
+  readonly templateId: string
+  readonly tier: BuffTier
+}
+
+/** `BUFF_TEMPLATES` keyed by id, derived ONCE at module load in the style `slotWeights.ts`'s
+ *  `FAMILY_AXIS_TOTAL` already uses, so a lookup never rescans the pool. */
+const TEMPLATES_BY_ID: ReadonlyMap<string, BuffTemplate> = new Map(
+  BUFF_TEMPLATES.map((template) => [template.id, template]),
+)
+
+/** `undefined` for an id this build has no template for — which is exactly what DLR-113's
+ *  `reconcileVault` tests a stale save against. */
+export function templateById(id: string): BuffTemplate | undefined {
+  return TEMPLATES_BY_ID.get(id)
+}
+
+/** One `Buff` per grant, consecutive ids from `firstId`, mirroring `mintPullAwards`. A grant
+ *  naming an id this build no longer has is SKIPPED rather than throwing: a save written by an
+ *  older build is not a programming error, and dropping the one dead card is better than
+ *  refusing to start the run. Ids stay consecutive over what was actually minted. */
+export function mintGrants(grants: readonly TemplateGrant[], firstId: BuffId): readonly Buff[] {
+  const minted: Buff[] = []
+  for (const grant of grants) {
+    const template = templateById(grant.templateId)
+    if (template === undefined) continue
+    minted.push(mintFromTemplate(template, grant.tier, firstId + minted.length))
+  }
+  return minted
 }
 
 /** DLR-111 → *Reward master tier list*, transcribed. Blade 1/3/5, Purse 2/5/10, Second Wind 1/2/3,

@@ -21,7 +21,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['src/warCouncil/**/*.{ts,tsx}', 'src/hunt/**/*.{ts,tsx}'],
+    files: ['src/warCouncil/**/*.{ts,tsx}', 'src/hunt/**/*.{ts,tsx}', 'src/vault/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -62,8 +62,16 @@ export default defineConfig([
     // their own, fuller no-restricted-globals override above (which also bans
     // localStorage/sessionStorage). They must stay ignored here, or this block's
     // narrower options would silently overwrite that override's DOM bans.
+    // src/vault/** joins the same list for the same flat-config replacement reason —
+    // the pure-core block above already bans localStorage and sessionStorage there,
+    // so nothing is lost.
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/persistence/browserStorage.ts', 'src/warCouncil/**', 'src/hunt/**'],
+    ignores: [
+      'src/persistence/browserStorage.ts',
+      'src/warCouncil/**',
+      'src/hunt/**',
+      'src/vault/**',
+    ],
     rules: {
       'no-restricted-globals': [
         'error',

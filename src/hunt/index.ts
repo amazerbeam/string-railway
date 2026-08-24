@@ -238,7 +238,7 @@ export {
   weightedDrawWithoutReplacement,
 } from './slotWeights'
 
-export type { BuffTemplate, BuffThresholdFamily } from './buffTemplates'
+export type { BuffTemplate, BuffThresholdFamily, TemplateGrant } from './buffTemplates'
 export {
   REWARD_TIER_VALUE,
   CONDITION_THRESHOLD,
@@ -247,6 +247,8 @@ export {
   templatesForFamily,
   mintFromTemplate,
   conditionThresholdOf,
+  templateById,
+  mintGrants,
 } from './buffTemplates'
 
 export type { SlotMachine, SlotAward, SlotPull, SlotVisitStock } from './slotMachine'
