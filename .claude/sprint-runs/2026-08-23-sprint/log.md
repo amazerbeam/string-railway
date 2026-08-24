@@ -4752,3 +4752,66 @@ unparseable run-on at three buffs — **exactly the failure the ticket exists to
 implementer **reported rather than reconciled it**, the agent fixed it, and both reviewers then
 scrutinised the fix. That is the pipeline working: the instruction was wrong, and the executor
 said so instead of quietly complying.
+
+## Developer input mid-run — "Cheats and Timebombs should be folded into the buff cards as cards"
+
+Checking the state to answer that question surfaced a **playability defect nobody had noticed**,
+because each of its three causes was correct in isolation and no single ticket owned the whole.
+
+**Measured at `363fcd2`: Cheat and Timebomb cannot be acquired by a player at all.**
+
+| Route | State | Closed by |
+|---|---|---|
+| Buy from the shop | `SHOP_ITEMS` = `[ApCapacity, SwanTier, WitchTier, Heal]` | DLR-116 pared the shelf |
+| Draw from the reel | `grep -c "BuffKind.Cheat\|BuffKind.Timebomb" src/hunt/buffTemplates.ts` → **0** | DLR-112 built the pool without them |
+| Start with one | `RUN_STARTING_CHEATS = 1`, `timebombCharges: 0` | pre-existing |
+
+A run begins with **exactly one Cheat and zero Timebombs, and can never obtain another of
+either.** **The Timebomb is entirely unreachable in play** — a mechanic with tier damage tables,
+a ticking-heart bar state, Blast Guard insurance built to counter it, a detonation rule that
+destroys a queued Apply Damage payout, a dedicated rename ticket for its vocabulary, and a
+`TimebombCharge.tsx` rail on the felt. None of it can happen.
+
+**This is very likely a contributor to the 0-wins-in-200 simulator result.** DLR-130 reported
+`mean buff activations per hand: 0.88` and `mean slot pulls: 0.44` — the player never reaches the
+systems this epic built, and two of the oldest are not reachable at all. It also strengthens the
+question DLR-120 is currently being asked: **balance problem, or integration problem?**
+
+**DLR-132 raised.** Add both to the buff pool as drawable cards; retire `CheatStage` /
+`TimebombStage` and drive them through the ordinary activation flow; **collapse
+`timebombDamageFor` / `timebombDamageOf`, a nomination that has now outlived four tickets**; and
+decide what becomes of `RUN_STARTING_CHEATS` and the `cheats` / `timebombCharges` fields on
+`RunState` once both are pile members. **Explicitly forbidden from retuning damage or costs** —
+balance is the developer's pass.
+
+**Sequenced after DLR-120 and before DLR-121**, so the verification ticket signs off on a game in
+which these are actually obtainable. Counted as out-of-band; the denominator stays 22.
+
+**Worth recording for the run report:** this is the second time in this run that a developer
+question — rather than a reviewer, a gate or an agent — found the most serious defect. The first
+was "Envenom has been replaced by Timebomb", which surfaced the naming duplication. Both times
+the pipeline was green and confident.
+
+### Scope correction — the four-button bar already shipped
+
+The developer clarified the intent: **four buttons — `Apply Buff` · `Cards` · `Swap` ·
+`Apply Damage`** — with no room for a Cheat control, so a Cheat lives behind Buff.
+
+**That part is built.** `actionBarLabels.ts` (DLR-114, `1cb1a18`) carries exactly those four and
+no fifth; `CheatSlots` and `TimebombCharge` already render **inside** `BuffLoadoutPanel`, not as
+felt rails. The coordinator's first framing of DLR-132 was wrong on this point and is corrected
+on the ticket.
+
+**The real remaining gap is narrower and sharper:** they are **bespoke widgets behind Buff rather
+than cards in the list.** `BuffLoadoutPanel.tsx:57` says it outright — *"the ref is attached ONLY
+to the buff-row list — `CheatSlots` and `TimebombCharge` sit outside it"*. Two special-cased
+components beside the row list, outside its roving tabindex, driven by `CheatStage` /
+`TimebombStage` instead of the ordinary activation flow.
+
+So DLR-132 is a **consolidation, not a build**: make them ordinary rows using the same grammar and
+the same two-tap poise-then-spend interaction, then delete `CheatSlots.tsx`, `TimebombCharge.tsx`
+and both stages. **The risk sits in the keyboard model** — folding two widgets into a roving
+tabindex they were deliberately outside of changes focus order for the whole panel.
+
+The unobtainability finding above stands unchanged and is the more serious half.
+
