@@ -63,6 +63,8 @@ const someResolvedTrick: ResolvedTrick = {
     timebombTarget: null,
     timebombToQuarry: 0,
     blastGuardSpent: false,
+    buffAccrual: null,
+    firedBuffIds: [],
   },
 }
 

@@ -4,7 +4,7 @@ Part of [War Council UI](README.md).
 
 Every card in the hand fan carries a small strip beneath it reading `W<n> L<n>`: the damage the
 Quarry takes if that card **wins** its trick, and the damage the player takes if it **loses**.
-Built by DLR-117.
+Built by DLR-117, extended by DLR-125 (which met its AC3 — see below).
 
 The strip's whole reason to exist is that the numbers are true, so the interesting part of this
 mechanic is not the rendering — it is the single decision that makes the numbers impossible to
@@ -163,16 +163,32 @@ pointer moves.
 2. **Gross damage.** Every figure is a health delta and `deplete` floors health at zero, so "win: 4"
    against a Quarry on 4 health means "enough", not "exactly 4". This matches how `duelHealthBars`
    already truncates overkill.
-3. **Anything an activated buff would add.** `src/hunt/buffAccrual.ts` still has no caller anywhere
-   in `src/`; `activateBuff` spends action points, records `activatedThisTrick`, and stops. The
-   preview deliberately does not invent a bonus the resolution will not pay. **DLR-117's AC3 —
-   additive stacking of several buffs on one card — is therefore not met today.** It becomes true
-   with no edit to any file described here the moment accrual is wired into `playOptions`, because
-   that is the one place the preview reads those facts from.
-4. **DLR-117's AC1 gate.** "Once any buff is active for the hand" was deliberately not built: the
-   readout is always visible, because bank, multiplier, a pending Timebomb, a held Blast Guard, the
-   final trick and a primed card all already move these numbers, and hiding a true number until a
-   buff fires would withhold it for no reason.
+3. ~~**Anything an activated buff would add.**~~ **No longer true — DLR-125 wired it, and the
+   prediction below held exactly.** The entry used to read that `buffAccrual.ts` had no caller, that
+   DLR-117's **AC3** was therefore not met, and that it would become true "with no edit to any file
+   described here the moment accrual is wired into `playOptions`". DLR-125 wired it, and **AC3 is
+   now met**: `playOptions` gained a `buffs` field, `cardDamage.ts` gained the one line that spreads
+   `buffTrickFactsFor(visible, remainingHand, options.buffs ?? null)` into the hypothetical
+   `TrickFacts`, and everything else — R3's five-step order, the four per-hand caps, the Overlap
+   Bonus, the once-per-hand spend of the Momentum and Blade pools — is inherited through
+   `resolveTrickBank` and `applyResolution` rather than restated. The preview still performs **no**
+   damage arithmetic of its own. See
+   [The hand's buff bookkeeping, and the fold that pays it out](buff-hand-state-and-the-fold.md).
+   - One structural note, raised as an Info finding by DLR-125's defender review and left as a note
+     rather than a change: the preview derives `remainingHand` as
+     `state.round.hands[Player].filter(...)`, which is **structurally different** from the commit's
+     post-ability hand in `playCard`. The two coincide only because both reduce to an empty hand at
+     every reachable final trick — an invariant that is true today, but is nowhere stated and nowhere
+     tested. It is moot while Keepsake cannot fire (see the Known defects in
+     [hunt/buff-condition-evaluation.md](../hunt/buff-condition-evaluation.md)), and live the moment
+     it can.
+4. **DLR-117's AC1 gate — still deliberately not built, and still deferred after DLR-125.** "Once
+   any buff is active for the hand" was scoped out again: the readout is always visible, because
+   bank, multiplier, a pending Timebomb, a held Blast Guard, the final trick and a primed card all
+   already move these numbers, and hiding a true number until a buff fires would withhold it for no
+   reason. Hiding and revealing a readout that is currently always on screen is a judgement about
+   what the felt looks like at rest, which is the developer's, and DLR-125 was an `engine`-labelled
+   ticket. **Do not read AC3's arrival as AC1 having landed with it.**
 
 ## Verifying it has not drifted
 

@@ -110,6 +110,12 @@ product, floored — it was the plain product until 2026-08-20), `damageToPlayer
 the end-of-hand cash pays in full. That asymmetry is the whole of DLR-94's rule change and is pinned by a
 spec that cashes one identical streak both ways.
 
+> **Since DLR-125 both of those branches also carry a buff contribution.** An activated buff whose
+> condition fired adds to the multiplier **inside** the product (R3 step 2) and adds flat damage
+> **outside** it, after the two-thirds floor (R3 step 4). Each of those two pools pays **once per
+> hand**, not once per cash-out. Neither rate itself moved, and a hand with no buffs evaluates to the
+> arithmetic described above unchanged. See [Buffs in the cash-out](buffs-in-the-cash-out.md).
+
 ### The two rates — `cashValue` and `forcedCashValue` (DLR-94)
 
 ```ts

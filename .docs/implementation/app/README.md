@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125
 
 ## Responsibility
 
@@ -35,7 +35,7 @@ import React, and `src/app/warCouncil/` does.
 | Export                  | Purpose                                                                                                                                                                                                                                                                                                                                                                                 | File                 |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
 | `WarCouncilMountProps`  | Props a War Council mount accepts: `initialState`, a required `hunt: Hunt` (DLR-53), a required `encounter: EncounterState` and `maxHealth` (DLR-71), a required `runLabel: string` (DLR-82), a required `cheats` (DLR-83), a required `coins: Coins` (DLR-84), a required `discardsRemaining: number` (DLR-100) and a required `buffs: readonly Buff[]` (DLR-114) in; `onComplete` out | `warCouncilMount.ts` |
-| `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + `encounter`, the `EncounterState` **after** this Hunt's damage was applied (DLR-71); also carries the survivors of every hand-owned run resource, including `discardsRemaining` since DLR-100                                                                                                                                | `warCouncilMount.ts` |
+| `WarCouncilRoundResult` | What a completed War Council round reports: `finalState` + `encounter`, the `EncounterState` **after** this Hunt's damage was applied (DLR-71); also carries the survivors of every hand-owned run resource, including `discardsRemaining` since DLR-100 and, since DLR-125, `coinsEarned: Coins` — the Purse coins this hand's fired buffs earned, already clipped at `MAX_COIN_BONUS_PER_HAND` by the accrual, required, with both construction sites in `WarCouncilRound.tsx`                                                                                                                                | `warCouncilMount.ts` |
 
 DLR-53 added `hunt: Hunt` as a **required** field — `src/hunt`'s own pairing, widened by DLR-63 to
 `{ quarry, demand, loseCredits }` and then **narrowed by DLR-67 to `{ quarry }`** when the Demand and
@@ -125,6 +125,14 @@ components — are tabulated in [../war-council-ui/README.md](../war-council-ui/
   widened `RunPhase` union, the roster reads that make this the only file naming an opponent, the two
   `RunPathScreen` mounts, and the one line of `handleNewRun` that is the whole of AC10 (DLR-71,
   DLR-80, DLR-82, DLR-84, DLR-85).
+
+**DLR-125 added one argument to a call the driver already makes.** `App.tsx` now passes
+`result.coinsEarned` as `recordEncounter`'s **optional eighth** parameter, `buffCoinsEarned` — the
+Purse coins a hand's fired buffs earned. The driver performs no arithmetic on it and applies no
+condition to it: the figure was clipped at `MAX_COIN_BONUS_PER_HAND` by the accrual, and
+`recordEncounter` adds it **outside** its own won-this-encounter branch, so a Purse contribution
+lands on a lost fight too. That keeps the "the driver calls the rules and does no arithmetic of its
+own" property DLR-82 established intact.
 
 **The historical shape, for orientation:** through DLR-71 this file held a round number, the dealt
 `RoundState` and a single live `EncounterState`, with a module-scope `SLICE_ENCOUNTER_INDEX = 0`

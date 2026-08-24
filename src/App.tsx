@@ -164,6 +164,7 @@ function App() {
       result.blastGuardHeld,
       result.discardsRemaining,
       result.unplayedAtResolve,
+      result.coinsEarned,
     )
     setRun(recorded)
     if (isEncounterResolved(recorded.encounter)) {

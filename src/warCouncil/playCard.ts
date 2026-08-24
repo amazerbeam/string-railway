@@ -1,6 +1,7 @@
 import { HAND_SIZE, TieredRank } from '../hunt'
 import { applyFoxExchange, applyWoodcutterDraw, nextLeaderAfterTrick } from './abilities'
 import { resolveTrickBank } from './bank'
+import { buffTrickFactsFor } from './buffTrickFacts'
 import { containsCard, removeCard, sameCard } from './cardUtils'
 import { legalMoves, type PlayCardOptions } from './legalMoves'
 import { trickIsPrimed } from './timebomb'
@@ -126,6 +127,9 @@ export function playCard(
       // DLR-122 AC4/AC5 — the Swan ladder as two plain facts, derived by `rankTierRules.ts`,
       // which owns AC3's player-only gate. `bank.ts` adds the clean-loss half of the rule.
       ...swanTierFactsFor(completedTrick, options?.playerRankTiers),
+      // DLR-125 — `next.hands` is already post-removal, which is exactly "the hand at hand's
+      // end" Keepsake reads. Derived by the ONE producer both this call site and the preview use.
+      ...buffTrickFactsFor(completedTrick, next.hands[PlayerSide.Player], options?.buffs ?? null),
     },
   )
 

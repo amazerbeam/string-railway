@@ -128,6 +128,8 @@ describe('CarryOn commits a pending Quarry lead', () => {
         timebombTarget: null,
         timebombToQuarry: 0,
         blastGuardSpent: false,
+        buffAccrual: null,
+        firedBuffIds: [],
       },
     }
     let ui: RoundUiState = { ...uiFrom(round), resolvedTrick: heldReveal }

@@ -114,6 +114,7 @@ export default function WarCouncilRound({
       buffs,
       apCapacity,
       rankTiers,
+      coins,
     },
     createRoundUiState,
   )
@@ -225,6 +226,7 @@ export default function WarCouncilRound({
         blastGuardHeld: ui.blastGuardHeld,
         discardsRemaining: ui.discardsRemaining,
         unplayedAtResolve: ui.unplayedAtResolve,
+        coinsEarned: ui.buffHand.coinsEarned,
       })
       return
     }
@@ -241,6 +243,7 @@ export default function WarCouncilRound({
         blastGuardHeld: ui.blastGuardHeld,
         discardsRemaining: ui.discardsRemaining,
         unplayedAtResolve: ui.unplayedAtResolve,
+        coinsEarned: ui.buffHand.coinsEarned,
       })
     }
   }

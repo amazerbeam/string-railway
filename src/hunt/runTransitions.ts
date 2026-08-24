@@ -75,6 +75,11 @@ export function recordEncounter(
   blastGuardHeld: boolean,
   discardsRemaining: number,
   unplayedCards: number | null,
+  /** DLR-125 — Purse coins this hand's fired buffs earned, already clipped at
+   *  `MAX_COIN_BONUS_PER_HAND` by the accrual. OPTIONAL and defaulted to 0 so all 48 existing
+   *  call sites are unchanged; `App.tsx` is the only caller that passes it. Added to the same
+   *  sum the win payout and the quick kill already feed, never as a second coin path. */
+  buffCoinsEarned: Coins = 0,
 ): RunState {
   if (run.outcome !== RunOutcome.InProgress) {
     throw new RangeError(
@@ -102,7 +107,12 @@ export function recordEncounter(
     timebombCharges,
     discardsRemaining,
     blastGuardHeld: guardAfter(encounter, blastGuardHeld),
-    coins: wonThisEncounter ? run.coins + COINS_PER_ENCOUNTER_WIN + quickKill : run.coins,
+    // DLR-125 R3 step 5 — Purse coins are additive with the win payout and the quick kill, never
+    // conditioned on `wonThisEncounter`: a buff's condition already decided whether it fired, and
+    // the run's purse is not the place to re-judge that.
+    coins:
+      (wonThisEncounter ? run.coins + COINS_PER_ENCOUNTER_WIN + quickKill : run.coins) +
+      buffCoinsEarned,
     lastQuickKillPayout: quickKill,
     handOfFight: handOfFightAfter(run, encounter),
     flaskCharges: flaskAfter(run, wonThisEncounter),

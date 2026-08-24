@@ -26,11 +26,11 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                                                |
 | --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, PT-001, PT-002                                                                                  |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, PT-002                                                                          |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, PT-001, PT-002                                                                                  |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125 |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, PT-002                                                                          |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-112, DLR-113, DLR-114, DLR-116, DLR-127, PT-001, PT-002 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-112, DLR-113, DLR-114, DLR-116, DLR-125, DLR-127, PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                 |
 | `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118                                                                                                                                                                                                                                                                                                 |
 | `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118                                                                                                                                                                                                                                                                                                 |
@@ -752,7 +752,7 @@ ordering rule, [hunt/quick-kill-payout.md](hunt/quick-kill-payout.md#two-sources
 for the two-source count, or [war-council/voluntary-cash-out.md](war-council/voluntary-cash-out.md)
 for the widened refusal predicate.
 
-## Latest — DLR-114, the pre-hand loadout action bar (2026-08-24)
+## DLR-114, the pre-hand loadout action bar (2026-08-24)
 
 **DLR-114 is the ticket where ten tickets of bottom-up buff engineering finally became something a
 player can press.** It replaced the felt rail's four separate plates with **one action bar along the
@@ -780,7 +780,7 @@ the UI would be writing a rule `src/hunt/` does not own.
 
 **Do not read this as "the buff system works now."** A buff's condition is **never evaluated** and its
 reward is **never paid** — `buffAccrual.ts` still has no caller, so activating a condition-family buff
-spends AP and does nothing else. `startRun` still seeds four `Unassigned` placeholders that
+spends AP and does nothing else. (**True of DLR-114 and closed by DLR-125**, below.) `startRun` still seeds four `Unassigned` placeholders that
 `activatableBuffs` filters out, so a fresh run with an empty Vault shows an **empty** buff list and
 only the relocated Cheat and Timebomb controls; real priced buffs arrive only through Vault grants.
 And Cheat and Timebomb were relocated, not migrated — both still run on their own bespoke state, not
@@ -790,6 +790,56 @@ door-versus-window split and the AP unification,
 [hunt/buff-activation-and-ap-costs.md](hunt/buff-activation-and-ap-costs.md) for `isPricedBuff` /
 `activatableBuffs` and where the activation state now lives, or
 [app/README.md](app/README.md) for the `buffs` mount prop and why it is one-way.
+
+## Latest — DLR-125, buffs that actually pay (2026-08-24)
+
+**DLR-125 is the ticket that made the buff system a system.** DLR-124 had settled the stacking rule
+and DLR-108 had built the accrual it needs — but `buffAccrual.ts` shipped with **no caller**, so a
+player could open the loadout, spend action points on a condition buff, and be paid nothing at all.
+That is closed. An activated buff now genuinely changes the damage a cash-out deals, the coins a run
+banks, and the action points a hand has.
+
+**The design is three pieces and two seams, and the seam placement is the whole of it.** A new pure
+module, `src/hunt/buffEvaluation.ts`, answers "did this buff's condition come true on this trick" for
+the **eleven shipping condition families** — Taker, Feeder, Mark of the *R*, Sidestep, Glutton,
+Hoarder, Unbloodied, Debt Collector, Keepsake, Miser, Cornered — as a total `switch` behind an
+`isConditionFamily` guard, then layers DLR-124 R4's cadence on top: Event families fire every trick,
+Threshold families once per hand, Terminal (Keepsake) only at the final trick, and every Activated
+consumable never. The **call site is inside `resolveTrickBank`**, which is forced rather than chosen:
+Hoarder needs the bank *after* the climb and Unbloodied needs to know whether the trick was a hit —
+figures that only exist inside that function — and R3 puts Momentum **inside** the cash-out product
+and Blade **outside** it, and the product is `bank.ts`'s. Steps 1 and 5 (Second Wind into the AP
+pool, Purse into the coins) land in a new `src/app/warCouncil/buffRoundState.ts`, folded after the
+trick has resolved so a refund can never be re-spent on the trick that generated it.
+
+**One rule reading is the ticket's own, and it is worth knowing.** `hybrid-design.md` R6 caps each
+reward axis *per hand* but never says what happens when a hand has more than one cash-out. New
+`multiplierPaid` / `flatDamagePaid` counters make each pool pay **once per hand** — without them a
+hand holding a forced cash-out, a voluntary Apply Damage and an end-of-hand fold would pay three full
+pools, at which point the cap is not a cap. **That is a plan decision, not a transcription**, and
+reversing it is a one-line change.
+
+**DLR-117's AC3 landed for free, and that is a consequence of the seam rather than extra work.** The
+per-card `W/L` preview computes no damage — it hands a hypothetical `TrickResolution` to
+`applyResolution` and reads the health delta — so threading buffs through the one `playOptions`
+assembly the commit, the Quarry's follow and the preview all share made the preview buff-aware in one
+line. **DLR-117's AC1**, the "once any buff is active" visibility gate, is **still deferred**; it is a
+judgement about what the felt looks like at rest.
+
+**Four defects are recorded and none is fixed.** **`Keepsake` is structurally unfireable** — with
+`HAND_SIZE` cards and that many tricks the hand is empty when it ends, so "hold a card of suit S at
+hand's end" is false by construction, and **three Purse cards pay nothing**; an assertion pins it.
+**`Ward` silver and gold are indistinguishable** at `DAMAGE_PER_HIT = 1` and never reach the
+evaluator at all. **`Miser` fights the shop**, and is now live rather than theoretical. And **Long
+Fall** (v1 row #8) is still unimplemented, so eleven of twelve rows are evaluated. Start at
+[hunt/buff-condition-evaluation.md](hunt/buff-condition-evaluation.md) for the evaluator, the cadence
+and the spend model, [war-council/buffs-in-the-cash-out.md](war-council/buffs-in-the-cash-out.md) for
+why the call site is where it is, or
+[war-council-ui/buff-hand-state-and-the-fold.md](war-council-ui/buff-hand-state-and-the-fold.md) for
+the hand's bookkeeping and the two load-bearing orderings.
+
+**One gap it opened by succeeding:** nothing on the felt announces a firing, so a player sees a
+larger number with no cause named. That is the developer's to judge and someone's to fix.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

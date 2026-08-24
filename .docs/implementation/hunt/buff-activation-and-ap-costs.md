@@ -13,8 +13,12 @@ reducer action, no component, no reader of `RunState.buffs` — the same deliber
 > on a confirming second tap. `BuffActivationState` **has an owner now** —
 > `RoundUiState.buffActivation`, which replaced that state's separate `apPool` field so the hand has
 > one pool rather than two. `openBuffWindow` fires from the reducer on the transition that resolves a
-> trick. The two things this page describes that are **still uncalled** are `buffAccrual.ts` entirely
-> and `refreshBuffsForNewHand`; see the foot of this page. Read
+> trick. The two things this page describes that were **still uncalled** after DLR-114 were
+> `buffAccrual.ts` entirely and `refreshBuffsForNewHand`; see the foot of this page. **DLR-125 gave
+> `buffAccrual.ts` its caller** — `resolveTrickBuffs` in `buffEvaluation.ts`, reached from
+> `resolveTrickBank` — and widened it with the once-per-hand cash-out spend counters, so only
+> `refreshBuffsForNewHand` is still uncalled (the per-hand reset is the felt's remount). See
+> [Condition evaluation](buff-condition-evaluation.md). Read
 > [war-council-ui/action-bar-and-loadout.md](../war-council-ui/action-bar-and-loadout.md) for the
 > screen.
 
@@ -138,6 +142,15 @@ ticket's.
 > no caller when the loadout became reachable. A player can now spend action points on a
 > condition-family buff and watch the pool fall — and **the condition is never evaluated and the
 > reward is never paid**. Activation is what DLR-114 made reachable; firing is a later ticket's.
+>
+> **DLR-125 was that ticket, and the paragraph above is now history rather than status.** The
+> cash-out step **is** performed: `resolveTrickBank` applies R3's step 2 (Momentum into the
+> multiplier feeding `forcedCashValue`/`cashValue`) and step 4 (Blade added flat, after §7's
+> two-thirds floor), and the felt's fold applies step 1 (Second Wind into the pool for the next
+> window) and step 5 (Purse into the run's coins). `buffAccrual.ts` also gained `multiplierPaid` /
+> `flatDamagePaid` with `payableCashOutBonus` / `markCashOutPaid`, so each of those two pools pays
+> **once per hand** rather than once per cash-out. See
+> [Condition evaluation](buff-condition-evaluation.md).
 
 ## Activating a buff — the window, the spend, and the refusal
 

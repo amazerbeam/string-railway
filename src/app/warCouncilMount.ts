@@ -119,4 +119,9 @@ export interface WarCouncilRoundResult {
    *  for why the two are not interchangeable. The run consumes it through `recordEncounter`'s
    *  sixth parameter. */
   readonly unplayedAtResolve: number | null
+  /** DLR-125 — Purse coins this hand's fired buffs earned, already clipped at
+   *  `MAX_COIN_BONUS_PER_HAND` by the accrual. REQUIRED so the compiler enumerates both
+   *  construction sites; the run adopts it through `recordEncounter`'s new optional eighth
+   *  parameter. */
+  readonly coinsEarned: Coins
 }

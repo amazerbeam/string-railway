@@ -116,6 +116,7 @@ describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
     bankClimbBonus: 0,
     swanKeepsMultiplier: false,
     swanKeepsBank: false,
+    buffs: null,
     ...over,
   })
 

@@ -33,6 +33,7 @@ import {
   type EncounterState,
 } from '../../hunt'
 import { cheatArmed, type RoundUiState } from './roundUiState'
+import { buffHandInputFor } from './buffRoundState'
 import { advanceQuarryFollow, deriveResolvedTrick } from './quarryAdvance'
 
 /**
@@ -58,6 +59,11 @@ export function playOptions(state: RoundUiState): PlayCardOptions {
     // commit that read the run's ladder itself would be exactly the second reading this
     // docblock already warns about.
     playerRankTiers: state.rankTiers,
+    // DLR-125 — the SIXTH field, in the one assembly all three readers share. This is what makes
+    // DLR-117's preview inherit buff contributions with no arithmetic of its own: it hands a
+    // hypothetical resolution to `applyResolution` and reads the health delta, so a buffed
+    // multiplier and a Blade bonus arrive in that delta for free.
+    buffs: buffHandInputFor(state),
   }
 }
 

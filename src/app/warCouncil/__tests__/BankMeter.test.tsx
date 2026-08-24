@@ -17,6 +17,8 @@ const cleanLoss: TrickResolution = {
   timebombTarget: null,
   timebombToQuarry: 0,
   blastGuardSpent: false,
+  buffAccrual: null,
+  firedBuffIds: [],
 }
 
 describe('BankMeter', () => {

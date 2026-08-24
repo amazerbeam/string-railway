@@ -37,9 +37,11 @@ import {
   type BuffId,
   type CheatCard,
   type CheatCardId,
+  type Coins,
   type EncounterState,
   type RankTierTable,
 } from '../../hunt'
+import { startBuffHand, type BuffHandState } from './buffRoundState'
 
 export interface ResolvedTrick {
   readonly cards: readonly TrickCard[] // [lead, follow] — the engine's load-bearing order
@@ -167,6 +169,12 @@ export interface RoundUiState {
    *  would admit "closed but holding a stale poise". Mirrors `discardSelection`'s `null` / `[]`
    *  shape exactly. The hand's OWN transient — dies on remount, never touches `RunState`. */
   readonly loadout: LoadoutSelection | null
+  /** DLR-125 — this hand's buff bookkeeping. See `buffRoundState.ts`'s module docblock for why it
+   *  is a separate module. */
+  readonly buffHand: BuffHandState
+  /** DLR-125 — the run's purse at the START of this hand, for Miser. Read-only for the hand's
+   *  whole life, exactly as `bankClimbBonus` is: a hand cannot spend coins, only the shop can. */
+  readonly coins: Coins
 }
 
 /** DLR-114 — `null` when the loadout panel is closed; an object (with `poised: null`) while it is
@@ -195,6 +203,9 @@ export interface RoundUiSeed {
    *  bought", which is what AC1 requires play identically to today. The driver passes
    *  `playerRankTiersFor(run)`. */
   readonly rankTiers?: RankTierTable
+  /** DLR-125 — the run's purse at the START of this hand, for Miser. OPTIONAL and defaulted to 0
+   *  so all 38 existing `createRoundUiState` fixtures reproduce today's game exactly. */
+  readonly coins?: Coins
 }
 
 // `chooseCpuMove` throws rather than returning a rejection when the CPU has no legal
@@ -264,6 +275,8 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     buffs: seed.buffs,
     buffActivation: startBuffActivation(seed.apCapacity ?? STARTING_AP),
     loadout: null,
+    buffHand: startBuffHand(),
+    coins: seed.coins ?? 0,
   }
 }
 

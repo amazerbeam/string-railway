@@ -15,8 +15,10 @@
  */
 import { DuelSide, HAND_SIZE, isEncounterResolved, type Damage } from '../../hunt'
 import {
+  buffTrickFactsFor,
   PlayerSide,
   resolveTrickBank,
+  sameCard,
   swanTierFactsFor,
   RoundPhase,
   trickIsPrimed,
@@ -69,6 +71,7 @@ export function cardDamagePreview(state: RoundUiState, card: Card): CardDamagePr
   // field, so the preview and the commit cannot read "what is pending" differently.
   const options = playOptions(state)
   const finalTrick = state.round.tricksPlayed + 1 === HAND_SIZE
+  const remainingHand = state.round.hands[PlayerSide.Player].filter((c) => !sameCard(c, card))
   const shared: Omit<TrickFacts, 'playerWon'> = {
     skullTrick: trickIsSkulled(state.round.skulledCards, visible),
     finalTrick,
@@ -83,6 +86,11 @@ export function cardDamagePreview(state: RoundUiState, card: Card): CardDamagePr
     // it. A preview that read the run's ladder itself would be the second reading `playOptions`'
     // own docblock warns about.
     ...swanTierFactsFor(visible, options.playerRankTiers),
+    // DLR-117 AC3, met by DLR-125. The preview STILL computes no damage: it threads the same
+    // buff input the commit does through the same `resolveTrickBank`, then reads a health delta
+    // off `applyResolution`. R3's order, the four caps and the Overlap Bonus are inherited, never
+    // restated here — which is the preview's whole correctness argument.
+    ...buffTrickFactsFor(visible, remainingHand, options.buffs ?? null),
   }
 
   return {

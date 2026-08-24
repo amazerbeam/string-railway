@@ -128,8 +128,10 @@ outcome or a second refusal code is a compile error here rather than a blank lin
 - **Nobody has seen this screen.** The browser pass was not requested on DLR-116. Whether the pared
   shop plus this section fits without scrolling or cropping at 1280×800, 1024×768, 1366×768 or 390×844
   is unverified, and jsdom cannot settle it — see [the shop screen](shop-screen.md#the-clipping-history-and-why-it-still-matters).
-- **A drawn buff still pays nothing when activated.** `buffAccrual.ts` has no caller. The machine now
-  fills the pile with real priced cards, which turns that gap from theoretical into visible.
+- ~~**A drawn buff still pays nothing when activated.**~~ **Fixed by DLR-125 on 2026-08-24** —
+  `buffAccrual.ts` gained its caller, so a card won here is evaluated and paid. See
+  [hunt/buff-condition-evaluation.md](../hunt/buff-condition-evaluation.md). (This module's own code
+  did not change; the claim it made about another module did.)
 - **`Miser` fights this screen directly**, and this screen made the tension worse rather than better:
   `Miser` rewards unspent coins, and an uncapped 1-coin reroll is now the strongest coin sink in the
   game. Recorded as a design tension, not patched with UI.

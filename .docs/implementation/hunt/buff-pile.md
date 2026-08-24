@@ -113,6 +113,13 @@ the *second* half — nothing evaluates a `BuffCondition` or applies a `BuffRewa
 be held and activated and pays nothing. The machine filling the pile with real content is what turns
 that gap from theoretical into visible.
 
+> **That second half stopped being true on 2026-08-24 (DLR-125).** A `BuffCondition` **is** now
+> evaluated, for the eleven shipping condition families, and a `BuffReward` **is** applied — into the
+> cash-out's multiplier and flat damage, into the action-point pool, and into the run's purse. So an
+> activated buff genuinely changes what a hand pays. The paragraph above is left standing because it
+> is the accurate record of what DLR-116 shipped; read it with this correction. See
+> [Condition evaluation](buff-condition-evaluation.md).
+
 **Since DLR-107, T4 has partly landed and this paragraph needs one correction.** Cheat and Timebomb
 now have a `Buff` representation and their tier tables — but still no consumer: nothing evaluates a
 condition, applies a reward, or reads the pile. The felt continues to drive the old bespoke Cheat and

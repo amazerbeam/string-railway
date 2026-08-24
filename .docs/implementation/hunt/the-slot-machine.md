@@ -110,8 +110,10 @@ Awards are minted through `mintFromTemplate`, so every card the machine pays is 
 - **The 7 consumable/activated templates are still absent from `BUFF_TEMPLATES`** — AC6 is DLR-126's.
   `Ward` is consequently **not in the reel pool**, and its silver and gold tiers remain
   indistinguishable while `DAMAGE_PER_HIT = 1`.
-- **`Keepsake` may be unfireable** and ships at floor weight, so a player can win a `Keepsake` card
-  from a reel that never fires. It is a dud card, not a crash — `apCostOf` prices it fine.
-- **A drawn buff still does nothing when activated.** `buffAccrual.ts` has no caller: activating a
-  condition-family buff spends action points and pays no reward. The slot machine now fills the pile
-  with real content, which makes that gap visible for the first time rather than theoretical.
+- **`Keepsake` is unfireable in live play** and ships at floor weight, so a player can win a
+  `Keepsake` card from a reel that never fires. It is a dud card, not a crash — `apCostOf` prices it
+  fine. DLR-125 confirmed the defect rather than fixing it: see
+  [Condition evaluation](buff-condition-evaluation.md).
+- ~~**A drawn buff still does nothing when activated.**~~ **Fixed by DLR-125 on 2026-08-24** —
+  `buffAccrual.ts` has a caller, conditions are evaluated and rewards are paid, so a card won here
+  now genuinely changes damage, coins or the action-point pool.

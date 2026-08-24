@@ -3721,3 +3721,163 @@ also left an unindexed module doc). The pattern is worth noting for the run repo
 documentation step runs last, so it is the most likely casualty, and its failure mode is silent —
 a complete document that nothing links to.
 
+
+---
+
+## DLR-125 — Engine: buff condition/reward evaluation framework
+
+**GREEN.** Four gates: `typecheck` exit 0 · `lint` exit 0 (0 errors, 0 warnings) · `npm test`
+**1702 passed of 1702, 131 files, 0 failures** (baseline 1655/1655 across 127) · `npm run build`
+exit 0. Scoped `prettier --check` clean across all 30 contract files. Reviewers: Code-Evaluator
+APPROVED, Defender APPROVED (0 Critical / 0 Warning / 2 Info), QA found one Prettier miss in
+`buffEvaluation.ts`, fixed with a scoped `--write`, all four gates re-run green. **One review round;
+no second round needed** — the only finding was whitespace, so re-dispatching three reviewers for a
+formatter run would have bought nothing.
+
+**This is the ticket the whole buff system was waiting for.** `buffAccrual.ts` had shipped on
+DLR-124 with no caller; it has one now.
+
+### Which of the twelve condition families fire, and which do not
+
+This is the list that tells the developer — and DLR-130's simulator — which of the 78 v1 cards are
+real.
+
+| # | Family | Cards | Fires? |
+|---|---|---|---|
+| 1 | Taker | 12 | **Yes** |
+| 2 | Feeder | 12 | **Yes** |
+| 3 | Mark of the *R* | 22 | **Yes** |
+| 4 | Sidestep | 2 | **Yes** |
+| 5 | Glutton | 4 | **Yes** |
+| 6 | Hoarder | 4 | **Yes** |
+| 7 | Unbloodied | 4 | **Yes** |
+| 8 | Long Fall | 0 | **No — not shipped.** DLR-111 deferred it for want of a UI answer; no template exists. |
+| 9 | Debt Collector | 4 | **Yes**, on the PRESS |
+| 10 | Keepsake | 3 | **Evaluates correctly, never fires in live play** — see defects |
+| 11 | Miser | 2 | **Yes** |
+| 12 | Cornered | 2 | **Yes** |
+
+**Ten of twelve fire and pay (65 cards). One is enforced but unsatisfiable (3 cards). One does not
+exist (0 cards).** All eight Activated cards answer `false` to every condition by design.
+
+### Plan defaults taken (the gate was not paused at, per the dispatch)
+
+1. **Evaluation lives inside `resolveTrickBank`**, not before or after it. Hoarder reads the bank
+   *after* the climb and Unbloodied reads "was this trick a hit" — figures that exist only inside
+   that function — and R3 puts Momentum inside the cash-out product and Blade outside it, and the
+   product is `bank.ts`'s. Evaluating before would need a discarded first pass or a duplicated
+   climb; after cannot work at all.
+2. **`TrickFacts.buffs` and the two new `TrickResolution` fields are REQUIRED, typed `… | null`**,
+   not optional — so the compiler enumerates every construction site. Cost: 16 `TrickFacts` sites
+   and 6 `TrickResolution` sites, 19 of them spec fixtures. Optional would have let a call site skip
+   buffs silently.
+3. **Sidestep/Glutton's "with this card" is satisfied by per-trick activation; no target-card field
+   was added.** A buff is activated in the between-tricks window *for the coming trick*, and
+   `openBuffWindow` clears `activatedThisTrick` at each resolution — so "this card" already means
+   "the card played on the trick this buff was bought for". AC3 is tested against that mechanism.
+4. **Debt Collector fires on the Apply Damage PRESS, not the landing** — DLR-109's reading, until
+   now unenforced in code. A hand-scoped `applyDamagePressed` flag set in `handleTapApplyDamage`'s
+   committing branch.
+5. **The Momentum and Blade pools are SPENT once per hand, not re-applied at every cash-out.** This
+   is a rule *reading*, not a transcription: R6 states a per-hand cap but does not say what happens
+   when a hand holds more than one cash-out, and a hand can hold a forced cash-out, a voluntary
+   Apply Damage and an end-of-hand fold. Re-adding at each would pay three full pools and the cap
+   would not be a cap. Implemented with two new forward-only counters, `multiplierPaid` /
+   `flatDamagePaid`. **Reversing it is a one-line change in `bank.ts`.**
+6. **Blade pays whenever a cash-out branch fires, even when the product is zero.** R3 step 4 adds
+   flat damage "to the result"; a result of zero is a result.
+7. **A buff whose condition is met on the trick that ends the hand fires, and fires before the
+   end-of-hand cash-out.** Terminal cadence exists for that instant. Second Wind refunded there buys
+   nothing — a player's mistake to make, per R7.
+8. **`recordEncounter` gained an OPTIONAL eighth parameter** (`buffCoinsEarned`, default 0) rather
+   than a required one — 48 call sites across 14 files, of which 47 have nothing to do with coins.
+9. **Purse coins land on a LOST encounter too** — added outside the `wonThisEncounter` ternary. The
+   buff's condition already decided whether it fired; the run's purse is not the place to re-judge.
+10. **`Cornered` is evaluated as `health * 100 < threshold * PLAYER_START_HEALTH`** — integer both
+    sides, no division anywhere in the new code, so no `NaN` can reach a rendered heart row.
+11. **DLR-117 AC1 (the "once any buff is active" visibility gate) was left undone**, deliberately.
+    Hiding a currently-always-visible readout changes what the felt looks like at rest — a visual
+    judgement the developer owns, and this is an `engine` ticket. Follow-up.
+12. **`timebombDamageFor` / `timebombDamageOf` were NOT collapsed.** The DLR-117 handoff conditions
+    that on the ticket that replaces `commitTimebomb` with `activateBuff`, and this is not it —
+    Timebomb is an Activated card with no condition, untouched here.
+13. **Hand-scoped buff state lives in a NEW module, `src/app/warCouncil/buffRoundState.ts`**, not in
+    `roundUiState.ts` — that file stood at 379 of its 400-line budget and three documented fields
+    would have breached it. It ended at 392.
+
+### Does DLR-117's preview inherit buff contributions for free?
+
+**Yes — AC3 is met, and it cost one line.** `playOptions(state)` is the single assembly the player's
+commit, the Quarry's follow and the preview all read. Adding `buffs` to it means the preview's
+hypothetical `TrickResolution` already carries the buffed multiplier and the Blade bonus before
+`applyResolution` is asked what it costs. **The preview still computes no damage itself** — QA
+verified `cardDamage.ts` performs no arithmetic of its own — so R3's order, the four caps and the
+Overlap Bonus are inherited, never restated. The preview's whole correctness argument survives.
+
+### How the per-hand-not-per-hit reset asymmetry is preserved
+
+Structurally, and made stronger:
+
+- `startHandAccrual()` is still the **only** reset in `buffAccrual.ts`, and no `resetOnHit`-shaped
+  function was added — the wrong reading still has no function to call. Verified by grep: the only
+  match is the docblock sentence stating the absence.
+- The per-hand reset is `createRoundUiState` calling `startBuffHand()`, which works because
+  `App.tsx` remounts the felt per hand (`key={hand}`) — the identical argument `startBuffActivation`
+  already makes. The Defender verified that remount assumption still holds at `App.tsx:371`.
+- The two new counters move **forward only**, and only when a cash-out actually pays.
+- The one counter that legitimately zeroes on a hit is `tricksWithoutHit` — Unbloodied's
+  **condition**, not a cap. It lives in `buffRoundState.ts`, a different module from the caps,
+  precisely so no reader confuses the two.
+
+### How the three known defects moved
+
+- **`Keepsake` — confirmed unfireable, and now pinned by a test rather than suspected in a comment.**
+  With `HAND_SIZE` cards and that many tricks every dealt card is played, so the hand at the final
+  trick's resolution is empty and "hold a card of suit S at hand's end" is false by construction. The
+  evaluator is correct (a test fires it on a non-empty remaining hand); a second test records that
+  the live path supplies an empty one. **Three Purse cards pay nothing.** Two exits, both the
+  developer's: redefine "hand's end" against DLR-123's persistent encounter deck, or retire the
+  family. Not decided here.
+- **`Ward` silver/gold indistinguishable at `DAMAGE_PER_HIT = 1` — unmoved.** Ward is an Activated
+  consumable with no condition and never reaches the evaluator.
+- **`Miser` fights the shop — now genuinely live rather than theoretical.** A Miser buff fires and
+  pays whenever the purse clears 5/10/20, so the hoard-versus-spend tension is real from this ticket
+  onward. A balance call for the end-of-epic pass, not a code defect.
+
+### Two planner slips the implementers caught, worth the run report
+
+1. **`tasks.md` Task 4's Files block omitted `src/app/warCouncil/cardDamage.ts`**, even though
+   `plan.md`'s own construction-site audit names it as one of exactly two production `TrickFacts`
+   sites. Making the field required without fixing every site breaks `typecheck` project-wide, so
+   the Phase 2 implementer added a placeholder `buffs: null` with a comment, and Phase 3 replaced it
+   with the real spread. The plan should have listed the file in Task 4 or assigned the whole site
+   to Task 6. **The audit knew; the task list did not inherit it** — worth a `/fb-plan` note: an
+   audit finding must land in a `**Files:**` block, not only in prose.
+2. **`tasks.md`'s R3 worked example ("16, not 18") could not be reproduced with two firing buffs**,
+   because two buffs firing also draw R5's Overlap Bonus (+1 multiplier), which pushes the figure to
+   19. The implementer isolated R3's *order* from R5's *stacking* by building the accrual directly,
+   and left R5 exercised by its own separate case. A planner arithmetic slip, flagged rather than
+   quietly reconciled.
+
+### One reviewer disagreement, recorded not actioned
+
+The Code-Evaluator would place the Task 8 end-to-end assertion in `src/app/warCouncil/__tests__/`
+rather than in `src/warCouncil/__tests__/bank.buffs.test.ts`, since that one test imports
+`applyResolution` from the app layer while the file's other five are pure `bank.ts` specs. It did
+not block on it and the crossing is commented as deliberate. Left as shipped.
+
+The Defender left one Info item worth carrying: the preview's `remainingHand` derivation is
+structurally different from the commit's post-ability hand in `playCard`, and the two only coincide
+because both reduce to an empty hand at every reachable final trick — an invariant true today but
+nowhere stated or tested. **Moot while Keepsake cannot fire; live the moment it can.**
+
+### Browser
+
+Not requested — opt-in and off by default. No server started. What a browser would have checked:
+activate a Bell-Taker (Blade) between tricks, win a trick with a Bells card, confirm the Quarry's
+health drops by more than the unbuffed cash-out; confirm the hand fan's per-card readout shows the
+larger figure *before* the card is played; confirm the AP plate's pool climbs after a Second Wind
+buff fires; confirm the purse after the hand includes the Purse contribution; confirm a clean
+console across a full hand and a remount. **And the one thing only a person can judge: nothing
+announces a buff firing.** A player sees a larger number with no cause named — a UX gap this ticket
+creates by making buffs work at all.

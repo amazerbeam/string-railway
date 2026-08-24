@@ -4,7 +4,9 @@ import * as buffAccrual from '../buffAccrual'
 import {
   EMPTY_BUFF_ACCRUAL,
   accrueAxisBonus,
+  markCashOutPaid,
   overlapBonusFor,
+  payableCashOutBonus,
   resolveFiredBuffs,
   startHandAccrual,
   type BuffBonusAccrual,
@@ -32,6 +34,8 @@ describe('startHandAccrual', () => {
       flatDamageBonus: 0,
       coinBonus: 0,
       apRefunded: 0,
+      multiplierPaid: 0,
+      flatDamagePaid: 0,
     })
   })
 })
@@ -123,6 +127,36 @@ describe('resolveFiredBuffs', () => {
     expect(result.coinBonus).toBe(2)
     expect(result.apRefunded).toBe(1)
     expect(result.multiplierBonus).toBe(2)
+  })
+})
+
+describe('DLR-125 — the cash-out spend model', () => {
+  it('a second cash-out in the same hand pays nothing more once the pool is spent', () => {
+    const accrued = accrueAxisBonus(startHandAccrual(), BuffRewardAxis.Magnitude, 5)
+    const first = payableCashOutBonus(accrued)
+    expect(first.flatDamageBonus).toBe(5)
+    const after = markCashOutPaid(accrued, first)
+    expect(payableCashOutBonus(after).flatDamageBonus).toBe(0)
+  })
+
+  it('a contribution accrued AFTER a cash-out is still payable at the next one', () => {
+    const spent = markCashOutPaid(
+      accrueAxisBonus(startHandAccrual(), BuffRewardAxis.Multiplier, 2),
+      {
+        multiplierBonus: 2,
+        flatDamageBonus: 0,
+      },
+    )
+    const more = accrueAxisBonus(spent, BuffRewardAxis.Multiplier, 3)
+    expect(payableCashOutBonus(more).multiplierBonus).toBe(3)
+  })
+
+  it('the accrued total still clips at its cap after a spend — the cap is per hand, not per pool', () => {
+    let a = accrueAxisBonus(startHandAccrual(), BuffRewardAxis.Multiplier, 6)
+    a = markCashOutPaid(a, payableCashOutBonus(a))
+    a = accrueAxisBonus(a, BuffRewardAxis.Multiplier, 4)
+    expect(a.multiplierBonus).toBe(MAX_MULTIPLIER_BONUS_PER_HAND)
+    expect(payableCashOutBonus(a).multiplierBonus).toBe(0)
   })
 })
 

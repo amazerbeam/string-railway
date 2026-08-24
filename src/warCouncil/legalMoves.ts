@@ -1,4 +1,5 @@
 import type { Damage, RankTierTable } from '../hunt'
+import type { BuffHandInput } from './buffTrickFacts'
 import { cardsOfSuit, highestOfSuit, sameCard } from './cardUtils'
 import { CardRank, type Card, type PlayerSide, type RoundState, type Suit } from './types'
 
@@ -59,6 +60,9 @@ export interface PlayCardOptions extends LegalMoveOptions {
    *  Named for the PLAYER because that is who it applies to: there is no Quarry counterpart to
    *  pass by mistake, and `rankTierRules.ts` refuses a non-player side regardless. */
   readonly playerRankTiers?: RankTierTable
+  /** DLR-125 — the hand-scoped buff input. Optional like every other field on this interface;
+   *  absent is "this caller evaluates no buffs", which is what the Quarry's own call sites are. */
+  readonly buffs?: BuffHandInput
 }
 
 /**

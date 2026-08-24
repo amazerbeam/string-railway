@@ -130,7 +130,7 @@ export {
   isConsumableKind,
 } from './buffCosts'
 
-export type { BuffBonusAccrual } from './buffAccrual'
+export type { BuffBonusAccrual, CashOutBonus } from './buffAccrual'
 export {
   EMPTY_BUFF_ACCRUAL,
   startHandAccrual,
@@ -138,7 +138,23 @@ export {
   accrueAxisBonus,
   overlapBonusFor,
   resolveFiredBuffs,
+  markCashOutPaid,
+  payableCashOutBonus,
 } from './buffAccrual'
+
+export type {
+  BuffHandContext,
+  BuffTrickContext,
+  BuffTrickInput,
+  BuffTrickOutcome,
+} from './buffEvaluation'
+export {
+  advanceTricksWithoutHit,
+  buffFires,
+  firedBuffs,
+  firesOncePerHand,
+  resolveTrickBuffs,
+} from './buffEvaluation'
 
 export type { BuffActivationStock, BuffActivationState } from './buffActivation'
 export {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { advanceRun, recordEncounter, startRun } from '../run'
 import { applyDamage } from '../encounter'
 import { BuffTier } from '../buffs'
-import { STARTING_BUFF_COUNT } from '../config'
+import { COINS_PER_ENCOUNTER_WIN, STARTING_BUFF_COUNT } from '../config'
 import { DuelSide, type EncounterState, type IncomingDamage } from '../types'
 
 const damage = (toPlayer: number, toQuarry: number): IncomingDamage => ({
@@ -70,5 +70,65 @@ describe('Buff pile on RunState (DLR-105 AC2/AC3)', () => {
     )
     const third = advanceRun(wonSecond)
     expect(third.buffs).toEqual(first.buffs)
+  })
+})
+
+describe('DLR-125 — Purse coins reach the run purse through recordEncounter', () => {
+  it('the eighth parameter is added to the purse', () => {
+    const run = startRun()
+    const recorded = recordEncounter(
+      run,
+      winEncounter(run.encounter),
+      run.cheats,
+      run.timebombCharges,
+      false,
+      run.discardsRemaining,
+      null,
+      5,
+    )
+    expect(recorded.coins).toBe(run.coins + COINS_PER_ENCOUNTER_WIN + 5)
+  })
+
+  it('an omitted buffCoinsEarned reproduces the pre-DLR-125 payout exactly', () => {
+    const run = startRun()
+    const withoutBuffs = recordEncounter(
+      run,
+      winEncounter(run.encounter),
+      run.cheats,
+      run.timebombCharges,
+      false,
+      run.discardsRemaining,
+      null,
+    )
+    const withZero = recordEncounter(
+      run,
+      winEncounter(run.encounter),
+      run.cheats,
+      run.timebombCharges,
+      false,
+      run.discardsRemaining,
+      null,
+      0,
+    )
+    expect(withoutBuffs).toEqual(withZero)
+  })
+
+  it('a purse contribution lands even on a lost encounter — coins are never conditioned on a win', () => {
+    const run = startRun()
+    const lostEncounter = applyDamage(
+      run.encounter,
+      damage(run.encounter.health[DuelSide.Player], 0),
+    )
+    const recorded = recordEncounter(
+      run,
+      lostEncounter,
+      run.cheats,
+      run.timebombCharges,
+      false,
+      run.discardsRemaining,
+      null,
+      3,
+    )
+    expect(recorded.coins).toBe(run.coins + 3)
   })
 })

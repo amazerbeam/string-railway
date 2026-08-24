@@ -216,15 +216,18 @@ control now lives. `labels.ts`'s label functions were kept and are reused by the
 
 ## What this does NOT make reachable
 
-- **A buff's condition is never evaluated and its reward is never paid.** `buffAccrual.ts`
-  (`resolveFiredBuffs`, `accrueAxisBonus`, `overlapBonusFor`) still has no caller anywhere in `src/`.
-  Activating a condition-family buff spends AP and does nothing else. Deliberately out of scope.
+- ~~**A buff's condition is never evaluated and its reward is never paid.**~~ True of DLR-114 and
+  **no longer true since DLR-125** (2026-08-24): `buffAccrual.ts` has a caller, an activated buff's
+  condition is checked at every trick resolution, and the reward reaches the cash-out, the AP pool
+  and the run's purse. Nothing on this bar changed to make that happen — the buffs the panel
+  activates simply now reach the engine that pays them. See
+  [The hand's buff bookkeeping, and the fold that pays it out](buff-hand-state-and-the-fold.md).
 - **On a fresh run with an empty Vault the buff list opens empty — and fills at the first shop.**
   `startRun` seeds four `Unassigned` placeholders and `activatableBuffs` filters every one of them
   out, so the panel shows only the relocated Cheat slots and Timebomb charge until the player pulls a
   reel. **DLR-116 wired `slotMachine.ts` into the shop**, so priced buffs now reach the pile through a
   pull as well as through Vault grants (`mintGrants`) — roughly 2.6 cards per pull, one pull free per
-  visit. Activating one still pays nothing, per the bullet above.
+  visit. Activating one **now pays**, since DLR-125 — see the bullet above.
 - **Cheat and Timebomb still run on their own bespoke state.** `CheatStage` / `TimebombStage` and
   their reducer branches were **relocated, not rewritten** — they do not run on `buffCatalog.ts`, and
   `timebombDamageOf` still has no caller. DLR-129's `timebombDamageFor` / `timebombDamageOf` collapse

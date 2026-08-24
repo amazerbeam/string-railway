@@ -37,10 +37,19 @@ import {
 import { advanceQuarryLead } from './quarryAdvance'
 import { handleCancelDiscard, handleTapDiscard, toggleDiscardCard } from './discardHandlers'
 import { handleCancelLoadout, handleTapBuff, handleToggleLoadout } from './buffHandlers'
+import { foldBuffOutcome } from './buffRoundState'
 import { commit } from './commitHandlers'
 
+// DLR-125 — `foldBuffOutcome` runs BEFORE `openWindowOnTrickResolved`, and the order is
+// load-bearing: the fold credits R3 step 1's AP refund into `buffActivation.apPool` while it
+// still holds this trick's activations, and only THEN does `openWindowOnTrickResolved` clear
+// `activatedThisTrick`. Reversing the order would clear the activations the fold reads before it
+// ran.
 export function roundReducer(state: RoundUiState, action: RoundUiAction): RoundUiState {
-  return openWindowOnTrickResolved(state, captureUnplayed(applyAction(state, action)))
+  return openWindowOnTrickResolved(
+    state,
+    foldBuffOutcome(state, captureUnplayed(applyAction(state, action))),
+  )
 }
 
 /**
@@ -264,6 +273,11 @@ function handleTapApplyDamage(state: RoundUiState): RoundUiState {
       ...state.buffActivation,
       apPool: spendAp(state.buffActivation.apPool, APPLY_DAMAGE_AP_COST),
     },
+    // DLR-125 — Debt Collector's trigger is THE PRESS, not the landing (DLR-109's reading, until
+    // now unenforced in code). Set here, at the moment the press commits, and read at the next
+    // trick's resolution; firing on the queued payout's arrival would pay the family a trick or
+    // more late and would silently contradict a reading DLR-109 already recorded.
+    buffHand: { ...state.buffHand, applyDamagePressed: true },
     applyPoised: false,
   }
 }

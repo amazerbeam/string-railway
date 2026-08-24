@@ -32,6 +32,12 @@ export interface BuffBonusAccrual {
   readonly flatDamageBonus: number
   readonly coinBonus: number
   readonly apRefunded: number
+  /** DLR-125 — how much of `multiplierBonus` a cash-out has already been paid. Moves FORWARD
+   *  only, and only when a cash-out actually fires. `startHandAccrual()` remains the only reset
+   *  in this module and nothing resets this on a hit — R6's asymmetry, unchanged. */
+  readonly multiplierPaid: number
+  /** DLR-125 — the same, for `flatDamageBonus`. */
+  readonly flatDamagePaid: number
 }
 
 export const EMPTY_BUFF_ACCRUAL: BuffBonusAccrual = {
@@ -39,6 +45,8 @@ export const EMPTY_BUFF_ACCRUAL: BuffBonusAccrual = {
   flatDamageBonus: 0,
   coinBonus: 0,
   apRefunded: 0,
+  multiplierPaid: 0,
+  flatDamagePaid: 0,
 }
 
 /** The value a new hand's accrual starts at. The ONLY reset this module exports — see the module
@@ -117,4 +125,33 @@ export function resolveFiredBuffs(
     next = accrueAxisBonus(next, BuffRewardAxis.Multiplier, overlap)
   }
   return next
+}
+
+/** The unspent balance of the two axes that land AT a cash-out — R3's step 2 (Momentum, inside
+ *  the product) and step 4 (Blade, outside it). */
+export interface CashOutBonus {
+  readonly multiplierBonus: number
+  readonly flatDamageBonus: number
+}
+
+/** What THIS cash-out may add. Clamped at 0 so a malformed accrual can never produce a negative
+ *  bonus that would REDUCE damage — `web-project.md`'s "guard the divisor, not the symptom",
+ *  applied to a subtraction that feeds a rendered heart row. */
+export function payableCashOutBonus(accrual: BuffBonusAccrual): CashOutBonus {
+  return {
+    multiplierBonus: Math.max(0, accrual.multiplierBonus - accrual.multiplierPaid),
+    flatDamageBonus: Math.max(0, accrual.flatDamageBonus - accrual.flatDamagePaid),
+  }
+}
+
+/** Records `paid` as spent. This is what makes R6's cap a PER-HAND bound rather than a
+ *  per-cash-out one: a pool re-added at every cash-out would pay up to
+ *  `MAX_FLAT_DAMAGE_BONUS_PER_HAND` three times in a hand holding a forced cash-out, a voluntary
+ *  Apply Damage and an end-of-hand fold. Never mutates `accrual`. */
+export function markCashOutPaid(accrual: BuffBonusAccrual, paid: CashOutBonus): BuffBonusAccrual {
+  return {
+    ...accrual,
+    multiplierPaid: accrual.multiplierPaid + paid.multiplierBonus,
+    flatDamagePaid: accrual.flatDamagePaid + paid.flatDamageBonus,
+  }
 }

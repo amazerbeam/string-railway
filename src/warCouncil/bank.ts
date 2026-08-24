@@ -1,8 +1,16 @@
 import {
+  advanceTricksWithoutHit,
   DAMAGE_PER_HIT,
   DuelSide,
   FORCED_CASH_OUT_DENOMINATOR,
   FORCED_CASH_OUT_NUMERATOR,
+  markCashOutPaid,
+  payableCashOutBonus,
+  resolveTrickBuffs,
+  type BuffBonusAccrual,
+  type BuffId,
+  type BuffTrickInput,
+  type CashOutBonus,
   type Damage,
   type IncomingDamage,
 } from '../hunt'
@@ -48,6 +56,11 @@ export interface TrickResolution extends BankState {
   /** AC4 — the Guard fired and suppressed a reset, so the reducer must spend it. `true` only when
    *  Timebomb was actually owed to the player at this trick AND a Guard was held. */
   readonly blastGuardSpent: boolean
+  /** DLR-125 — the hand's accrual AFTER this trick, or `null` when `TrickFacts.buffs` was
+   *  `null`. Reported back OUT so the felt folds one value rather than re-deriving it. */
+  readonly buffAccrual: BuffBonusAccrual | null
+  /** DLR-125 — the ids that fired on this trick, in `active` order. Empty when none did. */
+  readonly firedBuffIds: readonly BuffId[]
 }
 
 /**
@@ -89,6 +102,12 @@ export interface TrickFacts {
    *  implication in itself rather than trusting the caller, so a hand-built fact object cannot
    *  produce the nonsense state "the bank survives but the streak that valued it does not". */
   readonly swanKeepsBank: boolean
+  /** DLR-125 — the buffs activated for this trick plus the hand facts their conditions read.
+   *  REQUIRED and `| null`, not optional: optional would let a call site skip buffs silently,
+   *  and this shape has five construction sites the compiler should enumerate. A plain value
+   *  handed in, never a run figure read — exactly `bankClimbBonus`'s and `blastGuarded`'s
+   *  contract. */
+  readonly buffs: BuffTrickInput | null
 }
 
 /** §3.2's table as a total function. The skull inverts the trick: on a clean trick you want to
@@ -112,6 +131,11 @@ const TAKEN: Readonly<Record<TrickOutcome, boolean>> = {
 export function isTaken(outcome: TrickOutcome): boolean {
   return TAKEN[outcome]
 }
+
+/** DLR-125 — the payable bonus when there is nothing to pay: a `null` accrual (no buffs this
+ *  trick) reads identically to an accrual with nothing left to spend. A `const`, not mutable
+ *  state. */
+const NO_CASH_OUT_BONUS: CashOutBonus = { multiplierBonus: 0, flatDamageBonus: 0 }
 
 /**
  * The figure a bank of `bank` at a multiplier of `multiplier` is worth IN FULL — the plain
@@ -233,6 +257,29 @@ export function resolveTrickBank(before: BankState, trick: TrickFacts): TrickRes
   // on one they also lost.
   const damageToPlayer = (trickHit ? DAMAGE_PER_HIT : 0) + trick.timebombToPlayer
 
+  // DLR-125/DLR-124 R3 — evaluation happens HERE, between the climb and the cash-out, because two
+  // conditions read figures that exist only inside this function: Hoarder's bank AFTER the climb
+  // and Unbloodied's "was this trick a hit". R3's five steps then land in their forced order —
+  // step 2 (Momentum) inside the product below, step 4 (Blade) outside it, after §7's two-thirds
+  // floor. Steps 1 and 5 (Second Wind, Purse) touch nothing this hand's damage depends on and are
+  // folded by the felt from `buffAccrual`. Cited, never restated: hybrid-design.md §5.
+  const buffOutcome =
+    trick.buffs === null
+      ? null
+      : resolveTrickBuffs(trick.buffs, {
+          playerWon: trick.playerWon,
+          skullTrick: trick.skullTrick,
+          playerHit: damageToPlayer > 0,
+          finalTrick: trick.finalTrick,
+          bankAfterTrick: bank,
+          ...trick.buffs.hand,
+          tricksWithoutHit: advanceTricksWithoutHit(
+            trick.buffs.hand.tricksWithoutHit,
+            damageToPlayer > 0,
+          ),
+        })
+  let accrual = buffOutcome?.accrual ?? null
+
   if (trickHit || timebombResets) {
     // A1 — the win above has already banked, so a won-but-primed trick cashes the LARGER figure.
     //
@@ -262,7 +309,12 @@ export function resolveTrickBank(before: BankState, trick: TrickFacts): TrickRes
     // `rankTiers.resolution.test.ts`; raised by DLR-122's defender review and left as the reading
     // the developer confirms.
     if (!swanKeepsBank) {
-      cashOut = forcedCashValue(bank, multiplier)
+      // R3 steps 2-4: Momentum joins the multiplier INSIDE the product, Blade is added to what
+      // the product (and §7's two-thirds reduction) produced. `spend`/`markCashOutPaid` is what
+      // makes R6's cap a per-HAND bound: each pool pays once, not once per cash-out.
+      const spend = accrual === null ? NO_CASH_OUT_BONUS : payableCashOutBonus(accrual)
+      cashOut = forcedCashValue(bank, multiplier + spend.multiplierBonus) + spend.flatDamageBonus
+      if (accrual !== null) accrual = markCashOutPaid(accrual, spend)
       bank = 0
       // DLR-122 AC4 — silver spares the RATE, not the POT: the bank above still cashes at the
       // configured fraction and still resets to zero, and only the streak survives.
@@ -275,7 +327,11 @@ export function resolveTrickBank(before: BankState, trick: TrickFacts): TrickRes
   // AC5 — UNCHANGED, and deliberately so: the end-of-hand cash pays IN FULL. The reduction above
   // is specifically the "you got caught before you chose to apply" cost, and the sixth trick
   // simply arriving is not being caught.
-  const handEndCash = trick.finalTrick ? cashValue(bank, multiplier) : 0
+  const endSpend = accrual === null ? NO_CASH_OUT_BONUS : payableCashOutBonus(accrual)
+  const handEndCash = trick.finalTrick
+    ? cashValue(bank, multiplier + endSpend.multiplierBonus) + endSpend.flatDamageBonus
+    : 0
+  if (trick.finalTrick && accrual !== null) accrual = markCashOutPaid(accrual, endSpend)
   if (trick.finalTrick) {
     cashOut += handEndCash
     bank = 0
@@ -298,6 +354,8 @@ export function resolveTrickBank(before: BankState, trick: TrickFacts): TrickRes
       : null,
     timebombToQuarry: trick.timebombToQuarry,
     blastGuardSpent: trick.timebombToPlayer > 0 && trick.blastGuarded,
+    buffAccrual: accrual,
+    firedBuffIds: buffOutcome?.firedIds ?? [],
   }
 }
 
