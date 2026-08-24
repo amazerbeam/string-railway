@@ -38,6 +38,8 @@ export const SHOP_ITEM_NAME: Readonly<Record<ShopItem, string>> = {
   [ShopItem.Whetstone]: 'Whetstone', // PLACEHOLDER copy — the developer's call
   [ShopItem.Heal]: 'Heal',
   [ShopItem.ApCapacity]: 'Action points',
+  [ShopItem.SwanTier]: 'Swan', // PLACEHOLDER copy — the developer's call.
+  [ShopItem.WitchTier]: 'Witch', // PLACEHOLDER copy — the developer's call.
 }
 
 /** Built FROM the configuration keys, never from a literal, so re-pricing or re-tuning the heal
@@ -51,14 +53,22 @@ export const SHOP_ITEM_BLURB: Readonly<Record<ShopItem, string>> = {
     'Every trick you take banks one more, for the rest of the run. Buy it again to stack it.', // PLACEHOLDER copy
   [ShopItem.Heal]: `Restore ${HEAL_HEALTH_RESTORED} health, now. Anything over your maximum is lost.`,
   [ShopItem.ApCapacity]: `+${AP_CAPACITY_STEP} action points a hand, for the rest of the run. Buy it again to stack it.`,
+  // DLR-122 — PLACEHOLDER copy. Deliberately says WHICH rung the next coin buys rather than
+  // printing the whole ladder: the screen shows the price beside it, and the rungs already read
+  // as bronze/silver/gold from the buff cards.
+  [ShopItem.SwanTier]:
+    'Upgrade the Swan, for the rest of the run. At silver, losing a trick cleanly with a Swan no longer breaks your streak. At gold, it does not cash your bank either. Your Swans only — the Quarry keeps the printed card.',
+  [ShopItem.WitchTier]:
+    'Upgrade the Witch, for the rest of the run. At silver, two Witches no longer cancel — yours still counts as trump. At gold, yours also beats every trump. Your Witches only — the Quarry keeps the printed card.',
 }
 
-/** AC6 — the reason, in words. Total over `PurchaseRefusal`, so a fourth reason code is a
+/** AC6 — the reason, in words. Total over `PurchaseRefusal`, so a FIFTH reason code is a
  *  compile error here rather than a blank sentence on screen. */
 export const PURCHASE_REFUSAL_MESSAGE: Readonly<Record<PurchaseRefusal, string>> = {
   [PurchaseRefusal.SlotsFull]: 'Both Cheat slots are full.',
   [PurchaseRefusal.AlreadyFullHealth]: 'You are already at full health.',
   [PurchaseRefusal.GuardAlreadyActive]: 'You are already holding a Blast Guard.',
+  [PurchaseRefusal.RankAtMaxTier]: 'That rank is already at gold.',
   [PurchaseRefusal.NotEnoughCoins]: 'You do not have the coins for this.',
 }
 

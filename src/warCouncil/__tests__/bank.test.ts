@@ -14,7 +14,8 @@ import {
 
 const START: BankState = { bank: 0, multiplier: 0 }
 
-/** The eight facts, defaulted to an ordinary unmarked non-final unprimed trick. */
+/** The ten facts, defaulted to an ordinary unmarked non-final unprimed trick with no Swan
+ *  ladder bought. */
 const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
   playerWon: false,
   skullTrick: false,
@@ -24,6 +25,8 @@ const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
   timebombToQuarry: 0,
   blastGuarded: false,
   bankClimbBonus: 0,
+  swanKeepsMultiplier: false,
+  swanKeepsBank: false,
   ...over,
 })
 

@@ -79,6 +79,16 @@ export interface TrickFacts {
    *  handed in, never a run figure read: this module must not learn what bought it, which is why
    *  it is not called a Whetstone count. 0 is the bare rule. The MULTIPLIER is unaffected (AC5). */
   readonly bankClimbBonus: number
+  /** DLR-122 AC4 — the player's Swan ladder stands at silver or better AND the player played a
+   *  Swan into this trick. A plain FACT handed in, never a run figure read, exactly as
+   *  `blastGuarded` and `bankClimbBonus` above: this module must not learn who holds which card.
+   *  `rankTierRules.ts`'s `swanTierFactsFor` is the single producer, and AC3's player-only gate
+   *  lives there. Only ever consulted on a CLEAN LOSS — see `resolveTrickBank`. */
+  readonly swanKeepsMultiplier: boolean
+  /** DLR-122 AC5 — as above, at gold. Gold IMPLIES silver, and `resolveTrickBank` folds that
+   *  implication in itself rather than trusting the caller, so a hand-built fact object cannot
+   *  produce the nonsense state "the bank survives but the streak that valued it does not". */
+  readonly swanKeepsBank: boolean
 }
 
 /** §3.2's table as a total function. The skull inverts the trick: on a clean trick you want to
@@ -205,6 +215,16 @@ export function resolveTrickBank(before: BankState, trick: TrickFacts): TrickRes
   // rather than getting a rule of its own: that is what makes "Timebomb behaves like any other
   // damage" true in code instead of asserted in a comment.
   const trickHit = !isTaken(outcome) && !replaced
+
+  // DLR-122 AC4/AC5 — the Swan ladder, gated on CLEAN LOSS here rather than at the call site.
+  // "Not an eaten skull" is a rule about OUTCOMES, and outcomes are this module's subject; a
+  // caller-side gate would put half of AC4 in `playCard.ts`, where no bank spec would ever see
+  // it. A Dodge and a Clean Win have no hit to spare and a Skull Win is the eaten skull AC4
+  // excludes by name, so `CleanLoss` is the whole of it.
+  const swanCleanLoss = outcome === TrickOutcome.CleanLoss
+  const swanKeepsBank = swanCleanLoss && trick.swanKeepsBank
+  // Gold implies silver, folded in HERE rather than trusted from the caller.
+  const swanKeepsMultiplier = swanCleanLoss && (trick.swanKeepsMultiplier || trick.swanKeepsBank)
   // AC4 — a held Guard suppresses the TIMEBOMB trigger only.
   const timebombResets = trick.timebombToPlayer > 0 && !trick.blastGuarded
 
@@ -224,9 +244,32 @@ export function resolveTrickBank(before: BankState, trick: TrickFacts): TrickRes
     // is the case the-hunt.md calls "the moment you cannot choose" — precisely what the reduction
     // is charging for. Paying Timebomb in full would make being primed the CHEAPEST way to lose a
     // streak, which inverts the item this rule sits beside.
-    cashOut = forcedCashValue(bank, multiplier)
-    bank = 0
-    multiplier = 0
+    //
+    // DLR-122 AC5 — gold spares the FORCED cash-out. This is the poisoned-clean-loss exception's
+    // own shape (`the-hunt.md` §7) reached by a different trigger, not a second implementation of
+    // it: `replaced` above already skips the hit for the same reason, and this skips the cash-out
+    // one branch below it. The DAMAGE is untouched either way — it was booked into
+    // `damageToPlayer` above and no Swan rung insures against it.
+    //
+    // "THE FORCED cash-out", precisely, and NOT every cash-out — the end-of-hand fold below still
+    // fires on the surviving bank, and that is the rule working rather than leaking past it. On
+    // the sixth trick a gold Swan therefore pays the Quarry MORE, not less: a bank of 3 at a
+    // multiplier of 3 pays `forcedCashValue(3, 3)` = 6 when it is caught, and the spared streak
+    // reaches the final fold intact to pay `cashValue(3, 3)` = 9 in full. `cashOut` is damage
+    // dealt TO THE QUARRY (see `incomingFrom`), so the larger figure is the upgrade behaving as
+    // its own sentence says — the two-thirds reduction is the cost of being caught, and a gold
+    // Swan is exactly the purchase that says you were not. Pinned by the `finalTrick` cases in
+    // `rankTiers.resolution.test.ts`; raised by DLR-122's defender review and left as the reading
+    // the developer confirms.
+    if (!swanKeepsBank) {
+      cashOut = forcedCashValue(bank, multiplier)
+      bank = 0
+      // DLR-122 AC4 — silver spares the RATE, not the POT: the bank above still cashes at the
+      // configured fraction and still resets to zero, and only the streak survives.
+      if (!swanKeepsMultiplier) {
+        multiplier = 0
+      }
+    }
   }
 
   // AC5 — UNCHANGED, and deliberately so: the end-of-hand cash pays IN FULL. The reduction above

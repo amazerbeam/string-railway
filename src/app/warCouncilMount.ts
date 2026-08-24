@@ -7,6 +7,7 @@ import type {
   EncounterState,
   Health,
   Hunt,
+  RankTierTable,
 } from '../hunt'
 import type { WarCouncilState } from '../warCouncil'
 
@@ -74,6 +75,15 @@ export interface WarCouncilMountProps {
    *  to STARTING_AP so every existing seed fixture reproduces the pre-DLR-116 pool exactly; the
    *  driver passes apCapacityFor(run.apCapacityBonus). */
   readonly apCapacity?: ActionPoints
+  /** DLR-122 AC2/AC3 — the PLAYER's bought ability ladder, ALREADY RESOLVED from the run by
+   *  `playerRankTiersFor`. A plain table, not a `RunState`: the card layer resolves a run figure
+   *  and must not learn what bought it, exactly as `bankClimbBonus` above documents. OPTIONAL and
+   *  defaulted to `ALL_BRONZE`, following `apCapacity` immediately above rather than
+   *  `bankClimbBonus`: an absent table IS "nothing bought", which AC1 requires play identically
+   *  to today, so every existing seed fixture reproduces the pre-DLR-122 game exactly. Unlike
+   *  `timebombCharges` and `blastGuardHeld` it does NOT come back on `WarCouncilRoundResult` —
+   *  a hand cannot buy or spend a tier. */
+  readonly rankTiers?: RankTierTable
   readonly onComplete: (result: WarCouncilRoundResult) => void
 }
 

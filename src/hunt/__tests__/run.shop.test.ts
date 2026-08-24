@@ -68,7 +68,7 @@ describe('buyFromShop (DLR-84)', () => {
 })
 
 describe('shopStockFor (DLR-84)', () => {
-  it('projects the five figures the shop rules need', () => {
+  it('projects the six figures the shop rules need', () => {
     const run = { ...startRun(), coins: 3 }
     const stock = shopStockFor(run)
     expect(stock).toEqual({
@@ -77,6 +77,7 @@ describe('shopStockFor (DLR-84)', () => {
       playerHealth: run.encounter.health[DuelSide.Player],
       maxPlayerHealth: PLAYER_START_HEALTH,
       blastGuardHeld: run.blastGuardHeld,
+      rankTiers: run.rankTiers,
     })
   })
 })

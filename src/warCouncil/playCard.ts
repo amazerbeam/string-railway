@@ -1,10 +1,11 @@
-import { HAND_SIZE } from '../hunt'
+import { HAND_SIZE, TieredRank } from '../hunt'
 import { applyFoxExchange, applyWoodcutterDraw, nextLeaderAfterTrick } from './abilities'
 import { resolveTrickBank } from './bank'
 import { containsCard, removeCard, sameCard } from './cardUtils'
 import { legalMoves, type PlayCardOptions } from './legalMoves'
 import { trickIsPrimed } from './timebomb'
 import { resolveTrickWinner } from './resolveTrick'
+import { swanTierFactsFor, tierForSide } from './rankTierRules'
 import { trickIsSkulled } from './skulls'
 import {
   AbilityChoiceKind,
@@ -96,7 +97,13 @@ export function playCard(
 
   // safe: length===1 already returned above, so this is exactly 2
   const completedTrick = currentTrick as [TrickCard, TrickCard]
-  const winner = resolveTrickWinner(completedTrick, next.trumpSuit)
+  // DLR-122 — the Witch ladder reaches the trick's own resolution. `tierForSide` is the ONLY
+  // route to a tier in this tree (AC3); nothing here indexes the table itself.
+  const winner = resolveTrickWinner(
+    completedTrick,
+    next.trumpSuit,
+    tierForSide(options?.playerRankTiers, PlayerSide.Player, TieredRank.Witch),
+  )
   const nextLeader = nextLeaderAfterTrick(completedTrick, winner)
   const tricksPlayed = next.tricksPlayed + 1
   const tricksWon = { ...next.tricksWon, [winner]: next.tricksWon[winner] + 1 }
@@ -116,6 +123,9 @@ export function playCard(
       timebombToQuarry: options?.timebombToQuarry ?? 0,
       blastGuarded: options?.blastGuarded ?? false,
       bankClimbBonus: options?.bankClimbBonus ?? 0,
+      // DLR-122 AC4/AC5 — the Swan ladder as two plain facts, derived by `rankTierRules.ts`,
+      // which owns AC3's player-only gate. `bank.ts` adds the clean-loss half of the rule.
+      ...swanTierFactsFor(completedTrick, options?.playerRankTiers),
     },
   )
 

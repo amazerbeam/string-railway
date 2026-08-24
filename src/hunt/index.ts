@@ -188,7 +188,24 @@ export {
   isShopCategoryAvailable,
   refusalFor,
   canBuyAnything,
+  tieredRankOf,
 } from './shop'
+
+// DLR-122 — the rank-tier ladder and its single pricing point.
+export type { RankTierTable } from './rankTiers'
+export {
+  TieredRank,
+  AbilityTier,
+  TIER_LADDER,
+  TIERED_RANKS,
+  ALL_BRONZE,
+  RANK_TIER_STEP_PRICE,
+  tierIndexOf,
+  tierAtLeast,
+  nextTierAfter,
+  isAtMaxTier,
+  steppedTo,
+} from './rankTiers'
 
 export type { FlaskStock } from './flask'
 export { FlaskRefusal, flaskHealAmount, flaskRefusalFor } from './flask'
@@ -205,6 +222,7 @@ export {
   shopStockFor,
   flaskStockFor,
   bankClimbBonusFor,
+  playerRankTiersFor,
   slotVisitStockFor,
 } from './run'
 

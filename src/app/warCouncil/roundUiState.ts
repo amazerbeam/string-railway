@@ -27,6 +27,7 @@ import {
   hasPendingApplyPayout,
   hasPendingTimebomb,
   isEncounterResolved,
+  ALL_BRONZE,
   startBuffActivation,
   STARTING_AP,
   type ActionPoints,
@@ -37,6 +38,7 @@ import {
   type CheatCard,
   type CheatCardId,
   type EncounterState,
+  type RankTierTable,
 } from '../../hunt'
 
 export interface ResolvedTrick {
@@ -116,6 +118,11 @@ export interface RoundUiState {
    *  prop. Read-only for the hand's whole life: no action ever writes it, because a hand cannot
    *  spend or change a Whetstone — only the shop between hands can. */
   readonly bankClimbBonus: number
+  /** DLR-122 AC2/AC3 — the player's bought ability ladder, in force for this hand, mirrored from
+   *  the mount's opening prop. Read-only for the hand's whole life for `bankClimbBonus`'s stated
+   *  reason: no action ever writes it, because a hand cannot buy a tier — only the shop between
+   *  fights can. */
+  readonly rankTiers: RankTierTable
   /** DLR-94 — the Apply Damage plate has been tapped once and awaits its confirming second tap.
    *  The hand's OWN transient: dies on remount, never touches `RunState`.
    *
@@ -183,6 +190,11 @@ export interface RoundUiSeed {
    *  to STARTING_AP so every existing seed fixture reproduces the pre-DLR-116 pool exactly; the
    *  driver passes apCapacityFor(run.apCapacityBonus). */
   readonly apCapacity?: ActionPoints
+  /** DLR-122 — the player's bought ability ladder. OPTIONAL and defaulted to `ALL_BRONZE` so every
+   *  existing seed fixture reproduces the pre-DLR-122 game exactly; an absent table IS "nothing
+   *  bought", which is what AC1 requires play identically to today. The driver passes
+   *  `playerRankTiersFor(run)`. */
+  readonly rankTiers?: RankTierTable
 }
 
 // `chooseCpuMove` throws rather than returning a rejection when the CPU has no legal
@@ -244,6 +256,7 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     timebombStage: null,
     blastGuardHeld: seed.blastGuardHeld,
     bankClimbBonus: seed.bankClimbBonus,
+    rankTiers: seed.rankTiers ?? ALL_BRONZE,
     applyPoised: false,
     unplayedAtResolve: null,
     discardsRemaining: seed.discardsRemaining,

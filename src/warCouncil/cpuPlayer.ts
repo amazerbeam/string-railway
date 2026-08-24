@@ -54,6 +54,11 @@ export function chooseCpuCard(state: RoundState, side: PlayerSide): Card {
   }
   const lead = state.currentTrick[0]
   const wouldWin = (card: Card) =>
+    // DLR-122 — evaluated at BRONZE deliberately, with no tier threaded in. This is the Quarry's
+    // own EVALUATION of a candidate card, not the rule that resolves the trick — `playCard` owns
+    // that and does thread the ladder. The consequence is that a player's gold Witch is
+    // occasionally misjudged by the Quarry, which is a fair consequence of the upgrade rather
+    // than a defect, and it keeps `chooseCpuMove`'s signature and its call sites unchanged.
     resolveTrickWinner([lead, { side, card }], state.trumpSuit) === side
 
   const skulledLosers = legal.filter(
@@ -132,6 +137,11 @@ function deriveStance(state: RoundState, card: Card): QuarryIntentStance {
   }
   const lead = state.currentTrick[0]
   const wouldWin =
+    // DLR-122 — evaluated at BRONZE deliberately, with no tier threaded in. This is the Quarry's
+    // own EVALUATION of a candidate card, not the rule that resolves the trick — `playCard` owns
+    // that and does thread the ladder. The consequence is that a player's gold Witch is
+    // occasionally misjudged by the Quarry, which is a fair consequence of the upgrade rather
+    // than a defect, and it keeps `chooseCpuMove`'s signature and its call sites unchanged.
     resolveTrickWinner([lead, { side: QUARRY_SIDE, card }], state.trumpSuit) === QUARRY_SIDE
   return wouldWin ? QuarryIntentStance.Pressing : QuarryIntentStance.Ducking
 }

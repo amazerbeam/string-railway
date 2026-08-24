@@ -22,7 +22,9 @@ import {
   ShopItem,
   type ShopStock,
   UNCATEGORISED_SHOP_ITEMS,
+  tieredRankOf,
 } from '../shop'
+import { ALL_BRONZE, AbilityTier, RANK_TIER_STEP_PRICE, TieredRank, steppedTo } from '../rankTiers'
 
 const baseStock = (over: Partial<ShopStock> = {}): ShopStock => ({
   coins: 5,
@@ -30,13 +32,74 @@ const baseStock = (over: Partial<ShopStock> = {}): ShopStock => ({
   playerHealth: 6,
   maxPlayerHealth: 10,
   blastGuardHeld: false,
+  rankTiers: ALL_BRONZE,
   ...over,
 })
 const stock = baseStock
 
 describe('SHOP_ITEMS', () => {
-  it('holds exactly the two pared items — AP capacity then Heal (DLR-116 AC2)', () => {
-    expect(SHOP_ITEMS).toEqual([ShopItem.ApCapacity, ShopItem.Heal])
+  it('keeps the pared pair from DLR-116 and adds the two tier items from DLR-122', () => {
+    expect(SHOP_ITEMS).toEqual([
+      ShopItem.ApCapacity,
+      ShopItem.SwanTier,
+      ShopItem.WitchTier,
+      ShopItem.Heal,
+    ])
+  })
+})
+
+describe('the refilled run-permanent shelf (DLR-122 AC2)', () => {
+  const goldSwan = steppedTo(steppedTo(ALL_BRONZE, TieredRank.Swan), TieredRank.Swan)
+
+  it('sits both tier items on the run-permanent rung', () => {
+    expect(categoryOf(ShopItem.SwanTier)).toBe(ShopCategory.RunPermanent)
+    expect(categoryOf(ShopItem.WitchTier)).toBe(ShopCategory.RunPermanent)
+    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([
+      ShopItem.ApCapacity,
+      ShopItem.SwanTier,
+      ShopItem.WitchTier,
+    ])
+  })
+
+  it('prices both from the one configuration point (AC7)', () => {
+    expect(priceOf(ShopItem.SwanTier)).toBe(RANK_TIER_STEP_PRICE)
+    expect(priceOf(ShopItem.WitchTier)).toBe(RANK_TIER_STEP_PRICE)
+  })
+
+  it('maps each tier item to exactly one rank, and every other item to none', () => {
+    expect(tieredRankOf(ShopItem.SwanTier)).toBe(TieredRank.Swan)
+    expect(tieredRankOf(ShopItem.WitchTier)).toBe(TieredRank.Witch)
+    expect(tieredRankOf(ShopItem.Heal)).toBeNull()
+    expect(tieredRankOf(ShopItem.ApCapacity)).toBeNull()
+    expect(tieredRankOf(ShopItem.Whetstone)).toBeNull()
+  })
+
+  it('sells a step at bronze and at silver', () => {
+    expect(refusalFor(stock({ coins: RANK_TIER_STEP_PRICE }), ShopItem.SwanTier)).toBeNull()
+    const silver = steppedTo(ALL_BRONZE, TieredRank.Swan)
+    expect(
+      refusalFor(stock({ coins: RANK_TIER_STEP_PRICE, rankTiers: silver }), ShopItem.SwanTier),
+    ).toBeNull()
+  })
+
+  it('refuses on coins when the purse is one short', () => {
+    expect(refusalFor(stock({ coins: RANK_TIER_STEP_PRICE - 1 }), ShopItem.SwanTier)).toBe(
+      PurchaseRefusal.NotEnoughCoins,
+    )
+  })
+
+  it('refuses a rank already at gold, and does so before the coin check', () => {
+    expect(refusalFor(stock({ coins: 99, rankTiers: goldSwan }), ShopItem.SwanTier)).toBe(
+      PurchaseRefusal.RankAtMaxTier,
+    )
+    expect(refusalFor(stock({ coins: 0, rankTiers: goldSwan }), ShopItem.SwanTier)).toBe(
+      PurchaseRefusal.RankAtMaxTier,
+    )
+  })
+
+  it('upgrades one rank without touching the other', () => {
+    expect(goldSwan[TieredRank.Witch]).toBe(AbilityTier.Bronze)
+    expect(refusalFor(stock({ coins: 99, rankTiers: goldSwan }), ShopItem.WitchTier)).toBeNull()
   })
 })
 
@@ -65,7 +128,7 @@ describe('priceOf', () => {
     expect(priceOf(ShopItem.ApCapacity)).toBe(AP_CAPACITY_PRICE)
   })
 
-  it('DLR-116 AC3 — still answers for all six ShopItem members, proving no mechanic is deleted', () => {
+  it('DLR-116 AC3 / DLR-122 — still answers for every ShopItem member, proving no mechanic is deleted', () => {
     for (const item of Object.values(ShopItem)) {
       expect(typeof priceOf(item)).toBe('number')
     }
@@ -148,7 +211,7 @@ describe('canBuyAnything', () => {
     expect(canBuyAnything(stock())).toBe(true)
   })
 
-  it('is false only when all four items refuse', () => {
+  it('is false only when every offered item refuses', () => {
     expect(
       canBuyAnything(
         stock({
@@ -226,8 +289,12 @@ describe('SHOP_ITEMS_BY_CATEGORY', () => {
     expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.FightLong]).toEqual([])
   })
 
-  it('DLR-116 — sells AP capacity alone on the run-permanent rung; game-permanent stays empty', () => {
-    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([ShopItem.ApCapacity])
+  it('DLR-122 — sells AP capacity and the two rank ladders on the run-permanent rung; game-permanent stays empty', () => {
+    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([
+      ShopItem.ApCapacity,
+      ShopItem.SwanTier,
+      ShopItem.WitchTier,
+    ])
     expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.GamePermanent]).toEqual([])
   })
 

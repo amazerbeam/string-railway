@@ -15,6 +15,7 @@ import {
   STARTING_BUFF_COUNT,
 } from './config'
 import { seedStartingBuffPile, type Buff, type BuffId } from './buffs'
+import { ALL_BRONZE, type RankTierTable } from './rankTiers'
 import { mintGrants, type TemplateGrant } from './buffTemplates'
 import { grantCheats, type CheatCard, type CheatCardId } from './cheats'
 import { startEncounter } from './encounter'
@@ -140,6 +141,15 @@ export interface RunState {
    *  `advanceRun` at the fight boundary, exactly as `discardsRemaining` is. NEVER persisted,
    *  exactly as `coins` above. */
   readonly slotPullsThisVisit: number
+  /** DLR-122 AC2 — where every tierable rank stands for THIS run. Run-permanent like `whetstones`
+   *  rather than on `EncounterState`, and carried by `advanceRun`'s and `recordEncounter`'s
+   *  spreads: a bought tier that reset at a fight boundary would be a fight-long asset, not a
+   *  run-permanent one. Unlike `cheats`, `timebombCharges` and `blastGuardHeld` it is NEVER
+   *  handed back by a hand, because a hand cannot buy or spend a tier — only the shop between
+   *  fights can. A TABLE rather than a count, and that is the point: unlike `whetstones` and
+   *  `apCapacityBonus`, which stack, a rank is a RUNG and `steppedTo` refuses a third step.
+   *  NEVER persisted, exactly as `coins` above. */
+  readonly rankTiers: RankTierTable
 }
 
 /**
@@ -179,6 +189,9 @@ export function startRun(
     runSeed,
     apCapacityBonus: 0,
     slotPullsThisVisit: 0,
+    // DLR-122 AC1 — every rank at bronze, which IS the ability printed today, so a run that buys
+    // nothing plays exactly as it plays now.
+    rankTiers: ALL_BRONZE,
   }
 }
 
@@ -213,6 +226,7 @@ export function shopStockFor(
     playerHealth: run.encounter.health[DuelSide.Player],
     maxPlayerHealth,
     blastGuardHeld: run.blastGuardHeld,
+    rankTiers: run.rankTiers,
   }
 }
 
@@ -246,6 +260,20 @@ export function slotVisitStockFor(run: RunState): SlotVisitStock {
  */
 export function bankClimbBonusFor(run: RunState): number {
   return run.whetstones
+}
+
+/**
+ * DLR-122 AC2/AC3 — THE statement of "the bought ladder the PLAYER's cards resolve at". The
+ * sibling of `bankClimbBonusFor` above and for its stated reason: `App` reads this and hands the
+ * RESULT to the card layer as a plain value, which is what keeps `src/warCouncil/` free of
+ * `RunState`.
+ *
+ * The name carries AC3's asymmetry in the identifier itself — there is no Quarry counterpart to
+ * reach for by mistake, and `src/warCouncil/rankTierRules.ts` refuses a non-player side before it
+ * reads the table at all.
+ */
+export function playerRankTiersFor(run: RunState): RankTierTable {
+  return run.rankTiers
 }
 
 // The run's TRANSITIONS live in ./runTransitions (DLR-93 Phase 2.5) and are re-exported here so

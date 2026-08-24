@@ -13,6 +13,8 @@ const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
   timebombToQuarry: 0,
   blastGuarded: false,
   bankClimbBonus: 0,
+  swanKeepsMultiplier: false,
+  swanKeepsBank: false,
   ...over,
 })
 

@@ -7,6 +7,7 @@ import {
   BLAST_GUARD_PRICE,
   WHETSTONE_PRICE,
 } from './config'
+import { isAtMaxTier, RANK_TIER_STEP_PRICE, TieredRank, type RankTierTable } from './rankTiers'
 import type { Coins, Health } from './types'
 
 export const ShopItem = {
@@ -16,6 +17,8 @@ export const ShopItem = {
   Whetstone: 'whetstone',
   Heal: 'heal',
   ApCapacity: 'apCapacity', // DLR-116 AC2
+  SwanTier: 'swanTier', // DLR-122 AC2
+  WitchTier: 'witchTier', // DLR-122 AC2
 } as const
 export type ShopItem = (typeof ShopItem)[keyof typeof ShopItem]
 
@@ -23,8 +26,18 @@ export type ShopItem = (typeof ShopItem)[keyof typeof ShopItem]
  *  The `ShopItem` union above keeps every member and `priceOf` / `categoryOf` / `refusalFor` /
  *  `buyFromShop` stay TOTAL over it, so no mechanic is deleted — only this list changed. Cheat,
  *  Timebomb, Blast Guard and Whetstone are still priced, still buyable by a caller, and still
- *  tested; they are simply not on the shelf while this pared-down version is played. */
-export const SHOP_ITEMS: readonly ShopItem[] = [ShopItem.ApCapacity, ShopItem.Heal]
+ *  tested; they are simply not on the shelf while this pared-down version is played.
+ *
+ *  DLR-122 AC2 REFILLS the run-permanent rung with `SwanTier` and `WitchTier`. Nothing DLR-116
+ *  removed comes back: those two are NEW items, and the five ranks whose ladders this shelf does
+ *  not yet offer stay off `TIERED_RANKS` (`rankTiers.ts`) for exactly the reason Cheat and
+ *  Whetstone stay off this list. */
+export const SHOP_ITEMS: readonly ShopItem[] = [
+  ShopItem.ApCapacity,
+  ShopItem.SwanTier,
+  ShopItem.WitchTier,
+  ShopItem.Heal,
+]
 
 /** The persistence-length ladder (version-4-scope.md §1) — named after the design doc's own rungs
  *  rather than Balatro's deck / Joker / consumable, since this game has no deck-building layer for
@@ -52,6 +65,10 @@ export const PurchaseRefusal = {
   SlotsFull: 'slotsFull',
   AlreadyFullHealth: 'alreadyFullHealth',
   GuardAlreadyActive: 'guardAlreadyActive',
+  /** DLR-122 AC2 — the rank is already at gold, so there is no rung left to buy. A rank is a
+   *  RUNG, not a counter: unlike Whetstone and AP capacity it cannot be stacked, so this is the
+   *  ceiling and it is stated once. */
+  RankAtMaxTier: 'rankAtMaxTier',
   NotEnoughCoins: 'notEnoughCoins',
 } as const
 export type PurchaseRefusal = (typeof PurchaseRefusal)[keyof typeof PurchaseRefusal]
@@ -65,6 +82,9 @@ export interface ShopStock {
   readonly maxPlayerHealth: Health
   /** DLR-91 AC3 — a bought-but-unspent Guard is already held. Only one can be active at a time. */
   readonly blastGuardHeld: boolean
+  /** DLR-122 AC2 — where every tierable rank currently stands, so the ceiling is a rule this
+   *  module can state rather than something the caller has to remember to check. */
+  readonly rankTiers: RankTierTable
 }
 
 /** Total over `ShopItem`, so adding a third item is a compile error here rather than an
@@ -83,6 +103,36 @@ export function priceOf(item: ShopItem): Coins {
       return HEAL_PRICE
     case ShopItem.ApCapacity:
       return AP_CAPACITY_PRICE
+    // DLR-122 AC7 — both tier items read the SAME single configuration point. One key rather
+    // than one per rank or one per step: retuning the shelf is one edit in `rankTiers.ts`.
+    case ShopItem.SwanTier:
+    case ShopItem.WitchTier:
+      return RANK_TIER_STEP_PRICE
+  }
+}
+
+/**
+ * DLR-122 — the rank a tier item upgrades, or `null` for an item that is not a tier purchase.
+ * Total over `ShopItem` like `priceOf` and `categoryOf` above, so a third tier item is a compile
+ * error here rather than an item that silently upgrades nothing.
+ *
+ * THE single mapping from item to rank: `refusalFor` below and `buyFromShop` in
+ * `runTransitions.ts` both read it, rather than each carrying a second `switch` that could
+ * disagree about which rank a card sells.
+ */
+export function tieredRankOf(item: ShopItem): TieredRank | null {
+  switch (item) {
+    case ShopItem.SwanTier:
+      return TieredRank.Swan
+    case ShopItem.WitchTier:
+      return TieredRank.Witch
+    case ShopItem.Cheat:
+    case ShopItem.Timebomb:
+    case ShopItem.BlastGuard:
+    case ShopItem.Whetstone:
+    case ShopItem.Heal:
+    case ShopItem.ApCapacity:
+      return null
   }
 }
 
@@ -111,6 +161,11 @@ export function categoryOf(item: ShopItem): ShopCategory | null {
       return null
     // DLR-116 AC2 — the raise lasts the run, exactly as Whetstone's does.
     case ShopItem.ApCapacity:
+      return ShopCategory.RunPermanent
+    // DLR-122 AC2 — the shelf this ticket exists to refill. A bought tier lasts the run, exactly
+    // as Whetstone's climb and the AP raise do.
+    case ShopItem.SwanTier:
+    case ShopItem.WitchTier:
       return ShopCategory.RunPermanent
   }
 }
@@ -164,6 +219,12 @@ export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | 
   if (item === ShopItem.BlastGuard && stock.blastGuardHeld) {
     return PurchaseRefusal.GuardAlreadyActive
   }
+  // DLR-122 AC2 — above the coin check, matching this docblock's stated order: with a rank at
+  // gold and no coins, the ceiling is the reason that will still be true when the coin arrives.
+  const tieredRank = tieredRankOf(item)
+  if (tieredRank !== null && isAtMaxTier(stock.rankTiers, tieredRank)) {
+    return PurchaseRefusal.RankAtMaxTier
+  }
   if (!Number.isFinite(stock.coins) || stock.coins < priceOf(item)) {
     return PurchaseRefusal.NotEnoughCoins
   }
@@ -174,9 +235,10 @@ export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | 
  * Whether ANY item is purchasable right now — `some()` over `refusalFor`, never a second reading
  * of the rules. THE predicate the verdict's `Continue` warning fires on: a player holding a coin
  * at full health has nothing to stop for (AP capacity has no cap, so a coin always buys it), and a
- * warning they cannot act on is noise. (`SHOP_ITEMS` above is `ApCapacity` and `Heal` only —
- * DLR-116 pared `Cheat` out of the fixed shelf, so "full slots" no longer participates in this
- * predicate at all.)
+ * warning they cannot act on is noise. (`SHOP_ITEMS` above is `ApCapacity`, `SwanTier`,
+ * `WitchTier` and `Heal` — DLR-116 pared `Cheat` out of the fixed shelf, so "full slots" no
+ * longer participates in this predicate at all, and DLR-122's two tier items participate through
+ * `RankAtMaxTier` instead.)
  */
 export function canBuyAnything(stock: ShopStock): boolean {
   return SHOP_ITEMS.some((item) => refusalFor(stock, item) === null)

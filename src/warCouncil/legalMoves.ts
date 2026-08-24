@@ -1,4 +1,4 @@
-import type { Damage } from '../hunt'
+import type { Damage, RankTierTable } from '../hunt'
 import { cardsOfSuit, highestOfSuit, sameCard } from './cardUtils'
 import { CardRank, type Card, type PlayerSide, type RoundState, type Suit } from './types'
 
@@ -52,6 +52,13 @@ export interface PlayCardOptions extends LegalMoveOptions {
    *  interface's docblock already gives: it is a run figure and `src/warCouncil/` must not learn
    *  `RunState`. Absent means 0, so the Quarry's own call sites stay untouched. */
   readonly bankClimbBonus?: number
+  /** DLR-122 AC2/AC3 — the PLAYER's bought ability ladder, in force for this hand. Handed IN
+   *  rather than read, for the reason this interface's docblock already gives: it is a run figure
+   *  and `src/warCouncil/` must not learn `RunState`. ABSENT means all-bronze — today's game
+   *  exactly — so the Quarry's own call sites stay untouched, exactly as `bankClimbBonus` does.
+   *  Named for the PLAYER because that is who it applies to: there is no Quarry counterpart to
+   *  pass by mistake, and `rankTierRules.ts` refuses a non-player side regardless. */
+  readonly playerRankTiers?: RankTierTable
 }
 
 /**

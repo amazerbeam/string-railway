@@ -17,6 +17,7 @@ import { DuelSide, HAND_SIZE, isEncounterResolved, type Damage } from '../../hun
 import {
   PlayerSide,
   resolveTrickBank,
+  swanTierFactsFor,
   RoundPhase,
   trickIsPrimed,
   trickIsSkulled,
@@ -63,7 +64,7 @@ export function cardDamagePreview(state: RoundUiState, card: Card): CardDamagePr
     { side: PlayerSide.Player, card },
   ]
 
-  // The four queue/run facts come from `playOptions` — the SAME assembly both commit call
+  // The five queue/run facts come from `playOptions` — the SAME assembly both commit call
   // sites use — with `playCard.ts`'s own `?? 0` / `?? false` defaulting reproduced field for
   // field, so the preview and the commit cannot read "what is pending" differently.
   const options = playOptions(state)
@@ -76,6 +77,12 @@ export function cardDamagePreview(state: RoundUiState, card: Card): CardDamagePr
     timebombToQuarry: options.timebombToQuarry ?? 0,
     blastGuarded: options.blastGuarded ?? false,
     bankClimbBonus: options.bankClimbBonus ?? 0,
+    // DLR-122 — the Swan ladder, derived exactly as `playCard.ts` derives it, from the same
+    // `playOptions` assembly. `visible` already carries the real `side` on every entry, which is
+    // what makes AC3's player-only gate work here too: a Quarry Swan on the table cannot satisfy
+    // it. A preview that read the run's ladder itself would be the second reading `playOptions`'
+    // own docblock warns about.
+    ...swanTierFactsFor(visible, options.playerRankTiers),
   }
 
   return {

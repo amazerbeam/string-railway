@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DLR-122 — Refilled run-permanent shelf</title>
+    <style>
+      :root {
+        --ink: #f2e9dc;
+        --dim: #a3968a;
+        --ground: #14100d;
+        --card: #221b16;
+        --edge: #3b302a;
+        --coin: #e8b84b;
+        --bronze: #a4703c;
+        --silver: #b9c2c9;
+        --gold: #e8b84b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--ground);
+        color: var(--ink);
+        font: 15px/1.5 system-ui, sans-serif;
+        padding: 24px;
+      }
+      h1 {
+        font-size: 18px;
+        margin: 0 0 4px;
+      }
+      p.note {
+        color: var(--dim);
+        margin: 0 0 20px;
+        max-width: 62ch;
+      }
+      .purse {
+        display: flex;
+        gap: 20px;
+        padding: 10px 14px;
+        border: 1px solid var(--edge);
+        border-radius: 8px;
+        margin-bottom: 18px;
+        width: fit-content;
+      }
+      .purse b {
+        color: var(--coin);
+      }
+      h2 {
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--dim);
+        margin: 22px 0 10px;
+      }
+      .shelf {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 12px;
+        max-width: 1000px;
+      }
+      .item {
+        border: 1px solid var(--edge);
+        border-radius: 8px;
+        background: var(--card);
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .item h3 {
+        margin: 0;
+        font-size: 15px;
+      }
+      .item p {
+        margin: 0;
+        color: var(--dim);
+        font-size: 13px;
+      }
+      .rungs {
+        display: flex;
+        gap: 5px;
+      }
+      .rung {
+        flex: 1;
+        height: 5px;
+        border-radius: 3px;
+        background: #372d27;
+      }
+      .rung.on.bronze {
+        background: var(--bronze);
+      }
+      .rung.on.silver {
+        background: var(--silver);
+      }
+      .rung.on.gold {
+        background: var(--gold);
+      }
+      button {
+        font: inherit;
+        color: var(--ground);
+        background: var(--coin);
+        border: 0;
+        border-radius: 6px;
+        padding: 7px 10px;
+        cursor: pointer;
+      }
+      button[disabled] {
+        background: #3b332c;
+        color: var(--dim);
+        cursor: not-allowed;
+      }
+      .refusal {
+        color: #d08a7a;
+        font-size: 12px;
+        min-height: 1em;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>DLR-122 — the run-permanent shelf, refilled</h1>
+    <p class="note">
+      Placeholder data. This validates one thing only: that the run-permanent rung now carries four
+      purchase cards rather than one, that a tier card shows which rung it is on, and that a rank at
+      gold refuses rather than disappearing. Every price is read from the engine in the real screen
+      and is quoted here only to fill the card.
+    </p>
+
+    <div class="purse">
+      <span>Coins <b id="coins">12</b></span>
+      <span>Health <b>10</b></span>
+    </div>
+
+    <h2>Run-permanent</h2>
+    <div class="shelf" id="permanent"></div>
+
+    <h2>No rung — instant</h2>
+    <div class="shelf">
+      <div class="item">
+        <h3>Heal</h3>
+        <p>Restore 4 health, now. Anything over your maximum is lost.</p>
+        <button onclick="alert('bought Heal for 1 coin')">Buy — 1 coin</button>
+        <span class="refusal"></span>
+      </div>
+    </div>
+
+    <script>
+      const STEP = 5
+      const TIERS = ['bronze', 'silver', 'gold']
+      const state = {
+        coins: 12,
+        apBonus: 0,
+        ranks: { swan: 'bronze', witch: 'bronze' },
+      }
+      const RANKS = {
+        swan: {
+          name: 'Swan',
+          blurb:
+            'Upgrade the Swan, for the rest of the run. At silver, losing a trick cleanly with a Swan no longer breaks your streak. At gold, it does not cash your bank either. Your Swans only.',
+        },
+        witch: {
+          name: 'Witch',
+          blurb:
+            'Upgrade the Witch, for the rest of the run. At silver, two Witches no longer cancel — yours still counts as trump. At gold, yours also beats every trump. Your Witches only.',
+        },
+      }
+
+      function rungs(tier) {
+        return TIERS.map(
+          (t, i) =>
+            `<span class="rung ${TIERS.indexOf(tier) >= i ? 'on' : ''} ${t}"></span>`,
+        ).join('')
+      }
+
+      function buyRank(id) {
+        const next = TIERS[TIERS.indexOf(state.ranks[id]) + 1]
+        if (!next || state.coins < STEP) return
+        state.coins -= STEP
+        state.ranks[id] = next
+        render()
+      }
+
+      function buyAp() {
+        if (state.coins < 3) return
+        state.coins -= 3
+        state.apBonus += 5
+        render()
+      }
+
+      function render() {
+        document.getElementById('coins').textContent = state.coins
+        const cards = []
+        cards.push(`
+          <div class="item">
+            <h3>Action points</h3>
+            <p>+5 action points a hand, for the rest of the run. Buy it again to stack it. Bought: ${state.apBonus / 5}.</p>
+            <button ${state.coins < 3 ? 'disabled' : ''} onclick="buyAp()">Buy — 3 coins</button>
+            <span class="refusal">${state.coins < 3 ? 'You do not have the coins for this.' : ''}</span>
+          </div>`)
+        for (const id of Object.keys(RANKS)) {
+          const tier = state.ranks[id]
+          const maxed = tier === 'gold'
+          const poor = state.coins < STEP
+          cards.push(`
+            <div class="item">
+              <h3>${RANKS[id].name} <span style="color:var(--${tier})">— ${tier}</span></h3>
+              <div class="rungs">${rungs(tier)}</div>
+              <p>${RANKS[id].blurb}</p>
+              <button ${maxed || poor ? 'disabled' : ''} onclick="buyRank('${id}')">Buy — ${STEP} coins</button>
+              <span class="refusal">${maxed ? 'That rank is already at gold.' : poor ? 'You do not have the coins for this.' : ''}</span>
+            </div>`)
+        }
+        document.getElementById('permanent').innerHTML = cards.join('')
+      }
+
+      render()
+    </script>
+  </body>
+</html>

@@ -37,14 +37,15 @@ import { advanceQuarryFollow, deriveResolvedTrick } from './quarryAdvance'
 
 /**
  * Every `PlayCardOptions` field a resolving trick needs: D1's Timebomb owed from EARLIER tricks, read
- * off the encounter's queue, plus DLR-92 AC4's bank-climb bonus, mirrored straight from state.
+ * off the encounter's queue, plus DLR-92 AC4's bank-climb bonus and DLR-122's rank-tier ladder,
+ * both mirrored straight from state.
  *
  * One statement, read by both `playCard` call sites: the player's follow in `commit` and the
  * Quarry's in `advanceQuarryFollow`. Two readings of "what is pending" is exactly how a hit gets
  * paid twice or skipped, or a bonus applies to one side's follow and not the other's.
  *
  * EXPORTED on DLR-117: a THIRD reader, `cardDamage.ts`'s preview, which must assemble the
- * same four fields the two commit call sites do. A preview that read the queue itself would
+ * same five fields the two commit call sites do. A preview that read the queue itself would
  * be exactly the second reading this docblock already warns about.
  */
 export function playOptions(state: RoundUiState): PlayCardOptions {
@@ -53,6 +54,10 @@ export function playOptions(state: RoundUiState): PlayCardOptions {
     timebombToQuarry: state.encounter.pendingTimebomb[DuelSide.Quarry],
     blastGuarded: state.blastGuardHeld,
     bankClimbBonus: state.bankClimbBonus,
+    // DLR-122 — the FIFTH field, in the one assembly all three readers share. A preview or a
+    // commit that read the run's ladder itself would be exactly the second reading this
+    // docblock already warns about.
+    playerRankTiers: state.rankTiers,
   }
 }
 

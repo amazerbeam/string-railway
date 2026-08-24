@@ -66,18 +66,20 @@ const noRefusals: Readonly<Record<ShopItem, PurchaseRefusal | null>> = {
   [ShopItem.Whetstone]: null,
   [ShopItem.Heal]: null,
   [ShopItem.ApCapacity]: null,
+  [ShopItem.SwanTier]: null,
+  [ShopItem.WitchTier]: null,
 }
 
 describe('ShopPanel', () => {
   it('renders exactly SHOP_ITEMS.length purchase controls, queried by their accessible name (AC2)', () => {
     render(<ShopPanel {...baseProps} refusals={noRefusals} />)
-    expect(SHOP_ITEMS).toHaveLength(2)
-    expect(
-      screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.ApCapacity, null) }),
-    ).toBeTruthy()
-    expect(
-      screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Heal, null) }),
-    ).toBeTruthy()
+    // DLR-122 refilled the run-permanent rung, so the offered list is four rather than two.
+    // Driven off `SHOP_ITEMS` itself rather than a transcribed roster, so adding or removing an
+    // item is a one-line change in `shop.ts` and no edit here.
+    for (const item of SHOP_ITEMS) {
+      expect(screen.getByRole('button', { name: shopItemAccessibleName(item, null) })).toBeTruthy()
+    }
+    expect(screen.getAllByRole('button', { name: /coin/ })).toHaveLength(SHOP_ITEMS.length)
   })
 
   it('names no button, tab or text after Cheat, Timebomb, Blast Guard or Whetstone (AC3)', () => {

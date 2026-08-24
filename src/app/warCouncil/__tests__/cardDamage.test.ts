@@ -6,8 +6,19 @@ import {
   HAND_SIZE,
   queueTimebomb,
   startEncounter,
+  ALL_BRONZE,
+  steppedTo,
+  TieredRank,
+  type RankTierTable,
 } from '../../../hunt'
-import { cashValue, forcedCashValue, PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
+import {
+  CardRank,
+  cashValue,
+  forcedCashValue,
+  PlayerSide,
+  RoundPhase,
+  Suit,
+} from '../../../warCouncil'
 import { createRoundUiState } from '../roundUiState'
 import { cardDamagePreview } from '../cardDamage'
 import {
@@ -20,7 +31,11 @@ import {
   timebombChargesFixture,
 } from './roundFixture'
 
-function seededUi(overrides: Parameters<typeof makeRound>[0] = {}, encounter = encounterFixture) {
+function seededUi(
+  overrides: Parameters<typeof makeRound>[0] = {},
+  encounter = encounterFixture,
+  rankTiers?: RankTierTable,
+) {
   return createRoundUiState({
     round: makeRound(overrides),
     encounter,
@@ -30,6 +45,7 @@ function seededUi(overrides: Parameters<typeof makeRound>[0] = {}, encounter = e
     bankClimbBonus: bankClimbBonusFixture,
     discardsRemaining: discardsRemainingFixture,
     buffs: [],
+    rankTiers,
   })
 }
 
@@ -125,3 +141,28 @@ describe('cardDamagePreview — the hand fan’s per-card win/lose readout, deri
 function quarryStartHealth(): number {
   return startEncounter(0).health[DuelSide.Quarry]
 }
+
+describe('the preview reads the rank-tier ladder the commit will (DLR-122)', () => {
+  const GOLD_SWAN = steppedTo(steppedTo(ALL_BRONZE, TieredRank.Swan), TieredRank.Swan)
+  const swan = card(Suit.Bells, CardRank.Swan)
+
+  it('shows a clean loss costing health but not the bank once the Swan is at gold (AC5)', () => {
+    const bronze = seededUi({ bank: 3, multiplier: 2 })
+    const gold = seededUi({ bank: 3, multiplier: 2 }, encounterFixture, GOLD_SWAN)
+    // Bronze: the forced cash-out is dealt to the Quarry, exactly as the assertion above states.
+    expect(cardDamagePreview(bronze, swan)!.lose.toQuarry).toBe(forcedCashValue(3, 2))
+    // Gold: nothing cashes, so the Quarry takes nothing — but the player still takes the hit.
+    const goldLose = cardDamagePreview(gold, swan)!.lose
+    expect(goldLose.toQuarry).toBe(0)
+    expect(goldLose.toPlayer).toBe(DAMAGE_PER_HIT)
+  })
+
+  it('leaves the preview unchanged for a card that is not a Swan', () => {
+    const bronze = cardDamagePreview(seededUi({ bank: 3, multiplier: 2 }), card(Suit.Bells, 2))!
+    const gold = cardDamagePreview(
+      seededUi({ bank: 3, multiplier: 2 }, encounterFixture, GOLD_SWAN),
+      card(Suit.Bells, 2),
+    )!
+    expect(gold).toEqual(bronze)
+  })
+})

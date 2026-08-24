@@ -3,6 +3,7 @@ import {
   advanceRun,
   apCapacityFor,
   bankClimbBonusFor,
+  playerRankTiersFor,
   beatenCount,
   buyFromShop,
   canAdvanceRun,
@@ -294,6 +295,8 @@ function App() {
           [ShopItem.Whetstone]: refusalFor(stock, ShopItem.Whetstone),
           [ShopItem.Heal]: refusalFor(stock, ShopItem.Heal),
           [ShopItem.ApCapacity]: refusalFor(stock, ShopItem.ApCapacity),
+          [ShopItem.SwanTier]: refusalFor(stock, ShopItem.SwanTier),
+          [ShopItem.WitchTier]: refusalFor(stock, ShopItem.WitchTier),
         }}
         onBuy={handleBuy}
         onLeave={leaveForNextFight}
@@ -355,6 +358,7 @@ function App() {
       discardsRemaining={run.discardsRemaining}
       buffs={run.buffs}
       bankClimbBonus={bankClimbBonusFor(run)}
+      rankTiers={playerRankTiersFor(run)}
       apCapacity={apCapacityFor(run.apCapacityBonus)}
       quarryLabel={quarryHealthLabel(currentName)}
       onComplete={handleComplete}

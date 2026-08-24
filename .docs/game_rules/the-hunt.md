@@ -296,8 +296,10 @@ section 8, which are enforced, drawn, and unreachable because nothing grants one
 > just happened. See [section 10](#10-between-hands-and-the-run). **Engine and screen landed
 > together — nothing in that section is enforced but unreachable.**
 
-> **The Quarry has no powers — DLR-81, the same day.** It plays by exactly the player's rules, with
-> no exceptions. A character is a name only. The Monarch previously carried a whole-hand narrowing
+> **The Quarry has no powers — DLR-81, the same day.** It plays by exactly the player's rules and has
+> no power of its own. A character is a name only. **Since 2026-08-24 the deck itself is asymmetric**:
+> a bought rank rung applies to your copies only (section 5), so the Quarry's copy of a tiered rank
+> resolves at bronze. That is a power you bought, not one it lacks. The Monarch previously carried a whole-hand narrowing
 > of the player's follow; it was placeholder framing built as though it were a decision, and it is
 > **deferred to a final boss, not deleted** — see [section 9](#9-the-quarry). Every measurement taken
 > before this date was taken against that power.
@@ -856,6 +858,43 @@ suit decides the **current** trick — as the base game's own appendix specifies
 **A drawn card is never skulled.** The Woodcutter draws from the pile, and the pile carries no
 skulls — skulls are a property of the deal (section 3).
 
+### The named ranks carry a bronze / silver / gold ladder, bought in the shop — **[provisional]**
+
+Since 2026-08-24 the table above is the **bronze** rung of a three-rung ladder, and a rung is bought
+from the shop's run-permanent shelf for a fixed price in coins. A run that buys nothing plays exactly
+as the table above describes. A bought rung lasts **the rest of the run** and applies to **every copy
+of that rank you hold**. A rank can be bought **twice at most** — bronze to silver, silver to gold —
+and the shop refuses a third purchase; unlike the Whetstone, rungs do not stack.
+
+| Rank | Silver | Gold | Status |
+| ---- | ------ | ---- | ------ |
+| 1 **Swan** | On a **clean loss** — not an eaten skull — your **multiplier survives the hit**, and you still lead the next trick. The damage still lands and the bank still cashes at two-thirds. See section 7. | As silver, and the **bank survives too**: nothing cashes, the streak simply carries on. | **[provisional]** — built, unplayed |
+| 9 **Witch** | **Two Witches no longer cancel**: yours still counts as trump, the Quarry's does not. | As silver, and yours also **beats every trump** — it counts as the highest card of the trump suit. | **[provisional]** — built, unplayed |
+| 3 **Fox** | — | — | **[not built]** — needs a new choice surface (peek at the draw pile; exchange without giving a card up) |
+| 5 **Woodcutter** | — | — | **[not built]** — needs a multi-card choice surface (draw 2 or 3, bury 1) |
+| 7 **Treasure** | — | — | **[not built]** — has no printed ability to tier; a coin-paying row invents one |
+| 8 **Timebomb** (the rank; `TieredRank.Poison` in code) | — | — | **[not built]** — the drafted row gives rank 8 a delayed hit, which collapses the very distinction this section's own warning above draws between the rank-8 name, the skull, and Timebomb's primed cards. That collision is answered before the row is built |
+| 11 **Monarch** | — | — | **[not built]** — its gold rung has to survive into the next trick, which nothing carries yet |
+
+Every magnitude here is a placeholder and the price is a tuning value; both are the developer's,
+after playing. The reasoning, the discarded readings, and the pricing question are in
+`version-5-developer-idea.md` §7b. The five **[not built]** rows are named because the ladder is
+meant to cover all seven ranks; they are not on the shelf and cannot be bought.
+
+**Whose decision:** the developer's — every magnitude, the price, and whether the five unbuilt rows
+ship together or one at a time.
+
+### A bought rung applies to you only — **[provisional]**
+
+This is the **first asymmetry the deck has ever carried**, and it is deliberate. A tiered Swan in
+your hand and an untiered one in the Quarry's resolve differently: the Quarry's copy of every named
+rank always resolves at bronze, whatever you have bought. It is the opposite of the 2026-08-13
+decision that stripped character powers (section 9), and it is a rule about the **cards**, not about
+the Quarry — the Quarry still holds no powers of its own and still plays by exactly the printed
+rules. Nothing it may do is anything you may not.
+
+**Whose decision:** the developer's — whether the deck is allowed to be asymmetric at all.
+
 ### Whether the abilities survive at six cards — **[open]**
 
 A six-card hand contains far fewer named ranks than a thirteen-card one, and **many hands will
@@ -939,6 +978,39 @@ See `hybrid-design.md` version-4-scope §3.
 
 **It always rounds down**, so the Quarry is never paid more than the rule says by a rounding artefact. A
 streak worth 1 therefore pays **nothing at all** when it is caught, and a streak worth 4 pays 2.
+
+### A tiered Swan survives a clean loss — **[provisional]**
+
+Since 2026-08-24 there is a **second exception** to the three-part rule above, alongside the primed
+trick below, and it is bought rather than played. It fires only when **you** played a Swan into the
+trick and the trick was a **clean loss** — never an eaten skull, never a dodge, and never a trick you
+took. The Quarry's Swan never fires it.
+
+- **Silver** — step 3 is spared for the multiplier alone. You still take the 1 damage, the bank still
+  cashes at two-thirds and still resets to zero, but the **streak survives at the number it already
+  held**, so the rate you built is not erased by one lost trick. The purchase protects the **rate**,
+  not the **pot**.
+- **Gold** — steps 2 and 3 are both spared. **Nothing cashes**, and the bank and the multiplier both
+  stand at the values they already held. You still take the 1 damage: no rung insures against health.
+
+This is the primed-trick exception's own shape reached by a different trigger, not a second rule —
+both let a bank and a multiplier survive a lost trick at the values they already held. The two can
+coincide: a trick that is both primed and a clean loss is already costless by the rule below, and a
+gold Swan additionally spares a Timebomb forced cash-out landing on that same trick.
+
+**On the sixth trick, gold pays you MORE, not less.** The end-of-hand cash-out below is a separate
+rule and still fires on the bank gold spared, in full. So a streak worth 3 at a multiplier of 3
+deals the Quarry **6** when it is caught by an ordinary clean loss, and **9** when a gold Swan
+carries it into the end of the hand. That is the rung behaving as its own sentence says — the
+two-thirds is the cost of being caught, and a gold Swan is precisely the purchase that says you
+were not.
+
+The rung is bought on the shop's run-permanent shelf at a fixed price in coins — a tuning value,
+and the developer's. The ladder itself is in [section 5](#5-abilities).
+
+**Whose decision:** the developer's — the price, whether a gold Swan makes a clean loss too cheap
+now that it can be simply held rather than played for, and whether the larger sixth-trick payout
+above is the intended reward or wants capping at the reduced rate.
 
 ### A primed trick the Quarry wins cleanly costs you nothing — **[settled]**
 
@@ -1467,10 +1539,15 @@ offered.
 
 **[settled]** — it has no powers, and no character does.
 
-The Quarry is the CPU opponent. It **plays by the player's rules, with no exceptions at all**: it
-follows suit, holds six cards, plays one card per trick, and is bound by every rule in sections 4–7
-exactly as the player is. There is no rule-break, no round-long ability, and nothing it may do that
-you may not.
+The Quarry is the CPU opponent. It **plays by the player's rules**: it follows suit, holds six
+cards, plays one card per trick, and is bound by every rule in sections 4–7 exactly as the player is.
+There is no rule-break, no round-long ability, and **nothing it may do that you may not**.
+
+**One asymmetry runs the other way, and it is the cards' rather than the Quarry's.** Since 2026-08-24
+you can buy a silver or gold rung for a named rank (section 5), and the Quarry's copy of that rank
+still resolves at **bronze**. That is a power you bought, not one it lacks — the Quarry has never had
+a power of its own and still has none. Before that date this section read "with no exceptions at
+all"; that sentence is now false and this paragraph is what replaced it.
 
 Its character is a **name only** — an identity for the encounter, shown on screen so one opponent is
 distinguishable from the next. Nothing mechanical hangs off it.
@@ -2457,6 +2534,12 @@ the mechanics themselves are documented in `../implementation/`.
 | Nothing raises the multiplier's climb                                            | **not built** — by decision                                                                | nothing — `resolveTrickBank`'s `multiplier += 1` takes no bonus, and no `ShopItem` maps to one                                                                                                                                                                                                                                                                                          | **Developer — the twin item, a later ticket**                                                                                                                                                                                                                                                                     |
 | A bank climb that is not a positive integer is ignored                           | settled — since DLR-92                                                                     | `src/warCouncil/bank.ts` — `resolveTrickBank` floors the bonus to 0 unless `Number.isInteger` and `> 0`, so a spoiled figure degrades to the bare rule rather than reaching a health bar                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
 | The bank, and that it only climbs                                                | settled                                                                                    | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                                                                                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                                 |
+| Named ranks carry a bronze/silver/gold ladder, bought in the shop | **provisional** — since DLR-122, built and unplayed | `src/hunt/rankTiers.ts` — `TieredRank`, `AbilityTier`, `steppedTo`; `TIERED_RANKS` is what the shelf OFFERS (Swan and Witch) while the union names all seven, exactly as `SHOP_ITEMS` does against `ShopItem` | **Developer — every magnitude, and whether the five unbuilt rows ship together** |
+| A rung costs a fixed number of coins, read from one place | **provisional** — the number is unchosen and never played | `src/hunt/rankTiers.ts` — `RANK_TIER_STEP_PRICE`, the only figure `priceOf` reads for either tier item | **Developer — the price, and whether it should escalate per rung** |
+| A rank is bought twice at most, and rungs do not stack | settled — since DLR-122 | `src/hunt/shop.ts` — `refusalFor` returns `PurchaseRefusal.RankAtMaxTier` before the coin check; `src/hunt/rankTiers.ts` — `steppedTo` throws past gold | — |
+| A bought rung applies to the player's copies only | settled — since DLR-122 | `src/warCouncil/rankTierRules.ts` — `tierForSide` returns bronze for any side that is not the player, before the table is read; it is the only route to a tier anywhere in `src/warCouncil/` | **Developer — whether the deck is allowed to be asymmetric at all** |
+| A tiered Swan spares the multiplier (silver) or the whole bank (gold) on a clean loss | **provisional** — since DLR-122, built and unplayed | `src/warCouncil/bank.ts` — `resolveTrickBank` gates both on `outcome === CleanLoss`, so an eaten skull is excluded by the rule rather than by the caller; the facts come from `src/warCouncil/rankTierRules.ts` — `swanTierFactsFor` | **Developer — whether a gold Swan makes a clean loss too cheap** |
+| A tiered Witch survives the two-Witch cancellation (silver) and outranks every trump (gold) | **provisional** — since DLR-122, built and unplayed | `src/warCouncil/resolveTrick.ts` — `resolveTrickWinner`'s third parameter, defaulted to bronze; both predicates test the player's side before the tier. `cpuPlayer.ts`'s two heuristic calls evaluate at bronze deliberately | **Developer — whether a Quarry that misjudges a gold Witch is flavour or a defect** |
 | The streak multiplier, and its reset                                             | settled                                                                                    | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                                                                                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                                 |
 | Cash-out on damage, at **two-thirds** rounded down                               | settled — since DLR-94                                                                     | `src/warCouncil/bank.ts` — `forcedCashValue`, the only reader of `FORCED_CASH_OUT_NUMERATOR`/`_DENOMINATOR` in `src/hunt/config.ts`; `resolveTrickBank`'s forced branch calls it for every forced hit, Timebomb included                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
 | The fraction is a numerator over a denominator, not a float                      | settled — since DLR-94                                                                     | `src/hunt/config.ts` — two constants, multiplied before dividing in `forcedCashValue`, because `x * (2 / 3)` floors wrong on every multiple of 3; pinned by `bank.test.ts`'s multiples-of-three spec                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                                 |

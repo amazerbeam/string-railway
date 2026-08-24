@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 14/22 (64%) — done: 14 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-118 "Vault end-of-run screen" (15/22)
+**Progress:** 15/22 (68%) — done: 15 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-122 "Tiered rank abilities: refill the run-permanent shop shelf" (16/22)
 
 ## Run order
 
@@ -3279,3 +3279,252 @@ lost run pays in, what it buys, and what happens when the save cannot be read), 
 register rows. Two pre-existing statements were **stale and are now fixed**: "a run that has ended
 offers `Start a new run` and nothing else", and "Persistence — nothing is saved", which had been
 wrong since DLR-113 and is now marked PARTLY BUILT.
+
+## Coordinator decisions — DLR-118 reconciliation
+
+Suite 1526 → **1565, 120 files, 0 failures** (+39 tests, +3 files). Two reviewer rounds; round 1
+found two real defects, round 2 unanimous.
+
+- **Accepted eleven defined screen states, which is the right number for this surface.**
+  Deposit-on-loss · below-the-rate-on-loss · **winning run, nothing deposited, and it says so** ·
+  **first-ever run / empty Vault** (all buys disabled, **no alert** — an `Empty` read is not a
+  failure) · save corrupt · save version-mismatched · storage unavailable · entries dropped ·
+  write rejected · boost at cap · empty family. The empty and failure states are the ones that
+  normally get skipped and then look broken; they were built first-class instead.
+- **`VAULT_READ_PROBLEM` / `VAULT_WRITE_PROBLEM` are total over their unions**, so a sixth
+  outcome is a compile error rather than a blank line. That is the right shape for a screen whose
+  job includes rendering failure.
+- **DLR-113's unmigratable-save decision was rendered, not reinvented** — both the corrupt and
+  version-mismatch states say the record was left on disk untouched and the session starts empty.
+- **The loss-only deposit rule is correct and was proved three ways:** a unit test crediting 0 on
+  a won run at the same coin count that credits 3 on a loss; a component test asserting the
+  winning-run sentence is present *and* the lost sentence absent; and structurally,
+  `creditedFromRun` returns 0 before reaching the conversion. **`run.coins` is never zeroed
+  anywhere in the diff**, so the verdict panel keeps what it reads.
+- **Two stale statements in `the-hunt.md` were corrected** — "a run that has ended offers `Start a
+  new run` and nothing else", and "Persistence — nothing is saved", both wrong since DLR-113.
+- **CSS ownership stated:** shares `run.css`, shares **none** with `warCouncilHunt.css`, so
+  DLR-119's three risks do not reach it and none were touched.
+
+### DLR-131 raised — a systemic gap the reviewers exposed
+
+Review caught a **genuine crash path** that would have shipped: the spend guards re-derived their
+refusal against a **stale** `handle.vault` outside the commit updater, so a batched second click
+reached `buyOddsBoost`'s deliberate `RangeError`. Fixed in-ticket by moving the guard inside the
+updater — the pattern DLR-116 had already forced on `handleBuy` — with two regression tests.
+
+The coordinator measured the class rather than accepting the fix as sufficient. At `04eae28`:
+**72 deliberate `throw` sites across 28 files, and zero error boundaries** — no `ErrorBoundary`,
+no `componentDidCatch`, no `getDerivedStateFromError`. Any throw that escapes into React unmounts
+the tree and leaves a blank page with no way back.
+
+The throws are **correct and should stay** — `apCostOf` throwing on an unpriced kind and
+`timebombDamageOf` throwing rather than returning a plausible small integer are good discipline.
+The gap is that strictness has no backstop at the UI edge. Aggravating: the `Unassigned`
+placeholder trap has been hit **three separate times** this run, each a live path into
+`apCostOf`'s `RangeError`.
+
+**DLR-131** scopes the boundary, a readable fallback, a decision on root-versus-per-screen, and a
+test that a throwing child renders the fallback. It explicitly forbids weakening any existing
+throw. Slotted **before DLR-120 and DLR-121**, which exercise the whole app and are where an
+unguarded throw is most likely to surface.
+
+### Developer's own list from this ticket
+
+Whether the Vault should be skippable — it is one press from the verdict and `Start a new run`
+still bypasses it, which is a pacing call. Whether family-then-card narrowing reads as focused or
+as hiding 71 cards. All copy, **including the invented currency noun "mark"**. Every `clamp()`
+and hue in `vault.css`. And the densest no-scroll surface in the project, unmeasured: jsdom has
+no layout engine, so nothing checked it fits.
+
+---
+
+## DLR-122 — Tiered rank abilities: refill the run-permanent shop shelf
+
+**Outcome: GREEN.** Four gates clean. `npm run typecheck` 0 · `npm run lint` 0 ·
+`npm test` **1624 passed of 1624, 123 files, 0 failures** (baseline 1565 / 120) ·
+`npm run build` 0. `npx prettier --check` scoped to the contract's own files: clean.
+
+The deck's named ranks now carry a bought **bronze / silver / gold** ability ladder, run-permanent,
+applying to the player's copies only. Bronze is the printed ability in every row, so a run that
+buys nothing plays exactly as it did before this commit.
+
+### Plan defaults taken (no approval gate — unattended)
+
+The `AskUserQuestion` gate was never presented and the skill-confirmation call was skipped; both are
+noted at the top of `tasks.md`. Defaults taken, each logged here:
+
+1. **The shelf ships Swan and Witch only — 2 of AC1's 7 ranks.** The other five stay in the
+   `TieredRank` union and are documented `[not built]` in `the-hunt.md`, but are absent from
+   `TIERED_RANKS`. Reason per rank: **Fox** and **Woodcutter** need a new player-choice surface
+   (peek at the draw pile; choose among 2–3 drawn cards); **Treasure** needs a coin channel out of
+   `src/warCouncil/`, which cannot learn `RunState`; **Poison** collides with Timebomb's own
+   vocabulary and needs that answered first; **Monarch**'s narrowing is read at five call sites,
+   one of them the Quarry's own move choice, and its gold rung needs a `RoundState` field that
+   survives a trick — a missed site there produces a **stuck hand**, which is the one failure an
+   unattended run must not ship. The ticket explicitly permits Treasure and Poison to ship
+   separately; this extends that reasoning on cost grounds. A tier that is sold and does nothing
+   takes coins for nothing, which is worse than not offering it.
+2. **Price: `RANK_TIER_STEP_PRICE = 5` coins per step.** TRANSCRIBED from §7b's own stated reading
+   ("5 coins per tier step — a rank taken from bronze to gold costs 10 coins in total"), not
+   invented. One key, not a per-rank or per-step curve, because AC7 asks for one configuration
+   point and a flat step price is the only shape that literally is one.
+3. **The shelf does not refill on a clock.** §7b: "a fixed, always-purchasable list, deliberately
+   not behind the reels". Static shelf, no restock, no rotation, nothing behind the slot machine.
+4. **A rank is bought exactly twice, and rungs do not stack.** New `PurchaseRefusal.RankAtMaxTier`,
+   returned **before** the coin check so a gold rank reads "already at gold" rather than "not
+   enough coins".
+5. **`AbilityTier` is a new union, not a reuse of `BuffTier`.** They read the same to a player, but
+   a buff tier is drawn and keys `apCostOf`; sharing the type would let a rank tier be priced in AP.
+6. **`RoundUiSeed.rankTiers?` is OPTIONAL, defaulted to `ALL_BRONZE`**, following `apCapacity?`.
+   Making it required would have put 21 files in the diff (14 of them spec fixtures) for no
+   behavioural gain; an absent table IS "nothing bought", which AC1 requires play identically.
+7. **Monarch gold, had it shipped, was reworked away from §7b's draft** — §7b's "narrows for the
+   next trick as well" needs cross-trick state. Moot: Monarch is off the shelf.
+8. **The Quarry's move heuristic evaluates at bronze.** `cpuPlayer.ts`'s two `resolveTrickWinner`
+   calls are the Quarry's own evaluation of a candidate card, not the rule — `playCard` owns that
+   and does thread the ladder. A gold Witch is therefore occasionally misjudged by the Quarry.
+   Documented at both call sites.
+
+### Every price and refill rate, against the coin economy
+
+`COINS_PER_ENCOUNTER_WIN` is **1**. The full shelf, cheapest first: Heal 1 · Cheat 1 · Blast Guard 1
+· slot reroll 1 (after one free pull a visit) · Timebomb 2 · AP capacity 3 (stacks) · Whetstone 4,
+which `config.ts` itself calls "the shop's one real splurge" · **rank tier step 5** · **full ladder
+to gold 10**.
+
+So **one step is now the most expensive purchase in the game**, and a full ladder is roughly a whole
+run's flat encounter income. Reachable early only through a first-hand quick kill, exactly as
+Whetstone is. Deliberately steep for a permanent that never expires and that changes what a card
+*does* rather than what it *scores*. §7b's two unruled alternatives are both still live and are the
+developer's: a **flat 5 for the whole ladder** (makes gold the default purchase) or an **escalating
+5 / 10 / 15** (makes gold a run-defining commitment). Retuning is one edit in `rankTiers.ts`.
+
+**Refill rate: none, and that is the answer, not an omission.** The shelf is fixed and always
+purchasable. Every tierable rank not yet at gold is on it at every visit.
+
+### What returned to `SHOP_ITEMS`, and why
+
+**Nothing DLR-116 removed came back.** Cheat, Timebomb, Blast Guard and Whetstone are still priced,
+still buyable by a caller, still tested, still off the shelf. `SHOP_ITEMS` went from
+`[ApCapacity, Heal]` to `[ApCapacity, SwanTier, WitchTier, Heal]` — two **new** items on the
+run-permanent rung, which is the rung this ticket exists to refill.
+
+DLR-116's convention was respected and then applied a second time one level down: **`TieredRank` is
+everything the game can tier (all seven ranks); `TIERED_RANKS` is what the shelf offers (two).**
+Same shape as `ShopItem` vs `SHOP_ITEMS`, same reason, stated in the module's own docblock with the
+blocking surface named for each of the five deferred ranks.
+
+### How the `Miser` tension moved
+
+Both ways, and **no existing number was retuned**.
+
+- **Relieved during accumulation.** `Miser` rewards unspent coins; the uncapped 1-coin reroll is the
+  strongest sink in the game, so every held coin is a reroll forgone and holding was dominated at
+  the margin. A lumpy 5-coin permanent gives held coins a second reason to exist — a player saving
+  for silver Swan must *not* reroll, which is the same behaviour `Miser` pays for.
+- **Sharpened at the spend.** Spending 5 zeroes a `Miser` payout in one move, where the reroll would
+  have eroded it a coin at a time.
+
+Net, the conflict gains a **shape** it did not have — a saving phase and a spending moment — rather
+than getting uniformly worse, which is what DLR-116 recorded its screen doing. That is a design
+claim, not a measurement; the shelf is fully deterministic (a tier is bought, never drawn), so
+DLR-130's simulator can settle it.
+
+### Design decisions worth the developer's eye
+
+- **AC3 is enforced in exactly one place.** `src/warCouncil/rankTierRules.ts`'s `tierForSide`
+  returns bronze for any side that is not the player **before it reads the table at all**. A grep
+  for `rankTiers[` or `playerRankTiers[` anywhere under `src/warCouncil/` returns zero hits outside
+  that module's own docblock, which is what makes "enforced explicitly, not left to fall out of
+  shared resolution code" checkable rather than asserted.
+- **AC4's "not an eaten skull" lives in `bank.ts`, not at the call site.** Both Swan facts are
+  gated on `outcome === TrickOutcome.CleanLoss` inside `resolveTrickBank`, because outcomes are that
+  module's subject; a caller-side gate would have put half of AC4 where no bank spec would see it.
+- **AC5 reuses the poisoned-clean-loss shape** rather than reimplementing it: gold skips the
+  cash-out block one branch below where `replaced` already skips the hit.
+- **Gold implies silver, folded in inside `bank.ts`** rather than trusted from the caller, so a
+  hand-built fact object cannot produce "the bank survives but the streak that valued it does not".
+
+### Known open items, and how each was handled
+
+- **`Keepsake` unfireable, `Ward` indistinguishable and out of the reel pool, `buffAccrual.ts`
+  callerless** — none touched. This ticket adds no buff, no reel entry and no accrual path.
+- **No `ErrorBoundary` anywhere in `src/` (DLR-131).** One new throw was added, `steppedTo` past
+  gold. It is unreachable through the UI by two layers: `refusalFor` returns `RankAtMaxTier` and
+  the control is disabled, and `buyFromShop` re-checks `refusalFor` and throws its own named
+  `RangeError` before the `switch` is reached. The guard is inside the commit path, not against
+  stale state outside it — the DLR-118 review's finding.
+- **The `Unassigned` trap.** No new filter was written and `offeredBuffs` was not touched.
+  `RankTierTable` is a **total** `Record`, so no unseeded lookup exists to reproduce it.
+- **Determinism.** Nothing random was added. A tier is bought, never drawn.
+
+### The check-7 undercount, again — worth recording
+
+The Step 1.6 audit counted `ShopItem`'s construction sites through the compile-enforced total
+functions and the two `Record<ShopItem, string>` label maps, and **missed two more**: a hand-built
+`Record<ShopItem, PurchaseRefusal | null>` in `src/App.tsx:290` and its twin in
+`src/app/run/__tests__/ShopPanel.test.tsx`. Both surfaced at the first `npm run typecheck` after
+widening the union, exactly as the check predicts, and both were fixed in the same task. A third
+site, `ShopPanel.test.tsx`'s `expect(SHOP_ITEMS).toHaveLength(2)`, was a **runtime** failure the
+compiler could not see — it was rewritten to iterate `SHOP_ITEMS` rather than transcribe its length,
+so the next shelf change needs no edit there.
+
+### The mockup
+
+`mockup.html` was written to the plan folder but **not published and never seen** — the run is
+unattended. The diff touches `.tsx` files, but only as prop plumbing: no new component and no
+layout change. The shop screen renders the two new items through the map it already had.
+
+### Reviewer round 1 — what came back and what was done
+
+Three reviewers ran in parallel once, at the end. One combined fix pass; no round 2 was needed.
+
+- **code-evaluator: APPROVED**, two non-blocking notes. Note 1 was a **comment-honesty** catch worth
+  keeping: `rankTierRules.ts` claimed `tierForSide` was "the only route by which any rule in this
+  tree may learn a tier", while `resolveTrick.ts` still hand-writes one `t.side === PlayerSide.Player`
+  test — because identifying WHOSE Witch a card is needs the trick, which that module cannot see.
+  The claim was true in letter and overstated in spirit. **Fixed**: the docblock now scopes itself to
+  reading the TABLE, names `isPlayersWitch` as the one ownership test outside the file, and says a
+  third one is the thing to push back on; `resolveTrick.ts` carries the cross-reference. Note 2
+  (`TIER_LADDER` / `tierIndexOf` / `nextTierAfter` re-exported through the barrel with no external
+  consumer) was left as-is — all three are used inside `rankTiers.ts` and the barrel exports the
+  module's full pure API, which is the existing convention.
+- **defender: 0 critical, 1 warning, 2 info.** The warning is a genuinely good catch and is recorded
+  below in full.
+- **qa: ALL PASSED**, all eight acceptance criteria MET with named evidence per criterion.
+
+### The defender's warning, and why it did not become a code change
+
+`resolveTrickBank`'s end-of-hand fold runs AFTER the branch a gold Swan skips, so a spared bank
+reaches it intact and is cashed **in full**. On the sixth trick a streak of bank 3 × multiplier 3
+therefore produces `cashValue(3, 3)` = **9** where an ordinary caught clean loss produces
+`forcedCashValue(3, 3)` = **6**. The defender flagged this as the gold rung possibly inverting its
+own purpose.
+
+**It does not invert it — the number moves the player's way.** `cashOut` is damage dealt **to the
+Quarry** (`incomingFrom`), so 9 is better for the player than 6. Gold buys out of the two-thirds
+*reduction*, which the game charges for being caught; the ordinary end-of-hand rule then applies to
+the surviving bank exactly as it would to any other. That is coherent, and it is the reading the
+rung's own sentence implies.
+
+But the defender was right that it was **undocumented and untested**, and that the comment reading
+"gold spares the cash-out entirely" was false on the sixth trick. **Fixed**: the comment now says
+"the FORCED cash-out" and walks the 6-versus-9 arithmetic; three new cases in
+`rankTiers.resolution.test.ts` pin bronze, silver and gold against `finalTrick: true`; and
+`the-hunt.md` §7 states the larger sixth-trick payout in the rules. **The developer's read is
+whether that reward is intended or wants capping at the reduced rate** — added to the decision list.
+
+The two info items (the dead `rank === null` guard in `buyFromShop`'s new arm, and the Quarry's
+bronze move heuristic) were both already deliberate and already documented in code; no change.
+
+### Developer's own list from this ticket
+
+The price (5 per step, transcribed, never played) · the 2-of-7 split and how the remaining five
+should be ticketed · whether the shelf is meant to have a ceiling at 10 coins per rank · whether
+Swan gold sparing a Timebomb-forced reset on a clean loss is the intended reading · whether a gold
+Swan undercuts Timebomb, which §7b itself flags · whether a Quarry that misjudges a gold Witch is
+flavour or a defect · ratifying that `the-hunt.md`'s "no exceptions at all" line is now false, since
+this is the first asymmetry the deck has carried · all placeholder copy on the two new shop cards ·
+and whether four cards on the run-permanent rung still fits the panel without scrolling, which
+nothing measured.

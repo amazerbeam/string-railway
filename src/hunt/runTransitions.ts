@@ -20,7 +20,8 @@ import { addCheat, type CheatCard } from './cheats'
 import { isEncounterResolved, startEncounter } from './encounter'
 import { flaskHealAmount, flaskRefusalFor } from './flask'
 import { quickKillPayout } from './quickKill'
-import { priceOf, refusalFor, ShopItem } from './shop'
+import { priceOf, refusalFor, ShopItem, tieredRankOf } from './shop'
+import { steppedTo } from './rankTiers'
 import { mintPullAwards, pullPriceFor, slotPullRefusalFor, type SlotPull } from './slotMachine'
 import { DuelSide, type Coins, type EncounterState, type Health } from './types'
 import {
@@ -229,6 +230,19 @@ export function buyFromShop(
       // DLR-116 AC2 — a COUNT of purchases, not a point total; `apCapacityFor` owns the
       // multiplication, so the step size (`AP_CAPACITY_STEP`) is stated exactly once.
       return { ...paid, apCapacityBonus: run.apCapacityBonus + 1 }
+    case ShopItem.SwanTier:
+    case ShopItem.WitchTier: {
+      // DLR-122 AC2 — one STEP up the ladder, never a counter: a rank is a rung, unlike
+      // `whetstones` and `apCapacityBonus` above, which stack. `tieredRankOf` is the single
+      // mapping from item to rank, so this branch cannot disagree with `refusalFor` about which
+      // rank a card sells. `refusalFor` above has already refused a rank at gold, so
+      // `steppedTo`'s own RangeError is a guard rather than a path a player reaches.
+      const rank = tieredRankOf(item)
+      if (rank === null) {
+        throw new RangeError(`Cannot upgrade a rank from ${item}: it names no tiered rank`)
+      }
+      return { ...paid, rankTiers: steppedTo(run.rankTiers, rank) }
+    }
   }
 }
 
