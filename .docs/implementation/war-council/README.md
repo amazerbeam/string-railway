@@ -154,6 +154,10 @@ computed in `src/app/warCouncil/roundUiState.ts`, because that predicate reads `
 
 - [Deck and dealing](deck-and-dealing.md) — the 33-card base deck, the Fisher-Yates shuffle, and
   how `dealRound` deals hands, the decree, and the draw pile.
+- [The encounter deck](the-encounter-deck.md) — how the deck's lifetime moved from hand-scoped to
+  encounter-scoped (DLR-123): one shuffled 33 dealt from repeatedly, a spent pile that is never
+  dealt from, the single reshuffle when the draw pile can no longer cover a whole deal, and why
+  seeding the deal from `runSeed` made a hand reproducible for the first time.
 - [Legal moves and the odd-card abilities](legal-moves-and-abilities.md) — what's playable at any
   moment, the led-Monarch exception, the four non-Witch/Monarch ability effects (Fox, Woodcutter,
   Swan, Treasure), why the Quarry has **no** rule-break (DLR-81 removed the one DLR-51 built), and

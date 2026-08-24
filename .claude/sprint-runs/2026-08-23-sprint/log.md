@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 15/22 (68%) — done: 15 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-122 "Tiered rank abilities: refill the run-permanent shop shelf" (16/22)
+**Progress:** 17/22 (77%) — done: 17 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-125 "Engine: buff condition/reward evaluation framework" (18/22) — resumed 13:30 after the third session limit
 
 ## Run order
 
@@ -3529,3 +3529,195 @@ flavour or a defect · ratifying that `the-hunt.md`'s "no exceptions at all" lin
 this is the first asymmetry the deck has carried · all placeholder copy on the two new shop cards ·
 and whether four cards on the run-permanent rung still fits the panel without scrolling, which
 nothing measured.
+
+## Coordinator decisions — DLR-122 reconciliation
+
+Suite 1565 → **1624, 123 files, 0 failures.**
+
+- **The price was transcribed, not invented** — `RANK_TIER_STEP_PRICE = 5` comes from §7b. Worth
+  recording where it lands, because this is now **the most expensive purchase in the game**: an
+  encounter win pays 1; reroll / Heal / Cheat / Blast Guard cost 1; Timebomb 2; AP capacity 3;
+  Whetstone 4 ("the shop's one real splurge"); **a rank tier step 5**, and a full ladder 10 —
+  roughly a whole run's flat income, reachable early only via a first-hand quick kill. §7b's two
+  unruled alternatives (flat 5 for the whole ladder; escalating 5/10/15) remain open.
+- **"How does the shelf refill?" — it does not, and that is the answer.** §7b specifies a fixed,
+  always-purchasable list rather than anything behind the reels. Static shelf, no restock. A rank
+  is bought **exactly twice**; a new `PurchaseRefusal.RankAtMaxTier` fires *before* the coin
+  check. Rungs are rungs, not counters — they do not stack.
+- **Nothing DLR-116 removed came back.** `SHOP_ITEMS` goes `[ApCapacity, Heal]` →
+  `[ApCapacity, SwanTier, WitchTier, Heal]`, and both additions are new items. The agent applied
+  DLR-116's convention one level down of its own accord: **`TieredRank` is all seven ranks,
+  `TIERED_RANKS` is the two on offer.** That convention has now propagated across three tickets
+  without being re-taught.
+- **The `Miser` tension moves both ways, which is the first relief it has had.** *Relieved* while
+  accumulating — a lumpy 5-coin permanent finally gives held coins a reason to exist, so saving
+  stops being dominated by the 1-coin reroll. *Sharpened* at the moment of spending. No existing
+  number was retuned to achieve it.
+
+### A real rule consequence the Defender found, and it is the developer's to ratify
+
+Sparing the forced cash-out lets a **gold Swan's bank reach the end-of-hand fold and cash in
+full — 9 rather than 6 on a 3×3 streak.** `cashOut` damages the *Quarry*, so this favours the
+player and reads as the rung working as intended, but it was **undocumented and untested**. Fixed
+with precise comments, three new `finalTrick` cases and a ruleset note. **Whether that larger
+sixth-trick payout is intended or wants capping is a developer read**, not something the agent
+settled.
+
+### Only 2 of 7 ranks shipped, with the blockers named
+
+Fox and Woodcutter need a choice UI; Treasure needs a coin channel out of the card layer; Poison
+needs an answer to the **Timebomb name collision**; Monarch needs a `RoundState` field, and its
+narrowing is read at **five call sites including the Quarry's own move choice — a missed one is a
+stuck hand.** That is a good reason to have shipped two rather than seven, and the remaining five
+are now scoped rather than vague.
+
+Also flagged for ratification: **`the-hunt.md`'s "no exceptions at all" line is now false.**
+
+
+---
+
+## DLR-123 — Persistent deck across hands
+
+**GREEN.** Gates: typecheck 0 · lint 0 · `npm test` **1655 passed / 1655, 127 files** · build clean.
+Baseline was 1624/123 → **+31 tests, +4 spec files, 0 regressions**. Prettier clean on all 22 contract files.
+
+Reviewers: all three (production-logic diff). Defender **APPROVED, 0 critical / 0 warning**. QA: **all 12 ACs MET**, 2 findings (both fixed). Code-evaluator: 1 finding fixed, 1 disproved — see the race note below.
+
+### The deck rules as shipped, and the arithmetic
+
+**33-card deck** (3 suits × 11 ranks). **A hand costs 13**: 6 player + 6 Quarry + 1 decree.
+`CARDS_PER_DEAL = HAND_SIZE * 2 + 1` — derived, never a literal.
+
+| Hand | Draw pile after dealing | Spent pile at hand end | Reshuffle? |
+|---|---|---|---|
+| 1 | **20** | 13 | no |
+| 2 | **7** | 26 | no |
+| 3 | 7 < 13 → fold 26+7 = 33, shuffle → **20** | 13 | **YES** |
+| 4 | **7** | 26 | no |
+
+Observed, not asserted: `deckCycle.test.ts` gets `draws = [20, 7, 20, 7]`, `reshuffles = [false, false, true, false]`.
+
+**Cards seen per cycle: 26 of 33.** The player-facing consequence, which is the point of the ticket:
+
+- Hand 1's deal — unseen = 6 Quarry + 20 draw = **26**; a given card is 6/26 ≈ **1-in-4.3** to be in the Quarry's hand.
+- Hand 2's deal — unseen = 6 Quarry + 7 draw = **13**; the same card is 6/13 ≈ **1-in-2.2**, and half the feared cards are provably gone.
+
+An encounter runs ~3.3 hands, so a fight sees **exactly one reshuffle**: tracking spikes in hand two, wiped once mid-fight.
+
+### Plan defaults taken (auto-approved gate — none developer-confirmed)
+
+- **D1 — the naming collision is resolved at the NEW name.** "Discard" keeps meaning the player's swap everywhere; the new pile is `spentPile`. Renaming the player action instead would have touched 3 string reason codes, `DISCARDS_PER_FIGHT`, `MAX_CARDS_PER_DISCARD`, `RunState.discardsRemaining`, `recordEncounter`'s 6th param, 4 `roundUiState.ts` predicates and their copy — ~25 files of string-bound churn inside a ticket already changing where cards come from. Component file stays `DiscardPile.tsx` (it IS the standard discard pile); field/copy/CSS all say **spent**.
+- **D2 — "Spent" is a placeholder.** Flavour noun is the developer's.
+- **D3 — the leftover draw pile folds INTO the reshuffle**, not on top. Discarding it loses cards from a 33-deck; stacking it on top is a second ordering rule with no observable difference (never-seen cards either way).
+- **D4 — the threshold is derived**, not tuned. No new dial.
+- **D5 — "the deck runs out mid-hand" cannot happen.** Draw-pile length is invariant for a hand's life: the Woodcutter returns a card for every one taken, the swap puts cards on the bottom as it draws off the front. So the reshuffle is only ever checked at the deal — that is what "one per cycle" means. Pinned by a spec; the defender independently derived the mid-hand minimum as **7**, so `drawPile[0]` can never read past the end.
+- **D6 — at hand's end every card not in the draw pile is spent.** One total rule; AC4's decree clause is a case of it. Covers a Fox exchange and a mid-hand cash-out without special cases.
+- **D7 — Timebomb marks do NOT survive a hand boundary** and don't ride a card into the spent pile. A mark returning through a reshuffle would be invisible on a face-down card. `pendingTimebomb` still crosses untouched (DLR-91 D5) — different thing, unchanged.
+- **D8 — banked cards aren't a hand-boundary question.** `bank`/`multiplier` are numbers, reset per deal; tricks resolve to the spent pile as they land.
+- **D9 — skulls re-rolled, never remembered.**
+- **D10 — deal seed is `mixSeed(runSeed, encounterIndex, handOfFight)`**, mirroring `slotSeedFor`.
+- **D11 — `dealRound`'s deck param is trailing/optional**; absent = new encounter. Keeps every existing 2-arg call meaning what it meant.
+- **D12 — `handleBeginRun` now re-deals.** It mints a run with a new `runSeed`; leaving the mount-time hand would deal a run's opening hand from a seed that run doesn't have.
+- **D13 — the spent count ticks at the trick's resolution**, so cards are counted while still visible in `TrickWell`. The count reflects state.
+
+### How determinism survives the reshuffle
+
+`App.tsx` → `dealSeedFor(runSeed, encounterIndex, handOfFight)` → `createSeededRng` (mulberry32) → `dealRound` → `shuffle`/`assignSkulls`. The reshuffle happens **inside** `dealRound` under that same injected rng, so seeding the deal seeds the reshuffle — there is no second RNG to forget. `App.tsx` now has exactly **three** `Math.random()` calls, all `Math.floor(Math.random() * 0x100000000)` feeding `startRun`; **none reaches a deal** (was three that did). The pure-core ESLint override makes a regression a lint failure, not a silent one.
+
+### Specs rewritten — none weakened
+
+- **11 files at `+2/−0`** — mechanical widening of a `RoundState` literal with the two new required fields. No assertion touched.
+- **`deal.test.ts`** — the ONLY deletion in the whole diff: the 33-card conservation array, replaced by a **wider** one spanning `spentPile`. A strengthening. Plus 4 new AC cases.
+- **`playCard.test.ts`** — one new AC3 case, pure addition.
+- **`WarCouncilRound.telegraph.test.tsx`** — 3 `getByRole('status')` queries narrowed **by accessible name**, because `DiscardPile` legitimately adds a **second `role="status"`** live region. `aria-label` assertions untouched; the queries got stricter.
+
+### Keepsake and the rank families
+
+**`Keepsake` doesn't move, but it becomes decidable.** Still unfireable at the same rate — zero in any hand running its full six tricks, since the player's hand is empty by then and this ticket changes neither hand size nor trick count. What changed: "hand's end" stops being an implicit remount and becomes a **modelled event** (`closeHand` folding the decree and both hands into the spent pile). The three candidate fixes in `v1-buff-card-list.md` are now expressible against a real boundary. Developer's call; no replacement invented.
+
+**`Mark of the R` (22 of 71 templates) keeps its mean, loses its independence.** 3 copies per rank in 33.
+
+- Old: each hand independently dealt 13 of 33 → P(rank appears) = 1 − C(30,13)/C(33,13) = **0.791 per hand**, every hand alike.
+- New: hands 1+2 deal 26 of 33 → expected copies per cycle = 3 × 26/33 = **2.36. Identical.**
+- What moves: a rank whose 3 copies all landed in hand 1 is now **impossible** in hand 2 (was 79%). Negatively autocorrelated — swingier hand to hand, same over the cycle. Whether that variance is wanted is a design read.
+
+**Confirmed undisturbed, by test not assertion:** `Whetstone` pays per trick; tricks/hand (6) and hands/encounter (~3.3) unchanged. Slot machine `expectedCardsPerPull()` = 2.640625 — reel pool has no contact with `createDeck`/`shuffle`/`Card`; `slotOdds.test.ts` re-run green. `cardDamage.ts` cannot lie: builds no `RoundState`, never reads `drawPile`/`spentPile`, and none of the six fields it reads changed meaning.
+
+### GOTCHA — three reviewers reported a defect that was never shipped
+
+The code-evaluator filed a **blocking** finding: a `Math.random()` jitter in `dealPileFor`, with a claimed ~50% test flake. QA independently reported the **same line in the same file**, and the defender reported a transient `discard.ts` mutation too.
+
+It was **mutation testing**. The Phase 4 agent was deliberately breaking `closeHand`, `applyWoodcutterDraw`, `applyDiscard` and `dealPileFor` in turn to prove each invariant spec could actually fail, reverting each. Three reviewers running concurrently read the working tree inside those few-second windows.
+
+Adjudicated on evidence: the file is 92 lines with zero `Math.random()` calls, and **10 consecutive runs of both determinism specs passed, 0 failures**. `git status` shows `discard.ts` and `abilities.ts` were never modified at all.
+
+**Two lessons for the pipeline.** (1) Mutation testing and a concurrent reviewer dispatch are incompatible — an implementer that mutates production code to validate a spec must do it in a scratch copy, or the orchestrator must not overlap it with reviewers. (2) The reviewers behaved **correctly**: all three reported what they actually saw with captured evidence rather than smoothing it over, and QA explicitly flagged "something mutated this file mid-run" as worth the developer's attention. That is the right instinct, and it should not be trained out.
+
+### Other gotchas
+
+- **My own plan text had two errors, caught by the implementer.** The CSS tokens I named (`--wc-ink-dim`, `--wc-accent`) **do not exist**; the real ones are `--wc-chalk-dim` and `--wc-brass`. And my spec source omitted `afterEach(cleanup)`, which every other `.test.tsx` here uses — without it four renders leak and `getByRole` throws.
+- **My instruction "change the seed" was unsatisfiable.** The task's `playOutHand` helper tried to dodge Fox/Woodcutter cards and fall back; a full hand can legally reach a turn where *every* legal move needs an `AbilityChoice`. The Phase 4 agent brute-forced **10,000,000 seeds and found zero** where a 3–4 hand chain avoids it (a single hand succeeds ~6% of the time). Fixed properly by making the helper **total** — answer the prompt with a neutral choice (Fox declines, Woodcutter buries back the card it drew) rather than dodging it. **Future contracts writing a "play out a hand" helper should answer ability prompts, never try to avoid them.**
+- **`App.tsx` and `WarCouncilRound.tsx` are close to the 400-line ceiling** (394 and 387). A comment I added pushed `App.tsx` to 398; I trimmed it back. The next change to either file should expect to extract.
+- **The felt now has two `role="status"` live regions.** Any new `getByRole('status')` must disambiguate by name. Whether two polite live regions is the right screen-reader experience is a developer judgement (defender flagged it, not a defect).
+- **`.claude/rules/` is not empty** — it holds `save-data-versioning.md`. `CLAUDE.md` still says "currently empty"; that restatement is stale.
+
+### Ticket-scope note
+
+The ticket's Design Assets line asks for a write-up in `.docs/design/…/ideas.md`. **Deliberately not done.** `ideas.md` is the developer's hand-edited parking lot for ideas *before* they are arguments; this rule is now settled and shipped, which is `the-hunt.md`'s job — and that file was updated. Flagging rather than silently skipping.
+
+### What the developer must decide or judge by playing
+
+- The flavour word for "Spent" (copy).
+- Whether one reshuffle per fight is the right cadence, or arrives too early.
+- Whether the spent count is legible at a glance **without** becoming the card-counting aid the ticket forbids.
+- Whether the reshuffle notice is loud enough to register, quiet enough not to interrupt.
+- Whether the rank families' new hand-to-hand variance is wanted.
+- **Encounter tuning must be RE-MEASURED.** PIMC ~49% / random ~10% were measured under reshuffle-every-hand and are invalidated. The CPU does not count cards, so this hands the player an inference edge and the Quarry nothing.
+- `Keepsake`'s wording, instant, or deletion.
+
+### What a browser would have checked (browser pass NOT requested)
+
+Play hands 1 → 2 → 3 and watch the draw count read **20, 7, 20** while Spent climbs **0 → 13 → 26** and resets at the reshuffle; confirm the reshuffle notice fires **exactly once** at the hand-3 deal and the standing "Spent cards stay spent" line shows otherwise; confirm **no card face is ever visible** in the Spent plate, including right after a trick resolves; confirm a Woodcutter bury and a hand-swap in hand 2 do **not** move the Spent count; confirm the felt rail doesn't crop at real viewport sizes with the second plate added — jsdom has no layout engine, so no test here can prove it.
+
+## Coordinator decisions — DLR-123 reconciliation (third session-limit recovery)
+
+**The agent hit the session limit during its documentation pass** (reset 13:30; the run resumed
+immediately). Implementation was complete: contract **42/42, `Status: COMPLETE`**, sprint-log
+section written.
+
+- **All four gates verified by the coordinator, not relayed:** typecheck exit 0 · lint exit 0 ·
+  vitest **127 files, 1655 tests, 0 failures** (baseline 1624/123, so +31 tests, +4 files) ·
+  build exit 0. Committed as `00349ce` and pushed.
+- **The determinism constraint held, and went further than the brief asked.** The loudest line in
+  the dispatch was that a reshuffle is where `Math.random()` gets added by reflex, and that no
+  test would catch it. The agent instead **removed the last `Math.random()` from the deal path
+  entirely**: `dealRound` used to be handed `Math.random` directly, so **no deal and no reshuffle
+  in this game was ever reproducible.** The deal is now seeded from `runSeed` via `dealSeedFor`.
+  Verified independently by the coordinator — the only `Math.random()` calls left in `src/` are
+  three in `App.tsx`, all `Math.floor(Math.random() * 0x100000000)` feeding `startRun`'s seed,
+  and **none reaches a deal**. Every other hit in the codebase is a docblock stating the ban.
+  **DLR-130's simulator and the balance pass are now viable in a way they were not before this
+  ticket.**
+- **The deck's lifetime moved from hand-scoped to encounter-scoped.** One shuffled 33 is dealt
+  from repeatedly; resolved cards accumulate in a spent pile that is never dealt from; and only
+  when the draw pile cannot cover a whole deal does everything fold back and shuffle **once**.
+  `CARDS_PER_DEAL = HAND_SIZE * 2 + 1` is both the cost of a hand and the reshuffle threshold, so
+  the two cannot drift apart. `isFreshDeck` exists so `dealRound`'s branch and a spec cannot
+  disagree about what "fresh" means.
+- **The pure-core ESLint override makes reintroducing a bare random a lint failure rather than a
+  silent regression** — the boundary added during DLR-106 now protects the property it was built
+  for.
+
+### What the dead doc pass left, and what the coordinator finished
+
+`.docs/implementation/war-council/the-encounter-deck.md` was **written in full** (149 lines, head
+and tail both complete prose) before the agent died — but **nothing referenced it**. The
+coordinator added its entry to `war-council/README.md`'s "How it works" list. Any `the-hunt.md`
+ruleset update the doc pass would have made did not happen and is left for **DLR-121**, the
+verification ticket, rather than patched blind here.
+
+**This is the second session limit to land squarely on a doc pass** (DLR-113 was the first, and
+also left an unindexed module doc). The pattern is worth noting for the run report: the
+documentation step runs last, so it is the most likely casualty, and its failure mode is silent —
+a complete document that nothing links to.
+
