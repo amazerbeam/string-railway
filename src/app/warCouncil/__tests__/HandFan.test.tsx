@@ -2,12 +2,19 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Suit } from '../../../warCouncil'
+import { CARD_DAMAGE_ESTIMATE_NOTE } from '../labels'
 import HandFan from '../HandFan'
 import { card } from './roundFixture'
 
 afterEach(cleanup)
 
 const HAND = [card(Suit.Bells, 7), card(Suit.Keys, 3), card(Suit.Moons, 11)]
+
+const PREVIEW = {
+  win: { toQuarry: 6, toPlayer: 0, shielded: 0 },
+  lose: { toQuarry: 4, toPlayer: 1, shielded: 0 },
+  exact: true,
+}
 
 function renderFan(overrides = {}) {
   const onTap = vi.fn()
@@ -25,6 +32,7 @@ function renderFan(overrides = {}) {
       timebombArmed={false}
       discardSelecting={false}
       discardSelection={[]}
+      damageForCard={() => PREVIEW}
       onTap={onTap}
       onCancel={onCancel}
       {...overrides}
@@ -147,5 +155,49 @@ describe('HandFan', () => {
     const marked = screen.getByRole('button', { name: '7 of Bells' })
     expect(marked.className).toContain('wc-is-discard-selected')
     expect(marked.querySelector('.wc-discard-mark')).not.toBeNull()
+  })
+
+  it('describes every card with its own damage strip (DLR-117 AC4)', () => {
+    renderFan()
+    expect(
+      screen.getByRole('button', {
+        name: '7 of Bells',
+        description:
+          'If you win this trick: 6 damage to the Quarry. If you lose: 4 damage to the Quarry, 1 damage to you.',
+      }),
+    ).toBeDefined()
+  })
+
+  it('puts the estimate note into the description for an inexact preview', () => {
+    renderFan({ damageForCard: () => ({ ...PREVIEW, exact: false }) })
+    const button = screen.getByRole('button', { name: '7 of Bells' })
+    const descriptionId = button.getAttribute('aria-describedby')
+    expect(descriptionId).toBeTruthy()
+    expect(document.getElementById(descriptionId ?? '')?.textContent).toContain(
+      CARD_DAMAGE_ESTIMATE_NOTE,
+    )
+  })
+
+  it('renders no strip and no aria-describedby when damageForCard returns null', () => {
+    renderFan({ damageForCard: () => null })
+    const button = screen.getByRole('button', { name: '7 of Bells' })
+    expect(button.hasAttribute('aria-describedby')).toBe(false)
+    expect(document.querySelector('.wc-card-damage')).toBeNull()
+  })
+
+  it('still names every card by rank and suit with the damage strip in place', () => {
+    renderFan()
+    expect(screen.getByRole('button', { name: '7 of Bells' })).toBeDefined()
+    expect(screen.getByRole('button', { name: '3 of Keys (Fox)' })).toBeDefined()
+    expect(screen.getByRole('button', { name: '11 of Moons (Monarch)' })).toBeDefined()
+  })
+
+  it('lets the roving tabindex move focus with the wrapper in place, in the ordinary non-armed case', () => {
+    renderFan({ legal: HAND })
+    const group = screen.getByRole('group', { name: /hand/i })
+    fireEvent.keyDown(group, { key: 'ArrowRight' })
+    const keys3 = screen.getByRole('button', { name: '3 of Keys (Fox)' })
+    expect(keys3.getAttribute('tabindex')).toBe('0')
+    expect(document.activeElement).toBe(keys3)
   })
 })

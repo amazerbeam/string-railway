@@ -44,6 +44,20 @@ describe('PlayingCard', () => {
     expect(mark?.getAttribute('aria-hidden')).toBe('true')
   })
 
+  it('exposes aria-describedby only when describedBy is passed (DLR-117)', () => {
+    const { rerender } = render(
+      <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" describedBy="dmg-1" />,
+    )
+    expect(
+      screen.getByRole('button', { name: '6 of Bells' }).getAttribute('aria-describedby'),
+    ).toBe('dmg-1')
+
+    rerender(<PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" />)
+    expect(
+      screen.getByRole('button', { name: '6 of Bells' }).hasAttribute('aria-describedby'),
+    ).toBe(false)
+  })
+
   it('renders the suit mark for every suit', () => {
     for (const suit of ALL_SUITS) {
       const { container, unmount } = render(<PlayingCard card={{ suit, rank: 4 }} variant="hand" />)

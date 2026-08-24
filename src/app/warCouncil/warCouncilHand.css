@@ -44,3 +44,43 @@
   min-height: calc(var(--wc-card-w) * 1.5 + 2.1rem);
   padding: 1.3rem 0 0.6rem;
 }
+
+/* DLR-117 — one fan item: the card, and its damage strip beneath. The rotation and lift
+   custom properties stay on the card itself (`warCouncilCards.css`'s `.wc-fan .wc-card`
+   composes them with the hover/armed states); only the overlap margin and the stacking order
+   move out here, because the slot is now the flex item. `useRovingTabIndex` queries
+   `querySelectorAll('button')` on the group, a DESCENDANT query, so this wrapper changes
+   neither the arrow-key order nor the count. */
+.wc-fan-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--wc-card-w) * 0.04);
+}
+
+/* The two figures this ticket exists for. OUTSIDE the card face by necessity — all four
+   corners are taken (rank top-left, skull top-right, primed mark bottom-left, ability pip
+   bottom-right) and the centre is the large suit mark, so there is no free area on it at a
+   legible size, and keeping them off the face also keeps `game-ux`'s "the cards take visual
+   precedence" intact. Sized off `--wc-card-w` with the same multiplier convention the card's
+   own marks use (rank 0.34, suit 0.56, pip 0.12). PLACEHOLDER size and hue — the developer's
+   to retune, as those are.
+
+   COST: this is the ONLY thing on this screen that adds vertical space — roughly 7-12px on
+   the `hand` grid row, being one line of text plus the gap, less the ~3.2px of slack already
+   inside `.wc-fan`'s `min-height`. No grid row is added and `.wc-fan`'s rotation-reserve
+   padding is deliberately not spent, because that reserve is DLR-119's territory. */
+.wc-card-damage {
+  font-size: calc(var(--wc-card-w) * 0.2);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--wc-chalk-dim);
+}
+
+/* An estimate reads as one without relying on colour (`game-ux`): the italic slant here and
+   the leading `~` in `cardDamageGlyphText` are both form signals, and either alone suffices. */
+.wc-card-damage.wc-is-estimate {
+  font-style: italic;
+}

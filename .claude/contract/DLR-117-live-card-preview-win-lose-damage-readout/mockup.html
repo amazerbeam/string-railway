@@ -1,0 +1,162 @@
+<title>Card Damage Readout</title>
+<style>
+  :root {
+    --wc-card-w: 4.3rem;
+    --ink: #241c14;
+    --parchment: #e8ddc4;
+    --parchment-shade: #cdbf9e;
+    --felt: #1d3026;
+    --chalk: #e6e0d2;
+    --chalk-dim: #9aa39a;
+    --brass: #c9a227;
+    --alarm: #c4553d;
+    --deal: #7fae7a;
+    --take: #d98a6a;
+  }
+  body {
+    margin: 0;
+    background: var(--felt);
+    color: var(--chalk);
+    font-family: system-ui, sans-serif;
+    padding: 1.5rem;
+  }
+  h1 { font-size: 1rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brass); }
+  p.note { max-width: 46rem; color: var(--chalk-dim); font-size: 0.85rem; line-height: 1.5; }
+  .panel { border: 1px solid #3a5546; padding: 1rem; margin: 1rem 0; border-radius: 3px; }
+
+  /* --- the fan, as HandFan will render it --- */
+  .wc-fan { display: flex; justify-content: center; align-items: center;
+            min-height: calc(var(--wc-card-w) * 1.5 + 2.1rem); padding: 1.3rem 0 0.6rem; }
+  .wc-fan-slot { display: flex; flex-direction: column; align-items: center;
+                 gap: calc(var(--wc-card-w) * 0.04); }
+  .wc-card { position: relative; width: var(--wc-card-w); aspect-ratio: 2/3;
+             background: linear-gradient(168deg, var(--parchment), var(--parchment-shade));
+             color: var(--ink); border: 2px solid #6b5a3a; border-radius: 3px;
+             box-shadow: 0 3px 10px #00000070; cursor: pointer; font: inherit;
+             transform: var(--rot, rotate(0deg)); }
+  .wc-card:hover { transform: var(--rot, rotate(0deg)) translateY(-8px); }
+  .wc-card-rank { position: absolute; top: calc(var(--wc-card-w) * 0.06);
+                  left: calc(var(--wc-card-w) * 0.1);
+                  font-size: calc(var(--wc-card-w) * 0.34); line-height: 1; }
+  .wc-card-suit { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+                  font-size: calc(var(--wc-card-w) * 0.5); }
+  .wc-card-pip { position: absolute; right: calc(var(--wc-card-w) * 0.11);
+                 bottom: calc(var(--wc-card-w) * 0.11);
+                 width: calc(var(--wc-card-w) * 0.12); height: calc(var(--wc-card-w) * 0.12);
+                 border-radius: 50%; background: #8a7442; }
+
+  /* --- THE THING THIS TICKET ADDS --- */
+  .wc-card-damage {
+    font-size: calc(var(--wc-card-w) * 0.20);
+    line-height: 1.1;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--chalk-dim);
+  }
+  .wc-card-damage .deal { color: var(--deal); }
+  .wc-card-damage .take { color: var(--take); }
+  .wc-card-damage.is-estimate { font-style: italic; }
+  .wc-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden;
+                clip: rect(0 0 0 0); white-space: nowrap; }
+  button.ctl { font: inherit; font-size: 0.8rem; background: transparent; color: var(--chalk);
+               border: 1px solid var(--brass); border-radius: 2px; padding: 0.4rem 0.8rem;
+               margin-right: 0.5rem; cursor: pointer; }
+  code { background: #00000040; padding: 0 0.25rem; border-radius: 2px; }
+</style>
+
+<h1>DLR-117 — per-card win/lose damage readout</h1>
+
+<p class="note">
+  Placeholder data only — no engine, no real state. What this mockup settles is
+  <strong>placement and density</strong>: a strip in flow beneath each card, inside a
+  <code>.wc-fan-slot</code> wrapper, so nothing is added to the card face (all four corners and
+  the centre are already taken) and no grid row is added to <code>.wc-shell</code>.
+  <code>W</code> is the damage dealt to the Quarry if this card wins its trick;
+  <code>L</code> is the damage you take if it loses. A leading <code>~</code> and italics mark an
+  <em>estimate</em> — the Quarry's card is still face down, so the trick's skull and Timebomb
+  state are not yet decided.
+</p>
+
+<div class="panel">
+  <button class="ctl" id="lead">Player to lead (estimates)</button>
+  <button class="ctl" id="follow">Quarry has led (exact)</button>
+  <button class="ctl" id="buff">Activate a buff</button>
+  <button class="ctl" id="resolved">Encounter resolved (no readout)</button>
+  <div class="wc-fan" id="fan"></div>
+  <p class="note" id="state"></p>
+</div>
+
+<p class="note">
+  Vertical cost of the strip: one line at <code>calc(var(--wc-card-w) * 0.20)</code> plus a hairline
+  gap, minus the ~3.2px of slack already inside <code>.wc-fan</code>'s <code>min-height</code> —
+  about <strong>7-12px</strong> on the hand row. Nothing else on the shell moves.
+</p>
+
+<script>
+  const HAND = [
+    { rank: 2, suit: '♦', win: 6, lose: 1 },
+    { rank: 7, suit: '♦', win: 6, lose: 1 },
+    { rank: 3, suit: '♣', win: 6, lose: 1 },
+    { rank: 8, suit: '♣', win: 6, lose: 1 },
+    { rank: 5, suit: '♠', win: 6, lose: 1 },
+    { rank: 11, suit: '♠', win: 8, lose: 0 },
+  ]
+  let exact = false
+  let bonus = 0
+
+  function render() {
+    const fan = document.getElementById('fan')
+    fan.innerHTML = ''
+    HAND.forEach((c, i) => {
+      const spread = i - (HAND.length - 1) / 2
+      const slot = document.createElement('div')
+      slot.className = 'wc-fan-slot'
+      slot.style.marginLeft = i === 0 ? '0' : '-4px'
+      slot.style.zIndex = String(i)
+
+      const btn = document.createElement('button')
+      btn.className = 'wc-card'
+      btn.style.setProperty('--rot', 'rotate(' + (spread * 2.1).toFixed(2) + 'deg)')
+      btn.setAttribute('aria-label', c.rank + ' of ' + c.suit)
+      const dmgId = 'dmg-' + i
+      if (exact !== null) btn.setAttribute('aria-describedby', dmgId)
+      btn.innerHTML =
+        '<span class="wc-card-rank">' + c.rank + '</span>' +
+        '<span class="wc-card-suit">' + c.suit + '</span>' +
+        '<span class="wc-card-pip"></span>'
+      btn.onclick = () => alert('Tapped ' + c.rank + ' of ' + c.suit + ' — arms the card.')
+      slot.appendChild(btn)
+
+      const win = c.win + bonus
+      const strip = document.createElement('span')
+      strip.className = 'wc-card-damage' + (exact ? '' : ' is-estimate')
+      strip.id = dmgId
+      strip.innerHTML =
+        '<span aria-hidden="true">' + (exact ? '' : '~') +
+        '<span class="deal">W' + win + '</span> ' +
+        '<span class="take">L' + c.lose + '</span></span>' +
+        '<span class="wc-sr-only">If you win this trick: ' + win +
+        ' damage to the Quarry. If you lose: ' + c.lose + ' damage to you.' +
+        (exact ? '' : ' Estimate — the Quarry’s card is face down.') + '</span>'
+      slot.appendChild(strip)
+      fan.appendChild(slot)
+    })
+    document.getElementById('state').textContent =
+      (exact ? 'Quarry has led — both cards known, the preview is exact. '
+             : 'Player to lead — the Quarry’s card is face down, so every figure is an estimate. ') +
+      (bonus ? 'A buff is active and adds ' + bonus + ' to the win branch (mockup only — no buff pays anything in the real build yet).' : '')
+  }
+
+  function clear() {
+    document.getElementById('fan').innerHTML = ''
+    document.getElementById('state').textContent =
+      'Encounter resolved — cardDamagePreview returns null and no strip renders at all.'
+  }
+
+  document.getElementById('lead').onclick = () => { exact = false; render() }
+  document.getElementById('follow').onclick = () => { exact = true; render() }
+  document.getElementById('buff').onclick = () => { bonus = bonus ? 0 : 2; render() }
+  document.getElementById('resolved').onclick = clear
+  render()
+</script>

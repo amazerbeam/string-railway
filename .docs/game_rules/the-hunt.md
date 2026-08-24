@@ -8,6 +8,17 @@ Last reviewed against the code and the design on **2026-08-24**. Everything belo
 the app today except where a rule is marked **[not built]** — and except the **blue hearts** of
 section 8, which are enforced, drawn, and unreachable because nothing grants one.
 
+> **Every card in your hand now prints what it would cost — DLR-117, 2026-08-24.** Under each card
+> sit two figures: what the Quarry takes if that card wins its trick, and what you take if it loses
+> (section 4). Both are live, both are always on screen, and both are computed by asking the game
+> what it would actually pay rather than by a second sum that could disagree with it. **Two of them
+> are honestly marked as estimates** while you are the one to lead, because the Quarry's face-down
+> card decides whether the trick carries a skull. **An activated buff still moves none of them** —
+> not an omission in the readout but the unpaid buff reward recorded below it. **Nothing on this
+> screen has been seen in a browser**: the contract ran unattended with its browser pass off and its
+> mockup unseen, so whether the strip fits under a fanned hand without cropping the row is untested
+> at every viewport size, and every choice about how it looks is the developer's.
+
 > **Your health row can draw blue hearts now, and nothing can give you one — DLR-115, 2026-08-24.**
 > A **blue heart** is protection worth one point of damage, taken before your red health is (section
 > 8). The rule has been enforced since 2026-08-23; what landed today is the reading — blue pips drawn
@@ -603,6 +614,54 @@ clamped between 1 and 6 action points. The consumable cards are priced off that 
 a flat figure per tier. **Whose decision:** the developer's. Every figure in both tables was chosen by
 an agent, against a starting pool nobody has played, and the clearest thing to watch is the steep end
 — a gold Cheat is priced deliberately above a whole hand's budget.
+
+### Every card in your hand tells you what it would cost
+
+**[settled]** — since 2026-08-24, that each card carries the two figures and what they mean;
+**the glyphs and the wording** are **[provisional]**; **buff contributions appearing in them** is
+**[not built]**.
+
+Under every card in your hand sit two numbers: **`W`**, the damage the Quarry takes if that card
+**wins** its trick, and **`L`**, the damage **you** take if it loses. They are always on screen — you
+do not hover, tap, or select a card to see them, and they are there from the first trick whether or
+not you have activated anything. This is the concrete answer to `hybrid-design.md` §0's diagnosis
+that a decision's cost was invisible.
+
+**Both figures are conditional, and neither is a prediction of which branch will happen.** The game
+will not tell you whether you are about to win the trick, even where it could work that out — that
+would hand you the Quarry's exact card, which section 9's telegraph deliberately withholds.
+
+**Sometimes the two numbers are an estimate, and the game says so.** While **you are the one to
+lead**, the Quarry's card is still face down, so whether the trick will carry a skull or a Timebomb
+mark is not yet decided — and a skulled Quarry card turns a trick you win into one you eat
+(section 7). In that state the readout is **slanted and prefixed with a `~`**, and reads as an
+estimate in words for a player who cannot see it. Once the Quarry's card is on the table, both
+figures are exact.
+
+**What the two numbers deliberately leave out**, because it is the same whichever card you play and
+is already drawn on the health bars:
+
+- a **Timebomb detonating on you** at this trick lands whether you win or lose, and is already the
+  ticking hearts on your own row (section 8);
+- **losing cashes your streak into the Quarry** at the reduced rate, and that is already the at-risk
+  band on the Quarry's row (section 7).
+
+Both figures **are** stated in full for a player who cannot see the row: every card's spoken
+description carries all four numbers, any shield absorption, and the estimate caveat.
+
+**Two more things the readout does not show.** A Timebomb **this card would prime for the next
+trick** costs you no health at this one, so it does not appear — a primed card you win reads cheaper
+than it turns out to be until the ticking hearts arrive. And the figures are **health actually
+lost**, not raw damage: against a Quarry on 4 health, a card reading `W6` means "enough", not "six".
+
+> **This is a change to what you are shown, not to what anything costs.** Every number it prints is
+> the number the game was already going to pay; nothing about damage, the bank, the streak or the
+> shield changed on 2026-08-24. What changed is that you no longer have to hold the arithmetic in
+> your head.
+
+> **An activated buff moves none of these numbers — [not built].** Since no buff's reward is ever
+> paid (above), none can appear here either, and the readout deliberately does not print one it knows
+> the game will not honour. When buff rewards are built, they will reach this readout automatically.
 
 ### Cheats — refusing a trick follow-suit would force on you
 
@@ -2367,6 +2426,9 @@ the mechanics themselves are documented in `../implementation/`.
 | Quarry character = a name only                                                   | settled                                                                                    | `src/hunt/quarryCharacters.ts` — `QuarryCharacterInfo` has no rule field                                                                                                                                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
 | What any character's power is                                                    | **not built** — undecided                                                                  | —                                                                                                                                                                                                                                                                                                                                                                                       | **Developer — a final-boss ticket, not every opponent**                                                                                                                                                                                                                                                           |
 | Telegraph fidelity                                                               | provisional                                                                                | `src/hunt/config.ts` — `TELEGRAPH_FIDELITY`                                                                                                                                                                                                                                                                                                                                             | Developer, after playtest                                                                                                                                                                                                                                                                                         |
+| Per-card win/lose damage readout                                                 | settled — since 2026-08-24 (DLR-117)                                                       | `src/app/warCouncil/cardDamage.ts` — `cardDamagePreview`, which performs **no arithmetic of its own**: it hands a hypothetical `TrickResolution` to `src/app/warCouncil/commitHandlers.ts` — `applyResolution` (exported by DLR-117) and reports the health delta. Rendered by `HandFan.tsx` beneath each card; copy in `labels.ts` — `cardDamageGlyphText`, `cardDamageText`                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
+| The readout's glyphs and wording (`W6 L1`, `~`)                                  | **provisional**                                                                            | `src/app/warCouncil/labels.ts` — `cardDamageGlyphText`, `CARD_DAMAGE_ESTIMATE_GLYPH`, `CARD_DAMAGE_ESTIMATE_NOTE`; sized by `warCouncilHand.css` — `.wc-card-damage`                                                                                                                                                                                                                                                                                                                                                                                       | Developer — placeholder copy and a transcribed size multiplier, neither seen in a browser                                                                                                                                                                                                                          |
+| Buff rewards appearing in the readout                                            | **not built**                                                                              | `src/hunt/buffAccrual.ts` — still **no consumer**; `cardDamagePreview` reads only what `commitHandlers.ts` — `playOptions` supplies, so this becomes true with no edit once accrual is wired in                                                                                                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                                 |
 | Rank 8's name ("Timebomb")                                                       | **open** — misleading                                                                      | `src/app/warCouncil/labels.ts` — `RANK_NAME`                                                                                                                                                                                                                                                                                                                                            | Developer                                                                                                                                                                                                                                                                                                         |
 | Between-encounter restore (none, automatic)                                      | **not built** — by decision                                                                | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE`; still **no consumer** after DLR-93. A grep in DLR-82's, DLR-84's and DLR-93's final verification guards it                                                                                                                                                                                                                           | **Developer** — the flask has now shipped _without_ wiring this, so it is a separate decision rather than a story waiting to land                                                                                                                                                                                 |
 | Winning a fight pays 1 coin                                                      | **provisional** — set 2026-08-16                                                           | `src/hunt/config.ts` — `COINS_PER_ENCOUNTER_WIN`; credited by `src/hunt/runTransitions.ts` — `recordEncounter`, the single crediting site                                                                                                                                                                                                                                               | Developer — transcribed, not derived                                                                                                                                                                                                                                                                              |
@@ -2852,6 +2914,19 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
 
 ### Known tensions, recorded not resolved
 
+- **The hand now tells you the answer, and nobody has played a hand to see whether that spoils it**
+  (new 2026-08-24, DLR-117). Every card prints what it would deal and what it would cost, always,
+  from the first trick. The readout is honest and it is the fix §0 asked for — but it also removes
+  the arithmetic the player used to do, and arithmetic a player does is sometimes the decision
+  itself. Whether six cards each wearing two numbers reads as clarity or as clutter, and whether
+  section 3's carefully-withheld information still feels withheld once the consequences are printed,
+  are both unmeasured. Nothing has been retuned in response, and the screen has not been seen.
+- **A readout that is right about a rule the game does not yet enforce** (new 2026-08-24, DLR-117).
+  The per-card figures deliberately exclude any buff contribution, because no buff reward is paid
+  anywhere. That keeps the readout honest today and makes it correct automatically later — but it
+  means the ticket's own acceptance criterion about several buffs stacking on one card is **not met**
+  and cannot be tested against anything. The gap is the unpaid buff, not the readout; it is recorded
+  here so the next contract that wires rewards knows this surface is already waiting for them.
 - **The machine and Miser pull in opposite directions** (new 2026-08-24, DLR-116). Miser pays you
   for holding coins; the slot machine's uncapped 1-coin reroll is now the strongest reason in the
   game to spend them, and it is the only place a Miser card can be won in the first place. So the

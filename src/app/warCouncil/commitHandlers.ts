@@ -42,8 +42,12 @@ import { advanceQuarryFollow, deriveResolvedTrick } from './quarryAdvance'
  * One statement, read by both `playCard` call sites: the player's follow in `commit` and the
  * Quarry's in `advanceQuarryFollow`. Two readings of "what is pending" is exactly how a hit gets
  * paid twice or skipped, or a bonus applies to one side's follow and not the other's.
+ *
+ * EXPORTED on DLR-117: a THIRD reader, `cardDamage.ts`'s preview, which must assemble the
+ * same four fields the two commit call sites do. A preview that read the queue itself would
+ * be exactly the second reading this docblock already warns about.
  */
-function playOptions(state: RoundUiState): PlayCardOptions {
+export function playOptions(state: RoundUiState): PlayCardOptions {
   return {
     timebombToPlayer: state.encounter.pendingTimebomb[DuelSide.Player],
     timebombToQuarry: state.encounter.pendingTimebomb[DuelSide.Quarry],
@@ -72,7 +76,7 @@ function playOptions(state: RoundUiState): PlayCardOptions {
  * The all-zero skip on step 1 avoids bumping `damageEventsApplied` for nothing, but does not
  * return early: a REPLACED clean loss (DLR-90 AC5) is an all-zero event that still owes a booking.
  */
-interface FoldedResolution {
+export interface FoldedResolution {
   readonly encounter: EncounterState
   /** DLR-109 AC4 — the press-time unplayed count, and ONLY when a DELAYED payout is what resolved
    *  the encounter. `null` on every other path, including a kill by ordinary trick damage, which
@@ -80,7 +84,15 @@ interface FoldedResolution {
   readonly unplayedAtPress: number | null
 }
 
-function applyResolution(
+/**
+ * EXPORTED on DLR-117 so the hand fan's per-card preview can ask THIS function what a
+ * hypothetical trick would cost instead of re-deriving the arithmetic. That is the whole
+ * anti-drift argument for the preview: it reads a health DELTA off the real fold, so shield
+ * absorption, the zero floor, and the payout-destroyed-by-a-hit rule are inherited rather
+ * than restated. `projectedDepletion` (`duelHealthBars.ts`) is the cautionary case — it had
+ * its own absorption arithmetic and it lied until DLR-115.
+ */
+export function applyResolution(
   encounter: EncounterState,
   resolution: TrickResolution,
   handEnding: boolean,

@@ -1,7 +1,8 @@
-import { type CSSProperties } from 'react'
+import { useId, type CSSProperties } from 'react'
 import { containsCard, isPrimed, sameCard, type Card } from '../../warCouncil'
+import type { CardDamagePreview } from './cardDamage'
 import { fanPlacement } from './fanLayout'
-import { cardKey } from './labels'
+import { cardDamageGlyphText, cardDamageText, cardKey } from './labels'
 import PlayingCard from './PlayingCard'
 import { useRovingTabIndex } from './useRovingTabIndex'
 
@@ -28,6 +29,13 @@ interface HandFanProps {
   readonly discardSelecting: boolean
   /** DLR-100 — the cards currently toggled into the open selection, so the fan can mark them. */
   readonly discardSelection: readonly Card[]
+  /** DLR-117 — this card's win/lose preview, or `null` when there is nothing to preview.
+   *  REQUIRED and deliberately NOT defaulted, for the reason `projectedDepletion`'s fifth
+   *  parameter is required (`duelHealthBars.ts`): a defaulted stub is exactly how a preview
+   *  silently stops previewing. Asked as a callback rather than taken as an array so this
+   *  component still computes nothing about a card's state, exactly as it takes `legal` from
+   *  the engine rather than comparing suits itself. */
+  readonly damageForCard: (card: Card) => CardDamagePreview | null
   readonly onTap: (card: Card) => void
   readonly onCancel: () => void
 }
@@ -47,6 +55,13 @@ type FanCardStyle = CSSProperties & { '--wc-fan-rot'?: string; '--wc-fan-lift'?:
  * imperatively inside that hook's keydown handler rather than from an
  * effect reacting to a focus-index state change — this component uses no
  * lifecycle effect of any kind.
+ *
+ * DLR-117 wraps each card in a `.wc-fan-slot` column so the damage strip can sit beneath the
+ * card rather than on its face — all four corners of the face are taken (rank, skull, primed
+ * mark, ability pip) and the centre is the suit mark. `useRovingTabIndex`'s `focusIndex` uses
+ * `groupRef.current.querySelectorAll('button')`, a DESCENDANT query, so the extra element
+ * leaves the arrow-key order and count exactly as they were; the strip is a `<span>` and
+ * never enters that list.
  */
 export default function HandFan({
   hand,
@@ -60,6 +75,7 @@ export default function HandFan({
   timebombArmed,
   discardSelecting,
   discardSelection,
+  damageForCard,
   onTap,
   onCancel,
 }: HandFanProps) {
@@ -83,6 +99,10 @@ export default function HandFan({
   // card is the only other state that gets the "live" treatment, and every other hint (a
   // resolved trick, an open prompt, or whose turn it is) renders in the plain style.
   const hintClassName = `wc-hand-hint${rejected ? ' wc-is-reject' : armed ? ' wc-is-live' : ''}`
+
+  // Stable per mount and unique across mounts, so two fans could coexist without their
+  // description ids colliding. `cardKey` is unique within one hand.
+  const damageIdBase = useId()
 
   return (
     <>
@@ -120,25 +140,41 @@ export default function HandFan({
           const style: FanCardStyle = {
             '--wc-fan-rot': `rotate(${placement.rotateDeg}deg)`,
             '--wc-fan-lift': `translateY(${placement.liftPct}%)`,
+          }
+          const slotStyle: CSSProperties = {
             marginLeft: `${placement.overlapPx}px`,
             zIndex: placement.zIndex,
           }
+          const damage = damageForCard(card)
+          const damageId = `${damageIdBase}-${cardKey(card)}`
 
           return (
-            <PlayingCard
-              key={cardKey(card)}
-              card={card}
-              variant="hand"
-              armed={isArmed}
-              illegal={
-                !interactive || (!timebombArmed && !discardSelecting && !containsCard(legal, card))
-              }
-              primed={isPrimed(primedCards, card)}
-              discardSelected={containsCard(discardSelection, card)}
-              tabIndex={index === tabStopIndex ? 0 : -1}
-              style={style}
-              onTap={onTap}
-            />
+            <div key={cardKey(card)} className="wc-fan-slot" style={slotStyle}>
+              <PlayingCard
+                card={card}
+                variant="hand"
+                armed={isArmed}
+                illegal={
+                  !interactive ||
+                  (!timebombArmed && !discardSelecting && !containsCard(legal, card))
+                }
+                primed={isPrimed(primedCards, card)}
+                discardSelected={containsCard(discardSelection, card)}
+                tabIndex={index === tabStopIndex ? 0 : -1}
+                describedBy={damage === null ? undefined : damageId}
+                style={style}
+                onTap={onTap}
+              />
+              {damage !== null && (
+                <span
+                  id={damageId}
+                  className={`wc-card-damage${damage.exact ? '' : ' wc-is-estimate'}`}
+                >
+                  <span aria-hidden="true">{cardDamageGlyphText(damage)}</span>
+                  <span className="wc-sr-only">{cardDamageText(damage)}</span>
+                </span>
+              )}
+            </div>
           )
         })}
       </div>

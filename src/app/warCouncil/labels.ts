@@ -11,6 +11,7 @@ import {
   type SuitShape,
 } from '../../warCouncil'
 import { DuelSide, timebombDamageFor, MAX_CARDS_PER_DISCARD } from '../../hunt'
+import type { CardDamageBranch, CardDamagePreview } from './cardDamage'
 import { HeartState, type HealthBarView } from './duelHealthBars'
 import { CheatStage, TimebombStage } from './roundUiState'
 
@@ -305,4 +306,54 @@ export function discardAccessibleName(
   return selectionSize > 0
     ? `${held}, ${selectionSize} selected — tap to swap`
     : `${held}, selecting`
+}
+
+/** DLR-117 — the caveat a preview carries while the Quarry's card is face down. Its own
+ *  constant rather than an inline string, so the sentence and any future non-fan reader of
+ *  the same caveat cannot drift. PLACEHOLDER copy, as this file's rest is. */
+export const CARD_DAMAGE_ESTIMATE_NOTE =
+  'Estimate — the Quarry’s card is face down, so this trick’s skull and Timebomb state are not yet decided.'
+
+/** The `~` an estimate carries in the compact form. A FORM signal, not colour — `game-ux`'s
+ *  "state reads without motion or colour alone". PLACEHOLDER glyph. */
+export const CARD_DAMAGE_ESTIMATE_GLYPH = '~'
+
+/**
+ * DLR-117 — the compact on-card form, e.g. `W6 L1`, or `~W6 L1` for an estimate. Rendered
+ * `aria-hidden`; `cardDamageText` below is what a reader who cannot see it gets.
+ *
+ * TWO figures, and they are the CARD-DEPENDENT ones: what this card deals if it wins, what it
+ * costs if it loses. The two cross-terms — a Timebomb detonating on a win, the forced cash-out
+ * on a loss — are the same whichever card is played and are already previewed on the bars
+ * (DLR-101's ticking hearts, DLR-86 AC3's at-risk band), so repeating them on six cards would
+ * add noise without adding information. The full four-figure truth is in the sentence below.
+ * PLACEHOLDER glyphs: the wording is the developer's.
+ */
+export function cardDamageGlyphText(preview: CardDamagePreview): string {
+  const estimate = preview.exact ? '' : CARD_DAMAGE_ESTIMATE_GLYPH
+  return `${estimate}W${preview.win.toQuarry} L${preview.lose.toPlayer}`
+}
+
+/** One branch, in words. Omits a zero rather than saying "0 damage to you", and says
+ *  "no damage" when the branch costs nobody anything — a REPLACED clean loss (DLR-90 AC5) is
+ *  exactly that, and it is the branch a player most needs stated plainly. */
+function cardDamageBranchText(branch: CardDamageBranch): string {
+  const parts: string[] = []
+  if (branch.toQuarry > 0) parts.push(`${branch.toQuarry} damage to the Quarry`)
+  if (branch.toPlayer > 0) parts.push(`${branch.toPlayer} damage to you`)
+  if (branch.shielded > 0) parts.push(`${branch.shielded} absorbed by your shield`)
+  return parts.length === 0 ? 'no damage' : parts.join(', ')
+}
+
+/**
+ * DLR-117 — the `.wc-sr-only` sentence, and the COMPLETE statement: both branches, both sides
+ * of each, any shield absorption, and the estimate caveat when one applies. Reached through
+ * the card button's `aria-describedby`, so it is a DESCRIPTION and never part of the card's
+ * accessible NAME — `cardAccessibleName` stays the card's identity alone. PLACEHOLDER copy.
+ */
+export function cardDamageText(preview: CardDamagePreview): string {
+  const body =
+    `If you win this trick: ${cardDamageBranchText(preview.win)}. ` +
+    `If you lose: ${cardDamageBranchText(preview.lose)}.`
+  return preview.exact ? body : `${body} ${CARD_DAMAGE_ESTIMATE_NOTE}`
 }

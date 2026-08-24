@@ -1,7 +1,7 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, PT-002
+**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, PT-002
 
 ## Responsibility
 
@@ -289,6 +289,16 @@ review-enforced rather than lint-enforced. Sorting `RoundState.hands` instead wo
   mutual exclusion with Cheat and Timebomb; `handInteractive` as a second `interactive` value read by
   `HandFan` alone; the mid-implementation guard-ordering defect found and fixed before review; and the
   post-review `handleCarryOn` guard that stops a felt tap from orphaning an open selection (DLR-100).
+- [The per-card damage preview](card-damage-preview.md) — DLR-117's `W6 L1` strip under every hand
+  card: the one decision that makes the numbers impossible to disagree with what the game pays
+  (hand a hypothetical resolution to **`applyResolution` itself** and read the health delta, never
+  re-derive the arithmetic); what `commitHandlers.ts` had to export and why that is safe; the only
+  two facts the preview assembles itself and the only direction they can be wrong; **why it never
+  collapses to the one branch that will actually happen** even though the deterministic Quarry makes
+  that computable; the `.wc-fan-slot` wrapper, the inline-style split that keeps the fan's transform
+  cascade intact, and the 7-12px it costs; the numbers reaching a screen reader as the card's
+  **description** rather than its name; and the honest list of the four things it does **not** show
+  — including that an activated buff still contributes nothing, so DLR-117's AC3 is not met today.
 - [Accessibility](accessibility.md) — the shared roving tabindex, the ability prompt's focus
   handling, and the fan's `aria-hidden` behaviour while a prompt is open.
 - [Error handling](error-handling.md) — the two `cpuFault` cases and why they're shown, not

@@ -12,6 +12,9 @@ import {
   applyDamageAccessibleName,
   APPLY_DAMAGE_REFUSAL_MESSAGE,
   cardAccessibleName,
+  cardDamageGlyphText,
+  cardDamageText,
+  CARD_DAMAGE_ESTIMATE_NOTE,
   cheatAccessibleName,
   quarryHealthLabel,
   HEALTH_BAR_LABEL,
@@ -25,6 +28,7 @@ import {
   SUIT_NAME,
   TRICK_OUTCOME_MESSAGE,
 } from '../labels'
+import type { CardDamagePreview } from '../cardDamage'
 import { duelHealthBars, HeartState } from '../duelHealthBars'
 import { CheatStage } from '../roundUiState'
 
@@ -332,5 +336,62 @@ describe('applyDamageAccessibleName — DLR-94', () => {
     expect(applyDamageAccessibleName(9, true, ApplyDamageRefusal.NotYourMove)).toMatch(
       /unavailable/,
     )
+  })
+})
+
+describe('cardDamageGlyphText and cardDamageText — DLR-117', () => {
+  const exactPreview: CardDamagePreview = {
+    win: { toQuarry: 6, toPlayer: 0, shielded: 0 },
+    lose: { toQuarry: 0, toPlayer: 1, shielded: 0 },
+    exact: true,
+  }
+
+  it('reads the two card-dependent figures for an exact preview, with no caveat in the sentence', () => {
+    expect(cardDamageGlyphText(exactPreview)).toBe('W6 L1')
+    const sentence = cardDamageText(exactPreview)
+    expect(sentence).toBe(
+      'If you win this trick: 6 damage to the Quarry. If you lose: 1 damage to you.',
+    )
+    expect(sentence).not.toContain(CARD_DAMAGE_ESTIMATE_NOTE)
+  })
+
+  it('marks an inexact preview with the leading glyph and appends the estimate note to the sentence', () => {
+    const inexactPreview: CardDamagePreview = { ...exactPreview, exact: false }
+    expect(cardDamageGlyphText(inexactPreview)).toBe('~W6 L1')
+    expect(cardDamageText(inexactPreview)).toBe(
+      'If you win this trick: 6 damage to the Quarry. If you lose: 1 damage to you. ' +
+        CARD_DAMAGE_ESTIMATE_NOTE,
+    )
+  })
+
+  it('renders a branch that costs nobody anything as "no damage" rather than "0 damage to you"', () => {
+    const cleanPreview: CardDamagePreview = {
+      win: { toQuarry: 6, toPlayer: 0, shielded: 0 },
+      lose: { toQuarry: 0, toPlayer: 0, shielded: 0 },
+      exact: true,
+    }
+    expect(cardDamageText(cleanPreview)).toBe(
+      'If you win this trick: 6 damage to the Quarry. If you lose: no damage.',
+    )
+  })
+
+  it('names both sides of a branch that costs the player even on a win, so the cross-term is not dropped', () => {
+    const crossTermPreview: CardDamagePreview = {
+      win: { toQuarry: 6, toPlayer: 2, shielded: 0 },
+      lose: { toQuarry: 0, toPlayer: 1, shielded: 0 },
+      exact: true,
+    }
+    const sentence = cardDamageText(crossTermPreview)
+    expect(sentence).toContain('6 damage to the Quarry')
+    expect(sentence).toContain('2 damage to you')
+  })
+
+  it('names shield absorption when a branch spends one', () => {
+    const shieldedPreview: CardDamagePreview = {
+      win: { toQuarry: 6, toPlayer: 0, shielded: 0 },
+      lose: { toQuarry: 0, toPlayer: 0, shielded: 1 },
+      exact: true,
+    }
+    expect(cardDamageText(shieldedPreview)).toContain('1 absorbed by your shield')
   })
 })

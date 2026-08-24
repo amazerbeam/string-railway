@@ -14,6 +14,7 @@ import { CheatStage } from '../roundUiState'
 import WarCouncilRound from '../WarCouncilRound'
 import {
   bankClimbBonusFixture,
+  bankedRound,
   card,
   coinsFixture,
   discardsRemainingFixture,
@@ -186,5 +187,34 @@ describe('WarCouncilRound', () => {
     fireEvent.click(screen.getByRole('button', { name: cheatAccessibleName(CheatStage.Poised) }))
 
     expect(screen.getByRole('button', { name: offSuitName })).toHaveProperty('disabled', false)
+  })
+
+  it('describes a hand card with its win/lose damage readout (DLR-117 AC2)', () => {
+    renderRound({ initialState: bankedRound(3, 2) })
+    const bells7 = screen.getByRole('button', { name: '7 of Bells' })
+    const descriptionId = bells7.getAttribute('aria-describedby')
+    expect(descriptionId).toBeTruthy()
+    const description = document.getElementById(descriptionId ?? '')?.textContent ?? ''
+    expect(description).toMatch(/If you win this trick:/)
+    expect(description).toMatch(/If you lose:/)
+  })
+
+  it('changes the readout live when the seeded bank changes, with no effect or memoisation (DLR-117 AC2)', () => {
+    renderRound({ initialState: bankedRound(0, 0) })
+    const emptyBankDescriptionId = screen
+      .getByRole('button', { name: '7 of Bells' })
+      .getAttribute('aria-describedby')
+    const emptyBankDescription =
+      document.getElementById(emptyBankDescriptionId ?? '')?.textContent ?? ''
+    cleanup()
+
+    renderRound({ initialState: bankedRound(3, 2) })
+    const seededBankDescriptionId = screen
+      .getByRole('button', { name: '7 of Bells' })
+      .getAttribute('aria-describedby')
+    const seededBankDescription =
+      document.getElementById(seededBankDescriptionId ?? '')?.textContent ?? ''
+
+    expect(seededBankDescription).not.toBe(emptyBankDescription)
   })
 })

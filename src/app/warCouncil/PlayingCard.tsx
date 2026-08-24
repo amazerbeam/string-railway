@@ -24,6 +24,12 @@ interface PlayingCardProps {
    *  component. */
   readonly discardSelected?: boolean
   readonly tabIndex?: number
+  /** DLR-117 — the id of an element that DESCRIBES this card (the fan's damage strip).
+   *  Optional so all 13 other call sites keep compiling; only the fan passes one. Deliberately
+   *  a DESCRIPTION rather than part of `cardAccessibleName`: a card's accessible name is its
+   *  identity, and folding a derived figure into it would break every `getByRole('button',
+   *  { name })` query in the suite and conflate two different claims. */
+  readonly describedBy?: string
   readonly style?: CSSProperties
   readonly onTap?: (card: Card) => void
 }
@@ -46,6 +52,7 @@ export default function PlayingCard({
   primed = false,
   discardSelected = false,
   tabIndex,
+  describedBy,
   style,
   onTap,
 }: PlayingCardProps) {
@@ -73,6 +80,7 @@ export default function PlayingCard({
       disabled={condensed || illegal}
       tabIndex={condensed ? -1 : tabIndex}
       aria-label={cardAccessibleName(card, { skulled, primed })}
+      aria-describedby={describedBy}
       aria-pressed={armed || discardSelected ? true : undefined}
       onClick={() => onTap?.(card)}
     >

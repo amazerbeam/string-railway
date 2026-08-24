@@ -22,6 +22,7 @@ import ActionBar from './ActionBar'
 import BankMeter from './BankMeter'
 import { loadoutBarRefusalFor } from './buffHandlers'
 import BuffLoadoutPanel from './BuffLoadoutPanel'
+import { cardDamagePreview } from './cardDamage'
 import DecreePile from './DecreePile'
 import HandFan from './HandFan'
 import { sortHandForDisplay } from './handOrder'
@@ -357,6 +358,7 @@ export default function WarCouncilRound({
         timebombArmed={timebombArmed(ui)}
         discardSelecting={discardSelecting(ui)}
         discardSelection={ui.discardSelection ?? []}
+        damageForCard={(card) => cardDamagePreview(ui, card)}
         onTap={handleTap}
         onCancel={handleCancel}
       />

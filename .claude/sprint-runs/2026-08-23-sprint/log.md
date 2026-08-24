@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 12/22 (55%) — done: 12 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-116 "Shop screen: slot machine and pared-down purchasable list" (13/22)
+**Progress:** 13/22 (59%) — done: 13 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-117 "Live card preview: win/lose damage readout" (14/22)
 
 ## Run order
 
@@ -2954,3 +2954,123 @@ Not requested. No server started, no browser opened. A browser would have checke
 `AP_CAPACITY_PRICE`. The viewport fit at the four sizes above. Whether four odds figures is the right
 density (fallback: drop the expected-cards-per-pull figure). Whether one tap to pull, with no confirm,
 feels right. And the Miser tension, which is a design fork rather than a bug.
+
+## Coordinator decisions — DLR-116 reconciliation
+
+Suite 1474 → **1503, 116 files, 0 failures** (net +29 after deleting `ShopCategoryTabs.test.tsx`).
+Commit `2e60835`, 58 files, +4269/−1808.
+
+- **A player can now genuinely pull a reel end to end** — choose machine → read strip → pull →
+  cards land on `RunState.buffs`, where DLR-114's loadout bar already reads them. **This is the
+  first route to a real buff inside a run.** Ten tickets of bottom-up engine work are finally
+  connected.
+- **Determinism held**, grep-verified: zero `Math.random()` in `src/hunt/` or `src/vault/`; the
+  single call is `App.tsx` choosing `runSeed`. No strip stored. Reroll-same-strip asserted
+  directly. DLR-130's simulator remains viable.
+- **Accepted the paring: Cheat, Timebomb, Blast Guard and Whetstone leave the offered list**,
+  along with the four-shelf tab widget. `SHOP_ITEMS` → `[ApCapacity, Heal]`. Nothing mechanical
+  was deleted — the `ShopItem` union keeps all six and `priceOf`/`categoryOf`/`refusalFor`/
+  `buyFromShop` stay total. The convention introduced is worth keeping: **`SHOP_ITEMS` is what
+  the shop offers; `ShopItem` is everything the game prices.**
+- **Odds are surfaced, and derived rather than transcribed** from `REEL_COUNT`/`REEL_POOL_SIZE`.
+  This is DLR-112's flat-uniform spin paying off exactly as designed — the player can read the
+  strip and check the arithmetic.
+- **Accepted: drawn buffs go straight to the pile, no choose-one.** The reasoning is sound —
+  2.64 cards per pull only holds if every award lands, and a choose-one gate would make it 1.0
+  and break the simulator's yield model.
+- **Unaffordable pull is disabled with its reason stated, never hidden**, matching DLR-114's
+  action-bar convention. Two tickets now share one rule about refusals without either being
+  told to.
+- `AP_CAPACITY_PRICE = 3` is unchosen and trades directly against the 1-coin reroll.
+- **The `Miser` tension got worse, and the agent said so rather than patching it.** An uncapped
+  1-coin reroll is now the strongest coin sink in the game, which sharpens the conflict with a
+  card that rewards *unspent* coins. Recorded for the developer.
+
+### The repo-wide format churn — caught, mostly reverted, and the cause fixed
+
+The contract mandated **`npm run format`**, which is `prettier --write` across the whole repo.
+It rewrote **59 files by ~1,800 lines**, converting `*italic*` → `_italic_` and re-padding every
+markdown table across every design document — `hybrid-design.md`, `design-principles.md`,
+`ideas.md`, the play-test notes.
+
+- **The agent caught it and reverted the design docs itself**, unprompted. Verified by the
+  coordinator rather than trusted: **zero `.docs/design/` files in `2e60835`**.
+- **`the-hunt.md` kept the churn**, because that file legitimately changed in this ticket (210
+  lines, 144+/66− ignoring whitespace). Separating reformat from real content inside a file
+  whose content also changed is high-effort, high-risk and low-value; accepted deliberately, and
+  the file is now Prettier-stable going forward rather than flip-flopping.
+- **The cause is fixed, not just the symptom.** The prohibition already existed in
+  `web-project.md` — **36 lines below the table row that offers the command.** A planner writing
+  a task reads the row. The row now carries the scoped form (`npx prettier --write <path>`) and
+  the ban inline, and the note beneath states concretely what was churned and why those
+  documents in particular must not be. Committed as `ae9ee28`, with nine tickets still to run.
+
+### What a browser would have checked — the sharp one
+
+**Viewport fit at 1280×800 / 1024×768 / 1366×768 / 390×844.** `shop.css` has a documented
+clipping history, and this ticket moved **both sides** of that budget: removed four purse cells,
+the tablist, the tabpanel and an aside; added an eight-row strip. Also unseen: whether
+`shopSlot.css`'s custom properties resolve rather than falling back; a clean console on load, on
+machine change, on pull, and on a second visit; a real pull on each machine; the chooser by real
+keyboard; and the odds sentence as rendered. Mockup generated, **unseen**.
+
+Good news for DLR-119: **the shop shares no CSS with `warCouncilHunt.css`**, so its three
+`.wc-shell` risks are untouched in both directions.
+
+
+---
+
+## DLR-117 — Live card preview: win/lose damage readout
+
+**GREEN.** Committed locally, not pushed. Reviewers: all three, one round, no fix pass.
+Gates, run first-hand after the doc pass as well as by QA: `npm run typecheck` exit 0 · `npm run lint` exit 0 · `npm test` **1526 passed of 1526 across 117 files** (baseline 1503/116, so +23) · `npm run build` exit 0, built in 220ms. `npx prettier --check` on the twelve contract-owned `src/` files: clean.
+
+### What shipped
+
+A strip under every hand card reading `W<n> L<n>` — the damage the Quarry takes if that card wins its trick, the damage you take if it loses. New pure module `src/app/warCouncil/cardDamage.ts` (101 lines); `commitHandlers.ts` exports `playOptions`/`applyResolution`/`FoldedResolution` (visibility only); copy in `labels.ts`; an optional `describedBy` on `PlayingCard`; a required `damageForCard` on `HandFan` plus a `.wc-fan-slot` wrapper; three rules in `warCouncilHand.css`; one import and one prop in `WarCouncilRound.tsx`.
+
+### How I guaranteed it derives from the resolution path rather than re-deriving it
+
+**The preview does not compute damage. It asks `applyResolution` — the same fold the reducer commits a real trick through — and reads the health delta back off the returned encounter.** `branchFor` reports `before.health[side] − after.health[side]` per side and `before.shieldHearts − after.shieldHearts`. Shield absorption, the zero floor, D7's "a Quarry killed by the event spares you", and DLR-109 AC3's payout-destroyed-by-a-hit rule are therefore **inherited, not restated**.
+
+`applyDamage`'s own docblock turned out to sanction exactly this, which I did not know when I chose it: _"Returns a new state; the input is never mutated. That is what lets a caller preview an event by applying it to a copy, rather than writing a second projection routine that could drift from this one."_
+
+Proved three ways, not asserted: a grep of `cardDamage.ts` for `applyResolution|playOptions|resolveTrickBank` finds exactly the import plus one call site each; a recursive grep of `src/app/warCouncil` for `Math\.min\(.*[Ss]hield|absorbWithShield` finds only `duelHealthBars.ts`'s pre-existing calls and one prose mention in `cardDamage.ts`'s own docblock; and `cardDamage.test.ts` reads every expected figure off the engine's `DAMAGE_PER_HIT`, `forcedCashValue(3,2)` and `cashValue(2,2)` rather than hard-coding a number, so it would actually catch drift. Both reviewers ran the DLR-115 shield grep independently and found the same.
+
+Side effect worth having: this preview is **immune to the live `breaking`-overlay over-draw**. That defect needs the _absorbed_ portion of a landed hit, which `ResolvedTrick` does not record; a health delta never needs it. So the bug did not bite, and I did not paper over it.
+
+### Every case where the preview is an ESTIMATE rather than a certainty — the list the developer needs
+
+1. **You are the one to lead.** The Quarry's card is face down and skulls are dealt to the Quarry, so `skullTrick` and `timebombTrick` are undecided — and a skulled Quarry card turns a trick you win into one you eat, inverting **both** figures. Flagged on screen (`~` prefix + italics) and in words. `exact` is true only when `round.currentTrick.length === 1`.
+2. **A Timebomb this card would PRIME for the next trick is not shown.** Booking costs no health at this resolution, so it is absent from the delta. A primed card you win reads cheaper than it turns out to be until the ticking hearts appear.
+3. **Overkill is truncated.** Health floors at 0, so `W6` against a Quarry on 4 means "enough", not "six". Matches how `duelHealthBars` already handles overkill; still a reading to confirm.
+4. **Activated buffs contribute nothing** — `buffAccrual.ts` still has no caller. **DLR-117's AC3 (several buffs stacking on one card) is NOT met.** I deliberately did not invent a bonus the resolution will not pay; that would have been this ticket's own worst outcome. It becomes true with zero edits once accrual is wired into `playOptions`.
+5. **AC1's "once any buff is active" gate was not built** — the readout is always visible, because bank, multiplier, a pending Timebomb, a held Blast Guard, the final trick and a primed card all already move these numbers.
+6. **Only two of four figures are on the card face.** The omitted two (a Timebomb detonating on a win; the forced cash-out on a loss) are card-_invariant_ and already previewed on the health bars. All four are in every card's spoken description.
+7. **It never collapses to the branch that will actually happen**, though `chooseCpuCard` is deterministic and it could — that would leak the Quarry's exact card past `TELEGRAPH_FIDELITY`.
+
+### Plan defaults taken (no gate presented)
+
+Plan approval auto-taken; **mockup built and published, went unseen**. Skill confirmation not presented (`react-frontend` + `game-ux`, no developer override). Defaults logged: preview the trick not the hand; two branches on `playerWon`; two card-dependent figures on the face; inexact whenever the Quarry's card is off the table; no buff contribution; always visible; `null` (nothing rendered) once the encounter resolves or the hand ends; numbers as the card's `aria-describedby` **description** and never its accessible name; strip beneath the card, not on its face. Placeholder copy `W6 L1` / `~` and the transcribed `calc(var(--wc-card-w) * 0.2)` are the developer's.
+
+### The `aria-describedby` call, which is why 37 assertions stayed green
+
+All four card corners and the centre are taken (rank, skull, primed mark, ability pip, suit), so the strip could not go on the face. Folding the numbers into `cardAccessibleName` would have broken every `getByRole('button', { name })` in the suite — 37 exact-name assertions — and conflated a card's identity with a derived figure. Description instead: name untouched, and AC4 satisfied by `getByRole('button', { name, description })`.
+
+### Vertical space this cost
+
+**Roughly 7-12px on the `hand` grid row** — one line at `calc(var(--wc-card-w) * 0.2)` plus a `* 0.04` gap, less the ~3.2px of slack already inside `.wc-fan`'s `min-height`. **No grid row added** to `.wc-shell`. I deliberately did **not** spend `.wc-fan`'s `1.3rem / 0.6rem` rotation reserve to make it free, even though it measurably has ~17px of slack up top: that reserve is DLR-119's surface and spending it blind, with no browser, is exactly how you turn someone else's open risk into a regression. **This makes DLR-119's three risks slightly worse, not better**, and nobody has seen it.
+
+### What a browser would have checked — not requested, so not run
+
+No server started, no browser opened. Unseen: (1) whether the added 7-12px makes `.wc-shell` scroll or crop at **1280×800 / 1024×768 / 1366×768 / 390×844**; (2) whether `--wc-card-w` and `--wc-chalk-dim` resolve inside `.wc-card-damage` rather than silently falling back; (3) legibility at the smallest clamp — `--wc-card-w: 2.9rem` puts the strip at about **9.3px**, which is the single thing most likely to be wrong; (4) whether the fan's -4/-10/-18px card overlap occludes the strip of an underlying card; (5) a clean console on load and after a remount, watching specifically for an `aria-describedby`-target-missing warning, since the ids are composed per card from `useId()`.
+
+### Gotchas worth carrying forward
+
+- **A required prop with two construction sites is cheap; the count is what makes it cheap.** `HandFan`'s `damageForCard` is deliberately undefaulted, on `projectedDepletion`'s precedent. The `/fb-plan` construction-site check found exactly 2 sites (mount + one test helper) — so "required" cost one line each rather than a mid-phase typecheck cascade.
+- **`useRovingTabIndex` survives a wrapper by luck of one word.** Its `focusIndex` uses `querySelectorAll('button')` — a _descendant_ query. Had it used `children`, the `.wc-fan-slot` div would have silently broken arrow-key navigation with no test failing differently. Both reviewers checked it; the hook's own docblock already warned about this class of coupling.
+- **`labels.ts` is at 359 of 400 and `WarCouncilRound.tsx` at 380.** Both under budget, both tight. The next ticket touching either should expect to split it.
+
+### Docs
+
+`.docs/implementation/war-council-ui/card-damage-preview.md` created; that module's README and the top-level index updated with DLR-117. `.docs/game_rules/the-hunt.md` **was** updated — this changes what a player is shown before committing, which §3/§4 own: a new §4 subsection, three Status-register rows (settled / provisional glyphs / **not built** buff contributions), two new Known tensions, and a dated in-progress note. Three of those four docs already failed repo-wide `prettier --check` before I touched them, so I left their formatting alone rather than churning them; only the new file was formatted.
