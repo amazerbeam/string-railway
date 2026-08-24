@@ -4,10 +4,16 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   DuelSide,
   NO_PENDING_TIMEBOMB,
+  NO_SHIELD_HEARTS,
   PLAYER_START_HEALTH,
   quarryHealthForEncounter,
 } from '../../../hunt'
-import { duelHealthBars, projectedDepletion, type HealthBarOverlays } from '../duelHealthBars.ts'
+import {
+  duelHealthBars,
+  projectedDepletion,
+  PipType,
+  type HealthBarOverlays,
+} from '../duelHealthBars.ts'
 import DuelHealthBars from '../DuelHealthBars.tsx'
 import { HEALTH_BAR_LABEL, quarryHealthLabel } from '../labels'
 
@@ -110,7 +116,7 @@ describe('DuelHealthBars', () => {
     const current = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
     const { container } = renderPair(
       current,
-      projectedDepletion(current, 2, 2, NO_PENDING_TIMEBOMB),
+      projectedDepletion(current, 2, 2, NO_PENDING_TIMEBOMB, NO_SHIELD_HEARTS),
     )
     const quarry = container.querySelector('.wc-hp[data-side="quarry"]')
     expect(quarry?.querySelectorAll('[data-state="atRisk"]')).toHaveLength(4)
@@ -156,5 +162,96 @@ describe('DuelHealthBars', () => {
       h.getAttribute('style'),
     )
     expect(styled).toHaveLength(0)
+  })
+})
+
+describe('DuelHealthBars — the shield cluster (DLR-115)', () => {
+  it('names the standing blue hearts in the bar’s accessible value', () => {
+    render(
+      <DuelHealthBars
+        bars={duelHealthBars(FULL, FULL, MAX, { shield: 2 })}
+        centre={<span>trio</span>}
+        quarryLabel={QUARRY_LABEL}
+      />,
+    )
+    expect(
+      screen
+        .getByRole('meter', { name: HEALTH_BAR_LABEL[DuelSide.Player] })
+        .getAttribute('aria-valuetext'),
+    ).toBe(`${PLAYER_START_HEALTH} of ${PLAYER_START_HEALTH}. 2 shielded.`)
+  })
+
+  it('names a shield partly claimed by a booked Timebomb, with "of them"', () => {
+    render(
+      <DuelHealthBars
+        bars={duelHealthBars(FULL, FULL, MAX, {
+          shield: 2,
+          ticking: { [DuelSide.Player]: 2, [DuelSide.Quarry]: 0 },
+        })}
+        centre={<span>trio</span>}
+        quarryLabel={QUARRY_LABEL}
+      />,
+    )
+    expect(
+      screen
+        .getByRole('meter', { name: HEALTH_BAR_LABEL[DuelSide.Player] })
+        .getAttribute('aria-valuetext'),
+    ).toBe(`${PLAYER_START_HEALTH} of ${PLAYER_START_HEALTH}. 2 shielded, 2 of them ticking.`)
+  })
+
+  it('leaves an unshielded bar’s accessible value unchanged from today', () => {
+    renderPair(FULL, FULL)
+    expect(
+      screen
+        .getByRole('meter', { name: HEALTH_BAR_LABEL[DuelSide.Player] })
+        .getAttribute('aria-valuetext'),
+    ).toBe(`${PLAYER_START_HEALTH} of ${PLAYER_START_HEALTH}.`)
+  })
+
+  it('keeps aria-valuenow/aria-valuemax red-only — a 10/10 player with a shield never reads 12', () => {
+    render(
+      <DuelHealthBars
+        bars={duelHealthBars(FULL, FULL, MAX, { shield: 2 })}
+        centre={<span>trio</span>}
+        quarryLabel={QUARRY_LABEL}
+      />,
+    )
+    const player = screen.getByRole('meter', { name: HEALTH_BAR_LABEL[DuelSide.Player] })
+    expect(player.getAttribute('aria-valuenow')).toBe(String(PLAYER_START_HEALTH))
+    expect(player.getAttribute('aria-valuemax')).toBe(String(PLAYER_START_HEALTH))
+  })
+
+  it('renders the shield cluster’s pips inside the same meter as the health pips', () => {
+    const { container } = render(
+      <DuelHealthBars
+        bars={duelHealthBars(FULL, FULL, MAX, { shield: 2 })}
+        centre={<span>trio</span>}
+        quarryLabel={QUARRY_LABEL}
+      />,
+    )
+    const player = container.querySelector('.wc-hp[data-side="player"]')
+    expect(player?.querySelectorAll(`[data-type="${PipType.Health}"]`)).toHaveLength(
+      PLAYER_START_HEALTH,
+    )
+    expect(player?.querySelectorAll(`[data-type="${PipType.Shield}"]`)).toHaveLength(2)
+  })
+
+  it('binds a shield pip to its own symbol — a different shape from a health pip, not a colour (AC1)', () => {
+    render(
+      <DuelHealthBars
+        bars={duelHealthBars(FULL, FULL, MAX, { shield: 2 })}
+        centre={<span>trio</span>}
+        quarryLabel={QUARRY_LABEL}
+      />,
+    )
+    const player = screen.getByRole('meter', { name: HEALTH_BAR_LABEL[DuelSide.Player] })
+    const shieldHref = player
+      .querySelector(`[data-type="${PipType.Shield}"] use`)
+      ?.getAttribute('href')
+    const healthHref = player
+      .querySelector(`[data-type="${PipType.Health}"] use`)
+      ?.getAttribute('href')
+    expect(shieldHref).toBeTruthy()
+    expect(shieldHref).not.toBe(healthHref)
   })
 })

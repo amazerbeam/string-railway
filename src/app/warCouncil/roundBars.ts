@@ -18,7 +18,7 @@ import {
 import type { RoundUiState } from './roundUiState'
 
 /**
- * Three derivations, no new state:
+ * Four derivations, no new state:
  *
  *  · the AT-RISK preview (DLR-86 AC3) is the streak over `bank` and `multiplier`, which the engine
  *    already writes on every trick — it resets itself when they reset (AC5), because it is a view
@@ -31,9 +31,20 @@ import type { RoundUiState } from './roundUiState'
  *    so the held reveal IS the damage event. Reading it rather than diffing a remembered previous
  *    health keeps this a pure function of committed state and ties the crack to the cards that
  *    caused it.
+ *  · the SHIELD pips (DLR-115) are `encounter.shieldHearts`, read rather than remembered for the
+ *    same reason the other three are — and the player's projection is routed through
+ *    `absorbWithShield` (inside `projectedDepletion`) so the preview cannot contradict what
+ *    `applyDamage` will do once a shield stands.
  *
  * DLR-86 AC4 needs no code: a cash-out zeroes bank and multiplier and sets `resolvedTrick` in ONE
  * transition, so the same hearts at the same indices go atRisk -> breaking in one render.
+ *
+ * RESIDUAL (DLR-115, out of scope): `breaking` above is still the GROSS damage of the event on
+ * screen, while `ui.encounter.shieldHearts` is the POST-absorption remainder — so when a shield
+ * partially absorbs a landed hit, more red pips render `breaking` than red health actually lost.
+ * Fixing it exactly needs `ResolvedTrick` to record the absorption, which is engine/state work
+ * this ticket's Scope Boundaries put out of bounds. Unreachable today because nothing in the app
+ * layer calls `activateShield`, so `shieldHearts` is always `0` in real play.
  */
 export function barsForRound(
   ui: RoundUiState,
@@ -42,11 +53,18 @@ export function barsForRound(
   const pendingTimebombs = ui.encounter.pendingTimebomb
   return duelHealthBars(
     ui.encounter.health,
-    projectedDepletion(ui.encounter.health, ui.round.bank, ui.round.multiplier, pendingTimebombs),
+    projectedDepletion(
+      ui.encounter.health,
+      ui.round.bank,
+      ui.round.multiplier,
+      pendingTimebombs,
+      ui.encounter.shieldHearts,
+    ),
     maxHealth,
     {
       breaking: ui.resolvedTrick ? incomingFrom(ui.resolvedTrick.resolution) : NO_BREAKING,
       ticking: pendingTimebombs,
+      shield: ui.encounter.shieldHearts,
     },
   )
 }

@@ -63,6 +63,13 @@
      --wc-hp-atrisk-opacity and clearly below solid — the developer owns the value. */
   --wc-hp-ticking-fill: var(--wc-timebomb);
   --wc-hp-ticking-opacity: 0.78;
+  /* DLR-115 — the blue heart. NONE of these three numbers was chosen by anyone: the developer owns
+     the colour, the opacity and the gap, and none has been seen against a full row. The opacity
+     copies --wc-hp-ticking-opacity so the two "already claimed" readings agree; two unseen numbers
+     agreeing is a reason to tune them together, not evidence either is right. */
+  --wc-hp-shield-fill: #4f8fc0;
+  --wc-hp-shield-ticking-opacity: 0.78;
+  --wc-hp-shield-gap: 0.5rem;
   --wc-hp-break-ms: 520ms;
   --wc-hp-flash-ms: 900ms;
   /* DLR-97 — shared hover/active/state-change duration for controls that previously had no

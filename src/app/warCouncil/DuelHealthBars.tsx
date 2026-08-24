@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { DuelSide } from '../../hunt'
-import { HeartState, type HealthBarView } from './duelHealthBars'
-import { HeartMark, HeartSymbolSheet } from './HeartMark'
+import { HeartState, PipType, type HealthBarView } from './duelHealthBars'
+import { HeartMark, HeartSymbolSheet, ShieldMark } from './HeartMark'
 import { HEALTH_BAR_LABEL, healthBarValueText } from './labels'
 
 interface DuelHealthBarsProps {
@@ -57,6 +57,15 @@ export default function DuelHealthBars({ bars, centre, quarryLabel }: DuelHealth
  * geometry to communicate, so the hazard is designed out rather than guarded against. Any future
  * need for a per-heart value must come back through a custom property rather than an inline
  * style; the reasoning is recorded at `.docs/implementation/war-council-ui/layout-and-styling.md`.
+ *
+ * DLR-115 — the shield cluster (`view.shieldPips`) renders INSIDE this same `role="meter"`
+ * element, not beside it in a second meter, so the bar stays ONE reading with one accessible
+ * name: a second meter would make a screen reader announce the shield as a separate bounded
+ * value it is not. It comes AFTER the health pips in DOM order, which under the player's normal
+ * (non-reversed) flex direction puts it inboard, nearest the centre where damage arrives — the
+ * whole row then reads outward-to-inward in depletion order: the further toward the centre, the
+ * sooner it is lost. Still computes nothing; `view.shieldPips` is mapped exactly as `view.hearts`
+ * already is.
  */
 function SideBar({ view, label }: { view: HealthBarView; label: string }) {
   return (
@@ -77,10 +86,24 @@ function SideBar({ view, label }: { view: HealthBarView; label: string }) {
         aria-valuetext={healthBarValueText(view)}
       >
         {view.hearts.map((state, index) => (
-          <span key={index} className="wc-hp-heart" data-state={state}>
+          <span key={index} className="wc-hp-heart" data-type={PipType.Health} data-state={state}>
             <HeartMark broken={state === HeartState.Broken || state === HeartState.Breaking} />
           </span>
         ))}
+        {view.shieldPips.length > 0 ? (
+          <span className="wc-hp-shield-run">
+            {view.shieldPips.map((state, index) => (
+              <span
+                key={index}
+                className="wc-hp-heart"
+                data-type={PipType.Shield}
+                data-state={state}
+              >
+                <ShieldMark />
+              </span>
+            ))}
+          </span>
+        ) : null}
       </div>
     </div>
   )

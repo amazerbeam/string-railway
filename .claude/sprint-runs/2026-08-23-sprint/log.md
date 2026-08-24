@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 10/22 (45%) — done: 10 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-114 "Pre-hand loadout action bar" (11/22) — resumed 03:30 after the second session limit
+**Progress:** 11/22 (50%) — done: 11 shipped, 0 blocked (+2 out-of-band shipped) | now: DLR-115 "Health bar: rendering blue hearts" (12/22) — HALFWAY
 
 ## Run order
 
@@ -2600,3 +2600,159 @@ through the real reducer, pinned by `WarCouncilRound.actionBar.test.tsx`. But th
 opens with is four `Unassigned` placeholders, which this ticket deliberately filters out, so real
 priced buffs appear only when the Vault granted templates. And an activated condition buff still
 pays nothing. What is reachable today is **activation**; **firing** is a later ticket's.
+
+## Coordinator decisions — DLR-114 reconciliation
+
+**The largest ticket of the run: 70 files, +5462/−772, and the first one a player can see.**
+Suite 1403 → **1453, 112 files, 0 failures** (−2 deleted specs, +7 new).
+
+- **Accepted the deletion of two shipped components.** `ApplyDamagePlate.tsx` and
+  `DiscardPlate.tsx` are gone, along with their stylesheets and specs, folded into one
+  `ActionBar`. This is the right shape — one ritual instead of four scattered buttons — but it
+  is a **structural rewrite of the felt with no browser verification whatsoever**, which is the
+  sharpest edge of the deferred-QA trade so far.
+- **Accepted five interaction rules, all agent-decided:** the bar is **always mounted**, with
+  controls greying and stating their reason on their own face rather than disappearing;
+  **activation is reversible until a second tap** (one tap poises, a second spends, `Escape`
+  drops it) — chosen because the engine ships no un-activate and inventing a refund would be
+  writing a rule `src/hunt/` does not own; **Apply Buff opens even when nothing is affordable**,
+  because the panel is where you read what you own and what it costs; and condition + reward
+  render as **one line that doubles as the row's accessible name**, with the grammar transcribed
+  from `v1-buff-card-list.md` rather than invented.
+- **Accepted a regression fix the implementer correctly refused to decide alone.** Relocating
+  Cheat and Timebomb behind Apply Buff put them behind `discardWindowOpen`, making them
+  unreachable while *following* a lead — exactly when a Cheat has value. Resolved as
+  **`loadoutDoorOpen = discardWindowOpen || canAct`**: the door is wider than the window, while
+  buff rows keep the between-tricks rule.
+- **The `Unassigned` trap is closed, twice.** Once in the pure layer (`isPricedBuff` /
+  `activatableBuffs` mirror `buffApCost`'s own two branches), with a spec asserting every
+  `seedStartingBuffPile` buff both fails the filter *and* throws from `apCostOf`. A second
+  instance surfaced only under integration — `useRovingTabIndex` probes `isFocusable(0)` on an
+  empty collection, so `refusalFor(buffs[0])` reached `apCostOf(undefined)`.
+
+### Reachability, stated honestly rather than claimed
+
+**Activation is reachable; firing is not.** A player can open the loadout, read each owned
+priced buff, spend AP and watch the pool fall — pinned through the real reducer. But a fresh
+run's pile is four `Unassigned` placeholders which are filtered out, so real buffs appear only
+via Vault grants; and an activated **condition** buff still pays nothing, because
+`buffAccrual.ts` has no caller. The agent declined to overclaim this, correctly.
+
+### Nine unverified items — the deferred-QA bill, and it is now due
+
+No browser pass ran. The top three, all plausible and all invisible to the gates:
+
+1. **The shell may scroll** with a fourth grid row at 1280×800, 1024×768, 1366×768, 390×844.
+2. **The narrow/short-viewport override may not place the bar at all** — the Defender caught
+   that `warCouncilHunt.css` redeclares `.wc-shell`'s areas and never received the `actions`
+   row. Fixed, but **never rendered**.
+3. **The hand fan may be cropped** by the bar.
+
+Full list in the agent's log section and in `pr-description.md`. This is the concrete cost of
+the browser-QA decision, recorded so the end-of-run pass starts here rather than hunting.
+
+### Two carried items
+
+- **`timebombDamageFor` / `timebombDamageOf` were deliberately NOT collapsed.** This ticket
+  wires the felt onto the *pile*, not the catalog, so the rename would have no behaviour behind
+  it. The nomination moves to whichever ticket replaces `commitTimebomb` with `activateBuff`.
+- **A recurring planning defect, now twice observed.** The plan's config audit undercounted
+  `RoundUiSeed`'s construction sites **2 vs 11**; DLR-110 hit the same class at 1 vs 2. The
+  coordinator is fixing `/fb-plan`'s audit step directly rather than filing it, since eleven
+  tickets remain and each would inherit the same gap.
+
+
+---
+
+## DLR-115 — Health bar: rendering blue hearts
+
+**GREEN.** typecheck 0 · lint 0 · `npm test -- --run` **1474 passed of 1474, 112 files** (pre-ticket baseline 1453) · build 0. Reviewers: Code-Evaluator APPROVED, Defender APPROVED (0/0/0), QA FAILURES FOUND → one fix pass → QA ALL PASSED. Two rounds used of two.
+
+### The type × state model, as built
+
+`HeartState` still has **exactly five members**. A sixth was the named failure mode and it did not happen. The second dimension is a new `as const` map beside it:
+
+```ts
+export const PipType = { Health: 'health', Shield: 'shield' } as const
+```
+
+`HealthBarView` keeps `hearts: readonly HeartState[]` untouched and gains a sibling `shieldPips: readonly HeartState[]` plus the scalar `shielded: Health`. **The array a pip lives in is its type; the shared `HeartState` value is its state.** Both reach the DOM as `data-type` + `data-state`, and every pre-existing `.wc-hp-heart[data-state=…]` selector was re-qualified with `[data-type='health']` — including both entries in the `prefers-reduced-motion` block. The stylesheet now selects on the product rather than on a flattened sixth value.
+
+Two-array over `hearts: readonly HeartPip[]` was a **blast-radius call, not a shape preference**: the element-type widening would have touched `ShopPanel.tsx`, `App.tsx` and ~20 existing assertions for no behavioural gain. Code-Evaluator was asked directly whether that was a DRY smell and judged it defensible — the two arrays are different lengths from different domains (`max` vs `ceil(shielded)`) and `shieldPips`'s value set is a strict subset.
+
+**Shield pips produce only `Whole` and `Ticking`.** A spent blue heart simply stops being drawn — there is no shield graveyard — so `Breaking`/`Broken` are structurally unreachable for that type and no dead branch was written for them.
+
+### The `projectedDepletion` fix — and why it is the same piece of work as the state dimension
+
+`projectedDepletion` gained a **required** 5th parameter `shieldHearts: Health` (not defaulted: a default would let a future caller silently reintroduce the lying preview) and routes the player's booked Timebomb through `absorbWithShield` before subtracting from red health. The absorption rule was **never re-derived** — Defender and Code-Evaluator both grepped for an inline `Math.min(shield, …)` and found none.
+
+The thing worth recording is that the fix *produced* the shield's only live state. One `absorbWithShield` call answers two questions: how much damage reaches red health (→ `secure`, the red `ticking` band, and `lethal`), and how much of the shield is already claimed (→ which blue pips render `Ticking`). Fixing the preview is what gave blue hearts something to be in a state about; without it a shield pip would have been a constant.
+
+Tested both directions, as the brief demanded: with a shield (red spared), without (`NO_SHIELD_HEARTS` → byte-identical to before), the partial case, and the Quarry's untouched path. **No pre-existing expectation's value changed** — QA confirmed zero `.toBe(...)` edits alongside the appended 5th arguments.
+
+Fractional shields (`DAMAGE_ROUNDING = None` admits 1.5 blue hearts) round **up into a whole pip** by exactly the `i < value` rule the red row already uses — one rounding rule for the row, not a second one for blue. A `RangeError` guard covers non-finite and negative, exercised by `it.each([-1, NaN, +Infinity])`; without it `Array.from({length: NaN})` yields `[]` and renders nothing while logging nothing.
+
+### The new spoken form
+
+```
+"10 of 10." + [" 2 shielded." | " 2 shielded, 1 of them ticking."] + [" 3 at risk."] + [" 4 ticking."] + [" Lethal."]
+```
+
+Order is standing → shielded → at risk → ticking → lethal: outermost protection to innermost certainty, matching the row's own reading direction. `of them` exists because without it `"2 shielded, 1 ticking. 3 ticking."` reads as two unrelated ticking figures.
+
+**The worst case is asserted verbatim in a spec so its length is on the record:** `'10 of 10. 2 shielded, 1 of them ticking. 6 at risk. 4 ticking. Lethal.'` That is a shield, a booked Timebomb and a live streak at once. **Judge whether anyone listens to that sentence.** Dropping `of them` shortens it and makes it ambiguous; that trade is yours.
+
+`aria-valuenow`/`aria-valuemax` stay **red-only** — a 10/10 player with a shield still reports 10 of 10, never 12. The shield is a buffer on top of the bound, not part of it. The cluster renders inside the same `role="meter"`, so the bar stays one reading with one accessible name rather than announcing a second bounded value it is not.
+
+### Plan defaults taken (no approval gate — every one is unreviewed)
+
+1. **Type dimension as a second array**, not a widened element type. Blast radius.
+2. **Shield pips are `Whole`/`Ticking` only.** No graveyard.
+3. **The cluster sits inboard of the red run**, past the broken-heart graveyard, nearest the centre. Buys one statable rule for the whole row: *further toward the centre = sooner lost*. The alternative — the anchored screen edge, where most games put armour — puts the two clusters in opposite depletion directions. **It does mean live blue pips are separated from live red pips by dead ones.**
+4. **A shield pentagon, not a blue heart.** The ticket says "blue hearts"; the `game-ux` hard floor says state must read without colour alone, and a blue heart beside a red heart is a colour swap that vanishes in greyscale. If you want a heart silhouette, the type has to be carried some other way — a ring, a badge, a size step — and that is a redesign of this row, not a token change.
+5. **Half a pip rounds up.**
+6. **`shield` is a player-only scalar overlay**, not a per-side record — a record would invent a Quarry shield nobody designed.
+7. **Required 5th parameter** on `projectedDepletion`.
+8. **`aria-valuenow` stays red-only.**
+9. **`hasShieldHearts` is not used** — `shieldPips.length > 0` answers the same question at the point of use.
+
+### Every number nobody chose
+
+Three, all in `:root` in `warCouncil.css`, all shipped so the ticket is playable, **none ever seen against a real row**:
+
+| Key | Shipped | Note |
+|---|---|---|
+| `--wc-hp-shield-fill` | `#4f8fc0` | Never seen against `--wc-hp-secure-fill: #cc3f4a`, the ticking amber, or `--wc-hp-broken: #3a4a52`. |
+| `--wc-hp-shield-ticking-opacity` | `0.78` | Copies `--wc-hp-ticking-opacity`, itself already flagged in that file as the developer's. **Two unseen numbers now agreeing is a reason to tune them together, not evidence either is right.** |
+| `--wc-hp-shield-gap` | `0.5rem` | The only thing making the two clusters read as two. |
+
+Plus the glyph's `d` path, transcribed from this ticket's mockup and unjudged at rendered size.
+
+### The mockup went unseen
+
+`.claude/contract/DLR-115-health-bar-rendering-blue-hearts/mockup.html` was produced because the pipeline calls for one on a UI ticket. **There was no approval gate in this run and nobody looked at it.** It is interactive (book a Timebomb, land a hit, greyscale toggle) and it is the only picture of this layout that exists. The layout it proposes is unreviewed and it is what shipped.
+
+### Precisely what a browser would have checked
+
+No server started, no browser opened — the pass is off by default and was not requested. For a purely visual ticket this list is the whole handover:
+
+1. **The three custom properties resolve rather than falling back.** `getComputedStyle` on `.wc-hp-heart[data-type='shield'][data-state='whole']` should give `color: rgb(79, 143, 192)`, not an inherited text colour. A name misspelled between `warCouncil.css` and `warCouncilHealthBars.css` compiles, lints, and passes all 1474 tests while rendering the wrong colour. *(Mitigated but not proven: all three names were grepped and match in both files.)*
+2. **The shield cluster reads as a second cluster.** `margin-inline-start: 0.5rem` against `--wc-hp-heart-gap: 0.18rem` — at real glyph size that ratio may not separate.
+3. **The two silhouettes separate in greyscale.** Shield pentagon vs. heart at ~1–1.45rem, with saturation emulation. This is the whole justification for not shipping a blue heart, and it has never been looked at.
+4. **The wider player bar against DLR-119's three open risks**, at 1280×800, 1024×768, 1366×768, 390×844: does the shell scroll where it did not before; does the narrow/short override in `warCouncilHunt.css` clip the cluster; is the hand fan more cropped by `ActionBar`.
+5. **A clean console** on load and after a StrictMode remount, with a shield present.
+6. **Getting there at all.** No seed reaches a non-zero `shieldHearts` — see below. Any eyes-on look needs a temporary devtools override, never committed.
+
+### Two things that are true and uncomfortable
+
+- **Nothing renders a blue heart in play.** `activateShield` still has no app-layer caller, so `encounter.shieldHearts` is `0` for the whole of a real run. Every assertion in this ticket is against a constructed state. **Nobody has seen a blue pip and nobody can until a buff activation is wired to Shield.** QA filed AC2's live-interaction half as blocked/out-of-scope for exactly this reason; the derivation that will make it true once wired is solidly tested.
+- **The `breaking` overlay still over-draws** when a shield partially absorbs a *landed* hit: 3 damage into 2 blue hearts drops red health by 1 but draws 3 breaking red pips. `resolution.damageToPlayer` is gross while `encounter.shieldHearts` is post-absorption, and the absorbed amount is **not recoverable** from the two once the shield was exhausted. It needs `ResolvedTrick` to record the absorption — engine work this ticket's Scope Boundaries bar. Documented in `roundBars.ts`, unreachable today for the reason above, **visible the moment Shield is wired.** Defender was asked to sanity-check the reasoning and agreed it holds.
+
+### Interaction with DLR-119, stated because it was asked for
+
+**This change makes the player's bar wider** — 10 glyphs to as many as 13 at gold tier. It does not set a new maximum for the row (the Quarry's 18 is unchanged and untouched), but it adds width to a top band already under investigation for scroll and crop. Nothing of DLR-119's three risks was fixed or touched. Start there.
+
+### Two planning defects found mid-run, both by the agents doing the work
+
+- **The config audit undercounted `HealthBarView` construction sites, 0 vs 1.** `plan.md` asserted "Test files that build a bar view by hand: none found — every test goes through `duelHealthBars()`." `labels.test.ts` had a hand-built fixture and it broke typecheck the moment the two fields became required. Caught by the Phase 1 agent, reported rather than silently worked around, fixed in Phase 2 where the file was in scope. **This is the third consecutive ticket to hit the same class** — DLR-114 was 2 vs 11, DLR-110 was 1 vs 2. The coordinator was already fixing `/fb-plan`'s audit step; this is another data point for it.
+- **A grep in the plan's own verification phase was arithmetically wrong** (expected 6 `wc-hp-shield` hits, actual 8 — the planner forgot the `.wc-hp-shield-run` class name and double-counted a `var()` usage). Reported, not silently reconciled. The check's actual purpose — all three property names spelled identically in both files — was met.

@@ -11,7 +11,7 @@ import {
   type SuitShape,
 } from '../../warCouncil'
 import { DuelSide, timebombDamageFor, MAX_CARDS_PER_DISCARD } from '../../hunt'
-import type { HealthBarView } from './duelHealthBars'
+import { HeartState, type HealthBarView } from './duelHealthBars'
 import { CheatStage, TimebombStage } from './roundUiState'
 
 export const SUIT_NAME: Readonly<Record<Suit, string>> = {
@@ -117,13 +117,30 @@ export function quarryHealthLabel(name: string | undefined): string {
  * meter that calls a booked hit "at risk" is less true than its own picture, which this file's
  * own standard says is worse than having no picture at all. Placeholder copy: the wording is the
  * developer's.
+ *
+ * DLR-115 adds the shield clause, inserted between `standing` and `atRisk` so the sentence reads
+ * outermost protection to innermost certainty — standing, shielded, at risk, ticking, lethal —
+ * matching the row's own left-to-right reading (shield cluster inboard of the red run). The
+ * claimed count is derived from `view.shieldPips` itself
+ * (`shieldPips.filter((s) => s === HeartState.Ticking).length`) rather than a second absorption
+ * calculation here — the view already carries the answer, and recomputing it would be exactly the
+ * drift this module avoids elsewhere. "of them" disambiguates the shield's ticking count from the
+ * red row's own ticking count below it; without it, "2 shielded, 1 ticking. 3 ticking." reads as
+ * two unrelated ticking figures rather than one figure nested inside the other.
  */
 export function healthBarValueText(view: HealthBarView): string {
   const standing = `${view.current} of ${view.max}.`
+  const shieldClaimed = view.shieldPips.filter((state) => state === HeartState.Ticking).length
+  const shielded =
+    view.shielded > 0
+      ? shieldClaimed > 0
+        ? ` ${view.shielded} shielded, ${shieldClaimed} of them ticking.`
+        : ` ${view.shielded} shielded.`
+      : ''
   const atRiskOnly = view.pending - view.ticking
   const atRisk = atRiskOnly > 0 ? ` ${atRiskOnly} at risk.` : ''
   const ticking = view.ticking > 0 ? ` ${view.ticking} ticking.` : ''
-  const body = `${standing}${atRisk}${ticking}`
+  const body = `${standing}${shielded}${atRisk}${ticking}`
   return view.lethal ? `${body} Lethal.` : body
 }
 

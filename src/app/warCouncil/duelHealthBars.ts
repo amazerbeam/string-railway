@@ -1,4 +1,11 @@
-import { DuelSide, NO_PENDING_TIMEBOMB, type Damage, type Health } from '../../hunt'
+import {
+  absorbWithShield,
+  DuelSide,
+  NO_PENDING_TIMEBOMB,
+  NO_SHIELD_HEARTS,
+  type Damage,
+  type Health,
+} from '../../hunt'
 
 /** The two sides, in the order the mirror draws them. Player anchors the left edge, the Quarry
  *  the right, and both deplete toward the centre. */
@@ -25,7 +32,35 @@ export interface HealthBarView {
   /** This Hunt's pending damage would empty the bar. Rendered as a form change, never colour
    *  alone (`game-ux`). */
   readonly lethal: boolean
+  /** DLR-115 — blue hearts standing on this side. Player-only in practice; `0` for the Quarry,
+   *  because `overlays.shield` is never read for any other side. MAY BE FRACTIONAL —
+   *  `DAMAGE_ROUNDING = None` admits a half-point hit. */
+  readonly shielded: Health
+  /** DLR-115 — the SHIELD-type pips, ordered from this side's anchored edge inward,
+   *  `Math.ceil(shielded)` long. Empty when no shield stands. A strictly smaller state vocabulary
+   *  than `hearts`: a shield pip has no graveyard (a spent blue heart simply stops being drawn),
+   *  so only `HeartState.Whole` and `HeartState.Ticking` are ever produced here — `Breaking` and
+   *  `Broken` are unreachable for this array. */
+  readonly shieldPips: readonly HeartState[]
 }
+
+/**
+ * DLR-115 — the two KINDS of pip a bar can draw. The second of two orthogonal dimensions:
+ * `HeartState` above is a pip's STATE, this is its TYPE. `game-ux`'s ruling on this ticket was
+ * that blue hearts must NOT become a sixth peer `HeartState` — the row already carries five and
+ * has never been seen at 14–18 glyphs with a streak and a booked hit at once, so a sixth flat
+ * state is above the point where the row reads at a glance. Type × state caps what can be on
+ * screen instead.
+ *
+ * The VALUES are written straight into the DOM as `data-type`, so they are string-bound exactly
+ * as `HeartState`'s are: this map and `warCouncilHealthBars.css`'s attribute selectors are the
+ * only two places they may be written.
+ */
+export const PipType = {
+  Health: 'health',
+  Shield: 'shield',
+} as const
+export type PipType = (typeof PipType)[keyof typeof PipType]
 
 /**
  * The five readings a single heart can carry. An `as const` object map rather than an `enum` —
@@ -65,6 +100,12 @@ export interface HealthBarOverlays {
    *  next trick and nothing on the felt stops it, which is why it gets its own heart state
    *  rather than reusing `atRisk`. */
   readonly ticking?: Readonly<Record<DuelSide, Damage>>
+  /** DLR-115 — the PLAYER's blue hearts (`encounter.shieldHearts`). A `Health` SCALAR rather than
+   *  a `Record<DuelSide, Health>` — `EncounterState.shieldHearts` is one, and DLR-110 made shields
+   *  player-only; a per-side record would invent a Quarry shield nobody has designed. Read only
+   *  for `DuelSide.Player`; the Quarry's `shielded`/`shieldPips` are always `0`/`[]`. Defaults to
+   *  `NO_SHIELD_HEARTS`. */
+  readonly shield?: Health
 }
 
 /**
@@ -83,15 +124,24 @@ export interface HealthBarOverlays {
  *
  * Surplus is discarded by the heart row's own length rather than here, which is what keeps AC5's
  * "overkill leaves no trace" a single rule rather than two that can drift.
+ *
+ * DLR-115 — the PLAYER's booked Timebomb is routed through `absorbWithShield` before it reaches
+ * red health, THE fix for the inherited defect DLR-110 named: without it, a booked Timebomb
+ * previews red hearts breaking that blue hearts would in fact absorb, so the preview contradicts
+ * what `applyDamage` will do. Delegates to `absorbWithShield` rather than restating the absorption
+ * order — DLR-110's single statement stays single. `shieldHearts` is REQUIRED, not defaulted: a
+ * defaulted `= NO_SHIELD_HEARTS` would let a future caller silently reintroduce the lying preview.
  */
 export function projectedDepletion(
   current: Readonly<Record<DuelSide, Health>>,
   bank: number,
   multiplier: number,
   pendingTimebombs: Readonly<Record<DuelSide, Damage>>,
+  shieldHearts: Health,
 ): Readonly<Record<DuelSide, Health>> {
+  const { throughToHealth } = absorbWithShield(shieldHearts, pendingTimebombs[DuelSide.Player])
   return {
-    [DuelSide.Player]: Math.max(0, current[DuelSide.Player] - pendingTimebombs[DuelSide.Player]),
+    [DuelSide.Player]: Math.max(0, current[DuelSide.Player] - throughToHealth),
     [DuelSide.Quarry]: Math.max(
       0,
       current[DuelSide.Quarry] - bank * multiplier - pendingTimebombs[DuelSide.Quarry],
@@ -159,6 +209,22 @@ export function duelHealthBars(
     // committed: Timebomb lands at the next trick and nothing on the felt stops it.
     const atRiskEnd = current[side] - ticking
 
+    // DLR-115 — blue hearts. Player-only: `overlays.shield` is only ever meaningful for the
+    // player, because `EncounterState.shieldHearts` is a scalar DLR-110 made player-only. The
+    // Quarry gets NO_SHIELD_HEARTS regardless of what the overlay carries, so a caller cannot
+    // accidentally invent a Quarry shield by passing one.
+    const shielded =
+      side === DuelSide.Player ? (overlays.shield ?? NO_SHIELD_HEARTS) : NO_SHIELD_HEARTS
+    if (!Number.isFinite(shielded) || shielded < 0) {
+      throw new RangeError(
+        `Cannot draw the ${side}'s blue hearts against ${shielded}: it must be a non-negative finite number, because it is a pip count`,
+      )
+    }
+    // The SAME call `projectedDepletion` makes, against the same booked figure — one rule, asked
+    // twice, never restated. `absorbed` is how much of the shield a booked Timebomb has already
+    // claimed, which is the only shield pip STATE that is live today.
+    const shieldClaimed = absorbWithShield(shielded, tickingBySide[side]).absorbed
+
     return {
       side,
       secure,
@@ -174,6 +240,13 @@ export function duelHealthBars(
         if (i < current[side] + broke) return HeartState.Breaking
         return HeartState.Broken
       }),
+      shielded,
+      shieldPips: Array.from({ length: Math.ceil(shielded) }, (_, i) =>
+        // Half a pip rounds UP into a whole one, by exactly the `i < value` rule the red row above
+        // already uses — one rounding rule for the whole row rather than a second one for blue.
+        // The CLAIMED pips are the innermost, because those are the ones spent first.
+        i < shielded - shieldClaimed ? HeartState.Whole : HeartState.Ticking,
+      ),
     }
   })
 }

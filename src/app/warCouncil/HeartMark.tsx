@@ -6,6 +6,10 @@ const HEART_SYMBOL_ID = {
   broken: 'hp-heart-broken',
 } as const
 
+// DLR-115 — the shield pip's own symbol id, same two-places rule as HEART_SYMBOL_ID above: this
+// constant and the <symbol id> in HeartSymbolSheet are the only two places it may be written.
+const SHIELD_SYMBOL_ID = 'hp-shield' as const
+
 interface HeartMarkProps {
   readonly broken: boolean
 }
@@ -40,6 +44,20 @@ export function HeartSymbolSheet() {
           <path d="M12 6.1 9.9 10.4l3.4 1.6-2.6 2.9 2 1.9" />
         </g>
       </symbol>
+      {/* DLR-115 — the shield pip. A DIFFERENT SILHOUETTE from the heart above, not a blue heart:
+          `game-ux`'s hard floor is that state reads without colour alone, and a blue heart beside
+          a red heart is a colour swap that vanishes in greyscale and for a colour-blind player.
+          The `d` value is a placeholder transcribed from this ticket's `mockup.html`, exactly as
+          the two heart paths above are — the shape, like theirs, is the developer's to judge at
+          final rendered size. */}
+      <symbol id={SHIELD_SYMBOL_ID} viewBox="0 0 24 24">
+        <path
+          d="M12 2.6 20 5.4v6.2c0 4.6-3.2 8.2-8 9.8-4.8-1.6-8-5.2-8-9.8V5.4Z"
+          fill="currentColor"
+          stroke="currentColor"
+          strokeLinejoin="round"
+        />
+      </symbol>
     </svg>
   )
 }
@@ -53,6 +71,19 @@ export function HeartMark({ broken }: HeartMarkProps) {
   return (
     <svg aria-hidden="true" focusable="false">
       <use href={`#${broken ? HEART_SYMBOL_ID.broken : HEART_SYMBOL_ID.whole}`} />
+    </svg>
+  )
+}
+
+/**
+ * One shield pip, tinted by the surrounding CSS `color` (`currentColor`), exactly as `HeartMark`
+ * is. Always `aria-hidden` for the same reason: the enclosing `role="meter"` carries the whole
+ * reading via `aria-valuetext`, so a screen reader counting glyphs would double the figure.
+ */
+export function ShieldMark() {
+  return (
+    <svg aria-hidden="true" focusable="false">
+      <use href={`#${SHIELD_SYMBOL_ID}`} />
     </svg>
   )
 }

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DLR-115 — Blue hearts on the health bar</title>
+    <style>
+      :root {
+        --wc-felt: #123028;
+        --wc-parchment: #ece3d0;
+        --wc-chalk-dim: #8fa79c;
+        --wc-serif: Georgia, 'Times New Roman', serif;
+        --wc-hp-secure-fill: #cc3f4a;
+        --wc-hp-pending-fill: #8b9a94;
+        --wc-hp-lethal-edge: #d1705f;
+        --wc-hp-broken: #3a4a52;
+        --wc-hp-atrisk-opacity: 0.55;
+        --wc-hp-ticking-fill: #d8a13a;
+        --wc-hp-ticking-opacity: 0.78;
+        /* DLR-115 — three numbers nobody chose. */
+        --wc-hp-shield-fill: #4f8fc0;
+        --wc-hp-shield-ticking-opacity: 0.78;
+        --wc-hp-shield-gap: 0.5rem;
+        --wc-hp-heart-size: clamp(0.95rem, 2.3vmin, 1.45rem);
+        --wc-hp-heart-gap: 0.18rem;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100svh;
+        background: var(--wc-felt);
+        color: var(--wc-parchment);
+        font-family: var(--wc-serif);
+        padding: 1.5rem;
+      }
+      h1 { font-size: 1.1rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--wc-chalk-dim); }
+      .wc-hp { display: flex; flex-direction: column; gap: 0.22rem; margin-bottom: 1.4rem; }
+      .wc-hp[data-side='quarry'] .wc-hp-head { flex-direction: row-reverse; }
+      .wc-hp[data-side='quarry'] .wc-hp-hearts { flex-direction: row-reverse; }
+      .wc-hp-head { display: flex; align-items: baseline; gap: 0.5rem; }
+      .wc-hp-who { font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--wc-chalk-dim); }
+      .wc-hp-num { font-variant-numeric: tabular-nums; }
+      .wc-hp-hearts { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--wc-hp-heart-gap); min-width: 0; }
+      .wc-hp-heart { flex: 0 1 var(--wc-hp-heart-size); min-width: 0.34rem; aspect-ratio: 1; display: block; }
+      .wc-hp-heart svg { width: 100%; height: 100%; display: block; }
+      .wc-hp-shield-run { display: flex; gap: var(--wc-hp-heart-gap); margin-inline-start: var(--wc-hp-shield-gap); flex: 0 0 auto; }
+      .wc-hp-heart[data-type='health'][data-state='whole'] { color: var(--wc-hp-secure-fill); }
+      .wc-hp-heart[data-type='health'][data-state='atRisk'] { color: var(--wc-hp-pending-fill); opacity: var(--wc-hp-atrisk-opacity); }
+      .wc-hp-heart[data-type='health'][data-state='ticking'] { color: var(--wc-hp-ticking-fill); opacity: var(--wc-hp-ticking-opacity); }
+      .wc-hp-heart[data-type='health'][data-state='breaking'] { color: var(--wc-hp-lethal-edge); }
+      .wc-hp-heart[data-type='health'][data-state='broken'] { color: var(--wc-hp-broken); }
+      .wc-hp-heart[data-type='shield'][data-state='whole'] { color: var(--wc-hp-shield-fill); }
+      .wc-hp-heart[data-type='shield'][data-state='ticking'] { color: var(--wc-hp-shield-fill); opacity: var(--wc-hp-shield-ticking-opacity); }
+      .spoken { font-family: ui-monospace, monospace; font-size: 0.72rem; color: var(--wc-chalk-dim); margin-top: 0.3rem; }
+      button { font: inherit; background: #1d4438; color: var(--wc-parchment); border: 1px solid #37624f; border-radius: 0.3rem; padding: 0.4rem 0.8rem; cursor: pointer; margin: 0 0.4rem 0.5rem 0; }
+      button[aria-pressed='true'] { background: #2f6b52; }
+      .grey { filter: grayscale(1); }
+      .note { color: var(--wc-chalk-dim); font-size: 0.78rem; max-width: 46rem; line-height: 1.5; }
+    </style>
+  </head>
+  <body>
+    <h1>DLR-115 — blue hearts, pip type × pip state</h1>
+    <p class="note">
+      Unseen mockup: this sprint run has no approval gate. The shield cluster sits inboard of the red
+      run, past the broken-heart graveyard, separated by <code>--wc-hp-shield-gap</code>. Shield pips
+      are a different silhouette so the row still separates in greyscale.
+    </p>
+
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="hp-heart" viewBox="0 0 24 24">
+        <path d="M12 20.4 4.5 13a4.9 4.9 0 0 1 7.5-6.2A4.9 4.9 0 0 1 19.5 13Z" fill="currentColor" stroke="currentColor" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="hp-heart-broken" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M12 20.4 4.5 13a4.9 4.9 0 0 1 7.5-6.2A4.9 4.9 0 0 1 19.5 13Z" />
+          <path d="M12 6.1 9.9 10.4l3.4 1.6-2.6 2.9 2 1.9" />
+        </g>
+      </symbol>
+      <symbol id="hp-shield" viewBox="0 0 24 24">
+        <path d="M12 2.6 20 5.4v6.2c0 4.6-3.2 8.2-8 9.8-4.8-1.6-8-5.2-8-9.8V5.4Z" fill="currentColor" stroke="currentColor" stroke-linejoin="round" />
+      </symbol>
+    </svg>
+
+    <div id="bars"></div>
+
+    <div>
+      <button id="tb" aria-pressed="false">Book a 3-point Timebomb</button>
+      <button id="hit" aria-pressed="false">Land a hit (shield absorbs first)</button>
+      <button id="grey" aria-pressed="false">Greyscale check</button>
+      <button id="reset">Reset</button>
+    </div>
+
+    <script>
+      var state = { health: 10, max: 10, shield: 2, timebomb: 0, streak: 0 };
+
+      function pip(type, st) {
+        var href = type === 'shield' ? '#hp-shield' : (st === 'broken' || st === 'breaking' ? '#hp-heart-broken' : '#hp-heart');
+        return '<span class="wc-hp-heart" data-type="' + type + '" data-state="' + st + '"><svg aria-hidden="true"><use href="' + href + '"/></svg></span>';
+      }
+
+      function absorb(shield, dmg) {
+        var a = Math.min(shield, dmg);
+        return { absorbed: a, through: dmg - a };
+      }
+
+      function render() {
+        var split = absorb(state.shield, state.timebomb);
+        var secure = Math.max(0, state.health - split.through);
+        var ticking = Math.min(split.through, state.health - secure);
+        var atRiskEnd = state.health - ticking;
+
+        var hearts = '';
+        for (var i = 0; i < state.max; i++) {
+          var st = i < secure ? 'whole' : i < atRiskEnd ? 'atRisk' : i < state.health ? 'ticking' : 'broken';
+          hearts += pip('health', st);
+        }
+        var shieldPips = '';
+        var n = Math.ceil(state.shield);
+        for (var j = 0; j < n; j++) {
+          shieldPips += pip('shield', j < state.shield - split.absorbed ? 'whole' : 'ticking');
+        }
+        var cluster = n > 0 ? '<span class="wc-hp-shield-run">' + shieldPips + '</span>' : '';
+
+        var spoken = state.health + ' of ' + state.max + '.';
+        if (state.shield > 0) {
+          spoken += split.absorbed > 0
+            ? ' ' + state.shield + ' shielded, ' + split.absorbed + ' of them ticking.'
+            : ' ' + state.shield + ' shielded.';
+        }
+        if (ticking > 0) spoken += ' ' + ticking + ' ticking.';
+
+        document.getElementById('bars').innerHTML =
+          '<div class="wc-hp" data-side="player">' +
+          '<div class="wc-hp-head"><span class="wc-hp-who">Your health</span><span class="wc-hp-num">' +
+          state.health + ' / ' + state.max + '</span></div>' +
+          '<div class="wc-hp-hearts" role="meter" aria-label="Your health" aria-valuemin="0" aria-valuemax="' +
+          state.max + '" aria-valuenow="' + state.health + '" aria-valuetext="' + spoken + '">' +
+          hearts + cluster + '</div>' +
+          '<div class="spoken">aria-valuetext: ' + spoken + '</div></div>';
+      }
+
+      document.getElementById('tb').onclick = function () {
+        state.timebomb = state.timebomb ? 0 : 3;
+        this.setAttribute('aria-pressed', String(state.timebomb > 0));
+        render();
+      };
+      document.getElementById('hit').onclick = function () {
+        var s = absorb(state.shield, 2);
+        state.shield -= s.absorbed;
+        state.health = Math.max(0, state.health - s.through);
+        render();
+      };
+      document.getElementById('grey').onclick = function () {
+        var on = document.body.classList.toggle('grey');
+        this.setAttribute('aria-pressed', String(on));
+      };
+      document.getElementById('reset').onclick = function () {
+        state = { health: 10, max: 10, shield: 2, timebomb: 0, streak: 0 };
+        document.getElementById('tb').setAttribute('aria-pressed', 'false');
+        render();
+      };
+      render();
+    </script>
+  </body>
+</html>

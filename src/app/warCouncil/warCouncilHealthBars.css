@@ -1,6 +1,8 @@
-/* War Council — the duel's two health bars, each a row of discrete heart glyphs (DLR-86, replacing
-   DLR-71's percentage-width track) with the Quarry's row previewing the live streak as its last
-   `bank × multiplier` standing hearts, dimmed and flashing (hybrid-design.md §6).
+/* War Council — the duel's two health bars (DLR-86, replacing DLR-71's percentage-width track),
+   with the Quarry's row previewing the live streak as its last `bank × multiplier` standing
+   hearts, dimmed and flashing (hybrid-design.md §6). DLR-115 made each bar two pip TYPES —
+   health and shield — over one shared state vocabulary, rather than one row of discrete heart
+   glyphs alone; see the `data-type` selectors below.
 
    The SIXTH stylesheet. `warCouncilHunt.css` stood at 307 lines and a full bar surface — the heart
    row, its four states, two `@keyframes`, the lethal treatment, its reduced-motion suppression and
@@ -83,12 +85,16 @@
 /* The five resting states — AC6, and AC7's guarantee that nothing is lost when motion stops.
    Shape carries the reading before colour does: `whole` and `broken` bind to two different
    <symbol>s (solid versus cracked outline), so the row still separates in greyscale. Opacity
-   and the animations below are reinforcement, never the only signal. */
-.wc-hp-heart[data-state='whole'] {
+   and the animations below are reinforcement, never the only signal.
+
+   DLR-115 qualifies every rule below by `[data-type='health']`, because the row now draws a
+   second pip type (`shield`) over the same state vocabulary — see the shield cluster rules
+   further down this file. */
+.wc-hp-heart[data-type='health'][data-state='whole'] {
   color: var(--wc-hp-secure-fill);
 }
 
-.wc-hp-heart[data-state='atRisk'] {
+.wc-hp-heart[data-type='health'][data-state='atRisk'] {
   color: var(--wc-hp-pending-fill);
   opacity: var(--wc-hp-atrisk-opacity);
   animation: wc-hp-flash var(--wc-hp-flash-ms) ease-in-out infinite alternate;
@@ -100,18 +106,48 @@
    and because it is static it needs no entry in the reduced-motion block below, and loses
    nothing when motion is off. Shape still carries the reading before colour does: a ticking heart
    binds to the same solid <symbol> as a whole one, so it reads as STANDING, which it is. */
-.wc-hp-heart[data-state='ticking'] {
+.wc-hp-heart[data-type='health'][data-state='ticking'] {
   color: var(--wc-hp-ticking-fill);
   opacity: var(--wc-hp-ticking-opacity);
 }
 
-.wc-hp-heart[data-state='breaking'] {
+.wc-hp-heart[data-type='health'][data-state='breaking'] {
   color: var(--wc-hp-lethal-edge);
   animation: wc-hp-break var(--wc-hp-break-ms) ease-out 1 both;
 }
 
-.wc-hp-heart[data-state='broken'] {
+.wc-hp-heart[data-type='health'][data-state='broken'] {
   color: var(--wc-hp-broken);
+}
+
+/* The shield cluster — a SECOND cluster, not a continuation of the red run. The wider gap is what
+   makes that read; without it the two types run together. It sits inboard of the health pips so
+   the whole row reads outward-to-inward in depletion order: the further toward the centre, the
+   sooner it is lost. */
+.wc-hp-shield-run {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--wc-hp-heart-gap);
+  margin-inline-start: var(--wc-hp-shield-gap);
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+/* Shape carries the reading before colour does, exactly as it does for the red row: a shield pip
+   binds to a DIFFERENT <symbol> (a shield, not a heart), so the two types still separate in
+   greyscale and for a colour-blind player. A blue-vs-red colour swap alone would fail that floor.
+   Both shield states are STATIC — no animation, so neither needs an entry in the reduced-motion
+   block and neither loses anything when motion is off. */
+.wc-hp-heart[data-type='shield'][data-state='whole'] {
+  color: var(--wc-hp-shield-fill);
+}
+
+/* A blue heart a booked Timebomb has already claimed. Same static treatment, and the same
+   opacity figure, as the red `ticking` heart — one visual language for "committed, not yet
+   landed", across both pip types. */
+.wc-hp-heart[data-type='shield'][data-state='ticking'] {
+  color: var(--wc-hp-shield-fill);
+  opacity: var(--wc-hp-shield-ticking-opacity);
 }
 
 /* The break runs ONCE on the state's arrival and never retriggers: health only decreases, so a
@@ -172,12 +208,12 @@
    shape, colour and opacity at rest, so switching the animations off costs no information;
    `breaking` keeps its lethal-edge colour, which the keyframe would otherwise have landed on. */
 @media (prefers-reduced-motion: reduce) {
-  .wc-hp-heart[data-state='atRisk'],
-  .wc-hp-heart[data-state='breaking'] {
+  .wc-hp-heart[data-type='health'][data-state='atRisk'],
+  .wc-hp-heart[data-type='health'][data-state='breaking'] {
     animation: none;
   }
 
-  .wc-hp-heart[data-state='breaking'] {
+  .wc-hp-heart[data-type='health'][data-state='breaking'] {
     color: var(--wc-hp-lethal-edge);
   }
 }

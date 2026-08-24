@@ -4,6 +4,7 @@ import {
   TIMEBOMB_PLAYER_DAMAGE,
   TIMEBOMB_QUARRY_DAMAGE,
   NO_PENDING_TIMEBOMB,
+  NO_SHIELD_HEARTS,
   PLAYER_START_HEALTH,
   quarryHealthForEncounter,
   type Health,
@@ -113,29 +114,81 @@ describe('duelHealthBars — one heart per health point, counted from max', () =
   })
 })
 
+describe('projectedDepletion — the player-side shield (DLR-115)', () => {
+  it('spares red health that blue hearts will absorb', () => {
+    const projected = projectedDepletion(
+      { [DuelSide.Player]: 10, [DuelSide.Quarry]: 10 },
+      0,
+      1,
+      { [DuelSide.Player]: 2, [DuelSide.Quarry]: 0 },
+      2,
+    )
+    expect(projected[DuelSide.Player]).toBe(10)
+  })
+
+  it('lets through only the part the shield cannot take', () => {
+    const projected = projectedDepletion(
+      { [DuelSide.Player]: 10, [DuelSide.Quarry]: 10 },
+      0,
+      1,
+      { [DuelSide.Player]: 3, [DuelSide.Quarry]: 0 },
+      1,
+    )
+    expect(projected[DuelSide.Player]).toBe(8)
+  })
+
+  it('is unchanged with no shield', () => {
+    const projected = projectedDepletion(
+      { [DuelSide.Player]: 10, [DuelSide.Quarry]: 10 },
+      0,
+      1,
+      { [DuelSide.Player]: 3, [DuelSide.Quarry]: 0 },
+      NO_SHIELD_HEARTS,
+    )
+    expect(projected[DuelSide.Player]).toBe(7)
+  })
+
+  it('never touches the Quarry, which has no shield', () => {
+    const projected = projectedDepletion(
+      { [DuelSide.Player]: 10, [DuelSide.Quarry]: 10 },
+      2,
+      2,
+      { [DuelSide.Player]: 0, [DuelSide.Quarry]: 1 },
+      3,
+    )
+    expect(projected[DuelSide.Quarry]).toBe(5)
+  })
+})
+
 describe('projectedDepletion — AC3’s preview plus DLR-101’s booked Timebomb', () => {
   const quarryMax = quarryHealthForEncounter(0)
   const full = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
 
   it('leaves the player untouched — the streak only ever threatens the Quarry', () => {
-    expect(projectedDepletion(full, 3, 3, NO_PENDING_TIMEBOMB)[DuelSide.Player]).toBe(
-      PLAYER_START_HEALTH,
-    )
+    expect(
+      projectedDepletion(full, 3, 3, NO_PENDING_TIMEBOMB, NO_SHIELD_HEARTS)[DuelSide.Player],
+    ).toBe(PLAYER_START_HEALTH)
   })
 
   it('takes bank × multiplier off the Quarry’s projection', () => {
-    expect(projectedDepletion(full, 2, 2, NO_PENDING_TIMEBOMB)[DuelSide.Quarry]).toBe(quarryMax - 4)
+    expect(
+      projectedDepletion(full, 2, 2, NO_PENDING_TIMEBOMB, NO_SHIELD_HEARTS)[DuelSide.Quarry],
+    ).toBe(quarryMax - 4)
   })
 
   it('floors at zero so the module’s projected <= current precondition holds under overkill', () => {
-    expect(projectedDepletion(full, 9, 9, NO_PENDING_TIMEBOMB)[DuelSide.Quarry]).toBe(0)
+    expect(
+      projectedDepletion(full, 9, 9, NO_PENDING_TIMEBOMB, NO_SHIELD_HEARTS)[DuelSide.Quarry],
+    ).toBe(0)
   })
 
   it('AC5 — a reset streak previews nothing at all', () => {
-    expect(projectedDepletion(full, 0, 0, NO_PENDING_TIMEBOMB)[DuelSide.Quarry]).toBe(quarryMax)
+    expect(
+      projectedDepletion(full, 0, 0, NO_PENDING_TIMEBOMB, NO_SHIELD_HEARTS)[DuelSide.Quarry],
+    ).toBe(quarryMax)
     const [, quarry] = duelHealthBars(
       full,
-      projectedDepletion(full, 0, 0, NO_PENDING_TIMEBOMB),
+      projectedDepletion(full, 0, 0, NO_PENDING_TIMEBOMB, NO_SHIELD_HEARTS),
       MAX,
     )
     expect(quarry.pending).toBe(0)
@@ -143,7 +196,7 @@ describe('projectedDepletion — AC3’s preview plus DLR-101’s booked Timebom
   })
 
   it('AC3 — a live streak marks that many of the Quarry’s hearts at risk, and no more', () => {
-    const projected = projectedDepletion(full, 3, 3, NO_PENDING_TIMEBOMB)
+    const projected = projectedDepletion(full, 3, 3, NO_PENDING_TIMEBOMB, NO_SHIELD_HEARTS)
     const [, quarry] = duelHealthBars(full, projected, MAX)
     expect(quarry.hearts.filter((h) => h === HeartState.AtRisk)).toHaveLength(
       Math.min(9, quarryMax),
@@ -152,31 +205,92 @@ describe('projectedDepletion — AC3’s preview plus DLR-101’s booked Timebom
   })
 })
 
+describe('duelHealthBars — the shield cluster (DLR-115)', () => {
+  const quarryMax = quarryHealthForEncounter(0)
+  const full = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
+
+  it('gives the Quarry no shield, always — shield is a player-only overlay', () => {
+    const [, quarry] = duelHealthBars(full, full, MAX, { shield: 5 })
+    expect(quarry.shielded).toBe(0)
+    expect(quarry.shieldPips).toEqual([])
+  })
+
+  it('draws two whole shield pips for a player shield of 2 with no booked Timebomb', () => {
+    const [player] = duelHealthBars(full, full, MAX, { shield: 2 })
+    expect(player.shielded).toBe(2)
+    expect(player.shieldPips).toEqual([HeartState.Whole, HeartState.Whole])
+  })
+
+  it('claims the innermost shield pips against a booked Timebomb, and spares red health that much', () => {
+    const bookedTimebomb = { [DuelSide.Player]: 3, [DuelSide.Quarry]: 0 }
+    const projected = projectedDepletion(full, 0, 1, bookedTimebomb, 2)
+    const [player] = duelHealthBars(full, projected, MAX, {
+      ticking: bookedTimebomb,
+      shield: 2,
+    })
+    expect(player.shieldPips).toEqual([HeartState.Ticking, HeartState.Ticking])
+    expect(player.hearts.filter((h) => h === HeartState.Ticking)).toHaveLength(1)
+  })
+
+  it('rounds a fractional shield up into a whole pip, claiming the innermost first', () => {
+    const [player] = duelHealthBars(full, full, MAX, {
+      ticking: { [DuelSide.Player]: 0.5, [DuelSide.Quarry]: 0 },
+      shield: 1.5,
+    })
+    expect(player.shieldPips).toEqual([HeartState.Whole, HeartState.Ticking])
+  })
+
+  it.each([-1, Number.NaN, Number.POSITIVE_INFINITY])(
+    'refuses a shield of %s rather than drawing a wrong-length cluster',
+    (bad) => {
+      expect(() => duelHealthBars(full, full, MAX, { shield: bad })).toThrow(RangeError)
+    },
+  )
+})
+
 describe('DLR-101 — booked Timebomb on the projection and the row', () => {
   const quarryMax = quarryHealthForEncounter(0)
   const full = { [DuelSide.Player]: PLAYER_START_HEALTH, [DuelSide.Quarry]: quarryMax }
 
   it('subtracts the Quarry’s booked Timebomb as well as the streak', () => {
-    const projected = projectedDepletion(full, 2, 2, {
-      [DuelSide.Player]: 0,
-      [DuelSide.Quarry]: TIMEBOMB_QUARRY_DAMAGE,
-    })
+    const projected = projectedDepletion(
+      full,
+      2,
+      2,
+      {
+        [DuelSide.Player]: 0,
+        [DuelSide.Quarry]: TIMEBOMB_QUARRY_DAMAGE,
+      },
+      NO_SHIELD_HEARTS,
+    )
     expect(projected[DuelSide.Quarry]).toBe(quarryMax - 4 - TIMEBOMB_QUARRY_DAMAGE)
   })
 
   it('subtracts the player’s booked Timebomb, which the streak never touches', () => {
-    const projected = projectedDepletion(full, 3, 3, {
-      [DuelSide.Player]: TIMEBOMB_PLAYER_DAMAGE,
-      [DuelSide.Quarry]: 0,
-    })
+    const projected = projectedDepletion(
+      full,
+      3,
+      3,
+      {
+        [DuelSide.Player]: TIMEBOMB_PLAYER_DAMAGE,
+        [DuelSide.Quarry]: 0,
+      },
+      NO_SHIELD_HEARTS,
+    )
     expect(projected[DuelSide.Player]).toBe(PLAYER_START_HEALTH - TIMEBOMB_PLAYER_DAMAGE)
   })
 
   it('floors both sides at zero, so `projected <= current` still holds', () => {
-    const projected = projectedDepletion(full, 99, 99, {
-      [DuelSide.Player]: 999,
-      [DuelSide.Quarry]: 999,
-    })
+    const projected = projectedDepletion(
+      full,
+      99,
+      99,
+      {
+        [DuelSide.Player]: 999,
+        [DuelSide.Quarry]: 999,
+      },
+      NO_SHIELD_HEARTS,
+    )
     expect(projected[DuelSide.Player]).toBe(0)
     expect(projected[DuelSide.Quarry]).toBe(0)
   })

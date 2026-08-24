@@ -4,8 +4,9 @@ _Part of [War Council UI](README.md)._
 the bars' pending segment and rescaled them.** **DLR-86 retired the bars themselves**: there is no
 track, no width and no percentage any more — each side is a row of countable hearts, one per health
 point. **DLR-101 then added a fifth heart state and a second projection source**, so booked Timebomb
-shows on whichever bar owes it. Read the history below with that in mind; the mirror survives all
-four tickets, the geometry does not.
+shows on whichever bar owes it. **DLR-115 added a second pip _type_** — the shield cluster — beside
+the five states rather than as a sixth one. Read the history below with that in mind; the mirror
+survives all five tickets, the geometry does not.
 
 ### The pending segment is gone, and that was the point of the redesign
 
@@ -165,11 +166,144 @@ the card mark.
 > on the list, and the grep is scoped such that it did not catch this. Worth a rename or an
 > explicit narrowing of the rule.
 
+### DLR-115 — blue hearts reach the row as a second pip _type_, not a sixth state
+
+The health row now draws **two kinds of pip over one shared state vocabulary**. `HealthBarView`
+carries `shielded: Health` (the scalar, possibly fractional) and `shieldPips: readonly HeartState[]`
+beside its existing `hearts`, and `duelHealthBars.ts` exports a second `as const` map next to
+`HeartState`:
+
+```ts
+export const PipType = { Health: 'health', Shield: 'shield' } as const
+```
+
+**`HeartState` still has exactly its original five members, deliberately.** That is a `game-ux`
+ruling taken on this ticket, not an implementation convenience: the row already carries five
+readings and has never been seen at 14–18 glyphs with a live streak and a booked hit on it at once,
+so a sixth flat peer state would push it past the point where it reads at a glance. Type × state
+caps what can be on screen instead — and a shield pip draws from a **strictly smaller** subset of the
+same vocabulary rather than introducing words of its own.
+
+Both dimensions reach the DOM as attributes — `data-type="health" | "shield"` alongside the existing
+`data-state` — and `warCouncilHealthBars.css` selects on the **product**. Every pre-existing
+`.wc-hp-heart[data-state=…]` selector was re-qualified with `[data-type='health']` in the same pass,
+which is what stops a shield pip inheriting a red rule by accident. `PipType`'s values are
+string-bound exactly as `HeartState`'s are: that map and the stylesheet are the only two places they
+may be written.
+
+**Only `Whole` and `Ticking` are ever produced for a shield pip**, and no dead branch was written for
+the other three. A spent blue heart simply stops being drawn — there is no shield graveyard, which
+mirrors the row's own "overkill leaves no trace" rule — so `Breaking` and `Broken` are structurally
+unreachable for that array rather than merely unused today.
+
+**Half a pip rounds up into a whole one**, by exactly the `i < value` rule the red row already uses:
+the cluster is `Math.ceil(shielded)` long and pip `i` stands while `i < shielded - shieldClaimed`.
+One rounding rule for the whole row rather than a second one for blue. A fractional shield is
+expressible because `DAMAGE_ROUNDING = None` admits a half-point hit, and `duelHealthBars` guards
+`shielded` as a non-negative finite number with a `RangeError` naming the value — the same
+guard-rather-than-live-path reasoning its `max` guard already documents, one failure mode along
+(`Array.from({ length: NaN })` yields `[]` and logs nothing anywhere).
+
+**`HealthBarOverlays.shield` is a scalar, not a per-side record.** `EncounterState.shieldHearts` is
+one, and DLR-110 made shields player-only, so a `Record<DuelSide, Health>` would have invented a
+Quarry shield nobody has designed. `duelHealthBars` reads the overlay **only** for
+`DuelSide.Player`; the Quarry gets `NO_SHIELD_HEARTS` regardless of what the caller passes, so a
+caller cannot conjure one by mistake.
+
+The pip **type** is carried by which array a pip is in rather than by widening the element type to
+`{ type, state }`. That was a blast-radius decision and is recorded as one: the widened element is
+the same model, but it would have rewritten `ShopPanel.tsx`, `App.tsx` and roughly twenty existing
+assertions in `duelHealthBars.test.ts` for no behavioural gain.
+
+#### The fix that came with it: the ticking-Timebomb preview used to lie
+
+`projectedDepletion` knew nothing about `shieldHearts`, so once a shield stood it previewed **red
+hearts breaking that blue hearts would in fact absorb** — the preview contradicting what
+`applyDamage` would do. It now takes a **required fifth parameter**, `shieldHearts`, and routes the
+player's booked Timebomb through `absorbWithShield` before subtracting from red health. Required
+rather than defaulted on purpose: a `= NO_SHIELD_HEARTS` default would let a future caller silently
+reintroduce the same lie. There is exactly one call site (`roundBars.ts`), so it cost one line.
+
+**The defect fix and the shield's state dimension are one piece of work, not two.** The same
+`absorbWithShield` call answers both questions at once — how much damage reaches red health, and how
+much of the shield a booked Timebomb has **already claimed**, which is the one shield pip state that
+is live today. Fixing the preview is what gave blue hearts something to be in a state about.
+
+`projectedDepletion` and `duelHealthBars` each call `absorbWithShield` once. **That is two calls, not
+two rules** — both delegate to DLR-110's single statement in `src/hunt/shield.ts`, whose absorption
+order this ticket neither re-derives nor restates. Threading the `ShieldAbsorption` result from one
+into the other was rejected: it would put a derived engine value in a render-geometry function's
+argument list and make the caller responsible for keeping the two in step.
+
+#### The DOM, the glyph, and the spoken form
+
+The cluster renders **inside the same `role="meter"` element** as the health pips, wrapped in one
+`.wc-hp-shield-run` span, not as a second meter beside it — a second meter would make a screen reader
+announce the shield as a separate bounded value it is not. It comes **after** the health pips in DOM
+order, which under the player's normal (non-reversed) flex direction puts it **inboard**, nearest the
+centre where damage arrives. The whole row then reads outward-to-inward in depletion order: the
+further toward the centre, the sooner it is lost. `aria-valuenow`/`aria-valuemax` stay **red-only** —
+the shield is a buffer on top of that bound, and folding it in would make a 10/10 player with a
+shield read as 12/10.
+
+`HeartMark.tsx` gained an `hp-shield` `<symbol>` and a `ShieldMark` component, following
+`HEART_SYMBOL_ID`'s two-places rule verbatim. The glyph is a **shield pentagon, not a blue heart**:
+this module's own stated rule is that shape carries the reading before colour does, and a blue heart
+beside a red heart is a colour swap. `HeartMark`'s own signature is unchanged, which is why
+`ShopPanel.tsx` and `App.tsx` were not touched.
+
+`healthBarValueText` grew one clause, inserted between the standing and at-risk clauses so the
+sentence reads outermost protection to innermost certainty:
+
+```
+"10 of 10." + " 2 shielded." | " 2 shielded, 1 of them ticking." + " 3 at risk." + " 4 ticking." + " Lethal."
+```
+
+The claimed count is derived from `view.shieldPips` itself
+(`shieldPips.filter((s) => s === HeartState.Ticking).length`) rather than from a second absorption
+call — one derivation, read twice. **"of them" is load-bearing**: without it, `2 shielded, 1
+ticking. 3 ticking.` reads as two unrelated ticking counts.
+
+Three new custom properties live in `warCouncil.css`'s `:root` and are read only by the two shield
+rules in `warCouncilHealthBars.css`: `--wc-hp-shield-fill: #4f8fc0`,
+`--wc-hp-shield-ticking-opacity: 0.78` (set to the same figure as `--wc-hp-ticking-opacity` so the
+two "already claimed" readings match), and `--wc-hp-shield-gap: 0.5rem`, which is the only thing
+making the two clusters read as two. Both shield states are **static**, so neither needs an entry in
+the `prefers-reduced-motion` block — the same structural guarantee `ticking` reached by not adding
+motion in the first place.
+
+#### What is true about this that the code does not say
+
+> **No blue pip has ever been reachable in play, and none has ever been seen.** Nothing in the app
+> layer calls `activateShield`, so `encounter.shieldHearts` is `0` for the whole of a real run. Every
+> assertion behind this feature is a unit or component test against a constructed state. The
+> derivation and the DOM binding are proven; the appearance is not evidence of any kind.
+
+> **All three CSS values and the glyph choice are the developer's, and none has been seen against a
+> real row.** `#4f8fc0` has never sat next to `--wc-hp-secure-fill: #cc3f4a` or `--wc-hp-broken`;
+> `0.78` copies an opacity that was itself flagged as a placeholder nobody chose, so two unseen
+> numbers now agree with each other, which is a reason to move them together rather than evidence
+> either is right; and whether the cluster belongs inboard (past the broken-heart graveyard) or at
+> the anchored screen edge is a look-at-it decision.
+
+> **A known residual, deliberately out of scope: the `breaking` overlay still over-draws when a
+> shield partially absorbs a landed hit.** `resolvedTrick.resolution.damageToPlayer` is the **gross**
+> damage while `encounter.shieldHearts` is the **post-absorption** remainder, and the absorbed amount
+> is not recoverable from the two once the shield was exhausted — a hit of 3 into 2 blue hearts drops
+> red health by 1 but draws 3 breaking red pips. Fixing it exactly needs `ResolvedTrick` to record
+> the absorption, which is engine/state work this ticket's scope boundaries put out of bounds. It is
+> unreachable today for the same reason the point above gives, and becomes visible the moment Shield
+> is wired. Recorded in `roundBars.ts`'s own docblock.
+
 ### `roundBars.ts` — a split forced by a line budget, which bought a testable derivation
 
 `barsForRound(ui, maxHealth)` in `roundBars.ts` is the round screen's whole bar assembly: it reads
 `ui.encounter.pendingTimebomb` once, passes it to `projectedDepletion` and again as the `ticking`
 overlay, and passes `incomingFrom(ui.resolvedTrick.resolution)` — or `NO_BREAKING` — as `breaking`.
+**DLR-115 added a fourth reading of the same shape**: `ui.encounter.shieldHearts` goes both to
+`projectedDepletion` (as its required fifth argument) and again as the `shield` overlay. All four are
+**read rather than remembered**, for one reason — a copy would need an effect, and an effect would
+need to survive StrictMode.
 
 It exists because **`WarCouncilRound.tsx` was at 399 of its hard 400-line budget** and this change
 added lines to it; the file is now 380. That is the same forcing function that produced
@@ -227,11 +361,12 @@ question, and it is open** — now for both bars rather than only the player's.
 
 `duelHealthBars.ts` takes three health records — `current`, `projected`, `max` — plus a **defaulted
 fourth** argument of overlays, and returns one `HealthBarView` per side: `secure`, `pending`,
-`ticking`, `current`, `max`, a `lethal` flag, and the `hearts` array. It performs **no damage
-arithmetic and no clamping**, because `applyDamage` did both before `projected` arrived. The fourth
-argument is optional and each of its fields defaults — `breaking` to `NO_BREAKING`, `ticking` to
-`src/hunt`'s `NO_PENDING_TIMEBOMB` — which is why every three-argument call site has compiled
-unchanged through both DLR-86 and DLR-101.
+`ticking`, `current`, `max`, a `lethal` flag, the `hearts` array, and — since DLR-115 — `shielded`
+and the `shieldPips` array. It performs **no damage arithmetic and no clamping**, because
+`applyDamage` did both before `projected` arrived. The fourth argument is optional and each of its
+fields defaults — `breaking` to `NO_BREAKING`, `ticking` to `src/hunt`'s `NO_PENDING_TIMEBOMB`,
+`shield` to `NO_SHIELD_HEARTS` — which is why every three-argument call site has compiled unchanged
+through DLR-86, DLR-101 and DLR-115.
 
 **DLR-101 turned that fourth argument from a positional record into a `HealthBarOverlays` options
 object** (`{ breaking?, ticking? }`), and the reason is the one `bank.ts`'s `TrickFacts` already
@@ -239,6 +374,8 @@ states: both fields are `Readonly<Record<DuelSide, Damage>>`, so as two position
 were silently transposable and a swap would have type-checked cleanly and drawn a plausible but
 wrong picture. Naming them makes a transposition a compile error. **This is now the module's
 convention** — a future overlay is a named field on that object, never a fifth positional parameter.
+**DLR-115 was the first ticket to follow it**: `shield` joined `HealthBarOverlays` as a third named
+field rather than widening the call signature.
 
 `HealthBarView.pending` deliberately kept its meaning as the **whole** pending band — at-risk plus
 ticking — because `pending` is what drives `lethal`, and lethal must count committed Timebomb. `ticking`

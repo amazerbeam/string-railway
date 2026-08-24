@@ -25,7 +25,7 @@ import {
   SUIT_NAME,
   TRICK_OUTCOME_MESSAGE,
 } from '../labels'
-import { duelHealthBars } from '../duelHealthBars'
+import { duelHealthBars, HeartState } from '../duelHealthBars'
 import { CheatStage } from '../roundUiState'
 
 describe('cardAccessibleName', () => {
@@ -134,6 +134,10 @@ describe('healthBarValueText — the current total against the max (DLR-80)', ()
     max: 25,
     hearts: [],
     lethal: false,
+    // DLR-115 — the fixture is a hand-built HealthBarView, which Task 1's audit missed; these
+    // two fields keep it assignable now that HealthBarView carries the shield dimension.
+    shielded: 0,
+    shieldPips: [],
   }
 
   it('names the current total against the max — no pending figure exists any more', () => {
@@ -183,6 +187,59 @@ describe('healthBarValueText — DLR-101’s committed-Timebomb clause', () => {
     expect(view.pending).toBe(4)
     expect(view.ticking).toBe(4)
     expect(healthBarValueText(view)).toBe('10 of 10. 4 ticking.')
+  })
+})
+
+describe('healthBarValueText — DLR-115’s shield clause', () => {
+  const base = {
+    side: DuelSide.Player,
+    secure: 10,
+    pending: 0,
+    ticking: 0,
+    current: 10,
+    max: 10,
+    hearts: [],
+    lethal: false,
+    shielded: 0,
+    shieldPips: [] as HeartState[],
+  }
+
+  it('is byte-identical to today’s string when no shield stands', () => {
+    expect(healthBarValueText(base)).toBe('10 of 10.')
+  })
+
+  it('names a standing shield, with no Timebomb claimed, between standing and at-risk', () => {
+    expect(
+      healthBarValueText({
+        ...base,
+        shielded: 2,
+        shieldPips: [HeartState.Whole, HeartState.Whole],
+      }),
+    ).toBe('10 of 10. 2 shielded.')
+  })
+
+  it('names a shield partly claimed by a booked Timebomb, disambiguated with "of them"', () => {
+    expect(
+      healthBarValueText({
+        ...base,
+        shielded: 2,
+        shieldPips: [HeartState.Whole, HeartState.Ticking],
+      }),
+    ).toBe('10 of 10. 2 shielded, 1 of them ticking.')
+  })
+
+  it('states the worst case in full — shield, at-risk, red ticking, and lethal together', () => {
+    expect(
+      healthBarValueText({
+        ...base,
+        secure: 0,
+        pending: 10,
+        ticking: 4,
+        lethal: true,
+        shielded: 2,
+        shieldPips: [HeartState.Whole, HeartState.Ticking],
+      }),
+    ).toBe('10 of 10. 2 shielded, 1 of them ticking. 6 at risk. 4 ticking. Lethal.')
   })
 })
 

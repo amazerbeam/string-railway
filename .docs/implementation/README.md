@@ -28,7 +28,7 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, PT-001, PT-002                                                                |
 | `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114                                                                                              |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, PT-002                                                                 |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, PT-002                                                                 |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97                                                                                                                                                                                                        |
 | `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-114, DLR-127, PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                               |
@@ -57,7 +57,10 @@ to Hunt, and an encounter that could finally end. **DLR-86 then replaced both ba
 countable hearts** that break as damage lands, and gave the Quarry's row a preview of what the banked
 streak would cash for. **DLR-101 added a fifth heart state** so a booked Timebomb hit shows on whichever
 bar owes it — the readout the engine had been keeping a booking for since DLR-90 with nothing on the
-felt to show it. See
+felt to show it. **DLR-115 added a second pip _type_ rather than a sixth state**: a shield cluster
+drawn from `encounter.shieldHearts`, inboard of the red run, and a fix for the ticking-Timebomb
+preview that used to show red hearts breaking that blue hearts would in fact absorb. Nothing in the
+app layer grants a shield yet, so no player has seen one. See
 [war-council-ui/duel-health-bars.md](war-council-ui/duel-health-bars.md).
 
 **DLR-80 replaced the game's entire scoring layer, and it is the largest deletion this project has

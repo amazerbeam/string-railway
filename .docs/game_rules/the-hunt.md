@@ -5,7 +5,18 @@ _The Fox in the Forest_. This document is the **rules as they currently stand**:
 player follows, stated once, in playing order.
 
 Last reviewed against the code and the design on **2026-08-24**. Everything below is reachable in
-the app today except where a rule is marked **[not built]**.
+the app today except where a rule is marked **[not built]** — and except the **blue hearts** of
+section 8, which are enforced, drawn, and unreachable because nothing grants one.
+
+> **Your health row can draw blue hearts now, and nothing can give you one — DLR-115, 2026-08-24.**
+> A **blue heart** is protection worth one point of damage, taken before your red health is (section
+> 8). The rule has been enforced since 2026-08-23; what landed today is the reading — blue pips drawn
+> as their own cluster on your own row, named separately in the bar's spoken value, and a booked
+> Timebomb hit previewed **through** the shield rather than around it, which it was not before.
+> **You cannot reach any of it.** Nothing in the game grants a blue heart, so the count is zero for
+> the whole of every run and not one pip has ever appeared on a screen. It is stated here rather than
+> left out because the rule is real and decided; what it lacks is a way in. Every choice about how it
+> looks was taken by default in an unattended run and is the developer's.
 
 > **Every pre-trick decision now lives on one bar, and you can spend action points on a buff —
 > DLR-114, 2026-08-24.** The felt no longer has four separate plates scattered down its left edge. It
@@ -1230,6 +1241,61 @@ bar stops at zero.
 > than a third of all damage dealt is thrown away. Paying the surplus back as currency is a stated
 > intention and is **[not built]** — see [section 10](#10-between-hands-and-the-run).
 
+### Blue hearts take damage before your own — **[settled]**; how many one grants is **[provisional]**
+
+You can hold a second kind of heart, drawn **blue** and separate from your red ones. A blue heart is
+**protection worth one point of damage — not one hit.** Damage owed to you is taken by your blue
+hearts first, one point each, and only the remainder reaches your red health. Three damage into two
+blue hearts consumes both and lets one through; it does not negate the hit.
+
+- **They are yours alone.** The Quarry never has any, and nothing in the game gives it one.
+- **They do not stack, and gaining them sets the count rather than adding to it** — including
+  downward. A bronze grant after a gold one leaves you on 1, not 3. The counts are **1 blue heart at
+  bronze, 2 at silver, 3 at gold** (**[provisional]** — transcribed from `hybrid-design.md` §7a and
+  never played), so **3 is the most you can ever hold at once**.
+- **They survive a hand and die at the end of the fight.** Nothing happens to them at a hand
+  boundary; every fight starts with none.
+- **Healing never brings one back.** The flask and the shop's heal both raise red health only. A
+  spent blue heart is gone for the rest of that fight.
+- **A killing blow spends none.** If the damage that lands empties the Quarry's bar, you take no
+  damage from that event at all (the ordering above), so your blue hearts are carried through
+  untouched rather than absorbing a hit that never landed.
+- **A hit your blue hearts eat entirely does not cost you a queued payout.** An Apply Damage payout
+  still in the air is destroyed by _losing red health_ (section 7); a fully absorbed hit does not lose
+  any, so the payout survives. A hit that is only partly absorbed and still drops red health destroys
+  it exactly as any other hit does.
+
+> **Nothing in the game gives you a blue heart today.** The rule above is enforced everywhere damage
+> is applied, but no purchase, no buff activation and no other event ever grants one, so your count is
+> zero for the whole of every run. It is stated here rather than left out because the rule is real,
+> decided, and the thing a later ticket switches on rather than designs. See
+> [section 10](#not-built).
+
+**What the bar shows while blue hearts stand — [provisional]**
+
+Blue hearts are drawn on your own health row as a **separate cluster of a differently shaped pip**,
+sitting at the end of the row nearest the centre — inboard of your red hearts, so the whole row reads
+in the order things are lost: the further toward the centre, the sooner it goes. A blue heart a
+booked hit has already claimed is drawn claimed, the same reading a red heart in that position
+carries. A blue heart that has been spent is simply **not drawn** — there is no blue equivalent of
+the broken-heart graveyard. Half a blue heart is drawn as a whole one. The bar's spoken value states
+the shield as its own clause, and names how many of them are ticking separately from the red count
+below it.
+
+It is **[provisional]** for four reasons and all four are the developer's: the colour, the tone a
+claimed pip is drawn at and the gap separating the two clusters are three values nobody picked; the
+**shape is a shield rather than a blue heart**, chosen because a state that reads by colour alone is
+this project's stated floor rather than because anyone asked for it; whether the cluster belongs
+inboard or out at the screen edge is a look-at-it decision; and **none of it has ever been on
+screen**, since nothing grants a blue heart. It answers to no design section; the ticket's own
+acceptance criteria are its specification.
+
+> **One thing the bar still gets wrong, knowingly.** When a shield **partly** absorbs a hit that has
+> just landed, the row draws the full gross damage breaking in red rather than the smaller amount your
+> red health actually lost. The preview of a _booked_ hit is correct — it accounts for the shield —
+> but the moment of the hit landing over-draws. Unreachable while nothing grants a blue heart, and
+> recorded under [Known tensions](#known-tensions-recorded-not-resolved).
+
 ### A primed trick's damage lands at the resolution of the next trick — **[settled]**; its amounts are **[provisional]**
 
 One kind of damage does **not** land when the trick that caused it resolves. A primed card
@@ -1280,6 +1346,12 @@ untouched heart and a heart the banked streak merely threatens, and they sit **n
 edge** of the two — Timebomb lands first and cannot be avoided, while a streak preview evaporates if the
 streak breaks. The bar's spoken value states the two figures as separate readings rather than summing
 them. Both bars use it; the streak preview remains the Quarry's alone.
+
+**Since 2026-08-24 the preview accounts for your blue hearts.** A booked hit is taken by blue hearts
+before red ones when it lands, so it is previewed that way too: the claimed pips are blue first, and
+only the part that will reach your red health is drawn on red hearts. Before that the preview showed
+red hearts breaking that a shield would in fact have absorbed — a preview that contradicted what the
+hit would do. Unreachable in play, because nothing grants a blue heart.
 
 It is `[provisional]` for three reasons, all of them the developer's: **whether booked Timebomb deserves
 its own reading at all** rather than reusing the at-risk one was decided by default in an unattended
@@ -1802,6 +1874,13 @@ too, alongside who is coming next.
   nothing inside a run ever puts a priced buff in your pile. A fresh run holds only placeholders,
   which the loadout filters out, so the list is empty until something outside the run grants one. The
   draw that would populate it is written and unwired.
+- **Any way to gain a blue heart** — **[not built]**, and it is a sharper gap than it looks. The rule
+  is fully decided and fully enforced: blue hearts take your damage before red ones, they set rather
+  than stack, they die at the end of a fight and no heal restores one (section 8), and since
+  2026-08-24 your health row draws them and your bar's preview accounts for them. **Nothing ever
+  grants one.** No purchase does, and activating a Shield buff does not either — the activation spends
+  the points and stops, exactly as every other buff family does in the entry below. So the whole of
+  the shield, screen included, is unreachable and has never been seen by anyone.
 - **An activated buff's condition firing, and its reward being paid** — **[not built]**, and this is
   the sharpest half-built edge in the game today. Activation is real: the points are spent and the
   buff is marked active for the trick. Nothing then checks the condition and nothing pays the reward.
@@ -1963,6 +2042,20 @@ the mechanics themselves are documented in `../implementation/`.
 > the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
 > a `RunState` field and a transition in the same breath means exactly that.
 
+> **Where DLR-115 stands, 2026-08-24.** **Live in the engine and now on the screen, and reachable by
+> nobody:** blue hearts. The absorption rule has been enforced inside `applyDamage` since DLR-110, and
+> the health row now draws the cluster, states it in the bar's spoken value, and previews a booked hit
+> through the shield instead of around it. **What is missing is the only thing a player would notice:
+> nothing grants a blue heart.** `activateShield` has no caller, so the count is `0` for the whole of
+> every run and not one pip has ever rendered outside a test. Proven by unit and component tests
+> against constructed states, with **no browser pass at all** — this contract ran unattended with its
+> approval and mockup gates skipped. Everything it decided about how the shield looks is therefore the
+> plan's default rather than a choice: three CSS values nobody picked, a shield-shaped glyph chosen
+> because a state must not read by colour alone, and a cluster placed inboard of the red run. Its rows
+> are `provisional` for exactly that reason. **One defect ships knowingly**: a partial absorb of a
+> _landed_ hit still draws the gross damage breaking in red, recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
+>
 > **Where DLR-114 stands, 2026-08-24.** **Live and reachable by a player:** the one action bar and
 > its four buttons; the loadout panel and every priced buff in it, named, described and costed; the
 > two-tap activation and the action points it spends; the relocated Cheat slots and Timebomb charges;
@@ -2203,6 +2296,13 @@ the mechanics themselves are documented in `../implementation/`.
 | The Quarry's hearts preview the banked streak                                 | **provisional**                                            | `src/app/warCouncil/duelHealthBars.ts` — `projectedDepletion` (named `projectedFromStreak` until DLR-101 renamed it and taught it about booked Timebomb; the streak half of its reading is unchanged); styling in `warCouncilHealthBars.css`                                                                                                                                         | Developer — whether it reads as pending or as spent                                                                                                                                                                                                                                                            |
 | Booked Timebomb is drawn on the bar that owes it                                | **provisional** — since DLR-101, 2026-08-23                | `src/app/warCouncil/duelHealthBars.ts` — the fifth `HeartState`, `Ticking`, and the `ticking` overlay clamped to the pending band; fed by `roundBars.ts` from `encounter.pendingTimebomb`; `projectedDepletion` subtracts it from **both** sides and floors both at zero; styling in `warCouncilHealthBars.css` (`[data-state='ticking']`) over `--wc-hp-ticking-*` in `warCouncil.css` | **Developer** — three things: whether booked Timebomb deserves its own reading at all (decided by default in an unattended run, not chosen), the placeholder `--wc-hp-ticking-opacity` and the green-on-green fill, and whether five readings still separate on an 18-heart row. **Never seen in a live browser** |
 | The bar names Timebomb separately from at-risk                                  | **provisional** — copy is placeholder                      | `src/app/warCouncil/labels.ts` — `healthBarValueText` reads `pending - ticking` for the at-risk clause and `ticking` for the primed one, omitting either at zero                                                                                                                                                                                                                   | Developer — the wording                                                                                                                                                                                                                                                                                        |
+| Blue hearts absorb before red health, one point each                          | settled — since DLR-110                                    | `src/hunt/shield.ts` — `absorbWithShield`, THE single statement of the order; applied inside `applyDamage` in `src/hunt/encounter.ts`, the one damage funnel, so no route can skip it. A killing blow on the Quarry spends none                                                                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                              |
+| How many blue hearts one grant gives (1 / 2 / 3)                              | **provisional** — transcribed, never played                | `src/hunt/shield.ts` — `SHIELD_HEARTS`, read only through `shieldHeartsForTier`; `activateShield` in `src/hunt/encounter.ts` SETS the count rather than adding, including downward                                                                                                                                                                                                                                                                                                                                    | Developer — the 1/2/3 ladder, transcribed from `hybrid-design.md` §7a                                                                                                                                                                                                                                          |
+| Blue hearts die at the fight boundary, and no heal restores one               | settled                                                    | `src/hunt/encounter.ts` — `startEncounter` seeds `NO_SHIELD_HEARTS`; `healedBy` in `src/hunt/runTransitions.ts` is the single writer that raises health and writes only red                                                                                                                                                                                                                                                                                                                                          | —                                                                                                                                                                                                                                                                                                              |
+| Anything at all that grants a blue heart                                      | **not built**                                              | nothing — `activateShield` has no caller anywhere in `src/`, so `shieldHearts` is `0` for every run                                                                                                                                                                                                                                                                                                                                                                                                                  | —                                                                                                                                                                                                                                                                                                              |
+| Blue hearts are drawn on your health row                                      | **provisional** — since DLR-115, 2026-08-24                | `src/app/warCouncil/duelHealthBars.ts` — `PipType` as a second dimension beside `HeartState`'s untouched five, and `shieldPips`; rendered by `DuelHealthBars.tsx` inside the SAME meter; glyph in `HeartMark.tsx` (`ShieldMark`); styling in `warCouncilHealthBars.css` over `--wc-hp-shield-*` in `warCouncil.css`                                                                                                                                                                                                     | **Developer** — four things: the colour, the claimed-pip tone and the cluster gap (three values nobody chose), the shield-rather-than-heart glyph, and whether the cluster belongs inboard or at the screen edge. **Never seen at all** — nothing grants a blue heart                                            |
+| The booked-hit preview accounts for a shield                                  | settled — since DLR-115, 2026-08-24                        | `src/app/warCouncil/duelHealthBars.ts` — `projectedDepletion`'s **required** fifth argument, routed through `absorbWithShield` rather than restating the order; fed by `roundBars.ts` from `encounter.shieldHearts`                                                                                                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                              |
+| The bar names the shield in its spoken value                                  | **provisional** — copy is placeholder                      | `src/app/warCouncil/labels.ts` — `healthBarValueText`'s shield clause, between the standing and at-risk clauses; the claimed count is read off the drawn pips rather than recomputed                                                                                                                                                                                                                                                                                                                                  | Developer — the wording, and whether "of them" earns the length it costs                                                                                                                                                                                                                                       |
 | The trick that books a hit names it                                           | **provisional** — copy is placeholder                      | `src/app/warCouncil/TrickWell.tsx` renders a `.wc-timebomb-clause` when `resolution.timebombTarget` is non-null; wording from `src/app/warCouncil/labels.ts` — `timebombBookedText`, which reads the amount from `src/hunt`'s `timebombDamageFor` rather than choosing between the two constants                                                                                         | Developer — the wording, and whether a line that vanishes on the carry-on tap is the right place for it                                                                                                                                                                                                        |
 | The hand-over tally (between hands only)                                      | settled                                                    | `src/app/warCouncil/RoundOverPanel.tsx` — its terminal branch was **deleted** by DLR-82; a resolved fight is the verdict's                                                                                                                                                                                                                                                         | Developer — whether losing the felt's tally costs anything                                                                                                                                                                                                                                                     |
 | The Quarry dumps skulls into losing tricks                                    | settled                                                    | `src/warCouncil/cpuPlayer.ts` — `chooseCpuCard`'s first branch                                                                                                                                                                                                                                                                                                                     | —                                                                                                                                                                                                                                                                                                              |
@@ -2689,6 +2789,20 @@ under [Known tensions](#known-tensions-recorded-not-resolved).
 
 ### Known tensions, recorded not resolved
 
+- **A whole mechanic is now built on both sides and reachable from neither** (new 2026-08-24,
+  DLR-115). Blue hearts have a settled absorption rule, a settled lifetime, an enforced clamp and now
+  a drawn cluster on your health row with its own glyph, its own colours and its own spoken clause —
+  and nothing anywhere grants one, so no player has ever seen a single pip of it. Every judgement it
+  carries (four of them, all the developer's) is therefore unanswerable until something activates a
+  Shield. The risk is not that it is wrong; it is that it will be **tuned blind** the day it is wired,
+  with three unchosen colour values and a glyph decision already baked in.
+- **When a shield partly eats a landed hit, the row draws too much breaking red** (new 2026-08-24,
+  DLR-115). The hit the game reports as landing is the **gross** figure and the shield count left is
+  the **post-absorption** one; the amount absorbed is not recoverable from the two once the shield was
+  spent, so 3 damage into 2 blue hearts drops red health by 1 and draws 3 red hearts breaking. The
+  _preview_ of a booked hit is correct — only the moment of landing over-draws. Fixing it needs the
+  resolved trick to record how much the shield took, which is engine work nobody has scheduled.
+  Unreachable while nothing grants a blue heart, and visible the same day one does.
 - **You can now pay for a buff that does nothing** (new 2026-08-24, DLR-114). The loadout is the first
   thing in this game that takes a resource and returns nothing at all: a condition-family buff can be
   read, priced, poised and paid for, and its condition is never checked. The panel says so in its own
