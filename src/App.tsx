@@ -26,11 +26,18 @@ import {
   SLICE_QUARRY_CHARACTER,
   startRun,
   type Hunt,
+  type RunState,
 } from './hunt'
 import { useVault } from './app/vault/useVault'
 import VaultScreen from './app/vault/VaultScreen'
 import { clearStartingGrants, depositLeftoverCoin } from './vault'
-import { dealRound, PlayerSide, type WarCouncilState } from './warCouncil'
+import {
+  FRESH_ENCOUNTER_DECK,
+  closeHand,
+  PlayerSide,
+  type EncounterDeck,
+  type WarCouncilState,
+} from './warCouncil'
 // Imported from `./app/warCouncilMount` directly, NOT from the `./app` barrel: `./app`
 // extensionless collides case-insensitively with this very file (`App.tsx`) on Windows —
 // the same NTFS trap `duelHealthBars.ts`/`DuelHealthBars.tsx` hit — and would resolve here
@@ -39,7 +46,7 @@ import type { WarCouncilRoundResult } from './app/warCouncilMount'
 import WarCouncilRound from './app/warCouncil/WarCouncilRound'
 import { duelHealthBars } from './app/warCouncil/duelHealthBars'
 import { quarryHealthLabel } from './app/warCouncil/labels'
-import { dealerForRound } from './app/dealerForRound'
+import { dealHand } from './app/handDeal'
 import RunOutcomePanel, { type TrickTally } from './app/run/RunOutcomePanel'
 import ShopPanel from './app/run/ShopPanel'
 import RunPathScreen from './app/run/RunPathScreen'
@@ -90,16 +97,15 @@ type RunPhase = (typeof RunPhase)[keyof typeof RunPhase]
  * across a fight boundary keeps the dealer alternating naturally.
  */
 function App() {
-  // DLR-116 — `runSeed` is the ONLY `Math.random()` in the whole seed path, and it sits here, in
-  // the driver, for the same reason `dealRound(…, Math.random)` already does: `src/hunt/` may not
-  // call `Math.random()`, so the driver chooses the seed once and hands it to `startRun`.
+  // DLR-116/DLR-123 — `runSeed` is the ONLY `Math.random()` left in this app, and it sits here
+  // because `src/hunt/` may not call it. The deal used to be handed `Math.random` straight from
+  // this file, so no deal or reshuffle was reproducible; it goes through `dealHand` →
+  // `dealSeedFor` → `createSeededRng` now, which is what makes AC12 hold.
   const [run, setRun] = useState(() =>
     startRun(PLAYER_START_HEALTH, [], Math.floor(Math.random() * 0x100000000)),
   )
   const [hand, setHand] = useState(1)
-  const [dealt, setDealt] = useState<WarCouncilState>(() =>
-    dealRound(dealerForRound(1), Math.random),
-  )
+  const [dealt, setDealt] = useState<WarCouncilState>(() => dealHand(run, 1, FRESH_ENCOUNTER_DECK))
   // The deciding hand's trick split, captured when an encounter resolves so the verdict can show
   // it. Nothing accumulates tricks across the several hands a fight takes, so this is the last
   // hand's, which is the only figure that exists.
@@ -139,10 +145,14 @@ function App() {
       ? runEncounterAt(run.encounterIndex + 1).name
       : undefined
 
-  function dealNextHand() {
+  /** DLR-123 — takes the run EXPLICITLY rather than closing over `run`: every caller has just
+   *  computed a newer one, and the render's `run` is stale by the time this fires. `carried` is
+   *  `FRESH_ENCOUNTER_DECK` whenever an ENCOUNTER is starting (AC10) and the finished hand's
+   *  `closeHand` otherwise — which is the whole of the deck's lifetime rule, in one parameter. */
+  function dealNextHand(nextRun: RunState, carried: EncounterDeck) {
     const next = hand + 1
     setHand(next)
-    setDealt(dealRound(dealerForRound(next), Math.random))
+    setDealt(dealHand(nextRun, next, carried))
   }
 
   function handleComplete(result: WarCouncilRoundResult) {
@@ -176,16 +186,21 @@ function App() {
     // trick that resolves it, so an unresolved hand simply deals the next one. Any Timebomb booked by
     // this hand's last trick rides on `encounter.pendingTimebomb` into the next hand's first trick,
     // which is D5's carry half.
-    dealNextHand()
+    // DLR-123 AC2/AC4 — the SAME deck, minus this hand's 13. `closeHand` spends the decree and
+    // everything else not in the draw pile, so the next hand deals on from where this one stopped
+    // instead of from a fresh shuffle.
+    dealNextHand(recorded, closeHand(result.finalState))
   }
 
   // The ONE call to advanceRun. Reached from Continue on an unwarned verdict, Continue anyway on a
   // warned one, and Next fight in the shop — three controls, one transition.
   function leaveForNextFight() {
-    setRun(advanceRun(run))
+    const advanced = advanceRun(run)
+    setRun(advanced)
     setPhase(RunPhase.Verdict)
     setTricks(NO_TRICKS)
-    dealNextHand()
+    // AC10 — a new fight always begins on a fresh 33.
+    dealNextHand(advanced, FRESH_ENCOUNTER_DECK)
   }
 
   function handleContinue() {
@@ -229,12 +244,20 @@ function App() {
   // consumption from double-firing under StrictMode. Being a callback rather than an effect,
   // there is nothing for StrictMode to double-fire in the first place.
   function handleBeginRun() {
-    setRun(
-      startRun(PLAYER_START_HEALTH, vault.startingGrants, Math.floor(Math.random() * 0x100000000)),
+    const begun = startRun(
+      PLAYER_START_HEALTH,
+      vault.startingGrants,
+      Math.floor(Math.random() * 0x100000000),
     )
+    setRun(begun)
     if (vault.startingGrants.length > 0) {
       commit(clearStartingGrants)
     }
+    setHand(1)
+    // DLR-123 D12 — RE-DEAL. This mints a run with a new `runSeed`, and now that the deal is
+    // seeded off that value, leaving the mount-time hand in place would mean the opening hand of
+    // a run was dealt from a seed the run does not have.
+    setDealt(dealHand(begun, 1, FRESH_ENCOUNTER_DECK))
     setPhase(RunPhase.Verdict)
   }
 
@@ -244,7 +267,7 @@ function App() {
     setPhase(RunPhase.Start)
     setTricks(NO_TRICKS)
     setHand(1)
-    setDealt(dealRound(dealerForRound(1), Math.random))
+    setDealt(dealHand(fresh, 1, FRESH_ENCOUNTER_DECK))
   }
 
   if (phase === RunPhase.Start) {

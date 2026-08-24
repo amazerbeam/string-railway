@@ -1,0 +1,230 @@
+<title>Persistent Deck Felt Rail</title>
+<style>
+  :root {
+    --felt: #1b2a24;
+    --felt-2: #16221d;
+    --plate: #24352d;
+    --ink: #e8efe9;
+    --dim: #9db0a5;
+    --gold: #d8b26a;
+    --back-a: #2c3a42;
+    --back-b: #1e282e;
+    --line: #ffffff1f;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(ellipse at 50% 0%, var(--felt) 0%, var(--felt-2) 100%);
+    color: var(--ink);
+    font: 16px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 1.15rem; font-weight: 650; letter-spacing: 0.02em; margin: 0 0 0.25rem; }
+  .sub { color: var(--dim); font-size: 0.85rem; margin: 0 0 1.5rem; }
+
+  .table {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.5rem;
+    align-items: center;
+    background: #ffffff08;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 1.25rem;
+    min-height: 340px;
+  }
+
+  /* ---- the felt rail: decree plate, then the two piles ---- */
+  .rail { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; }
+
+  .plate { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; }
+  .plate-label {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--dim);
+  }
+
+  .pile-cards { position: relative; display: flex; padding: 0 0.45rem 0.3rem 0; }
+  .back {
+    width: 62px; aspect-ratio: 2/3; border-radius: 4px;
+    background: repeating-linear-gradient(-45deg, var(--back-a) 0 2px, var(--back-b) 2px 4px);
+    box-shadow: 0 0 0 1px #00000055;
+  }
+  .back.abs { position: absolute; }
+  .back.b1 { top: -5px; left: 7px; }
+  .back.b2 { top: -2.5px; left: 3.5px; }
+  .face {
+    position: relative; z-index: 2;
+    width: 62px; aspect-ratio: 2/3; border-radius: 4px;
+    background: #f4f1e6; color: #1b2a24;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-weight: 700; box-shadow: 0 0 0 1px #00000055;
+  }
+  .face .r { font-size: 1.25rem; line-height: 1; }
+  .face .s { font-size: 0.95rem; color: #7a3b3b; }
+
+  .trump {
+    font-size: 0.78rem; color: var(--gold);
+    border: 1px solid #d8b26a44; border-radius: 999px; padding: 0.1rem 0.5rem;
+  }
+  .count { font-size: 0.78rem; color: var(--ink); }
+  .count b { font-variant-numeric: tabular-nums; }
+
+  /* ---- the new spent plate ---- */
+  .spent .back { opacity: 0.9; }
+  .note {
+    font-size: 0.68rem; color: var(--dim); text-align: center; max-width: 12ch;
+  }
+  .note.reshuffled {
+    color: var(--gold); font-weight: 600; max-width: 16ch;
+    animation: pulse 1.1s ease-out 2;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+  .middle {
+    align-self: stretch; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1rem;
+    border-left: 1px dashed var(--line); padding-left: 1.5rem;
+  }
+  .well { display: flex; gap: 0.6rem; min-height: 96px; align-items: center; }
+  .muted { color: var(--dim); font-size: 0.85rem; }
+
+  .controls { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1.25rem; }
+  button {
+    font: inherit; font-size: 0.85rem; color: var(--ink);
+    background: var(--plate); border: 1px solid var(--line);
+    border-radius: 7px; padding: 0.45rem 0.9rem; cursor: pointer;
+  }
+  button:hover { background: #2e4238; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .log {
+    margin-top: 1.25rem; font-size: 0.8rem; color: var(--dim);
+    background: #00000030; border: 1px solid var(--line); border-radius: 8px;
+    padding: 0.75rem 1rem; max-height: 190px; overflow-y: auto;
+  }
+  .log div { padding: 0.1rem 0; }
+  .log b { color: var(--gold); }
+</style>
+
+<div class="wrap">
+  <h1>DLR-123 — the felt rail with a persistent deck</h1>
+  <p class="sub">
+    Placeholder data. The decree plate is what ships today; the <strong>Spent</strong> plate,
+    its standing note, and the reshuffle notice are what this ticket adds.
+  </p>
+
+  <div class="table">
+    <div class="rail">
+      <!-- decree plate: ships today, unchanged -->
+      <div class="plate">
+        <span class="plate-label">Decree</span>
+        <span class="pile-cards">
+          <span class="back abs b1"></span>
+          <span class="back abs b2"></span>
+          <span class="face"><span class="r">10</span><span class="s">&#9670;</span></span>
+        </span>
+        <span class="trump">Bells is trump</span>
+        <span class="count"><b id="draw">20</b> in the pile</span>
+      </div>
+
+      <!-- NEW: the spent plate -->
+      <div class="plate spent">
+        <span class="plate-label">Spent</span>
+        <span class="pile-cards">
+          <span class="back abs b1"></span>
+          <span class="back abs b2"></span>
+          <span class="back"></span>
+        </span>
+        <span class="count"><b id="spent">0</b> spent</span>
+        <span class="note" id="note">Spent cards stay spent</span>
+      </div>
+    </div>
+
+    <div class="middle">
+      <div class="well" id="well"><span class="muted">no trick on the table</span></div>
+      <div class="muted" id="status">Hand 1 of this fight &middot; trick 0 of 6</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="trick">Resolve a trick</button>
+    <button id="hand">End the hand &amp; deal the next</button>
+    <button id="fight">Start a new fight</button>
+  </div>
+
+  <div class="log" id="log"></div>
+</div>
+
+<script>
+  var DECK = 33, PER_DEAL = 13;
+  var draw = 20, spent = 0, hand = 1, trick = 0, reshuffled = false;
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function log(msg) {
+    var d = document.createElement('div');
+    d.innerHTML = msg;
+    $('log').prepend(d);
+  }
+
+  function render() {
+    $('draw').textContent = draw;
+    $('spent').textContent = spent;
+    $('status').textContent =
+      'Hand ' + hand + ' of this fight · trick ' + trick + ' of 6';
+    var note = $('note');
+    if (reshuffled) {
+      note.textContent = 'Reshuffled — the deck is fresh';
+      note.className = 'note reshuffled';
+    } else {
+      note.textContent = 'Spent cards stay spent';
+      note.className = 'note';
+    }
+    $('trick').disabled = trick >= 6;
+    var well = $('well');
+    well.innerHTML = trick === 0
+      ? '<span class="muted">no trick on the table</span>'
+      : '<span class="back"></span><span class="back"></span>';
+  }
+
+  $('trick').onclick = function () {
+    if (trick >= 6) return;
+    trick += 1;
+    spent += 2;
+    reshuffled = false;
+    log('Trick ' + trick + ' resolved — 2 cards to the spent pile (now <b>' + spent + '</b>).');
+    render();
+  };
+
+  $('hand').onclick = function () {
+    // close the hand: everything not in the draw pile is spent
+    var onTable = 12 - trick * 2;
+    spent += onTable + 1; // unplayed cards + the decree
+    log('Hand ' + hand + ' closed — the decree and ' + onTable +
+        ' unplayed card(s) spent. Draw <b>' + draw + '</b>, spent <b>' + spent + '</b>.');
+    // deal the next hand, reshuffling first if the draw pile cannot cover it
+    if (draw < PER_DEAL) {
+      log('<b>Draw pile is ' + draw + ', below ' + PER_DEAL +
+          ' — RESHUFFLE.</b> ' + spent + ' spent + ' + draw +
+          ' left folded together and shuffled into a fresh ' + DECK + '.');
+      draw = spent + draw;
+      spent = 0;
+      reshuffled = true;
+    } else {
+      reshuffled = false;
+    }
+    draw -= PER_DEAL;
+    hand += 1;
+    trick = 0;
+    log('Hand ' + hand + ' dealt — 6 + 6 + 1 off the same pile. Draw <b>' + draw + '</b>.');
+    render();
+  };
+
+  $('fight').onclick = function () {
+    draw = DECK - PER_DEAL; spent = 0; hand = 1; trick = 0; reshuffled = false;
+    log('<b>New fight</b> — fresh ' + DECK + ' shuffled, 13 dealt, draw <b>' + draw + '</b>.');
+    render();
+  };
+
+  render();
+  log('New fight — fresh 33 shuffled, 13 dealt, draw <b>20</b>.');
+</script>

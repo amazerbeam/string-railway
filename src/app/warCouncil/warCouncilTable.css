@@ -178,3 +178,28 @@
   margin: 0;
   max-width: 44ch;
 }
+
+/* ---------- DLR-123: the spent pile, beside the decree on the felt rail ---------- */
+
+/* `.wc-pile-back` is absolutely positioned so the two decorative backs can offset behind the
+   decree's FACE. The spent pile has no face, so its top back must be in flow or the plate
+   collapses to zero height. */
+.wc-spent .wc-pile-back.wc-spent-top {
+  position: relative;
+}
+
+.wc-reshuffle-note {
+  margin: 0;
+  max-width: 12ch;
+  text-align: center;
+  font-size: clamp(0.55rem, 1.1vmin, 0.68rem);
+  line-height: 1.25;
+  color: var(--wc-chalk-dim, #9db0a5);
+}
+
+/* AC9 — the reshuffle reads as an event, the standing note as furniture. */
+.wc-reshuffle-note.wc-is-reshuffled {
+  max-width: 16ch;
+  font-weight: 600;
+  color: var(--wc-brass, #d8b26a);
+}

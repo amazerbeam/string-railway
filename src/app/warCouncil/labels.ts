@@ -357,3 +357,23 @@ export function cardDamageText(preview: CardDamagePreview): string {
     `If you lose: ${cardDamageBranchText(preview.lose)}.`
   return preview.exact ? body : `${body} ${CARD_DAMAGE_ESTIMATE_NOTE}`
 }
+
+/** DLR-123 AC8/AC9 — the spent pile's copy. "Spent", not "discard": `discard` already means the
+ *  PLAYER'S swap everywhere in this codebase and on this felt, and DLR-123 was asked to resolve
+ *  that collision. It is resolved by naming the NEW thing, so nothing existing had to be renamed.
+ *  The flavour noun is the developer's — this is a descriptive placeholder. */
+export const SPENT_PILE_LABEL = 'Spent'
+
+/** AC8 — the live count. A count and nothing else: AC8 forbids the contents ever being
+ *  inspectable, so no label here may hint at what is in the pile. */
+export function spentCountText(spentCount: number): string {
+  return `${spentCount} spent`
+}
+
+/** AC9's SECOND half — the standing statement that cards are NOT reshuffled between hands. It is
+ *  on screen at every moment the notice below is not, so the absence of a reshuffle is stated
+ *  rather than merely implied by the absence of a message. */
+export const SPENT_STANDING_NOTE = 'Spent cards stay spent'
+
+/** AC9's FIRST half — the reshuffle, announced at the moment it happens. */
+export const RESHUFFLE_NOTE = 'Reshuffled — the deck is fresh'

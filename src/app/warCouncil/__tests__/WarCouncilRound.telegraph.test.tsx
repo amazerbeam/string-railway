@@ -50,7 +50,10 @@ describe('WarCouncilRound', () => {
     renderRound({ initialState: makeRound({ leader: PlayerSide.Cpu }) })
     // Nothing has been committed yet — the trick row is still empty (no `wc-played` card).
     expect(screen.queryByText(/^They led/i)).toBeNull()
-    const status = screen.getByRole('status')
+    // DLR-123 — `role="status"` is no longer unique to the telegraph: the felt's new spent
+    // plate (`DiscardPile`) carries the same role for its own live announcement. Disambiguated
+    // by accessible name, which is still an accessible-role-and-label query.
+    const status = screen.getByRole('status', { name: /will lead/i })
     expect(status.getAttribute('aria-label')).toMatch(/will lead/i)
 
     const letThemLead = screen.getByRole('button', { name: /let them lead/i })
@@ -62,7 +65,8 @@ describe('WarCouncilRound', () => {
     renderRound()
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
-    const status = screen.getByRole('status')
+    // DLR-123 — disambiguated from the felt's new spent-plate `role="status"` by accessible name.
+    const status = screen.getByRole('status', { name: /^If you lead that card/ })
     expect(status.getAttribute('aria-label')).toMatch(/^If you lead that card/)
     // Arming is a selection, not a commitment — the card has not been played.
     expect(screen.queryByText(/^You led/i)).toBeNull()
@@ -72,10 +76,13 @@ describe('WarCouncilRound', () => {
     renderRound()
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
-    expect(screen.getByRole('status').getAttribute('aria-label')).toMatch(/^If you lead that card/)
+    // DLR-123 — disambiguated from the felt's new spent-plate `role="status"` by accessible name:
+    // the telegraph's own name always starts with "The Quarry" (live) or "If you lead" (speculative).
+    const telegraph = () => screen.getByRole('status', { name: /^(The Quarry|If you lead)/ })
+    expect(telegraph().getAttribute('aria-label')).toMatch(/^If you lead that card/)
     const hand = screen.getByRole('group', { name: /hand/i })
     fireEvent.keyDown(hand, { key: 'Escape' })
-    expect(screen.getByRole('status').getAttribute('aria-label')).not.toMatch(/^If you lead/)
+    expect(telegraph().getAttribute('aria-label')).not.toMatch(/^If you lead/)
   })
 
   it('reaches "Let them lead" by keyboard alone', () => {

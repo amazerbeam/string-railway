@@ -44,3 +44,17 @@ export function mixSeed(...parts: readonly number[]): number {
   }
   return hash >>> 0
 }
+
+/**
+ * DLR-123 AC12 — the seed for one hand's deal AND, because the reshuffle happens inside
+ * `dealRound` under the same generator, for its reshuffle too. Shaped exactly like
+ * `slotMachine.ts`'s `slotSeedFor`, and for the same reason: a seeded encounter must reproduce
+ * every deal, every skull and every reshuffle, or DLR-130's balance simulator is impossible.
+ *
+ * The triple is unique per hand of a run: `encounterIndex` separates the fights and `handOfFight`
+ * the hands within one, and both already live on `RunState`. Pure — no `Math.random()`; the
+ * driver chooses `runSeed` and hands it down, exactly as it does for the slot machine.
+ */
+export function dealSeedFor(runSeed: number, encounterIndex: number, handOfFight: number): number {
+  return mixSeed(runSeed, encounterIndex, handOfFight)
+}

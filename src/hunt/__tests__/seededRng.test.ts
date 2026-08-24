@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createSeededRng, mixSeed } from '../seededRng'
+import { createSeededRng, dealSeedFor, mixSeed } from '../seededRng'
 
 describe('createSeededRng', () => {
   it('yields the same sequence for the same seed', () => {
@@ -41,5 +41,25 @@ describe('mixSeed', () => {
     expect(Number.isInteger(seed)).toBe(true)
     expect(seed).toBeGreaterThanOrEqual(0)
     expect(seed).toBeLessThan(2 ** 32)
+  })
+})
+
+describe('dealSeedFor', () => {
+  it('is stable for the same run, fight and hand', () => {
+    expect(dealSeedFor(1234, 2, 3)).toBe(dealSeedFor(1234, 2, 3))
+  })
+
+  it('differs across hands of a fight, across fights, and across runs', () => {
+    const base = dealSeedFor(1234, 2, 3)
+    expect(dealSeedFor(1234, 2, 4)).not.toBe(base)
+    expect(dealSeedFor(1234, 3, 3)).not.toBe(base)
+    expect(dealSeedFor(1235, 2, 3)).not.toBe(base)
+  })
+
+  it('is a non-negative 32-bit integer', () => {
+    const seed = dealSeedFor(0xdeadbeef, 4, 2)
+    expect(Number.isInteger(seed)).toBe(true)
+    expect(seed).toBeGreaterThanOrEqual(0)
+    expect(seed).toBeLessThan(0x100000000)
   })
 })

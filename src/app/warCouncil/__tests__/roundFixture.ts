@@ -44,6 +44,8 @@ export function makeRound(overrides: Partial<WarCouncilState> = {}): WarCouncilS
     tricksWon: { [PlayerSide.Player]: 0, [PlayerSide.Cpu]: 0 },
     skulledCards: [],
     primedCards: [],
+    spentPile: [],
+    reshuffled: false,
     bank: 0,
     multiplier: 0,
     lastResolution: null,

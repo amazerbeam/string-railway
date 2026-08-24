@@ -83,6 +83,20 @@ export interface RoundState {
    *  normally resolves in the hand it was made — the exception being a card the Woodcutter buries
    *  or the Fox exchanges away and never takes back, which simply wastes the charge. */
   readonly primedCards: readonly Card[]
+  /** DLR-123 AC3 — cards resolved to a trick this ENCOUNTER, face-down and never inspectable
+   *  (AC8). Grows by exactly two at each trick's resolution, in `playCard`, and by nothing else;
+   *  seeded by `dealRound` from the encounter's carried deck, so it climbs ACROSS the hands of a
+   *  fight and empties only on a reshuffle.
+   *
+   *  NOTHING to do with `src/warCouncil/discard.ts`, which is the PLAYER'S swap and sends its
+   *  cards to the BOTTOM OF THE DRAW PILE (AC5), where they stay unseen. That is the naming
+   *  collision DLR-123 was asked to resolve, and it is resolved by naming THIS pile something
+   *  else: "discard" continues to mean the swap, everywhere, unchanged. */
+  readonly spentPile: readonly Card[]
+  /** DLR-123 AC9 — whether THIS hand was dealt from a reshuffle. Written once by `dealRound` and
+   *  read only by the felt's notice. Hand-scoped by construction: the next deal rewrites it, so a
+   *  notice cannot persist into a hand that was not reshuffled. */
+  readonly reshuffled: boolean
   /** AC4/AC5 — the number of tricks taken in a row since the last cash-out. Only ever climbs
    *  until it cashes, which is the property the retired pending-damage figure lacked. */
   readonly bank: number

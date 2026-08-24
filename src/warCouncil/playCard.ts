@@ -134,6 +134,10 @@ export function playCard(
     state: {
       ...next,
       currentTrick: [],
+      // DLR-123 AC3 — the trick's two cards go face-down to the spent pile AS THE TRICK RESOLVES.
+      // THE single place this pile grows: `dealRound` seeds it and `closeHand` reads it, and
+      // nothing else in the engine writes it, so a card cannot be spent twice or spent early.
+      spentPile: [...next.spentPile, completedTrick[0].card, completedTrick[1].card],
       leader: nextLeader,
       tricksPlayed,
       tricksWon,

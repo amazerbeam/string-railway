@@ -31,6 +31,8 @@ function round(over: Partial<RoundState> = {}): RoundState {
     tricksWon: { [PlayerSide.Player]: 1, [PlayerSide.Cpu]: 2 },
     skulledCards: [],
     primedCards: [],
+    spentPile: [],
+    reshuffled: false,
     bank: 3,
     multiplier: 3,
     lastResolution: null,

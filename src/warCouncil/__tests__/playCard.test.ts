@@ -26,6 +26,8 @@ function stateWith(overrides: Partial<RoundState>): RoundState {
     tricksWon: { player: 0, cpu: 0 },
     skulledCards: [],
     primedCards: [],
+    spentPile: [],
+    reshuffled: false,
     bank: 0,
     multiplier: 0,
     lastResolution: null,
@@ -392,5 +394,25 @@ describe('playCard — banking and skulls', () => {
     const result = playCard(state, PlayerSide.Player, { suit: Suit.Bells, rank: 9 })
     expect(result.ok && result.state.lastResolution?.outcome).toBe(TrickOutcome.SkullWin)
     expect(result.ok && result.state.lastResolution?.damageToPlayer).toBe(DAMAGE_PER_HIT)
+  })
+
+  it('DLR-123 AC3 — a resolved trick sends both its cards to the spent pile, in trick order', () => {
+    const lead: Card = { suit: 'bells', rank: 9 }
+    const follow: Card = { suit: 'bells', rank: 2 }
+    const state = stateWith({
+      hands: {
+        player: [],
+        cpu: [follow],
+      },
+      trumpSuit: 'keys',
+      currentTrick: [{ side: PlayerSide.Player, card: lead }],
+      leader: PlayerSide.Player,
+      phase: RoundPhase.AwaitingFollow,
+    })
+
+    const done = playCard(state, PlayerSide.Cpu, follow)
+    expect(done.ok).toBe(true)
+    if (!done.ok) return
+    expect(done.state.spentPile).toEqual([lead, follow])
   })
 })

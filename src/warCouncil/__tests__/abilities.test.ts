@@ -21,6 +21,8 @@ function baseState(overrides: Partial<RoundState> = {}): RoundState {
     tricksWon: { player: 0, cpu: 0 },
     skulledCards: [],
     primedCards: [],
+    spentPile: [],
+    reshuffled: false,
     bank: 0,
     multiplier: 0,
     lastResolution: null,

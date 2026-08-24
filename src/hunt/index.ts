@@ -249,7 +249,7 @@ export {
 } from './actionPoints'
 
 export type { Rng } from './seededRng'
-export { createSeededRng, mixSeed } from './seededRng'
+export { createSeededRng, dealSeedFor, mixSeed } from './seededRng'
 
 export {
   SlotMachineId,

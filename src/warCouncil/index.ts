@@ -16,6 +16,14 @@ export type { AbilityChoice, Card, PlayCardResult, RoundState, TrickCard } from 
 export { containsCard, sameCard } from './cardUtils'
 export { createDeck } from './deck'
 export { shuffle } from './shuffle'
+export {
+  CARDS_PER_DEAL,
+  FRESH_ENCOUNTER_DECK,
+  closeHand,
+  dealPileFor,
+  isFreshDeck,
+} from './encounterDeck'
+export type { DealPile, EncounterDeck } from './encounterDeck'
 export { dealRound } from './deal'
 export { legalMoves, monarchFollowSet } from './legalMoves'
 export type { LegalMoveOptions, PlayCardOptions } from './legalMoves'

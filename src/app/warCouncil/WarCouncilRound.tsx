@@ -24,6 +24,7 @@ import { loadoutBarRefusalFor } from './buffHandlers'
 import BuffLoadoutPanel from './BuffLoadoutPanel'
 import { cardDamagePreview } from './cardDamage'
 import DecreePile from './DecreePile'
+import DiscardPile from './DiscardPile'
 import HandFan from './HandFan'
 import { sortHandForDisplay } from './handOrder'
 import { previewQuarryIntent } from './intentPreview'
@@ -342,6 +343,10 @@ export default function WarCouncilRound({
             drawPileCount={ui.round.drawPile.length}
             primed={isPrimed(ui.round.primedCards, ui.round.decree)}
           />
+          {/* DLR-123 AC7/AC8 — both counts read straight off round state on every render, so they
+              cannot lag it; `RoundUiState.round` already carries the whole engine state, which is
+              why this ticket needed no reducer action and no new UI state. */}
+          <DiscardPile spentCount={ui.round.spentPile.length} reshuffled={ui.round.reshuffled} />
         </div>
         {loadoutOpen(ui) && (
           <BuffLoadoutPanel {...buffLoadoutPanelProps({ ui, dispatch, offered, interactive })} />

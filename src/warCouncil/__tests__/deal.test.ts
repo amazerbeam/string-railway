@@ -3,6 +3,7 @@ import { HAND_SIZE, SKULL_DENSITY, SKULL_RANK_WEIGHTS } from '../../hunt'
 import { containsCard } from '../cardUtils'
 import { createDeck } from '../deck'
 import { dealRound } from '../deal'
+import { closeHand } from '../encounterDeck'
 import { PlayerSide, RoundPhase } from '../types'
 
 function lcg(seed: number): () => number {
@@ -24,7 +25,13 @@ describe('dealRound', () => {
 
   it('accounts for all 33 cards with no duplicates across hands, pile, and decree', () => {
     const state = dealRound(PlayerSide.Cpu, lcg(7))
-    const all = [...state.hands.player, ...state.hands.cpu, ...state.drawPile, state.decree]
+    const all = [
+      ...state.hands.player,
+      ...state.hands.cpu,
+      ...state.drawPile,
+      ...state.spentPile,
+      state.decree,
+    ]
     const keys = all.map((c) => `${c.suit}-${c.rank}`)
     expect(new Set(keys).size).toBe(33)
     expect(all).toHaveLength(33)
@@ -74,5 +81,44 @@ describe('dealRound', () => {
     expect(state.bank).toBe(0)
     expect(state.multiplier).toBe(0)
     expect(state.lastResolution).toBeNull()
+  })
+
+  it('AC1/AC10 — an absent deck deals a fresh 33: 6 + 6 + decree, 20 left, nothing spent', () => {
+    const state = dealRound(PlayerSide.Player, lcg(42))
+    expect(state.drawPile).toHaveLength(20)
+    expect(state.spentPile).toEqual([])
+    expect(state.reshuffled).toBe(false)
+  })
+
+  it('AC2 — a carried deck deals on from the same pile, and no card returns', () => {
+    const first = dealRound(PlayerSide.Player, lcg(42))
+    const carried = closeHand(first)
+    const second = dealRound(PlayerSide.Cpu, lcg(43), carried)
+    expect(second.drawPile).toHaveLength(7)
+    expect(second.spentPile).toHaveLength(13)
+    expect(second.reshuffled).toBe(false)
+    const spent = new Set(carried.spentPile.map((c) => `${c.suit}-${c.rank}`))
+    const dealt = [...second.hands.player, ...second.hands.cpu, second.decree]
+    for (const card of dealt) {
+      expect(spent.has(`${card.suit}-${card.rank}`)).toBe(false)
+    }
+  })
+
+  it('AC6/AC9 — a third hand reshuffles, empties the spent pile, and says so', () => {
+    const first = dealRound(PlayerSide.Player, lcg(42))
+    const second = dealRound(PlayerSide.Cpu, lcg(43), closeHand(first))
+    const third = dealRound(PlayerSide.Player, lcg(44), closeHand(second))
+    expect(third.reshuffled).toBe(true)
+    expect(third.drawPile).toHaveLength(20)
+    expect(third.spentPile).toEqual([])
+  })
+
+  it('AC11 — skulls are re-rolled per deal against the Quarry’s own six', () => {
+    const first = dealRound(PlayerSide.Player, lcg(42))
+    const second = dealRound(PlayerSide.Cpu, lcg(43), closeHand(first))
+    expect(second.skulledCards).toHaveLength(Math.round(HAND_SIZE * SKULL_DENSITY))
+    for (const skull of second.skulledCards) {
+      expect(containsCard(second.hands[PlayerSide.Cpu], skull)).toBe(true)
+    }
   })
 })

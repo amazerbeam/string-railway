@@ -321,6 +321,8 @@ describe('the ladder through playCard (AC2/AC3/AC6)', () => {
       tricksWon: { player: 0, cpu: 0 },
       skulledCards: [],
       primedCards: [],
+      spentPile: [],
+      reshuffled: false,
       bank: 3,
       multiplier: 3,
       lastResolution: null,

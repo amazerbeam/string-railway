@@ -1,5 +1,6 @@
-import { HAND_SIZE } from '../hunt'
+import { HAND_SIZE, type Rng } from '../hunt'
 import { createDeck } from './deck'
+import { FRESH_ENCOUNTER_DECK, dealPileFor, isFreshDeck, type EncounterDeck } from './encounterDeck'
 import { shuffle } from './shuffle'
 import { assignSkulls } from './skulls'
 import { otherSide, PlayerSide, RoundPhase, type RoundState } from './types'
@@ -12,11 +13,24 @@ import { otherSide, PlayerSide, RoundPhase, type RoundState } from './types'
  * `rng` the shuffle uses, so a seeded deal reproduces its skulls as well as its cards. A card the
  * Woodcutter later draws arrives unskulled: §3.4's density is a property of the deal.
  */
-export function dealRound(dealer: PlayerSide, rng: () => number): RoundState {
-  const shuffled = shuffle(createDeck(), rng)
-  const playerHand = shuffled.slice(0, HAND_SIZE)
-  const cpuHand = shuffled.slice(HAND_SIZE, HAND_SIZE * 2)
-  const remaining = shuffled.slice(HAND_SIZE * 2)
+export function dealRound(
+  dealer: PlayerSide,
+  rng: Rng,
+  /**
+   * DLR-123 AC2 — the encounter's carried deck. ABSENT or empty IS a new encounter, so a fresh 33
+   * is built and shuffled (AC1/AC10). Trailing and optional following `apCapacity`'s precedent
+   * rather than `bankClimbBonus`': every existing two-argument call still means exactly what it
+   * meant — a fresh deal — so no existing spec has to be rewritten to say what it already said.
+   */
+  deck: EncounterDeck = FRESH_ENCOUNTER_DECK,
+): RoundState {
+  const fresh = isFreshDeck(deck)
+  const opening = fresh
+    ? { drawPile: shuffle(createDeck(), rng), reshuffled: false }
+    : dealPileFor(deck, rng)
+  const playerHand = opening.drawPile.slice(0, HAND_SIZE)
+  const cpuHand = opening.drawPile.slice(HAND_SIZE, HAND_SIZE * 2)
+  const remaining = opening.drawPile.slice(HAND_SIZE * 2)
   const decree = remaining[0]
   const drawPile = remaining.slice(1)
 
@@ -31,6 +45,11 @@ export function dealRound(dealer: PlayerSide, rng: () => number): RoundState {
     // DLR-90 — a fresh deal carries no marks. Written here rather than defaulted on the type, so
     // `RoundState` stays a total shape with no optional field for a reader to forget about.
     primedCards: [],
+    // DLR-123 AC3/AC8 — the spent pile CLIMBS ACROSS the hands of a fight and empties only when a
+    // reshuffle folds it back into the draw pile. `FRESH_ENCOUNTER_DECK.spentPile` is `[]`, so the
+    // new-encounter case needs no branch of its own.
+    spentPile: opening.reshuffled ? [] : deck.spentPile,
+    reshuffled: opening.reshuffled,
     bank: 0,
     multiplier: 0,
     lastResolution: null,
