@@ -18,7 +18,7 @@ import {
 } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
 import { createRoundUiState, RoundUiActionKind, type RoundUiState } from '../roundUiState'
-import { card, discardsRemainingFixture, timebombChargesFixture, makeRound } from './roundFixture'
+import { card, discardsRemainingFixture, makeRound } from './roundFixture'
 
 // The bank cash-out specs (AC6/AC8) — carved into their own file for the same reason DLR-71's
 // own splits exist in this codebase: `roundReducer.test.ts` crossed the 400-line budget once
@@ -37,8 +37,6 @@ function uiFrom(
   return createRoundUiState({
     round,
     encounter,
-    cheats: [],
-    timebombCharges: timebombChargesFixture,
     blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: discardsRemainingFixture,

@@ -14,10 +14,10 @@ import {
   RUN_STARTING_CHEATS,
   STARTING_BUFF_COUNT,
 } from './config'
-import { seedStartingBuffPile, type Buff, type BuffId } from './buffs'
+import { seedStartingBuffPile, BuffTier, type Buff, type BuffId } from './buffs'
+import { cheatBuff } from './buffCatalog'
 import { ALL_BRONZE, type RankTierTable } from './rankTiers'
 import { mintGrants, type TemplateGrant } from './buffTemplates'
-import { grantCheats, type CheatCard, type CheatCardId } from './cheats'
 import { startEncounter } from './encounter'
 import type { FlaskStock } from './flask'
 import type { ShopStock } from './shop'
@@ -54,22 +54,10 @@ export interface RunState {
   readonly encounterCount: number
   readonly encounter: EncounterState
   readonly outcome: RunOutcome
-  /** AC3 — held Cheats, capped at `CHEAT_SLOT_COUNT` by `cheats.ts` and carried across every
-   *  fight boundary. Run state, not hand state: `advanceRun` passes it through untouched. */
-  readonly cheats: readonly CheatCard[]
-  /** The next id to mint. Monotonic and never reused, so DLR-84's mid-run purchase cannot
-   *  re-issue the id of a card already spent — which would collide as a React key. */
-  readonly nextCheatId: CheatCardId
   /** AC2 — the run's purse. Starts at 0, credited by `recordEncounter` on a won encounter, spent
    *  by `buyFromShop`, and carried through `advanceRun` untouched by the spread. NEVER persisted:
    *  the ticket puts cross-run carry-over out of scope. */
   readonly coins: Coins
-  /** DLR-90 AC2 — Timebomb charges held, bought in the shop and carried across every fight by
-   *  `advanceRun`'s spread. A COUNT, not a list of objects like `cheats`: unlike a Cheat, a charge
-   *  has no identity to spend by name — the card it marks IS the identity, and it lives on
-   *  `RoundState.primedCards`. No cap; the price is the limiter. NEVER persisted, exactly as
-   *  `coins` above. */
-  readonly timebombCharges: number
   /** DLR-91 AC2 — a bought-but-unspent Blast Guard. Run-level like `coins` rather than on
    *  `EncounterState`, and that placement is load-bearing: the shop is reachable only AFTER an
    *  encounter resolves and BEFORE `advanceRun` runs, and `advanceRun` re-seeds the encounter
@@ -81,15 +69,15 @@ export interface RunState {
   /** DLR-92 AC2/AC3 — Whetstones owned. A COUNT, not a flag: each copy stacks, and the price is
    *  the only limiter. Run-level like `coins` rather than on `EncounterState`, and carried by
    *  `advanceRun`'s and `recordEncounter`'s spread — a run-permanent buff that reset at a fight
-   *  boundary would be a fight-long one. Unlike `cheats`, `timebombCharges` and `blastGuardHeld`
-   *  it is NEVER handed back by a hand, because a hand cannot spend one. NEVER persisted, exactly
+   *  boundary would be a fight-long one. Unlike `blastGuardHeld` it is NEVER handed back by a
+   *  hand, because a hand cannot spend one. NEVER persisted, exactly
    *  as `coins` above. */
   readonly whetstones: number
-  /** DLR-93 AC1 — flask charges held. A COUNT like `timebombCharges`, not a boolean: AC5 refills
+  /** DLR-93 AC1 — flask charges held. A COUNT, not a boolean: AC5 refills
    *  "regardless of whether the player had 0 or 1", and the epic's deferred re-tune of the charge
    *  count raises the ceiling without changing this type. Run-level like `coins` and carried by
    *  `advanceRun`'s and `recordEncounter`'s spreads — a free heal that reset at a fight boundary
-   *  would be a per-fight heal. Unlike `cheats` and `timebombCharges` it is NEVER handed back by a
+   *  would be a per-fight heal. Unlike `blastGuardHeld` it is NEVER handed back by a
    *  hand, because a hand cannot drink it (AC4). NEVER persisted, exactly as `coins` above. */
   readonly flaskCharges: number
   /** DLR-95 AC3 — which hand OF THE CURRENT FIGHT is being played. 1-BASED: a fight's first hand
@@ -106,10 +94,10 @@ export interface RunState {
    *  remember. `recordEncounter` advances it. NEVER persisted, exactly as `coins` above. */
   readonly handOfFight: number
   /** DLR-100 AC5 — the discard's per-fight budget. Carried across every hand within a fight,
-   *  exactly as `cheats` and `timebombCharges` are — NOT on `EncounterState`, which `advanceRun`
+   *  exactly as `blastGuardHeld` is — NOT on `EncounterState`, which `advanceRun`
    *  re-seeds. Reset to `DISCARDS_PER_FIGHT` by `startRun` and by `advanceRun`; carried through
    *  `recordEncounter`'s spread otherwise, because the hand owns it for its life and hands the
-   *  survivor back through `WarCouncilRoundResult`, exactly as `cheats` and `timebombCharges` do.
+   *  survivor back through `WarCouncilRoundResult`, exactly as `blastGuardHeld` does.
    *  NEVER persisted, exactly as `coins` above. */
   readonly discardsRemaining: number
   /** DLR-95 AC6 — the receipt: what the quick-kill payout paid for the encounter just recorded, so
@@ -123,10 +111,10 @@ export interface RunState {
   readonly lastQuickKillPayout: Coins
   /** DLR-105 AC2/AC3 — the player's owned buff pile, seeded at `startRun` and carried through
    *  every `advanceRun`/`recordEncounter` spread untouched — no explicit parameter, mirroring
-   *  `whetstones` rather than `cheats`, because no consumer in this ticket spends or replaces a
+   *  `whetstones`, because no consumer in this ticket spends or replaces a
    *  buff mid-hand (that is T5's job). NEVER persisted across runs, exactly as `coins` is not. */
   readonly buffs: readonly Buff[]
-  /** The next id to mint — monotonic, never reused, mirroring `nextCheatId`. */
+  /** The next id to mint — monotonic, never reused. */
   readonly nextBuffId: BuffId
   /** DLR-116 — the run's reproducibility anchor. Chosen by the DRIVER and passed in, never by
    *  this tree: `src/hunt/` may not call `Math.random()`. Every strip and spin in the run is
@@ -144,7 +132,7 @@ export interface RunState {
   /** DLR-122 AC2 — where every tierable rank stands for THIS run. Run-permanent like `whetstones`
    *  rather than on `EncounterState`, and carried by `advanceRun`'s and `recordEncounter`'s
    *  spreads: a bought tier that reset at a fight boundary would be a fight-long asset, not a
-   *  run-permanent one. Unlike `cheats`, `timebombCharges` and `blastGuardHeld` it is NEVER
+   *  run-permanent one. Unlike `blastGuardHeld` it is NEVER
    *  handed back by a hand, because a hand cannot buy or spend a tier — only the shop between
    *  fights can. A TABLE rather than a count, and that is the point: unlike `whetstones` and
    *  `apCapacityBonus`, which stack, a rank is a RUNG and `steppedTo` refuses a third step.
@@ -169,23 +157,26 @@ export function startRun(
   runSeed: number = 1,
 ): RunState {
   const granted = mintGrants(grants, STARTING_BUFF_COUNT + 1)
+  // DLR-132 — the opening Cheat is a PILE MEMBER now, not a rail card. Ids stay consecutive with
+  // the seeded placeholders and the Vault's grants, so `nextBuffId` below is still the one true
+  // next id regardless of how many of either this run happens to have.
+  const openingCheats = Array.from({ length: RUN_STARTING_CHEATS }, (_, i) =>
+    cheatBuff(BuffTier.Bronze, STARTING_BUFF_COUNT + 1 + granted.length + i),
+  )
   return {
     encounterIndex: 0,
     encounterCount: QUARRY_ENCOUNTER_HEALTH.length,
     encounter: startEncounter(0, playerHealth),
     outcome: RunOutcome.InProgress,
-    cheats: grantCheats(RUN_STARTING_CHEATS, 1),
-    nextCheatId: RUN_STARTING_CHEATS + 1,
     coins: 0,
-    timebombCharges: 0,
     blastGuardHeld: false,
     whetstones: 0,
     flaskCharges: FLASK_STARTING_CHARGES,
     handOfFight: 1,
     discardsRemaining: DISCARDS_PER_FIGHT,
     lastQuickKillPayout: 0,
-    buffs: [...seedStartingBuffPile(STARTING_BUFF_COUNT, 1), ...granted],
-    nextBuffId: STARTING_BUFF_COUNT + 1 + granted.length,
+    buffs: [...seedStartingBuffPile(STARTING_BUFF_COUNT, 1), ...granted, ...openingCheats],
+    nextBuffId: STARTING_BUFF_COUNT + 1 + granted.length + openingCheats.length,
     runSeed,
     apCapacityBonus: 0,
     slotPullsThisVisit: 0,
@@ -222,7 +213,6 @@ export function shopStockFor(
 ): ShopStock {
   return {
     coins: run.coins,
-    cheatCount: run.cheats.length,
     playerHealth: run.encounter.health[DuelSide.Player],
     maxPlayerHealth,
     blastGuardHeld: run.blastGuardHeld,

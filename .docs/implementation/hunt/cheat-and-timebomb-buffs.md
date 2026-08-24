@@ -2,10 +2,25 @@ Part of [Hunt](README.md).
 
 DLR-107 gave Cheat and Timebomb a representation as ordinary `Buff` objects on the DLR-105 buff
 pile — `buffCatalog.ts`, a new pure module holding the two tier tables, the factories that mint each
-card at a tier, and the readers that get the tier-scaled figure back out. It ships
-**representation only**. Nothing activates a buff, draws one, or renders one; the felt still drives
-the old bespoke mechanics, so this module is inert by design. Read
-[The buff pile](buff-pile.md) first for the `Buff` type this builds on.
+card at a tier, and the readers that get the tier-scaled figure back out.
+
+> **DLR-132 closed the migration this file originally described as inert, 2026-08-24.** Everything
+> below this note is DLR-107's original record and is still accurate on its own terms — the tier
+> tables, the factories, the readers, all unchanged. What changed is everything *around* them:
+> `cheatBuff` and `timebombBuff` are now the **only** minting path (`buffTemplates.ts`'s
+> `mintFromTemplate` delegates to them for both cards), both are drawable from the reel
+> (`ACTIVATED_TEMPLATES`, two of the pool's 73 templates), and the old bespoke felt mechanics
+> (`CheatStage`, `TimebombStage`, `CheatSlots.tsx`, `TimebombCharge.tsx`, `src/hunt/cheats.ts`,
+> `RunState.cheats`/`nextCheatId`/`timebombCharges`) are **deleted in full**. Cheat and Timebomb no
+> longer exist twice — see [action-bar-and-loadout.md](../war-council-ui/action-bar-and-loadout.md)
+> for where the two effects fire now (`handleTapBuff`, beside Ward's), and
+> [buff-pile.md](buff-pile.md) for the pile's shape. `RUN_STARTING_CHEATS` is unchanged in name and
+> value (still `1`) and now seeds a bronze Cheat straight into `RunState.buffs` at `startRun`, rather
+> than granting a slot. `TimebombDamage` is retyped `Readonly<Record<DuelSide, Damage>>` and
+> `queueTimebomb` takes the pair directly — see
+> [timebomb-and-the-delayed-hit.md](timebomb-and-the-delayed-hit.md).
+
+Read [The buff pile](buff-pile.md) first for the `Buff` type this builds on.
 
 **`Buff` gained an identity, and that is the one type change.** DLR-105 shipped `Buff` with `id`,
 `tier`, `condition` and `reward` — and nothing naming *which card this is*. `condition.kind`
@@ -90,15 +105,13 @@ roughly 40. The values stay named, exported and stated once — which is what th
 rule actually asks for — and `index.ts` re-exports them, so `import { CHEAT_DURATION_TRICKS } from
 '../hunt'` reads identically either way.
 
-Second, and more consequentially: **DLR-107's AC3 asked for the old two-click Cheat-slot
-(`CheatStage`) and three-tap Timebomb-plate (`TimebombStage`) state machines to be removed, and they
-were not.** AC3 gates removal on the new model being "proven equivalent", while the same ticket's
-Scope Boundaries put the felt-rail UI removal out of scope and state that the UI still points at the
-old mechanics. Both machines are live, reachable, tested code in `src/app/warCouncil/`. So **Cheat and
-Timebomb currently exist twice**: the live bespoke mechanic the felt drives, and this inert
-representation nothing reads. That duplication is the intended intermediate state of a migration
-split across tickets, not an oversight — and the derivation above is the reason the two cannot drift
-apart while it lasts. It ends when the activation ticket (DLR-103 T5) and the UI ticket land.
+Second: **DLR-107's AC3 asked for the old two-click Cheat-slot (`CheatStage`) and three-tap
+Timebomb-plate (`TimebombStage`) state machines to be removed, and for two tickets they were not** —
+AC3 gated removal on the new model being "proven equivalent", and the felt kept driving both bespoke
+mechanics while this representation sat unread. **DLR-132 is what ended the duplication (2026-08-24)**:
+`CheatStage`, `TimebombStage`, `CheatSlots.tsx`, `TimebombCharge.tsx` and the whole of `cheats.ts` are
+deleted, and `mintFromTemplate` delegating to `cheatBuff`/`timebombBuff` (above) is now the only path
+either card is ever created through. Cheat and Timebomb exist exactly once.
 
 **One unchosen number lives here.** `TIMEBOMB_TIER_MULTIPLIER`'s `{ bronze: 1, silver: 2, gold: 3 }`
 is not transcribed from anywhere: neither the ticket nor §3 states Timebomb's tier magnitudes. It was

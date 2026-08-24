@@ -82,14 +82,27 @@ uses. It is the one new module-level object in the feature.
 
 ## `queueTimebomb` — booking the hit
 
+> **DLR-132 changed this function's signature, 2026-08-24.** `timebombDamageFor` is deleted, and
+> `queueTimebomb` now takes the damage pair as a required third argument rather than picking a figure
+> internally — because a Timebomb's amount depends on the tier of the card that primed it, which this
+> module cannot see. The paragraphs immediately below describe the pre-DLR-132 shape; the corrected
+> signature and its caller are described after them.
+
 `(encounter, target) => EncounterState`. Adds the **target side's own figure** to the record and
 returns a new encounter — `TIMEBOMB_QUARRY_DAMAGE` (4) against the Quarry, `TIMEBOMB_PLAYER_DAMAGE` (2)
 against the player, since DLR-91 split the single key. It was one shared figure as DLR-90 shipped it.
 
-**Which figure is chosen once, in `timebombDamageFor(target)` beside the booking** (D2). That
-placement is the point: a caller that had to pick the amount itself is a caller that can pick the wrong
+**Which figure was chosen once, in `timebombDamageFor(target)` beside the booking** (D2). That
+placement was the point: a caller that had to pick the amount itself is a caller that can pick the wrong
 one, and two keys whose names differ by one word is exactly the shape of a bug that type-checks, reads
-correctly, and pays the wrong side. Nothing outside this file names either key.
+correctly, and pays the wrong side. Nothing outside this file named either key.
+
+**Since DLR-132, `(encounter, target, damage: TimebombDamage) => EncounterState`.** The caller now
+supplies the pair — `damage[target]` is added to the record — because the figure is the *primed
+card's own tier's*, and `commit` in `src/app/warCouncil/commitHandlers.ts` is the one place that
+knows which card that was (`state.primedTimebombDamage`). `TimebombDamage` is `buffCatalog.ts`'s
+type, retyped `Readonly<Record<DuelSide, Damage>>` so `damage[target]` reads identically to the old
+`timebombDamageFor(target)` at every call site that still only needs one side.
 
 **It was module-private until DLR-101, which promoted it to a `src/hunt` export** — a purely additive
 change, with `queueTimebomb` still its only internal caller. The reason is the same argument one layer
@@ -154,10 +167,17 @@ ticket. DLR-94 built the control and read this predicate: `src/warCouncil/volunt
 
 ## The charge — bought, carried, spent
 
-`RunState.timebombCharges` is a **count**, not a list of objects like `cheats`. A Cheat is an object
+> **DLR-132 deleted everything this section originally described, 2026-08-24.** `RunState.timebombCharges`
+> and the required `cheats`/`timebombCharges` parameters on `recordEncounter` are gone. A Timebomb is
+> now an ordinary pile member on `RunState.buffs`, exactly like a Cheat or any other buff — it survives
+> a fight boundary through the pile's own carry, with no separate count and no separate parameter for a
+> hand to hand back. This section is kept for its historical record of DLR-90's original design; read
+> [Cheat and Timebomb as buff-pile objects](cheat-and-timebomb-buffs.md) for what replaced it.
+
+`RunState.timebombCharges` was a **count**, not a list of objects like `cheats`. A Cheat is an object
 because a spend names a specific card and React needs a stable key for the slot it leaves; a charge
 has no identity to spend by name — **the card it marks is the identity**, and that lives on
-`RoundState.primedCards`. `startRun` seeds it to `0` and `advanceRun`'s existing spread carries
+`RoundState.primedCards`. `startRun` seeded it to `0` and `advanceRun`'s existing spread carried
 it across every fight boundary with no new code.
 
 `recordEncounter` gained a **required fourth parameter** to take the count back from a finished
@@ -185,6 +205,14 @@ switch (item) {
 A fourth item is now a compile error here rather than an item that quietly does whatever the last
 branch happened to do. QA confirmed the fix in a real browser as well as in the type system: buying
 a Heal at 9 of 10 health raises health and leaves the Timebomb count untouched.
+
+> **DLR-132 rewrote the Cheat and Timebomb arms above, 2026-08-24.** Neither `addCheat` nor
+> `cheats`/`timebombCharges` exists any longer. Both arms now mint a bronze `Buff` into the pile
+> through a shared `withMintedBuff` helper (`case ShopItem.Cheat: return withMintedBuff(paid,
+> cheatBuff(BuffTier.Bronze, run.nextBuffId))`, and the mirror for Timebomb). `SHOP_ITEMS` still does
+> not list either `ShopItem` (DLR-116), so this branch has no reachable caller today — see
+> [reachability-audit.md](../sim/reachability-audit.md) — but it is exercised directly by
+> `run.shop.test.ts`.
 
 **`refusalFor` needed no clause at all**, and that is the correct rule rather than an omission.
 Timebomb falls through both item-specific guards to the coin check, because there is **no cap on

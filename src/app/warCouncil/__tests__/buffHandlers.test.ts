@@ -7,12 +7,14 @@ import {
   BuffKind,
   BuffRewardAxis,
   BuffTier,
+  CHEAT_DURATION_TRICKS,
   cheatBuff,
   STARTING_AP,
   WARD_ABSORPTION,
   type Buff,
 } from '../../../hunt'
 import {
+  cheatArmed,
   createRoundUiState,
   loadoutOpen,
   offeredBuffs,
@@ -30,8 +32,6 @@ function seed(overrides: Partial<WarCouncilState> = {}): RoundUiSeed {
   return {
     round: makeRound(overrides),
     encounter: encounterFixture,
-    cheats: [],
-    timebombCharges: 0,
     blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: 2,
@@ -230,5 +230,30 @@ describe('handleTapBuff — a consumable item leaves the pile at the spend', () 
     const after = spend(openWith([cheat]), cheat.id)
     expect(after.buffs.map((b) => b.id)).toEqual([cheat.id])
     expect(after.buffActivation.activatedThisTrick).toEqual([cheat.id])
+  })
+})
+
+// ── DLR-132 — Cheat and Timebomb, as ordinary rows through the ordinary two-tap flow ───────────
+
+describe('handleTapBuff — spending a Cheat row', () => {
+  it('spends a Cheat on the second tap and lifts follow-suit for its tier of tricks', () => {
+    const silverCheat = cheatBuff(BuffTier.Silver, 21)
+    const after = spend(openWith([silverCheat]), silverCheat.id)
+    expect(after.cheatTricksRemaining).toBe(CHEAT_DURATION_TRICKS[BuffTier.Silver])
+    expect(cheatArmed(after)).toBe(true)
+  })
+
+  it('drops the poise on Escape (CancelLoadout) without spending the Cheat', () => {
+    const opened = openWith([cheat])
+    const poised = roundReducer(opened, { kind: RoundUiActionKind.TapBuff, id: cheat.id })
+    const cancelled = roundReducer(poised, { kind: RoundUiActionKind.CancelLoadout })
+    expect(cancelled.cheatTricksRemaining).toBe(0)
+    expect(cancelled.buffActivation.apPool).toBe(opened.buffActivation.apPool)
+  })
+
+  it('leaves the pile unchanged when a Cheat is spent', () => {
+    const before = openWith([cheat])
+    const after = spend(before, cheat.id)
+    expect(after.buffs).toHaveLength(before.buffs.length)
   })
 })

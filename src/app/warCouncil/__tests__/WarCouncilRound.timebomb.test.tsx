@@ -2,10 +2,9 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
-import { HAND_SIZE } from '../../../hunt'
+import { BuffTier, HAND_SIZE, timebombBuff } from '../../../hunt'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
-import { TIMEBOMB_ARMED_HINT, TIMEBOMB_EMPTY_LABEL, timebombAccessibleName } from '../labels'
-import { TimebombStage } from '../roundUiState'
+import { TIMEBOMB_ARMED_HINT } from '../labels'
 import WarCouncilRound from '../WarCouncilRound'
 import {
   bankClimbBonusFixture,
@@ -13,7 +12,6 @@ import {
   coinsFixture,
   discardsRemainingFixture,
   encounterFixture,
-  timebombChargesFixture,
   huntFixture,
   makeRound,
   maxHealthFixture,
@@ -24,8 +22,11 @@ import {
 
 afterEach(cleanup)
 
-/** Mirrors `WarCouncilRound.test.tsx`'s own `renderRound` helper, adding the one prop this
- *  spec file exists to exercise. */
+const bronzeTimebomb = timebombBuff(BuffTier.Bronze, 1)
+
+/** Mirrors `WarCouncilRound.test.tsx`'s own `renderRound` helper. DLR-132 — a Timebomb is an
+ *  ordinary pile member now, so every test below seeds one through `buffs` rather than a
+ *  dedicated `timebombCharges` prop. */
 function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
   return render(
     <WarCouncilRound
@@ -35,58 +36,56 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       maxHealth={overrides.maxHealth ?? maxHealthFixture}
       runLabel={overrides.runLabel ?? runLabelFixture}
       quarryLabel={quarryLabelFixture}
-      cheats={overrides.cheats ?? []}
       coins={overrides.coins ?? coinsFixture}
-      timebombCharges={overrides.timebombCharges ?? timebombChargesFixture}
       blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
       bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
-      buffs={overrides.buffs ?? []}
+      buffs={overrides.buffs ?? [bronzeTimebomb]}
       onComplete={overrides.onComplete ?? vi.fn()}
     />,
   )
 }
 
-function timebombPlate(stage: TimebombStage | null, charges = timebombChargesFixture) {
-  return screen.getByRole('button', { name: timebombAccessibleName(stage, charges) })
+/** The Timebomb row, in `buffLine` grammar — its name stays matchable across poise/refusal
+ *  states because only the trailing clause changes. */
+function timebombRow() {
+  return screen.getByRole('button', { name: /^Timebomb \(/ })
 }
 
 /** DLR-114 — Timebomb relocated from the felt rail into the Apply Buff loadout panel. Every
- *  test below must open the panel before it can reach `timebombPlate`. */
+ *  test below must open the panel before it can reach the row. */
 function openLoadout() {
   fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
 }
 
-describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
-  it('renders the charge plate inside the opened loadout panel with its held name', () => {
+describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
+  it('renders the Timebomb row inside the opened loadout panel', () => {
     renderRound()
     openLoadout()
-    expect(timebombPlate(null)).toBeTruthy()
+    expect(timebombRow()).toBeTruthy()
   })
 
-  it('renders inert rather than vanishing at zero charges', () => {
-    renderRound({ timebombCharges: 0 })
+  it('is absent from the panel when the pile holds none', () => {
+    renderRound({ buffs: [] })
     openLoadout()
-    const empty = screen.getByRole('button', { name: TIMEBOMB_EMPTY_LABEL })
-    expect(empty).toHaveProperty('disabled', true)
+    expect(screen.queryByRole('button', { name: /^Timebomb \(/ })).toBeNull()
   })
 
-  it('arms on the second click, reporting the armed hint and aria-pressed true', () => {
+  it('arms on the second click, reporting the armed hint', () => {
     renderRound()
     openLoadout()
-    const plate = timebombPlate(null)
-    fireEvent.click(plate)
-    fireEvent.click(timebombPlate(TimebombStage.Poised))
-    const armed = timebombPlate(TimebombStage.Armed)
-    expect(armed.getAttribute('aria-pressed')).toBe('true')
+    const row = timebombRow()
+    fireEvent.click(row) // poise
+    fireEvent.click(row) // spend
     expect(screen.getByText(TIMEBOMB_ARMED_HINT)).toBeTruthy()
   })
 
   it('marks the tapped hand card and leaves the trick unplayed once armed', () => {
     renderRound()
     openLoadout()
-    fireEvent.click(timebombPlate(null))
-    fireEvent.click(timebombPlate(TimebombStage.Poised))
+    const row = timebombRow()
+    fireEvent.click(row)
+    fireEvent.click(row)
     const scoreboard = screen.getByRole('group', { name: /tricks won/i })
     expect(scoreboard.textContent).toMatch(/You0/)
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
@@ -111,36 +110,31 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
     expect(offSuit).toHaveProperty('disabled', true)
 
     openLoadout()
-    fireEvent.click(timebombPlate(null))
-    fireEvent.click(timebombPlate(TimebombStage.Poised))
+    const row = timebombRow()
+    fireEvent.click(row)
+    fireEvent.click(row)
     expect(screen.getByRole('button', { name: '7 of Bells' })).toHaveProperty('disabled', false)
     fireEvent.click(screen.getByRole('button', { name: '7 of Bells' }))
     expect(screen.getByRole('button', { name: '7 of Bells, primed' })).toBeTruthy()
   })
 
-  it('gives the charge back unspent on a third click', () => {
+  it('cancels the poise on Escape, spending nothing', () => {
     renderRound()
     openLoadout()
-    fireEvent.click(timebombPlate(null))
-    fireEvent.click(timebombPlate(TimebombStage.Poised))
-    fireEvent.click(timebombPlate(TimebombStage.Armed))
-    expect(screen.queryByText(TIMEBOMB_ARMED_HINT)).toBeNull()
-    expect(timebombPlate(null)).toBeTruthy()
-  })
-
-  it('cancels the selection on Escape', () => {
-    renderRound()
+    const row = timebombRow()
+    fireEvent.click(row) // poise
+    fireEvent.keyDown(row.closest('[role="dialog"]') as Element, { key: 'Escape' })
+    // The dialog itself closes on Escape (DLR-132 — the roving collection is now the whole
+    // panel, and Escape is handled once, on the container). Reopening finds the row unspent.
     openLoadout()
-    fireEvent.click(timebombPlate(null))
-    const poised = timebombPlate(TimebombStage.Poised)
-    fireEvent.keyDown(poised.closest('[role="group"]') as Element, { key: 'Escape' })
-    expect(timebombPlate(null)).toBeTruthy()
+    expect(timebombRow().getAttribute('aria-pressed')).toBe('false')
   })
 
   it('is disabled while a trick reveal is held, and does not clear the reveal on click (stopPropagation)', () => {
     // Same construction as the base spec's own "plays a legal card" case: the fixture hand's
     // one Bells card completes a trick against the fixture Cpu hand. The panel is opened BEFORE
-    // the trick resolves — opening it is refused once a reveal is held, same as Swap's own gate.
+    // the trick resolves — `discardWindowOpen` (and so `loadoutRefusalFor`) narrows once a reveal
+    // is held, same as Swap's own gate, so the row itself greys rather than the panel closing.
     renderRound()
     openLoadout()
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
@@ -148,11 +142,11 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
     fireEvent.click(bells7)
     expect(screen.getByText(/take the trick/i)).toBeDefined()
 
-    const plate = timebombPlate(null)
-    expect(plate).toHaveProperty('disabled', true)
-    fireEvent.click(plate)
-    // The reveal is still on screen — a click on the disabled plate must not have bubbled to
-    // `.wc-table`'s own onClick, which would otherwise have called handleCarryOn and cleared it.
+    const row = timebombRow()
+    expect(row).toHaveProperty('disabled', true)
+    fireEvent.click(row)
+    // A click on the disabled row must not have bubbled to `.wc-table`'s own onClick, which
+    // would otherwise have called handleCarryOn and cleared the reveal.
     expect(screen.getByText(/take the trick/i)).toBeDefined()
   })
 
@@ -179,8 +173,9 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
 
     // Mark the 2 of Bells, then play it.
     openLoadout()
-    fireEvent.click(timebombPlate(null))
-    fireEvent.click(timebombPlate(TimebombStage.Poised))
+    const row = timebombRow()
+    fireEvent.click(row)
+    fireEvent.click(row)
     const bells2 = screen.getByRole('button', { name: '2 of Bells' })
     fireEvent.click(bells2)
     const markedBells2 = screen.getByRole('button', { name: '2 of Bells, primed' })
@@ -213,8 +208,9 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
 
     // Mark the 2 of Bells with Timebomb.
     openLoadout()
-    fireEvent.click(timebombPlate(null))
-    fireEvent.click(timebombPlate(TimebombStage.Poised))
+    const row = timebombRow()
+    fireEvent.click(row)
+    fireEvent.click(row)
     fireEvent.click(screen.getByRole('button', { name: '2 of Bells' }))
     expect(screen.getByRole('button', { name: '2 of Bells, primed' })).toBeTruthy()
 
@@ -229,7 +225,7 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
     expect(screen.getByRole('button', { name: '2 of Bells, primed' })).toBeTruthy()
   })
 
-  it('reports onComplete with timebombCharges reflecting what was spent', () => {
+  it('reports onComplete with the pile still holding the Timebomb — DLR-132, not a one-shot item', () => {
     const onComplete = vi.fn()
     const round = makeRound({
       tricksPlayed: HAND_SIZE - 1,
@@ -241,8 +237,9 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
     renderRound({ initialState: round, onComplete })
 
     openLoadout()
-    fireEvent.click(timebombPlate(null))
-    fireEvent.click(timebombPlate(TimebombStage.Poised))
+    const row = timebombRow()
+    fireEvent.click(row)
+    fireEvent.click(row)
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
     const marked = screen.getByRole('button', { name: '7 of Bells, primed' })
@@ -253,6 +250,6 @@ describe('WarCouncilRound — the Timebomb rail (DLR-90)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Deal the next Hunt' }))
 
     expect(onComplete).toHaveBeenCalledTimes(1)
-    expect(onComplete.mock.calls[0][0].timebombCharges).toBe(timebombChargesFixture - 1)
+    expect(onComplete.mock.calls[0][0].buffs).toEqual([bronzeTimebomb])
   })
 })

@@ -8,6 +8,14 @@ price lookup, and
 purchase itself lives next door in `run.ts`, because spending changes a run and this module is not
 allowed to know what a run is.
 
+> **DLR-132 deleted `cheats.ts`, `CHEAT_SLOT_COUNT` and `RunState.timebombCharges`, 2026-08-24.**
+> Every reference to them below (`cheats.length`, `addCheat`, `nextCheatId`, `stock.cheatCount`) is
+> this file's original historical record and describes machinery that no longer exists — a Cheat and
+> a Timebomb are ordinary `Buff` objects in `RunState.buffs` now, with no capacity cap. Both purchases
+> remain off the shelf (`SHOP_ITEMS` still does not list either `ShopItem`, unchanged since DLR-116);
+> what changed is only what the branch does on the rare direct call. See
+> [Cheat and Timebomb as buff-pile objects](cheat-and-timebomb-buffs.md).
+
 Before DLR-84 there was no currency anywhere — [PT-002 had left overkill damage explicitly
 unconverted](hand-and-skull-tunables.md) and DLR-83 had laid `addCheat` and `nextCheatId` down
 unread, naming this ticket as the thing that would call them. Both now have production readers.
@@ -232,6 +240,11 @@ screen assembles a `ShopStock` by hand and gets one field wrong.
 
 ## `refusalFor` — the one rule, read four times
 
+> **DLR-132 deleted the `SlotsFull` clause below, 2026-08-24.** `CHEAT_SLOT_COUNT` and
+> `stock.cheatCount` no longer exist — the pile a Cheat now lives in has no capacity cap, so a Cheat
+> purchase (already unreachable via `SHOP_ITEMS` since DLR-116) can no longer be refused for being
+> full. The other three clauses are unchanged. The code below is DLR-84/DLR-91's original snapshot.
+
 ```ts
 export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | null {
   if (item === ShopItem.Cheat && stock.cheatCount >= CHEAT_SLOT_COUNT)
@@ -287,6 +300,10 @@ something to buy while every purchase card on the shop screen is greyed out.
 `runTransitions.ts` composes (it lived in `run.ts` until DLR-93 split the transitions out — see
 [the run](run-sequence.md)): consult `refusalFor`, throw if it is non-null, otherwise deduct and
 apply.
+
+> **DLR-132 rewrote the Cheat and Timebomb arms below, 2026-08-24.** `addCheat`/`nextCheatId` and
+> `timebombCharges` are deleted; both arms now mint a bronze `Buff` into `RunState.buffs` through a
+> shared `withMintedBuff(run, buff)` helper instead. The snippet below is DLR-84/DLR-90's original.
 
 ```ts
 const paid = { ...run, coins: run.coins - priceOf(item) }

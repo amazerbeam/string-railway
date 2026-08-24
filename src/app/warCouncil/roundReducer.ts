@@ -9,27 +9,22 @@ import {
   currentTurn,
   primeCard,
   isPrimed,
-  legalMoves,
   sameCard,
   type Card,
 } from '../../warCouncil'
 import {
   APPLY_DAMAGE_AP_COST,
-  hasCheat,
   isEncounterResolved,
   openBuffWindow,
   queueApplyDamagePayout,
   queueApplyPayout,
   spendAp,
-  type CheatCardId,
 } from '../../hunt'
 import {
   applyDamageStock,
   canAct,
-  CheatStage,
   discardSelecting,
   timebombArmed,
-  TimebombStage,
   RoundUiActionKind,
   type RoundUiAction,
   type RoundUiState,
@@ -101,14 +96,6 @@ function applyAction(state: RoundUiState, action: RoundUiAction): RoundUiState {
       return { ...state, armed: null, prompt: null }
     case RoundUiActionKind.CarryOn:
       return handleCarryOn(state)
-    case RoundUiActionKind.TapCheat:
-      return handleTapCheat(state, action.id)
-    case RoundUiActionKind.CancelCheat:
-      return clearCheat(state)
-    case RoundUiActionKind.TapTimebomb:
-      return handleTapTimebomb(state)
-    case RoundUiActionKind.CancelTimebomb:
-      return state.timebombStage === null ? state : { ...state, timebombStage: null }
     case RoundUiActionKind.TapApplyDamage:
       return handleTapApplyDamage(state)
     case RoundUiActionKind.CancelApplyDamage:
@@ -134,9 +121,9 @@ function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
   if (!canAct(state)) {
     return state
   }
-  // AC2 — while armed, a hand-card tap MARKS rather than plays.
+  // AC2 — while armed, a hand-card tap MARKS (primes) rather than plays.
   if (timebombArmed(state)) {
-    return commitTimebomb(state, tapped)
+    return primeTapped(state, tapped)
   }
 
   if (state.armed && sameCard(state.armed, tapped)) {
@@ -150,74 +137,9 @@ function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
 }
 
 /**
- * AC4/AC6 — four outcomes on one id. Nothing selected poises; poised on the same id arms; armed
- * on the same id gives it back unspent; a tap on a different id poises that one instead.
- *
- * Guards `hasCheat` rather than trusting the id: a selection can outlive its card if a future
- * caller ever removes one outside `commit`, and a reducer must not throw — a throw inside a
- * reducer during an event handler unmounts the tree.
- */
-function handleTapCheat(state: RoundUiState, id: CheatCardId): RoundUiState {
-  if (!canAct(state) || discardSelecting(state) || !hasCheat(state.cheats, id)) {
-    return state
-  }
-  const current = state.cheatSelection
-  if (current === null || current.id !== id) {
-    // Arming a Cheat reinterprets the same hand-card tap Timebomb does, so the two selections
-    // cannot coexist — clear a held Timebomb selection here for the same reason `handleTapTimebomb`
-    // clears `cheatSelection` on its own poise branch.
-    return {
-      ...state,
-      cheatSelection: { id, stage: CheatStage.Poised },
-      timebombStage: null,
-      discardSelection: null,
-    }
-  }
-  const stage = current.stage === CheatStage.Poised ? CheatStage.Armed : null
-  return stage === null ? clearCheat(state) : { ...state, cheatSelection: { id, stage } }
-}
-
-/**
- * AC6 — disarm without spending. Also drops a poised hand card that the RE-NARROWED legal set has
- * just made illegal, so the player is never left holding a selection that will be rejected on its
- * next tap with no visible cause.
- */
-function clearCheat(state: RoundUiState): RoundUiState {
-  const stillLegal =
-    state.armed === null || containsCard(legalMoves(state.round, PlayerSide.Player), state.armed)
-  return { ...state, cheatSelection: null, armed: stillLegal ? state.armed : null }
-}
-
-/**
- * AC2 — three outcomes on one control, mirroring `handleTapCheat`. Nothing selected poises; poised
- * arms; armed gives the charge back UNSPENT.
- *
- * Poising clears the Cheat selection and any card armed-to-play: both reinterpret a hand-card tap,
- * so allowing two at once makes the next tap ambiguous.
- */
-function handleTapTimebomb(state: RoundUiState): RoundUiState {
-  if (!canAct(state) || discardSelecting(state) || state.timebombCharges <= 0) {
-    return state
-  }
-  if (state.timebombStage === null) {
-    return {
-      ...state,
-      timebombStage: TimebombStage.Poised,
-      cheatSelection: null,
-      armed: null,
-      discardSelection: null,
-    }
-  }
-  if (state.timebombStage === TimebombStage.Poised) {
-    return { ...state, timebombStage: TimebombStage.Armed }
-  }
-  return { ...state, timebombStage: null }
-}
-
-/**
- * DLR-94 AC1/AC2 — three outcomes on one control, mirroring `handleTapTimebomb`'s shape. A refusal
- * changes nothing; nothing poised poises; poised COMMITS. There is no third stage: unlike Timebomb,
- * this control's second tap IS the action rather than a prelude to a hand-card tap.
+ * DLR-94 AC1/AC2 — three outcomes on one control. A refusal
+ * changes nothing; nothing poised poises; poised COMMITS. There is no third stage: unlike a
+ * Timebomb row, this control's second tap IS the action rather than a prelude to a hand-card tap.
  *
  * Asks `applyDamageRefusalFor` on BOTH taps, not just the first. The felt can change under a
  * poised plate — a Timebomb booking lands, a reveal is held, the turn passes — and re-reading is what
@@ -229,9 +151,9 @@ function handleTapTimebomb(state: RoundUiState): RoundUiState {
  * `resolvedTrick` stays null, and nothing writes `lastResolution` — so no reveal is held, the felt
  * never enters its waiting state, and the player's next tap plays their card by the ordinary rules.
  *
- * Poising does NOT clear the Cheat or Timebomb selection, and they do not clear it. Those two
- * reinterpret the next hand-card tap and therefore cannot coexist; this one reinterprets nothing,
- * so a player may poise a Cheat and apply damage in either order without losing either.
+ * Poising does NOT clear a live Cheat or an armed Timebomb, and they do not clear it. Neither
+ * reinterprets a hand-card tap the way arming a Timebomb does, so a player may poise a Cheat and
+ * apply damage in either order without losing either.
  *
  * DLR-109 — the committing tap no longer resolves anything. It spends `APPLY_DAMAGE_AP_COST`
  * through `spendAp`, the only subtraction path, and QUEUES the cash-out instead of dealing it —
@@ -283,31 +205,35 @@ function handleTapApplyDamage(state: RoundUiState): RoundUiState {
 }
 
 /**
- * AC2 — spend one charge to mark the tapped card.
+ * AC2 — an armed Timebomb's next hand-card tap primes the card rather than playing it.
  *
- * Guards membership, the existing mark, and the charge count BEFORE calling `primeCard`, which
+ * Guards membership, the existing mark, and the armed damage BEFORE calling `primeCard`, which
  * throws on the first two: a reducer must not throw, because a throw during an event handler
- * unmounts the tree. Exactly the shape `handleTapCheat` uses when it checks `hasCheat` before
- * `removeCheat`. A guard that fails clears the selection rather than half-applying it, so the
- * player is never left armed with no visible cause.
+ * unmounts the tree. Kept verbatim from the pre-DLR-132 `commitTimebomb`'s three guards. A guard
+ * that fails clears the armed state rather than half-applying, so the player is never left armed
+ * with no visible cause.
  *
- * Legality is deliberately NOT checked: marking is not a move, and the whole point of the item is
- * marking a card the player expects to lose with.
+ * On success, the pair moves from `timebombArmedDamage` (paid for, waiting) to
+ * `primedTimebombDamage` (what the primed card will detonate for) — `applyResolution` reads the
+ * latter when this trick's prime books against the encounter.
+ *
+ * Legality is deliberately NOT checked: priming is not a move, and the whole point of the card is
+ * marking one the player expects to lose with.
  */
-function commitTimebomb(state: RoundUiState, tapped: Card): RoundUiState {
+function primeTapped(state: RoundUiState, tapped: Card): RoundUiState {
   const hand = state.round.hands[PlayerSide.Player]
   if (
-    state.timebombCharges <= 0 ||
+    state.timebombArmedDamage === null ||
     !containsCard(hand, tapped) ||
     isPrimed(state.round.primedCards, tapped)
   ) {
-    return { ...state, timebombStage: null }
+    return { ...state, timebombArmedDamage: null }
   }
   return {
     ...state,
     round: primeCard(state.round, PlayerSide.Player, tapped),
-    timebombCharges: state.timebombCharges - 1,
-    timebombStage: null,
+    timebombArmedDamage: null,
+    primedTimebombDamage: state.timebombArmedDamage,
     armed: null,
     rejection: null,
   }

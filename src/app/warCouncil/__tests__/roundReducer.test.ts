@@ -14,38 +14,42 @@ import {
   type AbilityChoice,
   type WarCouncilState,
 } from '../../../warCouncil'
-import { HAND_SIZE, startEncounter, type CheatCard, type EncounterState } from '../../../hunt'
+import {
+  BuffTier,
+  cheatBuff,
+  HAND_SIZE,
+  startEncounter,
+  type Buff,
+  type EncounterState,
+} from '../../../hunt'
 import { roundReducer } from '../roundReducer'
 import {
   cheatArmed,
-  CheatStage,
   createRoundUiState,
   RoundUiActionKind,
   type ResolvedTrick,
   type RoundUiState,
 } from '../roundUiState'
-import { card, discardsRemainingFixture, timebombChargesFixture, makeRound } from './roundFixture'
+import { card, discardsRemainingFixture, makeRound } from './roundFixture'
 
 const tap = (c: Parameters<typeof card>[0] extends never ? never : ReturnType<typeof card>) =>
   ({ kind: RoundUiActionKind.TapCard, card: c }) as const
 const carryOn = { kind: RoundUiActionKind.CarryOn } as const
 
-// Every call site wants a fresh encounter and no held Cheats unless a scenario is specifically
+// Every call site wants a fresh encounter and an empty pile unless a scenario is specifically
 // testing one of those — this is `createRoundUiState`'s seed object, spelled once.
 function uiFrom(
   round: WarCouncilState,
   encounter: EncounterState = startEncounter(0),
-  cheats: readonly CheatCard[] = [],
+  buffs: readonly Buff[] = [],
 ): RoundUiState {
   return createRoundUiState({
     round,
     encounter,
-    cheats,
-    timebombCharges: timebombChargesFixture,
     blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: discardsRemainingFixture,
-    buffs: [],
+    buffs,
   })
 }
 
@@ -132,6 +136,7 @@ describe('CarryOn commits a pending Quarry lead', () => {
         firedBuffIds: [],
       },
       payout: null,
+      timebombDamage: null,
     }
     let ui: RoundUiState = { ...uiFrom(round), resolvedTrick: heldReveal }
     ui = roundReducer(ui, carryOn)
@@ -321,9 +326,9 @@ describe('a corrupt opponent turn', () => {
   })
 })
 
-describe('Cheat arm, disarm and spend (DLR-83)', () => {
+describe('Cheat poise, spend and consume (DLR-83, DLR-132)', () => {
   // Same shape as the `rejection` describe block above: the Quarry led Moons and the player
-  // holds Moons, so a Bells card is illegal without a Cheat armed — verified directly by that
+  // holds Moons, so a Bells card is illegal without a Cheat live — verified directly by that
   // block's own assertion (`MustFollowLeadSuit`) before this block leans on the same fixture.
   const followState = makeRound({
     leader: PlayerSide.Cpu,
@@ -331,61 +336,46 @@ describe('Cheat arm, disarm and spend (DLR-83)', () => {
     phase: RoundPhase.AwaitingFollow,
   })
   const offSuitCard = card(Suit.Bells, 7)
-  const held = [{ id: 1 }, { id: 2 }]
-  const seeded = () => uiFrom(followState, startEncounter(0), held)
+  const cheatA = cheatBuff(BuffTier.Bronze, 1)
+  const cheatB = cheatBuff(BuffTier.Bronze, 2)
+  const seeded = () => uiFrom(followState, startEncounter(0), [cheatA, cheatB])
+  const opened = () => roundReducer(seeded(), { kind: RoundUiActionKind.ToggleLoadout })
+  const tapBuff = (id: number) => ({ kind: RoundUiActionKind.TapBuff, id }) as const
 
-  it('needs two taps to arm, so one misclick cannot spend it (AC4)', () => {
-    const once = roundReducer(seeded(), { kind: RoundUiActionKind.TapCheat, id: 1 })
-    expect(once.cheatSelection).toEqual({ id: 1, stage: CheatStage.Poised })
+  it('needs two taps to poise then spend, so one tap alone does not lift follow-suit (AC4)', () => {
+    const once = roundReducer(opened(), tapBuff(cheatA.id))
+    expect(once.loadout?.poised).toBe(cheatA.id)
     expect(cheatArmed(once)).toBe(false)
 
-    const twice = roundReducer(once, { kind: RoundUiActionKind.TapCheat, id: 1 })
+    const twice = roundReducer(once, tapBuff(cheatA.id))
     expect(cheatArmed(twice)).toBe(true)
-    expect(twice.cheats).toHaveLength(2) // not spent yet
+    expect(twice.buffs).toHaveLength(2) // not consumed — a Cheat is not a one-shot item
   })
 
-  it('gives an armed Cheat back on a third tap, unspent (AC6)', () => {
-    let ui = roundReducer(seeded(), { kind: RoundUiActionKind.TapCheat, id: 1 })
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCheat, id: 1 })
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCheat, id: 1 })
-    expect(ui.cheatSelection).toBeNull()
-    expect(ui.cheats).toHaveLength(2)
+  it('moves the poise when a different row is tapped, spending neither', () => {
+    let ui = roundReducer(opened(), tapBuff(cheatA.id))
+    ui = roundReducer(ui, tapBuff(cheatB.id))
+    expect(ui.loadout?.poised).toBe(cheatB.id)
+    expect(cheatArmed(ui)).toBe(false)
   })
 
-  it('moves the selection when the other slot is tapped', () => {
-    let ui = roundReducer(seeded(), { kind: RoundUiActionKind.TapCheat, id: 1 })
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCheat, id: 2 })
-    expect(ui.cheatSelection).toEqual({ id: 2, stage: CheatStage.Poised })
-  })
-
-  it('consumes the armed Cheat when a forbidden card is committed (AC7)', () => {
-    let ui = seeded()
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCheat, id: 1 })
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCheat, id: 1 })
+  it('consumes one trick of the live Cheat when a forbidden card is committed (AC7)', () => {
+    let ui = roundReducer(opened(), tapBuff(cheatA.id))
+    ui = roundReducer(ui, tapBuff(cheatA.id))
+    expect(ui.cheatTricksRemaining).toBe(1)
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: offSuitCard })
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: offSuitCard })
-    expect(ui.cheats).toEqual([{ id: 2 }])
-    expect(ui.cheatSelection).toBeNull()
     expect(ui.rejection).toBeNull()
+    expect(ui.cheatTricksRemaining).toBe(0)
+    expect(ui.buffs).toHaveLength(2) // still in the pile — a Cheat is spent as duration, not a card
   })
 
-  it('rejects that same card with no Cheat armed, and holds every Cheat (AC9)', () => {
+  it('rejects that same card with no Cheat live, and touches nothing in the pile (AC9)', () => {
     let ui = seeded()
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: offSuitCard })
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: offSuitCard })
     expect(ui.rejection).toBe(IllegalMoveReason.MustFollowLeadSuit)
-    expect(ui.cheats).toHaveLength(2)
-  })
-
-  it('drops a poised card that disarming has just made illegal', () => {
-    let ui = seeded()
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCheat, id: 1 })
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCheat, id: 1 })
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: offSuitCard })
-    expect(ui.armed).toEqual(offSuitCard)
-    ui = roundReducer(ui, { kind: RoundUiActionKind.CancelCheat })
-    expect(ui.armed).toBeNull()
-    expect(ui.cheats).toHaveLength(2)
+    expect(ui.buffs).toHaveLength(2)
   })
 })
 

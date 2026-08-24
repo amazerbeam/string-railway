@@ -179,7 +179,8 @@ export function pullMachine(machine: SlotMachine, rng: Rng): SlotPull {
   return resolvePull(spinReels(machine, rng))
 }
 
-/** Ordinary `Buff` objects with consecutive ids from `firstId`, the `grantCheats` shape. */
+/** Ordinary `Buff` objects with consecutive ids from `firstId`, the same `(count, firstId)` /
+ *  `(grants, firstId)` shape as `seedStartingBuffPile` and `mintGrants`. */
 export function mintPullAwards(pull: SlotPull, firstId: BuffId): readonly Buff[] {
   return pull.awards.map((award, index) =>
     mintFromTemplate(award.template, award.tier, firstId + index),

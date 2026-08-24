@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyDamage,
+  BuffTier,
   DAMAGE_PER_HIT,
   DuelSide,
   HAND_SIZE,
@@ -9,6 +10,7 @@ import {
   ALL_BRONZE,
   steppedTo,
   TieredRank,
+  TIMEBOMB_DAMAGE,
   type RankTierTable,
 } from '../../../hunt'
 import {
@@ -28,7 +30,6 @@ import {
   discardsRemainingFixture,
   encounterFixture,
   makeRound,
-  timebombChargesFixture,
 } from './roundFixture'
 
 function seededUi(
@@ -39,8 +40,6 @@ function seededUi(
   return createRoundUiState({
     round: makeRound(overrides),
     encounter,
-    cheats: [],
-    timebombCharges: timebombChargesFixture,
     blastGuardHeld: blastGuardHeldFixture,
     bankClimbBonus: bankClimbBonusFixture,
     discardsRemaining: discardsRemainingFixture,
@@ -97,7 +96,11 @@ describe('cardDamagePreview — the hand fan’s per-card win/lose readout, deri
   })
 
   it('shows a Timebomb queued against the player in both branches, since it detonates whichever way the trick goes', () => {
-    const encounter = queueTimebomb(encounterFixture, DuelSide.Player)
+    const encounter = queueTimebomb(
+      encounterFixture,
+      DuelSide.Player,
+      TIMEBOMB_DAMAGE[BuffTier.Bronze],
+    )
     const ui = seededUi({}, encounter)
     const preview = cardDamagePreview(ui, card(Suit.Bells, 2))!
     // The Timebomb's own figure lands even on the WIN branch, where nothing else would hit the

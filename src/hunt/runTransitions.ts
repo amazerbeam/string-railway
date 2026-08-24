@@ -16,8 +16,8 @@ import {
   PLAYER_START_HEALTH,
   runEncounterAt,
 } from './config'
-import { addCheat, type CheatCard } from './cheats'
-import type { Buff } from './buffs'
+import { BuffKind, BuffTier, type Buff } from './buffs'
+import { cheatBuff, timebombBuff } from './buffCatalog'
 import { isEncounterResolved, startEncounter } from './encounter'
 import { flaskHealAmount, flaskRefusalFor } from './flask'
 import { quickKillPayout } from './quickKill'
@@ -41,38 +41,35 @@ import {
  * Refuses a run that has already ended: recording onto a finished run would silently resurrect
  * it, and there is no legitimate caller — the driver stops handing hands to a finished run.
  *
- * `cheats` (DLR-83) and `timebombCharges` (DLR-90 AC2) are both REQUIRED: the hand owns each for
- * its lifetime and hands the survivors back through `WarCouncilRoundResult`. A second transition
- * the caller must remember to make beside this one is the transition that eventually gets
- * forgotten.
- *
  * `blastGuardHeld` (DLR-91 AC2/AC4) is REQUIRED for the same reason — the hand owns it for its
  * whole life and hands the survivor back through `WarCouncilRoundResult`. It is passed through
  * `guardAfter`, not adopted verbatim: the Guard does not outlive the fight it was bought for, and
  * this is the ONE transition that adopts a hand's end state, so it is the one place that rule can
  * be enforced.
  *
- * `flaskCharges` (DLR-93 AC5) is NOT a parameter: unlike `cheats`, `timebombCharges` and
+ * `flaskCharges` (DLR-93 AC5) is NOT a parameter: unlike
  * `blastGuardHeld`, a hand cannot spend or grant a flask charge (AC4 makes it a between-fights
  * action), so there is nothing for a hand to hand back. It is read off `run` and refilled by
  * `flaskAfter` when the opponent just beaten was a stage boss.
  *
- * `discardsRemaining` (DLR-100 AC5) is the sixth parameter and REQUIRED for the same reason
- * `cheats`, `timebombCharges`, and `blastGuardHeld` are: the hand owns it for its lifetime and
+ * `discardsRemaining` (DLR-100 AC5) is REQUIRED for the same reason
+ * `blastGuardHeld` is: the hand owns it for its lifetime and
  * hands the survivor back through `WarCouncilRoundResult`. Carried through the returned spread
  * unchanged — `advanceRun`, not this function, resets it at the fight boundary.
  *
- * `unplayedCards` (DLR-95 AC2) is REQUIRED, not defaulted, as the seventh parameter, for the
- * reason `cheats` and `timebombCharges` above are: the compiler must enumerate every call site. A
+ * `unplayedCards` (DLR-95 AC2) is REQUIRED, not defaulted, for the
+ * same reason: the compiler must enumerate every call site. A
  * defaulted `null` would pay 0 forever the first time a driver forgot to thread the figure
  * through, and would do it silently. `null` is the legitimate value for a hand that did not end
  * the fight.
+ *
+ * DLR-132 — `cheats` and `timebombCharges` were the two REQUIRED parameters here; both are
+ * deleted along with the `RunState` fields they fed. A Cheat and a Timebomb are pile members now,
+ * carried through `buffs` below like every other buff.
  */
 export function recordEncounter(
   run: RunState,
   encounter: EncounterState,
-  cheats: readonly CheatCard[],
-  timebombCharges: number,
   blastGuardHeld: boolean,
   discardsRemaining: number,
   unplayedCards: number | null,
@@ -110,8 +107,6 @@ export function recordEncounter(
   return {
     ...run,
     encounter,
-    cheats,
-    timebombCharges,
     discardsRemaining,
     buffs: buffs ?? run.buffs,
     blastGuardHeld: guardAfter(encounter, blastGuardHeld),
@@ -194,7 +189,7 @@ export function drinkFlask(run: RunState, maxPlayerHealth: Health = PLAYER_START
 /**
  * AC4/AC5/AC7 — the purchase. Throws a `RangeError` naming the `PurchaseRefusal` rather than
  * returning the run unchanged: a silent no-op is exactly the "took payment for nothing" failure
- * `cheats.ts`'s `addCheat` already refuses to allow. Reaching the throw is a driver bug, because
+ * `pullSlotMachine` below already refuses to allow. Reaching the throw is a driver bug, because
  * the control is disabled whenever `refusalFor` is non-null.
  *
  * The heal writes into `encounter.health[Player]` because that IS the carried figure — this
@@ -217,8 +212,11 @@ export function buyFromShop(
   }
   const refusal = refusalFor(shopStockFor(run, maxPlayerHealth), item)
   if (refusal !== null) {
+    // DLR-132 — was `run.cheats.length`; a Cheat is a pile member now, so the pile's own count of
+    // them is the figure that still makes this message legible.
+    const cheatsHeld = run.buffs.filter((b) => b.kind === BuffKind.Cheat).length
     throw new RangeError(
-      `Cannot buy ${item} — ${refusal} (holding ${run.coins} coins, ${run.cheats.length} Cheats, ${run.encounter.health[DuelSide.Player]} of ${maxPlayerHealth} health)`,
+      `Cannot buy ${item} — ${refusal} (holding ${run.coins} coins, ${cheatsHeld} Cheats, ${run.encounter.health[DuelSide.Player]} of ${maxPlayerHealth} health)`,
     )
   }
   const paid = { ...run, coins: run.coins - priceOf(item) }
@@ -228,13 +226,9 @@ export function buyFromShop(
   // without this restructuring would have healed the player and type-checked cleanly.
   switch (item) {
     case ShopItem.Cheat:
-      return {
-        ...paid,
-        cheats: addCheat(run.cheats, { id: run.nextCheatId }),
-        nextCheatId: run.nextCheatId + 1,
-      }
+      return withMintedBuff(paid, cheatBuff(BuffTier.Bronze, run.nextBuffId))
     case ShopItem.Timebomb:
-      return { ...paid, timebombCharges: run.timebombCharges + 1 }
+      return withMintedBuff(paid, timebombBuff(BuffTier.Bronze, run.nextBuffId))
     case ShopItem.BlastGuard:
       return { ...paid, blastGuardHeld: true }
     case ShopItem.Whetstone:
@@ -262,6 +256,13 @@ export function buyFromShop(
       return { ...paid, rankTiers: steppedTo(run.rankTiers, rank) }
     }
   }
+}
+
+/** DLR-132 — one bought activated card appended to the pile, with `nextBuffId` advanced. A
+ *  helper rather than two identical spreads in `buyFromShop`'s Cheat and Timebomb branches, so
+ *  "a purchase adds one card and burns one id" is stated once. */
+function withMintedBuff(run: RunState, buff: Buff): RunState {
+  return { ...run, buffs: [...run.buffs, buff], nextBuffId: run.nextBuffId + 1 }
 }
 
 /**

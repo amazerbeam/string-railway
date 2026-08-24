@@ -22,9 +22,12 @@ import type { Damage } from './types'
 /**
  * The five one-shot items. Cheat, Timebomb and Shield are DELIBERATELY EXCLUDED: all three are
  * `BuffCadence.Activated` and all three are priced through `buffCosts.ts`'s `CONSUMABLE_AP_COST`,
- * but each has its own live bespoke mechanic (`CheatStage`, `TimebombStage`, `activateShield`) and
- * none is spent from the pile. "Consumable" here means the narrower thing DLR-111 names, not the
- * wider `CONSUMABLE_AP_COST` pricing bucket that happens to share the word.
+ * but each ARMS FELT STATE at the spend rather than leaving the pile — a Cheat sets
+ * `cheatTricksRemaining`, a Timebomb sets `timebombArmedDamage`, `activateShield` credits shield
+ * hearts — and stays a pile member `activateFromPile` passes straight through unchanged
+ * (DLR-132's `handleTapBuff`, beside Ward's). "Consumable" here means the narrower thing DLR-111
+ * names — spent ONCE and gone from the pile — not the wider `CONSUMABLE_AP_COST` pricing bucket
+ * that happens to share the word.
  */
 export type ConsumableItemKind =
   | typeof BuffKind.Ward

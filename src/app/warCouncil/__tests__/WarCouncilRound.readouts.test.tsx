@@ -3,14 +3,15 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
 import {
+  BuffTier,
+  cheatBuff,
   DAMAGE_PER_HIT,
   HAND_SIZE,
   PLAYER_START_HEALTH,
   quarryHealthForEncounter,
 } from '../../../hunt'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
-import { cardAccessibleName, cheatAccessibleName } from '../labels'
-import { CheatStage } from '../roundUiState'
+import { cardAccessibleName } from '../labels'
 import WarCouncilRound from '../WarCouncilRound'
 import {
   bankClimbBonusFixture,
@@ -19,7 +20,6 @@ import {
   coinsFixture,
   discardsRemainingFixture,
   encounterFixture,
-  timebombChargesFixture,
   huntFixture,
   makeRound,
   maxHealthFixture,
@@ -32,7 +32,7 @@ afterEach(cleanup)
 
 /**
  * Mirrors `WarCouncilRound.test.tsx`'s own `renderRound` helper (DLR-93 400-line split) — the
- * health-bar, purse, shape/bank-readout, and Cheat-slot readouts, carved out on their own concern.
+ * health-bar, purse, and shape/bank-readout, carved out on their own concern.
  */
 function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
   return render(
@@ -43,9 +43,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       maxHealth={overrides.maxHealth ?? maxHealthFixture}
       runLabel={overrides.runLabel ?? runLabelFixture}
       quarryLabel={quarryLabelFixture}
-      cheats={overrides.cheats ?? []}
       coins={overrides.coins ?? coinsFixture}
-      timebombCharges={overrides.timebombCharges ?? timebombChargesFixture}
       blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
       bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
@@ -164,27 +162,30 @@ describe('WarCouncilRound', () => {
     expect(screen.getByLabelText(/cashes for 1\b/i)).toBeTruthy()
   })
 
-  it('makes a forbidden card playable once a Cheat is armed (AC5)', () => {
+  it('makes a forbidden card playable once a Cheat is spent (AC5, DLR-132)', () => {
     // Same construction as "disables a card the engine says is illegal" above: the player is
     // forced to follow Moons, so their sole Bells card is genuinely forbidden without a Cheat.
     // The loadout panel opens through `loadoutDoorOpen` — canAct alone, since currentTrick is
-    // non-empty here — restoring the pre-DLR-114 reach: a Cheat is armed FOLLOWING a forced
+    // non-empty here — restoring the pre-DLR-114 reach: a Cheat is spent FOLLOWING a forced
     // off-suit lead, the only moment breaking follow-suit has value.
     const round = makeRound({
       leader: PlayerSide.Cpu,
       currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Moons, 9) }],
       phase: RoundPhase.AwaitingFollow,
     })
-    renderRound({ initialState: round, cheats: [{ id: 1 }] })
+    const cheat = cheatBuff(BuffTier.Bronze, 1)
+    renderRound({ initialState: round, buffs: [cheat] })
 
     const offSuitName = cardAccessibleName(card(Suit.Bells, 7))
     const offSuit = screen.getByRole('button', { name: offSuitName })
     expect(offSuit).toHaveProperty('disabled', true)
 
     openLoadout()
-    const slot = screen.getByRole('button', { name: cheatAccessibleName(null) })
-    fireEvent.click(slot)
-    fireEvent.click(screen.getByRole('button', { name: cheatAccessibleName(CheatStage.Poised) }))
+    const dialog = screen.getByRole('dialog', { name: 'Your buffs' })
+    const row = screen.getByRole('button', { name: /^Cheat \(/ })
+    expect(row.closest('[role="dialog"]')).toBe(dialog)
+    fireEvent.click(row) // poise
+    fireEvent.click(row) // spend
 
     expect(screen.getByRole('button', { name: offSuitName })).toHaveProperty('disabled', false)
   })

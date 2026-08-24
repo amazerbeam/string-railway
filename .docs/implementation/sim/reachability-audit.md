@@ -25,31 +25,38 @@ admitted automatically, with no edit here — which is the property that makes t
 trusting a year from now. `Unassigned` is excluded throughout: it is `seedStartingBuffPile`'s
 placeholder, filtered out of every offer by `activatableBuffs`, and it is not a card.
 
-## What it measured, at 2026-08-24
+## What it measured, at 2026-08-24 (updated the same day by DLR-132)
 
-**Eight of the game's twenty `BuffKind`s cannot be minted at all.**
+**Six of the game's twenty `BuffKind`s cannot be minted at all — down from eight.**
 
-| Reachable — 11 kinds | Unreachable — 8 kinds |
+| Reachable — 13 kinds | Unreachable — 6 kinds |
 |---|---|
-| Taker, Feeder, Mark of the *R*, Sidestep, Glutton, Hoarder, Unbloodied, Debt Collector, Keepsake, Miser, Cornered | Ward, Puppeteer, Second Thoughts, Foresight, Spyglass, **Cheat, Timebomb, Shield** |
+| Taker, Feeder, Mark of the *R*, Sidestep, Glutton, Hoarder, Unbloodied, Debt Collector, Keepsake, Miser, Cornered, **Cheat, Timebomb** | Ward, Puppeteer, Second Thoughts, Foresight, Spyglass, **Shield** |
 
-`BUFF_TEMPLATES` holds exactly **71** templates and every one is a condition family. The seven
-consumable/activated templates were deferred by DLR-112 to DLR-126; DLR-126 landed, answered the
-question **affirmatively** — a consumable is an ordinary `Buff`, the draw mechanism needs no change —
-and never came back to add them. `cheatBuff`, `timebombBuff` and `shieldBuff` have **zero production
-callers**: DLR-107's migration of Cheat and Timebomb into the ordinary buff pile recorded that its
-intermediate state would last "until the activation ticket and the UI ticket land", and DLR-108 and
-DLR-114 both landed without finishing it.
+`BUFF_TEMPLATES` holds **73** templates as of DLR-132 (71 condition families plus `ACTIVATED_TEMPLATES`'s
+two activated cards) — up from 71. `mintFromTemplate`'s `form: 'activated'` branch delegates to
+`cheatBuff`/`timebombBuff`, and both templates carry a positive slot weight on both machines
+(`SLOT_FAMILY_WEIGHTS`), so both are drawable by a pull like any condition family. **`cheatBuff` and
+`timebombBuff` now have production callers**: DLR-107's migration recorded that its intermediate
+state — a representation nothing read — would last "until the activation ticket and the UI ticket
+land"; DLR-132 is that ticket. The five remaining consumables (Ward, Puppeteer, Second Thoughts,
+Foresight, Spyglass) and Shield are **explicitly out of this ticket's scope** (DLR-120 established
+this ticket owns Cheat and Timebomb only) and stay unreachable — `shieldBuff` still has zero
+production callers.
 
-**Four of the eight `ShopItem`s are off the shelf.** `SHOP_ITEMS` is `[ApCapacity, SwanTier,
-WitchTier, Heal]`; `Cheat`, `Timebomb`, `BlastGuard` and `Whetstone` are still priced by `priceOf`,
-still handled by `buyFromShop`, still tested, and unbuyable. Combined with `startRun()` seeding
-`timebombCharges: 0`, `blastGuardHeld: false` and `whetstones: 0`, **no play path can produce a
-Timebomb charge, a Blast Guard or a Whetstone.**
+**Four of the eight `ShopItem`s are off the shelf, unchanged by DLR-132.** `SHOP_ITEMS` is
+`[ApCapacity, SwanTier, WitchTier, Heal]`; `Cheat`, `Timebomb`, `BlastGuard` and `Whetstone` are
+still priced by `priceOf` and still handled by `buyFromShop`, but the purchase mechanism the last two
+depend on (`RunState.blastGuardHeld`, `RunState.whetstones`) is unchanged, while the Cheat and
+Timebomb branches now mint a buff into the pile rather than writing a field this ticket deleted
+(`cheats`, `timebombCharges`). **All four remain unbuyable via `SHOP_ITEMS`** — Cheat and Timebomb are
+reachable now only through the slot machine, not the shop.
 
-**A fresh run holds nothing it can activate.** `activatableBuffs(startRun().buffs).length` is `0` —
-the four seeded cards are all `Unassigned`. The one activated card a player can reach is the **Cheat
-slot**, and only because `RUN_STARTING_CHEATS` seeds one.
+**A fresh run holds one buff it can activate — its starting Cheat.**
+`activatableBuffs(startRun().buffs).length` is `1`: three of the four seeded cards are `Unassigned`
+and filtered out, and the fourth is a bronze Cheat, seeded as an ordinary pile member by
+`RUN_STARTING_CHEATS` rather than a rail grant. This was previously described as "0" because the
+Cheat lived outside `RunState.buffs` entirely, on a deleted `cheats` field.
 
 ## Why the spec pins the gaps as *passing* assertions
 

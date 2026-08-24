@@ -5,8 +5,7 @@
  *
  * Nothing here throws. `activateBuff` throws by design on a refused activation, so every path
  * below asks `buffActivationRefusalFor` FIRST — a throw inside a reducer during an event handler
- * unmounts the tree, which is the discipline `handleTapApplyDamage` and `handleTapCheat` already
- * set.
+ * unmounts the tree, which is the discipline `handleTapApplyDamage` already sets.
  */
 import {
   activateFromPile,
@@ -14,12 +13,15 @@ import {
   buffActivationRefusalFor,
   BuffActivationRefusal,
   BuffKind,
+  cheatDurationTricksOf,
   extraDiscardCharges,
+  timebombDamageOf,
   type Buff,
   type BuffId,
 } from '../../hunt'
 import {
   buffActivationStock,
+  buffActivationWindowOpen,
   canAct,
   discardWindowOpen,
   offeredBuffs,
@@ -28,9 +30,12 @@ import {
 
 /** THE one statement of whether a given buff can be activated right now. Both the panel's row
  *  `disabled` state and `handleTapBuff`'s guard call this, so they cannot read availability
- *  differently — the discipline `applyDamageRefusalFor` sets. UNCHANGED by the DLR-114 door-widening
- *  fix below: activating a buff is genuinely a between-tricks decision (AC1), so a row stays gated
- *  on `discardWindowOpen` exactly as it always has. */
+ *  differently — the discipline `applyDamageRefusalFor` sets. UNCHANGED by the DLR-114
+ *  door-widening fix below FOR EVERY CONDITION/CONSUMABLE ROW: activating one of those is
+ *  genuinely a between-tricks decision (AC1), so it stays gated on `discardWindowOpen` exactly as
+ *  it always has. Cheat and Timebomb are the one exception `roundUiState.ts`'s `buffActivationStock`
+ *  now carves out — see that function's own docblock for why their window is `canAct`, not
+ *  `discardWindowOpen`. */
 export function loadoutRefusalFor(state: RoundUiState, buff: Buff) {
   return buffActivationRefusalFor(buffActivationStock(state, state.buffActivation, buff))
 }
@@ -70,10 +75,12 @@ export function loadoutBarRefusalFor(state: RoundUiState): BuffActivationRefusal
 }
 
 /**
- * Open or close the panel. Opening clears `armed`, `cheatSelection`, `timebombStage` and
- * `discardSelection`: all four reinterpret the next hand-card tap, and allowing two at once makes
- * that tap ambiguous — `handleTapDiscard`'s own rule, extended by one control. Closing drops any
- * poise unspent. Refused (no-op) unless `loadoutDoorOpen` holds — the same widened gate
+ * Open or close the panel. Opening clears `armed` and `discardSelection`: both reinterpret the
+ * next hand-card tap, and allowing two at once makes that tap ambiguous — `handleTapDiscard`'s own
+ * rule, extended by one control. DLR-132 — a live Cheat or an armed Timebomb are no longer a
+ * transient selection that opening must clear: a Cheat is a paid-for duration and a Timebomb an
+ * armed spend, both already committed, and opening the panel again does not touch either. Closing
+ * drops any poise unspent. Refused (no-op) unless `loadoutDoorOpen` holds — the same widened gate
  * `loadoutBarRefusalFor` reads for the button, so the two cannot disagree.
  */
 export function handleToggleLoadout(state: RoundUiState): RoundUiState {
@@ -83,8 +90,6 @@ export function handleToggleLoadout(state: RoundUiState): RoundUiState {
     ...state,
     loadout: { poised: null },
     armed: null,
-    cheatSelection: null,
-    timebombStage: null,
     discardSelection: null,
   }
 }
@@ -118,11 +123,17 @@ export function handleTapBuff(state: RoundUiState, id: BuffId): RoundUiState {
   // DLR-126 — `activateFromPile`, never `activateBuff`: a CONSUMABLE ITEM leaves the pile here and
   // does not come back, which is the whole of what makes it one-shot. `buffs` is unchanged for a
   // Cheat, a Timebomb or a Shield.
+  //
+  // DLR-132 — `buffActivationWindowOpen`, NOT `discardWindowOpen` directly: `loadoutRefusalFor`
+  // (the guard just above) and this commit must ask the SAME window question or a Cheat/Timebomb
+  // row can pass its guard and then throw here — `activateBuff` re-checks the window itself and
+  // throws on a refusal, which is exactly what a narrower window at this line would trigger on a
+  // Cheat's or Timebomb's own second tap.
   const { activation, buffs } = activateFromPile(
     state.buffActivation,
     state.buffs,
     buff,
-    discardWindowOpen(state),
+    buffActivationWindowOpen(state, buff),
   )
   return {
     ...state,
@@ -134,6 +145,15 @@ export function handleTapBuff(state: RoundUiState, id: BuffId): RoundUiState {
     // a condition it does not have.
     encounter:
       buff.kind === BuffKind.Ward ? activateWard(state.encounter, buff.tier) : state.encounter,
+    // DLR-132 — Cheat and Timebomb fire HERE too, beside Ward, for the reason the comment above
+    // already states. Neither leaves the pile — `isConsumableItem` is false for both, which is
+    // exactly what `activateFromPile`'s docblock says and why `buffs` is unchanged for them.
+    // `cheatDurationTricksOf`/`timebombDamageOf` both throw on the wrong kind; each is called only
+    // inside a branch that has already checked `buff.kind`, so neither throw is reachable here.
+    cheatTricksRemaining:
+      buff.kind === BuffKind.Cheat ? cheatDurationTricksOf(buff) : state.cheatTricksRemaining,
+    timebombArmedDamage:
+      buff.kind === BuffKind.Timebomb ? timebombDamageOf(buff) : state.timebombArmedDamage,
     discardsRemaining: state.discardsRemaining + extraDiscardCharges(buff),
     loadout: { poised: null },
   }

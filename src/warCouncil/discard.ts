@@ -54,8 +54,9 @@ export function discardRefusalFor(stock: DiscardStock): DiscardRefusal | null {
  * the discarded cards appended to its BACK — `applyWoodcutterDraw`'s own convention, generalised
  * from one card to n. `drawPile.length` is invariant across the call.
  *
- * THROWS rather than returning the state unchanged, the discipline `primeCard` and `cheats.ts`'s
- * `addCheat` already set: a silent no-op would let the caller spend a discard for a swap that never
+ * THROWS rather than returning the state unchanged, the discipline `primeCard` (this tree) and
+ * `activateBuff` (`src/hunt/buffActivation.ts`) already set: a silent no-op would let the caller
+ * spend a discard for a swap that never
  * happened. The reducer guards every precondition before calling — a reducer must not throw,
  * because a throw during an event handler unmounts the tree — so reaching either throw here is a
  * driver bug.

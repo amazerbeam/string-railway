@@ -11,7 +11,6 @@ import {
   coinsFixture,
   discardsRemainingFixture,
   encounterFixture,
-  timebombChargesFixture,
   huntFixture,
   makeRound,
   maxHealthFixture,
@@ -34,7 +33,7 @@ function healthMeter(name: 'Your health' | typeof quarryLabelFixture) {
  *
  * Split further at the same budget (DLR-93): this is the core render/trick-play/hand-completion
  * slice — the intent-telegraph and Let-them-lead flow lives in `WarCouncilRound.telegraph.test.tsx`,
- * and the health-bar/purse/shape/cheats readouts live in `WarCouncilRound.readouts.test.tsx`. Each
+ * and the health-bar/purse/shape readouts live in `WarCouncilRound.readouts.test.tsx`. Each
  * mirrors this same `renderRound` helper rather than importing it, following this file's own
  * pre-existing split precedent (`WarCouncilRound.timebomb.test.tsx`).
  */
@@ -47,9 +46,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       maxHealth={overrides.maxHealth ?? maxHealthFixture}
       runLabel={overrides.runLabel ?? runLabelFixture}
       quarryLabel={quarryLabelFixture}
-      cheats={overrides.cheats ?? []}
       coins={overrides.coins ?? coinsFixture}
-      timebombCharges={overrides.timebombCharges ?? timebombChargesFixture}
       blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
       bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}

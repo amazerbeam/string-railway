@@ -28,7 +28,6 @@ import {
   bankClimbBonusFor,
   BuffActivationRefusal,
   DuelSide,
-  hasCheat,
   isEncounterResolved,
   MAX_CARDS_PER_DISCARD,
   playerRankTiersFor,
@@ -73,8 +72,6 @@ export function seedFor(run: RunState, dealt: WarCouncilState): RoundUiSeed {
   return {
     round: dealt,
     encounter: run.encounter,
-    cheats: run.cheats,
-    timebombCharges: run.timebombCharges,
     blastGuardHeld: run.blastGuardHeld,
     discardsRemaining: run.discardsRemaining,
     buffs: run.buffs,
@@ -123,41 +120,49 @@ function runDiscard(initial: RoundUiState, policy: SimPolicy): DiscardOutcome {
 
 interface CheatPlayOutcome {
   readonly ui: RoundUiState
-  /** `true` only when the Cheat left `ui.cheats` — i.e. the card actually committed. */
+  /** `true` only when the trick the Cheat was spent on actually committed and consumed a trick of
+   *  `cheatTricksRemaining` — i.e. `commit` (`commitHandlers.ts`) decremented it, which it does
+   *  only on a SUCCESSFUL player commit. */
   readonly spent: boolean
 }
 
 /**
- * One optional Cheat-armed play: two taps to poise and arm, then two to commit the card the policy
- * named. Counted only when the Cheat actually LEFT the pile, which `commitHandlers.ts` does on the
- * committing tap and only there.
+ * One optional Cheat-armed play, driven through the ordinary two-tap row flow every buff now
+ * uses: `TapBuff` (poise), `TapBuff` (commit — this is where the AP is spent and
+ * `cheatTricksRemaining` is set), then `TapCard` (arm), `TapCard` (commit the card the policy
+ * named).
  *
- * A play that does not commit — an illegal card, or a Fox/Woodcutter that opened a prompt instead —
- * gives the Cheat back through `CancelCheat` and then clears any armed card through
- * `CancelSelection`, so the caller's ordinary two-tap commit is not left racing a half-armed state.
+ * DLR-132 — there is no give-back. Before this ticket a rejected commit handed the Cheat back to
+ * `ui.cheats` through `CancelCheat`; now the trick is only spent on a SUCCESSFUL `commit`
+ * (`commitHandlers.ts`'s `wasArmed` decrement), so a rejected card simply leaves
+ * `cheatTricksRemaining` untouched and the Cheat stays armed for a later attempt — the same AC7
+ * discipline `commit`'s own docblock records.
  */
 function runCheatPlay(initial: RoundUiState, policy: SimPolicy): CheatPlayOutcome {
   const play = policy.wantsCheatPlay?.(initial) ?? null
-  if (play === null || !hasCheat(initial.cheats, play.cheatId)) {
+  const cheat =
+    play === null ? undefined : offeredBuffs(initial).find((buff) => buff.id === play.cheatId)
+  if (play === null || cheat === undefined) {
     return { ui: initial, spent: false }
   }
 
-  let ui = roundReducer(initial, { kind: RoundUiActionKind.TapCheat, id: play.cheatId })
-  ui = roundReducer(ui, { kind: RoundUiActionKind.TapCheat, id: play.cheatId })
+  let ui = initial
+  if (!loadoutOpen(ui)) {
+    ui = roundReducer(ui, { kind: RoundUiActionKind.ToggleLoadout })
+  }
+  ui = roundReducer(ui, { kind: RoundUiActionKind.TapBuff, id: play.cheatId }) // poise
+  ui = roundReducer(ui, { kind: RoundUiActionKind.TapBuff, id: play.cheatId }) // commit
+  if (loadoutOpen(ui)) {
+    ui = roundReducer(ui, { kind: RoundUiActionKind.CancelLoadout })
+  }
   if (!cheatArmed(ui)) {
-    return { ui: initial, spent: false }
+    return { ui, spent: false }
   }
 
-  const before = ui.cheats.length
-  ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: play.card })
-  ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: play.card })
-  if (ui.cheats.length < before) {
-    return { ui, spent: true }
-  }
-
-  ui = roundReducer(ui, { kind: RoundUiActionKind.CancelCheat })
-  ui = roundReducer(ui, { kind: RoundUiActionKind.CancelSelection })
-  return { ui, spent: false }
+  const before = ui.cheatTricksRemaining
+  ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: play.card }) // arm
+  ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: play.card }) // commit
+  return { ui, spent: ui.cheatTricksRemaining < before }
 }
 
 interface WindowOutcome {
@@ -313,8 +318,6 @@ export function playHand(
   const result: WarCouncilRoundResult = {
     finalState: ui.round,
     encounter: ui.encounter,
-    cheats: ui.cheats,
-    timebombCharges: ui.timebombCharges,
     blastGuardHeld: ui.blastGuardHeld,
     discardsRemaining: ui.discardsRemaining,
     buffs: ui.buffs,

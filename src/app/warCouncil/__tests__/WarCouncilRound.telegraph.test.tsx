@@ -9,7 +9,6 @@ import {
   coinsFixture,
   discardsRemainingFixture,
   encounterFixture,
-  timebombChargesFixture,
   huntFixture,
   makeRound,
   maxHealthFixture,
@@ -33,9 +32,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       maxHealth={overrides.maxHealth ?? maxHealthFixture}
       runLabel={overrides.runLabel ?? runLabelFixture}
       quarryLabel={quarryLabelFixture}
-      cheats={overrides.cheats ?? []}
       coins={overrides.coins ?? coinsFixture}
-      timebombCharges={overrides.timebombCharges ?? timebombChargesFixture}
       blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
       bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}

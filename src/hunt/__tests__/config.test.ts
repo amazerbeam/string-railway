@@ -12,7 +12,6 @@ import {
   HAND_SIZE,
   SKULL_DENSITY,
   DAMAGE_PER_HIT,
-  CHEAT_SLOT_COUNT,
   RUN_STARTING_CHEATS,
   COINS_PER_ENCOUNTER_WIN,
   CHEAT_PRICE,
@@ -114,15 +113,10 @@ describe('DLR-80 configuration', () => {
   })
 })
 
-describe('Cheat slots (DLR-83)', () => {
-  it('offers exactly two Cheat slots (DLR-83 AC1/AC2)', () => {
-    expect(CHEAT_SLOT_COUNT).toBe(2)
-  })
-
-  it('grants a starting number of Cheats that the slots can actually hold (AC3)', () => {
+describe('The opening Cheat pile seed (DLR-132, re-homed from DLR-83)', () => {
+  it('grants a whole, non-negative number of opening Cheat buffs', () => {
     expect(Number.isInteger(RUN_STARTING_CHEATS)).toBe(true)
     expect(RUN_STARTING_CHEATS).toBeGreaterThanOrEqual(0)
-    expect(RUN_STARTING_CHEATS).toBeLessThanOrEqual(CHEAT_SLOT_COUNT)
   })
 })
 

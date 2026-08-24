@@ -232,12 +232,6 @@
   color: var(--wc-alarm);
 }
 
-.wc-loadout-divider {
-  width: 100%;
-  height: 1px;
-  background: linear-gradient(90deg, #ffffff00, #ffffff26, #ffffff00);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .wc-loadout-buff {
     transition: none;

@@ -20,9 +20,12 @@ means "priced off the condition-family formula", nothing more.
 
 `consumables.ts`'s `ConsumableItemKind` covers **five**: `Ward`, `Puppeteer`, `SecondThoughts`,
 `Foresight`, `Spyglass`. That is the narrower thing — an item **held until used, then gone**. Cheat,
-Timebomb and Shield are deliberately excluded: all three are `Activated`, but each has its own live
-bespoke mechanic (`CheatStage`, `TimebombStage`, `activateShield`) and none is removed from the pile
-when activated.
+Timebomb and Shield are deliberately excluded: all three are `Activated`, but each **arms felt state
+rather than leaving the pile** — a Cheat sets `cheatTricksRemaining`, a Timebomb sets
+`timebombArmedDamage`, `activateShield` raises `shieldHearts` — so none of the three is a one-shot
+item. (Before DLR-132, the exclusion's stated reason was that Cheat and Timebomb each had their own
+live bespoke mechanic, `CheatStage`/`TimebombStage`; both are deleted, but the exclusion itself is
+unchanged — `isConsumableItem` still answers `false` for all three.)
 
 The two unions are not a duplication to reconcile. They answer different questions, and
 `isConsumableItem` in `consumables.ts` is the one that decides whether an activation also spends the

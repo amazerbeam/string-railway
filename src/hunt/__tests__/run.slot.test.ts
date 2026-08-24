@@ -44,8 +44,6 @@ describe('slotVisitStockFor / the per-visit reset', () => {
     const recorded = recordEncounter(
       run,
       winEncounter(run.encounter),
-      run.cheats,
-      run.timebombCharges,
       run.blastGuardHeld,
       run.discardsRemaining,
       null,

@@ -40,8 +40,6 @@ function uiFor(run: RunState, handNumber = 1): RoundUiState {
   const seed: RoundUiSeed = {
     round,
     encounter: run.encounter,
-    cheats: run.cheats,
-    timebombCharges: run.timebombCharges,
     blastGuardHeld: run.blastGuardHeld,
     discardsRemaining: run.discardsRemaining,
     buffs: run.buffs,
@@ -71,7 +69,7 @@ describe('baselinePolicy.chooseBuffs', () => {
     // which `activatableBuffs` filters out — mint a real, cheaply-priced buff so the pile has
     // something the baseline can actually activate.
     const magnitudeTemplate = BUFF_TEMPLATES.find(
-      (template) => template.axis === BuffRewardAxis.Magnitude,
+      (template) => template.form === 'condition' && template.axis === BuffRewardAxis.Magnitude,
     )
     if (magnitudeTemplate === undefined) {
       throw new Error('expected at least one BUFF_TEMPLATES entry on the Magnitude axis')

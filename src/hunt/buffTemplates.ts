@@ -11,26 +11,31 @@ import {
   type BuffTarget,
 } from './buffs'
 import type { BuffConditionKind, BuffCostAxis } from './buffCosts'
+import { cheatBuff, timebombBuff } from './buffCatalog'
 
 /**
  * DLR-112 — the 71-template v1 condition-card pool, GENERATED at module load from two small
  * crossing tables rather than hand-listed. `.docs/design/Balatro-Forbidden-Solitaire/
  * v1-buff-card-list.md` → *Condition templates* is the authoritative table this file transcribes;
- * cited, never re-derived. The 7 consumable/activated templates are still absent, and that is now
- * a KNOWN GAP rather than a deferral: DLR-126 landed and resolved AC6 affirmatively — a consumable
- * is an ordinary `Buff` and the draw mechanism needs no change — but no template was ever added, so
- * `BuffKind.Ward` and its four siblings are unreachable by playing. DLR-120's
- * `src/sim/__tests__/reachability.test.ts` pins that. Closing it is NOT a data edit:
- * `BuffTemplate.kind` is typed `BuffConditionKind` and `axis` is typed `BuffCostAxis`, and a
- * consumable has neither — it is priced through `CONSUMABLE_AP_COST` and pays in its effect. It
- * also needs 14 slot weights nobody has chosen. The developer decides whether consumables ship in
- * v1's reel.
+ * cited, never re-derived.
+ *
+ * DLR-132 — the shape problem this docblock used to state as open is now CLOSED for Cheat and
+ * Timebomb: `BuffTemplate` is a discriminated union tagged `form`, `ConditionBuffTemplate` keeps
+ * this file's 71 generated templates exactly as they were, and `ActivatedBuffTemplate` carries the
+ * two activated cards (`ACTIVATED_TEMPLATES`, appended below) — 73 templates total. The five
+ * consumables (Ward, Second Thoughts, Puppeteer, Foresight, Spyglass) are DELIBERATELY STILL
+ * ABSENT: the `form` tag is exactly what makes them trivially addable — five more
+ * `ActivatedBuffTemplate` literals, one more `mintFromTemplate` branch each, and ten unchosen slot
+ * weights — but that is DLR-120's scope boundary and a separate decision with its own weights, not
+ * this ticket's.
  */
 
 /** One distinct card template — a (family, reward axis, optional parameter) crossing. Carries NO
  *  tier: the tier is decided at draw time by the reel-match rules. Carries NO `apCost`: that stays
- *  a derived lookup through `apCostOf`, per the coordinator's standing decision. */
-export interface BuffTemplate {
+ *  a derived lookup through `apCostOf`, per the coordinator's standing decision. Today's shape,
+ *  unchanged in every field, now tagged `form: 'condition'` (DLR-132). */
+export interface ConditionBuffTemplate {
+  readonly form: 'condition'
   /** Stable identifier, `<kind>[:<param>]:<axis>` — e.g. `taker:bells:magnitude`. PERSISTED as
    *  of DLR-113: the Vault stores boosts and grants by this id, so the FORMAT is frozen and a
    *  renamed `BuffKind` or `BuffRewardAxis` value orphans saved entries. `reconcileVault` drops
@@ -43,6 +48,35 @@ export interface BuffTemplate {
   /** Present only on the suit- or rank-parameterised families. */
   readonly target?: BuffTarget
 }
+
+/** The two kinds an ACTIVATED template can mint. A closed pair, not `BuffConsumableKind`: the
+ *  five consumable items and Shield have no template and no slot weight yet (DLR-132 scope). */
+export type BuffActivatedTemplateKind = typeof BuffKind.Cheat | typeof BuffKind.Timebomb
+
+/** An activated card's template. Carries NO axis and NO condition family — that is exactly the
+ *  shape problem DLR-120 named, and the `form` tag is the answer to it. Its reward axis and value
+ *  come from `buffCatalog.ts`'s minting functions (`cheatBuff` / `timebombBuff`) at draw time, not
+ *  from anything stored here. PERSISTED as of DLR-113 exactly like `ConditionBuffTemplate.id`: the
+ *  Vault stores grants by this id, so `'cheat'` and `'timebomb'` are frozen the moment they ship. */
+export interface ActivatedBuffTemplate {
+  readonly form: 'activated'
+  readonly id: string
+  readonly kind: BuffActivatedTemplateKind
+}
+
+/** Today's `BuffTemplate` interface, now a discriminated union on `form` rather than a single
+ *  shape with an optional field — an optional `axis` would push an invisible `?? fallback` into
+ *  `templateWeightFor` and `mintFromTemplate`, which is the "plausible zero that type-checks" this
+ *  module already throws about. The tag makes every consumer's branch mandatory at compile time. */
+export type BuffTemplate = ConditionBuffTemplate | ActivatedBuffTemplate
+
+/** The two activated templates. Ids are bare kind strings — no axis segment, because there is no
+ *  axis — and they are PERSISTED by the Vault, so the format is frozen exactly as DLR-113 froze
+ *  `<kind>[:<param>]:<axis>` for a condition template's id. */
+export const ACTIVATED_TEMPLATES: readonly ActivatedBuffTemplate[] = [
+  { form: 'activated', id: 'cheat', kind: BuffKind.Cheat },
+  { form: 'activated', id: 'timebomb', kind: BuffKind.Timebomb },
+]
 
 const ALL_FOUR_AXES: readonly BuffCostAxis[] = [
   BuffRewardAxis.Magnitude,
@@ -91,7 +125,7 @@ const ALL_TARGET_RANKS: readonly number[] = Array.from(
 )
 
 /** One family's templates, crossing its axes with its parameter (suit, rank, or none). */
-function templatesForTemplateFamily(family: TemplateFamily): readonly BuffTemplate[] {
+function templatesForTemplateFamily(family: TemplateFamily): readonly ConditionBuffTemplate[] {
   if (family.param === 'suit') {
     return ALL_TARGET_SUITS.flatMap((suit) =>
       family.axes.map((axis) => makeTemplate(family.kind, axis, { suit }, suit)),
@@ -110,27 +144,23 @@ function makeTemplate(
   axis: BuffCostAxis,
   target: BuffTarget | undefined,
   paramLabel: string | undefined,
-): BuffTemplate {
+): ConditionBuffTemplate {
   const id = paramLabel === undefined ? `${kind}:${axis}` : `${kind}:${paramLabel}:${axis}`
-  return target === undefined ? { id, kind, axis } : { id, kind, axis, target }
+  return target === undefined
+    ? { form: 'condition', id, kind, axis }
+    : { form: 'condition', id, kind, axis, target }
 }
 
-/** The v1 pool: exactly 71 condition templates. GENERATED from the crossing tables at module load,
- *  never hand-listed. The 7 consumable/activated templates are still absent, and that is now a
- *  KNOWN GAP rather than a deferral: DLR-126 landed and resolved AC6 affirmatively — a consumable
- *  is an ordinary `Buff` and the draw mechanism needs no change — but no template was ever added,
- *  so `BuffKind.Ward` and its four siblings are unreachable by playing. DLR-120's
- *  `src/sim/__tests__/reachability.test.ts` pins that. Closing it is NOT a data edit:
- *  `BuffTemplate.kind` is typed `BuffConditionKind` and `axis` is typed `BuffCostAxis`, and a
- *  consumable has neither — it is priced through `CONSUMABLE_AP_COST` and pays in its effect. It
- *  also needs 14 slot weights nobody has chosen. The developer decides whether consumables ship in
- *  v1's reel. */
-export const BUFF_TEMPLATES: readonly BuffTemplate[] = TEMPLATE_FAMILIES.flatMap(
-  templatesForTemplateFamily,
-)
+/** The v1 pool: 73 templates — the 71 GENERATED condition templates plus the 2 activated ones
+ *  (`ACTIVATED_TEMPLATES`). The 5 consumable templates (Ward and its four siblings) are still
+ *  absent — see this file's own docblock above for why that is a scope boundary, not a gap. */
+export const BUFF_TEMPLATES: readonly BuffTemplate[] = [
+  ...TEMPLATE_FAMILIES.flatMap(templatesForTemplateFamily),
+  ...ACTIVATED_TEMPLATES,
+]
 export const BUFF_TEMPLATE_COUNT: number = BUFF_TEMPLATES.length
 
-export function templatesForFamily(kind: BuffConditionKind): readonly BuffTemplate[] {
+export function templatesForFamily(kind: BuffTemplate['kind']): readonly BuffTemplate[] {
   return BUFF_TEMPLATES.filter((template) => template.kind === kind)
 }
 
@@ -212,10 +242,17 @@ function isThresholdFamily(kind: BuffKind): kind is BuffThresholdFamily {
 
 /** Mint an ordinary `Buff` from a template at `tier`. `id` is the CALLER's, from
  *  `RunState.nextBuffId` — this module never invents one and never calls `Math.random()`.
- *  Throws `RangeError` on a template whose axis has no reward ladder rather than minting a
- *  zero-value card — the `cheatDurationTricksOf` discipline: a plausible-looking zero is the bug
- *  that type-checks. */
+ *  Throws `RangeError` on a CONDITION template whose axis has no reward ladder rather than minting
+ *  a zero-value card — the `cheatDurationTricksOf` discipline: a plausible-looking zero is the bug
+ *  that type-checks. An ACTIVATED template cannot reach that throw — it has no axis to be missing
+ *  a ladder for — and must not gain a softened version of it. */
 export function mintFromTemplate(template: BuffTemplate, tier: BuffTier, id: BuffId): Buff {
+  if (template.form === 'activated') {
+    // DLR-132 — DLR-107's `cheatBuff`/`timebombBuff` ARE the minting path. Reproducing their
+    // expressions here would give one card two answers, which is the discipline
+    // `cheatDurationTricksOf` sets three files away.
+    return template.kind === BuffKind.Cheat ? cheatBuff(tier, id) : timebombBuff(tier, id)
+  }
   const ladder = REWARD_TIER_VALUE[template.axis]
   if (ladder === undefined) {
     throw new RangeError(

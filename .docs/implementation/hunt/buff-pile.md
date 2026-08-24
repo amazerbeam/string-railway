@@ -86,12 +86,17 @@ such parameter because nothing spends or replaces one mid-hand, so it simply sur
 `{ ...run, ... }` spread `advanceRun` and `recordEncounter` already build. `buffs`/`nextBuffId`
 follow `whetstones`'s shape for the same reason: no consumer in this ticket (or any ticket before
 T5's buff activation) touches a buff mid-hand, so there is nothing yet for a hand to hand back.
-`seedStartingBuffPile(count, firstId)` mirrors `grantCheats`'s `(count, firstId)` shape but carries
-**no upper-bound throw** — unlike `CHEAT_SLOT_COUNT`, nothing in this ticket's scope, the design
-doc's §3, or its §8 states a capacity cap on the buff pile. §8 calls it "a growing pool." Whether one
-is wanted later is an open question for whichever ticket first lets the pile grow past this seed
-(most likely T5 or T8) — adding one then is a config key plus a throw in that function, the same
-shape `CHEAT_SLOT_COUNT`'s cap already takes in `cheats.ts`.
+`seedStartingBuffPile(count, firstId)` originally mirrored `grantCheats`'s `(count, firstId)` shape
+but carries **no upper-bound throw** — unlike `CHEAT_SLOT_COUNT`, nothing in this ticket's scope, the
+design doc's §3, or its §8 states a capacity cap on the buff pile. §8 calls it "a growing pool."
+Whether one is wanted later was an open question for whichever ticket first let the pile grow past
+this seed.
+
+> **DLR-132 answered part of that question by deleting the comparison, 2026-08-24.** `cheats.ts`,
+> `grantCheats` and `CHEAT_SLOT_COUNT` no longer exist — a Cheat is now a pile member exactly like
+> any other buff, and `recordEncounter` no longer takes a `cheats` parameter at all, because there is
+> no longer a second, separately-tracked "do you hold a Cheat" for a hand to hand back. The pile
+> still has no capacity cap of any kind.
 
 `STARTING_BUFF_COUNT = 4` (`config.ts`) is **transcribed**, not chosen here — both the ticket's AC3
 and design doc §8 state the figure explicitly ("a fresh run starts with 4 buff cards already in the

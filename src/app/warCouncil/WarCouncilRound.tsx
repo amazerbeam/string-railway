@@ -57,7 +57,6 @@ import './warCouncilCards.css'
 import './warCouncilHunt.css'
 import './warCouncilHealthBars.css'
 import './warCouncilHand.css'
-import './warCouncilTimebomb.css'
 import './warCouncilActionBar.css'
 
 /**
@@ -89,10 +88,8 @@ export default function WarCouncilRound({
   encounter,
   maxHealth,
   runLabel,
-  cheats,
   coins,
   quarryLabel,
-  timebombCharges,
   blastGuardHeld,
   discardsRemaining,
   bankClimbBonus,
@@ -106,8 +103,6 @@ export default function WarCouncilRound({
     {
       round: initialState,
       encounter,
-      cheats,
-      timebombCharges,
       blastGuardHeld,
       discardsRemaining,
       bankClimbBonus,
@@ -221,8 +216,6 @@ export default function WarCouncilRound({
       onComplete({
         finalState: ui.round,
         encounter: ui.encounter,
-        cheats: ui.cheats,
-        timebombCharges: ui.timebombCharges,
         blastGuardHeld: ui.blastGuardHeld,
         discardsRemaining: ui.discardsRemaining,
         buffs: ui.buffs,
@@ -239,8 +232,6 @@ export default function WarCouncilRound({
       onComplete({
         finalState: ui.round,
         encounter: ui.encounter,
-        cheats: ui.cheats,
-        timebombCharges: ui.timebombCharges,
         blastGuardHeld: ui.blastGuardHeld,
         discardsRemaining: ui.discardsRemaining,
         buffs: ui.buffs,
@@ -356,7 +347,7 @@ export default function WarCouncilRound({
           <DiscardPile spentCount={ui.round.spentPile.length} reshuffled={ui.round.reshuffled} />
         </div>
         {loadoutOpen(ui) && (
-          <BuffLoadoutPanel {...buffLoadoutPanelProps({ ui, dispatch, offered, interactive })} />
+          <BuffLoadoutPanel {...buffLoadoutPanelProps({ ui, dispatch, offered })} />
         )}
         <div className="wc-table-inner">{felt}</div>
       </section>

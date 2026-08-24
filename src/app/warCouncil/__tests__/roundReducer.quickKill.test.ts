@@ -9,7 +9,6 @@ import {
   card,
   discardsRemainingFixture,
   makeRound,
-  timebombChargesFixture,
 } from './roundFixture'
 
 /**
@@ -40,8 +39,6 @@ function seedOneTrickKill(): RoundUiSeed {
       currentTrick: [],
     }),
     encounter: startEncounter(0),
-    cheats: [],
-    timebombCharges: timebombChargesFixture,
     blastGuardHeld: blastGuardHeldFixture,
     bankClimbBonus: bankClimbBonusFixture,
     discardsRemaining: discardsRemainingFixture,

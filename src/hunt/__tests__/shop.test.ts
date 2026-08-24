@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   AP_CAPACITY_PRICE,
   CHEAT_PRICE,
-  CHEAT_SLOT_COUNT,
   TIMEBOMB_PRICE,
   HEAL_PRICE,
   BLAST_GUARD_PRICE,
@@ -28,7 +27,6 @@ import { ALL_BRONZE, AbilityTier, RANK_TIER_STEP_PRICE, TieredRank, steppedTo } 
 
 const baseStock = (over: Partial<ShopStock> = {}): ShopStock => ({
   coins: 5,
-  cheatCount: 0,
   playerHealth: 6,
   maxPlayerHealth: 10,
   blastGuardHeld: false,
@@ -141,10 +139,8 @@ describe('refusalFor', () => {
     expect(refusalFor(stock(), ShopItem.Heal)).toBeNull()
   })
 
-  it('refuses a Cheat with SlotsFull when the slots are full', () => {
-    expect(refusalFor(stock({ cheatCount: CHEAT_SLOT_COUNT }), ShopItem.Cheat)).toBe(
-      PurchaseRefusal.SlotsFull,
-    )
+  it('DLR-132 — never refuses a Cheat with SlotsFull; the pile has no cap', () => {
+    expect(refusalFor(stock(), ShopItem.Cheat)).not.toBe(PurchaseRefusal.SlotsFull)
   })
 
   it('refuses a Heal with AlreadyFullHealth at or above the maximum', () => {
@@ -155,12 +151,6 @@ describe('refusalFor', () => {
 
   it('refuses with NotEnoughCoins when the balance is under the price', () => {
     expect(refusalFor(stock({ coins: 0 }), ShopItem.Cheat)).toBe(PurchaseRefusal.NotEnoughCoins)
-  })
-
-  it('names the slots before the coins when both refuse (the durable reason wins)', () => {
-    expect(refusalFor(stock({ coins: 0, cheatCount: CHEAT_SLOT_COUNT }), ShopItem.Cheat)).toBe(
-      PurchaseRefusal.SlotsFull,
-    )
   })
 
   it('names full health before the coins when both refuse', () => {
@@ -182,10 +172,6 @@ describe('refusalFor — Timebomb (DLR-90)', () => {
     expect(refusalFor(stock({ coins: TIMEBOMB_PRICE - 1 }), ShopItem.Timebomb)).toBe(
       PurchaseRefusal.NotEnoughCoins,
     )
-  })
-
-  it('is unaffected by full Cheat slots, which are the Cheat’s cap and not a shared one', () => {
-    expect(refusalFor(stock({ cheatCount: CHEAT_SLOT_COUNT }), ShopItem.Timebomb)).toBeNull()
   })
 })
 
@@ -216,16 +202,11 @@ describe('canBuyAnything', () => {
       canBuyAnything(
         stock({
           coins: 0,
-          cheatCount: CHEAT_SLOT_COUNT,
           playerHealth: 10,
           maxPlayerHealth: 10,
         }),
       ),
     ).toBe(false)
-  })
-
-  it('is true when only one item refuses', () => {
-    expect(canBuyAnything(stock({ cheatCount: CHEAT_SLOT_COUNT }))).toBe(true)
   })
 })
 

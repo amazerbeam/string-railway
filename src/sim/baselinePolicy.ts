@@ -54,6 +54,7 @@ import {
 import {
   apCostOf,
   APPLY_DAMAGE_AP_COST,
+  BuffKind,
   flaskRefusalFor,
   flaskStockFor,
   MAX_CARDS_PER_DISCARD,
@@ -150,7 +151,7 @@ function chooseDiscard(ui: RoundUiState): readonly Card[] {
 }
 
 function wantsCheatPlay(ui: RoundUiState): CheatPlay | null {
-  const cheat = ui.cheats[0]
+  const cheat = offeredBuffs(ui).find((buff) => buff.kind === BuffKind.Cheat)
   if (cheat === undefined) return null
 
   const legal = legalMoves(ui.round, PlayerSide.Player)

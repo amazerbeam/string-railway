@@ -6,10 +6,13 @@ import { ShopItem } from '../shop'
 import { DuelSide } from '../types'
 
 // DLR-127. The ticket reported that buying a Timebomb charge also granted a Cheat. It does not —
-// `buyFromShop`'s Timebomb branch returns `{ ...paid, timebombCharges: run.timebombCharges + 1 }` and
-// never touches `cheats`; the red assertion was reading the run's OPENING Cheat grant. But "a
-// purchase quietly handed over something it did not charge for" is a real class of defect and had
-// no guard at all, so this file adds one for every item at once rather than for Timebomb alone.
+// `buyFromShop`'s Timebomb branch mints a bronze Timebomb `Buff` into `run.buffs` and never a
+// Cheat; the red assertion was reading the run's OPENING Cheat grant. But "a purchase quietly
+// handed over something it did not charge for" is a real class of defect and had no guard at all,
+// so this file adds one for every item at once rather than for Timebomb alone.
+//
+// DLR-132 — both Cheat and Timebomb are now pile members, minted through `withMintedBuff`, so
+// both purchases change exactly the same two `RunState` fields: `coins` and `buffs`.
 //
 // Each case asserts the EXACT set of `RunState` fields a transition writes. An exact set, not a
 // spot-check, is what makes this catch the next one: a branch that starts writing a field nobody
@@ -65,25 +68,26 @@ describe('changedFields — the helper itself is honest', () => {
 
   it('reports a field rebuilt to an equal value, so a needless rebuild cannot hide', () => {
     const run = hurtAndFunded(9)
-    expect(changedFields(run, { ...run, cheats: [...run.cheats] })).toEqual(['cheats'])
+    expect(changedFields(run, { ...run, buffs: [...run.buffs] })).toEqual(['buffs'])
   })
 })
 
 describe('buyFromShop — one purchase changes exactly one thing, plus the coins it cost', () => {
-  it('Cheat: coins, the held list, and the id counter — and nothing else', () => {
+  it('Cheat: coins and the pile, and the id counter — and nothing else', () => {
     const before = hurtAndFunded(9)
     expect(changedFields(before, buyFromShop(before, ShopItem.Cheat))).toEqual([
-      'cheats',
+      'buffs',
       'coins',
-      'nextCheatId',
+      'nextBuffId',
     ])
   })
 
-  it('Timebomb: coins and the charge count — and NOTHING else (the DLR-127 report)', () => {
+  it('Timebomb: coins and the pile, and the id counter — and NOTHING else (the DLR-127 report)', () => {
     const before = hurtAndFunded(9)
     expect(changedFields(before, buyFromShop(before, ShopItem.Timebomb))).toEqual([
+      'buffs',
       'coins',
-      'timebombCharges',
+      'nextBuffId',
     ])
   })
 
@@ -134,8 +138,7 @@ describe('no purchase touches another item’s holding', () => {
       (run, item) => buyFromShop(run, item),
       opened,
     )
-    expect(all.cheats).toHaveLength(opened.cheats.length + 1)
-    expect(all.timebombCharges).toBe(1)
+    expect(all.buffs).toHaveLength(opened.buffs.length + 2)
     expect(all.blastGuardHeld).toBe(true)
     expect(all.whetstones).toBe(1)
     // The one the ticket is about, stated once more against a run that bought everything.

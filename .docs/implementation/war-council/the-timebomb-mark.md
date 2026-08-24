@@ -49,11 +49,20 @@ is what stops a later ticket "simplifying" them into one marker list with a kind
 ### `primeCard` throws, and the reducer is why that is safe
 
 It raises a `RangeError` naming the card when the card is not in that side's hand, and again when the
-card is already marked. That is `cheats.ts`'s `addCheat` discipline, adopted for its reason: **a
-silent no-op would let the caller spend a charge for a mark that was never made.**
+card is already marked. That discipline was originally cited against `cheats.ts`'s `addCheat` — that
+module is deleted (DLR-132) — for the same reason it still holds: **a silent no-op would let the
+caller spend a charge for a mark that was never made.**
 
-`roundReducer.ts`'s `commitTimebomb` guards all three conditions — the charge count, membership, and
-the existing mark — *before* calling it, exactly as `handleTapCheat` checks `hasCheat` before
+> **The reducer function that guards this call is renamed, DLR-132, 2026-08-24.** `commitTimebomb` is
+> deleted; `primeTapped` in `src/app/warCouncil/roundReducer.ts` is `handleTapCard`'s replacement
+> branch and keeps the same three guards verbatim (card in hand, not already primed, damage actually
+> armed via `RoundUiState.timebombArmedDamage`) before calling `primeCard`. The Cheat side of the
+> "checks before calling" comparison below is also gone: `handleTapCheat`/`hasCheat`/`removeCheat` no
+> longer exist, because a Cheat is spent through the ordinary `handleTapBuff` two-tap flow, which
+> re-reads its own refusal before committing rather than checking membership in a held list.
+
+`roundReducer.ts`'s `commitTimebomb` guarded all three conditions — the charge count, membership, and
+the existing mark — *before* calling it, exactly as `handleTapCheat` checked `hasCheat` before
 `removeCheat`. A reducer must not throw, because a throw during an event handler unmounts the tree.
 So both throws are reachable only from a driver bug, and a failed guard clears the selection rather
 than half-applying it. A spec dispatches a tap with a card that is not in hand and asserts a state
@@ -110,8 +119,11 @@ is something there to cash. That is the existing rule acting on a bank that live
 
 `TrickResolution.timebombTarget: DuelSide | null` — the side owed the delayed hit, or `null` when the
 trick carried no mark. **This module names no figure and no timing**, which is why DLR-91 splitting the
-amount into a per-side pair *and* retiming the payment needed no edit here at all: the target is a side,
-`src/hunt/`'s `timebombDamageFor` decides what it costs, and the reducer decides when it is settled.
+amount into a per-side pair *and* retiming the payment needed no edit here at all, and why DLR-132
+making the figure depend on the primed card's own tier needed none either: the target is a side, the
+app layer's `commit` (`commitHandlers.ts`) now supplies the damage pair directly to `queueTimebomb`
+rather than this module or `encounter.ts` looking one up (`timebombDamageFor` is deleted), and the
+reducer still decides when it is settled.
 
 `DuelSide` rather than `PlayerSide` is deliberate. `bank.ts` is already **the** one crossing between
 the two vocabularies — `incomingFrom`'s docblock says so — and it already imports `DuelSide` from

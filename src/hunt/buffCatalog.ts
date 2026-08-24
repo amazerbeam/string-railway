@@ -8,28 +8,32 @@ import {
 } from './buffs'
 import { TIMEBOMB_PLAYER_DAMAGE, TIMEBOMB_QUARRY_DAMAGE } from './config'
 import { shieldHeartsForTier } from './shield'
-import type { Damage, Health } from './types'
+import { DuelSide, type Damage, type Health } from './types'
 
 /**
  * DLR-107 — Cheat and Timebomb as ordinary `Buff` objects, per design doc §1 ("both become ordinary
  * buff cards, owned and drawn the same way everything else in the pile is").
  *
- * This module ships REPRESENTATION ONLY. Nothing here activates a buff, spends one, or reads the
- * pile — activation is DLR-103 T5's, and the felt-rail UI still drives the old bespoke mechanics
- * (`CheatStage` in `app/warCouncil/roundUiState.ts`, `TimebombStage` beside it), which this ticket's
- * Scope Boundaries explicitly leave in place. So Cheat and Timebomb currently exist twice: the live
- * mechanic, and this inert representation. That is the intended intermediate state of a migration
- * split across tickets, not an oversight.
+ * DLR-132 closed the migration DLR-107 started: `cheatBuff` and `timebombBuff` below are now the
+ * ONE minting path — `buffTemplates.ts`'s `mintFromTemplate` delegates to them for its two
+ * `ActivatedBuffTemplate`s — and the retired felt-rail widgets and their bespoke per-card state
+ * machines, which used to duplicate this representation with a live mechanic, are deleted. Both
+ * effects now fire out of `app/warCouncil/buffHandlers.ts`'s `handleTapBuff`, beside Ward's,
+ * through the SAME two-tap row every other buff uses. Cheat and Timebomb no longer exist twice.
  */
 
-/** A Timebomb's two figures at one tier. A PAIR, not one number, for the reason `config.ts` already
- *  gives for `TIMEBOMB_QUARRY_DAMAGE` and `TIMEBOMB_PLAYER_DAMAGE` being two keys: the player's hit
- *  is deliberately smaller because it ALSO forces the streak's cash-out, and a single shared figure
- *  is the bug that type-checks, reads correctly, and pays the wrong side. */
-export interface TimebombDamage {
-  readonly quarry: Damage
-  readonly player: Damage
-}
+/** A Timebomb's two figures at one tier, keyed by the side that PAYS. A PAIR, not one number, for
+ *  the reason `config.ts` already gives for `TIMEBOMB_QUARRY_DAMAGE` and `TIMEBOMB_PLAYER_DAMAGE`
+ *  being two keys: the player's hit is deliberately smaller because it ALSO forces the streak's
+ *  cash-out, and a single shared figure is the bug that type-checks, reads correctly, and pays the
+ *  wrong side.
+ *
+ *  DLR-132 — retyped from an interface with `quarry`/`player` fields to a `DuelSide`-keyed record.
+ *  `DuelSide.Quarry === 'quarry'` and `DuelSide.Player === 'player'` are exactly those two field
+ *  names, so every existing `TIMEBOMB_DAMAGE[tier].quarry` read still compiles unchanged, and the
+ *  pair can now ALSO be indexed as `pair[target]` — which is what lets `timebombDamageFor` in
+ *  `encounter.ts` be DELETED rather than duplicated (four tickets nominated this collapse). */
+export type TimebombDamage = Readonly<Record<DuelSide, Damage>>
 
 // DLR-107 AC1 — how many tricks a Cheat's follow-suit break lasts, by tier. TRANSCRIBED verbatim
 // from AC1 ("{ bronze: 1, silver: 2, gold: 3 }") and from design doc §3 ("Cheat's tier is duration
@@ -156,8 +160,8 @@ export function shieldHeartsOf(buff: Buff): Health {
  * Tricks of no-follow-suit this Cheat buff grants. Reads `buff.reward.value` — the figure the buff
  * was MINTED with — rather than re-indexing the table, so one object has exactly one answer.
  *
- * THROWS on a buff of any other kind rather than returning a number, the discipline `cheats.ts`'s
- * `removeCheat` already sets in this tree and for a sharper version of its reason: a Timebomb's
+ * THROWS on a buff of any other kind rather than returning a number, the discipline `spendConsumable`
+ * already sets in this tree and for a sharper version of its reason: a Timebomb's
  * `reward.value` is also a small integer, so the swallowed version would silently lift follow-suit
  * for the wrong card and look entirely reasonable doing it.
  */
@@ -185,7 +189,7 @@ export function timebombDamageOf(buff: Buff): TimebombDamage {
  *  BOTH sides" rule is stated once and cannot be applied to one side by mistake. */
 function timebombRow(tier: BuffTier): TimebombDamage {
   return {
-    quarry: TIMEBOMB_QUARRY_DAMAGE * TIMEBOMB_TIER_MULTIPLIER[tier],
-    player: TIMEBOMB_PLAYER_DAMAGE * TIMEBOMB_TIER_MULTIPLIER[tier],
+    [DuelSide.Quarry]: TIMEBOMB_QUARRY_DAMAGE * TIMEBOMB_TIER_MULTIPLIER[tier],
+    [DuelSide.Player]: TIMEBOMB_PLAYER_DAMAGE * TIMEBOMB_TIER_MULTIPLIER[tier],
   }
 }

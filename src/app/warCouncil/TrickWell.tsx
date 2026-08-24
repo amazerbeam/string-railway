@@ -1,5 +1,5 @@
 import type { MouseEvent } from 'react'
-import { PayoutOutcome, type Buff } from '../../hunt'
+import { BuffTier, PayoutOutcome, TIMEBOMB_DAMAGE, type Buff } from '../../hunt'
 import { isPrimed, isSkulled, PlayerSide, type Card, type TrickCard } from '../../warCouncil'
 import { buffFiredText } from './buffFiredLabels'
 import { cardAccessibleName, timebombBookedText } from './labels'
@@ -95,7 +95,17 @@ export default function TrickWell({
           {resolvedTrick.resolution.timebombTarget !== null && (
             <span className="wc-timebomb-clause">
               {' '}
-              {timebombBookedText(resolvedTrick.resolution.timebombTarget)}
+              {timebombBookedText(
+                resolvedTrick.resolution.timebombTarget,
+                // DLR-132 Task 10a — reads the PAIR `commit` carried on `ResolvedTrick` itself
+                // (`roundUiState.ts`'s `timebombDamage`), which is the spent card's own tier, not
+                // a flat bronze figure. The bronze fallback below is now genuinely unreachable —
+                // a `timebombTarget` implies a primed card implies a spend, so `timebombDamage` is
+                // never `null` when this branch renders — and is kept only so this render path
+                // cannot throw on a value the type still allows to be `null`.
+                resolvedTrick.timebombDamage?.[resolvedTrick.resolution.timebombTarget] ??
+                  TIMEBOMB_DAMAGE[BuffTier.Bronze][resolvedTrick.resolution.timebombTarget],
+              )}
             </span>
           )}
         </p>

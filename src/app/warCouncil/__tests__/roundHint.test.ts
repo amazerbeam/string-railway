@@ -1,31 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { IllegalMoveReason, PlayerSide, Suit, TrickOutcome } from '../../../warCouncil'
+import { BuffTier, TIMEBOMB_DAMAGE } from '../../../hunt'
 import {
   APPLY_DAMAGE_POISED_HINT,
   cardAccessibleName,
-  CHEAT_ARMED_HINT,
-  CHEAT_POISED_HINT,
   DISCARD_READY_HINT,
   DISCARD_SELECT_HINT,
   TIMEBOMB_ARMED_HINT,
-  TIMEBOMB_POISED_HINT,
   ILLEGAL_MOVE_MESSAGE,
 } from '../labels'
 import { deriveHint } from '../roundHint'
-import {
-  CheatStage,
-  createRoundUiState,
-  TimebombStage,
-  type ResolvedTrick,
-  type RoundUiState,
-} from '../roundUiState'
-import {
-  card,
-  discardsRemainingFixture,
-  encounterFixture,
-  timebombChargesFixture,
-  makeRound,
-} from './roundFixture'
+import { createRoundUiState, type ResolvedTrick, type RoundUiState } from '../roundUiState'
+import { card, discardsRemainingFixture, encounterFixture, makeRound } from './roundFixture'
 
 // `deriveHint` reads only the fields overridden below plus the two positional flags — everything
 // else in the base state is inert as far as this cascade is concerned, so one fixture serves
@@ -35,8 +21,6 @@ function baseUi(overrides: Partial<RoundUiState> = {}): RoundUiState {
     ...createRoundUiState({
       round: makeRound(),
       encounter: encounterFixture,
-      cheats: [],
-      timebombCharges: timebombChargesFixture,
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
@@ -67,6 +51,7 @@ const someResolvedTrick: ResolvedTrick = {
     firedBuffIds: [],
   },
   payout: null,
+  timebombDamage: null,
 }
 
 describe('deriveHint — the cascade’s own priority order', () => {
@@ -77,7 +62,7 @@ describe('deriveHint — the cascade’s own priority order', () => {
       prompt: card(Suit.Keys, 3),
       resolvedTrick: someResolvedTrick,
       armed: card(Suit.Moons, 5),
-      cheatSelection: { id: 1, stage: CheatStage.Armed },
+      cheatTricksRemaining: 2,
     })
     const expected = ILLEGAL_MOVE_MESSAGE[IllegalMoveReason.MustFollowLeadSuit]
     expect(deriveHint(rejectionOnly, true, true)).toBe(expected)
@@ -95,37 +80,28 @@ describe('deriveHint — the cascade’s own priority order', () => {
     expect(deriveHint(trickHeld, true, true)).toBe(deriveHint(trickHeld, true, false))
   })
 
-  it('an armed card names itself', () => {
+  it('an armed card names itself, and beats a live Cheat held at the same time', () => {
     const armedCard = card(Suit.Bells, 7)
     const armedOnly = baseUi({ armed: armedCard })
     expect(deriveHint(armedOnly, true, false)).toContain(cardAccessibleName(armedCard))
 
-    // …and beats a Cheat selection held at the same time.
-    const armedAndCheatSelected = baseUi({
-      armed: armedCard,
-      cheatSelection: { id: 1, stage: CheatStage.Poised },
-    })
-    expect(deriveHint(armedAndCheatSelected, true, false)).toBe(deriveHint(armedOnly, true, false))
+    const armedAndCheatLive = baseUi({ armed: armedCard, cheatTricksRemaining: 2 })
+    expect(deriveHint(armedAndCheatLive, true, false)).toBe(deriveHint(armedOnly, true, false))
   })
 
-  it('a Cheat selection reports its stage', () => {
-    const poised = baseUi({ cheatSelection: { id: 1, stage: CheatStage.Poised } })
-    const armed = baseUi({ cheatSelection: { id: 1, stage: CheatStage.Armed } })
-    expect(deriveHint(poised, true, false)).toBe(CHEAT_POISED_HINT)
-    expect(deriveHint(armed, true, false)).toBe(CHEAT_ARMED_HINT)
+  it('DLR-132 — a live Cheat needs no hint of its own — it is visible in the fan’s widened legal set', () => {
+    const cheatLive = baseUi({ cheatTricksRemaining: 2 })
+    expect(deriveHint(cheatLive, true, false)).not.toBe('')
+    expect(deriveHint(cheatLive, true, false)).toBe(deriveHint(baseUi(), true, false))
   })
 
-  it('an Timebomb selection reports its stage, and beats a Cheat selection held at the same time', () => {
-    const poised = baseUi({ timebombStage: TimebombStage.Poised })
-    const armed = baseUi({ timebombStage: TimebombStage.Armed })
-    expect(deriveHint(poised, true, false)).toBe(TIMEBOMB_POISED_HINT)
+  it('an armed Timebomb reports the one surviving hint, and beats a live Cheat held at the same time', () => {
+    const armed = baseUi({ timebombArmedDamage: TIMEBOMB_DAMAGE[BuffTier.Bronze] })
     expect(deriveHint(armed, true, false)).toBe(TIMEBOMB_ARMED_HINT)
 
-    // The reducer makes this pair unreachable, but the cascade's stated priority is pinned
-    // regardless of whether the state that exercises it can occur today.
     const both = baseUi({
-      timebombStage: TimebombStage.Armed,
-      cheatSelection: { id: 1, stage: CheatStage.Poised },
+      timebombArmedDamage: TIMEBOMB_DAMAGE[BuffTier.Bronze],
+      cheatTricksRemaining: 2,
     })
     expect(deriveHint(both, true, false)).toBe(TIMEBOMB_ARMED_HINT)
   })

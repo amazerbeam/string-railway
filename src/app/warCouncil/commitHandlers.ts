@@ -23,15 +23,17 @@ import {
 } from '../../warCouncil'
 import {
   applyDamage,
+  BuffTier,
   DuelSide,
   hasPendingTimebomb,
   isEncounterResolved,
   NO_PENDING_TIMEBOMB,
   PayoutOutcome,
   queueTimebomb,
-  removeCheat,
   tickApplyPayout,
+  TIMEBOMB_DAMAGE,
   type EncounterState,
+  type TimebombDamage,
   type TrickPayoutEvent,
 } from '../../hunt'
 import { cheatArmed, type RoundUiState } from './roundUiState'
@@ -112,6 +114,13 @@ export function applyResolution(
   encounter: EncounterState,
   resolution: TrickResolution,
   handEnding: boolean,
+  // DLR-132 — the primed card's OWN tier's damage pair. `commit` threads `state.primedTimebombDamage`
+  // here, falling back to bronze when nothing is primed — unreachable in practice, since a
+  // `timebombTarget` implies a primed card implies a spend, but the reducer must stay throw-free
+  // and a non-null assertion would be exactly the "plausible thing that type-checks" this codebase
+  // throws about elsewhere. The default keeps every OTHER caller (fixtures, previews) compiling
+  // and behaving exactly as bronze always has, without passing one.
+  timebombDamage: TimebombDamage = TIMEBOMB_DAMAGE[BuffTier.Bronze],
 ): FoldedResolution {
   if (isEncounterResolved(encounter)) return { encounter, unplayedAtPress: null, payout: null }
   const queued = encounter.pendingApplyPayout
@@ -131,7 +140,9 @@ export function applyResolution(
     ? { ...paid, pendingTimebomb: NO_PENDING_TIMEBOMB }
     : paid
   const booked =
-    resolution.timebombTarget === null ? cleared : queueTimebomb(cleared, resolution.timebombTarget)
+    resolution.timebombTarget === null
+      ? cleared
+      : queueTimebomb(cleared, resolution.timebombTarget, timebombDamage)
   return settleApplyPayout(booked, handEnding, destroyed)
 }
 
@@ -176,10 +187,10 @@ export function commit(
   cardToPlay: Card,
   choice?: AbilityChoice,
 ): RoundUiState {
-  const armedCheat = cheatArmed(state) ? state.cheatSelection : null
+  const wasArmed = cheatArmed(state)
   const result = playCard(state.round, PlayerSide.Player, cardToPlay, choice, {
     ...playOptions(state),
-    ...(armedCheat ? { ignoreFollowSuit: true } : {}),
+    ...(wasArmed ? { ignoreFollowSuit: true } : {}),
   })
   if (!result.ok) {
     // A rejection is NOT a commit (AC7), so the Cheat survives and stays armed — the player can
@@ -187,11 +198,16 @@ export function commit(
     return { ...state, armed: null, prompt: null, rejection: result.reason }
   }
 
-  // AC7 — consumed on ANY successful commit while armed, even if the card was legal anyway.
-  // No "was it needed" check: that would put a legality judgement in the reducer that
-  // `legalMoves` already owns, and would make arming free.
-  const cheats = armedCheat ? removeCheat(state.cheats, armedCheat.id) : state.cheats
+  // AC7's rule, unchanged: consumed on ANY successful commit while live, even if the card was
+  // legal anyway. No "was it needed" check: that would put a legality judgement in the reducer
+  // that `legalMoves` already owns, and would make arming free. Only the accounting moved — a
+  // Cheat is a paid-for duration now, not a held card, so `Math.max` guards the floor instead of
+  // how the retired src/hunt/cheats.ts's `removeCheat` guarded membership.
+  const cheatTricksRemaining = wasArmed
+    ? Math.max(0, state.cheatTricksRemaining - 1)
+    : state.cheatTricksRemaining
 
+  const timebombDamage = state.primedTimebombDamage ?? TIMEBOMB_DAMAGE[BuffTier.Bronze]
   const playedCard: TrickCard = { side: PlayerSide.Player, card: cardToPlay }
   const resolvedTrick = deriveResolvedTrick(state.round, result.state, playedCard)
   const folded = resolvedTrick
@@ -199,6 +215,7 @@ export function commit(
         state.encounter,
         resolvedTrick.resolution,
         result.state.phase === RoundPhase.Complete,
+        timebombDamage,
       )
     : null
   const settled: RoundUiState = {
@@ -209,16 +226,19 @@ export function commit(
     rejection: null,
     resolvedTrick:
       resolvedTrick !== null && folded !== null
-        ? { ...resolvedTrick, payout: folded.payout }
+        ? {
+            ...resolvedTrick,
+            payout: folded.payout,
+            timebombDamage:
+              resolvedTrick.resolution.timebombTarget === null ? null : state.primedTimebombDamage,
+          }
         : resolvedTrick,
     encounter: folded ? folded.encounter : state.encounter,
     // DLR-109 AC4 — a DELAYED payout's press-time count, threaded in ONLY when nothing has
     // already frozen this field. The null check IS `captureUnplayed`'s "has this already been
     // captured" test, so this line and that function must never fight over the field.
     unplayedAtResolve: state.unplayedAtResolve ?? folded?.unplayedAtPress ?? null,
-    cheats,
-    cheatSelection: null,
-    timebombStage: null,
+    cheatTricksRemaining,
     // AC4 — consumed exactly when it suppressed a reset, which `resolveTrickBank` decided. The
     // reducer does not re-derive "did the Guard matter" — that would be a second reading of one
     // rule, and the two would drift.
@@ -237,6 +257,7 @@ export function commit(
         settled.encounter,
         advanced.resolvedTrick.resolution,
         advanced.round.phase === RoundPhase.Complete,
+        timebombDamage,
       )
     : null
   return {
@@ -244,7 +265,14 @@ export function commit(
     round: advanced.round,
     resolvedTrick:
       advanced.resolvedTrick !== null && quarryFolded !== null
-        ? { ...advanced.resolvedTrick, payout: quarryFolded.payout }
+        ? {
+            ...advanced.resolvedTrick,
+            payout: quarryFolded.payout,
+            timebombDamage:
+              advanced.resolvedTrick.resolution.timebombTarget === null
+                ? null
+                : settled.primedTimebombDamage,
+          }
         : advanced.resolvedTrick,
     cpuFault: advanced.cpuFault,
     encounter: quarryFolded ? quarryFolded.encounter : settled.encounter,

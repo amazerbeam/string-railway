@@ -45,7 +45,15 @@ export function deriveResolvedTrick(
     resolution.outcome === TrickOutcome.CleanWin || resolution.outcome === TrickOutcome.SkullWin
       ? PlayerSide.Player
       : PlayerSide.Cpu
-  return { cards: [before.currentTrick[0], playedCard], winner, resolution, payout: null }
+  return {
+    cards: [before.currentTrick[0], playedCard],
+    winner,
+    resolution,
+    payout: null,
+    // DLR-132 — `deriveResolvedTrick` runs BEFORE `commit`'s fold, the same reason `payout` above
+    // always writes `null` here: only `commit` knows which Timebomb tier (if any) is spent.
+    timebombDamage: null,
+  }
 }
 
 /**

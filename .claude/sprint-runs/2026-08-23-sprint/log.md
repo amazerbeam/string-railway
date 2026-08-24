@@ -6,7 +6,7 @@
 **Sprint query:** `project = DLR AND sprint in openSprints() AND status = "To Do" ORDER BY Rank ASC` → 24 issues
 **Gates overridden for this run:** plan approval (auto-take the plan's stated default), mockup approval (skipped unseen)
 
-**Progress:** 20/22 (91%) — done: 20 shipped, 0 blocked (+4 out-of-band shipped) | now: DLR-120 "Integration: one end-to-end run loop" (21/22)
+**Progress:** 21/22 (95%) — done: 21 shipped, 0 blocked (+4 out-of-band shipped) | now: DLR-132 "Cheat and Timebomb as cards" (out-of-band), then DLR-121 to close
 
 ## Run order
 
@@ -5082,3 +5082,236 @@ trick readout; `Lethal.`-first with a screen reader; the `ErrorBoundary` palette
 
 **One addition of this ticket's own, and it is cheap:** play one run and watch the loadout bar stay
 empty of anything activatable until you win a fight. The audit asserts it; nobody has seen it.
+
+## Coordinator decisions — DLR-120 reconciliation, and THE ANSWER TO THE RUN'S BIGGEST QUESTION
+
+Suite 1811 → **1829, 141 files, 0 failures.** Committed `c116afa`, pushed.
+
+### It is an integration problem before it is a balance one — with a number to prove it
+
+**1,600 simulated runs: 4 seeds × 2 policies × 200 each. 0 wins. `Faults: none`, `stalled runs: 0`
+in all eight batches.** Damage dealt 2.07–2.21 against 2.58–2.73 taken.
+
+The decisive new measurement: **67.3%–71.3% of hands are played holding no activatable buff at
+all.**
+
+The causal chain, all verified rather than asserted: a run opens with four `Unassigned`
+placeholders that `activatableBuffs` correctly filters out; the only route to a real buff is the
+free slot pull; `visitShop` is reached only past `canAdvanceRun` — **by winning a fight** — and
+**55–60% of runs die inside fight one.** So the 2.17/2.64 deficit is measuring the **pre-buff
+game**: the same game the pre-V5 passes measured at 0/120 and 0/150. **The V5 epic has not failed
+to move the needle; it is largely absent from the sample.**
+
+A second, useful negative: the new **`maximalist`** policy pulls both levers the player already
+has on every run (≈4 discards, exactly 1.00 Cheats) and moves the exchange **+0.02 damage a hand**.
+The existing levers are not the missing piece.
+
+**Stated fairly by the agent, and worth keeping:** a ~20% deficit is wide enough that a balance
+component probably survives full reachability. **Nothing was retuned.**
+
+### The reachability gap is 8 card kinds, not 5
+
+The audit is now pinned by `src/sim/reachability.ts` and its spec, so it cannot silently rot:
+**the five consumables plus Cheat, Timebomb and Shield.** `cheatBuff`, `timebombBuff` and
+`shieldBuff` have **zero production callers**.
+
+Seams handed over, six of seven:
+
+1. **DLR-112 deferred consumables-in-the-reel to DLR-126; DLR-126 answered affirmatively and never
+   came back.** Both stale docblocks fixed here (prose only). Not closed, because
+   `BuffTemplate.kind` is `BuffConditionKind` and `axis` is `BuffCostAxis` — a consumable has
+   neither — plus **14 unchosen slot weights**.
+2. **DLR-107's migration was never finished**, though it named DLR-108 and DLR-114 as its end
+   condition and both landed.
+3. **DLR-116's pared shelf made four tickets' work unobtainable** — Timebomb, Blast Guard and
+   Whetstone reachable by no path at all.
+4. The Cheat is the one reachable activated card, only via `RUN_STARTING_CHEATS = 1`.
+5. **The acquisition surfaces sit behind the fight that kills the player** — the structural seam,
+   and **the largest unowned one**.
+6. **`Keepsake` is now decidable**: DLR-123's `closeHand` turned "hand's end" into a modelled
+   event, so the rule finally has a boundary to name. `Long Fall` confirmed absent.
+
+**DLR-132 owns seams 2 and 3 and the Cheat/Timebomb half of the audit. It does NOT cover the five
+consumables, Blast Guard, Whetstone, or seam 5** — flagged explicitly so they do not quietly
+survive it.
+
+### The decisive experiment, deliberately not run
+
+`playRun` calls `startRun(PLAYER_START_HEALTH, [], seed)` — **that empty array is DLR-113's
+`TemplateGrant[]`, already wired.** Passing grants measures the game with buffs live from trick
+one, which is the first honest test of whether the V5 numbers work. A `--grants` flag is one step
+from the balance pass. **Named rather than shipped**, correctly: it is the developer's
+measurement to design.
+
+### Open for the developer
+
+The verdict itself; consumables in the reel (14 unchosen weights); Blast Guard and Whetstone back
+on the shelf; `Keepsake` and `Long Fall`; whether `maximalist` is the player worth measuring; and
+the big one — **whether a run should start with real cards or reach a shop before fight one**,
+which DLR-132 does not answer. Also two pre-existing 418/402-line spec files from DLR-123, which
+Defender and QA both agreed an integration ticket should not split.
+
+
+---
+
+## DLR-132 — Cheat and Timebomb as cards (out-of-band)
+
+Run out of band after ticket 21 of 22, before DLR-121 (verification), so the sign-off covers a game
+in which these are actually obtainable. Commit `1444293` on `Version-5`, **not pushed**.
+112 files, +3,400 / −2,933; **`src/` alone is net −859 lines.** A consolidation, not a build.
+
+### The gap, restated from what the code actually said
+
+Cheat and Timebomb could not be acquired **at all** — three tickets closed three routes
+independently, each correct in isolation. And they were two bespoke widgets sitting outside the
+buff list's roving tabindex, which `BuffLoadoutPanel.tsx:57` stated in as many words: *"the ref is
+attached ONLY to the buff-row list."* The developer's four-button felt (`Apply Buff` · `Cards` ·
+`Swap` · `Apply Damage`) was already built, so the remaining gap was never "put them behind Buff"
+— it was **"make them cards rather than widgets behind Buff."**
+
+### How the `BuffTemplate.kind` / `axis` shape problem was solved
+
+`kind` was `BuffConditionKind`, `axis` was `BuffCostAxis`, and **an activated card has neither**.
+That is why the pool never contained one, and why consumables were never added either.
+
+**`BuffTemplate` became a discriminated union tagged `form`** — `ConditionBuffTemplate` (today's
+fields, unchanged) | `ActivatedBuffTemplate` (`form`, `id`, `kind`, and nothing else).
+`mintFromTemplate` switches on the tag and **delegates to DLR-107's `cheatBuff` / `timebombBuff`**,
+which stop being inert after four tickets; that module's "REPRESENTATION ONLY" docblock is
+rewritten to say so.
+
+**The rejected alternative was an optional `axis`.** It type-checks, but it puts an invisible
+`?? 0` into `templateWeightFor`'s multiplication, and a silently-zero weight is *a card in the pool
+that can never be drawn* — the exact failure `mintFromTemplate`'s own `RangeError` guard exists to
+prevent. The tag makes every consumer's branch mandatory at compile time.
+
+**Consumables are now trivially addable** — five literals, five mint branches, ten weights — and
+were **deliberately left out** per DLR-120's scope boundary. That boundary is now pinned by a test
+rather than a comment: `reachability.test.ts` asserts the five consumables and Shield are *still*
+unreachable, so a future ticket cannot quietly assume this one covered them.
+
+### Plan defaults taken (nobody approved any of these)
+
+- **Four slot weights**, agent-chosen: Skirmisher Cheat **3** / Timebomb **3**; Strongbox Cheat
+  **1** / Timebomb **1**. Both are in-hand tactical plays rather than run-permanent rewards, so
+  mid-table on the trick-lean machine beside `MarkOfRank` (3) and `DebtCollector` (3), below
+  `Taker` (5); at the floor on the upgrade-lean one beside `Keepsake` (1). Only ratios matter
+  within a machine's table. `SLOT_AXIS_WEIGHTS` deliberately **not** widened — an activated
+  template has no axis; its share is `familyWeight / templates-in-family`, which preserves the
+  invariant `slotWeights.test.ts` already asserted.
+- **`RUN_STARTING_CHEATS` = 1, preserved.** Name and value unchanged, re-homed to mean bronze Cheat
+  **buffs** seeded into the opening pile. Behaviour bit-for-bit today's, which is what makes the
+  before/after sim legible. **The standing open question — should a run open holding a Cheat at
+  all — is now one integer, not a mechanic.** Not answered here.
+- **`RunState.cheats` / `.nextCheatId` / `.timebombCharges` deleted**, with `src/hunt/cheats.ts` in
+  full and `CHEAT_SLOT_COUNT`. Leaving them would leave a second record of "do you hold a Cheat",
+  which is the duplication the ticket exists to end. A run still opens with **zero** Timebombs;
+  granting one would have been a balance change.
+- **Tiers honoured in play for the first time** — Cheat 1/2/3 tricks of no-follow-suit, Timebomb
+  4/2 · 8/4 · 12/6. Both transcribed from DLR-107, neither chosen here. Bronze is today's live
+  behaviour by construction on both.
+- **Accepted limitation, stated not hidden:** one Timebomb tier is remembered per hand. Two
+  different-tier Timebombs primed in one hand both detonate at the second's figure. The proper fix
+  widens `WarCouncilState.primedCards` into the pure engine and every `primedCards: []` fixture —
+  out of proportion.
+
+### The focus-order model
+
+Two rows joined the roving tabindex they were deliberately outside of. **One tab stop** on the
+first activatable row; arrows move among activatable rows only and **skip refused ones**;
+`Home`/`End`; wrap both ways; `Escape` closes. `Escape` is now handled in **exactly one place** —
+each deleted widget carried its own `stopPropagation` purely to avoid closing the panel around
+itself, and that whole workaround is gone.
+
+The risk was real and named up front: `useRovingTabIndex` probes `isFocusable(0)`
+**unconditionally**, and DLR-131 shipped an integration-only crash from exactly that reaching
+`apCostOf(undefined)`. The `buffs[index] !== undefined` guard is kept and **six explicit tests pin
+it**, including empty-pile and all-rows-refused — the two shapes that reach the probe with nothing
+behind it.
+
+### The bug the plan did not anticipate, caught by a failing test
+
+Ordinary buff rows gate on `discardWindowOpen` (between tricks). **The retired widgets gated on
+`canAct`** — deliberately, because the only moment either card has value is *while following an
+already-committed lead*, which is exactly when `discardWindowOpen` is false. Folding them into
+ordinary rows as written would have made a Cheat's follow-suit break unreachable at the one trick
+it can matter, and a Timebomb unmarkable while following. `buffActivationWindowOpen(state, buff)`
+states the carve-out once; guard and commit both read it, so they cannot drift. **Found by
+`RangeError: Cannot activate buff 1 — windowClosed`, not by inspection.**
+
+### Also fixed: a display defect this ticket itself introduced
+
+Before DLR-132 a Timebomb was flat-costed, so `TrickWell`'s reveal narration reading the bronze
+constant was always right. Making silver and gold drawable turned it into a lie — a gold Timebomb
+books 12 and the reveal said 4. Fixed by carrying the pair on the **app-layer** `ResolvedTrick`
+(declared in `roundUiState.ts`, not in the engine) rather than widening `TrickResolution`. Added as
+Task 10a mid-run, with a gold-vs-bronze regression test.
+
+### `timebombDamageFor` / `timebombDamageOf` — collapsed after outliving four tickets
+
+`DuelSide`'s two values are `'player'` and `'quarry'`, which are exactly the old interface's two
+field names — so retyping `TimebombDamage` to `Readonly<Record<DuelSide, Damage>>` made the
+collapse a one-line index (`damage[target]`) and was **source-compatible at every existing read**.
+`queueTimebomb` now takes the pair, because the figure depends on the spent card's tier and
+`src/hunt/encounter.ts` cannot see that card.
+
+### Simulator — before and after, an OBSERVATION with nothing retuned
+
+`npm run sim -- --runs 200 --seed 1`:
+
+| | before (`c116afa`) | after |
+|---|---|---|
+| win rate | 0.0% (0/200) | **0.0% (0/200)** |
+| hands holding **no** activatable buff | 67.7% | **0.0%** |
+| buff activations / hand | 0.88 | **1.50** |
+| AP spent / hand | 2.33 | **4.35** |
+| slot pulls | 0.44 | 0.46 |
+| damage to Quarry / hand | 2.17 | 2.29 |
+| damage to player / hand | 2.64 | 2.64 |
+| faults / stalled | none / 0 | none / 0 |
+
+**Nothing was retuned in response to these.** The 67.7% → 0.0% collapse is the opening Cheat
+becoming a real activatable pile member instead of an inert `Unassigned` placeholder — DLR-120's
+headline number was measuring a pre-buff game, and this closes that specific cause without
+touching a single figure. **Win rate did not move.** `mean Cheats armed per run` reads 0.00 on both
+sides because that counter only increments through a policy's optional `wantsCheatPlay`, which
+`maximalistPolicy` implements and `baselinePolicy` — the policy the script runs — does not.
+
+### Deviations from the contract, with the measurement that forced each
+
+- **`roundUiState.ts` was NOT split.** The brief mandated it as blocking at 399/400. It **shrank to
+  389**: deleting `CheatStage`, `CheatSelection`, `TimebombStage`, four action kinds and four state
+  fields cost more than three new fields gained. Splitting a 389-line file to satisfy a trigger
+  that never fired is churn. Task 9 was re-scoped in-file to "re-measure, split only if it
+  breaches", `roundPredicates.ts` was never created, and the File map carries the amendment.
+- **Two tasks added mid-run** — 10a (the `TrickWell` tier narration above) and 10b (four docblocks
+  describing deleted machinery as live). Both recorded in `tasks.md` with the reasoning.
+- **Planner audit gap, worth a `/fb-issue`:** the config audit never caught `shop.ts`'s
+  `ShopStock.cheatCount` / `CHEAT_SLOT_COUNT` import, so deleting the constant broke it. Resolved
+  by removing the now-uncheckable cap (the pile has no capacity) and keeping
+  `PurchaseRefusal.SlotsFull` as a defined-but-unproduced code so `shopLabels.ts`'s total `Record`
+  needed no edit. Also: **Task 13's grep pattern list never included `cheats.ts` or `CheatCardId`**,
+  so seven present-tense citations of the deleted module survived it and both Code-Evaluator and
+  QA found them independently. A name-only grep cannot distinguish a live claim from a dated
+  attribution — that check wants scoping to the task's own files, or a read.
+
+### Gates
+
+typecheck **0** · lint **0** · `npm test` **1808 passed / 139 files / 0 failed** · build **0**.
+Baseline was 1829/141; the delta is exactly the specs deleted and added. Throw count **99** against
+102 — the four deletions are precisely `cheats.ts`'s guards on a two-slot rail that no longer
+exists, and **no surviving throw was weakened**. Pure-core boundary clean; no `Math.random()`;
+every file under 400 measured with `(Get-Content).Count`.
+
+**Reviewers:** Code-Evaluator APPROVED, Defender APPROVED (0/0/0), QA FAILURES FOUND — all three
+QA failures were process gaps (docs, PR description, stale comment citations), not logic. One
+combined fix pass, one round. **Browser pass NOT requested and not run**; the eyes-on agenda is in
+`pr-description.md` → *What a browser would have checked*.
+
+### Open for the developer
+
+The four slot weights · whether a run should open holding a Cheat · **the gold Cheat's price**, now
+reachable at 7 AP with `buffCatalog.ts`'s own standing warning that three tricks of no-follow-suit
+is "close to a guaranteed run of wins" · the one-tier-per-hand Timebomb limitation · **the panel
+nobody has seen** (mockup gate skipped) · and the balance pass, which these figures moved and
+nobody tuned.

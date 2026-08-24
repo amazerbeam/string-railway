@@ -13,13 +13,12 @@ import {
 import { MAX_CARDS_PER_DISCARD, startEncounter, type EncounterState } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
 import {
-  CheatStage,
   createRoundUiState,
   discardStock,
   RoundUiActionKind,
   type RoundUiState,
 } from '../roundUiState'
-import { card, discardsRemainingFixture, timebombChargesFixture, makeRound } from './roundFixture'
+import { card, discardsRemainingFixture, makeRound } from './roundFixture'
 
 // The discard's own reducer-level coverage (AC10) — chaining, refusals (including the AC1
 // pre-Quarry-lead availability and the AC1 "never mid-trick" refusal), and the void-in-suit
@@ -38,8 +37,6 @@ function uiFrom(
   return createRoundUiState({
     round,
     encounter,
-    cheats: [],
-    timebombCharges: timebombChargesFixture,
     blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining,
@@ -54,17 +51,23 @@ describe('opening the selection (AC1/AC9)', () => {
     expect(ui.discardSelection).toEqual([])
   })
 
-  it('opening clears any prior Cheat selection, Timebomb stage, and armed card', () => {
+  it('opening clears any armed card, so the next hand-card tap is never ambiguous', () => {
     const seeded: RoundUiState = {
       ...uiFrom(makeRound()),
-      cheatSelection: { id: 1, stage: CheatStage.Poised },
       armed: card(Suit.Bells, 2),
     }
     const ui = roundReducer(seeded, tapDiscard)
-    expect(ui.cheatSelection).toBeNull()
-    expect(ui.timebombStage).toBeNull()
     expect(ui.armed).toBeNull()
     expect(ui.discardSelection).toEqual([])
+  })
+
+  it('opening does NOT clear a live Cheat or an armed Timebomb — DLR-132, neither is a transient selection', () => {
+    const seeded: RoundUiState = {
+      ...uiFrom(makeRound()),
+      cheatTricksRemaining: 2,
+    }
+    const ui = roundReducer(seeded, tapDiscard)
+    expect(ui.cheatTricksRemaining).toBe(2)
   })
 })
 

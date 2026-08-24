@@ -26,9 +26,9 @@ const EXPECTED_COUNTS: ReadonlyArray<readonly [string, number]> = [
 ]
 
 describe('BUFF_TEMPLATES', () => {
-  it('holds exactly the 71 condition templates DLR-111 decided', () => {
-    expect(BUFF_TEMPLATES).toHaveLength(71)
-    expect(BUFF_TEMPLATE_COUNT).toBe(71)
+  it('holds exactly the 71 condition templates DLR-111 decided, plus the 2 DLR-132 activated ones', () => {
+    expect(BUFF_TEMPLATES).toHaveLength(73)
+    expect(BUFF_TEMPLATE_COUNT).toBe(73)
   })
 
   it.each(EXPECTED_COUNTS)('crosses %s into %i templates', (kind, count) => {
@@ -39,18 +39,22 @@ describe('BUFF_TEMPLATES', () => {
     expect(new Set(BUFF_TEMPLATES.map((t) => t.id)).size).toBe(BUFF_TEMPLATES.length)
   })
 
-  it('holds no consumable or activated card — AC6 is DLR-126s', () => {
+  it('holds no consumable card — AC6 is DLR-126s (DLR-132 added Cheat and Timebomb only)', () => {
     for (const template of BUFF_TEMPLATES) {
+      if (template.form !== 'condition') continue
       expect(isConditionFamily(template.kind)).toBe(true)
     }
   })
 
   it('parameterises exactly the 49 suit- or rank-carrying templates', () => {
-    expect(BUFF_TEMPLATES.filter((t) => t.target !== undefined)).toHaveLength(12 + 12 + 22 + 3)
+    expect(
+      BUFF_TEMPLATES.filter((t) => t.form === 'condition' && t.target !== undefined),
+    ).toHaveLength(12 + 12 + 22 + 3)
   })
 
   it('pays Keepsake on coins alone', () => {
     for (const template of templatesForFamily(BuffKind.Keepsake)) {
+      if (template.form !== 'condition') continue
       expect(template.axis).toBe(BuffRewardAxis.Coins)
     }
   })
@@ -68,6 +72,7 @@ describe('REWARD_TIER_VALUE', () => {
 describe('mintFromTemplate', () => {
   it('mints a priceable Buff carrying the callers id and the tiers reward value', () => {
     const template = templatesForFamily(BuffKind.Taker)[0]
+    if (template.form !== 'condition') throw new Error('Taker is a condition family')
     const buff = mintFromTemplate(template, BuffTier.Silver, 42)
     expect(buff.id).toBe(42)
     expect(buff.kind).toBe(BuffKind.Taker)
@@ -77,8 +82,12 @@ describe('mintFromTemplate', () => {
     expect(() => apCostOf(buff)).not.toThrow()
   })
 
-  it('prices every template at every tier without throwing', () => {
+  it('prices every CONDITION template at every tier within the AP_COST_MIN..AP_COST_MAX clamp', () => {
+    // DLR-132 — the two ACTIVATED templates are priced off `CONSUMABLE_AP_COST`, not this clamp
+    // (gold Cheat is deliberately 7, above the clamp's ceiling — `buffTemplates.activated.test.ts`
+    // covers those two without asserting the condition-only bound).
     for (const template of BUFF_TEMPLATES) {
+      if (template.form !== 'condition') continue
       for (const tier of [BuffTier.Bronze, BuffTier.Silver, BuffTier.Gold]) {
         const cost = apCostOf(mintFromTemplate(template, tier, 1))
         expect(cost).toBeGreaterThanOrEqual(1)
@@ -88,7 +97,9 @@ describe('mintFromTemplate', () => {
   })
 
   it('carries the suit or rank onto the minted conditions target', () => {
-    const mark = templatesForFamily(BuffKind.MarkOfRank).find((t) => t.target?.rank === 9)
+    const mark = templatesForFamily(BuffKind.MarkOfRank).find(
+      (t) => t.form === 'condition' && t.target?.rank === 9,
+    )
     expect(mark).toBeDefined()
     expect(mintFromTemplate(mark!, BuffTier.Gold, 1).condition.target?.rank).toBe(9)
   })

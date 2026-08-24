@@ -19,11 +19,14 @@ import { MAX_CARDS_PER_DISCARD } from '../../hunt'
 import { discardStock, type RoundUiState } from './roundUiState'
 
 /**
- * DLR-100 — three outcomes on one control. Not selecting, refusal null → OPEN (clearing any Cheat
- * or Timebomb selection and any armed card, mutual exclusion mirroring `handleTapTimebomb`'s own).
- * Selecting, refusal null → the only way that happens is a non-empty selection, so COMMIT through
- * `applyDiscard` and decrement the budget. Refused → no-op, matching `handleTapApplyDamage`'s own
- * shape.
+ * DLR-100 — three outcomes on one control. Not selecting, refusal null → OPEN (clearing any armed
+ * card, so the next hand-card tap is never ambiguous). Selecting, refusal null → the only way that
+ * happens is a non-empty selection, so COMMIT through `applyDiscard` and decrement the budget.
+ * Refused → no-op, matching `handleTapApplyDamage`'s own shape.
+ *
+ * DLR-132 — opening no longer clears a live Cheat or an armed Timebomb: neither is a transient
+ * selection any more (a Cheat is a paid-for duration, a Timebomb an armed spend), so opening the
+ * discard rail does not touch either.
  */
 export function handleTapDiscard(state: RoundUiState): RoundUiState {
   if (discardRefusalFor(discardStock(state)) !== null) {
@@ -33,8 +36,6 @@ export function handleTapDiscard(state: RoundUiState): RoundUiState {
     return {
       ...state,
       discardSelection: [],
-      cheatSelection: null,
-      timebombStage: null,
       armed: null,
     }
   }
@@ -47,8 +48,7 @@ export function handleTapDiscard(state: RoundUiState): RoundUiState {
   }
 }
 
-/** AC9 — close the selection without spending, mirroring `clearCheat`'s and `CancelTimebomb`'s own
- *  shape. */
+/** AC9 — close the selection without spending. */
 export function handleCancelDiscard(state: RoundUiState): RoundUiState {
   return state.discardSelection === null ? state : { ...state, discardSelection: null }
 }
@@ -56,7 +56,7 @@ export function handleCancelDiscard(state: RoundUiState): RoundUiState {
 /**
  * Toggle `tapped`'s membership in the open selection, capped at `MAX_CARDS_PER_DISCARD` and
  * silently ignoring a tap past the cap or on a card not in hand — matching this codebase's existing
- * silent-guard style (`clearCheat`'s stale-selection drop).
+ * silent-guard style.
  */
 export function toggleDiscardCard(state: RoundUiState, tapped: Card): RoundUiState {
   const selection = state.discardSelection ?? []

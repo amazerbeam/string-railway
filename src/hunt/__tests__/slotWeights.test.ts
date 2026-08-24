@@ -5,7 +5,7 @@ import {
   templateWeightFor,
   weightedDrawWithoutReplacement,
 } from '../slotWeights'
-import { BUFF_TEMPLATES, templatesForFamily } from '../buffTemplates'
+import { BUFF_TEMPLATES, templateById, templatesForFamily } from '../buffTemplates'
 import { SLOT_MACHINE_IDS, SlotMachineId } from '../slotConfig'
 import { createSeededRng } from '../seededRng'
 import { BuffKind } from '../buffs'
@@ -53,6 +53,30 @@ describe('templateWeightFor', () => {
       share(SlotMachineId.Skirmisher, thresholdFamilies),
     )
   })
+})
+
+describe('activated templates', () => {
+  it.each([SlotMachineId.Skirmisher, SlotMachineId.Strongbox])(
+    'gives %s a positive weight to both activated templates',
+    (machineId) => {
+      for (const id of ['cheat', 'timebomb']) {
+        expect(templateWeightFor(machineId, templateById(id)!)).toBeGreaterThan(0)
+      }
+    },
+  )
+
+  it.each([SlotMachineId.Skirmisher, SlotMachineId.Strongbox])(
+    "makes an activated family's strip share equal its family weight on %s",
+    (machineId) => {
+      for (const kind of [BuffKind.Cheat, BuffKind.Timebomb]) {
+        const total = templatesForFamily(kind).reduce(
+          (sum, t) => sum + templateWeightFor(machineId, t),
+          0,
+        )
+        expect(total).toBeCloseTo(SLOT_FAMILY_WEIGHTS[machineId][kind], 10)
+      }
+    },
+  )
 })
 
 describe('weightedDrawWithoutReplacement', () => {

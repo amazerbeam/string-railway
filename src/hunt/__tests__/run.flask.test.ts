@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { FLASK_STARTING_CHARGES, OpponentKind, RUN_ENCOUNTERS } from '../config'
 import { FlaskRefusal, flaskHealAmount } from '../flask'
 import { advanceRun, drinkFlask, flaskStockFor, recordEncounter, startRun } from '../run'
@@ -85,8 +85,7 @@ describe('drinkFlask (AC2, AC3, AC4)', () => {
     const run = runWonAt(firstOrdinaryIndex, 3, 1)
     const after = drinkFlask(run, MAX)
     expect(after.coins).toBe(run.coins)
-    expect(after.cheats).toBe(run.cheats)
-    expect(after.timebombCharges).toBe(run.timebombCharges)
+    expect(after.buffs).toBe(run.buffs)
     expect(after.whetstones).toBe(run.whetstones)
     expect(after.encounter.health[DuelSide.Quarry]).toBe(run.encounter.health[DuelSide.Quarry])
   })
@@ -128,8 +127,6 @@ describe("recordEncounter's flask refill (AC5)", () => {
     const recorded = recordEncounter(
       at,
       wonEncounter(at.encounter, 3),
-      at.cheats,
-      at.timebombCharges,
       at.blastGuardHeld,
       at.discardsRemaining,
       null,
@@ -142,8 +139,6 @@ describe("recordEncounter's flask refill (AC5)", () => {
     const recorded = recordEncounter(
       at,
       wonEncounter(at.encounter, 3),
-      at.cheats,
-      at.timebombCharges,
       at.blastGuardHeld,
       at.discardsRemaining,
       null,
@@ -156,8 +151,6 @@ describe("recordEncounter's flask refill (AC5)", () => {
     const recorded = recordEncounter(
       at,
       wonEncounter(at.encounter, 3),
-      at.cheats,
-      at.timebombCharges,
       at.blastGuardHeld,
       at.discardsRemaining,
       null,
@@ -180,15 +173,7 @@ describe("recordEncounter's flask refill (AC5)", () => {
         [DuelSide.Quarry]: 0,
       })
     }
-    const recorded = recordEncounter(
-      at,
-      lost,
-      at.cheats,
-      at.timebombCharges,
-      at.blastGuardHeld,
-      at.discardsRemaining,
-      null,
-    )
+    const recorded = recordEncounter(at, lost, at.blastGuardHeld, at.discardsRemaining, null)
     expect(recorded.flaskCharges).toBe(0)
   })
 })

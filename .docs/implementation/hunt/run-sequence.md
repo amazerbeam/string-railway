@@ -19,27 +19,37 @@ export interface RunState {
   readonly encounterCount: number // QUARRY_ENCOUNTER_HEALTH.length
   readonly encounter: EncounterState
   readonly outcome: RunOutcome // 'inProgress' | 'won' | 'lost'
-  readonly cheats: readonly CheatCard[] // DLR-83
-  readonly nextCheatId: CheatCardId // DLR-83
+  readonly cheats: readonly CheatCard[] // DLR-83 — DELETED, DLR-132
+  readonly nextCheatId: CheatCardId // DLR-83 — DELETED, DLR-132
   readonly coins: Coins // DLR-84
-  readonly timebombCharges: number // DLR-90
+  readonly timebombCharges: number // DLR-90 — DELETED, DLR-132
   readonly blastGuardHeld: boolean // DLR-91
   readonly whetstones: number // DLR-92
   readonly flaskCharges: number // DLR-93
+  readonly buffs: readonly Buff[] // DLR-105 — a held Cheat or Timebomb is a pile member here, since DLR-132
+  readonly nextBuffId: BuffId // DLR-105
 }
 ```
 
-The last seven fields arrived after the original four, and every one of them is carried across a fight
-boundary by the `...run` spread `advanceRun` already had — no ticket needed a line for the carry. See
-[Cheats](cheats-and-slots.md), [Coins and the shop](coins-and-the-shop.md),
-[Timebomb](timebomb-and-the-delayed-hit.md), [Blast Guard](blast-guard.md) and
-[the flask](the-flask.md).
+> **DLR-132 deleted `cheats`, `nextCheatId` and `timebombCharges`, 2026-08-24.** A Cheat and a
+> Timebomb are ordinary members of `buffs` now, carried and returned exactly as any other buff is —
+> see [Cheat and Timebomb as buff-pile objects](cheat-and-timebomb-buffs.md). The struct above is
+> shown with the deletions marked in place rather than silently removed, so a reader who remembers
+> the old shape can see what moved.
 
-**Three of them are handed back by a hand at the end of a fight, and three are not.** `cheats`,
-`timebombCharges` and `blastGuardHeld` are owned by the hand for its lifetime and returned through
-`WarCouncilRoundResult`, so `recordEncounter` takes them as required parameters. `whetstones` and
-`flaskCharges` are not: a hand cannot spend a Whetstone or drink the flask, so there is nothing to
-hand back and `recordEncounter` reads both off the run it was given.
+The seven fields below the original four arrived at various tickets, and every surviving one is
+carried across a fight boundary by the `...run` spread `advanceRun` already had — no ticket needed a
+line for the carry. See [the retired cheats module](cheats-and-slots.md),
+[Coins and the shop](coins-and-the-shop.md), [Timebomb](timebomb-and-the-delayed-hit.md),
+[Blast Guard](blast-guard.md) and [the flask](the-flask.md).
+
+**Some of them are handed back by a hand at the end of a fight, and some are not.** `blastGuardHeld`
+is owned by the hand for its lifetime and returned through `WarCouncilRoundResult`, so
+`recordEncounter` takes it as a required parameter — as `cheats` and `timebombCharges` did before
+DLR-132 deleted both. `whetstones`, `flaskCharges` and `buffs` are not handed back as a parameter: a
+hand cannot spend a Whetstone or drink the flask, and since DLR-132 a hand's buff spend (including a
+Cheat or Timebomb) never removes anything from the pile either, so there is nothing for
+`recordEncounter` to adopt — it reads all three off the run it was given.
 
 **`blastGuardHeld` is the one field that is carried and then deliberately cleared.** It has to be
 run-level to survive the `advanceRun` that opens the fight it was bought for, and it has to end when

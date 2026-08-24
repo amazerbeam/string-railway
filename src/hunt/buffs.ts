@@ -48,7 +48,7 @@ export const BuffKind = {
 export type BuffKind = (typeof BuffKind)[keyof typeof BuffKind]
 
 /** Minted from `RunState.nextBuffId`, never from `Math.random()` — `src/hunt/` is
- *  lint-enforced DOM-free and must stay deterministic, exactly as `CheatCardId` already is. */
+ *  lint-enforced DOM-free and must stay deterministic, exactly as every id in this tree is. */
 export type BuffId = number
 
 /**
@@ -208,9 +208,8 @@ export const ACTIVATED_BUFF_CONDITION: BuffCondition = { kind: 'activated' }
 
 /**
  * AC3 — the run's opening pile: `count` bronze buffs, all placeholder content, with
- * consecutive ids starting at `firstId`. Mirrors `grantCheats`'s `(count, firstId)` shape but
- * carries no upper-bound throw: unlike `CHEAT_SLOT_COUNT`, no capacity cap is stated anywhere in
- * this ticket's scope for the buff pile (see plan.md's Assumptions).
+ * consecutive ids starting at `firstId`. Carries no upper-bound throw: the pile has no capacity
+ * cap (DLR-132 retired the old two-slot Cheat rail on exactly that basis).
  */
 export function seedStartingBuffPile(count: number, firstId: BuffId): readonly Buff[] {
   return Array.from({ length: count }, (_, i) => ({

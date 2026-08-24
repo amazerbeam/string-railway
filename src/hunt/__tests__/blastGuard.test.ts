@@ -22,15 +22,7 @@ function wonRunWithCoins(coins: number) {
     [DuelSide.Quarry]: run.encounter.health[DuelSide.Quarry],
   })
   return {
-    ...recordEncounter(
-      run,
-      killed,
-      run.cheats,
-      run.timebombCharges,
-      false,
-      run.discardsRemaining,
-      null,
-    ),
+    ...recordEncounter(run, killed, false, run.discardsRemaining, null),
     coins,
   }
 }
@@ -68,15 +60,7 @@ describe('Blast Guard lifetime (AC2)', () => {
       [DuelSide.Player]: 0,
       [DuelSide.Quarry]: fighting.encounter.health[DuelSide.Quarry],
     })
-    const after = recordEncounter(
-      fighting,
-      killed,
-      fighting.cheats,
-      fighting.timebombCharges,
-      true,
-      fighting.discardsRemaining,
-      null,
-    )
+    const after = recordEncounter(fighting, killed, true, fighting.discardsRemaining, null)
     expect(after.blastGuardHeld).toBe(false)
   })
 
@@ -86,15 +70,7 @@ describe('Blast Guard lifetime (AC2)', () => {
       [DuelSide.Player]: 1,
       [DuelSide.Quarry]: 1,
     })
-    const after = recordEncounter(
-      fighting,
-      scratched,
-      fighting.cheats,
-      fighting.timebombCharges,
-      true,
-      fighting.discardsRemaining,
-      null,
-    )
+    const after = recordEncounter(fighting, scratched, true, fighting.discardsRemaining, null)
     expect(after.blastGuardHeld).toBe(true)
   })
 })

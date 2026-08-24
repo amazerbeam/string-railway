@@ -185,19 +185,11 @@ export const FORAGE_BUDGET_PER_ENCOUNTER = 4
 // waiting to happen. Replaces DLR-48 AC3's provisional 5, which sat beside a one-entry array.
 export const ENCOUNTERS_PER_RUN = QUARRY_ENCOUNTER_HEALTH.length
 
-// DLR-83 AC1/AC2 — exactly two slots. TRANSCRIBED FROM THE TICKET, not chosen: its Dependencies
-// section defends the cap at length ("the skull is the only thing stopping 'take every trick'
-// from being correct, so unlimited Cheats would remove the game's only inversion"). A key so the
-// number is stated once, NOT so it is easy to raise.
-// UNIT: slots available to the player, for the whole run.
-export const CHEAT_SLOT_COUNT = 2
-
-// DLR-83 AC3 set this to 0 on 2026-08-17: a run should start empty-handed, with Cheats earned or
-// bought rather than granted free. RAISED BACK TO 1 by the developer on 2026-08-22, to test whether
-// a tool available before fight one's coin-gated catch-up (see run-winnability-simulation.md) moves
-// the run's win rate at all.
-// Must be 0..CHEAT_SLOT_COUNT; `grantCheats` throws outside that range rather than clamping.
-// UNIT: Cheat cards granted once, at the start of a run.
+// DLR-132 — how many bronze Cheat BUFFS `startRun` seeds into `RunState.buffs`. Re-homed from the
+// retired two-slot rail: the pile has no capacity cap, so the old 0..CHEAT_SLOT_COUNT guard has
+// nothing left to guard. The VALUE is unchanged, so a run opens holding exactly the one Cheat it
+// always has — whether it should open holding one at all is still the developer's open question.
+// UNIT: bronze Cheat buffs in the opening pile.
 export const RUN_STARTING_CHEATS = 1
 
 // DLR-105 AC3 — the run's opening buff-pile size, all bronze. TRANSCRIBED from the ticket's AC3

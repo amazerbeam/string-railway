@@ -1,16 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { PlayerSide, Suit, TrickOutcome } from '../../../warCouncil'
 import {
+  BuffTier,
   DuelSide,
   TIMEBOMB_PLAYER_DAMAGE,
   TIMEBOMB_QUARRY_DAMAGE,
+  TIMEBOMB_DAMAGE,
   NO_PENDING_TIMEBOMB,
   isEncounterResolved,
   queueTimebomb,
   startEncounter,
+  timebombBuff,
 } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
-import { createRoundUiState, RoundUiActionKind } from '../roundUiState'
+import { createRoundUiState, RoundUiActionKind, type RoundUiState } from '../roundUiState'
 import { card, discardsRemainingFixture, makeRound } from './roundFixture'
 
 // The Timebomb queue's own behaviour — booking a mark against the winner of a marked trick, and
@@ -18,7 +21,15 @@ import { card, discardsRemainingFixture, makeRound } from './roundFixture'
 // Split out of `roundReducer.timebomb.test.ts`, which stayed with the mark/arm control mechanics,
 // to keep both files under the 400-line budget.
 
-const tapTimebomb = { kind: RoundUiActionKind.TapTimebomb } as const
+const bronzeTimebomb = timebombBuff(BuffTier.Bronze, 1)
+
+/** Spend the bronze Timebomb through the ordinary two-tap `TapBuff` flow — DLR-132 replaced the
+ *  retired `TapTimebomb` action with this. */
+function armTimebomb(ui: RoundUiState): RoundUiState {
+  const opened = roundReducer(ui, { kind: RoundUiActionKind.ToggleLoadout })
+  const poised = roundReducer(opened, { kind: RoundUiActionKind.TapBuff, id: bronzeTimebomb.id })
+  return roundReducer(poised, { kind: RoundUiActionKind.TapBuff, id: bronzeTimebomb.id })
+}
 
 describe('the queue write (AC3/AC6)', () => {
   it('queues TIMEBOMB_QUARRY_DAMAGE for the Quarry, replacing the normal cash-out, when a marked trick is lost cleanly', () => {
@@ -37,15 +48,12 @@ describe('the queue write (AC3/AC6)', () => {
     let ui = createRoundUiState({
       round,
       encounter,
-      cheats: [],
-      timebombCharges: 1,
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
-      buffs: [],
+      buffs: [bronzeTimebomb],
     })
-    ui = roundReducer(ui, tapTimebomb)
-    ui = roundReducer(ui, tapTimebomb)
+    ui = armTimebomb(ui)
     const target = card(Suit.Bells, 2)
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target }) // marks it
     expect(ui.round.primedCards).toEqual([target])
@@ -76,15 +84,12 @@ describe('the queue write (AC3/AC6)', () => {
     let ui = createRoundUiState({
       round,
       encounter: startEncounter(0),
-      cheats: [],
-      timebombCharges: 1,
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
-      buffs: [],
+      buffs: [bronzeTimebomb],
     })
-    ui = roundReducer(ui, tapTimebomb)
-    ui = roundReducer(ui, tapTimebomb)
+    ui = armTimebomb(ui)
     const target = card(Suit.Bells, 9)
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target }) // marks it
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target }) // arms to play
@@ -111,8 +116,6 @@ describe('the queue write (AC3/AC6)', () => {
     let ui = createRoundUiState({
       round,
       encounter: startEncounter(0),
-      cheats: [],
-      timebombCharges: 1,
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
@@ -145,15 +148,12 @@ describe('the queue write (AC3/AC6)', () => {
     let ui = createRoundUiState({
       round,
       encounter: startEncounter(0),
-      cheats: [],
-      timebombCharges: 1,
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
-      buffs: [],
+      buffs: [bronzeTimebomb],
     })
-    ui = roundReducer(ui, tapTimebomb)
-    ui = roundReducer(ui, tapTimebomb)
+    ui = armTimebomb(ui)
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target }) // marks it
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target }) // arms to play
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target }) // commits
@@ -177,12 +177,14 @@ describe('D1 — a Timebomb is paid at the trick that resolves it, not at the ne
     })
     // The queue already owes the player Timebomb BEFORE this trick is played — as if booked by an
     // earlier trick this hand — so this spec exercises payment, not booking.
-    const owedEncounter = queueTimebomb(startEncounter(0), DuelSide.Player)
+    const owedEncounter = queueTimebomb(
+      startEncounter(0),
+      DuelSide.Player,
+      TIMEBOMB_DAMAGE[BuffTier.Bronze],
+    )
     let ui = createRoundUiState({
       round,
       encounter: owedEncounter,
-      cheats: [],
-      timebombCharges: 1,
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
@@ -210,12 +212,14 @@ describe('D1 — a Timebomb is paid at the trick that resolves it, not at the ne
       },
       currentTrick: [],
     })
-    const owedEncounter = queueTimebomb(startEncounter(0), DuelSide.Player)
+    const owedEncounter = queueTimebomb(
+      startEncounter(0),
+      DuelSide.Player,
+      TIMEBOMB_DAMAGE[BuffTier.Bronze],
+    )
     let ui = createRoundUiState({
       round,
       encounter: owedEncounter,
-      cheats: [],
-      timebombCharges: 1,
       blastGuardHeld: false,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
@@ -255,12 +259,14 @@ describe('DLR-91 AC4 — the Blast Guard through the reducer', () => {
       currentTrick: [],
     })
     // Timebomb already owed to the player, as if booked by an earlier trick this hand.
-    const owedEncounter = queueTimebomb(startEncounter(0), DuelSide.Player)
+    const owedEncounter = queueTimebomb(
+      startEncounter(0),
+      DuelSide.Player,
+      TIMEBOMB_DAMAGE[BuffTier.Bronze],
+    )
     let ui = createRoundUiState({
       round,
       encounter: owedEncounter,
-      cheats: [],
-      timebombCharges: 0,
       blastGuardHeld: true,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
@@ -295,12 +301,14 @@ describe('DLR-91 AC4 — the Blast Guard through the reducer', () => {
       },
       currentTrick: [],
     })
-    const owedEncounter = queueTimebomb(startEncounter(0), DuelSide.Player)
+    const owedEncounter = queueTimebomb(
+      startEncounter(0),
+      DuelSide.Player,
+      TIMEBOMB_DAMAGE[BuffTier.Bronze],
+    )
     let ui = createRoundUiState({
       round,
       encounter: owedEncounter,
-      cheats: [],
-      timebombCharges: 0,
       blastGuardHeld: true,
       bankClimbBonus: 0,
       discardsRemaining: discardsRemainingFixture,
@@ -317,7 +325,10 @@ describe('DLR-91 AC4 — the Blast Guard through the reducer', () => {
 
     // A second Timebomb hit lands this fight, with the Guard already spent — simulating a mark an
     // earlier trick this hand booked, the same way `owedEncounter` above simulates the first.
-    ui = { ...ui, encounter: queueTimebomb(ui.encounter, DuelSide.Player) }
+    ui = {
+      ...ui,
+      encounter: queueTimebomb(ui.encounter, DuelSide.Player, TIMEBOMB_DAMAGE[BuffTier.Bronze]),
+    }
     ui = roundReducer(ui, { kind: RoundUiActionKind.CarryOn })
 
     const second = card(Suit.Keys, 9)

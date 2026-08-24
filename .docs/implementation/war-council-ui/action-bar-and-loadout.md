@@ -222,18 +222,27 @@ control now lives. `labels.ts`'s label functions were kept and are reused by the
   and the run's purse. Nothing on this bar changed to make that happen — the buffs the panel
   activates simply now reach the engine that pays them. See
   [The hand's buff bookkeeping, and the fold that pays it out](buff-hand-state-and-the-fold.md).
-- **On a fresh run with an empty Vault the buff list opens empty — and fills at the first shop.**
-  `startRun` seeds four `Unassigned` placeholders and `activatableBuffs` filters every one of them
-  out, so the panel shows only the relocated Cheat slots and Timebomb charge until the player pulls a
-  reel. **DLR-116 wired `slotMachine.ts` into the shop**, so priced buffs now reach the pile through a
-  pull as well as through Vault grants (`mintGrants`) — roughly 2.6 cards per pull, one pull free per
-  visit. Activating one **now pays**, since DLR-125 — see the bullet above.
-- **Cheat and Timebomb still run on their own bespoke state.** `CheatStage` / `TimebombStage` and
-  their reducer branches were **relocated, not rewritten** — they do not run on `buffCatalog.ts`, and
-  `timebombDamageOf` still has no caller. DLR-129's `timebombDamageFor` / `timebombDamageOf` collapse
-  therefore did not happen here: this contract wires the felt onto the _pile_ and the _activation
-  flow_, not onto the catalog, so the rename would have had no behaviour behind it. The nomination
-  belongs to whichever ticket replaces `commitTimebomb` with `activateBuff(timebombBuff(...))`.
+- **On a fresh run with an empty Vault the buff list opens holding one card — the starting Cheat —
+  and fills further at the first shop.** `startRun` seeds four `Unassigned` placeholders (filtered out
+  by `activatableBuffs`) plus, since DLR-132, one bronze Cheat buff, so the panel shows exactly one
+  row until the player pulls a reel. **DLR-116 wired `slotMachine.ts` into the shop**, so priced buffs
+  now reach the pile through a pull as well as through Vault grants (`mintGrants`) — roughly 2.6 cards
+  per pull, one pull free per visit, and since DLR-132 the pull can land a Cheat or a Timebomb too.
+  Activating one **now pays**, since DLR-125 — see the bullet above.
+
+> **DLR-132 closed the gap the two bullets below originally described, 2026-08-24.** Cheat and
+> Timebomb no longer run on their own bespoke state: `CheatStage`, `TimebombStage`, `CheatSlots.tsx`
+> and `TimebombCharge.tsx` are deleted, both are ordinary rows in `buffs` activated through
+> `handleTapBuff` beside Ward's, and `timebombDamageOf` (via `mintFromTemplate`) is the only minting
+> path for both. The nomination this section used to defer — `commitTimebomb` replaced by
+> `activateBuff` priming a card — is what DLR-132 built: spending a Timebomb sets
+> `timebombArmedDamage`, and the very next hand-card tap primes through `primeTapped`, folded into
+> `handleTapCard`. See [Cheat and Timebomb as buff-pile objects](../hunt/cheat-and-timebomb-buffs.md).
+> The two bullets immediately below are DLR-114's original record, kept for its accurate description
+> of the panel's move onto one door — only the "still bespoke" claim they made is now wrong.
+
+- ~~**Cheat and Timebomb still run on their own bespoke state.**~~ Was true from DLR-114 through
+  DLR-132; see the note above for what replaced it.
 
 ## What the tests pin
 

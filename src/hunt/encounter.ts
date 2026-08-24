@@ -1,9 +1,4 @@
-import {
-  TIMEBOMB_PLAYER_DAMAGE,
-  TIMEBOMB_QUARRY_DAMAGE,
-  PLAYER_START_HEALTH,
-  quarryHealthForEncounter,
-} from './config'
+import { PLAYER_START_HEALTH, quarryHealthForEncounter } from './config'
 import {
   DuelSide,
   type Damage,
@@ -20,6 +15,7 @@ import {
 } from './shield'
 import { absorbWithWard, wardAbsorptionForTier, type WardAbsorption } from './consumables'
 import type { BuffTier } from './buffs'
+import type { TimebombDamage } from './buffCatalog'
 
 /**
  * AC1 — a fresh encounter, both bars read from DLR-66's configured totals.
@@ -193,30 +189,33 @@ export function queueApplyDamagePayout(
   return { ...encounter, pendingApplyPayout: payout }
 }
 
-/** D2 — the amount owed depends on WHICH SIDE will pay it. Stated here, once, beside the booking:
- *  a caller that had to choose the figure itself is a caller that can choose the wrong one.
- *  EXPORTED on DLR-101: the copy layer needs the figure for the reveal's Timebomb clause, and a
- *  caller that chose between the two constants itself is a caller that can choose the wrong one
- *  — the same reason this function exists at all. */
-export function timebombDamageFor(target: DuelSide): Damage {
-  return target === DuelSide.Player ? TIMEBOMB_PLAYER_DAMAGE : TIMEBOMB_QUARRY_DAMAGE
-}
+// DELETED (DLR-132): timebombDamageFor(target: DuelSide): Damage — the flat, tier-blind reader.
+// `TimebombDamage` is now `Readonly<Record<DuelSide, Damage>>` (`buffCatalog.ts`), whose two field
+// names ARE `DuelSide`'s two values, so `damage[target]` does what this function did, WITH the
+// tier the caller's buff was minted at — which is the whole reason the flat version could not
+// survive a tiered Timebomb. Four tickets nominated this collapse; this is the one that lands it.
 
 /**
- * D1/D3 — book Timebomb against one side, to be paid at the resolution of the NEXT TRICK.
+ * D1/D3 — book Timebomb against one side, to be paid at the resolution of the NEXT TRICK. The
+ * amount is now the CALLER's `damage` pair — this module cannot see which buff, and therefore
+ * which tier, primed the card that booked it.
  *
  * ACCUMULATES rather than overwrites (D4), so two bookings against one side sum. Returns the
  * encounter UNCHANGED when it is already resolved — a hit must never be carried into a fight that
  * is over. NEVER throws: the reducer calls this during an event handler, and a throw there
  * unmounts the tree.
  */
-export function queueTimebomb(encounter: EncounterState, target: DuelSide): EncounterState {
+export function queueTimebomb(
+  encounter: EncounterState,
+  target: DuelSide,
+  damage: TimebombDamage,
+): EncounterState {
   if (isEncounterResolved(encounter)) return encounter
   return {
     ...encounter,
     pendingTimebomb: {
       ...encounter.pendingTimebomb,
-      [target]: encounter.pendingTimebomb[target] + timebombDamageFor(target),
+      [target]: encounter.pendingTimebomb[target] + damage[target],
     },
   }
 }

@@ -50,8 +50,6 @@ describe('buyFromShop — Whetstone (DLR-92)', () => {
     const won = recordEncounter(
       run,
       winEncounter(run.encounter),
-      run.cheats,
-      run.timebombCharges,
       false,
       run.discardsRemaining,
       null,

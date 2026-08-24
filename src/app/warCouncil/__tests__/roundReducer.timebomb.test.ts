@@ -1,23 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { PlayerSide, RoundPhase, Suit, TrickOutcome } from '../../../warCouncil'
+import { isPrimed, PlayerSide, RoundPhase, Suit, TrickOutcome } from '../../../warCouncil'
+import { BuffTier, TIMEBOMB_DAMAGE, timebombBuff } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
 import {
   createRoundUiState,
-  TimebombStage,
   RoundUiActionKind,
   type ResolvedTrick,
+  type RoundUiSeed,
 } from '../roundUiState'
-import {
-  card,
-  discardsRemainingFixture,
-  encounterFixture,
-  timebombChargesFixture,
-  makeRound,
-} from './roundFixture'
+import { card, discardsRemainingFixture, encounterFixture, makeRound } from './roundFixture'
 
-// The mark/arm mechanics of the Timebomb control itself — the stage cycle, the mutual-exclusion
-// with a Cheat selection, and marking a card. The queue's booking and next-trick payment moved to
-// `roundReducer.Timebomb.test.ts` on DLR-91, splitting the file below the 400-line budget.
+// DLR-132 — the mark/arm mechanics of a Timebomb, now driven through the ordinary two-tap
+// `TapBuff` flow rather than the retired `TapTimebomb`/`CancelTimebomb` actions. The queue's
+// booking and next-trick payment moved to `roundReducer.timebombQueue.test.ts` on DLR-91.
 
 // A held reveal, built directly rather than driven, for the `canAct` gate specs below — the same
 // construction `roundReducer.test.ts`'s own "clears a held reveal…" spec uses.
@@ -42,92 +37,61 @@ const heldReveal: ResolvedTrick = {
     firedBuffIds: [],
   },
   payout: null,
+  timebombDamage: null,
 }
 
-const tapTimebomb = { kind: RoundUiActionKind.TapTimebomb } as const
-const cancelTimebomb = { kind: RoundUiActionKind.CancelTimebomb } as const
+const timebomb = timebombBuff(BuffTier.Bronze, 1)
 
-function seededUi(charges = timebombChargesFixture) {
-  return createRoundUiState({
+function seed(overrides: Partial<RoundUiSeed> = {}): RoundUiSeed {
+  return {
     round: makeRound(),
     encounter: encounterFixture,
-    cheats: [{ id: 1 }],
-    timebombCharges: charges,
     blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: discardsRemainingFixture,
-    buffs: [],
-  })
+    buffs: [timebomb],
+    ...overrides,
+  }
 }
 
-describe('the stage cycle (AC2)', () => {
-  it('cycles null -> poised -> armed -> null on three taps, the charge unspent throughout', () => {
-    let ui = seededUi(1)
-    ui = roundReducer(ui, tapTimebomb)
-    expect(ui.timebombStage).toBe(TimebombStage.Poised)
-    expect(ui.timebombCharges).toBe(1)
+/** Open the panel, poise the given buff, then commit it — the two taps every row's activation
+ *  takes. */
+function spend(state: ReturnType<typeof createRoundUiState>, id: number) {
+  const opened = roundReducer(state, { kind: RoundUiActionKind.ToggleLoadout })
+  const poised = roundReducer(opened, { kind: RoundUiActionKind.TapBuff, id })
+  return roundReducer(poised, { kind: RoundUiActionKind.TapBuff, id })
+}
 
-    ui = roundReducer(ui, tapTimebomb)
-    expect(ui.timebombStage).toBe(TimebombStage.Armed)
-    expect(ui.timebombCharges).toBe(1)
+describe('spending a Timebomb row arms the next hand-card tap', () => {
+  it('carries that tier of damage from the spend to the prime', () => {
+    const gold = timebombBuff(BuffTier.Gold, 5)
+    const afterSpend = spend(createRoundUiState(seed({ buffs: [gold] })), gold.id)
+    expect(afterSpend.timebombArmedDamage).toEqual(TIMEBOMB_DAMAGE[BuffTier.Gold])
 
-    ui = roundReducer(ui, tapTimebomb)
-    expect(ui.timebombStage).toBeNull()
-    expect(ui.timebombCharges).toBe(1)
-  })
-})
-
-describe('no charges held', () => {
-  it('returns the identical state on TapTimebomb', () => {
-    const ui = seededUi(0)
-    expect(roundReducer(ui, tapTimebomb)).toBe(ui)
-  })
-})
-
-describe('TapTimebomb respects the same canAct gate the Cheat uses', () => {
-  it('no-ops while a trick reveal is held', () => {
-    const ui = { ...seededUi(), resolvedTrick: heldReveal }
-    expect(roundReducer(ui, tapTimebomb)).toBe(ui)
+    const target = afterSpend.round.hands[PlayerSide.Player][0]
+    const primed = roundReducer(afterSpend, { kind: RoundUiActionKind.TapCard, card: target })
+    expect(isPrimed(primed.round.primedCards, target)).toBe(true)
+    expect(primed.timebombArmedDamage).toBeNull()
+    expect(primed.primedTimebombDamage).toEqual(TIMEBOMB_DAMAGE[BuffTier.Gold])
   })
 
-  it('no-ops while a prompt is open', () => {
-    const ui = { ...seededUi(), prompt: card(Suit.Keys, 3) }
-    expect(roundReducer(ui, tapTimebomb)).toBe(ui)
-  })
-
-  it('no-ops on a CPU fault', () => {
-    const ui = { ...seededUi(), cpuFault: 'noLegalMove' as const }
-    expect(roundReducer(ui, tapTimebomb)).toBe(ui)
-  })
-
-  it('no-ops on the Quarry’s turn', () => {
-    const ui = createRoundUiState({
-      round: makeRound({ leader: PlayerSide.Cpu }),
-      encounter: encounterFixture,
-      cheats: [],
-      timebombCharges: 1,
-      blastGuardHeld: false,
-      bankClimbBonus: 0,
-      discardsRemaining: discardsRemainingFixture,
-      buffs: [],
-    })
-    expect(roundReducer(ui, tapTimebomb)).toBe(ui)
+  it('leaves the pile unchanged when a Timebomb is spent — not a one-shot consumable', () => {
+    const before = createRoundUiState(seed())
+    const after = spend(before, timebomb.id)
+    expect(after.buffs).toHaveLength(before.buffs.length)
   })
 })
 
 describe('marking (AC2)', () => {
   it('marks a hand card instead of playing it while armed', () => {
-    let ui = seededUi(1)
-    ui = roundReducer(ui, tapTimebomb)
-    ui = roundReducer(ui, tapTimebomb)
-    expect(ui.timebombStage).toBe(TimebombStage.Armed)
+    let ui = spend(createRoundUiState(seed()), timebomb.id)
+    expect(ui.timebombArmedDamage).not.toBeNull()
 
     const target = card(Suit.Bells, 7)
     const before = ui.round
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
     expect(ui.round.primedCards).toEqual([target])
-    expect(ui.timebombCharges).toBe(0)
-    expect(ui.timebombStage).toBeNull()
+    expect(ui.timebombArmedDamage).toBeNull()
     // Not a move: the trick and the tally are exactly as they were.
     expect(ui.round.currentTrick).toEqual(before.currentTrick)
     expect(ui.round.tricksPlayed).toBe(before.tricksPlayed)
@@ -141,122 +105,54 @@ describe('marking (AC2)', () => {
       currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Moons, 9) }],
       phase: RoundPhase.AwaitingFollow,
     })
-    let ui = createRoundUiState({
-      round,
-      encounter: encounterFixture,
-      cheats: [],
-      timebombCharges: 1,
-      blastGuardHeld: false,
-      bankClimbBonus: 0,
-      discardsRemaining: discardsRemainingFixture,
-      buffs: [],
-    })
-    ui = roundReducer(ui, tapTimebomb)
-    ui = roundReducer(ui, tapTimebomb)
+    let ui = spend(createRoundUiState(seed({ round })), timebomb.id)
     const offSuit = card(Suit.Bells, 7)
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: offSuit })
     expect(ui.round.primedCards).toEqual([offSuit])
     expect(ui.rejection).toBeNull()
   })
+})
 
-  it('clears the stage and spends nothing on a second tap of an already-marked card, rather than throwing', () => {
-    let ui = seededUi(2)
-    ui = roundReducer(ui, tapTimebomb)
-    ui = roundReducer(ui, tapTimebomb)
+/** Poise then commit a second buff, WITHOUT re-toggling the panel — it is already open and stays
+ *  open after a spend (AC2 allows more than one activation per trick). */
+function tapTwice(state: ReturnType<typeof createRoundUiState>, id: number) {
+  const poised = roundReducer(state, { kind: RoundUiActionKind.TapBuff, id })
+  return roundReducer(poised, { kind: RoundUiActionKind.TapBuff, id })
+}
+
+describe('a refused re-tap while armed clears the armed state rather than half-applying', () => {
+  it('re-priming an already-primed card is not a throw and marks nothing further', () => {
+    const second = timebombBuff(BuffTier.Bronze, 2)
+    let ui = spend(createRoundUiState(seed({ buffs: [timebomb, second] })), timebomb.id)
     const target = card(Suit.Bells, 7)
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
-    expect(ui.timebombCharges).toBe(1)
+    expect(ui.timebombArmedDamage).toBeNull()
+    expect(ui.round.primedCards).toEqual([target])
 
-    ui = roundReducer(ui, tapTimebomb)
-    ui = roundReducer(ui, tapTimebomb)
+    ui = tapTwice(ui, second.id)
     expect(() => roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })).not.toThrow()
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
-    expect(ui.timebombStage).toBeNull()
-    expect(ui.timebombCharges).toBe(1)
+    expect(ui.timebombArmedDamage).toBeNull()
     expect(ui.round.primedCards).toEqual([target])
-  })
-})
-
-describe('mutual exclusion — marking and arming a Cheat reinterpret the same tap', () => {
-  it('poising Timebomb clears a held Cheat selection', () => {
-    let ui = seededUi(1)
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCheat, id: 1 })
-    expect(ui.cheatSelection).not.toBeNull()
-    ui = roundReducer(ui, tapTimebomb)
-    expect(ui.timebombStage).toBe(TimebombStage.Poised)
-    expect(ui.cheatSelection).toBeNull()
-  })
-
-  it('arming a Cheat clears a held Timebomb selection', () => {
-    let ui = seededUi(1)
-    ui = roundReducer(ui, tapTimebomb)
-    expect(ui.timebombStage).toBe(TimebombStage.Poised)
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCheat, id: 1 })
-    expect(ui.cheatSelection).not.toBeNull()
-    expect(ui.timebombStage).toBeNull()
-  })
-
-  it('poising Timebomb drops a card armed-to-play, so the next tap is never ambiguous', () => {
-    let ui = seededUi(1)
-    const target = card(Suit.Bells, 7)
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
-    expect(ui.armed).toEqual(target)
-    ui = roundReducer(ui, tapTimebomb)
-    expect(ui.armed).toBeNull()
-    expect(ui.timebombStage).toBe(TimebombStage.Poised)
-  })
-})
-
-describe('CancelTimebomb', () => {
-  it('clears the stage and spends nothing', () => {
-    let ui = seededUi(1)
-    ui = roundReducer(ui, tapTimebomb)
-    ui = roundReducer(ui, cancelTimebomb)
-    expect(ui.timebombStage).toBeNull()
-    expect(ui.timebombCharges).toBe(1)
-  })
-})
-
-describe('commit() clears a poised-but-unarmed selection (regression)', () => {
-  it('poising Timebomb, then playing an unrelated card, leaves nothing armed', () => {
-    let ui = seededUi(1)
-    ui = roundReducer(ui, tapTimebomb)
-    expect(ui.timebombStage).toBe(TimebombStage.Poised)
-
-    // An ordinary, unrelated card — two taps: arm to play, then commit. Neither tap names
-    // Timebomb at all. Rank 8 carries no ability choice, unlike the Fox (3) or Woodcutter (5),
-    // so this reaches `commit()` directly rather than opening a prompt. Keys 8 beats the CPU
-    // fixture's Keys 6 follow (led-suit, non-trump), so the player wins and leads the next trick —
-    // keeping the scenario reachable by a real tap sequence rather than needing the round rigged.
-    const target = card(Suit.Keys, 8)
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
-
-    expect(ui.timebombStage).toBeNull()
-    expect(ui.timebombCharges).toBe(1) // an ordinary play never spends a charge
-
-    // Clear the held reveal so it is genuinely the player's turn again, then confirm the very
-    // next tap starts over at Poised rather than skipping straight to Armed — the misclick guard
-    // AC2 requires before an irreversible mark.
-    ui = roundReducer(ui, { kind: RoundUiActionKind.CarryOn })
-    const next = roundReducer(ui, tapTimebomb)
-    expect(next.timebombStage).toBe(TimebombStage.Poised)
   })
 })
 
 describe('the reducer never throws', () => {
   it('returns a state, not a RangeError, when TapCard names a card not in hand while armed', () => {
-    let ui = seededUi(1)
-    ui = roundReducer(ui, tapTimebomb)
-    ui = roundReducer(ui, tapTimebomb)
+    const ui = spend(createRoundUiState(seed()), timebomb.id)
     // Not among makeRound()'s dealt player hand — it lives in the draw pile instead.
     const notInHand = card(Suit.Moons, 2)
     expect(() =>
       roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: notInHand }),
     ).not.toThrow()
     const next = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: notInHand })
-    expect(next.timebombStage).toBeNull()
-    expect(next.timebombCharges).toBe(1)
+    expect(next.timebombArmedDamage).toBeNull()
     expect(next.round.primedCards).toEqual([])
+  })
+
+  it('the loadout door will not open while a trick reveal is held, so a Timebomb cannot be armed then', () => {
+    const ui = { ...createRoundUiState(seed()), resolvedTrick: heldReveal }
+    const opened = roundReducer(ui, { kind: RoundUiActionKind.ToggleLoadout })
+    expect(opened.loadout).toBeNull()
   })
 })

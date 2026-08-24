@@ -27,8 +27,9 @@ export function trickIsPrimed(primedCards: readonly Card[], trick: readonly Tric
 /**
  * AC2 — the mark.
  *
- * THROWS rather than returning the state unchanged, the discipline `cheats.ts`'s `addCheat` sets
- * and for its reason: a silent no-op would let the caller spend a charge for a mark that was never
+ * THROWS rather than returning the state unchanged, the discipline `activateBuff`
+ * (`src/hunt/buffActivation.ts`) sets and for its reason: a silent no-op would let the caller
+ * spend a charge for a mark that was never
  * made. The reducer guards BOTH conditions before calling — a reducer must not throw, because a
  * throw during an event handler unmounts the tree — so reaching either throw is a driver bug.
  */

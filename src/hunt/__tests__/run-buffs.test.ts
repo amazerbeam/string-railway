@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { advanceRun, recordEncounter, startRun } from '../run'
 import { applyDamage } from '../encounter'
 import { BuffTier } from '../buffs'
-import { COINS_PER_ENCOUNTER_WIN, STARTING_BUFF_COUNT } from '../config'
+import { COINS_PER_ENCOUNTER_WIN, RUN_STARTING_CHEATS, STARTING_BUFF_COUNT } from '../config'
 import { DuelSide, type EncounterState, type IncomingDamage } from '../types'
 
 const damage = (toPlayer: number, toQuarry: number): IncomingDamage => ({
@@ -24,11 +24,11 @@ function winEncounter(encounter: EncounterState, playerLoss = 0): EncounterState
 }
 
 describe('Buff pile on RunState (DLR-105 AC2/AC3)', () => {
-  it('seeds STARTING_BUFF_COUNT bronze buffs at the start of a run (AC3)', () => {
+  it('seeds STARTING_BUFF_COUNT bronze buffs plus RUN_STARTING_CHEATS bronze Cheats at the start of a run (AC3)', () => {
     const run = startRun()
-    expect(run.buffs).toHaveLength(STARTING_BUFF_COUNT)
+    expect(run.buffs).toHaveLength(STARTING_BUFF_COUNT + RUN_STARTING_CHEATS)
     expect(run.buffs.every((b) => b.tier === BuffTier.Bronze)).toBe(true)
-    expect(run.nextBuffId).toBe(STARTING_BUFF_COUNT + 1)
+    expect(run.nextBuffId).toBe(STARTING_BUFF_COUNT + 1 + RUN_STARTING_CHEATS)
   })
 
   it('carries the buff pile across a fight boundary untouched (AC2)', () => {
@@ -36,8 +36,6 @@ describe('Buff pile on RunState (DLR-105 AC2/AC3)', () => {
     const won = recordEncounter(
       run,
       winEncounter(run.encounter),
-      run.cheats,
-      run.timebombCharges,
       false,
       run.discardsRemaining,
       null,
@@ -52,8 +50,6 @@ describe('Buff pile on RunState (DLR-105 AC2/AC3)', () => {
     const wonFirst = recordEncounter(
       first,
       winEncounter(first.encounter),
-      first.cheats,
-      first.timebombCharges,
       false,
       first.discardsRemaining,
       null,
@@ -62,8 +58,6 @@ describe('Buff pile on RunState (DLR-105 AC2/AC3)', () => {
     const wonSecond = recordEncounter(
       second,
       winEncounter(second.encounter),
-      second.cheats,
-      second.timebombCharges,
       false,
       second.discardsRemaining,
       null,
@@ -79,8 +73,6 @@ describe('DLR-125 — Purse coins reach the run purse through recordEncounter', 
     const recorded = recordEncounter(
       run,
       winEncounter(run.encounter),
-      run.cheats,
-      run.timebombCharges,
       false,
       run.discardsRemaining,
       null,
@@ -94,8 +86,6 @@ describe('DLR-125 — Purse coins reach the run purse through recordEncounter', 
     const withoutBuffs = recordEncounter(
       run,
       winEncounter(run.encounter),
-      run.cheats,
-      run.timebombCharges,
       false,
       run.discardsRemaining,
       null,
@@ -103,8 +93,6 @@ describe('DLR-125 — Purse coins reach the run purse through recordEncounter', 
     const withZero = recordEncounter(
       run,
       winEncounter(run.encounter),
-      run.cheats,
-      run.timebombCharges,
       false,
       run.discardsRemaining,
       null,
@@ -119,32 +107,15 @@ describe('DLR-125 — Purse coins reach the run purse through recordEncounter', 
       run.encounter,
       damage(run.encounter.health[DuelSide.Player], 0),
     )
-    const recorded = recordEncounter(
-      run,
-      lostEncounter,
-      run.cheats,
-      run.timebombCharges,
-      false,
-      run.discardsRemaining,
-      null,
-      3,
-    )
+    const recorded = recordEncounter(run, lostEncounter, false, run.discardsRemaining, null, 3)
     expect(recorded.coins).toBe(run.coins + 3)
   })
 })
 
 describe('recordEncounter — DLR-126, the run adopts a pile a hand spent from', () => {
-  /** `recordEncounter`'s first eight arguments for a run that neither won nor lost this hand. */
+  /** `recordEncounter`'s first six arguments for a run that neither won nor lost this hand. */
   const carry = (run: ReturnType<typeof startRun>) =>
-    [
-      run.encounter,
-      run.cheats,
-      run.timebombCharges,
-      run.blastGuardHeld,
-      run.discardsRemaining,
-      null,
-      0,
-    ] as const
+    [run.encounter, run.blastGuardHeld, run.discardsRemaining, null, 0] as const
 
   it('adopts the shrunken pile when the ninth argument is passed', () => {
     const run = startRun()

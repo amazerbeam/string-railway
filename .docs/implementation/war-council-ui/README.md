@@ -528,11 +528,14 @@ ticking. 3 at risk. 4 ticking."` **"of them" is what disambiguates the shield's 
   from the first shop visit onward; Vault grants (`mintGrants`) are no longer the only route in. See
   [../run-ui/the-slot-machine-screen.md](../run-ui/the-slot-machine-screen.md). Making the *seeded*
   four real content is still a content decision and a later ticket's.
-- **Cheat and Timebomb were relocated, not migrated** (DLR-114). Both still run on their own bespoke
-  `CheatStage` / `TimebombStage` state and their own reducer branches, not on `src/hunt/buffCatalog.ts`;
-  `timebombDamageOf` still has no caller. DLR-129's nomination to collapse `timebombDamageFor` /
-  `timebombDamageOf` therefore did **not** land here and belongs to whichever ticket actually replaces
-  `commitTimebomb` with `activateBuff`.
+- ~~**Cheat and Timebomb were relocated, not migrated** (DLR-114). Both still run on their own bespoke
+  `CheatStage` / `TimebombStage` state.~~ **Closed by DLR-132, 2026-08-24.** `CheatStage`,
+  `TimebombStage`, `CheatSlots.tsx` and `TimebombCharge.tsx` are deleted; both are ordinary rows in
+  `buffs`, activated through `handleTapBuff` beside Ward's, and `mintFromTemplate` delegating to
+  `cheatBuff`/`timebombBuff` in `buffCatalog.ts` is the only path either card is minted through — the
+  `timebombDamageFor`/`timebombDamageOf` collapse this bullet deferred landed the same contract, as
+  `queueTimebomb` taking the damage pair directly. See
+  [Cheat and Timebomb as buff-pile objects](../hunt/cheat-and-timebomb-buffs.md).
 - **Nothing has proved the four-row shell does not scroll** (DLR-114). jsdom has no layout engine and
   the contract's browser pass was off, so the bar's fourth grid row and its narrow-viewport override
   ship unverified at every named viewport size — the exact class of defect this module's own history

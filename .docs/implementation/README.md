@@ -27,14 +27,14 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                                                |
 | --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, PT-001, PT-002                                                                                  |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, PT-002                                                                          |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132 |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, PT-002                                                                          |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-112, DLR-113, DLR-114, DLR-116, DLR-125, DLR-126, DLR-127, PT-001, PT-002 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-112, DLR-113, DLR-114, DLR-116, DLR-125, DLR-126, DLR-127, DLR-132, PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                 |
 | `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118                                                                                                                                                                                                                                                                                                 |
 | `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118                                                                                                                                                                                                                                                                                                 |
-| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120                                                                                                                                                                                                                                                                                        |
+| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132                                                                                                                                                                                                                                                                        |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -842,7 +842,70 @@ the hand's bookkeeping and the two load-bearing orderings.
 **One gap it opened by succeeding:** nothing on the felt announces a firing, so a player sees a
 larger number with no cause named. That is the developer's to judge and someone's to fix.
 
-## Latest — DLR-131, the ErrorBoundary (2026-08-24)
+## Latest — DLR-132, Cheat and Timebomb as drawable buff cards (2026-08-24)
+
+**DLR-132 closed a gap three separate tickets had each correctly left open: the Timebomb was
+entirely unobtainable, and a second Cheat was unobtainable past a cap that no longer had a reason to
+exist.** `SHOP_ITEMS` had been pared to four items (DLR-116), the buff pool was built with zero
+Cheat/Timebomb templates (DLR-112), and a run opened holding exactly one Cheat and zero Timebombs
+with no route to another of either. Both are now **ordinary buff cards**: two new templates the reel
+can draw (`BUFF_TEMPLATES` 71 → **73**), two rows in `BuffLoadoutPanel`'s roving-tabindex list, spent
+through the same two-tap poise-then-spend `activateFromPile` flow every other card uses, priced by
+the same `apCostOf`.
+
+**The shape fix is a discriminated union, and it is what makes the next extension cheap.**
+`BuffTemplate` was one interface whose `kind` was narrowed to eleven condition families and whose
+`axis` was narrowed to four priced reward axes — an activated card has neither. It is now
+`ConditionBuffTemplate | ActivatedBuffTemplate`, tagged `form`, and `mintFromTemplate` switches on
+it, delegating the activated branch to DLR-107's `cheatBuff`/`timebombBuff` — which stops being
+"representation nobody reads" and becomes the only minting path either card has. The five remaining
+consumables (Ward, Second Thoughts, Puppeteer, Foresight, Spyglass) are now a data edit plus one mint
+branch plus ten unchosen slot weights away, and are **deliberately left out of this ticket's scope**.
+
+**Two rules change what a player may do, not just how they reach it.** A Cheat's tier is now honoured
+as **duration** — 1/2/3 tricks of no-follow-suit for bronze/silver/gold, where only bronze's one-trick
+lift was ever reachable before; a gold Cheat is reachable for the first time, at 7 action points,
+above `STARTING_AP`, and `buffCatalog.ts`'s own standing comment already flags that row as not safe
+to ship active. A Timebomb's tier is now honoured as **damage** — the bronze pair (4 Quarry / 2
+player) is unchanged by construction, and silver/gold scale both sides together (8/4, 12/6). Only one
+Timebomb's tier is remembered per hand (`primedTimebombDamage`); priming a second in the same hand
+overwrites it — an accepted, recorded limitation, not a defect.
+
+**The deletions are the same size as the additions.** `CheatSlots.tsx`, `TimebombCharge.tsx`, their
+stylesheets, `CheatStage`, `TimebombStage`, `CheatSelection`, the whole of `src/hunt/cheats.ts`
+(`CheatCard`, `CheatCardId`, `grantCheats`, `addCheat`, `removeCheat`, `hasCheat`) and
+`CHEAT_SLOT_COUNT` are gone — along with `RunState.cheats`, `RunState.nextCheatId` and
+`RunState.timebombCharges`. Two records of "do you hold a Cheat" become one: a Cheat and a Timebomb
+are members of `RunState.buffs`, with no capacity cap of any kind. `RUN_STARTING_CHEATS` keeps its
+name and its value (`1`) and now seeds a bronze Cheat straight into the pile rather than granting a
+rail slot. The four-ticket-old `timebombDamageFor`/`timebombDamageOf` naming collision is also
+closed: `TimebombDamage` is retyped `Readonly<Record<DuelSide, Damage>>`, `timebombDamageFor` is
+deleted, and `queueTimebomb` takes the damage pair directly, because the figure now depends on the
+tier of the card that primed it — something `encounter.ts` cannot see.
+
+**One genuinely new interaction rule earns its own name: `buffActivationWindowOpen`.** Every ordinary
+buff activates only between tricks (`discardWindowOpen`). A Cheat and a Timebomb activate on
+`canAct` instead — reachable through the whole trick, including while following a lead the Quarry has
+already committed — because that is the only moment either has value: exactly when
+`discardWindowOpen` is false. Both the refusal guard and the commit read the one function, so they
+cannot disagree.
+
+**Nothing was retuned, and nothing was played.** This was an unattended sprint run: the plan-approval
+gate was auto-approved and the UI mockup gate was skipped, so the redesigned loadout panel — now
+carrying a Cheat row and a Timebomb row beside every condition buff — has not been seen. The four new
+slot weights (Skirmisher Cheat 3/Timebomb 3, Strongbox Cheat 1/Timebomb 1) are agent-chosen and
+unplayed. `npm run sim -- --runs 200 --seed 1` recorded an observation, not a result: mean buff
+activations per hand rose from 0.88 to 1.50, mean AP spent per hand from 2.33 to 4.35, and hands
+played holding no activatable buff fell from 67.7% to **0.0%** — every hand now opens holding at
+least the starting Cheat. Win rate stayed 0.0% (0/200 both times); no faults.
+
+Start at [hunt/cheat-and-timebomb-buffs.md](hunt/cheat-and-timebomb-buffs.md) for the minting path
+and the tier tables, [hunt/README.md](hunt/README.md) for the union and the deleted `RunState`
+fields, or [war-council-ui/action-bar-and-loadout.md](war-council-ui/action-bar-and-loadout.md) for
+where the two effects fire in `handleTapBuff`. `.docs/game_rules/the-hunt.md` records this as a rule
+change: both cards move from unreachable/rail-held to reel-drawn pile members.
+
+## DLR-131, the ErrorBoundary (2026-08-24)
 
 **`src/` throws deliberately and often — 98 `throw new` sites across 37 files at this ticket's
 start — and until now nothing caught any of them.** DLR-131 adds one class component,

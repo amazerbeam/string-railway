@@ -159,8 +159,6 @@ function App() {
     const recorded = recordEncounter(
       run,
       result.encounter,
-      result.cheats,
-      result.timebombCharges,
       result.blastGuardHeld,
       result.discardsRemaining,
       result.unplayedAtResolve,
@@ -376,9 +374,7 @@ function App() {
       encounter={run.encounter}
       maxHealth={maxHealth}
       runLabel={runPositionLabel(run.encounterIndex, run.encounterCount, currentName)}
-      cheats={run.cheats}
       coins={run.coins}
-      timebombCharges={run.timebombCharges}
       blastGuardHeld={run.blastGuardHeld}
       discardsRemaining={run.discardsRemaining}
       buffs={run.buffs}

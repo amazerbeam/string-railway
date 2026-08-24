@@ -9,6 +9,7 @@ import {
 import {
   APPLY_DAMAGE_AP_COST,
   applyDamage,
+  BuffTier,
   DuelSide,
   PLAYER_START_HEALTH,
   STARTING_AP,
@@ -16,11 +17,12 @@ import {
   queueTimebomb,
   quarryHealthForEncounter,
   startEncounter,
+  TIMEBOMB_DAMAGE,
   type EncounterState,
 } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
 import { createRoundUiState, RoundUiActionKind, type RoundUiState } from '../roundUiState'
-import { card, discardsRemainingFixture, timebombChargesFixture, makeRound } from './roundFixture'
+import { card, discardsRemainingFixture, makeRound } from './roundFixture'
 
 const tapApply = { kind: RoundUiActionKind.TapApplyDamage } as const
 const cancelApply = { kind: RoundUiActionKind.CancelApplyDamage } as const
@@ -32,8 +34,6 @@ function uiFrom(
   return createRoundUiState({
     round,
     encounter,
-    cheats: [],
-    timebombCharges: timebombChargesFixture,
     blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: discardsRemainingFixture,
@@ -69,7 +69,7 @@ describe('Apply Damage — the poise, and the refusals (AC1, D6)', () => {
   })
 
   it('D6 — a pending Timebomb hit cannot be poised past', () => {
-    const owed = queueTimebomb(startEncounter(0), DuelSide.Player)
+    const owed = queueTimebomb(startEncounter(0), DuelSide.Player, TIMEBOMB_DAMAGE[BuffTier.Bronze])
     const ui = roundReducer(uiFrom(streakRound(), owed), tapApply)
     expect(ui.applyPoised).toBe(false)
     expect(ui.round.bank).toBe(3)
@@ -80,7 +80,10 @@ describe('Apply Damage — the poise, and the refusals (AC1, D6)', () => {
   it('D6 — Timebomb booked AFTER the poise still stops the commit, and drops the poise', () => {
     let ui = roundReducer(uiFrom(streakRound()), tapApply)
     expect(ui.applyPoised).toBe(true)
-    ui = { ...ui, encounter: queueTimebomb(ui.encounter, DuelSide.Player) }
+    ui = {
+      ...ui,
+      encounter: queueTimebomb(ui.encounter, DuelSide.Player, TIMEBOMB_DAMAGE[BuffTier.Bronze]),
+    }
     ui = roundReducer(ui, tapApply)
     expect(ui.applyPoised).toBe(false)
     expect(ui.round.bank).toBe(3)

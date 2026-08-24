@@ -35,9 +35,9 @@ export function canAffordAp(pool: ActionPoints, cost: ActionPoints): boolean {
 
 /**
  * Spends `cost` (through apCostFor) from `pool`. Throws rather than clamping to zero — an
- * insufficient-AP spend attempt is a caller bug the same way src/hunt/cheats.ts's
- * removeCheat treats a double-spend, and clamping would silently let a consumer commit an
- * action it could not actually afford.
+ * insufficient-AP spend attempt is a caller bug the same way `spendConsumable` in
+ * src/hunt/consumables.ts treats spending an id that is not in the pile, and clamping would
+ * silently let a consumer commit an action it could not actually afford.
  */
 export function spendAp(pool: ActionPoints, cost: ActionPoints): ActionPoints {
   const effectiveCost = apCostFor(cost)

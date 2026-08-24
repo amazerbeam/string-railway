@@ -87,10 +87,6 @@ export const runLabelFixture = 'Fight 1 of 3'
 /** A fixed purse for component specs (DLR-84 AC2). */
 export const coinsFixture = 2
 
-/** A fixed Timebomb charge count for component specs (DLR-90 AC2) — one held, enough to exercise
- *  the stage cycle without a spec needing to track a second one down. */
-export const timebombChargesFixture = 1
-
 /** A fixed Blast Guard reading for component specs (DLR-91 AC4) — unheld, so a spec that does not
  *  exercise the Guard is not accidentally exercising it. */
 export const blastGuardHeldFixture = false

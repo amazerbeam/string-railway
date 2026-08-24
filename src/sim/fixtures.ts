@@ -43,6 +43,7 @@ import {
   canAct,
   createRoundUiState,
   discardWindowOpen,
+  loadoutOpen,
   offeredBuffs,
   RoundUiActionKind,
   type RoundUiState,
@@ -73,8 +74,6 @@ function attemptFirstFight(seed: number): RunState | null {
     run = recordEncounter(
       run,
       outcome.result.encounter,
-      outcome.result.cheats,
-      outcome.result.timebombCharges,
       outcome.result.blastGuardHeld,
       outcome.result.discardsRemaining,
       outcome.result.unplayedAtResolve,
@@ -155,11 +154,22 @@ function attemptPrimedTimebomb(seed: number): RoundUiState | null {
       continue
     }
 
-    if (canAct(ui) && !marked && ui.timebombCharges > 0) {
+    const timebomb = offeredBuffs(ui).find((buff) => buff.kind === BuffKind.Timebomb)
+    if (canAct(ui) && !marked && timebomb !== undefined) {
       const move = baselinePolicy.chooseCard(ui.round)
       heldChoice = move.choice
-      ui = roundReducer(ui, { kind: RoundUiActionKind.TapTimebomb }) // poise
-      ui = roundReducer(ui, { kind: RoundUiActionKind.TapTimebomb }) // arm
+      // DLR-132 — the Timebomb is an ordinary pile row now: `ToggleLoadout` opens the panel,
+      // `TapBuff` twice poises then spends it (arming `timebombArmedDamage`), `CancelLoadout`
+      // closes the panel again so the three `TapCard` taps below reach the ordinary hand — mark,
+      // arm, commit — exactly as before DLR-132.
+      if (!loadoutOpen(ui)) {
+        ui = roundReducer(ui, { kind: RoundUiActionKind.ToggleLoadout })
+      }
+      ui = roundReducer(ui, { kind: RoundUiActionKind.TapBuff, id: timebomb.id }) // poise
+      ui = roundReducer(ui, { kind: RoundUiActionKind.TapBuff, id: timebomb.id }) // commit, arms
+      if (loadoutOpen(ui)) {
+        ui = roundReducer(ui, { kind: RoundUiActionKind.CancelLoadout })
+      }
       ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: move.card }) // marks it
       ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: move.card }) // arms to play
       ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: move.card }) // commits
@@ -186,10 +196,11 @@ function attemptPrimedTimebomb(seed: number): RoundUiState | null {
 }
 
 /**
- * A run with a Timebomb charge bought, dealt a hand, and driven to the point where a card is
- * primed and `encounter.pendingTimebomb` is non-zero on at least one side. Marking is
- * `TapTimebomb` twice (poise, arm) then `TapCard` on the target once to mark it; the booking lands
- * on `encounter.pendingTimebomb` when the trick carrying the primed card resolves. Retries the next
+ * A run with a Timebomb bought, dealt a hand, and driven to the point where a card is primed and
+ * `encounter.pendingTimebomb` is non-zero on at least one side. DLR-132 — the Timebomb is an
+ * ordinary pile row now: marking is `TapBuff` twice (poise, commit — this is the spend) through
+ * the loadout panel, then `TapCard` on the target once to mark it; the booking lands on
+ * `encounter.pendingTimebomb` when the trick carrying the primed card resolves. Retries the next
  * seed (bounded to `PRIMED_TIMEBOMB_MAX_ATTEMPTS`) because which trick outcome the marked card
  * lands is not guaranteed on every seed.
  */
@@ -212,7 +223,7 @@ export function fixtureHandWithPrimedTimebomb(seed = 1302): RoundUiState {
  *  `wantsApplyDamage`'s `APPLY_DAMAGE_AP_COST` of `3` would otherwise need. */
 function twoCheapActivatableBuffs(): readonly Buff[] {
   const takerMagnitudeTemplates = templatesForFamily(BuffKind.Taker).filter(
-    (template) => template.axis === BuffRewardAxis.Magnitude,
+    (template) => template.form === 'condition' && template.axis === BuffRewardAxis.Magnitude,
   )
   if (takerMagnitudeTemplates.length < 2) {
     throw new RangeError(

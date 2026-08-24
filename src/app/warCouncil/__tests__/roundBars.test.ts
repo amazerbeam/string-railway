@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { DuelSide, queueTimebomb } from '../../../hunt'
+import { BuffTier, DuelSide, queueTimebomb, TIMEBOMB_DAMAGE } from '../../../hunt'
 import {
   bankClimbBonusFixture,
   discardsRemainingFixture,
   encounterFixture,
-  timebombChargesFixture,
   maxHealthFixture,
   makeRound,
   blastGuardHeldFixture,
@@ -16,8 +15,6 @@ function seededUi(encounter = encounterFixture) {
   return createRoundUiState({
     round: makeRound(),
     encounter,
-    cheats: [],
-    timebombCharges: timebombChargesFixture,
     blastGuardHeld: blastGuardHeldFixture,
     bankClimbBonus: bankClimbBonusFixture,
     discardsRemaining: discardsRemainingFixture,
@@ -38,7 +35,11 @@ describe('barsForRound — the round screen’s assembly, split out of WarCounci
   })
 
   it('shows the booked hit on the Quarry’s bar when a Timebomb is queued against it, leaving the player untouched', () => {
-    const encounter = queueTimebomb(encounterFixture, DuelSide.Quarry)
+    const encounter = queueTimebomb(
+      encounterFixture,
+      DuelSide.Quarry,
+      TIMEBOMB_DAMAGE[BuffTier.Bronze],
+    )
     const ui = seededUi(encounter)
     const bars = barsForRound(ui, maxHealthFixture)
     const player = bars.find((v) => v.side === DuelSide.Player)!
@@ -49,7 +50,11 @@ describe('barsForRound — the round screen’s assembly, split out of WarCounci
   })
 
   it('mirrors onto the player’s bar when a Timebomb is queued against them, leaving the Quarry untouched', () => {
-    const encounter = queueTimebomb(encounterFixture, DuelSide.Player)
+    const encounter = queueTimebomb(
+      encounterFixture,
+      DuelSide.Player,
+      TIMEBOMB_DAMAGE[BuffTier.Bronze],
+    )
     const ui = seededUi(encounter)
     const bars = barsForRound(ui, maxHealthFixture)
     const player = bars.find((v) => v.side === DuelSide.Player)!

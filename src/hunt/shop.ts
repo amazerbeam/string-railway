@@ -1,7 +1,6 @@
 import {
   AP_CAPACITY_PRICE,
   CHEAT_PRICE,
-  CHEAT_SLOT_COUNT,
   TIMEBOMB_PRICE,
   HEAL_PRICE,
   BLAST_GUARD_PRICE,
@@ -62,6 +61,10 @@ export const SHOP_CATEGORIES: readonly ShopCategory[] = [
 /** Why a purchase cannot be made. A reason CODE, not a sentence — `src/hunt/` holds no
  *  user-facing copy; `src/app/run/shopLabels.ts` maps these to words. */
 export const PurchaseRefusal = {
+  // DLR-132 — a Cheat is a pile member now and the pile has no capacity cap, so `refusalFor`
+  // below never produces this code any more. Kept, not deleted: `PURCHASE_REFUSAL_MESSAGE` in
+  // `src/app/run/shopLabels.ts` stays a total `Record<PurchaseRefusal, string>`, and removing the
+  // code would ripple into that copy map for no rule this ticket owns.
   SlotsFull: 'slotsFull',
   AlreadyFullHealth: 'alreadyFullHealth',
   GuardAlreadyActive: 'guardAlreadyActive',
@@ -77,7 +80,6 @@ export type PurchaseRefusal = (typeof PurchaseRefusal)[keyof typeof PurchaseRefu
  *  states the shop's rules and must not learn the run's shape. `run.ts`'s `shopStockFor` builds it. */
 export interface ShopStock {
   readonly coins: Coins
-  readonly cheatCount: number
   readonly playerHealth: Health
   readonly maxPlayerHealth: Health
   /** DLR-91 AC3 — a bought-but-unspent Guard is already held. Only one can be active at a time. */
@@ -203,16 +205,13 @@ export const UNCATEGORISED_SHOP_ITEMS: readonly ShopItem[] = SHOP_ITEMS.filter(
  * (which throws on a non-null result) and by the screen (which disables the control and prints
  * the reason). Two readings of one rule, never two rules.
  *
- * Item-specific reasons come BEFORE the coin check deliberately: with full slots and no coins,
- * the slots are the reason that will still be true when the coin arrives.
+ * Item-specific reasons come BEFORE the coin check deliberately: with a Guard already held and
+ * no coins, the Guard is the reason that will still be true when the coin arrives.
  *
  * A non-finite balance refuses rather than passing the comparison — `NaN >= 1` is `false`, which
  * would otherwise read as "not enough coins" by accident and hide a corrupted figure.
  */
 export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | null {
-  if (item === ShopItem.Cheat && stock.cheatCount >= CHEAT_SLOT_COUNT) {
-    return PurchaseRefusal.SlotsFull
-  }
   if (item === ShopItem.Heal && stock.playerHealth >= stock.maxPlayerHealth) {
     return PurchaseRefusal.AlreadyFullHealth
   }

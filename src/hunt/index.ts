@@ -36,7 +36,6 @@ export {
   QUARRY_ENCOUNTER_HEALTH,
   quarryHealthForEncounter,
   ENCOUNTER_PLAYER_RESTORE,
-  CHEAT_SLOT_COUNT,
   RUN_STARTING_CHEATS,
   STARTING_BUFF_COUNT,
   COINS_PER_ENCOUNTER_WIN,
@@ -78,9 +77,6 @@ export {
 
 export type { PathNode, PathStage } from './runPath'
 export { PathNodeStatus, runPath } from './runPath'
-
-export type { CheatCard, CheatCardId } from './cheats'
-export { grantCheats, addCheat, removeCheat, hasCheat } from './cheats'
 
 export type { Buff, BuffId, BuffCondition, BuffReward, BuffTarget } from './buffs'
 export {
@@ -210,7 +206,6 @@ export {
   NO_PENDING_TIMEBOMB,
   hasPendingTimebomb,
   queueTimebomb,
-  timebombDamageFor,
   hasPendingApplyPayout,
   queueApplyDamagePayout,
   activateShield,
@@ -329,12 +324,20 @@ export {
   weightedDrawWithoutReplacement,
 } from './slotWeights'
 
-export type { BuffTemplate, BuffThresholdFamily, TemplateGrant } from './buffTemplates'
+export type {
+  BuffTemplate,
+  ConditionBuffTemplate,
+  ActivatedBuffTemplate,
+  BuffActivatedTemplateKind,
+  BuffThresholdFamily,
+  TemplateGrant,
+} from './buffTemplates'
 export {
   REWARD_TIER_VALUE,
   CONDITION_THRESHOLD,
   BUFF_TEMPLATES,
   BUFF_TEMPLATE_COUNT,
+  ACTIVATED_TEMPLATES,
   templatesForFamily,
   mintFromTemplate,
   conditionThresholdOf,

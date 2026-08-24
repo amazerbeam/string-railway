@@ -24,6 +24,7 @@ import {
 import {
   activatableBuffs,
   buffActivationStockFor,
+  BuffKind,
   hasPendingApplyPayout,
   hasPendingTimebomb,
   isEncounterResolved,
@@ -35,11 +36,10 @@ import {
   type BuffActivationState,
   type BuffActivationStock,
   type BuffId,
-  type CheatCard,
-  type CheatCardId,
   type Coins,
   type EncounterState,
   type RankTierTable,
+  type TimebombDamage,
   type TrickPayoutEvent,
 } from '../../hunt'
 import { startBuffHand, type BuffHandState } from './buffRoundState'
@@ -54,32 +54,12 @@ export interface ResolvedTrick {
    *  is where the fold happens; `deriveResolvedTrick` runs BEFORE the fold and always writes
    *  `null`. */
   readonly payout: TrickPayoutEvent | null
+  /** DLR-132 — the damage pair a Timebomb booked by THIS trick will detonate for, or `null` when
+   *  the trick booked none. Carried on the app-layer `ResolvedTrick` rather than on the engine's
+   *  `TrickResolution`, deliberately: a Timebomb's tier is the spent CARD's, which `src/warCouncil/`
+   *  never sees and must not learn. `commit` is what knows it, and `commit` is what builds this. */
+  readonly timebombDamage: TimebombDamage | null
 }
-
-export const CheatStage = {
-  /** One click — a selection, no rule effect. AC4's guard against a single misclick. */
-  Poised: 'poised',
-  /** Two clicks — follow-suit is lifted for the next committed card. AC5. */
-  Armed: 'armed',
-} as const
-export type CheatStage = (typeof CheatStage)[keyof typeof CheatStage]
-
-/** ONE field, not two nullables: `poised` and `armed` are stages of a single selection, and two
- *  nullable fields would admit the invalid pair "poised AND armed". */
-export interface CheatSelection {
-  readonly id: CheatCardId
-  readonly stage: CheatStage
-}
-
-/** AC2 — the two stages of one Timebomb selection, mirroring `CheatStage` exactly because AC2 asks
- *  for the Cheat's arm/commit shape rather than a new interaction grammar. */
-export const TimebombStage = {
-  /** One tap — a selection, no effect. The misclick guard: the mark is irreversible. */
-  Poised: 'poised',
-  /** Two taps — the next tapped hand card is MARKED rather than played. */
-  Armed: 'armed',
-} as const
-export type TimebombStage = (typeof TimebombStage)[keyof typeof TimebombStage]
 
 export interface RoundUiState {
   readonly round: WarCouncilState
@@ -102,25 +82,23 @@ export interface RoundUiState {
    *  zero. Freezing the baseline here makes the tally independent of anything the parent does
    *  after the hand is over. */
   readonly openingEncounter: EncounterState
-  /** AC1/AC3 — the run's held Cheats, mirrored from the mount's opening prop and updated in place
-   *  as `commit` spends one. Run state carried for the life of the hand — see
-   *  `warCouncilMount.ts`'s `WarCouncilMountProps.cheats` for the same contract `encounter`
-   *  above already documents. */
-  readonly cheats: readonly CheatCard[]
-  /** The hand's OWN transient — dies on remount, never touches `RunState`. `null` when nothing is
-   *  selected. */
-  readonly cheatSelection: CheatSelection | null
-  /** AC2 — charges held, mirrored from the mount's opening prop and decremented as a card is
-   *  marked. Run state carried for the life of the hand — the same contract `cheats` documents. */
-  readonly timebombCharges: number
-  /** The hand's OWN transient — dies on remount, never touches `RunState`. ONE nullable field
-   *  rather than two booleans, for `CheatSelection`'s stated reason: `poised` and `armed` are
-   *  stages of one selection and two fields would admit the invalid pair "poised AND armed".
-   *  No id, unlike `CheatSelection` — charges are fungible, and the card marked is the identity. */
-  readonly timebombStage: TimebombStage | null
+  /** DLR-132 — tricks of no-follow-suit still owed by an activated Cheat. `0` when none is live. A
+   *  COUNT, not a stage: `CHEAT_DURATION_TRICKS` makes a Cheat's tier its duration, and a boolean
+   *  could only ever express bronze. Set by `handleTapBuff` at the spend, to
+   *  `cheatDurationTricksOf(buff)`; decremented by `commit` on each successful player commit. */
+  readonly cheatTricksRemaining: number
+  /** DLR-132 — the damage pair of a Timebomb that has been PAID FOR and is waiting for a hand card
+   *  to prime, or `null`. Carries the pair rather than a boolean because the figure depends on the
+   *  spent card's tier and nothing downstream can recover it. Set by `handleTapBuff` at the spend;
+   *  cleared to `null` the moment a hand-card tap primes a card (`primeTapped`). */
+  readonly timebombArmedDamage: TimebombDamage | null
+  /** DLR-132 — the damage pair a primed card will detonate for, or `null` when nothing is primed
+   *  this hand. Held for the hand; a second Timebomb primed in the same hand overwrites it
+   *  (`plan.md` → Assumptions — only one tier is remembered per hand). */
+  readonly primedTimebombDamage: TimebombDamage | null
   /** DLR-91 AC4 — mirrored from the mount's opening prop and flipped to `false` the moment a
    *  resolved trick reports `blastGuardSpent`. Run state carried for the life of the hand, the
-   *  same contract `cheats` and `timebombCharges` document. */
+   *  same contract `blastGuardHeld` and `discardsRemaining` below document. */
   readonly blastGuardHeld: boolean
   /** DLR-92 AC4 — the bank-climb bonus in force for this hand, mirrored from the mount's opening
    *  prop. Read-only for the hand's whole life: no action ever writes it, because a hand cannot
@@ -134,9 +112,9 @@ export interface RoundUiState {
   /** DLR-94 — the Apply Damage plate has been tapped once and awaits its confirming second tap.
    *  The hand's OWN transient: dies on remount, never touches `RunState`.
    *
-   *  A single BOOLEAN rather than `TimebombStage`'s two-stage union, deliberately. Timebomb needs
-   *  two stages because its armed state waits for a THIRD tap on a hand card; Apply Damage's
-   *  second tap IS the action, so "poised" is the only state there is to be in. */
+   *  A single BOOLEAN, unlike the two-tap poise-then-spend gesture every buff row (Cheat and
+   *  Timebomb included) uses: Apply Damage's second tap IS the action, so "poised" is the only
+   *  state there is to be in. */
   readonly applyPoised: boolean
   /** DLR-95 AC2 — the player's hand size at the FIRST transition after which the encounter reads
    *  resolved, frozen from then on. `null` until then, and `null` for a hand that never ends the
@@ -149,18 +127,18 @@ export interface RoundUiState {
    *  `openingEncounter` above already documents. */
   readonly unplayedAtResolve: number | null
   /** DLR-100 AC5 — mirrored from the mount's opening prop, decremented on each committed discard.
-   *  Run state carried for the life of the hand — the same contract `cheats` and `timebombCharges`
-   *  document. */
+   *  Run state carried for the life of the hand — the same contract `blastGuardHeld` documents. */
   readonly discardsRemaining: number
   /** DLR-100 — the hand's OWN transient: dies on remount, never touches `RunState`. `null` when
    *  the discard rail is closed; an array (possibly empty) while it is open, holding the hand
-   *  cards currently toggled in. ONE field rather than a boolean-plus-array pair, for
-   *  `CheatSelection`'s stated reason: two independent fields would admit "closed but holding a
-   *  stale selection". */
+   *  cards currently toggled in. ONE field rather than a boolean-plus-array pair: two independent
+   *  fields would admit "closed but holding a stale selection". */
   readonly discardSelection: readonly Card[] | null
   /** DLR-114 — the run's owned buff pile at the START of this hand, mirrored from the mount's
-   *  prop. Run state carried for the life of the hand — the same contract `cheats` documents.
-   *  NEVER written by an action: a hand spends action points, not cards. */
+   *  prop. Run state carried for the life of the hand — the same contract `blastGuardHeld`
+   *  documents. NEVER written by an action: a hand spends action points, not cards. DLR-132 —
+   *  Cheat and Timebomb are pile members like every other buff, so this is the only field that
+   *  carries either one into or out of a hand. */
   readonly buffs: readonly Buff[]
   /** DLR-114 — the hand's action-point pool AND this trick's activations, as one value.
    *  REPLACES DLR-109's separate `apPool: ActionPoints`, which was a second number claiming to be
@@ -171,9 +149,9 @@ export interface RoundUiState {
   readonly buffActivation: BuffActivationState
   /** DLR-114 — `null` when the loadout panel is closed; an object while it is open, holding the
    *  buff awaiting its confirming second tap (or `null` for "open, nothing poised"). ONE nullable
-   *  field rather than a boolean-plus-id pair, for `CheatSelection`'s stated reason: two fields
-   *  would admit "closed but holding a stale poise". Mirrors `discardSelection`'s `null` / `[]`
-   *  shape exactly. The hand's OWN transient — dies on remount, never touches `RunState`. */
+   *  field rather than a boolean-plus-id pair: two fields would admit "closed but holding a stale
+   *  poise". Mirrors `discardSelection`'s `null` / `[]` shape exactly. The hand's OWN transient —
+   *  dies on remount, never touches `RunState`. */
   readonly loadout: LoadoutSelection | null
   /** DLR-125 — this hand's buff bookkeeping. See `buffRoundState.ts`'s module docblock for why it
    *  is a separate module. */
@@ -184,9 +162,8 @@ export interface RoundUiState {
 }
 
 /** DLR-114 — `null` when the loadout panel is closed; an object (with `poised: null`) while it is
- *  open. ONE nullable field rather than a boolean-plus-id pair, for `CheatSelection`'s stated
- *  reason: two fields would admit "closed but holding a stale poise". Mirrors `discardSelection`'s
- *  `null` / `[]` shape exactly. */
+ *  open. ONE nullable field rather than a boolean-plus-id pair: two fields would admit "closed but
+ *  holding a stale poise". Mirrors `discardSelection`'s `null` / `[]` shape exactly. */
 export interface LoadoutSelection {
   readonly poised: BuffId | null
 }
@@ -194,8 +171,6 @@ export interface LoadoutSelection {
 export interface RoundUiSeed {
   readonly round: WarCouncilState
   readonly encounter: EncounterState
-  readonly cheats: readonly CheatCard[]
-  readonly timebombCharges: number
   readonly blastGuardHeld: boolean
   readonly bankClimbBonus: number
   readonly discardsRemaining: number
@@ -224,10 +199,6 @@ export const RoundUiActionKind = {
   ChooseAbility: 'chooseAbility',
   CancelSelection: 'cancelSelection',
   CarryOn: 'carryOn',
-  TapCheat: 'tapCheat',
-  CancelCheat: 'cancelCheat',
-  TapTimebomb: 'tapTimebomb',
-  CancelTimebomb: 'cancelTimebomb',
   TapApplyDamage: 'tapApplyDamage',
   CancelApplyDamage: 'cancelApplyDamage',
   TapDiscard: 'tapDiscard',
@@ -243,10 +214,6 @@ export type RoundUiAction =
   | { readonly kind: typeof RoundUiActionKind.ChooseAbility; readonly choice: AbilityChoice }
   | { readonly kind: typeof RoundUiActionKind.CancelSelection }
   | { readonly kind: typeof RoundUiActionKind.CarryOn }
-  | { readonly kind: typeof RoundUiActionKind.TapCheat; readonly id: CheatCardId }
-  | { readonly kind: typeof RoundUiActionKind.CancelCheat }
-  | { readonly kind: typeof RoundUiActionKind.TapTimebomb }
-  | { readonly kind: typeof RoundUiActionKind.CancelTimebomb }
   | { readonly kind: typeof RoundUiActionKind.TapApplyDamage }
   | { readonly kind: typeof RoundUiActionKind.CancelApplyDamage }
   | { readonly kind: typeof RoundUiActionKind.TapDiscard }
@@ -267,10 +234,9 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     cpuFault: null,
     encounter: seed.encounter,
     openingEncounter: seed.encounter,
-    cheats: seed.cheats,
-    cheatSelection: null,
-    timebombCharges: seed.timebombCharges,
-    timebombStage: null,
+    cheatTricksRemaining: 0,
+    timebombArmedDamage: null,
+    primedTimebombDamage: null,
     blastGuardHeld: seed.blastGuardHeld,
     bankClimbBonus: seed.bankClimbBonus,
     rankTiers: seed.rankTiers ?? ALL_BRONZE,
@@ -288,16 +254,18 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
 
 /** `true` when the next committed card should ignore follow-suit. EXPORTED so the mount computes
  *  its `legal` set from the SAME predicate the reducer commits with — two readings of "is the
- *  Cheat armed" is exactly how a fan's greying and a rejection reason drift apart. */
+ *  Cheat armed" is exactly how a fan's greying and a rejection reason drift apart. DLR-132 — a
+ *  live Cheat is now a COUNT of tricks still owed, not a two-stage selection. */
 export function cheatArmed(state: RoundUiState): boolean {
-  return state.cheatSelection?.stage === CheatStage.Armed
+  return state.cheatTricksRemaining > 0
 }
 
-/** `true` when the next tapped hand card should be MARKED rather than played. EXPORTED so the
- *  mount's tappability and the reducer's branch read the SAME predicate — two readings of "is
- *  Timebomb armed" is exactly how a greyed card and a reducer branch drift apart. */
+/** `true` when the next tapped hand card should be MARKED (primed) rather than played. EXPORTED so
+ *  the mount's tappability and the reducer's branch read the SAME predicate — two readings of "is
+ *  Timebomb armed" is exactly how a greyed card and a reducer branch drift apart. DLR-132 — armed
+ *  now means "paid for and carrying a damage pair", not a two-stage selection. */
 export function timebombArmed(state: RoundUiState): boolean {
-  return state.timebombStage === TimebombStage.Armed
+  return state.timebombArmedDamage !== null
 }
 
 /** The felt is waiting on the player's own card — nothing is held, nothing is prompting, the
@@ -381,11 +349,33 @@ export function discardStock(state: RoundUiState): DiscardStock {
   }
 }
 
-/** AC1 — the Apply Buff window is the DISCARD window. No second timing gate is built: this reads
- *  `discardWindowOpen` and nothing else, exactly as `discardStock` above does, so the two actions
- *  cannot disagree about when the felt is between tricks.
+/** AC1 — the Apply Buff window is the DISCARD window for every condition/consumable card. No
+ *  second timing gate is built for those: this reads `discardWindowOpen` and nothing else, exactly
+ *  as `discardStock` above does, so the two actions cannot disagree about when the felt is between
+ *  tricks.
  *
- *  DLR-126 — the stock's remaining four fields are DELEGATED to `buffActivationStockFor` rather
+ *  DLR-132 — Cheat and Timebomb are the one exception, and it is inherited rather than new: their
+ *  retired felt-rail widgets (`CheatSlots`, `TimebombCharge`) were never gated on
+ *  `discardWindowOpen` at all — each read its own `interactive` prop, which was `canAct(ui)` — for
+ *  the reason both docblocks gave: "cannot be armed into a moment where no card can be played."
+ *  Folding both into the ordinary row list must not narrow that reach to *between* tricks, because
+ *  the ONE moment either card has value is FOLLOWING an already-committed lead — exactly the
+ *  moment `discardWindowOpen` is false and `canAct` is true. Gating them on `discardWindowOpen`
+ *  like every other row would make a Cheat's follow-suit break unreachable at the only trick it
+ *  could matter, which is a functional regression, not a stricter rule.
+ *
+ *  EXPORTED so `handleTapBuff`'s COMMITTING tap threads the SAME window into `activateFromPile` —
+ *  `activateBuff` re-checks the window itself and throws on a refusal, so a caller that asked this
+ *  one question via `loadoutRefusalFor` and then a DIFFERENT one at the commit is exactly the
+ *  "two readings of one gate" failure this codebase's every other stock function is written to
+ *  prevent; here it would surface as a thrown `RangeError` on the second tap. */
+export function buffActivationWindowOpen(state: RoundUiState, buff: Buff): boolean {
+  return buff.kind === BuffKind.Cheat || buff.kind === BuffKind.Timebomb
+    ? canAct(state)
+    : discardWindowOpen(state)
+}
+
+/** DLR-126 — the stock's remaining four fields are DELEGATED to `buffActivationStockFor` rather
  *  than restated here. This function previously built the literal itself, which meant a field
  *  added to `BuffActivationStock` needed the same edit in two places and could be given two
  *  different answers. The felt's only contribution is the window; everything else is
@@ -395,5 +385,5 @@ export function buffActivationStock(
   activation: BuffActivationState,
   buff: Buff,
 ): BuffActivationStock {
-  return buffActivationStockFor(activation, buff, discardWindowOpen(state))
+  return buffActivationStockFor(activation, buff, buffActivationWindowOpen(state, buff))
 }

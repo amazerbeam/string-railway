@@ -119,8 +119,6 @@ export function playRun(seed: number, policy: SimPolicy): RunReport {
     run = recordEncounter(
       run,
       outcome.result.encounter,
-      outcome.result.cheats,
-      outcome.result.timebombCharges,
       outcome.result.blastGuardHeld,
       outcome.result.discardsRemaining,
       outcome.result.unplayedAtResolve,

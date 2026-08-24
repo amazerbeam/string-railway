@@ -52,8 +52,8 @@ export interface ActionBarProps {
  * DLR-114 AC1 — the felt's one bottom-of-screen action bar, carrying every pre-trick decision:
  * Apply Buff, Cards, Swap, Apply Damage, in that order. ALWAYS MOUNTED for the whole hand (the
  * plan's own default) — nothing here is conditionally unmounted, every button greys with its
- * reason on its own face instead, mirroring `TimebombCharge`'s existing "inert rather than absent"
- * precedent.
+ * reason on its own face instead, the same "inert rather than absent" precedent every disabled
+ * row in `BuffLoadoutPanel` follows.
  *
  * Four controls sits below `game-ux`'s roving-tabindex threshold of about five, so these are plain
  * tab stops rather than a roving-tabindex group.

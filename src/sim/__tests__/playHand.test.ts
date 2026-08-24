@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { FRESH_ENCOUNTER_DECK, PlayerSide, type Card } from '../../warCouncil'
-import { PLAYER_START_HEALTH, startRun } from '../../hunt'
+import { BuffKind, PLAYER_START_HEALTH, startRun } from '../../hunt'
 import { baselinePolicy } from '../baselinePolicy'
 import { playHand } from '../playHand'
 import type { CheatPlay, SimPolicy } from '../types'
@@ -104,6 +104,10 @@ describe('playHand — the optional levers', () => {
     const outcome = playHand(run, 1, FRESH_ENCOUNTER_DECK, policy)
 
     expect(outcome.report.cheatsArmed).toBe(0)
-    expect(outcome.result.cheats).toStrictEqual(run.cheats)
+    // DLR-132 — the Cheat is an ordinary pile buff now, so "unchanged" means the pile's own Cheat
+    // count is unchanged, not a deleted `RunState.cheats` array.
+    expect(outcome.result.buffs.filter((buff) => buff.kind === BuffKind.Cheat).length).toBe(
+      run.buffs.filter((buff) => buff.kind === BuffKind.Cheat).length,
+    )
   })
 })

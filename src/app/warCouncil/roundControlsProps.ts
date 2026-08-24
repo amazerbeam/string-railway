@@ -35,14 +35,12 @@ export interface BuffLoadoutPanelOptions {
   readonly ui: RoundUiState
   readonly dispatch: (action: RoundUiAction) => void
   readonly offered: readonly Buff[]
-  readonly interactive: boolean
 }
 
 export function buffLoadoutPanelProps({
   ui,
   dispatch,
   offered,
-  interactive,
 }: BuffLoadoutPanelOptions): BuffLoadoutPanelProps {
   return {
     buffs: offered,
@@ -50,16 +48,7 @@ export function buffLoadoutPanelProps({
     poised: ui.loadout?.poised ?? null,
     refusalFor: (buff) => loadoutRefusalFor(ui, buff),
     apCostFor: apCostOf,
-    cheats: ui.cheats,
-    cheatSelection: ui.cheatSelection,
-    timebombCharges: ui.timebombCharges,
-    timebombStage: ui.timebombStage,
-    interactive,
     onTapBuff: (id) => dispatch({ kind: RoundUiActionKind.TapBuff, id }),
-    onTapCheat: (id) => dispatch({ kind: RoundUiActionKind.TapCheat, id }),
-    onCancelCheat: () => dispatch({ kind: RoundUiActionKind.CancelCheat }),
-    onTapTimebomb: () => dispatch({ kind: RoundUiActionKind.TapTimebomb }),
-    onCancelTimebomb: () => dispatch({ kind: RoundUiActionKind.CancelTimebomb }),
     onClose: () => dispatch({ kind: RoundUiActionKind.CancelLoadout }),
   }
 }

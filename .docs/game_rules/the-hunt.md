@@ -9,17 +9,35 @@ the app today except where a rule is marked **[not built]** — and except the c
 here, every one of which is **decided, enforced and tested, yet cannot be obtained by playing**:
 
 - the **blue hearts** of section 8, because nothing grants one;
-- the five **items** of section 4 — Ward, Second Thoughts, Foresight, Spyglass, Puppeteer — because
-  nothing mints one into your pile, whatever the reel lands on;
-- a **Cheat**, a **Timebomb** or a **Shield** *as a card in your pile* (a Cheat as a **slot** is a
-  different thing and you do start every run holding one);
-- a **Timebomb charge**, a **Blast Guard** and a **Whetstone**, because the shop stopped selling all
-  three on 2026-08-24 — noted in full at section 10.
+- the five **items** of section 4 — Ward, Second Thoughts, Foresight, Spyglass, Puppeteer — and a
+  **Shield** as a card in your pile — because nothing mints one, whatever the reel lands on;
+- a **Blast Guard** and a **Whetstone**, because the shop stopped selling both on 2026-08-24 — noted
+  in full at section 10.
+
+**A Cheat and a Timebomb stopped being on that list on 2026-08-24 — DLR-132.** Both are now ordinary
+cards the reel can draw into your pile, exactly like any other buff, and every run still starts
+holding one bronze Cheat.
 
 That list is not an estimate. It is measured on every run by an executable audit added on
 2026-08-24, so a card leaving or joining it turns a test red rather than quietly changing what this
 paragraph should say. **A rule below being marked [settled] means the rule is decided, not that you
 can reach it** — the two are separate axes and this is the one that says which.
+
+> **A Cheat and a Timebomb are ordinary cards now — DLR-132, 2026-08-24.** Until today both were held
+> outside your pile on their own bespoke widgets — two Cheat **slots** and a Timebomb **charge**
+> counter, each with its own tap sequence. Both are now **rows in your loadout, drawn from the reel
+> like any other buff card**, spent through the same two-tap poise-then-spend gesture every other
+> card uses, and priced in action points the same way. A Cheat's **tier is now honoured as duration**:
+> a bronze Cheat still lifts follow-suit for exactly one trick, but a silver lifts it for two and a
+> gold for three (`CHEAT_DURATION_TRICKS`) — the gold row is reachable for the first time, at 7 action
+> points. A Timebomb's **tier is now honoured as damage**: the bronze figure is today's unchanged
+> 4-to-the-Quarry/2-to-you pair, and silver and gold scale both sides together (8/4, 12/6). A run
+> still starts holding **exactly one bronze Cheat** and zero Timebombs — unchanged in name and value,
+> now seeded as a buff rather than a slot grant. **Nobody has looked at any of it**: the contract ran
+> unattended with its approval and mockup gates skipped and no browser pass, so the four new slot
+> weights that decide how often either card is drawn, and whether the widened loadout list still
+> reads at a glance with a Cheat row and a Timebomb row in it, are unplayed. See
+> [Known tensions](#known-tensions-recorded-not-resolved).
 
 > **A buff you pay for now pays you back — DLR-125, 2026-08-24.** Until today activating a buff spent
 > action points and did nothing: no condition was checked and no reward was ever paid. Both halves
@@ -582,7 +600,7 @@ along the bottom of the screen**:
 
 | Button           | What it does                                                                     |
 | ---------------- | -------------------------------------------------------------------------------- |
-| **Apply Buff**   | Opens your loadout: the buffs you own, your Cheats, and your Timebomb charges    |
+| **Apply Buff**   | Opens your loadout — every buff you own, including a held Cheat or Timebomb     |
 | **Cards**        | Plays the card you have selected. Greyed until you have selected one             |
 | **Swap**         | Throws cards from your hand and draws the same number blind (the discard, below) |
 | **Apply Damage** | Cashes your banked streak into the Quarry (section 7)                            |
@@ -594,9 +612,9 @@ card twice does; it is a second route to the same commit, not a different one.
 
 > **This replaced four separate plates down the felt's left edge.** Until 2026-08-24 the Cheat slots,
 > the Timebomb plate, the discard control and the Apply Damage control each had their own frame in
-> their own corner. Nothing about what any of them **does** changed in the move — what changed is that
-> you now find all four in the same row, and that Cheats and Timebomb charges live one press deeper,
-> behind **Apply Buff**.
+> their own corner. The discard and Apply Damage controls moved into this bar unchanged. **A Cheat and
+> a Timebomb went further, the same day**: they stopped being two bespoke widgets and became two more
+> lines in the loadout list below, one press behind **Apply Buff**.
 
 #### Buffs — spending action points before a trick
 
@@ -631,9 +649,11 @@ first card is laid. Mid-trick every buff line is greyed, reading that it is not 
 
 > **The panel opens more often than its contents can be used, deliberately.** Apply Buff itself opens
 > whenever you can act at all, including while you are following a lead the Quarry has already
-> committed. That is because your **Cheats and Timebomb charges live inside it**, and mid-trick is
-> exactly when a Cheat is worth something — it is the moment follow-suit is binding you. So mid-trick:
-> the panel opens, the Cheat and Timebomb controls inside it work, and every buff line is greyed.
+> committed. **A held Cheat or Timebomb is the one exception to "activating is only available between
+> tricks" above** — both stay activatable through the whole trick, because mid-trick is exactly when
+> either is worth something: it is the moment follow-suit is binding you, or the moment you know which
+> card you are about to lose. So mid-trick: the panel opens, a Cheat or Timebomb line stays live, and
+> every other buff line is greyed reading that it is not between tricks.
 
 **A line you cannot afford is greyed too, and says so — but the panel still opens when you can afford
 nothing at all.** Reading what you own and what it costs is how you plan the next trick.
@@ -641,11 +661,11 @@ nothing at all.** Reading what you own and what it costs is how you plan the nex
 > **Until 2026-08-24 an activated buff did nothing but cost you** — its condition was never checked
 > and its reward was never paid. Both halves are now built; the rules are immediately below.
 
-> **On a fresh run you own no buffs the panel will show you.** A new run is seeded with placeholder
-> cards that have no condition, no reward and no price, and those are filtered out rather than shown
-> as empty lines — so until a real buff reaches your pile, Apply Buff shows only your Cheats and your
-> Timebomb charges. Nothing in a fight puts a real buff in your pile today; that comes from outside a
-> run. See [Not built](#not-built).
+> **On a fresh run you own one buff the panel will show you: your starting Cheat.** A new run is
+> otherwise seeded with placeholder cards that have no condition, no reward and no price, and those
+> are filtered out rather than shown as empty lines — so until you pull a real buff from the machine,
+> Apply Buff shows exactly one line. Nothing in a fight puts another real buff in your pile; that
+> comes from outside a run. See [Not built](#not-built).
 
 ##### Some cards are one-shot items, and using one spends the card — **[settled]** since 2026-08-24
 
@@ -839,111 +859,121 @@ lost**, not raw damage: against a Quarry on 4 health, a card reading `W6` means 
 
 ### Cheats — refusing a trick follow-suit would force on you
 
-**[settled]** — the procedure; **how many Cheats a run starts with** is **[provisional]**, below.
+**[settled]** — the procedure, since 2026-08-24; **how many Cheats a run starts with**, and **the four
+weights that decide how often the reel draws one**, are **[provisional]**, below.
 
-You hold **two Cheat slots**. A Cheat is a card you hold, not a counter: each is one use, and
-spending one frees its slot. **Since 2026-08-24 the slots live inside Apply Buff** — press it and they
-are there, below your buffs, filled or empty. They are reachable at any moment you could act,
-including while you are following a lead the Quarry has already committed, which is the moment a
-Cheat is worth something. Until that date they sat beside the decree on the felt for the whole hand;
-nothing about arming or spending one changed with the move, only where you reach for it.
+A Cheat is an ordinary buff card in your pile now, not a held slot. **Since 2026-08-24 it is a row in
+your loadout, drawn from the same reel every other buff comes from** — the machine can land one at
+bronze, silver or gold like anything else it stocks (section 10). Until that date you held it in one
+of two dedicated Cheat slots, arming it through a bespoke two-then-cancel control outside the loadout;
+nothing about what a Cheat *does* changed with the move, only how you get one and how you spend it.
 
-**Playing a held Cheat takes two clicks on it.**
+**Spending one takes the same two taps every buff row takes.**
 
-1. **The first click selects it.** Nothing about the rules changes yet — this exists so a single
-   misclick can never spend one.
-2. **The second click arms it.** While a Cheat is armed, **follow-suit does not bind you**: every
-   card in your hand is legal, including the off-suit cards it would otherwise forbid. Your whole
-   hand becomes playable on screen, which is how you can tell.
-3. **The next card you commit spends it.** The Cheat is gone and its slot is empty.
+1. **The first tap poises the row.** Nothing about the rules changes yet — this is the same misclick
+   guard every buff line uses.
+2. **The second tap spends your action points.** While it is live, **follow-suit does not bind you**:
+   every card in your hand is legal, including the off-suit cards it would otherwise forbid. Your
+   whole hand becomes playable on screen, which is how you can tell.
 
-**A third click gives an armed Cheat back**, unspent. So does pressing Escape. Nothing is committed
-until you play a card.
+**Once the second tap lands there is no way to give it back.** `Escape` before that point drops the
+poise and spends nothing; after it, the points are gone and the Cheat is live for its duration —
+there is no third tap that returns it unspent, unlike the two-then-cancel control it replaced.
+
+**A Cheat's tier decides how long it lasts, not just whether it works.** Bronze lifts follow-suit for
+**one** trick, silver for **two**, gold for **three** (`CHEAT_DURATION_TRICKS`) — spent counting down
+by one on every card you successfully commit while it is live, whether or not follow-suit was actually
+binding you on that trick. A refused play does not count against it.
 
 **The Cheat lifts follow-suit and nothing else.** A led Monarch still narrows you to your Swan or
 your highest of that suit (above), and every other rule in these sections is untouched. If you play
-a card that some other rule forbids, the play is refused and the Cheat is **not** spent — a refusal
-is not a commitment.
+a card that some other rule forbids, the play is refused and nothing is spent — a refusal is not a
+commitment.
 
-> **The Cheat is spent whether or not it was needed.** Committing any card while one is armed
-> consumes it, even a card that was perfectly legal anyway. Arming is therefore itself the decision;
-> there is no refund for changing your mind after the fact, only for disarming before you play. It is
-> recorded under [Known tensions](#known-tensions-recorded-not-resolved).
+> **A gold Cheat is reachable for the first time, and it is a costing question nobody has answered.**
+> Three tricks of no-follow-suit costs 7 action points — above the 6 you start a hand with, so only
+> reachable with bought action-point capacity. It is recorded here rather than being repriced.
+> Recorded under [Known tensions](#known-tensions-recorded-not-resolved).
 
 **The Quarry holds no Cheats and can never break follow-suit.** This is a thing the player can do
 that the opponent cannot — the first such asymmetry in the game.
 
 #### How many you get — **[provisional]**
 
-A run **starts with none**, and every Cheat you ever hold is bought at the shop. That was **set by the
-developer on 2026-08-17**, down from two: a run should open empty-handed, with Cheats earned rather than
-granted. **Whose decision:** the developer's, and it has already moved once — which is why it is
-provisional rather than settled. The permitted range is none up to the slot count.
+A run **starts with exactly one, at bronze**, seeded straight into your pile rather than bought
+(`RUN_STARTING_CHEATS`) — the value is unchanged from before this card became reel-drawn, only its
+form moved. **Whose decision:** the developer's — whether a run should open holding one at all,
+now that every further Cheat comes from the reel, is the standing open question `RUN_STARTING_CHEATS`
+answers with a single integer.
 
-> **The practical consequence is that the first fight has no Cheat in it at all**, and cannot: the
-> earliest you can hold one is after the first fight is won and a coin is spent. So "when do I spend it",
-> the question this mechanic exists to raise, does not arise until fight two at the earliest.
-
-**Since 2026-08-16 you can also buy them.** A Cheat costs 1 coin at the shop between fights, and
-goes into a free slot ([section 10](#10-between-hands-and-the-run)). You still hold no more than
-two at once: with both slots full the shop refuses the purchase and says so. So a run's total supply
-is two at a time, replenished for a coin whenever you have spent one.
+> **The shop no longer sells a Cheat at all.** It did, for a coin, until 2026-08-24 pared the shelf
+> (section 10) — that purchase is not merely unreachable, its whole mechanism (a capped two-slot rail)
+> is gone. Every Cheat beyond your starting one now comes from a pull of the machine.
 
 ### Timebomb — priming a card before you play it
 
-**[settled]** — the procedure; **the price and the damage** are **[provisional]**, below, and
-**whether three taps to mark a card feels right** is **[open]**.
+**[settled]** — the procedure, since 2026-08-24; **the damage figures**, and **the four weights that
+decide how often the reel draws one**, are **[provisional]**, below.
 
-You hold some number of **Timebomb charges**, bought at the shop for 2 coins each and carried across
-fights exactly as Cheats and health are. **There is no cap** — coins are the only limit — and **since
-2026-08-24 the plate showing how many you hold lives inside Apply Buff**, beside the Cheat slots,
-whether that is any or none. Until that date it sat in the felt rail beneath the Cheats; nothing about
-priming a card changed with the move, only where you reach for it.
+A Timebomb is an ordinary buff card in your pile now, not a bought charge. **Since 2026-08-24 it is a
+row in your loadout, drawn from the same reel every other buff comes from**, at bronze, silver or
+gold — until that date it did not exist as a card at all: it was a count bought at the shop, with its
+own plate and its own three-tap cycle. **This is the one card in the whole game that was previously
+impossible to hold at all** — a fresh run started with none and nothing sold one after the shop was
+pared, so nothing before today could ever put one in your hand.
 
-**Spending one takes three taps.**
+**Spending one takes two taps, the same as every other buff row — but spending it only arms it.**
 
-1. **The first tap on the plate selects it.** Nothing changes yet. This is the same misclick guard the
-   Cheat has, and it is here for a stronger reason: **the mark cannot be taken back.**
-2. **The second tap arms it.** Every card in your hand becomes tappable — **including cards that are
-   illegal to play**, which is the point, because the item exists to give a card you expect to lose with
-   a reason to be played.
-3. **The third tap is on a card in your hand, and Timebombs it.** One charge is spent, and the card is
-   marked from then on.
+1. **The first tap poises the row.** Nothing changes yet.
+2. **The second tap spends your action points and arms the Timebomb.** Every card in your hand becomes
+   tappable — **including cards that are illegal to play**, which is the point, because the card
+   exists to give a card you expect to lose with a reason to be played.
+3. **The very next tap you make on a card in your hand primes it.** The Timebomb is already spent; this
+   tap only chooses which card carries it.
 
-**A third tap on the plate instead gives the charge back**, unspent. So does pressing Escape. Nothing is
-spent until you tap a card.
+**Once the second tap lands there is no way to give it back.** `Escape` before that point drops the
+poise and spends nothing; after it, the points are gone. Priming a card is therefore the only remaining
+choice — the arm itself cannot be undone the way the old plate's third tap once undid it.
+
+**A Timebomb's tier decides how much it hits for.** Bronze is the same pair the game has always paid —
+**4 to the Quarry, 2 to you**; silver doubles both to 8 and 4; gold trebles them to 12 and 6
+(`TIMEBOMB_DAMAGE`, scaled by `TIMEBOMB_TIER_MULTIPLIER`). Whichever card you prime carries its own
+tier's figure to the trick it is played into.
+
+> **Priming two different-tier Timebombs in one hand is possible, and only the second tier is kept.**
+> The game remembers one armed figure per hand; priming a second card overwrites it, so both detonate
+> at the second card's tier rather than each keeping its own. Recorded, not fixed, under
+> [Known tensions](#known-tensions-recorded-not-resolved).
 
 **A primed card is marked wherever it renders** — in your hand, in the trick once you have played it,
 in an ability prompt that offers it, and on the decree if the Fox exchanges it there. The mark is
 announced as part of the card's name, so it does not depend on seeing the glyph.
 
-**Arming Timebomb and arming a Cheat are mutually exclusive.** Both change what a tap on a hand card
-means, so tapping either control clears the other, and arming Timebomb also drops a card you had armed to
-play.
+**Arming a Timebomb and arming a Cheat are mutually exclusive** in the sense that only one loadout
+spend can be waiting for its effect at once: arming either commits its action points immediately, and
+a Timebomb's arm additionally reinterprets your very next hand-card tap as a prime rather than a play.
 
 **Playing a primed card changes nothing about the trick itself.** The same side wins it by the same
 rules, and it banks the same. What it adds is a **delayed hit** owed to **whichever side won that
-trick**, paid when the **next** trick resolves — **4 if the Quarry won it, 2 if you did.** Section 7
+trick**, paid when the **next** trick resolves, at the figure the primed card's own tier set. Section 7
 states what the trick's own outcome does and what the hit does to your streak, and section 8 states when
 the damage lands.
 
-**You may Timebomb more than one card in a hand** if you hold more than one charge, and the hits accumulate
-— on either side, or on both.
+**You may Timebomb more than one card in a hand** if you hold more than one, and the hits accumulate —
+on either side, or on both.
 
 **Once a primed card has been played and its trick resolved, the hit it booked is shown.** The trick
 says who owes it and how much as it resolves, and the hearts the hit has already claimed are drawn
 distinctly on that side's row until it lands (section 8). Before that — while the card is only marked —
 nothing yet owes anything, so there is nothing to show.
 
-> **A primed card can leave your hand without ever being played, and the charge is simply wasted.** The
+> **A primed card can leave your hand without ever being played, and the spend is simply wasted.** The
 > Woodcutter can bury it on the bottom of the draw pile, and the Fox can exchange it into the decree and
 > you may never take it back. Nothing warns you and nothing refunds you.
 
-#### How many taps it should take — **[open]**
-
-Three taps to mark, then the usual two to play the card. The alternative is arming in one tap, which
-makes marking two — but puts an **irreversible** mark one misclick away. **Whose decision:** the
-developer's, after playing it.
+**A run starts holding zero Timebombs**, unchanged. The shop no longer sells a charge at all — that
+purchase and its uncapped-charges rule are both gone with the plate they belonged to; every Timebomb
+you ever hold now comes from a pull of the machine.
 
 ### The Discard, on the bar as **Swap** — swapping cards from hand between tricks
 
@@ -1938,9 +1968,9 @@ length legible.
   fresh: nothing struck out, and the first opponent current again.
 - **Beating the last Quarry — Diarmuid — ends the run as a win**, and it is stated differently from
   beating any earlier one. In practice you will not see it: see the health curve below.
-- **Your Cheat slots carry from fight to fight exactly as your health does** (section 4). A Cheat
-  spent in fight one is still gone in fight two; one held is still held. They are granted once, at
-  the start of the run, and are replenished only by buying one.
+- **A Cheat or Timebomb carries from fight to fight exactly as any other buff does** (section 4). One
+  spent in fight one is still gone in fight two; one held is still held. A run is granted exactly one
+  bronze Cheat once, at the start; every further one comes only from a pull of the machine.
 - **Your coins carry too**, and nothing takes them away but spending them.
 - **Your flask carries as well**, and it is the one thing in the run that is **given back** rather than
   only spent — a stage-boss kill refills it. See below.
@@ -2098,19 +2128,25 @@ nobody has played; the +5 is transcribed from the ticket and is not a placeholde
 the developer's — the price trades directly against the machine's 1-coin reroll, and too low it
 dominates the visit while too high it is decoration.
 
-> **Four purchases left the shop on 2026-08-24, and none of them left the game.** The **Cheat**, the
-> **Timebomb** charge, the **Blast Guard** and the **Whetstone** are all still real, still priced, and
-> still work exactly as sections 4 and 7 describe — but **nothing currently sells them**, so during a
-> run you cannot acquire one. This is deliberate: the pared-down shop is meant to be played and judged
-> before anything is added back. Recorded under
+> **Four purchases left the shop on 2026-08-24; two of them left the game with it and two did not.**
+> The **Blast Guard** and the **Whetstone** are still real, still priced, and still work exactly as
+> sections 4 and 7 describe — but nothing currently sells them, so during a run you cannot acquire
+> one. **The Cheat and the Timebomb are a different case, decided the same day (DLR-132): the shop
+> purchase they describe below is gone for good**, not merely unreachable — both are now cards the
+> machine draws (section 4, section 10), so a run can hold either without the shop ever selling one
+> again. This is deliberate: the pared-down shop is meant to be played and judged before Blast Guard
+> and the Whetstone are added back. Recorded under
 > [Known tensions](#known-tensions-recorded-not-resolved).
 
 The screen states which opponent is coming next, and shows your **coins**, your **action points**, and
-your **health against its maximum**, while you choose. The readouts for Cheat slots, Timebomb charges,
-the Guard and Whetstones went with the purchases; the first two are still visible on the felt.
+your **health against its maximum**, while you choose. The readouts for the Guard and Whetstones went
+with the purchases that sold them; your Cheats and Timebombs are read off the loadout panel like any
+other buff, and your health is still visible on the felt.
 
 Everything from here to the end of this subsection describes purchases that are **no longer offered**,
-kept because the rules themselves are unchanged and the items are expected back.
+kept because the Blast Guard's and the Whetstone's own rules are unchanged and both are expected back.
+**The Cheat and Timebomb paragraphs immediately below describe a shop mechanism — a bought slot, a
+bought charge — that no longer exists in any form**; read section 4 for what each card is today.
 
 **Timebomb arrived on 2026-08-19 and was the only thing in the shop costing more than a coin** — twice the
 Cheat, because it is a guaranteed unconditional hit rather than a rule-break you may not need. **It is not
@@ -2723,16 +2759,18 @@ the mechanics themselves are documented in `../implementation/`.
 | A skulled card is marked once face up                                            | settled                                                                                    | `src/app/warCouncil/PlayingCard.tsx` — the `skulled` prop; passed by `TrickWell.tsx`                                                                                                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                                 |
 | Follow-suit, led-Monarch narrowing                                               | settled                                                                                    | `src/warCouncil/legalMoves.ts` — `legalMoves`, `monarchFollowSet`                                                                                                                                                                                                                                                                                                                       | —                                                                                                                                                                                                                                                                                                                 |
 | An armed Cheat lifts follow-suit only                                            | settled — since DLR-83                                                                     | `src/warCouncil/legalMoves.ts` — `LegalMoveOptions.ignoreFollowSuit`, read after the Monarch branch returns; threaded by `playCard.ts`                                                                                                                                                                                                                                                  | —                                                                                                                                                                                                                                                                                                                 |
-| Two Cheat slots, one card each                                                   | settled                                                                                    | `src/hunt/config.ts` — `CHEAT_SLOT_COUNT`; the cap is stated once, in `src/hunt/cheats.ts` — `addCheat`                                                                                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                                                                                                 |
-| Two clicks to arm, a third to give it back                                       | settled                                                                                    | `src/app/warCouncil/roundUiState.ts` — `TapCheat`, `CancelCheat`, `cheatArmed` (moved there by DLR-90); handled in `roundReducer.ts`, rendered by `CheatSlots.tsx`                                                                                                                                                                                                                      | Developer — whether arming feels like a detour                                                                                                                                                                                                                                                                    |
-| Committing while armed spends the Cheat                                          | settled                                                                                    | `src/app/warCouncil/roundReducer.ts` — `commit`; removal in `src/hunt/cheats.ts` — `removeCheat`                                                                                                                                                                                                                                                                                        | Developer — whether spending it on an already-legal card is right                                                                                                                                                                                                                                                 |
-| A refused play does not spend the Cheat                                          | settled                                                                                    | `src/app/warCouncil/roundReducer.ts` — `commit`'s rejection branch returns before the removal                                                                                                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                                 |
-| Cheats carried fight to fight                                                    | settled                                                                                    | `src/hunt/run.ts` — `RunState.cheats`; `advanceRun`'s spread carries it, `recordEncounter` adopts the hand's survivors                                                                                                                                                                                                                                                                  | —                                                                                                                                                                                                                                                                                                                 |
-| Cheats a run starts with (0)                                                     | **provisional** — set 2026-08-17                                                           | `src/hunt/config.ts` — `RUN_STARTING_CHEATS`, **0** since 2026-08-17 (was 2); granted by `src/hunt/cheats.ts` — `grantCheats`, which throws outside `0..CHEAT_SLOT_COUNT` rather than clamping                                                                                                                                                                                          | **Developer** — it has moved once already; every Cheat is now bought                                                                                                                                                                                                                                              |
-| Cheats and Timebomb charges are reached through the loadout, not their own rails | settled — since DLR-114                                                                    | `src/app/warCouncil/BuffLoadoutPanel.tsx` mounts `CheatSlots.tsx` and `TimebombCharge.tsx`; `src/app/warCouncil/buffHandlers.ts` — `loadoutDoorOpen` is what gates reaching them. Both components and every reducer branch behind them are unchanged — relocated, not rewritten                                                                                                         | **Developer** — whether one extra press before arming a Cheat reads as friction. Unplayed                                                                                                                                                                                                                         |
+| A Cheat and a Timebomb are drawn from the reel like any other buff               | settled — since DLR-132                                                                    | `src/hunt/buffTemplates.ts` — `ACTIVATED_TEMPLATES`, minted through `mintFromTemplate`'s `form: 'activated'` branch; `src/hunt/slotWeights.ts` — `templateWeightFor`'s activated branch                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
+| The four weights that decide how often either is drawn                          | **provisional** — agent-chosen, unplayed                                                   | `src/hunt/slotWeights.ts` — `SLOT_FAMILY_WEIGHTS`: Skirmisher Cheat 3 / Timebomb 3, Strongbox Cheat 1 / Timebomb 1                                                                                                                                                                                                                                                                       | **Developer** — nobody has played a pull against these ratios                                                                                                                                                                                                                                                    |
+| A Cheat and a Timebomb spend through the ordinary two-tap poise-then-spend flow  | settled — since DLR-132                                                                    | `src/app/warCouncil/buffHandlers.ts` — `handleTapBuff`'s Cheat and Timebomb branches, beside Ward's; priced by `src/hunt/buffCosts.ts` — `apCostOf`                                                                                                                                                                                                                                     | Developer — whether arming reads as a detour, unplayed                                                                                                                                                                                                                                                            |
+| A Cheat and a Timebomb stay activatable through the whole trick, unlike other buffs | settled — since DLR-132                                                                 | `src/app/warCouncil/roundUiState.ts` — `buffActivationWindowOpen`; both the refusal guard and the commit read the one function                                                                                                                                                                                                                                                          | —                                                                                                                                                                                                                                                                                                                 |
+| Committing while a Cheat is live decrements its remaining tricks                 | settled — since DLR-132                                                                    | `src/app/warCouncil/commitHandlers.ts` — `commit`'s `cheatTricksRemaining` decrement, floored at 0 by `Math.max`                                                                                                                                                                                                                                                                         | Developer — whether spending it on an already-legal card is right                                                                                                                                                                                                                                                 |
+| A refused play does not spend the Cheat                                          | settled                                                                                    | `src/app/warCouncil/commitHandlers.ts` — `commit`'s rejection branch returns before the decrement                                                                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
+| A Cheat's tier sets how many tricks it lifts follow-suit for (1/2/3)             | settled — since DLR-132                                                                    | `src/hunt/buffCatalog.ts` — `CHEAT_DURATION_TRICKS`; read into `RoundUiState.cheatTricksRemaining` at the spend                                                                                                                                                                                                                                                                          | Developer — the gold row (3 tricks, 7 AP) is reachable and uncosted, see Known tensions                                                                                                                                                                                                                          |
+| Cheats carried fight to fight                                                    | settled                                                                                    | `src/hunt/run.ts` — `RunState.buffs` (a Cheat is a pile member); `advanceRun`'s spread carries it, `recordEncounter` adopts the hand's survivors                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
+| Cheats a run starts with (1, bronze)                                             | **provisional** — value unchanged, form re-homed 2026-08-24                                | `src/hunt/config.ts` — `RUN_STARTING_CHEATS`, **1**; seeded straight into `RunState.buffs` by `startRun`, no cap on the pile                                                                                                                                                                                                                                                             | **Developer** — whether a run should open holding one at all, now that the reel supplies the rest                                                                                                                                                                                                                |
+| A Cheat and a Timebomb are reached through the loadout, not their own rails      | settled — since DLR-114, migrated onto ordinary rows DLR-132                               | `src/app/warCouncil/BuffLoadoutPanel.tsx` — both are rows in the roving-tabindex `buffs` list, no longer separate widgets; `src/app/warCouncil/buffHandlers.ts` — `loadoutDoorOpen` gates reaching the panel at all                                                                                                                                                                     | **Developer** — whether the widened row list still reads at a glance. Unplayed, mockup gate skipped                                                                                                                                                                                                              |
 | The Quarry holds no Cheats                                                       | settled                                                                                    | nothing to enforce — the bypass is an argument the Quarry's call sites never pass; a grep guards the absence                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                                 |
-| Buying a Cheat (1 coin, into a free slot)                                        | settled — since DLR-84                                                                     | `src/hunt/runTransitions.ts` — `buyFromShop` calls `addCheat` and advances `nextCheatId`; priced by `src/hunt/config.ts` — `CHEAT_PRICE`                                                                                                                                                                                                                                                | Developer — the price                                                                                                                                                                                                                                                                                             |
-| Selling or replacing a Cheat                                                     | **not built**                                                                              | nothing — the shop only adds                                                                                                                                                                                                                                                                                                                                                            | Developer — a later ticket                                                                                                                                                                                                                                                                                        |
+| Buying a Cheat or a Timebomb at the shop                                         | **not built** — the mechanism was retired, not merely unreachable                          | `src/hunt/shop.ts` — neither `ShopItem` is in `SHOP_ITEMS` (DLR-116); the two-slot cap `CHEAT_SLOT_COUNT` and `src/hunt/cheats.ts` no longer exist at all (DLR-132)                                                                                                                                                                                                                     | Developer — the reel is the only route to either now                                                                                                                                                                                                                                                             |
 | Odd-rank abilities                                                               | settled                                                                                    | `src/warCouncil/abilities.ts`, `resolveTrick.ts`                                                                                                                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
 | Whether abilities survive six-card hands                                         | **open**                                                                                   | nothing — abilities are unchanged and ability-free hands are accepted                                                                                                                                                                                                                                                                                                                   | Developer, after playtest                                                                                                                                                                                                                                                                                         |
 | Trick resolution, Witch-as-trump                                                 | settled                                                                                    | `src/warCouncil/resolveTrick.ts`                                                                                                                                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
@@ -2797,7 +2835,7 @@ the mechanics themselves are documented in `../implementation/`.
 | Blue hearts are drawn on your health row                                         | **provisional** — since DLR-115, 2026-08-24                                                | `src/app/warCouncil/duelHealthBars.ts` — `PipType` as a second dimension beside `HeartState`'s untouched five, and `shieldPips`; rendered by `DuelHealthBars.tsx` inside the SAME meter; glyph in `HeartMark.tsx` (`ShieldMark`); styling in `warCouncilHealthBars.css` over `--wc-hp-shield-*` in `warCouncil.css`                                                                     | **Developer** — four things: the colour, the claimed-pip tone and the cluster gap (three values nobody chose), the shield-rather-than-heart glyph, and whether the cluster belongs inboard or at the screen edge. **Never seen at all** — nothing grants a blue heart                                             |
 | The booked-hit preview accounts for a shield                                     | settled — since DLR-115, 2026-08-24                                                        | `src/app/warCouncil/duelHealthBars.ts` — `projectedDepletion`'s **required** fifth argument, routed through `absorbWithShield` rather than restating the order; fed by `roundBars.ts` from `encounter.shieldHearts`                                                                                                                                                                     | —                                                                                                                                                                                                                                                                                                                 |
 | The bar names the shield in its spoken value                                     | **provisional** — copy is placeholder                                                      | `src/app/warCouncil/labels.ts` — `healthBarValueText`'s shield clause, between the standing and at-risk clauses; the claimed count is read off the drawn pips rather than recomputed                                                                                                                                                                                                    | Developer — the wording, and whether "of them" earns the length it costs                                                                                                                                                                                                                                          |
-| The trick that books a hit names it                                              | **provisional** — copy is placeholder                                                      | `src/app/warCouncil/TrickWell.tsx` renders a `.wc-timebomb-clause` when `resolution.timebombTarget` is non-null; wording from `src/app/warCouncil/labels.ts` — `timebombBookedText`, which reads the amount from `src/hunt`'s `timebombDamageFor` rather than choosing between the two constants                                                                                        | Developer — the wording, and whether a line that vanishes on the carry-on tap is the right place for it                                                                                                                                                                                                           |
+| The trick that books a hit names it, at the primed card's own tier               | **provisional** — copy is placeholder                                                      | `src/app/warCouncil/TrickWell.tsx` renders a `.wc-timebomb-clause` when `resolution.timebombTarget` is non-null, reading `resolvedTrick.timebombDamage` (since DLR-132; falls back to the bronze pair only as an unreachable render-safety guard); wording from `src/app/warCouncil/labels.ts` — `timebombBookedText(target, amount)`, which since DLR-132 takes the amount rather than looking it up                                                                                        | Developer — the wording, and whether a line that vanishes on the carry-on tap is the right place for it                                                                                                                                                                                                           |
 | The hand-over tally (between hands only)                                         | settled                                                                                    | `src/app/warCouncil/RoundOverPanel.tsx` — its terminal branch was **deleted** by DLR-82; a resolved fight is the verdict's                                                                                                                                                                                                                                                              | Developer — whether losing the felt's tally costs anything                                                                                                                                                                                                                                                        |
 | The Quarry dumps skulls into losing tricks                                       | settled                                                                                    | `src/warCouncil/cpuPlayer.ts` — `chooseCpuCard`'s first branch                                                                                                                                                                                                                                                                                                                          | —                                                                                                                                                                                                                                                                                                                 |
 | The Quarry's **lead** ignores skulls                                             | settled — deliberately minimal                                                             | `src/warCouncil/cpuPlayer.ts` — the lead branch is unchanged                                                                                                                                                                                                                                                                                                                            | Developer — the obvious next CPU change                                                                                                                                                                                                                                                                           |
@@ -2921,21 +2959,22 @@ the mechanics themselves are documented in `../implementation/`.
 | Every opponent plays identically                                                 | settled — health and name only                                                             | nothing to enforce — no game rule reads `OpponentKind` or an opponent's name; `SLICE_QUARRY_CHARACTER` is still the one _character_ the felt shows                                                                                                                                                                                                                                      | Developer — powers are a final-boss ticket                                                                                                                                                                                                                                                                        |
 | The health bar names the opponent                                                | settled — since 2026-08-17                                                                 | `src/app/warCouncil/labels.ts` — `quarryHealthLabel(name)`; threaded from `src/App.tsx` as a pre-worded string, like `runLabel`. `HEALTH_BAR_LABEL[Quarry]` is now only the unnamed fallback                                                                                                                                                                                            | Developer — the possessive wording                                                                                                                                                                                                                                                                                |
 | The dossier still says "The Monarch"                                             | **open** — the remaining seam                                                              | `src/hunt/quarryCharacters.ts` — `QUARRY_CHARACTERS`; rendered by `src/app/warCouncil/QuarryDossier.tsx`, with "What the Quarry holds" beside it                                                                                                                                                                                                                                        | **Developer** — accept the seam for a release, or pull the follow-on in                                                                                                                                                                                                                                           |
-| Timebomb — a charge bought, not spent on buying                                  | settled — since DLR-90                                                                     | `src/hunt/run.ts` — `RunState.timebombCharges`, credited by `runTransitions.ts`'s `buyFromShop`'s `ShopItem.Timebomb` arm and carried by `advanceRun`'s spread                                                                                                                                                                                                                          | —                                                                                                                                                                                                                                                                                                                 |
-| Its price (2 coins)                                                              | **provisional** — transcribed                                                              | `src/hunt/config.ts` — `TIMEBOMB_PRICE`; read by `priceOf`                                                                                                                                                                                                                                                                                                                              | Developer — from `version-4-scope.md`, not derived; **unmeasured in play**                                                                                                                                                                                                                                        |
-| No cap on charges held                                                           | settled                                                                                    | `src/hunt/shop.ts` — `refusalFor` has **no** Timebomb clause, so it falls through to the coin check                                                                                                                                                                                                                                                                                     | Developer — a cap is a key, one clause and one code                                                                                                                                                                                                                                                               |
-| Three taps to mark: select, arm, then a card                                     | **open** — a feel question                                                                 | `src/app/warCouncil/roundUiState.ts` — `TimebombStage`; cycled by `roundReducer.ts`'s `handleTapTimebomb`, drawn by `TimebombCharge.tsx`                                                                                                                                                                                                                                                | **Developer** — one tap to arm makes marking two, but puts an irreversible mark one misclick away                                                                                                                                                                                                                 |
-| A third tap on the plate refunds the charge                                      | settled                                                                                    | `src/app/warCouncil/roundReducer.ts` — `handleTapTimebomb`'s third branch; `CancelTimebomb` and `Escape` do the same                                                                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                                 |
+| Timebomb — a drawn card, not a bought charge                                     | settled — since DLR-132                                                                    | `src/hunt/run.ts` — `RunState.buffs`; a Timebomb is a pile member minted by `mintFromTemplate`, no longer a count on `RunState`                                                                                                                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                                 |
+| Buying one at the shop                                                           | **not built** — the purchase mechanism was retired                                         | `src/hunt/shop.ts` — `ShopItem.Timebomb` is not in `SHOP_ITEMS` (DLR-116); acquiring one now means pulling the machine (section 10)                                                                                                                                                                                                                                                     | Developer — the reel is the only route to it now                                                                                                                                                                                                                                                                 |
+| No cap on Timebombs held                                                         | settled                                                                                    | `src/hunt/buffs.ts` — the pile has no capacity cap of any kind, unlike the retired two-slot Cheat rail                                                                                                                                                                                                                                                                                  | Developer — a cap is a key and one guard                                                                                                                                                                                                                                                                          |
+| Two taps to spend, then one tap on a card primes it                              | settled — since DLR-132                                                                    | `src/app/warCouncil/buffHandlers.ts` — `handleTapBuff`'s Timebomb branch sets `timebombArmedDamage`; `src/app/warCouncil/roundReducer.ts` — `handleTapCard`'s `timebombArmed` branch calls `primeTapped`                                                                                                                                                                               | **Developer** — whether the ordinary buff gesture reads as clearly as the old dedicated plate did. Unplayed                                                                                                                                                                                                      |
+| Once spent, arming cannot be given back                                          | settled — since DLR-132, a change from the old plate's third-tap cancel                    | `src/app/warCouncil/buffHandlers.ts` — `Escape` only clears an unspent poise; there is no action that returns `timebombArmedDamage` to `null` once the second tap has landed                                                                                                                                                                                                           | Developer — whether losing the old cancel-after-arm costs anything                                                                                                                                                                                                                                               |
 | Every card in hand is markable while armed                                       | settled — including illegal ones                                                           | `src/app/warCouncil/HandFan.tsx` — `illegal` and `isFocusable` both widen under `timebombArmed`, so the tappable and focusable sets cannot drift                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
-| Marking is not a move, and never plays a card                                    | settled                                                                                    | `src/app/warCouncil/roundReducer.ts` — `handleTapCard` routes to `commitTimebomb` before the play branch                                                                                                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
-| Timebomb and a Cheat cannot both be armed                                        | settled                                                                                    | `src/app/warCouncil/roundReducer.ts` — each poise branch clears the other's selection, and `commit`'s `settled` object clears both                                                                                                                                                                                                                                                      | —                                                                                                                                                                                                                                                                                                                 |
+| Marking is not a move, and never plays a card                                    | settled                                                                                    | `src/app/warCouncil/roundReducer.ts` — `handleTapCard` routes to `primeTapped` before the play branch                                                                                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                                 |
+| A Timebomb's tier sets the damage pair it carries (4/2, 8/4, 12/6)               | settled — since DLR-132                                                                    | `src/hunt/buffCatalog.ts` — `TIMEBOMB_DAMAGE`, scaled by `TIMEBOMB_TIER_MULTIPLIER`; carried on `RoundUiState.timebombArmedDamage` → `primedTimebombDamage` from the spend to the prime                                                                                                                                                                                                | **Developer** — silver and gold are unmeasured in play                                                                                                                                                                                                                                                            |
+| Only one Timebomb's tier is remembered per hand                                  | **provisional** — an accepted limitation                                                   | `src/app/warCouncil/roundUiState.ts` — `RoundUiState.primedTimebombDamage` holds one pair; priming a second card in the same hand overwrites it                                                                                                                                                                                                                                        | **Developer** — whether two different-tier Timebombs primed in one hand matters. Recorded under [Known tensions](#known-tensions-recorded-not-resolved)                                                                                                                                                         |
 | The mark is drawn wherever the card renders                                      | settled — all four surfaces                                                                | `src/app/warCouncil/PlayingCard.tsx` — the `primed` prop; threaded by `HandFan`, `TrickWell`, `AbilityPrompt` and `DecreePile` (the last **fixed in review**, having been built and never passed)                                                                                                                                                                                       | Developer — the glyph and its colour are placeholders                                                                                                                                                                                                                                                             |
 | A primed trick resolves by the normal rules                                      | settled                                                                                    | `src/warCouncil/playCard.ts` — it reports `trickIsPrimed` as a fact and judges none of it; the winner and the bank are decided as ever                                                                                                                                                                                                                                                  | —                                                                                                                                                                                                                                                                                                                 |
 | A primed clean loss is replaced, not added to                                    | settled                                                                                    | `src/warCouncil/bank.ts` — `resolveTrickBank`'s `replaced` flag skips the hit half, so damage and cash-out stay 0 and bank/multiplier pass through                                                                                                                                                                                                                                      | —                                                                                                                                                                                                                                                                                                                 |
 | …and a **dodge** is deliberately not replaced                                    | settled — the outcome, not the winner                                                      | `src/warCouncil/bank.ts` — keyed on `TrickOutcome.CleanLoss`; a Dodge is a Quarry win the player **banks**, so replacing it would delete an earned bank                                                                                                                                                                                                                                 | Developer — the free-bonus interaction it creates                                                                                                                                                                                                                                                                 |
 | A primed skull trick you win still costs it                                      | settled — the harshest reading                                                             | nothing suppresses it — the override waives only the clean loss, so `SkullWin` resolves in full                                                                                                                                                                                                                                                                                         | **Developer** — no design document covers this case                                                                                                                                                                                                                                                               |
 | The delayed hit follows the trick's winner                                       | settled — no branch, but **no longer symmetric**                                           | `src/warCouncil/bank.ts` — `TrickResolution.timebombTarget`, typed `DuelSide` because this module is already the one seat → side crossing                                                                                                                                                                                                                                               | —                                                                                                                                                                                                                                                                                                                 |
-| Its amount — 4 to the Quarry, 2 to the player                                    | **provisional** — split 2026-08-19                                                         | `src/hunt/config.ts` — `TIMEBOMB_QUARRY_DAMAGE` (4, transcribed) and `TIMEBOMB_PLAYER_DAMAGE` (2, **the developer's own**); which side owes which is decided once by `encounter.ts`'s `timebombDamageFor`, read by `queueTimebomb` and — since DLR-101, which exported it — by the felt's copy layer                                                                                    | **Developer** — the player-side figure is a choice, not a transcription, and 2-and-4 is unmeasured in play                                                                                                                                                                                                        |
+| Its bronze amount — 4 to the Quarry, 2 to the player                             | **provisional** — split 2026-08-19, tiered 2026-08-24                                      | `src/hunt/config.ts` — `TIMEBOMB_QUARRY_DAMAGE` (4, transcribed) and `TIMEBOMB_PLAYER_DAMAGE` (2, **the developer's own**), the inputs `buffCatalog.ts`'s `TIMEBOMB_DAMAGE` scales by tier; queued by `encounter.ts`'s `queueTimebomb(encounter, target, damage)`, which since DLR-132 takes the primed card's own pair rather than looking one up                                    | **Developer** — the player-side figure is a choice, not a transcription, and every tier is unmeasured in play                                                                                                                                                                                                    |
 | It lands at the resolution of the NEXT trick                                     | settled — retimed 2026-08-19                                                               | `src/app/warCouncil/roundReducer.ts` — `TimebombOptions` reads `encounter.pendingTimebomb` into `playCard`, and `applyResolution` pays, clears and re-books in that order; folded into the trick's own damage by `src/warCouncil/bank.ts` — `resolveTrickBank`. It landed at the next hand's deal until this date                                                                       | —                                                                                                                                                                                                                                                                                                                 |
 | A primed last trick carries into the next hand                                   | settled                                                                                    | `src/hunt/types.ts` — the queue hangs off `EncounterState`, which outlives a hand; nothing at a hand boundary reads or clears it                                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
 | Your share of the hit cashes out your streak                                     | settled — since 2026-08-19, at **two-thirds** since DLR-94                                 | `src/warCouncil/bank.ts` — `resolveTrickBank`'s cash-out branch has a **second trigger**, `timebombToPlayer > 0 && !blastGuarded`, reaching the same statement a lost trick reaches — and therefore the same `forcedCashValue` reduction                                                                                                                                                | Developer — the reading that Timebomb pays the reduced rate rather than full                                                                                                                                                                                                                                      |
@@ -3314,8 +3353,60 @@ discard to dodge a telegraphed suit, so whether three throws of three cards actu
 forced trick reads at the table — rather than merely existing as a rule — is unmeasured. Recorded
 under [Known tensions](#known-tensions-recorded-not-resolved).
 
+### Cheat and Timebomb became drawable cards — DLR-132, 2026-08-24
+
+**What a player could not do before today: acquire a second Cheat past the shop's own two-slot cap,
+or ever acquire a Timebomb at all.** Three routes closed by three different tickets had left a run
+holding exactly one Cheat and zero Timebombs for the whole of the run, with no way to gain more of
+either — the Timebomb was entirely unreachable. Both are now ordinary cards the reel can draw, at
+bronze, silver or gold, exactly like any other buff (73 templates in the pool, up from 71).
+
+**What a player does differently:** a Cheat and a Timebomb are spent from the loadout by the same
+two-tap poise-then-spend gesture every other buff card uses, priced the same way in action points.
+The old two-click-arm-third-click-cancel Cheat control and the old three-tap Timebomb plate are gone.
+A Cheat's tier now sets **how long** it lasts — 1/2/3 tricks of no follow-suit for bronze/silver/gold,
+where only the bronze reading (one trick) was ever reachable before. A Timebomb's tier now sets **how
+much** it hits for — the bronze pair (4 to the Quarry, 2 to you) is unchanged, and silver and gold
+scale both sides together (8/4, 12/6).
+
+**What moved under the hood, for whoever reads the code next:** `BuffTemplate` became a discriminated
+union tagged `form`, closing the shape problem that had kept Cheat and Timebomb (and, later, the five
+consumables) out of the pool — a condition template carries a family and an axis, an activated
+template carries neither. `RunState.cheats`, `RunState.nextCheatId` and `RunState.timebombCharges`
+are deleted, along with the whole of `src/hunt/cheats.ts` and the two felt widgets `CheatSlots.tsx`
+and `TimebombCharge.tsx` — two records of "do you hold a Cheat" became one. `RUN_STARTING_CHEATS`
+keeps its name and its value of 1; only its form changed, from a slot grant to a seeded pile member.
+
+**What is recorded rather than resolved:** the four slot weights that decide how often either card is
+drawn, whether a gold Cheat's 7-action-point price is right for a mechanic `buffCatalog.ts` itself
+flags as unsafe to ship active, the one-tier-per-hand Timebomb limitation, and the redesigned loadout
+panel's readability with two more rows in it — none of it played, the mockup gate having been skipped
+for this contract. All four are under [Known tensions](#known-tensions-recorded-not-resolved).
+
 ### Known tensions, recorded not resolved
 
+- **A gold Cheat is reachable for the first time, and its cost is unresolved** (new 2026-08-24,
+  DLR-132). Three tricks of no-follow-suit is `buffCatalog.ts`'s own long-standing flag as "NOT SAFE
+  TO SHIP ACTIVE" — close to a guaranteed run of wins rather than one clutch save. It now prices at 7
+  action points, above the 6 you start a hand with, so it is reachable only after buying action-point
+  capacity. Nothing was retuned to answer this; the price is what the existing cost formula produced,
+  unreviewed against the new reachability.
+- **Priming two different-tier Timebombs in one hand loses the first tier** (new 2026-08-24, DLR-132).
+  `RoundUiState.primedTimebombDamage` holds one pair for the whole hand; priming a second card
+  overwrites it, so both detonate at the second card's figure rather than each keeping its own. Cheap
+  to fix later by widening the engine's `primedCards` to carry a per-card tier, deliberately not done
+  here because that widening reaches `src/warCouncil/`'s pure type and every `primedCards` fixture.
+  Whether it matters enough to fix is the developer's, after it has been played.
+- **Four slot weights that decide how often a Cheat or Timebomb is drawn were never played** (new
+  2026-08-24, DLR-132). `SLOT_FAMILY_WEIGHTS` gained `Cheat`/`Timebomb` rows on both machines —
+  Skirmisher 3/3, Strongbox 1/1 — chosen by the same reasoning the rest of that agent-authored table
+  uses (mid-table on the trick-lean machine, floor on the upgrade-lean one), and unplayed like every
+  other row in it.
+- **A buff list with a Cheat row and a Timebomb row in it has never been seen** (new 2026-08-24,
+  DLR-132). The mockup gate was skipped for this contract, so nobody has judged whether
+  `Cheat (Free Rein) — play any card, ignoring follow-suit: 1 trick of no follow-suit. 3 AP.` reads
+  well beside a condition card's line, or whether losing the two dedicated glyph plates the old
+  widgets drew costs the felt anything at a glance.
 - **Most hands are played with no buff to activate at all, and that is now measured** (new
   2026-08-24, DLR-120). Across 1,600 simulated runs at four seeds and two different players,
   **between 67% and 71% of all hands were played holding nothing activatable**. A run opens with

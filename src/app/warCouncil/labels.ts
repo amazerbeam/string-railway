@@ -10,10 +10,9 @@ import {
   type QuarryIntent,
   type SuitShape,
 } from '../../warCouncil'
-import { DuelSide, timebombDamageFor, MAX_CARDS_PER_DISCARD } from '../../hunt'
+import { DuelSide, MAX_CARDS_PER_DISCARD, type Damage } from '../../hunt'
 import type { CardDamageBranch, CardDamagePreview } from './cardDamage'
 import { HeartState, type HealthBarView } from './duelHealthBars'
-import { CheatStage, TimebombStage } from './roundUiState'
 
 export const SUIT_NAME: Readonly<Record<Suit, string>> = {
   [Suit.Bells]: 'Bells',
@@ -202,58 +201,32 @@ export function intentAccessibleName(intent: QuarryIntent | null, speculative: b
   return speculative ? `If you lead that card: ${body}` : body
 }
 
-/** The Cheat rail's copy (DLR-83). PLACEHOLDER — the wording is the developer's, exactly as
- *  `FINISH_ROUND_LABEL` and `TRICK_OUTCOME_MESSAGE` above are. */
-export const CHEAT_RAIL_LABEL = 'Cheats'
-export const CHEAT_EMPTY_SLOT_LABEL = 'Empty Cheat slot'
-export const CHEAT_ARMED_HINT = 'Cheat armed — play any card in your hand'
-export const CHEAT_POISED_HINT = 'Tap the Cheat again to arm it'
-
-/** One slot's accessible name. `null` is a held but unselected Cheat. The three must differ —
- *  `getByRole('button', { name })` is how the spec tells the stages apart. */
-export function cheatAccessibleName(stage: CheatStage | null): string {
-  if (stage === CheatStage.Armed) return 'Cheat, armed'
-  if (stage === CheatStage.Poised) return 'Cheat, selected'
-  return 'Cheat, held'
-}
-
 /** The purse plate on the status band (DLR-84). PLACEHOLDER copy, as this file's other labels
  *  are. Distinct from `runLabels.ts`'s `SHOP_COINS_LABEL`: each file owns its own surface's
  *  copy, so the felt and the shop can be reworded independently. */
 export const COINS_PLATE_LABEL = 'Coins'
 
-/** The Timebomb plate's copy (DLR-90). PLACEHOLDER — the wording is the developer's, exactly as
- *  `CHEAT_RAIL_LABEL` and the rest of this file are. */
-export const TIMEBOMB_RAIL_LABEL = 'Timebomb'
-export const TIMEBOMB_EMPTY_LABEL = 'No Timebomb held'
-export const TIMEBOMB_POISED_HINT = 'Tap Timebomb again to arm it'
+/** DLR-90, narrowed on DLR-132 to its one surviving hint. A live Cheat is visible in the fan's
+ *  widened legal set and needs no hint of its own; an armed Timebomb reinterprets the very next
+ *  hand-card tap and must be said out loud, since nothing on the card itself signals that yet.
+ *  PLACEHOLDER — the wording is the developer's, exactly as this file's rest is. */
 export const TIMEBOMB_ARMED_HINT = 'Pick a card in your hand to prime'
 
 /** DLR-101 — the reveal's clause for a hit this trick just BOOKED, as distinct from one it paid.
  *  Names the side and the amount, which the Apply Damage refusal (the only prior trace of a
- *  booked hit anywhere in the UI) named neither of. The figure comes from `timebombDamageFor`,
- *  its single owner, so this copy cannot pick the wrong constant. PLACEHOLDER copy, as this
+ *  booked hit anywhere in the UI) named neither of.
+ *
+ *  DLR-132 — takes `amount` rather than looking it up: `timebombDamageFor` is gone, and the figure
+ *  is now the primed card's OWN tier's, which this module cannot see. PLACEHOLDER copy, as this
  *  file's rest is. */
-export function timebombBookedText(target: DuelSide): string {
-  const amount = timebombDamageFor(target)
+export function timebombBookedText(target: DuelSide, amount: Damage): string {
   return target === DuelSide.Player
     ? `Timebomb ticking — you take ${amount} at the next trick.`
     : `Timebomb ticking — they take ${amount} at the next trick.`
 }
 
-/** The plate's accessible name. The three stages MUST differ, and the count is in the name rather
- *  than only in the glyph — `getByRole('button', { name })` is how the spec tells them apart, and
- *  a player who cannot see the plate needs to know how many are held. */
-export function timebombAccessibleName(stage: TimebombStage | null, charges: number): string {
-  if (charges <= 0) return TIMEBOMB_EMPTY_LABEL
-  const held = `${TIMEBOMB_RAIL_LABEL}, ${charges} held`
-  if (stage === TimebombStage.Armed) return `${held}, armed`
-  if (stage === TimebombStage.Poised) return `${held}, selected`
-  return held
-}
-
 /** The Apply Damage plate's copy (DLR-94). PLACEHOLDER — the wording is the developer's, exactly
- *  as `TIMEBOMB_RAIL_LABEL` and the rest of this file are. */
+ *  as this file's rest is. */
 export const APPLY_DAMAGE_RAIL_LABEL = 'Apply'
 export const APPLY_DAMAGE_POISED_HINT = 'Tap Apply again to cash your streak'
 
@@ -272,7 +245,7 @@ export const APPLY_DAMAGE_REFUSAL_MESSAGE: Readonly<Record<ApplyDamageRefusal, s
 /** The plate's accessible name. The three readings — live, poised, refused — MUST differ:
  *  `getByRole('button', { name })` is how the spec tells them apart, and a player who cannot see
  *  the dimming learns the reason from here or not at all. The figure is in the name rather than
- *  only in the glyph, for the reason `timebombAccessibleName` carries its count. */
+ *  only in the glyph, so a player who cannot see the plate still knows the amount. */
 export function applyDamageAccessibleName(
   cashValue: number,
   poised: boolean,
@@ -286,7 +259,7 @@ export function applyDamageAccessibleName(
 }
 
 /** The discard rail's copy (DLR-100). PLACEHOLDER — the wording is the developer's, exactly as
- *  `CHEAT_RAIL_LABEL`/`TIMEBOMB_RAIL_LABEL`/`APPLY_DAMAGE_RAIL_LABEL` above are. */
+ *  `APPLY_DAMAGE_RAIL_LABEL` above and this file's rest are. */
 export const DISCARD_RAIL_LABEL = 'Discard'
 export const DISCARD_SELECT_HINT = `Pick up to ${MAX_CARDS_PER_DISCARD} cards to discard`
 export const DISCARD_READY_HINT = 'Tap Discard again to swap them'

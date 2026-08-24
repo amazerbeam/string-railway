@@ -7,6 +7,7 @@ import {
   DuelSide,
   mintFromTemplate,
   PayoutOutcome,
+  TIMEBOMB_DAMAGE,
   TIMEBOMB_QUARRY_DAMAGE,
   templateById,
   type Buff,
@@ -43,6 +44,7 @@ const resolvedTrick: ResolvedTrick = {
     firedBuffIds: [],
   },
   payout: null,
+  timebombDamage: null,
 }
 
 describe('TrickWell — a resolved trick', () => {
@@ -141,6 +143,33 @@ describe('TrickWell — a resolved trick', () => {
           Boolean(
             node.textContent?.includes(`they take ${TIMEBOMB_QUARRY_DAMAGE} at the next trick`),
           ),
+      ),
+    ).toBeDefined()
+  })
+
+  it('narrates a GOLD Timebomb at its own figure, not the bronze one (DLR-132 Task 10a)', () => {
+    // Before this task the reveal always read `TIMEBOMB_DAMAGE[BuffTier.Bronze]` regardless of
+    // the spent card's tier — this is the assertion that would have caught that bug.
+    const goldPrimed: ResolvedTrick = {
+      ...resolvedTrick,
+      resolution: { ...resolvedTrick.resolution, timebombTarget: DuelSide.Quarry },
+      timebombDamage: TIMEBOMB_DAMAGE[BuffTier.Gold],
+    }
+    render(
+      <TrickWell
+        currentTrick={[]}
+        resolvedTrick={goldPrimed}
+        quarryToLead={false}
+        onCarryOn={vi.fn()}
+      />,
+    )
+    const goldFigure = TIMEBOMB_DAMAGE[BuffTier.Gold][DuelSide.Quarry]
+    expect(goldFigure).not.toBe(TIMEBOMB_QUARRY_DAMAGE)
+    expect(
+      screen.getByText(
+        (_, node) =>
+          node?.tagName === 'P' &&
+          Boolean(node.textContent?.includes(`they take ${goldFigure} at the next trick`)),
       ),
     ).toBeDefined()
   })

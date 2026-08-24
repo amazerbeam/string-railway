@@ -14,7 +14,7 @@ import {
 import { PlayerSide, TrickOutcome, type TrickResolution } from '../../../warCouncil'
 import { buffHandInputFor, foldBuffOutcome, startBuffHand } from '../buffRoundState'
 import { createRoundUiState, type ResolvedTrick, type RoundUiState } from '../roundUiState'
-import { discardsRemainingFixture, makeRound, timebombChargesFixture } from './roundFixture'
+import { discardsRemainingFixture, makeRound } from './roundFixture'
 
 const buff = (id: string, tier: BuffTier, buffId: number): Buff =>
   mintFromTemplate(templateById(id)!, tier, buffId)
@@ -28,8 +28,6 @@ function uiFrom(over: { buffs?: readonly Buff[]; coins?: number } = {}): RoundUi
   return createRoundUiState({
     round: makeRound(),
     encounter: startEncounter(0),
-    cheats: [],
-    timebombCharges: timebombChargesFixture,
     blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: discardsRemainingFixture,
@@ -63,6 +61,7 @@ function withResolved(
     winner: PlayerSide.Player,
     resolution: { ...RESOLUTION, ...over, firedBuffIds },
     payout: null,
+    timebombDamage: null,
   }
   return { ...ui, resolvedTrick }
 }

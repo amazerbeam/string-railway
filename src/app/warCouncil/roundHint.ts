@@ -1,15 +1,12 @@
 import {
   APPLY_DAMAGE_POISED_HINT,
   cardAccessibleName,
-  CHEAT_ARMED_HINT,
-  CHEAT_POISED_HINT,
   DISCARD_READY_HINT,
   DISCARD_SELECT_HINT,
   TIMEBOMB_ARMED_HINT,
-  TIMEBOMB_POISED_HINT,
   ILLEGAL_MOVE_MESSAGE,
 } from './labels'
-import { CheatStage, TimebombStage, type RoundUiState } from './roundUiState'
+import { type RoundUiState } from './roundUiState'
 
 /** Priority mirrors the mockup's hint cascade: a rejection or an armed card
  * always says the most specific thing; otherwise the hint names whose turn
@@ -32,16 +29,14 @@ export function deriveHint(ui: RoundUiState, interactive: boolean, quarryToLead:
   }
   if (quarryToLead) return 'They are choosing their lead'
   // Above `ui.armed` deliberately: a poised plate is the more specific thing to say, and unlike
-  // the Cheat and Timebomb selections it can legitimately coexist with an armed card, because it
-  // does not reinterpret the next hand-card tap.
+  // an armed Timebomb it can legitimately coexist with an armed card, because it does not
+  // reinterpret the next hand-card tap.
   if (ui.applyPoised) return APPLY_DAMAGE_POISED_HINT
   if (ui.armed) return `Tap ${cardAccessibleName(ui.armed)} again to play it`
-  if (ui.timebombStage) {
-    return ui.timebombStage === TimebombStage.Armed ? TIMEBOMB_ARMED_HINT : TIMEBOMB_POISED_HINT
-  }
-  if (ui.cheatSelection) {
-    return ui.cheatSelection.stage === CheatStage.Armed ? CHEAT_ARMED_HINT : CHEAT_POISED_HINT
-  }
+  // DLR-132 — a live Cheat needs no hint of its own: it is visible in the fan's widened legal set.
+  // An armed Timebomb still reinterprets the next hand-card tap and must be said out loud —
+  // `TIMEBOMB_ARMED_HINT` is the one surviving Cheat/Timebomb hint (`labels.ts`).
+  if (ui.timebombArmedDamage !== null) return TIMEBOMB_ARMED_HINT
   if (interactive) return ui.round.currentTrick.length > 0 ? 'Follow their lead' : 'Your lead'
   return ''
 }

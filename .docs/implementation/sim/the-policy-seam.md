@@ -58,18 +58,27 @@ and because a swap changes the hand the buff decision is then made against.
 
 ### `runCheatPlay` — arm, play, and count only what was actually spent
 
-`runCheatPlay` (`playHand.ts`) dispatches `TapCheat` twice to poise then arm, then `TapCard` twice to
+> **DLR-132 replaced this mechanism, 2026-08-24.** `TapCheat`, `CancelCheat` and the `ui.cheats`
+> array are deleted — a Cheat is an ordinary buff row now. The paragraphs below are DLR-90/DLR-96's
+> original record; the corrected route follows them.
+
+`runCheatPlay` (`playHand.ts`) dispatched `TapCheat` twice to poise then arm, then `TapCard` twice to
 arm and commit the card the policy named. A `CheatPlay` names the Cheat **and** the card together,
 deliberately: arming a Cheat and then playing a card that was follow-suit-legal anyway spends the
 card for nothing, which would report the Cheat as *harmful* rather than as unexercised.
 
-It counts a Cheat as spent by comparing `ui.cheats.length` before and after. That proxy is sound
-rather than convenient: `commitHandlers.ts`'s `commit` reaches `removeCheat` only past its `!ok`
-early return, and a Fox or Woodcutter's second tap routes to a `prompt` instead of committing — so
-the length is unchanged in **both** the rejected case and the opened-a-prompt case, which are exactly
-the two cases that must not be counted. When the play does not commit, the Cheat is given back with
-`CancelCheat` and any armed card or open prompt is then cleared with `CancelSelection`, so the
-caller's ordinary two-tap commit is never left racing a half-armed state.
+It counted a Cheat as spent by comparing `ui.cheats.length` before and after. That proxy was sound
+rather than convenient: `commitHandlers.ts`'s `commit` reached `removeCheat` only past its `!ok`
+early return, and a Fox or Woodcutter's second tap routed to a `prompt` instead of committing — so
+the length was unchanged in **both** the rejected case and the opened-a-prompt case, which are
+exactly the two cases that must not be counted. When the play did not commit, the Cheat was given
+back with `CancelCheat` and any armed card or open prompt was then cleared with `CancelSelection`.
+
+**Since DLR-132**, the policy opens the loadout (`ToggleLoadout`), finds the row
+(`offeredBuffs(ui).find((b) => b.kind === BuffKind.Cheat)`), taps it twice (`TapBuff` × 2) to spend
+it, then plays the card through the ordinary `TapCard` × 2 commit. The *decision* the policy makes —
+arm only where lifting follow-suit widens the legal set — is unchanged; only the dispatch mechanism
+moved, because there is no longer a poise-then-cancel Cheat state to race against.
 
 ## `baselinePolicy` — the reference player
 

@@ -1,5 +1,5 @@
 import type { AbilityChoice, Card, RoundState } from '../warCouncil'
-import type { BuffId, CheatCardId, RunState, ShopItem, SlotMachineId } from '../hunt'
+import type { BuffId, RunState, ShopItem, SlotMachineId } from '../hunt'
 import type { RoundUiState } from '../app/warCouncil/roundUiState'
 
 /** A card and, for a Fox or a Woodcutter, the ability choice that must accompany it. Exactly
@@ -16,11 +16,13 @@ export type ShopAction =
   | { readonly kind: 'pull'; readonly machineId: SlotMachineId }
   | { readonly kind: 'flask' }
 
-/** A Cheat to arm and the off-suit card to play with it. Named TOGETHER, deliberately: arming a
- *  Cheat and then playing a card that was follow-suit-legal anyway spends the card for nothing,
- *  which would report the Cheat as harmful rather than as unexercised. */
+/** A Cheat buff to spend from the pile and the off-suit card to play with it. Named TOGETHER,
+ *  deliberately: arming a Cheat and then playing a card that was follow-suit-legal anyway spends
+ *  the card for nothing, which would report the Cheat as harmful rather than as unexercised.
+ *  DLR-132 — `cheatId` is now a `BuffId`: the Cheat is an ordinary pile member spent through
+ *  `TapBuff`, not a rail card with its own id space. */
 export interface CheatPlay {
-  readonly cheatId: CheatCardId
+  readonly cheatId: BuffId
   readonly card: Card
 }
 
@@ -46,9 +48,11 @@ export interface SimPolicy {
    *  its printed figures mean while changing none of them. */
   chooseDiscard?(ui: RoundUiState): readonly Card[]
 
-  /** OPTIONAL — a Cheat to arm and the card to play with it, or `null`. Advisory: the driver
-   *  re-checks `hasCheat`, re-checks that the Cheat actually armed, and gives it back unspent if
-   *  the card does not commit. Optional for `chooseDiscard`'s reason. */
+  /** OPTIONAL — a Cheat to spend and the card to play with it, or `null`. Advisory: the driver
+   *  re-checks the buff is still offered, re-checks the spend actually armed it, and — DLR-132 —
+   *  leaves `cheatTricksRemaining` untouched (there is no give-back any more) if the named card's
+   *  play does not commit, the same AC7 discipline `commit` itself follows. Optional for
+   *  `chooseDiscard`'s reason. */
   wantsCheatPlay?(ui: RoundUiState): CheatPlay | null
 }
 

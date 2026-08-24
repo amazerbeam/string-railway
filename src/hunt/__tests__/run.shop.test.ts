@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buyFromShop, shopStockFor, startRun } from '../run'
 import { CHEAT_PRICE, HEAL_HEALTH_RESTORED, HEAL_PRICE, PLAYER_START_HEALTH } from '../config'
+import { BuffKind } from '../buffs'
 import { ShopItem } from '../shop'
 import { DuelSide } from '../types'
 
@@ -9,17 +10,20 @@ import { DuelSide } from '../types'
 // (`CLAUDE.md`, `react-frontend`). A pure move: no expression or assertion below differs from what
 // `run.test.ts` held. Follows the existing `run.flask.test.ts` / `run.whetstone.test.ts` sibling
 // convention.
+//
+// DLR-132 — `run.cheats` / `run.nextCheatId` are gone. A bought Cheat is a bronze `Buff` minted
+// into `run.buffs`, exactly like every other buff, so the assertions below read the pile instead.
 
 describe('buyFromShop (DLR-84)', () => {
   it('mints a fresh id for a bought Cheat, so a spent card cannot be re-issued', () => {
-    const run = { ...startRun(), coins: 5, cheats: [] }
+    const run = { ...startRun(), coins: 5 }
     const bought = buyFromShop(run, ShopItem.Cheat)
-    expect(bought.nextCheatId).toBe(run.nextCheatId + 1)
-    expect(bought.cheats.map((c) => c.id)).toContain(run.nextCheatId)
+    expect(bought.nextBuffId).toBe(run.nextBuffId + 1)
+    expect(bought.buffs.map((b) => b.id)).toContain(run.nextBuffId)
   })
 
   it('deducts CHEAT_PRICE on a Cheat purchase', () => {
-    const run = { ...startRun(), coins: 5, cheats: [] }
+    const run = { ...startRun(), coins: 5 }
     const bought = buyFromShop(run, ShopItem.Cheat)
     expect(bought.coins).toBe(run.coins - CHEAT_PRICE)
   })
@@ -38,18 +42,17 @@ describe('buyFromShop (DLR-84)', () => {
   })
 
   it('allows buying twice in one visit when the coins allow (AC8)', () => {
-    const run = { ...startRun(1), coins: 5, cheats: [] }
+    const run = { ...startRun(1), coins: 5 }
     const once = buyFromShop(run, ShopItem.Heal, 10)
     const twice = buyFromShop(once, ShopItem.Cheat)
     expect(twice.coins).toBe(run.coins - HEAL_PRICE - CHEAT_PRICE)
-    expect(twice.cheats.length).toBe(run.cheats.length + 1)
+    expect(twice.buffs.length).toBe(run.buffs.length + 1)
   })
 
-  it('throws a RangeError naming SlotsFull and leaves the run unmodified', () => {
-    const run = { ...startRun(), coins: 5, cheats: [{ id: 100 }, { id: 101 }] }
-    const before = JSON.stringify(run)
-    expect(() => buyFromShop(run, ShopItem.Cheat)).toThrow(/slotsFull/)
-    expect(JSON.stringify(run)).toBe(before)
+  it('mints into the pile rather than being capped — the pile has no slot count (DLR-132)', () => {
+    const run = { ...startRun(), coins: CHEAT_PRICE * 3 }
+    const thrice = [0, 1, 2].reduce((r) => buyFromShop(r, ShopItem.Cheat), run)
+    expect(thrice.buffs.filter((b) => b.kind === BuffKind.Cheat).length).toBeGreaterThanOrEqual(3)
   })
 
   it('throws a RangeError naming AlreadyFullHealth and leaves the run unmodified', () => {
@@ -60,7 +63,7 @@ describe('buyFromShop (DLR-84)', () => {
   })
 
   it('throws a RangeError naming NotEnoughCoins and leaves the run unmodified', () => {
-    const run = { ...startRun(), coins: 0, cheats: [] }
+    const run = { ...startRun(), coins: 0 }
     const before = JSON.stringify(run)
     expect(() => buyFromShop(run, ShopItem.Cheat)).toThrow(/notEnoughCoins/)
     expect(JSON.stringify(run)).toBe(before)
@@ -68,12 +71,11 @@ describe('buyFromShop (DLR-84)', () => {
 })
 
 describe('shopStockFor (DLR-84)', () => {
-  it('projects the six figures the shop rules need', () => {
+  it('projects the five figures the shop rules need', () => {
     const run = { ...startRun(), coins: 3 }
     const stock = shopStockFor(run)
     expect(stock).toEqual({
       coins: 3,
-      cheatCount: run.cheats.length,
       playerHealth: run.encounter.health[DuelSide.Player],
       maxPlayerHealth: PLAYER_START_HEALTH,
       blastGuardHeld: run.blastGuardHeld,

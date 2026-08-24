@@ -8,9 +8,11 @@ import {
 } from '../../../warCouncil'
 import {
   APPLY_DAMAGE_DELAY_TRICKS,
+  BuffTier,
   DuelSide,
   PLAYER_START_HEALTH,
   TIMEBOMB_PLAYER_DAMAGE,
+  TIMEBOMB_DAMAGE,
   isEncounterResolved,
   queueTimebomb,
   startEncounter,
@@ -18,7 +20,7 @@ import {
 } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
 import { createRoundUiState, RoundUiActionKind, type RoundUiState } from '../roundUiState'
-import { card, discardsRemainingFixture, timebombChargesFixture, makeRound } from './roundFixture'
+import { card, discardsRemainingFixture, makeRound } from './roundFixture'
 
 // DLR-109 — the reducer-level integration tests for the delayed Apply Damage payout: how long it
 // survives (AC2), what wipes it (AC3), what it freezes for the quick-kill payout (AC4), how it
@@ -37,8 +39,6 @@ function uiFrom(
   return createRoundUiState({
     round,
     encounter,
-    cheats: [],
-    timebombCharges: timebombChargesFixture,
     blastGuardHeld: false,
     bankClimbBonus: 0,
     discardsRemaining: discardsRemainingFixture,
@@ -174,7 +174,7 @@ describe('Ordering — a payout due the same trick a Timebomb detonates against 
       },
       currentTrick: [],
     })
-    const owed = queueTimebomb(startEncounter(0), DuelSide.Player)
+    const owed = queueTimebomb(startEncounter(0), DuelSide.Player, TIMEBOMB_DAMAGE[BuffTier.Bronze])
     const encounter: EncounterState = {
       ...owed,
       // A payout one resolution from due, constructed directly rather than through a press —
@@ -323,7 +323,7 @@ describe('DLR-119 — the resolved trick reports what happened to the queued pay
       },
       currentTrick: [],
     })
-    const owed = queueTimebomb(startEncounter(0), DuelSide.Player)
+    const owed = queueTimebomb(startEncounter(0), DuelSide.Player, TIMEBOMB_DAMAGE[BuffTier.Bronze])
     const encounter: EncounterState = {
       ...owed,
       pendingApplyPayout: { cashOut: 9, unplayedAtPress: 1, resolutionsOwed: 1 },
