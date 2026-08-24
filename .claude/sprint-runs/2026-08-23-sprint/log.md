@@ -3341,7 +3341,8 @@ no layout engine, so nothing checked it fits.
 
 ## DLR-122 — Tiered rank abilities: refill the run-permanent shop shelf
 
-**Outcome: GREEN.** Four gates clean. `npm run typecheck` 0 · `npm run lint` 0 ·
+**Outcome: GREEN.** Commit `4177b2d` — "DLR-122: refill the run-permanent shelf with tiered rank
+abilities". Not pushed. Jira DLR-122 -> Ready for Test. Four gates clean. `npm run typecheck` 0 · `npm run lint` 0 ·
 `npm test` **1624 passed of 1624, 123 files, 0 failures** (baseline 1565 / 120) ·
 `npm run build` 0. `npx prettier --check` scoped to the contract's own files: clean.
 
