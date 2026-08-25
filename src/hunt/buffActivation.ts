@@ -179,8 +179,8 @@ export function refreshBuffsForNewHand(state: BuffActivationState): BuffActivati
 
 /**
  * DLR-114 — whether `apCostOf` can price this buff. TRUE for the 11 condition families and the 8
- * consumable/activated cards; FALSE for `BuffKind.Unassigned`, which `seedStartingBuffPile` mints
- * and `buffApCost` throws a `RangeError` on.
+ * consumable/activated cards; FALSE for `BuffKind.Unassigned`, which no production path mints as of
+ * DLR-135 and which this guard still correctly refuses — `buffApCost` throws a `RangeError` on it.
  *
  * The predicate is a MIRROR of `buffApCost`'s own two branches rather than a second rule, so a
  * kind added to one table is admitted here automatically and a kind added to neither is refused
@@ -192,8 +192,9 @@ export function isPricedBuff(buff: Buff): boolean {
 
 /**
  * The subset of an owned pile that may be offered to the player. THE guard between
- * `RunState.buffs` — which opens every run holding `STARTING_BUFF_COUNT` placeholders — and
- * `apCostOf`'s `RangeError`. Order is preserved: the pile's order is the player's mental order.
+ * `RunState.buffs` — which opens every run holding `STARTING_BUFF_COUNT` real bronze cards since
+ * DLR-135 — and `apCostOf`'s `RangeError`. Order is preserved: the pile's order is the player's
+ * mental order.
  */
 export function activatableBuffs(buffs: readonly Buff[]): readonly Buff[] {
   return buffs.filter(isPricedBuff)

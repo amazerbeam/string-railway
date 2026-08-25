@@ -216,8 +216,8 @@ export function fixtureHandWithPrimedTimebomb(seed = 1302): RoundUiState {
 }
 
 /** Two cheap, real, activatable buffs — real templates minted via `mintFromTemplate`, exactly as
- *  `baselinePolicy.test.ts` does, because a fresh run's `STARTING_BUFF_COUNT` pile is
- *  `BuffKind.Unassigned` placeholders that `activatableBuffs` filters out. Taker on the Magnitude
+ *  `baselinePolicy.test.ts` does, because a fresh run's pile is a random draw (DLR-135) and this
+ *  fixture needs two buffs of a KNOWN cost. Taker on the Magnitude
  *  axis at Bronze costs `1` AP each (`REWARD_BASE.magnitude.bronze + CONDITION_MODIFIER.taker` =
  *  `1 + 0`), so both together cost `2` of `STARTING_AP`'s `6` — comfortably inside the reserve
  *  `wantsApplyDamage`'s `APPLY_DAMAGE_AP_COST` of `3` would otherwise need. */
@@ -238,8 +238,9 @@ function twoCheapActivatableBuffs(): readonly Buff[] {
 /**
  * A hand at a between-tricks window after two buffs have been activated in one trick, so
  * `buffActivation.activatedThisTrick.length >= 2`. Seeds the run's pile with two real, cheap,
- * activatable buffs (see `twoCheapActivatableBuffs`) rather than relying on the fresh-run
- * placeholders, which `activatableBuffs` filters out entirely. No policy driving is needed here:
+ * activatable buffs of a KNOWN cost (see `twoCheapActivatableBuffs`) rather than relying on the
+ * fresh run's random draw (DLR-135), whose cost this fixture cannot control. No policy driving is
+ * needed here:
  * the window is opened and both buffs activated directly, which is both simpler and, unlike a
  * policy-driven search, exactly reproducible with no retry.
  */

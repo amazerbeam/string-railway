@@ -96,8 +96,9 @@ export const TIMEBOMB_DAMAGE: Readonly<Record<BuffTier, TimebombDamage>> = {
 }
 
 /** AC1 — mint a Cheat buff at `tier`. `id` is the caller's, minted from `RunState.nextBuffId` the
- *  same way `seedStartingBuffPile`'s are; this module never invents one and never calls
- *  `Math.random()`, because `src/hunt/` must stay deterministic. */
+ *  same way `startingPile.ts`'s `seedStartingBuffPile` (now living there, not here) mints its own;
+ *  this module never invents one and never calls `Math.random()`, because `src/hunt/` must stay
+ *  deterministic. */
 export function cheatBuff(tier: BuffTier, id: BuffId): Buff {
   return {
     id,

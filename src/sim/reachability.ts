@@ -13,8 +13,8 @@
 import { BUFF_TEMPLATES, BuffKind, SHOP_ITEMS, ShopItem, startRun } from '../hunt'
 
 /** Every `BuffKind` some production path can put in the BUFF PILE today. `Unassigned` is excluded:
- *  it is `seedStartingBuffPile`'s placeholder, filtered out of every offer by `activatableBuffs`,
- *  and it is not a card. */
+ *  nothing mints it as of DLR-135; it is the retained unpriced-kind sentinel, not a card, filtered
+ *  out of every offer by `activatableBuffs`. */
 export function mintableBuffKinds(): ReadonlySet<BuffKind> {
   const kinds = new Set<BuffKind>()
   for (const template of BUFF_TEMPLATES) {

@@ -181,8 +181,9 @@ consistent with this file's own pre-V5 passes (0/120, 0/150).
 
 **The re-framing matters more than the repetition.** DLR-120 added one figure to the report, and it
 changes what the deficit above is a measurement *of*: **between 67% and 71% of all hands were played
-holding no activatable buff at all.** A run opens with four `Unassigned` placeholders that
-`activatableBuffs` filters out of every offer; the only route to a real card is the free pull at the
+holding no activatable buff at all.** A run opened, at the time, with four `Unassigned` placeholders
+that `activatableBuffs` filtered out of every offer (no longer true — see the DLR-135 section at the
+foot of this file); the only route to a real card is the free pull at the
 shop; and the shop is reached only by **winning a fight**, which 55–60% of runs never do. So the
 2.17-against-2.64 exchange is not a reading of the tuned game falling ~20% short — it is a reading of
 the **pre-buff game**, which is the same game the two passes above measured before any of the V5 work
@@ -207,3 +208,41 @@ reachability, and both policies take their cards from `chooseCpuMove`, so neithe
 `TemplateGrant[]`. Passing grants measures the game with the buff system live from the first trick.
 DLR-120 deliberately did not add the flag — it is one step from running the balance pass, which is
 the developer's.
+
+## The starvation confound was removed, and the win rate did not move — DLR-135, 2026-08-25
+
+The 67–71% figure above described a game in which a run opened with four `BuffKind.Unassigned`
+placeholders that `activatableBuffs` filtered out of every offer. **DLR-132 took that figure to 0.0%
+by re-homing the guaranteed Cheat into the pile; DLR-135 made the other four cards real.** A run now
+opens holding five cards — four distinct real bronze draws from `BUFF_TEMPLATES` plus the guaranteed
+bronze Cheat — and every one of them is activatable. See
+[The opening pile](hunt/the-opening-pile.md).
+
+`npm run sim -- --runs 200 --seed 1`, taken immediately before (`f56a51f`) and after on the same
+machine:
+
+| Figure                             | Before   | After    |
+| ---------------------------------- | -------- | -------- |
+| Win rate                           | **0.0%** | **0.0%** |
+| Mean buff activations per hand     | **1.50** | **2.86** |
+| Mean AP spent per hand             | 4.35     | 4.41     |
+| Hands holding no activatable buff  | 0.0%     | 0.0%     |
+| Mean fight reached                 | 0.46     | 0.52     |
+| Mean coins earned                  | 0.84     | 1.07     |
+| Mean damage to the Quarry per hand | 2.29     | 2.44     |
+| Max damage to the player in a hand | 9        | 6        |
+
+Activations **nearly doubled**. AP spent barely moved, which says the **AP pool rather than the card
+supply is now the binding constraint**. Everything else drifted marginally in the player's favour.
+
+**What this changes is what the 0% is evidence of.** The section above argued the 0-win result was an
+*integration* problem before a balance one, and that the balance question could not be answered until
+a living player could reach the acquisition surfaces. **DLR-135 was the last known confound.** The
+player is demonstrably no longer starved of cards, and the win rate still has not moved — so a 0% win
+rate now points at **the numbers** rather than at the supply. That is a finding for the developer's
+balance pass, and **nothing was retuned in response to it**: no AP cost, damage figure, slot weight,
+threshold, `STARTING_BUFF_COUNT` or `RUN_STARTING_CHEATS` is in DLR-135's diff. Also recorded under
+`.docs/game_rules/the-hunt.md`'s Known tensions.
+
+The single measurement still missing is unchanged: `playRun` still passes an empty `TemplateGrant[]`,
+so the Vault's contribution is still unmeasured.

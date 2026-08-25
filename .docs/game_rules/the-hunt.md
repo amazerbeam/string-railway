@@ -4,7 +4,7 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-08-24**. Everything below is reachable in
+Last reviewed against the code and the design on **2026-08-25**. Everything below is reachable in
 the app today except where a rule is marked **[not built]** — and except the cards and guards listed
 here, every one of which is **decided, enforced and tested, yet cannot be obtained by playing**:
 
@@ -17,6 +17,13 @@ here, every one of which is **decided, enforced and tested, yet cannot be obtain
 **A Cheat and a Timebomb stopped being on that list on 2026-08-24 — DLR-132.** Both are now ordinary
 cards the reel can draw into your pile, exactly like any other buff, and every run still starts
 holding one bronze Cheat.
+
+**Since 2026-08-25 a run also opens holding four more real cards — DLR-135.** Until that date the
+four cards a run started with were blanks: they were filtered out of your loadout, so you began every
+run with **one** card you could actually use. They are now four real cards, drawn from the same pool
+the machine stocks from, so you begin a run with **five** and can use all five. Section 10 states the
+rule. Nothing about the five items above changed — they are still unreachable, because no card in
+that pool is one of them.
 
 That list is not an estimate. It is measured on every run by an executable audit added on
 2026-08-24, so a card leaving or joining it turns a test red rather than quietly changing what this
@@ -903,15 +910,21 @@ that the opponent cannot — the first such asymmetry in the game.
 
 #### How many you get — **[provisional]**
 
-A run **starts with exactly one, at bronze**, seeded straight into your pile rather than bought
+A run is **guaranteed exactly one, at bronze**, seeded straight into your pile rather than bought
 (`RUN_STARTING_CHEATS`) — the value is unchanged from before this card became reel-drawn, only its
 form moved. **Whose decision:** the developer's — whether a run should open holding one at all,
-now that every further Cheat comes from the reel, is the standing open question `RUN_STARTING_CHEATS`
-answers with a single integer.
+now that every further Cheat comes from elsewhere, is the standing open question
+`RUN_STARTING_CHEATS` answers with a single integer, and it is **still open**.
+
+> **You may open a run holding more than one — since 2026-08-25.** A Cheat is in the pool the run's
+> four opening cards are drawn from (section 10), so a run can deal you a second, or a third, on top
+> of the guaranteed one. The guarantee is a floor, not a count. The guaranteed Cheat also stopped
+> being the only card you open with that you can use — it is now one of five.
 
 > **The shop no longer sells a Cheat at all.** It did, for a coin, until 2026-08-24 pared the shelf
 > (section 10) — that purchase is not merely unreachable, its whole mechanism (a capped two-slot rail)
-> is gone. Every Cheat beyond your starting one now comes from a pull of the machine.
+> is gone. Every Cheat beyond your starting one comes from a pull of the machine, or from the run's
+> own opening draw.
 
 ### Timebomb — priming a card before you play it
 
@@ -974,9 +987,12 @@ nothing yet owes anything, so there is nothing to show.
 > Woodcutter can bury it on the bottom of the draw pile, and the Fox can exchange it into the decree and
 > you may never take it back. Nothing warns you and nothing refunds you.
 
-**A run starts holding zero Timebombs**, unchanged. The shop no longer sells a charge at all — that
-purchase and its uncapped-charges rule are both gone with the plate they belonged to; every Timebomb
-you ever hold now comes from a pull of the machine.
+**A run is guaranteed no Timebombs** — none is seeded on purpose. The shop no longer sells a charge
+at all: that purchase and its uncapped-charges rule are both gone with the plate they belonged to.
+
+> **A run may nonetheless open holding one — since 2026-08-25.** A Timebomb is in the pool the run's
+> four opening cards are drawn from (section 10), so chance can deal you one before your first trick.
+> Every other Timebomb comes from a pull of the machine.
 
 ### The Discard, on the bar as **Swap** — swapping cards from hand between tricks
 
@@ -1869,6 +1885,35 @@ in the order you will meet them.
 **Nothing on the path is clickable.** It is something you read, not something you choose from — there are
 no branches, no route to pick, and no node that does anything other than tell you who is there.
 
+### What you start a run holding — **[settled]** since 2026-08-25; the shape is **[provisional]**
+
+You begin every run with **five buff cards in your pile, and every one of them can be used**:
+
+- **Four cards drawn at random from the pool the shop's machine stocks from**, all at **bronze**. They
+  are four **different** cards — never two copies of the same one — and which four you get is decided
+  by the run itself, so the same run played again deals the same five.
+- **One Cheat, at bronze**, on top of those four. It is the same guaranteed Cheat a run has always
+  started with (section 4).
+
+A **Cheat and a Timebomb are in the pool the four are drawn from**, so a run can open holding **more
+than one Cheat**, or a Timebomb it did not buy. Nothing else changes about either card.
+
+**Cards bought in the Vault are added on top of these five**, at the tier you bought them (section
+10). Beyond that you hold nothing else at the start of a run: no items, no blue hearts, no coins, no
+Blast Guard and no Whetstone — the five items of section 4 are not in the pool, so no draw can produce
+one. Your flask is the exception: you begin with **one** charge in it (below).
+
+> **Until 2026-08-25 four of those five cards were blanks.** They sat in your pile, were filtered out
+> of your loadout, and could not be read, priced or spent — so a run really began with **one** usable
+> card, the Cheat. The count of five is unchanged; what changed is that four of them became real
+> (`hybrid-design.md` §5, §8).
+
+**What is provisional is the shape, not the procedure.** Whether **four plus a guaranteed Cheat** is
+the right opening hand — and whether the odds that pick the four are right — is the developer's, and
+nobody has played it. The weights the four are drawn through were written by an agent for the shop's
+machine and have never been played against either; see
+[Known tensions](#known-tensions-recorded-not-resolved).
+
 ### The same path is reachable between fights — **[settled]**
 
 Beating an opponent offers a **`Map`** control, beside the one that goes on to the next fight and the one
@@ -2332,16 +2377,23 @@ too, alongside who is coming next.
   reads the budget. **The player holds no skulls of their own**, and Forage could not add any.
 - ~~**Any way to gain a real buff during a run**~~ — **built on 2026-08-24.** The shop's machine is
   it: one free pull a visit, 1 coin after, roughly 2.64 cards a pull, straight into your pile
-  (section 10). A fresh run still opens holding only placeholders, which the loadout filters out, so
-  the list is empty until your first shop. What remains unbuilt is the half below — the card you win
-  still pays nothing when you fire it.
+  (section 10). **It is no longer the only way — 2026-08-25.** A fresh run opens holding four real
+  cards of its own, so your loadout is full from the first trick rather than empty until your first
+  shop. What remains unbuilt is the half below — the card you win still pays nothing when you fire it.
 - **Any way to gain a one-shot item** — **[not built]** (new 2026-08-24, DLR-126), and it is the
   same shape as the blue-heart gap immediately below. Using an item is fully built: it costs points,
   it takes the card out of your loadout permanently, and for a Ward or a Second Thoughts it does
   what it says (section 4). **Nothing mints one.** No shop sells one, no fight drops one, and the
-  starting pile is placeholders. So the whole of it — the Ward's absorption, the extra Swaps, the
-  `Not usable yet.` lines on the other three — is unreachable and has never been seen by anyone.
-  What would change that is the same thing that would fill the buff pile: the card draw itself.
+  run's opening draw cannot produce one either. So the whole of it — the Ward's absorption, the extra
+  Swaps, the `Not usable yet.` lines on the other three — is unreachable and has never been seen by
+  anyone.
+
+  > **The buff pile filled on 2026-08-25 and this gap did not close.** This entry used to end "what
+  > would change that is the same thing that would fill the buff pile: the card draw itself" — the
+  > machine did that on 2026-08-24 and the run's opening draw did it again on 2026-08-25. **These five
+  > are unreachable for a different reason now**: not one of them is in the pool either draw pulls
+  > from. What would change it is putting them in that pool, not filling the pile.
+
   **Three of the five would still be unusable afterwards** — Puppeteer, Foresight and Spyglass each
   need a screen that does not exist, and are refused rather than allowed to be burned for nothing.
 - **Any way to gain a blue heart** — **[not built]**, and it is a sharper gap than it looks. The rule
@@ -2531,7 +2583,20 @@ the mechanics themselves are documented in `../implementation/`.
 > the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
 > a `RunState` field and a transition in the same breath means exactly that.
 
-> **Where DLR-125 stands, 2026-08-24 — the newest entry here.** **Live in the engine and reachable
+> **Where DLR-135 stands, 2026-08-25 — the newest entry here.** **Live in the engine, and on screen
+> through surfaces that already existed:** a run's opening pile is four distinct real bronze cards
+> drawn from the same pool the shop's machine stocks from, plus the guaranteed bronze Cheat, and all
+> five are readable, priceable and spendable from the loadout the moment a run starts. Nothing new was
+> drawn or laid out for it — the loadout bar and the card rows are DLR-114's and DLR-132's, and they
+> render a real opening card by the same path they already rendered a bought one. **No tuning value
+> moved:** the odds the four are drawn on are the shop machine's own weights, summed across both
+> machines so the draw favours neither, and `STARTING_BUFF_COUNT` (4) and `RUN_STARTING_CHEATS` (1)
+> are untouched. **Nobody has played it or looked at it** — the contract ran out-of-band with its
+> approval and mockup gates skipped and no browser pass, so whether an opening hand of four random
+> bronze cards reads as a hand with a plan in it is unjudged, and the weights deciding it were written
+> by an agent and have never been played. See [Known tensions](#known-tensions-recorded-not-resolved).
+
+> **Where DLR-125 stands, 2026-08-24.** **Live in the engine and reachable
 > by a player:** an activated buff's condition is checked when the trick resolves, and its reward is
 > paid — into the cash-out's multiplier and its flat damage, into the action-point pool for the next
 > window, and into the run's purse. Eleven of the card list's twelve conditions are evaluated; the
@@ -2773,7 +2838,8 @@ the mechanics themselves are documented in `../implementation/`.
 | A refused play does not spend the Cheat                                          | settled                                                                                    | `src/app/warCouncil/commitHandlers.ts` — `commit`'s rejection branch returns before the decrement                                                                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
 | A Cheat's tier sets how many tricks it lifts follow-suit for (1/2/3)             | settled — since DLR-132                                                                    | `src/hunt/buffCatalog.ts` — `CHEAT_DURATION_TRICKS`; read into `RoundUiState.cheatTricksRemaining` at the spend                                                                                                                                                                                                                                                                          | Developer — the gold row (3 tricks, 7 AP) is reachable and uncosted, see Known tensions                                                                                                                                                                                                                          |
 | Cheats carried fight to fight                                                    | settled                                                                                    | `src/hunt/run.ts` — `RunState.buffs` (a Cheat is a pile member); `advanceRun`'s spread carries it, `recordEncounter` adopts the hand's survivors                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
-| Cheats a run starts with (1, bronze)                                             | **provisional** — value unchanged, form re-homed 2026-08-24                                | `src/hunt/config.ts` — `RUN_STARTING_CHEATS`, **1**; seeded straight into `RunState.buffs` by `startRun`, no cap on the pile                                                                                                                                                                                                                                                             | **Developer** — whether a run should open holding one at all, now that the reel supplies the rest                                                                                                                                                                                                                |
+| What a run opens holding (4 random bronze cards + 1 bronze Cheat)                | settled — the procedure, since DLR-135, 2026-08-25; **provisional** — whether four-plus-one is the right shape | `src/hunt/startingPile.ts` — `startingBuffPileFor` / `seedStartingBuffPile` / `startingPileSeedFor` / `openingPileWeightOf`, called once by `startRun` in `src/hunt/run.ts`. `src/hunt/config.ts` — `STARTING_BUFF_COUNT`, **4**. Drawn without replacement from `src/hunt/buffTemplates.ts` — `BUFF_TEMPLATES` (73), weighted by the **sum** of `src/hunt/slotWeights.ts` — `templateWeightFor` across both `src/hunt/slotConfig.ts` — `SLOT_MACHINE_IDS`, so no new tuning value exists. Seeded from `RunState.runSeed`, so a seed reproduces its opening hand | **Developer** — whether four plus a guaranteed Cheat is the right opening hand, and whether the reel weights it draws through are right; neither has been played |
+| Cheats a run is guaranteed (1, bronze)                                           | **provisional** — value unchanged, form re-homed 2026-08-24; a floor rather than a count since 2026-08-25 | `src/hunt/config.ts` — `RUN_STARTING_CHEATS`, **1**; seeded straight into `RunState.buffs` by `startRun` as the pile's final members, no cap on the pile. `src/hunt/startingPile.ts` may draw further Cheats into the same pile, so the held count is `>= 1`                                                                                                                              | **Developer** — whether a run should open holding one at all, now that the reel and the opening draw both supply them. **Still open; DLR-135 did not settle it**                                                                                                                                                 |
 | A Cheat and a Timebomb are reached through the loadout, not their own rails      | settled — since DLR-114, migrated onto ordinary rows DLR-132                               | `src/app/warCouncil/BuffLoadoutPanel.tsx` — both are rows in the roving-tabindex `buffs` list, no longer separate widgets; `src/app/warCouncil/buffHandlers.ts` — `loadoutDoorOpen` gates reaching the panel at all                                                                                                                                                                     | **Developer** — whether the widened row list still reads at a glance. Unplayed, mockup gate skipped                                                                                                                                                                                                              |
 | The Quarry holds no Cheats                                                       | settled                                                                                    | nothing to enforce — the bypass is an argument the Quarry's call sites never pass; a grep guards the absence                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                                 |
 | Buying a Cheat or a Timebomb at the shop                                         | **not built** — the mechanism was retired, not merely unreachable                          | `src/hunt/shop.ts` — neither `ShopItem` is in `SHOP_ITEMS` (DLR-116); the two-slot cap `CHEAT_SLOT_COUNT` and `src/hunt/cheats.ts` no longer exist at all (DLR-132)                                                                                                                                                                                                                     | Developer — the reel is the only route to either now                                                                                                                                                                                                                                                             |
@@ -2923,7 +2989,7 @@ the mechanics themselves are documented in `../implementation/`.
 | A trick's activations clear when that trick resolves; the pool does not          | settled — since DLR-108, fired since DLR-114                                               | `src/hunt/buffActivation.ts` — `openBuffWindow`, called by `src/app/warCouncil/roundReducer.ts` — `openWindowOnTrickResolved` on the transition that resolves a trick                                                                                                                                                                                                                   | —                                                                                                                                                                                                                                                                                                                 |
 | The loadout panel opens more widely than a buff row can be used                  | settled — since DLR-114                                                                    | `src/app/warCouncil/buffHandlers.ts` — `loadoutDoorOpen`, deliberately `discardWindowOpen \|\| canAct`, because the Cheat slots and the Timebomb plate moved inside the panel and both must stay reachable mid-trick                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                                 |
 | The panel opens even when you can afford nothing                                 | settled — since DLR-114                                                                    | `src/app/warCouncil/buffHandlers.ts` — `loadoutBarRefusalFor` returns only `WindowClosed`; affordability is a per-row refusal inside                                                                                                                                                                                                                                                    | **Developer** — taken as a default under an unattended run                                                                                                                                                                                                                                                        |
-| Placeholder buffs are filtered out rather than shown                             | settled — since DLR-114                                                                    | `src/hunt/buffActivation.ts` — `isPricedBuff` / `activatableBuffs`, read once through `src/app/warCouncil/roundUiState.ts` — `offeredBuffs`. `src/hunt/config.ts` — `STARTING_BUFF_COUNT` (4) placeholders are what a fresh run holds, so a fresh run's list is empty                                                                                                                   | Developer — making the seeded pile real content is a content decision                                                                                                                                                                                                                                             |
+| Unusable buffs are filtered out rather than shown                                | settled — since DLR-114, unchanged by DLR-135                                              | `src/hunt/buffActivation.ts` — `isPricedBuff` / `activatableBuffs`, read once through `src/app/warCouncil/roundUiState.ts` — `offeredBuffs`. **Byte-identical since DLR-114.** It no longer filters anything at run start: every one of a fresh run's `STARTING_BUFF_COUNT` + `RUN_STARTING_CHEATS` cards is priced, so the opening list is full. The guard stands because any unpriced kind reaching a render is still the bug it catches | Nobody — the content decision it waited on was taken by DLR-135, 2026-08-25                                                                                                                                                                                                                                       |
 | How often each condition may pay — every trick, once a hand, or only at the sixth | settled — since DLR-125 | `src/hunt/buffs.ts` — `BUFF_CADENCE`, a total map over every buff kind; applied by `src/hunt/buffEvaluation.ts` — `firedBuffs` / `firesOncePerHand`, with the once-a-hand families filtered against a fired list held on `src/app/warCouncil/buffRoundState.ts` — `BuffHandState.firedThisHand` | — |
 | Contributions add; two or more on one trick pay a further multiplier bonus | settled — since DLR-108, **paid on real play since DLR-125** | `src/hunt/buffAccrual.ts` — `accrueAxisBonus` (one axis per contribution) and `overlapBonusFor` (`max(0, k − 1)`), drawn from the same multiplier allowance | **Developer** — the overlap bonus has never been played against a real hand |
 | The order the four rewards land in around a cash-out | settled — since DLR-125 | `src/warCouncil/bank.ts` — `resolveTrickBank` holds the multiplier bonus (inside the product) and the flat damage (added after the reduced rate); `src/app/warCouncil/buffRoundState.ts` — `foldBuffOutcome` holds the refund into the next window's pool and the coins, after the trick has resolved | — |
@@ -3391,6 +3457,25 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
 
 ### Known tensions, recorded not resolved
 
+- **The player is no longer starved of cards, and the game is still unwinnable** (new 2026-08-25,
+  DLR-135). This is the sharpest finding in the file. A run now opens holding five usable cards
+  instead of one, and across 200 simulated runs on the same seed the number of buffs a player fires
+  per hand **nearly doubled — 1.50 to 2.86** — while the win rate stayed at **0.0%**, exactly where it
+  has been through every measurement anyone has taken. The points spent per hand barely moved (4.35 to
+  4.41), which says the **action-point pool, not the card supply, is now what limits you**. The
+  starvation reading recorded below was the standing explanation for the 0-win result, and **it has
+  now been removed as a cause**: the last confound is gone, and a 0% win rate points at the numbers
+  themselves. **Whose decision:** the developer's, and it is a balance pass rather than a structural
+  one for the first time. **Nothing was retuned in response** — no cost, damage figure, weight,
+  threshold, or opening count is different.
+- **Nobody has seen an opening hand, and the odds that deal it were never chosen for it** (new
+  2026-08-25, DLR-135). The four cards a run opens with are drawn on the shop machine's own weights,
+  summed across both machines so neither's lean applies. That is a deliberate refusal to invent a
+  second set of numbers — but it means the opening hand's odds are a by-product of a table written for
+  a different purpose, by an agent, and never played. Four random bronze cards can be four that never
+  fire in fight one or four that all pay, and the aggregate a simulator reports does not answer
+  whether an opening hand **reads as a hand with a plan in it**. **Whose decision:** the developer's
+  eyes, and it also covers whether four-plus-a-guaranteed-Cheat is the right opening shape at all.
 - **A gold Cheat is reachable for the first time, and its cost is unresolved** (new 2026-08-24,
   DLR-132). Three tricks of no-follow-suit is `buffCatalog.ts`'s own long-standing flag as "NOT SAFE
   TO SHIP ACTIVE" — close to a guaranteed run of wins rather than one clutch save. It now prices at 7
@@ -3415,17 +3500,20 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
   widgets drew costs the felt anything at a glance.
 - **Most hands are played with no buff to activate at all, and that is now measured** (new
   2026-08-24, DLR-120). Across 1,600 simulated runs at four seeds and two different players,
-  **between 67% and 71% of all hands were played holding nothing activatable**. A run opens with
-  four placeholder cards that are filtered out of every offer, and the only way to a real card is
-  the free pull at the shop — which you reach by **winning a fight**. Around 55–60% of runs end
-  inside the first one. So the build phase this game is built around sits behind the fight that
+  **between 67% and 71% of all hands were played holding nothing activatable**. A run opened, at the
+  time, with four placeholder cards that were filtered out of every offer, and the only way to a real
+  card was the free pull at the shop — which you reach by **winning a fight**. Around 55–60% of runs
+  end inside the first one. **Both halves of that were fixed and the win rate did not move** — DLR-132
+  took the figure to 0.0% on 2026-08-24 and DLR-135 filled the opening pile on 2026-08-25; see the
+  first entry in this list. So the build phase this game is built around sits behind the fight that
   kills you, and the numbers everyone has been reading — 2.17 damage dealt against 2.64 taken, no
   wins in 200 runs — are measurements of the game **without** its buffs, which is the same game the
   pre-2026-08-23 passes measured. Pulling every lever a run actually grants (the Swap budget and the
   starting Cheat, on every run) moved the exchange by about **0.02 damage a hand** — so the levers
   you have are not the missing piece. **Whose decision:** the developer's, and it is a structural
   one before it is a tuning one — whether a run should start with real cards, or reach a shop before
-  its first fight, or both. Nothing was retuned.
+  its first fight, or both. Nothing was retuned. **The first of those was chosen on 2026-08-25**: a run
+  starts with real cards. It did not help.
 - **A rule being settled and a rule being reachable came apart far enough to need saying** (new
   2026-08-24, DLR-120). Eight of the game's twenty card kinds, plus three shop purchases and the
   blue hearts, are decided, enforced, tested — and obtainable by no path. They are listed at the top

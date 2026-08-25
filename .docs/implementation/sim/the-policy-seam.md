@@ -118,6 +118,13 @@ any difference in the printed figures is attributable to the levers alone and ne
 Every threshold in that description is an existing configuration constant read by name. The policy
 introduces no number of its own.
 
+> **The Cheat lever stopped being singular on 2026-08-25 — DLR-135.** A run's opening pile is now a
+> real weighted draw from `BUFF_TEMPLATES`, and **Cheat is an eligible draw**, so a run can open
+> holding more than the one `RUN_STARTING_CHEATS` guarantees. The policy is unchanged and needs no
+> edit — it arms whatever Cheats the pile holds — but "exactly 1.00 Cheats" below is a figure from
+> before that draw existed, not an invariant. The value of `RUN_STARTING_CHEATS` itself is untouched
+> at **1**.
+
 **The measured answer, at 200 runs across four seeds: no.** Both levers fire on every run — about 4
 discards and exactly 1.00 Cheats — and the per-hand exchange moves by roughly 0.02 damage. That is a
 useful negative result: it says the missing piece is the system the player cannot reach, not the

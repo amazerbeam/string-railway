@@ -189,10 +189,17 @@ dead content.
 
 ## Nothing player-reachable mints a consumable yet
 
-`mintGrants` generates none of the five (`buffTemplates.ts` has no Ward row at all) and
-`seedStartingBuffPile` mints only `Unassigned`. So no path a player can reach produces a consumable,
-and not one line of this page is exercised by playing the game today. DLR-112's reel is what will
-mint them.
+`mintGrants` generates none of the five, and neither does the opening pile: **`buffTemplates.ts` has
+no Ward row at all**, so the five consumables are absent from the 73-template `BUFF_TEMPLATES` pool
+(71 condition templates plus the two activated ones, Cheat and Timebomb) that both the reel and — since
+DLR-135, 2026-08-25 — the run's opening draw pull from. So no path a player can reach produces a
+consumable, and not one line of this page is exercised by playing the game today.
+
+> **The conclusion is unchanged; the reason has moved, 2026-08-25.** This paragraph used to end
+> "`seedStartingBuffPile` mints only `Unassigned`", and that is no longer true — a fresh run opens
+> holding four real bronze cards. The five consumables stay unreachable for a **different** reason:
+> they have no template in the pool the draw reads. Filling that pool is what would change it, not
+> filling the pile.
 
 That is also the answer to **DLR-112's AC6**, which this ticket was asked to resolve: **yes,
 consumables draw through the same reel/tier mechanism as persistent buffs, and DLR-112 needs no

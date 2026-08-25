@@ -15,8 +15,11 @@ import {
   BuffKind,
   BuffRewardAxis,
   BuffTier,
-  seedStartingBuffPile,
+  UNASSIGNED_BUFF_CONDITION,
+  UNASSIGNED_BUFF_REWARD,
 } from '../buffs'
+import { isPricedBuff } from '../buffActivation'
+import { startRun } from '../run'
 import { TIMEBOMB_PLAYER_DAMAGE, TIMEBOMB_QUARRY_DAMAGE } from '../config'
 
 describe('CHEAT_DURATION_TRICKS (AC1)', () => {
@@ -116,8 +119,14 @@ describe('the readers refuse a buff of the wrong kind rather than answering', ()
     expect(() => cheatDurationTricksOf(timebombBuff(BuffTier.Bronze, 1))).toThrow(RangeError)
   })
 
-  it('cheatDurationTricksOf throws on a placeholder seed', () => {
-    const [placeholder] = seedStartingBuffPile(1, 1)
+  it('cheatDurationTricksOf throws on the unassigned sentinel (DLR-135: nothing mints it now)', () => {
+    const placeholder = {
+      id: 1,
+      kind: BuffKind.Unassigned,
+      tier: BuffTier.Bronze,
+      condition: UNASSIGNED_BUFF_CONDITION,
+      reward: UNASSIGNED_BUFF_REWARD,
+    }
     expect(() => cheatDurationTricksOf(placeholder)).toThrow(RangeError)
   })
 
@@ -166,13 +175,12 @@ describe('shieldHeartsOf (DLR-110)', () => {
 })
 
 describe('nothing in this ticket puts a gold Cheat on a player-reachable path', () => {
-  // The ticket's own Dependencies & Risks: gold Cheat needs a costing pass before it ships. Nothing
-  // activates a buff yet, and the run's opening pile is still all-bronze placeholder content.
-  it('the run-seeding path still mints only bronze, unassigned buffs', () => {
-    expect(
-      seedStartingBuffPile(4, 1).every(
-        (b) => b.tier === BuffTier.Bronze && b.kind === BuffKind.Unassigned,
-      ),
-    ).toBe(true)
+  // The ticket's own Dependencies & Risks: gold Cheat needs a costing pass before it ships. The
+  // run's opening pile is real bronze content now (DLR-135), not placeholder content.
+  it('the run-seeding path mints only BRONZE — no gold Cheat reaches a player (DLR-135)', () => {
+    const pile = startRun().buffs
+    expect(pile.every((b) => b.tier === BuffTier.Bronze)).toBe(true)
+    expect(pile.every((b) => b.kind !== BuffKind.Unassigned)).toBe(true)
+    expect(pile.every((b) => isPricedBuff(b))).toBe(true)
   })
 })

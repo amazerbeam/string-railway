@@ -89,8 +89,8 @@ its tier is already paid in health rather than AP, and **gold Cheat is 7 — del
 
 `buffApCost(kind, axis, tier)` dispatches between the two regimes; `apCostOf(buff)` is the single
 entry point a consumer should call. Both **throw `RangeError`** on a kind with no price — which is
-what `BuffKind.Unassigned` is, since the four buffs `seedStartingBuffPile` mints are documented
-placeholder content. Returning a plausible small integer there is the bug that type-checks.
+what `BuffKind.Unassigned` is: the retained unpriced-kind sentinel that nothing has minted since
+DLR-135. Returning a plausible small integer there is the bug that type-checks.
 `narrowToCostAxis` throws for the same class of reason on a condition family minted on an axis
 `REWARD_BASE` does not price (`heartCount`, say) rather than defaulting to zero, which would price
 it at the clamp floor and look entirely reasonable.
@@ -190,10 +190,10 @@ trick" function that also reset the pool is precisely the bug the test suite exi
 
 ## `isPricedBuff` / `activatableBuffs` — the guard that keeps `RangeError` off a render — DLR-114
 
-`apCostOf` **throws** on `BuffKind.Unassigned`, and `startRun` seeds `STARTING_BUFF_COUNT` of exactly
-that. So the moment a screen was going to price an owned pile, something had to stand between the two.
-DLR-114 put it here, beside the function that throws, rather than in the component that would
-otherwise have had to remember it:
+`apCostOf` **throws** on `BuffKind.Unassigned`, and when DLR-114 was written `startRun` seeded
+`STARTING_BUFF_COUNT` of exactly that. So the moment a screen was going to price an owned pile,
+something had to stand between the two. DLR-114 put it here, beside the function that throws, rather
+than in the component that would otherwise have had to remember it:
 
 ```ts
 export function isPricedBuff(buff: Buff): boolean {
@@ -212,9 +212,17 @@ automatically, and a kind added to neither is refused here rather than throwing 
 re-exported from `src/hunt/index.ts`; the felt reads them once, through `roundUiState.ts`'s
 `offeredBuffs`.
 
-The consequence worth stating plainly: **on a fresh run with an empty Vault, `activatableBuffs`
-returns nothing**, so the loadout panel offers no buffs at all and shows only the relocated Cheat and
-Timebomb controls. That is the placeholder pile being correctly filtered, not a failure.
+The consequence worth stating plainly, as it stood until 2026-08-25: **on a fresh run with an empty
+Vault, `activatableBuffs` returned nothing**, so the loadout panel offered no buffs at all. That was
+the placeholder pile being correctly filtered, not a failure.
+
+> **DLR-135 removed the cause and left the guard alone, 2026-08-25.** `startRun` no longer seeds any
+> `BuffKind.Unassigned` at all — a fresh run's pile is four distinct real bronze cards plus the
+> guaranteed bronze Cheat, and **all five are priced**, so `activatableBuffs` discards nothing at run
+> start and the loadout panel opens holding five rows. `isPricedBuff` and `activatableBuffs` are
+> **byte-identical** across that change, deliberately: any unpriced kind reaching a render is still
+> the class of bug this guard catches, and `BuffKind.Unassigned` is retained as the sentinel five
+> guard suites fire against by name. See [The opening pile](the-opening-pile.md).
 
 ## Where the state lives now
 

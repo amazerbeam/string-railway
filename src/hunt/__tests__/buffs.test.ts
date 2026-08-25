@@ -3,61 +3,16 @@ import { Suit } from '../../warCouncil/types'
 import {
   BuffKind,
   BuffRewardAxis,
-  BuffTier,
   BuffCadence,
   BuffTargetSuit,
   BUFF_CADENCE,
   BUFF_TARGET_RANK_MIN,
   BUFF_TARGET_RANK_MAX,
   UNASSIGNED_BUFF_CONDITION,
-  UNASSIGNED_BUFF_REWARD,
   ACTIVATED_BUFF_CONDITION,
   isValidBuffTarget,
-  seedStartingBuffPile,
   type BuffCondition,
 } from '../buffs'
-
-describe('seedStartingBuffPile', () => {
-  it('mints `count` buffs with consecutive ids from `firstId`, all bronze (AC1/AC3)', () => {
-    const pile = seedStartingBuffPile(2, 1)
-    expect(pile).toEqual([
-      {
-        id: 1,
-        kind: BuffKind.Unassigned,
-        tier: BuffTier.Bronze,
-        condition: UNASSIGNED_BUFF_CONDITION,
-        reward: UNASSIGNED_BUFF_REWARD,
-      },
-      {
-        id: 2,
-        kind: BuffKind.Unassigned,
-        tier: BuffTier.Bronze,
-        condition: UNASSIGNED_BUFF_CONDITION,
-        reward: UNASSIGNED_BUFF_REWARD,
-      },
-    ])
-  })
-
-  it('seeds nothing for 0 rather than throwing', () => {
-    expect(seedStartingBuffPile(0, 1)).toEqual([])
-  })
-
-  it('starts ids at `firstId`, not always 1', () => {
-    expect(seedStartingBuffPile(1, 7)).toEqual([
-      {
-        id: 7,
-        kind: BuffKind.Unassigned,
-        tier: BuffTier.Bronze,
-        condition: UNASSIGNED_BUFF_CONDITION,
-        reward: UNASSIGNED_BUFF_REWARD,
-      },
-    ])
-  })
-
-  it('seeds placeholder content as `unassigned`, never as a real card (DLR-107)', () => {
-    expect(seedStartingBuffPile(3, 1).every((b) => b.kind === BuffKind.Unassigned)).toBe(true)
-  })
-})
 
 describe('BuffKind (DLR-108/DLR-111 finding 1 — widened to 20 members on DLR-110)', () => {
   it('carries all 20 members, pairwise distinct', () => {

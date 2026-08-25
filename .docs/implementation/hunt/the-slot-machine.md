@@ -85,7 +85,9 @@ simulator. `advanceRun` resets `slotPullsThisVisit` to 0 at the fight boundary, 
 resets `discardsRemaining`, so the free pull returns at every visit.
 
 Awards are minted through `mintFromTemplate`, so every card the machine pays is a priced buff — the
-`Unassigned` placeholders that `apCostOf` throws on can never come out of a reel.
+`BuffKind.Unassigned` sentinel that `apCostOf` throws on can never come out of a reel — and since
+DLR-135 the run's opening draw mints through the same `mintFromTemplate`, so it cannot come out of
+that either.
 `run.slot.test.ts` asserts `isPricedBuff` over every buff a pull appends rather than assuming it.
 
 ## Key exports

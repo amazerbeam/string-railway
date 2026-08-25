@@ -94,8 +94,14 @@ export {
   buffTargetSuitOf,
   buffTargetRankOf,
   isValidBuffTarget,
-  seedStartingBuffPile,
 } from './buffs'
+
+export {
+  openingPileWeightOf,
+  seedStartingBuffPile,
+  startingBuffPileFor,
+  startingPileSeedFor,
+} from './startingPile'
 
 export type { TimebombDamage } from './buffCatalog'
 export {

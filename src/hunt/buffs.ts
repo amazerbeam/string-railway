@@ -11,9 +11,9 @@ export type BuffTier = (typeof BuffTier)[keyof typeof BuffTier]
  * is" the same string. A closed `as const` map, not an `enum` — `erasableSyntaxOnly` is on
  * (`tsconfig.app.json`), the same reason `BuffTier` above takes this shape.
  *
- * `Unassigned` is what `seedStartingBuffPile` mints: the run's opening pile is still placeholder
- * content (DLR-105 AC4), and naming that keeps it obviously placeholder rather than silently
- * turning the four opening buffs into Cheats.
+ * `Unassigned` is a RETAINED SENTINEL — DLR-135 removed the last production path that minted it
+ * (the run's opening pile is four real bronze cards now, drawn by `startingPile.ts`), but the
+ * member stays as the codebase's canonical unpriced kind, read by name by five guard suites.
  *
  * DLR-108/DLR-111 finding 1 — the 11 shipping condition families and 5 consumables the authored
  * v1 list needs, appended below the three pre-existing members which are UNCHANGED. `Unassigned`,
@@ -161,8 +161,8 @@ export type BuffCadence = (typeof BuffCadence)[keyof typeof BuffCadence]
 
 /**
  * DLR-124 R4 / DLR-111's *Firing cadence* table, transcribed. `Record`-typed over every
- * `BuffKind` — including `Unassigned`, mapped to `Activated` as the closest-shaped bucket for
- * placeholder content that never actually fires — so a member added to `BuffKind` later fails to
+ * `BuffKind` — including `Unassigned`, mapped to `Activated` as the closest-shaped bucket for a
+ * retained sentinel that never actually fires — so a member added to `BuffKind` later fails to
  * compile at this table rather than silently classifying as `undefined`.
  */
 export const BUFF_CADENCE: Readonly<Record<BuffKind, BuffCadence>> = {
@@ -190,10 +190,15 @@ export const BUFF_CADENCE: Readonly<Record<BuffKind, BuffCadence>> = {
 }
 
 /**
- * The starting pile's placeholder content — every seeded buff shares this inert condition and
- * a zero-value reward, since the real catalog (design doc §5) is not yet authored (DLR-103 T7a)
- * and AC4 rules out anything reading these values yet. Exported so the seeding test can assert
- * against it without duplicating the literal.
+ * DLR-135 — NOTHING MINTS THESE ANY MORE. The run's opening pile is four real bronze cards drawn
+ * from `BUFF_TEMPLATES` (`startingPile.ts`); DLR-105's placeholder factory is gone.
+ *
+ * They are KEPT, deliberately, as the codebase's canonical UNPRICED buff — the fixture five guard
+ * suites fire against by name (`buffActivation.priced.test.ts`, `buffCosts.test.ts:198`,
+ * `consumables.test.ts`, `ErrorBoundary.test.tsx`'s literal error string, and
+ * `sim/reachability.ts`'s set exclusions). The `Unassigned` trap was hit three times during V5;
+ * this removes its CAUSE while leaving the GUARD that catches the whole class intact. Stated once
+ * here so no guard suite invents its own version of the literal.
  */
 export const UNASSIGNED_BUFF_CONDITION: BuffCondition = { kind: 'unassigned' }
 export const UNASSIGNED_BUFF_REWARD: BuffReward = { axis: BuffRewardAxis.Magnitude, value: 0 }
@@ -205,18 +210,3 @@ export const UNASSIGNED_BUFF_REWARD: BuffReward = { axis: BuffRewardAxis.Magnitu
  * Shared by both rather than one per card: there is one thing being said here, not two.
  */
 export const ACTIVATED_BUFF_CONDITION: BuffCondition = { kind: 'activated' }
-
-/**
- * AC3 — the run's opening pile: `count` bronze buffs, all placeholder content, with
- * consecutive ids starting at `firstId`. Carries no upper-bound throw: the pile has no capacity
- * cap (DLR-132 retired the old two-slot Cheat rail on exactly that basis).
- */
-export function seedStartingBuffPile(count: number, firstId: BuffId): readonly Buff[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: firstId + i,
-    kind: BuffKind.Unassigned,
-    tier: BuffTier.Bronze,
-    condition: UNASSIGNED_BUFF_CONDITION,
-    reward: UNASSIGNED_BUFF_REWARD,
-  }))
-}

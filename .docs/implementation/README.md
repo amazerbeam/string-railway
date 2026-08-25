@@ -30,11 +30,11 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132 |
 | `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, PT-002                                                                          |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, PT-001, PT-002 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                 |
 | `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118                                                                                                                                                                                                                                                                                                 |
 | `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118                                                                                                                                                                                                                                                                                                 |
-| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132                                                                                                                                                                                                                                                                        |
+| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135                                                                                                                                                                                                                                                                        |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -634,12 +634,16 @@ the ticket or the design doc states one.
 starting buff's `condition`/`reward`, because the real card catalog was explicitly "TO BE REVIEWED,
 not committed" in the design doc (§5) and belonged to a separate ticket. That ticket (DLR-111)
 landed on 2026-08-23 — the v1 list is authored at
-`.docs/design/Balatro-Forbidden-Solitaire/v1-buff-card-list.md` — but nothing in `src/` reads it
-yet, so the placeholder content below is unchanged and still correct. Nothing
+`.docs/design/Balatro-Forbidden-Solitaire/v1-buff-card-list.md` — but nothing in `src/` read it at
+the time. Nothing
 in this ticket reads or evaluates a buff's `condition`/`reward` — no activation logic, no UI, no
 slot-machine draw, per the ticket's own AC4. Start at [hunt/buff-pile.md](hunt/buff-pile.md) for the
 type's four fields, the placeholder-content decision, why the pile follows `whetstones` rather than
 `cheats`, and the three axes AC1 named by name.
+
+> **The placeholder content is gone — DLR-135, 2026-08-25.** `startRun` now seeds the pile with four
+> distinct **real bronze cards** drawn from `BUFF_TEMPLATES`, and nothing in production mints
+> `BuffKind.Unassigned` any more. See [hunt/the-opening-pile.md](hunt/the-opening-pile.md).
 
 ## DLR-106, cross-run persistent storage layer (2026-08-23)
 
@@ -784,6 +788,8 @@ reward is **never paid** — `buffAccrual.ts` still has no caller, so activating
 spends AP and does nothing else. (**True of DLR-114 and closed by DLR-125**, below.) `startRun` still seeds four `Unassigned` placeholders that
 `activatableBuffs` filters out, so a fresh run with an empty Vault shows an **empty** buff list and
 only the relocated Cheat and Timebomb controls; real priced buffs arrive only through Vault grants.
+(**Also closed — by DLR-135, 2026-08-25**: a fresh run's four cards are real bronze draws, all five
+opening cards are activatable, and the loadout list opens full.)
 And Cheat and Timebomb were relocated, not migrated — both still run on their own bespoke state, not
 on `buffCatalog.ts`. Start at
 [war-council-ui/action-bar-and-loadout.md](war-council-ui/action-bar-and-loadout.md) for the bar, the
@@ -947,6 +953,50 @@ limits instead; the guards themselves are untouched.
 Start at [app/error-boundary.md](app/error-boundary.md) for the component, the mount, and the full
 root-versus-per-screen argument. `.docs/game_rules/the-hunt.md` is **not** touched: this ticket adds
 a recovery mechanism, not a game rule — nothing a player may do, must do, or is scored on moved.
+
+## DLR-135, a fresh run opens with four real bronze cards (2026-08-25)
+
+**The run's opening pile stopped being a scaffold.** `seedStartingBuffPile` had minted
+`STARTING_BUFF_COUNT` (4) `BuffKind.Unassigned` stubs since DLR-105, for a reason its own docblock
+stated — the real card catalog was not yet authored. DLR-111 authored it and DLR-112 built the reel
+that draws from it, and the scaffold outlived that reason by four tickets while `activatableBuffs`
+correctly filtered all four cards straight back out. **A player opened a run holding exactly one
+usable card.** They now open holding **five, all of them usable**: four distinct real bronze cards
+drawn from the 73-template `BUFF_TEMPLATES` pool, plus the guaranteed bronze Cheat. The *count* did
+not change — four of the five were simply inert.
+
+**The draw lives in a new pure module, `src/hunt/startingPile.ts`, and that placement was forced.**
+It must import `buffTemplates.ts` and `slotWeights.ts`, and both of those import `buffs.ts` — keeping
+it where it was would have opened exactly the import cycle `slotWeights.ts`'s docblock refuses to open
+for `warCouncil`. The module is deliberately the sibling of `slotMachine.ts`'s `drawReelPool`: derive
+a named seed from `runSeed`, weight the pool, draw distinct templates without replacement, throw
+`RangeError` on a short draw, mint at a fixed tier with consecutive ids. `startRun` derives
+`startingPileSeedFor(runSeed) = mixSeed(runSeed)` — a **one-part** fold, distinct in shape from
+`dealSeedFor`'s and `slotSeedFor`'s three-part folds — and the `rng` parameter is **required, never
+defaulted**, so no call site can silently drop determinism.
+
+**No tuning value moved, and the weighting is why that was possible.** `openingPileWeightOf` is the
+**sum of the existing `templateWeightFor(machineId, template)` across both `SLOT_MACHINE_IDS`** — a
+derivation over two shipped tables that contributes no number of its own, and is machine-neutral by
+construction because the opening pile is not a slot machine. `STARTING_BUFF_COUNT` is still 4 and
+`RUN_STARTING_CHEATS` still 1.
+
+**`BuffKind.Unassigned` was kept, and the distinction is the point.** Nothing in production mints it
+any more — the **cause** of the placeholder trap is gone — but the member, `UNASSIGNED_BUFF_CONDITION`
+and `UNASSIGNED_BUFF_REWARD` all survive as the codebase's retained **unpriced-kind sentinel**, read
+by name in five guard suites. `isPricedBuff` and `activatableBuffs` are **byte-identical**: the
+**guard** is preserved intact.
+
+**The simulator says the supply problem is solved and the win rate still is not.**
+`npm run sim -- --runs 200 --seed 1` moved mean buff activations per hand from **1.50 to 2.86** with
+the win rate unchanged at **0.0%** and AP spent barely moving (4.35 → 4.41), which says the AP pool
+rather than the card supply is now the binding constraint. DLR-135 was the last known confound behind
+the 0-win result, so it now points at the numbers rather than the supply. **Nothing was retuned.**
+
+Start at [hunt/the-opening-pile.md](hunt/the-opening-pile.md) for the draw, the weighting and the
+sentinel decision, [hunt/buff-pile.md](hunt/buff-pile.md) for the superseded scaffold it replaced, or
+[run-winnability-simulation.md](run-winnability-simulation.md) for the before/after figures.
+`.docs/game_rules/the-hunt.md` **is** touched: what a player holds when a run begins is a rule.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

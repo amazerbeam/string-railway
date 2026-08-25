@@ -79,6 +79,24 @@ copy that could drift.
 > `startHandAccrual()` is the module's only exported reset, and no per-hit reset function was
 > written at all. Still no reader in `src/`.
 
+> **The whole of the passage above stopped describing the shipped game on 2026-08-25 (DLR-135), and
+> that is the point of this note.** The starting pile's content is **no longer inert**. `startRun`
+> now seeds it with **four distinct, real, bronze cards drawn from the 73-template `BUFF_TEMPLATES`
+> pool**, weighted and seeded from `runSeed`. Nothing in production mints `BuffKind.Unassigned` any
+> more. The scaffold's stated reason — "the real catalog is not yet authored" — had been false since
+> DLR-111 authored it and DLR-112 built the reel that draws from it; it outlived that reason by four
+> tickets, and every one of its four cards was filtered straight back out by `activatableBuffs`, so a
+> run opened holding exactly **one** usable card.
+>
+> **`UNASSIGNED_BUFF_CONDITION` and `UNASSIGNED_BUFF_REWARD` are kept and still exported**, and
+> `BuffKind.Unassigned` was **not** deleted — deliberately. The member is now the codebase's
+> **retained canonical unpriced-kind sentinel**, read by name in five guard suites, rather than live
+> placeholder content. DLR-135 removed the **cause** of the placeholder trap and left the **guard**
+> byte-identical. The full account of the draw, the weighting, the short-draw guard and the sentinel
+> decision is [The opening pile](the-opening-pile.md); the function itself moved out of `buffs.ts`
+> to `src/hunt/startingPile.ts`, because it must import `buffTemplates.ts` and `slotWeights.ts` and
+> both of those import `buffs.ts`.
+
 **The pile is carried through `advanceRun`/`recordEncounter` with no explicit parameter, following
 `whetstones` rather than `cheats`.** `cheats` is an explicit, required parameter to `recordEncounter`
 because a hand can spend a Cheat mid-fight and must hand the survivor back; `whetstones` needs no
@@ -87,7 +105,9 @@ such parameter because nothing spends or replaces one mid-hand, so it simply sur
 follow `whetstones`'s shape for the same reason: no consumer in this ticket (or any ticket before
 T5's buff activation) touches a buff mid-hand, so there is nothing yet for a hand to hand back.
 `seedStartingBuffPile(count, firstId)` originally mirrored `grantCheats`'s `(count, firstId)` shape
-but carries **no upper-bound throw** — unlike `CHEAT_SLOT_COUNT`, nothing in this ticket's scope, the
+(DLR-135 added a required third parameter, `rng`, and moved it to `startingPile.ts`; the `(count,
+firstId)` prefix is unchanged) but carries **no upper-bound throw** — unlike `CHEAT_SLOT_COUNT`,
+nothing in this ticket's scope, the
 design doc's §3, or its §8 states a capacity cap on the buff pile. §8 calls it "a growing pool."
 Whether one is wanted later was an open question for whichever ticket first let the pile grow past
 this seed.
@@ -97,6 +117,10 @@ this seed.
 > any other buff, and `recordEncounter` no longer takes a `cheats` parameter at all, because there is
 > no longer a second, separately-tracked "do you hold a Cheat" for a hand to hand back. The pile
 > still has no capacity cap of any kind.
+>
+> **Still true after DLR-135, 2026-08-25.** The rewritten `seedStartingBuffPile` does add a `throw`,
+> but it is a **short-draw** guard (`RangeError` when the weighted draw returns fewer cards than
+> asked, which only an all-zero weight table could cause), not an upper bound on the pile.
 
 `STARTING_BUFF_COUNT = 4` (`config.ts`) is **transcribed**, not chosen here — both the ticket's AC3
 and design doc §8 state the figure explicitly ("a fresh run starts with 4 buff cards already in the

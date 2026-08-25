@@ -65,9 +65,9 @@ describe('baselinePolicy.chooseCard', () => {
 
 describe('baselinePolicy.chooseBuffs', () => {
   it('activates at least one buff, leaving APPLY_DAMAGE_AP_COST in the pool', () => {
-    // A freshly started run's pile is STARTING_BUFF_COUNT `BuffKind.Unassigned` placeholders,
-    // which `activatableBuffs` filters out — mint a real, cheaply-priced buff so the pile has
-    // something the baseline can actually activate.
+    // A freshly started run's pile is a random draw (DLR-135) of unknown cost — mint a real,
+    // cheaply-priced buff explicitly so the pile has something the baseline can actually activate
+    // at a KNOWN cost.
     const magnitudeTemplate = BUFF_TEMPLATES.find(
       (template) => template.form === 'condition' && template.axis === BuffRewardAxis.Magnitude,
     )

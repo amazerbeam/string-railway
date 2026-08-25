@@ -29,9 +29,13 @@ one string with both is how the two stop being separable. So DLR-107 added `kind
 `buffs.ts`: a closed `as const` map over `unassigned` / `cheat` / `timebomb`, in the same idiom
 `BuffTier` and `BuffRewardAxis` already use (`erasableSyntaxOnly` in `tsconfig.app.json` rules out a
 real `enum`). It is a **required** field, so every construction site names one — which made the
-widening a compile error at each site rather than a silent `undefined`. `seedStartingBuffPile` mints
-`BuffKind.Unassigned`, keeping the run's four opening buffs obviously placeholder rather than
-silently turning them into Cheats. `ACTIVATED_BUFF_CONDITION` (`{ kind: 'activated' }`) is the
+widening a compile error at each site rather than a silent `undefined`. When DLR-107 shipped,
+`seedStartingBuffPile` minted `BuffKind.Unassigned`, keeping the run's four opening buffs obviously
+placeholder rather than silently turning them into Cheats. **Since DLR-135 (2026-08-25) nothing mints
+that member at all** — the opening pile draws four real bronze cards, and `BuffKind.Unassigned`
+survives only as the retained unpriced-kind sentinel (see [The opening pile](the-opening-pile.md)).
+A run can therefore now open holding **more than one Cheat, or a Timebomb**, since both are ordinary
+draws from `BUFF_TEMPLATES`. `ACTIVATED_BUFF_CONDITION` (`{ kind: 'activated' }`) is the
 condition both migrated cards share: neither has a trigger, because the player pulls them
 deliberately (design doc §1's "held in the pile and sprung in response to what's actually
 happening").

@@ -14,11 +14,12 @@ import {
   RUN_STARTING_CHEATS,
   STARTING_BUFF_COUNT,
 } from './config'
-import { seedStartingBuffPile, BuffTier, type Buff, type BuffId } from './buffs'
+import { BuffTier, type Buff, type BuffId } from './buffs'
 import { cheatBuff } from './buffCatalog'
 import { ALL_BRONZE, type RankTierTable } from './rankTiers'
 import { mintGrants, type TemplateGrant } from './buffTemplates'
 import { startEncounter } from './encounter'
+import { startingBuffPileFor } from './startingPile'
 import type { FlaskStock } from './flask'
 import type { ShopStock } from './shop'
 import type { SlotVisitStock } from './slotMachine'
@@ -148,8 +149,8 @@ export interface RunState {
  * Its guard lives in `startEncounter`, which already refuses a non-positive or non-finite value.
  *
  * `grants` (DLR-113 AC3) is the Vault's bought starting cards, minted into the opening pile
- * alongside the seeded placeholders. DEFAULTED to `[]`, so every existing call site is
- * unchanged and a run started with no Vault behaves exactly as before.
+ * alongside the four real bronze cards the run's seed draws. DEFAULTED to `[]`, so every
+ * existing call site is unchanged and a run started with no Vault behaves exactly as before.
  */
 export function startRun(
   playerHealth: Health = PLAYER_START_HEALTH,
@@ -175,7 +176,7 @@ export function startRun(
     handOfFight: 1,
     discardsRemaining: DISCARDS_PER_FIGHT,
     lastQuickKillPayout: 0,
-    buffs: [...seedStartingBuffPile(STARTING_BUFF_COUNT, 1), ...granted, ...openingCheats],
+    buffs: [...startingBuffPileFor(STARTING_BUFF_COUNT, 1, runSeed), ...granted, ...openingCheats],
     nextBuffId: STARTING_BUFF_COUNT + 1 + granted.length + openingCheats.length,
     runSeed,
     apCapacityBonus: 0,

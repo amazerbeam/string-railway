@@ -22,8 +22,9 @@ A pure, data-only module: it builds no `RoundState`, drives no reducer, and call
 
 Nothing is hand-listed. A family added to `BUFF_TEMPLATES` or an item returned to `SHOP_ITEMS` is
 admitted automatically, with no edit here — which is the property that makes the audit worth
-trusting a year from now. `Unassigned` is excluded throughout: it is `seedStartingBuffPile`'s
-placeholder, filtered out of every offer by `activatableBuffs`, and it is not a card.
+trusting a year from now. `Unassigned` is excluded throughout: **nothing has minted it since
+DLR-135**, it is the retained unpriced-kind sentinel rather than a card, and `activatableBuffs`
+filters it out of every offer. `reachability.ts`'s own docblocks say exactly that.
 
 ## What it measured, at 2026-08-24 (updated the same day by DLR-132)
 
@@ -53,10 +54,27 @@ Timebomb branches now mint a buff into the pile rather than writing a field this
 reachable now only through the slot machine, not the shop.
 
 **A fresh run holds one buff it can activate — its starting Cheat.**
-`activatableBuffs(startRun().buffs).length` is `1`: three of the four seeded cards are `Unassigned`
-and filtered out, and the fourth is a bronze Cheat, seeded as an ordinary pile member by
+`activatableBuffs(startRun().buffs).length` was `1`: the four seeded cards were `Unassigned` and
+filtered out, and the fifth was a bronze Cheat, seeded as an ordinary pile member by
 `RUN_STARTING_CHEATS` rather than a rail grant. This was previously described as "0" because the
 Cheat lived outside `RunState.buffs` entirely, on a deleted `cheats` field.
+
+> **It holds FIVE as of DLR-135, 2026-08-25.** `startRun` draws `STARTING_BUFF_COUNT` (4) distinct
+> real bronze cards from `BUFF_TEMPLATES` and mints them into the pile, so
+> `activatableBuffs(startRun().buffs).length` is now `STARTING_BUFF_COUNT + RUN_STARTING_CHEATS`
+> **and equal to `run.buffs.length`** — nothing is filtered at run start. Both opening-pile specs in
+> `reachability.test.ts` were rewritten to assert **more** than they did: the guaranteed Cheats are
+> pinned as the pile's *final* members (a position claim the count-only original could not make), and
+> every opening card is asserted activatable against both figures. The count assertion
+> `filter(kind === Cheat).length === RUN_STARTING_CHEATS` had to go — **Cheat is an eligible random
+> draw now**, so a run may legitimately open holding more than one. The `mintableBuffKinds()` /
+> `unreachableBuffKinds()` sets are unaffected: the draw pulls from `BUFF_TEMPLATES`, which those
+> functions already fold in.
+
+**The five consumables and Shield stay unreachable, for a different reason than before.** They are
+absent from `BUFF_TEMPLATES` itself (73 = 71 condition templates + 2 activated), so neither a pull nor
+the opening draw can produce one. Filling the pile was never what stood between a player and a Ward;
+filling the *pool* is.
 
 ## Why the spec pins the gaps as *passing* assertions
 

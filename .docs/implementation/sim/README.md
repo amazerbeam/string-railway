@@ -1,7 +1,7 @@
 # Headless run simulator — `src/sim/`
 
 **Status:** implemented
-**Built by:** DLR-130, DLR-120
+**Built by:** DLR-130, DLR-120, DLR-132, DLR-135
 
 ## Responsibility
 

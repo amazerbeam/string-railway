@@ -5,6 +5,7 @@ import {
   BuffKind,
   RUN_STARTING_CHEATS,
   ShopItem,
+  STARTING_BUFF_COUNT,
   startRun,
 } from '../../hunt'
 import { mintableBuffKinds, unreachableBuffKinds, unshelvedShopItems } from '../reachability'
@@ -81,18 +82,19 @@ describe('reachability — the DLR-120 audit', () => {
     expect(run.whetstones).toBe(0)
   })
 
-  it('seeds exactly RUN_STARTING_CHEATS — the one activated card a player can reach', () => {
+  it("seeds RUN_STARTING_CHEATS GUARANTEED Cheats as the pile's final members (DLR-132)", () => {
     const run = startRun()
-    expect(run.buffs.filter((buff) => buff.kind === BuffKind.Cheat).length).toBe(
-      RUN_STARTING_CHEATS,
-    )
+    const guaranteed = run.buffs.slice(run.buffs.length - RUN_STARTING_CHEATS)
+    expect(guaranteed).toHaveLength(RUN_STARTING_CHEATS)
+    expect(guaranteed.every((buff) => buff.kind === BuffKind.Cheat)).toBe(true)
   })
 
-  it('the player enters fight one holding only the seeded Cheat to activate', () => {
-    // This is the measurement `HandReport.activatableBuffsHeld` generalises. Before DLR-132 this
-    // was 0 — the opening pile held only `Unassigned` placeholders. DLR-132 seeds
-    // `RUN_STARTING_CHEATS` real Cheat buffs into that same pile, so the count moves to match.
+  it('the player enters fight one with EVERY opening card activatable (DLR-135)', () => {
+    // DLR-120 measured this at 0 — the opening pile held only `Unassigned` placeholders. DLR-132
+    // added the guaranteed Cheat, taking it to 1. DLR-135 draws the other four for real, so the
+    // whole opening pile is now activatable and this asserts the total rather than the Cheat.
     const run = startRun()
-    expect(activatableBuffs(run.buffs).length).toBe(RUN_STARTING_CHEATS)
+    expect(activatableBuffs(run.buffs)).toHaveLength(STARTING_BUFF_COUNT + RUN_STARTING_CHEATS)
+    expect(activatableBuffs(run.buffs)).toHaveLength(run.buffs.length)
   })
 })

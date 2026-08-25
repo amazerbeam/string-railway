@@ -66,7 +66,7 @@ function cheat(id = 90): Buff {
   }
 }
 
-/** Placeholder content — what `seedStartingBuffPile` mints. */
+/** The unpriced-kind sentinel — nothing mints it as of DLR-135. */
 function unassigned(id = 91): Buff {
   return {
     id,

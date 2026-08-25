@@ -5691,3 +5691,139 @@ rate is 0.0%. That stops the developer hunting for things that are not there.
 **Nothing in this epic has been seen by a human or a browser, and nothing in the hand-off claims
 otherwise** — QA specifically checked both documents for such a claim and found none.
 
+
+---
+
+## DLR-135 — Four real bronze cards in the opening pile (out-of-band)
+
+Run **after** the sprint completed, as a single out-of-band ticket. Base commit `f56a51f`, branch
+`Version-5`. The ticket's blocking design decision was answered by the developer before work
+started — **"the player starts with 4 random buff cards, bronze tier"** — so the `/fb-plan`
+approval gate was deliberately skipped. Contract:
+`.claude/contract/DLR-135-fresh-run-opens-with-four-real-cards/`.
+
+### How the four are drawn, and how they are seeded
+
+`seedStartingBuffPile` used to mint four `BuffKind.Unassigned` stubs with `UNASSIGNED_BUFF_CONDITION`
+and a zero-value reward. Its own docblock explained why: *"since the real catalog (design doc §5) is
+not yet authored (DLR-103 T7a)"*. That was DLR-105 — before DLR-111 authored the cards and DLR-112
+built the reel. The scaffold outlived its reason, and `activatableBuffs` correctly filtered all four
+straight back out, so a run opened holding exactly one usable card.
+
+It is now a real weighted draw, in a new pure module `src/hunt/startingPile.ts`:
+
+- `startRun(playerHealth, grants, runSeed)` derives `startingPileSeedFor(runSeed) = mixSeed(runSeed)`
+  — a one-part fold, distinct in shape from `dealSeedFor`'s and `slotSeedFor`'s three-part folds —
+  and passes `createSeededRng` of it in. **`rng` is a REQUIRED parameter, not defaulted**, so no call
+  site can drop determinism without a compile error.
+- `weightedDrawWithoutReplacement(BUFF_TEMPLATES, openingPileWeightOf, rng, 4)` draws **four distinct**
+  templates from the **full 73-template pool** — exactly one `rng()` call per card.
+- Each is minted at `BuffTier.Bronze` through `mintFromTemplate`, with consecutive ids from `firstId`.
+- A short draw throws `RangeError`, mirroring `drawReelPool`'s short-strip guard. That is the one new
+  `throw` site: **99 → 100, none weakened.**
+
+The module deliberately reads as the sibling of `slotMachine.ts`'s `drawReelPool` — the same pattern
+applied twice, not two designs. It could not stay in `buffs.ts`: it must import `buffTemplates.ts`
+and `slotWeights.ts`, and both of those import `buffs.ts`. That is a forced move, not a preference.
+
+**Determinism holds.** `src/hunt/`, `src/warCouncil/`, `src/vault/` and `src/sim/` remain free of
+`Math.random()` — the only three calls in the codebase are still in `App.tsx`, seeding `startRun`.
+The same `runSeed` reproduces the same opening hand, which DLR-130's simulator and the developer's
+balance pass both depend on.
+
+### Two sub-decisions taken by the coordinator — each a one-line reversal
+
+1. **Draw from the full pool, using the reel's existing family weights.** `openingPileWeightOf(t)` is
+   the **sum of `templateWeightFor(machineId, t)` across both `SLOT_MACHINE_IDS`**. This is a
+   *derivation over the two shipped tables and contributes no number of its own* — a second opening
+   pool would have been eleven-plus unchosen numbers on a ticket whose AC3 forbids changing a tuning
+   value. Summing is also machine-neutral: taking one machine's table would silently hand every run
+   Skirmisher's trick lean or Strongbox's coin lean with nobody having chosen it.
+   *Reverse in one line:* `templateWeightFor(SlotMachineId.Skirmisher, template)`.
+2. **Cheat and Timebomb are eligible draws.** They have been ordinary pool members since DLR-132;
+   excluding them re-introduces the special-casing that ticket removed. Bronze Cheat is 3 AP, bronze
+   Timebomb 2 AP — neither is degenerate at bronze.
+   *Reverse in one line:* `if (template.form === 'activated') return 0` in `openingPileWeightOf`.
+
+### `BuffKind.Unassigned` — kept, deliberately
+
+**Nothing mints it any more**, which is the precondition the ticket named for considering its
+deletion. It was still **not deleted**, and that is a decision rather than an omission: the member is
+the codebase's canonical *unpriced kind*, and five guard suites fire against it **by name** —
+`buffActivation.priced.test.ts` (the `isPricedBuff` / `activatableBuffs` guard),
+`buffCosts.test.ts:198` (`apCostOf` throws `RangeError`), `consumables.test.ts` (nine uses as the
+not-a-consumable fixture), `src/app/__tests__/ErrorBoundary.test.tsx:18` (which asserts the literal
+string `apCostOf: no AP price for buff kind "unassigned"`), and `src/sim/reachability.ts`, which
+excludes it by name from both the mintable and unreachable sets.
+
+Deleting the member would force each of those to fabricate an unpriced kind through a cast, which
+**weakens the very guard the ticket asked to preserve**. So: the *cause* is removed, the *guard* is
+preserved — `isPricedBuff` and `activatableBuffs` are byte-identical. `UNASSIGNED_BUFF_CONDITION` and
+`UNASSIGNED_BUFF_REWARD` stay exported as the one place that literal is stated. Every docblock
+describing them as live placeholder content was rewritten to describe a retained sentinel.
+
+**For the developer:** a follow-up ticket could delete the member, but it must own rewriting those
+five fixture sites. Doing it here would have weakened the guard mid-flight.
+
+### Simulator — AC2. An OBSERVATION. Nothing was retuned.
+
+`npm run sim -- --runs 200 --seed 1`, both runs on this machine:
+
+| Figure | Before (`f56a51f`) | After |
+|---|---|---|
+| **Win rate** | **0.0%** (0 won / 200 lost / 0 stalled) | **0.0%** (0 won / 200 lost / 0 stalled) |
+| **Mean buff activations per hand** | **1.50** | **2.86** |
+| **Mean AP spent per hand** | **4.35** | **4.41** |
+| **Hands holding NO activatable buff** | **0.0%** | **0.0%** |
+| Mean fight reached | 0.46 | 0.52 |
+| Mean coins earned | 0.84 | 1.07 |
+| Mean damage to Quarry per hand | 2.29 | 2.44 |
+| Max damage to player in one hand | 9 | 6 |
+
+Activations per hand **nearly doubled** — the opening pile now supplies real, priceable cards, which
+is exactly what the change was for. AP spent barely moved (4.35 → 4.41) because the AP pool, not the
+card supply, is the binding constraint. Everything else drifted marginally in the player's favour.
+
+**The win rate did not move off 0.0%.** DLR-120 measured 0 wins in 1,600 runs with 67.3–71.3% of
+hands holding nothing activatable; DLR-132 took that to 0.0% and activations to 1.50/hand with the
+win rate unchanged; this ticket takes activations to 2.86/hand with the win rate *still* unchanged.
+**DLR-135 was the last known confound.** The player is demonstrably no longer starved of cards, so a
+0% win rate now means the numbers are wrong rather than the supply being empty. That is a finding
+for the developer's balance pass, and **nothing was retuned in response to it** — no AP cost, damage
+figure, weight, threshold, `STARTING_BUFF_COUNT` or `RUN_STARTING_CHEATS` is in the diff. AC3 holds.
+
+### How many cards a run opens with, in total
+
+**Five, and all five are now activatable** — four random real bronze draws plus the one guaranteed
+bronze Cheat that `RUN_STARTING_CHEATS = 1` still adds (DLR-132 re-homed it into the pile).
+
+The *count* is unchanged: it was five before, too. What changed is that four of those five were inert
+placeholders that `activatableBuffs` discarded, so the player effectively opened with **one** card.
+They now open with **five**.
+
+`RUN_STARTING_CHEATS` was deliberately left alone. **Whether a run should open holding a guaranteed
+Cheat at all — and whether five is the right number — is a separate standing question and was not
+this ticket's to settle.** Flagged here because it is a number the developer will want to see stated.
+
+### Specs rewritten, and why
+
+Never weakened to go green. Where a replacement is stronger, it is marked.
+
+| Spec | What changed, and why |
+|---|---|
+| `src/hunt/__tests__/buffs.test.ts` | Whole `describe('seedStartingBuffPile')` block **deleted** (45 lines) — the function no longer lives in `buffs.ts`, and `startingPile.test.ts` covers every property it asserted plus determinism and distinctness. The `UNASSIGNED_BUFF_CONDITION` sentinel assertion is untouched. |
+| `src/hunt/__tests__/buffActivation.priced.test.ts` | Three tests used `seedStartingBuffPile` as their source of unpriced buffs — a fact this ticket makes false. Replaced with a local explicit `unassignedPlaceholder(id)` fixture. **Every assertion keeps its original strength**; only the fixture's provenance changed. Arguably a better test: the guard is now exercised against the *class* of unpriced kind rather than against whatever a production path happens to mint today. |
+| `src/hunt/__tests__/buffCatalog.test.ts` | `'the run-seeding path still mints only bronze, unassigned buffs'` asserted a fact this ticket deliberately makes false. **Replaced with a stronger three-assertion version** over `startRun().buffs`: all Bronze, none `Unassigned`, all priced — which preserves the enclosing describe's real purpose (no gold Cheat is player-reachable) and adds two claims. |
+| `src/hunt/__tests__/buffCatalog.test.ts` (2nd site) | **PLANNER GAP — flagged.** A second, unnamed `seedStartingBuffPile` use in `'cheatDurationTricksOf throws on a placeholder seed'` broke at typecheck. The `/fb-plan` Step 1.6 audit scoped this file to lines 169-178 and missed it. Rewritten honestly against an explicit `BuffKind.Unassigned` literal, not weakened. **This is the CONSTRUCTION SITES trap (`f45d66e`) landing again** — the audit counted the *type name* correctly but under-scoped a *file range*. Worth an `/fb-issue`: the check should count sites per file, never per line range. |
+| `src/sim/__tests__/reachability.test.ts` | Both opening-pile tests stopped being true statements of intent — Cheat is an eligible random draw now, so a pile may hold more than one, and the player no longer holds *only* the Cheat. **Both replacements assert more than the originals did:** the guaranteed Cheats are asserted as the pile's *final members* (a position claim the count-only original could not make), and the second now asserts **every** opening card is activatable, against both `STARTING_BUFF_COUNT + RUN_STARTING_CHEATS` and `run.buffs.length`. |
+| `src/sim/fixtures.ts`, `src/sim/__tests__/baselinePolicy.test.ts`, `src/hunt/__tests__/consumables.test.ts` | **Comments only, no executable line changed.** Each explained a deliberate pile replacement with the stale reason "a fresh run's pile is `BuffKind.Unassigned` placeholders". The code is still correct; only its stated reason changed. |
+
+### Notes for the developer
+
+- **The browser pass was not requested and did not run.** A dev server was already listening on 5173;
+  none was started and none was killed. What a browser would have checked: that the loadout panel
+  opens showing **five named cards with real AP prices** rather than four "Blank card" rows reading
+  "nothing yet", and that the console is clean.
+- **Whether the opening hand *reads* as a hand with a plan in it can only be judged by playing.** Four
+  random bronze cards can be four Threshold-cadence cards that never fire in fight one, or four Event
+  cards that all pay. The simulator reports the aggregate; it cannot report that.
