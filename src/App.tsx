@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   advanceRun,
   apCapacityFor,
@@ -47,6 +47,7 @@ import WarCouncilRound from './app/warCouncil/WarCouncilRound'
 import { duelHealthBars } from './app/warCouncil/duelHealthBars'
 import { quarryHealthLabel } from './app/warCouncil/labels'
 import { dealHand } from './app/handDeal'
+import { setDebugAppState } from './app/debugState'
 import RunOutcomePanel, { type TrickTally } from './app/run/RunOutcomePanel'
 import ShopPanel from './app/run/ShopPanel'
 import RunPathScreen from './app/run/RunPathScreen'
@@ -144,6 +145,25 @@ function App() {
     run.encounterIndex + 1 < run.encounterCount
       ? runEncounterAt(run.encounterIndex + 1).name
       : undefined
+
+  // Dev-only mirror for browser automation (`.claude/skills/ai-play-tester`) — see
+  // `./app/debugState.ts`. Mirrors the SAME branch order the render below switches on, so the
+  // reported `screen` can never disagree with what is actually on screen.
+  const screen =
+    phase === RunPhase.Start
+      ? 'start'
+      : encounterOver && phase === RunPhase.Map
+        ? 'map'
+        : encounterOver && phase === RunPhase.Shop
+          ? 'shop'
+          : encounterOver && phase === RunPhase.Vault
+            ? 'vault'
+            : encounterOver
+              ? 'verdict'
+              : 'warCouncil'
+  useEffect(() => {
+    setDebugAppState({ screen, phase, hand, run, vault })
+  }, [screen, phase, hand, run, vault])
 
   /** DLR-123 — takes the run EXPLICITLY rather than closing over `run`: every caller has just
    *  computed a newer one, and the render's `run` is stale by the time this fires. `carried` is

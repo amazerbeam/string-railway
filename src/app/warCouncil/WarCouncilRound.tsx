@@ -1,5 +1,6 @@
-import { useReducer, type ReactNode } from 'react'
+import { useEffect, useReducer, type ReactNode } from 'react'
 import { DuelSide, isEncounterResolved, payableCashOutBonus, quarryCharacterInfo } from '../../hunt'
+import { clearDebugRoundState, setDebugRoundState } from '../debugState'
 import {
   applyDamageRefusalFor,
   cashValue,
@@ -139,6 +140,34 @@ export default function WarCouncilRound({
   // Quarry-to-lead gap, where `interactive` is false but a selection may still be open or opening.
   const discardRefusal = discardRefusalFor(discardStock(ui))
   const handInteractive = interactive || discardSelecting(ui)
+
+  // Dev-only mirror for browser automation (`.claude/skills/ai-play-tester`) — see
+  // `../debugState.ts`. Two effects, not one: the write runs on every render that changes this
+  // slice, the clear runs ONLY on unmount (empty deps) — `App` switches screens by conditionally
+  // rendering this component out entirely, and that's the one moment this slice actually goes
+  // stale, not merely re-renders.
+  useEffect(() => {
+    setDebugRoundState({
+      ui,
+      interactive,
+      legalCount: legal.length,
+      applyCash,
+      applyRefusal,
+      discardRefusal,
+      encounterOver,
+      roundComplete,
+    })
+  }, [
+    ui,
+    interactive,
+    legal,
+    applyCash,
+    applyRefusal,
+    discardRefusal,
+    encounterOver,
+    roundComplete,
+  ])
+  useEffect(() => clearDebugRoundState, [])
 
   // DLR-114 AC2 — the pile offered to the panel, and the ONE refusal the bar's own Apply Buff
   // button reads. `loadoutBarRefusalFor` lives in `buffHandlers.ts` rather than inline here: it is
