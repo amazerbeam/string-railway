@@ -9,6 +9,7 @@
  */
 import {
   activateFromPile,
+  activateShield,
   activateWard,
   buffActivationRefusalFor,
   BuffActivationRefusal,
@@ -121,8 +122,7 @@ export function handleTapBuff(state: RoundUiState, id: BuffId): RoundUiState {
   if (loadoutRefusalFor(state, buff) !== null) return { ...state, loadout: { poised: null } }
   if (state.loadout.poised !== id) return { ...state, loadout: { poised: id } }
   // DLR-126 — `activateFromPile`, never `activateBuff`: a CONSUMABLE ITEM leaves the pile here and
-  // does not come back, which is the whole of what makes it one-shot. `buffs` is unchanged for a
-  // Cheat, a Timebomb or a Shield.
+  // does not come back, which is the whole of what makes it one-shot.
   //
   // DLR-132 — `buffActivationWindowOpen`, NOT `discardWindowOpen` directly: `loadoutRefusalFor`
   // (the guard just above) and this commit must ask the SAME window question or a Cheat/Timebomb
@@ -144,12 +144,17 @@ export function handleTapBuff(state: RoundUiState, id: BuffId): RoundUiState {
     // `firedBuffs` filters them out. Applying it at trick resolution would be applying it against
     // a condition it does not have.
     encounter:
-      buff.kind === BuffKind.Ward ? activateWard(state.encounter, buff.tier) : state.encounter,
-    // DLR-132 — Cheat and Timebomb fire HERE too, beside Ward, for the reason the comment above
-    // already states. Neither leaves the pile — `isConsumableItem` is false for both, which is
-    // exactly what `activateFromPile`'s docblock says and why `buffs` is unchanged for them.
-    // `cheatDurationTricksOf`/`timebombDamageOf` both throw on the wrong kind; each is called only
-    // inside a branch that has already checked `buff.kind`, so neither throw is reachable here.
+      buff.kind === BuffKind.Ward
+        ? activateWard(state.encounter, buff.tier)
+        : buff.kind === BuffKind.Shield
+          ? activateShield(state.encounter, buff.tier)
+          : state.encounter,
+    // DLR-132/DLR-142 — Cheat and Timebomb fire HERE too, beside Ward and Shield. All three now
+    // also leave the pile once spent, by default (`ACTIVATED_CARD_SINGLE_USE`, read through
+    // `isConsumableItem` inside `activateFromPile` above) — this block only arms the felt-state
+    // effect; pile removal already happened above. `cheatDurationTricksOf`/`timebombDamageOf` both
+    // throw on the wrong kind; each is called only inside a branch that has already checked
+    // `buff.kind`, so neither throw is reachable here.
     cheatTricksRemaining:
       buff.kind === BuffKind.Cheat ? cheatDurationTricksOf(buff) : state.cheatTricksRemaining,
     timebombArmedDamage:

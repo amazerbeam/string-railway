@@ -88,7 +88,7 @@ describe('WarCouncilRound — the action bar (DLR-114)', () => {
     renderRound()
     fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
     const dialog = screen.getByRole('dialog', { name: 'Your buffs' })
-    expect(within(dialog).getByRole('button', { name: /^Cheat \(/ })).toBeTruthy()
+    expect(within(dialog).getByRole('button', { name: /Cheat \(/ })).toBeTruthy()
   })
 
   it("activating the held Cheat buff twice spends its AP cost off Apply Buff's own figure", () => {
@@ -144,7 +144,7 @@ describe('WarCouncilRound — the action bar (DLR-114)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
     const dialog = screen.getByRole('dialog', { name: 'Your buffs' })
-    const row = within(dialog).getByRole('button', { name: /^Cheat \(/ })
+    const row = within(dialog).getByRole('button', { name: /Cheat \(/ })
     expect(row).toHaveProperty('disabled', false)
   })
 

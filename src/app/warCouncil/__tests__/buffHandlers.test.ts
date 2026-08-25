@@ -9,6 +9,7 @@ import {
   BuffTier,
   CHEAT_DURATION_TRICKS,
   cheatBuff,
+  shieldHeartsForTier,
   STARTING_AP,
   WARD_ABSORPTION,
   type Buff,
@@ -228,9 +229,9 @@ describe('handleTapBuff — a consumable item leaves the pile at the spend', () 
     expect(after.buffActivation.apPool).toBe(STARTING_AP)
   })
 
-  it('a Cheat is activated but NOT consumed — an Activated card is not a one-shot item', () => {
+  it('a Cheat is spent and removed from the pile — DLR-142, Activated cards default to single-use', () => {
     const after = spend(openWith([cheat]), cheat.id)
-    expect(after.buffs.map((b) => b.id)).toEqual([cheat.id])
+    expect(after.buffs).toHaveLength(0)
     expect(after.buffActivation.activatedThisTrick).toEqual([cheat.id])
   })
 })
@@ -253,9 +254,23 @@ describe('handleTapBuff — spending a Cheat row', () => {
     expect(cancelled.buffActivation.apPool).toBe(opened.buffActivation.apPool)
   })
 
-  it('leaves the pile unchanged when a Cheat is spent', () => {
+  it('removes the Cheat from the pile once spent — DLR-142', () => {
     const before = openWith([cheat])
     const after = spend(before, cheat.id)
-    expect(after.buffs).toHaveLength(before.buffs.length)
+    expect(after.buffs).toHaveLength(before.buffs.length - 1)
+  })
+})
+
+// ── DLR-142 — Shield wiring, mirroring Ward's own coverage above ──────────────────────────────
+
+describe('handleTapBuff — spending a Shield row', () => {
+  it('credits shieldHearts for the tier, spends its AP, and leaves the pile — DLR-142', () => {
+    const shield = itemBuff(BuffKind.Shield, BuffTier.Silver, 22)
+    const before = openWith([shield])
+    const after = spend(before, shield.id)
+
+    expect(after.encounter.shieldHearts).toBe(shieldHeartsForTier(BuffTier.Silver))
+    expect(after.buffActivation.apPool).toBe(STARTING_AP - apCostOf(shield))
+    expect(after.buffs).toHaveLength(0)
   })
 })

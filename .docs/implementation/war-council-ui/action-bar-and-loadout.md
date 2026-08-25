@@ -176,13 +176,27 @@ that document, so their words are this ticket's own placeholder copy.
 `buffLine(buff, apCost)` composes the one glanceable line:
 
 ```
-Bell-Taker (Momentum) — win a trick with Bells: +3 multiplier. 2 AP.
+Silver Bell-Taker (Momentum) — win a trick with Bells: +3 multiplier. 2 AP.
 ```
 
 and `buffRowAccessibleName` appends the poise hint or the refusal sentence. **The same string is the
 row's visible text and its accessible name**, so what a sighted player reads and what a screen reader
 announces cannot drift — which is also what makes the component specs' `getByRole('button', { name })`
 assertions test the string a player actually sees.
+
+**DLR-142 (2026-08-25) prefixed the tier word** — `Bronze`/`Silver`/`Gold`, via a `BUFF_TIER_WORD`
+lookup keyed on the closed `BuffTier` union — so a player can tell which copy of a buff they hold
+without opening a second surface. It flows into the accessible name automatically, since
+`buffRowAccessibleName` composes `buffLine` rather than restating its text. The tier word is
+deliberately scoped to `buffLine` and not folded into `buffName`, which `buffFiredLabels.ts`'s
+trick-payout readout also calls — keeping the change out of `buffName` is what kept that other
+surface's copy untouched.
+
+**Activated cards changed at the same time, in `src/hunt/`, not here.** Cheat, Timebomb and Shield
+now leave the pile after one activation by default (`ACTIVATED_CARD_SINGLE_USE`, see
+[consumable-items.md](../hunt/consumable-items.md)), and `handleTapBuff` (`buffHandlers.ts`) now
+also wires `activateShield` into the `encounter` field alongside the pre-existing Ward branch —
+Shield's effect had never fired from the app layer before this ticket.
 
 `actionBarLabels.ts` owns the bar's own copy and reuses `labels.ts`'s existing
 `APPLY_DAMAGE_POISED_HINT`, `APPLY_DAMAGE_REFUSAL_MESSAGE`, `DISCARD_REFUSAL_MESSAGE`,

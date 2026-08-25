@@ -182,7 +182,7 @@ describe('WarCouncilRound', () => {
 
     openLoadout()
     const dialog = screen.getByRole('dialog', { name: 'Your buffs' })
-    const row = screen.getByRole('button', { name: /^Cheat \(/ })
+    const row = screen.getByRole('button', { name: /Cheat \(/ })
     expect(row.closest('[role="dialog"]')).toBe(dialog)
     fireEvent.click(row) // poise
     fireEvent.click(row) // spend

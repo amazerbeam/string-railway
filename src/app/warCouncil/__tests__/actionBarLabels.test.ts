@@ -29,7 +29,7 @@ describe('actionBarLabels', () => {
 
   it('DLR-119/DLR-141 — names the risk while the payout is queued', () => {
     expect(queuedPayoutText(payout(2))).toBe(
-      'Payout queued: 12 damage, 2 tricks to go. Damage to you cuts it to 60%.',
+      'Payout queued: 12 damage, 2 tricks to go. Damage to you cuts it to 33%.',
     )
   })
 
@@ -50,7 +50,7 @@ describe('actionBarLabels', () => {
   it('applyDamageBarAccessibleName includes the queued sentence when a payout is pending', () => {
     const name = applyDamageBarAccessibleName(12, 3, false, null, payout(2))
     expect(name).toContain('2 tricks to go')
-    expect(name).toContain('Damage to you cuts it to 60%.')
+    expect(name).toContain('Damage to you cuts it to 33%.')
   })
 
   it('applyBuffAccessibleName names the AP figure it is given', () => {

@@ -10,7 +10,7 @@ import type { RunReport, SimOptions, SimPolicy, SimSummary } from './types'
 export function simulate(options: SimOptions, policy: SimPolicy): SimSummary {
   const runs: RunReport[] = []
   for (let runIndex = 0; runIndex < options.runs; runIndex += 1) {
-    runs.push(playRun(mixSeed(options.baseSeed, runIndex), policy))
+    runs.push(playRun(mixSeed(options.baseSeed, runIndex), policy, options.openingPileWeightOf))
   }
   return { policyName: policy.name, baseSeed: options.baseSeed, runs }
 }

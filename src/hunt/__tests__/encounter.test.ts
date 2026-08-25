@@ -230,15 +230,15 @@ describe('applyDamage — DLR-109 AC3 / DLR-141, the payout is reduced (not wipe
     const after = applyDamage(queued, damage(1, 0))
     expect(after.pendingApplyPayout).toMatchObject({
       cashOut: Math.floor(9 * APPLY_DAMAGE_HIT_RETENTION),
-      resolutionsOwed: 2,
+      resolutionsOwed: 1,
       unplayedAtPress: 4,
     })
   })
 
-  it('a reduction that floors to zero evaporates the payout the same way a resolved encounter does', () => {
+  it('a reduction that would floor to zero clamps to 1 rather than evaporating the payout', () => {
     const queued = queueApplyDamagePayout(startEncounter(0, 10), queueApplyPayout(1, 4))
     const after = applyDamage(queued, damage(1, 0))
-    expect(after.pendingApplyPayout).toBeNull()
+    expect(after.pendingApplyPayout).toMatchObject({ cashOut: 1 })
   })
 
   it('a hit FULLY ABSORBED by blue hearts leaves the queued payout untouched, at 100%', () => {

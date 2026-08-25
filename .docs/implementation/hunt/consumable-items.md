@@ -20,17 +20,44 @@ means "priced off the condition-family formula", nothing more.
 
 `consumables.ts`'s `ConsumableItemKind` covers **five**: `Ward`, `Puppeteer`, `SecondThoughts`,
 `Foresight`, `Spyglass`. That is the narrower thing — an item **held until used, then gone**. Cheat,
-Timebomb and Shield are deliberately excluded: all three are `Activated`, but each **arms felt state
-rather than leaving the pile** — a Cheat sets `cheatTricksRemaining`, a Timebomb sets
-`timebombArmedDamage`, `activateShield` raises `shieldHearts` — so none of the three is a one-shot
-item. (Before DLR-132, the exclusion's stated reason was that Cheat and Timebomb each had their own
-live bespoke mechanic, `CheatStage`/`TimebombStage`; both are deleted, but the exclusion itself is
-unchanged — `isConsumableItem` still answers `false` for all three.)
+Timebomb and Shield stay a **separate, closed union of their own**: all three are `Activated`, and
+each **arms felt state at the spend** — a Cheat sets `cheatTricksRemaining`, a Timebomb sets
+`timebombArmedDamage`, `activateShield` raises `shieldHearts` — which is orthogonal to whether the
+card *also* leaves the pile. Before DLR-142 (2026-08-25) it never did: `isConsumableItem` answered
+`false` for all three unconditionally, so a Timebomb could be spammed every trick for as long as the
+pile held one. **DLR-142 makes it a developer-owned choice, defaulted `true`** — see
+`ACTIVATED_CARD_SINGLE_USE` below.
 
 The two unions are not a duplication to reconcile. They answer different questions, and
 `isConsumableItem` in `consumables.ts` is the one that decides whether an activation also spends the
 card. A test in `consumables.test.ts` pins every one of the five as priced by `apCostOf`, so the
 narrower set can never drift out of the wider one.
+
+## `ACTIVATED_CARD_SINGLE_USE` — DLR-142, a per-card revert switch
+
+```ts
+export const ACTIVATED_CARD_SINGLE_USE: Readonly<Record<ActivatedItemKind, boolean>> = {
+  [BuffKind.Cheat]: true,
+  [BuffKind.Timebomb]: true,
+  [BuffKind.Shield]: true,
+}
+```
+
+`isConsumableItem(buff)` now returns `true` for the five DLR-111 items (`isConsumableItemKind`,
+unchanged) **OR** for Cheat/Timebomb/Shield when this table says so for that kind. The table is
+deliberately **not** a merge into `ConsumableItemKind` — the developer rejected that shape because
+reverting one card would then mean editing five separate tables in lock-step
+(`CONSUMABLE_TIMING`, `CONSUMABLE_EFFECT_LIVE`, `ConsumableEffect`, `consumableEffectOf`'s switch,
+plus the union itself). Reverting Timebomb alone to "stays in the pile" is one line —
+`[BuffKind.Timebomb]: false` — and nothing else in the codebase changes; `isConsumableItem` is the
+table's only reader. This follows the same pattern `AP_REFRESH_CADENCE` (`apConfig.ts`) already
+sets for a developer-owned, easily-reversed behavioural switch.
+
+`spendConsumable`'s own guard was changed in the same ticket, from `isConsumableItemKind(found.kind)`
+to `isConsumableItem(found)` — a fix discovered mid-implementation, not planned up front. Before the
+fix, `isConsumableItem` said "yes, spend it" for Cheat/Timebomb/Shield while `spendConsumable`'s
+guard still said "no", so calling it on one of the three threw `RangeError` instead of removing the
+card. The two must read the same predicate, since one gates the call to the other.
 
 ## `consumables.ts` is a leaf
 
@@ -82,8 +109,9 @@ the count is of; merging them would report "2x Ward" for two cards that absorb d
 
 `activateFromPile(state, buffs, buff, windowOpen)` in `buffActivation.ts` calls `activateBuff` first
 — so a refused activation throws before the pile is touched and neither half lands — then returns
-`{ activation, buffs }` with the card removed **only** when `isConsumableItem` is true. A Cheat, a
-Timebomb or a Shield passes through with the pile unchanged.
+`{ activation, buffs }` with the card removed **only** when `isConsumableItem` is true. Since
+DLR-142, that now includes a Cheat, a Timebomb or a Shield by default — see
+`ACTIVATED_CARD_SINGLE_USE` above for the toggle and how to revert one card.
 
 The pair-return is the point. Leaving the caller to make two calls has a silent and permanent
 failure mode — AP spent, card kept, and the card back on the rail next trick — which is exactly the

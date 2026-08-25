@@ -135,19 +135,27 @@ describe('SlotMachinePanel', () => {
     const group = screen.getByRole('group', { name: SLOT_RESULT_GROUP_LABEL })
     expect(group.textContent).toContain(SLOT_OUTCOME_LABEL[twoMatchView.outcome])
     expect(twoMatchView.symbols).toHaveLength(3)
-    for (const award of twoMatchView.awards) {
-      expect(group.textContent).toContain(buffLine(award, apCostOf(award)))
-    }
+    const awardItems = screen.getAllByRole('listitem').filter((item) =>
+      twoMatchView.awards.some((award) => item.textContent === buffLine(award, apCostOf(award))),
+    )
+    expect(awardItems).toHaveLength(twoMatchView.awards.length)
     expect(twoMatchView.awards).toHaveLength(2)
   })
 
-  it('shows exactly one gold award row for a three-match pull', () => {
+  it('shows exactly one gold award row for a three-match pull, with no duplicate tier prefix', () => {
     render(<SlotMachinePanel {...baseProps} lastPull={threeMatchView} />)
     expect(threeMatchView.awards).toHaveLength(1)
+    const award = threeMatchView.awards[0]
+    const expectedText = buffLine(award, apCostOf(award))
     const group = screen.getByRole('group', { name: SLOT_RESULT_GROUP_LABEL })
-    expect(group.textContent).toContain(
-      buffLine(threeMatchView.awards[0], apCostOf(threeMatchView.awards[0])),
-    )
+    expect(group.textContent).toContain(expectedText)
+    // `buffLine` now states the tier word itself — the award row's exact text must equal it, with
+    // no separate `SLOT_TIER_LABEL` prefix prepended in front (the duplication this test guards
+    // against, e.g. "Silver — Silver Bell-Taker (Momentum) — ...").
+    const awardItem = screen
+      .getAllByRole('listitem')
+      .find((item) => item.textContent === expectedText)
+    expect(awardItem).toBeDefined()
   })
 
   it('renders no radio and does not throw when machineIds is empty (the empty-collection guard)', () => {

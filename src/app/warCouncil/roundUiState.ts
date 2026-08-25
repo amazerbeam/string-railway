@@ -26,7 +26,6 @@ import {
   buffActivationStockFor,
   BuffKind,
   hasPendingApplyPayout,
-  hasPendingTimebomb,
   isEncounterResolved,
   ALL_BRONZE,
   startBuffActivation,
@@ -289,14 +288,14 @@ export function canAct(state: RoundUiState): boolean {
 /** The plain values `applyDamageRefusalFor` needs, assembled in ONE place so the reducer's guard
  *  and the plate's disabled state cannot read availability differently.
  *
- *  This is where the app layer's shape is translated into the pure module's — `hasPendingTimebomb`
+ *  This is where the app layer's shape is translated into the pure module's — `hasPendingApplyPayout`
  *  and `canAct` are read HERE and nowhere else, which is what lets `voluntaryCashOut.ts` take four
  *  plain values and stay ignorant of both `EncounterState` and `RoundUiState`. */
 export function applyDamageStock(state: RoundUiState): ApplyDamageStock {
   return {
     bank: state.round.bank,
     multiplier: state.round.multiplier,
-    timebombPending: hasPendingTimebomb(state.encounter),
+    trickInFlight: state.round.currentTrick.length > 0,
     payoutPending: hasPendingApplyPayout(state.encounter),
     apPool: state.buffActivation.apPool,
     canAct: canAct(state),

@@ -26,6 +26,6 @@ describe('payoutEventText', () => {
   })
 
   it('states the risk in one sentence, derived from the retention percentage', () => {
-    expect(PAYOUT_QUEUE_RISK_HINT).toBe('Damage to you cuts it to 60%.')
+    expect(PAYOUT_QUEUE_RISK_HINT).toBe('Damage to you cuts it to 33%.')
   })
 })

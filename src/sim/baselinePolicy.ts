@@ -1,7 +1,7 @@
 /**
  * DLR-130 — THE baseline simulated player. Every figure `npm run sim` prints is conditional on
  * this file, so its behaviour is written out here in full rather than left to be read off the
- * code. Swap it by passing `--policy <name>`; add a policy by putting it in `POLICIES` below.
+ * code. Swap it by passing `--policy <name>`; add a policy by registering it in `policies.ts`.
  *
  * CARDS — delegates to `chooseCpuMove(round, PlayerSide.Player)`, the engine's own shipped
  * heuristic, seated on the player's side: lead the lowest legal card; when following, the lowest
@@ -63,6 +63,8 @@ import {
   ShopItem,
   SLOT_FREE_PULLS_PER_VISIT,
   SLOT_MACHINE_IDS,
+  slotPullRefusalFor,
+  slotVisitStockFor,
   type BuffId,
   type RunState,
 } from '../hunt'
@@ -142,6 +144,103 @@ export const baselinePolicy: SimPolicy = {
   nextShopAction,
 }
 
+/** play-tester (2026-08-25) — "would more/better buff access help" modeled through the ONE
+ *  mechanic that already grants it: a paid slot reroll (`SLOT_REROLL_PRICE`) can turn up a
+ *  `TwoMatch` (silver) or `ThreeMatch` (gold) award, where the baseline's single free pull almost
+ *  never does. `baselinePolicy`'s cards and buffs, VERBATIM — only `nextShopAction` differs, so a
+ *  gap against the baseline's own figures is attributable to the reroll spend, not to different
+ *  card or buff play.
+ *
+ *  SHOP — free pull first, same as baseline. Below `HEAL_FLOOR_HEALTH` (survival risk), heals
+ *  first exactly as the baseline does — a dead player can't spend a buff. At or above the floor,
+ *  spends every coin it can on further rerolls before falling back to the baseline's own
+ *  Heal -> AP capacity -> Swan tier -> Witch tier order and the flask. This is a REDISTRIBUTION of
+ *  the SAME income the baseline earns, not a "more money" run — see this policy's own report
+ *  question for that half. */
+export const HEAL_FLOOR_HEALTH = 4
+
+function rerollFocusedShopAction(run: RunState): ShopAction | null {
+  if (run.slotPullsThisVisit < SLOT_FREE_PULLS_PER_VISIT) {
+    return { kind: 'pull', machineId: SLOT_MACHINE_IDS[0] }
+  }
+
+  const stock = shopStockFor(run)
+  const belowFloor = stock.playerHealth < HEAL_FLOOR_HEALTH
+  if (belowFloor && refusalFor(stock, ShopItem.Heal) === null) {
+    return { kind: 'buy', item: ShopItem.Heal }
+  }
+  if (!belowFloor && slotPullRefusalFor(slotVisitStockFor(run)) === null) {
+    return { kind: 'pull', machineId: SLOT_MACHINE_IDS[0] }
+  }
+
+  for (const item of SHOP_PURCHASE_ORDER) {
+    if (refusalFor(stock, item) === null) {
+      return { kind: 'buy', item }
+    }
+  }
+
+  if (flaskRefusalFor(flaskStockFor(run)) === null) {
+    return { kind: 'flask' }
+  }
+
+  return null
+}
+
+export const rerollFocusedPolicy: SimPolicy = {
+  name: 'rerollFocused',
+  chooseCard,
+  wantsApplyDamage,
+  chooseBuffs,
+  nextShopAction: rerollFocusedShopAction,
+}
+
+/** play-tester (2026-08-25) — "would AP capacity purchases alone raise the win rate" modeled
+ *  through the ONE existing lever for it: `ShopItem.ApCapacity` (`AP_CAPACITY_PRICE` coins for
+ *  `AP_CAPACITY_STEP` more AP, uncapped, refilling every trick under `ApRefreshCadence.PerTrick`
+ *  — not just once per hand). `baselinePolicy`'s cards and buffs, VERBATIM — only `nextShopAction`
+ *  differs, matching this file's own attribution discipline.
+ *
+ *  SHOP — free pull first, same as baseline. Below `HEAL_FLOOR_HEALTH`, heals first, same
+ *  survival floor `rerollFocusedPolicy` uses. At or above the floor, buys AP capacity while
+ *  affordable, ahead of Heal, before falling back to the baseline's own
+ *  Heal -> AP capacity -> Swan tier -> Witch tier order and the flask. Also a REDISTRIBUTION of the
+ *  SAME income the baseline earns, for the same reason `rerollFocusedPolicy`'s docblock states a
+ *  `SimPolicy` cannot mint coins. */
+function apCapacityFocusedShopAction(run: RunState): ShopAction | null {
+  if (run.slotPullsThisVisit < SLOT_FREE_PULLS_PER_VISIT) {
+    return { kind: 'pull', machineId: SLOT_MACHINE_IDS[0] }
+  }
+
+  const stock = shopStockFor(run)
+  const belowFloor = stock.playerHealth < HEAL_FLOOR_HEALTH
+  if (belowFloor && refusalFor(stock, ShopItem.Heal) === null) {
+    return { kind: 'buy', item: ShopItem.Heal }
+  }
+  if (!belowFloor && refusalFor(stock, ShopItem.ApCapacity) === null) {
+    return { kind: 'buy', item: ShopItem.ApCapacity }
+  }
+
+  for (const item of SHOP_PURCHASE_ORDER) {
+    if (refusalFor(stock, item) === null) {
+      return { kind: 'buy', item }
+    }
+  }
+
+  if (flaskRefusalFor(flaskStockFor(run)) === null) {
+    return { kind: 'flask' }
+  }
+
+  return null
+}
+
+export const apCapacityFocusedPolicy: SimPolicy = {
+  name: 'apCapacityFocused',
+  chooseCard,
+  wantsApplyDamage,
+  chooseBuffs,
+  nextShopAction: apCapacityFocusedShopAction,
+}
+
 function chooseDiscard(ui: RoundUiState): readonly Card[] {
   if (discardRefusalFor(discardStock(ui)) !== null) return []
   const hand = ui.round.hands[PlayerSide.Player]
@@ -178,7 +277,13 @@ export const maximalistPolicy: SimPolicy = {
   wantsCheatPlay,
 }
 
-export const POLICIES: Readonly<Record<string, SimPolicy>> = {
-  baseline: baselinePolicy,
-  maximalist: maximalistPolicy,
+/** play-tester — the "how far with no buffs at all" floor. `baselinePolicy` verbatim except it
+ *  never activates a single buff, ever (`chooseBuffs` always `[]`): card play, Apply Damage timing
+ *  and shop order are all identical, so any gap against `baselinePolicy`'s own figures is
+ *  attributable to buff activation alone, not to a different strategy elsewhere. */
+export const noBuffsPolicy: SimPolicy = {
+  ...baselinePolicy,
+  name: 'noBuffs',
+  chooseBuffs: () => [],
 }
+

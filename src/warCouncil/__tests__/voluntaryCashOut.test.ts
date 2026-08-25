@@ -12,7 +12,7 @@ import { PlayerSide, RoundPhase, Suit, type RoundState } from '../types'
 const stock = (over: Partial<ApplyDamageStock> = {}): ApplyDamageStock => ({
   bank: 3,
   multiplier: 3,
-  timebombPending: false,
+  trickInFlight: false,
   payoutPending: false,
   apPool: STARTING_AP,
   canAct: true,
@@ -44,7 +44,7 @@ function round(over: Partial<RoundState> = {}): RoundState {
   }
 }
 
-describe('applyDamageRefusalFor — AC1 and D6', () => {
+describe('applyDamageRefusalFor — AC1', () => {
   it('allows the apply when the bank is up, nothing is owed, and it is the player’s move', () => {
     expect(applyDamageRefusalFor(stock())).toBeNull()
   })
@@ -55,9 +55,9 @@ describe('applyDamageRefusalFor — AC1 and D6', () => {
     )
   })
 
-  it('D6 — refuses while a Timebomb hit is still owed', () => {
-    expect(applyDamageRefusalFor(stock({ timebombPending: true }))).toBe(
-      ApplyDamageRefusal.TimebombPending,
+  it('AC1 — refuses once any card is on the table, including the Quarry’s lead', () => {
+    expect(applyDamageRefusalFor(stock({ trickInFlight: true }))).toBe(
+      ApplyDamageRefusal.TrickInProgress,
     )
   })
 
@@ -65,14 +65,13 @@ describe('applyDamageRefusalFor — AC1 and D6', () => {
     expect(applyDamageRefusalFor(stock({ canAct: false }))).toBe(ApplyDamageRefusal.NotYourMove)
   })
 
-  // The order is the reason that will still be true after the next trick banks — `flaskRefusalFor`
-  // states the same discipline. Getting it backwards tells a primed player to go take a trick.
-  it('names the move gate first, then Timebomb, then the bank', () => {
-    expect(applyDamageRefusalFor(stock({ bank: 0, timebombPending: true, canAct: false }))).toBe(
+  // The order is the reason that will still be true after the next trick banks.
+  it('names the move gate first, then the trick-in-progress gate, then the bank', () => {
+    expect(applyDamageRefusalFor(stock({ bank: 0, trickInFlight: true, canAct: false }))).toBe(
       ApplyDamageRefusal.NotYourMove,
     )
-    expect(applyDamageRefusalFor(stock({ bank: 0, timebombPending: true }))).toBe(
-      ApplyDamageRefusal.TimebombPending,
+    expect(applyDamageRefusalFor(stock({ bank: 0, trickInFlight: true }))).toBe(
+      ApplyDamageRefusal.TrickInProgress,
     )
   })
 
@@ -95,13 +94,13 @@ describe('applyDamageRefusalFor — AC1 and D6', () => {
     )
   })
 
-  // DLR-109 — the five-clause order is load-bearing: NotYourMove → TimebombPending →
+  // DLR-143 — the five-clause order is load-bearing: NotYourMove → TrickInProgress →
   // PayoutPending → InsufficientAp → EmptyBank. Walking it down from every reason true at once
   // confirms each clause yields to the one before it, in order.
-  it('DLR-109 — walks all five refusal clauses in order', () => {
+  it('DLR-143 — walks all five refusal clauses in order', () => {
     const everyReason = stock({
       canAct: false,
-      timebombPending: true,
+      trickInFlight: true,
       payoutPending: true,
       apPool: 0,
       bank: 0,
@@ -109,16 +108,16 @@ describe('applyDamageRefusalFor — AC1 and D6', () => {
     })
     expect(applyDamageRefusalFor(everyReason)).toBe(ApplyDamageRefusal.NotYourMove)
     expect(applyDamageRefusalFor({ ...everyReason, canAct: true })).toBe(
-      ApplyDamageRefusal.TimebombPending,
+      ApplyDamageRefusal.TrickInProgress,
     )
-    expect(applyDamageRefusalFor({ ...everyReason, canAct: true, timebombPending: false })).toBe(
+    expect(applyDamageRefusalFor({ ...everyReason, canAct: true, trickInFlight: false })).toBe(
       ApplyDamageRefusal.PayoutPending,
     )
     expect(
       applyDamageRefusalFor({
         ...everyReason,
         canAct: true,
-        timebombPending: false,
+        trickInFlight: false,
         payoutPending: false,
       }),
     ).toBe(ApplyDamageRefusal.InsufficientAp)
@@ -126,7 +125,7 @@ describe('applyDamageRefusalFor — AC1 and D6', () => {
       applyDamageRefusalFor({
         ...everyReason,
         canAct: true,
-        timebombPending: false,
+        trickInFlight: false,
         payoutPending: false,
         apPool: STARTING_AP,
       }),

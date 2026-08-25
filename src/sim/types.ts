@@ -1,5 +1,15 @@
 import type { AbilityChoice, Card, RoundState } from '../warCouncil'
-import type { BuffActivationRefusal, BuffId, BuffKind, RunState, ShopItem, SlotMachineId } from '../hunt'
+import type {
+  BuffActivationRefusal,
+  BuffId,
+  BuffKind,
+  BuffRewardAxis,
+  BuffTemplate,
+  BuffTier,
+  RunState,
+  ShopItem,
+  SlotMachineId,
+} from '../hunt'
 import type { RoundUiState } from '../app/warCouncil/roundUiState'
 
 /** A card and, for a Fox or a Woodcutter, the ability choice that must accompany it. Exactly
@@ -30,8 +40,13 @@ export interface CheatPlay {
  *  driver decides whether the decision is legal. */
 export interface SimPolicy {
   readonly name: string
-  /** Which card to play, with its ability choice. Called only when `canAct(ui)` holds. */
-  chooseCard(round: RoundState): CardChoice
+  /** Which card to play, with its ability choice. Called only when `canAct(ui)` holds.
+   *
+   *  `ui` is OPTIONAL and additive (2026-08-25): a policy that coordinates its card with the buffs
+   *  it armed this trick needs `buffActivation.activatedThisTrick`, which `RoundState` does not
+   *  carry. A one-parameter implementation still satisfies this type, so `baselinePolicy` and every
+   *  other existing policy are unchanged and keep ignoring it. */
+  chooseCard(round: RoundState, ui?: RoundUiState): CardChoice
   /** Whether to press Apply Damage in this between-tricks window. */
   wantsApplyDamage(ui: RoundUiState): boolean
   /** Which owned buffs to activate in this between-tricks window, in the order to activate them. */
@@ -66,6 +81,11 @@ export interface SimPolicy {
 export interface BuffWindowObservation {
   readonly kind: BuffKind
   readonly refusal: BuffActivationRefusal | null
+  /** 2026-08-25 — the reward axis of the card that was offered, so "which axes does the player even
+   *  get shown" can be asked alongside "which axes pay off". See `BuffFireOutcome.axis`. */
+  readonly axis: BuffRewardAxis
+  /** The offered card's tier. See `BuffFireOutcome.tier`. */
+  readonly tier: BuffTier
 }
 
 /** One buff that was ACTIVATED for one trick (spent its AP, `activatedThisTrick` included its id),
@@ -79,6 +99,27 @@ export interface BuffWindowObservation {
 export interface BuffFireOutcome {
   readonly kind: BuffKind
   readonly fired: boolean
+  /** 2026-08-25 — WHICH quantity this card pays on when it fires: `Magnitude` (flat damage),
+   *  `Coins`, `ApRefund`, or `Multiplier`. A card is a condition CROSSED WITH a reward axis
+   *  (`buffTemplates.ts` → `TEMPLATE_FAMILIES`), so "did Taker help" is not answerable without it:
+   *  Bell-Taker on Magnitude and Bell-Taker on Coins share a trigger and pay in different
+   *  currencies. Read off `buff.reward.axis` at activation time, beside `kind`, for the reason
+   *  `kind` itself is captured there — `activatedThisTrick` clears when the trick resolves. */
+  readonly axis: BuffRewardAxis
+  /** The tier that supplied `axis`'s value — bronze/silver/gold. Opening-pile cards are all bronze
+   *  (`startingPile.ts`), so this separates an opening card from a slot-won upgrade. */
+  readonly tier: BuffTier
+  /** The reward's actual figure at this tier on this axis (`REWARD_TIER_VALUE`) — e.g. Magnitude
+   *  bronze is 1 damage, gold is 5. Carried so a query can weight a fire by what it was worth
+   *  rather than counting every fire equally. UNIT: depends on `axis`. */
+  readonly rewardValue: number
+  /** 2026-08-25 — WHICH trick of the hand this activation belonged to (`round.tricksPlayed` as the
+   *  trick resolved). The flat `buffFireOutcomes` array cannot otherwise be grouped back into
+   *  tricks, and the Overlap Bonus (`buffAccrual.ts` → `overlapBonusFor`) pays
+   *  `max(0, firedCount - 1)` multiplier points for buffs firing on ONE trick — so "how many fired
+   *  together" is a different, and mechanically rewarded, question from "how many fired this hand".
+   *  UNIT: trick ordinal within the hand, 1-based. */
+  readonly trickOfHand: number
 }
 
 /** What one hand did. */
@@ -87,6 +128,21 @@ export interface HandReport {
   readonly damageToQuarry: number
   readonly damageToPlayer: number
   readonly tricksWon: number
+  /** Total tricks resolved this hand — won or lost alike, `round.tricksPlayed` at the hand's end.
+   *  The denominator a per-trick rate (e.g. damage per trick) needs: `tricksWon` alone undercounts
+   *  a hand where tricks were lost, and a lost trick can still move `damageToQuarry` (bank-climb
+   *  and buff effects are not gated on winning the trick). UNIT: tricks. */
+  readonly tricksPlayed: number
+  /** Apply Damage payouts (`PayoutOutcome.Paid`) that actually landed on the Quarry this hand —
+   *  already counted inside `damageToQuarry`, broken out here so a queued payout's fate can be
+   *  told apart from a payout that never queued at all. UNIT: damage. */
+  readonly applyDamagePaid: number
+  /** Apply Damage value that was queued and then never landed — the delta a `Reduced` event cut
+   *  (`cashOut - remaining`) plus the full `cashOut` an `Evaporated` event lost outright. Sums
+   *  telescope across a payout reduced more than once: each event's `cashOut` already reflects
+   *  every earlier reduction, so `applyDamagePaid + applyDamageLost` recovers the sum of every
+   *  press's frozen `cashOut` for the hand. UNIT: damage. */
+  readonly applyDamageLost: number
   readonly buffsActivated: number
   readonly apSpent: number
   readonly applyDamagePresses: number
@@ -151,4 +207,11 @@ export interface SimSummary {
 export interface SimOptions {
   readonly runs: number
   readonly baseSeed: number
+  /** play-tester (2026-08-25) — OPTIONAL what-if weighting for the run's opening buff pile
+   *  (`src/sim/openingPileVariants.ts`). Absent means the production draw, unchanged, which is what
+   *  every existing caller gets. Present means each run's opening pile is redrawn under this
+   *  weighting from the SAME seed, so a variant batch differs from its baseline only by the
+   *  weighting. Deliberately on `SimOptions` and not on `SimPolicy`: the opening pile is game
+   *  configuration, not a decision the simulated player makes. */
+  readonly openingPileWeightOf?: (template: BuffTemplate) => number
 }

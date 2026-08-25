@@ -49,7 +49,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
 /** The Timebomb row, in `buffLine` grammar — its name stays matchable across poise/refusal
  *  states because only the trailing clause changes. */
 function timebombRow() {
-  return screen.getByRole('button', { name: /^Timebomb \(/ })
+  return screen.getByRole('button', { name: /Timebomb \(/ })
 }
 
 /** DLR-114 — Timebomb relocated from the felt rail into the Apply Buff loadout panel. Every
@@ -68,7 +68,7 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
   it('is absent from the panel when the pile holds none', () => {
     renderRound({ buffs: [] })
     openLoadout()
-    expect(screen.queryByRole('button', { name: /^Timebomb \(/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Timebomb \(/ })).toBeNull()
   })
 
   it('arms on the second click, reporting the armed hint', () => {
@@ -225,7 +225,7 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     expect(screen.getByRole('button', { name: '2 of Bells, primed' })).toBeTruthy()
   })
 
-  it('reports onComplete with the pile still holding the Timebomb — DLR-132, not a one-shot item', () => {
+  it('reports onComplete with the Timebomb spent from the pile — DLR-142, single-use by default', () => {
     const onComplete = vi.fn()
     const round = makeRound({
       tricksPlayed: HAND_SIZE - 1,
@@ -250,6 +250,6 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Deal the next Hunt' }))
 
     expect(onComplete).toHaveBeenCalledTimes(1)
-    expect(onComplete.mock.calls[0][0].buffs).toEqual([bronzeTimebomb])
+    expect(onComplete.mock.calls[0][0].buffs).toEqual([])
   })
 })

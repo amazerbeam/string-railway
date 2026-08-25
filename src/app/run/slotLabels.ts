@@ -38,12 +38,6 @@ export const SLOT_PULL_LABEL = 'Pull'
 export const SLOT_FREE_TAG = 'Free'
 export const SLOT_NO_PULL_YET = 'No pull yet this visit.'
 
-export const SLOT_TIER_LABEL: Readonly<Record<BuffTier, string>> = {
-  [BuffTier.Bronze]: 'Bronze',
-  [BuffTier.Silver]: 'Silver',
-  [BuffTier.Gold]: 'Gold',
-}
-
 /** AC1 — the outcome display's own words. Total over `SlotOutcome`, so a fourth outcome is a
  *  compile error here rather than a blank line on screen — the guarantee `PURCHASE_REFUSAL_MESSAGE`
  *  already gives. */

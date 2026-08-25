@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   absorbWithWard,
+  ACTIVATED_CARD_SINGLE_USE,
   CONSUMABLE_EFFECT_LIVE,
   CONSUMABLE_TIMING,
   consumableEffectIsLive,
@@ -66,6 +67,28 @@ function cheat(id = 90): Buff {
   }
 }
 
+/** A Timebomb — an Activated card whose single-use-ness is `ACTIVATED_CARD_SINGLE_USE`'s to say. */
+function timebomb(id = 92): Buff {
+  return {
+    id,
+    kind: BuffKind.Timebomb,
+    tier: BuffTier.Bronze,
+    condition: ACTIVATED_BUFF_CONDITION,
+    reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
+  }
+}
+
+/** A Shield — an Activated card whose single-use-ness is `ACTIVATED_CARD_SINGLE_USE`'s to say. */
+function shield(id = 93): Buff {
+  return {
+    id,
+    kind: BuffKind.Shield,
+    tier: BuffTier.Bronze,
+    condition: ACTIVATED_BUFF_CONDITION,
+    reward: { axis: BuffRewardAxis.HeartCount, value: 1 },
+  }
+}
+
 /** The unpriced-kind sentinel — nothing mints it as of DLR-135. */
 function unassigned(id = 91): Buff {
   return {
@@ -97,9 +120,22 @@ describe('isConsumableItemKind — the five one-shot items, and nothing else', (
     expect(isConsumableItem(unassigned())).toBe(false)
   })
 
-  it('is true through isConsumableItem for a whole buff', () => {
+  it('is true through isConsumableItem for a DLR-111 item, unaffected by the new toggle', () => {
     expect(isConsumableItem(itemBuff(BuffKind.Ward, BuffTier.Bronze))).toBe(true)
-    expect(isConsumableItem(cheat())).toBe(false)
+  })
+})
+
+describe('ACTIVATED_CARD_SINGLE_USE — DLR-142, the developer-owned revert switch', () => {
+  it('defaults to true for Cheat, Timebomb and Shield', () => {
+    expect(ACTIVATED_CARD_SINGLE_USE[BuffKind.Cheat]).toBe(true)
+    expect(ACTIVATED_CARD_SINGLE_USE[BuffKind.Timebomb]).toBe(true)
+    expect(ACTIVATED_CARD_SINGLE_USE[BuffKind.Shield]).toBe(true)
+  })
+
+  it('isConsumableItem now removes Cheat, Timebomb and Shield from the pile, since their toggle defaults true', () => {
+    expect(isConsumableItem(cheat())).toBe(true)
+    expect(isConsumableItem(timebomb())).toBe(true)
+    expect(isConsumableItem(shield())).toBe(true)
   })
 })
 
@@ -277,8 +313,8 @@ describe('spendConsumable — AC3, exactly one card leaves the pile', () => {
     )
   })
 
-  it('throws for an id naming a Cheat — a Cheat is not spent from the pile', () => {
-    expect(() => spendConsumable([cheat(3)], 3)).toThrow(RangeError)
+  it('removes a Cheat from the pile — DLR-142, spendConsumable now agrees with isConsumableItem', () => {
+    expect(spendConsumable([cheat(3)], 3)).toHaveLength(0)
   })
 })
 

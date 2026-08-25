@@ -14,7 +14,7 @@ describe('applyDamageDelayTricks', () => {
   })
 
   it('AC5 — a shortening buff subtracts, and the result never goes below zero', () => {
-    expect(applyDamageDelayTricks({ shortenBy: 1 })).toBe(APPLY_DAMAGE_DELAY_TRICKS - 1)
+    expect(applyDamageDelayTricks({ shortenBy: 1 })).toBe(Math.max(0, APPLY_DAMAGE_DELAY_TRICKS - 1))
     expect(applyDamageDelayTricks({ shortenBy: 99 })).toBe(0)
   })
 
@@ -49,10 +49,10 @@ describe('tickApplyPayout', () => {
   })
 
   it('AC2 — counts down one resolution at a time and is not due before zero', () => {
-    const queued = queueApplyPayout(9, 4)
+    const queued = { cashOut: 9, unplayedAtPress: 4, resolutionsOwed: 2 }
     const first = tickApplyPayout(queued, false)
     expect(first.due).toBeNull()
-    expect(first.pending?.resolutionsOwed).toBe(APPLY_DAMAGE_DELAY_TRICKS)
+    expect(first.pending?.resolutionsOwed).toBe(1)
   })
 
   it('AC2 — becomes due on the resolution that takes the count to zero', () => {
@@ -86,8 +86,8 @@ describe('reduceApplyPayoutOnHit', () => {
     })
   })
 
-  it('returns null once the floored value reaches zero', () => {
-    expect(reduceApplyPayoutOnHit(queueApplyPayout(1, 4))).toBeNull()
+  it('clamps to a minimum of 1 rather than flooring to zero', () => {
+    expect(reduceApplyPayoutOnHit(queueApplyPayout(1, 4))).toMatchObject({ cashOut: 1 })
   })
 })
 

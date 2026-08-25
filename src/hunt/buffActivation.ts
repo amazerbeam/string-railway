@@ -149,9 +149,11 @@ export interface BuffActivationResult {
  * to prevent. `activateBuff` runs FIRST, so a refused activation throws before the pile is touched
  * and neither half lands.
  *
- * Cheat, Timebomb and Shield pass through with the pile UNCHANGED. They are `Activated` cards with
- * their own live mechanics, not items held until used — see `consumables.ts`'s own docblock on why
- * "consumable" is narrower here than `buffCosts.ts`'s pricing bucket of the same name.
+ * Cheat, Timebomb and Shield are `Activated` cards with their own live mechanics, not items held
+ * until used — but DLR-142's `ACTIVATED_CARD_SINGLE_USE` (defaulted `true` for all three) means
+ * `isConsumableItem` also removes them from the pile here, same as the five DLR-111 items, unless
+ * that toggle is flipped for a given card. See `consumables.ts`'s own docblock for the full
+ * distinction and how to revert one card to "stays in the pile."
  */
 export function activateFromPile(
   state: BuffActivationState,

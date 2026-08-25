@@ -157,13 +157,13 @@ describe('activateFromPile — DLR-126, an activation that also SPENDS the card'
     expect(pile).toHaveLength(2)
   })
 
-  it('leaves the pile UNCHANGED for a Cheat — an Activated card is not a one-shot item', () => {
+  it('removes a Cheat from the pile too — DLR-142, Activated cards default to single-use', () => {
     const cheat = cheatBuff(BuffTier.Bronze, 3)
     const pile: readonly Buff[] = [cheat]
 
     const { activation, buffs } = activateFromPile(startBuffActivation(), pile, cheat, true)
 
-    expect(buffs).toEqual(pile)
+    expect(buffs).toHaveLength(0)
     expect(activation.activatedThisTrick).toEqual([3])
   })
 

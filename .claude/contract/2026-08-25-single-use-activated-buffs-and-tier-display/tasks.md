@@ -2,8 +2,9 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: COMPLETE
 Started: 2026-08-25
+Completed: 2026-08-25
 
 **Goal:** Cheat, Timebomb and Shield stop being infinitely-reusable Activated cards and become one-shot items by default, via a per-card developer-owned toggle (`ACTIVATED_CARD_SINGLE_USE`) rather than a structural merge into the existing five-item consumable set; separately, every buff row on the loadout rail states its tier (Bronze/Silver/Gold).
 
@@ -39,7 +40,9 @@ Started: 2026-08-25
 
 This phase adds `ACTIVATED_CARD_SINGLE_USE` to `src/hunt/consumables.ts` and makes `isConsumableItem` read it, then corrects the one docblock outside that file whose claim it falsifies. It is a safe stopping point: `isConsumableItem`'s new behaviour is exercised by this phase's own tests, and every other file in the codebase still compiles unchanged because nothing outside `consumables.ts` and `buffActivation.ts`'s docblock references the old claim in a way the type checker sees.
 
-### Task 1: Add `ACTIVATED_CARD_SINGLE_USE` and change `isConsumableItem` in `src/hunt/consumables.ts`
+**Addendum (discovered after Phase 1, applied at the start of Phase 3):** `spendConsumable`'s own guard in `src/hunt/consumables.ts` still checked `isConsumableItemKind` (the unchanged five-item set) instead of `isConsumableItem`, so `activateFromPile` calling `spendConsumable` on a Cheat/Timebomb/Shield threw `RangeError` instead of removing the card. Fixed by changing that guard to call `isConsumableItem(found)`, making it consistent with the exact predicate `activateFromPile` already uses to decide whether to call `spendConsumable` at all. This also required flipping one more pre-existing test (`throws for an id naming a Cheat…` in `src/hunt/__tests__/consumables.test.ts`) and one more latent assertion in `roundReducer.test.ts` (`consumes one trick of the live Cheat…`, AC7) that weren't in the original Task 5–9 list but asserted the same stale pile-persistence behaviour.
+
+### Task 1: Add `ACTIVATED_CARD_SINGLE_USE` and change `isConsumableItem` in `src/hunt/consumables.ts` ✓
 
 - Skill: react-frontend
 
@@ -47,7 +50,7 @@ This phase adds `ACTIVATED_CARD_SINGLE_USE` to `src/hunt/consumables.ts` and mak
 - Modify: `src/hunt/consumables.ts`
 - Test: `src/hunt/__tests__/consumables.test.ts`
 
-- [ ] **Step 1: Write the failing tests for the new toggle and the changed `isConsumableItem` behaviour**
+- [x] **Step 1: Write the failing tests for the new toggle and the changed `isConsumableItem` behaviour**
 
 In `src/hunt/__tests__/consumables.test.ts`, add `ACTIVATED_CARD_SINGLE_USE` to the import from `../consumables`, and add two Activated-card helpers beside the existing `cheat()`:
 
@@ -113,7 +116,7 @@ describe('ACTIVATED_CARD_SINGLE_USE — DLR-142, the developer-owned revert swit
 Run: `npx vitest run src/hunt/__tests__/consumables.test.ts`
 Expected: fails — `ACTIVATED_CARD_SINGLE_USE` does not exist yet, and the new `isConsumableItem` assertions read `false` from the unchanged implementation.
 
-- [ ] **Step 2: Add the toggle and change `isConsumableItem`'s body in `src/hunt/consumables.ts`**
+- [x] **Step 2: Add the toggle and change `isConsumableItem`'s body in `src/hunt/consumables.ts`**
 
 Replace the module-level docblock at lines 22–30 (the one starting "The five one-shot items. Cheat, Timebomb and Shield are DELIBERATELY EXCLUDED…") with:
 
@@ -178,19 +181,19 @@ export function isConsumableItem(buff: Buff): boolean {
 Run: `npx vitest run src/hunt/__tests__/consumables.test.ts`
 Expected: all tests in this file pass.
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 Run: `npm run typecheck`
 Expected: exits 0, no errors.
 
-### Task 2: Correct `activateFromPile`'s stale docblock in `src/hunt/buffActivation.ts`
+### Task 2: Correct `activateFromPile`'s stale docblock in `src/hunt/buffActivation.ts` ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Modify: `src/hunt/buffActivation.ts:152-154`
 
-- [ ] **Step 1: Replace the stale claim**
+- [x] **Step 1: Replace the stale claim**
 
 Replace:
 
@@ -212,7 +215,7 @@ with:
  */
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: exits 0, no errors.
@@ -223,14 +226,14 @@ Expected: exits 0, no errors.
 
 This phase wires `activateShield` into `handleTapBuff` so Shield's effect fires for the first time, and corrects the one docblock elsewhere that describes it as never wired. It depends on nothing from Phase 1 and Phase 1 depends on nothing from it — both phases leave the codebase type-checking and internally consistent on their own.
 
-### Task 3: Wire `activateShield` into `handleTapBuff` in `src/app/warCouncil/buffHandlers.ts`
+### Task 3: Wire `activateShield` into `handleTapBuff` in `src/app/warCouncil/buffHandlers.ts` ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Modify: `src/app/warCouncil/buffHandlers.ts`
 
-- [ ] **Step 1: Add `activateShield` to the `hunt` import**
+- [x] **Step 1: Add `activateShield` to the `hunt` import**
 
 In the `import { ... } from '../../hunt'` block near the top of the file, add `activateShield` alongside the existing `activateWard`:
 
@@ -250,7 +253,7 @@ import {
 } from '../../hunt'
 ```
 
-- [ ] **Step 2: Extend the `encounter` field in `handleTapBuff`'s returned object literal**
+- [x] **Step 2: Extend the `encounter` field in `handleTapBuff`'s returned object literal**
 
 Replace:
 
@@ -270,7 +273,7 @@ with:
           : state.encounter,
 ```
 
-- [ ] **Step 3: Correct the stale comment two lines below**
+- [x] **Step 3: Correct the stale comment two lines below**
 
 Replace:
 
@@ -293,19 +296,19 @@ with:
     // `buff.kind`, so neither throw is reachable here.
 ```
 
-- [ ] **Step 4: Typecheck**
+- [x] **Step 4: Typecheck**
 
 Run: `npm run typecheck`
 Expected: exits 0, no errors.
 
-### Task 4: Correct the stale "unreachable" reasoning in `src/app/warCouncil/roundBars.ts`
+### Task 4: Correct the stale "unreachable" reasoning in `src/app/warCouncil/roundBars.ts` ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Modify: `src/app/warCouncil/roundBars.ts`
 
-- [ ] **Step 1: Replace the stale claim**
+- [x] **Step 1: Replace the stale claim**
 
 Replace:
 
@@ -327,7 +330,7 @@ with:
  */
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
 Expected: exits 0, no errors.
@@ -338,7 +341,7 @@ Expected: exits 0, no errors.
 
 This phase updates the five test files the Step 1.6 audit enumerated, each of which hard-codes an assertion that Cheat, Timebomb or Shield stays in the pile after being spent — now false by construction after Phases 1–2. Each task is independent of the others; together they bring the full suite back to green. The phase ends with the codebase type-checking and every test file internally consistent with the new behaviour.
 
-### Task 5: Flip the Cheat pile-persistence assertion in `src/hunt/__tests__/buffActivation.test.ts`
+### Task 5: Flip the Cheat pile-persistence assertion in `src/hunt/__tests__/buffActivation.test.ts` ✓
 
 - Skill: react-frontend
 
@@ -346,7 +349,7 @@ This phase updates the five test files the Step 1.6 audit enumerated, each of wh
 - Modify: `src/hunt/__tests__/buffActivation.test.ts:160-167`
 - Test: `src/hunt/__tests__/buffActivation.test.ts`
 
-- [ ] **Step 1: Replace the test**
+- [x] **Step 1: Replace the test**
 
 Replace:
 
@@ -376,12 +379,12 @@ with:
   })
 ```
 
-- [ ] **Step 2: Run the scoped test**
+- [x] **Step 2: Run the scoped test**
 
 Run: `npx vitest run src/hunt/__tests__/buffActivation.test.ts`
 Expected: all tests pass.
 
-### Task 6: Flip the two Cheat pile-persistence assertions in `src/app/warCouncil/__tests__/buffHandlers.test.ts`
+### Task 6: Flip the two Cheat pile-persistence assertions in `src/app/warCouncil/__tests__/buffHandlers.test.ts` ✓
 
 - Skill: react-frontend
 
@@ -389,7 +392,7 @@ Expected: all tests pass.
 - Modify: `src/app/warCouncil/__tests__/buffHandlers.test.ts`
 - Test: `src/app/warCouncil/__tests__/buffHandlers.test.ts`
 
-- [ ] **Step 1: Replace the first assertion, in the "a consumable item leaves the pile at the spend" describe block**
+- [x] **Step 1: Replace the first assertion, in the "a consumable item leaves the pile at the spend" describe block**
 
 Replace:
 
@@ -411,7 +414,7 @@ with:
   })
 ```
 
-- [ ] **Step 2: Replace the second assertion, in the "spending a Cheat row" describe block**
+- [x] **Step 2: Replace the second assertion, in the "spending a Cheat row" describe block**
 
 Replace:
 
@@ -433,12 +436,12 @@ with:
   })
 ```
 
-- [ ] **Step 3: Run the scoped test**
+- [x] **Step 3: Run the scoped test**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/buffHandlers.test.ts`
 Expected: all tests pass.
 
-### Task 7: Flip the two-Cheat pile-count assertion in `src/app/warCouncil/__tests__/roundReducer.test.ts`
+### Task 7: Flip the two-Cheat pile-count assertion in `src/app/warCouncil/__tests__/roundReducer.test.ts` ✓
 
 - Skill: react-frontend
 
@@ -446,7 +449,7 @@ Expected: all tests pass.
 - Modify: `src/app/warCouncil/__tests__/roundReducer.test.ts:352`
 - Test: `src/app/warCouncil/__tests__/roundReducer.test.ts`
 
-- [ ] **Step 1: Replace the assertion**
+- [x] **Step 1: Replace the assertion**
 
 Replace:
 
@@ -460,12 +463,12 @@ with:
     expect(twice.buffs).toHaveLength(1) // DLR-142 — cheatA is spent and removed; cheatB remains
 ```
 
-- [ ] **Step 2: Run the scoped test**
+- [x] **Step 2: Run the scoped test**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/roundReducer.test.ts`
 Expected: all tests pass.
 
-### Task 8: Flip the Timebomb pile-persistence assertion in `src/app/warCouncil/__tests__/roundReducer.timebomb.test.ts`
+### Task 8: Flip the Timebomb pile-persistence assertion in `src/app/warCouncil/__tests__/roundReducer.timebomb.test.ts` ✓
 
 - Skill: react-frontend
 
@@ -473,7 +476,7 @@ Expected: all tests pass.
 - Modify: `src/app/warCouncil/__tests__/roundReducer.timebomb.test.ts:78-82`
 - Test: `src/app/warCouncil/__tests__/roundReducer.timebomb.test.ts`
 
-- [ ] **Step 1: Replace the test**
+- [x] **Step 1: Replace the test**
 
 Replace:
 
@@ -495,12 +498,12 @@ with:
   })
 ```
 
-- [ ] **Step 2: Run the scoped test**
+- [x] **Step 2: Run the scoped test**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/roundReducer.timebomb.test.ts`
 Expected: all tests pass.
 
-### Task 9: Flip the `onComplete` pile-contents assertion in `src/app/warCouncil/__tests__/WarCouncilRound.timebomb.test.tsx`
+### Task 9: Flip the `onComplete` pile-contents assertion in `src/app/warCouncil/__tests__/WarCouncilRound.timebomb.test.tsx` ✓
 
 - Skill: react-frontend
 
@@ -508,7 +511,7 @@ Expected: all tests pass.
 - Modify: `src/app/warCouncil/__tests__/WarCouncilRound.timebomb.test.tsx:228-254`
 - Test: `src/app/warCouncil/__tests__/WarCouncilRound.timebomb.test.tsx`
 
-- [ ] **Step 1: Replace the test title and the final assertion**
+- [x] **Step 1: Replace the test title and the final assertion**
 
 Replace:
 
@@ -538,7 +541,7 @@ with:
   })
 ```
 
-- [ ] **Step 2: Run the scoped test**
+- [x] **Step 2: Run the scoped test**
 
 Run: `npx vitest run --project dom src/app/warCouncil/__tests__/WarCouncilRound.timebomb.test.tsx`
 Expected: all tests pass.
@@ -549,7 +552,7 @@ Expected: all tests pass.
 
 Independent of Phases 1–3: this changes only `buffLabels.ts`'s `buffLine` and its own test's one hard-coded expectation. The phase ends type-checking with the tier word flowing automatically into `buffRowAccessibleName` (which composes `buffLine`) and into every other test that calls `buffLine` directly rather than hard-coding its output.
 
-### Task 10: Add `BUFF_TIER_WORD` and prefix it in `buffLine`
+### Task 10: Add `BUFF_TIER_WORD` and prefix it in `buffLine` ✓
 
 - Skill: react-frontend
 
@@ -558,7 +561,7 @@ Independent of Phases 1–3: this changes only `buffLabels.ts`'s `buffLine` and 
 - Modify: `src/app/warCouncil/__tests__/buffLabels.test.ts:38-41`
 - Test: `src/app/warCouncil/__tests__/buffLabels.test.ts`
 
-- [ ] **Step 1: Update the failing expectation first**
+- [x] **Step 1: Update the failing expectation first**
 
 In `src/app/warCouncil/__tests__/buffLabels.test.ts`, replace:
 
@@ -583,7 +586,7 @@ with:
 Run: `npx vitest run src/app/warCouncil/__tests__/buffLabels.test.ts`
 Expected: fails — `buffLine` does not yet prefix the tier word.
 
-- [ ] **Step 2: Add `BuffTier` to the `hunt` import in `src/app/warCouncil/buffLabels.ts`**
+- [x] **Step 2: Add `BuffTier` to the `hunt` import in `src/app/warCouncil/buffLabels.ts`**
 
 Replace:
 
@@ -616,7 +619,7 @@ import {
 } from '../../hunt'
 ```
 
-- [ ] **Step 3: Add `BUFF_TIER_WORD` and prefix it in `buffLine`**
+- [x] **Step 3: Add `BUFF_TIER_WORD` and prefix it in `buffLine`**
 
 Add, immediately above `buffLine`:
 
@@ -645,7 +648,7 @@ export function buffLine(buff: Buff, apCost: ActionPoints): string {
 }
 ```
 
-- [ ] **Step 4: Run the scoped test, then typecheck**
+- [x] **Step 4: Run the scoped test, then typecheck**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/buffLabels.test.ts; npm run typecheck`
 Expected: all tests pass; typecheck exits 0.
@@ -656,35 +659,52 @@ Expected: all tests pass; typecheck exits 0.
 
 The closing phase. No production changes — only sanity-checks that the cumulative work is clean.
 
-### Task 11: Confirm the pure-core boundary still holds
+### Task 11: Confirm the pure-core boundary still holds ✓
 
-- [ ] **Step 1: Grep the touched pure-core files for a React import or a DOM global**
+- [x] **Step 1: Grep the touched pure-core files for a React import or a DOM global**
 
 Run: `Get-ChildItem src\hunt -Recurse -Include *.ts | Select-String -Pattern "from 'react'|\bwindow\.|\bdocument\.|localStorage"`
 Expected: zero hits — `src/hunt/consumables.ts` and `src/hunt/buffActivation.ts` stay inside the pure-core boundary.
 
-### Task 12: Confirm no stale "stays in the pile" claim remains
+Confirmed: zero hits.
 
-- [ ] **Step 1: Grep the touched trees for the retired phrasing**
+### Task 12: Confirm no stale "stays in the pile" claim remains ✓
+
+- [x] **Step 1: Grep the touched trees for the retired phrasing**
 
 Run: `Get-ChildItem src\hunt,src\app\warCouncil -Recurse -Include *.ts,*.tsx | Select-String -Pattern "not a one-shot item|NOT consumed|pile UNCHANGED|leaves the pile unchanged|pile still holding the Timebomb"`
 Expected: zero hits — every docblock and test title this contract touched has been corrected.
 
-### Task 13: Static gates and full suite
+Confirmed: one hit, `src/hunt/consumables.ts:285` ("THROWS rather than returning the pile unchanged when `id` is absent or names a non-consumable") — this is the expected, legitimate hit the task brief called out in advance, describing `spendConsumable`'s error-throwing guard on a bad id, not the retired pile-persistence claim. Judged on its own merit: not a stale claim.
 
-- [ ] **Step 1: Typecheck, lint, and the unfiltered suite**
+### Task 13: Static gates and full suite ✓
+
+- [x] **Step 1: Typecheck, lint, and the unfiltered suite**
 
 Run: `npm run typecheck; npm run lint; npm test`
 Expected: all three exit 0; Vitest reports 0 failed.
 
-- [ ] **Step 2: Production build**
+Actual (post-addendum): typecheck PASS (exit 0), lint PASS (exit 0, as part of `npm run build`), `npm test` PASS — `Test Files 140 passed (140)`, `Tests 1833 passed (1833)`.
+
+**Addendum (2026-08-25, applied after the initial BLOCKED finding above):** the 12 failures reported below were fixed by dropping the `^` start-anchor from 5 role-name-query regexes across 3 test files, so each still finds its row by kind name (`Cheat` / `Timebomb`) regardless of the new `Bronze `/`Silver `/`Gold ` tier prefix Phase 4 added ahead of the kind name in `buffLine`'s output:
+- `src/app/warCouncil/__tests__/WarCouncilRound.timebomb.test.tsx` — 2 call sites (`/^Timebomb \(/` → `/Timebomb \(/`), lines 52 and 71.
+- `src/app/warCouncil/__tests__/WarCouncilRound.readouts.test.tsx` — 1 call site (`/^Cheat \(/` → `/Cheat \(/`), line 185.
+- `src/app/warCouncil/__tests__/WarCouncilRound.actionBar.test.tsx` — 2 call sites (`/^Cheat \(/` → `/Cheat \(/`), lines 91 and 147.
+
+Each call site was checked against its rendered tree before the anchor was dropped — "Cheat"/"Timebomb" are buff *kind* names with no other buff in scope whose name contains them as a substring, so the match stays unambiguous. No production code changed. Scoped run (`npx vitest run --project dom` on the 3 files) reported `Test Files 3 passed (3)`, `Tests 25 passed (25)`; the full suite (`npm test`) then reported `Test Files 140 passed (140)`, `Tests 1833 passed (1833)`; `npm run typecheck` exited 0; `npm run build` (which runs lint + typecheck + vite build) exited 0.
+
+Original finding, preserved for the record: typecheck PASS (exit 0), lint PASS (exit 0), `npm test` FAIL — `Test Files 3 failed | 137 passed (140)`, `Tests 12 failed | 1821 passed (1833)`. All 12 failures were role-name regex anchors (`/^Cheat \(/`, `/^Timebomb \(/`) in three `WarCouncilRound.*.test.tsx` files that predated Phase 4's tier-prefix change to `buffLine` and were never updated for it — a genuine regression from this contract's own Phase 3/Phase 4 interaction, not the pre-existing `scripts/query-furthest.ts` issue (which did not surface). See `pr-description.md` for the original breakdown.
+
+- [x] **Step 2: Production build**
 
 Run: `npm run build`
 Expected: exits 0, `dist/` written, no bundler errors.
 
-### Task 14: Update the PR description
+Confirmed: exit 0, `dist/index.html`, `dist/assets/index-*.css`, `dist/assets/index-*.js` written, no bundler errors.
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder**
+### Task 14: Update the PR description ✓
+
+- [x] **Step 1: Write `pr-description.md` in this plan folder**
 
 Include:
 - Link to `plan.md` in this folder.
@@ -695,6 +715,16 @@ Include:
 - One-line note: reverting any one of Cheat/Timebomb/Shield to "stays in the pile" is a single boolean flip in `ACTIVATED_CARD_SINGLE_USE` (`src/hunt/consumables.ts`) — no other file changes.
 
 ---
+
+## Fix-pass addendum (post-review round 1)
+
+Combined feedback from Code-Evaluator, Defender and QA, fixed in one pass:
+
+- **Code-Evaluator** — `src/app/warCouncil/buffHandlers.ts`: deleted the stale clause ("`buffs` is unchanged for a Cheat, a Timebomb or a Shield") from the comment above the `activateFromPile` call, which contradicted the already-correct DLR-132/DLR-142 comment ~25 lines below. Only one true statement of `activateFromPile`'s pile behaviour remains in the function.
+- **Defender (critical)** — `buffLine`'s new tier-word prefix duplicated the tier label `SlotMachinePanel.tsx` already prepended from `SLOT_TIER_LABEL`, producing player-visible duplicate text (`"Silver — Silver Bell-Taker ..."`). Fixed by dropping the redundant `SLOT_TIER_LABEL` prefix from `SlotMachinePanel.tsx`'s award row (line ~178), matching how `BuffLoadoutPanel.tsx` already calls `buffLine` with no separate prefix. Removed the now-unused `SLOT_TIER_LABEL` import from `SlotMachinePanel.tsx`, and removed the `SLOT_TIER_LABEL` export itself from `src/app/run/slotLabels.ts` after confirming zero remaining consumers anywhere (production or tests) — its only production call site was the line just removed, and no test imported it directly. Strengthened `src/app/run/__tests__/SlotMachinePanel.test.tsx`'s two award-row assertions to check a list item's exact text equals `buffLine(award, apCostOf(award))`, so a future duplicate-prefix regression is actually caught (the prior `toContain` assertion couldn't catch this).
+- **QA (`ac-test-gap`)** — Added a test for Shield's wiring into `handleTapBuff`, mirroring the existing Ward coverage: `src/app/warCouncil/__tests__/buffHandlers.test.ts` now has a `handleTapBuff — spending a Shield row` describe block that constructs a Shield buff via the file's existing `itemBuff` helper, spends it through `spend(...)`, and asserts `after.encounter.shieldHearts` equals `shieldHeartsForTier(tier)` (imported from `../../../hunt`, not a hardcoded number), its AP is spent, and the card leaves the pile.
+
+**Verification (this round):** `npm run typecheck` clean; `npm run lint` clean; scoped Vitest (`buffHandlers.test.ts` + `SlotMachinePanel.test.tsx`) 32/32 passed; full `npm test` 1834/1834 passed (140 test files, up from 1833 before this round's new test); `npm run build` succeeded, `dist/` written.
 
 ## Self-review
 

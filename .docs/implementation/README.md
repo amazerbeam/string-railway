@@ -26,11 +26,11 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                                                |
 | --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, PT-001, PT-002                                                                                  |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, PT-001, PT-002                                                                                  |
 | `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, PT-002                                                                          |
-| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, PT-001, PT-002 |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, PT-002                                                                          |
+| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                 |
 | `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118                                                                                                                                                                                                                                                                                                 |
 | `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118                                                                                                                                                                                                                                                                                                 |
@@ -1037,6 +1037,46 @@ Start at [hunt/the-opening-pile.md](hunt/the-opening-pile.md) for the draw, the 
 sentinel decision, [hunt/buff-pile.md](hunt/buff-pile.md) for the superseded scaffold it replaced, or
 [run-winnability-simulation.md](run-winnability-simulation.md) for the before/after figures.
 `.docs/game_rules/the-hunt.md` **is** touched: what a player holds when a run begins is a rule.
+
+## DLR-143, Apply Damage reworked: leader-only, Timebomb stacks, 1-trick settle, ⅓ retention (2026-08-25)
+
+**DLR-143 corrected three Apply Damage timing/economy rules in the same pass, because all three share
+the two files that gate and pay the action.** The press's own availability gate changed shape rather
+than merely its value: `ApplyDamageRefusal.TimebombPending` (design decision D6, 2026-08-19) is
+**deleted**, not relaxed — a pending Timebomb no longer blocks the press at all, reversing a rule that
+was three days old. In its place, `TrickInProgress` makes the press **leader-only**: refused whenever
+`state.round.currentTrick.length > 0`, including the Quarry's own lead, independent of Timebomb state
+entirely. The two systems may now stack, and settle together in the same trick's resolution fold — no
+new fold logic was needed, because `commitHandlers.ts`'s existing four-step order (trick damage →
+Timebomb clear → Timebomb book → payout tick) already produced the right answer the moment a state
+reaching it became possible.
+
+**Both tunables moved in the same ticket.** `APPLY_DAMAGE_DELAY_TRICKS` went `1 → 0`, so a queued
+payout now settles at the resolution of the very next trick after the press rather than the one after
+that — DLR-109's "current trick plus the next trick" reading is retired outright.
+`APPLY_DAMAGE_HIT_RETENTION` went `0.6 → 1/3` (still floored), so a trick that costs the player red
+health while a payout is queued now keeps a third of the frozen figure rather than 60%. Neither the
+reduction mechanism nor the fold order changed — only the fraction and the two gating/timing rules
+around it.
+
+**A review round caught a real second-order gap an identifier grep could not see.** Two tests in
+`roundReducer.applyDamage.test.ts` exercised the reversed D6 rule through the real two-tap press flow
+without ever naming the string `timebombPending` — an audit that greps for the removed identifier
+alone would have missed both. Both were rewritten to their mirrors, and a new stacked-fold test proves
+a Timebomb queued before the press and the payout the press queues both settle in the same trick
+resolution — the one scenario the old refusal made unreachable. A separate finding, caught only by the
+combined reviewer dispatch, was `src/app/warCouncil/__tests__/actionBarLabels.test.ts` — a file
+outside every task's stated file list that hardcoded the pre-change "60%" wording via
+`PAYOUT_QUEUE_RISK_HINT` and broke the moment the retention constant changed; fixed in the same
+review-fix pass.
+
+Start at [war-council/voluntary-cash-out.md](war-council/voluntary-cash-out.md) for the leader-only
+gate and the reason vocabulary swap, or
+[hunt/delayed-apply-damage-payout.md](hunt/delayed-apply-damage-payout.md) for the two tunables, the
+retuned three-fate table, and why the fold order needed no code change to handle the newly-reachable
+stacked case. `.docs/game_rules/the-hunt.md` **is** touched: when Apply Damage may be pressed, whether
+it stacks with Timebomb, how long a payout takes to settle, and what fraction survives a hit are all
+rules a player acts on.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

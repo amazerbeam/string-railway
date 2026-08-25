@@ -30,8 +30,10 @@ import {
   slotVisitStockFor,
   spinSeedFor,
   startRun,
+  type BuffTemplate,
   type RunState,
 } from '../hunt'
+import { withOpeningPile } from './openingPileVariants'
 import { playHand } from './playHand'
 import { MAX_HANDS_PER_FIGHT, MAX_SHOP_ACTIONS_PER_VISIT } from './simConfig'
 import { RunEnding, type HandReport, type RunReport, type SimPolicy } from './types'
@@ -93,8 +95,17 @@ function visitShop(run: RunState, policy: SimPolicy): ShopVisitOutcome {
 /** Plays one whole run from `seed`, ending `Won`, `Lost`, or `Stalled` — a driver failure
  *  (a hand stalled or faulted, or `MAX_HANDS_PER_FIGHT` was hit), deliberately distinct from
  *  `Lost`, which is a genuine game outcome. */
-export function playRun(seed: number, policy: SimPolicy): RunReport {
-  let run = startRun(PLAYER_START_HEALTH, [], seed)
+export function playRun(
+  seed: number,
+  policy: SimPolicy,
+  /** play-tester (2026-08-25) — OPTIONAL what-if opening-pile weighting; see
+   *  `SimOptions.openingPileWeightOf`. Absent leaves `startRun`'s production draw untouched, which
+   *  is what every pre-existing caller gets. */
+  openingPileWeightOf?: (template: BuffTemplate) => number,
+): RunReport {
+  const started = startRun(PLAYER_START_HEALTH, [], seed)
+  let run =
+    openingPileWeightOf === undefined ? started : withOpeningPile(started, openingPileWeightOf)
   let carried: EncounterDeck = FRESH_ENCOUNTER_DECK
   let handNumber = 1
   let handsThisFight = 0

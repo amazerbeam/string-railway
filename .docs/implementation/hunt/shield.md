@@ -115,10 +115,16 @@ absorbs passes the remainder on to the blue hearts first, ahead of red health.
 
 ## Known defects, recorded and not fixed
 
-- **Unreachable in play.** `shieldBuff` has zero production callers and `activateShield` has no
-  app-layer caller, so `encounter.shieldHearts` is `0` for the whole of a real run. Pinned by
-  `src/sim/__tests__/reachability.test.ts`, which asserts `BuffKind.Shield` is _still_ unreachable.
-  **No blue heart has ever been drawn by anything.**
+- **Unreachable in play, for a narrower reason since DLR-142 (2026-08-25).** `activateShield` now
+  HAS an app-layer caller — `handleTapBuff` (`src/app/warCouncil/buffHandlers.ts`) wires it in,
+  mirroring the existing Ward branch — and fires correctly the moment it runs. What still makes
+  `encounter.shieldHearts` `0` for the whole of a real run is that `shieldBuff` has zero production
+  callers: nothing mints a Shield into any drawable pool, so `activateShield` is never actually
+  invoked in play. Pinned by `src/sim/__tests__/reachability.test.ts`, which asserts `BuffKind.Shield`
+  is _still_ unreachable. **No blue heart has ever been drawn by anything.** DLR-142 also made
+  Shield single-use by default (`ACTIVATED_CARD_SINGLE_USE`, see
+  [consumable-items.md](consumable-items.md)) — once a Shield source exists, activating one removes
+  it from the pile the same way a Cheat or Timebomb now does.
 - **The `breaking` overlay over-draws** when a shield partially absorbs a landed hit: 3 damage into
   2 blue hearts drops red health by 1 but draws 3 breaking red pips, because
   `resolution.damageToPlayer` is gross while `encounter.shieldHearts` is post-absorption and the

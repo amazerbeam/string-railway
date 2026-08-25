@@ -8,6 +8,11 @@ export default defineConfig({
   // an explicit path before adding the first client-side route.
   base: './',
   plugins: [react()],
+  server: {
+    // dist/dist-ssr are build output, not source — watching them risks a locked or
+    // mid-write file there (seen from dist-ssr) crashing the dev server's fs watcher.
+    watch: { ignored: ['**/dist/**', '**/dist-ssr/**'] },
+  },
   test: {
     projects: [
       {

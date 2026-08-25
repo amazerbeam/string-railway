@@ -2,6 +2,7 @@ import {
   BuffKind,
   BuffRewardAxis,
   BuffTargetSuit,
+  BuffTier,
   buffTargetRankOf,
   buffTargetSuitOf,
   type ActionPoints,
@@ -142,8 +143,15 @@ export function buffRewardPhrase(buff: Buff): string {
 /** THE one glanceable line, and the row's own accessible name — one string, so what a sighted
  *  player reads and what a screen reader announces cannot drift.
  *  `Bell-Taker (Momentum) — win a trick with Bells: +2 multiplier. 2 AP.` */
+/** The tier word every loadout row states, so a player can tell which copy of a buff they own. */
+const BUFF_TIER_WORD: Readonly<Record<BuffTier, string>> = {
+  [BuffTier.Bronze]: 'Bronze',
+  [BuffTier.Silver]: 'Silver',
+  [BuffTier.Gold]: 'Gold',
+}
+
 export function buffLine(buff: Buff, apCost: ActionPoints): string {
-  return `${buffName(buff)} — ${buffConditionSentence(buff)}: ${buffRewardPhrase(buff)}. ${apCost} AP.`
+  return `${BUFF_TIER_WORD[buff.tier]} ${buffName(buff)} — ${buffConditionSentence(buff)}: ${buffRewardPhrase(buff)}. ${apCost} AP.`
 }
 
 /** PLACEHOLDER copy, as this project's rest is. */

@@ -90,11 +90,21 @@ if (!state.applyPoised) return { ...state, applyPoised: true }
 ```
 
 **It asks the refusal predicate on BOTH taps, and that is load-bearing.** The felt can change under a
-poised plate — a Timebomb booking lands, a reveal is held, the turn passes — and re-reading is what stops
-a poise made while the control was live from committing after it stopped being. Design decision D6 asks
-for exactly this: the control must read the pending-Timebomb predicate *before it commits to anything*.
-There is a spec that books Timebomb between the two taps and asserts the commit is refused and the poise
-dropped.
+poised plate — the Quarry leads (starting the trick and closing the leader-only window), a reveal is
+held, the turn passes — and re-reading is what stops a poise made while the control was live from
+committing after it stopped being.
+
+> **Design decision D6 (2026-08-19) asked for exactly this against a different predicate, and DLR-143
+> (2026-08-25) reversed which predicate it is.** ~~The control must read the pending-Timebomb predicate
+> *before it commits to anything*. There is a spec that books Timebomb between the two taps and asserts
+> the commit is refused and the poise dropped.~~ A pending Timebomb no longer refuses the press at all —
+> `ApplyDamageRefusal.TimebombPending` is deleted from the reason vocabulary, not merely relaxed. The
+> re-read on both taps is still load-bearing, but against the **leader-only** gate now:
+> `TrickInProgress` refuses once any card is on the table, so a poise made while the trick was still
+> empty correctly drops if the Quarry's lead lands before the second tap. The spec that used to book a
+> Timebomb between the two taps and assert the commit refused now asserts the **opposite** — the commit
+> succeeds and the Timebomb settles alongside the queued payout at the next trick resolution — and a
+> new spec covers the leader-only case directly (a card already on the table blocks even the poise).
 
 A refusal **drops a held poise** rather than leaving it stranded, and never half-applies. The reason is
 already on the plate's face, so the player is never left with an inert control and no visible cause.
@@ -180,17 +190,24 @@ a disabled button.
 
 ## What the tests pin
 
-- `__tests__/roundReducer.applyDamage.test.ts` — the poise, the refusals (all five since DLR-109), the
-  D6 race (Timebomb booked *between* the two taps), cancel, the trick carrying on and resolving
-  normally afterwards, and a further tap on a resolved fight being inert rather than throwing.
+- `__tests__/roundReducer.applyDamage.test.ts` — the poise, the refusals (all five since DLR-109,
+  `TrickInProgress` since DLR-143), cancel, the trick carrying on and resolving normally afterwards,
+  and a further tap on a resolved fight being inert rather than throwing.
   **Since DLR-109** its assertions on the committing tap changed direction: the Quarry's health no
   longer drops in the same transition, `encounter.pendingApplyPayout` holds the frozen `cashOut`
-  instead, and `apPool` falls by `APPLY_DAMAGE_AP_COST` on the commit and not on the poise.
+  instead, and `apPool` falls by `APPLY_DAMAGE_AP_COST` on the commit and not on the poise. **DLR-143
+  rewrote the two D6-titled tests to their mirrors** (a pending Timebomb no longer blocks the poise or
+  the commit), added a leader-only test (a trick already in flight cannot even be poised), and added a
+  stacked-fold test proving a Timebomb queued before the press and the payout the press queues both
+  settle in the same trick resolution — the one scenario the old refusal made unreachable.
 - `__tests__/roundReducer.delayedApply.test.ts` (new, DLR-109; **rewritten for the reduce-not-wipe
-  figures, DLR-141**) — the landing after `APPLY_DAMAGE_DELAY_TRICKS + 1` resolutions, the AC3/DLR-141
-  reduction to `APPLY_DAMAGE_HIT_RETENTION` floored, the AC4 press-time snapshot surviving a card
-  played during the delay window, the Timebomb-then-reduce ordering on a shared resolution, and the
-  hand-end flush.
+  figures, DLR-141; restructured for the one-trick settle and ⅓ retention, DLR-143**) — the landing at
+  the resolution of the very next trick after the press (was `APPLY_DAMAGE_DELAY_TRICKS + 1`
+  resolutions with the delay at `1`; now the same expression evaluates to 1 resolution with the delay
+  at `0`), the AC3/DLR-141 reduction to `APPLY_DAMAGE_HIT_RETENTION` floored (`⅓` since DLR-143, `3`
+  where the worked example used to read `5`), the AC4 press-time snapshot surviving a card played
+  during the delay window, the Timebomb-then-reduce ordering on a shared resolution, and the hand-end
+  flush.
 - ~~`__tests__/ApplyDamagePlate.test.tsx`~~ — **deleted with the component by DLR-114.** Its coverage
   moved to `__tests__/ActionBar.test.tsx` and `__tests__/WarCouncilRound.actionBar.test.tsx`, which
   assert the same behaviours against the bar's button: live and tappable, disabled with the reason on

@@ -19,7 +19,6 @@ import {
   SLOT_RESULT_GROUP_LABEL,
   SLOT_SECTION_LABEL,
   SLOT_STRIP_GROUP_LABEL,
-  SLOT_TIER_LABEL,
   slotMachineAccessibleName,
   slotOddsText,
   slotPullAccessibleName,
@@ -174,9 +173,7 @@ export default function SlotMachinePanel({
             </ul>
             <ul className="shop-slot-awards">
               {lastPull.awards.map((award) => (
-                <li key={award.id}>
-                  {`${SLOT_TIER_LABEL[award.tier]} — ${buffLine(award, apCostOf(award))}`}
-                </li>
+                <li key={award.id}>{buffLine(award, apCostOf(award))}</li>
               ))}
             </ul>
           </>

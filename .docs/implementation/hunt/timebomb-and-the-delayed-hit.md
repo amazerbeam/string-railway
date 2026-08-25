@@ -158,12 +158,19 @@ carries the record through untouched. Nothing here decides *when* the hit lands 
 
 `hasPendingTimebomb` is exported as the one statement of "is anything owed", so a queue check and a
 payment cannot disagree about whether there is work to do. The reducer reads it to decide whether the
-queue needs clearing after a payment. **Its second, reserved purpose acquired a caller at DLR-94** —
-D6 (2026-08-19) decided that Apply Damage must be disabled while Timebomb is pending, and when DLR-91
-shipped there was no such control, so the predicate was kept waiting rather than re-derived by a later
-ticket. DLR-94 built the control and read this predicate: `src/warCouncil/voluntaryCashOut.ts`'s
-`applyDamageRefusalFor` returns `TimebombPending`, re-asked on the confirming second tap. It reads
-**both** sides of the queue, so a hit owed to the Quarry locks the control too.
+queue needs clearing after a payment.
+
+> **Its second, reserved purpose acquired a caller at DLR-94, and lost it again at DLR-143.** D6
+> (2026-08-19) decided that Apply Damage must be disabled while Timebomb is pending, and when DLR-91
+> shipped there was no such control, so the predicate was kept waiting rather than re-derived by a
+> later ticket. DLR-94 built the control and read this predicate:
+> `src/warCouncil/voluntaryCashOut.ts`'s `applyDamageRefusalFor` returned `TimebombPending`, re-asked
+> on the confirming second tap, reading **both** sides of the queue so a hit owed to the Quarry locked
+> the control too. **DLR-143 (2026-08-25) reversed D6 outright** — the two systems now stack rather
+> than exclude each other — and `roundUiState.ts`'s `applyDamageStock` dropped its only call to
+> `hasPendingTimebomb` in that file as part of the change. The exported predicate itself is untouched
+> and still answers "is anything owed" for the reducer's own clearing logic; it simply has no
+> caller outside `src/hunt/` any more.
 
 ## The charge — bought, carried, spent
 

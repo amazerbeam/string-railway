@@ -16,10 +16,11 @@ import type { RoundState } from './types'
 export const ApplyDamageRefusal = {
   /** AC1 — nothing banked, so there is nothing to cash. */
   EmptyBank: 'emptyBank',
-  /** D6 (version-4-scope §3, decided 2026-08-19) — a booked Timebomb hit has not landed yet, and a
-   *  player able to cash out on demand could otherwise dodge the interaction between the two
-   *  systems entirely. */
-  TimebombPending: 'timebombPending',
+  /** DLR-143 AC1 — a trick has already started (the Quarry's lead or the player's own lead is
+   *  already on the table). Apply Damage is leader-only: it must be pressed before any card
+   *  lands, never mid-trick. Replaces the D6 (version-4-scope §3, 2026-08-19) TimebombPending
+   *  rule, which DLR-143 reverses — a pending Timebomb no longer blocks the press. */
+  TrickInProgress: 'trickInProgress',
   /** DLR-109 — a pressed cash-out is still in the air. One at a time. */
   PayoutPending: 'payoutPending',
   /** DLR-109 AC1 — the hand's AP pool does not cover `APPLY_DAMAGE_AP_COST`. */
@@ -39,8 +40,9 @@ export type ApplyDamageRefusal = (typeof ApplyDamageRefusal)[keyof typeof ApplyD
 export interface ApplyDamageStock {
   readonly bank: number
   readonly multiplier: number
-  /** A Timebomb is owed to either side and has not been paid. */
-  readonly timebombPending: boolean
+  /** DLR-143 AC1 — the current trick already has a card on the table. Replaces `timebombPending`:
+   *  a pending Timebomb no longer gates this action, per D6's reversal. */
+  readonly trickInFlight: boolean
   /** DLR-109 — a cash-out is already queued and undelivered. */
   readonly payoutPending: boolean
   /** DLR-109 AC1 — the hand's remaining action points. */
@@ -57,7 +59,7 @@ export interface ApplyDamageStock {
  * from `roundUiState.ts` rather than recomputed in the component.
  *
  * `NotYourMove` comes FIRST because it is true of the whole felt rather than of this control, and
- * `TimebombPending` before `PayoutPending` before `InsufficientAp` before `EmptyBank` for
+ * `TrickInProgress` before `PayoutPending` before `InsufficientAp` before `EmptyBank` for
  * `flaskRefusalFor`'s stated reason: report the reason that will still be true after the next
  * trick banks. Telling a primed player with an empty bank to go and take a trick would be
  * actively wrong. `EmptyBank` stays LAST of the five because it is the one reason that stops
@@ -71,7 +73,7 @@ export interface ApplyDamageStock {
  */
 export function applyDamageRefusalFor(stock: ApplyDamageStock): ApplyDamageRefusal | null {
   if (!stock.canAct) return ApplyDamageRefusal.NotYourMove
-  if (stock.timebombPending) return ApplyDamageRefusal.TimebombPending
+  if (stock.trickInFlight) return ApplyDamageRefusal.TrickInProgress
   if (stock.payoutPending) return ApplyDamageRefusal.PayoutPending
   if (!canAffordAp(stock.apPool, APPLY_DAMAGE_AP_COST)) return ApplyDamageRefusal.InsufficientAp
   if (cashValue(stock.bank, stock.multiplier) <= 0) return ApplyDamageRefusal.EmptyBank

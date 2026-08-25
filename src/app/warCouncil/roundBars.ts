@@ -43,8 +43,10 @@ import type { RoundUiState } from './roundUiState'
  * screen, while `ui.encounter.shieldHearts` is the POST-absorption remainder — so when a shield
  * partially absorbs a landed hit, more red pips render `breaking` than red health actually lost.
  * Fixing it exactly needs `ResolvedTrick` to record the absorption, which is engine/state work
- * this ticket's Scope Boundaries put out of bounds. Unreachable today because nothing in the app
- * layer calls `activateShield`, so `shieldHearts` is always `0` in real play.
+ * this ticket's Scope Boundaries put out of bounds. Unreachable today because nothing mints a
+ * Shield buff into any drawable pool yet (DLR-142) — `activateShield` is wired into
+ * `handleTapBuff` and fires correctly once a Shield exists, but `shieldHearts` stays `0` in real
+ * play until one does.
  */
 export function barsForRound(
   ui: RoundUiState,

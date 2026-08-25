@@ -31,7 +31,16 @@ import {
   type RoundUiSeed,
   type RoundUiState,
 } from '../../app/warCouncil/roundUiState'
-import { baselinePolicy, maximalistPolicy, POLICIES } from '../baselinePolicy'
+import {
+  apCapacityFocusedPolicy,
+  baselinePolicy,
+  HEAL_FLOOR_HEALTH,
+  maximalistPolicy,
+  noBuffsPolicy,
+  rerollFocusedPolicy,
+} from '../baselinePolicy'
+import { POLICIES } from '../policies'
+import { playHand } from '../playHand'
 
 /** Assembles a `RoundUiSeed` from a real run and a real deal, exactly the fields `App.tsx`'s mount
  *  passes — mirrors `playHand.ts`'s (Phase 3) `seedFor` helper in spirit, ahead of its existence. */
@@ -120,10 +129,18 @@ describe('baselinePolicy.nextShopAction', () => {
 })
 
 describe('maximalistPolicy', () => {
-  it('POLICIES holds exactly baseline and maximalist, each named after its key', () => {
-    expect(Object.keys(POLICIES).sort()).toEqual(['baseline', 'maximalist'])
-    expect(POLICIES.baseline.name).toBe('baseline')
-    expect(POLICIES.maximalist.name).toBe('maximalist')
+  it('POLICIES holds every named policy, each named after its key', () => {
+    expect(Object.keys(POLICIES).sort()).toEqual([
+      'apCapacityFocused',
+      'baseline',
+      'cardAware',
+      'maximalist',
+      'noBuffs',
+      'rerollFocused',
+    ])
+    for (const [key, policy] of Object.entries(POLICIES)) {
+      expect(policy.name).toBe(key)
+    }
   })
 
   it('differs from baselinePolicy only in the two levers — the shared methods are reference-identical', () => {
@@ -179,5 +196,115 @@ describe('maximalistPolicy', () => {
       expect(play.card.rank).not.toBe(CardRank.Fox)
       expect(play.card.rank).not.toBe(CardRank.Woodcutter)
     }
+  })
+})
+
+describe('rerollFocusedPolicy', () => {
+  it('differs from baselinePolicy only in nextShopAction — the shared methods are reference-identical', () => {
+    expect(rerollFocusedPolicy.chooseCard).toBe(baselinePolicy.chooseCard)
+    expect(rerollFocusedPolicy.wantsApplyDamage).toBe(baselinePolicy.wantsApplyDamage)
+    expect(rerollFocusedPolicy.chooseBuffs).toBe(baselinePolicy.chooseBuffs)
+    expect(rerollFocusedPolicy.nextShopAction).not.toBe(baselinePolicy.nextShopAction)
+  })
+
+  it('takes the free pull first, same as baseline', () => {
+    const run = startRun(PLAYER_START_HEALTH, [], 29)
+    expect(rerollFocusedPolicy.nextShopAction(run)).toEqual({
+      kind: 'pull',
+      machineId: SLOT_MACHINE_IDS[0],
+    })
+  })
+
+  it('at or above HEAL_FLOOR_HEALTH, spends a coin on a paid reroll instead of healing', () => {
+    const run: RunState = {
+      ...startRun(PLAYER_START_HEALTH, [], 30),
+      coins: 5,
+      slotPullsThisVisit: SLOT_FREE_PULLS_PER_VISIT,
+      encounter: {
+        ...startRun(PLAYER_START_HEALTH, [], 30).encounter,
+        health: { player: HEAL_FLOOR_HEALTH, quarry: 10 },
+      },
+    }
+    expect(rerollFocusedPolicy.nextShopAction(run)).toEqual({
+      kind: 'pull',
+      machineId: SLOT_MACHINE_IDS[0],
+    })
+  })
+
+  it('below HEAL_FLOOR_HEALTH, heals instead of rerolling', () => {
+    const run: RunState = {
+      ...startRun(PLAYER_START_HEALTH, [], 31),
+      coins: 5,
+      slotPullsThisVisit: SLOT_FREE_PULLS_PER_VISIT,
+      encounter: {
+        ...startRun(PLAYER_START_HEALTH, [], 31).encounter,
+        health: { player: HEAL_FLOOR_HEALTH - 1, quarry: 10 },
+      },
+    }
+    expect(rerollFocusedPolicy.nextShopAction(run)).toEqual({ kind: 'buy', item: 'heal' })
+  })
+})
+
+describe('apCapacityFocusedPolicy', () => {
+  it('differs from baselinePolicy only in nextShopAction — the shared methods are reference-identical', () => {
+    expect(apCapacityFocusedPolicy.chooseCard).toBe(baselinePolicy.chooseCard)
+    expect(apCapacityFocusedPolicy.wantsApplyDamage).toBe(baselinePolicy.wantsApplyDamage)
+    expect(apCapacityFocusedPolicy.chooseBuffs).toBe(baselinePolicy.chooseBuffs)
+    expect(apCapacityFocusedPolicy.nextShopAction).not.toBe(baselinePolicy.nextShopAction)
+  })
+
+  it('takes the free pull first, same as baseline', () => {
+    const run = startRun(PLAYER_START_HEALTH, [], 32)
+    expect(apCapacityFocusedPolicy.nextShopAction(run)).toEqual({
+      kind: 'pull',
+      machineId: SLOT_MACHINE_IDS[0],
+    })
+  })
+
+  it('at or above HEAL_FLOOR_HEALTH, buys AP capacity instead of healing', () => {
+    const fresh = startRun(PLAYER_START_HEALTH, [], 33)
+    const run: RunState = {
+      ...fresh,
+      coins: 5,
+      slotPullsThisVisit: SLOT_FREE_PULLS_PER_VISIT,
+      encounter: { ...fresh.encounter, health: { player: HEAL_FLOOR_HEALTH, quarry: 10 } },
+    }
+    expect(apCapacityFocusedPolicy.nextShopAction(run)).toEqual({
+      kind: 'buy',
+      item: 'apCapacity',
+    })
+  })
+
+  it('below HEAL_FLOOR_HEALTH, heals instead of buying AP capacity', () => {
+    const fresh = startRun(PLAYER_START_HEALTH, [], 34)
+    const run: RunState = {
+      ...fresh,
+      coins: 5,
+      slotPullsThisVisit: SLOT_FREE_PULLS_PER_VISIT,
+      encounter: { ...fresh.encounter, health: { player: HEAL_FLOOR_HEALTH - 1, quarry: 10 } },
+    }
+    expect(apCapacityFocusedPolicy.nextShopAction(run)).toEqual({ kind: 'buy', item: 'heal' })
+  })
+})
+
+describe('noBuffsPolicy', () => {
+  it('differs from baselinePolicy only in chooseBuffs — every other method is reference-identical', () => {
+    expect(noBuffsPolicy.chooseCard).toBe(baselinePolicy.chooseCard)
+    expect(noBuffsPolicy.wantsApplyDamage).toBe(baselinePolicy.wantsApplyDamage)
+    expect(noBuffsPolicy.nextShopAction).toBe(baselinePolicy.nextShopAction)
+    expect(noBuffsPolicy.chooseBuffs).not.toBe(baselinePolicy.chooseBuffs)
+  })
+
+  it('chooseBuffs always returns empty, regardless of what is offered', () => {
+    const run = startRun(PLAYER_START_HEALTH, [], 28)
+    const ui = uiFor(run)
+    expect(noBuffsPolicy.chooseBuffs(ui)).toEqual([])
+  })
+
+  it('a real hand activates zero buffs and fires zero buff conditions', () => {
+    const run = startRun(PLAYER_START_HEALTH, [], 28)
+    const outcome = playHand(run, 1, FRESH_ENCOUNTER_DECK, noBuffsPolicy)
+    expect(outcome.report.buffsActivated).toBe(0)
+    expect(outcome.report.buffFireOutcomes).toEqual([])
   })
 })

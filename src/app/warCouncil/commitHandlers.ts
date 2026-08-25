@@ -85,8 +85,9 @@ export function playOptions(state: RoundUiState): PlayCardOptions {
  * both outstanding. DLR-141 split AC3's old wipe into a reduce/evaporate pair, both inside
  * `applyDamage`: step 1 has already run `reduceApplyPayoutOnHit` on any trick that cost the
  * player health, so a Timebomb detonating against the player on the trick a payout was due
- * REDUCES that payout to `APPLY_DAMAGE_HIT_RETENTION` of its value (floored, `null` only when
- * that floor reaches zero) rather than destroying it outright — and it is this reduced figure,
+ * REDUCES that payout to `APPLY_DAMAGE_HIT_RETENTION` of its value (floored, clamped to a
+ * minimum of `1`; `null` only when the encounter itself resolved) rather than destroying it
+ * outright — and it is this reduced figure,
  * not the original, that lands if step 4 also settles the payout this same trick. Putting the
  * tick anywhere earlier would let a player dodge the reduction by timing, which is the one thing
  * the criterion exists to prevent.
@@ -132,17 +133,15 @@ export function applyResolution(
     incoming[DuelSide.Player] === 0 && incoming[DuelSide.Quarry] === 0
       ? encounter
       : applyDamage(encounter, incoming)
-  // DLR-141 — `applyDamage`'s three fates, read off the field across that call, the ONLY place
-  // the difference between them is visible: afterwards a reduction-to-zero and an evaporation
-  // both read `null`. Gone with a winner is EVAPORATED; gone with no winner is a REDUCTION that
-  // floored to zero; a smaller `cashOut` still standing is REDUCED; unchanged is no event at all.
+  // DLR-141 — `applyDamage`'s two remaining fates, read off the field across that call.
+  // `reduceApplyPayoutOnHit` clamps its floor at `1`, so a queued payout can only go to `null`
+  // when the encounter resolved this trick (EVAPORATED); a smaller `cashOut` still standing is
+  // REDUCED; unchanged is no event at all.
   const payoutEvent: TrickPayoutEvent | null =
     queued === null
       ? null
       : paid.pendingApplyPayout === null
-        ? paid.winner !== null
-          ? { outcome: PayoutOutcome.Evaporated, cashOut: queued.cashOut, remaining: null }
-          : { outcome: PayoutOutcome.Reduced, cashOut: queued.cashOut, remaining: 0 }
+        ? { outcome: PayoutOutcome.Evaporated, cashOut: queued.cashOut, remaining: null }
         : // Reference inequality, not a `cashOut` value comparison: `reduceApplyPayoutOnHit`
           // always returns a NEW object (`{ ...pending, cashOut }`) when it reduces, and
           // returns the SAME reference untouched when no hit landed this trick. Comparing

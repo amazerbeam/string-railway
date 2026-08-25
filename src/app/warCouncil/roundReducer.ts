@@ -142,10 +142,11 @@ function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
  * Timebomb row, this control's second tap IS the action rather than a prelude to a hand-card tap.
  *
  * Asks `applyDamageRefusalFor` on BOTH taps, not just the first. The felt can change under a
- * poised plate — a Timebomb booking lands, a reveal is held, the turn passes — and re-reading is what
- * stops a poise made while the control was live from committing after it stopped being. D6
- * (version-4-scope §3) asks for exactly this: the control must read the pending-Timebomb predicate
- * "before it commits to anything".
+ * poised plate — the Quarry leads (starting the trick and closing the leader-only window), a
+ * reveal is held, the turn passes — and re-reading is what stops a poise made while the control
+ * was live from committing after it stopped being. DLR-143 AC1 reverses D6 (version-4-scope §3,
+ * 2026-08-19): a pending Timebomb no longer blocks this control at all, and the two are allowed
+ * to stack, settling together in `commitHandlers.ts`'s existing trick-resolution fold.
  *
  * AC3 needs no code here. `cashBankNow` returns the round with only `bank` and `multiplier` moved,
  * `resolvedTrick` stays null, and nothing writes `lastResolution` — so no reveal is held, the felt

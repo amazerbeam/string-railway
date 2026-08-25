@@ -30,7 +30,6 @@ import { card, discardsRemainingFixture, makeRound } from './roundFixture'
 
 const tapApply = { kind: RoundUiActionKind.TapApplyDamage } as const
 const tap = (c: ReturnType<typeof card>) => ({ kind: RoundUiActionKind.TapCard, card: c }) as const
-const carryOn = { kind: RoundUiActionKind.CarryOn } as const
 
 function uiFrom(
   round: WarCouncilState,
@@ -46,16 +45,16 @@ function uiFrom(
   })
 }
 
-describe('AC2 — the queued payout survives the current trick plus the next, then lands', () => {
-  it('ticks down on a clean-win trick, then lands on the next one', () => {
+describe('AC2/AC3 — the queued payout survives the trick it was pressed in, then lands on the very next one', () => {
+  it('lands on the first trick resolution after the press', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Bells,
       bank: 3,
       multiplier: 3,
       hands: {
-        [PlayerSide.Player]: [card(Suit.Bells, 11), card(Suit.Keys, 11)],
-        [PlayerSide.Cpu]: [card(Suit.Bells, 2), card(Suit.Keys, 6)],
+        [PlayerSide.Player]: [card(Suit.Bells, 11)],
+        [PlayerSide.Cpu]: [card(Suit.Bells, 2)],
       },
       currentTrick: [],
     })
@@ -69,20 +68,9 @@ describe('AC2 — the queued payout survives the current trick plus the next, th
       resolutionsOwed: APPLY_DAMAGE_DELAY_TRICKS + 1,
     })
 
-    // Trick 1 — a clean win: nothing is lost, so the payout survives, ticked down by one.
+    // The one trick after the press — a clean win: the payout comes due at THIS resolution.
     ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
-    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanWin)
-    expect(ui.encounter.health[DuelSide.Quarry]).toBe(startQuarryHealth)
-    expect(ui.encounter.pendingApplyPayout).toMatchObject({
-      resolutionsOwed: APPLY_DAMAGE_DELAY_TRICKS,
-    })
-
-    ui = roundReducer(ui, carryOn)
-
-    // Trick 2 — another clean win: the payout comes due at THIS resolution and lands.
-    ui = roundReducer(ui, tap(card(Suit.Keys, 11)))
-    ui = roundReducer(ui, tap(card(Suit.Keys, 11)))
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanWin)
     expect(ui.encounter.pendingApplyPayout).toBeNull()
     expect(ui.encounter.health[DuelSide.Quarry]).toBe(startQuarryHealth - 9)
@@ -90,36 +78,36 @@ describe('AC2 — the queued payout survives the current trick plus the next, th
 })
 
 describe('DLR-141 — a hit taken during the window reduces, rather than destroys, the queued payout', () => {
-  it('a CleanLoss during the window cuts the payout to 60% floored, and it stays queued — this fixture (tricksPlayed: 0, a 1-card hand) does not end the hand on this trick', () => {
+  it('a CleanLoss during the window cuts the payout to APPLY_DAMAGE_HIT_RETENTION floored, and it stays queued when a resolution beyond this one is still owed', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
-      bank: 3,
-      multiplier: 3,
       hands: {
         [PlayerSide.Player]: [card(Suit.Bells, 2)],
         [PlayerSide.Cpu]: [card(Suit.Bells, 9)],
       },
       currentTrick: [],
     })
-    let ui = uiFrom(round)
+    const encounter: EncounterState = {
+      ...startEncounter(0),
+      // Two resolutions from due, constructed directly rather than through a press — this test is
+      // about the REDUCE-but-not-yet-DUE case, which a fresh one-trick-settle press cannot reach
+      // (its own single owed resolution comes due on the very trick that would reduce it).
+      pendingApplyPayout: { cashOut: 9, unplayedAtPress: 1, resolutionsOwed: 2 },
+    }
+    let ui = uiFrom(round, encounter)
     const startQuarryHealth = ui.encounter.health[DuelSide.Quarry]
-
-    ui = roundReducer(ui, tapApply)
-    ui = roundReducer(ui, tapApply)
-    expect(ui.encounter.pendingApplyPayout).toMatchObject({ cashOut: 9 })
 
     ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
 
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanLoss)
-    // Reduced to floor(9 * 0.6) = 5 by the hit — STILL IN THE AIR (this round's HAND_SIZE is 6,
-    // and this fixture's `tricksPlayed` starts at 0, so trick 1 of 6 does not end the hand). Not
-    // wiped, and not the un-reduced 9 either.
-    expect(ui.encounter.pendingApplyPayout).toMatchObject({ cashOut: 5 })
+    // Reduced to floor(9 * 1/3) = 3 by the hit — STILL IN THE AIR, since a second resolution was
+    // owed. Not wiped, and not the un-reduced 9 either.
+    expect(ui.encounter.pendingApplyPayout).toMatchObject({ cashOut: 3, resolutionsOwed: 1 })
     expect(ui.encounter.health[DuelSide.Quarry]).toBe(startQuarryHealth)
     expect(ui.encounter.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH - 1)
-    expect(ui.resolvedTrick?.payout).toEqual({ outcome: 'reduced', cashOut: 9, remaining: 5 })
+    expect(ui.resolvedTrick?.payout).toEqual({ outcome: 'reduced', cashOut: 9, remaining: 3 })
   })
 })
 
@@ -131,8 +119,8 @@ describe('AC4 — a delayed kill freezes the PRESS-TIME hand size', () => {
       bank: 5,
       multiplier: 1,
       hands: {
-        [PlayerSide.Player]: [card(Suit.Bells, 11), card(Suit.Keys, 11), card(Suit.Moons, 5)],
-        [PlayerSide.Cpu]: [card(Suit.Bells, 2), card(Suit.Keys, 6), card(Suit.Moons, 9)],
+        [PlayerSide.Player]: [card(Suit.Bells, 11), card(Suit.Keys, 11)],
+        [PlayerSide.Cpu]: [card(Suit.Bells, 2), card(Suit.Keys, 6)],
       },
       currentTrick: [],
     })
@@ -150,14 +138,10 @@ describe('AC4 — a delayed kill freezes the PRESS-TIME hand size', () => {
       unplayedAtPress: handSizeAtPress,
     })
 
-    // Trick 1 — a clean win; the hand shrinks to 2 cards, and the payout is still just held.
+    // The one trick after the press — a clean win; the hand shrinks to 1 card, and the payout
+    // lands and kills on this same resolution.
     ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
-    ui = roundReducer(ui, carryOn)
-
-    // Trick 2 — another clean win; the hand shrinks to 1 card, and the payout lands and kills.
-    ui = roundReducer(ui, tap(card(Suit.Keys, 11)))
-    ui = roundReducer(ui, tap(card(Suit.Keys, 11)))
 
     expect(isEncounterResolved(ui.encounter)).toBe(true)
     expect(ui.encounter.health[DuelSide.Quarry]).toBe(0)
@@ -168,7 +152,7 @@ describe('AC4 — a delayed kill freezes the PRESS-TIME hand size', () => {
 })
 
 describe('Ordering — a payout due the same trick a Timebomb detonates against the player', () => {
-  it('DLR-141 — reduces the payout to 60% floored first, then lands it at the reduced figure, while the Timebomb still lands in full', () => {
+  it('DLR-141 — reduces the payout to APPLY_DAMAGE_HIT_RETENTION floored first, then lands it at the reduced figure, while the Timebomb still lands in full', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Bells,
@@ -192,12 +176,12 @@ describe('Ordering — a payout due the same trick a Timebomb detonates against 
     ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
 
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanWin)
-    // Reduced to floor(9 * 0.6) = 5 by the Timebomb's hit, then paid at 5 on the same resolution.
+    // Reduced to floor(9 * 1/3) = 3 by the Timebomb's hit, then paid at 3 on the same resolution.
     expect(ui.encounter.pendingApplyPayout).toBeNull()
-    expect(ui.encounter.health[DuelSide.Quarry]).toBe(startQuarryHealth - 5)
+    expect(ui.encounter.health[DuelSide.Quarry]).toBe(startQuarryHealth - 3)
     // The Timebomb's own damage lands normally, undiminished by the payout's presence.
     expect(ui.encounter.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH - TIMEBOMB_PLAYER_DAMAGE)
-    expect(ui.resolvedTrick?.payout).toEqual({ outcome: 'paid', cashOut: 5, remaining: null })
+    expect(ui.resolvedTrick?.payout).toEqual({ outcome: 'paid', cashOut: 3, remaining: null })
   })
 })
 
@@ -257,42 +241,37 @@ describe('DLR-119 — the resolved trick reports what happened to the queued pay
     ui = roundReducer(ui, tapApply)
     ui = roundReducer(ui, tapApply)
 
-    // Trick 1 — a clean win: nothing settles or dies, so this trick reports no payout event.
+    // The one trick after the press — a clean win: the payout comes due at THIS resolution and
+    // lands.
     ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
-    expect(ui.resolvedTrick?.payout).toBeNull()
-
-    ui = roundReducer(ui, carryOn)
-
-    // Trick 2 — the payout comes due at THIS resolution and lands.
-    ui = roundReducer(ui, tap(card(Suit.Keys, 11)))
-    ui = roundReducer(ui, tap(card(Suit.Keys, 11)))
     expect(ui.resolvedTrick?.payout).toEqual({ outcome: 'paid', cashOut: 9, remaining: null })
     expect(ui.encounter.health[DuelSide.Quarry]).toBe(startQuarryHealth - 9)
   })
 
-  it('DLR-141 — a trick that damages the player while a payout is queued reports it reduced, and the Quarry does not fall yet — the payout is still in the air', () => {
+  it('DLR-141 — a trick that damages the player while a payout is still owed a further resolution reports it reduced, and the Quarry does not fall yet', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
-      bank: 3,
-      multiplier: 3,
       hands: {
         [PlayerSide.Player]: [card(Suit.Bells, 2)],
         [PlayerSide.Cpu]: [card(Suit.Bells, 9)],
       },
       currentTrick: [],
     })
-    let ui = uiFrom(round)
+    const encounter: EncounterState = {
+      ...startEncounter(0),
+      // Two resolutions from due, constructed directly — the reduce-but-not-yet-due case a fresh
+      // one-trick-settle press cannot reach on its own single owed resolution.
+      pendingApplyPayout: { cashOut: 9, unplayedAtPress: 1, resolutionsOwed: 2 },
+    }
+    let ui = uiFrom(round, encounter)
     const startQuarryHealth = ui.encounter.health[DuelSide.Quarry]
 
-    ui = roundReducer(ui, tapApply)
-    ui = roundReducer(ui, tapApply)
-
     ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
 
-    expect(ui.resolvedTrick?.payout).toEqual({ outcome: 'reduced', cashOut: 9, remaining: 5 })
+    expect(ui.resolvedTrick?.payout).toEqual({ outcome: 'reduced', cashOut: 9, remaining: 3 })
     expect(ui.encounter.health[DuelSide.Quarry]).toBe(startQuarryHealth)
   })
 
@@ -340,8 +319,8 @@ describe('DLR-119 — the resolved trick reports what happened to the queued pay
 
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanWin)
     expect(ui.encounter.pendingApplyPayout).toBeNull()
-    expect(ui.encounter.health[DuelSide.Quarry]).toBe(startQuarryHealth - 5)
+    expect(ui.encounter.health[DuelSide.Quarry]).toBe(startQuarryHealth - 3)
     expect(ui.encounter.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH - TIMEBOMB_PLAYER_DAMAGE)
-    expect(ui.resolvedTrick?.payout).toEqual({ outcome: 'paid', cashOut: 5, remaining: null })
+    expect(ui.resolvedTrick?.payout).toEqual({ outcome: 'paid', cashOut: 3, remaining: null })
   })
 })

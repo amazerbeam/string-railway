@@ -1,7 +1,7 @@
 # Run verdict and shop UI — `src/app/run/`
 
 **Status:** implemented
-**Built by:** DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118
+**Built by:** DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142
 
 ## Responsibility
 

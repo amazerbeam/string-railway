@@ -75,10 +75,10 @@ describe('spending a Timebomb row arms the next hand-card tap', () => {
     expect(primed.primedTimebombDamage).toEqual(TIMEBOMB_DAMAGE[BuffTier.Gold])
   })
 
-  it('leaves the pile unchanged when a Timebomb is spent — not a one-shot consumable', () => {
+  it('removes the Timebomb from the pile once spent — DLR-142, single-use by default', () => {
     const before = createRoundUiState(seed())
     const after = spend(before, timebomb.id)
-    expect(after.buffs).toHaveLength(before.buffs.length)
+    expect(after.buffs).toHaveLength(before.buffs.length - 1)
   })
 })
 

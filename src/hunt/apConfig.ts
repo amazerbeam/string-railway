@@ -65,15 +65,18 @@ export const MAX_COIN_BONUS_PER_HAND = 10
 export const APPLY_DAMAGE_AP_COST: ActionPoints = 1
 
 // AC2/AC5 — how many WHOLE TRICKS BEYOND the trick the press happened in a queued payout must
-// survive. `1` is AC2's "the current trick plus the next trick": a press queues
-// `APPLY_DAMAGE_DELAY_TRICKS + 1` trick resolutions. Deliberately NOT typed `ActionPoints` — it
-// counts tricks, not points. Read only through `applyDamageDelayTricks`, never as a literal.
-// NEVER PLAYED. UNIT: tricks.
-export const APPLY_DAMAGE_DELAY_TRICKS = 1
+// survive. `0` is DLR-143 AC3's "settles at the resolution of the very next trick after the
+// press": a press queues `APPLY_DAMAGE_DELAY_TRICKS + 1` trick resolutions, so a base of `0`
+// means exactly one resolution is owed. Deliberately NOT typed `ActionPoints` — it counts
+// tricks, not points. Read only through `applyDamageDelayTricks`, never as a literal.
+// DEVELOPER-SET on DLR-143, replacing DLR-109's transcribed default of 1 (two-trick settle).
+// UNIT: tricks.
+export const APPLY_DAMAGE_DELAY_TRICKS = 0
 
-// DLR-141 — the FRACTION of a queued Apply Damage payout that survives a hit which costs the
-// player red health. DEVELOPER-SET on the ticket: 60%, rounded down at the point of use
-// (`reduceApplyPayoutOnHit`). The `winner !== null` branch of `applyDamage`'s payout expression is
-// untouched by this constant — a resolved encounter still evaporates the payout in full.
+// DLR-143 — the FRACTION of a queued Apply Damage payout that survives a hit which costs the
+// player red health. DEVELOPER-SET on DLR-143, replacing DLR-141's 60%: one third, rounded down
+// at the point of use (`reduceApplyPayoutOnHit`). The `winner !== null` branch of `applyDamage`'s
+// payout expression is untouched by this constant — a resolved encounter still evaporates the
+// payout in full.
 // UNIT: dimensionless fraction of the frozen cashOut, 0..1.
-export const APPLY_DAMAGE_HIT_RETENTION = 0.6
+export const APPLY_DAMAGE_HIT_RETENTION = 1 / 3

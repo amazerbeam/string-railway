@@ -30,10 +30,10 @@ import {
   DuelSide,
   isEncounterResolved,
   MAX_CARDS_PER_DISCARD,
+  PayoutOutcome,
   playerRankTiersFor,
   type ActionPoints,
   type BuffId,
-  type BuffKind,
   type RunState,
 } from '../hunt'
 import { dealHand } from '../app/handDeal'
@@ -202,6 +202,8 @@ function runBuffWindow(initial: RoundUiState, policy: SimPolicy): WindowOutcome 
   const observations: BuffWindowObservation[] = offeredBuffs(initial).map((buff) => ({
     kind: buff.kind,
     refusal: loadoutRefusalFor(initial, buff),
+    axis: buff.reward.axis,
+    tier: buff.tier,
   }))
 
   for (const id of policy.chooseBuffs(ui)) {
@@ -265,15 +267,20 @@ export function playHand(
   let cheatsArmed = 0
   const buffWindowObservations: BuffWindowObservation[] = []
   const buffFireOutcomes: BuffFireOutcome[] = []
-  // The buffs activated for the trick currently in flight, kind resolved once at activation time
-  // rather than re-looked-up later — `activatedThisTrick` itself clears the instant the trick
-  // resolves (`buffActivation.ts`), so this is the only place that window's active set survives to
-  // be reconciled against `resolvedTrick.resolution.firedBuffIds` below.
-  let pendingActive: ReadonlyMap<BuffId, BuffKind> = new Map()
+  // The buffs activated for the trick currently in flight, resolved once at activation time rather
+  // than re-looked-up later — `activatedThisTrick` itself clears the instant the trick resolves
+  // (`buffActivation.ts`), so this is the only place that window's active set survives to be
+  // reconciled against `resolvedTrick.resolution.firedBuffIds` below. Carries the reward axis/tier
+  // with the kind for the same reason: the `Buff` object is in hand HERE and gone later.
+  // `fired` and `trickOfHand` are BOTH supplied at resolution, not here: this map is built when the
+  // window opens, before the trick it belongs to has resolved.
+  let pendingActive: ReadonlyMap<BuffId, Omit<BuffFireOutcome, 'fired' | 'trickOfHand'>> = new Map()
   // 2026-08-25 — summed at each spend site rather than read as `capacity - endingApPool`: under
   // `ApRefreshCadence.PerTrick` the pool refills mid-hand, so a start/end diff would only ever
   // report the LAST trick's spend and silently undercount every earlier one.
   let apSpentTotal = 0
+  let applyDamagePaidTotal = 0
+  let applyDamageLostTotal = 0
   let discardedThisHand = false
   let stalled = false
   let fault: string | null = null
@@ -300,10 +307,24 @@ export function playHand(
 
     if (ui.resolvedTrick !== null) {
       const fired = ui.resolvedTrick.resolution.firedBuffIds
-      for (const [id, kind] of pendingActive) {
-        buffFireOutcomes.push({ kind, fired: fired.includes(id) })
+      for (const [id, card] of pendingActive) {
+        buffFireOutcomes.push({
+          ...card,
+          fired: fired.includes(id),
+          trickOfHand: ui.round.tricksPlayed,
+        })
       }
       pendingActive = new Map()
+      const payout = ui.resolvedTrick.payout
+      if (payout !== null) {
+        if (payout.outcome === PayoutOutcome.Paid) {
+          applyDamagePaidTotal += payout.cashOut
+        } else if (payout.outcome === PayoutOutcome.Reduced) {
+          applyDamageLostTotal += payout.cashOut - (payout.remaining ?? 0)
+        } else {
+          applyDamageLostTotal += payout.cashOut
+        }
+      }
       ui = roundReducer(ui, { kind: RoundUiActionKind.CarryOn })
       continue
     }
@@ -341,7 +362,19 @@ export function playHand(
       pendingActive = new Map(
         ui.buffActivation.activatedThisTrick.flatMap((id) => {
           const buff = offered.find((candidate) => candidate.id === id)
-          return buff === undefined ? [] : [[id, buff.kind] as const]
+          return buff === undefined
+            ? []
+            : [
+                [
+                  id,
+                  {
+                    kind: buff.kind,
+                    axis: buff.reward.axis,
+                    tier: buff.tier,
+                    rewardValue: buff.reward.value,
+                  },
+                ] as const,
+              ]
         }),
       )
       continue
@@ -355,7 +388,7 @@ export function playHand(
         cheatsArmed += 1
         continue
       }
-      const move = policy.chooseCard(ui.round)
+      const move = policy.chooseCard(ui.round, ui)
       heldChoice = move.choice
       ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: move.card }) // arm
       ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: move.card }) // commit
@@ -390,6 +423,9 @@ export function playHand(
     damageToPlayer:
       ui.openingEncounter.health[DuelSide.Player] - ui.encounter.health[DuelSide.Player],
     tricksWon: ui.round.tricksWon[PlayerSide.Player],
+    tricksPlayed: ui.round.tricksPlayed,
+    applyDamagePaid: applyDamagePaidTotal,
+    applyDamageLost: applyDamageLostTotal,
     buffsActivated,
     apSpent: apSpentTotal,
     applyDamagePresses,

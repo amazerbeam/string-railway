@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { FRESH_ENCOUNTER_DECK, PlayerSide, type Card } from '../../warCouncil'
-import { BuffKind, PLAYER_START_HEALTH, startRun } from '../../hunt'
+import { BuffKind, BuffRewardAxis, BuffTier, PLAYER_START_HEALTH, startRun } from '../../hunt'
 import { baselinePolicy } from '../baselinePolicy'
 import { playHand } from '../playHand'
 import type { CheatPlay, SimPolicy } from '../types'
@@ -46,6 +46,39 @@ describe('playHand', () => {
     expect(outcome.report.buffFireOutcomes.length).toBe(outcome.report.buffsActivated)
     for (const fireOutcome of outcome.report.buffFireOutcomes) {
       expect(Object.values(BuffKind)).toContain(fireOutcome.kind)
+    }
+  })
+
+  it('reports applyDamagePaid as a non-negative subset of damageToQuarry, and applyDamageLost as non-negative', () => {
+    const run = startRun(PLAYER_START_HEALTH, [], 42)
+    for (let hand = 1; hand <= 5; hand += 1) {
+      const outcome = playHand(run, hand, FRESH_ENCOUNTER_DECK, baselinePolicy)
+      expect(outcome.report.applyDamagePaid).toBeGreaterThanOrEqual(0)
+      expect(outcome.report.applyDamageLost).toBeGreaterThanOrEqual(0)
+      expect(outcome.report.applyDamagePaid).toBeLessThanOrEqual(outcome.report.damageToQuarry)
+    }
+  })
+
+  it('carries the reward axis, tier and value on every fire outcome and window observation', () => {
+    const run = startRun(PLAYER_START_HEALTH, [], 42)
+    const outcome = playHand(run, 1, FRESH_ENCOUNTER_DECK, baselinePolicy)
+
+    const axes = Object.values(BuffRewardAxis)
+    const tiers = Object.values(BuffTier)
+    for (const fireOutcome of outcome.report.buffFireOutcomes) {
+      expect(axes).toContain(fireOutcome.axis)
+      expect(tiers).toContain(fireOutcome.tier)
+      expect(fireOutcome.rewardValue).toBeGreaterThanOrEqual(0)
+    }
+    for (const observation of outcome.report.buffWindowObservations) {
+      expect(axes).toContain(observation.axis)
+      expect(tiers).toContain(observation.tier)
+    }
+
+    // The opening pile is drawn all-bronze (`startingPile.ts`), and hand 1 of a fresh run can only
+    // offer opening-pile cards — nothing has reached a shop or a slot machine yet.
+    for (const observation of outcome.report.buffWindowObservations) {
+      expect(observation.tier).toBe(BuffTier.Bronze)
     }
   })
 

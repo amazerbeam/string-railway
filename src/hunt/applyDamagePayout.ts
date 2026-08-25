@@ -22,7 +22,8 @@ export const PayoutOutcome = {
   /** The delay ran out, or the hand ended, and the frozen `cashOut` was dealt to the Quarry. */
   Paid: 'paid',
   /** DLR-141 — a hit cost the player red health and cut the queued payout to
-   *  `APPLY_DAMAGE_HIT_RETENTION` of its value, rounded down. STILL IN THE AIR. */
+   *  `APPLY_DAMAGE_HIT_RETENTION` of its value, rounded down and floored at `1`. STILL IN THE
+   *  AIR. */
   Reduced: 'reduced',
   /** DLR-141 — the encounter resolved (Quarry dead, or player dead) with the payout still
    *  queued. There is no target left to pay, so it is lost entirely. */
@@ -36,9 +37,10 @@ export interface TrickPayoutEvent {
   readonly outcome: PayoutOutcome
   /** The payout's frozen `cashOut` as it stood BEFORE this event. UNIT: damage. */
   readonly cashOut: number
-  /** DLR-141 — what is STILL IN THE AIR after a `Reduced` event, which may be `0` when the
-   *  floored value reached zero. `null` for `Paid` and `Evaporated`, which are terminal.
-   *  REQUIRED rather than optional, so every construction site must state it explicitly. */
+  /** DLR-141 — what is STILL IN THE AIR after a `Reduced` event; always `>= 1`, since
+   *  `reduceApplyPayoutOnHit` clamps its floor at `1`. `null` for `Paid` and `Evaporated`, which
+   *  are terminal. REQUIRED rather than optional, so every construction site must state it
+   *  explicitly. */
   readonly remaining: number | null
 }
 
@@ -95,16 +97,16 @@ export function queueApplyPayout(
 /**
  * DLR-141 — the retention rule. Never throws: it runs inside `applyDamage`, which runs inside a
  * reducer. `null` in gives `null` out. Otherwise floors `cashOut` to `APPLY_DAMAGE_HIT_RETENTION`
- * of its value, and returns `null` — rather than a payout of `0` — when that floored value is
- * `<= 0`: `PendingApplyPayout.cashOut` is documented strictly positive, and `queueApplyPayout`
- * itself refuses to mint a non-positive one, so this function does not either.
+ * of its value, clamped to a minimum of `1`: a hit that landed always costs the queued payout
+ * something, rather than the floor rounding it away to nothing. `PendingApplyPayout.cashOut` is
+ * documented strictly positive, and `queueApplyPayout` itself refuses to mint a non-positive one,
+ * so this function never returns one either.
  */
 export function reduceApplyPayoutOnHit(
   pending: PendingApplyPayout | null,
 ): PendingApplyPayout | null {
   if (pending === null) return null
-  const cashOut = Math.floor(pending.cashOut * APPLY_DAMAGE_HIT_RETENTION)
-  if (cashOut <= 0) return null
+  const cashOut = Math.max(1, Math.floor(pending.cashOut * APPLY_DAMAGE_HIT_RETENTION))
   return { ...pending, cashOut }
 }
 

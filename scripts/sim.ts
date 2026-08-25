@@ -9,7 +9,7 @@
  * Writes through `process.stdout.write`, never `console.log`: a CLI's stdout IS its output, and
  * `console.log` is banned in shipped code (`CLAUDE.md` → Code conventions).
  */
-import { formatSummary, POLICIES, simulate } from '../src/sim'
+import { formatSummary, OPENING_PILE_VARIANTS, POLICIES, simulate } from '../src/sim'
 
 const DEFAULT_RUNS = 200
 const DEFAULT_SEED = 1
@@ -19,6 +19,9 @@ interface CliArgs {
   readonly runs: number
   readonly baseSeed: number
   readonly policyName: string
+  /** play-tester — `undefined` means the production opening pile, the default and the only
+   *  behaviour before `--pile` existed. */
+  readonly pileName: string | undefined
 }
 
 /** Parses `--runs`, `--seed` and `--policy`. Returns a message instead of args when anything is
@@ -27,6 +30,7 @@ function parseArgs(argv: readonly string[]): CliArgs | string {
   let runs = DEFAULT_RUNS
   let baseSeed = DEFAULT_SEED
   let policyName = DEFAULT_POLICY
+  let pileName: string | undefined
 
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i]
@@ -55,12 +59,19 @@ function parseArgs(argv: readonly string[]): CliArgs | string {
       }
       policyName = value
       i += 1
+    } else if (flag === '--pile') {
+      const value = argv[i + 1]
+      if (value === undefined) {
+        return `Missing value for --pile.`
+      }
+      pileName = value
+      i += 1
     } else {
       return `Unknown flag '${flag}'.`
     }
   }
 
-  return { runs, baseSeed, policyName }
+  return { runs, baseSeed, policyName, pileName }
 }
 
 function main(): number {
@@ -76,8 +87,19 @@ function main(): number {
     )
     return 1
   }
+  // `--pile` absent leaves `openingPileWeightOf` undefined, which is the production draw.
+  const openingPileWeightOf =
+    parsed.pileName === undefined ? undefined : OPENING_PILE_VARIANTS[parsed.pileName]
+  if (parsed.pileName !== undefined && openingPileWeightOf === undefined) {
+    process.stdout.write(
+      `Unknown pile '${parsed.pileName}'. Known piles: ${Object.keys(OPENING_PILE_VARIANTS).join(', ')}\n`,
+    )
+    return 1
+  }
   process.stdout.write(
-    formatSummary(simulate({ runs: parsed.runs, baseSeed: parsed.baseSeed }, policy)),
+    `${formatSummary(
+      simulate({ runs: parsed.runs, baseSeed: parsed.baseSeed, openingPileWeightOf }, policy),
+    )}\nOpening pile: ${parsed.pileName ?? 'production (default)'}\n`,
   )
   return 0
 }

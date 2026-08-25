@@ -19,6 +19,7 @@ import {
   quarryHealthForEncounter,
   startEncounter,
   TIMEBOMB_DAMAGE,
+  TIMEBOMB_PLAYER_DAMAGE,
   type EncounterState,
 } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
@@ -43,19 +44,20 @@ function uiFrom(
 }
 
 /** The player is to lead, holding a streak of 3 x 3 = 9. */
-function streakRound(): WarCouncilState {
+function streakRound(over: Partial<WarCouncilState> = {}): WarCouncilState {
   return makeRound({
     leader: PlayerSide.Player,
     trumpSuit: Suit.Keys,
     bank: 3,
     multiplier: 3,
     currentTrick: [],
+    ...over,
   })
 }
 
 const apply = (ui: RoundUiState) => roundReducer(roundReducer(ui, tapApply), tapApply)
 
-describe('Apply Damage — the poise, and the refusals (AC1, D6)', () => {
+describe('Apply Damage — the poise, and the refusals (AC1)', () => {
   it('one tap poises and changes nothing else', () => {
     const ui = roundReducer(uiFrom(streakRound()), tapApply)
     expect(ui.applyPoised).toBe(true)
@@ -69,16 +71,14 @@ describe('Apply Damage — the poise, and the refusals (AC1, D6)', () => {
     expect(ui.applyPoised).toBe(false)
   })
 
-  it('D6 — a pending Timebomb hit cannot be poised past', () => {
+  it('DLR-143 — a pending Timebomb hit no longer blocks the poise (reverses D6)', () => {
     const owed = queueTimebomb(startEncounter(0), DuelSide.Player, TIMEBOMB_DAMAGE[BuffTier.Bronze])
     const ui = roundReducer(uiFrom(streakRound(), owed), tapApply)
-    expect(ui.applyPoised).toBe(false)
+    expect(ui.applyPoised).toBe(true)
     expect(ui.round.bank).toBe(3)
   })
 
-  // The felt can change under a poised plate. A poise made while the control was live must not
-  // commit after it stopped being — which is D6's "read the predicate before it commits".
-  it('D6 — Timebomb booked AFTER the poise still stops the commit, and drops the poise', () => {
+  it('DLR-143 — a Timebomb booked AFTER the poise does not stop the commit', () => {
     let ui = roundReducer(uiFrom(streakRound()), tapApply)
     expect(ui.applyPoised).toBe(true)
     ui = {
@@ -87,8 +87,21 @@ describe('Apply Damage — the poise, and the refusals (AC1, D6)', () => {
     }
     ui = roundReducer(ui, tapApply)
     expect(ui.applyPoised).toBe(false)
+    expect(ui.round.bank).toBe(0)
+    expect(ui.encounter.pendingApplyPayout).toMatchObject({ cashOut: 9 })
+  })
+
+  it('DLR-143 AC1 — a trick already in flight cannot even be poised', () => {
+    const ui = roundReducer(
+      uiFrom(
+        streakRound({
+          currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Bells, 9) }],
+        }),
+      ),
+      tapApply,
+    )
+    expect(ui.applyPoised).toBe(false)
     expect(ui.round.bank).toBe(3)
-    expect(ui.encounter.health[DuelSide.Quarry]).toBe(quarryHealthForEncounter(0))
   })
 
   it('cancels a poise without spending anything', () => {
@@ -97,6 +110,39 @@ describe('Apply Damage — the poise, and the refusals (AC1, D6)', () => {
     expect(ui.applyPoised).toBe(false)
     expect(ui.round.bank).toBe(3)
     expect(ui.round.multiplier).toBe(3)
+  })
+})
+
+describe('DLR-143 AC2 — a pressed Apply Damage stacks with a pending Timebomb through the real press flow', () => {
+  it('both the Timebomb and the queued payout settle in the same trick fold', () => {
+    const round = makeRound({
+      leader: PlayerSide.Player,
+      trumpSuit: Suit.Bells,
+      bank: 3,
+      multiplier: 3,
+      hands: {
+        [PlayerSide.Player]: [card(Suit.Bells, 11)],
+        [PlayerSide.Cpu]: [card(Suit.Bells, 2)],
+      },
+      currentTrick: [],
+    })
+    const owed = queueTimebomb(startEncounter(0), DuelSide.Player, TIMEBOMB_DAMAGE[BuffTier.Bronze])
+    let ui = uiFrom(round, owed)
+    const startQuarryHealth = ui.encounter.health[DuelSide.Quarry]
+
+    ui = roundReducer(ui, tapApply)
+    ui = roundReducer(ui, tapApply)
+    expect(ui.encounter.pendingApplyPayout).toMatchObject({ cashOut: 9 })
+
+    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: card(Suit.Bells, 11) })
+    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: card(Suit.Bells, 11) })
+
+    // The Timebomb detonates against the player this same resolution, reducing the payout to
+    // floor(9 * 1/3) = 3 rather than destroying it, and — since APPLY_DAMAGE_DELAY_TRICKS is now
+    // 0 — that reduced figure settles on this very resolution too.
+    expect(ui.encounter.pendingApplyPayout).toBeNull()
+    expect(ui.encounter.health[DuelSide.Quarry]).toBe(startQuarryHealth - 3)
+    expect(ui.encounter.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH - TIMEBOMB_PLAYER_DAMAGE)
   })
 })
 
@@ -138,7 +184,7 @@ describe('Apply Damage — the commit (AC1, AC2, AC3)', () => {
     expect(ui.round.currentTrick).toEqual([])
   })
 
-  it('AC3 / DLR-141 — the player then plays their card by the ordinary rules, against a zeroed bank, and taking the hit reduces the queued payout to 60% floored rather than wiping it', () => {
+  it('AC3 / DLR-141 — the player then plays their card by the ordinary rules, against a zeroed bank, and taking the hit reduces the queued payout to APPLY_DAMAGE_HIT_RETENTION floored, landing at that reduced figure on this same trick', () => {
     let ui = apply(
       uiFrom(
         makeRound({
@@ -161,12 +207,14 @@ describe('Apply Damage — the commit (AC1, AC2, AC3)', () => {
     // The trick is lost, but the bank was already spent — so the forced cash-out pays nothing.
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanLoss)
     expect(ui.resolvedTrick?.resolution.cashOut).toBe(0)
-    // DLR-141 — the player lost health on this trick, so the queued payout is reduced to
-    // APPLY_DAMAGE_HIT_RETENTION of its value, floored, not wiped and not ticked down.
-    expect(ui.encounter.pendingApplyPayout).toMatchObject({
-      cashOut: Math.floor(9 * APPLY_DAMAGE_HIT_RETENTION),
-    })
-    expect(ui.encounter.health[DuelSide.Quarry]).toBe(quarryHealthForEncounter(0))
+    // DLR-141 — the player lost health on this trick, reducing the queued payout to
+    // APPLY_DAMAGE_HIT_RETENTION of its value, floored. Under DLR-143's 1-trick settle
+    // (APPLY_DAMAGE_DELAY_TRICKS = 0), a fresh press's single owed resolution comes due on this
+    // very trick too, so the reduced figure lands here rather than staying queued.
+    expect(ui.encounter.pendingApplyPayout).toBeNull()
+    expect(ui.encounter.health[DuelSide.Quarry]).toBe(
+      quarryHealthForEncounter(0) - Math.floor(9 * APPLY_DAMAGE_HIT_RETENTION),
+    )
     expect(ui.encounter.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH - 1)
   })
 

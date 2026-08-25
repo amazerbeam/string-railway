@@ -349,7 +349,7 @@ describe('Cheat poise, spend and consume (DLR-83, DLR-132)', () => {
 
     const twice = roundReducer(once, tapBuff(cheatA.id))
     expect(cheatArmed(twice)).toBe(true)
-    expect(twice.buffs).toHaveLength(2) // not consumed — a Cheat is not a one-shot item
+    expect(twice.buffs).toHaveLength(1) // DLR-142 — cheatA is spent and removed; cheatB remains
   })
 
   it('moves the poise when a different row is tapped, spending neither', () => {
@@ -367,7 +367,7 @@ describe('Cheat poise, spend and consume (DLR-83, DLR-132)', () => {
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: offSuitCard })
     expect(ui.rejection).toBeNull()
     expect(ui.cheatTricksRemaining).toBe(0)
-    expect(ui.buffs).toHaveLength(2) // still in the pile — a Cheat is spent as duration, not a card
+    expect(ui.buffs).toHaveLength(1) // DLR-142 — cheatA left the pile at the spend; cheatB remains
   })
 
   it('rejects that same card with no Cheat live, and touches nothing in the pile (AC9)', () => {

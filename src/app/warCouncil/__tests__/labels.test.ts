@@ -314,8 +314,8 @@ describe('applyDamageAccessibleName — DLR-94', () => {
   })
 
   it('puts the reason in the name of a refused control, not only in the styling', () => {
-    expect(applyDamageAccessibleName(0, false, ApplyDamageRefusal.TimebombPending)).toContain(
-      APPLY_DAMAGE_REFUSAL_MESSAGE[ApplyDamageRefusal.TimebombPending],
+    expect(applyDamageAccessibleName(0, false, ApplyDamageRefusal.TrickInProgress)).toContain(
+      APPLY_DAMAGE_REFUSAL_MESSAGE[ApplyDamageRefusal.TrickInProgress],
     )
   })
 

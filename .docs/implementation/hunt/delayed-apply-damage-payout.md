@@ -49,12 +49,15 @@ heart row and vanish with nothing logged. `resolutionsOwed` is seeded to
 
 ## How long the delay is — `applyDamageDelayTricks`, never a literal
 
-`APPLY_DAMAGE_DELAY_TRICKS` (`1`, `src/hunt/apConfig.ts`) is **the number of whole tricks beyond the
-trick the press happened in** that a queued payout must survive — AC2's "the current trick plus the
-next trick" restated as a count. A press therefore queues `APPLY_DAMAGE_DELAY_TRICKS + 1` trick
-resolutions: the trick in flight at the press is the first one, and the constant adds to that floor
-rather than replacing it, so "no delay at all" stays inexpressible as a trick count while a future
-buff's `removeDelay` can still mean "the earliest possible landing".
+`APPLY_DAMAGE_DELAY_TRICKS` (`0` since **DLR-143** — was `1`, `src/hunt/apConfig.ts`) is **the number
+of whole tricks beyond the trick the press happened in** that a queued payout must survive. A press
+therefore queues `APPLY_DAMAGE_DELAY_TRICKS + 1` trick resolutions: the trick in flight at the press
+is the first one, and the constant adds to that floor rather than replacing it, so "no delay at all"
+stays inexpressible as a trick count while a future buff's `removeDelay` can still mean "the earliest
+possible landing". **At `0`, that floor of 1 is exactly what settles: a queued payout lands at the
+resolution of the very next trick after the press**, not the trick after that — DLR-109's original
+"current trick plus the next trick" reading is retired; DLR-143 states the settle window directly
+rather than restating a two-trick count.
 
 ```ts
 function applyDamageDelayTricks(modifiers?: ApplyDamageDelayModifiers): number
@@ -103,11 +106,11 @@ already queued (the one-at-a-time rule below).
 **The on-hit rule is enforced inside `applyDamage`, the module's single clamp point**, deliberately
 rather than at a call site. DLR-109 originally wiped the payout to `null` on either condition below;
 **DLR-141 (2026-08-25) split that into a reduce/evaporate pair**, per the developer's confirmed
-three-outcome table:
+three-outcome table, and **DLR-143 (2026-08-25, later the same day) retuned the retained fraction**:
 
 | Situation | Queued payout |
 | --- | --- |
-| Player loses health from a hit | **`APPLY_DAMAGE_HIT_RETENTION` (60%) of its value, rounded down** |
+| Player loses health from a hit | **`APPLY_DAMAGE_HIT_RETENTION` (⅓, since DLR-143 — was 60%) of its value, rounded down** |
 | Hit fully absorbed by blue hearts | **100% — untouched** (unchanged since DLR-110) |
 | Encounter ends (either side) | **0 — evaporates** (unchanged since DLR-109) |
 
@@ -167,10 +170,20 @@ payout~~ — true until **DLR-141, 2026-08-25**: it now **reduces** that payout 
 than destroying it outright, and it is this reduced figure — not the original — that lands if step 4
 also settles the payout the same trick. This is a consequence of the on-hit rule and the order, not a
 fifth rule stated separately: putting the tick anywhere earlier would let a player dodge the
-reduction by timing, which is the one thing the criterion exists to prevent. The reverse case cannot
-arise — a ticking Timebomb already refuses a new Apply Damage press via `TimebombPending`, so a
-payout can never be queued while a Timebomb is outstanding against the player in a way that would
-need the ordering to run the other way.
+reduction by timing, which is the one thing the criterion exists to prevent.
+
+> **The reverse case, once believed unreachable, is now the whole point — DLR-143, 2026-08-25.**
+> ~~The reverse case cannot arise — a ticking Timebomb already refuses a new Apply Damage press via
+> `TimebombPending`, so a payout can never be queued while a Timebomb is outstanding against the
+> player in a way that would need the ordering to run the other way.~~ That refusal is **deleted**,
+> not merely relaxed: `TimebombPending` no longer exists in `ApplyDamageRefusal`, and a pending
+> Timebomb no longer gates the press at all. A player may now press Apply Damage with a Timebomb
+> already queued against them, and the two settle in the **same** trick's fold through the ordering
+> already documented above — no new fold logic was needed, because `applyResolution`'s four-step order
+> already produced the right answer once a state reaching it became possible. The press instead gates
+> on **`TrickInProgress`** (leader-only — see [the voluntary cash-out](../war-council/voluntary-cash-out.md)):
+> refused once any card, including the Quarry's own lead, is on the table, independent of Timebomb
+> state entirely.
 
 ### Reporting the fate — `PayoutOutcome`, `TrickPayoutEvent`, and why the check is by reference
 
@@ -226,10 +239,11 @@ on the one path where a **delayed** payout is what killed the Quarry — see the
 `APPLY_DAMAGE_AP_COST` (`1`, `src/hunt/apConfig.ts`) is spent through `spendAp` — the only subtraction
 path — on the committing press, and is **not refunded** if the payout is later wiped. Availability
 extends `src/warCouncil/voluntaryCashOut.ts`'s existing `applyDamageRefusalFor` rather than adding a
-second refusal path, per the ticket's own named risk. The predicate is now five ordered clauses:
+second refusal path, per the ticket's own named risk. The predicate is now five ordered clauses
+(`TrickInProgress` since **DLR-143**, replacing `TimebombPending`):
 
 ```
-NotYourMove → TimebombPending → PayoutPending → InsufficientAp → EmptyBank
+NotYourMove → TrickInProgress → PayoutPending → InsufficientAp → EmptyBank
 ```
 
 `PayoutPending` and `InsufficientAp` are the two DLR-109 adds. `EmptyBank` stays last because it is
@@ -287,22 +301,26 @@ two-source read.
 | Key | Value | Unit | Where it came from |
 | --- | --- | --- | --- |
 | `APPLY_DAMAGE_AP_COST` | `1` | action points per press | **DEVELOPER-SET on 2026-08-25** (2026-08-25), replacing the transcribed-from-ticket default of `3` that `hybrid-design.md` §2 had flagged OPEN |
-| `APPLY_DAMAGE_DELAY_TRICKS` | `1` | tricks, beyond the press's own | AC2's "the current trick plus the next trick" — **never played** |
-| `APPLY_DAMAGE_HIT_RETENTION` | `0.6` | dimensionless fraction of the frozen `cashOut`, 0..1 | **DEVELOPER-SET on the DLR-141 ticket** — 60%, rounded down at the point of use (`reduceApplyPayoutOnHit`). Read at exactly one call site. |
+| `APPLY_DAMAGE_DELAY_TRICKS` | `0` (was `1`) | tricks, beyond the press's own | **DEVELOPER-SET on DLR-143** (2026-08-25) — settles at the very next trick's resolution, replacing DLR-109's transcribed two-trick default |
+| `APPLY_DAMAGE_HIT_RETENTION` | `1/3` (was `0.6`) | dimensionless fraction of the frozen `cashOut`, 0..1 | **DEVELOPER-SET on DLR-143** (2026-08-25), replacing DLR-141's 60% — one third, rounded down at the point of use (`reduceApplyPayoutOnHit`). Read at exactly one call site. |
 
 All three live in `src/hunt/apConfig.ts` under their own labelled comment blocks, re-exported through
-`config.ts` exactly as `AP_ENABLED`/`STARTING_AP` already are. No copy states the 60% figure as a
+`config.ts` exactly as `AP_ENABLED`/`STARTING_AP` already are. No copy states the 33% figure as a
 literal either — `payoutLabels.ts`'s risk hint derives its percentage from the same constant.
 
 ## What was taken as a design reading, not chosen by the developer
 
 Three readings behind this mechanic were taken by an agent under an unattended sprint run, not
-played or developer-approved: the hand-end flush, the one-at-a-time rule, and the **order** of the
-Timebomb-vs-payout resolution (all documented above, with their rationale) — the ORDER remains
-`[provisional]`. **The on-hit rule's figure is no longer one of these** — DLR-141 settled it against
-a developer-confirmed table (quoted at the top of the "three fates" section above), so
-`.docs/game_rules/the-hunt.md` marks that specific reading `[settled]` while the AP cost, the delay
-figure, and the Timebomb-ordering reading stay `[provisional]`/unplayed.
+played or developer-approved: the hand-end flush, the one-at-a-time rule, and the **fold order** of a
+Timebomb detonation and a due payout landing on the same trick resolution (all documented above, with
+their rationale) — the fold ORDER remains `[provisional]`. **The on-hit rule's figure is no longer one
+of these** — DLR-141 settled it against a developer-confirmed table (quoted at the top of the "three
+fates" section above), and **DLR-143 settled a second reading the same way**: that a pending Timebomb
+and a queued Apply Damage payout are allowed to coexist at all (AC2, transcribed directly from the
+ticket, not an agent's reading) is now `[settled]`, distinct from the fold *order* itself, which is
+unchanged code and stays `[provisional]`. So `.docs/game_rules/the-hunt.md` marks the on-hit fraction
+and the stacking permission `[settled]` while the AP cost, the delay figure, and the fold-order
+reading stay `[provisional]`/unplayed.
 
 ~~**Nothing on screen tells the player a payout is in the air.**~~ **True as DLR-109 shipped it,
 closed by DLR-114.** DLR-109 scoped out any UI change — no new component, no `.tsx` file touched — so

@@ -35,9 +35,9 @@ describe('buffLabels — one glanceable line', () => {
     expect(buffName(bellTaker)).toBe('Bell-Taker (Momentum)')
   })
 
-  it('states condition and reward in one line, ending with the AP cost', () => {
+  it('states condition and reward in one line, prefixed with the tier and ending with the AP cost', () => {
     expect(buffLine(bellTaker, apCostOf(bellTaker))).toBe(
-      `Bell-Taker (Momentum) — win a trick with Bells: +3 multiplier. ${apCostOf(bellTaker)} AP.`,
+      `Silver Bell-Taker (Momentum) — win a trick with Bells: +3 multiplier. ${apCostOf(bellTaker)} AP.`,
     )
   })
 
