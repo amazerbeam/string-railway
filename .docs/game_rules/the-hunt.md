@@ -56,7 +56,9 @@ can reach it** — the two are separate axes and this is the one that says which
 > absorbs your next hit and then breaks, ahead of any blue heart; a Second Thoughts buys more Swaps
 > for the fight. The other three read **`Not usable yet.`** and cannot be spent at all, because each
 > needs a screen that does not exist. **All of it is engine-only and none of it is reachable** —
-> nothing mints an item yet, exactly as nothing mints a buff.
+> nothing mints an item yet. **The analogy this sentence originally drew — "exactly as nothing
+> mints a buff" — was falsified by DLR-132, 2026-08-24**: the reel now mints buffs, including Cheat
+> and Timebomb. Items remain the exception.
 
 > **Something now survives a run, and a lost run pays for it — DLR-118, 2026-08-24.** The **Vault**
 > has been in the code since 2026-08-23 with no way to reach it; today it got its screen. A run that

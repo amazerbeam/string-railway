@@ -297,7 +297,7 @@ hand.
 **#16 the co-trigger combo template — superseded.** It is the `k = 2` case of the Overlap Bonus,
 which is now a rule rather than a card.
 
-**The v1 pool therefore stays at 78.** No template count moves, and **DLR-112 is unblocked with a
+**The v1 pool therefore stays at 78 as authored.** (What shipped is 73 — see *Total v1 pool size* below for the five consumables that were authored but never pooled.) No template count moves, and **DLR-112 is unblocked with a
 permanent answer rather than a hold** — the hold is lifted in both directions: none of the four
 returns under a later reading of the stacking rule, because the stacking rule is the reading.
 
@@ -375,6 +375,23 @@ pile is"), and `src/hunt/buffCatalog.ts` **already mints both as `Buff` objects 
 ## Total v1 pool size
 
 **71 condition-template cards + 7 consumable/activated cards = 78 distinct card templates.**
+
+> **What actually shipped is 73, and the difference is deliberate — DLR-132, 2026-08-24.**
+> `BUFF_TEMPLATES` in `src/hunt/buffTemplates.ts` is the 71 condition templates **plus 2 activated
+> cards (Cheat and Timebomb)**. The **five consumables — Ward, Second Thoughts, Puppeteer,
+> Foresight and Spyglass — are authored here but not in the pool**, so nothing can draw them.
+> DLR-132 established that adding them is five literals, five mint branches and ten weights, and
+> deliberately left them out as a separate decision with its own weights; the boundary is pinned by
+> `src/sim/reachability.test.ts` rather than by a comment. **DLR-136** tracks closing it.
+>
+> **78 remains the correct figure for this document**, which is the authoring record — all 78 were
+> authored and costed here. Read it as "78 authored, 73 in the pool"; the count that governs
+> `REEL_POOL_SIZE` today is 73.
+>
+> Also live and unreachable for the same class of reason: **Shield**, whose `shieldBuff` has zero
+> production callers — the epic's one NOT MET Definition-of-Done criterion (**DLR-133**). And
+> **Keepsake's 3 Purse cards are in the pool but can never fire** (**DLR-139**), so of the 73
+> drawable templates, **70 do anything**.
 
 This is the number that matters for DLR-112 (T8)'s `REEL_POOL_SIZE` sizing — each template carries
 its own bronze/silver/gold ladder (resolved at draw or activation time via the reel-match rules, not
