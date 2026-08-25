@@ -269,11 +269,12 @@ describe('Action Points (DLR-104 AC1)', () => {
     expect(typeof AP_ENABLED).toBe('boolean')
   })
 
-  it('defaults the refresh cadence to perHand, the game-designer-recommended default', () => {
-    expect(AP_REFRESH_CADENCE).toBe(ApRefreshCadence.PerHand)
+  it('defaults the refresh cadence to perTrick, the developer-set 2026-08-25 default', () => {
+    expect(AP_REFRESH_CADENCE).toBe(ApRefreshCadence.PerTrick)
   })
 
   it('names the cadence as an enum-shaped constant, not a boolean', () => {
     expect(Object.values(ApRefreshCadence)).toContain('perHand')
+    expect(Object.values(ApRefreshCadence)).toContain('perTrick')
   })
 })

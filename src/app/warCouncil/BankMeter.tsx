@@ -1,10 +1,19 @@
 import { cashValue, forcedCashValue, isTaken, type TrickResolution } from '../../warCouncil'
+import type { CashOutBonus } from '../../hunt'
 import { TRICKS_LABEL, MULTIPLIER_LABEL, TRICK_OUTCOME_MESSAGE } from './labels'
+
+/** No buff bonus pending — the default when a caller has none to report, so every existing
+ *  call site keeps reading exactly as it did before this prop existed. */
+const NO_PENDING_BONUS: CashOutBonus = { multiplierBonus: 0, flatDamageBonus: 0 }
 
 interface BankMeterProps {
   readonly bank: number
   readonly multiplier: number
   readonly lastResolution: TrickResolution | null
+  /** The unpaid buff accrual (`payableCashOutBonus`) this hand has fired but not yet cashed —
+   *  Momentum sits inside the product, Blade lands on top of it, exactly as `resolveTrickBank`
+   *  would spend it at the next real cash-out. Display only: nothing here pays it. */
+  readonly pendingBonus?: CashOutBonus
 }
 
 /**
@@ -18,13 +27,23 @@ interface BankMeterProps {
  * distinction is carried by that copy and by a class name (`wc-is-take`/`wc-is-hit`), never by
  * colour alone.
  */
-export default function BankMeter({ bank, multiplier, lastResolution }: BankMeterProps) {
-  const cash = cashValue(bank, multiplier)
+export default function BankMeter({
+  bank,
+  multiplier,
+  lastResolution,
+  pendingBonus = NO_PENDING_BONUS,
+}: BankMeterProps) {
+  // A buff's bonus is unpaid until a real cash-out, but the reader can already see it building —
+  // folded into the SAME two figures `resolveTrickBank` would use if a cash-out fired right now
+  // (Momentum inside the product, Blade added on top), never a third running total of its own.
+  const shownMultiplier = multiplier + pendingBonus.multiplierBonus
+  const cash = cashValue(bank, shownMultiplier) + pendingBonus.flatDamageBonus
   // DLR-94 AC4 — what the same streak pays if the player is caught before applying. Computed
   // through `forcedCashValue` rather than restated as a fraction, so this copy cannot drift from
   // the configured constants. It is on the face of the readout rather than behind a hover because
   // it is precisely the number the new decision needs (`game-ux`).
-  const forced = forcedCashValue(bank, multiplier)
+  const forced = forcedCashValue(bank, shownMultiplier) + pendingBonus.flatDamageBonus
+  const hasPendingBonus = pendingBonus.multiplierBonus > 0 || pendingBonus.flatDamageBonus > 0
   const taken = lastResolution ? isTaken(lastResolution.outcome) : null
   const lastLine = lastResolution
     ? TRICK_OUTCOME_MESSAGE[lastResolution.outcome]
@@ -45,7 +64,11 @@ export default function BankMeter({ bank, multiplier, lastResolution }: BankMete
       </p>
       <p
         className="wc-bank-figures"
-        aria-label={`${TRICKS_LABEL} ${bank}, ${MULTIPLIER_LABEL} ${multiplier}, cashes for ${cash}, or ${forced} if you are hit first`}
+        aria-label={`${TRICKS_LABEL} ${bank}, ${MULTIPLIER_LABEL} ${multiplier}${
+          hasPendingBonus
+            ? `, plus a pending buff bonus of ${pendingBonus.multiplierBonus} multiplier and ${pendingBonus.flatDamageBonus} damage`
+            : ''
+        }, cashes for ${cash}, or ${forced} if you are hit first`}
       >
         <span className="wc-bank-num" aria-hidden="true">
           {bank}
@@ -56,6 +79,11 @@ export default function BankMeter({ bank, multiplier, lastResolution }: BankMete
         <span className="wc-bank-mult" aria-hidden="true">
           {multiplier}
         </span>
+        {pendingBonus.multiplierBonus > 0 && (
+          <span className="wc-bank-pending-bonus" aria-hidden="true">
+            +{pendingBonus.multiplierBonus}
+          </span>
+        )}
       </p>
       <p className="wc-bank-cash" aria-hidden="true">
         Cashes for <b>{cash}</b>
@@ -63,6 +91,12 @@ export default function BankMeter({ bank, multiplier, lastResolution }: BankMete
       <p className="wc-bank-forced" aria-hidden="true">
         If you&rsquo;re hit first: <b>{forced}</b>
       </p>
+      {hasPendingBonus && (
+        <p className="wc-bank-pending" aria-hidden="true">
+          Buff bonus pending: <b>+{pendingBonus.multiplierBonus}</b> multiplier,{' '}
+          <b>+{pendingBonus.flatDamageBonus}</b> damage
+        </p>
+      )}
       <p className={lastClassName}>{lastLine}</p>
     </section>
   )

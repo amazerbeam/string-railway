@@ -1,5 +1,5 @@
 import type { AbilityChoice, Card, RoundState } from '../warCouncil'
-import type { BuffId, RunState, ShopItem, SlotMachineId } from '../hunt'
+import type { BuffActivationRefusal, BuffId, BuffKind, RunState, ShopItem, SlotMachineId } from '../hunt'
 import type { RoundUiState } from '../app/warCouncil/roundUiState'
 
 /** A card and, for a Fox or a Woodcutter, the ability choice that must accompany it. Exactly
@@ -56,6 +56,31 @@ export interface SimPolicy {
   wantsCheatPlay?(ui: RoundUiState): CheatPlay | null
 }
 
+/** One buff, as it stood the moment a between-tricks window opened — BEFORE that window's own
+ *  activations run, so an earlier activation in the same window never biases a later buff's
+ *  `refusal` (e.g. spending AP first would make a later buff read `InsufficientAp` for a reason
+ *  that has nothing to do with the buff itself). `refusal: null` means it was activatable right
+ *  then, whether or not the policy chose to. Recorded independently of `policy.chooseBuffs` —
+ *  unlike `buffsActivated`, a kind the policy never even attempts still shows up here, which is
+ *  what makes this answer "which buffs CAN'T be used" rather than "which buffs got used". */
+export interface BuffWindowObservation {
+  readonly kind: BuffKind
+  readonly refusal: BuffActivationRefusal | null
+}
+
+/** One buff that was ACTIVATED for one trick (spent its AP, `activatedThisTrick` included its id),
+ *  and whether `buffFires` actually paid it off on that trick — see `buffFires`
+ *  (`src/hunt/buffEvaluation.ts`), the pure condition check this mirrors. `refusal`/`fired` are
+ *  deliberately separate questions: `BuffWindowObservation` asks "could this be pressed", this asks
+ *  "given it WAS pressed, did its condition ever come true" — a buff can be legally activated every
+ *  trick and still never fire, if what it needs (e.g. Cornered's health threshold, Miser's coin
+ *  threshold) cannot yet be true this early in a run. One row per activation-trick pairing, so a
+ *  buff activated on three tricks in one hand contributes three rows. */
+export interface BuffFireOutcome {
+  readonly kind: BuffKind
+  readonly fired: boolean
+}
+
 /** What one hand did. */
 export interface HandReport {
   readonly handOfFight: number
@@ -82,6 +107,14 @@ export interface HandReport {
   readonly stalled: boolean
   /** A `cpuFault` the reducer reported, or `null`. Also a bug signal. */
   readonly fault: string | null
+  /** Every buff offered in every between-tricks window this hand, kind and refusal state as it
+   *  stood at that window's open — see `BuffWindowObservation`. A buff still offered in a later
+   *  window of the same hand is recorded again: that later window is a second, independent chance
+   *  to activate it. `[]` for a hand with no window opened before it ended. */
+  readonly buffWindowObservations: readonly BuffWindowObservation[]
+  /** Every activation-trick pairing this hand and whether it fired — see `BuffFireOutcome`. `[]`
+   *  for a hand where nothing was ever activated. */
+  readonly buffFireOutcomes: readonly BuffFireOutcome[]
 }
 
 /** How a run ended. `stalled` is a driver failure, deliberately distinct from `lost`. */

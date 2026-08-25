@@ -90,7 +90,9 @@ actually resolves — the `null` → non-null edge of `resolvedTrick`. It delibe
 `discardWindowOpen` means), so an empty-trick rule would erase every activation the instant it was
 made. Two arguments and pure, so StrictMode's development double dispatch recomputes an identical
 value — the same property `captureUnplayed` beside it relies on. `openBuffWindow` clears
-`activatedThisTrick` and leaves the pool untouched.
+`activatedThisTrick` and, since 2026-08-25, also refills the pool back to `BuffActivationState.capacity`
+— see [action-points.md](../hunt/action-points.md#the-refresh-cadence-moved-to-per-trick-2026-08-25)
+for the cadence change and why `capacity` exists.
 
 ## The panel door is wider than the activation window, and that is a fix rather than a looseness
 

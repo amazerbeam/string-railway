@@ -140,12 +140,13 @@ describe('activating a buff — poise, then commit', () => {
 })
 
 describe('the per-trick activation window', () => {
-  it('clears activatedThisTrick when a trick resolves, and leaves the pool alone', () => {
+  it('2026-08-25 — clears activatedThisTrick when a trick resolves, and refills the pool to capacity', () => {
     const done = roundReducer(
       roundReducer(open(), { kind: RoundUiActionKind.TapBuff, id: cheat.id }),
       { kind: RoundUiActionKind.TapBuff, id: cheat.id },
     )
     expect(done.buffActivation.activatedThisTrick).toEqual([cheat.id])
+    expect(done.buffActivation.apPool).toBeLessThan(done.buffActivation.capacity)
 
     // Play a card and let the Quarry answer, so a trick resolves.
     const closed = roundReducer(done, { kind: RoundUiActionKind.ToggleLoadout })
@@ -155,7 +156,8 @@ describe('the per-trick activation window', () => {
 
     expect(played.resolvedTrick).not.toBeNull()
     expect(played.buffActivation.activatedThisTrick).toEqual([])
-    expect(played.buffActivation.apPool).toBe(done.buffActivation.apPool)
+    // PerTrick cadence (2026-08-25): the trick boundary refills the pool, it doesn't just leave it.
+    expect(played.buffActivation.apPool).toBe(played.buffActivation.capacity)
   })
 })
 

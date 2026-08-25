@@ -31,6 +31,9 @@ import {
   isEncounterResolved,
   MAX_CARDS_PER_DISCARD,
   playerRankTiersFor,
+  type ActionPoints,
+  type BuffId,
+  type BuffKind,
   type RunState,
 } from '../hunt'
 import { dealHand } from '../app/handDeal'
@@ -52,7 +55,7 @@ import {
 } from '../app/warCouncil/roundUiState'
 import type { WarCouncilRoundResult } from '../app/warCouncilMount'
 import { MAX_ACTIONS_PER_HAND } from './simConfig'
-import type { HandReport, SimPolicy } from './types'
+import type { BuffFireOutcome, BuffWindowObservation, HandReport, SimPolicy } from './types'
 
 export interface HandOutcome {
   readonly result: WarCouncilRoundResult
@@ -124,6 +127,11 @@ interface CheatPlayOutcome {
    *  `cheatTricksRemaining` — i.e. `commit` (`commitHandlers.ts`) decremented it, which it does
    *  only on a SUCCESSFUL player commit. */
   readonly spent: boolean
+  /** 2026-08-25 — the AP the Cheat's own `TapBuff` commit spent, captured BEFORE the `TapCard`
+   *  arm/commit below it: under `ApRefreshCadence.PerTrick` those two dispatches can cross a
+   *  trick boundary and refill `apPool`, which would make a before/after diff taken any later
+   *  than this undercount every spend that happened before the refill. */
+  readonly apSpent: ActionPoints
 }
 
 /**
@@ -143,7 +151,7 @@ function runCheatPlay(initial: RoundUiState, policy: SimPolicy): CheatPlayOutcom
   const cheat =
     play === null ? undefined : offeredBuffs(initial).find((buff) => buff.id === play.cheatId)
   if (play === null || cheat === undefined) {
-    return { ui: initial, spent: false }
+    return { ui: initial, spent: false, apSpent: 0 }
   }
 
   let ui = initial
@@ -155,14 +163,17 @@ function runCheatPlay(initial: RoundUiState, policy: SimPolicy): CheatPlayOutcom
   if (loadoutOpen(ui)) {
     ui = roundReducer(ui, { kind: RoundUiActionKind.CancelLoadout })
   }
+  // Captured HERE, before the TapCard dispatches below: those can cross a trick boundary and,
+  // under ApRefreshCadence.PerTrick, refill apPool — a diff taken any later would undercount.
+  const apSpent = initial.buffActivation.apPool - ui.buffActivation.apPool
   if (!cheatArmed(ui)) {
-    return { ui, spent: false }
+    return { ui, spent: false, apSpent }
   }
 
   const before = ui.cheatTricksRemaining
   ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: play.card }) // arm
   ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: play.card }) // commit
-  return { ui, spent: ui.cheatTricksRemaining < before }
+  return { ui, spent: ui.cheatTricksRemaining < before, apSpent }
 }
 
 interface WindowOutcome {
@@ -170,6 +181,14 @@ interface WindowOutcome {
   readonly buffsActivated: number
   readonly applyDamagePresses: number
   readonly deadCardRefusals: number
+  /** 2026-08-25 — every AP this window spent, on buffs and Apply Damage alike. Safe to diff
+   *  `initial`/final `apPool` directly: no `TapCard` dispatch happens inside this window, so no
+   *  per-trick refill can land between the spends counted and this diff. */
+  readonly apSpent: ActionPoints
+  /** Every buff `offeredBuffs(initial)` held at this window's OPEN, kind and refusal together —
+   *  see `BuffWindowObservation`. Independent of `policy.chooseBuffs`: recorded from `initial`,
+   *  before this window's own activation loop can spend AP and shift a later buff's refusal. */
+  readonly observations: readonly BuffWindowObservation[]
 }
 
 /** One between-tricks window: the policy's buff activations, then its Apply Damage press. Every
@@ -180,6 +199,10 @@ function runBuffWindow(initial: RoundUiState, policy: SimPolicy): WindowOutcome 
   let buffsActivated = 0
   let deadCardRefusals = 0
   let applyDamagePresses = 0
+  const observations: BuffWindowObservation[] = offeredBuffs(initial).map((buff) => ({
+    kind: buff.kind,
+    refusal: loadoutRefusalFor(initial, buff),
+  }))
 
   for (const id of policy.chooseBuffs(ui)) {
     const buff = offeredBuffs(ui).find((candidate) => candidate.id === id)
@@ -211,7 +234,14 @@ function runBuffWindow(initial: RoundUiState, policy: SimPolicy): WindowOutcome 
     }
   }
 
-  return { ui, buffsActivated, applyDamagePresses, deadCardRefusals }
+  return {
+    ui,
+    buffsActivated,
+    applyDamagePresses,
+    deadCardRefusals,
+    apSpent: initial.buffActivation.apPool - ui.buffActivation.apPool,
+    observations,
+  }
 }
 
 /** Plays one hand to its end — a resolved encounter, a completed round, a reported CPU fault, or
@@ -233,6 +263,17 @@ export function playHand(
   let deadCardRefusals = 0
   let discardsUsed = 0
   let cheatsArmed = 0
+  const buffWindowObservations: BuffWindowObservation[] = []
+  const buffFireOutcomes: BuffFireOutcome[] = []
+  // The buffs activated for the trick currently in flight, kind resolved once at activation time
+  // rather than re-looked-up later — `activatedThisTrick` itself clears the instant the trick
+  // resolves (`buffActivation.ts`), so this is the only place that window's active set survives to
+  // be reconciled against `resolvedTrick.resolution.firedBuffIds` below.
+  let pendingActive: ReadonlyMap<BuffId, BuffKind> = new Map()
+  // 2026-08-25 — summed at each spend site rather than read as `capacity - endingApPool`: under
+  // `ApRefreshCadence.PerTrick` the pool refills mid-hand, so a start/end diff would only ever
+  // report the LAST trick's spend and silently undercount every earlier one.
+  let apSpentTotal = 0
   let discardedThisHand = false
   let stalled = false
   let fault: string | null = null
@@ -258,6 +299,11 @@ export function playHand(
     }
 
     if (ui.resolvedTrick !== null) {
+      const fired = ui.resolvedTrick.resolution.firedBuffIds
+      for (const [id, kind] of pendingActive) {
+        buffFireOutcomes.push({ kind, fired: fired.includes(id) })
+      }
+      pendingActive = new Map()
       ui = roundReducer(ui, { kind: RoundUiActionKind.CarryOn })
       continue
     }
@@ -287,12 +333,24 @@ export function playHand(
       buffsActivated += outcome.buffsActivated
       applyDamagePresses += outcome.applyDamagePresses
       deadCardRefusals += outcome.deadCardRefusals
+      apSpentTotal += outcome.apSpent
+      buffWindowObservations.push(...outcome.observations)
+      // Snapshot the trick's active set HERE, while `activatedThisTrick` still holds it — it
+      // clears the moment this trick resolves, before `buffFireOutcomes` above gets to read it.
+      const offered = offeredBuffs(ui)
+      pendingActive = new Map(
+        ui.buffActivation.activatedThisTrick.flatMap((id) => {
+          const buff = offered.find((candidate) => candidate.id === id)
+          return buff === undefined ? [] : [[id, buff.kind] as const]
+        }),
+      )
       continue
     }
 
     if (canAct(ui)) {
       const cheat = runCheatPlay(ui, policy)
       ui = cheat.ui
+      apSpentTotal += cheat.apSpent
       if (cheat.spent) {
         cheatsArmed += 1
         continue
@@ -333,7 +391,7 @@ export function playHand(
       ui.openingEncounter.health[DuelSide.Player] - ui.encounter.health[DuelSide.Player],
     tricksWon: ui.round.tricksWon[PlayerSide.Player],
     buffsActivated,
-    apSpent: apCapacityFor(run.apCapacityBonus) - ui.buffActivation.apPool,
+    apSpent: apSpentTotal,
     applyDamagePresses,
     coinsFromBuffs: ui.buffHand.coinsEarned,
     activatableBuffsHeld,
@@ -341,6 +399,8 @@ export function playHand(
     cheatsArmed,
     stalled,
     fault,
+    buffWindowObservations,
+    buffFireOutcomes,
   }
 
   return { result, report, deadCardRefusals }

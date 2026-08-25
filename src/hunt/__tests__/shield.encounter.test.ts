@@ -8,7 +8,12 @@ import {
 } from '../encounter'
 import { queueApplyPayout } from '../applyDamagePayout'
 import { advanceRun, buyFromShop, drinkFlask, startRun } from '../run'
-import { HEAL_HEALTH_RESTORED, OpponentKind, RUN_ENCOUNTERS } from '../config'
+import {
+  APPLY_DAMAGE_HIT_RETENTION,
+  HEAL_HEALTH_RESTORED,
+  OpponentKind,
+  RUN_ENCOUNTERS,
+} from '../config'
 import { ShopItem } from '../shop'
 import { BuffTier } from '../buffs'
 import { NO_SHIELD_HEARTS } from '../shield'
@@ -133,10 +138,12 @@ describe('applyDamage — the DLR-109 queued payout, both directions', () => {
     expect(after.pendingApplyPayout).toEqual(queued.pendingApplyPayout)
   })
 
-  it('a partially absorbed hit that drops red health destroys it exactly as before', () => {
+  it('DLR-141 — a partially absorbed hit that drops red health reduces it to APPLY_DAMAGE_HIT_RETENTION, floored, rather than destroying it', () => {
     const queued = queueApplyDamagePayout(shielded(BuffTier.Silver), queueApplyPayout(9, 4))
     const after = applyDamage(queued, damage(3, 0))
-    expect(after.pendingApplyPayout).toBeNull()
+    expect(after.pendingApplyPayout).toMatchObject({
+      cashOut: Math.floor(9 * APPLY_DAMAGE_HIT_RETENTION),
+    })
   })
 })
 

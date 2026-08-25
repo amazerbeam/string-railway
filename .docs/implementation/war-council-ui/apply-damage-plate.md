@@ -9,7 +9,8 @@ Part of [War Council UI](README.md).
 > on the control's own face, the same `aria-pressed`, the same `Escape` cancel, and the same
 > `APPLY_DAMAGE_REFUSAL_MESSAGE` map — `labels.ts`'s label functions were kept and reused rather than
 > rewritten, which is why no copy changed. Two things are genuinely new on the bar: the **AP cost is
-> now stated on the button's face** (`12 for 3 AP`), and a **queued payout is now visible**
+> now stated on the button's face** (`12 for 1 AP` since 2026-08-25, was `12 for 3 AP`), and a
+> **queued payout is now visible**
 > (`Payout queued: 12 damage, 2 tricks to go.`) where before it was invisible. Read the sections below
 > as the rule and its history; read
 > [the action bar and the buff loadout](action-bar-and-loadout.md) for where the control now lives.
@@ -185,9 +186,10 @@ a disabled button.
   **Since DLR-109** its assertions on the committing tap changed direction: the Quarry's health no
   longer drops in the same transition, `encounter.pendingApplyPayout` holds the frozen `cashOut`
   instead, and `apPool` falls by `APPLY_DAMAGE_AP_COST` on the commit and not on the poise.
-- `__tests__/roundReducer.delayedApply.test.ts` (new, DLR-109) — the landing after
-  `APPLY_DAMAGE_DELAY_TRICKS + 1` resolutions, the AC3 wipe, the AC4 press-time snapshot surviving a
-  card played during the delay window, the Timebomb-wins ordering on a shared resolution, and the
+- `__tests__/roundReducer.delayedApply.test.ts` (new, DLR-109; **rewritten for the reduce-not-wipe
+  figures, DLR-141**) — the landing after `APPLY_DAMAGE_DELAY_TRICKS + 1` resolutions, the AC3/DLR-141
+  reduction to `APPLY_DAMAGE_HIT_RETENTION` floored, the AC4 press-time snapshot surviving a card
+  played during the delay window, the Timebomb-then-reduce ordering on a shared resolution, and the
   hand-end flush.
 - ~~`__tests__/ApplyDamagePlate.test.tsx`~~ — **deleted with the component by DLR-114.** Its coverage
   moved to `__tests__/ActionBar.test.tsx` and `__tests__/WarCouncilRound.actionBar.test.tsx`, which
@@ -244,8 +246,8 @@ return {
 still visibly drops the instant the second tap lands. What no longer happens on this transition is
 the cash-out itself: instead of `applyDamage(state.encounter, incomingFromCashOut(cashOut))`, the
 figure and the press-time hand size are frozen into a `PendingApplyPayout` and handed to the
-encounter's queue, and `APPLY_DAMAGE_AP_COST` is spent from the hand's `apPool` — **not refunded** if
-the payout is later wiped. `captureUnplayed` no longer fires on this transition at all, because the
+encounter's queue, and `APPLY_DAMAGE_AP_COST` is spent from the hand's `apPool` — **not refunded**
+regardless of what later becomes of the payout (paid, reduced, or evaporated — DLR-141). `captureUnplayed` no longer fires on this transition at all, because the
 press no longer resolves the encounter; a **delayed** kill's unplayed count instead comes from the
 payout's own frozen `unplayedAtPress`, threaded through `commit` in `commitHandlers.ts`. See
 [the delayed Apply Damage payout](../hunt/delayed-apply-damage-payout.md) for the queue, the

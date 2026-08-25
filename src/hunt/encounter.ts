@@ -6,7 +6,7 @@ import {
   type Health,
   type IncomingDamage,
 } from './types'
-import type { PendingApplyPayout } from './applyDamagePayout'
+import { reduceApplyPayoutOnHit, type PendingApplyPayout } from './applyDamagePayout'
 import {
   NO_SHIELD_HEARTS,
   absorbWithShield,
@@ -131,16 +131,18 @@ export function applyDamage(encounter: EncounterState, incoming: IncomingDamage)
   }
 
   const winner = resolveWinner(health)
-  // DLR-109 AC3 — THE single enforcement point, deliberately here rather than at a call site.
-  // Every damage path in this codebase funnels through this function, so a queued payout cannot
-  // survive a hit by taking a route that forgot to check. A resolved encounter drops it too: a
-  // dead Quarry needs no further damage, and a dead player has already been wiped by the same
-  // line.
+  // DLR-109 AC3 / DLR-141 — THE single enforcement point, deliberately here rather than at a call
+  // site. Every damage path in this codebase funnels through this function, so a queued payout
+  // cannot dodge the rule by taking a route that forgot to check. A resolved encounter still
+  // EVAPORATES it in full: a dead Quarry needs no further damage, and a dead player has already
+  // been wiped by the same line — `winner` is checked FIRST so a killing blow that also cost the
+  // player health evaporates rather than reduces.
   //
   // DLR-110 — a hit FULLY ABSORBED by blue hearts leaves red health untouched, so this stays
-  // false and the queued payout survives. Deliberate (`plan.md` Part 1 → Assumptions made): the
-  // payout loss is the price of taking a hit, and a shield that ate the hit did its job. A
-  // partially-absorbed hit that still drops red health destroys it exactly as before.
+  // false and the queued payout survives untouched at 100%. Deliberate (`plan.md` Part 1 →
+  // Assumptions made): the payout loss is the price of taking a hit, and a shield that ate the hit
+  // did its job. A partially-absorbed hit that still drops red health REDUCES it — DLR-141,
+  // replacing the full wipe DLR-109 originally shipped.
   const playerLostHealth = playerHealth < encounter.health[DuelSide.Player]
 
   return {
@@ -148,7 +150,12 @@ export function applyDamage(encounter: EncounterState, incoming: IncomingDamage)
     damageEventsApplied: encounter.damageEventsApplied + 1,
     winner,
     pendingTimebomb: encounter.pendingTimebomb,
-    pendingApplyPayout: playerLostHealth || winner !== null ? null : encounter.pendingApplyPayout,
+    pendingApplyPayout:
+      winner !== null
+        ? null
+        : playerLostHealth
+          ? reduceApplyPayoutOnHit(encounter.pendingApplyPayout)
+          : encounter.pendingApplyPayout,
     shieldHearts: absorption.shieldHeartsRemaining,
     wardAbsorbs: wardAfter,
   }

@@ -8,6 +8,7 @@ import {
 } from '../../../warCouncil'
 import {
   APPLY_DAMAGE_AP_COST,
+  APPLY_DAMAGE_HIT_RETENTION,
   applyDamage,
   BuffTier,
   DuelSide,
@@ -137,7 +138,7 @@ describe('Apply Damage — the commit (AC1, AC2, AC3)', () => {
     expect(ui.round.currentTrick).toEqual([])
   })
 
-  it('AC3 — the player then plays their card by the ordinary rules, against a zeroed bank, and taking the hit wipes the queued payout', () => {
+  it('AC3 / DLR-141 — the player then plays their card by the ordinary rules, against a zeroed bank, and taking the hit reduces the queued payout to 60% floored rather than wiping it', () => {
     let ui = apply(
       uiFrom(
         makeRound({
@@ -160,8 +161,11 @@ describe('Apply Damage — the commit (AC1, AC2, AC3)', () => {
     // The trick is lost, but the bank was already spent — so the forced cash-out pays nothing.
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanLoss)
     expect(ui.resolvedTrick?.resolution.cashOut).toBe(0)
-    // AC3 — the player lost health on this trick, so the queued payout is wiped, not ticked down.
-    expect(ui.encounter.pendingApplyPayout).toBeNull()
+    // DLR-141 — the player lost health on this trick, so the queued payout is reduced to
+    // APPLY_DAMAGE_HIT_RETENTION of its value, floored, not wiped and not ticked down.
+    expect(ui.encounter.pendingApplyPayout).toMatchObject({
+      cashOut: Math.floor(9 * APPLY_DAMAGE_HIT_RETENTION),
+    })
     expect(ui.encounter.health[DuelSide.Quarry]).toBe(quarryHealthForEncounter(0))
     expect(ui.encounter.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH - 1)
   })

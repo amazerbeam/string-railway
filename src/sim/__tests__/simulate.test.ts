@@ -19,6 +19,8 @@ function handFixture(overrides: Partial<HandReport> = {}): HandReport {
     cheatsArmed: 0,
     stalled: false,
     fault: null,
+    buffWindowObservations: [],
+    buffFireOutcomes: [],
     ...overrides,
   }
 }

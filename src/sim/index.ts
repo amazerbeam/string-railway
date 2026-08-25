@@ -19,6 +19,8 @@ export {
 } from './fixtures'
 export { RunEnding } from './types'
 export type {
+  BuffFireOutcome,
+  BuffWindowObservation,
   CardChoice,
   HandReport,
   RunReport,

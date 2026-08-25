@@ -231,6 +231,16 @@
   color: var(--wc-parchment);
 }
 
+/* 2026-08-25 — the unpaid Momentum bonus a fired buff has queued for the next cash-out, folded
+   visibly into the multiplier readout rather than staying invisible until it is spent. */
+.wc-bank-pending-bonus {
+  font-family: var(--wc-serif);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-brass);
+  margin-left: 0.15rem;
+}
+
 .wc-bank-cash {
   margin: 0.3rem 0 0;
   font-size: 0.72rem;
@@ -258,6 +268,18 @@
 
 .wc-bank-forced b {
   color: var(--wc-parchment);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 2026-08-25 — the same unpaid buff bonus, spelled out per axis under the two cash-out figures. */
+.wc-bank-pending {
+  margin: 0.15rem 0 0;
+  font-size: 0.7rem;
+  color: var(--wc-brass-dim);
+}
+
+.wc-bank-pending b {
+  color: var(--wc-brass);
   font-variant-numeric: tabular-nums;
 }
 

@@ -176,17 +176,31 @@ allowing.
 `discardWindowOpen(state)` — the same signal the discard already uses, so the two actions cannot
 drift apart about when the felt is between tricks. It reads nothing else from `RoundUiState`.
 
-`BuffActivationState` is `{ apPool, activatedThisTrick }`. `activateBuff` refuses through
+`BuffActivationState` is `{ apPool, capacity, activatedThisTrick }`. `activateBuff` refuses through
 `buffActivationRefusalFor` **first**, throws `RangeError` naming the refusal code rather than
 returning the state unchanged, and spends through `spendAp` — the only subtraction path, so
 `AP_ENABLED` is honoured exactly as every other AP consumer honours it. Stacking needs no rule of
 its own: the pool is one number, so two `activateBuff` calls draw down one budget.
 
-**AC4's "the pool does not silently refresh mid-hand" is enforced by there being two functions
-rather than one.** `openBuffWindow` clears `activatedThisTrick` and leaves `apPool` untouched;
-`refreshBuffsForNewHand` is the only thing in the module that resets the pool, and it delegates to
-`refreshActionPointsForNewHand` so a cadence change needs no edit here. A single "start the next
-trick" function that also reset the pool is precisely the bug the test suite exists to catch.
+**AC4's "the pool does not silently refresh mid-hand" held under `PerHand` cadence by there being
+two functions rather than one.** `openBuffWindow` cleared `activatedThisTrick` and left `apPool`
+untouched; `refreshBuffsForNewHand` was the only thing in the module that reset the pool, delegating
+to `refreshActionPointsForNewHand` so a cadence change needed no edit here.
+
+> **2026-08-25 changed the default cadence to `PerTrick`, 2026-08-25 — developer-directed.**
+> `BuffActivationState` gained `capacity` (the pool's full value, set once by `startBuffActivation`
+> and never touched again mid-hand) precisely so `openBuffWindow` would have something to refill
+> to. Under `AP_REFRESH_CADENCE = ApRefreshCadence.PerTrick`, `openBuffWindow` now refills `apPool`
+> back to `capacity` at every trick boundary, in addition to clearing `activatedThisTrick` — AC4's
+> two-function separation is unchanged in *shape* (`openBuffWindow` is still the trick boundary,
+> `refreshBuffsForNewHand` is still the hand boundary and still preserves `capacity` through its
+> reset), but AC4's own guarantee ("the pool does not silently refresh mid-hand") now describes the
+> retired `PerHand` branch, not the live default. `refreshActionPointsForNewHand`
+> (`actionPoints.ts`) also changed: it now resets under **both** `PerHand` and `PerTrick`, because
+> `PerTrick` is strictly more frequent than `PerHand`, never coarser — a hand boundary still resets
+> under it. Only a future coarser cadence (per-fight, per-run) would leave that function's `else`
+> branch live. See [action-points.md](action-points.md#dlr-141--per-trick-refresh) for the cadence
+> itself and the AP-spent sim-metric fix it required.
 
 ## `isPricedBuff` / `activatableBuffs` — the guard that keeps `RangeError` off a render — DLR-114
 

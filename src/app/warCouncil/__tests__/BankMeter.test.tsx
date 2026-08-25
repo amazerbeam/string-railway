@@ -53,4 +53,26 @@ describe('BankMeter', () => {
     // 5 x 5 = 25; two-thirds floored is 16.
     expect(container.querySelector('.wc-bank-forced')?.textContent).toContain('16')
   })
+
+  it('2026-08-25 — an unpaid buff bonus is folded into the multiplier and both cash figures', () => {
+    const { container } = render(
+      <BankMeter
+        bank={2}
+        multiplier={2}
+        lastResolution={null}
+        pendingBonus={{ multiplierBonus: 2, flatDamageBonus: 1 }}
+      />,
+    )
+    // Momentum lands inside the product: 2 x (2 + 2) = 8, plus Blade's +1 on top = 9.
+    expect(container.querySelector('.wc-bank-cash')?.textContent).toContain('9')
+    expect(container.querySelector('.wc-bank-pending-bonus')?.textContent).toContain('+2')
+    expect(container.querySelector('.wc-bank-pending')?.textContent).toContain('+2')
+    expect(container.querySelector('.wc-bank-pending')?.textContent).toContain('+1')
+  })
+
+  it('shows no pending-bonus readout when nothing is unpaid', () => {
+    const { container } = render(<BankMeter bank={2} multiplier={2} lastResolution={null} />)
+    expect(container.querySelector('.wc-bank-pending')).toBeNull()
+    expect(container.querySelector('.wc-bank-pending-bonus')).toBeNull()
+  })
 })

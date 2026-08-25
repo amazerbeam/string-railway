@@ -1,4 +1,4 @@
-import { APPLY_DAMAGE_DELAY_TRICKS } from './config'
+import { APPLY_DAMAGE_DELAY_TRICKS, APPLY_DAMAGE_HIT_RETENTION } from './config'
 
 /** A cash-out pressed but not yet dealt. Every figure FROZEN at the press. */
 export interface PendingApplyPayout {
@@ -11,30 +11,35 @@ export interface PendingApplyPayout {
 }
 
 /**
- * DLR-119 — which of the two things a trick resolution did to a queued payout. Declared here
- * because it names `PendingApplyPayout`'s two terminal fates and nothing else.
+ * DLR-119/DLR-141 — which of three things a trick resolution did to a queued payout. Declared
+ * here because it names `PendingApplyPayout`'s three fates and nothing else.
  *
  * REPORTING ONLY. Nothing branches on this value: it exists so the felt can narrate an outcome
- * the engine already decided, and DLR-119 is a presentation-only ticket. After the fold, "paid"
- * and "destroyed" are indistinguishable — both leave `pendingApplyPayout: null` — which is
- * exactly why the distinction has to be captured at the point it is made rather than re-derived
- * from two encounter snapshots.
+ * the engine already decided. `Reduced` is NON-TERMINAL — the payout is still in the air after
+ * it — while `Paid` and `Evaporated` are terminal, matching `remaining` on `TrickPayoutEvent`.
  */
 export const PayoutOutcome = {
   /** The delay ran out, or the hand ended, and the frozen `cashOut` was dealt to the Quarry. */
   Paid: 'paid',
-  /** Damage to the player wiped it before it could land — DLR-109's resolution order, step 1
-   *  nulls the payout before step 4 would pay it. The bomb wins, by design. */
-  Destroyed: 'destroyed',
+  /** DLR-141 — a hit cost the player red health and cut the queued payout to
+   *  `APPLY_DAMAGE_HIT_RETENTION` of its value, rounded down. STILL IN THE AIR. */
+  Reduced: 'reduced',
+  /** DLR-141 — the encounter resolved (Quarry dead, or player dead) with the payout still
+   *  queued. There is no target left to pay, so it is lost entirely. */
+  Evaporated: 'evaporated',
 } as const
 export type PayoutOutcome = (typeof PayoutOutcome)[keyof typeof PayoutOutcome]
 
-/** What one trick resolution did to a queued payout. `null` wherever nothing was queued. */
+/** What one trick resolution did to a queued payout. `null` wherever nothing was queued or
+ *  settled this trick. */
 export interface TrickPayoutEvent {
   readonly outcome: PayoutOutcome
-  /** The payout's own frozen `cashOut`, captured BEFORE the field was nulled — it is not
-   *  recoverable afterwards. UNIT: damage. */
+  /** The payout's frozen `cashOut` as it stood BEFORE this event. UNIT: damage. */
   readonly cashOut: number
+  /** DLR-141 — what is STILL IN THE AIR after a `Reduced` event, which may be `0` when the
+   *  floored value reached zero. `null` for `Paid` and `Evaporated`, which are terminal.
+   *  REQUIRED rather than optional, so every construction site must state it explicitly. */
+  readonly remaining: number | null
 }
 
 /** AC5's hook. Both fields are optional and every caller today passes nothing. */
@@ -85,6 +90,22 @@ export function queueApplyPayout(
     unplayedAtPress,
     resolutionsOwed: applyDamageDelayTricks(modifiers) + 1,
   }
+}
+
+/**
+ * DLR-141 — the retention rule. Never throws: it runs inside `applyDamage`, which runs inside a
+ * reducer. `null` in gives `null` out. Otherwise floors `cashOut` to `APPLY_DAMAGE_HIT_RETENTION`
+ * of its value, and returns `null` — rather than a payout of `0` — when that floored value is
+ * `<= 0`: `PendingApplyPayout.cashOut` is documented strictly positive, and `queueApplyPayout`
+ * itself refuses to mint a non-positive one, so this function does not either.
+ */
+export function reduceApplyPayoutOnHit(
+  pending: PendingApplyPayout | null,
+): PendingApplyPayout | null {
+  if (pending === null) return null
+  const cashOut = Math.floor(pending.cashOut * APPLY_DAMAGE_HIT_RETENTION)
+  if (cashOut <= 0) return null
+  return { ...pending, cashOut }
 }
 
 /** One trick resolution's effect on the queue. `pending` is what to store; `due` is what to pay,

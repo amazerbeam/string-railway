@@ -204,37 +204,29 @@ describe('activateBuff — AC3, stacking several activations against one pool', 
   })
 })
 
-describe('activateBuff — AC4, the pool does not silently refresh mid-hand', () => {
-  it('keeps falling across successive openBuffWindow boundaries and only refreshBuffsForNewHand restores it', () => {
+describe('activateBuff + openBuffWindow — 2026-08-25, PerTrick cadence refills every trick boundary', () => {
+  it('falls within a trick from activations, then returns to capacity at every openBuffWindow', () => {
     let state: BuffActivationState = startBuffActivation()
 
     const timebomb1 = timebombBuff(BuffTier.Bronze, 10)
     state = activateBuff(state, timebomb1, true)
-    const afterFirst = state.apPool
-    expect(afterFirst).toBeLessThan(STARTING_AP)
+    expect(state.apPool).toBeLessThan(STARTING_AP)
 
+    // 2026-08-25 supersedes AC4's PerHand assertion here: under the PerTrick default,
+    // openBuffWindow is the refill boundary, not just the activation-clearing one.
     state = openBuffWindow(state)
-    expect(state.apPool).toBe(afterFirst)
+    expect(state.apPool).toBe(STARTING_AP)
     expect(state.activatedThisTrick).toEqual([])
 
     const timebomb2 = timebombBuff(BuffTier.Bronze, 11)
     state = activateBuff(state, timebomb2, true)
-    const afterSecond = state.apPool
-    expect(afterSecond).toBeLessThan(afterFirst)
+    expect(state.apPool).toBeLessThan(STARTING_AP)
 
     state = openBuffWindow(state)
-    expect(state.apPool).toBe(afterSecond)
+    expect(state.apPool).toBe(STARTING_AP)
 
-    const timebomb3 = timebombBuff(BuffTier.Bronze, 12)
-    state = activateBuff(state, timebomb3, true)
-    const afterThird = state.apPool
-    expect(afterThird).toBeLessThan(afterSecond)
-
-    // Never silently returns to STARTING_AP across any of these boundaries.
-    expect(afterFirst).not.toBe(STARTING_AP)
-    expect(afterSecond).not.toBe(STARTING_AP)
-    expect(afterThird).not.toBe(STARTING_AP)
-
+    // refreshBuffsForNewHand — the per-hand boundary — is unaffected by the cadence change and
+    // still resets the pool (and, unlike openBuffWindow, is capacity-unaware; see its docblock).
     state = refreshBuffsForNewHand(state)
     expect(state.apPool).toBe(STARTING_AP)
     expect(state.activatedThisTrick).toEqual([])
@@ -242,11 +234,16 @@ describe('activateBuff — AC4, the pool does not silently refresh mid-hand', ()
 })
 
 describe('openBuffWindow', () => {
-  it('clears activatedThisTrick and leaves apPool byte-for-byte unchanged', () => {
-    const seeded: BuffActivationState = { apPool: 4, activatedThisTrick: [7, 8] }
+  it('2026-08-25 — clears activatedThisTrick and refills apPool back to capacity', () => {
+    const seeded: BuffActivationState = { apPool: 4, capacity: 6, activatedThisTrick: [7, 8] }
     const next = openBuffWindow(seeded)
     expect(next.activatedThisTrick).toEqual([])
-    expect(next.apPool).toBe(4)
+    expect(next.apPool).toBe(6)
+  })
+
+  it('2026-08-25 — never changes capacity itself', () => {
+    const seeded: BuffActivationState = { apPool: 2, capacity: 11, activatedThisTrick: [] }
+    expect(openBuffWindow(seeded).capacity).toBe(11)
   })
 })
 

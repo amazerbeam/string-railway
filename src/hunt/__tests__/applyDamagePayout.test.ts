@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { APPLY_DAMAGE_DELAY_TRICKS } from '../config'
+import { APPLY_DAMAGE_DELAY_TRICKS, APPLY_DAMAGE_HIT_RETENTION } from '../config'
 import {
   applyDamageDelayTricks,
   queueApplyPayout,
+  reduceApplyPayoutOnHit,
   tickApplyPayout,
   PayoutOutcome,
 } from '../applyDamagePayout'
@@ -70,8 +71,28 @@ describe('tickApplyPayout', () => {
   })
 })
 
+describe('reduceApplyPayoutOnHit', () => {
+  it('null in, null out', () => {
+    expect(reduceApplyPayoutOnHit(null)).toBeNull()
+  })
+
+  it('DLR-141 — floors the cashOut to APPLY_DAMAGE_HIT_RETENTION of its value, keeping every other field', () => {
+    const pending = queueApplyPayout(9, 4)
+    const reduced = reduceApplyPayoutOnHit(pending)
+    expect(reduced).toMatchObject({
+      cashOut: Math.floor(9 * APPLY_DAMAGE_HIT_RETENTION),
+      resolutionsOwed: pending.resolutionsOwed,
+      unplayedAtPress: pending.unplayedAtPress,
+    })
+  })
+
+  it('returns null once the floored value reaches zero', () => {
+    expect(reduceApplyPayoutOnHit(queueApplyPayout(1, 4))).toBeNull()
+  })
+})
+
 describe('PayoutOutcome', () => {
-  it('has exactly two members, so a third fate cannot be added without a compile error here', () => {
-    expect(Object.values(PayoutOutcome)).toEqual(['paid', 'destroyed'])
+  it('has exactly three members, so a fourth fate cannot be added without a compile error here', () => {
+    expect(Object.values(PayoutOutcome)).toEqual(['paid', 'reduced', 'evaporated'])
   })
 })

@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import {
+  activateShield,
   applyDamage,
   hasPendingApplyPayout,
   isEncounterResolved,
   queueApplyDamagePayout,
   startEncounter,
 } from '../encounter'
-import { PLAYER_START_HEALTH, quarryHealthForEncounter, QUARRY_ENCOUNTER_HEALTH } from '../config'
+import { BuffTier } from '../buffs'
+import {
+  APPLY_DAMAGE_HIT_RETENTION,
+  PLAYER_START_HEALTH,
+  quarryHealthForEncounter,
+  QUARRY_ENCOUNTER_HEALTH,
+} from '../config'
 import { DuelSide, type IncomingDamage } from '../types'
 import { queueApplyPayout } from '../applyDamagePayout'
 
@@ -217,11 +224,30 @@ describe('queueApplyDamagePayout — the one-at-a-time rule (DLR-109 AC2)', () =
   })
 })
 
-describe('applyDamage — DLR-109 AC3, the payout wipes at the single clamp point', () => {
-  it('a non-zero hit to the player wipes a queued payout to null', () => {
+describe('applyDamage — DLR-109 AC3 / DLR-141, the payout is reduced (not wiped) at the single clamp point', () => {
+  it('a non-zero hit to the player reduces a queued payout to APPLY_DAMAGE_HIT_RETENTION, floored', () => {
     const queued = queueApplyDamagePayout(startEncounter(0, 10), queueApplyPayout(9, 4))
     const after = applyDamage(queued, damage(1, 0))
+    expect(after.pendingApplyPayout).toMatchObject({
+      cashOut: Math.floor(9 * APPLY_DAMAGE_HIT_RETENTION),
+      resolutionsOwed: 2,
+      unplayedAtPress: 4,
+    })
+  })
+
+  it('a reduction that floors to zero evaporates the payout the same way a resolved encounter does', () => {
+    const queued = queueApplyDamagePayout(startEncounter(0, 10), queueApplyPayout(1, 4))
+    const after = applyDamage(queued, damage(1, 0))
     expect(after.pendingApplyPayout).toBeNull()
+  })
+
+  it('a hit FULLY ABSORBED by blue hearts leaves the queued payout untouched, at 100%', () => {
+    const shielded = activateShield(
+      queueApplyDamagePayout(startEncounter(0, 10), queueApplyPayout(9, 4)),
+      BuffTier.Bronze,
+    )
+    const after = applyDamage(shielded, damage(1, 0))
+    expect(after.pendingApplyPayout).toBe(shielded.pendingApplyPayout)
   })
 
   it('an all-zero incoming event preserves the queued payout', () => {
@@ -236,7 +262,7 @@ describe('applyDamage — DLR-109 AC3, the payout wipes at the single clamp poin
     expect(after.pendingApplyPayout).toBe(queued.pendingApplyPayout)
   })
 
-  it('an encounter that resolves — either side — leaves the payout null', () => {
+  it('an encounter that resolves — either side — still evaporates the payout in full', () => {
     const queuedOnPlayerWin = queueApplyDamagePayout(startEncounter(0, 10), queueApplyPayout(9, 4))
     const playerWins = applyDamage(queuedOnPlayerWin, damage(0, quarryHealthForEncounter(0)))
     expect(playerWins.winner).toBe(DuelSide.Player)

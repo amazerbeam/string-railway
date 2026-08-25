@@ -225,7 +225,7 @@ describe('TrickWell — DLR-119 clauses', () => {
   it('reports a settled payout', () => {
     const paid: ResolvedTrick = {
       ...resolvedTrick,
-      payout: { outcome: PayoutOutcome.Paid, cashOut: 12 },
+      payout: { outcome: PayoutOutcome.Paid, cashOut: 12, remaining: null },
     }
     render(
       <TrickWell currentTrick={[]} resolvedTrick={paid} quarryToLead={false} onCarryOn={vi.fn()} />,
@@ -233,20 +233,20 @@ describe('TrickWell — DLR-119 clauses', () => {
     expect(screen.getByText('Your queued 12 lands.')).toBeDefined()
   })
 
-  it('reports a destroyed payout', () => {
-    const destroyed: ResolvedTrick = {
+  it('DLR-141 — reports an evaporated payout', () => {
+    const evaporated: ResolvedTrick = {
       ...resolvedTrick,
-      payout: { outcome: PayoutOutcome.Destroyed, cashOut: 12 },
+      payout: { outcome: PayoutOutcome.Evaporated, cashOut: 12, remaining: null },
     }
     render(
       <TrickWell
         currentTrick={[]}
-        resolvedTrick={destroyed}
+        resolvedTrick={evaporated}
         quarryToLead={false}
         onCarryOn={vi.fn()}
       />,
     )
-    expect(screen.getByText('The hit destroyed your queued 12.')).toBeDefined()
+    expect(screen.getByText('The fight ended before your queued 12 could land.')).toBeDefined()
   })
 
   it('renders neither clause when nothing fired and nothing was queued', () => {
@@ -258,7 +258,7 @@ describe('TrickWell — DLR-119 clauses', () => {
         onCarryOn={vi.fn()}
       />,
     )
-    expect(screen.queryByText(/lands\.|destroyed your queued/)).toBeNull()
+    expect(screen.queryByText(/lands\.|before your queued/)).toBeNull()
     expect(screen.queryByText(/Momentum\)/)).toBeNull()
   })
 })

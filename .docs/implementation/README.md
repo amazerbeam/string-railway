@@ -28,9 +28,9 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, PT-001, PT-002                                                                                  |
 | `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, PT-002                                                                          |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, PT-002                                                                          |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, PT-001, PT-002 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                 |
 | `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118                                                                                                                                                                                                                                                                                                 |
 | `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118                                                                                                                                                                                                                                                                                                 |
@@ -607,8 +607,9 @@ and no existing action costs AP — that is explicitly this ticket's scope fence
 activation (T5) and Apply Damage (T6) are the two tickets that will spend against it, and the field
 a consumer needs is theirs to add, not this one's. Start at
 [hunt/action-points.md](hunt/action-points.md) for the toggle's single-read-site shape, the
-enum-shaped refresh cadence and its presently-dead non-`PerHand` branch, and the two developer
-decisions the ticket carries (`STARTING_AP`, `AP_ENABLED`'s default).
+enum-shaped refresh cadence (`PerHand` as shipped; a second, now-live `PerTrick` member landed
+2026-08-25 — see that page's own section on it), and the two developer decisions the ticket carries
+(`STARTING_AP`, `AP_ENABLED`'s default).
 
 ## DLR-105, Buff pile data model (2026-08-23)
 
@@ -713,11 +714,12 @@ lesson.
 ## DLR-109, the delayed Apply Damage payout (2026-08-23)
 
 **Apply Damage stopped being a free, instant, risk-free cash-out.** Pressing it now costs
-`APPLY_DAMAGE_AP_COST` (3 action points) and **queues** the payout instead of dealing it — the cash
-lands `APPLY_DAMAGE_DELAY_TRICKS + 1` trick resolutions later (1 beyond the press's own trick) rather
-than in the same reducer transition as the press. Taking damage during that window wipes the queued
-payout to nothing, enforced at `applyDamage`'s single clamp point in `src/hunt/encounter.ts` — the
-same discipline that already made an ordinary hit's bank/multiplier reset undodgeable. A new pure
+`APPLY_DAMAGE_AP_COST` (3 action points, since moved to 1 — see DLR-141 below) and **queues** the
+payout instead of dealing it — the cash lands `APPLY_DAMAGE_DELAY_TRICKS + 1` trick resolutions
+later (1 beyond the press's own trick) rather than in the same reducer transition as the press.
+~~Taking damage during that window wipes the queued payout to nothing~~ — true until **DLR-141,
+2026-08-25**, see below — enforced at `applyDamage`'s single clamp point in `src/hunt/encounter.ts` —
+the same discipline that already made an ordinary hit's bank/multiplier reset undodgeable. A new pure
 module, `src/hunt/applyDamagePayout.ts`, is this game's **second** effect that resolves later than
 the thing that caused it, deliberately reusing Timebomb's queue-on-`EncounterState` shape
 (`hunt/timebomb-and-the-delayed-hit.md`) rather than inventing a second mechanism — and it is a
@@ -726,14 +728,14 @@ _detonating_.
 
 **The ordering inside `applyResolution` is the ticket's substance.** A trick resolution is now four
 steps — the trick's own damage, the Timebomb queue clear, the new prime booking, and the Apply
-Damage payout's tick — and the payout settles **last**. Because the wipe lives inside `applyDamage`,
-a trick that costs the player health has already cleared `pendingApplyPayout` by the time the tick
-runs, so **a Timebomb detonating against the player on the trick a payout was due destroys that
-payout** — a consequence of the wipe rule and the order, not a fifth rule. The quick-kill
-unplayed-card count, previously read off the live hand at every kill, now has **two sources**: the
-live hand for an ordinary kill, and the payout's own frozen `unplayedAtPress` for a delayed one, so a
-card played during the delay window can no longer silently under-count the hand that earned a
-deferred kill.
+Damage payout's tick — and the payout settles **last**. Because the on-hit rule lives inside
+`applyDamage`, a trick that costs the player health has already acted on `pendingApplyPayout` by the
+time the tick runs, so ~~a Timebomb detonating against the player on the trick a payout was due
+destroys that payout~~ — see DLR-141 below, it now reduces rather than destroys — a consequence of
+the on-hit rule and the order, not a fifth rule. The quick-kill unplayed-card count, previously read
+off the live hand at every kill, now has **two sources**: the live hand for an ordinary kill, and the
+payout's own frozen `unplayedAtPress` for a delayed one, so a card played during the delay window can
+no longer silently under-count the hand that earned a deferred kill.
 
 Availability extends the existing `applyDamageRefusalFor` in `src/warCouncil/voluntaryCashOut.ts`
 with two clauses — `PayoutPending` and `InsufficientAp` — rather than adding a second refusal path,
@@ -748,14 +750,52 @@ one number rather than two.
 
 **Three design readings behind this mechanic were taken by an agent under an unattended sprint run,
 not played or developer-approved**: an outstanding payout lands at the resolution of a hand's final
-trick rather than being lost (the hand-end flush); only one payout may be queued at a time; and a
-detonating Timebomb beats a due payout on the same resolution. `.docs/game_rules/the-hunt.md` marks
-the Apply Damage rule `[provisional]` for exactly this reason, and both new tunables — the 3-AP cost
-and the 1-trick delay — are transcribed from the ticket and have never been played. Start at
+trick rather than being lost (the hand-end flush); only one payout may be queued at a time; and the
+**order** of a detonating Timebomb versus a due payout on the same resolution. `.docs/game_rules/the-hunt.md`
+marks those readings `[provisional]` for exactly this reason, and the delay figure is transcribed
+from the ticket and has never been played. Start at
 [hunt/delayed-apply-damage-payout.md](hunt/delayed-apply-damage-payout.md) for the mechanic and the
 ordering rule, [hunt/quick-kill-payout.md](hunt/quick-kill-payout.md#two-sources-of-the-unplayed-count-since-dlr-109)
 for the two-source count, or [war-council/voluntary-cash-out.md](war-council/voluntary-cash-out.md)
 for the widened refusal predicate.
+
+## DLR-141, the on-hit rule reduces rather than destroys (2026-08-25)
+
+**A queued Apply Damage payout is no longer an all-or-nothing gamble against the player's health
+bar.** DLR-109 wiped it entirely on any hit that cost the player health; DLR-141 replaced that with a
+developer-confirmed three-outcome table: a hit that costs red health cuts the payout to
+`APPLY_DAMAGE_HIT_RETENTION` (60%, rounded down) and it stays queued on its existing countdown; a hit
+fully absorbed by blue hearts leaves it untouched at 100% (unchanged since DLR-110); the encounter
+ending — either side — still evaporates it in full (unchanged since DLR-109). `winner !== null` is
+checked first in `applyDamage`'s payout expression, so a killing blow that also costs the player
+health evaporates rather than reduces. The new pure reducer, `reduceApplyPayoutOnHit`
+(`src/hunt/applyDamagePayout.ts`), floors the frozen `cashOut` and returns `null` — not a payout of
+`0` — once the floor reaches zero.
+
+`PayoutOutcome` widened from two members (`Paid`/`Destroyed`) to three (`Paid`/`Reduced`/`Evaporated`)
+— `Destroyed` deleted outright, not aliased — and `TrickPayoutEvent` gained a required
+`remaining: number | null`. `commitHandlers.ts`'s `applyResolution` derives the three-way event by
+comparing `pendingApplyPayout` across the `applyDamage` call using **reference** inequality, not a
+`cashOut` value comparison — a value check would only happen to distinguish "reduced" from "unchanged"
+while the retention constant stays below `1`, and would silently misreport if it were ever retuned to
+`1.0`. A trick that both reduces and settles a payout the same fold reports it `Paid` at the reduced
+figure, since `tick.due.cashOut` is already post-reduction.
+
+The felt's copy in `payoutLabels.ts` was rewritten for the three outcomes, with the risk hint's
+percentage derived from `APPLY_DAMAGE_HIT_RETENTION` rather than typed as a literal; `TrickWell.tsx`'s
+outcome CSS class was renamed from `wc-is-destroyed` to `wc-is-evaporated`. `.docs/game_rules/the-hunt.md`
+was corrected in six passages and its full-wipe reading moved from `[provisional]` (as DLR-109 shipped
+it) to `[settled]` for the retention figure specifically — the Timebomb-ordering reading and the AP
+cost/delay figures stay `[provisional]`/unplayed, unaffected by this ticket.
+
+**One finding surfaced no code change**: the ticket's audit for `.docs/design/Balatro-Forbidden-Solitaire/hybrid-design.md`
+cited three passages that turned out to live in `.docs/game_rules/the-hunt.md` instead —
+`hybrid-design.md` never described this mechanic's on-hit behaviour at all, a pre-existing gap this
+ticket's scope did not cover filling. Start at
+[hunt/delayed-apply-damage-payout.md](hunt/delayed-apply-damage-payout.md#where-it-lives-and-the-three-fates--ac3--dlr-141)
+for the three-fate rule, the reference-inequality derivation, and the tunable, or
+[war-council-ui/apply-damage-plate.md](war-council-ui/apply-damage-plate.md) for what changed on the
+felt.
 
 ## DLR-114, the pre-hand loadout action bar (2026-08-24)
 

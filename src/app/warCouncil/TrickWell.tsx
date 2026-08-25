@@ -112,7 +112,7 @@ export default function TrickWell({
         {firedText !== null && <p className="wc-buff-fired">{firedText}</p>}
         {payoutText !== null && (
           <p
-            className={`wc-payout-line${resolvedTrick.payout?.outcome === PayoutOutcome.Destroyed ? ' wc-is-destroyed' : ''}`}
+            className={`wc-payout-line${resolvedTrick.payout?.outcome === PayoutOutcome.Evaporated ? ' wc-is-evaporated' : ''}`}
           >
             {payoutText}
           </p>

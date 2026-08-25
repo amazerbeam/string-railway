@@ -2,7 +2,7 @@ import { canAffordAp, refreshActionPointsForNewHand, spendAp } from './actionPoi
 import { apCostOf, isConditionFamily, isConsumableKind } from './buffCosts'
 import { consumableEffectIsLive, isConsumableItem, spendConsumable } from './consumables'
 import type { Buff, BuffId } from './buffs'
-import { STARTING_AP } from './apConfig'
+import { AP_REFRESH_CADENCE, ApRefreshCadence, STARTING_AP } from './apConfig'
 import type { ActionPoints } from './types'
 
 /**
@@ -47,13 +47,20 @@ export interface BuffActivationStock {
 }
 
 /**
- * A per-hand budget drawn down across up to six per-trick windows (AC4), plus the buffs activated
- * for the CURRENT trick. Lives as a pure value with no home on `RunState` or `RoundUiState` yet —
- * whichever ticket builds the felt-rail button decides where it lives (`plan.md` Part 1 →
- * Assumptions made).
+ * A budget of `capacity` AP, plus the buffs activated for the CURRENT trick. Under
+ * `ApRefreshCadence.PerHand` that budget is drawn down across up to six per-trick windows (AC4);
+ * under `ApRefreshCadence.PerTrick` (the DEVELOPER-SET default since 2026-08-25) `openBuffWindow`
+ * refills `apPool` back to `capacity` at every trick boundary instead. `capacity` itself never
+ * changes mid-hand either way — only the shop's AP-capacity purchase moves it, at the next hand's
+ * `startBuffActivation` call. Lives as a pure value with no home on `RunState` yet — whichever
+ * ticket builds the felt-rail button decides where it lives (`plan.md` Part 1 → Assumptions made).
  */
 export interface BuffActivationState {
   readonly apPool: ActionPoints
+  /** 2026-08-25 — the pool's full value, so a per-trick refill knows what "full" means.
+   *  `STARTING_AP` plus any bought AP-capacity bonus (`apCapacityFor`). Read-only after
+   *  `startBuffActivation` sets it; nothing in this module ever changes it mid-hand. */
+  readonly capacity: ActionPoints
   readonly activatedThisTrick: readonly BuffId[]
 }
 
@@ -61,7 +68,7 @@ export interface BuffActivationState {
  *  `capacity` defaults to `STARTING_AP`, reproducing the pre-DLR-116 value exactly, so every
  *  existing call site is unchanged. */
 export function startBuffActivation(capacity: ActionPoints = STARTING_AP): BuffActivationState {
-  return { apPool: capacity, activatedThisTrick: [] }
+  return { apPool: capacity, capacity, activatedThisTrick: [] }
 }
 
 /**
@@ -119,6 +126,7 @@ export function activateBuff(
   }
   return {
     apPool: spendAp(state.apPool, stock.apCost),
+    capacity: state.capacity,
     activatedThisTrick: [...state.activatedThisTrick, buff.id],
   }
 }
@@ -159,22 +167,33 @@ export function activateFromPile(
 }
 
 /**
- * AC4's per-trick boundary — clears the current trick's activations and leaves `apPool`
- * UNTOUCHED. The separation from `refreshBuffsForNewHand` below is what AC4's test asserts
- * against: a single "start next trick" function that also reset the pool is precisely the bug
- * AC4 asks for a test against.
+ * AC4's per-trick boundary — clears the current trick's activations, and under
+ * `ApRefreshCadence.PerHand` leaves `apPool` UNTOUCHED. 2026-08-25: under `PerTrick` (the
+ * DEVELOPER-SET default since 2026-08-25), refills `apPool` back to `capacity` here instead —
+ * `capacity` itself is never touched, so a bought AP-capacity purchase still carries forward
+ * unchanged. The separation from `refreshBuffsForNewHand` below stays load-bearing under
+ * `PerHand`: AC4's own test is what that mode's "no silent mid-hand refresh" asserts against.
  */
 export function openBuffWindow(state: BuffActivationState): BuffActivationState {
-  return { ...state, activatedThisTrick: [] }
+  return {
+    ...state,
+    apPool: AP_REFRESH_CADENCE === ApRefreshCadence.PerTrick ? state.capacity : state.apPool,
+    activatedThisTrick: [],
+  }
 }
 
 /**
- * AC4's per-hand boundary — the ONLY function in this module that resets the pool. Delegates to
- * `refreshActionPointsForNewHand`, the same function every other AP consumer resets through, so
- * a change to the refresh cadence needs no edit here.
+ * AC4's per-hand boundary — the ONLY function in this module that resets the pool through
+ * `refreshActionPointsForNewHand` rather than through `capacity`. Delegates to that function, the
+ * same one every other AP consumer resets through, so a change to the PerHand refresh value needs
+ * no edit here. Preserves `capacity` untouched, exactly as `openBuffWindow` does.
  */
 export function refreshBuffsForNewHand(state: BuffActivationState): BuffActivationState {
-  return { apPool: refreshActionPointsForNewHand(state.apPool), activatedThisTrick: [] }
+  return {
+    apPool: refreshActionPointsForNewHand(state.apPool),
+    capacity: state.capacity,
+    activatedThisTrick: [],
+  }
 }
 
 /**

@@ -64,6 +64,7 @@ export {
   MAX_COIN_BONUS_PER_HAND,
   APPLY_DAMAGE_AP_COST,
   APPLY_DAMAGE_DELAY_TRICKS,
+  APPLY_DAMAGE_HIT_RETENTION,
   OpponentKind,
   RUN_ENCOUNTERS,
   ORDINARY_OPPONENT_NAMES,
@@ -230,6 +231,7 @@ export type {
 export {
   applyDamageDelayTricks,
   queueApplyPayout,
+  reduceApplyPayoutOnHit,
   tickApplyPayout,
   PayoutOutcome,
 } from './applyDamagePayout'

@@ -92,6 +92,27 @@ drift silently again.
 > continuously. It is deliberately a *different number in a different place* rather than a reuse of
 > the bars' pending machinery, which would have carried the old shape forward.
 
+#### Pending buff bonus — the accrual folded into the figures before it is spent, 2026-08-25
+
+`BankMeter` gained an optional `pendingBonus: CashOutBonus` prop, filled by
+`WarCouncilRound.tsx`'s `payableCashOutBonus(ui.buffHand.accrual)`. Before this, a fired Momentum or
+Blade buff's contribution was invisible on the felt: `buffAccrual.ts` tracked it correctly, but
+nothing rendered it, so the reader only saw its effect the moment it was actually spent at a
+cash-out. This is a **display-only** fix — the payout timing itself is unchanged: Momentum and Blade
+are still only *spent* (`markCashOutPaid`) at a real cash-out, not the instant a buff fires.
+
+**The pending bonus is folded into the SAME two numbers a live cash-out would use, not shown as a
+third figure.** `shownMultiplier = multiplier + pendingBonus.multiplierBonus` (Momentum sits inside
+the product, matching `resolveTrickBank`'s R3 step 2), and both `cash` and `forced` add
+`pendingBonus.flatDamageBonus` on top (Blade lands after the product, matching R3 step 4 and, for
+`forced`, after §7's two-thirds floor). A `+N` badge (`.wc-bank-pending-bonus`) sits beside the
+multiplier figure itself, and a `.wc-bank-pending` line spells out both axes explicitly beneath the
+two cash-out figures, shown only when at least one axis is non-zero (`hasPendingBonus`).
+
+`pendingBonus` defaults to `{ multiplierBonus: 0, flatDamageBonus: 0 }` (a module-level
+`NO_PENDING_BONUS` constant) when omitted, so every existing call site — and every existing test —
+reads exactly as it did before this prop existed.
+
 ### The skull mark on a played card
 
 `PlayingCard` takes a `skulled?: boolean` (defaulting to `false`) and, when true, renders a skull

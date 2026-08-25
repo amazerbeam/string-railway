@@ -28,12 +28,17 @@ export const AP_CAPACITY_STEP: ActionPoints = 5
 // TelegraphFidelity in `config.ts` already uses.
 export const ApRefreshCadence = {
   PerHand: 'perHand',
+  /** DEVELOPER-SET on 2026-08-25 — the pool refills to full CAPACITY (`STARTING_AP` plus any
+   *  bought bonus) at every trick boundary, not just once at the top of the hand. Read by
+   *  `openBuffWindow`, which is the per-trick boundary; `refreshActionPointsForNewHand` (the
+   *  per-hand boundary) is unaffected by this value. */
+  PerTrick: 'perTrick',
 } as const
 export type ApRefreshCadence = (typeof ApRefreshCadence)[keyof typeof ApRefreshCadence]
 
-// §1's "each hand" framing / the game-designer consult's recommended default, per the epic
-// breakdown's T1.
-export const AP_REFRESH_CADENCE: ApRefreshCadence = ApRefreshCadence.PerHand
+// DEVELOPER-SET on 2026-08-25, replacing §1's "each hand" framing / the game-designer consult's
+// per-hand default (DLR-104 T1): the pool now refills every trick instead of once per hand.
+export const AP_REFRESH_CADENCE: ApRefreshCadence = ApRefreshCadence.PerTrick
 
 // DLR-108 — the four per-hand reward caps DLR-124 R6 requires. Contributions past a cap are
 // CLIPPED and lost; nothing is banked. Each resets PER HAND and NOT on a hit — that asymmetry is
@@ -54,10 +59,10 @@ export const MAX_COIN_BONUS_PER_HAND = 10
 // one control's pair of tunables and splitting them across two files to satisfy a filename would
 // be worse.
 
-// AC1 — what one Apply Damage press costs. Transcribed from the ticket, which sets this default
-// and flags it OPEN per §2 of the design doc. NEVER PLAYED — the developer's to move.
+// AC1 — what one Apply Damage press costs. DEVELOPER-SET on 2026-08-25, replacing the
+// transcribed-from-ticket default of 3 (§2 of the design doc flagged it OPEN).
 // UNIT: action points per press.
-export const APPLY_DAMAGE_AP_COST: ActionPoints = 3
+export const APPLY_DAMAGE_AP_COST: ActionPoints = 1
 
 // AC2/AC5 — how many WHOLE TRICKS BEYOND the trick the press happened in a queued payout must
 // survive. `1` is AC2's "the current trick plus the next trick": a press queues
@@ -65,3 +70,10 @@ export const APPLY_DAMAGE_AP_COST: ActionPoints = 3
 // counts tricks, not points. Read only through `applyDamageDelayTricks`, never as a literal.
 // NEVER PLAYED. UNIT: tricks.
 export const APPLY_DAMAGE_DELAY_TRICKS = 1
+
+// DLR-141 — the FRACTION of a queued Apply Damage payout that survives a hit which costs the
+// player red health. DEVELOPER-SET on the ticket: 60%, rounded down at the point of use
+// (`reduceApplyPayoutOnHit`). The `winner !== null` branch of `applyDamage`'s payout expression is
+// untouched by this constant — a resolved encounter still evaporates the payout in full.
+// UNIT: dimensionless fraction of the frozen cashOut, 0..1.
+export const APPLY_DAMAGE_HIT_RETENTION = 0.6

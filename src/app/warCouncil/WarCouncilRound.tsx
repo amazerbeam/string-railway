@@ -1,5 +1,5 @@
 import { useReducer, type ReactNode } from 'react'
-import { DuelSide, isEncounterResolved, quarryCharacterInfo } from '../../hunt'
+import { DuelSide, isEncounterResolved, payableCashOutBonus, quarryCharacterInfo } from '../../hunt'
 import {
   applyDamageRefusalFor,
   cashValue,
@@ -326,6 +326,7 @@ export default function WarCouncilRound({
           bank={ui.round.bank}
           multiplier={ui.round.multiplier}
           lastResolution={ui.round.lastResolution}
+          pendingBonus={payableCashOutBonus(ui.buffHand.accrual)}
         />
         <IntentTelegraph intent={intent} speculative={speculative} />
       </aside>

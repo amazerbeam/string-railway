@@ -23,11 +23,12 @@ expose the branch-taking logic as a pure function that takes `enabled` as an exp
 
 **The refresh rule is a single function reading a cadence, not a boolean.** `refreshActionPointsForNewHand(currentAp)`
 reads `AP_REFRESH_CADENCE` (`config.ts`, an `as const`-shaped enum matching the `TelegraphFidelity`
-pattern, since `erasableSyntaxOnly` rules out a real TypeScript `enum`). For `PerHand` — the only
-cadence that exists today — it returns `STARTING_AP` regardless of the incoming pool. For any other
-cadence value it passes `currentAp` through unchanged; that branch is dead code today (there is
-only one member), but it is what lets a later per-fight or per-run cadence be added as one new
-config entry and one new `if`, rather than a boolean-to-enum type change.
+pattern, since `erasableSyntaxOnly` rules out a real TypeScript `enum`). As shipped, `PerHand` was the
+only cadence that existed — it returned `STARTING_AP` regardless of the incoming pool, any other
+cadence value passed `currentAp` through unchanged, and that second branch was dead code (there was
+only one member). That is what let a later cadence be added as one new config entry and one new `if`,
+rather than a boolean-to-enum type change — which is exactly what happened on 2026-08-25; see
+[below](#the-refresh-cadence-moved-to-per-trick-2026-08-25) for the live behaviour.
 
 `spendAp(pool, cost)` throws a `RangeError` rather than clamping to zero when `pool` cannot cover
 the (toggle-adjusted) cost — the same discipline `src/hunt/cheats.ts`'s `removeCheat` uses for a
@@ -106,3 +107,35 @@ Three things changed, none of them in this module:
 Nothing about `actionPoints.ts` itself changed: both consumers still draw through `spendAp` and refuse
 through `canAffordAp`, with no bypass written at either call site. See
 [war-council-ui/action-bar-and-loadout.md](../war-council-ui/action-bar-and-loadout.md).
+
+## The refresh cadence moved to per-trick, 2026-08-25
+
+**Developer-directed, no ticket.** `ApRefreshCadence` gained a second member, `PerTrick`, and
+`AP_REFRESH_CADENCE` now defaults to it — the pool refills to full at every trick boundary instead of
+once at the top of the hand. Three things changed to carry this:
+
+- **`BuffActivationState` gained `capacity`** (`src/hunt/buffActivation.ts`) — the pool's full value
+  (`STARTING_AP` plus any bought AP-capacity bonus), set once by `startBuffActivation` and never
+  touched again mid-hand. Before this, `openBuffWindow` had no way to know what "full" meant; `apPool`
+  was the only number the state carried.
+- **`openBuffWindow` — the per-trick boundary — now branches on cadence.** Under `PerHand` it still
+  clears `activatedThisTrick` and leaves `apPool` untouched, exactly as AC4 originally specified.
+  Under `PerTrick` (the live default) it also refills `apPool` back to `capacity`. `refreshBuffsForNewHand`
+  — the per-hand boundary — is unchanged in shape and still preserves `capacity` through its reset.
+- **`refreshActionPointsForNewHand` now resets under both `PerHand` and `PerTrick`.** `PerTrick` is
+  strictly more frequent than `PerHand`, never coarser, so a hand boundary still resets under it —
+  only a future coarser cadence (per-fight, per-run) would leave its `else` branch live.
+
+**A silent sim-metric bug came with it, and was fixed in the same pass.** `sim/playHand.ts`'s
+`apSpent` used to be computed as `apCapacityFor(run.apCapacityBonus) - ui.buffActivation.apPool` — a
+start-capacity-minus-ending-pool diff. Under `PerTrick` that would only ever reflect the *last*
+trick's spend, since every earlier trick's pool level is overwritten by the next refill before the
+hand ends. It now accumulates AP spent at each actual spend site instead: `runBuffWindow`'s buff and
+Apply Damage taps, and `runCheatPlay`'s Cheat tap — the latter captured **before** its own `TapCard`
+dispatches, since those can cross a trick boundary and refill the pool before a later diff would see
+the spend.
+
+See [buff-activation-and-ap-costs.md](buff-activation-and-ap-costs.md#the-per-hand-accrual-and-the-one-asymmetry-that-must-not-be-lost)
+for how this interacts with AC4's original "does not silently refresh mid-hand" guarantee, and
+[the-hunt.md, section 4](../../game_rules/the-hunt.md#buffs--spending-action-points-before-a-trick)
+for the player-facing rule.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Suit } from '../../../warCouncil'
-import type { PendingApplyPayout } from '../../../hunt'
+import { applyDamageDelayTricks, type PendingApplyPayout } from '../../../hunt'
 import {
   applyBuffAccessibleName,
   applyDamageBarAccessibleName,
@@ -27,9 +27,9 @@ describe('actionBarLabels', () => {
     expect(queuedPayoutText(payout(2))).toContain('2 tricks to go')
   })
 
-  it('DLR-119 — names the risk while the payout is queued', () => {
+  it('DLR-119/DLR-141 — names the risk while the payout is queued', () => {
     expect(queuedPayoutText(payout(2))).toBe(
-      'Payout queued: 12 damage, 2 tricks to go. Damage to you destroys it.',
+      'Payout queued: 12 damage, 2 tricks to go. Damage to you cuts it to 60%.',
     )
   })
 
@@ -50,10 +50,18 @@ describe('actionBarLabels', () => {
   it('applyDamageBarAccessibleName includes the queued sentence when a payout is pending', () => {
     const name = applyDamageBarAccessibleName(12, 3, false, null, payout(2))
     expect(name).toContain('2 tricks to go')
-    expect(name).toContain('Damage to you destroys it.')
+    expect(name).toContain('Damage to you cuts it to 60%.')
   })
 
   it('applyBuffAccessibleName names the AP figure it is given', () => {
     expect(applyBuffAccessibleName(4, 2, false, true)).toContain('4')
+  })
+
+  it('DLR-135 lesson, applied to the spec — the "N tricks to go" figure a FRESH press owes is derived from applyDamageDelayTricks() + 1, not a literal', () => {
+    const freshlyQueuedResolutionsOwed = applyDamageDelayTricks() + 1
+    const tricksWord = freshlyQueuedResolutionsOwed === 1 ? 'trick' : 'tricks'
+    expect(queuedPayoutText(payout(freshlyQueuedResolutionsOwed))).toContain(
+      `${freshlyQueuedResolutionsOwed} ${tricksWord} to go`,
+    )
   })
 })

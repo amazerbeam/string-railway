@@ -48,10 +48,12 @@ export function spendAp(pool: ActionPoints, cost: ActionPoints): ActionPoints {
 }
 
 /**
- * DLR-104 AC3 — the pool's value at the top of a new hand. Only `PerHand` is implemented
- * today; any other cadence value passes `currentAp` through untouched rather than throwing,
- * which is the shape the ticket's own risk note asks for so a later cadence (per-fight,
- * per-run) needs a new config entry and a new branch here, not a type change.
+ * DLR-104 AC3 — the pool's value at the top of a new hand. `PerHand` and `PerTrick` both reset
+ * here: 2026-08-25's `PerTrick` is a STRICTLY MORE frequent refill than `PerHand`, never a coarser
+ * one, so a hand boundary resets under it too — only a future COARSER cadence (per-fight,
+ * per-run) would carry the pool past a hand boundary instead of resetting it, which is the shape
+ * the ticket's own risk note asks for: a later coarser cadence needs a new config entry and a new
+ * branch here, not a type change.
  *
  * DLR-116 note: this hard-resets to plain `STARTING_AP` and is NOT capacity-aware — it does not
  * read `apCapacityFor`/`apCapacityBonus`. That is dead code in production today only because
@@ -62,7 +64,10 @@ export function spendAp(pool: ActionPoints, cost: ActionPoints): ActionPoints {
  * capacity unless it is made capacity-aware first.
  */
 export function refreshActionPointsForNewHand(currentAp: ActionPoints): ActionPoints {
-  if (AP_REFRESH_CADENCE === ApRefreshCadence.PerHand) {
+  if (
+    AP_REFRESH_CADENCE === ApRefreshCadence.PerHand ||
+    AP_REFRESH_CADENCE === ApRefreshCadence.PerTrick
+  ) {
     return STARTING_AP
   }
   return currentAp

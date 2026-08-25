@@ -82,11 +82,14 @@ export function playOptions(state: RoundUiState): PlayCardOptions {
  *   4. the queued Apply Damage payout ticks, and lands if it is due.
  *
  * Step 4 is LAST, and that is the whole ordering rule when a payout and a ticking Timebomb are
- * both outstanding. Because AC3's wipe lives inside `applyDamage`, step 1 has already set
- * `pendingApplyPayout` to `null` on any trick that cost the player health — so a Timebomb
- * detonating against the player on the trick a payout was due DESTROYS that payout. Putting the
- * tick anywhere earlier would let a player dodge AC3 by timing, which is the one thing the
- * criterion exists to prevent.
+ * both outstanding. DLR-141 split AC3's old wipe into a reduce/evaporate pair, both inside
+ * `applyDamage`: step 1 has already run `reduceApplyPayoutOnHit` on any trick that cost the
+ * player health, so a Timebomb detonating against the player on the trick a payout was due
+ * REDUCES that payout to `APPLY_DAMAGE_HIT_RETENTION` of its value (floored, `null` only when
+ * that floor reaches zero) rather than destroying it outright — and it is this reduced figure,
+ * not the original, that lands if step 4 also settles the payout this same trick. Putting the
+ * tick anywhere earlier would let a player dodge the reduction by timing, which is the one thing
+ * the criterion exists to prevent.
  *
  * The all-zero skip on step 1 avoids bumping `damageEventsApplied` for nothing, but does not
  * return early: a REPLACED clean loss (DLR-90 AC5) is an all-zero event that still owes a booking.
@@ -129,13 +132,32 @@ export function applyResolution(
     incoming[DuelSide.Player] === 0 && incoming[DuelSide.Quarry] === 0
       ? encounter
       : applyDamage(encounter, incoming)
-  // DLR-109 resolution order, step 1: `applyDamage` nulls a queued payout when the player lost
-  // health or the encounter ended. Comparing the field across that call is the ONLY place the
-  // difference between "destroyed" and "not yet due" is visible — afterwards both read `null`.
-  const destroyed: TrickPayoutEvent | null =
-    queued !== null && paid.pendingApplyPayout === null
-      ? { outcome: PayoutOutcome.Destroyed, cashOut: queued.cashOut }
-      : null
+  // DLR-141 — `applyDamage`'s three fates, read off the field across that call, the ONLY place
+  // the difference between them is visible: afterwards a reduction-to-zero and an evaporation
+  // both read `null`. Gone with a winner is EVAPORATED; gone with no winner is a REDUCTION that
+  // floored to zero; a smaller `cashOut` still standing is REDUCED; unchanged is no event at all.
+  const payoutEvent: TrickPayoutEvent | null =
+    queued === null
+      ? null
+      : paid.pendingApplyPayout === null
+        ? paid.winner !== null
+          ? { outcome: PayoutOutcome.Evaporated, cashOut: queued.cashOut, remaining: null }
+          : { outcome: PayoutOutcome.Reduced, cashOut: queued.cashOut, remaining: 0 }
+        : // Reference inequality, not a `cashOut` value comparison: `reduceApplyPayoutOnHit`
+          // always returns a NEW object (`{ ...pending, cashOut }`) when it reduces, and
+          // returns the SAME reference untouched when no hit landed this trick. Comparing
+          // `cashOut` values instead would only detect a reduction because
+          // `APPLY_DAMAGE_HIT_RETENTION` happens to be `< 1` today — raise that tunable to
+          // `1.0` and a value comparison would silently stop reporting `Reduced` even though a
+          // hit landed. Reference inequality detects "a reduction happened" independent of what
+          // fraction the reduction produced.
+          paid.pendingApplyPayout !== queued
+          ? {
+              outcome: PayoutOutcome.Reduced,
+              cashOut: queued.cashOut,
+              remaining: paid.pendingApplyPayout.cashOut,
+            }
+          : null
   const cleared = hasPendingTimebomb(paid)
     ? { ...paid, pendingTimebomb: NO_PENDING_TIMEBOMB }
     : paid
@@ -143,7 +165,7 @@ export function applyResolution(
     resolution.timebombTarget === null
       ? cleared
       : queueTimebomb(cleared, resolution.timebombTarget, timebombDamage)
-  return settleApplyPayout(booked, handEnding, destroyed)
+  return settleApplyPayout(booked, handEnding, payoutEvent)
 }
 
 /**
@@ -151,23 +173,24 @@ export function applyResolution(
  * steps. Ticks the queue and, when a payout comes due, deals it through `incomingFromCashOut` —
  * the ONE sanctioned `PlayerSide -> DuelSide` crossing for this figure — guarding
  * `isEncounterResolved` for the reason `applyResolution` already guards it: a dead Quarry needs no
- * further damage, and a dead player has already wiped the payout via AC3.
+ * further damage, and a dead player has already had the payout nulled by the `winner !== null`
+ * (Evaporated) branch above, not by a hit's ordinary reduction.
  */
 function settleApplyPayout(
   encounter: EncounterState,
   handEnding: boolean,
-  destroyed: TrickPayoutEvent | null,
+  payoutEvent: TrickPayoutEvent | null,
 ): FoldedResolution {
   const tick = tickApplyPayout(encounter.pendingApplyPayout, handEnding)
   if (tick.due === null) {
     // A no-payout trick allocates nothing: `tick.pending` is `null`, equal to the field it came
     // from, so the input object is returned untouched rather than a spread copy of itself.
     return tick.pending === encounter.pendingApplyPayout
-      ? { encounter, unplayedAtPress: null, payout: destroyed }
+      ? { encounter, unplayedAtPress: null, payout: payoutEvent }
       : {
           encounter: { ...encounter, pendingApplyPayout: tick.pending },
           unplayedAtPress: null,
-          payout: destroyed,
+          payout: payoutEvent,
         }
   }
   const cleared: EncounterState = { ...encounter, pendingApplyPayout: null }
@@ -177,7 +200,11 @@ function settleApplyPayout(
   return {
     encounter: settled,
     unplayedAtPress: isEncounterResolved(settled) ? tick.due.unplayedAtPress : null,
-    payout: { outcome: PayoutOutcome.Paid, cashOut: tick.due.cashOut },
+    // DLR-141 — a trick that BOTH reduces and settles a payout in the same fold reports it PAID
+    // at the reduced figure: `tick.due.cashOut` is already the post-reduction value, so the
+    // number the player is told is the number that actually landed. The intermediate `Reduced`
+    // event this fold may have produced is deliberately overwritten here, not composed with it.
+    payout: { outcome: PayoutOutcome.Paid, cashOut: tick.due.cashOut, remaining: null },
   }
 }
 

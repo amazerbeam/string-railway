@@ -10,7 +10,7 @@ import {
 } from '../encounter'
 import { queueApplyPayout } from '../applyDamagePayout'
 import { advanceRun, startRun } from '../run'
-import { OpponentKind, RUN_ENCOUNTERS } from '../config'
+import { APPLY_DAMAGE_HIT_RETENTION, OpponentKind, RUN_ENCOUNTERS } from '../config'
 import { BuffTier } from '../buffs'
 import { WARD_ABSORPTION } from '../consumables'
 import { NO_SHIELD_HEARTS } from '../shield'
@@ -144,11 +144,13 @@ describe('applyDamage — a hit a Ward fully absorbed leaves a queued payout sta
     expect(after.pendingApplyPayout).not.toBeNull()
   })
 
-  it('destroys pendingApplyPayout when the Ward only partly covered the hit', () => {
+  it('DLR-141 — reduces pendingApplyPayout to APPLY_DAMAGE_HIT_RETENTION, floored, when the Ward only partly covered the hit', () => {
     const queued = queueApplyDamagePayout(warded(BuffTier.Bronze), queueApplyPayout(4, 1))
     const after = applyDamage(queued, damage(3, 0))
 
     expect(after.health[DuelSide.Player]).toBe(MAX - 2)
-    expect(after.pendingApplyPayout).toBeNull()
+    expect(after.pendingApplyPayout).toMatchObject({
+      cashOut: Math.floor(4 * APPLY_DAMAGE_HIT_RETENTION),
+    })
   })
 })

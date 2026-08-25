@@ -38,6 +38,29 @@ describe('playHand', () => {
     const resolvedEarly = outcome.result.finalState.tricksPlayed < 6
     expect(outcome.result.finalState.tricksPlayed === 6 || resolvedEarly).toBe(true)
   })
+
+  it('records exactly one buffFireOutcome per buff activation, and only for kinds a valid BuffKind names', () => {
+    const run = startRun(PLAYER_START_HEALTH, [], 42)
+    const outcome = playHand(run, 1, FRESH_ENCOUNTER_DECK, baselinePolicy)
+
+    expect(outcome.report.buffFireOutcomes.length).toBe(outcome.report.buffsActivated)
+    for (const fireOutcome of outcome.report.buffFireOutcomes) {
+      expect(Object.values(BuffKind)).toContain(fireOutcome.kind)
+    }
+  })
+
+  it('records a buffWindowObservation for every offered buff at the opening window, independent of what the policy chooses', () => {
+    const neverActivates: SimPolicy = { ...baselinePolicy, chooseBuffs: () => [] }
+    const run = startRun(PLAYER_START_HEALTH, [], 42)
+    const outcome = playHand(run, 1, FRESH_ENCOUNTER_DECK, neverActivates)
+
+    // A fresh run's opening pile is non-empty (DLR-135), so the opening window offers at least
+    // one buff even though this policy never activates any of them.
+    expect(outcome.report.buffWindowObservations.length).toBeGreaterThan(0)
+    for (const observation of outcome.report.buffWindowObservations) {
+      expect(Object.values(BuffKind)).toContain(observation.kind)
+    }
+  })
 })
 
 describe('playHand — the optional levers', () => {
