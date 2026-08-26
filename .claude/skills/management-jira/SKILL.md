@@ -378,8 +378,15 @@ Ask where the ticket goes: **the current sprint, or the backlog.** Both are
 valid; neither is the silent default.
 
 To put a ticket in a sprint, set the Sprint field in `additional_fields` to the
-sprint's **numeric id**, as a single-element array — e.g.
-`"customfield_10020": [37]`.
+sprint's **numeric id as a bare scalar** — e.g. `"customfield_10020": 134`.
+
+**Not an array.** `createJiraIssue` rejects `[134]` with
+`400 {"customfield_10020": "Specify a valid value for Sprint"}` and creates
+nothing, even when the id is a valid active sprint — verified on this instance
+2026-08-26 while creating DLR-148. The scalar succeeds on create and reads back
+as an array (`fields.customfield_10020[0]`), which is what makes the array form
+look correct and is why this was wrong for so long. Write a scalar, read an
+array.
 
 - **Resolve the field id live.** Call `getJiraIssueTypeMetaWithFields` for the
   project and issue type and read the Sprint field's `customfield_XXXXX` id.

@@ -52,6 +52,34 @@ Two consequences worth stating, because both are easy to get wrong:
 - **`the-hunt.md` is the ruleset, not a changelog.** It is organised in playing order, marks every rule `[settled]` / `[provisional]` / `[open]` / `[not built]`, cites `hybrid-design.md §N` rather than reproducing its reasoning, and names no functions outside its Status register. `implementation-doc-writer` owns it and `/fb-apply` updates it every run that changes a rule — never edit it by hand, and never add a per-ticket section to it.
 - **`.docs/game_rules/fox-in-the-forest.md` is not part of this split.** It is the base game's published rulebook, transcribed, and it is a fixed reference — nothing in the pipeline maintains it.
 
+### Cut buffs are cut until a ticket brings them back
+
+DLR-145 pared the mintable buff pool to **13 templates** — Taker (3 suits × Blade/Momentum), Feeder
+(3 suits × Blade), Sidestep (Blade/Momentum), plus the two activated cards Cheat and Timebomb.
+`src/hunt/buffTemplates.ts` is the owner; `MintableConditionKind` and `MintableRewardAxis` narrow
+the *types*, so everything outside that set is **unconstructible, not merely unweighted**.
+
+Everything cut is **removed from the game until a ticket explicitly restores it** — treat it as
+absent when planning, reviewing, writing docs, or answering a question about what the game contains:
+
+- **Eight condition families** — Mark of the *R*, Glutton, Hoarder, Unbloodied, Debt Collector,
+  Keepsake, Miser, Cornered. They keep their `BuffKind` entry, their `CONDITION_MODIFIER` price,
+  their `buffFires` case and their `BUFF_CADENCE` row, and none of that makes them live.
+- **Two reward axes** — Purse (coins) and Second Wind (AP refund). No card pays on either.
+- **Five consumables** — Ward, Second Thoughts, Puppeteer, Foresight, Spyglass. `consumables.ts`
+  holds their timings and tier tables; no template and no slot weight exists for any of them.
+
+Retained code is a restoration path, not a live mechanic. Do not describe a cut card as something
+the player can get, do not treat its presence in `src/hunt/` or in an older design document as
+evidence it ships, and do not quietly re-add one while doing adjacent work — restoring a family is a
+row in `TEMPLATE_FAMILIES` plus a type widening, which is a ticket's decision, never a side effect.
+
+Two places still describe the wider pool and are **superseded on this point**:
+`.docs/design/Balatro-Forbidden-Solitaire/v1-buff-card-list.md` (the 71-template v1 list, including
+its unbuilt "Apply-to-card" category — no buff attaches to a card; a buff is activated for a trick
+and checked when that trick resolves) and `.claude/contract/DLR-147-full-ui-pass/mockup-buff-gallery.html`,
+which shows cut cards deliberately, to load-test the grid.
+
 ## Commands
 
 Everything runs in **PowerShell on Windows**. Chain with `;`, never `&&`. Backslash paths for the filesystem; forward slashes inside npm script names and Vitest filters.

@@ -10,7 +10,7 @@ metadata:
 
 Standards for the surfaces a player actually plays on. A game screen is not a document: it fills the viewport, never scrolls, and is scanned in glances between decisions rather than read top to bottom.
 
-**Scope:** this file owns the *game-screen* layer — the viewport shell, zoning, interaction cost, and how a collection of like controls is navigated. Two reference files hold the detail: `references/full-viewport-layout.md` for the shell skeleton, viewport units and the zone model; `references/feedback-to-redesign.md` for the method that turns play-session notes into a redesign doc.
+**Scope:** this file owns the *game-screen* layer — the viewport shell, zoning, interaction cost, and how a collection of like controls is navigated. Three reference files hold the detail: `references/full-viewport-layout.md` for the shell skeleton, viewport units and the zone model; `references/feedback-to-redesign.md` for the method that turns play-session notes into a redesign doc; `references/figma-mcp.md` for reading a design out of Figma via the MCP server without importing its assumptions.
 
 **Not here.** How to write the React and CSS is `.claude/skills/react-frontend/SKILL.md`, and its *Accessibility and input* section owns the generic floor — ≥44px targets, `:focus-visible`, `@media (hover: hover)`, `touch-action`, semantic HTML and ARIA. Read it first; this skill adds the game layer on top and does not repeat it. Whether a mechanic is any good is `game-designer`.
 
@@ -24,6 +24,7 @@ Standards for the surfaces a player actually plays on. A game screen is not a do
 - Making a collection of sibling controls (a hand of cards, a row of tiles) keyboard-navigable.
 - Reviewing a game UI for whether it shows the player what the current decision needs.
 - Working out what to change after a play session — someone found a screen confusing, fiddly, cramped or slow, and the notes need turning into a decided set of changes.
+- Taking a design out of Figma — reading a frame through the MCP server, or judging whether a Figma file is structured well enough to be read at all. Read `references/figma-mcp.md` first; its reject conditions are what stop Tailwind and fixed pixel dimensions arriving in `src/`.
 
 ## The hard floor
 
@@ -78,6 +79,14 @@ When **responding to feedback**: five steps, in order, detailed in `references/f
 4. **Run the interaction pass.** Walk the pairs and mark each compounding, redundant, clashing, dependent or neutral. Fixes collide over four scarce things: screen area, the player's attention in a given moment, the tap budget of the repeated action, and the moment in the loop. Resolve a clash on the hard floor first, then frequency, then reversibility — and if it is still tied, it is the developer's call.
 5. **Write the set, not the list** — what ships, in what order, and what was dropped and why. A redesign doc that drops nothing has not decided anything.
 
+## Mocking a screen up: HTML first, Figma when HTML runs out
+
+**Default to a hand-authored `mockup.html`.** It is what `/fb-plan`'s UI gate approves, and it is the only medium in which this skill's hard floor is even expressible — `dvh`/`svh`, `clamp()` bounds, `overflow: hidden`, safe-area insets, tap counts and the keyboard model are all behaviour, and a fixed-pixel canvas has none of them. A mockup you can run also *fails* in front of you: on 2026-08-26 the buff-gallery mockup shipped four defects that were invisible in the equivalent Figma frames and obvious within seconds of loading the page (an invisible element whose `color-mix()` resolved against the wrong `currentColor`, an `[hidden]` attribute losing to `display:flex`, cards with width but no height, and a missing narrow breakpoint). Its CSS is also a draft of the real stylesheet rather than something to be re-authored.
+
+**Reach for Figma when the job is one HTML is bad at**, and say which: the developer wants to move elements by hand rather than through you; a reusable component/variant library or bound design tokens across many screens; many alternative layouts compared side by side on one canvas; handing frames to another person; producing art assets. `references/figma-mcp.md` owns how to reach the server, what it costs, and the reject conditions — read it before proposing Figma, not after.
+
+Neither medium settles a tuning value. See *Decisions that are not yours* below.
+
 ## Verification, and its one real limit
 
 Layout claims are checked in a browser, not in a test. **jsdom has no layout engine**, so no Vitest test can prove a screen does not scroll — a component test that passes tells you nothing about whether the hand fits. Check it in a real browser at a few named viewport sizes and report the sizes. Because that question has a right answer, it belongs to QA driving the app through the `chrome-devtools` MCP, not to the developer's eye. What *does* belong to the developer's eye is whether the result feels right.
@@ -96,7 +105,7 @@ Project-wide rules live at `.claude/rules/`. Before answering, scan `.claude/rul
 
 ## Extending this skill
 
-When a game-UX question comes up that the hard floor does not answer, research it (`WebSearch`, `WebFetch` — prefer shipped-game teardowns, practitioner write-ups, platform documentation, and the WAI-ARIA Authoring Practices over listicles), then add the finding to whichever reference file owns it — `references/full-viewport-layout.md` for anything about the shell, zoning or keyboard model, `references/feedback-to-redesign.md` for anything about reading feedback or choosing between fixes — with its source link, rather than leaving it in a conversation.
+When a game-UX question comes up that the hard floor does not answer, research it (`WebSearch`, `WebFetch` — prefer shipped-game teardowns, practitioner write-ups, platform documentation, and the WAI-ARIA Authoring Practices over listicles), then add the finding to whichever reference file owns it — `references/full-viewport-layout.md` for anything about the shell, zoning or keyboard model, `references/feedback-to-redesign.md` for anything about reading feedback or choosing between fixes, `references/figma-mcp.md` for anything about Figma or its MCP server — with its source link, rather than leaving it in a conversation. If a finding fits none of the three, add a fourth file rather than wedging it into the nearest one.
 
 State plainly where the research is thin instead of inflating a search result into a principle, and **record whether you fetched the primary text or only read a search summary** — `feedback-to-redesign.md` has a *Where this research is thin* section that does exactly this, and it is the part that stops a secondhand paraphrase hardening into a rule.
 

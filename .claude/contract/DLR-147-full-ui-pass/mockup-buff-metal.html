@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Buff card — the design</title>
+<style>
+/* ============================================================================
+   Buff card — the settled design: off-white face, metallic tier frame, bare suit glyph.
+   Supersedes the medallion variant and mockup-buff-suit.html's four options.
+   A REFERENCE SHEET, not a play surface: it scrolls deliberately.
+   Every colour, width and duration below is a PLACEHOLDER the developer owns.
+   ========================================================================== */
+:root {
+  --wc-chamber:#0c1013; --wc-chamber-lift:#141a1f;
+  --wc-ink:#1b1710; --wc-ink-soft:#5f5647;
+  --wc-brass:#c99a4e; --wc-brass-dim:#7d6132;
+  --wc-chalk:#cdd6d2; --wc-chalk-dim:#6f7d78; --wc-alarm:#d1705f;
+  --wc-serif:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+  --wc-sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+
+  --bells:#c9873f; --keys:#5f93a8; --moons:#9c7cb8;
+
+  /* The face is near-neutral, but tinted to sit with its own metal — warm cream under
+     bronze, a cool paper-white under silver, a pale straw under gold. Kept this close to
+     white on purpose: the moment a face gets saturated it starts competing with the suit
+     suit mark again, which is the whole problem this design exists to avoid. PLACEHOLDERS. */
+  --face:#f6f2e8; --face-edge:#e2dac7;
+  --face-bronze:#f8efdf; --face-bronze-edge:#e7d6b6;
+  --face-silver:#f3f7f9; --face-silver-edge:#dae4e9;
+  --face-gold:#fcf6e0;   --face-gold-edge:#efe1b3;
+
+  /* PLACEHOLDER metals. Five stops each, because a two-stop gradient reads as a
+     tint and a five-stop one reads as a rolled edge catching light. */
+  --m-bronze:linear-gradient(142deg,#f3c894 0%,#b0702e 22%,#65401c 47%,#e0a561 64%,#7d4d20 100%);
+  --m-silver:linear-gradient(142deg,#ffffff 0%,#ccd6da 20%,#76858c 47%,#f2f7f9 64%,#8e9ba1 100%);
+  --m-gold:linear-gradient(142deg,#fff6cf 0%,#e6c159 21%,#8f6d1c 47%,#f8e296 64%,#a8842a 100%);
+  --m-bronze-edge:#4a2d13; --m-silver-edge:#59656b; --m-gold-edge:#6b520f;
+
+  --card-w:10.5rem;
+  /* 3px showed the colour but not the SHINE — the specular streak needs width to
+     land on. 5px is the point where it reads as a rolled metal edge. PLACEHOLDER. */
+  --frame:5px;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--wc-chamber); color:var(--wc-chalk); color-scheme:dark;
+  font-family:var(--wc-sans); -webkit-font-smoothing:antialiased;
+  padding:clamp(1rem,3vw,2.4rem) clamp(.9rem,3vw,2.4rem) 6rem; }
+
+h1 { margin:0 0 .4rem; font-family:var(--wc-serif); font-weight:400; color:var(--wc-brass);
+  font-size:clamp(1.3rem,3.4vw,2rem); }
+.lede { margin:0 0 1.6rem; max-width:68ch; color:var(--wc-chalk-dim); line-height:1.6;
+  font-size:clamp(.76rem,1.6vw,.87rem); }
+.lede b { color:var(--wc-chalk); font-weight:600; }
+h2.sec { margin:2.4rem 0 .3rem; font-family:var(--wc-serif); font-weight:400;
+  color:var(--wc-chalk); font-size:clamp(.98rem,2.2vw,1.24rem); }
+p.note { margin:0 0 1rem; max-width:70ch; font-size:.72rem; line-height:1.6; color:var(--wc-chalk-dim); }
+code { background:#1a2226; padding:.06rem .3rem; border-radius:3px; font-size:.94em; }
+
+.controls { display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; margin:0 0 1.4rem; }
+.controls span { font-size:.68rem; color:var(--wc-chalk-dim); margin-right:.3rem; }
+.controls button { min-height:2.4rem; padding:.4rem .85rem; border-radius:8px;
+  border:1px solid var(--wc-brass-dim); background:linear-gradient(160deg,#2a2418,#1a1710);
+  color:var(--wc-brass); font-family:var(--wc-serif); font-size:.78rem; cursor:pointer;
+  transition:filter 140ms ease, transform 140ms ease; }
+.controls button[aria-pressed='true'] { border:2px dashed var(--wc-brass); transform:translateY(-2px); }
+.controls button:focus-visible { outline:2px solid var(--wc-brass); outline-offset:3px; }
+@media (hover:hover) { .controls button:hover { filter:brightness(1.15); } }
+
+.row { display:grid; grid-template-columns:repeat(auto-fill,var(--card-w));
+  justify-content:start; gap:.8rem; }
+
+.suitgroup { margin:0 0 1.2rem; }
+.suitgroup > h3 { display:flex; align-items:center; gap:.45rem; margin:0 0 .55rem;
+  font-family:var(--wc-serif); font-weight:400; font-size:.86rem; }
+.suitgroup > h3 .rule { flex:1; height:1px; background:currentColor; opacity:.28; }
+.suitgroup > h3 .n { font-size:.62rem; color:var(--wc-chalk-dim); font-family:var(--wc-sans); }
+.suitgroup > h3 svg { width:1.05rem; height:1.05rem; }
+.suitgroup.bells { color:var(--bells); } .suitgroup.keys { color:var(--keys); }
+.suitgroup.moons { color:var(--moons); } .suitgroup.none { color:var(--wc-chalk-dim); }
+
+/* ======================= the card: metal frame + neutral face ============== */
+.bc { position:relative; display:block; width:100%; padding:var(--frame);
+  aspect-ratio:31/41; border-radius:12px; background:var(--metal);
+  box-shadow:0 0 0 1px var(--metal-edge), 0 4px 10px #00000073;
+  text-align:left; font-family:var(--wc-sans); border:none; cursor:pointer;
+  overflow:hidden;  /* clips the hover sheen to the frame */
+  transition:transform 140ms ease, box-shadow 140ms ease, filter 140ms ease; }
+.bc.bronze { --metal:var(--m-bronze); --metal-edge:var(--m-bronze-edge);
+  --face:var(--face-bronze); --face-edge:var(--face-bronze-edge); }
+.bc.silver { --metal:var(--m-silver); --metal-edge:var(--m-silver-edge);
+  --face:var(--face-silver); --face-edge:var(--face-silver-edge); }
+.bc.gold   { --metal:var(--m-gold);   --metal-edge:var(--m-gold-edge);
+  --face:var(--face-gold);   --face-edge:var(--face-gold-edge); }
+
+/* the specular streak — what makes it read as metal rather than a coloured border */
+.bc::before { content:''; position:absolute; inset:0; border-radius:12px; pointer-events:none;
+  background:linear-gradient(118deg, #ffffff00 34%, #ffffffbf 45%, #ffffff00 56%);
+  opacity:.55; }
+/* a darker roll on the lower-right, so the frame has two lit faces not one */
+.bc::after { content:''; position:absolute; inset:0; border-radius:12px; pointer-events:none;
+  background:linear-gradient(318deg, #00000073 0%, #00000000 26%); }
+
+/* display:block is load-bearing — a <span> ignores width/height, and a <button> may
+   only contain phrasing content, so h4/p get hoisted OUT of the card by the parser.
+   Everything inside is a span, promoted to block here. */
+.face { display:block; position:relative; z-index:1; width:100%; height:100%; border-radius:9px;
+  overflow:hidden; color:var(--wc-ink);
+  background:radial-gradient(120% 92% at 50% 0%, #fffdf7 0%, var(--face) 52%, var(--face-edge) 100%);
+  box-shadow:inset 0 0 0 1px #ffffffd9, inset 0 1px 4px #00000021; }
+/* the printed hairline every card in this game carries */
+.face .rule { position:absolute; inset:5px; border:1px solid currentColor; opacity:.13;
+  border-radius:5px; pointer-events:none; }
+
+.top { display:flex; position:absolute; top:7%; left:8%; right:8%; display:flex; align-items:center; gap:.24rem; }
+/* ---------- the suit mark: the bare glyph in the suit's own colour ----------
+   Chosen over a filled medallion, which was tried and cut. A disc renders the glyph at
+   11px inside a 17px circle, and there is not enough room left at that size for a bell to
+   look like a bell. Bare, it renders at 20px — 90% larger — and keeps full stroke weight
+   against the pale face. The suit sections already do the long-range scanning, so the mark
+   is free to be legible rather than loud. */
+.suitmark { flex:0 0 auto; width:1.25rem; height:1.25rem; display:grid; place-items:center;
+  color:var(--suitc); }
+.suitmark svg { width:100%; height:100%; }
+.suitmark.none { color:var(--wc-ink-soft); opacity:.55; }
+.suitmark.none::after { content:'—'; font-size:.62rem; }
+
+/* Tier rank as a ROMAN NUMERAL, replacing the cluster of dots that used to sit here.
+   The dots were an unlabelled blob beside the suit mark and read as noise; I / II /
+   III is a rank you can say out loud, it stays shape-distinct in greyscale, and it costs
+   less width than three pips did. */
+.tiernum { flex:0 0 auto; font-family:var(--wc-serif); font-size:.66rem; line-height:1;
+  letter-spacing:.07em; color:var(--wc-ink); opacity:.8; }
+.cadence { padding:.1rem .3rem; border-radius:4px; font-size:.4rem; font-weight:700;
+  letter-spacing:.07em; color:var(--wc-ink); opacity:.8; background:#1b171014; }
+.count { margin-left:auto; padding:.1rem .32rem; border-radius:4px; background:var(--wc-ink);
+  color:var(--face); font-size:.46rem; font-weight:700; }
+
+.face .nm { display:block; position:absolute; top:20.5%; left:8%; right:8%; margin:0; font-family:var(--wc-serif);
+  font-weight:400; font-size:.74rem; line-height:1.2; }
+.face .cond { display:block; position:absolute; top:47%; left:8%; right:8%; margin:0; color:var(--wc-ink-soft);
+  font-size:.5rem; line-height:1.32; }
+/* The reward bar carries the SUIT colour, so suit is stated twice on the card — once at
+   the top by the mark, once at the foot by the payoff. Text colour is per suit and is not
+   a taste call: WHITE FAILS on all three (Bells 2.99:1, Keys 3.37:1, Moons 3.51:1 — none
+   of them reach WCAG AA's 4.5 for text this size). The dark inks below were picked by
+   measuring, and all three pass:
+     Bells  #1d1004 on #c9873f = 6.22:1
+     Keys   #06212e on #5f93a8 = 4.92:1
+     Moons  #1c1030 on #9c7cb8 = 5.14:1
+   A buff with no target suit keeps the neutral ink bar. Colours are PLACEHOLDERS; the
+   CONTRAST FLOOR is not — re-measure if any suit colour changes. */
+.face .reward { position:absolute; left:6%; right:6%; bottom:6%; padding:.32rem 0; border-radius:7px;
+  background:var(--reward-bg, var(--wc-ink)); color:var(--reward-fg, var(--face));
+  text-align:center; font-size:.58rem; font-weight:700;
+  box-shadow:inset 0 0 0 1px #00000026; }
+/* the tier NAME at the foot: the numeral gives rank, this gives the material by name.
+   Arguably droppable now — see the notes. */
+.face .tierword { position:absolute; left:8%; bottom:calc(6% + 2.05rem); font-size:.48rem;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--wc-ink-soft); opacity:.85;
+  font-weight:700; }
+
+/* ---------- holding more than one: the pile, in metal ----------
+   Carried over from the gallery mockup, and it earns more here: the layers behind are
+   the SAME metal gradient as the frame, so a stack of three bronze reads as three
+   bronze-edged cards rather than as a drop shadow. One copy stays a plain card. */
+.stack { position:relative; display:block; }
+.stack .layer { position:absolute; inset:0; z-index:0; border-radius:12px;
+  background:var(--metal); box-shadow:0 0 0 1px var(--metal-edge), 0 2px 5px #00000059; }
+.stack .layer::after { content:''; position:absolute; inset:0; border-radius:12px;
+  background:linear-gradient(118deg,#ffffff00 34%,#ffffffa6 45%,#ffffff00 56%); opacity:.5; }
+.stack .layer.l2 { transform:translate(11px,-11px); }
+.stack .layer.l1 { transform:translate(5.5px,-5.5px); }
+.stack > .bc { position:relative; z-index:1; display:block; width:100%; }
+.stack.bronze { --metal:var(--m-bronze); --metal-edge:var(--m-bronze-edge); }
+.stack.silver { --metal:var(--m-silver); --metal-edge:var(--m-silver-edge); }
+.stack.gold   { --metal:var(--m-gold);   --metal-edge:var(--m-gold-edge); }
+/* the pile leans up and right, so its row needs headroom */
+.row { padding-top:13px; padding-right:13px; }
+
+/* ---------- the hover sheen: light travelling along the rim ----------
+   A band of white, skewed and swept across the card on hover. It sits at z-index 0 —
+   ABOVE the metal background but BELOW the face, which is z-index 1 — so the light only
+   ever appears on the rim, never washing across the card's text. That is the whole trick:
+   one element, and the face does the masking for free.
+
+   Held to a single pass on hover rather than a loop. A looping shine on fifteen cards is
+   a fairground, and it would also never stop asking for the compositor's attention.
+   Duration, angle, width and brightness are all PLACEHOLDERS. */
+.sheen { position:absolute; top:-30%; bottom:-30%; left:-45%; width:36%; z-index:0;
+  pointer-events:none; opacity:0;
+  background:linear-gradient(90deg, #ffffff00 0%, #ffffffe6 48%, #ffffff00 100%);
+  transform:skewX(-18deg) translateX(-160%); }
+
+@media (hover: hover) {
+  .bc:hover .sheen { animation:sheen-sweep 760ms cubic-bezier(.32,.06,.2,1) 1; }
+}
+@keyframes sheen-sweep {
+  0%   { transform:skewX(-18deg) translateX(-160%); opacity:0; }
+  14%  { opacity:.95; }
+  86%  { opacity:.95; }
+  100% { transform:skewX(-18deg) translateX(460%); opacity:0; }
+}
+
+/* Reduced motion keeps the READ — the rim still brightens, it just does not travel. */
+@media (prefers-reduced-motion: reduce) {
+  .bc:hover .sheen { animation:none; opacity:0; }
+  .bc:hover::before { opacity:.95; }
+}
+
+/* ---------- states ---------- */
+@media (hover:hover) {
+  .bc:hover { transform:translateY(-5px); box-shadow:0 0 0 1px var(--metal-edge), 0 12px 20px #000000a6; }
+  .bc:hover::before { opacity:.85; }
+}
+.bc:focus-visible { outline:2px solid var(--wc-brass); outline-offset:3px; }
+.bc.is-poised { transform:translateY(-9px);
+  box-shadow:0 0 0 1px var(--metal-edge), 0 0 0 3px var(--wc-brass), 0 14px 24px #000000b3; }
+.bc.is-poised .face::after { content:'TAP AGAIN'; position:absolute; left:6%; right:6%; bottom:6%;
+  padding:.3rem 0; border-radius:7px; background:var(--wc-brass); color:#1a1206;
+  text-align:center; font-size:.5rem; font-weight:700; letter-spacing:.07em; }
+.bc.is-dead { filter:saturate(.25) brightness(.72); cursor:default; }
+.bc.is-dead .face { opacity:.62; }
+.bc.is-dead::before { opacity:.15; }
+
+@media (prefers-reduced-motion:reduce) { .bc { transition:none; } }
+
+/* ---------- the metal swatches ---------- */
+.metals { display:flex; gap:1rem; flex-wrap:wrap; margin:0 0 .4rem; }
+.metals figure { margin:0; display:flex; flex-direction:column; gap:.35rem; align-items:center; }
+.metals .bar { width:9rem; height:2.4rem; border-radius:8px; position:relative; overflow:hidden;
+  box-shadow:0 0 0 1px var(--metal-edge), 0 3px 8px #00000073; background:var(--metal); }
+.metals .bar::before { content:''; position:absolute; inset:0;
+  background:linear-gradient(118deg,#ffffff00 34%,#ffffffbf 45%,#ffffff00 56%); opacity:.55; }
+.metals figcaption { font-size:.64rem; color:var(--wc-chalk-dim); letter-spacing:.08em; }
+
+.foot { margin:3rem 0 0; padding-top:1.2rem; border-top:1px solid #232c33; max-width:76ch;
+  color:var(--wc-chalk-dim); font-size:.73rem; line-height:1.65; }
+.foot h3 { margin:0 0 .4rem; color:var(--wc-brass); font-size:.82rem;
+  font-family:var(--wc-serif); font-weight:400; }
+.foot ul { margin:.3rem 0 1.1rem; padding-left:1.1rem; }
+.foot li { margin:.32rem 0; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="s-bells" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="2.9" r="1.05"/><path d="M12 4.9v.8"/>
+      <path d="M6.6 16.1v-4.3a5.4 5.4 0 0 1 10.8 0v4.3"/><path d="M4.4 16.1h15.2"/>
+      <path d="M9.9 18.7a2.1 2.1 0 0 0 4.2 0"/>
+    </g>
+  </symbol>
+  <symbol id="s-keys" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="6.5" r="3.7"/><path d="M12 10.2V21"/><path d="M12 14.3h3.5M12 17h2.7"/>
+    </g>
+  </symbol>
+  <symbol id="s-moons" viewBox="0 0 24 24">
+    <path d="M15.4 3.6a8.4 8.4 0 1 0 4.1 12 6.9 6.9 0 0 1-4.1-12z"
+      fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+  </symbol>
+</svg>
+
+<h1>Buff card — the design</h1>
+<p class="lede">
+  The settled buff card: an <b>off-white face</b>, tier carried entirely by a <b>metallic frame</b>
+  — bronze, silver, gold — and the target suit carried by <b>its own glyph in its own colour</b>.
+  With the face neutral, the suit mark and the payoff bar are the only saturated things on the card,
+  so Bells no longer competes with the Bronze field: tier and suit stop fighting for the same channel.
+  <br><br>
+  These are <b>all thirteen buffs in the game</b>, not a selection — DLR-145 pared the mintable pool
+  to Taker, Feeder and Sidestep crossed with Blade and Momentum, plus Cheat and Timebomb. That makes
+  the suit question far more load-bearing than it first looked: <b>nine of the thirteen target a
+  suit</b>, and only Sidestep, Cheat and Timebomb do not.
+</p>
+
+<h2 class="sec">The three metals</h2>
+<p class="note">
+  Each is a five-stop gradient rather than a tint — a light roll, a mid, a dark core, a specular
+  return, then a shadowed edge — with a bright streak across the top-left and a dark roll on the
+  bottom-right, so the frame has two lit faces instead of one flat colour.
+</p>
+<div class="metals">
+  <figure><span class="bar bronze" style="--metal:var(--m-bronze);--metal-edge:var(--m-bronze-edge)"></span><figcaption>BRONZE</figcaption></figure>
+  <figure><span class="bar silver" style="--metal:var(--m-silver);--metal-edge:var(--m-silver-edge)"></span><figcaption>SILVER</figcaption></figure>
+  <figure><span class="bar gold" style="--metal:var(--m-gold);--metal-edge:var(--m-gold-edge)"></span><figcaption>GOLD</figcaption></figure>
+</div>
+
+<h2 class="sec">The loadout</h2>
+<div class="controls" role="group" aria-label="Ordering">
+  <span>Order by</span>
+  <button data-order="suit" aria-pressed="true">Suit, then tier</button>
+  <button data-order="tier" aria-pressed="false">Tier, then suit</button>
+</div>
+<div id="sheet"></div>
+
+<h2 class="sec">States</h2>
+<p class="note">
+  Hover lifts the card and brightens the specular streak — the metal catches the light as it rises.
+  Poised adds a brass ring and names the next tap. Unusable desaturates the metal and dims the face,
+  so a dead card reads as tarnished rather than merely faint.
+</p>
+<div class="row" id="states"></div>
+
+<section class="foot">
+  <h3>How the card works</h3>
+  <ul>
+    <li><b>Tier and suit stop competing.</b> The problem the earlier sheets kept hitting was that
+      Bells and the Bronze field sit 28.7 RGB units apart — effectively the same amber. A neutral
+      face removes the contest: tier becomes <em>material</em> and suit becomes <em>colour</em>, so
+      neither has to lose.</li>
+    <li><b>Tier is the metallic frame, plus a roman numeral.</b> <b>I</b>, <b>II</b>, <b>III</b>,
+      where a cluster of unlabelled dots used to sit. The dots read as noise rather than as a rank; a
+      numeral is something you can say out loud and it stays shape-distinct in greyscale — which
+      matters, because a metallic gradient reads as light-and-dark in greyscale, never as
+      bronze/silver/gold. The metal alone was never going to carry tier.</li>
+    <li><b>Suit is the dominant axis in the live pool.</b> Nine of the thirteen mintable buffs are
+      Takers or Feeders, and every one of those targets a suit; only Sidestep, Cheat and Timebomb do
+      not. An earlier sheet guessed "roughly half have no suit" from the full <code>BuffKind</code>
+      list — that list includes eight cut families, and counting it overstated the suitless case
+      badly. Showing suit clearly is worth more than it first appeared.</li>
+    <li><b>Suit is the bare glyph in its own colour</b> — amber bell, blue key, purple moon. A filled
+      medallion was tried and cut: a disc rendered the glyph at 11px inside a 17px circle, which is
+      not enough room for a bell to look like a bell. Bare, it is 20px — <b>90% larger</b> — at full
+      stroke weight. The suit sections already do the long-range scanning, so the mark is free to be
+      legible rather than loud.</li>
+    <li><b>The payoff bar carries the suit colour too</b>, so suit is stated twice: by the mark at the
+      top and the reward at the foot. The text colour on it was <b>measured, not chosen</b> — white
+      fails WCAG AA on all three suits at this size (Bells 2.99:1, Keys 3.37:1, Moons 3.51:1), so each
+      bar takes a dark ink from its own suit family instead: <b>6.22</b>, <b>4.92</b> and <b>5.14:1</b>.
+      Buffs with no target suit keep the neutral ink bar, which makes that group visibly different.</li>
+    <li><b>The face is tinted to its own metal</b> — warm cream under bronze, cool paper-white under
+      silver, pale straw under gold. Held close to white on purpose: a saturated face would start
+      competing with the suit mark again, which is the problem this design exists to avoid.</li>
+    <li><b>Duplicates are a pile</b>, the layers behind carrying the same metal gradient as the frame,
+      so three bronze reads as three bronze-edged cards rather than as a drop shadow. One copy stays a
+      plain card.</li>
+    <li><b>It matches the playing cards.</b> Both decks are off-white with a printed hairline and a
+      dark-to-coloured bar at the foot, so a buff and a card of the hand read as objects from the same
+      game.</li>
+    <li><b>Cost:</b> the face lost its tier colour, which is what used to make a full gallery scan as
+      three colour blocks. Ordering does that work now — which is why the toggle is still here.</li>
+  </ul>
+
+  <h3>Open — still yours</h3>
+  <ul>
+    <li>Every metal stop, the <b>5px</b> frame width, the specular angle and opacity, the suit-mark
+      size, the three face tints and the off-white itself are <b>PLACEHOLDERS</b>. The suit colours are
+      too — but the <b>contrast floor on the payoff bar is not</b>. Retune a suit colour and its bar
+      text has to be re-measured, because the failing option is the one that looks obvious.</li>
+    <li><b>Is the tier word at the foot still earning its place?</b> With the numeral, the metal and
+      the tinted face, it is a fourth carrier of the same fact. It is the first thing I would cut.</li>
+    <li><b>The rim sheen is in.</b> Hovering sweeps a band of light along the frame. It sits below
+      the face in the stacking order, so the light only ever crosses the <em>rim</em> — the face masks
+      the rest for free, with no extra element and no clip path. It fires <b>once per hover</b>, not
+      on a loop: fifteen looping cards would be a fairground. Under
+      <code>prefers-reduced-motion</code> it does not travel, and the rim simply brightens instead, so
+      the hover still reads. Duration, angle, width and brightness are placeholders.</li>
+    <li><b>Silver reads weakest</b>, being a pale metal on a pale face where bronze and gold have more
+      contrast. Inherent to the palette rather than a bug, but worth checking at gallery scale.</li>
+    <li>A tension to resolve later: the payoff bar is about the <em>reward</em>, and colouring it by
+      suit conflates two facts. If buffs ever need reward-<em>type</em> colour — damage vs coins vs
+      multiplier — this bar is the slot that would want it, and suit would move back to the mark alone.</li>
+  </ul>
+</section>
+
+<script>
+/* THE LIVE POOL, not a sample. DLR-145 pared `TEMPLATE_FAMILIES` in
+   src/hunt/buffTemplates.ts to thirteen mintable templates, and `MintableConditionKind` /
+   `MintableRewardAxis` make everything outside that set UNCONSTRUCTIBLE rather than merely
+   unweighted. So these thirteen are the whole catalogue a player can actually hold:
+     Taker   — 3 suits x Blade/Momentum ....... 6
+     Feeder  — 3 suits x Blade ................ 3
+     Sidestep — Blade/Momentum ................ 2
+     Cheat, Timebomb (activated) .............. 2
+   Cut families (Mark of the R, Glutton, Hoarder, Unbloodied, Debt Collector, Keepsake, Miser,
+   Cornered) and the cut reward axes (Purse/coins, Second Wind/AP) are NOT shown — they keep
+   their code but no card pays on them. Counts and tiers below are illustrative; the SET is not. */
+const SAMPLES = [
+  { name:'Bell-Taker (Blade)',    cad:'WIN',   suit:'bells', tier:'bronze', n:2, cond:'win a trick with Bells',  reward:'+1 damage' },
+  { name:'Bell-Taker (Momentum)', cad:'WIN',   suit:'bells', tier:'silver', n:1, cond:'win a trick with Bells',  reward:'+2 multiplier' },
+  { name:'Bell-Feeder (Blade)',   cad:'LOSE',  suit:'bells', tier:'bronze', n:3, cond:'lose a trick with Bells', reward:'+1 damage' },
+  { name:'Key-Taker (Blade)',     cad:'WIN',   suit:'keys',  tier:'bronze', n:2, cond:'win a trick with Keys',   reward:'+1 damage' },
+  { name:'Key-Taker (Momentum)',  cad:'WIN',   suit:'keys',  tier:'gold',   n:1, cond:'win a trick with Keys',   reward:'+3 multiplier' },
+  { name:'Key-Feeder (Blade)',    cad:'LOSE',  suit:'keys',  tier:'silver', n:1, cond:'lose a trick with Keys',  reward:'+2 damage' },
+  { name:'Moon-Taker (Blade)',    cad:'WIN',   suit:'moons', tier:'silver', n:1, cond:'win a trick with Moons',  reward:'+2 damage' },
+  { name:'Moon-Taker (Momentum)', cad:'WIN',   suit:'moons', tier:'bronze', n:2, cond:'win a trick with Moons',  reward:'+2 multiplier' },
+  { name:'Moon-Feeder (Blade)',   cad:'LOSE',  suit:'moons', tier:'gold',   n:1, cond:'lose a trick with Moons', reward:'+3 damage' },
+  { name:'Sidestep (Blade)',      cad:'DODGE', suit:null,    tier:'bronze', n:1, cond:'dodge a skull with this card', reward:'+1 damage' },
+  { name:'Sidestep (Momentum)',   cad:'DODGE', suit:null,    tier:'silver', n:2, cond:'dodge a skull with this card', reward:'+2 multiplier' },
+  { name:'Cheat (Free Rein)',     cad:'PRESS', suit:null,    tier:'bronze', n:2, cond:'play any card, ignoring follow-suit', reward:'1 trick of no follow-suit' },
+  { name:'Timebomb (Blade)',      cad:'PRESS', suit:null,    tier:'bronze', n:1, cond:'prime a card in your hand',   reward:'+4 damage' },
+];
+const SUIT = {
+  bells:{ label:'Bells', glyph:'s-bells', col:'#c9873f', edge:'#8a5722', ink:'#1d1004' },
+  keys: { label:'Keys',  glyph:'s-keys',  col:'#5f93a8', edge:'#33606f', ink:'#06212e' },
+  moons:{ label:'Moons', glyph:'s-moons', col:'#9c7cb8', edge:'#63497c', ink:'#1c1030' },
+};
+const TIER_RANK = { bronze:1, silver:2, gold:3 };
+const ROMAN = { bronze:'I', silver:'II', gold:'III' };
+const SUIT_ORDER = { bells:0, keys:1, moons:2, null:3 };
+const glyph = id => `<svg aria-hidden="true"><use href="#${id}"/></svg>`;
+
+function card(b, extra) {
+  const s = b.suit ? SUIT[b.suit] : null;
+  const el = document.createElement('button');
+  el.type = 'button';
+  el.className = `bc ${b.tier}` + (extra ? ' ' + extra : '');
+  if (s) {
+    el.style.setProperty('--suitc', s.col);
+    el.style.setProperty('--suit-edge', s.edge);
+    el.style.setProperty('--reward-bg', s.col);
+    el.style.setProperty('--reward-fg', s.ink);
+  }
+  el.setAttribute('aria-label',
+    `${b.tier} ${b.name}. ${s ? 'Targets ' + s.label + '. ' : 'No target suit. '}` +
+    `${b.cond}: ${b.reward}.${b.n > 1 ? ' You hold ' + b.n + '.' : ''}`);
+  el.innerHTML = `<i class="sheen" aria-hidden="true"></i><span class="face"><i class="rule"></i>
+    <span class="top">
+      ${s ? `<span class="suitmark">${glyph(s.glyph)}</span>` : `<span class="suitmark none"></span>`}
+      <span class="tiernum">${ROMAN[b.tier]}</span>
+      <span class="cadence">${b.cad}</span>
+      ${b.n > 1 ? `<span class="count">×${b.n}</span>` : ''}
+    </span>
+    <span class="nm">${b.name}</span><span class="cond">${b.cond}</span>
+    <span class="tierword">${b.tier}</span>
+    <span class="reward">${b.reward}</span></span>`;
+
+  // one copy is a card; more than one is a pile of them
+  if (b.n <= 1) return el;
+  const stack = document.createElement('div');
+  stack.className = 'stack ' + b.tier;
+  for (const cls of (b.n > 2 ? ['l2','l1'] : ['l1'])) {
+    const layer = document.createElement('i');
+    layer.className = 'layer ' + cls;
+    layer.setAttribute('aria-hidden', 'true');
+    stack.appendChild(layer);
+  }
+  stack.appendChild(el);
+  return stack;
+}
+
+let order = 'suit';
+function sorted() {
+  const l = [...SAMPLES];
+  if (order === 'suit') l.sort((x,y) => SUIT_ORDER[x.suit]-SUIT_ORDER[y.suit]
+    || TIER_RANK[y.tier]-TIER_RANK[x.tier] || x.name.localeCompare(y.name));
+  else l.sort((x,y) => TIER_RANK[y.tier]-TIER_RANK[x.tier]
+    || SUIT_ORDER[x.suit]-SUIT_ORDER[y.suit] || x.name.localeCompare(y.name));
+  return l;
+}
+
+function render() {
+  const sheet = document.getElementById('sheet');
+  sheet.replaceChildren();
+  if (order === 'suit') {
+    for (const key of ['bells','keys','moons','null']) {
+      const group = sorted().filter(b => String(b.suit) === key);
+      if (!group.length) continue;
+      const s = SUIT[key];
+      const g = document.createElement('div');
+      g.className = 'suitgroup ' + (s ? key : 'none');
+      g.innerHTML = `<h3>${s ? glyph(s.glyph) : ''}${s ? s.label : 'No target suit'}` +
+        `<span class="n">${group.length} card${group.length===1?'':'s'}</span>` +
+        `<span class="rule"></span></h3><div class="row"></div>`;
+      const row = g.querySelector('.row');
+      group.forEach(b => row.appendChild(card(b)));
+      sheet.appendChild(g);
+    }
+  } else {
+    const row = document.createElement('div');
+    row.className = 'row';
+    sorted().forEach(b => row.appendChild(card(b)));
+    sheet.appendChild(row);
+  }
+}
+
+document.querySelectorAll('.controls button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.controls button').forEach(b => b.setAttribute('aria-pressed','false'));
+    btn.setAttribute('aria-pressed','true');
+    order = btn.dataset.order; render();
+  });
+});
+render();
+
+const states = document.getElementById('states');
+const byName = n => SAMPLES.find(b => b.name === n);
+states.appendChild(card(byName('Bell-Taker (Blade)')));
+states.appendChild(card(byName('Key-Taker (Momentum)'), 'is-poised'));
+states.appendChild(card(byName('Cheat (Free Rein)'), 'is-dead'));
+states.appendChild(card(byName('Moon-Feeder (Blade)')));
+</script>
+</body>
+</html>
