@@ -75,6 +75,58 @@ With `overflow: hidden`, content that does not fit is content the player cannot 
 - **A crowded collection can overlap instead of shrinking further.** A negative inline margin fans a hand so a wide collection stays inside its band without each card becoming unreadable. The overlap amount is a tuning value.
 - **The min and max bounds, and any overlap amount, are the developer's** (`SKILL.md` → *Decisions that are not yours*). Name the key, ship a documented default, and say it is a placeholder.
 
+## Size a tile against the container it actually gets, not the screen
+
+A `clamp()` in `vw`/`vmin` sizes a card against the **viewport**, but the card lives in whatever is
+left after the rails, panels and gutters have taken their share. Those are not the same number, and
+the gap is usually large.
+
+**Measure the container before choosing the bound.** On DLR-148 the buff grid was assumed to be
+~1167px wide inside a 1440px viewport; it was **787px**. The card bound had been set from the wrong
+figure, so sixteen tiles wrapped to three rows instead of two, the panel overflowed by 56px, and the
+group that had to stay visible was pushed below the fold. Nothing looked broken — it just quietly
+hid the thing the screen existed to show.
+
+```js
+// in the browser, before picking the bound
+const grid = document.querySelector('.grid')
+const gap  = 13                                   // whatever the computed gap is
+const perRow = 8                                  // how many you need per row
+const maxCardWidth = (grid.clientWidth - (perRow - 1) * gap) / perRow
+```
+
+Then set the `vw` term so it lands under that at your reference viewport, and **re-assert the
+overflow** — the bound is still a tuning value the developer owns, but *which* values are viable is a
+measurement, not a preference.
+
+## A group label costs a row; an in-flow tile costs a cell
+
+Grouping tiles inside a fixed-height panel is where headings get expensive. A heading above each
+group consumes a full row of vertical budget per group, whether the group holds one tile or eight.
+
+On the same screen, four suit groups with headings needed roughly **800px** against the **416px** the
+panel had. Replacing each heading with a **tile-shaped label sitting in the flow of the same grid** —
+one grid cell, same dimensions as a card — dropped the cost to four cells: sixteen cards plus four
+labels is twenty cells, exactly two rows of eight, and the fenced group stayed on screen.
+
+Reach for the in-flow label when the panel's height is fixed and the groups are small. Reach for a
+heading when the page can scroll, or when groups are large enough that a row of chrome per group is
+a rounding error.
+
+## Pin a tile's bottom element to one line
+
+Anything anchored to the **bottom** of a tile that can wrap will grow *upward* into whatever sits
+above it — and then no percentage position above it is safe, because its height is data-dependent.
+
+This fails intermittently, which is what makes it nasty: on DLR-148 twelve buff cards were clean and
+exactly two were broken, because only those two had reward text long enough to wrap onto a second
+line. `white-space: nowrap` on the bottom element makes its height a constant and every position
+above it computable. If the text genuinely cannot fit on one line, shorten the *text* — a truncated
+payoff is worse than a shorter phrasing.
+
+The same applies to a wrapping top row: pin it with `flex-wrap: nowrap` and size its contents down,
+rather than letting it push into the title beneath.
+
 ## Zone model
 
 ```
@@ -140,6 +192,22 @@ All of this is assertable in a component test — focus movement, activation, an
 ## Verifying a no-scroll layout
 
 **jsdom has no layout engine.** Every element reports zero size, so a component test cannot detect a screen that scrolls, crops, or overflows. Treating a green component suite as evidence about layout is the specific mistake to avoid.
+
+**Assert the geometry; do not look at it.** Overlap and overflow both have exact answers, and the
+eye is unreliable at the 2–3px scale where they usually start. Two checks worth scripting on any
+card or tile surface, because both caught real defects on DLR-148 that repeated visual passes had
+missed:
+
+```js
+// 1. does the panel overflow its own scroll container?
+sc.scrollHeight <= sc.clientHeight + 1
+// 2. does any part of a tile overlap any other part?
+const hit = (a, b) => !(a.right <= b.left || a.left >= b.right ||
+                        a.bottom <= b.top || a.top >= b.bottom)
+```
+
+Run them at every viewport in the spread, and in **every state the surface has** — a mode toggle that
+adds tiles can break a layout that was clean a moment earlier.
 
 Check it in a real browser and report the viewport sizes checked. A reasonable spread: a short laptop window, a phone in portrait, and the same phone in landscape — landscape is where a bottom-anchored hand and a `1fr` play area compete hardest. The check is whether the document scrolls at all and whether every zone's content is fully visible; both have right answers, so this is QA's work through the `chrome-devtools` MCP rather than a developer judgement call. Whether the result *feels* right remains the developer's.
 

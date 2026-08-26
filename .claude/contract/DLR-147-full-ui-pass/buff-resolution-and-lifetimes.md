@@ -218,6 +218,11 @@ the +1 it pays is invisible today. It is the cheapest available moment of drama 
 2. **Does the gallery show unobtainable cards at all?** The mockup's twenty-three include eight cut
    families and every coins-paying card. A gallery of the live thirteen looks very different, and a
    real hand is four bronze cards.
-3. **How does a spent card leave?** Nothing currently animates the pile losing a card at the commit
+3. **How does a spent card leave?** ~~Nothing currently animates the pile losing a card at the commit
    tap, and the card is gone before the trick it was bought for has resolved — so the player sees it
-   vanish, then sees the payout, with nothing joining the two.
+   vanish, then sees the payout, with nothing joining the two.~~ **Answered in the mockups.**
+   `mockup-buff-loading.html`, folded into `mockup-buff-gallery.html`, has the card leave the pile and
+   land on the hand card you are about to play — where it is counted, drives that card's load ring,
+   and can be taken back off. The gap is closed by an object rather than by the player's memory. Note
+   this shifts the question rather than deleting it: it now needs a rule on what happens to a load
+   when the trick actually resolves.

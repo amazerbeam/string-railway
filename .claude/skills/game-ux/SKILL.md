@@ -10,7 +10,7 @@ metadata:
 
 Standards for the surfaces a player actually plays on. A game screen is not a document: it fills the viewport, never scrolls, and is scanned in glances between decisions rather than read top to bottom.
 
-**Scope:** this file owns the *game-screen* layer — the viewport shell, zoning, interaction cost, and how a collection of like controls is navigated. Three reference files hold the detail: `references/full-viewport-layout.md` for the shell skeleton, viewport units and the zone model; `references/feedback-to-redesign.md` for the method that turns play-session notes into a redesign doc; `references/figma-mcp.md` for reading a design out of Figma via the MCP server without importing its assumptions.
+**Scope:** this file owns the *game-screen* layer — the viewport shell, zoning, interaction cost, and how a collection of like controls is navigated. Three reference files hold the detail: `references/full-viewport-layout.md` for the shell skeleton, viewport units, the zone model, and how to size a tile against the container it actually gets; `references/feedback-to-redesign.md` for the method that turns play-session notes into a redesign doc; `references/figma-mcp.md` for reading a design out of Figma via the MCP server without importing its assumptions.
 
 **Not here.** How to write the React and CSS is `.claude/skills/react-frontend/SKILL.md`, and its *Accessibility and input* section owns the generic floor — ≥44px targets, `:focus-visible`, `@media (hover: hover)`, `touch-action`, semantic HTML and ARIA. Read it first; this skill adds the game layer on top and does not repeat it. Whether a mechanic is any good is `game-designer`.
 
@@ -65,6 +65,29 @@ More than about five sibling controls in the tab order makes the keyboard path w
 
 Encode state in form as well as colour — a raised card, a dashed edge, a badge — so a static screenshot still communicates it, colour-vision differences do not erase it, and `prefers-reduced-motion` costs nothing. Animation may reinforce a state change; it may not be the only signal.
 
+**Take the greyscale screenshot.** It is the cheapest test in this file and it fails more often than expected. On DLR-148 the claim "every state reads without colour" was made and then broken by its own test: two of three card tiers were indistinguishable in greyscale, because tier existed only as a hue. The fix was a rank numeral, not a better colour.
+
+### Two categorical axes cannot both be a field colour
+
+Before spending colour on a second category — tier *and* suit, faction *and* rarity — measure the distance between the two palettes. If any pair collides, colour can carry only one of them and the other needs glyph, shape or position, with colour reinforcing at most.
+
+On DLR-148 the Bells suit colour `#c9873f` sat **28.7 RGB units** from the bronze tier field `#b0793f` — the same amber. That measurement, not taste, is what moved tier onto a metallic frame and left the field neutral. Ten minutes of arithmetic before the design work would have saved a whole discarded option sheet.
+
+### Re-measure contrast whenever the ground changes
+
+A token that passes on a dark panel can fail outright on a light one, and the failing choice is usually the one that looks obvious. Both of these were measured, not guessed, and both failed:
+
+- **White on a mid-tone accent bar** — 2.99:1, 3.37:1 and 3.51:1 across three suits, all under the 4.5:1 floor.
+- **The project's own accent tokens on parchment** — `--wc-alarm` at 3.03:1 and `--wc-brass` at 2.29:1.
+
+The fix in both cases was a **darker member of the same family**, so it still reads as "the red one" and "the gold one" rather than as a new colour. Treat the ratio as a floor that survives retuning: the colour values are the developer's, the 4.5:1 is not.
+
+### Do not render a panel that has nothing to say
+
+A readout that sits in the same place every turn becomes furniture, and furniture teaches a player to stop looking — which makes it invisible on the turn it finally matters. If a surface has nothing to report for the current state, render **nothing**: no placeholder row, no empty frame, no "nothing to report" text.
+
+The corollary: **an absence is not a signal.** "You can tell the effect is live because your whole hand is now playable" is not feedback — a player cannot notice something that stopped being greyed out. If an effect is running, say so, and say how much of it is left.
+
 ## Approach
 
 When **authoring**: read `react-frontend` for the code conventions, then build the shell from the reference file's skeleton before placing any content — retrofitting a no-scroll grid around a laid-out screen is the expensive order. Name each zone after what it holds.
@@ -117,7 +140,11 @@ State plainly where the research is thin instead of inflating a search result in
 - The most repeated action's tap count is stated, and confirmation happens on the object rather than only at a distant button.
 - Nothing a current decision needs is hover-only.
 - Any collection of more than about five sibling controls uses a roving tabindex, with arrow-key movement and `Escape` covered by a component test.
-- Every state is distinguishable without colour or motion alone.
+- Every state is distinguishable without colour or motion alone, **and the greyscale screenshot was actually taken**.
+- Where two categorical axes are shown at once, the palette distance between them was measured and no colliding pair relies on colour alone.
+- Every text/background pair meets 4.5:1, **re-measured on whatever ground it actually sits on** — not inherited from a token that passed somewhere else.
+- Any tile bound was chosen against the **container's measured width**, not the viewport's, and the resulting overflow was asserted at every viewport and in every state the surface has.
+- No panel renders to say that nothing is happening, and no effect is signalled only by the absence of something else.
 - No tuning value — size bound, delay, glyph, colour — was invented rather than routed to the developer.
 
 When the work was a response to feedback, additionally:

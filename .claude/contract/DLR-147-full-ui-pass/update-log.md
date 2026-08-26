@@ -46,6 +46,437 @@ gallery down to three gold cards stretched those three across the whole panel. B
 
 ## DLR-148 — the buff gallery
 
+### CORRECTION — the breakdown is open by default; you never click to read it
+The gallery's readout was collapsed by default, so seeing what a card was worth cost a tap. That was
+the wrong side of the trade: the breakdown **is** the point of the panel, and making it the thing you
+have to ask for is what the panel exists to avoid. It now opens with the rows showing, on both
+sheets. The collapse control stays as the escape hatch for getting the grid back, and says so —
+*"tap to collapse and see the grid"*.
+
+**The cost, measured rather than waved at.** At 1440×900 the expanded panel is **287px** and covers
+**63% of the buff grid** (277px of 441px). The grid's top row and the riding pills stay visible; the
+middle and lower rows sit behind it. That is the price of not clicking, and it is the right price —
+but it is a real one, and it is the thing to watch when the pool grows.
+
+**Why it is not in the dossier column instead.** There is genuinely dead space there — roughly
+230×560px below "Tricks" — and moving the panel into it would free the grid completely. Rejected on a
+measurement, not on taste: at ~230px these rows (condition, buff name, payout) wrap badly. The
+standalone sheet's rail is that width and carries only compact one-liners for exactly this reason.
+Putting the full breakdown there needs a different row design, which is a bigger change than this
+warranted. Worth revisiting if the grid coverage starts to bite.
+
+
+### CORRECTION — the readout stays up, and the struck-through rows come back
+Two things the earlier version did better, both restored.
+
+**The panel no longer needs re-hovering.** It appeared on hover and vanished on leave, so getting the
+list back meant going and finding a card again — friction for a panel whose whole job is to be read
+while you decide. It now **opens as soon as anything is riding**, defaults to the card that gains
+most, and hovering another card simply **switches** it. Nothing closes it but `Escape` or an empty
+trick. Hover became a comparison gesture instead of the only way in, which is what it should have
+been: the ring and the numeral are on the card's face at all times, so the panel was never the thing
+carrying the decision — it was the thing carrying the detail, and detail you have to re-summon is
+detail you stop consulting.
+
+**The "cannot fire on this card" rows are back, struck through and furthest from the card.** They
+were cut when the model was corrected, on the reasoning that a Keys buff on a Bells card is not dead
+— it is lighting the Keys cards, so listing it would read as failure. That was right about the buff
+and wrong about the *card*: when you are looking at one card, what will **not** fire on it is exactly
+what you give up by playing it, and that is a real part of the comparison.
+
+The wording carries both facts, which is what neither earlier version did: *"Needs Bells — this card
+is Keys. It is lighting your 2 Bells cards instead."* Struck through, so it reads as "not here"; the
+second clause, so it never reads as "wasted". Where a buff genuinely reaches nothing it says so
+instead.
+
+**Verified.** At 1440×900 on both sheets: the panel auto-shows on the first activation, names the
+best card, survives leaving a card, switches on hovering another, and the struck-through rows report
+the right reach. Self-check green, console clean.
+
+
+### CORRECTION — the hover readout was unreachable, and taking the ✕ out of it was pedantry
+Two defects, one developer question: *"I can't hover and remove buffs?"* Both confirmed by driving
+it rather than by reading the code.
+
+**1. The panel opened on the card's `mouseenter` and closed on its `mouseleave`** — so moving the
+pointer up to reach anything inside it was the exact gesture that destroyed it. There is a 9px gap to
+cross and the panel is not a child of the card, so it was decorative: you could look at it and never
+touch it. It now has a **hover bridge** — entering the panel holds it open, leaving either the card
+or the panel schedules a 160ms close that entering the other cancels. Blur deliberately does **not**
+schedule a close, because tabbing into the panel's ✕ moves focus off the card and would spring the
+same trap on a keyboard user; `Escape` closes it.
+
+**2. The ✕ had been removed from the per-card readout on the reasoning that "a buff is not ON this
+card, so removing it here would take it off a place it never was."** That is true about the rule and
+useless about the interaction: the buff is listed there, so that is where the hand goes. The control
+is back. What the pedantry was right about is the **wording** — it says the buff comes off the
+*trick*, and names what else goes dark (*"Take off the trick — 3 cards go dark"*), so nobody thinks
+they are unloading a single card. The toast says the same after the fact.
+
+The rail's "Riding this trick" list keeps its ✕ too, and that is not redundant: **a buff that reaches
+zero cards never appears in any card's readout**, so the list is the only place it can be removed
+from.
+
+### CARRY — an invisible hit expander overflows its row, and it does not look like a touch bug
+The ✕ is drawn at 18px with a 44px pseudo-element for the touch target. On a 33px row that expander
+sticks out ~5px top and bottom, which caused two things that both read as something else entirely:
+
+- **Inside a scrollable ancestor it inflates `scrollHeight`.** The readout grew a scrollbar with a
+  single row in it — measured, 56px of "content" in a 50.5px box, where the visible children summed
+  to exactly 50.5. The extra 5px was the invisible expander.
+- **Stacked rows overlap.** 33px rows with 44px expanders overlap by 11px, so adjacent ✕ buttons
+  quietly steal each other's taps. Nothing renders wrong; the wrong button just fires.
+
+The fix is to expand the **row**, not just the control: rows are `min-height:44px`, so the expander
+fits inside its own row and cannot reach a neighbour. The gallery's riding-list pills went further —
+their ✕ is now a genuine 44×44 control with no pseudo-element at all, because side by side two
+expanders would have overlapped across the gap between pills. Asserted afterwards by computing every
+control's real hit rectangle and testing all pairs for intersection: 4 controls, all ≥44px, zero
+overlaps.
+
+### Verified after this correction
+Driven at **1440×900** and emulated **430×860 mobile/touch** on both sheets. Hover a card, cross the
+gap into the panel, expand it, remove a buff from inside it, watch the affected cards go dark, and
+the panel stays open under the pointer throughout. On touch there is no hover at all: tapping a card
+pins the readout, so removal is reachable without it. Both sheets' self-checks green, console clean.
+
+### CORRECTION — a buff is activated for the TRICK, so nothing is selected and the whole hand answers
+**This supersedes the two sections below it.** Both `mockup-buff-loading.html` and the fold into
+`mockup-buff-gallery.html` originally asked the player to nominate a card and then load buffs onto
+it. That was wrong, and not merely as extra work — **it described a rule the game does not have.**
+
+Bell-Taker's condition is *"took the trick playing Bells"*. It does not attach to one Bells card.
+Once it is riding it is live for whatever you play, and it pays on **any** Bells card in your hand.
+Asking which card to buff has no answer, because the buff has already answered: all of them.
+
+So the model is now:
+
+- **Activating a buff takes one tap and no target.** It rides the trick immediately.
+- **Every card in the hand it could fire on lights up**, and each card's ring reads *that card's own*
+  count. Play a Bells Taker and both your Bells cards glow; play a Sidestep, which is suitless, and
+  the whole hand glows.
+- **The hand becomes the readout.** You look at it and see which of your cards are hot, which is
+  exactly the decision you are about to make. The old flow made you commit to a card *before* you
+  could see what it was worth — precisely backwards.
+- **A buff's reach is a property of the buff against your hand**, not something the player assigns,
+  so each row in "Riding this trick" states it: *"lights up 3 of your cards"*. A buff that reaches
+  nothing says *"no card in your hand can fire it"* — and that is the **real** dead case: dead
+  globally, not dead on one card.
+
+**Timebomb is the one genuine exception, and it keeps a targeting step.** It primes a specific card
+and lands at the next trick's resolution, so "choose a card" is the correct instruction there — and
+it is now the *only* place either sheet says it. Activating it enters a priming mode, the hand takes
+a dashed green outline, and the next card tapped carries the bomb. Cheat targets nothing at all: it
+is a permission for the trick, and says so.
+
+**Two consequences worth judging in the running app.** First, a suitless buff lights the entire hand,
+at which point the glow stops discriminating and the numeral badge is doing all the work — that is
+honest, but it is the case to look at. Second, the per-card breakdown now has **no remove control**:
+a buff is not on that card, so a ✕ there would take it off a place it never was. Removal lives on the
+"Riding this trick" list, which is where the buff actually is.
+
+**Only playable cards light up.** A card that is illegal this trick cannot be played, so no buff can
+fire on it — lighting it, or counting it in a buff's reach, would promise a payoff the rules cannot
+deliver. The gallery's illegal 2 of Bells stays dark and is excluded from every reach figure.
+
+### CARRY — one fact, one owner: the hard-coded primed card fought the chosen one
+The gallery's hand markup carried `data-primed="yes"` on the 7 of Bells as a static demo of the bomb
+mark. Once priming became a live flow there were **two sources of truth**: the mark said one card and
+the riding list said another, and both were "right". The static attribute is gone, the bomb's SVG is
+hoisted to a single `BOMB_SVG` constant shared by the initial render and by `paintRing`, and the mark
+now follows the chosen card only.
+
+### CARRY — an x-only overlap test says nothing once a layout restacks
+The assertion that the readout never covers the game rail compared `panel.left < rail.right`. That is
+correct while the two are side by side and **meaningless** at 430px, where the shell restacks to one
+column and the rail sits *above* the hand — the check reported a collision that could not exist. Real
+rectangle intersection (all four edges) showed the rail at y 120–294 and the panel at y 580–681, no
+overlap. Test the geometry that actually matters, not the one axis that happened to matter once.
+
+### The gallery grid had exactly two rows and silently absorbed a third child
+Adding the riding list as a third child of `.gallery` — `grid-template-rows: auto minmax(0,1fr)` —
+stretched it to **162px** of mostly-empty panel. A grid does not complain about extra children, it
+distributes them. Three rows now. Worth remembering because nothing errors and nothing overflows;
+the layout just quietly gets worse.
+
+### Verified after the correction
+Driven in Chrome at **1440×900**, **1280×720** and an emulated **430×860 mobile/touch** viewport, on
+both sheets. The standalone sheet's self-check is green at every size. Behaviour checked by driving
+it rather than reading it: activating a Bells Taker lights exactly the Bells cards and nothing else;
+adding a Bells Feeder leaves them at 1 because Taker and Feeder sit on **opposite branches**, so the
+peak is the max and not the sum; a suitless Sidestep lights every playable card; the illegal card
+stays dark and out of the reach counts; hover and focus reveal a card's breakdown with nothing
+selected and clear on leave; the Timebomb's priming mode targets a card and the mark and the riding
+list agree; taking the Timebomb back off clears the mark. The gallery's pre-existing behaviour was
+re-checked again: tier filters (12 → 2), the phase toggle, the fence, two-tap poise/fire, stack
+consumption and focus restoration. No page or horizontal scroll anywhere. Console clean on both.
+
+### Buff loading is folded into the gallery, and it answers this file's own open question 3
+**SUPERSEDED in part** by the CORRECTION above: this section describes a flow where the player
+nominates a card and loads buffs onto it. There is no such step. What survives is the fold itself,
+the collapsed-by-default readout, the stage clamp and the two CARRY notes.
+`mockup-buff-gallery.html` now carries the loading design, so the full screen matches the specialist
+sheet. The hand rests at half its hover lift, the chosen card gains the ring and the load badge,
+and firing a buff **puts it on that card** instead of vanishing it.
+
+That last part is the point. This file's own open question was *"how does a spent card leave? Nothing
+animates the pile losing a card, and the card is gone before the trick it was bought for has
+resolved — so the player sees it vanish, then sees the payout, with nothing joining the two."* Folded
+in, the buff leaves the grid and lands somewhere the player can point at, count, and **take back
+off**. The two ends of that gap are now joined by an object rather than by memory.
+
+**Firing now needs a chosen card, and says so.** With no card selected the commit is refused with
+*"Choose the card you mean to play first — a buff rides a trick, not a pile"* rather than silently
+working. That is the same refusal discipline the fence already uses: a blocked action names its
+reason.
+
+**Deselecting does not discard the load.** A buff belongs to the trick, so it re-scores against
+whatever you pick next — verified live: three buffs riding a Bells card drop from peak 2 to peak 1
+when a Moons card is selected instead, and the Bells rows move to the struck-through group.
+
+### Two deliberate differences from `mockup-buff-loading.html`, both forced by measurement
+
+**1. The readout is collapsed by default here.** In the standalone sheet the whole screen was about
+loading, so the panel could be as tall as it liked. Here the stage is **471px at 1280×720** and the
+full panel is ~300px of it — it would bury the very grid you tap to load from. Collapsed it is
+**105px**: the card's name and rule, both branch totals, and a one-line count. The bar itself is the
+expand control, so it is one target rather than a separate chevron.
+
+**2. It is clamped to the stage, not the shell.** This file has always said *"the game rail: nothing
+here is ever covered by the gallery"*, and the readout is bound by the same rule. Asserted rather
+than eyeballed at every viewport: the panel's left edge never crosses the rail's right edge.
+
+**The rail was the obvious home and it does not fit.** Measured at 1280×720 the rail column already
+overflows itself by **6px** before anything is added — the earlier "0px overflow" reading no longer
+holds at that height. Putting a growing list in there would have made a real defect worse.
+
+### The fold made the win/lose vocabulary collision visible, and the fix was row order
+Under a group header reading **"If you take the trick"**, this file's card list produced rows reading
+**"win a trick with Bells"** — the header states the *mechanical* axis and the row answers on the
+*outcome* axis. That is precisely the confusion `CLAUDE.md` warns about, and the fold put the two
+half an inch apart.
+
+The fix was not to rewrite the card list, which is deliberately the older and wider one including cut
+families. The header already supplies the branch, so the row now **leads with the buff's name** and
+carries the printed condition as its second line. The collision disappears without touching data this
+sheet exists to load-test. Note this is the **opposite** order to `mockup-buff-loading.html`, which
+leads with the condition — there the names repeat (a Blade Taker and a Momentum Taker on one suit
+share a condition exactly) and the wording is already mechanical.
+
+### One panel above a card at a time
+The armed card shows its rule in a tooltip, deliberately — touch has no hover, and arming is a
+gesture the player is already making. The readout occupies exactly that space, so both appeared at
+once and sat on top of each other. The readout wins and **adopts the rule as its header**, so nothing
+is lost and touch still reaches it.
+
+### CARRY — a token-derived offset does not clear a child of a padded container
+The panel's `bottom` was `calc(-1 * var(--lift-armed) + .6rem)`, which is correct arithmetic about
+the card and wrong about the box: it is positioned against `.hand`, whose height **includes its own
+padding**, so "the armed lift plus a gap" landed partway up the card rather than above it. The
+clearance is now measured (`handBox.bottom - card.top + 9`) and asserted at 9px. Derive from a token
+when the token describes the same box; measure when it does not.
+
+### CARRY — `min(30rem, 100%)` resolves against the parent, and `overflow:hidden` hides the damage
+The panel is a child of `.hand`, which spans the whole shell, rail included — so `100%` was the
+*shell's* width, not the stage's. At 430px the panel came out **30px wider than the stage** and ran
+past the viewport edge. It did not report as a horizontal scroll, because the shell is
+`overflow: hidden`: the overflow was **silently clipped**. A no-scroll assertion is not a
+no-overflow assertion. The width is now capped against the stage's measured box before the panel is
+positioned.
+
+### Verified
+Driven in Chrome at **1440×900**, **1280×720** and an emulated **430×860 mobile/touch** viewport. No
+page scroll and no horizontal scroll at any of them; the panel inside the stage and clear of the card
+by 9px at all three; the rail never covered. The gallery's existing behaviour was re-checked rather
+than assumed: **tier filters** (gold narrows 12 → 2), the **phase toggle**, the **fence**, the
+two-tap poise/fire, stack consumption and focus restoration all still work. Loading, removing and
+re-scoring on reselect were driven end to end. `prefers-reduced-motion` was verified by forcing all
+five media blocks through the CSSOM — the cell stops and becomes a continuous rail, and the badge and
+glow are untouched, so all three carriers survive. Console clean.
+
+### NEW REQUIREMENT — loading buffs onto the card you are about to play
+**SUPERSEDED in part** by the CORRECTION above. The ring, the badge, the half-hover lift, the
+bottom-up readout and the two-branch scoring all stand. The card-selection step it is built around
+does not: a buff is activated for the trick, and every card it can fire on lights up.
+`mockup-buff-loading.html`. The act of choosing which buffs ride a trick, and seeing what that is
+worth before committing. It is not the gallery (which owns the pool and its filters) and not the card
+face; it borrows both.
+
+**The rules point it had to settle, because the brief and `CLAUDE.md` appear to contradict.** The
+root `CLAUDE.md` says in bold that **no buff attaches to a card** — a buff is activated for a trick
+and checked when that trick resolves. The sheet shows buffs loading *onto a card* anyway, and that is
+a presentation of the existing rule rather than a change to it, because **the card you are about to
+play IS the trick those buffs will be checked against**.
+
+It is also a *better* presentation than a detached tray, and this is the argument for it: nine of the
+thirteen live templates are suit-gated on the card you play — Taker is "took the trick playing S",
+Feeder is "did not take it, playing S" — so a Bells Taker riding a Moons card is dead weight, and
+nothing on screen says so today. Attaching the readout to the card is what makes that visible. The
+sheet shows it as a struck-through row reading *"Needs Keys — this card is Bells. It cannot fire."*
+
+**One consequence, and it is the thing to judge in the running app: deselecting a card does NOT
+discard the load.** A buff belongs to the trick, not the card, so changing your mind about which card
+to play re-scores the same load against the new card — a buff can go live → inert → live as you shop
+the hand. That is the honest reading. The alternative, emptying the load on deselect, is simpler and
+lies about what a buff is.
+
+**Timebomb is the one genuine exception and it already had a design.** It primes a card and lands at
+the *next* trick's resolution, so it really does attach — it renders as the bomb mark from
+`mockup-primed-card.html`, not as a scoring row. Cheat attaches to nothing (it is a permission for
+the trick), so it renders as a trick-level row that states it has no condition to meet.
+
+### The readout scores the trick TWICE, and this was a correctness fix rather than a flourish
+The first build summed every firing buff into one total. That is wrong, and it was wrong on the very
+first realistic load: **Taker and Feeder on the same suit can never both fire** — you either take the
+trick or you do not. A single total added both *and* inflated the Overlap Bonus, which is derived
+from how many actually fire. It reported **+6 Damage** for a load whose real ceiling was **+4**.
+
+So the trick is scored on both branches — *if you take it* / *if you do not* — and both are shown,
+**neither highlighted**. That is not a new idea; it is the constraint `mockup-trick-readout.html`
+already settled: the readout must never lean toward an outcome, because the ruleset withholds the
+Quarry's card and a leaning readout would leak it. Sidestep sits in the do-not-take branch, being a
+dodge.
+
+The Overlap Bonus gets its own row immediately above the totals, because it is part of the sum and
+because it is **the thing the ring's rising energy is actually drawing**. That matters: it makes the
+glow a readout rather than a decoration.
+
+### The lift is half the hover, and the ladder is derived rather than typed
+Every hand card rests at `--lift-rest`, which is `calc(--lift-hover / 2)`, so the screen reads as
+"the cards are the subject" the moment it opens and hover still has somewhere to go. Retune
+`--lift-hover` and rest and armed follow: **rest −5 → hover −10 → armed −24**. Never set `--lift-rest`
+independently of it, and the self-check asserts the ladder stays monotonic by **measuring the
+resolved transform**, not by parsing the token (see the trap below).
+
+### The ring: a red glow that gains energy, a white cell that gains speed
+An SVG stroke, not a rotating conic-gradient. The stroke follows the card's real border radius,
+`vector-effect:non-scaling-stroke` holds its weight at every card size, and `pathLength="1000"`
+normalises the perimeter so one set of dash figures works on any card. A conic-gradient needs
+`@property` to animate and repaints the whole box each frame.
+
+**There is deliberately no `filter:blur()`.** The buff gallery proved a per-card filter stalls
+Chrome's rasteriser badly enough to time out screenshots; the halo is four stacked wide, soft, low
+-opacity strokes plus a box-shadow, which costs nothing. Carry that into `src/`.
+
+**Both energy and speed count the LIVE buffs only** — the best branch's firing count. Counting every
+loaded buff would make a card glow for a load that pays nothing on it, which is the exact lie this
+screen exists to stop telling.
+
+**The 0.9s lap-time floor is not a placeholder.** The slope is (`3.2 − 0.5 × n` seconds, energy
+saturating at five), and the developer should retune it freely. The floor is a flash-safety limit: a
+bright cell passing a given point more than ~3 times a second is a hazard, and at a 0.9s lap it
+passes once. Do not lower it.
+
+### Three carriers for one fact, because glow is colour and speed is motion
+`game-ux` forbids either being the only signal, so the load count also appears as a **numeral badge**
+with tally dots on the card's bottom-right corner (top-right is the bomb's, top-left is the corner
+index). Ink on parchment, measured at 14.10:1. Under `prefers-reduced-motion` the cell stops dead and
+becomes a **continuous rail** at full brightness — the state still reads, it just stops moving —
+which was verified by forcing the media rule through the CSSOM rather than assumed.
+
+**What the greyscale screenshot actually showed.** The badge and the "THIS TRICK" caption carry the
+state fine. The ring's *energy* channel contributes nothing in greyscale — it is reinforcement for
+colour-sighted players only, which is acceptable but should be said out loud. One thing did fail: the
+two branch groups were separated by a green-grey rule and a purple-grey rule, identical in greyscale.
+They now differ in **form** — solid vs dotted — and the group headers carry it in words regardless.
+
+### The readout is pinned, not hovered, because it contains controls
+It holds an × per row. A hover tooltip with buttons in it is unreachable on touch, which is worse
+than hidden text, so the panel is pinned open whenever a card is selected. Its left edge is set from
+the card's **measured** centre and clamped to the stage, with the pointer moved independently so it
+still finds the card when the panel has been clamped — a percentage would drift the moment the hand
+changed size.
+
+Its bottom clears `--lift-armed`, derived: the selected card rises *into* this slot, so a panel
+pinned to `bottom:0` lands on top of the very card it describes. That happened.
+
+### Every row NAMES its buff, because two cards can share a condition exactly
+A Blade Taker and a Momentum Taker on the same suit both read "Take the trick, playing Bells". Without
+the name they render as one sentence printed twice, which looks like a bug and makes the two ×
+buttons ambiguous. The bold line is what you must do; the small line is which card is asking.
+
+### Tap costs
+Loading a buff is **one tap** once a card is chosen; removing it is one tap on the × on that buff's
+own row — confirmation on the object, never a trip to a distant button. Playing is **two taps on the
+card** (choose, then confirm on the same object), with the Play button as the secondary
+keyboard-friendly path. `game-ux` is explicit both ways: the button may not be the only route, and a
+distant button may not be the confirmation.
+
+The refusal when no card is chosen is stated **once**, in the rail's header. The first pass repeated
+it on every row and reproduced the buff gallery's own "wall of noise" defect.
+
+### CARRY — `display:block` on the card, or it has width and no height
+`.pc` is a `<span>`, and an **inline box ignores `width`, `height` and `aspect-ratio` outright**. The
+card rendered 2×17px inside a 107px-wide button, which on screen reads as "the cards vanished" rather
+than as a sizing bug. `position:relative` and `overflow:hidden` do **not** blockify an inline box.
+
+### CARRY — `border-top:none` is a shorthand and it resets width and colour
+It sets style to `none` but also resets width to `medium` (3px) and colour to `currentColor`. A later
+rule changing only `border-top-style` resurrects both: `.row.dead` became a **3px dashed chalk bar**
+across the panel, reading as a broken divider. Reset the style alone, or redeclare the whole border.
+
+### CARRY — a custom property holding a `calc()` cannot be read back with parseFloat
+`getPropertyValue('--lift-rest')` returns the literal string `calc(-10px / 2)`, so `parseFloat` gives
+`NaN` and the assertion silently fails. Read the **resolved** value off a real element — here
+`new DOMMatrix(getComputedStyle(el).transform).m42`. Measure, do not parse.
+
+### Fitting is not passing
+The narrow layout put **475px of cards into a 475px strip**. It fitted, and it was one padding change
+away from wrapping. The bound came down to 14vw for ~21px of spare, and the self-check now demands
+headroom rather than mere fit. Touch targets are asserted the same way, against the **hit** area
+rather than the painted box: the × is drawn at 18px on purpose — a bigger disc would shout louder
+than the condition beside it — and carries a 44px pseudo-element hit area instead.
+
+### OPEN — red is what was asked for, and red is already spoken for
+`--wc-alarm` means damage and hurt across this UI, so a red halo on **your** empowered card fights a
+meaning the player has already learned. Brass is the alternative and already means "yours, selected,
+active" — the armed card's existing outline is brass. Both are wired; the dev bar flips them live.
+This is a colour judgement and it is the developer's.
+
+
+### The gallery card text was overflowing, and the fix was to cut a line rather than shrink one
+The card was designed at the size `mockup-buff-metal.html` shows it and then dropped into a grid that
+only affords about **86px** of width at 1440. Three things broke at that width, and only the two
+`PRESS` cards broke visibly, which is why it was nearly missed:
+
+- **The top row wrapped into the name.** Suit mark, roman numeral, cadence chip and count no longer
+  fit on one line, so the row grew a second one and pushed `h3` down into itself. It is now
+  `flex-wrap:nowrap` with `overflow:hidden`, the suit mark down from `.85-1.25rem` to `.68-1.1rem`,
+  gap from `.2rem` to `.14rem`, and both chips `white-space:nowrap`. **`nowrap` is the guarantee, not
+  the smaller sizes** - the sizes buy headroom, the nowrap is what makes the row's height a constant.
+- **The payoff bar wrapped upward.** This is the real defect. A bar pinned to `bottom:6%` that gains a
+  second line grows *into* the condition text, which means no percentage above it can ever be safe.
+  Cheat's `1 trick of no follow-suit` was the only string long enough to do it. Fixed twice over: the
+  bar is `white-space:nowrap` so its height is fixed, **and** the copy shortened to `1 trick free`.
+- **The condition text had no floor.** `.cond` was `top:47%` with no `bottom`, so it ran wherever it
+  liked. It is now `top:50%; bottom:30%; overflow:hidden` - 50% because a two-line name reaches 47%
+  of an 86px card and 47% started the condition 2px inside it; 30% because the bar's top edge sits at
+  73%. Both measured on the rendered card, not guessed.
+
+**The tier WORD is cut in the gallery.** It was the line that had to go, and it is the right one to
+lose: tier was already carried four times over - the metal frame, the roman numeral, the tinted face,
+and the rank pips that `Tier survives greyscale` added. The numeral is the greyscale-safe carrier, so
+the word is redundant here. It stays on `mockup-buff-metal.html`, where the card is shown at full
+size and has the room. The rule is kept in the file as `.tierword-unused` so restoring it is one
+selector rename rather than a re-derivation.
+
+**`1 trick free` is copy, and copy is the developer's.** The string was shortened to stop the bar
+wrapping; the shorter wording itself has not been approved by anyone.
+
+### CARRY - a bar pinned to the bottom of a card must never wrap
+Any absolutely-positioned element anchored to a card's bottom edge grows *upward* when its content
+wraps, silently invalidating every `top`/`bottom` percentage above it. `white-space:nowrap` on it is
+not styling - it is what makes the rest of the card's vertical layout computable. Expect this again
+in `src/` the first time a buff's reward string gets longer, and expect it to show on one card out of
+thirteen rather than on all of them.
+
+### CARRY - a card component sized on its own sheet is not sized for its grid
+The buff card was settled on a full-size specialist sheet and then broke three separate rules the
+moment the gallery gave it ~86px. Per `game-ux`, a tile bound is chosen against **the container's
+measured width**, not the viewport's - measure the track the grid actually hands out, then assert
+overflow on every card in every state, because the longest string is the only one that fails.
+
+
 ### The reward bar carries the suit colour, and its text was measured not chosen
 The payoff bar (`+1 damage`, `+3 coins`) now takes the target suit's colour, so suit is stated twice
 on the card — by the mark at the top and by the payoff at the foot. Buffs with no target suit keep
@@ -525,7 +956,8 @@ art drops into the same window as an `<img>` with no layout change.
 ---
 
 ## OPEN — needs a decision before or during the build
-
+
+
 1. **Does suit outrank tier when a player picks a buff?** That single answer decides whether option
    C is right or absurd, and it is a game-design question rather than a UI one. Note the metal-frame
    sheet largely sidesteps it — with a neutral face, neither axis has to lose.
@@ -543,6 +975,24 @@ art drops into the same window as an `<img>` with no layout change.
    so its ability arguably matters as much as a hand card's. Left out for now because plate cards are
    deliberately non-interactive, and making one focusable weakens that rule.
 
+
+From `mockup-buff-loading.html`:
+
+8. **Should deselecting a card empty its load?** The sheet keeps it and re-scores against whatever
+   you pick next, because a buff belongs to the trick rather than the card. Emptying it is simpler
+   and lies. Only the running app settles whether keeping it feels like a helpful memory or like a
+   load you cannot get rid of.
+9. **Red or brass for the load ring?** Red was asked for; red already means damage and hurt
+   (`--wc-alarm`) everywhere else, and brass already means yours-and-selected. Both are wired
+   behind the dev bar's toggle.
+10. **Does the two-branch total read as clarity or as arithmetic homework?** It is correct — a
+   single total overstates, because Taker and Feeder cannot both fire — but it puts four figures
+   where the brief asked for two. If it is too much, the fix is to show only the branch the player
+   is steering toward, and that leaks the Quarry's card, which is why it was not done.
+11. **Cheat is usable mid-trick and everything else is not.** This screen currently shows the
+   whole pile as loadable, which is the mockup's inverted fence again (see the CARRY in
+   `buff-resolution-and-lifetimes.md` §2). Whether this is a between-tricks planning screen or a
+   live tray is still question 1's twin, and it is a rules ticket.
 ---
 
 ## Placeholders — every one is the developer's
@@ -551,6 +1001,16 @@ Tier colours (bronze `#a9713c`, silver `#9aa7ac`, gold `#d0a53f`) · the three c
 parchment tones · card sizes and the buff-grid track width · `--art-top`, how much of the face the
 art takes · pip scale · grain opacity · the −10px hover lift, the −24px armed lift, the 5.5/11px pile
 offsets, and the 140ms transition · the 14px drop on fenced buff cards · tooltip width and its 120ms fade.
+
+From `mockup-buff-loading.html`: the load-ring colours (`--load-red` `#ff3326`, `--load-brass`
+`#ffc257`) and their deep pair · the halo's four stroke widths and opacities · the energy slope
+(saturating at five firing conditions) and the lap-time slope (`3.2 − 0.5n` seconds) · the load
+badge's size and its tally dots · the readout's 30rem width and its .75rem clearance over the armed
+card · every figure in that sheet's PAY table · `--card-w` at 7.4vw wide and 14vw narrow.
+
+Two figures in that sheet are **not** placeholders and must survive any retuning: the **4.5:1**
+contrast floor, and the **0.9s** lap-time floor on the travelling cell, which is a flash-safety limit
+rather than a taste call.
 
 None of these has been chosen by anyone. They are written down so they are visible, not so they are
 adopted.
@@ -572,6 +1032,17 @@ after the duplicate-pile fix — specifically the **scaled pile offsets (5.5/11p
 **hover-plus-armed frame** — is verified by measured geometry, computed style and the accessibility
 tree, but **has not been seen rendered by anyone**. The last frame actually observed was the pile at
 the earlier 3/6px offsets, which was correct. Put eyes on both before planning.
+
+**`mockup-buff-loading.html` was verified separately and more cleanly**, because the screenshot
+channel behaved this session. Checked in Chrome at **1440×900**, **1280×720** and **500×844**, with
+its self-check green at every one: no page scroll, no horizontal scroll, the hand fitting its strip
+with measured headroom, every text/ground pair over 4.5:1, every touch target at or over 44px
+measured against the *hit* area rather than the painted box, and the lift ladder monotonic. The
+roving tabindex, arrow traversal, `Home`/`End`, `Escape` and the two-tap commit were driven and
+observed, not read off the source. `prefers-reduced-motion` was verified by forcing the media rule
+through the CSSOM — the cell stops and becomes a continuous rail, and the badge and glow survive. The
+greyscale screenshot **was taken**, and it failed one thing, recorded above and fixed: the two branch
+groups were separated only by hue.
 
 A second measurement trap worth knowing, because it produced three wrong readings before it was
 spotted: reading `getComputedStyle(...).transform` immediately after adding a class returns the

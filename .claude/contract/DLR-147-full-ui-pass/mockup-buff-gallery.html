@@ -205,8 +205,14 @@ body {
   transform:translateX(-50%); border:5px solid transparent; border-top-color:var(--wc-brass-dim); }
 
 @media (hover: hover) { .hand .pick:hover .tip { opacity:1; visibility:visible; transform:translate(-50%,0); } }
+/* The armed card normally shows its rule here, because touch has no hover and
+   arming is the gesture a player is already making. But once buffs are riding,
+   the trick readout occupies exactly this space, and both appearing at once put
+   two panels on top of each other. The readout wins and ADOPTS the rule as its
+   header, so nothing is lost and touch still reaches it. */
 .hand .pick:focus-visible .tip,
 .hand .pick.is-armed .tip { opacity:1; visibility:visible; transform:translate(-50%,0); }
+.hand .pick.is-loaded .tip { opacity:0 !important; visibility:hidden !important; }
 
 /* An inert card says so in the same place a real rule would appear, rather than
    showing nothing -- silence reads as "the tooltip is broken". */
@@ -223,22 +229,25 @@ body {
    :focus-visible twin, and `armed` is reachable by tap and by Enter/Space, because
    touch has no hover at all (game-ux hard floor). Hover changes POSITION and depth
    only -- rank, suit and art are on the face at all times. Distances are PLACEHOLDERS. */
+/* The hand RESTS lifted, at half the hover distance, so the cards read as the
+   subject of this screen the moment it opens -- and hover still has somewhere
+   to go, which is the whole reason rest is half and not equal. */
 .pick { position:relative; display:block; padding:0; border:none; background:none;
-  cursor:pointer; touch-action:manipulation;
+  cursor:pointer; touch-action:manipulation; transform:translateY(var(--lift-rest));
   transition:transform var(--wc-ui-transition-ms) ease, filter var(--wc-ui-transition-ms) ease; }
 .pick .pc { width:100%; height:auto; }
 
 @media (hover: hover) {
-  .hand .pick:not(.is-armed):not(.is-illegal):hover { transform:translateY(-10px); filter:brightness(1.05); }
+  .hand .pick:not(.is-armed):not(.is-illegal):hover { transform:translateY(var(--lift-hover)); filter:brightness(1.05); }
   .hand .pick:not(.is-armed):not(.is-illegal):hover .pc { box-shadow:0 12px 20px #000000a6; }
 }
-.hand .pick:focus-visible { outline:none; transform:translateY(-10px); }
+.hand .pick:focus-visible { outline:none; transform:translateY(var(--lift-hover)); }
 .hand .pick:focus-visible .pc { outline:2px solid var(--wc-brass); outline-offset:3px;
   box-shadow:0 12px 20px #000000a6; }
 
 /* Armed = the first of the two taps. Form carries it, not colour: the card rises clear
    of its neighbours, gains a brass ring, AND names what the next tap does. */
-.hand .pick.is-armed { transform:translateY(-24px); }
+.hand .pick.is-armed { transform:translateY(var(--lift-armed)); }
 .hand .pick.is-armed .pc { box-shadow:0 16px 26px #000000b8, 0 0 0 2px var(--wc-brass); }
 .hand .pick.is-armed::after { content:'PLAY'; position:absolute; left:50%; bottom:-1.15rem;
   transform:translateX(-50%); padding:.12rem .4rem; border-radius:4px;
@@ -275,7 +284,10 @@ body {
 
 /* ---------- gallery ---------- */
 .stage { position:relative; min-height:0; display:grid; }
-.gallery { display:grid; grid-template-rows:auto minmax(0,1fr); min-height:0;
+/* THREE rows now: header, the riding list, then the body. The list was added
+   as a third child against a two-row template and silently stretched to 162px
+   of mostly-empty panel -- a grid does not complain, it just distributes. */
+.gallery { display:grid; grid-template-rows:auto auto minmax(0,1fr); min-height:0;
   background:#111a1c; border:1px solid var(--wc-brass-dim); border-radius:12px;
   box-shadow:0 8px 28px #0000008c; overflow:hidden; }
 .gallery[hidden] { display:none; }
@@ -422,7 +434,7 @@ body {
 .trick-well figcaption { font-size:clamp(.44rem,.95vmin,.55rem); letter-spacing:.1em; color:var(--wc-chalk-dim); }
 
 /* ---------- hand + actions ---------- */
-.hand { grid-area:hand; display:flex; justify-content:center; align-items:flex-end;
+.hand { grid-area:hand; position:relative; display:flex; justify-content:center; align-items:flex-end;
   gap:clamp(.2rem,.6vw,.5rem); padding:clamp(.3rem,1vh,.7rem) 0; }
 .hand .pick { width:clamp(3rem,4.8vw,4.6rem); }
 .hand .pc { border-radius:6px; }
@@ -623,39 +635,56 @@ body {
 }
 
 /* top row: suit mark, roman numeral, cadence, count */
-.card .face .top { position:absolute; top:6.5%; left:8%; right:8%; display:flex;
-  align-items:center; gap:.2rem; }
-.suitmark { flex:0 0 auto; width:clamp(.85rem,1.9vmin,1.25rem); aspect-ratio:1;
+/* At the card width the grid allows (~86px), suit mark + numeral + cadence + count
+   no longer fit on one line, and the row wrapped into the card's name. Everything in
+   it is pinned to a single line and sized down to suit; nowrap is the guarantee. */
+.card .face .top { position:absolute; top:6%; left:7%; right:7%; display:flex;
+  align-items:center; gap:.14rem; flex-wrap:nowrap; overflow:hidden; }
+.suitmark { flex:0 0 auto; width:clamp(.68rem,1.5vmin,1.1rem); aspect-ratio:1;
   display:grid; place-items:center; color:var(--suitc); }
 .suitmark svg { width:100%; height:100%; }
 .suitmark.none { color:var(--buff-ink-soft); opacity:.5; }
 .suitmark.none::after { content:'\2014'; font-size:clamp(.4rem,.9vmin,.6rem); }
 .tiernum { flex:0 0 auto; font-family:var(--wc-serif); line-height:1; letter-spacing:.07em;
   color:var(--buff-ink); opacity:.8; font-size:clamp(.45rem,1vmin,.66rem); }
-.card .cadence { padding:.08rem .28rem; border-radius:4px; background:#1b171014;
-  color:var(--buff-ink); opacity:.8; font-size:clamp(.34rem,.78vmin,.42rem);
-  font-weight:700; letter-spacing:.06em; }
-.card .count { margin-left:auto; padding:.08rem .3rem; border-radius:4px;
-  background:var(--buff-ink); color:var(--face); font-size:clamp(.36rem,.84vmin,.46rem);
+.card .cadence { padding:.06rem .22rem; border-radius:4px; background:#1b171014;
+  color:var(--buff-ink); opacity:.8; font-size:clamp(.3rem,.7vmin,.4rem);
+  font-weight:700; letter-spacing:.04em; white-space:nowrap; }
+.card .count { margin-left:auto; padding:.06rem .24rem; border-radius:4px; flex:0 0 auto;
+  background:var(--buff-ink); color:var(--face); font-size:clamp(.32rem,.76vmin,.44rem);
   font-weight:700; }
 .card .count i { color:var(--face); font-style:normal; }
 
-.card .face h3 { position:absolute; top:20%; left:8%; right:8%; margin:0;
+.card .face h3 { position:absolute; top:22%; left:8%; right:8%; margin:0;
   font-family:var(--wc-serif); font-weight:400; color:var(--buff-ink);
-  font-size:clamp(.5rem,1.2vmin,.74rem); line-height:1.2; }
-.card .face .cond { position:absolute; top:47%; left:8%; right:8%; margin:0;
-  color:var(--buff-ink-soft); opacity:1;
-  font-size:clamp(.36rem,.85vmin,.5rem); line-height:1.3; }
-.card .face .tierword { position:absolute; left:8%; bottom:calc(6% + 1.55rem);
+  font-size:clamp(.46rem,1.1vmin,.7rem); line-height:1.16; }
+/* top:50%, not 45% — a two-line name reaches 47% of an 86px-wide card, and at 45%
+   the condition started 2px inside it. bottom:30% clears the payoff bar, whose top
+   edge sits at 73% of the card. Both numbers are measured, not guessed. */
+.card .face .cond { position:absolute; top:50%; left:8%; right:8%; bottom:30%; margin:0;
+  overflow:hidden; color:var(--buff-ink-soft); opacity:1;
+  font-size:clamp(.34rem,.8vmin,.48rem); line-height:1.28; }
+/* The tier WORD is cut in the gallery. It was always the fourth carrier of tier —
+   after the metal, the roman numeral and the tinted face — and at the card width the
+   grid actually allows (~86px at 1440) it was the line that pushed the condition text
+   into the payoff bar. The numeral is the greyscale-safe carrier, so the word is what
+   goes. It stays on mockup-buff-metal.html, where the card is shown at full size. */
+.card .face .tierword { display:none; }
+.card .face .tierword-unused { position:absolute; left:8%; bottom:calc(6% + 1.55rem);
   font-size:clamp(.32rem,.75vmin,.44rem); letter-spacing:.15em; text-transform:uppercase;
   color:var(--buff-ink-soft); opacity:.85; font-weight:700; }
 
 /* the payoff bar carries the suit colour. Text colour is contrast-derived, not chosen:
    white FAILS WCAG AA on all three suits at this size (2.99 / 3.37 / 3.51:1). */
+/* ONE LINE, always. A wrapping payoff bar grows upward into the condition text, and
+   no percentage above it can then be safe — which is exactly how the two PRESS cards
+   broke while every other card was clean. nowrap makes the bar's height a constant. */
 .card .face .reward { position:absolute; left:6%; right:6%; bottom:6%; padding:.28rem 0;
   border-radius:6px; background:var(--reward-bg,var(--buff-ink));
   color:var(--reward-fg,var(--face)); text-align:center; font-weight:700;
-  font-size:clamp(.4rem,.95vmin,.58rem); box-shadow:inset 0 0 0 1px #00000026; }
+  font-size:clamp(.4rem,.95vmin,.58rem); box-shadow:inset 0 0 0 1px #00000026;
+  white-space:nowrap; overflow:hidden; }
+.card .face .reward.split span { white-space:nowrap; overflow:hidden; }
 
 /* PRESS is the only cadence that is a VERB — WIN, LOSE, DODGE, WHEN and HAND END all
    describe something that happens TO you. It gets a raised chip, not a flat tint. */
@@ -730,6 +759,221 @@ body {
 .chip .dot.bronze { background:var(--m-bronze); }
 .chip .dot.silver { background:var(--m-silver); }
 .chip .dot.gold   { background:var(--m-gold); }
+
+
+/* ==========================================================================
+   THE LOAD RING AND THE TRICK READOUT, folded in from mockup-buff-loading.html
+
+   That sheet owns the reasoning; this is the same design living next to the
+   grid it draws from. Two things are DELIBERATELY different here, both for a
+   measured reason rather than a change of mind:
+
+   1. The readout is COLLAPSED BY DEFAULT. In the standalone sheet the whole
+      screen was about loading, so the panel could be as tall as it liked. Here
+      the stage is 471px at 1280x720 and the full panel is ~300px of it, which
+      would bury the very grid you tap to load from. Collapsed it is one bar
+      carrying both branch totals; expanded it is the full bottom-up list with
+      its remove controls. The expand is on the bar itself, one tap.
+   2. It is CLAMPED TO THE STAGE, not to the shell. The game rail is the one
+      region this file has always said the gallery may never cover, and the
+      readout is bound by the same rule.
+
+   The rail was the obvious home and it does NOT fit: measured at 1280x720 it
+   already overflows its own column by 6px before anything is added.
+   ========================================================================== */
+
+/* PLACEHOLDER colour. Red was asked for; red also already means damage and
+   hurt in this UI (--wc-alarm), so a red halo on YOUR empowered card fights a
+   meaning the player has learnt elsewhere. Brass already means yours-and-
+   selected -- the armed card's own outline is brass. Both are wired; the dev
+   bar flips them. This is the developer's call, not a finding. */
+:root {
+  --load-red:#ff3326; --load-red-deep:#8e1409;
+  --load-brass:#ffc257; --load-brass-deep:#7d5a12;
+  --load-hue:var(--load-red); --load-hue-deep:var(--load-red-deep);
+  --energy:0; --spin:3.2s;
+  /* The hand's resting lift is HALF the hover lift, so the cards read as the
+     subject the moment the screen opens and hover still has somewhere to go.
+     Derived, never typed independently: rest -5 -> hover -10 -> armed -24. */
+  --lift-hover:-10px;
+  --lift-rest:calc(var(--lift-hover) / 2);
+  --lift-armed:-24px;
+}
+
+/* An SVG stroke, not a rotating conic-gradient: it follows the card's real
+   border radius, non-scaling-stroke holds its weight at every card size, and
+   pathLength="1000" normalises the perimeter so one set of dash figures works
+   on any card. There is deliberately NO filter:blur() -- this file already
+   proved a per-card filter stalls Chrome's rasteriser hard enough to time out
+   screenshots, so the halo is stacked wide soft strokes instead. */
+.ring { position:absolute; inset:0; z-index:6; pointer-events:none; opacity:0;
+  transition:opacity 240ms ease; }
+.pick.is-loaded .ring { opacity:1; }
+.ring svg { position:absolute; inset:-9%; width:118%; height:118%; overflow:visible; }
+.ring rect { fill:none; stroke-linecap:round; vector-effect:non-scaling-stroke; }
+.ring .halo-far  { stroke:var(--load-hue-deep); stroke-width:calc(7px + 20px * var(--energy));
+  opacity:calc(.16 + .20 * var(--energy)); }
+.ring .halo-mid  { stroke:var(--load-hue);      stroke-width:calc(4px + 11px * var(--energy));
+  opacity:calc(.20 + .26 * var(--energy)); }
+.ring .halo-near { stroke:var(--load-hue);      stroke-width:calc(2px + 5px * var(--energy));
+  opacity:calc(.34 + .36 * var(--energy)); }
+.ring .rail-s    { stroke:var(--load-hue);      stroke-width:1.5px;
+  opacity:calc(.5 + .5 * var(--energy)); }
+.ring .cell-glow { stroke:#fff; stroke-width:calc(8px + 6px * var(--energy));
+  stroke-dasharray:70 930; opacity:calc(.22 + .2 * var(--energy));
+  animation:cell var(--spin) linear infinite; }
+.ring .cell { stroke:#fff; stroke-width:2.6px; stroke-dasharray:70 930;
+  animation:cell var(--spin) linear infinite; }
+@keyframes cell { from { stroke-dashoffset:0; } to { stroke-dashoffset:-1000; } }
+
+.pick.is-loaded .pc { box-shadow:0 2px 6px #00000059, inset 0 0 0 1px #ffffffaa,
+  0 0 calc(16px + 34px * var(--energy)) calc(2px + 7px * var(--energy))
+    color-mix(in srgb, var(--load-hue) calc(45% + 40% * var(--energy)), transparent); }
+.hand .pick.is-armed.is-loaded .pc { box-shadow:0 16px 26px #000000b8,
+  0 0 0 2px var(--wc-brass),
+  0 0 calc(16px + 34px * var(--energy)) calc(2px + 7px * var(--energy))
+    color-mix(in srgb, var(--load-hue) calc(45% + 40% * var(--energy)), transparent); }
+
+/* The load count as a NUMERAL. The glow is colour and the cell's speed is
+   motion, and neither may be the only carrier of a state -- this is what
+   survives a greyscale screenshot and prefers-reduced-motion. Bottom-right,
+   because top-right belongs to the bomb and top-left to the corner index.
+   Ink on parchment, 14.10:1. */
+.loadbadge { position:absolute; z-index:8; right:-6%; bottom:6%;
+  display:flex; align-items:center; gap:.18rem; padding:.1rem .3rem; border-radius:999px;
+  background:#ece4d2; color:#1b1710; border:1.5px solid var(--load-hue-deep);
+  box-shadow:0 2px 6px #000000a6; font-family:var(--wc-sans);
+  font-size:clamp(.42rem,.95vmin,.56rem); font-weight:800; line-height:1; }
+.loadbadge .dots { display:flex; gap:.08rem; }
+.loadbadge .dots i { width:.16rem; height:.16rem; border-radius:50%; background:#1b1710; }
+
+/* ---------- what is riding: stated once, where the buffs are ---------- */
+/* Pills are thumb-height and their ✕ is a REAL 44px control rather than a
+   small disc with an invisible expander -- side by side, two expanders would
+   have overlapped across the gap and stolen each other's taps. The strip is
+   the trick's live state and earns the height. */
+.riding-list { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem;
+  padding:.3rem clamp(.5rem,1.4vw,1rem) .4rem; border-bottom:1px solid #1e2a2e; }
+.riding-list .rl-h { font-size:clamp(.42rem,.95vmin,.55rem); letter-spacing:.14em;
+  text-transform:uppercase; color:var(--load-hue); margin-right:.15rem; }
+.riding-list .rl { display:inline-flex; align-items:center; gap:.25rem; min-height:44px;
+  padding:.14rem .14rem .14rem .6rem; border-radius:999px;
+  background:#1b2c33; border:1px solid #33484f; color:var(--wc-chalk);
+  font-size:clamp(.46rem,1.05vmin,.62rem); }
+.riding-list .rl b { font-weight:600; }
+/* A buff nothing in your hand can fire is the REAL dead case, and it is dead
+   GLOBALLY rather than dead on one card. It says so instead of dimming. */
+.riding-list .rl.out { border-style:dashed; border-color:var(--wc-alarm);
+  color:var(--wc-alarm); }
+.riding-list .x { position:relative; width:44px; height:44px; display:grid;
+  place-items:center; border-radius:50%; border:1px solid #3b4a50; background:#18242a;
+  color:inherit; cursor:pointer; font:inherit; font-size:.85em; line-height:1; padding:0;
+  touch-action:manipulation; }
+/* no pseudo-element here: the control is genuinely 44px, so nothing overflows
+   the pill and nothing can reach the pill beside it. */
+@media (hover:hover) { .riding-list .x:hover { background:var(--wc-alarm); color:#1a0b08; } }
+.riding-list .x:focus-visible { outline:2px solid var(--wc-brass); outline-offset:2px; }
+
+/* The ONE place this file asks the player to choose a card, because the
+   Timebomb is the one buff that actually attaches to one. */
+.arming-mode .hand .pick .pc { outline:2px dashed var(--wc-timebomb); outline-offset:3px; }
+
+/* ---------- the readout itself ---------- */
+.riding { position:absolute; z-index:20; bottom:calc(-1 * var(--lift-armed) + .6rem);
+  width:min(30rem, 100%); border-radius:10px; overflow:hidden;
+  background:#0f1518; border:1px solid var(--wc-brass-dim);
+  box-shadow:0 12px 30px #000000bf; font-family:var(--wc-sans);
+  font-size:clamp(.5rem,1.15vmin,.7rem); }
+.riding::after { content:''; position:absolute; top:100%; left:var(--point,50%);
+  transform:translateX(-50%); border:7px solid transparent;
+  border-top-color:var(--wc-parchment); }
+
+/* Expanded: the rows, capped so a big load scrolls INSIDE the panel rather
+   than growing over the grid. Scoped overflow, not page overflow. */
+.riding .rows { max-height:min(38vh, 17rem); overflow-y:auto; overscroll-behavior:contain; }
+.riding[data-open='no'] .rows { display:none; }
+.riding > h4 { margin:0; padding:.3rem .6rem .26rem; border-bottom:1px solid #23303588;
+  font-family:var(--wc-serif); font-weight:400; color:var(--wc-brass);
+  font-size:clamp(.58rem,1.35vmin,.8rem); }
+.riding > h4 small { display:block; font-family:var(--wc-sans); color:var(--wc-chalk-dim);
+  font-size:clamp(.44rem,1vmin,.58rem); line-height:1.35; margin-top:.1rem; }
+
+.riding .grp { padding:.22rem .6rem .1rem; border-top:1px solid #1b2529;
+  font-size:clamp(.42rem,.95vmin,.55rem); letter-spacing:.14em; text-transform:uppercase;
+  color:var(--wc-brass); background:#131e22; }
+.riding .grp + .r { border-top:none; }
+/* CARRY -- an invisible 44px hit expander OVERFLOWS a shorter row, and that has
+   two consequences neither of which looks like a touch problem:
+     1. inside a scrollable ancestor it inflates scrollHeight, so a panel with
+        ONE row grew a scrollbar (measured: content 56px in a 50.5px box); and
+     2. stacked 33px rows with 44px expanders OVERLAP by 11px, so adjacent ✕
+        buttons quietly steal each other's taps.
+   Making the row itself 44px fixes both: the expander now fits inside its own
+   row and cannot reach a neighbour. Expand the ROW, not just the control. */
+.riding .r { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:.4rem;
+  min-height:44px; padding:.26rem .6rem; border-top:1px solid #1b2529; }
+/* The two branches differ in FORM, not hue -- a green-grey rule and a
+   purple-grey one are the same grey in a greyscale screenshot. The group
+   headers carry the fact in words regardless. */
+.riding .r[data-b=take], .riding .grp[data-b=take] { border-left:3px solid #4d6357; }
+.riding .r[data-b=miss], .riding .grp[data-b=miss] { border-left:3px dotted #6b5a63; }
+.riding .r[data-b=both], .riding .grp[data-b=both] { border-left:3px double #5c6a55; }
+
+/* Drawn at 18px on purpose -- a bigger disc would shout louder than the
+   condition beside it -- with a 44px pseudo-element HIT area instead. Do not
+   solve a touch-target failure here by growing the disc. */
+.riding .x { position:relative; width:1.15rem; height:1.15rem; display:grid; place-items:center;
+  border-radius:50%; border:1px solid #3b4a50; background:#18242a; color:var(--wc-chalk);
+  cursor:pointer; font:inherit; font-size:.8em; line-height:1; padding:0;
+  touch-action:manipulation; }
+.riding .x::after { content:''; position:absolute; left:50%; top:50%;
+  width:44px; height:44px; transform:translate(-50%,-50%); }
+@media (hover:hover) { .riding .x:hover { background:var(--wc-alarm); color:#1a0b08;
+  border-color:var(--wc-alarm); } }
+.riding .x:focus-visible { outline:2px solid var(--wc-brass); outline-offset:2px; }
+.riding .c { min-width:0; line-height:1.3; }
+.riding .c b { display:block; font-weight:600; color:var(--wc-chalk); }
+.riding .c small { display:block; color:var(--wc-chalk-dim); font-size:clamp(.44rem,1vmin,.58rem); }
+.riding .p { font-family:var(--wc-serif); white-space:nowrap; color:var(--wc-chalk); }
+
+/* The Overlap Bonus is the game's only combo and it is EXACTLY what the ring's
+   rising energy draws. It has no remove control -- it is a consequence of the
+   others, not a card. */
+.riding .r.ov { background:#141f24; }
+.riding .r.ov .x { visibility:hidden; }
+.riding .r.ov .c b { color:var(--load-hue); }
+/* Loaded but unable to fire on THIS card, and it says why rather than dimming. */
+.riding .r.dead { background:#12191c; border-top:1px dashed #35434a; }
+.riding .r.dead .c b { color:var(--wc-chalk-dim); text-decoration:line-through; }
+.riding .r.dead .p { color:var(--wc-chalk-dim); text-decoration:line-through; }
+
+/* THE BOTTOM BAR. Both branches, NEITHER highlighted -- the ruleset withholds
+   the Quarry's card and a readout that leaned would leak it. It is also the
+   expand control, so the whole thing is one 44px-tall target. */
+.riding .tot { display:block; width:100%; text-align:left; font:inherit; cursor:pointer;
+  padding:0; border:none; border-top:2px solid var(--load-hue-deep);
+  background:var(--wc-parchment); color:var(--wc-ink); }
+.riding .tot:focus-visible { outline:2px solid var(--wc-brass); outline-offset:-2px; }
+.riding .tl { display:flex; align-items:baseline; gap:.5rem; padding:.24rem .6rem; min-height:22px; }
+.riding .tl + .tl { border-top:1px solid #00000022; }
+.riding .tl .k { font-size:clamp(.42rem,.95vmin,.55rem); letter-spacing:.14em;
+  text-transform:uppercase; color:#4a4234; }
+.riding .tl .v { margin-left:auto; display:flex; gap:.6rem; }
+.riding .tl .v span { font-family:var(--wc-serif); font-size:clamp(.7rem,1.7vmin,1rem);
+  white-space:nowrap; }
+.riding .tl .v span i { font-style:normal; font-family:var(--wc-sans);
+  font-size:clamp(.42rem,.95vmin,.55rem); letter-spacing:.1em; text-transform:uppercase;
+  color:#4a4234; }
+.riding .hint { display:block; padding:.16rem .6rem .22rem; font-size:clamp(.4rem,.9vmin,.52rem);
+  letter-spacing:.1em; text-transform:uppercase; color:#5d5546; border-top:1px solid #00000018; }
+
+/* prefers-reduced-motion: the cell stops dead and becomes a CONTINUOUS rail at
+   full brightness. The state still reads, it just stops moving -- and the badge
+   and the glow are untouched, so all three carriers survive. */
+@media (prefers-reduced-motion:reduce) {
+  .ring .cell { stroke-dasharray:none; opacity:.9; }
+  .ring .cell-glow { stroke-dasharray:none; opacity:.45; }
+}
 
 @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
 
@@ -892,6 +1136,9 @@ body {
           <span class="spacer"></span>
           <span style="font-size:.62rem;color:var(--wc-chalk-dim)">Esc to close</span>
         </header>
+        <!-- what is live for the trick: the authoritative list, because a buff
+             belongs to the trick and not to a card. Hidden when empty. -->
+        <div class="riding-list" id="ridingList" hidden></div>
 
         <div class="g-body">
           <nav class="filters" aria-label="Filter by tier">
@@ -933,7 +1180,11 @@ body {
   <div class="hand">
     <div class="pc-slot" data-suit="bells" data-rank="1" data-variant="hand"></div>
     <div class="pc-slot" data-suit="bells" data-rank="2" data-variant="hand"></div>
-    <div class="pc-slot" data-suit="bells" data-rank="7" data-variant="hand" data-primed="yes"></div>
+    <!-- No hard-coded data-primed any more. Priming is a live flow now (activate
+         the Timebomb, then choose a card), and a static mark here was a SECOND
+         source of truth that disagreed with the one the player had chosen.
+         mockup-primed-card.html remains the dedicated study of the mark. -->
+    <div class="pc-slot" data-suit="bells" data-rank="7" data-variant="hand"></div>
     <div class="pc-slot" data-suit="keys" data-rank="1" data-variant="hand"></div>
     <div class="pc-slot" data-suit="keys" data-rank="3" data-variant="hand"></div>
     <div class="pc-slot" data-suit="moons" data-rank="10" data-variant="hand"></div>
@@ -949,11 +1200,419 @@ body {
 
 <div class="dev">
   <span>mockup only —</span>
+  <button id="hue">Ring: red</button>
   <button id="phase">Phase: mid-trick</button>
 </div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
+
+
+/* ==========================================================================
+   LOADING BUFFS ONTO THE CARD YOU ARE ABOUT TO PLAY
+   Folded in from mockup-buff-loading.html, which owns the reasoning. In short:
+
+   A BUFF IS ACTIVATED FOR THE TRICK, NOT FOR A CARD. Bell-Taker's condition is
+   "took the trick playing Bells" -- it does not attach to one Bells card, it is
+   live for whatever you play and pays on ANY Bells card in your hand. An
+   earlier version of this fold asked the player to nominate a card to buff,
+   which was not merely extra work: it described a rule the game does not have.
+
+   So activating a buff lights up EVERY card in the hand it could fire on, and
+   each card's ring reads THAT CARD's own count. The hand becomes the readout --
+   you look at it and see which of your cards are hot, which is exactly the
+   decision you are about to make. A buff's scope is a property of the buff
+   against your hand, not something the player assigns, so the gallery row and
+   the riding list state how many of your cards it reaches.
+
+   THE ONE EXCEPTION IS TIMEBOMB, and it is real: it primes a specific card and
+   lands at the next trick's resolution. That is the only flow in the game where
+   "choose a card" is the right instruction, so it is the only place this file
+   says it. Cheat targets nothing -- it is a permission for the trick.
+
+   Folding it in ANSWERS this file's own open question 3 -- "how does a spent
+   card leave?". It no longer just vanishes: it moves to the trick's own list,
+   where the player can see it, see what it reaches, and take it back off.
+   ========================================================================== */
+
+/* The bomb's shapes are INLINE rather than a <symbol> + <use>: `use` clones into
+   a shadow tree, where the .fizz class never matches from the light DOM, so the
+   spark would sit dead and prefers-reduced-motion could not reach it either.
+   ONE definition, shared by the initial render and by paintRing -- it used to be
+   built inline in playingCard, which is how the hard-coded primed card and the
+   player's chosen one ended up disagreeing. */
+const BOMB_SVG = `<span class="bomb"><svg viewBox="0 0 100 100" aria-hidden="true">
+  <circle cx="46" cy="60" r="31" fill="#15130f"/>
+  <circle cx="46" cy="60" r="31" fill="url(#bombBody)"/>
+  <path d="M18 52a31 31 0 0 1 26-22 31 31 0 0 0-22 30z" fill="#8e8a80" opacity=".5"/>
+  <ellipse cx="33" cy="46" rx="8" ry="5.5" fill="#fff" opacity=".26" transform="rotate(-28 33 46)"/>
+  <rect x="37" y="22" width="17" height="12" rx="3" fill="#33302a"/>
+  <rect x="37" y="22" width="17" height="4" rx="2" fill="#5c574d"/>
+  <path d="M54 27c9-7 19-4 22 3" fill="none" stroke="#7a6a4a" stroke-width="5" stroke-linecap="round"/>
+  <circle class="fizz-glow" cx="76" cy="30" r="15" fill="url(#sparkGlow)"/>
+  <g class="fizz" fill="#ffd980">
+    <path d="M76 18l3.4 8.6L88 30l-8.6 3.4L76 42l-3.4-8.6L64 30l8.6-3.4z"/>
+    <circle cx="76" cy="30" r="3.6" fill="#fffbe8"/></g>
+</svg></span>`;
+
+const RING_SVG = `<span class="ring" aria-hidden="true"><svg viewBox="0 0 200 300">
+  <rect class="halo-far"  x="6" y="6" width="188" height="288" rx="15" pathLength="1000"/>
+  <rect class="halo-mid"  x="6" y="6" width="188" height="288" rx="15" pathLength="1000"/>
+  <rect class="halo-near" x="6" y="6" width="188" height="288" rx="15" pathLength="1000"/>
+  <rect class="rail-s"    x="6" y="6" width="188" height="288" rx="15" pathLength="1000"/>
+  <rect class="cell-glow" x="6" y="6" width="188" height="288" rx="15" pathLength="1000"/>
+  <rect class="cell"      x="6" y="6" width="188" height="288" rx="15" pathLength="1000"/>
+</svg></span>`;
+
+let riding = [];           // { c, uid } activated for THIS TRICK. No card target.
+let primedPick = null;     // the hand card carrying a Timebomb, if any
+let armingBomb = null;     // a Timebomb waiting for the player to pick its target
+let selectedPick = null;   // the card whose breakdown is pinned (armed to play)
+let hoverPick = null;      // ...or merely hovered/focused
+/* OPEN by default. It was collapsed to protect the grid underneath -- the stage
+   is 471px at 1280x720 and the expanded panel is most of it -- but that traded
+   the developer's actual question ("what is this card worth?") for a tap every
+   time they wanted it answered. The breakdown is the point of the panel; making
+   it the thing you have to ask for was the wrong side of that trade. The
+   collapse control stays as the escape hatch for getting the grid back. */
+let ridingOpen = true;
+let loadUid = 0;
+/* The readout STAYS UP. It used to appear on hover and vanish on leave, which
+   meant re-hovering every time you wanted the list back -- friction for a panel
+   whose whole job is to be read while you decide. It now opens as soon as
+   anything is riding, defaults to the card that gains most, and hovering
+   another card just SWITCHES it. Hover becomes a comparison gesture rather than
+   the only way in. */
+let lastShownPick = null;
+function defaultPick() {
+  let best = null, bestN = 0;
+  playable().forEach(p => { const n = scoreTrick(p).peak;
+    if (n > bestN) { bestN = n; best = p; } });
+  return best || playable()[0] || null;
+}
+const focusPick = () => {
+  if (selectedPick) return selectedPick;
+  if (hoverPick) return hoverPick;
+  if (!riding.length) return null;
+  if (lastShownPick && lastShownPick.isConnected) return lastShownPick;
+  return defaultPick();
+};
+
+/* ---- classifying a gallery card ------------------------------------------
+   The cadence decides WHICH BRANCH a card can fire on. WIN and EAT both mean
+   the player physically took the cards; LOSE and DODGE both mean they did not.
+   That is the mechanical axis, and it is the only axis a buff condition ever
+   reads -- the skull decides what the outcome is WORTH, never whether the
+   condition came true. WHEN and HAND END are not gated on the trick's outcome
+   at all, so they can fire either way. */
+const BRANCH = { WIN:'take', EAT:'take', LOSE:'miss', DODGE:'miss', WHEN:'both', 'HAND END':'both' };
+const AXIS_WORD = { damage:'Blade', multiplier:'Momentum', coins:'Purse' };
+
+function rewardOf(c) {
+  const m = /^\+(\d+)\s+(damage|multiplier|coins)/.exec(c.reward || '');
+  return m ? { n:+m[1], axis:AXIS_WORD[m[2]] } : null;
+}
+/* Mark of the R targets a RANK, not a suit -- it is the one live gate this
+   file's data carries that is not c.suit, and reading it off the name is
+   deliberate: the real BUFF_CONDITION_SENTENCE substitutes {rank} the same way
+   it substitutes {suit}. */
+const rankGateOf = c => { const m = /Mark of the (\d+)/.exec(c.name); return m ? +m[1] : null; };
+
+/* Can this buff fire on this card, in principle? Suit and rank gates only --
+   the branch decides the rest. */
+function gateFits(c, suitId, rank) {
+  if (c.suit && c.suit !== suitId) return { ok:false, why:`Needs ${BUFF_SUIT[c.suit].label} — this card is ${BUFF_SUIT[suitId].label}.` };
+  const rg = rankGateOf(c);
+  if (rg && rg !== rank) return { ok:false, why:`Needs a ${rg} — this card is a ${rank}.` };
+  return { ok:true };
+}
+
+/* ---- scoring, TWICE ------------------------------------------------------
+   Never one total. Taker fires on "took the trick playing S" and Feeder on
+   "did not take it, playing S": at most ONE of them can come true. A single
+   summed total adds both AND inflates the Overlap Bonus, which is derived from
+   how many actually fire -- in mockup-buff-loading.html's first build that
+   reported +6 Damage for a load whose real ceiling was +4.
+
+   So both branches are shown and NEITHER is highlighted. That constraint is
+   not new: mockup-trick-readout.html settled it, because the ruleset withholds
+   the Quarry's card and a readout that leaned would leak it. */
+/* Scored for ONE CARD -- and every card in the hand gets its own score, because
+   a riding buff is live for whichever card you end up playing. */
+function scoreTrick(pick) {
+  pick = pick || focusPick();
+  const out = { dead:[], press:[], take:[], miss:[] };
+  if (!pick) { out.t = blank(); out.m = blank(); out.peak = 0; return out; }
+  const suitId = pick.dataset.suit;
+  const rank = +pick.dataset.rank;
+  riding.forEach(L => {
+    const br = BRANCH[L.c.cad];
+    if (!br || !rewardOf(L.c)) { out.press.push(L); return; }   // Cheat, Timebomb, Ward
+    const g = gateFits(L.c, suitId, rank);
+    if (!g.ok) { out.dead.push({ ...L, why:g.why }); return; }
+    if (br === 'take' || br === 'both') out.take.push(L);
+    if (br === 'miss' || br === 'both') out.miss.push(L);
+  });
+  out.t = sumBranch(out.take);
+  out.m = sumBranch(out.miss);
+  /* The ring reads the BEST branch -- the most this card can light up.
+     Averaging would make a card that is huge on one outcome look mediocre,
+     and summing the two is the lie above. */
+  out.peak = Math.max(out.t.n, out.m.n);
+  return out;
+}
+function blank() { return { n:0, blade:0, mom:0, coins:0, overlap:0, mult:0 }; }
+function sumBranch(arr) {
+  const s = blank();
+  arr.forEach(L => { const r = rewardOf(L.c); if (!r) return;
+    if (r.axis === 'Blade') s.blade += r.n;
+    else if (r.axis === 'Momentum') s.mom += r.n;
+    else s.coins += r.n; });
+  s.n = arr.length;
+  /* THE OVERLAP BONUS: firedCount - 1 into the multiplier pool, regardless of
+     what those cards themselves pay. Two firing gives +1, three gives +2. */
+  s.overlap = Math.max(0, arr.length - 1);
+  s.mult = s.mom + s.overlap;
+  return s;
+}
+
+/* How much of your hand a riding buff actually reaches. This figure is what
+   replaces the old "choose a card" step: a buff's scope is a property of the
+   buff against your hand, not something the player assigns. A buff that reaches
+   nothing is the real dead case, and it is dead GLOBALLY, not on one card. */
+/* Only PLAYABLE cards count. A card that is illegal this trick cannot be
+   played, so no buff can fire on it -- lighting it up, or counting it in a
+   buff's reach, would promise a payoff the rules cannot deliver. */
+const playable = () => [...document.querySelectorAll('.hand .pick:not(.is-illegal)')];
+function reachOf(c) {
+  if (!BRANCH[c.cad] || !rewardOf(c)) return null;
+  return playable().filter(p => gateFits(c, p.dataset.suit, +p.dataset.rank).ok).length;
+}
+
+/* ---- the ring, on EVERY card the riding buffs reach -----------------------
+   Not on one nominated card. Activating a buff lights the whole set it could
+   fire on, so choosing what to play becomes a comparison between cards that are
+   already lit rather than a commitment made in advance. */
+function paintRing() {
+  document.querySelectorAll('.hand .pick').forEach(p => {
+    p.style.removeProperty('--energy'); p.style.removeProperty('--spin');
+    p.classList.remove('is-loaded');
+    p.querySelector('.loadbadge')?.remove();
+    p.querySelector('.bomb')?.remove();
+    if (primedPick === p) p.insertAdjacentHTML('beforeend', BOMB_SVG);
+    if (!p.classList.contains('is-illegal')) paintOne(p);
+  });
+}
+function paintOne(p) {
+  const n = scoreTrick(p).peak;
+  if (n === 0) return;
+  /* PLACEHOLDER slope, NOT a placeholder floor. Energy saturates at five firing
+     conditions and the lap time shortens by .5s each, then STOPS at 0.9s. That
+     floor is a flash-safety limit, not a taste call: a bright cell passing a
+     point more than ~3 times a second is a hazard, and at a 0.9s lap it passes
+     once. Retune the slope freely; do not lower the floor. */
+  const energy = Math.min(1, n / 5);
+  const spin = Math.max(0.9, 3.2 - 0.5 * n);
+  p.classList.add('is-loaded');
+  p.style.setProperty('--energy', energy.toFixed(3));
+  p.style.setProperty('--spin', spin.toFixed(2) + 's');
+  const dots = Array.from({ length: Math.min(n, 5) }, () => '<i></i>').join('');
+  p.insertAdjacentHTML('beforeend',
+    `<span class="loadbadge" aria-hidden="true">${n}<span class="dots">${dots}</span></span>`);
+}
+
+/* ---- the readout, read BOTTOM-UP -----------------------------------------
+   Bottom: what you get, on each branch. Above it: what has to come true, each
+   row with its own remove control. Above those, furthest from the card because
+   it matters least: whatever cannot fire on this card at all.
+
+   Collapsed by default -- see the CSS block for the measurement that forced
+   that, and note it is the one deliberate difference from the standalone
+   sheet. The bar is the expand control, so it is one target rather than a
+   separate chevron. */
+function renderRiding() {
+  document.querySelector('.riding')?.remove();
+  const pick = focusPick();
+  if (!pick || !riding.length) return;
+  const s = scoreTrick(pick);
+  const hand = document.querySelector('.hand');
+
+  /* The ✕ belongs here as well as on the riding list. An earlier pass took it
+     out on the grounds that "a buff is not ON this card, so removing it here
+     would take it off a place it never was" -- true about the RULE and useless
+     about the INTERACTION. The buff is listed here, so this is where the hand
+     goes. What the pedantry was right about is the WORDING: the control says it
+     comes off the TRICK, and names what else goes dark. */
+  const rm = L => { const r = reachOf(L.c);
+    return `<button type="button" class="x" data-rm="${L.uid}"
+      aria-label="Take ${L.c.name} off the trick${r > 1 ? `, unlighting all ${r} of your cards` : ''}"
+      title="Take off the trick${r > 1 ? ` — ${r} cards go dark` : ''}">&times;</button>`; };
+  const tag = L => { const r = rewardOf(L.c); return r ? `+${r.n} ${r.axis === 'Blade' ? 'dmg'
+    : r.axis === 'Momentum' ? 'mult' : 'coins'}` : ''; };
+
+  const rows = [];
+  /* Riding, but not on THIS card. Shown struck through and furthest from the
+     card, because it is exactly what you give up by playing this one -- and the
+     row says where the buff IS live rather than calling it dead, because under
+     the trick-wide model it is not wasted, it is waiting for a different card. */
+  s.dead.forEach(L => {
+    const r = reachOf(L.c);
+    rows.push(`<div class="r dead">${rm(L)}<span class="c"><b>${L.c.name}</b>
+      <small>${L.why} ` +
+      (r > 0 ? `It is lighting ${r} of your other cards instead.`
+             : `Nothing in your hand can fire it.`) +
+      `</small></span><span class="p">${tag(L)}</span></div>`);
+  });
+  s.press.forEach(L => rows.push(`<div class="r">${rm(L)}<span class="c"><b>${L.c.name}</b>
+    <small>${L.c.cad === 'PRESS' ? 'No condition — it does its thing and is spent.' : L.c.cond}</small>
+    </span><span class="p">${L.c.reward}</span></div>`));
+
+  /* A branch with nothing in it renders NOTHING. No empty header, no "none"
+     row -- a panel with nothing to say is furniture, and furniture teaches a
+     player to stop looking at that part of the screen. */
+  const grp = (title, arr, tot, key) => {
+    if (!arr.length) return;
+    rows.push(`<div class="grp" data-b="${key}">${title}</div>`);
+    arr.forEach(L => {
+      const both = BRANCH[L.c.cad] === 'both';
+      /* The NAME leads here and the printed condition is the second line --
+         the opposite of mockup-buff-loading.html, and for a reason the fold
+         exposed. This file's card list still carries the pre-rename outcome
+         vocabulary, so under a group header reading "If you take the trick"
+         the row read "win a trick with Bells": the header states the
+         MECHANICAL axis and the row answers on the OUTCOME axis, which is the
+         exact confusion CLAUDE.md warns about. The header already supplies the
+         branch, so leading with the name removes the clash without rewriting
+         a card list that is deliberately the older, wider one. The standalone
+         sheet leads with the condition because its names repeat and its
+         wording is already mechanical. */
+      rows.push(`<div class="r" data-b="${both ? 'both' : key}">${rm(L)}<span class="c">
+        <b>${L.c.name}</b><small>${L.c.cond}${both ? ' — fires either way' : ''}</small>
+        </span><span class="p">${tag(L)}</span></div>`);
+    });
+    if (tot.overlap > 0) rows.push(`<div class="r ov" data-b="${key}"><span></span>
+      <span class="c"><b>Overlap bonus</b><small>${tot.n} conditions firing together</small></span>
+      <span class="p">+${tot.overlap} mult</span></div>`);
+  };
+  grp('If you take the trick', s.take, s.t, 'take');
+  grp('If you do not take it', s.miss, s.m, 'miss');
+
+  const fig = t => `<span>+${t.blade}<i> dmg</i></span><span>+${t.mult}<i> mult</i></span>` +
+    (t.coins ? `<span>+${t.coins}<i> coins</i></span>` : '');
+  const bar = (!s.take.length && !s.miss.length)
+    ? `<div class="tl"><span class="k">Nothing riding can fire on this card</span></div>`
+    : `<div class="tl"><span class="k">If you take it</span><span class="v">${fig(s.t)}</span></div>
+       <div class="tl"><span class="k">If you do not</span><span class="v">${fig(s.m)}</span></div>`;
+
+  const box = document.createElement('div');
+  box.className = 'riding';
+  box.dataset.open = ridingOpen ? 'yes' : 'no';
+  box.setAttribute('role', 'group');
+  box.setAttribute('aria-label', `What ${pick.dataset.label} is worth`);
+  box.innerHTML = `<h4>${pick.dataset.label}<small>${pick.dataset.rule}</small></h4>` +
+    `<div class="rows">${rows.join('')}</div>` +
+    `<button type="button" class="tot" aria-expanded="${ridingOpen}">${bar}` +
+      `<span class="hint">${s.peak} of ${riding.length} riding would fire on this card — ` +
+      `${ridingOpen ? 'tap to collapse and see the grid' : 'tap for the breakdown'}</span></button>`;
+  hand.appendChild(box);
+
+  /* Anchor over the selected card and CLAMP TO THE STAGE, never to the shell:
+     the game rail is the one region this file has always said the gallery may
+     not cover, and this panel is bound by the same rule. The pointer moves
+     independently so it still finds the card after clamping. */
+  lastShownPick = pick;
+  const stage = document.querySelector('.stage').getBoundingClientRect();
+  const handBox = hand.getBoundingClientRect();
+  const card = pick.getBoundingClientRect();
+  /* Cap the WIDTH against the stage before measuring it. The CSS says
+     `min(30rem, 100%)`, and that 100% resolves against .hand -- which spans the
+     whole shell, rail included. At 430px that made the panel 30px wider than
+     the stage, and because the shell is overflow:hidden it was silently CLIPPED
+     rather than scrolling: a defect that reports as "no horizontal scroll". */
+  box.style.maxWidth = Math.round(stage.width) + 'px';
+  const w = box.getBoundingClientRect().width;
+  const want = card.left + card.width / 2;
+  const left = Math.max(stage.left, Math.min(stage.right - w, want - w / 2));
+  box.style.left = (left - handBox.left) + 'px';
+  box.style.setProperty('--point', (want - left) + 'px');
+  /* Clearing the card is MEASURED, not derived from --lift-armed. The panel is
+     positioned against .hand, whose box includes its own padding, so an offset
+     of "the armed lift plus a gap" lands partway up the card rather than above
+     it -- which is exactly what it did. Measure the gap that actually exists. */
+  box.style.bottom = (handBox.bottom - card.top + 9) + 'px';
+
+  box.querySelector('.tot').addEventListener('click', () => {
+    ridingOpen = !ridingOpen; holdOpen(); renderRiding();
+    document.querySelector('.riding .tot')?.focus();
+  });
+  box.querySelectorAll('[data-rm]').forEach(x =>
+    x.addEventListener('click', () => { holdOpen(); unload(x.dataset.rm); }));
+  /* THE HOVER BRIDGE. Without it this panel is decorative: it opens on the
+     card's mouseenter and closes on its mouseleave, so moving the pointer up to
+     reach the expand control or a ✕ is the exact gesture that destroys it --
+     there is a 9px gap to cross and the panel is not a child of the card.
+     Entering the panel holds it open; leaving either schedules a close that
+     entering the other cancels. */
+  box.addEventListener('mouseenter', holdOpen);
+  box.addEventListener('mouseleave', scheduleClose);
+}
+
+/* ---- taking a buff back off the trick ------------------------------------
+   The card returns to the pile it came from, count and all. This is the other
+   half of answering open question 3: a spent card is now visibly somewhere,
+   and somewhere you can undo. */
+function unload(uid) {
+  const i = riding.findIndex(L => L.uid === uid);
+  if (i < 0) return;
+  const [L] = riding.splice(i, 1);
+  if (/Timebomb/.test(L.c.name)) { primedPick = null; armingBomb = null; }
+  const existing = CARDS.find(c => c.name === L.c.name);
+  if (existing) existing.n += 1; else CARDS.push({ ...L.c, n:1 });
+  const r = reachOf(L.c);
+  say(L.c.name + ' taken off the trick' + (r > 1 ? ` — ${r} cards went dark` : ''));
+  holdOpen();            // the re-render must not close the panel under the pointer
+  render(); repaintTrick();
+}
+
+/* ---- what is riding, listed where the buffs are ----
+   The authoritative list, because a buff belongs to the trick. Each row states
+   how much of your hand it reaches -- the figure that replaces "choose a card"
+   -- and carries the ✕, since this is where the buff actually is. */
+function renderRidingList() {
+  const box = document.getElementById('ridingList');
+  if (!box) return;
+  box.hidden = riding.length === 0;      // nothing to say, so nothing rendered
+  if (!riding.length) { box.innerHTML = ''; return; }
+  box.innerHTML = `<span class="rl-h">Riding this trick</span>` + riding.map(L => {
+    const reach = reachOf(L.c);
+    const scope = /Cheat/.test(L.c.name) ? 'the whole trick'
+      : /Timebomb/.test(L.c.name) ? (primedPick ? 'primed on your ' + primedPick.dataset.label
+                                                : 'not yet primed')
+      : reach === 0 ? 'no card in your hand can fire it'
+      : `lights up ${reach} of your cards`;
+    return `<span class="rl${reach === 0 ? ' out' : ''}"><b>${L.c.name}</b> — ${scope}
+      <button type="button" class="x" data-rm="${L.uid}"
+        aria-label="Take ${L.c.name} back off the trick">&times;</button></span>`;
+  }).join('');
+  box.querySelectorAll('[data-rm]').forEach(x =>
+    x.addEventListener('click', () => unload(x.dataset.rm)));
+}
+
+/* Leaving a card no longer closes the panel -- it just stops treating that card
+   as the hovered one, and the panel keeps showing whichever card it was last
+   pointed at. The timer survives only so that crossing the gap between the card
+   and the panel does not flicker the contents. */
+let closeTimer = null;
+function holdOpen() { clearTimeout(closeTimer); }
+function scheduleClose() {
+  clearTimeout(closeTimer);
+  closeTimer = setTimeout(() => { hoverPick = null; renderRiding(); }, 160);
+}
+
+function repaintTrick() {
+  document.body.classList.toggle('arming-mode', !!armingBomb);
+  renderRidingList(); paintRing(); renderRiding();
+}
 
 /* ================== playing cards, folded in from mockup-card-faces.html ===== */
 const SUITS = [
@@ -1164,21 +1823,14 @@ function playingCard(suitId, rank, variant, skulled, primed) {
     b.setAttribute('aria-describedby', u + '-tip');
     b.tabIndex = -1;
     const rule = meta.rule || 'Plain number card. No rule.';
-    b.innerHTML = `<span class="pc ${meta.cls} ${suitId} ${variant}${primed ? ' primed' : ''}">${face}</span>` +
+    b.dataset.suit = suitId;
+    b.dataset.rank = rank;
+    b.dataset.label = name;
+    b.dataset.rule = rule;
+    b.innerHTML = RING_SVG +
+      `<span class="pc ${meta.cls} ${suitId} ${variant}${primed ? ' primed' : ''}">${face}</span>` +
       // the bomb hangs on the WRAPPER: .pc clips its own overflow
-      (primed ? `<span class="bomb"><svg viewBox="0 0 100 100" aria-hidden="true">` +
-                  `<circle cx="46" cy="60" r="31" fill="#15130f"/>` +
-                  `<circle cx="46" cy="60" r="31" fill="url(#bombBody)"/>` +
-                  `<path d="M18 52a31 31 0 0 1 26-22 31 31 0 0 0-22 30z" fill="#8e8a80" opacity=".5"/>` +
-                  `<ellipse cx="33" cy="46" rx="8" ry="5.5" fill="#fff" opacity=".26" transform="rotate(-28 33 46)"/>` +
-                  `<rect x="37" y="22" width="17" height="12" rx="3" fill="#33302a"/>` +
-                  `<rect x="37" y="22" width="17" height="4" rx="2" fill="#5c574d"/>` +
-                  `<path d="M54 27c9-7 19-4 22 3" fill="none" stroke="#7a6a4a" stroke-width="5" stroke-linecap="round"/>` +
-                  `<circle class="fizz-glow" cx="76" cy="30" r="15" fill="url(#sparkGlow)"/>` +
-                  `<g class="fizz" fill="#ffd980">` +
-                    `<path d="M76 18l3.4 8.6L88 30l-8.6 3.4L76 42l-3.4-8.6L64 30l8.6-3.4z"/>` +
-                    `<circle cx="76" cy="30" r="3.6" fill="#fffbe8"/></g>` +
-                `</svg></span>` : '') +
+      (primed ? BOMB_SVG : '') +
       `<span class="tip" id="${u}-tip" role="tooltip">` +
         `<b>${rank}${meta.name ? ' \u00b7 ' + meta.name : ''}</b>${rule}</span>`;
     return b;
@@ -1201,19 +1853,44 @@ function wireHand() {
   let armed = null;
 
   const disarm = () => { if (armed) { armed.classList.remove('is-armed');
-    armed.setAttribute('aria-pressed', 'false'); armed = null; } };
+    armed.setAttribute('aria-pressed', 'false'); armed = null; }
+    /* The riding buffs are NOT discarded. They belong to the trick, not to the
+       card, so putting a card back changes nothing about what is live. */
+    selectedPick = null; repaintTrick(); };
 
-  cards().forEach(c => c.addEventListener('click', () => {
-    if (armed === c) {
-      say(c.getAttribute('aria-label') + ' played');
+  cards().forEach(c => {
+    c.addEventListener('click', () => {
+      /* The ONE targeting flow in the game: a Timebomb primes a card. */
+      if (armingBomb) {
+        primedPick = c; armingBomb = null;
+        repaintTrick();
+        say('Timebomb primed on your ' + c.dataset.label);
+        return;
+      }
+      if (armed === c) {
+        const sc = scoreTrick(c);
+        say(c.dataset.label + ' played' + (riding.length
+          ? ` — ${sc.peak} of ${riding.length} riding would fire` : ''));
+        return;
+      }
       disarm();
-      return;
-    }
-    disarm();
-    c.classList.add('is-armed');
-    c.setAttribute('aria-pressed', 'true');
-    armed = c;
-  }));
+      c.classList.add('is-armed');
+      c.setAttribute('aria-pressed', 'true');
+      armed = c;
+      selectedPick = c;
+      repaintTrick();
+    });
+    /* Hover and focus only reveal the DETAIL behind a ring that is already on
+       the card's face, so this stays inside game-ux's rule about hover. */
+    c.addEventListener('mouseenter', () => { holdOpen();
+      if (!selectedPick && hoverPick !== c) { hoverPick = c; renderRiding(); } });
+    c.addEventListener('mouseleave', scheduleClose);
+    c.addEventListener('focus', () => { holdOpen();
+      if (!selectedPick && hoverPick !== c) { hoverPick = c; renderRiding(); } });
+    /* Focus does NOT schedule a close on blur: tabbing into the panel's ✕ moves
+       focus out of the card, and closing there would put the keyboard user in
+       exactly the trap the mouse bridge exists to avoid. Escape closes it. */
+  });
 
   const first = cards()[0];
   if (first) first.tabIndex = 0;
@@ -1246,6 +1923,18 @@ document.querySelectorAll('.pc-slot').forEach(s => {
 document.querySelector('.hand .pick[aria-label^="2 of Bells"]')?.classList.add('is-illegal');
 wireHand();
 
+/* The load ring's colour is the developer's call, so both candidates are live.
+   Red is what was asked for; red also already means damage and hurt in this UI
+   (--wc-alarm), while brass already means yours-and-selected. */
+document.getElementById('hue')?.addEventListener('click', e => {
+  const red = e.target.textContent.includes('red');
+  const r = document.documentElement.style;
+  r.setProperty('--load-hue', red ? 'var(--load-brass)' : 'var(--load-red)');
+  r.setProperty('--load-hue-deep', red ? 'var(--load-brass-deep)' : 'var(--load-red-deep)');
+  e.target.textContent = red ? 'Ring: brass' : 'Ring: red';
+});
+window.addEventListener('resize', () => { if (selectedPick) renderRiding(); });
+
 /* ------------------------------------------------------------------ data */
 /* Names, conditions, rewards and cadences follow src/app/warCouncil/buffLabels.ts
    and src/hunt/buffs.ts BUFF_CADENCE. Counts are illustrative. */
@@ -1268,7 +1957,7 @@ const CARDS = [
   { name:'Unbloodied (Blade)',    cad:'WHEN',     suit:null,    cond:'survive several tricks without a hit', reward:'+2 damage',  tier:'silver', n:1 },
   { name:'Keepsake (Purse)',      cad:'HAND END', suit:'moons', cond:"hold a Moons card at hand's end",   reward:'+4 coins',      tier:'gold',   n:1 },
   { name:'Cornered (Blade)',      cad:'WHEN',     suit:null,    cond:'be low on health',                  reward:'+3 damage',     tier:'gold',   n:1 },
-  { name:'Cheat (Free Rein)',     cad:'PRESS',    suit:null,    cond:'play any card, ignoring follow-suit', reward:'1 trick of no follow-suit', tier:'bronze', n:2 },
+  { name:'Cheat (Free Rein)',     cad:'PRESS',    suit:null,    cond:'play any card, ignoring follow-suit', reward:'1 trick free', tier:'bronze', n:2 },
   { name:'Timebomb (Blade)',      cad:'PRESS',    suit:null,    cond:'prime a card in your hand',         reward:'+4 damage',     tier:'bronze', n:2,
     split:['+4 them','2 you'] },
   { name:'Ward (Blast Guard)',    cad:'PRESS',    suit:null,    cond:'absorb the next hit',               reward:'2 blue hearts', tier:'gold',   n:1 },
@@ -1434,14 +2123,30 @@ function tap(el, c) {
   if (poised && poised !== el) poised.setAttribute('aria-pressed','false');
   if (poised !== el) { el.setAttribute('aria-pressed','true'); poised = el; return; }
 
-  // second tap on the SAME card = commit. One copy leaves the stack.
+  /* Second tap on the SAME card = commit. One copy leaves the stack AND lands
+     on the trick, which is this file's own open question 3 answered: a spent
+     card no longer just vanishes with the payout arriving later and nothing
+     joining the two. It is now visibly riding a card you can point at, and it
+     can be taken back off. */
   const name = c.name;
   el.classList.add('fired');
-  say(name + ' fired — ' + c.reward + (c.n > 1 ? '  ·  ' + (c.n - 1) + ' left' : '  ·  last one'));
+  const snapshot = { ...c };
   c.n -= 1;
   if (c.n <= 0) { const i = CARDS.indexOf(c); if (i > -1) CARDS.splice(i, 1); }
+  riding.push({ c:snapshot, uid:'L' + (++loadUid) });
   poised = null;
-  setTimeout(() => { render(); restoreFocus(name); }, 380);
+  /* Timebomb is the ONE buff that takes a card, so it is the one place the
+     player is asked to choose one. Everything else is already live. */
+  if (/Timebomb/.test(name)) {
+    armingBomb = true;
+    say('Choose the card to prime — a Timebomb is the one buff that attaches to one');
+  } else {
+    const reach = reachOf(snapshot);
+    say(name + (reach === null ? ' is riding this trick'
+      : reach === 0 ? ' is riding — but no card in your hand can fire it'
+      : ` is riding — ${reach} of your cards lit up`));
+  }
+  setTimeout(() => { render(); restoreFocus(name); repaintTrick(); }, 380);
 }
 
 /* keep the keyboard where it was after a re-render, or fall back to the first card */
