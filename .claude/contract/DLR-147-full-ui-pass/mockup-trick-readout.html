@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>The trick — skull cards and what their card does to you</title>
+<style>
+/* ============================================================================
+   The played card and the consequence readout beneath it — 2026-08-26
+   A FLOW SHEET, not a play surface: it scrolls deliberately.
+   Facts from .docs/game_rules/the-hunt.md — "What a skull does", the Swan /
+   Monarch / Witch rank rules, and the section stating the game will NOT tell
+   you which branch will happen. Card design from mockup-buff-metal.html.
+   Everything marked PLACEHOLDER is the developer's.
+   ========================================================================== */
+:root {
+  --wc-chamber:#0c1013; --wc-chamber-lift:#141a1f;
+  --wc-felt:#16241f; --wc-felt-lip:#0a1211; --wc-felt-line:#2b4038;
+  --wc-parchment:#f2ecdc; --wc-parchment-shade:#ded3b8; --wc-parchment-deep:#c4b593;
+  --wc-ink:#191610; --wc-ink-soft:#5c5443;
+  --wc-brass:#c99a4e; --wc-brass-dim:#7d6132;
+  --wc-chalk:#cdd6d2; --wc-chalk-dim:#6f7d78; --wc-alarm:#d1705f;
+  --wc-bells:#c9873f; --wc-keys:#5f93a8; --wc-moons:#9c7cb8;
+  --wc-timebomb:#8fb04e;
+  --wc-serif:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+  --wc-sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+  /* PLACEHOLDER — the skull card's wash. Deliberately ONE colour for every suit. */
+  --skull-a:#2b2622; --skull-b:#0d0b09; --bone:#efe8d7;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--wc-chamber); color:var(--wc-chalk); color-scheme:dark;
+  font-family:var(--wc-sans); -webkit-font-smoothing:antialiased;
+  padding:clamp(1rem,3vw,2.4rem) clamp(.9rem,3vw,2.4rem) 6rem; }
+h1 { margin:0 0 .4rem; font-family:var(--wc-serif); font-weight:400; color:var(--wc-brass);
+  font-size:clamp(1.3rem,3.4vw,2rem); }
+.lede { margin:0 0 1.8rem; max-width:72ch; color:var(--wc-chalk-dim); line-height:1.6;
+  font-size:clamp(.76rem,1.6vw,.87rem); }
+.lede b { color:var(--wc-chalk); font-weight:600; }
+h2.sec { margin:2.6rem 0 .3rem; font-family:var(--wc-serif); font-weight:400; color:var(--wc-chalk);
+  font-size:clamp(.98rem,2.2vw,1.28rem); }
+p.note { margin:0 0 1.1rem; max-width:78ch; font-size:.73rem; line-height:1.6; color:var(--wc-chalk-dim); }
+p.note b { color:var(--wc-chalk); }
+code { background:#1a2226; padding:.06rem .3rem; border-radius:3px; font-size:.94em; }
+
+/* ---------- playing card ---------- */
+.pc { position:relative; width:var(--pcw,5.6rem); aspect-ratio:2/3; border-radius:7px;
+  overflow:hidden; color:var(--wc-ink); --suit:var(--wc-ink);
+  background:radial-gradient(120% 90% at 50% 0%, #fffbf2 0%, var(--wc-parchment) 44%, var(--wc-parchment-shade) 100%);
+  border:1px solid var(--wc-parchment-deep);
+  box-shadow:0 4px 10px #00000073, inset 0 0 0 1px #ffffffaa; }
+.pc.bells { --suit:var(--wc-bells); --art-a:#e08a3a; --art-b:#ffe3ad; --fig:#40260c; }
+.pc.keys  { --suit:var(--wc-keys);  --art-a:#6f9fc0; --art-b:#eaf5fd; --fig:#132e3d; }
+.pc.moons { --suit:var(--wc-moons); --art-a:#6a4f96; --art-b:#e4d8f6; --fig:#241640; }
+.pc .corner { position:absolute; z-index:3; top:5%; left:7%; display:grid;
+  grid-template-columns:auto auto; column-gap:.16rem; align-items:center; line-height:1; }
+.pc .corner .r { font-family:var(--wc-serif); font-size:.9rem; color:var(--suit); }
+.pc .corner .g { width:.66rem; height:.66rem; color:var(--suit); }
+.pc .corner .nm { grid-row:2; grid-column:1/-1; font-family:var(--wc-serif); font-size:.38rem;
+  letter-spacing:.04em; color:var(--wc-ink-soft); margin-top:.08rem; white-space:nowrap; }
+.pc .art { position:absolute; left:7%; right:7%; top:24%; bottom:6%; border-radius:4px;
+  overflow:hidden; z-index:1; box-shadow:0 0 0 1px #00000033; }
+.pc .art .wash { position:absolute; inset:0;
+  background:radial-gradient(78% 62% at 50% 34%, var(--art-b) 0%,
+    color-mix(in srgb, var(--art-a) 55%, var(--art-b)) 42%, var(--art-a) 100%); }
+.pc .art .figure { position:absolute; left:50%; bottom:6%; width:66%; transform:translateX(-50%);
+  color:var(--fig); }
+.pc .art .figure svg { width:100%; display:block; }
+.pc .art .vig { position:absolute; inset:0; box-shadow:inset 0 0 10px 4px #00000026; }
+.pc .pips { position:absolute; inset:26% 24% 20% 24%; z-index:2; display:grid;
+  grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(7,1fr);
+  justify-items:center; align-items:center; }
+.pc .pips .g { width:100%; max-width:.5rem; aspect-ratio:1; color:var(--suit); }
+.pc .pips .g.inv { transform:rotate(180deg); }
+.pc.empty { background:transparent; border:1px dashed #3d5a50; box-shadow:none; }
+
+/* the skulled card: ONE wash, ONE skull, whatever the suit or rank */
+.pc.skull .art .wash {
+  background:radial-gradient(72% 58% at 50% 32%, #4a423a 0%, var(--skull-a) 46%, var(--skull-b) 100%); }
+.pc.skull .art .figure { color:var(--bone); width:74%; bottom:9%; }
+.pc.skull { border-color:#6b5f52; box-shadow:0 4px 10px #00000073, inset 0 0 0 1px #ffffff8a,
+  0 0 0 1px #2a231d; }
+.pc.skull .art { box-shadow:0 0 0 1px #00000066; }
+
+/* ---------- the trick ---------- */
+.felt { border-radius:12px; padding:clamp(.8rem,2vw,1.3rem);
+  background:radial-gradient(70% 100% at 50% 0%, #1d2f28 0%, var(--wc-felt) 68%, #101b18 100%);
+  box-shadow:inset 0 0 0 1px var(--wc-felt-line), inset 0 0 0 6px var(--wc-felt-lip); }
+.well { display:flex; gap:clamp(1rem,3vw,2.2rem); justify-content:center; align-items:flex-start;
+  padding:clamp(.5rem,1.4vh,.9rem) clamp(1rem,3vw,2rem); border-radius:6px;
+  box-shadow:inset 0 0 0 1px #ffffff0d; width:max-content; margin:0 auto; }
+.well figure { margin:0; display:flex; flex-direction:column; align-items:center; gap:.35rem; }
+.well figcaption { font-size:.5rem; letter-spacing:.11em; color:var(--wc-chalk-dim); }
+
+/* ---------- the consequence readout — replaces "Their intent" ----------
+   An off-white slip on the felt, matching the card faces: same parchment gradient,
+   same printed hairline, so it reads as part of the same deck rather than as a HUD
+   panel bolted onto the table.
+
+   TEXT COLOURS ARE MEASURED, NOT PICKED. On this light ground the two project accent
+   tokens FAIL WCAG AA outright — `--wc-alarm` #d1705f drops to 3.03:1 and
+   `--wc-brass` #c99a4e to 2.29:1. Each is therefore replaced by a darker member of
+   its own family, so it still reads as "the red one" and "the gold one":
+
+     body                #1b1710  15.96:1   (the card's own ink)
+     label, small caps   #5f5647   6.46:1   (the card's own ink-soft)
+     costs you           #96301f   6.86:1   deep madder, in place of --wc-alarm
+     worth having        #6f5412   6.36:1   deep bronze, in place of --wc-brass
+
+   All four are PLACEHOLDERS as values; the 4.5:1 FLOOR is not. Re-measure if the
+   parchment is retuned. */
+.readout { width:max-content; max-width:100%; margin:.75rem auto 0; border-radius:8px;
+  overflow:hidden; color:var(--readout-ink);
+  --readout-ink:#1b1710; --readout-soft:#5f5647;
+  --readout-bad:#96301f; --readout-good:#6f5412; --readout-rule:#c9bfa6;
+  background:radial-gradient(120% 92% at 50% 0%, #fffdf7 0%, #f6f2e8 52%, #e6dcc6 100%);
+  border:1px solid var(--wc-parchment-deep);
+  box-shadow:0 4px 12px #00000066, inset 0 0 0 1px #ffffffd9; }
+.readout .what { display:flex; align-items:baseline; gap:.4rem; padding:.36rem .7rem;
+  border-bottom:1px solid var(--readout-rule); font-size:.62rem;
+  color:var(--readout-ink); font-family:var(--wc-serif); }
+.readout .what .tagline { color:var(--readout-soft); font-family:var(--wc-sans); font-size:.55rem; }
+.readout .what .skulled { margin-left:.15rem; padding:.06rem .32rem; border-radius:3px;
+  border:1px solid var(--readout-bad); color:var(--readout-bad); font-family:var(--wc-sans);
+  font-size:.46rem; font-weight:700; letter-spacing:.1em; }
+.branch { display:grid; grid-template-columns:4.4rem 1fr; align-items:baseline; gap:.6rem;
+  padding:.34rem .7rem; font-size:.62rem; line-height:1.45; }
+.branch + .branch { border-top:1px solid var(--readout-rule); }
+.branch .k { font-size:.48rem; letter-spacing:.12em; font-weight:700;
+  color:var(--readout-soft); text-transform:uppercase; }
+.branch .v { color:var(--readout-ink); }
+.branch .v em { color:var(--readout-soft); font-style:normal; }
+.branch .v .bad { color:var(--readout-bad); font-weight:700; }
+.branch .v .good { color:var(--readout-good); font-weight:700; }
+
+/* what "nothing to say" looks like: nothing. Sheet annotation only — this marker is
+   not part of the UI; in the game that space is simply felt. */
+.nothing { width:max-content; margin:.75rem auto 0; padding:.3rem .6rem; border-radius:6px;
+  border:1px dashed #2a3a35; color:#4c5b56; font-size:.55rem; letter-spacing:.08em; }
+
+.hand { display:flex; gap:.35rem; justify-content:center; margin-top:clamp(.8rem,2vh,1.3rem); }
+.hand .pc { --pcw:4.2rem; }
+
+/* ---------- examples grid ---------- */
+.examples { display:grid; gap:clamp(.7rem,1.6vw,1.1rem);
+  grid-template-columns:repeat(auto-fit,minmax(19rem,1fr)); align-items:start; }
+.ex { border:1px solid #232c33; border-radius:12px; background:#101619; overflow:hidden; }
+.ex > header { padding:.5rem .75rem; border-bottom:1px solid #1e262b; background:#141c20;
+  font-family:var(--wc-serif); font-size:.8rem; color:var(--wc-chalk); }
+.ex .body { padding:.8rem .75rem; display:flex; gap:.8rem; align-items:flex-start; }
+.ex .readout { margin:0; flex:1; }
+
+.foot { margin:3rem 0 0; padding-top:1.2rem; border-top:1px solid #232c33; max-width:80ch;
+  color:var(--wc-chalk-dim); font-size:.73rem; line-height:1.65; }
+.foot h3 { margin:1.2rem 0 .4rem; color:var(--wc-brass); font-size:.82rem;
+  font-family:var(--wc-serif); font-weight:400; }
+.foot ul { margin:.3rem 0 1rem; padding-left:1.1rem; }
+.foot li { margin:.34rem 0; }
+
+/* ---------- sheet navigation — NOT part of the game UI ----------
+   position:fixed so it costs the layout nothing: the gallery is a full-viewport
+   no-scroll shell and must not gain a nav row. Kept quiet and out of the way. */
+.sheetnav { position:fixed; left:.6rem; bottom:.6rem; z-index:60; display:flex; flex-wrap:wrap;
+  align-items:center; gap:.28rem; padding:.3rem .45rem; border-radius:9px;
+  border:1px solid #2a373d; background:#0b1113ee; backdrop-filter:blur(3px);
+  font-family:system-ui,-apple-system,'Segoe UI',sans-serif; font-size:.58rem;
+  max-width:min(34rem, calc(100vw - 1.2rem)); }
+.sheetnav > span { color:#54635e; letter-spacing:.09em; margin-right:.15rem; }
+.sheetnav a { text-decoration:none; padding:.16rem .4rem; border-radius:5px; color:#9fb0aa;
+  border:1px solid transparent; white-space:nowrap; }
+.sheetnav a:hover { color:#e6d3ac; border-color:#7d6132; background:#1a1710; }
+.sheetnav a:focus-visible { outline:2px solid #c99a4e; outline-offset:2px; }
+.sheetnav a[aria-current='page'] { color:#c99a4e; border-color:#3c4b45; background:#141c20; }
+.sheetnav a.home { color:#c99a4e; }
+@media print { .sheetnav { display:none; } }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="s-bells" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7"
+    stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="2.9" r="1.05"/>
+    <path d="M12 4.9v.8"/><path d="M6.6 16.1v-4.3a5.4 5.4 0 0 1 10.8 0v4.3"/><path d="M4.4 16.1h15.2"/>
+    <path d="M9.9 18.7a2.1 2.1 0 0 0 4.2 0"/></g></symbol>
+  <symbol id="s-keys" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7"
+    stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6.5" r="3.7"/>
+    <path d="M12 10.2V21"/><path d="M12 14.3h3.5M12 17h2.7"/></g></symbol>
+  <symbol id="s-moons" viewBox="0 0 24 24"><path d="M15.4 3.6a8.4 8.4 0 1 0 4.1 12 6.9 6.9 0 0 1-4.1-12z"
+    fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+</svg>
+
+<h1>The trick — a skulled card, and what it does to you</h1>
+<p class="lede">
+  Two changes to the middle of the felt. <b>A skulled card shows a skull instead of its character
+  art</b> — one skull, one wash, identical on every rank and every suit, with the suit still named in
+  the corner index. And <b>underneath the trick sits a readout of what their card actually does to
+  you</b>, which <b>replaces the “Their intent” panel</b> in the left dossier.
+</p>
+
+<h2 class="sec">The skulled card</h2>
+<p class="note">
+  Every skulled card is the same object: the same bone skull on the same dark wash, whatever its rank
+  or suit. That uniformity is the point — a skull is a property of the trick, not a character, and a
+  player should recognise one across the table without reading it. The <b>rank and suit stay in the
+  corner</b>, because the trick is still decided on them.
+</p>
+<div class="examples" id="skulls"></div>
+
+<h2 class="sec">The trick, with the readout underneath</h2>
+<p class="note">
+  The readout says what their card does <b>to you</b>, in both branches, and <b>never predicts which
+  branch happens</b> — <code>the-hunt.md</code> is explicit that the game will not tell you whether
+  you are about to win, because that would hand you the Quarry's card. So both outcomes are stated
+  and neither is emphasised.
+</p>
+<div class="felt" id="trick"></div>
+
+<h2 class="sec">The same readout, for other cards they might lead</h2>
+<p class="note">
+  The wording follows the rank's real rule — and where a card has <b>nothing</b> to say, the readout
+  <b>does not render at all</b>. No panel appears to tell you that nothing is happening. The two
+  cases below marked “no readout” show that emptiness deliberately; in the game that space is simply
+  felt.
+</p>
+<div class="examples" id="examples"></div>
+
+<section class="foot">
+  <h3>The new requirement, stated plainly</h3>
+  <ul>
+    <li><b>A skulled card renders a skull, not its character art.</b> One bone skull on one dark
+      wash, identical across every rank and suit. The corner index keeps rank, suit glyph and rank
+      name, because the trick is still won on rank and suit. The current felt marks a skull with a
+      small glyph on an otherwise ordinary card; this makes it the card's whole face.</li>
+    <li><b>Below the trick, a readout of the led card's consequence for you</b> — an <em>if you
+      win</em> / <em>if you lose</em> pair when the outcome differs, or a single <em>rule</em> row
+      when the card constrains your legal play or changes how the trick resolves.</li>
+    <li><b>It renders only when there is something to say.</b> A clean low card produces no panel at
+      all, and neither does the state before the Quarry has played. The readout sits under the trick
+      on every hand, so a row reading “nothing extra” would be permanent furniture teaching the
+      player to stop looking — which is exactly the thing that would make it useless on the hand
+      where it matters.</li>
+    <li><b>It is an off-white slip, matching the cards</b> — same parchment gradient, same printed
+      hairline, so it reads as part of the deck rather than a HUD panel bolted onto the table.</li>
+    <li><b>Its text colours are measured, not picked.</b> On a light ground both project accent
+      tokens fail WCAG AA outright — <code>--wc-alarm</code> falls to <b>3.03:1</b> and
+      <code>--wc-brass</code> to <b>2.29:1</b>. Each is replaced by a darker member of its own family
+      so it still reads as the red one and the gold one: body <code>#1b1710</code> 15.96:1, label
+      <code>#5f5647</code> 6.46:1, <b>costs you</b> <code>#96301f</code> 6.86:1, <b>worth having</b>
+      <code>#6f5412</code> 6.36:1. The values are placeholders; the 4.5:1 floor is not.</li>
+    <li><b>It is deliberately quiet.</b> Labels are plain small-caps, no chips, and colour appears
+      only on the consequence itself. An earlier pass used red and green pills and read as a traffic
+      light — and the green was not a project colour at all.</li>
+    <li><b>It never predicts the outcome.</b> Both branches are shown, neither highlighted. This is
+      not a style choice: the ruleset withholds the Quarry's card deliberately, and a readout that
+      leaned one way would leak it.</li>
+    <li><b>“Their intent” is removed from the dossier.</b> Its job was to telegraph what they would
+      lead; once they <em>have</em> led, the card itself is better information, and this readout says
+      what the card means rather than what suit was coming.</li>
+  </ul>
+
+  <h3>The gap that removing “Their intent” leaves — needs your call</h3>
+  <ul>
+    <li><b>When <em>you</em> lead, there is no played card to describe.</b> Their card is face down,
+      and the ruleset says a skull or Timebomb mark is not yet decided in that state — which is
+      exactly when a telegraph was worth having. Options, and I have not chosen: the readout carries
+      the telegraph in that state instead (“They are holding Keys”), or it states the estimate the
+      damage readout already uses (slanted, prefixed <code>~</code>), or it collapses and the felt
+      shows nothing until they answer. The mockup shows the third for comparison.</li>
+    <li><b>A skull that changes hands keeps its skull</b> — the Quarry's Fox can exchange a skulled
+      card into the decree, and your Fox can take it into hand. So a card in <em>your</em> hand can be
+      skulled, and it must then render as a skull card too. Worth confirming that is wanted, because
+      it means your own hand can contain a card whose face is a skull.</li>
+    <li>Every colour and size here is a <b>PLACEHOLDER</b> — the skull wash, the bone tone, the
+      readout's row colours, and the skull's proportions.</li>
+  </ul>
+</section>
+
+<script>
+const glyph = id => `<svg class="g" aria-hidden="true"><use href="#${id}"/></svg>`;
+const SUITNAME = { bells:'Bells', keys:'Keys', moons:'Moons' };
+const RANKNAME = { 1:'Swan', 3:'Fox', 5:'Woodcutter', 7:'Treasure', 9:'Witch', 11:'Monarch' };
+
+/* A skull, drawn once and reused for every skulled card. Three tones plus dark sockets. */
+let uid = 0;
+const SKULL = () => { const u = 'sk' + (++uid); return `
+  <svg viewBox="0 0 100 100" aria-hidden="true">
+    <defs>
+      <linearGradient id="${u}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fbf7ec"/><stop offset=".52" stop-color="#e3dbc6"/>
+        <stop offset="1" stop-color="#b5a98d"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="50" cy="93" rx="30" ry="4" fill="#000" opacity=".3"/>
+    <!-- cranium and jaw -->
+    <path d="M50 8C29 8 16 21 16 40c0 10 4 18 9 23 3 4 5 7 5 11v4c0 5 4 8 9 8h22c5 0 9-3 9-8v-4
+      c0-4 2-7 5-11 5-5 9-13 9-23C84 21 71 8 50 8z" fill="url(#${u})"/>
+    <!-- brow shadow -->
+    <path d="M20 34c3-11 12-19 24-21-14 4-22 12-24 21z" fill="#fff" opacity=".5"/>
+    <path d="M80 34c-3-11-12-19-24-21 14 4 22 12 24 21z" fill="#8d8168" opacity=".45"/>
+    <!-- eye sockets -->
+    <ellipse cx="36" cy="43" rx="10" ry="11" fill="#171310"/>
+    <ellipse cx="64" cy="43" rx="10" ry="11" fill="#171310"/>
+    <ellipse cx="33" cy="39" rx="3.2" ry="3.6" fill="#fff" opacity=".16"/>
+    <ellipse cx="61" cy="39" rx="3.2" ry="3.6" fill="#fff" opacity=".16"/>
+    <!-- cheekbones -->
+    <path d="M23 47c2 8 6 14 12 18l-3 4c-7-5-11-13-12-22z" fill="#8d8168" opacity=".4"/>
+    <path d="M77 47c-2 8-6 14-12 18l3 4c7-5 11-13 12-22z" fill="#8d8168" opacity=".4"/>
+    <!-- nasal cavity -->
+    <path d="M50 54l7 13H43z" fill="#171310"/>
+    <!-- teeth -->
+    <path d="M33 72h34v10a4 4 0 0 1-4 4H37a4 4 0 0 1-4-4z" fill="url(#${u})"/>
+    <g fill="#171310" opacity=".8">
+      <rect x="39" y="72" width="1.8" height="14"/><rect x="45" y="72" width="1.8" height="14"/>
+      <rect x="51" y="72" width="1.8" height="14"/><rect x="57" y="72" width="1.8" height="14"/>
+    </g>
+    <path d="M33 72h34" stroke="#171310" stroke-width="1.6" opacity=".55" fill="none"/>
+  </svg>`; };
+
+const PIP_LAYOUT = {
+  2:[[1,2],[7,2]], 4:[[1,1],[1,3],[7,1],[7,3]], 6:[[1,1],[1,3],[4,1],[4,3],[7,1],[7,3]],
+  7:[[1,1],[1,3],[3,1],[3,3],[5,1],[5,3],[4,2]],
+  8:[[1,1],[1,3],[3,1],[3,3],[5,1],[5,3],[7,1],[7,3]],
+  10:[[1,1],[1,3],[3,1],[3,3],[5,1],[5,3],[7,1],[7,3],[2,2],[6,2]],
+};
+const pipField = (suit, rank) => `<span class="pips">` +
+  (PIP_LAYOUT[rank] || [[4,2]]).map(([r,c]) =>
+    `<svg class="g${r>4?' inv':''}" style="grid-row:${r};grid-column:${c}" aria-hidden="true">` +
+    `<use href="#s-${suit}"/></svg>`).join('') + `</span>`;
+
+const FIG_FOX = `<svg viewBox="0 0 100 100" aria-hidden="true"><g fill="currentColor">
+  <path d="M24 88C2 82 4 50 28 45c-8 16-3 31 10 37z"/>
+  <path d="M34 88c0-18 10-29 24-29s24 11 24 29z"/>
+  <path d="M37 44L41 14l16 16h10l16-16 4 30c0 7-3 13-8 17L62 74 45 61c-5-4-8-10-8-17z"/>
+  <circle cx="51" cy="45" r="2.8" fill="#fff" opacity=".8"/>
+  <circle cx="73" cy="45" r="2.8" fill="#fff" opacity=".8"/></g></svg>`;
+
+const FIG_SWAN = `<svg viewBox="0 0 100 100" aria-hidden="true"><g fill="currentColor">
+  <ellipse cx="45" cy="72" rx="31" ry="16"/>
+  <path d="M62 67C50 53 54 29 70 24" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="72" cy="23" r="8.5"/><path d="M79 21l13 4-13 5z"/></g></svg>`;
+const FIG_CROWN = `<svg viewBox="0 0 100 100" aria-hidden="true"><g fill="currentColor">
+  <path d="M18 74L10 26l22 17L50 16l18 27 22-17-8 48z"/><rect x="15" y="75" width="70" height="15" rx="5"/>
+  <circle cx="50" cy="29" r="5" fill="#fff" opacity=".5"/></g></svg>`;
+const FIG_WITCH = `<svg viewBox="0 0 100 100" aria-hidden="true"><g fill="currentColor">
+  <rect x="75" y="18" width="5" height="74" rx="2.5"/><circle cx="78" cy="15" r="7.5" fill="none"
+    stroke="currentColor" stroke-width="4"/><path d="M22 92c0-30 10-48 24-48s24 18 24 48z"/>
+  <path d="M32 52c0-13 6-21 14-21s14 8 14 21c0 7-28 7-28 0z" opacity=".55"/></g></svg>`;
+
+function card(rank, suit, opts = {}) {
+  const el = document.createElement('div');
+  el.className = 'pc ' + suit + (opts.skull ? ' skull' : '');
+  if (opts.width) el.style.setProperty('--pcw', opts.width);
+  const nm = RANKNAME[rank];
+  el.setAttribute('role','img');
+  el.setAttribute('aria-label',
+    `${rank} of ${SUITNAME[suit]}${nm ? ' — ' + nm : ''}${opts.skull ? ', skulled' : ''}`);
+  const FIGS = { 1:FIG_SWAN, 3:FIG_FOX, 9:FIG_WITCH, 11:FIG_CROWN };
+  const art = opts.skull ? SKULL() : (opts.fig || FIGS[rank] || '');
+  el.innerHTML =
+    `<span class="corner"><span class="r">${rank}</span>${glyph('s-' + suit)}` +
+      (nm ? `<span class="nm">${nm}</span>` : '') + `</span>` +
+    (art
+      ? `<span class="art"><span class="wash"></span>
+         <span class="figure">${art}</span><span class="vig"></span></span>`
+      : pipField(suit, rank));
+  return el;
+}
+
+/* ---------- readout ---------- */
+/* A readout with no rows is not rendered at all. The felt does not get a panel
+   telling the player that nothing is happening. */
+function readout(spec) {
+  if (!spec.rows || !spec.rows.length) {
+    const n = document.createElement('p');
+    n.className = 'nothing';
+    n.textContent = '\u2014 nothing renders here \u2014';
+    return n;
+  }
+  const d = document.createElement('div');
+  d.className = 'readout';
+  d.setAttribute('role','group');
+  d.setAttribute('aria-label','What their card does');
+  const rows = spec.rows.map(([kind, k, v]) =>
+    `<div class="branch ${kind}"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
+  d.innerHTML =
+    `<div class="what">${spec.title}<span class="tagline">${spec.tag || ''}</span>` +
+      (spec.skulled ? `<span class="skulled">SKULL</span>` : '') + `</div>` + rows;
+  return d;
+}
+
+/* ---------- 1. skulled cards, all identical ---------- */
+[[7,'bells'],[3,'keys'],[10,'moons']].forEach(([r, s]) => {
+  const ex = document.createElement('section');
+  ex.className = 'ex';
+  ex.innerHTML = `<header>${r} of ${SUITNAME[s]}${RANKNAME[r] ? ' — ' + RANKNAME[r] : ''}, skulled</header>
+    <div class="body"></div>`;
+  const b = ex.querySelector('.body');
+  b.appendChild(card(r, s, { skull:true }));
+  const p = document.createElement('p');
+  p.style.cssText = 'margin:0;font-size:.66rem;line-height:1.5;color:var(--wc-chalk-dim)';
+  p.innerHTML = 'Same skull, same wash. Only the corner changes — and the corner is what the trick is won on.';
+  b.appendChild(p);
+  document.getElementById('skulls').appendChild(ex);
+});
+
+/* ---------- 2. the trick ---------- */
+const felt = document.getElementById('trick');
+const well = document.createElement('div');
+well.className = 'well';
+const f1 = document.createElement('figure');
+f1.appendChild(card(1, 'bells', { skull:true, width:'6.4rem' }));
+f1.insertAdjacentHTML('beforeend', '<figcaption>AOIFE LED</figcaption>');
+const f2 = document.createElement('figure');
+const empty = document.createElement('div');
+empty.className = 'pc empty'; empty.style.setProperty('--pcw','6.4rem');
+f2.appendChild(empty);
+f2.insertAdjacentHTML('beforeend', '<figcaption>YOU — TO FOLLOW</figcaption>');
+well.append(f1, f2);
+felt.appendChild(well);
+felt.appendChild(readout({
+  title: 'Their 1 of Bells — Swan', skulled: true,
+  rows: [
+    ['win','IF YOU WIN','You <span class="bad">eat the skull</span>. And their Swan lost the trick, so <b>Aoife leads next</b>.'],
+    ['lose','IF YOU LOSE','<span class="good">Aoife eats the skull.</span> Their Swan won, so it does nothing.'],
+  ],
+}));
+const hand = document.createElement('div');
+hand.className = 'hand';
+[[2,'bells'],[7,'bells'],[3,'keys'],[9,'keys'],[10,'moons'],[4,'moons']]
+  .forEach(([r,s]) => hand.appendChild(card(r, s, {})));
+felt.appendChild(hand);
+
+/* ---------- 3. other led cards ---------- */
+const EX = [
+  { head:'A clean 4 of Keys — no readout at all', card:[4,'keys',{}],
+    spec:{ rows:[] } },
+  { head:'A skulled 7 of Bells', card:[7,'bells',{skull:true}],
+    spec:{ title:'Their 7 of Bells — Treasure', skulled:true, tag:'— the rank does nothing',
+      rows:[['win','IF YOU WIN','You <span class="bad">eat the skull</span>.'],
+            ['lose','IF YOU LOSE','<span class="good">Aoife eats the skull.</span>']] } },
+  { head:'A led Monarch', card:[11,'moons',{fig:FIG_CROWN}],
+    spec:{ title:'Their 11 of Moons — Monarch', tag:'— it narrows you',
+      rows:[['rule','YOU MAY PLAY','Only your <b>Swan of Moons</b>, or your <b>highest Moons</b>.']] } },
+  { head:'A Witch, when yours is not one', card:[9,'keys',{fig:FIG_WITCH}],
+    spec:{ title:'Their 9 of Keys — Witch', tag:'— it changes how the trick is decided',
+      rows:[['rule','THIS TRICK','Their 9 counts as <b>trump</b>, unless you play a Witch too — two cancel.']] } },
+  { head:'A skulled Swan', card:[1,'moons',{skull:true}],
+    spec:{ title:'Their 1 of Moons — Swan', skulled:true, tag:'— two things at once',
+      rows:[['win','IF YOU WIN','You <span class="bad">eat the skull</span>, and <b>Aoife leads next</b>.'],
+            ['lose','IF YOU LOSE','<span class="good">Aoife eats the skull.</span>']] } },
+  { head:'You lead — no readout at all', card:null, spec:{ rows:[] } },
+];
+const wrap = document.getElementById('examples');
+EX.forEach(e => {
+  const ex = document.createElement('section');
+  ex.className = 'ex';
+  ex.innerHTML = `<header>${e.head}</header><div class="body"></div>`;
+  const b = ex.querySelector('.body');
+  if (e.card) b.appendChild(card(e.card[0], e.card[1], { ...e.card[2], width:'4.6rem' }));
+  b.appendChild(readout(e.spec));
+  wrap.appendChild(ex);
+});
+</script>
+<nav class="sheetnav" aria-label="Mockup sheets"><span>DLR-147</span><a class="home" href="index.html">Contents</a><a href="mockup-buff-gallery.html">Gallery</a><a href="mockup-buff-metal.html">Buff card</a><a href="mockup-trick-readout.html" aria-current="page">Trick</a><a href="mockup-util-cards.html">Cheat & Timebomb</a><a href="mockup-card-faces.html">Playing cards</a><a href="mockup-buff-suit.html">Suit options</a></nav>
+</body>
+</html>

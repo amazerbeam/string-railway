@@ -18,7 +18,16 @@ payout = floor(unplayedCards × tier(handOfFight))
 ```
 
 `unplayedCards` is how many cards were left in the player's hand at the instant the Quarry's health
-reached zero. `tier` is a lookup into `QUICK_KILL_TIER_MULTIPLIERS` in `config.ts` — `[2, 1, 0.5]`,
+reached zero.
+
+> **DLR-146 inflated this figure, and nothing was changed in response — the developer decides
+> whether it should be.** The player's hand is now refilled to `PLAYER_HAND_FLOOR` (4) as each trick
+> resolves, so it never falls below four during a hand. A kill on the fifth trick of a fight's first
+> hand used to pay `1 × 2 = 2` coins and now pays `4 × 2 = 8`. Nothing breaks and no arithmetic here
+> is wrong, but **"cards to spare" has stopped measuring speed** — which is the whole rule. The
+> faithful alternative is to count `HAND_SIZE - tricksPlayed` instead, which restores the original
+> intent at both floor values; that is a change to DLR-95's rule rather than to DLR-146's, so it was
+> deliberately not taken. Recorded as a Known tension in `.docs/game_rules/the-hunt.md`. `tier` is a lookup into `QUICK_KILL_TIER_MULTIPLIERS` in `config.ts` — `[2, 1, 0.5]`,
 transcribed from `version-4-scope.md` §4, which marks the curve "Confirmed as final". So:
 
 | Hand of the fight | Tier | 5 cards left pays |

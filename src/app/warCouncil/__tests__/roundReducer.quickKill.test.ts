@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PlayerSide, Suit } from '../../../warCouncil'
-import { DuelSide, isEncounterResolved, startEncounter } from '../../../hunt'
+import { DuelSide, isEncounterResolved, PLAYER_HAND_FLOOR, startEncounter } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
 import { createRoundUiState, RoundUiActionKind, type RoundUiSeed } from '../roundUiState'
 import {
@@ -55,11 +55,18 @@ describe('roundReducer — capturing the unplayed count at the kill (DLR-95 AC2)
     expect(state.unplayedAtResolve).toBeNull()
   })
 
-  it('freezes the player’s hand size on the transition that empties the Quarry’s bar', () => {
+  it('freezes the player’s hand size — refilled to the floor — on the transition that empties the Quarry’s bar', () => {
     const state = createRoundUiState(seedOneTrickKill())
     const led = card(Suit.Bells, 1)
-    // The played card is already gone from the hand by the transition `captureUnplayed` reads.
-    const expectedUnplayed = state.round.hands[PlayerSide.Player].length - 1
+    // DLR-146 — this used to be a bare `.length - 1` (the pre-refill count). The kill trick here
+    // is trick 3 of 6 (non-final), so `playCard`'s refill tops the player back up to
+    // PLAYER_HAND_FLOOR before `captureUnplayed` reads the hand — the deck has plenty of cards to
+    // draw, so the refill always reaches the floor exactly. `Math.max` keeps this correct whether
+    // or not a refill was needed, and collapses to the old `.length - 1` at PLAYER_HAND_FLOOR = 0.
+    const expectedUnplayed = Math.max(
+      state.round.hands[PlayerSide.Player].length - 1,
+      PLAYER_HAND_FLOOR,
+    )
 
     const killed = roundReducer(roundReducer(state, tap(led)), tap(led))
 

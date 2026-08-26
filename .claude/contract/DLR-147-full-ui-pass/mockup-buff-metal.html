@@ -240,6 +240,23 @@ code { background:#1a2226; padding:.06rem .3rem; border-radius:3px; font-size:.9
   font-family:var(--wc-serif); font-weight:400; }
 .foot ul { margin:.3rem 0 1.1rem; padding-left:1.1rem; }
 .foot li { margin:.32rem 0; }
+
+/* ---------- sheet navigation — NOT part of the game UI ----------
+   position:fixed so it costs the layout nothing: the gallery is a full-viewport
+   no-scroll shell and must not gain a nav row. Kept quiet and out of the way. */
+.sheetnav { position:fixed; left:.6rem; bottom:.6rem; z-index:60; display:flex; flex-wrap:wrap;
+  align-items:center; gap:.28rem; padding:.3rem .45rem; border-radius:9px;
+  border:1px solid #2a373d; background:#0b1113ee; backdrop-filter:blur(3px);
+  font-family:system-ui,-apple-system,'Segoe UI',sans-serif; font-size:.58rem;
+  max-width:min(34rem, calc(100vw - 1.2rem)); }
+.sheetnav > span { color:#54635e; letter-spacing:.09em; margin-right:.15rem; }
+.sheetnav a { text-decoration:none; padding:.16rem .4rem; border-radius:5px; color:#9fb0aa;
+  border:1px solid transparent; white-space:nowrap; }
+.sheetnav a:hover { color:#e6d3ac; border-color:#7d6132; background:#1a1710; }
+.sheetnav a:focus-visible { outline:2px solid #c99a4e; outline-offset:2px; }
+.sheetnav a[aria-current='page'] { color:#c99a4e; border-color:#3c4b45; background:#141c20; }
+.sheetnav a.home { color:#c99a4e; }
+@media print { .sheetnav { display:none; } }
 </style>
 </head>
 <body>
@@ -493,5 +510,6 @@ states.appendChild(card(byName('Key-Taker (Momentum)'), 'is-poised'));
 states.appendChild(card(byName('Cheat (Free Rein)'), 'is-dead'));
 states.appendChild(card(byName('Moon-Feeder (Blade)')));
 </script>
+<nav class="sheetnav" aria-label="Mockup sheets"><span>DLR-147</span><a class="home" href="index.html">Contents</a><a href="mockup-buff-gallery.html">Gallery</a><a href="mockup-buff-metal.html" aria-current="page">Buff card</a><a href="mockup-trick-readout.html">Trick</a><a href="mockup-util-cards.html">Cheat & Timebomb</a><a href="mockup-card-faces.html">Playing cards</a><a href="mockup-buff-suit.html">Suit options</a></nav>
 </body>
 </html>

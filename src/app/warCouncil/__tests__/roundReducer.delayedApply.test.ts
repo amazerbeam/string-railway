@@ -10,6 +10,7 @@ import {
   APPLY_DAMAGE_DELAY_TRICKS,
   BuffTier,
   DuelSide,
+  PLAYER_HAND_FLOOR,
   PLAYER_START_HEALTH,
   TIMEBOMB_PLAYER_DAMAGE,
   TIMEBOMB_DAMAGE,
@@ -138,15 +139,22 @@ describe('AC4 — a delayed kill freezes the PRESS-TIME hand size', () => {
       unplayedAtPress: handSizeAtPress,
     })
 
-    // The one trick after the press — a clean win; the hand shrinks to 1 card, and the payout
-    // lands and kills on this same resolution.
+    // The one trick after the press — a clean win; the payout lands and kills on this same
+    // resolution.
     ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
 
     expect(isEncounterResolved(ui.encounter)).toBe(true)
     expect(ui.encounter.health[DuelSide.Quarry]).toBe(0)
-    // The live hand really did shrink — the frozen figure must NOT equal this.
-    expect(ui.round.hands[PlayerSide.Player].length).toBe(1)
+    // DLR-146 — this trick is trick 1 of 6 (non-final), so `playCard`'s refill tops the live hand
+    // back up to PLAYER_HAND_FLOOR once it drops below it (the deck here has plenty of cards to
+    // draw). It used to shrink to a bare 1 and stay there; now it shrinks to 1 then refills. Either
+    // way the live hand differs from the frozen press-time figure below, which is the point of this
+    // spec — `Math.max` collapses to the old literal `1` at PLAYER_HAND_FLOOR = 0.
+    expect(ui.round.hands[PlayerSide.Player].length).toBe(
+      Math.max(handSizeAtPress - 1, PLAYER_HAND_FLOOR),
+    )
+    // The kill still reports the count from PRESS time, unaffected by the live hand's refill.
     expect(ui.unplayedAtResolve).toBe(handSizeAtPress)
   })
 })

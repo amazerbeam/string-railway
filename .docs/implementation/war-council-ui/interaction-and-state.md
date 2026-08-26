@@ -89,6 +89,15 @@ Three properties are load-bearing:
   unrelated predicate staying false is correctness that breaks silently. This is the same reasoning
   `openingEncounter` in `roundUiState.ts` already documents.
 
+> **DLR-146 changed what this figure measures, and this file was deliberately not edited to
+> compensate.** The player's hand is now refilled to `PLAYER_HAND_FLOOR` (4) as each trick resolves,
+> so `hands[Player].length` never falls below four during a hand and the frozen figure inflates: a
+> kill on the fifth trick of a fight's first hand goes from paying 2 coins to paying 8. Every
+> property above still holds — the capture is still once, still ungated on the winner, still frozen —
+> but the *quantity* it captures has stopped being a proxy for how fast the fight ended. The rule it
+> feeds is `src/hunt/`'s, so changing it is that module's decision, not this reducer's. See
+> [../hunt/quick-kill-payout.md](../hunt/quick-kill-payout.md), and `the-hunt.md`'s Known tensions.
+
 `RoundUiState.unplayedAtResolve` is `number | null`, seeded `null` by `createRoundUiState`; `null`
 means "this hand did not end the fight" and is a legitimate value rather than a failure — which is
 why it is not a defaulted `0`, a value that would read correctly and pay wrong. A remount re-seeds

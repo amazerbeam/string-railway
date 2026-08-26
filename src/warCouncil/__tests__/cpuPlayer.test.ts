@@ -36,6 +36,7 @@ function stateWith(overrides: Partial<RoundState>): RoundState {
     primedCards: [],
     spentPile: [],
     reshuffled: false,
+    drawSeed: 0,
     bank: 0,
     multiplier: 0,
     lastResolution: null,
@@ -279,6 +280,37 @@ describe('chooseCpuMove', () => {
     })
     const move = chooseCpuMove(state, PlayerSide.Cpu)
     expect(move.card).toEqual({ suit: 'keys', rank: 5 })
+    const result = playCard(state, PlayerSide.Cpu, move.card, move.choice)
+    expect(result.ok).toBe(true)
+  })
+})
+
+describe('chooseCpuMove — Woodcutter preview under an empty draw pile (DLR-146 fix pass)', () => {
+  it('does not throw and previews a real card by reshuffling the spent pile in', () => {
+    const state = stateWith({
+      leader: PlayerSide.Cpu,
+      drawPile: [],
+      spentPile: [
+        { suit: 'moons', rank: 9 },
+        { suit: 'keys', rank: 10 },
+      ],
+      drawSeed: 42,
+      hands: {
+        player: [],
+        cpu: [
+          { suit: 'keys', rank: 5 },
+          { suit: 'keys', rank: 7 },
+        ],
+      },
+    })
+    expect(() => chooseCpuMove(state, PlayerSide.Cpu)).not.toThrow()
+    const move = chooseCpuMove(state, PlayerSide.Cpu)
+    expect(move.card).toEqual({ suit: 'keys', rank: 5 })
+    expect(move.choice?.kind).toBe(AbilityChoiceKind.WoodcutterDiscard)
+    if (move.choice?.kind !== AbilityChoiceKind.WoodcutterDiscard) {
+      throw new Error('expected a Woodcutter discard choice')
+    }
+    expect(move.choice.discard).toBeDefined()
     const result = playCard(state, PlayerSide.Cpu, move.card, move.choice)
     expect(result.ok).toBe(true)
   })

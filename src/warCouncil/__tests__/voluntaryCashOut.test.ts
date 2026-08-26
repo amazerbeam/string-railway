@@ -33,6 +33,7 @@ function round(over: Partial<RoundState> = {}): RoundState {
     primedCards: [],
     spentPile: [],
     reshuffled: false,
+    drawSeed: 0,
     bank: 3,
     multiplier: 3,
     lastResolution: null,

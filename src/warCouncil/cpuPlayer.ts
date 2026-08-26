@@ -1,5 +1,6 @@
 import { TelegraphFidelity, TELEGRAPH_FIDELITY } from '../hunt'
 import { cardsOfSuit, removeCard } from './cardUtils'
+import { drawCards } from './encounterDeck'
 import { legalMoves } from './legalMoves'
 import { playCard } from './playCard'
 import { resolveTrickWinner } from './resolveTrick'
@@ -108,7 +109,10 @@ export function chooseCpuMove(state: RoundState, side: PlayerSide): CpuMove {
     return { card, choice: chooseCpuFoxChoice(handAfter, state.trumpSuit) }
   }
   if (card.rank === CardRank.Woodcutter) {
-    const handWithDrawn = [...handAfter, state.drawPile[0]]
+    // DLR-146 fix pass — through `drawCards` rather than a raw `drawPile[0]` index, so this
+    // preview agrees with what `applyWoodcutterDraw` will actually hand back, including a
+    // mid-hand reshuffle, and never contains `undefined` when the pile has run dry.
+    const handWithDrawn = [...handAfter, ...drawCards(state, 1).drawn]
     return { card, choice: chooseCpuWoodcutterChoice(handWithDrawn) }
   }
   return { card }

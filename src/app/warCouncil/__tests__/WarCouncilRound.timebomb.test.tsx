@@ -95,27 +95,24 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     expect(scoreboard.textContent).toMatch(/You0/)
   })
 
-  it('lets an illegal card be marked while armed', () => {
-    // The player is forced to follow Moons, so their sole Bells card is genuinely forbidden.
-    // The panel opens through `loadoutDoorOpen` — `canAct` alone, since `currentTrick` is
-    // non-empty here — restoring the pre-DLR-114 reach: Timebomb is armed FOLLOWING a forced
-    // off-suit lead, and marking is never itself a legality check either way.
+  it('is refused once the Quarry has led — 2026-08-26, Cheat is the only mid-trick card', () => {
+    // The panel still OPENS mid-trick through `loadoutDoorOpen` (`canAct` alone, since
+    // `currentTrick` is non-empty here) — reading what you hold is free. The Timebomb ROW,
+    // however, now takes the ordinary between-tricks window: arming it after seeing the lead
+    // bought a read the card was never meant to sell.
     const round = makeRound({
       leader: PlayerSide.Cpu,
       currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Moons, 9) }],
       phase: RoundPhase.AwaitingFollow,
     })
     renderRound({ initialState: round })
-    const offSuit = screen.getByRole('button', { name: '7 of Bells' })
-    expect(offSuit).toHaveProperty('disabled', true)
-
     openLoadout()
     const row = timebombRow()
+    expect(row).toHaveProperty('disabled', true)
+    expect(row.getAttribute('aria-label')).toMatch(/Not between tricks\./)
     fireEvent.click(row)
     fireEvent.click(row)
-    expect(screen.getByRole('button', { name: '7 of Bells' })).toHaveProperty('disabled', false)
-    fireEvent.click(screen.getByRole('button', { name: '7 of Bells' }))
-    expect(screen.getByRole('button', { name: '7 of Bells, primed' })).toBeTruthy()
+    expect(screen.queryByText(TIMEBOMB_ARMED_HINT)).toBeNull()
   })
 
   it('cancels the poise on Escape, spending nothing', () => {

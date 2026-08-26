@@ -1,4 +1,4 @@
-import { QuarryCharacter, type Health, type Damage, type Coins } from './types'
+﻿import { QuarryCharacter, type Health, type Damage, type Coins } from './types'
 
 // §5 "Player health" — DECIDED, and small on purpose: Balatro tracks 4 hands and 3 discards as
 // integers held in the head against score requirements in the hundreds and thousands, and §5
@@ -317,11 +317,24 @@ export const TELEGRAPH_FIDELITY: TelegraphFidelity = TelegraphFidelity.SuitAndSt
 // tuning value; it exists as a key so the later roster ticket has one place to change.
 export const SLICE_QUARRY_CHARACTER: QuarryCharacter = QuarryCharacter.Monarch
 
-// §3.1/§5 — six cards each, six tricks. ONE constant, not two: every card dealt is played, so
-// hand size and trick count cannot differ, and two constants that must be equal is a bug waiting
-// for one of them to be edited. SETTLED (§5).
+// §3.1/§5 — six cards each, six tricks. ONE constant, not two: the Quarry is dealt this many and
+// plays exactly this many, so its hand size and the trick count cannot differ, and two constants
+// that must be equal is a bug waiting for one of them to be edited. SETTLED (§5).
+//
+// DLR-146 — this is NO LONGER the number of cards the PLAYER plays through in a hand. The player
+// is topped back up to `PLAYER_HAND_FLOOR` as tricks resolve, so they see more than `HAND_SIZE`
+// cards and end the hand still holding some, which `closeHand` sweeps to the spent pile. The trick
+// count is still `HAND_SIZE`, because the Quarry still runs out.
 // UNIT: cards dealt to each side, and therefore tricks in a hand.
 export const HAND_SIZE = 6
+
+// DLR-146 — the player's hand is topped back up to this many cards as each trick resolves, so the
+// last tricks of a hand stay decisions instead of the one card left in hand. The Quarry NEVER
+// refills. SET THIS TO 0 TO RESTORE PRE-DLR-146 BEHAVIOUR EXACTLY, with no other edit anywhere:
+// the refill is a single `hand.length < PLAYER_HAND_FLOOR` test, so a floor of 0 is unreachable
+// rather than a second code path. PROVISIONAL — chosen to be played, not derived.
+// UNIT: cards held by the player.
+export const PLAYER_HAND_FLOOR = 4
 
 // §5 "Skull density, first CPU" — roughly 30% of the CPU's dealt cards carry a skull. SETTLED as
 // a proportion; the count it produces is Math.round(HAND_SIZE * SKULL_DENSITY) = 2 of 6, which is

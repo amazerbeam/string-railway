@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createSeededRng, MAX_CARDS_PER_DISCARD } from '../../hunt'
+import { createSeededRng, HAND_SIZE, MAX_CARDS_PER_DISCARD, PLAYER_HAND_FLOOR } from '../../hunt'
 import { applyDiscard } from '../discard'
 import { createDeck } from '../deck'
 import { dealRound } from '../deal'
@@ -46,7 +46,11 @@ function census(state: RoundState): string[] {
 function choiceFor(state: RoundState, card: Card): AbilityChoice | undefined {
   if (card.rank === CardRank.Fox) return { kind: AbilityChoiceKind.FoxDecline }
   if (card.rank === CardRank.Woodcutter) {
-    return { kind: AbilityChoiceKind.WoodcutterDiscard, discard: state.drawPile[0] }
+    const discard = state.drawPile[0]
+    // Fails cleanly with a named cause rather than letting `undefined` reach `playCard` and
+    // crash somewhere downstream with an opaque TypeError — DLR-146 fix pass.
+    if (!discard) throw new Error('choiceFor: drawPile is empty, nothing to bury as the discard')
+    return { kind: AbilityChoiceKind.WoodcutterDiscard, discard }
   }
   return undefined
 }
@@ -88,34 +92,39 @@ describe('the encounter deck cycle', () => {
       reshuffles.push(dealt.reshuffled)
       deck = closeHand(playOutHand(dealt))
     }
-    // Stated as the arithmetic rather than as four magic numbers: a fresh 33 less one deal is
-    // 20, less a second is 7, and 7 is below the 13 a deal costs — which is exactly why the
-    // third hand reshuffles. Written this way so the cycle re-derives if `HAND_SIZE` ever moves.
-    const afterOneDeal = DECK_SIZE - CARDS_PER_DEAL // 33 - 13 = 20
-    const afterTwoDeals = afterOneDeal - CARDS_PER_DEAL // 20 - 13 = 7
-    expect(afterTwoDeals).toBeLessThan(CARDS_PER_DEAL)
-    expect(draws).toEqual([afterOneDeal, afterTwoDeals, afterOneDeal, afterTwoDeals])
-    expect(draws).toEqual([20, 7, 20, 7])
-    // Exactly ONE reshuffle per cycle of two hands, and never on a fight's first hand.
+    // DLR-146 — a hand no longer costs exactly `CARDS_PER_DEAL`. The deal takes 13, and the
+    // player's refill takes one more per trick that ends below the floor: `HAND_SIZE - 1` tricks
+    // can refill (the last one never does), and only those where the hand has fallen under it.
+    // DERIVED from the two constants rather than pinned to a measured number, so that flipping
+    // `PLAYER_HAND_FLOOR` to 0 leaves this test green — AC4's "no other edit anywhere" has to hold
+    // for the SUITE too, or the revert is a one-line change plus a test fix, which is not a
+    // one-line change.
+    const refillsPerHand = Math.max(0, Math.min(HAND_SIZE - 1, PLAYER_HAND_FLOOR - 1))
+    const handCost = CARDS_PER_DEAL + refillsPerHand
+    expect(draws[0]).toBe(DECK_SIZE - CARDS_PER_DEAL)
+    expect(draws[1]).toBe(draws[0] - handCost)
+    expect(draws[1]).toBeGreaterThanOrEqual(0)
+    // The reshuffle PATTERN is what this test is really for, and it is unchanged by the floor.
     expect(reshuffles).toEqual([false, false, true, false])
   })
 
-  it('D5 — the draw pile’s length never changes for the life of a hand, so it cannot run out', () => {
+  it('DLR-146 — the draw pile only SHRINKS within a hand, and every card is conserved throughout', () => {
     const dealt = dealRound(PlayerSide.Cpu, createSeededRng(2026), FRESH_ENCOUNTER_DECK)
-    const opening = dealt.drawPile.length
     let state = dealt
-    // Stepped card by card rather than through `playOutHand`, because the assertion is about
-    // every INTERMEDIATE state, not the final one — including the turns either side of a
-    // Woodcutter, which is the one ability that touches the draw pile at all.
+    let previous = dealt.drawPile.length
     while (state.phase !== RoundPhase.Complete) {
-      expect(state.drawPile).toHaveLength(opening)
+      expect(new Set(census(state)).size).toBe(DECK_SIZE)
       const side = currentTurn(state)
       const card = legalMoves(state, side)[0]
       const result = playCard(state, side, card, choiceFor(state, card))
       if (!result.ok) throw new Error(`illegal move: ${result.reason}`)
       state = result.state
+      // Never grows, EXCEPT across a reshuffle, which is the one thing that can put cards back.
+      const grew = state.drawPile.length > previous
+      expect(grew ? state.spentPile.length : 0).toBe(0)
+      previous = state.drawPile.length
     }
-    expect(state.drawPile).toHaveLength(opening)
+    expect(new Set(census(state)).size).toBe(DECK_SIZE)
   })
 
   it('AC5 — the player’s swap sends cards to the BOTTOM OF THE DRAW PILE, never to the spent pile', () => {

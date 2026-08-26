@@ -108,7 +108,7 @@ Two different questions, two different gates, and the separation is load-bearing
 | Question                         | Gate                                                                                            | Where                        |
 | -------------------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------- |
 | May the panel be **opened**?     | `loadoutDoorOpen(state) = discardWindowOpen(state) \|\| canAct(state)`                          | `buffHandlers.ts`            |
-| May a **buff row** be activated? | `buffActivationRefusalFor(buffActivationStock(...))`, whose `windowOpen` is `discardWindowOpen` | `src/hunt/buffActivation.ts` |
+| May a **buff row** be activated? | `buffActivationRefusalFor(buffActivationStock(...))`, whose `windowOpen` is `buffActivationWindowOpen` — `canAct` for a Cheat, `discardWindowOpen` for every other card | `src/hunt/buffActivation.ts`, fed from `roundUiState.ts` |
 
 The reason the door is wider: **Cheat and Timebomb moved inside the panel**. Before DLR-114 both were
 reachable on any of the player's own turns — including while following a lead the Quarry had already
@@ -119,10 +119,16 @@ relocation would carry "no rule change and no reducer change"; the gate the relo
 what broke that promise, so the gate is what widened back. **The regression was found and fixed
 inside the ticket.**
 
-The practical consequence, which is the shipped behaviour: mid-trick the panel **opens**, the Cheat
-slots and Timebomb charge inside it are **live**, and every buff row inside it is **disabled reading
-"Not between tricks."** Opening the drawer is not itself a game action — reading what is inside costs
-nothing.
+**2026-08-26 — the row gate narrowed back to Cheat alone.** A Timebomb takes the ordinary
+between-tricks window now: arming it *after* seeing the Quarry's lead let the player buy a read the
+card was never meant to sell, and unlike a Cheat's follow-suit break, a Timebomb has nothing to do
+with what was led. The door is untouched. See
+[the activation window](../hunt/cheat-and-timebomb-buffs.md#the-activation-window-cheat-mid-trick-timebomb-between-tricks-2026-08-26).
+
+The practical consequence, which is the shipped behaviour: mid-trick the panel **opens**, the **Cheat
+row** inside it is **live**, and every other buff row — the Timebomb's included — is **disabled
+reading "Not between tricks."** Opening the drawer is not itself a game action — reading what is
+inside costs nothing.
 
 `loadoutBarRefusalFor(state)` is the bar's own Apply Buff refusal, and it reads `loadoutDoorOpen`
 directly so the button and `handleToggleLoadout`'s transition cannot disagree. It returns only

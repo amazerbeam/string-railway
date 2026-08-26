@@ -14,11 +14,12 @@ This file replaced `scoring-tunables.md`, which documented the two Standing mult
 per-declaration card-value accessor, and rank inversion. **All of that was deleted by DLR-80** — see
 [what went](#what-dlr-80-deleted-from-this-module) at the foot.
 
-## The four new keys
+## The hand and skull keys
 
 | Key | Value | Unit | Status |
 | --- | --- | --- | --- |
 | `HAND_SIZE` | `6` | cards a side, and therefore tricks in a hand | settled |
+| `PLAYER_HAND_FLOOR` | `4` | cards held by the player | **provisional** (DLR-146) |
 | `SKULL_DENSITY` | `0.3` | proportion of the Quarry's dealt hand, 0..1 | settled |
 | `SKULL_RANK_WEIGHTS` | `SKULL_WEIGHTS_HUMP` | relative weight per rank, ≥ 0, unitless | provisional (PT-001) |
 | `DAMAGE_PER_HIT` | `1` | health points per damage event | settled |
@@ -54,9 +55,35 @@ Their only reader anywhere in `src/` is `forcedCashValue`. See
 
 ### `HAND_SIZE` is deliberately one constant, not two
 
-The design states "six cards each, six tricks", and the two **cannot** differ — every card dealt is
-played, so the hand ends exactly when the last card does. Two constants that must be equal is a bug
-waiting for one of them to be edited, so there is one.
+The design states "six cards each, six tricks", and the two **cannot** differ — the **Quarry** is
+dealt this many and plays exactly this many, so the hand ends exactly when its last card does. Two
+constants that must be equal is a bug waiting for one of them to be edited, so there is one.
+
+**DLR-146 retired the wider reading of this.** It used to say "every card dealt is played", full
+stop. That is now true of the Quarry only: the player is refilled mid-hand, sees more than
+`HAND_SIZE` cards across a hand, and ends holding some. The trick count is still `HAND_SIZE` because
+the Quarry still runs out.
+
+### `PLAYER_HAND_FLOOR` — the hand the player chooses from — DLR-146
+
+**`4` cards, and the developer's to move.** The player's hand is topped back up to this many as each
+trick resolves, so a hand's widths run **6, 5, 4, 4, 4, 4** rather than **6, 5, 4, 3, 2, 1** and the
+last three tricks are still decisions rather than the one card left in hand. The **Quarry never
+refills**.
+
+It is **provisional and chosen to be played rather than derived** — no arithmetic produced `4`, and
+nothing in the codebase is correct only at `4`.
+
+**Setting it to `0` is the whole revert**, one line in this file, with no other edit anywhere and the
+full Vitest suite still green. That is a property the ticket enforced rather than hoped for: the
+refill is a single `hand.length < PLAYER_HAND_FLOOR` test, so a floor of `0` is an *unreachable*
+path rather than a second code path that could drift; and every spec it wrote or rewrote derives its
+expectations from `HAND_SIZE` and this constant rather than pinning a figure measured at `4`. There
+is deliberately **no companion `REFILL_ENABLED` boolean** — `0` is the off switch, and two constants
+that must be kept in step is the trap `HAND_SIZE`'s own comment already warns about.
+
+Its only production reader is `src/warCouncil/playCard.ts`. The mechanic itself is documented in
+[the hand refill](../war-council/the-hand-refill.md).
 
 It is read by `dealRound` (to slice both hands) and by `playCard` (to decide when `phase` becomes
 `Complete` and when to fire the end-of-hand cash-out), and by `RoundStatusBand.tsx` for the "trick N

@@ -17,6 +17,7 @@ function stateWith(
     primedCards: [],
     spentPile: [],
     reshuffled: false,
+    drawSeed: 0,
     bank: 0,
     multiplier: 0,
     lastResolution: null,

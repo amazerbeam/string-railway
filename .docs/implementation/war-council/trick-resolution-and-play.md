@@ -48,6 +48,16 @@ other exported function mutates state. Its order of operations:
 state }` with `phase: AwaitingFollow`. If it's the second, `resolveTrickWinner` and
    `nextLeaderAfterTrick` run, `tricksWon`/`tricksPlayed` increment, and `phase` becomes `Complete`
    once `tricksPlayed` reaches `HAND_SIZE`, else `AwaitingLead`.
+7. **(DLR-146) Refill the player's hand to `PLAYER_HAND_FLOOR`**, last, and only on the second-card
+   path. It runs **after** `resolveTrickBank` has produced `lastResolution`, is **skipped on the
+   final trick**, and is never reached from the lead — so a drawn card can neither enter the trick in
+   progress nor change what the trick's buff evaluation saw. The Quarry is never passed to it. See
+   [the hand refill](the-hand-refill.md).
+
+**The Woodcutter's discard preview in step 5 also changed (DLR-146):** it builds "the hand as it
+would be after the draw" through `drawCards` rather than indexing `drawPile[0]`, so the preview
+agrees with what `applyWoodcutterDraw` will actually hand back — including a mid-hand reshuffle — and
+never contains an `undefined` when the pile has run dry.
 
 Every rejection returns `{ ok: false, reason }` and leaves the **input** `state` untouched — no
 partial mutation, no thrown exception; a caller (a future CPU or UI ticket) branches on the named

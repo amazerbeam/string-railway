@@ -89,7 +89,14 @@ Read `baselinePolicy.ts`'s docblock before reading any number this tool prints. 
   cover `APPLY_DAMAGE_AP_COST`. The sort tiebreaks on `buff.id`, which is monotonic and never
   reused, so the ordering is total.
 - **Apply Damage** — pressed when the multiplier reaches `BASELINE_CASH_AT_MULTIPLIER` (3), or on the
-  hand's last window with a non-empty bank.
+  hand's last window with a non-empty bank. **"The hand's last window" is `HAND_SIZE -
+  tricksPlayed <= 1` since DLR-146**, and the change matters more than it reads: it used to be
+  `hands[Player].length <= 1`, a *proxy* for the same thing that silently stops firing at any hand
+  floor above 1. Left alone, the reference player would have quietly stopped banking at every hand's
+  end — corrupting the very runs the floor was to be judged by. The new expression is identical at a
+  floor of `0` (both mean five or six tricks played) and floor-invariant thereafter.
+  `cardAwarePolicy.ts` compares `deadCards.length` to `hand.length` and assumes nothing about tricks
+  remaining, so it needed no equivalent change.
 - **Never** discards, marks a Timebomb, or arms a Cheat — it implements neither optional method.
 - **Shop** — free pulls, then Heal → Swan tier → Witch tier while affordable, then the
   flask.

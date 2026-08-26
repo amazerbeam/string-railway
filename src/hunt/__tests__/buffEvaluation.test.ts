@@ -285,10 +285,12 @@ describe('Keepsake — the known open defect, pinned', () => {
     expect(buffFires(k, ctx({ finalTrick: true, remainingSuits: [BuffTargetSuit.Moons] }))).toBe(
       true,
     )
-    // …and the shape the live game actually reaches it with is this one. With HAND_SIZE cards and
-    // HAND_SIZE tricks, every dealt card is played, so `remainingSuits` is empty at the final
-    // trick and the three Purse Keepsake cards pay nothing. Known open defect — see
-    // `plan.md` → Risks. Not fixed here; pinned so a fix has a failing assertion to flip.
+    // …and the shape the live game actually reaches it with is this one. Before DLR-146 the player
+    // was dealt HAND_SIZE cards and played exactly HAND_SIZE tricks, so `remainingSuits` was always
+    // empty at the final trick and the three Purse Keepsake cards paid nothing. DLR-146 refills the
+    // player mid-hand, so a hand can now end with cards still unplayed — but Purse is one of the
+    // reward axes DLR-145 cut, so no live template can still observe the difference. Known open
+    // defect — see `plan.md` → Risks. Not fixed here; pinned so a fix has a failing assertion to flip.
     expect(buffFires(k, ctx({ finalTrick: true, remainingSuits: [] }))).toBe(false)
   })
 })

@@ -123,3 +123,58 @@ taken as a documented default from the only tier curves the sources *do* state �
 and §3's Shield bullet, both 1/2/3 — and it yields 4/8/12 to the Quarry and 2/4/6 to the player. A
 gold Timebomb costing 6 of a 10-point player bar is a large self-inflicted hit and may want a flatter
 curve; it is the developer's to move, in one place.
+
+## The activation window: Cheat mid-trick, Timebomb between tricks, 2026-08-26
+
+DLR-132 gave **both** cards the same widened activation window, and for two days that was the rule:
+`buffActivationWindowOpen` in `src/app/warCouncil/roundUiState.ts` returned `canAct(state)` for
+either kind and `discardWindowOpen(state)` for everything else. **Timebomb no longer shares it.**
+The gate now reads:
+
+```ts
+return buff.kind === BuffKind.Cheat ? canAct(state) : discardWindowOpen(state)
+```
+
+**The two cards were folded together for a reason that only ever applied to one of them.** Both had
+been felt-rail widgets (`CheatSlots`, `TimebombCharge`) reading `interactive={canAct(ui)}` rather
+than `discardWindowOpen`, so when DLR-114 moved them into the loadout panel and DLR-132 made them
+ordinary rows, keeping `canAct` looked like preserving existing reach rather than granting new reach.
+It was — but the *justification* written down for it is Cheat's alone: a Cheat breaks follow-suit,
+which is worth nothing until a lead is on the felt binding you, so gating it between tricks makes it
+unreachable at the only trick it could matter. That is a real functional argument and it still holds.
+
+**A Timebomb arms damage onto a card you have not played yet**, and it does not care what the Quarry
+led. Letting it be armed *after* the lead sold the player a read the card was never meant to sell:
+see the Quarry's card, work out which trick you are about to lose, and only then decide to spend.
+The card's whole cost is committing before you know. So it takes the ordinary between-tricks window —
+the same one the Swap and every condition buff use.
+
+**What actually changed, and what did not:**
+
+| | Before 2026-08-26 | Now |
+| --- | --- | --- |
+| Cheat's window | `canAct` — any moment you may play a card | unchanged |
+| Timebomb's window | `canAct` | `discardWindowOpen` — between tricks only |
+| The loadout **door** (`loadoutDoorOpen`) | `discardWindowOpen \|\| canAct` | unchanged — the panel still opens mid-trick |
+| Marking a hand card once armed | any legal-or-illegal card, no legality check | unchanged |
+| Everything downstream of the arm | tier damage, the booking, the payment | unchanged |
+
+Mid-trick the panel therefore still **opens**, the Cheat row is still **live**, and the Timebomb row
+is now **greyed reading "Not between tricks."** alongside every condition buff. Marking is still not
+a legality check — a Timebomb armed between tricks can still mark a card that would be illegal to
+*play* once the Quarry leads, which is exactly the case the card exists for.
+
+**Three test files pin this**, and one non-obvious consumer moved with it:
+`roundReducer.timebomb.test.ts` (arm between tricks, then mark an illegal card once the lead lands;
+plus a spend attempted mid-trick that arms nothing), `WarCouncilRound.timebomb.test.tsx` (the row is
+disabled and names the refusal), and **`src/sim/fixtures.ts`** — `attemptPrimedTimebomb` drove its
+spend on `canAct` alone, which now silently armed nothing and made
+`fixtureHandWithPrimedTimebomb` throw its bounded-search `RangeError`; it gates on
+`discardWindowOpen` too. **That is the failure mode to expect if this window is ever narrowed
+again:** the refusal is silent at the reducer, so what breaks is a downstream fixture or policy that
+assumed a spend landed, not the spend itself.
+
+**This gate is a hardcoded kind check on purpose**, with one exception in it — see
+[structure notes for the port](../structure-notes-for-the-port.md#1-a-buffs-timing-window-is-a-hardcoded-kind-check-not-a-property-of-the-buff)
+for why a `Record<BuffKind, TimingWindow>` table is the right shape in Unity and the wrong shape
+here.

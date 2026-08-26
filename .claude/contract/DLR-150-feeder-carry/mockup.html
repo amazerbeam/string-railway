@@ -1,0 +1,464 @@
+<title>Feeder Carry Readout</title>
+<style>
+  :root {
+    --wc-chamber: #0c1013;
+    --wc-chamber-lift: #141a1f;
+    --wc-felt: #16241f;
+    --wc-felt-lip: #0a1211;
+    --wc-felt-line: #2b4038;
+    --wc-parchment: #e9e1cd;
+    --wc-parchment-shade: #d3c8ae;
+    --wc-ink: #191610;
+    --wc-ink-soft: #5c5443;
+    --wc-brass: #c99a4e;
+    --wc-brass-dim: #7d6132;
+    --wc-chalk: #cdd6d2;
+    --wc-chalk-dim: #6f7d78;
+    --wc-alarm: #d1705f;
+    --wc-bells: #c9873f;
+    --wc-carry: #8fb04e;
+    --wc-carry-dim: #5c7a2e;
+    --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  /* `display: flex` on a rule below would otherwise beat the `hidden` attribute — the exact
+     defect game-ux/SKILL.md records from the 2026-08-26 buff-gallery mockup. */
+  [hidden] { display: none !important; }
+
+  body {
+    margin: 0;
+    min-height: 100svh;
+    background:
+      radial-gradient(120% 90% at 50% 0%, var(--wc-chamber-lift), var(--wc-chamber) 70%);
+    color: var(--wc-chalk);
+    font-family: var(--wc-sans);
+    font-size: 16px;
+    line-height: 1.55;
+    padding: clamp(1rem, 3vmin, 2.25rem);
+  }
+
+  .page {
+    max-width: 62rem;
+    margin: 0 auto;
+    display: grid;
+    gap: clamp(1.25rem, 3vmin, 2rem);
+  }
+
+  header h1 {
+    font-family: var(--wc-serif);
+    font-size: clamp(1.5rem, 4vmin, 2.1rem);
+    font-weight: 600;
+    margin: 0 0 0.35rem;
+    color: var(--wc-parchment);
+    text-wrap: balance;
+    letter-spacing: 0.01em;
+  }
+
+  header p {
+    margin: 0;
+    max-width: 62ch;
+    color: var(--wc-chalk-dim);
+  }
+
+  .eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--wc-brass-dim);
+    margin: 0 0 0.5rem;
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: minmax(15rem, 20rem) 1fr;
+    gap: clamp(1rem, 2.5vmin, 1.75rem);
+    align-items: start;
+  }
+
+  @media (max-width: 46rem) {
+    .board { grid-template-columns: 1fr; }
+  }
+
+  /* --- the dossier column, as it sits on the felt --- */
+  .dossier {
+    background: linear-gradient(180deg, var(--wc-felt), var(--wc-felt-lip));
+    border: 1px solid var(--wc-felt-line);
+    border-radius: 4px;
+    padding: clamp(0.9rem, 2.2vmin, 1.35rem);
+    box-shadow: inset 0 1px 0 rgba(233, 225, 205, 0.06);
+  }
+
+  .wc-bank { display: grid; gap: 0.45rem; }
+
+  .wc-bank-eyebrow {
+    margin: 0;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--wc-brass-dim);
+  }
+
+  .wc-bank-figures {
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    font-family: var(--wc-serif);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wc-bank-num, .wc-bank-mult { font-size: 2.1rem; color: var(--wc-parchment); }
+  .wc-bank-op { font-size: 1.2rem; color: var(--wc-chalk-dim); }
+  .wc-bank-pending-bonus { font-size: 1.2rem; color: var(--wc-brass); }
+
+  .wc-bank-cash, .wc-bank-forced, .wc-bank-pending {
+    margin: 0;
+    font-size: 0.86rem;
+    color: var(--wc-chalk-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .wc-bank-cash b, .wc-bank-forced b { color: var(--wc-parchment); font-weight: 600; }
+  .wc-bank-pending { color: var(--wc-brass); }
+  .wc-bank-pending b { color: var(--wc-brass); }
+
+  /* --- AC6: the two carry lines --- */
+  .wc-bank-carried-in,
+  .wc-bank-carry-out {
+    margin: 0;
+    font-size: 0.86rem;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+  }
+
+  .wc-bank-carried-in {
+    color: var(--wc-parchment-shade);
+    border-left: 3px solid var(--wc-brass);
+    padding-left: 0.55rem;
+  }
+
+  .wc-bank-carry-out {
+    color: var(--wc-carry);
+    border-left: 3px dashed var(--wc-carry-dim);
+    padding-left: 0.55rem;
+  }
+
+  .wc-bank-carry-out b, .wc-bank-carried-in b { font-weight: 600; }
+
+  .wc-bank-last {
+    margin: 0.35rem 0 0;
+    font-size: 0.86rem;
+    color: var(--wc-chalk-dim);
+    border-top: 1px solid var(--wc-felt-line);
+    padding-top: 0.5rem;
+    min-height: 2.6em;
+  }
+  .wc-is-take { color: var(--wc-parchment-shade); }
+  .wc-is-hit { color: var(--wc-alarm); }
+
+  /* --- the driving controls (mockup only) --- */
+  .drive { display: grid; gap: 0.9rem; align-content: start; }
+
+  .drive h2 {
+    font-family: var(--wc-serif);
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--wc-parchment);
+  }
+
+  .drive p.note { margin: 0; font-size: 0.86rem; color: var(--wc-chalk-dim); max-width: 58ch; }
+
+  .buttons { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+
+  button {
+    font: inherit;
+    font-size: 0.86rem;
+    min-height: 44px;
+    padding: 0.55rem 0.9rem;
+    border-radius: 3px;
+    border: 1px solid var(--wc-felt-line);
+    background: var(--wc-chamber-lift);
+    color: var(--wc-parchment-shade);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: border-color 120ms ease, color 120ms ease;
+  }
+  @media (hover: hover) {
+    button:hover { border-color: var(--wc-brass-dim); color: var(--wc-parchment); }
+  }
+  button:active { border-color: var(--wc-brass); }
+  button:focus-visible { outline: 2px solid var(--wc-brass); outline-offset: 2px; }
+  button.primary { border-color: var(--wc-brass-dim); color: var(--wc-brass); }
+  button.quiet { color: var(--wc-chalk-dim); }
+
+  .log {
+    background: var(--wc-chamber-lift);
+    border: 1px solid var(--wc-felt-line);
+    border-radius: 3px;
+    padding: 0.75rem 0.9rem;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    color: var(--wc-chalk-dim);
+    max-height: 15rem;
+    overflow-y: auto;
+    font-variant-numeric: tabular-nums;
+  }
+  .log p { margin: 0; }
+  .log .carry { color: var(--wc-carry); }
+  .log .hand { color: var(--wc-brass); border-top: 1px solid var(--wc-felt-line); margin-top: 0.4rem; padding-top: 0.4rem; }
+
+  footer {
+    border-top: 1px solid var(--wc-felt-line);
+    padding-top: 1rem;
+    font-size: 0.82rem;
+    color: var(--wc-chalk-dim);
+  }
+  footer ul { margin: 0.5rem 0 0; padding-left: 1.1rem; }
+  footer li { margin-bottom: 0.3rem; }
+  footer code { color: var(--wc-parchment-shade); font-size: 0.95em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+<div class="page">
+  <header>
+    <p class="eyebrow">DLR-150 · mockup</p>
+    <h1>The Feeder carry, on the felt</h1>
+    <p>
+      Placeholder figures throughout. This is the bank readout in the dossier column only — the hand,
+      the trick well and the health bars are unchanged and are not drawn here. Play tricks with the
+      controls on the right and watch the two new lines.
+    </p>
+  </header>
+
+  <div class="board">
+    <div class="dossier">
+      <section class="wc-bank" aria-label="Tricks banked and streak">
+        <p class="wc-bank-eyebrow" aria-hidden="true">Tricks banked</p>
+        <p class="wc-bank-figures" id="figures-label">
+          <span class="wc-bank-num" aria-hidden="true" id="f-bank">0</span>
+          <span class="wc-bank-op" aria-hidden="true">×</span>
+          <span class="wc-bank-mult" aria-hidden="true" id="f-mult">0</span>
+          <span class="wc-bank-pending-bonus" aria-hidden="true" id="f-bonus" hidden></span>
+        </p>
+        <p class="wc-bank-cash" aria-hidden="true">Cashes for <b id="f-cash">0</b></p>
+        <p class="wc-bank-forced" aria-hidden="true">If you&rsquo;re hit first: <b id="f-forced">0</b></p>
+
+        <p class="wc-bank-pending" aria-hidden="true" id="f-pending" hidden></p>
+
+        <!-- AC6, first half: what this hand opened on -->
+        <p class="wc-bank-carried-in" aria-hidden="true" id="f-carried-in" hidden></p>
+
+        <!-- AC6, second half: what this hand is banking for the next one -->
+        <p class="wc-bank-carry-out" aria-hidden="true" id="f-carry-out" hidden></p>
+
+        <p class="wc-bank-last" id="f-last">Take tricks. Make them eat the skulls.</p>
+      </section>
+    </div>
+
+    <div class="drive">
+      <h2>Resolve a trick</h2>
+      <p class="note">
+        A bronze Bells Feeder (Blade, +1 damage) and a bronze Bells Feeder (Momentum, +2 multiplier)
+        are both activated. Every button below assumes the player played Bells.
+      </p>
+      <div class="buttons">
+        <button onclick="trick('cleanWin')">Clean win — took it</button>
+        <button onclick="trick('dodge')">Dodge — skull, went low</button>
+        <button onclick="trick('cleanLoss')">Clean loss — went low</button>
+        <button onclick="trick('eatSkull')">Ate the skull — took a skulled trick</button>
+      </div>
+
+      <h2>Boundaries</h2>
+      <div class="buttons">
+        <button class="primary" onclick="nextHand()">Deal the next hand</button>
+        <button onclick="applyDamage()">Apply Damage — cash out now</button>
+        <button class="quiet" onclick="nextFight()">Fight ends</button>
+        <button class="quiet" onclick="reset()">Reset</button>
+      </div>
+
+      <h2>What happened</h2>
+      <div class="log" id="log" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <footer>
+    <strong>What this mockup is standing in for</strong>
+    <ul>
+      <li><strong>AC6, first half</strong> — the dashed green line, <em>Banking for next hand</em>, growing every time a Feeder fires on a Loss. It is deliberately excluded from <em>Cashes for</em> and <em>If you&rsquo;re hit first</em>, because AC1 says this hand&rsquo;s cash-out pays nothing from it.</li>
+      <li><strong>AC6, second half</strong> — the solid brass line, <em>Carried in from last hand</em>, present for the whole hand rather than only at the first trick, so a player looking up mid-hand still sees where their opening bonus came from.</li>
+      <li><strong>AC1 / AC2</strong> — the four trick buttons are the four outcomes. Only <em>Clean loss</em> and <em>Ate the skull</em> route the Feeder into the carry; a dodge pays into the hand exactly as it does today.</li>
+      <li><strong>AC3</strong> — <em>Deal the next hand</em> moves the carry into the opening figure, where <em>Apply Damage</em> then spends it.</li>
+      <li><strong>AC4</strong> — <em>Fight ends</em> wipes it.</li>
+    </ul>
+    <p style="margin-top:0.75rem">
+      Every colour, glyph, border weight and word above is placeholder and the developer&rsquo;s to
+      change. The line positions are the thing being approved; the wording is not.
+    </p>
+  </footer>
+</div>
+
+<script>
+  const FEEDER_BLADE = 1;
+  const FEEDER_MOMENTUM = 2;
+  const RETENTION = 2 / 3;
+
+  let s;
+  reset();
+
+  function reset() {
+    s = {
+      bank: 0,
+      mult: 0,
+      bonusMult: 0,
+      bonusDmg: 0,
+      paidMult: 0,
+      paidDmg: 0,
+      carriedIn: { m: 0, d: 0 },
+      carryOut: { m: 0, d: 0 },
+      hand: 1,
+      last: 'Take tricks. Make them eat the skulls.',
+      lastClass: '',
+    };
+    document.getElementById('log').innerHTML = '';
+    log('Hand 1 of this fight. Nothing carried in.', 'hand');
+    render();
+  }
+
+  function trick(kind) {
+    const won = kind === 'cleanWin' || kind === 'eatSkull';
+    const skull = kind === 'dodge' || kind === 'eatSkull';
+    const isLoss = won === skull; // the outcome axis: cleanLoss and eatSkull
+    const feederFires = !won;     // buffFires: !playerWon && suit matches
+
+    if (isLoss) {
+      s.bank = 0;
+      s.mult = 0;
+      s.last = kind === 'eatSkull' ? 'You ate the skull. −1 health.' : 'They took it. −1 health.';
+      s.lastClass = 'wc-is-hit';
+    } else {
+      s.bank += 1;
+      s.mult += 1;
+      s.last = kind === 'dodge' ? 'You let the skull go. Banked.' : 'You took the trick. Banked.';
+      s.lastClass = 'wc-is-take';
+    }
+
+    if (feederFires && isLoss) {
+      s.carryOut.d += FEEDER_BLADE;
+      s.carryOut.m += FEEDER_MOMENTUM;
+      log('Feeder fired on a LOSS — +' + FEEDER_BLADE + ' damage, +' + FEEDER_MOMENTUM + ' multiplier banked for next hand.', 'carry');
+    } else if (feederFires) {
+      s.bonusDmg += FEEDER_BLADE;
+      s.bonusMult += FEEDER_MOMENTUM;
+      log('Feeder fired on a DODGE — +' + FEEDER_BLADE + ' damage, +' + FEEDER_MOMENTUM + ' multiplier into this hand, plus the Overlap Bonus.');
+    } else {
+      log('No Feeder fired — the player took the trick.');
+    }
+    render();
+  }
+
+  function applyDamage() {
+    const payMult = Math.max(0, s.bonusMult - s.paidMult);
+    const payDmg = Math.max(0, s.bonusDmg - s.paidDmg);
+    const paid = s.bank * (s.mult + payMult) + payDmg;
+    s.paidMult = s.bonusMult;
+    s.paidDmg = s.bonusDmg;
+    s.bank = 0;
+    s.mult = 0;
+    log('Apply Damage lands for ' + paid + '. The carry is untouched — it is not payable this hand.');
+    render();
+  }
+
+  function nextHand() {
+    s.hand += 1;
+    s.carriedIn = { m: s.carryOut.m, d: s.carryOut.d };
+    s.bonusMult = s.carriedIn.m;
+    s.bonusDmg = s.carriedIn.d;
+    s.paidMult = 0;
+    s.paidDmg = 0;
+    s.carryOut = { m: 0, d: 0 };
+    s.bank = 0;
+    s.mult = 0;
+    s.last = 'A new hand.';
+    s.lastClass = '';
+    const carried = s.carriedIn.m > 0 || s.carriedIn.d > 0;
+    log('Hand ' + s.hand + ' of this fight. ' + (carried
+      ? 'Opens on +' + s.carriedIn.m + ' multiplier and +' + s.carriedIn.d + ' damage, spendable now.'
+      : 'Nothing carried in.'), 'hand');
+    render();
+  }
+
+  function nextFight() {
+    s.carryOut = { m: 0, d: 0 };
+    s.carriedIn = { m: 0, d: 0 };
+    s.bonusMult = 0;
+    s.bonusDmg = 0;
+    s.paidMult = 0;
+    s.paidDmg = 0;
+    s.bank = 0;
+    s.mult = 0;
+    s.hand = 1;
+    s.last = 'Take tricks. Make them eat the skulls.';
+    s.lastClass = '';
+    log('The fight ended. The carry is wiped — it never crosses a fight boundary.', 'hand');
+    render();
+  }
+
+  function log(text, cls) {
+    const el = document.getElementById('log');
+    const p = document.createElement('p');
+    if (cls) p.className = cls;
+    p.textContent = text;
+    el.appendChild(p);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function show(id, on, html) {
+    const el = document.getElementById(id);
+    if (on) {
+      el.innerHTML = html;
+      el.removeAttribute('hidden');
+    } else {
+      el.setAttribute('hidden', '');
+    }
+  }
+
+  function render() {
+    const payMult = Math.max(0, s.bonusMult - s.paidMult);
+    const payDmg = Math.max(0, s.bonusDmg - s.paidDmg);
+    const shownMult = s.mult + payMult;
+    const cash = s.bank * shownMult + payDmg;
+    const forced = Math.floor(s.bank * shownMult * RETENTION) + payDmg;
+
+    document.getElementById('f-bank').textContent = s.bank;
+    document.getElementById('f-mult').textContent = s.mult;
+    document.getElementById('f-cash').textContent = cash;
+    document.getElementById('f-forced').textContent = forced;
+
+    show('f-bonus', payMult > 0, '+' + payMult);
+    show('f-pending', payMult > 0 || payDmg > 0,
+      'Buff bonus pending: <b>+' + payMult + '</b> multiplier, <b>+' + payDmg + '</b> damage');
+    show('f-carried-in', s.carriedIn.m > 0 || s.carriedIn.d > 0,
+      'Carried in from last hand: <b>+' + s.carriedIn.m + '</b> multiplier, <b>+' + s.carriedIn.d + '</b> damage');
+    show('f-carry-out', s.carryOut.m > 0 || s.carryOut.d > 0,
+      'Banking for next hand: <b>+' + s.carryOut.m + '</b> multiplier, <b>+' + s.carryOut.d + '</b> damage');
+
+    const last = document.getElementById('f-last');
+    last.textContent = s.last;
+    last.className = 'wc-bank-last ' + s.lastClass;
+
+    document.getElementById('figures-label').setAttribute('aria-label',
+      'Tricks banked ' + s.bank + ', streak ' + s.mult +
+      (payMult > 0 || payDmg > 0 ? ', plus a pending buff bonus of ' + payMult + ' multiplier and ' + payDmg + ' damage' : '') +
+      (s.carriedIn.m > 0 || s.carriedIn.d > 0 ? ', of which ' + s.carriedIn.m + ' multiplier and ' + s.carriedIn.d + ' damage carried in from last hand' : '') +
+      (s.carryOut.m > 0 || s.carryOut.d > 0 ? ', banking ' + s.carryOut.m + ' multiplier and ' + s.carryOut.d + ' damage for next hand' : '') +
+      ', cashes for ' + cash + ', or ' + forced + ' if you are hit first');
+  }
+</script>

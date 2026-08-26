@@ -353,15 +353,21 @@ export function discardStock(state: RoundUiState): DiscardStock {
  *  as `discardStock` above does, so the two actions cannot disagree about when the felt is between
  *  tricks.
  *
- *  DLR-132 — Cheat and Timebomb are the one exception, and it is inherited rather than new: their
- *  retired felt-rail widgets (`CheatSlots`, `TimebombCharge`) were never gated on
- *  `discardWindowOpen` at all — each read its own `interactive` prop, which was `canAct(ui)` — for
- *  the reason both docblocks gave: "cannot be armed into a moment where no card can be played."
- *  Folding both into the ordinary row list must not narrow that reach to *between* tricks, because
- *  the ONE moment either card has value is FOLLOWING an already-committed lead — exactly the
- *  moment `discardWindowOpen` is false and `canAct` is true. Gating them on `discardWindowOpen`
- *  like every other row would make a Cheat's follow-suit break unreachable at the only trick it
- *  could matter, which is a functional regression, not a stricter rule.
+ *  DLR-132 — **Cheat** is the one exception, and it is inherited rather than new: its retired
+ *  felt-rail widget (`CheatSlots`) was never gated on `discardWindowOpen` at all — it read its own
+ *  `interactive` prop, which was `canAct(ui)` — for the reason its docblock gave: "cannot be armed
+ *  into a moment where no card can be played." Folding it into the ordinary row list must not
+ *  narrow that reach to *between* tricks, because the ONE moment a Cheat has value is FOLLOWING an
+ *  already-committed lead — exactly the moment `discardWindowOpen` is false and `canAct` is true.
+ *  Gating Cheat on `discardWindowOpen` would make its follow-suit break unreachable at the only
+ *  trick it could matter, which is a functional regression, not a stricter rule.
+ *
+ *  2026-08-26 — **Timebomb is NOT that exception, and no longer shares it.** It shipped alongside
+ *  Cheat on DLR-132 because both were felt-rail widgets reading `canAct`, but the reasoning above
+ *  is Cheat's alone: a Timebomb arms damage onto a card the player has yet to play, so it has no
+ *  business being armable AFTER the Quarry has led — that let the player see the lead and then
+ *  decide to arm, which is a read the card was never meant to buy. Timebomb now takes the ordinary
+ *  between-tricks window like every other row.
  *
  *  EXPORTED so `handleTapBuff`'s COMMITTING tap threads the SAME window into `activateFromPile` —
  *  `activateBuff` re-checks the window itself and throws on a refusal, so a caller that asked this
@@ -369,9 +375,7 @@ export function discardStock(state: RoundUiState): DiscardStock {
  *  "two readings of one gate" failure this codebase's every other stock function is written to
  *  prevent; here it would surface as a thrown `RangeError` on the second tap. */
 export function buffActivationWindowOpen(state: RoundUiState, buff: Buff): boolean {
-  return buff.kind === BuffKind.Cheat || buff.kind === BuffKind.Timebomb
-    ? canAct(state)
-    : discardWindowOpen(state)
+  return buff.kind === BuffKind.Cheat ? canAct(state) : discardWindowOpen(state)
 }
 
 /** DLR-126 — the stock's remaining four fields are DELEGATED to `buffActivationStockFor` rather

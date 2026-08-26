@@ -1,6 +1,6 @@
 # The discard — the swap and its refusal
 
-**Built by:** DLR-100
+**Built by:** DLR-100, DLR-146
 
 ## What it is
 
@@ -21,17 +21,25 @@ export function applyDiscard(
 
 `n` cards come off `side`'s hand; the same `n` come off the **front** of `drawPile`; the discarded
 cards are appended to the pile's **back**. This is `applyWoodcutterDraw`'s own one-card convention
-(`drawPile: [...restOfPile, discard]`), generalised to n cards rather than reinvented. `drawPile`'s
-**length is invariant across the call** — n out, n in — which is what makes the mechanic safe against
-exhausting a 20-card pile: three chained discards of three is nine draws against twenty, and every
-draw pairs with a same-sized append.
+(`drawPile: [...restOfPile, discard]`), generalised to n cards rather than reinvented.
+
+**Since DLR-146 the draw goes through `drawCards`, and `drawPile.length` is no longer invariant
+across the call.** It used to be — n out, n in — and that pairing was the whole reason the mechanic
+could not exhaust a 20-card pile. The player's per-trick refill now shortens the pile itself, so the
+pile a discard draws against can already be shorter than the throw; when it is, `drawCards` folds the
+spent pile back in under a seeded shuffle and the two piles are repartitioned. All 33 cards are still
+conserved, which is what `deckCycle.test.ts` pins, and the discarded cards still go to the **bottom
+of whatever pile the draw left**, so they stay unseen whether or not the draw reshuffled. See
+[the hand refill](the-hand-refill.md).
 
 `applyDiscard` throws a `RangeError` on two preconditions the reducer must guard before calling:
 `discarded.length` outside `1..MAX_CARDS_PER_DISCARD`, and a discarded card not held by `side`. A
-**third guard was added in the post-review fix pass**: `discarded.length > drawPile.length`,
-defensive against a pile drained below the discard size — unreachable at today's constants (the
-design doc's own arithmetic already rules the case out) but consistent with this module's discipline
-of never trusting a caller's arithmetic where a cheap check closes the gap. All three throws are
+**third guard was added in the post-review fix pass** and **re-aimed by DLR-146**: it now tests
+`discarded.length > drawPile.length + spentPile.length` rather than `drawPile.length` alone. The
+narrower form would have started firing on a state the game can now genuinely reach — a draw pile
+drained below the discard size, which is a reshuffle rather than a bug — and firing there would have
+thrown a `RangeError` inside a reducer. Against **both** piles it still names only what it was for:
+a caller asking for more cards than the encounter holds at all. All three throws are
 reachable only from a driver bug: the reducer (`src/app/warCouncil/discardHandlers.ts`) guards every
 precondition before calling, exactly as `primeCard` and `cheats.ts`'s `addCheat` already do — a
 reducer must not throw, because a throw during an event handler unmounts the tree.

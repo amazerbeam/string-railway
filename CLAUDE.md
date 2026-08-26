@@ -52,6 +52,45 @@ Two consequences worth stating, because both are easy to get wrong:
 - **`the-hunt.md` is the ruleset, not a changelog.** It is organised in playing order, marks every rule `[settled]` / `[provisional]` / `[open]` / `[not built]`, cites `hybrid-design.md §N` rather than reproducing its reasoning, and names no functions outside its Status register. `implementation-doc-writer` owns it and `/fb-apply` updates it every run that changes a rule — never edit it by hand, and never add a per-ticket section to it.
 - **`.docs/game_rules/fox-in-the-forest.md` is not part of this split.** It is the base game's published rulebook, transcribed, and it is a fixed reference — nothing in the pipeline maintains it.
 
+### "Win" and "lose" mean two different things — say which one you mean
+
+A skull **inverts** a trick, so the mechanical act and the outcome come apart, and the codebase uses
+one pair of words for both. This is the single most common source of wrong statements about the
+game — including in conversation with the developer. Before writing "win" or "lose" anywhere, work
+out which axis you are on:
+
+- **The mechanical axis — did the player physically take the cards.** This is what `playerWon` in
+  `BuffTrickContext` means, and its docblock says so: *"The player won the trick physically (before
+  the skull inverts what that is worth)."* **Every buff condition reads this axis and nothing else.**
+- **The outcome axis — did the player gain or get hurt.** This is what the bank, the multiplier, the
+  damage and the cash-out read.
+
+The four outcomes, which `.docs/game_rules/the-hunt.md` §7 owns:
+
+| | Clean trick | Skull trick |
+|---|---|---|
+| **Took the trick** | clean win — +1 bank, +1 multiplier | **ate the skull** — −1 health, two-thirds cash-out, both reset |
+| **Did not take it** | clean loss — −1 health, two-thirds cash-out, both reset | **dodge** — +1 bank, +1 multiplier |
+
+Three consequences that are routinely got wrong:
+
+- **A dodge is a good outcome reached by losing the trick.** Playing a 2 under a skulled 5 is the
+  correct play — no damage, +1 bank, +1 multiplier. Damage on a skull trick comes from **winning**
+  it, never from losing it.
+- **Feeder fires on both.** Its predicate is `!playerWon && suit matches` — there is no skull term
+  in it at all, so a Feeder pays whether the trick was a dodge or a clean loss. That is deliberate,
+  not a bug. Sidestep, by contrast, is `skullTrick && !playerWon`, which makes it the only condition
+  card that can never fire on a bad outcome.
+- **A card's printed text may contradict the code.** Sidestep and Glutton read "…with this card", a
+  leftover from an unbuilt "Apply-to-card" category in `v1-buff-card-list.md`. **No buff attaches to
+  a card.** A buff is activated for a trick and checked when that trick resolves.
+
+**A `High` / `Low` rename is banked and NOT built.** The proposal — Win/Loss become skull-aware and
+name only the outcome, while High/Low name the mechanical act and are the only words a buff card
+uses — is written up in `.docs/design/Balatro-Forbidden-Solitaire/ideas.md`. Until a ticket ships it,
+the vocabulary above is what the code and the ruleset actually say. Do not use High/Low in code, in
+`the-hunt.md`, or in a plan as though it were live.
+
 ### Cut buffs are cut until a ticket brings them back
 
 DLR-145 pared the mintable buff pool to **13 templates** — Taker (3 suits × Blade/Momentum), Feeder

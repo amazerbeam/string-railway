@@ -1,5 +1,6 @@
 import { MAX_CARDS_PER_DISCARD } from '../hunt'
 import { containsCard, removeCard } from './cardUtils'
+import { drawCards } from './encounterDeck'
 import type { Card, PlayerSide, RoundState } from './types'
 
 /**
@@ -52,7 +53,11 @@ export function discardRefusalFor(stock: DiscardStock): DiscardRefusal | null {
 /**
  * AC2/AC3 — the swap. `n` cards out of `side`'s hand, the same `n` off the FRONT of `drawPile`,
  * the discarded cards appended to its BACK — `applyWoodcutterDraw`'s own convention, generalised
- * from one card to n. `drawPile.length` is invariant across the call.
+ * from one card to n.
+ *
+ * Since DLR-146 `drawPile.length` is NO LONGER invariant across the call: if the pile cannot cover
+ * the draw, `drawCards` folds the spent pile back in and the two piles are repartitioned. All 33
+ * cards are still conserved, which is what `deckCycle.test.ts` pins.
  *
  * THROWS rather than returning the state unchanged, the discipline `primeCard` (this tree) and
  * `activateBuff` (`src/hunt/buffActivation.ts`) already set: a silent no-op would let the caller
@@ -77,16 +82,20 @@ export function applyDiscard(
       `Cannot discard the ${missing.rank} of ${missing.suit} — it is not in the ${side}'s hand`,
     )
   }
-  if (discarded.length > state.drawPile.length) {
+  if (discarded.length > state.drawPile.length + state.spentPile.length) {
     throw new RangeError(
-      `Cannot discard ${discarded.length} cards — only ${state.drawPile.length} left in the draw pile`,
+      `Cannot discard ${discarded.length} cards — only ${state.drawPile.length + state.spentPile.length} left in the encounter's deck`,
     )
   }
-  const drawn = state.drawPile.slice(0, discarded.length)
+  const draw = drawCards(state, discarded.length)
   const handAfterRemoval = discarded.reduce((hand, c) => removeCard(hand, c), state.hands[side])
   return {
     ...state,
-    hands: { ...state.hands, [side]: [...handAfterRemoval, ...drawn] },
-    drawPile: [...state.drawPile.slice(discarded.length), ...discarded],
+    hands: { ...state.hands, [side]: [...handAfterRemoval, ...draw.drawn] },
+    // AC3/AC5 unchanged — the discarded cards go to the BOTTOM of whatever pile the draw left,
+    // so they stay unseen whether or not the draw reshuffled.
+    drawPile: [...draw.drawPile, ...discarded],
+    spentPile: draw.spentPile,
+    drawSeed: draw.drawSeed,
   }
 }

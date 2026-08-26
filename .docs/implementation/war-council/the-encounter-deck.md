@@ -8,7 +8,7 @@ deck's lifetime from **hand-scoped to encounter-scoped**: one shuffled 33 is dea
 cards resolved to tricks accumulate in a second pile that is never dealt from, and only when the
 draw pile can no longer cover a whole deal does everything fold back together and shuffle once.
 
-The module is four exports and one interface, all pure and all in the lint-enforced pure core:
+The module is six exports and three interfaces, all pure and all in the lint-enforced pure core:
 
 | Export                 | What it is                                                                              |
 | ---------------------- | --------------------------------------------------------------------------------------- |
@@ -17,30 +17,37 @@ The module is four exports and one interface, all pure and all in the lint-enfor
 | `FRESH_ENCOUNTER_DECK` | both piles empty; the "new encounter" value, shared and only ever spread from             |
 | `isFreshDeck`          | the one statement of what "fresh" means, so `dealRound`'s branch and a spec cannot differ |
 | `closeHand(state)`     | the hand-boundary fold — every card not in the draw pile joins the spent pile             |
-| `dealPileFor(deck,rng)`| the reshuffle rule — returns `{ drawPile, reshuffled }`                                   |
+| `dealPileFor(deck,rng)`| the BETWEEN-HAND reshuffle rule — returns `{ drawPile, reshuffled }`                     |
+| `drawCards(source,n)`  | **DLR-146** — the MID-HAND draw, and the mid-hand sibling of the rule above              |
 
 `CARDS_PER_DEAL` is **derived, never written as `13`**. `HAND_SIZE` is `6` in `src/hunt/config.ts`,
 so a deal takes 6 + 6 + 1 = 13. It is not a configuration dial anyone has to keep in step with the
 hand size: it is what a deal costs, so it is the threshold by definition rather than by choice.
 
-### The cycle — 20, 7, reshuffle, 20
+### The cycle — 20, 4, reshuffle, 20 (since DLR-146)
 
-A hand costs 13 of the 33. That produces a fixed four-step cadence, and `deckCycle.test.ts` observes
-it rather than asserting it in prose:
+**A hand no longer costs exactly `CARDS_PER_DEAL`.** The deal takes 13, and the player's refill takes
+one more card for every trick that ends with their hand below `PLAYER_HAND_FLOOR` — three of them at
+today's constants, since trick 1 leaves five cards, trick 2 leaves four, and the sixth trick is
+skipped. So one hand costs **16**, and the cadence is:
 
-| Hand of the fight | Draw pile after dealing | Spent pile at hand's end | Reshuffled at this deal? |
-| ----------------- | ----------------------- | ------------------------ | ------------------------ |
-| 1                 | **20**                  | 13                       | no                       |
-| 2                 | **7**                   | 26                       | no                       |
-| 3                 | **20**                  | 13                       | **yes** — 26 + 7 shuffled |
-| 4                 | **7**                   | 26                       | no                       |
+| Hand of the fight | Draw pile after dealing | Reshuffled at this deal? |
+| ----------------- | ----------------------- | ------------------------ |
+| 1                 | **20**                  | no                       |
+| 2                 | **4**                   | no                       |
+| 3                 | **20**                  | **yes** — the whole 33 shuffled |
+| 4                 | **4**                   | no                       |
 
-The spec's observed sequences are `draws = [20, 7, 20, 7]` and
-`reshuffles = [false, false, true, false]`. So there is **exactly one reshuffle per two-hand cycle,
-and never on a fight's first hand** — a fresh encounter always opens on a shuffled 33.
+`deckCycle.test.ts` observes the cadence rather than pinning it, and derives the cost as
+`CARDS_PER_DEAL + Math.max(0, Math.min(HAND_SIZE - 1, PLAYER_HAND_FLOOR - 1))` — so the same spec is
+green at a floor of `0`, where it reduces to the pre-DLR-146 `[20, 7, 20, 7]`. What the spec asserts
+outright is the **reshuffle pattern**, `[false, false, true, false]`, which the floor does not move:
+there is still **exactly one between-hand reshuffle per two-hand cycle, and never on a fight's first
+hand**.
 
-An encounter runs about 3.3 hands, so a typical fight sees exactly one reshuffle: what the player
-has tracked spikes across hand two and is wiped once, mid-fight.
+An encounter runs about 3.3 hands, so a typical fight still sees one between-hand reshuffle. What is
+new is that hand two now deals from a **4-card** pile, so any draw within it — a refill, a swap, or a
+Woodcutter — is likely to trigger a **mid-hand** reshuffle as well.
 
 ### `closeHand` — the total rule at the hand boundary
 
@@ -77,19 +84,29 @@ It **throws** a `RangeError` naming both pile sizes and the shortfall when the t
 cannot cover a deal. That is unreachable through the shipped driver — `closeHand` conserves all 33,
 so the draw pile at a hand's start is exactly 33, 20 or 7, and 7 reshuffles back to 33 — and it is
 kept for `shieldHeartsForTier`'s stated reason: the guard is not dead code, it is the check that
-makes the guarantee hold. It sits on a path no event handler reaches, deliberately, because `src/`
-has no `ErrorBoundary` (DLR-131) and an escaping throw would blank the screen.
+makes the guarantee hold. It sits on a path no event handler reaches, deliberately. `src/` **has** had a root `ErrorBoundary`
+since DLR-131, so an escaping throw now replaces the app with the fallback panel rather than blanking
+the screen — but that is still a run lost, so the guard stays where it is.
 
-### The draw pile cannot run out mid-hand, and that is why one check at the deal is enough
+### The draw pile CAN run out mid-hand, since DLR-146 — and `drawCards` is the answer
 
-`drawPile.length` is **invariant for the life of a hand**. `applyWoodcutterDraw` returns a card for
-every card it takes, and `applyDiscard` appends the swapped cards to the pile's back as it takes the
-same number off its front (see [the discard](the-discard.md)). Nothing else touches the pile at all.
+Until 2026-08-26 `drawPile.length` was **invariant for the life of a hand**. `applyWoodcutterDraw`
+returned a card for every card it took, `applyDiscard` appended the swapped cards to the pile's back
+as it took the same number off its front, and nothing else touched the pile at all. That is why one
+reshuffle check at the deal was enough, and it is why both of those sites were unguarded: their
+`RangeError` and their `undefined`-into-a-hand were unreachable rather than defended against.
 
-So the only moment a reshuffle can ever be needed is the deal — which is exactly what "one reshuffle
-per cycle" means, and why `dealPileFor` is called from `dealRound` and nowhere else. A spec pins the
-invariant, because a future mutator that broke the take/return pairing would silently reintroduce a
-mid-hand exhaustion that nothing else in the engine is defended against.
+**The player's per-trick refill retires that invariant** — it takes cards off the pile and returns
+none. Both latent failures became reachable at the shipped floor, and two Woodcutter *previews* that
+indexed `drawPile[0]` became able to read `undefined`. All five sites now route through
+`drawCards`, which folds the spent pile back in under a seeded shuffle when the pile cannot cover a
+draw and returns fewer cards rather than throwing when both piles together are short. See
+[the hand refill](the-hand-refill.md) for the primitive, its seed, and the table of the five callers.
+
+So there are now **two** reshuffle rules rather than one, and they are deliberately siblings:
+`dealPileFor` between hands, `drawCards` within one. What `deckCycle.test.ts` pins in the invariant's
+place is the weaker, still-true statement: **the draw pile only ever shrinks within a hand, never
+grows except across a reshuffle, and all 33 cards are conserved at every intermediate state.**
 
 ### The spent pile grows at exactly one place
 
@@ -101,6 +118,13 @@ when a trick resolves and cannot grow at any other time.
 It ticks at the **resolution**, not when the player dismisses the trick well, so the two cards are
 counted while still visible in `TrickWell`. The count reflects state; a count that lagged the state
 would be a second source of truth.
+
+> **DLR-146 added a second way the pile CHANGES, though not a second way it grows.** `drawCards`
+> **empties** it when a mid-hand reshuffle folds it into the draw pile. Growth still happens at
+> exactly one place. One ordering matters: `playCard` hands the refill the spent pile with the
+> just-resolved trick's two cards **already appended**, and then takes `refill.spentPile` back rather
+> than rebuilding it — which is what keeps all 33 conserved when a refill and a reshuffle land at the
+> same instant.
 
 > **The player's swap and the Woodcutter's bury do NOT go here.** Both still go to the **bottom of
 > the draw pile**, so those cards stay unseen — neither `discard.ts` nor `abilities.ts` changed a

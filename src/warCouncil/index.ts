@@ -21,9 +21,10 @@ export {
   FRESH_ENCOUNTER_DECK,
   closeHand,
   dealPileFor,
+  drawCards,
   isFreshDeck,
 } from './encounterDeck'
-export type { DealPile, EncounterDeck } from './encounterDeck'
+export type { DealPile, DrawResult, DrawSource, EncounterDeck } from './encounterDeck'
 export { dealRound } from './deal'
 export { legalMoves, monarchFollowSet } from './legalMoves'
 export type { LegalMoveOptions, PlayCardOptions } from './legalMoves'

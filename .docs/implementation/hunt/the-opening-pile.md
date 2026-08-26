@@ -230,3 +230,10 @@ shipped engine produces. **AC10's first half does not hold as written.** Its sec
 Nothing was retuned in response: the gap is between a design prediction and the engine, and closing
 it is a design decision rather than a documentation one. Recorded in
 `.docs/game_rules/the-hunt.md`'s Known tensions.
+
+> **Both figures above were superseded a day later by DLR-146, 2026-08-26**, which refills the
+> player's hand to a floor of four cards mid-hand. They were measured against a hand that ran
+> 6, 5, 4, 3, 2, 1; the game now runs 6, 5, 4, 4, 4, 4, which changes how often a streak survives —
+> and every damage figure in this game is quadratic in streak length. **Re-measuring was explicitly
+> out of DLR-146's scope**, so nothing here has been re-taken and neither number should be quoted as
+> a reading of the current game.

@@ -20,9 +20,24 @@ which the decree takes one.
 
 > **DLR-80 changed the hand from 13 to 6.** `HAND_SIZE` in `src/hunt/config.ts` replaced the old
 > `TRICKS_PER_ROUND` constant, which lived in this module's `types.ts`. It is deliberately **one**
-> constant serving both the hand size and the trick count: every card dealt is played, so the two
-> cannot differ, and two constants that must be equal is a bug waiting for one of them to be edited.
-> The draw pile grew from 6 cards to 20 as a consequence.
+> constant serving both the hand size and the trick count, and the draw pile grew from 6 cards to 20
+> as a consequence.
+>
+> **DLR-146 changed what that one constant means, and it no longer means "every card dealt is
+> played".** The player is refilled to `PLAYER_HAND_FLOOR` as tricks resolve, so they see more than
+> `HAND_SIZE` cards and end a hand still holding some. `HAND_SIZE` is still one constant rather than
+> two because it is the **Quarry's** hand size and the trick count, and those two genuinely cannot
+> differ — the Quarry never refills, so the hand ends exactly when its last card does. Two constants
+> that must be equal is still a bug waiting for one of them to be edited.
+
+`dealRound` also seeds **`drawSeed`** (DLR-146) from the same generator, which is what makes a
+mid-hand reshuffle reproducible from the run seed. See
+[the hand refill](the-hand-refill.md).
+
+> **The 20-card remainder is no longer a fixed figure for the life of the hand.** The player's
+> per-trick refill takes cards off it, so at today's constants a hand costs 16 rather than 13 and the
+> pile can run short mid-hand — which `drawCards` handles by folding the spent pile back in. See
+> [the encounter deck](the-encounter-deck.md).
 
 **Skulls are assigned here too** (DLR-80): `dealRound` calls `assignSkulls(cpuHand, rng)` with the
 **same injected `rng`** it shuffled with, so a seeded deal reproduces its skulls as well as its

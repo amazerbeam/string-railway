@@ -65,6 +65,210 @@ One tension worth naming: the bar is about the *reward*, and colouring it by sui
 facts. It reads well now, but if a buff ever needs reward-*type* colour — damage vs coins vs
 multiplier — this bar is the slot that would want it, and suit would have to move.
 
+### The primed-card mark — a bomb, added rather than substituted
+`mockup-primed-card.html`. Scope is the **mark** only: what a card looks like once a Timebomb is
+primed onto it, not the arming flow.
+
+**A cartoon bomb** — black body with a rim light and a specular, a short fuse, and a spark that
+fizzes — sat **half over the card's top-right corner**, so it reads as an object *placed on* the card
+rather than as part of its printing. The corner is also the one part of a card that stays visible if
+the hand is ever overlapped or fanned.
+
+**The governing distinction: a skull REPLACES the art, a Timebomb is ADDED.** A skull is what the
+card *is* for that trick, so it takes the whole face. A Timebomb is a temporary thing the player did
+to a card that is otherwise still itself, so the card keeps its rank, suit, name and art and simply
+gains a mark. A primed Swan is still a Swan.
+
+**The green ring stays, and this is not decoration.** `--wc-timebomb` also drives
+`--wc-hp-ticking-fill`, the ticking hearts on the health bar, so green already means "a Timebomb is
+involved" everywhere else in the UI. The bomb is the icon; the green is the system colour, and the
+ring is the thread tying this card to damage the player can already see coming on the bar. Dropping
+it would cut that thread.
+
+**The fizz is one small loop** on a `steps()` timing so it flickers rather than glides, and it stops
+dead under `prefers-reduced-motion` with the spark simply left lit — the mark still reads, it just
+stops moving. It survives greyscale on shape alone: a black silhouette on a pale card.
+
+Open, and worth judging at real scale: a card can be **both skulled and primed**, which puts two loud
+marks on one small object (shown in the third close-up). And **the mark says nothing about tier** — a
+gold Timebomb hits for 12/6 and a bronze for 4/2 — though the ruleset's note that priming a second
+card overwrites the first's tier means a per-card figure could end up lying.
+
+### The skull and the readout are folded into the gallery
+`mockup-buff-gallery.html` now carries both, so the full screen matches the specialist sheets:
+
+- **The Quarry's led card is skulled**, and renders the skull face instead of the Swan it would
+  otherwise show. The skull lives in the shared symbol sheet as `#skull-fig` and is referenced by
+  `<use>`, so there is exactly one skull in the document however many skulled cards are on screen.
+  The corner keeps `1`, the Bells glyph and the name *Swan*; the accessible name reads
+  "1 of Bells — Swan, skulled".
+- **The readout sits in the LEFT RAIL, not under the trick well.** This follows from the decision the
+  rail exists for: the gallery covers the middle of the felt, so a readout placed under the trick
+  would vanish at the exact moment the player is choosing a buff — which is when knowing the
+  consequence matters most. In the rail it is visible in both states.
+- **"Their intent" is gone from the dossier**, which now holds three panels rather than four. The
+  readout replaces it.
+
+**Measured after the change:** the rail does **not** overflow (0px) despite gaining the readout —
+removing the intent panel from the dossier and the rail's `space-evenly` distribution absorbed it.
+The gallery still fits, and there is no page scroll.
+
+The rail's readout uses the same measured light-ground inks as the standalone sheet — body
+`#1b1710`, label `#5f5647`, costs-you `#96301f`, worth-having `#6f5412` — because it is the same
+off-white slip on the same parchment.
+
+### NEW REQUIREMENT — the skulled card, and a consequence readout replacing "Their intent"
+`mockup-trick-readout.html`. Two changes to the middle of the felt, both new scope.
+
+**A skulled card renders a skull instead of its character art.** One bone skull on one dark wash,
+**identical on every rank and every suit** — a skull is a property of the trick, not a character, so a
+player should recognise one across the table without reading it. The corner index keeps rank, suit
+glyph and rank name, because the trick is still won on rank and suit. Today a skull is a small glyph
+on an otherwise ordinary card; this makes it the whole face.
+
+**Below the trick sits a readout of what their card does to you**, and it **replaces the "Their
+intent" panel** in the left dossier. It has up to three rows: `IF YOU WIN`, `IF YOU LOSE`, and a
+`RULE` row when the card constrains what you may legally play or changes how the trick is decided.
+
+**It renders only when there is something to say.** A clean low card produces **no panel at all**,
+and neither does the state before the Quarry has played. The readout sits under the trick on every
+single hand, so a row reading "nothing extra" would be permanent furniture — and permanent furniture
+teaches a player to stop looking, which is exactly what would make it useless on the hand where it
+matters. The sheet shows those two empty cases explicitly so the restraint is visible; in the game
+that space is simply felt.
+
+**It is an off-white slip, matching the cards** — the same parchment gradient and printed hairline,
+so it reads as part of the deck rather than a HUD panel bolted onto the table.
+
+**Its text colours are measured, and the measurement changed them.** On a light ground **both project
+accent tokens fail WCAG AA outright**: `--wc-alarm` `#d1705f` falls to **3.03:1** and `--wc-brass`
+`#c99a4e` to **2.29:1**. Each is replaced by a darker member of its own family, so it still reads as
+"the red one" and "the gold one" rather than as a new colour:
+
+| role | colour | on `#f6f2e8` |
+|---|---|---|
+| body | `#1b1710` | 15.96:1 |
+| label, small caps | `#5f5647` | 6.46:1 |
+| **costs you** | `#96301f` | 6.86:1 |
+| **worth having** | `#6f5412` | 6.36:1 |
+
+Verified live from computed styles, not just on paper. The values are placeholders; **the 4.5:1 floor
+is not** — re-measure if the parchment is retuned. This is the second time on this ticket that the
+obvious colour was the failing one.
+
+**It is deliberately quiet, and the first pass was not.** That version gave each branch a filled pill
+— green for *if you win*, red for *if you lose* — which read as a traffic light under the trick. The
+green was not even a project colour; it was invented for the sheet. Labels are now plain small-caps
+in `--wc-chalk-dim` with no chip at all, and colour appears **only on the consequence itself**:
+`--wc-alarm` when the outcome costs you, `--wc-brass` when it is worth having. Both are existing
+tokens, and nothing else in the panel is tinted.
+
+**It never predicts the outcome, and that is a rules constraint rather than a style choice.**
+`the-hunt.md` states the game will not tell you whether you are about to win even where it could work
+it out, because that would hand you the Quarry's exact card and section 9's telegraph withholds it
+deliberately. So both branches are stated and neither is emphasised. The mockup carries five worked
+examples, each following the rank's real rule:
+
+- **skulled Swan** — *win*: you eat the skull, and their Swan lost, so Aoife leads next; *lose*: Aoife
+  eats the skull and the Swan does nothing, because it was on the winning side.
+- **skulled Treasure (7)** — the rank does nothing, so only the skull branches.
+- **led Monarch** — a RULE row: you may play only your Swan of that suit or your highest of it.
+- **lone Witch (9)** — a RULE row: their 9 counts as trump, unless you play a Witch too and the two
+  cancel.
+- **a clean 4** — "nothing extra", stated honestly rather than padded with a filler sentence.
+
+**The gap this leaves, and it is a real one.** "Their intent" existed for the state where *you* lead:
+their card is face down, and the ruleset says whether the trick carries a skull is not yet decided
+then — which is exactly when a telegraph was worth having. Three options, none chosen: the readout
+carries the telegraph in that state; it shows the same slanted `~` estimate the damage readout
+already uses; or it collapses and says nothing. The mockup shows the third so the emptiness is
+visible rather than theoretical.
+
+**Also unresolved:** a skull stays with its card when the card changes hands (the Quarry's Fox can
+exchange a skulled card into the decree, and your Fox can take it into hand). So a card in *your* hand
+can be skulled and would render as a skull card. Worth confirming that is wanted.
+
+### The utility-card decisions are folded into the gallery
+`mockup-buff-gallery.html` now carries all four, so the picker and the util-card sheet agree:
+
+- **A fifth run, "Press".** The grouping key is no longer the target suit alone — it is
+  `suit ?? (cadence === 'PRESS' ? 'press' : 'null')`. Cheat, Timebomb and Ward leave the "No suit"
+  bucket, which now holds only the passive suitless buffs like Sidestep. The Press tab is **solid
+  where the other four are dashed**, because it names an action rather than the absence of a suit.
+  Flip the mid-trick / between-tricks toggle to watch the run appear.
+- **The `PRESS` pill is raised** — a chip with a lit top edge, against the flat tint every passive
+  cadence gets.
+- **The Timebomb's payoff bar is split**, green over alarm: `+4 them` / `2 you`. Its accessible name
+  now reads the full sentence — *"4 damage to them, and 2 to you if it lands on your side"* — so the
+  risk is not a purely visual fact.
+- **A PRESS card's poised label reads "TAP AGAIN TO SPEND"**; every other card still reads
+  "TAP AGAIN TO ACTIVATE". For these two the second tap consumes the card and `Escape` will not
+  bring it back.
+
+**Cost, measured and accepted.** The fifth tab is a sixteenth grid cell. Mid-trick — the common case,
+and the one where the fenced group must stay visible — the grid still fits exactly, **0px overflow**
+with the fence in view. Between tricks, with all fifteen cards live and five tabs, the grid runs
+**68px** over and the gallery scrolls internally. That is scoped overflow inside one panel rather
+than a page scroll, and the fence is empty in that state, so nothing the player needs is hidden. If
+that 68px is judged unacceptable the fix is a slightly narrower card, which is a tuning value and
+therefore the developer's.
+
+### The two utility cards on the picker — `mockup-util-cards.html`
+Cheat and Timebomb are the only `PRESS` cards in the game: the only two you *spend* rather than wait
+on. **Scope here is the picker only** — how you find them and tell them apart — not what happens once
+one is committed. A first draft covered the whole in-game flow (the Cheat's live duration, the
+Timebomb's targeting of a hand card) and was cut as out of scope; that flow is a separate ticket.
+
+- **Proposed: a fourth run, "Press".** They currently share the "No target suit" bucket with
+  Sidestep, which fires on its own. Those are different *kinds* of card, and a player scanning for
+  "what can I act on right now" has to read the cadence pill on every one. The tab is solid rather
+  than dashed, because unlike the other three it names an **action**, not the absence of a suit.
+- **The `PRESS` pill is raised** — a chip with a lit top edge. WIN, LOSE, DODGE, WHEN and HAND END all
+  describe something that happens *to* you; PRESS is the only cadence that is a verb you perform.
+- **The Timebomb's payoff bar is split, green over alarm.** Its reward as written is `+4 damage`,
+  which is half the card: the same figure is **2 to you** if the hit lands on your side
+  (`TIMEBOMB_DAMAGE`, 4/2 bronze, 8/4 silver, 12/6 gold). A single-value bar makes the card look
+  strictly better than it is at the exact moment a player is deciding whether to take it. The Cheat
+  needs no split — its only downside is expiring unused.
+- **Tier means different things on the two cards**, and the face is the only place that can be read:
+  a Cheat's tier is **duration** (1/2/3 tricks), a Timebomb's is **damage**.
+- **Poised reads "TAP AGAIN TO SPEND"**, not "activate" — for these two the second tap consumes the
+  card, and `the-hunt.md` is explicit that `Escape` works before it and never after.
+- **Fenced is their normal home.** Both can only be pressed between tricks, so most times a player
+  opens the picker they are in the fence. It is designed as a resting state, not an error state.
+
+Open, and logged in the sheet: whether "Press" should be a run or a fourth chip on the tier filter
+rail; and that priming a second Timebomb overwrites the first's tier, so two different-tier Timebombs
+in the picker advertise figures that will not both be honoured.
+
+### The settled buff card is folded into the gallery
+`mockup-buff-gallery.html` now renders its buffs with the design from `mockup-buff-metal.html`:
+off-white face, metallic tier frame, roman-numeral rank, bare suit glyph in the suit's own colour,
+suit-coloured payoff bar with the contrast-derived inks, tarnished-metal unusable state, and the
+hover sheen travelling the rim. The pile layers took the metal gradient too, and the tier filter
+chips became little metal swatches. The old tier-field card is overridden rather than excised, in one
+clearly-headed block at the end of the stylesheet.
+
+**Suit HEADERS were tried and do not fit, and the measurement is the interesting part.** The panel
+gives the grid **416px**. The dense twelve-card grid needs **348px** — two rows of eight. Four stacked
+suit groups, each a header plus its own row, needed roughly **800px**, which overflowed by 692 and
+pushed the fenced "not usable now" group below the fold. That is a real loss: the fence being visible
+without scrolling is one of this screen's points.
+
+So the suit label costs a **cell, not a row**. Each suit run opens with a `.suittab` — a
+card-shaped, dashed, suit-tinted tile carrying the glyph, the suit name and the held count, sitting
+in the flow of the same dense grid. Twelve cards plus four tabs is sixteen cells, exactly two rows of
+eight, and the fence stays put. Verified: grid overflow **0px**, fence visible without scrolling, no
+page scroll.
+
+This matters beyond layout. The bare suit glyph on each card is only sufficient *because* something
+marks where each run begins — that is the trade the metal sheet's design rests on. A header would
+have done it; a tab does it for a fifth of the vertical cost.
+
+`CLAUDE.md` names this sheet as the one place a cut buff may still appear, so its fifteen-card set
+(including Glutton, Hoarder, Keepsake and the Purse rewards) is deliberately unchanged — it is a grid
+load test. `mockup-buff-metal.html` shows the real thirteen.
+
 ### The rim sheen — light travels along the frame on hover
 Hovering a buff card sweeps a skewed band of white along its metal frame. The trick is stacking
 order rather than geometry: the sheen sits at `z-index: 0`, **above the metal background but below

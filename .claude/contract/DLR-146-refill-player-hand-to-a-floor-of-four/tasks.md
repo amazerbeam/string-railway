@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: COMPLETE
 Started: 2026-08-26
 
 **Goal:** The player's hand is topped back up to four cards as each trick resolves, behind one constant that restores today's behaviour exactly at `0`; and because a hand now shortens the draw pile mid-hand for the first time, every draw in the engine routes through one primitive that folds the spent pile back in when the pile cannot cover a draw.
@@ -31,6 +31,17 @@ Started: 2026-08-26
 - `src/sim/baselinePolicy.ts:116` — `isLastWindow` by tricks remaining.
 - `src/warCouncil/__tests__/deckCycle.test.ts` — rewrite the retired D5 invariant and re-derive the draw-pile cycle.
 - The 15 `RoundState` construction sites the audit counted, for the new required field: `src/warCouncil/deal.ts` (production) and `src/app/warCouncil/__tests__/roundFixture.ts`, `src/warCouncil/__tests__/discard.test.ts` (3), `abilities.test.ts`, `cpuPlayer.test.ts`, `legalMoves.test.ts`, `legalMovesQuarry.test.ts`, `playCard.test.ts`, `playCard.timebomb.test.ts`, `quarryIntent.test.ts`, `rankTiers.resolution.test.ts`, `types.test.ts`, `voluntaryCashOut.test.ts`.
+- **Post-Phase-3 corrective task** — `src/app/warCouncil/__tests__/roundReducer.quickKill.test.ts` — re-derived a pinned hand-width expectation from `HAND_SIZE`/`PLAYER_HAND_FLOOR` instead of the pre-refill literal `1`.
+- **Post-Phase-3 corrective task** — `src/app/warCouncil/__tests__/roundReducer.delayedApply.test.ts` — re-derived the live-hand-width expectation in the AC4 case; the frozen `unplayedAtPress` expectation was already floor-invariant and untouched.
+- **Post-Phase-3 corrective task** — `src/app/warCouncil/__tests__/WarCouncilRound.duelHealthBars.test.tsx` — re-derived the mid-hand-resolve `unplayedAtResolve` expectation from the same two constants, since trick A's non-final refill now feeds trick B's played-down count.
+- **Post-review fix pass** — `src/warCouncil/cpuPlayer.ts` — the audit's grep found only sites that MUTATE `drawPile`; it missed the Woodcutter-choice PREVIEW at `chooseCpuMove`, which indexed `drawPile[0]` raw and could hand `lowestCard` an `undefined` once the pile could run empty mid-hand. Routed through `drawCards` instead, matching `playCard`'s own preview fix.
+- **Post-review fix pass** — `src/warCouncil/playCard.ts` — the second missed preview site, same root cause and same fix, in the Woodcutter-discard validation this ticket itself edited.
+- **Post-review fix pass** — `src/warCouncil/encounterDeck.ts` — corrected `drawCards`'s docblock, which claimed it "closes both" reachable-throw problems when it closed two of (it turns out) four; now names all five sites it unifies.
+- **Post-review fix pass** — `src/warCouncil/abilities.ts` — added the documented-not-guarded note to `applyWoodcutterDraw` for the exhausted-deck degenerate case (Defender Warning 2).
+- **Post-review fix pass** — `src/warCouncil/__tests__/deckCycle.test.ts`, `src/warCouncil/__tests__/handRefill.test.ts` — the `choiceFor` test helpers now throw a named error instead of silently passing `undefined` through when the draw pile is empty.
+- **Post-review fix pass** — `src/warCouncil/__tests__/cpuPlayer.test.ts` — added the Critical-finding spec: `chooseCpuMove` with an empty `drawPile` and a Woodcutter in hand.
+- **Post-review fix pass** — `src/warCouncil/__tests__/playCard.test.ts` — added the Warning-1 spec: an empty `drawPile` plus an invalid Woodcutter discard returns `InvalidWoodcutterDiscard` rather than throwing.
+- **Post-review fix pass** — `src/warCouncil/__tests__/handRefill.test.ts` — added the Info-1 targeted case: a Woodcutter play that completes a trick still refills through the floor.
 
 **Deleted:** (none)
 
@@ -48,7 +59,7 @@ Started: 2026-08-26
 
 Everything in this phase is additive: a new constant, a new required state field with every construction site moved in the same task, and a new pure function nothing calls yet. The phase ends type-checking with the engine's behaviour completely unchanged — `drawCards` exists and is tested, but no draw site routes through it until Phase 2.
 
-### Task 1: Add `PLAYER_HAND_FLOOR` to the Hunt config and correct the `HAND_SIZE` comment
+### Task 1: Add `PLAYER_HAND_FLOOR` to the Hunt config and correct the `HAND_SIZE` comment ✓
 
 - Skill: `react-frontend`
 
@@ -57,7 +68,7 @@ Everything in this phase is additive: a new constant, a new required state field
 - Modify: `src/hunt/index.ts:33-35` (the config re-export block, beside `HAND_SIZE`)
 - Config: `src/hunt/config.ts` — add `PLAYER_HAND_FLOOR` (value `4`, transcribed from the ticket as PROVISIONAL)
 
-- [ ] **Step 1: Correct the `HAND_SIZE` block, which currently asserts every dealt card is played (AC7)**
+- [x] **Step 1: Correct the `HAND_SIZE` block, which currently asserts every dealt card is played (AC7)**
 
 Replace the existing comment above `export const HAND_SIZE = 6`:
 
@@ -74,7 +85,7 @@ Replace the existing comment above `export const HAND_SIZE = 6`:
 export const HAND_SIZE = 6
 ```
 
-- [ ] **Step 2: Add the new constant directly beneath `HAND_SIZE`**
+- [x] **Step 2: Add the new constant directly beneath `HAND_SIZE`**
 
 ```ts
 // DLR-146 — the player's hand is topped back up to this many cards as each trick resolves, so the
@@ -86,16 +97,16 @@ export const HAND_SIZE = 6
 export const PLAYER_HAND_FLOOR = 4
 ```
 
-- [ ] **Step 3: Re-export it from the Hunt barrel, beside `HAND_SIZE`**
+- [x] **Step 3: Re-export it from the Hunt barrel, beside `HAND_SIZE`**
 
 In `src/hunt/index.ts`, add `PLAYER_HAND_FLOOR,` to the existing `export { … } from './config'` block, on the line after `HAND_SIZE,`.
 
-- [ ] **Step 4: Typecheck**
+- [x] **Step 4: Typecheck**
 
 Run: `npm run typecheck`
 Expected: exits 0, no errors reported.
 
-### Task 2: Add `RoundState.drawSeed` and seed it in `dealRound`
+### Task 2: Add `RoundState.drawSeed` and seed it in `dealRound` ✓
 
 - Skill: `react-frontend`
 
@@ -105,7 +116,7 @@ Expected: exits 0, no errors reported.
 - Test: `src/warCouncil/__tests__/deal.test.ts` — pin the seed's reproducibility
 - Modify (construction sites, same task — a required field split across tasks leaves a phase that does not compile): `src/app/warCouncil/__tests__/roundFixture.ts`, `src/warCouncil/__tests__/discard.test.ts`, `src/warCouncil/__tests__/abilities.test.ts`, `src/warCouncil/__tests__/cpuPlayer.test.ts`, `src/warCouncil/__tests__/legalMoves.test.ts`, `src/warCouncil/__tests__/legalMovesQuarry.test.ts`, `src/warCouncil/__tests__/playCard.test.ts`, `src/warCouncil/__tests__/playCard.timebomb.test.ts`, `src/warCouncil/__tests__/quarryIntent.test.ts`, `src/warCouncil/__tests__/rankTiers.resolution.test.ts`, `src/warCouncil/__tests__/types.test.ts`, `src/warCouncil/__tests__/voluntaryCashOut.test.ts`
 
-- [ ] **Step 1: Add the field to `RoundState`, directly after `reshuffled`**
+- [x] **Step 1: Add the field to `RoundState`, directly after `reshuffled`**
 
 ```ts
   /** DLR-146 — the seed a MID-HAND reshuffle draws its order from. Written once by `dealRound`
@@ -120,7 +131,7 @@ Expected: exits 0, no errors reported.
   readonly drawSeed: number
 ```
 
-- [ ] **Step 2: Correct the `primedCards` docblock's retired claim (AC7)**
+- [x] **Step 2: Correct the `primedCards` docblock's retired claim (AC7)**
 
 In `src/warCouncil/types.ts`, replace the sentence beginning "With `HAND_SIZE` cards and that many tricks every dealt card is played…" with:
 
@@ -131,7 +142,7 @@ In `src/warCouncil/types.ts`, replace the sentence beginning "With `HAND_SIZE` c
    *  could for a card the Woodcutter buries or the Fox exchanges away and never takes back.
 ```
 
-- [ ] **Step 3: Seed `drawSeed` in `dealRound` and correct its docblock (AC7)**
+- [x] **Step 3: Seed `drawSeed` in `dealRound` and correct its docblock (AC7)**
 
 In `src/warCouncil/deal.ts`, replace the docblock sentence "With the 33-card deck that is 6 + 6 dealt, 1 decree and 20 left for the Woodcutter." with:
 
@@ -151,12 +162,12 @@ Then add `drawSeed` to the returned object, directly after `reshuffled`:
 
 Note the ordering constraint: this `rng()` call must come **after** `shuffle` and `assignSkulls` have consumed theirs, or every existing seeded-deal expectation shifts. Placing the line in the returned object literal (which is evaluated after `opening` and `assignSkulls`) satisfies this — but `assignSkulls(cpuHand, rng)` is itself in that literal, so put `drawSeed` **after** the `skulledCards` line and read it there.
 
-- [ ] **Step 4: Add `drawSeed` to every `RoundState` literal that fails to compile**
+- [x] **Step 4: Add `drawSeed` to every `RoundState` literal that fails to compile**
 
 Run: `npm run typecheck`
 Expected: errors naming each construction site missing `drawSeed`. Add `drawSeed: 0,` to each fixture literal — the value is irrelevant to every existing spec, and `0` is a valid seed (`createSeededRng` coerces with `>>> 0`). Re-run until it exits 0. Sites that spread an existing base object need no edit; the audit's 15 is an upper bound and the compiler is the arbiter.
 
-- [ ] **Step 5: Pin the seed's reproducibility in `deal.test.ts`**
+- [x] **Step 5: Pin the seed's reproducibility in `deal.test.ts`**
 
 ```ts
   it('DLR-146 — drawSeed is a non-negative 32-bit integer, and the same seed deals the same one', () => {
@@ -169,12 +180,12 @@ Expected: errors naming each construction site missing `drawSeed`. Add `drawSeed
   })
 ```
 
-- [ ] **Step 6: Run the touched specs and typecheck**
+- [x] **Step 6: Run the touched specs and typecheck**
 
 Run: `npx vitest run src/warCouncil/__tests__/deal.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; typecheck exits 0.
 
-### Task 3: Add the `drawCards` primitive to `encounterDeck.ts`
+### Task 3: Add the `drawCards` primitive to `encounterDeck.ts` ✓
 
 - Skill: `react-frontend`
 
@@ -183,7 +194,7 @@ Expected: Vitest reports 0 failed; typecheck exits 0.
 - Modify: `src/warCouncil/index.ts` — export `drawCards`, `DrawSource`, `DrawResult`
 - Test: `src/warCouncil/__tests__/drawCards.test.ts`
 
-- [ ] **Step 1: Write the failing spec first**
+- [x] **Step 1: Write the failing spec first**
 
 Create `src/warCouncil/__tests__/drawCards.test.ts`:
 
@@ -255,12 +266,12 @@ describe('drawCards', () => {
 })
 ```
 
-- [ ] **Step 2: Run it and watch it fail for the right reason**
+- [x] **Step 2: Run it and watch it fail for the right reason**
 
 Run: `npx vitest run src/warCouncil/__tests__/drawCards.test.ts`
 Expected: fails to collect with "does not provide an export named 'drawCards'" — not an assertion failure.
 
-- [ ] **Step 3: Implement `drawCards` in `src/warCouncil/encounterDeck.ts`**
+- [x] **Step 3: Implement `drawCards` in `src/warCouncil/encounterDeck.ts`**
 
 Add `mixSeed` and `createSeededRng` to the existing `'../hunt'` import, then append:
 
@@ -335,11 +346,11 @@ export function drawCards(source: DrawSource, count: number): DrawResult {
 }
 ```
 
-- [ ] **Step 4: Export it from the tree's barrel**
+- [x] **Step 4: Export it from the tree's barrel**
 
 In `src/warCouncil/index.ts`, extend the existing `encounterDeck` export lines with `drawCards` and `export type { DrawSource, DrawResult }`.
 
-- [ ] **Step 5: Run the spec and typecheck**
+- [x] **Step 5: Run the spec and typecheck**
 
 Run: `npx vitest run src/warCouncil/__tests__/drawCards.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; typecheck exits 0.
@@ -350,7 +361,7 @@ Expected: Vitest reports 0 failed; typecheck exits 0.
 
 Both changes are behaviour-preserving while the draw pile is long, which it always is today — so this phase can land on its own with no observable difference, and it is what makes Phase 3's refill safe to add. The phase ends type-checking with the full existing suite still green.
 
-### Task 4: Route `applyDiscard` through `drawCards` and re-aim its guard
+### Task 4: Route `applyDiscard` through `drawCards` and re-aim its guard ✓
 
 - Skill: `react-frontend`
 
@@ -358,7 +369,7 @@ Both changes are behaviour-preserving while the draw pile is long, which it alwa
 - Modify: `src/warCouncil/discard.ts:52-92`
 - Test: `src/warCouncil/__tests__/discard.test.ts`
 
-- [ ] **Step 1: Correct the docblock's retired invariant and re-aim the third guard**
+- [x] **Step 1: Correct the docblock's retired invariant and re-aim the third guard**
 
 In `applyDiscard`'s docblock, replace "`drawPile.length` is invariant across the call." with:
 
@@ -391,7 +402,7 @@ Then replace the third guard and the body:
 
 Add `drawCards` to the existing import from `./encounterDeck` (a new import line — `discard.ts` does not import from it today).
 
-- [ ] **Step 2: Add a spec for the reshuffling swap**
+- [x] **Step 2: Add a spec for the reshuffling swap**
 
 Append to `src/warCouncil/__tests__/discard.test.ts`:
 
@@ -409,12 +420,12 @@ Append to `src/warCouncil/__tests__/discard.test.ts`:
 
 Add whatever of `dealRound`, `lcg`, `FRESH_ENCOUNTER_DECK` the file does not already import.
 
-- [ ] **Step 3: Run the discard specs and typecheck**
+- [x] **Step 3: Run the discard specs and typecheck**
 
 Run: `npx vitest run src/warCouncil/__tests__/discard.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; typecheck exits 0.
 
-### Task 5: Route `applyWoodcutterDraw` through `drawCards`
+### Task 5: Route `applyWoodcutterDraw` through `drawCards` ✓
 
 - Skill: `react-frontend`
 
@@ -422,7 +433,7 @@ Expected: Vitest reports 0 failed; typecheck exits 0.
 - Modify: `src/warCouncil/abilities.ts:17-30`
 - Test: `src/warCouncil/__tests__/abilities.test.ts`
 
-- [ ] **Step 1: Add the failing spec for the empty-pile case**
+- [x] **Step 1: Add the failing spec for the empty-pile case**
 
 Append to `src/warCouncil/__tests__/abilities.test.ts`:
 
@@ -438,12 +449,12 @@ Append to `src/warCouncil/__tests__/abilities.test.ts`:
   })
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `npx vitest run src/warCouncil/__tests__/abilities.test.ts`
 Expected: the new test fails — today `[drawn]` destructures `undefined` off an empty array, so the hand length or the `!== undefined` assertion is wrong.
 
-- [ ] **Step 3: Replace the body**
+- [x] **Step 3: Replace the body**
 
 ```ts
 export function applyWoodcutterDraw(
@@ -468,7 +479,7 @@ export function applyWoodcutterDraw(
 
 Add `drawCards` to `abilities.ts`'s imports from `./encounterDeck`.
 
-- [ ] **Step 4: Run the abilities specs and typecheck**
+- [x] **Step 4: Run the abilities specs and typecheck**
 
 Run: `npx vitest run src/warCouncil/__tests__/abilities.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; typecheck exits 0.
@@ -479,7 +490,7 @@ Expected: Vitest reports 0 failed; typecheck exits 0.
 
 The behavioural phase. The refill lands, the two `deckCycle.test.ts` tests whose asserted invariants this ticket trades away are rewritten to pin what is now true, and the simulator's last-window heuristic is re-expressed so it does not silently stop firing. The phase ends with the engine's behaviour changed and every spec describing the new behaviour.
 
-### Task 6: Refill the player's hand at trick resolution
+### Task 6: Refill the player's hand at trick resolution ✓
 
 - Skill: `react-frontend`
 
@@ -488,7 +499,7 @@ The behavioural phase. The refill lands, the two `deckCycle.test.ts` tests whose
 - Modify: `src/warCouncil/playCard.ts:110-154` (the trick-resolution branch)
 - Test: `src/warCouncil/__tests__/handRefill.test.ts`
 
-- [ ] **Step 1: Add the optional floor to `PlayCardOptions`**
+- [x] **Step 1: Add the optional floor to `PlayCardOptions`**
 
 In `src/warCouncil/legalMoves.ts`, append to the `PlayCardOptions` interface:
 
@@ -500,7 +511,7 @@ In `src/warCouncil/legalMoves.ts`, append to the `PlayCardOptions` interface:
   readonly handFloor?: number
 ```
 
-- [ ] **Step 2: Add the refill to `playCard`'s trick-resolution branch**
+- [x] **Step 2: Add the refill to `playCard`'s trick-resolution branch**
 
 Add `PLAYER_HAND_FLOOR` to the existing `'../hunt'` import and `drawCards` to the `'./encounterDeck'` import. Then, between the `lastResolution` assignment and the final `return`, insert:
 
@@ -561,7 +572,7 @@ Then thread it through the existing return, replacing the `spentPile`, `hands` a
   }
 ```
 
-- [ ] **Step 3: Write the spec pinning AC2–AC5**
+- [x] **Step 3: Write the spec pinning AC2–AC5**
 
 Create `src/warCouncil/__tests__/handRefill.test.ts`. Play a full hand through the real `playCard`, recording the player's hand width at the moment they choose, at floor `4` and at floor `0`:
 
@@ -657,24 +668,28 @@ describe('DLR-146 — the player hand floor', () => {
 })
 ```
 
-- [ ] **Step 4: Run the refill spec and typecheck**
+- [x] **Step 4: Run the refill spec and typecheck**
 
 Run: `npx vitest run src/warCouncil/__tests__/handRefill.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; typecheck exits 0.
 
-- [ ] **Step 5: Run the whole engine tree's specs, which is where a refill regression surfaces**
+- [x] **Step 5: Run the whole engine tree's specs, which is where a refill regression surfaces**
 
 Run: `npx vitest run src/warCouncil`
 Expected: Vitest reports 0 failed. `deckCycle.test.ts` is expected to FAIL here — Task 7 rewrites it. Record which of its tests fail and carry that to Task 7; any other failure is a regression to fix before moving on.
 
-### Task 7: Rewrite the two `deckCycle.test.ts` tests whose invariants this ticket retires
+**Measured:** `deckCycle.test.ts`'s two failures are exactly the two Task 7 targets — "AC1/AC2/AC6 — the draw pile runs 20, 7, then reshuffles back to 20" (got `[20, 4, 20, 4]`, matching Task 7's predicted `refillsPerHand = 3`) and "D5 — the draw pile's length never changes for the life of a hand…" (got length 19 vs opening 20). A third, unpredicted failure surfaced in `playCard.test.ts` ("DLR-123 AC3 — a resolved trick sends both its cards to the spent pile, in trick order"): its fixture's 2-card `drawPile` is too small to cover a floor-4 refill without itself reshuffling the very spent pile the test asserts on. Fixed by passing `{ handFloor: 0 }` at that one call site — the test is about spent-pile ordering, not about the refill, so disabling the refill for that call is the correct, minimal fix rather than growing the shared fixture's `drawPile` for every test in the file. Re-run after the fix: only the two `deckCycle.test.ts` tests fail (412 passed, 2 failed), confirming no other regression.
+
+**Not in this task's Files block, touched anyway:** fixing the AC3 spentPile test grew `playCard.test.ts` from 418 to 422 lines, past the 400-line budget it was already close to. Per the fix-in-ticket rule, split its "playCard — banking and skulls" describe block into a new sibling file `src/warCouncil/__tests__/playCard.bank.test.ts` (own local copy of `stateWith`, matching how other spec files keep their own small fixtures rather than sharing one across files). Resulting sizes: `playCard.test.ts` 354 lines, `playCard.bank.test.ts` 102 lines. Both files run and pass (20 tests, 0 failed); typecheck and lint clean.
+
+### Task 7: Rewrite the two `deckCycle.test.ts` tests whose invariants this ticket retires ✓
 
 - Skill: `react-frontend`
 
 **Files:**
 - Modify: `src/warCouncil/__tests__/deckCycle.test.ts:81-120`
 
-- [ ] **Step 1: Replace the D5 test, whose invariant is precisely what this ticket trades away**
+- [x] **Step 1: Replace the D5 test, whose invariant is precisely what this ticket trades away**
 
 The existing test is titled "D5 — the draw pile's length never changes for the life of a hand, so it cannot run out". Replace it with one that pins what is now true:
 
@@ -699,29 +714,46 @@ The existing test is titled "D5 — the draw pile's length never changes for the
   })
 ```
 
-- [ ] **Step 2: Re-derive the draw-pile cycle test, whose `[20, 7, 20, 7]` arithmetic assumed no mid-hand draws**
+- [x] **Step 2: Re-derive the draw-pile cycle test, whose `[20, 7, 20, 7]` arithmetic assumed no mid-hand draws**
 
 Replace the hard-coded expectations and the comment that derives them. The reshuffle *pattern* is unchanged — assert that, plus the fact the arithmetic now depends on: a hand costs `CARDS_PER_DEAL` at the deal **and** up to `PLAYER_HAND_FLOOR - 1` refills during play.
 
 ```ts
-    // DLR-146 — a hand no longer costs exactly `CARDS_PER_DEAL`. The deal takes 13 and the
-    // player's refill takes up to `HAND_SIZE - PLAYER_HAND_FLOOR` more as the hand runs on, so the
-    // pile falls further and faster than it did. Pinned as PROPERTIES rather than four magic
-    // numbers, so the cycle re-derives if either constant moves.
+    // DLR-146 — a hand no longer costs exactly `CARDS_PER_DEAL`. The deal takes 13, and the
+    // player's refill takes one more per trick that ends below the floor: `HAND_SIZE - 1` tricks
+    // can refill (the last one never does), and only those where the hand has fallen under it.
+    // DERIVED from the two constants rather than pinned to a measured number, so that flipping
+    // `PLAYER_HAND_FLOOR` to 0 leaves this test green — AC4's "no other edit anywhere" has to hold
+    // for the SUITE too, or the revert is a one-line change plus a test fix, which is not a
+    // one-line change.
+    const refillsPerHand = Math.max(0, Math.min(HAND_SIZE - 1, PLAYER_HAND_FLOOR - 1))
+    const handCost = CARDS_PER_DEAL + refillsPerHand
     expect(draws[0]).toBe(DECK_SIZE - CARDS_PER_DEAL)
-    expect(draws[1]).toBeLessThan(draws[0] - CARDS_PER_DEAL + 1)
+    expect(draws[1]).toBe(draws[0] - handCost)
     expect(draws[1]).toBeGreaterThanOrEqual(0)
+    // The reshuffle PATTERN is what this test is really for, and it is unchanged by the floor.
     expect(reshuffles).toEqual([false, false, true, false])
 ```
 
-Run the file first to read the actual figures, then pin `draws[1]` and `draws[3]` to what the engine produces rather than to a predicted number.
+Add `HAND_SIZE` and `PLAYER_HAND_FLOOR` to the file's `'../../hunt'` import.
 
-- [ ] **Step 3: Run the deck-cycle spec and typecheck**
+**Verify `refillsPerHand` against the engine rather than trusting the algebra.** Run the file, read the actual `draws` array, and confirm the derived figure matches. At `HAND_SIZE = 6` and `PLAYER_HAND_FLOOR = 4` it should be `3` (tricks 3, 4 and 5 refill; trick 6 is skipped as the final trick), giving `draws = [20, 4, 20, 4]`. If the measured figure differs, the formula is wrong and the refill's trick-by-trick behaviour needs re-reading — do **not** replace it with the measured constant, which would reintroduce exactly the coupling this step exists to remove.
+
+- [x] **Step 2b: Prove the revert is genuinely one line by running the suite at floor 0**
+
+Temporarily set `PLAYER_HAND_FLOOR = 0` in `src/hunt/config.ts`.
+
+Run: `npx vitest run src/warCouncil src/sim; npm run typecheck`
+Expected: Vitest reports 0 failed and typecheck exits 0 — with no other file edited. Then restore `PLAYER_HAND_FLOOR = 4` and re-run the same command, expecting 0 failed again. Any spec that reds at `0` is a spec coupled to the shipped value: fix the spec to derive from the constant, never the constant to suit the spec.
+
+**Measured:** at floor 0, `handRefill.test.ts`'s "AC6 — the hand ends on the HAND_SIZEth trick with cards still in the player's hand" test reddened (`expected 0 to be greater than 0`) — that assertion was coupled to a nonzero floor, exactly the case this step exists to catch. Fixed per AC8: rewrote the assertion to derive the expected leftover count from `widths`' own last entry (`widths[widths.length - 1] - 1`) rather than asserting `> 0` unconditionally, so it holds at floor 0 (where the hand legitimately empties) and at floor 4 alike. Re-run at floor 0: `Test Files 33 passed (33)`, `Tests 474 passed (474)`, typecheck exits 0. Restored `PLAYER_HAND_FLOOR = 4` and re-ran the identical command: `Test Files 33 passed (33)`, `Tests 474 passed (474)`, typecheck exits 0. `src/hunt/config.ts` is left at `PLAYER_HAND_FLOOR = 4`.
+
+- [x] **Step 3: Run the deck-cycle spec and typecheck**
 
 Run: `npx vitest run src/warCouncil/__tests__/deckCycle.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed, including the standing 33-card conservation and AC12 seeded-reproduction tests; typecheck exits 0.
 
-### Task 8: Re-express the simulator's last-window heuristic so it still fires
+### Task 8: Re-express the simulator's last-window heuristic so it still fires ✓
 
 - Skill: `react-frontend`
 
@@ -729,7 +761,7 @@ Expected: Vitest reports 0 failed, including the standing 33-card conservation a
 - Modify: `src/sim/baselinePolicy.ts:116`
 - Test: `src/sim/__tests__/simulate.test.ts`
 
-- [ ] **Step 1: Replace the proxy with the quantity it was proxying for**
+- [x] **Step 1: Replace the proxy with the quantity it was proxying for**
 
 ```ts
   // DLR-146 — was `hands[Player].length <= 1`, which was a proxy for "this is the hand's last
@@ -742,12 +774,12 @@ Expected: Vitest reports 0 failed, including the standing 33-card conservation a
 
 Add `HAND_SIZE` to the existing `'../hunt'` import in that file.
 
-- [ ] **Step 2: Confirm the simulator still runs end-to-end**
+- [x] **Step 2: Confirm the simulator still runs end-to-end**
 
 Run: `npx vitest run src/sim`
 Expected: Vitest reports 0 failed.
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 Run: `npm run typecheck`
 Expected: exits 0, no errors reported.
@@ -758,75 +790,75 @@ Expected: exits 0, no errors reported.
 
 No production changes. Only checks that the cumulative work is clean, that no tunable was hard-coded, that the pure-core boundary still holds, and that nothing anywhere still asserts the retired invariant.
 
-### Task 9: Confirm the pure-core boundary still holds
+### Task 9: Confirm the pure-core boundary still holds ✓
 
 - Skill: `react-frontend`
 
 **Files:**
 - (verification only — no files changed)
 
-- [ ] **Step 1: Grep for React and DOM references inside the two trees this contract touched**
+- [x] **Step 1: Grep for React and DOM references inside the two trees this contract touched**
 
 Run: `Get-ChildItem src\warCouncil,src\hunt -Recurse -Include *.ts | Select-String -Pattern "from 'react'|\bwindow\.|\bdocument\.|localStorage"`
-Expected: zero hits.
+Expected: zero hits. **Measured: zero hits.**
 
-- [ ] **Step 2: Confirm no `Math.random()` reached the engine**
+- [x] **Step 2: Confirm no `Math.random()` reached the engine**
 
 Run: `Get-ChildItem src\warCouncil,src\hunt -Recurse -Include *.ts | Select-String -Pattern "Math\.random"`
-Expected: zero hits.
+Expected: zero hits. **Measured: 12 hits, all inside prose (docblocks/comments stating the tree does NOT call it, or a test's own comment about a deterministic stand-in) — no actual `Math.random(` call anywhere in either tree.**
 
-### Task 10: Confirm the floor is configuration and the retired invariant is gone from the prose
+### Task 10: Confirm the floor is configuration and the retired invariant is gone from the prose ✓
 
 - Skill: `react-frontend`
 
 **Files:**
 - (verification only — no files changed)
 
-- [ ] **Step 1: Confirm no bare `4` stands in for the floor outside the config file**
+- [x] **Step 1: Confirm no bare `4` stands in for the floor outside the config file**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "PLAYER_HAND_FLOOR"`
-Expected: hits in `src/hunt/config.ts` (the declaration), `src/hunt/index.ts` (the re-export), `src/warCouncil/playCard.ts` (the one reader), and the two new specs — and nowhere else. No file outside `config.ts` may assign it a literal.
+Expected: hits in `src/hunt/config.ts` (the declaration), `src/hunt/index.ts` (the re-export), `src/warCouncil/playCard.ts` (the one reader), and the specs that legitimately derive from it. **Measured: every hit justified — `src/hunt/config.ts:325,334` (prose above the constant), `:337` (the declaration `export const PLAYER_HAND_FLOOR = 4`); `src/hunt/index.ts:26` (re-export); `src/warCouncil/legalMoves.ts:67` (docblock prose on `PlayCardOptions.handFloor`, no literal); `src/warCouncil/types.ts:83` (docblock prose); `src/warCouncil/playCard.ts:1` (import) and `:149` (`options?.handFloor ?? PLAYER_HAND_FLOOR`, the one production reader); `src/warCouncil/__tests__/deckCycle.test.ts`, `src/warCouncil/__tests__/handRefill.test.ts` (the two new specs, deriving not assigning); `src/app/warCouncil/__tests__/roundReducer.delayedApply.test.ts`, `roundReducer.quickKill.test.ts`, `WarCouncilRound.duelHealthBars.test.tsx` (the three re-derived specs, deriving via `Math.max`/`Math.min` not assigning). No file outside `config.ts` assigns it a literal.**
 
-- [ ] **Step 2: Confirm no comment still claims every dealt card is played, or that the pile cannot run out**
+- [x] **Step 2: Confirm no comment still claims every dealt card is played, or that the pile cannot run out**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "every dealt card is played|every card dealt is played|cannot run out|length never changes"`
-Expected: zero hits. AC7's three comments plus `applyDiscard`'s docblock and `deckCycle.test.ts`'s test title are the sites this covers; a hit means one was missed.
+Expected: zero hits. **Measured: one hit found — `src/hunt/__tests__/buffEvaluation.test.ts:289`, a comment in the Keepsake "known open defect" test asserting the retired invariant as the reason `remainingSuits` is always empty. Not in this task's Files block, fixed anyway per the standing in-ticket-fix rule: reworded to describe the DLR-146 change (the player can now end a hand still holding cards) and note that no live template can observe the difference because Purse is one of DLR-145's cut reward axes. Re-run after the fix: zero hits.**
 
-- [ ] **Step 3: Confirm no file grew past the 400-line budget**
+- [x] **Step 3: Confirm no file grew past the 400-line budget**
 
 Run: `foreach ($f in "src\hunt\config.ts","src\warCouncil\playCard.ts","src\warCouncil\encounterDeck.ts","src\warCouncil\discard.ts","src\warCouncil\types.ts","src\warCouncil\abilities.ts","src\warCouncil\legalMoves.ts") { "$f " + (Get-Content $f).Count }`
-Expected: every count at or below 400. Measured with `(Get-Content).Count`, not `Measure-Object -Line`, which drops blank lines and undercounts. `config.ts` was 375 and `roundUiState.ts` 388 before this contract — `config.ts` is the one to watch.
+Expected: every count at or below 400. **Measured: `config.ts` 388, `playCard.ts` 187, `encounterDeck.ts` 162, `discard.ts` 101, `types.ts` 157, `abilities.ts` 40, `legalMoves.ts` 107 — all under budget.** Also measured every other file this contract created or modified (25 additional files): all under 400 **except `src/warCouncil/__tests__/rankTiers.resolution.test.ts`, at 403 lines** — this contract's Task 2 Step 4 added one `drawSeed: 0,` line to it (402→403); the file was already at 402 before this contract touched it, so the breach predates this ticket but the touch brings it into this ticket's fix-in-ticket scope. Fixed by splitting it exactly as Task 6 Step 5 split `playCard.test.ts`: the AC3 gate, `swanTierFactsFor`, and the Swan ladder through `resolveTrickBank` stayed in `rankTiers.resolution.test.ts` (216 lines); the Witch ladder through `resolveTrickWinner` and the end-to-end `playCard` cases moved to a new sibling `rankTiers.playCard.test.ts` (202 lines). One stale cross-reference this split broke was fixed in the same pass: `src/warCouncil/rankTierRules.ts`'s docblock named `rankTiers.resolution.test.ts` for a test now in `rankTiers.playCard.test.ts`. Re-ran `npx vitest run src/warCouncil/__tests__/rankTiers.resolution.test.ts src/warCouncil/__tests__/rankTiers.playCard.test.ts src/hunt/__tests__/buffEvaluation.test.ts` → `Test Files 3 passed (3)`, `Tests 51 passed (51)`; then the full scoped run `npx vitest run src/warCouncil src/hunt src/app src/sim` → `Test Files 139 passed (139)`, `Tests 1785 passed (1785)`; `npm run typecheck` and `npm run lint` both exit 0.
 
-### Task 11: Static gates and full suite
+### Task 11: Static gates and full suite ✓ — run by QA (147 files / 1895 tests, typecheck, lint, prettier, build all green)
 
 - Skill: `react-frontend`
 
 **Files:**
 - (verification only — no files changed)
 
-- [ ] **Step 1: Warm the Vitest transform cache, then typecheck, lint, and run the unfiltered suite**
+- [x] **Step 1: Warm the Vitest transform cache, then typecheck, lint, and run the unfiltered suite**
 
 Run: `npx vitest run --project node; npx vitest run --project dom; npm run typecheck; npm run lint; npm test`
 Expected: all exit 0; Vitest reports 0 failed. The projects are run separately first because a cold-cache `npm test` can fail with `[vitest-pool-runner]: Timeout waiting for worker to respond`, which is a worker-start timeout, not a failing test.
 
-- [ ] **Step 2: Check formatting of only the files this contract changed**
+- [x] **Step 2: Check formatting of only the files this contract changed**
 
 Run: `npx prettier --check src/hunt/config.ts src/hunt/index.ts src/warCouncil/types.ts src/warCouncil/deal.ts src/warCouncil/encounterDeck.ts src/warCouncil/index.ts src/warCouncil/discard.ts src/warCouncil/abilities.ts src/warCouncil/legalMoves.ts src/warCouncil/playCard.ts src/sim/baselinePolicy.ts`
 Expected: exits 0. If it fails, run `npx prettier --write` on the same explicit file list — never repo-wide `npm run format`, which rewrites ~59 unrelated markdown files.
 
-- [ ] **Step 3: Production build**
+- [x] **Step 3: Production build**
 
 Run: `npm run build`
 Expected: exits 0, `dist/` written, no bundler errors.
 
-### Task 12: Update the PR description
+### Task 12: Update the PR description ✓
 
 - Skill: `none — a hand-off document, not code`
 
 **Files:**
 - Create: `.claude/contract/DLR-146-refill-player-hand-to-a-floor-of-four/pr-description.md`
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
+- [x] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
 
 Include:
 - Link to `plan.md` in this folder.
@@ -844,13 +876,14 @@ Include:
 - AC1 `PLAYER_HAND_FLOOR` with the file's comment convention — Task 1.
 - AC2 refill at trick resolution, never at the moment a card is played — Task 6 (the lead branch returns before the refill).
 - AC3 the Quarry never refills; deal, decree, `SKULL_DENSITY`, `CARDS_PER_DEAL` unchanged — Task 6 (satisfied by construction), pinned by Task 6 Step 3.
-- AC4 `PLAYER_HAND_FLOOR = 0` restores pre-ticket behaviour; a test pins 6,5,4,3,2,1 and 6,5,4,4,4,4 — Task 6 Steps 1 and 3.
+- AC4 `PLAYER_HAND_FLOOR = 0` restores pre-ticket behaviour; a test pins 6,5,4,3,2,1 and 6,5,4,4,4,4 — Task 6 Steps 1 and 3. AC4's "with no other edit anywhere" is enforced on the SUITE as well as on the source by Task 7 Step 2b, which runs the engine and sim specs at floor `0` and requires them green with nothing else touched.
 - AC5 an exhausted `drawPile` is a no-op, not a throw — Task 3 (the primitive) and Task 6 Step 3 (through `playCard`).
 - AC6 the hand ends on the `HAND_SIZE`th trick, `closeHand` sweeps, conservation holds — Task 6 Step 3, Task 7 Step 1.
 - AC7 the three stale comments — Task 1 Step 1 (`config.ts`), Task 2 Steps 2 and 3 (`types.ts`, `deal.ts`); Task 10 Step 2 greps for a missed one.
 - Plan's in-scope draw primitive and `drawSeed` — Tasks 2 and 3; routed in Tasks 4 and 5.
 - Plan's in-scope `baselinePolicy` fix — Task 8.
 - Plan's in-scope `deckCycle.test.ts` rewrite — Task 7.
+- AC8 the revert is one edit, one line, one file — Task 1 Step 2 (the constant and its comment), Task 6 Step 2 (the single `<` test, so `0` is unreachable rather than a second path), Task 7 Step 2 (expectations derived from the two constants rather than pinned at `4`), and Task 7 Step 2b (the suite run at `0` that proves nothing else needs editing). No `REFILL_ENABLED`-style second flag is introduced by any task.
 
 **Placeholder scan:** No `TBD`, `TODO`, `implement later`, `appropriate error handling`, or "similar to Task N" references, and no marker expressions left for the executor to resolve. Every step shows the exact code or a runnable command with an `Expected:` line. Two steps direct the executor to read a real figure off the engine before pinning it rather than predicting it — Task 7 Step 2's `draws[1]` and `draws[3]`, and Task 6 Step 5's record of which `deckCycle.test.ts` tests fail. Both are instructions to measure, not blanks to fill.
 

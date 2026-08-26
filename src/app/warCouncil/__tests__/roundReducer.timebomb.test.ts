@@ -98,18 +98,35 @@ describe('marking (AC2)', () => {
   })
 
   it('marks a card illegal to play — HandFan must not block this', () => {
-    // The Quarry led Moons and the player holds Moons, so a Bells card is illegal to PLAY —
-    // exactly the fixture `roundReducer.test.ts`'s own rejection spec uses.
+    // 2026-08-26 — the Timebomb is armed BETWEEN tricks, its only window now. The Quarry THEN
+    // leads Moons and the player holds Moons, so a Bells card is illegal to PLAY — exactly the
+    // fixture `roundReducer.test.ts`'s own rejection spec uses. The lead is spliced in rather
+    // than driven because the point under test is marking, not the CPU's turn.
+    let ui = spend(createRoundUiState(seed()), timebomb.id)
+    ui = {
+      ...ui,
+      round: {
+        ...ui.round,
+        leader: PlayerSide.Cpu,
+        currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Moons, 9) }],
+        phase: RoundPhase.AwaitingFollow,
+      },
+    }
+    const offSuit = card(Suit.Bells, 7)
+    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: offSuit })
+    expect(ui.round.primedCards).toEqual([offSuit])
+    expect(ui.rejection).toBeNull()
+  })
+
+  it('cannot be armed once the Quarry has led — 2026-08-26, Cheat is the only mid-trick card', () => {
     const round = makeRound({
       leader: PlayerSide.Cpu,
       currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Moons, 9) }],
       phase: RoundPhase.AwaitingFollow,
     })
-    let ui = spend(createRoundUiState(seed({ round })), timebomb.id)
-    const offSuit = card(Suit.Bells, 7)
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: offSuit })
-    expect(ui.round.primedCards).toEqual([offSuit])
-    expect(ui.rejection).toBeNull()
+    const ui = spend(createRoundUiState(seed({ round })), timebomb.id)
+    expect(ui.timebombArmedDamage).toBeNull()
+    expect(ui.buffs).toHaveLength(1)
   })
 })
 

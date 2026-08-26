@@ -63,6 +63,11 @@ export interface PlayCardOptions extends LegalMoveOptions {
   /** DLR-125 — the hand-scoped buff input. Optional like every other field on this interface;
    *  absent is "this caller evaluates no buffs", which is what the Quarry's own call sites are. */
   readonly buffs?: BuffHandInput
+  /** DLR-146 — the hand floor in force for this call. Optional like every other field here, and
+   *  ABSENT MEANS `PLAYER_HAND_FLOOR` — so no production call site changes and the constant
+   *  remains the single dial. It exists so AC4's revert can be pinned at 0 and at 4 through the
+   *  real code path rather than by mocking `../hunt`, which is lint-enforced pure. */
+  readonly handFloor?: number
 }
 
 /**

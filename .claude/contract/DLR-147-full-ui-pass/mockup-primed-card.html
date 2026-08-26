@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>A primed card — the Timebomb mark</title>
+<style>
+/* ============================================================================
+   The Timebomb mark on a card in the player's hand — 2026-08-26
+   A FLOW SHEET, not a play surface: it scrolls deliberately.
+   Scope: the MARK only — what a primed card looks like. Not the arming flow.
+   `the-hunt.md`: "A primed card is marked wherever it renders — in your hand, in
+   the trick once you have played it, in an ability prompt that offers it, and on
+   the decree if the Fox exchanges it there. The mark is announced as part of the
+   card's name, so it does not depend on seeing the glyph."
+   Sizes and colours are PLACEHOLDERS.
+   ========================================================================== */
+:root {
+  --wc-chamber:#0c1013; --wc-felt:#16241f; --wc-felt-lip:#0a1211; --wc-felt-line:#2b4038;
+  --wc-parchment:#f2ecdc; --wc-parchment-shade:#ded3b8; --wc-parchment-deep:#c4b593;
+  --wc-ink:#191610; --wc-ink-soft:#5c5443;
+  --wc-brass:#c99a4e; --wc-brass-dim:#7d6132;
+  --wc-chalk:#cdd6d2; --wc-chalk-dim:#6f7d78; --wc-alarm:#d1705f;
+  --wc-bells:#c9873f; --wc-keys:#5f93a8; --wc-moons:#9c7cb8;
+  /* the project's existing timebomb tokens — warCouncil.css :root. The SAME green
+     drives --wc-hp-ticking-fill, the ticking hearts on the health bar, so green
+     already means "a Timebomb is involved" everywhere else in the UI. */
+  --wc-timebomb:#8fb04e; --wc-timebomb-edge:#5c7a2e;
+  --wc-serif:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+  --wc-sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--wc-chamber); color:var(--wc-chalk); color-scheme:dark;
+  font-family:var(--wc-sans); -webkit-font-smoothing:antialiased;
+  padding:clamp(1rem,3vw,2.4rem) clamp(.9rem,3vw,2.4rem) 6rem; }
+h1 { margin:0 0 .4rem; font-family:var(--wc-serif); font-weight:400; color:var(--wc-brass);
+  font-size:clamp(1.3rem,3.4vw,2rem); }
+.lede { margin:0 0 1.8rem; max-width:72ch; color:var(--wc-chalk-dim); line-height:1.6;
+  font-size:clamp(.76rem,1.6vw,.87rem); }
+.lede b { color:var(--wc-chalk); font-weight:600; }
+h2.sec { margin:2.6rem 0 .3rem; font-family:var(--wc-serif); font-weight:400; color:var(--wc-chalk);
+  font-size:clamp(.98rem,2.2vw,1.28rem); }
+p.note { margin:0 0 1.1rem; max-width:78ch; font-size:.73rem; line-height:1.6; color:var(--wc-chalk-dim); }
+p.note b { color:var(--wc-chalk); }
+code { background:#1a2226; padding:.06rem .3rem; border-radius:3px; font-size:.94em; }
+
+/* ---------- playing card ---------- */
+.pc { position:relative; width:var(--pcw,5rem); aspect-ratio:2/3; border-radius:7px;
+  color:var(--wc-ink); --suit:var(--wc-ink);
+  background:radial-gradient(120% 90% at 50% 0%, #fffbf2 0%, var(--wc-parchment) 44%, var(--wc-parchment-shade) 100%);
+  border:1px solid var(--wc-parchment-deep);
+  box-shadow:0 4px 10px #00000073, inset 0 0 0 1px #ffffffaa; }
+.pc.bells { --suit:var(--wc-bells); --art-a:#e08a3a; --art-b:#ffe3ad; --fig:#40260c; }
+.pc.keys  { --suit:var(--wc-keys);  --art-a:#6f9fc0; --art-b:#eaf5fd; --fig:#132e3d; }
+.pc.moons { --suit:var(--wc-moons); --art-a:#6a4f96; --art-b:#e4d8f6; --fig:#241640; }
+.pc .inner { position:absolute; inset:0; border-radius:inherit; overflow:hidden; }
+.pc .corner { position:absolute; z-index:3; top:5%; left:7%; display:grid;
+  grid-template-columns:auto auto; column-gap:.16rem; align-items:center; line-height:1; }
+.pc .corner .r { font-family:var(--wc-serif); font-size:.82rem; color:var(--suit); }
+.pc .corner .g { width:.6rem; height:.6rem; color:var(--suit); }
+.pc .corner .nm { grid-row:2; grid-column:1/-1; font-family:var(--wc-serif); font-size:.36rem;
+  color:var(--wc-ink-soft); margin-top:.07rem; white-space:nowrap; }
+.pc .art { position:absolute; left:7%; right:7%; top:24%; bottom:6%; border-radius:4px;
+  overflow:hidden; z-index:1; box-shadow:0 0 0 1px #00000033; }
+.pc .art .wash { position:absolute; inset:0;
+  background:radial-gradient(78% 62% at 50% 34%, var(--art-b) 0%,
+    color-mix(in srgb, var(--art-a) 55%, var(--art-b)) 42%, var(--art-a) 100%); }
+.pc .art .figure { position:absolute; left:50%; bottom:6%; width:66%; transform:translateX(-50%);
+  color:var(--fig); }
+.pc .art .figure svg { width:100%; display:block; }
+.pc .pips { position:absolute; inset:26% 24% 20% 24%; z-index:2; display:grid;
+  grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(7,1fr);
+  justify-items:center; align-items:center; }
+.pc .pips .g { width:100%; max-width:.46rem; aspect-ratio:1; color:var(--suit); }
+.pc .pips .g.inv { transform:rotate(180deg); }
+/* a skulled card, for the both-at-once case */
+.pc.skull .art .wash {
+  background:radial-gradient(72% 58% at 50% 32%, #4a423a 0%, #2b2622 46%, #0d0b09 100%); }
+.pc.skull .art .figure { color:#efe8d7; width:76%; bottom:8%; }
+
+/* ---------- the primed mark ----------
+   A cartoon bomb, sat on the card's top-right corner, half over the edge so it
+   reads as an object PLACED on the card rather than as part of its printing.
+   That distinction is the whole idea: a skull REPLACES the art, because a skull
+   is what the card is for this trick; a Timebomb is ADDED, because it is a
+   temporary thing the player did to a card that is otherwise itself.
+
+   The green ring is `--wc-timebomb`, kept because that same token drives the
+   ticking hearts on the health bar — green already means "a Timebomb is involved"
+   elsewhere, and the ring is what ties the card to the damage you can see coming. */
+.pc.primed { box-shadow:0 4px 10px #00000073, inset 0 0 0 1px #ffffffaa,
+  0 0 0 2px var(--wc-timebomb-edge); }
+.bomb { position:absolute; z-index:6; top:-11%; right:-9%; width:46%; aspect-ratio:1;
+  pointer-events:none; filter:drop-shadow(0 2px 3px #000000a6); }
+.bomb svg { width:100%; display:block; overflow:visible; }
+.fizz { transform-origin:76px 30px; animation:fizz 620ms steps(2,end) infinite; }
+.fizz-glow { transform-origin:76px 30px; animation:glow 620ms ease-in-out infinite alternate; }
+@keyframes fizz { 0%{transform:scale(1) rotate(0deg)} 50%{transform:scale(1.28) rotate(22deg)}
+  100%{transform:scale(1) rotate(-14deg)} }
+@keyframes glow { from{opacity:.45; transform:scale(.9)} to{opacity:.9; transform:scale(1.15)} }
+@media (prefers-reduced-motion:reduce) {
+  .fizz, .fizz-glow { animation:none; }
+  .fizz-glow { opacity:.75; }
+}
+
+/* ---------- felt + hand ---------- */
+.felt { border-radius:12px; padding:clamp(.9rem,2.2vw,1.4rem);
+  background:radial-gradient(70% 100% at 50% 0%, #1d2f28 0%, var(--wc-felt) 68%, #101b18 100%);
+  box-shadow:inset 0 0 0 1px var(--wc-felt-line), inset 0 0 0 6px var(--wc-felt-lip); }
+.hand { display:flex; gap:.45rem; justify-content:center; align-items:flex-end; }
+.hand .pc { --pcw:clamp(3.4rem,6vw,5rem); }
+.hand-note { display:block; text-align:center; margin-top:.7rem; font-size:.56rem;
+  letter-spacing:.09em; color:var(--wc-chalk-dim); }
+.hand-note b { color:var(--wc-timebomb); }
+
+/* ---------- close-ups ---------- */
+.row { display:flex; gap:clamp(.9rem,2.4vw,1.8rem); flex-wrap:wrap; align-items:flex-start; }
+.shot { border:1px solid #232c33; border-radius:12px; background:#101619; padding:.9rem 1rem;
+  display:flex; flex-direction:column; align-items:center; gap:.6rem; }
+.shot h3 { margin:0; font-family:var(--wc-serif); font-weight:400; font-size:.8rem;
+  color:var(--wc-chalk); }
+.shot p { margin:0; max-width:15rem; font-size:.66rem; line-height:1.5; color:var(--wc-chalk-dim);
+  text-align:center; }
+
+.foot { margin:3rem 0 0; padding-top:1.2rem; border-top:1px solid #232c33; max-width:80ch;
+  color:var(--wc-chalk-dim); font-size:.73rem; line-height:1.65; }
+.foot h3 { margin:1.2rem 0 .4rem; color:var(--wc-brass); font-size:.82rem;
+  font-family:var(--wc-serif); font-weight:400; }
+.foot ul { margin:.3rem 0 1rem; padding-left:1.1rem; }
+.foot li { margin:.34rem 0; }
+
+/* sheet nav — not part of the game UI */
+.sheetnav { position:fixed; left:.6rem; bottom:.6rem; z-index:60; display:flex; flex-wrap:wrap;
+  align-items:center; gap:.28rem; padding:.3rem .45rem; border-radius:9px;
+  border:1px solid #2a373d; background:#0b1113ee; font-size:.58rem;
+  max-width:min(34rem, calc(100vw - 1.2rem)); }
+.sheetnav > span { color:#54635e; letter-spacing:.09em; margin-right:.15rem; }
+.sheetnav a { text-decoration:none; padding:.16rem .4rem; border-radius:5px; color:#9fb0aa;
+  border:1px solid transparent; white-space:nowrap; }
+.sheetnav a:hover { color:#e6d3ac; border-color:#7d6132; background:#1a1710; }
+.sheetnav a[aria-current='page'] { color:#c99a4e; border-color:#3c4b45; background:#141c20; }
+.sheetnav a.home { color:#c99a4e; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="s-bells" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7"
+    stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="2.9" r="1.05"/>
+    <path d="M12 4.9v.8"/><path d="M6.6 16.1v-4.3a5.4 5.4 0 0 1 10.8 0v4.3"/><path d="M4.4 16.1h15.2"/>
+    <path d="M9.9 18.7a2.1 2.1 0 0 0 4.2 0"/></g></symbol>
+  <symbol id="s-keys" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7"
+    stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6.5" r="3.7"/>
+    <path d="M12 10.2V21"/><path d="M12 14.3h3.5M12 17h2.7"/></g></symbol>
+  <symbol id="s-moons" viewBox="0 0 24 24"><path d="M15.4 3.6a8.4 8.4 0 1 0 4.1 12 6.9 6.9 0 0 1-4.1-12z"
+    fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+  <symbol id="skull-fig" viewBox="0 0 100 100">
+    <path d="M50 8C29 8 16 21 16 40c0 10 4 18 9 23 3 4 5 7 5 11v4c0 5 4 8 9 8h22c5 0 9-3 9-8v-4
+      c0-4 2-7 5-11 5-5 9-13 9-23C84 21 71 8 50 8z" fill="#efe8d7"/>
+    <ellipse cx="36" cy="43" rx="10" ry="11" fill="#171310"/>
+    <ellipse cx="64" cy="43" rx="10" ry="11" fill="#171310"/>
+    <path d="M50 54l7 13H43z" fill="#171310"/>
+    <path d="M33 72h34v10a4 4 0 0 1-4 4H37a4 4 0 0 1-4-4z" fill="#efe8d7"/>
+    <g fill="#171310" opacity=".8"><rect x="39" y="72" width="1.8" height="14"/>
+      <rect x="45" y="72" width="1.8" height="14"/><rect x="51" y="72" width="1.8" height="14"/>
+      <rect x="57" y="72" width="1.8" height="14"/></g>
+  </symbol>
+</svg>
+
+<h1>A primed card — the Timebomb mark</h1>
+<p class="lede">
+  What a card looks like once a Timebomb has been primed onto it. Scope is the <b>mark</b> only, not
+  the arming flow. The ruleset requires the mark <b>wherever the card renders</b> — in hand, in the
+  trick, in an ability prompt, and on the decree if the Fox moves it there — and requires it to be
+  <b>part of the card's spoken name</b>, so it never depends on seeing the glyph.
+</p>
+
+<h2 class="sec">Your hand, with the 7 of Bells primed</h2>
+<p class="note">
+  One card carries the bomb. Everything else about it is unchanged — it is still the 7 of Bells, still
+  legal or illegal on its own merits, still played the same way.
+</p>
+<div class="felt">
+  <div class="hand" id="hand" role="group" aria-label="Your hand"></div>
+  <span class="hand-note">7 OF BELLS IS <b>PRIMED</b> — IT CARRIES +4 TO WHOEVER WINS ITS TRICK</span>
+</div>
+
+<h2 class="sec">The mark, close up</h2>
+<p class="note">
+  A cartoon bomb, sat half over the card's top-right corner so it reads as an object <b>placed on</b>
+  the card rather than as part of its printing. That is the distinction worth holding: a
+  <b>skull replaces</b> the art, because a skull is what the card <em>is</em> this trick — a
+  <b>Timebomb is added</b>, because it is a temporary thing you did to a card that is otherwise still
+  itself.
+</p>
+<div class="row" id="shots"></div>
+
+<section class="foot">
+  <h3>What this proposes</h3>
+  <ul>
+    <li><b>A bomb, not a glyph.</b> Black body with a rim light and a specular, a short fuse, and a
+      spark that fizzes. It sits at the <b>top-right corner, half off the card</b>, which puts it in
+      the one part of a card that stays visible if the hand is ever overlapped or fanned.</li>
+    <li><b>The green ring stays.</b> <code>--wc-timebomb</code> already drives
+      <code>--wc-hp-ticking-fill</code>, the ticking hearts on the health bar, so green means "a
+      Timebomb is involved" everywhere else in the UI. The bomb is the icon; the green is the system
+      colour, and the ring is what ties this card to the damage you can already see coming on the
+      bar. Dropping it would break that thread.</li>
+    <li><b>Added, not substituted.</b> The card keeps its rank, suit, name and art. A primed Swan is
+      still a Swan. This is deliberately the opposite treatment from a skull.</li>
+    <li><b>The fizz is one small looping animation</b>, on a `steps()` timing so it flickers rather
+      than glides. It stops dead under <code>prefers-reduced-motion</code>, where the spark simply
+      sits lit — the mark still reads, it just stops moving.</li>
+    <li><b>It survives greyscale</b>: the bomb is a black silhouette against a pale card, and the
+      shape alone carries it. The green ring is reinforcement, never the only signal.</li>
+    <li><b>The name carries it too</b> — "7 of Bells — Treasure, primed" — as the ruleset requires.</li>
+  </ul>
+
+  <h3>Open — yours, or a rules call</h3>
+  <ul>
+    <li><b>A card can be both skulled and primed.</b> Shown in the third close-up. The bomb sits over
+      a skull card without much trouble at this size, but it is two loud marks on one small object and
+      worth a look at hand scale before committing.</li>
+    <li><b>Should the bomb show its tier?</b> A gold Timebomb hits for 12/6 and a bronze for 4/2, and
+      the mark currently says nothing about which. The ruleset also records that priming a second card
+      overwrites the first's tier — so if the mark ever did show a figure, two primed cards could
+      both be lying.</li>
+    <li>The bomb's size, its overhang, the fuse, the spark colour and the 620ms fizz are all
+      <b>PLACEHOLDERS</b>.</li>
+  </ul>
+</section>
+
+<script>
+const glyph = id => `<svg class="g" aria-hidden="true"><use href="#${id}"/></svg>`;
+const SUITNAME = { bells:'Bells', keys:'Keys', moons:'Moons' };
+const RANKNAME = { 1:'Swan', 3:'Fox', 5:'Woodcutter', 7:'Treasure', 9:'Witch', 11:'Monarch' };
+const PIPS = {
+  2:[[1,2],[7,2]], 4:[[1,1],[1,3],[7,1],[7,3]], 6:[[1,1],[1,3],[4,1],[4,3],[7,1],[7,3]],
+  7:[[1,1],[1,3],[3,1],[3,3],[5,1],[5,3],[4,2]],
+  10:[[1,1],[1,3],[3,1],[3,3],[5,1],[5,3],[7,1],[7,3],[2,2],[6,2]],
+};
+const FIG_SWAN = `<svg viewBox="0 0 100 100" aria-hidden="true"><g fill="currentColor">
+  <ellipse cx="45" cy="72" rx="31" ry="16"/>
+  <path d="M62 67C50 53 54 29 70 24" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="72" cy="23" r="8.5"/><path d="M79 21l13 4-13 5z"/></g></svg>`;
+const FIG_FOX = `<svg viewBox="0 0 100 100" aria-hidden="true"><g fill="currentColor">
+  <path d="M24 88C2 82 4 50 28 45c-8 16-3 31 10 37z"/>
+  <path d="M34 88c0-18 10-29 24-29s24 11 24 29z"/>
+  <path d="M37 44L41 14l16 16h10l16-16 4 30c0 7-3 13-8 17L62 74 45 61c-5-4-8-10-8-17z"/>
+  <circle cx="51" cy="45" r="2.8" fill="#fff" opacity=".8"/>
+  <circle cx="73" cy="45" r="2.8" fill="#fff" opacity=".8"/></g></svg>`;
+const FIGS = { 1:FIG_SWAN, 3:FIG_FOX };
+
+/* The cartoon bomb: black body, rim light, specular, fuse, fizzing spark. */
+const BOMB = () => `
+<svg viewBox="0 0 100 100" aria-hidden="true">
+  <defs>
+    <radialGradient id="bombBody" cx="36%" cy="32%" r="72%">
+      <stop offset="0" stop-color="#5a5852"/><stop offset=".42" stop-color="#22201c"/>
+      <stop offset="1" stop-color="#0a0908"/>
+    </radialGradient>
+    <radialGradient id="sparkGlow">
+      <stop offset="0" stop-color="#fff6cf"/><stop offset=".4" stop-color="#f5a623" stop-opacity=".8"/>
+      <stop offset="1" stop-color="#f5a623" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="46" cy="60" r="31" fill="url(#bombBody)"/>
+  <path d="M18 52a31 31 0 0 1 26-22 31 31 0 0 0-22 30z" fill="#8e8a80" opacity=".5"/>
+  <ellipse cx="33" cy="46" rx="8" ry="5.5" fill="#ffffff" opacity=".26" transform="rotate(-28 33 46)"/>
+  <rect x="37" y="22" width="17" height="12" rx="3" fill="#33302a"/>
+  <rect x="37" y="22" width="17" height="4" rx="2" fill="#5c574d"/>
+  <path d="M54 27c9-7 19-4 22 3" fill="none" stroke="#7a6a4a" stroke-width="5" stroke-linecap="round"/>
+  <circle class="fizz-glow" cx="76" cy="30" r="15" fill="url(#sparkGlow)"/>
+  <g class="fizz" fill="#ffd980">
+    <path d="M76 18l3.4 8.6L88 30l-8.6 3.4L76 42l-3.4-8.6L64 30l8.6-3.4z"/>
+    <circle cx="76" cy="30" r="3.6" fill="#fffbe8"/>
+  </g>
+</svg>`;
+
+function card(rank, suit, opts = {}) {
+  const el = document.createElement('div');
+  el.className = 'pc ' + suit + (opts.skull ? ' skull' : '') + (opts.primed ? ' primed' : '');
+  if (opts.width) el.style.setProperty('--pcw', opts.width);
+  const nm = RANKNAME[rank];
+  el.setAttribute('role','img');
+  el.setAttribute('aria-label',
+    `${rank} of ${SUITNAME[suit]}${nm ? ' — ' + nm : ''}` +
+    `${opts.skull ? ', skulled' : ''}${opts.primed ? ', primed' : ''}`);
+  const art = opts.skull
+    ? `<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#skull-fig"/></svg>`
+    : FIGS[rank];
+  el.innerHTML =
+    `<span class="inner">` +
+      `<span class="corner"><span class="r">${rank}</span>${glyph('s-' + suit)}` +
+        (nm ? `<span class="nm">${nm}</span>` : '') + `</span>` +
+      (art
+        ? `<span class="art"><span class="wash"></span><span class="figure">${art}</span></span>`
+        : `<span class="pips">` + (PIPS[rank] || [[4,2]]).map(([r,c]) =>
+            `<svg class="g${r>4?' inv':''}" style="grid-row:${r};grid-column:${c}" aria-hidden="true">` +
+            `<use href="#s-${suit}"/></svg>`).join('') + `</span>`) +
+    `</span>` +
+    (opts.primed ? `<span class="bomb">${BOMB()}</span>` : '');
+  return el;
+}
+
+const HAND = [[2,'bells',{}],[7,'bells',{primed:true}],[3,'keys',{}],
+              [1,'keys',{}],[10,'moons',{}],[4,'moons',{}]];
+const hand = document.getElementById('hand');
+HAND.forEach(([r,s,o]) => hand.appendChild(card(r, s, o)));
+
+const SHOTS = [
+  { h:'In your hand', c:[7,'bells',{primed:true, width:'7.5rem'}],
+    p:'Hand size. The bomb overhangs the corner, so it is the first thing you see and it survives a card being partly covered.' },
+  { h:'Played into the trick', c:[7,'bells',{primed:true, width:'4.6rem'}],
+    p:'Condensed. The mark scales with the card and still reads at plate size, where a small glyph would disappear.' },
+  { h:'Skulled and primed at once', c:[7,'bells',{primed:true, skull:true, width:'7.5rem'}],
+    p:'Possible, and worth judging: two loud marks on one small object. The skull replaces the art, the bomb sits on top of it.' },
+];
+const shots = document.getElementById('shots');
+SHOTS.forEach(s => {
+  const d = document.createElement('div');
+  d.className = 'shot';
+  d.innerHTML = `<h3>${s.h}</h3>`;
+  d.appendChild(card(s.c[0], s.c[1], s.c[2]));
+  const p = document.createElement('p'); p.textContent = s.p; d.appendChild(p);
+  shots.appendChild(d);
+});
+</script>
+
+<nav class="sheetnav" aria-label="Mockup sheets"><span>DLR-147</span><a class="home" href="index.html">Contents</a><a href="mockup-buff-gallery.html">Gallery</a><a href="mockup-buff-metal.html">Buff card</a><a href="mockup-trick-readout.html">Trick</a><a href="mockup-primed-card.html" aria-current="page">Primed card</a><a href="mockup-util-cards.html">Cheat &amp; Timebomb</a><a href="mockup-card-faces.html">Playing cards</a><a href="mockup-buff-suit.html">Suit options</a></nav>
+</body>
+</html>

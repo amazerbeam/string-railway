@@ -26,21 +26,31 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                                                |
 | --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, PT-001, PT-002                                                                                  |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, PT-001, PT-002                                                                                  |
 | `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, PT-002                                                                          |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, PT-002                                                                          |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, PT-001, PT-002 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                 |
 | `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                 |
 | `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                 |
-| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135, DLR-145                                                                                                                                                                                                                                                                        |
+| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146                                                                                                                                                                                                                                                                        |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
 budget by the time it was split (SCRUM-28) — and has since been split again, into per-mechanic
 files within each of `war-council/` and `war-council-ui/`, for the same reason. `src/app/run/`
 (DLR-82) follows the same convention as a sibling screen module: `run-ui/`.
+
+Two files here are not module docs and sit at the top level deliberately:
+[run-winnability-simulation.md](run-winnability-simulation.md), the record of what `npm run sim`
+has actually played, and
+[structure-notes-for-the-port.md](structure-notes-for-the-port.md) — **a running list of structural
+improvements this prototype deliberately did not make, and should make when the game is rebuilt in
+Unity.** Nothing in that file is a defect; each entry names a place where the prototype hardcodes
+something that ought to be data, says why the shortcut was right at this scale, and says what the
+port should do instead. Add to it whenever you defer a structural improvement, while you still
+remember the reasoning.
 
 DLR-47 retired the Vanguard board engine, the battle-loop orchestrator, and their UIs —
 `src/App.tsx` now mounts a single War Council round directly
@@ -936,6 +946,10 @@ already committed — because that is the only moment either has value: exactly 
 `discardWindowOpen` is false. Both the refusal guard and the commit read the one function, so they
 cannot disagree.
 
+> **Timebomb was narrowed out of that exception on 2026-08-26 — Cheat is now the only card in it.**
+> See [the Timebomb's activation window](hunt/cheat-and-timebomb-buffs.md#the-activation-window-cheat-mid-trick-timebomb-between-tricks-2026-08-26)
+> for why the two cards' reasoning was never actually the same one.
+
 **Nothing was retuned, and nothing was played.** This was an unattended sprint run: the plan-approval
 gate was auto-approved and the UI mockup gate was skipped, so the redesigned loadout panel — now
 carrying a Cheat row and a Timebomb row beside every condition buff — has not been seen. The four new
@@ -1152,6 +1166,28 @@ Start at [hunt/action-points.md](hunt/action-points.md) for the removal,
 [hunt/consumable-items.md](hunt/consumable-items.md) for the consumption toggle,
 [hunt/buff-activation-and-ap-costs.md](hunt/buff-activation-and-ap-costs.md) for `spentThisTrick`, and
 [hunt/the-opening-pile.md](hunt/the-opening-pile.md) for the twenty-card draw and the measurement.
+
+**DLR-146 refilled the player's hand mid-hand, and its second-order consequence is larger than the
+feature.** The player is topped back up to `PLAYER_HAND_FLOOR` (4) cards as each trick resolves, so a
+hand's widths run 6, 5, 4, 4, 4, 4 instead of 6, 5, 4, 3, 2, 1 and the last tricks are still choices.
+The Quarry never refills, the hand still ends when its sixth trick resolves, and `closeHand` sweeps
+whatever the player is still holding. But because a hand now costs 16 cards rather than 13, **the
+draw pile can run short inside a hand for the first time in the game's history** — which made
+`applyDiscard`'s `RangeError` reachable inside a reducer and let `applyWoodcutterDraw` put an
+`undefined` in a hand. One new primitive, `drawCards`, is now the only way a card leaves the draw pile
+mid-hand: it folds the spent pile back in under a seeded shuffle when the pile cannot cover a draw,
+and five sites route through it. `RoundState` gained one required field, `drawSeed`, which is what
+keeps a mid-hand reshuffle reproducible from the run seed.
+
+The floor is **provisional and revertible in one line**: `PLAYER_HAND_FLOOR = 0` restores pre-ticket
+behaviour exactly, with no other edit anywhere and the whole suite still green. Two things the ticket
+surfaced and deliberately did not resolve: **the quick-kill payout now inflates** (a trick-5 kill in a
+fight's first hand pays 8 coins where it paid 2, because "cards to spare" has stopped measuring
+speed), and **the mid-hand reshuffle is silent** — nothing on the felt says the deck was rebuilt, and
+seen cards can come back inside a hand. **Every simulated baseline recorded before 2026-08-26 is now
+stale**, including the tricks-taken and damage-per-hand figures the shop arithmetic is priced against;
+re-measuring was out of scope. Start at
+[war-council/the-hand-refill.md](war-council/the-hand-refill.md).
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

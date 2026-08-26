@@ -57,6 +57,7 @@ import {
   BuffKind,
   flaskRefusalFor,
   flaskStockFor,
+  HAND_SIZE,
   MAX_CARDS_PER_DISCARD,
   refusalFor,
   shopStockFor,
@@ -113,7 +114,12 @@ function chooseBuffs(ui: RoundUiState): readonly BuffId[] {
 
 function wantsApplyDamage(ui: RoundUiState): boolean {
   if (applyDamageRefusalFor(applyDamageStock(ui)) !== null) return false
-  const isLastWindow = ui.round.hands[PlayerSide.Player].length <= 1
+  // DLR-146 — was `hands[Player].length <= 1`, which was a proxy for "this is the hand's last
+  // cash-out window" and silently stopped firing at any floor above 1: the baseline policy would
+  // have quietly stopped banking at a hand's end, corrupting the very simulation runs used to
+  // judge whether the floor works. Identical at a floor of 0 — both mean five or six tricks
+  // played — and floor-invariant thereafter.
+  const isLastWindow = HAND_SIZE - ui.round.tricksPlayed <= 1
   return ui.round.multiplier >= BASELINE_CASH_AT_MULTIPLIER || (isLastWindow && ui.round.bank > 0)
 }
 

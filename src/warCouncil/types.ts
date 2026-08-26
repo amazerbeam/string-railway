@@ -79,9 +79,11 @@ export interface RoundState {
    *  and no connection to the skull. That is why nothing in this feature is called `poison`.
    *
    *  Hand-scoped by construction: `dealRound` rebuilds this, so a mark cannot leak into the next
-   *  hand. With `HAND_SIZE` cards and that many tricks every dealt card is played, so a mark
-   *  normally resolves in the hand it was made — the exception being a card the Woodcutter buries
-   *  or the Fox exchanges away and never takes back, which simply wastes the charge. */
+   *  hand. The Quarry plays every card it is dealt, so a mark on one of its cards resolves in the
+   *  hand it was made. Since DLR-146 the PLAYER is refilled to `PLAYER_HAND_FLOOR` and can end a
+   *  hand still holding cards, so a mark on a player card may simply expire unplayed — as it
+   *  already could for a card the Woodcutter buries or the Fox exchanges away and never takes
+   *  back. */
   readonly primedCards: readonly Card[]
   /** DLR-123 AC3 — cards resolved to a trick this ENCOUNTER, face-down and never inspectable
    *  (AC8). Grows by exactly two at each trick's resolution, in `playCard`, and by nothing else;
@@ -97,6 +99,16 @@ export interface RoundState {
    *  read only by the felt's notice. Hand-scoped by construction: the next deal rewrites it, so a
    *  notice cannot persist into a hand that was not reshuffled. */
   readonly reshuffled: boolean
+  /** DLR-146 — the seed a MID-HAND reshuffle draws its order from. Written once by `dealRound`
+   *  from the deal's own generator, so it inherits `dealSeedFor`'s run/encounter/hand uniqueness
+   *  and a seeded encounter still reproduces every reshuffle. Replaced by `mixSeed(drawSeed,
+   *  spentPile.length)` each time `drawCards` consumes it, so two reshuffles in one hand differ.
+   *
+   *  A plain integer rather than an `Rng` closure, deliberately: `RoundState` is immutable, plain,
+   *  serialisable data, and every function in this tree takes `rng` as an explicit parameter.
+   *  NOTHING to do with `reshuffled` above, which is a property of the DEAL and is never written
+   *  mid-hand. */
+  readonly drawSeed: number
   /** AC4/AC5 — the number of tricks taken in a row since the last cash-out. Only ever climbs
    *  until it cashes, which is the property the retired pending-damage figure lacked. */
   readonly bank: number

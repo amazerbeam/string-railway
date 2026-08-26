@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_CARDS_PER_DISCARD } from '../../hunt'
+import { createSeededRng, MAX_CARDS_PER_DISCARD } from '../../hunt'
 import { cardsOfSuit } from '../cardUtils'
+import { dealRound } from '../deal'
+import { FRESH_ENCOUNTER_DECK } from '../encounterDeck'
 import { legalMoves } from '../legalMoves'
 import { PlayerSide, RoundPhase, Suit, type RoundState } from '../types'
 import { applyDiscard, DiscardRefusal, discardRefusalFor, type DiscardStock } from '../discard'
@@ -29,6 +31,7 @@ function baseState(overrides: Partial<RoundState> = {}): RoundState {
     primedCards: [],
     spentPile: [],
     reshuffled: false,
+    drawSeed: 0,
     bank: 0,
     multiplier: 0,
     lastResolution: null,
@@ -137,6 +140,16 @@ describe('applyDiscard', () => {
     }
     const legal = legalMoves(laterTrick, PlayerSide.Player)
     expect(legal).toEqual(result.hands.player)
+  })
+
+  it('DLR-146 — a swap the draw pile cannot cover reshuffles the spent pile in rather than throwing', () => {
+    const dealt = dealRound(PlayerSide.Cpu, createSeededRng(5), FRESH_ENCOUNTER_DECK)
+    const short = { ...dealt, drawPile: dealt.drawPile.slice(0, 1), spentPile: dealt.drawPile.slice(1) }
+    const thrown = short.hands[PlayerSide.Player].slice(0, 3)
+    const result = applyDiscard(short, PlayerSide.Player, thrown)
+    expect(result.hands[PlayerSide.Player]).toHaveLength(short.hands[PlayerSide.Player].length)
+    expect(result.spentPile).toEqual([])
+    expect(result.drawPile.slice(-thrown.length)).toEqual(thrown)
   })
 })
 

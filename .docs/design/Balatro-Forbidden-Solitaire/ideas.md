@@ -1509,6 +1509,121 @@ fight-long is the one that costs nothing in the cross-run argument.
 
 ---
 
+### The Feeder carry, and a High/Low vocabulary that stops describing the wrong axis
+
+Decided in conversation 2026-08-26, out of a question about what happens when a Bell-Feeder fires on
+a skull trick. Two changes that turned out to be one problem: the game's outcome words describe the
+mechanical act, and the Feeder's reward is spent by the very loss it is meant to compensate.
+
+**The confusion that started it.** The Quarry plays a skulled 5 Bells, the player plays a 2 Bells,
+holding a bronze Bell-Feeder. What the game says today is *"you lost the trick, it was a dodge, your
+Feeder — lose a trick with Bells — fired."* Three of those words point the wrong way: the player
+lost, the card is a Feeder, it fired on a loss, and yet nothing bad happened and they gained a bank
+point and a multiplier point. At roughly 30% skull density that is about two of six tricks a hand —
+a third of the player's decisions sit in the quadrant where the words invert.
+
+**The root cause is two axes wearing one vocabulary.** There is a mechanical axis — did you
+physically take the cards — and an outcome axis — did you gain or get hurt. Every buff condition
+reads the mechanical axis; the bank, the multiplier and the damage all read the outcome axis. Both
+are currently called win and lose, so the words collide exactly where the skull decouples them.
+This is the second instance of one root problem: `hybrid-design.md` §10 already records that the
+band names Humble / Defeated / Victorious / Greedy came from Fox in the Forest and misdescribe the
+mirrored path, and the 2026-08-11 decision was to note the mismatch and leave it. Both are base-game
+outcome words imported into a game that inverts the outcome.
+
+#### The vocabulary — High / Low over Win / Loss
+
+**Win and Loss become skull-aware and mean only the outcome.** A clean win and a dodge both become
+**Win**; a clean loss and an eaten skull both become **Loss**. This costs nothing, because the
+ruleset already states that each pair is "identical in every respect but their name."
+
+**High and Low name the mechanical act, and are the only words a buff card uses.** You go high or
+you go low. High takes the trick. On a clean trick high wins; on a skull trick low wins.
+
+| | Clean trick | Skull trick |
+|---|---|---|
+| You went **high** | **WIN** — +1 bank, +1 multiplier | **LOSS** — −1 health, two-thirds cash-out, both reset |
+| You went **low** | **LOSS** — −1 health, two-thirds cash-out, both reset | **WIN** — +1 bank, +1 multiplier |
+
+The family words fall out of the scheme, which also fixes "Feeder" meaning nothing: Bell-Taker
+becomes **Bell High**, Bell-Feeder becomes **Bell Low**, Sidestep becomes **Skull Low**. The whole
+live pool reads as three suits crossed with high/low, plus skull-low. Card text becomes *"go high on
+a Bells trick"*, *"go low on a Bells trick"*, *"go low on a skull"* — and Sidestep's text is true for
+the first time, since it never looked at which card was played.
+
+**The one place it strains** is that "high" is not literally the higher rank — a trump 3 takes a
+trick over an 11 Bells, and an off-suit 11 takes nothing. Either define it as the contest rather
+than the number (*the card that takes the trick went high, trump included*), or let a pre-commit
+hover string carry it: hovering an off-suit 11 reads `goes LOW`, and the player learns it in one
+trick without being taught. The hover is preferred — the word only has to be right on the readout,
+not in the player's head.
+
+#### The Feeder carry
+
+**What is actually wrong today, and it is not the two-thirds reduction.** Flat damage is added
+outside the product, after the reduction, so a bronze Feeder pays its full +1 even on a catastrophic
+loss. The real defect is that the reward is *consumed* by the same losing cash-out that triggered
+it, paid into a pot that is near zero precisely because the player just lost. Three deliberate
+losses in a bad hand pay three separate points into three tiny cash-outs and accumulate into nothing.
+
+**The rule.** A Feeder that fires on a **Loss** does not join this hand's pool. Its reward goes into
+a carry pool which seeds the next hand's pool. A Feeder that fires on a **dodge** — which is a Win —
+pays into the current hand exactly as it does now, and stacks with everything else that fired,
+including the Overlap Bonus. So the card pays now when you got away with it, and pays later when you
+got hit.
+
+```
+HAND 1 (going badly, bronze Bell Low active)
+  trick 2 · went low · LOSS · fires → carry +1
+  trick 4 · went low · LOSS · fires → carry +2
+  trick 5 · went low · LOSS · fires → carry +3
+  hand 1 pays out nothing from the Feeder
+
+HAND 2
+  opens with +3 already banked — spent when the player chooses,
+  at full rate via Apply Damage or at hand end
+```
+
+**The carry evaporates at the fight boundary** — decided 2026-08-26. It compounds hand to hand
+inside a fight, where there is deliberately no cap on hands, so three bad hands open the fourth at
++9. It does not survive the fight, whether the fight was won or lost. This keeps the carry the
+first and only value crossing a hand boundary without also making it the first to cross a fight
+boundary.
+
+**Momentum Feeder returns** — decided 2026-08-26. Feeder is damage-only today for exactly one
+reason: a multiplier bonus is wiped by the loss's own reset. The carry removes that on the loss half
+(the bonus escapes the reset by leaving the hand) and the dodge half never had the problem (a dodge
+is a Win, nothing resets). Restoring it is one row in `TEMPLATE_FAMILIES`.
+
+**It is a much larger card than the damage version.** Carried damage is added on at the end; a
+carried multiplier compounds against the next hand's whole bank. Opening a hand at +3 and reaching a
+bank of 3 at a live multiplier of 3 pays 3 × 6 = **18** where the damage version pays 3 × 3 + 3 =
+**12**, and the unbuffed hand pays **9**.
+
+**The tanking risk is smaller than it first looks and needs no cap.** Every deliberate loss costs 1
+health of 10, so farming six Feeder fires in one hand spends 60% of the health bar to bank +6. It is
+self-limiting. The live risk is the opposite one — that the carry is too small to be felt — and that
+is a tuning question and the developer's.
+
+**Cost in new rules.** Four, none of them a subsystem. One carry pool that survives the hand
+boundary and dies at the fight boundary. One branch in Feeder's fire, splitting Loss from dodge.
+One restored template row for the Momentum Feeder. One vocabulary rename, which is copy but ripples
+into `the-hunt.md`, the buff label strings and the `BuffKind` identifiers, so it is a ticket rather
+than a copy edit.
+
+**Build the readout first.** The whole feel of the carry is a promise made during a hand the player
+is losing and redeemed at the start of the next one. If the carry is not on screen — accumulating
+during the bad hand, and shown as a starting figure at the top of the next — the player experiences
+a bad hand followed by a slightly better one and never connects them. No number is worth tuning
+before that exists.
+
+**What to measure.** How often a hand ends with a non-zero carry; the average carry size at the
+point it is spent; and whether a carry ever exceeds what winning the hand outright would have paid,
+which is the line at which throwing a hand beats playing it.
+
+**Still open.** Whether the Momentum Feeder ships at the same tier ladder as the damage version, and
+whether the carry is shown as a raw figure or as a preview of what the next hand opens with.
+
 ## Promoted
 
 ### Health replaces the Demand — became `hybrid-design.md` §5 and the opening section, 2026-08-11

@@ -17,17 +17,45 @@
   --wc-brass:#c99a4e; --wc-brass-dim:#7d6132;
   --wc-chalk:#cdd6d2; --wc-chalk-dim:#6f7d78; --wc-alarm:#d1705f;
   --wc-bells:#c9873f; --wc-keys:#5f93a8; --wc-moons:#9c7cb8;
+  /* src/app/warCouncil/warCouncil.css :root. The same green drives --wc-hp-ticking-fill,
+     the ticking hearts, so green means "a Timebomb is involved" across the whole UI.
+     These were being USED by the primed ring and the Timebomb's split payoff bar
+     before they were declared here, so both were silently falling back. */
+  --wc-timebomb:#8fb04e; --wc-timebomb-edge:#5c7a2e;
   --wc-serif:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
   --wc-sans:system-ui,-apple-system,'Segoe UI',sans-serif;
   --wc-ui-transition-ms:140ms;
 
-  /* PLACEHOLDER — no tier colour exists in the codebase today. Developer's. */
+  /* PLACEHOLDER — no tier colour exists in the codebase today. Developer's.
+     Kept because the tier filter chips still use them as swatches. */
   --tier-bronze-field:#b0793f; --tier-bronze-deep:#6d4520; --tier-bronze-ink:#23140a;
   --tier-silver-field:#c3ccd0; --tier-silver-deep:#6c7a80; --tier-silver-ink:#16202a;
   --tier-gold-field:#dfb44a;   --tier-gold-deep:#8a6a1c;   --tier-gold-ink:#2a1d05;
 
+  /* The settled buff card (mockup-buff-metal.html): a near-neutral face with tier carried
+     by a metallic frame, so tier and suit stop competing for one colour channel. Every
+     value here is a PLACEHOLDER except the payoff-bar inks, which are contrast-derived. */
+  --m-bronze:linear-gradient(142deg,#f3c894 0%,#b0702e 22%,#65401c 47%,#e0a561 64%,#7d4d20 100%);
+  --m-silver:linear-gradient(142deg,#ffffff 0%,#ccd6da 20%,#76858c 47%,#f2f7f9 64%,#8e9ba1 100%);
+  --m-gold:linear-gradient(142deg,#fff6cf 0%,#e6c159 21%,#8f6d1c 47%,#f8e296 64%,#a8842a 100%);
+  --m-bronze-edge:#4a2d13; --m-silver-edge:#59656b; --m-gold-edge:#6b520f;
+  --face-bronze:#f8efdf; --face-bronze-edge:#e7d6b6;
+  --face-silver:#f3f7f9; --face-silver-edge:#dae4e9;
+  --face-gold:#fcf6e0;   --face-gold-edge:#efe1b3;
+  --buff-ink:#1b1710; --buff-ink-soft:#5f5647;
+  --frame:5px;
+
   /* PLACEHOLDER — every size bound below. Developer's. */
-  --card-w:clamp(5.6rem, 7.6vw, 7.6rem);
+  /* PLACEHOLDER, but constrained. The gallery's grid is only ~787px wide at a 1440
+     viewport — the dossier, the felt rail and the filter rail take the rest — so the
+     card width decides how many rows 16 cells become, and therefore whether the
+     fenced group stays above the fold. At 7.6vw the card was 109px, six per row,
+     three rows, and 56px of overflow that pushed the fence out of sight. 6.9vw gave
+     ~99px, seven per row, three rows and still 16px over. 6vw gives ~86px and EIGHT
+     per row, which is two rows for the mid-trick sixteen cells and leaves enough
+     headroom that the twenty-cell between-tricks case fits too.
+     Retune only against a measurement, never by eye. */
+  --card-w:clamp(4.6rem, 6vw, 6.6rem);
   --plate-card-w:clamp(2.4rem, 3.6vw, 3.5rem);
   --rail-w:clamp(9rem, 14vw, 13.5rem);
 }
@@ -292,14 +320,19 @@ body {
   gap:clamp(.4rem,1vw,.8rem); align-content:start; }
 
 /* ---------- the card ---------- */
-.card { position:relative; aspect-ratio:31/41; border-radius:10px; overflow:hidden; cursor:pointer;
-  border:1.5px solid var(--deep); background:var(--field); color:var(--ink);
-  font-family:var(--wc-sans); text-align:left; padding:0;
-  box-shadow:0 3px 7px #00000059; touch-action:manipulation;
-  transition:transform var(--wc-ui-transition-ms) ease, box-shadow var(--wc-ui-transition-ms) ease; }
-.card.bronze, .stack.bronze { --field:var(--tier-bronze-field); --deep:var(--tier-bronze-deep); --ink:var(--tier-bronze-ink); }
-.card.silver, .stack.silver { --field:var(--tier-silver-field); --deep:var(--tier-silver-deep); --ink:var(--tier-silver-ink); }
-.card.gold, .stack.gold { --field:var(--tier-gold-field); --deep:var(--tier-gold-deep); --ink:var(--tier-gold-ink); }
+.card { position:relative; display:block; aspect-ratio:31/41; border-radius:12px; cursor:pointer;
+  border:none; padding:var(--frame); background:var(--metal); color:var(--buff-ink);
+  overflow:hidden;  /* clips the hover sheen to the frame */
+  box-shadow:0 0 0 1px var(--metal-edge), 0 4px 10px #00000073;
+  font-family:var(--wc-sans); text-align:left; touch-action:manipulation;
+  transition:transform var(--wc-ui-transition-ms) ease, box-shadow var(--wc-ui-transition-ms) ease,
+             filter var(--wc-ui-transition-ms) ease; }
+.card.bronze, .stack.bronze { --metal:var(--m-bronze); --metal-edge:var(--m-bronze-edge);
+  --face:var(--face-bronze); --face-edge:var(--face-bronze-edge); }
+.card.silver, .stack.silver { --metal:var(--m-silver); --metal-edge:var(--m-silver-edge);
+  --face:var(--face-silver); --face-edge:var(--face-silver-edge); }
+.card.gold, .stack.gold { --metal:var(--m-gold); --metal-edge:var(--m-gold-edge);
+  --face:var(--face-gold); --face-edge:var(--face-gold-edge); }
 .card .rule { position:absolute; inset:5px; border:1px solid currentColor; opacity:.16; border-radius:6px; pointer-events:none; }
 .card .mark { position:absolute; right:2%; bottom:24%; font-size:clamp(2.4rem,5.4vmin,3.9rem);
   line-height:1; opacity:.13; pointer-events:none; }
@@ -436,6 +469,91 @@ body {
 .pip.none { background:transparent; border:1px dashed #55636a; }
 .pip.none::after { color:var(--wc-chalk-dim); }
 
+
+
+/* ---------- the primed-card mark, folded in from mockup-primed-card.html ----------
+   A cartoon bomb sat half over the card's top-right corner. Its shapes are INLINE
+   rather than a <symbol> + <use>: `use` clones into a shadow tree, where the .fizz
+   class never matches from the light DOM, so the spark would sit dead and
+   prefers-reduced-motion could not reach it either. It hangs on the .pick
+   WRAPPER, not on .pc — .pc sets overflow:hidden to clip its own art, and would eat
+   the overhang exactly as it ate the PLAY badge earlier in this file.
+
+   Governing distinction: a skull REPLACES the art, because a skull is what the card
+   IS this trick. A Timebomb is ADDED, because it is a temporary thing the player did
+   to a card that is otherwise still itself. A primed Swan is still a Swan.
+
+   The green ring is --wc-timebomb, which also drives --wc-hp-ticking-fill (the
+   ticking hearts). Green already means "a Timebomb is involved" everywhere else, so
+   the ring is what ties this card to damage already visible on the health bar. */
+.pc.primed { box-shadow:0 2px 6px #00000059, inset 0 0 0 1px #ffffffaa,
+  0 0 0 2px var(--wc-timebomb-edge); }
+.bomb { position:absolute; z-index:8; top:-13%; right:-11%; width:48%; aspect-ratio:1;
+  pointer-events:none; filter:drop-shadow(0 2px 3px #000000a6); }
+.bomb svg { width:100%; height:100%; display:block; overflow:visible; }
+.fizz { transform-origin:76px 30px; animation:fizz 620ms steps(2,end) infinite; }
+.fizz-glow { transform-origin:76px 30px; animation:fizzglow 620ms ease-in-out infinite alternate; }
+@keyframes fizz { 0%{transform:scale(1) rotate(0deg)} 50%{transform:scale(1.28) rotate(22deg)}
+  100%{transform:scale(1) rotate(-14deg)} }
+@keyframes fizzglow { from{opacity:.45; transform:scale(.9)} to{opacity:.9; transform:scale(1.15)} }
+@media (prefers-reduced-motion:reduce) {
+  .fizz, .fizz-glow { animation:none; }
+  .fizz-glow { opacity:.75; }
+}
+
+/* ---------- the skulled card, folded in from mockup-trick-readout.html ----------
+   ONE skull on ONE wash, identical on every rank and suit: a skull is a property of
+   the trick, not a character. Rank, suit glyph and rank name stay in the corner,
+   because the trick is still won on those. */
+.pc.skull { --art-a:#2b2622; --art-b:#4a423a; border-color:#6b5f52; }
+.pc.skull .art .wash {
+  background:radial-gradient(72% 58% at 50% 32%, #4a423a 0%, #2b2622 46%, #0d0b09 100%); }
+.pc.skull .art .figure { color:#efe8d7; width:76%; bottom:8%; }
+
+/* ---------- the consequence readout, in the rail ----------
+   It lives in the RAIL rather than under the trick well, for the same reason the
+   trick moved there: the gallery covers the middle of the felt, and a readout you
+   cannot see while choosing a buff is a readout that is missing at the moment you
+   are deciding. An off-white slip, matching the card faces.
+
+   TEXT COLOURS ARE MEASURED. On this light ground both project accent tokens fail
+   WCAG AA — --wc-alarm 3.03:1 and --wc-brass 2.29:1 — so each is replaced by a
+   darker member of its own family:
+     body #1b1710 15.96:1 · label #5f5647 6.46:1
+     costs you #96301f 6.86:1 · worth having #6f5412 6.36:1
+   Values are PLACEHOLDERS; the 4.5:1 floor is not. */
+.trick-readout { width:100%; border-radius:7px; overflow:hidden; text-align:left;
+  --ro-ink:#1b1710; --ro-soft:#5f5647; --ro-bad:#96301f; --ro-good:#6f5412; --ro-rule:#c9bfa6;
+  background:radial-gradient(120% 92% at 50% 0%, #fffdf7 0%, #f6f2e8 52%, #e6dcc6 100%);
+  border:1px solid var(--wc-parchment-deep);
+  box-shadow:0 3px 8px #00000059, inset 0 0 0 1px #ffffffd9; }
+.trick-readout .what { display:flex; align-items:baseline; gap:.25rem; flex-wrap:wrap;
+  padding:.26rem .4rem; border-bottom:1px solid var(--ro-rule);
+  font-family:var(--wc-serif); font-size:clamp(.44rem,.95vmin,.58rem); color:var(--ro-ink); }
+.trick-readout .what .skulled { padding:.02rem .22rem; border-radius:3px;
+  border:1px solid var(--ro-bad); color:var(--ro-bad); font-family:var(--wc-sans);
+  font-size:clamp(.34rem,.75vmin,.44rem); font-weight:700; letter-spacing:.09em; }
+.trick-readout .row { padding:.24rem .4rem; font-size:clamp(.4rem,.9vmin,.52rem);
+  line-height:1.4; color:var(--ro-ink); }
+.trick-readout .row + .row { border-top:1px solid var(--ro-rule); }
+.trick-readout .row .k { display:block; font-size:clamp(.32rem,.72vmin,.42rem);
+  letter-spacing:.12em; font-weight:700; color:var(--ro-soft); margin-bottom:.08rem; }
+.trick-readout .row .bad { color:var(--ro-bad); font-weight:700; }
+.trick-readout .row .good { color:var(--ro-good); font-weight:700; }
+
+/* ---------- short viewports: the fence collapses to one line ----------
+   The fenced group costs ~113px because it shows its cards. At 1280x720 the panel is
+   short enough that those cards are what pushes the fence itself below the fold —
+   which is self-defeating, since the fence exists to keep unusable cards VISIBLE.
+   Under 800px of viewport height it drops to a single stated line and keeps its
+   place; the cards return as soon as there is room for them. The count and the
+   reason are the load-bearing parts, not the thumbnails. */
+@media (max-height: 800px) {
+  .fence .dead-row { display:none; }
+  .fence { padding:.4rem .7rem; gap:.5rem; }
+  .fence .why small { display:none; }
+}
+
 /* ---------- narrow / portrait: restack, mirroring warCouncilHunt.css's own breakpoint ---------- */
 @media (max-width: 900px), (max-height: 560px) {
   :root { --card-w:clamp(4.6rem, 26vw, 6.4rem); --rail-w:auto; }
@@ -457,7 +575,180 @@ body {
   .g-head { flex-wrap:wrap; row-gap:.15rem; }
 }
 
+
+/* ==========================================================================
+   THE SETTLED BUFF CARD, folded in from mockup-buff-metal.html
+   Off-white face, metallic tier frame, roman-numeral rank, bare suit glyph in the
+   suit's own colour, suit-coloured payoff bar, and a sheen that travels the rim on
+   hover. These rules come last on purpose: they override the older tier-field card
+   above rather than excising it rule by rule.
+   ========================================================================== */
+
+/* the old face furniture, superseded */
+.card .mark, .tierpips { display:none !important; }
+
+.card .face { display:block; position:relative; z-index:1; width:100%; height:100%;
+  border-radius:8px; overflow:hidden; color:var(--buff-ink);
+  background:radial-gradient(120% 92% at 50% 0%, #fffdf7 0%, var(--face) 52%, var(--face-edge) 100%);
+  box-shadow:inset 0 0 0 1px #ffffffd9, inset 0 1px 4px #00000021; }
+.card .face .rule { position:absolute; inset:4px; border:1px solid currentColor; opacity:.13;
+  border-radius:5px; pointer-events:none; }
+
+/* the frame's two lit faces */
+.card::before { content:''; position:absolute; inset:0; border-radius:12px; pointer-events:none;
+  background:linear-gradient(118deg,#ffffff00 34%,#ffffffbf 45%,#ffffff00 56%); opacity:.55; }
+.card::after { content:''; position:absolute; inset:0; border-radius:12px; pointer-events:none;
+  background:linear-gradient(318deg,#00000073 0%,#00000000 26%); }
+
+/* the hover sheen. z-index 0 puts it above the metal but BELOW the face, so the light
+   only ever crosses the rim — the face masks the rest for free. One pass, never a loop. */
+.card .sheen { position:absolute; top:-30%; bottom:-30%; left:-45%; width:36%; z-index:0;
+  pointer-events:none; opacity:0;
+  background:linear-gradient(90deg,#ffffff00 0%,#ffffffe6 48%,#ffffff00 100%);
+  transform:skewX(-18deg) translateX(-160%); }
+@media (hover:hover) {
+  .card:not(.dead):hover .sheen { animation:sheen-sweep 760ms cubic-bezier(.32,.06,.2,1) 1; }
+  .card:not(.dead):hover { filter:none; transform:translateY(-5px);
+    box-shadow:0 0 0 1px var(--metal-edge), 0 12px 20px #000000a6; }
+}
+@keyframes sheen-sweep {
+  0%   { transform:skewX(-18deg) translateX(-160%); opacity:0; }
+  14%  { opacity:.95; }
+  86%  { opacity:.95; }
+  100% { transform:skewX(-18deg) translateX(460%); opacity:0; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .card:hover .sheen { animation:none; opacity:0; }
+  .card:hover::before { opacity:.95; }
+}
+
+/* top row: suit mark, roman numeral, cadence, count */
+.card .face .top { position:absolute; top:6.5%; left:8%; right:8%; display:flex;
+  align-items:center; gap:.2rem; }
+.suitmark { flex:0 0 auto; width:clamp(.85rem,1.9vmin,1.25rem); aspect-ratio:1;
+  display:grid; place-items:center; color:var(--suitc); }
+.suitmark svg { width:100%; height:100%; }
+.suitmark.none { color:var(--buff-ink-soft); opacity:.5; }
+.suitmark.none::after { content:'\2014'; font-size:clamp(.4rem,.9vmin,.6rem); }
+.tiernum { flex:0 0 auto; font-family:var(--wc-serif); line-height:1; letter-spacing:.07em;
+  color:var(--buff-ink); opacity:.8; font-size:clamp(.45rem,1vmin,.66rem); }
+.card .cadence { padding:.08rem .28rem; border-radius:4px; background:#1b171014;
+  color:var(--buff-ink); opacity:.8; font-size:clamp(.34rem,.78vmin,.42rem);
+  font-weight:700; letter-spacing:.06em; }
+.card .count { margin-left:auto; padding:.08rem .3rem; border-radius:4px;
+  background:var(--buff-ink); color:var(--face); font-size:clamp(.36rem,.84vmin,.46rem);
+  font-weight:700; }
+.card .count i { color:var(--face); font-style:normal; }
+
+.card .face h3 { position:absolute; top:20%; left:8%; right:8%; margin:0;
+  font-family:var(--wc-serif); font-weight:400; color:var(--buff-ink);
+  font-size:clamp(.5rem,1.2vmin,.74rem); line-height:1.2; }
+.card .face .cond { position:absolute; top:47%; left:8%; right:8%; margin:0;
+  color:var(--buff-ink-soft); opacity:1;
+  font-size:clamp(.36rem,.85vmin,.5rem); line-height:1.3; }
+.card .face .tierword { position:absolute; left:8%; bottom:calc(6% + 1.55rem);
+  font-size:clamp(.32rem,.75vmin,.44rem); letter-spacing:.15em; text-transform:uppercase;
+  color:var(--buff-ink-soft); opacity:.85; font-weight:700; }
+
+/* the payoff bar carries the suit colour. Text colour is contrast-derived, not chosen:
+   white FAILS WCAG AA on all three suits at this size (2.99 / 3.37 / 3.51:1). */
+.card .face .reward { position:absolute; left:6%; right:6%; bottom:6%; padding:.28rem 0;
+  border-radius:6px; background:var(--reward-bg,var(--buff-ink));
+  color:var(--reward-fg,var(--face)); text-align:center; font-weight:700;
+  font-size:clamp(.4rem,.95vmin,.58rem); box-shadow:inset 0 0 0 1px #00000026; }
+
+/* PRESS is the only cadence that is a VERB — WIN, LOSE, DODGE, WHEN and HAND END all
+   describe something that happens TO you. It gets a raised chip, not a flat tint. */
+.card .cadence.press { background:var(--buff-ink); color:var(--face); opacity:1;
+  box-shadow:0 1px 0 #ffffff59 inset, 0 1px 2px #00000040; }
+
+/* A split payoff bar, for a card whose reward is only half its story. Green for what it
+   pays, alarm for what the same figure costs YOU if the hit lands on your side. */
+.card .face .reward.split { display:flex; gap:2px; padding:0; background:none; box-shadow:none; }
+.card .face .reward.split span { flex:1; padding:.28rem 0; }
+.card .face .reward.split .gain { background:var(--wc-timebomb); color:#16210a;
+  border-radius:6px 0 0 6px; box-shadow:inset 0 0 0 1px #00000026; }
+.card .face .reward.split .risk { background:var(--wc-alarm); color:#2b0d07;
+  border-radius:0 6px 6px 0; box-shadow:inset 0 0 0 1px #00000026; }
+
+/* poised */
+.card[aria-pressed='true'] { transform:translateY(-9px);
+  box-shadow:0 0 0 1px var(--metal-edge), 0 0 0 3px var(--wc-brass), 0 14px 24px #000000b3; }
+.card[aria-pressed='true'] .face .confirm { display:block; position:absolute; left:6%; right:6%;
+  bottom:6%; padding:.28rem 0; border-radius:6px; background:var(--wc-brass); color:#1a1206;
+  text-align:center; font-weight:700; letter-spacing:.06em;
+  font-size:clamp(.34rem,.8vmin,.46rem); }
+.card[aria-pressed='true'] .face .reward { bottom:calc(6% + 1.5rem); }
+
+/* unusable: the metal tarnishes rather than the card merely fading */
+.card.dead { filter:saturate(.25) brightness(.72); cursor:default; opacity:1;
+  border:none; box-shadow:0 0 0 1px var(--metal-edge); }
+.card.dead .face { opacity:.62; }
+.card.dead::before { opacity:.15; }
+.card.dead .face .cond, .card.dead .face .reward { display:none; }
+/* The fenced cards render at ~62px wide. At that size the full face furniture collides —
+   the name overlapped the tier word and the cadence pill. Strip the card back to the two
+   things that still matter when it cannot be used: what it is, and how many. */
+.card.dead .face h3 { top:30%; left:10%; right:10%; line-height:1.15;
+  font-size:clamp(.32rem,.78vmin,.44rem); }
+.card.dead .face .tierword, .card.dead .face .cadence { display:none; }
+.card.dead .face .top { top:8%; gap:.14rem; }
+
+/* the pile's layers are the same metal as the frame */
+.stack .layer { background:var(--metal); border:none;
+  box-shadow:0 0 0 1px var(--metal-edge), 0 2px 5px #00000059; border-radius:12px; }
+.stack .layer::after { content:''; position:absolute; inset:0; border-radius:12px;
+  background:linear-gradient(118deg,#ffffff00 34%,#ffffffa6 45%,#ffffff00 56%);
+  opacity:.5; height:auto; }
+
+/* ---------- suit grouping inside the gallery ----------
+   Suit HEADERS were tried first and do not fit. Measured: the panel gives the grid 416px,
+   the dense 12-card grid needs 348px in two rows of eight, and four stacked groups —
+   header plus its own row each — needed roughly 800px, which pushed the fenced group
+   below the fold. A header costs a whole ROW; this tab costs one CELL. Twelve cards plus
+   four tabs is sixteen cells, exactly two rows, and the fence stays visible.
+
+   The bare suit glyph on each card is only sufficient because these tabs mark where each
+   run begins — that is the trade the metal sheet's design depends on. */
+.suittab { display:flex; flex-direction:column; justify-content:center; gap:.2rem;
+  aspect-ratio:31/41; padding:0 .5rem; border-radius:10px;
+  border:1px dashed color-mix(in srgb, currentColor 45%, transparent);
+  background:color-mix(in srgb, currentColor 7%, transparent); }
+.suittab svg { width:clamp(1rem,2.4vmin,1.5rem); height:clamp(1rem,2.4vmin,1.5rem); }
+.suittab .lbl { font-family:var(--wc-serif); font-size:clamp(.55rem,1.3vmin,.8rem); line-height:1.1; }
+.suittab .n { font-family:var(--wc-sans); font-size:clamp(.4rem,.9vmin,.55rem);
+  color:var(--wc-chalk-dim); letter-spacing:.06em; }
+/* The Press run is the odd one out and says so: solid, not dashed, because unlike the
+   other three tabs it names an ACTION rather than the absence of a target suit. */
+.suittab.press { color:var(--wc-brass); border-style:solid;
+  background:linear-gradient(160deg,#2a2418,#161109); }
+.suittab.press .n { color:var(--wc-brass); opacity:.75; }
+.suittab.bells { color:var(--wc-bells); } .suittab.keys { color:var(--wc-keys); }
+.suittab.moons { color:var(--wc-moons); } .suittab.none { color:var(--wc-chalk-dim); }
+
+/* the tier filter chips become little metal swatches */
+.chip .dot.bronze { background:var(--m-bronze); }
+.chip .dot.silver { background:var(--m-silver); }
+.chip .dot.gold   { background:var(--m-gold); }
+
 @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+
+/* ---------- sheet navigation — NOT part of the game UI ----------
+   position:fixed so it costs the layout nothing: the gallery is a full-viewport
+   no-scroll shell and must not gain a nav row. Kept quiet and out of the way. */
+.sheetnav { position:fixed; left:.6rem; bottom:.6rem; z-index:60; display:flex; flex-wrap:wrap;
+  align-items:center; gap:.28rem; padding:.3rem .45rem; border-radius:9px;
+  border:1px solid #2a373d; background:#0b1113ee; backdrop-filter:blur(3px);
+  font-family:system-ui,-apple-system,'Segoe UI',sans-serif; font-size:.58rem;
+  max-width:min(34rem, calc(100vw - 1.2rem)); }
+.sheetnav > span { color:#54635e; letter-spacing:.09em; margin-right:.15rem; }
+.sheetnav a { text-decoration:none; padding:.16rem .4rem; border-radius:5px; color:#9fb0aa;
+  border:1px solid transparent; white-space:nowrap; }
+.sheetnav a:hover { color:#e6d3ac; border-color:#7d6132; background:#1a1710; }
+.sheetnav a:focus-visible { outline:2px solid #c99a4e; outline-offset:2px; }
+.sheetnav a[aria-current='page'] { color:#c99a4e; border-color:#3c4b45; background:#141c20; }
+.sheetnav a.home { color:#c99a4e; }
+@media print { .sheetnav { display:none; } }
 </style>
 </head>
 <body>
@@ -480,6 +771,37 @@ body {
       <path d="M12 10.2V21"/>
       <path d="M12 14.3h3.5M12 17h2.7"/>
       <path d="M12 19.5h1.9" opacity=".55"/>
+    </g>
+  </symbol>
+  <radialGradient id="bombBody" cx="36%" cy="32%" r="72%">
+    <stop offset="0" stop-color="#5a5852"/><stop offset=".42" stop-color="#22201c"/>
+    <stop offset="1" stop-color="#0a0908"/>
+  </radialGradient>
+  <radialGradient id="sparkGlow">
+    <stop offset="0" stop-color="#fff6cf"/><stop offset=".4" stop-color="#f5a623" stop-opacity=".8"/>
+    <stop offset="1" stop-color="#f5a623" stop-opacity="0"/>
+  </radialGradient>
+  <symbol id="skull-fig" viewBox="0 0 100 100">
+    <path d="M50 8C29 8 16 21 16 40c0 10 4 18 9 23 3 4 5 7 5 11v4c0 5 4 8 9 8h22c5 0 9-3 9-8v-4
+      c0-4 2-7 5-11 5-5 9-13 9-23C84 21 71 8 50 8z" fill="#efe8d7"/>
+    <path d="M20 34c3-11 12-19 24-21-14 4-22 12-24 21z" fill="#fff" opacity=".5"/>
+    <path d="M80 34c-3-11-12-19-24-21 14 4 22 12 24 21z" fill="#8d8168" opacity=".45"/>
+    <ellipse cx="36" cy="43" rx="10" ry="11" fill="#171310"/>
+    <ellipse cx="64" cy="43" rx="10" ry="11" fill="#171310"/>
+    <ellipse cx="33" cy="39" rx="3.2" ry="3.6" fill="#fff" opacity=".16"/>
+    <ellipse cx="61" cy="39" rx="3.2" ry="3.6" fill="#fff" opacity=".16"/>
+    <path d="M23 47c2 8 6 14 12 18l-3 4c-7-5-11-13-12-22z" fill="#8d8168" opacity=".4"/>
+    <path d="M77 47c-2 8-6 14-12 18l3 4c7-5 11-13 12-22z" fill="#8d8168" opacity=".4"/>
+    <path d="M50 54l7 13H43z" fill="#171310"/>
+    <path d="M33 72h34v10a4 4 0 0 1-4 4H37a4 4 0 0 1-4-4z" fill="#efe8d7"/>
+    <g fill="#171310" opacity=".8"><rect x="39" y="72" width="1.8" height="14"/>
+      <rect x="45" y="72" width="1.8" height="14"/><rect x="51" y="72" width="1.8" height="14"/>
+      <rect x="57" y="72" width="1.8" height="14"/></g>
+    <path d="M33 72h34" stroke="#171310" stroke-width="1.6" opacity=".55" fill="none"/>
+  </symbol>
+  <symbol id="s-press" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3v7"/><path d="M6.5 6.8a7.5 7.5 0 1 0 11 0"/>
     </g>
   </symbol>
   <symbol id="s-moons" viewBox="0 0 24 24">
@@ -509,7 +831,6 @@ body {
     <section class="panel"><h2>The Quarry</h2><p>The Monarch</p></section>
     <section class="panel"><h2>What the Quarry holds</h2><p>Bells · Keys · Moons</p></section>
     <section class="panel"><h2>Tricks</h2><p>0 × 0</p></section>
-    <section class="panel"><h2>Their intent</h2><p>They will lead Keys.</p></section>
   </aside>
 
   <section class="felt">
@@ -530,13 +851,20 @@ body {
         <span class="rail-label">This trick</span>
         <div class="trick-row">
           <figure>
-            <div class="pile" style="margin:0"><div class="pc-slot" data-suit="bells" data-rank="1" data-variant="plate"></div></div>
+            <div class="pile" style="margin:0"><div class="pc-slot" data-suit="bells" data-rank="1" data-variant="plate" data-skull="yes"></div></div>
             <figcaption>THEY LED</figcaption>
           </figure>
           <figure>
             <div class="pile" style="margin:0"><div class="pc empty"></div></div>
             <figcaption>YOU</figcaption>
           </figure>
+        </div>
+        <div class="trick-readout">
+          <div class="what">1 of Bells — Swan <span class="skulled">SKULL</span></div>
+          <div class="row"><span class="k">IF YOU WIN</span>You <span class="bad">eat the
+            skull</span>. Their Swan lost, so <b>Aoife leads next</b>.</div>
+          <div class="row"><span class="k">IF YOU LOSE</span><span class="good">Aoife eats the
+            skull.</span></div>
         </div>
       </div>
       <div class="rail-rule"></div>
@@ -551,7 +879,7 @@ body {
     <!-- the stage: gallery, or the trick well when it is shut -->
     <div class="stage">
       <div class="trick-well" id="well" hidden>
-        <figure><div class="pc-slot" data-suit="bells" data-rank="1" data-variant="plate"></div><figcaption>THEY LED</figcaption></figure>
+        <figure><div class="pc-slot" data-suit="bells" data-rank="1" data-variant="plate" data-skull="yes"></div><figcaption>THEY LED</figcaption></figure>
         <figure><div class="pc empty"></div><figcaption>YOU — TO FOLLOW</figcaption></figure>
       </div>
 
@@ -605,7 +933,7 @@ body {
   <div class="hand">
     <div class="pc-slot" data-suit="bells" data-rank="1" data-variant="hand"></div>
     <div class="pc-slot" data-suit="bells" data-rank="2" data-variant="hand"></div>
-    <div class="pc-slot" data-suit="bells" data-rank="7" data-variant="hand"></div>
+    <div class="pc-slot" data-suit="bells" data-rank="7" data-variant="hand" data-primed="yes"></div>
     <div class="pc-slot" data-suit="keys" data-rank="1" data-variant="hand"></div>
     <div class="pc-slot" data-suit="keys" data-rank="3" data-variant="hand"></div>
     <div class="pc-slot" data-suit="moons" data-rank="10" data-variant="hand"></div>
@@ -801,13 +1129,19 @@ const RANK_META = {
 const SUIT_BY_ID = Object.fromEntries(SUITS.map(s => [s.id, s]));
 let pcUid = 0;
 
-function playingCard(suitId, rank, variant) {
+function playingCard(suitId, rank, variant, skulled, primed) {
   const suit = SUIT_BY_ID[suitId];
   const meta = RANK_META[rank] || { name:null, cls:'plain' };
   const figKey = meta.figBySuit ? meta.figBySuit[suitId] : meta.fig;
   const u = 'pc' + (++pcUid);
 
-  const body = figKey
+  // A skulled card shows the skull INSTEAD of its character art, at every rank.
+  const body = skulled
+    ? `<span class="art"><span class="wash"></span>
+         <span class="figure"><svg viewBox="0 0 100 100" aria-hidden="true">
+           <use href="#skull-fig"/></svg></span>
+         <span class="vig"></span></span>`
+    : figKey
     ? `<span class="art"><span class="wash"></span><span class="glow"></span>
          <span class="figure"><svg viewBox="0 0 100 100" aria-hidden="true">${FIGURE[figKey](suit.pal, u)}</svg></span>
          <span class="vig"></span></span>`
@@ -825,20 +1159,34 @@ function playingCard(suitId, rank, variant) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'pick';
-    b.setAttribute('aria-label', name);
+    b.setAttribute('aria-label', name + (skulled ? ', skulled' : '') + (primed ? ', primed' : ''));
     b.setAttribute('aria-pressed', 'false');
     b.setAttribute('aria-describedby', u + '-tip');
     b.tabIndex = -1;
     const rule = meta.rule || 'Plain number card. No rule.';
-    b.innerHTML = `<span class="pc ${meta.cls} ${suitId} ${variant}">${face}</span>` +
+    b.innerHTML = `<span class="pc ${meta.cls} ${suitId} ${variant}${primed ? ' primed' : ''}">${face}</span>` +
+      // the bomb hangs on the WRAPPER: .pc clips its own overflow
+      (primed ? `<span class="bomb"><svg viewBox="0 0 100 100" aria-hidden="true">` +
+                  `<circle cx="46" cy="60" r="31" fill="#15130f"/>` +
+                  `<circle cx="46" cy="60" r="31" fill="url(#bombBody)"/>` +
+                  `<path d="M18 52a31 31 0 0 1 26-22 31 31 0 0 0-22 30z" fill="#8e8a80" opacity=".5"/>` +
+                  `<ellipse cx="33" cy="46" rx="8" ry="5.5" fill="#fff" opacity=".26" transform="rotate(-28 33 46)"/>` +
+                  `<rect x="37" y="22" width="17" height="12" rx="3" fill="#33302a"/>` +
+                  `<rect x="37" y="22" width="17" height="4" rx="2" fill="#5c574d"/>` +
+                  `<path d="M54 27c9-7 19-4 22 3" fill="none" stroke="#7a6a4a" stroke-width="5" stroke-linecap="round"/>` +
+                  `<circle class="fizz-glow" cx="76" cy="30" r="15" fill="url(#sparkGlow)"/>` +
+                  `<g class="fizz" fill="#ffd980">` +
+                    `<path d="M76 18l3.4 8.6L88 30l-8.6 3.4L76 42l-3.4-8.6L64 30l8.6-3.4z"/>` +
+                    `<circle cx="76" cy="30" r="3.6" fill="#fffbe8"/></g>` +
+                `</svg></span>` : '') +
       `<span class="tip" id="${u}-tip" role="tooltip">` +
         `<b>${rank}${meta.name ? ' \u00b7 ' + meta.name : ''}</b>${rule}</span>`;
     return b;
   }
   const el = document.createElement('div');
-  el.className = `pc ${meta.cls} ${suitId} ${variant}`;
+  el.className = `pc ${meta.cls} ${suitId} ${variant}` + (skulled ? ' skull' : '') + (primed ? ' primed' : '');
   el.setAttribute('role', 'img');
-  el.setAttribute('aria-label', name);
+  el.setAttribute('aria-label', name + (skulled ? ', skulled' : '') + (primed ? ', primed' : ''));
   el.innerHTML = face;
   return el;
 }
@@ -890,7 +1238,8 @@ function wireHand() {
 }
 
 document.querySelectorAll('.pc-slot').forEach(s => {
-  s.replaceWith(playingCard(s.dataset.suit, +s.dataset.rank, s.dataset.variant));
+  s.replaceWith(playingCard(s.dataset.suit, +s.dataset.rank, s.dataset.variant,
+    s.dataset.skull === 'yes', s.dataset.primed === 'yes'));
 });
 // The 2 of Bells stands in for a card that is illegal this trick, so the
 // not-playable state can be judged next to the playable ones.
@@ -900,23 +1249,45 @@ wireHand();
 /* ------------------------------------------------------------------ data */
 /* Names, conditions, rewards and cadences follow src/app/warCouncil/buffLabels.ts
    and src/hunt/buffs.ts BUFF_CADENCE. Counts are illustrative. */
+/* `suit` is the TARGET suit, from buffLabels.ts -> BUFF_CONDITION_SENTENCE's {suit}
+   substitution. Only Taker, Feeder and Keepsake carry one; everything else targets a
+   rank or nothing. NOTE this list deliberately still includes families DLR-145 CUT
+   (Glutton, Mark of the R, Hoarder, Unbloodied, Keepsake, Cornered) and cut reward axes
+   (Purse) — per CLAUDE.md this sheet load-tests the grid, so it is the one place a cut
+   card may appear. mockup-buff-metal.html shows the real thirteen. */
 const CARDS = [
-  { name:'Bell-Taker (Momentum)', cad:'WIN',      cond:'win a trick with Bells',            reward:'+2 multiplier', tier:'bronze', n:2, mark:'♭' },
-  { name:'Bell-Feeder (Blade)',   cad:'LOSE',     cond:'lose a trick with Bells',           reward:'+1 damage',     tier:'bronze', n:3, mark:'♭' },
-  { name:'Key-Taker (Blade)',     cad:'WIN',      cond:'win a trick with Keys',             reward:'+1 damage',     tier:'bronze', n:2, mark:'⚷' },
-  { name:'Key-Feeder (Blade)',    cad:'LOSE',     cond:'lose a trick with Keys',            reward:'+1 damage',     tier:'bronze', n:1, mark:'⚷' },
-  { name:'Sidestep (Momentum)',   cad:'DODGE',    cond:'dodge a skull with this card',      reward:'+2 multiplier', tier:'bronze', n:2, mark:'✦' },
-  { name:'Glutton (Purse)',       cad:'EAT',      cond:'eat a skull with this card',        reward:'+3 coins',      tier:'bronze', n:1, mark:'☠' },
-  { name:'Mark of the 9 (Blade)', cad:'WIN',      cond:'win a trick with a 9',              reward:'+2 damage',     tier:'silver', n:1, mark:'9' },
-  { name:'Moon-Taker (Purse)',    cad:'WIN',      cond:'win a trick with Moons',            reward:'+3 coins',      tier:'silver', n:1, mark:'☾' },
-  { name:'Hoarder (Momentum)',    cad:'WHEN',     cond:'reach a high bank this hand',       reward:'+1 multiplier', tier:'silver', n:2, mark:'◆' },
-  { name:'Unbloodied (Blade)',    cad:'WHEN',     cond:'survive several tricks without a hit', reward:'+2 damage',  tier:'silver', n:1, mark:'♥' },
-  { name:'Keepsake (Purse)',      cad:'HAND END', cond:"hold a Moons card at hand's end",   reward:'+4 coins',      tier:'gold',   n:1, mark:'☾' },
-  { name:'Cornered (Blade)',      cad:'WHEN',     cond:'be low on health',                  reward:'+3 damage',     tier:'gold',   n:1, mark:'♥' },
-  { name:'Cheat (Free Rein)',     cad:'PRESS',    cond:'play any card, ignoring follow-suit', reward:'1 trick of no follow-suit', tier:'bronze', n:2, mark:'⚑' },
-  { name:'Timebomb (Blade)',      cad:'PRESS',    cond:'prime a card in your hand',         reward:'+4 damage',     tier:'bronze', n:2, mark:'☠' },
-  { name:'Ward (Blast Guard)',    cad:'PRESS',    cond:'absorb the next hit',               reward:'2 blue hearts', tier:'gold',   n:1, mark:'✚' },
+  { name:'Bell-Taker (Momentum)', cad:'WIN',      suit:'bells', cond:'win a trick with Bells',            reward:'+2 multiplier', tier:'bronze', n:2 },
+  { name:'Bell-Feeder (Blade)',   cad:'LOSE',     suit:'bells', cond:'lose a trick with Bells',           reward:'+1 damage',     tier:'bronze', n:3 },
+  { name:'Key-Taker (Blade)',     cad:'WIN',      suit:'keys',  cond:'win a trick with Keys',             reward:'+1 damage',     tier:'bronze', n:2 },
+  { name:'Key-Feeder (Blade)',    cad:'LOSE',     suit:'keys',  cond:'lose a trick with Keys',            reward:'+1 damage',     tier:'silver', n:1 },
+  { name:'Sidestep (Momentum)',   cad:'DODGE',    suit:null,    cond:'dodge a skull with this card',      reward:'+2 multiplier', tier:'bronze', n:2 },
+  { name:'Glutton (Purse)',       cad:'EAT',      suit:null,    cond:'eat a skull with this card',        reward:'+3 coins',      tier:'bronze', n:1 },
+  { name:'Mark of the 9 (Blade)', cad:'WIN',      suit:null,    cond:'win a trick with a 9',              reward:'+2 damage',     tier:'silver', n:1 },
+  { name:'Moon-Taker (Purse)',    cad:'WIN',      suit:'moons', cond:'win a trick with Moons',            reward:'+3 coins',      tier:'silver', n:1 },
+  { name:'Hoarder (Momentum)',    cad:'WHEN',     suit:null,    cond:'reach a high bank this hand',       reward:'+1 multiplier', tier:'silver', n:2 },
+  { name:'Unbloodied (Blade)',    cad:'WHEN',     suit:null,    cond:'survive several tricks without a hit', reward:'+2 damage',  tier:'silver', n:1 },
+  { name:'Keepsake (Purse)',      cad:'HAND END', suit:'moons', cond:"hold a Moons card at hand's end",   reward:'+4 coins',      tier:'gold',   n:1 },
+  { name:'Cornered (Blade)',      cad:'WHEN',     suit:null,    cond:'be low on health',                  reward:'+3 damage',     tier:'gold',   n:1 },
+  { name:'Cheat (Free Rein)',     cad:'PRESS',    suit:null,    cond:'play any card, ignoring follow-suit', reward:'1 trick of no follow-suit', tier:'bronze', n:2 },
+  { name:'Timebomb (Blade)',      cad:'PRESS',    suit:null,    cond:'prime a card in your hand',         reward:'+4 damage',     tier:'bronze', n:2,
+    split:['+4 them','2 you'] },
+  { name:'Ward (Blast Guard)',    cad:'PRESS',    suit:null,    cond:'absorb the next hit',               reward:'2 blue hearts', tier:'gold',   n:1 },
 ];
+
+const BUFF_SUIT = {
+  bells:{ label:'Bells', glyph:'s-bells', col:'#c9873f', ink:'#1d1004' },
+  keys: { label:'Keys',  glyph:'s-keys',  col:'#5f93a8', ink:'#06212e' },
+  moons:{ label:'Moons', glyph:'s-moons', col:'#9c7cb8', ink:'#1c1030' },
+};
+const ROMAN = { bronze:'I', silver:'II', gold:'III' };
+const TIER_RANK = { bronze:1, silver:2, gold:3 };
+const SUIT_ORDER = { bells:0, keys:1, moons:2, null:3, press:4 };
+/* The picker's runs are by TARGET SUIT, but the two cards you press are not a suit and are
+   not "no suit" either — they are a different kind of card from Sidestep, which fires on
+   its own. Grouping them together forced a player to read every cadence pill to find what
+   they could actually act on. */
+const runOf = c => c.suit ?? (c.cad === 'PRESS' ? 'press' : 'null');
+const RUN_LABEL = { press:{ label:'Press', glyph:'s-press' } };
 
 let betweenTricks = false;   // the only thing that decides usable vs fenced here
 let filter = 'all';
@@ -941,21 +1312,38 @@ function cardEl(c, dead) {
   b.tabIndex = -1;
   if (dead) b.disabled = true;
   b.setAttribute('aria-label',
-    `${c.tier} ${c.name}. ${c.cond}: ${c.reward}.` +
+    `${c.tier} ${c.name}. ${c.suit ? 'Targets ' + BUFF_SUIT[c.suit].label + '. ' : ''}` +
+    `${c.cond}: ${c.split
+        ? c.split[0].replace(/[+]| them/g,'') + ' damage to them, and ' +
+          c.split[1].replace(/ you/,'') + ' to you if it lands on your side'
+        : c.reward}.` +
     (c.n > 1 ? ` You hold ${c.n}.` : '') +
     (dead ? ' Not usable now — only between tricks.' : ''));
-  const rank = { bronze:1, silver:2, gold:3 }[c.tier];
+  const sm = c.suit ? BUFF_SUIT[c.suit] : null;
+  if (sm) {
+    b.style.setProperty('--suitc', sm.col);
+    b.style.setProperty('--reward-bg', sm.col);
+    b.style.setProperty('--reward-fg', sm.ink);
+  }
   b.innerHTML =
-    `<i class="rule"></i><i class="mark" aria-hidden="true">${c.mark}</i>` +
-    (c.n > 1 ? '<i class="stackedge"></i>' : '') +
-    `<div class="top">` +
-      `<span class="tierpips" aria-hidden="true">${'<i></i>'.repeat(rank)}</span>` +
-      `<span class="cadence">${c.cad}</span>` +
-      (c.n > 1 ? `<span class="count"><i>×${c.n}</i></span>` : '') +
-    `</div>` +
-    `<h3>${c.name}</h3><p class="cond">${c.cond}</p>` +
-    `<div class="reward">${c.reward}</div>` +
-    `<div class="confirm">TAP AGAIN TO ACTIVATE</div>`;
+    `<i class="sheen" aria-hidden="true"></i>` +
+    `<span class="face"><i class="rule"></i>` +
+      `<span class="top">` +
+        (sm ? `<span class="suitmark"><svg aria-hidden="true"><use href="#${sm.glyph}"/></svg></span>`
+            : `<span class="suitmark none"></span>`) +
+        `<span class="tiernum">${ROMAN[c.tier]}</span>` +
+        `<span class="cadence${c.cad === 'PRESS' ? ' press' : ''}">${c.cad}</span>` +
+        (c.n > 1 ? `<span class="count"><i>×${c.n}</i></span>` : '') +
+      `</span>` +
+      `<h3>${c.name}</h3><p class="cond">${c.cond}</p>` +
+      `<span class="tierword">${c.tier}</span>` +
+      (c.split
+        ? `<div class="reward split"><span class="gain">${c.split[0]}</span>` +
+          `<span class="risk">${c.split[1]}</span></div>`
+        : `<div class="reward">${c.reward}</div>`) +
+      // For a PRESS card the second tap SPENDS it and cannot be undone — say so.
+      `<div class="confirm">TAP AGAIN TO ${c.cad === 'PRESS' ? 'SPEND' : 'ACTIVATE'}</div>` +
+    `</span>`;
   if (!dead) b.addEventListener('click', () => tap(b, c));
 
   // One copy is just a card. More than one becomes a pile of them.
@@ -977,7 +1365,29 @@ function render() {
   const live = CARDS.filter(c => usableOf(c) && shown(c));
   const dead = CARDS.filter(c => !usableOf(c) && shown(c));
 
-  grid.replaceChildren(...live.map(c => cardEl(c, false)));
+  // One dense grid, sorted by suit, with a tab opening each run. See the CSS note on
+  // .suittab for why this is not a set of headed sections.
+  const ordered = [...live].sort((x, y) =>
+    SUIT_ORDER[runOf(x)] - SUIT_ORDER[runOf(y)]
+    || TIER_RANK[y.tier] - TIER_RANK[x.tier]
+    || x.name.localeCompare(y.name));
+  grid.replaceChildren();
+  let run = undefined;
+  for (const c of ordered) {
+    if (runOf(c) !== run) {
+      run = runOf(c);
+      const sm = BUFF_SUIT[run] || RUN_LABEL[run];
+      const held = ordered.filter(x => runOf(x) === run).reduce((t, x) => t + x.n, 0);
+      const tab = document.createElement('div');
+      tab.className = 'suittab ' + (sm ? run : 'none');
+      tab.setAttribute('role', 'presentation');
+      tab.innerHTML = (sm ? `<svg aria-hidden="true"><use href="#${sm.glyph}"/></svg>` : '') +
+        `<span class="lbl">${sm ? sm.label : 'No suit'}</span>` +
+        `<span class="n">${held} held</span>`;
+      grid.appendChild(tab);
+    }
+    grid.appendChild(cardEl(c, false));
+  }
   deadRow.replaceChildren(...dead.map(c => cardEl(c, true)));
   document.getElementById('fence').hidden = dead.length === 0;
 
@@ -1104,5 +1514,6 @@ phaseBtn.addEventListener('click', () => {
 
 render();
 </script>
+<nav class="sheetnav" aria-label="Mockup sheets"><span>DLR-147</span><a class="home" href="index.html">Contents</a><a href="mockup-buff-gallery.html" aria-current="page">Gallery</a><a href="mockup-buff-metal.html">Buff card</a><a href="mockup-trick-readout.html">Trick</a><a href="mockup-util-cards.html">Cheat & Timebomb</a><a href="mockup-card-faces.html">Playing cards</a><a href="mockup-buff-suit.html">Suit options</a></nav>
 </body>
 </html>

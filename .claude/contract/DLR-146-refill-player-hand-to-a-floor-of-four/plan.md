@@ -18,8 +18,14 @@ Execution status: see `tasks.md` in this folder.
 5. An exhausted `drawPile` makes the refill a no-op rather than a throw or a short draw error.
 6. The hand still ends when its `HAND_SIZE`th trick resolves. Cards left unplayed in the player's hand are swept to the spent pile by `closeHand`, and `deckCycle.test.ts`'s 33-card conservation invariant still passes.
 7. The three code comments that assert every dealt card is played are corrected: `src/hunt/config.ts` (the `HAND_SIZE` block), `src/warCouncil/types.ts` (the `primedCards` docblock), and `src/warCouncil/deal.ts`.
+8. **Going back to the plain six-card deal is ONE edit, on ONE line, in ONE file.** Setting `PLAYER_HAND_FLOOR = 0` in `src/hunt/config.ts` is the whole revert: no mid-hand draw, no mid-hand reshuffle, and the 6, 5, 4, 3, 2, 1 widths back. Three things this requires, and each is what stops the flip being a one-liner in name only:
+   - The refill must be a single `hand.length < PLAYER_HAND_FLOOR` test, so a floor of `0` is UNREACHABLE rather than a second code path that could drift.
+   - **The full Vitest suite must stay green at `0` as well as at `4`, with nothing else edited.** Any spec that reds when the constant is flipped is a spec coupled to the shipped value, and it is the spec that gets fixed — never the constant. Verified by running the suite at both values.
+   - No second on/off flag is added. `0` IS the off switch; a companion `REFILL_ENABLED` boolean that must be kept in step with the floor is the "two constants that must be equal is a bug waiting for one of them to be edited" trap that `HAND_SIZE`'s own comment already warns against.
 
 Scope boundaries, dependencies and risks are as the ticket states them, and are reflected in "In scope" / "Explicitly out of scope" below.
+
+**AC8 was added to the ticket on 2026-08-26 at the developer's request,** after this plan's approval, to make the one-line revert an acceptance criterion in its own right rather than a property left implicit in AC4. It changes no design decision here — the number-not-a-boolean choice and the single-`<`-test shape were already the plan's — but it does add one verification step, Task 7 Step 2b, which runs the suite at `0` and requires it green with nothing else touched. That step exists because without it the revert would have been one line of source plus a test fix, which is not a one-line revert. The ticket's Dependencies & Risks section was also brought up to date in the same edit with the two findings this plan's audit produced (`baselinePolicy.ts` and the reachable `applyDiscard` crash), so the ticket no longer states that only `cardAwarePolicy.ts` needed checking.
 
 **Follow-up decision confirmed interactively, 2026-08-26.** The audit (Part 1 → Config and persisted-shape audit, bullet 6) found that this change makes `applyDiscard`'s `RangeError` reachable inside a reducer. Asked how much of that to plan, the developer answered:
 
@@ -42,6 +48,7 @@ The player's hand is topped back up to a floor of four cards as each trick resol
 - Rewriting `deckCycle.test.ts`'s D5 test, whose asserted invariant ("the draw pile's length never changes for the life of a hand, so it cannot run out") is precisely what this ticket retires, and its draw-pile-length cycle test, whose `[20, 7, 20, 7]` arithmetic no longer holds.
 - Re-expressing `src/sim/baselinePolicy.ts`'s `isLastWindow` heuristic in terms of tricks remaining, which is floor-invariant — its current `hand.length <= 1` test can never fire once the floor is above 1.
 - Vitest coverage for the hand widths at floor `4` and floor `0`, the exhausted-pile reshuffle, the Quarry never refilling, and 33-card conservation across a mid-hand reshuffle.
+- **AC8's one-line-revert guarantee, enforced on the suite as well as the source**: every spec this contract writes or rewrites derives its expectations from `HAND_SIZE` and `PLAYER_HAND_FLOOR` rather than pinning a figure measured at `4`, and a verification step runs the engine and sim specs with the constant set to `0` to prove nothing else needs editing.
 
 ### Explicitly out of scope
 

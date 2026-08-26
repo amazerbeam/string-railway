@@ -2,7 +2,11 @@
 
 > **Superseded as a reading of the current game, 2026-08-25.** Every figure below was measured
 > against a game with action points on, an eleven-family 73-template buff pool, four opening cards,
-> one coin a fight and two live per-hand damage caps. DLR-145 changed all five. The doc is kept for
+> one coin a fight and two live per-hand damage caps. DLR-145 changed all five. **DLR-146 then changed
+> a sixth thing on 2026-08-26** — the player's hand is refilled to a floor of four cards mid-hand — so
+> every win-rate, tricks-taken and damage-per-hand figure taken before that date describes a game
+> where the last three tricks of every hand had fewer cards to choose from. Re-measuring was
+> explicitly out of that ticket's scope. The doc is kept for
 > its method and its diagnosis — the trick-deficit finding and the way the engine was called
 > directly — not for its numbers. The current measurements live in
 > [hunt/the-opening-pile.md](hunt/the-opening-pile.md) and `.docs/game_rules/the-hunt.md`'s Known

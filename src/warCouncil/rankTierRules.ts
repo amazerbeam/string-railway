@@ -19,7 +19,7 @@ import { CardRank, PlayerSide, type TrickCard } from './types'
  * answers it for the Swan and is therefore the whole of that rule. `resolveTrick.ts` answers it
  * for the Witch itself, in `isPlayersWitch`, because the tier arrives there already resolved to a
  * scalar and only the card's owner is left to test — that is the ONE ownership test outside this
- * file, it is pinned by `rankTiers.resolution.test.ts`'s "never lifts a QUARRY Witch above a
+ * file, it is pinned by `rankTiers.playCard.test.ts`'s "never lifts a QUARRY Witch above a
  * player's trump", and a third one appearing anywhere is the thing to push back on.
  */
 

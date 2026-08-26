@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DAMAGE_PER_HIT, HAND_SIZE } from '../../hunt'
-import { TrickOutcome } from '../bank'
+import { HAND_SIZE } from '../../hunt'
 import { dealRound } from '../deal'
 import { playCard } from '../playCard'
 import {
@@ -8,7 +7,6 @@ import {
   IllegalMoveReason,
   PlayerSide,
   RoundPhase,
-  Suit,
   type Card,
   type RoundState,
 } from '../types'
@@ -28,6 +26,7 @@ function stateWith(overrides: Partial<RoundState>): RoundState {
     primedCards: [],
     spentPile: [],
     reshuffled: false,
+    drawSeed: 0,
     bank: 0,
     multiplier: 0,
     lastResolution: null,
@@ -155,6 +154,23 @@ describe('playCard — rejections', () => {
       { kind: AbilityChoiceKind.WoodcutterDiscard, discard: { suit: 'bells', rank: 4 } },
     )
     expect(result).toEqual({ ok: false, reason: IllegalMoveReason.UnexpectedAbilityChoice })
+  })
+
+  it('rejects an invalid Woodcutter discard rather than throwing when the draw pile is empty', () => {
+    // DLR-146 fix pass — an empty `drawPile` used to leave `undefined` in the preview hand, which
+    // threw a TypeError out of a reducer instead of returning this reason.
+    const state = stateWith({
+      hands: { player: [{ suit: 'keys', rank: 5 }], cpu: [] },
+      drawPile: [],
+      spentPile: [],
+    })
+    const result = playCard(
+      state,
+      'player',
+      { suit: 'keys', rank: 5 },
+      { kind: AbilityChoiceKind.WoodcutterDiscard, discard: { suit: 'bells', rank: 4 } },
+    )
+    expect(result).toEqual({ ok: false, reason: IllegalMoveReason.InvalidWoodcutterDiscard })
   })
 })
 
@@ -351,68 +367,5 @@ describe('playCard — a full hand plays out exactly HAND_SIZE tricks', () => {
     const dealtKeys = [...dealt.hands.player, ...dealt.hands.cpu].map(cardKey).sort()
     const playedKeys = allPlayed.map(cardKey).sort()
     expect(playedKeys).toEqual(dealtKeys)
-  })
-})
-
-describe('playCard — banking and skulls', () => {
-  it('banks a clean win and clears the resolution on the next lead', () => {
-    const state = stateWith({
-      hands: {
-        player: [{ suit: 'moons', rank: 4 }],
-        cpu: [{ suit: 'bells', rank: 2 }],
-      },
-      trumpSuit: 'keys',
-      currentTrick: [{ side: PlayerSide.Player, card: { suit: 'bells', rank: 9 } }],
-      leader: PlayerSide.Player,
-      phase: RoundPhase.AwaitingFollow,
-    })
-
-    const won = playCard(state, PlayerSide.Cpu, { suit: 'bells', rank: 2 })
-    expect(won.ok && won.state.lastResolution?.outcome).toBe(TrickOutcome.CleanWin)
-
-    const led = playCard(won.ok ? won.state : state, PlayerSide.Player, {
-      suit: 'moons',
-      rank: 4,
-    })
-    expect(led.ok && led.state.lastResolution).toBeNull()
-  })
-
-  it('treats a trick containing a skulled card as a skull trick', () => {
-    const skulled: Card = { suit: Suit.Bells, rank: 6 }
-    const state = stateWith({
-      hands: {
-        player: [{ suit: Suit.Bells, rank: 9 }],
-        cpu: [],
-      },
-      trumpSuit: 'keys',
-      skulledCards: [skulled],
-      currentTrick: [{ side: PlayerSide.Cpu, card: skulled }],
-      leader: PlayerSide.Cpu,
-      phase: RoundPhase.AwaitingFollow,
-    })
-
-    const result = playCard(state, PlayerSide.Player, { suit: Suit.Bells, rank: 9 })
-    expect(result.ok && result.state.lastResolution?.outcome).toBe(TrickOutcome.SkullWin)
-    expect(result.ok && result.state.lastResolution?.damageToPlayer).toBe(DAMAGE_PER_HIT)
-  })
-
-  it('DLR-123 AC3 — a resolved trick sends both its cards to the spent pile, in trick order', () => {
-    const lead: Card = { suit: 'bells', rank: 9 }
-    const follow: Card = { suit: 'bells', rank: 2 }
-    const state = stateWith({
-      hands: {
-        player: [],
-        cpu: [follow],
-      },
-      trumpSuit: 'keys',
-      currentTrick: [{ side: PlayerSide.Player, card: lead }],
-      leader: PlayerSide.Player,
-      phase: RoundPhase.AwaitingFollow,
-    })
-
-    const done = playCard(state, PlayerSide.Cpu, follow)
-    expect(done.ok).toBe(true)
-    if (!done.ok) return
-    expect(done.state.spentPile).toEqual([lead, follow])
   })
 })

@@ -7,7 +7,9 @@ import { otherSide, PlayerSide, RoundPhase, type RoundState } from './types'
 
 /**
  * One hand: `HAND_SIZE` cards each, one decree, the rest a draw pile. With the 33-card deck that
- * is 6 + 6 dealt, 1 decree and 20 left for the Woodcutter.
+ * is 6 + 6 dealt, 1 decree and 20 left. Since DLR-146 that remainder also feeds the player's
+ * per-trick refill, so it SHRINKS during a hand rather than only being swapped against —
+ * `drawCards` folds the spent pile back in if it runs short.
  *
  * Skulls are assigned to the Quarry's dealt hand only (AC2) and drawn through the SAME injected
  * `rng` the shuffle uses, so a seeded deal reproduces its skulls as well as its cards. A card the
@@ -50,6 +52,9 @@ export function dealRound(
     // new-encounter case needs no branch of its own.
     spentPile: opening.reshuffled ? [] : deck.spentPile,
     reshuffled: opening.reshuffled,
+    // DLR-146 — drawn from the deal's OWN generator, so the mid-hand reshuffle inherits
+    // `dealSeedFor`'s run/encounter/hand uniqueness with no second seed source to keep in step.
+    drawSeed: Math.floor(rng() * 0x100000000),
     bank: 0,
     multiplier: 0,
     lastResolution: null,

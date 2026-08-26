@@ -19,6 +19,13 @@ here, every one of which is **decided, enforced and tested, yet cannot be obtain
   decided and still enforced; the machine and the opening draw simply no longer deal any of them.
   Section 4 lists the three that remain.
 
+> **Your hand no longer empties as a hand goes on — DLR-146, 2026-08-26.** You are refilled to four
+> cards as each trick resolves, so the number of cards you choose from runs 6, 5, 4, 4, 4, 4 instead
+> of 6, 5, 4, 3, 2, 1, and a hand ends with three still in your hand. The Quarry is unchanged. One
+> knock-on is worth reading before you play: a hand now takes more cards off the draw pile than a
+> deal leaves, so the pile can run out mid-hand and be rebuilt from the resolved cards **in silence**.
+> Section 2 states all of it.
+
 **A Cheat and a Timebomb stopped being on that list on 2026-08-24 — DLR-132.** Both are now ordinary
 cards the reel can draw into your pile, exactly like any other buff, and every run still starts
 holding one bronze Cheat.
@@ -539,9 +546,13 @@ ordinary rank 8 of all three suits, not on a separate module card.
 
 **[settled]** — six cards, six tricks (play-test 2 §3.1, §5).
 
-A **hand** is one deal of **6 cards to each side**, played out over **6 tricks**. Every card dealt is
-played; the hand ends when the sixth trick resolves, and another is dealt immediately unless the
-encounter has ended.
+A **hand** is one deal of **6 cards to each side**, played out over **6 tricks**. The hand ends when
+the sixth trick resolves, and another is dealt immediately unless the encounter has ended.
+
+**You do not play only the six you were dealt.** Since 2026-08-26 your hand is topped back up to a
+floor of four cards as the hand goes on, so you see more than six cards and finish a hand still
+holding some — the rule is below. The **Quarry** plays exactly the six it was dealt, which is why the
+hand is still six tricks long.
 
 ### Setup
 
@@ -552,12 +563,64 @@ encounter has ended.
    hand.
 5. The remaining **20 cards** form the **draw pile**, face down.
 
-The Fox exchanges with the decree; the Woodcutter draws from the pile and discards back to it, so the
-pile stays at 20 for the whole hand.
+The Fox exchanges with the decree. The Woodcutter draws from the pile and discards back to it, and a
+Swap does the same for as many cards as you throw — so neither of those changes the pile's size. **Your
+per-trick refill does**: it takes cards off the pile and puts none back, so the pile shrinks as the
+hand goes on.
 
 > **Deviation from the base game — the deal.** The base game deals 13 and 13 and leaves a 6-card
 > draw pile. Here the hand is less than half that and the draw pile is more than three times it. The
 > decree is still one card turned face up from what remains.
+
+### Your hand is topped back up to four cards — **[provisional]** since 2026-08-26
+
+**Your hand is refilled to 4 cards as each trick resolves.** If you are holding fewer than four when
+a trick finishes, you draw off the top of the draw pile until you hold four again.
+
+So the number of cards you choose from across a hand runs **6, 5, 4, 4, 4, 4** rather than
+**6, 5, 4, 3, 2, 1**. The last tricks of a hand are decisions rather than the one card you have left.
+
+Three things bound the rule:
+
+- **The draw happens when the trick RESOLVES, never when a card is played.** A card you draw cannot
+  be played into the trick that is still in progress.
+- **There is no refill on the hand's last trick.** The hand is over, so a card drawn there could
+  never be played.
+- **The Quarry never refills.** It is dealt six, plays six, and draws nothing — which is the whole
+  reason a hand is still six tricks long.
+
+**The number 4 is a first guess, not a decision.** It was chosen to be played with rather than
+derived from anything, and it is the developer's to move; setting it to zero puts the game back
+exactly as it was.
+
+### A hand can end with cards still in your hand — **[settled]** since 2026-08-26
+
+Because you keep being refilled and the Quarry does not, the sixth trick resolves while you are still
+holding cards — **three of them**, at the current floor. They are simply gone: they join the face-down
+pile of resolved cards along with the decree and everything else the hand did not leave in the draw
+pile, and the next hand is dealt as normal. You do not carry them over.
+
+> **Deviation from the base game.** In the base game both players run out together, on the last
+> trick, every hand. Here only the Quarry does.
+
+### The draw pile can run out mid-hand, and it is rebuilt in silence — **[settled]** since 2026-08-26
+
+The 20 cards left after a deal are no longer enough to be sure of covering a whole hand: your refill
+takes about three of them, and a Swap or a Woodcutter can take more. **When a draw cannot be covered,
+the face-down pile of already-resolved cards is shuffled back into the draw pile and the draw
+continues.**
+
+Two consequences worth knowing before you play:
+
+- **Cards you have already seen can come back inside the same hand.** Counting what has gone is
+  worth slightly less than it was. The between-hand reshuffle already did this; what is new is that
+  it can now happen *within* a hand.
+- **Nothing tells you it happened.** There is no notice on the felt for a mid-hand rebuild. Whether
+  there should be is an open copy and visual question — recorded under
+  [Known tensions](#known-tensions-recorded-not-resolved).
+
+If the draw pile and the resolved pile are *both* empty, a draw simply returns fewer cards than it
+asked for rather than failing. That state is not reachable in ordinary play.
 
 ### Who deals, who leads
 
@@ -765,11 +828,16 @@ first card is laid. Mid-trick every buff line is greyed, reading that it is not 
 
 > **The panel opens more often than its contents can be used, deliberately.** Apply Buff itself opens
 > whenever you can act at all, including while you are following a lead the Quarry has already
-> committed. **A held Cheat or Timebomb is the one exception to "activating is only available between
-> tricks" above** — both stay activatable through the whole trick, because mid-trick is exactly when
-> either is worth something: it is the moment follow-suit is binding you, or the moment you know which
-> card you are about to lose. So mid-trick: the panel opens, a Cheat or Timebomb line stays live, and
-> every other buff line is greyed reading that it is not between tricks.
+> committed. **A held Cheat is the one exception to "activating is only available between tricks"
+> above** — it stays activatable through the whole trick, because mid-trick is exactly when a Cheat is
+> worth something: it is the moment follow-suit is binding you. So mid-trick: the panel opens, a Cheat
+> line stays live, and every other buff line is greyed reading that it is not between tricks.
+>
+> > **A Timebomb was in that exception until 2026-08-26, and no longer is.** It now takes the ordinary
+> > between-tricks window like every other card. Arming it after the Quarry had led let you see the
+> > lead, work out which trick you were about to lose, and only then decide to spend — a read the card
+> > was never meant to sell, since committing before you know is its whole cost. A Cheat's exception is
+> > about what was led; a Timebomb's never was.
 
 **The panel opens even when there is nothing in it you can use right now.** Reading what you own is
 how you plan the next trick. (Until 2026-08-25 a line you could not _afford_ was greyed with its
@@ -1095,6 +1163,17 @@ own plate and its own three-tap cycle. **This is the one card in the whole game 
 impossible to hold at all** — a fresh run started with none and nothing sold one after the shop was
 pared, so nothing before today could ever put one in your hand.
 
+**You can only arm one between tricks — [settled] since 2026-08-26.** A Timebomb takes the ordinary
+activation window every condition buff takes: before a trick's first card is laid, the same window
+the Swap uses. Once the Quarry has led, the Timebomb row is greyed reading that it is not between
+tricks, and only a **Cheat** stays live (section 4). You commit to arming *before* you know what you
+are up against — that is the card's cost, and being able to arm it after seeing the lead quietly
+refunded it.
+
+> Marking is a separate question from arming, and it did not change: **a card you mark can still be
+> one it would be illegal to play.** You arm between tricks, the Quarry leads a suit you must follow,
+> and the off-suit card you cannot legally play is still a legal thing to *prime*.
+
 **Spending one takes two taps, the same as every other buff row — but spending it only arms it.**
 
 1. **The first tap poises the row.** Nothing changes yet.
@@ -1125,6 +1204,8 @@ announced as part of the card's name, so it does not depend on seeing the glyph.
 **Arming a Timebomb and arming a Cheat are mutually exclusive** in the sense that only one loadout
 spend can be waiting for its effect at once: arming either commits the card immediately, and
 a Timebomb's arm additionally reinterprets your very next hand-card tap as a prime rather than a play.
+Their **windows** now differ, though: a Cheat can be spent at any moment you may play a card, a
+Timebomb only between tricks.
 
 **Playing a primed card changes nothing about the trick itself.** The same side wins it by the same
 rules, and it banks the same. What it adds is a **delayed hit** owed to **whichever side won that
@@ -1178,9 +1259,14 @@ started — so you can throw against the shape you can see rather than against a
 table. It is never available mid-trick, and never while a trick's reveal is still on screen.
 
 **Discarded cards go to the bottom of the draw pile** — the same convention the Woodcutter's ability
-already uses for one card, generalised here to as many as you throw at once. There is no separate
-discard pile and no reshuffle: the pile dealt every hand is large enough that discarding cannot run
-it dry, however you spend the budget.
+already uses for one card, generalised here to as many as you throw at once. They stay unseen. There
+is no separate discard pile for them.
+
+**Since 2026-08-26 a Swap can outrun the draw pile, and that is no longer refused.** The pile used to
+be guaranteed large enough that discarding could not run it dry; the per-trick refill (section 2) has
+taken that guarantee away. If the pile cannot cover your throw, the resolved-card pile is shuffled
+back in and the draw continues — the same silent rebuild section 2 describes, on the same terms. You
+are never refused a Swap for want of cards in the pile.
 
 **You may chain discards.** Nothing stops you throwing, looking at what arrived, and throwing again
 in the same gap before a trick, up to however many discards you have left for the fight. Each throw
@@ -1920,6 +2006,10 @@ queue rather than your side of it, which is the stricter reading of the two.
 
 When the sixth trick resolves, a panel states that hand's own tally: tricks you took, tricks the
 Quarry took, health you lost, and health you dealt to the Quarry. One press deals the next hand.
+
+**Whatever you are still holding is spent with the hand** — since 2026-08-26 that is three cards at
+the current floor (section 2), and they join the face-down resolved pile along with the decree. You
+do not carry them into the next hand, and you are not paid for them.
 
 If a bar emptied instead, the encounter's outcome is stated in its place and no further hand is
 offered.
@@ -2791,6 +2881,25 @@ the mechanics themselves are documented in `../implementation/`.
 > the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
 > a `RunState` field and a transition in the same breath means exactly that.
 
+> **Where DLR-146 stands, 2026-08-26 — the newest entry here.** **Live in the engine, and reachable
+> by a player with no new screen:** your hand is topped back up to four cards as each trick resolves,
+> the Quarry is untouched, a hand ends with cards still in your hand, and a draw that outruns the
+> pile rebuilds it from the resolved cards and carries on. There is **no half-landed rule** — the
+> felt already renders whatever hand the engine hands it, so the wider hand appears with no UI work
+> at all.
+>
+> **One thing was deliberately left unbuilt, and it is the only visible gap:** nothing announces the
+> mid-hand rebuild. That is a copy and visual call and it is recorded as such, not as an oversight.
+>
+> **Nobody has played it.** No browser pass was run — it is opt-in on this project and was not
+> requested — so the floor of **4**, and whether cards you have already seen returning inside a hand
+> reads as fine or as cheap, are both unjudged. The two questions the ticket exists to answer ("are
+> tricks 4, 5 and 6 decisions now?" and "does the hand drag?") cannot be answered by a test.
+>
+> **Two consequences are recorded under [Known tensions](#known-tensions-recorded-not-resolved)
+> rather than resolved**: the quick-kill payout now inflates, and every simulated baseline taken
+> before today describes a narrower hand.
+
 > **Where DLR-145 stands, 2026-08-26 — the newest entry here.** **Live in the engine, and on the
 > screens that already existed:** every card you can be dealt is spent when you use it, nothing costs
 > action points, the card pool is thirteen templates, a run opens holding twenty drawn cards plus the
@@ -3061,8 +3170,14 @@ the mechanics themselves are documented in `../implementation/`.
 
 | Rule area                                                                        | Status                                                                                     | Where enforced                                                                                                                                                                                                                                                                                                                                                                          | Who decides what's open                                                                                                                                                                                                                                                                                           |
 | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Deck, decree, draw pile                                                          | settled                                                                                    | `src/warCouncil/deck.ts`, `deal.ts`                                                                                                                                                                                                                                                                                                                                                     | —                                                                                                                                                                                                                                                                                                                 |
-| Hand size and trick count (6)                                                    | settled                                                                                    | `src/hunt/config.ts` — `HAND_SIZE`; sliced in `src/warCouncil/deal.ts`, ends the hand in `playCard.ts`                                                                                                                                                                                                                                                                                  | —                                                                                                                                                                                                                                                                                                                 |
+| Deck, decree, draw pile                                                          | settled                                                                                    | `src/warCouncil/deck.ts`, `deal.ts`; the mid-hand rebuild is `drawCards` in `src/warCouncil/encounterDeck.ts`, seeded from `RoundState.drawSeed` | —                                                                                                                                                                                                                                                                                                                 |
+| The player's hand is refilled to a floor of 4 as each trick resolves | **provisional** — since DLR-146, 2026-08-26 | `src/hunt/config.ts` — `PLAYER_HAND_FLOOR`; applied at trick resolution in `src/warCouncil/playCard.ts`, drawn through `drawCards` in `src/warCouncil/encounterDeck.ts` | **Developer** — the value `4`, and whether the refill is the right shape at all. Setting it to `0` restores the pre-DLR-146 game exactly |
+| The Quarry never refills | settled — since DLR-146 | `src/warCouncil/playCard.ts` — the refill names `PlayerSide.Player` and the Quarry is never passed to it | — |
+| No refill on the hand's last trick | settled — since DLR-146 | `src/warCouncil/playCard.ts` — skipped when `finalTrick` | — |
+| A hand can end with cards still in the player's hand, which are swept to the resolved pile | settled — since DLR-146 | `src/warCouncil/encounterDeck.ts` — `closeHand`, unchanged; all 33 cards conserved, pinned by `deckCycle.test.ts` | — |
+| The draw pile is rebuilt from the resolved pile when a mid-hand draw cannot be covered | settled — since DLR-146 | `src/warCouncil/encounterDeck.ts` — `drawCards`; reproducible from `RoundState.drawSeed`, advanced by `mixSeed` on each rebuild | — |
+| Nothing on the felt announces a mid-hand rebuild | **not built** — by decision | nothing; `RoundState.reshuffled` keeps its deal-only meaning and is never written mid-hand | **Developer** — a copy and visual call |
+| Hand size and trick count (6)                                                    | settled — the Quarry's hand and the trick count; **it is no longer the number of cards the player plays through** (DLR-146) | `src/hunt/config.ts` — `HAND_SIZE`; sliced in `src/warCouncil/deal.ts`, ends the hand in `playCard.ts`                                                                                                                                                                                                                                                                                  | —                                                                                                                                                                                                                                                                                                                 |
 | First dealer, alternation                                                        | provisional                                                                                | `src/app/dealerForRound.ts`                                                                                                                                                                                                                                                                                                                                                             | Developer                                                                                                                                                                                                                                                                                                         |
 | Skull density (~30%, 2 of 6)                                                     | settled                                                                                    | `src/hunt/config.ts` — `SKULL_DENSITY`; applied by `src/warCouncil/skulls.ts` — `assignSkulls`                                                                                                                                                                                                                                                                                          | —                                                                                                                                                                                                                                                                                                                 |
 | Skulls never on rank 1                                                           | settled                                                                                    | `src/hunt/skullWeights.ts` (moved out of `config.ts` by DLR-94) — every `SKULL_WEIGHTS_*` curve sets rank `1: 0`; filtered by `src/warCouncil/skulls.ts` — `skullableCards`                                                                                                                                                                                                             | —                                                                                                                                                                                                                                                                                                                 |
@@ -3077,7 +3192,7 @@ the mechanics themselves are documented in `../implementation/`.
 | A Cheat and a Timebomb are drawn from the reel like any other buff               | settled — since DLR-132                                                                    | `src/hunt/buffTemplates.ts` — `ACTIVATED_TEMPLATES`, minted through `mintFromTemplate`'s `form: 'activated'` branch; `src/hunt/slotWeights.ts` — `templateWeightFor`'s activated branch                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
 | The four weights that decide how often either is drawn                          | **provisional** — agent-chosen, unplayed                                                   | `src/hunt/slotWeights.ts` — `SLOT_FAMILY_WEIGHTS`: Skirmisher Cheat 3 / Timebomb 3, Strongbox Cheat 1 / Timebomb 1                                                                                                                                                                                                                                                                       | **Developer** — nobody has played a pull against these ratios                                                                                                                                                                                                                                                    |
 | A Cheat and a Timebomb spend through the ordinary two-tap poise-then-spend flow  | settled — since DLR-132                                                                    | `src/app/warCouncil/buffHandlers.ts` — `handleTapBuff`'s Cheat and Timebomb branches, beside Ward's; priced by `src/hunt/buffCosts.ts` — `apCostOf`                                                                                                                                                                                                                                     | Developer — whether arming reads as a detour, unplayed                                                                                                                                                                                                                                                            |
-| A Cheat and a Timebomb stay activatable through the whole trick, unlike other buffs | settled — since DLR-132                                                                 | `src/app/warCouncil/roundUiState.ts` — `buffActivationWindowOpen`; both the refusal guard and the commit read the one function                                                                                                                                                                                                                                                          | —                                                                                                                                                                                                                                                                                                                 |
+| **A Cheat** stays activatable through the whole trick, unlike every other buff — **a Timebomb no longer does, since 2026-08-26** | settled — Cheat since DLR-132; Timebomb narrowed back to the ordinary between-tricks window 2026-08-26 | `src/app/warCouncil/roundUiState.ts` — `buffActivationWindowOpen`, now `buff.kind === BuffKind.Cheat ? canAct : discardWindowOpen`; both the refusal guard and the commit read the one function. `src/sim/fixtures.ts` — `attemptPrimedTimebomb` gates its spend on `discardWindowOpen` for the same reason                                                                                                                                                                                                                                                          | —                                                                                                                                                                                                                                                                                                                 |
 | Committing while a Cheat is live decrements its remaining tricks                 | settled — since DLR-132                                                                    | `src/app/warCouncil/commitHandlers.ts` — `commit`'s `cheatTricksRemaining` decrement, floored at 0 by `Math.max`                                                                                                                                                                                                                                                                         | Developer — whether spending it on an already-legal card is right                                                                                                                                                                                                                                                 |
 | A refused play does not spend the Cheat                                          | settled                                                                                    | `src/app/warCouncil/commitHandlers.ts` — `commit`'s rejection branch returns before the decrement                                                                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
 | A Cheat's tier sets how many tricks it lifts follow-suit for (1/2/3)             | settled — since DLR-132                                                                    | `src/hunt/buffCatalog.ts` — `CHEAT_DURATION_TRICKS`; read into `RoundUiState.cheatTricksRemaining` at the spend                                                                                                                                                                                                                                                                          | Developer — the gold row (3 tricks, 7 AP) is reachable and uncosted, see Known tensions                                                                                                                                                                                                                          |
@@ -3650,7 +3765,9 @@ read this predicate rather than invent a second version.
 **What's reused rather than invented:** the swap generalises the Woodcutter's own one-card
 "draw one, bury one on the bottom" convention to n cards, so there is no new discard pile and no
 reshuffle rule to build or to get wrong — the 20-card pile already dealt every hand cannot be
-emptied by any legal sequence of discards.
+emptied by any legal sequence of discards. _(That last clause stopped being true on 2026-08-26: the
+per-trick refill shortens the pile, so a Swap can now outrun it and trigger a mid-hand rebuild.
+Section 2 states the rule; the Swap's own procedure did not change.)_
 
 **Two defects were found and closed before this reached the developer.** The first was structural:
 the reducer's initial cut let the rail **open** a selection during the pre-lead gap but silently
@@ -3709,6 +3826,30 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
 
 ### Known tensions, recorded not resolved
 
+- **The quick-kill payout now pays for a hand that refills itself** (new 2026-08-26, DLR-146).
+  Winning a fight pays extra for **cards left unplayed in your hand** when the Quarry dies, scaled by
+  which hand of the fight it was — the rule that prices how fast you killed. Your hand no longer falls
+  below four, so that count no longer measures speed: a kill on the fifth trick of a fight's first
+  hand pays **8** coins where it paid **2**. Nothing is broken and no arithmetic is wrong; the rule
+  has simply stopped meaning what it was written to mean. Counting tricks remaining instead would
+  restore the intent at any floor, but that rewrites a settled rule from a different ticket, so it was
+  surfaced and left. **Whose decision:** the developer's.
+- **Every simulated baseline on record now describes a narrower hand** (new 2026-08-26, DLR-146).
+  Win rates, tricks taken and damage per hand were all measured against a hand that ran 6, 5, 4, 3,
+  2, 1 — including the tricks-taken and damage-per-hand figures the shop's prices were argued
+  against. The hand now runs 6, 5, 4, 4, 4, 4, which changes how often a streak survives, and streak
+  length is the quantity every damage figure in this game is quadratic in. **Re-measuring was
+  explicitly out of the ticket's scope**, so no number anywhere in this document or in
+  `../implementation/` has been re-taken. **Whose decision:** the developer's — it is a
+  measurement pass to schedule, not a rule to settle.
+- **The deck is rebuilt mid-hand and nothing says so** (new 2026-08-26, DLR-146). When a refill, a
+  Swap or a Woodcutter outruns the draw pile, the resolved cards are shuffled back in and play
+  continues with no notice on the felt. So a card you watched resolve three tricks ago can be dealt
+  back to you inside the same hand, silently. The between-hand rebuild has always worked this way and
+  has a notice; this one deliberately does not reuse it, because that notice means "this hand was
+  *dealt* from a reshuffle" and would be lying. Whether the player should be told, and whether seen
+  cards returning reads as fine or as cheap, are both **the developer's eyes** and neither is
+  measurable.
 - **Aoife does not die on trick one or two, and the design's arithmetic says she should** (new
   2026-08-26, DLR-145). The ticket that made buff cards spendable claimed as an acceptance criterion
   that a fresh run can beat the first opponent on **the first or second trick of hand one** using
@@ -3818,12 +3959,15 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
   closed it two tickets later — the trick well now announces which card fired and what it paid, on
   the felt itself.
 - **Three cards are confirmed dead rather than suspected dead** (new 2026-08-24, DLR-125, replacing
-  half of the DLR-111 entry below). The hold-a-suit condition is now implemented and **verified
-  unsatisfiable in an ordinary hand**: six cards over six tricks leaves an empty hand at the moment
-  it is checked. The evaluator is right, the game gives it no instant, and a test pins both facts.
-  Two exits and both are the developer's — redefine "the hand's end" against the encounter deck the
-  game has kept since 2026-08-23, or retire the three cards. Doing nothing means three cards a player
-  can buy and can never cash.
+  half of the DLR-111 entry below; **the cause changed twice since**). The hold-a-suit condition was
+  implemented and verified **unsatisfiable in an ordinary hand**: six cards over six tricks left an
+  empty hand at the moment it was checked. **That reason expired on 2026-08-26** — DLR-146 refills
+  your hand and skips the refill on the last trick, so a hand now genuinely ends with cards in it and
+  the condition has a real instant to be true in. What keeps the three cards dead is instead the
+  earlier cut: DLR-145 removed the coins reward axis and made this condition unmintable, so no card
+  the game can deal observes the difference. The evaluator is right, and a test pins both halves. The
+  exits have flipped direction — restore the family and its axis, or retire it; redefining "the
+  hand's end" is no longer one of them. **Whose decision:** the developer's.
 - **Miser's tension is live rather than theoretical now** (new 2026-08-24, DLR-125, sharpening the
   DLR-116 entry below). A Miser buff genuinely fires and genuinely pays whenever your purse clears
   its threshold — so the card that rewards you for hoarding coins is now competing for real against

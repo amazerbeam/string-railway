@@ -135,13 +135,17 @@ contribution lands even on a lost encounter.
 
 ## Known defects, recorded and not fixed
 
-- **`Keepsake` evaluates correctly and is structurally unfireable in live play.** With `HAND_SIZE`
-  cards and that many tricks every dealt card is played, so the player's hand at the end of the hand
-  is empty and "hold a card of suit S at hand's end" is false by construction. **Three Purse cards
-  therefore pay nothing.** The evaluator itself is right — a test in
-  `src/hunt/__tests__/buffEvaluation.test.ts` fires it against a non-empty remaining hand — and a
-  second assertion pins the live path supplying an empty one. Two exits, both the developer's:
-  redefine "hand's end" against DLR-123's persistent encounter deck, or retire the family.
+- **`Keepsake` evaluates correctly, and DLR-146 removed the structural reason it could never fire —
+  without making it reachable.** The old statement was that every dealt card is played, so the
+  player's hand at the end of a hand is empty and "hold a card of suit S at hand's end" is false by
+  construction. **That is no longer true**: since 2026-08-26 the player is refilled to
+  `PLAYER_HAND_FLOOR` as tricks resolve and the refill is *skipped* on the final trick, so a hand now
+  ends with cards still in hand and `remainingSuits` is non-empty at the moment the condition is
+  checked. What keeps the family dead is a different fact — **DLR-145 cut the Purse reward axis and
+  made `keepsake` unmintable**, so no card the game can deal observes the difference. The evaluator
+  is still right, and `src/hunt/__tests__/buffEvaluation.test.ts` still pins both halves. The exits
+  are now the developer's in the other direction: restore the family and its axis, or retire it —
+  redefining "hand's end" is no longer one of them, because the game supplies a real instant for it.
 - **`Ward` silver and gold are indistinguishable** while `DAMAGE_PER_HIT = 1`. Unmoved by this
   ticket: Ward is an Activated consumable with no condition and never reaches the evaluator.
 - **`Miser` rewards unspent coins and fights the shop**, and is now genuinely live rather than

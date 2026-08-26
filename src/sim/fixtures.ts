@@ -155,7 +155,11 @@ function attemptPrimedTimebomb(seed: number): RoundUiState | null {
     }
 
     const timebomb = offeredBuffs(ui).find((buff) => buff.kind === BuffKind.Timebomb)
-    if (canAct(ui) && !marked && timebomb !== undefined) {
+    // 2026-08-26 — `discardWindowOpen`, not `canAct` alone: a Timebomb takes the ordinary
+    // between-tricks activation window now (Cheat is the sole mid-trick exception), so a spend
+    // attempted while following an already-committed lead is refused and arms nothing. The three
+    // `TapCard` taps below still need `canAct`, which between tricks on the player's turn implies.
+    if (canAct(ui) && discardWindowOpen(ui) && !marked && timebomb !== undefined) {
       const move = baselinePolicy.chooseCard(ui.round)
       heldChoice = move.choice
       // DLR-132 — the Timebomb is an ordinary pile row now: `ToggleLoadout` opens the panel,

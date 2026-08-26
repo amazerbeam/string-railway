@@ -121,4 +121,13 @@ describe('dealRound', () => {
       expect(containsCard(second.hands[PlayerSide.Cpu], skull)).toBe(true)
     }
   })
+
+  it('DLR-146 — drawSeed is a non-negative 32-bit integer, and the same seed deals the same one', () => {
+    const a = dealRound(PlayerSide.Player, lcg(42))
+    const b = dealRound(PlayerSide.Player, lcg(42))
+    expect(Number.isInteger(a.drawSeed)).toBe(true)
+    expect(a.drawSeed).toBeGreaterThanOrEqual(0)
+    expect(a.drawSeed).toBe(b.drawSeed)
+    expect(dealRound(PlayerSide.Player, lcg(43)).drawSeed).not.toBe(a.drawSeed)
+  })
 })

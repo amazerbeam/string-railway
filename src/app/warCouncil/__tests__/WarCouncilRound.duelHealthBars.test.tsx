@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { dealRound, PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
-import { DAMAGE_PER_HIT, DuelSide, HAND_SIZE } from '../../../hunt'
+import { DAMAGE_PER_HIT, DuelSide, HAND_SIZE, PLAYER_HAND_FLOOR } from '../../../hunt'
 import WarCouncilRound from '../WarCouncilRound'
 import {
   bankClimbBonusFixture,
@@ -235,9 +235,15 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
     expect(startingEncounter.health[DuelSide.Player] - encounter.health[DuelSide.Player]).toBe(
       DAMAGE_PER_HIT,
     )
-    // DLR-95 AC2 — the killing blow is this hand's last trick, so nothing is left unplayed. The
-    // 0 is the figure a quick-kill payout would be computed from, not an absence of one.
-    expect(unplayedAtResolve).toBe(0)
+    // DLR-95 AC2 — the killing blow is this hand's last trick (trick B), which never refills. But
+    // trick A, the trick before it, is non-final, so `playCard`'s refill tops the player's hand
+    // back up to PLAYER_HAND_FLOOR before trick B is even played (the deck here has plenty of
+    // cards to draw). DLR-146 — this used to be a bare `0`, correct only when nothing ever
+    // refills; re-derived so it collapses back to `0` at PLAYER_HAND_FLOOR = 0, where the `<` test
+    // in `playCard`'s refill is unreachable and trick A's played-down hand of 1 stays 1.
+    const playerHandAfterTrickA = round.hands[PlayerSide.Player].length - 1
+    const handSizeBeforeTrickB = Math.max(playerHandAfterTrickA, PLAYER_HAND_FLOOR)
+    expect(unplayedAtResolve).toBe(handSizeBeforeTrickB - 1)
   })
 })
 

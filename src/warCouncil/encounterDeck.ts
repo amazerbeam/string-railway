@@ -1,4 +1,4 @@
-import { HAND_SIZE, type Rng } from '../hunt'
+import { createSeededRng, HAND_SIZE, mixSeed, type Rng } from '../hunt'
 import { shuffle } from './shuffle'
 import { PlayerSide, type Card, type RoundState } from './types'
 
@@ -90,4 +90,77 @@ export function dealPileFor(deck: EncounterDeck, rng: Rng): DealPile {
     )
   }
   return { drawPile: shuffle([...deck.spentPile, ...deck.drawPile], rng), reshuffled: true }
+}
+
+/** DLR-146 — what one draw needs off the state, and nothing else. `DiscardStock`'s discipline:
+ *  this module owns the rule and must not learn the shape of the layer that calls it. */
+export interface DrawSource {
+  readonly drawPile: readonly Card[]
+  readonly spentPile: readonly Card[]
+  readonly drawSeed: number
+}
+
+/** The cards drawn, and the three fields as they now stand — spread straight onto a `RoundState`. */
+export interface DrawResult {
+  readonly drawn: readonly Card[]
+  readonly drawPile: readonly Card[]
+  readonly spentPile: readonly Card[]
+  readonly drawSeed: number
+  /** Whether this draw folded the spent pile back in. Reported so a spec can pin it, and
+   *  deliberately NOT written to `RoundState.reshuffled`, which means "this hand was DEALT from a
+   *  reshuffle" and is read by the felt's notice. */
+  readonly reshuffled: boolean
+}
+
+/**
+ * DLR-146 — THE single way a card leaves the draw pile mid-hand. `dealPileFor`'s sibling: it folds
+ * the spent pile back in under a seeded shuffle when the pile cannot cover the draw, for the same
+ * reason and by the same rule, but WITHIN a hand rather than between two.
+ *
+ * Before this existed, five sites read `drawPile` directly and were safe only because the pile's
+ * length was invariant for the life of a hand: the three that MUTATE it (`applyDiscard`,
+ * `applyWoodcutterDraw`, and the refill this ticket adds) plus two that only PREVIEW it
+ * (`playCard`'s and `chooseCpuMove`'s Woodcutter-discard validation, both of which indexed
+ * `drawPile[0]` to compute "the hand as it would be after the draw"). The refill retires that
+ * invariant, which made `applyDiscard`'s `RangeError` reachable inside a reducer, let
+ * `applyWoodcutterDraw` destructure `undefined` off an empty array into a hand, and left both
+ * previews reading `undefined` off an empty pile. This one primitive is what every one of the
+ * five now routes through, so none of them can disagree about which card a draw actually returns.
+ *
+ * Does NOT throw on an exhausted deck — it returns fewer cards than asked, which is AC5's no-op as
+ * the degenerate case of a general rule. The shortfall is visible in `drawn.length`, so no caller
+ * is handed a success it did not get. It DOES throw on a negative or non-finite `count`, the guard
+ * discipline `quickKillPayout` and `flaskHealAmount` already set: a `NaN` count would slice to an
+ * empty array and silently draw nothing.
+ */
+export function drawCards(source: DrawSource, count: number): DrawResult {
+  if (!Number.isFinite(count)) {
+    throw new RangeError(`Cannot draw ${count} cards: the count must be a finite number`)
+  }
+  if (count < 0) {
+    throw new RangeError(`Cannot draw ${count} cards: the count must be zero or more`)
+  }
+  if (count === 0 || source.drawPile.length >= count) {
+    return {
+      drawn: source.drawPile.slice(0, count),
+      drawPile: source.drawPile.slice(count),
+      spentPile: source.spentPile,
+      drawSeed: source.drawSeed,
+      reshuffled: false,
+    }
+  }
+  // Short. Take what the pile has, then rebuild it from the spent pile and take the rest. The
+  // leftover front cards keep their order and their place at the head of the draw — folding them
+  // INTO the shuffle instead would reorder cards the caller has already been handed.
+  const fromPile = source.drawPile
+  const rebuilt = shuffle([...source.spentPile], createSeededRng(source.drawSeed))
+  const stillWanted = count - fromPile.length
+  return {
+    drawn: [...fromPile, ...rebuilt.slice(0, stillWanted)],
+    drawPile: rebuilt.slice(stillWanted),
+    spentPile: [],
+    // Advanced so a second reshuffle in the same hand cannot repeat the first's order.
+    drawSeed: mixSeed(source.drawSeed, source.spentPile.length),
+    reshuffled: true,
+  }
 }

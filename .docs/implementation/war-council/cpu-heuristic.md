@@ -30,8 +30,10 @@ already treats as legal:
   hand after the draw.
 - **`chooseCpuMove(state, side)`** — composes the above: picks the card, then — only if its rank is
   `CardRank.Fox` or `CardRank.Woodcutter` — computes the matching ability choice, building the
-  candidate hand the exact same way `playCard.ts` does internally (`[...handAfter, drawPile[0]]`
-  for Woodcutter), so the two stay in lockstep. Returns a `CpuMove` (`{ card, choice? }`) that
+  candidate hand the exact same way `playCard.ts` does internally — since **DLR-146** that is
+  `[...handAfter, ...drawCards(state, 1).drawn]` in both places rather than a raw `drawPile[0]`
+  index, so the two stay in lockstep *and* neither can put an `undefined` in a candidate hand once
+  the player's refill has drained the pile. Returns a `CpuMove` (`{ card, choice? }`) that
   `playCard`/`submitWarCouncilCard` always accepts.
 
 `chooseCpuMove` is **legality-generic per `PlayerSide`** — nothing in it assumes `side === Cpu` — so

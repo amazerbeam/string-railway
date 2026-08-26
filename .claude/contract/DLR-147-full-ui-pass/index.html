@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>DLR-147 — UI pass, contents</title>
+<style>
+:root {
+  --wc-chamber:#0c1013; --wc-chamber-lift:#141a1f;
+  --wc-brass:#c99a4e; --wc-brass-dim:#7d6132;
+  --wc-chalk:#cdd6d2; --wc-chalk-dim:#6f7d78; --wc-alarm:#d1705f;
+  --wc-serif:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+  --wc-sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--wc-chamber); color:var(--wc-chalk); color-scheme:dark;
+  font-family:var(--wc-sans); -webkit-font-smoothing:antialiased;
+  padding:clamp(1.2rem,4vw,3rem) clamp(1rem,4vw,3rem) 5rem; }
+h1 { margin:0 0 .35rem; font-family:var(--wc-serif); font-weight:400; color:var(--wc-brass);
+  font-size:clamp(1.4rem,3.6vw,2.1rem); }
+.lede { margin:0 0 2rem; max-width:70ch; color:var(--wc-chalk-dim); line-height:1.6;
+  font-size:clamp(.78rem,1.7vw,.9rem); }
+.lede b { color:var(--wc-chalk); font-weight:600; }
+code { background:#1a2226; padding:.06rem .3rem; border-radius:3px; font-size:.94em; }
+
+h2 { margin:2.2rem 0 .8rem; font-family:var(--wc-serif); font-weight:400; color:var(--wc-chalk);
+  font-size:clamp(1rem,2.3vw,1.3rem); }
+
+.sheets { display:grid; gap:clamp(.7rem,1.6vw,1rem);
+  grid-template-columns:repeat(auto-fit,minmax(20rem,1fr)); }
+a.sheet { display:block; text-decoration:none; color:inherit; border-radius:12px;
+  border:1px solid #26333a; background:#101619; padding:.9rem 1rem;
+  transition:transform 140ms ease, border-color 140ms ease, background 140ms ease; }
+a.sheet:hover { transform:translateY(-3px); border-color:var(--wc-brass-dim); background:#141c20; }
+a.sheet:focus-visible { outline:2px solid var(--wc-brass); outline-offset:3px; }
+a.sheet h3 { margin:0 0 .3rem; font-family:var(--wc-serif); font-weight:400;
+  font-size:1rem; color:var(--wc-brass); display:flex; align-items:baseline; gap:.5rem; }
+a.sheet h3 .tag { margin-left:auto; font-family:var(--wc-sans); font-size:.55rem;
+  letter-spacing:.1em; text-transform:uppercase; padding:.14rem .45rem; border-radius:4px;
+  border:1px solid #33414a; color:var(--wc-chalk-dim); }
+a.sheet.approved h3 .tag { border-color:var(--wc-brass-dim); color:var(--wc-brass); }
+a.sheet.superseded { opacity:.62; }
+a.sheet.superseded h3 { color:var(--wc-chalk-dim); }
+a.sheet p { margin:0; font-size:.74rem; line-height:1.55; color:var(--wc-chalk-dim); }
+a.sheet .file { display:block; margin-top:.5rem; font-family:var(--wc-sans); font-size:.62rem;
+  color:#4f5d58; }
+
+.docs { display:flex; flex-wrap:wrap; gap:.6rem; margin-top:.4rem; }
+.docs a { text-decoration:none; padding:.5rem .8rem; border-radius:9px; border:1px solid #26333a;
+  background:#101619; color:var(--wc-chalk); font-size:.75rem;
+  transition:border-color 140ms ease, background 140ms ease; }
+.docs a:hover { border-color:var(--wc-brass-dim); background:#141c20; }
+.docs a:focus-visible { outline:2px solid var(--wc-brass); outline-offset:3px; }
+.docs a b { color:var(--wc-brass); font-weight:400; font-family:var(--wc-serif); }
+
+.foot { margin:2.6rem 0 0; padding-top:1.1rem; border-top:1px solid #232c33; max-width:74ch;
+  color:var(--wc-chalk-dim); font-size:.72rem; line-height:1.65; }
+.foot b { color:var(--wc-chalk); }
+</style>
+</head>
+<body>
+
+<h1>DLR-147 — Full UI pass</h1>
+<p class="lede">
+  Approved mockups for the epic, and the reasoning behind them. These are <b>interactive</b> — open
+  them and click, hover and tab through rather than reading the source. They are <b>intent, not
+  code</b>: plain co-located CSS with no build step, to be re-authored under
+  <code>react-frontend</code>, never ported.
+</p>
+
+<h2>The screen</h2>
+<div class="sheets">
+  <a class="sheet approved" href="mockup-buff-gallery.html">
+    <h3>The buff gallery <span class="tag">approved target</span></h3>
+    <p>The whole screen, with every decision folded in: the metal buff card, suit-ordered runs, the
+      Press run, the skulled card and the trick readout in the left rail. Flip the toggle bottom-right
+      between mid-trick and between-tricks.</p>
+    <span class="file">mockup-buff-gallery.html · DLR-148</span>
+  </a>
+</div>
+
+<h2>The pieces, in isolation</h2>
+<div class="sheets">
+  <a class="sheet" href="mockup-buff-metal.html">
+    <h3>The buff card <span class="tag">settled</span></h3>
+    <p>Off-white face, metallic tier frame, roman-numeral rank, bare suit glyph, suit-coloured payoff
+      bar, and the sheen that travels the rim on hover. All thirteen live templates.</p>
+    <span class="file">mockup-buff-metal.html · DLR-148</span>
+  </a>
+  <a class="sheet" href="mockup-trick-readout.html">
+    <h3>Skulls &amp; the trick readout <span class="tag">new requirement</span></h3>
+    <p>A skulled card renders a skull, identical on every rank and suit. Underneath, a readout of what
+      their card does to you — which replaces “Their intent”, and renders nothing when there is
+      nothing to say.</p>
+    <span class="file">mockup-trick-readout.html · DLR-148</span>
+  </a>
+  <a class="sheet" href="mockup-primed-card.html">
+    <h3>A primed card <span class="tag">new requirement</span></h3>
+    <p>What a card looks like once a Timebomb is primed onto it — a cartoon bomb with a fizzing fuse,
+      sat on the corner. Added to the card rather than replacing its art, which is the opposite of how
+      a skull works.</p>
+    <span class="file">mockup-primed-card.html · DLR-148</span>
+  </a>
+  <a class="sheet" href="mockup-util-cards.html">
+    <h3>Cheat &amp; Timebomb <span class="tag">the picker only</span></h3>
+    <p>The two cards you press, as they appear when choosing. The Press run, the raised cadence pill,
+      and the split payoff bar that stops the Timebomb understating what it costs you.</p>
+    <span class="file">mockup-util-cards.html · DLR-148</span>
+  </a>
+  <a class="sheet" href="mockup-card-faces.html">
+    <h3>Every playing card <span class="tag">reference sheet</span></h3>
+    <p>All 33 faces. Five ranks act and get a painting; two are named but inert; the rest carry pips
+      on a printed-deck lattice. Filter by class at the top.</p>
+    <span class="file">mockup-card-faces.html · DLR-149</span>
+  </a>
+  <a class="sheet superseded" href="mockup-buff-suit.html">
+    <h3>Target suit — four options <span class="tag">superseded</span></h3>
+    <p>Kept only as the record of how the constraint was found: Bells and the old bronze field sit
+      28.7 RGB units apart, so suit and tier could not both be a field colour. That measurement is
+      why the card looks the way it does.</p>
+    <span class="file">mockup-buff-suit.html</span>
+  </a>
+</div>
+
+<h2>The reasoning</h2>
+<div class="docs">
+  <a href="update-log.md"><b>update-log.md</b> — every decision, including what was tried and cut</a>
+  <a href="README.md"><b>README.md</b> — what this folder is and how it feeds the pipeline</a>
+  <a href="https://amazerbeam.atlassian.net/browse/DLR-147"><b>DLR-147</b> — the epic</a>
+  <a href="https://amazerbeam.atlassian.net/browse/DLR-148"><b>DLR-148</b> — the buff screen and the readout</a>
+  <a href="https://amazerbeam.atlassian.net/browse/DLR-149"><b>DLR-149</b> — the card faces</a>
+</div>
+
+<section class="foot">
+  <b>Before planning either ticket, read <code>update-log.md</code>.</b> The Jira descriptions are the
+  spec; the log is why, and it records the things that were built and then cut — a filled suit
+  medallion, suit section headers, red-and-green readout chips — so they do not get re-proposed. It
+  also carries the three performance traps that must survive the port into <code>src/</code>, and the
+  open questions that are the developer's or a rules call rather than mine.
+</section>
+</body>
+</html>
