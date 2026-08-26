@@ -21,18 +21,24 @@ import {
 } from '../config'
 
 describe('the four DLR-108 per-hand caps (values, agent-chosen on DLR-111/DLR-124)', () => {
-  it('names each cap at its transcribed figure, as a whole number', () => {
+  it('names the two surviving finite caps at their transcribed figure, as whole numbers', () => {
     expect(MAX_REFUND_PER_HAND).toBe(6)
-    expect(MAX_MULTIPLIER_BONUS_PER_HAND).toBe(6)
-    expect(MAX_FLAT_DAMAGE_BONUS_PER_HAND).toBe(12)
     expect(MAX_COIN_BONUS_PER_HAND).toBe(10)
-    for (const cap of [
-      MAX_REFUND_PER_HAND,
-      MAX_MULTIPLIER_BONUS_PER_HAND,
-      MAX_FLAT_DAMAGE_BONUS_PER_HAND,
-      MAX_COIN_BONUS_PER_HAND,
-    ]) {
+    for (const cap of [MAX_REFUND_PER_HAND, MAX_COIN_BONUS_PER_HAND]) {
       expect(Number.isInteger(cap)).toBe(true)
+      expect(cap).toBeGreaterThan(0)
+    }
+  })
+
+  // DLR-145 AC9 — the Multiplier and Magnitude axes are UNCAPPED because their reward now comes
+  // from a CONSUMED card, not a rented one; a clipped contribution would silently destroy an
+  // irreplaceable card. Do not "fix" this back to a finite integer — that is the regression AC9
+  // exists to prevent.
+  it('names the two uncapped axes as POSITIVE_INFINITY, not a finite integer', () => {
+    expect(MAX_MULTIPLIER_BONUS_PER_HAND).toBe(Number.POSITIVE_INFINITY)
+    expect(MAX_FLAT_DAMAGE_BONUS_PER_HAND).toBe(Number.POSITIVE_INFINITY)
+    for (const cap of [MAX_MULTIPLIER_BONUS_PER_HAND, MAX_FLAT_DAMAGE_BONUS_PER_HAND]) {
+      expect(Number.isInteger(cap)).toBe(false)
     }
   })
 

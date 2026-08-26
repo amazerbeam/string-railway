@@ -149,8 +149,15 @@ describe('playHand — the optional levers', () => {
 
   it('a Cheat play naming a cheatId not held reports zero Cheats armed and leaves the held Cheats unchanged', () => {
     const run = startRun(PLAYER_START_HEALTH, [], 42)
+    // DLR-145 — `chooseBuffs` is ALSO overridden to `[]` here, isolating the lever under test from
+    // the ordinary buff window: with the pool now concentrated on five families,
+    // `baselinePolicy`'s "activate everything affordable" window reaches the run's real starting
+    // Cheat and consumes it through the normal single-use path (`CONDITION_CARD_SINGLE_USE`) —
+    // nothing to do with `wantsCheatPlay`. Without this override the held-Cheat-count assertion
+    // below fails for a reason unrelated to what this test names.
     const policy: SimPolicy = {
       ...baselinePolicy,
+      chooseBuffs: () => [],
       wantsCheatPlay: (ui): CheatPlay | null => {
         const card = ui.round.hands[PlayerSide.Player][0]
         return card === undefined ? null : { cheatId: -999, card }

@@ -89,6 +89,20 @@ describe('R6’s asymmetry — the module offers no per-hit reset', () => {
   })
 })
 
+describe('DLR-145 AC9 — Multiplier and Magnitude are uncapped', () => {
+  it('never clips a Momentum or Blade contribution, however many cards fire', () => {
+    let accrual = startHandAccrual()
+    for (let i = 0; i < 12; i++) {
+      accrual = accrueAxisBonus(accrual, BuffRewardAxis.Multiplier, 5)
+      accrual = accrueAxisBonus(accrual, BuffRewardAxis.Magnitude, 5)
+    }
+    expect(accrual.multiplierBonus).toBe(60)
+    expect(accrual.flatDamageBonus).toBe(60)
+    expect(Number.isFinite(accrual.multiplierBonus)).toBe(true)
+    expect(Number.isFinite(accrual.flatDamageBonus)).toBe(true)
+  })
+})
+
 describe('R5 — the Overlap Bonus is linear', () => {
   it('overlapBonusFor(1) = 0, (2) = 1, (6) = 5, (0) = 0', () => {
     expect(overlapBonusFor(1)).toBe(0)
@@ -151,12 +165,17 @@ describe('DLR-125 — the cash-out spend model', () => {
     expect(payableCashOutBonus(more).multiplierBonus).toBe(3)
   })
 
-  it('the accrued total still clips at its cap after a spend — the cap is per hand, not per pool', () => {
+  // DLR-145 AC9 retired the Multiplier axis's per-hand cap, so a spend no longer has a bound to
+  // re-hit — the case this test guarded against (a spend resetting the pool and letting a second
+  // cash-out pay past the cap) no longer has a cap to reset. What survives is the underlying
+  // bookkeeping: `markCashOutPaid` deducts what was already paid rather than zeroing the accrual,
+  // so a contribution made AFTER a spend is exactly the new payable amount.
+  it('a spend deducts what was paid rather than resetting the running total', () => {
     let a = accrueAxisBonus(startHandAccrual(), BuffRewardAxis.Multiplier, 6)
     a = markCashOutPaid(a, payableCashOutBonus(a))
     a = accrueAxisBonus(a, BuffRewardAxis.Multiplier, 4)
-    expect(a.multiplierBonus).toBe(MAX_MULTIPLIER_BONUS_PER_HAND)
-    expect(payableCashOutBonus(a).multiplierBonus).toBe(0)
+    expect(a.multiplierBonus).toBe(10)
+    expect(payableCashOutBonus(a).multiplierBonus).toBe(4)
   })
 })
 

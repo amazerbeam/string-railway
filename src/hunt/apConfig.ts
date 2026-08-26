@@ -4,12 +4,16 @@ import type { ActionPoints } from './types'
 // budget, the same split `run.ts` → `runTransitions.ts` already made. `config.ts` re-exports every
 // name below so no existing importer (`actionPoints.ts`, `index.ts`, the specs) changes.
 
-// DLR-104 AC1 — a single flag such that flipping it off makes every AP-gated action free,
-// with no consuming code writing its own bypass (see actionPoints.ts's apCostFor).
-// DEVELOPER DECISION: defaults true so the module is exercisable in its own tests; flip to
-// false at any time before a consumer lands with no other code change required.
+// DLR-104 AC1 — a single flag such that flipping it off makes every AP-gated action free, with no
+// consuming code writing its own bypass (see `actionPoints.ts`'s `apCostFor`).
+// DEVELOPER DECISION, DLR-145 AC2, 2026-08-25: OFF. Action points are removed from the game. They
+// were the only thing limiting how many buffs fire per trick, and they did it badly — under
+// `ApRefreshCadence.PerTrick` the pool refilled at every trick boundary, so the stake was refunded
+// before the next bet. Consumed cards (`consumables.ts`'s `CONDITION_CARD_SINGLE_USE`) replace that
+// with real scarcity: the limit is how many cards you own. The two are coherent only together.
+// The `apRefund` reward axis dies with this flag rather than needing its own repair.
 // UNIT: on/off.
-export const AP_ENABLED = true
+export const AP_ENABLED = false
 
 // DLR-104 AC1 — the player's opening AP pool, and what a perHand refresh resets to.
 // DEVELOPER-CHOSEN PLACEHOLDER pending the first playtest — no consumer exists yet (AC4), so
@@ -47,9 +51,15 @@ export const AP_REFRESH_CADENCE: ApRefreshCadence = ApRefreshCadence.PerTrick
 // UNIT: action points per hand.
 export const MAX_REFUND_PER_HAND: ActionPoints = 6
 // UNIT: multiplier points per hand.
-export const MAX_MULTIPLIER_BONUS_PER_HAND = 6
+// DLR-145 AC9 — NO CAP. With rented cards a clipped contribution was harmless; with CONSUMED cards
+// it silently destroys an irreplaceable card, and it bites hardest on exactly the high-tier cards
+// that are the reward for reaching the shop. Design §3.3 option 1, in its "removed entirely" form:
+// this is deliberately NOT a large chosen number — card scarcity is the only limit now. `Math.min`
+// against Infinity is the identity for any finite total, so `accrueAxisBonus` needs no change.
+// TO RESTORE A CAP, put a finite number back here; this is still the one place it lives.
+export const MAX_MULTIPLIER_BONUS_PER_HAND = Number.POSITIVE_INFINITY
 // UNIT: damage per hand.
-export const MAX_FLAT_DAMAGE_BONUS_PER_HAND = 12
+export const MAX_FLAT_DAMAGE_BONUS_PER_HAND = Number.POSITIVE_INFINITY
 // UNIT: coins per hand.
 export const MAX_COIN_BONUS_PER_HAND = 10
 

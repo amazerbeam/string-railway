@@ -53,7 +53,13 @@ export function startBuffHand(): BuffHandState {
  *  `offeredBuffs` and this trick's activations off `buffActivation.activatedThisTrick` — never a
  *  second filter, which is the `Unassigned` trap `plan.md` names. */
 export function buffHandInputFor(state: RoundUiState): BuffHandInput {
-  const active = offeredBuffs(state).filter((buff) =>
+  // DLR-145 — the pile AND the cards spent out of it this trick. `activateFromPile` removes a
+  // consumed card from `state.buffs` at the commit tap, so filtering the pile alone would find
+  // nothing and a spent Taker would pay nothing. The two sets are disjoint by construction — a
+  // spent card is no longer offered — so no de-duplication is needed and the overlap-bonus count
+  // stays correct.
+  const candidates = [...offeredBuffs(state), ...state.buffActivation.spentThisTrick]
+  const active = candidates.filter((buff) =>
     state.buffActivation.activatedThisTrick.includes(buff.id),
   )
   return {
@@ -67,13 +73,15 @@ export function buffHandInputFor(state: RoundUiState): BuffHandInput {
   }
 }
 
-/** Resolves each fired id back to its `Buff` through `offeredBuffs` — never a second filter — and
- *  keeps only the ones `firesOncePerHand` is true for, so an Event family that fired stays free to
- *  fire again this hand. */
+/** Resolves each fired id back to its `Buff` through the same `offeredBuffs ∪ spentThisTrick`
+ *  union `buffHandInputFor` uses — DLR-145: a card consumed on the trick it fired is no longer in
+ *  `offeredBuffs`, so looking there alone would silently drop it. Keeps only the ones
+ *  `firesOncePerHand` is true for, so an Event family that fired stays free to fire again this
+ *  hand. */
 function firedOncePerHandIds(state: RoundUiState, firedIds: readonly BuffId[]): readonly BuffId[] {
-  const offered = offeredBuffs(state)
+  const candidates = [...offeredBuffs(state), ...state.buffActivation.spentThisTrick]
   return firedIds.filter((id) => {
-    const buff = offered.find((candidate) => candidate.id === id)
+    const buff = candidates.find((candidate) => candidate.id === id)
     return buff !== undefined && firesOncePerHand(buff)
   })
 }

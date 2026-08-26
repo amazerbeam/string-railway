@@ -192,17 +192,18 @@ export const ENCOUNTERS_PER_RUN = QUARRY_ENCOUNTER_HEALTH.length
 // UNIT: bronze Cheat buffs in the opening pile.
 export const RUN_STARTING_CHEATS = 1
 
-// DLR-105 AC3 — the run's opening buff-pile size, all bronze. TRANSCRIBED from the ticket's AC3
-// and design doc §8 ("a fresh run starts with 4 buff cards already in the player's pile... all
-// four arrive at bronze") — not chosen here.
+// DLR-105 AC3, superseded by DLR-145 AC6 — the run's opening buff-pile size, all bronze.
+// TRANSCRIBED FROM DLR-145 (design §3.4): a fight runs two to four hands at six tricks each, so
+// firing about one card a trick makes twenty close to exactly one fight's ammunition — the player
+// reaches the first shop nearly empty, with coins to restock. Drawn WITH REPLACEMENT from a
+// 13-template pool (`startingPile.ts`), so the pile holds duplicates by design.
 // UNIT: buffs granted once, at the start of a run, all at BuffTier.Bronze.
-export const STARTING_BUFF_COUNT = 4
+export const STARTING_BUFF_COUNT = 20
 
-// DLR-84 AC1 — what beating an opponent pays. TRANSCRIBED FROM THE TICKET (developer's
-// specification, 2026-08-15), not chosen here. Credited by `recordEncounter`, which is the one
-// place a fight is known to have been won.
+// DLR-84 AC1, superseded by DLR-145 AC7 — what beating an opponent pays. TRANSCRIBED FROM DLR-145,
+// not chosen here. Credited by `recordEncounter`.
 // UNIT: coins, credited once per encounter won.
-export const COINS_PER_ENCOUNTER_WIN: Coins = 1
+export const COINS_PER_ENCOUNTER_WIN: Coins = 10
 
 // DLR-84 AC3 — the shop's two prices. Both TRANSCRIBED, both 1, and deliberately TWO keys rather
 // than one shared price: the ticket predicts the player buying Heal every visit and names

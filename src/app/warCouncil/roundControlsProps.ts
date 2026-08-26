@@ -18,7 +18,7 @@
  * site in `WarCouncilRound.tsx` — TypeScript cannot catch two same-typed values swapped by
  * position, but a mislabelled field is a compile error.
  */
-import { apCostOf, type Buff, type BuffActivationRefusal } from '../../hunt'
+import type { Buff, BuffActivationRefusal } from '../../hunt'
 import type { ApplyDamageRefusal, Card, DiscardRefusal } from '../../warCouncil'
 import type { ActionBarProps } from './ActionBar'
 import type { BuffLoadoutPanelProps } from './BuffLoadoutPanel'
@@ -44,10 +44,8 @@ export function buffLoadoutPanelProps({
 }: BuffLoadoutPanelOptions): BuffLoadoutPanelProps {
   return {
     buffs: offered,
-    activation: ui.buffActivation,
     poised: ui.loadout?.poised ?? null,
     refusalFor: (buff) => loadoutRefusalFor(ui, buff),
-    apCostFor: apCostOf,
     onTapBuff: (id) => dispatch({ kind: RoundUiActionKind.TapBuff, id }),
     onClose: () => dispatch({ kind: RoundUiActionKind.CancelLoadout }),
   }
@@ -77,7 +75,6 @@ export function actionBarProps({
   discardRefusal,
 }: ActionBarOptions): ActionBarProps {
   return {
-    apPool: ui.buffActivation.apPool,
     offeredBuffs: offered,
     loadoutOpen: loadoutOpen(ui),
     loadoutRefusal,

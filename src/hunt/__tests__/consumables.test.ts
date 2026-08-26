@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   absorbWithWard,
   ACTIVATED_CARD_SINGLE_USE,
+  CONDITION_CARD_SINGLE_USE,
   CONSUMABLE_EFFECT_LIVE,
   CONSUMABLE_TIMING,
   consumableEffectIsLive,
@@ -86,6 +87,19 @@ function shield(id = 93): Buff {
     tier: BuffTier.Bronze,
     condition: ACTIVATED_BUFF_CONDITION,
     reward: { axis: BuffRewardAxis.HeartCount, value: 1 },
+  }
+}
+
+/** A condition-family buff — Taker, Feeder, Sidestep, or any of the eight still-declared-but-cut
+ *  families (e.g. Glutton). Built inline for the same reason `itemBuff` is: nothing in `src/hunt/`
+ *  mints one yet. */
+function conditionBuff(kind: BuffKind, tier: BuffTier, id = 1): Buff {
+  return {
+    id,
+    kind,
+    tier,
+    condition: { kind: `${kind}Trigger` },
+    reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
   }
 }
 
@@ -359,5 +373,35 @@ describe('absorbWithWard — up to N of one hit, and no remainder to carry', () 
   it('throws rather than minting NaN on a non-finite or negative hit', () => {
     expect(() => absorbWithWard(1, Number.NaN)).toThrow(RangeError)
     expect(() => absorbWithWard(1, -1)).toThrow(RangeError)
+  })
+})
+
+describe('CONDITION_CARD_SINGLE_USE (DLR-145 AC1)', () => {
+  it.each([BuffKind.Taker, BuffKind.Feeder, BuffKind.Sidestep])(
+    'reports a %s as a consumable item',
+    (kind) => {
+      expect(isConsumableItem(conditionBuff(kind, BuffTier.Bronze, 1))).toBe(true)
+    },
+  )
+
+  it('defaults to true for Taker, Feeder and Sidestep', () => {
+    expect(CONDITION_CARD_SINGLE_USE[BuffKind.Taker]).toBe(true)
+    expect(CONDITION_CARD_SINGLE_USE[BuffKind.Feeder]).toBe(true)
+    expect(CONDITION_CARD_SINGLE_USE[BuffKind.Sidestep]).toBe(true)
+  })
+
+  it('leaves the five DLR-111 items and the three activated cards unchanged', () => {
+    expect(isConsumableItem(itemBuff(BuffKind.Ward, BuffTier.Bronze, 2))).toBe(true)
+    expect(isConsumableItem(cheat(3))).toBe(true)
+  })
+
+  it('does NOT admit a family that was cut from the pool but still declared', () => {
+    expect(isConsumableItem(conditionBuff(BuffKind.Glutton, BuffTier.Bronze, 4))).toBe(false)
+  })
+
+  it('spendConsumable removes exactly the spent Taker and leaves its twin', () => {
+    const a = conditionBuff(BuffKind.Taker, BuffTier.Bronze, 1)
+    const b = conditionBuff(BuffKind.Taker, BuffTier.Bronze, 2)
+    expect(spendConsumable([a, b], 1).map((buff) => buff.id)).toEqual([2])
   })
 })

@@ -1,6 +1,5 @@
 import { useRef, type KeyboardEvent } from 'react'
 import {
-  apCostOf,
   type Buff,
   type BuffTemplate,
   type Coins,
@@ -173,7 +172,7 @@ export default function SlotMachinePanel({
             </ul>
             <ul className="shop-slot-awards">
               {lastPull.awards.map((award) => (
-                <li key={award.id}>{buffLine(award, apCostOf(award))}</li>
+                <li key={award.id}>{buffLine(award)}</li>
               ))}
             </ul>
           </>

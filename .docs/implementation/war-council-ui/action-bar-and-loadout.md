@@ -39,6 +39,13 @@ inside `.wc-table`, which fires `handleCarryOn` on click whenever the felt is wa
 the panel's stop on the mistaken belief the bar's already covers it; the component docblocks say so
 in both places.
 
+> **DLR-145 turned the pool off entirely, 2026-08-25.** `AP_ENABLED` is `false`, so nothing on this
+> bar or in this panel renders an AP figure any more. The unification below still holds in code —
+> `RoundUiState.buffActivation.apPool` is still the felt's one pool and both spenders still draw on
+> it — it is simply always zero-cost and never shown. `ActionBarProps.apPool` and
+> `BuffLoadoutPanelProps.activation` / `.apCostFor` were removed as props, with their two suppliers
+> in `roundControlsProps.ts`; the `.wc-loadout-ap` rule was renamed `.wc-loadout-count`.
+
 ## One AP pool, where there used to be two
 
 Before this ticket the felt held **two independent numbers both claiming to be the hand's action
@@ -173,11 +180,16 @@ _How a card is named_. Keying over the closed unions means a `BuffKind` added la
 here rather than rendering `undefined`. The activated/consumable kinds and `Unassigned` have no row in
 that document, so their words are this ticket's own placeholder copy.
 
-`buffLine(buff, apCost)` composes the one glanceable line:
+`buffLine(buff)` composes the one glanceable line:
 
 ```
-Silver Bell-Taker (Momentum) — win a trick with Bells: +3 multiplier. 2 AP.
+Silver Bell-Taker (Momentum) — win a trick with Bells: +3 multiplier.
 ```
+
+> **DLR-145 removed the trailing `2 AP.` and the `apCost` parameter that produced it** (from
+> `buffRowAccessibleName` too). The parameter was **removed rather than passed a zero**: a row that
+> reads "0 AP" still claims a resource exists. See
+> [action points](../hunt/action-points.md#action-points-are-switched-off--dlr-145-2026-08-25).
 
 and `buffRowAccessibleName` appends the poise hint or the refusal sentence. **The same string is the
 row's visible text and its accessible name**, so what a sighted player reads and what a screen reader
@@ -198,13 +210,31 @@ now leave the pile after one activation by default (`ACTIVATED_CARD_SINGLE_USE`,
 also wires `activateShield` into the `encounter` field alongside the pre-existing Ward branch —
 Shield's effect had never fired from the app layer before this ticket.
 
+> **DLR-145 did the same to Taker, Feeder and Sidestep** (`CONDITION_CARD_SINGLE_USE`), and this
+> time the app layer *did* have to change. A condition card fires at **trick resolution**, not at
+> the tap, and by then `activateFromPile` has already removed it from `state.buffs` — so
+> `buffHandInputFor`, which builds the trick's active set by filtering the pile, would have found
+> nothing and the card would have paid nothing, silently. Both it and `firedOncePerHandIds`
+> (`buffRoundState.ts`) now read `[...offeredBuffs(state), ...state.buffActivation.spentThisTrick]`.
+> The two sets are **disjoint by construction** — a spent card is no longer offered — so no
+> de-duplication is needed and R5's overlap-bonus count stays correct. A third reader of the same
+> union lives in the simulator (`src/sim/playHand.ts`); the three must be kept in step.
+
 `actionBarLabels.ts` owns the bar's own copy and reuses `labels.ts`'s existing
 `APPLY_DAMAGE_POISED_HINT`, `APPLY_DAMAGE_REFUSAL_MESSAGE`, `DISCARD_REFUSAL_MESSAGE`,
 `discardAccessibleName` and `cardAccessibleName` rather than restating any of them — which is why
 deleting the two plates rewrote no copy. `queuedPayoutText(pending)` is the queued-payout readout
 (`Payout queued: 12 damage, 2 tricks to go.`), returning `null` rather than rendering
-`undefined tricks` when nothing is queued; `applyDamageBarAccessibleName` puts the AP cost on the
-control's face. All of it is placeholder copy, as this project's rest is.
+`undefined tricks` when nothing is queued. All of it is placeholder copy, as this project's rest is.
+
+> **DLR-145 stripped the AP clauses from both composed names.** `applyBuffAccessibleName` lost its
+> `apPool` parameter (`Apply Buff — 4 action points left, 3 buffs held.` → `Apply Buff — 3 buffs
+> held.`) and `applyDamageBarAccessibleName` lost its `apCost` parameter (`Apply Damage — cash 12
+> for 1 action point.` → `Apply Damage — cash 12.`). The poise hint, the refusal sentence and the
+> queued-payout sentence are untouched and still appended in the same order. `LOADOUT_EMPTY_MESSAGE`
+> was rewritten from "No priced buffs held. Cheats and Timebomb charges are below." — which had
+> described a divider DLR-132 deleted — to **"Nothing left to spend."**, which is what an emptied
+> pile now means.
 
 ## The props assembly is its own file
 

@@ -5,7 +5,6 @@ import {
   BuffTier,
   buffTargetRankOf,
   buffTargetSuitOf,
-  type ActionPoints,
   type Buff,
   BuffActivationRefusal,
 } from '../../hunt'
@@ -140,9 +139,6 @@ export function buffRewardPhrase(buff: Buff): string {
   }
 }
 
-/** THE one glanceable line, and the row's own accessible name — one string, so what a sighted
- *  player reads and what a screen reader announces cannot drift.
- *  `Bell-Taker (Momentum) — win a trick with Bells: +2 multiplier. 2 AP.` */
 /** The tier word every loadout row states, so a player can tell which copy of a buff they own. */
 const BUFF_TIER_WORD: Readonly<Record<BuffTier, string>> = {
   [BuffTier.Bronze]: 'Bronze',
@@ -150,8 +146,13 @@ const BUFF_TIER_WORD: Readonly<Record<BuffTier, string>> = {
   [BuffTier.Gold]: 'Gold',
 }
 
-export function buffLine(buff: Buff, apCost: ActionPoints): string {
-  return `${BUFF_TIER_WORD[buff.tier]} ${buffName(buff)} — ${buffConditionSentence(buff)}: ${buffRewardPhrase(buff)}. ${apCost} AP.`
+/** THE one glanceable line, and the row's own accessible name — one string, so what a sighted
+ *  player reads and what a screen reader announces cannot drift.
+ *  `Bronze Bell-Taker (Momentum) — win a trick with Bells: +2 multiplier.`
+ *  DLR-145 AC2 — the trailing `N AP.` is gone with action points. The parameter is REMOVED rather
+ *  than passed a zero: a row that reads "0 AP" still claims a resource exists. */
+export function buffLine(buff: Buff): string {
+  return `${BUFF_TIER_WORD[buff.tier]} ${buffName(buff)} — ${buffConditionSentence(buff)}: ${buffRewardPhrase(buff)}.`
 }
 
 /** PLACEHOLDER copy, as this project's rest is. */
@@ -167,11 +168,10 @@ export const BUFF_POISED_HINT = 'Tap again to activate'
 /** The row's full accessible name: the line, then the poise stage or the refusal reason. */
 export function buffRowAccessibleName(
   buff: Buff,
-  apCost: ActionPoints,
   poised: boolean,
   refusal: BuffActivationRefusal | null,
 ): string {
-  const line = buffLine(buff, apCost)
+  const line = buffLine(buff)
   if (refusal !== null) return `${line} ${BUFF_ACTIVATION_REFUSAL_MESSAGE[refusal]}`
   return poised ? `${line} ${BUFF_POISED_HINT}` : line
 }

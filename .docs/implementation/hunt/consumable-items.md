@@ -59,6 +59,47 @@ fix, `isConsumableItem` said "yes, spend it" for Cheat/Timebomb/Shield while `sp
 guard still said "no", so calling it on one of the three threw `RangeError` instead of removing the
 card. The two must read the same predicate, since one gates the call to the other.
 
+## `CONDITION_CARD_SINGLE_USE` — DLR-145, the same switch for the three condition families
+
+```ts
+export const CONDITION_CARD_SINGLE_USE: Readonly<Record<ConsumedConditionKind, boolean>> = {
+  [BuffKind.Taker]: true,
+  [BuffKind.Feeder]: true,
+  [BuffKind.Sidestep]: true,
+}
+```
+
+A **sibling** of `ACTIVATED_CARD_SINGLE_USE`, not an extension of it, and not a merge into
+`ConsumableItemKind`. The reason is the distinction at the top of this file: those five items have a
+**timing window and an effect**, and a condition card has neither — it has a **trigger**. So neither
+`CONSUMABLE_TIMING` nor `CONSUMABLE_EFFECT_LIVE` admits Taker, Feeder or Sidestep, and
+`consumableTimingOf` and `consumableEffectOf` still **throw** on one, which is correct: nothing calls
+them for a condition card.
+
+`isConsumableItem` is now three clauses, and it is still the only reader of all three tables:
+
+1. `true` for the five DLR-111 items (`isConsumableItemKind`);
+2. otherwise `ACTIVATED_CARD_SINGLE_USE[kind]` for Cheat / Timebomb / Shield;
+3. otherwise `CONDITION_CARD_SINGLE_USE[kind]` for Taker / Feeder / Sidestep.
+
+`false` for every other condition family — the eight DLR-145 cut from the mintable pool are still
+declared and still evaluated, and if one were ever minted again it would behave exactly as it always
+did. Reverting one card to "stays in the pile" is one `false`, as above.
+
+`spendConsumable` needed **no** change: it gates on `isConsumableItem`, which now admits the three.
+
+**This is the change that turns a rented buff into a spent one**, and it is the whole point of the
+Version 6 pass. Before it, a Taker was re-activated and re-paid every trick and the correct play was
+to dump the whole action-point pool every trick, because the pool came back before the next one.
+Action points went off in the same ticket for exactly that reason — see
+[action points](action-points.md#action-points-are-switched-off--dlr-145-2026-08-25). The two are
+coherent only together.
+
+**A consumed card still fires on the trick it was spent on**, and that does not follow from this
+table on its own — it needed `BuffActivationState.spentThisTrick`, without which a spent card pays
+nothing at all, silently. See
+[buff activation](buff-activation-and-ap-costs.md#spentthistrick--how-a-consumed-card-still-gets-paid--dlr-145-2026-08-25).
+
 ## `consumables.ts` is a leaf
 
 It imports `./buffs` and `./types` and nothing else. In particular it does **not** import
@@ -110,8 +151,11 @@ the count is of; merging them would report "2x Ward" for two cards that absorb d
 `activateFromPile(state, buffs, buff, windowOpen)` in `buffActivation.ts` calls `activateBuff` first
 — so a refused activation throws before the pile is touched and neither half lands — then returns
 `{ activation, buffs }` with the card removed **only** when `isConsumableItem` is true. Since
-DLR-142, that now includes a Cheat, a Timebomb or a Shield by default — see
-`ACTIVATED_CARD_SINGLE_USE` above for the toggle and how to revert one card.
+DLR-142, that now includes a Cheat, a Timebomb or a Shield by default, and since DLR-145 a Taker, a
+Feeder or a Sidestep too — see `ACTIVATED_CARD_SINGLE_USE` and `CONDITION_CARD_SINGLE_USE` above for
+the two toggles and how to revert one card. On the consumable branch `activateFromPile` also appends
+the card to `activation.spentThisTrick`, which is what keeps it firing at this trick's resolution
+after it has left the pile.
 
 The pair-return is the point. Leaving the caller to make two calls has a silent and permanent
 failure mode — AP spent, card kept, and the card back on the rail next trick — which is exactly the
@@ -218,8 +262,9 @@ dead content.
 ## Nothing player-reachable mints a consumable yet
 
 `mintGrants` generates none of the five, and neither does the opening pile: **`buffTemplates.ts` has
-no Ward row at all**, so the five consumables are absent from the 73-template `BUFF_TEMPLATES` pool
-(71 condition templates plus the two activated ones, Cheat and Timebomb) that both the reel and — since
+no Ward row at all**, so the five consumables are absent from the `BUFF_TEMPLATES` pool — 73
+templates when this was written (71 condition plus the two activated ones, Cheat and Timebomb), **13
+since DLR-145** (11 condition plus the same two) — that both the reel and — since
 DLR-135, 2026-08-25 — the run's opening draw pull from. So no path a player can reach produces a
 consumable, and not one line of this page is exercised by playing the game today.
 

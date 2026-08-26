@@ -45,7 +45,6 @@ const baseSlot = {
 
 const baseProps = {
   coins: 3,
-  apCapacity: 6,
   playerHealth: 6,
   maxPlayerHealth: 10,
   playerHearts: heartsAt6of10,
@@ -135,12 +134,12 @@ describe('ShopPanel', () => {
     expect(onLeave).toHaveBeenCalledTimes(1)
   })
 
-  it('states the coming opponent, the coins and the AP figure on the face of the screen (AC10)', () => {
+  it('states the coming opponent and the coins on the face of the screen (AC10); no Action points cell (DLR-145 AC3)', () => {
     const { container } = render(<ShopPanel {...baseProps} refusals={noRefusals} />)
     expect(container.querySelector('.shop-next')?.textContent).toContain('The Monarch')
     const purse = screen.getByRole('group', { name: /purse/i })
     expect(purse.textContent).toContain('3')
-    expect(purse.textContent).toContain('6')
+    expect(purse.textContent).not.toContain('Action points')
   })
 
   it('states the health on the meter', () => {

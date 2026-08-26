@@ -107,6 +107,32 @@ which is precisely what "fixed and always-purchasable" means: only the coin chec
 `RunState.apCapacityBonus` counts purchases rather than points, and `apCapacityFor` owns the
 multiplication so the step is stated once.
 
+> **DLR-145 took `ApCapacity` off the shelf too, 2026-08-25**, on exactly the precedent DLR-116 set
+> above. With `AP_ENABLED` false it has nothing to sell: it would buy capacity in a pool no action
+> draws on. It keeps its `ShopItem` member, its `priceOf` row, its `categoryOf` rung and its
+> `refusalFor` handling; `RunState.apCapacityBonus`, `apCapacityFor` and `buyFromShop`'s branch are
+> all untouched, so a caller can still buy one — it is simply not on any shelf.
+> **The shipped shelf is now three items: `SwanTier`, `WitchTier`, `Heal`.**
+> `SHOP_ITEMS_BY_CATEGORY` derives to `{ oneTimeUse: [], fightLong: [], runPermanent: [SwanTier,
+> WitchTier], gamePermanent: [] }`.
+>
+> **`canBuyAnything`'s meaning shifted with it.** It was true whenever the player held a coin,
+> because AP capacity had no cap and so a coin always bought *something*; the verdict's `Continue`
+> warning therefore fired constantly. Now a player at full health with both rank tiers maxed has
+> nothing left to buy and the warning stays quiet.
+>
+> **An open contradiction is recorded here rather than resolved.** DLR-145's AC3 says the shop
+> "sells Heal and a machine pull only", but its own in-scope list names only the action-point
+> purchase, and DLR-122's Swan and Witch rank-tier items are on the shelf. The plan removed
+> `ApCapacity` and left the two tier items, flagging the disagreement for the developer. **Whether
+> the shop should be a two-item shelf is still the developer's call** — it is one line in
+> `SHOP_ITEMS` plus the reachability spec, but it would also silently retire DLR-122's whole
+> run-permanent shelf.
+>
+> **The shop poses no real choice at ten coins a fight**, and that was accepted for this pass rather
+> than overlooked: Heal is 1 coin and a slot pull is 1, both left alone on the developer's explicit
+> call. See the price table below.
+
 **`Heal` stays last in `SHOP_ITEMS` on purpose**: `UNCATEGORISED_SHOP_ITEMS` derives from this array's
 order, and the heal is the only member with no category. `SHOP_ITEMS` is also a plain array, so nothing
 forces a new `ShopItem` member into it — `shop.test.ts`'s deep-equality assertion is what does.
@@ -422,7 +448,7 @@ player-side hit is deliberately smaller, because it _also_ forces the streak's c
 
 | Key                       | Value | Unit                                                                                                          |
 | ------------------------- | ----- | ------------------------------------------------------------------------------------------------------------- |
-| `COINS_PER_ENCOUNTER_WIN` | `1`   | coins, credited once per encounter won — the **flat** term; since DLR-95 the quick-kill payout is added to it |
+| `COINS_PER_ENCOUNTER_WIN` | `10`  | coins, credited once per encounter won — the **flat** term; since DLR-95 the quick-kill payout is added to it. **Was `1` until DLR-145 raised it tenfold**, transcribed from that ticket, not chosen here |
 | `CHEAT_PRICE`             | `1`   | coins per purchase                                                                                            |
 | `HEAL_PRICE`              | `1`   | coins per purchase                                                                                            |
 | `BLAST_GUARD_PRICE`       | `1`   | coins per purchase (DLR-91)                                                                                   |
@@ -431,8 +457,9 @@ player-side hit is deliberately smaller, because it _also_ forces the streak's c
 
 **`WHETSTONE_PRICE = 4` is transcribed from `version-4-scope.md` §1's own heading** — "priced as the shop's
 one real splurge" — and is the only price in the shop above 2 coins. The design's reasoning, not arithmetic
-done here: on flat win income (1 coin a fight, against a run expected to end in its first or second stage)
-it eats most of a short attempt, and the intended way to reach it early is the **quick-kill payout**, which
+done here: on the flat win income of the day (1 coin a fight, against a run expected to end in its first
+or second stage) it ate most of a short attempt — **DLR-145 raised that income to 10 a fight, so the
+reasoning behind this price no longer holds and the Whetstone is off the shelf anyway** — and the intended way to reach it early is the **quick-kill payout**, which
 is a separate ticket and **is not built**. So the item is currently priced for an income that does not exist
 yet, which is why the price is `provisional` in `the-hunt.md` rather than settled. QA reached the shop in two
 full runs and never got past 2 coins.

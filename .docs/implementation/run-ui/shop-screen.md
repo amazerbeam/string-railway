@@ -5,7 +5,7 @@ Part of [Run verdict UI](README.md).
 `ShopPanel.tsx` (DLR-84, DLR-89, **rebuilt DLR-116**) is the second full-viewport surface this module
 owns: the screen reached from the verdict's `Shop` control.
 
-**DLR-116 pared it down to the bone and gave it a slot machine.** The screen now sells exactly two
+**DLR-116 pared it down to the bone and gave it a slot machine.** The screen sold exactly two
 things — **Health** and **AP capacity** — plus the free flask, and its centre is the
 [slot machine section](the-slot-machine-screen.md), where the run's real buff cards come from. The
 four-tab persistence-length ladder DLR-89 built is **gone**; so are the Cheat, the Timebomb, the Blast
@@ -33,7 +33,8 @@ expected back once there is a catalogue to put on it.
 
 > `SHOP_ITEMS` is **what the shop offers**. The `ShopItem` union is **everything the game prices.**
 
-`SHOP_ITEMS` is now `[ApCapacity, Heal]`, but the union keeps all six members and `priceOf`,
+`SHOP_ITEMS` was `[ApCapacity, Heal]` at DLR-116 and is **`[SwanTier, WitchTier, Heal]` after
+DLR-122 and DLR-145**, but the union keeps all its members and `priceOf`,
 `categoryOf`, `refusalFor` and `buyFromShop` all stay **total** over it — so the Cheat, the Timebomb,
 the Blast Guard and the Whetstone are still priced, still buyable by a caller, and still covered by
 `shop.test.ts`. That totality *is* the ticket's third acceptance criterion, and it is asserted rather
@@ -66,7 +67,14 @@ item's name, its blurb and its price, followed by its own `<p class="shop-refusa
 built by the `renderItem` helper. It is a nested function rather than a `useCallback` — there is no
 profiling evidence for memoising it.
 
-### AP capacity, the one new purchase
+### AP capacity, the one new purchase — off the shelf since DLR-145
+
+> **`ShopItem.ApCapacity` is no longer in `SHOP_ITEMS`.** Everything below still describes live code
+> — the price, the step, `RunState.apCapacityBonus`, `apCapacityFor`, `buyFromShop`'s branch and
+> `RoundUiSeed.apCapacity` are all untouched and still tested — but **no screen sells it**, and with
+> `AP_ENABLED` false the capacity it would buy has no spender. It is off the shelf on exactly the
+> DLR-116 precedent this page already describes.
+
 
 `ShopItem.ApCapacity` costs `AP_CAPACITY_PRICE` coins and adds `AP_CAPACITY_STEP` (**5**) action
 points to the per-hand pool, for the rest of the run, stacking without a cap. `refusalFor` gained
@@ -98,10 +106,19 @@ reason code is a compile error in `shopLabels.ts` rather than a blank sentence o
 
 ## The purse row states everything a purchase decision needs
 
-**Two** labelled cells inside one `role="group"` since DLR-116: **coins** and **action points**. The
+**Two** labelled cells inside one `role="group"` at DLR-116: **coins** and **action points**. The
 Cheat-slots, Timebomb, Blast Guard, Whetstone and flask-charge cells went with the items they
 described — the flask's count still shows on the flask row itself, so nothing was lost by dropping its
 purse cell.
+
+> **DLR-145 took the action-points cell out too, leaving the purse a single-cell group.** With
+> `AP_ENABLED` false there is no pool to state; `SHOP_AP_LABEL` was deleted from `shopLabels.ts` and
+> `ShopPanelProps.apCapacity` was removed with its supplier in `App.tsx`.
+> `SHOP_ITEM_NAME[ShopItem.ApCapacity]` and `SHOP_ITEM_BLURB[ShopItem.ApCapacity]` **stay**, because
+> both `Record`s are total over the whole `ShopItem` union. Health remains a sibling row rather than a
+> purse cell, for the reason immediately below, so a one-cell "purse" beside a full-width health
+> meter is the shape the screen now has. **Whether that reads as deliberate or as a hole is a
+> look-at-it question and no browser pass has been run.**
 
 **Health is not one of them**, though it reads as part of the same block and reuses the same
 `.shop-purse-label` / `.shop-purse-value` classes. It is a sibling `.shop-health` row carrying its own

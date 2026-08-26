@@ -43,6 +43,19 @@ keeps `BuffKind.Unassigned` placeholders out without a second filter anywhere. `
 resolves fired ids back to their `Buff` the same way, so an Event family that fired stays free to
 fire again this hand while a Threshold or Terminal family is recorded as spent.
 
+> **DLR-145 widened both readings from the pile to `pile ∪ spent-this-trick`, 2026-08-25.** Taker,
+> Feeder and Sidestep became single-use, and `activateFromPile` removes a consumed card from
+> `state.buffs` at the commit tap — before the trick it was spent on has resolved. Filtering the
+> pile alone therefore found nothing and the card paid nothing: no throw, no refusal, no log. Both
+> functions now build their candidate list as
+> `[...offeredBuffs(state), ...state.buffActivation.spentThisTrick]`. The two sets are **disjoint by
+> construction**, so nothing is double-counted and R5's overlap-bonus count is unaffected.
+> `spentThisTrick` is cleared by `openBuffWindow` on the same edge that clears `activatedThisTrick`,
+> which is what bounds it to one trick. The **"read the pile exactly once"** discipline this section
+> is named for is unchanged — there is still one candidate list, built in one expression, and still
+> no second filter. See
+> [buff activation](../hunt/buff-activation-and-ap-costs.md#spentthistrick--how-a-consumed-card-still-gets-paid--dlr-145-2026-08-25).
+
 The rest of the input is plain values the trick cannot supply: the accrual, the fired list, the
 no-hit counter, `state.coins` (Miser), the player's red hearts (Cornered) and the press flag.
 `RoundUiState.coins` is the run's purse at the **start** of the hand and is read-only for the hand's
@@ -56,7 +69,8 @@ fixtures reproduce today's game exactly.
 `openWindowOnTrickResolved` already uses — and is pure and two-argument, so StrictMode's development
 double dispatch recomputes an identical value.
 
-It credits the **delta** in `apRefunded` into `buffActivation.apPool` (step 1) and the delta in
+It credits the **delta** in `apRefunded` into `buffActivation.apPool` (step 1 — a dead credit since
+DLR-145, since the `apRefund` axis no longer mints and nothing spends from the pool) and the delta in
 `coinBonus` into `coinsEarned` (step 5); deltas rather than totals, because the accrual is the hand's
 running figure and the pool has already been credited with everything before this trick. It then
 appends the newly-fired once-per-hand ids and advances `tricksWithoutHit` through

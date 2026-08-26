@@ -1,7 +1,7 @@
 # Headless run simulator — `src/sim/`
 
 **Status:** implemented
-**Built by:** DLR-130, DLR-120, DLR-132, DLR-135
+**Built by:** DLR-130, DLR-120, DLR-132, DLR-135, DLR-145
 
 ## Responsibility
 
@@ -25,9 +25,11 @@ imported by none of them.
 | `ShopAction`                                                               | One between-fights action a policy wants: `buy` / `pull` / `flask`                       | `types.ts`          |
 | `HandReport` / `RunReport` / `SimSummary` / `SimOptions`                   | What one hand, one run and one batch measured                                            | `types.ts`          |
 | `RunEnding`                                                                | `Won` / `Lost` / `Stalled` — `Stalled` is a driver bug, deliberately not a game outcome  | `types.ts`          |
-| `baselinePolicy`, `maximalistPolicy`, `POLICIES`, `BASELINE_CASH_AT_MULTIPLIER` | The two shipped players, the name registry `--policy` resolves against, and the baseline's one knob | `baselinePolicy.ts` |
+| `baselinePolicy`, `maximalistPolicy`, `POLICIES`, `BASELINE_CASH_AT_MULTIPLIER` | The shipped players, the name registry `--policy` resolves against, and the baseline's one knob. `POLICIES` is `baseline`, `maximalist`, `noBuffs`, `rerollFocused` and `cardAware`; **DLR-145 deleted `apCapacityFocused`**, whose whole purpose was to exercise the AP-capacity lever that ticket removed — left in place it would have spent coins on nothing and quietly distorted every future comparison | `baselinePolicy.ts` |
 | `mintableBuffKinds`, `unreachableBuffKinds`, `unshelvedShopItems`          | Which cards a player can actually obtain, derived from production data alone             | `reachability.ts`   |
 | `playHand`, `HandOutcome`                                                  | Drives one hand through `roundReducer` and returns the felt's own `WarCouncilRoundResult` | `playHand.ts`       |
+| `seedFor`, `runDiscard`, `runCheatPlay`, `runBuffWindow`                   | The four between-tricks helpers `playHand`'s driver loop calls once per open window. **Split out of `playHand.ts` by DLR-145**, which pushed that file past its 400-line budget adding the `spentThisTrick` union; `playHand.ts` keeps the driver loop, which is the part that needs all four in view at once, and re-exports `seedFor` so no importer changed | `playHandWindows.ts` |
+| `withOpeningPile`, `OPENING_PILE_VARIANTS`                                 | The what-if opening-pile injection point `--pile <name>` resolves against. **`OPENING_PILE_VARIANTS` is empty as of DLR-145** — see below | `openingPileVariants.ts` |
 | `playRun`                                                                  | Drives one whole run: hands, `recordEncounter`, the shop visit, `advanceRun`             | `playRun.ts`        |
 | `simulate`                                                                 | The batch loop over N seeded runs                                                        | `simulate.ts`       |
 | `formatSummary`                                                            | Turns a `SimSummary` into the printed report — returns a string, prints nothing          | `report.ts`         |
@@ -178,6 +180,17 @@ still prices Timebomb — DLR-116 pared it off the `SHOP_ITEMS` shelf, not out o
 - **No balancing was done here, and none should be read out of this module.** DLR-130 shipped the
   instrument, not the readings. The developer's balance pass is a separate exercise, and the
   first observation this tool recorded is in `../run-winnability-simulation.md`.
+- **`OPENING_PILE_VARIANTS` is empty, and the seam is deliberately kept.** DLR-145 deleted both
+  named what-if piles: `conditionsOnlyOpeningWeightOf` zeroed exactly the three families (`miser`,
+  `keepsake`, `cornered`) that ticket removed from `BUFF_TEMPLATES` outright, and
+  `recommendedOpeningWeightOf` compared a template's axis against `apRefund` and `coins` — neither of
+  which `MintableRewardAxis` has a member for any more, so the comparison no longer compiles. **The
+  reduced pool *is* the recommendation those variants existed to measure.** `withOpeningPile` and
+  the (now empty) `OPENING_PILE_VARIANTS` map stay, so `SimConfig.openingPileVariant`, `playRun.ts`'s
+  lookup and the `--pile` flag need no edit — an unknown `--pile <name>` fails exactly as it always
+  did, with no names left to ask for. A future what-if pile is one new entry, not a structural
+  change. `EXCLUDED_OPENING_KINDS`, `EXCLUDED_OPENING_AXIS`, `COINS_WEIGHT_FACTOR` and
+  `SIDESTEP_WEIGHT_FACTOR` went with them.
 - **No export format but plain text.** No CSV, no JSON, no charting, no parallel or multi-process
   batching. `--runs` has a lower bound but no upper one, so a very large batch is simply slow.
 - **The Vault is not simulated.** Starting grants and Vault-adjusted slot odds

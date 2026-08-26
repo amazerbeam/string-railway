@@ -88,16 +88,19 @@ describe('applyDamageRefusalFor — AC1', () => {
     )
   })
 
-  it('DLR-109 AC1 — refuses when the AP pool cannot cover the press', () => {
-    expect(applyDamageRefusalFor(stock({ apPool: APPLY_DAMAGE_AP_COST - 1 }))).toBe(
-      ApplyDamageRefusal.InsufficientAp,
-    )
+  it('DLR-145 — InsufficientAp is now unreachable: AP_ENABLED is off, so canAffordAp reads every pool as covering the press', () => {
+    // InsufficientAp stays in the ApplyDamageRefusal union (its message Record stays total over
+    // it) but nothing can reach it any more — a pool below the raw cost still refuses null.
+    expect(applyDamageRefusalFor(stock({ apPool: APPLY_DAMAGE_AP_COST - 1 }))).toBeNull()
+    expect(applyDamageRefusalFor(stock({ apPool: 0 }))).toBeNull()
   })
 
-  // DLR-143 — the five-clause order is load-bearing: NotYourMove → TrickInProgress →
-  // PayoutPending → InsufficientAp → EmptyBank. Walking it down from every reason true at once
-  // confirms each clause yields to the one before it, in order.
-  it('DLR-143 — walks all five refusal clauses in order', () => {
+  // DLR-143 — the clause order is load-bearing: NotYourMove → TrickInProgress → PayoutPending →
+  // InsufficientAp → EmptyBank. Walking it down from every reason true at once confirms each
+  // clause yields to the one before it, in order. DLR-145 — InsufficientAp is unreachable with
+  // AP_ENABLED off, so clearing PayoutPending falls straight through to EmptyBank; apPool is left
+  // at 0 throughout to show that reaching it no longer matters.
+  it('DLR-143/DLR-145 — walks the surviving refusal clauses in order', () => {
     const everyReason = stock({
       canAct: false,
       trickInFlight: true,
@@ -120,7 +123,7 @@ describe('applyDamageRefusalFor — AC1', () => {
         trickInFlight: false,
         payoutPending: false,
       }),
-    ).toBe(ApplyDamageRefusal.InsufficientAp)
+    ).toBe(ApplyDamageRefusal.EmptyBank)
     expect(
       applyDamageRefusalFor({
         ...everyReason,

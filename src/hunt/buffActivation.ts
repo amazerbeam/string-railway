@@ -62,13 +62,20 @@ export interface BuffActivationState {
    *  `startBuffActivation` sets it; nothing in this module ever changes it mid-hand. */
   readonly capacity: ActionPoints
   readonly activatedThisTrick: readonly BuffId[]
+  /** DLR-145 — cards REMOVED FROM THE PILE during the current trick, kept so a consumed condition
+   *  card still fires at this trick's resolution. `buffHandInputFor` builds the trick's active set
+   *  by filtering the PILE, and `activateFromPile` has already taken a consumed card out of it —
+   *  without this field a spent Taker pays nothing, with no throw, no refusal and no log.
+   *  Same lifetime as `activatedThisTrick`, cleared on the same edge; separating the two is how
+   *  that bug comes back in a different shape. Always empty for a non-consumable activation. */
+  readonly spentThisTrick: readonly Buff[]
 }
 
 /** A fresh per-hand activation state, pool at `capacity`, nothing activated yet. DLR-116 —
  *  `capacity` defaults to `STARTING_AP`, reproducing the pre-DLR-116 value exactly, so every
  *  existing call site is unchanged. */
 export function startBuffActivation(capacity: ActionPoints = STARTING_AP): BuffActivationState {
-  return { apPool: capacity, capacity, activatedThisTrick: [] }
+  return { apPool: capacity, capacity, activatedThisTrick: [], spentThisTrick: [] }
 }
 
 /**
@@ -128,6 +135,7 @@ export function activateBuff(
     apPool: spendAp(state.apPool, stock.apCost),
     capacity: state.capacity,
     activatedThisTrick: [...state.activatedThisTrick, buff.id],
+    spentThisTrick: state.spentThisTrick,
   }
 }
 
@@ -162,9 +170,12 @@ export function activateFromPile(
   windowOpen: boolean,
 ): BuffActivationResult {
   const activation = activateBuff(state, buff, windowOpen)
+  if (!isConsumableItem(buff)) {
+    return { activation, buffs }
+  }
   return {
-    activation,
-    buffs: isConsumableItem(buff) ? spendConsumable(buffs, buff.id) : buffs,
+    activation: { ...activation, spentThisTrick: [...activation.spentThisTrick, buff] },
+    buffs: spendConsumable(buffs, buff.id),
   }
 }
 
@@ -181,6 +192,7 @@ export function openBuffWindow(state: BuffActivationState): BuffActivationState 
     ...state,
     apPool: AP_REFRESH_CADENCE === ApRefreshCadence.PerTrick ? state.capacity : state.apPool,
     activatedThisTrick: [],
+    spentThisTrick: [],
   }
 }
 
@@ -195,6 +207,7 @@ export function refreshBuffsForNewHand(state: BuffActivationState): BuffActivati
     apPool: refreshActionPointsForNewHand(state.apPool),
     capacity: state.capacity,
     activatedThisTrick: [],
+    spentThisTrick: [],
   }
 }
 

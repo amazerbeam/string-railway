@@ -61,7 +61,7 @@ becomes a compile error there rather than an `undefined` sentence under a disabl
 | `NotYourMove` | The felt is not waiting on the player's card — a reveal is held, a prompt is open, the engine faulted, the hand or the fight is over, or it is the Quarry's turn. |
 | `TrickInProgress` | **DLR-143.** The current trick already has a card on the table — Apply Damage is leader-only. Replaces `TimebombPending` (design decision D6, 2026-08-19 — reversed). |
 | `PayoutPending` | A pressed cash-out is already queued and undelivered — one at a time (DLR-109). |
-| `InsufficientAp` | The hand's AP pool does not cover `APPLY_DAMAGE_AP_COST` (DLR-109 AC1). |
+| `InsufficientAp` | The hand's AP pool does not cover `APPLY_DAMAGE_AP_COST` (DLR-109 AC1). **UNREACHABLE since DLR-145** — `AP_ENABLED` is `false`, so the cost is 0 and the clause never fires. It stays in the union, and in the order below, so `APPLY_DAMAGE_REFUSAL_MESSAGE` stays a total `Record`. |
 | `EmptyBank` | Nothing banked, so there is nothing to cash. |
 
 **The order is deliberate and is tested — five clauses since DLR-109, `TrickInProgress` taking
@@ -73,7 +73,9 @@ report the reason that will still be true after the next trick banks. Telling a 
 empty bank to go and take a trick would be actively wrong. **`EmptyBank` stays last of the five**
 because it is the one reason that stops being true after the next trick banks; **`InsufficientAp`
 precedes it** because AP refreshes only per hand and therefore outlives a trick — a player who cannot
-afford the press now still cannot afford it once the bank climbs.
+afford the press now still cannot afford it once the bank climbs. (That last reasoning was already
+weakened by the move to a per-trick refresh, and is moot since DLR-145 turned action points off — the
+clause is now unreachable, and the ordering is preserved rather than justified.)
 
 A non-integer or non-positive bank or multiplier refuses rather than passing the comparison. `NaN > 0` is
 already `false`, but a fractional bank would otherwise present a fractional cash-out as applicable — and

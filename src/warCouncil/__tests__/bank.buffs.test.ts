@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   accrueAxisBonus,
+  BuffKind,
   BuffRewardAxis,
   BuffTargetSuit,
   BuffTier,
@@ -138,7 +139,16 @@ describe('resolveTrickBank — DLR-125/DLR-124 R3 at resolution level', () => {
   it('R5 — three buffs firing on one trick add +2 Momentum from the Overlap Bonus', () => {
     const magnitude = buff('taker:bells:magnitude', BuffTier.Bronze, 1)
     const multiplier = buff('taker:bells:multiplier', BuffTier.Bronze, 2)
-    const coins = buff('taker:bells:coins', BuffTier.Bronze, 3)
+    // `MintableRewardAxis` narrowed Taker to Magnitude/Multiplier (DLR-145) — Coins stays on
+    // `BuffRewardAxis` with its `REWARD_TIER_VALUE` ladder, so it is built directly as a `Buff`
+    // literal rather than through `templateById('taker:bells:coins')`, which is now orphaned.
+    const coins: Buff = {
+      id: 3,
+      kind: BuffKind.Taker,
+      tier: BuffTier.Bronze,
+      condition: { kind: BuffKind.Taker, target: { suit: BuffTargetSuit.Bells } },
+      reward: { axis: BuffRewardAxis.Coins, value: 2 },
+    }
     const r = resolveTrickBank(
       { bank: 0, multiplier: 0 },
       facts({

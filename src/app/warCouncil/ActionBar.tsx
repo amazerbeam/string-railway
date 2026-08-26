@@ -1,10 +1,4 @@
-import {
-  APPLY_DAMAGE_AP_COST,
-  BuffActivationRefusal,
-  type ActionPoints,
-  type Buff,
-  type PendingApplyPayout,
-} from '../../hunt'
+import { BuffActivationRefusal, type Buff, type PendingApplyPayout } from '../../hunt'
 import type { ApplyDamageRefusal, Card, DiscardRefusal } from '../../warCouncil'
 import {
   ACTION_BAR_LABEL,
@@ -26,7 +20,6 @@ import {
 } from './labels'
 
 export interface ActionBarProps {
-  readonly apPool: ActionPoints
   readonly offeredBuffs: readonly Buff[]
   readonly loadoutOpen: boolean
   readonly loadoutRefusal: BuffActivationRefusal | null
@@ -71,7 +64,6 @@ export interface ActionBarProps {
  * no-op when there is nothing to cancel.
  */
 export default function ActionBar({
-  apPool,
   offeredBuffs,
   loadoutOpen,
   loadoutRefusal,
@@ -118,7 +110,6 @@ export default function ActionBar({
           className={`wc-bar-btn${loadoutOpen ? ' is-open' : ''}`}
           aria-pressed={loadoutOpen}
           aria-label={applyBuffAccessibleName(
-            apPool,
             offeredBuffs.length,
             loadoutOpen,
             loadoutRefusal !== BuffActivationRefusal.WindowClosed,
@@ -130,7 +121,7 @@ export default function ActionBar({
             {APPLY_BUFF_LABEL}
           </span>
           <span className="wc-bar-btn-figure" aria-hidden="true">
-            {apPool} AP · {offeredBuffs.length} held
+            {offeredBuffs.length} held
           </span>
         </button>
       </div>
@@ -186,7 +177,6 @@ export default function ActionBar({
           aria-pressed={applyPoised}
           aria-label={applyDamageBarAccessibleName(
             applyCashValue,
-            APPLY_DAMAGE_AP_COST,
             applyPoised,
             applyRefusal,
             pendingPayout,
@@ -198,7 +188,7 @@ export default function ActionBar({
             {APPLY_DAMAGE_BAR_LABEL}
           </span>
           <span className="wc-bar-btn-figure" aria-hidden="true">
-            {applyCashValue} for {APPLY_DAMAGE_AP_COST} AP
+            cash {applyCashValue}
           </span>
         </button>
         {queued !== null && <p className="wc-bar-queued">{queued}</p>}

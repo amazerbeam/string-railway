@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   accrueAxisBonus,
+  activateFromPile,
+  openBuffWindow,
+  BuffKind,
   BuffRewardAxis,
   BuffTier,
   EMPTY_BUFF_ACCRUAL,
@@ -13,15 +16,29 @@ import {
 } from '../../../hunt'
 import { PlayerSide, TrickOutcome, type TrickResolution } from '../../../warCouncil'
 import { buffHandInputFor, foldBuffOutcome, startBuffHand } from '../buffRoundState'
-import { createRoundUiState, type ResolvedTrick, type RoundUiState } from '../roundUiState'
+import {
+  createRoundUiState,
+  offeredBuffs,
+  type ResolvedTrick,
+  type RoundUiState,
+} from '../roundUiState'
 import { discardsRemainingFixture, makeRound } from './roundFixture'
 
 const buff = (id: string, tier: BuffTier, buffId: number): Buff =>
   mintFromTemplate(templateById(id)!, tier, buffId)
 
-// `hoarder:magnitude` is a Threshold family; `taker:bells:magnitude` is an Event family —
-// the same two rows `buffEvaluation.test.ts` pins their cadence with.
-const hoarder = buff('hoarder:magnitude', BuffTier.Bronze, 1)
+// Hoarder has no surviving template (DLR-145) — it stays declared on `BuffKind`, keeps its
+// `BUFF_CADENCE` row and its `buffFires` case, so it is built directly as a `Buff` literal here,
+// the same idiom `buffEvaluation.test.ts` and `buffTemplates.test.ts` already use for it.
+// `taker:bells:magnitude` is still mintable — an Event family, the same row
+// `buffEvaluation.test.ts` pins its cadence with.
+const hoarder: Buff = {
+  id: 1,
+  kind: BuffKind.Hoarder,
+  tier: BuffTier.Bronze,
+  condition: { kind: BuffKind.Hoarder },
+  reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
+}
 const taker = buff('taker:bells:magnitude', BuffTier.Bronze, 2)
 
 function uiFrom(over: { buffs?: readonly Buff[]; coins?: number } = {}): RoundUiState {
@@ -87,6 +104,22 @@ describe('buffHandInputFor', () => {
     const input = buffHandInputFor(activated)
     expect(input.active).toEqual([taker])
     expect(input.coins).toBe(7)
+  })
+
+  it('a consumed card is no longer in the pile but is still active for THIS trick (DLR-145)', () => {
+    const seeded = uiFrom({ buffs: [taker] })
+    const { activation, buffs } = activateFromPile(seeded.buffActivation, seeded.buffs, taker, true)
+    const spentState = { ...seeded, buffs, buffActivation: activation }
+
+    expect(offeredBuffs(spentState)).toHaveLength(0)
+    expect(buffHandInputFor(spentState).active.map((buff) => buff.id)).toEqual([taker.id])
+  })
+
+  it('drops it from the active set once the window reopens', () => {
+    const seeded = uiFrom({ buffs: [taker] })
+    const { activation, buffs } = activateFromPile(seeded.buffActivation, seeded.buffs, taker, true)
+    const nextTrick = { ...seeded, buffs, buffActivation: openBuffWindow(activation) }
+    expect(buffHandInputFor(nextTrick).active).toEqual([])
   })
 })
 

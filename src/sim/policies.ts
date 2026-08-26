@@ -12,7 +12,6 @@
  * Keys and `policy.name` must agree; `policies.test.ts` pins that.
  */
 import {
-  apCapacityFocusedPolicy,
   baselinePolicy,
   maximalistPolicy,
   noBuffsPolicy,
@@ -26,6 +25,5 @@ export const POLICIES: Readonly<Record<string, SimPolicy>> = {
   maximalist: maximalistPolicy,
   noBuffs: noBuffsPolicy,
   rerollFocused: rerollFocusedPolicy,
-  apCapacityFocused: apCapacityFocusedPolicy,
   cardAware: cardAwarePolicy,
 }

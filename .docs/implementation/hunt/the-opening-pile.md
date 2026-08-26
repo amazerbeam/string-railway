@@ -1,10 +1,11 @@
 Part of [Hunt](README.md).
 
-# The opening pile — the four real bronze cards a run starts with
+# The opening pile — the real bronze cards a run starts with
 
 `src/hunt/startingPile.ts` (DLR-135, 2026-08-25) owns one question: **what is in a player's pile the
-instant `startRun` returns?** Before this ticket the answer was "four stubs nothing can use"; it is
-now "four distinct, real, bronze cards drawn from the shipping catalog".
+instant `startRun` returns?** Before DLR-135 the answer was "four stubs nothing can use"; DLR-135
+made it "four distinct, real, bronze cards drawn from the shipping catalog", and **DLR-145 made it
+twenty real bronze cards drawn with replacement from a thirteen-template pool**.
 
 ## What it replaced, and why the replacement was overdue
 
@@ -22,14 +23,14 @@ adds. See [the buff pile](buff-pile.md) for the record of that scaffold as it st
 | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `startingPileSeedFor(runSeed)`                        | the opening pile's own seed stream — `mixSeed(runSeed)`                                              |
 | `openingPileWeightOf(template)`                       | a template's draw weight for the opening pile                                                        |
-| `seedStartingBuffPile(count, firstId, rng, weightOf?)` | `count` distinct bronze cards, consecutive ids from `firstId`                                        |
+| `seedStartingBuffPile(count, firstId, rng, weightOf?)` | `count` bronze cards, consecutive ids from `firstId` — **with repeats since DLR-145**                |
 | `startingBuffPileFor(count, firstId, runSeed)`        | the seed derivation and the draw in one call — **the** call `startRun` makes                         |
 
 ## How the draw works
 
 `startRun` calls `startingBuffPileFor(STARTING_BUFF_COUNT, 1, runSeed)`. That derives
 `startingPileSeedFor(runSeed)`, builds a `createSeededRng` over it, and hands the generator to
-`seedStartingBuffPile`, which runs `weightedDrawWithoutReplacement(BUFF_TEMPLATES,
+`seedStartingBuffPile`, which runs `weightedDrawWithReplacement(BUFF_TEMPLATES,
 openingPileWeightOf, rng, count)` and mints each drawn template through `mintFromTemplate` at
 `BuffTier.Bronze` with consecutive ids from `firstId`. Exactly one `rng()` call is spent per card.
 
@@ -43,8 +44,14 @@ Four properties are deliberate and each is load-bearing:
   drop determinism with no compile error, and determinism is the one property this function must not
   lose. `weightOf`, by contrast, **is** defaulted — exactly as `drawReelPool`'s is — so a curve can
   be tested without mutating module state.
-- **Drawn without replacement**, so the opening hand holds four *different* cards rather than four
-  copies of one.
+- **Drawn WITH replacement since DLR-145**, so the opening hand holds duplicates on purpose. It was
+  drawn *without* replacement through DLR-135, when four cards came out of a 73-template pool and
+  four different cards was the point. Twenty cards cannot be drawn distinctly from thirteen
+  templates, and distinctness is no longer wanted either: three bronze Bell-Takers is exactly the
+  shape "one fight's ammunition" describes. `weightedDrawWithReplacement`
+  (`slotWeights.ts`) is written as the without-replacement version's sibling — same weight-summing,
+  same last-candidate float-drift fallback, exactly one `rng()` call per card, no splice, and the
+  total computed once because the pool never shrinks.
 - **Bronze, always.** The tier is fixed at the call, not drawn.
 
 `startingPile.ts` is inside the lint-enforced pure-core tree: no React, no DOM global, and no
@@ -80,8 +87,10 @@ them: `templateWeightFor(SlotMachineId.Skirmisher, template)` for a trick-lean o
 They have been ordinary members of `BUFF_TEMPLATES` since DLR-132, and excluding them here would
 re-introduce exactly the special-casing that ticket removed. So **a run can open holding more than
 one Cheat, or two Timebombs**, and the guaranteed bronze Cheat is no longer the pile's only
-`Cheat`. Bronze Cheat prices at 3 AP and bronze Timebomb at 2 AP against a 6-AP opening pool —
-neither is degenerate at bronze.
+`Cheat`. (Until DLR-145 the argument that neither is degenerate at bronze rested on price: a bronze
+Cheat cost 3 action points and a bronze Timebomb 2, against a 6-point opening pool. Nothing costs
+anything now, so that argument is gone and nothing has replaced it — what limits either is that
+using one spends the card.)
 
 This is why `reachability.test.ts` no longer asserts
 `buffs.filter(kind === Cheat).length === RUN_STARTING_CHEATS`: that stopped being a true statement of
@@ -90,11 +99,13 @@ the guaranteed Cheats — a position claim the count-only original could not mak
 
 ## The short-draw guard
 
-`seedStartingBuffPile` **throws `RangeError`** when `weightedDrawWithoutReplacement` returns fewer
+`seedStartingBuffPile` **throws `RangeError`** when `weightedDrawWithReplacement` returns fewer
 than `count` templates, naming the count, the number drawn, and the two weight tables to check. It
 mirrors `drawReelPool`'s short-strip guard for the same stated reason: a pile shorter than asked is a
 **configuration bug** — an all-zero weight table — not a legal state, and it would otherwise surface
-far from its cause. Unreachable with the shipped tables (73 templates, every family weighted ≥ 1 on
+far from its cause. Since DLR-145 it fires only on an all-zero table — the with-replacement draw
+cannot run out of candidates — which is a narrowing of the reachable causes, not a change of
+meaning. Unreachable with the shipped tables (13 templates, every surviving family weighted ≥ 1 on
 both machines), but a zeroed row is one edit away. The project's `throw new` site count went 99 → 100
 and none was weakened.
 
@@ -106,14 +117,15 @@ must not become an opening card silently.
 
 Forced, not preferred. The new implementation must import `buffTemplates.ts` (`BUFF_TEMPLATES`,
 `mintFromTemplate`) and `slotWeights.ts` (`templateWeightFor`,
-`weightedDrawWithoutReplacement`), and **both of those import `buffs.ts`** — keeping the function in
+`weightedDrawWithReplacement`), and **both of those import `buffs.ts`** — keeping the function in
 `buffs.ts` would open exactly the import cycle `slotWeights.ts`'s own docblock refuses to open for
 `warCouncil`. `slotMachine.ts` was the alternative home and was rejected: the opening pile is not a
 slot machine, and that file is already 203 lines of one coherent subject.
 
 The module is deliberately written as the **sibling of `slotMachine.ts`'s `drawReelPool`** — derive a
-named seed from `runSeed`, weight the pool, draw distinct templates without replacement, throw on a
-short draw, mint at a fixed tier with consecutive ids. Read side by side they should show one pattern
+named seed from `runSeed`, weight the pool, draw templates, throw on a short draw, mint at a fixed
+tier with consecutive ids. The one place the two now diverge is replacement: a reel strip must hold
+eight *distinct* symbols, an opening pile must not have to. Read side by side they should show one pattern
 applied twice, not two designs.
 
 ## `BuffKind.Unassigned` survived, and the distinction matters
@@ -137,12 +149,32 @@ stated. A follow-up ticket may delete the member, but it must own rewriting thos
 
 ## What a run actually opens holding
 
-**Five cards, and all five are activatable**: four random real bronze draws
-(`STARTING_BUFF_COUNT = 4`) plus the one guaranteed bronze Cheat (`RUN_STARTING_CHEATS = 1`, seeded
-as an ordinary pile member since DLR-132). Ids run `1..4` for the draws, then the Vault's grants, then
-the Cheats — `startRun` keeps `nextBuffId` as the one true high-water mark.
+**Twenty-one cards since DLR-145, and all twenty-one are activatable**: twenty random real bronze
+draws (`STARTING_BUFF_COUNT = 20`) plus the one guaranteed bronze Cheat (`RUN_STARTING_CHEATS = 1`,
+seeded as an ordinary pile member since DLR-132). Ids run `1..20` for the draws, then the Vault's
+grants, then the Cheats — `startRun` keeps `nextBuffId` as the one true high-water mark.
 
-**The count is unchanged; it was five before too.** What changed is that four of the five were inert
+**Twenty is transcribed from DLR-145, not chosen here**: a fight runs two to four hands at six
+tricks each, so firing about one card a trick makes twenty close to exactly one fight's ammunition,
+and the player reaches the first shop nearly empty with coins to restock. It is the number that
+makes the pile a *supply* rather than a rail, and it only means anything alongside consumption —
+see [action points](action-points.md#action-points-are-switched-off--dlr-145-2026-08-25).
+
+**`RUN_STARTING_CHEATS` stayed at 1, so a fresh run holds twenty-one cards, not twenty.** DLR-145's
+AC6 asks for "20 activatable bronze cards drawn from the pool", which the drawn pile satisfies on
+its own; whether a run should open holding a guaranteed Cheat at all is still the standing open
+question `config.ts` records, and DLR-145 was not asked to close it.
+
+> **This is the single most likely thing to look wrong on first play.** `BuffLoadoutPanel` was
+> designed and last laid out against a five-card pile and now renders around twenty-one rows in a
+> between-tricks dialog. Whether it scrolls, whether it needs grouping by family, and whether the
+> most-repeated action's tap count still holds are questions no jsdom test can answer. **No browser
+> pass has been run against it.**
+
+**The pre-DLR-145 state of this section, for the record:** five cards, four random draws plus the
+Cheat.
+
+**As of DLR-135 the count was unchanged; it was five before too.** What changed is that four of the five were inert
 placeholders `activatableBuffs` discarded, so the player effectively opened with **one**.
 `RUN_STARTING_CHEATS` was deliberately left alone — whether a run should open holding a guaranteed
 Cheat at all, and whether five is the right number, is a standing question and was not DLR-135's to
@@ -172,8 +204,29 @@ Recorded in `.docs/game_rules/the-hunt.md`'s Known tensions.
 
 ## Not yet judged
 
-The opening hand's *composition* can only be assessed by playing it. Four random bronze cards can be
-four Threshold-cadence cards that never fire in fight one, or four Event cards that all pay. The
-simulator reports the aggregate; whether the opening hand **reads as a hand with a plan in it** is
-the developer's eyes, and nobody has looked. The weights it draws through are themselves
+The opening hand's *composition* can only be assessed by playing it. Since DLR-145 all twenty draws
+come from three Event-cadence families, so the "a hand of cards that never fire in fight one"
+failure mode is largely gone — what replaced it as the open question is **duplication**: a
+with-replacement draw over thirteen templates will hand out the same card several times, and
+whether that reads as a supply or as a bad shuffle is the developer's eyes. Nobody has looked. The weights it draws through are themselves
 agent-authored and unplayed — see [the slot machine](the-slot-machine.md).
+
+## What the simulator measured after DLR-145 — and the acceptance criterion it falsified
+
+DLR-145's AC10 claimed that "a fresh run can beat Aoife on the first or second trick of hand one
+using bronze cards from the opening pile, and remains winnable with no cards activated at all". Put
+to the real engine through the headless simulator at 200 seeded runs each at seeds 1 and 7:
+
+| Claim                                                          | Seed 1     | Seed 7     |
+| -------------------------------------------------------------- | ---------- | ---------- |
+| Aoife beaten on trick 1 or 2 of hand 1 with a bronze card fired | **0.0%**   | **0.0%**   |
+| Fight 1 winnable with nothing activated at all                  | **51.0%**  | **52.5%**  |
+
+The first figure holds even under a policy that activates **every legal buff at every window**. The
+earliest observed win against Aoife is **trick 3**. Design §4's arithmetic — one bronze Bell-Taker on
+Momentum over two won Bell tricks paying `2 × (2 + 4) = 12` against 10 HP — is **not** what the
+shipped engine produces. **AC10's first half does not hold as written.** Its second half does.
+
+Nothing was retuned in response: the gap is between a design prediction and the engine, and closing
+it is a design decision rather than a documentation one. Recorded in
+`.docs/game_rules/the-hunt.md`'s Known tensions.

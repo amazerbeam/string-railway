@@ -32,7 +32,6 @@ import {
   type RoundUiState,
 } from '../../app/warCouncil/roundUiState'
 import {
-  apCapacityFocusedPolicy,
   baselinePolicy,
   HEAL_FLOOR_HEALTH,
   maximalistPolicy,
@@ -131,7 +130,6 @@ describe('baselinePolicy.nextShopAction', () => {
 describe('maximalistPolicy', () => {
   it('POLICIES holds every named policy, each named after its key', () => {
     expect(Object.keys(POLICIES).sort()).toEqual([
-      'apCapacityFocused',
       'baseline',
       'cardAware',
       'maximalist',
@@ -242,48 +240,6 @@ describe('rerollFocusedPolicy', () => {
       },
     }
     expect(rerollFocusedPolicy.nextShopAction(run)).toEqual({ kind: 'buy', item: 'heal' })
-  })
-})
-
-describe('apCapacityFocusedPolicy', () => {
-  it('differs from baselinePolicy only in nextShopAction — the shared methods are reference-identical', () => {
-    expect(apCapacityFocusedPolicy.chooseCard).toBe(baselinePolicy.chooseCard)
-    expect(apCapacityFocusedPolicy.wantsApplyDamage).toBe(baselinePolicy.wantsApplyDamage)
-    expect(apCapacityFocusedPolicy.chooseBuffs).toBe(baselinePolicy.chooseBuffs)
-    expect(apCapacityFocusedPolicy.nextShopAction).not.toBe(baselinePolicy.nextShopAction)
-  })
-
-  it('takes the free pull first, same as baseline', () => {
-    const run = startRun(PLAYER_START_HEALTH, [], 32)
-    expect(apCapacityFocusedPolicy.nextShopAction(run)).toEqual({
-      kind: 'pull',
-      machineId: SLOT_MACHINE_IDS[0],
-    })
-  })
-
-  it('at or above HEAL_FLOOR_HEALTH, buys AP capacity instead of healing', () => {
-    const fresh = startRun(PLAYER_START_HEALTH, [], 33)
-    const run: RunState = {
-      ...fresh,
-      coins: 5,
-      slotPullsThisVisit: SLOT_FREE_PULLS_PER_VISIT,
-      encounter: { ...fresh.encounter, health: { player: HEAL_FLOOR_HEALTH, quarry: 10 } },
-    }
-    expect(apCapacityFocusedPolicy.nextShopAction(run)).toEqual({
-      kind: 'buy',
-      item: 'apCapacity',
-    })
-  })
-
-  it('below HEAL_FLOOR_HEALTH, heals instead of buying AP capacity', () => {
-    const fresh = startRun(PLAYER_START_HEALTH, [], 34)
-    const run: RunState = {
-      ...fresh,
-      coins: 5,
-      slotPullsThisVisit: SLOT_FREE_PULLS_PER_VISIT,
-      encounter: { ...fresh.encounter, health: { player: HEAL_FLOOR_HEALTH - 1, quarry: 10 } },
-    }
-    expect(apCapacityFocusedPolicy.nextShopAction(run)).toEqual({ kind: 'buy', item: 'heal' })
   })
 })
 

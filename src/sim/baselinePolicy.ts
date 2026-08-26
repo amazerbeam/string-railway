@@ -22,8 +22,8 @@
  * (`SHOP_ITEMS`), so a baseline that used them would be measuring cards a player cannot buy.
  *
  * SHOP — takes the free slot pulls first, then buys in the fixed order Heal (only below maximum
- * health) -> AP capacity -> Swan tier -> Witch tier while each is affordable, then drinks the
- * flask if below maximum health with a charge in hand.
+ * health) -> Swan tier -> Witch tier while each is affordable, then drinks the flask if below
+ * maximum health with a charge in hand. `ApCapacity` dropped with DLR-145 (AP removed entirely).
  *
  * DLR-120 — the second policy: `baselinePolicy`'s cards and buffs, VERBATIM, plus the two levers a
  * run actually grants and the baseline never pulls. Card and buff play are deliberately identical
@@ -81,10 +81,10 @@ import type { CardChoice, CheatPlay, ShopAction, SimPolicy } from './types'
  *  multiplier the baseline waits for before voluntarily cashing out. */
 export const BASELINE_CASH_AT_MULTIPLIER = 3
 
-/** The fixed order the baseline shops in, tried while each is affordable. */
+/** The fixed order the baseline shops in, tried while each is affordable. `ShopItem.ApCapacity`
+ *  dropped with DLR-145 (AP removed entirely) — see that ticket's Phase 2. */
 const SHOP_PURCHASE_ORDER: readonly ShopItem[] = [
   ShopItem.Heal,
-  ShopItem.ApCapacity,
   ShopItem.SwanTier,
   ShopItem.WitchTier,
 ]
@@ -194,53 +194,6 @@ export const rerollFocusedPolicy: SimPolicy = {
   nextShopAction: rerollFocusedShopAction,
 }
 
-/** play-tester (2026-08-25) — "would AP capacity purchases alone raise the win rate" modeled
- *  through the ONE existing lever for it: `ShopItem.ApCapacity` (`AP_CAPACITY_PRICE` coins for
- *  `AP_CAPACITY_STEP` more AP, uncapped, refilling every trick under `ApRefreshCadence.PerTrick`
- *  — not just once per hand). `baselinePolicy`'s cards and buffs, VERBATIM — only `nextShopAction`
- *  differs, matching this file's own attribution discipline.
- *
- *  SHOP — free pull first, same as baseline. Below `HEAL_FLOOR_HEALTH`, heals first, same
- *  survival floor `rerollFocusedPolicy` uses. At or above the floor, buys AP capacity while
- *  affordable, ahead of Heal, before falling back to the baseline's own
- *  Heal -> AP capacity -> Swan tier -> Witch tier order and the flask. Also a REDISTRIBUTION of the
- *  SAME income the baseline earns, for the same reason `rerollFocusedPolicy`'s docblock states a
- *  `SimPolicy` cannot mint coins. */
-function apCapacityFocusedShopAction(run: RunState): ShopAction | null {
-  if (run.slotPullsThisVisit < SLOT_FREE_PULLS_PER_VISIT) {
-    return { kind: 'pull', machineId: SLOT_MACHINE_IDS[0] }
-  }
-
-  const stock = shopStockFor(run)
-  const belowFloor = stock.playerHealth < HEAL_FLOOR_HEALTH
-  if (belowFloor && refusalFor(stock, ShopItem.Heal) === null) {
-    return { kind: 'buy', item: ShopItem.Heal }
-  }
-  if (!belowFloor && refusalFor(stock, ShopItem.ApCapacity) === null) {
-    return { kind: 'buy', item: ShopItem.ApCapacity }
-  }
-
-  for (const item of SHOP_PURCHASE_ORDER) {
-    if (refusalFor(stock, item) === null) {
-      return { kind: 'buy', item }
-    }
-  }
-
-  if (flaskRefusalFor(flaskStockFor(run)) === null) {
-    return { kind: 'flask' }
-  }
-
-  return null
-}
-
-export const apCapacityFocusedPolicy: SimPolicy = {
-  name: 'apCapacityFocused',
-  chooseCard,
-  wantsApplyDamage,
-  chooseBuffs,
-  nextShopAction: apCapacityFocusedShopAction,
-}
-
 function chooseDiscard(ui: RoundUiState): readonly Card[] {
   if (discardRefusalFor(discardStock(ui)) !== null) return []
   const hand = ui.round.hands[PlayerSide.Player]
@@ -286,4 +239,3 @@ export const noBuffsPolicy: SimPolicy = {
   name: 'noBuffs',
   chooseBuffs: () => [],
 }
-

@@ -27,14 +27,14 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                                                |
 | --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, PT-001, PT-002                                                                                  |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, PT-002                                                                          |
-| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, PT-001, PT-002 |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145 |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, PT-002                                                                          |
+| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                 |
-| `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118                                                                                                                                                                                                                                                                                                 |
-| `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118                                                                                                                                                                                                                                                                                                 |
-| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135                                                                                                                                                                                                                                                                        |
+| `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                 |
+| `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                 |
+| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135, DLR-145                                                                                                                                                                                                                                                                        |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -888,7 +888,7 @@ the hand's bookkeeping and the two load-bearing orderings.
 **One gap it opened by succeeding:** nothing on the felt announces a firing, so a player sees a
 larger number with no cause named. That is the developer's to judge and someone's to fix.
 
-## Latest — DLR-132, Cheat and Timebomb as drawable buff cards (2026-08-24)
+## DLR-132, Cheat and Timebomb as drawable buff cards (2026-08-24)
 
 **DLR-132 closed a gap three separate tickets had each correctly left open: the Timebomb was
 entirely unobtainable, and a second Cheat was unobtainable past a cap that no longer had a reason to
@@ -1002,8 +1002,9 @@ stated — the real card catalog was not yet authored. DLR-111 authored it and D
 that draws from it, and the scaffold outlived that reason by four tickets while `activatableBuffs`
 correctly filtered all four cards straight back out. **A player opened a run holding exactly one
 usable card.** They now open holding **five, all of them usable**: four distinct real bronze cards
-drawn from the 73-template `BUFF_TEMPLATES` pool, plus the guaranteed bronze Cheat. The *count* did
-not change — four of the five were simply inert.
+drawn from the then-73-template `BUFF_TEMPLATES` pool, plus the guaranteed bronze Cheat. The *count*
+did not change — four of the five were simply inert. (DLR-145 took the draw to **twenty**, with
+replacement, from a **thirteen**-template pool — see below.)
 
 **The draw lives in a new pure module, `src/hunt/startingPile.ts`, and that placement was forced.**
 It must import `buffTemplates.ts` and `slotWeights.ts`, and both of those import `buffs.ts` — keeping
@@ -1077,6 +1078,80 @@ retuned three-fate table, and why the fold order needed no code change to handle
 stacked case. `.docs/game_rules/the-hunt.md` **is** touched: when Apply Damage may be pressed, whether
 it stacks with Timebomb, how long a payout takes to settle, and what fraction survives a hit are all
 rules a player acts on.
+
+## Latest — DLR-145, Version 6: buff cards you spend, no action points, a thirteen-card pool (2026-08-25)
+
+**The change that makes the rest of it cohere is that a buff card is now something you spend.** Before
+this, the eleven condition families were *rented*: a Taker cost action points, fired for the trick,
+and stayed in the pile — and because `AP_REFRESH_CADENCE` had moved to `PerTrick`, the pool refilled
+at every trick boundary, so the stake was refunded before the next bet. Firing everything every trick
+was strictly correct and nothing was ever a decision. `consumables.ts` now carries a third toggle,
+`CONDITION_CARD_SINGLE_USE`, over Taker, Feeder and Sidestep — a **sibling** of DLR-142's
+`ACTIVATED_CARD_SINGLE_USE`, not an extension of it, because a condition card has a **trigger** where
+the five DLR-111 items have a timing window and an effect. `isConsumableItem` is the single reader of
+all three toggles, so reverting one card is one `false`.
+
+**Action points were deleted as a resource, and DLR-104's toggle did exactly the job it was built
+for.** `AP_ENABLED = false` was one constant: `apCostFor` is still the only reader, so no consumer
+needed a bypass written anywhere. Everything AP-gated is free, and both `InsufficientAp` refusals
+became **unreachable rather than deleted** — they stay in their unions so their message `Record`s stay
+total, the same discipline DLR-132 used for `PurchaseRefusal.SlotsFull`. What the flag could *not* do
+was stop three surfaces rendering zeroes, so the action bar's two figures, the loadout panel's header
+and the shop purse's AP cell were removed at source; `buffLine` and `buffRowAccessibleName` lost their
+`apCost` parameter entirely rather than being handed a zero, because a control reading "0 AP" still
+claims a resource exists. `ShopItem.ApCapacity` came off `SHOP_ITEMS` on DLR-116's precedent, keeping
+its price, category and refusal. **None of the machinery was deleted** — `actionPoints.ts`,
+`STARTING_AP`, `apCapacityFor`, `apPool`, `capacity`, `RoundUiSeed.apCapacity` and the `apRefund`
+reward ladder are all still declared and still tested, which is what keeps this a toggle.
+
+**The mintable pool went from 73 templates to 13, by narrowing types rather than zeroing weights.**
+`ConditionBuffTemplate.kind` and `.axis` are now typed by two new exports, `MintableConditionKind`
+(Taker, Feeder, Sidestep) and `MintableRewardAxis` (Magnitude, Multiplier), so a cut family or a cut
+axis is **unconstructible**, not merely unweighted — and `SLOT_FAMILY_WEIGHTS` and `SLOT_AXIS_WEIGHTS`
+genuinely shrink with them rather than carrying dead rows. The composition is 6 Taker + 3 Feeder +
+2 Sidestep + Cheat + Timebomb. **The eight cut families and the two cut axes stay fully declared** —
+their `BuffKind` members, `CONDITION_MODIFIER` prices, `buffFires` cases, `BUFF_CADENCE` rows and
+`REWARD_BASE` ladders are all untouched — so restoring one is a row in `TEMPLATE_FAMILIES`, and
+`templateById` simply answers `undefined` for the rest. That has one real consequence: **a Vault
+grant bought against a cut template is now dead**, skipped by `mintGrants` and refused by
+`oddsBoostRefusalFor` / `startingTierRefusalFor`. Nothing corrupts, no save is rejected, and
+`src/persistence/` did not change — but a developer carrying a populated Vault silently loses those
+cards.
+
+**Twenty opening cards, drawn with replacement, and ten coins a fight.** `STARTING_BUFF_COUNT` is
+`20` and `COINS_PER_ENCOUNTER_WIN` is `10`, both transcribed. Twenty cards cannot be drawn distinctly
+from thirteen templates, so `slotWeights.ts` gained `weightedDrawWithReplacement` as the
+without-replacement version's sibling; duplicates are now the point rather than a defect.
+`RUN_STARTING_CHEATS` stayed at 1, so a fresh run actually **holds twenty-one cards**. The two
+per-hand damage caps (`MAX_MULTIPLIER_BONUS_PER_HAND`, `MAX_FLAT_DAMAGE_BONUS_PER_HAND`) became
+`Number.POSITIVE_INFINITY`, because clipping a rented card's contribution was harmless and clipping a
+consumed one destroys a card the player cannot get back.
+
+**The load-bearing invention was not in the ticket.** `BuffActivationState.spentThisTrick` exists
+because `buffHandInputFor` builds the trick's active set by filtering the *pile*, and
+`activateFromPile` has removed a consumed card from it by then — so the instant Taker became
+consumable, activating one paid nothing at all, with no throw, no refusal and no log. Three readers
+share the fix and must stay in step: `buffHandInputFor` and `firedOncePerHandIds`
+(`src/app/warCouncil/buffRoundState.ts`) and the simulator's active-set snapshot
+(`src/sim/playHand.ts`). Two files were carved out under the 400-line budget in the same pass:
+`src/sim/playHandWindows.ts` (the four between-tricks helpers, split from `playHand.ts`) and
+`src/app/run/shopRefusals.ts` (`shopRefusalsFor`, replacing an eight-row literal `App.tsx` had been
+maintaining by hand at 410 lines).
+
+**One acceptance criterion was measured and does not hold.** AC10 claimed a fresh run can beat Aoife
+on trick 1 or 2 of hand one with a bronze card fired. Across 200 seeded runs at each of seeds 1 and 7,
+under a policy activating every legal buff at every window, that is **0.0% at both seeds** — the
+earliest observed win is trick 3. The claim's second half does hold: the fight is winnable with
+nothing activated 51.0% / 52.5% of the time. Recorded in `.docs/game_rules/the-hunt.md`'s Known
+tensions rather than acted on. **No browser pass was run**, and three things are on the developer's
+eyes-on list: a loadout panel rendering ~21 rows where it was laid out against 5, a shop purse that is
+now a single cell, and whether the two slot machines still feel different now both axis tables are
+flat.
+
+Start at [hunt/action-points.md](hunt/action-points.md) for the removal,
+[hunt/consumable-items.md](hunt/consumable-items.md) for the consumption toggle,
+[hunt/buff-activation-and-ap-costs.md](hunt/buff-activation-and-ap-costs.md) for `spentThisTrick`, and
+[hunt/the-opening-pile.md](hunt/the-opening-pile.md) for the twenty-card draw and the measurement.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

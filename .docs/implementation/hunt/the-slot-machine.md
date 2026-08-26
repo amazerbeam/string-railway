@@ -109,21 +109,39 @@ that either.
 
 - **Only two machines exist** (`Skirmisher`, `Strongbox`) and their weight tables are
   `slotWeights.ts`'s, untouched by DLR-116.
+  > **DLR-145 pruned both tables and left the two machines harder to tell apart, 2026-08-25.**
+  > `SLOT_FAMILY_WEIGHTS` is now five rows per machine (Taker / Feeder / Sidestep / Cheat /
+  > Timebomb) and `SLOT_AXIS_WEIGHTS` two (Magnitude / Multiplier). **Every surviving number is
+  > unchanged** — the eight cut families and the two cut axes simply have no row, because
+  > `SlotTemplateKind` and `SlotAxisWeights` are now typed by `MintableConditionKind` and
+  > `MintableRewardAxis`, so a dead row would not compile rather than sitting at weight 0.
+  > **Strongbox's whole lean rode on the axes that went.** It was Coins 4 / ApRefund 3 against
+  > Magnitude 1 / Multiplier 1 — the "run-permanent reward" machine. Its axis table is now 1 / 1
+  > and Skirmisher's is 3 / 3, which is the same ratio, so the two machines differ **only by family
+  > weight** (Taker/Feeder/Sidestep 5/4/2 against 2/2/1). Nobody has chosen a replacement lean, and
+  > inventing one would be inventing tuning values. **Whether the two machines still feel different
+  > is an open developer question, unmeasured and unobserved.**
+  > `REEL_POOL_SIZE` is 8 and the pool is 13, so `drawReelPool`'s distinct draw still succeeds on
+  > both machines with every surviving family weighted ≥ 1 — but the strip is now a much larger
+  > share of the whole pool than it was at 73 templates, which shrinks how much two pulls can
+  > differ.
 - **The 7 consumable/activated templates are still absent from `BUFF_TEMPLATES`, and this is now a
   known gap rather than a deferral** (DLR-120). DLR-126 landed and answered AC6 **affirmatively** —
   a consumable is an ordinary `Buff` and the draw mechanism needs no change at all — but no template
   was ever added, so `Ward` and its four siblings are **not in the reel pool** and no play path can
   produce one. `src/sim/__tests__/reachability.test.ts` pins that. Closing it is **not** a data edit:
-  `BuffTemplate.kind` is typed `BuffConditionKind` and `axis` is typed `BuffCostAxis`, and a
+  `ConditionBuffTemplate.kind` is typed `MintableConditionKind` and `axis` is typed
+  `MintableRewardAxis` (both narrowed by DLR-145, from `BuffConditionKind` / `BuffCostAxis`), and a
   consumable has neither — it is priced through `CONSUMABLE_AP_COST` and pays in its effect. It also
   needs 14 slot weights (7 kinds × 2 machines) nobody has chosen. Whether consumables ship in v1's
   reel is the developer's call. (DLR-126 separately **disproved** the old claim that Ward's silver
   and gold tiers are indistinguishable: `bank.ts` adds `trick.timebombToPlayer`, whose column is
   2/4/6, so a hit is 1 **or** 3/5/7 — all three Ward rows ship.)
-- **`Keepsake` is unfireable in live play** and ships at floor weight, so a player can win a
-  `Keepsake` card from a reel that never fires. It is a dud card, not a crash — `apCostOf` prices it
-  fine. DLR-125 confirmed the defect rather than fixing it: see
-  [Condition evaluation](buff-condition-evaluation.md).
+- ~~**`Keepsake` is unfireable in live play** and ships at floor weight, so a player can win a
+  `Keepsake` card from a reel that never fires.~~ **Moot since DLR-145** — Keepsake has no template
+  any more, so no reel and no opening pile can produce one. The family is still declared and
+  `buffFires` still has its case, so the *defect* DLR-125 confirmed is unfixed; it is merely
+  unreachable. See [Condition evaluation](buff-condition-evaluation.md).
 - ~~**A drawn buff still does nothing when activated.**~~ **Fixed by DLR-125 on 2026-08-24** —
   `buffAccrual.ts` has a caller, conditions are evaluated and rewards are paid, so a card won here
   now genuinely changes damage, coins or the action-point pool.

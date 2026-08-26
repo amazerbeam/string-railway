@@ -41,20 +41,24 @@ describe('actionBarLabels', () => {
     expect(cardsAccessibleName({ suit: Suit.Bells, rank: 7 })).toContain('7 of Bells')
   })
 
-  it('applyDamageBarAccessibleName names the cash value and the AP cost', () => {
-    const name = applyDamageBarAccessibleName(12, 3, false, null, null)
+  it('applyDamageBarAccessibleName names the cash value, with no AP cost (DLR-145 AC2)', () => {
+    const name = applyDamageBarAccessibleName(12, false, null, null)
     expect(name).toContain('12')
-    expect(name).toContain('3')
+    expect(name).not.toContain('AP')
+    expect(name).not.toContain('action point')
   })
 
   it('applyDamageBarAccessibleName includes the queued sentence when a payout is pending', () => {
-    const name = applyDamageBarAccessibleName(12, 3, false, null, payout(2))
+    const name = applyDamageBarAccessibleName(12, false, null, payout(2))
     expect(name).toContain('2 tricks to go')
     expect(name).toContain('Damage to you cuts it to 33%.')
   })
 
-  it('applyBuffAccessibleName names the AP figure it is given', () => {
-    expect(applyBuffAccessibleName(4, 2, false, true)).toContain('4')
+  it('applyBuffAccessibleName names the held count, with no AP figure (DLR-145 AC2)', () => {
+    const name = applyBuffAccessibleName(2, false, true)
+    expect(name).toContain('2')
+    expect(name).not.toContain('AP')
+    expect(name).not.toContain('action point')
   })
 
   it('DLR-135 lesson, applied to the spec — the "N tricks to go" figure a FRESH press owes is derived from applyDamageDelayTricks() + 1, not a literal', () => {

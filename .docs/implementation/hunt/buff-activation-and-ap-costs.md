@@ -42,8 +42,10 @@ Both widenings are additive and broke no reader: there is no `switch` over eithe
 `src/`, and every existing read is an equality or inequality check.
 
 **`BuffCondition` gained an optional `target`.** It was `{ kind: string }` with nowhere to put a
-suit or a rank, and 49 of the 71 condition templates are parameterised by one — Taker, Feeder and
-Keepsake by suit, Mark of the _R_ by rank. `target` is `{ suit?: BuffTargetSuit; rank?: number }`,
+suit or a rank, and 49 of the 71 condition templates were parameterised by one — Taker, Feeder and
+Keepsake by suit, Mark of the _R_ by rank. (DLR-145 pared the mintable pool to 11 condition
+templates, of which the 9 Taker and Feeder ones carry a suit and none carries a rank; `target` and
+its `rank` field both stay, since `buffFires` still evaluates the unminted families.) `target` is `{ suit?: BuffTargetSuit; rank?: number }`,
 optional so `UNASSIGNED_BUFF_CONDITION` and `ACTIVATED_BUFF_CONDITION` stay valid unchanged. The
 alternative — baking the parameter into `BuffKind` as `takerBells`/`markOfThe9`/… — needs 33
 members where 4 do, and turns "is this a Taker?" from an equality check into a string-prefix test.
@@ -176,7 +178,9 @@ allowing.
 `discardWindowOpen(state)` — the same signal the discard already uses, so the two actions cannot
 drift apart about when the felt is between tricks. It reads nothing else from `RoundUiState`.
 
-`BuffActivationState` is `{ apPool, capacity, activatedThisTrick }`. `activateBuff` refuses through
+`BuffActivationState` is `{ apPool, capacity, activatedThisTrick, spentThisTrick }` — the fourth
+field is DLR-145's, see [its own section](#spentthistrick--how-a-consumed-card-still-gets-paid--dlr-145-2026-08-25)
+below. `activateBuff` refuses through
 `buffActivationRefusalFor` **first**, throws `RangeError` naming the refusal code rather than
 returning the state unchanged, and spends through `spendAp` — the only subtraction path, so
 `AP_ENABLED` is honoured exactly as every other AP consumer honours it. Stacking needs no rule of
@@ -252,3 +256,55 @@ remounts the felt per hand. It is not on `RunState` and is not persisted. In the
 **deleted**, so the felt has exactly one action-point number and divergence between the two spenders
 is unexpressible. `refreshBuffsForNewHand` remains the pure statement of the per-hand rule and remains
 uncalled, because a remount already performs it.
+
+## `spentThisTrick` — how a consumed card still gets paid — DLR-145, 2026-08-25
+
+DLR-145 made Taker, Feeder and Sidestep single-use (`CONDITION_CARD_SINGLE_USE`,
+[consumable items](consumable-items.md)). On its own that change **silently pays nothing**, and the
+failure mode is the reason this section exists rather than a footnote.
+
+The trick's active set is built by filtering the *pile*: `buffHandInputFor`
+(`src/app/warCouncil/buffRoundState.ts`) reads `offeredBuffs(state)`, which is
+`activatableBuffs(state.buffs)`. `activateFromPile` removes a consumable from `state.buffs` at the
+moment of the commit tap. So the instant a Taker became consumable, activating one deleted it from
+the pile, the filter found nothing, and the card paid nothing — no throw, no refusal, no log, just a
+card that cost itself and did zero.
+
+The fix is a fourth field on `BuffActivationState`:
+
+```ts
+readonly spentThisTrick: readonly Buff[]
+```
+
+- **Populated** by `activateFromPile`, the only function that knows a card left the pile — and only
+  on the consumable branch, so it is always empty for a non-consumable activation.
+- **Cleared** by `openBuffWindow` and `refreshBuffsForNewHand`, alongside `activatedThisTrick`.
+- **Read** by unioning it with `offeredBuffs` wherever a fired id is resolved back to a `Buff`.
+
+It lives on the activation state rather than on `RoundUiState` because it has **exactly
+`activatedThisTrick`'s lifetime** and is cleared on the same two edges. Splitting the two across
+different owners is how this bug comes back in a different shape.
+
+The union is **disjoint by construction** — a spent card is no longer in the pile — so no
+de-duplication is needed and R5's overlap-bonus count stays correct. There are **three** readers of
+that union and they must be kept in step: `buffHandInputFor` and `firedOncePerHandIds` (both in
+`src/app/warCouncil/buffRoundState.ts`), and the simulator's active-set snapshot in
+`src/sim/playHand.ts`.
+
+**The alternative that was rejected** was deferring pile removal to the trick boundary, which would
+have changed DLR-142's already-shipped Cheat and Timebomb behaviour.
+
+## The two damage caps were removed — DLR-145, 2026-08-25
+
+R6's containment is deliberately relaxed for the two axes a card can still pay on.
+`MAX_MULTIPLIER_BONUS_PER_HAND` and `MAX_FLAT_DAMAGE_BONUS_PER_HAND` are
+`Number.POSITIVE_INFINITY`, so `accrueAxisBonus`'s `Math.min(current + amount, cap)` is the identity
+on `multiplierBonus` and `flatDamageBonus`. The **per-hand, not-on-a-hit** asymmetry documented
+above is unchanged in shape and still governs `coinBonus` and `apRefunded`, whose caps (10 and 6)
+are untouched — but neither of those axes mints any more, so as the game currently ships **no
+accrual is ever clipped**.
+
+The reason is the consumption rule, not a balance judgement: a clipped contribution used to cost a
+player a card they could re-activate next trick, and now costs them a card they can never get back.
+The two constants stay declared, with their `UNIT:` comments, as the single place a cap would be
+restored.

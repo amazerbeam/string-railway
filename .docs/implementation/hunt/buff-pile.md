@@ -81,7 +81,7 @@ copy that could drift.
 
 > **The whole of the passage above stopped describing the shipped game on 2026-08-25 (DLR-135), and
 > that is the point of this note.** The starting pile's content is **no longer inert**. `startRun`
-> now seeds it with **four distinct, real, bronze cards drawn from the 73-template `BUFF_TEMPLATES`
+> now seeds it with **four distinct, real, bronze cards drawn from the then-73-template `BUFF_TEMPLATES`
 > pool**, weighted and seeded from `runSeed`. Nothing in production mints `BuffKind.Unassigned` any
 > more. The scaffold's stated reason — "the real catalog is not yet authored" — had been false since
 > DLR-111 authored it and DLR-112 built the reel that draws from it; it outlived that reason by four
@@ -121,11 +121,19 @@ this seed.
 > **Still true after DLR-135, 2026-08-25.** The rewritten `seedStartingBuffPile` does add a `throw`,
 > but it is a **short-draw** guard (`RangeError` when the weighted draw returns fewer cards than
 > asked, which only an all-zero weight table could cause), not an upper bound on the pile.
+>
+> **Still true after DLR-145, 2026-08-25**, and the question has changed direction. The pile now
+> opens at twenty-one cards and has no cap — but it **shrinks** for the first time: Taker, Feeder
+> and Sidestep leave the pile when activated (`CONDITION_CARD_SINGLE_USE`), so the open design
+> question is no longer "does a growing pool need a ceiling" but "does a draining one need a
+> floor". Nothing enforces one, and nothing yet says whether it should.
 
-`STARTING_BUFF_COUNT = 4` (`config.ts`) is **transcribed**, not chosen here — both the ticket's AC3
-and design doc §8 state the figure explicitly ("a fresh run starts with 4 buff cards already in the
-player's pile... all four arrive at bronze"), the same way `RUN_STARTING_CHEATS` and most of this
-module's shop prices are transcribed rather than invented.
+`STARTING_BUFF_COUNT` (`config.ts`) is **transcribed**, not chosen here. DLR-105 set it at `4` from
+its AC3 and design doc §8 ("a fresh run starts with 4 buff cards already in the player's pile... all
+four arrive at bronze"); **DLR-145 superseded that with `20`**, transcribed in turn from its own
+ticket and design §3.4 — two to four hands of six tricks at roughly a card a trick makes twenty
+about one fight's ammunition. Either way the figure is transcribed rather than invented, the same
+way `RUN_STARTING_CHEATS` and most of this module's shop prices are.
 
 **Nothing here has a consumer yet, and that is the whole of this ticket's scope.** No component,
 hook, or reducer reads `RunState.buffs`; no function evaluates a `BuffCondition` against play state

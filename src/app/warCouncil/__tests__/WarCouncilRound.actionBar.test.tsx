@@ -3,7 +3,6 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   ACTIVATED_BUFF_CONDITION,
-  apCostOf,
   BuffKind,
   BuffRewardAxis,
   BuffTier,
@@ -91,23 +90,30 @@ describe('WarCouncilRound — the action bar (DLR-114)', () => {
     expect(within(dialog).getByRole('button', { name: /Cheat \(/ })).toBeTruthy()
   })
 
-  it("activating the held Cheat buff twice spends its AP cost off Apply Buff's own figure", () => {
+  it('the loadout dialog text contains neither "AP" nor "action point" (DLR-145 AC2)', () => {
+    renderRound()
+    fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
+    const dialog = screen.getByRole('dialog', { name: 'Your buffs' })
+    expect(dialog.textContent).not.toContain('AP')
+    expect(dialog.textContent).not.toContain('action point')
+  })
+
+  it("activating the held Cheat buff twice SPENDS the card — DLR-145 AC2/AC10, no AP cost any more, and Apply Buff's held figure drops", () => {
     renderRound()
     fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
 
     const dialog = screen.getByRole('dialog', { name: 'Your buffs' })
     const row = within(dialog).getByRole('button', { name: /Cheat/i, hidden: false })
-    // Sanity: the row states its own AP cost.
-    expect(row.getAttribute('aria-label')).toContain(`${apCostOf(cheatBuffFixture)} AP.`)
+    // Sanity: the row states no AP cost — DLR-145 removed it from buffLine's grammar.
+    expect(row.getAttribute('aria-label')).not.toContain('AP')
+    expect(row.getAttribute('aria-label')).not.toContain('action point')
 
     fireEvent.click(row) // poise
-    fireEvent.click(row) // commit
+    fireEvent.click(row) // commit — the card leaves the pile for the rest of the run
 
     expect(
-      screen.getByRole('button', {
-        name: new RegExp(`${6 - apCostOf(cheatBuffFixture)} action points left`),
-      }),
-    ).toBeTruthy()
+      screen.getByRole('button', { name: /apply buff/i }).getAttribute('aria-label'),
+    ).toContain('0 buffs held')
   })
 
   it('mid-trick: Apply Buff stays enabled and opens the panel, while an ordinary buff row inside greys with "Not between tricks." (DLR-114 door widening)', () => {

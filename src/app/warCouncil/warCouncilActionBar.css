@@ -151,7 +151,7 @@
   box-shadow: 0 -6px 18px #000a;
 }
 
-.wc-loadout-ap {
+.wc-loadout-count {
   margin: 0;
   font-family: var(--wc-serif);
   font-size: clamp(0.75rem, 1.8vmin, 0.95rem);

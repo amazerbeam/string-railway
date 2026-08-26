@@ -2,7 +2,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
-  apCostOf,
   BUFF_TEMPLATES,
   mintPullAwards,
   REEL_POOL_SIZE,
@@ -135,9 +134,9 @@ describe('SlotMachinePanel', () => {
     const group = screen.getByRole('group', { name: SLOT_RESULT_GROUP_LABEL })
     expect(group.textContent).toContain(SLOT_OUTCOME_LABEL[twoMatchView.outcome])
     expect(twoMatchView.symbols).toHaveLength(3)
-    const awardItems = screen.getAllByRole('listitem').filter((item) =>
-      twoMatchView.awards.some((award) => item.textContent === buffLine(award, apCostOf(award))),
-    )
+    const awardItems = screen
+      .getAllByRole('listitem')
+      .filter((item) => twoMatchView.awards.some((award) => item.textContent === buffLine(award)))
     expect(awardItems).toHaveLength(twoMatchView.awards.length)
     expect(twoMatchView.awards).toHaveLength(2)
   })
@@ -146,7 +145,7 @@ describe('SlotMachinePanel', () => {
     render(<SlotMachinePanel {...baseProps} lastPull={threeMatchView} />)
     expect(threeMatchView.awards).toHaveLength(1)
     const award = threeMatchView.awards[0]
-    const expectedText = buffLine(award, apCostOf(award))
+    const expectedText = buffLine(award)
     const group = screen.getByRole('group', { name: SLOT_RESULT_GROUP_LABEL })
     expect(group.textContent).toContain(expectedText)
     // `buffLine` now states the tier word itself — the award row's exact text must equal it, with

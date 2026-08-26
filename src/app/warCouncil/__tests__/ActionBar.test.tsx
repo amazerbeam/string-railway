@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { APPLY_DAMAGE_AP_COST, BuffActivationRefusal, type PendingApplyPayout } from '../../../hunt'
+import { BuffActivationRefusal, type PendingApplyPayout } from '../../../hunt'
 import { ApplyDamageRefusal, DiscardRefusal, Suit } from '../../../warCouncil'
 import ActionBar from '../ActionBar'
 
@@ -17,7 +17,6 @@ function renderBar(over: Partial<Parameters<typeof ActionBar>[0]> = {}) {
 
   render(
     <ActionBar
-      apPool={4}
       offeredBuffs={[]}
       loadoutOpen={false}
       loadoutRefusal={null}
@@ -58,9 +57,12 @@ describe('ActionBar', () => {
     expect(bar).toBeTruthy()
   })
 
-  it("Apply Buff's accessible name carries the remaining AP figure", () => {
-    renderBar({ apPool: 4 })
-    expect(screen.getByRole('button', { name: /4 action points left/ })).toBeTruthy()
+  it("Apply Buff's accessible name carries the held count, with no AP figure (DLR-145 AC2)", () => {
+    renderBar({ offeredBuffs: [] })
+    const btn = screen.getByRole('button', { name: /0 buffs held/i })
+    expect(btn).toBeTruthy()
+    expect(btn.getAttribute('aria-label')).not.toContain('AP')
+    expect(btn.getAttribute('aria-label')).not.toContain('action point')
   })
 
   it('Apply Buff is enabled when loadoutRefusal is null', () => {
@@ -110,9 +112,10 @@ describe('ActionBar', () => {
     expect(screen.getByText(/no discards left/i)).toBeTruthy()
   })
 
-  it("Apply Damage's face carries the AP cost", () => {
+  it("Apply Damage's face carries the cash value, with no AP cost (DLR-145 AC2)", () => {
     renderBar()
-    expect(screen.getByText(`9 for ${APPLY_DAMAGE_AP_COST} AP`)).toBeTruthy()
+    expect(screen.getByText('cash 9')).toBeTruthy()
+    expect(screen.queryByText(/AP/)).toBeNull()
   })
 
   it('shows "2 tricks to go" for a pending payout with resolutionsOwed 2', () => {
@@ -150,7 +153,6 @@ describe('ActionBar', () => {
     render(
       <div onClick={onFelt}>
         <ActionBar
-          apPool={4}
           offeredBuffs={[]}
           loadoutOpen={false}
           loadoutRefusal={null}

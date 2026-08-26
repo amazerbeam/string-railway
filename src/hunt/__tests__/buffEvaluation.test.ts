@@ -50,13 +50,35 @@ const HAND_CONTEXT: BuffHandContext = {
 }
 
 /** Mints a REAL v1 template through `templateById` + `mintFromTemplate` — never a synthetic
- *  literal, per AC5's requirement. A `templateById` miss fails loudly, not silently. */
+ *  literal, per AC5's requirement. A `templateById` miss fails loudly, not silently. Only usable
+ *  for the three families DLR-145 kept mintable (Taker, Feeder, Sidestep) — the id must resolve. */
 function fromTemplate(id: string, tier: BuffTier, buffId: BuffId): Buff {
   const template = templateById(id)
   if (template === undefined) {
     throw new Error(`No template for id '${id}' — AC5's sample must resolve a real v1 template`)
   }
   return mintFromTemplate(template, tier, buffId)
+}
+
+/** DLR-145 pruned the other eight condition families out of `BUFF_TEMPLATES` — they are still
+ *  DECLARED on `BuffKind`, priced by `CONDITION_MODIFIER`, and read by `buffFires`'s own switch
+ *  (`buffTemplates.ts`'s module docblock), so `buffFires` must still evaluate them correctly even
+ *  though no template mints one any more. Builds the `Buff` directly rather than through
+ *  `templateById`, which is exactly the `undefined` DLR-113's `reconcileVault` already expects for
+ *  these ids. */
+function directBuff(
+  kind: BuffKind,
+  buffId: BuffId,
+  axis: BuffRewardAxis,
+  target?: { suit?: BuffTargetSuit; rank?: number },
+): Buff {
+  return {
+    id: buffId,
+    kind,
+    tier: BuffTier.Bronze,
+    condition: target === undefined ? { kind } : { kind, target },
+    reward: { axis, value: 1 },
+  }
 }
 
 describe('buffFires — one case per condition family (AC5)', () => {
@@ -72,7 +94,7 @@ describe('buffFires — one case per condition family (AC5)', () => {
   })
 
   it('Feeder — loses the trick with the named suit', () => {
-    const feeder = fromTemplate('feeder:keys:coins', BuffTier.Bronze, 2)
+    const feeder = fromTemplate('feeder:keys:magnitude', BuffTier.Bronze, 2)
     expect(buffFires(feeder, ctx({ playerWon: false, playerSuits: [BuffTargetSuit.Keys] }))).toBe(
       true,
     )
@@ -82,8 +104,8 @@ describe('buffFires — one case per condition family (AC5)', () => {
     )
   })
 
-  it('Mark of the R — wins the trick with the named rank', () => {
-    const markOfRank = fromTemplate('markOfRank:9:magnitude', BuffTier.Bronze, 3)
+  it('Mark of the R — wins the trick with the named rank (DLR-145: still declared, no longer mintable)', () => {
+    const markOfRank = directBuff(BuffKind.MarkOfRank, 3, BuffRewardAxis.Magnitude, { rank: 9 })
     expect(buffFires(markOfRank, ctx({ playerWon: true, playerRanks: [9] }))).toBe(true)
     // Near-miss: won, but with a different rank.
     expect(buffFires(markOfRank, ctx({ playerWon: true, playerRanks: [8] }))).toBe(false)
@@ -96,33 +118,38 @@ describe('buffFires — one case per condition family (AC5)', () => {
     expect(buffFires(sidestep, ctx({ skullTrick: false, playerWon: false }))).toBe(false)
   })
 
-  it('Glutton — eats (wins) a skull trick with this card', () => {
-    const glutton = fromTemplate('glutton:coins', BuffTier.Bronze, 5)
+  it('Glutton — eats (wins) a skull trick with this card (DLR-145: still declared, no longer mintable)', () => {
+    const glutton = directBuff(BuffKind.Glutton, 5, BuffRewardAxis.Coins)
     expect(buffFires(glutton, ctx({ skullTrick: true, playerWon: true }))).toBe(true)
     // Near-miss: a skull trick that was lost, not eaten.
     expect(buffFires(glutton, ctx({ skullTrick: true, playerWon: false }))).toBe(false)
   })
 
-  it("Hoarder — the bank after this trick reaches bronze's threshold (2)", () => {
-    const hoarder = fromTemplate('hoarder:magnitude', BuffTier.Bronze, 6)
+  it("Hoarder — the bank after this trick reaches bronze's threshold (2) (DLR-145: still declared, no longer mintable)", () => {
+    const hoarder = directBuff(BuffKind.Hoarder, 6, BuffRewardAxis.Magnitude)
     expect(buffFires(hoarder, ctx({ bankAfterTrick: 2 }))).toBe(true)
     expect(buffFires(hoarder, ctx({ bankAfterTrick: 1 }))).toBe(false)
   })
 
-  it("Unbloodied — survives silver's threshold (3) tricks without a hit", () => {
-    const unbloodied = fromTemplate('unbloodied:coins', BuffTier.Silver, 7)
+  it("Unbloodied — survives silver's threshold (3) tricks without a hit (DLR-145: still declared, no longer mintable)", () => {
+    const unbloodied = {
+      ...directBuff(BuffKind.Unbloodied, 7, BuffRewardAxis.Coins),
+      tier: BuffTier.Silver,
+    }
     expect(buffFires(unbloodied, ctx({ tricksWithoutHit: 3 }))).toBe(true)
     expect(buffFires(unbloodied, ctx({ tricksWithoutHit: 2 }))).toBe(false)
   })
 
-  it("Debt Collector — Apply Damage was PRESSED this hand (DLR-109's reading)", () => {
-    const debtCollector = fromTemplate('debtCollector:magnitude', BuffTier.Bronze, 8)
+  it("Debt Collector — Apply Damage was PRESSED this hand (DLR-109's reading) (DLR-145: still declared, no longer mintable)", () => {
+    const debtCollector = directBuff(BuffKind.DebtCollector, 8, BuffRewardAxis.Magnitude)
     expect(buffFires(debtCollector, ctx({ applyDamagePressed: true }))).toBe(true)
     expect(buffFires(debtCollector, ctx({ applyDamagePressed: false }))).toBe(false)
   })
 
-  it("Keepsake — holds the named suit at hand's end (the final trick)", () => {
-    const keepsake = fromTemplate('keepsake:moons:coins', BuffTier.Bronze, 9)
+  it("Keepsake — holds the named suit at hand's end (the final trick) (DLR-145: still declared, no longer mintable)", () => {
+    const keepsake = directBuff(BuffKind.Keepsake, 9, BuffRewardAxis.Coins, {
+      suit: BuffTargetSuit.Moons,
+    })
     expect(
       buffFires(keepsake, ctx({ finalTrick: true, remainingSuits: [BuffTargetSuit.Moons] })),
     ).toBe(true)
@@ -130,14 +157,14 @@ describe('buffFires — one case per condition family (AC5)', () => {
     expect(buffFires(keepsake, ctx({ finalTrick: true, remainingSuits: [] }))).toBe(false)
   })
 
-  it("Miser — the purse reaches bronze's threshold (5 coins)", () => {
-    const miser = fromTemplate('miser:magnitude', BuffTier.Bronze, 10)
+  it("Miser — the purse reaches bronze's threshold (5 coins) (DLR-145: still declared, no longer mintable)", () => {
+    const miser = directBuff(BuffKind.Miser, 10, BuffRewardAxis.Magnitude)
     expect(buffFires(miser, ctx({ coins: 5 }))).toBe(true)
     expect(buffFires(miser, ctx({ coins: 4 }))).toBe(false)
   })
 
-  it("Cornered — health falls below bronze's threshold (60% of PLAYER_START_HEALTH)", () => {
-    const cornered = fromTemplate('cornered:multiplier', BuffTier.Bronze, 11)
+  it("Cornered — health falls below bronze's threshold (60% of PLAYER_START_HEALTH) (DLR-145: still declared, no longer mintable)", () => {
+    const cornered = directBuff(BuffKind.Cornered, 11, BuffRewardAxis.Multiplier)
     expect(buffFires(cornered, ctx({ playerHealth: 5 }))).toBe(true)
     expect(buffFires(cornered, ctx({ playerHealth: 6 }))).toBe(false)
   })
@@ -170,7 +197,7 @@ describe('buffFires — one case per condition family (AC5)', () => {
   })
 
   it('a threshold family already fired this hand does not fire again', () => {
-    const hoarder = fromTemplate('hoarder:magnitude', BuffTier.Bronze, 7)
+    const hoarder = directBuff(BuffKind.Hoarder, 7, BuffRewardAxis.Magnitude)
     const c = ctx({ bankAfterTrick: 4 })
     expect(firedBuffs([hoarder], [], c)).toHaveLength(1)
     expect(firedBuffs([hoarder], [7], c)).toHaveLength(0)
@@ -183,7 +210,7 @@ describe('buffFires — one case per condition family (AC5)', () => {
   })
 
   it('Keepsake fires only at the final trick', () => {
-    const k = fromTemplate('keepsake:moons:coins', BuffTier.Bronze, 9)
+    const k = directBuff(BuffKind.Keepsake, 9, BuffRewardAxis.Coins, { suit: BuffTargetSuit.Moons })
     const held = { remainingSuits: [BuffTargetSuit.Moons] }
     expect(firedBuffs([k], [], ctx({ ...held, finalTrick: false }))).toHaveLength(0)
     expect(firedBuffs([k], [], ctx({ ...held, finalTrick: true }))).toHaveLength(1)
@@ -192,8 +219,12 @@ describe('buffFires — one case per condition family (AC5)', () => {
 
 describe('firesOncePerHand', () => {
   it('is true for Threshold and Terminal cadences, false for Event', () => {
-    expect(firesOncePerHand(fromTemplate('hoarder:magnitude', BuffTier.Bronze, 20))).toBe(true)
-    expect(firesOncePerHand(fromTemplate('keepsake:moons:coins', BuffTier.Bronze, 21))).toBe(true)
+    expect(firesOncePerHand(directBuff(BuffKind.Hoarder, 20, BuffRewardAxis.Magnitude))).toBe(true)
+    expect(
+      firesOncePerHand(
+        directBuff(BuffKind.Keepsake, 21, BuffRewardAxis.Coins, { suit: BuffTargetSuit.Moons }),
+      ),
+    ).toBe(true)
     expect(firesOncePerHand(fromTemplate('taker:bells:magnitude', BuffTier.Bronze, 22))).toBe(false)
   })
 })
@@ -231,7 +262,7 @@ describe('AC3/AC4 — apply-to-card targeting and additive stacking', () => {
 
   it('AC4 — two satisfied buffs on one trick add within their axis, plus the Overlap Bonus', () => {
     const blade = fromTemplate('taker:bells:magnitude', BuffTier.Silver, 1) // +3 damage
-    const second = fromTemplate('markOfRank:9:magnitude', BuffTier.Bronze, 2) // +1 damage
+    const second = directBuff(BuffKind.MarkOfRank, 2, BuffRewardAxis.Magnitude, { rank: 9 }) // +1 damage
     const out = resolveTrickBuffs(
       {
         active: [blade, second],
@@ -249,7 +280,7 @@ describe('AC3/AC4 — apply-to-card targeting and additive stacking', () => {
 
 describe('Keepsake — the known open defect, pinned', () => {
   it('evaluates correctly, and records that the live path hands it an empty hand', () => {
-    const k = fromTemplate('keepsake:moons:coins', BuffTier.Bronze, 9)
+    const k = directBuff(BuffKind.Keepsake, 9, BuffRewardAxis.Coins, { suit: BuffTargetSuit.Moons })
     // The evaluator is right…
     expect(buffFires(k, ctx({ finalTrick: true, remainingSuits: [BuffTargetSuit.Moons] }))).toBe(
       true,

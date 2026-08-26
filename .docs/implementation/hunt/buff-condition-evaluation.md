@@ -149,3 +149,28 @@ contribution lands even on a lost encounter.
   for the developer's end-of-epic pass, not a code defect.
 - **`Long Fall` (v1 list row #8) is not implemented and generates no template**, deferred by DLR-111
   for want of a UI answer. **Eleven of the twelve condition rows are evaluated.**
+
+## Eight of the eleven families became unmintable — DLR-145, 2026-08-25
+
+`markOfRank`, `glutton`, `hoarder`, `unbloodied`, `debtCollector`, `miser`, `cornered` and
+`keepsake` were removed from `TEMPLATE_FAMILIES`, and the `coins` and `apRefund` reward axes were
+removed from what a template may carry. **Nothing in this file changed.** Each of the eight keeps its
+`BuffKind` member, its `buffFires` case, its `BUFF_CADENCE` row, its `CONDITION_MODIFIER` price and
+its `CONDITION_THRESHOLD` entry, and both cut axes keep their `REWARD_BASE` and `REWARD_TIER_VALUE`
+ladders. `buffFires` is still a total `switch` over eleven families.
+
+What changed is one table upstream: `templateById` returns `undefined` for a cut family's id, so no
+reel, no opening pile and no Vault grant can produce one. A card of a cut family would behave
+exactly as it always did if one existed — none can. This is DLR-116's shelf-versus-union precedent
+applied to the template pool, and it is what makes the cut reversible in a single table rather than
+a redesign.
+
+Two consequences worth stating:
+
+- **DLR-125's confirmed `keepsake` defect is now unreachable rather than fixed.** It is still
+  described above and still true of the code.
+- **Vault grants keyed by a cut template id are dead.** `mintGrants` skips an id `templateById`
+  cannot resolve, and `oddsBoostRefusalFor` and `startingTierRefusalFor` refuse one — the existing
+  DLR-113 paths, so nothing corrupts and no save is rejected. A developer carrying a populated Vault
+  from before DLR-145 silently loses those starting cards and odds boosts. See
+  [../vault/README.md](../vault/README.md).

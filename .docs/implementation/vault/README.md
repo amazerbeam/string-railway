@@ -1,7 +1,7 @@
 # Vault — `src/vault/` and `src/app/vault/`
 
 **Status:** implemented
-**Built by:** DLR-113, DLR-118
+**Built by:** DLR-113, DLR-118, DLR-145
 
 ## Responsibility
 
@@ -119,6 +119,21 @@ counted as dropped — that entry survives, just smaller.
 
 The split is what stops the half-load the save-data rule forbids: a shape failure loses the whole
 save, domain drift loses only the affected entries and keeps the balance.
+
+> **DLR-145 made that drift real for the first time, 2026-08-25.** Nothing in `src/persistence/` or
+> `src/vault/` changed — **no persisted shape, no field, no key, and no `SAVE_SCHEMA_VERSION` bump**
+> — but the ticket removed eight condition families and two reward axes from `BUFF_TEMPLATES`, so
+> `templateById` now returns `undefined` for every id naming one. The consequence runs entirely
+> through paths that were already built and already tested: `reconcileVault` drops those boosts and
+> grants and counts them in `droppedCount`, `mintGrants` skips a grant it cannot resolve, and
+> `oddsBoostRefusalFor` and `startingTierRefusalFor` refuse a purchase against one.
+>
+> **Nothing corrupts and no save is rejected**, but the effect on a developer carrying a populated
+> Vault from before DLR-145 is real and silent in the sense that matters: the Vault currency already
+> spent on a cut card is gone, and those starting cards and odds boosts simply stop arriving.
+> Clearing local storage before the first play session avoids the confusion. The template-id format
+> itself is unchanged — ids were **removed**, never renamed, which is exactly the case DLR-113 built
+> `reconcileVault` for.
 
 ### Persistence, and what happens to a save this build cannot read
 

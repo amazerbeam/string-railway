@@ -8,60 +8,53 @@ import {
   mintFromTemplate,
   templatesForFamily,
 } from '../buffTemplates'
-import { BuffKind, BuffRewardAxis, BuffTier } from '../buffs'
+import { BuffKind, BuffRewardAxis, BuffTier, type Buff } from '../buffs'
 import { apCostOf, isConditionFamily } from '../buffCosts'
 
-const EXPECTED_COUNTS: ReadonlyArray<readonly [string, number]> = [
-  [BuffKind.Taker, 12],
-  [BuffKind.Feeder, 12],
-  [BuffKind.MarkOfRank, 22],
-  [BuffKind.Sidestep, 2],
-  [BuffKind.Glutton, 4],
-  [BuffKind.Hoarder, 4],
-  [BuffKind.Unbloodied, 4],
-  [BuffKind.DebtCollector, 4],
-  [BuffKind.Keepsake, 3],
-  [BuffKind.Miser, 2],
-  [BuffKind.Cornered, 2],
-]
-
 describe('BUFF_TEMPLATES', () => {
-  it('holds exactly the 71 condition templates DLR-111 decided, plus the 2 DLR-132 activated ones', () => {
-    expect(BUFF_TEMPLATES).toHaveLength(73)
-    expect(BUFF_TEMPLATE_COUNT).toBe(73)
+  it('holds exactly the 13 templates DLR-145 AC4 names', () => {
+    expect(BUFF_TEMPLATES).toHaveLength(13)
+    expect(BUFF_TEMPLATE_COUNT).toBe(13)
+    expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Taker)).toHaveLength(6)
+    expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Feeder)).toHaveLength(3)
+    expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Sidestep)).toHaveLength(2)
+    expect(BUFF_TEMPLATES.filter((t) => t.form === 'activated')).toHaveLength(2)
   })
 
-  it.each(EXPECTED_COUNTS)('crosses %s into %i templates', (kind, count) => {
-    expect(templatesForFamily(kind as never)).toHaveLength(count)
+  it('mints no card on a cut reward axis', () => {
+    for (const template of BUFF_TEMPLATES) {
+      if (template.form !== 'condition') continue
+      expect([BuffRewardAxis.Magnitude, BuffRewardAxis.Multiplier]).toContain(template.axis)
+    }
+  })
+
+  it('every Feeder pays on Blade only', () => {
+    const feeders = BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Feeder)
+    expect(
+      feeders.every((t) => t.form === 'condition' && t.axis === BuffRewardAxis.Magnitude),
+    ).toBe(true)
   })
 
   it('gives every template a unique id', () => {
     expect(new Set(BUFF_TEMPLATES.map((t) => t.id)).size).toBe(BUFF_TEMPLATES.length)
   })
 
-  it('holds no consumable card — AC6 is DLR-126s (DLR-132 added Cheat and Timebomb only)', () => {
+  it('holds no consumable and no cut-family card', () => {
     for (const template of BUFF_TEMPLATES) {
       if (template.form !== 'condition') continue
       expect(isConditionFamily(template.kind)).toBe(true)
     }
   })
 
-  it('parameterises exactly the 49 suit- or rank-carrying templates', () => {
+  it('parameterises exactly the suit-carrying Taker and Feeder templates', () => {
     expect(
       BUFF_TEMPLATES.filter((t) => t.form === 'condition' && t.target !== undefined),
-    ).toHaveLength(12 + 12 + 22 + 3)
-  })
-
-  it('pays Keepsake on coins alone', () => {
-    for (const template of templatesForFamily(BuffKind.Keepsake)) {
-      if (template.form !== 'condition') continue
-      expect(template.axis).toBe(BuffRewardAxis.Coins)
-    }
+    ).toHaveLength(6 + 3)
   })
 })
 
 describe('REWARD_TIER_VALUE', () => {
-  it('transcribes DLR-111s reward master tier list', () => {
+  it('transcribes DLR-111s reward master tier list — including the two cut, still-declared axes', () => {
     expect(REWARD_TIER_VALUE[BuffRewardAxis.Magnitude]).toEqual({ bronze: 1, silver: 3, gold: 5 })
     expect(REWARD_TIER_VALUE[BuffRewardAxis.Coins]).toEqual({ bronze: 2, silver: 5, gold: 10 })
     expect(REWARD_TIER_VALUE[BuffRewardAxis.ApRefund]).toEqual({ bronze: 1, silver: 2, gold: 3 })
@@ -96,21 +89,28 @@ describe('mintFromTemplate', () => {
     }
   })
 
-  it('carries the suit or rank onto the minted conditions target', () => {
-    const mark = templatesForFamily(BuffKind.MarkOfRank).find(
-      (t) => t.form === 'condition' && t.target?.rank === 9,
+  it('carries the suit onto the minted conditions target', () => {
+    const taker = templatesForFamily(BuffKind.Taker).find(
+      (t) => t.form === 'condition' && t.target?.suit !== undefined,
     )
-    expect(mark).toBeDefined()
-    expect(mintFromTemplate(mark!, BuffTier.Gold, 1).condition.target?.rank).toBe(9)
+    expect(taker).toBeDefined()
+    expect(mintFromTemplate(taker!, BuffTier.Gold, 1).condition.target?.suit).toBeDefined()
   })
 })
 
 describe('conditionThresholdOf', () => {
-  it('reads the tier-parameterised threshold for a threshold family', () => {
-    const hoarder = templatesForFamily(BuffKind.Hoarder)[0]
-    expect(conditionThresholdOf(mintFromTemplate(hoarder, BuffTier.Gold, 1))).toBe(
-      CONDITION_THRESHOLD[BuffKind.Hoarder][BuffTier.Gold],
-    )
+  it('reads the tier-parameterised threshold for a threshold family — still declared, no longer mintable', () => {
+    // Hoarder has no surviving template (DLR-145), so this constructs the Buff directly rather
+    // than minting one — `CONDITION_THRESHOLD` and `BuffThresholdFamily` are unchanged by the
+    // pruning and must still answer for a card a save or a future TEMPLATE_FAMILIES row could name.
+    const hoarder: Buff = {
+      id: 1,
+      kind: BuffKind.Hoarder,
+      tier: BuffTier.Gold,
+      condition: { kind: BuffKind.Hoarder },
+      reward: { axis: BuffRewardAxis.Magnitude, value: 0 },
+    }
+    expect(conditionThresholdOf(hoarder)).toBe(CONDITION_THRESHOLD[BuffKind.Hoarder][BuffTier.Gold])
   })
 
   it('returns null — a real answer — for a family with no threshold', () => {

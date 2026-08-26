@@ -96,8 +96,9 @@ Every buff this surface names goes through DLR-114's `src/app/warCouncil/buffLab
 symbol is a `BuffTemplate` and carries **no tier**, so `slotSymbolText` mints it at bronze with a
 throwaway id purely for wording and returns `buffName(b) + ' — ' + buffConditionSentence(b)`; the
 bronze is a wording device and claims nothing. A won award is a real `Buff` and gets the full
-`buffLine(award, apCostOf(award))` — `Silver Bell-Taker (Momentum) — win a trick with Bells: +3
-multiplier. 2 AP.` `slotLabels.test.ts` asserts `slotSymbolText`'s output against an independently
+`buffLine(award)` — `Silver Bell-Taker (Momentum) — win a trick with Bells: +3
+multiplier.` (`buffLine` took an `apCost` second argument until DLR-145 removed action points; the
+award row passed `apCostOf(award)` and the line ended `2 AP.`) `slotLabels.test.ts` asserts `slotSymbolText`'s output against an independently
 recomputed `buffName` / `buffConditionSentence` pair, which is what proves there is one grammar
 rather than two.
 
@@ -107,7 +108,7 @@ prepend its own `SLOT_TIER_LABEL[award.tier]` in front of `buffLine(...)` — a 
 gained the `BUFF_TIER_WORD` prefix in the same ticket. The existing test only asserted the row's
 text *contained* `buffLine(...)`'s output, which stayed true even duplicated, so it caught nothing.
 `SLOT_TIER_LABEL` was removed from `slotLabels.ts` entirely (it had no other consumer) and the award
-row now renders `buffLine(award, apCostOf(award))` alone; the test was rewritten to assert the row's
+row now renders `buffLine(award)` alone; the test was rewritten to assert the row's
 exact text so a reintroduced duplicate fails loudly.
 
 ## The three interaction rules DLR-116 decided

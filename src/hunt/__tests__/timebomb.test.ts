@@ -109,13 +109,17 @@ describe('queueTimebomb — booking the hit (AC3)', () => {
 const funded = (coins: number) => ({ ...startRun(), coins })
 
 describe('buyFromShop — Timebomb (AC1, AC2)', () => {
-  it('opens a run holding no Timebomb buffs', () => {
-    expect(startRun().buffs.filter((b) => b.kind === BuffKind.Timebomb)).toHaveLength(0)
-  })
-
+  // DLR-145 — Timebomb is an ordinary weighted-pool member now (`SLOT_FAMILY_WEIGHTS`), exactly as
+  // Cheat already was under DLR-132, so a fresh run's DRAWN opening pile (20 cards, up from 4) can
+  // legitimately pick one before the shop is ever reached — "opens holding none" is no longer a
+  // true invariant to assert. What must still hold is the purchase's OWN effect: it adds exactly
+  // one Timebomb to whatever the pile already carried, mirroring the "does NOT add a Cheat" fix
+  // below for the identical reason.
   it('mints a Timebomb buff into the pile and debits the price', () => {
-    const after = buyFromShop(funded(3), ShopItem.Timebomb)
-    expect(after.buffs.filter((b) => b.kind === BuffKind.Timebomb)).toHaveLength(1)
+    const before = funded(3)
+    const beforeCount = before.buffs.filter((b) => b.kind === BuffKind.Timebomb).length
+    const after = buyFromShop(before, ShopItem.Timebomb)
+    expect(after.buffs.filter((b) => b.kind === BuffKind.Timebomb)).toHaveLength(beforeCount + 1)
     expect(after.coins).toBe(3 - TIMEBOMB_PRICE)
   })
 
@@ -131,8 +135,14 @@ describe('buyFromShop — Timebomb (AC1, AC2)', () => {
     // stopped testing anything the moment `RUN_STARTING_CHEATS` moved 0 -> 1 and the run began
     // opening with a Cheat in the pile — it then failed on the OPENING GRANT rather than on
     // anything the purchase did. Asserting the fixture actually holds Cheats keeps the check
-    // below meaningful whatever that key is retuned to.
-    expect(before.buffs.filter((b) => b.kind === BuffKind.Cheat)).toHaveLength(RUN_STARTING_CHEATS)
+    // below meaningful whatever that key is retuned to. DLR-145 — `>=` rather than `toHaveLength`
+    // exactly: the pool prune raised the odds of the DRAWN opening pile also picking a `cheat`
+    // template, on top of the `RUN_STARTING_CHEATS` guaranteed tail, so the fixture's true count
+    // can be higher than the guarantee alone. Still non-vacuous, and still exercises what the
+    // purchase itself must leave untouched.
+    expect(before.buffs.filter((b) => b.kind === BuffKind.Cheat).length).toBeGreaterThanOrEqual(
+      RUN_STARTING_CHEATS,
+    )
     const after = buyFromShop(before, ShopItem.Timebomb)
     // Fails on a Cheat ADDED and on a Cheat REMOVED — the Timebomb branch mints only the one
     // Timebomb buff, so the pile's Cheat count must be exactly what it was before the purchase.
@@ -142,8 +152,10 @@ describe('buyFromShop — Timebomb (AC1, AC2)', () => {
   })
 
   it('stacks, because there is no cap', () => {
-    const twice = buyFromShop(buyFromShop(funded(10), ShopItem.Timebomb), ShopItem.Timebomb)
-    expect(twice.buffs.filter((b) => b.kind === BuffKind.Timebomb)).toHaveLength(2)
+    const before = funded(10)
+    const beforeCount = before.buffs.filter((b) => b.kind === BuffKind.Timebomb).length
+    const twice = buyFromShop(buyFromShop(before, ShopItem.Timebomb), ShopItem.Timebomb)
+    expect(twice.buffs.filter((b) => b.kind === BuffKind.Timebomb)).toHaveLength(beforeCount + 2)
   })
 
   it('throws rather than taking payment it cannot honour', () => {
@@ -168,7 +180,9 @@ describe('recordEncounter and advanceRun — the pile is run state (AC2)', () =>
   })
 
   it('carries an unspent Timebomb buff across a fight boundary', () => {
-    const run = buyFromShop(funded(3), ShopItem.Timebomb)
+    const before = funded(3)
+    const beforeCount = before.buffs.filter((b) => b.kind === BuffKind.Timebomb).length
+    const run = buyFromShop(before, ShopItem.Timebomb)
     const won = recordEncounter(
       run,
       {
@@ -180,7 +194,9 @@ describe('recordEncounter and advanceRun — the pile is run state (AC2)', () =>
       run.discardsRemaining,
       null,
     )
-    expect(advanceRun(won).buffs.filter((b) => b.kind === BuffKind.Timebomb)).toHaveLength(1)
+    expect(advanceRun(won).buffs.filter((b) => b.kind === BuffKind.Timebomb)).toHaveLength(
+      beforeCount + 1,
+    )
   })
 })
 

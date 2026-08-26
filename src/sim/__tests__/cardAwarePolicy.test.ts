@@ -3,12 +3,11 @@ import { FRESH_ENCOUNTER_DECK, legalMoves, PlayerSide, type RoundState } from '.
 import {
   apCapacityFor,
   bankClimbBonusFor,
-  BUFF_TEMPLATES,
   buffTargetRankOf,
   buffTargetSuitOf,
   BuffKind,
+  BuffRewardAxis,
   BuffTier,
-  mintFromTemplate,
   PLAYER_START_HEALTH,
   playerRankTiersFor,
   startRun,
@@ -41,13 +40,20 @@ function uiFor(run: RunState, handNumber = 1): RoundUiState {
 }
 
 /** A `markOfRank` card for a rank the player's hand does NOT hold — the exact waste this policy
- *  exists to stop, and the case the seed-1 replay caught the baseline committing. */
+ *  exists to stop, and the case the seed-1 replay caught the baseline committing.
+ *
+ *  DLR-145 pruned Mark of Rank out of `BUFF_TEMPLATES` (it is still DECLARED on `BuffKind`, priced,
+ *  and read by `buffFires` — simply not mintable), so this constructs the `Buff` directly rather
+ *  than through `mintFromTemplate`. `cardAwarePolicy` reads a `Buff`'s `condition.target`, not its
+ *  template, so this is an equally real fixture for the behaviour under test. */
 function markOfRankFor(rank: number, id: number): Buff {
-  const template = BUFF_TEMPLATES.find(
-    (t) => t.kind === BuffKind.MarkOfRank && t.form === 'condition' && t.target?.rank === rank,
-  )
-  if (template === undefined) throw new Error(`no markOfRank template for rank ${rank}`)
-  return mintFromTemplate(template, BuffTier.Bronze, id)
+  return {
+    id,
+    kind: BuffKind.MarkOfRank,
+    tier: BuffTier.Bronze,
+    condition: { kind: BuffKind.MarkOfRank, target: { rank } },
+    reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
+  }
 }
 
 describe('cardAwarePolicy — it aims, the baseline does not', () => {

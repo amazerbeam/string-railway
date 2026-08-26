@@ -31,8 +31,11 @@ export type ShopItem = (typeof ShopItem)[keyof typeof ShopItem]
  *  removed comes back: those two are NEW items, and the five ranks whose ladders this shelf does
  *  not yet offer stay off `TIERED_RANKS` (`rankTiers.ts`) for exactly the reason Cheat and
  *  Whetstone stay off this list. */
+/** DLR-145 AC3 — the action-point purchase leaves the shelf: with `AP_ENABLED` false it has
+ *  nothing to sell. It keeps its `ShopItem` member, its `priceOf` row, its `categoryOf` rung and
+ *  its `refusalFor` handling, exactly as DLR-116 kept Cheat, Timebomb, Blast Guard and Whetstone —
+ *  no mechanic is deleted, only this list changed. */
 export const SHOP_ITEMS: readonly ShopItem[] = [
-  ShopItem.ApCapacity,
   ShopItem.SwanTier,
   ShopItem.WitchTier,
   ShopItem.Heal,
@@ -233,11 +236,11 @@ export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | 
 /**
  * Whether ANY item is purchasable right now — `some()` over `refusalFor`, never a second reading
  * of the rules. THE predicate the verdict's `Continue` warning fires on: a player holding a coin
- * at full health has nothing to stop for (AP capacity has no cap, so a coin always buys it), and a
- * warning they cannot act on is noise. (`SHOP_ITEMS` above is `ApCapacity`, `SwanTier`,
- * `WitchTier` and `Heal` — DLR-116 pared `Cheat` out of the fixed shelf, so "full slots" no
- * longer participates in this predicate at all, and DLR-122's two tier items participate through
- * `RankAtMaxTier` instead.)
+ * at full health with both tiers maxed has nothing left to buy, and a warning they cannot act on
+ * is noise. (`SHOP_ITEMS` above is `SwanTier`, `WitchTier` and `Heal` — DLR-116 pared `Cheat` out
+ * of the fixed shelf and DLR-145 pared `ApCapacity` out too, so neither "full slots" nor a bought
+ * AP raise participates in this predicate any more, and DLR-122's two tier items participate
+ * through `RankAtMaxTier`.)
  */
 export function canBuyAnything(stock: ShopStock): boolean {
   return SHOP_ITEMS.some((item) => refusalFor(stock, item) === null)

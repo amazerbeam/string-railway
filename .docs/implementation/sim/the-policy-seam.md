@@ -40,7 +40,7 @@ Both new levers extend that discipline to multi-step rituals, which is the part 
 
 ### `runDiscard` — open, select, commit, and never leave it half-open
 
-`runDiscard` (`playHand.ts`) drives the same three-stage interaction a player performs: `TapDiscard`
+`runDiscard` (`playHandWindows.ts`, split out of `playHand.ts` by DLR-145) drives the same three-stage interaction a player performs: `TapDiscard`
 opens the selection, one `TapCard` per card toggles it in (capped at `MAX_CARDS_PER_DISCARD`), and a
 second `TapDiscard` commits the swap and spends a budget charge. It re-asks `discardRefusalFor`
 before opening *and* again before committing, because the second call is what catches an empty
@@ -62,7 +62,7 @@ and because a swap changes the hand the buff decision is then made against.
 > array are deleted — a Cheat is an ordinary buff row now. The paragraphs below are DLR-90/DLR-96's
 > original record; the corrected route follows them.
 
-`runCheatPlay` (`playHand.ts`) dispatched `TapCheat` twice to poise then arm, then `TapCard` twice to
+`runCheatPlay` (`playHandWindows.ts` since DLR-145) dispatched `TapCheat` twice to poise then arm, then `TapCard` twice to
 arm and commit the card the policy named. A `CheatPlay` names the Cheat **and** the card together,
 deliberately: arming a Cheat and then playing a card that was follow-suit-legal anyway spends the
 card for nothing, which would report the Cheat as *harmful* rather than as unexercised.
@@ -91,7 +91,7 @@ Read `baselinePolicy.ts`'s docblock before reading any number this tool prints. 
 - **Apply Damage** — pressed when the multiplier reaches `BASELINE_CASH_AT_MULTIPLIER` (3), or on the
   hand's last window with a non-empty bank.
 - **Never** discards, marks a Timebomb, or arms a Cheat — it implements neither optional method.
-- **Shop** — free pulls, then Heal → AP capacity → Swan tier → Witch tier while affordable, then the
+- **Shop** — free pulls, then Heal → Swan tier → Witch tier while affordable, then the
   flask.
 
 `BASELINE_CASH_AT_MULTIPLIER` is a **policy** parameter, not a game tunable. It deliberately does not

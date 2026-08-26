@@ -103,10 +103,13 @@ describe('activating a buff — poise, then commit', () => {
     expect(poised.buffActivation.activatedThisTrick).toEqual([])
   })
 
-  it('the second tap on the same buff spends its AP cost and records it', () => {
+  it('DLR-145 — the second tap records the activation but leaves the pool untouched, since AP_ENABLED is off', () => {
     const poised = roundReducer(open(), { kind: RoundUiActionKind.TapBuff, id: cheat.id })
     const done = roundReducer(poised, { kind: RoundUiActionKind.TapBuff, id: cheat.id })
-    expect(done.buffActivation.apPool).toBe(STARTING_AP - apCostOf(cheat))
+    // apCostOf(cheat) still prices the card — `spendAp` is what re-derives an effective cost of 0
+    // through the disabled AP_ENABLED flag, exactly as `actionPoints.test.ts` pins.
+    expect(apCostOf(cheat)).toBeGreaterThan(0)
+    expect(done.buffActivation.apPool).toBe(STARTING_AP)
     expect(done.buffActivation.activatedThisTrick).toEqual([cheat.id])
     expect(loadoutOpen(done)).toBe(true)
     expect(done.loadout?.poised).toBeNull()
@@ -147,7 +150,9 @@ describe('the per-trick activation window', () => {
       { kind: RoundUiActionKind.TapBuff, id: cheat.id },
     )
     expect(done.buffActivation.activatedThisTrick).toEqual([cheat.id])
-    expect(done.buffActivation.apPool).toBeLessThan(done.buffActivation.capacity)
+    // DLR-145 — AP_ENABLED is off, so the activation records but never drops the pool below
+    // capacity in the first place; there is nothing left for the trick boundary to refill.
+    expect(done.buffActivation.apPool).toBe(done.buffActivation.capacity)
 
     // Play a card and let the Quarry answer, so a trick resolves.
     const closed = roundReducer(done, { kind: RoundUiActionKind.ToggleLoadout })
@@ -196,7 +201,10 @@ describe('handleTapBuff — a consumable item leaves the pile at the spend', () 
     const after = spend(openWith(wards), 10)
 
     expect(after.buffs.map((b) => b.id)).toEqual([11])
-    expect(after.buffActivation.apPool).toBe(STARTING_AP - apCostOf(wards[0]))
+    // DLR-145 — the item still leaves the pile (spending the CARD), but AP_ENABLED is off, so the
+    // pool itself is untouched even though apCostOf(wards[0]) still prices it above zero.
+    expect(apCostOf(wards[0])).toBeGreaterThan(0)
+    expect(after.buffActivation.apPool).toBe(STARTING_AP)
     expect(after.encounter.wardAbsorbs).toBe(WARD_ABSORPTION[BuffTier.Bronze])
     // The panel stays open — AC2 allows more than one activation per trick.
     expect(loadoutOpen(after)).toBe(true)
@@ -270,7 +278,9 @@ describe('handleTapBuff — spending a Shield row', () => {
     const after = spend(before, shield.id)
 
     expect(after.encounter.shieldHearts).toBe(shieldHeartsForTier(BuffTier.Silver))
-    expect(after.buffActivation.apPool).toBe(STARTING_AP - apCostOf(shield))
+    // DLR-145 — same reading as the Ward case above: the pool is untouched with AP_ENABLED off.
+    expect(apCostOf(shield)).toBeGreaterThan(0)
+    expect(after.buffActivation.apPool).toBe(STARTING_AP)
     expect(after.buffs).toHaveLength(0)
   })
 })

@@ -2,7 +2,7 @@ import { BuffTier, type Buff, type BuffId } from './buffs'
 import { BUFF_TEMPLATES, mintFromTemplate, type BuffTemplate } from './buffTemplates'
 import { createSeededRng, mixSeed, type Rng } from './seededRng'
 import { SLOT_MACHINE_IDS } from './slotConfig'
-import { templateWeightFor, weightedDrawWithoutReplacement } from './slotWeights'
+import { templateWeightFor, weightedDrawWithReplacement } from './slotWeights'
 
 /**
  * DLR-135 — the run's OPENING PILE, drawn for real.
@@ -56,17 +56,17 @@ export function openingPileWeightOf(template: BuffTemplate): number {
 }
 
 /**
- * `count` DISTINCT real BRONZE cards drawn from `BUFF_TEMPLATES`, with consecutive ids from
- * `firstId` — the same `(count, firstId)` shape `mintGrants` and `mintPullAwards` already use.
+ * `count` real BRONZE cards drawn from `BUFF_TEMPLATES`, with consecutive ids from `firstId` —
+ * the same `(count, firstId)` shape `mintGrants` and `mintPullAwards` already use.
  *
  * `rng` is REQUIRED, not defaulted. A defaulted generator would let a call site drop determinism
  * with no compile error, and determinism is the one property this function must not lose.
  *
- * Drawn WITHOUT replacement, so the opening hand holds four different cards rather than four
- * copies of one. THROWS `RangeError` on a short draw for `drawReelPool`'s stated reason: a pile
- * shorter than asked is a configuration bug (an all-zero weight table), not a legal state, and it
- * would otherwise surface far from its cause. Unreachable with the shipped tables — 73 templates,
- * every family weighted >= 1 on both machines — but a zeroed row is one edit away.
+ * Drawn WITH REPLACEMENT as of DLR-145: the pool is 13 templates and the opening pile is 20 cards,
+ * so distinctness is arithmetically impossible — and it is also not wanted. Three bronze Bell-Takers
+ * is exactly the shape design §3.4's "one fight's ammunition" describes. The short-draw THROW is
+ * kept and still means what it always meant: an all-zero weight table, which is a configuration bug
+ * rather than a legal state.
  *
  * `weightOf` is a DEFAULTED parameter rather than something this function closes over, exactly as
  * `drawReelPool`'s is: a curve can then be tested without mutating module state.
@@ -77,7 +77,7 @@ export function seedStartingBuffPile(
   rng: Rng,
   weightOf: (template: BuffTemplate) => number = openingPileWeightOf,
 ): readonly Buff[] {
-  const drawn = weightedDrawWithoutReplacement(BUFF_TEMPLATES, weightOf, rng, count)
+  const drawn = weightedDrawWithReplacement(BUFF_TEMPLATES, weightOf, rng, count)
   if (drawn.length !== count) {
     throw new RangeError(
       `Opening pile drew ${drawn.length} of ${count} cards — check SLOT_FAMILY_WEIGHTS and SLOT_AXIS_WEIGHTS for an all-zero table`,

@@ -217,9 +217,17 @@ describe('advanceRun — the carry (AC3)', () => {
 })
 
 describe('the opening Cheat, now a pile member (DLR-132)', () => {
-  it('seeds RUN_STARTING_CHEATS bronze Cheat buffs into the opening pile (AC3)', () => {
+  it("seeds RUN_STARTING_CHEATS GUARANTEED bronze Cheat buffs as the pile's final members (AC3)", () => {
+    // DLR-145 — the drawn opening pile (`STARTING_BUFF_COUNT` cards) can now ALSO draw a Cheat
+    // template: it pruned the pool to 13 candidates, of which `cheat` is one, so its per-draw odds
+    // rose sharply from the old 73-template pool. That is not a defect — it is the same weighted
+    // draw `openingPileWeightOf` always ran, over a smaller field. The GUARANTEE this test pins is
+    // narrower and still exact: the pile's final `RUN_STARTING_CHEATS` members are Cheats,
+    // independent of whatever the earlier, weighted draw happened to include.
     const run = startRun()
-    expect(run.buffs.filter((b) => b.kind === BuffKind.Cheat)).toHaveLength(RUN_STARTING_CHEATS)
+    const guaranteed = run.buffs.slice(run.buffs.length - RUN_STARTING_CHEATS)
+    expect(guaranteed).toHaveLength(RUN_STARTING_CHEATS)
+    expect(guaranteed.every((b) => b.kind === BuffKind.Cheat)).toBe(true)
   })
 
   it('carries the pile across a fight boundary untouched', () => {

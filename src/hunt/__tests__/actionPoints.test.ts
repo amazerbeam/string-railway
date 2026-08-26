@@ -26,28 +26,29 @@ describe('apCostFor (wired to the live AP_ENABLED config value)', () => {
   })
 })
 
-describe('canAffordAp', () => {
+describe('canAffordAp (DLR-145 — AP_ENABLED is off, so every cost reads as affordable)', () => {
   it('is true when the pool covers the cost', () => {
     expect(canAffordAp(10, 5)).toBe(true)
     expect(canAffordAp(5, 5)).toBe(true)
   })
 
-  it('is false when the pool falls short', () => {
-    expect(canAffordAp(4, 5)).toBe(false)
+  it('is true even when the pool is below the nominal cost, because the cost reads as 0', () => {
+    expect(canAffordAp(4, 5)).toBe(true)
   })
 })
 
-describe('spendAp (AC2 — the single place a cost is actually deducted)', () => {
-  it('deducts the cost from the pool', () => {
-    expect(spendAp(10, 3)).toBe(7)
+describe('spendAp (AC2 — the single place a cost is actually deducted; DLR-145 — AP_ENABLED is off, so every spend is free)', () => {
+  it('deducts nothing from the pool, since the effective cost is 0', () => {
+    expect(spendAp(10, 3)).toBe(10)
   })
 
-  it('refuses a spend the pool cannot cover, rather than clamping to zero', () => {
-    expect(() => spendAp(2, 3)).toThrow(RangeError)
+  it('never throws for want of AP, since the effective cost is always affordable', () => {
+    expect(() => spendAp(2, 3)).not.toThrow()
+    expect(spendAp(2, 3)).toBe(2)
   })
 
-  it('allows spending the pool down to exactly zero', () => {
-    expect(spendAp(3, 3)).toBe(0)
+  it('leaves the pool at zero when it starts at zero', () => {
+    expect(spendAp(0, 3)).toBe(0)
   })
 })
 

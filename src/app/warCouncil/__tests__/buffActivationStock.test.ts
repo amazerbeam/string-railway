@@ -82,13 +82,19 @@ describe('buffActivationStock — AC1, fed by the existing discardWindowOpen', (
       apPool: notActivated.apPool,
       capacity: notActivated.capacity,
       activatedThisTrick: [cheat.id],
+      spentThisTrick: [],
     }
     expect(buffActivationStock(state, activated, cheat).alreadyActive).toBe(true)
   })
 
   it('apPool is read straight from the activation state', () => {
     const state = createRoundUiState(makeSeed())
-    const activation: BuffActivationState = { apPool: 3, capacity: 3, activatedThisTrick: [] }
+    const activation: BuffActivationState = {
+      apPool: 3,
+      capacity: 3,
+      activatedThisTrick: [],
+      spentThisTrick: [],
+    }
     expect(buffActivationStock(state, activation, cheat).apPool).toBe(3)
   })
 })

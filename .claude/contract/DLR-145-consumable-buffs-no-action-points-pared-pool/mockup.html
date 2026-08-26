@@ -1,0 +1,545 @@
+<title>Spent Cards Felt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap">
+
+<style>
+  /* DLR-145 mockup. Deliberately single-theme: this is a felt table at night, and a light
+     inversion would misrepresent the surface being reviewed. Every colour is painted
+     explicitly from a token so the page holds on either host ground. */
+  :root {
+    --felt:        #10201a;
+    --felt-deep:   #0a1512;
+    --felt-raised: #172c24;
+    --rule:        #2b4b3e;
+    --bone:        #ece4d2;
+    --bone-dim:    #9db0a4;
+    --brass:       #c9a227;
+    --brass-soft:  #7a6520;
+    --blood:       #b4453a;
+    --spent:       #5c4a52;
+    --ok:          #6fae7d;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--felt-deep);
+    color: var(--bone);
+    font-family: 'Karla', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 3vw, 2rem) 5rem;
+  }
+
+  /* ---- masthead ---- */
+  .masthead { border-bottom: 1px solid var(--rule); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+  .eyebrow {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--brass); margin: 0 0 0.6rem;
+  }
+  h1 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 600; font-size: clamp(2rem, 5vw, 3rem); line-height: 1.05;
+    margin: 0 0 0.75rem; text-wrap: balance; color: var(--bone);
+  }
+  .standfirst { margin: 0; max-width: 62ch; color: var(--bone-dim); }
+
+  /* ---- the removal toggle: the whole point of a mockup for a subtraction ticket ---- */
+  .control-strip {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1rem;
+    background: var(--felt); border: 1px solid var(--rule); border-radius: 3px;
+    padding: 0.9rem 1.1rem; margin: 2rem 0;
+  }
+  .control-strip p { margin: 0; font-size: 0.9rem; color: var(--bone-dim); flex: 1 1 22ch; }
+  .toggle {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    background: var(--felt-raised); color: var(--bone);
+    border: 1px solid var(--brass-soft); border-radius: 3px;
+    padding: 0.7rem 1rem; min-height: 44px;
+    font: inherit; font-weight: 700; font-size: 0.85rem;
+    letter-spacing: 0.04em; cursor: pointer;
+    touch-action: manipulation;
+  }
+  .toggle[aria-pressed="true"] { background: var(--brass); color: var(--felt-deep); border-color: var(--brass); }
+  .toggle:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .swatch { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--blood); }
+  .toggle[aria-pressed="true"] .swatch { background: var(--felt-deep); }
+
+  /* Struck-through AP chrome. Hidden until the toggle turns it on. */
+  .gone { display: none; }
+  body.reveal .gone { display: revert; }
+  body.reveal [data-gone] {
+    position: relative;
+    color: var(--blood);
+    text-decoration: line-through;
+    text-decoration-color: var(--blood);
+    text-decoration-thickness: 2px;
+  }
+
+  /* ---- surface sections ---- */
+  section { margin: 3rem 0 0; }
+  .surface-head { display: flex; align-items: baseline; gap: 0.9rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+  h2 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 600; font-size: 1.75rem; margin: 0; color: var(--bone);
+  }
+  .file {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.72rem; color: var(--brass); letter-spacing: 0.02em;
+  }
+  .surface-note { margin: 0 0 1.2rem; color: var(--bone-dim); font-size: 0.92rem; max-width: 68ch; }
+
+  .felt-panel {
+    background: var(--felt);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1.25rem;
+  }
+
+  /* ---- action bar ---- */
+  .bar { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .bar-btn {
+    flex: 1 1 12rem; min-height: 64px;
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0.2rem;
+    background: var(--felt-raised); color: var(--bone);
+    border: 1px solid var(--rule); border-radius: 3px;
+    padding: 0.7rem 1rem; font: inherit; text-align: left;
+    cursor: pointer; touch-action: manipulation;
+  }
+  .bar-btn:hover { border-color: var(--brass-soft); }
+  @media (hover: none) { .bar-btn:hover { border-color: var(--rule); } }
+  .bar-btn:active { background: #1d3529; }
+  .bar-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .bar-btn[aria-pressed="true"] { border-color: var(--brass); background: #1d3529; }
+  .bar-label { font-weight: 700; letter-spacing: 0.03em; font-size: 0.95rem; }
+  .bar-figure {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.8rem; color: var(--bone-dim); font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- loadout panel ---- */
+  .loadout { margin-top: 1rem; border-top: 1px solid var(--rule); padding-top: 1rem; }
+  .loadout[hidden] { display: none; }
+  .loadout-head {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+    flex-wrap: wrap; margin-bottom: 0.75rem;
+  }
+  .loadout-title { font-weight: 700; letter-spacing: 0.03em; font-size: 0.9rem; }
+  .loadout-count {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.8rem; color: var(--bone-dim); font-variant-numeric: tabular-nums;
+  }
+  .rows { display: grid; gap: 0.4rem; max-height: 22rem; overflow-y: auto; padding-right: 0.4rem; }
+  .row-buff {
+    width: 100%; min-height: 44px; text-align: left;
+    display: flex; align-items: center; gap: 0.7rem;
+    background: var(--felt-raised); color: var(--bone);
+    border: 1px solid var(--rule); border-left: 3px solid var(--rule);
+    border-radius: 2px; padding: 0.55rem 0.8rem;
+    font: inherit; font-size: 0.88rem; cursor: pointer; touch-action: manipulation;
+  }
+  .row-buff:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .row-buff[aria-pressed="true"] { border-left-color: var(--brass); background: #23402f; }
+  .row-buff[data-tier="silver"] { border-left-color: #a8b3ba; }
+  .row-buff[data-tier="gold"]   { border-left-color: var(--brass); }
+  .row-buff[aria-pressed="true"][data-tier] { border-left-color: var(--brass); }
+  .tier-chip {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--bone-dim); flex: 0 0 3.6rem;
+  }
+  .row-name { font-weight: 700; }
+  .row-effect { color: var(--bone-dim); }
+  .row-hint {
+    margin-left: auto; font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.7rem; color: var(--brass); letter-spacing: 0.05em;
+  }
+  .empty { color: var(--bone-dim); font-size: 0.9rem; margin: 0; }
+
+  /* ---- the spend log: proves consumption, which is the ticket ---- */
+  .log { margin-top: 1rem; border-top: 1px dashed var(--rule); padding-top: 0.8rem; }
+  .log h3 {
+    margin: 0 0 0.5rem; font-size: 0.72rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--brass); font-weight: 700;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  .log ol { margin: 0; padding-left: 1.2rem; font-size: 0.85rem; color: var(--bone-dim); }
+  .log li { margin-bottom: 0.25rem; }
+  .log .spent-tag { color: var(--spent); }
+  .log .fire-tag { color: var(--ok); }
+
+  /* ---- shop ---- */
+  .purse { display: flex; gap: 2.5rem; flex-wrap: wrap; padding-bottom: 1rem; border-bottom: 1px solid var(--rule); }
+  .purse-cell { display: flex; flex-direction: column; gap: 0.15rem; }
+  .purse-label {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bone-dim);
+  }
+  .purse-value {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 2rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .shelf { display: grid; gap: 0.5rem; margin-top: 1rem; }
+  .shop-item {
+    width: 100%; min-height: 56px; text-align: left;
+    display: flex; align-items: center; gap: 1rem;
+    background: var(--felt-raised); color: var(--bone);
+    border: 1px solid var(--rule); border-radius: 2px; padding: 0.7rem 1rem;
+    font: inherit; font-size: 0.9rem; cursor: pointer; touch-action: manipulation;
+  }
+  .shop-item:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .shop-item:disabled { cursor: not-allowed; opacity: 0.5; }
+  .shop-item .price {
+    margin-left: auto; font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.85rem; color: var(--brass); font-variant-numeric: tabular-nums;
+  }
+  .refusal { min-height: 1.2rem; margin: 0.15rem 0 0; font-size: 0.78rem; color: var(--blood); }
+
+  .callout {
+    margin-top: 3rem; border-left: 3px solid var(--brass);
+    background: var(--felt); padding: 1rem 1.25rem; border-radius: 0 3px 3px 0;
+  }
+  .callout h3 { margin: 0 0 0.5rem; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.3rem; font-weight: 600; }
+  .callout p { margin: 0 0 0.6rem; color: var(--bone-dim); font-size: 0.92rem; max-width: 66ch; }
+  .callout p:last-child { margin-bottom: 0; }
+  code {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.85em; color: var(--brass); background: rgba(201,162,39,0.08);
+    padding: 0.1em 0.35em; border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <p class="eyebrow">DLR-145 · Version 6 · Layout &amp; interaction mockup</p>
+    <h1>Spent cards, and the felt with no action points</h1>
+    <p class="standfirst">
+      Three surfaces lose a readout in this ticket, and one gains a behaviour: a buff card you
+      activate is a card you no longer own. Placeholder data throughout — the point is the shape,
+      the density and the taps, not the numbers.
+    </p>
+  </header>
+
+  <div class="control-strip">
+    <p>Every action-point figure this ticket deletes. Turn it on to see exactly what leaves each surface.</p>
+    <button type="button" class="toggle" id="revealBtn" aria-pressed="false">
+      <span class="swatch" aria-hidden="true"></span>
+      <span id="revealLabel">Show what's removed</span>
+    </button>
+  </div>
+
+  <section>
+    <div class="surface-head">
+      <h2>The action bar</h2>
+      <span class="file">src/app/warCouncil/ActionBar.tsx</span>
+    </div>
+    <p class="surface-note">
+      The Apply Buff button's figure drops the AP half and keeps the held count. Tap it to open the
+      loadout — the same single tap it costs today.
+    </p>
+
+    <div class="felt-panel">
+      <div class="bar" role="group" aria-label="Round actions">
+        <button type="button" class="bar-btn" id="loadoutBtn" aria-pressed="false" aria-controls="loadout">
+          <span class="bar-label">Apply Buff</span>
+          <span class="bar-figure">
+            <span class="gone" data-gone>6 AP · </span><span id="heldFigure">21 held</span>
+          </span>
+        </button>
+        <button type="button" class="bar-btn" onclick="logLine('Cards — armed the 7 of Bells.')">
+          <span class="bar-label">Cards</span>
+          <span class="bar-figure">No card selected</span>
+        </button>
+        <button type="button" class="bar-btn" onclick="logLine('Apply Damage — payout queued, 1 trick to go.')">
+          <span class="bar-label">Apply Damage</span>
+          <span class="bar-figure">cash 12<span class="gone" data-gone> for 1 action point</span></span>
+        </button>
+      </div>
+
+      <div class="loadout" id="loadout" role="dialog" aria-label="Your buffs" hidden>
+        <div class="loadout-head">
+          <span class="loadout-title">Your buffs</span>
+          <span class="loadout-count gone" data-gone>6 action points left</span>
+          <span class="loadout-count" id="loadoutCount">21 cards</span>
+        </div>
+        <div class="rows" id="rows"></div>
+        <p class="empty" id="emptyMsg" hidden>Nothing left to spend. Every card is gone for this run.</p>
+      </div>
+
+      <div class="log">
+        <h3>What happened</h3>
+        <ol id="logList"><li>Fresh run. Opening pile drawn: 20 cards plus the guaranteed Cheat.</li></ol>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="surface-head">
+      <h2>The loadout row</h2>
+      <span class="file">src/app/warCouncil/buffLabels.ts · BuffLoadoutPanel.tsx</span>
+    </div>
+    <p class="surface-note">
+      Each row loses its trailing <code>2 AP.</code> and keeps tier, name, condition and reward. Two taps
+      to spend: the first poises the row, the second commits — and the card leaves the pile for the
+      rest of the run. Escape drops a poise. Open the bar above and try it; the held count and the
+      log below both move.
+    </p>
+    <div class="felt-panel">
+      <p class="surface-note" style="margin:0">
+        Twenty-one rows is the real density question this ticket creates — the panel was laid out
+        against a pile of five. Scroll the list above.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="surface-head">
+      <h2>The shop</h2>
+      <span class="file">src/app/run/ShopPanel.tsx</span>
+    </div>
+    <p class="surface-note">
+      The action-points purse cell and the action-point purchase both go. Ten coins a fight arrive
+      against a one-coin heal and a one-coin pull — the shop poses no real choice this pass, on the
+      developer's explicit call. Buy something and watch the purse.
+    </p>
+
+    <div class="felt-panel">
+      <div class="purse" role="group" aria-label="Your purse">
+        <span class="purse-cell">
+          <span class="purse-label">Coins</span>
+          <span class="purse-value" id="coinValue">10</span>
+        </span>
+        <span class="purse-cell gone" data-gone>
+          <span class="purse-label">Action points</span>
+          <span class="purse-value">6</span>
+        </span>
+        <span class="purse-cell">
+          <span class="purse-label">Health</span>
+          <span class="purse-value" id="healthValue">14 / 20</span>
+        </span>
+      </div>
+
+      <div class="shelf">
+        <div>
+          <button type="button" class="shop-item" id="pullBtn">
+            <span><span class="row-name">Slot pull</span> — one spin of the Skirmisher</span>
+            <span class="price">1 coin</span>
+          </button>
+          <p class="refusal" id="pullRefusal"></p>
+        </div>
+        <div>
+          <button type="button" class="shop-item" id="healBtn">
+            <span><span class="row-name">Heal</span> — restore 4 health</span>
+            <span class="price">1 coin</span>
+          </button>
+          <p class="refusal" id="healRefusal"></p>
+        </div>
+        <div class="gone">
+          <button type="button" class="shop-item" disabled>
+            <span data-gone><span class="row-name">Action points</span> — +5 action points a hand, for the rest of the run</span>
+            <span class="price" data-gone>3 coins</span>
+          </button>
+          <p class="refusal">Removed by this ticket.</p>
+        </div>
+        <div>
+          <button type="button" class="shop-item" id="swanBtn">
+            <span><span class="row-name">Swan tier</span> — step the Swan's ability up a rung</span>
+            <span class="price">2 coins</span>
+          </button>
+          <p class="refusal" id="swanRefusal"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="callout">
+    <h3>What this mockup is standing in for</h3>
+    <p>
+      <strong>AC1 and AC10</strong> — a spent card leaves the pile and does not return, but still
+      fires on the trick it was spent on. The log records both halves; that second half is the
+      <code>spentThisTrick</code> field the plan adds, and without it the card would silently pay nothing.
+    </p>
+    <p>
+      <strong>AC2 and AC3</strong> — every AP cost, AP pool and AP-capacity readout is gone from the
+      three surfaces, and the shop shelf closes over the removed row rather than leaving a gap.
+    </p>
+    <p>
+      It is not standing in for the visual identity of the real screens, which already exist and are
+      not being restyled. Colours, spacing and type here are the mockup's own.
+    </p>
+  </div>
+</div>
+
+<script>
+  var SUITS = ['Bell', 'Key', 'Moon'];
+  var TIERS = ['bronze', 'bronze', 'bronze', 'bronze', 'silver', 'gold'];
+
+  // 20 drawn cards plus the guaranteed Cheat — the AC6 opening pile, with duplicates, because
+  // 20 cards cannot be drawn from 13 distinct templates.
+  var PILE = [];
+  var families = [
+    { name: 'Taker', cond: 'win a trick with', axes: [['Blade', '+1 damage'], ['Momentum', '+2 multiplier']] },
+    { name: 'Feeder', cond: 'lose a trick with', axes: [['Blade', '+1 damage']] },
+    { name: 'Sidestep', cond: 'dodge a skull', axes: [['Blade', '+1 damage'], ['Momentum', '+2 multiplier']] }
+  ];
+  var seed = 7;
+  function nextRandom() { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
+
+  for (var i = 0; i < 20; i++) {
+    var fam = families[Math.floor(nextRandom() * families.length)];
+    var axis = fam.axes[Math.floor(nextRandom() * fam.axes.length)];
+    var suit = SUITS[Math.floor(nextRandom() * SUITS.length)];
+    var tier = TIERS[Math.floor(nextRandom() * TIERS.length)];
+    var isSidestep = fam.name === 'Sidestep';
+    PILE.push({
+      id: 'b' + i,
+      tier: tier,
+      name: (isSidestep ? '' : suit + '-') + fam.name + ' (' + axis[0] + ')',
+      effect: isSidestep ? 'dodge a skull: ' + axis[1] : fam.cond + ' ' + suit + 's: ' + axis[1]
+    });
+  }
+  PILE.push({ id: 'cheat', tier: 'bronze', name: 'Cheat', effect: 'ignore follow-suit for 1 trick' });
+
+  var poised = null;
+
+  function el(id) { return document.getElementById(id); }
+
+  function logLine(text, cls) {
+    var li = document.createElement('li');
+    if (cls) { li.className = cls; }
+    li.textContent = text;
+    el('logList').appendChild(li);
+    el('logList').parentElement.scrollTop = 9999;
+  }
+
+  function renderRows() {
+    var rows = el('rows');
+    rows.innerHTML = '';
+    PILE.forEach(function (buff, index) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'row-buff';
+      btn.dataset.tier = buff.tier;
+      btn.setAttribute('aria-pressed', poised === buff.id ? 'true' : 'false');
+      btn.tabIndex = index === 0 ? 0 : -1;   // roving tabindex, as the real panel uses
+
+      var chip = document.createElement('span');
+      chip.className = 'tier-chip';
+      chip.textContent = buff.tier;
+
+      var name = document.createElement('span');
+      name.className = 'row-name';
+      name.textContent = buff.name;
+
+      var effect = document.createElement('span');
+      effect.className = 'row-effect';
+      effect.textContent = '— ' + buff.effect + '.';
+
+      var apGone = document.createElement('span');
+      apGone.className = 'gone';
+      apGone.setAttribute('data-gone', '');
+      apGone.textContent = ' 2 AP.';
+
+      btn.appendChild(chip);
+      btn.appendChild(name);
+      btn.appendChild(effect);
+      btn.appendChild(apGone);
+
+      if (poised === buff.id) {
+        var hint = document.createElement('span');
+        hint.className = 'row-hint';
+        hint.textContent = 'Tap again to spend';
+        btn.appendChild(hint);
+      }
+
+      btn.addEventListener('click', function () { tapBuff(buff.id); });
+      rows.appendChild(btn);
+    });
+
+    el('emptyMsg').hidden = PILE.length > 0;
+    el('loadoutCount').textContent = PILE.length + (PILE.length === 1 ? ' card' : ' cards');
+    el('heldFigure').textContent = PILE.length + ' held';
+  }
+
+  function tapBuff(id) {
+    if (poised !== id) {
+      poised = id;
+      renderRows();
+      return;
+    }
+    var index = -1;
+    for (var i = 0; i < PILE.length; i++) { if (PILE[i].id === id) { index = i; } }
+    if (index === -1) { return; }
+    var buff = PILE[index];
+    PILE.splice(index, 1);          // consumed — it does not come back this run
+    poised = null;
+    renderRows();
+    logLine('Spent the ' + buff.tier + ' ' + buff.name + '. Gone from the pile for the rest of the run.', 'spent-tag');
+    logLine('…and it still fires at this trick’s resolution: ' + buff.effect + '.', 'fire-tag');
+  }
+
+  el('loadoutBtn').addEventListener('click', function () {
+    var panel = el('loadout');
+    var open = panel.hidden;
+    panel.hidden = !open;
+    this.setAttribute('aria-pressed', open ? 'true' : 'false');
+    if (!open) { poised = null; renderRows(); }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && poised !== null) { poised = null; renderRows(); logLine('Escape — poise dropped, nothing spent.'); }
+  });
+
+  el('revealBtn').addEventListener('click', function () {
+    var on = this.getAttribute('aria-pressed') === 'true';
+    this.setAttribute('aria-pressed', on ? 'false' : 'true');
+    document.body.classList.toggle('reveal', !on);
+    el('revealLabel').textContent = on ? "Show what's removed" : "Hide what's removed";
+  });
+
+  // ---- shop ----
+  var coins = 10, health = 14, maxHealth = 20;
+
+  function renderShop() {
+    el('coinValue').textContent = coins;
+    el('healthValue').textContent = health + ' / ' + maxHealth;
+
+    var healFull = health >= maxHealth;
+    var healBroke = coins < 1;
+    el('healBtn').disabled = healFull || healBroke;
+    el('healRefusal').textContent = healFull ? 'Already at full health.' : (healBroke ? 'Not enough coins.' : '');
+
+    el('pullBtn').disabled = coins < 1;
+    el('pullRefusal').textContent = coins < 1 ? 'Not enough coins.' : '';
+
+    el('swanBtn').disabled = coins < 2;
+    el('swanRefusal').textContent = coins < 2 ? 'Not enough coins.' : '';
+  }
+
+  el('healBtn').addEventListener('click', function () {
+    coins -= 1; health = Math.min(maxHealth, health + 4); renderShop();
+    logLine('Bought a Heal for 1 coin. Health now ' + health + '.');
+  });
+  el('pullBtn').addEventListener('click', function () {
+    coins -= 1; renderShop();
+    logLine('Pulled the Skirmisher for 1 coin. One new card into the pile.');
+  });
+  el('swanBtn').addEventListener('click', function () {
+    coins -= 2; renderShop();
+    logLine('Stepped the Swan up a rung for 2 coins.');
+  });
+
+  renderRows();
+  renderShop();
+</script>

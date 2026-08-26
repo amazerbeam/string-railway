@@ -28,14 +28,25 @@ filters it out of every offer. `reachability.ts`'s own docblocks say exactly tha
 
 ## What it measured, at 2026-08-24 (updated the same day by DLR-132)
 
-**Six of the game's twenty `BuffKind`s cannot be minted at all — down from eight.**
+**Fourteen of the game's twenty `BuffKind`s cannot be minted at all — up from six.**
 
-| Reachable — 13 kinds | Unreachable — 6 kinds |
+| Reachable — 5 kinds | Unreachable — 14 kinds |
 |---|---|
-| Taker, Feeder, Mark of the *R*, Sidestep, Glutton, Hoarder, Unbloodied, Debt Collector, Keepsake, Miser, Cornered, **Cheat, Timebomb** | Ward, Puppeteer, Second Thoughts, Foresight, Spyglass, **Shield** |
+| Taker, Feeder, Sidestep, **Cheat, Timebomb** | Ward, Puppeteer, Second Thoughts, Foresight, Spyglass, **Shield**, and — since DLR-145 — Mark of the *R*, Glutton, Hoarder, Unbloodied, Debt Collector, Keepsake, Miser, Cornered |
 
-`BUFF_TEMPLATES` holds **73** templates as of DLR-132 (71 condition families plus `ACTIVATED_TEMPLATES`'s
-two activated cards) — up from 71. `mintFromTemplate`'s `form: 'activated'` branch delegates to
+> **DLR-145 widened the unreachable set by eight, and it is deliberate rather than a defect.** The
+> eight new entries are still **fully declared**: they keep their `BuffKind` member, their
+> `CONDITION_MODIFIER` price, their `buffFires` case and their `BUFF_CADENCE` row. Only their
+> `TEMPLATE_FAMILIES` rows are gone, and `ConditionBuffTemplate.kind` is now typed
+> `MintableConditionKind`, so a cut family is **unconstructible** rather than merely unweighted.
+> Restoring one is a single row. `unshelvedShopItems()` gained `ApCapacity` in the same ticket for
+> the same kind of reason. The audit's own identity still holds: mintable + unreachable + 1 equals
+> the size of the `BuffKind` union.
+
+`BUFF_TEMPLATES` held **73** templates as of DLR-132 (71 condition families plus
+`ACTIVATED_TEMPLATES`'s two activated cards) — up from 71. **It holds 13 after DLR-145**: 6 Taker
+(3 suits × Blade/Momentum) + 3 Feeder (3 suits × Blade) + 2 Sidestep (Blade/Momentum) + the same 2
+activated cards. `mintFromTemplate`'s `form: 'activated'` branch delegates to
 `cheatBuff`/`timebombBuff`, and both templates carry a positive slot weight on both machines
 (`SLOT_FAMILY_WEIGHTS`), so both are drawable by a pull like any condition family. **`cheatBuff` and
 `timebombBuff` now have production callers**: DLR-107's migration recorded that its intermediate
@@ -45,8 +56,8 @@ Foresight, Spyglass) and Shield are **explicitly out of this ticket's scope** (D
 this ticket owns Cheat and Timebomb only) and stay unreachable — `shieldBuff` still has zero
 production callers.
 
-**Four of the eight `ShopItem`s are off the shelf, unchanged by DLR-132.** `SHOP_ITEMS` is
-`[ApCapacity, SwanTier, WitchTier, Heal]`; `Cheat`, `Timebomb`, `BlastGuard` and `Whetstone` are
+**Four of the eight `ShopItem`s were off the shelf at DLR-132; five are since DLR-145.**
+`SHOP_ITEMS` was `[ApCapacity, SwanTier, WitchTier, Heal]` and is now `[SwanTier, WitchTier, Heal]`; `Cheat`, `Timebomb`, `BlastGuard` and `Whetstone` are
 still priced by `priceOf` and still handled by `buyFromShop`, but the purchase mechanism the last two
 depend on (`RunState.blastGuardHeld`, `RunState.whetstones`) is unchanged, while the Cheat and
 Timebomb branches now mint a buff into the pile rather than writing a field this ticket deleted
@@ -72,7 +83,8 @@ Cheat lived outside `RunState.buffs` entirely, on a deleted `cheats` field.
 > functions already fold in.
 
 **The five consumables and Shield stay unreachable, for a different reason than before.** They are
-absent from `BUFF_TEMPLATES` itself (73 = 71 condition templates + 2 activated), so neither a pull nor
+absent from `BUFF_TEMPLATES` itself (73 = 71 condition + 2 activated at the time; 13 = 11 + 2 since
+DLR-145), so neither a pull nor
 the opening draw can produce one. Filling the pile was never what stood between a player and a Ward;
 filling the *pool* is.
 

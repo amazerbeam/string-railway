@@ -1,11 +1,5 @@
 import { type KeyboardEvent } from 'react'
-import {
-  type ActionPoints,
-  type Buff,
-  type BuffActivationRefusal,
-  type BuffActivationState,
-  type BuffId,
-} from '../../hunt'
+import { type Buff, type BuffActivationRefusal, type BuffId } from '../../hunt'
 import { LOADOUT_EMPTY_MESSAGE, LOADOUT_PANEL_LABEL } from './actionBarLabels'
 import { BUFF_ACTIVATION_REFUSAL_MESSAGE, buffLine, buffRowAccessibleName } from './buffLabels'
 import { useRovingTabIndex } from './useRovingTabIndex'
@@ -19,19 +13,19 @@ function noop() {}
 
 export interface BuffLoadoutPanelProps {
   readonly buffs: readonly Buff[]
-  readonly activation: BuffActivationState
   readonly poised: BuffId | null
   readonly refusalFor: (buff: Buff) => BuffActivationRefusal | null
-  readonly apCostFor: (buff: Buff) => ActionPoints
   readonly onTapBuff: (id: BuffId) => void
   readonly onClose: () => void
 }
 
 /**
  * DLR-114 AC2, folded into ordinary rows on DLR-132 — opened by Apply Buff. One glanceable line
- * per owned, priced buff (`activatableBuffs` has already dropped the `Unassigned` placeholders
- * before this component ever sees `buffs`) and the hand's remaining AP. Cheat and Timebomb are
- * members of `buffs` like any other card — DLR-132 deleted the two bespoke widgets (`CheatSlots`,
+ * per owned buff (`activatableBuffs` has already dropped the `Unassigned` placeholders before this
+ * component ever sees `buffs`) plus a held-card count. DLR-145 AC2 — the AP pool is gone from this
+ * header along with the rest of action points; the count replacing it is the loadout's own scarcity
+ * signal now (`consumables.ts`'s `CONDITION_CARD_SINGLE_USE`). Cheat and Timebomb are members of
+ * `buffs` like any other card — DLR-132 deleted the two bespoke widgets (`CheatSlots`,
  * `TimebombCharge`) and the divider that used to separate them from this list, so a row is now the
  * WHOLE of what this panel renders.
  *
@@ -59,10 +53,8 @@ export interface BuffLoadoutPanelProps {
  */
 export default function BuffLoadoutPanel({
   buffs,
-  activation,
   poised,
   refusalFor,
-  apCostFor,
   onTapBuff,
   onClose,
 }: BuffLoadoutPanelProps) {
@@ -90,8 +82,8 @@ export default function BuffLoadoutPanel({
       onClick={(e) => e.stopPropagation()}
       onKeyDown={handlePanelKeyDown}
     >
-      <p className="wc-loadout-ap">
-        {activation.apPool} action {activation.apPool === 1 ? 'point' : 'points'} left
+      <p className="wc-loadout-count">
+        {buffs.length} {buffs.length === 1 ? 'card' : 'cards'}
       </p>
       {buffs.length === 0 ? (
         <p className="wc-loadout-empty">{LOADOUT_EMPTY_MESSAGE}</p>
@@ -106,12 +98,12 @@ export default function BuffLoadoutPanel({
                   type="button"
                   className={`wc-loadout-buff${isPoised ? ' is-poised' : ''}`}
                   aria-pressed={poised === buff.id}
-                  aria-label={buffRowAccessibleName(buff, apCostFor(buff), isPoised, refusal)}
+                  aria-label={buffRowAccessibleName(buff, isPoised, refusal)}
                   disabled={refusal !== null}
                   tabIndex={index === tabStopIndex ? 0 : -1}
                   onClick={() => onTapBuff(buff.id)}
                 >
-                  {buffLine(buff, apCostFor(buff))}
+                  {buffLine(buff)}
                 </button>
                 {refusal !== null && (
                   <p className="wc-loadout-refusal">{BUFF_ACTIVATION_REFUSAL_MESSAGE[refusal]}</p>

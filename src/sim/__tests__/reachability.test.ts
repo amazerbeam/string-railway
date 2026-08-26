@@ -11,22 +11,14 @@ import {
 import { mintableBuffKinds, unreachableBuffKinds, unshelvedShopItems } from '../reachability'
 
 describe('reachability — the DLR-120 audit', () => {
-  it('mints exactly the 11 condition families plus DLR-132s two activated cards', () => {
+  it('DLR-145 — mints exactly the 3 surviving condition families plus DLR-132s two activated cards', () => {
     const mintable = mintableBuffKinds()
-    expect(mintable.size).toBe(13)
+    expect(mintable.size).toBe(5)
     expect([...mintable].sort()).toEqual(
       [
         BuffKind.Taker,
         BuffKind.Feeder,
-        BuffKind.MarkOfRank,
         BuffKind.Sidestep,
-        BuffKind.Glutton,
-        BuffKind.Hoarder,
-        BuffKind.Unbloodied,
-        BuffKind.DebtCollector,
-        BuffKind.Keepsake,
-        BuffKind.Miser,
-        BuffKind.Cornered,
         BuffKind.Cheat,
         BuffKind.Timebomb,
       ].sort(),
@@ -54,11 +46,30 @@ describe('reachability — the DLR-120 audit', () => {
     expect(unreachable.has(BuffKind.Cheat)).toBe(false)
     expect(unreachable.has(BuffKind.Timebomb)).toBe(false)
     expect(unreachable.has(BuffKind.Shield)).toBe(true)
-    expect(unreachable.size).toBe(6)
+  })
+
+  it('DLR-145 — widens the unreachable set to the previous 6 plus the 8 families pruned from TEMPLATE_FAMILIES', () => {
+    // The eight are DELIBERATELY declared-but-unreachable, not a defect: `BuffKind`,
+    // `CONDITION_MODIFIER`, `buffFires` and `BUFF_CADENCE` all still carry them (see
+    // `buffTemplates.ts`'s module docblock), and restoring one is a `TEMPLATE_FAMILIES` row.
+    const unreachable = unreachableBuffKinds()
+    expect(unreachable.size).toBe(14)
+    for (const kind of [
+      BuffKind.MarkOfRank,
+      BuffKind.Glutton,
+      BuffKind.Hoarder,
+      BuffKind.Unbloodied,
+      BuffKind.DebtCollector,
+      BuffKind.Keepsake,
+      BuffKind.Miser,
+      BuffKind.Cornered,
+    ]) {
+      expect(unreachable.has(kind)).toBe(true)
+    }
   })
 
   it('partitions the BuffKind union with mintable and unreachable, less Unassigned', () => {
-    expect(BUFF_TEMPLATES.length).toBe(73)
+    expect(BUFF_TEMPLATES.length).toBe(13)
     const total = Object.values(BuffKind).length
     expect(mintableBuffKinds().size + unreachableBuffKinds().size + 1).toBe(total)
   })
@@ -71,6 +82,11 @@ describe('reachability — the DLR-120 audit', () => {
     expect(unshelved.has(ShopItem.Timebomb)).toBe(true)
     expect(unshelved.has(ShopItem.BlastGuard)).toBe(true)
     expect(unshelved.has(ShopItem.Whetstone)).toBe(true)
+  })
+
+  it('DLR-145 — ApCapacity is not on the shelf either, AP having been removed entirely', () => {
+    const unshelved = unshelvedShopItems()
+    expect(unshelved.has(ShopItem.ApCapacity)).toBe(true)
   })
 
   it('PINNED GAP — a fresh run holds no Blast Guard or Whetstone', () => {

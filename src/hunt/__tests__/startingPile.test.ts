@@ -30,12 +30,6 @@ describe('seedStartingBuffPile', () => {
     }
   })
 
-  it('draws WITHOUT replacement — four distinct kinds-and-conditions, no duplicated card', () => {
-    const pile = seedStartingBuffPile(4, 1, createSeededRng(startingPileSeedFor(3)))
-    const signatures = pile.map((b) => `${b.kind}|${JSON.stringify(b.condition)}|${b.reward.axis}`)
-    expect(new Set(signatures).size).toBe(pile.length)
-  })
-
   it('starts ids at `firstId`, not always 1', () => {
     const pile = seedStartingBuffPile(2, 7, createSeededRng(startingPileSeedFor(1)))
     expect(pile.map((b) => b.id)).toEqual([7, 8])
@@ -47,6 +41,26 @@ describe('seedStartingBuffPile', () => {
 
   it('throws RangeError when the weight table cannot supply `count` templates', () => {
     expect(() => seedStartingBuffPile(4, 1, createSeededRng(1), () => 0)).toThrow(RangeError)
+  })
+
+  it('draws more cards than there are templates, with duplicates (DLR-145 AC6)', () => {
+    const pile = seedStartingBuffPile(20, 1, createSeededRng(startingPileSeedFor(1)))
+    expect(pile).toHaveLength(20)
+    expect(pile.every((buff) => buff.tier === BuffTier.Bronze)).toBe(true)
+    expect(pile.map((buff) => buff.id)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1))
+    expect(new Set(pile.map((buff) => buff.kind)).size).toBeLessThanOrEqual(5)
+  })
+
+  it('is reproducible from the same seed', () => {
+    const first = seedStartingBuffPile(20, 1, createSeededRng(startingPileSeedFor(42)))
+    const second = seedStartingBuffPile(20, 1, createSeededRng(startingPileSeedFor(42)))
+    expect(first.map((b) => b.kind + b.reward.axis)).toEqual(
+      second.map((b) => b.kind + b.reward.axis),
+    )
+  })
+
+  it('still throws on an all-zero weight table', () => {
+    expect(() => seedStartingBuffPile(20, 1, createSeededRng(1), () => 0)).toThrow(RangeError)
   })
 })
 

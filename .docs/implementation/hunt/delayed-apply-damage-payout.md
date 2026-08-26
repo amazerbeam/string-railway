@@ -236,6 +236,15 @@ on the one path where a **delayed** payout is what killed the Quarry — see the
 
 ## The AP cost and the widened refusal — AC1
 
+> **DLR-145 made this section's cost zero, 2026-08-25.** `AP_ENABLED` is `false`, so `apCostFor`
+> returns 0 for `APPLY_DAMAGE_AP_COST` too, `spendAp` subtracts nothing, and **`InsufficientAp` is
+> unreachable on this path** — it stays in the `ApplyDamageRefusal` union so
+> `APPLY_DAMAGE_REFUSAL_MESSAGE` stays a total `Record`, and the ordering below is unchanged in code.
+> The constant, the clause, `ApplyDamageStock.apPool` and every test around them are all still
+> there; the press is simply free. The action bar's face lost its `for N AP` suffix in the same pass
+> (it now reads `cash {N}`), because a control that says "for 0 AP" still claims a resource exists.
+> See [action points](action-points.md#action-points-are-switched-off--dlr-145-2026-08-25).
+
 `APPLY_DAMAGE_AP_COST` (`1`, `src/hunt/apConfig.ts`) is spent through `spendAp` — the only subtraction
 path — on the committing press, and is **not refunded** if the payout is later wiped. Availability
 extends `src/warCouncil/voluntaryCashOut.ts`'s existing `applyDamageRefusalFor` rather than adding a

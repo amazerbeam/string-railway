@@ -14,7 +14,9 @@ describe('applyDamageDelayTricks', () => {
   })
 
   it('AC5 — a shortening buff subtracts, and the result never goes below zero', () => {
-    expect(applyDamageDelayTricks({ shortenBy: 1 })).toBe(Math.max(0, APPLY_DAMAGE_DELAY_TRICKS - 1))
+    expect(applyDamageDelayTricks({ shortenBy: 1 })).toBe(
+      Math.max(0, APPLY_DAMAGE_DELAY_TRICKS - 1),
+    )
     expect(applyDamageDelayTricks({ shortenBy: 99 })).toBe(0)
   })
 

@@ -1,6 +1,4 @@
 import {
-  BUFF_TARGET_RANK_MAX,
-  BUFF_TARGET_RANK_MIN,
   BuffKind,
   BuffRewardAxis,
   BuffTargetSuit,
@@ -10,24 +8,29 @@ import {
   type BuffId,
   type BuffTarget,
 } from './buffs'
-import type { BuffConditionKind, BuffCostAxis } from './buffCosts'
+import type { BuffCostAxis } from './buffCosts'
 import { cheatBuff, timebombBuff } from './buffCatalog'
 
 /**
- * DLR-112 — the 71-template v1 condition-card pool, GENERATED at module load from two small
- * crossing tables rather than hand-listed. `.docs/design/Balatro-Forbidden-Solitaire/
- * v1-buff-card-list.md` → *Condition templates* is the authoritative table this file transcribes;
- * cited, never re-derived.
+ * DLR-112 — originally the 71-template v1 condition-card pool, GENERATED at module load from two
+ * small crossing tables rather than hand-listed. `.docs/design/Balatro-Forbidden-Solitaire/
+ * v1-buff-card-list.md` → *Condition templates* is the authoritative table this file transcribed.
  *
- * DLR-132 — the shape problem this docblock used to state as open is now CLOSED for Cheat and
- * Timebomb: `BuffTemplate` is a discriminated union tagged `form`, `ConditionBuffTemplate` keeps
- * this file's 71 generated templates exactly as they were, and `ActivatedBuffTemplate` carries the
- * two activated cards (`ACTIVATED_TEMPLATES`, appended below) — 73 templates total. The five
- * consumables (Ward, Second Thoughts, Puppeteer, Foresight, Spyglass) are DELIBERATELY STILL
- * ABSENT: the `form` tag is exactly what makes them trivially addable — five more
- * `ActivatedBuffTemplate` literals, one more `mintFromTemplate` branch each, and ten unchosen slot
- * weights — but that is DLR-120's scope boundary and a separate decision with its own weights, not
- * this ticket's.
+ * DLR-132 added `ActivatedBuffTemplate` and its two cards (Cheat, Timebomb), taking the pool to 73.
+ *
+ * DLR-145 PARES the pool to 13 — 6 Taker + 3 Feeder + 2 Sidestep condition templates plus the same
+ * 2 activated ones — so that card scarcity, not a refilling action-points pool, is the limit on how
+ * hard a hand can be pushed. `TEMPLATE_FAMILIES` now lists only these three families. The eight cut
+ * families (MarkOfRank, Glutton, Hoarder, Unbloodied, DebtCollector, Keepsake, Miser, Cornered) are
+ * NOT deleted from `BuffKind`, `CONDITION_MODIFIER`, `buffFires` or `BUFF_CADENCE` — they simply
+ * have no row here any more, exactly as DLR-116 left Cheat, Timebomb, Blast Guard and Whetstone
+ * priced but off the shop shelf. Restoring one is a `TEMPLATE_FAMILIES` row, not a design from
+ * scratch. `MintableConditionKind` and `MintableRewardAxis` (below) are what make a cut family or a
+ * cut axis UNCONSTRUCTIBLE rather than merely unweighted — narrowing the template's own types,
+ * not zeroing a slot weight, is what the plan calls out as the actual mechanism.
+ *
+ * The five consumables (Ward, Second Thoughts, Puppeteer, Foresight, Spyglass) are still absent —
+ * DLR-120's scope boundary, unrelated to this pruning.
  */
 
 /** One distinct card template — a (family, reward axis, optional parameter) crossing. Carries NO
@@ -43,11 +46,23 @@ export interface ConditionBuffTemplate {
    *  gone — a future rename must ship a migration. (Was documented "NOT persisted" by DLR-112;
    *  DLR-113 overturned that deliberately, see that ticket's plan.md → Approach.) */
   readonly id: string
-  readonly kind: BuffConditionKind
-  readonly axis: BuffCostAxis
-  /** Present only on the suit- or rank-parameterised families. */
+  readonly kind: MintableConditionKind
+  readonly axis: MintableRewardAxis
+  /** Present only on the suit-parameterised families. */
   readonly target?: BuffTarget
 }
+
+/** DLR-145 AC5 — the three condition families a template can still mint. The other eight stay
+ *  DECLARED on `BuffKind`, keep their `CONDITION_MODIFIER` price, their `buffFires` case and their
+ *  `BUFF_CADENCE` row; they are simply unreachable, exactly as DLR-116 left Cheat, Timebomb, Blast
+ *  Guard and Whetstone priced but off the shelf. Restoring one is a row in `TEMPLATE_FAMILIES`. */
+export type MintableConditionKind =
+  typeof BuffKind.Taker | typeof BuffKind.Feeder | typeof BuffKind.Sidestep
+
+/** DLR-145 AC5 — Blade and Momentum. `coins` and `apRefund` stay on `BuffRewardAxis` and keep
+ *  their `REWARD_BASE` and `REWARD_TIER_VALUE` ladders; narrowing HERE is what makes a
+ *  coins-paying card unconstructible rather than merely unweighted. */
+export type MintableRewardAxis = typeof BuffRewardAxis.Magnitude | typeof BuffRewardAxis.Multiplier
 
 /** The two kinds an ACTIVATED template can mint. A closed pair, not `BuffConsumableKind`: the
  *  five consumable items and Shield have no template and no slot weight yet (DLR-132 scope). */
@@ -78,37 +93,27 @@ export const ACTIVATED_TEMPLATES: readonly ActivatedBuffTemplate[] = [
   { form: 'activated', id: 'timebomb', kind: BuffKind.Timebomb },
 ]
 
-const ALL_FOUR_AXES: readonly BuffCostAxis[] = [
-  BuffRewardAxis.Magnitude,
-  BuffRewardAxis.Coins,
-  BuffRewardAxis.ApRefund,
-  BuffRewardAxis.Multiplier,
-]
-const BLADE_AND_MOMENTUM: readonly BuffCostAxis[] = [
+const BLADE_AND_MOMENTUM: readonly MintableRewardAxis[] = [
   BuffRewardAxis.Magnitude,
   BuffRewardAxis.Multiplier,
 ]
 
 /** How one family fans out. `param` names the axis the family is parameterised over — DLR-111
- *  finding 3's suit- and rank-carrying families — and `undefined` means one generic template. */
+ *  finding 3's suit-carrying families — and `undefined` means one generic template. DLR-145
+ *  dropped `'rank'`: Mark of Rank was the only rank-carrying family and it is no longer minted. */
 interface TemplateFamily {
-  readonly kind: BuffConditionKind
-  readonly axes: readonly BuffCostAxis[]
-  readonly param?: 'suit' | 'rank'
+  readonly kind: MintableConditionKind
+  readonly axes: readonly MintableRewardAxis[]
+  readonly param?: 'suit'
 }
 
 const TEMPLATE_FAMILIES: readonly TemplateFamily[] = [
-  { kind: BuffKind.Taker, axes: ALL_FOUR_AXES, param: 'suit' },
-  { kind: BuffKind.Feeder, axes: ALL_FOUR_AXES, param: 'suit' },
-  { kind: BuffKind.MarkOfRank, axes: BLADE_AND_MOMENTUM, param: 'rank' },
+  { kind: BuffKind.Taker, axes: BLADE_AND_MOMENTUM, param: 'suit' },
+  // Feeder is Blade-only: `buffFires` reads it as `!ctx.playerWon`, which covers BOTH a clean loss
+  // and a dodge. Momentum pays on the dodge half and is wiped by the clean loss, which resets the
+  // multiplier it just raised. Blade pays on both. Restoring its Momentum version is one entry.
+  { kind: BuffKind.Feeder, axes: [BuffRewardAxis.Magnitude], param: 'suit' },
   { kind: BuffKind.Sidestep, axes: BLADE_AND_MOMENTUM },
-  { kind: BuffKind.Glutton, axes: ALL_FOUR_AXES },
-  { kind: BuffKind.Hoarder, axes: ALL_FOUR_AXES },
-  { kind: BuffKind.Unbloodied, axes: ALL_FOUR_AXES },
-  { kind: BuffKind.DebtCollector, axes: ALL_FOUR_AXES },
-  { kind: BuffKind.Keepsake, axes: [BuffRewardAxis.Coins], param: 'suit' },
-  { kind: BuffKind.Miser, axes: BLADE_AND_MOMENTUM },
-  { kind: BuffKind.Cornered, axes: BLADE_AND_MOMENTUM },
 ]
 
 const ALL_TARGET_SUITS: readonly BuffTargetSuit[] = [
@@ -117,31 +122,19 @@ const ALL_TARGET_SUITS: readonly BuffTargetSuit[] = [
   BuffTargetSuit.Moons,
 ]
 
-/** `BUFF_TARGET_RANK_MIN..BUFF_TARGET_RANK_MAX` inclusive — the eleven ranks Mark of the R fans
- *  out over (DLR-111 finding 3). */
-const ALL_TARGET_RANKS: readonly number[] = Array.from(
-  { length: BUFF_TARGET_RANK_MAX - BUFF_TARGET_RANK_MIN + 1 },
-  (_, i) => BUFF_TARGET_RANK_MIN + i,
-)
-
-/** One family's templates, crossing its axes with its parameter (suit, rank, or none). */
+/** One family's templates, crossing its axes with its parameter (suit, or none). */
 function templatesForTemplateFamily(family: TemplateFamily): readonly ConditionBuffTemplate[] {
   if (family.param === 'suit') {
     return ALL_TARGET_SUITS.flatMap((suit) =>
       family.axes.map((axis) => makeTemplate(family.kind, axis, { suit }, suit)),
     )
   }
-  if (family.param === 'rank') {
-    return ALL_TARGET_RANKS.flatMap((rank) =>
-      family.axes.map((axis) => makeTemplate(family.kind, axis, { rank }, String(rank))),
-    )
-  }
   return family.axes.map((axis) => makeTemplate(family.kind, axis, undefined, undefined))
 }
 
 function makeTemplate(
-  kind: BuffConditionKind,
-  axis: BuffCostAxis,
+  kind: MintableConditionKind,
+  axis: MintableRewardAxis,
   target: BuffTarget | undefined,
   paramLabel: string | undefined,
 ): ConditionBuffTemplate {
@@ -151,9 +144,10 @@ function makeTemplate(
     : { form: 'condition', id, kind, axis, target }
 }
 
-/** The v1 pool: 73 templates — the 71 GENERATED condition templates plus the 2 activated ones
- *  (`ACTIVATED_TEMPLATES`). The 5 consumable templates (Ward and its four siblings) are still
- *  absent — see this file's own docblock above for why that is a scope boundary, not a gap. */
+/** DLR-145's pared pool: 13 templates — 11 GENERATED condition templates (6 Taker + 3 Feeder +
+ *  2 Sidestep) plus the 2 activated ones (`ACTIVATED_TEMPLATES`). The 5 consumable templates (Ward
+ *  and its four siblings) are still absent — see this file's own docblock above for why that is a
+ *  scope boundary, not a gap. */
 export const BUFF_TEMPLATES: readonly BuffTemplate[] = [
   ...TEMPLATE_FAMILIES.flatMap(templatesForTemplateFamily),
   ...ACTIVATED_TEMPLATES,

@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145
 
 ## Responsibility
 
@@ -196,7 +196,12 @@ that constant and the module-scope `MAX_HEALTH` beside it are **deleted**, not r
   **still true and closer after DLR-93**). It is **304** lines — 262 at DLR-85, 208 before that — and
   holds five `useState` calls plus the widened `RunPhase`. That is still inside the 400-line budget and
   `react-frontend`'s reducer guidance is not yet breached, but **the next ticket that adds a surface
-  here should probably convert the driver to a reducer.** DLR-93 added a fourth click-handler
+  here should probably convert the driver to a reducer.**
+  > **It went over, 2026-08-25.** `App.tsx` measured **410 lines** at DLR-145's start — the budget is
+  > blocking, not advisory — and that ticket fixed the breach in-ticket rather than reporting it:
+  > extracting the hand-maintained shop-`refusals` literal to `src/app/run/shopRefusals.ts` and
+  > dropping the now-dead `apCapacity` prop from two mounts took it to **399**. It is still not a
+  > reducer, and the advice above still stands with less room than it had. DLR-93 added a fourth click-handler
   transition (`handleDrinkFlask`) and three props to the `ShopPanel` mount without adding state, which
   is why it did not force the question; the ticket after it may not be so cheap.
 - **No way to reach a standalone/manual-entry test harness.** DLR-47 deleted

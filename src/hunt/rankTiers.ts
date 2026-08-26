@@ -154,11 +154,12 @@ export function steppedTo(table: RankTierTable, rank: TieredRank): RankTierTable
  * which is deliberately steep for a permanent that never expires"). NOT chosen here.
  *
  * VALUE UNCHOSEN in the sense that matters — never played. Against the rest of the economy:
- * `COINS_PER_ENCOUNTER_WIN` is 1, a slot reroll is 1, Heal / Cheat / Blast Guard are 1, Timebomb
+ * `COINS_PER_ENCOUNTER_WIN` is 10, a slot reroll is 1, Heal / Cheat / Blast Guard are 1, Timebomb
  * is 2, AP capacity is 3, and Whetstone — which `config.ts` calls "the shop's one real splurge" —
- * is 4. At 5, one tier STEP is the most expensive purchase in the game and a full ladder is
- * roughly a whole run's flat encounter income. §7b names two readings it did not rule out: a flat
- * 5 for the whole ladder, or an escalating 5 / 10 / 15. Both are the developer's to take.
+ * is 4. At 5, one tier STEP now costs half an encounter win rather than a whole one, so a full
+ * ladder is a fraction of a single fight's income instead of a whole run's. §7b names two readings
+ * it did not rule out: a flat 5 for the whole ladder, or an escalating 5 / 10 / 15. Both are the
+ * developer's to take.
  *
  * UNIT: coins per tier STEP — bronze to silver, and silver to gold, each cost this.
  */

@@ -11,8 +11,9 @@ import {
 } from '../../hunt'
 
 /**
- * Every user-visible string on the shop screen (DLR-84, pared to Health/AP capacity plus the slot
- * machine on DLR-116).
+ * Every user-visible string on the shop screen (DLR-84, pared to Health plus the slot machine on
+ * DLR-116; the AP-capacity purchase left the shelf on DLR-145, though it keeps its name and blurb
+ * below — `SHOP_ITEM_NAME`/`SHOP_ITEM_BLURB` stay total over the whole `ShopItem` union).
  *
  * ALL PLACEHOLDER COPY — the wording is the developer's, exactly as `runLabels.ts` and
  * `warCouncil/labels.ts` mark their own. Prices and the heal figure are always interpolated from
@@ -23,8 +24,6 @@ import {
 export const SHOP_TITLE = 'Between fights'
 export const SHOP_COINS_LABEL = 'Coins'
 export const SHOP_HEALTH_LABEL = 'Health'
-/** DLR-116 AC2 — the purse cell for the per-hand AP pool bought this run. */
-export const SHOP_AP_LABEL = 'Action points'
 export const SHOP_NOTHING_TO_BUY_HINT = 'Buy nothing and carry the coin if you would rather.'
 export const SHOP_PURSE_GROUP_LABEL = 'Your purse and health'
 

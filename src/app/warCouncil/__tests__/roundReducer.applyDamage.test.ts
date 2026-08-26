@@ -168,12 +168,15 @@ describe('Apply Damage — the commit (AC1, AC2, AC3)', () => {
     expect(ui.applyPoised).toBe(false)
   })
 
-  it('AC1 — the committing tap spends APPLY_DAMAGE_AP_COST; the poising tap spends nothing', () => {
+  it('DLR-145 — AP_ENABLED is off, so neither the poising nor the committing tap spends anything', () => {
     const poised = roundReducer(uiFrom(streakRound()), tapApply)
     expect(poised.buffActivation.apPool).toBe(STARTING_AP)
 
     const committed = roundReducer(poised, tapApply)
-    expect(committed.buffActivation.apPool).toBe(STARTING_AP - APPLY_DAMAGE_AP_COST)
+    // APPLY_DAMAGE_AP_COST still names the nominal price — spendAp is what re-derives an
+    // effective cost of 0 through the disabled AP_ENABLED flag.
+    expect(APPLY_DAMAGE_AP_COST).toBeGreaterThan(0)
+    expect(committed.buffActivation.apPool).toBe(STARTING_AP)
   })
 
   it('AC3 — no trick is resolved, so no reveal is held and the hand stays live', () => {

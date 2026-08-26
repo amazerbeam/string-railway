@@ -4,10 +4,11 @@ import {
   SLOT_FAMILY_WEIGHTS,
   templateWeightFor,
   weightedDrawWithoutReplacement,
+  weightedDrawWithReplacement,
 } from '../slotWeights'
 import { BUFF_TEMPLATES, templateById, templatesForFamily } from '../buffTemplates'
 import { SLOT_MACHINE_IDS, SlotMachineId } from '../slotConfig'
-import { createSeededRng } from '../seededRng'
+import { createSeededRng, type Rng } from '../seededRng'
 import { BuffKind } from '../buffs'
 
 describe('templateWeightFor', () => {
@@ -39,20 +40,13 @@ describe('templateWeightFor', () => {
     },
   )
 
-  it('leans the two machines in opposite directions', () => {
-    const eventFamilies = [BuffKind.Taker, BuffKind.Feeder, BuffKind.Glutton]
-    const thresholdFamilies = [BuffKind.Hoarder, BuffKind.Unbloodied]
-    const share = (machineId: SlotMachineId, families: readonly string[]) => {
-      const all = Object.values(SLOT_FAMILY_WEIGHTS[machineId]).reduce((a, b) => a + b, 0)
-      return families.reduce((sum, f) => sum + SLOT_FAMILY_WEIGHTS[machineId][f as never], 0) / all
-    }
-    expect(share(SlotMachineId.Skirmisher, eventFamilies)).toBeGreaterThan(
-      share(SlotMachineId.Strongbox, eventFamilies),
-    )
-    expect(share(SlotMachineId.Strongbox, thresholdFamilies)).toBeGreaterThan(
-      share(SlotMachineId.Skirmisher, thresholdFamilies),
-    )
-  })
+  // DLR-145 — the "leans the two machines in opposite directions" case this file used to carry is
+  // GONE, not broken: it compared `Glutton`'s event-family share against `Hoarder`/`Unbloodied`'s
+  // threshold-family share, and all three families were cut from `SLOT_FAMILY_WEIGHTS` along with
+  // the coins/apRefund axis lean Strongbox rode on. Every surviving weight (Taker, Feeder,
+  // Sidestep, Cheat, Timebomb; Magnitude, Multiplier) is unchanged from before the pruning — see
+  // `slotWeights.ts`'s own comments on both tables — so there is no new lean to assert; a
+  // replacement lean is a developer decision this ticket does not make.
 })
 
 describe('activated templates', () => {
@@ -121,5 +115,58 @@ describe('weightedDrawWithoutReplacement', () => {
     const draw = () =>
       weightedDrawWithoutReplacement(BUFF_TEMPLATES, () => 1, createSeededRng(808), 8)
     expect(draw()).toEqual(draw())
+  })
+})
+
+describe('weightedDrawWithReplacement (DLR-145)', () => {
+  const scripted = (values: number[]): Rng => {
+    let i = 0
+    return () => values[i++ % values.length]
+  }
+
+  it('draws MORE items than there are candidates', () => {
+    expect(
+      weightedDrawWithReplacement(['a', 'b'], () => 1, scripted([0.1, 0.9, 0.1]), 5),
+    ).toHaveLength(5)
+  })
+
+  it('can return the same candidate twice', () => {
+    expect(weightedDrawWithReplacement(['a', 'b'], () => 1, scripted([0.1]), 3)).toEqual([
+      'a',
+      'a',
+      'a',
+    ])
+  })
+
+  it('never draws a zero-weighted candidate', () => {
+    const drawn = weightedDrawWithReplacement(
+      ['a', 'b'],
+      (x) => (x === 'a' ? 0 : 1),
+      scripted([0.1, 0.5, 0.9]),
+      3,
+    )
+    expect(drawn).toEqual(['b', 'b', 'b'])
+  })
+
+  it('returns empty rather than dividing when the total weight is zero', () => {
+    expect(weightedDrawWithReplacement(['a', 'b'], () => 0, scripted([0.5]), 3)).toEqual([])
+  })
+
+  it('does not mutate the candidate array', () => {
+    const candidates = ['a', 'b']
+    weightedDrawWithReplacement(candidates, () => 1, scripted([0.5]), 4)
+    expect(candidates).toEqual(['a', 'b'])
+  })
+
+  it('consumes exactly one rng call per item drawn', () => {
+    let calls = 0
+    const rng = createSeededRng(5)
+    const counted = () => {
+      calls++
+      return rng()
+    }
+    const drawn = weightedDrawWithReplacement(['a', 'b', 'c'], () => 1, counted, 7)
+    expect(drawn).toHaveLength(7)
+    expect(calls).toBe(7)
   })
 })

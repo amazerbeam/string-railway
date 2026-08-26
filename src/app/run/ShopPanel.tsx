@@ -2,7 +2,6 @@ import {
   flaskHealAmount,
   SHOP_ITEMS,
   ShopItem,
-  type ActionPoints,
   type Coins,
   type FlaskRefusal,
   type Health,
@@ -16,7 +15,6 @@ import {
   nextOpponentText,
   priceText,
   PURCHASE_REFUSAL_MESSAGE,
-  SHOP_AP_LABEL,
   SHOP_COINS_LABEL,
   SHOP_FLASK_GROUP_LABEL,
   SHOP_FLASK_LABEL,
@@ -42,8 +40,6 @@ import './shopSlot.css'
 
 interface ShopPanelProps {
   readonly coins: Coins
-  /** DLR-116 AC2 — the per-hand AP pool including capacity bought this run. */
-  readonly apCapacity: ActionPoints
   readonly playerHealth: Health
   readonly maxPlayerHealth: Health
   /** One entry per point of maximum health, derived by the driver from the SAME
@@ -76,8 +72,10 @@ interface ShopPanelProps {
 
 /**
  * The shop screen (DLR-84, ladder rebuilt on DLR-89, pared down and given a slot machine on
- * DLR-116): a full-viewport surface reached from the run verdict, offering exactly Health and AP
- * capacity as fixed purchases, a slot machine to pull, and a free flask to drink.
+ * DLR-116): a full-viewport surface reached from the run verdict, offering exactly Health and the
+ * two rank-tier steps as fixed purchases, a slot machine to pull, and a free flask to drink.
+ * DLR-145 AC3 — the action-point purchase left the shelf along with the rest of action points;
+ * `SHOP_ITEMS` is the one place that changed, per its own docblock.
  *
  * Computes NOTHING — a `RunOutcomePanel` clone in discipline. Every figure, every refusal, and
  * the opponent's name arrive as props; this component maps `SHOP_ITEMS` in one flat list and
@@ -88,7 +86,6 @@ interface ShopPanelProps {
  */
 export default function ShopPanel({
   coins,
-  apCapacity,
   playerHealth,
   maxPlayerHealth,
   playerHearts,
@@ -148,10 +145,6 @@ export default function ShopPanel({
             <span className="shop-purse-label">{SHOP_COINS_LABEL}</span>
             <span className="shop-purse-value">{coins}</span>
           </span>
-          <span className="shop-purse-cell">
-            <span className="shop-purse-label">{SHOP_AP_LABEL}</span>
-            <span className="shop-purse-value">{apCapacity}</span>
-          </span>
         </div>
 
         {/* The health readout is a row of its own rather than a purse cell: it is what a heal is
@@ -180,8 +173,8 @@ export default function ShopPanel({
 
         <SlotMachinePanel {...slot} />
 
-        {/* AC2/AC3 — the pared purchasable list: exactly Health and AP capacity, no tablist, no
-            tabpanel, no "Also for sale" heading. */}
+        {/* AC2/AC3 — the pared purchasable list: Health and the two rank-tier steps, no tablist,
+            no tabpanel, no "Also for sale" heading. DLR-145 AC3 took the AP-capacity row off. */}
         <div className="shop-list">{SHOP_ITEMS.map(renderItem)}</div>
 
         {/* AC6 (DLR-93) — the flask keeps its OWN accessible group so it still reads as apart

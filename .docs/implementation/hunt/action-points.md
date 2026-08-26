@@ -137,5 +137,65 @@ the spend.
 
 See [buff-activation-and-ap-costs.md](buff-activation-and-ap-costs.md#the-per-hand-accrual-and-the-one-asymmetry-that-must-not-be-lost)
 for how this interacts with AC4's original "does not silently refresh mid-hand" guarantee, and
-[the-hunt.md, section 4](../../game_rules/the-hunt.md#buffs--spending-action-points-before-a-trick)
-for the player-facing rule.
+[the-hunt.md, section 4](../../game_rules/the-hunt.md) for the player-facing rule.
+
+## Action points are switched off — DLR-145, 2026-08-25
+
+**`AP_ENABLED` is `false`.** Every AP-gated action in the game is now free, and the toggle DLR-104
+built for exactly this moment did its job: one constant moved, and no consuming code needed a
+bypass written anywhere, because `apCostFor` was already the only reader.
+
+**Why it went, in the module's own terms.** The per-trick cadence above is the reason. Under
+`ApRefreshCadence.PerTrick` the pool refilled to `capacity` at every trick boundary, so the stake a
+player put on a buff was refunded before the next bet — firing everything every trick was strictly
+correct and nothing was ever a decision. Action points were the only thing limiting how many buffs
+fired per trick, and they were doing it badly. What replaced them is **card scarcity**: activating a
+Taker, Feeder or Sidestep now removes it from the pile for the rest of the run
+(`CONDITION_CARD_SINGLE_USE`, [consumable items](consumable-items.md)). The two changes are coherent
+only together — the flag flipped without consumption would leave no limit at all.
+
+**What the flip does on its own.** `apCostFor` returns 0 for every buff and for Apply Damage, so
+`canAffordAp` is always true and `spendAp(pool, 0)` never subtracts. Both
+`BuffActivationRefusal.InsufficientAp` and `ApplyDamageRefusal.InsufficientAp` become
+**unreachable rather than deleted** — each stays in its union so
+`BUFF_ACTIVATION_REFUSAL_MESSAGE` and `APPLY_DAMAGE_REFUSAL_MESSAGE` stay total `Record`s, the same
+discipline DLR-132 used for `PurchaseRefusal.SlotsFull`.
+
+**What the flip does *not* do, and had to be removed by hand.** A disabled resource still renders as
+zeroes, and a control that says "0 AP" is a control still claiming a resource exists. Three surfaces
+were edited at source rather than handed a zero:
+
+- the action bar's Apply Buff figure (`{apPool} AP · N held` → `N held`) and its
+  `applyBuffAccessibleName`, plus Apply Damage's face (`{cash} for N AP` → `cash {N}`) and
+  `applyDamageBarAccessibleName`;
+- the loadout panel's header (`N action points left` → `N cards`, the panel's own scarcity signal
+  now) and `buffLine`'s trailing `${apCost} AP.`;
+- the shop purse's action-points cell, leaving Coins as a single-cell group.
+
+`buffLine` and `buffRowAccessibleName` **lost the `apCost` parameter entirely**, and
+`BuffLoadoutPanelProps.apCostFor`, `ActionBarProps.apPool` and `ShopPanelProps.apCapacity` were
+removed with their suppliers, so a future reader cannot wonder why every card prices at nothing.
+
+**The `apRefund` reward axis died as a side effect, not by its own repair** — it pays into a pool
+nothing spends from. It is still declared on `BuffRewardAxis` with its `REWARD_BASE`,
+`REWARD_TIER_VALUE` and `MAX_REFUND_PER_HAND` rows intact, and it is no longer mintable
+(`MintableRewardAxis`, DLR-145 AC5). If `AP_ENABLED` is ever flipped back, the dead-refund problem
+returns with it.
+
+**Everything else in this module stayed.** `actionPoints.ts` and all four of its functions,
+`STARTING_AP`, `AP_CAPACITY_STEP`, `apCapacityFor`, `RunState.apCapacityBonus`,
+`ApRefreshCadence`, `AP_REFRESH_CADENCE`, `BuffActivationState.apPool` and `.capacity`,
+`RoundUiSeed.apCapacity`, and `ShopItem.ApCapacity`'s price, category and refusal are all still
+declared and still under test — only the shop **shelf** dropped the item
+(`SHOP_ITEMS`, [coins and the shop](coins-and-the-shop.md)). That is what keeps this a toggle rather
+than a one-way deletion.
+
+**The two damage caps went at the same time and for the entangled reason.**
+`MAX_MULTIPLIER_BONUS_PER_HAND` and `MAX_FLAT_DAMAGE_BONUS_PER_HAND` are now
+`Number.POSITIVE_INFINITY`. Clipping a *rented* card's contribution cost the player nothing they
+could not re-rent next trick; clipping a *consumed* card's destroys an irreplaceable card, and it
+bites hardest on exactly the high-tier cards the shop exists to sell. `Math.min(finite, Infinity)`
+is the identity, so `accrueAxisBonus` needed no change, and the two constants stay named as the one
+place a cap would be restored. `MAX_REFUND_PER_HAND` (6) and `MAX_COIN_BONUS_PER_HAND` (10) are
+**untouched** — their axes no longer mint. One test moved with them:
+`apConfig.test.ts`'s `Number.isInteger` assertion no longer holds over all four caps.

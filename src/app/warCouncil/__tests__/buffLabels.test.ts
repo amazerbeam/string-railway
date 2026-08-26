@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  apCostOf,
   BuffActivationRefusal,
   BuffKind,
   BuffRewardAxis,
@@ -35,19 +34,21 @@ describe('buffLabels — one glanceable line', () => {
     expect(buffName(bellTaker)).toBe('Bell-Taker (Momentum)')
   })
 
-  it('states condition and reward in one line, prefixed with the tier and ending with the AP cost', () => {
-    expect(buffLine(bellTaker, apCostOf(bellTaker))).toBe(
-      `Silver Bell-Taker (Momentum) — win a trick with Bells: +3 multiplier. ${apCostOf(bellTaker)} AP.`,
+  it('states condition and reward in one line, prefixed with the tier — DLR-145 AC2, no trailing AP cost', () => {
+    expect(buffLine(bellTaker)).toBe(
+      'Silver Bell-Taker (Momentum) — win a trick with Bells: +3 multiplier.',
     )
   })
 
-  it('names every activated card the catalog can mint, without throwing', () => {
+  it('names every activated card the catalog can mint, without throwing or mentioning AP', () => {
     for (const buff of [
       cheatBuff(BuffTier.Bronze, 1),
       timebombBuff(BuffTier.Gold, 2),
       shieldBuff(BuffTier.Silver, 3),
     ]) {
-      expect(buffLine(buff, apCostOf(buff))).toContain(' AP.')
+      const line = buffLine(buff)
+      expect(line).not.toContain('AP')
+      expect(line).not.toContain('action point')
     }
   })
 
@@ -68,8 +69,14 @@ describe('buffLabels — one glanceable line', () => {
   })
 
   it('appends the refusal reason to the accessible name so no control is dead without a cause', () => {
-    const name = buffRowAccessibleName(bellTaker, 4, false, BuffActivationRefusal.InsufficientAp)
-    expect(name).toContain('Not enough action points.')
+    const name = buffRowAccessibleName(bellTaker, false, BuffActivationRefusal.AlreadyActive)
+    expect(name).toContain('Already active this trick.')
+  })
+
+  it('the rendered line and accessible name never mention AP or action points (DLR-145 AC2)', () => {
+    const name = buffRowAccessibleName(bellTaker, false, null)
+    expect(name).not.toContain('AP')
+    expect(name).not.toContain('action point')
   })
 })
 

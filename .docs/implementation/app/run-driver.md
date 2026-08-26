@@ -39,9 +39,16 @@ takes `setRun` directly because its `onRun` parameter is typed as a functional u
 stale-closure discipline `handleBuy` and `handleDrinkFlask` already follow, and a review round on
 DLR-116 is what forced it to actually be one rather than merely to look like one.
 
-`apCapacityFor(run.apCapacityBonus)` goes to **two** places: the shop's purse cell, and
-`<WarCouncilRound apCapacity={…}>`, where it seeds the hand's action-point pool through an optional
+`apCapacityFor(run.apCapacityBonus)` went to **two** places: the shop's purse cell, and
+`<WarCouncilRound apCapacity={…}>`, where it seeded the hand's action-point pool through an optional
 `RoundUiSeed.apCapacity` field defaulting to `STARTING_AP`.
+
+> **DLR-145 removed both call sites from this file, 2026-08-25.** With `AP_ENABLED` false the shop
+> has no purse cell to fill and the felt has no pool to show, so `App.tsx` no longer imports
+> `apCapacityFor` at all. `RunState.apCapacityBonus`, `apCapacityFor` and `RoundUiSeed.apCapacity`
+> all still exist and are still exercised — the felt seeds from `STARTING_AP` by default, and the
+> **simulator's** `seedFor` (`src/sim/playHandWindows.ts`) still passes
+> `apCapacityFor(run.apCapacityBonus)`, so the seam is still covered.
 
 **DLR-85 renamed `between`/`setBetween` to `phase`/`setPhase` and opened it on `RunPhase.Start`.** The
 app therefore no longer opens on fight one — it opens on the start screen. Five `useState` calls, the
@@ -324,6 +331,16 @@ function handleContinue() {
 `stock` is `shopStockFor(run)`, derived once per render and used for both this predicate and the
 `refusals` record the shop is handed. So the warning reads **the same rule** the shop's buttons grey
 on, and cannot claim there is something to buy while every purchase card is disabled.
+
+> **DLR-145 stopped `App.tsx` writing that record by hand.** It was an eight-row object literal —
+> one `refusalFor(stock, item)` call per `ShopItem` member — that had to be edited whenever the union
+> gained a member, and a forgotten row was an `undefined` the panel rendered as "buyable". It is now
+> `refusals={shopRefusalsFor(stock)}`, a pure function in `src/app/run/shopRefusals.ts` that iterates
+> `Object.values(ShopItem)` so the record cannot fall behind the union. That extraction, plus
+> dropping the `apCapacity` prop, is what brought `App.tsx` from **410 lines back to 399** — it was
+> already over the project's 400-line blocking budget before this ticket touched it, and the breach
+> was fixed in-ticket rather than reported. See
+> [../run-ui/README.md](../run-ui/README.md).
 
 `Shop` is unguarded — `setPhase(RunPhase.Shop)` — because a player is always allowed to go and
 look.

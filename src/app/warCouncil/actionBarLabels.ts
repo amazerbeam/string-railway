@@ -5,7 +5,7 @@
  * `APPLY_DAMAGE_REFUSAL_MESSAGE`, `DISCARD_REFUSAL_MESSAGE` and `cardAccessibleName` rather than
  * restating any of them.
  */
-import type { ActionPoints, PendingApplyPayout } from '../../hunt'
+import type { PendingApplyPayout } from '../../hunt'
 import type { ApplyDamageRefusal, Card } from '../../warCouncil'
 import {
   APPLY_DAMAGE_POISED_HINT,
@@ -20,18 +20,17 @@ export const CARDS_LABEL = 'Cards'
 export const SWAP_LABEL = 'Swap'
 export const APPLY_DAMAGE_BAR_LABEL = 'Apply Damage'
 export const LOADOUT_PANEL_LABEL = 'Your buffs'
-export const LOADOUT_EMPTY_MESSAGE = 'No priced buffs held. Cheats and Timebomb charges are below.'
+export const LOADOUT_EMPTY_MESSAGE = 'Nothing left to spend.'
 export const CARDS_NO_SELECTION_HINT = 'No card selected'
 
-/** `Apply Buff — 4 action points left, 3 buffs held.` — appends "panel open" or "not between
- *  tricks" when either is true. */
+/** `Apply Buff — 3 buffs held.` — appends "panel open" or "not between tricks" when either is
+ *  true. DLR-145 AC2 — the action-point clause is gone. */
 export function applyBuffAccessibleName(
-  apPool: ActionPoints,
   offeredCount: number,
   open: boolean,
   windowOpen: boolean,
 ): string {
-  const base = `${APPLY_BUFF_LABEL} — ${apPool} action ${apPool === 1 ? 'point' : 'points'} left, ${offeredCount} ${offeredCount === 1 ? 'buff' : 'buffs'} held.`
+  const base = `${APPLY_BUFF_LABEL} — ${offeredCount} ${offeredCount === 1 ? 'buff' : 'buffs'} held.`
   if (!windowOpen) return `${base} Not between tricks.`
   return open ? `${base} Panel open.` : base
 }
@@ -51,19 +50,17 @@ export function queuedPayoutText(pending: PendingApplyPayout | null): string | n
   return `Payout queued: ${pending.cashOut} damage, ${pending.resolutionsOwed} ${tricks} to go. ${PAYOUT_QUEUE_RISK_HINT}`
 }
 
-/** `Apply Damage — cash 12 for 3 action points.` — AC5's cost on the face, plus the poise hint,
- *  the refusal reason, and the queued-payout sentence when one applies. */
+/** `Apply Damage — cash 12.` — plus the poise hint, the refusal reason, and the queued-payout
+ *  sentence when one applies. DLR-145 AC2 — the "for N action points" clause is gone. */
 export function applyDamageBarAccessibleName(
   cashValue: number,
-  apCost: ActionPoints,
   poised: boolean,
   refusal: ApplyDamageRefusal | null,
   pending: PendingApplyPayout | null,
 ): string {
-  const base = `${APPLY_DAMAGE_BAR_LABEL} — cash ${cashValue} for ${apCost} action ${apCost === 1 ? 'point' : 'points'}.`
+  const base = `${APPLY_DAMAGE_BAR_LABEL} — cash ${cashValue}.`
   const poise = poised ? ` ${APPLY_DAMAGE_POISED_HINT}` : ''
   const refusalText = refusal !== null ? ` ${APPLY_DAMAGE_REFUSAL_MESSAGE[refusal]}` : ''
   const queued = queuedPayoutText(pending)
-  const queuedText = queued !== null ? ` ${queued}` : ''
-  return `${base}${poise}${refusalText}${queuedText}`
+  return `${base}${poise}${refusalText}${queued !== null ? ` ${queued}` : ''}`
 }

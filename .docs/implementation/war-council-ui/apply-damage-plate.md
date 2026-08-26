@@ -8,8 +8,9 @@ Part of [War Council UI](README.md).
 > two-tap poise-then-commit grammar, the same refusal-re-read on both taps, the same refusal sentence
 > on the control's own face, the same `aria-pressed`, the same `Escape` cancel, and the same
 > `APPLY_DAMAGE_REFUSAL_MESSAGE` map — `labels.ts`'s label functions were kept and reused rather than
-> rewritten, which is why no copy changed. Two things are genuinely new on the bar: the **AP cost is
-> now stated on the button's face** (`12 for 1 AP` since 2026-08-25, was `12 for 3 AP`), and a
+> rewritten, which is why no copy changed. Two things were genuinely new on the bar: the **AP cost
+> stated on the button's face** (`12 for 3 AP`, then `12 for 1 AP` from 2026-08-25 — **removed
+> entirely by DLR-145**, which turned action points off; the face now reads `cash 12`), and a
 > **queued payout is now visible**
 > (`Payout queued: 12 damage, 2 tricks to go.`) where before it was invisible. Read the sections below
 > as the rule and its history; read

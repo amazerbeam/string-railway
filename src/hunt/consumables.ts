@@ -17,6 +17,10 @@ import type { Damage } from './types'
  * wiped by `openBuffWindow` at the next trick boundary, and did nothing at all — the card stayed in
  * the pile forever and could be re-bought every trick. A consumable is spent ONCE, leaves the pile,
  * and applies its effect AT THE SPEND rather than at a condition it does not have.
+ *
+ * DLR-145 — a THIRD toggle, `CONDITION_CARD_SINGLE_USE`, extends the idea to Taker, Feeder and
+ * Sidestep: condition families that fire on a TRIGGER rather than a player spend, but which this
+ * pass makes leave the pile once fired. `isConsumableItem` is where all three toggles converge.
  */
 
 /**
@@ -176,13 +180,47 @@ function isActivatedSingleUseKind(kind: BuffKind): kind is ActivatedItemKind {
   return ACTIVATED_ITEM_KINDS.has(kind)
 }
 
+/** The three CONDITION families whose single-use-ness is a developer-owned toggle. A SIBLING of
+ *  `ACTIVATED_CARD_SINGLE_USE`, not a member of `ConsumableItemKind`: these cards have a TRIGGER,
+ *  not a timing window and an effect, so neither `CONSUMABLE_TIMING` nor `CONSUMABLE_EFFECT_LIVE`
+ *  admits them and neither `consumableTimingOf` nor `consumableEffectOf` may be called on one. */
+type ConsumedConditionKind =
+  typeof BuffKind.Taker | typeof BuffKind.Feeder | typeof BuffKind.Sidestep
+
+/**
+ * DLR-145 AC1 — whether activating this condition card ALSO removes it from the pile. Default
+ * `true` for all three as of 2026-08-25: this is the change that turns a rented buff into a spent
+ * one, and it is the whole point of the Version 6 pass. Before it, a Taker was re-activated and
+ * re-paid every trick and the correct play was to dump the pool every trick, because the pool came
+ * back before the next one.
+ *
+ * TO REVERT ONE CARD to "stays in the pile", flip that entry to `false`. Nothing else in this
+ * module, and no other file, needs to change — `isConsumableItem` below is the only reader.
+ */
+export const CONDITION_CARD_SINGLE_USE: Readonly<Record<ConsumedConditionKind, boolean>> = {
+  [BuffKind.Taker]: true,
+  [BuffKind.Feeder]: true,
+  [BuffKind.Sidestep]: true,
+}
+
+const CONSUMED_CONDITION_KINDS: ReadonlySet<BuffKind> = new Set(
+  Object.keys(CONDITION_CARD_SINGLE_USE) as ConsumedConditionKind[],
+)
+
+function isConsumedConditionKind(kind: BuffKind): kind is ConsumedConditionKind {
+  return CONSUMED_CONDITION_KINDS.has(kind)
+}
+
 /** Whether `buff` is a one-shot item — the predicate `activateFromPile` branches on to decide
- *  whether an activation also SPENDS the card. TRUE for the five DLR-111 items, and true for
- *  Cheat/Timebomb/Shield exactly when `ACTIVATED_CARD_SINGLE_USE` says so for that kind — see that
- *  constant's own docblock for how to revert one card. */
+ *  whether an activation also SPENDS the card. TRUE for the five DLR-111 items, true for
+ *  Cheat/Timebomb/Shield exactly when `ACTIVATED_CARD_SINGLE_USE` says so for that kind, and TRUE
+ *  for Taker/Feeder/Sidestep exactly when `CONDITION_CARD_SINGLE_USE` says so for that kind —
+ *  see each constant's own docblock for how to revert one card. FALSE for every other condition
+ *  family (still declared, no longer mintable — DLR-145 Phase 1 does not touch the union). */
 export function isConsumableItem(buff: Buff): boolean {
   if (isConsumableItemKind(buff.kind)) return true
-  return isActivatedSingleUseKind(buff.kind) && ACTIVATED_CARD_SINGLE_USE[buff.kind]
+  if (isActivatedSingleUseKind(buff.kind)) return ACTIVATED_CARD_SINGLE_USE[buff.kind]
+  return isConsumedConditionKind(buff.kind) && CONDITION_CARD_SINGLE_USE[buff.kind]
 }
 
 /** The window `buff` needs. THROWS on a non-consumable rather than defaulting to

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
   advanceRun,
-  apCapacityFor,
   bankClimbBonusFor,
   playerRankTiersFor,
   beatenCount,
@@ -50,6 +49,7 @@ import { dealHand } from './app/handDeal'
 import { setDebugAppState } from './app/debugState'
 import RunOutcomePanel, { type TrickTally } from './app/run/RunOutcomePanel'
 import ShopPanel from './app/run/ShopPanel'
+import { shopRefusalsFor } from './app/run/shopRefusals'
 import RunPathScreen from './app/run/RunPathScreen'
 import { useShopSlot } from './app/run/useShopSlot'
 import {
@@ -322,7 +322,6 @@ function App() {
     return (
       <ShopPanel
         coins={run.coins}
-        apCapacity={apCapacityFor(run.apCapacityBonus)}
         playerHealth={run.encounter.health[DuelSide.Player]}
         maxPlayerHealth={PLAYER_START_HEALTH}
         playerHearts={playerBar.hearts}
@@ -331,16 +330,7 @@ function App() {
         onDrinkFlask={handleDrinkFlask}
         nextOpponentName={nextName}
         progressText={runProgressText(run.encounterIndex + 1, run.encounterCount)}
-        refusals={{
-          [ShopItem.Cheat]: refusalFor(stock, ShopItem.Cheat),
-          [ShopItem.Timebomb]: refusalFor(stock, ShopItem.Timebomb),
-          [ShopItem.BlastGuard]: refusalFor(stock, ShopItem.BlastGuard),
-          [ShopItem.Whetstone]: refusalFor(stock, ShopItem.Whetstone),
-          [ShopItem.Heal]: refusalFor(stock, ShopItem.Heal),
-          [ShopItem.ApCapacity]: refusalFor(stock, ShopItem.ApCapacity),
-          [ShopItem.SwanTier]: refusalFor(stock, ShopItem.SwanTier),
-          [ShopItem.WitchTier]: refusalFor(stock, ShopItem.WitchTier),
-        }}
+        refusals={shopRefusalsFor(stock)}
         onBuy={handleBuy}
         onLeave={leaveForNextFight}
         slot={{ ...slotView, onSelectMachine: selectMachine, onPull: pull }}
@@ -400,7 +390,6 @@ function App() {
       buffs={run.buffs}
       bankClimbBonus={bankClimbBonusFor(run)}
       rankTiers={playerRankTiersFor(run)}
-      apCapacity={apCapacityFor(run.apCapacityBonus)}
       quarryLabel={quarryHealthLabel(currentName)}
       onComplete={handleComplete}
     />

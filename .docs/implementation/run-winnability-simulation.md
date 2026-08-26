@@ -1,5 +1,13 @@
 # Run-winnability simulation — 2026-08-22
 
+> **Superseded as a reading of the current game, 2026-08-25.** Every figure below was measured
+> against a game with action points on, an eleven-family 73-template buff pool, four opening cards,
+> one coin a fight and two live per-hand damage caps. DLR-145 changed all five. The doc is kept for
+> its method and its diagnosis — the trick-deficit finding and the way the engine was called
+> directly — not for its numbers. The current measurements live in
+> [hunt/the-opening-pile.md](hunt/the-opening-pile.md) and `.docs/game_rules/the-hunt.md`'s Known
+> tensions.
+
 A standalone investigation, not tied to a ticket: **is a full 25-fight run currently winnable, and
 if not, why not?** `the-hunt.md`'s own Status register already says "not winnable as configured,
 provisional, accepted," but the most recent full-run data on record (DLR-92, 2026-08-19) predates

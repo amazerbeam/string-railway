@@ -36,13 +36,13 @@ const baseStock = (over: Partial<ShopStock> = {}): ShopStock => ({
 const stock = baseStock
 
 describe('SHOP_ITEMS', () => {
-  it('keeps the pared pair from DLR-116 and adds the two tier items from DLR-122', () => {
-    expect(SHOP_ITEMS).toEqual([
-      ShopItem.ApCapacity,
-      ShopItem.SwanTier,
-      ShopItem.WitchTier,
-      ShopItem.Heal,
-    ])
+  it('keeps Heal and the two tier items from DLR-122; DLR-145 AC3 takes ApCapacity off the shelf', () => {
+    expect(SHOP_ITEMS).toEqual([ShopItem.SwanTier, ShopItem.WitchTier, ShopItem.Heal])
+    expect(SHOP_ITEMS).not.toContain(ShopItem.ApCapacity)
+  })
+
+  it('DLR-145 AC3 — ApCapacity is still priced even though it left the shelf, exactly as Cheat/Timebomb/Blast Guard/Whetstone stayed priced on DLR-116', () => {
+    expect(priceOf(ShopItem.ApCapacity)).toBe(AP_CAPACITY_PRICE)
   })
 })
 
@@ -53,7 +53,6 @@ describe('the refilled run-permanent shelf (DLR-122 AC2)', () => {
     expect(categoryOf(ShopItem.SwanTier)).toBe(ShopCategory.RunPermanent)
     expect(categoryOf(ShopItem.WitchTier)).toBe(ShopCategory.RunPermanent)
     expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([
-      ShopItem.ApCapacity,
       ShopItem.SwanTier,
       ShopItem.WitchTier,
     ])
@@ -270,9 +269,8 @@ describe('SHOP_ITEMS_BY_CATEGORY', () => {
     expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.FightLong]).toEqual([])
   })
 
-  it('DLR-122 — sells AP capacity and the two rank ladders on the run-permanent rung; game-permanent stays empty', () => {
+  it('DLR-122/DLR-145 — sells the two rank ladders on the run-permanent rung (AP capacity left the shelf); game-permanent stays empty', () => {
     expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([
-      ShopItem.ApCapacity,
       ShopItem.SwanTier,
       ShopItem.WitchTier,
     ])
