@@ -1,0 +1,200 @@
+import { Fragment, useState, type KeyboardEvent } from 'react'
+import { BuffActivationRefusal, BuffTier, type BuffId } from '../../hunt'
+import { LOADOUT_PANEL_LABEL } from './actionBarLabels'
+import BuffCard from './BuffCard'
+import {
+  buffStackKey,
+  type BuffGalleryView,
+  type BuffRun,
+  type BuffStack,
+} from './buffGalleryModel'
+import { BUFF_ACTIVATION_REFUSAL_MESSAGE } from './buffLabels'
+import BuffRunTab from './BuffRunTab'
+import BuffTierFilter from './BuffTierFilter'
+import { useRovingTabIndex } from './useRovingTabIndex'
+import './warCouncilBuffGallery.css'
+import './warCouncilBuffCard.css'
+
+export interface BuffGalleryProps {
+  readonly view: BuffGalleryView
+  readonly poised: BuffId | null
+  readonly onTapBuff: (id: BuffId) => void
+  readonly onCancelPoise: () => void
+  readonly onClose: () => void
+}
+
+/** A stable no-op — `Escape` is handled once, on the outer container (see the component
+ *  docblock), so the roving-tabindex group's own `onCancel` is never wired to anything.
+ *  Module-level rather than recreated per render, mirroring the retired `BuffLoadoutPanel`'s
+ *  identical precaution. */
+function noop() {}
+
+function matchesTier(stack: BuffStack, tier: BuffTier | 'all'): boolean {
+  return tier === 'all' || stack.buff.tier === tier
+}
+
+/** "3 cards — not between tricks" / "5 cards — for different reasons" when the fenced stacks
+ *  do not share one reason. Reuses `BUFF_ACTIVATION_REFUSAL_MESSAGE` rather than authoring a
+ *  second copy of the same sentence. */
+function fenceReasonText(count: number, reason: BuffActivationRefusal | null): string {
+  const noun = count === 1 ? 'card' : 'cards'
+  const clause =
+    reason !== null
+      ? BUFF_ACTIVATION_REFUSAL_MESSAGE[reason].replace(/\.$/, '').toLowerCase()
+      : 'for different reasons'
+  return `${count} ${noun} — ${clause}`
+}
+
+/**
+ * DLR-148 Phase 3 — replaces `BuffLoadoutPanel`. Renders a `BuffGalleryView` it never builds
+ * itself (`buffGallery.ts` owns run grouping, duplicate collapse and the fence) and decides
+ * nothing about a card's own state.
+ *
+ * Keeps `role="dialog"` and `aria-label={LOADOUT_PANEL_LABEL}` — **load-bearing**:
+ * `WarCouncilRound.actionBar.test.tsx` and `WarCouncilRound.timebomb.test.tsx` both reach this
+ * panel through `getByRole('dialog', { name: 'Your buffs' })`. Keeps the outer
+ * `onClick={(e) => e.stopPropagation()}` too — this mounts inside `.wc-table`, which fires
+ * `handleCarryOn` on click whenever the felt is waiting.
+ *
+ * The tier filter is component-local `useState` — ephemeral view state that dies with the panel,
+ * not round state — so `buildBuffGallery` is never re-run here: this component only FILTERS the
+ * `BuffGalleryView` it was given by tier, locally, once per render.
+ *
+ * The roving collection is the GRID's cards and nothing else. `useRovingTabIndex` indexes
+ * `groupRef.current.querySelectorAll('button')` POSITIONALLY with no typed contract, so every
+ * focusable control inside `groupRef` must be a native `<button>` in DOM order — which is why the
+ * run tabs are `<div>`s and the tier chips render ABOVE this element, outside the ref.
+ */
+export default function BuffGallery({
+  view,
+  poised,
+  onTapBuff,
+  onCancelPoise,
+  onClose,
+}: BuffGalleryProps) {
+  const [tierFilter, setTierFilter] = useState<BuffTier | 'all'>('all')
+
+  const counts: Record<BuffTier | 'all', number> = {
+    all: view.held,
+    [BuffTier.Bronze]: 0,
+    [BuffTier.Silver]: 0,
+    [BuffTier.Gold]: 0,
+  }
+  for (const run of view.runs) {
+    for (const stack of run.stacks) counts[stack.buff.tier] += stack.count
+  }
+  for (const stack of view.fence.stacks) counts[stack.buff.tier] += stack.count
+
+  const runs: readonly BuffRun[] = view.runs
+    .map((run) => ({
+      ...run,
+      stacks: run.stacks.filter((stack) => matchesTier(stack, tierFilter)),
+    }))
+    .filter((run) => run.stacks.length > 0)
+  const fenceStacks = view.fence.stacks.filter((stack) => matchesTier(stack, tierFilter))
+  const fenceHeld = fenceStacks.reduce((sum, stack) => sum + stack.count, 0)
+  // Recomputed over the FILTERED stacks, not read from `view.fence.reason` — the tier filter can
+  // narrow a mixed-reason fence down to one that shares a single reason, or the reverse, and the
+  // fence's own note must follow what is actually on screen.
+  const fenceReasons = new Set(fenceStacks.map((stack) => stack.refusal))
+  const fenceReason = fenceReasons.size === 1 ? (fenceStacks[0]?.refusal ?? null) : null
+
+  const cards = runs.flatMap((run) => run.stacks)
+  // Guards against `cards[index]` being undefined: the hook probes `isFocusable(0)`
+  // unconditionally even when the collection is empty. This exact gap caused an
+  // integration-only crash before; it is load-bearing, not defensive noise.
+  const isFocusable = (index: number) => cards[index] !== undefined && cards[index].refusal === null
+  const { groupRef, tabStopIndex, handleKeyDown } = useRovingTabIndex(
+    cards.length,
+    isFocusable,
+    noop,
+  )
+
+  function handleGalleryKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== 'Escape') return
+    if (poised !== null) onCancelPoise()
+    else onClose()
+  }
+
+  // Looked up rather than incremented inside the JSX below — mutating a variable captured by a
+  // render-time closure is exactly what the immutability lint rule (and the eventual React
+  // Compiler) forbids, so the index-per-stack lookup is built as an ordinary map beforehand.
+  const cardIndexByKey = new Map<string, number>(
+    cards.map((stack, index) => [buffStackKey(stack.buff), index]),
+  )
+
+  return (
+    <div
+      className="wc-gallery"
+      role="dialog"
+      aria-label={LOADOUT_PANEL_LABEL}
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={handleGalleryKeyDown}
+    >
+      <header className="wc-gallery-head">
+        <h2>{LOADOUT_PANEL_LABEL}</h2>
+        <span className="wc-gallery-fig">
+          <b>{view.held}</b> held
+        </span>
+        <span className="wc-gallery-fig">
+          <b>{view.usable}</b> usable now
+        </span>
+      </header>
+      <div className="wc-gallery-body">
+        <BuffTierFilter counts={counts} selected={tierFilter} onSelect={setTierFilter} />
+        <div className="wc-gallery-scroll">
+          <div
+            className="wc-gallery-grid"
+            role="group"
+            aria-label="Usable buffs"
+            ref={groupRef}
+            onKeyDown={handleKeyDown}
+          >
+            {runs.map((run) => (
+              <Fragment key={run.kind}>
+                <BuffRunTab kind={run.kind} held={run.held} />
+                {run.stacks.map((stack) => {
+                  const key = buffStackKey(stack.buff)
+                  const index = cardIndexByKey.get(key) ?? -1
+                  return (
+                    <BuffCard
+                      key={key}
+                      stack={stack}
+                      poised={poised !== null && stack.ids[0] === poised}
+                      tabIndex={index === tabStopIndex ? 0 : -1}
+                      onTap={onTapBuff}
+                    />
+                  )
+                })}
+              </Fragment>
+            ))}
+          </div>
+          {fenceStacks.length > 0 && (
+            <div className="wc-fence">
+              <div className="wc-fence-row">
+                {fenceStacks.map((stack) => (
+                  <BuffCard
+                    key={buffStackKey(stack.buff)}
+                    stack={stack}
+                    poised={false}
+                    tabIndex={-1}
+                    onTap={onTapBuff}
+                  />
+                ))}
+              </div>
+              <div className="wc-fence-why">
+                <span className="wc-fence-why-label">NOT USABLE NOW</span>
+                <span className="wc-fence-why-reason">
+                  {fenceReasonText(fenceHeld, fenceReason)}
+                </span>
+                <span className="wc-fence-why-note">
+                  They keep their place at the end of the list until they can be used.
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

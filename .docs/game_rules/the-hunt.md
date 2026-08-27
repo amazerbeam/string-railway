@@ -26,6 +26,26 @@ here, every one of which is **decided, enforced and tested, yet cannot be obtain
 > deal leaves, so the pile can run out mid-hand and be rebuilt from the resolved cards **in silence**.
 > Section 2 states all of it.
 
+> **The screen changed shape, and one thing you could see is gone — DLR-148, 2026-08-26.** No rule
+> of play moved: nothing about what a card does, what a trick costs, what a buff asks of you or when
+> you may spend one is different. Three things you *see* and one thing you *do* are:
+>
+> - **The Quarry's next-trick intent is no longer telegraphed.** The suit-and-stance line that used
+>   to appear before you committed — and the speculative reading against a card you had merely
+>   selected — are both deleted. Section 9 states what you can and cannot see now.
+> - **A skulled card shows a skull instead of its picture**, the same skull on every rank and suit,
+>   with its rank and suit still readable in the corner. Section 3.
+> - **When the Quarry leads a card that does something to you, the table now says what** — what
+>   happens if you take the trick and what happens if you do not, in that card's own terms. It says
+>   nothing at all when the card has nothing extra to do, when the table is empty, and when you were
+>   the one who led. It never tells you which of the two will happen. Section 4.
+> - **`Escape` now unwinds one step at a time** in your buff panel: the first press drops a poised
+>   card and leaves the panel open, the second closes it. Section 4.
+>
+> Your buffs are also laid out as cards in a grid rather than as a list of lines, with copies of the
+> same card stacked and counted, and anything you cannot use right now moved to the end in one
+> group with the reason on it. **Nobody has played or looked at any of it.**
+
 **A Cheat and a Timebomb stopped being on that list on 2026-08-24 — DLR-132.** Both are now ordinary
 cards the reel can draw into your pile, exactly like any other buff, and every run still starts
 holding one bronze Cheat.
@@ -677,7 +697,11 @@ Two readouts carry the skulls, and neither ever reveals a rank:
   **skulled**. So you know there are two skulls in Bells; you do not know whether they are the 2 and
   the 4 or the 10 and the 11.
 - **The skull mark on a played card.** Once a skulled card is face up on the table, it is marked as
-  skulled.
+  skulled. **Since 2026-08-26 the mark is the whole card face** — a skull replaces the card's
+  picture, identically on every rank and suit, while the rank and the suit stay readable in the
+  corner because the trick is still won on those. It was a small glyph in the corner until then.
+  Because a skull stays with its card when it changes hands, the face holds wherever the card is:
+  in the trick, on the decree, and in your own hand.
 
 That split is the whole design of it: counting suits is bookkeeping and reading ranks is judgement,
 so the readout removes the first and keeps the second (play-test 2 §3.5).
@@ -784,9 +808,25 @@ limits how hard you can push a hand is **how many cards you still own**.
 > simply correct and nothing you did with it was ever a bet. Card scarcity replaced it, and the two
 > changes only make sense together (`hybrid-design.md` §3).
 
-You own a **pile of buffs**. Pressing **Apply Buff** opens it. Each buff you hold is one line: its
-tier, its name, the condition it asks of you and the reward it promises. Above them sits **how many
-cards you are holding**.
+You own a **pile of buffs**. Pressing **Apply Buff** opens it. **Since 2026-08-26 each buff you hold
+is a card in a grid** — **[settled]** for the procedure, **[provisional]** for the layout, which
+nobody has looked at. Each card carries the suit it wants, its tier as a roman numeral on a metal
+frame, when it pays out, the condition it asks of you and the reward it promises. Above them sits
+**how many cards you are holding**, and a filter by tier.
+
+Three things about that grid are rules of reading it rather than decoration:
+
+- **Copies of the same card are stacked into one, with a count.** Two cards stack only when they are
+  the same card in every respect you could tell apart — same family, same tier, same suit, same
+  reward, same amount. Two cards that pay different amounts are two cards.
+- **Cards are grouped by the suit they want**, with the ones that want no suit and the ones you
+  press yourself as their own last two groups.
+- **Anything you cannot use right now moves to the end, in one group, with the reason on it** — it
+  is dimmed rather than blanked, and it keeps its place there until it can be used. **What can be
+  used when has not changed**: a Cheat is usable while a trick is in progress, and everything else
+  only between tricks.
+
+Until 2026-08-26 the same pile was a plain list, one line per buff.
 
 **Activating one takes two taps on its line.**
 
@@ -794,7 +834,11 @@ cards you are holding**.
    Damage already use.
 2. **The second tap activates the buff** for the coming trick, and spends the card.
 
-**Pressing `Escape` closes the panel and drops any poise unspent**, as does pressing Apply Buff again.
+**`Escape` unwinds one step at a time — [settled] since 2026-08-26.** With a card poised, the first
+press drops the poise and leaves the panel open; with nothing poised, it closes the panel. Pressing
+**Apply Buff** again always closes the panel outright, whatever is poised. Until 2026-08-26 a single
+`Escape` did both at once.
+
 But **once the second tap lands there is no way to un-activate**, and if the card was one of the ones
 that is spent, it is gone. Activating is therefore the decision.
 
@@ -1029,6 +1073,45 @@ than in full at each. That reading was taken by a ticket rather than decided by 
 > **A fired buff is now announced on screen — DLR-119, 2026-08-24.** The trick well names which card
 > fired and what it paid.
 
+### When the Quarry's card does something to you, the table says what — **[settled]** since 2026-08-26
+
+**[settled]** for what it says and when it stays silent; **[provisional]** for the wording, which is
+placeholder, and for whether it reads well, which nobody has seen.
+
+Once the Quarry has led, if its card does anything beyond taking or not taking the trick, a short
+readout sits beside the table stating **what happens if you win the trick** and **what happens if you
+lose it** — or, where the card constrains what you may play instead, a single **rule** line. The
+words come from the card's own rule, so the readout can only ever repeat something already true
+elsewhere in these rules.
+
+What produces a readout, and nothing else does:
+
+| The Quarry led | You are told |
+| --- | --- |
+| a **skulled** card | if you win: you eat the skull — a heart, and your bank cashes at two-thirds. If you lose: they eat it, you bank the trick, your multiplier climbs |
+| a **skulled Swan** | the pair above, and — **on the winning branch only** — that they will lead the next trick |
+| an **unskulled Swan** | if you win: they lead the next trick |
+| a **Monarch** | the rule: you may play only your Swan of that suit, or your highest card of it |
+| a **Witch**, and it is the only Witch on the table | the rule: their Witch counts as trump, unless you play a Witch too and the two cancel |
+| anything else | **nothing at all** |
+
+Three silences are deliberate, not gaps:
+
+- **Nothing appears before the Quarry has played**, and **nothing appears when you led.** The
+  readout only ever speaks about a card they have already put on the table.
+- **Nothing appears when their card has nothing extra to do** — no empty frame, no "nothing to
+  report" line.
+- **A Fox and a Woodcutter produce nothing**, because both resolve the instant the card is played,
+  before you follow. By the time the card is face up there is nothing left for it to do to you.
+
+**It never says which of the two will happen, and it never tells you anything about a card they have
+not played.** Both branches are always stated and neither is emphasised — the same discipline the
+per-card cost readout below keeps, for the same reason.
+
+> **This replaced the intent telegraph, and it is not the same thing.** Until 2026-08-26 the game
+> told you, *before* you committed, what the Quarry was **about to** play. That is gone. This says
+> what the card they have **already played** will do to you. See section 9.
+
 ### Every card in your hand tells you what it would cost
 
 **[settled]** — since 2026-08-24, that each card carries the two figures and what they mean, **and
@@ -1043,7 +1126,9 @@ that a decision's cost was invisible.
 
 **Both figures are conditional, and neither is a prediction of which branch will happen.** The game
 will not tell you whether you are about to win the trick, even where it could work that out — that
-would hand you the Quarry's exact card, which section 9's telegraph deliberately withholds.
+would hand you the Quarry's exact card, which section 9 says it never shows you. The consequence
+readout below keeps the same discipline for the same reason: it always states both branches and
+never says which one is coming.
 
 **Sometimes the two numbers are an estimate, and the game says so.** While **you are the one to
 lead**, the Quarry's card is still face down, so whether the trick will carry a skull or a Timebomb
@@ -2110,27 +2195,31 @@ design document, not from this section.
 | The Quarry's hand                          | **Hidden**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | **Which of its cards are skulled**         | **Open — by suit, never by rank.** Per suit: how many it holds, and how many of those are skulled (section 3).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | A skulled card once played                 | **Marked**, face up on the table                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| The Quarry's next-trick intent             | **Telegraphed** before you commit — the suit it is about to play, plus its stance: **leading**, or, when it is following you, **pressing** (this card takes the trick) or **ducking** (it does not). Never the exact card.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ~~The Quarry's next-trick intent~~            | **Hidden since 2026-08-26.** It was **telegraphed** before you committed — the suit it was about to play, plus its stance (leading, or, when following you, pressing or ducking), never the exact card — and a speculative reading of the same against a card you had merely selected. Both were deleted. Nothing anywhere previews an unplayed card now. |
+| **What their played card will do to you**   | **Open since 2026-08-26 — beside the table**, once they have led and only where their card does something beyond taking the trick: what happens if you win it and what happens if you lose it, or the rule it puts on your follow (section 4). It **never** says which branch will happen, and **never** reveals anything about a card they have not played. Nothing at all is shown when their card has nothing extra to do, when the table is empty, or when you led. Its wording is **[provisional]** and unseen. |
 | The Quarry's trick count                   | Public                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | The Quarry's character and its rule        | Always on screen                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | **Your tricks and your multiplier**        | **Open — on screen throughout** as two separate figures, plus **both** cash-out figures since DLR-94: what the streak pays if you cash it yourself, and what it pays if you are hit first.                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | **Whether you can apply damage now**       | **Open — on the control itself** (section 7). When it is refused, the reason is printed on its face rather than hidden behind a hover, and the figure it would deal is on the button. **Since 2026-08-24 its action-point cost is on the button too.**                                                                                                                                                                                                                                                                                                                                                                                                               |
 | What the last trick did                    | **Stated** — which of the four outcomes it was, and what it cost or banked.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **Your Cheat slots**                       | **Open — two frames, since 2026-08-24 inside Apply Buff** rather than beside the decree, filled or empty. A selected Cheat and an armed one differ in frame as well as tone, and the hint line names which state you are in (section 4). One press further away than they used to be, which is unplayed.                                                                                                                                                                                                                                                                                                                                                             |
+| **Your Cheat slots**                       | **Open — since 2026-08-24 inside Apply Buff** rather than beside the decree, and since 2026-08-26 as ordinary buff cards in a `Press` group rather than two bespoke frames. A selected Cheat and an armed one differ in frame as well as tone (section 4). One press further away than they used to be, which is unplayed. |
 | **Your coins**                             | **Open — a plate on the status band**, beside the fight counter, all hand. Also stated on the verdict and throughout the shop (section 10).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Both sides' health**                     | **Open — two rows of hearts**, one heart per health point against each side's own maximum. The Quarry's row is **named after the opponent** — "Aoife's health" (since 2026-08-17). The hearts a trick just took break as it resolves. While a streak is banked, the Quarry's last _bank × multiplier_ standing hearts flash as a preview of what cashing right now would take. **That preview shows the FULL figure and deliberately still does, since DLR-94** — you can realise it on demand, so the full figure is what the streak is genuinely worth to you; the reduced figure sits beside the bank readout instead of competing with this one on the same bar. |
 | **Timebomb booked against either side**    | **Open — on the bar that owes it, since 2026-08-23.** The hearts a booked hit has already claimed are drawn distinctly from both untouched hearts and the streak's flashing preview, on **your** row as well as the Quarry's, and the bar's spoken value names the primed figure separately from the at-risk one. The reading is **[provisional]** (section 8).                                                                                                                                                                                                                                                                                                      |
 | **The trick that books a Timebomb hit**    | **Stated as it resolves, since 2026-08-23** — which side owes the hit and how much. It is **transient**: the line lives on the held trick and goes when you tap to carry on, so the bar is the durable signal and this is the announcement.                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **The moment a Timebomb hit lands**        | **Hidden** — the hearts break and the streak goes with nothing naming the cause (section 8).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | **Your action points**                     | **Nothing to show since 2026-08-25** — action points were removed from the game, and the two readouts that carried them (the Apply Buff button's figure and the loadout panel's header) went with them. They were open from 2026-08-24 to 2026-08-25, and invisible from the day the pool first cost you something (2026-08-23) until then, which made an unaffordable control read as a control that had simply died (section 4). |
-| **How many cards you are holding**         | **Open since 2026-08-25 — at the top of the Apply Buff panel**, where the action-point pool used to sit. It is the scarcity figure that replaced it, now that a card is spent rather than rented (section 4). **Nobody has looked at it**, and the panel it heads now lists around twenty-one rows where it was laid out for five. |
-| **The buffs you own**                      | **Open since 2026-08-24 — inside Apply Buff**, one line each: the tier, the name, the condition and the reward. It stated a price in action points too, until 2026-08-25. **The panel opens even when there is nothing in it you can use**, on purpose: reading what you hold is how you plan. Placeholder cards you cannot use are not listed at all (section 4). |
+| **How many cards you are holding**         | **Open since 2026-08-25 — at the top of the Apply Buff panel**, where the action-point pool used to sit, beside how many of them you can use right now. It is the scarcity figure that replaced the pool, now that a card is spent rather than rented (section 4). **Nobody has looked at it.** |
+| **The buffs you own**                      | **Open since 2026-08-24 — inside Apply Buff.** One line each until 2026-08-26, and **a grid of cards since**: the suit each wants, its tier as a roman numeral, when it pays, its condition and its reward, with copies of the same card stacked into one counted card and anything unusable right now moved to the end in one group carrying the reason (section 4). **The panel opens even when there is nothing in it you can use**, on purpose: reading what you hold is how you plan. Placeholder cards you cannot use are not listed at all. **Nobody has looked at the grid.** |
 | **That a cash-out is queued**              | **Open since 2026-08-24 — under the Apply Damage button**: the figure it will deal and how many tricks it still has to run. Hidden for the one day between the delay landing and this readout (section 7).                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | **Whether an activated buff did anything** | **Hidden, and there is now something to hide — since 2026-08-24.** Conditions are checked and rewards are paid (section 4), and **nothing names the cause**: the damage, the coins or the pool simply come out larger. The one place a buff contribution is visible in advance is the per-card `W/L` readout, which includes it. **[not built]** — an announcement at the trick that fired.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **The buff surface covering the table**     | **It cannot, since 2026-08-26.** The decree, the cards already played and the spent pile sit in their own column of the table, and the buff panel sits in another — so opening your buffs can never hide any of them. Before that the panel was a layer over the middle of the table. |
 | **A Blast Guard you are holding**          | **Hidden** during a fight — the shop's purse is its only surface, and nothing on the felt says you are carrying one (section 7).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
-The telegraph's fidelity — suit only, or suit and stance — is **[provisional]**; it currently shows
-both.
+**There is no telegraph any more — [settled] since 2026-08-26.** Its fidelity dial — suit only, or
+suit and stance — still exists in configuration and **nothing reads it**; the whole surface was
+deleted, both the live reading and the speculative one. What replaced it is not a preview: the
+readout in section 4 speaks only about a card the Quarry has **already** played.
 
 ---
 
@@ -2881,6 +2970,40 @@ the mechanics themselves are documented in `../implementation/`.
 > the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
 > a `RunState` field and a transition in the same breath means exactly that.
 
+> **Where DLR-148 stands, 2026-08-26 — the newest entry here.** **Live and reachable by a player,
+> in full:** every rule this ticket touched is on screen, because the ticket touched nothing else —
+> it is a screen change end to end. The buff panel is a grid of cards with duplicates stacked and
+> the unusable fenced; a skulled card shows a skull face; the consequence readout appears beside the
+> table whenever the Quarry's led card has something extra to do; `Escape` unwinds one step; and the
+> buff panel can no longer cover the decree, the played cards or the spent pile, because they are
+> now separate columns of the table rather than a panel over a felt.
+>
+> **What was removed is removed for a player, and only for a player.** There is no intent telegraph
+> anywhere — neither the live reading nor the speculative "if you lead that" one. The engine surface
+> behind it (`quarryIntent`, `TelegraphFidelity`, `TELEGRAPH_FIDELITY`, and their spec) is still
+> declared and still tested and **has no reader at all**. That is a recorded decision rather than an
+> oversight, and the register row above says so. Do not read those constants as evidence a telegraph
+> exists.
+>
+> **No mechanic moved.** No cost, no timing, no condition, no cadence, no activation window, no
+> template. In particular the fence in the buff grid **reads** the existing activation gate and does
+> not change it: a Cheat is still the one card usable mid-trick and everything else is still
+> between-tricks only. If the grid ever appears to say otherwise, the grid is wrong, not the rule.
+>
+> **Nobody has played or looked at it.** A browser pass was requested for the five questions no test
+> can answer — non-occlusion at 1440x900 and 1280x720, no card's text overflowing at the width the
+> grid affords, the mid-trick grid fitting without scrolling, no glyph overlapping another, and
+> every state being distinguishable in greyscale. Two figures are already known and are not promised
+> away: **mid-trick the grid fits at 0px overflow**, and **between tricks, with every card live, it
+> ran 68px over and scrolled inside its own panel**. Every colour, every size bound and all of the
+> copy is a transcribed placeholder and the developer's — **except the 4.5:1 contrast floor**, which
+> is enforced by a test that parses the stylesheet.
+>
+> **Two readings are recorded rather than resolved** under
+> [Known tensions](#known-tensions-recorded-not-resolved): whether losing the intent telegraph costs
+> the game a decision it needed, and whether cards re-sorting under the player's finger as the
+> usable window opens and closes is right.
+
 > **Where DLR-146 stands, 2026-08-26 — the newest entry here.** **Live in the engine, and reachable
 > by a player with no new screen:** your hand is topped back up to four cards as each trick resolves,
 > the Quarry is untouched, a hand ends with cards still in your hand, and a draw that outruns the
@@ -3199,7 +3322,7 @@ the mechanics themselves are documented in `../implementation/`.
 | Cheats carried fight to fight                                                    | settled                                                                                    | `src/hunt/run.ts` — `RunState.buffs` (a Cheat is a pile member); `advanceRun`'s spread carries it, `recordEncounter` adopts the hand's survivors                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
 | What a run opens holding (20 random bronze cards + 1 bronze Cheat) | settled — the procedure, since DLR-135; the count and the with-repeats draw since DLR-145, 2026-08-25; **provisional** — whether twenty-plus-one is the right shape | `src/hunt/startingPile.ts` — `startingBuffPileFor` / `seedStartingBuffPile` / `startingPileSeedFor` / `openingPileWeightOf`, called once by `startRun` in `src/hunt/run.ts`. `src/hunt/config.ts` — `STARTING_BUFF_COUNT`, **20**. Drawn **with replacement** (`src/hunt/slotWeights.ts` — `weightedDrawWithReplacement`) from `src/hunt/buffTemplates.ts` — `BUFF_TEMPLATES` (**13**), weighted by the **sum** of `templateWeightFor` across both `src/hunt/slotConfig.ts` — `SLOT_MACHINE_IDS`, so no new tuning value exists. Seeded from `RunState.runSeed`, so a seed reproduces its opening hand | **Developer** — whether twenty plus a guaranteed Cheat is the right opening hand, whether the repeats read as a supply or as a bad shuffle, and whether the reel weights it draws through are right; none has been played |
 | Cheats a run is guaranteed (1, bronze)                                           | **provisional** — value unchanged, form re-homed 2026-08-24; a floor rather than a count since 2026-08-25 | `src/hunt/config.ts` — `RUN_STARTING_CHEATS`, **1**; seeded straight into `RunState.buffs` by `startRun` as the pile's final members, no cap on the pile. `src/hunt/startingPile.ts` may draw further Cheats into the same pile, so the held count is `>= 1`                                                                                                                              | **Developer** — whether a run should open holding one at all, now that the reel and the opening draw both supply them. **Still open; DLR-135 did not settle it**                                                                                                                                                 |
-| A Cheat and a Timebomb are reached through the loadout, not their own rails      | settled — since DLR-114, migrated onto ordinary rows DLR-132                               | `src/app/warCouncil/BuffLoadoutPanel.tsx` — both are rows in the roving-tabindex `buffs` list, no longer separate widgets; `src/app/warCouncil/buffHandlers.ts` — `loadoutDoorOpen` gates reaching the panel at all                                                                                                                                                                     | **Developer** — whether the widened row list still reads at a glance. Unplayed, mockup gate skipped                                                                                                                                                                                                              |
+| A Cheat and a Timebomb are reached through the buff panel, not their own rails   | settled — since DLR-114, migrated onto ordinary rows DLR-132, onto cards in a grid DLR-148 | `src/app/warCouncil/BuffGallery.tsx` — both are cards in the roving-tabindex grid's `Press` run, no longer separate widgets; `src/app/warCouncil/buffHandlers.ts` — `loadoutDoorOpen` gates reaching the panel at all | **Developer** — whether the grid reads at a glance where the widened row list did not. Unplayed |
 | The Quarry holds no Cheats                                                       | settled                                                                                    | nothing to enforce — the bypass is an argument the Quarry's call sites never pass; a grep guards the absence                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                                 |
 | Buying a Cheat or a Timebomb at the shop                                         | **not built** — the mechanism was retired, not merely unreachable                          | `src/hunt/shop.ts` — neither `ShopItem` is in `SHOP_ITEMS` (DLR-116); the two-slot cap `CHEAT_SLOT_COUNT` and `src/hunt/cheats.ts` no longer exist at all (DLR-132)                                                                                                                                                                                                                     | Developer — the reel is the only route to either now                                                                                                                                                                                                                                                             |
 | Odd-rank abilities                                                               | settled                                                                                    | `src/warCouncil/abilities.ts`, `resolveTrick.ts`                                                                                                                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
@@ -3276,7 +3399,7 @@ the mechanics themselves are documented in `../implementation/`.
 | The Quarry has no rule-break of any kind                                         | settled                                                                                    | nothing to enforce — `legalMoves.ts` reads only the led card; guarded by `cpuPlayer.test.ts`'s 60-seed soak                                                                                                                                                                                                                                                                             | —                                                                                                                                                                                                                                                                                                                 |
 | Quarry character = a name only                                                   | settled                                                                                    | `src/hunt/quarryCharacters.ts` — `QuarryCharacterInfo` has no rule field                                                                                                                                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
 | What any character's power is                                                    | **not built** — undecided                                                                  | —                                                                                                                                                                                                                                                                                                                                                                                       | **Developer — a final-boss ticket, not every opponent**                                                                                                                                                                                                                                                           |
-| Telegraph fidelity                                                               | provisional                                                                                | `src/hunt/config.ts` — `TELEGRAPH_FIDELITY`                                                                                                                                                                                                                                                                                                                                             | Developer, after playtest                                                                                                                                                                                                                                                                                         |
+| ~~Telegraph fidelity~~ — **the telegraph itself is gone**                        | **not built** — the surface was DELETED on 2026-08-26 (DLR-148). It existed and was reachable from DLR-53 | `src/hunt/config.ts` — `TelegraphFidelity` / `TELEGRAPH_FIDELITY`, and `src/warCouncil/cpuPlayer.ts` — `quarryIntent`, are all still declared and still tested (`src/warCouncil/__tests__/quarryIntent.test.ts`) and have **no production consumer**: nothing in `src/app/` reads any of them. A toggle-off by deletion of every reader, not a deletion of the engine surface | **Developer** — whether an intent preview ever returns. Nothing shows one today |
 | Per-card win/lose damage readout                                                 | settled — since 2026-08-24 (DLR-117)                                                       | `src/app/warCouncil/cardDamage.ts` — `cardDamagePreview`, which performs **no arithmetic of its own**: it hands a hypothetical `TrickResolution` to `src/app/warCouncil/commitHandlers.ts` — `applyResolution` (exported by DLR-117) and reports the health delta. Rendered by `HandFan.tsx` beneath each card; copy in `labels.ts` — `cardDamageGlyphText`, `cardDamageText`                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
 | The readout's glyphs and wording (`W6 L1`, `~`)                                  | **provisional**                                                                            | `src/app/warCouncil/labels.ts` — `cardDamageGlyphText`, `CARD_DAMAGE_ESTIMATE_GLYPH`, `CARD_DAMAGE_ESTIMATE_NOTE`; sized by `warCouncilHand.css` — `.wc-card-damage`                                                                                                                                                                                                                                                                                                                                                                                       | Developer — placeholder copy and a transcribed size multiplier, neither seen in a browser                                                                                                                                                                                                                          |
 | Buff rewards appearing in the readout                                            | settled — since DLR-125                                                                    | `src/app/warCouncil/commitHandlers.ts` — `playOptions` now carries the hand's buff input, and `src/app/warCouncil/cardDamage.ts` threads it through `src/warCouncil/bank.ts` — `resolveTrickBank` and reads a health delta. The preview computes no damage of its own, so the rewards, the ceilings and the overlap bonus are inherited rather than restated                                                                                                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                                 |
@@ -3343,7 +3466,11 @@ the mechanics themselves are documented in `../implementation/`.
 | Forage                                                                           | **not built**                                                                              | `src/hunt/config.ts` — `FORAGE_BUDGET_PER_ENCOUNTER` (no consumer)                                                                                                                                                                                                                                                                                                                      | Developer — budget is provisional                                                                                                                                                                                                                                                                                 |
 | One action bar carrying every pre-trick decision                                 | settled — since DLR-114                                                                    | `src/app/warCouncil/ActionBar.tsx`, mounted by `src/app/warCouncil/WarCouncilRound.tsx` into the shell's fourth grid row (`src/app/warCouncil/warCouncil.css`, mirrored in `src/app/warCouncil/warCouncilHunt.css`'s narrow-viewport block). `ApplyDamagePlate.tsx` and `DiscardPlate.tsx` were deleted                                                                                 | **Developer** — whether four buttons in a row reads clearly, and whether the fourth grid row still fits without scrolling. Never seen in a browser                                                                                                                                                                |
 | A control you cannot use greys with its reason, rather than disappearing         | settled — since DLR-114                                                                    | `src/app/warCouncil/ActionBar.tsx` — every button's `disabled` comes from a refusal predicate and the sentence renders on the control's own face; nothing on the bar is conditionally unmounted                                                                                                                                                                                         | **Developer** — taken as a default under an unattended run                                                                                                                                                                                                                                                        |
-| Owning and pricing a buff, and reading it on screen                              | settled — since DLR-114; **every price is provisional**                                    | `src/hunt/buffs.ts` (the card's shape), `src/hunt/buffCosts.ts` (the price formula and the two tables), `src/hunt/run.ts` — `RunState.buffs`, reaching the felt as `src/app/warCouncilMount.ts` — `WarCouncilMountProps.buffs`; worded by `src/app/warCouncil/buffLabels.ts` and rendered by `src/app/warCouncil/BuffLoadoutPanel.tsx`                                                  | **Developer** — every AP price was chosen by an agent and none has been played                                                                                                                                                                                                                                    |
+| Owning and pricing a buff, and reading it on screen                               | settled — since DLR-114, re-presented as a card grid DLR-148; **every price is provisional**               | `src/hunt/buffs.ts` (the card's shape), `src/hunt/buffCosts.ts` (the price formula and the two tables), `src/hunt/run.ts` — `RunState.buffs`, reaching the felt as `src/app/warCouncilMount.ts` — `WarCouncilMountProps.buffs`; grouped, stacked and fenced by `src/app/warCouncil/buffGalleryModel.ts` — `buildBuffGallery`; worded by `src/app/warCouncil/buffLabels.ts`; rendered by `src/app/warCouncil/BuffGallery.tsx` and `BuffCard.tsx` | **Developer** — every AP price was chosen by an agent and none has been played; every colour and size on the card is a transcribed placeholder |
+| A skulled card shows a skull in place of its picture                             | settled — since DLR-148, 2026-08-26 (a corner glyph before that)                            | `src/app/warCouncil/PlayingCard.tsx` — the skull face replaces the centred pip when `skulled`; the symbol is defined once in `src/app/warCouncil/SuitMark.tsx` — `SuitSymbolSheet`, as `#wc-skull`. The corner rank and suit are untouched, as is the spoken name | **Developer** — the skull's shape and its wash are transcribed placeholders, unseen |
+| The consequence readout — what their played card does to you either way          | settled — since DLR-148, 2026-08-26; the **wording** is provisional                         | `src/app/warCouncil/trickConsequenceModel.ts` — `trickConsequence` decides which clauses apply and returns nothing when the trick is empty, when the player led, or when no clause applies; `consequenceLabels.ts` holds the words; rendered by `TrickConsequence.tsx` in `FeltRail.tsx`. Every clause is derived from this document's own rank table and section 7, never authored per card | **Developer** — all of the copy, and whether the readout earns its place beside the table. Unseen |
+| Opening the buff panel cannot hide the decree, the played cards or the spent pile | settled — since DLR-148, 2026-08-26                                                        | `src/app/warCouncil/warCouncilTable.css` — `.wc-table` is `grid-template-columns: var(--wc-rail-w) minmax(0, 1fr)`, so `src/app/warCouncil/FeltRail.tsx` is a sibling grid COLUMN of the panel rather than a layer under it. Structural, not a stacking order | — |
+| `Escape` unwinds one step in the buff panel                                       | settled — since DLR-148, 2026-08-26                                                        | `src/app/warCouncil/roundUiState.ts` — `RoundUiActionKind.CancelBuffPoise`; `src/app/warCouncil/buffHandlers.ts` — `handleCancelBuffPoise` drops the poise and leaves the panel open, while `handleCancelLoadout` still closes outright and is what the bar's own toggle dispatches | — |
 | Activating a buff — two taps, and the card is spent | settled — the two taps since DLR-114; **that using a condition card removes it from the pile** since DLR-145, 2026-08-25 | `src/hunt/consumables.ts` — `CONDITION_CARD_SINGLE_USE` (Taker/Feeder/Sidestep, all `true`), a sibling of DLR-142's `ACTIVATED_CARD_SINGLE_USE`, both read only by `isConsumableItem`; `src/hunt/buffActivation.ts` — `activateFromPile`, which spends the card and records it on `BuffActivationState.spentThisTrick` so it still fires at this trick's resolution; the two-tap stage is `src/app/warCouncil/buffHandlers.ts` — `handleTapBuff` | **Developer** — whether every card should be single-use; it is one `false` per card type to revert |
 | A card spent on a trick still fires at that trick's resolution | settled — since DLR-145, 2026-08-25 | `src/hunt/buffActivation.ts` — `BuffActivationState.spentThisTrick`, appended by `activateFromPile` and cleared by `openBuffWindow` and `refreshBuffsForNewHand` on exactly the edges that clear `activatedThisTrick`. Read by unioning it with the offered pile in `src/app/warCouncil/buffRoundState.ts` — `buffHandInputFor` and `firedOncePerHandIds`, and again in `src/sim/playHand.ts`. Without it a spent card pays nothing, silently | — |
 | Which card types can be dealt at all (3 of 11 conditions, 2 of 4 reward kinds) | settled — since DLR-145, 2026-08-25; **provisional** — whether the cut is the right one | `src/hunt/buffTemplates.ts` — `TEMPLATE_FAMILIES` (Taker, Feeder, Sidestep) and the narrowed `MintableConditionKind` / `MintableRewardAxis` types on `ConditionBuffTemplate`, which make a cut family or a cut axis **unconstructible** rather than merely unweighted. `BUFF_TEMPLATES` is **13** (6 Taker + 3 Feeder + 2 Sidestep + Cheat + Timebomb). The eight cut families keep their `BuffKind` member, their `CONDITION_MODIFIER` price, their `buffFires` case and their `BUFF_CADENCE` row; `coins` and `apRefund` keep their `REWARD_BASE` / `REWARD_TIER_VALUE` ladders. Pinned by `src/sim/__tests__/reachability.test.ts` | **Developer** — whether the cut is right, and whether any of the eight should return. Restoring one is a `TEMPLATE_FAMILIES` row |
@@ -3825,6 +3952,27 @@ panel's readability with two more rows in it — none of it played, the mockup g
 for this contract. All four are under [Known tensions](#known-tensions-recorded-not-resolved).
 
 ### Known tensions, recorded not resolved
+
+- **The game no longer previews the Quarry's intent, and nothing measured whether it needed to**
+  (new 2026-08-26, DLR-148). The telegraph was the answer to a specific complaint — that a decision's
+  outcome was settled after you committed to it — and it was deleted because its speculative half was
+  saying things that were not true of the action the player was taking, and because a second surface
+  saying what a trick would do was one too many. What replaced it says only what a card **already on
+  the table** does, which is strictly less information: you can no longer plan a lead against a suit
+  you know is coming. Whether that removes a decision the game wanted or removes noise it did not is
+  unmeasured, and the discard's whole "throw cards to dodge a telegraphed suit" line of play loses
+  the thing it was dodging. **Whose decision:** the developer's, after playing. The engine can still
+  compute an intent, so restoring a surface for it is a new screen rather than new rules.
+- **Cards re-sort under your finger as the usable window opens and closes** (new 2026-08-26,
+  DLR-148). Anything you cannot use right now moves to the end of the buff grid, and the grid is
+  re-derived continuously — so a card can move between where you looked and where you tapped, at the
+  exact moment a trick resolves. Freezing the order for the duration of a trick is a small change and
+  the alternative. **Whose decision:** the developer's, after playing.
+- **Between tricks, with every card usable, the buff grid scrolls inside its own panel** (new
+  2026-08-26, DLR-148). Mid-trick it fits exactly, with the fenced group in view. Between tricks the
+  measured overflow was **68 pixels** — scoped to the panel rather than the page, and reached only
+  when the fence is empty. It is accepted rather than fixed: the fix is a narrower card, which is a
+  tuning value nobody has chosen. **Whose decision:** the developer's.
 
 - **The quick-kill payout now pays for a hand that refills itself** (new 2026-08-26, DLR-146).
   Winning a fight pays extra for **cards left unplayed in your hand** when the Quarry dies, scaled by

@@ -117,7 +117,9 @@ initializer is a *pure restructuring* of `initialState` with no engine call at a
 plays the opponent's opening lead, which makes it trivially rather than arguably idempotent. See
 [Hunt readouts and the telegraph](hunt-readouts-and-telegraph.md) for why that lead is now held.
 
-DLR-53 added `previewQuarryIntent` and `quarryIntent` calls *during render*, which is safe for the
+DLR-53 added `previewQuarryIntent` and `quarryIntent` calls *during render* — **both deleted from
+this module by DLR-148**, whose own render-time call is `trickConsequence(trickConsequenceFacts(ui))`
+in `feltRailProps`, pure by the same argument — which is safe for the
 same reason: both are documented pure and neither mutates the state handed to it, so a StrictMode
 double-invoke recomputes identical values. Neither result is stored in `RoundUiState` — a stored
 copy could only go stale against `ui.round`.

@@ -205,6 +205,9 @@ export const RoundUiActionKind = {
   ToggleLoadout: 'toggleLoadout',
   CancelLoadout: 'cancelLoadout',
   TapBuff: 'tapBuff',
+  /** AC18 — `Escape` unwinds ONE level: this drops an unspent poise and leaves the panel open.
+   *  `CancelLoadout` keeps meaning "close outright", which is what the bar's toggle dispatches. */
+  CancelBuffPoise: 'cancelBuffPoise',
 } as const
 export type RoundUiActionKind = (typeof RoundUiActionKind)[keyof typeof RoundUiActionKind]
 
@@ -220,6 +223,7 @@ export type RoundUiAction =
   | { readonly kind: typeof RoundUiActionKind.ToggleLoadout }
   | { readonly kind: typeof RoundUiActionKind.CancelLoadout }
   | { readonly kind: typeof RoundUiActionKind.TapBuff; readonly id: BuffId }
+  | { readonly kind: typeof RoundUiActionKind.CancelBuffPoise }
 
 /** Still a pure restructuring of its seed, so StrictMode's double-invocation of the lazy
  *  `useReducer` initialiser recomputes an identical value. */

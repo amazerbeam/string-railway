@@ -129,10 +129,15 @@ the at-risk figure, for the reason above: the spoken text would otherwise have c
 damage "at risk", which is the picture-versus-text failure this section already names. Either clause
 is omitted at zero, so a bar with neither reads exactly as it did before. The wording is placeholder.
 
-`IntentTelegraph` goes further and hides *all* its visible text, carrying one `aria-label` on the
-container built by `intentAccessibleName` — so the eyebrow and the line are heard as one sentence
-rather than two fragments. Its `role="status"` announces a changed intent without stealing focus
-from the hand.
+**`IntentTelegraph` used the same technique and was deleted by DLR-148** (2026-08-26): it hid *all*
+its visible text behind one `aria-label` built by `intentAccessibleName`, so the eyebrow and the
+line were heard as one sentence rather than two fragments, with `role="status"` announcing a changed
+intent without stealing focus from the hand. **The technique survives it.** DLR-148's replacement,
+`TrickConsequence`, carries one `aria-label` from `consequenceAccessibleName` on the whole slip for
+the same reason — a reader who cannot see it gets the same claim, as one sentence — and
+`BuffCard`'s `buffCardAccessibleName` does the same job for a card whose visible face is
+abbreviated: the Timebomb's face shows a bare signed numeral while the name carries the full
+sentence with both figures.
 
 One collision hazard worth keeping in mind: the dossier readouts stay mounted while `RoundOverPanel`
 is on the felt, so any accessible name the panel introduces must not duplicate one already on screen

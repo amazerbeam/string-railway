@@ -262,3 +262,13 @@ describe('TrickWell — DLR-119 clauses', () => {
     expect(screen.queryByText(/Momentum\)/)).toBeNull()
   })
 })
+
+describe('TrickWell — the Quarry is about to lead', () => {
+  it('DLR-148 — names the wait without pointing at the deleted intent telegraph', () => {
+    render(<TrickWell currentTrick={[]} resolvedTrick={null} quarryToLead onCarryOn={vi.fn()} />)
+    // The old copy said "Read their intent first" — there is no such panel any more.
+    expect(screen.queryByText(/intent/i)).toBeNull()
+    expect(screen.getByText('They are about to lead.')).toBeDefined()
+    expect(screen.getByRole('button', { name: /let them lead/i })).toBeDefined()
+  })
+})

@@ -1,42 +1,38 @@
-import { useEffect, useReducer, type ReactNode } from 'react'
+import { useEffect, useReducer } from 'react'
 import { DuelSide, isEncounterResolved, payableCashOutBonus, quarryCharacterInfo } from '../../hunt'
 import { clearDebugRoundState, setDebugRoundState } from '../debugState'
 import {
   applyDamageRefusalFor,
   cashValue,
   discardRefusalFor,
-  isPrimed,
   PlayerSide,
   RoundPhase,
   currentTurn,
   legalMoves,
-  quarryIntent,
-  sameCard,
   suitShape,
-  CardRank,
   type Card,
-  type QuarryIntent,
 } from '../../warCouncil'
 import type { WarCouncilMountProps } from '../warCouncilMount'
-import AbilityPrompt from './AbilityPrompt'
 import ActionBar from './ActionBar'
 import BankMeter from './BankMeter'
-import { loadoutBarRefusalFor } from './buffHandlers'
-import BuffLoadoutPanel from './BuffLoadoutPanel'
+import { loadoutBarRefusalFor, loadoutDoorOpen } from './buffHandlers'
+import BuffGallery from './BuffGallery'
 import { cardDamagePreview } from './cardDamage'
-import DecreePile from './DecreePile'
-import DiscardPile from './DiscardPile'
+import FeltRail from './FeltRail'
+import FeltStage from './FeltStage'
 import HandFan from './HandFan'
 import { sortHandForDisplay } from './handOrder'
-import { previewQuarryIntent } from './intentPreview'
-import IntentTelegraph from './IntentTelegraph'
 import QuarryDossier from './QuarryDossier'
 import QuarryShape from './QuarryShape'
 import { barsForRound } from './roundBars'
 import { deriveHint } from './roundHint'
-import RoundOverPanel from './RoundOverPanel'
 import { roundReducer } from './roundReducer'
-import { actionBarProps, buffLoadoutPanelProps } from './roundControlsProps'
+import {
+  actionBarProps,
+  buffGalleryProps,
+  feltRailProps,
+  feltStageProps,
+} from './roundControlsProps'
 import {
   applyDamageStock,
   canAct,
@@ -51,7 +47,6 @@ import {
 } from './roundUiState'
 import RoundStatusBand from './RoundStatusBand'
 import { SuitSymbolSheet } from './SuitMark'
-import TrickWell from './TrickWell'
 import './warCouncil.css'
 import './warCouncilTable.css'
 import './warCouncilCards.css'
@@ -59,6 +54,8 @@ import './warCouncilHunt.css'
 import './warCouncilHealthBars.css'
 import './warCouncilHand.css'
 import './warCouncilActionBar.css'
+import './warCouncilFeltRail.css'
+import './warCouncilBuffGallery.css'
 
 /**
  * The round mount, implementing SCRUM-37's `WarCouncilMountProps`. Owns exactly one piece of
@@ -210,17 +207,7 @@ export default function WarCouncilRound({
     currentTurn(ui.round) === PlayerSide.Cpu &&
     ui.round.currentTrick.length === 0
 
-  // Two readings of the same telegraph, never both at once. An armed card is a selection, not
-  // a commitment, so previewing the Quarry's answer to it is still "before the player commits"
-  // (AC3). With nothing armed, `quarryIntent` self-guards and returns null unless it is
-  // genuinely the Quarry's turn. Both are pure and cheap enough to derive every render —
-  // storing either could only make it stale against `ui.round`.
-  const speculative = ui.armed !== null
-  const intent: QuarryIntent | null =
-    ui.armed !== null ? previewQuarryIntent(ui.round, ui.armed) : quarryIntent(ui.round)
-
   const hint = deriveHint(ui, interactive, quarryToLead)
-  const promptCard = ui.prompt
 
   function handleTap(card: Card) {
     dispatch({ kind: RoundUiActionKind.TapCard, card })
@@ -270,68 +257,6 @@ export default function WarCouncilRound({
     }
   }
 
-  // DLR-82: a resolved encounter NO LONGER renders a terminal panel here. The run verdict is
-  // `src/app/run/RunOutcomePanel.tsx`, owned by `App`, and the tap that clears the deciding
-  // trick reports upward through `handleCarryOn` — whose first line already tests `encounterOver`.
-  // Consequence worth knowing: the trick that ends a fight now gets its own reveal beat, which
-  // the old branch ordering deliberately skipped.
-  let felt: ReactNode
-  if (ui.cpuFault) {
-    felt = (
-      <p className="wc-fault" role="alert">
-        The engine rejected the opponent&rsquo;s own move — reason: {ui.cpuFault}. That is a bug,
-        not a rule, so play stops here rather than retrying.
-      </p>
-    )
-  } else if (ui.resolvedTrick) {
-    // Held regardless of `roundComplete` — the deciding sixth trick resolves and completes the
-    // hand in the same reducer transition, so without this branch running first the winning
-    // card of the final trick would never be shown.
-    felt = (
-      <TrickWell
-        currentTrick={ui.round.currentTrick}
-        resolvedTrick={ui.resolvedTrick}
-        skulledCards={ui.round.skulledCards}
-        primedCards={ui.round.primedCards}
-        offeredBuffs={offered}
-        quarryToLead={quarryToLead}
-        onCarryOn={handleCarryOn}
-      />
-    )
-  } else if (roundComplete) {
-    felt = (
-      <RoundOverPanel
-        tricksWon={ui.round.tricksWon}
-        handSummary={handSummary}
-        onFinish={handleCarryOn}
-      />
-    )
-  } else if (promptCard) {
-    felt = (
-      <AbilityPrompt
-        card={promptCard}
-        decree={ui.round.decree}
-        hand={displayHand.filter((c) => !sameCard(c, promptCard))}
-        drawnCard={promptCard.rank === CardRank.Woodcutter ? (ui.round.drawPile[0] ?? null) : null}
-        primedCards={ui.round.primedCards}
-        onChoose={(choice) => dispatch({ kind: RoundUiActionKind.ChooseAbility, choice })}
-        onCancel={handleCancel}
-      />
-    )
-  } else {
-    felt = (
-      <TrickWell
-        currentTrick={ui.round.currentTrick}
-        resolvedTrick={null}
-        skulledCards={ui.round.skulledCards}
-        primedCards={ui.round.primedCards}
-        offeredBuffs={offered}
-        quarryToLead={quarryToLead}
-        onCarryOn={handleCarryOn}
-      />
-    )
-  }
-
   return (
     <div className="wc-shell">
       <SuitSymbolSheet />
@@ -357,29 +282,41 @@ export default function WarCouncilRound({
           lastResolution={ui.round.lastResolution}
           pendingBonus={payableCashOutBonus(ui.buffHand.accrual)}
         />
-        <IntentTelegraph intent={intent} speculative={speculative} />
       </aside>
       <section
         className={`wc-table${ui.resolvedTrick || quarryToLead || encounterOver ? ' wc-is-waiting' : ''}`}
         aria-live="polite"
         onClick={ui.resolvedTrick || quarryToLead || encounterOver ? handleCarryOn : undefined}
       >
-        <div className="wc-felt-rail">
-          <DecreePile
-            decree={ui.round.decree}
-            trumpSuit={ui.round.trumpSuit}
-            drawPileCount={ui.round.drawPile.length}
-            primed={isPrimed(ui.round.primedCards, ui.round.decree)}
+        {/* `loadoutOpen(ui)` alone is not enough: the panel's OWN toggle state survives a trick
+            resolving under it (nothing clears `ui.loadout`), but `loadoutDoorOpen` — the same
+            gate `handleToggleLoadout` reads — goes false on exactly the four states the gallery
+            must never contend with (a held reveal, an open prompt, an engine fault, a complete
+            round). Reading both is what makes "the gallery can only coexist with an empty or an
+            in-progress trick" true, rather than merely asserted.
+
+            DELIBERATE, not a leak: the drawer remembers it was open. Dismissing a held reveal
+            (`handleCarryOn`) does not clear `ui.loadout`, so once the door reopens between tricks
+            the gallery pops back without a new tap — that is the between-tricks window the
+            gallery is meant to be available in. `CancelLoadout` is the only action that closes it
+            outright; see `WarCouncilRound.loadoutReopen.test.tsx` for the pinned sequence. */}
+        <FeltRail {...feltRailProps({ ui, galleryOpen: loadoutOpen(ui) && loadoutDoorOpen(ui) })} />
+        {loadoutOpen(ui) && loadoutDoorOpen(ui) ? (
+          <BuffGallery {...buffGalleryProps({ ui, dispatch, offered })} />
+        ) : (
+          <FeltStage
+            {...feltStageProps({
+              ui,
+              dispatch,
+              offered,
+              quarryToLead,
+              handSummary,
+              displayHand,
+              onCarryOn: handleCarryOn,
+              onCancel: handleCancel,
+            })}
           />
-          {/* DLR-123 AC7/AC8 — both counts read straight off round state on every render, so they
-              cannot lag it; `RoundUiState.round` already carries the whole engine state, which is
-              why this ticket needed no reducer action and no new UI state. */}
-          <DiscardPile spentCount={ui.round.spentPile.length} reshuffled={ui.round.reshuffled} />
-        </div>
-        {loadoutOpen(ui) && (
-          <BuffLoadoutPanel {...buffLoadoutPanelProps({ ui, dispatch, offered })} />
         )}
-        <div className="wc-table-inner">{felt}</div>
       </section>
       <HandFan
         hand={displayHand}

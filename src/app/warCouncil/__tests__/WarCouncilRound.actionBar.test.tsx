@@ -116,13 +116,16 @@ describe('WarCouncilRound — the action bar (DLR-114)', () => {
     ).toContain('0 buffs held')
   })
 
-  it('mid-trick: Apply Buff stays enabled and opens the panel, while an ordinary buff row inside greys with "Not between tricks." (DLR-114 door widening)', () => {
+  it('mid-trick: Apply Buff stays enabled and opens the panel, while an ordinary buff card is fenced with "not between tricks" (DLR-114 door widening)', () => {
     // The player is following an already-committed lead — `currentTrick` is non-empty, so
     // `discardWindowOpen` is false, but `canAct` is true. `loadoutDoorOpen` reads either, so the
-    // door widens while an ORDINARY row's activation window (`loadoutRefusalFor`, unchanged for
+    // door widens while an ORDINARY card's activation window (`loadoutRefusalFor`, unchanged for
     // every condition/consumable card) stays shut. A Ward stands in here rather than the Cheat
     // fixture every other spec in this file uses, because Cheat is DLR-132's one exception to
     // this exact gate.
+    //
+    // DLR-148 — the refused row's own `<p>` is gone: a fenced card carries no per-card reason any
+    // more, only the fence's ONE shared-reason line, which also states the count (AC8).
     const round = makeRound({
       leader: PlayerSide.Cpu,
       currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Moons, 9) }],
@@ -137,7 +140,7 @@ describe('WarCouncilRound — the action bar (DLR-114)', () => {
     const dialog = screen.getByRole('dialog', { name: 'Your buffs' })
     const row = within(dialog).getByRole('button', { name: /Ward/i })
     expect(row).toHaveProperty('disabled', true)
-    expect(within(dialog).getByText('Not between tricks.')).toBeTruthy()
+    expect(within(dialog).getByText(/1 card — not between tricks/i)).toBeTruthy()
   })
 
   it('mid-trick: a Cheat row stays live, following an already-committed lead — DLR-132, the one moment it has value', () => {

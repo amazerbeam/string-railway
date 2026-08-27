@@ -382,3 +382,6 @@ describe('Cheat poise, spend and consume (DLR-83, DLR-132)', () => {
 // The bank cash-out specs (AC6/AC8) live in `roundReducer.bank.test.ts` — carved out once this
 // file crossed the 400-line budget with Task 12's own additions (the encounter, its seed, and
 // the four cash-out scenarios together were the largest single piece).
+//
+// `CancelBuffPoise`'s own specs (AC18, DLR-148) live in `roundReducer.cancelBuffPoise.test.ts` —
+// carved out for the same reason, once that describe block crossed the budget again.

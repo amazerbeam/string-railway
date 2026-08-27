@@ -130,11 +130,14 @@
   color: var(--wc-suit, var(--wc-ink-soft));
 }
 
-/* DLR-80/AC3: the skull on a face-up mined card. A dark disc under a light glyph, so it reads
-   over any of the three suit colours and survives greyscale — the colour is never the signal,
-   the disc-plus-glyph form is. Sized and positioned against the card in `PlayingCard`'s own
-   context; the shape readout below repositions the identical mark inline instead. */
-.wc-card .wc-skull-mark {
+/* AC12/DLR-148: a skull REPLACES the card's art on every rank and suit — one bone skull on one
+   dark wash, identical whatever the card, so a player recognises it across the table without
+   reading it. Positioned and sized where the previous corner disc sat; only the artwork inside
+   changed, from a `☠` glyph to the shared `#wc-skull` symbol referenced by `<use>`. PLACEHOLDER
+   colours, transcribed verbatim from
+   `.claude/contract/DLR-147-full-ui-pass/mockup-trick-readout.html`'s `--skull-a` / `--skull-b`
+   / `--bone` tokens — the developer's to retune. */
+.wc-card .wc-card-skull-face {
   position: absolute;
   top: calc(var(--wc-card-w) * 0.07);
   right: calc(var(--wc-card-w) * 0.08);
@@ -144,10 +147,20 @@
   width: calc(var(--wc-card-w) * 0.24);
   height: calc(var(--wc-card-w) * 0.24);
   border-radius: 50%;
-  background: var(--wc-ink);
-  color: var(--wc-parchment);
-  font-size: calc(var(--wc-card-w) * 0.13);
-  line-height: 1;
+  background: radial-gradient(72% 58% at 50% 32%, #4a423a 0%, #2b2622 46%, #0d0b09 100%);
+  color: #efe8d7;
+}
+
+.wc-card .wc-card-skull-face svg {
+  width: 68%;
+  height: 68%;
+}
+
+/* The skull's eye sockets, nasal cavity and teeth gaps — a fixed dark shadow regardless of suit,
+   tier or greyscale. Set via a class + `fill` here rather than a `var()` inside the SVG's own
+   `fill` attribute: presentation attributes do not reliably resolve `var()` cross-browser. */
+.wc-skull-shadow {
+  fill: var(--wc-skull-shadow);
 }
 
 /* DLR-90/AC2: the Timebomb mark, once a marked card is face up. Bottom-left — the ONE corner the

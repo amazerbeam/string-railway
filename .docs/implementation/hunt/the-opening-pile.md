@@ -165,11 +165,17 @@ AC6 asks for "20 activatable bronze cards drawn from the pool", which the drawn 
 its own; whether a run should open holding a guaranteed Cheat at all is still the standing open
 question `config.ts` records, and DLR-145 was not asked to close it.
 
-> **This is the single most likely thing to look wrong on first play.** `BuffLoadoutPanel` was
-> designed and last laid out against a five-card pile and now renders around twenty-one rows in a
-> between-tricks dialog. Whether it scrolls, whether it needs grouping by family, and whether the
-> most-repeated action's tap count still holds are questions no jsdom test can answer. **No browser
-> pass has been run against it.**
+> **This was the single most likely thing to look wrong on first play, and DLR-148 is the answer to
+> it.** `BuffLoadoutPanel` had been designed against a five-card pile and was rendering around
+> twenty-one rows in a between-tricks dialog. On 2026-08-26 it was replaced by `BuffGallery`, which
+> is built for this pile size: cards in a fixed-track grid, **exact duplicates collapsed into one
+> counted stack**, grouped into runs by target suit, and everything unusable right now fenced into
+> one group — so twenty-one cards is materially fewer things to read than twenty-one rows. Whether
+> it scrolls is measured rather than assumed: **mid-trick it fits at 0px overflow with the fence in
+> view; between tricks, with every card live, the mockup ran 68px over and scrolled inside its own
+> panel** — scoped overflow in one dialog, not a page scroll. See
+> [The buff gallery](../war-council-ui/buff-gallery.md). **A browser pass was requested for DLR-148
+> and the developer's eyes-on list is in that module's Deferred section.**
 
 **The pre-DLR-145 state of this section, for the record:** five cards, four random draws plus the
 Cheat.

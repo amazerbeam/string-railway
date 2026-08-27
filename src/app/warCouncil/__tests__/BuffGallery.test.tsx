@@ -1,0 +1,248 @@
+/** @vitest-environment jsdom */
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import {
+  BUFF_TEMPLATES,
+  BuffActivationRefusal,
+  BuffTier,
+  mintFromTemplate,
+  type Buff,
+  type BuffTemplate,
+} from '../../../hunt'
+import { buildBuffGallery } from '../buffGalleryModel'
+import BuffGallery from '../BuffGallery'
+import { BUFF_ACTIVATION_REFUSAL_MESSAGE } from '../buffLabels'
+
+afterEach(cleanup)
+
+function templateFor(predicate: (template: BuffTemplate) => boolean): BuffTemplate {
+  const template = BUFF_TEMPLATES.find(predicate)
+  if (template === undefined) throw new Error('fixture template not found — check the predicate')
+  return template
+}
+
+const bellTakerBladeTemplate = templateFor(
+  (t) =>
+    t.form === 'condition' &&
+    t.kind === 'taker' &&
+    t.target?.suit === 'bells' &&
+    t.axis === 'magnitude',
+)
+const keyTakerBladeTemplate = templateFor(
+  (t) =>
+    t.form === 'condition' &&
+    t.kind === 'taker' &&
+    t.target?.suit === 'keys' &&
+    t.axis === 'magnitude',
+)
+const moonTakerBladeTemplate = templateFor(
+  (t) =>
+    t.form === 'condition' &&
+    t.kind === 'taker' &&
+    t.target?.suit === 'moons' &&
+    t.axis === 'magnitude',
+)
+const bellFeederTemplate = templateFor(
+  (t) => t.form === 'condition' && t.kind === 'feeder' && t.target?.suit === 'bells',
+)
+const sidestepTemplate = templateFor((t) => t.form === 'condition' && t.kind === 'sidestep')
+const cheatTemplate = templateFor((t) => t.form === 'activated' && t.kind === 'cheat')
+const timebombTemplate = templateFor((t) => t.form === 'activated' && t.kind === 'timebomb')
+
+let nextId = 1
+function mint(template: BuffTemplate, tier: BuffTier = BuffTier.Bronze): Buff {
+  return mintFromTemplate(template, tier, nextId++)
+}
+
+const noRefusal = () => null
+
+interface RenderOptions {
+  readonly buffs: readonly Buff[]
+  readonly refusalFor?: (buff: Buff) => BuffActivationRefusal | null
+  readonly poised?: number | null
+}
+
+function renderGallery(options: RenderOptions) {
+  const view = buildBuffGallery(options.buffs, options.refusalFor ?? noRefusal)
+  const onTapBuff = vi.fn()
+  const onCancelPoise = vi.fn()
+  const onClose = vi.fn()
+  render(
+    <BuffGallery
+      view={view}
+      poised={options.poised ?? null}
+      onTapBuff={onTapBuff}
+      onCancelPoise={onCancelPoise}
+      onClose={onClose}
+    />,
+  )
+  return { view, onTapBuff, onCancelPoise, onClose }
+}
+
+describe('BuffGallery — the dialog identity WarCouncilRound depends on', () => {
+  it('is a dialog named "Your buffs"', () => {
+    renderGallery({ buffs: [mint(bellTakerBladeTemplate)] })
+    expect(screen.getByRole('dialog', { name: 'Your buffs' })).toBeTruthy()
+  })
+})
+
+describe('BuffGallery — AC18 roving tabindex over the grid only', () => {
+  it('ArrowRight moves from the first card to the second, stepping over the run tab (a <div>)', () => {
+    renderGallery({
+      buffs: [
+        mint(bellTakerBladeTemplate),
+        mint(keyTakerBladeTemplate),
+        mint(moonTakerBladeTemplate),
+        mint(bellFeederTemplate),
+        mint(sidestepTemplate),
+      ],
+    })
+    const grid = screen.getByRole('group', { name: 'Usable buffs' })
+    const buttons = within(grid).getAllByRole('button')
+    expect(buttons).toHaveLength(5)
+    buttons[0].focus()
+    fireEvent.keyDown(buttons[0], { key: 'ArrowRight' })
+    expect(document.activeElement).toBe(buttons[1])
+  })
+
+  it('Home and End jump to the first and last card', () => {
+    renderGallery({
+      buffs: [mint(bellTakerBladeTemplate), mint(keyTakerBladeTemplate), mint(sidestepTemplate)],
+    })
+    const grid = screen.getByRole('group', { name: 'Usable buffs' })
+    const buttons = within(grid).getAllByRole('button')
+    buttons[0].focus()
+    fireEvent.keyDown(buttons[0], { key: 'End' })
+    expect(document.activeElement).toBe(buttons[buttons.length - 1])
+    fireEvent.keyDown(document.activeElement as Element, { key: 'Home' })
+    expect(document.activeElement).toBe(buttons[0])
+  })
+})
+
+describe('BuffGallery — AC18 Enter/Space poises then activates (native buttons translate both into a click)', () => {
+  it('aria-pressed reflects whether this stack is the poised one', () => {
+    const buff = mint(bellTakerBladeTemplate)
+    renderGallery({ buffs: [buff], poised: buff.id })
+    const grid = screen.getByRole('group', { name: 'Usable buffs' })
+    expect(within(grid).getByRole('button').getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it("tapping a card calls onTapBuff with the stack's first held id — the reducer decides poise vs. commit", () => {
+    const buff = mint(bellTakerBladeTemplate)
+    const { onTapBuff } = renderGallery({ buffs: [buff], poised: null })
+    const grid = screen.getByRole('group', { name: 'Usable buffs' })
+    fireEvent.click(within(grid).getByRole('button'))
+    expect(onTapBuff).toHaveBeenCalledWith(buff.id)
+  })
+})
+
+describe('BuffGallery — AC18 Escape unwinds one level', () => {
+  it('with a card poised, Escape calls onCancelPoise and not onClose', () => {
+    const buff = mint(bellTakerBladeTemplate)
+    const { onCancelPoise, onClose } = renderGallery({ buffs: [buff], poised: buff.id })
+    fireEvent.keyDown(screen.getByRole('dialog', { name: 'Your buffs' }), { key: 'Escape' })
+    expect(onCancelPoise).toHaveBeenCalledOnce()
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('with nothing poised, Escape calls onClose', () => {
+    const buff = mint(bellTakerBladeTemplate)
+    const { onCancelPoise, onClose } = renderGallery({ buffs: [buff], poised: null })
+    fireEvent.keyDown(screen.getByRole('dialog', { name: 'Your buffs' }), { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledOnce()
+    expect(onCancelPoise).not.toHaveBeenCalled()
+  })
+})
+
+describe('BuffGallery — AC7 duplicates collapse into one counted stack', () => {
+  it('three identical Bell-Takers render ONE card, named with the held count and showing ×3', () => {
+    const buffs = [
+      mint(bellTakerBladeTemplate),
+      mint(bellTakerBladeTemplate),
+      mint(bellTakerBladeTemplate),
+    ]
+    const { view } = renderGallery({ buffs })
+    const grid = screen.getByRole('group', { name: 'Usable buffs' })
+    const buttons = within(grid).getAllByRole('button')
+    expect(buttons).toHaveLength(1)
+    expect(view.runs[0].stacks[0].count).toBe(3)
+    expect(buttons[0].getAttribute('aria-label')).toContain('×3')
+    expect(buttons[0].textContent).toContain('×3')
+  })
+})
+
+describe('BuffGallery — AC8 the fence', () => {
+  it('fenced stacks are absent from the grid group, present in the fence, disabled, with the shared reason stated', () => {
+    const usable = mint(bellTakerBladeTemplate)
+    const fenced = mint(sidestepTemplate)
+    renderGallery({
+      buffs: [usable, fenced],
+      refusalFor: (buff) => (buff.id === fenced.id ? BuffActivationRefusal.WindowClosed : null),
+    })
+    const grid = screen.getByRole('group', { name: 'Usable buffs' })
+    expect(within(grid).getAllByRole('button')).toHaveLength(1)
+
+    const fenceRow = screen.getByText('NOT USABLE NOW').closest('.wc-fence') as HTMLElement
+    const fencedButton = within(fenceRow).getByRole('button')
+    expect((fencedButton as HTMLButtonElement).disabled).toBe(true)
+    expect(
+      within(fenceRow).getByText(
+        new RegExp(
+          BUFF_ACTIVATION_REFUSAL_MESSAGE[BuffActivationRefusal.WindowClosed].replace(/\.$/, ''),
+          'i',
+        ),
+      ),
+    ).toBeTruthy()
+  })
+})
+
+describe('BuffGallery — AC4 Cheat and Timebomb sit under Press, not Suitless', () => {
+  it('renders a "Press" run tab distinct from a suitless one', () => {
+    renderGallery({
+      buffs: [mint(cheatTemplate), mint(timebombTemplate), mint(sidestepTemplate)],
+    })
+    expect(screen.getByText('Press')).toBeTruthy()
+    expect(screen.getByText('No suit')).toBeTruthy()
+  })
+})
+
+describe('BuffGallery — the empty pile does not crash', () => {
+  it('renders with no cards and throws nothing — the isFocusable(0) probe on an empty collection', () => {
+    expect(() => renderGallery({ buffs: [] })).not.toThrow()
+    expect(screen.getByRole('group', { name: 'Usable buffs' })).toBeTruthy()
+  })
+
+  it('renders with every card fenced and throws nothing', () => {
+    expect(() =>
+      renderGallery({
+        buffs: [mint(bellTakerBladeTemplate)],
+        refusalFor: () => BuffActivationRefusal.WindowClosed,
+      }),
+    ).not.toThrow()
+    expect(screen.getByRole('group', { name: 'Usable buffs' }).children).toHaveLength(0)
+  })
+})
+
+describe('BuffGallery — the tier filter narrows the grid and the fence follows', () => {
+  it('selecting Gold hides bronze cards from both the grid and the fence', () => {
+    const bronzeUsable = mint(bellTakerBladeTemplate, BuffTier.Bronze)
+    const goldUsable = mint(keyTakerBladeTemplate, BuffTier.Gold)
+    const bronzeFenced = mint(sidestepTemplate, BuffTier.Bronze)
+    const goldFenced = mint(cheatTemplate, BuffTier.Gold)
+    renderGallery({
+      buffs: [bronzeUsable, goldUsable, bronzeFenced, goldFenced],
+      refusalFor: (buff) =>
+        buff.id === bronzeFenced.id || buff.id === goldFenced.id
+          ? BuffActivationRefusal.WindowClosed
+          : null,
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /Gold/ }))
+
+    const grid = screen.getByRole('group', { name: 'Usable buffs' })
+    expect(within(grid).getAllByRole('button')).toHaveLength(1)
+
+    const fenceRow = screen.getByText('NOT USABLE NOW').closest('.wc-fence') as HTMLElement
+    expect(within(fenceRow).getAllByRole('button')).toHaveLength(1)
+  })
+})

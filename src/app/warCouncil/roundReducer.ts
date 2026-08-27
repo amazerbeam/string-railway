@@ -31,7 +31,12 @@ import {
 } from './roundUiState'
 import { advanceQuarryLead } from './quarryAdvance'
 import { handleCancelDiscard, handleTapDiscard, toggleDiscardCard } from './discardHandlers'
-import { handleCancelLoadout, handleTapBuff, handleToggleLoadout } from './buffHandlers'
+import {
+  handleCancelBuffPoise,
+  handleCancelLoadout,
+  handleTapBuff,
+  handleToggleLoadout,
+} from './buffHandlers'
 import { foldBuffOutcome } from './buffRoundState'
 import { commit } from './commitHandlers'
 
@@ -110,6 +115,8 @@ function applyAction(state: RoundUiState, action: RoundUiAction): RoundUiState {
       return handleCancelLoadout(state)
     case RoundUiActionKind.TapBuff:
       return handleTapBuff(state, action.id)
+    case RoundUiActionKind.CancelBuffPoise:
+      return handleCancelBuffPoise(state)
   }
 }
 

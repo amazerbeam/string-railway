@@ -32,10 +32,13 @@ function healthMeter(name: 'Your health' | typeof quarryLabelFixture) {
  * one-prop-per-line blocks was what pushed the file over the 400-line budget in the first place.
  *
  * Split further at the same budget (DLR-93): this is the core render/trick-play/hand-completion
- * slice — the intent-telegraph and Let-them-lead flow lives in `WarCouncilRound.telegraph.test.tsx`,
- * and the health-bar/purse/shape readouts live in `WarCouncilRound.readouts.test.tsx`. Each
+ * slice, and the health-bar/purse/shape readouts live in `WarCouncilRound.readouts.test.tsx`. Each
  * mirrors this same `renderRound` helper rather than importing it, following this file's own
  * pre-existing split precedent (`WarCouncilRound.timebomb.test.tsx`).
+ *
+ * DLR-148 deleted `WarCouncilRound.telegraph.test.tsx` along with the intent telegraph itself —
+ * `TrickWell.test.tsx` covers the "Let them lead" copy and control that file used to exercise
+ * through this component; the dossier's own panel count and the felt re-home are asserted below.
  */
 function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
   return render(
@@ -269,6 +272,29 @@ describe('WarCouncilRound', () => {
     expect(plate()).toHaveProperty('disabled', true)
     expect(screen.getByRole('button', { name: /still in the air/i })).toBeTruthy()
     expect(screen.getByRole('button', { name: '2 of Bells' })).toBeTruthy()
+  })
+
+  it('DLR-148 — the dossier holds three panels now the intent telegraph is gone', () => {
+    const { container } = renderRound()
+    const dossier = container.querySelector('.wc-dossier')
+    expect(dossier?.children.length).toBe(3)
+  })
+
+  it('DLR-148 — opening the buff gallery leaves the decree, the spent pile and the Quarry’s played card in the document (AC1, jsdom half)', () => {
+    const round = makeRound({
+      leader: PlayerSide.Cpu,
+      currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Moons, 6) }],
+      phase: RoundPhase.AwaitingFollow,
+    })
+    renderRound({ initialState: round })
+    fireEvent.click(screen.getByRole('button', { name: /apply buff/i }))
+    expect(screen.getByRole('dialog', { name: 'Your buffs' })).toBeDefined()
+    // The decree, still in the rail — not occluded by the now-open gallery.
+    expect(screen.getByRole('button', { name: '10 of Bells' })).toBeDefined()
+    // The spent pile, still in the rail.
+    expect(screen.getByRole('group', { name: 'Spent' })).toBeDefined()
+    // The Quarry's played card, condensed into the rail's own trick strip.
+    expect(screen.getByRole('button', { name: '6 of Moons' })).toBeDefined()
   })
 })
 

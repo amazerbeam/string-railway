@@ -101,6 +101,14 @@ export function handleCancelLoadout(state: RoundUiState): RoundUiState {
   return state.loadout === null ? state : { ...state, loadout: null }
 }
 
+/** Drops an unspent poise, leaving the panel open. A no-op when the panel is shut or nothing
+ *  is poised — returning `state` itself, not a fresh object, so an idle `Escape` cannot even
+ *  cause a re-render. */
+export function handleCancelBuffPoise(state: RoundUiState): RoundUiState {
+  if (state.loadout === null || state.loadout.poised === null) return state
+  return { ...state, loadout: { ...state.loadout, poised: null } }
+}
+
 /**
  * Three outcomes on one row, mirroring `handleTapApplyDamage`'s shape. A refusal drops the poise
  * and changes nothing else; nothing poised (or a different buff poised) poises this one; the same

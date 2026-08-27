@@ -1,9 +1,12 @@
-/* DLR-114 — the bar (`.wc-bar` / `.wc-bar-btn`) and the loadout panel it opens
-   (`.wc-loadout` / `.wc-loadout-row`). EVERY size bound below is a PLACEHOLDER copied from a
-   sibling rail stylesheet's own `clamp()` (`warCouncilCheats.css`, `warCouncilApplyDamage.css`,
-   `warCouncilDiscard.css`) rather than a new number, and the visual-polish ticket owns retuning
-   every one of them. No new colour token is invented — every colour here is one of `warCouncil.css`'s
-   existing `:root` tokens. */
+/* DLR-114 — the bar (`.wc-bar` / `.wc-bar-btn`). EVERY size bound below is a PLACEHOLDER copied
+   from a sibling rail stylesheet's own `clamp()` (`warCouncilCheats.css`,
+   `warCouncilApplyDamage.css`, `warCouncilDiscard.css`) rather than a new number, and the
+   visual-polish ticket owns retuning every one of them. No new colour token is invented — every
+   colour here is one of `warCouncil.css`'s existing `:root` tokens.
+
+   DLR-148 — the loadout panel this bar used to open (`.wc-loadout` / `.wc-loadout-row`) is gone:
+   `BuffGallery` replaces `BuffLoadoutPanel` and owns its own stylesheets
+   (`warCouncilBuffGallery.css`, `warCouncilBuffCard.css`). */
 
 /* ---------- the bar: the shell's fourth grid row ---------- */
 
@@ -125,115 +128,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .wc-bar-btn {
-    transition: none;
-  }
-}
-
-/* ---------- the loadout panel Apply Buff opens ---------- */
-
-.wc-loadout {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  transform: translateX(-50%);
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(0.35rem, 1.2vmin, 0.7rem);
-  width: min(90%, 26rem);
-  max-height: 80%;
-  overflow-y: auto;
-  padding: clamp(0.6rem, 2vmin, 1.1rem);
-  border-radius: 10px;
-  border: 1px solid var(--wc-brass-dim);
-  background: var(--wc-chamber-lift);
-  box-shadow: 0 -6px 18px #000a;
-}
-
-.wc-loadout-count {
-  margin: 0;
-  font-family: var(--wc-serif);
-  font-size: clamp(0.75rem, 1.8vmin, 0.95rem);
-  color: var(--wc-brass);
-}
-
-.wc-loadout-empty {
-  margin: 0;
-  font-family: var(--wc-sans);
-  font-size: clamp(0.6rem, 1.3vmin, 0.74rem);
-  color: var(--wc-chalk-dim);
-  text-align: center;
-}
-
-.wc-loadout-rows {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(0.25rem, 0.8vmin, 0.45rem);
-  width: 100%;
-}
-
-.wc-loadout-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-/* Every buff's own line, per row — form carries the state, not colour alone: held = solid dim,
-   poised = dashed brass + lift, disabled = dashed + reduced opacity. */
-.wc-loadout-buff {
-  width: 100%;
-  padding: clamp(0.4rem, 1.2vmin, 0.6rem) clamp(0.5rem, 1.5vmin, 0.75rem);
-  border-radius: 6px;
-  border: 1px solid var(--wc-brass-dim);
-  background: linear-gradient(160deg, #2a2418 0%, #1a1710 100%);
-  color: var(--wc-chalk);
-  font-family: var(--wc-sans);
-  font-size: clamp(0.6rem, 1.3vmin, 0.74rem);
-  text-align: left;
-  line-height: 1.35;
-  cursor: pointer;
-  touch-action: manipulation;
-  transition:
-    transform 140ms ease,
-    box-shadow 140ms ease;
-}
-
-.wc-loadout-buff.is-poised {
-  border: 2px dashed var(--wc-brass);
-  transform: translateY(-2px);
-}
-
-.wc-loadout-buff:disabled {
-  border-style: dashed;
-  opacity: 0.55;
-  cursor: default;
-}
-
-.wc-loadout-buff:focus-visible {
-  outline: 2px solid var(--wc-brass);
-  outline-offset: 3px;
-}
-
-@media (hover: hover) {
-  .wc-loadout-buff:not(:disabled):hover {
-    filter: brightness(1.15);
-  }
-}
-
-.wc-loadout-buff:not(:disabled):active {
-  filter: brightness(0.9);
-}
-
-.wc-loadout-refusal {
-  margin: 0;
-  font-family: var(--wc-sans);
-  font-size: clamp(0.5rem, 1.1vmin, 0.62rem);
-  color: var(--wc-alarm);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .wc-loadout-buff {
     transition: none;
   }
 }

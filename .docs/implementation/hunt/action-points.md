@@ -174,7 +174,8 @@ were edited at source rather than handed a zero:
 
 `buffLine` and `buffRowAccessibleName` **lost the `apCost` parameter entirely**, and
 `BuffLoadoutPanelProps.apCostFor`, `ActionBarProps.apPool` and `ShopPanelProps.apCapacity` were
-removed with their suppliers, so a future reader cannot wonder why every card prices at nothing.
+removed with their suppliers (`BuffLoadoutPanelProps` itself was deleted outright on DLR-148, when
+the panel became `BuffGallery`), so a future reader cannot wonder why every card prices at nothing.
 
 **The `apRefund` reward axis died as a side effect, not by its own repair** — it pays into a pool
 nothing spends from. It is still declared on `BuffRewardAxis` with its `REWARD_BASE`,

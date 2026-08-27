@@ -1,0 +1,272 @@
+/* DLR-148 Phase 3 — the buff gallery shell: the header, the tier filter, the scroll region, the
+   grid and the run tabs. Re-authored from `<plan>/mockup.html` under `react-frontend` rather than
+   ported — every colour and size bound is one of `warCouncil.css`'s `:root` tokens (added by the
+   same ticket) or a `clamp()` bound by one. No literal colour, no literal size outside a
+   token-bound `clamp()`.
+
+   The buff card's own rules (the metallic card, the duplicate pile, the fence) live in the sibling
+   `warCouncilBuffCard.css` — this sheet crossed the 400-line budget as one file (tasks.md Task 6
+   Step 2). Import both from `BuffGallery.tsx`; both share `warCouncil.css`'s `:root` tokens.
+
+   No paper grain, no `mix-blend-mode`, no SVG filter over `feTurbulence` — both stalled the
+   rasteriser on the mockup (`filter: url(#grain)` timed out `Page.captureScreenshot` at 120s with
+   eleven cards on screen; `mix-blend-mode` on the overlay forces a compositing layer per card). If
+   a future ticket adds a texture, it must not use either. */
+
+.wc-gallery {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  background: #111a1c;
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px #0000008c;
+}
+
+.wc-gallery-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: clamp(0.4rem, 1.1vh, 0.75rem) clamp(0.6rem, 1.4vw, 1.1rem);
+  border-bottom: 1px solid var(--wc-felt-line);
+  background: linear-gradient(180deg, #1a2529, #111a1c);
+}
+
+.wc-gallery-head h2 {
+  margin: 0;
+  font-family: var(--wc-serif);
+  font-weight: 400;
+  font-size: clamp(0.75rem, 1.8vmin, 1rem);
+}
+
+.wc-gallery-fig {
+  font-size: clamp(0.5rem, 1.1vmin, 0.64rem);
+  color: var(--wc-chalk-dim);
+}
+
+.wc-gallery-fig b {
+  color: var(--wc-brass);
+  font-weight: 600;
+}
+
+.wc-gallery-body {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+/* ---------- the tier filter: real <button>s, rendered OUTSIDE the roving-tabindex group ---------- */
+.wc-tier-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  padding: clamp(0.35rem, 0.9vh, 0.6rem) clamp(0.5rem, 1.2vw, 1rem);
+  border-bottom: 1px solid #ffffff0f;
+}
+
+.wc-tier-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  min-height: 44px;
+  border-radius: 6px;
+  border: 1px solid var(--wc-felt-line);
+  background: #16211f;
+  color: var(--wc-chalk);
+  font-family: var(--wc-sans);
+  font-size: clamp(0.38rem, 0.85vmin, 0.5rem);
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  touch-action: manipulation;
+}
+
+.wc-tier-chip[aria-pressed='true'] {
+  border-color: var(--wc-brass);
+  color: var(--wc-brass);
+}
+
+.wc-tier-chip:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 2px;
+}
+
+.wc-tier-chip-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+/* One swatch per tier metal, so a chip's colour is never a literal in the component. "All" gets
+   the shared brass accent rather than one metal standing in for all three. */
+.wc-tier-chip-dot-all {
+  background: var(--wc-brass);
+}
+.wc-tier-chip-dot-bronze {
+  background: var(--wc-m-bronze);
+}
+.wc-tier-chip-dot-silver {
+  background: var(--wc-m-silver);
+}
+.wc-tier-chip-dot-gold {
+  background: var(--wc-m-gold);
+}
+
+.wc-tier-chip-n {
+  color: var(--wc-chalk-dim);
+  font-weight: 400;
+}
+
+.wc-gallery-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  padding: clamp(0.5rem, 1.2vh, 0.9rem) clamp(0.5rem, 1.2vw, 1rem);
+}
+
+/* CARRY — a card's size must not encode how many there are. `repeat(auto-fill, <fixed>)`,
+   NEVER `minmax(…, 1fr)`: with `1fr`, filtering the gallery down to three gold cards
+   stretched those three across the whole panel. */
+.wc-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, var(--wc-buffcard-w));
+  justify-content: start;
+  align-content: start;
+  gap: clamp(0.4rem, 1vw, 0.8rem);
+  padding-top: 13px; /* headroom for the duplicate pile's layers, which step up and right */
+  padding-right: 13px;
+}
+
+/* ---------- the run tab: a card-shaped CELL, never a row ----------
+   A <div>, not a <button> — it labels a run, it is not a control, and the roving tabindex
+   indexes buttons positionally: any extra button inside the group silently breaks arrow-key
+   traversal. Solid border names an ACTION (Press); dashed names the absence of a target suit. */
+.wc-runtab {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.2rem;
+  aspect-ratio: 31 / 41;
+  padding: 0 0.5rem;
+  border-radius: 10px;
+  border: 1px dashed color-mix(in srgb, currentColor 45%, transparent);
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+
+.wc-runtab svg {
+  width: clamp(1rem, 2.4vmin, 1.5rem);
+  height: clamp(1rem, 2.4vmin, 1.5rem);
+}
+
+.wc-runtab-label {
+  font-family: var(--wc-serif);
+  font-size: clamp(0.55rem, 1.3vmin, 0.8rem);
+  line-height: 1.1;
+}
+
+.wc-runtab-count {
+  font-family: var(--wc-sans);
+  font-size: clamp(0.4rem, 0.9vmin, 0.55rem);
+  color: var(--wc-chalk-dim);
+  letter-spacing: 0.06em;
+}
+
+.wc-runtab-bells {
+  color: var(--wc-bells);
+}
+.wc-runtab-keys {
+  color: var(--wc-keys);
+}
+.wc-runtab-moons {
+  color: var(--wc-moons);
+}
+.wc-runtab-suitless {
+  color: var(--wc-chalk-dim);
+}
+.wc-runtab-press {
+  color: var(--wc-brass);
+  border-style: solid;
+  background: linear-gradient(160deg, #2a2418, #161109);
+}
+.wc-runtab-press .wc-runtab-count {
+  color: var(--wc-brass);
+  opacity: 0.75;
+}
+
+/* Duplicates render as a PHYSICAL PILE, with the metal on the layers.
+   CARRY — the layers must be ordered EXPLICITLY behind the card. They are absolutely
+   positioned and the card is `position: relative`, so at `z-index: auto` the order depends on
+   whatever stacking context happens to be nearest, and the pile silently paints OVER its own
+   card: a stacked buff renders as a blank slab of metal with no face at all. That does not read
+   as a z-order bug, it reads as "that card is broken". `isolation` pins the contest to this
+   wrapper; the two z-indexes settle it. */
+.wc-stack {
+  position: relative;
+  display: block;
+  isolation: isolate;
+}
+.wc-stack-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 12px;
+  background: var(--wc-buffcard-metal);
+  box-shadow:
+    0 0 0 1px var(--wc-buffcard-metal-edge),
+    0 2px 5px #00000059;
+}
+.wc-stack-layer-1 {
+  transform: translate(5.5px, -5.5px);
+}
+.wc-stack-layer-2 {
+  transform: translate(11px, -11px);
+}
+.wc-stack > .wc-buffcard {
+  z-index: 1;
+}
+
+/* the fence: ONE group, with the count and the shared reason */
+.wc-fence {
+  margin-top: clamp(0.5rem, 1.2vh, 0.9rem);
+  border: 1px dashed #4a4034;
+  border-radius: 10px;
+  background: #00000030;
+  padding: clamp(0.4rem, 1vh, 0.7rem) clamp(0.5rem, 1.1vw, 0.85rem);
+  display: flex;
+  align-items: center;
+  gap: clamp(0.5rem, 1.4vw, 1.1rem);
+  flex-wrap: wrap;
+}
+
+.wc-fence-row {
+  display: flex;
+  gap: 0.4rem;
+  padding-top: 9px;
+  padding-right: 9px;
+  flex-wrap: wrap;
+}
+.wc-fence-row .wc-buffcard {
+  width: clamp(3rem, 4.4vw, 4.2rem);
+}
+
+.wc-fence-why {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  max-width: 34ch;
+}
+.wc-fence-why-label {
+  font-size: clamp(0.5rem, 1.1vmin, 0.62rem);
+  letter-spacing: 0.09em;
+  color: var(--wc-chalk-dim);
+}
+.wc-fence-why-reason {
+  font-size: clamp(0.48rem, 1.05vmin, 0.6rem);
+  color: var(--wc-chalk);
+}
+.wc-fence-why-note {
+  font-size: clamp(0.42rem, 0.95vmin, 0.54rem);
+  color: var(--wc-chalk-dim);
+}

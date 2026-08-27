@@ -1,13 +1,18 @@
 import {
+  BuffCadence,
+  BUFF_CADENCE,
   BuffKind,
   BuffRewardAxis,
   BuffTargetSuit,
   BuffTier,
   buffTargetRankOf,
   buffTargetSuitOf,
+  DuelSide,
+  TIMEBOMB_DAMAGE,
   type Buff,
   BuffActivationRefusal,
 } from '../../hunt'
+import type { BuffStack } from './buffGalleryModel'
 
 /** DLR-114 — the family word half of a card's name. TRANSCRIBED from `v1-buff-card-list.md` ->
  *  *How a card is named*; the eight activated/consumable kinds and `Unassigned` have no row there,
@@ -174,4 +179,110 @@ export function buffRowAccessibleName(
   const line = buffLine(buff)
   if (refusal !== null) return `${line} ${BUFF_ACTIVATION_REFUSAL_MESSAGE[refusal]}`
   return poised ? `${line} ${BUFF_POISED_HINT}` : line
+}
+
+/** AC9 — the cadence word, derived from `BUFF_CADENCE` and never authored per card. Keyed over
+ *  the closed `BuffCadence` union. `Event` is a placeholder here — every live `Event` family is
+ *  narrowed by kind below, through `BUFF_EVENT_WORD`; this table is what a cut `Event` family
+ *  (that has no entry in `BUFF_EVENT_WORD`) still falls back to, so it resolves to a word rather
+ *  than `undefined`. */
+const CADENCE_WORD: Readonly<Record<BuffCadence, string>> = {
+  [BuffCadence.Event]: 'WHEN',
+  [BuffCadence.Threshold]: 'WHEN',
+  [BuffCadence.Terminal]: 'HAND END',
+  [BuffCadence.Activated]: 'PRESS',
+}
+
+/** AC9's public export — the same table as `CADENCE_WORD` above, so a consumer or a test can read
+ *  the fallback word straight from a `BuffCadence` without minting a `Buff`. */
+export const BUFF_CADENCE_WORD: Readonly<Record<BuffCadence, string>> = CADENCE_WORD
+
+/** `Event` is shared by three live families that fire on different branches of the trick, so the
+ *  word is narrowed by kind. MECHANICAL vocabulary — TAKE / MISS / DODGE — because every buff
+ *  condition reads `playerWon`, "did the player physically take the cards", NOT the outcome axis
+ *  the bank and the damage read. `CLAUDE.md` names this as the single most common source of wrong
+ *  statements about this game: a `WIN` pill on a Taker beside a readout saying "if you take the
+ *  trick" is the two axes given one pair of words. A `Partial` over the closed `BuffKind` union —
+ *  the eight cut families fall through to `BUFF_CADENCE_WORD` via `BUFF_CADENCE`, through
+ *  `buffCadenceWord` below. */
+export const BUFF_EVENT_WORD: Partial<Readonly<Record<BuffKind, string>>> = {
+  [BuffKind.Taker]: 'TAKE',
+  [BuffKind.Feeder]: 'MISS',
+  [BuffKind.Sidestep]: 'DODGE',
+}
+
+/** The cadence word a buff's card states — never free text (AC9). */
+export function buffCadenceWord(buff: Buff): string {
+  return BUFF_EVENT_WORD[buff.kind] ?? BUFF_CADENCE_WORD[BUFF_CADENCE[buff.kind]]
+}
+
+/** AC5 — the Timebomb pays one figure and costs another. `null` for every other card, which is
+ *  what makes the split bar a shape rather than a special case in the component. Reads
+ *  `TIMEBOMB_DAMAGE[buff.tier]` from `src/hunt` — never a literal — so a retuned ladder cannot
+ *  leave the card advertising a figure the engine will not honour. */
+export interface BuffPayoff {
+  readonly gain: string
+  /** Present only where the same figure can land on the player. */
+  readonly risk: string | null
+}
+
+export function buffPayoff(buff: Buff): BuffPayoff {
+  if (buff.kind !== BuffKind.Timebomb) {
+    return { gain: buffRewardPhrase(buff), risk: null }
+  }
+  const damage = TIMEBOMB_DAMAGE[buff.tier]
+  return {
+    gain: `+${damage[DuelSide.Quarry]} damage`,
+    risk: `−${damage[DuelSide.Player]} to you`,
+  }
+}
+
+/** AC10/DLR-148 fix-pass — the FACE-only rendering of `buffPayoff`. `buffPayoff`'s two-word phrasing
+ *  ("+4 damage" / "−2 to you") does not fit the split bar's half-width box at the grid's actual
+ *  card width (measured: 46px of content in a 33px box at 1440x900, 39px in 33px at 1280x720) —
+ *  `warCouncilBuffCard.css`'s `white-space: nowrap; overflow: hidden` then clips it mid-word rather
+ *  than wrapping it. The bare, signed numeral is what fits at both viewports; the gain/risk
+ *  distinction is carried by the two spans' position and colour (green vs. alarm background), and
+ *  the full unabbreviated sentence — AC5's second half — still lives in `buffCardAccessibleName`
+ *  via `buffPayoff` above, untouched. Every other card's single-bar reward phrase is unaffected;
+ *  only the Timebomb's split case had a fitting problem. */
+export function buffPayoffFace(buff: Buff): BuffPayoff {
+  if (buff.kind !== BuffKind.Timebomb) {
+    return buffPayoff(buff)
+  }
+  const damage = TIMEBOMB_DAMAGE[buff.tier]
+  return {
+    gain: `+${damage[DuelSide.Quarry]}`,
+    risk: `−${damage[DuelSide.Player]}`,
+  }
+}
+
+/** The count suffix a stack states — `×N` only when there is more than one copy (AC7 wording, not
+ *  a resource claim: "1 held" is not said, matching DLR-145 AC2's discipline against a claim that
+ *  reads like a resource that isn't there). */
+function buffCountSuffix(stack: BuffStack): string {
+  return stack.count > 1 ? ` ×${stack.count}` : ''
+}
+
+/** PRESS cards are SPENT by the second tap and `Escape` cannot bring them back. */
+export const BUFF_POISED_HINT_PRESS = 'Tap again to spend'
+
+/** AC5's second half — the accessible name carries the whole sentence, both figures included, and
+ *  `buffName(buff)` verbatim so `getByRole('button', { name: /Cheat \(/ })`-style queries in
+ *  `WarCouncilRound.actionBar.test.tsx` and `WarCouncilRound.timebomb.test.tsx` keep matching
+ *  across the rewrite. */
+export function buffCardAccessibleName(
+  stack: BuffStack,
+  poised: boolean,
+  refusal: BuffActivationRefusal | null,
+): string {
+  const { buff } = stack
+  const payoff = buffPayoff(buff)
+  const payoffSentence = payoff.risk === null ? payoff.gain : `${payoff.gain}, ${payoff.risk}`
+  const name = `${buffName(buff)} — ${buffConditionSentence(buff)}: ${payoffSentence}.${buffCountSuffix(stack)}`
+  if (refusal !== null) return `${name} ${BUFF_ACTIVATION_REFUSAL_MESSAGE[refusal]}`
+  if (!poised) return name
+  const hint =
+    BUFF_CADENCE[buff.kind] === BuffCadence.Activated ? BUFF_POISED_HINT_PRESS : BUFF_POISED_HINT
+  return `${name} ${hint}`
 }

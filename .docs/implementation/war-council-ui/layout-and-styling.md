@@ -51,21 +51,31 @@ because **card rotation and lift are transforms, which do not affect layout size
 reserved room the fan's visual pixels spill outside its box and the shell's `overflow: hidden` crops
 them. The fix is to reserve the room, never to loosen the overflow.
 
-The styling ships as **nine** stylesheets, not one, all imported by `WarCouncilRound.tsx` in cascade
-order (`warCouncilActionBar.css` is imported by `BuffLoadoutPanel.tsx` too, since the panel is the
-only other consumer of its `.wc-loadout-*` block):
+The styling ships as **ten** stylesheets, not one, all imported by `WarCouncilRound.tsx` in cascade
+order. Two of them are imported a second time, by the component that owns them —
+`warCouncilBuffGallery.css` and `warCouncilBuffCard.css` from `BuffGallery.tsx` — which is the same
+pattern `warCouncilActionBar.css` used to follow when `BuffLoadoutPanel.tsx` was the only other
+consumer of its `.wc-loadout-*` block. **That block, and that panel, were deleted by DLR-148.**
 
 | Sheet | Owns |
 |---|---|
-| `warCouncilActionBar.css` | DLR-114: the whole action bar (`.wc-bar*`, including `grid-area: actions`) and the buff loadout panel (`.wc-loadout*`). Every size bound in it is a `clamp()` copied from the sibling rail sheets rather than a new number — placeholder, flagged for the polish ticket |
-| `warCouncilCheats.css` | DLR-83: the Cheat slots — since DLR-114 rendered inside the loadout panel rather than on the felt rail |
-| `warCouncil.css` (268) | the `:root` tokens, the shell grid, the status band including DLR-82's `.wc-run` readout, and — re-homed by DLR-80 — the `.wc-sr-only` utility |
-| `warCouncilTable.css` (172) | DLR-93: the decree and draw pile, and the whole `.wc-table` block — the felt itself |
-| `warCouncilCards.css` | the card face, the ability prompt, and the hand-over panel |
-| `warCouncilHunt.css` | the dossier zone, the telegraph, and DLR-80's `.wc-shape*` and `.wc-bank*` readouts |
-| `warCouncilHealthBars.css` | DLR-71: the duel's two health displays — rewritten by DLR-86 from a bar surface into the heart rows, their four `[data-state]` rules, the two `@keyframes`, and the reduced-motion block |
+| `warCouncilActionBar.css` (133) | DLR-114: the whole action bar (`.wc-bar*`, including `grid-area: actions`). Its `.wc-loadout*` block — the old buff panel — was **deleted by DLR-148**, taking the sheet from 239 lines to 133. Every size bound in it is a `clamp()` copied from a sibling rail sheet rather than a new number — placeholder, flagged for the polish ticket |
+| `warCouncil.css` (370) | the `:root` tokens, the shell grid, the status band including DLR-82's `.wc-run` readout, and — re-homed by DLR-80 — the `.wc-sr-only` utility. **DLR-148 added the buff card's metals, face tints, inks, the two size bounds `--wc-buffcard-w` / `--wc-rail-w`, the skull shadow, and the five contrast-derived inks**; `__tests__/contrast.test.ts` parses this file and asserts the 4.5:1 floor against whatever it says |
+| `warCouncilTable.css` (176) | DLR-93: the decree and draw pile, and the whole `.wc-table` block — the felt itself. **DLR-148 replaced its `1fr auto 1fr` with `var(--wc-rail-w) minmax(0, 1fr)`** — the rail/stage split — and corrected a comment that had been pointing `.wc-felt-rail`'s rules at a stylesheet deleted two tickets earlier |
+| `warCouncilFeltRail.css` (109) | **DLR-148, new.** The felt's left game rail: the always-mounted decree/trick/readout/spent column, the condensed trick strip it shows while the gallery holds the stage, and the readout slip's light ground and its three tones. Closes a pre-existing defect — `.wc-felt-rail` had **no rule at all** before this sheet existed |
+| `warCouncilBuffGallery.css` (272) | **DLR-148, new.** The gallery panel, its head figures, the tier-chip filter, the `repeat(auto-fill, <fixed>)` grid (never `minmax(…, 1fr)`), the run tabs and the fence. Carries the `isolation: isolate` on the pile wrapper that keeps a stacked card from painting over its own face |
+| `warCouncilBuffCard.css` (387) | **DLR-148, new.** One buff card: the metal frame, the tinted face, the roman numeral, the cadence pill, the suit-coloured payoff bar and its split variant, the hover sheen, and the tarnish a fenced card takes. Carries the card's own `isolation: isolate` + `overflow: hidden`, and the `white-space: nowrap` on the payoff bar that makes the rest of the card's vertical layout computable |
+| `warCouncilCards.css` (359) | the card face, the ability prompt, and the hand-over panel. **DLR-148 added `.wc-card-skull-face`** and removed `.wc-skull-mark`, the corner glyph it replaces |
+| `warCouncilHunt.css` (376) | the dossier zone and DLR-80's `.wc-shape*` and `.wc-bank*` readouts. **DLR-148 deleted its six `.wc-telegraph*` rules** with the component they styled, taking the sheet from 417 lines — over the blocking budget before this ticket touched it — to 376 |
+| `warCouncilHealthBars.css` | DLR-71: the duel's two health displays — rewritten by DLR-86 from a bar surface into the heart rows, their four `[data-state]` rules, the two `@keyframes`, and DLR-115's `[data-type]` product |
 | `warCouncilHand.css` | DLR-82: the hand container and the fan |
-| `warCouncilTimebomb.css` | DLR-90: the Timebomb charge readout and its mark — since DLR-114 also rendered inside the loadout panel |
+
+> **Two sheets this table used to list no longer exist.** `warCouncilCheats.css` and
+> `warCouncilTimebomb.css` went with `CheatSlots.tsx` and `TimebombCharge.tsx` on **DLR-132**, when
+> both became ordinary buff cards. `warCouncilCheats.css` is worth remembering for one reason: a
+> comment in `warCouncilTable.css` went on pointing `.wc-felt-rail`'s rules at it for two tickets
+> after it was deleted, so the class styled nothing at all until DLR-148 noticed. That is the
+> string-bound failure mode this module's invariants warn about, in its cheapest possible form.
 
 The felt used to live in `warCouncil.css` alongside the shell; DLR-93 moved it out (see below).
 

@@ -3,11 +3,9 @@ import {
   CardRank,
   DiscardRefusal,
   IllegalMoveReason,
-  QuarryIntentStance,
   Suit,
   TrickOutcome,
   type Card,
-  type QuarryIntent,
   type SuitShape,
 } from '../../warCouncil'
 import { DuelSide, MAX_CARDS_PER_DISCARD, type Damage } from '../../hunt'
@@ -66,13 +64,6 @@ export const ILLEGAL_MOVE_MESSAGE: Readonly<Record<IllegalMoveReason, string>> =
   [IllegalMoveReason.UnexpectedAbilityChoice]: 'That card takes no choice.',
   [IllegalMoveReason.InvalidFoxExchangeCard]: 'That card is not available to exchange.',
   [IllegalMoveReason.InvalidWoodcutterDiscard]: 'That card is not available to discard.',
-}
-
-/** The verb phrase for each telegraphed stance (§4, DLR-52's QuarryIntentStance). */
-export const STANCE_PHRASE: Readonly<Record<QuarryIntentStance, string>> = {
-  [QuarryIntentStance.Leading]: 'lead',
-  [QuarryIntentStance.Pressing]: 'press with',
-  [QuarryIntentStance.Ducking]: 'duck with',
 }
 
 /** AC1/AC7 — each bar's accessible name. The two must differ, because `getByRole('meter', …)`
@@ -182,23 +173,6 @@ export function suitShapeRowText(row: SuitShape): string {
 /** One sentence for a reader who cannot see the shape rows (AC11) — never a rank. */
 export function quarryShapeText(shape: readonly SuitShape[]): string {
   return `${QUARRY_SHAPE_LABEL} — ${shape.map(suitShapeRowText).join('; ')}.`
-}
-
-/**
- * The telegraph's screen-reader name (AC6). `speculative` distinguishes the live reading of
- * the Quarry's own turn from the preview against a card the player has merely armed, so the
- * two never sound identical to someone who cannot see the difference in the border.
- */
-export function intentAccessibleName(intent: QuarryIntent | null, speculative: boolean): string {
-  if (intent === null) {
-    return speculative
-      ? 'The Quarry has no readable answer to that lead.'
-      : 'The Quarry has no intent to read yet.'
-  }
-  const suit = SUIT_NAME[intent.suit]
-  const phrase = intent.stance === undefined ? 'play' : STANCE_PHRASE[intent.stance]
-  const body = `The Quarry will ${phrase} ${suit}.`
-  return speculative ? `If you lead that card: ${body}` : body
 }
 
 /** The purse plate on the status band (DLR-84). PLACEHOLDER copy, as this file's other labels

@@ -1,5 +1,6 @@
-/* War Council — the Hunt screen's readouts: the dossier zone (the Quarry's card and the
-   intent telegraph). Sibling to `warCouncil.css` and `warCouncilCards.css`, split out because
+/* War Council — the Hunt screen's readouts: the dossier zone (the Quarry's card, the shape
+   readout and the bank meter — DLR-148 deleted the intent telegraph, both halves).
+   Sibling to `warCouncil.css` and `warCouncilCards.css`, split out because
    the shell stylesheet is at its 400-line budget; import both from the mount component.
    Tokens are defined once in `warCouncil.css` and apply globally once that sheet is
    loaded — nothing here redeclares `:root`. Selectors and values are transcribed from the
@@ -12,7 +13,7 @@
    Standing multiplier they scored — none of that machinery has a place in the bank-and-skull
    loop that replaced it. */
 
-/* ---------- the dossier zone: the Quarry's card, then the telegraph ---------- */
+/* ---------- the dossier zone: the Quarry's card, then the shape and bank readouts ---------- */
 
 .wc-dossier {
   grid-area: dossier;
@@ -301,49 +302,6 @@
   color: var(--wc-alarm);
 }
 
-/* ---------- the intent telegraph ---------- */
-
-.wc-telegraph {
-  background: #101a20;
-  border: 1px dashed var(--wc-keys);
-  border-radius: 0.4rem;
-  padding: 0.55rem 0.7rem;
-}
-
-/* Live vs. speculative vs. empty carry their own border style — never colour alone. */
-.wc-telegraph.wc-is-speculative {
-  border-style: dotted;
-}
-
-.wc-telegraph.wc-telegraph-empty {
-  border-color: #2b3a44;
-  border-style: solid;
-}
-
-.wc-telegraph-eyebrow {
-  font-size: 0.64rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--wc-chalk-dim);
-}
-
-.wc-telegraph-line {
-  font-family: var(--wc-serif);
-  font-size: 0.98rem;
-  color: var(--wc-parchment);
-  margin: 0.2rem 0 0;
-  line-height: 1.3;
-}
-
-.wc-telegraph-mark {
-  display: inline-block;
-  width: 0.8em;
-  height: 0.8em;
-  vertical-align: -0.1em;
-  margin-right: 0.3em;
-  color: var(--wc-brass);
-}
-
 /* ---------- narrow/short collapse — AC5 on a phone or a short laptop window ---------- */
 
 @media (max-width: 44rem), (max-height: 34rem) {
@@ -364,8 +322,9 @@
   }
 
   /* DLR-119 — bounded, and given its own scroll. At this breakpoint the dossier stops being a
-     narrow column and becomes a wrapping ROW of four panels (dossier card, shape readout, bank
-     meter, telegraph) with no ceiling on how tall it wraps. `.wc-shell` clips rather than scrolls
+     narrow column and becomes a wrapping ROW of panels (dossier card, shape readout, bank meter —
+     DLR-148 removed the intent telegraph, the fourth) with no ceiling on how tall it wraps.
+     `.wc-shell` clips rather than scrolls
      and its felt row is `minmax(0, 1fr)`, so the felt collapses to zero first and every further
      pixel pushes the `hand` and `actions` rows off the bottom edge — the rows that hold every
      control the player has. This is `game-ux`'s stated exception ("if some region genuinely must

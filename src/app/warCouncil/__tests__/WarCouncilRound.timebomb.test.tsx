@@ -115,36 +115,56 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     expect(screen.queryByText(TIMEBOMB_ARMED_HINT)).toBeNull()
   })
 
-  it('cancels the poise on Escape, spending nothing', () => {
+  it('cancels the poise on Escape, leaving the panel open — AC18 unwinds ONE level at a time', () => {
+    // DLR-148 AC18 — a poised Escape now drops only the poise, not the whole panel: the SECOND
+    // Escape (nothing poised) is what closes it. Superseding the pre-DLR-148 behaviour this test
+    // used to pin, where Escape closed the panel outright on the first press.
     renderRound()
     openLoadout()
     const row = timebombRow()
     fireEvent.click(row) // poise
     fireEvent.keyDown(row.closest('[role="dialog"]') as Element, { key: 'Escape' })
-    // The dialog itself closes on Escape (DLR-132 — the roving collection is now the whole
-    // panel, and Escape is handled once, on the container). Reopening finds the row unspent.
-    openLoadout()
+    expect(screen.getByRole('dialog', { name: 'Your buffs' })).toBeTruthy()
     expect(timebombRow().getAttribute('aria-pressed')).toBe('false')
   })
 
-  it('is disabled while a trick reveal is held, and does not clear the reveal on click (stopPropagation)', () => {
-    // Same construction as the base spec's own "plays a legal card" case: the fixture hand's
-    // one Bells card completes a trick against the fixture Cpu hand. The panel is opened BEFORE
-    // the trick resolves — `discardWindowOpen` (and so `loadoutRefusalFor`) narrows once a reveal
-    // is held, same as Swap's own gate, so the row itself greys rather than the panel closing.
+  it('is not rendered at all once a trick reveal is held — AC1, the gallery and the felt stage never contend', () => {
+    // Same construction as the base spec's own "plays a legal card" case: the fixture hand's one
+    // Bells card completes a trick against the fixture Cpu hand. The panel is opened BEFORE the
+    // trick resolves. Pre-DLR-148, a held reveal only narrowed `discardWindowOpen` (and so
+    // `loadoutRefusalFor`), greying the Timebomb row while the panel stayed open beside the
+    // resolved-trick text. DLR-148 replaces that: `loadoutDoorOpen` is `discardWindowOpen ||
+    // canAct`, and a held reveal makes BOTH false, so the gallery is not rendered at all — the
+    // felt stage (and its reveal) is the only thing on screen.
     renderRound()
     openLoadout()
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
     fireEvent.click(bells7)
     expect(screen.getByText(/take the trick/i)).toBeDefined()
+    expect(screen.queryByRole('dialog', { name: 'Your buffs' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Timebomb \(/ })).toBeNull()
+  })
 
-    const row = timebombRow()
-    expect(row).toHaveProperty('disabled', true)
-    fireEvent.click(row)
-    // A click on the disabled row must not have bubbled to `.wc-table`'s own onClick, which
-    // would otherwise have called handleCarryOn and cleared the reveal.
-    expect(screen.getByText(/take the trick/i)).toBeDefined()
+  it('stops a click inside the open gallery from bubbling to the felt and firing carry-on (stopPropagation)', () => {
+    // Quarry-to-lead is the one window where `.wc-table` itself carries an onClick
+    // (`handleCarryOn`, armed by `quarryToLead`) AND the gallery can legitimately be open at the
+    // same time — `loadoutDoorOpen` is `discardWindowOpen || canAct`, and both hold here, since
+    // `discardWindowOpen` doesn't care whose turn it is. Every other open-gallery state has no
+    // handler on `.wc-table` to bubble to at all, so this is the only state that can prove the
+    // gallery's own `onClick={(e) => e.stopPropagation()}` is doing anything.
+    const round = makeRound({ leader: PlayerSide.Cpu, currentTrick: [] })
+    renderRound({ initialState: round })
+    openLoadout()
+    expect(screen.getByRole('dialog', { name: 'Your buffs' })).toBeTruthy()
+    expect(screen.getByText('4 held')).toBeTruthy() // the Cpu's opening hand size
+
+    fireEvent.click(screen.getByRole('heading', { name: /your buffs/i }))
+
+    // If the click had bubbled, `.wc-table`'s handleCarryOn would have committed the Quarry's
+    // pending lead, moving one card out of its hand and closing the quarry-to-lead window.
+    expect(screen.getByText('4 held')).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: 'Your buffs' })).toBeTruthy()
   })
 
   it('AC5 — a marked card the Quarry wins cleanly costs nothing: no damage, bank and multiplier stand', () => {

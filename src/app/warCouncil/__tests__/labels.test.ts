@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   ApplyDamageRefusal,
   IllegalMoveReason,
-  QuarryIntentStance,
   Suit,
   TrickOutcome,
   type SuitShape,
@@ -19,10 +18,8 @@ import {
   HEALTH_BAR_LABEL,
   healthBarValueText,
   ILLEGAL_MOVE_MESSAGE,
-  intentAccessibleName,
   quarryShapeText,
   RANK_NAME,
-  STANCE_PHRASE,
   suitShapeRowText,
   SUIT_NAME,
   TRICK_OUTCOME_MESSAGE,
@@ -87,42 +84,10 @@ describe('the label maps', () => {
     }
   })
 
-  it('carries a stance phrase for every QuarryIntentStance', () => {
-    for (const stance of Object.values(QuarryIntentStance)) {
-      expect(STANCE_PHRASE[stance]).toBeTruthy()
-    }
-  })
-
   it('carries copy for every trick outcome (§3.2)', () => {
     for (const outcome of Object.values(TrickOutcome)) {
       expect(TRICK_OUTCOME_MESSAGE[outcome]).toBeTruthy()
     }
-  })
-})
-
-describe('intentAccessibleName', () => {
-  it('names the suit and the stance for a live intent', () => {
-    expect(
-      intentAccessibleName({ suit: Suit.Bells, stance: QuarryIntentStance.Pressing }, false),
-    ).toBe('The Quarry will press with Bells.')
-  })
-
-  it('prefixes with "If you lead that card" when speculative', () => {
-    expect(
-      intentAccessibleName({ suit: Suit.Keys, stance: QuarryIntentStance.Ducking }, true),
-    ).toBe('If you lead that card: The Quarry will duck with Keys.')
-  })
-
-  it('returns a distinct sentence for null in each mode', () => {
-    const live = intentAccessibleName(null, false)
-    const speculative = intentAccessibleName(null, true)
-    expect(live).not.toBe(speculative)
-    expect(live).toBeTruthy()
-    expect(speculative).toBeTruthy()
-  })
-
-  it('omits the stance without crashing when stance is absent (suit-only fidelity)', () => {
-    expect(intentAccessibleName({ suit: Suit.Moons }, false)).toBe('The Quarry will play Moons.')
   })
 })
 

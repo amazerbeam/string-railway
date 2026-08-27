@@ -1,8 +1,8 @@
 _Part of [War Council UI](README.md)._
 
-The dossier column is the screen's persistent-readout slot: what the Quarry is, what it holds, what
-your streak is worth, and what it is about to play. DLR-53 established it; **DLR-80 replaced two of
-its three readouts.**
+The dossier column is the screen's persistent-readout slot: what the Quarry is, what it holds and
+what your streak is worth. DLR-53 established it; **DLR-80 replaced two of its three readouts**, and
+**DLR-148 deleted the third** — "what it is about to play" is no longer a thing this screen shows.
 
 > **DLR-80 deleted the Hunt ledger, the Standing track, and the declare gate.** `HuntLedger.tsx`,
 > `StandingTrack.tsx`, `standingSegments.ts` and `DeclareGate.tsx` are gone, along with
@@ -115,6 +115,13 @@ reads exactly as it did before this prop existed.
 
 ### The skull mark on a played card
 
+> **DLR-148 changed what this looks like, and nothing else about it.** A skulled card now renders a
+> **full skull face in place of the card art**, identical for every rank and suit, with the corner
+> index — rank, suit glyph, rank name — intact, because the trick is still won on those. The small
+> corner `☠` described below is gone, as is `.wc-skull-mark`. The prop, the pass-through and the
+> accessible name are untouched. See
+> [The felt rail, the trick readout, and the skull face](felt-rail-and-the-trick-readout.md).
+
 `PlayingCard` takes a `skulled?: boolean` (defaulting to `false`) and, when true, renders a skull
 glyph on the face. `TrickWell` passes it through by testing each played card against
 `ui.round.skulledCards`.
@@ -139,7 +146,25 @@ new derivation, so `roundReducer.ts` and `bank.ts` are untouched. Recognition ov
 trick sits at the felt centre, so naming the figure at the point of resolution closes the gap
 between the two zones without needing a new transient UI state.
 
-### The telegraph has two readings, and never both at once
+### The telegraph had two readings, and never both at once — deleted DLR-148
+
+> **Everything in this section describes deleted code, kept as the record of why the surface
+> existed and what replaced it.** On 2026-08-26 DLR-148 deleted `IntentTelegraph.tsx`,
+> `intentPreview.ts`, `previewQuarryIntent`, `intentAccessibleName` and `STANCE_PHRASE`, and both
+> readings went with them — the live one *and* the speculative "If you lead that" preview. The
+> [consequence readout](felt-rail-and-the-trick-readout.md) is the single surface that says what a
+> trick will do now, and it speaks only about the card the Quarry has **already** led, never about
+> an unplayed one. The state where the player leads deliberately says nothing at all.
+>
+> **`quarryIntent` itself survives in `src/warCouncil/`, with no production consumer**, as do
+> `TelegraphFidelity` and `TELEGRAPH_FIDELITY` in `src/hunt/config.ts` and
+> `src/warCouncil/__tests__/quarryIntent.test.ts`. That is a recorded decision — removing engine
+> surface is a larger cut than a UI ticket's scope — not a live feature. **No screen reads it.**
+>
+> One thing below outlived the deletion: **the Quarry's lead is still held uncommitted** on trick 1,
+> because the commit is folded onto the carry-on tap on every later trick and trick 1 has no prior
+> reveal to fold onto. `TrickWell`'s copy for that window lost its pointer at the telegraph — it read
+> "They are about to lead. Read their intent first." and now reads "They are about to lead."
 
 Unchanged by DLR-80. The Quarry's next-trick intent must be readable *before* the player commits,
 and because `quarryIntent(state)` returns `null` unless it is currently the Quarry's turn, that
@@ -157,7 +182,8 @@ arm-then-confirm interaction, which is a selection rather than a commitment.
 `intentPreview.ts`'s `previewQuarryIntent(round, card, fidelity?)` plays the card into a throwaway
 state via the pure `playCard` and asks `quarryIntent` about the result.
 
-The fidelity is read from `TELEGRAPH_FIDELITY`, never decided here.
+The fidelity was read from `TELEGRAPH_FIDELITY`, never decided here. That constant still exists and
+nothing reads it.
 
 ### The hand-over panel states a tally, not an equation
 

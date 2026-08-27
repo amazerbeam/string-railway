@@ -77,7 +77,10 @@ preview says so rather than guessing silently: `exact` is `true` only when
 `chooseCpuCard` in `src/warCouncil/cpuPlayer.ts` is fully deterministic, so after the player picks a
 card the Quarry's answer — and therefore the winner — is computable. Collapsing the two branches into
 one certain number would leak the Quarry's exact card past `TELEGRAPH_FIDELITY`, which
-`previewQuarryIntent` exists precisely to avoid: it gives suit and stance and nothing more. Two
+the (since-deleted) `previewQuarryIntent` existed precisely to avoid: it gave suit and stance and
+nothing more. **DLR-148 deleted the telegraph outright**, so this preview and
+[the consequence readout](felt-rail-and-the-trick-readout.md) are now the only two surfaces that say
+anything about what a trick will do — and both state **both** branches, for this same reason. Two
 conditional branches is the design-preserving reading, not a limitation.
 
 ## When nothing is previewed

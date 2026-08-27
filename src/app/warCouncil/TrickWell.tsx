@@ -125,14 +125,17 @@ export default function TrickWell({
   }
 
   if (quarryToLead) {
-    // The Quarry's lead is chosen but not committed, so the telegraph beside the felt can be
-    // read first (AC3). The control is a real button for the same reason the carry-on control
-    // is: while the Quarry holds the turn every hand card is disabled, so this is the only
-    // thing a keyboard-only player can reach.
+    // The Quarry's lead is chosen but not committed. DLR-148 deleted the intent telegraph — this
+    // copy used to point at it ("Read their intent first") and there is no longer a panel to
+    // point at, so the line says only what is still true: a lead is coming and nothing more. The
+    // control is a real button for the same reason the carry-on control is: while the Quarry
+    // holds the turn every hand card is disabled, so this is the only thing a keyboard-only
+    // player can reach.
     return (
       <>
         <div className="wc-trick-row" />
-        <p className="wc-table-line">They are about to lead. Read their intent first.</p>
+        {/* PLACEHOLDER COPY — the developer's to retune. */}
+        <p className="wc-table-line">They are about to lead.</p>
         <button type="button" className="wc-table-hint wc-is-carry-on" onClick={handleHintClick}>
           Let them lead
         </button>

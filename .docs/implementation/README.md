@@ -28,7 +28,7 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, PT-001, PT-002                                                                                  |
 | `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, PT-002                                                                          |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, PT-002                                                                  |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145 |
 | `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                 |
@@ -59,7 +59,8 @@ DLR-47 retired the Vanguard board engine, the battle-loop orchestrator, and thei
 via `git show` per `CLAUDE.md`'s recovery instructions, not documented here.
 
 DLR-53 turned that round screen into the **Hunt screen** — persistent readouts in a dossier column,
-the Quarry's intent telegraphed before every commit, and an end panel. It is the ticket that gave
+the Quarry's intent telegraphed before every commit (**that telegraph was deleted by DLR-148**), and
+an end panel. It is the ticket that gave
 `src/hunt/` its first UI consumers and made a Hunt playable end to end; start at
 [war-council-ui/hunt-readouts-and-telegraph.md](war-council-ui/hunt-readouts-and-telegraph.md).
 
@@ -815,7 +816,8 @@ bottom of the screen** — Apply Buff, Cards, Swap, Apply Damage — added as th
 grid row**, always mounted and greying with its reason on each control's own face rather than
 disappearing. `ApplyDamagePlate.tsx`, `DiscardPlate.tsx` and their two stylesheets and two specs were
 deleted; `CheatSlots` and `TimebombCharge` were **relocated unchanged** into a new `BuffLoadoutPanel`
-that Apply Buff opens.
+that Apply Buff opens. (**That panel was itself replaced by `BuffGallery` on DLR-148**, and the two
+relocated controls had already become ordinary buff cards on DLR-132.)
 
 **The integration it forced is the substantive part.** `RunState.buffs` reaches the card layer for
 the first time, as a required mount prop that deliberately does **not** come back on
@@ -905,7 +907,8 @@ entirely unobtainable, and a second Cheat was unobtainable past a cap that no lo
 exist.** `SHOP_ITEMS` had been pared to four items (DLR-116), the buff pool was built with zero
 Cheat/Timebomb templates (DLR-112), and a run opened holding exactly one Cheat and zero Timebombs
 with no route to another of either. Both are now **ordinary buff cards**: two new templates the reel
-can draw (`BUFF_TEMPLATES` 71 → **73**), two rows in `BuffLoadoutPanel`'s roving-tabindex list, spent
+can draw (`BUFF_TEMPLATES` 71 → **73**), two rows in the buff panel's roving-tabindex list (cards in
+`BuffGallery`'s grid since DLR-148), spent
 through the same two-tap poise-then-spend `activateFromPile` flow every other card uses, priced by
 the same `apCostOf`.
 
@@ -1093,7 +1096,7 @@ stacked case. `.docs/game_rules/the-hunt.md` **is** touched: when Apply Damage m
 it stacks with Timebomb, how long a payout takes to settle, and what fraction survives a hit are all
 rules a player acts on.
 
-## Latest — DLR-145, Version 6: buff cards you spend, no action points, a thirteen-card pool (2026-08-25)
+## DLR-145, Version 6: buff cards you spend, no action points, a thirteen-card pool (2026-08-25)
 
 **The change that makes the rest of it cohere is that a buff card is now something you spend.** Before
 this, the eleven condition families were *rented*: a Taker cost action points, fired for the trick,
@@ -1188,6 +1191,54 @@ seen cards can come back inside a hand. **Every simulated baseline recorded befo
 stale**, including the tricks-taken and damage-per-hand figures the shop arithmetic is priced against;
 re-measuring was out of scope. Start at
 [war-council/the-hand-refill.md](war-council/the-hand-refill.md).
+
+## Latest — DLR-148, the buff gallery, the felt re-home, and the trick readout (2026-08-26)
+
+**DLR-148 is the largest change to the Hunt screen's shape since DLR-114, and it is entirely a UI
+contract: no engine rule, cost, timing or gate moved.** Fifty-one files changed and every one of
+them is under `src/app/warCouncil/`.
+
+Three things landed together because they share the felt's grid. **The buff surface became a
+gallery of cards**: `BuffLoadoutPanel`'s one-line-per-buff list is deleted, and `BuffGallery` renders
+a `BuffGalleryView` built by a new pure module — runs grouped by target suit with `Suitless` and
+`Press` as the fourth and fifth, tier-descending order, **exact duplicates collapsed into one counted
+stack**, and everything unusable right now fenced into one tarnished group carrying the count and the
+shared reason. That is the direct answer to the crowding DLR-145 created when the opening pile went
+to twenty-one cards. **The felt became two grid columns**, `game rail | stage`: an always-mounted
+`FeltRail` holding decree, trick and spent, and a `FeltStage` holding the gallery or the felt's
+narrative states — so "the buff surface never occludes the decree, the spent pile or the Quarry's
+played card" is a **structural guarantee rather than a z-index promise**. And **a consequence readout
+replaced the intent telegraph**: `trickConsequence` derives, from the Quarry's *already led* card
+alone, what taking the trick does to the player and what not taking it does, in the rank table's own
+terms, and returns `null` — so nothing renders at all — when the trick is empty, when the player led,
+or when the card has nothing extra to say.
+
+**The telegraph is gone, both halves.** `IntentTelegraph.tsx`, `intentPreview.ts`,
+`previewQuarryIntent`, `intentAccessibleName` and `STANCE_PHRASE` are deleted with their three specs.
+The game no longer previews the Quarry's intent, and the speculative "if you lead that" reading went
+with it. **`quarryIntent`, `TelegraphFidelity` and `TELEGRAPH_FIDELITY` deliberately remain in the
+engine with no production consumer** — a recorded decision, not an oversight, because removing engine
+surface is a larger cut than a UI ticket's scope.
+
+Two smaller things worth knowing. **A skulled card now renders a full skull face** in place of the
+card art, identical for every rank and suit, with the corner index intact — one shared `<symbol>`, so
+N skulled cards cost one path. And the 4.5:1 WCAG contrast floor is now **enforced by a test that
+parses the real stylesheet**, keeping the CSS the single owner of every colour; white failed on all
+three suits (2.99 / 3.37 / 3.51:1) and both existing project accents failed on the readout's light
+ground, so the five inks that ship are contrast-derived rather than chosen. Every other colour and
+size the ticket added is a transcribed placeholder the developer owns.
+
+Two pre-existing breaches were fixed in-ticket rather than handed back: `WarCouncilRound.tsx` at 415
+lines (the felt's branch chain moved verbatim into `roundControlsProps.ts`, taking it to 352) and
+`warCouncilHunt.css` at 417 (the six `.wc-telegraph*` rules went with the component). A third,
+quieter defect closed with them: **`.wc-felt-rail` had had no CSS rule at all**, because a comment
+pointed its rules at `warCouncilCheats.css`, a file deleted two tickets earlier.
+
+**Nothing here is persisted and `SAVE_SCHEMA_VERSION` is deliberately not bumped.** Start at
+[war-council-ui/buff-gallery.md](war-council-ui/buff-gallery.md) for the gallery, its view-model and
+the contrast floor, and
+[war-council-ui/felt-rail-and-the-trick-readout.md](war-council-ui/felt-rail-and-the-trick-readout.md)
+for the re-home, the readout and the skull face.
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

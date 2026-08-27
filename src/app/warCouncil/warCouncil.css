@@ -32,6 +32,12 @@
   --wc-keys: #5f93a8;
   --wc-moons: #9c7cb8;
 
+  /* AC12/DLR-148 — the skull's eye sockets, nasal cavity and teeth gaps. A fixed dark shadow
+     regardless of suit, tier or greyscale (it is shadow, not a suit-coloured signal), transcribed
+     verbatim from the value `#wc-skull` in `SuitMark.tsx` used inline before this token existed.
+     PLACEHOLDER — the developer's to retune. */
+  --wc-skull-shadow: #171310;
+
   /* The mined-card green. Deliberately a sickly yellow-green rather than a felt green — it must
      not read as "the table" — and light enough to carry the dark skull glyph at full contrast.
      Not a suit colour: it names a card's *state*, which is why it sits apart from the three
@@ -89,6 +95,75 @@
      screen so status + dossier + hand + actions cannot crowd the felt to zero. The developer owns
      it, and only a browser at 390x844 settles it. UNIT: dynamic viewport height. */
   --wc-dossier-narrow-max: 30dvh;
+
+  /* DLR-148 — the settled buff card: a near-neutral face with tier carried by a METALLIC
+     FRAME, so tier and suit stop competing for one colour channel. That is a measured
+     decision, not taste: the Bells suit colour #c9873f sits 28.7 RGB units from the old
+     bronze tier field #b0793f — effectively the same amber. Every value below is a
+     PLACEHOLDER and the developer's, EXCEPT the three payoff inks. */
+  --wc-m-bronze: linear-gradient(
+    142deg,
+    #f3c894 0%,
+    #b0702e 22%,
+    #65401c 47%,
+    #e0a561 64%,
+    #7d4d20 100%
+  );
+  --wc-m-silver: linear-gradient(
+    142deg,
+    #ffffff 0%,
+    #ccd6da 20%,
+    #76858c 47%,
+    #f2f7f9 64%,
+    #8e9ba1 100%
+  );
+  --wc-m-gold: linear-gradient(
+    142deg,
+    #fff6cf 0%,
+    #e6c159 21%,
+    #8f6d1c 47%,
+    #f8e296 64%,
+    #a8842a 100%
+  );
+  --wc-m-bronze-edge: #4a2d13;
+  --wc-m-silver-edge: #59656b;
+  --wc-m-gold-edge: #6b520f;
+  --wc-face-bronze: #f8efdf;
+  --wc-face-bronze-edge: #e7d6b6;
+  --wc-face-silver: #f3f7f9;
+  --wc-face-silver-edge: #dae4e9;
+  --wc-face-gold: #fcf6e0;
+  --wc-face-gold-edge: #efe1b3;
+  --wc-buff-ink: #1b1710;
+  --wc-buff-ink-soft: #5f5647;
+  --wc-buff-frame: 5px; /* at 3px the colour reads but the shine has nowhere to land */
+
+  /* CONTRAST-DERIVED, NOT CHOSEN. White FAILS WCAG AA on all three suits at this size —
+     Bells 2.99:1, Keys 3.37:1, Moons 3.51:1. These pass: 6.22 / 4.92 / 5.14:1. The suit
+     colours are placeholders; the 4.5:1 floor is not. Retune a suit and RE-MEASURE — the
+     whole point is that the failing option was the one that looked obvious.
+     Enforced by `__tests__/contrast.test.ts`. */
+  --wc-payoff-ink-bells: #1d1004;
+  --wc-payoff-ink-keys: #06212e;
+  --wc-payoff-ink-moons: #1c1030;
+
+  /* PLACEHOLDER, but CONSTRAINED — chosen against the PANEL's measured width, not the
+     viewport's. At 7.6vw the card was 109px, six per row, three rows, 56px of overflow that
+     pushed the fence out of sight. 6vw gives ~86px and EIGHT per row. Retune only against a
+     measurement. */
+  --wc-buffcard-w: clamp(4.6rem, 6vw, 6.6rem);
+  --wc-rail-w: clamp(9rem, 14vw, 13.5rem);
+
+  /* DLR-148 — the readout is an off-white slip matching the card faces. On this LIGHT ground
+     BOTH project accent tokens fail WCAG AA outright: --wc-alarm falls to 3.03:1 and
+     --wc-brass to 2.29:1. Each is replaced by a DARKER MEMBER OF ITS OWN FAMILY, so it still
+     reads as "the red one" and "the gold one" rather than as a new colour. Values are
+     placeholders; the 4.5:1 floor is not. Enforced by `__tests__/contrast.test.ts`. */
+  --wc-readout-ground: #f6f2e8;
+  --wc-readout-ink: #1b1710; /* 15.96:1 */
+  --wc-readout-label: #5f5647; /*  6.46:1 */
+  --wc-readout-costly: #96301f; /*  6.86:1 */
+  --wc-readout-worthwhile: #6f5412; /*  6.36:1 */
 }
 
 /* ---------- the shell: one full-viewport grid, never scrolls ---------- */

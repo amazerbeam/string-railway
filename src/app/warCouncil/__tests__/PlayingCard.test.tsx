@@ -65,4 +65,52 @@ describe('PlayingCard', () => {
       unmount()
     }
   })
+
+  // AC12 — a skull is a property of the trick, not of a character: every rank and every suit
+  // must render the identical skull markup, so a player recognises it across the table without
+  // reading it. The five acting ranks (RANK_NAME's keys) plus one plain rank, across all three
+  // suits.
+  const ACTING_RANKS = [1, 3, 5, 9, 11]
+  const PLAIN_RANK = 6
+
+  it('AC12 — the skull face is byte-identical for every rank and suit', () => {
+    const markups = new Set<string>()
+    for (const suit of ALL_SUITS) {
+      for (const rank of [...ACTING_RANKS, PLAIN_RANK]) {
+        const { container, unmount } = render(
+          <PlayingCard card={{ suit, rank }} variant="hand" skulled />,
+        )
+        const face = container.querySelector('.wc-card-skull-face')
+        expect(face).toBeTruthy()
+        markups.add(face!.innerHTML)
+        unmount()
+      }
+    }
+    expect(markups.size).toBe(1)
+  })
+
+  it('AC12 — the corner survives: a skulled card still shows its rank and suit', () => {
+    const { container } = render(
+      <PlayingCard card={{ suit: Suit.Keys, rank: 11 }} variant="hand" skulled />,
+    )
+    expect(container.querySelector('.wc-card-rank')?.textContent).toBe('11')
+    expect(container.querySelector('.wc-suit-keys .wc-card-suit')).toBeTruthy()
+  })
+
+  it('AC12 — a skulled and primed card renders both the skull face and the primed mark', () => {
+    const { container } = render(
+      <PlayingCard card={{ suit: Suit.Moons, rank: 1 }} variant="hand" skulled primed />,
+    )
+    expect(container.querySelector('.wc-card-skull-face')).toBeTruthy()
+    expect(container.querySelector('.wc-primed-mark')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /skulled, primed/i })).toBeTruthy()
+  })
+
+  it('AC12 — an unskulled card renders the pip and no skull element', () => {
+    const { container } = render(
+      <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" />,
+    )
+    expect(container.querySelector('.wc-card-pip')).toBeTruthy()
+    expect(container.querySelector('.wc-card-skull-face')).toBeNull()
+  })
 })

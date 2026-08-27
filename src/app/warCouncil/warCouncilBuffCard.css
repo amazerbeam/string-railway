@@ -1,0 +1,387 @@
+/* DLR-148 Phase 3 — split out of `warCouncilBuffGallery.css`, which crossed the 400-line budget
+   as one sheet (tasks.md Task 6 Step 2). The card's own rules: the metallic buff card face, its
+   hover sheen, and its tarnished/disabled state. The duplicate pile (`.wc-stack*`) and the fence
+   (`.wc-fence*`) that compose cards into the grid live in `warCouncilBuffGallery.css` instead —
+   even this narrower split still needed both files under budget. Import both stylesheets from
+   `BuffGallery.tsx`; they share `warCouncil.css`'s `:root` tokens. */
+
+/* ---------- the buff card ----------
+   A <button> that IS the grid item — it stops stretching the moment it is not a direct grid
+   item — and contains ONLY phrasing content (no <h3>, no <p>). Explicit `display`, because an
+   inline box ignores width/height/aspect-ratio outright. */
+.wc-buffcard {
+  position: relative;
+  display: block;
+  aspect-ratio: 31 / 41;
+  border-radius: 12px;
+  border: none;
+  padding: var(--wc-buff-frame);
+  cursor: pointer;
+  background: var(--wc-buffcard-metal);
+  color: var(--wc-buff-ink);
+  font-family: var(--wc-sans);
+  text-align: left;
+  box-shadow:
+    0 0 0 1px var(--wc-buffcard-metal-edge),
+    0 4px 10px #00000073;
+  transition: transform var(--wc-ui-transition-ms) ease-out;
+  touch-action: manipulation;
+  /* CARRY — the card MUST be its own stacking context and MUST clip itself. Without
+     `isolation`, the face's `z-index: 1` and the sheen's `z-index: 0` resolve in the GRID's
+     stacking context rather than the card's, so one card's face paints over the card beside it
+     and the sheen escapes the card it belongs to. Without `overflow: hidden` the sheen —
+     deliberately taller and wider than the card, so the band can travel — sweeps across the
+     neighbouring cards and the felt instead of along this card's rim. Both were observed on the
+     first render of `mockup.html`. */
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.wc-buffcard-bronze {
+  --wc-buffcard-metal: var(--wc-m-bronze);
+  --wc-buffcard-metal-edge: var(--wc-m-bronze-edge);
+  --wc-buffcard-face: var(--wc-face-bronze);
+  --wc-buffcard-face-edge: var(--wc-face-bronze-edge);
+}
+.wc-buffcard-silver {
+  --wc-buffcard-metal: var(--wc-m-silver);
+  --wc-buffcard-metal-edge: var(--wc-m-silver-edge);
+  --wc-buffcard-face: var(--wc-face-silver);
+  --wc-buffcard-face-edge: var(--wc-face-silver-edge);
+}
+.wc-buffcard-gold {
+  --wc-buffcard-metal: var(--wc-m-gold);
+  --wc-buffcard-metal-edge: var(--wc-m-gold-edge);
+  --wc-buffcard-face: var(--wc-face-gold);
+  --wc-buffcard-face-edge: var(--wc-face-gold-edge);
+}
+
+/* the frame's two lit faces */
+.wc-buffcard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  pointer-events: none;
+  opacity: 0.55;
+  background: linear-gradient(118deg, #ffffff00 34%, #ffffffbf 45%, #ffffff00 56%);
+}
+.wc-buffcard::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  pointer-events: none;
+  background: linear-gradient(318deg, #00000073 0%, #00000000 26%);
+}
+
+.wc-buffcard-face {
+  display: block;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  color: var(--wc-buff-ink);
+  background: radial-gradient(
+    120% 92% at 50% 0%,
+    #fffdf7 0%,
+    var(--wc-buffcard-face) 52%,
+    var(--wc-buffcard-face-edge) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px #ffffffd9,
+    inset 0 1px 4px #00000021;
+}
+
+/* The hover sheen: z-index 0 puts it ABOVE the metal and BELOW the face, so the light only ever
+   crosses the rim — the face masks the rest for free. Fires ONCE per hover, never on a loop. */
+.wc-buffcard-sheen {
+  position: absolute;
+  top: -30%;
+  bottom: -30%;
+  left: -45%;
+  width: 36%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg, #ffffff00 0%, #ffffffe6 48%, #ffffff00 100%);
+  transform: skewX(-18deg) translateX(-160%);
+}
+
+@media (hover: hover) {
+  .wc-buffcard:not(:disabled):hover .wc-buffcard-sheen {
+    animation: wc-buffcard-sheen 760ms cubic-bezier(0.32, 0.06, 0.2, 1) 1;
+  }
+  .wc-buffcard:not(:disabled):hover {
+    transform: translateY(-5px);
+    box-shadow:
+      0 0 0 1px var(--wc-buffcard-metal-edge),
+      0 12px 20px #000000a6;
+  }
+}
+.wc-buffcard:active {
+  transform: translateY(-2px);
+}
+
+@keyframes wc-buffcard-sheen {
+  0% {
+    transform: skewX(-18deg) translateX(-160%);
+    opacity: 0;
+  }
+  14% {
+    opacity: 0.95;
+  }
+  86% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: skewX(-18deg) translateX(460%);
+    opacity: 0;
+  }
+}
+
+/* Under reduced motion the band does not travel — the static specular brightens instead, so the
+   hover still reads without relying on motion. */
+@media (prefers-reduced-motion: reduce) {
+  .wc-buffcard,
+  .wc-buffcard:hover {
+    transition: none;
+  }
+  .wc-buffcard:hover .wc-buffcard-sheen {
+    animation: none;
+    opacity: 0;
+  }
+  .wc-buffcard:hover::before {
+    opacity: 0.95;
+  }
+}
+
+.wc-buffcard:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 2px;
+}
+
+/* CARRY — the top row is `nowrap`, and the NOWRAP is the guarantee, not the smaller sizes.
+   At the ~86px the grid affords, suit mark + numeral + cadence + count stopped fitting and the
+   row grew a second line that pushed the name down into itself. The sizes buy headroom; this
+   makes the row's height a constant. */
+.wc-buffcard-top {
+  position: absolute;
+  top: 6%;
+  left: 7%;
+  right: 7%;
+  display: flex;
+  align-items: center;
+  gap: 0.14rem;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.wc-buffcard-suit {
+  flex: 0 0 auto;
+  width: clamp(0.68rem, 1.5vmin, 1.1rem);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  color: var(--wc-buffcard-suit-color, var(--wc-buff-ink-soft));
+}
+.wc-buffcard-suit svg {
+  width: 100%;
+  height: 100%;
+}
+.wc-buffcard-suit-none {
+  opacity: 0.5;
+}
+.wc-buffcard-suit-none::after {
+  content: '\2014';
+  font-size: clamp(0.4rem, 0.9vmin, 0.6rem);
+}
+
+/* AC2 — tier is legible as a ROMAN NUMERAL, independent of colour. A metallic gradient reads as
+   light-and-dark in greyscale, never as bronze/silver/gold. */
+.wc-buffcard-tier {
+  flex: 0 0 auto;
+  font-family: var(--wc-serif);
+  line-height: 1;
+  letter-spacing: 0.07em;
+  opacity: 0.8;
+  font-size: clamp(0.45rem, 1vmin, 0.66rem);
+}
+
+.wc-buffcard-cadence {
+  padding: 0.06rem 0.22rem;
+  border-radius: 4px;
+  background: #1b171014;
+  opacity: 0.8;
+  font-size: clamp(0.3rem, 0.7vmin, 0.4rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* PRESS is the only cadence that is a VERB. A raised chip, not a flat tint. */
+.wc-buffcard-cadence-press {
+  background: var(--wc-buff-ink);
+  color: var(--wc-buffcard-face);
+  opacity: 1;
+  box-shadow:
+    0 1px 0 #ffffff59 inset,
+    0 1px 2px #00000040;
+}
+
+.wc-buffcard-count {
+  margin-left: auto;
+  flex: 0 0 auto;
+  padding: 0.06rem 0.24rem;
+  border-radius: 4px;
+  background: var(--wc-buff-ink);
+  color: var(--wc-buffcard-face);
+  font-size: clamp(0.32rem, 0.76vmin, 0.44rem);
+  font-weight: 700;
+}
+
+.wc-buffcard-name {
+  position: absolute;
+  top: 22%;
+  left: 8%;
+  right: 8%;
+  font-family: var(--wc-serif);
+  font-size: clamp(0.46rem, 1.1vmin, 0.7rem);
+  line-height: 1.16;
+}
+
+/* CARRY — the condition text needs a FLOOR as well as a ceiling. `top: 50%` because a two-line
+   name reaches 47% of an 86px card; `bottom: 30%` because the payoff bar's top edge sits at
+   73%. Both measured on the rendered card. */
+.wc-buffcard-cond {
+  position: absolute;
+  top: 50%;
+  left: 8%;
+  right: 8%;
+  bottom: 30%;
+  overflow: hidden;
+  color: var(--wc-buff-ink-soft);
+  font-size: clamp(0.34rem, 0.8vmin, 0.48rem);
+  line-height: 1.28;
+}
+
+/* CARRY — ONE LINE, ALWAYS. A bar pinned to the bottom that gains a second line grows UPWARD
+   into the condition text, after which no percentage above it can be safe. `nowrap` is what
+   makes the rest of the card's vertical layout computable. */
+.wc-buffcard-payoff {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 6%;
+  padding: 0.28rem 0;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 700;
+  background: var(--wc-buffcard-payoff-bg, var(--wc-buff-ink));
+  color: var(--wc-buffcard-payoff-fg, var(--wc-buffcard-face));
+  font-size: clamp(0.4rem, 0.95vmin, 0.58rem);
+  box-shadow: inset 0 0 0 1px #00000026;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.wc-buffcard-payoff-split {
+  display: flex;
+  gap: 2px;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+.wc-buffcard-payoff-split span {
+  flex: 1;
+  padding: 0.28rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.wc-buffcard-payoff-gain {
+  background: var(--wc-timebomb);
+  color: #16210a;
+  border-radius: 6px 0 0 6px;
+  box-shadow: inset 0 0 0 1px #00000026;
+}
+.wc-buffcard-payoff-risk {
+  background: var(--wc-alarm);
+  color: #2b0d07;
+  border-radius: 0 6px 6px 0;
+  box-shadow: inset 0 0 0 1px #00000026;
+}
+
+.wc-buffcard-bells {
+  --wc-buffcard-payoff-bg: var(--wc-bells);
+  --wc-buffcard-payoff-fg: var(--wc-payoff-ink-bells);
+  --wc-buffcard-suit-color: var(--wc-bells);
+}
+.wc-buffcard-keys {
+  --wc-buffcard-payoff-bg: var(--wc-keys);
+  --wc-buffcard-payoff-fg: var(--wc-payoff-ink-keys);
+  --wc-buffcard-suit-color: var(--wc-keys);
+}
+.wc-buffcard-moons {
+  --wc-buffcard-payoff-bg: var(--wc-moons);
+  --wc-buffcard-payoff-fg: var(--wc-payoff-ink-moons);
+  --wc-buffcard-suit-color: var(--wc-moons);
+}
+
+/* poised — the first tap. Form as well as colour: a lift AND a ring. */
+.wc-buffcard[aria-pressed='true'] {
+  transform: translateY(-9px);
+  box-shadow:
+    0 0 0 1px var(--wc-buffcard-metal-edge),
+    0 0 0 3px var(--wc-brass),
+    0 14px 24px #000000b3;
+}
+.wc-buffcard[aria-pressed='true'] .wc-buffcard-payoff {
+  bottom: calc(6% + 1.5rem);
+}
+.wc-buffcard-confirm {
+  display: none;
+}
+.wc-buffcard[aria-pressed='true'] .wc-buffcard-confirm {
+  display: block;
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 6%;
+  padding: 0.28rem 0;
+  border-radius: 6px;
+  background: var(--wc-brass);
+  color: #1a1206;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-size: clamp(0.34rem, 0.8vmin, 0.46rem);
+}
+
+/* Duplicate-pile layers (`.wc-stack*`) and the fence (`.wc-fence*`) live in
+   `warCouncilBuffGallery.css` alongside the grid they compose into — this file, the card's own
+   rules, still crossed the budget with both included (tasks.md Task 6 Step 2). */
+
+/* AC8 — unusable buffs TARNISH rather than blank. The metal desaturates; the card is still
+   plainly a card, and still plainly yours. */
+.wc-buffcard:disabled {
+  filter: saturate(0.25) brightness(0.72);
+  cursor: default;
+  box-shadow: 0 0 0 1px var(--wc-buffcard-metal-edge);
+}
+.wc-buffcard:disabled .wc-buffcard-face {
+  opacity: 0.62;
+}
+.wc-buffcard:disabled::before {
+  opacity: 0.15;
+}
+.wc-buffcard:disabled .wc-buffcard-cond,
+.wc-buffcard:disabled .wc-buffcard-payoff,
+.wc-buffcard:disabled .wc-buffcard-cadence {
+  display: none;
+}
+.wc-buffcard:disabled .wc-buffcard-name {
+  top: 30%;
+  font-size: clamp(0.32rem, 0.78vmin, 0.44rem);
+}

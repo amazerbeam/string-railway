@@ -1,0 +1,109 @@
+/* DLR-148 Phase 5 — the felt's left game rail: decree, the trick and its consequence readout, and
+   the spent pile. `.wc-felt-rail` had NO CSS RULE AT ALL before this ticket — `warCouncilTable.css`
+   pointed a comment at `warCouncilCheats.css`, a file deleted along with the old felt-rail plates —
+   so this is the class's first real stylesheet. It is one of `.wc-table`'s two grid COLUMNS
+   (`warCouncilTable.css`), not a layer stacked over the stage, which is what makes AC1 a structural
+   guarantee rather than a z-index: nothing the stage renders (the gallery included) can occlude the
+   decree, the trick strip or the spent pile.
+
+   Shares `warCouncil.css`'s `:root` tokens; import both from the mount component after
+   `warCouncil.css`, matching every sibling felt sheet's own cascade-order comment. */
+
+.wc-felt-rail {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: clamp(0.4rem, 1.2vmin, 0.8rem);
+  min-height: 0;
+  overflow: hidden;
+  padding: clamp(0.4rem, 1.2vmin, 0.8rem) clamp(0.3rem, 1vmin, 0.6rem);
+}
+
+.wc-rail-rule {
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--wc-felt-line);
+  margin: 0;
+}
+
+/* ---------- the condensed trick strip: rendered only while the gallery holds the stage ---------- */
+
+.wc-rail-trick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.3rem, 1vmin, 0.6rem);
+  min-height: 0;
+}
+
+.wc-rail-trick-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: clamp(0.3rem, 1vmin, 0.5rem);
+}
+
+.wc-rail-trick-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.15rem, 0.5vmin, 0.3rem);
+}
+
+.wc-rail-trick-side {
+  font-size: clamp(0.5rem, 1vmin, 0.6rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+  font-weight: 600;
+}
+
+/* ---------- the trick consequence readout: an off-white slip matching the card faces ----------
+   Renders in BOTH felt states (gallery open or shut) — under the trick well it would vanish at the
+   exact moment the player is choosing a buff, which is when the consequence matters most. Colours
+   are `warCouncil.css`'s measured `--wc-readout-*` tokens; `__tests__/contrast.test.ts` enforces
+   the 4.5:1 floor against them. */
+
+.wc-readout {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--wc-readout-ground);
+  border-radius: clamp(3px, 0.8vmin, 6px);
+  padding: clamp(0.35rem, 1vmin, 0.55rem) clamp(0.45rem, 1.2vmin, 0.7rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.2rem, 0.6vmin, 0.35rem);
+}
+
+/* Every row shares this ONE class — no emphasis class, no ordering marker, distinguishes one
+   branch from another (AC15). */
+.wc-readout-row {
+  margin: 0;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.6rem, 1.3vmin, 0.72rem);
+  line-height: 1.35;
+  color: var(--wc-readout-ink);
+}
+
+/* The label is PLAIN — colour appears only on the consequence text below, never here. */
+.wc-readout-label {
+  display: block;
+  font-size: clamp(0.52rem, 1.1vmin, 0.62rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--wc-readout-label);
+}
+
+.wc-readout-clause {
+  color: var(--wc-readout-ink);
+}
+
+.wc-readout-clause.wc-is-costly {
+  color: var(--wc-readout-costly);
+}
+
+.wc-readout-clause.wc-is-worthwhile {
+  color: var(--wc-readout-worthwhile);
+}

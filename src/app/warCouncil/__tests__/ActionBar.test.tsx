@@ -144,7 +144,7 @@ describe('ActionBar', () => {
 
   // In the real tree `ActionBar` renders as a sibling of `.wc-table`, not inside it, so this
   // synthetic wrapping `<div onClick>` does not reproduce any click path that actually exists —
-  // `BuffLoadoutPanel`'s own equivalent test is the one that pins a real risk, because that
+  // `BuffGallery`'s own equivalent test is the one that pins a real risk, because that
   // component really does mount inside `.wc-table`. This test only pins the bar's defensive
   // `stopPropagation` so a future edit does not silently drop it.
   it('pins its defensive stopPropagation even though nothing here can currently receive it', () => {

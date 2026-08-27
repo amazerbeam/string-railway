@@ -1,0 +1,176 @@
+Part of [War Council UI](README.md).
+
+DLR-148 replaced `BuffLoadoutPanel`'s one-line-per-buff list with a **gallery of buff cards**: a
+metallic tier frame over a near-neutral face, laid out in a fixed grid, grouped into runs, with
+exact duplicates collapsed into a counted pile and everything unusable right now fenced into one
+tarnished group carrying the count and the shared reason. The panel's identity did not change — it
+is still `role="dialog"` named "Your buffs", still opened by the bar's Apply Buff button, still
+gated by `loadoutDoorOpen` — so every spec that reached the old panel through
+`getByRole('dialog', { name: 'Your buffs' })` reaches this one unedited.
+
+## The rules live in a `.ts` module, the components render what it decided
+
+`buffGalleryModel.ts` is the whole of the grouping logic and imports no React and touches no DOM.
+`buildBuffGallery(buffs, refusalFor)` walks the pile once and returns a `BuffGalleryView`:
+
+- **Duplicate collapse.** `buffStackKey(buff)` joins **kind, tier, target suit, target rank, reward
+  axis and reward value**. Two cards merge only when they are the same card in every respect a
+  player could tell apart, which is what makes the `×N` on the face exact — two Bell-Takers that pay
+  different amounts are two cards, not one card counted twice. The first copy in pile order is the
+  one a tap acts on (`BuffStack.buff`), so repeated taps spend a stable copy.
+- **Runs.** `buffRunOf(buff)` is `suit ?? (cadence is Activated ? press : suitless)`. The activated
+  test reads `BUFF_CADENCE[buff.kind]` rather than a hard-coded list of the two activated kinds, so
+  restoring a cut consumable needs no edit here. `BUFF_RUN_ORDER` fixes the order:
+  **Bells, Keys, Moons, Suitless, Press** — suitless last of the passives, Press last of all.
+- **Order within a run** is tier descending, then `buffStackKey` ascending. That is a **total**
+  order with no `Math.random()`, no date and no mutation of the input, so two identical piles in
+  different input order always produce an identical grid.
+- **The fence.** `refusalFor` is called **once per stack, never once per copy**. Any stack with a
+  non-`null` refusal leaves its run entirely and lands in `BuffFence`; `BuffFence.reason` is the
+  shared refusal when all fenced stacks agree on one and `null` when they do not. A run with no
+  usable stack is omitted, so it renders no tab.
+
+The gate itself is not re-read here. `roundControlsProps.ts`'s `buffGalleryProps` passes
+`(buff) => loadoutRefusalFor(ui, buff)`, which reads `buffActivationWindowOpen` — the one owner of
+the activation window. **DLR-148 changed nothing about that gate**, which is what "the fence follows
+the code, not the mockup" means concretely: twelve of the thirteen live templates are gated on
+`discardWindowOpen` (between tricks only) and **Cheat alone** is `canAct`, usable mid-trick. The
+gallery mockup showed the inverse and the port corrected the mockup rather than moving the gate.
+
+## What is on a card's face
+
+`BuffCard.tsx` renders one `BuffStack` and decides nothing about it. The face carries, in order: the
+target suit as a bare coloured glyph (`SuitMark`, or an empty slot for a suitless card), the tier as
+a **roman numeral** (`I` / `II` / `III`), the cadence word, the `×N` when the stack holds more than
+one, the card's name, its condition sentence, and the payoff bar pinned to the bottom edge.
+
+**Tier is legible without colour by construction.** A metallic gradient reads as light-and-dark in
+greyscale, never as bronze/silver/gold, so the numeral is the carrier that survives. The tier
+*word* is deliberately not rendered — it is what pushed the condition text into the payoff bar on
+the mockup.
+
+**The cadence word is derived, never authored per card.** `buffLabels.ts`'s `buffCadenceWord(buff)`
+reads `BUFF_EVENT_WORD[buff.kind]` first and falls back to `BUFF_CADENCE_WORD[BUFF_CADENCE[kind]]`.
+`BuffCadence.Event` is shared by three live families that fire on different branches of a trick, so
+`Event` alone would say nothing; the narrowing is a `Partial` over `BuffKind` holding the three live
+Event families, and the eight cut families fall through to the cadence table rather than rendering
+`undefined`. The words are **`TAKE` / `MISS` / `DODGE` / `WHEN` / `HAND END` / `PRESS`**.
+
+> **Those words are the mechanical axis, on purpose.** Every buff condition reads `playerWon` —
+> *did the player physically take the cards* — while the bank, the multiplier and the damage read
+> the outcome axis. The mockup said `WIN` / `LOSE`, which would have put outcome words on a
+> mechanical test right beside a consequence readout speaking the outcome axis in the same felt.
+> `CLAUDE.md` names that collision as the single most common source of wrong statements about this
+> game. The words themselves are **placeholder copy and the developer's**; the axis split is not.
+
+**The Timebomb states both figures.** `buffPayoff(buff)` returns `{ gain, risk }`, with `risk`
+non-`null` only for the Timebomb, which is what makes the split bar a shape rather than a special
+case inside the component. Both figures come from `TIMEBOMB_DAMAGE[buff.tier]` in `src/hunt/` —
+never a literal — so a retuned ladder cannot leave a card advertising a figure the engine will not
+honour. `buffPayoffFace(buff)` is a second, **face-only** rendering added in the fix pass: the full
+two-word phrasing ("+4 damage" / "−2 to you") measured 46px of content in a 33px box at 1440×900 and
+was being clipped mid-word by the bar's own `white-space: nowrap; overflow: hidden`, so the face
+shows the bare signed numeral and the position and colour of the two spans carry the gain/risk
+distinction. The **unabbreviated sentence survives in the accessible name**, via
+`buffCardAccessibleName`, which also carries the condition, both payoff figures, the `×N` suffix,
+and either the refusal message or the poise hint — `Tap again to spend` for a `PRESS` card, whose
+second tap is irreversible.
+
+## The grid, and the four layout traps that are structural rules here
+
+- The `<button>` **is** the grid item. A `<button>` stops stretching the moment it is not a direct
+  grid item, which broke the mockup's layout three separate times.
+- The button contains **only phrasing content** — `<span>`s throughout, no `<h3>`, no `<p>`.
+- The grid is `repeat(auto-fill, var(--wc-buffcard-w))` with `justify-content: start`, never
+  `minmax(…, 1fr)`, so **a card's size does not encode how many there are** and a tier-filtered
+  gallery does not stretch three cards across the panel.
+- **The card and the duplicate pile must each be their own stacking context.** Neither creates one
+  by default, so both contests get resolved in the *grid's* context and both lose the same way: on
+  the mockup's first render the hover sheen swept across the whole card and its neighbours instead
+  of travelling the rim, and every stacked buff rendered as a blank slab of metal with no face at
+  all, because the pile painted over its own card. The second one does not read as a z-order bug, it
+  reads as "that card is broken". `warCouncilBuffGallery.css` carries `isolation: isolate` plus
+  `overflow: hidden` on the card and `isolation: isolate` with an explicit `z-index` on the pile
+  wrapper, with the reasoning at the point of use.
+
+**No SVG filter over `feTurbulence` and no `mix-blend-mode` appear anywhere.** Both were measured as
+performance traps while building the mockups — the first timed out `Page.captureScreenshot` at 120s
+with eleven cards on screen, the second forces a compositing layer per card. The paper-grain texture
+they were built for is deliberately not ported; its two prohibitions are recorded as CSS comments
+where a future ticket would add it.
+
+## Keyboard: one roving group, and `Escape` unwinds one level
+
+`useRovingTabIndex` is reused unchanged, and that **constrains the markup**. It indexes
+`groupRef.current.querySelectorAll('button')` **positionally** with no typed contract, so the ref'd
+element must contain exactly the buff cards, as native `<button>`s, in DOM order, and nothing else
+focusable. Two consequences:
+
+- `BuffRunTab` is a **`<div>`, not a button** — it labels a run, it is not a control — and is
+  `aria-hidden`, since each card's own accessible name already carries what it says.
+- `BuffTierFilter`'s four chips **are** buttons, so they render **outside** `groupRef`, above the
+  scroll region.
+
+`isFocusable(index)` guards `cards[index] !== undefined` before reading `.refusal`, because the hook
+probes index 0 unconditionally even on an empty collection. That guard is carried over verbatim from
+`BuffLoadoutPanel` and is load-bearing for the same reason: it is the gap that produced an
+integration-only crash once already.
+
+**`Escape` unwinds one level, which needed a second reducer action.**
+`RoundUiActionKind.CancelBuffPoise` joins the union; `buffHandlers.ts`'s `handleCancelBuffPoise`
+drops an unspent poise and leaves the panel open, returning `state` itself — not a fresh object —
+when the panel is shut or nothing is poised, so an idle `Escape` cannot even cause a re-render.
+`CancelLoadout` keeps its old meaning, "close the panel outright", because that is what the bar's
+own toggle dispatches and it must always close outright. The gallery's own handler is the ladder:
+poised → `onCancelPoise`, otherwise → `onClose`. Covered by
+`__tests__/roundReducer.cancelBuffPoise.test.ts`.
+
+The panel's outer `onClick={(e) => e.stopPropagation()}` is **load-bearing**, not defensive: this
+mounts inside `.wc-table`, which fires `handleCarryOn` on click whenever the felt is waiting.
+`ActionBar`'s identical-looking stop is the defensive one — the two are not interchangeable.
+
+## The tier filter is component-local, and the fence's note follows the filter
+
+`BuffGallery` holds `tierFilter` in a `useState` that is created and destroyed with the panel —
+ephemeral view state, not round state, so it does not belong in `roundReducer`. `buildBuffGallery`
+is **not** re-run when the filter changes: the component filters the view it was handed.
+
+One subtlety worth stating because it looks like duplication: the fence's shared reason is
+**recomputed over the filtered stacks** rather than read from `view.fence.reason`. A tier filter can
+narrow a mixed-reason fence down to one that shares a single reason, or the reverse, and the fence's
+own note has to describe what is actually on screen. The sentence itself reuses
+`BUFF_ACTIVATION_REFUSAL_MESSAGE` rather than authoring a second copy of the same wording, and falls
+back to "for different reasons" when the fenced stacks do not agree.
+
+## The 4.5:1 contrast floor is enforced by a test that parses the real stylesheet
+
+`__tests__/contrast.test.ts` reads `warCouncil.css` with `readFileSync`, extracts the token hexes by
+regex and computes the WCAG relative-luminance ratio for every payoff-bar ink against its suit and
+every readout ink against the readout ground, asserting **at least 4.5:1**. It runs in the `node`
+Vitest project and pulls Node's ambient types through a file-local `/// <reference types="node" />`
+rather than widening `tsconfig.app.json`'s `types` for the whole tree.
+
+Exporting the hexes from TypeScript and mirroring them in CSS was rejected as exactly the
+two-sources-of-truth failure this codebase is organised against — **the CSS stays the single owner
+of the colour**, and the test still fails if someone retunes a suit without re-measuring.
+`token()`'s `throw` on a missing token is deliberate: a renamed token must fail loudly rather than
+silently pass by comparing `undefined` against `undefined`.
+
+The measurement that made this necessary: **white fails on all three suits** — Bells 2.99:1, Keys
+3.37:1, Moons 3.51:1 — and both existing project accents fail on the readout's light ground
+(`--wc-alarm` 3.03:1, `--wc-brass` 2.29:1). The inks that ship are contrast-derived, not chosen.
+Every other colour and size token DLR-148 added is a transcribed placeholder the developer owns;
+**the 4.5:1 floor is the one figure that is not.**
+
+## The `.ts` model and its `.tsx` component may not share a name
+
+`buffGalleryModel.ts` was `buffGallery.ts` for two phases, and `trickConsequenceModel.ts` was
+`trickConsequence.ts`. Both were renamed, and the rule is worth stating as an invariant rather than
+as a ticket anecdote: **a pure `.ts` view-model and its `.tsx` component may not have names that
+differ only by case.** This toolchain's Vite/Vitest module resolution folds two source files whose
+names differ only by case into **one cached module id**, even though the filesystem underneath is
+case-sensitive — so `import BuffGallery from './BuffGallery'` silently resolved to the *model's*
+exports, which have no default export, and the component rendered as `undefined` the moment both
+were in one module graph. It is not a test-only artefact: the same collision would recur in the app
+bundle as soon as `WarCouncilRound.tsx` imported both. The `Model` suffix is the convention that
+avoids it; nothing about either module's behaviour changed with the rename.

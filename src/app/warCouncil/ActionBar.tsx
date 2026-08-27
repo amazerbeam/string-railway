@@ -46,7 +46,7 @@ export interface ActionBarProps {
  * Apply Buff, Cards, Swap, Apply Damage, in that order. ALWAYS MOUNTED for the whole hand (the
  * plan's own default) — nothing here is conditionally unmounted, every button greys with its
  * reason on its own face instead, the same "inert rather than absent" precedent every disabled
- * row in `BuffLoadoutPanel` follows.
+ * card in `BuffGallery` follows.
  *
  * Four controls sits below `game-ux`'s roving-tabindex threshold of about five, so these are plain
  * tab stops rather than a roving-tabindex group.
@@ -55,7 +55,7 @@ export interface ActionBarProps {
  * load-bearing: `ActionBar` renders as a sibling of `.wc-table` under `.wc-shell` (which itself
  * carries no `onClick`), so a click here can never reach `handleCarryOn` regardless of this
  * stop. It is kept for defence in depth and to stay consistent with its siblings' own stops.
- * `BuffLoadoutPanel`'s identical-looking stop IS load-bearing — that component mounts inside
+ * `BuffGallery`'s identical-looking stop IS load-bearing — that component mounts inside
  * `.wc-table` and really would leak a click through to `handleCarryOn` without it. Do not delete
  * that one on the mistaken belief this bar's stop already covers it.
  *

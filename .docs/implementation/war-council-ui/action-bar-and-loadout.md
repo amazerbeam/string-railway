@@ -1,5 +1,15 @@
 _Part of [War Council UI](README.md)._
 
+> **The panel this file describes was replaced on 2026-08-26 by DLR-148.** `BuffLoadoutPanel` is
+> deleted; the surface behind **Apply Buff** is now `BuffGallery`, a grid of buff cards — see
+> [The buff gallery](buff-gallery.md). **Everything below about the gate is unchanged and still
+> current**: `loadoutDoorOpen` still gates opening, `loadoutRefusalFor` still gates activating,
+> `openWindowOnTrickResolved` is still the per-trick boundary, and the two-tap grammar is still the
+> grammar. What changed is what a buff *looks* like, that duplicates collapse, that the unusable are
+> fenced rather than listed inline — and that `Escape` now unwinds **one level** (poise first, panel
+> second) rather than closing outright. Read the names `BuffLoadoutPanel` / `BuffLoadoutPanelProps`
+> below as historical.
+
 # The action bar, the buff loadout, and the AP pool that stopped being two numbers
 
 DLR-114 replaced the felt rail's four separate plates with **one action bar along the bottom of the
@@ -34,7 +44,8 @@ list uses `useRovingTabIndex`.
 
 `ActionBar`'s `onClick` stops propagation, but for that component the stop is **defensive only** — it
 renders under `.wc-shell`, which carries no `onClick`, so a click there could never reach
-`handleCarryOn`. `BuffLoadoutPanel`'s identical-looking stop **is** load-bearing: the panel mounts
+`handleCarryOn`. The buff panel's identical-looking stop **is** load-bearing (`BuffLoadoutPanel`'s then,
+`BuffGallery`'s now): the panel mounts
 inside `.wc-table`, which fires `handleCarryOn` on click whenever the felt is waiting. Do not delete
 the panel's stop on the mistaken belief the bar's already covers it; the component docblocks say so
 in both places.
@@ -44,7 +55,8 @@ in both places.
 > `RoundUiState.buffActivation.apPool` is still the felt's one pool and both spenders still draw on
 > it — it is simply always zero-cost and never shown. `ActionBarProps.apPool` and
 > `BuffLoadoutPanelProps.activation` / `.apCostFor` were removed as props, with their two suppliers
-> in `roundControlsProps.ts`; the `.wc-loadout-ap` rule was renamed `.wc-loadout-count`.
+> in `roundControlsProps.ts`; the `.wc-loadout-ap` rule was renamed `.wc-loadout-count`. Both the
+> props type and the whole `.wc-loadout*` CSS block were **deleted outright by DLR-148**.
 
 ## One AP pool, where there used to be two
 
@@ -244,7 +256,8 @@ deleting the two plates rewrote no copy. `queuedPayoutText(pending)` is the queu
 
 ## The props assembly is its own file
 
-`roundControlsProps.ts` assembles `ActionBarProps` and `BuffLoadoutPanelProps` from the reducer's own
+`roundControlsProps.ts` assembles `ActionBarProps` and `BuffLoadoutPanelProps` — **`BuffGalleryProps`
+since DLR-148, which also moved `FeltRailProps` and `FeltStageProps` in here** — from the reducer's own
 state plus the handful of values `WarCouncilRound.tsx` already derives once. It was split out the
 moment the two prop objects pushed that component over its 400-line budget — the same forcing function
 that produced `quarryAdvance.ts`, `commitHandlers.ts`, `discardHandlers.ts` and `roundBars.ts`. It
@@ -301,7 +314,8 @@ control now lives. `labels.ts`'s label functions were kept and are reused by the
 - `__tests__/buffHandlers.test.ts` — the door's widened gate, the mutual exclusions on open, the
   three `handleTapBuff` outcomes, the re-read refusal on the second tap, an unknown id, and
   `Escape`'s unspent close.
-- `__tests__/ActionBar.test.tsx` and `__tests__/BuffLoadoutPanel.test.tsx` — every control by
+- `__tests__/ActionBar.test.tsx` and `__tests__/BuffLoadoutPanel.test.tsx` (**the latter deleted by
+  DLR-148 and replaced by `__tests__/BuffGallery.test.tsx`**) — every control by
   accessible role and label: greying with the reason on its own face, `aria-pressed` for each poise,
   the empty-pile message, the per-row refusal sentences, and the panel's click not reaching the felt
   behind it.

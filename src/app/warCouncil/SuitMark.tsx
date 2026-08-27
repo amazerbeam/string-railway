@@ -50,6 +50,30 @@ export function SuitSymbolSheet() {
           strokeLinejoin="round"
         />
       </symbol>
+      {/* AC12/DLR-148 — the skull. A skull is a property of the TRICK, not of a character, so it
+          is drawn once here and referenced by `<use>` from every skulled `PlayingCard` — N skulled
+          cards then cost one path rather than N, and every one is byte-identical. Bone shapes fill
+          `currentColor` (the wrapper's `.wc-card-skull-face` sets it to the bone tint); the eye
+          sockets and nasal cavity are a fixed dark regardless of suit, tier or greyscale, because
+          they are shadow, not a suit-coloured signal. No `stroke-width` is set — this symbol uses
+          no stroke at all, matching the file's convention of leaving weight to the call site.
+          Geometry transcribed from `mockup-trick-readout.html`'s `SKULL()`. */}
+      <symbol id="wc-skull" viewBox="0 0 100 100">
+        <path
+          d="M50 8C29 8 16 21 16 40c0 10 4 18 9 23 3 4 5 7 5 11v4c0 5 4 8 9 8h22c5 0 9-3 9-8v-4c0-4 2-7 5-11 5-5 9-13 9-23C84 21 71 8 50 8z"
+          fill="currentColor"
+        />
+        <ellipse className="wc-skull-shadow" cx="36" cy="43" rx="10" ry="11" />
+        <ellipse className="wc-skull-shadow" cx="64" cy="43" rx="10" ry="11" />
+        <path className="wc-skull-shadow" d="M50 54l7 13H43z" />
+        <path d="M33 72h34v10a4 4 0 0 1-4 4H37a4 4 0 0 1-4-4z" fill="currentColor" />
+        <g className="wc-skull-shadow">
+          <rect x="39" y="72" width="1.8" height="14" />
+          <rect x="45" y="72" width="1.8" height="14" />
+          <rect x="51" y="72" width="1.8" height="14" />
+          <rect x="57" y="72" width="1.8" height="14" />
+        </g>
+      </symbol>
     </svg>
   )
 }

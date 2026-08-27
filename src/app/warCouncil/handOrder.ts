@@ -15,8 +15,8 @@ import { ALL_SUITS, type Card, type Suit } from '../../warCouncil'
  * which does mean a suit can lose its leftmost slot mid-round (DLR-63 plan.md -> Risks).
  *
  * Lives here rather than in the lint-enforced pure core because display order is not a
- * game rule — the same call `intentPreview.ts` makes. React-free and DOM-free, so it runs
- * in the cheap `node` Vitest project.
+ * game rule — it changes what the player sees, never what the engine decides. React-free
+ * and DOM-free, so it runs in the cheap `node` Vitest project.
  */
 export function sortHandForDisplay(hand: readonly Card[]): readonly Card[] {
   const held = new Map<Suit, number>()

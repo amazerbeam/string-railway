@@ -88,11 +88,6 @@ export default function PlayingCard({
         {card.rank}
       </span>
       <SuitMark suit={card.suit} className="wc-card-suit" />
-      {skulled && (
-        <span className="wc-skull-mark" aria-hidden="true">
-          ☠
-        </span>
-      )}
       {primed && (
         <span className="wc-primed-mark" aria-hidden="true">
           ⚗
@@ -103,7 +98,18 @@ export default function PlayingCard({
           ✕
         </span>
       )}
-      <span className={`wc-card-pip${hasAbility ? '' : ' wc-is-blank'}`} aria-hidden="true" />
+      {/* AC12 — a skull REPLACES the art; a Timebomb is ADDED. One bone skull on one dark wash,
+          identical on every rank and suit. The corner index keeps rank, suit glyph and rank name,
+          because the trick is still won on those. */}
+      {skulled ? (
+        <span className="wc-card-skull-face" aria-hidden="true">
+          <svg viewBox="0 0 32 32">
+            <use href="#wc-skull" />
+          </svg>
+        </span>
+      ) : (
+        <span className={`wc-card-pip${hasAbility ? '' : ' wc-is-blank'}`} aria-hidden="true" />
+      )}
     </button>
   )
 }

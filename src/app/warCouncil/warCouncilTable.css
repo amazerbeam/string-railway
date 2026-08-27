@@ -6,7 +6,7 @@
 
 .wc-pile {
   /* grid-column, justify-self, align-self and padding MOVE to `.wc-felt-rail`, declared in
-     warCouncilCheats.css — this file is 2 lines under the 400-line budget and cannot take a
+     warCouncilFeltRail.css — this file is 2 lines under the 400-line budget and cannot take a
      new block. Nothing else about the pile changes and it renders identically. */
   display: flex;
   flex-direction: column;
@@ -78,10 +78,14 @@
     inset 0 0 0 clamp(4px, 1vmin, 9px) var(--wc-felt-lip),
     inset 0 clamp(8px, 2vmin, 18px) clamp(20px, 5vmin, 40px) #00000066;
   display: grid;
-  /* Spacer columns keep the trick centred on the felt while the pile stays clear of it. */
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  justify-items: center;
+  /* DLR-148 — `game rail | stage`, replacing `1fr auto 1fr` with an absolutely-positioned
+     panel over the middle. AC1 is a STRUCTURAL guarantee, not a z-index: the decree, the live
+     trick and the spent pile are a grid COLUMN, so nothing the stage renders can occlude
+     them. */
+  grid-template-columns: var(--wc-rail-w) minmax(0, 1fr);
+  gap: clamp(0.35rem, 1vw, 0.8rem);
+  align-items: stretch;
+  justify-items: stretch;
   min-height: 0;
   cursor: default;
 }
