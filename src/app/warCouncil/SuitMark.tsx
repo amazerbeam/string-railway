@@ -1,13 +1,5 @@
-import { Suit } from '../../warCouncil'
-
-// The three suit marks bind to their <symbol> by this id — a rename here
-// type-checks cleanly and renders nothing, so this map and the sheet below
-// are the only two places a suit's symbol id may be written.
-const SUIT_SYMBOL_ID: Readonly<Record<Suit, string>> = {
-  [Suit.Bells]: 's-bells',
-  [Suit.Keys]: 's-keys',
-  [Suit.Moons]: 's-moons',
-}
+import type { Suit } from '../../warCouncil'
+import { SUIT_SYMBOL_ID } from './suitSymbolIds'
 
 interface SuitMarkProps {
   readonly suit: Suit
@@ -28,27 +20,32 @@ export function SuitSymbolSheet() {
   return (
     <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true" focusable="false">
       <symbol id="s-bells" viewBox="0 0 24 24">
-        <path
-          d="M6.8 16.4v-4.6a5.2 5.2 0 0 1 10.4 0v4.6M4.6 16.4h14.8M12 6.6V4.6M10.2 19.1a1.9 1.9 0 0 0 3.6 0"
-          fill="none"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="2.9" r="1.05" />
+          <path d="M12 4.9v.8" />
+          <path d="M6.6 16.1v-4.3a5.4 5.4 0 0 1 10.8 0v4.3" />
+          <path d="M4.4 16.1h15.2" />
+          <path d="M9.9 18.7a2.1 2.1 0 0 0 4.2 0" />
+          <path d="M9.3 12.1a2.7 2.7 0 0 1 2.4-2.4" opacity=".5" />
+          <path d="M8.5 16.1v-3.7M15.5 16.1v-3.7" opacity=".3" />
+        </g>
       </symbol>
       <symbol id="s-keys" viewBox="0 0 24 24">
-        <g fill="none" stroke="currentColor" strokeLinecap="round">
-          <circle cx="12" cy="7.2" r="3.5" />
-          <path d="M12 10.7V20M12 14.6h3.1M12 17.6h2.3" />
+        <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="6.5" r="3.7" />
+          <circle cx="12" cy="6.5" r="1.35" opacity=".55" />
+          <path d="M12 10.2V21" />
+          <path d="M12 14.3h3.5M12 17h2.7" />
+          <path d="M12 19.5h1.9" opacity=".55" />
         </g>
       </symbol>
       <symbol id="s-moons" viewBox="0 0 24 24">
-        <path
-          d="M15.3 3.9a8.2 8.2 0 1 0 3.9 11.8 6.7 6.7 0 0 1-3.9-11.8z"
-          fill="none"
-          stroke="currentColor"
-          strokeLinejoin="round"
-        />
+        <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15.4 3.6a8.4 8.4 0 1 0 4.1 12 6.9 6.9 0 0 1-4.1-12z" />
+          <circle cx="9.5" cy="9.7" r="1.15" opacity=".45" />
+          <circle cx="7.7" cy="14.3" r=".8" opacity=".4" />
+          <circle cx="11.7" cy="15.5" r=".62" opacity=".35" />
+        </g>
       </symbol>
       {/* AC12/DLR-148 — the skull. A skull is a property of the TRICK, not of a character, so it
           is drawn once here and referenced by `<use>` from every skulled `PlayingCard` — N skulled

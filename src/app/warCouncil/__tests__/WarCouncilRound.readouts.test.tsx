@@ -190,32 +190,36 @@ describe('WarCouncilRound', () => {
     expect(screen.getByRole('button', { name: offSuitName })).toHaveProperty('disabled', false)
   })
 
+  // DLR-149 joins its own rule-text id into `aria-describedby` alongside the damage-strip id
+  // (AC8), so `aria-describedby` now names more than one id — `describedByText` resolves and
+  // concatenates every one of them, the same way the accessible-description computation would.
   it('describes a hand card with its win/lose damage readout (DLR-117 AC2)', () => {
     renderRound({ initialState: bankedRound(3, 2) })
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
-    const descriptionId = bells7.getAttribute('aria-describedby')
-    expect(descriptionId).toBeTruthy()
-    const description = document.getElementById(descriptionId ?? '')?.textContent ?? ''
+    const description = describedByText(bells7)
+    expect(description).toBeTruthy()
     expect(description).toMatch(/If you win this trick:/)
     expect(description).toMatch(/If you lose:/)
   })
 
   it('changes the readout live when the seeded bank changes, with no effect or memoisation (DLR-117 AC2)', () => {
     renderRound({ initialState: bankedRound(0, 0) })
-    const emptyBankDescriptionId = screen
-      .getByRole('button', { name: '7 of Bells' })
-      .getAttribute('aria-describedby')
-    const emptyBankDescription =
-      document.getElementById(emptyBankDescriptionId ?? '')?.textContent ?? ''
+    const emptyBankDescription = describedByText(screen.getByRole('button', { name: '7 of Bells' }))
     cleanup()
 
     renderRound({ initialState: bankedRound(3, 2) })
-    const seededBankDescriptionId = screen
-      .getByRole('button', { name: '7 of Bells' })
-      .getAttribute('aria-describedby')
-    const seededBankDescription =
-      document.getElementById(seededBankDescriptionId ?? '')?.textContent ?? ''
+    const seededBankDescription = describedByText(
+      screen.getByRole('button', { name: '7 of Bells' }),
+    )
 
     expect(seededBankDescription).not.toBe(emptyBankDescription)
   })
 })
+
+function describedByText(element: HTMLElement): string {
+  return (element.getAttribute('aria-describedby') ?? '')
+    .split(' ')
+    .filter(Boolean)
+    .map((id) => document.getElementById(id)?.textContent ?? '')
+    .join(' ')
+}

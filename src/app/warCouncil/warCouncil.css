@@ -32,6 +32,29 @@
   --wc-keys: #5f93a8;
   --wc-moons: #9c7cb8;
 
+  /* DLR-149 AC1/AC7 — the card-art figures' per-suit palette: four tones (dark/mid/light/white)
+     x three suits, twelve tokens total. `warCouncilCards.css`'s `.wc-card.wc-suit-*` rules bind
+     them onto the generic `--wc-fig-*` custom properties `CardArtSheet.tsx`'s classes read.
+     PLACEHOLDER, transcribed verbatim from `mockup.html`'s `.card.bells/.keys/.moons` rules — the
+     developer's to retune. */
+  --wc-fig-bells-dark: #3a2109;
+  --wc-fig-bells-mid: #7a4d1c;
+  --wc-fig-bells-light: #c99a55;
+  --wc-fig-bells-white: #fff4dd;
+  --wc-fig-keys-dark: #0f2735;
+  --wc-fig-keys-mid: #2b556e;
+  --wc-fig-keys-light: #7fb0cd;
+  --wc-fig-keys-white: #f2fbff;
+  --wc-fig-moons-dark: #1e1236;
+  --wc-fig-moons-mid: #43306e;
+  --wc-fig-moons-light: #8f74bd;
+  --wc-fig-moons-white: #f6f0ff;
+
+  /* DLR-149 — the card's tiled paper-grain opacity. PLACEHOLDER, not a choice — the developer's
+     to retune. See `warCouncilCards.css`'s `.wc-card::before` for why the grain is a bitmap and
+     never an SVG filter or `mix-blend-mode`. */
+  --wc-grain-opacity: 0.28;
+
   /* AC12/DLR-148 — the skull's eye sockets, nasal cavity and teeth gaps. A fixed dark shadow
      regardless of suit, tier or greyscale (it is shadow, not a suit-coloured signal), transcribed
      verbatim from the value `#wc-skull` in `SuitMark.tsx` used inline before this token existed.

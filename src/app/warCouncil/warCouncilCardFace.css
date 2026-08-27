@@ -1,0 +1,327 @@
+/* War Council — the card FACE's painted content. Sibling to `warCouncilCards.css`, split out on
+   DLR-149 because the combined file exceeded the 400-line budget — the same reason
+   `warCouncilCards.css` itself split from `warCouncil.css`. Import both from the mount
+   component; this file shares `.wc-card`'s `--wc-face-*` geometry custom properties, which are
+   declared in `warCouncilCards.css` (`cardFaceCss.test.ts` reads that file specifically) and
+   simply read here. The tooltip bubble rules split further, into the sibling
+   `warCouncilCardTip.css`, in the DLR-149 round-2 fix loop, for the same 400-line reason. */
+
+/* Paper grain as a tiled 64x64 bitmap, NEVER an SVG `filter` and NEVER `mix-blend-mode` — both
+   are measured performance traps `reference-sheet.html`'s header records verbatim: with 11 cards
+   on screen, `filter:url(#grain)` with `feTurbulence` made a screenshot take over 120s, because
+   every filtered box re-rasterises independently, and a blended pseudo-element forces its own
+   compositing layer per card for the same cost. A tiled bitmap costs nothing and looks the same.
+   `--wc-grain-opacity` is a PLACEHOLDER — the developer's to retune. */
+.wc-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  opacity: var(--wc-grain-opacity);
+  border-radius: inherit;
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAApwElEQVR42i2bB/jrVP3G05EmbdO0TUeaNm2SziRt6gbnX8W9t+IeuLei4gTc87r3vLgHDlwo4kIF98KJ4uYKTnCgVxz/z3sfeJ4+l1+bnJzz/b7v+x3nxHjHO95R/+pXv5qNRqPqFa94RX86ncaPeMQjyrvdbvKDH/yg+pSnPMX88Y9/XLnuda/rRlG0/NrXvlZ5zGMeU77hDW/o8Xv92te+9vJNb3rT4h73uEftPve5j3+lK11pEcfxcjabbR7ykIdE5513Xv9Pf/rT6sILL/Rf97rXtblu99SnPtXk/5P//Oc/gwsuuMBbrVYWYzU++MEP1v/1r3+N+/1+vtlsFgcPHhx85CMfWf/3v/9dXXTRRdUrXOEK3b/85S+7JEkqb37zm7Pf/OY33pe+9KX8tNNOK/3hD38Y3vnOd95c61rXinh26xWveIV94oknBl/+8pejLMsaPCd48YtfbP/0pz9d8G/xve99b3jWWWe5xq1udSvzbne7W/0JT3hCfsIJJxj//Oc/V/e85z07L33pS42b3/zm409/+tObt73tbfZkMpkyWPD1r389uNrVrjb7xje+Ubnvfe9bfehDHxre4Q53sD7wgQ+sx+NxzTCMJWPOr3KVq/itVku/bz73uc/Vn/70pw/POOOM2f/93/9Zhw8fnv7973+fveUtbzFvdrOb1Vh4h793t7/97ZNms9n65Cc/Wefe5LWvfW223+93z372s5NPfepTjY9//OPuu9/97vSxj33s5rjjjmszB/eBD3xg8u9//3voum7pJS95yexZz3qW86EPfSj88Ic/7LNw96pXvap78cUXO6eeemrrH//4x4b5zfg92263+XWuc52RwQCzu9/97pP3vve9JkiYMqh5u9vdrnH961+/xEJWeC/DEBssn+ON+g1ucIOSZVl7Bk5ucpObTJhIi4d3Hv7wh3ugZfXOd76zgzdt0DL83e9+l//whz+MjznmmDljJfV6PcS463K5XD/22GPrjLlhEguu7TO5GuhrY9TuYDCo/fa3v10wbvVXv/pVnznuDhw4EP7tb3+L8eqORS4e9KAHhTe+8Y3HGDTQNaAo5/kT/m294Q1vsG5zm9sUGE2Gt//85z+7oDvA8A2M1wAF8Te/+c0Bc3MMrNoHWnsuLr3//e9fMOmQiY7e8573JK95zWtAc2w9/vGPr2Gxzgtf+MIyEO6yoAmTCG55y1vOgfHuXe96lwmsKixOE+jatp0WRdHJ83wNXarPfe5zLShgaPzvf//7ur/85Cc/2cLjnSAImiym98Y3vjGBMh6wjnFIV7A++eSTyxi7hFHiv/71r21+q51//vk5z5x/5StfiaHe7pGPfKQLghycEXBPhbGN5XKZPuMZz5iAzIo8/YUvfCEG0Wuot3v1q19d/v3vf9+87W1v22U8w3jOc57jA6sFWtDudru9Rz3qUUMWYrzvfe8bsYAZC4vxQBuvmSxEkA3wUABUe1g6hTYm1s7POeecPhOrv+xlL9uDmPJPfvKTPZNKMMYWA5rtdlu6kX7iE5+oQYmQhacYOn3a054WMa5xOcdz+D3DazJaG4O4TDZiAVUosoXX5Qc84AHVW9ziFgMWmPH8DWMal156aQXqdq985SvvmP8WHfFe/vKXT0HvFI1aMP8ehpgxFw8HVw8dOtQ9++yzWw972MOqBhyrywhAew2HLHjqIjoRFi5BBeOyyy7bckPw+te/fn/Tm950DH9Gp5xyigVCDOA+QBSt+9///kWtVvOYuM8CAoyxQsR8jNBFXLvQpcKEUhDTft7znjfhfuezn/3sBIinaMriwQ9+8B6+Vr773e8K1hnXRhhoAQ0bl1xyyRgPe+hBBy0IQE4PuiyYn3WnO90pA0XSmZg5Lx796EeHUDlEeO373e9+bdbW5N4F//a5zwe1S9BWOvfcc0d8EgwwMl7wghcM4GCEp5d4xwZSJt+1v/jFLwZAZIJQlZhImUhQwNkV1jWAeQCvwpNOOqkGp+ri99FHH73HuiYKblzvetdze72ePGQD4+TnP//57hrXuEYNaPaY2IiFuIiRgVGnPLcPNGdPfOITF/C7hBEKoF0BYc7//ve/LTw1n/nMZ7o833/c4x4XgdIdVCr43keznEql4s3n8xboc5irg5hPoV0H+tb4bnPve9/bBR3jMAzXIDNAzFuO46zlTP4rDEJGE2uGhJw9kzTveOc7DuBckwWWGTD//Oc/7+PtkBBTK5VKJigxEcMxYXGB5UdoSA9emnhMBnI+85nPzDGcA6V8/taC2t/61rfKwL78xz/+sYqtOwhnlUX4aMpgOBx23vrWt3bxsAF6SlCqBt8L4DvCeBMU3sa7zWq12sPQawzVJypNiRTrNE1jKBGA1Pa3v/3tKsaZgcoGCJCxO8C+RVgeY8iCOTUZ20aDpowxRzw99KBrPP/5z/fhU4eBQjzQhJPtW9/61h4xvS84M4k2Vs0IaxkLKANngwm6xFUfb3sMarF4R4ti8RKwEA/neKaGoVogwSdE1lloi+eUgbuBaI65tomBq/xdxlMLYF1lETW8mqMpKbDNELEANI7RlRxUyGM9DD5mESWomkG9AOO2eNYEUZtc85rXNPl7yW9T7rUR0AqezqCpSTiP73KXu9QJj57CLf9fBbUjcdwBijYTnMHNCuJgckEKjDYMtuEhM0RxibiU4WvCg0ann366JT4D5zILzPG2Be/XCNkCNc+AZw96TPguP/PMM8Nf/OIXILppQB9ZP4QqTdARHHXUUVXoNSQs+Sw4xKBlVNwUGvFuBfRlN7rRjUo4YnP1q1/dQacihLChyIJxN2hOg2dvXvSiF00RZ+USLfRs86QnPamPgSWYTcJdA5ptMfoIFHcwUoIuSYxD8pmOAfx9FHfERJdwRHA3iasuydGGCyVsPU0IypZ5cP2Vr3zlBsiPsXJFE4KXG9/3S3DL+NjHPtZjUQlemqMNYwy7QqVbhNgNqGlIseF7gfFCoFnleTkeDhQF4GimrO/Xv/71Gti3oaKBUyrwNYDHbWBeYcIGDqkjYA6Z3Oaud71rTEZYJatMmeuePKEADSM0Z4qoZuQSzeOPP74mzcFRFpFth4EKkNTlmi3P9Qw8awKVBhe1UcgGlnLw3ADVHJFBzRiwxMV7oK6Ut0U2iMBvloJTp9MpSdxAzBCo7ZSNESJtPjuEqYznVhjK4d8CUa1BsRaQt+CqUu0Ub86glk34yvjeg9uDH/3oR51GozFE+DwWVeCYPsbzCKNjPhOuHTKvgt/mCHYBcpZCBXM0mL8nRwDziMQnute97hWRG8SsbYkBPVL8HXSOMK6FfSIMmoqPQ2VJcM/k4RkW94m/PSw1YZEjFj5F1edMesi1CfwMgV0DPQiZ5IoBbSw7BXYxlOji9YJr9nzaXL9mMg0JF5rSQT8afByMUSeW9xC+CfB14GIKcro8dySdIaQGihwgLkbNp9CnzrPWUFIImkAxl9xiS1KWIcZTENlnkSnGGfN7AE07rGUGJUvf+c53EiicMRcDx0Y8p4yuzXF8Q2m0rFXjwjkeKLB0rCwOwUiIn2O+b2HFAMXcA+sUmHaY8AgtqDDJKinv+KMf/agKKCkc9kijE2JxQGHSwsr2YrFIMcoMGNa5Lge6U5R3gUFn0MUlJyiIDltoNgHmM6LMnigzRIgzDNmH0xG5xEbZnOoDwuqIdNlE6W3ykRTk5qZptlD8jHE7oGmFFriMFeL5OlEqIFfYgJIcYzvKWkFBgr6EFE0LkqSOwSJcMrYZvFsw+IzwV0cY24SOBvBvvP3tb58ShnJ5QskL12/X63UTEUkFefi/RTdqqHjEw8s8QJVWyiIHICuH/wMET0mH97Of/ewIxOGg96pXvWrIMwMSl5hwGLOgFn8rwXIIiwW8tqGJhHeP5+dEmoDvasypTJgmes9ijLcBSSkZa0sVJOKaogs1kFEGJfio5rO2HglQD0eOQXEfesGSScT1FtcsDQYP4auB+q+B7QwvLYCpSQbWIu7KyhPSYAMUmMDGQqVnpLBdoBZi6QoLLBCzPV7yMNqUUFdBGwzivYGlR4S6HmhQidqX0BIRZniljgd8QlVKSJtR0oYYYYkxPBBQ4d81z60jcCsQ0GahIz5r6BgSEncIch+KdjFmA73x0J8lhujy/CHzmJP4jIC3dKuHU7cq8qBXh1xiRGo9x7BzEFjl98DAOgleniEgDhWdQz7eROl9Qp2KnTZKHOH5GmElhZ/K+/uI0ZCJJlizhlVbKqHxfIfvJqh7SHTooLoDJtEklJkgpcJ1C6hV4KWIAmutFBpodhC+JRPJKJ5yIlKT/KLBdW3432SMDtSp6H7mGYOyCjCvgxCDELcF1qtf/vKXmcpzJV7oxAhN8KkNFPJChLwOCqbkKGV0wZV6sxZbRRVGL4HkUBVanwnM8Eiq8hEIulitqXIUz4YYoSuuo+Cq0btQYYAHO9CkxkSmTMoicYq5J8WAC0KRR4nbwaA+4tRhEm2MMsKoY1VncLWOzoQkRzHwDPFmQu4vSk2A5RiUdYGwzSdB6Aog7YAkE/52+f8WtcIGXVkRkRz4r+RpjzYlcH5AxZdCI0W1MfOw0Zg2KF2yrjLP3uHEJWgeYoAE3bDQtcJAcPpUW0sg6ymf50GhmhHE7JI6N2o+oKJS7x7qucD7JRa0w6odqLAGFQmL3BG/lfnVyATLwNkilY1UXKkBAs1s8gUXmOYIZAAlSijyDg6uPc8L0AQfRwTU8wPUfwkilbP3uX4LAtpAXWLnM7+EBVURwQnoikGg9GsMmqZoURmUZSx6y/NTxt2Alg7PT0DBhChVJlxaJGpDHGhByTVZsGmoXcWDQqATA10PiyquiuMm/6qwyICLgxWnKj+x7AxuyjgDflNIW8Exg4k2MESfyUUkNx4x2gMVqigXaIzCYYiRE7QmhH81IsMWOo1PPfXUnHttELM5cOBAgnDOmFhKhjhW2k0tIbWOWOQSNI4xqrLCEQjdQSePe/UJmEeG4Qx0YIQzJHpz5luXQaGhwrUJulV49Yl4EwxaIpfoGCh8D6Gac2FCSqo4PASKa7wZctGWyQuKNeKpT5jLgLuD5yL+PyRU7tCMBiGqj4GqjBMDUwuY7/gt5roU7iXAP1bJSi4wBk0VYvFQyRKLMwh9PWDZY4E1hTUQ5jBGhCczosoSrqvrU9c43FfCq1XykwQKTpmvwvFWfU08PMSADQRYfYEVOjOEKqG4DppcnLRCz0L+fyNaguwyzlkZxx57bJ/QIu+OiccRC24Dzy3eHePpAIE7QgWuayCMIyBosKCARSu1nPOAAfl2RrZnAVXF8BFhaopaD5nUBFh2Sa4GSoyU55PKdvHugnR7ykQaRIYhaFGoG2GknnIRPOTi4S2ILEhw1gjdiuvmanKiMzYG2SKgc5A2QiBztKqH8Uao+44U3gUJSq6qzDFW/Fcmqv4jqPMIzwWh1YP/Ac5ODR7S5aYSHtyqzGWy4qkajkMs2SReWzxoTYJTgIxA6CD1neCZHosa8feCwVO4v4TnSxBVqB0F5A3SZDU3ykCtDWzLKH6LeG8S+nYo/gYjd1nIkFpforhj0TEe2hKyJhgpAjFlDNBUuFQJq3Qd7soRQ9BjQpuUZ9sUTNvDhw/nCHIbHTGggM1adsolCJEraYs6QzynwZzX0iGeYeFIw0B9I/4oM3AXFDhMdIfnQybfgM8hidESS3qElQXKWYYWU1AhPi2VAVLhTfg44h8TM9X5QSwzkGCi2CUVM3jIw4NN9RQYe6PKDI5m6kdCL58FKEQqYlTUEAVRFVARgagI6PfI2+sYt8F4oZq2GD0kS3SIGHuU3QD2GxandlyViCDqDaBASNzPce4e0R0RvQxQt8QxS1W4yhegTmKQGEywSqCWFItaA5mlui3E0pwH9uByAswcvLUlRu+4sc5D1dz0sewSeAZ4xmKCam4uMJwLlTLEzMEQBcZxESuX72OeMV6tViERJqYsTRE5tdrncNoB+jKY9iUCqFNROQuslbpO8aSFkSYgfMMzlty7R0gbyjJxiJS+rV4EBt3zvDKiWOP/F6pFeG4ZCne43iH8lZivRfSIcHSV3KJpoKwLoLA966yz6ioSUOBQnVhtUgArJR9lQkoV8dow2RnCsdMmA57bkEiooZrgrR5Uksi08LIPagZ8RjxU+jJgjAEGKp100kkKV6kyRwSui3J31XYmqxsSznZKlmS48847T4WNT1xvA+GtWmlQxAdVQ7RiAFoLRQ88OANZbegxJGu1QbJx4YUXqpWnHmYD7tfVyyRn6HB/FW1akVOsoGsPI00x0s5Q9xbhi+BnExXtUHk1MEIbK7XgbsBiHSYSMyEHj+/xkM33Jp5cMugezxhwtYvRUiZUQqT6WL4ETQIm2eT6MYs2EcwI8ekgPAZ5Rv/gwYMV1fQYsEEkKYHCFkZJpAlQboJWzIk4uRIzPFUQfsvaDWKB2tnxKcpskKbuVE2FEgYOuLcEuhTjVdwttMGj5A4aNEDxUOk7YVI6pJS4pfkaqGXO5KtwSyJYkZCRd4/55IQK9eZLaiJQyKg1NmTgPnzLmERPg8HRGSHLBqYe6eyAkBbh6QYG3SJqLZKcFjpTVleIMWwotkUXLDxmMFn1+WJBFuRM1brCKOo0D+D1Cs86zK2MkWOevSTs7Uh79zinQhZaBcbaZbJxooFXlWilQD4BeRFZr6KLq30KDGCgV12q0zL8j3HgGKN1oU/fQHRk1TleXmBtxeYCBAQIUJ8UeMQER4S6Md5JWVwbhd+RWLSJAjnpswlsC1VqCOYWkVmccsopU20/XXzxxTE0WkGtNtcPQXqAoTaIZVXZJRPqUCXuEaUE7y7VbQKyyRlnnJFg5ERUQhS32kHSRgb0UsaqVrtFTiK6jtAQHxjnwDzE+F1ivTZW1IHWLtKefCKB4gbh10cbErRlo1If5I5AT4ls0lAxVBEngFSfxbWZWAiUtN+mMGNjCE+CxOJGyqlR0zGeyCg8huoaMbhy84Jr1OAcwFeTSYwIcwnejIB7jbAzJdEas+AmawzxcCSvSqXxrAP65ij7Vr0CnCB4qlBS8bIEATVCq4k3lziqwqQL6DRD7SXEK6XC2mRBV/p8rzZ5k7UkoFa9xRFrUi9ggXEUHbZqrBLt2jhmwhp6aiPZgilV0hQrFYiOurjORRddpN7ZnkEMNGIMX8oM7AJlT5OgvteOb0DMVZurQvEyIZ2uoORVtbG1f6gyWNGDhbUQzzoilZDJTSV0LFAa4DKJAuNuFcbQix20UIYWco8LjQp0QPV8n2igDdwAavQl2OQnLtrhoCl1Qqr2NrcY0qKCHBIVcuaXAX+PNQ2pWSJdq90jFr8GLdpKm5HfuAbcLTMpA2FwgHvO3xVgp23pkFDYRqR8EGJhxSoLrik/wLtTIkMZr8XquxMB1BmqYsQ9SYsPfHMWKD3IiNc9YNhh0TXtB7Ig1QpzEpM+kaLN9UtoGGMIH1p55ADaKbK5ds9H6XFNDQwWtNMWm3qRoLSEwQI0QJWn+hQuArem1miz6DXiW2PMFhRQGDdBoHa8DXRjTK1TxgBt9GKvvoQWbvNAh0xPnZ1CzREmXcaLCYuvwl0HiPnKvODriglH/GbjlR3WrFBMbfH0BJ1IMd4KXajCL5fJO8T/BbzTNpd6jimTGRHGTIQ2o/rLCXdH6gC8tKZEtlD0Mc9ZM84USA/wuomgBTxjg+c9IK5dqyaIGRORLGixZaFKqkba4cKBPoty1TLHSRJp9SIbhO8EuhnqFhFKp+jHEKcvEHrbYLI5XKpq9weR8lDHHj8khJKMASJEaQeEKkolEbNQBQ8P0jZYGeGbAXltr9V50IpwF4CeFRVbygQ9+C+Lay9eeUZENNhpK4xUeknZXaGGt9WYxHMNYrU2K7aMXwFtI11L3dEl9M1AhsQzBB1qcfssro/BFX0snLc5dOhQjDCmUKePWNZ5xhwRzjFmFdqqbilwQEJ1m0KPDtdL/OcqjZUKd4BPFSivzz333AJYqYWVKYVk0QEPG+hQBMYQLZpEgznX5TqBgYcGiNoY1MRUdUvC1vL8888P+H7Jg1XM1NGAHDTE6IOneh0l9/g+IwnShoYQt6Z+X3OPy2JrzGdLsuKTj+zUtMDILcaeqnnC9TGOCUFDGfpYJFguWpGiWQPo0aKYUvvcxQklItkESsoAeyC/grratJWhXARUCVwOEqqGQhDCM4HfWz4Og23ImCztqBAaHZRYW9whXiiIoer0LIgEJb6rAs8W6FGMXfD/qfhMGBxi2RqeaPKdevmFtAP41+C/f8kll0R5ng8QuBkFT41JxEysxbXaD3DwnjZT9xhIvX5bCMMpLRBUAsam2uZ4Hdss+9BoA79Vy6hdrjFG5Ak1Kj6HlHfKp4p+zNAk7SoXoGLH87UxakHjtbbdDX5w4WFAbE5R0LYUWrtA8K6CqralDSxmgdc7wKaO5UtoRA3ECA0Ji94QIWoMpoMJJdAeY7SCB+ek2EputE+ojdQSkI6hTgsYFvydK6arQYmAbnmuKdHDW8ryeqDBQ6iiy0ObSdpdpgbYqq0N/KdQa4MwagutpNQYQ+eqF/BuE1SEhL8Cx3bQEx2fUQ5RY646zpPpZArI6pKwGQYLm2P5ASFmTlIxYPFtKSc8raH0yvpSVNVHDLWjOuX7FotTtTdmshmprw4kGXBzAmWahMkNQrSjMgt4wAB1L+mcj8ISwrnRZiUZ2Rro7xCnHsaq8v9zZaNwtcrvKqj25CEZhgiJQDUW04PDY6AdYqgp8+vj9dLZZ5/tHnXUUS2omWMoZXYOUcAkO821s00u0ESX6kQzHb9RTqDm6xJnV6CuxzO7ypJ0eGkO522VpHykpAmT0P6cJ+hxQ3bccce5wFIVYAaMOnilQn1wZPsc7ot7MxYfEQUsEpnFZZddpp1ai9g7Y+Iuiq+WmKWDVYiXT/4ww+MDJlZFJ2ZKdBBf5fHyYhtBjKFTC7U2oWkH5E3RjirpdUo4q2GALnpRJQxqQ2eGoZsYICXNzoD6Fp2Yn3DCCRHakbG+Osbqg2CfcLhTYQYSdSgj1N5gmRo+5EKHsKYDSaoLStqc5AEzBqkyAV8nRfD2hok6OnUFRKdKJFDnMnDUSYwxwrVEeNQbNNR4wONr+K++v61mBpPtohl1eJ0A1xX3VhS21N9nMisWp66UPFRHxAptl5OMTeB1CTpVQVpTB6PwcoKxehg7hPuR0luy0Qk0Wel+4N6UtwnBY7LXBONsuWeHsTfa79A2mRyA3m0NMrgpfHBJb014OUclA7jjqoePAUaEKx+xcll4V7U1Ew9IKTOgO2NxA2gzRKz6xFhtmGyhSMC9FpmaEpoUGkg8ffL1jEmpRJVRcqCpQkeRZ08UKEELtedM8VKIYbwOC1BDxUI0TUS4juEHWjz5SJ/xx2hRhwywwu8duN2BalUMph1gG5Uf4DSFZx3fq2NkNUUKxNvVuQQMUdPmrc4JOlh+igZsdEiJH5aq2mq1msOia0ClrU0JBkjIFVQOlwg5eybm4pUWi1Et0GSxPbxsw7/K8ccfP9UxFvUUgXFCVKjwr4k4VTB2zMLqLFAHpKZqgoIEC/5vgXKiycHrHINsgO1EByeUq0CTEOjPKNCKy0+h7Blzo7OJpO06pWYj4gsoXVVypgNfjJHj5YmaOITzHfqh9F7tcQmmmqw7KXcf682Bm6Db1EN1fIW43VYmp4oPA+yVeLCwplrlDFYQDvc8zNEGCde3dVZQYYa0V0lLHy/uBTE8kDPpCuLqknUaoGCtgxDA0NXRGCDagzYbtbbRE4+Q56rTSxIjA2WqR5T+qqmB8bT33wOhbTVE0IqhmrrQd0uJu8AQA+YwJVLo2T5oqqIhlvoTJGVCtQQ3YkyH8JlC9Z7ygBGeSrmxzwT3eGCIZdZYb4aVx0wmRzSUZPh4KccwGdbVlnQJUZpcvpWmdlQNL61BiMuidGRlBE3GGKoP/AeEwAiRygmdaxa6QGOawDGDVuo5VlhMCw2JQV3M5OoqfsgbUoRVeb9S7/WBAwdc6NdCECs812CRBeOoRBdl9FFPcyq6ck/MQiMMHxJqqxRedZ0twpgpv88x4BgDO4aajfBePFbsbSCKoSCj7Scdh4M3TW1gqjUtRWcSSk1n5OoxCYYaDkOiQ1VpKonIngcP8GZBiMug11S7uRh5iLUnpLgNco4t92obbkuG2SfPGGCshVrrKLQH4my8pdxCz4wIhb4OTOD9lHEsON8BpRvoVsKjIzzq46SuNlbRqwbG1Z6fQ9itgIw6DnV5RoX1qXe4x7l1QmEdmjsgMTKAtryotvaaDAoa9Uy80cDTZTzSZ5EW2VeDG5ssfH366adv+ddH0SdMKsB4HZDiwtUSHmggqnXicqqUFaSov6gzQiVBVjU5yY0OLkVcu1O2h0FiPj4eKqDLkrC7Z8wBArdCUPuovUNEaHHNCihrV3jDWA0KqC7iFynOk1Cpk+QRagsd6IQiOozZJXFas1Ad5DAvuOCC7Mwzz1RuE5EctRBA5SVdAyu2uHGJiEzhZECWZGlQPK8zQEMGOiKCWgweKAEndYFaGGWtoyqErz0UGFCR2RglU7aHdwZAU+dyZ3w6arpAjwZUqLLouXoIOs0h2mGokU6hMd5MqbZOcOn8sOZCiLR1TIekqKvJ69S4eohKq/l7BH1sapQVKfsARy5xYl9ZH4I8Ve2BJuiwhygm1M4xuq+oQC7SQ5ALKFAYZHjjy09ZtMjktIGxJS+oQYEt/OlSyaod3T148OCSXDzWMXO8rEZKk8XVgJpFYrMCslsdrtQJcWigzRR5e0ISkoMkbU+pZG6g4DqXvMBLQyVeoKEBBeqIp8WkG9BQPYYFix1jFGWIijzaILWJHgaJ2FBH+HHGSoKt7hAJjss8tR2us8wO+qVzygP1KEmVJwhoFZS2yU2aRCQhtwZqGjg60sGHjAmkPMSDEwPUtKbDyWRxDcKdOis6GJ0T7pSrT6nMdiw8116e9u2UyxMZfCaiY7BHurjQKNDuD7lFlYeaGLeCQXWEZQR0dVBSpziXelcAB6xAnXZwqtBIO0I5IXYHolReF/DZIqq0tb8HFYaI2A4DjrUPCLWUKmt3y+RZWmAO+gplo1DJBHUGQlpGm0wWvgJV2pLT+cIeKJlBJdsgBA11JhAK5Dw8xlvq+eVMoKyTlKAixXq+TmtDhzlw9xC0glSzw4TVqtqTR6gCnJI4mXz2RAyXKKHER2K3Q+27pMEDfhtz24RrXZWwSkYUHdTc1J7h4cOHyyxGx9hDjDrWYQwWIHEscJIOZVSA7QAeN4UokKYulvTIIplSr3HNM0sIsPYwR9pSRwf6CKQNbTfAv4WgaqfYu7zN7xpMQimpxaBLoKG+fKymJHBrocI97QABQxerqi8gKLYZUPttIzydkD53pQWI1hQ1rmD5KZFlDd+kEQtg2tCBRMYyUeQp6fQOFOlkuImRfURrQsyP4aunDjHcLrSFpvNC0MUDgS5jDEHYmojgEaHU2bUwbI4oKuPbssgB2qFU3MeZAeM31LWW40Byh3S+SU7TUMtOiRyOVAqvHuJWnZEIIzgkFFUpM5brkCXtgFoO7z24WuDpPdpgq0xFyLbUC3M1OvSiApHDZ7Ihoqdtb1P9fJ3XgYc6HaqsUXF4p9a7Ei3lBSROa7TCVpWJGle5Ti9OVLTrRIqba8+BW+QAnWBfYCSdNnfhsqm3PsgltI0/wmhq5XWlNyeeeKINsgJoo5cjdK9PPhFj1Fg73NoNxpiN0047LRK9QdYEB8wMvnTImHRWsAOv1FGdoaoj8oG+Dh+y4A4FiI62ySge120JLWpzb/k4OrODB5uIWF+HKfhtxALqfN9ESxpQZ6V9eiZRgwoOEUDnjedc12LCqTZiMH7GxHyd9VF4Au47Fqu3PRaMU9FZZObY0ksbfGcSCiPt+iDSPRbpgpQ2NYWFNhlCw9FHHx2SoZbIXFUql9UeZ44Z1FAdoGJqg4E0/5W2lroIiXp3LZ3RJ0uawjOdyjCB40TNREQwhZ867KBKULtAE0RE+XUO3HSErkQFFopC8GtAcqLtsxwF9obDocdC53qvaK9N/fm8h8jtBXWeu1GzlMhi8bwEr/Z4TqhTpRjIhU6qE2YkN3rhydImDsKprlSdBYxwmI8n1zhmorNM0NbCyGNCcxlD59BTh6gKhLaGUbRfGOttGCKTjfCaXFtSMRTjuZSbTNR5jWLbOtDEjR143mchS8KSqkQdObPwyERvhWGolQ4hE648HUTCmiWQo8pSmywp3pLSq1d3RIiAtjYpfaA65ve13u+haOmoBa4DE+iM3gvQoSi92KAzSDpw2eTZPZDRxFEZNYXOCOpNMO0j6KWLHGroRa5Y7w6cc845dWi1YNwy62kTQQrQ5RM9ptw/wPtrbdNrr1DZIHo0M9RDR23rwGeA8vaInzqyGuhgEfwaMZiBMVKEwwD+LimrDFNCRadMaIVT2wpnRANtaS/RAG0/p0Bep8wCxp6zEL0DFCBU2hDRzo4yNAdDS3h1XwwtykpzddQeA00QsFA7SoQuS8duoMAWQ7XQJx2oVAfI4fo9182048xCK1wXsmg1TUp4eiZxRUvGOs4Luld6dwH96UGPMQargO6+gZKvCXva/x+w6BKLrOhgAg/xddZGB4yoCQxgmTK5MRyNMEZNVSBikjPxiJAXq26HHj0msyaM5cBT9Jjh8aG2yrnOozgZgIK5usd4bUnWNlH3SG+lkdjo3gKjaLO2DvQLskSq5XaGwKo3sIdmLgZTW00Hr3X+ZwgFQha+UC7CohMEUdWeBeUMwqLeYexrf0OnWbQZS66zUmsPIY0Q3pYShR4wNQirHTU6SS5ShRcUsg/HVbjoYET35JNPXiM8Nt6q6+0rvLxlIAd+G3z6GMsDLXNtaykaoL4BWVmDnKCqpqZOdiCkbTVD9ObDoUOHLBYXaBtOr9tBoQKU6E2QHZ5WkaMXM3Wk1gJdyt5CdakvvfTSHtqwAcIWY1Thuvb4Ir3FpncE0akYh6iROsNgA5ylA9ULKCk09oQKxvcuP/3iqRzeUDWphZRKQPBkF177eiiLnHLDniRFp8GUWWnTRGf1fRaS8iAf3unIW1UbG3B9pRIa5V0y+RRxalNnDLSTC4oifiuTuy+hWI7BG6rnqRC18amzyT3CqrRmThmto/ZNjKfnjnBSgoD5GKXOxDPSWFfFGiIb8XcZWqY6M6CijGxUr/s0ccRUGy84ccFYavep2yz0pdoV0ltxagIZ1MgGXAihQYp3tZ2k8rHHw/csRCc/lzpJoSOv/LfEa8rBUy2IayaE0YgkaqawST6hiOERNlMWs9d7gFBlDZr2OlSlfX9ifo2ooSNsOt/bVEsMIbMQNOUPNSba4bsuBvb0Rim0dJVe6+QXc+zwXUktc77XIWsbIfN1yhVxGwDpWJu0GFw71BHI9Ikcyiw3hE693jvTBo8aKuovgNq2AZf0vqADx2xUe8gFOqejt68mKKcjXvLQMhDqAmt1eY+0s6CL9t5HKqFZ/EpFCR6Z6cQnhhnqHI4OT6kKI8Tt4LqL5Qfco1pD1Z7P9WMUfk6o7KExUwzY5VkKkw73NvldpzmOKD5cRp/zhGtVtpcULskJuujIGN4nrLOLQE55dguK1vVKHt/bXKfDEAaiO9Z70Twv0nuPXBvhnKbeD9ZrpDZW6gIfFTxqa6uVvMRCMbzXGSDYYZuIiUtSIfhVgHgTw6kqm+EFvR4jj9dV1lLGlpm4NkN0PG0PSqQLOleY6fgroTUjNK3gaaQj69BBKa1ehKhCqzYTTgh1dejTESr1PhHP70OxQEd5ccAKb/sgry3B1OtvelGSirQCxPUKrTZGdohyCFotpcKkzpY2d1lbXa131iT9yA3tkhxzzDE1aDCGf22EbaX0FU+04JdJCNRZ4b0aonCpj9JaQGwsFAgZCKSqtQWLbyjhwcMxhlRWGSI6HtDbIax6geJIRkix0yJ8NQlDPQw/49+63j/SsRvGbWqfX2+OCN6Ilc+EY/62id0ZIVvv+RgYqamSF8O0SHB0TL9PmNRR+yHG3GGoJUhRa3+p0/AgKVWkwzARoquDWj2E04KSmd4dXiBEBfDUu34eQtEldroMYKKiQ5KcDIUe6OAUA6ZqkVEXLDBAiQFVJdrKBxAend33ubcEvHWyfK13ElmEmg87Jhqj0Krw5oyhNrqto/E60aXT4XobROcFmcMCFKq1LsTpTbSaXtHHoxtoV+e7Plmr8hC9GKEXKPXeYQUkd3VUXqfGEc2pUMwaBtrrYG19CS4G32q9IEwbrbZOn/0/j9Ub0CkvNoMAAAAASUVORK5CYII=');
+  background-size: 64px 64px;
+}
+
+.wc-card::after {
+  content: '';
+  position: absolute;
+  inset: clamp(2px, 0.4vmin, 4px);
+  z-index: 5;
+  border: 1px solid currentColor;
+  opacity: 0.12;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* AC2 — the border states whether the card ACTS. Form (width, dash pattern), not hue, so both
+   read in greyscale alongside the corner index's painted/plain distinction. */
+.wc-card.wc-face-act {
+  border-width: 3px;
+}
+
+.wc-card.wc-face-inert {
+  border-style: dashed;
+}
+
+/* ---------- art window (AC1) ---------- */
+
+.wc-card-art {
+  position: absolute;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 3px;
+  left: calc(100% * var(--wc-face-art-x));
+  right: calc(100% * var(--wc-face-art-x));
+  top: calc(100% * var(--wc-face-art-top));
+  bottom: calc(100% * var(--wc-face-art-bottom));
+}
+
+.wc-card-art-wash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    78% 62% at 50% 34%,
+    var(--wc-fig-white) 0%,
+    color-mix(in srgb, var(--wc-fig-light) 60%, var(--wc-fig-white)) 44%,
+    var(--wc-fig-light) 100%
+  );
+}
+
+.wc-card-art-glow {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  width: 74%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff8c 0%, #ffffff33 46%, #ffffff00 72%);
+}
+
+.wc-card-art-figure {
+  position: absolute;
+  left: 50%;
+  bottom: 5%;
+  width: 70%;
+  transform: translateX(-50%);
+}
+
+.wc-card-art-figure svg {
+  width: 100%;
+  display: block;
+}
+
+.wc-card-art-vig {
+  position: absolute;
+  inset: 0;
+  box-shadow:
+    inset 0 0 10px 4px #00000026,
+    inset 0 -8px 14px -5px #00000033;
+}
+
+/* ---------- pips (AC4) — a fixed 3x7 lattice, suit-glyph shaped (AC7) ---------- */
+
+.wc-card-pips {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(7, 1fr);
+  justify-items: center;
+  align-items: center;
+  left: calc(100% * var(--wc-face-pip-x));
+  right: calc(100% * var(--wc-face-pip-x));
+  top: calc(100% * var(--wc-face-pip-top));
+  bottom: calc(100% * var(--wc-face-pip-bottom));
+}
+
+.wc-card-pip {
+  width: 100%;
+  aspect-ratio: 1;
+  color: var(--wc-suit, var(--wc-ink-soft));
+}
+
+/* AC4 — a spot below the lattice's mid-row prints rotated 180°, so the card reads the same
+   from either end. */
+.wc-card-pip.wc-is-inverted {
+  transform: rotate(180deg);
+}
+
+/* ---------- the Treasure's "no rule" mark (AC2) ---------- */
+
+.wc-card-no-rule {
+  position: absolute;
+  z-index: 6;
+  text-align: center;
+  left: calc(100% * var(--wc-face-mark-x));
+  right: calc(100% * var(--wc-face-mark-x));
+  top: calc(100% * var(--wc-face-mark-top));
+  bottom: calc(100% * var(--wc-face-mark-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #ffffff70;
+  border-radius: 3px;
+  background: #0d0a06aa;
+  font-family: var(--wc-serif);
+  font-style: italic;
+  color: #f6efe1;
+  font-size: calc(var(--wc-card-w) * 0.095);
+}
+
+/* ---------- overlays ---------- */
+
+/* AC12/DLR-148: a skull REPLACES the card's art — one bone skull on one dark wash, identical
+   whatever the card, so a player recognises it across the table without reading it. Now fills
+   the declared art window rather than a small top-right disc, since a skull replaces the art
+   and there is now an art window to replace (DLR-148's own wording). Background and colour
+   values are unchanged from before this ticket. */
+.wc-card .wc-card-skull-face {
+  position: absolute;
+  z-index: 6;
+  overflow: hidden;
+  border-radius: 3px;
+  left: calc(100% * var(--wc-face-art-x));
+  right: calc(100% * var(--wc-face-art-x));
+  top: calc(100% * var(--wc-face-art-top));
+  bottom: calc(100% * var(--wc-face-art-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(72% 58% at 50% 32%, #4a423a 0%, #2b2622 46%, #0d0b09 100%);
+  color: #efe8d7;
+}
+
+.wc-card .wc-card-skull-face svg {
+  width: 68%;
+  height: 68%;
+}
+
+/* CRIT-2 (round-2 defender review) — `cardFace.ts`'s `printedRects()` already models a Plain
+   rank's skull as occupying `pipField`, not the wider `artWindow`/`skullFace` box the rule above
+   paints unconditionally: a Plain rank also carries the mirrored `cornerBottomRight` index
+   (AC6), and the art-window footprint runs straight into it, so the skull painted over the
+   corner index on every skulled 6/8/10. This rule brings the stylesheet into agreement with that
+   model, routed through the SAME `--wc-face-pip-*` properties `.wc-card-pips` already uses
+   (`cardFaceCss.test.ts` drift-checks them) rather than a new custom property — `cardFace.ts`'s
+   own comment on `skullFootprint` says no dedicated property is needed for exactly this reason.
+   `.wc-face-plain` is the class `PlayingCard.tsx` already renders (`wc-face-${face.faceClass}`).
+   Act/Inert ranks are untouched — they keep the rule above's art-window footprint. */
+.wc-card.wc-face-plain .wc-card-skull-face {
+  left: calc(100% * var(--wc-face-pip-x));
+  right: calc(100% * var(--wc-face-pip-x));
+  top: calc(100% * var(--wc-face-pip-top));
+  bottom: calc(100% * var(--wc-face-pip-bottom));
+}
+
+/* The skull replaces the art/pips, not the corner index — the trick is still won on the rank
+   and suit (AC12). */
+.wc-card.wc-is-skulled .wc-card-art,
+.wc-card.wc-is-skulled .wc-card-pips {
+  display: none;
+}
+
+/* The skull's eye sockets, nasal cavity and teeth gaps — a fixed dark shadow regardless of suit,
+   tier or greyscale. Set via a class + `fill` here rather than a `var()` inside the SVG's own
+   `fill` attribute: presentation attributes do not reliably resolve `var()` cross-browser. */
+.wc-skull-shadow {
+  fill: var(--wc-skull-shadow);
+}
+
+/* DLR-90/AC2: the Timebomb mark, once a marked card is face up. Bottom-left. A ringed badge
+   rather than a bare tinted glyph, per `game-ux`'s "state reads without motion or colour alone":
+   the ring is the form signal, the fill colour is secondary. PLACEHOLDER glyph and hue — the
+   developer's to retune. */
+.wc-card .wc-primed-mark {
+  position: absolute;
+  z-index: 7;
+  /* QA-1 (DLR-149 fix loop) — was `bottom`/`left`/`width`/`height` all multiplying
+     `var(--wc-card-w)` directly, which sized and positioned this badge in units of the card's
+     WIDTH on both axes. Rewritten as `--wc-face-primed-*` percentages of the card's own box
+     (`warCouncilCards.css`, values mirrored from `cardFace.ts`) — the badge renders at the exact
+     same pixel box (the property values are the same numbers converted through the card's fixed
+     aspect ratio), but now the numbers are declared once and drift-checked. */
+  left: calc(100% * var(--wc-face-primed-x));
+  width: calc(100% * var(--wc-face-primed-w));
+  bottom: calc(100% * var(--wc-face-primed-bottom));
+  height: calc(100% * var(--wc-face-primed-h));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid var(--wc-parchment);
+  background: var(--wc-timebomb-edge);
+  color: var(--wc-parchment);
+  font-size: calc(var(--wc-card-w) * 0.13);
+  line-height: 1;
+}
+
+/* DLR-100 — the discard-selected mark. Its FIRST stylesheet rule ever: a centred badge inside
+   `CARD_FACE_GEOMETRY.discardMark` (35%/65% x, 40%/60% y) plus a face tint on the card itself —
+   NOT the mockup's full-face veil, which covered the corner index and so contradicted AC6.
+   PLACEHOLDER glyph, size and tint — the developer's to retune. */
+.wc-card.wc-is-discard-selected {
+  background: linear-gradient(168deg, #cbb98f 0%, #b3a281 100%);
+}
+
+.wc-card .wc-discard-mark {
+  position: absolute;
+  z-index: 7;
+  /* QA-1 (DLR-149 fix loop) — was the literals `35%`/`40%` with no `--wc-face-*` twin at all, so
+     `CARD_FACE_GEOMETRY.discardMark` (`cardFace.ts`) and this rule could drift with nothing to
+     catch it, even though the two numbers already agreed. Routed through
+     `--wc-face-discard-x`/`-y` (`warCouncilCards.css`) so `cardFaceCss.test.ts` now enforces the
+     agreement; both axes are symmetric (0.35/0.65 and 0.4/0.6), so one property drives both
+     insets on each axis, same as `--wc-face-art-x` and `--wc-face-pip-x` above. */
+  left: calc(100% * var(--wc-face-discard-x));
+  right: calc(100% * var(--wc-face-discard-x));
+  top: calc(100% * var(--wc-face-discard-y));
+  bottom: calc(100% * var(--wc-face-discard-y));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #0c101399;
+  color: #f0e6d2;
+  font-size: calc(var(--wc-card-w) * 0.26);
+  line-height: 1;
+}
+
+/* The elaborated figure symbols (`CardArtSheet.tsx`) bind their fills/strokes from these
+   INHERITED custom properties, never from a `var()` inside a presentation attribute — the same
+   mechanism `.wc-skull-shadow` above already uses, and the trap `SuitMark.tsx`'s docblock
+   records. */
+.wc-fig-dark {
+  fill: var(--wc-fig-dark);
+}
+.wc-fig-mid {
+  fill: var(--wc-fig-mid);
+}
+.wc-fig-light {
+  fill: var(--wc-fig-light);
+}
+.wc-fig-white {
+  fill: var(--wc-fig-white);
+}
+.wc-fig-stroke-light {
+  stroke: var(--wc-fig-light);
+}
+.wc-fig-stroke-mid {
+  stroke: var(--wc-fig-mid);
+}
+.wc-fig-stroke-white {
+  stroke: var(--wc-fig-white);
+}
+
+/* The figure palette's fallback, for a card rendered with no suit class — the same grey the
+   mockup's base `.card` rule carries. Overridden per suit below. */
+.wc-card {
+  --wc-fig-dark: #333;
+  --wc-fig-mid: #777;
+  --wc-fig-light: #bbb;
+  --wc-fig-white: #eee;
+}
+
+.wc-card.wc-suit-bells {
+  --wc-suit: var(--wc-bells);
+  --wc-fig-dark: var(--wc-fig-bells-dark);
+  --wc-fig-mid: var(--wc-fig-bells-mid);
+  --wc-fig-light: var(--wc-fig-bells-light);
+  --wc-fig-white: var(--wc-fig-bells-white);
+}
+.wc-card.wc-suit-keys {
+  --wc-suit: var(--wc-keys);
+  --wc-fig-dark: var(--wc-fig-keys-dark);
+  --wc-fig-mid: var(--wc-fig-keys-mid);
+  --wc-fig-light: var(--wc-fig-keys-light);
+  --wc-fig-white: var(--wc-fig-keys-white);
+}
+.wc-card.wc-suit-moons {
+  --wc-suit: var(--wc-moons);
+  --wc-fig-dark: var(--wc-fig-moons-dark);
+  --wc-fig-mid: var(--wc-fig-moons-mid);
+  --wc-fig-light: var(--wc-fig-moons-light);
+  --wc-fig-white: var(--wc-fig-moons-white);
+}

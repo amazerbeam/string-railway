@@ -35,38 +35,41 @@
   font-size: clamp(0.68rem, 1.45vmin, 0.82rem);
 }
 
-/* Rotation and lift push pixels outside the layout box, and the shell clips
-   overflow — so reserve the room explicitly rather than letting cards crop.
+/* The hand is a straight, evenly gapped ROW — no rotation, no resting arc, no overlap. The
+   fan was retired in the DLR-149 follow-up because its negative margins made a slice of every
+   card's visible face hit-test to the wrong card: the card beside an armed one (which is
+   scaled 1.05 and lifted, on `z-index: 20`) had its whole left edge stolen, so aiming there
+   PLAYED the armed card instead of changing the selection.
 
-   DLR-119 — the top reserve is now a MULTIPLE OF `--wc-card-w` rather than a fixed `1.3rem`,
-   because everything it reserves for scales with the card and the reserve did not. The figure is
-   DERIVED from constants already in this codebase, not chosen:
+   The gap is a real `gap`, not a per-slot margin, and is sized off `--wc-card-w` like every
+   other length on this screen. `0.12` is a PLACEHOLDER — the developer's to retune — chosen so
+   the gap survives the armed card's own growth: `scale(1.05)` on a card whose width is
+   `--wc-card-w` adds `0.05w` total, i.e. `0.025w` on each side, so a `0.12w` gap still leaves
+   about `0.095w` of clear space beside an armed card and the two boxes never touch.
+
+   The top padding still reserves the room the lifts push outside the layout box, because the
+   shell clips overflow. The rotation term is gone from the figure with the rotation:
 
      armed lift        0.20 x cardHeight, and cardHeight is 1.5 x --wc-card-w   -> 0.300w
      armed scale(1.05) 0.025 x cardHeight                                       -> 0.038w
-     max fan rotation  sin(5.25deg) / 2, at FAN_ROTATION_STEP_DEG 2.1 and a
-                       6-card hand's max |spread| of 2.5 (`fanLayout.ts`)        -> 0.046w
-                                                                        total    = 0.384w
+                                                                        total    = 0.338w
 
-   Rounded up to 0.4. At `--wc-card-w`'s lower clamp bound (2.9rem = 46.4px) that is 18.6px
-   against the old fixed 20.8px, so the hand row gets 2.2px BACK — a small repayment on the
-   7-12px DLR-117 spent. At the upper bound (4.3rem = 68.8px) it is 27.5px against the same
-   20.8px, which is where the old fixed value was CLIPPING the top of an armed card. `min-height`
-   is left alone: it is a floor the real content already exceeds, so it constrains nothing. */
+   Rounded up to 0.35 (was 0.4, which also carried a 0.046w rotation term). `min-height` is left
+   alone: it is a floor the real content already exceeds, so it constrains nothing. */
 .wc-fan {
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: calc(var(--wc-card-w) * 0.12);
   min-height: calc(var(--wc-card-w) * 1.5 + 2.1rem);
-  padding: calc(var(--wc-card-w) * 0.4) 0 0.6rem;
+  padding: calc(var(--wc-card-w) * 0.35) 0 0.6rem;
 }
 
-/* DLR-117 — one fan item: the card, and its damage strip beneath. The rotation and lift
-   custom properties stay on the card itself (`warCouncilCards.css`'s `.wc-fan .wc-card`
-   composes them with the hover/armed states); only the overlap margin and the stacking order
-   move out here, because the slot is now the flex item. `useRovingTabIndex` queries
-   `querySelectorAll('button')` on the group, a DESCENDANT query, so this wrapper changes
-   neither the arrow-key order nor the count. */
+/* DLR-117 — one hand item: the card, and its damage strip beneath. The overlap margin and the
+   per-slot stacking order that used to be set inline here are both gone with the fan; the slot
+   now carries no inline style at all, so a card's painted face and its tap target are the same
+   rectangle. `useRovingTabIndex` queries `querySelectorAll('button')` on the group, a DESCENDANT
+   query, so this wrapper changes neither the arrow-key order nor the count. */
 .wc-fan-slot {
   display: flex;
   flex-direction: column;

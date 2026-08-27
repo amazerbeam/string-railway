@@ -9,6 +9,7 @@ export {
   otherSide,
   PlayerSide,
   QUARRY_SIDE,
+  RANKS,
   RoundPhase,
   Suit,
 } from './types'

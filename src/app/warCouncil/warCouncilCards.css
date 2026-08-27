@@ -1,8 +1,15 @@
-/* War Council — the card face, the ability prompt, and the round-over panel.
-   Sibling to `warCouncil.css`, split out because the combined stylesheet
-   exceeded the 400-line budget; import both from the mount component.
-   Tokens are defined once in `warCouncil.css` and apply globally once both
-   sheets are loaded — nothing here redeclares `:root`. */
+/* War Council — the card as a control: the ability prompt, the round-over panel, and the card's
+   own box (position, border, shadow, the corner index, and its table/pile/illegal/armed states).
+   Sibling to `warCouncil.css`, split out because the combined stylesheet exceeded the 400-line
+   budget; import both from the mount component. Tokens are defined once in `warCouncil.css` and
+   apply globally once both sheets are loaded — nothing here redeclares `:root`.
+
+   DLR-149 split this AGAIN: the face's painted content — the art window, the pip lattice, the
+   "no rule" mark, the skull/primed/discard overlays and the per-suit figure palette — moved to
+   the sibling `warCouncilCardFace.css`, for the same reason. The `--wc-face-*` geometry custom
+   properties and the `.wc-card-corner` rule they size STAY here: `cardFaceCss.test.ts` reads
+   THIS file from disk, so the numbers `cardFace.ts` owns must live in the file the drift spec
+   actually opens. */
 
 /* ---------- ability prompt: on the table, not a modal ---------- */
 
@@ -75,19 +82,18 @@
 .wc-card {
   font: inherit;
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
+  display: block;
   width: var(--wc-card-w);
   aspect-ratio: 2 / 3;
-  padding: clamp(0.18rem, 0.7vmin, 0.4rem) 0;
+  padding: 0;
   background: linear-gradient(168deg, var(--wc-parchment) 0%, var(--wc-parchment-shade) 100%);
   color: var(--wc-ink);
+  text-align: left;
   /* AC7 (2/2)/DLR-80: the border reads the `--wc-suit` custom property the `.wc-suit-*` rules
-     below set — the same property the centred `SuitMark` reads via its own `color`, so the
-     suit reads twice (edge and symbol) and never from colour alone. One declaration covers all
-     three suits; `--wc-ink-soft` is the fallback for a card rendered with no suit class. */
+     (`warCouncilCardFace.css`) set — the same property the corner `SuitMark` reads via its own
+     `color`, so the suit reads twice (edge and glyph) and never from colour alone. One
+     declaration covers all three suits; `--wc-ink-soft` is the fallback for a card rendered
+     with no suit class. */
   border: 2px solid var(--wc-suit, var(--wc-ink-soft));
   border-radius: clamp(2px, 0.5vmin, 4px);
   box-shadow:
@@ -98,119 +104,120 @@
   transition:
     transform 0.13s ease-out,
     box-shadow 0.13s ease-out;
+  /* AC5's geometry, restated as CSS. Every value here has an exact twin in
+     `cardFace.ts`'s `CARD_FACE_GEOMETRY` / `CARD_FACE_TYPE`, and `cardFaceCss.test.ts` reads
+     THIS FILE from disk and fails if the two drift — the property NAMES and NUMBERS must match
+     the module character for character. `container-type` is what lets the printed-name
+     container query in `warCouncilCardFace.css` read the card's own rendered width rather than
+     the viewport's. */
+  --wc-face-corner-x: 0.06;
+  --wc-face-corner-y: 0.04;
+  --wc-face-corner-w: 0.46;
+  --wc-face-corner-h-named: 0.26;
+  --wc-face-corner-h-plain: 0.21;
+  --wc-face-rank-size: 0.24;
+  --wc-face-name-size: 0.075;
+  --wc-face-corner-glyph: 0.15;
+  --wc-face-art-x: 0.07;
+  --wc-face-art-top: 0.32;
+  --wc-face-art-bottom: 0.06;
+  --wc-face-pip-x: 0.25;
+  --wc-face-pip-top: 0.27;
+  --wc-face-pip-bottom: 0.27;
+  --wc-face-mark-x: 0.16;
+  --wc-face-mark-top: 0.8;
+  --wc-face-mark-bottom: 0.06;
+  /* QA-1 (DLR-149 fix loop) — `.wc-primed-mark` and `.wc-discard-mark` (both
+     `warCouncilCardFace.css`) used to hand-code their own numbers with no `--wc-face-*` twin at
+     all, so nothing enforced them against `cardFace.ts`'s `CARD_FACE_GEOMETRY`. These four are
+     the same shipped box, expressed as this module's height-normalised fractions — see
+     `cardFace.ts`'s comment on `PRIMED_MARK_BOTTOM_FRACTION` for the width-to-height conversion
+     `-bottom`/`-h` need and don't. */
+  --wc-face-primed-x: 0.08;
+  --wc-face-primed-w: 0.24;
+  --wc-face-primed-bottom: 0.046667;
+  --wc-face-primed-h: 0.16;
+  --wc-face-discard-x: 0.35;
+  --wc-face-discard-y: 0.4;
+  container-type: inline-size;
 }
 
-/* The rank is a corner index, in the top-left, the way a real card prints it — so a fanned
-   hand stays readable when each card covers all but the leading edge of the one behind it.
-   Absolute like the suit and the pip, so all three corner marks are placed rather than
-   flowed. Both the offsets and the size are the developer's to retune. */
-.wc-card-rank {
+.wc-card:disabled {
+  pointer-events: none;
+}
+
+/* ---------- corner index (AC6) — held to a DECLARED box ---------- */
+
+.wc-card-corner {
   position: absolute;
-  top: calc(var(--wc-card-w) * 0.06);
-  left: calc(var(--wc-card-w) * 0.1);
-  font-family: var(--wc-serif);
-  font-size: calc(var(--wc-card-w) * 0.34);
+  z-index: 3;
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 0.14em;
+  align-items: center;
+  align-content: start;
   line-height: 1;
-  font-variant-numeric: tabular-nums;
-  color: var(--wc-ink);
+  /* Held to the DECLARED box — the geometric assertion `cardFace.test.ts` makes is only honest
+     if the stylesheet actually clips the element to the rectangle the spec checks. */
+  overflow: hidden;
+  left: calc(100% * var(--wc-face-corner-x));
+  top: calc(100% * var(--wc-face-corner-y));
+  width: calc(100% * var(--wc-face-corner-w));
+  height: calc(100% * var(--wc-face-corner-h-plain));
 }
 
-/* DLR-80: the suit mark moved from a bottom-left corner index to centred and large — the
-   card's dominant mark, so the suit reads at a glance across a fanned hand and a condensed
-   table card alike. `color` reads the same `--wc-suit` property the border does (AC7/game-ux's
-   state-without-colour rule: the suit is legible from the symbol alone even if the border's
-   hue is indistinguishable). */
-.wc-card-suit {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: calc(var(--wc-card-w) * 0.56);
-  height: calc(var(--wc-card-w) * 0.56);
+.wc-card.wc-is-named .wc-card-corner {
+  height: calc(100% * var(--wc-face-corner-h-named));
+}
+
+/* AC6 — the mirrored bottom-right index, printed only on a `plain` rank, where nothing else is
+   printed there. */
+.wc-card-corner.wc-is-mirrored {
+  left: auto;
+  top: auto;
+  right: calc(100% * var(--wc-face-corner-x));
+  bottom: calc(100% * var(--wc-face-corner-y));
+  transform: rotate(180deg);
+}
+
+.wc-card-rank {
+  grid-row: 1;
+  grid-column: 1;
+  font-family: var(--wc-serif);
+  font-size: calc(var(--wc-card-w) * var(--wc-face-rank-size));
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
   color: var(--wc-suit, var(--wc-ink-soft));
 }
 
-/* AC12/DLR-148: a skull REPLACES the card's art on every rank and suit — one bone skull on one
-   dark wash, identical whatever the card, so a player recognises it across the table without
-   reading it. Positioned and sized where the previous corner disc sat; only the artwork inside
-   changed, from a `☠` glyph to the shared `#wc-skull` symbol referenced by `<use>`. PLACEHOLDER
-   colours, transcribed verbatim from
-   `.claude/contract/DLR-147-full-ui-pass/mockup-trick-readout.html`'s `--skull-a` / `--skull-b`
-   / `--bone` tokens — the developer's to retune. */
-.wc-card .wc-card-skull-face {
-  position: absolute;
-  top: calc(var(--wc-card-w) * 0.07);
-  right: calc(var(--wc-card-w) * 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: calc(var(--wc-card-w) * 0.24);
-  height: calc(var(--wc-card-w) * 0.24);
-  border-radius: 50%;
-  background: radial-gradient(72% 58% at 50% 32%, #4a423a 0%, #2b2622 46%, #0d0b09 100%);
-  color: #efe8d7;
+.wc-card-name {
+  grid-row: 2;
+  grid-column: 1 / -1;
+  font-family: var(--wc-serif);
+  font-size: calc(var(--wc-card-w) * var(--wc-face-name-size));
+  letter-spacing: 0.02em;
+  margin-top: 0.15em;
+  color: var(--wc-ink-soft);
+  white-space: nowrap;
 }
 
-.wc-card .wc-card-skull-face svg {
-  width: 68%;
-  height: 68%;
+/* AC6 degrades honestly: below the threshold the name is suppressed rather than rendered
+   illegibly. `150px` is a PLACEHOLDER literal — the developer's to retune — and it has to stay a
+   literal: a custom property cannot appear inside an `@container` (or `@media`) query condition,
+   so there is no `--wc-card-name-min-w` lever to grep for. Retuning this threshold means editing
+   the `150px` right here. */
+@container (max-width: 150px) {
+  .wc-card-name {
+    display: none;
+  }
 }
 
-/* The skull's eye sockets, nasal cavity and teeth gaps — a fixed dark shadow regardless of suit,
-   tier or greyscale. Set via a class + `fill` here rather than a `var()` inside the SVG's own
-   `fill` attribute: presentation attributes do not reliably resolve `var()` cross-browser. */
-.wc-skull-shadow {
-  fill: var(--wc-skull-shadow);
-}
-
-/* DLR-90/AC2: the Timebomb mark, once a marked card is face up. Bottom-left — the ONE corner the
-   rank (top-left), the skull (top-right) and the pip (bottom-right) leave free, so a card carrying
-   both marks stays legible. A ringed badge rather than a bare tinted glyph, per `game-ux`'s
-   "state reads without motion or colour alone": the ring is the form signal, the fill colour is
-   secondary. PLACEHOLDER glyph and hue — the developer's to retune. */
-.wc-card .wc-primed-mark {
-  position: absolute;
-  bottom: calc(var(--wc-card-w) * 0.07);
-  left: calc(var(--wc-card-w) * 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: calc(var(--wc-card-w) * 0.24);
-  height: calc(var(--wc-card-w) * 0.24);
-  border-radius: 50%;
-  border: 2px solid var(--wc-parchment);
-  background: var(--wc-timebomb-edge);
-  color: var(--wc-parchment);
-  font-size: calc(var(--wc-card-w) * 0.13);
-  line-height: 1;
-}
-
-/* An ability marker, not a printed name — "WOODCUTTER" cannot fit at this width
-   without becoming unreadable. The rank identifies which ability; the full name
-   lives in the accessible label and in the hint under the hand. */
-.wc-card-pip {
-  position: absolute;
-  right: calc(var(--wc-card-w) * 0.11);
-  bottom: calc(var(--wc-card-w) * 0.11);
-  width: calc(var(--wc-card-w) * 0.12);
-  height: calc(var(--wc-card-w) * 0.12);
-  border-radius: 50%;
-  background: var(--wc-brass-dim);
-  opacity: 0.85;
-}
-
-.wc-card-pip.wc-is-blank {
-  background: transparent;
-}
-
-.wc-card.wc-suit-bells {
-  --wc-suit: var(--wc-bells);
-}
-.wc-card.wc-suit-keys {
-  --wc-suit: var(--wc-keys);
-}
-.wc-card.wc-suit-moons {
-  --wc-suit: var(--wc-moons);
+.wc-card-suit {
+  grid-row: 1;
+  grid-column: 2;
+  width: calc(var(--wc-card-w) * var(--wc-face-corner-glyph));
+  height: calc(var(--wc-card-w) * var(--wc-face-corner-glyph));
+  color: var(--wc-suit, var(--wc-ink-soft));
 }
 
 /* cards on the table or the pile are condensed — a record, not a choice */
@@ -257,29 +264,36 @@
     0 clamp(6px, 1.6vmin, 14px) clamp(10px, 2.6vmin, 22px) #00000090;
 }
 
-/* The base placement — rotation and lift from `fanPlacement`, carried in via the two
-   `--wc-fan-*` custom properties `HandFan` sets inline. This is the ONLY rule that reads
-   `--wc-fan-lift`: hover/active/armed below replace it outright with a flat lift value
-   rather than adding to it, exactly as the approved mockup's own stylesheet does. Keeping
-   `transform` itself out of the inline style is what lets these rules take effect at all —
-   an inline `style.transform` always beats an external rule with no `!important`. */
+/* The RESTING state of a hand card: upright and flat. The fan's per-card rotation and lift arc
+   were retired in the DLR-149 follow-up, along with the two `--wc-fan-*` custom properties that
+   carried them in from `fanPlacement` — the hand is a straight gapped row now
+   (`warCouncilHand.css`). Declared rather than left at `transform: none` so the three
+   interaction states below have an explicit resting value to transition back to.
+
+   The INTERACTION lifts stay: they are what makes a card feel selectable, and `game-ux` counts
+   that feedback as load-bearing rather than decoration. Each one replaces the resting value
+   outright rather than adding to it. */
 .wc-fan .wc-card {
-  transform: var(--wc-fan-lift, translateY(0%)) var(--wc-fan-rot, rotate(0deg));
+  transform: translateY(0%);
 }
 
 @media (hover: hover) {
   .wc-fan .wc-card:not(.wc-is-illegal):hover {
-    transform: translateY(-9%) var(--wc-fan-rot, rotate(0deg));
+    transform: translateY(-9%);
   }
 }
 
 .wc-fan .wc-card:not(.wc-is-illegal):active {
-  transform: translateY(-5%) var(--wc-fan-rot, rotate(0deg));
+  transform: translateY(-5%);
 }
 
+/* The armed card is the only one that grows past its own resting box, so it is the only one
+   that needs to paint over its neighbours — which is why the fan's per-slot `z-index` could go
+   and this one declaration is now the single owner of hand-card stacking. `.wc-fan-slot` sets
+   no `z-index` at all, so this competes directly with its sibling cards. */
 .wc-fan .wc-card.wc-is-armed,
 .wc-fan .wc-card.wc-is-armed:hover {
-  transform: translateY(-20%) rotate(0deg) scale(1.05);
+  transform: translateY(-20%) scale(1.05);
   z-index: 20;
 }
 

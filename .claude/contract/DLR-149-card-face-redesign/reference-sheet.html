@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>The Hunt — every card</title>
+<style>
+/* ============================================================================
+   Card face mockup — 2026-08-26, second pass
+   A REFERENCE SHEET, not a game screen: it is allowed to scroll. game-ux's
+   no-scroll floor applies to playable surfaces only.
+
+   Rule text is NOT printed on the face — the developer is adding tooltips.
+   It is still carried in each card's aria-label and in a demo tooltip, so the
+   sheet stays usable and so the tooltip pattern can be judged.
+   Rules transcribed from .docs/game_rules/the-hunt.md.
+   Everything marked PLACEHOLDER is a tuning value the developer owns.
+   ========================================================================== */
+:root {
+  --wc-chamber:#0c1013; --wc-chamber-lift:#141a1f;
+  --wc-parchment:#f2ecdc; --wc-parchment-shade:#ded3b8; --wc-parchment-deep:#c4b593;
+  --wc-ink:#191610; --wc-ink-soft:#5c5443;
+  --wc-brass:#c99a4e; --wc-brass-dim:#7d6132;
+  --wc-chalk:#cdd6d2; --wc-chalk-dim:#6f7d78;
+  --wc-bells:#c9873f; --wc-keys:#5f93a8; --wc-moons:#9c7cb8;
+  --wc-serif:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+  --wc-sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+
+  /* PLACEHOLDER — card size, and how much of the face the art takes. */
+  --card-w:clamp(8.5rem, 12vw, 11.5rem);
+  --art-top:22%;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--wc-chamber); color:var(--wc-chalk);
+  font-family:var(--wc-sans); -webkit-font-smoothing:antialiased; color-scheme:dark;
+  padding:clamp(1rem,3vw,2.5rem) clamp(.8rem,3vw,2.5rem) 5rem; }
+
+h1 { margin:0 0 .3rem; font-family:var(--wc-serif); font-weight:400;
+  font-size:clamp(1.3rem,3.4vw,2rem); color:var(--wc-brass); }
+.lede { margin:0 0 1.4rem; max-width:60ch; color:var(--wc-chalk-dim);
+  font-size:clamp(.75rem,1.6vw,.86rem); line-height:1.55; }
+.lede b { color:var(--wc-chalk); font-weight:600; }
+code { background:#1a2226; padding:.06rem .3rem; border-radius:3px; font-size:.94em; }
+
+.legend { display:flex; flex-wrap:wrap; gap:.55rem; margin:0 0 1.4rem; }
+.legend span { display:flex; align-items:center; gap:.4rem; padding:.35rem .6rem;
+  border:1px solid #26333a; border-radius:8px; background:var(--wc-chamber-lift);
+  font-size:.7rem; color:var(--wc-chalk-dim); }
+.legend i { width:.85rem; height:.85rem; border-radius:3px; flex:0 0 auto; }
+.key-act { background:var(--wc-brass); }
+.key-inert { background:transparent; border:1px dashed var(--wc-chalk-dim); }
+.key-plain { background:var(--wc-parchment-shade); }
+
+.controls { display:flex; flex-wrap:wrap; gap:.4rem; margin:0 0 1.7rem; align-items:center; }
+.controls button { min-height:2.4rem; padding:.4rem .8rem; border-radius:8px;
+  border:1px solid var(--wc-brass-dim); background:linear-gradient(160deg,#2a2418,#1a1710);
+  color:var(--wc-brass); font-family:var(--wc-serif); font-size:.78rem; cursor:pointer;
+  touch-action:manipulation; transition:filter 140ms ease, transform 140ms ease; }
+.controls button[aria-pressed='true'] { border:2px dashed var(--wc-brass); transform:translateY(-2px); }
+.controls button:focus-visible { outline:2px solid var(--wc-brass); outline-offset:3px; }
+@media (hover:hover) { .controls button:hover { filter:brightness(1.15); } }
+
+.suit-sec { margin:0 0 2.6rem; }
+.suit-head { display:flex; align-items:center; gap:.6rem; margin:0 0 .9rem;
+  padding-bottom:.5rem; border-bottom:1px solid #232c33; }
+.suit-head h2 { margin:0; font-family:var(--wc-serif); font-weight:400;
+  font-size:clamp(1rem,2.4vw,1.35rem); }
+.suit-head .glyph { width:1.5rem; height:1.5rem; }
+.suit-head small { margin-left:auto; color:var(--wc-chalk-dim); font-size:.7rem; }
+.suit-head.bells { color:var(--wc-bells); }
+.suit-head.keys  { color:var(--wc-keys); }
+.suit-head.moons { color:var(--wc-moons); }
+
+/* fixed track, not `1fr` -- filtering to five cards must not blow them up */
+.row { display:grid; gap:clamp(.55rem,1.3vw,1rem); justify-content:start;
+  grid-template-columns:repeat(auto-fill,var(--card-w)); }
+
+/* ============================ the card ================================== */
+.card { position:relative; aspect-ratio:5/7; border-radius:clamp(6px,.9vw,11px);
+  background:radial-gradient(120% 90% at 50% 0%, #fffbf2 0%, var(--wc-parchment) 44%,
+             var(--wc-parchment-shade) 100%);
+  border:1px solid var(--wc-parchment-deep); color:var(--wc-ink);
+  --suit:var(--wc-ink); --art-a:#ccc; --art-b:#eee; --fig:#333;
+  box-shadow:0 5px 14px #00000070, inset 0 0 0 1px #ffffffaa;
+  overflow:hidden; display:block; width:100%; padding:0; cursor:pointer;
+  font-family:var(--wc-sans); text-align:left; }
+.card.bells { --suit:var(--wc-bells); --art-a:#e08a3a; --art-b:#ffe3ad; --fig:#40260c; }
+.card.keys  { --suit:var(--wc-keys);  --art-a:#6f9fc0; --art-b:#eaf5fd; --fig:#132e3d; }
+.card.moons { --suit:var(--wc-moons); --art-a:#6a4f96; --art-b:#e4d8f6; --fig:#241640; }
+
+/* paper grain — the thing that stops a flat fill looking like a div */
+/* Paper grain as a tiled 64x64 bitmap, NOT an SVG filter.
+   `filter:url(#grain)` with feTurbulence was the original approach and it is a
+   REAL performance trap, not a mockup quirk: with 11 cards on screen it made
+   Chrome's Page.captureScreenshot time out at 120s, because every filtered box is
+   re-rasterised independently. A repeating bitmap costs nothing and looks the
+   same.
+   mix-blend-mode is gone for the SAME reason: a blended pseudo-element forces its
+   own compositing layer per card, and that alone still stalled the rasteriser.
+   A plain low-opacity overlay is indistinguishable on parchment and free.
+   Carry BOTH decisions into src/ -- do not reintroduce filter or blend here. */
+.card::before { content:''; position:absolute; inset:0; pointer-events:none; z-index:4;
+  opacity:.34; border-radius:inherit;
+  background-image:url(data:image/png;base64,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); background-size:64px 64px; }
+/* the printed inner rule */
+.card::after { content:''; position:absolute; inset:clamp(4px,.7vw,8px); z-index:5;
+  border:1px solid currentColor; opacity:.14; border-radius:5px; pointer-events:none; }
+
+/* ---------- corner index ---------- */
+.corner { position:absolute; z-index:3; display:grid; grid-template-columns:auto auto;
+  column-gap:.2rem; align-items:center; line-height:1; max-width:62%; }
+.corner.tl { top:5.5%; left:7%; }
+.corner.br { bottom:5.5%; right:7%; transform:rotate(180deg); }
+.corner .rank { grid-row:1; grid-column:1; font-family:var(--wc-serif);
+  font-size:clamp(1.2rem,2.9vw,1.85rem); color:var(--suit); letter-spacing:-.02em; }
+.corner .nm { grid-row:2; grid-column:1 / -1; font-family:var(--wc-serif);
+  font-size:clamp(.4rem,.85vw,.55rem); letter-spacing:.03em; margin-top:.12rem;
+  color:var(--wc-ink-soft); white-space:nowrap; }
+.corner .glyph { grid-row:1; grid-column:2; width:clamp(.72rem,1.6vw,1.05rem);
+  height:clamp(.72rem,1.6vw,1.05rem); color:var(--suit); }
+
+/* ---------- the art window: what a power card mostly IS ---------- */
+.art { position:absolute; left:7%; right:7%; top:var(--art-top); bottom:6%;
+  border-radius:5px; overflow:hidden; z-index:1;
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--fig) 22%, transparent),
+             0 1px 3px #00000026; }
+.art .wash { position:absolute; inset:0;
+  background:radial-gradient(78% 62% at 50% 34%, var(--art-b) 0%,
+             color-mix(in srgb, var(--art-a) 55%, var(--art-b)) 42%, var(--art-a) 100%); }
+/* a light behind the figure, the way every card in the reference sheet is lit */
+.art .glow { position:absolute; left:50%; top:34%; width:74%; aspect-ratio:1;
+  transform:translate(-50%,-50%); border-radius:50%;
+  background:radial-gradient(circle, #ffffff8c 0%, #ffffff33 46%, #ffffff00 72%); }
+/* suit-specific weather: sparks / snow / stars */
+.art .motes { position:absolute; inset:0; opacity:.7; }
+.card.bells .motes { background-image:
+  radial-gradient(circle at 22% 28%, #fff6de 0 1.6px, transparent 1.7px),
+  radial-gradient(circle at 68% 62%, #ffdfa0 0 1.1px, transparent 1.2px);
+  background-size:37px 44px, 23px 29px; }
+.card.keys .motes { background-image:
+  radial-gradient(circle at 30% 22%, #ffffff 0 1.7px, transparent 1.8px),
+  radial-gradient(circle at 74% 66%, #e6f4ff 0 1.2px, transparent 1.3px);
+  background-size:26px 31px, 17px 21px; }
+.card.moons .motes { background-image:
+  radial-gradient(circle at 26% 34%, #fbf6ff 0 1.5px, transparent 1.6px),
+  radial-gradient(circle at 71% 20%, #cdb9f0 0 1.1px, transparent 1.2px);
+  background-size:33px 39px, 21px 26px; }
+.art .figure { position:absolute; left:50%; bottom:6%; width:66%; transform:translateX(-50%);
+  color:var(--fig); }
+.art .figure svg { width:100%; display:block; }
+/* edge vignette, so the art sinks into the card instead of sitting on it */
+.art .vig { position:absolute; inset:0;
+  box-shadow:inset 0 0 14px 6px #00000026, inset 0 -10px 18px -6px #00000033; }
+
+/* ---------- pips: plain and inert ranks ---------- */
+/* Laid out the way a printed deck lays them out: a 3x7 lattice with explicit
+   placement per rank, and the lower half rotated 180deg so the card reads the
+   same from either end. */
+.pips { position:absolute; inset:22% 25% 22% 25%; z-index:2; display:grid;
+  grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(7,1fr);
+  justify-items:center; align-items:center; }
+.card.inert .pips { inset:25% 25% 29% 25%; }
+.pips .glyph { width:100%; max-width:clamp(.95rem,2.1vw,1.6rem); aspect-ratio:1; color:var(--suit); }
+.pips .glyph.inv { transform:rotate(180deg); }
+
+/* the inert pair still has to LOOK inert without printing a rule */
+.no-rule { position:absolute; z-index:3; left:16%; right:16%; bottom:9%; padding:3% 0;
+  border:1px dashed #b6a988; border-radius:4px; text-align:center;
+  font-family:var(--wc-serif); font-style:italic; font-size:clamp(.4rem,.84vw,.53rem);
+  color:var(--wc-ink-soft); }
+/* over a painting it needs its own ground to stay legible */
+.card.has-art .no-rule { left:15%; right:15%; bottom:8.5%;
+  background:#0d0a0699; border-color:#ffffff5e; color:#f6efe1;
+  backdrop-filter:blur(1px); }
+.card.has-art.inert .figure { bottom:17%; width:58%; }
+
+/* class reads with no colour at all */
+.card.act   { border-width:2px; border-color:var(--wc-brass-dim); }
+.card.inert { border-style:dashed; }
+.card:focus-visible { outline:2px solid var(--wc-brass); outline-offset:3px; }
+
+/* ---------- tooltip (the pattern, for judging) ---------- */
+.cell { margin:0; position:relative; display:flex; flex-direction:column; gap:.3rem; }
+.cell figcaption { font-size:.6rem; color:var(--wc-chalk-dim); text-align:center; }
+.cell figcaption b { color:var(--wc-chalk); font-weight:600; }
+.tip { position:absolute; left:50%; bottom:calc(100% - 1.4rem); z-index:20; width:max(11rem,105%);
+  transform:translate(-50%,.3rem); padding:.5rem .6rem; border-radius:8px;
+  background:#0f1518; border:1px solid var(--wc-brass-dim); color:var(--wc-chalk);
+  box-shadow:0 8px 20px #000000a6; font-size:.66rem; line-height:1.45;
+  opacity:0; visibility:hidden; pointer-events:none;
+  transition:opacity 120ms ease, transform 120ms ease; }
+.tip b { display:block; color:var(--wc-brass); font-family:var(--wc-serif);
+  font-weight:400; font-size:.78rem; margin-bottom:.15rem; }
+.cell:has(.card:hover) .tip,
+.cell:has(.card:focus-visible) .tip,
+.cell.open .tip { opacity:1; visibility:visible; transform:translate(-50%,0); }
+.cell[hidden] { display:none; }
+
+.foot { margin:3rem 0 0; padding-top:1.2rem; border-top:1px solid #232c33;
+  max-width:72ch; color:var(--wc-chalk-dim); font-size:.72rem; line-height:1.6; }
+.foot h3 { margin:0 0 .4rem; color:var(--wc-brass); font-size:.8rem;
+  font-family:var(--wc-serif); font-weight:400; }
+.foot ul { margin:.3rem 0 1rem; padding-left:1.1rem; }
+.foot li { margin:.3rem 0; }
+
+@media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
+
+/* ---------- sheet navigation — NOT part of the game UI ----------
+   position:fixed so it costs the layout nothing: the gallery is a full-viewport
+   no-scroll shell and must not gain a nav row. Kept quiet and out of the way. */
+.sheetnav { position:fixed; left:.6rem; bottom:.6rem; z-index:60; display:flex; flex-wrap:wrap;
+  align-items:center; gap:.28rem; padding:.3rem .45rem; border-radius:9px;
+  border:1px solid #2a373d; background:#0b1113ee; backdrop-filter:blur(3px);
+  font-family:system-ui,-apple-system,'Segoe UI',sans-serif; font-size:.58rem;
+  max-width:min(34rem, calc(100vw - 1.2rem)); }
+.sheetnav > span { color:#54635e; letter-spacing:.09em; margin-right:.15rem; }
+.sheetnav a { text-decoration:none; padding:.16rem .4rem; border-radius:5px; color:#9fb0aa;
+  border:1px solid transparent; white-space:nowrap; }
+.sheetnav a:hover { color:#e6d3ac; border-color:#7d6132; background:#1a1710; }
+.sheetnav a:focus-visible { outline:2px solid #c99a4e; outline-offset:2px; }
+.sheetnav a[aria-current='page'] { color:#c99a4e; border-color:#3c4b45; background:#141c20; }
+.sheetnav a.home { color:#c99a4e; }
+@media print { .sheetnav { display:none; } }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <!-- Suit glyphs, elaborated from src/app/warCouncil/SuitMark.tsx. Stroke-based on purpose:
+       these render from ~14px (a pip) to ~28px (the corner index) and strokes hold at both.
+       NOTE the real SuitMark deliberately sets no stroke-width so call sites can set weight in
+       CSS; these carry one only because this sheet has no such component. -->
+  <symbol id="s-bells" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="2.9" r="1.05"/>
+      <path d="M12 4.9v.8"/>
+      <path d="M6.6 16.1v-4.3a5.4 5.4 0 0 1 10.8 0v4.3"/>
+      <path d="M4.4 16.1h15.2"/>
+      <path d="M9.9 18.7a2.1 2.1 0 0 0 4.2 0"/>
+      <path d="M9.3 12.1a2.7 2.7 0 0 1 2.4-2.4" opacity=".5"/>
+      <path d="M8.5 16.1v-3.7M15.5 16.1v-3.7" opacity=".3"/>
+    </g>
+  </symbol>
+  <symbol id="s-keys" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="6.5" r="3.7"/>
+      <circle cx="12" cy="6.5" r="1.35" opacity=".55"/>
+      <path d="M12 10.2V21"/>
+      <path d="M12 14.3h3.5M12 17h2.7"/>
+      <path d="M12 19.5h1.9" opacity=".55"/>
+    </g>
+  </symbol>
+  <symbol id="s-moons" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15.4 3.6a8.4 8.4 0 1 0 4.1 12 6.9 6.9 0 0 1-4.1-12z"/>
+      <circle cx="9.5" cy="9.7" r="1.15" opacity=".45"/>
+      <circle cx="7.7" cy="14.3" r=".8" opacity=".4"/>
+      <circle cx="11.7" cy="15.5" r=".62" opacity=".35"/>
+    </g>
+  </symbol>
+</svg>
+
+<h1>The Hunt — every card</h1>
+<p class="lede">
+  Thirty-three cards, read by two signals. <b>A painting means the card has a character</b> — the five
+  acting ranks (1, 3, 5, 9, 11) and the Treasure (7), whose treasure differs by suit: harp, chalice,
+  sword. <b>The border says whether it acts</b> — solid for the five that do, dashed plus a “no rule”
+  mark for the Treasure, which is illustrated but inert. Plain numbers carry pips.
+  <b>No rule text is printed</b> — hover, focus or tap a card for the tooltip.
+</p>
+
+<div class="legend">
+  <span><i class="key-act"></i>Acts — 2px border, full art window</span>
+  <span><i class="key-inert"></i>Named, no rule — dashed border, pips, “no rule” mark</span>
+  <span><i class="key-plain"></i>Plain number — pips, no name</span>
+</div>
+
+<div class="controls" role="group" aria-label="Filter the sheet">
+  <button data-show="all" aria-pressed="true">All 33</button>
+  <button data-show="act" aria-pressed="false">Only the 15 that act</button>
+  <button data-show="named" aria-pressed="false">Only named cards</button>
+  <button data-show="plain" aria-pressed="false">Only plain numbers</button>
+</div>
+
+<main id="sheet"></main>
+
+<section class="foot">
+  <h3>Notes</h3>
+  <ul>
+    <li><b>Two signals, not one.</b> Art marks a card with a <em>character</em>; the border marks whether
+      it <em>acts</em>. The Treasure is the case that needs both — it is a real named card from the deck
+      and deserves a painting, but it does nothing, so it keeps the dashed border and the “no rule”
+      mark. You can still tell at a glance which cards in a hand can change anything.</li>
+    <li><b>Rank 8 has no art, deliberately.</b> Not because it is inert — the Treasure is inert and is
+      painted — but because it has no settled name, so there is no character to paint yet. Give it a
+      name and it should get a picture.</li>
+    <li><b>The figures are hand-drawn SVG silhouettes</b> — swan, fox, axe, witch, crown — lit from
+      behind and set in a suit-tinted vignette, with sparks for Bells, snow for Keys and stars for
+      Moons. They are <em>compositional placeholders</em>: they show the pose, the crop and how much of
+      the face a painting gets. They are not final art.</li>
+    <li><b>No printed rule.</b> Tooltips carry it, as you asked. The demo tooltip fires on hover,
+      focus <em>and</em> tap — worth keeping all three: touch has no hover, so a rule reachable only by
+      hovering is unreachable on a phone.</li>
+    <li><b>Rank 8’s name is still unresolved</b> and I have not picked one.
+      <code>the-hunt.md</code> logs the rename as open, <code>src/warCouncil/types.ts</code> calls it
+      <code>Poison</code>, the doc calls it Timebomb — which collides with the Timebomb <em>buff</em>.
+      Labelled “rank 8” here.</li>
+    <li><b>PLACEHOLDER — yours:</b> card size, <code>--art-top</code> (how much face the art takes),
+      the three art palettes, parchment tones, pip scale, and the grain strength.</li>
+  </ul>
+</section>
+
+<script>
+const SUITS = [
+  { id:'bells', name:'Bells', glyph:'s-bells', pal:{ d:'#3a2109', m:'#7a4d1c', l:'#c99a55', w:'#fff4dd' } },
+  { id:'keys',  name:'Keys',  glyph:'s-keys',  pal:{ d:'#0f2735', m:'#2b556e', l:'#7fb0cd', w:'#f2fbff' } },
+  { id:'moons', name:'Moons', glyph:'s-moons', pal:{ d:'#1e1236', m:'#43306e', l:'#8f74bd', w:'#f6f0ff' } },
+];
+
+/* Layered vector illustrations — three tones per suit plus highlights, gradient
+   fills, rim light and a cast shadow. Still placeholders for painted art, but
+   they carry form rather than being flat cut-outs. Gradient ids are suffixed per
+   instance: 15 copies of these live on one page and duplicate ids would collide. */
+const FIGURE = {
+  swan: (p,u) => `<defs>
+      <linearGradient id="sw${u}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${p.w}"/><stop offset="1" stop-color="${p.l}"/>
+      </linearGradient></defs>
+      <ellipse cx="50" cy="88" rx="42" ry="6" fill="${p.d}" opacity=".22"/>
+      <path d="M14 74c0-11 14-19 32-19s34 7 34 18c0 8-13 14-33 14S14 82 14 74z" fill="url(#sw${u})"/>
+      <path d="M27 67c9-8 23-11 35-7-6 3-10 8-12 13-9 2-17 0-23-6z" fill="${p.w}"/>
+      <path d="M22 77c11-6 25-8 37-4" stroke="${p.l}" stroke-width="2" fill="none" opacity=".75"/>
+      <path d="M64 66C50 54 55 28 72 24" fill="none" stroke="url(#sw${u})" stroke-width="10" stroke-linecap="round"/>
+      <circle cx="74" cy="23" r="8.5" fill="${p.w}"/>
+      <path d="M81 20l13 4-13 5z" fill="${p.l}"/>
+      <circle cx="77.5" cy="21" r="1.7" fill="${p.d}"/>`,
+
+  fox: (p,u) => `<ellipse cx="54" cy="91" rx="40" ry="5" fill="${p.d}" opacity=".2"/>
+      <path d="M22 88C0 80 4 46 30 42c-9 17-4 33 10 40z" fill="${p.m}"/>
+      <path d="M22 88c-8-6-12-16-12-26 0-8 3-15 8-20-3 7-4 14-4 21 0 10 3 19 8 25z" fill="${p.w}" opacity=".8"/>
+      <path d="M32 90c0-19 11-31 26-31s26 12 26 31z" fill="${p.m}"/>
+      <path d="M46 90c0-13 4-22 12-25 8 3 12 12 12 25z" fill="${p.w}" opacity=".5"/>
+      <path d="M35 44L39 12l17 17h10l17-17 4 32c0 8-3 14-9 19L61 76 44 63c-6-5-9-11-9-19z" fill="${p.m}"/>
+      <path d="M45 38l-4-18 12 11z" fill="${p.d}"/>
+      <path d="M77 38l4-18-12 11z" fill="${p.d}"/>
+      <path d="M44 50c2 11 8 19 17 24 9-5 15-13 17-24-1 13-7 22-17 27-10-5-16-14-17-27z" fill="${p.w}" opacity=".62"/>
+      <circle cx="50" cy="45" r="3" fill="${p.d}"/>
+      <circle cx="72" cy="45" r="3" fill="${p.d}"/>
+      <path d="M61 60l5 5-5 5-5-5z" fill="${p.d}"/>`,
+
+  axe: (p,u) => `<defs>
+      <linearGradient id="ax${u}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="${p.w}"/><stop offset=".55" stop-color="${p.l}"/>
+        <stop offset="1" stop-color="${p.m}"/>
+      </linearGradient></defs>
+      <ellipse cx="50" cy="93" rx="28" ry="4" fill="${p.d}" opacity=".22"/>
+      <path d="M40 92L58 24" stroke="${p.m}" stroke-width="9" stroke-linecap="round" fill="none"/>
+      <path d="M38 90L56 26" stroke="${p.d}" stroke-width="2.6" stroke-linecap="round" fill="none" opacity=".4"/>
+      <path d="M54 30c14-15 33-15 40-2-9 9-12 21-8 33-15 4-30-5-35-19z" fill="url(#ax${u})"/>
+      <path d="M54 30c10-10 23-12 33-7-9 4-14 11-15 19-8-2-14-6-18-12z" fill="${p.w}" opacity=".5"/>
+      <path d="M58 45c9 8 20 12 28 10" stroke="${p.m}" stroke-width="2" fill="none" opacity=".55"/>
+      <rect x="46" y="37" width="17" height="7" rx="3.2" transform="rotate(-15 54 40)" fill="${p.d}"/>`,
+
+  witch: (p,u) => `<defs>
+      <linearGradient id="cl${u}" x1=".28" y1="0" x2=".72" y2="1">
+        <stop offset="0" stop-color="${p.m}"/><stop offset="1" stop-color="${p.d}"/>
+      </linearGradient>
+      <radialGradient id="or${u}">
+        <stop offset="0" stop-color="#fff"/>
+        <stop offset=".42" stop-color="${p.w}" stop-opacity=".6"/>
+        <stop offset="1" stop-color="${p.w}" stop-opacity="0"/>
+      </radialGradient></defs>
+      <ellipse cx="48" cy="92" rx="33" ry="5" fill="${p.d}" opacity=".25"/>
+      <circle cx="78" cy="16" r="21" fill="url(#or${u})"/>
+      <rect x="75.5" y="18" width="5" height="74" rx="2.5" fill="${p.m}"/>
+      <circle cx="78" cy="15" r="7.5" fill="none" stroke="${p.l}" stroke-width="3.5"/>
+      <circle cx="78" cy="15" r="3" fill="#fff"/>
+      <path d="M22 92c0-30 10-48 24-48s24 18 24 48z" fill="url(#cl${u})"/>
+      <path d="M30 92c1-19 5-31 11-36-3 11-4 24-3 36z" fill="${p.l}" opacity=".32"/>
+      <path d="M62 92c0-16-2-27-6-34 7 6 11 19 12 34z" fill="${p.d}" opacity=".45"/>
+      <path d="M32 52c0-13 6-21 14-21s14 8 14 21c0 7-28 7-28 0z" fill="${p.d}"/>
+      <ellipse cx="46" cy="48" rx="7" ry="8.5" fill="${p.w}" opacity=".92"/>
+      <path d="M39 45c1-5 4-9 8-11-4 5-6 10-6 16z" fill="${p.d}" opacity=".3"/>
+      <circle cx="44" cy="47" r="1.6" fill="${p.d}"/>
+      <circle cx="49.5" cy="47" r="1.6" fill="${p.d}"/>`,
+
+  harp: (p,u) => `<defs>
+      <linearGradient id="hp${u}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="${p.w}"/><stop offset=".5" stop-color="${p.l}"/>
+        <stop offset="1" stop-color="${p.m}"/>
+      </linearGradient></defs>
+      <ellipse cx="50" cy="92" rx="26" ry="4" fill="${p.d}" opacity=".24"/>
+      <rect x="29" y="79" width="42" height="10" rx="5" fill="url(#hp${u})"/>
+      <rect x="29" y="79" width="42" height="3.5" rx="1.75" fill="${p.w}" opacity=".35"/>
+      <path d="M35 81c-5-23 0-42 13-55 3-3 8 0 6 4-10 12-15 29-12 51z" fill="url(#hp${u})"/>
+      <path d="M62 81c1-18 1-34-1-47l7-2c2 14 2 31 1 49z" fill="url(#hp${u})"/>
+      <path d="M49 27l21-5 2 9-22 4z" fill="${p.m}"/>
+      <g stroke="${p.w}" stroke-width="1.1" opacity=".8" stroke-linecap="round">
+        <path d="M53 32L44 79"/><path d="M58 31L51 79"/>
+        <path d="M63 30L58 79"/><path d="M68 29L65 79"/>
+      </g>
+      <circle cx="70" cy="25" r="3.4" fill="${p.w}"/>`,
+
+  chalice: (p,u) => `<defs>
+      <linearGradient id="ch${u}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="${p.w}"/><stop offset=".55" stop-color="${p.l}"/>
+        <stop offset="1" stop-color="${p.m}"/>
+      </linearGradient></defs>
+      <ellipse cx="50" cy="93" rx="23" ry="4" fill="${p.d}" opacity=".24"/>
+      <path d="M31 84h38c2 0 3 2 3 4s-1 4-3 4H31c-2 0-3-2-3-4s1-4 3-4z" fill="url(#ch${u})"/>
+      <rect x="45.5" y="58" width="9" height="27" fill="url(#ch${u})"/>
+      <ellipse cx="50" cy="66" rx="6.5" ry="5" fill="${p.l}"/>
+      <path d="M27 28h46c0 19-10 32-23 32S27 47 27 28z" fill="url(#ch${u})"/>
+      <ellipse cx="50" cy="28" rx="23" ry="5.5" fill="${p.w}"/>
+      <ellipse cx="50" cy="28" rx="17" ry="3.6" fill="${p.m}" opacity=".55"/>
+      <path d="M31 32c2 12 8 21 17 24-11-2-19-12-21-24z" fill="${p.w}" opacity=".45"/>
+      <circle cx="50" cy="44" r="4.2" fill="${p.w}" opacity=".85"/>`,
+
+  sword: (p,u) => `<defs>
+      <linearGradient id="sd${u}" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="${p.w}"/><stop offset=".5" stop-color="${p.l}"/>
+        <stop offset="1" stop-color="${p.m}"/>
+      </linearGradient></defs>
+      <ellipse cx="50" cy="94" rx="17" ry="3.5" fill="${p.d}" opacity=".24"/>
+      <path d="M50 8l8 16v42H42V24z" fill="url(#sd${u})"/>
+      <path d="M50 8l8 16v42h-8z" fill="${p.d}" opacity=".22"/>
+      <path d="M27 64h46c2 0 3 2 3 4.5s-1 4.5-3 4.5H27c-2 0-3-2-3-4.5S25 64 27 64z" fill="${p.m}"/>
+      <path d="M27 64h46c2 0 3 1 3 2H24c0-1 1-2 3-2z" fill="${p.w}" opacity=".4"/>
+      <rect x="45.5" y="73" width="9" height="15" rx="3" fill="${p.d}"/>
+      <circle cx="50" cy="90" r="5.2" fill="url(#sd${u})"/>
+      <circle cx="50" cy="68.5" r="3.2" fill="${p.w}"/>`,
+
+  crown: (p,u) => `<defs>
+      <linearGradient id="cr${u}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${p.l}"/><stop offset=".6" stop-color="${p.m}"/>
+        <stop offset="1" stop-color="${p.d}"/>
+      </linearGradient></defs>
+      <ellipse cx="50" cy="93" rx="31" ry="4" fill="${p.d}" opacity=".24"/>
+      <path d="M18 74L10 26l22 17L50 16l18 27 22-17-8 48z" fill="url(#cr${u})"/>
+      <path d="M18 74L10 26l22 17L50 16v58z" fill="${p.w}" opacity=".16"/>
+      <rect x="15" y="75" width="70" height="15" rx="5" fill="url(#cr${u})"/>
+      <rect x="15" y="75" width="70" height="5" rx="2.5" fill="${p.w}" opacity=".28"/>
+      <circle cx="50" cy="29" r="5" fill="${p.w}"/>
+      <circle cx="23" cy="59" r="4" fill="${p.w}" opacity=".85"/>
+      <circle cx="77" cy="59" r="4" fill="${p.w}" opacity=".85"/>
+      <circle cx="32" cy="83" r="3.4" fill="${p.w}" opacity=".68"/>
+      <circle cx="50" cy="83" r="3.4" fill="${p.w}" opacity=".68"/>
+      <circle cx="68" cy="83" r="3.4" fill="${p.w}" opacity=".68"/>`,
+};
+
+/* Names and rules: .docs/game_rules/the-hunt.md -> the named-rank table. */
+const RANKS = {
+  1:  { name:'Swan', cls:'act', fig:'swan',
+        rule:'If a Swan is in a trick and belongs to the side that lost it, that side leads the next trick.' },
+  3:  { name:'Fox', cls:'act', fig:'fox',
+        rule:'On playing it, you may exchange the decree card for a card from your hand. Its suit becomes the new trump.' },
+  5:  { name:'Woodcutter', cls:'act', fig:'axe',
+        rule:'On playing it, draw the top card of the draw pile, then put one card from your hand on the bottom of the pile.' },
+  7:  { name:'Treasure', cls:'inert', figBySuit:{ bells:'harp', keys:'chalice', moons:'sword' },
+        rule:'No effect. A named card with no rule attached.' },
+  8:  { name:'rank 8', cls:'inert', rule:'No effect. A named card with no rule attached. Its name is unresolved.' },
+  9:  { name:'Witch', cls:'act', fig:'witch',
+        rule:'If a trick contains exactly one Witch, that Witch counts as trump when the winner is decided.' },
+  11: { name:'Monarch', cls:'act', fig:'crown',
+        rule:'When led, the follower may play only their Swan of that suit, or their highest card of that suit.' },
+};
+
+/* [row, column] in the 3x7 lattice. Only even ranks and rank 8 ever need pips —
+   everything else carries a painting. */
+const PIP_LAYOUT = {
+  2:  [[1,2],[7,2]],
+  4:  [[1,1],[1,3],[7,1],[7,3]],
+  6:  [[1,1],[1,3],[4,1],[4,3],[7,1],[7,3]],
+  8:  [[1,1],[1,3],[3,1],[3,3],[5,1],[5,3],[7,1],[7,3]],
+  10: [[1,1],[1,3],[3,1],[3,3],[5,1],[5,3],[7,1],[7,3],[2,2],[6,2]],
+};
+function pipField(suit, rank) {
+  const spots = PIP_LAYOUT[rank]
+    || Array.from({ length: rank }, (_, i) => [Math.min(7, i + 1), 2]);
+  return `<span class="pips">` + spots.map(([r, c]) =>
+    `<svg class="glyph${r > 4 ? ' inv' : ''}" style="grid-row:${r};grid-column:${c}"
+      aria-hidden="true"><use href="#${suit.glyph}"/></svg>`).join('') + `</span>`;
+}
+
+const glyph = (id, cls) => `<svg class="glyph ${cls||''}" aria-hidden="true"><use href="#${id}"/></svg>`;
+let uid = 0;
+
+function cardEl(suit, rank) {
+  const meta = RANKS[rank] || { name:null, cls:'plain', rule:null };
+  const named = Boolean(meta.name);
+  const id = 'tip' + (++uid);
+
+  const corner = pos => `<span class="corner ${pos}"><span class="rank">${rank}</span>` +
+    (named ? `<span class="nm">${meta.name}</span>` : '') + glyph(suit.glyph) + `</span>`;
+
+  const figKey = meta.figBySuit ? meta.figBySuit[suit.id] : meta.fig;
+  const body = figKey
+    ? `<span class="art"><span class="wash"></span><span class="glow"></span>
+         <span class="motes"></span>
+         <span class="figure"><svg viewBox="0 0 100 100" aria-hidden="true">${FIGURE[figKey](suit.pal, id)}</svg></span>
+         <span class="vig"></span></span>`
+    : pipField(suit, rank);
+
+  // A printed card repeats its index in the opposite corner only when nothing is
+  // printed there — the reference sheet's 6 has both corners, its 9 (Witch) has one.
+  const mirrored = meta.cls === 'plain' ? corner('br') : '';
+
+  const label = `${rank} of ${suit.name}${named ? ' — ' + meta.name : ''}. `
+    + (meta.rule ?? 'Plain number card, no rule.');
+
+  const fig = document.createElement('figure');
+  fig.className = 'cell';
+  fig.dataset.cls = meta.cls;
+  fig.dataset.named = named ? 'yes' : 'no';
+  fig.dataset.art = figKey ? 'yes' : 'no';
+
+  // The inert pair still has to declare itself without printing a rule.
+  const chip = meta.cls === 'inert' ? `<span class="no-rule">no rule</span>` : '';
+
+  fig.innerHTML =
+    `<div class="tip" id="${id}" role="tooltip"><b>${rank}${named ? ' · ' + meta.name : ''}</b>` +
+      `${meta.rule ?? 'Plain number card. No rule.'}</div>` +
+    `<button type="button" class="card ${meta.cls}${figKey ? ' has-art' : ''} ${suit.id}"
+             aria-label="${label}" aria-describedby="${id}">
+       ${corner('tl')}${body}${chip}${mirrored}
+     </button>` +
+    `<figcaption><b>${rank}</b>${named ? ' · ' + meta.name : ''}</figcaption>`;
+
+  // touch has no hover — tapping must reach the same text
+  fig.querySelector('.card').addEventListener('click', () => {
+    document.querySelectorAll('.cell.open').forEach(c => { if (c !== fig) c.classList.remove('open'); });
+    fig.classList.toggle('open');
+  });
+  return fig;
+}
+
+const sheet = document.getElementById('sheet');
+for (const suit of SUITS) {
+  const sec = document.createElement('section');
+  sec.className = 'suit-sec';
+  sec.innerHTML = `<div class="suit-head ${suit.id}">${glyph(suit.glyph)}<h2>${suit.name}</h2>
+      <small>11 cards · 5 act · 2 named but inert</small></div><div class="row"></div>`;
+  const row = sec.querySelector('.row');
+  for (let r = 1; r <= 11; r++) row.appendChild(cardEl(suit, r));
+  sheet.appendChild(sec);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.cell.open').forEach(c => c.classList.remove('open'));
+});
+
+document.querySelectorAll('.controls button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.controls button').forEach(b => b.setAttribute('aria-pressed','false'));
+    btn.setAttribute('aria-pressed','true');
+    const show = btn.dataset.show;
+    document.querySelectorAll('.cell').forEach(cell => {
+      const c = cell.dataset.cls, named = cell.dataset.named === 'yes';
+      cell.hidden = !(show === 'all' || (show === 'act' && c === 'act')
+        || (show === 'named' && named) || (show === 'plain' && c === 'plain'));
+    });
+  });
+});
+</script>
+<nav class="sheetnav" aria-label="Mockup sheets"><span>DLR-147</span><a class="home" href="index.html">Contents</a><a href="mockup-buff-gallery.html">Gallery</a><a href="mockup-buff-metal.html">Buff card</a><a href="mockup-trick-readout.html">Trick</a><a href="mockup-util-cards.html">Cheat & Timebomb</a><a href="mockup-card-faces.html" aria-current="page">Playing cards</a><a href="mockup-buff-suit.html">Suit options</a></nav>
+</body>
+</html>

@@ -1,7 +1,6 @@
-import { useId, type CSSProperties } from 'react'
+import { useId } from 'react'
 import { containsCard, isPrimed, sameCard, type Card } from '../../warCouncil'
 import type { CardDamagePreview } from './cardDamage'
-import { fanPlacement } from './fanLayout'
 import { cardDamageGlyphText, cardDamageText, cardKey } from './labels'
 import PlayingCard from './PlayingCard'
 import { useRovingTabIndex } from './useRovingTabIndex'
@@ -40,13 +39,21 @@ interface HandFanProps {
   readonly onCancel: () => void
 }
 
-type FanCardStyle = CSSProperties & { '--wc-fan-rot'?: string; '--wc-fan-lift'?: string }
-
 /**
- * The fanned hand (AC1): every card in `hand` renders as a `PlayingCard`
- * positioned by `fanPlacement` — this component computes no geometry of
- * its own. Legality is always the engine's answer (`containsCard(legal,
- * card)`), never a local suit or rank comparison.
+ * The hand row (AC1): every card in `hand` renders as a `PlayingCard` in a
+ * plain flex row — this component computes no geometry of its own, and no
+ * longer carries any placement style at all. Legality is always the engine's
+ * answer (`containsCard(legal, card)`), never a local suit or rank comparison.
+ *
+ * DLR-149 follow-up — the fan is retired. It used to rotate each card, arc it
+ * on a lift curve, pull it left over its neighbour with a negative margin and
+ * stack the slots by `z-index`. The overlap made a slice of every card's
+ * visible face hit-test to the WRONG card: aiming at the left edge of the card
+ * beside an armed one landed on the armed card, which plays it rather than
+ * changing the selection. The row is gapped instead (`warCouncilHand.css`), so
+ * a card's face and its tap target are the same rectangle. The armed card's
+ * stacking is owned once, by CSS (`.wc-fan .wc-card.wc-is-armed`), because it
+ * only matters while that card is scaled past its resting box.
  *
  * The roving tabindex itself — exactly one card a tab stop, arrow keys among
  * the legal cards only (a `disabled` button cannot take focus, so an
@@ -131,25 +138,11 @@ export default function HandFan({
       >
         {hand.map((card, index) => {
           const isArmed = armed !== null && sameCard(armed, card)
-          const placement = fanPlacement(index, hand.length, isArmed)
-          // Only custom properties go inline — the actual `transform` is a single rule in
-          // warCouncilCards.css that composes this base placement with the hover/active/armed
-          // states. Setting `transform` here too would always win over those external rules
-          // (an inline style beats any stylesheet selector without `!important`), which is
-          // exactly why the hover and armed lift never used to render.
-          const style: FanCardStyle = {
-            '--wc-fan-rot': `rotate(${placement.rotateDeg}deg)`,
-            '--wc-fan-lift': `translateY(${placement.liftPct}%)`,
-          }
-          const slotStyle: CSSProperties = {
-            marginLeft: `${placement.overlapPx}px`,
-            zIndex: placement.zIndex,
-          }
           const damage = damageForCard(card)
           const damageId = `${damageIdBase}-${cardKey(card)}`
 
           return (
-            <div key={cardKey(card)} className="wc-fan-slot" style={slotStyle}>
+            <div key={cardKey(card)} className="wc-fan-slot">
               <PlayingCard
                 card={card}
                 variant="hand"
@@ -162,7 +155,6 @@ export default function HandFan({
                 discardSelected={containsCard(discardSelection, card)}
                 tabIndex={index === tabStopIndex ? 0 : -1}
                 describedBy={damage === null ? undefined : damageId}
-                style={style}
                 onTap={onTap}
               />
               {damage !== null && (

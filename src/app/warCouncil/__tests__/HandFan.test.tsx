@@ -157,31 +157,45 @@ describe('HandFan', () => {
     expect(marked.querySelector('.wc-discard-mark')).not.toBeNull()
   })
 
+  // DLR-149's tooltip joins its own rule-text id into `aria-describedby` alongside the fan's
+  // damage-strip id (AC8), so `aria-describedby` is now always non-empty and its concatenated
+  // text is no longer just the damage strip's own sentence — these assertions check the damage
+  // strip's id individually rather than the full accessible description.
   it('describes every card with its own damage strip (DLR-117 AC4)', () => {
     renderFan()
-    expect(
-      screen.getByRole('button', {
-        name: '7 of Bells',
-        description:
+    const button = screen.getByRole('button', { name: '7 of Bells' })
+    const describedByIds = button.getAttribute('aria-describedby')?.split(' ') ?? []
+    const damageText = describedByIds
+      .map((id) => document.getElementById(id)?.textContent)
+      .find((text) =>
+        text?.includes(
           'If you win this trick: 6 damage to the Quarry. If you lose: 4 damage to the Quarry, 1 damage to you.',
-      }),
-    ).toBeDefined()
+        ),
+      )
+    expect(damageText).toBeTruthy()
   })
 
   it('puts the estimate note into the description for an inexact preview', () => {
     renderFan({ damageForCard: () => ({ ...PREVIEW, exact: false }) })
     const button = screen.getByRole('button', { name: '7 of Bells' })
-    const descriptionId = button.getAttribute('aria-describedby')
-    expect(descriptionId).toBeTruthy()
-    expect(document.getElementById(descriptionId ?? '')?.textContent).toContain(
-      CARD_DAMAGE_ESTIMATE_NOTE,
-    )
+    const describedByIds = button.getAttribute('aria-describedby')?.split(' ') ?? []
+    expect(describedByIds.length).toBeGreaterThan(0)
+    const estimateText = describedByIds
+      .map((id) => document.getElementById(id)?.textContent)
+      .find((text) => text?.includes(CARD_DAMAGE_ESTIMATE_NOTE))
+    expect(estimateText).toBeTruthy()
   })
 
-  it('renders no strip and no aria-describedby when damageForCard returns null', () => {
+  it('renders no damage strip and no damage id in aria-describedby when damageForCard returns null', () => {
     renderFan({ damageForCard: () => null })
     const button = screen.getByRole('button', { name: '7 of Bells' })
-    expect(button.hasAttribute('aria-describedby')).toBe(false)
+    // aria-describedby is still non-empty — DLR-149's rule-text id is always present — but it
+    // carries no id resolving to the damage strip's own text.
+    const describedByIds = button.getAttribute('aria-describedby')?.split(' ') ?? []
+    const damageText = describedByIds
+      .map((id) => document.getElementById(id)?.textContent)
+      .find((text) => text?.startsWith('If you win this trick'))
+    expect(damageText).toBeUndefined()
     expect(document.querySelector('.wc-card-damage')).toBeNull()
   })
 

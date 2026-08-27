@@ -1,0 +1,91 @@
+/* War Council — the card ability tooltip bubble. Sibling to `warCouncilCardFace.css`, split out
+   on DLR-149 (round-2 fix loop) because the combined file exceeded the 400-line budget — the same
+   reason `warCouncilCardFace.css` itself split from `warCouncilCards.css`, and `warCouncilCards.css`
+   split from `warCouncil.css` before that. Import alongside the other card stylesheets from the
+   mount component; this file reads `--wc-card-w` (`warCouncil.css`) and `--wc-tip-anchor-x`
+   (written inline by `CardAbilityTip.tsx`). */
+
+/* ---------- tooltip (AC8) — hover, focus AND tap, resolved in React (`useCardTip`) into one
+   `open` boolean expressed as `.wc-card-tip.wc-is-open` — no :has() ---------- */
+
+/* The pointer/click host: `.wc-card:disabled { pointer-events: none }` (`warCouncilCards.css`)
+   means a `table`/`pile` card or an illegal hand card never becomes the hit-test target itself,
+   so its click is caught here on the wrapper instead — without this, the tooltip is unreachable
+   on exactly the cards a player most wants to inspect. */
+.wc-card-tip-host {
+  position: relative;
+  display: block;
+}
+
+/* Portalled to `document.body` (`position: fixed`), so `left`/`top` are viewport coordinates
+   written inline by `CardAbilityTip`, not offsets from this host. The bubble carries no id and
+   is never linked from `aria-describedby` — the rule text is already unconditionally in the
+   accessible tree via the hidden span inside the button. */
+.wc-card-tip {
+  position: fixed;
+  z-index: 90;
+  /* CRIT-1 (round-2 defender review) — this element is `position: fixed` with no ancestor
+     between it and the initial containing block that carries a `transform`/`filter`/
+     `perspective`, so a PERCENTAGE width here resolves against the viewport, not against the
+     card and not against the `11rem` floor. The old `150%` therefore meant `150vw` on every
+     open, which always exceeded `max-width: calc(100vw - 1rem)` below and made the bubble a
+     near-full-width banner every single time — not a rare edge case, as the previous version of
+     this comment claimed. `calc(var(--wc-card-w) * 1.5)` says the same "1.5x the card's own
+     width" in a real length instead, built from the already-shipped `--wc-card-w` tunable
+     (`warCouncil.css`) rather than a new invented number. */
+  width: max(11rem, calc(var(--wc-card-w) * 1.5));
+  /* D-W2 (defender fix-loop) — clamp the bubble's centre into the viewport rather than letting
+     `left` (set from `--wc-tip-anchor-x`, the anchor card's own centre) run off either edge, which
+     the outermost cards of a fan hit routinely. `6rem` is half of this rule's own `11rem` minimum
+     width plus a small edge gap, so it is derived from an existing shipped number rather than a
+     new invented one. A CSS clamp is used deliberately instead of measuring the bubble's own
+     rendered width after mount, per the runtime contract's "measured once on open" rule — no
+     `ResizeObserver`, no per-frame reflow. */
+  max-width: calc(100vw - 1rem);
+  left: clamp(6rem, var(--wc-tip-anchor-x), calc(100vw - 6rem));
+  /* `top` is the card's CURRENT, visible top edge (`useCardTip` measures `button.wc-card`, which
+     carries the lift transform), so `-100%` puts the bubble's bottom edge exactly on it and the
+     extra `0.35rem` is the gap. The closed state starts `0.25rem` lower so opening reads as a
+     small rise. */
+  transform: translate(-50%, calc(-100% - 0.1rem));
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: #0f1518;
+  border: 1px solid var(--wc-brass-dim);
+  color: var(--wc-chalk);
+  box-shadow: 0 8px 20px #000000c0;
+  font-size: 0.66rem;
+  line-height: 1.45;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.wc-card-tip b {
+  display: block;
+  color: var(--wc-brass);
+  font-family: var(--wc-serif);
+  font-weight: 400;
+  font-size: 0.78rem;
+  margin-bottom: 0.15rem;
+}
+
+/* DLR-149 round-3 fix — the bubble is portalled to `document.body`, so it is never a descendant
+   of `.wc-card-tip-host` and no descendant selector (`:hover`, `:focus-within`, an ancestor
+   `.wc-is-open`) can ever match it. All three channels — hover (mouse only), focus and tap — are
+   now resolved in React (`useCardTip`) into one `open` boolean, expressed as this class ON THE
+   BUBBLE ITSELF, so a plain single-element selector is what reveals it. */
+.wc-card-tip.wc-is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, calc(-100% - 0.35rem));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-card-tip {
+    transition: none;
+  }
+}

@@ -1,0 +1,643 @@
+<title>Card Faces at Play Size</title>
+<style>
+/* ============================================================================
+   DLR-149 — the card face AT THE SIZES IT ACTUALLY SHIPS AT.
+   The reference sheet (reference-sheet.html) settled the composition at
+   ~11.5rem. This sheet answers the question it could not: does that face
+   survive at --wc-card-w, which is clamp(2.9rem, 6.2vmin, 4.3rem) today —
+   46px to 69px, roughly a third of the sheet's width.
+   Every geometry number below is a --wc-face-* custom property mirroring
+   CARD_FACE_GEOMETRY in the plan's cardFace.ts.
+   PLACEHOLDER, the developer's: card width, aspect ratio, figure palettes,
+   grain opacity, and the name-line threshold.
+   ========================================================================== */
+:root {
+  --wc-chamber:#0c1013; --wc-chamber-lift:#141a1f; --wc-felt:#16302b;
+  --wc-parchment:#e9e1cd; --wc-parchment-shade:#d3c8ae; --wc-parchment-deep:#c4b593;
+  --wc-ink:#191610; --wc-ink-soft:#5c5443;
+  --wc-brass:#c99a4e; --wc-brass-dim:#7d6132;
+  --wc-chalk:#cdd6d2; --wc-chalk-dim:#6f7d78;
+  --wc-bells:#c9873f; --wc-keys:#5f93a8; --wc-moons:#9c7cb8;
+  --wc-serif:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+  --wc-sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+
+  /* --- the two live tunables, driven by the sliders --- */
+  --wc-card-w: 4.3rem;
+  --wc-card-aspect: 2 / 3;
+  --wc-plate-card-w: calc(var(--wc-card-w) * 0.744);
+
+  /* --- CARD_FACE_GEOMETRY, as fractions of the card box --- */
+  --wc-face-corner-x:.06; --wc-face-corner-y:.04;
+  --wc-face-corner-w:.46;
+  /* Tall enough to CONTAIN the numeral at --wc-face-rank-size, plus the name line on a
+     named rank. Get this wrong and the box clips its own contents — which it did. */
+  --wc-face-corner-h-named:.26; --wc-face-corner-h-plain:.21;
+  --wc-face-rank-size:.24; --wc-face-name-size:.075; --wc-face-corner-glyph:.15;
+  --wc-face-art-x:.07; --wc-face-art-top:.32; --wc-face-art-bottom:.06;
+  --wc-face-pip-x:.25; --wc-face-pip-top:.27; --wc-face-pip-bottom:.27;
+  --wc-face-mark-x:.16; --wc-face-mark-top:.80; --wc-face-mark-bottom:.06;
+
+  /* below this the printed name is suppressed — a container query in src/ */
+  --wc-card-name-min-w: 150px;
+  --wc-grain-opacity:.30;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--wc-chamber); color:var(--wc-chalk);
+  font-family:var(--wc-sans); -webkit-font-smoothing:antialiased; color-scheme:dark;
+  padding:clamp(1rem,3vw,2rem) clamp(.8rem,3vw,2rem) 4rem; }
+h1 { margin:0 0 .3rem; font-family:var(--wc-serif); font-weight:400;
+  font-size:clamp(1.2rem,3.2vw,1.8rem); color:var(--wc-brass); }
+.lede { margin:0 0 1.3rem; max-width:66ch; color:var(--wc-chalk-dim);
+  font-size:.8rem; line-height:1.55; }
+.lede b { color:var(--wc-chalk); font-weight:600; }
+h2 { font-family:var(--wc-serif); font-weight:400; font-size:1.05rem; color:var(--wc-chalk);
+  margin:2.2rem 0 .2rem; padding-bottom:.4rem; border-bottom:1px solid #232c33; }
+h2 small { color:var(--wc-chalk-dim); font-size:.68rem; font-family:var(--wc-sans); margin-left:.5rem; }
+p.note { margin:.5rem 0 1rem; color:var(--wc-chalk-dim); font-size:.72rem; line-height:1.5; max-width:70ch; }
+code { background:#1a2226; padding:.06rem .3rem; border-radius:3px; font-size:.92em; }
+
+/* ---------- control rail ---------- */
+.rail { position:sticky; top:0; z-index:80; display:flex; flex-wrap:wrap; gap:1rem 1.4rem;
+  align-items:flex-end; padding:.7rem .9rem; margin:0 0 1.2rem; border-radius:10px;
+  border:1px solid #2a373d; background:#0b1113f2; backdrop-filter:blur(4px); }
+.ctl { display:flex; flex-direction:column; gap:.25rem; }
+.ctl label { font-size:.6rem; letter-spacing:.09em; text-transform:uppercase; color:var(--wc-chalk-dim); }
+.ctl input[type=range] { width:11rem; accent-color:var(--wc-brass); }
+.ctl .val { font-family:var(--wc-serif); color:var(--wc-brass); font-size:.85rem; }
+.rail button { min-height:2.2rem; padding:.35rem .7rem; border-radius:7px;
+  border:1px solid var(--wc-brass-dim); background:linear-gradient(160deg,#2a2418,#1a1710);
+  color:var(--wc-brass); font-family:var(--wc-serif); font-size:.75rem; cursor:pointer;
+  touch-action:manipulation; }
+.rail button[aria-pressed='true'] { border:2px solid var(--wc-brass); }
+.rail button:focus-visible { outline:2px solid var(--wc-brass); outline-offset:3px; }
+
+/* the arithmetic the plan routes to the developer, live */
+.gauge { display:flex; gap:.9rem; flex-wrap:wrap; margin-left:auto; }
+.gauge div { padding:.3rem .55rem; border-radius:7px; border:1px solid #26333a;
+  background:var(--wc-chamber-lift); font-size:.62rem; color:var(--wc-chalk-dim); line-height:1.4; }
+.gauge b { display:block; font-family:var(--wc-serif); font-size:.95rem; }
+.gauge .ok b { color:#6fbf8a; }
+.gauge .bad b { color:#d97b6c; }
+
+body.greyscale .stage, body.greyscale .row { filter:grayscale(1); }
+
+/* ---------- the card ---------- */
+.card { position:relative; width:var(--wc-card-w); aspect-ratio:var(--wc-card-aspect);
+  border-radius:clamp(2px,.5vmin,4px); container-type:inline-size;
+  background:linear-gradient(168deg,var(--wc-parchment) 0%,var(--wc-parchment-shade) 100%);
+  border:1px solid var(--wc-parchment-deep); color:var(--wc-ink);
+  --suit:var(--wc-ink-soft);
+  --wc-fig-dark:#333; --wc-fig-mid:#777; --wc-fig-light:#bbb; --wc-fig-white:#eee;
+  box-shadow:0 0 0 1px #00000055, 0 2px 8px #00000070;
+  display:block; padding:0; cursor:pointer; font-family:var(--wc-sans); text-align:left;
+  touch-action:manipulation; }
+.card:disabled { pointer-events:none; }
+.card.bells { --suit:var(--wc-bells);
+  --wc-fig-dark:#3a2109; --wc-fig-mid:#7a4d1c; --wc-fig-light:#c99a55; --wc-fig-white:#fff4dd; }
+.card.keys { --suit:var(--wc-keys);
+  --wc-fig-dark:#0f2735; --wc-fig-mid:#2b556e; --wc-fig-light:#7fb0cd; --wc-fig-white:#f2fbff; }
+.card.moons { --suit:var(--wc-moons);
+  --wc-fig-dark:#1e1236; --wc-fig-mid:#43306e; --wc-fig-light:#8f74bd; --wc-fig-white:#f6f0ff; }
+
+/* AC2 — border states whether the card ACTS. Form, not hue: greyscale-safe. */
+.card.act { border-width:2px; border-color:var(--wc-brass-dim); }
+.card.inert { border-style:dashed; border-color:var(--wc-ink-soft); }
+.card:focus-visible { outline:2px solid var(--wc-brass); outline-offset:2px; }
+
+/* paper grain: a tiled bitmap, NEVER an SVG filter and never mix-blend-mode.
+   Both decisions are carried from the reference sheet, where feTurbulence made a
+   screenshot of 11 cards time out at 120s. */
+.card::before { content:''; position:absolute; inset:0; pointer-events:none; z-index:4;
+  opacity:var(--wc-grain-opacity); border-radius:inherit;
+  background-image:repeating-conic-gradient(#00000010 0% 25%, #ffffff10 0% 50%);
+  background-size:3px 3px; }
+.card::after { content:''; position:absolute; inset:clamp(2px,.4vmin,4px); z-index:5;
+  border:1px solid currentColor; opacity:.12; border-radius:3px; pointer-events:none; }
+
+/* ---------- corner index (AC6) — held to a DECLARED box ---------- */
+.corner { position:absolute; z-index:3; display:grid; grid-template-columns:auto auto;
+  column-gap:.14em; align-items:center; align-content:start; line-height:1; overflow:hidden;
+  /* Held to the DECLARED box — the geometric assertion is only honest if the
+     stylesheet actually clips the element to the rectangle the test checks. */
+  left:calc(100% * var(--wc-face-corner-x));
+  top:calc(100% * var(--wc-face-corner-y));
+  width:calc(100% * var(--wc-face-corner-w));
+  height:calc(100% * var(--wc-face-corner-h-plain)); }
+.card.named .corner { height:calc(100% * var(--wc-face-corner-h-named)); }
+.corner.br { left:auto; top:auto;
+  right:calc(100% * var(--wc-face-corner-x));
+  bottom:calc(100% * var(--wc-face-corner-y));
+  transform:rotate(180deg); }
+.rank { grid-row:1; grid-column:1; font-family:var(--wc-serif);
+  font-size:calc(var(--wc-card-w) * var(--wc-face-rank-size)); color:var(--suit); letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums; }
+.nm { grid-row:2; grid-column:1 / -1; font-family:var(--wc-serif);
+  font-size:calc(var(--wc-card-w) * var(--wc-face-name-size)); letter-spacing:.02em; margin-top:.15em;
+  color:var(--wc-ink-soft); white-space:nowrap; }
+/* AC6 degrades honestly: below the threshold the name is suppressed rather than
+   rendered at 3px. THE THRESHOLD IS THE DEVELOPER'S. */
+@container (max-width: 150px) { .nm { display:none; } }
+.corner .glyph { grid-row:1; grid-column:2;
+  width:calc(var(--wc-card-w) * var(--wc-face-corner-glyph));
+  height:calc(var(--wc-card-w) * var(--wc-face-corner-glyph)); color:var(--suit); }
+
+/* ---------- art window (AC1) ---------- */
+.art { position:absolute; z-index:1; overflow:hidden; border-radius:3px;
+  left:calc(100% * var(--wc-face-art-x)); right:calc(100% * var(--wc-face-art-x));
+  top:calc(100% * var(--wc-face-art-top)); bottom:calc(100% * var(--wc-face-art-bottom)); }
+.art .wash { position:absolute; inset:0;
+  background:radial-gradient(78% 62% at 50% 34%, var(--wc-fig-white) 0%,
+    color-mix(in srgb, var(--wc-fig-light) 60%, var(--wc-fig-white)) 44%, var(--wc-fig-light) 100%); }
+.art .glow { position:absolute; left:50%; top:34%; width:74%; aspect-ratio:1;
+  transform:translate(-50%,-50%); border-radius:50%;
+  background:radial-gradient(circle,#ffffff8c 0%,#ffffff33 46%,#ffffff00 72%); }
+.art .figure { position:absolute; left:50%; bottom:5%; width:70%; transform:translateX(-50%); }
+.art .figure svg { width:100%; display:block; }
+.art .vig { position:absolute; inset:0;
+  box-shadow:inset 0 0 10px 4px #00000026, inset 0 -8px 14px -5px #00000033; }
+
+/* ---------- pips (AC4) — a fixed 3x7 lattice ---------- */
+.pips { position:absolute; z-index:2; display:grid;
+  grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(7,1fr);
+  justify-items:center; align-items:center;
+  left:calc(100% * var(--wc-face-pip-x)); right:calc(100% * var(--wc-face-pip-x));
+  top:calc(100% * var(--wc-face-pip-top)); bottom:calc(100% * var(--wc-face-pip-bottom)); }
+.wc-card-pip { width:100%; aspect-ratio:1; color:var(--suit); }
+.wc-card-pip.inv { transform:rotate(180deg); }
+
+/* ---------- the Treasure's "no rule" mark (AC2) ---------- */
+.no-rule { position:absolute; z-index:6; text-align:center;
+  left:calc(100% * var(--wc-face-mark-x)); right:calc(100% * var(--wc-face-mark-x));
+  top:calc(100% * var(--wc-face-mark-top)); bottom:calc(100% * var(--wc-face-mark-bottom));
+  display:flex; align-items:center; justify-content:center;
+  border:1px dashed #ffffff70; border-radius:3px; background:#0d0a06aa;
+  font-family:var(--wc-serif); font-style:italic; color:#f6efe1;
+  font-size:calc(var(--wc-card-w) * .095); }
+
+/* ---------- overlays ---------- */
+.skull { position:absolute; z-index:6; overflow:hidden; border-radius:3px;
+  left:calc(100% * var(--wc-face-art-x)); right:calc(100% * var(--wc-face-art-x));
+  top:calc(100% * var(--wc-face-art-top)); bottom:calc(100% * var(--wc-face-art-bottom));
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(72% 58% at 50% 32%,#4a423a 0%,#2b2622 46%,#0d0b09 100%);
+  color:#efe8d7; }
+.skull svg { width:64%; height:64%; }
+.skull-shadow { fill:#0d0b09; }
+.primed { position:absolute; z-index:7; display:flex; align-items:center; justify-content:center;
+  left:calc(var(--wc-card-w) * .08); bottom:calc(var(--wc-card-w) * .07);
+  width:calc(var(--wc-card-w) * .24); height:calc(var(--wc-card-w) * .24);
+  border-radius:50%; border:2px solid var(--wc-parchment); background:#8a4b8f;
+  color:var(--wc-parchment); font-size:calc(var(--wc-card-w) * .13); line-height:1; }
+.discard { position:absolute; z-index:7; inset:0; display:flex; align-items:center;
+  justify-content:center; border-radius:inherit; background:#0c101399;
+  color:#f0e6d2; font-size:calc(var(--wc-card-w) * .42); line-height:1; }
+
+/* ---------- tooltip (AC8) — hover, focus-within AND tap; no :has() ---------- */
+.tip-host { position:relative; display:block; }
+.tip { position:absolute; left:50%; bottom:calc(100% + .3rem); z-index:90; width:max(11rem,150%);
+  transform:translate(-50%,.25rem); padding:.5rem .6rem; border-radius:8px;
+  background:#0f1518; border:1px solid var(--wc-brass-dim); color:var(--wc-chalk);
+  box-shadow:0 8px 20px #000000c0; font-size:.66rem; line-height:1.45;
+  opacity:0; visibility:hidden; pointer-events:none;
+  transition:opacity 120ms ease, transform 120ms ease; }
+.tip b { display:block; color:var(--wc-brass); font-family:var(--wc-serif);
+  font-weight:400; font-size:.78rem; margin-bottom:.15rem; }
+.tip-host:hover .tip, .tip-host:focus-within .tip, .tip-host.open .tip {
+  opacity:1; visibility:visible; transform:translate(-50%,0); }
+@media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
+
+/* ---------- stages ---------- */
+.stage { position:relative; border-radius:12px; padding:1.6rem 1rem 1.2rem;
+  background:radial-gradient(120% 100% at 50% 0%, #1d3d36 0%, var(--wc-felt) 70%);
+  border:1px solid #24443d; }
+.fan { display:flex; justify-content:center; align-items:flex-end; padding-top:1.2rem; }
+/* Side by side, not fanned. FAN_OVERLAP_PX.medium (-10px) is what fanLayout.ts gives a
+   seven-card hand; no rotation and no lift are applied here. */
+.fan .slot { margin-left:-10px; }
+.fan .slot:first-child { margin-left:0; }
+.fan .card { transition:transform .13s ease-out; }
+@media (hover:hover) { .fan .tip-host:hover .card { transform:translateY(-9%); } }
+.plates { display:flex; gap:.7rem; justify-content:center; align-items:flex-end;
+  margin-top:1.4rem; padding-top:1rem; border-top:1px solid #ffffff14; }
+.plates .card { width:var(--wc-plate-card-w); cursor:default; }
+.plates .cap { text-align:center; font-size:.58rem; color:#8fb0a6; margin-top:.35rem;
+  letter-spacing:.08em; text-transform:uppercase; }
+
+.row { display:grid; gap:.7rem; justify-content:start; margin-top:.8rem;
+  grid-template-columns:repeat(auto-fill,var(--wc-card-w)); }
+.cell { margin:0; display:flex; flex-direction:column; gap:.3rem; }
+.cell figcaption { font-size:.55rem; color:var(--wc-chalk-dim); text-align:center; }
+.suit-head { display:flex; align-items:center; gap:.5rem; margin:1.4rem 0 0; }
+.suit-head .glyph { width:1.2rem; height:1.2rem; }
+.suit-head span { font-family:var(--wc-serif); font-size:.95rem; }
+.suit-head.bells { color:var(--wc-bells); } .suit-head.keys { color:var(--wc-keys); }
+.suit-head.moons { color:var(--wc-moons); }
+.foot { margin:2.6rem 0 0; padding-top:1.1rem; border-top:1px solid #232c33; max-width:74ch;
+  color:var(--wc-chalk-dim); font-size:.72rem; line-height:1.6; }
+.foot h3 { margin:0 0 .4rem; color:var(--wc-brass); font-size:.8rem;
+  font-family:var(--wc-serif); font-weight:400; }
+.foot li { margin:.35rem 0; }
+</style>
+
+<h1>DLR-149 — the card face at play size</h1>
+<p class="lede">
+  The reference sheet settled <b>what</b> the face is, at about <code>11.5rem</code> a card.
+  This sheet asks whether it survives at <b><code>--wc-card-w</code>, which ships today as
+  <code>clamp(2.9rem, 6.2vmin, 4.3rem)</code> — 46px to 69px</b>. Drag the width slider and watch
+  the two gauges: the plan's two open tuning values are exactly the points where they turn red.
+  Hover, focus or tap any card for its rule — no rule text is printed on any face.
+</p>
+
+<div class="rail">
+  <div class="ctl">
+    <label for="w">Card width — <code>--wc-card-w</code></label>
+    <input id="w" type="range" min="40" max="200" step="1" value="69" />
+    <span class="val" id="wv">69px · 4.3rem <em style="font-style:normal;color:#6f7d78">(today's max)</em></span>
+  </div>
+  <div class="ctl">
+    <label for="asp">Aspect ratio</label>
+    <button id="asp" type="button" aria-pressed="false">2 / 3 &nbsp;→&nbsp; try 5 / 7</button>
+  </div>
+  <div class="ctl">
+    <label for="grey">Greyscale check</label>
+    <button id="grey" type="button" aria-pressed="false">Colour</button>
+  </div>
+  <div class="ctl">
+    <label for="marks">Overlays</label>
+    <button id="marks" type="button" aria-pressed="false">Show skull / primed / discard</button>
+  </div>
+  <div class="gauge">
+    <div id="g-pip"><span>Pip glyph — AC7 floor 14px</span><b>—</b></div>
+    <div id="g-name"><span>Name line — legible ≈9px</span><b>—</b></div>
+  </div>
+</div>
+
+<h2>A hand, at the size it is actually played<small>five acting ranks · one Treasure · four plain numbers</small></h2>
+<p class="note">
+  This is the surface that matters. The five solid-bordered cards are the ones that can change
+  anything; the dashed one is the Treasure, which is painted and does nothing; the rest are pips.
+  The <b>played card and the pile below</b> render at <code>--wc-plate-card-w</code> — the degrade the
+  ticket asks about. Tapping a hand card in the real app arms it, and opens its rule at the same time.
+</p>
+<div class="stage">
+  <div class="fan" id="fan"></div>
+  <div class="plates" id="plates"></div>
+</div>
+
+<h2>Every rank, every suit<small>33 faces at the current width</small></h2>
+<p class="note">
+  Rank 8 renders as an ordinary plain number here — pips, default border, no name, no "no rule"
+  mark. That follows AC2 and AC3 and <b>deliberately differs from the reference sheet</b>, which
+  classes it inert. Giving 8 a dashed edge while 6 gets none tells the player 8 is special, which is
+  the defect the ticket opens with.
+</p>
+<div id="sheet"></div>
+
+<div class="foot">
+  <h3>What this sheet is for</h3>
+  <ul>
+    <li><b>The two gauges are the decision.</b> At today's <code>--wc-card-w</code> the pip glyph is
+      7.7–11.5px against AC7's ~14px floor, and the name line is 3.5–5.2px. A ~14px pip needs about
+      <code>5.25rem</code>; a ~9px name needs about <code>7.5rem</code>. Both are yours.</li>
+    <li><b>The name suppresses itself rather than shrinking.</b> Below
+      <code>--wc-card-name-min-w</code> a container query drops the name line instead of printing it
+      illegibly. The threshold is a tuning value — it is 150px here to make the behaviour visible.</li>
+    <li><b>Greyscale is the AC2 check.</b> Solid-2px vs dashed vs default, plus art present or
+      absent, is a form distinction, so it should survive. DLR-148 is the recorded case where that
+      claim was made and then failed, so take the screenshot rather than trusting this sentence.</li>
+    <li><b>The figures are compositional placeholders.</b> They show the pose and the crop and how
+      much of the face a painting gets. Real art replaces the symbol bodies with no layout change.</li>
+    <li><b>No <code>:has()</code>.</b> The tooltip is <code>:hover</code>, <code>:focus-within</code>
+      and a tap class — the ticket asked whether <code>:has()</code> was safe to rely on, and the
+      answer here is that it is not needed.</li>
+    <li><b>PLACEHOLDER, yours:</b> card width, aspect ratio, the twelve figure colours, parchment
+      tones, grain opacity, the name threshold, and the discard-selected treatment.</li>
+  </ul>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <!-- Suit glyphs, elaborated (AC7). No stroke-width is set on any path: weight is the call
+       site's, exactly as SuitMark.tsx requires. -->
+  <symbol id="s-bells" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="2.9" r="1.05"/><path d="M12 4.9v.8"/>
+      <path d="M6.6 16.1v-4.3a5.4 5.4 0 0 1 10.8 0v4.3"/><path d="M4.4 16.1h15.2"/>
+      <path d="M9.9 18.7a2.1 2.1 0 0 0 4.2 0"/>
+      <path d="M9.3 12.1a2.7 2.7 0 0 1 2.4-2.4" opacity=".5"/>
+      <path d="M8.5 16.1v-3.7M15.5 16.1v-3.7" opacity=".3"/>
+    </g>
+  </symbol>
+  <symbol id="s-keys" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="6.5" r="3.7"/><circle cx="12" cy="6.5" r="1.35" opacity=".55"/>
+      <path d="M12 10.2V21"/><path d="M12 14.3h3.5M12 17h2.7"/>
+      <path d="M12 19.5h1.9" opacity=".55"/>
+    </g>
+  </symbol>
+  <symbol id="s-moons" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15.4 3.6a8.4 8.4 0 1 0 4.1 12 6.9 6.9 0 0 1-4.1-12z"/>
+      <circle cx="9.5" cy="9.7" r="1.15" opacity=".45"/>
+      <circle cx="7.7" cy="14.3" r=".8" opacity=".4"/>
+      <circle cx="11.7" cy="15.5" r=".62" opacity=".35"/>
+    </g>
+  </symbol>
+  <symbol id="wc-skull" viewBox="0 0 100 100">
+    <path d="M50 8C29 8 16 21 16 40c0 10 4 18 9 23 3 4 5 7 5 11v4c0 5 4 8 9 8h22c5 0 9-3 9-8v-4c0-4 2-7 5-11 5-5 9-13 9-23C84 21 71 8 50 8z" fill="currentColor"/>
+    <ellipse class="skull-shadow" cx="36" cy="43" rx="10" ry="11"/>
+    <ellipse class="skull-shadow" cx="64" cy="43" rx="10" ry="11"/>
+    <path class="skull-shadow" d="M50 54l7 13H43z"/>
+    <path d="M33 72h34v10a4 4 0 0 1-4 4H37a4 4 0 0 1-4-4z" fill="currentColor"/>
+    <g class="skull-shadow"><rect x="39" y="72" width="1.8" height="14"/><rect x="45" y="72" width="1.8" height="14"/><rect x="51" y="72" width="1.8" height="14"/><rect x="57" y="72" width="1.8" height="14"/></g>
+  </symbol>
+
+  <!-- The eight figures. Every fill is a class whose CSS reads an inherited custom property —
+       the one mechanism this codebase has already shipped through a <use> shadow tree
+       (.wc-skull-shadow). No var() inside a presentation attribute. -->
+  <symbol id="wc-fig-swan" viewBox="0 0 100 100">
+    <ellipse cx="50" cy="88" rx="42" ry="6" class="f-d" opacity=".22"/>
+    <path d="M14 74c0-11 14-19 32-19s34 7 34 18c0 8-13 14-33 14S14 82 14 74z" class="f-l"/>
+    <path d="M27 67c9-8 23-11 35-7-6 3-10 8-12 13-9 2-17 0-23-6z" class="f-w"/>
+    <path d="M64 66C50 54 55 28 72 24" fill="none" class="s-l" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="74" cy="23" r="8.5" class="f-w"/><path d="M81 20l13 4-13 5z" class="f-l"/>
+    <circle cx="77.5" cy="21" r="1.7" class="f-d"/>
+  </symbol>
+  <symbol id="wc-fig-fox" viewBox="0 0 100 100">
+    <ellipse cx="54" cy="91" rx="40" ry="5" class="f-d" opacity=".2"/>
+    <path d="M22 88C0 80 4 46 30 42c-9 17-4 33 10 40z" class="f-m"/>
+    <path d="M32 90c0-19 11-31 26-31s26 12 26 31z" class="f-m"/>
+    <path d="M46 90c0-13 4-22 12-25 8 3 12 12 12 25z" class="f-w" opacity=".5"/>
+    <path d="M35 44L39 12l17 17h10l17-17 4 32c0 8-3 14-9 19L61 76 44 63c-6-5-9-11-9-19z" class="f-m"/>
+    <path d="M45 38l-4-18 12 11z" class="f-d"/><path d="M77 38l4-18-12 11z" class="f-d"/>
+    <path d="M44 50c2 11 8 19 17 24 9-5 15-13 17-24-1 13-7 22-17 27-10-5-16-14-17-27z" class="f-w" opacity=".62"/>
+    <circle cx="50" cy="45" r="3" class="f-d"/><circle cx="72" cy="45" r="3" class="f-d"/>
+    <path d="M61 60l5 5-5 5-5-5z" class="f-d"/>
+  </symbol>
+  <symbol id="wc-fig-axe" viewBox="0 0 100 100">
+    <ellipse cx="50" cy="93" rx="28" ry="4" class="f-d" opacity=".22"/>
+    <path d="M40 92L58 24" class="s-m" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <path d="M54 30c14-15 33-15 40-2-9 9-12 21-8 33-15 4-30-5-35-19z" class="f-l"/>
+    <path d="M54 30c10-10 23-12 33-7-9 4-14 11-15 19-8-2-14-6-18-12z" class="f-w" opacity=".5"/>
+    <rect x="46" y="37" width="17" height="7" rx="3.2" transform="rotate(-15 54 40)" class="f-d"/>
+  </symbol>
+  <symbol id="wc-fig-witch" viewBox="0 0 100 100">
+    <ellipse cx="48" cy="92" rx="33" ry="5" class="f-d" opacity=".25"/>
+    <rect x="75.5" y="18" width="5" height="74" rx="2.5" class="f-m"/>
+    <circle cx="78" cy="15" r="7.5" fill="none" class="s-l" stroke-width="3.5"/>
+    <circle cx="78" cy="15" r="3" class="f-w"/>
+    <path d="M22 92c0-30 10-48 24-48s24 18 24 48z" class="f-m"/>
+    <path d="M62 92c0-16-2-27-6-34 7 6 11 19 12 34z" class="f-d" opacity=".45"/>
+    <path d="M32 52c0-13 6-21 14-21s14 8 14 21c0 7-28 7-28 0z" class="f-d"/>
+    <ellipse cx="46" cy="48" rx="7" ry="8.5" class="f-w" opacity=".92"/>
+    <circle cx="44" cy="47" r="1.6" class="f-d"/><circle cx="49.5" cy="47" r="1.6" class="f-d"/>
+  </symbol>
+  <symbol id="wc-fig-crown" viewBox="0 0 100 100">
+    <ellipse cx="50" cy="93" rx="31" ry="4" class="f-d" opacity=".24"/>
+    <path d="M18 74L10 26l22 17L50 16l18 27 22-17-8 48z" class="f-l"/>
+    <path d="M18 74L10 26l22 17L50 16v58z" class="f-w" opacity=".18"/>
+    <rect x="15" y="75" width="70" height="15" rx="5" class="f-m"/>
+    <circle cx="50" cy="29" r="5" class="f-w"/>
+    <circle cx="23" cy="59" r="4" class="f-w" opacity=".85"/>
+    <circle cx="77" cy="59" r="4" class="f-w" opacity=".85"/>
+  </symbol>
+  <symbol id="wc-fig-harp" viewBox="0 0 100 100">
+    <ellipse cx="50" cy="92" rx="26" ry="4" class="f-d" opacity=".24"/>
+    <rect x="29" y="79" width="42" height="10" rx="5" class="f-l"/>
+    <path d="M35 81c-5-23 0-42 13-55 3-3 8 0 6 4-10 12-15 29-12 51z" class="f-l"/>
+    <path d="M62 81c1-18 1-34-1-47l7-2c2 14 2 31 1 49z" class="f-l"/>
+    <path d="M49 27l21-5 2 9-22 4z" class="f-m"/>
+    <g class="s-w" stroke-width="1.1" opacity=".8" stroke-linecap="round" fill="none">
+      <path d="M53 32L44 79"/><path d="M58 31L51 79"/><path d="M63 30L58 79"/><path d="M68 29L65 79"/>
+    </g>
+    <circle cx="70" cy="25" r="3.4" class="f-w"/>
+  </symbol>
+  <symbol id="wc-fig-chalice" viewBox="0 0 100 100">
+    <ellipse cx="50" cy="93" rx="23" ry="4" class="f-d" opacity=".24"/>
+    <path d="M31 84h38c2 0 3 2 3 4s-1 4-3 4H31c-2 0-3-2-3-4s1-4 3-4z" class="f-l"/>
+    <rect x="45.5" y="58" width="9" height="27" class="f-l"/>
+    <ellipse cx="50" cy="66" rx="6.5" ry="5" class="f-m"/>
+    <path d="M27 28h46c0 19-10 32-23 32S27 47 27 28z" class="f-l"/>
+    <ellipse cx="50" cy="28" rx="23" ry="5.5" class="f-w"/>
+    <ellipse cx="50" cy="28" rx="17" ry="3.6" class="f-m" opacity=".55"/>
+    <circle cx="50" cy="44" r="4.2" class="f-w" opacity=".85"/>
+  </symbol>
+  <symbol id="wc-fig-sword" viewBox="0 0 100 100">
+    <ellipse cx="50" cy="94" rx="17" ry="3.5" class="f-d" opacity=".24"/>
+    <path d="M50 8l8 16v42H42V24z" class="f-l"/>
+    <path d="M50 8l8 16v42h-8z" class="f-d" opacity=".22"/>
+    <path d="M27 64h46c2 0 3 2 3 4.5s-1 4.5-3 4.5H27c-2 0-3-2-3-4.5S25 64 27 64z" class="f-m"/>
+    <rect x="45.5" y="73" width="9" height="15" rx="3" class="f-d"/>
+    <circle cx="50" cy="90" r="5.2" class="f-l"/>
+    <circle cx="50" cy="68.5" r="3.2" class="f-w"/>
+  </symbol>
+</svg>
+<style>
+  .f-d { fill:var(--wc-fig-dark); } .f-m { fill:var(--wc-fig-mid); }
+  .f-l { fill:var(--wc-fig-light); } .f-w { fill:var(--wc-fig-white); }
+  .s-l { stroke:var(--wc-fig-light); } .s-m { stroke:var(--wc-fig-mid); }
+  .s-w { stroke:var(--wc-fig-white); }
+</style>
+
+<script>
+/* ---- cardFace.ts, transcribed ------------------------------------------- */
+const SUITS = [
+  { id:'bells', name:'Bells', glyph:'s-bells' },
+  { id:'keys',  name:'Keys',  glyph:'s-keys'  },
+  { id:'moons', name:'Moons', glyph:'s-moons' },
+];
+
+/* Rule copy from .docs/game_rules/the-hunt.md — the named-rank table, and §4 for the Monarch. */
+const RANK_FACE = {
+  1:  { cls:'act', name:'Swan', fig:'swan',
+        rule:'If a Swan is in a trick and belongs to the side that lost it, that side leads the next trick. Two Swans: the loser leads either way.' },
+  3:  { cls:'act', name:'Fox', fig:'fox',
+        rule:'On playing it, you may exchange the decree card for a card from your hand. The exchanged card becomes the new decree, and its suit becomes the new trump. You may decline.' },
+  5:  { cls:'act', name:'Woodcutter', fig:'axe',
+        rule:'On playing it, draw the top card of the draw pile, then put one card from your hand on the bottom of the pile.' },
+  7:  { cls:'inert', name:'Treasure', figBySuit:{ bells:'harp', keys:'chalice', moons:'sword' },
+        rule:'No effect at all. A named card with no rule attached.' },
+  9:  { cls:'act', name:'Witch', fig:'witch',
+        rule:'If a trick contains exactly one Witch, that Witch counts as trump when the winner is decided. Two Witches cancel — neither is treated as trump.' },
+  11: { cls:'act', name:'Monarch', fig:'crown',
+        rule:'When led, the follower may play only their Swan of that suit, or their highest card of that suit.' },
+};
+const PLAIN_RULE = 'A plain number card. No rule attached.';
+
+/* [row, column] on the fixed 3x7 lattice. Only the even ranks carry pips. */
+const PIP_LAYOUT = {
+  2:  [[1,2],[7,2]],
+  4:  [[1,1],[1,3],[7,1],[7,3]],
+  6:  [[1,1],[1,3],[4,1],[4,3],[7,1],[7,3]],
+  8:  [[1,1],[1,3],[3,1],[3,3],[5,1],[5,3],[7,1],[7,3]],
+  10: [[1,1],[1,3],[3,1],[3,3],[5,1],[5,3],[7,1],[7,3],[2,2],[6,2]],
+};
+const PIP_MID_ROW = 4;
+
+const face = r => RANK_FACE[r] ?? { cls:'plain', name:null, fig:null, rule:PLAIN_RULE };
+const glyph = (id, cls) => `<svg class="${cls||'glyph'}" aria-hidden="true"><use href="#${id}"/></svg>`;
+
+function cornerEl(suit, rank, pos) {
+  const f = face(rank);
+  return `<span class="corner ${pos}"><span class="rank">${rank}</span>` +
+    (f.name ? `<span class="nm">${f.name}</span>` : '') + glyph(suit.glyph) + `</span>`;
+}
+
+function pipsEl(suit, rank) {
+  const spots = PIP_LAYOUT[rank] ?? [];
+  return `<span class="pips">` + spots.map(([r,c]) =>
+    `<svg class="wc-card-pip${r > PIP_MID_ROW ? ' inv' : ''}" style="grid-row:${r};grid-column:${c}"
+      aria-hidden="true"><use href="#${suit.glyph}"/></svg>`).join('') + `</span>`;
+}
+
+function artEl(figKey) {
+  return `<span class="art"><span class="wash"></span><span class="glow"></span>
+    <span class="figure"><svg viewBox="0 0 100 100" aria-hidden="true"><use href="#wc-fig-${figKey}"/></svg></span>
+    <span class="vig"></span></span>`;
+}
+
+let uid = 0;
+/* opts: { disabled, skulled, primed, discard, rot, lift } */
+function cardEl(suit, rank, opts = {}) {
+  const f = face(rank);
+  const figKey = f.figBySuit ? f.figBySuit[suit.id] : f.fig;
+  const id = 'tip' + (++uid);
+  let body;
+  if (opts.skulled) body = `<span class="skull">${glyph('wc-skull','')}</span>`;
+  else body = figKey ? artEl(figKey) : pipsEl(suit, rank);
+
+  const mark = f.cls === 'inert' && !opts.skulled ? `<span class="no-rule">no rule</span>` : '';
+  const primed = opts.primed ? `<span class="primed">⚗</span>` : '';
+  const discard = opts.discard ? `<span class="discard">✕</span>` : '';
+  // AC6 — the mirrored index prints only where nothing else is printed there.
+  const mirrored = f.cls === 'plain' && !opts.skulled && !opts.discard ? cornerEl(suit, rank, 'br') : '';
+
+  const label = `${rank} of ${suit.name}${f.name ? ' (' + f.name + ')' : ''}`;
+  const host = document.createElement('span');
+  host.className = 'tip-host';
+  host.style.cssText = opts.rot ? `--rot:rotate(${opts.rot}deg)` : '';
+  host.innerHTML =
+    `<div class="tip" id="${id}" role="tooltip"><b>${rank}${f.name ? ' · ' + f.name : ''}</b>${f.rule}</div>` +
+    `<button type="button" class="card ${f.cls} ${suit.id}${f.name ? ' named' : ''}"
+       ${opts.disabled ? 'disabled' : ''} aria-label="${label}" aria-describedby="${id}"
+       style="${opts.rot ? `--rot:rotate(${opts.rot}deg);` : ''}${opts.lift ? `--lift:translateY(${opts.lift}%);` : ''}">
+       ${cornerEl(suit, rank, 'tl')}${body}${mark}${primed}${discard}${mirrored}
+     </button>`;
+
+  // Touch has no hover: a tap must reach the same text. In the real app this same tap
+  // also arms the card, which is the moment the rule is wanted.
+  host.addEventListener('click', () => {
+    document.querySelectorAll('.tip-host.open').forEach(h => { if (h !== host) h.classList.remove('open'); });
+    host.classList.toggle('open');
+  });
+  return host;
+}
+
+/* ---- the hand ----------------------------------------------------------- */
+const HAND = [[0,1],[1,3],[2,6],[0,7],[1,8],[2,9],[0,11]];
+const fan = document.getElementById('fan');
+HAND.forEach(([s, r], i) => {
+  const slot = document.createElement('div');
+  slot.className = 'slot';
+  slot.style.zIndex = String(i);
+  slot.appendChild(cardEl(SUITS[s], r));
+  fan.appendChild(slot);
+});
+
+const plates = document.getElementById('plates');
+[[SUITS[1], 5, 'Played — you'], [SUITS[2], 4, 'Played — Quarry'], [SUITS[0], 7, 'Decree'], [SUITS[1], 10, 'Spent']]
+  .forEach(([suit, rank, cap]) => {
+    const wrap = document.createElement('div');
+    wrap.appendChild(cardEl(suit, rank, { disabled: true }));
+    const c = document.createElement('div');
+    c.className = 'cap'; c.textContent = cap;
+    wrap.appendChild(c);
+    plates.appendChild(wrap);
+  });
+
+/* ---- the full sheet ----------------------------------------------------- */
+const sheet = document.getElementById('sheet');
+for (const suit of SUITS) {
+  const head = document.createElement('div');
+  head.className = `suit-head ${suit.id}`;
+  head.innerHTML = glyph(suit.glyph) + `<span>${suit.name}</span>`;
+  sheet.appendChild(head);
+  const row = document.createElement('div');
+  row.className = 'row';
+  for (let r = 1; r <= 11; r++) {
+    const cell = document.createElement('figure');
+    cell.className = 'cell';
+    cell.appendChild(cardEl(suit, r));
+    const cap = document.createElement('figcaption');
+    const f = face(r);
+    cap.textContent = f.name ? `${r} · ${f.name}` : String(r);
+    cell.appendChild(cap);
+    row.appendChild(cell);
+  }
+  sheet.appendChild(row);
+}
+
+/* ---- the rail ----------------------------------------------------------- */
+const root = document.documentElement;
+const wIn = document.getElementById('w');
+const wv = document.getElementById('wv');
+const gPip = document.getElementById('g-pip');
+const gName = document.getElementById('g-name');
+
+function gauge(el, px, floor, unit) {
+  el.className = px >= floor ? 'ok' : 'bad';
+  el.querySelector('b').textContent = `${px.toFixed(1)}px${unit}`;
+}
+
+function apply() {
+  const px = Number(wIn.value);
+  root.style.setProperty('--wc-card-w', px + 'px');
+  const rem = (px / 16).toFixed(2);
+  const today = px <= 69 ? ' · within today’s clamp' : ' · above today’s clamp';
+  wv.innerHTML = `${px}px · ${rem}rem<em style="font-style:normal;color:#6f7d78">${today}</em>`;
+  // one lattice cell is (1 - 2 * pip-x) / 3 of the card width
+  gauge(gPip, px * (1 - 2 * 0.25) / 3, 14, ' pip');
+  gauge(gName, px * 0.075, 9, ' name');
+}
+wIn.addEventListener('input', apply);
+apply();
+
+const asp = document.getElementById('asp');
+asp.addEventListener('click', () => {
+  const on = asp.getAttribute('aria-pressed') === 'true';
+  asp.setAttribute('aria-pressed', String(!on));
+  root.style.setProperty('--wc-card-aspect', on ? '2 / 3' : '5 / 7');
+  asp.textContent = on ? '2 / 3 → try 5 / 7' : '5 / 7 → back to 2 / 3';
+});
+
+const grey = document.getElementById('grey');
+grey.addEventListener('click', () => {
+  const on = grey.getAttribute('aria-pressed') === 'true';
+  grey.setAttribute('aria-pressed', String(!on));
+  document.body.classList.toggle('greyscale', !on);
+  grey.textContent = on ? 'Colour' : 'Greyscale — AC2 check';
+});
+
+const marks = document.getElementById('marks');
+marks.addEventListener('click', () => {
+  const on = marks.getAttribute('aria-pressed') === 'true';
+  marks.setAttribute('aria-pressed', String(!on));
+  marks.textContent = on ? 'Show skull / primed / discard' : 'Hide overlays';
+  const slots = fan.querySelectorAll('.slot');
+  if (!on) {
+    slots[1]?.querySelector('.card')?.insertAdjacentHTML('beforeend', '<span class="primed" data-ov>⚗</span>');
+    slots[3]?.querySelector('.card')?.insertAdjacentHTML('beforeend', '<span class="discard" data-ov>✕</span>');
+    const c = slots[5]?.querySelector('.card');
+    if (c) {
+      c.querySelectorAll('.art, .pips').forEach(n => { n.setAttribute('data-hidden-ov',''); n.style.display = 'none'; });
+      c.insertAdjacentHTML('beforeend', '<span class="skull" data-ov><svg aria-hidden="true"><use href="#wc-skull"/></svg></span>');
+    }
+  } else {
+    document.querySelectorAll('[data-ov]').forEach(n => n.remove());
+    document.querySelectorAll('[data-hidden-ov]').forEach(n => { n.style.display = ''; n.removeAttribute('data-hidden-ov'); });
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.tip-host.open').forEach(h => h.classList.remove('open'));
+});
+</script>

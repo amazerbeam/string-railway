@@ -46,10 +46,13 @@ import {
   RoundUiActionKind,
 } from './roundUiState'
 import RoundStatusBand from './RoundStatusBand'
+import { CardArtSheet } from './CardArtSheet'
 import { SuitSymbolSheet } from './SuitMark'
 import './warCouncil.css'
 import './warCouncilTable.css'
 import './warCouncilCards.css'
+import './warCouncilCardFace.css'
+import './warCouncilCardTip.css'
 import './warCouncilHunt.css'
 import './warCouncilHealthBars.css'
 import './warCouncilHand.css'
@@ -260,6 +263,7 @@ export default function WarCouncilRound({
   return (
     <div className="wc-shell">
       <SuitSymbolSheet />
+      <CardArtSheet />
       <RoundStatusBand
         tricksWon={ui.round.tricksWon}
         tricksPlayed={ui.round.tricksPlayed}

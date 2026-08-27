@@ -1,7 +1,10 @@
-import type { CSSProperties } from 'react'
+import { useId, type CSSProperties } from 'react'
 import type { Card } from '../../warCouncil'
-import { cardAccessibleName, RANK_NAME } from './labels'
-import { SuitMark } from './SuitMark'
+import CardAbilityTip from './CardAbilityTip'
+import { RANK_FACE } from './cardFace'
+import CardFace from './CardFacePanel'
+import { RANK_RULE_TEXT } from './cardRuleText'
+import { cardAccessibleName } from './labels'
 
 interface PlayingCardProps {
   readonly card: Card
@@ -39,8 +42,9 @@ interface PlayingCardProps {
  * record, not a choice" a single prop instead of three near-duplicate
  * components: `table` and `pile` render condensed at `--wc-plate-card-w`
  * and never enter the keyboard path. This component computes no geometry
- * of its own — `style` carries whatever placement the caller (e.g.
- * `fanPlacement`) already worked out.
+ * of its own — `style` carries whatever placement the caller has already
+ * worked out, and the hand no longer passes one at all now that the fan is
+ * a plain gapped row (`HandFan`).
  */
 export default function PlayingCard({
   card,
@@ -57,59 +61,74 @@ export default function PlayingCard({
   onTap,
 }: PlayingCardProps) {
   const condensed = variant === 'table' || variant === 'pile'
-  const hasAbility = Boolean(RANK_NAME[card.rank])
+  const face = RANK_FACE[card.rank]
+  const tipId = useId()
+  // DLR-117's `describedBy` used to be passed through as-is, present only when the caller
+  // supplied one; the rule span below is now ALWAYS present, so `aria-describedby` is now
+  // always non-empty — the caller's id (when present) sits alongside the rule id rather than
+  // replacing it.
+  const describedByIds = [describedBy, tipId].filter(Boolean).join(' ')
 
   const className = [
     'wc-card',
     `wc-suit-${card.suit}`,
+    `wc-face-${face.faceClass}`,
+    face.name !== null && 'wc-is-named',
     variant === 'table' && 'wc-is-played',
     variant === 'pile' && 'wc-is-plate',
     illegal && 'wc-is-illegal',
     armed && 'wc-is-armed',
     winner && 'wc-is-winner',
     discardSelected && 'wc-is-discard-selected',
+    skulled && 'wc-is-skulled',
   ]
     .filter(Boolean)
     .join(' ')
 
   return (
-    <button
-      type="button"
-      className={className}
-      style={style}
-      disabled={condensed || illegal}
-      tabIndex={condensed ? -1 : tabIndex}
-      aria-label={cardAccessibleName(card, { skulled, primed })}
-      aria-describedby={describedBy}
-      aria-pressed={armed || discardSelected ? true : undefined}
-      onClick={() => onTap?.(card)}
-    >
-      <span className="wc-card-rank" aria-hidden="true">
-        {card.rank}
-      </span>
-      <SuitMark suit={card.suit} className="wc-card-suit" />
-      {primed && (
-        <span className="wc-primed-mark" aria-hidden="true">
-          ⚗
+    <CardAbilityTip card={card}>
+      <button
+        type="button"
+        className={className}
+        style={style}
+        disabled={condensed || illegal}
+        tabIndex={condensed ? -1 : tabIndex}
+        aria-label={cardAccessibleName(card, { skulled, primed })}
+        aria-describedby={describedByIds}
+        aria-pressed={armed || discardSelected ? true : undefined}
+        onClick={() => onTap?.(card)}
+      >
+        {/* The skull REPLACES the art/pips, not the whole face: CardFace always renders its
+            corner index, and `.wc-card.wc-is-skulled` in warCouncilCards.css hides the art
+            window and pip lattice, so a skulled card keeps its rank, suit glyph and rank
+            name — the trick is still won on those (AC12). */}
+        <CardFace card={card} />
+        {primed && (
+          <span className="wc-primed-mark" aria-hidden="true">
+            ⚗
+          </span>
+        )}
+        {discardSelected && (
+          <span className="wc-discard-mark" aria-hidden="true">
+            ✕
+          </span>
+        )}
+        {/* AC12 — a skull REPLACES the art; a Timebomb is ADDED. One bone skull on one dark wash,
+            identical on every rank and suit. */}
+        {skulled && (
+          <span className="wc-card-skull-face" aria-hidden="true">
+            <svg viewBox="0 0 32 32">
+              <use href="#wc-skull" />
+            </svg>
+          </span>
+        )}
+        {/* AC8 — the rule reaches the accessible tree unconditionally, whether or not the
+            tooltip bubble is open. `game-ux` forbids hiding a decision-relevant fact behind
+            hover, and touch has no hover at all. */}
+        <span id={tipId} className="wc-sr-only">
+          {RANK_RULE_TEXT[card.rank]}
         </span>
-      )}
-      {discardSelected && (
-        <span className="wc-discard-mark" aria-hidden="true">
-          ✕
-        </span>
-      )}
-      {/* AC12 — a skull REPLACES the art; a Timebomb is ADDED. One bone skull on one dark wash,
-          identical on every rank and suit. The corner index keeps rank, suit glyph and rank name,
-          because the trick is still won on those. */}
-      {skulled ? (
-        <span className="wc-card-skull-face" aria-hidden="true">
-          <svg viewBox="0 0 32 32">
-            <use href="#wc-skull" />
-          </svg>
-        </span>
-      ) : (
-        <span className={`wc-card-pip${hasAbility ? '' : ' wc-is-blank'}`} aria-hidden="true" />
-      )}
-    </button>
+      </button>
+    </CardAbilityTip>
   )
 }
