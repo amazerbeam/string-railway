@@ -75,4 +75,48 @@ describe('BankMeter', () => {
     expect(container.querySelector('.wc-bank-pending')).toBeNull()
     expect(container.querySelector('.wc-bank-pending-bonus')).toBeNull()
   })
+
+  it('DLR-150 AC6 — shows what this hand opened on, named in the aria-label', () => {
+    render(
+      <BankMeter
+        bank={0}
+        multiplier={0}
+        lastResolution={null}
+        carriedIn={{ multiplierBonus: 3, flatDamageBonus: 2 }}
+      />,
+    )
+    expect(screen.getByText(/carried in from last hand/i)).toBeTruthy()
+    expect(
+      screen.getByLabelText(/3 multiplier and 2 damage carried in from last hand/i),
+    ).toBeTruthy()
+  })
+
+  it('DLR-150 AC6 — shows what this hand is banking for the next one, without touching cash-out', () => {
+    const withCarryOut = render(
+      <BankMeter
+        bank={2}
+        multiplier={2}
+        lastResolution={null}
+        carryOut={{ multiplierBonus: 2, flatDamageBonus: 1 }}
+      />,
+    )
+    expect(screen.getByText(/banking for next hand/i)).toBeTruthy()
+    const cashWithCarryOut = withCarryOut.container.querySelector('.wc-bank-cash')?.textContent
+    cleanup()
+
+    // AC1 on the readout: the same render with an empty carryOut cashes for the same figure —
+    // carryOut is never folded into what this hand's cash-out pays.
+    const { container: withoutCarryOut } = render(
+      <BankMeter bank={2} multiplier={2} lastResolution={null} />,
+    )
+    expect(withoutCarryOut.querySelector('.wc-bank-cash')?.textContent).toBe(cashWithCarryOut)
+  })
+
+  it('DLR-150 AC6 — shows neither carry line when both are empty', () => {
+    const { container } = render(<BankMeter bank={2} multiplier={2} lastResolution={null} />)
+    expect(container.querySelector('.wc-bank-carried-in')).toBeNull()
+    expect(container.querySelector('.wc-bank-carry-out')).toBeNull()
+    expect(screen.queryByText(/carried in from last hand/i)).toBeNull()
+    expect(screen.queryByText(/banking for next hand/i)).toBeNull()
+  })
 })

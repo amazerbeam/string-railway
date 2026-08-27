@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150
 
 ## Responsibility
 
@@ -115,6 +115,21 @@ is not brevity: the mount hands up **the encounter the player just watched the d
 already applied by the reducer. `App` _sets_ it rather than re-applying it, which makes applying a
 hand's damage twice **unexpressible** rather than merely unlikely.
 
+**DLR-150 added `screenFor.ts`, and moved `RunPhase` into it.** `screenFor(phase, encounterOver)` is
+`App.tsx`'s seven-branch screen ternary as a pure, unit-testable function returning
+`AppScreen` (`'start' | 'map' | 'shop' | 'vault' | 'verdict' | 'warCouncil'`), so the render and
+`debugState`'s mirror cannot disagree about which screen is up — the property the inline chain's own
+comment already claimed. `RunPhase` moved with it because `screenFor` is the only reader that needs
+the union outside the component; it is deliberately **not** re-exported through `../hunt`, since
+`RunState` carries no notion of "which screen". The extraction was forced by the 400-line budget:
+`App.tsx` stood at 399 and this ticket adds to it.
+
+`WarCouncilMountProps` gained an optional `feederCarry?: BuffCarry` (defaulted to
+`EMPTY_BUFF_CARRY`, `apCapacity`'s precedent) and `WarCouncilRoundResult` a **required**
+`feederCarry: BuffCarry` (`coinsEarned`'s precedent, so the compiler enumerates every construction
+site). `App.tsx` passes `run.feederCarry` down and `result.feederCarry` back into `recordEncounter`.
+See [hunt/the-feeder-carry.md](../hunt/the-feeder-carry.md).
+
 Both are type-only exports, re-exported via `export type` from `index.ts` (required by this
 project's `verbatimModuleSyntax` tsconfig setting). `src/app/warCouncil/`'s own exports —
 `WarCouncilRound`, `roundReducer`, `labels.ts`, `cardFace.ts`, `useRovingTabIndex`, and the zone
@@ -128,7 +143,8 @@ components — are tabulated in [../war-council-ui/README.md](../war-council-ui/
   is no effect in the file at all, the felt-versus-verdict render switch, and — since DLR-85 — the
   widened `RunPhase` union, the roster reads that make this the only file naming an opponent, the two
   `RunPathScreen` mounts, and the one line of `handleNewRun` that is the whole of AC10 (DLR-71,
-  DLR-80, DLR-82, DLR-84, DLR-85).
+  DLR-80, DLR-82, DLR-84, DLR-85), and — since DLR-150 — the screen switch living in `screenFor.ts`
+  as a pure function, `RunPhase` moving there with it, and the Feeder carry threaded down and back.
 
 - [The `ErrorBoundary`](error-boundary.md) — where it is mounted and why root-only, why it is the
   only class in `src/`, what it does not catch, and what the fallback promises and refuses to

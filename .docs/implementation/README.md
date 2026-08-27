@@ -26,15 +26,15 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                                                |
 | --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, PT-001, PT-002                                                                                  |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, PT-002                                                                  |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, DLR-150, PT-001, PT-002                                                                                  |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150 |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, PT-002                                                                  |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145 |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, PT-001, PT-002 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-150, PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                 |
 | `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                 |
 | `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                 |
-| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146                                                                                                                                                                                                                                                                        |
+| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150                                                                                                                                                                                                                                                                        |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -1125,8 +1125,9 @@ reward ladder are all still declared and still tested, which is what keeps this 
 `ConditionBuffTemplate.kind` and `.axis` are now typed by two new exports, `MintableConditionKind`
 (Taker, Feeder, Sidestep) and `MintableRewardAxis` (Magnitude, Multiplier), so a cut family or a cut
 axis is **unconstructible**, not merely unweighted — and `SLOT_FAMILY_WEIGHTS` and `SLOT_AXIS_WEIGHTS`
-genuinely shrink with them rather than carrying dead rows. The composition is 6 Taker + 3 Feeder +
-2 Sidestep + Cheat + Timebomb. **The eight cut families and the two cut axes stay fully declared** —
+genuinely shrink with them rather than carrying dead rows. The composition was 6 Taker + 3 Feeder +
+2 Sidestep + Cheat + Timebomb — **16 since DLR-150 put Feeder's Momentum row back**, making it 6
+Taker + 6 Feeder + 2 Sidestep + Cheat + Timebomb. **The eight cut families and the two cut axes stay fully declared** —
 their `BuffKind` members, `CONDITION_MODIFIER` prices, `buffFires` cases, `BUFF_CADENCE` rows and
 `REWARD_BASE` ladders are all untouched — so restoring one is a row in `TEMPLATE_FAMILIES`, and
 `templateById` simply answers `undefined` for the rest. That has one real consequence: **a Vault
@@ -1239,6 +1240,36 @@ pointed its rules at `warCouncilCheats.css`, a file deleted two tickets earlier.
 the contrast floor, and
 [war-council-ui/felt-rail-and-the-trick-readout.md](war-council-ui/felt-rail-and-the-trick-readout.md)
 for the re-home, the readout and the skull face.
+
+**DLR-150 let a buff's reward leave the hand that earned it, and it is the first figure in this
+codebase that survives a hand boundary without being something the player spends.** A Feeder pays for
+*not* taking a trick, and its reward used to land in the accrual that the loss's own cash-out
+immediately spent into a near-empty pot — three deliberate losses in a bad hand paid three points
+into three tiny cash-outs and accumulated into nothing. The reward is now split by the trick's
+**outcome**: a Feeder firing on a **Loss** (a clean loss, or an eaten skull) diverts into a carry
+pool that pays nothing this hand, rides `RunState.feederCarry` across the hand boundary, seeds the
+next hand's accrual as an ordinary spendable bonus, and is wiped at the fight boundary whether the
+fight was won or lost. A Feeder firing on a **dodge** — a skull trick the player did not take, which
+is a Win — pays into the hand exactly as before, Overlap Bonus included.
+
+The architectural point worth carrying forward: **the skull inversion is still stated exactly once**,
+in `src/warCouncil/bank.ts`'s `TAKEN` table behind `isTaken`. Everything downstream that needs the
+outcome axis **receives it as a parameter** (`trickIsLoss`) rather than re-deriving it — a
+`trickWasLoss(ctx)` predicate inside `src/hunt/` was explicitly rejected as a second statement of the
+game's most misread rule, and `src/hunt/` learns nothing new about skulls.
+
+Because the carry lets a multiplier bonus escape the reset that used to destroy it, **the Feeder
+family got its Momentum row back and the mintable pool went 13 → 16** — three additive template ids,
+no slot weight changed, and every slot-draw probability shifted as a result. Both halves of the carry
+are on `BankMeter`: what this hand is banking for the next one, and what this hand opened on. Three
+extractions rode along, all forced by the 400-line budget and all collapsing real duplication:
+`roundResult.ts` (three construction sites of `WarCouncilRoundResult` became one, adopted by the
+simulator too), `screenFor.ts` (`App.tsx`'s screen ternary, with `RunPhase` moving there), and
+`roundUiSeed.ts` / `warCouncilBankMeter.css`. **Nothing is persisted and `SAVE_SCHEMA_VERSION` is not
+bumped.** **No number was chosen** — the carry rides the existing reward ladders, so a bronze Blade
+Feeder carries `+1` and a bronze Momentum Feeder `+2`, and whether that is enough to be felt is the
+developer's to answer by playing. Start at
+[hunt/the-feeder-carry.md](hunt/the-feeder-carry.md).
 
 **scaffold** = types/folders only, no runtime logic yet. **partial** = some real logic, incomplete.
 **implemented** = the module's stated responsibility is functionally covered (may still grow).

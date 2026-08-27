@@ -411,6 +411,21 @@ deliberately not taken, precisely because StrictMode would fire it twice.
 
 ## The render switch
 
+> **DLR-150 moved the decision out of the file, then kept the branches here.** `App.tsx` computes
+> `const screen = screenFor(phase, encounterOver)` — a pure function in `src/app/screenFor.ts`
+> returning `AppScreen` — and switches on the result, instead of testing `phase` and `encounterOver`
+> inline at each of the branches below. The ordering the branches encode is now stated once, inside
+> `screenFor`, and `src/app/__tests__/screenFor.test.ts` covers it without a renderer;
+> `debugState`'s mirror reads the same value the render does. **`RunPhase` moved to `screenFor.ts`
+> with it** — the derivation and the type it switches on cannot drift apart if they live together —
+> and `App.tsx` imports both. The chain below is shown in its pre-DLR-150 form because it is the
+> clearest statement of *which* branch wins over which; nothing about that order changed.
+>
+> The extraction was forced by the 400-line budget: `App.tsx` stood at **399** and this ticket adds
+> `feederCarry` down to the mount and back from the result. It is **376** lines now, and still not a
+> reducer.
+
+
 ```tsx
 if (phase === RunPhase.Start) {                       // DLR-85 — precedes the run, so it is first
   return <RunPathScreen title={START_TITLE} stages={stages} goalText={goalText}

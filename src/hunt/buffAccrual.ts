@@ -6,7 +6,7 @@ import {
   MAX_MULTIPLIER_BONUS_PER_HAND,
   MAX_REFUND_PER_HAND,
 } from './apConfig'
-import { BuffRewardAxis } from './buffs'
+import { BuffKind, BuffRewardAxis } from './buffs'
 
 /**
  * DLR-108/DLR-124 — the per-hand accrual R1/R2/R5/R6 describe: four independent running totals,
@@ -25,6 +25,17 @@ import { BuffRewardAxis } from './buffs'
  * their contribution.
  */
 
+/** The two axes that cross a hand boundary — structurally identical to `CashOutBonus`, and
+ *  deliberately so: the carry seeds exactly the two figures a cash-out can spend. A distinct
+ *  NAMED type because it lives on `RunState` and crosses the mount seam in both directions,
+ *  where `CashOutBonus`'s "what this cash-out may add" meaning would be a lie. */
+export interface BuffCarry {
+  readonly multiplierBonus: number
+  readonly flatDamageBonus: number
+}
+
+export const EMPTY_BUFF_CARRY: BuffCarry = { multiplierBonus: 0, flatDamageBonus: 0 }
+
 /** One hand's four running totals, one per reward axis R1 prices, each already clipped at its cap
  *  (R6) so a reader never has to re-check a bound. */
 export interface BuffBonusAccrual {
@@ -38,6 +49,14 @@ export interface BuffBonusAccrual {
   readonly multiplierPaid: number
   /** DLR-125 — the same, for `flatDamageBonus`. */
   readonly flatDamagePaid: number
+  /** DLR-150 AC3 — what seeded this hand's `multiplierBonus`/`flatDamageBonus`. DISPLAY ONLY:
+   *  nothing reads it to decide a payout, because the seed is already inside those two figures.
+   *  Kept so AC6's opening figure is legible for the whole hand, not only at trick 0. */
+  readonly carriedIn: BuffCarry
+  /** DLR-150 AC1 — rewards a Feeder earned on a LOSS this hand. Never payable this hand;
+   *  UNCAPPED, because R6's caps bound what a hand may PAY and this pays nothing. Handed to the
+   *  run at hand end and wiped at the fight boundary by `feederCarryAfter`. */
+  readonly carryOut: BuffCarry
 }
 
 export const EMPTY_BUFF_ACCRUAL: BuffBonusAccrual = {
@@ -47,14 +66,25 @@ export const EMPTY_BUFF_ACCRUAL: BuffBonusAccrual = {
   apRefunded: 0,
   multiplierPaid: 0,
   flatDamagePaid: 0,
+  carriedIn: EMPTY_BUFF_CARRY,
+  carryOut: EMPTY_BUFF_CARRY,
 }
 
 /** The value a new hand's accrual starts at. The ONLY reset this module exports — see the module
- *  docblock's R6 note. Equal to `EMPTY_BUFF_ACCRUAL`; a distinct named function rather than
- *  exporting the constant directly under two names, so a caller's intent ("start a new hand") is
- *  legible at the call site the way `refreshActionPointsForNewHand` already is for AP. */
-export function startHandAccrual(): BuffBonusAccrual {
-  return EMPTY_BUFF_ACCRUAL
+ *  docblock's R6 note. `carriedIn` (DLR-150 AC3) seeds `multiplierBonus`/`flatDamageBonus`
+ *  directly, with `multiplierPaid`/`flatDamagePaid` at zero, so `payableCashOutBonus` reads the
+ *  seed as an ordinary spendable bonus with no second payable pool. The carry itself sits outside
+ *  R6's caps deliberately — R6 bounds what a hand may PAY, and the carry paid nothing in the hand
+ *  that earned it. A distinct named function rather than exporting the constant directly under
+ *  two names, so a caller's intent ("start a new hand") is legible at the call site the way
+ *  `refreshActionPointsForNewHand` already is for AP. */
+export function startHandAccrual(carriedIn: BuffCarry = EMPTY_BUFF_CARRY): BuffBonusAccrual {
+  return {
+    ...EMPTY_BUFF_ACCRUAL,
+    multiplierBonus: carriedIn.multiplierBonus,
+    flatDamageBonus: carriedIn.flatDamageBonus,
+    carriedIn,
+  }
 }
 
 /** The per-hand cap for one of the four `BuffCostAxis` reward axes, transcribed from
@@ -100,26 +130,57 @@ export function overlapBonusFor(firedCount: number): number {
   return Math.max(0, firedCount - 1)
 }
 
-/** R1/R2/R5 resolved for one trick's fired buffs: each buff's reward adds into its own axis, then
- *  the Overlap Bonus — drawn from the SAME `MAX_MULTIPLIER_BONUS_PER_HAND` pool Momentum cards
- *  themselves draw from (R5) — adds to the multiplier axis. Reflects R3's five-step order (Second
- *  Wind → Momentum → cash-out → Blade → Purse) in the sequence contributions are applied, but does
- *  NOT perform the cash-out step itself — nothing in `src/` reads a buff yet, so wiring this into
- *  `bank.ts`'s live cash-out is a later ticket's job (`plan.md` → Explicitly out of scope). Never
- *  mutates `accrual` or `fired`. */
+/** AC1 — one Loss-firing Feeder's reward into `carryOut`. UNCAPPED: R6's caps bound what a hand
+ *  may PAY, and this pays nothing this hand. Throws on an axis that cannot carry rather than
+ *  accruing a plausible zero — `mintFromTemplate`'s discipline. Never mutates `accrual`. */
+export function accrueCarry(
+  accrual: BuffBonusAccrual,
+  axis: BuffCostAxis,
+  amount: number,
+): BuffBonusAccrual {
+  switch (axis) {
+    case BuffRewardAxis.Multiplier:
+      return {
+        ...accrual,
+        carryOut: {
+          ...accrual.carryOut,
+          multiplierBonus: accrual.carryOut.multiplierBonus + amount,
+        },
+      }
+    case BuffRewardAxis.Magnitude:
+      return {
+        ...accrual,
+        carryOut: {
+          ...accrual.carryOut,
+          flatDamageBonus: accrual.carryOut.flatDamageBonus + amount,
+        },
+      }
+    case BuffRewardAxis.Coins:
+    case BuffRewardAxis.ApRefund:
+      throw new RangeError(
+        `Axis ${axis} cannot carry across a hand boundary: only Momentum and Blade seed a hand`,
+      )
+  }
+}
+
+/** R1/R2/R5 for one trick's fired buffs, plus DLR-150 AC1/AC2's outcome split. `trickIsLoss` is
+ *  supplied by `bank.ts` from `!isTaken(outcome)` — this module never re-derives the skull
+ *  inversion, which is stated exactly once, in `bank.ts`'s `TAKEN` table. A FEEDER firing on a
+ *  Loss carries; every other family and every Win is unchanged, and so is the Overlap Bonus.
+ *  Reflects R3's five-step order (Second Wind → Momentum → cash-out → Blade → Purse) in the
+ *  sequence contributions are applied, but does NOT perform the cash-out step itself — that is
+ *  `bank.ts`'s job. Never mutates `accrual` or `fired`. */
 export function resolveFiredBuffs(
   accrual: BuffBonusAccrual,
   fired: readonly Buff[],
+  trickIsLoss: boolean,
 ): BuffBonusAccrual {
-  let next = fired.reduce(
-    (running, buff) =>
-      accrueAxisBonus(
-        running,
-        narrowToCostAxis(buff.reward.axis, 'Fired buff reward axis'),
-        buff.reward.value,
-      ),
-    accrual,
-  )
+  let next = fired.reduce((running, buff) => {
+    const axis = narrowToCostAxis(buff.reward.axis, 'Fired buff reward axis')
+    return trickIsLoss && buff.kind === BuffKind.Feeder
+      ? accrueCarry(running, axis, buff.reward.value)
+      : accrueAxisBonus(running, axis, buff.reward.value)
+  }, accrual)
   const overlap = overlapBonusFor(fired.length)
   if (overlap > 0) {
     next = accrueAxisBonus(next, BuffRewardAxis.Multiplier, overlap)

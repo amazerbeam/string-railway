@@ -69,7 +69,7 @@ describe('reachability — the DLR-120 audit', () => {
   })
 
   it('partitions the BuffKind union with mintable and unreachable, less Unassigned', () => {
-    expect(BUFF_TEMPLATES.length).toBe(13)
+    expect(BUFF_TEMPLATES.length).toBe(16)
     const total = Object.values(BuffKind).length
     expect(mintableBuffKinds().size + unreachableBuffKinds().size + 1).toBe(total)
   })

@@ -266,18 +266,24 @@ export function resolveTrickBank(before: BankState, trick: TrickFacts): TrickRes
   const buffOutcome =
     trick.buffs === null
       ? null
-      : resolveTrickBuffs(trick.buffs, {
-          playerWon: trick.playerWon,
-          skullTrick: trick.skullTrick,
-          playerHit: damageToPlayer > 0,
-          finalTrick: trick.finalTrick,
-          bankAfterTrick: bank,
-          ...trick.buffs.hand,
-          tricksWithoutHit: advanceTricksWithoutHit(
-            trick.buffs.hand.tricksWithoutHit,
-            damageToPlayer > 0,
-          ),
-        })
+      : resolveTrickBuffs(
+          trick.buffs,
+          {
+            playerWon: trick.playerWon,
+            skullTrick: trick.skullTrick,
+            playerHit: damageToPlayer > 0,
+            finalTrick: trick.finalTrick,
+            bankAfterTrick: bank,
+            ...trick.buffs.hand,
+            tricksWithoutHit: advanceTricksWithoutHit(
+              trick.buffs.hand.tricksWithoutHit,
+              damageToPlayer > 0,
+            ),
+          },
+          // DLR-150 — `TAKEN` (above) is the single statement of the skull inversion; the outcome
+          // axis is read once, here, and handed down rather than re-derived in `src/hunt/`.
+          !isTaken(outcome),
+        )
   let accrual = buffOutcome?.accrual ?? null
 
   if (trickHit || timebombResets) {

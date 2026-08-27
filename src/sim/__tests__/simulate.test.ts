@@ -3,6 +3,7 @@ import { RunEnding, type HandReport, type RunReport, type SimSummary } from '../
 import { baselinePolicy } from '../baselinePolicy'
 import { formatSummary } from '../report'
 import { simulate } from '../simulate'
+import { EMPTY_BUFF_CARRY } from '../../hunt'
 
 function handFixture(overrides: Partial<HandReport> = {}): HandReport {
   return {
@@ -24,6 +25,8 @@ function handFixture(overrides: Partial<HandReport> = {}): HandReport {
     fault: null,
     buffWindowObservations: [],
     buffFireOutcomes: [],
+    feederCarriedIn: EMPTY_BUFF_CARRY,
+    feederCarryOut: EMPTY_BUFF_CARRY,
     ...overrides,
   }
 }

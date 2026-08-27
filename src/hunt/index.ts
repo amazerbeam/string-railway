@@ -134,12 +134,14 @@ export {
   isConsumableKind,
 } from './buffCosts'
 
-export type { BuffBonusAccrual, CashOutBonus } from './buffAccrual'
+export type { BuffBonusAccrual, BuffCarry, CashOutBonus } from './buffAccrual'
 export {
   EMPTY_BUFF_ACCRUAL,
+  EMPTY_BUFF_CARRY,
   startHandAccrual,
   accrualCapFor,
   accrueAxisBonus,
+  accrueCarry,
   overlapBonusFor,
   resolveFiredBuffs,
   markCashOutPaid,

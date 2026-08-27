@@ -1,7 +1,7 @@
 # War Council — `src/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, PT-001, PT-002
+**Built by:** SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, DLR-150, PT-001, PT-002
 
 ## Responsibility
 
@@ -226,7 +226,9 @@ shuffle when the pile runs short — and five sites route through it. See
   Blade outside it), which two of R3's five steps land here, the `payableCashOutBonus` /
   `markCashOutPaid` pair that makes R6's ceiling a per-**hand** bound, why the two new `TrickFacts`
   and `TrickResolution` fields are required rather than optional, `buffTrickFactsFor` as the single
-  producer of the per-trick facts, and `PlayCardOptions`' sixth field (DLR-125).
+  producer of the per-trick facts, `PlayCardOptions`' sixth field (DLR-125), and **`resolveTrickBank`
+  supplying `!isTaken(outcome)` as `trickIsLoss`** so the skull inversion stays stated exactly once
+  in this file and `src/hunt/` never re-derives it (DLR-150).
 - [The hand refill and the mid-hand draw](the-hand-refill.md) — the player's hand topped back up to
   `PLAYER_HAND_FLOOR` as each trick resolves, why the refill sits after `resolveTrickBank` and is
   skipped on the final trick, why a floor of `0` is a missing code path rather than a flag,

@@ -1,5 +1,5 @@
 import { cashValue, forcedCashValue, isTaken, type TrickResolution } from '../../warCouncil'
-import type { CashOutBonus } from '../../hunt'
+import { EMPTY_BUFF_CARRY, type BuffCarry, type CashOutBonus } from '../../hunt'
 import { TRICKS_LABEL, MULTIPLIER_LABEL, TRICK_OUTCOME_MESSAGE } from './labels'
 
 /** No buff bonus pending — the default when a caller has none to report, so every existing
@@ -14,6 +14,15 @@ interface BankMeterProps {
    *  Momentum sits inside the product, Blade lands on top of it, exactly as `resolveTrickBank`
    *  would spend it at the next real cash-out. Display only: nothing here pays it. */
   readonly pendingBonus?: CashOutBonus
+  /** DLR-150 AC6, first half — what this hand opened on. Reads `accrual.carriedIn`, which stays
+   *  the same value for the whole hand, so a player who looks up mid-hand still sees where their
+   *  opening bonus came from rather than only at trick 0. Display only. */
+  readonly carriedIn?: BuffCarry
+  /** DLR-150 AC6, second half — what this hand is banking for the next one. Reads
+   *  `accrual.carryOut`. Deliberately NOT folded into `cash`/`forced`/`shownMultiplier` — AC1
+   *  says this hand's cash-out pays nothing from it, and folding it in would be this component
+   *  inventing a payout. Display only. */
+  readonly carryOut?: BuffCarry
 }
 
 /**
@@ -32,6 +41,8 @@ export default function BankMeter({
   multiplier,
   lastResolution,
   pendingBonus = NO_PENDING_BONUS,
+  carriedIn = EMPTY_BUFF_CARRY,
+  carryOut = EMPTY_BUFF_CARRY,
 }: BankMeterProps) {
   // A buff's bonus is unpaid until a real cash-out, but the reader can already see it building —
   // folded into the SAME two figures `resolveTrickBank` would use if a cash-out fired right now
@@ -44,6 +55,8 @@ export default function BankMeter({
   // it is precisely the number the new decision needs (`game-ux`).
   const forced = forcedCashValue(bank, shownMultiplier) + pendingBonus.flatDamageBonus
   const hasPendingBonus = pendingBonus.multiplierBonus > 0 || pendingBonus.flatDamageBonus > 0
+  const hasCarriedIn = carriedIn.multiplierBonus > 0 || carriedIn.flatDamageBonus > 0
+  const hasCarryOut = carryOut.multiplierBonus > 0 || carryOut.flatDamageBonus > 0
   const taken = lastResolution ? isTaken(lastResolution.outcome) : null
   const lastLine = lastResolution
     ? TRICK_OUTCOME_MESSAGE[lastResolution.outcome]
@@ -67,6 +80,14 @@ export default function BankMeter({
         aria-label={`${TRICKS_LABEL} ${bank}, ${MULTIPLIER_LABEL} ${multiplier}${
           hasPendingBonus
             ? `, plus a pending buff bonus of ${pendingBonus.multiplierBonus} multiplier and ${pendingBonus.flatDamageBonus} damage`
+            : ''
+        }${
+          hasCarriedIn
+            ? `, of which ${carriedIn.multiplierBonus} multiplier and ${carriedIn.flatDamageBonus} damage carried in from last hand`
+            : ''
+        }${
+          hasCarryOut
+            ? `, banking ${carryOut.multiplierBonus} multiplier and ${carryOut.flatDamageBonus} damage for next hand`
             : ''
         }, cashes for ${cash}, or ${forced} if you are hit first`}
       >
@@ -95,6 +116,18 @@ export default function BankMeter({
         <p className="wc-bank-pending" aria-hidden="true">
           Buff bonus pending: <b>+{pendingBonus.multiplierBonus}</b> multiplier,{' '}
           <b>+{pendingBonus.flatDamageBonus}</b> damage
+        </p>
+      )}
+      {hasCarriedIn && (
+        <p className="wc-bank-carried-in" aria-hidden="true">
+          Carried in from last hand: <b>+{carriedIn.multiplierBonus}</b> multiplier,{' '}
+          <b>+{carriedIn.flatDamageBonus}</b> damage
+        </p>
+      )}
+      {hasCarryOut && (
+        <p className="wc-bank-carry-out" aria-hidden="true">
+          Banking for next hand: <b>+{carryOut.multiplierBonus}</b> multiplier,{' '}
+          <b>+{carryOut.flatDamageBonus}</b> damage
         </p>
       )}
       <p className={lastClassName}>{lastLine}</p>

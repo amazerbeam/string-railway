@@ -1,7 +1,7 @@
 # Headless run simulator — `src/sim/`
 
 **Status:** implemented
-**Built by:** DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146
+**Built by:** DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150
 
 ## Responsibility
 
@@ -14,6 +14,15 @@ It is separate from its neighbours because it **decides nothing about the game**
 `src/warCouncil/` own the rules; `src/app/warCouncil/` owns how a hand is played out; this module
 owns only *who is at the controls* and *what gets counted*. It is a consumer of all three and is
 imported by none of them.
+
+**DLR-150 kept the simulator on the same seam rather than beside it.** The Feeder carry crosses a
+hand boundary, so a simulator that never threaded it would have measured a game where the carry did
+not exist: `playHandWindows.ts`'s seed now passes `run.feederCarry`, `playHand.ts` dropped its
+hand-built `WarCouncilRoundResult` literal in favour of the shared `roundResultFor(ui)` — the same
+one `WarCouncilRound.tsx` uses, so a field added to the result can no longer reach the felt and miss
+the simulator — and `playRun.ts` hands `outcome.result.feederCarry` to `recordEncounter`. The
+reachability audit's pool figure moved 13 → 16 with the restored Feeder Momentum row. See
+[hunt/the-feeder-carry.md](../hunt/the-feeder-carry.md) for the mechanic itself.
 
 ## Key types & exports
 

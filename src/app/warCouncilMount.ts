@@ -1,6 +1,7 @@
 import type {
   ActionPoints,
   Buff,
+  BuffCarry,
   Coins,
   DuelSide,
   EncounterState,
@@ -74,6 +75,9 @@ export interface WarCouncilMountProps {
    *  `blastGuardHeld` it does NOT come back on `WarCouncilRoundResult` —
    *  a hand cannot buy or spend a tier. */
   readonly rankTiers?: RankTierTable
+  /** DLR-150 AC3 — the carry this hand OPENS on. OPTIONAL and defaulted to `EMPTY_BUFF_CARRY`,
+   *  following `apCapacity`, so every existing mount site and fixture reproduces today's game. */
+  readonly feederCarry?: BuffCarry
   readonly onComplete: (result: WarCouncilRoundResult) => void
 }
 
@@ -117,4 +121,7 @@ export interface WarCouncilRoundResult {
    *  construction sites; the run adopts it through `recordEncounter`'s optional sixth
    *  parameter. */
   readonly coinsEarned: Coins
+  /** DLR-150 AC1 — what this hand banked for the next one. REQUIRED, following `coinsEarned`,
+   *  so the compiler enumerates every construction site. */
+  readonly feederCarry: BuffCarry
 }

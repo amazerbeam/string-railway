@@ -159,11 +159,17 @@ export interface BuffTrickOutcome {
 }
 
 /** R4's cadence and R1/R2/R5/R6 in one call, so `bank.ts` states R3's ORDER and nothing else.
- *  Delegates every figure to `resolveFiredBuffs` — the accrual arithmetic is never re-derived. */
-export function resolveTrickBuffs(input: BuffTrickInput, ctx: BuffTrickContext): BuffTrickOutcome {
+ *  `trickIsLoss` is the OUTCOME axis and is passed straight through to `resolveFiredBuffs` — it
+ *  arrives from `bank.ts`'s `!isTaken(outcome)` because `src/hunt/` deliberately does not hold a
+ *  second statement of the skull inversion. */
+export function resolveTrickBuffs(
+  input: BuffTrickInput,
+  ctx: BuffTrickContext,
+  trickIsLoss: boolean,
+): BuffTrickOutcome {
   const fired = firedBuffs(input.active, input.firedThisHand, ctx)
   return {
-    accrual: resolveFiredBuffs(input.accrual, fired),
+    accrual: resolveFiredBuffs(input.accrual, fired, trickIsLoss),
     firedIds: fired.map((buff) => buff.id),
   }
 }

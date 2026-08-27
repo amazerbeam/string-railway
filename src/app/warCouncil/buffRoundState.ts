@@ -16,6 +16,7 @@ import {
   firesOncePerHand,
   startHandAccrual,
   type BuffBonusAccrual,
+  type BuffCarry,
   type BuffId,
   type Coins,
 } from '../../hunt'
@@ -38,10 +39,12 @@ export interface BuffHandState {
   readonly applyDamagePressed: boolean
 }
 
-/** A fresh hand's bookkeeping — nothing fired, nothing pressed, the no-hit streak at zero. */
-export function startBuffHand(): BuffHandState {
+/** A fresh hand's bookkeeping — nothing fired, nothing pressed, the no-hit streak at zero.
+ *  DLR-150 AC3 — `carriedIn` is no longer always empty: it seeds the accrual's payable axes with
+ *  whatever the previous hand's Loss-firing Feeders diverted into the carry pool. */
+export function startBuffHand(carriedIn?: BuffCarry): BuffHandState {
   return {
-    accrual: startHandAccrual(),
+    accrual: startHandAccrual(carriedIn),
     firedThisHand: [],
     tricksWithoutHit: 0,
     coinsEarned: 0,

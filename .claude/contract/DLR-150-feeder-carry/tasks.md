@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: COMPLETE
 Started: 2026-08-26
 
 **Goal:** A Feeder firing on a Loss diverts its reward into a carry pool that pays nothing this hand, seeds the next hand's accrual, and dies at the fight boundary; a Feeder firing on a dodge pays this hand as today; Momentum is restored to the Feeder family; and both halves of the carry are on the felt.
@@ -65,7 +65,7 @@ Started: 2026-08-26
 
 Two files this contract must edit are at or over `CLAUDE.md`'s blocking budget before it touches them: `WarCouncilRound.tsx` at 415 lines and `App.tsx` at 399. Both extractions are behaviour-preserving and land before any feature work, so every later phase edits a file with room in it. The phase boundary is safe because nothing changes shape — the app type-checks and plays identically at the end of it.
 
-### Task 1: Extract the round result into `src/app/warCouncil/roundResult.ts`
+### Task 1: Extract the round result into `src/app/warCouncil/roundResult.ts` ✓
 
 - Skill: react-frontend
 
@@ -75,7 +75,7 @@ Two files this contract must edit are at or over `CLAUDE.md`'s blocking budget b
 - Test: `src/app/warCouncil/__tests__/roundResult.test.ts`
 - Modify: `src/app/warCouncil/WarCouncilRound.tsx:245-275`, `src/sim/playHand.ts:222-231`
 
-- [ ] **Step 1: Write the module**
+- [x] **Step 1: Write the module**
 
 ```ts
 import type { WarCouncilRoundResult } from '../warCouncilMount'
@@ -98,29 +98,29 @@ export function roundResultFor(ui: RoundUiState): WarCouncilRoundResult {
 }
 ```
 
-- [ ] **Step 2: Replace both literals in `WarCouncilRound.tsx` with `roundResultFor(ui)`**
+- [x] **Step 2: Replace both literals in `WarCouncilRound.tsx` with `roundResultFor(ui)`**
 
 Both `onComplete({ … })` call sites at lines 245-275 currently build the same seven-field object. Replace each with `onComplete(roundResultFor(ui))`, keeping whatever surrounding condition each sits behind unchanged, and add the import.
 
-- [ ] **Step 3: Replace the simulator's copy in `src/sim/playHand.ts`**
+- [x] **Step 3: Replace the simulator's copy in `src/sim/playHand.ts`**
 
 Replace the `const result: WarCouncilRoundResult = { … }` literal with `const result = roundResultFor(ui)`, keeping the `WarCouncilRoundResult` type import only if it is still referenced elsewhere in the file.
 
-- [ ] **Step 4: Write the spec**
+- [x] **Step 4: Write the spec**
 
 `src/app/warCouncil/__tests__/roundResult.test.ts` — build a `RoundUiState` through `createRoundUiState` with a seed from the nearest existing fixture (`src/app/warCouncil/__tests__/roundReducer.test.ts` is the pattern to copy), then assert `roundResultFor(ui)` reports each of the seven fields from the state it was given: `finalState` is `ui.round`, `encounter` is `ui.encounter`, and `coinsEarned` reads through `ui.buffHand.coinsEarned` rather than a constant.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run: `npm run typecheck; npx vitest run src/app/warCouncil/__tests__/roundResult.test.ts`
 Expected: typecheck exits 0; Vitest reports 0 failed.
 
-- [ ] **Step 6: Measure the file that forced this**
+- [x] **Step 6: Measure the file that forced this**
 
 Run: `(Get-Content src\app\warCouncil\WarCouncilRound.tsx).Count`
 Expected: under 400. If it is not, extract the felt's prop assembly for `<BankMeter>`/`<RoundStatusBand>` into `roundControlsProps.ts`, which already exists for exactly this purpose, and measure again.
 
-### Task 2: Extract `App.tsx`'s screen derivation into `src/app/screenFor.ts`
+### Task 2: Extract `App.tsx`'s screen derivation into `src/app/screenFor.ts` ✓
 
 - Skill: react-frontend
 
@@ -130,7 +130,7 @@ Expected: under 400. If it is not, extract the felt's prop assembly for `<BankMe
 - Test: `src/app/__tests__/screenFor.test.ts`
 - Modify: `src/App.tsx:150-165`
 
-- [ ] **Step 1: Write the module**
+- [x] **Step 1: Write the module**
 
 ```ts
 import { RunPhase } from '../hunt'
@@ -152,15 +152,15 @@ export function screenFor(phase: RunPhase, encounterOver: boolean): AppScreen {
 }
 ```
 
-- [ ] **Step 2: Adopt it in `App.tsx`**
+- [x] **Step 2: Adopt it in `App.tsx`**
 
 Replace the seven-branch `const screen = phase === RunPhase.Start ? 'start' : …` chain with `const screen = screenFor(phase, encounterOver)` and add the import. The comment above it — that the mirror follows the same branch order the render switches on — stays, reworded to say the derivation now lives in `screenFor`.
 
-- [ ] **Step 3: Write the spec**
+- [x] **Step 3: Write the spec**
 
 `src/app/__tests__/screenFor.test.ts` — one assertion per branch, including the two that the ternary's ordering makes easy to get wrong: `screenFor(RunPhase.Start, true)` is `'start'` (Start wins over an over encounter) and `screenFor(RunPhase.Map, false)` is `'warCouncil'` (an unresolved encounter wins over every non-Start phase).
 
-- [ ] **Step 4: Verify and measure**
+- [x] **Step 4: Verify and measure**
 
 Run: `npm run typecheck; npx vitest run src/app/__tests__/screenFor.test.ts; (Get-Content src\App.tsx).Count`
 Expected: typecheck exits 0; Vitest reports 0 failed; the line count is under 395, leaving room for Phase 4's two lines.
@@ -171,7 +171,7 @@ Expected: typecheck exits 0; Vitest reports 0 failed; the line count is under 39
 
 The whole rule, in `src/hunt/`, with no caller changed yet beyond the one signature `bank.ts` must satisfy. AC1, AC2 and the arithmetic half of AC3 are decided here and covered by tests that need no renderer. The boundary is safe because `resolveFiredBuffs` and `resolveTrickBuffs` grow a required parameter that Task 4 supplies in the same phase — the phase, not each task, is the checkpoint.
 
-### Task 3: `BuffCarry`, `accrueCarry`, and the Loss branch in `resolveFiredBuffs`
+### Task 3: `BuffCarry`, `accrueCarry`, and the Loss branch in `resolveFiredBuffs` ✓
 
 - Skill: react-frontend
 
@@ -180,7 +180,7 @@ The whole rule, in `src/hunt/`, with no caller changed yet beyond the one signat
 - Modify: `src/hunt/buffAccrual.ts`, `src/hunt/index.ts`
 - Test: `src/hunt/__tests__/buffCarry.test.ts` (create), `src/hunt/__tests__/buffAccrual.test.ts`
 
-- [ ] **Step 1: Write the failing spec for the four AC7 cases**
+- [x] **Step 1: Write the failing spec for the four AC7 cases**
 
 `src/hunt/__tests__/buffCarry.test.ts`, mirroring `buffAccrual.test.ts`'s existing style (plain function-in, value-out; buffs built as `Buff` literals with `kind: BuffKind.Feeder`):
 
@@ -218,12 +218,12 @@ expect(takerLoss.carryOut).toEqual(EMPTY_BUFF_CARRY)
 expect(payableCashOutBonus(takerLoss).flatDamageBonus).toBe(1)
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `npx vitest run src/hunt/__tests__/buffCarry.test.ts`
 Expected: fails to collect or fails on the missing exports — `startHandAccrual` takes no argument and `carryOut` does not exist yet.
 
-- [ ] **Step 3: Add the shape to `src/hunt/buffAccrual.ts`**
+- [x] **Step 3: Add the shape to `src/hunt/buffAccrual.ts`**
 
 Add `BuffCarry`, `EMPTY_BUFF_CARRY`, the two accrual fields on `BuffBonusAccrual` and on `EMPTY_BUFF_ACCRUAL`, and the seeding parameter — exactly the declarations in `plan.md` Part 2 → Data shapes, docblocks included. `startHandAccrual` stays the only exported reset in the module; the docblock's R6 note is extended to say the carry is deliberately outside R6's caps because it pays nothing in the hand that earns it.
 
@@ -261,7 +261,7 @@ export function accrueCarry(
 }
 ```
 
-- [ ] **Step 4: Add the Loss branch to `resolveFiredBuffs`**
+- [x] **Step 4: Add the Loss branch to `resolveFiredBuffs`**
 
 ```ts
 /** R1/R2/R5 for one trick's fired buffs, plus DLR-150 AC1/AC2's outcome split. `trickIsLoss` is
@@ -287,20 +287,20 @@ export function resolveFiredBuffs(
 }
 ```
 
-- [ ] **Step 5: Export the three new names from `src/hunt/index.ts`**
+- [x] **Step 5: Export the three new names from `src/hunt/index.ts`**
 
 Add `BuffCarry` (type), `EMPTY_BUFF_CARRY` and `accrueCarry` beside the existing `EMPTY_BUFF_ACCRUAL` / `startHandAccrual` / `resolveFiredBuffs` entries at lines 139-144.
 
-- [ ] **Step 6: Update `buffAccrual.test.ts`**
+- [x] **Step 6: Update `buffAccrual.test.ts`**
 
 Two full-object `toEqual({ … })` assertions (around lines 32 and 118) gain `carriedIn` and `carryOut`; every `resolveFiredBuffs(…)` call gains a third argument of `false`, which is today's behaviour. The existing assertion that `startHandAccrual` is the only `^start|reset` export is unchanged and must stay passing.
 
-- [ ] **Step 7: Verify**
+- [x] **Step 7: Verify**
 
 Run: `npm run typecheck; npx vitest run src/hunt/__tests__/buffCarry.test.ts src/hunt/__tests__/buffAccrual.test.ts`
 Expected: typecheck exits 0; Vitest reports 0 failed.
 
-### Task 4: Thread `trickIsLoss` from the one place that owns the outcome axis
+### Task 4: Thread `trickIsLoss` from the one place that owns the outcome axis ✓
 
 - Skill: react-frontend
 
@@ -309,7 +309,7 @@ Expected: typecheck exits 0; Vitest reports 0 failed.
 - Modify: `src/hunt/buffEvaluation.ts:160-170`, `src/warCouncil/bank.ts:260-280`
 - Test: `src/hunt/__tests__/buffEvaluation.test.ts`, `src/warCouncil/__tests__/bank.buffs.test.ts`
 
-- [ ] **Step 1: Widen `resolveTrickBuffs`**
+- [x] **Step 1: Widen `resolveTrickBuffs`**
 
 ```ts
 /** R4's cadence and R1/R2/R5/R6 in one call, so `bank.ts` states R3's ORDER and nothing else.
@@ -329,15 +329,15 @@ export function resolveTrickBuffs(
 }
 ```
 
-- [ ] **Step 2: Supply it from `resolveTrickBank`**
+- [x] **Step 2: Supply it from `resolveTrickBank`**
 
 At `src/warCouncil/bank.ts:269`, pass `!isTaken(outcome)` as the third argument to `resolveTrickBuffs`, reading the `TrickOutcome` the function has already computed rather than re-deriving anything from `playerWon` / `skullTrick`. Add a one-line comment naming `TAKEN` as the single statement of the inversion.
 
-- [ ] **Step 3: Cover the crossing**
+- [x] **Step 3: Cover the crossing**
 
 In `src/warCouncil/__tests__/bank.buffs.test.ts`, add two cases against the real `resolveTrickBank`: a Bells Feeder on a **clean loss** raises `buffAccrual.carryOut.flatDamageBonus` and leaves that trick's `cashOut` exactly what it is with no buffs; the same card on a **dodge** raises the paid bonus and leaves `carryOut` empty. Existing `resolveTrickBuffs` calls in `buffEvaluation.test.ts` gain a third argument of `false`.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `npm run typecheck; npx vitest run src/hunt/__tests__/buffEvaluation.test.ts src/warCouncil/__tests__/bank.buffs.test.ts`
 Expected: typecheck exits 0; Vitest reports 0 failed.
@@ -348,7 +348,7 @@ Expected: typecheck exits 0; Vitest reports 0 failed.
 
 `RunState` gains the field and the fight-boundary rule. Nothing carries yet — the felt is not wired until Phase 4 — so the game plays exactly as it does today at the end of this phase, with a field that is always empty. That is what makes the boundary safe.
 
-### Task 5: `RunState.feederCarry` and `feederCarryAfter`
+### Task 5: `RunState.feederCarry` and `feederCarryAfter` ✓
 
 - Skill: react-frontend
 
@@ -357,7 +357,7 @@ Expected: typecheck exits 0; Vitest reports 0 failed.
 - Modify: `src/hunt/run.ts:51-155`, `src/hunt/runTransitions.ts:70-120`
 - Test: `src/hunt/__tests__/run.feederCarry.test.ts` (create)
 
-- [ ] **Step 1: Write the failing spec for AC4**
+- [x] **Step 1: Write the failing spec for AC4**
 
 `src/hunt/__tests__/run.feederCarry.test.ts`, following `run.integration.test.ts`'s fixture style:
 
@@ -382,16 +382,16 @@ expect(recordEncounter(carried, unresolved, false, 3, null).feederCarry)
 expect(startRun().feederCarry).toEqual(EMPTY_BUFF_CARRY)
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `npx vitest run src/hunt/__tests__/run.feederCarry.test.ts`
 Expected: fails to collect — `feederCarry` is not a property of `RunState`.
 
-- [ ] **Step 3: Add the field and seed it**
+- [x] **Step 3: Add the field and seed it**
 
 In `src/hunt/run.ts`, add `readonly feederCarry: BuffCarry` to `RunState` with the docblock from `plan.md` Part 2 → Data shapes, and `feederCarry: EMPTY_BUFF_CARRY` to `startRun`'s returned object. `advanceRun` needs no entry — the spread carries an already-empty value, and the reset is stated in `feederCarryAfter` instead.
 
-- [ ] **Step 4: Add the parameter and the named rule to `runTransitions.ts`**
+- [x] **Step 4: Add the parameter and the named rule to `runTransitions.ts`**
 
 ```ts
 /** AC4 — ONE statement of "a carry does not outlive the fight that earned it". A named function
@@ -405,7 +405,7 @@ function feederCarryAfter(encounter: EncounterState, carry: BuffCarry): BuffCarr
 
 and in `recordEncounter`'s returned object, `feederCarry: feederCarryAfter(encounter, feederCarry ?? run.feederCarry)`, with the optional 8th parameter documented as `plan.md` specifies.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run: `npm run typecheck; npx vitest run src/hunt/__tests__/run.feederCarry.test.ts src/hunt/__tests__/run.integration.test.ts`
 Expected: typecheck exits 0; Vitest reports 0 failed. A failure naming a missing `feederCarry` on a hand-built `RunState` fixture is a fixture to fix in this task, not a defect.
@@ -416,7 +416,7 @@ Expected: typecheck exits 0; Vitest reports 0 failed. A failure naming a missing
 
 The carry crosses the mount boundary in both directions and the simulator adopts the same path. This is the phase where the mechanic becomes live. Felt and simulator move in one phase deliberately: a carry that reaches the felt and not `src/sim/` would make every measured run a measurement of a different game.
 
-### Task 6: The mount seam and the seed
+### Task 6: The mount seam and the seed ✓
 
 - Skill: react-frontend
 
@@ -424,29 +424,31 @@ The carry crosses the mount boundary in both directions and the simulator adopts
 
 - Modify: `src/app/warCouncilMount.ts:60-125`, `src/app/warCouncil/roundUiState.ts:170-189,226-253`, `src/app/warCouncil/buffRoundState.ts:42-50`, `src/app/warCouncil/roundResult.ts`
 
-- [ ] **Step 1: Add the two seam fields**
+- [x] **Step 1: Add the two seam fields**
 
 `WarCouncilMountProps.feederCarry?: BuffCarry` (optional, defaulted at the read site to `EMPTY_BUFF_CARRY`, following `apCapacity`) and `WarCouncilRoundResult.feederCarry: BuffCarry` (required, following `coinsEarned`), with the docblocks from `plan.md` Part 2 → Data shapes.
 
-- [ ] **Step 2: Seed the hand from it**
+- [x] **Step 2: Seed the hand from it**
 
 `RoundUiSeed.feederCarry?: BuffCarry` in `roundUiState.ts`; `startBuffHand(carriedIn?: BuffCarry)` in `buffRoundState.ts` passing it to `startHandAccrual`; and `createRoundUiState`'s line becomes `buffHand: startBuffHand(seed.feederCarry)`. Update `startBuffHand`'s docblock to say a hand no longer always opens empty.
 
-- [ ] **Step 3: Report it back**
+- [x] **Step 3: Report it back**
 
 Add `feederCarry: ui.buffHand.accrual.carryOut` to `roundResultFor`. Because Task 1 collapsed three construction sites to one, this is the only edit needed to satisfy the required field.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `npm run typecheck; npx vitest run src/app/warCouncil/__tests__/buffRoundState.test.ts src/app/warCouncil/__tests__/roundResult.test.ts`
 Expected: typecheck exits 0; Vitest reports 0 failed.
 
-- [ ] **Step 5: Measure the file that was closest to the budget**
+- [x] **Step 5: Measure the file that was closest to the budget**
 
 Run: `(Get-Content src\app\warCouncil\roundUiState.ts).Count`
 Expected: under 400. If it is not, move `RoundUiSeed` and `createRoundUiState` into a new `src/app/warCouncil/roundUiSeed.ts` and re-export both names from `roundUiState.ts`, so no importer changes — the move `runTransitions.ts` already is for `run.ts`. Then measure again.
 
-### Task 7: The driver
+Measured 400 before this task's edits landed the field/docblock — not under 400 — so the named contingency fired: `RoundUiSeed` and `createRoundUiState` moved to `src/app/warCouncil/roundUiSeed.ts` (75 lines), re-exported from `roundUiState.ts`, which now measures 346.
+
+### Task 7: The driver ✓
 
 - Skill: react-frontend
 
@@ -454,20 +456,20 @@ Expected: under 400. If it is not, move `RoundUiSeed` and `createRoundUiState` i
 
 - Modify: `src/App.tsx:178-190,380-395`
 
-- [ ] **Step 1: Hand the carry down**
+- [x] **Step 1: Hand the carry down**
 
 Add `feederCarry={run.feederCarry}` to the `<WarCouncilRound … />` props, beside `blastGuardHeld` and `discardsRemaining`.
 
-- [ ] **Step 2: Hand it back up**
+- [x] **Step 2: Hand it back up**
 
 In `handleComplete`, pass `result.feederCarry` as `recordEncounter`'s eighth argument, after `result.buffs`.
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 Run: `npm run typecheck; (Get-Content src\App.tsx).Count`
 Expected: typecheck exits 0; the line count is under 400.
 
-### Task 8: The simulator walks the same seam
+### Task 8: The simulator walks the same seam ✓
 
 - Skill: react-frontend
 
@@ -475,15 +477,15 @@ Expected: typecheck exits 0; the line count is under 400.
 
 - Modify: `src/sim/playHandWindows.ts:38-50`, `src/sim/playRun.ts:128-140`
 
-- [ ] **Step 1: Seed from the run**
+- [x] **Step 1: Seed from the run**
 
 Add `feederCarry: run.feederCarry` to the object `seedFor` returns, beside `discardsRemaining`.
 
-- [ ] **Step 2: Adopt it on the way out**
+- [x] **Step 2: Adopt it on the way out**
 
 Add `outcome.result.feederCarry` as the eighth argument to `playRun.ts`'s `recordEncounter` call, after `outcome.result.buffs`.
 
-- [ ] **Step 3: Verify the simulator still runs a whole run**
+- [x] **Step 3: Verify the simulator still runs a whole run**
 
 Run: `npm run typecheck; npx vitest run src/sim`
 Expected: typecheck exits 0; Vitest reports 0 failed. `src/sim/` is lint-enforced pure — nothing added here imports React or touches a DOM global.
@@ -494,7 +496,7 @@ Expected: typecheck exits 0; Vitest reports 0 failed. `src/sim/` is lint-enforce
 
 AC5 and AC6. The pool widens and the felt learns to show both halves of the carry. Kept last deliberately, following the ticket's own instruction to build the readout before tuning anything: at the end of this phase the mechanic is visible and nothing has been balanced.
 
-### Task 9: Restore the Momentum Feeder
+### Task 9: Restore the Momentum Feeder ✓
 
 - Skill: react-frontend
 
@@ -503,7 +505,7 @@ AC5 and AC6. The pool widens and the felt learns to show both halves of the carr
 - Modify: `src/hunt/buffTemplates.ts:105-120`
 - Test: `src/hunt/__tests__/buffTemplates.test.ts:14-20`, `src/sim/__tests__/reachability.test.ts:70-75`
 
-- [ ] **Step 1: Restore the row**
+- [x] **Step 1: Restore the row**
 
 ```ts
 const TEMPLATE_FAMILIES: readonly TemplateFamily[] = [
@@ -519,25 +521,33 @@ const TEMPLATE_FAMILIES: readonly TemplateFamily[] = [
 
 The file's own DLR-145 docblock is updated in the same edit to say the pool is 16, and that Feeder's Momentum row was restored by DLR-150 while the eight cut families and two cut axes stay unreachable. No slot weight changes: `slotWeights.ts` already carries a `[BuffRewardAxis.Multiplier]` entry and keys family weight on `BuffKind.Feeder`.
 
-- [ ] **Step 2: Move the two pool-size assertions**
+- [x] **Step 2: Move the two pool-size assertions**
 
-`buffTemplates.test.ts:16-17` — `toHaveLength(13)` and `toBe(13)` become `16`; add an assertion that `templateById('feeder:bells:multiplier')`, `'feeder:keys:multiplier'` and `'feeder:moons:multiplier'` all resolve, since those three ids are persisted by the Vault the moment they ship. `reachability.test.ts:72` — `toBe(13)` becomes `16`.
+`buffTemplates.test.ts:16-17` — `toHaveLength(13)` and `toBe(13)` become `16`; add an assertion that `templateById('feeder:bells:multiplier')`, `'feeder:keys:multiplier'` and `'feeder:moons:multiplier'` all resolve, since those three ids are persisted by the Vault the moment they ship. `reachability.test.ts:72` — `toBe(13)` becomes `16`. Two further assertions in the same file were also pinned to Feeder's old Blade-only shape (`every Feeder pays on Blade only` and the suit-carrying-template count `6 + 3`) — both are direct consequences of the same pool-size arithmetic change, so they were moved in this step too rather than left failing.
 
-- [ ] **Step 3: Verify, including the slot-draw specs the wider pool touches**
+- [x] **Step 3: Verify, including the slot-draw specs the wider pool touches**
 
 Run: `npm run typecheck; npx vitest run src/hunt/__tests__/buffTemplates.test.ts src/hunt/__tests__/slotWeights.test.ts src/hunt/__tests__/slotOdds.test.ts src/sim/__tests__/reachability.test.ts`
 Expected: typecheck exits 0; Vitest reports 0 failed. A slot spec asserting an exact probability against a 13-template pool is an assertion to move to the 16-template figure in this task, not a defect.
 
-### Task 10: Both carry lines on `BankMeter`
+### Task 10: Both carry lines on `BankMeter` ✓
 
 - Skill: react-frontend
 
 **Files:**
 
-- Modify: `src/app/warCouncil/BankMeter.tsx`, `src/app/warCouncil/WarCouncilRound.tsx:355-362`, `src/app/warCouncil/warCouncilTable.css`
+- Modify: `src/app/warCouncil/BankMeter.tsx`, `src/app/warCouncil/WarCouncilRound.tsx:355-362`, `src/app/warCouncil/warCouncilHunt.css` (see note), `src/app/warCouncil/warCouncilBankMeter.css` (new — see note)
 - Test: `src/app/warCouncil/__tests__/BankMeter.test.tsx`
 
-- [ ] **Step 1: Add the two props and their lines**
+> **Discrepancy from the task's file list:** the `.wc-bank*` rules do not live in `warCouncilTable.css`
+> as named — they live in `warCouncilHunt.css`, at 400/400 lines before this task's edit. Styling the
+> two new lines there would have breached the 400-line budget, so the whole self-contained bank-meter
+> block (`.wc-bank` through `.wc-bank-last`) was moved into a new seventh stylesheet,
+> `warCouncilBankMeter.css`, imported from `WarCouncilRound.tsx` right after `warCouncilHunt.css` —
+> following the exact precedent `warCouncilHealthBars.css`'s own header comment documents for the
+> same forced split. `warCouncilHunt.css` now measures 268 lines and the new file 149.
+
+- [x] **Step 1: Add the two props and their lines**
 
 Layout, line order and the exclusion rule per `mockup.html` in this folder: the carried-in line sits directly under the existing "Buff bonus pending" line and the banking-for-next-hand line under that. Both are optional props defaulted to `EMPTY_BUFF_CARRY` and both render only when non-zero, exactly as `hasPendingBonus` already gates its line.
 
@@ -558,29 +568,29 @@ Layout, line order and the exclusion rule per `mockup.html` in this folder: the 
 
 `carryOut` is deliberately **not** folded into `shownMultiplier`, `cash` or `forced` — AC1 says this hand's cash-out pays nothing from it, and folding it in would be the component inventing a payout. Both figures are appended to the existing `wc-bank-figures` `aria-label` so a screen reader gets them without a new landmark, following the pattern `pendingBonus` already uses.
 
-- [ ] **Step 2: Style the two lines**
+- [x] **Step 2: Style the two lines**
 
-Add `.wc-bank-carried-in` and `.wc-bank-carry-out` to `warCouncilTable.css`, adapting the rules in `mockup.html`'s `<style>` block to the felt's existing tokens. State is carried by border style and position as well as colour — a solid rule on the carried-in line, a dashed one on the accumulating line — so a static screenshot and a colour-vision difference both still read. Every colour comes from an existing `--wc-*` token; no new token and no new tuning value is introduced.
+Added `.wc-bank-carried-in` and `.wc-bank-carry-out` to the new `warCouncilBankMeter.css` (see the discrepancy note above), adapting the rules in `mockup.html`'s `<style>` block to the felt's existing tokens — `--wc-brass-dim`/`--wc-brass` (solid, carried-in) and `--wc-timebomb`/`--wc-timebomb-edge` (dashed, carry-out; the mockup's own placeholder `--wc-carry`/`--wc-carry-dim` values are byte-for-byte the same hex as these two existing tokens). State is carried by border style and position as well as colour — a solid rule on the carried-in line, a dashed one on the accumulating line — so a static screenshot and a colour-vision difference both still read. Every colour comes from an existing `--wc-*` token; no new token and no new tuning value is introduced.
 
-- [ ] **Step 3: Feed it from the felt**
+- [x] **Step 3: Feed it from the felt**
 
-At `WarCouncilRound.tsx:358`, beside the existing `pendingBonus={payableCashOutBonus(ui.buffHand.accrual)}`, add `carriedIn={ui.buffHand.accrual.carriedIn}` and `carryOut={ui.buffHand.accrual.carryOut}`.
+At `WarCouncilRound.tsx`, beside the existing `pendingBonus={payableCashOutBonus(ui.buffHand.accrual)}`, added `carriedIn={ui.buffHand.accrual.carriedIn}` and `carryOut={ui.buffHand.accrual.carryOut}`.
 
-- [ ] **Step 4: Cover both lines, present and absent**
+- [x] **Step 4: Cover both lines, present and absent**
 
-In `src/app/warCouncil/__tests__/BankMeter.test.tsx`, add cases queried by accessible role and text: with a non-zero `carriedIn` the "Carried in from last hand" text is present and the `aria-label` names it; with a non-zero `carryOut` the "Banking for next hand" text is present **and** the rendered "Cashes for" figure is unchanged from the same render with an empty `carryOut` — that assertion is AC1 on the readout; with both empty, neither string appears at all.
+In `src/app/warCouncil/__tests__/BankMeter.test.tsx`, added cases queried by accessible role and text: with a non-zero `carriedIn` the "Carried in from last hand" text is present and the `aria-label` names it; with a non-zero `carryOut` the "Banking for next hand" text is present **and** the rendered "Cashes for" figure is unchanged from the same render with an empty `carryOut` — AC1 on the readout; with both empty, neither string appears at all.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run: `npm run typecheck; npx vitest run src/app/warCouncil/__tests__/BankMeter.test.tsx`
-Expected: typecheck exits 0; Vitest reports 0 failed.
+Expected: typecheck exits 0; Vitest reports 0 failed. Result: typecheck exit 0; `Test Files 1 passed (1)`, `Tests 11 passed (11)`.
 
-- [ ] **Step 6: Format the files this contract changed**
+- [x] **Step 6: Format the files this contract changed**
 
-Run: `npx prettier --write src/app/warCouncil/BankMeter.tsx src/app/warCouncil/warCouncilTable.css src/app/warCouncil/roundResult.ts src/app/screenFor.ts src/hunt/buffAccrual.ts src/hunt/buffTemplates.ts src/hunt/run.ts src/hunt/runTransitions.ts`
-Expected: exits 0. Scoped to this contract's files — never `npm run format`, which rewrites ~58 unrelated markdown files.
+Run: `npx prettier --write src/app/warCouncil/BankMeter.tsx src/app/warCouncil/warCouncilTable.css src/app/warCouncil/warCouncilHunt.css src/app/warCouncil/warCouncilBankMeter.css src/app/warCouncil/roundResult.ts src/app/screenFor.ts src/hunt/buffAccrual.ts src/hunt/buffTemplates.ts src/hunt/run.ts src/hunt/runTransitions.ts`
+Expected: exits 0. Scoped to this contract's files — never `npm run format`, which rewrites ~58 unrelated markdown files. Result: all reported `(unchanged)`.
 
-### Task 11: Correct the pool figures in `CLAUDE.md`
+### Task 11: Correct the pool figures in `CLAUDE.md` ✓
 
 - Skill: none — a prose correction to project instructions, no TypeScript in the diff.
 
@@ -588,14 +598,15 @@ Expected: exits 0. Scoped to this contract's files — never `npm run format`, w
 
 - Modify: `CLAUDE.md` — the *Cut buffs are cut until a ticket brings them back* section
 
-- [ ] **Step 1: Update the two invalidated statements**
+- [x] **Step 1: Update the two invalidated statements**
 
-That section currently reads "DLR-145 pared the mintable buff pool to **13 templates** — Taker (3 suits × Blade/Momentum), Feeder (3 suits × Blade), Sidestep (Blade/Momentum), plus the two activated cards Cheat and Timebomb." Replace the count with **16** and Feeder's axes with **Blade/Momentum**, and add one sentence naming DLR-150 as what restored the Momentum row and why (the carry lets the bonus escape the loss's own reset). Everything else in that section — the eight cut families, the two cut axes, the five consumables, and the two superseded documents — is untouched and stays true.
+Replaced the count with **16** and Feeder's axes with **Blade/Momentum**, and added one sentence naming DLR-150 as what restored the Momentum row and why (the carry lets the bonus escape the loss's own reset). Everything else in that section — the eight cut families, the two cut axes, the five consumables, and the two superseded documents — is untouched.
 
-- [ ] **Step 2: Confirm no other file still quotes the old figure**
+- [x] **Step 2: Confirm no other file still quotes the old figure**
 
 Run: `Get-ChildItem . -Recurse -Include *.md -Exclude node_modules | Select-String -Pattern "13 templates|Feeder \(3 suits . Blade\)"`
-Expected: hits only in `.claude/contract/**` (this contract and DLR-145's archived plan, both historical records) and in `.docs/implementation/**`, which `/fb-apply`'s `implementation-doc-writer` step owns and updates.
+Expected: hits only in `.claude/contract/**` and in `.docs/implementation/**`.
+Result: as expected in `.claude/contract/**` (DLR-145's archived plan/tasks, DLR-147's update-log, and this contract's own plan/tasks) and `.docs/implementation/**` (`hunt/README.md`, `hunt/the-opening-pile.md`, `sim/reachability-audit.md`, all owned by `implementation-doc-writer`). Two further hits fell OUTSIDE those two locations and are a finding, not fixed here (out of this task's file scope and one is a design document this contract must not edit): `.docs/ai-play-tester/live-playthrough-log.md` names "13 templates" describing a specific dated build snapshot, historically accurate and not a current-state claim; `.docs/design/Balatro-Forbidden-Solitaire/version-6-developer-idea.md` states "13 templates, down from 73" as the DLR-145 design record, which is the specification `plan.md` cites — not this task's to edit.
 
 ---
 
@@ -603,7 +614,7 @@ Expected: hits only in `.claude/contract/**` (this contract and DLR-145's archiv
 
 No production changes. Only cumulative sanity checks, plus the boundary and budget greps this contract's own design depends on.
 
-### Task 12: Confirm the pure-core boundary still holds
+### Task 12: Confirm the pure-core boundary still holds ✓
 
 - Skill: none — verification only, no code written.
 
@@ -611,17 +622,17 @@ No production changes. Only cumulative sanity checks, plus the boundary and budg
 
 - (none — read-only checks)
 
-- [ ] **Step 1: Grep the two pure trees for React and DOM references**
+- [x] **Step 1: Grep the two pure trees for React and DOM references**
 
 Run: `Get-ChildItem src\hunt,src\warCouncil -Recurse -Include *.ts,*.tsx | Select-String -Pattern "from 'react'|\bwindow\.|\bdocument\.|localStorage|Math\.random"`
 Expected: zero hits. `src/hunt/` and `src/warCouncil/` are lint-enforced pure and this contract adds real logic to both.
 
-- [ ] **Step 2: Grep the simulator, which is lint-enforced pure for the same reason**
+- [x] **Step 2: Grep the simulator, which is lint-enforced pure for the same reason**
 
 Run: `Get-ChildItem src\sim -Recurse -Include *.ts | Select-String -Pattern "from 'react'|\bwindow\.|\bdocument\.|Math\.random"`
 Expected: zero hits.
 
-### Task 13: Confirm the skull inversion is still stated once, and no budget is breached
+### Task 13: Confirm the skull inversion is still stated once, and no budget is breached ✓
 
 - Skill: none — verification only, no code written.
 
@@ -629,17 +640,17 @@ Expected: zero hits.
 
 - (none — read-only checks)
 
-- [ ] **Step 1: Confirm no second statement of the outcome axis was introduced**
+- [x] **Step 1: Confirm no second statement of the outcome axis was introduced**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "playerWon === ctx.skullTrick|playerWon !== ctx.skullTrick|trickWasLoss"`
 Expected: zero hits. The inversion lives only in `bank.ts`'s `TAKEN` table and `trickOutcomeFor`, and `trickIsLoss` reaches `src/hunt/` as a parameter.
 
-- [ ] **Step 2: Measure every file this contract created or grew**
+- [x] **Step 2: Measure every file this contract created or grew**
 
 Run: `Get-ChildItem src\App.tsx,src\app\warCouncil\WarCouncilRound.tsx,src\app\warCouncil\roundUiState.ts,src\app\warCouncil\BankMeter.tsx,src\app\warCouncil\buffRoundState.ts,src\app\warCouncil\roundResult.ts,src\app\screenFor.ts,src\hunt\buffAccrual.ts,src\hunt\buffTemplates.ts,src\hunt\run.ts,src\hunt\runTransitions.ts,src\warCouncil\bank.ts | ForEach-Object { "$($_.Name) $((Get-Content $_.FullName).Count)" }`
 Expected: every count under 400. `(Get-Content).Count` and not `Measure-Object -Line`, which drops blank lines and hid a real breach on DLR-63.
 
-### Task 14: Static gates and full suite
+### Task 14: Static gates and full suite ✓
 
 - Skill: none — verification only, no code written.
 
@@ -647,22 +658,22 @@ Expected: every count under 400. `(Get-Content).Count` and not `Measure-Object -
 
 - (none — read-only checks)
 
-- [ ] **Step 1: Warm the transform cache, then run the whole suite**
+- [x] **Step 1: Warm the transform cache, then run the whole suite**
 
 Run: `npx vitest run --project node; npx vitest run --project dom; npm run typecheck; npm run lint; npm test`
 Expected: all exit 0; Vitest reports 0 failed. The two project runs first are deliberate — a cold-cache `npm test` can report a `[vitest-pool-runner]` worker timeout on the `dom` project, which is infrastructure and not a failing test.
 
-- [ ] **Step 2: Formatting of this contract's files only**
+- [x] **Step 2: Formatting of this contract's files only**
 
 Run: `npx prettier --check src/app/warCouncil/BankMeter.tsx src/app/warCouncil/warCouncilTable.css src/app/warCouncil/roundResult.ts src/app/screenFor.ts src/hunt/buffAccrual.ts src/hunt/buffEvaluation.ts src/hunt/buffTemplates.ts src/hunt/run.ts src/hunt/runTransitions.ts src/warCouncil/bank.ts src/App.tsx`
 Expected: exits 0. The repo-wide `npm run format:check` fails on pre-existing `.docs/**` files no contract has touched; run it and report it, but do not gate on it and do not "fix" it here.
 
-- [ ] **Step 3: Production build**
+- [x] **Step 3: Production build**
 
 Run: `npm run build`
 Expected: exits 0, `dist/` written, no bundler errors.
 
-### Task 15: Update the PR description
+### Task 15: Update the PR description ✓
 
 - Skill: none — a document for the developer, no code written.
 
@@ -670,7 +681,7 @@ Expected: exits 0, `dist/` written, no bundler errors.
 
 - Create: `.claude/contract/DLR-150-feeder-carry/pr-description.md`
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
+- [x] **Step 1: Write `pr-description.md` in this plan folder for the developer to paste**
 
 Include:
 

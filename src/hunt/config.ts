@@ -196,7 +196,7 @@ export const RUN_STARTING_CHEATS = 1
 // TRANSCRIBED FROM DLR-145 (design §3.4): a fight runs two to four hands at six tricks each, so
 // firing about one card a trick makes twenty close to exactly one fight's ammunition — the player
 // reaches the first shop nearly empty, with coins to restock. Drawn WITH REPLACEMENT from a
-// 13-template pool (`startingPile.ts`), so the pile holds duplicates by design.
+// 16-template pool (`startingPile.ts`), so the pile holds duplicates by design.
 // UNIT: buffs granted once, at the start of a run, all at BuffTier.Bronze.
 export const STARTING_BUFF_COUNT = 20
 

@@ -2,7 +2,7 @@ Part of [War Council](README.md).
 
 # Buffs in the cash-out — where evaluation happens, and why it is inside `resolveTrickBank`
 
-Built by DLR-125. This page covers the **call site**: how an activated buff reaches the trick that
+Built by DLR-125, DLR-150. This page covers the **call site**: how an activated buff reaches the trick that
 resolves it, where in `resolveTrickBank` its contribution lands, and how the per-trick half of the
 evaluation context is derived. What a buff's condition actually *asks* lives one module over, in
 [hunt/buff-condition-evaluation.md](../hunt/buff-condition-evaluation.md); the design rule both
@@ -49,6 +49,27 @@ branch needs a second guard.
 Blade pays whenever a cash-out branch fires **even if the product is zero**: R3 step 4 says flat
 damage is added to the result of the product, and a product of zero is a result. The alternative
 would make Blade silently worthless on exactly the trick a streak is caught at a multiplier of zero.
+
+## `trickIsLoss` — this file exports the outcome axis rather than letting `hunt` re-derive it
+
+DLR-150's Feeder carry needs the **outcome** axis: a Feeder that fires on a Loss banks its reward for
+the next hand, while one that fires on a **dodge** — a Win — pays into this hand as before. Every
+buff *condition*, by contrast, reads only the mechanical axis (`ctx.playerWon`, did the player
+physically take the cards). The two disagree on exactly the tricks that matter: taking a skulled
+trick is a Loss, and not taking one is a Win.
+
+This file already owns that inversion, once, in the total `TAKEN` table behind `isTaken` — and
+`isTaken(outcome)` is already exactly "this trick was a Win". So `resolveTrickBank` passes
+`!isTaken(outcome)` into `resolveTrickBuffs` as a third argument, `trickIsLoss`, which forwards it
+untouched to `resolveFiredBuffs`. **`src/hunt/` learns nothing new about skulls.** The rejected
+alternative — a `trickWasLoss(ctx)` predicate in `buffEvaluation.ts` reading
+`playerWon === skullTrick` — would have put a second statement of the game's most misread rule in a
+different module from the first. The mechanic itself is
+[hunt/the-feeder-carry.md](../hunt/the-feeder-carry.md).
+
+Nothing else in `resolveTrickBank` moved: the take/hit branch, R3's order, both cash-out branches and
+`payableCashOutBonus`/`markCashOutPaid` are unchanged, and the carry is deliberately **not** payable
+from either branch in the hand that earns it.
 
 ## The two new fields, and why both are required rather than optional
 

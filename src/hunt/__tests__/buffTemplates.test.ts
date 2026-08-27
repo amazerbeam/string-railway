@@ -6,19 +6,26 @@ import {
   REWARD_TIER_VALUE,
   conditionThresholdOf,
   mintFromTemplate,
+  templateById,
   templatesForFamily,
 } from '../buffTemplates'
 import { BuffKind, BuffRewardAxis, BuffTier, type Buff } from '../buffs'
 import { apCostOf, isConditionFamily } from '../buffCosts'
 
 describe('BUFF_TEMPLATES', () => {
-  it('holds exactly the 13 templates DLR-145 AC4 names', () => {
-    expect(BUFF_TEMPLATES).toHaveLength(13)
-    expect(BUFF_TEMPLATE_COUNT).toBe(13)
+  it('holds exactly the 16 templates DLR-150 AC5 names', () => {
+    expect(BUFF_TEMPLATES).toHaveLength(16)
+    expect(BUFF_TEMPLATE_COUNT).toBe(16)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Taker)).toHaveLength(6)
-    expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Feeder)).toHaveLength(3)
+    expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Feeder)).toHaveLength(6)
     expect(BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Sidestep)).toHaveLength(2)
     expect(BUFF_TEMPLATES.filter((t) => t.form === 'activated')).toHaveLength(2)
+  })
+
+  it('resolves the three Momentum Feeder ids DLR-150 restored, persisted by the Vault', () => {
+    expect(templateById('feeder:bells:multiplier')).toBeDefined()
+    expect(templateById('feeder:keys:multiplier')).toBeDefined()
+    expect(templateById('feeder:moons:multiplier')).toBeDefined()
   })
 
   it('mints no card on a cut reward axis', () => {
@@ -28,10 +35,14 @@ describe('BUFF_TEMPLATES', () => {
     }
   })
 
-  it('every Feeder pays on Blade only', () => {
+  it('every Feeder pays on Blade or Momentum', () => {
     const feeders = BUFF_TEMPLATES.filter((t) => t.kind === BuffKind.Feeder)
     expect(
-      feeders.every((t) => t.form === 'condition' && t.axis === BuffRewardAxis.Magnitude),
+      feeders.every(
+        (t) =>
+          t.form === 'condition' &&
+          (t.axis === BuffRewardAxis.Magnitude || t.axis === BuffRewardAxis.Multiplier),
+      ),
     ).toBe(true)
   })
 
@@ -49,7 +60,7 @@ describe('BUFF_TEMPLATES', () => {
   it('parameterises exactly the suit-carrying Taker and Feeder templates', () => {
     expect(
       BUFF_TEMPLATES.filter((t) => t.form === 'condition' && t.target !== undefined),
-    ).toHaveLength(6 + 3)
+    ).toHaveLength(6 + 6)
   })
 })
 

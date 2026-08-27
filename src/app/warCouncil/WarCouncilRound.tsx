@@ -27,6 +27,7 @@ import QuarryShape from './QuarryShape'
 import { barsForRound } from './roundBars'
 import { deriveHint } from './roundHint'
 import { roundReducer } from './roundReducer'
+import { roundResultFor } from './roundResult'
 import {
   actionBarProps,
   buffGalleryProps,
@@ -54,6 +55,7 @@ import './warCouncilCards.css'
 import './warCouncilCardFace.css'
 import './warCouncilCardTip.css'
 import './warCouncilHunt.css'
+import './warCouncilBankMeter.css'
 import './warCouncilHealthBars.css'
 import './warCouncilHand.css'
 import './warCouncilActionBar.css'
@@ -97,6 +99,7 @@ export default function WarCouncilRound({
   buffs,
   apCapacity,
   rankTiers,
+  feederCarry,
   onComplete,
 }: WarCouncilMountProps) {
   const [ui, dispatch] = useReducer(
@@ -111,6 +114,7 @@ export default function WarCouncilRound({
       apCapacity,
       rankTiers,
       coins,
+      feederCarry,
     },
     createRoundUiState,
   )
@@ -232,15 +236,7 @@ export default function WarCouncilRound({
    */
   function handleCarryOn() {
     if (encounterOver) {
-      onComplete({
-        finalState: ui.round,
-        encounter: ui.encounter,
-        blastGuardHeld: ui.blastGuardHeld,
-        discardsRemaining: ui.discardsRemaining,
-        buffs: ui.buffs,
-        unplayedAtResolve: ui.unplayedAtResolve,
-        coinsEarned: ui.buffHand.coinsEarned,
-      })
+      onComplete(roundResultFor(ui))
       return
     }
     if (ui.resolvedTrick !== null || quarryToLead) {
@@ -248,15 +244,7 @@ export default function WarCouncilRound({
       return
     }
     if (roundComplete) {
-      onComplete({
-        finalState: ui.round,
-        encounter: ui.encounter,
-        blastGuardHeld: ui.blastGuardHeld,
-        discardsRemaining: ui.discardsRemaining,
-        buffs: ui.buffs,
-        unplayedAtResolve: ui.unplayedAtResolve,
-        coinsEarned: ui.buffHand.coinsEarned,
-      })
+      onComplete(roundResultFor(ui))
     }
   }
 
@@ -285,6 +273,8 @@ export default function WarCouncilRound({
           multiplier={ui.round.multiplier}
           lastResolution={ui.round.lastResolution}
           pendingBonus={payableCashOutBonus(ui.buffHand.accrual)}
+          carriedIn={ui.buffHand.accrual.carriedIn}
+          carryOut={ui.buffHand.accrual.carryOut}
         />
       </aside>
       <section

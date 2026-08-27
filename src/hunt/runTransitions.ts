@@ -17,6 +17,7 @@ import {
   runEncounterAt,
 } from './config'
 import { BuffKind, BuffTier, type Buff } from './buffs'
+import { EMPTY_BUFF_CARRY, type BuffCarry } from './buffAccrual'
 import { cheatBuff, timebombBuff } from './buffCatalog'
 import { isEncounterResolved, startEncounter } from './encounter'
 import { flaskHealAmount, flaskRefusalFor } from './flask'
@@ -84,6 +85,10 @@ export function recordEncounter(
    *  DELIBERATELY untouched: ids are minted forward-only, and reissuing a spent card's id would
    *  make two different cards indistinguishable to `activatedThisTrick` and `firedThisHand`. */
   buffs?: readonly Buff[],
+  /** DLR-150 — OPTIONAL and defaulted to `undefined`, which keeps `run.feederCarry`, so all 48
+   *  existing call sites are unchanged. `App.tsx` and `sim/playRun.ts` are the only callers that
+   *  pass it. */
+  feederCarry?: BuffCarry,
 ): RunState {
   if (run.outcome !== RunOutcome.InProgress) {
     throw new RangeError(
@@ -120,6 +125,7 @@ export function recordEncounter(
     handOfFight: handOfFightAfter(run, encounter),
     flaskCharges: flaskAfter(run, wonThisEncounter),
     outcome: outcomeFor(run.encounterIndex, run.encounterCount, encounter),
+    feederCarry: feederCarryAfter(encounter, feederCarry ?? run.feederCarry),
   }
 }
 
@@ -317,6 +323,14 @@ function outcomeFor(
  */
 function guardAfter(encounter: EncounterState, held: boolean): boolean {
   return isEncounterResolved(encounter) ? false : held
+}
+
+/** AC4 — ONE statement of "a carry does not outlive the fight that earned it". A named function
+ *  rather than an inline ternary, exactly as `guardAfter` immediately above is and for its
+ *  reason: a second transition adopting a hand's end state is what gets added without
+ *  remembering this rule, and a named rule is what a reviewer finds. */
+function feederCarryAfter(encounter: EncounterState, carry: BuffCarry): BuffCarry {
+  return isEncounterResolved(encounter) ? EMPTY_BUFF_CARRY : carry
 }
 
 /**

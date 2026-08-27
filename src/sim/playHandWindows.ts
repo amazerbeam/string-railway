@@ -46,6 +46,7 @@ export function seedFor(run: RunState, dealt: WarCouncilState): RoundUiSeed {
     rankTiers: playerRankTiersFor(run),
     apCapacity: apCapacityFor(run.apCapacityBonus),
     coins: run.coins,
+    feederCarry: run.feederCarry,
   }
 }
 

@@ -169,7 +169,7 @@ export function weightedDrawWithoutReplacement<T>(
 
 /**
  * DLR-145 — `weightedDrawWithoutReplacement`'s sibling, for a draw where a REPEAT IS THE POINT
- * rather than a bug: an opening pile of 20 from a 13-template pool, where three Bell-Takers is the
+ * rather than a bug: an opening pile of 20 from a 16-template pool, where three Bell-Takers is the
  * intended shape (design §3.4). EXACTLY ONE `rng()` call per item drawn, with the same
  * last-candidate fallback that catches float drift, and the total computed once because — unlike
  * the without-replacement version — the pool never changes.

@@ -2,7 +2,7 @@ Part of [War Council UI](README.md).
 
 # The hand's buff bookkeeping, and the fold that pays it out
 
-Built by DLR-125. `buffRoundState.ts` is the felt's half of buff evaluation: it holds what a hand
+Built by DLR-125, DLR-150. `buffRoundState.ts` is the felt's half of buff evaluation: it holds what a hand
 knows about its own buffs, assembles that into the one `PlayCardOptions` all three readers share,
 and folds a resolved trick's outcome back onto `RoundUiState`.
 
@@ -26,6 +26,20 @@ declaration and `createRoundUiState`'s call to `startBuffHand()`.
 | `tricksWithoutHit`   | Unbloodied's condition counter                                            |
 | `coinsEarned`        | Purse, accumulated this hand and handed up at hand's end                   |
 | `applyDamagePressed` | DLR-109's reading — Apply Damage was **pressed**, not landed              |
+
+The `accrual` row carries two more fields since DLR-150 — `carriedIn`, what seeded this hand, and
+`carryOut`, what a Loss-firing Feeder has banked for the next one. Neither is a new channel: both
+ride the accrual the fold already adopts wholesale. See
+[hunt/the-feeder-carry.md](../hunt/the-feeder-carry.md).
+
+> **DLR-150 gave the reset an argument.** `startBuffHand(carriedIn?)` forwards to
+> `startHandAccrual(carriedIn)`, so a new hand's `accrual` opens on the Feeder carry the last hand
+> banked rather than on zero — and `createRoundUiState` now passes `seed.feederCarry`. It is still a
+> reset, and still the only one: the carry arrives as a value from `RunState`, and the hand's own
+> figures start where they always did. Optional, defaulted to `EMPTY_BUFF_CARRY`, so all 11 existing
+> seed literals reproduce today's game exactly. `createRoundUiState` and `RoundUiSeed` themselves
+> moved to a sibling `roundUiSeed.ts` in the same ticket (`roundUiState.ts` had reached its 400-line
+> budget) and are re-exported from `roundUiState.ts`, so no importer changed.
 
 `createRoundUiState` calling `startBuffHand()` **is** the per-hand reset, which works because
 `App.tsx` remounts the felt per hand (`key={hand}`) — the identical argument `startBuffActivation`
@@ -90,11 +104,14 @@ The `accrual === null` branch — a trick where no buffs were evaluated at all �
 `tricksWithoutHit`, because Unbloodied's streak is a fact about the hand rather than about the buffs
 held.
 
-## Purse leaving the hand
+## Purse — and, since DLR-150, the carry — leaving the hand
 
-`WarCouncilRound.tsx` puts `ui.buffHand.coinsEarned` on `WarCouncilRoundResult.coinsEarned` at both
-of its construction sites, and `App.tsx` passes it as `recordEncounter`'s new optional eighth
-parameter. Nothing about the coin path is re-derived at the component: the figure was clipped at
+`ui.buffHand.coinsEarned` reaches `WarCouncilRoundResult.coinsEarned`, and `App.tsx` passes it to
+`recordEncounter` as the optional `buffCoinsEarned` argument. **DLR-150 collapsed the construction
+sites**: `WarCouncilRound.tsx` had two identical literals and `src/sim/playHand.ts` a third
+hand-built copy, and all three now call `roundResultFor(ui)` in `roundResult.ts`. That same function
+puts `ui.buffHand.accrual.carryOut` on `WarCouncilRoundResult.feederCarry`, which `App.tsx` and
+`sim/playRun.ts` hand to `recordEncounter` as its optional eighth parameter. Nothing about the coin path is re-derived at the component: the figure was clipped at
 `MAX_COIN_BONUS_PER_HAND` by the accrual long before it got here.
 
 ## No new effect, no new state manager, no memoisation

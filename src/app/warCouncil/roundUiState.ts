@@ -27,10 +27,6 @@ import {
   BuffKind,
   hasPendingApplyPayout,
   isEncounterResolved,
-  ALL_BRONZE,
-  startBuffActivation,
-  STARTING_AP,
-  type ActionPoints,
   type Buff,
   type BuffActivationState,
   type BuffActivationStock,
@@ -41,7 +37,7 @@ import {
   type TimebombDamage,
   type TrickPayoutEvent,
 } from '../../hunt'
-import { startBuffHand, type BuffHandState } from './buffRoundState'
+import type { BuffHandState } from './buffRoundState'
 
 export interface ResolvedTrick {
   readonly cards: readonly TrickCard[] // [lead, follow] — the engine's load-bearing order
@@ -167,26 +163,10 @@ export interface LoadoutSelection {
   readonly poised: BuffId | null
 }
 
-export interface RoundUiSeed {
-  readonly round: WarCouncilState
-  readonly encounter: EncounterState
-  readonly blastGuardHeld: boolean
-  readonly bankClimbBonus: number
-  readonly discardsRemaining: number
-  readonly buffs: readonly Buff[]
-  /** DLR-116 — the per-hand AP pool including capacity bought in the shop. OPTIONAL and defaulted
-   *  to STARTING_AP so every existing seed fixture reproduces the pre-DLR-116 pool exactly; the
-   *  driver passes apCapacityFor(run.apCapacityBonus). */
-  readonly apCapacity?: ActionPoints
-  /** DLR-122 — the player's bought ability ladder. OPTIONAL and defaulted to `ALL_BRONZE` so every
-   *  existing seed fixture reproduces the pre-DLR-122 game exactly; an absent table IS "nothing
-   *  bought", which is what AC1 requires play identically to today. The driver passes
-   *  `playerRankTiersFor(run)`. */
-  readonly rankTiers?: RankTierTable
-  /** DLR-125 — the run's purse at the START of this hand, for Miser. OPTIONAL and defaulted to 0
-   *  so all 38 existing `createRoundUiState` fixtures reproduce today's game exactly. */
-  readonly coins?: Coins
-}
+// `RoundUiSeed` and `createRoundUiState` live in `roundUiSeed.ts` now (DLR-150 — this file was at
+// its 400-line budget) and are re-exported here so no importer has to know the seam moved.
+export type { RoundUiSeed } from './roundUiSeed'
+export { createRoundUiState } from './roundUiSeed'
 
 // `chooseCpuMove` throws rather than returning a rejection when the CPU has no legal
 // move (`lowestCard([])` is `undefined`, then `card.rank` throws), so the reducer guards
@@ -224,36 +204,6 @@ export type RoundUiAction =
   | { readonly kind: typeof RoundUiActionKind.CancelLoadout }
   | { readonly kind: typeof RoundUiActionKind.TapBuff; readonly id: BuffId }
   | { readonly kind: typeof RoundUiActionKind.CancelBuffPoise }
-
-/** Still a pure restructuring of its seed, so StrictMode's double-invocation of the lazy
- *  `useReducer` initialiser recomputes an identical value. */
-export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
-  return {
-    round: seed.round,
-    armed: null,
-    prompt: null,
-    resolvedTrick: null,
-    rejection: null,
-    cpuFault: null,
-    encounter: seed.encounter,
-    openingEncounter: seed.encounter,
-    cheatTricksRemaining: 0,
-    timebombArmedDamage: null,
-    primedTimebombDamage: null,
-    blastGuardHeld: seed.blastGuardHeld,
-    bankClimbBonus: seed.bankClimbBonus,
-    rankTiers: seed.rankTiers ?? ALL_BRONZE,
-    applyPoised: false,
-    unplayedAtResolve: null,
-    discardsRemaining: seed.discardsRemaining,
-    discardSelection: null,
-    buffs: seed.buffs,
-    buffActivation: startBuffActivation(seed.apCapacity ?? STARTING_AP),
-    loadout: null,
-    buffHand: startBuffHand(),
-    coins: seed.coins ?? 0,
-  }
-}
 
 /** `true` when the next committed card should ignore follow-suit. EXPORTED so the mount computes
  *  its `legal` set from the SAME predicate the reducer commits with — two readings of "is the

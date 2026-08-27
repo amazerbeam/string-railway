@@ -7,6 +7,7 @@ import {
   BuffTier,
   DuelSide,
   EMPTY_BUFF_ACCRUAL,
+  EMPTY_BUFF_CARRY,
   mintFromTemplate,
   startEncounter,
   startHandAccrual,
@@ -175,6 +176,39 @@ describe('resolveTrickBank — DLR-125/DLR-124 R3 at resolution level', () => {
     expect(withBuffs.cashOut).toBe(9) // (2+1) x (2+1) = 9, the pre-DLR-125 figure
     expect(withBuffs.buffAccrual).toBeNull()
     expect(withBuffs.firedBuffIds).toEqual([])
+  })
+
+  it('DLR-150 — a Bells Feeder on a clean loss carries and pays nothing this trick', () => {
+    const feeder: Buff = {
+      id: 9,
+      kind: BuffKind.Feeder,
+      tier: BuffTier.Bronze,
+      condition: { kind: BuffKind.Feeder, target: { suit: BuffTargetSuit.Bells } },
+      reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
+    }
+    const bare = resolveTrickBank({ bank: 0, multiplier: 0 }, facts({ playerWon: false }))
+    const withFeeder = resolveTrickBank(
+      { bank: 0, multiplier: 0 },
+      facts({ playerWon: false, buffs: input({ active: [feeder] }) }),
+    )
+    expect(withFeeder.buffAccrual?.carryOut.flatDamageBonus).toBe(1)
+    expect(withFeeder.cashOut).toBe(bare.cashOut)
+  })
+
+  it('DLR-150 — the same card on a dodge pays this hand and leaves carryOut empty', () => {
+    const feeder: Buff = {
+      id: 9,
+      kind: BuffKind.Feeder,
+      tier: BuffTier.Bronze,
+      condition: { kind: BuffKind.Feeder, target: { suit: BuffTargetSuit.Bells } },
+      reward: { axis: BuffRewardAxis.Magnitude, value: 1 },
+    }
+    const r = resolveTrickBank(
+      { bank: 0, multiplier: 0 },
+      facts({ playerWon: false, skullTrick: true, buffs: input({ active: [feeder] }) }),
+    )
+    expect(r.buffAccrual?.carryOut).toEqual(EMPTY_BUFF_CARRY)
+    expect(r.buffAccrual?.flatDamageBonus).toBe(1)
   })
 
   it('an activated Bell-Taker (Blade) genuinely increases the damage applyResolution deals', () => {

@@ -121,7 +121,8 @@ that either.
   > weight** (Taker/Feeder/Sidestep 5/4/2 against 2/2/1). Nobody has chosen a replacement lean, and
   > inventing one would be inventing tuning values. **Whether the two machines still feel different
   > is an open developer question, unmeasured and unobserved.**
-  > `REEL_POOL_SIZE` is 8 and the pool is 13, so `drawReelPool`'s distinct draw still succeeds on
+  > `REEL_POOL_SIZE` is 8 and the pool is 16 (13 until DLR-150 restored Feeder's Momentum row), so
+  > `drawReelPool`'s distinct draw still succeeds on
   > both machines with every surviving family weighted ≥ 1 — but the strip is now a much larger
   > share of the whole pool than it was at 73 templates, which shrinks how much two pulls can
   > differ.

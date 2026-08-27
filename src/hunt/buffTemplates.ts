@@ -18,7 +18,7 @@ import { cheatBuff, timebombBuff } from './buffCatalog'
  *
  * DLR-132 added `ActivatedBuffTemplate` and its two cards (Cheat, Timebomb), taking the pool to 73.
  *
- * DLR-145 PARES the pool to 13 — 6 Taker + 3 Feeder + 2 Sidestep condition templates plus the same
+ * DLR-145 PARED the pool to 13 — 6 Taker + 3 Feeder + 2 Sidestep condition templates plus the same
  * 2 activated ones — so that card scarcity, not a refilling action-points pool, is the limit on how
  * hard a hand can be pushed. `TEMPLATE_FAMILIES` now lists only these three families. The eight cut
  * families (MarkOfRank, Glutton, Hoarder, Unbloodied, DebtCollector, Keepsake, Miser, Cornered) are
@@ -28,6 +28,14 @@ import { cheatBuff, timebombBuff } from './buffCatalog'
  * scratch. `MintableConditionKind` and `MintableRewardAxis` (below) are what make a cut family or a
  * cut axis UNCONSTRUCTIBLE rather than merely unweighted — narrowing the template's own types,
  * not zeroing a slot weight, is what the plan calls out as the actual mechanism.
+ *
+ * DLR-150 RESTORES Feeder's Momentum row, taking the pool to 16 — 6 Taker + 6 Feeder + 2 Sidestep
+ * condition templates plus the same 2 activated ones. Feeder was cut to Blade-only by DLR-145
+ * because a multiplier raised on a Loss trick was wiped by that same trick's reset before it could
+ * ever be spent; the feeder carry (`src/hunt/buffAccrual.ts`'s `BuffCarry`) removes exactly that
+ * failure mode by diverting a Loss-fired Feeder's reward out of the hand before the reset runs, so
+ * Momentum is safe to mint again. The eight cut families and the two cut reward axes (Purse, Second
+ * Wind) stay unreachable — this ticket restores one row, not the pruning itself.
  *
  * The five consumables (Ward, Second Thoughts, Puppeteer, Foresight, Spyglass) are still absent —
  * DLR-120's scope boundary, unrelated to this pruning.
@@ -109,10 +117,11 @@ interface TemplateFamily {
 
 const TEMPLATE_FAMILIES: readonly TemplateFamily[] = [
   { kind: BuffKind.Taker, axes: BLADE_AND_MOMENTUM, param: 'suit' },
-  // Feeder is Blade-only: `buffFires` reads it as `!ctx.playerWon`, which covers BOTH a clean loss
-  // and a dodge. Momentum pays on the dodge half and is wiped by the clean loss, which resets the
-  // multiplier it just raised. Blade pays on both. Restoring its Momentum version is one entry.
-  { kind: BuffKind.Feeder, axes: [BuffRewardAxis.Magnitude], param: 'suit' },
+  // DLR-150 AC5 — Momentum restored. Feeder was Blade-only because `buffFires` reads it as
+  // `!ctx.playerWon`, covering both a clean loss and a dodge, and a multiplier raised on the
+  // loss half was wiped by that loss's own reset. The carry removes exactly that: on the loss
+  // half the bonus leaves the hand before the reset, and the dodge half never had the problem.
+  { kind: BuffKind.Feeder, axes: BLADE_AND_MOMENTUM, param: 'suit' },
   { kind: BuffKind.Sidestep, axes: BLADE_AND_MOMENTUM },
 ]
 
@@ -144,7 +153,7 @@ function makeTemplate(
     : { form: 'condition', id, kind, axis, target }
 }
 
-/** DLR-145's pared pool: 13 templates — 11 GENERATED condition templates (6 Taker + 3 Feeder +
+/** DLR-150's widened pool: 16 templates — 14 GENERATED condition templates (6 Taker + 6 Feeder +
  *  2 Sidestep) plus the 2 activated ones (`ACTIVATED_TEMPLATES`). The 5 consumable templates (Ward
  *  and its four siblings) are still absent — see this file's own docblock above for why that is a
  *  scope boundary, not a gap. */

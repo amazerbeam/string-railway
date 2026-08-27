@@ -1,0 +1,149 @@
+/* War Council — the bank meter (DLR-80, AC4/AC5/AC8/AC9), plus DLR-150 AC6's two carry lines.
+
+   The SEVENTH stylesheet, split out of `warCouncilHunt.css` for the same reason
+   `warCouncilHealthBars.css` was the sixth: that sheet stood at 400 of its 400-line budget
+   before DLR-150 added the carried-in/carry-out lines, so the bank meter's whole self-contained
+   block moves here rather than pushing the sheet over. Imported from the mount AFTER
+   `warCouncilHunt.css`. Tokens live in `warCouncil.css`; nothing here redeclares `:root`. */
+
+.wc-bank {
+  background: var(--wc-chamber-lift);
+  border: 1px solid #23303a;
+  border-left: 3px solid var(--wc-brass-dim);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.7rem;
+}
+
+.wc-bank-eyebrow {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--wc-chalk-dim);
+  margin: 0 0 0.3rem;
+}
+
+.wc-bank-figures {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.wc-bank-num {
+  font-family: var(--wc-serif);
+  font-size: 1.5rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-brass);
+}
+
+.wc-bank-op {
+  color: var(--wc-chalk-dim);
+  font-size: 1rem;
+}
+
+.wc-bank-mult {
+  font-family: var(--wc-serif);
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-parchment);
+}
+
+/* 2026-08-25 — the unpaid Momentum bonus a fired buff has queued for the next cash-out, folded
+   visibly into the multiplier readout rather than staying invisible until it is spent. */
+.wc-bank-pending-bonus {
+  font-family: var(--wc-serif);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-brass);
+  margin-left: 0.15rem;
+}
+
+.wc-bank-cash {
+  margin: 0.3rem 0 0;
+  font-size: 0.72rem;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-bank-cash b {
+  color: var(--wc-parchment);
+  font-variant-numeric: tabular-nums;
+}
+
+/* DLR-94 — the reduced figure the same streak pays if the player is caught before applying.
+   Dimmer than `.wc-bank-cash` and marked with a caret, so the pair reads as full-versus-reduced
+   without relying on colour alone. */
+.wc-bank-forced {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-bank-forced::before {
+  content: '↓ ';
+  color: var(--wc-alarm);
+}
+
+.wc-bank-forced b {
+  color: var(--wc-parchment);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 2026-08-25 — the same unpaid buff bonus, spelled out per axis under the two cash-out figures. */
+.wc-bank-pending {
+  margin: 0.15rem 0 0;
+  font-size: 0.7rem;
+  color: var(--wc-brass-dim);
+}
+
+.wc-bank-pending b {
+  color: var(--wc-brass);
+  font-variant-numeric: tabular-nums;
+}
+
+/* DLR-150 AC6 — the two carry lines. State is carried by border style and position as well as
+   colour, so a static screenshot and a colour-vision difference both still read: a solid brass
+   rule on what this hand opened with, a dashed one on what it is banking for the next hand. */
+.wc-bank-carried-in {
+  margin: 0.2rem 0 0;
+  padding-left: 0.45rem;
+  border-left: 3px solid var(--wc-brass-dim);
+  font-size: 0.7rem;
+  color: var(--wc-parchment-shade);
+}
+
+.wc-bank-carried-in b {
+  color: var(--wc-brass);
+  font-variant-numeric: tabular-nums;
+}
+
+.wc-bank-carry-out {
+  margin: 0.2rem 0 0;
+  padding-left: 0.45rem;
+  border-left: 3px dashed var(--wc-timebomb-edge);
+  font-size: 0.7rem;
+  color: var(--wc-timebomb);
+}
+
+.wc-bank-carry-out b {
+  color: var(--wc-timebomb);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Take vs. hit is carried by this copy and by the class below — never by colour alone. */
+.wc-bank-last {
+  margin: 0.4rem 0 0;
+  padding-top: 0.4rem;
+  border-top: 1px solid #232d33;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-bank-last.wc-is-take {
+  color: var(--wc-brass);
+}
+
+.wc-bank-last.wc-is-hit {
+  color: var(--wc-alarm);
+}

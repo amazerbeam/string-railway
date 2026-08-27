@@ -28,6 +28,7 @@ export interface RunState {
   readonly flaskCharges: number // DLR-93
   readonly buffs: readonly Buff[] // DLR-105 — a held Cheat or Timebomb is a pile member here, since DLR-132
   readonly nextBuffId: BuffId // DLR-105
+  readonly feederCarry: BuffCarry // DLR-150
 }
 ```
 
@@ -51,10 +52,20 @@ hand cannot spend a Whetstone or drink the flask, and since DLR-132 a hand's buf
 Cheat or Timebomb) never removes anything from the pile either, so there is nothing for
 `recordEncounter` to adopt — it reads all three off the run it was given.
 
-**`blastGuardHeld` is the one field that is carried and then deliberately cleared.** It has to be
+**`blastGuardHeld` is no longer the only field that is carried and then deliberately cleared.** It has to be
 run-level to survive the `advanceRun` that opens the fight it was bought for, and it has to end when
 that fight does — so `recordEncounter` passes it through a private `guardAfter` rather than adopting it
 verbatim. That pairing is what makes "fight-long" a duration rather than a label.
+
+**DLR-150 added `feederCarry` on exactly that pattern.** It is a `BuffCarry`
+(`{ multiplierBonus, flatDamageBonus }`), seeded empty by `startRun`, owned by the hand for its
+lifetime, handed back through `WarCouncilRoundResult.feederCarry`, and taken by `recordEncounter` as
+an **optional 8th parameter** — optional so none of the 48 existing call sites changed; `App.tsx` and
+`sim/playRun.ts` are the only callers that pass it. It goes through a private `feederCarryAfter`,
+`guardAfter`'s sibling and its reason: a carry compounds hand to hand **within** a fight and is wiped
+at the fight boundary, won or lost. The wipe lives here rather than in `advanceRun` precisely because
+a lost fight ends the run and never reaches `advanceRun` at all. Like `coins`, it is **never
+persisted**. See [The Feeder carry](the-feeder-carry.md).
 
 **It holds no separate player-health field, and that is the design decision worth knowing.** The
 health a player carries is `encounter.health[DuelSide.Player]` — read out of the encounter that
@@ -218,7 +229,7 @@ two files on disk today.
 | File                 | Holds                                                                                              |
 | -------------------- | -------------------------------------------------------------------------------------------------- |
 | `run.ts`             | The run's **shape** and its projections — `RunState`, `RunOutcome`, `startRun`, `canAdvanceRun`, `beatenCount`, `shopStockFor`, `flaskStockFor`, `bankClimbBonusFor` |
-| `runTransitions.ts`  | The run's **transitions** — `recordEncounter`, `advanceRun`, `buyFromShop`, `drinkFlask`, and the private helpers only they use: `outcomeFor`, `guardAfter`, `healedBy`, `flaskAfter` |
+| `runTransitions.ts`  | The run's **transitions** — `recordEncounter`, `advanceRun`, `buyFromShop`, `drinkFlask`, and the private helpers only they use: `outcomeFor`, `guardAfter`, `feederCarryAfter`, `healedBy`, `flaskAfter` |
 
 The line drawn is **a function that produces a new `RunState` versus one that only reads an existing
 one.** `canAdvanceRun` and `beatenCount` stayed with the shape despite being logic, because they answer

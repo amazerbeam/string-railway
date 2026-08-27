@@ -271,6 +271,7 @@ describe('AC3/AC4 — apply-to-card targeting and additive stacking', () => {
         hand: HAND_CONTEXT,
       },
       ctx({ playerWon: true, playerSuits: [BuffTargetSuit.Bells], playerRanks: [9] }),
+      false,
     )
     expect(out.firedIds).toEqual([1, 2])
     expect(out.accrual.flatDamageBonus).toBe(4)

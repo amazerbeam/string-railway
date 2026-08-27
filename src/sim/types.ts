@@ -1,6 +1,7 @@
 import type { AbilityChoice, Card, RoundState } from '../warCouncil'
 import type {
   BuffActivationRefusal,
+  BuffCarry,
   BuffId,
   BuffKind,
   BuffRewardAxis,
@@ -120,6 +121,12 @@ export interface BuffFireOutcome {
    *  together" is a different, and mechanically rewarded, question from "how many fired this hand".
    *  UNIT: trick ordinal within the hand, 1-based. */
   readonly trickOfHand: number
+  /** DLR-150 — whether the trick this activation resolved on was a LOSS on the OUTCOME axis (a
+   *  clean loss, or an eaten skull), as opposed to a Win (a clean win, or a dodge). A FEEDER firing
+   *  on a Loss banks its reward into the hand's carry instead of paying it this hand; every other
+   *  family and every Win pays as before. Recorded so "did this fire carry or pay" is answerable
+   *  without re-deriving the skull inversion, which `bank.ts`'s `TAKEN` table states exactly once. */
+  readonly trickWasLoss: boolean
 }
 
 /** What one hand did. */
@@ -171,6 +178,14 @@ export interface HandReport {
   /** Every activation-trick pairing this hand and whether it fired — see `BuffFireOutcome`. `[]`
    *  for a hand where nothing was ever activated. */
   readonly buffFireOutcomes: readonly BuffFireOutcome[]
+  /** DLR-150 — the Feeder carry this hand OPENED on, seeded from `RunState.feederCarry`
+   *  (`accrual.carriedIn`). Zero on the first hand of every fight, because the carry is wiped at
+   *  the fight boundary. UNIT: bonus points, per axis. */
+  readonly feederCarriedIn: BuffCarry
+  /** DLR-150 — the Feeder carry this hand BANKED for the next one (`accrual.carryOut`) — rewards
+   *  from Feeders that fired on a LOSS, which paid nothing in this hand. UNIT: bonus points,
+   *  per axis. */
+  readonly feederCarryOut: BuffCarry
 }
 
 /** How a run ended. `stalled` is a driver failure, deliberately distinct from `lost`. */

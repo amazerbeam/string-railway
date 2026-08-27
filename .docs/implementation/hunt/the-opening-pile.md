@@ -105,8 +105,8 @@ mirrors `drawReelPool`'s short-strip guard for the same stated reason: a pile sh
 **configuration bug** — an all-zero weight table — not a legal state, and it would otherwise surface
 far from its cause. Since DLR-145 it fires only on an all-zero table — the with-replacement draw
 cannot run out of candidates — which is a narrowing of the reachable causes, not a change of
-meaning. Unreachable with the shipped tables (13 templates, every surviving family weighted ≥ 1 on
-both machines), but a zeroed row is one edit away. The project's `throw new` site count went 99 → 100
+meaning. Unreachable with the shipped tables (16 templates since DLR-150, every surviving family weighted ≥ 1
+on both machines), but a zeroed row is one edit away. The project's `throw new` site count went 99 → 100
 and none was weakened.
 
 `mintFromTemplate`'s own `RangeError` on a condition template with no reward ladder is unchanged and
@@ -213,7 +213,8 @@ Recorded in `.docs/game_rules/the-hunt.md`'s Known tensions.
 The opening hand's *composition* can only be assessed by playing it. Since DLR-145 all twenty draws
 come from three Event-cadence families, so the "a hand of cards that never fire in fight one"
 failure mode is largely gone — what replaced it as the open question is **duplication**: a
-with-replacement draw over thirteen templates will hand out the same card several times, and
+with-replacement draw over sixteen templates (thirteen until DLR-150) will hand out the same card
+several times, and
 whether that reads as a supply or as a bad shuffle is the developer's eyes. Nobody has looked. The weights it draws through are themselves
 agent-authored and unplayed — see [the slot machine](the-slot-machine.md).
 

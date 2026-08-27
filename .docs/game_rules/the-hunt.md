@@ -4,7 +4,7 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-08-26**. Everything below is reachable in
+Last reviewed against the code and the design on **2026-08-27**. Everything below is reachable in
 the app today except where a rule is marked **[not built]** — and except the cards and guards listed
 here, every one of which is **decided, enforced and tested, yet cannot be obtained by playing**:
 
@@ -488,6 +488,14 @@ can reach it** — the two are separate axes and this is the one that says which
 > the same number — the length of your streak — and a streak of _n_ cashes exactly **`n × n`**: 1, 4,
 > 9, 16, 25, 36 across a hand (section 7). Nothing else about the loop moved. **Both health totals now
 > stand at 10** (section 8), because a hand that used to deal about 84 now deals about 7.
+
+> **A card that pays you for losing now pays you *next* hand — DLR-150, 2026-08-27.** The
+> lose-a-trick-with-a-named-suit card used to pay into the streak that the very loss was about to
+> wipe, so deliberately throwing tricks earned you almost nothing. Its reward now **banks for the
+> next hand** whenever the trick was a Loss, and pays into this hand only when the trick was a
+> **dodge**. Both figures are on the streak readout. In the same change that card can once again be
+> dealt as a **multiplier** card and not only a damage one, taking the pool of card types from 13 to
+> **16**. Section 4 states all of it; the size of the carry is a number nobody has chosen yet.
 
 ---
 
@@ -1005,7 +1013,9 @@ Eleven conditions exist as rules. **Only the first three of them can be dealt to
 > **inside a trick you are playing**, which is where a card you spend has to earn its place. Two
 > reward kinds went the same way at the same time: **coins** and **refunded action points** are no
 > longer dealt either — the second because there is no longer a pool to refund into. The pool of card
-> types went from **73 to 13**. **None of this is a deletion**: restoring a card type is one line, and
+> types went from **73 to 13** — **and back to 16 on 2026-08-27**, when the lose-a-trick card became
+> mintable as a multiplier card again as well as a damage one (see the carry, below).
+> **None of this is a deletion**: restoring a card type is one line, and
 > a card of a cut type would behave exactly as this table says if one existed. **Whose decision:** the
 > developer's, both for whether the cut is right and for whether any of the eight should come back.
 >
@@ -1039,6 +1049,56 @@ two of them are inside it:
 3. The cash-out happens (section 7), at whichever of the two rates applies.
 4. **Flat damage is added to whatever that produced**, after the reduced rate has been taken.
 5. **Coins are added to your purse.** _(No card pays this any more.)_
+
+##### A card that pays you for losing banks its reward for the next hand — **[settled]** since 2026-08-27; **its size is [provisional]**
+
+**[settled]** — that the split exists, which side of it each outcome falls on, that the bank survives
+every hand of a fight and dies with the fight. **[provisional]** — how much it is worth, and whether
+it should read on screen for the whole hand or only at the hand's start. `hybrid-design.md` §5; the
+change itself is specified by DLR-150's own acceptance criteria, which no design section yet covers.
+
+The lose-a-trick-with-a-named-suit card asks you to **not take** a trick while playing that suit.
+Two very different things satisfy it, and the two are now paid differently:
+
+| The trick you did not take | Which outcome that is | Where the reward goes                     |
+| -------------------------- | --------------------- | ----------------------------------------- |
+| a clean trick              | a **loss** — you take damage, both counters reset | **banked for the next hand** |
+| a skulled trick            | a **dodge** — you bank the trick and climb        | **paid into this hand**, as before |
+
+It also pays when you **take** a skulled trick, which is a loss too — you eat the skull. That is
+banked for the next hand as well. In short: **when the trick hurt you, the reward is banked; when it
+paid you, the reward is paid.**
+
+**What is banked pays nothing in the hand that earned it.** It does not raise that hand's multiplier,
+it does not add to that hand's damage, and no cash-out in that hand can reach it — which is the whole
+point, because the loss that earned it is precisely the moment your streak was worth least.
+
+**At the start of your next hand you open on it**, exactly as though you had already earned it: it is
+an ordinary bonus from that moment, spendable by every route a bonus is spendable by — pressing Apply
+Damage, being caught by a hit, or the end of the sixth trick. It **compounds hand after hand within a
+fight** if you keep banking without spending, and there is **no ceiling on it**.
+
+**It is wiped when the fight ends, win or lose.** Nothing carries a bank into the next opponent.
+
+> **Only the lose-a-trick card banks.** The win-a-trick card can also fire on a trick that hurt you —
+> take a skulled trick with its suit and it pays while you eat the skull — and it still pays into the
+> hand it lost. That is deliberate; **whether it should bank too is the developer's**, and it is the
+> reading most likely to change.
+
+> **The overlap bonus does not bank either.** Two cards paying on the same losing trick still add
+> their overlap bonus to *this* hand's multiplier, where that trick's reset then wipes it. **Whose
+> decision:** the developer's.
+
+> **Nobody has chosen what a bank is worth.** It uses the card's ordinary reward — **1 / 3 / 5**
+> damage or **2 / 3 / 5** multiplier at bronze / silver / gold — so a bronze card banks 1 damage or 2
+> multiplier. Whether that is large enough to be worth throwing a trick for is **the developer's, and
+> only after playing**. The multiplier version in particular is a much larger card than the damage
+> version, and whether it should have its own ladder is undecided.
+
+> **Both halves are on the streak readout**, in words rather than colour: what this hand is banking
+> for the next one, and what this hand opened on. The opening figure stays up for the whole hand
+> rather than flashing at the first trick — **whether that is right is pacing judgement, and the
+> developer's**. Every colour and glyph in both lines is a placeholder.
 
 **There is no longer any ceiling on what a hand's buffs can pay in multiplier or in damage** —
 **[settled]** since 2026-08-25. Both were removed outright rather than raised.
@@ -2970,7 +3030,20 @@ the mechanics themselves are documented in `../implementation/`.
 > the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
 > a `RunState` field and a transition in the same breath means exactly that.
 
-> **Where DLR-148 stands, 2026-08-26 — the newest entry here.** **Live and reachable by a player,
+> **Where DLR-150 stands, 2026-08-27 — the newest entry here.** **Live and reachable by a player, in
+> full.** The engine banks a lose-a-trick card's reward on a losing trick, carries it across every
+> hand of a fight, opens the next hand on it, and wipes it when the fight ends; the multiplier
+> version of that card can be dealt again, so the pool is 16; and both halves of the bank are on the
+> streak readout in the dossier column. Nothing in this ticket is engine-only, and nothing is
+> waiting on a screen.
+>
+> **What is not decided is every number and every word.** The bank's size is the card's ordinary
+> reward and nobody has chosen whether that is right; the multiplier version rides the shared ladder
+> and may need its own; the two readout lines are placeholder copy in placeholder colours; and
+> whether the opening figure should stay up all hand or flash once at the start is unanswered. Those
+> are the developer's, after playing, and the register rows above say so.
+
+> **Where DLR-148 stands, 2026-08-26.** **Live and reachable by a player,
 > in full:** every rule this ticket touched is on screen, because the ticket touched nothing else —
 > it is a screen change end to end. The buff panel is a grid of cards with duplicates stacked and
 > the unusable fenced; a skulled card shows a skull face; the consequence readout appears beside the
@@ -3004,7 +3077,7 @@ the mechanics themselves are documented in `../implementation/`.
 > the game a decision it needed, and whether cards re-sorting under the player's finger as the
 > usable window opens and closes is right.
 
-> **Where DLR-146 stands, 2026-08-26 — the newest entry here.** **Live in the engine, and reachable
+> **Where DLR-146 stands, 2026-08-26.** **Live in the engine, and reachable
 > by a player with no new screen:** your hand is topped back up to four cards as each trick resolves,
 > the Quarry is untouched, a hand ends with cards still in your hand, and a draw that outruns the
 > pile rebuilds it from the resolved cards and carries on. There is **no half-landed rule** — the
@@ -3023,9 +3096,10 @@ the mechanics themselves are documented in `../implementation/`.
 > rather than resolved**: the quick-kill payout now inflates, and every simulated baseline taken
 > before today describes a narrower hand.
 
-> **Where DLR-145 stands, 2026-08-26 — the newest entry here.** **Live in the engine, and on the
+> **Where DLR-145 stands, 2026-08-26.** **Live in the engine, and on the
 > screens that already existed:** every card you can be dealt is spent when you use it, nothing costs
-> action points, the card pool is thirteen templates, a run opens holding twenty drawn cards plus the
+> action points, the card pool was thirteen templates (sixteen since DLR-150), a run opens holding
+> twenty drawn cards plus the
 > guaranteed Cheat, a fight pays 10 coins, and neither the multiplier nor the flat-damage reward is
 > capped any more. **A player can reach all of it today** — there is no half-landed rule here and
 > nothing waiting on a screen. What *changed* on screen is subtraction: the action-bar and loadout AP
@@ -3473,7 +3547,9 @@ the mechanics themselves are documented in `../implementation/`.
 | `Escape` unwinds one step in the buff panel                                       | settled — since DLR-148, 2026-08-26                                                        | `src/app/warCouncil/roundUiState.ts` — `RoundUiActionKind.CancelBuffPoise`; `src/app/warCouncil/buffHandlers.ts` — `handleCancelBuffPoise` drops the poise and leaves the panel open, while `handleCancelLoadout` still closes outright and is what the bar's own toggle dispatches | — |
 | Activating a buff — two taps, and the card is spent | settled — the two taps since DLR-114; **that using a condition card removes it from the pile** since DLR-145, 2026-08-25 | `src/hunt/consumables.ts` — `CONDITION_CARD_SINGLE_USE` (Taker/Feeder/Sidestep, all `true`), a sibling of DLR-142's `ACTIVATED_CARD_SINGLE_USE`, both read only by `isConsumableItem`; `src/hunt/buffActivation.ts` — `activateFromPile`, which spends the card and records it on `BuffActivationState.spentThisTrick` so it still fires at this trick's resolution; the two-tap stage is `src/app/warCouncil/buffHandlers.ts` — `handleTapBuff` | **Developer** — whether every card should be single-use; it is one `false` per card type to revert |
 | A card spent on a trick still fires at that trick's resolution | settled — since DLR-145, 2026-08-25 | `src/hunt/buffActivation.ts` — `BuffActivationState.spentThisTrick`, appended by `activateFromPile` and cleared by `openBuffWindow` and `refreshBuffsForNewHand` on exactly the edges that clear `activatedThisTrick`. Read by unioning it with the offered pile in `src/app/warCouncil/buffRoundState.ts` — `buffHandInputFor` and `firedOncePerHandIds`, and again in `src/sim/playHand.ts`. Without it a spent card pays nothing, silently | — |
-| Which card types can be dealt at all (3 of 11 conditions, 2 of 4 reward kinds) | settled — since DLR-145, 2026-08-25; **provisional** — whether the cut is the right one | `src/hunt/buffTemplates.ts` — `TEMPLATE_FAMILIES` (Taker, Feeder, Sidestep) and the narrowed `MintableConditionKind` / `MintableRewardAxis` types on `ConditionBuffTemplate`, which make a cut family or a cut axis **unconstructible** rather than merely unweighted. `BUFF_TEMPLATES` is **13** (6 Taker + 3 Feeder + 2 Sidestep + Cheat + Timebomb). The eight cut families keep their `BuffKind` member, their `CONDITION_MODIFIER` price, their `buffFires` case and their `BUFF_CADENCE` row; `coins` and `apRefund` keep their `REWARD_BASE` / `REWARD_TIER_VALUE` ladders. Pinned by `src/sim/__tests__/reachability.test.ts` | **Developer** — whether the cut is right, and whether any of the eight should return. Restoring one is a `TEMPLATE_FAMILIES` row |
+| Which card types can be dealt at all (3 of 11 conditions, 2 of 4 reward kinds) | settled — since DLR-145, 2026-08-25; **provisional** — whether the cut is the right one | `src/hunt/buffTemplates.ts` — `TEMPLATE_FAMILIES` (Taker, Feeder, Sidestep) and the narrowed `MintableConditionKind` / `MintableRewardAxis` types on `ConditionBuffTemplate`, which make a cut family or a cut axis **unconstructible** rather than merely unweighted. `BUFF_TEMPLATES` is **16** since DLR-150, 2026-08-27 (6 Taker + **6** Feeder + 2 Sidestep + Cheat + Timebomb) — the Feeder family's Momentum row came back once the carry stopped a Loss-fired multiplier being wiped by that loss's own reset; it was **13** between DLR-145 and then. The eight cut families keep their `BuffKind` member, their `CONDITION_MODIFIER` price, their `buffFires` case and their `BUFF_CADENCE` row; `coins` and `apRefund` keep their `REWARD_BASE` / `REWARD_TIER_VALUE` ladders. Pinned by `src/sim/__tests__/reachability.test.ts` | **Developer** — whether the cut is right, and whether any of the eight should return. Restoring one is a `TEMPLATE_FAMILIES` row |
+| A card that pays you for losing banks its reward for the next hand | settled — since DLR-150, 2026-08-27; **provisional** — the size of the bank, and whether the opening figure should be persistent or a hand-start flourish | `src/hunt/buffAccrual.ts` — `BuffCarry`, `accrueCarry` (uncapped, and it throws rather than accruing zero on an axis that cannot carry), `carriedIn`/`carryOut` on `BuffBonusAccrual`, `startHandAccrual(carriedIn)` seeding the new hand's two spendable figures, and the Feeder-only branch in `resolveFiredBuffs`. The Loss/Win answer is supplied by `src/warCouncil/bank.ts` as `!isTaken(outcome)` and is never re-derived. `src/hunt/run.ts` — `RunState.feederCarry`, seeded empty by `startRun`; `src/hunt/runTransitions.ts` — the private `feederCarryAfter`, which wipes it on a resolved encounter. Pinned by `src/hunt/__tests__/buffCarry.test.ts` and `run.feederCarry.test.ts` | **Developer** — the size of the bank, whether the win-a-trick card should bank on a losing trick too, whether the overlap bonus should follow the trick's outcome, and whether the multiplier version needs its own ladder |
+| Both halves of the bank are on the streak readout | settled — since DLR-150, 2026-08-27; the **wording, colours and glyphs** are provisional | `src/app/warCouncil/BankMeter.tsx` — the `carriedIn` / `carryOut` display-only props and their two lines, both folded into the section's existing accessible name and deliberately **not** into the cash-out figures; styled by `src/app/warCouncil/warCouncilBankMeter.css`. Pinned by `src/app/warCouncil/__tests__/BankMeter.test.tsx` and `WarCouncilRound.feederCarry.test.tsx` | **Developer** — every word, colour and glyph, and whether the opening figure should be persistent or a one-off flourish |
 | A Vault card of a type that is no longer dealt does not arrive | settled — the behaviour predates DLR-145 (DLR-113); DLR-145 is what made it reachable | `src/hunt/buffTemplates.ts` — `templateById` returns `undefined` for a cut id, so `mintGrants` skips it and `src/vault/vaultEconomy.ts` — `oddsBoostRefusalFor` / `startingTierRefusalFor` refuse a purchase against it; `src/vault/` — `reconcileVault` drops it and counts it. No persisted shape, field or key changed and `SAVE_SCHEMA_VERSION` did not move | **Developer** — nothing corrupts, but Vault currency already spent on a cut card is gone. Clearing saved data avoids the confusion |
 | There is no way to un-activate a buff                                            | settled — the engine ships no refund                                                       | nothing to enforce — `src/hunt/buffActivation.ts` exposes no removal path at all, and the absence is what makes sure one is never written in the UI                                                                                                                                                                                                                                     | —                                                                                                                                                                                                                                                                                                                 |
 | More than one buff per trick; never the same buff twice                          | settled — since DLR-108, reachable since DLR-114                                           | `src/hunt/buffActivation.ts` — the pool is one number so stacking needs no rule, and `BuffActivationRefusal.AlreadyActive` refuses the duplicate                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
@@ -3952,6 +4028,26 @@ panel's readability with two more rows in it — none of it played, the mockup g
 for this contract. All four are under [Known tensions](#known-tensions-recorded-not-resolved).
 
 ### Known tensions, recorded not resolved
+
+- **A card that pays you for winning can fire on a trick that hurt you, and still pays into the hand
+  it lost** (new 2026-08-27, DLR-150). Win a skulled trick with the named suit and the win-a-trick
+  card fires — you ate the skull, both counters reset, and its reward went into the pot that reset
+  just destroyed. That is exactly the defect the carry was built to fix, left in place for one family
+  because the change was specified for the other. Extending it is a single condition. **Whose
+  decision:** the developer's.
+- **The overlap bonus still lands in the hand a losing trick wipes** (new 2026-08-27, DLR-150). Two
+  or more cards paying on the same clean loss add a bonus to *this* hand's multiplier, which that
+  trick's reset then takes. The reward each card earned is banked; the bonus for earning them
+  together is not. **Whose decision:** the developer's.
+- **Nobody knows whether the bank is big enough to be worth losing a trick for** (new 2026-08-27,
+  DLR-150). A bronze card banks 1 damage or 2 multiplier, from the ordinary reward ladders — no new
+  number was invented, deliberately. The ticket's own recorded risk is that this is too small to
+  change anyone's play, and the only way to find out is to play it. **Whose decision:** the
+  developer's, after playing.
+- **Three more card types in the pool change what every pull is likely to give** (new 2026-08-27,
+  DLR-150). No weight moved, but the pool went 13 to 16, so the machine's odds shifted for every
+  family. Whether the machine still feels the way it did is unmeasured. **Whose decision:** the
+  developer's, after playing.
 
 - **The game no longer previews the Quarry's intent, and nothing measured whether it needed to**
   (new 2026-08-26, DLR-148). The telegraph was the answer to a specific complaint — that a decision's

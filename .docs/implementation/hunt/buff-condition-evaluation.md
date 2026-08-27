@@ -2,7 +2,7 @@ Part of [Hunt](README.md).
 
 # Condition evaluation — which buffs fire, and what a firing is worth
 
-Built by DLR-125. Until this ticket `buffAccrual.ts` had **no caller anywhere in `src/`**: a player
+Built by DLR-125, DLR-150. Until this ticket `buffAccrual.ts` had **no caller anywhere in `src/`**: a player
 could open the loadout, pay action points for a condition-family buff, and receive nothing at all.
 This module is the missing middle — the pure predicate that answers "did this buff's condition come
 true on this trick", plus the cadence rule that decides how often a satisfied condition may pay.
@@ -77,11 +77,20 @@ Order follows `active`, because the pile's order is the player's mental order.
 
 ## `resolveTrickBuffs` — one call, so `bank.ts` states R3's order and nothing else
 
-`resolveTrickBuffs(input, ctx)` composes the cadence filter with the accrual arithmetic and returns
+`resolveTrickBuffs(input, ctx, trickIsLoss)` composes the cadence filter with the accrual arithmetic and returns
 `{ accrual, firedIds }`. It **delegates every figure to `resolveFiredBuffs`** in `buffAccrual.ts` —
 R1 (one axis per contribution), R2 (contributions add within an axis), R5 (the Overlap Bonus,
 `max(0, k − 1)`) and R6 (the per-hand caps) are never re-derived here. That is what leaves
 `src/warCouncil/bank.ts` holding exactly one rule of its own: R3's *order*.
+
+**`trickIsLoss` is the outcome axis, and this module never derives it.** DLR-150 added it as a third
+parameter that is passed straight through to `resolveFiredBuffs` and read for nothing here. It
+arrives from `src/warCouncil/bank.ts` as `!isTaken(outcome)`, because that file's `TAKEN` table *is*
+the skull inversion and a second statement of it in `src/hunt/` — a `trickWasLoss(ctx)` predicate
+reading `playerWon === skullTrick` — would be two copies of the game's most misread rule in two
+modules. Every `buffFires` case still reads only the **mechanical** axis (`ctx.playerWon`, did the
+player physically take the cards); the outcome axis is used for exactly one thing, the Feeder carry.
+See [The Feeder carry](the-feeder-carry.md).
 
 `BuffTrickInput` and `BuffHandContext` are declared **in this module**, not in `bank.ts`, because
 `src/hunt/` owns what a buff is and `bank.ts` is already an importer of `../hunt`. `BuffHandContext`
@@ -178,3 +187,13 @@ Two consequences worth stating:
   DLR-113 paths, so nothing corrupts and no save is rejected. A developer carrying a populated Vault
   from before DLR-145 silently loses those starting cards and odds boosts. See
   [../vault/README.md](../vault/README.md).
+
+## Feeder's Momentum row came back — DLR-150, 2026-08-27
+
+`feeder` is unchanged as a **condition**: it still fires on `!ctx.playerWon && suit matches`, with no
+skull term in it at all, so it pays on a dodge and on a clean loss alike — deliberate, and not a bug.
+What changed is what a Feeder may be *minted* as. DLR-145 had cut it to Blade-only because a
+multiplier raised on the loss half was wiped by that loss's own reset before it could be spent; the
+carry removes exactly that failure mode, so `TEMPLATE_FAMILIES`'s Feeder row is `BLADE_AND_MOMENTUM`
+again and `BUFF_TEMPLATE_COUNT` is **16**. The eight cut families and the two cut reward axes are
+untouched by this — one row came back, not the pruning. See [The Feeder carry](the-feeder-carry.md).

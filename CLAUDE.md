@@ -93,10 +93,13 @@ the vocabulary above is what the code and the ruleset actually say. Do not use H
 
 ### Cut buffs are cut until a ticket brings them back
 
-DLR-145 pared the mintable buff pool to **13 templates** — Taker (3 suits × Blade/Momentum), Feeder
-(3 suits × Blade), Sidestep (Blade/Momentum), plus the two activated cards Cheat and Timebomb.
+DLR-145 pared the mintable buff pool to 13 templates, and DLR-150 restored Feeder's Momentum row,
+bringing it to **16 templates** — Taker (3 suits × Blade/Momentum), Feeder (3 suits ×
+Blade/Momentum), Sidestep (Blade/Momentum), plus the two activated cards Cheat and Timebomb.
 `src/hunt/buffTemplates.ts` is the owner; `MintableConditionKind` and `MintableRewardAxis` narrow
-the *types*, so everything outside that set is **unconstructible, not merely unweighted**.
+the *types*, so everything outside that set is **unconstructible, not merely unweighted**. Momentum
+was unsafe on Feeder while a multiplier raised on a Loss trick was wiped by that trick's own reset;
+the feeder carry lets it escape the hand first, which is what made the row safe to restore.
 
 Everything cut is **removed from the game until a ticket explicitly restores it** — treat it as
 absent when planning, reviewing, writing docs, or answering a question about what the game contains:

@@ -113,6 +113,40 @@ two cash-out figures, shown only when at least one axis is non-zero (`hasPending
 `NO_PENDING_BONUS` constant) when omitted, so every existing call site — and every existing test —
 reads exactly as it did before this prop existed.
 
+#### Both halves of the Feeder carry — DLR-150, 2026-08-27
+
+`BankMeter` gained two more display-only props, `carriedIn` and `carryOut`, both `BuffCarry` and both
+defaulted to `EMPTY_BUFF_CARRY`. `WarCouncilRound.tsx` fills them straight off
+`ui.buffHand.accrual.carriedIn` and `.carryOut`. They render as two conditional lines beneath the
+pending-bonus line, `.wc-bank-carried-in` (**"Carried in from last hand"**) and `.wc-bank-carry-out`
+(**"Banking for next hand"**), each shown only when one of its two axes is non-zero, and both are
+folded into the section's existing `aria-label` rather than added as new landmarks — so the readout
+still carries one accessible name, not four.
+
+**Both halves are on screen because the whole effect is a promise made in one hand and redeemed in
+the next**, and an invisible promise is not one. The carry is *earned* in a hand that is going badly
+and *spent* in the hand after it; a reader who only ever saw the second half would experience an
+opening bonus with no cause.
+
+**Neither line is folded into `cash`, `forced` or `shownMultiplier`, and that asymmetry with
+`pendingBonus` is the point.** A pending bonus *is* payable at the next cash-out, so folding it into
+the two cash-out figures is telling the truth. The carry pays **nothing** in the hand that earns it,
+so folding `carryOut` in would be this component inventing a payout. `carriedIn` is likewise not
+added on top: it was already seeded into `multiplierBonus`/`flatDamageBonus` by `startHandAccrual`,
+so it is *already* inside the figures — the line names where it came from, and adding it again would
+double-count it.
+
+**`carriedIn` is deliberately persistent rather than a hand-start flourish.** It reads
+`accrual.carriedIn`, which does not move for the hand's whole life, so a player who looks up at trick
+4 still sees what their opening bonus was. AC6's wording ("an opening figure at the top of the next
+hand") is satisfied either way; **whether it should instead be a one-off flourish is pacing
+judgement and the developer's**, as is every colour, glyph, border weight and word in both lines —
+all placeholder. The mechanic itself is [hunt/the-feeder-carry.md](../hunt/the-feeder-carry.md).
+
+> **The `.wc-bank*` rules moved house in the same ticket.** They now live in
+> `warCouncilBankMeter.css`, imported by `WarCouncilRound.tsx` alongside the others, because
+> `warCouncilHunt.css` had reached its 400-line budget. No selector was renamed and no rule changed.
+
 ### The skull mark on a played card
 
 > **DLR-148 changed what this looks like, and nothing else about it.** A skulled card now renders a

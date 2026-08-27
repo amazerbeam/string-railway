@@ -82,6 +82,20 @@ describe('playHand', () => {
     }
   })
 
+  it('records trickWasLoss as a boolean on every fire outcome, and well-formed feeder carry fields on every hand', () => {
+    const run = startRun(PLAYER_START_HEALTH, [], 42)
+    for (let hand = 1; hand <= 5; hand += 1) {
+      const outcome = playHand(run, hand, FRESH_ENCOUNTER_DECK, baselinePolicy)
+      for (const fireOutcome of outcome.report.buffFireOutcomes) {
+        expect(typeof fireOutcome.trickWasLoss).toBe('boolean')
+      }
+      for (const carry of [outcome.report.feederCarriedIn, outcome.report.feederCarryOut]) {
+        expect(carry.multiplierBonus).toBeGreaterThanOrEqual(0)
+        expect(carry.flatDamageBonus).toBeGreaterThanOrEqual(0)
+      }
+    }
+  })
+
   it('records a buffWindowObservation for every offered buff at the opening window, independent of what the policy chooses', () => {
     const neverActivates: SimPolicy = { ...baselinePolicy, chooseBuffs: () => [] }
     const run = startRun(PLAYER_START_HEALTH, [], 42)

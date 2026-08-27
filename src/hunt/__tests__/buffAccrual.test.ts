@@ -36,6 +36,8 @@ describe('startHandAccrual', () => {
       apRefunded: 0,
       multiplierPaid: 0,
       flatDamagePaid: 0,
+      carriedIn: { multiplierBonus: 0, flatDamageBonus: 0 },
+      carryOut: { multiplierBonus: 0, flatDamageBonus: 0 },
     })
   })
 })
@@ -119,7 +121,7 @@ describe('R5 — the bonus draws from the Momentum cap', () => {
       multiplierBonus: MAX_MULTIPLIER_BONUS_PER_HAND,
     }
     const fired = Array.from({ length: 6 }, () => firedBuff(BuffRewardAxis.Multiplier, 0))
-    const result = resolveFiredBuffs(maxedOut, fired)
+    const result = resolveFiredBuffs(maxedOut, fired, false)
     expect(result.multiplierBonus).toBe(MAX_MULTIPLIER_BONUS_PER_HAND)
   })
 })
@@ -127,7 +129,7 @@ describe('R5 — the bonus draws from the Momentum cap', () => {
 describe('resolveFiredBuffs', () => {
   it('returns the accrual unchanged on an empty array', () => {
     const accrual = accrueAxisBonus(startHandAccrual(), BuffRewardAxis.Coins, 3)
-    expect(resolveFiredBuffs(accrual, [])).toEqual(accrual)
+    expect(resolveFiredBuffs(accrual, [], false)).toEqual(accrual)
   })
 
   it('three fired buffs across three axes move three counters and add k-1=2 to multiplierBonus', () => {
@@ -136,7 +138,7 @@ describe('resolveFiredBuffs', () => {
       firedBuff(BuffRewardAxis.Coins, 2),
       firedBuff(BuffRewardAxis.ApRefund, 1),
     ]
-    const result = resolveFiredBuffs(startHandAccrual(), fired)
+    const result = resolveFiredBuffs(startHandAccrual(), fired, false)
     expect(result.flatDamageBonus).toBe(3)
     expect(result.coinBonus).toBe(2)
     expect(result.apRefunded).toBe(1)
@@ -183,10 +185,18 @@ describe('every field of every returned accrual is a non-negative integer, input
   it('holds across a representative sequence', () => {
     const start = startHandAccrual()
     const fired = [firedBuff(BuffRewardAxis.Magnitude, 5), firedBuff(BuffRewardAxis.Multiplier, 2)]
-    const result = resolveFiredBuffs(start, fired)
-    for (const value of Object.values(result)) {
+    const result = resolveFiredBuffs(start, fired, false)
+    const { carriedIn, carryOut, ...axisTotals } = result
+    for (const value of Object.values(axisTotals)) {
       expect(Number.isInteger(value)).toBe(true)
       expect(value).toBeGreaterThanOrEqual(0)
+    }
+    // DLR-150 — carriedIn/carryOut are BuffCarry objects, not numbers; check their own two fields.
+    for (const carry of [carriedIn, carryOut]) {
+      for (const value of Object.values(carry)) {
+        expect(Number.isInteger(value)).toBe(true)
+        expect(value).toBeGreaterThanOrEqual(0)
+      }
     }
     expect(start).toEqual(EMPTY_BUFF_ACCRUAL)
   })

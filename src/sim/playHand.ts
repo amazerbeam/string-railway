@@ -13,6 +13,7 @@
 import {
   chooseCpuMove,
   currentTurn,
+  isTaken,
   PlayerSide,
   QUARRY_SIDE,
   RoundPhase,
@@ -29,6 +30,7 @@ import {
 } from '../hunt'
 import { dealHand } from '../app/handDeal'
 import { roundReducer } from '../app/warCouncil/roundReducer'
+import { roundResultFor } from '../app/warCouncil/roundResult'
 import {
   canAct,
   createRoundUiState,
@@ -79,9 +81,12 @@ export function playHand(
   // (`buffActivation.ts`), so this is the only place that window's active set survives to be
   // reconciled against `resolvedTrick.resolution.firedBuffIds` below. Carries the reward axis/tier
   // with the kind for the same reason: the `Buff` object is in hand HERE and gone later.
-  // `fired` and `trickOfHand` are BOTH supplied at resolution, not here: this map is built when the
-  // window opens, before the trick it belongs to has resolved.
-  let pendingActive: ReadonlyMap<BuffId, Omit<BuffFireOutcome, 'fired' | 'trickOfHand'>> = new Map()
+  // `fired`, `trickOfHand` and `trickWasLoss` are ALL supplied at resolution, not here: this map is
+  // built when the window opens, before the trick it belongs to has resolved.
+  let pendingActive: ReadonlyMap<
+    BuffId,
+    Omit<BuffFireOutcome, 'fired' | 'trickOfHand' | 'trickWasLoss'>
+  > = new Map()
   // 2026-08-25 — summed at each spend site rather than read as `capacity - endingApPool`: under
   // `ApRefreshCadence.PerTrick` the pool refills mid-hand, so a start/end diff would only ever
   // report the LAST trick's spend and silently undercount every earlier one.
@@ -114,11 +119,13 @@ export function playHand(
 
     if (ui.resolvedTrick !== null) {
       const fired = ui.resolvedTrick.resolution.firedBuffIds
+      const trickWasLoss = !isTaken(ui.resolvedTrick.resolution.outcome)
       for (const [id, card] of pendingActive) {
         buffFireOutcomes.push({
           ...card,
           fired: fired.includes(id),
           trickOfHand: ui.round.tricksPlayed,
+          trickWasLoss,
         })
       }
       pendingActive = new Map()
@@ -218,15 +225,7 @@ export function playHand(
   }
   if (!terminated) stalled = true
 
-  const result: WarCouncilRoundResult = {
-    finalState: ui.round,
-    encounter: ui.encounter,
-    blastGuardHeld: ui.blastGuardHeld,
-    discardsRemaining: ui.discardsRemaining,
-    buffs: ui.buffs,
-    unplayedAtResolve: ui.unplayedAtResolve,
-    coinsEarned: ui.buffHand.coinsEarned,
-  }
+  const result = roundResultFor(ui)
 
   const report: HandReport = {
     handOfFight: run.handOfFight,
@@ -249,6 +248,8 @@ export function playHand(
     fault,
     buffWindowObservations,
     buffFireOutcomes,
+    feederCarriedIn: ui.buffHand.accrual.carriedIn,
+    feederCarryOut: ui.buffHand.accrual.carryOut,
   }
 
   return { result, report, deadCardRefusals }

@@ -61,6 +61,7 @@ import {
   MAP_TITLE,
   START_TITLE,
 } from './app/run/runLabels'
+import { RunPhase, screenFor } from './app/screenFor'
 
 // Built once at module scope because its only half is a configuration constant — it holds no
 // per-run state, so it cannot go stale across the remounts below. Every fight of the run faces
@@ -68,21 +69,6 @@ import {
 const HUNT: Hunt = { quarry: { character: SLICE_QUARRY_CHARACTER } }
 
 const NO_TRICKS: TrickTally = { taken: 0, lost: 0 }
-
-/** Which surface is showing. A union rather than a phase boolean beside it, because
- *  "in the shop AND warned" and "in the shop before the run began" are both states that
- *  must not exist. Widened on DLR-85 with Start and Map — folding the start screen in here
- *  costs no new state variable. */
-const RunPhase = {
-  Start: 'start',
-  Verdict: 'verdict',
-  Warned: 'warned',
-  Shop: 'shop',
-  Map: 'map',
-  // DLR-118 — reachable ONLY from a terminal verdict's `Open the Vault` control.
-  Vault: 'vault',
-} as const
-type RunPhase = (typeof RunPhase)[keyof typeof RunPhase]
 
 /**
  * The run driver (DLR-82). Owns `RunState` and switches on it: while the encounter is live it
@@ -147,20 +133,9 @@ function App() {
       : undefined
 
   // Dev-only mirror for browser automation (`.claude/skills/ai-play-tester`) — see
-  // `./app/debugState.ts`. Mirrors the SAME branch order the render below switches on, so the
-  // reported `screen` can never disagree with what is actually on screen.
-  const screen =
-    phase === RunPhase.Start
-      ? 'start'
-      : encounterOver && phase === RunPhase.Map
-        ? 'map'
-        : encounterOver && phase === RunPhase.Shop
-          ? 'shop'
-          : encounterOver && phase === RunPhase.Vault
-            ? 'vault'
-            : encounterOver
-              ? 'verdict'
-              : 'warCouncil'
+  // `./app/debugState.ts`. The derivation itself lives in `screenFor` (DLR-150), so the reported
+  // `screen` can never disagree with what is actually on screen.
+  const screen = screenFor(phase, encounterOver)
   useEffect(() => {
     setDebugAppState({ screen, phase, hand, run, vault })
   }, [screen, phase, hand, run, vault])
@@ -184,6 +159,7 @@ function App() {
       result.unplayedAtResolve,
       result.coinsEarned,
       result.buffs,
+      result.feederCarry,
     )
     setRun(recorded)
     if (isEncounterResolved(recorded.encounter)) {
@@ -387,6 +363,7 @@ function App() {
       coins={run.coins}
       blastGuardHeld={run.blastGuardHeld}
       discardsRemaining={run.discardsRemaining}
+      feederCarry={run.feederCarry}
       buffs={run.buffs}
       bankClimbBonus={bankClimbBonusFor(run)}
       rankTiers={playerRankTiersFor(run)}

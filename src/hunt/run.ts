@@ -15,6 +15,7 @@ import {
   STARTING_BUFF_COUNT,
 } from './config'
 import { BuffTier, type Buff, type BuffId } from './buffs'
+import { EMPTY_BUFF_CARRY, type BuffCarry } from './buffAccrual'
 import { cheatBuff } from './buffCatalog'
 import { ALL_BRONZE, type RankTierTable } from './rankTiers'
 import { mintGrants, type TemplateGrant } from './buffTemplates'
@@ -139,6 +140,10 @@ export interface RunState {
    *  `apCapacityBonus`, which stack, a rank is a RUNG and `steppedTo` refuses a third step.
    *  NEVER persisted, exactly as `coins` above. */
   readonly rankTiers: RankTierTable
+  /** DLR-150 AC3/AC4 — the Feeder carry, carried across every hand WITHIN a fight and wiped at
+   *  the fight boundary, exactly as `blastGuardHeld` is. The hand owns it for its life and hands
+   *  the survivor back through `WarCouncilRoundResult`. NEVER persisted, exactly as `coins`. */
+  readonly feederCarry: BuffCarry
 }
 
 /**
@@ -184,6 +189,7 @@ export function startRun(
     // DLR-122 AC1 — every rank at bronze, which IS the ability printed today, so a run that buys
     // nothing plays exactly as it plays now.
     rankTiers: ALL_BRONZE,
+    feederCarry: EMPTY_BUFF_CARRY,
   }
 }
 
