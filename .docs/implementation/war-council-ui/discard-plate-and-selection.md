@@ -1,6 +1,6 @@
 _Part of [War Council UI](README.md)._
 
-# The discard (now Swap), the hand fan's third mode, and the pre-lead gate
+# The discard (now Swap), the hand's third mode, and the pre-lead gate
 
 > **The plate this page is named for no longer exists — DLR-114 deleted it, and no rule below
 > changed.** `DiscardPlate.tsx` and `warCouncilDiscard.css` went with the felt rail; the control is
@@ -8,7 +8,7 @@ _Part of [War Council UI](README.md)._
 > `TapDiscard`/`CancelDiscard` actions, reads the same `discardRefusalFor(discardStock(ui))`, prints
 > the same `DISCARD_REFUSAL_MESSAGE` sentence on its own face, and reuses `discardAccessibleName`
 > unchanged — the copy was kept, not rewritten. The `discardWindowOpen` gate, the selection model, the
-> chaining behaviour, the hand fan's third mode and the `handleCarryOn` guard below are all exactly as
+> chaining behaviour, the hand's third mode and the `handleCarryOn` guard below are all exactly as
 > described. See [the action bar and the buff loadout](action-bar-and-loadout.md) for where the control
 > now lives; where this page says "the rail control", the bar's Swap button is what does it today.
 
@@ -147,13 +147,13 @@ more predictable interaction, and it matches the arm/spend/re-arm shape Cheat an
 use. Whether the extra tap per chained throw is worth the friction is unplayed (see
 [README.md](README.md)'s Deferred section).
 
-## The hand fan and the card marker
+## The hand and the card marker
 
 `HandFan` gained `discardSelecting`/`discardSelection` props. `isFocusable` and the `illegal`
 expression each gain `|| discardSelecting` beside their existing `timebombArmed` clause — a second
 instance of the same "every held card is a valid tap target, including one illegal to play" relaxation,
 not a new concept. `WarCouncilRound.tsx` computes `handInteractive = interactive ||
-discardSelecting(ui)` and passes it to `HandFan` alone, so the fan stays interactive during the
+discardSelecting(ui)` and passes it to `HandFan` alone, so the hand stays interactive during the
 Quarry-to-lead gap even though every other control on the rail reads the unchanged `interactive`.
 
 `PlayingCard` gained `discardSelected?: boolean`, defaulting to `false`, rendering a third

@@ -2,7 +2,7 @@ Part of [War Council UI](README.md).
 
 # The per-card damage preview — asking the resolution rather than re-deriving it
 
-Every card in the hand fan carries a small strip beneath it reading `W<n> L<n>`: the damage the
+Every card in the hand carries a small strip beneath it reading `W<n> L<n>`: the damage the
 Quarry takes if that card **wins** its trick, and the damage the player takes if it **loses**.
 Built by DLR-117, extended by DLR-125 (which met its AC3 — see below).
 
@@ -119,7 +119,7 @@ The strip sits **beside** the card button, not inside it, and the button points 
 `aria-describedby` — a new optional `describedBy` prop on `PlayingCard`. `cardAccessibleName` is
 untouched, and deliberately: a card's accessible name is its identity, and folding a derived figure
 into it would both conflate two different claims and break the 37 assertions across this suite that
-query cards by exact name. Ids are composed from `useId()` plus `cardKey(card)`, so two fans could
+query cards by exact name. Ids are composed from `useId()` plus `cardKey(card)`, so two hands could
 coexist without colliding.
 
 This is also what makes the readout testable the way DLR-117 AC4 asks: component specs query
@@ -132,11 +132,16 @@ top-right, primed mark bottom-left, ability pip bottom-right — and the centre 
 mark, so there is no free area at a legible size. Keeping the numbers off the face also keeps
 `game-ux`'s "the cards take visual precedence" intact.
 
-So `HandFan` now wraps each card in a `.wc-fan-slot` flex column and puts the strip beneath it. The
-split of the inline style is load-bearing: `--wc-fan-rot` and `--wc-fan-lift` stay on the
-`PlayingCard` button, where `warCouncilCards.css`'s `.wc-fan .wc-card` composes them with the
-hover/armed states, while `margin-left` and `z-index` move to the slot because the slot is now the
-flex item that participates in the fan's layout and stacking order.
+So `HandFan` wraps each card in a `.wc-fan-slot` flex column and puts the strip beneath it.
+
+> **The slot outlived the fan that named it.** DLR-117 introduced `.wc-fan-slot` with an inline
+> style split across two elements: `--wc-fan-rot` and `--wc-fan-lift` on the `PlayingCard` button,
+> where `warCouncilCards.css` composed them with the hover and armed states, and `margin-left` and
+> `z-index` on the slot, because the slot was the flex item participating in the fan's layout and
+> stacking order. The DLR-149 follow-up retired the fan — that overlap was making a slice of every
+> card's visible face hit-test to the wrong card — so all four are gone and `HandFan` sets no inline
+> style at all. The wrapper stays, because the strip still needs a column to sit in; only its name
+> is a fossil. See [Layout and styling](layout-and-styling.md).
 
 `useRovingTabIndex`'s `focusIndex` queries `groupRef.current.querySelectorAll('button')` — a
 **descendant** query — so the extra wrapper changes neither the arrow-key order nor the count, and
@@ -145,7 +150,9 @@ the strip is a `<span>` that never enters that list. See [Accessibility](accessi
 **Vertical cost: roughly 7-12px on the `hand` grid row** — one line of
 `calc(var(--wc-card-w) * 0.2)` text plus a `calc(var(--wc-card-w) * 0.04)` gap, less the ~3.2px of
 slack already inside `.wc-fan`'s `min-height`. No grid row was added to `.wc-shell`, and `.wc-fan`'s
-rotation-reserve padding was deliberately **not** spent, because that reserve is DLR-119's territory.
+lift-reserve top padding was deliberately **not** spent. (That reserve was DLR-119's territory at the
+time; it is now `calc(var(--wc-card-w) * 0.35)`, re-derived by the DLR-149 follow-up once the
+rotation term left it.)
 See [Layout and styling](layout-and-styling.md).
 
 ## Live updating needs no machinery at all
@@ -153,7 +160,7 @@ See [Layout and styling](layout-and-styling.md).
 `WarCouncilRound` passes `damageForCard={(card) => cardDamagePreview(ui, card)}` — a fresh inline
 closure over committed reducer state, every render. There is **no effect, no memoisation, and no
 second copy of state**, which is exactly what makes DLR-117 AC2's "updates live, without a refresh
-the player has to invoke" free: the fan re-derives on every render and cannot go stale. The cost is
+the player has to invoke" free: the hand re-derives on every render and cannot go stale. The cost is
 bounded — at most `HAND_SIZE` cards × 2 branches = 12 `resolveTrickBank` + `applyResolution` pairs
 per render, each a handful of integer operations, on a surface driven by discrete taps rather than
 pointer moves.

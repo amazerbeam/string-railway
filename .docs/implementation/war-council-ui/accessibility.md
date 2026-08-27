@@ -144,11 +144,11 @@ is on the felt, so any accessible name the panel introduces must not duplicate o
 — identical names across two simultaneously-mounted components make a `getByLabelText` query
 ambiguous. The DLR-80 panel avoids it by using a table with row headers rather than labelled figures.
 
-### While a prompt is open, the fan leaves the accessibility tree
+### While a prompt is open, the hand leaves the accessibility tree
 
 `AbilityPrompt` renders a live, enabled button for every remaining hand card, using the same
 `cardAccessibleName` those cards already have in `HandFan` — so with both visible, a screen-reader
 user scanning a flat buttons list met every name twice, one disabled and one actionable, with nothing
 but document order to tell them apart. `HandFan` now sets `aria-hidden` on `.wc-fan` when a prompt is
-open. `promptOpen` is true only when `interactive` is false, which forces every card in the fan
+open. `promptOpen` is true only when `interactive` is false, which forces every card in the hand
 `disabled`, so nothing focusable ever sits inside the hidden subtree.

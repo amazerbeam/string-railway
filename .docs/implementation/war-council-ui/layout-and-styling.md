@@ -46,12 +46,12 @@ document level, and `index.html`'s `viewport-fit=cover` is what makes the safe-a
 to something other than zero.
 
 `1fr` belongs to the table row and `auto` to the two bands; reversed, the hand grows and the play
-area collapses at short viewports. The fan container carries explicit `min-height` and padding
-because **card rotation and lift are transforms, which do not affect layout size** — without
-reserved room the fan's visual pixels spill outside its box and the shell's `overflow: hidden` crops
-them. The fix is to reserve the room, never to loosen the overflow.
+area collapses at short viewports. The hand container carries explicit `min-height` and padding
+because **a card's lift is a transform, which does not affect layout size** — without reserved room
+the hand's visual pixels spill outside its box and the shell's `overflow: hidden` crops them. The
+fix is to reserve the room, never to loosen the overflow.
 
-The styling ships as **ten** stylesheets, not one, all imported by `WarCouncilRound.tsx` in cascade
+The styling ships as **twelve** stylesheets, not one, all imported by `WarCouncilRound.tsx` in cascade
 order. Two of them are imported a second time, by the component that owns them —
 `warCouncilBuffGallery.css` and `warCouncilBuffCard.css` from `BuffGallery.tsx` — which is the same
 pattern `warCouncilActionBar.css` used to follow when `BuffLoadoutPanel.tsx` was the only other
@@ -60,15 +60,17 @@ consumer of its `.wc-loadout-*` block. **That block, and that panel, were delete
 | Sheet | Owns |
 |---|---|
 | `warCouncilActionBar.css` (133) | DLR-114: the whole action bar (`.wc-bar*`, including `grid-area: actions`). Its `.wc-loadout*` block — the old buff panel — was **deleted by DLR-148**, taking the sheet from 239 lines to 133. Every size bound in it is a `clamp()` copied from a sibling rail sheet rather than a new number — placeholder, flagged for the polish ticket |
-| `warCouncil.css` (370) | the `:root` tokens, the shell grid, the status band including DLR-82's `.wc-run` readout, and — re-homed by DLR-80 — the `.wc-sr-only` utility. **DLR-148 added the buff card's metals, face tints, inks, the two size bounds `--wc-buffcard-w` / `--wc-rail-w`, the skull shadow, and the five contrast-derived inks**; `__tests__/contrast.test.ts` parses this file and asserts the 4.5:1 floor against whatever it says |
+| `warCouncil.css` (393) | the `:root` tokens, the shell grid, the status band including DLR-82's `.wc-run` readout, and — re-homed by DLR-80 — the `.wc-sr-only` utility. **DLR-148 added the buff card's metals, face tints, inks, the two size bounds `--wc-buffcard-w` / `--wc-rail-w`, the skull shadow, and the five contrast-derived inks**; `__tests__/contrast.test.ts` parses this file and asserts the 4.5:1 floor against whatever it says. **DLR-149 added the twelve `--wc-fig-*` figure colours (four per suit) and `--wc-grain-opacity` (0.28)** — all thirteen placeholders, the developer's to choose |
 | `warCouncilTable.css` (176) | DLR-93: the decree and draw pile, and the whole `.wc-table` block — the felt itself. **DLR-148 replaced its `1fr auto 1fr` with `var(--wc-rail-w) minmax(0, 1fr)`** — the rail/stage split — and corrected a comment that had been pointing `.wc-felt-rail`'s rules at a stylesheet deleted two tickets earlier |
 | `warCouncilFeltRail.css` (109) | **DLR-148, new.** The felt's left game rail: the always-mounted decree/trick/readout/spent column, the condensed trick strip it shows while the gallery holds the stage, and the readout slip's light ground and its three tones. Closes a pre-existing defect — `.wc-felt-rail` had **no rule at all** before this sheet existed |
 | `warCouncilBuffGallery.css` (272) | **DLR-148, new.** The gallery panel, its head figures, the tier-chip filter, the `repeat(auto-fill, <fixed>)` grid (never `minmax(…, 1fr)`), the run tabs and the fence. Carries the `isolation: isolate` on the pile wrapper that keeps a stacked card from painting over its own face |
 | `warCouncilBuffCard.css` (387) | **DLR-148, new.** One buff card: the metal frame, the tinted face, the roman numeral, the cadence pill, the suit-coloured payoff bar and its split variant, the hover sheen, and the tarnish a fenced card takes. Carries the card's own `isolation: isolate` + `overflow: hidden`, and the `white-space: nowrap` on the payoff bar that makes the rest of the card's vertical layout computable |
-| `warCouncilCards.css` (359) | the card face, the ability prompt, and the hand-over panel. **DLR-148 added `.wc-card-skull-face`** and removed `.wc-skull-mark`, the corner glyph it replaces |
+| `warCouncilCards.css` (366) | the card face, the ability prompt, and the hand-over panel. **DLR-149 moved the whole card-face block out into `warCouncilCardFace.css`** and left behind the `--wc-face-*` geometry custom properties, the `aspect-ratio`, and the `@container (max-width: 150px)` name suppression. **DLR-148 added `.wc-card-skull-face`** and removed `.wc-skull-mark`, the corner glyph it replaces |
+| `warCouncilCardFace.css` (327) | **DLR-149, new.** The card face itself: the three face-class borders, the art window's wash/glow/figure/vignette stack, the pip lattice and its 180-degree lower half, the "no rule" mark, the paper grain (a tiled base64 bitmap, never an SVG `filter`), and the skull-face rules — including the `.wc-card.wc-face-plain` branch that routes a plain rank's skull through the `--wc-face-pip-*` properties so it clears the mirrored corner index |
+| `warCouncilCardTip.css` (87) | **DLR-149, new.** The ability tooltip bubble, split from `warCouncilCardFace.css` in the same ticket's round-2 fix loop when the combined file crossed the 400-line budget. Reads `--wc-card-w` and the inline `--wc-tip-anchor-x`, and clamps the bubble's centre into the viewport rather than measuring its own rendered width. **The bubble is portalled to `document.body`, so it is revealed by the single-element rule `.wc-card-tip.wc-is-open` — a descendant selector on the host can never match a portalled node** — see [Card faces and the ability tooltip](card-faces-and-the-ability-tooltip.md) |
 | `warCouncilHunt.css` (376) | the dossier zone and DLR-80's `.wc-shape*` and `.wc-bank*` readouts. **DLR-148 deleted its six `.wc-telegraph*` rules** with the component they styled, taking the sheet from 417 lines — over the blocking budget before this ticket touched it — to 376 |
 | `warCouncilHealthBars.css` | DLR-71: the duel's two health displays — rewritten by DLR-86 from a bar surface into the heart rows, their four `[data-state]` rules, the two `@keyframes`, and DLR-115's `[data-type]` product |
-| `warCouncilHand.css` | DLR-82: the hand container and the fan |
+| `warCouncilHand.css` | DLR-82: the hand container and the hand row (the fan, until the DLR-149 follow-up retired it) |
 
 > **Two sheets this table used to list no longer exist.** `warCouncilCheats.css` and
 > `warCouncilTimebomb.css` went with `CheatSlots.tsx` and `TimebombCharge.tsx` on **DLR-132**, when
@@ -248,19 +250,49 @@ end-panel state alone — more CSS, centring preserved. A standing check accompa
 sheet family for `justify-content: center` and confirm no remaining hit shares a rule with
 `overflow-y: auto`, since the same pairing under a different selector is the same defect.
 
-### The fan's transform is composed in CSS, not written whole from React
+### The hand is a straight gapped row, laid out entirely in CSS
 
-`HandFan.tsx` sets only two CSS custom properties inline per card — `--wc-fan-rot` and
-`--wc-fan-lift`, both carrying `fanPlacement`'s numbers as ready-made transform-function strings
-(e.g. `rotate(2.1deg)`, `translateY(0.13%)`) — and never sets `transform` itself.
-`warCouncilCards.css` owns the one rule that reads them
-(`transform: var(--wc-fan-lift, …) var(--wc-fan-rot, …)`), plus the hover/active/armed rules that
-replace the lift component outright, matching the approved mockup's own stylesheet.
+`HandFan.tsx` sets **no inline style at all**. Every card in `hand` renders as a `PlayingCard`
+inside a `.wc-fan-slot` column, and the row's geometry is three declarations in
+`warCouncilHand.css`:
 
-This split exists because **an inline `style.transform` always outranks an external rule with no
-`!important`**. When the base placement's `transform` was previously written whole from React, the
-hover-lift and armed-lift rules already present in the stylesheet were permanently unreachable — a
-card never actually lifted on hover, in any browser, no matter what the CSS said. `fanPlacement`
-guards `count > 1` before dividing, so neither custom property can carry a `NaN`; a `NaN` inside a
-`transform` string produces an invalid declaration the browser silently drops, which would flatten
-the fan with no error anywhere.
+- `.wc-fan` is a centred flex row with `gap: calc(var(--wc-card-w) * 0.12)`. `0.12` is a
+  **placeholder the developer may retune**; the only thing it has to clear is the armed card's own
+  growth. `scale(1.05)` on a card of width `w` adds `0.05w` in total, i.e. `0.025w` on each side, so
+  a `0.12w` gap leaves roughly `0.095w` of clear space beside an armed card and the two boxes never
+  meet.
+- `.wc-fan`'s top padding, `calc(var(--wc-card-w) * 0.35)`, reserves the room the lift pushes
+  outside the layout box, because the shell clips overflow. The figure is re-derived with the
+  rotation term removed: the card is `aspect-ratio: 2 / 3`, so its height is `1.5w`; the armed lift
+  of `20%` of that height is `0.300w`, and `scale(1.05)`'s overflow above the resting box is half
+  the added height, `0.038w` — `0.338w`, rounded up to `0.35`. It was `0.4` while the fan also
+  carried a `0.046w` rotation term.
+- `.wc-fan-slot` carries no `z-index` and no margin, so a card's painted face and its tap target are
+  the same rectangle.
+
+`warCouncilCards.css` owns the transforms. A hand card **rests** at `translateY(0%)` — declared
+rather than left at `transform: none`, so the interaction states have an explicit resting value to
+transition back to — and three rules replace it outright: `-9%` on hover, `-5%` while pressed, and
+`-20%` with `scale(1.05)` while armed. Those lifts are what makes a card feel selectable, and
+`game-ux` counts that feedback as load-bearing rather than decoration, so they survived the fan.
+`z-index: 20` lives on the armed rule and **only** there: the armed card is the only one that grows
+past its own resting box, so it is the only one that needs to paint over its neighbours, and that
+one declaration is now the single owner of hand-card stacking.
+
+> **Why the fan went (DLR-149 follow-up).** The hand used to rotate each card about the row's
+> centre, arc it on a lift curve, pull it left over its neighbour with a negative margin, and stack
+> the slots by `z-index: index` — all computed by `fanPlacement` in `fanLayout.ts` and handed to
+> `HandFan` as inline style. It produced two defects. **Cards could not be reliably selected:**
+> the overlap gave each card's rightmost ~10% to its right-hand neighbour, an armed card's
+> `z-index: 20` plus `scale(1.05)` plus `-20%` lift covered *both* neighbours, and a rotated card's
+> bounding box extends past its own visible quad, so a click near an edge fell through to the card
+> behind. Measured self-hit coverage was **76–92%** per card, and the strip stolen beside an armed
+> card resolved *to the armed card* — which plays it rather than changing the selection. The row
+> measures **100% self-hit coverage on every card in every state, armed included.** It also carried
+> a live cascade trap worth remembering: **an inline `style.transform` always outranks an external
+> rule with no `!important`**, so an earlier revision that wrote the whole `transform` from React
+> made the stylesheet's hover and armed lifts permanently unreachable — a card never lifted on
+> hover, in any browser, no matter what the CSS said. That is the reason not to reintroduce
+> rotation and overlap by handing `HandFan` a `transform` again. `fanLayout.ts` and its spec are
+> deleted; `__tests__/handRowCss.test.ts` now pins the row's contract by reading these two
+> stylesheets from disk.

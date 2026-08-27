@@ -15,7 +15,7 @@ or `cpuFault` is set, or the round is complete.
 
 **DLR-114 gave the second tap a second home rather than a second action.** The action bar's **Cards**
 button is greyed while nothing is armed and highlighted once something is, and pressing it calls the
-same `handleTap(ui.armed)` the fan's own second tap calls — so committing a card is reachable from two
+same `handleTap(ui.armed)` the hand's own second tap calls — so committing a card is reachable from two
 places and is still exactly one entry in `RoundUiActionKind`.
 
 **The state shape changed underneath all of this on DLR-114**, and it is worth stating here because

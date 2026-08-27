@@ -117,7 +117,7 @@ hand's damage twice **unexpressible** rather than merely unlikely.
 
 Both are type-only exports, re-exported via `export type` from `index.ts` (required by this
 project's `verbatimModuleSyntax` tsconfig setting). `src/app/warCouncil/`'s own exports —
-`WarCouncilRound`, `roundReducer`, `labels.ts`, `fanLayout.ts`, `useRovingTabIndex`, and the zone
+`WarCouncilRound`, `roundReducer`, `labels.ts`, `cardFace.ts`, `useRovingTabIndex`, and the zone
 components — are tabulated in [../war-council-ui/README.md](../war-council-ui/README.md), not here.
 
 ## How it works
