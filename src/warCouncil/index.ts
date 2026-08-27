@@ -32,8 +32,16 @@ export type { LegalMoveOptions, PlayCardOptions } from './legalMoves'
 export { resolveTrickWinner } from './resolveTrick'
 export { tierForSide, swanTierFactsFor } from './rankTierRules'
 export type { SwanTierFacts } from './rankTierRules'
-export { buffTrickFactsFor } from './buffTrickFacts'
+export { buffTrickFactsFor, targetSuitOf } from './buffTrickFacts'
 export type { BuffHandInput } from './buffTrickFacts'
+export { buffReach, projectBuffBranches } from './buffProjection'
+export type {
+  BuffBranchOutcome,
+  BuffBranchProjection,
+  BuffProjection,
+  BuffProjectionFacts,
+  BuffProjectionInput,
+} from './buffProjection'
 export { playCard } from './playCard'
 export { assignSkulls, isSkulled, skullableCards, suitShape, trickIsSkulled } from './skulls'
 export { isPrimed, trickIsPrimed, primeCard } from './timebomb'

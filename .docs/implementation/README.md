@@ -24,17 +24,17 @@ invariants, Deferred — and links out to one file per mechanic once the module 
 couple worth a standalone answer. A thin module stays a single `README.md`; nothing forces a split
 before it earns one. See the skill's own SKILL.md for the split threshold and per-module template.
 
-| Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                                                |
-| --------------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, DLR-150, PT-001, PT-002                                                                                  |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150 |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, PT-002                                                                  |
-| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145 |
+| Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --------------------- | ------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, DLR-150, DLR-152, PT-001, PT-002                                                                                                                                                                   |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150                                                                                                                                                                                        |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, PT-002                                                                                                              |
+| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145                                                                                                                                                                                                                                                                                                                             |
 | `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-150, PT-001, PT-002 |
-| `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                 |
-| `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                 |
-| `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                 |
-| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150                                                                                                                                                                                                                                                                        |
+| `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150                                                                                                                                                                                                                                                                                                                                                                                  |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -860,19 +860,19 @@ banks, and the action points a hand has.
 
 **The design is three pieces and two seams, and the seam placement is the whole of it.** A new pure
 module, `src/hunt/buffEvaluation.ts`, answers "did this buff's condition come true on this trick" for
-the **eleven shipping condition families** — Taker, Feeder, Mark of the *R*, Sidestep, Glutton,
+the **eleven shipping condition families** — Taker, Feeder, Mark of the _R_, Sidestep, Glutton,
 Hoarder, Unbloodied, Debt Collector, Keepsake, Miser, Cornered — as a total `switch` behind an
 `isConditionFamily` guard, then layers DLR-124 R4's cadence on top: Event families fire every trick,
 Threshold families once per hand, Terminal (Keepsake) only at the final trick, and every Activated
 consumable never. The **call site is inside `resolveTrickBank`**, which is forced rather than chosen:
-Hoarder needs the bank *after* the climb and Unbloodied needs to know whether the trick was a hit —
+Hoarder needs the bank _after_ the climb and Unbloodied needs to know whether the trick was a hit —
 figures that only exist inside that function — and R3 puts Momentum **inside** the cash-out product
 and Blade **outside** it, and the product is `bank.ts`'s. Steps 1 and 5 (Second Wind into the AP
 pool, Purse into the coins) land in a new `src/app/warCouncil/buffRoundState.ts`, folded after the
 trick has resolved so a refund can never be re-spent on the trick that generated it.
 
 **One rule reading is the ticket's own, and it is worth knowing.** `hybrid-design.md` R6 caps each
-reward axis *per hand* but never says what happens when a hand has more than one cash-out. New
+reward axis _per hand_ but never says what happens when a hand has more than one cash-out. New
 `multiplierPaid` / `flatDamagePaid` counters make each pool pay **once per hand** — without them a
 hand holding a forced cash-out, a voluntary Apply Damage and an end-of-hand fold would pay three full
 pools, at which point the cap is not a cap. **That is a plan decision, not a transcription**, and
@@ -978,8 +978,8 @@ is the **only class in `src/`**, because `getDerivedStateFromError`/`componentDi
 equivalent in React 19 — there is no function-component way to write an error boundary at all.
 
 **Root-only, not per-screen, and the reason is structural rather than a preference.** React runs a
-`useState` functional updater during the render of the component that *owns* that state, and
-DLR-116/DLR-118 deliberately moved the shop's and the Vault's spend guards *inside* those
+`useState` functional updater during the render of the component that _owns_ that state, and
+DLR-116/DLR-118 deliberately moved the shop's and the Vault's spend guards _inside_ those
 updaters — so when `buyFromShop` or `buyOddsBoost` throws, it throws while React is rendering
 `App`, above every screen. A boundary placed around any one screen sits below `App` in the tree and
 cannot catch that throw. A per-screen boundary also could not honestly offer to keep the run: every
@@ -990,7 +990,7 @@ untouched at its existing line count was a secondary factor, not the deciding on
 
 **What the fallback promises, and what it deliberately does not.** A full-viewport `role="alert"`
 panel states plainly that the in-memory run is lost, that Vault progress is written through
-`saveVault` on every `commit` and *should* still be there — "should", not "is", because a write can
+`saveVault` on every `commit` and _should_ still be there — "should", not "is", because a write can
 return `SaveWriteOutcome.Rejected` on a quota error or in private browsing, which the Vault screen
 already reports separately — and shows the caught error's one-line `message` (never `.stack`) as
 technical detail. Two controls: clearing the boundary's `error` state remounts `App` fresh (a new
@@ -1001,7 +1001,7 @@ on the same input.
 render, in a lifecycle method, or in a constructor beneath it — never a throw inside an event
 handler, a `setTimeout`, a rejected promise, or its own fallback render. Those still escape to
 `window.onerror` and still blank the screen. That is a second argument for the in-the-updater guard
-convention DLR-116 and DLR-118 established: a guard written *outside* the updater it protects is
+convention DLR-116 and DLR-118 established: a guard written _outside_ the updater it protects is
 exactly the code path this boundary cannot reach. Three docblocks that asserted "no `ErrorBoundary`
 exists (DLR-131)" — the reason three functions in `src/hunt/` and `src/warCouncil/` stay
 throw-free or keep a guard — were corrected in the same contract to state the boundary's actual
@@ -1019,7 +1019,7 @@ stated — the real card catalog was not yet authored. DLR-111 authored it and D
 that draws from it, and the scaffold outlived that reason by four tickets while `activatableBuffs`
 correctly filtered all four cards straight back out. **A player opened a run holding exactly one
 usable card.** They now open holding **five, all of them usable**: four distinct real bronze cards
-drawn from the then-73-template `BUFF_TEMPLATES` pool, plus the guaranteed bronze Cheat. The *count*
+drawn from the then-73-template `BUFF_TEMPLATES` pool, plus the guaranteed bronze Cheat. The _count_
 did not change — four of the five were simply inert. (DLR-145 took the draw to **twenty**, with
 replacement, from a **thirteen**-template pool — see below.)
 
@@ -1099,7 +1099,7 @@ rules a player acts on.
 ## DLR-145, Version 6: buff cards you spend, no action points, a thirteen-card pool (2026-08-25)
 
 **The change that makes the rest of it cohere is that a buff card is now something you spend.** Before
-this, the eleven condition families were *rented*: a Taker cost action points, fired for the trick,
+this, the eleven condition families were _rented_: a Taker cost action points, fired for the trick,
 and stayed in the pile — and because `AP_REFRESH_CADENCE` had moved to `PerTrick`, the pool refilled
 at every trick boundary, so the stake was refunded before the next bet. Firing everything every trick
 was strictly correct and nothing was ever a decision. `consumables.ts` now carries a third toggle,
@@ -1112,7 +1112,7 @@ all three toggles, so reverting one card is one `false`.
 for.** `AP_ENABLED = false` was one constant: `apCostFor` is still the only reader, so no consumer
 needed a bypass written anywhere. Everything AP-gated is free, and both `InsufficientAp` refusals
 became **unreachable rather than deleted** — they stay in their unions so their message `Record`s stay
-total, the same discipline DLR-132 used for `PurchaseRefusal.SlotsFull`. What the flag could *not* do
+total, the same discipline DLR-132 used for `PurchaseRefusal.SlotsFull`. What the flag could _not_ do
 was stop three surfaces rendering zeroes, so the action bar's two figures, the loadout panel's header
 and the shop purse's AP cell were removed at source; `buffLine` and `buffRowAccessibleName` lost their
 `apCost` parameter entirely rather than being handed a zero, because a control reading "0 AP" still
@@ -1146,7 +1146,7 @@ per-hand damage caps (`MAX_MULTIPLIER_BONUS_PER_HAND`, `MAX_FLAT_DAMAGE_BONUS_PE
 consumed one destroys a card the player cannot get back.
 
 **The load-bearing invention was not in the ticket.** `BuffActivationState.spentThisTrick` exists
-because `buffHandInputFor` builds the trick's active set by filtering the *pile*, and
+because `buffHandInputFor` builds the trick's active set by filtering the _pile_, and
 `activateFromPile` has removed a consumed card from it by then — so the instant Taker became
 consumable, activating one paid nothing at all, with no throw, no refusal and no log. Three readers
 share the fix and must stay in step: `buffHandInputFor` and `firedOncePerHandIds`
@@ -1193,7 +1193,52 @@ stale**, including the tricks-taken and damage-per-hand figures the shop arithme
 re-measuring was out of scope. Start at
 [war-council/the-hand-refill.md](war-council/the-hand-refill.md).
 
-## Latest — DLR-148, the buff gallery, the felt re-home, and the trick readout (2026-08-26)
+## Latest — DLR-152, the two-branch buff projection (2026-08-27)
+
+**A pure-engine contract with no visible surface at all.** One new module,
+`src/warCouncil/buffProjection.ts`, answers — for one card the player is considering — which of the
+buffs riding this trick would fire and what they would pay, **both if the player takes the trick and
+if they do not**. Nothing consumes it yet: the engine half was built deliberately ahead of the
+activation UI that will read it.
+
+The whole correctness argument is that it **delegates rather than calculates**. It builds a
+`BuffTrickContext` from plain values, hands it to `firedBuffs`, hands the result to
+`resolveFiredBuffs`, and returns what comes back — so cadence, the four per-hand caps, the Overlap
+Bonus and DLR-150's Feeder carry are inherited, never restated, and the spec pins that as an
+assertion against `resolveTrickBuffs` rather than against a hand-computed number. The DLR-147 mockup
+re-derived the buff predicates in the view layer and reported +6 damage for a load whose ceiling was
++4; this module exists so a preview cannot disagree with the commit. It contains **no `switch` over
+`BuffConditionKind`**, and a grep audit checks that it never gains one.
+
+Two consequences shaped the return type. **A lead makes each branch return two outcomes, not one** —
+since DLR-150, `resolveFiredBuffs` takes `trickIsLoss`, and on the "did not take it" branch the
+outcome is a Dodge under a skull and a Clean Loss without one, which sends a fired Feeder's reward to
+the carry in one case and pays it this hand in the other. Reporting one figure would be right about
+the amount and wrong about when it can be spent. And **buffs whose branch cannot be decided are
+reported rather than guessed**: they land in a separate `indeterminate` set, derived by diffing the
+fired sets across both still-possible skull readings, so the module holds no knowledge of _which_
+family reads the skull and a future one needs no edit here. Today that set holds only Sidestep, and
+only on a lead — as a test assertion, not as a constant in the code.
+
+A `buffReach` helper counts how many of the caller's **legal** cards could fire a given buff,
+deliberately counting a card whose buff only _might_ fire: a reach of 0 for a Sidestep on a lead
+would read as "this buff is dead" at exactly the moment the player is deciding whether to activate
+it. Legality stays the caller's — the module takes plain values, never a `RoundState`.
+
+Two limits were recorded as deliberate rather than left to drift. `playerHit` and `bankAfterTrick`
+are caller-supplied and held constant across both branches, which is inert only because Hoarder and
+Unbloodied are cut and unconstructible — the type's docblock names that as the line a ticket
+restoring either family must revisit. And no `gain` delta is exposed, so the module keeps exactly one
+arithmetic surface.
+
+`buffTrickFacts.ts` gained an exported `targetSuitOf(suit)` so the `Suit → BuffTargetSuit` crossing
+stays stated exactly once; `TARGET_SUIT` itself remains module-private and total.
+
+Start at [war-council/buff-projection.md](war-council/buff-projection.md) for the module, or
+[war-council/buffs-in-the-cash-out.md](war-council/buffs-in-the-cash-out.md) for the resolution path
+it delegates to.
+
+## DLR-148, the buff gallery, the felt re-home, and the trick readout (2026-08-26)
 
 **DLR-148 is the largest change to the Hunt screen's shape since DLR-114, and it is entirely a UI
 contract: no engine rule, cost, timing or gate moved.** Fifty-one files changed and every one of
@@ -1209,7 +1254,7 @@ to twenty-one cards. **The felt became two grid columns**, `game rail | stage`: 
 `FeltRail` holding decree, trick and spent, and a `FeltStage` holding the gallery or the felt's
 narrative states — so "the buff surface never occludes the decree, the spent pile or the Quarry's
 played card" is a **structural guarantee rather than a z-index promise**. And **a consequence readout
-replaced the intent telegraph**: `trickConsequence` derives, from the Quarry's *already led* card
+replaced the intent telegraph**: `trickConsequence` derives, from the Quarry's _already led_ card
 alone, what taking the trick does to the player and what not taking it does, in the rank table's own
 terms, and returns `null` — so nothing renders at all — when the trick is empty, when the player led,
 or when the card has nothing extra to say.
@@ -1243,7 +1288,7 @@ for the re-home, the readout and the skull face.
 
 **DLR-150 let a buff's reward leave the hand that earned it, and it is the first figure in this
 codebase that survives a hand boundary without being something the player spends.** A Feeder pays for
-*not* taking a trick, and its reward used to land in the accrual that the loss's own cash-out
+_not_ taking a trick, and its reward used to land in the accrual that the loss's own cash-out
 immediately spent into a near-empty pot — three deliberate losses in a bad hand paid three points
 into three tiny cash-outs and accumulated into nothing. The reward is now split by the trick's
 **outcome**: a Feeder firing on a **Loss** (a clean loss, or an eaten skull) diverts into a carry

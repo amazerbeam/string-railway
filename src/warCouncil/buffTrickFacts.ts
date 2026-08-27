@@ -20,6 +20,14 @@ const TARGET_SUIT: Readonly<Record<Suit, BuffTargetSuit>> = {
   [Suit.Moons]: BuffTargetSuit.Moons,
 }
 
+/** The `Suit → BuffTargetSuit` crossing, as a function so a second module can reuse the ONE
+ *  statement of it rather than making a second map. `TARGET_SUIT` stays private and stays
+ *  total, so a member added to `Suit` still fails to compile here rather than mapping to
+ *  `undefined`. */
+export function targetSuitOf(suit: Suit): BuffTargetSuit {
+  return TARGET_SUIT[suit]
+}
+
 /** What the app layer supplies — everything the trick itself cannot say. */
 export interface BuffHandInput {
   readonly active: readonly Buff[]
@@ -47,9 +55,9 @@ export function buffTrickFactsFor(
       accrual: input.accrual,
       firedThisHand: input.firedThisHand,
       hand: {
-        playerSuits: played.map((t) => TARGET_SUIT[t.card.suit]),
+        playerSuits: played.map((t) => targetSuitOf(t.card.suit)),
         playerRanks: played.map((t) => t.card.rank),
-        remainingSuits: remainingHand.map((c) => TARGET_SUIT[c.suit]),
+        remainingSuits: remainingHand.map((c) => targetSuitOf(c.suit)),
         tricksWithoutHit: input.tricksWithoutHit,
         coins: input.coins,
         playerHealth: input.playerHealth,

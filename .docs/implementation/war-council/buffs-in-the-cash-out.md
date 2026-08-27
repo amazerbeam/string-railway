@@ -4,7 +4,7 @@ Part of [War Council](README.md).
 
 Built by DLR-125, DLR-150. This page covers the **call site**: how an activated buff reaches the trick that
 resolves it, where in `resolveTrickBank` its contribution lands, and how the per-trick half of the
-evaluation context is derived. What a buff's condition actually *asks* lives one module over, in
+evaluation context is derived. What a buff's condition actually _asks_ lives one module over, in
 [hunt/buff-condition-evaluation.md](../hunt/buff-condition-evaluation.md); the design rule both
 implement is `hybrid-design.md` §5 (R1–R7), cited and never restated.
 
@@ -27,13 +27,13 @@ and `firedBuffIds` so that nothing downstream re-derives it.
 
 ## R3's five steps, and which two land here
 
-| Step | Axis                       | Where it lands                                                        |
-| ---- | -------------------------- | --------------------------------------------------------------------- |
-| 1    | Second Wind (AP refund)    | the felt's fold, into the pool for the **next** window                 |
-| 2    | Momentum (multiplier)      | **here** — joins the multiplier feeding `forcedCashValue`/`cashValue`  |
-| 3    | the product                | **here** — the cash-out itself, unchanged                             |
-| 4    | Blade (flat damage)        | **here** — added to the result, after §7's two-thirds floor           |
-| 5    | Purse (coins)              | the felt's fold, accumulated for the hand's end                       |
+| Step | Axis                    | Where it lands                                                        |
+| ---- | ----------------------- | --------------------------------------------------------------------- |
+| 1    | Second Wind (AP refund) | the felt's fold, into the pool for the **next** window                |
+| 2    | Momentum (multiplier)   | **here** — joins the multiplier feeding `forcedCashValue`/`cashValue` |
+| 3    | the product             | **here** — the cash-out itself, unchanged                             |
+| 4    | Blade (flat damage)     | **here** — added to the result, after §7's two-thirds floor           |
+| 5    | Purse (coins)           | the felt's fold, accumulated for the hand's end                       |
 
 Steps 1 and 5 touch nothing this hand's damage depends on, which is exactly why they are folded
 outside — see [war-council-ui/buff-hand-state-and-the-fold.md](../war-council-ui/buff-hand-state-and-the-fold.md).
@@ -54,7 +54,7 @@ would make Blade silently worthless on exactly the trick a streak is caught at a
 
 DLR-150's Feeder carry needs the **outcome** axis: a Feeder that fires on a Loss banks its reward for
 the next hand, while one that fires on a **dodge** — a Win — pays into this hand as before. Every
-buff *condition*, by contrast, reads only the mechanical axis (`ctx.playerWon`, did the player
+buff _condition_, by contrast, reads only the mechanical axis (`ctx.playerWon`, did the player
 physically take the cards). The two disagree on exactly the tricks that matter: taking a skulled
 trick is a Loss, and not taking one is a Win.
 
@@ -96,7 +96,9 @@ hand-scoped input through untouched. Its two readers are `playCard.ts` and `card
 **`src/hunt/` cannot see `TrickCard`**, which is why this crossing lives on the `warCouncil` side and
 hands `hunt` plain `BuffTargetSuit` values. `TARGET_SUIT` is the total `Record<Suit, BuffTargetSuit>`
 map between the two unions, so a member added to `Suit` fails to compile here rather than silently
-mapping to `undefined`; a test in `buffs.test.ts` pins the two unions member for member.
+mapping to `undefined`; a test in `buffs.test.ts` pins the two unions member for member. DLR-152
+exported that crossing as `targetSuitOf(suit)` so `buffProjection.ts` could reuse the one statement
+of it; the map itself stays module-private.
 
 ## `PlayCardOptions` gains a sixth field
 
