@@ -133,9 +133,11 @@ consequence is that the state needs **no entry in the `prefers-reduced-motion` b
 nothing when motion is off — the same structural reduced-motion guarantee the other four states
 already had, reached by not adding motion in the first place.
 
-`--wc-hp-ticking-fill: var(--wc-timebomb)` and `--wc-hp-ticking-opacity: 0.78` are declared in
-`warCouncil.css` beside the other `--wc-hp-*` tokens, and `[data-state='ticking']` in
-`warCouncilHealthBars.css` is the only rule that reads them. The fill is an **alias** of the existing
+`--wc-hp-ticking-fill: var(--wc-timebomb)` and `--wc-hp-ticking-opacity: 0.78` are declared beside
+the other `--wc-hp-*` tokens, and `[data-state='ticking']` in `warCouncilHealthBars.css` is the only
+rule that reads them. **That whole token block lives in `warCouncilHealthBars.css` itself since
+DLR-153**, moved byte-identical out of `warCouncil.css`'s `:root` when that file crossed the
+400-line budget — the tokens now sit with their only consumers, and no value changed. The fill is an **alias** of the existing
 Timebomb-mark colour rather than a new colour value, so the heart can be retuned without disturbing
 the card mark.
 
@@ -264,8 +266,9 @@ The claimed count is derived from `view.shieldPips` itself
 call — one derivation, read twice. **"of them" is load-bearing**: without it, `2 shielded, 1
 ticking. 3 ticking.` reads as two unrelated ticking counts.
 
-Three new custom properties live in `warCouncil.css`'s `:root` and are read only by the two shield
-rules in `warCouncilHealthBars.css`: `--wc-hp-shield-fill: #4f8fc0`,
+Three new custom properties live in the same `--wc-hp-*` block (in `warCouncil.css`'s `:root` until
+DLR-153 relocated the block into `warCouncilHealthBars.css`) and are read only by the two shield
+rules in that same file: `--wc-hp-shield-fill: #4f8fc0`,
 `--wc-hp-shield-ticking-opacity: 0.78` (set to the same figure as `--wc-hp-ticking-opacity` so the
 two "already claimed" readings match), and `--wc-hp-shield-gap: 0.5rem`, which is the only thing
 making the two clusters read as two. Both shield states are **static**, so neither needs an entry in

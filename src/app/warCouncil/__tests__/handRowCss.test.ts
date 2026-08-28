@@ -17,6 +17,7 @@ import { describe, expect, it } from 'vitest'
  */
 const handCss = readFileSync(new URL('../warCouncilHand.css', import.meta.url), 'utf8')
 const cardsCss = readFileSync(new URL('../warCouncilCards.css', import.meta.url), 'utf8')
+const rootCss = readFileSync(new URL('../warCouncil.css', import.meta.url), 'utf8')
 
 /** The body of one rule, by exact selector text. Tolerates the indentation a rule picks up
  *  inside an `@media` block, so the hover rule can be read the same way as the rest. */
@@ -67,29 +68,52 @@ describe('the hand row', () => {
       cardsCss,
       '.wc-fan .wc-card.wc-is-armed,\n.wc-fan .wc-card.wc-is-armed:hover',
     )
-    const liftPct = Number(armed.match(/translateY\(-([0-9.]+)%\)/)?.[1])
+    // The armed rule now reads `--wc-lift-armed` rather than a literal (DLR-153 AC8), so the
+    // magnitude comes from the token declared in warCouncil.css's `:root`.
+    const liftPct = Math.abs(
+      Number(ruleBody(rootCss, ':root').match(/--wc-lift-armed:\s*(-?[0-9.]+)%/)?.[1]),
+    )
     const scale = Number(armed.match(/scale\(([0-9.]+)\)/)?.[1])
     const needed = 1.5 * (liftPct / 100) + (1.5 * (scale - 1)) / 2
     expect(padTop).toBeGreaterThanOrEqual(needed)
   })
 
   it('rests every card upright, with no rotation and no arc', () => {
-    expect(ruleBody(cardsCss, '.wc-fan .wc-card')).toContain('translateY(0%)')
+    expect(ruleBody(cardsCss, '.wc-fan .wc-card')).toContain('translateY(var(--wc-lift-rest))')
     expect(cardsCss).not.toContain('--wc-fan-rot')
     expect(cardsCss).not.toContain('--wc-fan-lift')
     expect(cardsCss.match(/\.wc-fan .wc-card[^{]*\{[^}]*rotate\(/)).toBeNull()
   })
 
   it('keeps the hover, press and armed lifts, which are what make a card feel selectable', () => {
-    expect(ruleBody(cardsCss, '.wc-fan .wc-card:not(.wc-is-illegal):hover')).toMatch(
-      /translateY\(-[0-9.]+%\)/,
+    expect(ruleBody(cardsCss, '.wc-fan .wc-card:not(.wc-is-illegal):hover')).toContain(
+      'translateY(var(--wc-lift-hover))',
     )
+    // The press lift stays a literal — it is not on the DLR-153 AC8 ladder.
     expect(ruleBody(cardsCss, '.wc-fan .wc-card:not(.wc-is-illegal):active')).toMatch(
       /translateY\(-[0-9.]+%\)/,
     )
     expect(
       ruleBody(cardsCss, '.wc-fan .wc-card.wc-is-armed,\n.wc-fan .wc-card.wc-is-armed:hover'),
-    ).toMatch(/translateY\(-[0-9.]+%\)/)
+    ).toContain('translateY(var(--wc-lift-armed))')
+  })
+
+  it('derives the lift ladder from ONE typed value, DLR-153 AC8', () => {
+    // SOURCE assertion only — `--wc-lift-rest` resolves to the literal string
+    // `calc(var(--wc-lift-hover) / 2)` under jsdom's `getPropertyValue`, and `parseFloat` on that
+    // gives `NaN`. jsdom has no layout engine, so the RESOLVED transform on a real hand card is
+    // QA's to confirm in a browser — this spec only proves the tokens are wired the way AC8
+    // requires them to be wired.
+    const root = ruleBody(rootCss, ':root')
+    const hover = Number(root.match(/--wc-lift-hover:\s*(-?[0-9.]+)%/)?.[1])
+    const armed = Number(root.match(/--wc-lift-armed:\s*(-?[0-9.]+)%/)?.[1])
+    expect(root).toMatch(/--wc-lift-rest:\s*calc\(var\(--wc-lift-hover\)\s*\/\s*2\)/)
+    expect(Number.isNaN(hover)).toBe(false)
+    expect(Number.isNaN(armed)).toBe(false)
+    const rest = hover / 2
+    // Monotonic by magnitude: |rest| < |hover| < |armed|.
+    expect(Math.abs(rest)).toBeLessThan(Math.abs(hover))
+    expect(Math.abs(hover)).toBeLessThan(Math.abs(armed))
   })
 
   it('stacks the armed card above its siblings — the one thing the fan slots used to do', () => {

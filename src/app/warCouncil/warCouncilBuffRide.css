@@ -1,0 +1,178 @@
+﻿/* DLR-153 â€” the card's three buff-ride carriers: halo, travelling cell, numeral badge. Split out
+   from `warCouncilCards.css` (already at 373 of its 400-line budget) rather than grown into it â€”
+   see plan.md's Config and persisted-shape audit. Shares `warCouncil.css`'s `:root` tokens;
+   import it alongside the other sheets. The riding-list and breakdown panel rules live in the
+   sibling `warCouncilBuffRidePanel.css` â€” this file crossed its own 400-line budget once the
+   panel's grid-layout fix landed, so it split the same way `warCouncilCards.css` did before it. */
+
+/* ---------- the halo: six stacked SVG strokes plus a box-shadow ----------
+   NO blur FILTER property anywhere in this file â€” a per-card filter stalled Chrome's rasteriser
+   badly enough on this epic to time out screenshots. Softness comes from stacking wide,
+   low-opacity strokes instead. NO blend-mode compositing either, for the same reason: a
+   per-card compositing layer. Both constraints are repeated at their point of use below because
+   both have been "helpfully" reintroduced before.
+
+   The halo must BLEED OUTSIDE the card, or it reads as a hard outline rather than a glow â€”
+   `inset: -9%` plus a `118%` box on the `<svg>` itself (not merely `overflow: visible` on a
+   zero-size wrapper) is what gives the strokes room to actually extend past the card's own
+   border. Nothing in this component's ancestry (`.wc-card`, `.wc-fan-slot`, `.wc-fan`) sets
+   `overflow: hidden`, so nothing clips it back down. */
+.wc-card-buff-halo {
+  position: absolute;
+  z-index: 5;
+  inset: -9%;
+  width: 118%;
+  height: 118%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.wc-card-buff-halo rect {
+  fill: none;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Every stroke width and every opacity STARTS non-zero and GROWS with `--energy` â€” a 0â€¦1 FLOAT
+   (`CardBuffHalo.tsx`'s own docblock), never the raw count. A stroke scaled by the raw count
+   renders as a hard outline instead of a glow that gains energy; these figures are TRANSCRIBED
+   from the mockup's `.ring` rules exactly. */
+.wc-card-buff-halo-far {
+  stroke: var(--wc-buff-halo-deep);
+  stroke-width: calc(7px + 20px * var(--energy));
+  opacity: calc(0.16 + 0.2 * var(--energy));
+}
+
+.wc-card-buff-halo-mid {
+  stroke: var(--wc-buff-halo);
+  stroke-width: calc(4px + 11px * var(--energy));
+  opacity: calc(0.2 + 0.26 * var(--energy));
+}
+
+.wc-card-buff-halo-near {
+  stroke: var(--wc-buff-halo);
+  stroke-width: calc(2px + 5px * var(--energy));
+  opacity: calc(0.34 + 0.36 * var(--energy));
+}
+
+.wc-card-buff-rail {
+  stroke: var(--wc-buff-halo);
+  stroke-width: 1.5px;
+  opacity: calc(0.5 + 0.5 * var(--energy));
+}
+
+/* A per-card `box-shadow` glow on the card face itself â€” the layer that actually makes the card
+   read as GLOWING rather than merely ringed. Its spread and blur grow with `--energy`, exactly
+   the mockup's `.pick.is-loaded .pc` rule; the SVG strokes above draw the ring, this draws the
+   bloom past the ring. `color-mix` blends the halo hue in at an energy-scaled percentage rather
+   than a fixed one, so a single riding buff still shows colour rather than reading as grey. */
+.wc-card.wc-card-buff {
+  box-shadow:
+    0 2px 6px #00000059,
+    inset 0 0 0 1px #ffffffaa,
+    0 0 calc(16px + 34px * var(--energy)) calc(2px + 7px * var(--energy))
+      color-mix(in srgb, var(--wc-buff-halo) calc(45% + 40% * var(--energy)), transparent);
+}
+
+/* The armed, riding card in the hand keeps its brass ring alongside the glow â€” mirrors the
+   mockup's `.hand .pick.is-armed.is-loaded .pc`. */
+.wc-fan .wc-card.wc-is-armed.wc-card-buff {
+  box-shadow:
+    0 16px 26px #000000b8,
+    0 0 0 2px var(--wc-brass),
+    0 0 calc(16px + 34px * var(--energy)) calc(2px + 7px * var(--energy))
+      color-mix(in srgb, var(--wc-buff-halo) calc(45% + 40% * var(--energy)), transparent);
+}
+
+/* ---------- the travelling cell ----------
+   A `stroke-dashoffset` animation on the rounded rect, not a rotating `conic-gradient` â€”
+   `conic-gradient` needs `@property` to animate and repaints the whole box every frame. The cell
+   is WHITE (`#fff`) â€” a red glow that GAINS ENERGY, a white cell that GAINS SPEED. A previous
+   pass recorded it as parchment-coloured "by design"; that was wrong. `cell-glow` is the same
+   dash animation at a wider, softer stroke, giving the travelling cell its own bloom. */
+.wc-card-buff-cell-glow {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  stroke: #fff;
+  stroke-width: calc(8px + 6px * var(--energy));
+  stroke-dasharray: 70 930;
+  opacity: calc(0.22 + 0.2 * var(--energy));
+  animation: wc-buff-cell
+    max(var(--wc-buff-lap-floor), calc(var(--wc-buff-lap-base) - var(--wc-buff-count) * 0.5s))
+    linear infinite;
+}
+
+.wc-card-buff-cell {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  stroke: #fff;
+  stroke-width: 2.6px;
+  stroke-dasharray: 70 930;
+  /* NOT a tuning value: `max()` is what makes the 0.9s flash-safety floor un-defeatable by any
+     count â€” do not move this arithmetic into TypeScript. The base term is a PLACEHOLDER slope,
+     the developer's to retune freely. */
+  animation: wc-buff-cell
+    max(var(--wc-buff-lap-floor), calc(var(--wc-buff-lap-base) - var(--wc-buff-count) * 0.5s))
+    linear infinite;
+}
+
+@keyframes wc-buff-cell {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -1000;
+  }
+}
+
+/* AC6 â€” under reduced motion the cell stops and becomes a continuous rail at full brightness,
+   so the state still reads without the motion carrier. The halo and the badge are untouched by
+   this block â€” neither the halo ring classes nor the badge selector appears below â€” so all
+   three carriers survive. */
+@media (prefers-reduced-motion: reduce) {
+  .wc-card-buff-cell,
+  .wc-card-buff-cell-glow {
+    animation: none;
+    stroke-dasharray: none;
+  }
+
+  .wc-card-buff-cell {
+    opacity: 0.9;
+  }
+
+  .wc-card-buff-cell-glow {
+    opacity: 0.45;
+  }
+}
+
+/* ---------- the numeral badge ----------
+   Ink on parchment at the card's bottom-right â€” top-right is the skull's, top-left the corner
+   index, bottom-left the primed mark. A real text node (AC5), not a background image or a
+   pseudo-element, so it survives a greyscale screenshot. Sets no `color` through
+   `--wc-buff-halo` â€” the badge must not go invisible when that hue is retuned. */
+.wc-card-buff-badge {
+  position: absolute;
+  z-index: 8;
+  right: -6%;
+  bottom: 6%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.3em;
+  height: 1.3em;
+  padding: 0 0.2em;
+  border-radius: 999px;
+  background: var(--wc-parchment);
+  border: 1px solid var(--wc-parchment-shade);
+  color: var(--wc-ink);
+  font-family: var(--wc-sans);
+  font-weight: 700;
+  font-size: clamp(0.55rem, 1.3vmin, 0.72rem);
+  font-variant-numeric: tabular-nums;
+}
+
+/* AC5/Assumption 5 â€” the estimate form reuses `wc-card-damage.wc-is-estimate`'s existing
+   grammar: a leading `~` and an italic slant. Not a second signal, the established one. */
+.wc-card-buff-badge.wc-is-estimate {
+  font-style: italic;
+}

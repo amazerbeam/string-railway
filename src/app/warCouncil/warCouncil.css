@@ -10,7 +10,9 @@
    `warCouncilHand.css` — import all three from the mount component.
    The decree/draw pile and the table itself split further into
    `warCouncilTable.css` (DLR-93 400-line pass) — import it alongside
-   the rest; it shares this file's `:root` tokens. */
+   the rest; it shares this file's `:root` tokens.
+   DLR-153 Phase 8 relocated the `--wc-hp-*` health-bar tokens out of this file's `:root`
+   entirely — their only consumer, `warCouncilHealthBars.css`, now declares them itself. */
 
 :root {
   --wc-chamber: #0c1013;
@@ -74,33 +76,31 @@
   --wc-card-w: clamp(2.9rem, 6.2vmin, 4.3rem);
   --wc-plate-card-w: clamp(2.3rem, 4.6vmin, 3.2rem);
 
-  /* DLR-71 — the duel health bars. Every value below is a placeholder transcribed from
-     `.claude/contract/DLR-71-two-health-bars-with-pending-damage/mockup.html` (and, for the six
-     heart-row tokens, `.claude/contract/DLR-86-hearts-with-pending-cash-preview/mockup.html`) and
-     is the developer's to retune; the visual polish ticket owns them. */
-  --wc-hp-secure-fill: #cc3f4a;
-  --wc-hp-pending-fill: #8b9a94;
-  --wc-hp-lethal-edge: #d1705f;
-  --wc-hp-height: clamp(0.7rem, 1.7vmin, 1.05rem);
-  --wc-hp-heart-size: clamp(0.95rem, 2.3vmin, 1.45rem);
-  --wc-hp-heart-gap: 0.18rem;
-  --wc-hp-broken: #3a4a52;
-  --wc-hp-atrisk-opacity: 0.55;
-  /* DLR-101 — the committed-Timebomb heart. An ALIAS of the Timebomb mark's own colour rather than a
-     new colour value: it ties the heart to the marker that caused it, and it means no tuning
-     number was invented for it. The opacity is a PLACEHOLDER, picked only to sit clearly above
-     --wc-hp-atrisk-opacity and clearly below solid — the developer owns the value. */
-  --wc-hp-ticking-fill: var(--wc-timebomb);
-  --wc-hp-ticking-opacity: 0.78;
-  /* DLR-115 — the blue heart. NONE of these three numbers was chosen by anyone: the developer owns
-     the colour, the opacity and the gap, and none has been seen against a full row. The opacity
-     copies --wc-hp-ticking-opacity so the two "already claimed" readings agree; two unseen numbers
-     agreeing is a reason to tune them together, not evidence either is right. */
-  --wc-hp-shield-fill: #4f8fc0;
-  --wc-hp-shield-ticking-opacity: 0.78;
-  --wc-hp-shield-gap: 0.5rem;
-  --wc-hp-break-ms: 520ms;
-  --wc-hp-flash-ms: 900ms;
+  /* DLR-153 AC8 — ONE typed lift, and a ladder derived from it. `--wc-lift-rest` is NEVER set
+     independently: the hand rests at half the hover lift so the cards read as the subject of the
+     screen the moment it opens, and hover still has somewhere to go. Retune `--wc-lift-hover` and
+     rest follows. Both figures are TRANSCRIBED from the literals this replaces, not new choices. */
+  --wc-lift-hover: -9%;
+  --wc-lift-rest: calc(var(--wc-lift-hover) / 2);
+  --wc-lift-armed: -20%;
+
+  /* DLR-153 Phase 8 Correction 3 — the lit card. PLACEHOLDER hue, still (OPEN #9, unresolved):
+     the mockup's OWN red (`--load-red`/`--load-red-deep`), not `--wc-alarm`'s damage-meaning
+     salmon and not even the mockup's own red before. `-deep` is the outer halo ring's companion. */
+  --wc-buff-halo: #ff3326;
+  --wc-buff-halo-deep: #8e1409;
+  /* The lap-time slope's intercept. PLACEHOLDER — the developer's to retune freely. */
+  --wc-buff-lap-base: 3.2s;
+  /* NOT a tuning value. A bright cell passing a point more than ~3 times a second is a flash
+     hazard; at a 0.9s lap it passes once. Do not lower it. */
+  --wc-buff-lap-floor: 0.9s;
+
+  /* DLR-71 — the duel health bars' tunables moved to `warCouncilHealthBars.css`'s own `:root`
+     block at the DLR-153 Phase 8 400-line pass (this file's turn after DLR-82, DLR-93, DLR-119,
+     DLR-148...) — that file already owns every rule that reads them, so the tokens now sit beside
+     their only consumer instead of eleven files away from it. Cascade order does not matter for a
+     `:root` declaration; see `warCouncilHealthBars.css` for the values and their provenance. */
+
   /* DLR-97 — shared hover/active/state-change duration for controls that previously had no
      transition at all (shop tabs, shop list rows) or an untransitioned filter (the felt-rail
      plates' hover brightness). Matches the felt-rail plates' existing 140ms transform/box-shadow

@@ -8,12 +8,49 @@
    row, its four states, two `@keyframes`, the lethal treatment, its reduced-motion suppression and
    its own narrow-viewport block — would have carried it past the 400-line budget, which is the
    same forced split that produced the fourth and fifth sheets. Imported from the mount AFTER
-   `warCouncilHunt.css`. Tokens live in `warCouncil.css`; nothing here redeclares `:root`.
+   `warCouncilHunt.css`. Most tokens this sheet reads live in `warCouncil.css`'s `:root`; the
+   `--wc-hp-*` tokens are the one exception — see the DLR-153 note below.
 
    Carries its own copy of the `@media (max-width: 44rem), (max-height: 34rem)` breakpoint —
    the same duplication a sibling sheet's own narrow-viewport block already made. The VALUE
    lives in more than one file as a result — a multi-file edit if the threshold is ever tuned,
-   and the split's one real drift risk. */
+   and the split's one real drift risk.
+
+   DLR-153 Phase 8 400-line pass on `warCouncil.css` moved the `--wc-hp-*` tokens below into this
+   file's own `:root` block — they had no other consumer, so this is their obvious home rather
+   than a file split by line count alone. Every OTHER token this sheet reads (suit colours, the
+   readout tokens, `--wc-ui-transition-ms`) still lives in `warCouncil.css`'s `:root` and cascades
+   in as before; only the tokens below moved. */
+
+:root {
+  /* DLR-71 — the duel health bars. Every value below is a placeholder transcribed from
+     `.claude/contract/DLR-71-two-health-bars-with-pending-damage/mockup.html` (and, for the six
+     heart-row tokens, `.claude/contract/DLR-86-hearts-with-pending-cash-preview/mockup.html`) and
+     is the developer's to retune; the visual polish ticket owns them. */
+  --wc-hp-secure-fill: #cc3f4a;
+  --wc-hp-pending-fill: #8b9a94;
+  --wc-hp-lethal-edge: #d1705f;
+  --wc-hp-height: clamp(0.7rem, 1.7vmin, 1.05rem);
+  --wc-hp-heart-size: clamp(0.95rem, 2.3vmin, 1.45rem);
+  --wc-hp-heart-gap: 0.18rem;
+  --wc-hp-broken: #3a4a52;
+  --wc-hp-atrisk-opacity: 0.55;
+  /* DLR-101 — the committed-Timebomb heart. An ALIAS of the Timebomb mark's own colour rather than a
+     new colour value: it ties the heart to the marker that caused it, and it means no tuning
+     number was invented for it. The opacity is a PLACEHOLDER, picked only to sit clearly above
+     --wc-hp-atrisk-opacity and clearly below solid — the developer owns the value. */
+  --wc-hp-ticking-fill: var(--wc-timebomb);
+  --wc-hp-ticking-opacity: 0.78;
+  /* DLR-115 — the blue heart. NONE of these three numbers was chosen by anyone: the developer owns
+     the colour, the opacity and the gap, and none has been seen against a full row. The opacity
+     copies --wc-hp-ticking-opacity so the two "already claimed" readings agree; two unseen numbers
+     agreeing is a reason to tune them together, not evidence either is right. */
+  --wc-hp-shield-fill: #4f8fc0;
+  --wc-hp-shield-ticking-opacity: 0.78;
+  --wc-hp-shield-gap: 0.5rem;
+  --wc-hp-break-ms: 520ms;
+  --wc-hp-flash-ms: 900ms;
+}
 
 .wc-hp {
   flex: 1 1 8rem;

@@ -308,3 +308,45 @@ The reason is the consumption rule, not a balance judgement: a clipped contribut
 player a card they could re-activate next trick, and now costs them a card they can never get back.
 The two constants stay declared, with their `UNIT:` comments, as the single place a cap would be
 restored.
+
+## Taking a buff back off the trick — DLR-153, 2026-08-27
+
+Until this ticket the ruleset recorded activation as irreversible: "once the second tap lands there
+is no way to un-activate". `buffActivation.ts` is where that changed, because that is where the rule
+lives.
+
+**`isRevocableBuff(buff)` is the single statement of which cards may come back off.** It is a
+membership test against a frozen `ReadonlySet<BuffKind>` holding exactly `Taker`, `Feeder` and
+`Sidestep` — the three condition families, whose activation touches nothing but the pool and the
+pile, which is precisely what makes them putbackable. It is **false for every Activated card**:
+Cheat, Timebomb, Ward and Shield each arm felt state at the spend — `cheatTricksRemaining`,
+`timebombArmedDamage`, `activateShield`'s credited hearts, `activateWard`'s guard — none of which
+this module can reach. Reversing those is a larger rule change and its own ticket.
+
+One predicate, read by **both** the riding row's control and the reducer's guard, is the same
+discipline `buffActivationRefusalFor` sets for activation: two readings of one gate is how a control
+and a transition drift apart.
+
+**`deactivateFromPile(state, buffs, buff)` returns the same `BuffActivationResult` pair
+`activateFromPile` returns**, for the identical reason — a refund without the card returned is a free
+spend, and a card returned without a refund is a double charge, so the pool and the pile must move
+together or not at all. It:
+
+- refunds through `refundAp`, clamped to `capacity` (see [action points](action-points.md));
+- drops the id from `activatedThisTrick`;
+- drops the buff from `spentThisTrick`;
+- and returns the card to the pile **only if it was actually removed at activation** — membership of
+  `spentThisTrick` is the test, so a card that never left is not added a second time.
+
+**The card is appended to the end of the pile, not reinserted at its old index.** `offeredBuffs`
+preserves pile order deliberately — the pile's order is the player's mental order — and storing an
+index whose only job is to survive one transition would be a second piece of state. The card is
+demonstrably back, and the gallery regroups by run anyway; the cost is that it moves under the
+player's finger.
+
+**It throws a `RangeError` naming the reason** when handed a non-revocable buff, or one not in
+`activatedThisTrick` — exactly the contract `activateBuff` sets on a refused activation, so a caller
+that skipped the predicate cannot commit an incoherent pool/pile pair. Nothing reachable from a tap
+can reach the throw: `handleRemoveBuff` in `src/app/warCouncil/buffHandlers.ts` asks membership and
+then `isRevocableBuff` first and returns the state unchanged on a no, because a throw inside a
+reducer during an event handler unmounts the tree.

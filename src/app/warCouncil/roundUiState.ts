@@ -188,6 +188,10 @@ export const RoundUiActionKind = {
   /** AC18 — `Escape` unwinds ONE level: this drops an unspent poise and leaves the panel open.
    *  `CancelLoadout` keeps meaning "close outright", which is what the bar's toggle dispatches. */
   CancelBuffPoise: 'cancelBuffPoise',
+  /** DLR-153 AC10 — take an activated CONDITION buff back off the trick. Distinct from
+   *  `CancelBuffPoise`, which drops an UNSPENT poise: this reverses a COMMITTED activation, which
+   *  the ruleset had no way to do before this ticket (`the-hunt.md`, "no way to un-activate"). */
+  RemoveBuff: 'removeBuff',
 } as const
 export type RoundUiActionKind = (typeof RoundUiActionKind)[keyof typeof RoundUiActionKind]
 
@@ -204,6 +208,7 @@ export type RoundUiAction =
   | { readonly kind: typeof RoundUiActionKind.CancelLoadout }
   | { readonly kind: typeof RoundUiActionKind.TapBuff; readonly id: BuffId }
   | { readonly kind: typeof RoundUiActionKind.CancelBuffPoise }
+  | { readonly kind: typeof RoundUiActionKind.RemoveBuff; readonly id: BuffId }
 
 /** `true` when the next committed card should ignore follow-suit. EXPORTED so the mount computes
  *  its `legal` set from the SAME predicate the reducer commits with — two readings of "is the

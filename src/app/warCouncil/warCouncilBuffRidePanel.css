@@ -1,0 +1,370 @@
+/* DLR-153 — the riding-list pills and the anchored per-card breakdown panel. Split out of
+   `warCouncilBuffRide.css` (that file holds the card-face carriers — halo, cell, badge — and
+   crossed its own 400-line budget once this panel's structural fix was added). Shares
+   `warCouncil.css`'s `:root` tokens; import it alongside the other sheets. */
+
+/* ---------- the riding list ----------
+   "Riding this trick" (AC9/AC10) — one PILL per activated buff, thumb-height, wrapping onto
+   several lines rather than a bare column of text (the developer's own complaint: this used to
+   render as an unstyled line at the bottom-left). Transcribed from the mockup's `.riding-list`. */
+.wc-buff-riding-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem clamp(0.5rem, 1.4vw, 1rem) 0.4rem;
+}
+
+.wc-buff-riding-heading {
+  font-size: clamp(0.42rem, 0.95vmin, 0.55rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wc-buff-halo);
+  margin-right: 0.15rem;
+}
+
+/* Real 44px tall, not a small disc with an invisible expander — side by side, two expanders
+   would overlap across the pill gap and steal each other's taps. */
+.wc-buff-riding-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 44px;
+  padding: 0.14rem 0.14rem 0.14rem 0.6rem;
+  border-radius: 999px;
+  background: #1b2c33;
+  border: 1px solid #33484f;
+  color: var(--wc-chalk);
+  font-size: clamp(0.46rem, 1.05vmin, 0.62rem);
+}
+
+/* A buff nothing in the hand can fire is the REAL dead case (AC9), and it is dead GLOBALLY
+   rather than dead on one card — it says so rather than merely dimming. */
+.wc-buff-riding-row.wc-is-unreachable {
+  border-style: dashed;
+  border-color: var(--wc-alarm);
+  color: var(--wc-alarm);
+}
+
+.wc-buff-riding-remove {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #18242a;
+  border: 1px solid #3b4a50;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+@media (hover: hover) {
+  .wc-buff-riding-remove:hover {
+    background: var(--wc-alarm);
+    color: #1a0b08;
+  }
+}
+
+.wc-buff-riding-remove:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 2px;
+}
+
+/* ---------- the breakdown ---------- */
+
+/* DLR-153 Fix 2 — the hand+riding-list+breakdown zone (`WarCouncilRound.tsx`'s wrapper div). A
+   REAL positioned ancestor, so anything inside that needs one has somewhere to anchor against
+   that is actually a PARENT — `.wc-table`, the shell's other positioned rule, is a SIBLING of
+   this zone, not an ancestor of it, which is what let the panel escape to the initial containing
+   block in the first place.
+
+   DLR-153 QA fix — `grid-area: hand` MUST live here now: this wrapper, not `.wc-hand` (see the
+   comment above `.wc-hand` in `warCouncilHand.css` — nothing renders that class), is the element
+   that actually sits in the shell's `"hand hand"` grid row. Without it the zone fell to grid
+   auto-placement and landed in the narrow rail-column track (measured 244.797px wide at 1440x900
+   instead of ~1440px), which is what let the breakdown panel's `min-width` overflow its own
+   parent. `warCouncilHunt.css`'s narrow-shell override redefines the same `hand` area name in a
+   single-column template, so this resolves correctly there too. */
+.wc-buff-ride-zone {
+  grid-area: hand;
+  position: relative;
+}
+
+/* The panel — a THREE-COLUMN grid per row is what a malformed, overflowing panel was missing:
+   with no grid, a long condition sentence had nowhere to go but past the panel's own border.
+   Anchored to the HOVERED CARD's own measured box (`CardBuffBreakdown.tsx`'s
+   `useBuffBreakdownAnchor`, which sets `left`, `--point` AND `bottom`) — never `right: 0`, which
+   pinned the panel to the whole zone regardless of which card it was describing and is what let
+   it land on top of the gallery. `bottom` is MEASURED against the card's own `getBoundingClientRect`,
+   not derived from `--wc-lift-armed` — a lift-token offset resolves against the zone's own padded
+   box, not the card, which is what let the panel's bottom edge land below the card it describes
+   (DLR-153 Fix 2). Dark chamber background — ink on parchment is reserved for the totals bar
+   below, which is the one thing here meant to read as a settled anchor. */
+.wc-buff-breakdown {
+  position: absolute;
+  z-index: 20;
+  /* `bottom` starts at 0 and `left` at 0 — both corrected by `useBuffBreakdownAnchor` on every
+     anchor change, before paint (`useLayoutEffect`) — never a bare percentage, which would drift
+     the moment the hand resizes. */
+  bottom: 0;
+  left: 0;
+  min-width: min(18rem, 92vw);
+  /* Capped against the ZONE's own width MINUS the rail column the zone's grid row spans
+     underneath (`--wc-rail-w`) — never the bare `min(30rem, 100%)` this file used to carry:
+     `100%` resolves against this panel's own parent (the zone), which spans the FULL width of
+     the shell's `hand` grid row, rail included, so an uncorrected `100%` let the panel run under
+     the rail (DLR-153 QA Fix 2d). */
+  max-width: min(30rem, calc(100% - var(--wc-rail-w)));
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0f1518;
+  border: 1px solid var(--wc-brass-dim);
+  box-shadow: 0 12px 30px #000000bf;
+  font-family: var(--wc-sans);
+  font-size: clamp(0.5rem, 1.15vmin, 0.7rem);
+  color: var(--wc-chalk);
+}
+
+/* The pointer down onto the anchored card. `--point` is a PIXEL offset from the panel's own
+   left edge (set by `useBuffBreakdownAnchor`), never a percentage — a percentage cannot track a
+   card that is not centred under the panel once clamping moves the panel to stay on stage. */
+.wc-buff-breakdown::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: var(--point, 50%);
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top-color: var(--wc-parchment);
+}
+
+.wc-buff-breakdown-head {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0.3rem 0.6rem 0.26rem;
+  border-bottom: 1px solid #23303588;
+  font-family: var(--wc-serif);
+  font-weight: 400;
+  color: var(--wc-brass);
+  font-size: clamp(0.58rem, 1.35vmin, 0.8rem);
+}
+
+.wc-buff-breakdown-head-note {
+  display: block;
+  font-family: var(--wc-sans);
+  color: var(--wc-chalk-dim);
+  font-size: clamp(0.44rem, 1vmin, 0.58rem);
+  line-height: 1.35;
+  margin-top: 0.1rem;
+}
+
+/* The scrollable middle — capped so a long load scrolls INSIDE the panel rather than growing
+   over the felt. `min-height: 0` is what lets a flex child actually shrink to this cap instead
+   of forcing the panel to grow past it. */
+.wc-buff-breakdown-rows {
+  flex-shrink: 1;
+  min-height: 0;
+  max-height: min(38vh, 17rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.wc-buff-breakdown-group {
+  padding: 0.22rem 0.6rem 0.1rem;
+  border-top: 1px solid #1b2529;
+  font-size: clamp(0.42rem, 0.95vmin, 0.55rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wc-brass);
+  background: #131e22;
+}
+
+/* `.wc-buff-breakdown-group + .wc-buff-breakdown-row` removes the row's own top border where it
+   immediately follows its group's heading — a STYLE-only declaration, never the shorthand (see
+   `.wc-buff-breakdown-dead` below for why). */
+.wc-buff-breakdown-group + .wc-buff-breakdown-row {
+  border-top-style: none;
+}
+
+/* THE GRID. `auto 1fr auto` is what a malformed panel was missing: the remove control, the
+   name+condition cell, and the payoff, each with somewhere to go. `min-width: 0` on the cell
+   below is the single most load-bearing declaration in this file — its absence is what let a
+   long condition sentence blow the grid out and spill past the panel's own border. */
+.wc-buff-breakdown-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.26rem 0.6rem;
+  border-top: 1px solid #1b2529;
+}
+
+/* The two branches differ in FORM, not only in hue — a green-grey rule and a purple-grey one
+   read as the same grey in a greyscale screenshot, which is exactly what caught this last time. */
+.wc-buff-breakdown-row.wc-is-took {
+  border-left: 3px solid #4d6357;
+}
+
+.wc-buff-breakdown-row.wc-is-did-not-take {
+  border-left: 3px dotted #6b5a63;
+}
+
+.wc-buff-breakdown-group.wc-is-took {
+  border-left: 3px solid #4d6357;
+}
+
+.wc-buff-breakdown-group.wc-is-did-not-take {
+  border-left: 3px dotted #6b5a63;
+}
+
+/* DLR-153 Phase 8 Correction 2 — every condition row and every dead row carries its own remove
+   control (restored from the mockup's `rm(b)`, which appears in both its `row` and `row dead`
+   templates). A real 44x44 button, no pseudo-element expander, so stacked rows' controls cannot
+   steal each other's taps. The riding list keeps its OWN separate `.wc-buff-riding-remove`: a
+   buff that reaches zero cards never gets a row here at all, so the list is the only place such
+   a buff can be removed from. */
+/* AC15 — measured live: this control rendered as an 18x18 box with `position: static` and no
+   `::after` at all, so its true hit area was 18x18, not the 44px the row's `min-height` implies.
+   The row height does not stand in for the control's own hit area; the control needs its own
+   expander. `position: relative` plus a 44x44 centred `::after` fixes it, per the mockup's
+   `.riding .x` pattern (`mockup-buff-gallery.html`) — drawn small on purpose, a bigger disc would
+   shout louder than the condition beside it, so do NOT grow the disc to solve this. Safe to
+   overflow the disc here because the row is already 44px tall (`min-height: 44px` above): the
+   expander's vertical half-extent (22px) lands exactly on the row's own top/bottom edge, so it
+   cannot reach into a neighbouring row's controls. Horizontally it can only bleed into this row's
+   own text cell, which carries no interactive control. */
+.wc-buff-breakdown-remove {
+  position: relative;
+  min-width: 1.15rem;
+  min-height: 1.15rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid #3b4a50;
+  background: #18242a;
+  color: var(--wc-chalk);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.wc-buff-breakdown-remove::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+
+@media (hover: hover) {
+  .wc-buff-breakdown-remove:hover {
+    background: var(--wc-alarm);
+    color: #1a0b08;
+    border-color: var(--wc-alarm);
+  }
+}
+
+.wc-buff-breakdown-remove:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 2px;
+}
+
+/* `min-width: 0` is the fix. A flex/grid item defaults to `min-width: auto`, i.e. "never
+   narrower than my own content" — which is exactly what let a long condition sentence force the
+   row, and the whole panel, wider than its own border. */
+.wc-buff-breakdown-cell {
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.wc-buff-breakdown-cell b {
+  display: block;
+  font-weight: 600;
+  color: var(--wc-chalk);
+}
+
+.wc-buff-breakdown-cell small {
+  display: block;
+  color: var(--wc-chalk-dim);
+  font-size: clamp(0.44rem, 1vmin, 0.58rem);
+}
+
+.wc-buff-breakdown-payoff {
+  font-family: var(--wc-serif);
+  white-space: nowrap;
+  color: var(--wc-chalk);
+}
+
+/* The Overlap Bonus is the game's only combo, and it is exactly what the halo's rising energy
+   draws. It has no remove control — it is a consequence of the others, not a card. */
+.wc-buff-breakdown-overlap {
+  background: #141f24;
+}
+
+.wc-buff-breakdown-overlap .wc-buff-breakdown-cell b {
+  color: var(--wc-buff-halo);
+}
+
+/* Loaded but unable to fire on THIS card — says why rather than dimming, and both clauses of the
+   text are struck through so it never reads as merely "wasted". */
+.wc-buff-breakdown-dead {
+  background: #12191c;
+  border-top: 1px dashed #35434a;
+}
+
+.wc-buff-breakdown-dead .wc-buff-breakdown-cell s,
+.wc-buff-breakdown-dead .wc-buff-breakdown-payoff {
+  color: var(--wc-chalk-dim);
+}
+
+/* THE BOTTOM BAR. Both branches, NEITHER highlighted (AC11) — the ruleset withholds the
+   Quarry's card and a readout that leaned would leak it. Parchment on ink is the one real
+   visual anchor at the bottom of an otherwise dark panel. A plain block, not a button: the
+   mockup's totals bar doubles as an expand control, but this panel has no collapsed state to
+   expand into (AC13), so neither `cursor: pointer` nor a focus ring belongs here. */
+.wc-buff-breakdown-totals {
+  flex-shrink: 0;
+  border-top: 2px solid var(--wc-buff-halo-deep);
+  background: var(--wc-parchment);
+  color: var(--wc-ink);
+}
+
+.wc-buff-breakdown-totals-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.24rem 0.6rem;
+  min-height: 22px;
+}
+
+.wc-buff-breakdown-totals-line + .wc-buff-breakdown-totals-line {
+  border-top: 1px solid #00000022;
+}
+
+.wc-buff-breakdown-totals-key {
+  font-size: clamp(0.42rem, 0.95vmin, 0.55rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #4a4234;
+}
+
+.wc-buff-breakdown-totals-value {
+  margin-left: auto;
+  font-family: var(--wc-serif);
+  white-space: nowrap;
+}
+
+/* Fix 3 — reuses the SAME italic "this is qualified, not settled" grammar
+   `.wc-card-damage.wc-is-estimate` already carries, rather than inventing a second signal. */
+.wc-buff-breakdown-estimate {
+  font-style: italic;
+}

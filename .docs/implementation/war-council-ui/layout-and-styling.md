@@ -70,7 +70,7 @@ consumer of its `.wc-loadout-*` block. **That block, and that panel, were delete
 | `warCouncilCardTip.css` (91) | **DLR-149, new.** The ability tooltip bubble, split from `warCouncilCardFace.css` in the same ticket's round-2 fix loop when the combined file crossed the 400-line budget. Reads `--wc-card-w` and the inline `--wc-tip-anchor-x`, and clamps the bubble's centre into the viewport rather than measuring its own rendered width. **The bubble is portalled to `document.body`, so it is revealed by the single-element rule `.wc-card-tip.wc-is-open` — a descendant selector on the host can never match a portalled node** — see [Card faces and the ability tooltip](card-faces-and-the-ability-tooltip.md) |
 | `warCouncilHunt.css` (268) | the dossier zone and DLR-80's `.wc-shape*` readouts. **DLR-148 deleted its six `.wc-telegraph*` rules** with the component they styled, taking the sheet from 417 lines — over the blocking budget before this ticket touched it — to 376. **DLR-150 moved the whole `.wc-bank*` block out** into the sheet below, taking it to 268 |
 | `warCouncilBankMeter.css` (149) | **DLR-150, new.** Everything `BankMeter` renders — the eyebrow, the three figures and the `×` glyph, the two cash-out lines, the pending-bonus badge and line, and DLR-150's own two carry lines (`.wc-bank-carried-in`, `.wc-bank-carry-out`). Split out because `warCouncilHunt.css` was at its 400-line budget and this ticket adds to the block; **no selector was renamed and no rule changed in the move**. Its colours, weights and glyphs are placeholders, the developer's to choose |
-| `warCouncilHealthBars.css` | DLR-71: the duel's two health displays — rewritten by DLR-86 from a bar surface into the heart rows, their four `[data-state]` rules, the two `@keyframes`, and DLR-115's `[data-type]` product |
+| `warCouncilHealthBars.css` (256) | DLR-71: the duel's two health displays — rewritten by DLR-86 from a bar surface into the heart rows, their four `[data-state]` rules, the two `@keyframes`, and DLR-115's `[data-type]` product. **DLR-153 re-homed the whole `--wc-hp-*` token block here from `warCouncil.css`'s `:root`**, byte-identical, when that file crossed 400 lines: these tokens' only consumers are the rules in this file |
 | `warCouncilHand.css` | DLR-82: the hand container and the hand row (the fan, until the DLR-149 follow-up retired it) |
 
 > **Two sheets this table used to list no longer exist.** `warCouncilCheats.css` and
@@ -125,6 +125,12 @@ then tune by feel" convention.
 > out verbatim into `warCouncilHand.css` (46 lines), leaving `warCouncil.css` at 393. Content only
 > moved — no rule, value or selector changed — and the new sheet is imported from
 > `WarCouncilRound.tsx` with the others.
+
+> **DLR-153 did it a third time, and the same way.** Phase 8's halo-hue correction pushed
+> `warCouncil.css` to **412**. The `--wc-hp-*` health-bar token block moved **byte-identical** into
+> `warCouncilHealthBars.css`, beside the only rules that read it, leaving `warCouncil.css` at 393
+> again. Content only moved — no value, selector or cascade position changed, since both sheets
+> declare on `:root`.
 
 > **DLR-80 deleted two of the six.** `warCouncilDeclare.css` went with the declare gate and
 > `warCouncilStandingTrack.css` with the Standing track. **`.wc-sr-only` was defined only in the

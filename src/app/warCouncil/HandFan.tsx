@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import { containsCard, isPrimed, sameCard, type Card } from '../../warCouncil'
 import type { CardDamagePreview } from './cardDamage'
+import type { CardBuffLight } from './buffRideModel'
 import { cardDamageGlyphText, cardDamageText, cardKey } from './labels'
 import PlayingCard from './PlayingCard'
 import { useRovingTabIndex } from './useRovingTabIndex'
@@ -35,6 +36,24 @@ interface HandFanProps {
    *  component still computes nothing about a card's state, exactly as it takes `legal` from
    *  the engine rather than comparing suits itself. */
   readonly damageForCard: (card: Card) => CardDamagePreview | null
+  /** DLR-153 — this card's lit state, or `null` when no riding buff reaches it. REQUIRED and
+   *  deliberately NOT defaulted, for the reason `damageForCard`'s docblock gives: a defaulted stub
+   *  is exactly how a readout silently stops reading out. A callback rather than an array so this
+   *  component still computes nothing about a card's state. */
+  readonly buffLightForCard: (card: Card) => CardBuffLight | null
+  /** DLR-153 AC13/AC14 — switches the breakdown's target to THIS card on a real mouse hover or
+   *  keyboard focus. REQUIRED and deliberately NOT defaulted, mirroring `buffLightForCard`'s own
+   *  docblock: a defaulted stub here is exactly how a hovered card silently stops switching the
+   *  breakdown, which is the regression this fix closes — `onEnterCard` existed on the hook from
+   *  the start but was never wired to a single production card. Gated on `playable` at the call
+   *  site below (DLR-153 hand-gate fix), the SAME gate `buffCount` uses — rules-legality only, NOT
+   *  `interactive` — so a card that is genuinely illegal to play (AC3) never becomes the
+   *  breakdown's target, but a card between tricks (when `interactive` is false) still can. */
+  readonly onCardEnter: (card: Card) => void
+  /** The paired leave, wired for every card regardless of `illegal` — it only ever cancels or
+   *  schedules a close the hook already owns, so calling it for a card that was never the target
+   *  is inert. */
+  readonly onCardLeave: () => void
   readonly onTap: (card: Card) => void
   readonly onCancel: () => void
 }
@@ -83,6 +102,9 @@ export default function HandFan({
   discardSelecting,
   discardSelection,
   damageForCard,
+  buffLightForCard,
+  onCardEnter,
+  onCardLeave,
   onTap,
   onCancel,
 }: HandFanProps) {
@@ -140,21 +162,54 @@ export default function HandFan({
           const isArmed = armed !== null && sameCard(armed, card)
           const damage = damageForCard(card)
           const damageId = `${damageIdBase}-${cardKey(card)}`
+          // DLR-153 — rules-legality ONLY: may this card be PLAYED this trick? This is the
+          // question AC3 asks ("an illegal card never lights"), and it is deliberately NOT the
+          // same question `illegal` below asks, which ALSO folds in whether the player may tap
+          // right now (`interactive`). Condition buffs are activatable ONLY between tricks, which
+          // is exactly the window `interactive` is false in — gating the light on `interactive`
+          // made the lit hand unreachable in the one window it exists for. `playable` is what the
+          // light, the buff count/estimate, and the hover/focus breakdown target all gate on now;
+          // `illegal` still folds in `interactive` for `PlayingCard`'s own tappability, unchanged.
+          const playable = timebombArmed || discardSelecting || containsCard(legal, card)
+          const illegal = !interactive || !playable
+          const light = buffLightForCard(card)
 
           return (
-            <div key={cardKey(card)} className="wc-fan-slot">
+            <div
+              key={cardKey(card)}
+              className="wc-fan-slot"
+              // DLR-153 — lets `useBuffBreakdownAnchor` find this card's own DOM node to measure
+              // its centre against, without a second ref map threaded down from `WarCouncilRound`.
+              data-buff-anchor={cardKey(card)}
+              // DLR-153 Fix 1 — the actual seam AC13/AC14's hover bridge needs. `onPointerEnter`/
+              // `onFocus` mirror `useCardTip`'s own `pointerType === 'mouse'` gate: a touch tap
+              // must not also register as a stuck hover a touch device can never "leave", and a
+              // keyboard user reaches the same switch through focus, which React bubbles here from
+              // the card's own button (focus/blur are the two React events that DO bubble). Gated
+              // on `playable`, NOT `!illegal` — condition buffs activate only between tricks, when
+              // `interactive` (and so `illegal`) is false, and the breakdown is exactly what a
+              // player reads while deciding what to activate in that window.
+              onPointerEnter={(event) => {
+                if (event.pointerType === 'mouse' && playable) onCardEnter(card)
+              }}
+              onFocus={() => {
+                if (playable) onCardEnter(card)
+              }}
+              onPointerLeave={(event) => {
+                if (event.pointerType === 'mouse') onCardLeave()
+              }}
+            >
               <PlayingCard
                 card={card}
                 variant="hand"
                 armed={isArmed}
-                illegal={
-                  !interactive ||
-                  (!timebombArmed && !discardSelecting && !containsCard(legal, card))
-                }
+                illegal={illegal}
                 primed={isPrimed(primedCards, card)}
                 discardSelected={containsCard(discardSelection, card)}
                 tabIndex={index === tabStopIndex ? 0 : -1}
                 describedBy={damage === null ? undefined : damageId}
+                buffCount={playable && light !== null ? light.count : undefined}
+                buffEstimate={playable && light !== null ? light.estimate : undefined}
                 onTap={onTap}
               />
               {damage !== null && (

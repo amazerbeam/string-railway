@@ -1,7 +1,7 @@
-import { canAffordAp, refreshActionPointsForNewHand, spendAp } from './actionPoints'
+import { canAffordAp, refreshActionPointsForNewHand, refundAp, spendAp } from './actionPoints'
 import { apCostOf, isConditionFamily, isConsumableKind } from './buffCosts'
 import { consumableEffectIsLive, isConsumableItem, spendConsumable } from './consumables'
-import type { Buff, BuffId } from './buffs'
+import { BuffKind, type Buff, type BuffId } from './buffs'
 import { AP_REFRESH_CADENCE, ApRefreshCadence, STARTING_AP } from './apConfig'
 import type { ActionPoints } from './types'
 
@@ -176,6 +176,69 @@ export function activateFromPile(
   return {
     activation: { ...activation, spentThisTrick: [...activation.spentThisTrick, buff] },
     buffs: spendConsumable(buffs, buff.id),
+  }
+}
+
+/**
+ * DLR-153 AC10 — THE one statement of which activated cards may be taken back off the trick.
+ *
+ * TRUE only for the three REVOCABLE condition families — Taker, Feeder, Sidestep. Deliberately NOT
+ * `isConditionFamily` from `buffCosts.ts`: that predicate spans all 11 condition families the type
+ * system still declares, eight of which are cut and unmintable (CLAUDE.md → "Cut buffs are cut
+ * until a ticket brings them back"). Activating one touches only the AP pool and the pile, both of
+ * which `deactivateFromPile` can put back exactly. FALSE for every Activated card, because its
+ * spend ALSO arms felt state the felt has already adopted — `cheatTricksRemaining`,
+ * `timebombArmedDamage`, `activateShield`'s credited hearts, `activateWard`'s guard — and this
+ * module cannot reach any of it. Reversing those is a second rule change and its own ticket
+ * (`plan.md` Part 1 → Assumption 2).
+ *
+ * Read by the riding row's own control AND by `handleRemoveBuff`'s guard, so the two cannot read
+ * revocability differently — the discipline `buffActivationRefusalFor` sets for activation.
+ */
+const REVOCABLE_CONDITION_KINDS: ReadonlySet<BuffKind> = new Set([
+  BuffKind.Taker,
+  BuffKind.Feeder,
+  BuffKind.Sidestep,
+])
+
+export function isRevocableBuff(buff: Buff): boolean {
+  return REVOCABLE_CONDITION_KINDS.has(buff.kind)
+}
+
+/**
+ * The mirror of `activateFromPile`: the pool AND the pile after one revocation, returned as the
+ * same pair for the identical reason — a refund without the card returned is a free spend, and a
+ * card returned without a refund is a double charge.
+ *
+ * THROWS a `RangeError` naming the reason when `buff` is not revocable or is not in
+ * `activatedThisTrick`, exactly as `activateBuff` throws on a refused activation, so a caller that
+ * skipped `isRevocableBuff` cannot commit an incoherent pool/pile pair. `handleRemoveBuff` is that
+ * caller's guard and returns unchanged state rather than letting this throw inside a dispatch.
+ *
+ * Only a card actually REMOVED at activation comes back: membership of `spentThisTrick` is the
+ * test, so a card that never left the pile is not added a second time. It is APPENDED rather than
+ * reinserted at its old index — `plan.md` Part 1, Assumptions made #3.
+ */
+export function deactivateFromPile(
+  state: BuffActivationState,
+  buffs: readonly Buff[],
+  buff: Buff,
+): BuffActivationResult {
+  if (!isRevocableBuff(buff)) {
+    throw new RangeError(`Cannot take buff ${buff.id} back off — a ${buff.kind} is not revocable`)
+  }
+  if (!state.activatedThisTrick.includes(buff.id)) {
+    throw new RangeError(`Cannot take buff ${buff.id} back off — it is not riding this trick`)
+  }
+  const spent = state.spentThisTrick.some((b) => b.id === buff.id)
+  return {
+    activation: {
+      apPool: Math.min(state.capacity, refundAp(state.apPool, apCostOf(buff))),
+      capacity: state.capacity,
+      activatedThisTrick: state.activatedThisTrick.filter((id) => id !== buff.id),
+      spentThisTrick: state.spentThisTrick.filter((b) => b.id !== buff.id),
+    },
+    buffs: spent ? [...buffs, buff] : buffs,
   }
 }
 

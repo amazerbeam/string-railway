@@ -33,6 +33,9 @@ function renderFan(overrides = {}) {
       discardSelecting={false}
       discardSelection={[]}
       damageForCard={() => PREVIEW}
+      buffLightForCard={() => null}
+      onCardEnter={() => {}}
+      onCardLeave={() => {}}
       onTap={onTap}
       onCancel={onCancel}
       {...overrides}
@@ -213,5 +216,114 @@ describe('HandFan', () => {
     const keys3 = screen.getByRole('button', { name: '3 of Keys (Fox)' })
     expect(keys3.getAttribute('tabindex')).toBe('0')
     expect(document.activeElement).toBe(keys3)
+  })
+
+  describe('the buff light (DLR-153)', () => {
+    it('lights only the cards buffLightForCard reaches (AC2)', () => {
+      renderFan({
+        legal: HAND,
+        buffLightForCard: (c: (typeof HAND)[number]) =>
+          c.suit === Suit.Bells ? { count: 2, estimate: false, projection: {} as never } : null,
+      })
+      const bells = screen.getByRole('button', { name: '7 of Bells' })
+      const keys = screen.getByRole('button', { name: '3 of Keys (Fox)' })
+      const moons = screen.getByRole('button', { name: '11 of Moons (Monarch)' })
+      expect(bells.querySelector('.wc-card-buff-badge')).not.toBeNull()
+      expect(keys.querySelector('.wc-card-buff-badge')).toBeNull()
+      expect(moons.querySelector('.wc-card-buff-badge')).toBeNull()
+    })
+
+    it('never lights an illegal card, even when a light is supplied for it (AC3)', () => {
+      // legal=[Moons 11] only (the default fixture), so Bells 7 and Keys 3 are illegal — supply
+      // a light for every card and confirm the illegal ones stay dark.
+      renderFan({
+        buffLightForCard: () => ({ count: 3, estimate: false, projection: {} as never }),
+      })
+      const bells = screen.getByRole('button', { name: '7 of Bells' })
+      const moons = screen.getByRole('button', { name: '11 of Moons (Monarch)' })
+      expect(bells.querySelector('.wc-card-buff-badge')).toBeNull()
+      expect(moons.querySelector('.wc-card-buff-badge')).not.toBeNull()
+    })
+  })
+
+  describe('the between-tricks gate (DLR-153 hand-gate fix)', () => {
+    // Condition buffs are activatable ONLY between tricks, which is exactly the window
+    // `interactive` (and so PlayingCard's own `illegal` prop) is false in. The light and the
+    // hover/focus breakdown target must still work in that window, or the feature they exist
+    // for is unreachable by construction — which is the defect this fix closes.
+    it('still lights a rules-legal card while interactive is false', () => {
+      renderFan({
+        interactive: false,
+        legal: HAND,
+        buffLightForCard: (c: (typeof HAND)[number]) =>
+          c.suit === Suit.Bells ? { count: 4, estimate: false, projection: {} as never } : null,
+      })
+      const bells = screen.getByRole('button', { name: '7 of Bells' })
+      expect(bells.querySelector('.wc-card-buff-badge')).not.toBeNull()
+    })
+
+    it('never lights a rules-illegal card even while interactive is false', () => {
+      // legal=[Moons 11] only (the default fixture) — Bells 7 and Keys 3 are rules-illegal.
+      renderFan({
+        interactive: false,
+        buffLightForCard: () => ({ count: 3, estimate: false, projection: {} as never }),
+      })
+      const bells = screen.getByRole('button', { name: '7 of Bells' })
+      const moons = screen.getByRole('button', { name: '11 of Moons (Monarch)' })
+      expect(bells.querySelector('.wc-card-buff-badge')).toBeNull()
+      expect(moons.querySelector('.wc-card-buff-badge')).not.toBeNull()
+    })
+
+    it('still calls onCardEnter for a rules-legal card while interactive is false', () => {
+      const onCardEnter = vi.fn()
+      renderFan({ interactive: false, legal: HAND, onCardEnter })
+      const moons = screen.getByRole('button', { name: '11 of Moons (Monarch)' })
+      fireEvent.pointerEnter(moons.closest('.wc-fan-slot')!, { pointerType: 'mouse' })
+      expect(onCardEnter).toHaveBeenCalledWith(card(Suit.Moons, 11))
+    })
+  })
+
+  describe('the hover-bridge wiring (DLR-153 Fix 1)', () => {
+    it('calls onCardEnter with the card on a real-mouse hover', () => {
+      const onCardEnter = vi.fn()
+      renderFan({ legal: HAND, onCardEnter })
+      const moons = screen.getByRole('button', { name: '11 of Moons (Monarch)' })
+      fireEvent.pointerEnter(moons.closest('.wc-fan-slot')!, { pointerType: 'mouse' })
+      expect(onCardEnter).toHaveBeenCalledWith(card(Suit.Moons, 11))
+    })
+
+    it('calls onCardEnter on keyboard focus, not just hover', () => {
+      const onCardEnter = vi.fn()
+      renderFan({ legal: HAND, onCardEnter })
+      const keys = screen.getByRole('button', { name: '3 of Keys (Fox)' })
+      fireEvent.focus(keys)
+      expect(onCardEnter).toHaveBeenCalledWith(card(Suit.Keys, 3))
+    })
+
+    it('never calls onCardEnter for an illegal card', () => {
+      // legal=[Moons 11] only (the default fixture) — Bells 7 is illegal.
+      const onCardEnter = vi.fn()
+      renderFan({ onCardEnter })
+      const bells = screen.getByRole('button', { name: '7 of Bells' })
+      fireEvent.pointerEnter(bells.closest('.wc-fan-slot')!, { pointerType: 'mouse' })
+      fireEvent.focus(bells)
+      expect(onCardEnter).not.toHaveBeenCalled()
+    })
+
+    it('does not call onCardEnter for a touch pointer', () => {
+      const onCardEnter = vi.fn()
+      renderFan({ legal: HAND, onCardEnter })
+      const moons = screen.getByRole('button', { name: '11 of Moons (Monarch)' })
+      fireEvent.pointerEnter(moons.closest('.wc-fan-slot')!, { pointerType: 'touch' })
+      expect(onCardEnter).not.toHaveBeenCalled()
+    })
+
+    it('calls onCardLeave on a real-mouse pointer leave', () => {
+      const onCardLeave = vi.fn()
+      renderFan({ legal: HAND, onCardLeave })
+      const moons = screen.getByRole('button', { name: '11 of Moons (Monarch)' })
+      fireEvent.pointerLeave(moons.closest('.wc-fan-slot')!, { pointerType: 'mouse' })
+      expect(onCardLeave).toHaveBeenCalled()
+    })
   })
 })

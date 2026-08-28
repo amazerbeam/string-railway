@@ -274,12 +274,12 @@
    that feedback as load-bearing rather than decoration. Each one replaces the resting value
    outright rather than adding to it. */
 .wc-fan .wc-card {
-  transform: translateY(0%);
+  transform: translateY(var(--wc-lift-rest));
 }
 
 @media (hover: hover) {
   .wc-fan .wc-card:not(.wc-is-illegal):hover {
-    transform: translateY(-9%);
+    transform: translateY(var(--wc-lift-hover));
   }
 }
 
@@ -293,7 +293,7 @@
    no `z-index` at all, so this competes directly with its sibling cards. */
 .wc-fan .wc-card.wc-is-armed,
 .wc-fan .wc-card.wc-is-armed:hover {
-  transform: translateY(-20%) scale(1.05);
+  transform: translateY(var(--wc-lift-armed)) scale(1.05);
   z-index: 20;
 }
 

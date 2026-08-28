@@ -1,7 +1,7 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, PT-002
+**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, PT-002
 
 ## Responsibility
 
@@ -267,6 +267,12 @@ and, for the mechanic, [hunt/the-feeder-carry.md](../hunt/the-feeder-carry.md).
 | `HeartSymbolSheet`, `HeartMark`, `ShieldMark`                                                                                                           | **DLR-86, extended by DLR-115.** The two heart `<symbol>` definitions — a solid heart and a cracked outline — mounted once, and a `<use>` reference to one of them. Same pattern as `SuitMark.tsx`, including the id map. **DLR-115 added a third symbol, `hp-shield`, and `ShieldMark`**: a shield pentagon, deliberately a DIFFERENT SILHOUETTE rather than a blue heart, because this module's own rule is that shape carries the reading before colour does. `HeartMark`'s signature is unchanged, which is why `ShopPanel.tsx` and `App.tsx` were untouched                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | `HeartMark.tsx`                                    |
 | `PipType`                                                                                                                                               | **DLR-115.** The two KINDS of pip a bar can draw — `{ Health: 'health', Shield: 'shield' }` — the second of two orthogonal dimensions beside `HeartState`'s five. A `game-ux` ruling on that ticket forbade a **sixth peer `HeartState`**: the row has never been seen at 14–18 glyphs with a streak and a booked hit on it at once, so type × state caps what can be on screen rather than flattening it. String-bound into the DOM as `data-type`; this map and `warCouncilHealthBars.css`'s attribute selectors are the only two places its values may be written                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `duelHealthBars.ts`                                |
 | `HeartState`, `NO_BREAKING`, `HealthBarOverlays`, `projectedDepletion`                                                                                  | **DLR-86, extended by DLR-101 and DLR-115.** The **five** readings a heart can carry (`whole` / `atRisk` / `ticking` / `breaking` / `broken`, written into the DOM as `data-state`); the zero-damage record the `breaking` overlay defaults to; the options object that carries `breaking` and `ticking` so two same-typed records cannot be transposed; and the projection — the Quarry's health as the banked streak would leave it, **minus each side's booked Timebomb from both bars**, each floored at zero. `projectedDepletion` was `projectedFromStreak` until DLR-101 renamed it. **DLR-115 added `HealthBarOverlays.shield`** — a `Health` SCALAR, not a per-side record, because `EncounterState.shieldHearts` is one and DLR-110 made shields player-only — and gave `projectedDepletion` a **required** fifth parameter, `shieldHearts`, routing the player's booked Timebomb through `absorbWithShield` before it reaches red health. Required rather than defaulted so no future caller can silently reintroduce the preview defect it fixes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `duelHealthBars.ts`                                |
+| `CardBuffLight`, `RidingBuffRow`, `RideInput`, `rideInputFor`, `skullReadingFor`, `lightsForHand`, `ridingRowsFor`, `activatedBuffs`, `projectionHasBuff`, `reachOf` | **DLR-153.** The buff-side twin of `cardDamage.ts`: assembles the projection input from the SAME `buffHandInputFor(state)` the real commit uses, reads the skull PER CANDIDATE CARD (a card you hold that is itself skulled makes the trick skulled even on a lead; `null` means "not knowable", never "no skull"), and builds a `cardKey → light` map for every LEGAL card a riding buff reaches. Reach is counted off that map rather than a second projection pass, so an illegal card cannot inflate it by construction. Holds no `switch` over `BuffConditionKind` and no accrual arithmetic | `buffRideModel.ts` |
+| `BreakdownBranch`, `BreakdownConditionRow`, `BreakdownDeadRow`, `BreakdownTotals`, `CardBuffBreakdown`, `breakdownFor` | **DLR-153.** One card's rows, ordered as the panel reads them: struck-through dead rows with both clauses, two branch groups named on the **mechanical** axis (`Took` / `DidNotTake`, because that is the axis every buff condition reads), the Overlap row, and two totals rows carrying **no** emphasis flag — a leaning readout would leak the Quarry's card. `BreakdownTotals.estimate` marks a row whose figures assume one of two still-possible skull readings | `buffBreakdownModel.ts` |
+| `RIDING_LIST_LABEL`, `BREAKDOWN_LABEL`, `BRANCH_HEADING`, `TOTALS_LABEL`, `buffReachText`, `removeBuffLabel`, `deadRowReasonText`, `deadRowElsewhereText`, `nonRevocableStatusText`, `buffRemovedText`, `buffBadgeText`, `totalsEstimateNote` | **DLR-153.** Every sentence this surface prints, in `buffLabels.ts`'s shape and re-exporting `buffName` / `buffConditionSentence` / `buffPayoff` from it rather than authoring second copies. `BreakdownBranch` and `CardBuffLight` are imported **type-only**, so the runtime graph has one edge into this file and no cycle | `buffRideLabels.ts` |
+| `BuffRideOptions`, `BuffRideView`, `buffRideView`, `BuffRideBundle`, `useBuffRide` | **DLR-153.** Prop assembly split out of `WarCouncilRound.tsx` for the same stated reason `roundControlsProps.ts` was — the 400-line budget. `buffRideView` is a plain assembler; `useBuffRide` bundles the hover-bridge hook, the breakdown lookup and the transient removal announcement behind one call. **Phase 8 dropped `defaultTarget` and the `displayHand` option** along with the default target hover-only made unnecessary | `buffRideProps.ts` |
+| `BreakdownTarget`, `useBuffBreakdownTarget` | **DLR-153, reversed in its own Phase 8.** The panel's hover bridge, now **hover-only**: the target is a plain `Card \| null` starting at `null`, opened by entering a lit card (mouse hover, keyboard focus, or a tap — the touch path, since the pointer seam is gated to a mouse), switched by entering another, held open across the gap into the panel, closed on leaving or on `Escape`. Open-by-default and its `undefined`/`{ escapedFrom }` state machine are **gone**, and `bestLitCard` with them. **Deliberately has no `onBlur`** — tabbing into the panel moves focus off the card, and closing on blur would spring the hover trap on a keyboard user. One `setTimeout` in a ref, cleared on every cancel path and in the effect cleanup | `useBuffBreakdownTarget.ts` |
+| `CardBuffHalo`, `BuffRidingList`, `CardBuffBreakdown` | **DLR-153.** Default exports. The halo's four stacked SVG strokes plus the travelling `stroke-dashoffset` cell (no `filter: blur()`, no `mix-blend-mode`, not a `conic-gradient`); the "riding this trick" rows with a remove control on the three revocable families and a stated reason instead on the rest; and the hover-gated breakdown panel, which since Phase 8 carries that **same** remove control on every row it prints, dead rows included. All three decide nothing — each renders a built model value | `CardBuffHalo.tsx`, `BuffRidingList.tsx`, `CardBuffBreakdown.tsx` |
 
 The zone components — `RoundStatusBand`, `DecreePile`, `TrickWell`, `HandFan`, `AbilityPrompt`,
 `RoundOverPanel` — are each a default export consumed only by `WarCouncilRound.tsx`. DLR-53 added
@@ -339,7 +345,9 @@ pure-core ESLint override's `files` array is untouched. Sorting `RoundState.hand
   deletion of `RoundUiState.apPool` and the unification of the hand's two competing AP numbers into
   one; `openWindowOnTrickResolved` as the per-trick activation boundary and why it does not key on an
   empty trick; **the panel door being deliberately wider than the activation window**, the mid-trick
-  Cheat/Timebomb regression that forced it, and the two-tap activation that has no un-activate; the
+  Cheat/Timebomb regression that forced it, and the two-tap activation — which since DLR-153 **can**
+  be taken back off the trick for the three condition families, documented in
+  [the buff ride](buff-ride-and-the-card-breakdown.md); the
   transcribed naming grammar and the one string serving both the visible row and its accessible name;
   and what the ticket deliberately did **not** make reachable.
 - [The buff gallery](buff-gallery.md) — **DLR-148's replacement for the loadout list**: the pure
@@ -353,6 +361,17 @@ pure-core ESLint override's `files` array is untouched. Sorting `RoundState.hand
   render as a blank slab); the roving group's positional indexing and what it forces the markup to
   be; `Escape` unwinding one level through the new `CancelBuffPoise`; and the WCAG 4.5:1 floor
   enforced by parsing the real stylesheet.
+- [The riding buffs, the lit hand, and the per-card breakdown](buff-ride-and-the-card-breakdown.md)
+  — **DLR-153.** The one rule the surface obeys (every figure comes from `projectBuffBranches`, and
+  no firing rule is derived in the view layer); the per-candidate skull reading and why it is not
+  one reading per trick; the light map and why an illegal card cannot inflate a reach figure by
+  construction; the bottom-up breakdown — dead rows with both clauses, two unemphasised branch
+  groups on the **mechanical** axis, the Overlap row, and the `estimate` flag that stops a totals
+  row reading as a certainty on a lead; the hover-only gate that replaced open-by-default and why it
+  reverses a recorded decision; taking a condition buff back off the trick from either surface, and why the four
+  Activated cards keep a status line instead of a control; the three carriers on a lit card and the
+  lift ladder; the hover bridge and why blur deliberately does nothing; where the panel mounts; and
+  the accepted trade that lets it cover the live trick, with the measurements a revisit would need.
 - [The felt rail, the trick readout, and the skull face](felt-rail-and-the-trick-readout.md) —
   **DLR-148's re-home**: `.wc-table` becoming `game rail | stage` and why non-occlusion is now
   structural rather than a z-index promise; `.wc-felt-rail` having had **no CSS rule at all** before
@@ -427,7 +446,9 @@ pure-core ESLint override's `files` array is untouched. Sorting `RoundState.hand
   that computable; the `.wc-fan-slot` wrapper — which outlived the fan that named it — and the 7-12px
   it costs; the numbers reaching a screen reader as the card's
   **description** rather than its name; and the honest list of the four things it does **not** show
-  — including that an activated buff still contributes nothing, so DLR-117's AC3 is not met today.
+  — the four things it does **not** show. (Its own AC3, an activated buff contributing to the
+  strip, was met by DLR-125; the strip still shows no per-buff breakdown, which is DLR-153's
+  separate panel.)
 - [Card faces, the printed geometry, and the ability tooltip](card-faces-and-the-ability-tooltip.md)
   — **DLR-149.** The three face classes (`Act` / `Inert` / `Plain`), why rank 8 is deliberately
   plain rather than inert, the normalised-card-box geometry that makes "nothing overlaps a corner
@@ -543,9 +564,22 @@ testing-library helpers to it would break the DOM/node project boundary.
   `roundReducer.ts` contains no suit comparison, no rank comparison, and no trick-winner
   computation. The single permitted rank _identity_ check is "is this rank `CardRank.Fox` or
   `CardRank.Woodcutter`", for opening the ability prompt — via `CardRank`, never a numeric literal.
-- **No `useEffect` or `useLayoutEffect` anywhere**, in `.ts` or `.tsx` (see
-  [Interaction and state § The module has no effect at all](interaction-and-state.md)). Enforced by
-  a grep in the contract's final verification.
+- **No buff firing rule is derived in this module** (DLR-153). Every figure on the lit hand, the
+  riding list and the per-card breakdown comes from `projectBuffBranches`, which answers the
+  question by calling `firedBuffs` and `resolveFiredBuffs` — the two functions the real trick
+  resolution calls. `buffRideModel.ts` and `buffBreakdownModel.ts` hold no `switch` over
+  `BuffConditionKind` and perform no accrual arithmetic; the only subtraction anywhere is a delta
+  between two accruals the projection returned. The DLR-147 mockup's re-derivation reported +6
+  damage for a load whose ceiling was +4, which is the failure this rule exists to prevent.
+- ~~**No `useEffect` or `useLayoutEffect` anywhere**~~ — **the reducer still holds no effect**, which
+  is the claim that actually matters (see
+  [Interaction and state § The module has no effect at all](interaction-and-state.md)), but the
+  module-wide absence has not been true for some time. Four effects exist today, in three files, and
+  **every one of them exists only to release something**: two in `WarCouncilRound.tsx` (the debug
+  state mirror and its teardown), one in `useCardTip.ts` (DLR-149's tooltip listeners), and one in
+  `useBuffBreakdownTarget.ts` (DLR-153), whose entire body is a cleanup clearing the hover bridge's
+  `setTimeout` so StrictMode's double mount cannot leave an orphan that closes the panel under the
+  next mount. `useLayoutEffect` genuinely appears nowhere.
 - **`labels.ts`, `cardFace.ts`, and `roundReducer.ts` import no React and touch no DOM global** —
   verified by grep, which is what lets them run in the `node` Vitest project.
 - **No component sees a numeric literal standing in for a tunable** (DLR-53, extended by every ticket
@@ -739,9 +773,37 @@ testing-library helpers to it would break the DOM/node project boundary.
   deliberately produce nothing (both resolve before the follow), and Treasure, Poison and every
   plain rank have no rule to state. If a later ticket gives a rank a follow-time rule, the clause
   union is where it lands, and the closed keying makes forgetting the words a compile error.
-- **Activation, the lit hand, the riding list and the per-card breakdown are DLR-153**, and the
-  Timebomb's targeting flow and primed-card mark are **DLR-154**. `mockup-buff-gallery.html` shows
-  more than this module currently delivers, deliberately. `primed` still renders today's corner `⚗`.
+- **The Timebomb's targeting flow and primed-card mark are DLR-154.**
+  `mockup-buff-gallery.html` shows more than this module currently delivers, deliberately. `primed`
+  still renders today's corner `⚗`. (Activation, the lit hand, the riding list and the per-card
+  breakdown landed on DLR-153 — see
+  [the buff ride](buff-ride-and-the-card-breakdown.md), including the accepted overlap over the live
+  trick, which is settled behaviour rather than deferred work.)
+- **Every colour, size bound, slope, delay and glyph DLR-153 added is a placeholder nobody chose.**
+  `--wc-buff-halo` (`#ff3326`, with `--wc-buff-halo-deep: #8e1409` — both transcribed from the
+  DLR-147 mockup's `--load-red`/`--load-red-deep` in Phase 8, correcting an earlier alias onto
+  `--wc-alarm`, the damage colour. Which red is now right; **red-against-brass is still open**, since
+  red already means damage and brass already means yours-and-selected), the four halo stroke widths
+  and opacities, `--wc-buff-lap-base`
+  (`3.2s`) and its `0.5s`-per-buff slope, the badge's size and form, the hover bridge's 160ms close
+  delay, and the panel's `max-height` and `margin-bottom`. **Two figures are not placeholders and
+  must not be retuned as though they were**: the `0.9s` lap floor (`--wc-buff-lap-floor`, a flash
+  safety limit, enforced by a `max()` in the stylesheet precisely so no count can defeat it) and the
+  4.5:1 contrast floor.
+- **Whether the breakdown should be hover-only is unjudged** (DLR-153 Phase 8). It was open by
+  default for most of that ticket, on the recorded reasoning that a readout you must re-summon is one
+  you stop consulting; the developer reversed it once the panel was seen covering the live trick.
+  Both readings are defensible and only a play session separates them. The touch path is the weaker
+  half: a tap opens the panel and nothing there closes it, since there is no pointer to leave with
+  and no `Escape` to press.
+- **Whether a suitless buff lighting the whole hand still reads as information is unjudged**
+  (DLR-153). Sidestep reaches every legal card, so the halo stops discriminating and the badge is
+  left carrying the state alone. That is honest, and whether it is useful is a feel question only
+  playing answers.
+- **Whether two branch totals read as clarity or as arithmetic homework is unjudged** (DLR-153). Two
+  branches is correct — Taker and Feeder cannot both fire — but it puts four figures where the brief
+  asked for two. The obvious simplification, showing only the branch the player is steering toward,
+  **leaks the Quarry's card**, which is why it was not done.
 - **Cheat's live duration has no readout**, and no ticket exists for one.
 
 - **The health bar can draw blue hearts, and no player has ever been able to get one** (DLR-115).
@@ -813,7 +875,8 @@ ticking. 3 at risk. 4 ticking."` **"of them" is what disambiguates the shield's 
 - **Every judgement DLR-114 took is the developer's to overrule after playing it.** All four were
   taken as the plan's default under an unattended sprint run with the mockup gate skipped: that the
   bar is always mounted and greys rather than disappearing; that activation is reversible until the
-  second tap and committing after, with no un-activate; that Apply Buff still opens when the player
+  second tap and committing after, with no un-activate (**that third default was overturned by
+  DLR-153** for the three condition families); that Apply Buff still opens when the player
   can afford nothing; and that a buff's condition and reward are stated as one line. Every CSS token
   the bar and panel added is a `clamp()` copied from a sibling rail stylesheet, flagged in the
   stylesheet for the polish ticket, and all of the copy is placeholder.

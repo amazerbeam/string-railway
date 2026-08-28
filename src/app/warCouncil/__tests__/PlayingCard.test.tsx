@@ -266,4 +266,46 @@ describe('PlayingCard', () => {
       }
     }
   })
+
+  describe('the buff light (DLR-153)', () => {
+    it('renders no badge and no halo with no buffCount — every existing call site keeps compiling', () => {
+      const { container } = render(
+        <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" />,
+      )
+      expect(container.querySelector('.wc-card-buff-badge')).toBeNull()
+      expect(container.querySelector('.wc-card-buff')).toBeNull()
+    })
+
+    it('carries the badge text in the accessible tree and shows the numeral with buffCount', () => {
+      const { container } = render(
+        <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" buffCount={2} />,
+      )
+      expect(screen.getByText(/2 buffs could fire on this card/i)).toBeTruthy()
+      const badge = container.querySelector('.wc-card-buff-badge')
+      expect(badge?.textContent).toContain('2')
+    })
+
+    it('renders the ~ estimate form and its class with buffCount and buffEstimate', () => {
+      const { container } = render(
+        <PlayingCard
+          card={{ suit: Suit.Bells, rank: 6 }}
+          variant="hand"
+          buffCount={2}
+          buffEstimate
+        />,
+      )
+      const badge = container.querySelector('.wc-card-buff-badge')
+      expect(badge?.classList.contains('wc-is-estimate')).toBe(true)
+      expect(badge?.textContent).toContain('~2')
+      expect(screen.getByText(/up to 2 buffs could fire on this card/i)).toBeTruthy()
+    })
+
+    it('renders the badge as a real text node, so it survives a greyscale screenshot (AC5)', () => {
+      const { container } = render(
+        <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" buffCount={3} />,
+      )
+      const numeral = container.querySelector('.wc-card-buff-badge > span[aria-hidden="true"]')
+      expect(numeral?.textContent).toBe('3')
+    })
+  })
 })

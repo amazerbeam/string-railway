@@ -284,6 +284,57 @@ describe('AC6 — an undecidable branch is reported, not guessed', () => {
   })
 })
 
+describe('mayFire — the projection keeps its branch attribution (DLR-153)', () => {
+  it('places a riding Sidestep in lost.mayFire on a lead, leaving won.mayFire empty', () => {
+    const lead = projectBuffBranches(
+      input({ active: [momentumSidestep], skullTrick: null }),
+      bellsCard,
+    )
+    expect(lead.lost.mayFire.map((b) => b.id)).toEqual([3])
+    expect(lead.won.mayFire).toEqual([])
+  })
+
+  it('has empty mayFire on both branches of a follow, where every fired buff is certain', () => {
+    const cleanFollow = projectBuffBranches(
+      input({ active: [bladeTaker, bladeFeeder, momentumSidestep], skullTrick: false }),
+      bellsCard,
+    )
+    expect(cleanFollow.won.mayFire).toEqual([])
+    expect(cleanFollow.lost.mayFire).toEqual([])
+
+    const skulledFollow = projectBuffBranches(
+      input({ active: [bladeTaker, bladeFeeder, momentumSidestep], skullTrick: true }),
+      bellsCard,
+    )
+    expect(skulledFollow.won.mayFire).toEqual([])
+    expect(skulledFollow.lost.mayFire).toEqual([])
+  })
+
+  it('keeps projection.indeterminate equal to the deduped union of both branches’ mayFire', () => {
+    const lead = projectBuffBranches(
+      input({ active: [momentumSidestep], skullTrick: null }),
+      bellsCard,
+    )
+    const union = [...lead.won.mayFire, ...lead.lost.mayFire]
+    const dedupedIds = [...new Set(union.map((b) => b.id))]
+    expect(lead.indeterminate.map((b) => b.id)).toEqual(dedupedIds)
+  })
+
+  it('never puts the same buff in both fired and mayFire on one branch', () => {
+    const lead = projectBuffBranches(
+      input({ active: [bladeTaker, bladeFeeder, momentumSidestep], skullTrick: null }),
+      bellsCard,
+    )
+    for (const branch of [lead.won, lead.lost]) {
+      const firedIds = new Set(branch.fired.map((b) => b.id))
+      const mayFireIds = new Set(branch.mayFire.map((b) => b.id))
+      for (const id of mayFireIds) {
+        expect(firedIds.has(id)).toBe(false)
+      }
+    }
+  })
+})
+
 describe('AC7 — reach counts only the cards that are legal to play this trick', () => {
   const bells2: Card = { suit: Suit.Bells, rank: 2 }
   const bells9: Card = { suit: Suit.Bells, rank: 9 }

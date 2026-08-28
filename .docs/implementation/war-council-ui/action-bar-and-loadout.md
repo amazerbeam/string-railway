@@ -160,11 +160,14 @@ The refusal is re-read on **both** taps, for `handleTapApplyDamage`'s stated rea
 change under a poised row, and re-reading is what stops a poise made while the row was live from
 committing after it stopped being. `Escape` (via `handleCancelLoadout`) drops the poise unspent.
 
-**There is no un-activate**, and that is not an omission: `activateBuff` spends through `spendAp` and
-`activatedThisTrick` has no removal path, so the engine ships no refund and inventing one here would
-be writing a rule `src/hunt/` does not own. The reversibility the ticket asks for is satisfied by the
-poise stage — the same grammar Cheat, Timebomb and Apply Damage already use, so the bar teaches one
-ritual rather than a fifth.
+~~**There is no un-activate**~~ — true of DLR-114 and **overturned by DLR-153, 2026-08-27**. The
+reasoning still holds for *where* the rule belongs: the engine had no removal path, and inventing a
+refund in the UI would have been writing a rule `src/hunt/` does not own. DLR-153 wrote it in
+`src/hunt/buffActivation.ts` instead — `isRevocableBuff` plus `deactivateFromPile` — and only for
+the three condition families; **Cheat, Timebomb, Ward and Shield are still irreversible**, because
+their spend also arms felt state the transition cannot reverse. See
+[the buff ride](buff-ride-and-the-card-breakdown.md). The poise stage is unchanged: activation is
+still two taps, and it is still what guards a misclick before the commit.
 
 **Committing leaves the panel open**, because a player may activate more than one buff per trick.
 

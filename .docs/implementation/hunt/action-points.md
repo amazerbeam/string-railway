@@ -200,3 +200,16 @@ is the identity, so `accrueAxisBonus` needed no change, and the two constants st
 place a cap would be restored. `MAX_REFUND_PER_HAND` (6) and `MAX_COIN_BONUS_PER_HAND` (10) are
 **untouched** — their axes no longer mint. One test moved with them:
 `apConfig.test.ts`'s `Number.isInteger` assertion no longer holds over all four caps.
+
+## `refundAp` — the inverse spend, for a revoked activation — DLR-153, 2026-08-27
+
+DLR-153 gave a player a way to take a condition buff back off a trick, which needs the pool to move
+back too. `refundAp(pool, cost)` is `spendAp`'s mirror and routes through the **same** `apCostFor`
+gate `spendAp` routes through, so a refund can never exceed what was actually charged and flipping
+`AP_ENABLED` back to `true` cannot make revocation free. With `AP_ENABLED` `false` today
+`apCostFor` returns 0, so the call is numerically inert — it is written symmetrically anyway,
+precisely because the flag is a toggle and not a deletion.
+
+Clamping to the pool's capacity is deliberately **not** this module's job: `actionPoints.ts` holds
+no capacity. The caller does it — `deactivateFromPile` in `buffActivation.ts` wraps the call in
+`Math.min(state.capacity, …)`, which is the only place both numbers are in scope.

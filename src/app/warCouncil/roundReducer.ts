@@ -34,6 +34,7 @@ import { handleCancelDiscard, handleTapDiscard, toggleDiscardCard } from './disc
 import {
   handleCancelBuffPoise,
   handleCancelLoadout,
+  handleRemoveBuff,
   handleTapBuff,
   handleToggleLoadout,
 } from './buffHandlers'
@@ -117,6 +118,8 @@ function applyAction(state: RoundUiState, action: RoundUiAction): RoundUiState {
       return handleTapBuff(state, action.id)
     case RoundUiActionKind.CancelBuffPoise:
       return handleCancelBuffPoise(state)
+    case RoundUiActionKind.RemoveBuff:
+      return handleRemoveBuff(state, action.id)
   }
 }
 

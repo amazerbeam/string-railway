@@ -17,11 +17,15 @@ import ActionBar from './ActionBar'
 import BankMeter from './BankMeter'
 import { loadoutBarRefusalFor, loadoutDoorOpen } from './buffHandlers'
 import BuffGallery from './BuffGallery'
+import BuffRidingList from './BuffRidingList'
+import { useBuffRide } from './buffRideProps'
+import CardBuffBreakdown from './CardBuffBreakdown'
 import { cardDamagePreview } from './cardDamage'
 import FeltRail from './FeltRail'
 import FeltStage from './FeltStage'
 import HandFan from './HandFan'
 import { sortHandForDisplay } from './handOrder'
+import { cardKey } from './labels'
 import QuarryDossier from './QuarryDossier'
 import QuarryShape from './QuarryShape'
 import { barsForRound } from './roundBars'
@@ -45,6 +49,7 @@ import {
   offeredBuffs,
   timebombArmed,
   RoundUiActionKind,
+  type RoundUiAction,
 } from './roundUiState'
 import RoundStatusBand from './RoundStatusBand'
 import { CardArtSheet } from './CardArtSheet'
@@ -203,6 +208,24 @@ export default function WarCouncilRound({
 
   const displayHand = sortHandForDisplay(ui.round.hands[PlayerSide.Player])
 
+  // DLR-153 — the buff-ride surface, bundled behind one hook (`buffRideProps.ts`'s own docblock
+  // says why it is a hook rather than a plain assembler like `actionBarProps`). Takes the RAW
+  // reducer `dispatch` — it is the origin `dispatchClearingAnnouncement` below wraps, not a second
+  // wrapped copy, and `handleRemoveBuff`'s own dispatch is what SETS the announcement this ticket
+  // is about, so it must not clear the very message it is about to write.
+  const buffRide = useBuffRide({ ui, dispatch, legal })
+
+  // DLR-153 Fix 4 — every dispatch OTHER than the removal's own clears the transient "buff
+  // removed" announcement, so it cannot outlive the very next player action and sit in place of
+  // the hand's real hint (a rejection, whose turn it is) for an arbitrary number of further taps.
+  // A single wrapper around `dispatch`, used everywhere `dispatch` reaches a control below, is
+  // what makes this true of EVERY action — `ToggleLoadout`, `TapBuff`, applying damage, opening a
+  // discard selection — rather than only the two hand actions this used to be scoped to.
+  function dispatchClearingAnnouncement(action: RoundUiAction) {
+    buffRide.clearRemovedAnnouncement()
+    dispatch(action)
+  }
+
   // The Quarry has chosen its lead but has not committed it, so the telegraph can be read
   // before the card lands. `currentTrick.length === 0` is what keeps this to leads only.
   const quarryToLead =
@@ -216,12 +239,16 @@ export default function WarCouncilRound({
 
   const hint = deriveHint(ui, interactive, quarryToLead)
 
+  // DLR-153 Phase 8 Correction 1 — the touch path into a hover-only breakdown: `HandFan.tsx`
+  // gates `onEnterCard` to a mouse pointer, so a tap pins the readout here instead (a SELECTION,
+  // per the mockup's own rule for touch), through the same tap event.
   function handleTap(card: Card) {
-    dispatch({ kind: RoundUiActionKind.TapCard, card })
+    buffRide.breakdownTarget.onEnterCard(card)
+    dispatchClearingAnnouncement({ kind: RoundUiActionKind.TapCard, card })
   }
 
   function handleCancel() {
-    dispatch({ kind: RoundUiActionKind.CancelSelection })
+    dispatchClearingAnnouncement({ kind: RoundUiActionKind.CancelSelection })
   }
 
   /**
@@ -240,7 +267,7 @@ export default function WarCouncilRound({
       return
     }
     if (ui.resolvedTrick !== null || quarryToLead) {
-      dispatch({ kind: RoundUiActionKind.CarryOn })
+      dispatchClearingAnnouncement({ kind: RoundUiActionKind.CarryOn })
       return
     }
     if (roundComplete) {
@@ -296,12 +323,14 @@ export default function WarCouncilRound({
             outright; see `WarCouncilRound.loadoutReopen.test.tsx` for the pinned sequence. */}
         <FeltRail {...feltRailProps({ ui, galleryOpen: loadoutOpen(ui) && loadoutDoorOpen(ui) })} />
         {loadoutOpen(ui) && loadoutDoorOpen(ui) ? (
-          <BuffGallery {...buffGalleryProps({ ui, dispatch, offered })} />
+          <BuffGallery
+            {...buffGalleryProps({ ui, dispatch: dispatchClearingAnnouncement, offered })}
+          />
         ) : (
           <FeltStage
             {...feltStageProps({
               ui,
-              dispatch,
+              dispatch: dispatchClearingAnnouncement,
               offered,
               quarryToLead,
               handSummary,
@@ -312,26 +341,50 @@ export default function WarCouncilRound({
           />
         )}
       </section>
-      <HandFan
-        hand={displayHand}
-        legal={legal}
-        armed={ui.armed}
-        interactive={handInteractive}
-        hint={hint}
-        rejected={ui.rejection !== null}
-        promptOpen={ui.prompt !== null}
-        primedCards={ui.round.primedCards}
-        timebombArmed={timebombArmed(ui)}
-        discardSelecting={discardSelecting(ui)}
-        discardSelection={ui.discardSelection ?? []}
-        damageForCard={(card) => cardDamagePreview(ui, card)}
-        onTap={handleTap}
-        onCancel={handleCancel}
-      />
+      {/* DLR-153 Assumption 6 — outside `.wc-table` deliberately: `BuffGallery` replaces the
+          stage and unmounts the moment the door closes, but the hand zone renders unconditionally,
+          so anchoring the riding list and the (hover-only, Phase 8) breakdown here is what keeps
+          them reachable across the gallery closing.
+          DLR-153 Fix 2 — a REAL positioning class, not an unclassed div: the panel's nearest
+          positioned ancestor used to be `.wc-table`, a SIBLING rather than a parent. */}
+      <div
+        className="wc-buff-ride-zone"
+        onMouseEnter={buffRide.breakdownTarget.onEnterPanel}
+        onMouseLeave={buffRide.breakdownTarget.onLeaveCard}
+      >
+        <HandFan
+          hand={displayHand}
+          legal={legal}
+          armed={ui.armed}
+          interactive={handInteractive}
+          hint={buffRide.removedAnnouncement ?? hint}
+          rejected={ui.rejection !== null}
+          promptOpen={ui.prompt !== null}
+          primedCards={ui.round.primedCards}
+          timebombArmed={timebombArmed(ui)}
+          discardSelecting={discardSelecting(ui)}
+          discardSelection={ui.discardSelection ?? []}
+          damageForCard={(card) => cardDamagePreview(ui, card)}
+          buffLightForCard={(card) => buffRide.lights.get(cardKey(card)) ?? null}
+          onCardEnter={buffRide.breakdownTarget.onEnterCard}
+          onCardLeave={buffRide.breakdownTarget.onLeaveCard}
+          onTap={handleTap}
+          onCancel={handleCancel}
+        />
+        <BuffRidingList rows={buffRide.riding} onRemove={buffRide.handleRemoveBuff} />
+        <CardBuffBreakdown
+          breakdown={buffRide.breakdown}
+          riding={buffRide.riding}
+          onEnter={buffRide.breakdownTarget.onEnterPanel}
+          onLeave={buffRide.breakdownTarget.onLeavePanel}
+          onEscape={buffRide.breakdownTarget.onEscape}
+          onRemove={buffRide.handleRemoveBuff}
+        />
+      </div>
       <ActionBar
         {...actionBarProps({
           ui,
-          dispatch,
+          dispatch: dispatchClearingAnnouncement,
           handleTap,
           offered,
           loadoutRefusal,

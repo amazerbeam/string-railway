@@ -174,6 +174,8 @@ export {
   buffActivationStockFor,
   activateBuff,
   activateFromPile,
+  deactivateFromPile,
+  isRevocableBuff,
   openBuffWindow,
   refreshBuffsForNewHand,
   isPricedBuff,
@@ -309,6 +311,7 @@ export {
   apCostFor,
   canAffordAp,
   spendAp,
+  refundAp,
   refreshActionPointsForNewHand,
   apCapacityFor,
 } from './actionPoints'

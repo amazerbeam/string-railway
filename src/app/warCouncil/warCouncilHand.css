@@ -4,6 +4,15 @@
 
 /* ---------- hand ---------- */
 
+/* DLR-153 QA fix — NO element currently renders the class `wc-hand`, and none did before that
+   contract either (checked at base commit f703647: `HandFan` returned a bare fragment, so its
+   two children auto-placed into separate grid cells and happened to look acceptable). This rule
+   is pre-existing dead CSS. `grid-area: hand` now lives on `.wc-buff-ride-zone`
+   (`warCouncilBuffRide.css`) instead, because that wrapper is the element that actually occupies
+   the shell's `"hand hand"` row. The `display: flex` / `flex-direction` / `align-items` / `gap`
+   / `padding` declarations below have never been applied to anything in the app's live history —
+   leave them; switching them on is a visual change for the developer to decide, not a
+   regression fix. */
 .wc-hand {
   grid-area: hand;
   display: flex;

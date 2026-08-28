@@ -19,6 +19,36 @@ here, every one of which is **decided, enforced and tested, yet cannot be obtain
   decided and still enforced; the machine and the opening draw simply no longer deal any of them.
   Section 4 lists the three that remain.
 
+> **You can now see what a buff you activated is doing, and you can take it back off — DLR-153,
+> 2026-08-27.** Activating a buff used to change nothing you could see. Now, the moment a buff is
+> riding the coming trick:
+>
+> - **Every card in your hand it could fire on lights up**, and no others. A card you are not allowed
+>   to play never lights. A card lights with a glow, a bright cell travelling its edge, and a **number**
+>   saying how many buffs could fire on it — three signals, so the state survives a colourblind
+>   reading, a greyscale one, and switching motion off. The number is a **ceiling** when the Quarry's
+>   card is still face down, and it says so.
+> - **A "riding this trick" list** names each buff you activated and how many of your cards it reaches
+>   — including the case where the answer is **none**, which it states in words rather than as a zero.
+> - **Point at a lit card and a panel breaks that card down** — what fires if you take the trick,
+>   what fires if you do not, the Overlap Bonus on its own line, and — struck through — the buffs
+>   that cannot fire on that card, each saying why and where it is lighting up instead. Every row of
+>   it, the struck-through ones included, will take that buff back off the trick. The panel is only
+>   up while you are pointing at a lit card; moving to another lit card switches it, moving away or
+>   pressing Escape closes it. Where there is nothing to point with, **tapping** a lit card opens it.
+> - **A buff you activated can be taken back off the trick** — a Taker, a Feeder or a Sidestep. The
+>   card returns to your pile and the points come back. **A Cheat, a Timebomb, a Ward and a Shield
+>   cannot**: using one of those already changed the felt, and that cannot be undone. They still
+>   appear in the list, saying so. Section 4.
+>
+> **Activating is still two taps**, and it still asks you for no card: you activate the buff for the
+> trick, never for a card. **While the breakdown is open it may cover the cards on the table**,
+> including the Quarry's played card, and on a wide screen and a narrow one it also takes the taps
+> meant for them — so the trick is not merely hidden but untappable until you move off the panel.
+> Because the panel is only up while you are pointing at a lit card, that is confined to the moments
+> you are comparing cards; at rest the table is fully visible. It is **accepted**, not a fault:
+> section 9, and [Known tensions](#known-tensions-recorded-not-resolved).
+
 > **Your hand no longer empties as a hand goes on — DLR-146, 2026-08-26.** You are refilled to four
 > cards as each trick resolves, so the number of cards you choose from runs 6, 5, 4, 4, 4, 4 instead
 > of 6, 5, 4, 3, 2, 1, and a hand ends with three still in your hand. The Quarry is unchanged. One
@@ -203,8 +233,9 @@ can reach it** — the two are separate axes and this is the one that says which
 >
 > **Nobody has looked at any of it.** This landed in an unattended run that skipped both its approval
 > and its mockup gate and ran no browser. Four judgements were taken by default rather than decided —
-> that the bar greys rather than disappearing, that activation commits on a second tap with **no way to
-> un-activate**, that Apply Buff still opens when you can afford nothing, and that a buff is described
+> that the bar greys rather than disappearing, that activation commits on a second tap with ~~no way to
+> un-activate~~ (**overturned for the three condition cards on 2026-08-27** — section 4), that Apply
+> Buff still opens when you can afford nothing, and that a buff is described
 > in one line — and **nothing has confirmed that a four-row screen still fits without scrolling**. All
 > of it is the developer's, and it is why the rows below carry the markers they do.
 
@@ -847,8 +878,79 @@ press drops the poise and leaves the panel open; with nothing poised, it closes 
 **Apply Buff** again always closes the panel outright, whatever is poised. Until 2026-08-26 a single
 `Escape` did both at once.
 
-But **once the second tap lands there is no way to un-activate**, and if the card was one of the ones
-that is spent, it is gone. Activating is therefore the decision.
+##### Taking a buff back off the trick — **[settled]** since 2026-08-27
+
+~~Once the second tap lands there is no way to un-activate.~~ True until 2026-08-27, and no longer.
+**A buff you activated for the coming trick can be taken back off it**, from its row in the "riding
+this trick" list. Doing so returns the card to your pile, gives you back what it cost, and clears it
+from that trick — the cards it was lighting go dark, and the list says how many did.
+
+**Only the three condition cards can be taken back**: the win-with-a-suit, the lose-with-a-suit and
+the dodge-a-skull. **A Cheat, a Timebomb, a Ward and a Shield cannot.** Using one of those does
+something to the felt at the moment you commit it — follow-suit stops binding you, a hit is armed
+against a card, a guard goes up — and that is not something the game can take back. All four still
+appear in the riding list, each saying plainly that it has no condition to reach and is already
+spent, rather than showing you a control that would refuse.
+
+**A card that comes back is put at the end of your pile**, not back where it was — **[provisional]**,
+and the developer's, since it means the card moves under your finger. Nothing else about it changes.
+
+**Activating is still two taps**, and the first is still the misclick guard. Whether the poise is
+still worth its tap now that a commit can be undone is the developer's to decide — **[open]**.
+
+##### What you can see once a buff is riding — **[settled]** for the procedure, **[provisional]** for when the breakdown is on screen and for every look of it, since 2026-08-27
+
+A buff is activated **for the trick**, never for a card — you are never asked to pick one. What the
+screen then shows you is which of your cards it could pay out on:
+
+- **Every card in your hand that buff could fire on lights up, and no others.** A buff that wants a
+  suit lights only that suit; one that wants no suit lights everything. **A card you are not allowed
+  to play this trick never lights**, and is never counted anywhere.
+- **A lit card carries three signals at once** — a glow around it, a bright cell travelling its edge,
+  and a **number** saying how many buffs could fire on it. Three rather than one so the state reads
+  without colour, without motion, and in greyscale. The travelling cell's speed rises with the
+  number; **how fast it may ever go is capped as a safety limit, not as a look** — that cap is not
+  the developer's to raise.
+- **The number is a ceiling, not a promise, whenever the Quarry's card is still face down**, and it
+  is marked as one. A card of yours that carries a skull is the exception: it makes the trick skulled
+  whatever they play, so its reading is certain even while you lead.
+- **A "riding this trick" list** names each buff you activated and how many of your cards it reaches.
+  **When it reaches none, the list says so in words** — that is the case worth telling you about, and
+  a zero would read as an error rather than as information.
+- **Point at a lit card and that one card is broken down in full** — **[provisional]**, since
+  2026-08-27. The breakdown is shown **only while you are pointing at a lit card**: moving to another
+  lit card switches it to that card, moving off it or pressing Escape closes it, and crossing the gap
+  between the card and the panel does not close it. On a screen with nothing to point with,
+  **tapping** a lit card opens it. It reads: which buffs fire **if you take the trick** and which
+  **if you do not**, listed separately and with **neither presented as the better one** — the game
+  will not lean, because leaning would tell you something about the Quarry's card that you are not
+  meant to know. Below them, the Overlap Bonus on its own line, and above them, struck through, the
+  buffs that **cannot** fire on this card — each saying why, and where it is lighting up instead.
+  > **This reverses the reading this document carried until 2026-08-27**, which was that the panel
+  > stayed open by itself the whole time a buff was riding. It is the developer's decision and it is
+  > marked **[provisional]** because nobody has played it either way: the panel covers the cards on
+  > the table, and open-by-default meant they were covered permanently rather than only while you
+  > were reading it.
+- **Every row of the breakdown will take that buff back off the trick**, the struck-through ones
+  included — **[provisional]**, since 2026-08-27. A buff named in front of you is removable where it
+  is named, with the same exception the riding list has: a Cheat, a Timebomb, a Ward and a Shield
+  cannot come back, so their rows carry no control rather than one that would refuse. The riding list keeps its own controls, and that is not a duplicate: a buff that reaches
+  no card at all appears in no card's breakdown, so the list is the only place it can be taken off
+  from. Every one of these controls names the **trick**, never the card you happen to be pointing at
+  — removing takes the buff off the trick entirely.
+- **Where a figure genuinely cannot be known yet, it is marked rather than stated flat.** On a lead,
+  the totals assume the trick is not skulled and say that they are assuming it.
+
+**Every number on this surface is the same number the trick will actually pay.** It is read from the
+same rules that resolve the trick, not worked out a second time — so a preview cannot disagree with
+what happens.
+
+**How all of it looks is placeholder** — every colour, size, glow, speed and wording. **The panel
+grows upward and may cover the cards on the table while it is open**, which is an accepted trade
+rather than a fault; section 9 states it as a rule, and
+[Known tensions](#known-tensions-recorded-not-resolved) records what it would take to change. Because
+the panel is only up while you point at a lit card, the cards on the table are covered only while you
+are comparing them, not for the whole time a buff rides.
 
 ##### Using a card takes it out of your pile — **[settled]** since 2026-08-25
 
@@ -2273,7 +2375,7 @@ design document, not from this section.
 | **The buffs you own**                      | **Open since 2026-08-24 — inside Apply Buff.** One line each until 2026-08-26, and **a grid of cards since**: the suit each wants, its tier as a roman numeral, when it pays, its condition and its reward, with copies of the same card stacked into one counted card and anything unusable right now moved to the end in one group carrying the reason (section 4). **The panel opens even when there is nothing in it you can use**, on purpose: reading what you hold is how you plan. Placeholder cards you cannot use are not listed at all. **Nobody has looked at the grid.** |
 | **That a cash-out is queued**              | **Open since 2026-08-24 — under the Apply Damage button**: the figure it will deal and how many tricks it still has to run. Hidden for the one day between the delay landing and this readout (section 7).                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | **Whether an activated buff did anything** | **Hidden, and there is now something to hide — since 2026-08-24.** Conditions are checked and rewards are paid (section 4), and **nothing names the cause**: the damage, the coins or the pool simply come out larger. The one place a buff contribution is visible in advance is the per-card `W/L` readout, which includes it. **[not built]** — an announcement at the trick that fired.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| **The buff surface covering the table**     | **It cannot, since 2026-08-26.** The decree, the cards already played and the spent pile sit in their own column of the table, and the buff panel sits in another — so opening your buffs can never hide any of them. Before that the panel was a layer over the middle of the table. |
+| **The buff surface covering the table**     | **The decree and the spent pile can never be hidden, since 2026-08-26** — they sit in their own column of the table and the buff panel sits in another. **The cards already played can be, since 2026-08-27, and that is allowed — [provisional].** The per-card breakdown grows upward from above your hand and may cover the played-cards row while it is open; at a wide screen and at a phone-width one it also **takes the taps meant for the cards underneath**, so the trick is untappable until you move off the panel. Accepted by the developer on the basis that the cost is only paid while you are deliberately reading the breakdown; to be revisited if it gets in the way in play. **Since later the same day the panel is only up while you point at a lit card**, so at rest the table is fully visible — the cost is smaller, not gone. |
 | **A Blast Guard you are holding**          | **Hidden** during a fight — the shop's purse is its only surface, and nothing on the felt says you are carrying one (section 7).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 **There is no telegraph any more — [settled] since 2026-08-26.** Its fidelity dial — suit only, or
@@ -3030,7 +3132,38 @@ the mechanics themselves are documented in `../implementation/`.
 > the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
 > a `RunState` field and a transition in the same breath means exactly that.
 
-> **Where DLR-150 stands, 2026-08-27 — the newest entry here.** **Live and reachable by a player, in
+> **Where DLR-153 stands, 2026-08-27 — the newest entry here.** **Live and reachable by a player,
+> almost in full.** Activating a buff no longer asks for a card and no longer changes nothing you can
+> see: the hand lights up, the riding list names every buff and its reach, pointing at a lit card
+> breaks that card down, and a Taker, a Feeder or a Sidestep can be taken back off the trick with its
+> card and its points returned — from the riding list, or from any row of the breakdown. All of that
+> is on screen and playable; none of it is engine-only.
+>
+> **Three things were corrected against the mockup late on 2026-08-27, and one of them reverses a
+> rule this document carried.** The breakdown no longer stays open by itself while a buff rides: it
+> is up **only while you point at a lit card**, or while you have tapped one where there is nothing
+> to point with. Every breakdown row, the struck-through ones included, gained its own control to
+> take that buff off the trick. And the lit card's glow was moved off the damage colour onto the
+> mockup's own red. Both rule changes are marked **[provisional]** in section 4 — they are one round
+> of the developer's judgement and no play session has tested them.
+>
+> **One behaviour was questioned and then accepted, on 2026-08-27.** The breakdown panel overlaps the
+> played-cards row and, at two of the three screen sizes it was driven at, takes the taps meant for
+> it. The developer allowed it rather than move the panel — the cost is only paid while you are
+> deliberately reading the breakdown — so the register row about the buff surfaces reads
+> **provisional** for the played cards rather than settled, and the trade is recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved). Making the panel hover-only shrank that
+> cost — the trick is uncovered whenever you are not comparing cards — without removing it.
+> Everything else about the panel behaves.
+>
+> **Nobody has played it, and every colour, size, glow, speed, delay and word is a placeholder** —
+> except the cell's minimum lap time and the 4.5:1 contrast floor, which are safety limits and are
+> not the developer's to move. Two feel questions are open: whether a buff that wants no suit, and so
+> lights the whole hand, still tells you anything; and whether two branches of figures read as
+> clarity or as homework. Whether the poise tap still earns itself now that a commit can be undone is
+> a third.
+
+> **Where DLR-150 stands, 2026-08-27.** **Live and reachable by a player, in
 > full.** The engine banks a lose-a-trick card's reward on a losing trick, carries it across every
 > hand of a fight, opens the next hand on it, and wipes it when the fight ends; the multiplier
 > version of that card can be dealt again, so the pool is 16; and both halves of the bank are on the
@@ -3543,7 +3676,7 @@ the mechanics themselves are documented in `../implementation/`.
 | Owning and pricing a buff, and reading it on screen                               | settled — since DLR-114, re-presented as a card grid DLR-148; **every price is provisional**               | `src/hunt/buffs.ts` (the card's shape), `src/hunt/buffCosts.ts` (the price formula and the two tables), `src/hunt/run.ts` — `RunState.buffs`, reaching the felt as `src/app/warCouncilMount.ts` — `WarCouncilMountProps.buffs`; grouped, stacked and fenced by `src/app/warCouncil/buffGalleryModel.ts` — `buildBuffGallery`; worded by `src/app/warCouncil/buffLabels.ts`; rendered by `src/app/warCouncil/BuffGallery.tsx` and `BuffCard.tsx` | **Developer** — every AP price was chosen by an agent and none has been played; every colour and size on the card is a transcribed placeholder |
 | A skulled card shows a skull in place of its picture                             | settled — since DLR-148, 2026-08-26 (a corner glyph before that)                            | `src/app/warCouncil/PlayingCard.tsx` — the skull face replaces the centred pip when `skulled`; the symbol is defined once in `src/app/warCouncil/SuitMark.tsx` — `SuitSymbolSheet`, as `#wc-skull`. The corner rank and suit are untouched, as is the spoken name | **Developer** — the skull's shape and its wash are transcribed placeholders, unseen |
 | The consequence readout — what their played card does to you either way          | settled — since DLR-148, 2026-08-26; the **wording** is provisional                         | `src/app/warCouncil/trickConsequenceModel.ts` — `trickConsequence` decides which clauses apply and returns nothing when the trick is empty, when the player led, or when no clause applies; `consequenceLabels.ts` holds the words; rendered by `TrickConsequence.tsx` in `FeltRail.tsx`. Every clause is derived from this document's own rank table and section 7, never authored per card | **Developer** — all of the copy, and whether the readout earns its place beside the table. Unseen |
-| Opening the buff panel cannot hide the decree, the played cards or the spent pile | settled — since DLR-148, 2026-08-26                                                        | `src/app/warCouncil/warCouncilTable.css` — `.wc-table` is `grid-template-columns: var(--wc-rail-w) minmax(0, 1fr)`, so `src/app/warCouncil/FeltRail.tsx` is a sibling grid COLUMN of the panel rather than a layer under it. Structural, not a stacking order | — |
+| Opening a buff surface cannot hide the decree or the spent pile; the breakdown may cover the played cards | settled for the decree and the spent pile — since DLR-148, 2026-08-26. **provisional** for the played cards — the breakdown covering them, and taking their taps, was **accepted** by the developer on 2026-08-27 (DLR-153), to be revisited if it gets in the way in play | `src/app/warCouncil/warCouncilTable.css` — `.wc-table` is `grid-template-columns: var(--wc-rail-w) minmax(0, 1fr)`, so `src/app/warCouncil/FeltRail.tsx` is a sibling grid COLUMN of the panel rather than a layer under it. Structural, not a stacking order. **DLR-153's `.wc-buff-breakdown` (`src/app/warCouncil/warCouncilBuffRide.css`) is deliberately outside that structure**: it is absolutely positioned against `.wc-buff-ride-zone` and grows upward over the felt, and its `max-width: calc(100% - var(--wc-rail-w))` clears the rail but **not `.wc-trick-row`**, which is a sibling under `.wc-table-inner` rather than inside the rail. Measurements and the relocation options are in `../implementation/war-council-ui/buff-ride-and-the-card-breakdown.md`. **Narrowed on 2026-08-27** by making the panel hover-only — the overlap now exists only while you point at a lit card, not for the whole time a buff rides — but the geometry is unchanged | **Developer** — whether to keep the overlap after playing; changing it means relocating the panel, not retuning a width (at phone width its 288px minimum cannot fit the ~117px beside the trick row) |
 | `Escape` unwinds one step in the buff panel                                       | settled — since DLR-148, 2026-08-26                                                        | `src/app/warCouncil/roundUiState.ts` — `RoundUiActionKind.CancelBuffPoise`; `src/app/warCouncil/buffHandlers.ts` — `handleCancelBuffPoise` drops the poise and leaves the panel open, while `handleCancelLoadout` still closes outright and is what the bar's own toggle dispatches | — |
 | Activating a buff — two taps, and the card is spent | settled — the two taps since DLR-114; **that using a condition card removes it from the pile** since DLR-145, 2026-08-25 | `src/hunt/consumables.ts` — `CONDITION_CARD_SINGLE_USE` (Taker/Feeder/Sidestep, all `true`), a sibling of DLR-142's `ACTIVATED_CARD_SINGLE_USE`, both read only by `isConsumableItem`; `src/hunt/buffActivation.ts` — `activateFromPile`, which spends the card and records it on `BuffActivationState.spentThisTrick` so it still fires at this trick's resolution; the two-tap stage is `src/app/warCouncil/buffHandlers.ts` — `handleTapBuff` | **Developer** — whether every card should be single-use; it is one `false` per card type to revert |
 | A card spent on a trick still fires at that trick's resolution | settled — since DLR-145, 2026-08-25 | `src/hunt/buffActivation.ts` — `BuffActivationState.spentThisTrick`, appended by `activateFromPile` and cleared by `openBuffWindow` and `refreshBuffsForNewHand` on exactly the edges that clear `activatedThisTrick`. Read by unioning it with the offered pile in `src/app/warCouncil/buffRoundState.ts` — `buffHandInputFor` and `firedOncePerHandIds`, and again in `src/sim/playHand.ts`. Without it a spent card pays nothing, silently | — |
@@ -3551,7 +3684,14 @@ the mechanics themselves are documented in `../implementation/`.
 | A card that pays you for losing banks its reward for the next hand | settled — since DLR-150, 2026-08-27; **provisional** — the size of the bank, and whether the opening figure should be persistent or a hand-start flourish | `src/hunt/buffAccrual.ts` — `BuffCarry`, `accrueCarry` (uncapped, and it throws rather than accruing zero on an axis that cannot carry), `carriedIn`/`carryOut` on `BuffBonusAccrual`, `startHandAccrual(carriedIn)` seeding the new hand's two spendable figures, and the Feeder-only branch in `resolveFiredBuffs`. The Loss/Win answer is supplied by `src/warCouncil/bank.ts` as `!isTaken(outcome)` and is never re-derived. `src/hunt/run.ts` — `RunState.feederCarry`, seeded empty by `startRun`; `src/hunt/runTransitions.ts` — the private `feederCarryAfter`, which wipes it on a resolved encounter. Pinned by `src/hunt/__tests__/buffCarry.test.ts` and `run.feederCarry.test.ts` | **Developer** — the size of the bank, whether the win-a-trick card should bank on a losing trick too, whether the overlap bonus should follow the trick's outcome, and whether the multiplier version needs its own ladder |
 | Both halves of the bank are on the streak readout | settled — since DLR-150, 2026-08-27; the **wording, colours and glyphs** are provisional | `src/app/warCouncil/BankMeter.tsx` — the `carriedIn` / `carryOut` display-only props and their two lines, both folded into the section's existing accessible name and deliberately **not** into the cash-out figures; styled by `src/app/warCouncil/warCouncilBankMeter.css`. Pinned by `src/app/warCouncil/__tests__/BankMeter.test.tsx` and `WarCouncilRound.feederCarry.test.tsx` | **Developer** — every word, colour and glyph, and whether the opening figure should be persistent or a one-off flourish |
 | A Vault card of a type that is no longer dealt does not arrive | settled — the behaviour predates DLR-145 (DLR-113); DLR-145 is what made it reachable | `src/hunt/buffTemplates.ts` — `templateById` returns `undefined` for a cut id, so `mintGrants` skips it and `src/vault/vaultEconomy.ts` — `oddsBoostRefusalFor` / `startingTierRefusalFor` refuse a purchase against it; `src/vault/` — `reconcileVault` drops it and counts it. No persisted shape, field or key changed and `SAVE_SCHEMA_VERSION` did not move | **Developer** — nothing corrupts, but Vault currency already spent on a cut card is gone. Clearing saved data avoids the confusion |
-| There is no way to un-activate a buff                                            | settled — the engine ships no refund                                                       | nothing to enforce — `src/hunt/buffActivation.ts` exposes no removal path at all, and the absence is what makes sure one is never written in the UI                                                                                                                                                                                                                                     | —                                                                                                                                                                                                                                                                                                                 |
+| A condition buff can be taken back off the trick; an Activated card cannot | **settled** — since DLR-153, 2026-08-27; **provisional** — that the returned card goes to the END of the pile rather than its old place | `src/hunt/buffActivation.ts` — `isRevocableBuff` (a frozen set of `Taker`/`Feeder`/`Sidestep`, the single statement of what may come back) and `deactivateFromPile`, which refunds through `src/hunt/actionPoints.ts` — `refundAp`, drops the id from `activatedThisTrick` and the buff from `spentThisTrick`, and appends the card to the pile only when `spentThisTrick` says it actually left. It throws rather than clamping; `src/app/warCouncil/buffHandlers.ts` — `handleRemoveBuff` is the guard that keeps the throw off a render, dispatched by `RoundUiActionKind.RemoveBuff` | Developer — whether the card should return to its old place in the pile, and whether the poise tap still earns itself now that a commit can be undone |
+| Activating a buff asks for no card — it rides the trick | settled — the behaviour predates DLR-153; DLR-153 is what made it legible | `src/hunt/buffActivation.ts` — `activateBuff` takes no card argument, and no refusal about choosing one exists anywhere in `src/` | — |
+| Every legal card a riding buff could fire on lights up, and no illegal card is ever counted | **settled** — since DLR-153, 2026-08-27; **provisional** — every colour, size, glow and wording | `src/app/warCouncil/buffRideModel.ts` — `lightsForHand` builds the map from the caller's `legal` list only, and `reachOf` counts off that same map rather than a second pass; `src/app/warCouncil/HandFan.tsx` gates the light behind the SAME `illegal` expression it passes to `PlayingCard` | Developer — whether a suitless buff lighting the whole hand still reads as information |
+| A lit card carries three carriers, and the travelling cell has a hard speed cap | settled — since DLR-153, 2026-08-27; the **slope** is provisional, the **cap** is not | `src/app/warCouncil/CardBuffHalo.tsx` (four stacked SVG strokes plus the cell) and `src/app/warCouncil/PlayingCard.tsx` (the numeral badge, a real text node with its own spoken form). The lap time is `max(--wc-buff-lap-floor, --wc-buff-lap-base - count * 0.5s)` in `src/app/warCouncil/warCouncilBuffRide.css`, computed in CSS precisely so no count in TypeScript can defeat the 0.9s floor. The hue is `--wc-buff-halo: #ff3326` / `--wc-buff-halo-deep: #8e1409` on `:root` in `src/app/warCouncil/warCouncil.css` — transcribed from the mockup's own `--load-red` / `--load-red-deep` on 2026-08-27, correcting an earlier borrow of `--wc-alarm`, the damage colour | Developer — the hue, the stroke figures and the slope. Correcting WHICH red decided nothing: red-against-brass is still open. **Not the 0.9s floor**, which is a flash-safety limit |
+| Neither branch of the per-card breakdown is presented as the better one | **settled** — since DLR-153, 2026-08-27 | `src/app/warCouncil/buffBreakdownModel.ts` — `BreakdownTotals` carries no "preferred" flag at all, and `BRANCH_HEADING`/`TOTALS_LABEL` in `src/app/warCouncil/buffRideLabels.ts` state both the same way. The branch names are on the MECHANICAL axis (`Took`/`DidNotTake`) because that is the axis every buff condition reads | Developer — whether four figures read as clarity or as arithmetic homework |
+| The per-card breakdown is on screen only while you point at a lit card | **provisional** — since DLR-153, 2026-08-27, reversing this document's own earlier open-by-default reading | `src/app/warCouncil/useBuffBreakdownTarget.ts` — the target is a plain `Card \| null` starting at `null`; `onEnterCard` sets it, `onLeaveCard` / `onLeavePanel` schedule a 160ms close that entering the other cancels, `onEscape` closes at once. There is deliberately no `onBlur`. `src/app/warCouncil/HandFan.tsx` gates `onPointerEnter` on `pointerType === 'mouse'`, so the touch path is a tap, routed through `src/app/warCouncil/WarCouncilRound.tsx`'s card-tap handler | **Developer** — hover-only versus open-by-default, and the 160ms bridge delay. Neither has been played |
+| Every breakdown row can take its buff off the trick, dead rows included | **provisional** — since DLR-153, 2026-08-27 | `src/app/warCouncil/CardBuffBreakdown.tsx` — one `.wc-buff-breakdown-remove` control per condition row and per dead row, labelled by `removeBuffLabel` in `src/app/warCouncil/buffRideLabels.ts`, the SAME sentence `src/app/warCouncil/BuffRidingList.tsx` prints, so both name the trick rather than a card. A row whose buff is not revocable renders no control at all. Both dispatch `RoundUiActionKind.RemoveBuff` into `src/app/warCouncil/buffHandlers.ts` — `handleRemoveBuff` | **Developer** — whether a control on every row reads as reach or as clutter |
+| A figure that cannot be known yet is marked rather than stated flat | **settled** — since DLR-153, 2026-08-27 | `src/warCouncil/buffProjection.ts` — a branch returns two `outcomes` while the skull is unknown, and `BuffBranchProjection.mayFire` holds the buffs that fire under some readings and not all; `src/app/warCouncil/buffBreakdownModel.ts` — `BreakdownTotals.estimate` is set whenever `outcomes.length === 2`, and `CardBuffLight.estimate` puts the badge into its `~n` form | — |
 | More than one buff per trick; never the same buff twice                          | settled — since DLR-108, reachable since DLR-114                                           | `src/hunt/buffActivation.ts` — the pool is one number so stacking needs no rule, and `BuffActivationRefusal.AlreadyActive` refuses the duplicate                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
 | A buff may only be activated between tricks                                      | settled — since DLR-108                                                                    | `src/hunt/buffActivation.ts` — `buffActivationRefusalFor`, fed `windowOpen` from `src/app/warCouncil/roundUiState.ts` — `discardWindowOpen`, the same signal the Swap reads. No second timing gate exists                                                                                                                                                                               | —                                                                                                                                                                                                                                                                                                                 |
 | A trick's activations clear when that trick resolves; the pool does not          | settled — since DLR-108, fired since DLR-114                                               | `src/hunt/buffActivation.ts` — `openBuffWindow`, called by `src/app/warCouncil/roundReducer.ts` — `openWindowOnTrickResolved` on the transition that resolves a trick                                                                                                                                                                                                                   | —                                                                                                                                                                                                                                                                                                                 |
@@ -4283,12 +4423,47 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
   invisibility bug. The cheapest measurement is the one QA has made before: measure each control's
   own rectangle against the viewport at 1920×1080, 1366×768, 1024×640 and a phone portrait, rather
   than only asking whether the page scrolls.
-- **Four judgements were taken by default rather than decided** (new 2026-08-24, DLR-114). That the
-  bar greys rather than disappearing; that activation commits on a second tap with **no way to
-  un-activate**; that Apply Buff opens even when nothing is affordable; and that a buff is described
-  in one glanceable line. Each is defensible and each is the developer's to overrule after playing.
-  The one with teeth is the second: a misclick past the poise stage costs points that nothing gives
-  back, and unlike Apply Damage there is no bank-zeroing to make the mistake obvious.
+- **Four judgements were taken by default rather than decided** (new 2026-08-24, DLR-114; **the
+  second was overturned 2026-08-27 by DLR-153**). That the bar greys rather than disappearing; that
+  activation commits on a second tap with ~~no way to un-activate~~; that Apply Buff opens even when
+  nothing is affordable; and that a buff is described in one glanceable line. Each is defensible and
+  each is the developer's to overrule after playing. The one with teeth was the second — a misclick
+  past the poise stage cost points that nothing gave back, with no bank-zeroing to make the mistake
+  obvious — and it now has an undo for the three condition cards. **It still has none for a Cheat, a
+  Timebomb, a Ward or a Shield**, where the misclick is more expensive, because those four change the
+  felt at the commit.
+- **The breakdown panel can cover the cards on the table, and that is accepted** (new 2026-08-27,
+  DLR-153; **accepted the same day**, **reduced later the same day**). It grows upward from above
+  your hand and overlaps the played-cards row — measured at a wide screen, at a smaller one, and at a
+  phone-width one, and at the wide and the phone-width ones it also takes the taps meant for what is
+  underneath, so the trick is untappable while the panel is open. The decree and the spent pile are
+  safe; the trick itself is not. At phone width it cannot be made to fit beside the trick at all.
+  **The developer accepted it on 2026-08-27** rather than redesign against a guess — the reasoning
+  being that the cost is only paid while you have deliberately opened the breakdown, and that it is
+  not worth fixing before it has annoyed anyone in play.
+
+  **Making the panel hover-only, later the same day, shrank this tension without closing it.** The
+  panel used to stay open by itself for the whole time a buff was riding, which made the occlusion
+  permanent rather than occasional; it is now up only while you are pointing at a lit card, so at
+  rest the trick is fully visible. That is a smaller cost paid at the moments you are most likely to
+  want to look at the trick — comparing your cards against what is already on the table — and the
+  geometry that causes it has not changed at all. It stays recorded because it may still resurface:
+  if it does, the fix is a decision about where the panel should live and how big it may be — a
+  drawer, a fixed strip above the hand, or a place of its own on the felt — rather than a number to
+  retune.
+- **Hover-only was decided in one pass and has never been played** (new 2026-08-27, DLR-153). It
+  reverses a reading this document had carried — that a readout you must re-summon is a readout you
+  stop consulting — on the grounds that the reading was formed against a standalone sheet with
+  nothing underneath the panel. Both arguments are sound and only playing separates them: whether
+  the trick being visible at rest is worth having to point at a card to see the figures. The touch
+  path is a further unknown: a tap opens the panel and tapping another lit card moves it, but there
+  is no pointer to move away and no Escape to press, so it stays up until the trick moves on.
+- **Nobody has played DLR-153, and its whole look is placeholder** (new 2026-08-27). Every colour,
+  size, glow, cell speed, delay and word on the lit hand, the riding list and the breakdown was
+  transcribed from a mockup, not chosen. Two figures are **not** the developer's and must not be
+  retuned as though they were: the cell's minimum lap time (a flash-safety limit) and the 4.5:1
+  contrast floor. Two questions only playing answers: whether a suitless buff lighting every card
+  still tells you anything, and whether two branches of figures read as clarity or as homework.
 - **Cheats are one press further away than they were, at the moment they matter** (new 2026-08-24,
   DLR-114). Arming a Cheat now costs a press to open the loadout before the two clicks to arm — and
   the moment a Cheat is worth anything is mid-trick, with a lead already on the table and a decision

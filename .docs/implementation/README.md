@@ -26,11 +26,11 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | --------------------- | ------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, DLR-150, DLR-152, PT-001, PT-002                                                                                                                                                                   |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, DLR-150, DLR-152, DLR-153, PT-001, PT-002                                                                                                                                                                   |
 | `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150                                                                                                                                                                                        |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, PT-002                                                                                                              |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, PT-002                                                                                                              |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145                                                                                                                                                                                                                                                                                                                             |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-150, PT-001, PT-002 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-150, DLR-153, PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -833,7 +833,8 @@ activation window** — `loadoutDoorOpen = discardWindowOpen || canAct` gates _o
 and were reachable mid-trick before, which is exactly when a Cheat has value; that regression was
 found and fixed inside the ticket. And **activation is two-tap, reversible until the second tap and
 committing after**: there is no un-activate, because the engine ships none and inventing a refund in
-the UI would be writing a rule `src/hunt/` does not own.
+the UI would be writing a rule `src/hunt/` does not own. (**DLR-153 wrote it in the engine**, and a
+Taker, Feeder or Sidestep can now be taken back off the trick — see that section below.)
 
 **Do not read this as "the buff system works now."** A buff's condition is **never evaluated** and its
 reward is **never paid** — `buffAccrual.ts` still has no caller, so activating a condition-family buff
@@ -1193,13 +1194,63 @@ stale**, including the tricks-taken and damage-per-hand figures the shop arithme
 re-measuring was out of scope. Start at
 [war-council/the-hand-refill.md](war-council/the-hand-refill.md).
 
-## Latest — DLR-152, the two-branch buff projection (2026-08-27)
+## Latest — DLR-153, activation you can see and take back (2026-08-27)
+
+**The ticket that made activating a buff legible, and the first one to change what activation
+*means*.** Until now, activating a buff deleted a card from the pile and changed nothing on screen —
+and nine of the sixteen live templates are gated on the **suit of the card you end up playing**,
+which the screen never named. Now every legal-to-play card a riding buff could fire on lights up
+with three independent carriers (a halo, a travelling SVG cell, and a numeral badge that survives
+greyscale and reduced motion); a **"riding this trick"** list gives each activated buff's reach
+across the hand, states the zero-reach case out loud, and carries a remove control; and a per-card
+breakdown — shown **only while a lit card is pointed at, or tapped where there is no pointer** —
+reads bottom-up from two unemphasised branch totals through an Overlap Bonus row and the condition
+rows to struck-through rows naming what playing this card gives up, every one of those rows carrying
+its own control to take that buff off the trick.
+
+**Phase 8 corrected three things against the DLR-147 mockup, and one reverses a recorded decision.**
+The breakdown was open by default the whole time a buff rode; it is now hover-only, because on the
+real felt it covers the played cards and open-by-default made that permanent. Every breakdown row,
+dead ones included, gained the remove control the riding list already had. And the halo's hue moved
+off `--wc-alarm`, the damage colour, onto the mockup's own `#ff3326` — which corrects *which* red
+without settling whether red is right at all.
+
+**The rule change: a buff can now come back off the trick.** `the-hunt.md` had recorded activation
+as committing on a second tap with no way to un-activate. `src/hunt/buffActivation.ts` now exposes
+`isRevocableBuff` — the single statement of which cards may be taken back, exactly `Taker`, `Feeder`
+and `Sidestep` — and `deactivateFromPile`, which returns the card to the pile (**appended at the
+end**, not reinserted), refunds the action-point cost through a new `refundAp`, and clears the buff
+from that trick's activations. **Cheat, Timebomb, Ward and Shield stay irreversible**, because their
+spend also arms felt state the transition cannot reach; they still appear in the riding list, with a
+status line saying why and no control. **Activation is still two taps** — the ticket removed the
+card *target*, not the poise.
+
+**No firing rule was copied into the view layer, and that is the whole correctness argument.** Every
+figure comes from DLR-152's `projectBuffBranches`, which is finally consumed. Two pure app-layer
+models sit between it and the screen — `buffRideModel.ts` (input assembly, the per-card light map,
+reach) and `buffBreakdownModel.ts` (one card's rows) — and neither holds a `switch` over
+`BuffConditionKind` or any accrual arithmetic. The one real decision either makes is reading the
+skull **per candidate card**: a card the player holds that is itself skulled makes the trick skulled
+even on a lead, so `null` means "not knowable", never "no skull". That is also why `buffReach` is
+deliberately left in the engine **unused** — it takes one hand-wide reading. Start at
+[war-council-ui/buff-ride-and-the-card-breakdown.md](war-council-ui/buff-ride-and-the-card-breakdown.md),
+or [hunt/buff-activation-and-ap-costs.md](hunt/buff-activation-and-ap-costs.md) for the engine half.
+
+**It ships with one criterion unmet, and it is recorded rather than papered over.** The breakdown
+panel grows upward over the felt and **overlaps the live trick row**, winning the hit-test at
+1440x900 and at a ~500px viewport. Its width cap subtracts the felt rail, which protects the decree
+and the spent pile — but the trick row is not in that rail. At the narrow shell it cannot be cleared
+geometrically at all. Where this panel lives and how large it may be is a developer design decision;
+the module's Deferred section holds the measurements. Making the panel hover-only shrank the cost —
+at rest the trick is fully visible — without touching the geometry.
+
+## DLR-152, the two-branch buff projection (2026-08-27)
 
 **A pure-engine contract with no visible surface at all.** One new module,
 `src/warCouncil/buffProjection.ts`, answers — for one card the player is considering — which of the
 buffs riding this trick would fire and what they would pay, **both if the player takes the trick and
-if they do not**. Nothing consumes it yet: the engine half was built deliberately ahead of the
-activation UI that will read it.
+if they do not**. Nothing consumed it on the day it landed: the engine half was built deliberately
+ahead of the activation UI that would read it, and **DLR-153 is that consumer** (below).
 
 The whole correctness argument is that it **delegates rather than calculates**. It builds a
 `BuffTrickContext` from plain values, hands it to `firedBuffs`, hands the result to

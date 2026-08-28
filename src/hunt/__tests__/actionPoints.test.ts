@@ -5,6 +5,7 @@ import {
   apCostFor,
   canAffordAp,
   spendAp,
+  refundAp,
   refreshActionPointsForNewHand,
 } from '../actionPoints'
 
@@ -49,6 +50,16 @@ describe('spendAp (AC2 — the single place a cost is actually deducted; DLR-145
 
   it('leaves the pool at zero when it starts at zero', () => {
     expect(spendAp(0, 3)).toBe(0)
+  })
+})
+
+describe('refundAp', () => {
+  it('returns the pool a spend took from it, so spend-then-refund is the identity', () => {
+    expect(refundAp(spendAp(5, 2), 2)).toBe(5)
+  })
+
+  it('honours AP_ENABLED through the same apCostFor path spendAp honours it through', () => {
+    expect(refundAp(5, 2)).toBe(5 + apCostFor(2))
   })
 })
 

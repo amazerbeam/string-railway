@@ -15,7 +15,9 @@ import {
   BuffActivationRefusal,
   BuffKind,
   cheatDurationTricksOf,
+  deactivateFromPile,
   extraDiscardCharges,
+  isRevocableBuff,
   timebombDamageOf,
   type Buff,
   type BuffId,
@@ -170,4 +172,24 @@ export function handleTapBuff(state: RoundUiState, id: BuffId): RoundUiState {
     discardsRemaining: state.discardsRemaining + extraDiscardCharges(buff),
     loadout: { poised: null },
   }
+}
+
+/**
+ * AC10. Asks `isRevocableBuff` and membership FIRST and returns `state` itself on a no —
+ * `deactivateFromPile` throws by design, and a throw inside a reducer during an event handler
+ * unmounts the tree, which is the discipline `handleTapBuff` already sets. Returning the state
+ * object itself rather than a copy means an idle removal cannot cause a re-render, mirroring
+ * `handleCancelBuffPoise`.
+ *
+ * Touches the pool and the pile ONLY. The hand re-lights from the new state on the next render,
+ * so nothing here knows anything about which cards were lit — that stays `buffRideModel.ts`'s.
+ */
+export function handleRemoveBuff(state: RoundUiState, id: BuffId): RoundUiState {
+  if (!state.buffActivation.activatedThisTrick.includes(id)) return state
+  const buff = [...offeredBuffs(state), ...state.buffActivation.spentThisTrick].find(
+    (b) => b.id === id,
+  )
+  if (buff === undefined || !isRevocableBuff(buff)) return state
+  const { activation, buffs } = deactivateFromPile(state.buffActivation, state.buffs, buff)
+  return { ...state, buffs, buffActivation: activation }
 }

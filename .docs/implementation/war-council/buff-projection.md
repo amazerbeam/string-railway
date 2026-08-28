@@ -8,8 +8,11 @@ the player does not.** It is the buff-side sibling of `src/app/warCouncil/cardDa
 does the same job for damage, and it shares that file's shape down to the flag naming the one thing
 it cannot know (`exact` there, `skullKnown` here).
 
-Nothing consumes it yet. DLR-152 built the engine half deliberately ahead of the activation UI that
-will read it, so the module ships with a full spec and no call site inside `src/`.
+DLR-152 built it deliberately ahead of the activation UI that would read it, so for one ticket it
+shipped with a full spec and no call site inside `src/`. **DLR-153 is that consumer**:
+`src/app/warCouncil/buffRideModel.ts` calls `projectBuffBranches` once per legal card and builds the
+lit hand, the reach figures and the per-card breakdown off the result. `buffReach` is the one export
+that still has no caller — see the last paragraph of its own section below.
 
 ## Why it delegates everything, and what that buys
 
@@ -66,12 +69,29 @@ of _which_ family reads the skull and cannot fall out of step with `buffFires`. 
 skull-reading family is handled here with no edit. The ticket's "today only `sidestep`" became a
 test assertion instead of an implementation constant.
 
+DLR-153 surfaces the same diff a second way, without changing what it means. `branchFor` already
+computed each branch's own indeterminate set before merging it into the projection-level union and
+discarding the per-branch value — that discarded value is now kept as `BuffBranchProjection.mayFire`.
+`indeterminate` is untouched and stays the deduped union of `won.mayFire` and `lost.mayFire`; the
+split is still a plain set difference over `perReading`, so `mayFire` carries no knowledge of which
+family produced it either. The reason to keep it: a consumer that wants "how many buffs could this
+branch pay" — the reach figure the activation UI reads — needs the per-branch ceiling, and computing
+that from the projection-level union alone would mean re-deriving which entries belong to which
+branch, exactly the second copy of the rules this module exists to prevent.
+
 ## `buffReach` — how many cards could fire this buff
 
 `buffReach(input, legalCards, buff)` runs the same projection once per card and counts a card when
 the buff appears in **either** branch's `fired` set **or** in `indeterminate`. "Could fire"
 deliberately includes "might fire": a reach of 0 for a Sidestep on a lead would read as "this buff
 is dead" at exactly the moment the player is deciding whether to activate it.
+
+**It has no consumer, and that is a decision rather than an oversight.** DLR-153, the ticket that
+would have called it, derives reach from its own per-card projection map instead: `buffReach` takes
+ONE hand-wide `skullTrick`, and a card the player holds that is itself skulled makes the trick
+skulled whatever the Quarry plays — so a hand-wide reading would report that certainty as a maybe on
+a lead. The function stays exported and specced for a caller that genuinely has a single reading for
+the whole hand.
 
 Legality is the caller's, not the module's. `legalCards` is the caller's `legalMoves(state,
 PlayerSide.Player, options)` output, and an illegal card is not counted **because it is not in the

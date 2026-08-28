@@ -1,10 +1,13 @@
 import { useId, type CSSProperties } from 'react'
 import type { Card } from '../../warCouncil'
+import { buffBadgeText } from './buffRideLabels'
 import CardAbilityTip from './CardAbilityTip'
+import CardBuffHalo, { HALO_SATURATION_CEILING } from './CardBuffHalo'
 import { RANK_FACE } from './cardFace'
 import CardFace from './CardFacePanel'
 import { RANK_RULE_TEXT } from './cardRuleText'
 import { cardAccessibleName } from './labels'
+import './warCouncilBuffRide.css'
 
 interface PlayingCardProps {
   readonly card: Card
@@ -33,6 +36,15 @@ interface PlayingCardProps {
    *  identity, and folding a derived figure into it would break every `getByRole('button',
    *  { name })` query in the suite and conflate two different claims. */
   readonly describedBy?: string
+  /** DLR-153 — how many riding buffs could fire on this card, the higher of its two branches.
+   *  `undefined` (the default) means dark: no halo, no cell, no badge. Optional so all 49 other
+   *  construction sites keep compiling, the precedent `primed` / `discardSelected` / `describedBy`
+   *  each set. */
+  readonly buffCount?: number
+  /** DLR-153 — `buffCount` is a CEILING because the Quarry's card is face down. Renders the badge
+   *  in the existing `~n` italic estimate form, the same grammar `wc-card-damage.wc-is-estimate`
+   *  uses. */
+  readonly buffEstimate?: boolean
   readonly style?: CSSProperties
   readonly onTap?: (card: Card) => void
 }
@@ -57,12 +69,25 @@ export default function PlayingCard({
   discardSelected = false,
   tabIndex,
   describedBy,
+  buffCount,
+  buffEstimate = false,
   style,
   onTap,
 }: PlayingCardProps) {
   const condensed = variant === 'table' || variant === 'pile'
   const face = RANK_FACE[card.rank]
   const tipId = useId()
+  const litCount = buffCount !== undefined && buffCount > 0 ? buffCount : null
+  const lit = litCount !== null
+  // DLR-153 — `--energy` (the SAME `Math.min(1, n / 5)` conversion the mockup's `paintOne`
+  // makes) is set HERE, on the card element itself, rather than in `CardBuffHalo`'s `<svg>`
+  // (a card CHILD). The card's own `box-shadow` glow reads `var(--energy)` and a custom property
+  // set on a descendant is invisible to an ancestor's rule — that scope mismatch is what silently
+  // discarded the whole `box-shadow` declaration. Setting it once here lets both the box-shadow
+  // and the halo's descendant `<rect>` strokes inherit the same value — one owner.
+  const cardStyle = lit
+    ? ({ ...style, '--energy': Math.min(1, litCount / HALO_SATURATION_CEILING) } as CSSProperties)
+    : style
   // DLR-117's `describedBy` used to be passed through as-is, present only when the caller
   // supplied one; the rule span below is now ALWAYS present, so `aria-describedby` is now
   // always non-empty — the caller's id (when present) sits alongside the rule id rather than
@@ -81,6 +106,7 @@ export default function PlayingCard({
     winner && 'wc-is-winner',
     discardSelected && 'wc-is-discard-selected',
     skulled && 'wc-is-skulled',
+    lit && 'wc-card-buff',
   ]
     .filter(Boolean)
     .join(' ')
@@ -90,7 +116,7 @@ export default function PlayingCard({
       <button
         type="button"
         className={className}
-        style={style}
+        style={cardStyle}
         disabled={condensed || illegal}
         tabIndex={condensed ? -1 : tabIndex}
         aria-label={cardAccessibleName(card, { skulled, primed })}
@@ -98,6 +124,10 @@ export default function PlayingCard({
         aria-pressed={armed || discardSelected ? true : undefined}
         onClick={() => onTap?.(card)}
       >
+        {/* DLR-153 — the halo and travelling cell. `aria-hidden` on its own root: the numeral
+            badge below is the accessible carrier for the same fact, so this subtree is
+            decorative only. */}
+        {litCount !== null && <CardBuffHalo count={litCount} />}
         {/* The skull REPLACES the art/pips, not the whole face: CardFace always renders its
             corner index, and `.wc-card.wc-is-skulled` in warCouncilCards.css hides the art
             window and pip lattice, so a skulled card keeps its rank, suit glyph and rank
@@ -120,6 +150,19 @@ export default function PlayingCard({
             <svg viewBox="0 0 32 32">
               <use href="#wc-skull" />
             </svg>
+          </span>
+        )}
+        {/* DLR-153 — the numeral badge, ink on parchment at the card's bottom-right. This is
+            the ACCESSIBLE carrier for the buff-ride fact (`CardBuffHalo` above is
+            `aria-hidden`), and it is a real text node so it survives a greyscale screenshot
+            (AC5). Reuses `wc-card-damage.wc-is-estimate`'s established `~n` italic grammar for
+            a count that includes a `mayFire` buff, rather than inventing a second form. */}
+        {litCount !== null && (
+          <span className={`wc-card-buff-badge${buffEstimate ? ' wc-is-estimate' : ''}`}>
+            <span aria-hidden="true">{buffEstimate ? `~${litCount}` : litCount}</span>
+            <span className="wc-sr-only">
+              {buffBadgeText({ count: litCount, estimate: buffEstimate })}
+            </span>
           </span>
         )}
         {/* AC8 — the rule reaches the accessible tree unconditionally, whether or not the

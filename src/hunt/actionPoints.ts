@@ -48,6 +48,16 @@ export function spendAp(pool: ActionPoints, cost: ActionPoints): ActionPoints {
 }
 
 /**
+ * The inverse of `spendAp`, for an activation the player takes back (DLR-153 AC10). Routes through
+ * `apCostFor` — the SAME gate `spendAp` routes through — so a refund can never exceed what was
+ * actually charged, and flipping `AP_ENABLED` to `true` cannot make a revocation free. Clamping to
+ * the pool's capacity is the CALLER's job: this module holds no capacity.
+ */
+export function refundAp(pool: ActionPoints, cost: ActionPoints): ActionPoints {
+  return pool + apCostFor(cost)
+}
+
+/**
  * DLR-104 AC3 — the pool's value at the top of a new hand. `PerHand` and `PerTrick` both reset
  * here: 2026-08-25's `PerTrick` is a STRICTLY MORE frequent refill than `PerHand`, never a coarser
  * one, so a hand boundary resets under it too — only a future COARSER cadence (per-fight,

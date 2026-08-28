@@ -71,6 +71,13 @@ export interface BuffBranchProjection {
   readonly playerWon: boolean
   /** Buffs that fire on this branch under EVERY still-possible skull reading. */
   readonly fired: readonly Buff[]
+  /** DLR-153 — buffs that fire on THIS branch under some still-possible skull reading but not
+   *  all. Deduped by `BuffId`, and disjoint from `fired` by construction. The projection-level
+   *  `indeterminate` remains the deduped UNION of both branches' sets and is unchanged; this is
+   *  the same value `branchFor` already computed and previously discarded, kept so a consumer can
+   *  count one branch's ceiling without re-deriving which family reads the skull. Empty whenever
+   *  `skullKnown` is true. */
+  readonly mayFire: readonly Buff[]
   /** One entry per still-possible `TrickOutcome`: exactly one when the skull is known, two while
    *  the player leads. Never empty. Two entries can differ in more than their label — a Feeder
    *  pays into THIS hand on a Dodge and into the carry on a Clean Loss (DLR-150). */
@@ -156,11 +163,13 @@ function branchFor(
     perReading.every((fired) => hasBuff(fired, buff.id)),
   )
   const indeterminate = perReading.flat().filter((buff) => !hasBuff(certain, buff.id))
+  const deduped = dedupeById(indeterminate)
 
   return {
     branch: {
       playerWon,
       fired: certain,
+      mayFire: deduped,
       outcomes: readings.map((skullTrick) => {
         const outcome = trickOutcomeFor(playerWon, skullTrick)
         return {
@@ -171,7 +180,7 @@ function branchFor(
         }
       }),
     },
-    indeterminate: dedupeById(indeterminate),
+    indeterminate: deduped,
   }
 }
 
