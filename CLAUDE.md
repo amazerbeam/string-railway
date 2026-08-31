@@ -2,6 +2,26 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## How to talk to this developer
+
+**Be short. Expand only when asked.** Lead with the answer in a sentence or two, and stop. The
+developer will ask for detail if they want it — several small turns beat one long one. Cut every
+table, heading and bullet list that is not doing real work.
+
+**Never use a shorthand the developer has not used themselves without saying what it means.**
+`AC11`, a bare ticket key, a config constant, a file path, an internal section number, a pipeline or
+agent term — all of these are meaningless to them out of context. Say "the criterion about a card
+showing both the skull and the bomb", not "AC11".
+
+**One thing per turn.** If a turn explains something *and* needs a decision, split it: explain,
+let them agree or push back, then ask. Bundling the two means disagreeing with half an answer is
+awkward, and they have said so.
+
+Two narrower rules extend this and still apply where they bite: design analysis goes in prose, with
+the worked detail in `ideas.md` rather than in chat; and a buff or card name never appears bare —
+say what it does the first time it comes up, since the names were agent-authored and carry no
+intuition.
+
 ## Project state — read this first
 
 **This is a Vite + React 19 + TypeScript prototype with a working POC on disk.** `src/` holds 271 source files across eight modules (measured DLR-121) — `app/` (React screens and the app shell), `warCouncil/` (the card-layer engine), `hunt/` (the Hunt configuration module and domain types), `persistence/` (cross-run save storage), `vault/` (cross-run meta-progression), `sim/` (the headless run simulator, lint-enforced pure), `styles/`, and `__tests__/` — plus `App.tsx` and `main.tsx` at the root. 139 of those files are tests.
