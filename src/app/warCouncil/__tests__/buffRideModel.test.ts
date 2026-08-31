@@ -1,9 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { BuffTier, mintFromTemplate, templateById, type Buff } from '../../../hunt'
+import {
+  BuffTier,
+  mintFromTemplate,
+  templateById,
+  timebombBuff,
+  timebombDamageOf,
+  type Buff,
+} from '../../../hunt'
 import { legalMoves, PlayerSide, Suit } from '../../../warCouncil'
 import { buffHandInputFor } from '../buffRoundState'
 import { createRoundUiState, type RoundUiState } from '../roundUiState'
-import { lightsForHand, rideInputFor, ridingRowsFor, skullReadingFor } from '../buffRideModel'
+import {
+  lightsForHand,
+  ridingTimebombId,
+  ridingRowsFor,
+  rideInputFor,
+  skullReadingFor,
+  timebombTargetFor,
+} from '../buffRideModel'
 import { cardKey } from '../labels'
 import { card, discardsRemainingFixture, encounterFixture, makeRound } from './roundFixture'
 
@@ -190,5 +204,31 @@ describe('ridingRowsFor', () => {
     // A Bells card is in the hand but not in `legal` — must not count.
     expect(legal.some((c) => c.suit === Suit.Bells)).toBe(false)
     expect(ridingRowsFor(ui, legal)[0].reach).toBe(0)
+  })
+})
+
+describe('timebombTargetFor / ridingTimebombId', () => {
+  const five = card(Suit.Bells, 7)
+  const timebombCard = timebombBuff(BuffTier.Bronze, 9)
+
+  it('names the primed card as the Timebomb row target — Assumption 3', () => {
+    const primedUi = activate(seededUi({ primedCards: [five] }, [timebombCard]), [timebombCard.id])
+    expect(timebombTargetFor(primedUi)).toEqual(five)
+  })
+
+  it('reports no target while the mode is still waiting for a card', () => {
+    const armedUi = {
+      ...activate(seededUi({}, [timebombCard]), [timebombCard.id]),
+      timebombArmedDamage: timebombDamageOf(timebombCard),
+    }
+    expect(timebombTargetFor(armedUi)).toBeNull()
+  })
+
+  it('resolves the riding Timebomb id so Escape reaches the same removal — AC13', () => {
+    // DLR-154 FIX 2 — `ridingTimebombId` reads `timebombBuff` directly, not `activatedThisTrick`
+    // (which R3's two-trick fuse deliberately outlives past a trick boundary), so the fixture sets
+    // that field rather than the trick-scoped list `activate` above simulates.
+    const armedUi = { ...seededUi({}, [timebombCard]), timebombBuff: timebombCard }
+    expect(ridingTimebombId(armedUi)).toBe(timebombCard.id)
   })
 })

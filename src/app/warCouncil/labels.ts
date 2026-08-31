@@ -32,6 +32,9 @@ export const RANK_NAME: Readonly<Record<number, string>> = {
 export interface CardMarks {
   readonly skulled?: boolean
   readonly primed?: boolean
+  /** R4 — trick resolutions left, so the numeral reaches assistive tech through the NAME rather
+   *  than a second live region. Read only when `primed`. */
+  readonly fuseRemaining?: number
 }
 
 /** `marks` is optional so every call site that names an unmarked card keeps compiling unchanged;
@@ -41,8 +44,28 @@ export function cardAccessibleName(card: Card, marks: CardMarks = {}): string {
   const base = `${card.rank} of ${SUIT_NAME[card.suit]}`
   const named = RANK_NAME[card.rank]
   const name = named ? `${base} (${named})` : base
-  const suffix = [marks.skulled && 'skulled', marks.primed && 'primed'].filter(Boolean).join(', ')
+  // R4 — the fuse clause is folded in only once a caller states a POSITIVE fuse figure.
+  // `PlayingCard`'s `fuseRemaining` prop defaults to 0 (Assumption/Task 13) so every construction
+  // site that does not yet know the real count — every pre-Phase-5 caller, before `HandFan`
+  // threads the true value through — keeps reading the plain "primed" it always has. A card
+  // whose fuse has actually hit zero detonates within the same commit that reads it
+  // (`commitHandlers.ts`), so a rendered "0, going off now" name is not a state a player can see
+  // anyway; treating 0 as "no fuse to report" loses nothing real.
+  const primedClause =
+    marks.primed && marks.fuseRemaining !== undefined && marks.fuseRemaining > 0
+      ? `primed, ${timebombFuseText(marks.fuseRemaining)}`
+      : marks.primed && 'primed'
+  const suffix = [marks.skulled && 'skulled', primedClause].filter(Boolean).join(', ')
   return suffix ? `${name}, ${suffix}` : name
+}
+
+/** R4 — the fuse clause, folded into a primed card's accessible name and its hover tip.
+ *  PLACEHOLDER copy, as this file's rest is. */
+export function timebombFuseText(fuseRemaining: number): string {
+  if (fuseRemaining <= 0) return 'Timebomb — going off now.'
+  return fuseRemaining === 1
+    ? 'Timebomb — play it this trick or it goes off in your hand.'
+    : `Timebomb — ${fuseRemaining} tricks to play it before it goes off in your hand.`
 }
 
 /** The mark's own label, beside `SKULL_MARK_LABEL`. PLACEHOLDER copy. */
@@ -183,8 +206,11 @@ export const COINS_PLATE_LABEL = 'Coins'
 /** DLR-90, narrowed on DLR-132 to its one surviving hint. A live Cheat is visible in the fan's
  *  widened legal set and needs no hint of its own; an armed Timebomb reinterprets the very next
  *  hand-card tap and must be said out loud, since nothing on the card itself signals that yet.
- *  PLACEHOLDER — the wording is the developer's, exactly as this file's rest is. */
-export const TIMEBOMB_ARMED_HINT = 'Pick a card in your hand to prime'
+ *  DLR-154 AC1 — was 'Pick a card in your hand to prime', which said WHAT but not WHY. A Timebomb
+ *  is the one buff that attaches to a card, and the prompt is where that is learned. PLACEHOLDER
+ *  — the wording is the developer's, exactly as this file's rest is. */
+export const TIMEBOMB_ARMED_HINT =
+  'Timebomb — pick the card it rides on. It goes off in two tricks.'
 
 /** DLR-101 — the reveal's clause for a hit this trick just BOOKED, as distinct from one it paid.
  *  Names the side and the amount, which the Apply Damage refusal (the only prior trace of a

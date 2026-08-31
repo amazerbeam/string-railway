@@ -10,6 +10,7 @@ import {
   activateFromPile,
   buffActivationRefusalFor,
   buffActivationStockFor,
+  isRevocableBuff,
   openBuffWindow,
   refreshBuffsForNewHand,
   startBuffActivation,
@@ -64,6 +65,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
         apPool: 1,
         apCost: 2,
         alreadyActive: false,
+        timebombLive: false,
       }),
     ).toBeNull()
   })
@@ -76,6 +78,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
         apPool: 6,
         apCost: 2,
         alreadyActive: false,
+        timebombLive: false,
       }),
     ).toBe(BuffActivationRefusal.WindowClosed)
   })
@@ -88,6 +91,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
         apPool: 6,
         apCost: 2,
         alreadyActive: true,
+        timebombLive: false,
       }),
     ).toBe(BuffActivationRefusal.AlreadyActive)
   })
@@ -100,6 +104,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
         apPool: 6,
         apCost: 2,
         alreadyActive: false,
+        timebombLive: false,
       }),
     ).toBeNull()
   })
@@ -112,6 +117,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
         apPool: 0,
         apCost: 5,
         alreadyActive: false,
+        timebombLive: false,
       }),
     ).toBe(BuffActivationRefusal.WindowClosed)
   })
@@ -124,6 +130,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
         apPool: 0,
         apCost: 5,
         alreadyActive: true,
+        timebombLive: false,
       }),
     ).toBe(BuffActivationRefusal.NoEffectYet)
   })
@@ -136,6 +143,7 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
         apPool: STARTING_AP,
         apCost: 1,
         alreadyActive: false,
+        timebombLive: false,
       }),
     ).toBe(BuffActivationRefusal.NoEffectYet)
   })
@@ -144,18 +152,22 @@ describe('buffActivationRefusalFor — AC5, refusal with a reason', () => {
 describe('buffActivationStockFor — DLR-126, effectLive comes off the card', () => {
   it('reports a Foresight as not live and a Ward as live', () => {
     const state = startBuffActivation()
-    expect(buffActivationStockFor(state, foresightBuff(BuffTier.Bronze, 1), true).effectLive).toBe(
-      false,
-    )
-    expect(buffActivationStockFor(state, wardBuff(BuffTier.Bronze, 2), true).effectLive).toBe(true)
+    expect(
+      buffActivationStockFor(state, foresightBuff(BuffTier.Bronze, 1), true, false).effectLive,
+    ).toBe(false)
+    expect(
+      buffActivationStockFor(state, wardBuff(BuffTier.Bronze, 2), true, false).effectLive,
+    ).toBe(true)
   })
 
   it('reports every NON-consumable as live — NoEffectYet is about unbuilt consumable surfaces', () => {
     const state = startBuffActivation()
-    expect(buffActivationStockFor(state, cheatBuff(BuffTier.Bronze, 3), true).effectLive).toBe(true)
-    expect(buffActivationStockFor(state, timebombBuff(BuffTier.Bronze, 4), true).effectLive).toBe(
-      true,
-    )
+    expect(
+      buffActivationStockFor(state, cheatBuff(BuffTier.Bronze, 3), true, false).effectLive,
+    ).toBe(true)
+    expect(
+      buffActivationStockFor(state, timebombBuff(BuffTier.Bronze, 4), true, false).effectLive,
+    ).toBe(true)
   })
 })
 
@@ -218,7 +230,7 @@ describe('activateBuff — AC3, stacking several activations against one pool', 
     expect(state.activatedThisTrick).toEqual([1, 2])
 
     const cheat = cheatBuff(BuffTier.Gold, 3)
-    const refusal = buffActivationRefusalFor(buffActivationStockFor(state, cheat, true))
+    const refusal = buffActivationRefusalFor(buffActivationStockFor(state, cheat, true, false))
     expect(refusal).toBeNull()
     state = activateBuff(state, cheat, true)
     expect(state.apPool).toBe(STARTING_AP)
@@ -332,5 +344,35 @@ describe('spentThisTrick (DLR-145)', () => {
     const taker = conditionBuff(BuffKind.Taker, BuffTier.Bronze, 1)
     const { activation } = activateFromPile(startBuffActivation(), [taker], taker, true)
     expect(refreshBuffsForNewHand(activation).spentThisTrick).toEqual([])
+  })
+})
+
+describe('isRevocableBuff — DLR-154 AC5/AC13', () => {
+  it('reports a Timebomb as revocable', () => {
+    expect(isRevocableBuff(timebombBuff(BuffTier.Bronze, 40))).toBe(true)
+  })
+
+  it('still reports a Cheat as non-revocable', () => {
+    expect(isRevocableBuff(cheatBuff(BuffTier.Bronze, 41))).toBe(false)
+  })
+})
+
+describe('activateBuff/activateFromPile — DLR-154 FIX 5, a REAL timebombLive re-check', () => {
+  it('activateBuff throws naming TimebombLive when a second Timebomb is genuinely live, rather than silently defaulting false', () => {
+    const state = startBuffActivation()
+    const timebomb = timebombBuff(BuffTier.Bronze, 50)
+    expect(() => activateBuff(state, timebomb, true, true)).toThrow(/timebombLive/)
+  })
+
+  it('activateFromPile throws the same way, so a future caller that threads the real fact gets a real guard', () => {
+    const timebomb = timebombBuff(BuffTier.Bronze, 51)
+    expect(() => activateFromPile(startBuffActivation(), [timebomb], timebomb, true, true)).toThrow(
+      /timebombLive/,
+    )
+  })
+
+  it('the defaulted `false` still lets an existing caller compile and succeed unchanged', () => {
+    const timebomb = timebombBuff(BuffTier.Bronze, 52)
+    expect(() => activateBuff(startBuffActivation(), timebomb, true)).not.toThrow()
   })
 })

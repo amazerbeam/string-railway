@@ -22,12 +22,14 @@ import {
   type Buff,
   type BuffId,
 } from '../../hunt'
+import { isPrimed, unprimeCard } from '../../warCouncil'
 import {
   buffActivationStock,
   buffActivationWindowOpen,
   canAct,
   discardWindowOpen,
   offeredBuffs,
+  timebombLive,
   type RoundUiState,
 } from './roundUiState'
 
@@ -139,11 +141,17 @@ export function handleTapBuff(state: RoundUiState, id: BuffId): RoundUiState {
   // row can pass its guard and then throw here — `activateBuff` re-checks the window itself and
   // throws on a refusal, which is exactly what a narrower window at this line would trigger on a
   // Cheat's or Timebomb's own second tap.
+  // DLR-154 FIX 5 — the real felt-supplied fact, threaded through exactly as
+  // `buffActivationWindowOpen(state, buff)` already is, so `activateBuff`'s own throw-guard is a
+  // REAL re-check rather than the permissive `false` default `src/hunt/`'s own docblock warns is
+  // otherwise silently inherited by a future caller. No behaviour changes for this production
+  // path: `loadoutRefusalFor` above already refused a live Timebomb before this line is reached.
   const { activation, buffs } = activateFromPile(
     state.buffActivation,
     state.buffs,
     buff,
     buffActivationWindowOpen(state, buff),
+    timebombLive(state),
   )
   return {
     ...state,
@@ -169,6 +177,10 @@ export function handleTapBuff(state: RoundUiState, id: BuffId): RoundUiState {
       buff.kind === BuffKind.Cheat ? cheatDurationTricksOf(buff) : state.cheatTricksRemaining,
     timebombArmedDamage:
       buff.kind === BuffKind.Timebomb ? timebombDamageOf(buff) : state.timebombArmedDamage,
+    // DLR-154 FIX 2 — the Buff object itself, kept OUTSIDE `activatedThisTrick`/`spentThisTrick` so
+    // it survives the trick boundary those two lists are cleared at. See `RoundUiState.timebombBuff`'s
+    // own docblock for why the riding row and `Escape` both need this rather than either list.
+    timebombBuff: buff.kind === BuffKind.Timebomb ? buff : state.timebombBuff,
     discardsRemaining: state.discardsRemaining + extraDiscardCharges(buff),
     loadout: { poised: null },
   }
@@ -185,6 +197,15 @@ export function handleTapBuff(state: RoundUiState, id: BuffId): RoundUiState {
  * so nothing here knows anything about which cards were lit — that stays `buffRideModel.ts`'s.
  */
 export function handleRemoveBuff(state: RoundUiState, id: BuffId): RoundUiState {
+  // DLR-154 FIX 2 — a riding Timebomb outlives `activatedThisTrick`: R3's two-trick fuse survives
+  // the trick boundary `openBuffWindow` clears that list (and `spentThisTrick`) at. Reading
+  // `state.timebombBuff` directly, rather than trick-scoped membership, is what keeps the
+  // reversal reachable for as long as the riding row itself is shown (`buffRideModel.ts`'s
+  // `ridingRowsFor` reads the same field) — without this branch, `deactivateFromPile` below would
+  // throw the moment a second trick passed with the card still held.
+  if (state.timebombBuff !== null && state.timebombBuff.id === id) {
+    return removeRidingTimebomb(state, state.timebombBuff)
+  }
   if (!state.buffActivation.activatedThisTrick.includes(id)) return state
   const buff = [...offeredBuffs(state), ...state.buffActivation.spentThisTrick].find(
     (b) => b.id === id,
@@ -192,4 +213,39 @@ export function handleRemoveBuff(state: RoundUiState, id: BuffId): RoundUiState 
   if (buff === undefined || !isRevocableBuff(buff)) return state
   const { activation, buffs } = deactivateFromPile(state.buffActivation, state.buffs, buff)
   return { ...state, buffs, buffActivation: activation }
+}
+
+/**
+ * DLR-154 FIX 2 — the Timebomb-specific reversal, for the case `deactivateFromPile` cannot serve:
+ * once a trick boundary has passed, `buff.id` is no longer in `activatedThisTrick`, and that
+ * function THROWS on exactly that membership check (`buffActivation.ts`'s own docblock). This
+ * returns the card to the pile directly instead, and clears any stale trick-scoped membership too,
+ * so a fresh re-arm afterwards is never refused `AlreadyActive` for a card that no longer exists.
+ * `AP_ENABLED` is off (R1), so the AP side of a refund is inert either way (`refundAp` adds `0`);
+ * the pile and the felt state are what actually matter here.
+ */
+function removeRidingTimebomb(state: RoundUiState, buff: Buff): RoundUiState {
+  const alreadyInPile = state.buffs.some((held) => held.id === buff.id)
+  // AC5 — the felt-state reversal `src/hunt/` cannot do and must not learn to (Assumption 2).
+  // Guarded with `isPrimed` first: `unprimeCard` throws by design.
+  const round = state.round.primedCards.reduce(
+    (next, card) => (isPrimed(next.primedCards, card) ? unprimeCard(next, card) : next),
+    state.round,
+  )
+  return {
+    ...state,
+    buffs: alreadyInPile ? state.buffs : [...state.buffs, buff],
+    buffActivation: {
+      ...state.buffActivation,
+      activatedThisTrick: state.buffActivation.activatedThisTrick.filter(
+        (held) => held !== buff.id,
+      ),
+      spentThisTrick: state.buffActivation.spentThisTrick.filter((held) => held.id !== buff.id),
+    },
+    round,
+    timebombArmedDamage: null,
+    primedTimebombDamage: null,
+    timebombFuseRemaining: 0,
+    timebombBuff: null,
+  }
 }

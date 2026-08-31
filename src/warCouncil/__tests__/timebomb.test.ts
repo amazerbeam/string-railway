@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { primeCard, isPrimed, trickIsPrimed } from '../timebomb'
+import { primeCard, unprimeCard, isPrimed, trickIsPrimed } from '../timebomb'
 import { PlayerSide, Suit, type Card, type RoundState, type TrickCard } from '../types'
 import { dealRound } from '../deal'
 
@@ -97,5 +97,30 @@ describe('primeCard (AC2)', () => {
     const target = state.hands[PlayerSide.Player][0]
     const once = primeCard(state, PlayerSide.Player, target)
     expect(() => primeCard(once, PlayerSide.Player, target)).toThrow(RangeError)
+  })
+})
+
+describe('unprimeCard — DLR-154 AC5', () => {
+  it('removes the mark and leaves every other primed card in place', () => {
+    const state = dealt()
+    const [five, seven] = state.hands[PlayerSide.Player]
+    const primed = primeCard(primeCard(state, PlayerSide.Player, five), PlayerSide.Player, seven)
+    const lifted = unprimeCard(primed, five)
+    expect(isPrimed(lifted.primedCards, five)).toBe(false)
+    expect(isPrimed(lifted.primedCards, seven)).toBe(true)
+  })
+
+  it('throws on a card that is not primed, the discipline primeCard sets', () => {
+    const state = dealt()
+    const target = state.hands[PlayerSide.Player][0]
+    expect(() => unprimeCard(state, target)).toThrow(RangeError)
+  })
+
+  it('does not mutate the state it is given', () => {
+    const state = dealt()
+    const target = state.hands[PlayerSide.Player][0]
+    const primed = primeCard(state, PlayerSide.Player, target)
+    unprimeCard(primed, target)
+    expect(isPrimed(primed.primedCards, target)).toBe(true)
   })
 })

@@ -210,33 +210,9 @@
   fill: var(--wc-skull-shadow);
 }
 
-/* DLR-90/AC2: the Timebomb mark, once a marked card is face up. Bottom-left. A ringed badge
-   rather than a bare tinted glyph, per `game-ux`'s "state reads without motion or colour alone":
-   the ring is the form signal, the fill colour is secondary. PLACEHOLDER glyph and hue — the
-   developer's to retune. */
-.wc-card .wc-primed-mark {
-  position: absolute;
-  z-index: 7;
-  /* QA-1 (DLR-149 fix loop) — was `bottom`/`left`/`width`/`height` all multiplying
-     `var(--wc-card-w)` directly, which sized and positioned this badge in units of the card's
-     WIDTH on both axes. Rewritten as `--wc-face-primed-*` percentages of the card's own box
-     (`warCouncilCards.css`, values mirrored from `cardFace.ts`) — the badge renders at the exact
-     same pixel box (the property values are the same numbers converted through the card's fixed
-     aspect ratio), but now the numbers are declared once and drift-checked. */
-  left: calc(100% * var(--wc-face-primed-x));
-  width: calc(100% * var(--wc-face-primed-w));
-  bottom: calc(100% * var(--wc-face-primed-bottom));
-  height: calc(100% * var(--wc-face-primed-h));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  border: 2px solid var(--wc-parchment);
-  background: var(--wc-timebomb-edge);
-  color: var(--wc-parchment);
-  font-size: calc(var(--wc-card-w) * 0.13);
-  line-height: 1;
-}
+/* DLR-154 — the Timebomb mark's face-printed rule used to live here. It now hangs on the card's
+   WRAPPER instead (AC4) — `TimebombMark.tsx` / `warCouncilTimebombMark.css` — since an
+   overhanging mark has no printed-on-the-face rectangle for this file to hold. */
 
 /* DLR-100 — the discard-selected mark. Its FIRST stylesheet rule ever: a centred badge inside
    `CARD_FACE_GEOMETRY.discardMark` (35%/65% x, 40%/60% y) plus a face tint on the card itself —

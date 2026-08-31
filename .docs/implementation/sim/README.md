@@ -1,7 +1,7 @@
 # Headless run simulator — `src/sim/`
 
 **Status:** implemented
-**Built by:** DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150
+**Built by:** DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154
 
 ## Responsibility
 
@@ -145,6 +145,14 @@ a `.test.tsx` component spec can import one and assert what that state *renders*
 `fixtureHandWithPrimedTimebomb` buys its charge through `buyFromShop(run, ShopItem.Timebomb)`
 directly. That is legitimate rather than a back door: `buyFromShop` is total over `ShopItem` and
 still prices Timebomb — DLR-116 pared it off the `SHOP_ITEMS` shelf, not out of the game.
+
+> **Its success test changed shape on DLR-154, 2026-08-31, and the change is the point.** The
+> driver used to wait for *a primed card **and** a booked payment* together. It now waits for a
+> booked payment alone, because a detonation — whether the marked card was played or its two-trick
+> fuse ran out in hand — **lifts the mark in the same transition that books the payment**. The
+> co-occurrence the old test waited for is no longer a reachable state; it was the defect that
+> ticket's FIX B removed. The fixture still reaches the state it names, and the tightening is what
+> stops the new in-hand-fuse route silently satisfying a fixture written for the played route.
 
 ## Rules & invariants enforced
 

@@ -110,23 +110,6 @@ export const PIP_LAYOUT: Readonly<Record<number, readonly PipSpot[]>> = {
   ],
 }
 
-/** `.wc-primed-mark` (`warCouncilCardFace.css`) sizes and positions itself in units of the
- *  card's WIDTH on BOTH axes — `--wc-card-w * 0.08` from the left edge, `--wc-card-w * 0.24`
- *  square, `--wc-card-w * 0.07` up from the bottom edge — unlike every other rectangle in this
- *  module, which this file's own y-axis normalises against the card's HEIGHT. That box shipped
- *  and was visually approved on DLR-148/DLR-90; QA (DLR-149 fix loop) found this module's own
- *  number for it did not match. Rather than re-guess a replacement, this converts the shipped
- *  width-relative numbers into this module's height-normalised y-axis via the card's own fixed
- *  `2 / 3` (width / height) aspect ratio, so the two stay byte-identical. If that aspect ratio is
- *  ever retuned (a developer's call — see `FaceRect`'s own docblock above), this conversion and
- *  the CSS it mirrors both need revisiting; nothing else in this module depends on it. */
-const CARD_ASPECT_RATIO = 2 / 3 // --wc-card-w's aspect-ratio: 2 / 3, width / height
-const PRIMED_MARK_LEFT = 0.08
-const PRIMED_MARK_SIZE = 0.24
-const PRIMED_MARK_BOTTOM = 0.07
-const PRIMED_MARK_BOTTOM_FRACTION = PRIMED_MARK_BOTTOM * CARD_ASPECT_RATIO
-const PRIMED_MARK_HEIGHT_FRACTION = PRIMED_MARK_SIZE * CARD_ASPECT_RATIO
-
 /** The declared boxes. Every number here has a `--wc-face-*` twin in `warCouncilCards.css`, and
  *  `cardFaceCss.test.ts` fails if the two drift. The corner heights are derived from the type
  *  sizes below rather than guessed: a box shorter than its own numeral clips it. */
@@ -139,12 +122,6 @@ export const CARD_FACE_GEOMETRY = {
   noRuleMark: { x0: 0.16, y0: 0.8, x1: 0.84, y1: 0.94 },
   /** A skull REPLACES the art (DLR-148), so it occupies the identical window. */
   skullFace: { x0: 0.07, y0: 0.32, x1: 0.93, y1: 0.94 },
-  primedMark: {
-    x0: PRIMED_MARK_LEFT,
-    y0: 1 - PRIMED_MARK_BOTTOM_FRACTION - PRIMED_MARK_HEIGHT_FRACTION,
-    x1: PRIMED_MARK_LEFT + PRIMED_MARK_SIZE,
-    y1: 1 - PRIMED_MARK_BOTTOM_FRACTION,
-  },
   discardMark: { x0: 0.35, y0: 0.4, x1: 0.65, y1: 0.6 },
 } as const satisfies Readonly<Record<string, FaceRect>>
 
@@ -221,7 +198,7 @@ export function printedRects(rank: number): {
   if (face.faceClass === RankFaceClass.Plain) corners.push(geometry.cornerBottomRight)
 
   const skullFootprint = skullFootprintFor(rank)
-  const printed: FaceRect[] = [skullFootprint, geometry.primedMark, geometry.discardMark]
+  const printed: FaceRect[] = [skullFootprint, geometry.discardMark]
   if (face.figure !== null) printed.push(geometry.artWindow)
   else for (const spot of PIP_LAYOUT[rank]) printed.push(pipCellRect(rank, spot))
   if (face.faceClass === RankFaceClass.Inert) printed.push(geometry.noRuleMark)

@@ -91,6 +91,29 @@ export interface RoundUiState {
    *  this hand. Held for the hand; a second Timebomb primed in the same hand overwrites it
    *  (`plan.md` → Assumptions — only one tier is remembered per hand). */
   readonly primedTimebombDamage: TimebombDamage | null
+  /** R3 — trick resolutions left before a primed card detonates in the player's hand. `0` when
+   *  nothing is primed. A COUNT, not a stage, exactly as `cheatTricksRemaining` above is and for
+   *  its reason: the fuse length is a config key (`TIMEBOMB_FUSE_TRICKS`) and a boolean could
+   *  only ever express one value of it. Set by `primeTapped` to `TIMEBOMB_FUSE_TRICKS`;
+   *  decremented by `commit` at each resolution while the card is still held; cleared to `0` by
+   *  the detonation, by the card being played, and by removal.
+   *
+   *  DLR-154 FIX 6 cross-reference: `0` is ALSO what this field reads on a card whose mark has
+   *  simply never been counted down yet from the render layer's point of view — see
+   *  `commitHandlers.ts`'s `liftExpiredMarks`, which is what actually distinguishes "the fuse
+   *  really is spent" from "nobody has told this render site the real count" for the widgets that
+   *  never learned `fuseRemaining` (`PlayingCard.tsx`'s prop is optional for exactly that reason). */
+  readonly timebombFuseRemaining: number
+  /** DLR-154 FIX 2 — the `Buff` behind the currently armed or primed Timebomb, or `null`.
+   *  Persisted OUTSIDE `buffActivation.activatedThisTrick`/`spentThisTrick` deliberately: R3 gives
+   *  a primed card a TWO-TRICK fuse, and `openBuffWindow` clears both of those lists at every
+   *  trick resolution regardless of what a Timebomb is still doing (`buffActivation.ts`'s own
+   *  docblock). Deriving the riding row's `Buff` — or `Escape`'s target id — from either would make
+   *  the row, and its remove control, disappear the moment a second trick resolves with the card
+   *  still held: exactly the stranded-card outcome AC13 exists to prevent. Set by `handleTapBuff`
+   *  at the arm; cleared by `handleRemoveBuff` and by the fuse's own in-hand detonation
+   *  (`commitHandlers.ts`'s `fuseExpired` branch). */
+  readonly timebombBuff: Buff | null
   /** DLR-91 AC4 — mirrored from the mount's opening prop and flipped to `false` the moment a
    *  resolved trick reports `blastGuardSpent`. Run state carried for the life of the hand, the
    *  same contract `blastGuardHeld` and `discardsRemaining` below document. */
@@ -226,6 +249,12 @@ export function timebombArmed(state: RoundUiState): boolean {
   return state.timebombArmedDamage !== null
 }
 
+/** R3 — the fuse is live and counting. EXPORTED so the mark's numeral and the reducer's expiry
+ *  branch read the SAME predicate, the discipline `timebombArmed` above sets. */
+export function timebombFuseLive(state: RoundUiState): boolean {
+  return state.timebombFuseRemaining > 0
+}
+
 /** The felt is waiting on the player's own card — nothing is held, nothing is prompting, the
  *  engine has not faulted, the hand and the fight are both still live, and it is their turn.
  *
@@ -337,15 +366,27 @@ export function buffActivationWindowOpen(state: RoundUiState, buff: Buff): boole
   return buff.kind === BuffKind.Cheat ? canAct(state) : discardWindowOpen(state)
 }
 
+/** R2 — a Timebomb is armed (spent, waiting for a card) or a card is already primed. Either
+ *  state means a second Timebomb would strand a card, so the row goes unavailable with its
+ *  reason on its face. Derived, never stored — AC6 forbids a second flag. */
+export function timebombLive(state: RoundUiState): boolean {
+  return timebombArmed(state) || state.round.primedCards.length > 0
+}
+
 /** DLR-126 — the stock's remaining four fields are DELEGATED to `buffActivationStockFor` rather
  *  than restated here. This function previously built the literal itself, which meant a field
  *  added to `BuffActivationStock` needed the same edit in two places and could be given two
- *  different answers. The felt's only contribution is the window; everything else is
- *  `src/hunt/`'s own state to read. */
+ *  different answers. The felt's only contribution is the window and the Timebomb-live fact;
+ *  everything else is `src/hunt/`'s own state to read. */
 export function buffActivationStock(
   state: RoundUiState,
   activation: BuffActivationState,
   buff: Buff,
 ): BuffActivationStock {
-  return buffActivationStockFor(activation, buff, buffActivationWindowOpen(state, buff))
+  return buffActivationStockFor(
+    activation,
+    buff,
+    buffActivationWindowOpen(state, buff),
+    timebombLive(state),
+  )
 }

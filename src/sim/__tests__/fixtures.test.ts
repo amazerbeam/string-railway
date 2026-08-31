@@ -17,13 +17,16 @@ describe('fixtureRunAfterFirstFight', () => {
 })
 
 describe('fixtureHandWithPrimedTimebomb', () => {
-  it('returns a state with at least one primed card and a booked Timebomb payment', () => {
+  it('returns a state with a booked Timebomb payment and no lingering mark — DLR-154 FIX B', () => {
     const ui = fixtureHandWithPrimedTimebomb()
-    expect(ui.round.primedCards.length).toBeGreaterThanOrEqual(1)
     const booked =
       ui.encounter.pendingTimebomb[DuelSide.Player] > 0 ||
       ui.encounter.pendingTimebomb[DuelSide.Quarry] > 0
     expect(booked).toBe(true)
+    // The detonation that booked this payment cleared the mark in the same transition —
+    // `commitHandlers.ts`'s `liftDetonatedMark`/`liftExpiredMarks`. A lingering primed card here
+    // would be exactly the stranded-mark bug FIX B removed.
+    expect(ui.round.primedCards).toEqual([])
   })
 })
 

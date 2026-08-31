@@ -44,7 +44,7 @@ export type {
 } from './buffProjection'
 export { playCard } from './playCard'
 export { assignSkulls, isSkulled, skullableCards, suitShape, trickIsSkulled } from './skulls'
-export { isPrimed, trickIsPrimed, primeCard } from './timebomb'
+export { isPrimed, trickIsPrimed, primeCard, unprimeCard } from './timebomb'
 export type { SuitShape } from './skulls'
 export {
   cashValue,

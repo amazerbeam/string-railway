@@ -112,3 +112,34 @@
 .wc-card-damage.wc-is-estimate {
   font-style: italic;
 }
+
+/* DLR-154 AC1 — the hand VISIBLY waits for a card. The class has been rendered since DLR-90 and
+   had no rule at all until now, so "the hand shows it is waiting" was not weak, it was absent.
+   Treatment per this contract's `mockup.html`. EVERY VALUE IS A PLACEHOLDER — the tint, the edge
+   and the drift are the developer's (`tasks.md` File map).
+
+   Presentational only: every card is `disabled` either way, so nothing about behaviour or the
+   accessible tree changes here. The prompt (`TIMEBOMB_ARMED_HINT`, in the `aria-live` hint above
+   the fan) is what carries the mode to a player who cannot see the tint — colour is never the
+   only channel (`game-ux`). */
+.wc-fan.wc-is-marking {
+  background: color-mix(in srgb, var(--wc-timebomb) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wc-timebomb) 45%, transparent);
+  border-radius: 0.4rem;
+}
+
+.wc-fan.wc-is-marking .wc-card {
+  animation: wc-marking-drift 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes wc-marking-drift {
+  to {
+    transform: translateY(-2%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-fan.wc-is-marking .wc-card {
+    animation: none;
+  }
+}

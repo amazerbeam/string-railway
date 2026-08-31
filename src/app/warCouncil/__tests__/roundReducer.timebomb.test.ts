@@ -5,6 +5,7 @@ import { roundReducer } from '../roundReducer'
 import {
   createRoundUiState,
   RoundUiActionKind,
+  timebombLive,
   type ResolvedTrick,
   type RoundUiSeed,
 } from '../roundUiState'
@@ -151,6 +152,78 @@ describe('a refused re-tap while armed clears the armed state rather than half-a
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
     expect(ui.timebombArmedDamage).toBeNull()
     expect(ui.round.primedCards).toEqual([target])
+  })
+})
+
+describe('DLR-154 FIX B — a normally-detonated Timebomb is cleared, not stranded', () => {
+  it('clears timebombBuff and the mark when the primed card is PLAYED (as a follow) into a trick that resolves mid-hand', () => {
+    const second = timebombBuff(BuffTier.Bronze, 2)
+    let ui = spend(createRoundUiState(seed({ buffs: [timebomb, second] })), timebomb.id)
+    const target = card(Suit.Bells, 7)
+    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
+    expect(ui.timebombBuff?.id).toBe(timebomb.id)
+    expect(isPrimed(ui.round.primedCards, target)).toBe(true)
+
+    // Splice into the Quarry-led follow window the marked card is about to detonate in — the
+    // window a Timebomb can no longer be ARMED in, but a card marked earlier can still be PLAYED
+    // in. The Quarry leads a LOWER card of the same suit, so the marked follow WINS the trick
+    // (the player leading next matters below — see the `CarryOn` comment).
+    ui = {
+      ...ui,
+      round: {
+        ...ui.round,
+        leader: PlayerSide.Cpu,
+        currentTrick: [{ side: PlayerSide.Cpu, card: card(Suit.Bells, 4) }],
+        phase: RoundPhase.AwaitingFollow,
+      },
+    }
+    const armed = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
+    const resolved = roundReducer(armed, { kind: RoundUiActionKind.TapCard, card: target })
+
+    expect(resolved.resolvedTrick?.resolution.timebombTarget).not.toBeNull()
+    // The bug: `timebombBuff` used to survive this trick, permanently blocking every later
+    // Timebomb and leaving a resurrectable "take it back" control on a spent single-use card.
+    expect(resolved.timebombBuff).toBeNull()
+    expect(isPrimed(resolved.round.primedCards, target)).toBe(false)
+    expect(timebombLive(resolved)).toBe(false)
+    // The spent Timebomb is gone from the pile, not duplicated — `removeRidingTimebomb`'s
+    // resurrection path must not be reachable once `timebombBuff` is correctly null.
+    expect(resolved.buffs.filter((buff) => buff.id === timebomb.id)).toHaveLength(0)
+
+    // A second Timebomb can now be armed — R2's "one live at a time" is a per-Timebomb rule, not
+    // a permanent one-per-hand lockout. `CarryOn` clears the held reveal; the player won this
+    // trick, so it is their own turn to lead next and `discardWindowOpen` is true — no Quarry
+    // auto-lead intervenes the way it would if the Quarry had won. The panel is already open from
+    // the first `spend` and stays open across the trick boundary (AC2), so `tapTwice` alone re-arms.
+    const carriedOn = roundReducer(resolved, { kind: RoundUiActionKind.CarryOn })
+    const rearmed = tapTwice(carriedOn, second.id)
+    expect(rearmed.timebombArmedDamage).not.toBeNull()
+  })
+
+  it('clears timebombBuff and the mark when the Quarry follow completes a trick the marked card LED', () => {
+    const second = timebombBuff(BuffTier.Bronze, 2)
+    let ui = spend(createRoundUiState(seed({ buffs: [timebomb, second] })), timebomb.id)
+    const target = card(Suit.Bells, 7)
+    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
+    expect(isPrimed(ui.round.primedCards, target)).toBe(true)
+
+    // Lead the marked card: arm (ordinary two-tap), then commit. The Quarry's automatic follow
+    // resolves the trick in the SAME commit, at `advanceQuarryFollow`'s resolution site.
+    const armed = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target })
+    const resolved = roundReducer(armed, { kind: RoundUiActionKind.TapCard, card: target })
+
+    expect(resolved.resolvedTrick?.resolution.timebombTarget).not.toBeNull()
+    expect(resolved.timebombBuff).toBeNull()
+    expect(isPrimed(resolved.round.primedCards, target)).toBe(false)
+    expect(timebombLive(resolved)).toBe(false)
+    expect(resolved.buffs.filter((buff) => buff.id === timebomb.id)).toHaveLength(0)
+
+    // As above, the player wins the lead (their marked Bells 7 beats the Quarry's forced Bells 4
+    // follow), so `CarryOn` clears the reveal with no Quarry auto-lead in the way, and the panel
+    // (already open from the first `spend`) only needs `tapTwice` to re-arm.
+    const carriedOn = roundReducer(resolved, { kind: RoundUiActionKind.CarryOn })
+    const rearmed = tapTwice(carriedOn, second.id)
+    expect(rearmed.timebombArmedDamage).not.toBeNull()
   })
 })
 

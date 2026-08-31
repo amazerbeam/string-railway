@@ -117,6 +117,24 @@ mechanics while this representation sat unread. **DLR-132 is what ended the dupl
 deleted, and `mintFromTemplate` delegating to `cheatBuff`/`timebombBuff` (above) is now the only path
 either card is ever created through. Cheat and Timebomb exist exactly once.
 
+## `TIMEBOMB_FUSE_TRICKS` joined the file on DLR-154, for the same reason
+
+`TIMEBOMB_FUSE_TRICKS = 2` — **trick resolutions**, counted only while the primed card is still in
+the player's hand — sits here rather than in `config.ts` on exactly the argument above, and by then
+the argument was sharper: `config.ts` stood at **388 of its 400 lines** and could not take a
+documented key at all, while this file (196 lines) already homes `CHEAT_DURATION_TRICKS` and
+`TIMEBOMB_DAMAGE`, the two constants the fuse sits beside conceptually. `plan.md` heads the key at
+`config.ts`; `tasks.md`'s own header records the correction.
+
+**It is not an unchosen number.** Unlike `TIMEBOMB_TIER_MULTIPLIER` below, the figure is the
+developer's own, stated as ruling R3 on 2026-08-31. Nothing in this module reads it: it is seeded
+into `RoundUiState.timebombFuseRemaining` at the prime and counted down by the felt — see
+[Priming a Timebomb](../war-council-ui/timebomb-priming-and-the-fuse.md). When the fuse expires the
+felt books the **player** side of the primed card's own `TIMEBOMB_DAMAGE` row (2 / 4 / 6) through
+`queueTimebomb`, the same path a played bomb takes — which is why the player figure being
+deliberately the smaller of the pair, *because* it also forces the streak's cash-out, still holds
+for a bomb that goes off in hand.
+
 **One unchosen number lives here.** `TIMEBOMB_TIER_MULTIPLIER`'s `{ bronze: 1, silver: 2, gold: 3 }`
 is not transcribed from anywhere: neither the ticket nor §3 states Timebomb's tier magnitudes. It was
 taken as a documented default from the only tier curves the sources *do* state — AC1's Cheat duration,

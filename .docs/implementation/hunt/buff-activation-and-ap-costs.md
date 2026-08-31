@@ -167,6 +167,20 @@ the two can never disagree.
 2. **`alreadyActive`** — this buff is already activated for this trick.
 3. **`insufficientAp`** — the pool does not cover this buff's cost, via `canAffordAp`.
 
+> **Two members were added later, and the order is now five long.** DLR-126 put `noEffectYet`
+> **first** (see [consumable items](consumable-items.md)); DLR-154 put `timebombLive` between
+> `windowClosed` and `alreadyActive`. The full order is
+> **`noEffectYet → windowClosed → timebombLive → alreadyActive → insufficientAp`**, and it still
+> reads the same way: what is true of the **card**, then of the whole **felt**, then of this card on
+> this felt. `timebombLive` is what refuses a **second Timebomb** while one is armed or primed — the
+> spend is refused outright rather than allowed and then blocked at the prime, which would strand a
+> just-paid-for card. It is a **distinct member rather than a reuse of `alreadyActive`**, which means
+> "this same card, twice in one trick" and is false of a *different* Timebomb blocked by state from
+> an earlier trick. The felt fact reaches this module the way `windowOpen` does — assembled once by
+> `roundUiState.ts`'s `buffActivationStock` and passed in — and `buffActivationStockFor` applies it
+> only to a Timebomb. Adding a member cost one enum entry and one row in
+> `buffLabels.ts`'s `BUFF_ACTIVATION_REFUSAL_MESSAGE`: nothing `switch`es over the union.
+
 The window reason comes first for `applyDamageRefusalFor`'s reason: report what is true of the whole
 felt before what is true of this one control. `alreadyActive` is the one rule here with no source
 document behind it — §5's R7 says a player paying for a card that cannot fire is a legitimate
@@ -322,6 +336,21 @@ pile, which is precisely what makes them putbackable. It is **false for every Ac
 Cheat, Timebomb, Ward and Shield each arm felt state at the spend — `cheatTricksRemaining`,
 `timebombArmedDamage`, `activateShield`'s credited hearts, `activateWard`'s guard — none of which
 this module can reach. Reversing those is a larger rule change and its own ticket.
+
+> **DLR-154 renamed the set and widened it by exactly one, 2026-08-31.**
+> `REVOCABLE_CONDITION_KINDS` is now `REVOCABLE_BUFF_KINDS` — it is no longer condition-only — and
+> `BuffKind.Timebomb` joins it as **the first revocable Activated card**. That is valid only
+> because `AP_ENABLED` is `false`: with points off, the whole of a revocation is the card returning
+> to the pile, which is exactly what `deactivateFromPile` already does. Cheat, Ward and Shield stay
+> out, and the paragraph above is corrected on Timebomb alone.
+>
+> **`true` here does not mean this module can fully reverse one.** The felt-state reversal —
+> `timebombArmedDamage`, `primedTimebombDamage`, `timebombFuseRemaining`, `timebombBuff` and the
+> mark itself — is `handleRemoveBuff`'s, in `src/app/warCouncil/`, and this module must not learn
+> about any of it. In practice both of that function's Timebomb branches intercept the call before
+> the generic path below ever runs, because a Timebomb outlives the trick boundary that clears
+> `activatedThisTrick` and `deactivateFromPile` throws on exactly that membership check. See
+> [Priming a Timebomb](../war-council-ui/timebomb-priming-and-the-fuse.md).
 
 One predicate, read by **both** the riding row's control and the reducer's guard, is the same
 discipline `buffActivationRefusalFor` sets for activation: two readings of one gate is how a control

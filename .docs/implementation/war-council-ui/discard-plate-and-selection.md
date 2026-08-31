@@ -153,7 +153,9 @@ use. Whether the extra tap per chained throw is worth the friction is unplayed (
 expression each gain `|| discardSelecting` beside their existing `timebombArmed` clause — a second
 instance of the same "every held card is a valid tap target, including one illegal to play" relaxation,
 not a new concept. `WarCouncilRound.tsx` computes `handInteractive = interactive ||
-discardSelecting(ui)` and passes it to `HandFan` alone, so the hand stays interactive during the
+discardSelecting(ui)` — **`|| timebombArmed(ui)` joined it on DLR-154**, for the same reason, after a
+live browser pass found every hand card rendering `disabled` and untabbable while a Timebomb was
+armed in that same gap — and passes it to `HandFan` alone, so the hand stays interactive during the
 Quarry-to-lead gap even though every other control on the rail reads the unchanged `interactive`.
 
 `PlayingCard` gained `discardSelected?: boolean`, defaulting to `false`, rendering a third

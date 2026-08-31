@@ -28,7 +28,7 @@ describe('PlayingCard', () => {
       <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" primed />,
     )
     expect(screen.getByRole('button', { name: /primed/i })).toBeTruthy()
-    expect(container.querySelector('.wc-primed-mark')).toBeTruthy()
+    expect(container.querySelector('.wc-timebomb-mark')).toBeTruthy()
   })
 
   it('announces both marks on a card carrying skull and Timebomb together', () => {
@@ -41,8 +41,23 @@ describe('PlayingCard', () => {
     const { container } = render(
       <PlayingCard card={{ suit: Suit.Bells, rank: 6 }} variant="hand" primed />,
     )
-    const mark = container.querySelector('.wc-primed-mark')
+    const mark = container.querySelector('.wc-timebomb-mark')
     expect(mark?.getAttribute('aria-hidden')).toBe('true')
+  })
+
+  it('hangs the mark on the wrapper, not inside the card box — AC4', () => {
+    const { container } = render(
+      <PlayingCard card={{ suit: Suit.Bells, rank: 5 }} variant="hand" primed fuseRemaining={2} />,
+    )
+    expect(container.querySelector('button .wc-timebomb-mark')).toBeNull()
+    expect(container.querySelector('.wc-card-tip-host > .wc-timebomb-mark')).not.toBeNull()
+  })
+
+  it('keeps rank, suit and rank name — the mark is ADDED, never substituted (AC3)', () => {
+    render(
+      <PlayingCard card={{ suit: Suit.Bells, rank: 5 }} variant="hand" primed fuseRemaining={2} />,
+    )
+    expect(screen.getByRole('button', { name: /5 of/i })).toBeTruthy()
   })
 
   it('folds the caller-supplied describedBy id in among the always-present rule id (DLR-117, DLR-149)', () => {
@@ -126,7 +141,7 @@ describe('PlayingCard', () => {
       <PlayingCard card={{ suit: Suit.Moons, rank: 1 }} variant="hand" skulled primed />,
     )
     expect(container.querySelector('.wc-card-skull-face')).toBeTruthy()
-    expect(container.querySelector('.wc-primed-mark')).toBeTruthy()
+    expect(container.querySelector('.wc-timebomb-mark')).toBeTruthy()
     expect(screen.getByRole('button', { name: /skulled, primed/i })).toBeTruthy()
   })
 

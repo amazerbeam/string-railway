@@ -194,3 +194,14 @@ function timebombRow(tier: BuffTier): TimebombDamage {
     [DuelSide.Player]: TIMEBOMB_PLAYER_DAMAGE * TIMEBOMB_TIER_MULTIPLIER[tier],
   }
 }
+
+/**
+ * DLR-154 R3, DEVELOPER-STATED 2026-08-31: the player gets the resolution of this many tricks to
+ * play a primed card before it detonates in their hand. NOT an invented tunable — the figure is
+ * the developer's own, recorded in `plan.md` Part 1 → Developer rulings.
+ *
+ * UNIT: trick resolutions, counted only while the primed card is still in the player's hand.
+ * Keyed and documented like `CHEAT_DURATION_TRICKS` above, and read through
+ * `RoundUiState.timebombFuseRemaining` rather than at any call site.
+ */
+export const TIMEBOMB_FUSE_TRICKS = 2

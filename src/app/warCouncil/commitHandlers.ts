@@ -10,6 +10,7 @@
  * behaviour changed, and every docblock came with its function.
  */
 import {
+  containsCard,
   incomingFrom,
   incomingFromCashOut,
   playCard,
@@ -39,6 +40,7 @@ import {
 import { cheatArmed, type RoundUiState } from './roundUiState'
 import { buffHandInputFor } from './buffRoundState'
 import { advanceQuarryFollow, deriveResolvedTrick } from './quarryAdvance'
+import { liftDetonatedMark, liftExpiredMarks } from './timebombMarks'
 
 /**
  * Every `PlayCardOptions` field a resolving trick needs: D1's Timebomb owed from EARLIER tricks, read
@@ -125,6 +127,12 @@ export function applyResolution(
   // throws about elsewhere. The default keeps every OTHER caller (fixtures, previews) compiling
   // and behaving exactly as bronze always has, without passing one.
   timebombDamage: TimebombDamage = TIMEBOMB_DAMAGE[BuffTier.Bronze],
+  // R3 — the fuse expired with the card still held. Booked through `queueTimebomb`, the IDENTICAL
+  // path a played bomb takes (below), so the bank reset, the Blast Guard and the forced cash-out
+  // are inherited rather than restated (Assumption 13). `queueTimebomb` itself indexes the pair by
+  // `target`, so passing the PLAYER side's damage happens by naming `DuelSide.Player` as the
+  // target — the same figure `TIMEBOMB_DAMAGE[tier][DuelSide.Player]` gives (Assumption 14).
+  fuseExpired = false,
 ): FoldedResolution {
   if (isEncounterResolved(encounter)) return { encounter, unplayedAtPress: null, payout: null }
   const queued = encounter.pendingApplyPayout
@@ -164,7 +172,8 @@ export function applyResolution(
     resolution.timebombTarget === null
       ? cleared
       : queueTimebomb(cleared, resolution.timebombTarget, timebombDamage)
-  return settleApplyPayout(booked, handEnding, payoutEvent)
+  const withFuse = fuseExpired ? queueTimebomb(booked, DuelSide.Player, timebombDamage) : booked
+  return settleApplyPayout(withFuse, handEnding, payoutEvent)
 }
 
 /**
@@ -233,20 +242,48 @@ export function commit(
     ? Math.max(0, state.cheatTricksRemaining - 1)
     : state.cheatTricksRemaining
 
+  // R3 — the fuse counts trick RESOLUTIONS, and only while the primed card is still in hand
+  // (Assumption 12). A card played into this trick has left the hand, so its fuse stops rather
+  // than ticking to a detonation the player already avoided. Every successful commit here
+  // completes a trick's resolution within this same call — either this play is the follow
+  // (`resolvedTrick` below), or it is the lead and the Quarry's automatic follow resolves it a
+  // few lines further down — so decrementing beside Cheat's own decrement (above) counts exactly
+  // one resolution per commit, matching that field's own cadence.
+  const nextHand = result.state.hands[PlayerSide.Player]
+  const primedStillHeld =
+    state.timebombFuseRemaining > 0 &&
+    state.round.primedCards.some((held) => containsCard(nextHand, held))
+  const timebombFuseRemaining = primedStillHeld ? Math.max(0, state.timebombFuseRemaining - 1) : 0
+  // R3 — the fuse expired with the card still held. Booked through `queueTimebomb` inside
+  // `applyResolution`, the IDENTICAL path a played bomb takes, so the bank-and-multiplier reset,
+  // the Blast Guard's absorption and the forced cash-out are inherited rather than restated
+  // (Assumption 13). The mark is lifted in the same transition (`liftExpiredMarks` below) so the
+  // same card cannot detonate twice.
+  const fuseExpired = primedStillHeld && timebombFuseRemaining === 0
+
   const timebombDamage = state.primedTimebombDamage ?? TIMEBOMB_DAMAGE[BuffTier.Bronze]
   const playedCard: TrickCard = { side: PlayerSide.Player, card: cardToPlay }
   const resolvedTrick = deriveResolvedTrick(state.round, result.state, playedCard)
+  // DLR-154 FIX B — the ORDINARY way a Timebomb detonates: a primed card is played and the trick
+  // it lands in resolves the mark, as opposed to `fuseExpired`'s in-hand expiry. Both are
+  // detonations and both must clear the same two things (`timebombBuff`, the felt mark) — see
+  // `liftDetonatedMark`'s docblock for why this one needs a different lift than `fuseExpired`'s.
+  const detonatedByPlay = resolvedTrick !== null && resolvedTrick.resolution.timebombTarget !== null
   const folded = resolvedTrick
     ? applyResolution(
         state.encounter,
         resolvedTrick.resolution,
         result.state.phase === RoundPhase.Complete,
         timebombDamage,
+        fuseExpired,
       )
     : null
   const settled: RoundUiState = {
     ...state,
-    round: result.state,
+    round: liftDetonatedMark(
+      liftExpiredMarks(result.state, state.round.primedCards, nextHand, fuseExpired),
+      detonatedByPlay && resolvedTrick !== null ? resolvedTrick.cards : [],
+    ),
     armed: null,
     prompt: null,
     rejection: null,
@@ -265,6 +302,12 @@ export function commit(
     // captured" test, so this line and that function must never fight over the field.
     unplayedAtResolve: state.unplayedAtResolve ?? folded?.unplayedAtPress ?? null,
     cheatTricksRemaining,
+    timebombFuseRemaining,
+    // DLR-154 FIX 2/FIX B — a detonation clears `timebombBuff`, whether the mark expired in hand
+    // (`fuseExpired`) or the marked card was just played into a trick that resolved
+    // (`detonatedByPlay`). Either edge, left unclear, keeps the riding row naming a card that has
+    // already paid out and had its mark lifted (above).
+    timebombBuff: fuseExpired || detonatedByPlay ? null : state.timebombBuff,
     // AC4 — consumed exactly when it suppressed a reset, which `resolveTrickBank` decided. The
     // reducer does not re-derive "did the Guard matter" — that would be a second reading of one
     // rule, and the two would drift.
@@ -277,18 +320,28 @@ export function commit(
 
   // The player led — advance the opponent in the same commit. `settled`, not `state`, so the
   // Quarry's follow reads the queue as the player's own commit left it.
-  const advanced = advanceQuarryFollow(result.state, playOptions(settled))
+  const advanced = advanceQuarryFollow(settled.round, playOptions(settled))
   const quarryFolded = advanced.resolvedTrick
     ? applyResolution(
         settled.encounter,
         advanced.resolvedTrick.resolution,
         advanced.round.phase === RoundPhase.Complete,
         timebombDamage,
+        fuseExpired,
       )
     : null
+  // DLR-154 FIX B — the SECOND resolution site: a Quarry follow can complete a trick the marked
+  // card LED, so this branch needs its own detonation check, mirroring `detonatedByPlay` above.
+  const detonatedByQuarryFollow =
+    advanced.resolvedTrick !== null && advanced.resolvedTrick.resolution.timebombTarget !== null
   return {
     ...settled,
-    round: advanced.round,
+    round: liftDetonatedMark(
+      advanced.round,
+      detonatedByQuarryFollow && advanced.resolvedTrick !== null
+        ? advanced.resolvedTrick.cards
+        : [],
+    ),
     resolvedTrick:
       advanced.resolvedTrick !== null && quarryFolded !== null
         ? {
@@ -303,6 +356,10 @@ export function commit(
     cpuFault: advanced.cpuFault,
     encounter: quarryFolded ? quarryFolded.encounter : settled.encounter,
     unplayedAtResolve: settled.unplayedAtResolve ?? quarryFolded?.unplayedAtPress ?? null,
+    // DLR-154 FIX B — clears `timebombBuff` when the marked LEAD card's detonation resolves only
+    // now, via the Quarry's follow. `settled.timebombBuff` already reflects the settled step's own
+    // clearing (`fuseExpired`/`detonatedByPlay`), so this only narrows it further, never reopens it.
+    timebombBuff: detonatedByQuarryFollow ? null : settled.timebombBuff,
     blastGuardHeld: advanced.resolvedTrick?.resolution.blastGuardSpent
       ? false
       : settled.blastGuardHeld,

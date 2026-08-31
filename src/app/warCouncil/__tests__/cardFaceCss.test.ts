@@ -43,15 +43,6 @@ const MIRRORED: ReadonlyArray<readonly [string, number]> = [
   ['wc-face-mark-x', CARD_FACE_GEOMETRY.noRuleMark.x0],
   ['wc-face-mark-top', CARD_FACE_GEOMETRY.noRuleMark.y0],
   ['wc-face-mark-bottom', 1 - CARD_FACE_GEOMETRY.noRuleMark.y1],
-  // QA-1 (DLR-149 fix loop) — `primedMark` and `discardMark` are declared, styled and rendered
-  // (`.wc-primed-mark` / `.wc-discard-mark`, `warCouncilCardFace.css`) but had no `--wc-face-*`
-  // twin at all until this fix, so nothing here proved them honest. `primedMark`'s two y-axis
-  // properties are the width-to-height conversion `cardFace.ts` now performs, not the raw
-  // shipped numbers (0.07/0.24) — see that module's comment.
-  ['wc-face-primed-x', CARD_FACE_GEOMETRY.primedMark.x0],
-  ['wc-face-primed-w', CARD_FACE_GEOMETRY.primedMark.x1 - CARD_FACE_GEOMETRY.primedMark.x0],
-  ['wc-face-primed-bottom', 1 - CARD_FACE_GEOMETRY.primedMark.y1],
-  ['wc-face-primed-h', CARD_FACE_GEOMETRY.primedMark.y1 - CARD_FACE_GEOMETRY.primedMark.y0],
   ['wc-face-discard-x', CARD_FACE_GEOMETRY.discardMark.x0],
   ['wc-face-discard-y', CARD_FACE_GEOMETRY.discardMark.y0],
 ]

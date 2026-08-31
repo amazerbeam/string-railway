@@ -164,8 +164,11 @@ committing after it stopped being. `Escape` (via `handleCancelLoadout`) drops th
 reasoning still holds for *where* the rule belongs: the engine had no removal path, and inventing a
 refund in the UI would have been writing a rule `src/hunt/` does not own. DLR-153 wrote it in
 `src/hunt/buffActivation.ts` instead — `isRevocableBuff` plus `deactivateFromPile` — and only for
-the three condition families; **Cheat, Timebomb, Ward and Shield are still irreversible**, because
-their spend also arms felt state the transition cannot reverse. See
+the three condition families; **Cheat, Ward and Shield are still irreversible**, because their
+spend also arms felt state the transition cannot reverse. (**Timebomb left that group on DLR-154**:
+the set is renamed `REVOCABLE_BUFF_KINDS` and holds it, valid only because action points are off —
+and the felt-state reversal the engine cannot do is `handleRemoveBuff`'s, in the app layer. See
+[Priming a Timebomb](timebomb-priming-and-the-fuse.md).) See
 [the buff ride](buff-ride-and-the-card-breakdown.md). The poise stage is unchanged: activation is
 still two taps, and it is still what guards a misclick before the commit.
 

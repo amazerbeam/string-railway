@@ -102,15 +102,24 @@ force.
 equals the rank, that the keys are exactly the art-less ranks, that inversion is exactly the
 below-mid-row set, and that every derived cell stays inside the declared pip field.
 
-### The primed mark's aspect-ratio coupling — a known trap
+### The primed mark's aspect-ratio coupling — the trap, and its removal on DLR-154
 
-`CARD_ASPECT_RATIO = 2 / 3` in `cardFace.ts` is the one number in the module that is **not**
-aspect-ratio independent, and it **duplicates the `aspect-ratio: 2 / 3` literal in
-`warCouncilCards.css` without the drift guard covering it**. It exists because `.wc-primed-mark`
+`CARD_ASPECT_RATIO = 2 / 3` in `cardFace.ts` **was** the one number in the module that was not
+aspect-ratio independent, and it duplicated the `aspect-ratio: 2 / 3` literal in
+`warCouncilCards.css` without the drift guard covering it. It existed because `.wc-primed-mark`
 shipped (DLR-90/DLR-148) sizing and positioning itself in units of the card's **width on both
-axes**, unlike every other rectangle here. Converting those shipped width-relative numbers into
-this module's height-normalised y-axis needs the aspect ratio. **If the developer retunes the card's
-aspect ratio, this constant must move with it** or the primed-mark geometry silently goes wrong.
+axes**, unlike every other rectangle here, and converting those width-relative numbers into this
+module's height-normalised y-axis needed the ratio. Retuning the card's aspect ratio without moving
+the constant silently broke the primed mark's geometry.
+
+> **DLR-154 deleted the coupling outright, 2026-08-31.** The mark now hangs on the card's
+> **wrapper**, outside `.wc-card`'s box, so it has no printed-on-the-face rectangle at all:
+> `CARD_FACE_GEOMETRY.primedMark`, its `printedRects` entry, the `PRIMED_MARK_*` and
+> `CARD_ASPECT_RATIO` constants that fed only it, the four `--wc-face-primed-*` custom properties,
+> the `.wc-card .wc-primed-mark` rule and its four drift rows in `cardFaceCss.test.ts` were
+> **deleted rather than repointed** — keeping a declared rectangle would have had the drift spec
+> certify a false claim. The trap is gone; so is the guarantee that anything pins the mark's box.
+> See [Priming a Timebomb](timebomb-priming-and-the-fuse.md).
 
 ## The skull's footprint follows the rank's own content
 

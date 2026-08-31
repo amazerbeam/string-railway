@@ -1,4 +1,4 @@
-import { containsCard } from './cardUtils'
+import { containsCard, sameCard } from './cardUtils'
 import type { Card, PlayerSide, RoundState, TrickCard } from './types'
 
 /**
@@ -43,4 +43,17 @@ export function primeCard(state: RoundState, side: PlayerSide, card: Card): Roun
     throw new RangeError(`The ${card.rank} of ${card.suit} is already primed`)
   }
   return { ...state, primedCards: [...state.primedCards, card] }
+}
+
+/**
+ * `primeCard`'s mirror. THROWS when the card is not primed, the same discipline `primeCard` above
+ * sets and for its reason: a silent no-op would let a caller believe a mark was lifted that was
+ * never there. Both callers — `handleRemoveBuff` and the fuse's expiry — guard with `isPrimed`
+ * first, because a reducer must not throw during an event handler.
+ */
+export function unprimeCard(state: RoundState, card: Card): RoundState {
+  if (!isPrimed(state.primedCards, card)) {
+    throw new RangeError(`The ${card.rank} of ${card.suit} is not primed`)
+  }
+  return { ...state, primedCards: state.primedCards.filter((held) => !sameCard(held, card)) }
 }

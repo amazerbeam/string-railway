@@ -111,6 +111,18 @@ choosing between `TIMEBOMB_QUARRY_DAMAGE` and `TIMEBOMB_PLAYER_DAMAGE` at the ca
 caller this function exists to prevent. `labels.ts`'s `timebombBookedText` reads it. **This is the only
 engine-side change DLR-101 made**, and no behaviour moved with it.
 
+> **DLR-154 gave `queueTimebomb` a SECOND producer, 2026-08-31 — and no signature change.** A
+> primed card the player never plays now carries a **two-trick fuse** and detonates in the hand:
+> when the fuse runs out, `commitHandlers.ts` calls this same function with `DuelSide.Player` and
+> the primed card's own tier pair, so `damage[target]` selects the **player** figure (2 / 4 / 6).
+> Booking rather than applying is the whole point of the choice — the bank-and-multiplier reset, the
+> Blast Guard's absorption and spend, the zero floor and the forced cash-out are all inherited from
+> the path a played bomb already takes, with nothing restated. The cost is one further trick of
+> delay before the hit lands, which is the same one-trick fuse every booked hit has. **Whether the
+> Blast Guard should absorb an in-hand pop is inherited, not chosen, and is the developer's.** The
+> fuse itself is entirely the felt's — see
+> [Priming a Timebomb](../war-council-ui/timebomb-priming-and-the-fuse.md).
+
 Two properties are deliberate:
 
 - **It never throws.** Every other transition in this module throws on misuse, because every other

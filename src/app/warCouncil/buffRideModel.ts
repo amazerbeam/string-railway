@@ -13,7 +13,7 @@
  * the trick skulled whatever the Quarry does, so its reading is knowable even on a lead. The
  * Quarry's face-down card is what makes the reading `null` — "not knowable", never "no skull".
  */
-import { HAND_SIZE, isRevocableBuff, type Buff, type BuffId } from '../../hunt'
+import { BuffKind, HAND_SIZE, isRevocableBuff, type Buff, type BuffId } from '../../hunt'
 import {
   containsCard,
   PlayerSide,
@@ -37,6 +37,16 @@ export interface CardBuffLight {
   readonly projection: BuffProjection
 }
 
+/** DLR-154 — the Timebomb row's own state, riding alongside the ordinary `reach`/`revocable`
+ *  fields every row carries. `target` and `fuseRemaining` are BOTH derived, never stored
+ *  (Assumption 3) — `null`/`0` while the mode is still waiting for a card. */
+export interface TimebombRide {
+  /** The primed card, or `null` while the mode is still waiting for one. */
+  readonly target: Card | null
+  /** R4 — trick resolutions left, mirrored from `timebombFuseRemaining`. `0` when unprimed. */
+  readonly fuseRemaining: number
+}
+
 /** One row of "Riding this trick". `reach` counts the LEGAL cards this buff appears in the
  *  projection of — certain or `mayFire` — so an illegal card can never inflate it (AC3). */
 export interface RidingBuffRow {
@@ -44,6 +54,28 @@ export interface RidingBuffRow {
   readonly reach: number
   /** `isRevocableBuff(buff)` — whether this row draws a remove control (AC9/AC10). */
   readonly revocable: boolean
+  /** DLR-154 AC12 — non-null ONLY on a Timebomb row. */
+  readonly timebomb: TimebombRide | null
+}
+
+/** Assumption 3 — DERIVED from `round.primedCards`, never stored: AC6 forbids a second flag that
+ *  could disagree with the chosen target. `null` while armed, because nothing is primed yet.
+ *  R2 makes this airtight rather than merely conventional — with at most one Timebomb live at a
+ *  time, there is never a second candidate to pick between. */
+export function timebombTargetFor(state: RoundUiState): Card | null {
+  if (state.timebombArmedDamage !== null) return null
+  return state.round.primedCards.at(-1) ?? null
+}
+
+/** AC13 — the riding Timebomb's id, so `Escape` reaches the SAME removal the row's own control
+ *  does. Two code paths is how two reversals drift apart (Assumption 4).
+ *
+ *  DLR-154 FIX 2 — reads `state.timebombBuff` directly rather than `activatedBuffs(state)`: R3's
+ *  two-trick fuse outlives the trick boundary `activatedThisTrick` is cleared at, so deriving from
+ *  that list would make `Escape` fall through to `CancelSelection` the moment a second trick
+ *  resolves with the card still held. */
+export function ridingTimebombId(state: RoundUiState): BuffId | null {
+  return state.timebombBuff?.id ?? null
 }
 
 /** The projection input for this felt, assembled ONCE per render and reused for every card.
@@ -148,11 +180,30 @@ export function ridingRowsFor(
   legal: readonly Card[],
 ): readonly RidingBuffRow[] {
   const lights = lightsForHand(state, legal)
-  return activatedBuffs(state).map((buff) => ({
-    buff,
-    reach: reachOf(lights, buff.id),
-    revocable: isRevocableBuff(buff),
-  }))
+  // DLR-154 FIX 2 — the Timebomb row is built from `state.timebombBuff` directly, below, NOT from
+  // `activatedBuffs(state)`: R3's two-trick fuse outlives the trick boundary that clears
+  // `activatedThisTrick`/`spentThisTrick`, so a Timebomb sourced from either would vanish from this
+  // list — and lose its remove control — the moment a second trick resolves with the card still
+  // held (the exact stranded-card outcome AC13 exists to prevent). Excluded from the ordinary
+  // mapping below so the same card is never listed twice during the trick it was armed in.
+  const ordinary = activatedBuffs(state)
+    .filter((buff) => buff.kind !== BuffKind.Timebomb)
+    .map((buff) => ({
+      buff,
+      reach: reachOf(lights, buff.id),
+      revocable: isRevocableBuff(buff),
+      timebomb: null,
+    }))
+  if (state.timebombBuff === null) return ordinary
+  return [
+    ...ordinary,
+    {
+      buff: state.timebombBuff,
+      reach: reachOf(lights, state.timebombBuff.id),
+      revocable: true,
+      timebomb: { target: timebombTargetFor(state), fuseRemaining: state.timebombFuseRemaining },
+    },
+  ]
 }
 
 /** Resolves `activatedThisTrick`'s ids back to `Buff`s through the same `offeredBuffs ∪

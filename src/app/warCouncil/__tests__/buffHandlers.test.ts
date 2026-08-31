@@ -9,8 +9,11 @@ import {
   BuffTier,
   CHEAT_DURATION_TRICKS,
   cheatBuff,
+  mintFromTemplate,
   shieldHeartsForTier,
   STARTING_AP,
+  templateById,
+  timebombBuff,
   WARD_ABSORPTION,
   type Buff,
 } from '../../../hunt'
@@ -22,7 +25,7 @@ import {
   RoundUiActionKind,
   type RoundUiSeed,
 } from '../roundUiState'
-import { loadoutBarRefusalFor, loadoutRefusalFor } from '../buffHandlers'
+import { handleRemoveBuff, loadoutBarRefusalFor, loadoutRefusalFor } from '../buffHandlers'
 import { roundReducer } from '../roundReducer'
 import { makeRound, encounterFixture } from './roundFixture'
 
@@ -282,5 +285,53 @@ describe('handleTapBuff — spending a Shield row', () => {
     expect(apCostOf(shield)).toBeGreaterThan(0)
     expect(after.buffActivation.apPool).toBe(STARTING_AP)
     expect(after.buffs).toHaveLength(0)
+  })
+})
+
+// ── DLR-154 AC5 — taking a riding Timebomb back off the trick ──────────────────────────────────
+
+describe('handleRemoveBuff — reversing a riding Timebomb', () => {
+  const timebombBronze = timebombBuff(BuffTier.Bronze, 31)
+  const takerBuff = mintFromTemplate(templateById('taker:bells:magnitude')!, BuffTier.Bronze, 32)
+
+  function primedUiFixture() {
+    const opened = openWith([timebombBronze])
+    const armed = spend(opened, timebombBronze.id)
+    const closed = roundReducer(armed, { kind: RoundUiActionKind.ToggleLoadout })
+    const target = closed.round.hands[PlayerSide.Player][0]
+    return roundReducer(closed, { kind: RoundUiActionKind.TapCard, card: target })
+  }
+
+  function armedUiFixture() {
+    const opened = openWith([timebombBronze])
+    return spend(opened, timebombBronze.id)
+  }
+
+  function takerUiFixture() {
+    const opened = openWith([takerBuff])
+    return spend(opened, takerBuff.id)
+  }
+
+  it('clears the mark, both damages and the fuse when a primed Timebomb is taken back — AC5', () => {
+    const primedUi = primedUiFixture()
+    const back = handleRemoveBuff(primedUi, timebombBronze.id)
+    expect(back.round.primedCards).toHaveLength(0)
+    expect(back.timebombArmedDamage).toBeNull()
+    expect(back.primedTimebombDamage).toBeNull()
+    expect(back.timebombFuseRemaining).toBe(0)
+    expect(back.buffs).toContainEqual(timebombBronze)
+  })
+
+  it('closes a pending priming mode when the Timebomb is taken back before a card is chosen', () => {
+    const armedUi = armedUiFixture()
+    const back = handleRemoveBuff(armedUi, timebombBronze.id)
+    expect(back.timebombArmedDamage).toBeNull()
+    expect(back.round.primedCards).toHaveLength(0)
+  })
+
+  it('leaves a Taker removal untouched', () => {
+    const takerUi = takerUiFixture()
+    const back = handleRemoveBuff(takerUi, takerBuff.id)
+    expect(back.timebombFuseRemaining).toBe(takerUi.timebombFuseRemaining)
   })
 })

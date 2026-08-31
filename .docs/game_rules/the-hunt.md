@@ -4,7 +4,7 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-08-27**. Everything below is reachable in
+Last reviewed against the code and the design on **2026-08-31**. Everything below is reachable in
 the app today except where a rule is marked **[not built]** — and except the cards and guards listed
 here, every one of which is **decided, enforced and tested, yet cannot be obtained by playing**:
 
@@ -37,9 +37,10 @@ here, every one of which is **decided, enforced and tested, yet cannot be obtain
 >   up while you are pointing at a lit card; moving to another lit card switches it, moving away or
 >   pressing Escape closes it. Where there is nothing to point with, **tapping** a lit card opens it.
 > - **A buff you activated can be taken back off the trick** — a Taker, a Feeder or a Sidestep. The
->   card returns to your pile and the points come back. **A Cheat, a Timebomb, a Ward and a Shield
->   cannot**: using one of those already changed the felt, and that cannot be undone. They still
->   appear in the list, saying so. Section 4.
+>   card returns to your pile and the points come back. **A Cheat, a Ward and a Shield cannot**:
+>   using one of those already changed the felt, and that cannot be undone. They still appear in the
+>   list, saying so. Section 4. (**A Timebomb was in that group until 2026-08-31**, and now can be
+>   taken back — see the note below.)
 >
 > **Activating is still two taps**, and it still asks you for no card: you activate the buff for the
 > trick, never for a card. **While the breakdown is open it may cover the cards on the table**,
@@ -48,6 +49,24 @@ here, every one of which is **decided, enforced and tested, yet cannot be obtain
 > Because the panel is only up while you are pointing at a lit card, that is confined to the moments
 > you are comparing cards; at rest the table is fully visible. It is **accepted**, not a fault:
 > section 9, and [Known tensions](#known-tensions-recorded-not-resolved).
+
+> **A primed card now has a fuse, you can only have one bomb going at a time, and you can take a
+> Timebomb back — DLR-154, 2026-08-31.** Three rules of play changed, all of them in section 4:
+>
+> - **A card you prime has two tricks to be played.** If it is still in your hand after the second
+>   trick resolves, it goes off **where it sits** and the damage is yours. Marking a card and then
+>   quietly never playing it no longer costs you nothing.
+> - **Only one Timebomb can be live at a time.** While one is armed or primed, every other Timebomb
+>   row is refused outright, with the reason on its face — so you can never pay for a second one and
+>   find you cannot use it.
+> - **A Timebomb you are riding can be taken back**, from its row or with `Escape`. The card returns
+>   to your pile and the mark comes off the card. It is the first of the four "changes the felt at
+>   the commit" cards that can be undone.
+>
+> You can also now *see* all of it: the hand says it is waiting for a card and says why, the marked
+> card wears a bomb that hangs off its corner and counts down, and the riding row names the card the
+> bomb is on. **Every colour, size, timing and word of that is a placeholder nobody has looked at
+> yet.**
 
 > **Your hand no longer empties as a hand goes on — DLR-146, 2026-08-26.** You are refilled to four
 > cards as each trick resolves, so the number of cards you choose from runs 6, 5, 4, 4, 4, 4 instead
@@ -885,12 +904,20 @@ press drops the poise and leaves the panel open; with nothing poised, it closes 
 this trick" list. Doing so returns the card to your pile, gives you back what it cost, and clears it
 from that trick — the cards it was lighting go dark, and the list says how many did.
 
-**Only the three condition cards can be taken back**: the win-with-a-suit, the lose-with-a-suit and
-the dodge-a-skull. **A Cheat, a Timebomb, a Ward and a Shield cannot.** Using one of those does
-something to the felt at the moment you commit it — follow-suit stops binding you, a hit is armed
-against a card, a guard goes up — and that is not something the game can take back. All four still
-appear in the riding list, each saying plainly that it has no condition to reach and is already
-spent, rather than showing you a control that would refuse.
+**Four cards can be taken back**: the win-with-a-suit, the lose-with-a-suit, the dodge-a-skull —
+and, **since 2026-08-31, a Timebomb**. **A Cheat, a Ward and a Shield cannot.** Using one of those
+does something to the felt at the moment you commit it — follow-suit stops binding you, a guard goes
+up — and that is not something the game can take back. All three still appear in the riding list,
+each saying plainly that it has no condition to reach and is already spent, rather than showing you
+a control that would refuse.
+
+**Taking a Timebomb back takes the mark off the card too** — **[settled]** since 2026-08-31. The
+card returns to your pile, the bomb comes off whichever card was wearing it, the countdown stops,
+and if you had not yet chosen a card the game stops waiting for one. `Escape` while the hand is
+waiting for a card does exactly the same thing, rather than throwing the card away, and the row's
+own control and `Escape` are the same act. It is the only one of the four felt-changing cards this
+is possible for, and it is possible because **nothing else was spent** — see the action-point note
+in section 4.
 
 **A card that comes back is put at the end of your pile**, not back where it was — **[provisional]**,
 and the developer's, since it means the card moves under your finger. Nothing else about it changes.
@@ -933,8 +960,8 @@ screen then shows you is which of your cards it could pay out on:
   > were reading it.
 - **Every row of the breakdown will take that buff back off the trick**, the struck-through ones
   included — **[provisional]**, since 2026-08-27. A buff named in front of you is removable where it
-  is named, with the same exception the riding list has: a Cheat, a Timebomb, a Ward and a Shield
-  cannot come back, so their rows carry no control rather than one that would refuse. The riding list keeps its own controls, and that is not a duplicate: a buff that reaches
+  is named, with the same exception the riding list has: a Cheat, a Ward and a Shield cannot come
+  back, so their rows carry no control rather than one that would refuse. The riding list keeps its own controls, and that is not a duplicate: a buff that reaches
   no card at all appears in no card's breakdown, so the list is the only place it can be taken off
   from. Every one of these controls names the **trick**, never the card you happen to be pointing at
   — removing takes the buff off the trick entirely.
@@ -1400,8 +1427,10 @@ now that every further Cheat comes from elsewhere, is the standing open question
 
 ### Timebomb — priming a card before you play it
 
-**[settled]** — the procedure, since 2026-08-24; **the damage figures**, and **the four weights that
-decide how often the reel draws one**, are **[provisional]**, below.
+**[settled]** — the procedure, since 2026-08-24, and its three 2026-08-31 additions (the two-trick
+fuse, one bomb at a time, and taking one back); **the damage figures**, **the four weights that
+decide how often the reel draws one**, and **everything you see of the mark and the priming mode**
+are **[provisional]**, below.
 
 A Timebomb is an ordinary buff card in your pile now, not a bought charge. **Since 2026-08-24 it is a
 row in your loadout, drawn from the same reel every other buff comes from**, at bronze, silver or
@@ -1430,23 +1459,47 @@ refunded it.
 3. **The very next tap you make on a card in your hand primes it.** The Timebomb is already spent; this
    tap only chooses which card carries it.
 
-**Once the second tap lands there is no way to give it back.** `Escape` before that point drops the
-poise and spends nothing; after it, the card is gone. Priming a card is therefore the only remaining
-choice — the arm itself cannot be undone the way the old plate's third tap once undid it.
+**You can take an armed or primed Timebomb back — [settled] since 2026-08-31.** `Escape` before the
+second tap drops the poise and spends nothing, as it always did. After it, the Timebomb rides the
+trick with its own row in the riding list, and that row will give it back: the card returns to your
+pile, the mark comes off the card, and the countdown stops. `Escape` while the hand is waiting for a
+card does the same thing rather than throwing the card away. Until this date the arm could not be
+undone at all, and `Escape` at that moment silently ate the card you had paid for.
+
+> **A Timebomb is the only one of the four felt-changing cards you can take back**, and the reason
+> is that nothing else is spent on it: the game's action points are switched off, so the whole of a
+> Timebomb's cost is the card leaving your pile, and returning the card returns all of it. A Cheat, a
+> Ward and a Shield each arm something else besides — section 4's *Taking a buff back off the trick*.
+
+**You cannot have two Timebombs going at once — [settled] since 2026-08-31.** While one is armed or
+primed, every other Timebomb in your pile is refused outright, with the reason on its face, and it
+stays refused until that one goes off or you take it back. The refusal is at the **spend**, not at
+the mark: you can never pay for a second Timebomb and then find there is nothing you may do with it.
+Once the first has gone off, a second may be armed in the same hand.
 
 **A Timebomb's tier decides how much it hits for.** Bronze is the same pair the game has always paid —
 **4 to the Quarry, 2 to you**; silver doubles both to 8 and 4; gold trebles them to 12 and 6
 (`TIMEBOMB_DAMAGE`, scaled by `TIMEBOMB_TIER_MULTIPLIER`). Whichever card you prime carries its own
 tier's figure to the trick it is played into.
 
-> **Priming two different-tier Timebombs in one hand is possible, and only the second tier is kept.**
-> The game remembers one armed figure per hand; priming a second card overwrites it, so both detonate
-> at the second card's tier rather than each keeping its own. Recorded, not fixed, under
-> [Known tensions](#known-tensions-recorded-not-resolved).
+> **This used to be able to go wrong, and cannot any more.** Until 2026-08-31 a second Timebomb could
+> be spent over a first, and the game remembered only one figure per hand — so a card marked by a gold
+> Timebomb detonated for a bronze one's damage. Refusing the second spend outright removes the case
+> rather than tracking a figure per card.
 
 **A primed card is marked wherever it renders** — in your hand, in the trick once you have played it,
-in an ability prompt that offers it, and on the decree if the Fox exchanges it there. The mark is
-announced as part of the card's name, so it does not depend on seeing the glyph.
+in an ability prompt that offers it, and on the decree if the Fox exchanges it there. The mark is a
+bomb hanging off the card's top corner, **added to the card and never replacing anything**: the
+card's rank, suit, name and picture are all still there, and a card that is both skulled and primed
+shows both. The mark is announced as part of the card's name, so it does not depend on seeing it.
+**Every part of how it looks is [provisional]** — its size, how far it overhangs, its colour and the
+speed its spark fizzes are all placeholders nobody has yet looked at on screen, and so is whether
+the countdown numeral on it stays legible at a small card size.
+
+**While the game is waiting for you to choose a card, it says so** — **[settled]** since 2026-08-31.
+Your hand is tinted and edged, its cards drift gently, and the hint line says a Timebomb is asking
+for the card it rides on. Until that date the hand showed nothing at all and the prompt was
+unreachable in practice. The tint, the drift and the wording are all **[provisional]** placeholders.
 
 **Arming a Timebomb and arming a Cheat are mutually exclusive** in the sense that only one loadout
 spend can be waiting for its effect at once: arming either commits the card immediately, and
@@ -1460,17 +1513,42 @@ trick**, paid when the **next** trick resolves, at the figure the primed card's 
 states what the trick's own outcome does and what the hit does to your streak, and section 8 states when
 the damage lands.
 
-**You may Timebomb more than one card in a hand** if you hold more than one, and the hits accumulate —
-on either side, or on both.
+**You may Timebomb more than one card in a hand** if you hold more than one — but only **one at a
+time**, one after another, since 2026-08-31. Hits from separate primed tricks still accumulate, on
+either side or on both.
 
 **Once a primed card has been played and its trick resolved, the hit it booked is shown.** The trick
 says who owes it and how much as it resolves, and the hearts the hit has already claimed are drawn
 distinctly on that side's row until it lands (section 8). Before that — while the card is only marked —
 nothing yet owes anything, so there is nothing to show.
 
-> **A primed card can leave your hand without ever being played, and the spend is simply wasted.** The
-> Woodcutter can bury it on the bottom of the draw pile, and the Fox can exchange it into the decree and
-> you may never take it back. Nothing warns you and nothing refunds you.
+#### A primed card has two tricks to be played, then it goes off in your hand — **[settled]** since 2026-08-31
+
+**Once you mark a card, you get the resolution of two tricks to play it.** The bomb shows the count
+on its face and it drops by one each time a trick resolves with the card still in your hand. If it
+is still there when the count reaches zero, **it detonates where it sits, and the damage is yours** —
+the same figure you would take by winning a trick you had marked, which is the smaller half of that
+tier's pair (2, 4 or 6). So you may play the marked card into the next trick or the one after it;
+after that the choice is made for you.
+
+The **two** is the developer's own stated figure, which is why the rule is settled rather than
+provisional; whether two is the right number is still a thing only play can answer.
+
+> **The hit is booked, not dealt — so you feel it one trick later.** A bomb going off in your hand
+> queues its damage exactly as a played one does, and every booked hit lands at the following
+> trick's resolution (section 8). That is what makes it cash out your streak, be absorbed by a Blast
+> Guard, and stop at zero without any of those rules being written twice — but it means "two tricks
+> to play it" is really "two tricks, then it goes off, then a beat before you feel it". Whether the
+> hit should instead be immediate is **[open]** and the developer's. **Whether a Blast Guard ought
+> to absorb a bomb going off in your own hand** is inherited from that shared path rather than
+> chosen, and is likewise the developer's.
+
+> **A primed card can still leave your hand without ever being played, and that spend is simply
+> wasted.** The Woodcutter can bury it on the bottom of the draw pile, and the Fox can exchange it
+> into the decree and you may never take it back. **The countdown only runs while the card is in
+> your hand**, so a card that leaves it never goes off. Nothing warns you and nothing refunds you —
+> though you can take the Timebomb back off it and get the card returned to your pile. Recorded
+> under [Known tensions](#known-tensions-recorded-not-resolved).
 
 **A run is guaranteed no Timebombs** — none is seeded on purpose. The shop no longer sells a charge
 at all: that purchase and its uncapped-charges rule are both gone with the plate they belonged to.
@@ -2181,6 +2259,11 @@ paid **as part of the next trick's own damage** instead — folded in, not appli
   yours — exactly as any other killing blow does.
 - **A primed trick that is the last of a hand carries over**: the hit is paid at the first trick of the
   next hand, because nothing happens at a hand boundary.
+- **A bomb that goes off in your hand books the same way** — **[settled]** since 2026-08-31. A primed
+  card you never played detonates against **you** when its two-trick fuse runs out (section 4), and
+  that hit is queued exactly as a played one is: it lands at the following trick's resolution, cashes
+  out your streak, is absorbed by a Blast Guard, stops at zero, and can kill. Nothing about it is a
+  second rule; it is this rule, reached by a second route.
 - **If the fight ends before the hit is paid, the queued damage is discarded.** It is never carried into
   the next fight, and never into the next run. That includes the case where the primed trick's own
   cash-out is what ended the fight.
@@ -2229,16 +2312,18 @@ at the third fight's eighteen hearts, with a streak preview and a booked hit on 
 question that decides it. See `hybrid-design.md` version-4-scope §1 for the mechanic; the readout
 itself answers to no design section, because none covers it.
 
-### Applying damage cannot be pressed while Timebomb is pending — **[settled]** since 2026-08-20
+### ~~Applying damage cannot be pressed while Timebomb is pending~~ — **removed**, the two now stack — **[settled]** since 2026-08-25
 
 The design decided (2026-08-19) that **Apply Damage** (section 7) must be **disabled while Timebomb is
-pending**, so a player cannot dodge a booked hit by cashing out ahead of it. **It is now enforced.** The
-control is refused, and says so, while a Timebomb hit is owed to either side — and the refusal is re-checked
-on the confirming second tap, not only on the first, so a poise made while the control was live cannot
-commit after a booking has landed under it. See `hybrid-design.md` version-4-scope §3.
+pending**, so a player could not dodge a booked hit by cashing out ahead of it, and from 2026-08-20 to
+2026-08-25 it was enforced: the control was refused while a hit was owed to **either** side, re-checked
+on the confirming second tap. See `hybrid-design.md` version-4-scope §3.
 
-**A Timebomb hit owed to the Quarry locks it too, not only one owed to you.** The rule reads the pending
-queue rather than your side of it, which is the stricter reading of the two.
+**That rule was reversed outright on 2026-08-25 and no longer exists.** A booked Timebomb and a
+queued Apply Damage payout now stack, and settle together in the same trick's resolution — the
+reduction rule below is what governs the interaction instead. The reason for the refusal, and the
+refusal itself, are both gone; nothing about a pending Timebomb touches the Apply Damage control any
+more. The Status register carries the row.
 
 > **Since 2026-08-23, the control is refused for one further reason**: an earlier press's payout
 > still owed (**[provisional]**, DLR-109). The full order a refusal is chosen in is: not your move, a
@@ -3132,7 +3217,17 @@ the mechanics themselves are documented in `../implementation/`.
 > the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
 > a `RunState` field and a transition in the same breath means exactly that.
 
-> **Where DLR-153 stands, 2026-08-27 — the newest entry here.** **Live and reachable by a player,
+> **Where DLR-154 stands, 2026-08-31 — the newest entry here.** **Live and reachable by a player in
+> full**: the engine half and the screen half landed in one contract, so nothing here is engine-only.
+> A primed card carries a two-trick fuse and detonates in the player's hand; only one Timebomb may be
+> live at a time, refused at the spend; and a riding Timebomb can be taken back, from its row or with
+> `Escape`. **What has NOT been judged is everything you look at.** No developer has yet seen the
+> mark, the countdown, the priming tint or any of the new wording on a real screen — every colour,
+> size, timing and string the contract added is a placeholder it shipped with, and the rows above
+> marked **[provisional]** are provisional for exactly that reason. A card that is both skulled and
+> primed, now carrying a numeral as well, has never been looked at at real size.
+
+> **Where DLR-153 stands, 2026-08-27.** **Live and reachable by a player,
 > almost in full.** Activating a buff no longer asks for a card and no longer changes nothing you can
 > see: the hand lights up, the riding list names every buff and its reach, pointing at a lit card
 > breaks that card down, and a Taker, a Feeder or a Sidestep can be taken back off the trick with its
@@ -3684,7 +3779,7 @@ the mechanics themselves are documented in `../implementation/`.
 | A card that pays you for losing banks its reward for the next hand | settled — since DLR-150, 2026-08-27; **provisional** — the size of the bank, and whether the opening figure should be persistent or a hand-start flourish | `src/hunt/buffAccrual.ts` — `BuffCarry`, `accrueCarry` (uncapped, and it throws rather than accruing zero on an axis that cannot carry), `carriedIn`/`carryOut` on `BuffBonusAccrual`, `startHandAccrual(carriedIn)` seeding the new hand's two spendable figures, and the Feeder-only branch in `resolveFiredBuffs`. The Loss/Win answer is supplied by `src/warCouncil/bank.ts` as `!isTaken(outcome)` and is never re-derived. `src/hunt/run.ts` — `RunState.feederCarry`, seeded empty by `startRun`; `src/hunt/runTransitions.ts` — the private `feederCarryAfter`, which wipes it on a resolved encounter. Pinned by `src/hunt/__tests__/buffCarry.test.ts` and `run.feederCarry.test.ts` | **Developer** — the size of the bank, whether the win-a-trick card should bank on a losing trick too, whether the overlap bonus should follow the trick's outcome, and whether the multiplier version needs its own ladder |
 | Both halves of the bank are on the streak readout | settled — since DLR-150, 2026-08-27; the **wording, colours and glyphs** are provisional | `src/app/warCouncil/BankMeter.tsx` — the `carriedIn` / `carryOut` display-only props and their two lines, both folded into the section's existing accessible name and deliberately **not** into the cash-out figures; styled by `src/app/warCouncil/warCouncilBankMeter.css`. Pinned by `src/app/warCouncil/__tests__/BankMeter.test.tsx` and `WarCouncilRound.feederCarry.test.tsx` | **Developer** — every word, colour and glyph, and whether the opening figure should be persistent or a one-off flourish |
 | A Vault card of a type that is no longer dealt does not arrive | settled — the behaviour predates DLR-145 (DLR-113); DLR-145 is what made it reachable | `src/hunt/buffTemplates.ts` — `templateById` returns `undefined` for a cut id, so `mintGrants` skips it and `src/vault/vaultEconomy.ts` — `oddsBoostRefusalFor` / `startingTierRefusalFor` refuse a purchase against it; `src/vault/` — `reconcileVault` drops it and counts it. No persisted shape, field or key changed and `SAVE_SCHEMA_VERSION` did not move | **Developer** — nothing corrupts, but Vault currency already spent on a cut card is gone. Clearing saved data avoids the confusion |
-| A condition buff can be taken back off the trick; an Activated card cannot | **settled** — since DLR-153, 2026-08-27; **provisional** — that the returned card goes to the END of the pile rather than its old place | `src/hunt/buffActivation.ts` — `isRevocableBuff` (a frozen set of `Taker`/`Feeder`/`Sidestep`, the single statement of what may come back) and `deactivateFromPile`, which refunds through `src/hunt/actionPoints.ts` — `refundAp`, drops the id from `activatedThisTrick` and the buff from `spentThisTrick`, and appends the card to the pile only when `spentThisTrick` says it actually left. It throws rather than clamping; `src/app/warCouncil/buffHandlers.ts` — `handleRemoveBuff` is the guard that keeps the throw off a render, dispatched by `RoundUiActionKind.RemoveBuff` | Developer — whether the card should return to its old place in the pile, and whether the poise tap still earns itself now that a commit can be undone |
+| A condition buff can be taken back off the trick; an Activated card cannot — **except a Timebomb, since DLR-154** | **settled** — since DLR-153, 2026-08-27, widened by DLR-154, 2026-08-31; **provisional** — that the returned card goes to the END of the pile rather than its old place | `src/hunt/buffActivation.ts` — `isRevocableBuff` (a frozen set, `REVOCABLE_BUFF_KINDS`, of `Taker`/`Feeder`/`Sidestep`/`Timebomb`, the single statement of what may come back) and `deactivateFromPile`, which refunds through `src/hunt/actionPoints.ts` — `refundAp`, drops the id from `activatedThisTrick` and the buff from `spentThisTrick`, and appends the card to the pile only when `spentThisTrick` says it actually left. It throws rather than clamping; `src/app/warCouncil/buffHandlers.ts` — `handleRemoveBuff` is the guard that keeps the throw off a render, dispatched by `RoundUiActionKind.RemoveBuff` | Developer — whether the card should return to its old place in the pile, and whether the poise tap still earns itself now that a commit can be undone |
 | Activating a buff asks for no card — it rides the trick | settled — the behaviour predates DLR-153; DLR-153 is what made it legible | `src/hunt/buffActivation.ts` — `activateBuff` takes no card argument, and no refusal about choosing one exists anywhere in `src/` | — |
 | Every legal card a riding buff could fire on lights up, and no illegal card is ever counted | **settled** — since DLR-153, 2026-08-27; **provisional** — every colour, size, glow and wording | `src/app/warCouncil/buffRideModel.ts` — `lightsForHand` builds the map from the caller's `legal` list only, and `reachOf` counts off that same map rather than a second pass; `src/app/warCouncil/HandFan.tsx` gates the light behind the SAME `illegal` expression it passes to `PlayingCard` | Developer — whether a suitless buff lighting the whole hand still reads as information |
 | A lit card carries three carriers, and the travelling cell has a hard speed cap | settled — since DLR-153, 2026-08-27; the **slope** is provisional, the **cap** is not | `src/app/warCouncil/CardBuffHalo.tsx` (four stacked SVG strokes plus the cell) and `src/app/warCouncil/PlayingCard.tsx` (the numeral badge, a real text node with its own spoken form). The lap time is `max(--wc-buff-lap-floor, --wc-buff-lap-base - count * 0.5s)` in `src/app/warCouncil/warCouncilBuffRide.css`, computed in CSS precisely so no count in TypeScript can defeat the 0.9s floor. The hue is `--wc-buff-halo: #ff3326` / `--wc-buff-halo-deep: #8e1409` on `:root` in `src/app/warCouncil/warCouncil.css` — transcribed from the mockup's own `--load-red` / `--load-red-deep` on 2026-08-27, correcting an earlier borrow of `--wc-alarm`, the damage colour | Developer — the hue, the stroke figures and the slope. Correcting WHICH red decided nothing: red-against-brass is still open. **Not the 0.9s floor**, which is a flash-safety limit |
@@ -3745,11 +3840,17 @@ the mechanics themselves are documented in `../implementation/`.
 | Buying one at the shop                                                           | **not built** — the purchase mechanism was retired                                         | `src/hunt/shop.ts` — `ShopItem.Timebomb` is not in `SHOP_ITEMS` (DLR-116); acquiring one now means pulling the machine (section 10)                                                                                                                                                                                                                                                     | Developer — the reel is the only route to it now                                                                                                                                                                                                                                                                 |
 | No cap on Timebombs held                                                         | settled                                                                                    | `src/hunt/buffs.ts` — the pile has no capacity cap of any kind, unlike the retired two-slot Cheat rail                                                                                                                                                                                                                                                                                  | Developer — a cap is a key and one guard                                                                                                                                                                                                                                                                          |
 | Two taps to spend, then one tap on a card primes it                              | settled — since DLR-132                                                                    | `src/app/warCouncil/buffHandlers.ts` — `handleTapBuff`'s Timebomb branch sets `timebombArmedDamage`; `src/app/warCouncil/roundReducer.ts` — `handleTapCard`'s `timebombArmed` branch calls `primeTapped`                                                                                                                                                                               | **Developer** — whether the ordinary buff gesture reads as clearly as the old dedicated plate did. Unplayed                                                                                                                                                                                                      |
-| Once spent, arming cannot be given back                                          | settled — since DLR-132, a change from the old plate's third-tap cancel                    | `src/app/warCouncil/buffHandlers.ts` — `Escape` only clears an unspent poise; there is no action that returns `timebombArmedDamage` to `null` once the second tap has landed                                                                                                                                                                                                           | Developer — whether losing the old cancel-after-arm costs anything                                                                                                                                                                                                                                               |
+| ~~Once spent, arming cannot be given back~~ — an armed or primed Timebomb **can** be taken back | **settled** — reversed by DLR-154, 2026-08-31 (was settled since DLR-132) | `src/hunt/buffActivation.ts` — `REVOCABLE_BUFF_KINDS` (renamed from `REVOCABLE_CONDITION_KINDS`) now holds `BuffKind.Timebomb`, the first Activated card in it, valid because `src/hunt/apConfig.ts` — `AP_ENABLED` is `false`; the felt-state reversal the engine cannot do is `src/app/warCouncil/buffHandlers.ts` — `handleRemoveBuff`'s Timebomb branch and `removeRidingTimebomb`, which clear the armed and primed damage, the fuse and the persisted buff and call `src/warCouncil/timebomb.ts` — `unprimeCard`; `Escape` reaches the same path through `src/app/warCouncil/WarCouncilRound.tsx` — `handleCancel` | — |
 | Every card in hand is markable while armed                                       | settled — including illegal ones                                                           | `src/app/warCouncil/HandFan.tsx` — `illegal` and `isFocusable` both widen under `timebombArmed`, so the tappable and focusable sets cannot drift                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
 | Marking is not a move, and never plays a card                                    | settled                                                                                    | `src/app/warCouncil/roundReducer.ts` — `handleTapCard` routes to `primeTapped` before the play branch                                                                                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                                 |
+| A primed card has a two-trick fuse and detonates in your hand | **settled** — since DLR-154, 2026-08-31; the figure is the **developer's own stated value**, not an agent's default | `src/hunt/buffCatalog.ts` — `TIMEBOMB_FUSE_TRICKS` (2, in trick resolutions), seeded into `src/app/warCouncil/roundUiState.ts` — `RoundUiState.timebombFuseRemaining` by `roundReducer.ts`'s `primeTapped`, decremented by `src/app/warCouncil/commitHandlers.ts` — `commit`, and booked at zero through `src/hunt/encounter.ts` — `queueTimebomb` against `DuelSide.Player`; the mark is lifted in the same transition by `src/app/warCouncil/timebombMarks.ts` — `liftExpiredMarks` | **Developer** — whether the hit should land immediately rather than a trick later, and whether a Blast Guard ought to absorb a bomb going off in hand (inherited from the shared booking path, not chosen) |
+| The fuse counts trick resolutions, and only while the card is still held | settled — since DLR-154 | `src/app/warCouncil/commitHandlers.ts` — `primedStillHeld` tests membership of the post-play hand, so a card played, buried by the Woodcutter or exchanged away by the Fox stops counting instead of detonating | — |
+| The hand shows it is waiting for a card, and says why | **provisional** — the tint, the drift and every word of the prompt are placeholders, since DLR-154, 2026-08-31 | `src/app/warCouncil/warCouncilHand.css` — the `.wc-fan.wc-is-marking` rule (which had never existed); `src/app/warCouncil/roundHint.ts` — `deriveHint`'s Timebomb branch, moved above `quarryToLead` because that gap IS the window a Timebomb is armed in; `src/app/warCouncil/labels.ts` — `TIMEBOMB_ARMED_HINT` | **Developer** — the tint, the drift and the copy |
+| Priming stays reachable in the Quarry-to-lead gap | settled — since DLR-154 | `src/app/warCouncil/roundReducer.ts` — `handleTapCard` checks `timebombArmed` BEFORE the `canAct` guard, mirroring `discardSelecting`; `src/app/warCouncil/WarCouncilRound.tsx` — `handInteractive` includes `timebombArmed(ui)` so hand cards keep focus and lose `disabled` | — |
+| The mark is a bomb ADDED to the card, hung off its corner | **provisional** — every size, colour and timing is a placeholder, since DLR-154, 2026-08-31 | `src/app/warCouncil/TimebombMark.tsx` — inline SVG with per-instance `useId()` gradient ids, `aria-hidden`, `pointer-events: none`, rendered by `PlayingCard.tsx` on the `.wc-card-tip-host` **wrapper** rather than inside the card's own box; `src/app/warCouncil/warCouncilTimebombMark.css` — placement, fizz and the `prefers-reduced-motion` rule that stops the fizz with the spark lit. The on-face geometry it replaced (`cardFace.ts`'s `CARD_FACE_GEOMETRY.primedMark`, the `--wc-face-primed-*` properties and their drift rows) is **deleted** | **Developer** — size, overhang, hue, fizz duration, and whether the countdown numeral stays legible at a small card size |
+| The riding row names the card the bomb is on | **provisional** — copy is placeholder, since DLR-154 | `src/app/warCouncil/buffRideModel.ts` — `TimebombRide`, with its target **derived** as `primedCards.at(-1) ?? null` by `timebombTargetFor` and never stored, and the row built from `RoundUiState.timebombBuff` so it survives the trick boundary `openBuffWindow` clears `activatedThisTrick` at; `src/app/warCouncil/buffRideLabels.ts` — `ridingRowText`, `timebombRemoveLabel`, `timebombRemovedText` | **Developer** — all four strings |
 | A Timebomb's tier sets the damage pair it carries (4/2, 8/4, 12/6)               | settled — since DLR-132                                                                    | `src/hunt/buffCatalog.ts` — `TIMEBOMB_DAMAGE`, scaled by `TIMEBOMB_TIER_MULTIPLIER`; carried on `RoundUiState.timebombArmedDamage` → `primedTimebombDamage` from the spend to the prime                                                                                                                                                                                                | **Developer** — silver and gold are unmeasured in play                                                                                                                                                                                                                                                            |
-| Only one Timebomb's tier is remembered per hand                                  | **provisional** — an accepted limitation                                                   | `src/app/warCouncil/roundUiState.ts` — `RoundUiState.primedTimebombDamage` holds one pair; priming a second card in the same hand overwrites it                                                                                                                                                                                                                                        | **Developer** — whether two different-tier Timebombs primed in one hand matters. Recorded under [Known tensions](#known-tensions-recorded-not-resolved)                                                                                                                                                         |
+| Only one Timebomb may be live at a time; a second spend is refused outright | **settled** — since DLR-154, 2026-08-31, replacing the tier-overwrite limitation it removes | `src/hunt/buffActivation.ts` — `BuffActivationRefusal.TimebombLive`, ordered `NoEffectYet → WindowClosed → TimebombLive → AlreadyActive → InsufficientAp`, fed by `src/app/warCouncil/roundUiState.ts` — `timebombLive` (`timebombArmed(state) || round.primedCards.length > 0`) through `buffActivationStock`, and threaded into `activateFromPile` by `src/app/warCouncil/buffHandlers.ts` — `handleTapBuff`. `RoundUiState.primedTimebombDamage` still holds one pair, and now cannot be overwritten while one is live | — |
 | The mark is drawn wherever the card renders                                      | settled — all four surfaces                                                                | `src/app/warCouncil/PlayingCard.tsx` — the `primed` prop; threaded by `HandFan`, `TrickWell`, `AbilityPrompt` and `DecreePile` (the last **fixed in review**, having been built and never passed)                                                                                                                                                                                       | Developer — the glyph and its colour are placeholders                                                                                                                                                                                                                                                             |
 | A primed trick resolves by the normal rules                                      | settled                                                                                    | `src/warCouncil/playCard.ts` — it reports `trickIsPrimed` as a fact and judges none of it; the winner and the bank are decided as ever                                                                                                                                                                                                                                                  | —                                                                                                                                                                                                                                                                                                                 |
 | A primed clean loss is replaced, not added to                                    | settled                                                                                    | `src/warCouncil/bank.ts` — `resolveTrickBank`'s `replaced` flag skips the hit half, so damage and cash-out stay 0 and bank/multiplier pass through                                                                                                                                                                                                                                      | —                                                                                                                                                                                                                                                                                                                 |
@@ -4299,12 +4400,28 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
   action points, above the 6 you start a hand with, so it is reachable only after buying action-point
   capacity. Nothing was retuned to answer this; the price is what the existing cost formula produced,
   unreviewed against the new reachability.
-- **Priming two different-tier Timebombs in one hand loses the first tier** (new 2026-08-24, DLR-132).
-  `RoundUiState.primedTimebombDamage` holds one pair for the whole hand; priming a second card
-  overwrites it, so both detonate at the second card's figure rather than each keeping its own. Cheap
-  to fix later by widening the engine's `primedCards` to carry a per-card tier, deliberately not done
-  here because that widening reaches `src/warCouncil/`'s pure type and every `primedCards` fixture.
-  Whether it matters enough to fix is the developer's, after it has been played.
+- ~~**Priming two different-tier Timebombs in one hand loses the first tier**~~ (new 2026-08-24,
+  DLR-132; **resolved 2026-08-31, DLR-154**). It was resolved by removing the case rather than by
+  tracking a figure per card: only one Timebomb may be live at a time now, and a second spend is
+  refused outright. The widening of `primedCards` to carry a per-card tier — which would reach
+  `src/warCouncil/`'s pure type and every fixture — was **not** done, and is not needed unless the
+  one-at-a-time rule is ever reversed.
+- **A marked card that leaves your hand strands the mark for the rest of the hand** (new 2026-08-31,
+  DLR-154). The countdown only runs while the primed card is in your hand, so a card the Woodcutter
+  buries or the Fox exchanges away never detonates — and because the mark stays on the felt, "a
+  Timebomb is live" stays true, so **no further Timebomb can be armed for the rest of that hand**.
+  It is recoverable: taking the Timebomb back from its riding row clears the mark and returns the
+  card. Nothing says any of that to the player. Whether the mark should instead be dropped when the
+  card leaves the hand is the developer's.
+- **A bomb going off in your own hand is felt a trick after it goes off** (new 2026-08-31, DLR-154).
+  The in-hand detonation books through the same queue a played bomb uses, which is what buys the
+  bank reset, the Blast Guard and the forced cash-out for nothing — at the cost of a beat between
+  the countdown reaching zero and the health actually moving. Whether the hit should be immediate,
+  and whether a Blast Guard should absorb it at all, are both inherited rather than chosen.
+- **Nobody has seen a bomb, a countdown and a skull on one small card** (new 2026-08-31, DLR-154).
+  The mark is 46% of a card's width and carries a numeral, on a card that may also be showing a
+  skull face. Whether all three read together at the small end of the card's size, and every colour,
+  size and timing the mark ships with, are placeholders the developer has not yet looked at.
 - **Four slot weights that decide how often a Cheat or Timebomb is drawn were never played** (new
   2026-08-24, DLR-132). `SLOT_FAMILY_WEIGHTS` gained `Cheat`/`Timebomb` rows on both machines —
   Skirmisher 3/3, Strongbox 1/1 — chosen by the same reasoning the rest of that agent-authored table
@@ -4429,9 +4546,10 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
   nothing is affordable; and that a buff is described in one glanceable line. Each is defensible and
   each is the developer's to overrule after playing. The one with teeth was the second — a misclick
   past the poise stage cost points that nothing gave back, with no bank-zeroing to make the mistake
-  obvious — and it now has an undo for the three condition cards. **It still has none for a Cheat, a
-  Timebomb, a Ward or a Shield**, where the misclick is more expensive, because those four change the
-  felt at the commit.
+  obvious — and it now has an undo for the three condition cards. **It still has none for a Cheat, a Ward or a Shield**, where the
+  misclick is more expensive, because those three change the felt at the commit. (**A Timebomb left
+  that group on 2026-08-31** — it can be taken back, because action points being off means the card
+  itself is the whole of its cost.)
 - **The breakdown panel can cover the cards on the table, and that is accepted** (new 2026-08-27,
   DLR-153; **accepted the same day**, **reduced later the same day**). It grows upward from above
   your hand and overlaps the played-cards row — measured at a wide screen, at a smaller one, and at a

@@ -1,6 +1,5 @@
-import { useEffect, useReducer } from 'react'
+import { useReducer } from 'react'
 import { DuelSide, isEncounterResolved, payableCashOutBonus, quarryCharacterInfo } from '../../hunt'
-import { clearDebugRoundState, setDebugRoundState } from '../debugState'
 import {
   applyDamageRefusalFor,
   cashValue,
@@ -18,6 +17,7 @@ import BankMeter from './BankMeter'
 import { loadoutBarRefusalFor, loadoutDoorOpen } from './buffHandlers'
 import BuffGallery from './BuffGallery'
 import BuffRidingList from './BuffRidingList'
+import { ridingTimebombId } from './buffRideModel'
 import { useBuffRide } from './buffRideProps'
 import CardBuffBreakdown from './CardBuffBreakdown'
 import { cardDamagePreview } from './cardDamage'
@@ -48,12 +48,14 @@ import {
   loadoutOpen,
   offeredBuffs,
   timebombArmed,
+  timebombLive,
   RoundUiActionKind,
   type RoundUiAction,
 } from './roundUiState'
 import RoundStatusBand from './RoundStatusBand'
 import { CardArtSheet } from './CardArtSheet'
 import { SuitSymbolSheet } from './SuitMark'
+import { useDebugRoundState } from './useDebugRoundState'
 import './warCouncil.css'
 import './warCouncilTable.css'
 import './warCouncilCards.css'
@@ -147,36 +149,22 @@ export default function WarCouncilRound({
 
   // DLR-100 — mirrors `applyRefusal` above. `handInteractive` keeps the fan tappable during the
   // Quarry-to-lead gap, where `interactive` is false but a selection may still be open or opening.
+  // DLR-154 FIX 1 — `timebombArmed(ui)` joins the OR for the same reason: an armed Timebomb
+  // reinterprets the very next hand-card tap into a prime, and that targeting is reachable in the
+  // same gap. Without this term every hand card rendered `disabled` and untabbable there.
   const discardRefusal = discardRefusalFor(discardStock(ui))
-  const handInteractive = interactive || discardSelecting(ui)
+  const handInteractive = interactive || discardSelecting(ui) || timebombArmed(ui)
 
-  // Dev-only mirror for browser automation (`.claude/skills/ai-play-tester`) — see
-  // `../debugState.ts`. Two effects, not one: the write runs on every render that changes this
-  // slice, the clear runs ONLY on unmount (empty deps) — `App` switches screens by conditionally
-  // rendering this component out entirely, and that's the one moment this slice actually goes
-  // stale, not merely re-renders.
-  useEffect(() => {
-    setDebugRoundState({
-      ui,
-      interactive,
-      legalCount: legal.length,
-      applyCash,
-      applyRefusal,
-      discardRefusal,
-      encounterOver,
-      roundComplete,
-    })
-  }, [
+  useDebugRoundState({
     ui,
     interactive,
-    legal,
+    legalCount: legal.length,
     applyCash,
     applyRefusal,
     discardRefusal,
     encounterOver,
     roundComplete,
-  ])
-  useEffect(() => clearDebugRoundState, [])
+  })
 
   // DLR-114 AC2 — the pile offered to the panel, and the ONE refusal the bar's own Apply Buff
   // button reads. `loadoutBarRefusalFor` lives in `buffHandlers.ts` rather than inline here: it is
@@ -248,6 +236,15 @@ export default function WarCouncilRound({
   }
 
   function handleCancel() {
+    // AC13 — Escape while priming must not strand a paid-for card. Routed through
+    // `buffRide.handleRemoveBuff` ITSELF (DLR-154 FIX 3), not a raw `RemoveBuff` dispatch — that
+    // hook is the ONLY place `removedAnnouncement` is set, so dispatching the action directly (as
+    // this used to) reversed the felt but announced nothing to a screen reader.
+    const timebombId = ridingTimebombId(ui)
+    if (timebombId !== null && timebombLive(ui)) {
+      buffRide.handleRemoveBuff(timebombId)
+      return
+    }
     dispatchClearingAnnouncement({ kind: RoundUiActionKind.CancelSelection })
   }
 
@@ -361,6 +358,7 @@ export default function WarCouncilRound({
           rejected={ui.rejection !== null}
           promptOpen={ui.prompt !== null}
           primedCards={ui.round.primedCards}
+          timebombFuseRemaining={ui.timebombFuseRemaining}
           timebombArmed={timebombArmed(ui)}
           discardSelecting={discardSelecting(ui)}
           discardSelection={ui.discardSelection ?? []}

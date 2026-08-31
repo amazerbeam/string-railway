@@ -140,4 +140,14 @@ describe('deriveHint — the cascade’s own priority order', () => {
     expect(deriveHint(selecting, true, true)).toBe(DISCARD_SELECT_HINT)
     expect(deriveHint(ready, true, true)).toBe(DISCARD_READY_HINT)
   })
+
+  it('says what an armed Timebomb is waiting for during the Quarry-to-lead gap — DLR-154 AC1', () => {
+    const ui = baseUi({ timebombArmedDamage: TIMEBOMB_DAMAGE[BuffTier.Bronze] })
+    expect(deriveHint(ui, false, true)).toBe(TIMEBOMB_ARMED_HINT)
+  })
+
+  it('still yields to a rejection and to an open discard selection', () => {
+    const armed = baseUi({ timebombArmedDamage: TIMEBOMB_DAMAGE[BuffTier.Bronze] })
+    expect(deriveHint({ ...armed, discardSelection: [] }, false, true)).toBe(DISCARD_SELECT_HINT)
+  })
 })

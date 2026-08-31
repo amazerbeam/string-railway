@@ -59,6 +59,8 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     cheatTricksRemaining: 0,
     timebombArmedDamage: null,
     primedTimebombDamage: null,
+    timebombFuseRemaining: 0,
+    timebombBuff: null,
     blastGuardHeld: seed.blastGuardHeld,
     bankClimbBonus: seed.bankClimbBonus,
     rankTiers: seed.rankTiers ?? ALL_BRONZE,

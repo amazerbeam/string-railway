@@ -12,10 +12,11 @@ import type { BuffId } from '../../hunt'
 import type { RidingBuffRow } from './buffRideModel'
 import {
   buffName,
-  buffReachText,
   nonRevocableStatusText,
   removeBuffLabel,
+  ridingRowText,
   RIDING_LIST_LABEL,
+  timebombRemoveLabel,
 } from './buffRideLabels'
 import './warCouncilBuffRidePanel.css'
 
@@ -35,17 +36,21 @@ export default function BuffRidingList({ rows, onRemove }: BuffRidingListProps) 
       {rows.map((row) => (
         <div
           key={row.buff.id}
-          className={`wc-buff-riding-row${row.reach === 0 ? ' wc-is-unreachable' : ''}`}
+          className={`wc-buff-riding-row${row.reach === 0 && row.timebomb === null ? ' wc-is-unreachable' : ''}`}
         >
           <span>
             <b>{buffName(row.buff)}</b>
           </span>
-          <span>{buffReachText(row.reach)}</span>
+          <span>{ridingRowText(row)}</span>
           {row.revocable ? (
             <button
               type="button"
               className="wc-buff-riding-remove"
-              aria-label={removeBuffLabel(row.buff, row.reach)}
+              aria-label={
+                row.timebomb === null
+                  ? removeBuffLabel(row.buff, row.reach)
+                  : timebombRemoveLabel(row.timebomb.target)
+              }
               onClick={() => onRemove(row.buff.id)}
             >
               ×

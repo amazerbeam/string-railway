@@ -108,6 +108,7 @@ export {
 export type { TimebombDamage } from './buffCatalog'
 export {
   CHEAT_DURATION_TRICKS,
+  TIMEBOMB_FUSE_TRICKS,
   TIMEBOMB_TIER_MULTIPLIER,
   TIMEBOMB_DAMAGE,
   cheatBuff,

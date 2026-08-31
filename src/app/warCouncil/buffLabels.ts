@@ -164,6 +164,9 @@ export function buffLine(buff: Buff): string {
 export const BUFF_ACTIVATION_REFUSAL_MESSAGE: Readonly<Record<BuffActivationRefusal, string>> = {
   [BuffActivationRefusal.NoEffectYet]: 'Not usable yet.',
   [BuffActivationRefusal.WindowClosed]: 'Not between tricks.',
+  // R2 — PLACEHOLDER copy. Says which card is in the way, not merely that something is: the row
+  // renders this on its own face, so a player who cannot see why is exactly who this is for.
+  [BuffActivationRefusal.TimebombLive]: 'A Timebomb is already live — resolve or remove it first.',
   [BuffActivationRefusal.AlreadyActive]: 'Already active this trick.',
   [BuffActivationRefusal.InsufficientAp]: 'Not enough action points.',
 }

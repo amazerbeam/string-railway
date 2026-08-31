@@ -19,6 +19,7 @@ import {
   queueApplyDamagePayout,
   queueApplyPayout,
   spendAp,
+  TIMEBOMB_FUSE_TRICKS,
 } from '../../hunt'
 import {
   applyDamageStock,
@@ -128,12 +129,16 @@ function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
   if (discardSelecting(state)) {
     return toggleDiscardCard(state, tapped)
   }
-  if (!canAct(state)) {
-    return state
-  }
-  // AC2 — while armed, a hand-card tap MARKS (primes) rather than plays.
+  // DLR-154 FIX A — also NOT `canAct`-gated, and for the same reason: a Timebomb can be armed
+  // during the Quarry-to-lead gap (`discardWindowOpen`'s window), where `canAct` is false because
+  // the Quarry, not the player, is next to move. Priming there must still reach `primeTapped`,
+  // whose own guards (membership, an existing mark, the armed damage) are what keep this safe to
+  // reach from a window where `canAct` is false — legality is deliberately not checked here.
   if (timebombArmed(state)) {
     return primeTapped(state, tapped)
+  }
+  if (!canAct(state)) {
+    return state
   }
 
   if (state.armed && sameCard(state.armed, tapped)) {
@@ -233,18 +238,21 @@ function handleTapApplyDamage(state: RoundUiState): RoundUiState {
  */
 function primeTapped(state: RoundUiState, tapped: Card): RoundUiState {
   const hand = state.round.hands[PlayerSide.Player]
-  if (
-    state.timebombArmedDamage === null ||
-    !containsCard(hand, tapped) ||
-    isPrimed(state.round.primedCards, tapped)
-  ) {
+  if (state.timebombArmedDamage === null || !containsCard(hand, tapped)) {
+    // Unreachable from the fan (every rendered card is held), so this keeps its existing
+    // clear-and-abandon behaviour rather than growing a second recovery path.
     return { ...state, timebombArmedDamage: null }
   }
+  // Assumption 5 — a tap on an already-primed card is a NO-OP that keeps the mode open. Clearing
+  // here would abandon a paid-for card with no mark to show for it, and leave the player with no
+  // visible cause. The prompt stays on screen and the next tap can still land.
+  if (isPrimed(state.round.primedCards, tapped)) return state
   return {
     ...state,
     round: primeCard(state.round, PlayerSide.Player, tapped),
     timebombArmedDamage: null,
     primedTimebombDamage: state.timebombArmedDamage,
+    timebombFuseRemaining: TIMEBOMB_FUSE_TRICKS,
     armed: null,
     rejection: null,
   }

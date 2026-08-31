@@ -49,11 +49,14 @@ describe('isRevocableBuff — DLR-153 AC10, the one statement of which cards may
     expect(isRevocableBuff(conditionBuff(BuffKind.Sidestep, BuffTier.Bronze, 3))).toBe(true)
   })
 
-  it('is false for the Activated cards — Cheat, Timebomb, Ward, Shield', () => {
+  it('is false for the Activated cards that stay non-revocable — Cheat, Ward, Shield', () => {
     expect(isRevocableBuff(cheatBuff(BuffTier.Bronze, 4))).toBe(false)
-    expect(isRevocableBuff(timebombBuff(BuffTier.Bronze, 5))).toBe(false)
     expect(isRevocableBuff(wardBuff(BuffTier.Bronze, 6))).toBe(false)
     expect(isRevocableBuff(shieldBuffFixture(BuffTier.Bronze, 7))).toBe(false)
+  })
+
+  it('is true for a Timebomb — DLR-154 AC5: with AP off, revocation is the card returning', () => {
+    expect(isRevocableBuff(timebombBuff(BuffTier.Bronze, 5))).toBe(true)
   })
 })
 

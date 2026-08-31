@@ -18,6 +18,9 @@ interface HandFanProps {
    *  computes nothing about a card's state, exactly as it takes `legal` from the engine rather
    *  than comparing suits itself. */
   readonly primedCards: readonly Card[]
+  /** R4 — trick resolutions left on the primed card's fuse. Read from the reducer's own
+   *  `timebombFuseRemaining`, never re-derived here. `0` when nothing is primed. */
+  readonly timebombFuseRemaining: number
   /** DLR-90 AC2 — a hand-card tap MARKS rather than plays. While true, every held card is a valid
    *  target INCLUDING one illegal to play: marking is not a move, and the item exists precisely to
    *  give a card the player expects to lose with a reason to be played. Read from the reducer's own
@@ -98,6 +101,7 @@ export default function HandFan({
   rejected,
   promptOpen,
   primedCards,
+  timebombFuseRemaining,
   timebombArmed,
   discardSelecting,
   discardSelection,
@@ -205,6 +209,7 @@ export default function HandFan({
                 armed={isArmed}
                 illegal={illegal}
                 primed={isPrimed(primedCards, card)}
+                fuseRemaining={timebombFuseRemaining}
                 discardSelected={containsCard(discardSelection, card)}
                 tabIndex={index === tabStopIndex ? 0 : -1}
                 describedBy={damage === null ? undefined : damageId}

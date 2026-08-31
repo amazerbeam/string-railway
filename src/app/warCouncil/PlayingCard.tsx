@@ -6,7 +6,8 @@ import CardBuffHalo, { HALO_SATURATION_CEILING } from './CardBuffHalo'
 import { RANK_FACE } from './cardFace'
 import CardFace from './CardFacePanel'
 import { RANK_RULE_TEXT } from './cardRuleText'
-import { cardAccessibleName } from './labels'
+import { cardAccessibleName, timebombFuseText } from './labels'
+import TimebombMark from './TimebombMark'
 import './warCouncilBuffRide.css'
 
 interface PlayingCardProps {
@@ -24,6 +25,15 @@ interface PlayingCardProps {
    *  site keeps compiling; a caller that knows the card's state passes it. The SAME rendering path
    *  as `skulled` — one more conditional `<span>` in one component, not a second component. */
   readonly primed?: boolean
+  /** R4 — trick resolutions left on this card's fuse. Ignored unless `primed`. Optional, and
+   *  DELIBERATELY UNDEFAULTED (DLR-154 FIX 6, superseding this ticket's earlier default of `0`):
+   *  `HandFan` is the ONE render path that threads the felt's real `timebombFuseRemaining`;
+   *  `TrickWell`, `AbilityPrompt` and `DecreePile` (via `FeltRail`) all render a `primed` card with
+   *  no idea what its real count is. Defaulting those to `0` made every one of them show "going off
+   *  now" on a card that may have 1–2 tricks left — an unknown count and a known-zero count must
+   *  render differently, and `undefined` is what tells `cardAccessibleName`/`TimebombMark`/
+   *  `CardAbilityTip`'s `fuseNote` apart from a caller that actually knows. */
+  readonly fuseRemaining?: number
   /** DLR-100 — a card currently toggled into the open discard selection. Defaults to `false` so
    *  every existing call site keeps compiling; a caller that knows the state passes it. The SAME
    *  rendering path as `skulled`/`primed` — one more conditional `<span>`, not a second
@@ -66,6 +76,7 @@ export default function PlayingCard({
   winner = false,
   skulled = false,
   primed = false,
+  fuseRemaining,
   discardSelected = false,
   tabIndex,
   describedBy,
@@ -111,15 +122,22 @@ export default function PlayingCard({
     .filter(Boolean)
     .join(' ')
 
+  // FIX 6 — the tip's fuse clause is folded in only once a POSITIVE, KNOWN count exists, the same
+  // gate `cardAccessibleName` below already applies to its own primed clause — an unknown or a
+  // known-zero count renders neither.
+  const knownFuse = fuseRemaining !== undefined && fuseRemaining > 0 ? fuseRemaining : null
   return (
-    <CardAbilityTip card={card}>
+    <CardAbilityTip
+      card={card}
+      fuseNote={primed && knownFuse !== null ? timebombFuseText(knownFuse) : null}
+    >
       <button
         type="button"
         className={className}
         style={cardStyle}
         disabled={condensed || illegal}
         tabIndex={condensed ? -1 : tabIndex}
-        aria-label={cardAccessibleName(card, { skulled, primed })}
+        aria-label={cardAccessibleName(card, { skulled, primed, fuseRemaining })}
         aria-describedby={describedByIds}
         aria-pressed={armed || discardSelected ? true : undefined}
         onClick={() => onTap?.(card)}
@@ -133,11 +151,6 @@ export default function PlayingCard({
             window and pip lattice, so a skulled card keeps its rank, suit glyph and rank
             name — the trick is still won on those (AC12). */}
         <CardFace card={card} />
-        {primed && (
-          <span className="wc-primed-mark" aria-hidden="true">
-            ⚗
-          </span>
-        )}
         {discardSelected && (
           <span className="wc-discard-mark" aria-hidden="true">
             ✕
@@ -172,6 +185,10 @@ export default function PlayingCard({
           {RANK_RULE_TEXT[card.rank]}
         </span>
       </button>
+      {/* AC4 — OUTSIDE the button, so the mark can overhang the corner. `.wc-card-tip-host` is
+          already `position: relative` and already wraps every render path, so this one placement
+          covers hand, table and pile (AC7). */}
+      {primed && <TimebombMark fuseRemaining={fuseRemaining} />}
     </CardAbilityTip>
   )
 }

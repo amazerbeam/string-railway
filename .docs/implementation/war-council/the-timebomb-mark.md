@@ -31,6 +31,15 @@ card dealt is played and a mark normally resolves in the hand it was made. The o
 marked card the Woodcutter buries on the bottom of the draw pile or the Fox exchanges away and the
 player never takes back. **That simply wastes the charge**, and nothing guards it.
 
+> **DLR-154 closed the larger half of that hole, 2026-08-31.** A marked card the player simply
+> *sits on* no longer evaporates for free: it carries a **two-trick fuse** and detonates in the
+> hand against the player when the fuse runs out. The fuse and its booking are the app layer's, not
+> this module's — see
+> [Priming a Timebomb](../war-council-ui/timebomb-priming-and-the-fuse.md) — and they change nothing
+> here, because the fuse only counts **while the card is still in the player's hand**. A card buried
+> by the Woodcutter or exchanged away by the Fox leaves the hand, so its fuse stops rather than
+> firing, and that narrower case still wastes the spend with nothing to warn the player.
+
 ## `src/warCouncil/timebomb.ts` is a separate module from `skulls.ts`, on purpose
 
 Three functions, and the separation is the design rather than a filing choice:
@@ -40,6 +49,7 @@ Three functions, and the separation is the design rather than a filing choice:
 | `isPrimed`      | Membership by **suit and rank together**, via `containsCard`                |
 | `trickIsPrimed` | `true` iff **any** card played into the trick carries the mark             |
 | `primeCard`      | Writes the mark, throwing rather than no-op'ing                            |
+| `unprimeCard`    | **DLR-154** — lifts the mark, throwing rather than no-op'ing (below)       |
 
 DLR-90 states Timebomb is a wholly separate marker from a skull, and **two markers sharing a helper is
 how they stop being separate.** Nothing in `timebomb.ts` reads `skulledCards`; nothing in `skulls.ts`
@@ -60,6 +70,19 @@ caller spend a charge for a mark that was never made.**
 > "checks before calling" comparison below is also gone: `handleTapCheat`/`hasCheat`/`removeCheat` no
 > longer exist, because a Cheat is spent through the ordinary `handleTapBuff` two-tap flow, which
 > re-reads its own refusal before committing rather than checking membership in a held list.
+
+### `unprimeCard` mirrors it, and both callers guard first — DLR-154
+
+Lifting a mark is `primeCard`'s mirror in every respect that matters: it throws a `RangeError`
+naming the card when the card is **not** primed, for the same reason the writer throws — a silent
+no-op would let a caller believe a mark was lifted that was never there. It returns
+`primedCards.filter(...)` by `sameCard`, so it removes exactly the one card.
+
+Both of its callers live in `src/app/warCouncil/` and both guard with `isPrimed` before calling,
+because a reducer must not throw during an event handler: `handleRemoveBuff`'s Timebomb branch,
+which is how a riding Timebomb is now taken back, and `timebombMarks.ts`'s two lift helpers, which
+retire a mark that has detonated — in hand, or by being played. **This module still decides nothing
+about when either happens.**
 
 `roundReducer.ts`'s `commitTimebomb` guarded all three conditions — the charge count, membership, and
 the existing mark — *before* calling it, exactly as `handleTapCheat` checked `hasCheat` before

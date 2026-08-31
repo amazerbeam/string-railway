@@ -90,7 +90,13 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     expect(scoreboard.textContent).toMatch(/You0/)
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
-    expect(screen.getByRole('button', { name: '7 of Bells, primed' })).toBeTruthy()
+    // DLR-154 R4 — the hand's own render now carries the real fuse count (`HandFan` threads
+    // `timebombFuseRemaining`), so the name gains the fuse clause the moment it is set.
+    expect(
+      screen.getByRole('button', {
+        name: '7 of Bells, primed, Timebomb — 2 tricks to play it before it goes off in your hand.',
+      }),
+    ).toBeTruthy()
     // The trick did not move — marking is not a move.
     expect(scoreboard.textContent).toMatch(/You0/)
   })
@@ -127,6 +133,12 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     expect(screen.getByRole('dialog', { name: 'Your buffs' })).toBeTruthy()
     expect(timebombRow().getAttribute('aria-pressed')).toBe('false')
   })
+
+  // DLR-154 FIX C — the revocation/keyboard group (the Escape/AC13 pair, the FIX A Quarry-to-lead
+  // test, and the "row survives a trick sat out" test) moved to
+  // `WarCouncilRound.timebombRevoke.test.tsx`, splitting this file back under its 400-line budget
+  // — the same reason `buffActivation.timebombLive.test.ts` and
+  // `buffActivation.deactivate.test.ts` were split from `buffActivation.test.ts`.
 
   it('is not rendered at all once a trick reveal is held — AC1, the gallery and the felt stage never contend', () => {
     // Same construction as the base spec's own "plays a legal card" case: the fixture hand's one
@@ -195,7 +207,10 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     fireEvent.click(row)
     const bells2 = screen.getByRole('button', { name: '2 of Bells' })
     fireEvent.click(bells2)
-    const markedBells2 = screen.getByRole('button', { name: '2 of Bells, primed' })
+    // DLR-154 R4 — the real fuse count is threaded through the hand as soon as the card is primed.
+    const markedBells2 = screen.getByRole('button', {
+      name: '2 of Bells, primed, Timebomb — 2 tricks to play it before it goes off in your hand.',
+    })
     fireEvent.click(markedBells2)
     fireEvent.click(markedBells2)
 
@@ -229,7 +244,14 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     fireEvent.click(row)
     fireEvent.click(row)
     fireEvent.click(screen.getByRole('button', { name: '2 of Bells' }))
-    expect(screen.getByRole('button', { name: '2 of Bells, primed' })).toBeTruthy()
+    // DLR-154 R4 — the hand's own render carries the real fuse count as soon as the card is
+    // primed. The Fox's exchange prompt below (`AbilityPrompt`) and `DecreePile` do not pass
+    // `fuseRemaining` (Task 18 threads it through `HandFan` only), so both stay unfused.
+    expect(
+      screen.getByRole('button', {
+        name: '2 of Bells, primed, Timebomb — 2 tricks to play it before it goes off in your hand.',
+      }),
+    ).toBeTruthy()
 
     // Lead the Fox, then exchange the marked card into the decree.
     const fox = screen.getByRole('button', { name: '3 of Keys (Fox)' })
@@ -240,6 +262,21 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     // The decree pile — not the hand fan, which no longer holds this card — must still announce
     // the mark. Exactly one match: the marked card left the hand when it became the decree.
     expect(screen.getByRole('button', { name: '2 of Bells, primed' })).toBeTruthy()
+  })
+
+  it("names the card on the riding row's own remove button too, not just on Escape — FIX 4", () => {
+    renderRound()
+    openLoadout()
+    const row = timebombRow()
+    fireEvent.click(row)
+    fireEvent.click(row)
+    fireEvent.click(screen.getByRole('button', { name: '7 of Bells' }))
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Take the Timebomb back off the 7 of Bells' }),
+    )
+
+    expect(screen.getByText('Timebomb taken off the 7 of Bells.')).toBeTruthy()
   })
 
   it('reports onComplete with the Timebomb spent from the pile — DLR-142, single-use by default', () => {
@@ -259,7 +296,10 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     fireEvent.click(row)
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
-    const marked = screen.getByRole('button', { name: '7 of Bells, primed' })
+    // DLR-154 R4 — the real fuse count is threaded through the hand as soon as the card is primed.
+    const marked = screen.getByRole('button', {
+      name: '7 of Bells, primed, Timebomb — 2 tricks to play it before it goes off in your hand.',
+    })
     fireEvent.click(marked)
     fireEvent.click(marked)
 

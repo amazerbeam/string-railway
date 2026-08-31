@@ -18,5 +18,12 @@ The rule the mark triggers is still the engine's — see
 [the Timebomb mark](../war-council/the-timebomb-mark.md). The charge count this file used to describe
 (`RunState.timebombCharges`) is deleted; a Timebomb is a pile member now, with no capacity cap.
 
+> **The mark itself moved on again — DLR-154, 2026-08-31.** The `⚗` glyph this file's title still
+> names is gone: the mark is now `TimebombMark`, an inline-SVG bomb hung on the card's **wrapper**
+> rather than printed inside its clipped box, carrying a two-trick countdown, and a riding Timebomb
+> can now be taken back off the trick. All of it — the priming mode, the mark, the fuse, the
+> one-at-a-time refusal and the revocation — is
+> [Priming a Timebomb](timebomb-priming-and-the-fuse.md).
+
 This file is kept, empty of live content, so a link or a search that lands here finds the retirement
 notice rather than a page describing a widget that no longer exists as though it still did.

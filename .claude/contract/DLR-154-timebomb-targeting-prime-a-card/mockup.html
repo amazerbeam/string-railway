@@ -1,0 +1,488 @@
+<title>Priming a Timebomb</title>
+<style>
+  /* DLR-154 mockup — the priming mode, the bomb mark, and the riding row.
+     Tokens transcribed from src/app/warCouncil/warCouncil.css. Single-theme on purpose:
+     the felt is one committed visual world and this sheet is a slice of it.
+     EVERY size, hue and duration here is a PLACEHOLDER — the developer's to retune. */
+  :root {
+    --chamber: #0c1013;
+    --chamber-lift: #141a1f;
+    --felt: #16241f;
+    --felt-lip: #0a1211;
+    --felt-line: #2b4038;
+    --parchment: #e9e1cd;
+    --parchment-shade: #d3c8ae;
+    --ink: #191610;
+    --ink-soft: #5c5443;
+    --brass: #c99a4e;
+    --brass-dim: #7d6132;
+    --chalk: #cdd6d2;
+    --chalk-dim: #6f7d78;
+    --alarm: #d1705f;
+    --bells: #c9873f;
+    --keys: #5f93a8;
+    --moons: #9c7cb8;
+    --timebomb: #8fb04e;
+    --timebomb-edge: #5c7a2e;
+    --skull-shadow: #171310;
+    --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --card-w: 4.6rem;
+  }
+
+  body {
+    margin: 0;
+    background: var(--chamber);
+    color: var(--chalk);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .page { max-width: 62rem; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+
+  header { border-bottom: 1px solid var(--felt-line); padding-bottom: 1.6rem; margin-bottom: 2.4rem; }
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(1.7rem, 4vw, 2.3rem);
+    font-weight: 600;
+    color: var(--parchment);
+    margin: 0 0 .5rem;
+    text-wrap: balance;
+  }
+  .kicker {
+    font-size: .7rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--brass); font-weight: 700; margin: 0 0 .7rem;
+  }
+  header p { margin: 0; max-width: 62ch; color: var(--chalk-dim); }
+
+  h2 {
+    font-family: var(--serif); font-size: 1.25rem; font-weight: 600;
+    color: var(--parchment); margin: 3rem 0 .4rem;
+  }
+  h2:first-of-type { margin-top: 2rem; }
+  section > p { margin: 0 0 1.2rem; max-width: 66ch; color: var(--chalk-dim); }
+  section > p b { color: var(--chalk); font-weight: 600; }
+  code { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: .87em; color: var(--brass); }
+
+  /* ---------- the felt slice ---------- */
+  .felt {
+    background: var(--felt);
+    border: 1px solid var(--felt-line);
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 6px var(--felt-lip);
+    padding: 1.4rem 1.2rem 1.6rem;
+  }
+
+  .hint {
+    font-size: .72rem; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--chalk-dim); font-weight: 600; text-align: center;
+    min-height: 1.3em; margin: 0 0 .9rem;
+  }
+  .hint.is-priming { color: var(--timebomb); letter-spacing: .04em; text-transform: none; font-size: .84rem; }
+
+  /* The hand. `.is-marking` is the class that has no stylesheet rule in the app today —
+     this is the proposal for it. PLACEHOLDER treatment. */
+  .fan {
+    display: flex; justify-content: center; align-items: flex-end;
+    gap: calc(var(--card-w) * 0.12);
+    padding: calc(var(--card-w) * 0.35) 0 .6rem;
+    border-radius: 3px;
+    transition: background-color .15s ease-out, box-shadow .15s ease-out;
+  }
+  .fan.is-marking {
+    background: color-mix(in srgb, var(--timebomb) 9%, transparent);
+    box-shadow: inset 0 0 0 1px var(--timebomb-edge);
+  }
+  .fan.is-marking .slot { animation: waiting 1.4s ease-in-out infinite alternate; }
+  .fan.is-marking .slot:nth-child(2) { animation-delay: .12s; }
+  .fan.is-marking .slot:nth-child(3) { animation-delay: .24s; }
+  .fan.is-marking .slot:nth-child(4) { animation-delay: .36s; }
+  .fan.is-marking .slot:nth-child(5) { animation-delay: .48s; }
+  @keyframes waiting { from { transform: translateY(0); } to { transform: translateY(-5%); } }
+
+  .slot { display: flex; flex-direction: column; align-items: center; gap: .3rem; }
+
+  /* The card's WRAPPER — the element AC4 hangs the mark on. In the app this is
+     `.wc-card-tip-host`, the span CardAbilityTip already wraps every PlayingCard in. */
+  .host { position: relative; display: block; }
+
+  .card {
+    font: inherit; position: relative; display: block;
+    width: var(--card-w); aspect-ratio: 2 / 3; padding: 0;
+    background: linear-gradient(168deg, var(--parchment) 0%, var(--parchment-shade) 100%);
+    color: var(--ink); text-align: left;
+    border: 2px solid var(--suit, var(--ink-soft));
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px #00000055, 0 3px 10px #00000070;
+    cursor: pointer; touch-action: manipulation;
+    transition: transform .13s ease-out;
+  }
+  .card:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .card:disabled { cursor: default; }
+  .card.bells { --suit: var(--bells); }
+  .card.keys  { --suit: var(--keys); }
+  .card.moons { --suit: var(--moons); }
+  @media (hover: hover) { .fan.is-marking .card:hover { transform: translateY(-9%); } }
+
+  .corner {
+    position: absolute; left: 6%; top: 4%; width: 46%;
+    display: grid; grid-template-columns: auto auto; column-gap: .14em;
+    align-items: center; align-content: start; line-height: 1;
+  }
+  .rank { font-family: var(--serif); font-size: calc(var(--card-w) * .24); font-weight: 700; }
+  .glyph { width: calc(var(--card-w) * .15); height: calc(var(--card-w) * .15); border-radius: 50%; background: var(--suit); }
+  .nm {
+    grid-column: 1 / -1; font-family: var(--serif); font-style: italic;
+    font-size: calc(var(--card-w) * .105); color: var(--ink-soft); margin-top: .1em;
+  }
+  .art {
+    position: absolute; left: 7%; right: 7%; top: 32%; bottom: 6%;
+    display: grid; place-items: center; overflow: hidden;
+    background: color-mix(in srgb, var(--suit) 16%, transparent);
+    border-radius: 2px;
+  }
+  .art span { font-size: calc(var(--card-w) * .34); line-height: 1; opacity: .75; }
+
+  /* A skull REPLACES the art. */
+  .card.skulled .art { background: #2a2118; }
+  .card.skulled .art span { font-size: calc(var(--card-w) * .46); opacity: 1; color: var(--parchment); }
+
+  .strip {
+    font-size: calc(var(--card-w) * .17); color: var(--chalk-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- the bomb mark (AC4, AC7, AC8, AC9) ---------- */
+  /* On the WRAPPER, a sibling of the card, so it overhangs the top-right corner.
+     Inline shapes, no <symbol>/<use>. pointer-events:none so it never steals a tap. */
+  .bomb {
+    position: absolute; z-index: 6;
+    top: -11%; right: -9%; width: 46%; aspect-ratio: 1;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--timebomb-edge), 0 0 0 4px color-mix(in srgb, var(--timebomb) 55%, transparent);
+    pointer-events: none;
+  }
+  .bomb svg { width: 100%; display: block; overflow: visible; }
+  .fizz { transform-origin: 76px 30px; animation: fizz 620ms steps(2, end) infinite; }
+  .glow { transform-origin: 76px 30px; animation: glow 620ms ease-in-out infinite alternate; }
+  @keyframes fizz {
+    0%   { transform: scale(1) rotate(0deg); }
+    50%  { transform: scale(1.28) rotate(22deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+  @keyframes glow { from { opacity: .55; } to { opacity: 1; } }
+
+  /* AC9 — the fizz stops, the spark stays LIT. Also honoured by the page's own toggle below. */
+  @media (prefers-reduced-motion: reduce) {
+    .fizz, .glow { animation: none; }
+    .glow { opacity: .75; }
+    .fan.is-marking .slot { animation: none; }
+    .card { transition: none; }
+  }
+  body.force-still .fizz, body.force-still .glow { animation: none; }
+  body.force-still .glow { opacity: .75; }
+  body.force-still .fan.is-marking .slot { animation: none; }
+
+  body.greyscale .felt, body.greyscale .close-row { filter: grayscale(1); }
+
+  /* ---------- riding list ---------- */
+  .riding {
+    margin: 1.2rem auto 0; max-width: 30rem;
+    border: 1px solid var(--felt-line); border-radius: 3px;
+    background: var(--chamber-lift); padding: .7rem .85rem;
+  }
+  .riding-heading {
+    display: block; font-size: .62rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--brass-dim); font-weight: 700; margin-bottom: .5rem;
+  }
+  .row {
+    display: grid; grid-template-columns: 1fr auto; align-items: center;
+    gap: .3rem .8rem; padding: .4rem 0;
+    border-top: 1px solid color-mix(in srgb, var(--felt-line) 60%, transparent);
+  }
+  .row:first-of-type { border-top: 0; }
+  .row.unreachable { opacity: .5; }
+  .row b { color: var(--parchment); font-weight: 600; }
+  .row .status { grid-column: 1; font-size: .8rem; color: var(--chalk-dim); }
+  .row .status em { color: var(--timebomb); font-style: normal; }
+  .remove {
+    grid-row: 1 / span 2; font: inherit; font-size: 1rem; line-height: 1;
+    min-width: 44px; min-height: 44px;
+    background: transparent; color: var(--chalk-dim);
+    border: 1px solid var(--brass-dim); border-radius: 2px;
+    cursor: pointer; touch-action: manipulation;
+  }
+  .remove:hover { color: var(--alarm); border-color: var(--alarm); }
+  .remove:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+  /* ---------- controls ---------- */
+  .controls { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; margin-top: 1.2rem; }
+  .btn {
+    font: inherit; font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700;
+    min-height: 44px; padding: 0 1.1rem;
+    background: transparent; color: var(--chalk);
+    border: 1px solid var(--brass-dim); border-radius: 2px;
+    cursor: pointer; touch-action: manipulation;
+  }
+  .btn:hover:not(:disabled) { border-color: var(--brass); color: var(--brass); }
+  .btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .btn:disabled { opacity: .35; cursor: default; }
+  .btn.primary { border-color: var(--timebomb-edge); color: var(--timebomb); }
+
+  .close-row {
+    display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-end;
+    background: var(--felt); border: 1px solid var(--felt-line); border-radius: 4px;
+    padding: 2rem 1.5rem 1.4rem; justify-content: center;
+  }
+  .close-row .slot { --card-w: 6.4rem; }
+  .caption { font-size: .72rem; color: var(--chalk-dim); text-align: center; max-width: 12rem; }
+
+  ul { max-width: 66ch; color: var(--chalk-dim); padding-left: 1.1rem; }
+  li { margin-bottom: .5rem; }
+  li b { color: var(--chalk); font-weight: 600; }
+
+  .note {
+    border-left: 2px solid var(--brass-dim); padding: .1rem 0 .1rem .9rem;
+    color: var(--chalk-dim); max-width: 66ch; margin: 1.2rem 0;
+  }
+</style>
+
+<div class="page">
+  <header>
+    <p class="kicker">DLR-154 · plan mockup</p>
+    <h1>Priming a Timebomb</h1>
+    <p>
+      The one buff in the game that attaches to a card, and everything the player needs to see while it does:
+      the hand waiting for a choice, the bomb sat on the card that took it, the row that says what is riding,
+      and the control that takes it all back. Every size, hue and duration on this page is a placeholder.
+    </p>
+  </header>
+
+  <section>
+    <h2>The flow</h2>
+    <p>
+      Press <b>Activate Timebomb</b>, then tap a card. The mode ends on that choice. The <b>×</b> on the riding
+      row — or <b>Escape</b> with focus in the hand — takes the Timebomb back off the trick, lifting the mark
+      and closing the mode together.
+    </p>
+
+    <div class="felt">
+      <p class="hint" id="hint" aria-live="polite">Your lead</p>
+      <div class="fan" id="fan" role="group" aria-label="Your hand"></div>
+      <div class="riding" id="riding" hidden>
+        <span class="riding-heading">Riding this trick</span>
+        <div class="row" id="taker-row">
+          <span><b>Taker of Bells</b></span>
+          <span class="status">lights up 2 of your cards</span>
+          <button class="remove" type="button" aria-label="Take Taker of Bells off the trick — 2 cards go dark">×</button>
+        </div>
+        <div class="row" id="tb-row">
+          <span><b>Timebomb</b></span>
+          <span class="status" id="tb-status">Not yet primed — pick a card in your hand.</span>
+          <button class="remove" type="button" id="tb-remove" aria-label="Take Timebomb off the trick — nothing is primed yet">×</button>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn primary" type="button" id="activate">Activate Timebomb</button>
+        <button class="btn" type="button" id="escape">Escape</button>
+        <button class="btn" type="button" id="reset">Reset</button>
+      </div>
+    </div>
+
+    <p class="note">
+      <b>One source of truth (AC6).</b> Nothing on this page carries a "primed" flag of its own. The mark, the
+      row's sentence and the remove label all read the same single primed-card value — which is why they cannot
+      disagree, and why the row says <em>not yet primed</em> rather than guessing.
+    </p>
+  </section>
+
+  <section>
+    <h2>The mark, at hand scale</h2>
+    <p>
+      A skull <b>replaces</b> the art — it is what the card is for that trick. A Timebomb is <b>added</b> — a
+      temporary thing done to a card that is otherwise still itself. A primed Swan is still a Swan.
+    </p>
+    <div class="close-row" id="close-row"></div>
+    <div class="controls">
+      <button class="btn" type="button" id="grey">Greyscale</button>
+      <button class="btn" type="button" id="still">Stop the fizz</button>
+    </div>
+    <ul>
+      <li><b>On the wrapper, not in the card.</b> The bomb overhangs the top-right corner, so it must hang on
+        the card's wrapper rather than inside the card's own box.</li>
+      <li><b>Inline shapes, not <code>&lt;use&gt;</code>.</b> A cloned <code>&lt;use&gt;</code> puts the spark in a
+        shadow tree the fizz class cannot reach, which would leave it dead and unreachable by
+        <code>prefers-reduced-motion</code>.</li>
+      <li><b>Reduced motion stops the fizz and leaves the spark lit.</b> The mark still reads; it stops moving.
+        "Stop the fizz" above shows the same result the media query produces.</li>
+      <li><b>Greyscale.</b> A black silhouette on a pale card — shape alone, no hue needed.</li>
+      <li><b>The mark says nothing about tier or damage.</b> Deliberate: priming a second Timebomb overwrites
+        the first's tier, so a per-card figure could end up lying.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>What this sheet is asking you to decide</h2>
+    <ul>
+      <li><b>Taking a Timebomb back off the trick is a rule change.</b> As drawn, the × refunds its action
+        points, returns the card to your pile and lifts the mark — a full undo, within the same trick window.
+        No other activated card can be undone today.</li>
+      <li><b>The hand's waiting treatment is new.</b> No approved sheet shows what the hand looks like
+        <em>while</em> it waits; the tint, the edge and the drift above are a first proposal.</li>
+      <li><b>Copy.</b> The prompt, the row's two sentences and the remove label are all placeholders.</li>
+      <li><b>Two loud marks on one small object.</b> The skulled-and-primed card in the row above is the case
+        worth judging at real scale.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+  // The one bomb definition, inline. In the app this becomes a component whose two gradient ids
+  // are minted per instance, so two primed cards on screen cannot collide.
+  let bombSeq = 0;
+  function bomb() {
+    const n = ++bombSeq;
+    return `<span class="bomb" aria-hidden="true"><svg viewBox="0 0 100 100">
+      <defs>
+        <radialGradient id="body${n}" cx="36%" cy="32%" r="72%">
+          <stop offset="0" stop-color="#5a5852"/><stop offset=".42" stop-color="#22201c"/>
+          <stop offset="1" stop-color="#0a0908"/>
+        </radialGradient>
+        <radialGradient id="spark${n}">
+          <stop offset="0" stop-color="#fff6cf"/>
+          <stop offset=".4" stop-color="#f5a623" stop-opacity=".8"/>
+          <stop offset="1" stop-color="#f5a623" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <circle cx="46" cy="60" r="31" fill="url(#body${n})"/>
+      <path d="M18 52a31 31 0 0 1 26-22 31 31 0 0 0-22 30z" fill="#8e8a80" opacity=".5"/>
+      <ellipse cx="33" cy="46" rx="8" ry="5.5" fill="#fff" opacity=".26" transform="rotate(-28 33 46)"/>
+      <rect x="37" y="22" width="17" height="12" rx="3" fill="#33302a"/>
+      <rect x="37" y="22" width="17" height="4" rx="2" fill="#5c574d"/>
+      <path d="M54 27c9-7 19-4 22 3" fill="none" stroke="#7a6a4a" stroke-width="5" stroke-linecap="round"/>
+      <circle class="glow" cx="76" cy="30" r="15" fill="url(#spark${n})"/>
+      <g class="fizz" fill="#ffd980">
+        <path d="M76 18l3.4 8.6L88 30l-8.6 3.4L76 42l-3.4-8.6L64 30l8.6-3.4z"/>
+        <circle cx="76" cy="30" r="3.6" fill="#fffbe8"/>
+      </g>
+    </svg></span>`;
+  }
+
+  const ART = { 1: '\u{1F9A2}', 3: '\u{1F98A}', 5: '\u{1FA93}', 7: '\u{1F3FA}', 9: '\u{1F52E}', 11: '\u{1F451}' };
+  const NAME = { 1: 'Swan', 3: 'Fox', 5: 'Woodcutter', 7: 'Treasure', 9: 'Witch', 11: 'Monarch' };
+  const SUITNAME = { bells: 'Bells', keys: 'Keys', moons: 'Moons' };
+
+  const HAND = [
+    { rank: 1, suit: 'bells' },
+    { rank: 4, suit: 'keys' },
+    { rank: 7, suit: 'bells', skulled: true },
+    { rank: 9, suit: 'moons' },
+    { rank: 11, suit: 'keys' },
+  ];
+
+  // The single source of truth. Nothing else records "primed".
+  const state = { riding: false, armed: false, primed: null };
+
+  const key = (c) => `${c.suit}-${c.rank}`;
+  const cardName = (c) => `${c.rank} of ${SUITNAME[c.suit]}${NAME[c.rank] ? ' (' + NAME[c.rank] + ')' : ''}`;
+
+  function cardHtml(c, opts = {}) {
+    const primed = opts.primed ?? (state.primed !== null && state.primed === key(c));
+    const marks = [c.skulled && 'skulled', primed && 'primed'].filter(Boolean).join(', ');
+    return `<span class="host">
+      <button class="card ${c.suit}${c.skulled ? ' skulled' : ''}" type="button"
+        data-key="${key(c)}" ${opts.inert ? 'disabled' : ''}
+        aria-label="${cardName(c)}${marks ? ', ' + marks : ''}">
+        <span class="corner"><span class="rank">${c.rank}</span><span class="glyph"></span>${
+          NAME[c.rank] ? `<span class="nm">${NAME[c.rank]}</span>` : ''}</span>
+        <span class="art"><span>${c.skulled ? '☠' : (ART[c.rank] || '✦')}</span></span>
+      </button>
+      ${primed ? bomb() : ''}
+    </span>`;
+  }
+
+  const fan = document.getElementById('fan');
+  const hint = document.getElementById('hint');
+  const riding = document.getElementById('riding');
+  const tbStatus = document.getElementById('tb-status');
+  const tbRemove = document.getElementById('tb-remove');
+  const tbRow = document.getElementById('tb-row');
+  const activate = document.getElementById('activate');
+
+  function render() {
+    fan.className = 'fan' + (state.armed ? ' is-marking' : '');
+    fan.innerHTML = HAND.map((c) => `<div class="slot">${cardHtml(c)}<span class="strip">${
+      c.skulled ? 'skulled' : '—'}</span></div>`).join('');
+
+    hint.textContent = state.armed
+      ? 'Timebomb — pick the card it rides on. It goes off next trick.'
+      : 'Your lead';
+    hint.className = 'hint' + (state.armed ? ' is-priming' : '');
+
+    riding.hidden = !state.riding;
+    activate.disabled = state.riding;
+
+    const target = state.primed ? HAND.find((c) => key(c) === state.primed) : null;
+    tbStatus.innerHTML = target
+      ? `Riding <em>${cardName(target)}</em> — it goes off at the next trick.`
+      : 'Not yet primed — pick a card in your hand.';
+    tbRemove.setAttribute('aria-label', target
+      ? `Take Timebomb off the trick — ${cardName(target)} loses its mark`
+      : 'Take Timebomb off the trick — nothing is primed yet');
+    // A Timebomb has no condition, so its reach is always 0 — but it must not be greyed as dead.
+    tbRow.classList.remove('unreachable');
+  }
+
+  fan.addEventListener('click', (e) => {
+    const button = e.target.closest('.card');
+    if (!button || !state.armed) return;
+    if (state.primed === button.dataset.key) return; // already primed — stay in the mode
+    state.primed = button.dataset.key;
+    state.armed = false;
+    render();
+  });
+
+  activate.addEventListener('click', () => {
+    state.riding = true;
+    state.armed = true;
+    state.primed = null;
+    render();
+  });
+
+  function takeItBackOff() {
+    state.riding = false;
+    state.armed = false;
+    state.primed = null;
+    render();
+  }
+
+  tbRemove.addEventListener('click', takeItBackOff);
+  document.getElementById('escape').addEventListener('click', () => {
+    if (state.armed || state.primed) takeItBackOff();
+  });
+  document.getElementById('reset').addEventListener('click', takeItBackOff);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && (state.armed || state.primed)) takeItBackOff();
+  });
+
+  document.getElementById('grey').addEventListener('click', (e) => {
+    document.body.classList.toggle('greyscale');
+    e.currentTarget.textContent = document.body.classList.contains('greyscale') ? 'Full colour' : 'Greyscale';
+  });
+  document.getElementById('still').addEventListener('click', (e) => {
+    document.body.classList.toggle('force-still');
+    e.currentTarget.textContent = document.body.classList.contains('force-still') ? 'Let it fizz' : 'Stop the fizz';
+  });
+
+  const CLOSE = [
+    { card: { rank: 1, suit: 'bells' }, primed: false, caption: 'Plain. A Swan, unmarked.' },
+    { card: { rank: 1, suit: 'bells' }, primed: true, caption: 'Primed. Rank, suit, name and art all survive — the mark is added.' },
+    { card: { rank: 7, suit: 'bells', skulled: true }, primed: true, caption: 'Both. The skull takes the face, the bomb takes the corner. Judge this one at real scale.' },
+  ];
+  document.getElementById('close-row').innerHTML = CLOSE.map((item) =>
+    `<div class="slot">${cardHtml(item.card, { primed: item.primed, inert: true })}<span class="caption">${item.caption}</span></div>`
+  ).join('');
+
+  render();
+</script>

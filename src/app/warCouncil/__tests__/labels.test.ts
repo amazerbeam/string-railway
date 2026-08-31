@@ -22,6 +22,7 @@ import {
   RANK_NAME,
   suitShapeRowText,
   SUIT_NAME,
+  timebombFuseText,
   TRICK_OUTCOME_MESSAGE,
 } from '../labels'
 import type { CardDamagePreview } from '../cardDamage'
@@ -62,6 +63,36 @@ describe('cardAccessibleName', () => {
     expect(cardAccessibleName({ suit: Suit.Keys, rank: 3 }, { primed: true })).toBe(
       '3 of Keys (Fox), primed',
     )
+  })
+
+  it('names the fuse on a primed card — R4', () => {
+    expect(
+      cardAccessibleName({ suit: Suit.Bells, rank: 5 }, { primed: true, fuseRemaining: 2 }),
+    ).toMatch(/2 tricks/)
+  })
+
+  it('names skull before Timebomb, and leaves an unmarked card alone', () => {
+    expect(
+      cardAccessibleName(
+        { suit: Suit.Bells, rank: 5 },
+        { skulled: true, primed: true, fuseRemaining: 1 },
+      ),
+    ).toMatch(/skulled.*primed/)
+    expect(cardAccessibleName({ suit: Suit.Bells, rank: 5 })).not.toMatch(/primed/)
+  })
+})
+
+describe('timebombFuseText — R4', () => {
+  it('names the tricks remaining when more than one is left', () => {
+    expect(timebombFuseText(2)).toMatch(/2 tricks/)
+  })
+
+  it('singularises the last trick', () => {
+    expect(timebombFuseText(1)).toMatch(/this trick/)
+  })
+
+  it('says it is going off now once the fuse has run out', () => {
+    expect(timebombFuseText(0)).toMatch(/going off now/)
   })
 })
 

@@ -127,16 +127,6 @@
   --wc-face-mark-x: 0.16;
   --wc-face-mark-top: 0.8;
   --wc-face-mark-bottom: 0.06;
-  /* QA-1 (DLR-149 fix loop) — `.wc-primed-mark` and `.wc-discard-mark` (both
-     `warCouncilCardFace.css`) used to hand-code their own numbers with no `--wc-face-*` twin at
-     all, so nothing enforced them against `cardFace.ts`'s `CARD_FACE_GEOMETRY`. These four are
-     the same shipped box, expressed as this module's height-normalised fractions — see
-     `cardFace.ts`'s comment on `PRIMED_MARK_BOTTOM_FRACTION` for the width-to-height conversion
-     `-bottom`/`-h` need and don't. */
-  --wc-face-primed-x: 0.08;
-  --wc-face-primed-w: 0.24;
-  --wc-face-primed-bottom: 0.046667;
-  --wc-face-primed-h: 0.16;
   --wc-face-discard-x: 0.35;
   --wc-face-discard-y: 0.4;
   container-type: inline-size;

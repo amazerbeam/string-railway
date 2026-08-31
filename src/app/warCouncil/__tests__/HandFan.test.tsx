@@ -29,6 +29,7 @@ function renderFan(overrides = {}) {
       rejected={false}
       promptOpen={false}
       primedCards={[]}
+      timebombFuseRemaining={0}
       timebombArmed={false}
       discardSelecting={false}
       discardSelection={[]}
@@ -109,6 +110,13 @@ describe('HandFan', () => {
   it('announces a card in primedCards as primed (DLR-90 AC2)', () => {
     renderFan({ primedCards: [card(Suit.Bells, 7)] })
     expect(screen.getByRole('button', { name: '7 of Bells, primed' })).toBeDefined()
+  })
+
+  it('draws the countdown on the primed card only — R4', () => {
+    renderFan({ primedCards: [card(Suit.Bells, 7)], timebombFuseRemaining: 2 })
+    const marks = document.querySelectorAll('.wc-timebomb-mark')
+    expect(marks).toHaveLength(1)
+    expect(marks[0].textContent).toContain('2')
   })
 
   it('disables an illegal card as today when timebombArmed is false', () => {

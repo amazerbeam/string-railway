@@ -26,15 +26,15 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | --------------------- | ------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, DLR-150, DLR-152, DLR-153, PT-001, PT-002                                                                                                                                                                   |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, DLR-150, DLR-152, DLR-153, DLR-154, PT-001, PT-002                                                                                                                                                                   |
 | `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150                                                                                                                                                                                        |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, PT-002                                                                                                              |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, DLR-154, PT-002                                                                                                              |
 | `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145                                                                                                                                                                                                                                                                                                                             |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-150, DLR-153, PT-001, PT-002 |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-150, DLR-153, DLR-154, PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150                                                                                                                                                                                                                                                                                                                                                                                  |
+| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154                                                                                                                                                                                                                                                                                                                                                                                  |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -1194,7 +1194,46 @@ stale**, including the tricks-taken and damage-per-hand figures the shop arithme
 re-measuring was out of scope. Start at
 [war-council/the-hand-refill.md](war-council/the-hand-refill.md).
 
-## Latest — DLR-153, activation you can see and take back (2026-08-27)
+## Latest — DLR-154, Timebomb targeting: the mark, the fuse, and taking it back (2026-08-31)
+
+**The ticket that gave Timebomb everything a player can see, undo and be held to.** The mechanic
+already worked — a spend armed a damage pair, the next hand-card tap primed a card, and the mark
+detonated at the trick's resolution against whoever physically took it — but almost none of it was
+visible, and two of its rules were wrong.
+
+Five invisible things were fixed: the priming prompt sat below a hint branch that is true throughout
+the prompt's own lifetime, so it never showed; the class the hand set while waiting for a card
+styled **nothing at all**; the mark was a `⚗` glyph in a disc rather than the approved bomb; the
+riding row called a spent Timebomb "already spent" and offered no way back; and `Escape` silently
+ate a paid-for card.
+
+**Three rules changed, and they are in `the-hunt.md`.** A primed card now carries a **two-trick
+fuse** (`TIMEBOMB_FUSE_TRICKS = 2`, the developer's own figure) and detonates **in the player's
+hand** against the player if it is never played — booked through the same `queueTimebomb` a played
+bomb uses, so the bank reset, the Blast Guard and the forced cash-out are inherited rather than
+restated. **Only one Timebomb may be live at a time**: a second is refused outright at the spend,
+through a new `BuffActivationRefusal.TimebombLive`, rather than being allowed and then blocked at
+the prime, which would strand the card. And a riding Timebomb **can now be taken back** — the first
+revocable Activated card, valid only because action points are off, so the whole of a revocation is
+the card returning to the pile.
+
+Three implementation facts are worth carrying forward. The bomb is **inline SVG with per-instance
+`useId()` gradients, deliberately not `<symbol>`+`<use>`** — a `use` clone lands in a shadow tree the
+fizz class cannot reach, leaving the spark dead and out of `prefers-reduced-motion`'s reach — and it
+hangs on the card's **wrapper**, outside the clipped card box, which is what lets it overhang and
+what makes one placement serve every render path; the on-face geometry it replaced was **deleted,
+not repointed**, because a wrapper-hung mark has no printed rectangle for the drift spec to certify.
+The armed Timebomb's `Buff` is persisted **outside** `activatedThisTrick`, which is cleared at every
+trick resolution, and has **three** lifetime exits — removal, fuse expiry, and the primed card being
+played and detonating normally; missing the third left every later Timebomb blocked for the hand.
+And the window a Timebomb is armed in is **wider than the window `canAct` allows**, so both the
+reducer's tap handler and the hand's interactivity gate check `timebombArmed` ahead of it.
+
+**Every colour, size, timing and string it added is a placeholder pending the developer** — the
+mark's geometry and hue, the fizz duration, the priming tint, and all new copy. Start at
+[war-council-ui/timebomb-priming-and-the-fuse.md](war-council-ui/timebomb-priming-and-the-fuse.md).
+
+## DLR-153, activation you can see and take back (2026-08-27)
 
 **The ticket that made activating a buff legible, and the first one to change what activation
 *means*.** Until now, activating a buff deleted a card from the pile and changed nothing on screen —
@@ -1222,7 +1261,9 @@ and `Sidestep` — and `deactivateFromPile`, which returns the card to the pile 
 end**, not reinserted), refunds the action-point cost through a new `refundAp`, and clears the buff
 from that trick's activations. **Cheat, Timebomb, Ward and Shield stay irreversible**, because their
 spend also arms felt state the transition cannot reach; they still appear in the riding list, with a
-status line saying why and no control. **Activation is still two taps** — the ticket removed the
+status line saying why and no control. (**Timebomb stopped being one of the four on DLR-154** — the
+set is renamed `REVOCABLE_BUFF_KINDS` and holds it too; the felt-state reversal the engine cannot do
+is the app layer's. Cheat, Ward and Shield are unchanged.) **Activation is still two taps** — the ticket removed the
 card *target*, not the poise.
 
 **No firing rule was copied into the view layer, and that is the whole correctness argument.** Every

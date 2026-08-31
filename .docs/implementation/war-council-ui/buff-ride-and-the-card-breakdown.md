@@ -55,6 +55,15 @@ counts a buff's reach by walking that same map, never by a second projection pas
 cannot inflate a reach figure by construction rather than by a filter someone has to remember.
 `ridingRowsFor` pairs each activated buff with its reach and with `isRevocableBuff(buff)`.
 
+> **DLR-154 gave the list a fourteenth kind of row and one exception to the paragraph above.** A
+> Timebomb row is built from `RoundUiState.timebombBuff` **directly**, and Timebombs are filtered
+> out of the ordinary rows — because a Timebomb now outlives the trick boundary at which
+> `openBuffWindow` clears `activatedThisTrick`, so a row sourced from that list would vanish while
+> its two-trick fuse was still running. The row carries a `timebomb: TimebombRide | null` field
+> holding the **derived** target (`primedCards.at(-1) ?? null`, never stored) and the fuse count,
+> and it is revocable — Timebomb is the first Activated card that is. See
+> [Priming a Timebomb](timebomb-priming-and-the-fuse.md).
+
 `activatedBuffs(state)` resolves the ids in `activatedThisTrick` back to cards through the
 **`offeredBuffs(state)` ∪ `spentThisTrick`** union `buffHandInputFor` already uses — a card consumed
 at activation is no longer offered, and looking in the pile alone would silently drop it. An id the
@@ -119,7 +128,11 @@ un-activate". That is no longer true, and the change is implemented where the ru
 - `RoundUiActionKind.RemoveBuff` — a thirteenth action, distinct from `CancelBuffPoise`, which drops
   an _unspent_ poise where this reverses a _committed_ activation.
 - `handleRemoveBuff(state, id)` in `buffHandlers.ts` — asks membership of `activatedThisTrick` and
-  then `isRevocableBuff` **first**, and returns `state` itself on a no. `deactivateFromPile` throws
+  then `isRevocableBuff` **first**, and returns `state` itself on a no. (**DLR-154 put one branch
+  ahead of both**: an id matching `state.timebombBuff` is handled by `removeRidingTimebomb`, which
+  returns the card to the pile directly and clears the fuse, the armed and primed damage and the
+  mark — `deactivateFromPile` would throw, because a riding Timebomb has usually outlived
+  `activatedThisTrick`.) `deactivateFromPile` throws
   by design, and a throw inside a reducer during an event handler unmounts the tree; returning the
   same object rather than a copy also means an idle removal causes no re-render, mirroring
   `handleCancelBuffPoise`.

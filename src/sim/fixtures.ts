@@ -116,7 +116,13 @@ export function fixtureRunAfterFirstFight(seed = 1301): RunState {
  *  open only until the NEXT trick's resolution pays and clears it — or `null` when the marked
  *  trick's own outcome does not book a payment (e.g. a `SkullWin`, which AC7 exempts) or the hand
  *  stalls before reaching one. `buyFromShop` is total over `ShopItem` and still prices Timebomb;
- *  DLR-116 only pared it off the `SHOP_ITEMS` shelf, so buying it directly here is legitimate. */
+ *  DLR-116 only pared it off the `SHOP_ITEMS` shelf, so buying it directly here is legitimate.
+ *
+ *  DLR-154 FIX B — `booked` alone is now the whole signal. A detonation (by play or by the fuse
+ *  expiring in hand) clears the mark in the SAME transition that books the payment
+ *  (`commitHandlers.ts`'s `liftDetonatedMark`/`liftExpiredMarks`), so "a primed card AND a booked
+ *  payment" is no longer a reachable state — that co-occurrence WAS the bug FIX B removed. Neither
+ *  `primed` nor `markedCardPlayed` can hold at the same instant `booked` first becomes true. */
 function attemptPrimedTimebomb(seed: number): RoundUiState | null {
   const funded: RunState = { ...startRun(PLAYER_START_HEALTH, [], seed), coins: TIMEBOMB_PRICE }
   const run = buyFromShop(funded, ShopItem.Timebomb)
@@ -126,11 +132,10 @@ function attemptPrimedTimebomb(seed: number): RoundUiState | null {
   let marked = false
 
   for (let i = 0; i < MAX_ACTIONS_PER_HAND; i += 1) {
-    const primed = ui.round.primedCards.length >= 1
     const booked =
       ui.encounter.pendingTimebomb[DuelSide.Player] > 0 ||
       ui.encounter.pendingTimebomb[DuelSide.Quarry] > 0
-    if (primed && booked) return ui
+    if (booked) return ui
 
     if (ui.cpuFault !== null) return null
     if (isEncounterResolved(ui.encounter)) return null
@@ -200,13 +205,18 @@ function attemptPrimedTimebomb(seed: number): RoundUiState | null {
 }
 
 /**
- * A run with a Timebomb bought, dealt a hand, and driven to the point where a card is primed and
- * `encounter.pendingTimebomb` is non-zero on at least one side. DLR-132 — the Timebomb is an
- * ordinary pile row now: marking is `TapBuff` twice (poise, commit — this is the spend) through
- * the loadout panel, then `TapCard` on the target once to mark it; the booking lands on
- * `encounter.pendingTimebomb` when the trick carrying the primed card resolves. Retries the next
- * seed (bounded to `PRIMED_TIMEBOMB_MAX_ATTEMPTS`) because which trick outcome the marked card
- * lands is not guaranteed on every seed.
+ * A run with a Timebomb bought, dealt a hand, and driven to the point where the marked card has
+ * just detonated and `encounter.pendingTimebomb` is non-zero on at least one side. DLR-132 — the
+ * Timebomb is an ordinary pile row now: marking is `TapBuff` twice (poise, commit — this is the
+ * spend) through the loadout panel, then `TapCard` on the target once to mark it; the booking
+ * lands on `encounter.pendingTimebomb` when the trick carrying the primed card resolves. Retries
+ * the next seed (bounded to `PRIMED_TIMEBOMB_MAX_ATTEMPTS`) because which trick outcome the marked
+ * card lands is not guaranteed on every seed.
+ *
+ * DLR-154 FIX B — the name outlives the exact state it returns: the mark is lifted in the SAME
+ * transition that books the payment, so the returned state has NO primed card by the time
+ * `pendingTimebomb` reads non-zero (see `attemptPrimedTimebomb`'s docblock). The pile/round no
+ * longer carries the stranded mark the pre-fix reducer left behind.
  */
 export function fixtureHandWithPrimedTimebomb(seed = 1302): RoundUiState {
   for (let attempt = 0; attempt < PRIMED_TIMEBOMB_MAX_ATTEMPTS; attempt += 1) {
