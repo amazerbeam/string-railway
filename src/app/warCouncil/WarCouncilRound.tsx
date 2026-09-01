@@ -5,6 +5,7 @@ import { createRoundUiState } from './roundUiState'
 import { roundReducer } from './roundReducer'
 import { SuitSymbolSheet } from './SuitMark'
 import TrickResolutionScreen from './TrickResolutionScreen'
+import { useTrickDwell } from './useTrickDwell'
 import WarCouncilTable from './WarCouncilTable'
 
 /**
@@ -20,9 +21,19 @@ import WarCouncilTable from './WarCouncilTable'
  * DLR-156 Task 14 — this component used to render the whole felt itself; it now owns nothing but
  * the reducer and the switch between the two full-viewport screens the felt can show:
  * `WarCouncilTable` (the felt, the hand, the action bar) while nothing is resolving, and
- * `TrickResolutionScreen` (the build-up and the apply-or-roll choice) the moment a trick resolves
- * (`ui.resolution !== null`, set by `commit` in `commitHandlers.ts`). Every derivation the felt
- * needs was moved WHOLESALE to `WarCouncilTable.tsx` — no behaviour changed in that move.
+ * `TrickResolutionScreen` (the build-up and the apply-or-roll choice) once a trick has resolved
+ * (`ui.resolution !== null`, set by `commit` in `commitHandlers.ts`) AND held that way for
+ * `--wc-trick-dwell`. Every derivation the felt needs was moved WHOLESALE to `WarCouncilTable.tsx`
+ * — no behaviour changed in that move.
+ *
+ * DLR-156 play-test fix 1 — `useTrickDwell` is the ONE exception to this component being the
+ * effect-free reducer owner the rest of this docblock describes: `ui.resolution` going non-null
+ * used to switch to `TrickResolutionScreen` in the very next paint, before the felt ever rendered
+ * the just-played card sitting in the well (`ui.resolvedTrick`, set in the SAME transition). The
+ * dwell holds the felt on screen for one beat first, so the card is seen landing before the screen
+ * that replaces it appears — it delays which screen this component renders, never the reducer
+ * transition itself. See `useTrickDwell.ts`'s own docblock for why the timer lives there rather
+ * than here or in the reducer.
  *
  * `encounter` (the prop) is this hand's OPENING figure — `warCouncilMount.ts`'s own docblock — and
  * it is read in exactly one place: seeding the reducer. Everything else reads the reducer's own
@@ -73,6 +84,8 @@ export default function WarCouncilRound({
     createRoundUiState,
   )
 
+  const showResolution = useTrickDwell(ui.resolution !== null)
+
   return (
     <>
       {/* Rendered here, ABOVE the switch, rather than inside either screen: both need the same
@@ -80,7 +93,7 @@ export default function WarCouncilRound({
           mounted at a time, so hoisting avoids a duplicate-id risk for no cost. */}
       <SuitSymbolSheet />
       <CardArtSheet />
-      {ui.resolution !== null ? (
+      {ui.resolution !== null && showResolution ? (
         <TrickResolutionScreen resolution={ui.resolution} dispatch={dispatch} />
       ) : (
         <WarCouncilTable

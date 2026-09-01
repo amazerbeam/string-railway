@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ACTIVATED_BUFF_CONDITION,
   BuffKind,
@@ -25,11 +25,15 @@ import {
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
-import { stubMatchMedia } from './resolutionTestHelpers'
+import { advanceTrickDwell, stubMatchMedia } from './resolutionTestHelpers'
 
 afterEach(cleanup)
 
 stubMatchMedia()
+
+// DLR-156 play-test fix 1 — see `WarCouncilRound.test.tsx`'s own comment on this pair.
+beforeEach(() => vi.useFakeTimers())
+afterEach(() => vi.useRealTimers())
 
 const cheatBuffFixture = cheatBuff(BuffTier.Bronze, 1)
 
@@ -168,6 +172,7 @@ describe('WarCouncilRound — the action bar (DLR-114)', () => {
     expect((cardsButton as HTMLButtonElement).disabled).toBe(false)
 
     fireEvent.click(cardsButton)
+    advanceTrickDwell()
 
     // DLR-156 — a two-card trick resolves the instant the player leads (the Quarry's follow is
     // committed in the same reducer transition), so it hands off to the resolution screen rather

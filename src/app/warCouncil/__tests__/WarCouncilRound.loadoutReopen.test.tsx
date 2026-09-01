@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
 import WarCouncilRound from '../WarCouncilRound'
 import {
@@ -15,11 +15,15 @@ import {
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
-import { carryOnFromResolution, stubMatchMedia } from './resolutionTestHelpers'
+import { advanceTrickDwell, carryOnFromResolution, stubMatchMedia } from './resolutionTestHelpers'
 
 afterEach(cleanup)
 
 stubMatchMedia()
+
+// DLR-156 play-test fix 1 — see `WarCouncilRound.test.tsx`'s own comment on this pair.
+beforeEach(() => vi.useFakeTimers())
+afterEach(() => vi.useRealTimers())
 
 /** Mirrors `WarCouncilRound.timebomb.test.tsx`'s own `renderRound` helper. */
 function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
@@ -61,6 +65,7 @@ describe('WarCouncilRound — the loadout drawer deliberately remembers it was o
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
     fireEvent.click(bells7)
+    advanceTrickDwell()
     // DLR-156 — the resolution screen REPLACES the felt the instant the trick resolves, so the
     // gallery is gone along with the rest of the felt, not merely hidden behind
     // `loadoutDoorOpen`'s own gate — this half is already pinned by the timebomb spec; restated

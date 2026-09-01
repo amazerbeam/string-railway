@@ -1,6 +1,6 @@
 ﻿/** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
 import { BuffTier, HAND_SIZE, timebombBuff } from '../../../hunt'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
@@ -19,11 +19,15 @@ import {
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
-import { carryOnFromResolution, stubMatchMedia } from './resolutionTestHelpers'
+import { advanceTrickDwell, carryOnFromResolution, stubMatchMedia } from './resolutionTestHelpers'
 
 afterEach(cleanup)
 
 stubMatchMedia()
+
+// DLR-156 play-test fix 1 — see `WarCouncilRound.test.tsx`'s own comment on this pair.
+beforeEach(() => vi.useFakeTimers())
+afterEach(() => vi.useRealTimers())
 
 const bronzeTimebomb = timebombBuff(BuffTier.Bronze, 1)
 
@@ -156,6 +160,7 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
     fireEvent.click(bells7)
+    advanceTrickDwell()
     // DLR-156 — the resolution screen replaces the WHOLE felt the instant the trick resolves,
     // taking the gallery with it (rather than the gallery merely narrowing its own door).
     expect(screen.getAllByText(/took it|streak is broken/i).length).toBeGreaterThan(0)
@@ -218,6 +223,7 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     })
     fireEvent.click(markedBells2)
     fireEvent.click(markedBells2)
+    advanceTrickDwell()
 
     // DLR-156 B2 — AC5's replaced clean loss has no `trickDamage` (it is not a TAKEN outcome),
     // but `resolveTrickBank`'s `replaced` branch skips the streak reset entirely — nothing was

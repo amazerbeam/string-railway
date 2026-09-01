@@ -25,6 +25,36 @@ import { vi } from 'vitest'
 const RESOLVE_HOLD_MS = 700
 
 /**
+ * DLR-156 play-test fix 1 — `useTrickDwell` holds the FELT on screen for `--wc-trick-dwell`
+ * after a trick commits, before `WarCouncilRound.tsx`'s switch ever renders the resolution
+ * screen at all (`useTrickDwell.ts`'s own docblock). Mirrors `RESOLVE_HOLD_MS` above: the
+ * FALLBACK constant `useTrickDwell.ts` falls back to, since jsdom computes no custom
+ * properties, so every spec here runs that fallback too.
+ */
+const TRICK_DWELL_MS = 800
+
+/**
+ * Advances past the trick dwell so the resolution screen's own controls exist to be queried at
+ * all. EXPORTED for specs that reach the resolution screen without going through
+ * `carryOnFromResolution`/`applyFromResolution` below — anything that asserts on the resolution
+ * screen's own content (its verdict text, its own controls) needs this called first, immediately
+ * after the commit that resolves the trick. Same fake-timer switch-and-restore discipline as
+ * `withResolveHold`, and for the same reason: a `setTimeout` created under real timers cannot be
+ * driven by `vi.advanceTimersByTime` at all.
+ */
+export function advanceTrickDwell(): void {
+  const wasFake = vi.isFakeTimers()
+  if (!wasFake) vi.useFakeTimers()
+  try {
+    act(() => {
+      vi.advanceTimersByTime(TRICK_DWELL_MS)
+    })
+  } finally {
+    if (!wasFake) vi.useRealTimers()
+  }
+}
+
+/**
  * EXPORTED for specs that press a resolution-screen control THEMSELVES — a mixed query, a custom
  * driving loop (`WarCouncilRound.duelHealthBars.test.tsx`'s own) — and still need the hold
  * flushed afterward. `press` must do the actual `fireEvent.click` INSIDE this callback, not
@@ -45,6 +75,7 @@ export function withResolveHold(press: () => void): void {
 }
 
 export function carryOnFromResolution(): void {
+  advanceTrickDwell()
   withResolveHold(() => {
     const onward = screen.queryByRole('button', { name: /onward/i })
     const button = onward ?? screen.getByRole('button', { name: /roll over/i })
@@ -55,6 +86,7 @@ export function carryOnFromResolution(): void {
 /** Also needed by the small number of specs that ARE about the pot's economy, and want the
  *  Apply Damage branch specifically. */
 export function applyFromResolution(): void {
+  advanceTrickDwell()
   withResolveHold(() => {
     fireEvent.click(screen.getByRole('button', { name: /apply damage/i }))
   })

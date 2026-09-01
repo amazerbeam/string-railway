@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
 import { HAND_SIZE } from '../../../hunt'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
@@ -18,11 +18,25 @@ import {
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
-import { applyFromResolution, carryOnFromResolution, stubMatchMedia } from './resolutionTestHelpers'
+import {
+  advanceTrickDwell,
+  applyFromResolution,
+  carryOnFromResolution,
+  stubMatchMedia,
+} from './resolutionTestHelpers'
 
 afterEach(cleanup)
 
 stubMatchMedia()
+
+// DLR-156 play-test fix 1 — `useTrickDwell`'s `setTimeout` is created the instant a commit tap
+// resolves a trick (inside that tap's own `fireEvent.click`), which is BEFORE any of this file's
+// helpers get a chance to switch timer modes. A `setTimeout` created under real timers cannot be
+// driven by `vi.advanceTimersByTime` at all (`resolutionTestHelpers.ts`'s own docblock on
+// `withResolveHold`) — so fake timers must already be active at the moment of every commit tap,
+// which means for the whole file, not switched on after the fact.
+beforeEach(() => vi.useFakeTimers())
+afterEach(() => vi.useRealTimers())
 
 /**
  * Renders `WarCouncilRound` with the shared fixtures, letting any prop be overridden per test.
@@ -128,7 +142,14 @@ describe('WarCouncilRound', () => {
       // Nobody ever calls the stubbed animation's `onfinish` — only the timer backstop can land
       // this. `--wc-flight` is unreadable in jsdom, so `useCardFlight.ts` falls back to its
       // documented 380ms; advancing well past it is what proves the timer path alone is enough.
+      // DLR-156 play-test fix 1 — the resolution screen itself is now held behind
+      // `--wc-trick-dwell` (`useTrickDwell.ts`'s fallback 800ms) on TOP of the flight, but the
+      // TWO timers are chained, not simultaneous: the dwell's own `setTimeout` is not created
+      // until the flight's landing dispatch has committed and re-rendered, so it must be advanced
+      // in its OWN `act()` call, after the flight's — a single combined advance does not
+      // reliably observe a timer that a still-in-flight effect has not scheduled yet.
       act(() => vi.advanceTimersByTime(1000))
+      advanceTrickDwell()
       expect(screen.getByText(/you took it/i)).toBeDefined()
       carryOnFromResolution()
       // The hand is back, interactive, and the played card is gone — not a permanently locked
@@ -166,8 +187,11 @@ describe('WarCouncilRound', () => {
       // Airborne: the whole hand rejects a tap — 2 of Bells is disabled, not a live re-arm target.
       expect(bells2).toHaveProperty('disabled', true)
       fireEvent.click(bells2) // a disabled button fires no onClick — this must be a no-op
-      // Land the flight.
+      // Land the flight, then clear the resolution screen's own `--wc-trick-dwell` hold on top of
+      // it (DLR-156 play-test fix 1) — a SEPARATE `act()` advance for each: the dwell's own
+      // `setTimeout` is not created until the flight's landing dispatch has already re-rendered.
       act(() => vi.advanceTimersByTime(1000))
+      advanceTrickDwell()
       expect(screen.getByText(/you took it/i)).toBeDefined()
       carryOnFromResolution()
       // 7 of Bells committed as the player's original intent — gone from the hand; 2 of Bells,
@@ -252,6 +276,7 @@ describe('WarCouncilRound', () => {
     const last = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(last)
     fireEvent.click(last)
+    advanceTrickDwell()
     // DLR-156 — the deciding trick resolves and completes the hand in the same commit, but its
     // cards and winner must be visible — on the resolution screen now, replacing the old felt-side
     // reveal — before the hand-over panel replaces them.
@@ -316,6 +341,7 @@ describe('WarCouncilRound', () => {
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
     fireEvent.click(bells7)
+    advanceTrickDwell()
     const rollOver = screen.getByRole('button', { name: /roll over/i })
     rollOver.focus()
     expect(document.activeElement).toBe(rollOver)

@@ -13,6 +13,13 @@
   --wc-resolve-hold: 700ms;
   --wc-flight: 380ms;
   --wc-ledger-row: 2.5rem;
+  /* PLACEHOLDER — the developer's to set by playing, not a chosen value: how long the felt stays
+     showing the just-played card in the trick well AFTER a commit before the resolution screen
+     replaces it (DLR-156 play-test fix 1 — "the card goes up in the air then the next screen just
+     appears"). Read by `useTrickDwell.ts`'s own `dwellMs`, following this file's other three
+     duration tokens' pattern exactly. 800ms is long enough to register the trick after a 380ms
+     `--wc-flight`, and no more considered than that. */
+  --wc-trick-dwell: 800ms;
 }
 
 .wc-resolve,
@@ -60,11 +67,22 @@
   min-height: 0;
 }
 
+/* DLR-156 play-test fix — `container-type: size` contains BOTH axes, and this element has no
+   explicit height: with nothing but its own (contained-away) content to size from, it collapsed
+   to zero height. The cards then overflowed onto `.wc-resolve-verdict` beneath (the "cards sit on
+   top of the words" defect) AND `.wc-resolve-card-slot`'s `7cqh` resolved against that zero height,
+   pinning every card at its 3.2rem floor (the "tiny cards" defect — one bug, two symptoms).
+   `container-type: inline-size` contains only the axis this stage actually needs to query (the
+   card slot below sizes off width, not height) — block size is left to flow from content exactly
+   as it would with no container at all, so there is no dimension left to collapse. Smaller and more
+   robust than giving the stage an explicit height: an explicit height is one more number to keep in
+   sync with the card bounds it would have to be sized to fit, where this fix removes the coupling
+   entirely. */
 .wc-resolve-trick {
   display: flex;
   align-items: flex-start;
   gap: clamp(1rem, 4vw, 2.4rem);
-  container-type: size;
+  container-type: inline-size;
   container-name: wc-resolve-stage;
 }
 
@@ -78,9 +96,12 @@
 
 /* Sized against the CONTAINER, never `vw`/`vh` — a `vw` bound is blind to the viewport that
    breaks it, and `vh` prices the card against a height the stage does not have (`ui-notes.md`
-   §6, carried from DLR-147). */
+   §6, carried from DLR-147). `cqi` (the stage's inline size, i.e. its width) rather than `cqh` —
+   the stage above now contains only the inline axis, so a height-based unit here would query a
+   dimension the container never establishes. The 3.2rem/5.2rem floor and cap are unchanged from
+   the mockup; only the axis the preferred term reads was wrong. */
 .wc-resolve-card-slot {
-  width: clamp(3.2rem, 7cqh, 5.2rem);
+  width: clamp(3.2rem, 8cqi, 5.2rem);
   aspect-ratio: 2 / 3;
   position: relative;
 }

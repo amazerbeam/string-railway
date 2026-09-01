@@ -1,6 +1,6 @@
 ﻿/** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dealRound, PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
 import { DAMAGE_PER_HIT, DuelSide, HAND_SIZE, PLAYER_HAND_FLOOR } from '../../../hunt'
 import WarCouncilRound from '../WarCouncilRound'
@@ -17,11 +17,17 @@ import {
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
-import { stubMatchMedia, withResolveHold } from './resolutionTestHelpers'
+import { advanceTrickDwell, stubMatchMedia, withResolveHold } from './resolutionTestHelpers'
 
 afterEach(cleanup)
 
 stubMatchMedia()
+
+// DLR-156 play-test fix 1 — see `WarCouncilRound.test.tsx`'s own comment on this pair: the trick
+// dwell's `setTimeout` is created inside the commit tap itself, so fake timers must already be
+// active at every commit, file-wide.
+beforeEach(() => vi.useFakeTimers())
+afterEach(() => vi.useRealTimers())
 
 // DLR-80's full-hand, six-trick end-to-end pass — carved into its own file for the same reason
 // DLR-71 first split it off `WarCouncilRound.test.tsx`: the driving-loop apparatus for a full
@@ -83,6 +89,12 @@ describe('WarCouncilRound — a full hand, damage landing per trick as it happen
         quarry: healthMeter(quarryLabelFixture).getAttribute('aria-valuenow'),
       }
       action()
+      // DLR-156 play-test fix 1 — a resolved trick no longer hands off to the resolution screen
+      // instantly; `--wc-trick-dwell` holds the felt (showing the just-played card landed in the
+      // well) for a beat first. Advancing past it here is what makes this check meaningful again —
+      // without it, every commit would read as "nothing resolved" and the loop would never press
+      // Apply/Onward at all.
+      advanceTrickDwell()
       if (screen.queryAllByText(/took it|streak is broken/i).length === 0) return
       tricksResolved += 1
       withResolveHold(() => {
@@ -244,6 +256,7 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
     const bells2 = screen.getByRole('button', { name: '2 of Bells' })
     fireEvent.click(bells2)
     fireEvent.click(bells2)
+    advanceTrickDwell()
     withResolveHold(() => fireEvent.click(screen.getByRole('button', { name: /onward/i })))
 
     // Trick B — the player follows the Quarry's led 10 with the Moons 11 and takes it cleanly, so
@@ -253,6 +266,7 @@ describe('WarCouncilRound — the deciding trick reports the correct encounter f
     const moons11 = screen.getByRole('button', { name: '11 of Moons (Monarch)' })
     fireEvent.click(moons11)
     fireEvent.click(moons11)
+    advanceTrickDwell()
     withResolveHold(() => fireEvent.click(screen.getByRole('button', { name: /apply damage/i })))
 
     // Applying the pot killed the Quarry — the deciding trick's own reveal survives on the felt
@@ -335,6 +349,7 @@ describe('WarCouncilRound — the Quarry’s at-risk preview (DLR-86)', () => {
       const prompt = screen.queryByRole('group', { name: 'Choose what the card does' })
       if (prompt) {
         fireEvent.click(within(prompt).getAllByRole('button')[0])
+        advanceTrickDwell()
         continue
       }
       const rollOver = screen.queryByRole('button', { name: /roll over/i })
@@ -361,6 +376,10 @@ describe('WarCouncilRound — the Quarry’s at-risk preview (DLR-86)', () => {
       }
       fireEvent.click(legalCard)
       fireEvent.click(legalCard)
+      // DLR-156 play-test fix 1 — a commit here may have resolved a trick, and the resolution
+      // screen's own Roll over/Onward controls (checked at the top of the next pass) do not exist
+      // until `--wc-trick-dwell` has elapsed.
+      advanceTrickDwell()
     }
   }
 

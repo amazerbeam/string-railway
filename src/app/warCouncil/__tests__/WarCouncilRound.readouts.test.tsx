@@ -1,6 +1,6 @@
 ﻿/** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
 import {
   BuffTier,
@@ -27,11 +27,19 @@ import {
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
-import { carryOnFromResolution, stubMatchMedia } from './resolutionTestHelpers'
+import { advanceTrickDwell, carryOnFromResolution, stubMatchMedia } from './resolutionTestHelpers'
 
 afterEach(cleanup)
 
 stubMatchMedia()
+
+// DLR-156 play-test fix 1 — `useTrickDwell`'s `setTimeout` is created inside the commit tap's own
+// `fireEvent.click`, before any helper gets a chance to switch timer modes — a `setTimeout`
+// created under real timers cannot be driven by `vi.advanceTimersByTime` at all
+// (`resolutionTestHelpers.ts`'s own docblock). Fake timers must already be active at every commit
+// tap, so this is file-wide rather than switched on after the fact.
+beforeEach(() => vi.useFakeTimers())
+afterEach(() => vi.useRealTimers())
 
 /**
  * Mirrors `WarCouncilRound.test.tsx`'s own `renderRound` helper (DLR-93 400-line split) — the
@@ -99,6 +107,7 @@ describe('WarCouncilRound', () => {
     const bells9 = screen.getByRole('button', { name: '9 of Bells (Witch)' })
     fireEvent.click(bells9)
     fireEvent.click(bells9)
+    advanceTrickDwell()
     // DLR-156 AC5 — a banked trick no longer pays the Quarry automatically; it only pays through
     // an explicit Apply on the resolution screen (which replaces the felt the instant the trick
     // resolves). Rolling over — never Apply — is what proves BOTH bars genuinely untouched.
@@ -129,6 +138,7 @@ describe('WarCouncilRound', () => {
     const bells2 = screen.getByRole('button', { name: '2 of Bells' })
     fireEvent.click(bells2)
     fireEvent.click(bells2)
+    advanceTrickDwell()
     // DLR-156 AC7 — a hit pays the Quarry NOTHING now; there is no two-thirds consolation any
     // more, the whole streak is simply lost. The hurt branch offers no choice (its single exit is
     // "Onward"), so dismissing it changes nothing about either bar beyond the hit already dealt.
@@ -165,6 +175,7 @@ describe('WarCouncilRound', () => {
     const bells9 = screen.getByRole('button', { name: '9 of Bells (Witch)' })
     fireEvent.click(bells9)
     fireEvent.click(bells9)
+    advanceTrickDwell()
     expect(screen.getByText(/you took it/i)).toBeDefined()
     // DLR-156 — rolling over (never Apply, which would deal the pot and reset both figures to
     // zero) is what proves the felt's own pot readout climbed rather than being reset by the

@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, Suit } from '../../../warCouncil'
 import { BuffTier, timebombBuff } from '../../../hunt'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
@@ -19,7 +19,7 @@ import {
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
-import { carryOnFromResolution, stubMatchMedia } from './resolutionTestHelpers'
+import { advanceTrickDwell, carryOnFromResolution, stubMatchMedia } from './resolutionTestHelpers'
 
 // DLR-154 FIX C — split out of `WarCouncilRound.timebomb.test.tsx`, which the FIX A2/FIX B work on
 // this ticket pushed over its 400-line budget. This is the revocation/keyboard group: the
@@ -31,6 +31,10 @@ import { carryOnFromResolution, stubMatchMedia } from './resolutionTestHelpers'
 afterEach(cleanup)
 
 stubMatchMedia()
+
+// DLR-156 play-test fix 1 — see `WarCouncilRound.test.tsx`'s own comment on this pair.
+beforeEach(() => vi.useFakeTimers())
+afterEach(() => vi.useRealTimers())
 
 const bronzeTimebomb = timebombBuff(BuffTier.Bronze, 1)
 
@@ -182,6 +186,7 @@ describe('WarCouncilRound — Timebomb revocation and keyboard reach (DLR-90, DL
     const bells4 = screen.getByRole('button', { name: '4 of Bells' })
     fireEvent.click(bells4)
     fireEvent.click(bells4)
+    advanceTrickDwell()
     // DLR-156 — hands off to the resolution screen rather than a held felt-side reveal.
     expect(screen.getAllByText(/took it|streak is broken/i).length).toBeGreaterThan(0)
     carryOnFromResolution()
