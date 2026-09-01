@@ -31,6 +31,10 @@ Everything about carrying it is free, because `advanceRun`'s existing `...run` s
 
 ## `guardAfter` is the one statement of the expiry
 
+> **DLR-158 moved `guardAfter` (and the four carry helpers beside it) into `src/hunt/runCarry.ts`**,
+> a pure extraction forced by `runTransitions.ts` crossing the 400-line budget. It is exported rather
+> than private now; no expression changed.
+
 ```ts
 function guardAfter(encounter: EncounterState, held: boolean): boolean {
   return isEncounterResolved(encounter) ? false : held

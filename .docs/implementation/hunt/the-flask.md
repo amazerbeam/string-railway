@@ -100,8 +100,14 @@ Lives in `src/hunt/runTransitions.ts`, beside `buyFromShop` and for the same rea
 [the run](run-sequence.md) for why the transitions are their own module.
 
 ```ts
-export function drinkFlask(run: RunState, maxPlayerHealth: Health = PLAYER_START_HEALTH): RunState
+export function drinkFlask(run: RunState): RunState
 ```
+
+> **DLR-158 deleted the `maxPlayerHealth` parameter.** The ceiling is now `RunState.maxPlayerHealth`,
+> run state that the shop can raise, so a caller passing its own figure could disagree with the run.
+> `flaskHealAmount` keeps its numeric parameter — it takes a number, not a run — and `drinkFlask`
+> hands it `run.maxPlayerHealth`, which is the whole of "the flask scales with a raised ceiling":
+> no edit to `flask.ts` at all.
 
 It throws **twice over**, with two different messages, and returns an unchanged run in neither case:
 
@@ -113,8 +119,10 @@ It throws **twice over**, with two different messages, and returns an unchanged 
   allow. Reaching it is a driver bug, because the control is disabled whenever the refusal is non-null
   and the driver re-derives it inside its own functional updater.
 
-`maxPlayerHealth` is a defaulted parameter, matching `startEncounter` / `startRun` / `buyFromShop`'s
-injectable pattern, so a spec varies the clamp without mutating module state.
+`maxPlayerHealth` **was** a defaulted parameter here, matching `startEncounter` / `startRun` /
+`buyFromShop`'s injectable pattern. DLR-158 removed it from all four — see
+[the max-health purchase](the-max-health-purchase.md). `startEncounter` kept its second parameter,
+which is *current* health, a different quantity.
 
 ## `healedBy` is now the single writer that raises player health
 
@@ -140,19 +148,30 @@ function healedBy(run: RunState, restored: Health, maxPlayerHealth: Health): Run
   — a restore is not a damage event.
 
 **Any future healing mechanic goes through `healedBy`, not beside it.** That is the whole point of the
-refactor: a third heal that writes its own `Math.min` re-opens the drift this closed.
+refactor: a third heal that writes its own `Math.min` re-opens the drift this closed. **DLR-158 is
+the test of that rule and it held**: the max-health purchase restores to the top of a *raised*
+ceiling through `fullyHealed(run, ceiling)`, a named helper beside `healedBy` that simply calls it
+with the ceiling as both the amount and the clamp — no second `Math.min` anywhere.
 
 ## The refill — `flaskAfter`, inside `recordEncounter`
 
 ```ts
-function flaskAfter(run: RunState, wonThisEncounter: boolean): number {
-  const beatABoss = wonThisEncounter && runEncounterAt(run.encounterIndex).kind === OpponentKind.Boss
-  return beatABoss ? FLASK_STARTING_CHARGES : run.flaskCharges
+export function flaskAfter(
+  encounterIndex: number,
+  flaskCharges: number,
+  wonThisEncounter: boolean,
+): number {
+  const beatABoss = wonThisEncounter && runEncounterAt(encounterIndex).kind === OpponentKind.Boss
+  return beatABoss ? FLASK_STARTING_CHARGES : flaskCharges
 }
 ```
 
-**A named private function, not an inline ternary**, following `guardAfter`'s precedent directly above
-it: a second transition adopting a hand's end state is exactly the thing that gets added without
+> **DLR-158 moved this helper (and the four carry helpers beside it) into `src/hunt/runCarry.ts`**,
+> a pure extraction forced by `runTransitions.ts` crossing the 400-line budget. It is exported now
+> and takes the two figures it reads rather than the whole `RunState`, so `runCarry.ts` need not
+> import `run.ts`; the expression is unchanged. `recordEncounter` still calls it.
+
+**A named function, not an inline ternary**, following `guardAfter`'s precedent beside it: a second transition adopting a hand's end state is exactly the thing that gets added without
 remembering this rule, and a named rule is what a reviewer finds.
 
 **It lives in `recordEncounter` and could not live in `advanceRun`** — for the same reason the coin

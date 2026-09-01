@@ -29,21 +29,21 @@ describe('buyFromShop (DLR-84)', () => {
   })
 
   it('deducts HEAL_PRICE and raises player health by HEAL_HEALTH_RESTORED on a Heal purchase', () => {
-    const run = { ...startRun(1), coins: 5 }
+    const run = { ...startRun(1), coins: 5, maxPlayerHealth: PLAYER_START_HEALTH }
     const healed = buyFromShop(run, ShopItem.Heal)
     expect(healed.coins).toBe(run.coins - HEAL_PRICE)
     expect(healed.encounter.health[DuelSide.Player]).toBe(1 + HEAL_HEALTH_RESTORED)
   })
 
   it('discards overheal rather than exceeding the maximum (AC4)', () => {
-    const run = { ...startRun(9), coins: 5 }
-    const healed = buyFromShop(run, ShopItem.Heal, 10)
+    const run = { ...startRun(9), coins: 5, maxPlayerHealth: 10 }
+    const healed = buyFromShop(run, ShopItem.Heal)
     expect(healed.encounter.health[DuelSide.Player]).toBe(10)
   })
 
   it('allows buying twice in one visit when the coins allow (AC8)', () => {
-    const run = { ...startRun(1), coins: 5 }
-    const once = buyFromShop(run, ShopItem.Heal, 10)
+    const run = { ...startRun(1), coins: 5, maxPlayerHealth: 10 }
+    const once = buyFromShop(run, ShopItem.Heal)
     const twice = buyFromShop(once, ShopItem.Cheat)
     expect(twice.coins).toBe(run.coins - HEAL_PRICE - CHEAT_PRICE)
     expect(twice.buffs.length).toBe(run.buffs.length + 1)
@@ -58,7 +58,7 @@ describe('buyFromShop (DLR-84)', () => {
   it('throws a RangeError naming AlreadyFullHealth and leaves the run unmodified', () => {
     const run = { ...startRun(10), coins: 5 }
     const before = JSON.stringify(run)
-    expect(() => buyFromShop(run, ShopItem.Heal, 10)).toThrow(/alreadyFullHealth/)
+    expect(() => buyFromShop(run, ShopItem.Heal)).toThrow(/alreadyFullHealth/)
     expect(JSON.stringify(run)).toBe(before)
   })
 
@@ -80,6 +80,7 @@ describe('shopStockFor (DLR-84)', () => {
       maxPlayerHealth: PLAYER_START_HEALTH,
       blastGuardHeld: run.blastGuardHeld,
       rankTiers: run.rankTiers,
+      maxHealthPurchases: run.maxHealthPurchases,
     })
   })
 })

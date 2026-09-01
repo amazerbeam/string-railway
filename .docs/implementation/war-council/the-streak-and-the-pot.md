@@ -229,7 +229,9 @@ RunState.streak                          src/hunt/run.ts — seeded EMPTY_STREAK
   -> streakAfter(encounter, streak)      carries it while the fight is live
 ```
 
-`streakAfter` returns `{ total: 0, roll: 0 }` the moment `isEncounterResolved(encounter)` is true and
+`streakAfter` — in `src/hunt/runCarry.ts` since DLR-158, moved there with the other four carry
+helpers when `runTransitions.ts` crossed the 400-line budget — returns `{ total: 0, roll: 0 }` the
+moment `isEncounterResolved(encounter)` is true and
 the streak unchanged otherwise — the exact shape of `feederCarryAfter` and `guardAfter` beside it. So
 **a hand boundary does nothing at all** (AC8) and **a fight boundary wipes both** (AC9). The mount
 prop is optional and defaulted so every existing mount site and fixture reproduces today's game

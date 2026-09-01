@@ -59,7 +59,8 @@ expected back once there is a catalogue to put on it.
 > `SHOP_ITEMS` is **what the shop offers**. The `ShopItem` union is **everything the game prices.**
 
 `SHOP_ITEMS` was `[ApCapacity, Heal]` at DLR-116, `[SwanTier, WitchTier, Heal]` after DLR-122 and
-DLR-145, and is **`[Heal]` alone since 2026-09-01**, but the union keeps all its members and `priceOf`,
+DLR-145, `[Heal]` alone on 2026-09-01, and is **`[Heal, MaxHealth]` since DLR-158, 2026-09-02** —
+the first addition since the shelf was pared to one item, but the union keeps all its members and `priceOf`,
 `categoryOf`, `refusalFor` and `buyFromShop` all stay **total** over it — so the Cheat, the Timebomb,
 the Blast Guard and the Whetstone are still priced, still buyable by a caller, and still covered by
 `shop.test.ts`. That totality *is* the ticket's third acceptance criterion, and it is asserted rather
@@ -215,9 +216,39 @@ The opponent's name sits at the far end with `margin-left: auto`, above the run 
 `nextOpponentText` is no longer used by this screen; the name and `progressText` are placed
 separately so the name can carry the larger type.
 
+## The second tile, and the price that moves
+
+DLR-158 put a second buy tile on the shelf: the **max-health raise**, which adds
+`MAX_HEALTH_PER_PURCHASE` to the run's ceiling and leaves the player at full health at the new top.
+Its name (`Max health`) and blurb are **placeholder copy, the developer's to rewrite**, like every
+string in this module.
+
+**Its price is the first on this screen that moves.** It costs more with each copy already bought, so
+the tile shows the price of the *next* purchase, and that figure has to change the moment a purchase
+lands without leaving the shop. It needs no mechanism to do so:
+
+- `App.tsx` derives `stock` from `run` on every render, and derives `prices={shopPricesFor(stock)}`
+  from that — the sibling of `shopRefusalsFor(stock)`, built by iterating the `ShopItem` union.
+- `ShopPanel` takes `prices` as a prop and prints `prices[item]`. It **computes nothing**, exactly as
+  it computes no refusal.
+- A buy changes `run`, which re-derives everything above it. No effect, no listener, nothing to clean
+  up, nothing for StrictMode to double-fire.
+
+`priceText` and `shopItemAccessibleName` were changed to take the **price** rather than the item, so
+the copy layer no longer calls `priceOf` and therefore no longer needs the shop's rules — which is
+what it would need, now that a price depends on the stock.
+
+**Being at full health does not grey this tile**, unlike the Heal beside it: the engine's `refusalFor`
+has no branch for it, so the only reason that can appear on it is not having the coins. See
+[the max-health purchase](../hunt/the-max-health-purchase.md).
+
+**Never seen on a real screen.** Whether two buy tiles plus the flask and the leave control still fit
+the viewport and read clearly, and whether a price ticking up looks like a mechanic rather than a
+glitch, are the developer's to judge.
+
 ## Copy quotes no number
 
-Every price comes from `priceText`, which reads `priceOf`; the heal blurb interpolates
+Every price comes from `priceText`, which is handed a figure derived from `priceOf`; the heal blurb interpolates
 `HEAL_HEALTH_RESTORED`; the AP-capacity blurb interpolates `AP_CAPACITY_STEP`; the slot surface's payout
 table is built from `slotOutcomeOdds()` and its strip summary from `expectedCardsPerPull()`. **No figure is quoted as a
 literal anywhere in this module**, so re-tuning a key cannot leave the screen advertising a number the

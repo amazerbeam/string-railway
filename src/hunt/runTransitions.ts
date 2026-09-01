@@ -1,28 +1,26 @@
 // DLR-93 Phase 2.5 — split out of `run.ts` once that file crossed the 400-line blocking budget
 // (`CLAUDE.md`, `react-frontend`). This module owns the run's TRANSITIONS — the functions that
 // take a `RunState` and produce the next one: `advanceRun`, `recordEncounter`, `buyFromShop`,
-// `drinkFlask`, and the private helpers only they use (`outcomeFor`, `guardAfter`, `healedBy`,
-// `flaskAfter`). `run.ts` keeps the run's SHAPE — `RunState`, `startRun`, and the projections
-// `shopStockFor` / `flaskStockFor` — and re-exports every name below so no existing importer
-// (`src/hunt/index.ts`, the `run.*.test.ts` specs) needed to change. A pure move: no expression,
-// name, or signature below differs from what `run.ts` held before this split.
+// `drinkFlask`, and the private helpers only they use (`outcomeFor`, `healedBy`). `run.ts` keeps
+// the run's SHAPE — `RunState`, `startRun`, and the projections `shopStockFor` / `flaskStockFor` —
+// and re-exports every name below so no existing importer (`src/hunt/index.ts`, the
+// `run.*.test.ts` specs) needed to change. A pure move: no expression, name, or signature below
+// differs from what `run.ts` held before this split.
+//
+// DLR-158 Phase 1 — the fight-boundary carry helpers (`guardAfter`, `feederCarryAfter`,
+// `streakAfter`, `handOfFightAfter`, `flaskAfter`) moved out to `./runCarry`, a second pure move,
+// to make room under the same 400-line budget for the max-health purchase. `healedBy` stayed here
+// — it is the health writer two transitions in this file call.
 
-import {
-  COINS_PER_ENCOUNTER_WIN,
-  DISCARDS_PER_FIGHT,
-  FLASK_STARTING_CHARGES,
-  HEAL_HEALTH_RESTORED,
-  OpponentKind,
-  PLAYER_START_HEALTH,
-  runEncounterAt,
-} from './config'
+import { COINS_PER_ENCOUNTER_WIN, DISCARDS_PER_FIGHT, HEAL_HEALTH_RESTORED } from './config'
 import { BuffKind, BuffTier, type Buff } from './buffs'
-import { EMPTY_BUFF_CARRY, type BuffCarry } from './buffAccrual'
+import { type BuffCarry } from './buffAccrual'
 import { cheatBuff, timebombBuff } from './buffCatalog'
 import { isEncounterResolved, startEncounter } from './encounter'
 import { flaskHealAmount, flaskRefusalFor } from './flask'
 import { quickKillPayout } from './quickKill'
 import { priceOf, refusalFor, ShopItem, tieredRankOf } from './shop'
+import { raisedMaxHealthFor } from './maxHealth'
 import { steppedTo } from './rankTiers'
 import { mintPullAwards, pullPriceFor, slotPullRefusalFor, type SlotPull } from './slotMachine'
 import { DuelSide, type Coins, type EncounterState, type Health } from './types'
@@ -34,6 +32,7 @@ import {
   slotVisitStockFor,
   type RunState,
 } from './run'
+import { feederCarryAfter, flaskAfter, guardAfter, handOfFightAfter, streakAfter } from './runCarry'
 // DLR-156 — type-only, erased under `verbatimModuleSyntax` (see `run.ts`'s import).
 import type { StreakState } from '../warCouncil'
 
@@ -126,8 +125,8 @@ export function recordEncounter(
       (wonThisEncounter ? run.coins + COINS_PER_ENCOUNTER_WIN + quickKill : run.coins) +
       buffCoinsEarned,
     lastQuickKillPayout: quickKill,
-    handOfFight: handOfFightAfter(run, encounter),
-    flaskCharges: flaskAfter(run, wonThisEncounter),
+    handOfFight: handOfFightAfter(run.handOfFight, encounter),
+    flaskCharges: flaskAfter(run.encounterIndex, run.flaskCharges, wonThisEncounter),
     outcome: outcomeFor(run.encounterIndex, run.encounterCount, encounter),
     feederCarry: feederCarryAfter(encounter, feederCarry ?? run.feederCarry),
     streak: streakAfter(encounter, streak ?? run.streak),
@@ -176,23 +175,24 @@ export function advanceRun(run: RunState): RunState {
  * The restore goes through `healedBy`, which is the single writer that raises player health — AC2's
  * "reuse that clamp pattern rather than writing a second one".
  *
- * `maxPlayerHealth` is a defaulted parameter, matching `startEncounter`/`startRun`/`buyFromShop`'s
- * injectable pattern, so a spec varies the clamp without mutating module state.
+ * DLR-158 — the ceiling is the run's OWN field now, not a defaulted parameter: there is no
+ * argument left to get wrong. A spec that wants a different ceiling spreads
+ * `{ ...run, maxPlayerHealth: N }`.
  */
-export function drinkFlask(run: RunState, maxPlayerHealth: Health = PLAYER_START_HEALTH): RunState {
+export function drinkFlask(run: RunState): RunState {
   if (!isEncounterResolved(run.encounter)) {
     throw new RangeError(
       `Cannot drink the flask while fight ${run.encounterIndex + 1} of ${run.encounterCount} is not resolved: it is a between-fights action`,
     )
   }
-  const refusal = flaskRefusalFor(flaskStockFor(run, maxPlayerHealth))
+  const refusal = flaskRefusalFor(flaskStockFor(run))
   if (refusal !== null) {
     throw new RangeError(
-      `Cannot drink the flask — ${refusal} (holding ${run.flaskCharges} charges, ${run.encounter.health[DuelSide.Player]} of ${maxPlayerHealth} health)`,
+      `Cannot drink the flask — ${refusal} (holding ${run.flaskCharges} charges, ${run.encounter.health[DuelSide.Player]} of ${run.maxPlayerHealth} health)`,
     )
   }
   return {
-    ...healedBy(run, flaskHealAmount(maxPlayerHealth), maxPlayerHealth),
+    ...healedBy(run, flaskHealAmount(run.maxPlayerHealth), run.maxPlayerHealth),
     flaskCharges: run.flaskCharges - 1,
   }
 }
@@ -208,29 +208,27 @@ export function drinkFlask(run: RunState, maxPlayerHealth: Health = PLAYER_START
  * `advanceRun` seeds the next fight from it. It deliberately does NOT go through `applyDamage`,
  * which refuses a resolved encounter: a restore is not a damage event.
  *
- * `maxPlayerHealth` is a defaulted parameter, matching `startEncounter`/`startRun`'s injectable
- * pattern, so a spec varies the clamp without mutating module state.
+ * DLR-158 — the ceiling is the run's OWN field now, not a defaulted parameter: there is no
+ * argument left to get wrong. A spec that wants a different ceiling spreads
+ * `{ ...run, maxPlayerHealth: N }`.
  */
-export function buyFromShop(
-  run: RunState,
-  item: ShopItem,
-  maxPlayerHealth: Health = PLAYER_START_HEALTH,
-): RunState {
-  if (!Number.isFinite(maxPlayerHealth) || maxPlayerHealth <= 0) {
+export function buyFromShop(run: RunState, item: ShopItem): RunState {
+  if (!Number.isFinite(run.maxPlayerHealth) || run.maxPlayerHealth <= 0) {
     throw new RangeError(
-      `Cannot buy against a maximum health of ${maxPlayerHealth}: it must be a positive finite number`,
+      `Cannot buy against a maximum health of ${run.maxPlayerHealth}: it must be a positive finite number`,
     )
   }
-  const refusal = refusalFor(shopStockFor(run, maxPlayerHealth), item)
+  const stock = shopStockFor(run)
+  const refusal = refusalFor(stock, item)
   if (refusal !== null) {
     // DLR-132 — was `run.cheats.length`; a Cheat is a pile member now, so the pile's own count of
     // them is the figure that still makes this message legible.
     const cheatsHeld = run.buffs.filter((b) => b.kind === BuffKind.Cheat).length
     throw new RangeError(
-      `Cannot buy ${item} — ${refusal} (holding ${run.coins} coins, ${cheatsHeld} Cheats, ${run.encounter.health[DuelSide.Player]} of ${maxPlayerHealth} health)`,
+      `Cannot buy ${item} — ${refusal} (holding ${run.coins} coins, ${cheatsHeld} Cheats, ${run.encounter.health[DuelSide.Player]} of ${run.maxPlayerHealth} health)`,
     )
   }
-  const paid = { ...run, coins: run.coins - priceOf(item) }
+  const paid = { ...run, coins: run.coins - priceOf(item, stock) }
   // A `switch` with no `default`, so a FOURTH item is a compile error here rather than an item
   // that silently does whatever the last branch happened to do. That is not hypothetical: before
   // DLR-90 this function returned the heal unconditionally as its fallback, so adding Timebomb
@@ -248,7 +246,7 @@ export function buyFromShop(
       // DLR-93 AC2 — the clamp moved to `healedBy` so the flask reuses it rather than writing a
       // second one. Byte-identical result for identical inputs; the paid Heal's behaviour is
       // unchanged.
-      return healedBy(paid, HEAL_HEALTH_RESTORED, maxPlayerHealth)
+      return healedBy(paid, HEAL_HEALTH_RESTORED, run.maxPlayerHealth)
     case ShopItem.ApCapacity:
       // DLR-116 AC2 — a COUNT of purchases, not a point total; `apCapacityFor` owns the
       // multiplication, so the step size (`AP_CAPACITY_STEP`) is stated exactly once.
@@ -265,6 +263,18 @@ export function buyFromShop(
         throw new RangeError(`Cannot upgrade a rank from ${item}: it names no tiered rank`)
       }
       return { ...paid, rankTiers: steppedTo(run.rankTiers, rank) }
+    }
+    case ShopItem.MaxHealth: {
+      // DLR-158 AC1/AC2 — the ceiling rises FIRST, then the bar fills to the new top, so the
+      // clamp inside `healedBy` is measured against the raised figure rather than the old one.
+      // `raisedMaxHealthFor` owns the step size, so `MAX_HEALTH_PER_PURCHASE` is read in exactly
+      // one place. A COUNT is incremented, not a flag set: each copy stacks and the climbing
+      // price is the only limiter (AC6).
+      const raised = raisedMaxHealthFor(run.maxPlayerHealth)
+      return {
+        ...fullyHealed({ ...paid, maxPlayerHealth: raised }, raised),
+        maxHealthPurchases: run.maxHealthPurchases + 1,
+      }
     }
   }
 }
@@ -319,40 +329,6 @@ function outcomeFor(
   return encounterIndex === encounterCount - 1 ? RunOutcome.Won : RunOutcome.InProgress
 }
 
-/** AC2 — "a Guard does not outlive the fight it was bought for", a named function rather than an
- *  inline ternary: a second transition adopting a hand's end state is exactly the kind of thing
- *  that gets added without remembering to clear this, and a named rule is what a reviewer finds. */
-function guardAfter(encounter: EncounterState, held: boolean): boolean {
-  return isEncounterResolved(encounter) ? false : held
-}
-
-/** AC4 — ONE statement of "a carry does not outlive the fight that earned it". A named function
- *  rather than an inline ternary, exactly as `guardAfter` immediately above is and for its
- *  reason: a second transition adopting a hand's end state is what gets added without
- *  remembering this rule, and a named rule is what a reviewer finds. */
-function feederCarryAfter(encounter: EncounterState, carry: BuffCarry): BuffCarry {
-  return isEncounterResolved(encounter) ? EMPTY_BUFF_CARRY : carry
-}
-
-/** DLR-156 AC9 — "a streak does not outlive the fight that earned it", mirroring
- *  `feederCarryAfter` immediately above. Literal below, not an imported `EMPTY_STREAK` — see
- *  `startRun`'s note on the runtime-cycle reason. */
-function streakAfter(encounter: EncounterState, streak: StreakState): StreakState {
-  return isEncounterResolved(encounter) ? { total: 0, roll: 0 } : streak
-}
-
-/**
- * DLR-95 AC3 — "a fight that continues moves on to its next hand; a fight that ended stays on
- * the hand it ended in, and `advanceRun` is what resets it" — a named function, following
- * `guardAfter` and `feederCarryAfter` above and for their reason.
- *
- * Holding the counter still on the deciding hand — rather than incrementing past it — is what
- * lets the verdict and any later reader say which hand the kill landed in.
- */
-function handOfFightAfter(run: RunState, encounter: EncounterState): number {
-  return isEncounterResolved(encounter) ? run.handOfFight : run.handOfFight + 1
-}
-
 /**
  * DLR-93 AC2 — THE single writer that raises player health, and therefore the single place
  * overheal is discarded (DLR-84 AC4). Read by `buyFromShop`'s Heal branch and by `drinkFlask`;
@@ -380,17 +356,14 @@ function healedBy(run: RunState, restored: Health, maxPlayerHealth: Health): Run
 }
 
 /**
- * DLR-93 AC5 — "a stage-boss kill refills the flask; an ordinary kill does not", a named function
- * following `guardAfter`'s precedent above and for its reason.
+ * DLR-158 AC2 — restored to the TOP of the given ceiling. Goes through `healedBy` rather than
+ * writing a second clamp, per DLR-93's own note on reusing that pattern: with the restored amount
+ * equal to the ceiling, `Math.min(ceiling, current + ceiling)` is the ceiling for any positive
+ * current health, which is AC2's "a player on 1 of 6 who buys a +2 increase leaves on 8 of 8".
  *
- * `run.encounterIndex` is the encounter just FOUGHT — `advanceRun` has not run yet — so
- * `runEncounterAt` on it names the opponent just beaten. Refills to `FLASK_STARTING_CHARGES`
- * rather than a literal `1` so the run's full-flask figure is stated exactly once. Lives here
- * rather than in `advanceRun` because `advanceRun` never runs for the final fight of a won run,
- * and Diarmuid — the last boss — is exactly that fight.
+ * A named rule rather than an inline `healedBy(run, max, max)`, following this file's convention:
+ * the doubled argument is opaque about what it means, and a named rule is what a reviewer finds.
  */
-function flaskAfter(run: RunState, wonThisEncounter: boolean): number {
-  const beatABoss =
-    wonThisEncounter && runEncounterAt(run.encounterIndex).kind === OpponentKind.Boss
-  return beatABoss ? FLASK_STARTING_CHARGES : run.flaskCharges
+function fullyHealed(run: RunState, maxPlayerHealth: Health): RunState {
+  return healedBy(run, maxPlayerHealth, maxPlayerHealth)
 }

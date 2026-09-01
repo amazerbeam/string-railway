@@ -6,6 +6,7 @@ import {
   BuffTier,
   FlaskRefusal,
   mintFromTemplate,
+  priceOf,
   PurchaseRefusal,
   SHOP_ITEMS,
   ShopItem,
@@ -14,8 +15,11 @@ import {
   SlotOutcome,
   type Buff,
   type BuffId,
+  type Coins,
+  type ShopStock,
   type SlotPullRefusal,
 } from '../../../hunt'
+import { ALL_BRONZE } from '../../../hunt/rankTiers'
 import { HeartState } from '../../warCouncil/duelHealthBars'
 import ShopPanel from '../ShopPanel'
 import { shopItemAccessibleName } from '../shopLabels'
@@ -44,6 +48,31 @@ const noRefusals: Readonly<Record<ShopItem, PurchaseRefusal | null>> = {
   [ShopItem.ApCapacity]: null,
   [ShopItem.SwanTier]: null,
   [ShopItem.WitchTier]: null,
+  [ShopItem.MaxHealth]: null,
+}
+
+/** The stock `priceOf` needs now that DLR-158 makes it stock-dependent. */
+const baseStock: ShopStock = {
+  coins: 10,
+  playerHealth: 6,
+  maxPlayerHealth: 10,
+  blastGuardHeld: false,
+  rankTiers: ALL_BRONZE,
+  maxHealthPurchases: 0,
+}
+
+/** Built the same way `noRefusals` is — one entry per `ShopItem`, read straight from `priceOf` so
+ *  this fixture cannot drift from the rule it prices. */
+const basePrices: Readonly<Record<ShopItem, Coins>> = {
+  [ShopItem.Cheat]: priceOf(ShopItem.Cheat, baseStock),
+  [ShopItem.Timebomb]: priceOf(ShopItem.Timebomb, baseStock),
+  [ShopItem.BlastGuard]: priceOf(ShopItem.BlastGuard, baseStock),
+  [ShopItem.Whetstone]: priceOf(ShopItem.Whetstone, baseStock),
+  [ShopItem.Heal]: priceOf(ShopItem.Heal, baseStock),
+  [ShopItem.ApCapacity]: priceOf(ShopItem.ApCapacity, baseStock),
+  [ShopItem.SwanTier]: priceOf(ShopItem.SwanTier, baseStock),
+  [ShopItem.WitchTier]: priceOf(ShopItem.WitchTier, baseStock),
+  [ShopItem.MaxHealth]: priceOf(ShopItem.MaxHealth, baseStock),
 }
 
 function baseSlot(overrides: Partial<Parameters<typeof ShopPanel>[0]['slot']> = {}) {
@@ -75,6 +104,7 @@ function baseProps(heldBuffs: readonly Buff[] = []) {
     onBuy: vi.fn(),
     onLeave: vi.fn(),
     refusals: noRefusals,
+    prices: basePrices,
     slot: baseSlot(),
   }
 }
@@ -91,7 +121,9 @@ describe('ShopPanel — M22, a purchase flies into the tray', () => {
     const onBuy = vi.fn()
     render(<ShopPanel {...baseProps()} onBuy={onBuy} />)
     fireEvent.click(
-      screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Heal, null) }),
+      screen.getByRole('button', {
+        name: shopItemAccessibleName(ShopItem.Heal, basePrices[ShopItem.Heal], null),
+      }),
     )
     expect(onBuy).toHaveBeenCalledTimes(1)
     expect(onBuy).toHaveBeenCalledWith(ShopItem.Heal)
@@ -104,7 +136,11 @@ describe('ShopPanel — M22, a purchase flies into the tray', () => {
     render(<ShopPanel {...baseProps()} refusals={refusals} onBuy={onBuy} />)
     fireEvent.click(
       screen.getByRole('button', {
-        name: shopItemAccessibleName(ShopItem.Heal, PurchaseRefusal.AlreadyFullHealth),
+        name: shopItemAccessibleName(
+          ShopItem.Heal,
+          basePrices[ShopItem.Heal],
+          PurchaseRefusal.AlreadyFullHealth,
+        ),
       }),
     )
     expect(onBuy).not.toHaveBeenCalled()
@@ -119,7 +155,9 @@ describe('ShopPanel — M22, a purchase flies into the tray', () => {
   it('every SHOP_ITEMS control still renders (AC2 unaffected by the motion wiring)', () => {
     render(<ShopPanel {...baseProps()} />)
     for (const item of SHOP_ITEMS) {
-      expect(screen.getByRole('button', { name: shopItemAccessibleName(item, null) })).toBeTruthy()
+      expect(
+        screen.getByRole('button', { name: shopItemAccessibleName(item, basePrices[item], null) }),
+      ).toBeTruthy()
     }
   })
 })
@@ -153,7 +191,7 @@ describe('ShopPanel — a second click mid-flight (QA fix — DLR-157 review, De
     const onBuy = vi.fn()
     render(<ShopPanel {...baseProps()} onBuy={onBuy} />)
     const button = screen.getByRole('button', {
-      name: shopItemAccessibleName(ShopItem.Heal, null),
+      name: shopItemAccessibleName(ShopItem.Heal, basePrices[ShopItem.Heal], null),
     }) as HTMLButtonElement
 
     act(() => fireEvent.click(button))
@@ -198,7 +236,7 @@ describe('ShopPanel — leaving mid-flight (QA fix — DLR-157 follow-up, Defend
     const onLeave = vi.fn()
     render(<ShopPanel {...baseProps()} onBuy={onBuy} onLeave={onLeave} />)
     const buyButton = screen.getByRole('button', {
-      name: shopItemAccessibleName(ShopItem.Heal, null),
+      name: shopItemAccessibleName(ShopItem.Heal, basePrices[ShopItem.Heal], null),
     })
     const leaveButton = screen.getByRole('button', {
       name: 'Fight The Monarch',
@@ -225,7 +263,7 @@ describe('ShopPanel — leaving mid-flight (QA fix — DLR-157 follow-up, Defend
     const onLeave = vi.fn()
     const { container } = render(<ShopPanel {...baseProps()} onBuy={onBuy} onLeave={onLeave} />)
     const buyButton = screen.getByRole('button', {
-      name: shopItemAccessibleName(ShopItem.Heal, null),
+      name: shopItemAccessibleName(ShopItem.Heal, basePrices[ShopItem.Heal], null),
     })
     const shell = container.querySelector('.shop-shell') as HTMLElement
 

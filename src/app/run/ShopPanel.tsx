@@ -83,6 +83,10 @@ interface ShopPanelProps {
    *  here. `null` means the purchase is available. Total over the whole union, exactly as
    *  `SHOP_ITEM_NAME`, even though only `SHOP_ITEMS` is ever rendered. */
   readonly refusals: Readonly<Record<ShopItem, PurchaseRefusal | null>>
+  /** DLR-158 AC5 — one entry per `ShopItem`, derived by the driver from `priceOf` and never
+   *  re-derived here: the price of the NEXT purchase, which for the max-health raise climbs with
+   *  every copy bought. Total over the whole union, exactly as `refusals` is. */
+  readonly prices: Readonly<Record<ShopItem, Coins>>
   readonly onBuy: (item: ShopItem) => void
   readonly onLeave: () => void
   /** DLR-116 AC1 — the slot machine, passed straight through from `useShopSlot`'s view plus the
@@ -138,6 +142,7 @@ function ShopPanelContent({
   nextOpponentName,
   progressText,
   refusals,
+  prices,
   onBuy,
   onLeave,
   slot,
@@ -193,11 +198,11 @@ function ShopPanelContent({
           // and, before this fix, silently drop — the first purchase's commit.
           disabled={refusal !== null || inFlight}
           onClick={() => handleBuy(item)}
-          aria-label={shopItemAccessibleName(item, refusal)}
+          aria-label={shopItemAccessibleName(item, prices[item], refusal)}
           ref={register(anchorKeyFor(offerAnchor(item)))}
         >
           <span className="shop-buy-name">{SHOP_ITEM_NAME[item]}</span>
-          <span className="shop-buy-price">{priceText(item)}</span>
+          <span className="shop-buy-price">{priceText(prices[item])}</span>
         </button>
         {/* A reason renders only when there IS one — `game-ux` forbids a panel that exists to say
             nothing is wrong, and five reserved-but-empty lines were a large part of why the old

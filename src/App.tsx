@@ -50,6 +50,7 @@ import { setDebugAppState } from './app/debugState'
 import RunOutcomePanel, { type TrickTally } from './app/run/RunOutcomePanel'
 import ShopPanel from './app/run/ShopPanel'
 import { shopRefusalsFor } from './app/run/shopRefusals'
+import { shopPricesFor } from './app/run/shopPrices'
 import RunPathScreen from './app/run/RunPathScreen'
 import { useShopSlot } from './app/run/useShopSlot'
 import {
@@ -114,9 +115,11 @@ function App() {
 
   // Read from config, never written as numbers, and derived from the SAME index the encounter was
   // started from — so a bar's denominator cannot disagree with its opening value. Not a module
-  // constant any more: the Quarry's maximum changes with every fight of the run.
+  // constant any more: the Quarry's maximum changes with every fight of the run, and DLR-158 makes
+  // the player's maximum run state too — raised by `ShopItem.MaxHealth` — rather than the constant
+  // it opened on.
   const maxHealth = {
-    [DuelSide.Player]: PLAYER_START_HEALTH,
+    [DuelSide.Player]: run.maxPlayerHealth,
     [DuelSide.Quarry]: quarryHealthForEncounter(run.encounterIndex),
   }
 
@@ -300,7 +303,7 @@ function App() {
       <ShopPanel
         coins={run.coins}
         playerHealth={run.encounter.health[DuelSide.Player]}
-        maxPlayerHealth={PLAYER_START_HEALTH}
+        maxPlayerHealth={run.maxPlayerHealth}
         playerHearts={playerBar.hearts}
         flaskCharges={run.flaskCharges}
         flaskRefusal={flaskRefusalFor(flaskStockFor(run))}
@@ -309,6 +312,7 @@ function App() {
         nextOpponentName={nextName}
         progressText={runProgressText(run.encounterIndex + 1, run.encounterCount)}
         refusals={shopRefusalsFor(stock)}
+        prices={shopPricesFor(stock)}
         onBuy={handleBuy}
         onLeave={leaveForNextFight}
         slot={{ ...slotView, onSelectMachine: selectMachine, onPull: pull }}

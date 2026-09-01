@@ -1,12 +1,13 @@
 import {
   AP_CAPACITY_STEP,
+  MAX_HEALTH_PER_PURCHASE,
   TIMEBOMB_PLAYER_DAMAGE,
   TIMEBOMB_QUARRY_DAMAGE,
   FlaskRefusal,
   HEAL_HEALTH_RESTORED,
-  priceOf,
   PurchaseRefusal,
   ShopItem,
+  type Coins,
   type Health,
 } from '../../hunt'
 
@@ -52,6 +53,7 @@ export const SHOP_ITEM_NAME: Readonly<Record<ShopItem, string>> = {
   [ShopItem.ApCapacity]: 'Action points',
   [ShopItem.SwanTier]: 'Swan', // PLACEHOLDER copy — the developer's call.
   [ShopItem.WitchTier]: 'Witch', // PLACEHOLDER copy — the developer's call.
+  [ShopItem.MaxHealth]: 'Max health', // PLACEHOLDER copy — the developer's call.
 }
 
 /** Built FROM the configuration keys, never from a literal, so re-pricing or re-tuning the heal
@@ -72,6 +74,7 @@ export const SHOP_ITEM_BLURB: Readonly<Record<ShopItem, string>> = {
     'Upgrade the Swan, for the rest of the run. At silver, losing a trick cleanly with a Swan no longer breaks your streak. At gold, it does not cash your bank either. Your Swans only — the Quarry keeps the printed card.',
   [ShopItem.WitchTier]:
     'Upgrade the Witch, for the rest of the run. At silver, two Witches no longer cancel — yours still counts as trump. At gold, yours also beats every trump. Your Witches only — the Quarry keeps the printed card.',
+  [ShopItem.MaxHealth]: `+${MAX_HEALTH_PER_PURCHASE} maximum health for the rest of the run, and you leave at full. Buy it again to stack it — each one costs more.`, // PLACEHOLDER copy
 }
 
 /** AC6 — the reason, in words. Total over `PurchaseRefusal`, so a FIFTH reason code is a
@@ -84,16 +87,21 @@ export const PURCHASE_REFUSAL_MESSAGE: Readonly<Record<PurchaseRefusal, string>>
   [PurchaseRefusal.NotEnoughCoins]: 'You do not have the coins for this.',
 }
 
-/** A price, in words — always read from `priceOf`, never a quoted number. */
-export function priceText(item: ShopItem): string {
-  const price = priceOf(item)
+/** A price, in words. Takes the ALREADY-DERIVED figure rather than the item: from DLR-158 the
+ *  price depends on run state, and a copy layer that called `priceOf` itself would have to learn
+ *  the shop's rules to do it. `shopPrices.ts` is the single reader of `priceOf` on this side. */
+export function priceText(price: Coins): string {
   return `${price} coin${price === 1 ? '' : 's'}`
 }
 
 /** The purchase control's accessible name — folds in the refusal so a screen-reader user hears
  *  why a control is disabled without having to find the sentence beside it (AC6). */
-export function shopItemAccessibleName(item: ShopItem, refusal: PurchaseRefusal | null): string {
-  const base = `${SHOP_ITEM_NAME[item]} — ${priceText(item)}`
+export function shopItemAccessibleName(
+  item: ShopItem,
+  price: Coins,
+  refusal: PurchaseRefusal | null,
+): string {
+  const base = `${SHOP_ITEM_NAME[item]} — ${priceText(price)}`
   return refusal === null ? base : `${base} — ${PURCHASE_REFUSAL_MESSAGE[refusal]}`
 }
 

@@ -96,13 +96,18 @@ later is the one that would have forgotten. It also means `recordEncounter` read
 off the run it was handed instead of taking it as a second new parameter.
 
 `startRun` seeds it `1`. `advanceRun` resets it to `1`. `recordEncounter` advances it through a
-named private helper, following `guardAfter` and `flaskAfter`'s established shape:
+named helper, following `guardAfter` and `flaskAfter`'s established shape:
 
 ```ts
-function handOfFightAfter(run: RunState, encounter: EncounterState): number {
-  return isEncounterResolved(encounter) ? run.handOfFight : run.handOfFight + 1
+export function handOfFightAfter(handOfFight: number, encounter: EncounterState): number {
+  return isEncounterResolved(encounter) ? handOfFight : handOfFight + 1
 }
 ```
+
+> **DLR-158 moved this helper (and the four beside it) into `src/hunt/runCarry.ts`**, a pure
+> extraction forced by `runTransitions.ts` crossing the 400-line budget. It is exported rather than
+> private now, and it takes the number instead of the whole `RunState` so `runCarry.ts` need not
+> import `run.ts`; the expression is unchanged.
 
 `App.handleComplete` calls `recordEncounter` once per hand whether or not the fight ended, so "the
 fight continues, therefore the next hand is n+1" is a rule that transition can own outright. The

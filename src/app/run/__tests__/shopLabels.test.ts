@@ -6,10 +6,23 @@ import {
   FlaskRefusal,
   flaskHealAmount,
   HEAL_HEALTH_RESTORED,
+  priceOf,
   PurchaseRefusal,
   ShopItem,
   WHETSTONE_PRICE,
+  type ShopStock,
 } from '../../../hunt'
+import { ALL_BRONZE } from '../../../hunt/rankTiers'
+
+const stock = (over: Partial<ShopStock> = {}): ShopStock => ({
+  coins: 5,
+  playerHealth: 6,
+  maxPlayerHealth: 10,
+  blastGuardHeld: false,
+  rankTiers: ALL_BRONZE,
+  maxHealthPurchases: 0,
+  ...over,
+})
 import {
   flaskAccessibleName,
   flaskBlurbText,
@@ -65,8 +78,9 @@ describe('shopLabels', () => {
   })
 
   it('gives an item a different accessible name when it carries a refusal', () => {
-    const available = shopItemAccessibleName(ShopItem.Heal, null)
-    const refused = shopItemAccessibleName(ShopItem.Heal, PurchaseRefusal.NotEnoughCoins)
+    const price = priceOf(ShopItem.Heal, stock())
+    const available = shopItemAccessibleName(ShopItem.Heal, price, null)
+    const refused = shopItemAccessibleName(ShopItem.Heal, price, PurchaseRefusal.NotEnoughCoins)
     expect(refused).not.toBe(available)
   })
 
@@ -83,9 +97,10 @@ describe('shopLabels', () => {
   })
 
   it('prices an item from configuration', () => {
-    expect(priceText(ShopItem.Cheat)).toBeTruthy()
-    expect(priceText(ShopItem.Heal)).toBeTruthy()
-    expect(priceText(ShopItem.ApCapacity)).toBeTruthy()
+    const s = stock()
+    expect(priceText(priceOf(ShopItem.Cheat, s))).toBeTruthy()
+    expect(priceText(priceOf(ShopItem.Heal, s))).toBeTruthy()
+    expect(priceText(priceOf(ShopItem.ApCapacity, s))).toBeTruthy()
   })
 })
 

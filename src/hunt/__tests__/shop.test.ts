@@ -24,6 +24,7 @@ import {
   tieredRankOf,
 } from '../shop'
 import { ALL_BRONZE, AbilityTier, RANK_TIER_STEP_PRICE, TieredRank, steppedTo } from '../rankTiers'
+import { maxHealthPriceFor } from '../maxHealth'
 
 const baseStock = (over: Partial<ShopStock> = {}): ShopStock => ({
   coins: 5,
@@ -31,25 +32,26 @@ const baseStock = (over: Partial<ShopStock> = {}): ShopStock => ({
   maxPlayerHealth: 10,
   blastGuardHeld: false,
   rankTiers: ALL_BRONZE,
+  maxHealthPurchases: 0,
   ...over,
 })
 const stock = baseStock
 
 describe('SHOP_ITEMS', () => {
-  it('sells Heal alone — the two rank ladders left the shelf, as ApCapacity did before them', () => {
-    expect(SHOP_ITEMS).toEqual([ShopItem.Heal])
+  it('sells Heal and the max-health raise — the two rank ladders left the shelf, as ApCapacity did before them', () => {
+    expect(SHOP_ITEMS).toEqual([ShopItem.Heal, ShopItem.MaxHealth])
     expect(SHOP_ITEMS).not.toContain(ShopItem.ApCapacity)
     expect(SHOP_ITEMS).not.toContain(ShopItem.SwanTier)
     expect(SHOP_ITEMS).not.toContain(ShopItem.WitchTier)
   })
 
   it('keeps both rank ladders PRICED though they left the shelf, so restoring one is a list row', () => {
-    expect(priceOf(ShopItem.SwanTier)).toBe(RANK_TIER_STEP_PRICE)
-    expect(priceOf(ShopItem.WitchTier)).toBe(RANK_TIER_STEP_PRICE)
+    expect(priceOf(ShopItem.SwanTier, baseStock())).toBe(RANK_TIER_STEP_PRICE)
+    expect(priceOf(ShopItem.WitchTier, baseStock())).toBe(RANK_TIER_STEP_PRICE)
   })
 
   it('DLR-145 AC3 — ApCapacity is still priced even though it left the shelf, exactly as Cheat/Timebomb/Blast Guard/Whetstone stayed priced on DLR-116', () => {
-    expect(priceOf(ShopItem.ApCapacity)).toBe(AP_CAPACITY_PRICE)
+    expect(priceOf(ShopItem.ApCapacity, baseStock())).toBe(AP_CAPACITY_PRICE)
   })
 })
 
@@ -61,12 +63,13 @@ describe('the refilled run-permanent shelf (DLR-122 AC2)', () => {
     expect(categoryOf(ShopItem.WitchTier)).toBe(ShopCategory.RunPermanent)
     // `SHOP_ITEMS_BY_CATEGORY` derives from `SHOP_ITEMS`, so an item off the shelf is off every
     // rung — the categorisation above is what survives, and it is what makes restoring one a row.
-    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([])
+    // DLR-158 put `MaxHealth` ON the shelf and ON this rung, so it is the one entry here now.
+    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([ShopItem.MaxHealth])
   })
 
   it('prices both from the one configuration point (AC7)', () => {
-    expect(priceOf(ShopItem.SwanTier)).toBe(RANK_TIER_STEP_PRICE)
-    expect(priceOf(ShopItem.WitchTier)).toBe(RANK_TIER_STEP_PRICE)
+    expect(priceOf(ShopItem.SwanTier, baseStock())).toBe(RANK_TIER_STEP_PRICE)
+    expect(priceOf(ShopItem.WitchTier, baseStock())).toBe(RANK_TIER_STEP_PRICE)
   })
 
   it('maps each tier item to exactly one rank, and every other item to none', () => {
@@ -75,6 +78,7 @@ describe('the refilled run-permanent shelf (DLR-122 AC2)', () => {
     expect(tieredRankOf(ShopItem.Heal)).toBeNull()
     expect(tieredRankOf(ShopItem.ApCapacity)).toBeNull()
     expect(tieredRankOf(ShopItem.Whetstone)).toBeNull()
+    expect(tieredRankOf(ShopItem.MaxHealth)).toBeNull()
   })
 
   it('sells a step at bronze and at silver', () => {
@@ -108,32 +112,38 @@ describe('the refilled run-permanent shelf (DLR-122 AC2)', () => {
 
 describe('priceOf', () => {
   it('reads CHEAT_PRICE for the Cheat', () => {
-    expect(priceOf(ShopItem.Cheat)).toBe(CHEAT_PRICE)
+    expect(priceOf(ShopItem.Cheat, baseStock())).toBe(CHEAT_PRICE)
   })
 
   it('reads HEAL_PRICE for the Heal', () => {
-    expect(priceOf(ShopItem.Heal)).toBe(HEAL_PRICE)
+    expect(priceOf(ShopItem.Heal, baseStock())).toBe(HEAL_PRICE)
   })
 
   it('reads TIMEBOMB_PRICE for Timebomb', () => {
-    expect(priceOf(ShopItem.Timebomb)).toBe(TIMEBOMB_PRICE)
+    expect(priceOf(ShopItem.Timebomb, baseStock())).toBe(TIMEBOMB_PRICE)
   })
 
   it('reads BLAST_GUARD_PRICE for the Blast Guard', () => {
-    expect(priceOf(ShopItem.BlastGuard)).toBe(BLAST_GUARD_PRICE)
+    expect(priceOf(ShopItem.BlastGuard, baseStock())).toBe(BLAST_GUARD_PRICE)
   })
 
   it('DLR-92 AC1 — prices the Whetstone from WHETSTONE_PRICE', () => {
-    expect(priceOf(ShopItem.Whetstone)).toBe(WHETSTONE_PRICE)
+    expect(priceOf(ShopItem.Whetstone, baseStock())).toBe(WHETSTONE_PRICE)
   })
 
   it('DLR-116 AC2 — prices AP capacity from AP_CAPACITY_PRICE', () => {
-    expect(priceOf(ShopItem.ApCapacity)).toBe(AP_CAPACITY_PRICE)
+    expect(priceOf(ShopItem.ApCapacity, baseStock())).toBe(AP_CAPACITY_PRICE)
+  })
+
+  it('DLR-158 AC4 — prices the max-health raise from the escalating formula, keyed off purchases already made', () => {
+    expect(priceOf(ShopItem.MaxHealth, baseStock({ maxHealthPurchases: 2 }))).toBe(
+      maxHealthPriceFor(2),
+    )
   })
 
   it('DLR-116 AC3 / DLR-122 — still answers for every ShopItem member, proving no mechanic is deleted', () => {
     for (const item of Object.values(ShopItem)) {
-      expect(typeof priceOf(item)).toBe('number')
+      expect(typeof priceOf(item, baseStock())).toBe('number')
     }
   })
 })
@@ -168,6 +178,18 @@ describe('refusalFor', () => {
     expect(refusalFor(stock({ coins: Number.NaN }), ShopItem.Cheat)).toBe(
       PurchaseRefusal.NotEnoughCoins,
     )
+  })
+})
+
+describe('refusalFor — MaxHealth (DLR-158 AC6)', () => {
+  it('does NOT refuse at full health — unlike Heal, being full is not a reason', () => {
+    const full = stock({ playerHealth: 10, maxPlayerHealth: 10 })
+    expect(refusalFor(full, ShopItem.MaxHealth)).toBeNull()
+    expect(refusalFor(full, ShopItem.Heal)).toBe(PurchaseRefusal.AlreadyFullHealth)
+  })
+
+  it('refuses only with NotEnoughCoins when the purse is short', () => {
+    expect(refusalFor(stock({ coins: 0 }), ShopItem.MaxHealth)).toBe(PurchaseRefusal.NotEnoughCoins)
   })
 })
 
@@ -255,6 +277,10 @@ describe('categoryOf', () => {
     expect(categoryOf(ShopItem.ApCapacity)).toBe(ShopCategory.RunPermanent)
   })
 
+  it('DLR-158 AC1 — puts the max-health raise on the run-permanent rung, alongside Whetstone', () => {
+    expect(categoryOf(ShopItem.MaxHealth)).toBe(ShopCategory.RunPermanent)
+  })
+
   it('answers for every SHOP_ITEMS member, so no item is silently unassigned', () => {
     for (const item of SHOP_ITEMS) {
       const category = categoryOf(item)
@@ -275,8 +301,8 @@ describe('SHOP_ITEMS_BY_CATEGORY', () => {
     expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.FightLong]).toEqual([])
   })
 
-  it('leaves every rung empty — Heal is the only item on the shelf and it sits on no rung', () => {
-    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([])
+  it('DLR-158 — the run-permanent rung now holds the max-health raise; game-permanent stays empty', () => {
+    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([ShopItem.MaxHealth])
     expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.GamePermanent]).toEqual([])
   })
 

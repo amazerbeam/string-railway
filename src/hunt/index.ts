@@ -258,6 +258,15 @@ export {
 export type { FlaskStock } from './flask'
 export { FlaskRefusal, flaskHealAmount, flaskRefusalFor } from './flask'
 
+// DLR-158 — the max-health purchase's price formula and its raise rule.
+export {
+  MAX_HEALTH_PER_PURCHASE,
+  MAX_HEALTH_PRICE_BASE,
+  MAX_HEALTH_PRICE_STEP,
+  maxHealthPriceFor,
+  raisedMaxHealthFor,
+} from './maxHealth'
+
 export type { QuickKill } from './quickKill'
 export { quickKillTierMultiplier, quickKillPayout } from './quickKill'
 

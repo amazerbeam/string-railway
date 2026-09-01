@@ -4,14 +4,18 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   FlaskRefusal,
   flaskHealAmount,
+  priceOf,
   PurchaseRefusal,
   SLOT_MACHINE_IDS,
   SHOP_ITEMS,
   ShopItem,
   SlotMachineId,
   type Buff,
+  type Coins,
+  type ShopStock,
   type SlotPullRefusal,
 } from '../../../hunt'
+import { ALL_BRONZE } from '../../../hunt/rankTiers'
 import { HeartState } from '../../warCouncil/duelHealthBars'
 import ShopPanel from '../ShopPanel'
 import { fightLabel } from '../runLabels'
@@ -44,6 +48,31 @@ const baseSlot = {
   lastPull: null,
 }
 
+/** The stock `priceOf` needs now that DLR-158 makes it stock-dependent. Fresh run, no max-health
+ *  purchases yet — matches `basePrices` below being the FIRST purchase's price. */
+const baseStock: ShopStock = {
+  coins: 3,
+  playerHealth: 6,
+  maxPlayerHealth: 10,
+  blastGuardHeld: false,
+  rankTiers: ALL_BRONZE,
+  maxHealthPurchases: 0,
+}
+
+/** Built the same way `noRefusals` below is — one entry per `ShopItem`, read straight from
+ *  `priceOf` so this fixture cannot drift from the rule it prices. */
+const basePrices: Readonly<Record<ShopItem, Coins>> = {
+  [ShopItem.Cheat]: priceOf(ShopItem.Cheat, baseStock),
+  [ShopItem.Timebomb]: priceOf(ShopItem.Timebomb, baseStock),
+  [ShopItem.BlastGuard]: priceOf(ShopItem.BlastGuard, baseStock),
+  [ShopItem.Whetstone]: priceOf(ShopItem.Whetstone, baseStock),
+  [ShopItem.Heal]: priceOf(ShopItem.Heal, baseStock),
+  [ShopItem.ApCapacity]: priceOf(ShopItem.ApCapacity, baseStock),
+  [ShopItem.SwanTier]: priceOf(ShopItem.SwanTier, baseStock),
+  [ShopItem.WitchTier]: priceOf(ShopItem.WitchTier, baseStock),
+  [ShopItem.MaxHealth]: priceOf(ShopItem.MaxHealth, baseStock),
+}
+
 const baseProps = {
   coins: 3,
   playerHealth: 6,
@@ -60,6 +89,9 @@ const baseProps = {
   onBuy: vi.fn(),
   onLeave: vi.fn(),
   slot: baseSlot,
+  /** DLR-158 — every `render(<ShopPanel {...baseProps} .../>)` call in this file carries this,
+   *  exactly as it already carries `refusals` via each call's own explicit prop. */
+  prices: basePrices,
 }
 
 const noRefusals: Readonly<Record<ShopItem, PurchaseRefusal | null>> = {
@@ -71,6 +103,7 @@ const noRefusals: Readonly<Record<ShopItem, PurchaseRefusal | null>> = {
   [ShopItem.ApCapacity]: null,
   [ShopItem.SwanTier]: null,
   [ShopItem.WitchTier]: null,
+  [ShopItem.MaxHealth]: null,
 }
 
 describe('ShopPanel', () => {
@@ -80,9 +113,21 @@ describe('ShopPanel', () => {
     // Driven off `SHOP_ITEMS` itself rather than a transcribed roster, so adding or removing an
     // item is a one-line change in `shop.ts` and no edit here.
     for (const item of SHOP_ITEMS) {
-      expect(screen.getByRole('button', { name: shopItemAccessibleName(item, null) })).toBeTruthy()
+      expect(
+        screen.getByRole('button', { name: shopItemAccessibleName(item, basePrices[item], null) }),
+      ).toBeTruthy()
     }
     expect(screen.getAllByRole('button', { name: /coin/ })).toHaveLength(SHOP_ITEMS.length)
+  })
+
+  it('DLR-158 — the Heal tile still reads "1 coin" and its accessible name is unchanged by the prices prop', () => {
+    const { container } = render(<ShopPanel {...baseProps} refusals={noRefusals} />)
+    expect(basePrices[ShopItem.Heal]).toBe(1)
+    const healButton = screen.getByRole('button', {
+      name: shopItemAccessibleName(ShopItem.Heal, basePrices[ShopItem.Heal], null),
+    })
+    expect(healButton.getAttribute('aria-label')).toBe('Heal — 1 coin')
+    expect(container.querySelector('.shop-buy-price')?.textContent).toBe('1 coin')
   })
 
   it('names no button, tab or text after Cheat, Timebomb, Blast Guard or Whetstone (AC3)', () => {
@@ -103,7 +148,11 @@ describe('ShopPanel', () => {
     const refusals = { ...noRefusals, [ShopItem.Heal]: PurchaseRefusal.AlreadyFullHealth }
     render(<ShopPanel {...baseProps} refusals={refusals} />)
     const button = screen.getByRole('button', {
-      name: shopItemAccessibleName(ShopItem.Heal, PurchaseRefusal.AlreadyFullHealth),
+      name: shopItemAccessibleName(
+        ShopItem.Heal,
+        basePrices[ShopItem.Heal],
+        PurchaseRefusal.AlreadyFullHealth,
+      ),
     })
     expect(button).toHaveProperty('disabled', true)
     expect(screen.getByText('You are already at full health.')).toBeTruthy()
@@ -113,7 +162,9 @@ describe('ShopPanel', () => {
     const onBuy = vi.fn()
     render(<ShopPanel {...baseProps} refusals={noRefusals} onBuy={onBuy} />)
     fireEvent.click(
-      screen.getByRole('button', { name: shopItemAccessibleName(ShopItem.Heal, null) }),
+      screen.getByRole('button', {
+        name: shopItemAccessibleName(ShopItem.Heal, basePrices[ShopItem.Heal], null),
+      }),
     )
     expect(onBuy).toHaveBeenCalledTimes(1)
     expect(onBuy).toHaveBeenCalledWith(ShopItem.Heal)
@@ -125,7 +176,11 @@ describe('ShopPanel', () => {
     render(<ShopPanel {...baseProps} refusals={refusals} onBuy={onBuy} />)
     fireEvent.click(
       screen.getByRole('button', {
-        name: shopItemAccessibleName(ShopItem.Heal, PurchaseRefusal.AlreadyFullHealth),
+        name: shopItemAccessibleName(
+          ShopItem.Heal,
+          basePrices[ShopItem.Heal],
+          PurchaseRefusal.AlreadyFullHealth,
+        ),
       }),
     )
     expect(onBuy).not.toHaveBeenCalled()

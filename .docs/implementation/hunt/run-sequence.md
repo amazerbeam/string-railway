@@ -86,15 +86,15 @@ is over" is what stops a screen and a transition disagreeing about it.
 
 | Function                              | Does                                                                                                 |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `startRun(playerHealth?)`             | Builds fight 0 at `PLAYER_START_HEALTH`, `outcome: InProgress`, **0 coins**, and the configured Cheat grant |
+| `startRun(playerHealth?, grants?, runSeed?)` | Builds fight 0 at `PLAYER_START_HEALTH`, `outcome: InProgress`, **0 coins**, and the configured Cheat grant. **Since DLR-158 the same `playerHealth` argument also seeds `maxPlayerHealth`, the run's live ceiling** |
 | `recordEncounter(run, enc, cheats, timebombCharges, blastGuardHeld)` | Adopts the encounter a hand reported upward, **credits `COINS_PER_ENCOUNTER_WIN` on a player win**, **refills the flask through `flaskAfter` if the opponent just beaten was a stage boss** (DLR-93), and **re-derives the outcome** — the AC4/AC5 decision point. The fifth argument goes through `guardAfter`, not straight onto the run |
 | `canAdvanceRun(run)`                  | `outcome === InProgress && encounter.winner === Player` — "the Quarry is down and another fight remains" |
 | `beatenCount(run)`                    | How many fights are behind the player, as one integer — `encounterIndex + (winner === Player ? 1 : 0)` (DLR-85) |
 | `advanceRun(run)`                     | Opens the next fight on the carried health, or throws                                                 |
-| `shopStockFor(run, maxPlayerHealth?)` | Projects the run into the four figures the shop's rules need (DLR-84)                                 |
-| `buyFromShop(run, item, max?)`        | Deducts a price and mints a Cheat or heals through the shared `healedBy` clamp, or throws (DLR-84)     |
-| `flaskStockFor(run, maxPlayerHealth?)` | Projects the run into the three figures the flask's rules need — `shopStockFor`'s sibling (DLR-93)   |
-| `drinkFlask(run, max?)`               | Spends one flask charge and restores through the same `healedBy` clamp, or throws — twice over (DLR-93) |
+| `shopStockFor(run)`                   | Projects the run into the figures the shop's rules need (DLR-84). **DLR-158 deleted the `maxPlayerHealth` parameter** — the ceiling and the purchase count are read off the run   |
+| `buyFromShop(run, item)`              | Deducts a price and acts by item, healing through the shared `healedBy` clamp, or throws (DLR-84). **DLR-158 deleted the `maxPlayerHealth` parameter and added the `MaxHealth` arm** |
+| `flaskStockFor(run)`                  | Projects the run into the three figures the flask's rules need — `shopStockFor`'s sibling (DLR-93). **DLR-158 deleted the `maxPlayerHealth` parameter** |
+| `drinkFlask(run)`                     | Spends one flask charge and restores through the same `healedBy` clamp, or throws — twice over (DLR-93). **DLR-158 deleted the `maxPlayerHealth` parameter** |
 | `baseDamageBonusFor(run)`             | `run.whetstones` — the one statement of "+1 to a banked trick's base damage per copy owned" (DLR-92, renamed DLR-156) |
 
 **`recordEncounter` is the run's single payout point as well as its single outcome point**, and for
@@ -228,12 +228,22 @@ two files on disk today.
 
 | File                 | Holds                                                                                              |
 | -------------------- | -------------------------------------------------------------------------------------------------- |
-| `run.ts`             | The run's **shape** and its projections — `RunState`, `RunOutcome`, `startRun`, `canAdvanceRun`, `beatenCount`, `shopStockFor`, `flaskStockFor`, `bankClimbBonusFor` |
-| `runTransitions.ts`  | The run's **transitions** — `recordEncounter`, `advanceRun`, `buyFromShop`, `drinkFlask`, and the private helpers only they use: `outcomeFor`, `guardAfter`, `feederCarryAfter`, `healedBy`, `flaskAfter` |
+| `run.ts`             | The run's **shape** and its projections — `RunState`, `RunOutcome`, `startRun`, `canAdvanceRun`, `beatenCount`, `shopStockFor`, `flaskStockFor`, `baseDamageBonusFor` |
+| `runTransitions.ts`  | The run's **transitions** — `recordEncounter`, `advanceRun`, `buyFromShop`, `drinkFlask`, `pullSlotMachine`, and the private helpers only they use: `outcomeFor`, `healedBy`, `fullyHealed` |
+| `runCarry.ts`        | **DLR-158.** The five fight-boundary **carry** helpers — `guardAfter`, `feederCarryAfter`, `streakAfter`, `handOfFightAfter`, `flaskAfter` — answering one question, "what survives the end of a fight" |
 
 The line drawn is **a function that produces a new `RunState` versus one that only reads an existing
 one.** `canAdvanceRun` and `beatenCount` stayed with the shape despite being logic, because they answer
 questions about a run rather than advancing it.
+
+> **`runCarry.ts` is a second split of the same kind, DLR-158.** `runTransitions.ts` reached 396
+> lines against the same 400-line budget, and the max-health branch plus its helper would have
+> breached it. The five carry helpers are a coherent group answering one question, so they moved
+> before any feature work, in their own phase. **Also a pure move**, with one narrowing:
+> `handOfFightAfter` and `flaskAfter` take the figures they read rather than the whole `RunState`,
+> so `runCarry.ts` does not import `run.ts` and no new cycle is created. `healedBy` deliberately
+> stayed in `runTransitions.ts` — it is the health writer two transitions there call, and DLR-158's
+> `fullyHealed` belongs beside it.
 
 **It was a pure move.** No expression, name or signature differs from what `run.ts` held before, and
 no test was edited: `run.ts` re-exports all four transitions on its last line, so every existing

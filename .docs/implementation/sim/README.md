@@ -181,6 +181,13 @@ still prices Timebomb — DLR-116 pared it off the `SHOP_ITEMS` shelf, not out o
 
 ## Deferred / not yet implemented
 
+- **No policy buys the max-health raise, so the simulator cannot say whether it is too strong**
+  (DLR-158). `SHOP_PURCHASE_ORDER` in `baselinePolicy.ts` was deliberately left untouched when
+  `ShopItem.MaxHealth` joined the shelf, so every existing simulation keeps measuring exactly what it
+  measured before — but the usual way of asking "is this item overpowered" is unavailable until
+  someone adds it to that list. That is a measurement decision, not a code one, and nobody has taken
+  it. Note also that a policy which *did* buy it would make the player's health ceiling vary within a
+  run for the first time, which some of this tool's reporting assumes is fixed.
 - **The modelled player applies whenever a pot stands and never pushes** (DLR-156). Neither shipped
   policy implements `wantsApplyPot`, so the driver's own default answers for both. It is the
   lowest-variance line the apply-or-roll choice admits and a deliberate floor, **not a claim about

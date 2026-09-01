@@ -7,6 +7,7 @@ import {
   WHETSTONE_PRICE,
 } from './config'
 import { isAtMaxTier, RANK_TIER_STEP_PRICE, TieredRank, type RankTierTable } from './rankTiers'
+import { maxHealthPriceFor } from './maxHealth'
 import type { Coins, Health } from './types'
 
 export const ShopItem = {
@@ -18,6 +19,8 @@ export const ShopItem = {
   ApCapacity: 'apCapacity', // DLR-116 AC2
   SwanTier: 'swanTier', // DLR-122 AC2
   WitchTier: 'witchTier', // DLR-122 AC2
+  /** DLR-158 AC1 — raises the run's maximum health and refills to the new top. */
+  MaxHealth: 'maxHealth',
 } as const
 export type ShopItem = (typeof ShopItem)[keyof typeof ShopItem]
 
@@ -41,7 +44,10 @@ export type ShopItem = (typeof ShopItem)[keyof typeof ShopItem]
  *  `categoryOf` rung and their `refusalFor` handling, exactly as DLR-145 left the action-point
  *  purchase and DLR-116 left Cheat, Timebomb, Blast Guard and Whetstone — no mechanic is deleted,
  *  only this list changed, and putting either back is one row here. */
-export const SHOP_ITEMS: readonly ShopItem[] = [ShopItem.Heal]
+/** DLR-158 AC1 — the shelf gains a second item, the first addition since the 2026-09-01 pass
+ *  pared it to Heal alone. Nothing that left comes back: this is a NEW item, and every card off
+ *  the shelf stays off it for the reasons the notes above give. */
+export const SHOP_ITEMS: readonly ShopItem[] = [ShopItem.Heal, ShopItem.MaxHealth]
 
 /** The persistence-length ladder (version-4-scope.md §1) — named after the design doc's own rungs
  *  rather than Balatro's deck / Joker / consumable, since this game has no deck-building layer for
@@ -92,11 +98,23 @@ export interface ShopStock {
   /** DLR-122 AC2 — where every tierable rank currently stands, so the ceiling is a rule this
    *  module can state rather than something the caller has to remember to check. */
   readonly rankTiers: RankTierTable
+  /** DLR-158 AC4 — copies of the max-health raise bought this run, so this module can price the
+   *  NEXT one without learning the run's shape. The discipline `ShopStock`'s own docblock states:
+   *  everything the shop's rules need, and nothing else. */
+  readonly maxHealthPurchases: number
 }
 
-/** Total over `ShopItem`, so adding a third item is a compile error here rather than an
- *  `undefined` price at runtime. */
-export function priceOf(item: ShopItem): Coins {
+/**
+ * Total over `ShopItem`, so adding a third item is a compile error here rather than an
+ * `undefined` price at runtime.
+ *
+ * DLR-158 — takes the STOCK, required, because `MaxHealth`'s price climbs with the number already
+ * bought. Required rather than defaulted for the reason this ticket removed four defaulted
+ * `maxPlayerHealth` parameters: a default is a silently-wrong answer waiting for a caller who
+ * forgets. One function rather than a `currentPriceOf` beside this one, so the tile, the refusal
+ * and the coin deduction cannot disagree about what a thing costs.
+ */
+export function priceOf(item: ShopItem, stock: ShopStock): Coins {
   switch (item) {
     case ShopItem.Cheat:
       return CHEAT_PRICE
@@ -115,6 +133,8 @@ export function priceOf(item: ShopItem): Coins {
     case ShopItem.SwanTier:
     case ShopItem.WitchTier:
       return RANK_TIER_STEP_PRICE
+    case ShopItem.MaxHealth:
+      return maxHealthPriceFor(stock.maxHealthPurchases)
   }
 }
 
@@ -139,6 +159,7 @@ export function tieredRankOf(item: ShopItem): TieredRank | null {
     case ShopItem.Whetstone:
     case ShopItem.Heal:
     case ShopItem.ApCapacity:
+    case ShopItem.MaxHealth:
       return null
   }
 }
@@ -173,6 +194,9 @@ export function categoryOf(item: ShopItem): ShopCategory | null {
     // as Whetstone's climb and the AP raise do.
     case ShopItem.SwanTier:
     case ShopItem.WitchTier:
+      return ShopCategory.RunPermanent
+    // DLR-158 AC1 — the raise lasts the run, exactly as Whetstone's climb and the AP raise do.
+    case ShopItem.MaxHealth:
       return ShopCategory.RunPermanent
   }
 }
@@ -229,7 +253,11 @@ export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | 
   if (tieredRank !== null && isAtMaxTier(stock.rankTiers, tieredRank)) {
     return PurchaseRefusal.RankAtMaxTier
   }
-  if (!Number.isFinite(stock.coins) || stock.coins < priceOf(item)) {
+  // DLR-158 AC6 — `MaxHealth` gets NO item-specific branch, deliberately: being at full health
+  // must NOT refuse this purchase, since the raise fills the bar to the new top regardless of how
+  // hurt the player was. It falls straight through to the coin check below, so `NotEnoughCoins` is
+  // the only reason it can ever produce. Do not "fix" this by adding an `AlreadyFullHealth` branch.
+  if (!Number.isFinite(stock.coins) || stock.coins < priceOf(item, stock)) {
     return PurchaseRefusal.NotEnoughCoins
   }
   return null

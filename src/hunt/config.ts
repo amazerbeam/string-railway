@@ -212,6 +212,10 @@ export const COINS_PER_ENCOUNTER_WIN: Coins = 10
 export const CHEAT_PRICE: Coins = 1
 export const HEAL_PRICE: Coins = 1
 
+// DLR-158 — the max-health purchase's price is NOT a key here. It climbs with the number already
+// bought, so it is a formula rather than a constant, and it lives with its rule in
+// `src/hunt/maxHealth.ts` — exactly as `RANK_TIER_STEP_PRICE` lives in `rankTiers.ts`.
+
 // DLR-116 — what one AP-capacity purchase costs. A separate key from HEAL_PRICE for the reason
 // CHEAT_PRICE and HEAL_PRICE are already separate: re-pricing one item must not move another.
 // VALUE UNCHOSEN — a documented placeholder, NEVER PLAYED. The developer's to move.

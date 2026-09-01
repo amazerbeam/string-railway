@@ -81,6 +81,18 @@ export interface RunState {
    *  hand, because a hand cannot spend one. NEVER persisted, exactly
    *  as `coins` above. */
   readonly whetstones: number
+  /** DLR-158 AC3 — the run's LIVE maximum health, raised by `ShopItem.MaxHealth`. Was
+   *  `PLAYER_START_HEALTH`, a module constant threaded through four defaulted parameters, which
+   *  meant the health bar's denominator, the flask's percentage heal and Heal's at-full-health
+   *  refusal were all pinned to the figure the run opened on. Run-permanent like `whetstones`
+   *  and carried by `advanceRun`'s and `recordEncounter`'s spreads. NEVER persisted, exactly as
+   *  `coins` above. */
+  readonly maxPlayerHealth: Health
+  /** DLR-158 AC4 — max-health copies bought this run. A COUNT, not a flag: each stacks and the
+   *  climbing price is the only limiter (AC6), exactly as `whetstones` and `apCapacityBonus`
+   *  stack. `maxHealthPriceFor` owns the arithmetic, so the growth step is stated once. NEVER
+   *  persisted, exactly as `coins` above. */
+  readonly maxHealthPurchases: number
   /** DLR-93 AC1 — flask charges held. A COUNT, not a boolean: AC5 refills
    *  "regardless of whether the player had 0 or 1", and the epic's deferred re-tune of the charge
    *  count raises the ceiling without changing this type. Run-level like `coins` and carried by
@@ -164,6 +176,10 @@ export interface RunState {
  * `startEncounter`'s own injectable pattern, so a spec varies it without mutating module state.
  * Its guard lives in `startEncounter`, which already refuses a non-positive or non-finite value.
  *
+ * DLR-158 — `playerHealth` now seeds BOTH the opening health and the opening ceiling
+ * (`maxPlayerHealth`): a run that starts hurt is not a thing the game has, and one parameter that
+ * means "how big is your bar" is fewer moving parts than two that can disagree.
+ *
  * `grants` (DLR-113 AC3) is the Vault's bought starting cards, minted into the opening pile
  * alongside the four real bronze cards the run's seed draws. DEFAULTED to `[]`, so every
  * existing call site is unchanged and a run started with no Vault behaves exactly as before.
@@ -188,6 +204,8 @@ export function startRun(
     coins: 0,
     blastGuardHeld: false,
     whetstones: 0,
+    maxPlayerHealth: playerHealth,
+    maxHealthPurchases: 0,
     flaskCharges: FLASK_STARTING_CHARGES,
     handOfFight: 1,
     discardsRemaining: DISCARDS_PER_FIGHT,
@@ -227,32 +245,28 @@ export function beatenCount(run: RunState): number {
   return run.encounterIndex + (run.encounter.winner === DuelSide.Player ? 1 : 0)
 }
 
-/** Projects a run into the four figures the shop's rules need, so no screen assembles a
- *  `ShopStock` by hand and gets one field wrong. */
-export function shopStockFor(
-  run: RunState,
-  maxPlayerHealth: Health = PLAYER_START_HEALTH,
-): ShopStock {
+/** Projects a run into the figures the shop's rules need, so no screen assembles a `ShopStock`
+ *  by hand and gets one field wrong. DLR-158 — `maxPlayerHealth` is READ off the run, not passed
+ *  in: the ceiling is run state now, so there is no argument left to get wrong. */
+export function shopStockFor(run: RunState): ShopStock {
   return {
     coins: run.coins,
     playerHealth: run.encounter.health[DuelSide.Player],
-    maxPlayerHealth,
+    maxPlayerHealth: run.maxPlayerHealth,
     blastGuardHeld: run.blastGuardHeld,
     rankTiers: run.rankTiers,
+    maxHealthPurchases: run.maxHealthPurchases,
   }
 }
 
-/** DLR-93 — projects a run into the three figures the flask's rules need, the sibling of
- *  `shopStockFor` and for the same reason: no screen assembles a `FlaskStock` by hand and gets one
- *  field wrong. */
-export function flaskStockFor(
-  run: RunState,
-  maxPlayerHealth: Health = PLAYER_START_HEALTH,
-): FlaskStock {
+/** DLR-93 — projects a run into the figures the flask's rules need, the sibling of `shopStockFor`
+ *  and for the same reason: no screen assembles a `FlaskStock` by hand and gets one field wrong.
+ *  DLR-158 — `maxPlayerHealth` is READ off the run, not passed in, for `shopStockFor`'s reason. */
+export function flaskStockFor(run: RunState): FlaskStock {
   return {
     charges: run.flaskCharges,
     playerHealth: run.encounter.health[DuelSide.Player],
-    maxPlayerHealth,
+    maxPlayerHealth: run.maxPlayerHealth,
   }
 }
 

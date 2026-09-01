@@ -58,7 +58,7 @@ describe('startRun (AC1)', () => {
 describe('flaskStockFor', () => {
   it('projects the run into exactly the three figures the rules need', () => {
     const run = startRun(MAX)
-    expect(flaskStockFor(run, MAX)).toEqual({
+    expect(flaskStockFor(run)).toEqual({
       charges: FLASK_STARTING_CHARGES,
       playerHealth: MAX,
       maxPlayerHealth: MAX,
@@ -69,21 +69,21 @@ describe('flaskStockFor', () => {
 describe('drinkFlask (AC2, AC3, AC4)', () => {
   it('restores the configured proportion and spends the charge', () => {
     const run = runWonAt(firstOrdinaryIndex, 3, 1)
-    const after = drinkFlask(run, MAX)
+    const after = drinkFlask(run)
     expect(after.encounter.health[DuelSide.Player]).toBe(3 + flaskHealAmount(MAX))
     expect(after.flaskCharges).toBe(0)
   })
 
   it('clamps to the maximum and discards the overheal', () => {
     const run = runWonAt(firstOrdinaryIndex, 8, 1)
-    const after = drinkFlask(run, MAX)
+    const after = drinkFlask(run)
     expect(after.encounter.health[DuelSide.Player]).toBe(MAX)
     expect(after.flaskCharges).toBe(0)
   })
 
   it('leaves every other run field untouched', () => {
     const run = runWonAt(firstOrdinaryIndex, 3, 1)
-    const after = drinkFlask(run, MAX)
+    const after = drinkFlask(run)
     expect(after.coins).toBe(run.coins)
     expect(after.buffs).toBe(run.buffs)
     expect(after.whetstones).toBe(run.whetstones)
@@ -92,32 +92,32 @@ describe('drinkFlask (AC2, AC3, AC4)', () => {
 
   it('throws naming the refusal at zero charges rather than taking a no-op turn', () => {
     const run = runWonAt(firstOrdinaryIndex, 3, 0)
-    expect(() => drinkFlask(run, MAX)).toThrow(RangeError)
-    expect(() => drinkFlask(run, MAX)).toThrow(FlaskRefusal.NoCharges)
+    expect(() => drinkFlask(run)).toThrow(RangeError)
+    expect(() => drinkFlask(run)).toThrow(FlaskRefusal.NoCharges)
   })
 
   it('throws naming the refusal at full health', () => {
     const run = runWonAt(firstOrdinaryIndex, MAX, 1)
-    expect(() => drinkFlask(run, MAX)).toThrow(FlaskRefusal.AlreadyFullHealth)
+    expect(() => drinkFlask(run)).toThrow(FlaskRefusal.AlreadyFullHealth)
   })
 
   it('throws on a maximum that is not a positive finite number', () => {
     const run = runWonAt(firstOrdinaryIndex, 3, 1)
-    expect(() => drinkFlask(run, 0)).toThrow(RangeError)
-    expect(() => drinkFlask(run, Number.NaN)).toThrow(RangeError)
+    expect(() => drinkFlask({ ...run, maxPlayerHealth: 0 })).toThrow(RangeError)
+    expect(() => drinkFlask({ ...run, maxPlayerHealth: Number.NaN })).toThrow(RangeError)
   })
 
   // AC4 — a between-fights action. Reaching it mid-hand is a driver bug, so it throws rather
   // than wording a third reason the screen would have to render.
   it('throws mid-hand, when the encounter has not resolved', () => {
     const run = startRun(MAX)
-    expect(() => drinkFlask({ ...run, flaskCharges: 1 }, MAX)).toThrow(RangeError)
-    expect(() => drinkFlask({ ...run, flaskCharges: 1 }, MAX)).toThrow(/not resolved|in progress/i)
+    expect(() => drinkFlask({ ...run, flaskCharges: 1 })).toThrow(RangeError)
+    expect(() => drinkFlask({ ...run, flaskCharges: 1 })).toThrow(/not resolved|in progress/i)
   })
 
   it('carries the drunk charge count across the fight boundary', () => {
     const run = runWonAt(firstOrdinaryIndex, 3, 1)
-    expect(advanceRun(drinkFlask(run, MAX)).flaskCharges).toBe(0)
+    expect(advanceRun(drinkFlask(run)).flaskCharges).toBe(0)
   })
 })
 

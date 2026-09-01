@@ -81,13 +81,17 @@ is derived per render instead:
 
 ```tsx
 const maxHealth = {
-  [DuelSide.Player]: PLAYER_START_HEALTH,
+  [DuelSide.Player]: run.maxPlayerHealth,   // DLR-158 — was PLAYER_START_HEALTH
   [DuelSide.Quarry]: quarryHealthForEncounter(run.encounterIndex),
 }
 ```
 
-The player's half stays `PLAYER_START_HEALTH` — that is the bar's **denominator**, not its current
-value, and it does not change as health is carried down. The Quarry's is read from the same index
+The player's half is the bar's **denominator**, not its current value, and it does not change as
+health is carried down. **DLR-158 made it `run.maxPlayerHealth` rather than the constant**: the shop
+now sells a raise to the ceiling, so the player's half moves for exactly the reason the Quarry's
+already did — a value computed once would be right only until the first purchase. The same field
+feeds the shop panel's `maxPlayerHealth` prop, so the heart row and the shop's health readout cannot
+disagree. The Quarry's is read from the same index
 the encounter was started from, so a bar's maximum cannot disagree with its opening value. This is
 the one place a stale maximum would be invisible, which is why it is derived from `run` rather than
 tracked separately.
@@ -342,6 +346,14 @@ on, and cannot claim there is something to buy while every purchase card is disa
 > was fixed in-ticket rather than reported. See
 > [../run-ui/README.md](../run-ui/README.md).
 
+> **DLR-158 added a second derived record beside it.** `prices={shopPricesFor(stock)}` — a
+> `Readonly<Record<ShopItem, Coins>>` built by `src/app/run/shopPrices.ts`, `shopRefusals.ts`'s exact
+> sibling, iterating the union for its reason. It exists because a price stopped being fixed: the
+> max-health raise costs more with every copy already bought, and `ShopPanel` computes nothing. The
+> "price updates after a purchase without leaving the shop" behaviour needs **no mechanism** as a
+> result — a buy changes `run`, which re-derives `stock`, which re-derives the prices, and the tile
+> shows the next one. No effect, no listener, nothing to clean up.
+
 `Shop` is unguarded — `setPhase(RunPhase.Shop)` — because a player is always allowed to go and
 look.
 
@@ -441,7 +453,7 @@ if (encounterOver && phase === RunPhase.Map) {        // DLR-85 — same compone
     actionLabel={MAP_BACK_LABEL} onAction={() => setPhase(RunPhase.Verdict)} />
 }
 if (encounterOver && phase === RunPhase.Shop) {
-  return <ShopPanel coins={run.coins} nextOpponentName={nextName} refusals={{ … refusalFor(stock, item) … }} onBuy={handleBuy} onLeave={leaveForNextFight}
+  return <ShopPanel coins={run.coins} nextOpponentName={nextName} refusals={shopRefusalsFor(stock)} prices={shopPricesFor(stock)} maxPlayerHealth={run.maxPlayerHealth} onBuy={handleBuy} onLeave={leaveForNextFight}
     flaskCharges={run.flaskCharges} flaskRefusal={flaskRefusalFor(flaskStockFor(run))} onDrinkFlask={handleDrinkFlask} … />   // DLR-93
 }
 if (encounterOver && phase === RunPhase.Vault) {      // DLR-118 — above the verdict branch

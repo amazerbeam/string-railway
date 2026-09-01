@@ -4,7 +4,7 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-09-01**. Everything below is reachable in
+Last reviewed against the code and the design on **2026-09-02**. Everything below is reachable in
 the app today except where a rule is marked **[not built]** — and except the cards and guards listed
 here, every one of which is **decided, enforced and tested, yet cannot be obtained by playing**:
 
@@ -2108,6 +2108,10 @@ developer in the session that changed what the bank counts. The player's **10** 
 Both are provisional because each has moved more than once and neither has been played at its
 current value.
 
+**The player's 10 is now only where a run starts.** Since 2026-09-02 the shop sells a raise to your
+maximum, so the ceiling a run is played against grows as you buy (section 10). The 10 above is the
+opening figure, not a fixed one.
+
 **What the player's 10 changes.** At 25 the player's bar never came under threat inside a
 three-hand encounter — it was sized as a **run-level** resource spent across several encounters, not
 as tension within one, and the cheapness of a single health point had a second cost: losing the
@@ -2641,8 +2645,11 @@ length legible.
 
 - **Your health carries from fight to fight, and nothing restores it on its own.** You begin the next
   fight on exactly the health you finished the last one on. Nothing is given back for winning, and
-  there is no rest site. **What you can do between fights is spend for it**: buy a heal for a coin, or
-  drink your flask for nothing — both below, and both only ever by your choosing.
+  there is no rest site. **What you can do between fights is spend for it**: buy a heal for a coin,
+  buy a raise to your maximum, or drink your flask for nothing — all three below, and all three only
+  ever by your choosing.
+- **Your maximum health carries too, and it can rise.** It starts at 10 and is raised only by buying
+  the shop's maximum-health item, which lasts the rest of the run. Nothing lowers it.
 - **Beating a Quarry does not end the session.** The fight resolves, you are told **by name** that you
   beat them, and you choose to go on to the next one.
 - **Your health emptying ends the run**, wherever it happens — including on the last fight. No
@@ -2801,14 +2808,15 @@ for. Backing out of that prompt returns you to the verdict without doing either.
 
 ### What the shop sells — **[settled]**; every price is **[provisional]**
 
-**The shop sells one thing, plus a machine you pull, plus a free flask you drink.** It sold five
-until 2026-08-24 and three until 2026-09-01, and every purchase that left is described further down,
-because none of them was removed from the game — only from the shelf.
+**The shop sells two things, plus a machine you pull, plus a free flask you drink.** It sold five
+until 2026-08-24, three until 2026-09-01 and one until 2026-09-02, and every purchase that left is
+described further down, because none of them was removed from the game — only from the shelf.
 
-| Buy          | Costs                  | You get                                                                      |
-| ------------ | ---------------------- | ---------------------------------------------------------------------------- |
-| **Heal**     | 1 coin                 | **4 health**, immediately, and never above your maximum — the excess is lost |
-| **A pull**   | free once, then 1 coin | One spin of the machine, paying you buff cards (see the machine below)        |
+| Buy            | Costs                       | You get                                                                                                  |
+| -------------- | --------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Heal**       | 1 coin                      | **4 health**, immediately, and never above your maximum — the excess is lost                             |
+| **Max health** | 3 coins, then 5, 7, 9, …    | **+2 to your maximum health** for the rest of the run, **and you leave at full** at that raised maximum   |
+| **A pull**     | free once, then 1 coin      | One spin of the machine, paying you buff cards (see the machine below)                                    |
 
 > **The two rank rungs left the shelf on 2026-09-01.** A **Swan rung** and a **Witch rung** each cost
 > 5 coins **[open]** and bought the next tier of that rank's ability for the rest of the run — bronze
@@ -2875,6 +2883,36 @@ holds** — a fight has paid 10 coins since 2026-08-25 — but the Whetstone is 
   There is no cap — the price is the only limiter, so the only refusal it can raise is not having the coins.
 - **It changes the bank's climb only.** The multiplier is untouched (section 7).
 
+### Buying maximum health — **[settled]** since 2026-09-02; all three numbers are **[provisional]**
+
+**Your maximum health is no longer fixed for a run.** The shop sells a raise, and it is the second
+thing on the shelf. Four things about it are the rules:
+
+- **It raises your maximum by 2** and keeps it raised for the rest of the run. Nothing spends it and
+  nothing expires it — it lasts exactly as long as a Whetstone does. **The amount is
+  [provisional]:** it has never been played. **Whose decision:** the developer's.
+- **You leave at full health, at the new maximum.** However hurt you were, buying it fills the bar
+  to the raised top: on 1 of 6, a purchase leaves you on 8 of 8. So it is a heal as well as an
+  upgrade, and it is the largest heal in the game.
+- **Being at full health does not refuse it.** Unlike the heal, which is refused when it would do
+  nothing, this always does something — the ceiling moves whether you were hurt or not.
+- **You may buy it as many times as you can afford, and each copy costs more than the last.** The
+  first costs 3 coins, the second 5, the third 7, and so on — 2 more each time. **There is no cap:
+  the climbing price is the only limiter.** **Both figures are [provisional]** and neither has been
+  played; the shape of the climb — a flat step rather than a doubling — is a reading of the ticket
+  rather than something the ticket required. **Whose decision:** the developer's.
+
+**The flask scales with the raised maximum**, because it restores a percentage of your maximum
+rather than a flat figure (see the flask, below). Raising the ceiling therefore makes every future
+flask larger as well.
+
+> **Deviation from the base game.** The base game has no health, no maximum, and nothing to buy.
+
+> **This purchase strictly beats the heal at the moment it lands** — it heals you further *and*
+> raises the ceiling — so whether the heal stays worth its coin rests entirely on the price climb,
+> which nobody has played. Recorded under
+> [Known tensions](#known-tensions-recorded-not-resolved).
+
 ### The shop's four shelves were removed on 2026-08-24 — **[settled]**
 
 From 2026-08-18 the shop was browsed as **four shelves** named for how long a purchase stayed with
@@ -2891,7 +2929,7 @@ game has no deck-building layer for those words to mean anything against.
 still have the coins — two heals in one visit is eight health if you have the room and the money.
 
 **A purchase you cannot make is refused with the reason on the screen**, never silently. Four
-things can refuse one:
+things can refuse one — and the maximum-health raise can only ever be refused by the last of them:
 
 - **Both Cheat slots are full** — a Cheat has nowhere to go.
 - **You are already at full health** — a heal would do nothing at all, so it is not sold to you.
@@ -2899,7 +2937,8 @@ things can refuse one:
 - **You do not have the coins.**
 
 **Only two of those four can actually fire**, because of what is currently on the shelf: full health
-refuses a heal, and an empty purse refuses anything. The other two are the Cheat's and the Guard's own
+refuses a heal, and an empty purse refuses anything. Full health deliberately does **not** refuse the
+maximum-health raise, for the reason given in its own rules above. The other two are the Cheat's and the Guard's own
 caps, and they wait with the items. A third refusal joined them with the rank ladders (section 5) — a
 rank already at gold refuses another rung.
 
@@ -2919,7 +2958,7 @@ arrives — full slots rather than an empty purse.
 > still costs a coin — only the wholly wasted purchase is refused.
 
 **Leaving the shop starts the next fight**, with everything you bought already in effect: the health
-you healed to, the Cheats in your slots, the Timebomb charges you hold, any Blast Guard, every Whetstone
+you healed to, any raised maximum and the full bar that came with it, the Cheats in your slots, the Timebomb charges you hold, any Blast Guard, every Whetstone
 you own, and whatever coins you did not spend. **The Guard is the one purchase that expires**: it lasts
 that fight and no longer. **The Whetstone is at the other extreme** — it survives every remaining fight of
 the run.
@@ -3246,7 +3285,16 @@ the mechanics themselves are documented in `../implementation/`.
 > projections — while the **transitions** (`recordEncounter`, `advanceRun`, `buyFromShop`,
 > `drinkFlask` and their private helpers) moved to `src/hunt/runTransitions.ts` and are re-exported from
 > the old file. Rows below name whichever of the two actually holds the code; a row naming `run.ts` for
-> a `RunState` field and a transition in the same breath means exactly that.
+> a `RunState` field and a transition in the same breath means exactly that. DLR-158 split it a
+> second time for the same reason: the five fight-boundary carry helpers moved to
+> `src/hunt/runCarry.ts`, a pure move with no rule changed.
+
+> **Where DLR-158 stands, 2026-09-02 — the newest entry here.** **Live and reachable by a player in
+> full**: the engine half and the shop screen landed in one contract, so the second tile is on the
+> shelf and buying it works end to end. **What has not been judged is every number and every word.**
+> The step (+2), the base price (3) and the climb (+2 a copy) are placeholders nobody has played,
+> the item's name on the tile is placeholder copy, and no developer has seen two buy tiles in that
+> row, or a heart row that grows mid-run, on a real screen.
 
 > **Where DLR-154 stands, 2026-08-31 — the newest entry here.** **Live and reachable by a player in
 > full**: the engine half and the screen half landed in one contract, so nothing here is engine-only.
@@ -3726,7 +3774,7 @@ the mechanics themselves are documented in `../implementation/`.
 | Two things spend action points, and they spend the same pool | settled — since DLR-114; **moot since DLR-145**, both costs being 0 | `src/hunt/actionPoints.ts` — `spendAp`, still the only subtraction path; called by `src/app/warCouncil/roundReducer.ts` — `handleTapApplyDamage` and by `src/hunt/buffActivation.ts` — `activateBuff` | — |
 | Applying deals the full pot, resets both figures, and costs no health | settled — since DLR-94, re-homed by DLR-156 | `src/warCouncil/streak.ts` — `applyPot` returns `EMPTY_STREAK` and the dealt figure; `incomingFromPot` keys the player's entry to a hard 0 | — |
 | Damage to the player = 1 per event                                               | settled                                                                                    | `src/hunt/config.ts` — `DAMAGE_PER_HIT`                                                                                                                                                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                                                                                                 |
-| Player health (10)                                                               | **provisional** — set 2026-08-14                                                           | `src/hunt/config.ts` — `PLAYER_START_HEALTH`                                                                                                                                                                                                                                                                                                                                            | Developer, after playing                                                                                                                                                                                                                                                                                          |
+| Player health (10) — the run's OPENING maximum only                              | **provisional** — set 2026-08-14                                                           | `src/hunt/config.ts` — `PLAYER_START_HEALTH`, which seeds `RunState.maxPlayerHealth` in `src/hunt/run.ts` — `startRun`. Since DLR-158 the live ceiling is that run field, not the constant                                                                                                                                                                                              | Developer, after playing                                                                                                                                                                                                                                                                                          |
 | Quarry health (10)                                                               | **provisional** — set 2026-08-14                                                           | `src/hunt/config.ts` — `QUARRY_ENCOUNTER_HEALTH`                                                                                                                                                                                                                                                                                                                                        | Developer, after playing                                                                                                                                                                                                                                                                                          |
 | Damage applied per trick, mid-hand                                               | settled                                                                                    | `src/hunt/encounter.ts` — `applyDamage`; called per resolution by `src/app/warCouncil/roundReducer.ts`                                                                                                                                                                                                                                                                                  | —                                                                                                                                                                                                                                                                                                                 |
 | The seat → side crossing, once | settled | `src/warCouncil/streak.ts` — `incomingFrom` for a resolved trick, `incomingFromPot` for the apply choice | — |
@@ -3772,7 +3820,7 @@ the mechanics themselves are documented in `../implementation/`.
 | The unplayed count is taken at the kill                                          | **settled**                                                                                | `src/app/warCouncil/roundReducer.ts` — `captureUnplayed`, frozen at the resolving transition, not re-read later                                                                                                                                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                                 |
 | The verdict names what the win paid                                              | **settled**                                                                                | `src/app/run/RunOutcomePanel.tsx` — the `.run-reward` line; wording in `src/app/run/runLabels.ts` — `rewardText`                                                                                                                                                                                                                                                                        | Developer — all of the copy is placeholder                                                                                                                                                                                                                                                                        |
 | Coins carry across the run, and are on screen                                    | settled — since DLR-84                                                                     | `src/hunt/run.ts` — `RunState.coins`, carried by `advanceRun`'s spread; drawn by `src/app/warCouncil/RoundStatusBand.tsx`'s `.wc-coins` plate                                                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                                 |
-| The shop offers exactly one item | settled — pared by DLR-116, widened by DLR-122, pared by DLR-145, pared to the heal alone 2026-09-01 | `src/hunt/shop.ts` — `SHOP_ITEMS`, now `[Heal]`; the `ShopItem` union still holds all eight and `priceOf` / `categoryOf` / `refusalFor` / `buyFromShop` stay total over it, so nothing was deleted; rendered by `src/app/run/ShopPanel.tsx`, whose refusal record is built by `src/app/run/shopRefusals.ts` — `shopRefusalsFor`, derived from the union rather than hand-listed | — resolved: DLR-145's AC3 asked for a heal-plus-a-pull shelf while its scope named only the action-point purchase, and 2026-09-01 settled it that way by taking both rank rungs off |
+| The shop offers exactly two items | settled — pared by DLR-116, widened by DLR-122, pared by DLR-145, pared to the heal alone 2026-09-01, widened to the heal plus the maximum-health raise by DLR-158 | `src/hunt/shop.ts` — `SHOP_ITEMS`, now `[Heal, MaxHealth]`; the `ShopItem` union still holds all eight and `priceOf` / `categoryOf` / `refusalFor` / `buyFromShop` stay total over it, so nothing was deleted; rendered by `src/app/run/ShopPanel.tsx`, whose refusal record is built by `src/app/run/shopRefusals.ts` — `shopRefusalsFor`, derived from the union rather than hand-listed | — resolved: DLR-145's AC3 asked for a heal-plus-a-pull shelf while its scope named only the action-point purchase, and 2026-09-01 settled it that way by taking both rank rungs off |
 | The two rank rungs are priced but unsold | **not built** — off the shelf since 2026-09-01, the ladder itself untouched | `src/hunt/shop.ts` — neither `SwanTier` nor `WitchTier` is in `SHOP_ITEMS`; `priceOf`, `categoryOf` and `refusalFor` still answer for both, and `src/hunt/rankTiers.ts` — `steppedTo` still applies a rung a caller buys | **Developer** — the rank ladder's rules are unsettled; the rungs return when they are decided |
 | Action points as a purchase (+5 a hand) | **not built** — off the shelf since DLR-145, with the resource it bought | `src/hunt/apConfig.ts` - `AP_CAPACITY_STEP`; `src/hunt/config.ts` - `AP_CAPACITY_PRICE` (3); still bought by `src/hunt/runTransitions.ts` - `buyFromShop` and summed by `src/hunt/actionPoints.ts` - `apCapacityFor` if a caller asks, but `SHOP_ITEMS` no longer lists it and `src/sim/reachability.ts` - `unshelvedShopItems` pins that | **Developer** — only if action points return |
 | One machine, not two | settled — since 2026-09-01 | `src/hunt/slotConfig.ts` — `SLOT_MACHINE_IDS`, now `[Skirmisher]`. `SlotMachineId.Strongbox` and both its `src/hunt/slotWeights.ts` rows are RETAINED; removing it from this array is what makes it unreachable, and Skirmisher stays index 0 so `slotSeedFor`'s machine index and every existing seed are unaffected. `src/app/run/SlotMachinePanel.tsx` renders a nameplate at one machine and its `radiogroup` chooser at two or more | **Developer** — a second machine returns only with a stocking lean chosen for it, since the reward axes the Strongbox's lean rode on were cut on 2026-08-25 |
@@ -3797,6 +3845,13 @@ the mechanics themselves are documented in `../implementation/`.
 | Buying a Whetstone (4 coins, no cap, stacks)                                     | settled — since DLR-92                                                                     | `src/hunt/runTransitions.ts` — `buyFromShop`'s `Whetstone` case increments `RunState.whetstones`; `src/hunt/shop.ts` — `refusalFor` needed no clause, so only `NotEnoughCoins` can refuse it                                                                                                                                                                                            | Developer — the price, and whether stacking wants a cap                                                                                                                                                                                                                                                           |
 | A heal restores 4, clamped, surplus discarded                                    | **provisional** — set 2026-08-16                                                           | `src/hunt/config.ts` — `HEAL_HEALTH_RESTORED`; the clamp moved into `src/hunt/runTransitions.ts` — the private `healedBy`, shared with the flask since DLR-93                                                                                                                                                                                                                           | Developer — the amount                                                                                                                                                                                                                                                                                            |
 | Health is raised in exactly one place                                            | settled — since DLR-93                                                                     | `src/hunt/runTransitions.ts` — `healedBy` is the sole writer that raises player health, read by `buyFromShop`'s `Heal` arm and by `drinkFlask`; overheal is discarded there and nowhere else                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                                 |
+| The maximum health is run state, not a constant | settled — since DLR-158 | `src/hunt/run.ts` — `RunState.maxPlayerHealth`, seeded by `startRun` and carried by `advanceRun` / `recordEncounter`'s spreads; `shopStockFor` and `flaskStockFor` read it off the run, and `buyFromShop` / `drinkFlask` no longer take it as a parameter at all. Never persisted | — |
+| Buying the raise moves the ceiling by a fixed step (+2) | **provisional** — the number is unchosen and has never been played | `src/hunt/maxHealth.ts` — `MAX_HEALTH_PER_PURCHASE`, read only by `raisedMaxHealthFor`, which `buyFromShop`'s `MaxHealth` arm calls | **Developer**, after playing |
+| The purchase restores to full at the RAISED ceiling | settled — since DLR-158 | `src/hunt/runTransitions.ts` — `fullyHealed`, which routes through the same `healedBy` clamp rather than adding a second one; the ceiling is written before the fill | — |
+| Its price climbs with each copy bought (3, then +2 each) | **provisional** — both numbers unchosen, never played; the linear shape is the plan's reading, not the ticket's | `src/hunt/maxHealth.ts` — `MAX_HEALTH_PRICE_BASE`, `MAX_HEALTH_PRICE_STEP` and `maxHealthPriceFor`, the single statement of the price; reached through `src/hunt/shop.ts` — `priceOf(item, stock)`, which takes the stock so the tile, the refusal and the deduction cannot disagree | **Developer**, after playing — the ticket requires only that each copy cost more than the last |
+| Full health does not refuse the raise, and there is no purchase cap | settled — since DLR-158 | `src/hunt/shop.ts` — `refusalFor` deliberately has NO branch for `MaxHealth`, so it falls through to the coin check and `NotEnoughCoins` is the only reason it can produce | — |
+| The shelf's prices are derived once and handed to the screen | settled — since DLR-158 | `src/app/run/shopPrices.ts` — `shopPricesFor(stock)`, the sibling of `shopRefusals.ts`, derived from the `ShopItem` union; `src/app/run/ShopPanel.tsx` takes it as a `prices` prop and computes nothing, and the next price appears after a purchase by plain re-render | — |
+| The player's heart row counts up to the raised maximum | settled — since DLR-158 | `src/App.tsx` — the player's denominator and the shop panel's `maxPlayerHealth` prop both read `run.maxPlayerHealth` rather than `PLAYER_START_HEALTH` | Developer — whether a growing heart row still reads at size. **Never seen in a live browser** |
 | Two sources of healing, one of them free                                         | settled — since DLR-93                                                                     | the paid Heal in `src/hunt/shop.ts` / `buyFromShop`, and the flask in `src/hunt/flask.ts` / `drinkFlask`. No rest site exists, and nothing restores health during a fight                                                                                                                                                                                                               | —                                                                                                                                                                                                                                                                                                                 |
 | The flask — one charge, drunk by choice, free                                    | settled — since DLR-93                                                                     | `src/hunt/run.ts` — `RunState.flaskCharges`, seeded by `startRun` and carried by `advanceRun`'s and `recordEncounter`'s spreads; spent by `src/hunt/runTransitions.ts` — `drinkFlask`. It is **not** a `ShopItem`, so no price or shelf exists for it                                                                                                                                   | —                                                                                                                                                                                                                                                                                                                 |
 | What one drink restores (60% of maximum)                                         | **provisional** — set 2026-08-20                                                           | `src/hunt/config.ts` — `FLASK_HEAL_PERCENT`, a proportion in 0..1; the amount is computed by `src/hunt/flask.ts` — `flaskHealAmount`, its only reader                                                                                                                                                                                                                                   | **Developer** — transcribed from `hybrid-design.md` version-4-scope §2, never played                                                                                                                                                                                                                              |
@@ -4330,6 +4385,19 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
 
 ### Known tensions, recorded not resolved
 
+- **The maximum-health raise strictly dominates the heal, and only its price climb stops it**
+  (new 2026-09-02, DLR-158). At the placeholder numbers it costs 3 coins to the heal's 1, and it
+  does everything the heal does — it fills the bar — plus it raises the ceiling and makes every
+  future flask bigger. So there is no state of the game in which the heal is the *better* buy; it is
+  only ever the *cheaper* one. Whether that is enough depends entirely on the 3 / 5 / 7 / 9 ladder,
+  and nobody has played it. If the heal turns out never to be bought, the levers are the raise's
+  base price, its step, or how much health it adds — all three unchosen. **Whose decision:** the
+  developer's, by playing.
+- **The headless simulator will never buy the raise, so it cannot tell you whether it is too strong**
+  (new 2026-09-02, DLR-158). The baseline policy's purchase order was deliberately left alone, so
+  every existing simulation keeps measuring what it measured before — which means the usual way of
+  asking "is this item overpowered" is unavailable until someone adds it to that order. That is a
+  measurement decision nobody has taken.
 - **Holding every buff back until the trick before you cash may still be the only sensible line**
   (new 2026-09-01, DLR-156). The new equation was written partly to kill the old reason for
   hoarding cards — a multiplier card used to multiply the whole hand's pot from wherever it was

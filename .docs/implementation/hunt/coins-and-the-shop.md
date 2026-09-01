@@ -94,7 +94,13 @@ tested **three times**, by DLR-90, DLR-91 and DLR-92, and held every time.
 
 > `SHOP_ITEMS` is **what the shop offers**. The `ShopItem` union is **everything the game prices.**
 
-> **`SHOP_ITEMS` is `[ShopItem.Heal]` alone as of 2026-09-01.** The list has now been
+> **`SHOP_ITEMS` is `[ShopItem.Heal, ShopItem.MaxHealth]` as of DLR-158, 2026-09-02** — the first
+> addition to the shelf since it was pared to `Heal` alone the day before. Nothing that left comes
+> back: `MaxHealth` is a new item on the run-permanent rung, so `SHOP_ITEMS_BY_CATEGORY` is no longer
+> wholly empty and `UNCATEGORISED_SHOP_ITEMS` is no longer the whole shelf. The paragraph below is
+> the 2026-09-01 state.
+>
+> **`SHOP_ITEMS` was `[ShopItem.Heal]` alone as of 2026-09-01.** The list has now been
 > `[ApCapacity, Heal]` (DLR-116), `[SwanTier, WitchTier, Heal]` (DLR-122, after DLR-145 dropped
 > `ApCapacity`), and finally `[Heal]`. **`ShopItem.SwanTier` and `ShopItem.WitchTier` left the shelf
 > on a developer decision** — their rules are not settled, and each printed a forty-word blurb that
@@ -284,8 +290,15 @@ export interface ShopStock {
 Five fields, and nothing else. The fifth is **required**, not optional, so every construction site was
 a compile error until it was supplied — `shopStockFor` and every literal in `shop.test.ts`. This module states the shop's rules and **must not learn the run's
 shape** — which is what keeps its whole specification function-in, value-out with no renderer and no
-`RunState` in sight. `run.ts`'s `shopStockFor(run, maxPlayerHealth?)` performs the projection, so no
+`RunState` in sight. `run.ts`'s `shopStockFor(run)` performs the projection, so no
 screen assembles a `ShopStock` by hand and gets one field wrong.
+
+> **The shape above is DLR-84/DLR-91's. It is now `{ coins, playerHealth, maxPlayerHealth,
+> blastGuardHeld, rankTiers, maxHealthPurchases }`** — `cheatCount` went with DLR-132's slot cap,
+> `rankTiers` arrived with DLR-122, and **DLR-158 added `maxHealthPurchases`** so this module can
+> price the next max-health copy without learning the run's shape. DLR-158 also **deleted
+> `shopStockFor`'s `maxPlayerHealth` parameter**: the ceiling is run state now, so a caller passing
+> its own figure could disagree with the run it is shopping against.
 
 ## `refusalFor` — the one rule, read four times
 
@@ -307,6 +320,15 @@ export function refusalFor(stock: ShopStock, item: ShopItem): PurchaseRefusal | 
   return null
 }
 ```
+
+> **DLR-122 added a fourth clause and DLR-158 pointedly added none.** A rank already at gold refuses
+> another rung (`RankAtMaxTier`), above the coin check for this docblock's stated reason. But
+> `ShopItem.MaxHealth` appears in **no** item-specific clause, deliberately: being at full health
+> must not refuse it, because the raise fills the bar to the new top whichever way. It falls straight
+> through to the coin comparison, so `NotEnoughCoins` is the only reason it can produce and there is
+> no purchase cap — the climbing price is the only limiter. A comment in `refusalFor` says so
+> outright, because the rule is expressed as the *absence* of code. `priceOf` also takes the stock
+> now. See [the max-health purchase](the-max-health-purchase.md).
 
 **This is the load-bearing arrangement of the whole ticket, and it is worth stating as a convention
 rather than as a detail.** One exported predicate is read by:
@@ -374,6 +396,12 @@ switch (item) {
     return healedBy(paid, HEAL_HEALTH_RESTORED, maxPlayerHealth)
 }
 ```
+
+> **DLR-158 changed the deduction line and added an arm.** `priceOf` now takes the stock, so the
+> first line reads `priceOf(item, shopStockFor(run))`; `maxPlayerHealth` is no longer a parameter and
+> is read off `run.maxPlayerHealth`; and `case ShopItem.MaxHealth` raises the ceiling, fills to the
+> **raised** top through `fullyHealed`, and increments a count. See
+> [the max-health purchase](the-max-health-purchase.md).
 
 **The Heal branch inlined its own `Math.min` until DLR-93**, and its comment called itself "THE clamp,
 and therefore also the single place overheal is discarded". Once the flask healed too, that sentence
@@ -458,10 +486,13 @@ never learns the word Whetstone. **Since DLR-156 that number feeds a banked tric
 damage bracket**, so a copy is multiplied by the trick's own multiplier and by the roll. See
 [the streak, the trick's damage, and the pot](../war-council/the-streak-and-the-pot.md) for the rest of the route.
 
-`maxPlayerHealth` is a **defaulted parameter** on both `shopStockFor` and `buyFromShop`
+`maxPlayerHealth` **was** a defaulted parameter on both `shopStockFor` and `buyFromShop`
 (`= PLAYER_START_HEALTH`), matching `startEncounter`/`startRun`'s injectable pattern so a spec varies
-the clamp without mutating module state. `buyFromShop` validates it (`Number.isFinite` and `> 0`)
-before doing anything, so a bad ceiling cannot silently Timebomb a health bar.
+the clamp without mutating module state. **DLR-158 deleted it from both** — the ceiling is
+`RunState.maxPlayerHealth` now, and the parameter was a live way to pass a figure that disagreed with
+the run. `buyFromShop`'s validation (`Number.isFinite` and `> 0`) survived intact: it validates
+`run.maxPlayerHealth` instead, so a corrupted run still fails loudly rather than silently clamping.
+See [the max-health purchase](the-max-health-purchase.md).
 
 ## The tunables
 

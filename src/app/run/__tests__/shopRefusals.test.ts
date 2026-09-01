@@ -8,6 +8,7 @@ const stock = {
   maxPlayerHealth: 20,
   blastGuardHeld: false,
   rankTiers: ALL_BRONZE,
+  maxHealthPurchases: 0,
 }
 
 describe('shopRefusalsFor', () => {

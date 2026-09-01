@@ -115,6 +115,10 @@ the opening figure for the **whole** hand rather than only at trick 0.
 
 ## The run holds it between hands, and `feederCarryAfter` kills it at the fight
 
+> **Since DLR-158 `feederCarryAfter` lives in `src/hunt/runCarry.ts`**, with the four carry helpers
+> beside it, moved out of `runTransitions.ts` when that file crossed the 400-line budget. Exported
+> rather than private now; no expression changed.
+
 `App.tsx` remounts the felt per hand (`key={hand}`), so nothing inside the felt can survive a hand
 boundary by construction. `RunState.feederCarry` is where a per-fight figure lives, joining
 `discardsRemaining` and `blastGuardHeld` — seeded `EMPTY_BUFF_CARRY` by `startRun` and **never
