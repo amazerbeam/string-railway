@@ -9,6 +9,7 @@ import {
   SHOP_ITEMS,
   ShopItem,
   SlotMachineId,
+  type Buff,
   type SlotPullRefusal,
 } from '../../../hunt'
 import { HeartState } from '../../warCouncil/duelHealthBars'
@@ -53,6 +54,9 @@ const baseProps = {
   flaskCharges: 1,
   flaskRefusal: null as FlaskRefusal | null,
   onDrinkFlask: vi.fn(),
+  /** Empty by default — the tray's own behaviour is covered in `ShopHeld.test.tsx`; here it only
+   *  has to be a valid prop. */
+  heldBuffs: [] as readonly Buff[],
   onBuy: vi.fn(),
   onLeave: vi.fn(),
   slot: baseSlot,
@@ -166,7 +170,7 @@ describe('ShopPanel', () => {
     const { container } = render(
       <ShopPanel {...baseProps} refusals={noRefusals} onLeave={onLeave} />,
     )
-    const shop = container.querySelector('.shop') as Element
+    const shop = container.querySelector('.shop-shell') as Element
     fireEvent.keyDown(shop, { key: 'Escape' })
     expect(onLeave).toHaveBeenCalledTimes(1)
   })
@@ -176,9 +180,11 @@ describe('ShopPanel', () => {
     expect(screen.getByRole('button', { name: 'Next fight' })).toBeTruthy()
   })
 
-  it('mounts the slot section — one radio per machine and a pull button (AC1)', () => {
+  it('mounts the slot section — a nameplate at the one-machine roster, and a pull control', () => {
     render(<ShopPanel {...baseProps} refusals={noRefusals} />)
-    expect(screen.getAllByRole('radio')).toHaveLength(SLOT_MACHINE_IDS.length)
+    // Strongbox is cut, so the marquee is a nameplate and there is nothing to choose.
+    expect(SLOT_MACHINE_IDS).toHaveLength(1)
+    expect(screen.queryAllByRole('radio')).toHaveLength(0)
     expect(screen.getByRole('button', { name: /pull/i })).toBeTruthy()
   })
 })

@@ -1,0 +1,539 @@
+<title>Manage Buffs</title>
+<style>
+  /* DLR-159 — the Manage Buffs screen. Layout, gesture and copy only: the data is hard-coded and
+     the combine is re-implemented in plain JS so the screen can actually be used. Tokens are
+     lifted from `warCouncil.css` / `shop.css` so this reads as the same room as the shop. */
+  :root {
+    --felt: #16241f;
+    --parchment: #e9e1cd;
+    --brass: #c99a4e;
+    --brass-dim: #7d6132;
+    --chalk: #e8e4d8;
+    --ink: #1b1710;
+    --ink-soft: #5f5647;
+    --ready: #7fb27a;
+    --ready-deep: #3f6b3d;
+    --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    --m-bronze: linear-gradient(150deg, #d99a5a 0%, #a3653a 38%, #6f3f22 72%, #b8814b 100%);
+    --m-silver: linear-gradient(150deg, #e9eff2 0%, #a8b6bd 38%, #74848c 72%, #cfd9de 100%);
+    --m-gold: linear-gradient(150deg, #f4dc8f 0%, #d0a53c 38%, #937012 72%, #e8cd74 100%);
+    --edge-bronze: #4a2d13;
+    --edge-silver: #59656b;
+    --edge-gold: #6b520f;
+    --face-bronze: #f8efdf;
+    --face-silver: #f3f7f9;
+    --face-gold: #fcf6e0;
+  }
+
+  /* ---- shell: one full-viewport grid, three rows, never scrolls ---- */
+  .mb-shell {
+    height: 100dvh;
+    width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: clamp(0.4rem, 1.4vmin, 0.9rem);
+    padding: clamp(0.5rem, 1.8vmin, 1.1rem);
+    padding-top: max(clamp(0.5rem, 1.8vmin, 1.1rem), env(safe-area-inset-top, 0px));
+    padding-bottom: max(clamp(0.5rem, 1.8vmin, 1.1rem), env(safe-area-inset-bottom, 0px));
+    background:
+      radial-gradient(90% 60% at 50% 6%, #2a211a 0%, transparent 62%),
+      radial-gradient(120% 90% at 50% 45%, #161d22 0%, #05080a 100%);
+    color: var(--chalk);
+    font-family: var(--sans);
+    color-scheme: dark;
+  }
+
+  /* ---- zone 1: status, pinned to the top edge ---- */
+  .mb-status {
+    display: flex;
+    align-items: baseline;
+    gap: clamp(0.8rem, 3vmin, 2rem);
+    padding: 0.2rem clamp(0.4rem, 2vmin, 1rem) 0.5rem;
+    border-bottom: 1px solid #ffffff14;
+  }
+  .mb-title {
+    font-size: clamp(0.95rem, 2.2vmin, 1.3rem);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brass);
+    font-weight: 700;
+  }
+  .mb-stat { display: flex; align-items: baseline; gap: 0.4rem; }
+  .mb-stat-value { font-size: clamp(1.1rem, 3vmin, 1.7rem); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mb-stat-label { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: #b4ac9a; }
+  .mb-rule {
+    margin-left: auto;
+    max-width: 34ch;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: #cfc8b8;
+  }
+  .mb-back {
+    font: inherit;
+    font-size: 0.85rem;
+    color: var(--chalk);
+    background: #ffffff0f;
+    border: 1px solid #ffffff2e;
+    border-radius: 8px;
+    padding: 0.62rem 1rem;
+    min-height: 44px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .mb-back:hover { background: #ffffff1c; }
+  .mb-back:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+  /* ---- zone 2: the piles ---- */
+  .mb-stage { min-height: 0; overflow: hidden; display: block; }
+  .mb-bandrow { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 0.3rem; min-height: 0; }
+  .mb-bandhead {
+    display: flex; align-items: center; gap: 0.55rem;
+    font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: #a49c8b;
+  }
+  .mb-bandhead::after { content: ''; flex: 1; height: 1px; background: #ffffff17; }
+  .mb-bandhead .mb-pip {
+    width: 8px; height: 8px; border-radius: 2px; background: var(--ready);
+    /* form, not only colour: the refused band's pip is a hollow diamond */
+  }
+  .mb-bandhead.is-refused .mb-pip { background: none; border: 1px solid #8b8272; transform: rotate(45deg); }
+
+  .mb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(clamp(108px, 10.5vw, 150px), 1fr));
+    gap: clamp(0.35rem, 1.1vmin, 0.7rem);
+    align-content: start;
+    min-height: 0;
+  }
+
+  /* ---- one pile: the card, plus a strip that says what it can do ---- */
+  .mb-pile {
+    position: relative;
+    display: grid;
+    grid-template-rows: auto auto;
+    gap: 0.25rem;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .mb-pile:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; border-radius: 12px; }
+  .mb-pile.is-refused { cursor: default; }
+
+  .card {
+    position: relative;
+    display: block;
+    aspect-ratio: 31 / 41;
+    border-radius: 11px;
+    padding: 5px;
+    background: var(--metal);
+    box-shadow: 0 0 0 1px var(--metal-edge), 0 4px 10px #00000073;
+    isolation: isolate;
+    overflow: hidden;
+    transition: transform 120ms ease-out;
+  }
+  .mb-pile:hover .card { transform: translateY(-2px); }
+  .is-bronze { --metal: var(--m-bronze); --metal-edge: var(--edge-bronze); --face: var(--face-bronze); }
+  .is-silver { --metal: var(--m-silver); --metal-edge: var(--edge-silver); --face: var(--face-silver); }
+  .is-gold   { --metal: var(--m-gold);   --metal-edge: var(--edge-gold);   --face: var(--face-gold); }
+  .card::before {
+    content: ''; position: absolute; inset: 0; border-radius: 11px; pointer-events: none;
+    opacity: 0.5; background: linear-gradient(118deg, #ffffff00 34%, #ffffffbf 45%, #ffffff00 56%);
+  }
+  .card-face {
+    position: relative; z-index: 1; height: 100%; border-radius: 7px;
+    background: radial-gradient(120% 92% at 50% 0%, #fffdf7 0%, var(--face) 62%);
+    color: var(--ink);
+    display: grid; grid-template-rows: auto 1fr auto; gap: 2px;
+    padding: 5px 6px;
+    overflow: hidden;
+  }
+  .card-top { display: flex; align-items: center; gap: 4px; font-size: 0.62rem; font-weight: 700; }
+  .card-suit { font-size: 0.85rem; line-height: 1; }
+  .card-tier {
+    margin-left: auto; letter-spacing: 0.06em; color: var(--ink-soft);
+    border: 1px solid #0000002e; border-radius: 3px; padding: 0 3px; font-size: 0.6rem;
+  }
+  .card-count {
+    background: #1b1710; color: #f6f1e4; border-radius: 4px; padding: 0 4px;
+    font-size: 0.62rem; font-variant-numeric: tabular-nums;
+  }
+  .card-name { font-size: 0.68rem; font-weight: 700; line-height: 1.15; }
+  .card-cond { font-size: 0.58rem; color: var(--ink-soft); line-height: 1.2; }
+  .card-payoff {
+    font-size: 0.62rem; font-weight: 700; text-align: center;
+    background: #1b17101a; border-radius: 4px; padding: 1px 0;
+  }
+  .card-payoff.is-split { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: none; padding: 0; }
+  .card-payoff.is-split span { border-radius: 4px; padding: 1px 0; }
+  .card-payoff .gain { background: #3f6b3d29; }
+  .card-payoff .risk { background: #a13a2929; }
+
+  /* the strip under the card — the pile's own verdict, always visible, never on hover */
+  .mb-strip {
+    font-size: 0.66rem;
+    line-height: 1.25;
+    border-radius: 6px;
+    padding: 4px 6px;
+    min-height: 30px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .mb-strip.is-ready { background: #3f6b3d40; border: 1px solid #7fb27a80; color: #dcecd8; font-weight: 700; }
+  .mb-strip.is-refused { background: #ffffff0a; border: 1px dashed #ffffff26; color: #a49c8b; }
+  .mb-arrow { font-weight: 700; }
+
+  /* tarnish: refused piles read as inert without relying on hue */
+  .mb-pile.is-refused .card { filter: saturate(0.25) brightness(0.82); box-shadow: 0 0 0 1px #00000066; }
+
+  /* the "just made" mark — a form change (notched ribbon), so it survives greyscale and outlives
+     any animation. Cleared by the next combine, never by a timer. */
+  .mb-new {
+    position: absolute; top: -6px; left: -6px; z-index: 3;
+    background: var(--parchment); color: #1b1710;
+    font-size: 0.56rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 2px 7px 2px 5px;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 50%, 100% 100%, 0 100%);
+    box-shadow: 0 2px 6px #0009;
+  }
+
+  /* ---- the armed state: the confirmation lives ON the pile ---- */
+  .mb-confirm {
+    position: absolute; inset: -6px; z-index: 4;
+    background: linear-gradient(180deg, #23303a 0%, #131b21 100%);
+    border: 1px solid var(--brass-dim);
+    border-radius: 12px;
+    box-shadow: 0 10px 26px #000c;
+    padding: 7px;
+    display: grid; grid-template-rows: auto auto auto 1fr auto; gap: 4px;
+    font-size: 0.64rem;
+  }
+  .mb-confirm-lab { font-size: 0.56rem; letter-spacing: 0.12em; text-transform: uppercase; color: #a49c8b; }
+  .mb-confirm-lose { color: #edc7c0; line-height: 1.25; }
+  .mb-confirm-lose s { opacity: 0.75; }
+  .mb-confirm-gain { color: #dcecd8; font-weight: 700; line-height: 1.25; }
+  .mb-confirm-cost {
+    align-self: end;
+    font-size: 0.62rem; color: #cfc8b8;
+    border-top: 1px solid #ffffff1f; padding-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .mb-confirm-acts { display: grid; grid-template-columns: 1fr auto; gap: 4px; }
+  .mb-go, .mb-no {
+    font: inherit; font-size: 0.66rem; font-weight: 700; min-height: 44px;
+    border-radius: 7px; cursor: pointer; touch-action: manipulation;
+  }
+  .mb-go { background: var(--ready-deep); color: #eaf6e7; border: 1px solid var(--ready); }
+  .mb-go:hover { background: #4d8149; }
+  .mb-no { background: #ffffff0f; color: var(--chalk); border: 1px solid #ffffff2e; padding: 0 8px; }
+  .mb-go:focus-visible, .mb-no:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+  /* ---- zone 3: the ledger, pinned to the bottom edge ---- */
+  .mb-foot {
+    display: flex; align-items: center; gap: clamp(0.6rem, 2.4vmin, 1.6rem);
+    padding: 0.45rem clamp(0.4rem, 2vmin, 1rem) 0.1rem;
+    border-top: 1px solid #ffffff14;
+    font-size: 0.8rem;
+  }
+  .mb-log { color: #dcecd8; min-height: 1.2em; }
+  .mb-log:empty { display: none; }
+  .mb-spend { margin-left: auto; color: #b4ac9a; font-variant-numeric: tabular-nums; }
+  .mb-spend b { color: var(--chalk); }
+
+  @media (max-width: 720px) {
+    .mb-rule { display: none; }
+    .mb-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+  }
+</style>
+
+<div class="mb-shell" id="shell">
+  <header class="mb-status">
+    <span class="mb-title">Manage Buffs</span>
+    <span class="mb-stat">
+      <span class="mb-stat-value" id="held">20</span>
+      <span class="mb-stat-label">cards held</span>
+    </span>
+    <span class="mb-stat">
+      <span class="mb-stat-value" id="ready">6</span>
+      <span class="mb-stat-label">piles ready</span>
+    </span>
+    <p class="mb-rule">
+      Two of the same card at the same tier become one of the next tier. It costs no coins — it
+      costs a card.
+    </p>
+    <button type="button" class="mb-back" onclick="leave()">Back to the shop &nbsp;<small>Esc</small></button>
+  </header>
+
+  <main class="mb-stage">
+    <div id="bands"></div>
+  </main>
+
+  <footer class="mb-foot">
+    <span class="mb-log" id="log" role="status" aria-live="polite"></span>
+    <span class="mb-spend">Every combine spends <b>2</b> cards and returns <b>1</b>.</span>
+  </footer>
+</div>
+
+<script>
+  // ---- fake pile ------------------------------------------------------------------------
+  // Shaped like a real opening pile: twenty cards drawn with replacement from sixteen templates,
+  // plus the run's starting Cheat. Six combinable pairs, which is what the ticket predicts.
+  const SUIT = { bells: '◆', keys: '⚘', moons: '☽' };
+  const NUMERAL = { bronze: 'I', silver: 'II', gold: 'III' };
+  const NEXT = { bronze: 'silver', silver: 'gold', gold: null };
+  const BLADE = { bronze: 1, silver: 3, gold: 5 };
+  const MOMENTUM = { bronze: 2, silver: 3, gold: 5 };
+  const CHEAT = { bronze: 1, silver: 2, gold: 3 };
+  const BOMB = { bronze: [4, 2], silver: [8, 4], gold: [12, 6] };
+
+  let nextId = 100;
+  function card(kind, suit, axis, tier) {
+    return { id: nextId++, kind, suit, axis, tier };
+  }
+  function name(c) {
+    const family = { taker: 'Taker', feeder: 'Feeder', sidestep: 'Sidestep', cheat: 'Cheat', timebomb: 'Timebomb' }[c.kind];
+    const head = c.suit ? { bells: 'Bell', keys: 'Key', moons: 'Moon' }[c.suit] + '-' + family : family;
+    const suffix = { magnitude: 'Blade', multiplier: 'Momentum', duration: 'Free Rein', bomb: 'Blast' }[c.axis];
+    return head + ' (' + suffix + ')';
+  }
+  function condition(c) {
+    if (c.kind === 'taker') return 'win a trick with ' + cap(c.suit);
+    if (c.kind === 'feeder') return 'lose a trick with ' + cap(c.suit);
+    if (c.kind === 'sidestep') return 'dodge a skull with this card';
+    if (c.kind === 'cheat') return 'play any card, ignoring follow-suit';
+    return 'prime a card in your hand';
+  }
+  function cap(s) { return s[0].toUpperCase() + s.slice(1); }
+  function payoff(c) {
+    if (c.axis === 'magnitude') return { gain: '+' + BLADE[c.tier] + ' damage', risk: null };
+    if (c.axis === 'multiplier') return { gain: '+' + MOMENTUM[c.tier] + ' multiplier', risk: null };
+    if (c.axis === 'duration') return { gain: CHEAT[c.tier] + (CHEAT[c.tier] === 1 ? ' trick free' : ' tricks free'), risk: null };
+    return { gain: '+' + BOMB[c.tier][0], risk: '−' + BOMB[c.tier][1] };
+  }
+  function payoffSentence(c) {
+    const p = payoff(c);
+    return p.risk === null ? p.gain : p.gain + ' damage, ' + p.risk + ' to you';
+  }
+  function tierWord(t) { return t[0].toUpperCase() + t.slice(1); }
+
+  // The combine key — the same composition the plan puts in `src/hunt/buffCombine.ts`.
+  function key(c) { return [c.kind, c.tier, c.suit || '', c.axis].join('|'); }
+
+  let pile = [
+    card('feeder', 'moons', 'magnitude', 'bronze'),
+    card('feeder', 'moons', 'magnitude', 'bronze'),
+    card('feeder', 'moons', 'magnitude', 'bronze'),
+    card('taker', 'bells', 'multiplier', 'bronze'),
+    card('taker', 'bells', 'multiplier', 'bronze'),
+    card('taker', 'keys', 'magnitude', 'bronze'),
+    card('taker', 'keys', 'magnitude', 'bronze'),
+    card('sidestep', null, 'magnitude', 'bronze'),
+    card('sidestep', null, 'magnitude', 'bronze'),
+    card('timebomb', null, 'bomb', 'bronze'),
+    card('timebomb', null, 'bomb', 'bronze'),
+    card('taker', 'moons', 'magnitude', 'silver'),
+    card('taker', 'moons', 'magnitude', 'silver'),
+    card('cheat', null, 'duration', 'gold'),
+    card('cheat', null, 'duration', 'gold'),
+    card('feeder', 'bells', 'multiplier', 'bronze'),
+    card('feeder', 'keys', 'magnitude', 'silver'),
+    card('sidestep', null, 'multiplier', 'bronze'),
+    card('taker', 'moons', 'multiplier', 'bronze'),
+    card('cheat', null, 'duration', 'bronze'),
+  ];
+
+  let armed = null;
+  let justMade = null;
+  let logLine = '';
+  let focusIndex = 0;
+
+  // ---- the view model: group, refuse, order ----------------------------------------------
+  const TIER_RANK = { bronze: 1, silver: 2, gold: 3 };
+
+  function groups() {
+    const byKey = new Map();
+    for (const c of pile) {
+      const k = key(c);
+      const g = byKey.get(k);
+      if (g) { g.count += 1; g.ids.push(c.id); }
+      else byKey.set(k, { key: k, buff: c, count: 1, ids: [c.id] });
+    }
+    const all = [...byKey.values()].map((g) => {
+      const refusal = NEXT[g.buff.tier] === null ? 'atMaxTier' : g.count < 2 ? 'noPair' : null;
+      const produces = refusal === null ? { ...g.buff, tier: NEXT[g.buff.tier] } : null;
+      return { ...g, refusal, produces };
+    });
+    // Ready first, then refused; tier descending and key ascending inside each band.
+    const order = (a, b) =>
+      TIER_RANK[b.buff.tier] - TIER_RANK[a.buff.tier] || a.key.localeCompare(b.key);
+    return {
+      ready: all.filter((g) => g.refusal === null).sort(order),
+      refused: all.filter((g) => g.refusal !== null).sort(order),
+      held: pile.length,
+    };
+  }
+
+  const REFUSAL = {
+    atMaxTier: 'Already gold — nothing above it',
+    noPair: 'Only one — nothing to pair it with',
+  };
+
+  // ---- render -----------------------------------------------------------------------------
+  function cardHtml(c, count) {
+    const p = payoff(c);
+    return (
+      '<span class="card is-' + c.tier + '">' +
+        '<span class="card-face">' +
+          '<span class="card-top">' +
+            '<span class="card-suit">' + (c.suit ? SUIT[c.suit] : '·') + '</span>' +
+            (count > 1 ? '<span class="card-count">×' + count + '</span>' : '') +
+            '<span class="card-tier">' + NUMERAL[c.tier] + '</span>' +
+          '</span>' +
+          '<span>' +
+            '<span class="card-name">' + name(c) + '</span><br>' +
+            '<span class="card-cond">' + condition(c) + '</span>' +
+          '</span>' +
+          (p.risk === null
+            ? '<span class="card-payoff">' + p.gain + '</span>'
+            : '<span class="card-payoff is-split"><span class="gain">' + p.gain + '</span><span class="risk">' + p.risk + '</span></span>') +
+        '</span>' +
+      '</span>'
+    );
+  }
+
+  function pileHtml(g, index, held) {
+    const isArmed = armed === g.key;
+    const badge = justMade === g.key ? '<span class="mb-new">Just made</span>' : '';
+    if (isArmed) {
+      const made = g.produces;
+      return (
+        '<div class="mb-pile" style="position:relative">' +
+          cardHtml(g.buff, g.count) +
+          '<div class="mb-strip is-ready">Confirm below</div>' +
+          '<div class="mb-confirm">' +
+            '<div class="mb-confirm-lab">Destroy</div>' +
+            '<div class="mb-confirm-lose"><s>2 × ' + tierWord(g.buff.tier) + ' ' + name(g.buff) + '</s></div>' +
+            '<div class="mb-confirm-lab">Make</div>' +
+            '<div class="mb-confirm-gain">1 × ' + tierWord(made.tier) + ' ' + name(made) + '<br>' + payoffSentence(made) + '</div>' +
+            '<div class="mb-confirm-cost">' + held + ' → ' + (held - 1) + ' cards</div>' +
+            '<div class="mb-confirm-acts">' +
+              '<button type="button" class="mb-go" onclick="commit(\'' + g.key + '\')" autofocus>Combine</button>' +
+              '<button type="button" class="mb-no" onclick="cancel()">Esc</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+    if (g.refusal !== null) {
+      return (
+        '<div class="mb-pile is-refused" tabindex="-1" aria-label="' +
+          tierWord(g.buff.tier) + ' ' + name(g.buff) + ', ' + g.count + ' held. ' + REFUSAL[g.refusal] + '">' +
+          badge + cardHtml(g.buff, g.count) +
+          '<div class="mb-strip is-refused">' + REFUSAL[g.refusal] + '</div>' +
+        '</div>'
+      );
+    }
+    return (
+      '<button type="button" class="mb-pile" data-index="' + index + '" tabindex="' + (index === focusIndex ? '0' : '-1') + '"' +
+        ' onclick="arm(\'' + g.key + '\')"' +
+        ' aria-label="' + tierWord(g.buff.tier) + ' ' + name(g.buff) + ', ' + g.count + ' held. Combine two into one ' +
+          tierWord(g.produces.tier) + ' ' + name(g.produces) + ', ' + payoffSentence(g.produces) + '">' +
+        badge + cardHtml(g.buff, g.count) +
+        '<span class="mb-strip is-ready"><span class="mb-arrow">⇧</span> Combine → ' + NUMERAL[g.produces.tier] + '</span>' +
+      '</button>'
+    );
+  }
+
+  function render() {
+    const v = groups();
+    document.getElementById('held').textContent = v.held;
+    document.getElementById('ready').textContent = v.ready.length;
+    document.getElementById('log').textContent = logLine;
+
+    let html = '';
+    // A band renders only when it has something in it — no panel that exists to report nothing.
+    if (v.ready.length > 0) {
+      html +=
+        '<section class="mb-bandrow"><h2 class="mb-bandhead"><span class="mb-pip"></span>Ready to combine · ' +
+        v.ready.length + '</h2><div class="mb-grid" role="group" aria-label="Piles ready to combine">' +
+        v.ready.map((g, i) => pileHtml(g, i, v.held)).join('') + '</div></section>';
+    }
+    if (v.refused.length > 0) {
+      html +=
+        '<section class="mb-bandrow" style="margin-top:0.5rem"><h2 class="mb-bandhead is-refused"><span class="mb-pip"></span>Nothing to combine · ' +
+        v.refused.length + '</h2><div class="mb-grid" role="group" aria-label="Piles that cannot be combined">' +
+        v.refused.map((g, i) => pileHtml(g, i, v.held)).join('') + '</div></section>';
+    }
+    if (v.ready.length === 0 && v.refused.length === 0) {
+      html = '<p style="color:#a49c8b">You are carrying no cards.</p>';
+    }
+    document.getElementById('bands').innerHTML = html;
+
+    const go = document.querySelector('.mb-go');
+    if (go) go.focus();
+  }
+
+  // ---- the gesture: arm, then commit, both on the pile itself ------------------------------
+  function arm(k) {
+    armed = k;
+    render();
+  }
+  function cancel() {
+    if (armed === null) return;
+    armed = null;
+    render();
+    focusPile();
+  }
+  function commit(k) {
+    const g = groups().ready.find((x) => x.key === k);
+    if (!g) return;
+    const made = { ...g.buff, id: nextId++, tier: g.produces.tier };
+    const doomed = new Set(g.ids.slice(0, 2));
+    pile = pile.filter((c) => !doomed.has(c.id)).concat([made]);
+    armed = null;
+    justMade = key(made);
+    logLine =
+      'Two ' + tierWord(g.buff.tier) + ' ' + name(g.buff) + ' became one ' +
+      tierWord(made.tier) + ' ' + name(made) + ' — ' + payoffSentence(made) + '.';
+    render();
+    focusPile();
+  }
+  function leave() {
+    logLine = 'Back to the shop. (In the app this returns to the shop screen.)';
+    render();
+  }
+
+  function focusPile() {
+    const piles = document.querySelectorAll('.mb-pile[data-index]');
+    if (piles.length === 0) return;
+    focusIndex = Math.min(focusIndex, piles.length - 1);
+    piles[focusIndex].focus();
+  }
+
+  // Roving tabindex over the ready piles: one tab stop, arrows move, Enter/Space arms, Esc cancels.
+  document.getElementById('shell').addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (armed !== null) cancel();
+      else leave();
+      return;
+    }
+    const piles = [...document.querySelectorAll('.mb-pile[data-index]')];
+    if (piles.length === 0 || armed !== null) return;
+    const move = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+    if (move === undefined && e.key !== 'Home' && e.key !== 'End') return;
+    e.preventDefault();
+    focusIndex =
+      e.key === 'Home' ? 0 :
+      e.key === 'End' ? piles.length - 1 :
+      Math.min(Math.max(focusIndex + move, 0), piles.length - 1);
+    piles.forEach((p, i) => p.setAttribute('tabindex', i === focusIndex ? '0' : '-1'));
+    piles[focusIndex].focus();
+  });
+
+  render();
+</script>

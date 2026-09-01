@@ -1,144 +1,93 @@
-/* The shop screen's own rules (DLR-84). Transcribed from
-   `.claude/contract/DLR-84-earn-coins-and-buy-a-cheat-or-a-heal/mockup.html`'s `.shop-*` block.
-   Reuses `.run-shell` and `.run-btn` from `run.css` unchanged — nothing here redefines them.
-   Every clamp() bound and every hue below is the DEVELOPER'S to retune.
+/* The shop screen's shell and its three zones. Rebuilt 2026-09-01 from this contract's
+   `mockup.html` after the developer rejected the previous layout ("a huge amount of info", "I can't
+   tell what I have in my inventory", "the overall style I don't like").
 
-   Split across three files at the 400-line budget (see also `shopItems.css`, `shopFlask.css`):
-   this file holds the shell/layout — the outer container, title, purse and health. All three are
-   imported together, in this order, from `ShopPanel.tsx`, so the cascade order matches this
-   file's original undivided form exactly.
+   Sibling files, all imported together from `ShopPanel.tsx` in this order so the cascade matches:
+   `shopItems.css` (the buy tiles and the refusal line), `shopFlask.css` (the flask's own marks),
+   `shopSlot.css` + `shopSlotCabinet.css` + `shopSlotReel.css` (the machine), `shopHeld.css` (the
+   held-cards tray).
 
-   DLR-116 — the `.shop-tabs` / `.shop-tab` / `.shop-panel` / `.shop-aside*` rule blocks that used
-   to live here went with `ShopCategoryTabs.tsx` and the "Also for sale" aside: two fixed
-   purchasable items need no ladder (AC2/AC3). The vertical space that widget and its tabpanel
-   used to occupy is what `.shop-slot` (`shopSlot.css`) now fills instead. */
+   Every clamp() bound and every hue below is the DEVELOPER'S to retune. No `100vh`, no `100vw`. */
 
-.shop {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  /* Was clamp(0.7rem, 2.4vmin, 1.5rem) — tightened so the purse/health/tabs/panel/aside/hint/
-     leave-button stack (nine rows, eight gaps) actually fits an ~800px-tall viewport instead of
-     running off the bottom of `.run-shell`'s non-scrolling, `overflow: hidden` box. Still a
-     PLACEHOLDER the developer owns. */
-  gap: clamp(0.3rem, 1vmin, 0.6rem);
-  text-align: center;
-  /* Was 42rem, which boxed the machine into a narrow strip with a third of the screen empty either
-     side while the stack still overran its height. The shop is now allowed the width it has, and
-     `.shop-columns` below spends it sideways — which is what bought the cabinet its size AND took
-     the vertical overrun out. A PLACEHOLDER bound like every other here. */
-  max-width: 68rem;
+/* ---- The shell ---------------------------------------------------------------------------- */
+
+/* The shop owns its own viewport shell rather than borrowing `.run-shell`. `.run-shell` is
+   `place-items: center` with heavy padding, which is right for a verdict card floating in the
+   middle of the screen and wrong for a screen whose status belongs ON the top edge. Three explicit
+   rows, so the tray is never the thing that gets clipped when the middle runs long. */
+.shop-shell {
+  height: 100dvh;
   width: 100%;
-  /* DLR-89 residual-clipping fix, take 2. `max-height: 100%` was inert: `.shop`'s containing
-     block is `.run-shell`'s grid ROW, and a grid row's height is itself resolved from its
-     content (`.shop`) rather than handed down as a definite length — a percentage `max-height`
-     against an indefinite containing block resolves to `none`, so the cap never engaged, and
-     QA measured `.shop` rendering at its full ~694px content height inside a 644px box, clipped
-     by `.run-shell`'s `overflow: hidden`.
-     Fixed by computing the cap directly against the viewport instead of depending on
-     `.run-shell`'s row to resolve anything: `.run-shell` (`run.css`) is `height: 100dvh` with
-     `padding: clamp(1rem, 4vmin, 3rem)` on every side, so its available content box is exactly
-     `100dvh` minus that padding twice over. Both operands are viewport-relative lengths, so this
-     `calc()` always resolves to a real pixel figure — the one property `100%` didn't have.
-     Kept in `clamp(1rem, 4vmin, 3rem)` terms rather than a hardcoded pixel figure so this cap
-     cannot silently drift from `.run-shell`'s actual padding if that clamp is ever retuned; `dvh`
-     matches `.run-shell`'s own unit rather than `vh`, so both agree on the same viewport metric.
-     `height` stays `auto` below, so a roomy viewport still sizes `.shop` from content and keeps
-     it vertically centred — only a viewport short enough to hit the cap makes `.shop-panel`
-     (its one `flex: 1 1 auto` child) give up space. Follow-up (this ticket): `.shop-panel` now
-     carries a readability-floor `min-height` instead of `min-height: 0` — see `shopItems.css` for
-     why, and for the flask-row-removal and list-not-grid changes that keep that floor met. */
-  max-height: calc(100dvh - 2 * clamp(1rem, 4vmin, 3rem));
-  height: auto;
+  overflow: hidden;
   box-sizing: border-box;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: clamp(0.4rem, 1.4vmin, 0.9rem);
+  padding: clamp(0.5rem, 1.8vmin, 1.1rem);
+  padding-top: max(clamp(0.5rem, 1.8vmin, 1.1rem), env(safe-area-inset-top, 0px));
+  padding-bottom: max(clamp(0.5rem, 1.8vmin, 1.1rem), env(safe-area-inset-bottom, 0px));
+  /* A room, not a document: a warm pool of light over the machine falling off to the corners. This
+     is most of what makes the screen read as somewhere the player has walked into, and it is the
+     substance of the restyle the developer asked for. */
+  background:
+    radial-gradient(90% 60% at 50% 8%, #2a211a 0%, transparent 60%),
+    radial-gradient(120% 90% at 50% 45%, #161d22 0%, #05080a 100%);
+  color: var(--wc-chalk);
+  font-family: var(--wc-sans);
+  color-scheme: dark;
 }
 
-.shop-title {
-  /* DLR-89 residual-clipping fix — fixed chrome holds its own size rather than being asked to
-     shrink when `.shop` is capped to the shell's available height (see `.shop`'s comment above).
-     `.shop-panel` is the one child that yields. */
-  flex: 0 0 auto;
-  font-family: var(--wc-serif);
-  font-size: clamp(1.6rem, 6vmin, 3rem);
-  letter-spacing: 0.06em;
-  font-weight: 600;
-  margin: 0;
-  color: var(--wc-brass);
-}
+/* ---- Zone 1: the status strip ------------------------------------------------------------- */
 
-.shop-next {
-  flex: 0 0 auto;
-  margin: 0;
-  font-size: clamp(0.85rem, 2.2vmin, 1.05rem);
-  line-height: 1.5;
-}
-
-/* The purse row: coins and Cheat slots, anchored above the choice, always visible (AC10).
-   Health moved out to `.shop-health` below, where it has room for a countable heart row. */
-.shop-purse {
-  /* DLR-89 residual-clipping fix — see `.shop-title`'s comment above. */
-  flex: 0 0 auto;
+/* One row, pinned to the top edge, replacing the old title + next-up line + purse panel + health
+   meter. `game-ux` — status is anchored at the edges so it never crowds the play area. */
+.shop-status {
   display: flex;
-  gap: clamp(1rem, 5vmin, 3rem);
-  /* Vertical padding was 0.55rem — tightened for the same viewport-fit reason as `.shop`'s gap
-     above. Still the developer's to retune. */
-  padding: 0.3rem clamp(0.9rem, 3vmin, 1.6rem);
-  border-top: 1px solid var(--wc-brass-dim);
-  border-bottom: 1px solid var(--wc-brass-dim);
+  align-items: center;
+  gap: clamp(0.8rem, 3vmin, 2rem);
+  padding: 0.3rem clamp(0.5rem, 2vmin, 1.1rem);
+  border-bottom: 1px solid #ffffff14;
 }
 
-.shop-purse-cell {
+.shop-stat {
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+  align-items: baseline;
+  gap: 0.45rem;
 }
 
-.shop-purse-label {
-  font-size: clamp(0.55rem, 1.2vmin, 0.68rem);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--wc-chalk-dim);
-}
-
-.shop-purse-value {
+.shop-stat-value {
   font-family: var(--wc-serif);
-  font-size: clamp(1.1rem, 3.4vmin, 1.8rem);
+  font-size: clamp(1.2rem, 3.4vmin, 1.9rem);
+  line-height: 1;
   color: var(--wc-parchment);
 }
 
-/* The health row (DLR-84 follow-up). Its own row rather than a purse cell: health is what a heal
-   is bought against, so it gets the full width and is counted at a glance rather than read as a
-   fraction. Hearts are DELIBERATELY LARGER HERE than on the felt — this screen has room the
-   status band does not, and nothing competes with them for it. Every value below is a placeholder
-   and the developer's to retune, as this file's header states. */
-.shop-health {
-  /* Declared here rather than in `warCouncil.css`'s `:root` block deliberately: that file sits at
-     exactly its 400-line budget, and this token is only ever read on this screen. */
-  --shop-heart-size: clamp(1.4rem, 4vmin, 2.2rem);
-  /* DLR-89 residual-clipping fix — see `.shop-title`'s comment above. */
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: clamp(0.6rem, 2vmin, 1.1rem);
-  flex-wrap: wrap;
-  /* Vertical padding was 0.55rem — tightened for the same viewport-fit reason as `.shop`'s gap
-     above. Still the developer's to retune. */
-  padding: 0.3rem clamp(0.9rem, 3vmin, 1.6rem);
-  border-bottom: 1px solid var(--wc-brass-dim);
+.shop-stat-value.is-coins {
+  color: var(--wc-brass);
+}
+
+/* The health fraction sits smaller than the coin count: it is the exact figure behind the hearts,
+   not the headline. */
+.shop-stat-value.is-health {
+  font-size: clamp(0.85rem, 2.3vmin, 1.25rem);
+}
+
+.shop-stat-label {
+  font-size: clamp(0.5rem, 1.15vmin, 0.62rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
 }
 
 .shop-hearts {
   display: flex;
   align-items: center;
-  gap: clamp(0.16rem, 0.6vmin, 0.3rem);
-  min-width: 0;
-  flex: 1 1 auto;
+  gap: clamp(0.1rem, 0.45vmin, 0.2rem);
 }
 
 .shop-heart {
-  flex: 0 1 var(--shop-heart-size);
+  width: clamp(0.85rem, 2.4vmin, 1.3rem);
   aspect-ratio: 1;
-  min-width: 0;
   line-height: 0;
 }
 
@@ -148,8 +97,8 @@
   stroke-width: 1.6;
 }
 
-/* Whole and broken differ in SHAPE as well as tone (the glyphs are a filled heart and a cracked
-   outline), so this row still reads in greyscale — `game-ux`'s no-colour-alone floor. */
+/* Whole and broken differ in SHAPE as well as tone (a filled heart and a cracked outline), so the
+   row still reads in greyscale — `game-ux`'s no-colour-alone floor. */
 .shop-heart[data-state='whole'] {
   color: var(--wc-hp-secure-fill);
 }
@@ -160,56 +109,95 @@
   color: var(--wc-hp-broken);
 }
 
-/* Item count drives the column count, so a long shelf packs instead of stretching two columns
-   down the page — every list in this shop is expected to grow. The `minmax()` floor is a
-   PLACEHOLDER tuning value the developer owns: it sets how narrow a card may get before the grid
-   drops a column. `min(100%, …)` keeps a single card from overflowing a narrow viewport. */
-.shop-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
-  gap: clamp(0.6rem, 2.4vmin, 1.2rem);
-  width: 100%;
+.shop-next {
+  margin-left: auto;
+  text-align: right;
+  font-size: clamp(0.6rem, 1.45vmin, 0.74rem);
+  color: var(--wc-chalk-dim);
 }
 
-/* ---- The two-column body ----------------------------------------------------------------- */
+.shop-next b {
+  display: block;
+  font-family: var(--wc-serif);
+  font-weight: 500;
+  font-size: clamp(0.85rem, 2.2vmin, 1.05rem);
+  color: var(--wc-parchment);
+}
 
-/* The machine on one side, everything bought with a coin on the other. The shop used to be one
-   tall column, which is why it overran `.run-shell`'s non-scrolling box by 172px at 1920x911, with
-   the flask row and the leave button clipped off the bottom entirely. Spending the screen's width
-   is what fixes that at the root, rather than shaving another clamp() bound.
+/* ---- Zone 2: the stage -------------------------------------------------------------------- */
 
-   Collapses to a single column below the breakpoint, where a stack is the only thing that fits.
-   Both the breakpoint and the column split are PLACEHOLDERS the developer owns. */
-.shop-columns {
-  flex: 1 1 auto;
+/* The machine, and nothing else. Centred, and allowed to be the biggest thing on the screen. */
+.shop-stage {
   min-height: 0;
-  width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  align-items: start;
-  gap: clamp(0.6rem, 2.4vmin, 1.4rem);
-  text-align: left;
-  /* The ONE scoped scroll region on this screen, and it earns it. Measured across twelve viewport
-     sizes, every desktop shape now fits with nothing clipped — but a viewport that is BOTH narrow
-     and short (430x700 clipped 176px, 360x640 clipped 266px) collapses to a single column and the
-     stack cannot fit however the bounds are tuned. `.run-shell` is `overflow: hidden`, so what
-     overran was silently cut off, and what got cut was the bottom of the screen: the flask and the
-     leave button. Scrolling this region instead keeps the title, the purse, the health row and —
-     the point — the leave-for-the-next-fight button pinned outside it and always reachable. The
-     PAGE still never scrolls, which is the rule `game-ux` actually sets. */
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.shop-column {
-  min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: clamp(0.25rem, 0.9vmin, 0.5rem);
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
-@media (max-width: 56rem) {
-  .shop-columns {
+/* ---- Zone 3: the tray --------------------------------------------------------------------- */
+
+/* What you hold on the left, what a coin buys on the right, the way out at the end of that row. */
+.shop-tray {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: clamp(0.6rem, 2.4vmin, 1.6rem);
+  padding-top: clamp(0.3rem, 1.2vmin, 0.6rem);
+  border-top: 1px solid #ffffff14;
+}
+
+.shop-buys {
+  display: flex;
+  align-items: end;
+  gap: clamp(0.35rem, 1.3vmin, 0.7rem);
+}
+
+/* The leave control. The only filled, brass-on-dark control on the screen, because leaving is the
+   one action every visit ends with and it must never be hunted for. */
+.shop-leave {
+  min-height: 44px;
+  padding: 0.55rem clamp(0.9rem, 3vmin, 1.7rem);
+  border: 1px solid var(--wc-brass);
+  border-radius: 5px;
+  background: linear-gradient(var(--wc-brass), #a87e3a);
+  color: #1b1408;
+  font-family: var(--wc-serif);
+  font-size: clamp(0.82rem, 2vmin, 1.02rem);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform var(--wc-ui-transition-ms) ease;
+}
+
+.shop-leave:focus-visible {
+  outline: 2px solid var(--wc-parchment);
+  outline-offset: 2px;
+}
+
+.shop-leave:active {
+  transform: translateY(1px);
+}
+
+/* Narrow: the tray stacks and the buy row wraps, rather than the machine being squeezed to make
+   room for a row that could simply go underneath. The breakpoint is a PLACEHOLDER. */
+@media (max-width: 46rem) {
+  .shop-tray {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shop-buys {
+    flex-wrap: wrap;
+  }
+}
+
+/* Short: the stage gives up its centring and scrolls as the ONE scoped scroll region, so the status
+   strip and — the point — the leave button stay pinned and reachable. The PAGE still never scrolls,
+   which is the rule `game-ux` actually sets. */
+@media (max-height: 34rem) {
+  .shop-stage {
+    align-items: start;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 }

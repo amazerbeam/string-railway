@@ -107,8 +107,31 @@ that either.
 
 ## Deferred / not yet implemented
 
-- **Only two machines exist** (`Skirmisher`, `Strongbox`) and their weight tables are
-  `slotWeights.ts`'s, untouched by DLR-116.
+- **One machine is reachable** (`Skirmisher`). `Strongbox` is **cut as of 2026-09-01** — see the
+  boxed note below, which answers the open question the note beneath it had been carrying. Their
+  weight tables are `slotWeights.ts`'s, untouched by DLR-116.
+
+  > **Strongbox is cut (developer decision, 2026-09-01) — the open question below was measured and
+  > answered.** The note beneath this one asks *"whether the two machines still feel different"*.
+  > Measured on the surviving tables, they do not: normalised, Skirmisher pays Taker 29.4% / Feeder
+  > 23.5% / Sidestep 11.8% / Cheat 17.6% / Timebomb 17.6%, and Strongbox pays 28.6% / 28.6% / 14.3%
+  > / 14.3% / 14.3%, on an **identical 50/50 Blade–Momentum split**. Within a point on every family.
+  > Choosing between them was a decision with no consequence, and the developer's call was to remove
+  > it rather than invent a lean.
+  >
+  > **Cut, not deleted**, exactly as `buffTemplates.ts` treats its eight cut condition families:
+  > `SlotMachineId.Strongbox` keeps its member and **both weight tables keep their Strongbox rows**.
+  > Removing it from **`SLOT_MACHINE_IDS`** is what makes it unreachable, because everything
+  > downstream maps that array rather than listing machines itself — which is exactly what that
+  > constant's docblock promised it would buy.
+  >
+  > Two consequences that make this safe rather than merely tidy: `slotSeedFor` folds the machine's
+  > **index** in `SLOT_MACHINE_IDS`, and Skirmisher stays index 0, so **every existing seed still
+  > resolves to the same strip**; and the Vault's per-machine storage keys are untouched, so nothing
+  > persisted is orphaned (`.claude/rules/save-data-versioning.md` applies to any future change that
+  > does move them). Restoring Strongbox is a row in `SLOT_MACHINE_IDS` plus a chosen lean — and the
+  > lean is the real work, since the axes its identity rode on are still gone.
+
   > **DLR-145 pruned both tables and left the two machines harder to tell apart, 2026-08-25.**
   > `SLOT_FAMILY_WEIGHTS` is now five rows per machine (Taker / Feeder / Sidestep / Cheat /
   > Timebomb) and `SLOT_AXIS_WEIGHTS` two (Magnitude / Multiplier). **Every surviving number is
@@ -119,8 +142,9 @@ that either.
   > Magnitude 1 / Multiplier 1 — the "run-permanent reward" machine. Its axis table is now 1 / 1
   > and Skirmisher's is 3 / 3, which is the same ratio, so the two machines differ **only by family
   > weight** (Taker/Feeder/Sidestep 5/4/2 against 2/2/1). Nobody has chosen a replacement lean, and
-  > inventing one would be inventing tuning values. **Whether the two machines still feel different
-  > is an open developer question, unmeasured and unobserved.**
+  > inventing one would be inventing tuning values. ~~**Whether the two machines still feel different
+  > is an open developer question, unmeasured and unobserved.**~~ **Measured and answered on
+  > 2026-09-01: they did not, and Strongbox was cut — see the note above.**
   > `REEL_POOL_SIZE` is 8 and the pool is 16 (13 until DLR-150 restored Feeder's Momentum row), so
   > `drawReelPool`'s distinct draw still succeeds on
   > both machines with every surviving family weighted ≥ 1 — but the strip is now a much larger
@@ -136,7 +160,7 @@ that either.
   consumable has neither — it is priced through `CONSUMABLE_AP_COST` and pays in its effect. It also
   needs 14 slot weights (7 kinds × 2 machines) nobody has chosen. Whether consumables ship in v1's
   reel is the developer's call. (DLR-126 separately **disproved** the old claim that Ward's silver
-  and gold tiers are indistinguishable: `bank.ts` adds `trick.timebombToPlayer`, whose column is
+  and gold tiers are indistinguishable: `streak.ts` adds `trick.timebombToPlayer`, whose column is
   2/4/6, so a hit is 1 **or** 3/5/7 — all three Ward rows ship.)
 - ~~**`Keepsake` is unfireable in live play** and ships at floor weight, so a player can win a
   `Keepsake` card from a reel that never fires.~~ **Moot since DLR-145** — Keepsake has no template

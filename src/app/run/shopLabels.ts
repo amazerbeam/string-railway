@@ -27,6 +27,19 @@ export const SHOP_HEALTH_LABEL = 'Health'
 export const SHOP_NOTHING_TO_BUY_HINT = 'Buy nothing and carry the coin if you would rather.'
 export const SHOP_PURSE_GROUP_LABEL = 'Your purse and health'
 
+/** 2026-09-01 — the "What you hold" tray (`ShopHeld.tsx`). PLACEHOLDER COPY, the developer's, as
+ *  every other string in this file is. */
+export const SHOP_HELD_LABEL = 'What you hold'
+export const SHOP_HELD_GROUP_LABEL = 'The cards you are holding'
+/** Points at the thing to do about it — an empty tray saying nothing reads as a broken tray. */
+export const SHOP_HELD_EMPTY = 'Nothing yet — pull the machine.'
+
+/** How many cards are held, in words. Mirrors `priceText`'s singular/plural handling rather than
+ *  printing a bare numeral, so one card does not read as "1 cards". */
+export function heldCountText(count: number): string {
+  return `${count} card${count === 1 ? '' : 's'}`
+}
+
 /** Total over the WHOLE `ShopItem` union, not over `SHOP_ITEMS` — Cheat, Timebomb, Blast Guard and
  *  Whetstone still get a name even though DLR-116 took them off this screen's offered list. AC3's
  *  "not deleted from the codebase" stated in copy. */

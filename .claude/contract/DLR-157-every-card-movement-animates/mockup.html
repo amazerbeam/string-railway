@@ -1,0 +1,769 @@
+<title>Card Motion Bench</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* ------------------------------------------------------------------------
+     DLR-157 — the card-motion bench.
+     Self-contained: no build step, no framework, no import of src/.
+     The :root block below is COPIED from src/app/warCouncil/warCouncil.css so the
+     bench sits on the game's real ground. Additions for this ticket are marked.
+     Every number in the MOTION block is a PLACEHOLDER, and the rail on the right
+     is here so the developer sets them by playing rather than by reading.
+     This is a deliberately single-theme page: the game is a dark felt chamber and
+     a light variant would not be the surface under test. Every colour is painted
+     explicitly so the page holds on either host ground.
+     ------------------------------------------------------------------------ */
+  :root {
+    --wc-chamber: #0c1013;
+    --wc-chamber-lift: #141a1f;
+    --wc-felt: #16241f;
+    --wc-felt-lip: #0a1211;
+    --wc-felt-line: #2b4038;
+    --wc-parchment: #e9e1cd;
+    --wc-parchment-shade: #d3c8ae;
+    --wc-ink: #191610;
+    --wc-ink-soft: #5c5443;
+    --wc-brass: #c99a4e;
+    --wc-brass-dim: #7d6132;
+    --wc-chalk: #cdd6d2;
+    --wc-chalk-dim: #6f7d78;
+    --wc-alarm: #d1705f;
+    --wc-bells: #c9873f;
+    --wc-keys: #5f93a8;
+    --wc-moons: #9c7cb8;
+
+    /* ---- ADDED BY DLR-157 — the whole motion token block, and the only place any
+       duration, distance or easing is stated (AC10). All six are PLACEHOLDERS. */
+    --wc-flight: 380ms;        /* moved here from warCouncilResolve.css, value unchanged */
+    --wc-flight-stagger: 70ms; /* AC5 — the one stagger, applied to every group */
+    --wc-flight-lift: 34px;    /* the arc's peak lift; was a `-34` literal in useCardFlight.ts */
+    --wc-flight-tilt: 4deg;    /* the mid-flight rotation; was a `-4deg` literal */
+    --wc-flight-ease: cubic-bezier(.3, .75, .25, 1);
+    --wc-flip-at: 0.5;         /* AC6 — 0.5 flips mid-air, 1 flips on landing. DEVELOPER'S CALL. */
+
+    --sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --display: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    height: 100dvh;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(15rem, 24vw, 20rem);
+    background: radial-gradient(90% 70% at 50% 40%, var(--wc-chamber-lift) 0%, var(--wc-chamber) 70%);
+    color: var(--wc-chalk);
+    font-family: var(--sans);
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============================ the table ============================ */
+
+  .stage {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    padding: clamp(0.6rem, 2vh, 1.2rem);
+    gap: clamp(0.5rem, 1.6vh, 1rem);
+    min-width: 0;
+  }
+
+  .stage-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--wc-felt-line);
+    padding-bottom: 0.5rem;
+  }
+  .stage-head h1 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(1.1rem, 2.6vmin, 1.6rem);
+    margin: 0;
+    letter-spacing: 0.01em;
+    text-wrap: balance;
+  }
+  .stage-head p {
+    margin: 0;
+    font-size: 0.72rem;
+    color: var(--wc-chalk-dim);
+    max-width: 46ch;
+  }
+
+  .felt {
+    position: relative;
+    border-radius: 0.7rem;
+    background:
+      radial-gradient(120% 90% at 50% 0%, #1d3129 0%, var(--wc-felt) 55%, var(--wc-felt-lip) 100%);
+    border: 1px solid var(--wc-felt-line);
+    box-shadow: inset 0 0 3rem #0006;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    align-items: center;
+    padding: clamp(0.5rem, 1.6vh, 1rem);
+    gap: clamp(0.4rem, 1.2vh, 0.8rem);
+    overflow: hidden; /* the flyer layer is on <body>, so a clone is never clipped by this */
+  }
+
+  .zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.5rem, 2vw, 1.4rem);
+  }
+  .zone-piles { justify-content: space-between; }
+
+  .plate {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .plate-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- cards. `display:block` on the face is load-bearing: it is a <span>, and width
+     does not apply to an inline box (ui-notes.md §6, the 2px-wide-hand defect). */
+  .card {
+    display: block;
+    width: clamp(2.6rem, 5.4vmin, 3.6rem);
+    aspect-ratio: 5 / 7;
+    border-radius: 0.28rem;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: opacity 140ms linear;
+  }
+  .card-face,
+  .card-back {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    border-radius: inherit;
+    backface-visibility: hidden;
+  }
+  .card-face {
+    background: linear-gradient(#fdf8ea, var(--wc-parchment));
+    border: 1px solid var(--wc-parchment-shade);
+    color: var(--wc-ink);
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(0.85rem, 2vmin, 1.15rem);
+    box-shadow: 0 2px 6px #0007;
+  }
+  .card-back {
+    background:
+      repeating-linear-gradient(45deg, #1b2c3a 0 4px, #16242f 4px 8px);
+    border: 1px solid var(--wc-brass-dim);
+    transform: rotateY(180deg);
+    box-shadow: 0 2px 6px #0007;
+  }
+  .card[data-face='down'] { transform: rotateY(180deg); }
+  .card.bells .card-face { color: var(--wc-bells); }
+  .card.keys  .card-face { color: var(--wc-keys); }
+  .card.moons .card-face { color: var(--wc-moons); }
+
+  /* a pile is drawn as a stack of backs — it moves as a pile, never as its cards */
+  .pile { position: relative; width: clamp(2.6rem, 5.4vmin, 3.6rem); aspect-ratio: 5 / 7; }
+  .pile > .card { position: absolute; inset: 0; width: 100%; }
+  .pile > .card:nth-child(1) { transform: translate(3px, 3px) rotateY(180deg); opacity: 0.55; }
+  .pile > .card:nth-child(2) { transform: translate(1.5px, 1.5px) rotateY(180deg); opacity: 0.8; }
+
+  .well {
+    display: flex;
+    gap: 0.5rem;
+    min-height: clamp(3.6rem, 7.6vmin, 5rem);
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem 1.2rem;
+    border: 1px dashed var(--wc-felt-line);
+    border-radius: 0.5rem;
+  }
+
+  .hand { display: flex; gap: 0.35rem; justify-content: center; flex-wrap: nowrap; }
+  .stack { display: flex; }
+  .stack > .card { margin-left: -1.4rem; }
+  .stack > .card:first-child { margin-left: 0; }
+
+  /* AC7 — a slot that is departing or arriving keeps its space and loses only its paint.
+     `visibility`, never `display`, so nothing reflows under the player's pointer. */
+  .is-hidden { visibility: hidden; }
+
+  /* the flyer layer, on <body>, above every overflow:hidden ancestor */
+  .flyer {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    will-change: transform;
+    transform-style: preserve-3d;
+  }
+
+  /* ============================ the rail ============================ */
+
+  .rail {
+    background: var(--wc-chamber-lift);
+    border-left: 1px solid var(--wc-felt-line);
+    padding: clamp(0.7rem, 2vh, 1.1rem);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    font-size: 0.78rem;
+  }
+  .rail h2 {
+    font-family: var(--display);
+    font-size: 1rem;
+    margin: 0;
+    color: var(--wc-brass);
+    letter-spacing: 0.02em;
+  }
+  .rail h3 {
+    margin: 0 0 0.4rem;
+    font-size: 0.58rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--wc-chalk-dim);
+  }
+  .rail section { display: flex; flex-direction: column; gap: 0.45rem; }
+
+  .moves { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; }
+  .moves button {
+    font: inherit;
+    font-size: 0.68rem;
+    min-height: 2.75rem;
+    padding: 0.35rem 0.4rem;
+    border-radius: 0.3rem;
+    border: 1px solid var(--wc-brass-dim);
+    background: #1b232a;
+    color: var(--wc-chalk);
+    cursor: pointer;
+    touch-action: manipulation;
+    text-align: left;
+    line-height: 1.25;
+    transition: border-color 120ms linear, background 120ms linear;
+  }
+  .moves button .m { color: var(--wc-brass); font-family: var(--mono); font-size: 0.6rem; }
+  .moves button:disabled { opacity: 0.4; cursor: default; }
+  @media (hover: hover) {
+    .moves button:not(:disabled):hover { border-color: var(--wc-brass); background: #232d36; }
+  }
+  .moves button:not(:disabled):active { background: #2b3742; }
+  .moves button.wide { grid-column: 1 / -1; }
+  :focus-visible { outline: 2px solid var(--wc-brass); outline-offset: 2px; }
+
+  .knob { display: grid; grid-template-columns: 1fr auto; gap: 0.15rem 0.5rem; align-items: center; }
+  .knob label { font-size: 0.7rem; }
+  .knob output {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--wc-brass);
+    font-variant-numeric: tabular-nums;
+  }
+  .knob input[type='range'] { grid-column: 1 / -1; width: 100%; accent-color: var(--wc-brass); }
+  .knob small { grid-column: 1 / -1; color: var(--wc-chalk-dim); font-size: 0.62rem; line-height: 1.3; }
+
+  .toggle { display: flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; }
+  .toggle input { width: 1.05rem; height: 1.05rem; accent-color: var(--wc-alarm); }
+
+  .log {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    line-height: 1.5;
+    color: var(--wc-chalk-dim);
+    background: #0e1418;
+    border: 1px solid var(--wc-felt-line);
+    border-radius: 0.3rem;
+    padding: 0.45rem 0.55rem;
+    height: 7rem;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  .log b { color: var(--wc-brass); font-weight: 500; }
+
+  .note {
+    font-size: 0.66rem;
+    line-height: 1.45;
+    color: var(--wc-chalk-dim);
+    border-left: 2px solid var(--wc-brass-dim);
+    padding-left: 0.55rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card { transition: none; }
+  }
+
+  @media (max-width: 44rem) {
+    body { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; }
+    .rail { border-left: none; border-top: 1px solid var(--wc-felt-line); max-height: 45dvh; }
+  }
+</style>
+
+<main class="stage">
+  <div class="stage-head">
+    <h1>Card Motion Bench</h1>
+    <p>Every movement below runs through <em>one</em> primitive. Watch the pace, not the polish &mdash; the rail's numbers are placeholders and yours to set.</p>
+  </div>
+
+  <div class="felt" id="felt">
+    <div class="zone">
+      <div class="plate">
+        <span class="plate-label">Quarry</span>
+        <span class="stack" id="quarryHand"></span>
+        <span class="plate-label" id="quarryCount">6 held</span>
+      </div>
+    </div>
+
+    <div class="zone zone-piles">
+      <div class="plate">
+        <span class="plate-label">Draw</span>
+        <span class="pile" id="drawPile"><span class="card"><span class="card-face"></span><span class="card-back"></span></span><span class="card"><span class="card-face"></span><span class="card-back"></span></span><span class="card" data-face="down"><span class="card-face"></span><span class="card-back"></span></span></span>
+        <span class="plate-label" id="drawCount">20 in the pile</span>
+      </div>
+
+      <div class="plate">
+        <span class="plate-label">Decree</span>
+        <span class="card bells" id="decree" data-face="up"><span class="card-face">9</span><span class="card-back"></span></span>
+        <span class="plate-label">Bells is trump</span>
+      </div>
+
+      <div class="plate" style="flex: 1">
+        <span class="plate-label">The trick</span>
+        <span class="well" id="trickWell"></span>
+      </div>
+
+      <div class="plate">
+        <span class="plate-label">Spent</span>
+        <span class="pile" id="spentPile"><span class="card"><span class="card-face"></span><span class="card-back"></span></span><span class="card"><span class="card-face"></span><span class="card-back"></span></span><span class="card" data-face="down"><span class="card-face"></span><span class="card-back"></span></span></span>
+        <span class="plate-label" id="spentCount">7 spent</span>
+      </div>
+    </div>
+
+    <div class="zone">
+      <div class="plate">
+        <span class="hand" id="playerHand"></span>
+        <span class="plate-label">Your hand</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<aside class="rail">
+  <h2>Tuning rail</h2>
+
+  <section>
+    <h3>Run a movement</h3>
+    <div class="moves">
+      <button type="button" data-move="play"><span class="m">M1</span><br>You play a card</button>
+      <button type="button" data-move="quarry"><span class="m">M2</span><br>Quarry plays</button>
+      <button type="button" data-move="close" class="wide"><span class="m">M3+M4</span><br>Trick closes &mdash; both cards spent, and your refill draws. Two directions, one beat.</button>
+      <button type="button" data-move="deal" class="wide"><span class="m">M5+M6+M7</span><br>Deal a hand &mdash; six to you, six to them, then the decree</button>
+      <button type="button" data-move="reshuffle"><span class="m">M8</span><br>Reshuffle</button>
+      <button type="button" data-move="closeHand"><span class="m">M14</span><br>Hand ends</button>
+      <button type="button" data-move="swap" class="wide"><span class="m">M9+M10</span><br>Discard and swap &mdash; two out to the draw pile's bottom, two back</button>
+      <button type="button" data-move="fox"><span class="m">M11</span><br>Fox exchange</button>
+      <button type="button" data-move="woodcutter"><span class="m">M12+M13</span><br>Woodcutter</button>
+      <button type="button" data-move="reset" class="wide">Reset the table</button>
+    </div>
+  </section>
+
+  <section>
+    <h3>The numbers &mdash; all placeholders</h3>
+
+    <div class="knob">
+      <label for="k-flight">Flight <span class="m" style="font-family:var(--mono);font-size:.6rem;color:var(--wc-chalk-dim)">--wc-flight</span></label>
+      <output id="o-flight">380ms</output>
+      <input id="k-flight" type="range" min="80" max="1200" step="10" value="380">
+    </div>
+
+    <div class="knob">
+      <label for="k-stagger">Stagger <span style="font-family:var(--mono);font-size:.6rem;color:var(--wc-chalk-dim)">--wc-flight-stagger</span></label>
+      <output id="o-stagger">70ms</output>
+      <input id="k-stagger" type="range" min="0" max="300" step="5" value="70">
+      <small>AC5's single tunable. Six cards at 70ms costs 350ms of stagger on top of the flight &mdash; every hand.</small>
+    </div>
+
+    <div class="knob">
+      <label for="k-flip">Flip at <span style="font-family:var(--mono);font-size:.6rem;color:var(--wc-chalk-dim)">--wc-flip-at</span></label>
+      <output id="o-flip">0.50</output>
+      <input id="k-flip" type="range" min="0" max="1" step="0.05" value="0.5">
+      <small>AC6, and yours to decide: 0.5 turns the card in mid-air, 1.0 turns it as it lands. Try the Quarry's play at each.</small>
+    </div>
+
+    <div class="knob">
+      <label for="k-lift">Arc lift <span style="font-family:var(--mono);font-size:.6rem;color:var(--wc-chalk-dim)">--wc-flight-lift</span></label>
+      <output id="o-lift">34px</output>
+      <input id="k-lift" type="range" min="0" max="120" step="2" value="34">
+    </div>
+
+    <div class="knob">
+      <label for="k-tilt">Tilt <span style="font-family:var(--mono);font-size:.6rem;color:var(--wc-chalk-dim)">--wc-flight-tilt</span></label>
+      <output id="o-tilt">4deg</output>
+      <input id="k-tilt" type="range" min="0" max="20" step="1" value="4">
+    </div>
+
+    <div class="toggle">
+      <input id="k-reduced" type="checkbox">
+      <label for="k-reduced">Force reduced motion (AC8)</label>
+    </div>
+    <p class="note">Reduced motion is a different path, not a shorter one: nothing is cloned, nothing is staggered, and the end state is reached before the next paint. Every button above must still leave the table correct.</p>
+  </section>
+
+  <section>
+    <h3>What landed</h3>
+    <div class="log" id="log" role="status" aria-live="polite"></div>
+    <p class="note">Each landing is reached by whichever of <b>onfinish</b>, the timer, or <b>visibilitychange</b> arrives first. Switch tabs mid-flight &mdash; the cards still land.</p>
+  </section>
+</aside>
+
+<script>
+  /* =====================================================================
+     The primitive, in miniature. This is a sketch of `useCardMotion`, not
+     the real hook: same three landing paths, same stagger, same flip, same
+     reduced-motion short circuit — so the PACING is honest even though the
+     state model is fake.
+     ===================================================================== */
+
+  const SUITS = ['bells', 'keys', 'moons'];
+  const RANKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+  const els = {
+    playerHand: document.getElementById('playerHand'),
+    quarryHand: document.getElementById('quarryHand'),
+    trickWell: document.getElementById('trickWell'),
+    drawPile: document.getElementById('drawPile'),
+    spentPile: document.getElementById('spentPile'),
+    decree: document.getElementById('decree'),
+    log: document.getElementById('log'),
+  };
+
+  let seq = 0;
+  function rnd(a) { return a[Math.floor(Math.random() * a.length)]; }
+
+  function makeCard(face) {
+    const c = document.createElement('span');
+    c.className = 'card ' + rnd(SUITS);
+    c.dataset.face = face;
+    c.innerHTML = '<span class="card-face">' + rnd(RANKS) + '</span><span class="card-back"></span>';
+    return c;
+  }
+
+  function log(text) {
+    const line = document.createElement('div');
+    line.innerHTML = text;
+    els.log.prepend(line);
+    while (els.log.childElementCount > 40) els.log.lastElementChild.remove();
+  }
+
+  /* ---- the tokens, read live off :root exactly as cardMotionConfig.ts will ---- */
+  function token(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  function ms(name, fallback) { const n = parseFloat(token(name)); return Number.isFinite(n) && n >= 0 ? n : fallback; }
+  function px(name) { const n = parseFloat(token(name)); return Number.isFinite(n) ? n : 0; }
+
+  function reducedMotion() {
+    return document.getElementById('k-reduced').checked ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  /**
+   * move(requests, onAllLanded)
+   * Each request: { el, to, hide, flip }
+   *   el    — the real element that is moving (or a stand-in for a pile)
+   *   to    — the element whose box it is travelling to
+   *   hide  — 'from' (a departure) or 'to' (an arrival): which real element holds
+   *           its space but loses its paint for the flight (AC7)
+   *   flip  — whether the card turns over on the way (AC6)
+   * Calls onAllLanded exactly once, when the last request has landed.
+   */
+  function move(requests, onAllLanded) {
+    if (requests.length === 0) { onAllLanded && onAllLanded(); return; }
+
+    // AC8 — a different path, not a shorter duration. No clone, no stagger.
+    if (reducedMotion()) {
+      requests.forEach(r => { r.el.classList.remove('is-hidden'); if (r.flip) r.el.dataset.face = r.faceEnd; });
+      log('<b>reduced motion</b> — ' + requests.length + ' movement' + (requests.length === 1 ? '' : 's') + ' resolved instantly');
+      onAllLanded && onAllLanded();
+      return;
+    }
+
+    const duration = ms('--wc-flight', 380) || 380;
+    const stagger = ms('--wc-flight-stagger', 70);
+    const lift = px('--wc-flight-lift');
+    const tilt = px('--wc-flight-tilt');
+    const flipAt = Math.min(1, Math.max(0, parseFloat(token('--wc-flip-at')) || 0));
+    const easing = token('--wc-flight-ease') || 'ease';
+
+    let remaining = requests.length;
+    const id = ++seq;
+    const started = performance.now();
+
+    requests.forEach((r, i) => {
+      const delay = i * stagger;
+      window.setTimeout(() => flyOne(r, duration, lift, tilt, flipAt, easing, () => {
+        remaining -= 1;
+        if (remaining === 0) {
+          log('<b>#' + id + '</b> ' + requests.length + ' landed in ' + Math.round(performance.now() - started) + 'ms');
+          onAllLanded && onAllLanded();
+        }
+      }), delay);
+    });
+  }
+
+  function flyOne(r, duration, lift, tilt, flipAt, easing, done) {
+    const startBox = r.from.getBoundingClientRect();
+    const endBox = r.to.getBoundingClientRect();
+    if (startBox.width === 0 || endBox.width === 0 || typeof r.el.animate !== 'function') {
+      // No box to fly between — land instantly rather than stranding the movement.
+      r.el.classList.remove('is-hidden');
+      if (r.flip) r.el.dataset.face = r.faceEnd;
+      done();
+      return;
+    }
+
+    const wrap = document.createElement('div');
+    wrap.className = 'flyer';
+    wrap.style.cssText =
+      'left:' + startBox.left + 'px;top:' + startBox.top + 'px;' +
+      'width:' + startBox.width + 'px;height:' + startBox.height + 'px;';
+    const clone = r.el.cloneNode(true);
+    clone.classList.remove('is-hidden');
+    clone.style.cssText = 'width:100%;height:100%;';
+    clone.dataset.face = r.faceStart;
+    wrap.appendChild(clone);
+    document.body.appendChild(wrap);
+    r.el.classList.add('is-hidden');
+
+    const dx = endBox.left + endBox.width / 2 - (startBox.left + startBox.width / 2);
+    const dy = endBox.top + endBox.height / 2 - (startBox.top + startBox.height / 2);
+    const scale = startBox.width > 0 ? endBox.width / startBox.width : 1;
+
+    const travel = wrap.animate([
+      { transform: 'translate(0,0) scale(1) rotate(0deg)' },
+      { transform: 'translate(' + dx * 0.45 + 'px,' + (dy * 0.35 - lift) + 'px) scale(' + (1 + (scale - 1) * 0.3) + ') rotate(' + -tilt + 'deg)', offset: 0.45 },
+      { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + scale + ') rotate(0deg)' },
+    ], { duration: duration, easing: easing, fill: 'forwards' });
+
+    // AC6 — the flip rides the flight, landing at --wc-flip-at of the way across.
+    if (r.flip) {
+      const a = r.faceStart === 'down' ? 180 : 0;
+      const b = r.faceStart === 'down' ? 0 : 180;
+      const at = Math.min(0.999, Math.max(0.001, flipAt));
+      clone.animate([
+        { transform: 'rotateY(' + a + 'deg)' },
+        { transform: 'rotateY(' + a + 'deg)', offset: Math.max(0.001, at - 0.35) },
+        { transform: 'rotateY(' + b + 'deg)', offset: at },
+        { transform: 'rotateY(' + b + 'deg)' },
+      ], { duration: duration, easing: 'ease-in-out', fill: 'forwards' });
+    }
+
+    let landed = false;
+    function land() {
+      if (landed) return;
+      landed = true;
+      document.removeEventListener('visibilitychange', onVis);
+      window.clearTimeout(timer);
+      try { travel.cancel(); } catch (e) { /* already finished */ }
+      wrap.remove();
+      r.el.classList.remove('is-hidden');
+      if (r.flip) r.el.dataset.face = r.faceEnd;
+      done();
+    }
+    function onVis() { if (document.visibilityState === 'visible') land(); }
+
+    travel.onfinish = land;
+    const timer = window.setTimeout(land, duration);
+    document.addEventListener('visibilitychange', onVis);
+  }
+
+  /* =====================================================================
+     The movements. Each one commits the fake state, then flies.
+     ===================================================================== */
+
+  function busy(on) {
+    document.querySelectorAll('.moves button').forEach(b => { b.disabled = on; });
+  }
+
+  /** An arrival: append the card already hidden, fly it in from `from`, reveal on landing. */
+  function arrive(card, parent, from, faceStart, faceEnd) {
+    card.dataset.face = faceEnd;
+    card.classList.add('is-hidden');
+    parent.appendChild(card);
+    return { el: card, from: from, to: card, hide: 'to', flip: faceStart !== faceEnd, faceStart: faceStart, faceEnd: faceEnd };
+  }
+
+  /** A departure: the card stays in the layout, hidden, and its slot closes after landing. */
+  function depart(card, to, faceStart, faceEnd) {
+    return { el: card, from: card, to: to, hide: 'from', flip: faceStart !== faceEnd, faceStart: faceStart, faceEnd: faceEnd, remove: true };
+  }
+
+  function sweep(reqs, after) {
+    busy(true);
+    move(reqs, () => {
+      reqs.forEach(r => { if (r.remove) r.el.remove(); });
+      after && after();
+      busy(false);
+      counts();
+    });
+  }
+
+  const state = { draw: 20, spent: 7 };
+  function counts() {
+    document.getElementById('drawCount').textContent = state.draw + ' in the pile';
+    document.getElementById('spentCount').textContent = state.spent + ' spent';
+    document.getElementById('quarryCount').textContent = els.quarryHand.childElementCount + ' held';
+  }
+
+  const moves = {
+    play() {
+      const card = els.playerHand.lastElementChild;
+      if (!card) { log('nothing left in hand — deal first'); return; }
+      const held = card.cloneNode(true);
+      sweep([depart(card, els.trickWell, 'up', 'up')], () => {
+        held.dataset.face = 'up';
+        els.trickWell.appendChild(held);
+      });
+    },
+
+    quarry() {
+      const back = els.quarryHand.lastElementChild;
+      if (!back) { log('the Quarry has no cards — deal first'); return; }
+      const shown = makeCard('up');
+      sweep([depart(back, els.trickWell, 'down', 'up')], () => els.trickWell.appendChild(shown));
+    },
+
+    /* M3 and M4 in one commit: two cards out to the spent pile, one refill in — opposite
+       directions, one beat. This is the pair the ticket's seed list treats as one row. */
+    close() {
+      const played = Array.from(els.trickWell.children);
+      if (played.length === 0) { log('no trick on the table'); return; }
+      const reqs = played.map(c => depart(c, els.spentPile, 'up', 'down'));
+      const refill = makeCard('up');
+      reqs.push(arrive(refill, els.playerHand, els.drawPile, 'down', 'up'));
+      state.spent += played.length;
+      state.draw -= 1;
+      sweep(reqs);
+    },
+
+    deal() {
+      els.playerHand.innerHTML = '';
+      els.quarryHand.innerHTML = '';
+      els.trickWell.innerHTML = '';
+      const reqs = [];
+      for (let i = 0; i < 6; i += 1) reqs.push(arrive(makeCard('up'), els.playerHand, els.drawPile, 'down', 'up'));
+      for (let i = 0; i < 6; i += 1) reqs.push(arrive(makeCard('down'), els.quarryHand, els.drawPile, 'down', 'down'));
+      const decree = els.decree;
+      decree.dataset.face = 'down';
+      reqs.push({ el: decree, from: els.drawPile, to: decree, hide: 'to', flip: true, faceStart: 'down', faceEnd: 'up' });
+      decree.classList.add('is-hidden');
+      state.draw = 20;
+      state.spent = 0;
+      sweep(reqs);
+    },
+
+    /* AC5 / the inventory's rule: a pile moves AS A PILE. One flight, not 26. */
+    reshuffle() {
+      const rep = makeCard('down');
+      rep.style.position = 'absolute';
+      rep.style.inset = '0';
+      const req = arrive(rep, els.drawPile, els.spentPile, 'down', 'down');
+      req.remove = true;
+      state.draw += state.spent;
+      state.spent = 0;
+      sweep([req], () => log('the spent pile folded back in — <b>one</b> flight, not 26'));
+    },
+
+    closeHand() {
+      const leaving = Array.from(els.playerHand.children)
+        .concat(Array.from(els.quarryHand.children))
+        .concat(Array.from(els.trickWell.children));
+      if (leaving.length === 0) { log('nothing to spend — deal first'); return; }
+      // Above the collapse threshold, the group flies as one representative card.
+      const rep = leaving[0];
+      state.spent += leaving.length;
+      sweep([depart(rep, els.spentPile, rep.dataset.face, 'down')], () => {
+        leaving.forEach(c => c.remove());
+        log('the hand ended — <b>' + leaving.length + '</b> cards, <b>one</b> sweep');
+      });
+    },
+
+    /* M9 out to the BOTTOM OF THE DRAW PILE — there is no discard pile — and M10 back in. */
+    swap() {
+      const out = Array.from(els.playerHand.children).slice(0, 2);
+      if (out.length === 0) { log('nothing to discard — deal first'); return; }
+      const reqs = out.map(c => depart(c, els.drawPile, 'up', 'down'));
+      out.forEach(() => reqs.push(arrive(makeCard('up'), els.playerHand, els.drawPile, 'down', 'up')));
+      sweep(reqs, () => log('discards went to the <b>bottom of the draw pile</b> — there is no discard pile'));
+    },
+
+    fox() {
+      const card = els.playerHand.firstElementChild;
+      if (!card) { log('nothing in hand — deal first'); return; }
+      const oldDecree = els.decree.cloneNode(true);
+      const newDecree = card.cloneNode(true);
+      const reqs = [
+        depart(card, els.decree, 'up', 'up'),
+        { el: els.decree, from: els.decree, to: els.playerHand, hide: 'from', flip: false, faceStart: 'up', faceEnd: 'up' },
+      ];
+      sweep(reqs, () => {
+        els.decree.className = newDecree.className;
+        els.decree.id = 'decree';
+        els.decree.innerHTML = newDecree.innerHTML;
+        els.decree.dataset.face = 'up';
+        oldDecree.removeAttribute('id');
+        oldDecree.dataset.face = 'up';
+        els.playerHand.appendChild(oldDecree);
+        log('the Fox swapped a hand card with the decree — a crossing <b>pair</b>');
+      });
+    },
+
+    woodcutter() {
+      const give = els.playerHand.firstElementChild;
+      if (!give) { log('nothing in hand — deal first'); return; }
+      const drawn = makeCard('up');
+      sweep([
+        arrive(drawn, els.playerHand, els.drawPile, 'down', 'up'),
+        depart(give, els.drawPile, 'up', 'down'),
+      ], () => log('drawn from the top, and a card returned to the <b>bottom</b>'));
+    },
+
+    reset() {
+      els.trickWell.innerHTML = '';
+      moves.deal();
+    },
+  };
+
+  document.querySelectorAll('.moves button').forEach(b => {
+    b.addEventListener('click', () => moves[b.dataset.move]());
+  });
+
+  /* ---- the rail writes straight onto :root, which is the single place AC10 asks for ---- */
+  const knobs = [
+    ['k-flight', 'o-flight', '--wc-flight', v => v + 'ms'],
+    ['k-stagger', 'o-stagger', '--wc-flight-stagger', v => v + 'ms'],
+    ['k-flip', 'o-flip', '--wc-flip-at', v => Number(v).toFixed(2)],
+    ['k-lift', 'o-lift', '--wc-flight-lift', v => v + 'px'],
+    ['k-tilt', 'o-tilt', '--wc-flight-tilt', v => v + 'deg'],
+  ];
+  knobs.forEach(([inputId, outId, prop, fmt]) => {
+    const input = document.getElementById(inputId);
+    const out = document.getElementById(outId);
+    function sync() {
+      const text = fmt(input.value);
+      out.textContent = text;
+      document.documentElement.style.setProperty(prop, text);
+    }
+    input.addEventListener('input', sync);
+    sync();
+  });
+
+  moves.deal();
+</script>

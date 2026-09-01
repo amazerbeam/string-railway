@@ -2,6 +2,7 @@ import {
   flaskHealAmount,
   SHOP_ITEMS,
   ShopItem,
+  type Buff,
   type Coins,
   type FlaskRefusal,
   type Health,
@@ -9,10 +10,8 @@ import {
 } from '../../hunt'
 import {
   flaskAccessibleName,
-  flaskBlurbText,
   flaskChargesText,
   FLASK_REFUSAL_MESSAGE,
-  nextOpponentText,
   priceText,
   PURCHASE_REFUSAL_MESSAGE,
   SHOP_COINS_LABEL,
@@ -20,15 +19,13 @@ import {
   SHOP_FLASK_LABEL,
   SHOP_FLASK_NO_COIN,
   SHOP_HEALTH_LABEL,
-  SHOP_ITEM_BLURB,
   SHOP_ITEM_NAME,
-  SHOP_NOTHING_TO_BUY_HINT,
   SHOP_PURSE_GROUP_LABEL,
-  SHOP_TITLE,
   shopItemAccessibleName,
 } from './shopLabels'
 import { fightLabel, NEXT_FIGHT_LABEL } from './runLabels'
 import SlotMachinePanel, { type SlotMachinePanelProps } from './SlotMachinePanel'
+import ShopHeld from './ShopHeld'
 import { FlaskMark, FlaskSymbolSheet } from './FlaskMark'
 import { HeartMark, HeartSymbolSheet } from '../warCouncil/HeartMark'
 import { HeartState } from '../warCouncil/duelHealthBars'
@@ -42,20 +39,22 @@ interface ShopPanelProps {
   readonly coins: Coins
   readonly playerHealth: Health
   readonly maxPlayerHealth: Health
-  /** One entry per point of maximum health, derived by the driver from the SAME
-   *  `duelHealthBars` the felt reads — never re-derived here, so the shop's row and the fight's
-   *  row cannot disagree. Between fights nothing is pending, so every entry is whole or broken. */
+  /** One entry per point of maximum health, derived by the driver from the SAME `duelHealthBars`
+   *  the felt reads — never re-derived here, so the shop's row and the fight's row cannot disagree.
+   *  Between fights nothing is pending, so every entry is whole or broken. */
   readonly playerHearts: readonly HeartState[]
-  /** DLR-93 AC1 — charges held, so the refusal at zero has a visible cause without hover. A count
-   *  with no denominator, exactly as before: the epic defers raising the ceiling. */
+  /** DLR-93 AC1 — charges held, so the refusal at zero has a visible cause without hover. */
   readonly flaskCharges: number
-  /** Derived by the driver from `flaskRefusalFor` — never re-derived here, exactly as `refusals`.
-   *  `null` means the flask can be drunk. */
+  /** Derived by the driver from `flaskRefusalFor` — never re-derived here. `null` means the flask
+   *  can be drunk. */
   readonly flaskRefusal: FlaskRefusal | null
   readonly onDrinkFlask: () => void
-  /** AC10 — the coming opponent's display name, `undefined` while the roster has no entry.
-   *  Also names the leave control (AC8, DLR-85): `Fight <name>` when known, `NEXT_FIGHT_LABEL`
-   *  otherwise. */
+  /** 2026-09-01 — the cards the player is carrying, straight off `RunState.buffs`. The shop had no
+   *  way to say what was held, which the developer named as the screen's worst gap: coins and
+   *  health were visible and the actual holdings were not. `ShopHeld` owns the grouping. */
+  readonly heldBuffs: readonly Buff[]
+  /** AC10 — the coming opponent's display name, `undefined` while the roster has no entry. Also
+   *  names the leave control (AC8, DLR-85). */
   readonly nextOpponentName: string | undefined
   /** AC10 — the run's position, ALREADY WORDED by `runProgressText`. */
   readonly progressText: string
@@ -65,24 +64,32 @@ interface ShopPanelProps {
   readonly refusals: Readonly<Record<ShopItem, PurchaseRefusal | null>>
   readonly onBuy: (item: ShopItem) => void
   readonly onLeave: () => void
-  /** DLR-116 AC1 — the slot machine section, passed straight through from `useShopSlot`'s view
-   *  plus the driver's own callbacks. `ShopPanel` computes nothing about it. */
+  /** DLR-116 AC1 — the slot machine, passed straight through from `useShopSlot`'s view plus the
+   *  driver's own callbacks. `ShopPanel` computes nothing about it. */
   readonly slot: SlotMachinePanelProps
 }
 
 /**
- * The shop screen (DLR-84, ladder rebuilt on DLR-89, pared down and given a slot machine on
- * DLR-116): a full-viewport surface reached from the run verdict, offering exactly Health and the
- * two rank-tier steps as fixed purchases, a slot machine to pull, and a free flask to drink.
- * DLR-145 AC3 — the action-point purchase left the shelf along with the rest of action points;
- * `SHOP_ITEMS` is the one place that changed, per its own docblock.
+ * The shop screen, rebuilt 2026-09-01 from this contract's `mockup.html` after the developer's
+ * verdict on the previous pass: *"it feels like a huge amount of info and I can't tell what I have
+ * in my inventory"*, plus a rejection of the overall style. Three zones replace ten stacked blocks:
  *
- * Computes NOTHING — a `RunOutcomePanel` clone in discipline. Every figure, every refusal, and
- * the opponent's name arrive as props; this component maps `SHOP_ITEMS` in one flat list and
- * fires the callbacks it is given. Layout follows this contract's `plan.md` and `mockup.html`.
+ * 1. **A status strip**, anchored to the top edge — coins, health and the coming fight in one row.
+ *    The screen title, the "next up" sentence, the purse panel and the health meter were four
+ *    separate blocks saying what now fits on one line. `game-ux`: status lives at the edges so it
+ *    never crowds the thing that matters.
+ * 2. **The machine**, centre stage and large, because it is the only thing on this screen the
+ *    player is actually here to operate.
+ * 3. **A tray** — what you hold, then what a coin buys, then the way out.
  *
- * The four-rung category tablist (`ShopCategoryTabs`) is gone on this ticket — two fixed items
- * need no ladder (AC2/AC3). `Escape` still leaves for the next fight.
+ * What left the screen, and why it is a deletion rather than a hiding: the Swan and Witch rank
+ * upgrades came off `SHOP_ITEMS` (developer decision — their rules are unsettled, and each printed
+ * a forty-word blurb that was most of the wall of text), and Strongbox came off `SLOT_MACHINE_IDS`
+ * because its odds were within a point of Skirmisher's on every family. Both are one row away from
+ * coming back; neither mechanic is deleted.
+ *
+ * Computes NOTHING — a `RunOutcomePanel` clone in discipline. Every figure, every refusal and the
+ * opponent's name arrive as props. `Escape` still leaves for the next fight.
  */
 export default function ShopPanel({
   coins,
@@ -92,6 +99,7 @@ export default function ShopPanel({
   flaskCharges,
   flaskRefusal,
   onDrinkFlask,
+  heldBuffs,
   nextOpponentName,
   progressText,
   refusals,
@@ -99,30 +107,26 @@ export default function ShopPanel({
   onLeave,
   slot,
 }: ShopPanelProps) {
-  // One row per item — a plain list rather than a card grid (developer correction, mid-fix on
-  // DLR-89): the name and blurb read left-to-right on the row's face, with the price pinned
-  // to its far end, per `shopItems.css`'s `.shop-list-item`.
+  // One tile per purchasable, carrying a name and a price and nothing else. The blurb is gone: on
+  // a one-item shelf the name IS the description, and the paragraph it replaced was a third of the
+  // screen's text.
   function renderItem(item: ShopItem) {
     const refusal = refusals[item]
     return (
-      <div key={item}>
+      <div key={item} className="shop-buy-slot">
         <button
           type="button"
-          className="shop-list-item"
+          className="shop-buy"
           disabled={refusal !== null}
           onClick={() => onBuy(item)}
           aria-label={shopItemAccessibleName(item, refusal)}
         >
-          <span className="shop-list-item-main">
-            <span className="shop-item-name">{SHOP_ITEM_NAME[item]}</span>
-            {' — '}
-            <span className="shop-item-blurb">{SHOP_ITEM_BLURB[item]}</span>
-          </span>
-          <span className="shop-item-price">{priceText(item)}</span>
+          <span className="shop-buy-name">{SHOP_ITEM_NAME[item]}</span>
+          <span className="shop-buy-price">{priceText(item)}</span>
         </button>
-        {/* A reason renders only when there IS one — `game-ux`: never a panel that exists to say
-            nothing is wrong. Reserving an empty line per row was also most of the vertical budget
-            this screen was overrunning. */}
+        {/* A reason renders only when there IS one — `game-ux` forbids a panel that exists to say
+            nothing is wrong, and five reserved-but-empty lines were a large part of why the old
+            screen overran its own height. */}
         {refusal !== null && (
           <p className="shop-refusal" role="status">
             {PURCHASE_REFUSAL_MESSAGE[refusal]}
@@ -133,37 +137,31 @@ export default function ShopPanel({
   }
 
   return (
-    <div className="run-shell">
-      <div
-        className="shop"
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') onLeave()
-        }}
-      >
-        <HeartSymbolSheet />
-        <FlaskSymbolSheet />
-        <h1 className="shop-title">{SHOP_TITLE}</h1>
-        <p className="shop-next">{nextOpponentText(nextOpponentName, progressText)}</p>
+    <div
+      className="shop-shell"
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onLeave()
+      }}
+    >
+      <HeartSymbolSheet />
+      <FlaskSymbolSheet />
 
-        <div className="shop-purse" role="group" aria-label={SHOP_PURSE_GROUP_LABEL}>
-          <span className="shop-purse-cell">
-            <span className="shop-purse-label">{SHOP_COINS_LABEL}</span>
-            <span className="shop-purse-value">{coins}</span>
-          </span>
-        </div>
+      <header className="shop-status" role="group" aria-label={SHOP_PURSE_GROUP_LABEL}>
+        <span className="shop-stat">
+          <span className="shop-stat-value is-coins">{coins}</span>
+          <span className="shop-stat-label">{SHOP_COINS_LABEL}</span>
+        </span>
 
-        {/* The health readout is a row of its own rather than a purse cell: it is what a heal is
-            bought against, so it gets the width to be counted at a glance. The numeric stays —
-            it carries the `meter`'s accessible reading, and the hearts are decoration over it. */}
-        <div
-          className="shop-health"
+        {/* The numeric stays alongside the hearts: it carries the `meter`'s accessible reading, and
+            the hearts are the at-a-glance count over it. */}
+        <span
+          className="shop-stat"
           role="meter"
           aria-valuenow={playerHealth}
           aria-valuemin={0}
           aria-valuemax={maxPlayerHealth}
           aria-label={`${SHOP_HEALTH_LABEL} ${playerHealth} of ${maxPlayerHealth}`}
         >
-          <span className="shop-purse-label">{SHOP_HEALTH_LABEL}</span>
           <span className="shop-hearts" aria-hidden="true">
             {playerHearts.map((state, index) => (
               <span key={index} className="shop-heart" data-state={state}>
@@ -171,71 +169,69 @@ export default function ShopPanel({
               </span>
             ))}
           </span>
-          <span className="shop-purse-value">
+          {/* The numeral stays beside the hearts. At ten points of maximum health the row is a
+              thing to COUNT, and `game-ux` warns against making the player do that — the hearts
+              give the shape at a glance, the fraction gives the exact figure without counting. */}
+          <span className="shop-stat-value is-health">
             {playerHealth} / {maxPlayerHealth}
           </span>
-        </div>
+          <span className="shop-stat-label">{SHOP_HEALTH_LABEL}</span>
+        </span>
 
-        {/* The machine on the left, the coin purchases on the right — one grid rather than one
-            tall column, which is what keeps this screen inside `.run-shell`'s non-scrolling box.
-            See `shop.css`'s `.shop-columns` for why the height fix is a width fix. */}
-        <div className="shop-columns">
-          <div className="shop-column">
-            <SlotMachinePanel {...slot} />
-          </div>
+        <span className="shop-next">
+          <b>{nextOpponentName ?? NEXT_FIGHT_LABEL}</b>
+          {progressText}
+        </span>
+      </header>
 
-          <div className="shop-column">
-            {/* AC2/AC3 — the pared purchasable list: Health and the two rank-tier steps, no
-                tablist, no tabpanel, no "Also for sale" heading. DLR-145 AC3 took the AP-capacity
-                row off. */}
-            <div className="shop-list">{SHOP_ITEMS.map(renderItem)}</div>
+      <main className="shop-stage">
+        <SlotMachinePanel {...slot} />
+      </main>
 
-            {/* AC6 (DLR-93) — the flask keeps its OWN accessible group so it still reads as apart
-                from the priced items to a screen reader, even sitting in the same flow. */}
-            <div role="group" aria-label={SHOP_FLASK_GROUP_LABEL}>
-              <button
-                type="button"
-                className="shop-list-item is-flask"
-                disabled={flaskRefusal !== null}
-                onClick={onDrinkFlask}
-                aria-label={flaskAccessibleName(
-                  flaskCharges,
-                  flaskHealAmount(maxPlayerHealth),
-                  flaskRefusal,
-                )}
-              >
-                <span className="shop-flask-icon" aria-hidden="true">
-                  <FlaskMark />
-                </span>
-                <span className="shop-list-item-main">
-                  <span className="shop-item-name">{SHOP_FLASK_LABEL}</span>
-                  {' — '}
-                  <span className="shop-item-blurb">
-                    {flaskBlurbText(flaskHealAmount(maxPlayerHealth))}
-                  </span>
-                </span>
-                <span className="shop-flask-tag">
-                  <span className="shop-flask-free">{SHOP_FLASK_NO_COIN}</span>
-                  <span className="shop-flask-charges">{flaskChargesText(flaskCharges)}</span>
-                </span>
-              </button>
-              {flaskRefusal !== null && (
-                <p className="shop-refusal" role="status">
-                  {FLASK_REFUSAL_MESSAGE[flaskRefusal]}
-                </p>
+      <footer className="shop-tray">
+        <ShopHeld buffs={heldBuffs} />
+
+        <div className="shop-buys">
+          {SHOP_ITEMS.map(renderItem)}
+
+          {/* AC6 (DLR-93) — the flask keeps its OWN accessible group so it still reads as apart
+              from the priced items to a screen reader, even sitting in the same row. */}
+          <div className="shop-buy-slot" role="group" aria-label={SHOP_FLASK_GROUP_LABEL}>
+            <button
+              type="button"
+              className="shop-buy is-flask"
+              disabled={flaskRefusal !== null}
+              onClick={onDrinkFlask}
+              aria-label={flaskAccessibleName(
+                flaskCharges,
+                flaskHealAmount(maxPlayerHealth),
+                flaskRefusal,
               )}
-            </div>
+            >
+              <span className="shop-buy-icon" aria-hidden="true">
+                <FlaskMark />
+              </span>
+              <span className="shop-buy-name">{SHOP_FLASK_LABEL}</span>
+              {/* Two spans, not one interpolated string: the charge count has to be findable as
+                  its own text, so "0 charges" reads as a fact on the face of the screen rather
+                  than as a fragment of "No coin · 0 charges". */}
+              <span className="shop-buy-price">
+                <span className="shop-buy-free">{SHOP_FLASK_NO_COIN}</span>
+                <span className="shop-buy-charges">{flaskChargesText(flaskCharges)}</span>
+              </span>
+            </button>
+            {flaskRefusal !== null && (
+              <p className="shop-refusal" role="status">
+                {FLASK_REFUSAL_MESSAGE[flaskRefusal]}
+              </p>
+            )}
           </div>
-        </div>
 
-        <p className="shop-hint">{SHOP_NOTHING_TO_BUY_HINT}</p>
-
-        <div className="run-actions">
-          <button type="button" className="run-btn is-primary" onClick={onLeave}>
+          <button type="button" className="shop-leave" onClick={onLeave}>
             {nextOpponentName === undefined ? NEXT_FIGHT_LABEL : fightLabel(nextOpponentName)}
           </button>
         </div>
-      </div>
+      </footer>
     </div>
   )
 }

@@ -32,11 +32,16 @@ export const SLOT_MACHINE_NAME: Readonly<Record<SlotMachineId, string>> = {
   [SlotMachineId.Strongbox]: 'Strongbox',
 }
 
-export const SLOT_STRIP_GROUP_LABEL = 'What is on this strip'
+export const SLOT_STRIP_GROUP_LABEL = 'On this strip'
 export const SLOT_RESULT_GROUP_LABEL = 'Your last pull'
 export const SLOT_PULL_LABEL = 'Pull'
 export const SLOT_FREE_TAG = 'Free'
-export const SLOT_NO_PULL_YET = 'No pull yet this visit.'
+/* `SLOT_NO_PULL_YET` was removed 2026-09-01. It stated "No pull yet this visit." in the result area
+   before the first pull, on the DLR-89 rule that an empty region should say it is empty. That rule
+   was REVERSED for this region: `game-ux` holds that a readout sitting in the same place every visit
+   saying nothing teaches a player to stop looking at it — and the region where their won cards
+   appear is the last one that should become invisible. The result area now renders nothing at all
+   until there is a result. */
 export const SLOT_SPINNING_LABEL = 'Spinning…'
 export const SLOT_ODDS_GROUP_LABEL = 'What this machine pays'
 

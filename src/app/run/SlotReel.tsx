@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import type { BuffTemplate } from '../../hunt'
 import { SuitMark } from '../warCouncil/SuitMark'
+import SlotGlyph from './SlotGlyph'
 import { slotSymbolFace, type SlotSymbolFace } from './slotSymbols'
 import { reelStopMs } from './slotSpinConfig'
 
@@ -21,58 +22,13 @@ interface SlotReelProps {
   readonly spinId: number
 }
 
+/** The suits come from `SuitMark`, the other three marks from `SlotGlyph` — the same two sources
+ *  the strip chips read, so a chip and a window can never disagree about what a symbol looks like. */
 function Glyph({ face }: { readonly face: SlotSymbolFace }) {
   if (face.glyph.kind === 'suit') {
     return <SuitMark suit={face.glyph.suit} className="shop-reel-glyph-mark" />
   }
-  if (face.glyph.kind === 'timebomb') {
-    // Drawn here rather than reusing `TimebombMark`: that component carries a fuse numeral and
-    // takes no `className`, and a reel symbol has no fuse to count down.
-    return (
-      <svg
-        className="shop-reel-glyph-mark"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="11" cy="15" r="6.4" />
-          <path d="M15.6 10.4 18 8" />
-          <path d="M18 8c1.6-1.6 3.2-.6 3 1.1" />
-          <path d="M8.2 12.4a4 4 0 0 1 2.4-1.6" opacity=".45" />
-        </g>
-      </svg>
-    )
-  }
-  // Sidestep and Cheat carry no suit and no bomb. Both get a drawn mark rather than a letter, so
-  // the window reads as a symbol at speed: Sidestep a pair of stepping chevrons, Cheat a palmed
-  // card fan. `aria-hidden` throughout — the strip list and the accessible names carry every word,
-  // exactly as `SuitMark` leaves naming to its call site.
-  if (face.glyph.kind === 'sidestep') {
-    return (
-      <svg
-        className="shop-reel-glyph-mark"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 6.5 9.5 12 4 17.5" />
-          <path d="M12.5 6.5 18 12l-5.5 5.5" opacity=".55" />
-          <path d="M20.5 6.5V17.5" opacity=".35" />
-        </g>
-      </svg>
-    )
-  }
-  return (
-    <svg className="shop-reel-glyph-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="7.5" y="4" width="10" height="14" rx="1.6" transform="rotate(-14 12.5 11)" />
-        <rect x="7.5" y="4" width="10" height="14" rx="1.6" opacity=".55" />
-        <path d="M4 20.5h16" opacity=".4" />
-      </g>
-    </svg>
-  )
+  return <SlotGlyph kind={face.glyph.kind} className="shop-reel-glyph-mark" />
 }
 
 function ReelSymbol({ face }: { readonly face: SlotSymbolFace }) {

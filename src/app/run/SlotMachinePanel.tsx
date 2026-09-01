@@ -12,7 +12,6 @@ import { buffLine } from '../warCouncil/buffLabels'
 import {
   SLOT_MACHINE_GROUP_LABEL,
   SLOT_MACHINE_NAME,
-  SLOT_NO_PULL_YET,
   SLOT_ODDS_GROUP_LABEL,
   SLOT_OUTCOME_LABEL,
   SLOT_PULL_LABEL,
@@ -26,9 +25,9 @@ import {
   slotPullAccessibleName,
   slotPullPriceText,
   slotStripSummaryText,
-  slotSymbolText,
 } from './slotLabels'
 import SlotReel from './SlotReel'
+import SlotStripChips from './SlotStripChips'
 import { SpinPhase, useSlotSpin } from './useSlotSpin'
 import './shopSlot.css'
 import './shopSlotCabinet.css'
@@ -139,9 +138,18 @@ export default function SlotMachinePanel({
     >
       <div className="shop-slot-body">
         <div className="shop-cabinet">
-          {/* The marquee: the machine chooser IS the sign, so choosing a machine and reading which
-              one you are at are the same object rather than two. */}
-          {machineIds.length > 0 && (
+          {/* The marquee. With one machine on the roster it is a NAMEPLATE — no radiogroup, no
+              roving tabindex, nothing to tab through; the chooser and its whole keyboard model go
+              away with the second machine. With two or more it becomes the chooser again, because
+              picking a machine and reading which one you are at should be the same object. The
+              branch is on `SLOT_MACHINE_IDS`, so restoring a machine restores the control. */}
+          {machineIds.length === 1 && (
+            <div className="shop-cabinet-marquee">
+              <span className="shop-cabinet-bulbs" aria-hidden="true" />
+              <span className="shop-cabinet-name is-plate">{SLOT_MACHINE_NAME[machineIds[0]]}</span>
+            </div>
+          )}
+          {machineIds.length > 1 && (
             <div
               className="shop-cabinet-marquee"
               role="radiogroup"
@@ -233,29 +241,45 @@ export default function SlotMachinePanel({
         </div>
 
         <div className="shop-slot-side">
-          <div className="shop-slot-strip-panel">
+          <div className="shop-slot-panel">
+            <h3 className="shop-slot-panel-head">{SLOT_STRIP_GROUP_LABEL}</h3>
+            {/* Face-up, always visible, never behind hover — it is what the pull decision needs.
+                Chips rather than sentences; the full wording rides on each chip. */}
+            <SlotStripChips reel={reel} />
             <p className="shop-slot-strip-summary">{slotStripSummaryText()}</p>
-            {/* Face-up, always visible, never behind hover — it is what the pull decision needs. */}
-            <ul className="shop-slot-strip" aria-label={SLOT_STRIP_GROUP_LABEL}>
-              {reel.map((template, index) => (
-                <li key={index} className="shop-slot-symbol">
-                  {slotSymbolText(template)}
+          </div>
+
+          {/* The odds, as three rows rather than one dense sentence — the shape a payout table
+              takes on a real cabinet, and readable at a glance. Every figure is still derived. */}
+          <div className="shop-slot-panel">
+            <h3 className="shop-slot-panel-head">{SLOT_ODDS_GROUP_LABEL}</h3>
+            <ul className="shop-slot-odds">
+              {slotOddsRows().map((row) => (
+                <li key={row.outcome} data-outcome={row.outcome}>
+                  <span className="shop-slot-odds-match">{row.match}</span>
+                  <span className="shop-slot-odds-pays">{row.pays}</span>
+                  <span className="shop-slot-odds-chance">{row.chance}</span>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* The odds, as three rows rather than one dense sentence — the shape a payout table
-              takes on a real cabinet, and readable at a glance. Every figure is still derived. */}
-          <ul className="shop-slot-odds" aria-label={SLOT_ODDS_GROUP_LABEL}>
-            {slotOddsRows().map((row) => (
-              <li key={row.outcome} data-outcome={row.outcome}>
-                <span className="shop-slot-odds-match">{row.match}</span>
-                <span className="shop-slot-odds-pays">{row.pays}</span>
-                <span className="shop-slot-odds-chance">{row.chance}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="shop-slot-result" role="group" aria-label={SLOT_RESULT_GROUP_LABEL}>
+            {showResult ? (
+              <>
+                <p className="shop-slot-outcome" data-outcome={lastPull.outcome}>
+                  {SLOT_OUTCOME_LABEL[lastPull.outcome]}
+                </p>
+                <ul className="shop-slot-awards">
+                  {lastPull.awards.map((award) => (
+                    <li key={award.id}>{buffLine(award)}</li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              spinning && <p className="shop-slot-no-pull">{SLOT_SPINNING_LABEL}</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -266,23 +290,6 @@ export default function SlotMachinePanel({
           {SLOT_REFUSAL_MESSAGE[pullRefusal]}
         </p>
       )}
-
-      <div className="shop-slot-result" role="group" aria-label={SLOT_RESULT_GROUP_LABEL}>
-        {showResult ? (
-          <>
-            <p className="shop-slot-outcome" data-outcome={lastPull.outcome}>
-              {SLOT_OUTCOME_LABEL[lastPull.outcome]}
-            </p>
-            <ul className="shop-slot-awards">
-              {lastPull.awards.map((award) => (
-                <li key={award.id}>{buffLine(award)}</li>
-              ))}
-            </ul>
-          </>
-        ) : (
-          <p className="shop-slot-no-pull">{spinning ? SLOT_SPINNING_LABEL : SLOT_NO_PULL_YET}</p>
-        )}
-      </div>
     </section>
   )
 }

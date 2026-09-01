@@ -11,7 +11,7 @@ import {
 } from '../../../hunt'
 import SlotMachinePanel, { type SlotPullView } from '../SlotMachinePanel'
 import { RESULT_REVEAL_MS, SPIN_TOTAL_MS, reelStopMs } from '../slotSpinConfig'
-import { SLOT_NO_PULL_YET, SLOT_OUTCOME_LABEL, SLOT_SPINNING_LABEL } from '../slotLabels'
+import { SLOT_OUTCOME_LABEL, SLOT_SPINNING_LABEL } from '../slotLabels'
 
 const reel = BUFF_TEMPLATES.slice(0, REEL_POOL_SIZE)
 
@@ -179,6 +179,7 @@ describe('the empty-strip guard', () => {
   it('renders still, dark windows and does not throw when the strip has not been drawn', () => {
     expect(() => render(<SlotMachinePanel {...baseProps} reel={[]} />)).not.toThrow()
     expect(document.querySelectorAll('.shop-reel[data-empty="true"]')).toHaveLength(REEL_COUNT)
-    expect(screen.getByText(SLOT_NO_PULL_YET)).toBeTruthy()
+    // And no strip chips either — `SlotStripChips` returns null rather than an empty frame.
+    expect(document.querySelector('.shop-strip-chips')).toBeNull()
   })
 })

@@ -130,6 +130,18 @@
         --reel-window-h: clamp(5.5rem, min(26vh, 15vw), 11rem);
         --reel-window-w: clamp(5.8rem, min(27vh, 16vw), 11.5rem);
       }
+      /* With Strongbox cut there is one machine, so the marquee is a lit NAMEPLATE rather than a
+         control: no pointer, no hit target, no tab stop. It keeps the lit treatment the selected
+         chooser button used to have, because the sign is still meant to look switched on. */
+      .mk-machine .shop-cabinet-name {
+        min-height: 0;
+        padding: 0.35rem clamp(1.2rem, 4vmin, 2.4rem);
+        border: none;
+        background: none;
+        cursor: default;
+        color: var(--wc-parchment);
+        text-shadow: 0 0 12px #e6b96699;
+      }
       .mk-machine .shop-slot {
         border: none;
         background: none;
@@ -457,14 +469,13 @@
         <div class="mk-machine">
           <section class="shop-slot" aria-label="The machines" id="slot">
             <div class="shop-cabinet">
-              <div class="shop-cabinet-marquee" role="radiogroup" aria-label="Choose a machine">
+              <!-- One machine, so the marquee is a NAMEPLATE, not a chooser: no radiogroup, no
+                   roving tabindex, nothing to tab through. Strongbox is cut (developer decision) —
+                   its odds were within a point of Skirmisher's on every family, so choosing
+                   between them was a decision with no consequence. -->
+              <div class="shop-cabinet-marquee">
                 <span class="shop-cabinet-bulbs" aria-hidden="true"></span>
-                <button class="shop-cabinet-name" role="radio" aria-checked="true" tabindex="0">
-                  Skirmisher
-                </button>
-                <button class="shop-cabinet-name" role="radio" aria-checked="false" tabindex="-1">
-                  Strongbox
-                </button>
+                <span class="shop-cabinet-name">Skirmisher</span>
               </div>
               <div class="shop-cabinet-neck" aria-hidden="true"><span></span><span></span></div>
               <div class="shop-cabinet-case">
@@ -729,9 +740,6 @@
       $('c-grey').addEventListener('change', (e) => {
         document.querySelector('.mk-shell').style.filter = e.target.checked ? 'grayscale(1)' : ''
       })
-      document.querySelectorAll('.shop-cabinet-name').forEach((b, _, all) =>
-        b.addEventListener('click', () => all.forEach((x) => x.setAttribute('aria-checked', String(x === b)))),
-      )
     </script>
   </body>
 </html>

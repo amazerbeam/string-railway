@@ -305,6 +305,7 @@ function App() {
         flaskCharges={run.flaskCharges}
         flaskRefusal={flaskRefusalFor(flaskStockFor(run))}
         onDrinkFlask={handleDrinkFlask}
+        heldBuffs={run.buffs}
         nextOpponentName={nextName}
         progressText={runProgressText(run.encounterIndex + 1, run.encounterCount)}
         refusals={shopRefusalsFor(stock)}

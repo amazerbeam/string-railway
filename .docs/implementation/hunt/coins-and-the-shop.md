@@ -94,6 +94,21 @@ tested **three times**, by DLR-90, DLR-91 and DLR-92, and held every time.
 
 > `SHOP_ITEMS` is **what the shop offers**. The `ShopItem` union is **everything the game prices.**
 
+> **`SHOP_ITEMS` is `[ShopItem.Heal]` alone as of 2026-09-01.** The list has now been
+> `[ApCapacity, Heal]` (DLR-116), `[SwanTier, WitchTier, Heal]` (DLR-122, after DLR-145 dropped
+> `ApCapacity`), and finally `[Heal]`. **`ShopItem.SwanTier` and `ShopItem.WitchTier` left the shelf
+> on a developer decision** — their rules are not settled, and each printed a forty-word blurb that
+> was a large part of why the shop screen read as a wall of text. On the same precedent as every cut
+> before them: both keep their `ShopItem` member, their `priceOf` row, their `categoryOf` rung and
+> their `refusalFor` handling, all still total over the union and still tested. Restoring either is
+> one row in this array.
+>
+> Two derived consequences worth stating, because both are easy to misread as breakage:
+> `SHOP_ITEMS_BY_CATEGORY` derives from this array, so with only the uncategorised `Heal` on the
+> shelf **every persistence-length rung is empty** — while `categoryOf` still answers correctly for
+> both tier items. `shop.test.ts` asserts that split directly, so "categorised" and "offered" cannot
+> silently collapse into each other. And `UNCATEGORISED_SHOP_ITEMS` is now the whole shelf.
+
 Cheat, Timebomb, Blast Guard and Whetstone left the list; **none of their mechanics left the
 codebase.** `priceOf`, `categoryOf`, `refusalFor` and `buyFromShop` all stay **total over the union**,
 so each is still priced, still buyable by a caller, and still covered by `shop.test.ts` — which now
@@ -241,8 +256,16 @@ game-permanent the moment its first item shipped.
 be opened now holds an item, so `isShopCategoryAvailable` and "is this shelf empty" no longer disagree about
 anything a player can reach — the one empty rung is also the refused one. The separation still matters for
 the next rung added, and `SHOP_CATEGORY_EMPTY` was **deleted outright by DLR-116** along with the tab widget that
-branched on it. The idea survives one screen over: `SLOT_NO_PULL_YET` states an empty slot result
-rather than leaving it blank, for exactly the reason the shelf sentence existed.
+branched on it.
+
+> **The idea itself was reversed on 2026-09-01, and `SLOT_NO_PULL_YET` went with it.** This paragraph
+> used to note that the slot section kept the shelf sentence's spirit — an empty result area saying
+> it was empty. `game-ux` holds the opposite for a region like that one: a readout standing in the
+> same place every visit reporting nothing teaches a player to stop looking at it, and the region
+> where a pull's won cards appear is the last one that should become invisible. The slot result now
+> renders **nothing at all** before the first pull. The idea survives one screen over instead, at
+> `SHOP_HELD_EMPTY` in `src/app/run/shopLabels.ts` — which says the tray is empty *and* names the
+> thing to do about it, which is the version of the rule worth keeping.
 
 Nothing about pricing, refusals or the purchase path changed — DLR-89 added a grouping and no rule.
 
@@ -409,12 +432,12 @@ laid that counter down for: re-issuing a spent card's id would collide as a Reac
 ticket `nextCheatId` never advanced past the opening grant, and its contract flagged that as
 possibly not worth its place — it is now load-bearing.
 
-**A Whetstone is a count on `RunState`, and `bankClimbBonusFor` is the one statement of what a copy buys.**
+**A Whetstone is a count on `RunState`, and `baseDamageBonusFor` is the one statement of what a copy buys.**
 
 ```ts
 readonly whetstones: number            // RunState — seeded 0 by startRun, +1 per purchase
 
-export function bankClimbBonusFor(run: RunState): number {
+export function baseDamageBonusFor(run: RunState): number {
   return run.whetstones
 }
 ```
@@ -426,12 +449,14 @@ existing spread, so **the carry needed no code**. Unlike `cheats`, `timebombChar
 is **never handed back by a hand** — a hand cannot spend a Whetstone — so `recordEncounter`'s signature did
 not grow a sixth parameter and nothing in the round layer can write it.
 
-`bankClimbBonusFor` is a one-line function and earns its place: it is where "+1 per copy" is stated, so that
+`baseDamageBonusFor` (named `bankClimbBonusFor` until DLR-156, which renamed it because there is no bank
+left to climb) is a one-line function and earns its place: it is where "+1 per copy" is stated, so that
 rule does not end up encoded at the JSX wiring site in `App.tsx` that happens to need it, and it is where the
-multiplier twin's own figure would be added. It is also the **whole of this module's contribution to the
-card layer** — `src/warCouncil/` receives its return value as a plain number called `bankClimbBonus` and
-never learns the word Whetstone. See
-[the bank, the streak, and the cash-out](../war-council/bank-and-cash-out.md) for the rest of the route.
+roll-side twin's own figure would be added. It is also the **whole of this module's contribution to the
+card layer** — `src/warCouncil/` receives its return value as a plain number called `baseDamageBonus` and
+never learns the word Whetstone. **Since DLR-156 that number feeds a banked trick's base damage inside the
+damage bracket**, so a copy is multiplied by the trick's own multiplier and by the roll. See
+[the streak, the trick's damage, and the pot](../war-council/the-streak-and-the-pot.md) for the rest of the route.
 
 `maxPlayerHealth` is a **defaulted parameter** on both `shopStockFor` and `buyFromShop`
 (`= PLAYER_START_HEALTH`), matching `startEncounter`/`startRun`'s injectable pattern so a spec varies
@@ -465,9 +490,9 @@ yet, which is why the price is `provisional` in `the-hunt.md` rather than settle
 full runs and never got past 2 coins.
 
 **There is deliberately no key for the per-copy `+1`.** DLR-92's ticket names exactly one new key, and the
-bonus per copy is the item's _definition_ rather than a tunable — the same reasoning `bank.ts` already uses
-to keep its `bankAdded = 1` out of configuration. An item granting +2 a copy would be a different item. The
-rule is stated once, in `bankClimbBonusFor` below.
+bonus per copy is the item's _definition_ rather than a tunable — the same reasoning `streak.ts` already uses
+to keep its own base figure out of configuration. An item granting +2 a copy would be a different item. The
+rule is stated once, in `baseDamageBonusFor` below.
 
 **`BLAST_GUARD_PRICE` is its own key rather than a reuse of `HEAL_PRICE`**, for the reason those two
 are already separate: re-pricing one item must not move another. It is priced level with the heal

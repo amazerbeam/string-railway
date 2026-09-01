@@ -36,9 +36,16 @@ const baseStock = (over: Partial<ShopStock> = {}): ShopStock => ({
 const stock = baseStock
 
 describe('SHOP_ITEMS', () => {
-  it('keeps Heal and the two tier items from DLR-122; DLR-145 AC3 takes ApCapacity off the shelf', () => {
-    expect(SHOP_ITEMS).toEqual([ShopItem.SwanTier, ShopItem.WitchTier, ShopItem.Heal])
+  it('sells Heal alone — the two rank ladders left the shelf, as ApCapacity did before them', () => {
+    expect(SHOP_ITEMS).toEqual([ShopItem.Heal])
     expect(SHOP_ITEMS).not.toContain(ShopItem.ApCapacity)
+    expect(SHOP_ITEMS).not.toContain(ShopItem.SwanTier)
+    expect(SHOP_ITEMS).not.toContain(ShopItem.WitchTier)
+  })
+
+  it('keeps both rank ladders PRICED though they left the shelf, so restoring one is a list row', () => {
+    expect(priceOf(ShopItem.SwanTier)).toBe(RANK_TIER_STEP_PRICE)
+    expect(priceOf(ShopItem.WitchTier)).toBe(RANK_TIER_STEP_PRICE)
   })
 
   it('DLR-145 AC3 — ApCapacity is still priced even though it left the shelf, exactly as Cheat/Timebomb/Blast Guard/Whetstone stayed priced on DLR-116', () => {
@@ -49,13 +56,12 @@ describe('SHOP_ITEMS', () => {
 describe('the refilled run-permanent shelf (DLR-122 AC2)', () => {
   const goldSwan = steppedTo(steppedTo(ALL_BRONZE, TieredRank.Swan), TieredRank.Swan)
 
-  it('sits both tier items on the run-permanent rung', () => {
+  it('keeps both tier items CATEGORISED on the run-permanent rung though neither is on the shelf', () => {
     expect(categoryOf(ShopItem.SwanTier)).toBe(ShopCategory.RunPermanent)
     expect(categoryOf(ShopItem.WitchTier)).toBe(ShopCategory.RunPermanent)
-    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([
-      ShopItem.SwanTier,
-      ShopItem.WitchTier,
-    ])
+    // `SHOP_ITEMS_BY_CATEGORY` derives from `SHOP_ITEMS`, so an item off the shelf is off every
+    // rung — the categorisation above is what survives, and it is what makes restoring one a row.
+    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([])
   })
 
   it('prices both from the one configuration point (AC7)', () => {
@@ -269,11 +275,8 @@ describe('SHOP_ITEMS_BY_CATEGORY', () => {
     expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.FightLong]).toEqual([])
   })
 
-  it('DLR-122/DLR-145 — sells the two rank ladders on the run-permanent rung (AP capacity left the shelf); game-permanent stays empty', () => {
-    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([
-      ShopItem.SwanTier,
-      ShopItem.WitchTier,
-    ])
+  it('leaves every rung empty — Heal is the only item on the shelf and it sits on no rung', () => {
+    expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.RunPermanent]).toEqual([])
     expect(SHOP_ITEMS_BY_CATEGORY[ShopCategory.GamePermanent]).toEqual([])
   })
 

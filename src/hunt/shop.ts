@@ -35,11 +35,13 @@ export type ShopItem = (typeof ShopItem)[keyof typeof ShopItem]
  *  nothing to sell. It keeps its `ShopItem` member, its `priceOf` row, its `categoryOf` rung and
  *  its `refusalFor` handling, exactly as DLR-116 kept Cheat, Timebomb, Blast Guard and Whetstone —
  *  no mechanic is deleted, only this list changed. */
-export const SHOP_ITEMS: readonly ShopItem[] = [
-  ShopItem.SwanTier,
-  ShopItem.WitchTier,
-  ShopItem.Heal,
-]
+/** 2026-09-01 — the Swan and Witch rank upgrades leave the shelf (developer decision): their rules
+ *  are not settled yet, and each printed a forty-word blurb that was most of what made the shop
+ *  read as a wall of text. They keep their `ShopItem` member, their `priceOf` row, their
+ *  `categoryOf` rung and their `refusalFor` handling, exactly as DLR-145 left the action-point
+ *  purchase and DLR-116 left Cheat, Timebomb, Blast Guard and Whetstone — no mechanic is deleted,
+ *  only this list changed, and putting either back is one row here. */
+export const SHOP_ITEMS: readonly ShopItem[] = [ShopItem.Heal]
 
 /** The persistence-length ladder (version-4-scope.md §1) — named after the design doc's own rungs
  *  rather than Balatro's deck / Joker / consumable, since this game has no deck-building layer for

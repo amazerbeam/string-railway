@@ -1,0 +1,77 @@
+/* The "What you hold" tray (`ShopHeld.tsx` / `HeldBuffCard.tsx`) — the shop's answer to the one
+   question the old screen could not answer. Imported from `ShopHeld.tsx`.
+
+   Every clamp() bound and every colour is a PLACEHOLDER the developer owns. */
+
+.shop-held {
+  min-width: 0;
+}
+
+.shop-held-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.25rem;
+}
+
+.shop-held-title {
+  font-family: var(--wc-serif);
+  font-size: clamp(0.58rem, 1.35vmin, 0.7rem);
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+}
+
+.shop-held-count {
+  font-size: clamp(0.55rem, 1.3vmin, 0.66rem);
+  color: var(--wc-chalk-dim);
+}
+
+.shop-held-empty {
+  margin: 0;
+  font-size: clamp(0.64rem, 1.5vmin, 0.78rem);
+  font-style: italic;
+  color: var(--wc-chalk-dim);
+}
+
+/* A row of cards, scrolling sideways once the holdings outgrow the width. Scoped overflow on ONE
+   bounded region, never the page — and horizontal, because a wrapping second row of cards would
+   push the machine off the top of the screen. */
+.shop-held-cards {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(0.2rem, 0.8vmin, 0.4rem);
+  margin: 0;
+  padding: 0 0 2px;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior: contain;
+}
+
+.shop-held-card {
+  flex: 0 0 auto;
+  min-width: 0;
+  /* `.wc-buffcard` takes its width from being a GRID ITEM in the buff gallery, so dropped into a
+     flex row it collapses to a zero-width dot — the "cards with width but no height" trap the
+     buff-gallery mockup already hit once. The width is stated explicitly here for that reason, and
+     `warCouncilBuffCard.css`'s own `aspect-ratio` still gives the height. */
+  --wc-buffcard-w: clamp(4rem, 7.5vmin, 5.6rem);
+}
+
+.shop-held-card .wc-buffcard {
+  width: var(--wc-buffcard-w);
+}
+
+/* The tray's cards are a READOUT, not controls: nothing here can be activated between fights, so
+   every interactive affordance the gallery's card carries is switched off. A card that looks
+   pressable but is not is worse than one that plainly is not. */
+.shop-held-card .wc-buffcard {
+  cursor: default;
+}
+
+@media (hover: hover) {
+  .shop-held-card .wc-buffcard:hover {
+    transform: none;
+  }
+}

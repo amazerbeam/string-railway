@@ -1,80 +1,16 @@
-/* The shop screen's Flask block — split out of `shop.css` at the 400-line budget. See that
-   file's header for the split's rationale and import order.
+/* The flask's own marks. Rebuilt 2026-09-01 alongside `shop.css`'s three-zone shell.
 
-   DLR-116 fix pass — the `.shop-aside`/`.shop-aside-label` (the Heal's old standalone block) and
-   `.shop-purse-cell.is-flask` rule blocks that used to live here were orphaned by this ticket's
-   `ShopPanel.tsx` rewrite: the Heal is now one row of `.shop-list`, not its own aside, and no
-   element ever carries `.shop-purse-cell` together with `.is-flask`. Both blocks were removed
-   rather than left as dead weight. */
-
-/* DLR-93 AC6, redesigned mid-fix on this ticket (developer direction): the flask no longer has its
-   own full-width row between the health meter and the ladder — that whole row was most of the
-   vertical-fit problem this ticket exists to solve. It now lives in `ShopPanel.tsx` as one row of
-   `.shop-list--extras` (`shopItems.css`), sharing a row with the Heal card, styled as a
-   `.shop-list-item` with the `.is-flask` modifier below. Distinctness from the priced Heal is no
-   longer carried by DISTANCE (the developer overruled that) — it is carried entirely by the
-   labelling this modifier does not touch: the `Free`/`No coin` tag and the visible charge count
-   read where every priced row instead carries `.shop-item-price`, and the dashed rule below reads
-   free-vs-paid in FORM too, not colour alone, per `game-ux`.
-   The wrapping `role="group" aria-label={SHOP_FLASK_GROUP_LABEL}` still lives in `ShopPanel.tsx` —
-   `ShopPanel.test.tsx` asserts the flask is grouped "apart from the priced items" and that holds
-   at the accessibility-tree level regardless of where the group sits visually.
-   Every colour, spacing and size figure here is a PLACEHOLDER the developer owns. */
-.shop-list-item.is-flask {
-  /* A dashed rule where every priced row uses a solid one — same device `.shop-tab`'s refused
-     state and `.shop-item:disabled` already use, reused here for the same reason: FREE reads as
-     free without depending on the tag being read first. */
-  border-bottom-style: dashed;
-}
-
-.shop-flask-icon {
-  flex: 0 0 auto;
-  width: clamp(1rem, 2.4vmin, 1.4rem);
-  height: clamp(1rem, 2.4vmin, 1.4rem);
-  transition: transform var(--wc-ui-transition-ms) ease;
-}
-
-/* `stroke-width` set here, not on the paths, so it reaches the cloned symbol through `<use>`. */
-.shop-flask-icon svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  stroke-width: 1.5;
-}
-
-.shop-list-item:disabled .shop-flask-icon svg {
-  opacity: 0.55;
-}
+   Almost everything this file used to hold went with the row list it styled: the flask is now one
+   `.shop-buy` tile among the buys (`shopItems.css`), and its FREE-vs-priced distinction is carried
+   there by `.shop-buy.is-flask`'s dashed edge and its own price label. What is left is the one
+   thing that is genuinely the flask's and not a buy tile's — the hover on its glyph. */
 
 @media (hover: hover) {
-  .shop-list-item.is-flask:not(:disabled):hover .shop-flask-icon {
+  .shop-buy.is-flask:not(:disabled):hover .shop-buy-icon {
     transform: scale(1.08);
   }
 }
 
-/* Where every `.shop-list-item` carries a single `.shop-item-price` at the row's far end, the
-   flask carries this two-line tag instead: the free/no-coin badge above the charge count, both
-   pinned to the same far end via `margin-left: auto`. */
-.shop-flask-tag {
-  flex: 0 0 auto;
-  margin-left: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.15rem;
-}
-
-.shop-flask-free {
-  padding: 0.1rem 0.4rem;
-  border: 1px solid currentColor;
-  border-radius: 2px;
-  font-size: clamp(0.5rem, 1.1vmin, 0.6rem);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.shop-flask-charges {
-  font-size: clamp(0.56rem, 1.3vmin, 0.7rem);
-  color: var(--wc-chalk-dim);
-  font-variant-numeric: tabular-nums;
+.shop-buy.is-flask .shop-buy-icon {
+  transition: transform var(--wc-ui-transition-ms) ease;
 }

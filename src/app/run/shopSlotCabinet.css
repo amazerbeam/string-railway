@@ -17,8 +17,11 @@
      of it, so the cabinet grows and shrinks as one object instead of drifting apart. Bounded
      against the SHOP COLUMN's measured width, not the viewport's: at a 1568px viewport that column
      is ~430px, and three windows plus case padding and the lever have to fit inside it. */
-  --reel-window-h: clamp(4.2rem, 9.5vmin, 5.6rem);
-  --reel-window-w: clamp(4.4rem, 10vmin, 6rem);
+  /* Sized against BOTH axes — `vh` so the machine grows into a tall stage instead of leaving a dead
+     band above the tray, `vw` so it never outgrows its row on a short wide monitor. Measured
+     against the STAGE it actually gets, not the viewport. */
+  --reel-window-h: clamp(4.4rem, min(24vh, 13vw), 9.5rem);
+  --reel-window-w: clamp(4.6rem, min(25vh, 14vw), 10rem);
   --cabinet-brass: var(--wc-brass);
   --cabinet-brass-dim: var(--wc-brass-dim);
 
@@ -113,6 +116,19 @@
 
 .shop-cabinet-name:disabled {
   cursor: default;
+}
+
+/* With one machine on the roster the marquee is a lit NAMEPLATE rather than a control: a `<span>`,
+   no hit target, no tab stop, no `aria-checked`. It keeps the lit treatment the selected chooser
+   button carries, because the sign is still meant to read as switched on. */
+.shop-cabinet-name.is-plate {
+  min-height: 0;
+  padding: 0.3rem clamp(1.1rem, 3.6vmin, 2.2rem);
+  border-color: transparent;
+  background: none;
+  cursor: default;
+  color: var(--wc-parchment);
+  text-shadow: 0 0 12px #e6b96699;
 }
 
 /* The two posts the sign stands on, above the case. */

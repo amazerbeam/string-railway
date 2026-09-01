@@ -1,142 +1,135 @@
-/* The shop screen's item cards and shelves — split out of `shop.css` at the 400-line budget.
-   See that file's header for the split's rationale and import order; this block covers the
-   catalogue grid's cards, the refusal/hint copy beneath it, and the scoped-scroll shelf panel.
+/* The shop's BUY TILES and the refusal line beneath them. Rebuilt 2026-09-01 alongside
+   `shop.css`'s three-zone shell; see that file's header for the redesign and the import order.
 
-   DLR-116 fix pass — the `.shop-panel` (the scoped-scroll shelf) and `.shop-empty` (an empty-rung
-   notice) rule blocks that used to live here were orphaned by this ticket's `ShopPanel.tsx`
-   rewrite: neither class is rendered anywhere any more, so both blocks were removed rather than
-   left as dead weight. */
+   The old `.shop-list` / `.shop-list-item` row list is gone with the shelf it served. It rendered a
+   name, a forty-word blurb and a price per row, which was most of what the developer meant by "a
+   huge amount of info" — and with `SHOP_ITEMS` down to a single entry there is no list left to lay
+   out. A tile carries a name and a price and nothing else.
 
-/* The shelf and the extras block are both a plain vertical list of rows (developer correction,
-   mid-fix on this same ticket): a text list reads faster than a grid of bordered cards and is far
-   shorter, which is most of what makes the panel actually fit its viewport budget.
-   `.shop-list--extras` turns the same list sideways so the flask and the Heal can share a row
-   (see `shopFlask.css`'s `.is-flask` for the flask's own row), wrapping back to a stack once the
-   column gets too narrow to hold both side by side. */
-.shop-list {
+   Every clamp() bound and every colour is a PLACEHOLDER the developer owns. */
+
+.shop-buy-slot {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  gap: clamp(0.15rem, 0.6vmin, 0.35rem);
+  align-items: stretch;
+  gap: 0.15rem;
 }
 
-.shop-list--extras {
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: clamp(0.6rem, 2vmin, 1.2rem);
-}
-
-.shop-list--extras > * {
-  flex: 1 1 14rem;
-  min-width: 0;
-}
-
-/* One row per item: name, blurb and price read left-to-right instead of stacked in a card, so a
-   whole shelf collapses to a fraction of the grid's height. `flex-wrap` lets a long blurb wrap
-   onto its own line rather than being clipped or forcing the row wider than its column. */
-.shop-list-item {
+.shop-buy {
   display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  column-gap: clamp(0.4rem, 1.4vmin, 0.8rem);
-  row-gap: 0.1rem;
-  width: 100%;
-  box-sizing: border-box;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-width: clamp(4.2rem, 10vmin, 6rem);
   min-height: 44px;
-  padding: clamp(0.25rem, 0.9vmin, 0.45rem) clamp(0.3rem, 1vmin, 0.5rem);
-  border: none;
-  border-bottom: 1px solid var(--wc-brass-dim);
-  background: none;
+  padding: 0.45rem 0.7rem;
+  box-sizing: border-box;
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 5px;
+  background: #ffffff0a;
   color: var(--wc-chalk);
   font-family: var(--wc-sans);
   cursor: pointer;
   touch-action: manipulation;
-  text-align: left;
   transition:
-    background-color var(--wc-ui-transition-ms) ease,
     border-color var(--wc-ui-transition-ms) ease,
+    background-color var(--wc-ui-transition-ms) ease,
     transform var(--wc-ui-transition-ms) ease;
 }
 
-/* Refused reads as refused in FORM, not only in colour: a dashed rule and no fill. */
-.shop-list-item:disabled {
+/* Refused reads as refused in FORM, not only in tone: a dashed edge and no fill. */
+.shop-buy:disabled {
   cursor: not-allowed;
-  border-bottom-style: dashed;
+  border-style: dashed;
+  border-color: var(--wc-chalk-dim);
+  background: none;
   color: var(--wc-chalk-dim);
 }
 
-.shop-list-item:focus-visible {
+.shop-buy:focus-visible {
   outline: 2px solid var(--wc-parchment);
   outline-offset: 2px;
 }
 
 @media (hover: hover) {
-  .shop-list-item:not(:disabled):hover {
-    background: #ffffff08;
+  .shop-buy:not(:disabled):hover {
+    border-color: var(--wc-brass);
+    background: #ffffff14;
   }
 }
 
-.shop-list-item:not(:disabled):active {
+.shop-buy:not(:disabled):active {
   transform: translateY(1px);
 }
 
-/* The name-and-blurb run. `flex: 1 1 12rem` so it takes the row's width and pushes the price to
-   the far end via that span's own `margin-left: auto`, while still being free to shrink onto a
-   second line ahead of the price on a narrow column (see `.shop-list--extras` above). */
-.shop-list-item-main {
-  flex: 1 1 12rem;
-  min-width: 0;
+.shop-buy-icon {
+  width: clamp(0.9rem, 2.3vmin, 1.3rem);
+  height: clamp(0.9rem, 2.3vmin, 1.3rem);
+  line-height: 0;
 }
 
-.shop-item-name {
+/* `stroke-width` set here, not on the paths, so it reaches the cloned symbol through `<use>`. */
+.shop-buy-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  stroke-width: 1.5;
+}
+
+.shop-buy:disabled .shop-buy-icon svg {
+  opacity: 0.55;
+}
+
+.shop-buy-name {
   font-family: var(--wc-serif);
-  font-size: clamp(0.95rem, 2.4vmin, 1.25rem);
-  letter-spacing: 0.04em;
-  color: var(--wc-brass);
+  font-size: clamp(0.72rem, 1.7vmin, 0.88rem);
+  color: var(--wc-parchment);
 }
 
-.shop-list-item:disabled .shop-item-name {
+.shop-buy:disabled .shop-buy-name {
   color: var(--wc-chalk-dim);
 }
 
-.shop-item-blurb {
-  font-size: clamp(0.72rem, 1.7vmin, 0.85rem);
-  line-height: 1.35;
-}
-
-.shop-item-price {
-  flex: 0 0 auto;
-  margin-left: auto;
-  font-size: clamp(0.55rem, 1.2vmin, 0.68rem);
-  letter-spacing: 0.16em;
+.shop-buy-price {
+  font-size: clamp(0.5rem, 1.15vmin, 0.6rem);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--wc-chalk-dim);
+  color: var(--wc-brass);
   white-space: nowrap;
 }
 
-/* AC6 — the reason is a sentence on the face of the screen, never a silent no-op. It is now
-   rendered ONLY when there is a reason (see `ShopPanel.tsx`), so the `min-height: 1em` that used to
-   reserve a line for the empty case is gone: an absent refusal costs no height at all. Five such
-   reserved-but-empty lines were a large part of the vertical budget this screen was overrunning,
-   and `game-ux` forbids a panel that exists to say nothing is wrong. */
-.shop-refusal {
-  margin: 0;
-  line-height: 1.25;
-  font-size: clamp(0.68rem, 1.6vmin, 0.8rem);
-  color: var(--wc-alarm);
-}
-
-.shop-hint {
-  /* DLR-89 residual-clipping fix — see `.shop-title`'s comment above. */
-  flex: 0 0 auto;
-  margin: 0;
-  font-size: clamp(0.7rem, 1.8vmin, 0.85rem);
+.shop-buy:disabled .shop-buy-price {
   color: var(--wc-chalk-dim);
 }
 
-/* DLR-89 residual-clipping fix. `.run-actions` (`run.css`) holds the leave-and-continue button —
-   the control this whole fix is about keeping on screen. Scoped to `.shop`'s own child rather
-   than edited in `run.css`, which other screens share and this contract does not touch. */
-.shop > .run-actions {
-  flex: 0 0 auto;
+/* The flask is FREE, and that reads in form as well as in its label: a dashed edge where every
+   priced tile uses a solid one, the same device `.shop-buy:disabled` uses for refusal — the two
+   never coincide, because a refused flask is disabled and dashed for both reasons at once. */
+.shop-buy.is-flask {
+  border-style: dashed;
+}
+
+.shop-buy.is-flask .shop-buy-price {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+  color: var(--wc-chalk-dim);
+}
+
+.shop-buy-charges {
+  text-transform: none;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* AC6 — the reason is a sentence on the face of the screen, never a silent no-op. It renders ONLY
+   when there is a reason (see `ShopPanel.tsx`), so an absent refusal costs no height at all. */
+.shop-refusal {
+  margin: 0;
+  max-width: 12rem;
+  line-height: 1.25;
+  font-size: clamp(0.58rem, 1.35vmin, 0.7rem);
+  color: var(--wc-alarm);
 }
