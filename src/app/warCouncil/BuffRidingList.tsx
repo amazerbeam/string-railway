@@ -18,14 +18,24 @@ import {
   RIDING_LIST_LABEL,
   timebombRemoveLabel,
 } from './buffRideLabels'
+import { PlaceKind } from './cardPlacement'
+import { anchorKeyFor, useMotionAnchors } from './motionAnchorContext'
 import './warCouncilBuffRidePanel.css'
 
 interface BuffRidingListProps {
   readonly rows: readonly RidingBuffRow[]
   readonly onRemove: (id: BuffId) => void
+  /** QA fix (DLR-157 review) — true while a buff's own M15/M16 flight is airborne. Disables every
+   *  remove button for the duration, so a second tap cannot supersede a removal's still-in-flight
+   *  commit — the tap cost stays one, the same guard `useTableCardMotion`'s `inFlight` gives M1. */
+  readonly disabled: boolean
 }
 
-export default function BuffRidingList({ rows, onRemove }: BuffRidingListProps) {
+export default function BuffRidingList({ rows, onRemove, disabled }: BuffRidingListProps) {
+  // DLR-157 — called before the early return below, or the hook order would change the render
+  // this list goes from empty to non-empty (or back), which React forbids.
+  const { register } = useMotionAnchors()
+
   if (rows.length === 0) return null
 
   return (
@@ -37,6 +47,7 @@ export default function BuffRidingList({ rows, onRemove }: BuffRidingListProps) 
         <div
           key={row.buff.id}
           className={`wc-buff-riding-row${row.reach === 0 && row.timebomb === null ? ' wc-is-unreachable' : ''}`}
+          ref={register(anchorKeyFor({ kind: PlaceKind.RidingStrip, slot: String(row.buff.id) }))}
         >
           <span>
             <b>{buffName(row.buff)}</b>
@@ -51,6 +62,7 @@ export default function BuffRidingList({ rows, onRemove }: BuffRidingListProps) 
                   ? removeBuffLabel(row.buff, row.reach)
                   : timebombRemoveLabel(row.timebomb.target)
               }
+              disabled={disabled}
               onClick={() => onRemove(row.buff.id)}
             >
               ×

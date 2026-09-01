@@ -1,4 +1,6 @@
 import type { Buff } from '../../hunt'
+import { PlaceKind } from '../warCouncil/cardPlacement'
+import { useMotionAnchor } from '../warCouncil/motionAnchorContext'
 import HeldBuffCard from './HeldBuffCard'
 import { heldBuffStacks } from './heldBuffs'
 import {
@@ -20,12 +22,18 @@ import './shopHeld.css'
  *
  * Computes nothing beyond grouping: `heldBuffStacks` owns the piling and the order, `buffLabels`
  * owns every word, and this component places them.
+ *
+ * DLR-157 Task 14 (M21/M22) — registers `PlaceKind.HeldTray` on the outer `<section>` rather than
+ * the `<ul>` inside it, so the anchor exists even on an EMPTY tray (the `<ul>` only renders once
+ * `stacks.length > 0`) — the very first purchase of a run must still have a destination to fly
+ * toward. `ShopPanel.tsx` mounts the `MotionAnchorProvider` this resolves against.
  */
 export default function ShopHeld({ buffs }: { readonly buffs: readonly Buff[] }) {
   const stacks = heldBuffStacks(buffs)
+  const trayRef = useMotionAnchor({ kind: PlaceKind.HeldTray })
 
   return (
-    <section className="shop-held" aria-label={SHOP_HELD_GROUP_LABEL}>
+    <section className="shop-held" aria-label={SHOP_HELD_GROUP_LABEL} ref={trayRef}>
       <h2 className="shop-held-head">
         <span className="shop-held-title">{SHOP_HELD_LABEL}</span>
         {/* The count renders only when there IS something to count — `game-ux`'s rule against a

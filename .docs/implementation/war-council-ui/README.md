@@ -1,7 +1,7 @@
 # War Council UI — `src/app/warCouncil/`
 
 **Status:** implemented
-**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, PT-002
+**Built by:** SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, DLR-157, PT-002
 
 ## Responsibility
 
@@ -206,7 +206,8 @@ the hand, the action bar — moved out wholesale, with no behaviour change) whil
 `null`, and `TrickResolutionScreen` the moment a trick resolves. Four new files came with it —
 `resolutionBeats.ts` (pure, the build-up derived from what the engine decided), `resolutionLabels.ts`
 (its wording), `useBeatSequence.ts` (the clock) and `useCardFlight.ts` (the played card's travel from
-hand to table) — plus `ResolutionLedger.tsx` and `warCouncilResolve.css`. **The Apply Damage button
+hand to table — **generalised into `useCardMotion.ts` and renamed by DLR-157**; `useCardFlight` no
+longer exists) — plus `ResolutionLedger.tsx` and `warCouncilResolve.css`. **The Apply Damage button
 left the action bar entirely**, taking `applyDamageStock`, `applyPoised`, the
 `TapApplyDamage`/`CancelApplyDamage` pair, `payoutLabels.ts` and the delayed-payout queue with it.
 See [the trick resolution screen](the-resolution-screen.md).
@@ -257,7 +258,7 @@ See [the trick resolution screen](the-resolution-screen.md).
 | `canAct`                                                                                                                                                | **Moved here from `roundReducer.ts` by DLR-94, and exported.** The six-clause gate that says the felt is waiting on the player's own card. `WarCouncilRound.tsx`'s `interactive` was an inline copy of it; both now read this one. Same discipline as `cheatArmed` / `timebombArmed`. **DLR-100 is the first ticket to deliberately NOT route a new control through this gate**: the discard reads `discardWindowOpen` instead, because `canAct` requires `currentTurn === Player` and the Quarry-to-lead gap the discard must reach is exactly the moment that is false                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `roundUiState.ts`                                  |
 | `ResolutionView` | **DLR-156.** The resolution screen's whole content, built once on the `null` → non-null edge of `resolvedTrick`: the two played cards (cloned, not moved), the winner, the engine's `TrickResolution`, the ordered `beats`, the 1-based `trickNumber`, and `nextPotFloor` — `potValue(total + BASE_DAMAGE, roll + 1)`, the **bare** rule, because the player may fire nothing next trick. **Replaces `applyDamageStock`**, which assembled the four plain values the deleted `applyDamageRefusalFor` needed | `roundUiState.ts` |
 | `resolutionBeatsFor`, `ResolutionBeat`, `BeatKind` | **DLR-156.** The build-up as a pure, rendererless list derived from what the ENGINE decided — base, one beat per fired Blade or Momentum in `firedBuffIds` order, the Overlap Bonus on its own beat when non-zero, then a `Banked` summary; or exactly one `Hurt` or `Absorbed` beat on a trick that took no damage figure. Each beat carries the running damage, mult and product **after** it lands, so the component renders a value rather than computing one. Pure but app-layer, because it produces worded labels and the engine holds no user-facing copy | `resolutionBeats.ts` |
-| `useBeatSequence`, `useCardFlight` | **DLR-156.** The two hooks that own every timer and listener in the change. `useBeatSequence` walks the beats one per `--wc-beat` and **still staggers under reduced motion** (the stagger is the derivation, not decoration); it holds one timer keyed off a value in state, so StrictMode recomputes rather than double-schedules. `useCardFlight` clones a card into a fixed layer, flies it on an arc, and lands through an **idempotent `land()` reachable three ways** — `onfinish`, a timer, and `visibilitychange` — because a background tab freezes Web Animations at time 0 and an awaited `onfinish` never fires | `useBeatSequence.ts`, `useCardFlight.ts` |
+| `useBeatSequence`, ~~`useCardFlight`~~ → `useCardMotion` | **DLR-156; the flight hook renamed and generalised by DLR-157 — `useCardFlight` and the `CardFlight` interface no longer exist.** The two hooks that own every timer and listener in the change. `useBeatSequence` walks the beats one per `--wc-beat` and **still staggers under reduced motion** (the stagger is the derivation, not decoration); it holds one timer keyed off a value in state, so StrictMode recomputes rather than double-schedules. `useCardMotion` clones a card into a fixed layer, flies it on an arc, and lands through an **idempotent `land()` reachable three ways** — `onfinish`, a timer, and `visibilitychange` — because a background tab freezes Web Animations at time 0 and an awaited `onfinish` never fires | `useBeatSequence.ts`, `useCardMotion.ts` |
 | `deriveResolvedTrick`, `advanceQuarryFollow`, `advanceQuarryLead`, `CpuAdvanceResult`                                                                   | **Moved out of `roundReducer.ts` by DLR-94** to buy the budget room for the Apply Damage handler — the Quarry's half of a commit, which talks to `cpuPlayer` and `playCard` and decides nothing about the player's own state, so it never needs to know what a `RoundUiState` is. A **pure move**: every pre-existing reducer spec passed unedited                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `quarryAdvance.ts`                                 |
 | `duelHealthBars`                                                                                                                                        | Pure: three health records (current / projected / maximum) plus an optional `HealthBarOverlays` → one `HealthBarView` per side, `player` first. **No damage arithmetic and no clamping** — `applyDamage` did both first. Since DLR-80 every caller passes the same record as `current` and `projected`, because damage has already landed by render time; DLR-101's projection is the first that does not. Throws `RangeError` on a `max` that is not a positive integer rather than drawing a wrong-length row. React-free and DOM-free, so it runs in the `node` project                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `duelHealthBars.ts`                                |
 | `barsForRound`                                                                                                                                          | **DLR-101, new module.** `(ui, maxHealth) => readonly HealthBarView[]` — the round screen's whole bar assembly: the streak projection, the booked-Timebomb overlay read off `ui.encounter.pendingTimebomb`, and the breaking overlay read off the held reveal. **A forced split**: `WarCouncilRound.tsx` was at 399 of its 400-line budget and this change added lines (it is now 380), the same forcing function that produced `quarryAdvance.ts`, `commitHandlers.ts` and `discardHandlers.ts`. Pure — no React, no DOM, no effect — so the assembly is directly testable without a renderer for the first time                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `roundBars.ts`                                     |
@@ -300,6 +301,15 @@ See [the trick resolution screen](the-resolution-screen.md).
 | `BuffRideOptions`, `BuffRideView`, `buffRideView`, `BuffRideBundle`, `useBuffRide` | **DLR-153.** Prop assembly split out of `WarCouncilRound.tsx` for the same stated reason `roundControlsProps.ts` was — the 400-line budget. `buffRideView` is a plain assembler; `useBuffRide` bundles the hover-bridge hook, the breakdown lookup and the transient removal announcement behind one call. **Phase 8 dropped `defaultTarget` and the `displayHand` option** along with the default target hover-only made unnecessary | `buffRideProps.ts` |
 | `BreakdownTarget`, `useBuffBreakdownTarget` | **DLR-153, reversed in its own Phase 8.** The panel's hover bridge, now **hover-only**: the target is a plain `Card \| null` starting at `null`, opened by entering a lit card (mouse hover, keyboard focus, or a tap — the touch path, since the pointer seam is gated to a mouse), switched by entering another, held open across the gap into the panel, closed on leaving or on `Escape`. Open-by-default and its `undefined`/`{ escapedFrom }` state machine are **gone**, and `bestLitCard` with them. **Deliberately has no `onBlur`** — tabbing into the panel moves focus off the card, and closing on blur would spring the hover trap on a keyboard user. One `setTimeout` in a ref, cleared on every cancel path and in the effect cleanup | `useBuffBreakdownTarget.ts` |
 | `CardBuffHalo`, `BuffRidingList`, `CardBuffBreakdown` | **DLR-153.** Default exports. The halo's four stacked SVG strokes plus the travelling `stroke-dashoffset` cell (no `filter: blur()`, no `mix-blend-mode`, not a `conic-gradient`); the "riding this trick" rows with a remove control on the three revocable families and a stated reason instead on the rest; and the hover-gated breakdown panel, which since Phase 8 carries that **same** remove control on every row it prints, dead rows included. All three decide nothing — each renders a built model value | `CardBuffHalo.tsx`, `BuffRidingList.tsx`, `CardBuffBreakdown.tsx` |
+| `useCardMotion`, `CardMotion` | **DLR-157.** The game's ONE card-motion primitive — `move(requests, onAllLanded)`. DLR-156's single flight generalised to a list: a per-request stagger, a per-request flip, a `prefers-reduced-motion` short circuit that clones nothing and calls back synchronously, a teardown that closes the idempotence guard WITHOUT landing, and a **flush** so a superseded group's deferred state commit is never dropped. Keeps DLR-156's three-path landing race verbatim. An unresolvable anchor lands instantly and still counts | `useCardMotion.ts` |
+| `PlaceKind`, `PlaceId`, `CardMovement`, `placementsOf`, `diffPlacements`, `faceAt` | **DLR-157.** PURE (no React, no DOM): where every card in a `RoundState` is, **total** over the deck, and what changed between two consecutive states. `faceAt` is what makes a flip derivable rather than declared. Lives under `src/app/` because it knows about places on a *screen*, which the engine must not | `cardPlacement.ts` |
+| `CardMoveRequest`, `planMovements`, `PILE_COLLAPSE_THRESHOLD` | **DLR-157.** PURE: a diff turned into a schedule — delays `0, s, 2s, …`, `flip` from the two faces, `hide` from the destination's face, and a pile-to-pile group collapsed to one representative flight. The collapse fires **only when no movement in the group carries a distinguishing `to.slot`**; collapsing on count alone silently stopped the six-card deal animating at all | `cardMotionPlan.ts` |
+| `cardMotionTiming`, `CardMotionTiming`, `prefersReducedMotion` | **DLR-157 (AC10).** The single reader for `warCouncilMotion.css`'s six tokens, read live off the computed style with documented literal fallbacks (jsdom computes no custom properties). Every duration and distance is guarded by `Number.isFinite && > 0`; the stagger allows 0; `--wc-flip-at` is clamped to `[0, 1]` | `cardMotionConfig.ts` |
+| `MotionAnchorProvider` | **DLR-157.** The place registry's provider, and the sole export of its file — `react-refresh/only-export-components` forbids a `.tsx` exporting a component and anything else. Holds the key→element map in a `useRef`, never module-level state; `arriving` is real React state because components render off it. One provider per screen: `WarCouncilRound.tsx` and `ShopPanel.tsx` each mount their own, and never share | `MotionAnchors.tsx` |
+| `anchorKeyFor`, `useMotionAnchors`, `useMotionAnchor`, `MotionAnchors`, `MotionAnchorKey` | **DLR-157.** The companion module the split above forced. A movement names its source and destination *places* by key rather than handing over two live elements — necessary because six movements land in a slot that does not exist until the state commits. `useMotionAnchors()` **throws** outside a provider rather than degrading quietly. Replaces the one `document.querySelector('.wc-trick-row')` the pre-DLR-157 flight bound by class name | `motionAnchorContext.ts` |
+| `useCardMotionDriver` | **DLR-157.** The post-commit trigger: watches `ui.round`, diffs placements, plans, moves. Fourteen movements share this one wiring. Holds the previous placement in a `useRef` seeded on the first run, so a fresh mount emits **no** movements rather than flying the whole deck in from nowhere | `useCardMotionDriver.ts` |
+| `useTableCardMotion`, `TableCardMotion` | **DLR-157.** M1's pre-commit orchestration, lifted out of `WarCouncilTable.tsx` (at exactly 400 lines) with **no behaviour change** — same commit-tap gate, same `inFlight` folded into `interactive`, same deferred dispatch; only the two `querySelector`s became anchors | `useTableCardMotion.ts` |
+| `useBuffCardMotion`, `BuffCardMotion` | **DLR-157.** The buff going up to the riding strip and coming back, caller-driven for the same reason M1 is: a buff is not a card in `RoundState`, so `cardPlacement.ts` never sees it. `inFlight` is exported so a caller can disable the control that would supersede an in-flight removal | `useBuffCardMotion.ts` |
 
 The zone components — `RoundStatusBand`, `DecreePile`, `TrickWell`, `HandFan`, `AbilityPrompt`,
 `RoundOverPanel` — are each a default export consumed only by `WarCouncilRound.tsx`. DLR-53 added
@@ -501,6 +511,14 @@ pure-core ESLint override's `files` array is untouched. Sorting `RoundState.hand
   same numbers, the skull footprint following the rank's own content, and the tooltip — its host
   wrapper, its portal, its three open-only listeners, and the CSS defect that stops the bubble
   actually appearing.
+- [Every card movement, and the one system that draws them](card-motion.md) — **DLR-157.** The
+  inventory that found 27 movements against a 10-row seed list and proved two of those rows wrong;
+  the one primitive `move(requests, onAllLanded)` and the three-path landing race it inherits; the
+  flush that stops a superseded group dropping a deferred state commit; the anchor registry and why
+  six movements cannot hand over two live elements; the two pure modules that carry the real
+  invariants, and the collapse condition whose earlier version silently stopped the deal animating;
+  the diff-driven trigger versus the three caller-driven ones; `visibility` never `display`; and the
+  six placeholder tokens in one block, every one of them the developer's to choose by playing.
 - [Accessibility](accessibility.md) — the shared roving tabindex, the ability prompt's focus
   handling, and the hand row's `aria-hidden` behaviour while a prompt is open.
 - [Error handling](error-handling.md) — the two `cpuFault` cases and why they're shown, not
@@ -619,12 +637,37 @@ testing-library helpers to it would break the DOM/node project boundary.
 - ~~**No `useEffect` or `useLayoutEffect` anywhere**~~ — **the reducer still holds no effect**, which
   is the claim that actually matters (see
   [Interaction and state § The module has no effect at all](interaction-and-state.md)), but the
-  module-wide absence has not been true for some time. Four effects exist today, in three files, and
-  **every one of them exists only to release something**: two in `WarCouncilRound.tsx` (the debug
-  state mirror and its teardown), one in `useCardTip.ts` (DLR-149's tooltip listeners), and one in
-  `useBuffBreakdownTarget.ts` (DLR-153), whose entire body is a cleanup clearing the hover bridge's
-  `setTimeout` so StrictMode's double mount cannot leave an orphan that closes the panel under the
-  next mount. `useLayoutEffect` genuinely appears nowhere.
+  module-wide absence has not been true for some time. Four effects existed before DLR-157, in three
+  files, and **every one of them exists only to release something**: two in `WarCouncilRound.tsx`
+  (the debug state mirror and its teardown), one in `useCardTip.ts` (DLR-149's tooltip listeners),
+  and one in `useBuffBreakdownTarget.ts` (DLR-153), whose entire body is a cleanup clearing the hover
+  bridge's `setTimeout` so StrictMode's double mount cannot leave an orphan that closes the panel
+  under the next mount. **DLR-157 added two more, and they keep the same discipline**:
+  `useCardMotion.ts`'s mount effect, whose whole body is a cleanup tearing down every live flight's
+  timers, clones, animations and `visibilitychange` listener; and `useCardMotionDriver.ts`'s, which
+  starts no timer of its own and owns nothing to release — it reads `ui.round`, diffs, and hands the
+  work to the primitive whose cleanup already covers it. `useLayoutEffect` genuinely appears
+  nowhere.
+- **Exactly one card-motion implementation exists** (DLR-157). Every movement in the game goes
+  through `useCardMotion.move`; `useCardFlight`, the `CardFlight` interface and `fly(from, to,
+  onLanded)` are gone, and the only `document.querySelector` the flight ever used is replaced by the
+  anchor registry. `cardPlacement.ts` and `cardMotionPlan.ts` import no React and touch no DOM —
+  grep-verified — and sit under `src/app/` deliberately, so the lint-enforced pure core never learns
+  what a place on a screen is. **This contract added no file under `src/warCouncil/**` or
+  `src/hunt/**`**, so that ESLint override's `files` array is untouched.
+- **No motion value is a literal anywhere outside one `:root` block** (DLR-157). All six —
+  `--wc-flight`, `--wc-flight-stagger`, `--wc-flight-lift`, `--wc-flight-tilt`, `--wc-flight-ease`,
+  `--wc-flip-at` — are declared once in `warCouncilMotion.css` and read by `cardMotionConfig.ts`
+  alone, each guarded so an unparseable or deleted token yields a documented fallback rather than a
+  `NaN` duration Web Animations would turn into a never-finishing animation.
+- **A slot mid-movement loses its paint, never its box** (DLR-157). `.wc-is-in-flight` is
+  `visibility: hidden` and nothing else; `display: none` would remove the box and reflow the row
+  under the player's pointer. A gap closes after a departure lands and a slot fills after an arrival
+  lands, never during either.
+- **`useMotionAnchors()` throws outside a `MotionAnchorProvider`** rather than returning a null
+  registry that would make every movement silently instant (DLR-157). The two providers — one in
+  `WarCouncilRound.tsx`, one in `ShopPanel.tsx` — are separate registries on purpose; the round's
+  diff driver has nothing to say about a shop purchase.
 - **`labels.ts`, `cardFace.ts`, and `roundReducer.ts` import no React and touch no DOM global** —
   verified by grep, which is what lets them run in the `node` Vitest project.
 - **No component sees a numeric literal standing in for a tunable** (DLR-53, extended by every ticket
@@ -732,20 +775,55 @@ testing-library helpers to it would break the DOM/node project boundary.
 
 ## Deferred / not yet implemented
 
+- **Two card-motion carve-outs are known, deliberate, and cosmetic** (DLR-157). Both are labelled
+  `DOCUMENTED CARVE-OUT` in source with the mechanism and what a real fix needs. In both cases the
+  card **lands correctly and the end state is right** — only the clone's mid-flight appearance is
+  wrong.
+  - **The trick well registers one anchor for the whole row**, because `cardPlacement.ts`
+    deliberately does not slot `TrickWell` (the well has no per-card slot until the state that
+    creates one has already committed). When both played cards leave the well in the same commit,
+    the two requests clone the *same row element*, so each flying clone shows the whole row rather
+    than the one card it stands for. A real fix means slotting `TrickWell` the way `PlayerHand`
+    already is, which also forces re-deriving the player's own play destination and every pure-core
+    fixture naming that place.
+  - **`DecreePile` registers one unslotted anchor**, so the Fox exchange's departing decree clone
+    shows the **post-commit** face. The exchange swaps a hand card for the decree in one commit and
+    is diffed *after* React has already re-rendered the plate to the new card; the flight clones
+    whatever is current. A real fix means the driver cloning from the previous render's DOM, or
+    carrying a snapshot of the departing card's art — a change to the driver's ordering guarantees,
+    not to the component.
+- **All six motion tokens are unchosen placeholders, and so is the pile-collapse threshold**
+  (DLR-157). `--wc-flight` (380ms), `--wc-flight-stagger` (70ms), `--wc-flight-lift` (34px),
+  `--wc-flight-tilt` (4deg), `--wc-flight-ease` and `--wc-flip-at` (0.5) live in one `:root` block in
+  `warCouncilMotion.css`; `PILE_COLLAPSE_THRESHOLD` is `3` in `cardMotionPlan.ts`. Two of them are
+  the ones that decide whether the system reads as pacing or as tax: the **stagger** (six cards at
+  70ms is 350ms on top of a 380ms flight, every hand) and **`--wc-flip-at`**, the in-transit-versus-
+  on-landing question shipped as a number rather than a branch. **All of them are the developer's,
+  and only answerable by playing.**
+- **Whether nineteen animated movements is too much motion is unsettled** (DLR-157), and nothing in
+  the code can settle it. The ticket's own risk section predicts the first playable version is too
+  slow; the whole design exists so that is a token pass rather than a rewrite. **Play-and-see.**
+- **No layout claim in DLR-157's work is provable in Vitest.** jsdom has no layout engine, so "the
+  card arrives at the well", "no gap closes mid-flight" and "nothing reflows under the pointer" are
+  browser questions with right answers and were **not** checked. What a browser pass would look at:
+  every one of the nineteen movements actually drawing something; the deal and the reshuffle reading
+  as a beat rather than a wait; the flip landing where `--wc-flip-at` says; the two carve-outs above
+  being tolerable rather than distracting; and `prefers-reduced-motion` leaving no card mid-flight
+  and no destination empty.
 - **No browser pass was run on DLR-156**, so nothing on either screen has been seen rendering. jsdom
   has no layout engine, so the no-scroll claim, the ledger's constant height across a full run, and
   the greyscale legibility of the two prompt buttons are all **unverified rather than unbuilt**. The
   whole feature is reachable in the app.
-- **The resolution screen does not hold after a choice** (DLR-156). `ui-notes.md` §4 asks both exits
-  to land the payout, change the header to name what happened, and only then return to the felt — so
-  the player sees the number they chose for more than zero frames. `applyPotAction` and
-  `rollOverAction` both close the screen in the same transition instead. `--wc-resolve-hold` is
-  declared in `warCouncilResolve.css` and **has no reader anywhere in `src/`**, and neither outcome
-  has header copy. The feature is otherwise complete; this is the one piece of the approved surface
-  that did not land.
-- **The four resolution tunables are transcribed placeholders** (DLR-156): `--wc-beat` (520ms),
-  `--wc-resolve-hold` (700ms), `--wc-flight` (380ms) and `--wc-ledger-row` (2.5rem), all declared in
-  `warCouncilResolve.css` and all marked `PLACEHOLDER`. `--wc-beat` is the one that matters — five
+- ~~**The resolution screen does not hold after a choice**~~ (DLR-156) — **closed by a DLR-156
+  follow-up, recorded here on the DLR-157 doc pass.** `useResolveHold.ts` now owns one timer per
+  answer, keyed off a value in state so StrictMode recomputes rather than double-schedules;
+  `TrickResolutionScreen` swaps the header word (`appliedHoldLabel` / `rolledOverHoldLabel`) and
+  disables all three controls while held, so a second press cannot queue a second dispatch.
+  `--wc-resolve-hold` (700ms) has a reader. **Its length is still an unchosen placeholder.**
+- **The resolution tunables are transcribed placeholders** (DLR-156): `--wc-beat` (520ms),
+  `--wc-resolve-hold` (700ms), `--wc-trick-dwell` (800ms) and `--wc-ledger-row` (2.5rem), all
+  declared in `warCouncilResolve.css` and all marked `PLACEHOLDER`. (`--wc-flight` was a fifth until
+  DLR-157 moved it, unchanged, into `warCouncilMotion.css` with the rest of the motion block.) `--wc-beat` is the one that matters — five
   impacts at 520ms is about three seconds a trick, six times a hand — and it is only answerable by
   playing. **The developer's.**
 - **Whether a whole screen firing up to six times a hand wears out is open** (DLR-156). The old

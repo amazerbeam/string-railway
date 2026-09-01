@@ -28,8 +28,8 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 | --------------------- | ------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, DLR-150, DLR-152, DLR-153, DLR-154, DLR-156, PT-001, PT-002                                                                                                                                                                   |
 | `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150, DLR-156                                                                                                                                                                                        |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, PT-002                                                                                                     |
-| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145, 2026-09-01 (unkeyed)                                                                                                                                                                                                                                                                                                                             |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, DLR-157, PT-002                                                                                                     |
+| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145, DLR-157, 2026-09-01 (unkeyed)                                                                                                                                                                                                                                                                                                                             |
 | `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, 2026-09-01 (unkeyed), PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -1239,8 +1239,9 @@ numerator/denominator pair (the codebase's only fractional rule, and its only di
 **Three things this ticket leaves open on purpose.** The payout lands roughly 2.5–3× today's for
 identical cards with nothing capping a streak — deliberately unbalanced, with the counterweight (a
 health penalty staked by firing a buff) deferred; whether a whole screen firing up to six times a
-hand wears out is play-and-see; and the four CSS tunables (`--wc-beat`, `--wc-resolve-hold`,
-`--wc-flight`, `--wc-ledger-row`) are transcribed placeholders the developer has not chosen. **No
+hand wears out is play-and-see; and the CSS tunables (`--wc-beat`, `--wc-resolve-hold`,
+`--wc-trick-dwell`, `--wc-ledger-row`, and `--wc-flight` until DLR-157 moved it into the motion
+block) are transcribed placeholders the developer has not chosen. **No
 browser pass was run**, so nothing on either screen has been seen rendering — a verification gap, not
 a build gap.
 
@@ -1255,6 +1256,21 @@ equation and the streak's lifetime,
 the beat sequence and the card's flight, or
 [war-council/buffs-in-the-trick-damage.md](war-council/buffs-in-the-trick-damage.md) for the split
 between what a fired buff pays into its own trick and what still pools for the hand.
+
+**DLR-157 turned that one flight into the game's only way a card moves (2026-09-01).** Its planning
+run produced an inventory of every card movement in the game — **27** of them, against the ticket's
+10-row seed list, two of whose rows it proved wrong (there is no discard pile, and `closeHand` runs
+at the end of a hand rather than a trick). Nineteen are live and now animate through a single
+primitive, `useCardMotion.move(requests, onAllLanded)`; `useCardFlight` and the `CardFlight`
+interface are gone. Fourteen of them fall out of **one** wiring: a pure differ over consecutive
+`RoundState`s, plus a registry that lets a movement name its source and destination *places* by key
+rather than hand over two live elements — which is the only shape that can animate the six movements
+landing in a slot that does not exist until the state commits. `--wc-flight` moved, unchanged in
+value, out of `warCouncilResolve.css` into a new `warCouncilMotion.css` alongside five siblings, so
+every duration, distance and easing in the game's motion is stated exactly once. **Every one of
+those six values, and the pile-collapse threshold, is an unchosen placeholder the developer sets by
+playing**, and nothing about the motion has been seen running. Nothing under `src/warCouncil/` or
+`src/hunt/` changed. See [war-council-ui/card-motion.md](war-council-ui/card-motion.md).
 
 ## DLR-154, Timebomb targeting: the mark, the fuse, and taking it back (2026-08-31)
 

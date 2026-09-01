@@ -326,3 +326,38 @@ than trusting a green test run.
 
 **Nothing a decision needs is behind hover** — the price and the refusal are both on the face of the
 tile, and the strip and the payouts are both on the face of the machine.
+
+## A bought or won card flies to the tray — DLR-157
+
+The shop holds the run layer's only two card movements, and both go through the same primitive the
+felt uses: `useCardMotion.move`, documented in full at
+[war-council-ui/card-motion.md](../war-council-ui/card-motion.md). Nothing here is a second
+implementation of anything.
+
+`ShopPanel` **mounts its own `MotionAnchorProvider`.** The shop and the round are different screens
+and never share a registry — the round's diff driver would have nothing to say about a purchase
+anyway. The provider has to sit *above* the component that consumes it (a component cannot resolve a
+context it renders itself), so the exported `ShopPanel` is now a two-line wrapper and every prop it
+takes is passed straight through to `ShopPanelContent`, which is where the screen actually lives.
+
+**A purchase defers its own commit to the landing.** The click *is* the moment, so `handleBuy` flies
+the offer tile to the tray and calls `onBuy(item)` in the landing callback — the same deferred-
+dispatch shape the player's own played card uses. If either anchor cannot be resolved the request
+lands instantly and the callback fires straight away, so **the purchase always reaches `RunState`,
+animated or not.**
+
+**A slot-machine win cannot defer anything**, and that is a real difference rather than an
+oversight: `useShopSlot.pull` commits the awarded buff and the pull result together, synchronously,
+so there is no "before the buff exists" moment left to hang a dispatch on. Instead the screen
+watches `heldBuffs` for an id that is **both** new since the previous render **and** named in this
+pull's own `awards` — the second clause is what stops a purchase firing the win animation.
+
+Two `PlaceKind` members exist so these two origins are *named* rather than encoded: `ShopOffer`
+(slotted by `ShopItem`, one per buy tile) and `SlotMachine`. An earlier revision reused `HeldTray`
+with invented slot strings for both, which made "which place is `offer:Heal`" something a reader had
+to decode. `ShopHeld` registers `HeldTray` on its outer `<section>` rather than on the `<ul>` inside
+it, because the `<ul>` only renders once something is held — **the very first purchase of a run must
+still have a destination to fly toward.**
+
+Covered by `src/app/run/__tests__/ShopCardMotion.test.tsx`. Nothing about how either movement
+*looks* is provable in jsdom.

@@ -1,10 +1,11 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { BuffTier, mintFromTemplate, templateById, timebombBuff } from '../../../hunt'
+import { BuffTier, mintFromTemplate, templateById, timebombBuff, type BuffId } from '../../../hunt'
 import { Suit } from '../../../warCouncil'
 import BuffRidingList from '../BuffRidingList'
 import type { RidingBuffRow } from '../buffRideModel'
+import { MotionAnchorProvider } from '../MotionAnchors'
 
 afterEach(cleanup)
 
@@ -12,9 +13,26 @@ const taker = mintFromTemplate(templateById('taker:bells:magnitude')!, BuffTier.
 const cheat = mintFromTemplate(templateById('cheat')!, BuffTier.Bronze, 2)
 const timebombCard = timebombBuff(BuffTier.Bronze, 3)
 
+// DLR-157 — `BuffRidingList` now calls `useMotionAnchors()` unconditionally (before its own
+// early return, so the hook order stays fixed across an empty-to-non-empty transition), which
+// throws outside a `MotionAnchorProvider`. Every render in this file goes through this helper
+// for that reason alone; `MotionAnchorProvider` itself renders no wrapping DOM element, so
+// `container.firstChild` below is unaffected.
+function renderList(
+  rows: readonly RidingBuffRow[],
+  onRemove: (id: BuffId) => void,
+  disabled = false,
+) {
+  return render(
+    <MotionAnchorProvider>
+      <BuffRidingList rows={rows} onRemove={onRemove} disabled={disabled} />
+    </MotionAnchorProvider>,
+  )
+}
+
 describe('BuffRidingList', () => {
   it('renders nothing at all when nothing is riding (game-ux — no empty frame)', () => {
-    const { container } = render(<BuffRidingList rows={[]} onRemove={vi.fn()} />)
+    const { container } = renderList([], vi.fn())
     expect(container.firstChild).toBeNull()
   })
 
@@ -23,7 +41,7 @@ describe('BuffRidingList', () => {
       { buff: taker, reach: 3, revocable: true, timebomb: null },
       { buff: cheat, reach: 0, revocable: false, timebomb: null },
     ]
-    render(<BuffRidingList rows={rows} onRemove={vi.fn()} />)
+    renderList(rows, vi.fn())
     expect(screen.getByRole('group', { name: 'Riding this trick' })).toBeTruthy()
     expect(screen.getByText(/lights up 3 of your cards/i)).toBeTruthy()
   })
@@ -32,7 +50,7 @@ describe('BuffRidingList', () => {
     const rows: readonly RidingBuffRow[] = [
       { buff: cheat, reach: 0, revocable: false, timebomb: null },
     ]
-    render(<BuffRidingList rows={rows} onRemove={vi.fn()} />)
+    renderList(rows, vi.fn())
     expect(screen.getByText(/no card in your hand can fire it/i)).toBeTruthy()
     expect(screen.queryByText(/0 cards/i)).toBeNull()
   })
@@ -41,7 +59,7 @@ describe('BuffRidingList', () => {
     const rows: readonly RidingBuffRow[] = [
       { buff: taker, reach: 3, revocable: true, timebomb: null },
     ]
-    render(<BuffRidingList rows={rows} onRemove={vi.fn()} />)
+    renderList(rows, vi.fn())
     const button = screen.getByRole('button', { name: /off the trick.*3 cards go dark/i })
     expect(button).toBeTruthy()
   })
@@ -50,7 +68,7 @@ describe('BuffRidingList', () => {
     const rows: readonly RidingBuffRow[] = [
       { buff: cheat, reach: 0, revocable: false, timebomb: null },
     ]
-    render(<BuffRidingList rows={rows} onRemove={vi.fn()} />)
+    renderList(rows, vi.fn())
     expect(screen.queryByRole('button')).toBeNull()
     expect(screen.getByText(/already spent|no condition/i)).toBeTruthy()
   })
@@ -60,10 +78,22 @@ describe('BuffRidingList', () => {
     const rows: readonly RidingBuffRow[] = [
       { buff: taker, reach: 3, revocable: true, timebomb: null },
     ]
-    render(<BuffRidingList rows={rows} onRemove={onRemove} />)
+    renderList(rows, onRemove)
     fireEvent.click(screen.getByRole('button'))
     expect(onRemove).toHaveBeenCalledTimes(1)
     expect(onRemove).toHaveBeenCalledWith(taker.id)
+  })
+
+  it('disables the remove button while a buff motion flight is airborne (QA fix — DLR-157 review)', () => {
+    const onRemove = vi.fn()
+    const rows: readonly RidingBuffRow[] = [
+      { buff: taker, reach: 3, revocable: true, timebomb: null },
+    ]
+    renderList(rows, onRemove, true)
+    const button = screen.getByRole('button', {
+      name: /off the trick.*3 cards go dark/i,
+    }) as HTMLButtonElement
+    expect(button.disabled).toBe(true)
   })
 
   it('states the Timebomb is not yet primed, and is not greyed — AC12', () => {
@@ -75,7 +105,7 @@ describe('BuffRidingList', () => {
         timebomb: { target: null, fuseRemaining: 0 },
       },
     ]
-    render(<BuffRidingList rows={rows} onRemove={vi.fn()} />)
+    renderList(rows, vi.fn())
     expect(screen.getByText(/not yet primed/i)).toBeTruthy()
     expect(document.querySelector('.wc-is-unreachable')).toBeNull()
   })
@@ -90,7 +120,7 @@ describe('BuffRidingList', () => {
         timebomb: { target: five, fuseRemaining: 2 },
       },
     ]
-    render(<BuffRidingList rows={rows} onRemove={vi.fn()} />)
+    renderList(rows, vi.fn())
     expect(
       screen.getByRole('button', { name: /take the timebomb back off the 5 of/i }),
     ).toBeTruthy()

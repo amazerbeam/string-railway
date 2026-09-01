@@ -11,7 +11,6 @@
   /* PLACEHOLDER — ui-notes.md §1/§7: "how long the resolution screen holds after a choice before
      returning to the table". Read by `useResolveHold.ts`'s own `holdMs`. */
   --wc-resolve-hold: 700ms;
-  --wc-flight: 380ms;
   --wc-ledger-row: 2.5rem;
   /* PLACEHOLDER — the developer's to set by playing, not a chosen value: how long the felt stays
      showing the just-played card in the trick well AFTER a commit before the resolution screen

@@ -59,7 +59,7 @@ import {
   type RoundUiState,
 } from './roundUiState'
 import RoundStatusBand from './RoundStatusBand'
-import { useCardFlight } from './useCardFlight'
+import { useTableCardMotion } from './useTableCardMotion'
 import { useDebugRoundState } from './useDebugRoundState'
 import './warCouncil.css'
 import './warCouncilTable.css'
@@ -106,9 +106,9 @@ export default function WarCouncilTable({
   const encounterOver = isEncounterResolved(ui.encounter)
   const roundComplete = ui.round.phase === RoundPhase.Complete
 
-  // DLR-156 AC15 — the played card's own flight, hand to table. `fly` clones `cardEl` and calls
-  // its landing callback once landed — see `handleTap` for the commit-tap gate. Declared before
-  // `interactive` because that now reads `inFlight` directly.
+  // DLR-156 AC15 — the played card's own flight, hand to table. `flyPlayedCard` clones the armed
+  // card's registered anchor and calls its landing callback once landed — see `handleTap` for the
+  // commit-tap gate. Declared before `interactive` because that now reads `inFlight` directly.
   // DLR-156 review fix (Defender Critical) — the commit tap's dispatch is deferred to landing,
   // closed over the card that started the flight, while `ui.armed` does not change until then. A
   // still-enabled hand let a second tap on a DIFFERENT card land mid-flight: read as a fresh arm
@@ -116,7 +116,9 @@ export default function WarCouncilTable({
   // dispatch, which re-armed the first card instead of playing it — visually flown, nothing
   // committed. `inFlight` folding into `interactive` below is the fix: smaller than making the
   // dispatch stale-aware, and the hand is disabled the whole ~380ms flight regardless.
-  const { fly, inFlight } = useCardFlight()
+  // DLR-157 Task 7 — lifted into `useTableCardMotion.ts`, which itself wraps the shared
+  // `useCardMotion` primitive; no behaviour changed in the move.
+  const { flyPlayedCard, inFlight } = useTableCardMotion()
 
   // The SAME predicate the reducer gates on — moved to `roundUiState.ts` on DLR-94. Two readings
   // of one gate is how a greyed control and a reducer branch drift apart. `!inFlight` ANDs in
@@ -228,17 +230,10 @@ export default function WarCouncilTable({
       dispatchClearingAnnouncement({ kind: RoundUiActionKind.TapCard, card })
       return
     }
-    const cardEl = document.querySelector<HTMLElement>(
-      `[data-buff-anchor="${cardKey(card)}"] button`,
-    )
-    const wellEl = document.querySelector<HTMLElement>('.wc-trick-row')
-    if (cardEl === null || wellEl === null) {
-      // No source or target box to fly between — commit exactly as before rather than stranding
-      // the tap on a flight that could never start.
-      dispatchClearingAnnouncement({ kind: RoundUiActionKind.TapCard, card })
-      return
-    }
-    fly(cardEl, wellEl, () =>
+    // DLR-157 Task 7 — no source/target box to fly between (an unresolvable anchor) is no longer
+    // a branch here: `useCardMotion`'s own instant-landing path calls `onLanded` synchronously in
+    // that case, so this always reads as "commit exactly as before".
+    flyPlayedCard(card, () =>
       dispatchClearingAnnouncement({ kind: RoundUiActionKind.TapCard, card }),
     )
   }
@@ -374,7 +369,11 @@ export default function WarCouncilTable({
           onTap={handleTap}
           onCancel={handleCancel}
         />
-        <BuffRidingList rows={buffRide.riding} onRemove={buffRide.handleRemoveBuff} />
+        <BuffRidingList
+          rows={buffRide.riding}
+          onRemove={buffRide.handleRemoveBuff}
+          disabled={buffRide.buffMotionInFlight}
+        />
         <CardBuffBreakdown
           breakdown={buffRide.breakdown}
           riding={buffRide.riding}

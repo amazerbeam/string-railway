@@ -12,6 +12,7 @@ import {
 import { buildBuffGallery } from '../buffGalleryModel'
 import BuffGallery from '../BuffGallery'
 import { BUFF_ACTIVATION_REFUSAL_MESSAGE } from '../buffLabels'
+import { MotionAnchorProvider } from '../MotionAnchors'
 
 afterEach(cleanup)
 
@@ -68,13 +69,17 @@ function renderGallery(options: RenderOptions) {
   const onCancelPoise = vi.fn()
   const onClose = vi.fn()
   render(
-    <BuffGallery
-      view={view}
-      poised={options.poised ?? null}
-      onTapBuff={onTapBuff}
-      onCancelPoise={onCancelPoise}
-      onClose={onClose}
-    />,
+    // DLR-157 — `BuffGallery` now registers one anchor per card, which throws outside a
+    // `MotionAnchorProvider`.
+    <MotionAnchorProvider>
+      <BuffGallery
+        view={view}
+        poised={options.poised ?? null}
+        onTapBuff={onTapBuff}
+        onCancelPoise={onCancelPoise}
+        onClose={onClose}
+      />
+    </MotionAnchorProvider>,
   )
   return { view, onTapBuff, onCancelPoise, onClose }
 }

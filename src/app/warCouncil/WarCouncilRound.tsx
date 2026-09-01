@@ -1,12 +1,16 @@
-import { useReducer } from 'react'
+import { useReducer, type ReactNode } from 'react'
+import type { RoundState } from '../../warCouncil'
 import type { WarCouncilMountProps } from '../warCouncilMount'
 import { CardArtSheet } from './CardArtSheet'
+import { MotionAnchorProvider } from './MotionAnchors'
 import { createRoundUiState } from './roundUiState'
 import { roundReducer } from './roundReducer'
 import { SuitSymbolSheet } from './SuitMark'
 import TrickResolutionScreen from './TrickResolutionScreen'
+import { useCardMotionDriver } from './useCardMotionDriver'
 import { useTrickDwell } from './useTrickDwell'
 import WarCouncilTable from './WarCouncilTable'
+import './warCouncilMotion.css'
 
 /**
  * The round mount, implementing SCRUM-37's `WarCouncilMountProps`. Owns exactly one piece of
@@ -87,26 +91,47 @@ export default function WarCouncilRound({
   const showResolution = useTrickDwell(ui.resolution !== null)
 
   return (
-    <>
-      {/* Rendered here, ABOVE the switch, rather than inside either screen: both need the same
-          sprite defs (a played card renders on both), and only one of the two screens is ever
-          mounted at a time, so hoisting avoids a duplicate-id risk for no cost. */}
-      <SuitSymbolSheet />
-      <CardArtSheet />
-      {ui.resolution !== null && showResolution ? (
-        <TrickResolutionScreen resolution={ui.resolution} dispatch={dispatch} />
-      ) : (
-        <WarCouncilTable
-          ui={ui}
-          dispatch={dispatch}
-          hunt={hunt}
-          maxHealth={maxHealth}
-          runLabel={runLabel}
-          coins={coins}
-          quarryLabel={quarryLabel}
-          onComplete={onComplete}
-        />
-      )}
-    </>
+    // DLR-157 — one registry per round, so the table and the resolution screen resolve every
+    // place a card can be against the same anchor map.
+    <MotionAnchorProvider>
+      {/* `useCardMotionDriver` reads the registry `MotionAnchorProvider` owns, so it must run in
+          a component BELOW the provider — this component itself renders the provider, so the
+          driver cannot be called in its own body. */}
+      <RoundMotionDriver round={ui.round}>
+        {/* Rendered here, ABOVE the switch, rather than inside either screen: both need the same
+            sprite defs (a played card renders on both), and only one of the two screens is ever
+            mounted at a time, so hoisting avoids a duplicate-id risk for no cost. */}
+        <SuitSymbolSheet />
+        <CardArtSheet />
+        {ui.resolution !== null && showResolution ? (
+          <TrickResolutionScreen resolution={ui.resolution} dispatch={dispatch} />
+        ) : (
+          <WarCouncilTable
+            ui={ui}
+            dispatch={dispatch}
+            hunt={hunt}
+            maxHealth={maxHealth}
+            runLabel={runLabel}
+            coins={coins}
+            quarryLabel={quarryLabel}
+            onComplete={onComplete}
+          />
+        )}
+      </RoundMotionDriver>
+    </MotionAnchorProvider>
   )
+}
+
+/** DLR-157 — mounts `useCardMotionDriver` as a descendant of `MotionAnchorProvider`, so it can
+ *  resolve the registry the provider owns. Renders nothing of its own; `round` is the only thing
+ *  it watches. */
+function RoundMotionDriver({
+  round,
+  children,
+}: {
+  readonly round: RoundState
+  readonly children: ReactNode
+}) {
+  useCardMotionDriver(round)
+  return children
 }

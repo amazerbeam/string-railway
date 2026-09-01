@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Suit } from '../../../warCouncil'
 import { CARD_DAMAGE_ESTIMATE_NOTE } from '../labels'
 import HandFan from '../HandFan'
+import { MotionAnchorProvider } from '../MotionAnchors'
 import { card } from './roundFixture'
 
 afterEach(cleanup)
@@ -21,27 +22,31 @@ function renderFan(overrides = {}) {
   const onTap = vi.fn()
   const onCancel = vi.fn()
   render(
-    <HandFan
-      hand={HAND}
-      legal={[card(Suit.Moons, 11)]}
-      armed={null}
-      interactive
-      hint="Follow their lead"
-      rejected={false}
-      promptOpen={false}
-      primedCards={[]}
-      timebombFuseRemaining={0}
-      timebombArmed={false}
-      discardSelecting={false}
-      discardSelection={[]}
-      damageForCard={() => PREVIEW}
-      buffLightForCard={() => null}
-      onCardEnter={() => {}}
-      onCardLeave={() => {}}
-      onTap={onTap}
-      onCancel={onCancel}
-      {...overrides}
-    />,
+    // DLR-157 — `HandFan` now registers one anchor per `.wc-fan-slot`, which throws outside a
+    // `MotionAnchorProvider`.
+    <MotionAnchorProvider>
+      <HandFan
+        hand={HAND}
+        legal={[card(Suit.Moons, 11)]}
+        armed={null}
+        interactive
+        hint="Follow their lead"
+        rejected={false}
+        promptOpen={false}
+        primedCards={[]}
+        timebombFuseRemaining={0}
+        timebombArmed={false}
+        discardSelecting={false}
+        discardSelection={[]}
+        damageForCard={() => PREVIEW}
+        buffLightForCard={() => null}
+        onCardEnter={() => {}}
+        onCardLeave={() => {}}
+        onTap={onTap}
+        onCancel={onCancel}
+        {...overrides}
+      />
+    </MotionAnchorProvider>,
   )
   return { onTap, onCancel }
 }

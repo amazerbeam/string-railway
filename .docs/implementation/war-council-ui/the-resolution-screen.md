@@ -141,7 +141,7 @@ rather than synchronously in an effect body, which `react-hooks/set-state-in-eff
 The pace is **read from the stylesheet**, not duplicated as a TypeScript literal: `beatIntervalMs()`
 reads `--wc-beat` off the document's computed style and falls back to `520` only when the property
 cannot be read at all — which is always true in jsdom, since it computes no custom properties.
-`useCardFlight` reads `--wc-flight` by the same pattern.
+`cardMotionConfig.ts` reads `--wc-flight` by the same pattern, for the card's flight.
 
 ## `ResolutionLedger` — two rows, always, and an instant follow
 
@@ -188,7 +188,15 @@ to reset). Its subtext branches on `absorbed` — "total and roll stand — noth
 primed card absorbed the loss, "trick N+1 starts from nothing" when the streak actually broke — and
 so does the header line, which reads `banked`, `the streak is broken`, or `nothing changed`.
 
-## The card's flight — `useCardFlight`
+## The card's flight — `useCardMotion`
+
+> **DLR-157 renamed and generalised this hook.** `useCardFlight` and the `CardFlight` interface no
+> longer exist: `useCardMotion.move(requests, onAllLanded)` is now the game's only card-motion
+> primitive, and this movement is one of nineteen that go through it. Its behaviour here is
+> unchanged — same second-tap gate, same deferred dispatch, same three landing paths — but the
+> orchestration moved out of `WarCouncilTable.tsx` into `useTableCardMotion.ts`, the two
+> `document.querySelector` calls became named anchors, and `--wc-flight` moved into
+> `warCouncilMotion.css`. See [card motion](card-motion.md) for the whole system.
 
 AC15: the played card **travels** from the hand to the table rather than appearing there.
 
@@ -232,13 +240,14 @@ Two more properties matter:
 
 ## The four tunables are transcribed placeholders
 
-Declared once, in `src/app/warCouncil/warCouncilResolve.css`, and read from there:
+Declared in `src/app/warCouncil/warCouncilResolve.css` and read from there — except `--wc-flight`,
+which **DLR-157 moved, unchanged in value, into `warCouncilMotion.css`'s single motion block**:
 
 | Property | Value | What it prices |
 | --- | --- | --- |
 | `--wc-beat` | `520ms` | one term's beat |
 | `--wc-resolve-hold` | `700ms` | how long the screen holds after a choice before returning — **declared and never read; see below** |
-| `--wc-flight` | `380ms` | the card's travel from hand to table |
+| `--wc-flight` | `380ms` | the card's travel from hand to table — **now declared in `warCouncilMotion.css`**, alongside DLR-157's five other motion tokens |
 | `--wc-ledger-row` | `2.5rem` | the pinned ledger row height |
 
 **None of these is a chosen value.** All four are transcribed verbatim from the approved mockup and
@@ -247,18 +256,27 @@ marked `PLACEHOLDER` in the stylesheet. `--wc-beat` is the one that matters most
 number most worth setting from a play-through. **They are the developer's, and only answerable by
 playing.**
 
-## The post-choice hold is not built
+## The post-choice hold — built in a DLR-156 follow-up
 
 `ui-notes.md` §4 specifies that **both exits hold before leaving**: applying a large pot and cutting
 straight back to the felt shows the player the number they chose for zero frames, so the payout
-should land, the header should change to name what happened ("Dealt to Aoife" / "Rolled over"), and
-only then should the screen return.
+should land, the header should change to name what happened, and only then should the screen return.
 
-**That does not happen.** `applyPotAction` and `rollOverAction` both set `resolution` to `null` in the
-same transition that deals the pot, so the screen leaves immediately. `--wc-resolve-hold` is declared
-in `warCouncilResolve.css` and **has no reader anywhere in `src/`**, and no header copy for either
-outcome exists. Nothing else depends on it; building it is a timer in the screen (or a two-stage
-`resolution` value) plus two lines of copy.
+**This section previously said that did not happen; it does now.** `useResolveHold.ts` owns the
+whole of it. `settle(key, onSettle)` arms one timer and calls `onSettle` exactly once after
+`--wc-resolve-hold`, and a second call while already held is a **no-op** — the double-press guard,
+on top of the `disabled` the buttons already carry. The effect is keyed off `pending`, a value in
+state, so StrictMode's double mount recomputes an identical schedule rather than double-scheduling,
+and unmounting mid-hold clears the timer through the same cleanup.
+
+`TrickResolutionScreen` reads `held` and swaps the header word — `appliedHoldLabel()` on Apply,
+`rolledOverHoldLabel(nextRoll)` on Roll over — while disabling all three controls. The hurt branch's
+single exit keeps `outcomeWord`, because it offers no choice and the header already said what
+happened.
+
+The hook is deliberately component-local and reducer-free: `src/sim/playHand.ts` dispatches
+`ApplyPot`/`RollOver` straight at the reducer with no component in between, so the simulator never
+waits on a timer. **`--wc-resolve-hold`'s 700ms is still an unchosen placeholder.**
 
 ## What is untested, and what a browser would have checked
 
@@ -270,7 +288,7 @@ covered: the beat derivation for every branch (`resolutionBeats.test.ts`), the l
 and its follow-to-newest (`ResolutionLedger.test.tsx`), the screen's two branches and their
 accessible names (`TrickResolutionScreen.test.tsx`), the beat clock and its reduced-motion branch
 (`useBeatSequence.test.tsx`), the flight landing even when the animation never runs
-(`useCardFlight.test.tsx`), and both reducer actions (`roundReducer.resolution.test.ts`).
+(`useCardMotion.test.tsx`), and both reducer actions (`roundReducer.resolution.test.ts`).
 
 What a browser would have checked: that neither screen scrolls at the seven viewport sizes the mockup
 was measured at; that the ledger holds a constant height across a full six-beat run; that a greyscale

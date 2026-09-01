@@ -11,7 +11,7 @@
  * rather than each living inline there. It is a hook (calls `useState`/`useBuffBreakdownTarget`),
  * not a plain assembler like `buffRideView`, which is why it lives beside it rather than in it.
  */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { BuffId } from '../../hunt'
 import type { Card } from '../../warCouncil'
 import { breakdownFor, type CardBuffBreakdown } from './buffBreakdownModel'
@@ -24,6 +24,7 @@ import {
 } from './buffRideModel'
 import { RoundUiActionKind, type RoundUiAction, type RoundUiState } from './roundUiState'
 import { useBuffBreakdownTarget, type BreakdownTarget } from './useBuffBreakdownTarget'
+import { useBuffCardMotion } from './useBuffCardMotion'
 
 export interface BuffRideOptions {
   readonly ui: RoundUiState
@@ -68,6 +69,10 @@ export interface BuffRideBundle {
    *  removal and the next card tap, and each used to leave the confirmation stranded in place of
    *  the hand's real hint, both visually and to a screen reader. */
   readonly clearRemovedAnnouncement: () => void
+  /** QA fix (DLR-157 review) — true while a buff's M15/M16 flight is airborne. `BuffRidingList`
+   *  disables its remove buttons while this is true, so a second tap cannot supersede — and
+   *  silently re-target — a removal whose commit is still in flight. */
+  readonly buffMotionInFlight: boolean
 }
 
 /** AC9/AC10/AC13/AC14 bundled behind one hook call. Reads `ui`/`legal` the same way
@@ -86,19 +91,51 @@ export function useBuffRide(options: BuffRideOptions): BuffRideBundle {
   // no rule and dies with the next ordinary hand action.
   const [removedAnnouncement, setRemovedAnnouncement] = useState<string | null>(null)
 
+  // DLR-157 Task 13 (M15/M16) — the buff going up to the riding strip and coming back. Neither
+  // movement is a card in `RoundState`, so the felt's own diff-driven `useCardMotionDriver`
+  // (Task 10) never sees it; this hook is the caller-driven equivalent for the two of them.
+  const { flyToStrip, flyToGallery, inFlight: buffMotionInFlight } = useBuffCardMotion()
+
+  // M15's trigger (`buffHandlers.handleTapBuff`'s COMMITTING tap) dispatches through the raw
+  // reducer, not through this file — `RidingStrip`'s row for the newly activated buff does not
+  // exist until AFTER that dispatch commits, so there is no "before" moment at which a request
+  // naming that destination could resolve (`useCardMotion.ts`'s own unresolvable-anchor path would
+  // just land it instantly, every time). Watching `view.riding` for a buff id that WASN'T here on
+  // the previous render is the same shape Task 10's driver uses for the felt, scoped to the one
+  // place a buff can appear. Seeded from the FIRST render's own riding set, not an empty one — a
+  // hand that opens with a buff already riding (a restored save, a re-render) must not fly it.
+  const previousRidingIdsRef = useRef<ReadonlySet<BuffId>>(
+    new Set(view.riding.map((row) => row.buff.id)),
+  )
+
+  useEffect(() => {
+    const currentIds = new Set(view.riding.map((row) => row.buff.id))
+    for (const id of currentIds) {
+      if (!previousRidingIdsRef.current.has(id)) flyToStrip(String(id), () => {})
+    }
+    previousRidingIdsRef.current = currentIds
+  }, [view.riding, flyToStrip])
+
   function handleRemoveBuff(id: BuffId) {
     const row = view.riding.find((candidate) => candidate.buff.id === id)
-    view.onRemoveBuff(id)
-    if (row === undefined) return
-    // FIX 4 — a Timebomb row announces through `timebombRemovedText`, which names the CARD taken
-    // back, rather than the generic `buffRemovedText`, which reads `reach: 0` for a Timebomb (it
-    // has no condition to reach) and always rendered "Bronze taken off the trick — nothing went
-    // dark", never naming the card.
-    setRemovedAnnouncement(
-      row.timebomb === null
-        ? buffRemovedText(row.buff, row.reach)
-        : timebombRemovedText(row.timebomb.target),
-    )
+    // M16 — the strip row is still resolvable at this instant (it is what the player just tapped
+    // to remove); the gallery card it returns to may or may not be, depending on whether the buff
+    // ever left the pile. Either way `useCardMotion` lands it and calls back — the actual removal,
+    // and `removedAnnouncement` (DLR-154 FIX 3's ONE place it is set), stay deferred to that
+    // landing, mirroring `useTableCardMotion.flyPlayedCard`'s deferred-dispatch shape for M1.
+    flyToGallery(String(id), () => {
+      view.onRemoveBuff(id)
+      if (row === undefined) return
+      // FIX 4 — a Timebomb row announces through `timebombRemovedText`, which names the CARD taken
+      // back, rather than the generic `buffRemovedText`, which reads `reach: 0` for a Timebomb (it
+      // has no condition to reach) and always rendered "Bronze taken off the trick — nothing went
+      // dark", never naming the card.
+      setRemovedAnnouncement(
+        row.timebomb === null
+          ? buffRemovedText(row.buff, row.reach)
+          : timebombRemovedText(row.timebomb.target),
+      )
+    })
   }
 
   return {
@@ -109,5 +146,6 @@ export function useBuffRide(options: BuffRideOptions): BuffRideBundle {
     removedAnnouncement,
     handleRemoveBuff,
     clearRemovedAnnouncement: () => setRemovedAnnouncement(null),
+    buffMotionInFlight,
   }
 }

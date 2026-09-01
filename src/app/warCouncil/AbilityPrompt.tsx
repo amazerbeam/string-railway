@@ -5,7 +5,9 @@ import {
   type AbilityChoice,
   type Card,
 } from '../../warCouncil'
+import { PlaceKind } from './cardPlacement'
 import { cardAccessibleName, cardKey } from './labels'
+import { useMotionAnchor } from './motionAnchorContext'
 import PlayingCard from './PlayingCard'
 import { useRovingTabIndex } from './useRovingTabIndex'
 
@@ -52,6 +54,12 @@ export default function AbilityPrompt({
   const count = isFox ? hand.length + 1 : (drawnCard ? 1 : 0) + hand.length
   const { groupRef, tabStopIndex, handleKeyDown } = useRovingTabIndex(count, () => true, onCancel)
 
+  // DLR-157 — two places, called unconditionally before either branch below: the row itself
+  // (both branches render exactly one `.wc-prompt-row`), and the Woodcutter's drawn-card slot,
+  // which only one of the two branches ever renders.
+  const rowRef = useMotionAnchor({ kind: PlaceKind.AbilityPrompt })
+  const drawnRef = useMotionAnchor({ kind: PlaceKind.AbilityPrompt, slot: 'drawn' })
+
   // Focuses the prompt on mount, so `Escape` works immediately without requiring the
   // player to tab first, while also handing the roving-tabindex hook its container node —
   // imperative ref work at attach time, not a lifecycle effect.
@@ -94,7 +102,7 @@ export default function AbilityPrompt({
           Give a card to become the decree, and take {cardAccessibleName(decree)} back. This changes
           trump before the trick resolves.
         </p>
-        <div className="wc-prompt-row">
+        <div className="wc-prompt-row" ref={rowRef}>
           {hand.map((handCard, index) => (
             <PlayingCard
               key={cardKey(handCard)}
@@ -134,9 +142,9 @@ export default function AbilityPrompt({
         You drew {drawnCard ? cardAccessibleName(drawnCard) : 'a card'}. Put one card back on the
         pile.
       </p>
-      <div className="wc-prompt-row">
+      <div className="wc-prompt-row" ref={rowRef}>
         {drawnCard && (
-          <span className="wc-drawn-wrap">
+          <span className="wc-drawn-wrap" ref={drawnRef}>
             <span className="wc-drawn-tag">Drawn</span>
             <PlayingCard
               card={drawnCard}

@@ -1,4 +1,6 @@
+import { PlaceKind } from './cardPlacement'
 import { RESHUFFLE_NOTE, SPENT_PILE_LABEL, SPENT_STANDING_NOTE, spentCountText } from './labels'
+import { useMotionAnchor } from './motionAnchorContext'
 
 interface DiscardPileProps {
   readonly spentCount: number
@@ -20,8 +22,10 @@ interface DiscardPileProps {
  * count gets occluded.
  */
 export default function DiscardPile({ spentCount, reshuffled }: DiscardPileProps) {
+  const spentPileRef = useMotionAnchor({ kind: PlaceKind.SpentPile })
+
   return (
-    <div className="wc-pile wc-spent" role="group" aria-label={SPENT_PILE_LABEL}>
+    <div className="wc-pile wc-spent" role="group" aria-label={SPENT_PILE_LABEL} ref={spentPileRef}>
       <span className="wc-plate-label">{SPENT_PILE_LABEL}</span>
       <span className="wc-pile-cards" aria-hidden="true">
         <span className="wc-pile-back wc-b1" />

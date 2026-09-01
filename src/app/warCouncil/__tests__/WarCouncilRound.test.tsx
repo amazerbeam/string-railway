@@ -126,7 +126,7 @@ describe('WarCouncilRound', () => {
   it('resolves the trick and keeps the hand interactive even when the flight’s onfinish never fires (AC15, ui-notes.md §2 — the hidden-tab case)', () => {
     // Web Animations stubbed so the play COULD start a real flight, but its `onfinish` is
     // deliberately never invoked — exactly the defect a background tab causes: `currentTime`
-    // freezes at 0, `onfinish` never fires, and without the timer backstop `useCardFlight.ts`
+    // freezes at 0, `onfinish` never fires, and without the timer backstop `useCardMotion.ts`
     // exists to provide, the trick would never resolve and the hand would stop responding for
     // the rest of the session.
     const originalAnimate = Element.prototype.animate
@@ -140,7 +140,7 @@ describe('WarCouncilRound', () => {
       fireEvent.click(bells7)
       fireEvent.click(bells7)
       // Nobody ever calls the stubbed animation's `onfinish` — only the timer backstop can land
-      // this. `--wc-flight` is unreadable in jsdom, so `useCardFlight.ts` falls back to its
+      // this. `--wc-flight` is unreadable in jsdom, so `useCardMotion.ts` falls back to its
       // documented 380ms; advancing well past it is what proves the timer path alone is enough.
       // DLR-156 play-test fix 1 — the resolution screen itself is now held behind
       // `--wc-trick-dwell` (`useTrickDwell.ts`'s fallback 800ms) on TOP of the flight, but the
@@ -165,7 +165,7 @@ describe('WarCouncilRound', () => {
     }
   })
 
-  it('rejects a tap on a DIFFERENT card while the first is still in flight, rather than silently reinterpreting it as a fresh arm (Defender Critical — WarCouncilTable.tsx/useCardFlight.ts)', () => {
+  it('rejects a tap on a DIFFERENT card while the first is still in flight, rather than silently reinterpreting it as a fresh arm (Defender Critical — WarCouncilTable.tsx/useCardMotion.ts)', () => {
     // Reproduces the exact A-B-land race: arm 7 of Bells, commit it (starts the ~380ms flight —
     // the dispatch that actually plays it is DEFERRED to landing, so `ui.armed` still names 7 of
     // Bells while it is airborne), then tap 2 of Bells before it lands. Before this fix, `ui.armed`

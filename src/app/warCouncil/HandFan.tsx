@@ -2,7 +2,9 @@ import { useId } from 'react'
 import { containsCard, isPrimed, sameCard, type Card } from '../../warCouncil'
 import type { CardDamagePreview } from './cardDamage'
 import type { CardBuffLight } from './buffRideModel'
+import { PlaceKind } from './cardPlacement'
 import { cardDamageGlyphText, cardDamageText, cardKey } from './labels'
+import { anchorKeyFor, useMotionAnchors } from './motionAnchorContext'
 import PlayingCard from './PlayingCard'
 import { useRovingTabIndex } from './useRovingTabIndex'
 
@@ -128,6 +130,12 @@ export default function HandFan({
     onCancel,
   )
 
+  // DLR-157 — one anchor per `.wc-fan-slot`, slotted by the card's own key. `register` (not the
+  // `useMotionAnchor` hook) because this component attaches one per card inside a `.map`, and a
+  // hook cannot be called conditionally or in a loop. `arriving` (AC7) — a card key currently
+  // flying INTO its slot renders that slot invisible-but-laid-out until it lands.
+  const { register, arriving } = useMotionAnchors()
+
   // Mirrors the mockup's own hint-class cascade exactly: a rejection always wins, an armed
   // card is the only other state that gets the "live" treatment, and every other hint (a
   // resolved trick, an open prompt, or whose turn it is) renders in the plain style.
@@ -181,7 +189,8 @@ export default function HandFan({
           return (
             <div
               key={cardKey(card)}
-              className="wc-fan-slot"
+              className={`wc-fan-slot${arriving.has(cardKey(card)) ? ' wc-is-in-flight' : ''}`}
+              ref={register(anchorKeyFor({ kind: PlaceKind.PlayerHand, slot: cardKey(card) }))}
               // DLR-153 — lets `useBuffBreakdownAnchor` find this card's own DOM node to measure
               // its centre against, without a second ref map threaded down from `WarCouncilRound`.
               data-buff-anchor={cardKey(card)}

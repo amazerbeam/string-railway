@@ -11,6 +11,8 @@ import {
 import { BUFF_ACTIVATION_REFUSAL_MESSAGE } from './buffLabels'
 import BuffRunTab from './BuffRunTab'
 import BuffTierFilter from './BuffTierFilter'
+import { PlaceKind } from './cardPlacement'
+import { anchorKeyFor, useMotionAnchors } from './motionAnchorContext'
 import { useRovingTabIndex } from './useRovingTabIndex'
 import './warCouncilBuffGallery.css'
 import './warCouncilBuffCard.css'
@@ -73,6 +75,10 @@ export default function BuffGallery({
   onClose,
 }: BuffGalleryProps) {
   const [tierFilter, setTierFilter] = useState<BuffTier | 'all'>('all')
+  // DLR-157 — one anchor per gallery card, slotted by the id a tap actually activates
+  // (`stack.ids[0]`, the same id `BuffCard`'s own `onClick` uses). `register`, not the
+  // `useMotionAnchor` hook: this component attaches one per stack inside a `.map`.
+  const { register } = useMotionAnchors()
 
   const counts: Record<BuffTier | 'all', number> = {
     all: view.held,
@@ -163,6 +169,9 @@ export default function BuffGallery({
                       poised={poised !== null && stack.ids[0] === poised}
                       tabIndex={index === tabStopIndex ? 0 : -1}
                       onTap={onTapBuff}
+                      ref={register(
+                        anchorKeyFor({ kind: PlaceKind.BuffGallery, slot: String(stack.ids[0]) }),
+                      )}
                     />
                   )
                 })}
@@ -179,6 +188,9 @@ export default function BuffGallery({
                     poised={false}
                     tabIndex={-1}
                     onTap={onTapBuff}
+                    ref={register(
+                      anchorKeyFor({ kind: PlaceKind.BuffGallery, slot: String(stack.ids[0]) }),
+                    )}
                   />
                 ))}
               </div>

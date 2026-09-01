@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: COMPLETE
 Started: 2026-09-01
 
 **Goal:** Turn DLR-156's single proven card flight into the game's only way a card moves — one shared primitive with a flip, a stagger, a reduced-motion path and one token block — and wire it to all seventeen animated movements the inventory found.
@@ -18,7 +18,8 @@ Started: 2026-09-01
 - `src/app/warCouncil/cardMotionConfig.ts` — reads the six motion tokens live, with documented fallbacks
 - `src/app/warCouncil/cardPlacement.ts` — PURE: where every card is, and what changed between two states
 - `src/app/warCouncil/cardMotionPlan.ts` — PURE: turns a diff into a staggered, flip-aware schedule
-- `src/app/warCouncil/MotionAnchors.tsx` — the place registry and the `arriving` set
+- `src/app/warCouncil/MotionAnchors.tsx` — the place registry's `MotionAnchorProvider` component
+- `src/app/warCouncil/motionAnchorContext.ts` — **not in the original file map**: the context, `anchorKeyFor`, `useMotionAnchors` and `useMotionAnchor` split out of `MotionAnchors.tsx` because a `.tsx` file exporting both a component and other bindings fails the project's `react-refresh/only-export-components` lint gate (a real, enforced rule — not one this contract may disable). `MotionAnchors.tsx` keeps `MotionAnchorProvider` as its sole export; every hook, the key function and the two types live here instead. The `arriving` set is still owned by the provider, defined via the `MotionAnchors` interface in this file.
 - `src/app/warCouncil/useCardMotion.ts` — the shared primitive (renamed and generalised from `useCardFlight.ts`)
 - `src/app/warCouncil/useCardMotionDriver.ts` — diffs `RoundState` across renders and runs the primitive
 - `src/app/warCouncil/useTableCardMotion.ts` — M1's pre-commit orchestration, lifted out of `WarCouncilTable.tsx`
@@ -58,7 +59,7 @@ Started: 2026-09-01
 
 Groundwork with no behaviour change: one stylesheet gains the tokens, two pure modules gain the logic that has a real invariant, and one reader binds them together. Nothing calls any of it yet, so the phase ends type-checking with the app behaving exactly as before. Doing the pure work first is deliberate — it is the only part testable without a renderer, and getting the placement differ wrong invisibly would poison every phase after it.
 
-### Task 1: Move every motion number into one token block
+### Task 1: Move every motion number into one token block ✓
 
 - Skill: react-frontend
 
@@ -66,7 +67,7 @@ Groundwork with no behaviour change: one stylesheet gains the tokens, two pure m
 - Create: `src/app/warCouncil/warCouncilMotion.css`
 - Modify: `src/app/warCouncil/warCouncil.css:388-397` (remove the `.wc-card-flyer` rule and its comment), `src/app/warCouncil/warCouncilResolve.css:14` (remove the `--wc-flight` declaration), `src/app/warCouncil/WarCouncilRound.tsx` (import the new stylesheet alongside the others)
 
-- [ ] **Step 1: Create the token block, transcribing the values from `mockup.html`'s `:root`**
+- [x] **Step 1: Create the token block, transcribing the values from `mockup.html`'s `:root`**
 
 `warCouncilMotion.css`. Every value is a PLACEHOLDER — say so, the way `warCouncilResolve.css:8` already does.
 
@@ -105,21 +106,21 @@ Groundwork with no behaviour change: one stylesheet gains the tokens, two pure m
 }
 ```
 
-- [ ] **Step 2: Remove both moved declarations from their old homes and import the new sheet**
+- [x] **Step 2: Remove both moved declarations from their old homes and import the new sheet**
 
 Delete `warCouncil.css:388-397` (the `.wc-card-flyer` rule and its DLR-156 comment) and `warCouncilResolve.css:14` (`--wc-flight: 380ms;`), leaving `warCouncilResolve.css`'s other four tokens in place. Add `import './warCouncilMotion.css'` to `WarCouncilRound.tsx` beside its existing stylesheet imports.
 
-- [ ] **Step 3: Confirm each moved name now has exactly one declaration**
+- [x] **Step 3: Confirm each moved name now has exactly one declaration**
 
 Run: `Get-ChildItem src\app -Recurse -Include *.css | Select-String -Pattern "--wc-flight:|\.wc-card-flyer \{"`
 Expected: exactly two hits, both in `src\app\warCouncil\warCouncilMotion.css`.
 
-- [ ] **Step 4: Confirm the relieved file is back under budget**
+- [x] **Step 4: Confirm the relieved file is back under budget**
 
 Run: `(Get-Content src\app\warCouncil\warCouncil.css).Count; (Get-Content src\app\warCouncil\warCouncilMotion.css).Count`
 Expected: the first is below 400; the second is well below 400.
 
-### Task 2: Read the six tokens live, with documented fallbacks
+### Task 2: Read the six tokens live, with documented fallbacks ✓
 
 - Skill: react-frontend
 
@@ -127,14 +128,14 @@ Expected: the first is below 400; the second is well below 400.
 - Create: `src/app/warCouncil/cardMotionConfig.ts`
 - Test: `src/app/warCouncil/__tests__/cardMotionConfig.test.ts`
 
-- [ ] **Step 1: Write the failing test for a missing, an unparseable and a negative token**
+- [x] **Step 1: Write the failing test for a missing, an unparseable and a negative token**
 
 `cardMotionConfig.test.ts`, under the `node` project (no DOM needed — stub `getComputedStyle` and `document` on `globalThis`). Assert: a well-formed token is read; an absent token yields the documented fallback; `NaN` yields the fallback rather than propagating; a zero or negative duration yields the fallback; `--wc-flight-stagger` of `0` is **kept** (zero stagger is a legitimate setting, unlike a zero duration); `--wc-flip-at` is clamped into `[0, 1]`.
 
 Run: `npx vitest run src/app/warCouncil/__tests__/cardMotionConfig.test.ts`
 Expected: fails — the module does not exist yet.
 
-- [ ] **Step 2: Implement the reader, following `useCardFlight.ts:16-24` exactly**
+- [x] **Step 2: Implement the reader, following `useCardFlight.ts:16-24` exactly**
 
 ```ts
 export interface CardMotionTiming {
@@ -156,7 +157,7 @@ Each fallback is a `const FALLBACK_*` with a docblock stating it is a placeholde
 Run: `npx vitest run src/app/warCouncil/__tests__/cardMotionConfig.test.ts`
 Expected: passes; Vitest reports 0 failed.
 
-### Task 3: Say where every card is, and what changed
+### Task 3: Say where every card is, and what changed ✓
 
 - Skill: react-frontend
 
@@ -164,7 +165,7 @@ Expected: passes; Vitest reports 0 failed.
 - Create: `src/app/warCouncil/cardPlacement.ts`
 - Test: `src/app/warCouncil/__tests__/cardPlacement.test.ts`
 
-- [ ] **Step 1: Write the failing test for the placement invariants**
+- [x] **Step 1: Write the failing test for the placement invariants**
 
 Build `RoundState` fixtures with the existing helpers in `src/app/warCouncil/__tests__/` (follow `resolutionTestHelpers.ts`'s pattern). Assert:
 
@@ -178,7 +179,7 @@ Build `RoundState` fixtures with the existing helpers in `src/app/warCouncil/__t
 Run: `npx vitest run src/app/warCouncil/__tests__/cardPlacement.test.ts`
 Expected: fails — the module does not exist yet.
 
-- [ ] **Step 2: Implement the pure module**
+- [x] **Step 2: Implement the pure module**
 
 ```ts
 export const PlaceKind = {
@@ -219,7 +220,7 @@ No React import and no DOM access — this module is pure so it can be tested wi
 Run: `npx vitest run src/app/warCouncil/__tests__/cardPlacement.test.ts; npm run typecheck`
 Expected: Vitest reports 0 failed; typecheck exits 0.
 
-### Task 4: Turn a diff into a staggered, flip-aware schedule
+### Task 4: Turn a diff into a staggered, flip-aware schedule ✓
 
 - Skill: react-frontend
 
@@ -227,14 +228,14 @@ Expected: Vitest reports 0 failed; typecheck exits 0.
 - Create: `src/app/warCouncil/cardMotionPlan.ts`
 - Test: `src/app/warCouncil/__tests__/cardMotionPlan.test.ts`
 
-- [ ] **Step 1: Write the failing test for the stagger, the flip and the pile collapse**
+- [x] **Step 1: Write the failing test for the stagger, the flip and the pile collapse**
 
 Assert: *n* movements yield delays `0, s, 2s, …, (n-1)s` for a given stagger (AC5); a stagger of `0` yields every delay `0`; `flip` is true exactly when `faceAt(from) !== faceAt(to)` (AC6) — check the Quarry's play (`QuarryHand → TrickWell`, down→up, flips) against the player's (`PlayerHand → TrickWell`, up→up, does not); a group of more than `PILE_COLLAPSE_THRESHOLD` movements sharing one source **and** one destination pile collapses to a single request (inventory **M8**, **M14**); a group at or under the threshold does not collapse; `hide` is `'from'` for a departure and `'to'` for an arrival.
 
 Run: `npx vitest run src/app/warCouncil/__tests__/cardMotionPlan.test.ts`
 Expected: fails — the module does not exist yet.
 
-- [ ] **Step 2: Implement the pure planner**
+- [x] **Step 2: Implement the pure planner**
 
 ```ts
 export interface CardMoveRequest {
@@ -266,11 +267,11 @@ Expected: Vitest reports 0 failed; typecheck exits 0.
 
 ---
 
-## Phase 2 — The registry and the shared primitive
+## Phase 2 — The registry and the shared primitive ✓
 
 The primitive itself. `useCardFlight` becomes `useCardMotion`, keeping DLR-156's three-path landing race verbatim and gaining a request list, a stagger, a flip and a reduced-motion short circuit. The registry that lets a movement name a *place* rather than hand over an element goes in alongside it. By the end of this phase M1 runs through the new primitive with no behaviour change and every other movement is still a teleport — a genuine stopping point, since the one shipped animation is the one under test.
 
-### Task 5: Register every place a card can be
+### Task 5: Register every place a card can be ✓
 
 - Skill: react-frontend
 
@@ -278,14 +279,14 @@ The primitive itself. `useCardFlight` becomes `useCardMotion`, keeping DLR-156's
 - Create: `src/app/warCouncil/MotionAnchors.tsx`
 - Test: `src/app/warCouncil/__tests__/MotionAnchors.test.tsx`
 
-- [ ] **Step 1: Write the failing test for register, resolve and unmount**
+- [x] **Step 1: Write the failing test for register, resolve and unmount**
 
 Assert: a component calling `useMotionAnchor(place)` is resolvable by `resolve(place)` after mount; it resolves to `null` after unmount (the ref callback must unregister, or the registry leaks a detached node); two places differing only by `slot` resolve to different elements; `resolve` on an unregistered place returns `null` rather than throwing; `arriving` starts empty. Query by accessible role and label.
 
 Run: `npx vitest run src/app/warCouncil/__tests__/MotionAnchors.test.tsx`
 Expected: fails — the module does not exist yet.
 
-- [ ] **Step 2: Implement the provider, the hook and the key form**
+- [x] **Step 2: Implement the provider, the hook and the key form**
 
 ```ts
 export type MotionAnchorKey = string
@@ -309,7 +310,7 @@ The element map lives in a `useRef<Map<...>>` inside the provider — **never** 
 Run: `npx vitest run src/app/warCouncil/__tests__/MotionAnchors.test.tsx; npm run typecheck`
 Expected: Vitest reports 0 failed; typecheck exits 0.
 
-### Task 6: Generalise the primitive from one flight to a group
+### Task 6: Generalise the primitive from one flight to a group ✓
 
 - Skill: react-frontend
 
@@ -320,7 +321,7 @@ Expected: Vitest reports 0 failed; typecheck exits 0.
 - Delete: `src/app/warCouncil/__tests__/useCardFlight.test.tsx`
 - Modify: `src/app/warCouncil/useResolveHold.ts:12`, `src/app/warCouncil/useTrickDwell.ts:8,37,44` — the docblock references to the old name
 
-- [ ] **Step 1: Carry over the existing spec unchanged, then add the new cases**
+- [x] **Step 1: Carry over the existing spec unchanged, then add the new cases**
 
 Every case in `useCardFlight.test.tsx` (lines 58, 67, 78, 91, 103 — the five `fly` calls) must survive as a `move` call with a one-request list, with the same assertions: `onfinish` lands; the timer lands when `onfinish` never fires; `visibilitychange` lands a flight frozen by a hidden tab; the landing is idempotent across all three paths; unmount tears down **without** calling the landing callback. Then add:
 
@@ -334,7 +335,7 @@ Every case in `useCardFlight.test.tsx` (lines 58, 67, 78, 91, 103 — the five `
 Run: `npx vitest run src/app/warCouncil/__tests__/useCardMotion.test.tsx`
 Expected: fails — the module does not exist yet.
 
-- [ ] **Step 2: Write the hook, preserving DLR-156's docblocks rather than re-deriving them**
+- [x] **Step 2: Write the hook, preserving DLR-156's docblocks rather than re-deriving them**
 
 ```ts
 export interface CardMotion {
@@ -346,17 +347,17 @@ export function useCardMotion(): CardMotion
 
 Carry over verbatim from `useCardFlight.ts`: the three-path `land()` race and its reasoning (the hidden-tab defect), the `ActiveFlight` teardown that closes the guard without calling the callback, the feature detection on `typeof from.animate !== 'function'`, and the `startBox.width > 0 ? … : 1` scale guard. What changes: `fly(from, to, onLanded)` becomes `move(requests, onAllLanded)`; the ref holds an array of live flights rather than one; each request gets its own stagger `setTimeout`, released in the same cleanup; `lift`, `tilt` and `easing` come from `cardMotionTiming()` instead of the three literals at lines 113 and 118; `prefersReducedMotion()` short-circuits **before** any clone is made; and a `flip: true` request runs a second `rotateY` animation on the clone whose keyframe offsets are placed around `flipAt`.
 
-- [ ] **Step 3: Update the two docblock references and confirm the old name is gone**
+- [x] **Step 3: Update the two docblock references and confirm the old name is gone**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx,*.css | Select-String -Pattern "useCardFlight|CardFlight\b"`
 Expected: zero hits.
 
-- [ ] **Step 4: Run the primitive's spec and the fast gate**
+- [x] **Step 4: Run the primitive's spec and the fast gate**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/useCardMotion.test.tsx; npm run typecheck`
 Expected: Vitest reports 0 failed; typecheck exits 0.
 
-### Task 7: Re-point the player's own flight, unchanged, and relieve the 400-line file
+### Task 7: Re-point the player's own flight, unchanged, and relieve the 400-line file ✓
 
 - Skill: react-frontend
 
@@ -364,7 +365,7 @@ Expected: Vitest reports 0 failed; typecheck exits 0.
 - Create: `src/app/warCouncil/useTableCardMotion.ts`
 - Modify: `src/app/warCouncil/WarCouncilTable.tsx:109-125,215-243`, `src/app/warCouncil/WarCouncilRound.tsx` (mount `MotionAnchorProvider`), `src/app/warCouncil/__tests__/WarCouncilRound.test.tsx` (the `useCardFlight` reference)
 
-- [ ] **Step 1: Lift the orchestration into its own hook, resolving the well by anchor**
+- [x] **Step 1: Lift the orchestration into its own hook, resolving the well by anchor**
 
 ```ts
 export interface TableCardMotion {
@@ -380,11 +381,11 @@ The `document.querySelector('.wc-trick-row')` at `WarCouncilTable.tsx:234` is re
 
 **Nothing about M1's behaviour changes**: same commit-tap gate, same `inFlight` folded into `interactive`, same deferred dispatch, same guard against a second tap mid-flight. `WarCouncilTable.tsx`'s DLR-156 comment block at lines 109-125 moves with the code it explains.
 
-- [ ] **Step 2: Wrap the round in the anchor provider**
+- [x] **Step 2: Wrap the round in the anchor provider**
 
 `WarCouncilRound.tsx` wraps its returned tree in `<MotionAnchorProvider>`, so both the table and the resolution screen resolve against one registry.
 
-- [ ] **Step 3: Confirm both budget-pressured files are under 400 and M1 still behaves**
+- [x] **Step 3: Confirm both budget-pressured files are under 400 and M1 still behaves**
 
 Run: `(Get-Content src\app\warCouncil\WarCouncilTable.tsx).Count; (Get-Content src\app\warCouncil\useTableCardMotion.ts).Count`
 Expected: both below 400.
@@ -398,7 +399,7 @@ Expected: Vitest reports 0 failed; typecheck exits 0.
 
 Purely additive: each component that renders a place calls `useMotionAnchor` once and attaches the returned ref. Nothing animates yet and no behaviour changes, so the phase ends type-checking with the app visually identical. Splitting it from Phase 4 means a mis-registered anchor surfaces as a resolvable-or-not assertion rather than as a card flying to the wrong corner.
 
-### Task 8: Register the felt's places
+### Task 8: Register the felt's places ✓
 
 - Skill: react-frontend
 
@@ -406,18 +407,18 @@ Purely additive: each component that renders a place calls `useMotionAnchor` onc
 - Modify: `src/app/warCouncil/HandFan.tsx` (one anchor per `.wc-fan-slot`, slotted by `cardKey`), `src/app/warCouncil/TrickWell.tsx` (the four `.wc-trick-row` sites), `src/app/warCouncil/DecreePile.tsx` (the decree plate and the draw pile — two distinct places in one component), `src/app/warCouncil/DiscardPile.tsx` (the spent pile), `src/app/warCouncil/RoundStatusBand.tsx` (the Quarry's hand)
 - Test: `src/app/warCouncil/__tests__/MotionAnchors.test.tsx` (extend)
 
-- [ ] **Step 1: Attach a ref to each place, changing no markup and no class name**
+- [x] **Step 1: Attach a ref to each place, changing no markup and no class name**
 
 Each component takes the ref callback from `useMotionAnchor(place)` and puts it on the element it already renders. **No class name is renamed** — `.wc-trick-row`, `.wc-fan-slot`, `.wc-pile`, `.wc-spent` and `.wc-stack` keep their existing owners and their existing styling and test bindings. `DecreePile.tsx` renders both the decree plate and the draw-pile count, so it registers two places.
 
-- [ ] **Step 2: Extend the registry spec to assert every felt place resolves**
+- [x] **Step 2: Extend the registry spec to assert every felt place resolves**
 
 Render a round and assert `resolve` returns a non-null element for `PlayerHand` (slotted), `QuarryHand`, `TrickWell`, `DrawPile`, `SpentPile` and `DecreePlate`. Query by accessible role and label.
 
 Run: `npx vitest run src/app/warCouncil/__tests__/MotionAnchors.test.tsx; npm run typecheck`
 Expected: Vitest reports 0 failed; typecheck exits 0.
 
-### Task 9: Register the prompt, the gallery and the riding strip
+### Task 9: Register the prompt, the gallery and the riding strip ✓
 
 - Skill: react-frontend
 
@@ -425,11 +426,11 @@ Expected: Vitest reports 0 failed; typecheck exits 0.
 - Modify: `src/app/warCouncil/AbilityPrompt.tsx:139-155` (the Woodcutter's `.wc-drawn-wrap` and the prompt row), `src/app/warCouncil/BuffGallery.tsx:147` (one anchor per gallery card, slotted by buff id), `src/app/warCouncil/BuffRidingList.tsx:39` (one anchor per riding row, slotted by buff id)
 - Test: `src/app/warCouncil/__tests__/MotionAnchors.test.tsx` (extend)
 
-- [ ] **Step 1: Attach the three remaining anchor groups**
+- [x] **Step 1: Attach the three remaining anchor groups**
 
 The gallery and the strip are slotted by the same buff id at both ends, so a buff's flight up (**M15**) and back (**M16**) resolve to the pair of elements that represent it.
 
-- [ ] **Step 2: Assert each resolves**
+- [x] **Step 2: Assert each resolves**
 
 Run: `npx vitest run src/app/warCouncil/__tests__/MotionAnchors.test.tsx; npm run typecheck`
 Expected: Vitest reports 0 failed; typecheck exits 0.
@@ -440,7 +441,7 @@ Expected: Vitest reports 0 failed; typecheck exits 0.
 
 The keystone. One hook watches `ui.round` across renders, diffs placements, plans the schedule and runs the primitive — and with it fourteen of the inventory's movements start animating at once, because they all fall out of the same diff. The phase ends with the felt fully animated and the run-level surfaces untouched, which is a safe boundary: the shop is a different screen and a different contract's working tree.
 
-### Task 10: Drive every movement off the state diff
+### Task 10: Drive every movement off the state diff ✓
 
 - Skill: react-frontend
 
@@ -449,14 +450,14 @@ The keystone. One hook watches `ui.round` across renders, diffs placements, plan
 - Modify: `src/app/warCouncil/WarCouncilRound.tsx` (mount the driver)
 - Test: `src/app/warCouncil/__tests__/useCardMotionDriver.test.tsx`
 
-- [ ] **Step 1: Write the failing test for the driver's own three rules**
+- [x] **Step 1: Write the failing test for the driver's own three rules**
 
 Assert: the **first** render emits no movements (the previous placement is seeded, not diffed against an empty map — otherwise 33 cards fly in from nowhere on mount); a `RoundState` change emits exactly the movements `diffPlacements` reports; a re-render with an unchanged `round` emits nothing; the previous placement lives in a ref and survives a re-render; unmount mid-flight leaves no clone attached to `document.body`.
 
 Run: `npx vitest run src/app/warCouncil/__tests__/useCardMotionDriver.test.tsx`
 Expected: fails — the module does not exist yet.
 
-- [ ] **Step 2: Implement the driver**
+- [x] **Step 2: Implement the driver**
 
 ```ts
 /** Watches `round` across renders, diffs placements, plans the schedule and runs it. Holds the
@@ -470,7 +471,7 @@ The effect reads `placementsOf(round)`, diffs it against the ref, calls `planMov
 Run: `npx vitest run src/app/warCouncil/__tests__/useCardMotionDriver.test.tsx; npm run typecheck`
 Expected: Vitest reports 0 failed; typecheck exits 0.
 
-### Task 11: An arriving slot holds its space and shows nothing until it lands
+### Task 11: An arriving slot holds its space and shows nothing until it lands ✓
 
 - Skill: react-frontend, game-ux
 
@@ -478,7 +479,7 @@ Expected: Vitest reports 0 failed; typecheck exits 0.
 - Modify: `src/app/warCouncil/HandFan.tsx`, `src/app/warCouncil/TrickWell.tsx`, `src/app/warCouncil/DecreePile.tsx`, `src/app/warCouncil/warCouncilMotion.css`
 - Test: `src/app/warCouncil/__tests__/useCardMotionDriver.test.tsx` (extend)
 
-- [ ] **Step 1: Add the one class that carries AC7, and read the arriving set**
+- [x] **Step 1: Add the one class that carries AC7, and read the arriving set**
 
 In `warCouncilMotion.css`:
 
@@ -494,21 +495,21 @@ In `warCouncilMotion.css`:
 
 Each of the three components reads `arriving` from `useMotionAnchors()` and adds the class to a slot whose card key is in the set.
 
-- [ ] **Step 2: Assert the class goes on during a flight and comes off on landing**
+- [x] **Step 2: Assert the class goes on during a flight and comes off on landing**
 
 Extend the driver spec: with a stubbed `Element.prototype.animate`, a card arriving into the hand carries `wc-is-in-flight` while airborne and does not after the landing; under `prefers-reduced-motion` it never carries it at all.
 
 Run: `npx vitest run src/app/warCouncil/__tests__/useCardMotionDriver.test.tsx; npm run typecheck`
 Expected: Vitest reports 0 failed; typecheck exits 0.
 
-### Task 12: Pin each named movement to a spec, so a regression names itself
+### Task 12: Pin each named movement to a spec, so a regression names itself ✓
 
 - Skill: react-frontend
 
 **Files:**
 - Test: `src/app/warCouncil/__tests__/cardPlacement.test.ts` (extend)
 
-- [ ] **Step 1: Add one assertion per animated felt movement, named by its inventory row**
+- [x] **Step 1: Add one assertion per animated felt movement, named by its inventory row**
 
 One `it(...)` per row, titled with the inventory's identifier so a failure says which movement broke. Cover **M2** (Quarry hand → trick well, flips), **M3+M4** (the pair on one commit), **M5/M6/M7** (the deal's three destinations, including the decree), **M8** (a reshuffle collapses to one request), **M9+M10** (out to the draw pile, back to the hand), **M11** (the Fox's crossing pair), **M12+M13** (the Woodcutter's draw and return), **M14** (the hand ending collapses to one sweep). Each asserts the end state and the movement list, never a pixel — jsdom has no layout engine.
 
@@ -521,7 +522,7 @@ Expected: Vitest reports 0 failed; typecheck exits 0.
 
 The two movements that are not cards in a `RoundState` — a buff going up to the riding strip and coming back — plus the two on the shop screen. These are caller-driven, like M1, because both ends exist and a handler knows exactly when they happen; they go through the same `move` primitive, which is what AC3 asks for. The shop is last on purpose: `ShopPanel.tsx`, `ShopHeld.tsx` and six shop stylesheets have uncommitted changes on this branch, so a conflict there cannot block anything before it.
 
-### Task 13: The buff card goes up, and comes back
+### Task 13: The buff card goes up, and comes back ✓
 
 - Skill: react-frontend
 
@@ -530,7 +531,7 @@ The two movements that are not cards in a `RoundState` — a buff going up to th
 - Modify: `src/app/warCouncil/buffRideProps.ts` (call it from the activate and remove handlers)
 - Test: `src/app/warCouncil/__tests__/useCardMotion.test.tsx` (extend)
 
-- [ ] **Step 1: Wire both directions through the shared primitive**
+- [x] **Step 1: Wire both directions through the shared primitive**
 
 ```ts
 export interface BuffCardMotion {
@@ -544,14 +545,14 @@ export function useBuffCardMotion(): BuffCardMotion
 
 Neither end changes face, so `flip` is false for both. `handleRemoveBuff` stays the only place `removedAnnouncement` is set (DLR-154 FIX 3) — the motion wraps it, it does not replace it.
 
-- [ ] **Step 2: Assert both directions land and neither is skipped when an anchor is missing**
+- [x] **Step 2: Assert both directions land and neither is skipped when an anchor is missing**
 
 A buff removed while the gallery is closed has no destination anchor; assert it lands instantly and the removal still commits.
 
 Run: `npx vitest run src/app/warCouncil/__tests__/useCardMotion.test.tsx; npm run typecheck`
 Expected: Vitest reports 0 failed; typecheck exits 0.
 
-### Task 14: A bought buff travels into the held tray
+### Task 14: A bought buff travels into the held tray ✓
 
 - Skill: react-frontend
 
@@ -559,14 +560,14 @@ Expected: Vitest reports 0 failed; typecheck exits 0.
 - Modify: `src/app/run/ShopHeld.tsx` (register the tray as a place), `src/app/run/ShopPanel.tsx` (fly a purchase and a slot win into it)
 - Test: `src/app/run/__tests__/ShopCardMotion.test.tsx`
 
-- [ ] **Step 1: Write the failing test for both run-level movements**
+- [x] **Step 1: Write the failing test for both run-level movements**
 
 Assert **M22** (a purchased buff lands in the tray) and **M21** (a slot win lands in the tray), each reaching its end state whether or not the animation ran, and under `prefers-reduced-motion` reaching it with no clone appended. The tray must never be left empty — the buff is in `heldBuffStacks` either way.
 
 Run: `npx vitest run src/app/run/__tests__/ShopCardMotion.test.tsx`
 Expected: fails.
 
-- [ ] **Step 2: Wrap the shop screen in the anchor provider and call the primitive**
+- [x] **Step 2: Wrap the shop screen in the anchor provider and call the primitive**
 
 `ShopPanel.tsx` mounts its own `MotionAnchorProvider` — the shop and the round are different screens and never share a registry. The slot machine's own reel spin (`useSlotSpin.ts`) is untouched: the inventory records it as already animated and not a card movement.
 
@@ -579,87 +580,96 @@ Expected: Vitest reports 0 failed; typecheck exits 0.
 
 No production changes. Only checks that the cumulative work is clean, that every tunable is in the one token block AC10 asks for, and that no stale name survives the rename.
 
-### Task 15: Confirm the pure-core boundary still holds
+### Task 15: Confirm the pure-core boundary still holds ✓
 
 - Skill: none — a verification grep, no code written
 
 **Files:**
 - Test: (none — verification only)
 
-- [ ] **Step 1: Grep the pure modules for React and DOM references**
+- [x] **Step 1: Grep the pure modules for React and DOM references**
 
 Run: `Get-ChildItem src\app\warCouncil -Include cardPlacement.ts,cardMotionPlan.ts | Select-String -Pattern "from 'react'|\bwindow\.|\bdocument\.|getComputedStyle|matchMedia"`
 Expected: zero hits — both modules are pure and testable without a renderer.
+Result: zero hits.
 
-- [ ] **Step 2: Confirm the engine tree is untouched**
+- [x] **Step 2: Confirm the engine tree is untouched**
 
 Run: `$env:Path = "C:\Program Files\Git\cmd;$env:Path"; git status --porcelain src/warCouncil src/hunt`
 Expected: no output — this contract changes no engine or configuration module.
+Result: no output.
 
-### Task 16: Confirm no tunable was hard-coded and no stale name remains
+### Task 16: Confirm no tunable was hard-coded and no stale name remains ✓
 
 - Skill: none — verification greps, no code written
 
 **Files:**
 - Test: (none — verification only)
 
-- [ ] **Step 1: Grep source for the literals the token block now owns**
+- [x] **Step 1: Grep source for the literals the token block now owns**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "cubic-bezier|\b380\b|\b-?34\b|\b-?4deg\b|\b70\b"`
 Expected: hits only inside `cardMotionConfig.ts`'s documented `FALLBACK_*` constants. Any hit elsewhere is a duration, distance or easing that escaped AC10's single block.
+Result: every real hit is either `cardMotionConfig.ts`'s `FALLBACK_*` constants (`FALLBACK_DURATION_MS = 380`, `FALLBACK_STAGGER_MS = 70`, `FALLBACK_LIFT_PX = 34`, `FALLBACK_EASING`) or a `.test.ts`/`.test.tsx` fixture asserting against those same values (`cardMotionConfig.test.ts`, `cardMotionPlan.test.ts`, `cardPlacement.test.ts`, `useCardMotion.test.tsx`). The remaining hits are unrelated numbers in `CardArtSheet.tsx` (SVG path coordinates) and `-70`/`DLR-70` references in `duelHealthBars.ts`, `encounter.ts`, `shield.ts` (a ticket number, not a motion literal). No escaped duration, distance or easing found.
 
-- [ ] **Step 2: Confirm the renamed hook leaves nothing behind**
+- [x] **Step 2: Confirm the renamed hook leaves nothing behind**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx,*.css | Select-String -Pattern "useCardFlight|CardFlight\b|querySelector"`
 Expected: zero hits for the first two. Any `querySelector` hit must be justified — this contract removes the only one on a motion path, in favour of the anchor registry.
+Result: zero hits for `useCardFlight`/`CardFlight`. Remaining `querySelector` hits are: (a) test-file DOM assertions (`container.querySelector(...)`, `document.querySelectorAll(...)`) across many pre-existing and new specs — normal Testing-Library usage, not a motion-path lookup; (b) docblock prose in `useTableCardMotion.ts` and `MotionAnchors.tsx` describing the *replaced* `document.querySelector` calls, in past/negative tense, not live code; (c) three pre-existing, out-of-scope call sites this contract does not touch: `useBuffBreakdownAnchor.ts:53`, `useRovingTabIndex.ts:46` and `SlotMachinePanel.tsx:99`, none of which are on a card-motion path (roving-tabindex focus management and an unrelated buff-anchor lookup) and none of which is in this contract's file map. Pre-existing, not fixed here.
 
-- [ ] **Step 3: Confirm every motion token is declared exactly once**
+- [x] **Step 3: Confirm every motion token is declared exactly once**
 
 Run: `Get-ChildItem src -Recurse -Include *.css | Select-String -Pattern "--wc-flight|--wc-flip-at"`
 Expected: six declarations, all in `src\app\warCouncil\warCouncilMotion.css`.
+Result: six declarations in `warCouncilMotion.css` (`--wc-flight`, `--wc-flight-stagger`, `--wc-flight-lift`, `--wc-flight-tilt`, `--wc-flight-ease`, `--wc-flip-at`); the one other hit, in `warCouncilResolve.css:20`, is prose in a docblock comment, not a declaration.
 
-### Task 17: Confirm no file breached the 400-line budget
+### Task 17: Confirm no file breached the 400-line budget ✓
 
 - Skill: none — verification only
 
 **Files:**
 - Test: (none — verification only)
 
-- [ ] **Step 1: Measure every file this contract created or grew**
+- [x] **Step 1: Measure every file this contract created or grew**
 
 Run: `Get-ChildItem src\app\warCouncil,src\app\run -Include *.ts,*.tsx,*.css -Recurse | ForEach-Object { [pscustomobject]@{ n = (Get-Content $_.FullName).Count; f = $_.Name } } | Where-Object { $_.n -gt 400 } | Sort-Object n -Descending`
 Expected: no output. `(Get-Content).Count`, not `Measure-Object -Line`, which drops blank lines and undercounts.
+Result: one hit — `WarCouncilRound.duelHealthBars.test.tsx` at 402 lines. Confirmed via `git diff d65e7fe -- <path>` (zero lines of diff) that this file is byte-for-byte unchanged since the contract's base commit: it predates this contract, is not in its file map, and this contract never touched it — so it is not this contract's breach to fix. Every file this contract actually created or modified is under 400 lines.
 
-### Task 18: Static gates and the full suite
+### Task 18: Static gates and the full suite ✓
 
 - Skill: none — verification only
 
 **Files:**
 - Test: (none — verification only)
 
-- [ ] **Step 1: Warm the transform cache, then typecheck, lint and run the unfiltered suite**
+- [x] **Step 1: Warm the transform cache, then typecheck, lint and run the unfiltered suite**
 
 Run: `npx vitest run --project node; npx vitest run --project dom; npm run typecheck; npm run lint; npm test`
 Expected: all exit 0; Vitest reports 0 failed. A **first** cold `[vitest-pool-runner]: Timeout waiting for worker to respond` is infrastructure, not a failing test — the two scoped runs above are what warms it. A second consecutive timeout is real.
+Result: `--project node` — no cold timeout — `Test Files  145 passed (145)`, `Tests  1871 passed (1871)`. `--project dom` — no cold timeout — `Test Files  48 passed (48)`, `Tests  449 passed (449)`. `npm run typecheck` — `tsc -b` exited 0, no diagnostics. `npm run lint` — `eslint .` exited 0, no output. `npm test` (unfiltered `vitest run`) — `Test Files  193 passed (193)`, `Tests  2320 passed (2320)`.
 
-- [ ] **Step 2: Check formatting of only the files this contract touched**
+- [x] **Step 2: Check formatting of only the files this contract touched**
 
 Run: `npx prettier --check src/app/warCouncil src/app/run`
 Expected: exits 0. Do **not** run `npm run format` — it rewrites ~59 unrelated markdown files.
+Result: `Checking formatting... All matched files use Prettier code style!` — exit 0.
 
-- [ ] **Step 3: Production build**
+- [x] **Step 3: Production build**
 
 Run: `npm run build`
 Expected: exits 0, `dist/` written, no bundler errors.
+Result: exit 0. `npm run lint && tsc -b && vite build` all passed. `220 modules transformed`, `dist/index.html`, `dist/assets/index-*.css` (99.15 kB), `dist/assets/index-*.js` (367.49 kB) written, `✓ built in 275ms`.
 
-### Task 19: Record what a browser must check, and update the PR description
+### Task 19: Record what a browser must check, and update the PR description ✓
 
 - Skill: none — a document for the developer
 
 **Files:**
 - Create: `.claude/contract/DLR-157-every-card-movement-animates/pr-description.md`
 
-- [ ] **Step 1: Write the PR description**
+- [x] **Step 1: Write the PR description**
 
 Include:
 - A link to `plan.md`, `card-movement-inventory.md` and `mockup.html` in this folder.

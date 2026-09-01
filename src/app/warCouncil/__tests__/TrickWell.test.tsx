@@ -1,5 +1,6 @@
-﻿/** @vitest-environment jsdom */
+/** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import type { ComponentProps } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, Suit, TrickOutcome } from '../../../warCouncil'
 import {
@@ -11,6 +12,7 @@ import {
   templateById,
   type Buff,
 } from '../../../hunt'
+import { MotionAnchorProvider } from '../MotionAnchors'
 import type { ResolvedTrick } from '../roundUiState'
 import TrickWell from '../TrickWell'
 
@@ -44,20 +46,29 @@ const resolvedTrick: ResolvedTrick = {
   timebombDamage: null,
 }
 
+// DLR-157 — `TrickWell` now registers the well's own anchor, which throws outside a
+// `MotionAnchorProvider`. Every render in this file goes through this helper for that reason
+// alone; nothing about any test's own assertions changed.
+function renderWell(props: ComponentProps<typeof TrickWell>) {
+  return render(
+    <MotionAnchorProvider>
+      <TrickWell {...props} />
+    </MotionAnchorProvider>,
+  )
+}
+
 describe('TrickWell — a resolved trick', () => {
   it('offers exactly one control, and it carries on (DLR-67: the claim fork is gone)', () => {
     // `PlayingCard` renders every table-variant card as its own (disabled, tab-index -1)
     // <button> for the played cards, so `getAllByRole('button')` alone would also pick
     // those up — filtering to the enabled buttons isolates the actual interactive controls.
     const onCarryOn = vi.fn()
-    render(
-      <TrickWell
-        currentTrick={[]}
-        resolvedTrick={resolvedTrick}
-        quarryToLead={false}
-        onCarryOn={onCarryOn}
-      />,
-    )
+    renderWell({
+      currentTrick: [],
+      resolvedTrick,
+      quarryToLead: false,
+      onCarryOn,
+    })
     const buttons = screen
       .getAllByRole('button')
       .filter((button) => !button.hasAttribute('disabled'))
@@ -67,56 +78,48 @@ describe('TrickWell — a resolved trick', () => {
   })
 
   it('renders no claim control and no claim-worth preview', () => {
-    render(
-      <TrickWell
-        currentTrick={[]}
-        resolvedTrick={resolvedTrick}
-        quarryToLead={false}
-        onCarryOn={vi.fn()}
-      />,
-    )
+    renderWell({
+      currentTrick: [],
+      resolvedTrick,
+      quarryToLead: false,
+      onCarryOn: vi.fn(),
+    })
     expect(screen.queryByRole('button', { name: /claim/i })).toBeNull()
     expect(screen.queryByText(/Claiming credits/)).toBeNull()
   })
 
   it('names the winning side and reports the damage figure — DLR-156 AC7 pays the Quarry nothing', () => {
-    render(
-      <TrickWell
-        currentTrick={[]}
-        resolvedTrick={resolvedTrick}
-        quarryToLead={false}
-        onCarryOn={vi.fn()}
-      />,
-    )
+    renderWell({
+      currentTrick: [],
+      resolvedTrick,
+      quarryToLead: false,
+      onCarryOn: vi.fn(),
+    })
     expect(screen.getByText(/They take the trick/)).toBeDefined()
     expect(screen.queryByText(/They take \d+\./)).toBeNull()
     expect(screen.getByText(/You take 1\./)).toBeDefined()
   })
 
   it('announces the marked card as primed (DLR-90 AC2)', () => {
-    render(
-      <TrickWell
-        currentTrick={[]}
-        resolvedTrick={resolvedTrick}
-        primedCards={[{ suit: Suit.Bells, rank: 7 }]}
-        quarryToLead={false}
-        onCarryOn={vi.fn()}
-      />,
-    )
+    renderWell({
+      currentTrick: [],
+      resolvedTrick,
+      primedCards: [{ suit: Suit.Bells, rank: 7 }],
+      quarryToLead: false,
+      onCarryOn: vi.fn(),
+    })
     expect(screen.getByRole('button', { name: /7 of Bells, primed/i })).toBeDefined()
   })
 
   it('announces a card carrying both a skull and the mark, both wordings present', () => {
-    render(
-      <TrickWell
-        currentTrick={[]}
-        resolvedTrick={resolvedTrick}
-        skulledCards={[{ suit: Suit.Bells, rank: 7 }]}
-        primedCards={[{ suit: Suit.Bells, rank: 7 }]}
-        quarryToLead={false}
-        onCarryOn={vi.fn()}
-      />,
-    )
+    renderWell({
+      currentTrick: [],
+      resolvedTrick,
+      skulledCards: [{ suit: Suit.Bells, rank: 7 }],
+      primedCards: [{ suit: Suit.Bells, rank: 7 }],
+      quarryToLead: false,
+      onCarryOn: vi.fn(),
+    })
     expect(screen.getByRole('button', { name: /7 of Bells, skulled, primed/i })).toBeDefined()
   })
 
@@ -125,14 +128,12 @@ describe('TrickWell — a resolved trick', () => {
       ...resolvedTrick,
       resolution: { ...resolvedTrick.resolution, timebombTarget: DuelSide.Quarry },
     }
-    render(
-      <TrickWell
-        currentTrick={[]}
-        resolvedTrick={primed}
-        quarryToLead={false}
-        onCarryOn={vi.fn()}
-      />,
-    )
+    renderWell({
+      currentTrick: [],
+      resolvedTrick: primed,
+      quarryToLead: false,
+      onCarryOn: vi.fn(),
+    })
     expect(
       screen.getByText(
         (_, node) =>
@@ -152,14 +153,12 @@ describe('TrickWell — a resolved trick', () => {
       resolution: { ...resolvedTrick.resolution, timebombTarget: DuelSide.Quarry },
       timebombDamage: TIMEBOMB_DAMAGE[BuffTier.Gold],
     }
-    render(
-      <TrickWell
-        currentTrick={[]}
-        resolvedTrick={goldPrimed}
-        quarryToLead={false}
-        onCarryOn={vi.fn()}
-      />,
-    )
+    renderWell({
+      currentTrick: [],
+      resolvedTrick: goldPrimed,
+      quarryToLead: false,
+      onCarryOn: vi.fn(),
+    })
     const goldFigure = TIMEBOMB_DAMAGE[BuffTier.Gold][DuelSide.Quarry]
     expect(goldFigure).not.toBe(TIMEBOMB_QUARRY_DAMAGE)
     expect(
@@ -172,14 +171,12 @@ describe('TrickWell — a resolved trick', () => {
   })
 
   it('renders no Timebomb clause when nothing was booked this trick', () => {
-    render(
-      <TrickWell
-        currentTrick={[]}
-        resolvedTrick={resolvedTrick}
-        quarryToLead={false}
-        onCarryOn={vi.fn()}
-      />,
-    )
+    renderWell({
+      currentTrick: [],
+      resolvedTrick,
+      quarryToLead: false,
+      onCarryOn: vi.fn(),
+    })
     expect(screen.queryByText(/Timebomb ticking/)).toBeNull()
   })
 })
@@ -190,15 +187,13 @@ describe('TrickWell — DLR-119 clauses', () => {
       ...resolvedTrick,
       resolution: { ...resolvedTrick.resolution, firedBuffIds: [taker.id] },
     }
-    render(
-      <TrickWell
-        currentTrick={[]}
-        resolvedTrick={fired}
-        offeredBuffs={[taker]}
-        quarryToLead={false}
-        onCarryOn={vi.fn()}
-      />,
-    )
+    renderWell({
+      currentTrick: [],
+      resolvedTrick: fired,
+      offeredBuffs: [taker],
+      quarryToLead: false,
+      onCarryOn: vi.fn(),
+    })
     expect(screen.getByText('Bell-Taker (Momentum): +2 multiplier.')).toBeDefined()
   })
 
@@ -207,34 +202,30 @@ describe('TrickWell — DLR-119 clauses', () => {
       ...resolvedTrick,
       resolution: { ...resolvedTrick.resolution, firedBuffIds: [taker.id] },
     }
-    render(
-      <TrickWell
-        currentTrick={[]}
-        resolvedTrick={fired}
-        offeredBuffs={[]}
-        quarryToLead={false}
-        onCarryOn={vi.fn()}
-      />,
-    )
+    renderWell({
+      currentTrick: [],
+      resolvedTrick: fired,
+      offeredBuffs: [],
+      quarryToLead: false,
+      onCarryOn: vi.fn(),
+    })
     expect(screen.queryByText(/Bell-Taker/)).toBeNull()
   })
 
   it('renders no fired-buff clause when nothing fired', () => {
-    render(
-      <TrickWell
-        currentTrick={[]}
-        resolvedTrick={resolvedTrick}
-        quarryToLead={false}
-        onCarryOn={vi.fn()}
-      />,
-    )
+    renderWell({
+      currentTrick: [],
+      resolvedTrick,
+      quarryToLead: false,
+      onCarryOn: vi.fn(),
+    })
     expect(screen.queryByText(/Momentum\)/)).toBeNull()
   })
 })
 
 describe('TrickWell — the Quarry is about to lead', () => {
   it('DLR-148 — names the wait without pointing at the deleted intent telegraph', () => {
-    render(<TrickWell currentTrick={[]} resolvedTrick={null} quarryToLead onCarryOn={vi.fn()} />)
+    renderWell({ currentTrick: [], resolvedTrick: null, quarryToLead: true, onCarryOn: vi.fn() })
     // The old copy said "Read their intent first" — there is no such panel any more.
     expect(screen.queryByText(/intent/i)).toBeNull()
     expect(screen.getByText('They are about to lead.')).toBeDefined()

@@ -87,3 +87,12 @@ reason.
 This is the same defect the buff-gallery mockup shipped once before ("cards with width but no
 height"), and it is worth knowing about before reusing `.wc-buffcard` anywhere a third time: **the
 class does not carry its own size.**
+
+## The tray is a motion anchor — DLR-157
+
+`ShopHeld` registers `PlaceKind.HeldTray` on its outer `<section>`, not on the `<ul>` of cards
+inside it. The `<ul>` renders only once `stacks.length > 0`, so anchoring there would mean the very
+first purchase or slot win of a run had no destination to fly toward — and a movement whose
+destination cannot be resolved lands instantly rather than animating. Registering on the section
+makes the anchor exist on an empty tray, which is exactly when the first card arrives. See
+[the shop screen](shop-screen.md#a-bought-or-won-card-flies-to-the-tray--dlr-157).

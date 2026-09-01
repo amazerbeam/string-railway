@@ -1,5 +1,7 @@
 import type { Card, Suit } from '../../warCouncil'
-import { SUIT_NAME } from './labels'
+import { PlaceKind } from './cardPlacement'
+import { cardKey, SUIT_NAME } from './labels'
+import { useMotionAnchor, useMotionAnchors } from './motionAnchorContext'
 import PlayingCard from './PlayingCard'
 import { SuitMark } from './SuitMark'
 
@@ -28,10 +30,32 @@ export default function DecreePile({
   drawPileCount,
   primed = false,
 }: DecreePileProps) {
+  // DLR-157 — two distinct places live in this one component: the decree plate (the face-up
+  // card) and the draw pile (the count). Two separate anchors, not one for the whole `.wc-pile`.
+  //
+  // DOCUMENTED CARVE-OUT (Defender review, DLR-157) — M11 (the Fox exchange) swaps a hand card
+  // for the decree in ONE commit: `DecreePlate → PlayerHand` (the old decree returning) and
+  // `PlayerHand → DecreePlate` (the new one arriving), diffed and planned AFTER the state has
+  // already committed. By the time the driver clones this element for the "old decree returning"
+  // request, React has already re-rendered `decree` to the NEW card — the flight clones whatever
+  // is current, so the departing flight visually shows the wrong face. A real fix needs the
+  // driver to clone from the PREVIOUS render's DOM before applying the new state (or to carry a
+  // snapshot of the departing card's own art rather than resolving live), which is a change to
+  // `useCardMotionDriver`'s ordering guarantees, not to this component — out of reach for this
+  // fix pass. The card still lands in the right place; only its face while airborne is wrong.
+  const decreeRef = useMotionAnchor({ kind: PlaceKind.DecreePlate })
+  const drawPileRef = useMotionAnchor({ kind: PlaceKind.DrawPile })
+  // AC7 — the decree card currently flying INTO the plate renders invisible-but-laid-out until
+  // it lands, so the plate does not reflow.
+  const { arriving } = useMotionAnchors()
+
   return (
     <div className="wc-pile">
       <span className="wc-plate-label">Decree</span>
-      <span className="wc-pile-cards">
+      <span
+        className={`wc-pile-cards${arriving.has(cardKey(decree)) ? ' wc-is-in-flight' : ''}`}
+        ref={decreeRef}
+      >
         <span className="wc-pile-back wc-b1" aria-hidden="true" />
         <span className="wc-pile-back wc-b2" aria-hidden="true" />
         <PlayingCard
@@ -45,7 +69,9 @@ export default function DecreePile({
         <SuitMark suit={trumpSuit} className="wc-trump-mark-icon" />
         {SUIT_NAME[trumpSuit]} is trump
       </span>
-      <span className="wc-plate-label">{drawPileCount} in the pile</span>
+      <span className="wc-plate-label" ref={drawPileRef}>
+        {drawPileCount} in the pile
+      </span>
     </div>
   )
 }

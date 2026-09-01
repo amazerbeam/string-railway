@@ -2,7 +2,9 @@ import type { MouseEvent } from 'react'
 import { BuffTier, TIMEBOMB_DAMAGE, type Buff } from '../../hunt'
 import { isPrimed, isSkulled, PlayerSide, type Card, type TrickCard } from '../../warCouncil'
 import { buffFiredText } from './buffFiredLabels'
-import { cardAccessibleName, timebombBookedText } from './labels'
+import { PlaceKind } from './cardPlacement'
+import { cardAccessibleName, cardKey, timebombBookedText } from './labels'
+import { useMotionAnchor, useMotionAnchors } from './motionAnchorContext'
 import PlayingCard from './PlayingCard'
 import type { ResolvedTrick } from './roundUiState'
 
@@ -61,17 +63,40 @@ export default function TrickWell({
     onCarryOn()
   }
 
+  // DLR-157 — one place, four render branches below. Called unconditionally, before any of the
+  // four early returns, and the same ref is attached to whichever single `.wc-trick-row` the
+  // active branch renders.
+  //
+  // DOCUMENTED CARVE-OUT (QA/Defender review, DLR-157) — `cardPlacement.ts` never slots
+  // `PlaceKind.TrickWell` (`placeCards(..., PlaceKind.TrickWell, /* slotted */ false)`), so every
+  // movement into or out of the well resolves to this ONE row anchor regardless of which card it
+  // names. For M3+M4 (both played cards leaving in the same commit, below the collapse threshold
+  // so two distinct requests are emitted) this means both requests clone the SAME row element —
+  // each flying clone shows the whole row, not the one card it represents. The real fix is
+  // slotting `TrickWell` the way `PlayerHand` already is, which would also require re-deriving
+  // `useTableCardMotion`'s M1 destination (today a deliberately unslotted `{ kind: TrickWell }`,
+  // since the well has no per-card slot until the state that creates one has already committed)
+  // and updating every `cardPlacement.test.ts`/`cardMotionPlan.test.ts` fixture that names this
+  // place — out of reach for this fix pass without touching the pure core's already-reviewed
+  // invariants for a cosmetic flight defect (the card still LANDS in the right place and the
+  // right end state either way; only the clone's mid-flight appearance is wrong). Tracked as a
+  // follow-up rather than fixed here.
+  const trickWellRef = useMotionAnchor({ kind: PlaceKind.TrickWell })
+  // AC7 — a played card currently flying INTO the well renders invisible-but-laid-out until it
+  // lands, so the row it joins does not reflow.
+  const { arriving } = useMotionAnchors()
+
   if (resolvedTrick) {
     const winnerLabel = resolvedTrick.winner === PlayerSide.Player ? 'You' : 'They'
     const firedText = buffFiredText(resolvedTrick.resolution.firedBuffIds, offeredBuffs)
 
     return (
       <>
-        <div className="wc-trick-row">
+        <div className="wc-trick-row" ref={trickWellRef}>
           {resolvedTrick.cards.map((played) => (
             <span
               key={`${played.side}-${played.card.suit}-${played.card.rank}`}
-              className={`wc-played${played.side === resolvedTrick.winner ? ' wc-is-winner' : ''}`}
+              className={`wc-played${played.side === resolvedTrick.winner ? ' wc-is-winner' : ''}${arriving.has(cardKey(played.card)) ? ' wc-is-in-flight' : ''}`}
             >
               <span className="wc-played-side">{SIDE_LABEL[played.side]}</span>
               <PlayingCard
@@ -122,7 +147,7 @@ export default function TrickWell({
     // player can reach.
     return (
       <>
-        <div className="wc-trick-row" />
+        <div className="wc-trick-row" ref={trickWellRef} />
         {/* PLACEHOLDER COPY — the developer's to retune. */}
         <p className="wc-table-line">They are about to lead.</p>
         <button type="button" className="wc-table-hint wc-is-carry-on" onClick={handleHintClick}>
@@ -136,8 +161,8 @@ export default function TrickWell({
     const led = currentTrick[0]
     return (
       <>
-        <div className="wc-trick-row">
-          <span className="wc-played">
+        <div className="wc-trick-row" ref={trickWellRef}>
+          <span className={`wc-played${arriving.has(cardKey(led.card)) ? ' wc-is-in-flight' : ''}`}>
             <span className="wc-played-side">{SIDE_LABEL[led.side]}</span>
             <PlayingCard
               card={led.card}
@@ -156,7 +181,7 @@ export default function TrickWell({
 
   return (
     <>
-      <div className="wc-trick-row" />
+      <div className="wc-trick-row" ref={trickWellRef} />
       <p className="wc-table-line">The table is yours — lead.</p>
     </>
   )

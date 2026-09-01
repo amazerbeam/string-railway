@@ -1,8 +1,10 @@
 import { HAND_SIZE, type Coins } from '../../hunt'
 import { PlayerSide } from '../../warCouncil'
+import { PlaceKind } from './cardPlacement'
 import type { HealthBarView } from './duelHealthBars.ts'
 import DuelHealthBars from './DuelHealthBars.tsx'
 import { COINS_PLATE_LABEL } from './labels'
+import { useMotionAnchor } from './motionAnchorContext'
 
 const MAX_VISIBLE_OPPONENT_BACKS = 8
 
@@ -45,12 +47,13 @@ export default function RoundStatusBand({
   const theirTricks = tricksWon[PlayerSide.Cpu]
   const trickNumber = Math.min(tricksPlayed + (roundComplete ? 0 : 1), HAND_SIZE)
   const backs = Array.from({ length: Math.min(opponentHandCount, MAX_VISIBLE_OPPONENT_BACKS) })
+  const quarryHandRef = useMotionAnchor({ kind: PlaceKind.QuarryHand })
 
   return (
     <header className="wc-status">
       <div className="wc-plate">
         <span className="wc-plate-label">Opponent</span>
-        <span className="wc-stack" aria-hidden="true">
+        <span className="wc-stack" aria-hidden="true" ref={quarryHandRef}>
           {backs.map((_, index) => (
             <span key={index} className="wc-stack-back" />
           ))}

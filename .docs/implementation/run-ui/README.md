@@ -1,7 +1,7 @@
 # Run verdict and shop UI — `src/app/run/`
 
 **Status:** implemented
-**Built by:** DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145, 2026-09-01 (unkeyed)
+**Built by:** DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145, DLR-157, 2026-09-01 (unkeyed)
 
 ## Responsibility
 
@@ -110,7 +110,9 @@ file's header.
   again with nobody watching**; plus — since **2026-09-01** — **the three-zone rebuild**, the status
   strip that replaced four blocks, the buy tiles that replaced the blurbed row list, the
   `run.css`-imports-`warCouncil.css` palette defect, and **the 172px clipping finally measured and
-  fixed**.
+  fixed**; plus — since **DLR-157** — **the run layer's only two card movements**, the screen's own
+  `MotionAnchorProvider` and the wrapper it forced, why a purchase can defer its commit to the
+  landing and a slot win cannot, and the two `PlaceKind` members that name the shop's two origins.
 - [The held-cards tray](the-held-cards-tray.md) — what you are carrying, shown as the cards you will
   play with rather than a list of their names; why `HeldBuffCard` is a `<span>` and never a
   `<button>`, why `heldBuffs.ts` is not `buildBuffGallery`, and the zero-width trap `.wc-buffcard`
@@ -220,6 +222,12 @@ file's header.
 
 ## Deferred / not yet implemented
 
+- **Neither shop card movement has been seen running** (DLR-157). No browser pass was taken, and
+  jsdom has no layout engine, so whether a purchase or a slot win reads as an arrival — or as a
+  distraction on a screen the player is already reading — is unverified rather than unbuilt. Both
+  are reachable in the app. Their timings are the same six unchosen placeholders the felt uses, in
+  `warCouncilMotion.css`; see
+  [war-council-ui/card-motion.md](../war-council-ui/card-motion.md).
 - **The flask's visual treatment is entirely placeholder, and the developer's UX design supersedes it
   wholesale** (DLR-93). The potion `<path>` data is transcribed from the contract's `mockup.html`,
   exactly as `HeartMark.tsx` marks its own heart paths; every figure in `shopFlask.css`'s `.shop-flask*`

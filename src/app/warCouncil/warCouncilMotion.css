@@ -1,0 +1,40 @@
+/* DLR-157 AC10 — the ONE place any card movement's duration, distance or easing is stated.
+   `cardMotionConfig.ts` reads all six live; nothing else in `src/` restates any of them.
+   Transcribed from `mockup.html`'s tuning rail. Every value is a PLACEHOLDER — the
+   developer's to set by playing, not chosen here. */
+:root {
+  /* MOVED from `warCouncilResolve.css`, value unchanged — one card's travel time. */
+  --wc-flight: 380ms;
+  /* AC5 — the single stagger between requests in one group. */
+  --wc-flight-stagger: 70ms;
+  /* The arc's peak lift. Was a bare `-34` literal in the pre-DLR-157 flight hook. */
+  --wc-flight-lift: 34px;
+  /* The mid-flight rotation. Was a bare `-4deg` literal at the same line. */
+  --wc-flight-tilt: 4deg;
+  /* Was a bare `cubic-bezier(...)` string literal in the pre-DLR-157 flight hook. */
+  --wc-flight-ease: cubic-bezier(0.3, 0.75, 0.25, 1);
+  /* AC6 — DEVELOPER DECISION, shipped unchosen. The fraction of the flight the flip
+     lands on: 0.5 turns the card in mid-air, 1 turns it as it lands. Recorded once
+     here and applied to every movement whose face changes. */
+  --wc-flip-at: 0.5;
+}
+
+/* MOVED from `warCouncil.css` (which was at 405 lines, over the 400 budget). The flight
+   layer: `useCardMotion.ts` appends every clone here, on `document.body`, so no clone is
+   ever clipped by the hand's or the felt's `overflow: hidden` (`ui-notes.md` §2). Only the
+   per-flight `left`/`top`/`width`/`height` are set inline. */
+.wc-card-flyer {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  will-change: transform;
+  transform-style: preserve-3d;
+}
+
+/* DLR-157 AC7 — a slot mid-movement keeps its space and loses only its paint, so nothing
+   reflows under the player's pointer: a departing card's gap closes AFTER it lands, and an
+   arriving card's slot fills after it lands, never during either. `visibility`, never
+   `display` — `display: none` removes the box and reflows the row immediately. */
+.wc-is-in-flight {
+  visibility: hidden;
+}

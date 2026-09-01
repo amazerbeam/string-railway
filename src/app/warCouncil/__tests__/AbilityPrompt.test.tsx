@@ -1,8 +1,9 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Suit } from '../../../warCouncil'
+import { Suit, type AbilityChoice, type Card } from '../../../warCouncil'
 import AbilityPrompt from '../AbilityPrompt'
+import { MotionAnchorProvider } from '../MotionAnchors'
 import { card } from './roundFixture'
 
 afterEach(cleanup)
@@ -11,20 +12,37 @@ const FOX = card(Suit.Keys, 3)
 const DECREE = card(Suit.Bells, 10)
 const HAND = [card(Suit.Bells, 7), card(Suit.Keys, 8), card(Suit.Moons, 5)]
 
+// DLR-157 — `AbilityPrompt` now registers its own row and drawn-slot anchors, which throw
+// outside a `MotionAnchorProvider`. Every render in this file goes through this helper for that
+// reason alone; nothing about any test's own assertions changed.
+function renderPrompt(props: {
+  card: Card
+  decree: Card
+  hand: readonly Card[]
+  drawnCard: Card | null
+  primedCards?: readonly Card[]
+  onChoose: (choice: AbilityChoice) => void
+  onCancel: () => void
+}) {
+  return render(
+    <MotionAnchorProvider>
+      <AbilityPrompt {...props} />
+    </MotionAnchorProvider>,
+  )
+}
+
 function renderFoxPrompt(overrides = {}) {
   const onChoose = vi.fn()
   const onCancel = vi.fn()
-  render(
-    <AbilityPrompt
-      card={FOX}
-      decree={DECREE}
-      hand={HAND}
-      drawnCard={null}
-      onChoose={onChoose}
-      onCancel={onCancel}
-      {...overrides}
-    />,
-  )
+  renderPrompt({
+    card: FOX,
+    decree: DECREE,
+    hand: HAND,
+    drawnCard: null,
+    onChoose,
+    onCancel,
+    ...overrides,
+  })
   return { onChoose, onCancel }
 }
 
@@ -86,16 +104,14 @@ describe('AbilityPrompt', () => {
   it('includes the drawn card as its own tab stop for a Woodcutter prompt', () => {
     const drawnCard = card(Suit.Moons, 2)
     const onChoose = vi.fn()
-    render(
-      <AbilityPrompt
-        card={card(Suit.Bells, 5)}
-        decree={DECREE}
-        hand={HAND}
-        drawnCard={drawnCard}
-        onChoose={onChoose}
-        onCancel={vi.fn()}
-      />,
-    )
+    renderPrompt({
+      card: card(Suit.Bells, 5),
+      decree: DECREE,
+      hand: HAND,
+      drawnCard,
+      onChoose,
+      onCancel: vi.fn(),
+    })
     const stops = screen.getAllByRole('button').filter((b) => b.getAttribute('tabindex') === '0')
     expect(stops).toHaveLength(1)
     fireEvent.click(screen.getByRole('button', { name: '2 of Moons' }))
@@ -109,17 +125,15 @@ describe('AbilityPrompt', () => {
 
   it('announces a marked hand card offered as a Woodcutter discard as primed (DLR-90 AC2)', () => {
     const onChoose = vi.fn()
-    render(
-      <AbilityPrompt
-        card={card(Suit.Bells, 5)}
-        decree={DECREE}
-        hand={HAND}
-        drawnCard={null}
-        primedCards={[card(Suit.Keys, 8)]}
-        onChoose={onChoose}
-        onCancel={vi.fn()}
-      />,
-    )
+    renderPrompt({
+      card: card(Suit.Bells, 5),
+      decree: DECREE,
+      hand: HAND,
+      drawnCard: null,
+      primedCards: [card(Suit.Keys, 8)],
+      onChoose,
+      onCancel: vi.fn(),
+    })
     expect(screen.getByRole('button', { name: '8 of Keys, primed' })).toBeDefined()
   })
 })

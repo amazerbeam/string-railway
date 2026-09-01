@@ -1,8 +1,10 @@
+import { useEffect, useRef } from 'react'
 import {
   flaskHealAmount,
   SHOP_ITEMS,
   ShopItem,
   type Buff,
+  type BuffId,
   type Coins,
   type FlaskRefusal,
   type Health,
@@ -29,11 +31,30 @@ import ShopHeld from './ShopHeld'
 import { FlaskMark, FlaskSymbolSheet } from './FlaskMark'
 import { HeartMark, HeartSymbolSheet } from '../warCouncil/HeartMark'
 import { HeartState } from '../warCouncil/duelHealthBars'
+import { PlaceKind } from '../warCouncil/cardPlacement'
+import { MotionAnchorProvider } from '../warCouncil/MotionAnchors'
+import { anchorKeyFor, useMotionAnchors } from '../warCouncil/motionAnchorContext'
+import { useCardMotion } from '../warCouncil/useCardMotion'
 import './run.css'
 import './shop.css'
 import './shopItems.css'
 import './shopFlask.css'
 import './shopSlot.css'
+
+/** DLR-157 Task 14 — the tray itself (`PlaceKind.HeldTray`, unslotted, `ShopHeld.tsx`'s own
+ *  anchor) and the two places a card can fly FROM into it. QA fix (code-evaluator review) —
+ *  these two origins were previously named as `HeldTray` slots (`slot: 'offer:<item>'`,
+ *  `slot: 'slotMachine'`), which read as a workaround around `cardPlacement.ts`'s fixed
+ *  `PlaceKind` union rather than what they actually are — neither is a slot of the tray.
+ *  `PlaceKind.ShopOffer` and `PlaceKind.SlotMachine` name them directly. `offerAnchor` slots by
+ *  the purchased `ShopItem` (M22); `SLOT_MACHINE_ANCHOR` is the one coarse origin for a slot win
+ *  (M21) — `SlotMachinePanel.tsx` registers no anchor of its own, so the flight starts from the
+ *  stage that hosts it. */
+function offerAnchor(item: ShopItem) {
+  return { kind: PlaceKind.ShopOffer, slot: item }
+}
+const SLOT_MACHINE_ANCHOR = { kind: PlaceKind.SlotMachine } as const
+const TRAY_ANCHOR = { kind: PlaceKind.HeldTray } as const
 
 interface ShopPanelProps {
   readonly coins: Coins
@@ -90,8 +111,22 @@ interface ShopPanelProps {
  *
  * Computes NOTHING — a `RunOutcomePanel` clone in discipline. Every figure, every refusal and the
  * opponent's name arrive as props. `Escape` still leaves for the next fight.
+ *
+ * DLR-157 Task 14 — mounts its OWN `MotionAnchorProvider`: the shop and the round are different
+ * screens and never share a registry (`useCardMotionDriver.ts`'s felt-only diff would have nothing
+ * to say about a shop purchase anyway). The provider has to sit ABOVE the component that calls
+ * `useMotionAnchors`/`useCardMotion` — a component cannot resolve a context it renders itself — so
+ * the real content lives in `ShopPanelContent` below, and this outer function does nothing else.
  */
-export default function ShopPanel({
+export default function ShopPanel(props: ShopPanelProps) {
+  return (
+    <MotionAnchorProvider>
+      <ShopPanelContent {...props} />
+    </MotionAnchorProvider>
+  )
+}
+
+function ShopPanelContent({
   coins,
   playerHealth,
   maxPlayerHealth,
@@ -107,6 +142,40 @@ export default function ShopPanel({
   onLeave,
   slot,
 }: ShopPanelProps) {
+  const { register } = useMotionAnchors()
+  const { move, inFlight } = useCardMotion()
+
+  // M22 — a purchase's own trigger: the click IS the moment, so this defers `onBuy` to the
+  // flight's landing, mirroring `useTableCardMotion.flyPlayedCard`'s deferred-dispatch shape for
+  // M1. An unresolvable anchor (`useCardMotion.ts`'s own path) lands instantly and calls back
+  // straight away — the purchase always reaches `RunState`, animated or not.
+  function handleBuy(item: ShopItem) {
+    move([{ from: offerAnchor(item), to: TRAY_ANCHOR, hide: 'to', flip: false, delayMs: 0 }], () =>
+      onBuy(item),
+    )
+  }
+
+  // M21 — a slot win's OWN trigger is `useShopSlot.pull`, out of this file's reach (Task 14's own
+  // `**Files:**` block), and it already commits `RunState` and `lastPull` together, synchronously —
+  // there is no "before the buff exists" moment left to defer a dispatch onto. Watching `heldBuffs`
+  // for an id that is BOTH new since the previous render AND named in this pull's own `awards` is
+  // the same shape `buffRideProps.ts`'s activation watcher uses for M15, scoped to the one case
+  // (a WIN, not a purchase) it must not double-fire on.
+  const previousHeldIdsRef = useRef<ReadonlySet<BuffId>>(new Set(heldBuffs.map((buff) => buff.id)))
+  useEffect(() => {
+    const currentIds = new Set(heldBuffs.map((buff) => buff.id))
+    const awardedIds = new Set((slot.lastPull?.awards ?? []).map((buff) => buff.id))
+    for (const id of currentIds) {
+      if (!previousHeldIdsRef.current.has(id) && awardedIds.has(id)) {
+        move(
+          [{ from: SLOT_MACHINE_ANCHOR, to: TRAY_ANCHOR, hide: 'to', flip: false, delayMs: 0 }],
+          () => {},
+        )
+      }
+    }
+    previousHeldIdsRef.current = currentIds
+  }, [heldBuffs, slot.lastPull, move])
+
   // One tile per purchasable, carrying a name and a price and nothing else. The blurb is gone: on
   // a one-item shelf the name IS the description, and the paragraph it replaced was a third of the
   // screen's text.
@@ -117,9 +186,15 @@ export default function ShopPanel({
         <button
           type="button"
           className="shop-buy"
-          disabled={refusal !== null}
-          onClick={() => onBuy(item)}
+          // QA fix (DLR-157 review) — `inFlight` folded in alongside the refusal gate, mirroring
+          // `useTableCardMotion`'s M1 guard: a purchase's own commit is deferred to its flight's
+          // landing (`handleBuy` below), and the M21 slot-win watcher shares this SAME
+          // `useCardMotion()` instance, so a second click mid-flight would otherwise supersede —
+          // and, before this fix, silently drop — the first purchase's commit.
+          disabled={refusal !== null || inFlight}
+          onClick={() => handleBuy(item)}
           aria-label={shopItemAccessibleName(item, refusal)}
+          ref={register(anchorKeyFor(offerAnchor(item)))}
         >
           <span className="shop-buy-name">{SHOP_ITEM_NAME[item]}</span>
           <span className="shop-buy-price">{priceText(item)}</span>
@@ -140,7 +215,12 @@ export default function ShopPanel({
     <div
       className="shop-shell"
       onKeyDown={(e) => {
-        if (e.key === 'Escape') onLeave()
+        // QA fix (DLR-157 follow-up) — a purchase's commit is deferred to its flight's landing
+        // (`handleBuy` above); leaving mid-flight unmounts this component and `useCardMotion`'s
+        // cleanup tears the flight down WITHOUT flushing `onAllLanded`, by design (flushing into
+        // an unmounting tree would be wrong). Gating Escape on `inFlight`, exactly like the Buy
+        // buttons already are, is what stops that purchase from silently never committing.
+        if (e.key === 'Escape' && !inFlight) onLeave()
       }}
     >
       <HeartSymbolSheet />
@@ -184,7 +264,7 @@ export default function ShopPanel({
         </span>
       </header>
 
-      <main className="shop-stage">
+      <main className="shop-stage" ref={register(anchorKeyFor(SLOT_MACHINE_ANCHOR))}>
         <SlotMachinePanel {...slot} />
       </main>
 
@@ -227,7 +307,11 @@ export default function ShopPanel({
             )}
           </div>
 
-          <button type="button" className="shop-leave" onClick={onLeave}>
+          {/* QA fix (DLR-157 follow-up) — same `inFlight` gate as the Escape handler above and the
+              Buy buttons: leaving while a purchase's flight is airborne would unmount this screen
+              before `onBuy` ever fires, silently dropping the purchase. `inFlight` clears the
+              instant the ~380ms flight lands, so the control is never stuck disabled. */}
+          <button type="button" className="shop-leave" disabled={inFlight} onClick={onLeave}>
             {nextOpponentName === undefined ? NEXT_FIGHT_LABEL : fightLabel(nextOpponentName)}
           </button>
         </div>

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
  * screen just appears, it should land on the 'you played' pile." `commit` (`commitHandlers.ts`)
  * sets `ui.resolvedTrick` and `ui.resolution` in the SAME transition, so the instant a trick
  * resolves `WarCouncilRound.tsx`'s switch used to render `TrickResolutionScreen` in the very next
- * paint — the card's flight (`useCardFlight.ts`) lands the clone, and the felt showing that landed
+ * paint — the card's flight (`useCardMotion.ts`) lands the clone, and the felt showing that landed
  * card (`roundControlsProps.ts`'s `feltStageProps`, `ui.resolvedTrick` branch) is replaced before
  * the player ever sees it there.
  *
@@ -34,14 +34,14 @@ function dwellMs(): number {
  *
  * DOES NOT delay the dispatch that resolves the trick, and does not delay HIDING the resolution
  * screen either — only the one-time reveal is held. Delaying the commit itself would leave a
- * window where the flown card's clone is already gone (`useCardFlight.ts`'s `land()` removed it)
+ * window where the flown card's clone is already gone (`useCardMotion.ts`'s `land()` removed it)
  * but the table has not yet re-rendered the real card into the well — a gap where the card exists
  * nowhere on screen, which is worse than the bug this hook fixes. Delaying only which SCREEN is
  * shown, with `ui.resolvedTrick` already rendering the landed card in the well the whole time,
  * avoids that gap entirely.
  *
  * `WarCouncilRound.tsx`'s own docblock calls itself the effect-free reducer owner; this hook is
- * the sanctioned exception, exactly as `useResolveHold`/`useBeatSequence`/`useCardFlight` already
+ * the sanctioned exception, exactly as `useResolveHold`/`useBeatSequence`/`useCardMotion` already
  * are for that component's tree — the timer lives here, in a hook the mount calls, never in the
  * reducer and never in the pure trees (`plan.md`'s "timers live in hooks under
  * `src/app/warCouncil/`"). `src/sim/playHand.ts` dispatches straight at the reducer with no

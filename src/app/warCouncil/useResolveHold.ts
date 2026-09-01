@@ -9,8 +9,8 @@ import { useEffect, useState } from 'react'
  * PLACEHOLDER, not a chosen value: transcribed from `mockup.html` via `ui-notes.md` §1/§7 ("how
  * long the resolution screen holds after a choice before returning to the table"). The real source
  * is the `--wc-resolve-hold` custom property declared in `warCouncilResolve.css` —`holdMs` below
- * reads it live, following `useBeatSequence.ts`'s `beatIntervalMs`/`useCardFlight.ts`'s
- * `flightDurationMs` pattern exactly, and only falls back to this literal when the property cannot
+ * reads it live, following `useBeatSequence.ts`'s `beatIntervalMs`/`cardMotionConfig.ts`'s own
+ * token readers pattern exactly, and only falls back to this literal when the property cannot
  * be read at all, which is always true in jsdom (it computes no custom properties).
  */
 const FALLBACK_HOLD_MS = 700
