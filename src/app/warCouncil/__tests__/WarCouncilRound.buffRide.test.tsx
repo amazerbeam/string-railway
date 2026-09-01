@@ -5,7 +5,7 @@ import { BuffTier, mintFromTemplate, templateById } from '../../../hunt'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
 import WarCouncilRound from '../WarCouncilRound'
 import {
-  bankClimbBonusFixture,
+  baseDamageBonusFixture,
   coinsFixture,
   discardsRemainingFixture,
   encounterFixture,
@@ -32,7 +32,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       quarryLabel={quarryLabelFixture}
       coins={overrides.coins ?? coinsFixture}
       blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
-      bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
+      baseDamageBonus={overrides.baseDamageBonus ?? baseDamageBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
       buffs={overrides.buffs ?? [bellsTaker]}
       onComplete={overrides.onComplete ?? vi.fn()}

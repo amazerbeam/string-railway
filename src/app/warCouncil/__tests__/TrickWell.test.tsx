@@ -1,4 +1,4 @@
-/** @vitest-environment jsdom */
+﻿/** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, Suit, TrickOutcome } from '../../../warCouncil'
@@ -6,7 +6,6 @@ import {
   BuffTier,
   DuelSide,
   mintFromTemplate,
-  PayoutOutcome,
   TIMEBOMB_DAMAGE,
   TIMEBOMB_QUARRY_DAMAGE,
   templateById,
@@ -31,19 +30,17 @@ const resolvedTrick: ResolvedTrick = {
   winner: PlayerSide.Cpu,
   resolution: {
     outcome: TrickOutcome.CleanLoss,
-    bankAdded: 0,
-    cashOut: 20,
+    trickDamage: null,
+    cashOut: 0,
     damageToPlayer: 1,
-    bank: 0,
-    multiplier: 0,
-    cashedAtHandEnd: false,
+    total: 0,
+    roll: 0,
     timebombTarget: null,
     timebombToQuarry: 0,
     blastGuardSpent: false,
     buffAccrual: null,
     firedBuffIds: [],
   },
-  payout: null,
   timebombDamage: null,
 }
 
@@ -82,7 +79,7 @@ describe('TrickWell — a resolved trick', () => {
     expect(screen.queryByText(/Claiming credits/)).toBeNull()
   })
 
-  it('names the winning side, and reports the cash-out and damage figures (DLR-97 Task 16)', () => {
+  it('names the winning side and reports the damage figure — DLR-156 AC7 pays the Quarry nothing', () => {
     render(
       <TrickWell
         currentTrick={[]}
@@ -92,7 +89,7 @@ describe('TrickWell — a resolved trick', () => {
       />,
     )
     expect(screen.getByText(/They take the trick/)).toBeDefined()
-    expect(screen.getByText(/They take 20\./)).toBeDefined()
+    expect(screen.queryByText(/They take \d+\./)).toBeNull()
     expect(screen.getByText(/You take 1\./)).toBeDefined()
   })
 
@@ -222,34 +219,7 @@ describe('TrickWell — DLR-119 clauses', () => {
     expect(screen.queryByText(/Bell-Taker/)).toBeNull()
   })
 
-  it('reports a settled payout', () => {
-    const paid: ResolvedTrick = {
-      ...resolvedTrick,
-      payout: { outcome: PayoutOutcome.Paid, cashOut: 12, remaining: null },
-    }
-    render(
-      <TrickWell currentTrick={[]} resolvedTrick={paid} quarryToLead={false} onCarryOn={vi.fn()} />,
-    )
-    expect(screen.getByText('Your queued 12 lands.')).toBeDefined()
-  })
-
-  it('DLR-141 — reports an evaporated payout', () => {
-    const evaporated: ResolvedTrick = {
-      ...resolvedTrick,
-      payout: { outcome: PayoutOutcome.Evaporated, cashOut: 12, remaining: null },
-    }
-    render(
-      <TrickWell
-        currentTrick={[]}
-        resolvedTrick={evaporated}
-        quarryToLead={false}
-        onCarryOn={vi.fn()}
-      />,
-    )
-    expect(screen.getByText('The fight ended before your queued 12 could land.')).toBeDefined()
-  })
-
-  it('renders neither clause when nothing fired and nothing was queued', () => {
+  it('renders no fired-buff clause when nothing fired', () => {
     render(
       <TrickWell
         currentTrick={[]}
@@ -258,7 +228,6 @@ describe('TrickWell — DLR-119 clauses', () => {
         onCarryOn={vi.fn()}
       />,
     )
-    expect(screen.queryByText(/lands\.|before your queued/)).toBeNull()
     expect(screen.queryByText(/Momentum\)/)).toBeNull()
   })
 })

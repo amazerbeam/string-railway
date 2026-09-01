@@ -54,7 +54,7 @@ when the player can spend it.
 
 So each branch returns `outcomes` — one `{ outcome, accrual }` entry per still-possible
 `TrickOutcome`. A follow gives one entry; a lead gives two. `trickIsLoss` is derived per entry as
-`!isTaken(trickOutcomeFor(playerWon, reading))`, reading `bank.ts`'s table rather than restating the
+`!isTaken(trickOutcomeFor(playerWon, reading))`, reading `streak.ts`'s table rather than restating the
 skull inversion, exactly as `resolveTrickBank` does.
 
 ## `indeterminate` falls out of a diff, not out of a name
@@ -111,7 +111,7 @@ single-element array, not a scalar.
 Everything else the caller passes in unchanged, and **that includes `playerHit` and
 `bankAfterTrick`, which are held constant across both branches even though they genuinely differ in
 the real game.** Deriving them would mean restating the outcome→damage and outcome→bank-climb rules
-that `bank.ts` owns, which is the duplication this module exists to prevent. It is inert today
+that `streak.ts` owns, which is the duplication this module exists to prevent. It is inert today
 because the only condition families reading them — Hoarder and Unbloodied — are cut and
 unconstructible. A ticket restoring either family is the ticket that must revisit this, and the
 type's own docblock says so rather than leaving it to be discovered.
@@ -119,7 +119,7 @@ type's own docblock says so rather than leaving it to be discovered.
 Two further limits were recorded as deliberate rather than left to drift: **no `gain` delta is
 exposed** (the consumer can subtract two accruals itself, and a second arithmetic surface here would
 be the very duplication the module prevents), and the branch fields are named `won` / `lost` rather
-than `taken`. `taken` was unavailable: `bank.ts`'s `isTaken` is the **outcome** axis, where a Dodge
+than `taken`. `taken` was unavailable: `streak.ts`'s `isTaken` is the **outcome** axis, where a Dodge
 counts as taken, so a `taken` branch here would mean the opposite of the neighbouring helper. Each
 branch carries an explicit `playerWon: boolean` and a docblock naming the mechanical axis.
 

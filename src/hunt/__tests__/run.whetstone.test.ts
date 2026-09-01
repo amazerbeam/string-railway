@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   advanceRun,
-  bankClimbBonusFor,
+  baseDamageBonusFor,
   buyFromShop,
   recordEncounter,
   shopStockFor,
@@ -58,9 +58,9 @@ describe('buyFromShop — Whetstone (DLR-92)', () => {
   })
 })
 
-describe('bankClimbBonusFor (DLR-92 AC2)', () => {
+describe('baseDamageBonusFor (DLR-92 AC2)', () => {
   it('is +1 per copy and 0 with none', () => {
-    expect(bankClimbBonusFor(startRun())).toBe(0)
-    expect(bankClimbBonusFor({ ...startRun(), whetstones: 3 })).toBe(3)
+    expect(baseDamageBonusFor(startRun())).toBe(0)
+    expect(baseDamageBonusFor({ ...startRun(), whetstones: 3 })).toBe(3)
   })
 })

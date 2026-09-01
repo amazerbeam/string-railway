@@ -1,15 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import {
-  ApplyDamageRefusal,
-  IllegalMoveReason,
-  Suit,
-  TrickOutcome,
-  type SuitShape,
-} from '../../../warCouncil'
+import { IllegalMoveReason, Suit, TrickOutcome, type SuitShape } from '../../../warCouncil'
 import { DuelSide } from '../../../hunt'
 import {
-  applyDamageAccessibleName,
-  APPLY_DAMAGE_REFUSAL_MESSAGE,
   cardAccessibleName,
   cardDamageGlyphText,
   cardDamageText,
@@ -314,35 +306,15 @@ describe('quarryHealthLabel', () => {
   })
 })
 
-describe('applyDamageAccessibleName — DLR-94', () => {
-  it('names the figure the apply would deal', () => {
-    expect(applyDamageAccessibleName(9, false, null)).toMatch(/9 to the Quarry/)
-  })
-
-  it('gives the three readings three different names', () => {
-    const live = applyDamageAccessibleName(9, false, null)
-    const poised = applyDamageAccessibleName(9, true, null)
-    const refused = applyDamageAccessibleName(0, false, ApplyDamageRefusal.EmptyBank)
-    expect(new Set([live, poised, refused]).size).toBe(3)
-  })
-
-  it('puts the reason in the name of a refused control, not only in the styling', () => {
-    expect(applyDamageAccessibleName(0, false, ApplyDamageRefusal.TrickInProgress)).toContain(
-      APPLY_DAMAGE_REFUSAL_MESSAGE[ApplyDamageRefusal.TrickInProgress],
-    )
-  })
-
-  it('a refusal outranks a poise — a stranded poise must never sound available', () => {
-    expect(applyDamageAccessibleName(9, true, ApplyDamageRefusal.NotYourMove)).toMatch(
-      /unavailable/,
-    )
-  })
-})
-
-describe('cardDamageGlyphText and cardDamageText — DLR-117', () => {
+describe('cardDamageGlyphText and cardDamageText — DLR-117, updated DLR-156 B1', () => {
+  // DLR-156 AC5 — `win.toQuarry` is correctly 0 on every ordinary win now: nothing is dealt to
+  // the Quarry immediately any more, only through the resolution screen's own Apply. `winPot` is
+  // what carries "does this card matter" instead — this fixture's `pot: 42` is what proves the
+  // sentence reads the WIN branch's own figures rather than the (now inert) `win.toQuarry`.
   const exactPreview: CardDamagePreview = {
-    win: { toQuarry: 6, toPlayer: 0, shielded: 0 },
+    win: { toQuarry: 0, toPlayer: 0, shielded: 0 },
     lose: { toQuarry: 0, toPlayer: 1, shielded: 0 },
+    winPot: { trickDamage: 6, total: 6, roll: 1, pot: 6 },
     exact: true,
   }
 
@@ -350,7 +322,8 @@ describe('cardDamageGlyphText and cardDamageText — DLR-117', () => {
     expect(cardDamageGlyphText(exactPreview)).toBe('W6 L1')
     const sentence = cardDamageText(exactPreview)
     expect(sentence).toBe(
-      'If you win this trick: 6 damage to the Quarry. If you lose: 1 damage to you.',
+      'If you win this trick: adds 6 to the streak — the pot would stand at 6. ' +
+        'If you lose: 1 damage to you.',
     )
     expect(sentence).not.toContain(CARD_DAMAGE_ESTIMATE_NOTE)
   })
@@ -359,37 +332,42 @@ describe('cardDamageGlyphText and cardDamageText — DLR-117', () => {
     const inexactPreview: CardDamagePreview = { ...exactPreview, exact: false }
     expect(cardDamageGlyphText(inexactPreview)).toBe('~W6 L1')
     expect(cardDamageText(inexactPreview)).toBe(
-      'If you win this trick: 6 damage to the Quarry. If you lose: 1 damage to you. ' +
+      'If you win this trick: adds 6 to the streak — the pot would stand at 6. ' +
+        'If you lose: 1 damage to you. ' +
         CARD_DAMAGE_ESTIMATE_NOTE,
     )
   })
 
-  it('renders a branch that costs nobody anything as "no damage" rather than "0 damage to you"', () => {
+  it('renders a win worth nothing as "adds nothing to the streak", and a lose branch that costs nobody anything as "no damage"', () => {
     const cleanPreview: CardDamagePreview = {
-      win: { toQuarry: 6, toPlayer: 0, shielded: 0 },
+      win: { toQuarry: 0, toPlayer: 0, shielded: 0 },
       lose: { toQuarry: 0, toPlayer: 0, shielded: 0 },
+      winPot: { trickDamage: 0, total: 0, roll: 0, pot: 0 },
       exact: true,
     }
     expect(cardDamageText(cleanPreview)).toBe(
-      'If you win this trick: 6 damage to the Quarry. If you lose: no damage.',
+      'If you win this trick: adds nothing to the streak. If you lose: no damage.',
     )
   })
 
-  it('names both sides of a branch that costs the player even on a win, so the cross-term is not dropped', () => {
+  it('names the win branch’s own cross-term (a Timebomb landing on the Quarry or the player even on a win) alongside the pot figure', () => {
     const crossTermPreview: CardDamagePreview = {
-      win: { toQuarry: 6, toPlayer: 2, shielded: 0 },
+      win: { toQuarry: 3, toPlayer: 2, shielded: 0 },
       lose: { toQuarry: 0, toPlayer: 1, shielded: 0 },
+      winPot: { trickDamage: 6, total: 6, roll: 1, pot: 6 },
       exact: true,
     }
     const sentence = cardDamageText(crossTermPreview)
-    expect(sentence).toContain('6 damage to the Quarry')
+    expect(sentence).toContain('adds 6 to the streak — the pot would stand at 6')
+    expect(sentence).toContain('3 damage to the Quarry')
     expect(sentence).toContain('2 damage to you')
   })
 
-  it('names shield absorption when a branch spends one', () => {
+  it('names shield absorption when the lose branch spends one', () => {
     const shieldedPreview: CardDamagePreview = {
-      win: { toQuarry: 6, toPlayer: 0, shielded: 0 },
+      win: { toQuarry: 0, toPlayer: 0, shielded: 0 },
       lose: { toQuarry: 0, toPlayer: 0, shielded: 1 },
+      winPot: { trickDamage: 6, total: 6, roll: 1, pot: 6 },
       exact: true,
     }
     expect(cardDamageText(shieldedPreview)).toContain('1 absorbed by your shield')

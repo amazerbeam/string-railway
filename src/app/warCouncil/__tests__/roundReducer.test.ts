@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import {
   AbilityChoiceKind,
   CardRank,
@@ -47,7 +47,7 @@ function uiFrom(
     round,
     encounter,
     blastGuardHeld: false,
-    bankClimbBonus: 0,
+    baseDamageBonus: 0,
     discardsRemaining: discardsRemainingFixture,
     buffs,
   })
@@ -123,19 +123,17 @@ describe('CarryOn commits a pending Quarry lead', () => {
       winner: PlayerSide.Player,
       resolution: {
         outcome: TrickOutcome.CleanWin,
-        bankAdded: 1,
+        trickDamage: { base: 1, buffDamage: 0, buffMult: 1, overlapBonus: 0, dealt: 1 },
         cashOut: 0,
         damageToPlayer: 0,
-        bank: 1,
-        multiplier: 1,
-        cashedAtHandEnd: false,
+        total: 1,
+        roll: 1,
         timebombTarget: null,
         timebombToQuarry: 0,
         blastGuardSpent: false,
         buffAccrual: null,
         firedBuffIds: [],
       },
-      payout: null,
       timebombDamage: null,
     }
     let ui: RoundUiState = { ...uiFrom(round), resolvedTrick: heldReveal }
@@ -379,7 +377,7 @@ describe('Cheat poise, spend and consume (DLR-83, DLR-132)', () => {
   })
 })
 
-// The bank cash-out specs (AC6/AC8) live in `roundReducer.bank.test.ts` — carved out once this
+// The total cash-out specs (AC6/AC8) live in `roundReducer.total.test.ts` — carved out once this
 // file crossed the 400-line budget with Task 12's own additions (the encounter, its seed, and
 // the four cash-out scenarios together were the largest single piece).
 //

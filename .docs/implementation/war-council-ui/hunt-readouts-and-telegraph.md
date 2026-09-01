@@ -97,7 +97,14 @@ drift silently again.
 > continuously. It is deliberately a *different number in a different place* rather than a reuse of
 > the bars' pending machinery, which would have carried the old shape forward.
 
-#### Pending buff bonus — the accrual folded into the figures before it is spent, 2026-08-25
+#### Pending buff bonus — the accrual folded into the figures before it is spent, 2026-08-25 — **removed by DLR-156**
+
+> **This readout no longer exists.** DLR-156 stopped buff rewards pooling across a hand: a fired
+> Blade or Momentum card pays into its own trick's bracket and does not survive it, so there is no
+> unspent balance left to preview. `BankMeter` lost `pendingBonus`, `shownMultiplier` and the
+> `forced` figure in the same pass, and now renders `total`, `roll` and `potValue(total, roll)`.
+> `carriedIn`/`carryOut` — the Feeder carry — survive unchanged, because that axis was untouched.
+> The section below is kept as the record of what was tried and why.
 
 `BankMeter` gained an optional `pendingBonus: CashOutBonus` prop, filled by
 `WarCouncilRound.tsx`'s `payableCashOutBonus(ui.buffHand.accrual)`. Before this, a fired Momentum or
@@ -176,11 +183,14 @@ suit therefore reads twice**, as a symbol and as an edge, so it never depends on
 ### The trick-resolution sentence names its own figure
 
 **DLR-97** closed a "hard to tell if I did damage or took damage" playtest note by having
-`TrickWell.tsx`'s resolution `<p className="wc-table-line">` read the two fields `bank.ts` already
+`TrickWell.tsx`'s resolution `<p className="wc-table-line">` read the two fields the engine already
 computes onto `ResolvedTrick.resolution` — `cashOut` and `damageToPlayer` — and append a clause
-naming whichever is non-zero: "They take N." when `cashOut > 0`, "You take N." when
-`damageToPlayer > 0`. Neither field is new; this is a prop-read added to an existing sentence, not a
-new derivation, so `roundReducer.ts` and `bank.ts` are untouched. Recognition over recall was the
+naming whichever is non-zero. **DLR-156 left only half of that**: `cashOut` is now always `0`,
+because a resolution pays the Quarry nothing and only the apply choice does, so the sentence names
+`damageToPlayer` and nothing else. What the trick was worth is now stated on the resolution screen
+instead — see [the trick resolution screen](the-resolution-screen.md). Neither field was new; this
+was a prop-read added to an existing sentence, not a new derivation, so `roundReducer.ts` and the
+engine were untouched. Recognition over recall was the
 `game-ux` heuristic: the health-bar break animation fires in the status band while the resolved
 trick sits at the felt centre, so naming the figure at the point of resolution closes the gap
 between the two zones without needing a new transient UI state.

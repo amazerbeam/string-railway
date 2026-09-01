@@ -1,4 +1,4 @@
-/** @vitest-environment jsdom */
+﻿/** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
@@ -7,7 +7,7 @@ import type { WarCouncilMountProps } from '../../warCouncilMount'
 import { TIMEBOMB_ARMED_HINT } from '../labels'
 import WarCouncilRound from '../WarCouncilRound'
 import {
-  bankClimbBonusFixture,
+  baseDamageBonusFixture,
   card,
   coinsFixture,
   discardsRemainingFixture,
@@ -19,8 +19,11 @@ import {
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
+import { carryOnFromResolution, stubMatchMedia } from './resolutionTestHelpers'
 
 afterEach(cleanup)
+
+stubMatchMedia()
 
 const bronzeTimebomb = timebombBuff(BuffTier.Bronze, 1)
 
@@ -38,7 +41,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       quarryLabel={quarryLabelFixture}
       coins={overrides.coins ?? coinsFixture}
       blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
-      bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
+      baseDamageBonus={overrides.baseDamageBonus ?? baseDamageBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
       buffs={overrides.buffs ?? [bronzeTimebomb]}
       onComplete={overrides.onComplete ?? vi.fn()}
@@ -153,7 +156,9 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
     fireEvent.click(bells7)
-    expect(screen.getByText(/take the trick/i)).toBeDefined()
+    // DLR-156 — the resolution screen replaces the WHOLE felt the instant the trick resolves,
+    // taking the gallery with it (rather than the gallery merely narrowing its own door).
+    expect(screen.getAllByText(/took it|streak is broken/i).length).toBeGreaterThan(0)
     expect(screen.queryByRole('dialog', { name: 'Your buffs' })).toBeNull()
     expect(screen.queryByRole('button', { name: /Timebomb \(/ })).toBeNull()
   })
@@ -179,12 +184,12 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     expect(screen.getByRole('dialog', { name: 'Your buffs' })).toBeTruthy()
   })
 
-  it('AC5 — a marked card the Quarry wins cleanly costs nothing: no damage, bank and multiplier stand', () => {
+  it('AC5 — a marked card the Quarry wins cleanly costs nothing: no damage, total and roll stand', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
-      bank: 3,
-      multiplier: 2,
+      total: 3,
+      roll: 2,
       tricksPlayed: 0,
       hands: {
         [PlayerSide.Player]: [card(Suit.Bells, 2), card(Suit.Bells, 4)],
@@ -197,8 +202,8 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     const playerHealthBefore = screen
       .getByRole('meter', { name: 'Your health' })
       .getAttribute('aria-valuenow')
-    // bank(3) x multiplier(2) = 6.
-    expect(screen.getByLabelText(/cashes for 6\b/i)).toBeTruthy()
+    // total(3) x roll(2) = 6.
+    expect(screen.getByLabelText(/pot stands at 6\b/i)).toBeTruthy()
 
     // Mark the 2 of Bells, then play it.
     openLoadout()
@@ -214,12 +219,18 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     fireEvent.click(markedBells2)
     fireEvent.click(markedBells2)
 
-    expect(screen.getByText(/take the trick/i)).toBeDefined()
-    // Neither the player's health nor the bank moved: AC5's replaced clean loss.
+    // DLR-156 B2 — AC5's replaced clean loss has no `trickDamage` (it is not a TAKEN outcome),
+    // but `resolveTrickBank`'s `replaced` branch skips the streak reset entirely — nothing was
+    // actually lost. The screen must say so rather than narrating a break that never happened.
+    expect(screen.getAllByText(/nothing changed/i).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/streak is broken/i)).toBeNull()
+    carryOnFromResolution()
+
+    // Neither the player's health nor the total moved: AC5's replaced clean loss.
     expect(screen.getByRole('meter', { name: 'Your health' }).getAttribute('aria-valuenow')).toBe(
       playerHealthBefore,
     )
-    expect(screen.getByLabelText(/cashes for 6\b/i)).toBeTruthy()
+    expect(screen.getByLabelText(/pot stands at 6\b/i)).toBeTruthy()
   })
 
   it('threads a marked card into the decree when the Fox exchanges it in (regression — DecreePile wiring)', () => {
@@ -258,6 +269,11 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     fireEvent.click(fox)
     fireEvent.click(fox)
     fireEvent.click(screen.getByRole('button', { name: '2 of Bells, primed' }))
+
+    // DLR-156 — the Fox's own commit resolves the trick in the same transition (the player led,
+    // so the Quarry's forced follow completes it), handing off to the resolution screen; the
+    // decree pile lives on the felt, so dismiss it before reading the felt again.
+    carryOnFromResolution()
 
     // The decree pile — not the hand fan, which no longer holds this card — must still announce
     // the mark. Exactly one match: the marked card left the hand when it became the decree.
@@ -303,7 +319,10 @@ describe('WarCouncilRound — the Timebomb row (DLR-90, DLR-132)', () => {
     fireEvent.click(marked)
     fireEvent.click(marked)
 
-    fireEvent.click(screen.getByRole('button', { name: /tap the table to carry on/i }))
+    // DLR-156 — the deciding trick hands off to the resolution screen; dismissing it clears the
+    // held reveal AND finds the hand already complete (`roundReducer.ts`'s Task 15 chaining), so
+    // the hand-over panel appears directly with no second felt-side tap.
+    carryOnFromResolution()
     fireEvent.click(screen.getByRole('button', { name: 'Deal the next Hunt' }))
 
     expect(onComplete).toHaveBeenCalledTimes(1)

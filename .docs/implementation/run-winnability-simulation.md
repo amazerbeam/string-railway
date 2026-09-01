@@ -11,6 +11,15 @@
 > directly — not for its numbers. The current measurements live in
 > [hunt/the-opening-pile.md](hunt/the-opening-pile.md) and `.docs/game_rules/the-hunt.md`'s Known
 > tensions.
+>
+> **A seventh thing changed on 2026-09-01.** DLR-156 replaced the damage equation outright — a banked
+> trick now pays `(BASE_DAMAGE + baseDamageBonus + buffDamage) x buffMult` into a running total that
+> the roll multiplies, a hurt trick pays the Quarry nothing, and the hand boundary no longer cashes.
+> **This ticket did not re-measure the whole-run win rate**, so the 0.0% recorded below still stands
+> unmeasured against the new equation rather than confirmed under it. What DLR-156 *did* fix, found
+> in review, is that the simulator could deal the Quarry **zero** pot damage on any seed: with the
+> apply choice wired into `playHand.ts` it now averages **4.45 damage per hand and 1.5 fights won per
+> run**. That is a simulator-reachability figure, not a win-rate one.
 
 A standalone investigation, not tied to a ticket: **is a full 25-fight run currently winnable, and
 if not, why not?** `the-hunt.md`'s own Status register already says "not winnable as configured,
@@ -31,7 +40,8 @@ was left in `src/`; `git status --porcelain` was confirmed clean both times.
 **Functions called directly, no approximation of any rule:**
 `startRun` / `recordEncounter` / `advanceRun` / `buyFromShop` / `drinkFlask`
 (`src/hunt/runTransitions.ts`, `src/hunt/run.ts`), `dealRound` / `playCard` / `chooseCpuMove` /
-`cashBankNow` (`src/warCouncil/deal.ts`, `playCard.ts`, `cpuPlayer.ts`, `voluntaryCashOut.ts`),
+`cashBankNow` (`src/warCouncil/deal.ts`, `playCard.ts`, `cpuPlayer.ts`, `voluntaryCashOut.ts` — that
+module and function were deleted by DLR-156; `applyPot` in `streak.ts` is what a re-run would call),
 `primeCard` (`src/warCouncil/timebomb.ts`), `applyDiscard` (`src/warCouncil/discard.ts`),
 `addCheat` / `removeCheat` / `hasCheat` (`src/hunt/cheats.ts`), `legalMoves` called with
 `{ ignoreFollowSuit: true }` when a Cheat was armed (`src/warCouncil/legalMoves.ts`).

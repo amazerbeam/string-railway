@@ -44,12 +44,10 @@ export function quickKillTierMultiplier(handOfFight: number): number {
  * never fractional".
  *
  * Floors rather than rounds, deliberately: AC4 asks that the rounding artefact never fall in the
- * player's favour. The same direction `forcedCashValue` already floors in.
+ * player's favour.
  *
  * The multiplication needs no numerator/denominator split — `2`, `1` and `0.5` are all exactly
  * representable in binary, so the product is exact and the floor only ever removes a genuine `.5`.
- * That is precisely what `FORCED_CASH_OUT_NUMERATOR`/`_DENOMINATOR` exist to work around for
- * `2/3`, which is not.
  */
 export function quickKillPayout(kill: QuickKill): Coins {
   if (!Number.isFinite(kill.unplayedCards) || kill.unplayedCards < 0) {

@@ -57,8 +57,8 @@ export function barsForRound(
     ui.encounter.health,
     projectedDepletion(
       ui.encounter.health,
-      ui.round.bank,
-      ui.round.multiplier,
+      ui.round.total,
+      ui.round.roll,
       pendingTimebombs,
       ui.encounter.shieldHearts,
     ),

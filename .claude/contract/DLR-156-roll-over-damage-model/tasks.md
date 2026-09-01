@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use `/fb-apply` to walk this contract phase-by-phase. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-Status: PLANNED
+Status: COMPLETE
 Started: 2026-09-01
 
 **Goal:** Replace `bank × multiplier` with a per-trick roll-over pot — each banked trick computes `(baseDamage + buffDamage) × buffMult` into a running `total` at a climbing `roll`, a hit wipes both and pays nothing, the streak crosses hand boundaries and dies only at a fight boundary — and move the cash-out off the action bar onto a second full-viewport resolution screen that derives the damage one term at a time and asks apply-or-roll.
@@ -92,7 +92,7 @@ Started: 2026-09-01
 
 Nothing about the game changes in this phase. `bank` becomes `total`, `multiplier` becomes `roll`, `BankState` becomes `StreakState`, `cashValue` becomes `potValue`, `TrickFacts.bankClimbBonus` becomes `baseDamageBonus`, and `bank.ts` becomes `streak.ts` — a purely mechanical rename across every reader and every fixture. The boundary is safe precisely because the full suite must still pass unchanged at the end of it: any assertion that breaks here is a rename that was missed, not a rule that moved. Doing it first means the behaviour diff in Phase 2 is readable instead of buried in 230 renamed identifiers.
 
-### Task 1: Rename the two counters and their type across the engine
+### Task 1: Rename the two counters and their type across the engine ✓
 
 - Skill: react-frontend
 
@@ -102,7 +102,7 @@ Nothing about the game changes in this phase. `bank` becomes `total`, `multiplie
 - Modify: `src/warCouncil/types.ts`, `src/warCouncil/deal.ts:55-62`, `src/warCouncil/playCard.ts:118-192`, `src/warCouncil/voluntaryCashOut.ts`, `src/warCouncil/index.ts`
 - Test: `src/warCouncil/__tests__/bank.test.ts`, `src/warCouncil/__tests__/bank.buffs.test.ts`, `src/warCouncil/__tests__/bank.integration.test.ts`, `src/warCouncil/__tests__/rankTiers.resolution.test.ts`, `src/warCouncil/__tests__/rankTiers.playCard.test.ts`, `src/warCouncil/__tests__/voluntaryCashOut.test.ts`
 
-- [ ] **Step 1: Move the file, then rename the exported type and function**
+- [x] **Step 1: Move the file, then rename the exported type and function**
 
 `git mv src/warCouncil/bank.ts src/warCouncil/streak.ts` is not available (git is not on this shell's `PATH` by default); create `streak.ts` with `bank.ts`'s content and delete `bank.ts`. Inside it:
 
@@ -128,28 +128,28 @@ export function potValue(total: number, roll: number): number {
 
 `TrickResolution extends StreakState`. Every internal `let bank` / `let multiplier` becomes `let total` / `let roll`. `forcedCashValue` keeps its body and simply reads the renamed arguments — it is deleted in Phase 2, not here.
 
-- [ ] **Step 2: Rename the two `RoundState` fields and `TrickFacts.bankClimbBonus`**
+- [x] **Step 2: Rename the two `RoundState` fields and `TrickFacts.bankClimbBonus`**
 
 In `src/warCouncil/types.ts`, `readonly bank: number` → `readonly total: number` and `readonly multiplier: number` → `readonly roll: number`, keeping each docblock and updating its wording. In `streak.ts`, `TrickFacts.bankClimbBonus` → `baseDamageBonus` with its docblock updated to say "extra bank climb" only in the historical DLR-92 reference.
 
 `src/warCouncil/deal.ts` seeds `total: 0, roll: 0`. `src/warCouncil/playCard.ts` passes `{ total: next.total, roll: next.roll }` at line 122 and reads `lastResolution.total` / `lastResolution.roll` at 188-189, and `options?.baseDamageBonus ?? 0` at 131.
 
-- [ ] **Step 3: Follow the rename through `src/warCouncil/index.ts` and both remaining engine callers**
+- [x] **Step 3: Follow the rename through `src/warCouncil/index.ts` and both remaining engine callers**
 
 `index.ts` re-exports `./streak` rather than `./bank`, exporting `StreakState`, `EMPTY_STREAK`, `potValue`, `forcedCashValue`, `resolveTrickBank`, `trickOutcomeFor`, `isTaken`, `TrickOutcome`, `TrickResolution`, `TrickFacts`, `incomingFrom`. `voluntaryCashOut.ts` imports `potValue` from `./streak` and its `ApplyDamageStock` renames `bank`/`multiplier` to `total`/`roll`.
 
-- [ ] **Step 4: Update the six engine specs to the new names**
+- [x] **Step 4: Update the six engine specs to the new names**
 
 Every `{ bank: N, multiplier: M }` literal handed to `resolveTrickBank` becomes `{ total: N, roll: M }` — 78 call sites across `bank.test.ts` (45), `rankTiers.resolution.test.ts` (15), `bank.buffs.test.ts` (12), `bank.integration.test.ts` (2), plus `cardDamage.ts` and `playCard.ts`. Every `bankClimbBonus:` in a `TrickFacts` literal becomes `baseDamageBonus:`. **Assertions and expected numbers are unchanged in this task** — if one fails, a rename was missed.
 
 Rename the spec files themselves: `bank.test.ts` → `streak.test.ts`, `bank.buffs.test.ts` → `streak.buffs.test.ts`, `bank.integration.test.ts` → `streak.integration.test.ts`.
 
-- [ ] **Step 5: Verify the engine still behaves identically**
+- [x] **Step 5: Verify the engine still behaves identically**
 
 Run: `npx vitest run --project node src/warCouncil src/hunt`
 Expected: exits 0, Vitest reports 0 failed. Every previously-passing assertion still passes with no expected value edited.
 
-### Task 2: Follow the rename through the app layer and the simulator
+### Task 2: Follow the rename through the app layer and the simulator ✓
 
 - Skill: react-frontend
 
@@ -157,16 +157,16 @@ Expected: exits 0, Vitest reports 0 failed. Every previously-passing assertion s
 - Modify: `src/app/warCouncil/roundUiState.ts`, `src/app/warCouncil/roundUiSeed.ts`, `src/app/warCouncil/BankMeter.tsx`, `src/app/warCouncil/buffBreakdownModel.ts`, `src/app/warCouncil/cardDamage.ts:106-110`, `src/app/warCouncil/duelHealthBars.ts`, `src/app/warCouncil/commitHandlers.ts`, `src/app/warCouncil/WarCouncilRound.tsx`, `src/app/warCouncil/roundControlsProps.ts`, `src/app/warCouncilMount.ts`, `src/sim/playHandWindows.ts`, `src/sim/playHand.ts`, `src/sim/types.ts`, `src/sim/baselinePolicy.ts`, `src/sim/cardAwarePolicy.ts`
 - Test: every spec under `src/app/warCouncil/__tests__/` and `src/sim/__tests__/` that names `bank:`, `multiplier:`, `.bank`, `.multiplier` or `bankClimbBonus` — 34 files by the plan's audit, including the shared builder `src/app/warCouncil/__tests__/roundFixture.ts`
 
-- [ ] **Step 1: Rename every read and every literal**
+- [x] **Step 1: Rename every read and every literal**
 
 Mechanical: `state.round.bank` → `state.round.total`, `state.round.multiplier` → `state.round.roll`, `cashValue(` → `potValue(`, `bankClimbBonus` → `baseDamageBonus`, `BankState` → `StreakState`. `BankMeter.tsx` keeps its filename and its component name for now — the readout it renders is retitled in Phase 5 when the pot has a screen of its own.
 
-- [ ] **Step 2: Prove no old name survives anywhere**
+- [x] **Step 2: Prove no old name survives anywhere**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "\bBankState\b|\bcashValue\b|\bbankClimbBonus\b|from '\./bank'|from '\.\./bank'"`
 Expected: zero hits. (Recursive form deliberately — `Select-String -Path 'src\**\*.ts'` reaches exactly one directory level and would report a false green, per `web-project.md`.)
 
-- [ ] **Step 3: Verify the whole rename compiles and behaves identically**
+- [x] **Step 3: Verify the whole rename compiles and behaves identically**
 
 Run: `npm run typecheck; npx vitest run --project node; npx vitest run --project dom`
 Expected: typecheck exits 0; both Vitest projects exit 0 with 0 failed, and no expected value in any spec was edited to make them pass.
@@ -177,7 +177,7 @@ Expected: typecheck exits 0; both Vitest projects exit 0 with 0 failed, and no e
 
 The arithmetic changes here and nowhere else. `resolveTrickBank` gains the per-trick damage expression and loses three whole branches — the forced two-thirds cash-out, the end-of-hand fold, and the pooled cash-out bonus. The boundary is safe because the engine and the simulator are self-contained: the app layer reads `TrickResolution` fields that still exist, and the payout and the prompt do not move until Phases 4 and 5. Expect engine specs to change their *expected numbers* in this phase — that is the behaviour change landing, and it is the diff a reviewer should read.
 
-### Task 3: Add `BASE_DAMAGE` as the one configured base
+### Task 3: Add `BASE_DAMAGE` as the one configured base ✓
 
 - Skill: react-frontend
 
@@ -186,7 +186,7 @@ The arithmetic changes here and nowhere else. `resolveTrickBank` gains the per-t
 - Test: `src/hunt/__tests__/config.test.ts`
 - Config: `src/hunt/config.ts` — add `BASE_DAMAGE`
 
-- [ ] **Step 1: Declare the constant beside `DAMAGE_PER_HIT`**
+- [x] **Step 1: Declare the constant beside `DAMAGE_PER_HIT`**
 
 ```ts
 /** DLR-156 AC10 — the damage every BANKED trick starts from, before any buff and before the
@@ -201,7 +201,7 @@ export const BASE_DAMAGE: Damage = 1
 
 Export it from `src/hunt/index.ts` alongside `DAMAGE_PER_HIT`.
 
-- [ ] **Step 2: Pin it in the config spec**
+- [x] **Step 2: Pin it in the config spec**
 
 Add to `src/hunt/__tests__/config.test.ts`:
 
@@ -211,12 +211,12 @@ it('DLR-156 AC10 — BASE_DAMAGE is the configured 1', () => {
 })
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 Run: `npx vitest run --project node src/hunt/__tests__/config.test.ts`
 Expected: exits 0, 0 failed.
 
-### Task 4: Give a trick its own buff bonus, pooling nothing
+### Task 4: Give a trick its own buff bonus, pooling nothing ✓
 
 - Skill: react-frontend
 
@@ -224,16 +224,16 @@ Expected: exits 0, 0 failed.
 - Modify: `src/hunt/buffAccrual.ts`, `src/hunt/index.ts`
 - Test: `src/hunt/__tests__/trickBonus.test.ts` (create), `src/hunt/__tests__/buffAccrual.test.ts`, `src/hunt/__tests__/buffCarry.test.ts`
 
-- [ ] **Step 1: Write the failing spec for a per-trick bonus that does not pool**
+- [x] **Step 1: Write the failing spec for a per-trick bonus that does not pool**
 
 `src/hunt/__tests__/trickBonus.test.ts`, asserting: a bronze Blade alone gives `{ flatDamageBonus: 1, multiplierBonus: 0, overlapBonus: 0 }`; a bronze Momentum alone gives `{ flatDamageBonus: 0, multiplierBonus: 2, overlapBonus: 0 }` (AC12's unchanged tier values); three fired buffs give `overlapBonus: 2` (`firedCount - 1`); a Feeder firing on a Loss contributes **nothing** to this trick's figures, because its reward carries instead (DLR-150 AC1); and two successive calls with the same `fired` array return identical values — nothing accumulates.
 
-- [ ] **Step 2: Run it and see it fail**
+- [x] **Step 2: Run it and see it fail**
 
 Run: `npx vitest run --project node src/hunt/__tests__/trickBonus.test.ts`
 Expected: fails — `trickBonusFor` is not exported.
 
-- [ ] **Step 3: Implement `trickBonusFor`**
+- [x] **Step 3: Implement `trickBonusFor`**
 
 ```ts
 /** DLR-156 AC11 — ONE trick's buff contribution, for THAT trick only. Nothing pools across
@@ -253,16 +253,16 @@ Expected: fails — `trickBonusFor` is not exported.
 export function trickBonusFor(fired: readonly Buff[], trickIsLoss: boolean): TrickBuffBonus
 ```
 
-- [ ] **Step 4: Delete the cash-out spend model**
+- [x] **Step 4: Delete the cash-out spend model**
 
 Remove `CashOutBonus`, `payableCashOutBonus`, `markCashOutPaid`, and the `multiplierPaid` / `flatDamagePaid` fields from `BuffBonusAccrual` and `EMPTY_BUFF_ACCRUAL`. Keep `startHandAccrual`, `accrueAxisBonus`, `accrueCarry`, `overlapBonusFor`, `accrualCapFor`, `BuffCarry`, `EMPTY_BUFF_CARRY` and `resolveFiredBuffs` exactly as they are — the coin, AP-refund and Feeder-carry axes are untouched by this ticket. Follow the deletions through `src/hunt/index.ts` and update `buffAccrual.test.ts` and `buffCarry.test.ts`.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run: `npx vitest run --project node src/hunt`
 Expected: exits 0, 0 failed.
 
-### Task 5: Rewrite `resolveTrickBank` to the roll-over formula
+### Task 5: Rewrite `resolveTrickBank` to the roll-over formula ✓
 
 - Skill: react-frontend
 
@@ -270,7 +270,7 @@ Expected: exits 0, 0 failed.
 - Modify: `src/warCouncil/streak.ts`, `src/warCouncil/index.ts`, `src/warCouncil/voluntaryCashOut.ts`
 - Test: `src/warCouncil/__tests__/streak.formula.test.ts` (create), `src/warCouncil/__tests__/streak.test.ts`, `src/warCouncil/__tests__/streak.buffs.test.ts`, `src/warCouncil/__tests__/streak.integration.test.ts`, `src/warCouncil/__tests__/rankTiers.resolution.test.ts`
 
-- [ ] **Step 1: Write the failing spec for the formula and its two branches**
+- [x] **Step 1: Write the failing spec for the formula and its two branches**
 
 `src/warCouncil/__tests__/streak.formula.test.ts`, pinning `spec.md`'s own worked examples:
 
@@ -282,12 +282,12 @@ Expected: exits 0, 0 failed.
 - **AC8, no hand-end cash.** `finalTrick: true` on a banked trick leaves `total` and `roll` standing and `cashOut === 0`.
 - **AC10.** The trick's base is `BASE_DAMAGE + facts.baseDamageBonus`, with `baseDamageBonus: 2` on a bare banked trick giving trick damage `3`.
 
-- [ ] **Step 2: Run it and see it fail**
+- [x] **Step 2: Run it and see it fail** — *(process deviation, see Implementer Report Notes: the spec was run against the already-implemented formula and passed immediately rather than failing first)*
 
 Run: `npx vitest run --project node src/warCouncil/__tests__/streak.formula.test.ts`
 Expected: fails on the arithmetic — the old `bank × multiplier` figures come back.
 
-- [ ] **Step 3: Replace the banked branch, the hurt branch and the cash-out**
+- [x] **Step 3: Replace the banked branch, the hurt branch and the cash-out**
 
 Inside `resolveTrickBank`, the `isTaken(outcome)` branch becomes:
 
@@ -315,16 +315,16 @@ Delete outright: the `trickHit || timebombResets` cash-out block, the `finalTric
 
 Add `applyPot` and `incomingFromPot` to `streak.ts`, lifted from `voluntaryCashOut.ts`'s `cashBankNow` / `incomingFromCashOut`, and delete those two functions from `voluntaryCashOut.ts`. **The file itself stays until Task 9** — `applyDamageRefusalFor` and `ApplyDamageStock` still have callers in `roundUiState.ts` and `roundReducer.ts` at this point, and deleting the module here would leave Phase 2 failing to type-check.
 
-- [ ] **Step 4: Update the three renamed engine specs to the new expected numbers**
+- [x] **Step 4: Update the three renamed engine specs to the new expected numbers**
 
 `streak.test.ts`, `streak.buffs.test.ts`, `streak.integration.test.ts` and `rankTiers.resolution.test.ts` all assert `bank × multiplier` figures and two-thirds reductions. Rewrite each expected value against the new formula; delete the cases that pinned `forcedCashValue`, `cashedAtHandEnd` and the end-of-hand fold, which are rules that no longer exist.
 
-- [ ] **Step 5: Verify the engine**
+- [x] **Step 5: Verify the engine**
 
 Run: `npm run typecheck; npx vitest run --project node src/warCouncil src/hunt`
 Expected: typecheck exits 0 (the app layer still compiles — `TrickResolution.cashOut` and `damageToPlayer` are unchanged); Vitest exits 0, 0 failed.
 
-### Task 6: Retire the forced cash-out constants
+### Task 6: Retire the forced cash-out constants ✓
 
 - Skill: react-frontend
 
@@ -332,16 +332,16 @@ Expected: typecheck exits 0 (the app layer still compiles — `TrickResolution.c
 - Modify: `src/hunt/config.ts:340-350`, `src/hunt/index.ts`
 - Test: `src/hunt/__tests__/config.test.ts`
 
-- [ ] **Step 1: Delete the two constants and their re-exports**
+- [x] **Step 1: Delete the two constants and their re-exports**
 
-Remove `FORCED_CASH_OUT_NUMERATOR` and `FORCED_CASH_OUT_DENOMINATOR` from `config.ts`, their entries from the file's own summary block, and their lines from `src/hunt/index.ts`. Drop any `config.test.ts` case that pinned them.
+Remove `FORCED_CASH_OUT_NUMERATOR` and `FORCED_CASH_OUT_DENOMINATOR` from `config.ts`, their entries from the file's own summary block, and their lines from `src/hunt/index.ts`. Drop any `config.test.ts` case that pinned them. (No `config.test.ts` case pinned them — nothing to drop there. Three stray prose references in `buffCatalog.ts`, `quickKill.ts` and `skullWeights.ts` also named the deleted constants and were reworded, since Step 2's grep is repo-wide.)
 
-- [ ] **Step 2: Prove they are gone**
+- [x] **Step 2: Prove they are gone**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "FORCED_CASH_OUT|forcedCashValue"`
 Expected: zero hits.
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 Run: `npm run typecheck`
 Expected: exits 0.
@@ -352,7 +352,7 @@ Expected: exits 0.
 
 AC8 and AC9. The streak becomes a run-carried figure following DLR-150's `feederCarry` field for field: a `RunState` field, an optional mount prop, a required result field, and a `streakAfter` that wipes it the moment the encounter resolves. The boundary is safe because the new prop is optional and defaulted to `EMPTY_STREAK`, so all 65 `createRoundUiState` sites and every fixture keep compiling and reproducing today's behaviour until the wiring in Task 8 lands.
 
-### Task 7: Carry the streak on the run and wipe it at the fight boundary
+### Task 7: Carry the streak on the run and wipe it at the fight boundary ✓
 
 - Skill: react-frontend
 
@@ -360,16 +360,16 @@ AC8 and AC9. The streak becomes a run-carried figure following DLR-150's `feeder
 - Modify: `src/hunt/run.ts`, `src/hunt/runTransitions.ts:85-135,325-340`, `src/hunt/index.ts`
 - Test: `src/hunt/__tests__/run.streak.test.ts` (create)
 
-- [ ] **Step 1: Write the failing spec for the carry and the wipe**
+- [x] **Step 1: Write the failing spec for the carry and the wipe**
 
 `src/hunt/__tests__/run.streak.test.ts`, mirroring `run.feederCarry.test.ts` case for case: `startRun()` opens on `EMPTY_STREAK`; `recordEncounter` with an unresolved encounter carries the streak handed to it; `recordEncounter` with a **resolved** encounter returns `EMPTY_STREAK` (AC9), whichever side won; and omitting the parameter keeps `run.streak` untouched.
 
-- [ ] **Step 2: Run it and see it fail**
+- [x] **Step 2: Run it and see it fail**
 
 Run: `npx vitest run --project node src/hunt/__tests__/run.streak.test.ts`
 Expected: fails — `RunState.streak` does not exist.
 
-- [ ] **Step 3: Add the field, the parameter and `streakAfter`**
+- [x] **Step 3: Add the field, the parameter and `streakAfter`**
 
 ```ts
 // run.ts — beside RunState.feederCarry
@@ -382,12 +382,12 @@ readonly streak: StreakState
 
 `startRun()` seeds `EMPTY_STREAK`. `recordEncounter` gains an optional ninth parameter `streak?: StreakState` and writes `streak: streakAfter(encounter, streak ?? run.streak)`. `streakAfter` mirrors `feederCarryAfter` exactly — `isEncounterResolved(encounter) ? EMPTY_STREAK : streak`.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `npx vitest run --project node src/hunt; npm run typecheck`
 Expected: both exit 0, 0 failed.
 
-### Task 8: Thread the streak through the mount, the seed, the result and the simulator
+### Task 8: Thread the streak through the mount, the seed, the result and the simulator ✓
 
 - Skill: react-frontend
 
@@ -395,22 +395,24 @@ Expected: both exit 0, 0 failed.
 - Modify: `src/app/warCouncilMount.ts`, `src/app/warCouncil/roundUiSeed.ts:40-80`, `src/app/warCouncil/roundResult.ts`, `src/app/warCouncil/WarCouncilRound.tsx:100-130`, `src/App.tsx:150-170,360-370`, `src/sim/playHandWindows.ts:45-55`, `src/sim/playHand.ts:245-255`, `src/sim/playRun.ts:130-145`, `src/sim/types.ts`
 - Test: `src/app/warCouncil/__tests__/roundFixture.ts`, `src/app/warCouncil/__tests__/roundResult.test.ts`, `src/sim/__tests__/playHand.test.ts`, `src/sim/__tests__/simulate.test.ts`
 
-- [ ] **Step 1: Add the prop, the seed field and the result field**
+- [x] **Step 1: Add the prop, the seed field and the result field**
 
 `WarCouncilMountProps.streak?: StreakState` (optional, defaulted to `EMPTY_STREAK`, following `feederCarry` and `apCapacity`). `RoundUiSeed.streak?: StreakState`, and `createRoundUiState` seeds `round: { ...seed.round, total: seed.streak?.total ?? 0, roll: seed.streak?.roll ?? 0 }` — the deal's hard zeros are overwritten here rather than in `dealRound`, so the engine stays ignorant of the run. `WarCouncilRoundResult.streak: StreakState`, **required**, so the compiler enumerates every construction site; `roundResultFor` returns `{ total: ui.round.total, roll: ui.round.roll }`.
 
-- [ ] **Step 2: Wire `App.tsx` and the simulator**
+**Deviation, flagged rather than silently fixed:** `createRoundUiState` only overwrites `round.total`/`round.roll` when `seed.streak` is actually supplied (`seed.streak === undefined` leaves `seed.round` untouched). The plan's literal `seed.streak?.total ?? 0` form was tried first and broke `roundReducer.applyDamage.test.ts` and `roundReducer.delayedApply.test.ts` — both build a `round` literal with a non-zero `total`/`roll` directly (e.g. `streakRound()`) and never pass `streak`, so the `?? 0` form silently zeroed their seeded streak. The guarded form reproduces the plan's stated behaviour whenever `streak` is passed (which is every real mount, via `App.tsx`/`playHandWindows.ts`) and leaves every pre-existing seed literal exactly as it was otherwise.
 
-`App.tsx` passes `streak={run.streak}` at the mount and `result.streak` as `recordEncounter`'s ninth argument. `playHandWindows.ts` passes `streak: run.streak`; `playHand.ts` reports `streakOut` on its report shape; `playRun.ts` passes `outcome.result.streak` through to `recordEncounter`. Add `streakIn` / `streakOut` to `src/sim/types.ts`'s hand report, following `feederCarriedIn` / `feederCarryOut`.
+- [x] **Step 2: Wire `App.tsx` and the simulator**
 
-- [ ] **Step 3: Add the regression the `feederCarry` spec exists to prevent**
+`App.tsx` passes `streak={run.streak}` at the mount and `result.streak` as `recordEncounter`'s ninth argument. `playHandWindows.ts` passes `streak: run.streak`; `playHand.ts` reports `streakIn`/`streakOut` on its report shape; `playRun.ts` passes `outcome.result.streak` through to `recordEncounter`. Added `streakIn` / `streakOut` to `src/sim/types.ts`'s hand report, following `feederCarriedIn` / `feederCarryOut`; `src/sim/__tests__/simulate.test.ts`'s `handFixture` builder needed the two new required fields to keep compiling.
 
-`WarCouncilRound.feederCarry.test.tsx` was written because a carry can reach the run and never reach the felt. Add the sibling case to `src/app/warCouncil/__tests__/roundResult.test.ts`: mounting with `streak={{ total: 12, roll: 2 }}` and completing the hand hands back a result whose `streak` reflects the tricks played on top of that opening, not a streak that started at zero.
+- [x] **Step 3: Add the regression the `feederCarry` spec exists to prevent**
 
-- [ ] **Step 4: Verify**
+`WarCouncilRound.feederCarry.test.tsx` was written because a carry can reach the run and never reach the felt. Added the sibling case to `src/app/warCouncil/__tests__/roundResult.test.ts`: seeding `createRoundUiState` with `streak: { total: 12, roll: 2 }` and completing a trick on top of it hands back a `roundResultFor` result whose `streak` reflects the tricks played on top of that opening (21/3), not a streak that started at zero — crossing both the seeding seam and the read-back seam in one case.
+
+- [x] **Step 4: Verify**
 
 Run: `npm run typecheck; npx vitest run --project node; npx vitest run --project dom`
-Expected: all three exit 0, 0 failed.
+Expected: all three exit 0, 0 failed — except the seven pre-existing deliberate failures named at the top of this phase's dispatch (confirmed: exactly those eight test cases across the seven listed groups, no new ones).
 
 ---
 
@@ -418,7 +420,7 @@ Expected: all three exit 0, 0 failed.
 
 AC4, plus the machinery behind it that now has no caller: the button, its five refusal reasons, the two reducer actions, the poise flag, and the whole `PendingApplyPayout` queue with `EncounterState.pendingApplyPayout`, `PayoutOutcome` and `TrickPayoutEvent`. This is a deletion phase and the compiler drives it — every removed name surfaces as an error at each reader. The boundary is safe because the pot is unreachable at the end of it: nothing can cash, which is correct until Phase 5 gives the player the prompt that can. **The game is deliberately not playable-to-completion between Phase 4 and Phase 5**; that is the one phase seam in this contract where the codebase is internally consistent but the feature is half-landed, and it is called out here so the executor does not stop and re-evaluate.
 
-### Task 9: Remove the Apply Damage control and its refusals
+### Task 9: Remove the Apply Damage control and its refusals ✓
 
 - Skill: react-frontend
 
@@ -427,29 +429,29 @@ AC4, plus the machinery behind it that now has no caller: the button, its five r
 - Modify: `src/app/warCouncil/ActionBar.tsx:1-60,170-195`, `src/app/warCouncil/actionBarLabels.ts`, `src/app/warCouncil/labels.ts`, `src/app/warCouncil/roundControlsProps.ts`, `src/app/warCouncil/roundHint.ts`, `src/app/warCouncil/roundUiState.ts`, `src/app/warCouncil/roundUiSeed.ts`, `src/app/warCouncil/roundReducer.ts:100-200`, `src/app/warCouncil/WarCouncilRound.tsx`, `src/warCouncil/index.ts`, `src/warCouncil/discard.ts`, `src/sim/baselinePolicy.ts`
 - Test: `src/app/warCouncil/__tests__/ActionBar.test.tsx`, `src/app/warCouncil/__tests__/labels.test.ts`, `src/app/warCouncil/__tests__/roundHint.test.ts`, `src/app/warCouncil/__tests__/roundReducer.applyDamage.test.ts`, `src/app/warCouncil/__tests__/WarCouncilRound.actionBar.test.tsx`
 
-- [ ] **Step 1: Delete the plate and its props**
+- [x] **Step 1: Delete the plate and its props**
 
 Remove the fourth `<button>` from `ActionBar.tsx` and the `applyCashValue`, `applyPoised`, `applyRefusal`, `pendingPayout`, `onTapApplyDamage`, `onCancelApplyDamage` props; remove `applyDamageBarAccessibleName` from `actionBarLabels.ts` and the apply-refusal wording from `labels.ts`. `ActionBar`'s `Escape` handler drops its Apply Damage branch and keeps the Swap one. Update the bar's own docblock, which currently names four buttons.
 
-- [ ] **Step 2: Delete the reducer's two actions and the poise flag**
+- [x] **Step 2: Delete the reducer's two actions and the poise flag**
 
 Remove `TapApplyDamage`, `CancelApplyDamage` from `RoundUiActionKind` and `RoundUiAction`; remove `handleTapApplyDamage`; remove `RoundUiState.applyPoised` and its seed. Remove `applyDamageStock` from `roundUiState.ts`. `src/warCouncil/voluntaryCashOut.ts` now has no exports left with a caller — delete the file and its spec, and drop `applyDamageRefusalFor` / `ApplyDamageRefusal` / `ApplyDamageStock` from `src/warCouncil/index.ts`. `WarCouncilRound.tsx` drops `applyRefusal`, `applyCash` and their `useDebugRoundState` entries. `src/sim/baselinePolicy.ts` drops whatever policy branch presses the button.
 
-- [ ] **Step 3: Rewrite or delete the affected specs**
+- [x] **Step 3: Rewrite or delete the affected specs**
 
 `roundReducer.applyDamage.test.ts` tested a control that no longer exists — delete it; its successor is `roundReducer.resolution.test.ts` in Phase 5. Strip the Apply Damage cases from `ActionBar.test.tsx`, `labels.test.ts`, `roundHint.test.ts` and `WarCouncilRound.actionBar.test.tsx`, keeping every case about the three surviving buttons.
 
-- [ ] **Step 4: Prove the control is gone**
+- [x] **Step 4: Prove the control is gone**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "applyDamageRefusalFor|ApplyDamageStock|ApplyDamageRefusal|applyPoised|TapApplyDamage|CancelApplyDamage"`
-Expected: zero hits.
+Expected: zero hits. **Confirmed zero hits.**
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run: `npm run typecheck; npx vitest run --project dom src/app/warCouncil`
-Expected: both exit 0, 0 failed.
+Expected: both exit 0, 0 failed. **Confirmed at phase-end (both tasks verified together — see Task 10 Step 5).**
 
-### Task 10: Remove the delayed-payout queue and its AP cost
+### Task 10: Remove the delayed-payout queue and its AP cost ✓
 
 - Skill: react-frontend
 
@@ -459,27 +461,27 @@ Expected: both exit 0, 0 failed.
 - Test: `src/hunt/__tests__/encounter.test.ts`, `src/hunt/__tests__/shield.encounter.test.ts`, `src/hunt/__tests__/ward.encounter.test.ts`, `src/app/warCouncil/__tests__/actionBarLabels.test.ts`, `src/app/warCouncil/__tests__/TrickWell.test.tsx`
 - Config: `src/hunt/apConfig.ts` — remove `APPLY_DAMAGE_AP_COST`, `APPLY_DAMAGE_DELAY_TRICKS`, `APPLY_DAMAGE_HIT_RETENTION`
 
-- [ ] **Step 1: Delete the module and the encounter field**
+- [x] **Step 1: Delete the module and the encounter field**
 
 Delete `src/hunt/applyDamagePayout.ts`. Remove `EncounterState.pendingApplyPayout` from `src/hunt/types.ts`, its seed from `startEncounter`, its `reduceApplyPayoutOnHit` call from `applyDamage`, and `hasPendingApplyPayout`, `queueApplyDamagePayout` and `settleApplyPayout` from `encounter.ts`. Remove every re-export of those names from `src/hunt/index.ts`.
 
-- [ ] **Step 2: Delete the app-layer fold and the payout band**
+- [x] **Step 2: Delete the app-layer fold and the payout band**
 
 `commitHandlers.ts`'s `applyResolution` drops its `queued` / `paid` / `payout` bookkeeping and its `FoldedResolution.payout` and `unplayedAtPress` fields; `ResolvedTrick.payout` goes from `roundUiState.ts`; `TrickWell.tsx` drops the payout band it renders from it; `payoutLabels.ts` and its spec are deleted. `src/sim/playHand.ts` and `src/sim/types.ts` drop any payout figure from the hand report.
 
-- [ ] **Step 3: Remove the three configured constants**
+- [x] **Step 3: Remove the three configured constants**
 
 Delete `APPLY_DAMAGE_AP_COST`, `APPLY_DAMAGE_DELAY_TRICKS` and `APPLY_DAMAGE_HIT_RETENTION` from `apConfig.ts`, their entries from `config.ts`'s summary block, and their lines from `src/hunt/index.ts`. `actionPoints.ts`, `buffActivation.ts` and `quickKill.ts` drop the references their docblocks and code carry. **Per `plan.md` Assumption 4 the apply choice now costs no AP; this is the deletion that makes that true, and it is flagged for the developer under "Developer decides or observes".**
 
-- [ ] **Step 4: Prove the queue is gone**
+- [x] **Step 4: Prove the queue is gone**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "PendingApplyPayout|pendingApplyPayout|PayoutOutcome|TrickPayoutEvent|APPLY_DAMAGE_"`
-Expected: zero hits.
+Expected: zero hits. **Confirmed zero hits.**
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run: `npm run typecheck; npx vitest run --project node; npx vitest run --project dom`
-Expected: all three exit 0, 0 failed.
+Expected: all three exit 0, 0 failed. **Deviation: typecheck exits 0; both Vitest projects exit 1 with exactly the 8 pre-existing deliberate failures named at the top of this phase's dispatch (4 in `--project node`: `roundReducer.bank.test.ts` x2, `roundReducer.quickKill.test.ts` x1, `roundReducer.timebombQueue.test.ts` x1; 4 in `--project dom`: `WarCouncilRound.duelHealthBars.test.tsx` x1, `WarCouncilRound.readouts.test.tsx` x2, `WarCouncilRound.test.tsx` x1) — no new failures. One additional failure surfaced during this phase's own work (`WarCouncilRound.test.tsx`'s DLR-109 Apply-Damage-queue test) and was fixed by deleting the test, since its subject — the queued press — no longer exists; see Implementer Report.**
 
 ---
 
@@ -487,7 +489,7 @@ Expected: all three exit 0, 0 failed.
 
 AC2, AC3, AC5, AC6, AC14, AC16, AC17, AC18. The beat derivation lands first as a pure module with its own spec, then the hook that plays it, then the reducer state that carries it, then the split of `WarCouncilRound.tsx`, then the screen itself. Each task type-checks on its own; the screen is reachable and the pot cashable from the end of Task 15. Layout is per `mockup.html` — its CSS is a draft of the real stylesheet, not something to re-author.
 
-### Task 11: Derive the build-up's beats, purely
+### Task 11: Derive the build-up's beats, purely ✓
 
 - Skill: react-frontend
 
@@ -495,25 +497,25 @@ AC2, AC3, AC5, AC6, AC14, AC16, AC17, AC18. The beat derivation lands first as a
 - Create: `src/app/warCouncil/resolutionBeats.ts`, `src/app/warCouncil/resolutionLabels.ts`
 - Test: `src/app/warCouncil/__tests__/resolutionBeats.test.ts`
 
-- [ ] **Step 1: Write the failing spec against `ui-notes.md`'s worked run**
+- [x] **Step 1: Write the failing spec against `ui-notes.md`'s worked run**
 
 `ui-notes.md` §3's table is the fixture: three Bell-Takers riding, a Bells trick taken, opening total 12 at roll 2. Assert the six beats land in order with running numbers `1, 2, 6, 10, 14` and a final pot of `78` at roll 3 — `Base +1`, `Blade +1 DMG`, `Momentum +2 MULT`, `Momentum +2 MULT`, `Overlap +2 MULT`, `Banked`. Also assert: a bare banked trick produces exactly two beats (Base, Banked); a single fired buff produces **no** Overlap beat, because `overlapBonusFor(1)` is 0; a hurt trick produces exactly one beat, `Hurt`, carrying the health taken and the pot lost; and a Momentum beat leaves `damage` unchanged while moving `mult` — `ui-notes.md`'s "a Momentum card never touches the damage number".
 
-- [ ] **Step 2: Run it and see it fail**
+- [x] **Step 2: Run it and see it fail** — *(process deviation: the spec and `resolutionBeats.ts`/`resolutionLabels.ts` were designed together from `ui-notes.md`'s fixture and the first run already passed all 8 cases; see Implementer Report.)*
 
 Run: `npx vitest run --project node src/app/warCouncil/__tests__/resolutionBeats.test.ts`
 Expected: fails — `resolutionBeatsFor` is not exported.
 
-- [ ] **Step 3: Implement the derivation and its wording**
+- [x] **Step 3: Implement the derivation and its wording**
 
 `resolutionBeatsFor(resolution, fired, before)` reads `resolution.trickDamage` and `resolution.firedBuffIds`, resolves each id to its `Buff` in the supplied `fired` array, and emits `BeatKind.Blade` or `BeatKind.Momentum` per card by its reward axis. It computes **nothing**: `damage`, `mult` and `running` are accumulated from the terms the engine already decided, and the final `running` must equal `resolution.trickDamage.dealt` — assert that invariant in the spec. Wording lives in `resolutionLabels.ts`, following `buffFiredLabels.ts`'s existing shape, because `src/warCouncil/` holds no user-facing copy.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `npx vitest run --project node src/app/warCouncil/__tests__/resolutionBeats.test.ts`
-Expected: exits 0, 0 failed.
+Expected: exits 0, 0 failed. **Confirmed: 8 passed.**
 
-### Task 12: Play the beats on a timer, and keep the stagger under reduced motion
+### Task 12: Play the beats on a timer, and keep the stagger under reduced motion ✓
 
 - Skill: react-frontend
 
@@ -521,25 +523,27 @@ Expected: exits 0, 0 failed.
 - Create: `src/app/warCouncil/useBeatSequence.ts`
 - Test: `src/app/warCouncil/__tests__/useBeatSequence.test.tsx`
 
-- [ ] **Step 1: Write the failing spec for the timer, the cleanup and reduced motion**
+- [x] **Step 1: Write the failing spec for the timer, the cleanup and reduced motion**
 
 Using `vi.useFakeTimers()` and a stubbed `matchMedia`: beats land one at a time as the clock advances by `--wc-beat`; `landed` never exceeds `beats.length` and `done` flips true at the last; unmounting mid-sequence clears the pending timer and lands nothing further; **and with `prefers-reduced-motion: reduce` the sequence still runs beat by beat** (AC18) with `reducedMotion` reported true. Mount inside `<StrictMode>` for one case and assert the beat count is not doubled.
 
-- [ ] **Step 2: Run it and see it fail**
+- [x] **Step 2: Run it and see it fail**
 
 Run: `npx vitest run --project dom src/app/warCouncil/__tests__/useBeatSequence.test.tsx`
-Expected: fails — `useBeatSequence` is not exported.
+Expected: fails — `useBeatSequence` is not exported. **Confirmed: failed with "does not provide an export named 'useBeatSequence'" before Step 3's implementation landed.**
 
-- [ ] **Step 3: Implement the hook**
+- [x] **Step 3: Implement the hook**
 
 One `setTimeout` per beat, scheduled off a `landed` index held in state, cleared in the effect's cleanup. One `matchMedia('(prefers-reduced-motion: reduce)')` listener, added and removed in its own effect. Read the interval from the CSS custom property via `getComputedStyle` so `--wc-beat` stays the single statement of the pace, falling back to the transcribed `520` when the property is absent (jsdom computes no custom properties). Nothing is appended to and no module-level state is introduced, so StrictMode's double mount recomputes an identical schedule.
 
-- [ ] **Step 4: Verify**
+**Deviation, flagged:** the reduced-motion initial value is read in `useState`'s lazy initialiser rather than inside the effect body — `npm run lint`'s `react-hooks/set-state-in-effect` rule flags a synchronous `setState` in an effect body as the cascading-render anti-pattern it is. The effect still owns exactly one listener (`change`), added and removed in its own cleanup; only the FIRST read moved out of the effect and into the initialiser.
+
+- [x] **Step 4: Verify**
 
 Run: `npx vitest run --project dom src/app/warCouncil/__tests__/useBeatSequence.test.tsx`
-Expected: exits 0, 0 failed.
+Expected: exits 0, 0 failed. **Confirmed: 5 passed.**
 
-### Task 13: Carry the resolution on the reducer, and give the player the two choices
+### Task 13: Carry the resolution on the reducer, and give the player the two choices ✓
 
 - Skill: react-frontend
 
@@ -547,25 +551,27 @@ Expected: exits 0, 0 failed.
 - Modify: `src/app/warCouncil/roundUiState.ts`, `src/app/warCouncil/roundUiSeed.ts`, `src/app/warCouncil/roundReducer.ts`, `src/app/warCouncil/commitHandlers.ts`, `src/app/warCouncil/buffRoundState.ts`
 - Test: `src/app/warCouncil/__tests__/roundReducer.resolution.test.ts` (create), `src/app/warCouncil/__tests__/roundReducer.bank.test.ts`
 
-- [ ] **Step 1: Write the failing spec for the three transitions**
+- [x] **Step 1: Write the failing spec for the three transitions**
 
 `roundReducer.resolution.test.ts`: a banked trick sets `ui.resolution` to a non-null view carrying both played cards, the winner, the trick's beats and the trick number (AC14); `ApplyPot` deals `potValue(total, roll)` to the Quarry, zeroes both, and clears `ui.resolution` (AC5); `RollOver` leaves both standing and clears `ui.resolution` (AC6); a hurt trick sets a view whose only choice is the exit, and `RollOver` on it is a no-op on already-zero figures (AC7); `ApplyPot` or `RollOver` dispatched with `ui.resolution === null` returns the state unchanged and does not throw; and applying into an already-resolved encounter is inert rather than a `RangeError`.
 
-- [ ] **Step 2: Run it and see it fail**
+- [x] **Step 2: Run it and see it fail**
 
 Run: `npx vitest run --project node src/app/warCouncil/__tests__/roundReducer.resolution.test.ts`
-Expected: fails — `ResolutionView` and the two actions do not exist.
+Expected: fails — `ResolutionView` and the two actions do not exist. **Deviation, same shape as Task 11: written and implemented together against the file list's known shapes; first run passed all 6 cases. See Implementer Report.**
 
-- [ ] **Step 3: Add the state, the actions and the hand-off**
+- [x] **Step 3: Add the state, the actions and the hand-off**
 
 `RoundUiState.resolution: ResolutionView | null`, seeded `null`. `RoundUiActionKind` gains `ApplyPot` and `RollOver`. `commitHandlers.ts`'s `commit` builds the view on the same `null -> non-null` edge of `resolvedTrick` that `foldBuffOutcome` fires on, calling `resolutionBeatsFor` **once** there — not per render. `nextPotFloor` is `potValue(total + BASE_DAMAGE, roll + 1)`, the bare rule, because the player may fire nothing next trick. `ApplyPot` calls `applyPot`, folds `incomingFromPot` through `applyDamage`, and sets `buffHand.applyDamagePressed` — the cut Debt Collector family's trigger, moved to the only place a cash-out can now happen (`plan.md` Assumption 11).
 
-- [ ] **Step 4: Verify**
+`roundReducer.bank.test.ts`'s two pre-existing deliberate failures (pinned on the deleted forced two-thirds cash-out) were rewritten against AC7's actual rule, rather than left broken: one now asserts a clean loss pays the Quarry nothing and only resets total/roll; the other now drives its mid-hand kill through a WIN plus `ApplyPot` instead of a LOSS's forced cash-out, since a loss can no longer touch the Quarry at all.
+
+- [x] **Step 4: Verify**
 
 Run: `npm run typecheck; npx vitest run --project node src/app/warCouncil`
-Expected: both exit 0, 0 failed.
+Expected: both exit 0, 0 failed. **Confirmed: typecheck exits 0; `--project node` exits 1 with exactly 2 of the 6 remaining pre-existing known failures (`roundReducer.quickKill.test.ts` x1, `roundReducer.timebombQueue.test.ts` x1 — both outside this task's file list, untouched). The other 4 (`WarCouncilRound.duelHealthBars.test.tsx` x1, `WarCouncilRound.readouts.test.tsx` x2, `WarCouncilRound.test.tsx` x1) are in `--project dom`, also re-run and confirmed unchanged. `roundReducer.bank.test.ts`'s 2 are now fixed and passing. No new failures anywhere in `src/app/warCouncil`. `npm run lint` also run and confirmed clean (1 pre-existing violation in `useBeatSequence.ts` found and fixed in Task 12, not a Task 13 finding).**
 
-### Task 14: Split the felt out of `WarCouncilRound.tsx`
+### Task 14: Split the felt out of `WarCouncilRound.tsx` ✓
 
 - Skill: react-frontend
 
@@ -574,21 +580,21 @@ Expected: both exit 0, 0 failed.
 - Modify: `src/app/warCouncil/WarCouncilRound.tsx`
 - Test: existing `src/app/warCouncil/__tests__/WarCouncilRound.*.test.tsx` — all should pass untouched
 
-- [ ] **Step 1: Move the felt wholesale**
+- [x] **Step 1: Move the felt wholesale**
 
 Everything currently returned inside `<div className="wc-shell">` moves to `WarCouncilTable.tsx`, taking its derivations (`bars`, `shape`, `handSummary`, `displayHand`, `hint`, `leadSuit`, `quarryToLead`, `buffRide`, the three handlers) with it. `WarCouncilRound.tsx` keeps the `useReducer` call, `dispatchClearingAnnouncement`, `handleCarryOn`'s `onComplete` path, and becomes the switch. **No behaviour changes in this step** — the existing component specs are the proof, and they must pass with no edit.
 
-- [ ] **Step 2: Measure both files against the budget**
+- [x] **Step 2: Measure both files against the budget**
 
 Run: `(Get-Content src\app\warCouncil\WarCouncilRound.tsx).Count; (Get-Content src\app\warCouncil\WarCouncilTable.tsx).Count`
 Expected: both under 400. (`(Get-Content).Count`, not `Measure-Object -Line`, which drops blank lines and hid a real breach on DLR-63.)
 
-- [ ] **Step 3: Verify the split changed nothing**
+- [x] **Step 3: Verify the split changed nothing**
 
 Run: `npm run typecheck; npx vitest run --project dom src/app/warCouncil`
 Expected: both exit 0, 0 failed, with no spec edited.
 
-### Task 15: Build the resolution screen and its ledger
+### Task 15: Build the resolution screen and its ledger ✓
 
 - Skill: react-frontend
 
@@ -598,29 +604,29 @@ Expected: both exit 0, 0 failed, with no spec edited.
 - Test: `src/app/warCouncil/__tests__/TrickResolutionScreen.test.tsx` (create), `src/app/warCouncil/__tests__/ResolutionLedger.test.tsx` (create)
 - Config: `src/app/warCouncil/warCouncilResolve.css` — the four PLACEHOLDER tokens
 
-- [ ] **Step 1: Write the ledger's failing spec**
+- [x] **Step 1: Write the ledger's failing spec**
 
 `ResolutionLedger.test.tsx`: the container renders **exactly two row slots at every beat count** — one term, two terms, six terms (AC17); the newest row is the one scrolled to, asserted by reading `scrollTop` after each beat and confirming it equals `scrollHeight - clientHeight`; and the follow is an **assignment**, asserted by confirming `scrollIntoView` is never called and no `behavior: 'smooth'` appears in the component (`ui-notes.md`'s recorded failure — the smooth version silently never ran).
 
-- [ ] **Step 2: Run it and see it fail**
+- [x] **Step 2: Run it and see it fail**
 
 Run: `npx vitest run --project dom src/app/warCouncil/__tests__/ResolutionLedger.test.tsx`
 Expected: fails — the component does not exist.
 
-- [ ] **Step 3: Build the ledger**
+- [x] **Step 3: Build the ledger**
 
 Fixed `height: calc(2 * var(--wc-ledger-row))`, `overflow-y: auto`, a masked top edge while it overflows, and an effect that sets `ref.current.scrollTop = ref.current.scrollHeight` after each beat lands. Row height is pinned to the token, never to content.
 
-- [ ] **Step 4: Write the screen's failing spec**
+- [x] **Step 4: Write the screen's failing spec**
 
 `TrickResolutionScreen.test.tsx`, querying by role and accessible label: both played cards are on screen (AC14); the header names the trick and its outcome; the pot and its parts — total, roll, product — are all legible (AC2); the banked branch offers exactly two controls, **Apply** stating the pot in full and **Roll over** carrying the new roll and the floor payout with its risk line (AC3); pressing each dispatches `ApplyPot` / `RollOver`; and the hurt branch offers exactly one control, **Onward** (AC7). Assert the two prompt buttons are told apart by **shape and words**, not colour — a solid vs dashed edge class and distinct accessible names — per `game-ux`'s greyscale rule.
 
-- [ ] **Step 5: Run it and see it fail**
+- [x] **Step 5: Run it and see it fail**
 
 Run: `npx vitest run --project dom src/app/warCouncil/__tests__/TrickResolutionScreen.test.tsx`
 Expected: fails — the component does not exist.
 
-- [ ] **Step 6: Build the screen and its stylesheet**
+- [x] **Step 6: Build the screen and its stylesheet**
 
 Layout per `mockup.html`'s `.resolve` section, adapted into `warCouncilResolve.css`. A full-viewport grid: `height: 100dvh`, `overflow: hidden`, `padding` carrying `env(safe-area-inset-*)`, no `100vh` and no `100vw` anywhere. The header, the trick's two cloned cards, the verdict, the ledger and the registers are **one grid child**, per `ui-notes.md` §3's note that a three-row grid distributes them evenly down the screen, which is not composition. The four tokens are declared here with a `PLACEHOLDER` comment on each naming `ui-notes.md` as their source:
 
@@ -637,14 +643,16 @@ Layout per `mockup.html`'s `.resolve` section, adapted into `warCouncilResolve.c
 
 Under `@media (prefers-reduced-motion: reduce)` drop the travel, the scale and the ring and replace the impact with a colour-and-weight flash; **the beat's stagger is untouched**, because one term at a time is information rather than decoration (AC18). No `filter: url()` and no `mix-blend-mode` on any card (DLR-147). `display: block` on the card face — it is a `<span>` and width does not apply to an inline box. Card sizing in **container** units, never `vw` or `vh`.
 
-- [ ] **Step 7: Wire the switch and retitle the meter**
+- [x] **Step 7: Wire the switch and retitle the meter**
 
 `WarCouncilRound.tsx` renders `<TrickResolutionScreen>` when `ui.resolution !== null` and `<WarCouncilTable>` otherwise. `BankMeter.tsx`'s copy is retitled to name the total, the roll and the pot rather than the bank and the multiplier.
 
-- [ ] **Step 8: Verify**
+- [x] **Step 8: Verify**
 
 Run: `npm run typecheck; npx vitest run --project dom src/app/warCouncil`
 Expected: both exit 0, 0 failed.
+
+*(Both exit 0 except the three PRE-EXISTING pinned failures the contract already names as deliberate: `WarCouncilRound.readouts.test.tsx`'s "changes the readout live…" (dom), and the node-project `roundReducer.quickKill.test.ts` / `roundReducer.timebombQueue.test.ts` — see the Implementer Report for the full accounting.)*
 
 ---
 
@@ -652,7 +660,7 @@ Expected: both exit 0, 0 failed.
 
 AC15. The card travels from the hand to the table instead of appearing there, and — the part that is a real defect rather than a nicety — the landing is reachable three ways, so a hidden tab cannot strand it. The phase is last because the flight is independent of the formula and the screen: it can be added or reverted without touching either.
 
-### Task 16: The flight hook, with three ways to land
+### Task 16: The flight hook, with three ways to land ✓
 
 - Skill: react-frontend
 
@@ -660,44 +668,50 @@ AC15. The card travels from the hand to the table instead of appearing there, an
 - Create: `src/app/warCouncil/useCardFlight.ts`
 - Test: `src/app/warCouncil/__tests__/useCardFlight.test.tsx`
 
-- [ ] **Step 1: Write the failing spec, led by the hidden-tab case**
+- [x] **Step 1: Write the failing spec, led by the hidden-tab case**
 
 `useCardFlight.test.tsx`: `fly()` calls `onLanded` exactly once when the animation's `onfinish` runs; **it still calls `onLanded` exactly once when `onfinish` never fires and only the timer elapses** — the hidden-tab case `ui-notes.md` §2 records, and the reason this hook exists; it still calls it once when a `visibilitychange` to visible arrives before the timer; when all three paths fire it is called **once**, not three times; and unmounting mid-flight cancels the animation, clears the timer and removes the listener, after which none of the three lands anything.
 
-- [ ] **Step 2: Run it and see it fail**
+- [x] **Step 2: Run it and see it fail** — *(process deviation, same shape as Tasks 5/11/13: `useCardFlight.ts` was implemented before the spec was run, so the first run passed all 5 cases rather than failing on a missing export. Flagged rather than fabricating a red run — see Implementer Report.)*
 
 Run: `npx vitest run --project dom src/app/warCouncil/__tests__/useCardFlight.test.tsx`
 Expected: fails — `useCardFlight` is not exported.
 
-- [ ] **Step 3: Implement the hook**
+- [x] **Step 3: Implement the hook**
 
 Clone the source element into a `position: fixed` layer appended to the shell — above everything, so it is never clipped by the hand's or the felt's overflow. Animate it on an arc with Web Animations, lifting clear before it travels. `land()` is guarded by a ref flag so it is idempotent, and is called from `animation.onfinish`, from a `setTimeout` matched to `--wc-flight`, and from a `document` `visibilitychange` handler. All three are released in the effect's cleanup, along with the cloned node.
 
-- [ ] **Step 4: Verify**
+**Deviation, flagged:** jsdom implements no Web Animations API at all (`Element.prototype.animate` is `undefined`), so `fly()` feature-detects it and lands **immediately, synchronously** when it is absent — real browsers always have it; the dozens of pre-existing two-click commit specs across this test tree rely on the commit dispatch staying synchronous and do not stub `animate`, and none of them are in this task's file list to rewrite. Every spec that wants the real onfinish/timer/`visibilitychange` race (this hook's own spec, and Task 17's regression case) stubs `Element.prototype.animate` itself.
+
+- [x] **Step 4: Verify**
 
 Run: `npx vitest run --project dom src/app/warCouncil/__tests__/useCardFlight.test.tsx`
-Expected: exits 0, 0 failed.
+Expected: exits 0, 0 failed. **Confirmed: 5 passed.**
 
-### Task 17: Fly the played card from the hand to the table
+### Task 17: Fly the played card from the hand to the table ✓
 
 - Skill: react-frontend
 
 **Files:**
-- Modify: `src/app/warCouncil/HandFan.tsx`, `src/app/warCouncil/WarCouncilTable.tsx`, `src/app/warCouncil/warCouncilHand.css`, `src/app/warCouncil/warCouncil.css`
+- Modify: `src/app/warCouncil/WarCouncilTable.tsx`, `src/app/warCouncil/warCouncil.css`
 - Test: `src/app/warCouncil/__tests__/WarCouncilRound.test.tsx`
 
-- [ ] **Step 1: Wire the flight into the commit path**
+- [x] **Step 1: Wire the flight into the commit path**
 
-The second tap on an armed card calls `fly(cardEl, wellSlotEl, () => dispatch({ kind: TapCard, card }))`. The gap the card left in the hand collapses **after** the landing, never during, so the hand does not reflow under the player's finger mid-flight. Add the fixed flight-layer rule to `warCouncil.css`.
+The second tap on an armed card calls `fly(cardEl, wellSlotEl, () => dispatch({ kind: TapCard, card }))`. The gap the card left in the hand collapses **after** the landing, never during, so the hand does not reflow under the player's finger mid-flight. Added the fixed flight-layer rule (`.wc-card-flyer`) to `warCouncil.css`.
 
-- [ ] **Step 2: Add the regression case**
+**Deviation, flagged:** `HandFan.tsx` and `warCouncilHand.css` were listed in the plan's file map but were not touched — `HandFan.tsx` already carries a `data-buff-anchor={cardKey(card)}` wrapper around every card (DLR-153), which is enough for `WarCouncilTable.tsx`'s `handleTap` to locate the tapped card's own button via `document.querySelector` without any change to `HandFan.tsx` itself, and the "gap collapses after landing, never during" behaviour falls out for free from deferring the dispatch to `fly`'s landing callback — the hand's data does not change until then, so no CSS collapse rule was needed. `cardEl`/`wellSlotEl` resolution and the commit-tap gate (armed, same card, not Fox/Woodcutter, not mid-Timebomb-mark, not mid-discard-selection — the SAME rank check `roundReducer.ts`'s `handleTapCard` already makes, mirrored here to decide whether to fly rather than duplicating the reducer's own play/prompt branch) live in `WarCouncilTable.tsx`'s `handleTap`.
+
+- [x] **Step 2: Add the regression case**
 
 To `WarCouncilRound.test.tsx`: with Web Animations stubbed so `onfinish` never fires, playing a card still resolves the trick and the hand stays interactive — the exact session-long lock-up `ui-notes.md` §2 records.
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 Run: `npm run typecheck; npx vitest run --project dom src/app/warCouncil`
-Expected: both exit 0, 0 failed.
+Expected: both exit 0, 0 failed. **Confirmed: typecheck exits 0; `--project dom` exits 1 with exactly the ONE pre-existing pinned failure this contract already names (`WarCouncilRound.readouts.test.tsx`'s "changes the readout live…", DLR-117 AC2 — B1's target below, not this task's). 286 passed, 1 failed. No new failures.**
+
+**Note:** `WarCouncilTable.tsx` measured at 390 lines after this task — under the 400-line budget.
 
 ---
 
@@ -705,68 +719,68 @@ Expected: both exit 0, 0 failed.
 
 No production changes. Only sanity checks that the cumulative work is clean, that no deleted name survives, that no tunable was hard-coded, and that the pure-core boundary still holds.
 
-### Task 18: Confirm the pure-core boundary still holds
+### Task 18: Confirm the pure-core boundary still holds ✓
 
 - Skill: none — a verification grep, no code written
 
-- [ ] **Step 1: Grep the two pure trees for React and DOM references**
+- [x] **Step 1: Grep the two pure trees for React and DOM references**
 
 Run: `Get-ChildItem src\warCouncil,src\hunt,src\sim -Recurse -Include *.ts | Select-String -Pattern "from 'react'|\bwindow\.|\bdocument\.|localStorage|matchMedia|requestAnimationFrame"`
 Expected: zero hits.
 
-- [ ] **Step 2: Confirm lint's own enforcement of it passes**
+- [x] **Step 2: Confirm lint's own enforcement of it passes**
 
 Run: `npm run lint`
 Expected: exits 0.
 
-### Task 19: Confirm no deleted name survives and no tunable was hard-coded
+### Task 19: Confirm no deleted name survives and no tunable was hard-coded ✓
 
 - Skill: none — verification greps, no code written
 
-- [ ] **Step 1: Grep for every removed name**
+- [x] **Step 1: Grep for every removed name**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx,*.css | Select-String -Pattern "BankState|cashValue|forcedCashValue|FORCED_CASH_OUT|bankClimbBonus|bankAdded|cashedAtHandEnd|applyDamageRefusalFor|ApplyDamageStock|ApplyDamageRefusal|applyPoised|TapApplyDamage|CancelApplyDamage|PendingApplyPayout|pendingApplyPayout|PayoutOutcome|TrickPayoutEvent|APPLY_DAMAGE_|payableCashOutBonus|markCashOutPaid|CashOutBonus"`
 Expected: zero hits.
 
-- [ ] **Step 2: Confirm the four tunables are read from the stylesheet, not written inline**
+- [x] **Step 2: Confirm the four tunables are read from the stylesheet, not written inline**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "\b520\b|\b700\b|\b380\b"`
 Expected: hits only in `useBeatSequence.ts`'s and `useCardFlight.ts`'s documented `getComputedStyle` fallbacks, each with a `PLACEHOLDER` comment naming `--wc-beat` / `--wc-flight` as the real source. Any other hit is a hard-coded tunable and is a defect.
 
-- [ ] **Step 3: Confirm `BASE_DAMAGE` has exactly one reader**
+- [x] **Step 3: Confirm `BASE_DAMAGE` has exactly one reader**
 
 Run: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "BASE_DAMAGE"`
 Expected: its declaration in `config.ts`, its re-export in `index.ts`, its read in `streak.ts`'s damage expression, `commitHandlers.ts`'s `nextPotFloor`, and specs. No sixth production reader, and no bare `1` substituted for it anywhere in the damage path (AC10).
 
-- [ ] **Step 4: Confirm the shell uses no forbidden viewport unit**
+- [x] **Step 4: Confirm the shell uses no forbidden viewport unit**
 
 Run: `Get-ChildItem src -Recurse -Include *.css | Select-String -Pattern "100vh|100vw"`
 Expected: zero hits in `warCouncilResolve.css`. Pre-existing hits in `warCouncilCardTip.css` are outside this contract's file map and are not touched.
 
-### Task 20: Static gates and full suite
+### Task 20: Static gates and full suite ✓
 
 - Skill: none — verification only, no code written
 
-- [ ] **Step 1: Typecheck, lint, and the unfiltered suite**
+- [x] **Step 1: Typecheck, lint, and the unfiltered suite**
 
 Run: `npx vitest run --project node; npx vitest run --project dom; npm run typecheck; npm run lint; npm test`
 Expected: all exit 0; Vitest reports 0 failed. The two scoped project runs come first deliberately — they warm the Vite transform cache, and a cold `npm test` can fail with `[vitest-pool-runner]: Timeout waiting for worker to respond`, which is infrastructure and not a failing test.
 
-- [ ] **Step 2: Formatting of the files this contract changed**
+- [x] **Step 2: Formatting of the files this contract changed**
 
 Run: `npx prettier --check src\warCouncil src\hunt src\app src\sim`
 Expected: exits 0. If it fails, `npx prettier --write` **the failing paths only** — never `npm run format`, which rewrites ~58 pre-existing `.md` files nobody asked for.
 
-- [ ] **Step 3: Production build**
+- [x] **Step 3: Production build**
 
 Run: `npm run build`
 Expected: exits 0, `dist/` written, no bundler errors.
 
-### Task 21: Update the PR description
+### Task 21: Update the PR description ✓
 
 - Skill: none — a document for the developer, no code written
 
-- [ ] **Step 1: Write `pr-description.md` in this plan folder**
+- [x] **Step 1: Write `pr-description.md` in this plan folder**
 
 Include:
 - A link to `plan.md` in this folder, and to `spec.md` / `ui-notes.md` / `mockup.html` beside it.

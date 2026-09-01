@@ -62,31 +62,3 @@ export const MAX_MULTIPLIER_BONUS_PER_HAND = Number.POSITIVE_INFINITY
 export const MAX_FLAT_DAMAGE_BONUS_PER_HAND = Number.POSITIVE_INFINITY
 // UNIT: coins per hand.
 export const MAX_COIN_BONUS_PER_HAND = 10
-
-// DLR-109 — Apply Damage's two tunables. They live here rather than in `config.ts` because that
-// file is at 372 of its 400-line blocking budget and this file is already its sanctioned overflow.
-// `APPLY_DAMAGE_DELAY_TRICKS` is not an AP figure; it sits beside the AP cost because the two are
-// one control's pair of tunables and splitting them across two files to satisfy a filename would
-// be worse.
-
-// AC1 — what one Apply Damage press costs. DEVELOPER-SET on 2026-08-25, replacing the
-// transcribed-from-ticket default of 3 (§2 of the design doc flagged it OPEN).
-// UNIT: action points per press.
-export const APPLY_DAMAGE_AP_COST: ActionPoints = 1
-
-// AC2/AC5 — how many WHOLE TRICKS BEYOND the trick the press happened in a queued payout must
-// survive. `0` is DLR-143 AC3's "settles at the resolution of the very next trick after the
-// press": a press queues `APPLY_DAMAGE_DELAY_TRICKS + 1` trick resolutions, so a base of `0`
-// means exactly one resolution is owed. Deliberately NOT typed `ActionPoints` — it counts
-// tricks, not points. Read only through `applyDamageDelayTricks`, never as a literal.
-// DEVELOPER-SET on DLR-143, replacing DLR-109's transcribed default of 1 (two-trick settle).
-// UNIT: tricks.
-export const APPLY_DAMAGE_DELAY_TRICKS = 0
-
-// DLR-143 — the FRACTION of a queued Apply Damage payout that survives a hit which costs the
-// player red health. DEVELOPER-SET on DLR-143, replacing DLR-141's 60%: one third, rounded down
-// at the point of use (`reduceApplyPayoutOnHit`). The `winner !== null` branch of `applyDamage`'s
-// payout expression is untouched by this constant — a resolved encounter still evaporates the
-// payout in full.
-// UNIT: dimensionless fraction of the frozen cashOut, 0..1.
-export const APPLY_DAMAGE_HIT_RETENTION = 1 / 3

@@ -1,7 +1,7 @@
 # Headless run simulator — `src/sim/`
 
 **Status:** implemented
-**Built by:** DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154
+**Built by:** DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154, DLR-156
 
 ## Responsibility
 
@@ -88,7 +88,7 @@ the coupling runs one way only.
 ### How a hand is driven
 
 `playHand` builds the felt's seed through a single helper, `seedFor(run, dealt)`, carrying every
-field `App.tsx`'s mount passes (`bankClimbBonusFor`, `playerRankTiersFor`, `apCapacityFor`, the
+field `App.tsx`'s mount passes (`baseDamageBonusFor`, `playerRankTiersFor`, `apCapacityFor`, the
 run's coins, cheats, charges, discards and buff pile). One helper rather than an inline literal per
 call site: 44 places in `src/` build a seed of this shape, and a divergent 45th is how a field gets
 forgotten.
@@ -181,6 +181,12 @@ still prices Timebomb — DLR-116 pared it off the `SHOP_ITEMS` shelf, not out o
 
 ## Deferred / not yet implemented
 
+- **The modelled player applies whenever a pot stands and never pushes** (DLR-156). Neither shipped
+  policy implements `wantsApplyPot`, so the driver's own default answers for both. It is the
+  lowest-variance line the apply-or-roll choice admits and a deliberate floor, **not a claim about
+  optimal play** — and since the roll-over mechanic exists precisely for the push, every damage
+  figure this tool now prints is a lower bound on what the equation can pay. Revisiting it is the
+  developer's, and a policy that times its cash-out is the obvious next one to write.
 - **Two policies exist, and neither is a good card player.** `POLICIES` holds `baseline` and
   `maximalist` (DLR-120), and both take their cards from `chooseCpuMove` seated on the player. A
   policy that actually plays well — one that times its cash-out, or reasons about the decree — is a

@@ -19,7 +19,6 @@ import {
   createRoundUiState,
   discardWindowOpen,
   buffActivationStock,
-  applyDamageStock,
   timebombLive,
   type RoundUiSeed,
   type RoundUiState,
@@ -33,7 +32,7 @@ function makeSeed(overrides: Partial<WarCouncilState> = {}): RoundUiSeed {
     round: makeRound(overrides),
     encounter: encounterFixture,
     blastGuardHeld: false,
-    bankClimbBonus: 0,
+    baseDamageBonus: 0,
     discardsRemaining: 2,
     buffs: [],
   }
@@ -104,10 +103,10 @@ describe('buffActivationStock — AC1, fed by the existing discardWindowOpen', (
 })
 
 describe('DLR-114 — the felt has exactly one AP pool', () => {
-  it('buffActivationStock reads the same pool applyDamageStock does', () => {
+  it('buffActivationStock reads the reducer state’s own pool', () => {
     const state = createRoundUiState(makeSeed())
     expect(buffActivationStock(state, state.buffActivation, cheat).apPool).toBe(
-      applyDamageStock(state).apPool,
+      state.buffActivation.apPool,
     )
   })
 

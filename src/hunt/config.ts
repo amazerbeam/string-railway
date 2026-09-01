@@ -293,8 +293,8 @@ export const WHETSTONE_PRICE: Coins = 4
 // card" base, and two numbers that must multiply out to the documented figure is the pair that
 // drifts.
 //
-// All three values are exactly representable in binary, so `cards × multiplier` is exact and this
-// needs none of the numerator/denominator treatment FORCED_CASH_OUT_* required below.
+// All three values are exactly representable in binary, so `cards × multiplier` is exact and
+// needs no numerator/denominator treatment.
 // UNIT: coins per card left unplayed in the player's hand at the kill.
 export const QUICK_KILL_TIER_MULTIPLIERS: readonly number[] = [2, 1, 0.5]
 
@@ -334,18 +334,14 @@ export const SKULL_DENSITY = 0.3
 // UNIT: health points per damage event.
 export const DAMAGE_PER_HIT: Damage = 1
 
-// version-4-scope §3 / DLR-94 AC4 — a FORCED cash-out (a hit the player did not choose) pays this
-// fraction of `bank × multiplier`. A cash-out the player CHOSE (`voluntaryCashOut.ts`) and the
-// end-of-hand one both pay in full; this is the "you got caught before you applied" cost, and it
-// is what makes Apply Damage a decision rather than a button with no wrong answer.
-// SETTLED by the design on 2026-08-19. UNIT: dimensionless ratio, numerator over denominator.
+// DLR-156 AC10 — the damage every BANKED trick starts from, before any buff and before the
+// run's `baseDamageBonus`. THE single statement of it: `resolveTrickBank` is the only reader,
+// and nothing else may write a bare 1 into the damage equation.
 //
-// TWO CONSTANTS RATHER THAN ONE FLOAT, and that is arithmetic rather than style. `2 / 3` is
-// 0.6666666666666666, so `3 * (2 / 3)` is 1.9999999999999998 and floors to 1 where the rule says
-// 2 — wrong for every multiple of 3. Keeping them separate lets `forcedCashValue` multiply before
-// it divides, so the dividend is an exact integer.
-export const FORCED_CASH_OUT_NUMERATOR: number = 2
-export const FORCED_CASH_OUT_DENOMINATOR: number = 3
+// A CONSTANT, deliberately. `roll-over-damage-model.md` → Out of scope: a card family that
+// raises the base — paying back only if the streak survives — is a separate design, and
+// nothing in this ticket may make this figure a variable. UNIT: damage.
+export const BASE_DAMAGE: Damage = 1
 
 // DLR-100 D4/D5 (the-discard.md) — the discard's two figures. BOTH PROVISIONAL, the developer's
 // values set 2026-08-19, explicitly expected to move after play — the design doc's own words:
@@ -369,9 +365,6 @@ export {
   MAX_MULTIPLIER_BONUS_PER_HAND,
   MAX_FLAT_DAMAGE_BONUS_PER_HAND,
   MAX_COIN_BONUS_PER_HAND,
-  APPLY_DAMAGE_AP_COST,
-  APPLY_DAMAGE_DELAY_TRICKS,
-  APPLY_DAMAGE_HIT_RETENTION,
   AP_CAPACITY_STEP,
 } from './apConfig'
 

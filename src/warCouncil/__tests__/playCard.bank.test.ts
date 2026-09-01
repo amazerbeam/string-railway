@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { DAMAGE_PER_HIT } from '../../hunt'
-import { TrickOutcome } from '../bank'
+import { TrickOutcome } from '../streak'
 import { playCard } from '../playCard'
 import { PlayerSide, RoundPhase, Suit, type Card, type RoundState } from '../types'
 
@@ -24,8 +24,8 @@ function stateWith(overrides: Partial<RoundState>): RoundState {
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,
-    bank: 0,
-    multiplier: 0,
+    total: 0,
+    roll: 0,
     lastResolution: null,
     currentTrick: [],
     leader: PlayerSide.Player,

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { createSeededRng, HAND_SIZE, PLAYER_HAND_FLOOR } from '../../hunt'
 import { dealRound } from '../deal'
 import { createDeck } from '../deck'
@@ -138,8 +138,8 @@ describe('DLR-146 — the player hand floor', () => {
       spentPile: [],
       reshuffled: false,
       drawSeed: 0,
-      bank: 0,
-      multiplier: 0,
+      total: 0,
+      roll: 0,
       lastResolution: null,
       currentTrick: [{ side: PlayerSide.Cpu, card: { suit: 'keys', rank: 2 } }],
       leader: PlayerSide.Cpu,

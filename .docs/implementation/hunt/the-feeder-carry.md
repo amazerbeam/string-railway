@@ -13,7 +13,7 @@ the worst possible moment instead of accumulating.
 This page covers the whole path: the value, where the split is decided, how the carry crosses a hand
 boundary, and where it dies. What a Feeder's condition *asks* is
 [condition evaluation](buff-condition-evaluation.md); where a payable bonus lands inside the cash-out
-is [war-council/buffs-in-the-cash-out.md](../war-council/buffs-in-the-cash-out.md); the readout is
+is [war-council/buffs-in-the-trick-damage.md](../war-council/buffs-in-the-trick-damage.md); the readout is
 [war-council-ui/hunt-readouts-and-telegraph.md](../war-council-ui/hunt-readouts-and-telegraph.md).
 
 ## The split is by outcome, and the outcome is stated exactly once
@@ -21,7 +21,7 @@ is [war-council/buffs-in-the-cash-out.md](../war-council/buffs-in-the-cash-out.m
 The rule needs the **outcome axis** — did the player gain or get hurt — not the **mechanical axis**
 (`playerWon`, did the player physically take the cards) that every buff condition reads. On a skull
 trick the two disagree: taking a skulled trick is a Loss, and *not* taking one is a dodge, which is a
-Win. `src/warCouncil/bank.ts` already owns that inversion, once, in the total `TAKEN` table behind
+Win. `src/warCouncil/streak.ts` already owns that inversion, once, in the total `TAKEN` table behind
 `isTaken` — and `isTaken(outcome)` is already exactly "this trick was a Win".
 
 So nothing in `src/hunt/` re-derives it. `resolveTrickBank` computes the outcome it was going to
@@ -60,11 +60,20 @@ Everything else is unchanged, and three consequences of that are deliberate rath
 
 ## `BuffCarry` and `accrueCarry`
 
-`BuffCarry` is `{ multiplierBonus, flatDamageBonus }` — structurally identical to `CashOutBonus`, and
-deliberately so: the carry seeds exactly the two figures a cash-out can spend. It is a distinct
-**named** type because it lives on `RunState` and crosses the mount seam in both directions, where
-`CashOutBonus`'s "what this cash-out may add" meaning would be a lie. `EMPTY_BUFF_CARRY` is the
-module `const` for none of it, in the style of `EMPTY_BUFF_ACCRUAL` and `NO_CASH_OUT_BONUS`.
+> **DLR-156 made the carry's payout inert, and this section is the record of that.** The carry is
+> still earned, still crosses the hand boundary, still rides on `RunState`, and is still shown on the
+> felt — but **nothing spends it any more**. The damage a trick deals is now computed by
+> `trickBonusFor` from the buffs fired *on that trick*, and it never reads the hand's accrual, so the
+> two figures the carry seeds are no longer part of any equation. The mechanism below is intact and
+> its wiring is unchanged; what it fed was deleted. **A ticket restoring the carry has to decide
+> where a carried-in bonus lands under the new equation** — most plausibly as a term inside the next
+> banked trick's bracket — and that is a design decision, not a repair.
+
+`BuffCarry` is `{ multiplierBonus, flatDamageBonus }` — structurally identical to the deleted
+`CashOutBonus`, and deliberately so: the carry seeded exactly the two figures a cash-out could spend.
+It is a distinct **named** type because it lives on `RunState` and crosses the mount seam in both
+directions, where `CashOutBonus`'s "what this cash-out may add" meaning would have been a lie.
+`EMPTY_BUFF_CARRY` is the module `const` for none of it, in the style of `EMPTY_BUFF_ACCRUAL`.
 
 `accrueCarry(accrual, axis, amount)` adds one Loss-firing Feeder's reward into `accrual.carryOut`,
 never mutating its argument. It is **uncapped**: R6's four `MAX_*_PER_HAND` ceilings bound what a
@@ -85,13 +94,15 @@ nothing.
 
 `startHandAccrual(carriedIn = EMPTY_BUFF_CARRY)` writes the carry straight into `multiplierBonus` and
 `flatDamageBonus`, with `multiplierPaid` / `flatDamagePaid` at zero. That is what makes the carry
-spendable through **every** cash-out route with no new arithmetic anywhere: `payableCashOutBonus` is
-`bonus − paid`, and both cash-out branches in `resolveTrickBank` plus the end-of-hand fold already
-spend exactly that. Apply Damage, being caught, and the hand's end all pay it for free.
-`startHandAccrual` remains the **only** reset this module exports.
+spendable through **every** cash-out route with no new arithmetic anywhere: `payableCashOutBonus` was
+`bonus − paid`, and both cash-out branches in `resolveTrickBank` plus the end-of-hand fold spent
+exactly that. **DLR-156 deleted all three of those routes**, and `payableCashOutBonus` with them, so
+the seeding still happens and pays nothing (see the note above). `startHandAccrual` remains the
+**only** reset this module exports.
 
 The rejected alternative was a separate `carriedIn`-payable pool added on top inside
-`payableCashOutBonus`. It is strictly more code, and its only advantage would be surviving a future
+`payableCashOutBonus`. (Reading it back after DLR-156, the rejected shape is the one a restoration
+would now have to build anyway, because the pool it was an alternative to no longer feeds anything.) It is strictly more code, and its only advantage would be surviving a future
 *finite* per-hand cap. **Seeding therefore depends on both damage caps being infinite**, which they
 are (`MAX_MULTIPLIER_BONUS_PER_HAND` and `MAX_FLAT_DAMAGE_BONUS_PER_HAND` are both
 `Number.POSITIVE_INFINITY` since DLR-145) — if either became finite, `accrueAxisBonus`'s `Math.min`

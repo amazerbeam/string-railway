@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { DAMAGE_PER_HIT, DuelSide } from '../../hunt'
 import { primeCard } from '../timebomb'
 import { playCard } from '../playCard'
@@ -27,8 +27,8 @@ function stateWith(overrides: Partial<RoundState>): RoundState {
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,
-    bank: 0,
-    multiplier: 0,
+    total: 0,
+    roll: 0,
     lastResolution: null,
     currentTrick: [],
     leader: PlayerSide.Player,
@@ -38,17 +38,17 @@ function stateWith(overrides: Partial<RoundState>): RoundState {
   }
 }
 
-describe('playCard — a marked trick reaches the bank rule (DLR-90 AC3)', () => {
+describe('playCard — a marked trick reaches the total rule (DLR-90 AC3)', () => {
   // A Quarry lead already on the table, and a player card of the led suit that loses to it
   // cleanly — neither card is trump, so the trick resolves as an ordinary CleanLoss unless the
   // mark replaces it. `stateWith`'s own base (`skulledCards: []`, no trump on `bells`) already
-  // expresses this; the only thing added here is the non-zero bank/multiplier streak.
+  // expresses this; the only thing added here is the non-zero total/roll streak.
   const losingFollowCard: Card = { suit: Suit.Bells, rank: 2 }
   const baseWithBank = stateWith({
     hands: { player: [losingFollowCard], cpu: [] },
     trumpSuit: Suit.Keys,
-    bank: 2,
-    multiplier: 2,
+    total: 2,
+    roll: 2,
     currentTrick: [{ side: PlayerSide.Cpu, card: { suit: Suit.Bells, rank: 9 } }],
     leader: PlayerSide.Cpu,
     phase: RoundPhase.AwaitingFollow,
@@ -63,8 +63,8 @@ describe('playCard — a marked trick reaches the bank rule (DLR-90 AC3)', () =>
     const resolution = result.state.lastResolution
     expect(resolution?.timebombTarget).toBe(DuelSide.Quarry)
     expect(resolution?.damageToPlayer).toBe(0)
-    expect(result.state.bank).toBe(marked.bank)
-    expect(result.state.multiplier).toBe(marked.multiplier)
+    expect(result.state.total).toBe(marked.total)
+    expect(result.state.roll).toBe(marked.roll)
   })
 
   it('reports no target for an unmarked trick, leaving every existing rule alone', () => {

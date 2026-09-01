@@ -1,5 +1,4 @@
 import {
-  ApplyDamageRefusal,
   CardRank,
   DiscardRefusal,
   IllegalMoveReason,
@@ -175,13 +174,16 @@ export const FINISH_ROUND_LABEL = 'Deal the next Hunt'
 export const TRICK_OUTCOME_MESSAGE: Readonly<Record<TrickOutcome, string>> = {
   [TrickOutcome.CleanWin]: 'Clean trick, taken. The streak climbs.',
   [TrickOutcome.Dodge]: 'Skull dodged. The streak climbs.',
-  [TrickOutcome.CleanLoss]: 'Clean trick lost. 1 damage — the streak cashes.',
-  [TrickOutcome.SkullWin]: 'You ate the skull. 1 damage — the streak cashes.',
+  [TrickOutcome.CleanLoss]: 'Clean trick lost. 1 damage — the streak is lost.',
+  [TrickOutcome.SkullWin]: 'You ate the skull. 1 damage — the streak is lost.',
 }
 
 export const SKULL_MARK_LABEL = 'Skull'
-export const TRICKS_LABEL = 'Tricks'
-export const MULTIPLIER_LABEL = 'Multiplier'
+// DLR-156 Task 15 Step 7 — renamed from `TRICKS_LABEL`/`MULTIPLIER_LABEL`: the pair `BankMeter`
+// renders is `total`/`roll` (`streak.ts`'s own field names), not a count of tricks or a
+// multiplier, so the copy is retitled to match what the figures actually are.
+export const TOTAL_LABEL = 'Total'
+export const ROLL_LABEL = 'Roll'
 export const QUARRY_SHAPE_LABEL = 'What the Quarry holds'
 
 /** One suit row's own phrase (AC11) — never a rank. The single owner of this wording: both
@@ -234,47 +236,14 @@ export function timebombBookedText(target: DuelSide, amount: Damage): string {
     : `Timebomb ticking — they take ${amount} at the next trick.`
 }
 
-/** The Apply Damage plate's copy (DLR-94). PLACEHOLDER — the wording is the developer's, exactly
- *  as this file's rest is. */
-export const APPLY_DAMAGE_RAIL_LABEL = 'Apply'
-export const APPLY_DAMAGE_POISED_HINT = 'Tap Apply again to cash your streak'
-
-/** Why the control is dark, in the player's words. A total `Record`, so a fourth refusal reason is
- *  a compile error here rather than an `undefined` sentence under a disabled button. */
-export const APPLY_DAMAGE_REFUSAL_MESSAGE: Readonly<Record<ApplyDamageRefusal, string>> = {
-  [ApplyDamageRefusal.EmptyBank]: 'No streak to cash — take a trick first.',
-  [ApplyDamageRefusal.TrickInProgress]: 'Only before a trick starts — the table is already live.',
-  [ApplyDamageRefusal.PayoutPending]:
-    'Your last Apply is still in the air — it lands when the next trick resolves.',
-  [ApplyDamageRefusal.InsufficientAp]: 'Not enough action points to apply.',
-  [ApplyDamageRefusal.NotYourMove]: 'Not your move yet.',
-}
-
-/** The plate's accessible name. The three readings — live, poised, refused — MUST differ:
- *  `getByRole('button', { name })` is how the spec tells them apart, and a player who cannot see
- *  the dimming learns the reason from here or not at all. The figure is in the name rather than
- *  only in the glyph, so a player who cannot see the plate still knows the amount. */
-export function applyDamageAccessibleName(
-  cashValue: number,
-  poised: boolean,
-  refusal: ApplyDamageRefusal | null,
-): string {
-  if (refusal !== null) {
-    return `${APPLY_DAMAGE_RAIL_LABEL} Damage, unavailable — ${APPLY_DAMAGE_REFUSAL_MESSAGE[refusal]}`
-  }
-  const base = `${APPLY_DAMAGE_RAIL_LABEL} Damage, ${cashValue} to the Quarry`
-  return poised ? `${base} — tap again to confirm` : base
-}
-
 /** The discard rail's copy (DLR-100). PLACEHOLDER — the wording is the developer's, exactly as
- *  `APPLY_DAMAGE_RAIL_LABEL` above and this file's rest are. */
+ *  this file's rest is. */
 export const DISCARD_RAIL_LABEL = 'Discard'
 export const DISCARD_SELECT_HINT = `Pick up to ${MAX_CARDS_PER_DISCARD} cards to discard`
 export const DISCARD_READY_HINT = 'Tap Discard again to swap them'
 
 /** Why the control is dark, in the player's words. A total `Record`, so a fourth refusal reason is
- *  a compile error here rather than an `undefined` sentence under a disabled button — the same
- *  discipline `APPLY_DAMAGE_REFUSAL_MESSAGE` above already sets. */
+ *  a compile error here rather than an `undefined` sentence under a disabled button. */
 export const DISCARD_REFUSAL_MESSAGE: Readonly<Record<DiscardRefusal, string>> = {
   [DiscardRefusal.NotAvailable]: 'Not available yet.',
   [DiscardRefusal.NoDiscardsRemaining]: 'No discards left this fight.',
@@ -313,16 +282,20 @@ export const CARD_DAMAGE_ESTIMATE_GLYPH = '~'
  * DLR-117 — the compact on-card form, e.g. `W6 L1`, or `~W6 L1` for an estimate. Rendered
  * `aria-hidden`; `cardDamageText` below is what a reader who cannot see it gets.
  *
- * TWO figures, and they are the CARD-DEPENDENT ones: what this card deals if it wins, what it
- * costs if it loses. The two cross-terms — a Timebomb detonating on a win, the forced cash-out
- * on a loss — are the same whichever card is played and are already previewed on the bars
- * (DLR-101's ticking hearts, DLR-86 AC3's at-risk band), so repeating them on six cards would
- * add noise without adding information. The full four-figure truth is in the sentence below.
+ * TWO figures, and they are the CARD-DEPENDENT ones: what this card ADDS TO THE STREAK if it
+ * wins, what it costs if it loses. DLR-156 B1 — the `W` figure is `winPot.trickDamage`, not
+ * `win.toQuarry`: AC5 means a win no longer pays the Quarry immediately, so `win.toQuarry` is
+ * correctly 0 on every ordinary trick and would make this glyph say the same thing on every
+ * card. `winPot.trickDamage` is what this card is actually worth toward the pot. The two
+ * cross-terms — a Timebomb detonating on a win, the loss's own hit — are the same whichever
+ * card is played and are already previewed on the bars (DLR-101's ticking hearts, DLR-86 AC3's
+ * at-risk band), so repeating them on six cards would add noise without adding information. The
+ * full truth, including the pot the streak would then stand at, is in the sentence below.
  * PLACEHOLDER glyphs: the wording is the developer's.
  */
 export function cardDamageGlyphText(preview: CardDamagePreview): string {
   const estimate = preview.exact ? '' : CARD_DAMAGE_ESTIMATE_GLYPH
-  return `${estimate}W${preview.win.toQuarry} L${preview.lose.toPlayer}`
+  return `${estimate}W${preview.winPot.trickDamage} L${preview.lose.toPlayer}`
 }
 
 /** One branch, in words. Omits a zero rather than saying "0 damage to you", and says
@@ -337,6 +310,26 @@ function cardDamageBranchText(branch: CardDamageBranch): string {
 }
 
 /**
+ * DLR-156 B1 — the win branch in words. Nothing is dealt to the Quarry immediately from a win any
+ * more (AC5) — winning GROWS the streak instead, so this states what the trick adds and what the
+ * pot would then be worth, plus any genuine immediate cross-term (a Timebomb landing on the
+ * Quarry or the player this trick, or shield absorption) exactly as `cardDamageBranchText` states
+ * them for the lose branch. PLACEHOLDER copy, as this file's rest is.
+ */
+function cardDamageWinText(preview: CardDamagePreview): string {
+  const parts: string[] = []
+  parts.push(
+    preview.winPot.trickDamage > 0
+      ? `adds ${preview.winPot.trickDamage} to the streak — the pot would stand at ${preview.winPot.pot}`
+      : 'adds nothing to the streak',
+  )
+  if (preview.win.toQuarry > 0) parts.push(`${preview.win.toQuarry} damage to the Quarry`)
+  if (preview.win.toPlayer > 0) parts.push(`${preview.win.toPlayer} damage to you`)
+  if (preview.win.shielded > 0) parts.push(`${preview.win.shielded} absorbed by your shield`)
+  return parts.join(', ')
+}
+
+/**
  * DLR-117 — the `.wc-sr-only` sentence, and the COMPLETE statement: both branches, both sides
  * of each, any shield absorption, and the estimate caveat when one applies. Reached through
  * the card button's `aria-describedby`, so it is a DESCRIPTION and never part of the card's
@@ -344,7 +337,7 @@ function cardDamageBranchText(branch: CardDamageBranch): string {
  */
 export function cardDamageText(preview: CardDamagePreview): string {
   const body =
-    `If you win this trick: ${cardDamageBranchText(preview.win)}. ` +
+    `If you win this trick: ${cardDamageWinText(preview)}. ` +
     `If you lose: ${cardDamageBranchText(preview.lose)}.`
   return preview.exact ? body : `${body} ${CARD_DAMAGE_ESTIMATE_NOTE}`
 }

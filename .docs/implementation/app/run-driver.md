@@ -191,13 +191,13 @@ the card layer needs and **cannot change**, so it goes down and never comes back
 `whetstones={run.whetstones}` plus a fifth `refusals` entry, and the mount gains
 
 ```tsx
-bankClimbBonus={bankClimbBonusFor(run)}
+baseDamageBonus={baseDamageBonusFor(run)}
 ```
 
 **That line is the whole crossing between the run and the card layer, and the shape of it is deliberate.**
 It hands over a **number**, not a `RunState` and not an item count, so `src/warCouncil/` never learns what a
 Whetstone is — a contract-phase grep enforces that the card layer names neither `Whetstone` nor `RunState` in
-code. And it calls `bankClimbBonusFor` rather than passing `run.whetstones` straight through, so the rule
+code. And it calls `baseDamageBonusFor` rather than passing `run.whetstones` straight through, so the rule
 "+1 per copy" lives in `src/hunt/run.ts` where a reviewer looks for it rather than in a JSX prop where nobody
 would.
 
@@ -422,8 +422,13 @@ deliberately not taken, precisely because StrictMode would fire it twice.
 > clearest statement of *which* branch wins over which; nothing about that order changed.
 >
 > The extraction was forced by the 400-line budget: `App.tsx` stood at **399** and this ticket adds
-> `feederCarry` down to the mount and back from the result. It is **376** lines now, and still not a
-> reducer.
+> `feederCarry` down to the mount and back from the result. It is **379** lines after DLR-156 added
+> the streak alongside it, and still not a reducer.
+>
+> **DLR-156 threaded a third run-carried figure the same way.** `RunState.streak` (`{ total, roll }`)
+> goes down as the `streak` mount prop and comes back on `WarCouncilRoundResult.streak`, which
+> `App.tsx` hands to `recordEncounter` as its ninth argument. It is `feederCarry`'s route field for
+> field, and it is what makes a streak survive a hand boundary and die at a fight boundary.
 
 
 ```tsx
@@ -449,7 +454,7 @@ if (encounterOver) {
     beatenName={currentName} nextName={nextName} onMap={() => setPhase(RunPhase.Map)}
     onVault={() => setPhase(RunPhase.Vault)} … />                                        // DLR-118
 }
-return <WarCouncilRound key={hand} … runLabel={runPositionLabel(run.encounterIndex, run.encounterCount, currentName)} coins={run.coins} bankClimbBonus={bankClimbBonusFor(run)} onComplete={handleComplete} />
+return <WarCouncilRound key={hand} … runLabel={runPositionLabel(run.encounterIndex, run.encounterCount, currentName)} coins={run.coins} baseDamageBonus={baseDamageBonusFor(run)} streak={run.streak} onComplete={handleComplete} />
 ```
 
 The shop branch sits **before** the verdict branch, so the two cannot both match, and the map branch sits

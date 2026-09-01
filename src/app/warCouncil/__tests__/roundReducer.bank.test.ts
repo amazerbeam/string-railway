@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import {
   currentTurn,
   PlayerSide,
@@ -20,7 +20,7 @@ import { roundReducer } from '../roundReducer'
 import { createRoundUiState, RoundUiActionKind, type RoundUiState } from '../roundUiState'
 import { card, discardsRemainingFixture, makeRound } from './roundFixture'
 
-// The bank cash-out specs (AC6/AC8) — carved into their own file for the same reason DLR-71's
+// The total cash-out specs (AC6/AC8) — carved into their own file for the same reason DLR-71's
 // own splits exist in this codebase: `roundReducer.test.ts` crossed the 400-line budget once
 // Task 12 added the encounter to its state, and this describe block was the largest single
 // piece. Duplicated rather than imported, matching the established local pattern
@@ -38,19 +38,19 @@ function uiFrom(
     round,
     encounter,
     blastGuardHeld: false,
-    bankClimbBonus: 0,
+    baseDamageBonus: 0,
     discardsRemaining: discardsRemainingFixture,
     buffs: [],
   })
 }
 
-describe('the bank cash-out — AC6/AC8, applied mid-hand as it happens', () => {
-  it('cashes the bank into the Quarry the moment a clean trick is lost', () => {
+describe('DLR-156 AC7 — a hit pays the Quarry NOTHING, replacing the old forced two-thirds cash-out', () => {
+  it('a clean loss deals no damage to the Quarry and resets total/roll, only the player is hit', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
-      bank: 2,
-      multiplier: 2,
+      total: 2,
+      roll: 2,
       hands: {
         [PlayerSide.Player]: [card(Suit.Bells, 2)],
         [PlayerSide.Cpu]: [card(Suit.Bells, 9)],
@@ -61,9 +61,11 @@ describe('the bank cash-out — AC6/AC8, applied mid-hand as it happens', () => 
     ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 2)))
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanLoss)
-    // DLR-94 AC4 — a forced hit pays two-thirds of 2 x 2, floored: 2.
-    expect(ui.resolvedTrick?.resolution.cashOut).toBe(2)
-    expect(ui.encounter.health[DuelSide.Quarry]).toBe(quarryHealthForEncounter(0) - 2)
+    // AC7 — no two-thirds consolation any more: a hit pays the Quarry nothing at all.
+    expect(ui.resolvedTrick?.resolution.cashOut).toBe(0)
+    expect(ui.round.total).toBe(0)
+    expect(ui.round.roll).toBe(0)
+    expect(ui.encounter.health[DuelSide.Quarry]).toBe(quarryHealthForEncounter(0))
     expect(ui.encounter.health[DuelSide.Player]).toBe(PLAYER_START_HEALTH - DAMAGE_PER_HIT)
   })
 
@@ -71,8 +73,8 @@ describe('the bank cash-out — AC6/AC8, applied mid-hand as it happens', () => 
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
-      bank: 0,
-      multiplier: 0,
+      total: 0,
+      roll: 0,
       hands: {
         [PlayerSide.Player]: [card(Suit.Bells, 9)],
         [PlayerSide.Cpu]: [card(Suit.Bells, 2)],
@@ -90,29 +92,35 @@ describe('the bank cash-out — AC6/AC8, applied mid-hand as it happens', () => 
     expect(ui.encounter).toBe(encounter)
   })
 
-  it('stops accepting taps once a cash-out empties the Quarry’s bar mid-hand', () => {
+  it('stops accepting taps once the player APPLIES a pot that empties the Quarry’s bar mid-hand', () => {
+    // DLR-156 — the old fixture relied on a LOSS forcing a two-thirds cash-out that no longer
+    // exists (AC7). The equivalent guard now lives behind the resolution screen's Apply choice:
+    // a WIN opens the screen with a huge pot on offer, and it is the player's own ApplyPot that
+    // can end the fight mid-hand.
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
-      bank: 500,
-      multiplier: 2,
+      total: 500,
+      roll: 2,
       tricksPlayed: 2,
       hands: {
-        [PlayerSide.Player]: [card(Suit.Bells, 1), card(Suit.Keys, 4)],
-        [PlayerSide.Cpu]: [card(Suit.Bells, 8), card(Suit.Keys, 5)],
+        [PlayerSide.Player]: [card(Suit.Bells, 9), card(Suit.Keys, 4)],
+        [PlayerSide.Cpu]: [card(Suit.Bells, 2), card(Suit.Keys, 5)],
       },
       currentTrick: [],
     })
     let ui = uiFrom(round)
-    // Player leads the Swan (rank 1) and loses it — the losing Swan-player leads next
-    // (`nextLeaderAfterTrick`), so it would ordinarily be the Player's turn again. The
-    // cash-out (500 x 2 = 1000) comfortably exceeds this encounter's 10-health Quarry, so the
-    // bar empties and resolves the encounter first — this isolates the new guard from the
-    // ordinary turn-order one, independent of the fixture's synthetic magnitude.
-    ui = roundReducer(ui, tap(card(Suit.Bells, 1)))
-    ui = roundReducer(ui, tap(card(Suit.Bells, 1)))
+    ui = roundReducer(ui, tap(card(Suit.Bells, 9)))
+    ui = roundReducer(ui, tap(card(Suit.Bells, 9)))
+    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanWin)
+    expect(ui.resolution).not.toBeNull()
+
+    // The pot on offer (potValue(501, 3) = 1503) comfortably exceeds this encounter's 10-health
+    // Quarry, so applying it empties the bar and resolves the encounter mid-hand.
+    ui = roundReducer(ui, { kind: RoundUiActionKind.ApplyPot })
     expect(isEncounterResolved(ui.encounter)).toBe(true)
     expect(ui.round.phase).not.toBe(RoundPhase.Complete)
+    expect(ui.resolution).toBeNull()
 
     ui = roundReducer(ui, carryOn)
     expect(ui.resolvedTrick).toBeNull()
@@ -127,8 +135,8 @@ describe('the bank cash-out — AC6/AC8, applied mid-hand as it happens', () => 
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Bells,
-      bank: 0,
-      multiplier: 0,
+      total: 0,
+      roll: 0,
       tricksPlayed: 0,
       hands: {
         [PlayerSide.Player]: [card(Suit.Bells, 11), card(Suit.Keys, 11), card(Suit.Moons, 4)],
@@ -146,21 +154,21 @@ describe('the bank cash-out — AC6/AC8, applied mid-hand as it happens', () => 
     // Trick 1 — the Player's Bells 11 beats the Quarry's only Bells card: a clean win.
     ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
     ui = roundReducer(ui, tap(card(Suit.Bells, 11)))
-    expect(ui.round.multiplier).toBe(1)
+    expect(ui.round.roll).toBe(1)
     ui = roundReducer(ui, carryOn)
 
     // Trick 2 — likewise with Keys: the streak climbs.
     ui = roundReducer(ui, tap(card(Suit.Keys, 11)))
     ui = roundReducer(ui, tap(card(Suit.Keys, 11)))
-    expect(ui.round.multiplier).toBe(2)
+    expect(ui.round.roll).toBe(2)
     ui = roundReducer(ui, carryOn)
 
     // Trick 3 — the Player leads low, the Quarry's only Moons card beats it: damage resets
-    // both the bank and the streak to zero.
+    // both the total and the streak to zero.
     ui = roundReducer(ui, tap(card(Suit.Moons, 4)))
     ui = roundReducer(ui, tap(card(Suit.Moons, 4)))
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanLoss)
-    expect(ui.round.multiplier).toBe(0)
-    expect(ui.round.bank).toBe(0)
+    expect(ui.round.roll).toBe(0)
+    expect(ui.round.total).toBe(0)
   })
 })

@@ -372,7 +372,7 @@ fields defaults — `breaking` to `NO_BREAKING`, `ticking` to `src/hunt`'s `NO_P
 through DLR-86, DLR-101 and DLR-115.
 
 **DLR-101 turned that fourth argument from a positional record into a `HealthBarOverlays` options
-object** (`{ breaking?, ticking? }`), and the reason is the one `bank.ts`'s `TrickFacts` already
+object** (`{ breaking?, ticking? }`), and the reason is the one `streak.ts`'s `TrickFacts` already
 states: both fields are `Readonly<Record<DuelSide, Damage>>`, so as two positional parameters they
 were silently transposable and a swap would have type-checked cleanly and drawn a plausible but
 wrong picture. Naming them makes a transposition a compile error. **This is now the module's

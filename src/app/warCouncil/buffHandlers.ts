@@ -5,7 +5,7 @@
  *
  * Nothing here throws. `activateBuff` throws by design on a refused activation, so every path
  * below asks `buffActivationRefusalFor` FIRST — a throw inside a reducer during an event handler
- * unmounts the tree, which is the discipline `handleTapApplyDamage` already sets.
+ * unmounts the tree.
  */
 import {
   activateFromPile,
@@ -35,7 +35,7 @@ import {
 
 /** THE one statement of whether a given buff can be activated right now. Both the panel's row
  *  `disabled` state and `handleTapBuff`'s guard call this, so they cannot read availability
- *  differently — the discipline `applyDamageRefusalFor` sets. UNCHANGED by the DLR-114
+ *  differently. UNCHANGED by the DLR-114
  *  door-widening fix below FOR EVERY CONDITION/CONSUMABLE ROW: activating one of those is
  *  genuinely a between-tricks decision (AC1), so it stays gated on `discardWindowOpen` exactly as
  *  it always has. Cheat and Timebomb are the one exception `roundUiState.ts`'s `buffActivationStock`
@@ -114,18 +114,18 @@ export function handleCancelBuffPoise(state: RoundUiState): RoundUiState {
 }
 
 /**
- * Three outcomes on one row, mirroring `handleTapApplyDamage`'s shape. A refusal drops the poise
- * and changes nothing else; nothing poised (or a different buff poised) poises this one; the same
- * buff poised COMMITS through `activateFromPile` and leaves the panel OPEN, because AC2 allows one
- * or more activations per trick.
+ * Three outcomes on one row. A refusal drops the poise and changes nothing else; nothing poised
+ * (or a different buff poised) poises this one; the same buff poised COMMITS through
+ * `activateFromPile` and leaves the panel OPEN, because AC2 allows one or more activations per
+ * trick.
  *
  * DLR-126 — the two-tap model IS the reversibility. There is no un-activate in the engine and a
  * spent consumable is gone for the rest of the run, so the only chance to change your mind is
  * before the second tap: `Escape` drops the poise, and the refusal is re-read on BOTH taps.
  *
- * The refusal is re-read on BOTH taps, for `handleTapApplyDamage`'s stated reason: the felt can
- * change under a poised row — the Quarry leads, a reveal is held — and re-reading is what stops a
- * poise made while the row was live from committing after it stopped being.
+ * The refusal is re-read on BOTH taps: the felt can change under a poised row — the Quarry leads,
+ * a reveal is held — and re-reading is what stops a poise made while the row was live from
+ * committing after it stopped being.
  */
 export function handleTapBuff(state: RoundUiState, id: BuffId): RoundUiState {
   if (state.loadout === null) return state

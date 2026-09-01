@@ -89,13 +89,18 @@ The four outcomes, which `.docs/game_rules/the-hunt.md` §7 owns:
 
 | | Clean trick | Skull trick |
 |---|---|---|
-| **Took the trick** | clean win — +1 bank, +1 multiplier | **ate the skull** — −1 health, two-thirds cash-out, both reset |
-| **Did not take it** | clean loss — −1 health, two-thirds cash-out, both reset | **dodge** — +1 bank, +1 multiplier |
+| **Took the trick** | clean win — **banks**: the trick's damage into `total`, `roll` +1 | **ate the skull** — **hurts**: −1 health, `total` and `roll` to zero, the Quarry paid nothing |
+| **Did not take it** | clean loss — **hurts**: −1 health, `total` and `roll` to zero, the Quarry paid nothing | **dodge** — **banks**: the trick's damage into `total`, `roll` +1 |
+
+DLR-156 replaced `bank × multiplier` with a per-trick pot. A banked trick adds
+`(BASE_DAMAGE + baseDamageBonus + buffDamage) × buffMult` to `total` and climbs `roll` by one; the
+pot is `total × roll`, and it is paid **only** when the player chooses *apply* on the resolution
+screen. **A hurt trick pays the Quarry nothing** — the old two-thirds consolation is gone.
 
 Three consequences that are routinely got wrong:
 
 - **A dodge is a good outcome reached by losing the trick.** Playing a 2 under a skulled 5 is the
-  correct play — no damage, +1 bank, +1 multiplier. Damage on a skull trick comes from **winning**
+  correct play — no damage, and the trick banks. Damage on a skull trick comes from **winning**
   it, never from losing it.
 - **Feeder fires on both.** Its predicate is `!playerWon && suit matches` — there is no skull term
   in it at all, so a Feeder pays whether the trick was a dodge or a clean loss. That is deliberate,

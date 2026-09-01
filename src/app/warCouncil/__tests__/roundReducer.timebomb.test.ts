@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { isPrimed, PlayerSide, RoundPhase, Suit, TrickOutcome } from '../../../warCouncil'
 import { BuffTier, TIMEBOMB_DAMAGE, timebombBuff } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
@@ -25,19 +25,17 @@ const heldReveal: ResolvedTrick = {
   winner: PlayerSide.Player,
   resolution: {
     outcome: TrickOutcome.CleanWin,
-    bankAdded: 1,
+    trickDamage: { base: 1, buffDamage: 0, buffMult: 1, overlapBonus: 0, dealt: 1 },
     cashOut: 0,
     damageToPlayer: 0,
-    bank: 1,
-    multiplier: 1,
-    cashedAtHandEnd: false,
+    total: 1,
+    roll: 1,
     timebombTarget: null,
     timebombToQuarry: 0,
     blastGuardSpent: false,
     buffAccrual: null,
     firedBuffIds: [],
   },
-  payout: null,
   timebombDamage: null,
 }
 
@@ -48,7 +46,7 @@ function seed(overrides: Partial<RoundUiSeed> = {}): RoundUiSeed {
     round: makeRound(),
     encounter: encounterFixture,
     blastGuardHeld: false,
-    bankClimbBonus: 0,
+    baseDamageBonus: 0,
     discardsRemaining: discardsRemainingFixture,
     buffs: [timebomb],
     ...overrides,

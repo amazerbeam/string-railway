@@ -1,0 +1,369 @@
+/* DLR-156 — the trick resolution screen: the build-up and the apply-or-roll choice, on a screen
+   of its own (`ui-notes.md` §1/§3). Adapted from `.claude/contract/DLR-156-roll-over-damage-model/
+   mockup.html`'s `.resolve` section, which is the approved article — this file is that CSS made
+   real, not a fresh design pass. Shares `warCouncil.css`'s `:root` tokens (the two files are always
+   imported together, via `WarCouncilRound.tsx`). */
+
+:root {
+  /* PLACEHOLDER — transcribed from mockup.html; the developer's to set by playing.
+     ui-notes.md §7 calls --wc-beat the single number most worth setting from a play-through. */
+  --wc-beat: 520ms;
+  /* PLACEHOLDER — ui-notes.md §1/§7: "how long the resolution screen holds after a choice before
+     returning to the table". Read by `useResolveHold.ts`'s own `holdMs`. */
+  --wc-resolve-hold: 700ms;
+  --wc-flight: 380ms;
+  --wc-ledger-row: 2.5rem;
+}
+
+.wc-resolve,
+.wc-resolve * {
+  box-sizing: border-box;
+}
+
+/* A second full-viewport shell, not a modal over the felt (`ui-notes.md` §1) — the header, the
+   trick, the verdict and the ledger sit in ONE grid child (`.wc-resolve-main`) so they read as one
+   sentence rather than being spread evenly down the screen by a grid that does not know they are
+   one thought (`ui-notes.md` §3). */
+.wc-resolve {
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  justify-items: center;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  color-scheme: dark;
+  background:
+    radial-gradient(90% 70% at 50% 42%, #14201d 0%, #080c0e 62%, #05070800 100%), var(--wc-chamber);
+  color: var(--wc-chalk);
+  font-family: var(--wc-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.wc-resolve-head {
+  padding: clamp(0.5rem, 1.6vh, 1rem) 1rem clamp(0.2rem, 0.6vh, 0.4rem);
+  font-size: clamp(0.44rem, 0.95vmin, 0.55rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+}
+
+/* the whole cluster — trick, verdict, readout — as one grid child (`ui-notes.md` §3) */
+.wc-resolve-main {
+  align-self: center;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.5rem, 2.2vh, 1.4rem);
+  min-height: 0;
+}
+
+.wc-resolve-trick {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(1rem, 4vw, 2.4rem);
+  container-type: size;
+  container-name: wc-resolve-stage;
+}
+
+.wc-resolve-card {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Sized against the CONTAINER, never `vw`/`vh` — a `vw` bound is blind to the viewport that
+   breaks it, and `vh` prices the card against a height the stage does not have (`ui-notes.md`
+   §6, carried from DLR-147). */
+.wc-resolve-card-slot {
+  width: clamp(3.2rem, 7cqh, 5.2rem);
+  aspect-ratio: 2 / 3;
+  position: relative;
+}
+
+.wc-resolve-card-slot > * {
+  position: absolute;
+  inset: 0;
+}
+
+.wc-resolve-card figcaption {
+  font-size: clamp(0.38rem, 0.85vmin, 0.48rem);
+  letter-spacing: 0.1em;
+  color: var(--wc-chalk-dim);
+}
+
+.wc-resolve-card.wc-is-winner .wc-resolve-card-slot {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.wc-resolve-verdict {
+  font-family: var(--wc-serif);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: clamp(0.7rem, 1.7vmin, 1rem);
+  color: var(--wc-brass);
+}
+
+.wc-resolve-verdict.wc-is-hurt {
+  color: var(--wc-alarm);
+}
+
+/* ---------- the ledger, per `ResolutionLedger.tsx` ---------- */
+
+.wc-resolve-figures {
+  width: min(calc(100% - 1rem), 68rem);
+  border-radius: 12px;
+  border: 1px solid var(--wc-brass-dim);
+  background: linear-gradient(180deg, #141d21, #10171a);
+  box-shadow: 0 8px 26px #0000008c;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.wc-resolve-ledger {
+  padding: clamp(0.4rem, 1.1vh, 0.7rem) clamp(0.55rem, 1.4vw, 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.wc-resolve-ledger-heading {
+  margin: 0 0 0.12rem;
+  font-size: clamp(0.42rem, 0.9vmin, 0.52rem);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--wc-chalk-dim);
+  font-weight: 600;
+}
+
+/* THE TWO-ROW WINDOW. Fixed to the token, never to content — `ui-notes.md` §3/§6: it does not
+   grow with the sixth beat and does not collapse on the first, and this is the file's ONE
+   scrolling region. */
+.wc-resolve-ledger-scroll {
+  height: calc(2 * var(--wc-ledger-row));
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--wc-brass-dim) transparent;
+}
+
+/* A scrolled-away row must not simply vanish — only applied while the box actually overflows. */
+.wc-resolve-ledger-scroll.wc-is-overflowing {
+  mask-image: linear-gradient(180deg, #0000 0, #000 var(--wc-ledger-row));
+}
+
+.wc-resolve-lrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.4rem;
+  height: var(--wc-ledger-row);
+  box-sizing: border-box;
+  font-size: clamp(0.5rem, 1.1vmin, 0.66rem);
+  line-height: 1.25;
+}
+
+.wc-resolve-lrow-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wc-chalk);
+}
+
+.wc-resolve-lrow-run {
+  font-family: var(--wc-serif);
+  color: var(--pot, var(--wc-brass));
+  min-width: 3.2rem;
+  text-align: right;
+}
+
+.wc-resolve-lrow-hurt .wc-resolve-lrow-name {
+  color: var(--wc-alarm);
+}
+
+/* ---------- the registers: damage, mult, this trick, and the pot line ---------- */
+
+.wc-resolve-registers {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.5rem, 1.6vw, 1.2rem);
+  padding: clamp(0.35rem, 1vh, 0.6rem) clamp(0.7rem, 1.8vw, 1.3rem);
+  border-left: 1px solid #222e33;
+  background: #0d1417;
+}
+
+.wc-resolve-figure-value {
+  font-family: var(--wc-serif);
+  font-variant-numeric: tabular-nums;
+}
+
+.wc-resolve-potline {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding-left: clamp(0.4rem, 1.2vw, 0.9rem);
+  border-left: 1px dashed #2b383e;
+}
+
+/* THE BIG ONE — "this trick", the only figure allowed this size, and the impact animation's
+   home. `ResolutionScreen` gives its value span `key={landed}`, so React remounts a fresh node
+   on every beat and the animation below replays on mount with no extra JS state to own
+   (`ui-notes.md` §3's "each term lands on its own beat"). */
+.wc-resolve-big {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+  position: relative;
+}
+
+.wc-resolve-big-value {
+  font-family: var(--wc-serif);
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(2.1rem, 6.2vmin, 3.6rem);
+  color: var(--pot, var(--wc-brass));
+  animation: wc-resolve-impact var(--wc-beat) cubic-bezier(0.2, 1.5, 0.35, 1);
+}
+
+.wc-resolve-big.wc-is-hurt .wc-resolve-big-value {
+  color: var(--wc-alarm);
+}
+
+@keyframes wc-resolve-impact {
+  0% {
+    transform: scale(1);
+  }
+  18% {
+    transform: scale(1.42);
+  }
+  38% {
+    transform: scale(0.94);
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-resolve-big-value {
+    animation: wc-resolve-flash calc(var(--wc-beat) * 0.5) steps(2, end);
+  }
+
+  @keyframes wc-resolve-flash {
+    0%,
+    49% {
+      filter: brightness(2.1);
+    }
+    50%,
+    100% {
+      filter: none;
+    }
+  }
+}
+
+/* ---------- the apply-or-roll prompt ---------- */
+
+.wc-resolve-prompt {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+  gap: clamp(0.5rem, 2vmin, 1.25rem);
+  width: 100%;
+  padding: clamp(0.4rem, 1.2vh, 0.8rem) clamp(0.6rem, 2vw, 1.5rem);
+  background: var(--wc-chamber-lift);
+  border-top: 1px solid #232c33;
+}
+
+.wc-resolve-pbtn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12rem;
+  min-width: clamp(9rem, 22vmin, 14rem);
+  min-height: 3.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  touch-action: manipulation;
+  font-family: var(--wc-serif);
+  border: 1px solid var(--wc-brass-dim);
+  background: linear-gradient(160deg, #2a2418, #1a1710);
+  color: var(--wc-brass);
+  transition:
+    transform var(--wc-ui-transition-ms) ease,
+    filter var(--wc-ui-transition-ms) ease;
+}
+
+.wc-resolve-pbtn:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 3px;
+}
+
+/* DLR-156 — the hold: a choice is made once, and the button it was made through must not stay
+   live for the rest of it (`ui-notes.md` §4). */
+.wc-resolve-pbtn:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+/* Told apart by SHAPE and WORDS first, colour only reinforcing (`ui-notes.md` §4): Apply is
+   solid-edged and states what it pays now; Roll is dashed-edged, the idiom this UI already uses
+   for "provisional", and states what it could pay and what it risks. */
+.wc-resolve-pbtn.wc-is-solid .wc-resolve-pbtn-fig {
+  color: var(--pot, var(--wc-brass));
+}
+
+.wc-resolve-pbtn.wc-is-dashed {
+  border-style: dashed;
+  border-color: var(--momentum, var(--wc-brass));
+  color: var(--momentum, var(--wc-brass));
+}
+
+.wc-resolve-pbtn.wc-is-dashed .wc-resolve-pbtn-fig {
+  color: var(--momentum, var(--wc-brass));
+}
+
+.wc-resolve-pbtn-risk {
+  color: var(--wc-alarm);
+}
+
+.wc-resolve-pbtn-fig {
+  font-size: clamp(1.15rem, 2.9vmin, 1.65rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.wc-resolve-pbtn-small {
+  font-family: var(--wc-sans);
+  font-size: clamp(0.46rem, 1vmin, 0.58rem);
+  color: var(--wc-chalk-dim);
+  letter-spacing: 0.02em;
+}
+
+/* ---------- reduced motion ----------
+   The beat still HAPPENS — one term at a time is information, not decoration, and removing the
+   stagger would remove the derivation (AC18). What goes is the travel, the scale and the ring;
+   the impact becomes a colour-and-weight flash. Nothing here yet animates on the beat — Task 16
+   wires the flight and the impact — so this block reserves the rule the flight will need. */
+@media (prefers-reduced-motion: reduce) {
+  .wc-resolve-pbtn {
+    transition: none;
+  }
+}

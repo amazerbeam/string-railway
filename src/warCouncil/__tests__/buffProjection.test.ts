@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import {
   BuffKind,
   BuffRewardAxis,
@@ -11,7 +11,7 @@ import {
   type Buff,
   type BuffTrickContext,
 } from '../../hunt'
-import { isTaken, trickOutcomeFor, TrickOutcome } from '../bank'
+import { isTaken, trickOutcomeFor, TrickOutcome } from '../streak'
 import {
   buffReach,
   projectBuffBranches,
@@ -110,14 +110,14 @@ describe('AC3 — the Overlap Bonus is computed per branch, never across the uni
   it('never counts a Taker and a Feeder on the same suit toward one Overlap Bonus', () => {
     const projection = projectBuffBranches(input({ active: [bladeTaker, bladeFeeder] }), bellsCard)
     // One buff fires per branch, so `overlapBonusFor(1)` is 0 on BOTH. A union of the two
-    // branches would be 2 fired and a spurious +1 multiplier — the mockup's exact defect.
+    // branches would be 2 fired and a spurious +1 roll — the mockup's exact defect.
     expect(projection.won.outcomes[0].accrual.multiplierBonus).toBe(0)
     expect(projection.lost.outcomes[0].accrual.multiplierBonus).toBe(0)
     expect(projection.won.outcomes[0].accrual.flatDamageBonus).toBe(1)
   })
 })
 
-describe('AC4 — the projected multiplier respects the same per-hand cap the live accrual does', () => {
+describe('AC4 — the projected roll respects the same per-hand cap the live accrual does', () => {
   it('clips at MAX_MULTIPLIER_BONUS_PER_HAND when pushed past it', () => {
     const maxed = { ...startHandAccrual(), multiplierBonus: MAX_MULTIPLIER_BONUS_PER_HAND }
     const bigTaker: Buff = {
@@ -132,7 +132,7 @@ describe('AC4 — the projected multiplier respects the same per-hand cap the li
 
 describe('AC2 — the projection equals real resolution for the same context', () => {
   /** Rebuilds, by hand, the context the projection builds internally, and runs it through
-   *  `resolveTrickBuffs` — the function `bank.ts` calls on a real trick. If the projection ever
+   *  `resolveTrickBuffs` — the function `total.ts` calls on a real trick. If the projection ever
    *  stops delegating and starts deriving, these two diverge and this test fails. */
   function realResolution(playerWon: boolean, skullTrick: boolean) {
     const ctx: BuffTrickContext = {

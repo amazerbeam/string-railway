@@ -1,8 +1,9 @@
-// DLR-94 — split out of `config.ts`, which stood at 413 of its 400-line budget once
-// `FORCED_CASH_OUT_NUMERATOR` / `FORCED_CASH_OUT_DENOMINATOR` were added. PURE MOVE: no curve,
-// weight, or comment changed — the four skull-weight curves and the active selection are exactly
-// what `config.ts` held, in their own file because they are one self-contained concept (the
-// per-rank skull curve) that nothing else in `config.ts` reads or is read by.
+// DLR-94 — split out of `config.ts`, which stood at 413 of its 400-line budget once that
+// ticket's forced cash-out fraction was added (retired by DLR-156, since a hit now pays
+// nothing). PURE MOVE: no curve, weight, or comment changed — the four skull-weight curves and
+// the active selection are exactly what `config.ts` held, in their own file because they are one
+// self-contained concept (the per-rank skull curve) that nothing else in `config.ts` reads or is
+// read by.
 
 /**
  * How likely each rank is to carry a skull, keyed by rank. Weight 0 means never; a higher weight

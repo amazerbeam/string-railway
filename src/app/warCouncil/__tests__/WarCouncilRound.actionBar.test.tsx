@@ -13,7 +13,7 @@ import { PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
 import WarCouncilRound from '../WarCouncilRound'
 import {
-  bankClimbBonusFixture,
+  baseDamageBonusFixture,
   card,
   coinsFixture,
   discardsRemainingFixture,
@@ -25,8 +25,11 @@ import {
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
+import { stubMatchMedia } from './resolutionTestHelpers'
 
 afterEach(cleanup)
+
+stubMatchMedia()
 
 const cheatBuffFixture = cheatBuff(BuffTier.Bronze, 1)
 
@@ -58,7 +61,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       quarryLabel={quarryLabelFixture}
       coins={overrides.coins ?? coinsFixture}
       blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
-      bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
+      baseDamageBonus={overrides.baseDamageBonus ?? baseDamageBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
       buffs={overrides.buffs ?? [cheatBuffFixture]}
       onComplete={overrides.onComplete ?? vi.fn()}
@@ -67,10 +70,10 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
 }
 
 describe('WarCouncilRound — the action bar (DLR-114)', () => {
-  it('renders the Actions group with its four buttons on a freshly mounted hand', () => {
+  it('renders the Actions group with its three buttons on a freshly mounted hand', () => {
     renderRound()
     const bar = screen.getByRole('group', { name: 'Actions' })
-    expect(within(bar).getAllByRole('button').length).toBe(4)
+    expect(within(bar).getAllByRole('button').length).toBe(3)
   })
 
   it('the old felt-rail widgets are gone — DLR-132 folded Cheat and Timebomb into the row list', () => {
@@ -166,8 +169,9 @@ describe('WarCouncilRound — the action bar (DLR-114)', () => {
 
     fireEvent.click(cardsButton)
 
-    // A two-card trick resolves the instant the player leads (the Quarry's follow is committed
-    // in the same reducer transition), so the well shows the resolved trick rather than a lead.
-    expect(screen.getByText(/take the trick/)).toBeTruthy()
+    // DLR-156 — a two-card trick resolves the instant the player leads (the Quarry's follow is
+    // committed in the same reducer transition), so it hands off to the resolution screen rather
+    // than showing a held reveal on the felt.
+    expect(screen.getByText(/took it|streak is broken/i)).toBeTruthy()
   })
 })

@@ -55,7 +55,7 @@ shortening the curve is one edit in `config.ts` and no code change at all.
 documented in `types.ts` as a whole number, never fractional, and the ×0.5 tier is the one that can
 produce a half — so flooring at the single point the figure is computed is what stops a fraction
 ever reaching a purse, rather than trusting whichever caller remembers. It floors rather than
-rounds so the artefact never falls in the player's favour, the same direction `forcedCashValue`
+rounds so the artefact never falls in the player's favour, the same direction the since-deleted `forcedCashValue`
 already floors in.
 
 The multiplication needs none of the numerator/denominator treatment
@@ -163,7 +163,7 @@ verdict is never on screen at that point, and the next `recordEncounter` overwri
 ## Where the count comes from
 
 `src/hunt/` never learns what a hand of cards is. `applyDamage` has no notion of either side's hand
-and does not gain one; the figure arrives as a plain `number`, the same way `bankClimbBonusFor`
+and does not gain one; the figure arrives as a plain `number`, the same way `baseDamageBonusFor`
 takes a plain number rather than a `RunState`. The count is observed one layer up, in the app's
 round reducer, at the exact transition where the encounter resolves — see
 [../war-council-ui/interaction-and-state.md](../war-council-ui/interaction-and-state.md).
@@ -179,7 +179,7 @@ pinned as a regression test in `quickKill.test.ts`.
 Until DLR-109 there was exactly one way for a kill to happen: a trick's own damage emptied the
 Quarry's bar, and `captureUnplayed` (`src/app/warCouncil/roundReducer.ts`) froze the player's live
 hand length at that same transition. **Apply Damage's payout now delays the kill by a trick or
-more** (see [the delayed Apply Damage payout](delayed-apply-damage-payout.md)), which means the hand
+more** (the delayed payout, deleted by DLR-156 along with this second source), which meant the hand
 can shrink between the press and the landing — a card played during the delay window would otherwise
 silently under-count the hand that actually earned the kill.
 

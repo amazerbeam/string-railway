@@ -1,9 +1,8 @@
 import type { MouseEvent } from 'react'
-import { BuffTier, PayoutOutcome, TIMEBOMB_DAMAGE, type Buff } from '../../hunt'
+import { BuffTier, TIMEBOMB_DAMAGE, type Buff } from '../../hunt'
 import { isPrimed, isSkulled, PlayerSide, type Card, type TrickCard } from '../../warCouncil'
 import { buffFiredText } from './buffFiredLabels'
 import { cardAccessibleName, timebombBookedText } from './labels'
-import { payoutEventText } from './payoutLabels'
 import PlayingCard from './PlayingCard'
 import type { ResolvedTrick } from './roundUiState'
 
@@ -65,7 +64,6 @@ export default function TrickWell({
   if (resolvedTrick) {
     const winnerLabel = resolvedTrick.winner === PlayerSide.Player ? 'You' : 'They'
     const firedText = buffFiredText(resolvedTrick.resolution.firedBuffIds, offeredBuffs)
-    const payoutText = payoutEventText(resolvedTrick.payout)
 
     return (
       <>
@@ -88,8 +86,6 @@ export default function TrickWell({
         </div>
         <p className="wc-table-line">
           {winnerLabel} take the trick.
-          {resolvedTrick.resolution.cashOut > 0 &&
-            ` They take ${resolvedTrick.resolution.cashOut}.`}
           {resolvedTrick.resolution.damageToPlayer > 0 &&
             ` You take ${resolvedTrick.resolution.damageToPlayer}.`}
           {resolvedTrick.resolution.timebombTarget !== null && (
@@ -110,13 +106,6 @@ export default function TrickWell({
           )}
         </p>
         {firedText !== null && <p className="wc-buff-fired">{firedText}</p>}
-        {payoutText !== null && (
-          <p
-            className={`wc-payout-line${resolvedTrick.payout?.outcome === PayoutOutcome.Evaporated ? ' wc-is-evaporated' : ''}`}
-          >
-            {payoutText}
-          </p>
-        )}
         <button type="button" className="wc-table-hint wc-is-carry-on" onClick={handleHintClick}>
           Tap the table to carry on
         </button>

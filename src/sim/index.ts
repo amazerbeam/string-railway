@@ -9,7 +9,6 @@ export {
   maximalistPolicy,
   noBuffsPolicy,
   rerollFocusedPolicy,
-  BASELINE_CASH_AT_MULTIPLIER,
   HEAL_FLOOR_HEALTH,
 } from './baselinePolicy'
 export { cardAwarePolicy } from './cardAwarePolicy'

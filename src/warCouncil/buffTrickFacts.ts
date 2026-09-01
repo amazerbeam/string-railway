@@ -1,6 +1,6 @@
 import type { Buff, BuffBonusAccrual, BuffId } from '../hunt'
 import { BuffTargetSuit } from '../hunt'
-import type { TrickFacts } from './bank'
+import type { TrickFacts } from './streak'
 import { PlayerSide, Suit, type Card, type TrickCard } from './types'
 
 /**

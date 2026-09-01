@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { BuffCarry } from '../../../hunt'
 import WarCouncilRound from '../WarCouncilRound'
 import {
-  bankClimbBonusFixture,
+  baseDamageBonusFixture,
   blastGuardHeldFixture,
   coinsFixture,
   discardsRemainingFixture,
@@ -39,7 +39,7 @@ describe('WarCouncilRound — a carried-in accrual seeds the hand it opens on (D
         quarryLabel={quarryLabelFixture}
         coins={coinsFixture}
         blastGuardHeld={blastGuardHeldFixture}
-        bankClimbBonus={bankClimbBonusFixture}
+        baseDamageBonus={baseDamageBonusFixture}
         discardsRemaining={discardsRemainingFixture}
         buffs={[]}
         feederCarry={feederCarry}

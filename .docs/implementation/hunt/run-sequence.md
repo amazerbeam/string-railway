@@ -95,7 +95,7 @@ is over" is what stops a screen and a transition disagreeing about it.
 | `buyFromShop(run, item, max?)`        | Deducts a price and mints a Cheat or heals through the shared `healedBy` clamp, or throws (DLR-84)     |
 | `flaskStockFor(run, maxPlayerHealth?)` | Projects the run into the three figures the flask's rules need — `shopStockFor`'s sibling (DLR-93)   |
 | `drinkFlask(run, max?)`               | Spends one flask charge and restores through the same `healedBy` clamp, or throws — twice over (DLR-93) |
-| `bankClimbBonusFor(run)`              | `run.whetstones` — the one statement of "+1 to the bank's climb per copy owned" (DLR-92)               |
+| `baseDamageBonusFor(run)`             | `run.whetstones` — the one statement of "+1 to a banked trick's base damage per copy owned" (DLR-92, renamed DLR-156) |
 
 **`recordEncounter` is the run's single payout point as well as its single outcome point**, and for
 the same reason: it is already the one place a fight is known to have been won, and the driver stops

@@ -34,6 +34,8 @@ import {
   slotVisitStockFor,
   type RunState,
 } from './run'
+// DLR-156 — type-only, erased under `verbatimModuleSyntax` (see `run.ts`'s import).
+import type { StreakState } from '../warCouncil'
 
 /**
  * Adopt the encounter a hand reported upward and re-derive the run's outcome. THE single place
@@ -48,21 +50,20 @@ import {
  * this is the ONE transition that adopts a hand's end state, so it is the one place that rule can
  * be enforced.
  *
- * `flaskCharges` (DLR-93 AC5) is NOT a parameter: unlike
- * `blastGuardHeld`, a hand cannot spend or grant a flask charge (AC4 makes it a between-fights
- * action), so there is nothing for a hand to hand back. It is read off `run` and refilled by
- * `flaskAfter` when the opponent just beaten was a stage boss.
+ * `flaskCharges` (DLR-93 AC5) is NOT a parameter: unlike `blastGuardHeld`, a hand cannot spend or
+ * grant a flask charge (AC4 makes it a between-fights action), so there is nothing for a hand to
+ * hand back. It is read off `run` and refilled by `flaskAfter` when the opponent just beaten was
+ * a stage boss.
  *
- * `discardsRemaining` (DLR-100 AC5) is REQUIRED for the same reason
- * `blastGuardHeld` is: the hand owns it for its lifetime and
- * hands the survivor back through `WarCouncilRoundResult`. Carried through the returned spread
- * unchanged — `advanceRun`, not this function, resets it at the fight boundary.
+ * `discardsRemaining` (DLR-100 AC5) is REQUIRED for the same reason `blastGuardHeld` is: the hand
+ * owns it for its lifetime and hands the survivor back through `WarCouncilRoundResult`. Carried
+ * through the returned spread unchanged — `advanceRun`, not this function, resets it at the fight
+ * boundary.
  *
- * `unplayedCards` (DLR-95 AC2) is REQUIRED, not defaulted, for the
- * same reason: the compiler must enumerate every call site. A
- * defaulted `null` would pay 0 forever the first time a driver forgot to thread the figure
- * through, and would do it silently. `null` is the legitimate value for a hand that did not end
- * the fight.
+ * `unplayedCards` (DLR-95 AC2) is REQUIRED, not defaulted, for the same reason: the compiler must
+ * enumerate every call site. A defaulted `null` would pay 0 forever the first time a driver
+ * forgot to thread the figure through, and would do it silently. `null` is the legitimate value
+ * for a hand that did not end the fight.
  *
  * DLR-132 — `cheats` and `timebombCharges` were the two REQUIRED parameters here; both are
  * deleted along with the `RunState` fields they fed. A Cheat and a Timebomb are pile members now,
@@ -89,6 +90,9 @@ export function recordEncounter(
    *  existing call sites are unchanged. `App.tsx` and `sim/playRun.ts` are the only callers that
    *  pass it. */
   feederCarry?: BuffCarry,
+  /** DLR-156 AC8/AC9 — OPTIONAL, defaulted to `run.streak`, mirroring `feederCarry` immediately
+   *  above. `App.tsx` and `sim/playRun.ts` are the only callers that pass it. */
+  streak?: StreakState,
 ): RunState {
   if (run.outcome !== RunOutcome.InProgress) {
     throw new RangeError(
@@ -126,6 +130,7 @@ export function recordEncounter(
     flaskCharges: flaskAfter(run, wonThisEncounter),
     outcome: outcomeFor(run.encounterIndex, run.encounterCount, encounter),
     feederCarry: feederCarryAfter(encounter, feederCarry ?? run.feederCarry),
+    streak: streakAfter(encounter, streak ?? run.streak),
   }
 }
 
@@ -314,13 +319,9 @@ function outcomeFor(
   return encounterIndex === encounterCount - 1 ? RunOutcome.Won : RunOutcome.InProgress
 }
 
-/**
- * AC2 — ONE statement of "a Guard does not outlive the fight it was bought for".
- *
- * A named function rather than an inline ternary deliberately: `recordEncounter` is the only
- * transition that adopts a hand's end state today, but a second one is exactly the kind of thing
- * that gets added without remembering to clear this, and a named rule is what a reviewer finds.
- */
+/** AC2 — "a Guard does not outlive the fight it was bought for", a named function rather than an
+ *  inline ternary: a second transition adopting a hand's end state is exactly the kind of thing
+ *  that gets added without remembering to clear this, and a named rule is what a reviewer finds. */
 function guardAfter(encounter: EncounterState, held: boolean): boolean {
   return isEncounterResolved(encounter) ? false : held
 }
@@ -333,17 +334,20 @@ function feederCarryAfter(encounter: EncounterState, carry: BuffCarry): BuffCarr
   return isEncounterResolved(encounter) ? EMPTY_BUFF_CARRY : carry
 }
 
+/** DLR-156 AC9 — "a streak does not outlive the fight that earned it", mirroring
+ *  `feederCarryAfter` immediately above. Literal below, not an imported `EMPTY_STREAK` — see
+ *  `startRun`'s note on the runtime-cycle reason. */
+function streakAfter(encounter: EncounterState, streak: StreakState): StreakState {
+  return isEncounterResolved(encounter) ? { total: 0, roll: 0 } : streak
+}
+
 /**
- * DLR-95 AC3 — ONE statement of "a fight that continues moves on to its next hand; a fight that
- * ended stays on the hand it ended in, and `advanceRun` is what resets it".
+ * DLR-95 AC3 — "a fight that continues moves on to its next hand; a fight that ended stays on
+ * the hand it ended in, and `advanceRun` is what resets it" — a named function, following
+ * `guardAfter` and `feederCarryAfter` above and for their reason.
  *
- * A named function rather than an inline ternary, following `guardAfter` and `flaskAfter`
- * immediately above and for their reason: a second transition adopting a hand's end state is
- * exactly the kind of thing that gets added without remembering this rule, and a named rule is
- * what a reviewer finds.
- *
- * Holding the counter still on the deciding hand — rather than incrementing past it — is what lets
- * the verdict and any later reader say which hand the kill landed in.
+ * Holding the counter still on the deciding hand — rather than incrementing past it — is what
+ * lets the verdict and any later reader say which hand the kill landed in.
  */
 function handOfFightAfter(run: RunState, encounter: EncounterState): number {
   return isEncounterResolved(encounter) ? run.handOfFight : run.handOfFight + 1
@@ -376,19 +380,14 @@ function healedBy(run: RunState, restored: Health, maxPlayerHealth: Health): Run
 }
 
 /**
- * DLR-93 AC5 — ONE statement of "a stage-boss kill refills the flask; an ordinary kill does not".
- *
- * A named function rather than an inline ternary, following `guardAfter`'s precedent immediately
- * below: a second transition adopting a hand's end state is exactly the kind of thing that gets
- * added without remembering this rule, and a named rule is what a reviewer finds.
+ * DLR-93 AC5 — "a stage-boss kill refills the flask; an ordinary kill does not", a named function
+ * following `guardAfter`'s precedent above and for its reason.
  *
  * `run.encounterIndex` is the encounter just FOUGHT — `advanceRun` has not run yet — so
  * `runEncounterAt` on it names the opponent just beaten. Refills to `FLASK_STARTING_CHARGES`
- * rather than a literal `1` so the run's full-flask figure is stated exactly once.
- *
- * Lives here rather than in `advanceRun` for `recordEncounter`'s own stated reason: `advanceRun`
- * never runs for the final fight of a won run, and Diarmuid — the last boss — is exactly that
- * fight.
+ * rather than a literal `1` so the run's full-flask figure is stated exactly once. Lives here
+ * rather than in `advanceRun` because `advanceRun` never runs for the final fight of a won run,
+ * and Diarmuid — the last boss — is exactly that fight.
  */
 function flaskAfter(run: RunState, wonThisEncounter: boolean): number {
   const beatABoss =

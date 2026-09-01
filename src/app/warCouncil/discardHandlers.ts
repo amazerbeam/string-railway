@@ -22,7 +22,7 @@ import { discardStock, type RoundUiState } from './roundUiState'
  * DLR-100 — three outcomes on one control. Not selecting, refusal null → OPEN (clearing any armed
  * card, so the next hand-card tap is never ambiguous). Selecting, refusal null → the only way that
  * happens is a non-empty selection, so COMMIT through `applyDiscard` and decrement the budget.
- * Refused → no-op, matching `handleTapApplyDamage`'s own shape.
+ * Refused → no-op.
  *
  * DLR-132 — opening no longer clears a live Cheat or an armed Timebomb: neither is a transient
  * selection any more (a Cheat is a paid-for duration, a Timebomb an armed spend), so opening the

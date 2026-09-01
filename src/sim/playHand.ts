@@ -1,8 +1,8 @@
 /**
  * DLR-130 — the INNER loop: plays one hand by dispatching `RoundUiAction`s at `roundReducer`,
  * exactly as a player's taps would, until the hand or the encounter is over. Never re-implements
- * the hand over `playCard` directly — `applyResolution`'s four-step damage/Timebomb/payout fold
- * and `handleTapBuff`'s activation-plus-consumable-spend live in `src/app/warCouncil/` and have no
+ * the hand over `playCard` directly — `applyResolution`'s damage/Timebomb fold and
+ * `handleTapBuff`'s activation-plus-consumable-spend live in `src/app/warCouncil/` and have no
  * equivalent in the pure tree, so driving anything else would measure a game nobody plays.
  *
  * The action picked each iteration comes from `roundReducer.ts`'s OWN guards, read off in the
@@ -24,7 +24,6 @@ import {
   activatableBuffs,
   DuelSide,
   isEncounterResolved,
-  PayoutOutcome,
   type BuffId,
   type RunState,
 } from '../hunt'
@@ -70,7 +69,6 @@ export function playHand(
   let heldChoice: AbilityChoice | undefined
   let windowKey = -1
   let buffsActivated = 0
-  let applyDamagePresses = 0
   let deadCardRefusals = 0
   let discardsUsed = 0
   let cheatsArmed = 0
@@ -91,8 +89,6 @@ export function playHand(
   // `ApRefreshCadence.PerTrick` the pool refills mid-hand, so a start/end diff would only ever
   // report the LAST trick's spend and silently undercount every earlier one.
   let apSpentTotal = 0
-  let applyDamagePaidTotal = 0
-  let applyDamageLostTotal = 0
   let discardedThisHand = false
   let stalled = false
   let fault: string | null = null
@@ -129,17 +125,24 @@ export function playHand(
         })
       }
       pendingActive = new Map()
-      const payout = ui.resolvedTrick.payout
-      if (payout !== null) {
-        if (payout.outcome === PayoutOutcome.Paid) {
-          applyDamagePaidTotal += payout.cashOut
-        } else if (payout.outcome === PayoutOutcome.Reduced) {
-          applyDamageLostTotal += payout.cashOut - (payout.remaining ?? 0)
-        } else {
-          applyDamageLostTotal += payout.cashOut
-        }
-      }
-      ui = roundReducer(ui, { kind: RoundUiActionKind.CarryOn })
+      // DLR-156 review fix — the resolution screen's own apply-or-roll choice (AC3/AC5/AC6)
+      // REPLACES the old unconditional `CarryOn` here: `ApplyPot`/`RollOver` already chain into
+      // `handleCarryOn` themselves (`roundReducer.ts`), so dispatching `CarryOn` directly left
+      // `ui.resolution` open and unconsumed — the Quarry could then never take damage through the
+      // pot at all, since `cashOut` is zeroed unconditionally (DLR-156 AC5) and applying the pot is
+      // the only remaining way to deal it. A hurt trick (`trickDamage === null`) offers no real
+      // choice — `RollOver` is its only exit ("Onward") — so the policy is never asked on that
+      // branch, matching `TrickResolutionScreen.tsx`'s own `hurt` gate.
+      const hurt = ui.resolution === null || ui.resolvedTrick.resolution.trickDamage === null
+      // MODELLING DEFAULT (developer-owned to revisit, not a tunable): when the policy declines to
+      // answer, apply whenever a pot stands — the modelled player never pushes their luck. This is
+      // the lowest-variance strategy the apply-or-roll choice admits, which is what makes the
+      // simulator measure something real again; it is deliberately not a claim about optimal play,
+      // and the whole point of the roll-over mechanic is the push a never-apply floor cannot see.
+      const apply = !hurt && (policy.wantsApplyPot?.(ui) ?? true)
+      ui = roundReducer(ui, {
+        kind: apply ? RoundUiActionKind.ApplyPot : RoundUiActionKind.RollOver,
+      })
       continue
     }
 
@@ -166,7 +169,6 @@ export function playHand(
       const outcome = runBuffWindow(ui, policy)
       ui = outcome.ui
       buffsActivated += outcome.buffsActivated
-      applyDamagePresses += outcome.applyDamagePresses
       deadCardRefusals += outcome.deadCardRefusals
       apSpentTotal += outcome.apSpent
       buffWindowObservations.push(...outcome.observations)
@@ -235,11 +237,8 @@ export function playHand(
       ui.openingEncounter.health[DuelSide.Player] - ui.encounter.health[DuelSide.Player],
     tricksWon: ui.round.tricksWon[PlayerSide.Player],
     tricksPlayed: ui.round.tricksPlayed,
-    applyDamagePaid: applyDamagePaidTotal,
-    applyDamageLost: applyDamageLostTotal,
     buffsActivated,
     apSpent: apSpentTotal,
-    applyDamagePresses,
     coinsFromBuffs: ui.buffHand.coinsEarned,
     activatableBuffsHeld,
     discardsUsed,
@@ -250,6 +249,8 @@ export function playHand(
     buffFireOutcomes,
     feederCarriedIn: ui.buffHand.accrual.carriedIn,
     feederCarryOut: ui.buffHand.accrual.carryOut,
+    streakIn: run.streak,
+    streakOut: result.streak,
   }
 
   return { result, report, deadCardRefusals }

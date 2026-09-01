@@ -7,16 +7,19 @@ anything, and every figure `npm run sim` prints is conditional on which implemen
 which is why both shipped policies write their behaviour out in full in their own module docblock
 rather than leaving it to be read off the code.
 
-## Four required methods, and two optional ones
+## Three required methods, and three optional ones
 
 | Method | Required? | Asked when |
 |---|---|---|
 | `chooseCard(round)` | yes | the driver's `canAct` branch, once per card played |
-| `wantsApplyDamage(ui)` | yes | each between-tricks window |
 | `chooseBuffs(ui)` | yes | each between-tricks window |
 | `nextShopAction(run)` | yes | repeatedly during a shop visit, until it answers `null` |
 | `chooseDiscard(ui)` | **no** | the first between-tricks window of a hand, before the buffs |
 | `wantsCheatPlay(ui)` | **no** | the `canAct` branch, before `chooseCard` |
+| `wantsApplyPot(ui)` | **no** | the resolution screen, and only when it offers a real choice |
+
+`wantsApplyDamage` was required until DLR-156, which deleted the button it answered for.
+**`wantsApplyPot` replaced it and is optional**, for the reason the paragraph below gives.
 
 The two optional methods were added by DLR-120 and are optional **on purpose**. Making either
 required would force `baselinePolicy` to implement a refusal, and that changes what its printed
@@ -25,12 +28,24 @@ consider discarding" to "this player considers discarding and declines", which a
 statements about the same numbers. Keeping them optional is what lets the baseline's output stay
 byte-identical to the figures recorded before the seam widened — verified, and it does.
 
-If a third policy needs a third lever, add it optional too.
+If a third policy needs a third lever, add it optional too. **DLR-156 added the third**:
+`wantsApplyPot` is asked only when the resolution screen offers a real choice — a hurt trick's only
+exit is `RollOver`/"Onward", so the policy is never asked on that branch, matching the screen's own
+gate.
+
+> **The modelling default when no policy answers is: apply whenever a pot stands, and never push.**
+> That is the lowest-variance strategy the apply-or-roll choice admits, and it is deliberately **not
+> a claim about optimal play** — the whole point of the roll-over mechanic is the push a never-apply
+> floor cannot see. It is a modelling decision routed to the developer, not a rule of the game. It
+> exists because a review pass found the driver dispatching `CarryOn` directly, which left
+> `ui.resolution` open and unconsumed: since a resolution's `cashOut` is now unconditionally zero,
+> the Quarry could take **no pot damage at all on any seed**. With the choice wired, the simulator
+> averages 4.45 damage per hand and 1.5 fights won per run.
 
 ## Every answer is advisory
 
 The driver never trusts a policy. Before dispatching anything it re-asks the engine's own refusal
-predicate — `applyDamageRefusalFor`, `loadoutRefusalFor`, `discardRefusalFor`, `hasCheat`,
+predicate — `loadoutRefusalFor`, `discardRefusalFor`, `hasCheat`,
 `refusalFor`, `slotPullRefusalFor`, `flaskRefusalFor` — and silently skips a refused action. A
 policy therefore cannot make the driver throw, so a carelessly written future policy cannot crash a
 measurement batch. It also cannot cheat: a policy that names an illegal card, a Cheat it does not
@@ -86,7 +101,7 @@ Read `baselinePolicy.ts`'s docblock before reading any number this tool prints. 
 
 - **Cards** — `chooseCpuMove` seated on the player's side, the engine's own opponent heuristic.
 - **Buffs** — activated cheapest-AP-first at every between-tricks window, while the pool would still
-  cover `APPLY_DAMAGE_AP_COST`. The sort tiebreaks on `buff.id`, which is monotonic and never
+  cover the Apply Damage press's AP cost (deleted by DLR-156 with the button). The sort tiebreaks on `buff.id`, which is monotonic and never
   reused, so the ordering is total.
 - **Apply Damage** — pressed when the multiplier reaches `BASELINE_CASH_AT_MULTIPLIER` (3), or on the
   hand's last window with a non-empty bank. **"The hand's last window" is `HAND_SIZE -
@@ -108,7 +123,7 @@ damage figures.
 ## `maximalistPolicy` — the same player, pulling every lever a run actually grants
 
 Added by DLR-120 to answer one question: are the levers the player *does* have the missing
-ingredient? Its `chooseCard`, `wantsApplyDamage`, `chooseBuffs` and `nextShopAction` are
+ingredient? Its `chooseCard`, `chooseBuffs` and `nextShopAction` are
 `baselinePolicy`'s **by reference** — asserted in `baselinePolicy.test.ts`, not merely described — so
 any difference in the printed figures is attributable to the levers alone and never to card play.
 

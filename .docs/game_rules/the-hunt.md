@@ -4,7 +4,7 @@ A single-player trick-taking game — a Balatro × Forbidden Solitaire treatment
 _The Fox in the Forest_. This document is the **rules as they currently stand**: the procedure a
 player follows, stated once, in playing order.
 
-Last reviewed against the code and the design on **2026-08-31**. Everything below is reachable in
+Last reviewed against the code and the design on **2026-09-01**. Everything below is reachable in
 the app today except where a rule is marked **[not built]** — and except the cards and guards listed
 here, every one of which is **decided, enforced and tested, yet cannot be obtained by playing**:
 
@@ -14,10 +14,41 @@ here, every one of which is **decided, enforced and tested, yet cannot be obtain
 - a **Blast Guard** and a **Whetstone**, because the shop stopped selling both on 2026-08-24 — noted
   in full at section 10;
 - **eight of the eleven buff conditions**, since 2026-08-25 — the win-with-a-named-**rank** card, and
-  every card asking you to reach a bank, survive unhurt tricks, hold a suit at the hand's end, hold
-  coins, be at low health, press Apply Damage, or win at all costs. Every one of those rules is still
+  every card asking you to reach a streak figure, survive unhurt tricks, hold a suit at the hand's
+  end, hold coins, be at low health, cash your pot, or win at all costs. Every one of those rules is still
   decided and still enforced; the machine and the opening draw simply no longer deal any of them.
-  Section 4 lists the three that remain.
+  Section 4 lists the three that remain;
+- the **Swan and Witch rank ladders** of section 5, since 2026-09-01 — the tiers are decided and
+  enforced, and the shop stopped selling the rungs that reach them. Noted in full at section 10;
+- the **second slot machine**, since 2026-09-01 — the Strongbox is still stocked and priced in the
+  code and no longer appears, because choosing between it and the Skirmisher decided nothing.
+  Section 10 has the measurement.
+
+> **The way damage is worked out changed completely, and the decision has its own screen — DLR-156,
+> 2026-09-01.** Section 7 is rewritten around it. In short:
+>
+> - **Every trick you bank works out its own damage** — `(1 + Whetstones + flat damage from the cards
+>   you fired on that trick) × (1 + multiplier points from those same cards + the Overlap Bonus)` —
+>   and adds it to a running **total**, while a **roll** counts the tricks. What you are sitting on,
+>   the **pot**, is `total × roll`.
+> - **A card you fire pays into that trick and no other.** Nothing pools across a hand any more.
+> - **Being hurt takes everything and pays the Quarry nothing.** The old two-thirds consolation is
+>   gone. So is the end-of-hand cash-out: a streak now carries from one hand into the next and ends
+>   only when you cash it, when a trick hurts you, or when the fight does.
+> - **The Apply Damage button is gone from the bar.** After **every** resolved trick, play stops and a
+>   screen of its own carries the two played cards across, builds the trick's damage up one term at a
+>   time, and asks you to **apply** (deal the pot, reset both) or **roll over** (keep both, play on).
+>   A trick that hurt you reaches the same screen with nothing to decide and a single way out. There
+>   is no action-point charge on either answer.
+> - **Bare play pays exactly what it always did** — 1, 4, 9, 16, 25, 36 — but with cards fired the
+>   payout is roughly two and a half to three times the old figure, and **nothing caps a streak**.
+>   That is deliberately unbalanced: the counterweight is a later change, and the point of shipping it
+>   like this is to find out how much is needed by playing.
+>
+> **Nobody has looked at the new screen running.** Every timing on it — how long a term takes to land,
+> how long it holds after you choose, how fast a card flies to the table — is a placeholder nobody has
+> chosen, and whether a whole screen firing up to six times a hand wears out is
+> [an open question](#known-tensions-recorded-not-resolved).
 
 > **You can now see what a buff you activated is doing, and you can take it back off — DLR-153,
 > 2026-08-27.** Activating a buff used to change nothing you could see. Now, the moment a buff is
@@ -260,6 +291,8 @@ can reach it** — the two are separate axes and this is the one that says which
 > in one line — and **nothing has confirmed that a four-row screen still fits without scrolling**. All
 > of it is the developer's, and it is why the rows below carry the markers they do.
 
+> **All of this was removed on 2026-09-01 (DLR-156).** Kept as the record of what the game did; section 7 has what it does now.
+>
 > **Applying damage now costs you and makes you wait — DLR-109, 2026-08-23.** Until today, applying
 > damage cashed your streak into the Quarry **instantly**, at no cost, the moment you confirmed the
 > press. It now costs **action points** to press, and the cash-out no longer lands there and then: it
@@ -285,6 +318,8 @@ can reach it** — the two are separate axes and this is the one that says which
 > [Known tensions](#known-tensions-recorded-not-resolved), and the rule below is marked
 > `[provisional]` for exactly this reason.
 
+> **All of this was removed on 2026-09-01 (DLR-156).** Kept as the record of what the game did; section 7 has what it does now.
+>
 > **Apply Damage reworked: leader-only, stacks with Timebomb, settles a trick sooner, keeps a third
 > — DLR-143, 2026-08-25.** Four things changed together, because they share the two files that gate
 > and pay the action:
@@ -347,6 +382,8 @@ can reach it** — the two are separate axes and this is the one that says which
 > **add**; the flat coin is what stops a long win paying nothing at all. Engine and screen landed
 > together and the verdict names both payments, so this is playable right now.
 
+> **All of this was removed on 2026-09-01 (DLR-156).** Kept as the record of what the game did; section 7 has what it does now.
+>
 > **You can cash your streak yourself now, and being caught pays less — DLR-94, 2026-08-20.** Until
 > now the bank only ever cashed when you were hit, or when the sixth trick arrived; you never chose the
 > moment. Now you do. Before you commit a card, you may **apply damage**: the bank cashes at the current
@@ -834,12 +871,15 @@ constraint in a suit once you hold none of that suit at all.
 Before you commit a card there are four things you may do, and all four are taken from **one bar
 along the bottom of the screen**:
 
-| Button           | What it does                                                                     |
-| ---------------- | -------------------------------------------------------------------------------- |
-| **Apply Buff**   | Opens your loadout — every buff you own, including a held Cheat or Timebomb     |
-| **Cards**        | Plays the card you have selected. Greyed until you have selected one             |
-| **Swap**         | Throws cards from your hand and draws the same number blind (the discard, below) |
-| **Apply Damage** | Cashes your banked streak into the Quarry (section 7)                            |
+| Button         | What it does                                                                     |
+| -------------- | -------------------------------------------------------------------------------- |
+| **Apply Buff** | Opens your loadout — every buff you own, including a held Cheat or Timebomb       |
+| **Cards**      | Plays the card you have selected. Greyed until you have selected one             |
+| **Swap**       | Throws cards from your hand and draws the same number blind (the discard, below) |
+
+**There were four buttons until 2026-09-01.** The fourth was **Apply Damage**, which cashed your
+streak; it was removed when cashing became a prompt raised after every trick on a screen of its own
+(section 7).
 
 **The bar is on screen for the whole hand and every button stays in the same place.** A button you
 cannot use right now is **greyed with its reason printed on its own face** — never removed, never
@@ -848,7 +888,8 @@ card twice does; it is a second route to the same commit, not a different one.
 
 > **This replaced four separate plates down the felt's left edge.** Until 2026-08-24 the Cheat slots,
 > the Timebomb plate, the discard control and the Apply Damage control each had their own frame in
-> their own corner. The discard and Apply Damage controls moved into this bar unchanged. **A Cheat and
+> their own corner. The discard and Apply Damage controls moved into this bar unchanged (and Apply
+> Damage left it again on 2026-09-01). **A Cheat and
 > a Timebomb went further, the same day**: they stopped being two bespoke widgets and became two more
 > lines in the loadout list below, one press behind **Apply Buff**.
 
@@ -1131,9 +1172,9 @@ Eleven conditions exist as rules. **Only the first three of them can be dealt to
 | **dodge** a skull with this card                              | the trick carried a skull and you did not take it         | **yes** |
 | **win** a trick with a named rank                             | you win, having played that rank                          | no |
 | **eat** a skull with this card                                | the trick carried a skull and you took it                 | no |
-| reach a **bank** of 2 / 3 / 4                                 | the bank reaches it, counting this trick's climb          | no |
+| reach a **streak figure** of 2 / 3 / 4                        | your roll reaches it, counting this trick's climb         | no |
 | survive **2 / 3 / 4** tricks without being hit                | the run of unhurt tricks reaches it, counting this one    | no |
-| **press Apply Damage** this hand                              | you have pressed it — the press, not the payout landing   | no |
+| **cash your pot** this hand                                   | you have chosen **apply** at the prompt at least once     | no |
 | **hold** a named suit at the hand's end                       | it is the sixth trick and you still hold that suit        | no |
 | hold **5 / 10 / 20** coins                                    | your purse is at or above it                              | no |
 | be below **60% / 45% / 33%** health                           | your red hearts are below that share of your maximum      | no |
@@ -1279,7 +1320,7 @@ What produces a readout, and nothing else does:
 
 | The Quarry led | You are told |
 | --- | --- |
-| a **skulled** card | if you win: you eat the skull — a heart, and your bank cashes at two-thirds. If you lose: they eat it, you bank the trick, your multiplier climbs |
+| a **skulled** card | if you win: you eat the skull — a heart, and your total and roll are wiped for nothing. If you lose: they eat it, you bank the trick, your roll climbs |
 | a **skulled Swan** | the pair above, and — **on the winning branch only** — that they will lead the next trick |
 | an **unskulled Swan** | if you win: they lead the next trick |
 | a **Monarch** | the rule: you may play only your Swan of that suit, or your highest card of it |
@@ -1659,7 +1700,7 @@ and the shop refuses a third purchase; unlike the Whetstone, rungs do not stack.
 
 | Rank | Silver | Gold | Status |
 | ---- | ------ | ---- | ------ |
-| 1 **Swan** | On a **clean loss** — not an eaten skull — your **multiplier survives the hit**, and you still lead the next trick. The damage still lands and the bank still cashes at two-thirds. See section 7. | As silver, and the **bank survives too**: nothing cashes, the streak simply carries on. | **[provisional]** — built, unplayed |
+| 1 **Swan** | On a **clean loss** — not an eaten skull — your **roll survives the hit**, and you still lead the next trick. The damage still lands and your total still goes to zero. See section 7. | As silver, and the **total survives too**: nothing cashes, the streak simply carries on. | **[provisional]** — built, unplayed |
 | 9 **Witch** | **Two Witches no longer cancel**: yours still counts as trump, the Quarry's does not. | As silver, and yours also **beats every trump** — it counts as the highest card of the trump suit. | **[provisional]** — built, unplayed |
 | 3 **Fox** | — | — | **[not built]** — needs a new choice surface (peek at the draw pile; exchange without giving a card up) |
 | 5 **Woodcutter** | — | — | **[not built]** — needs a multi-card choice surface (draw 2 or 3, bury 1) |
@@ -1724,353 +1765,305 @@ scored later. What a trick does is section 7, and it happens immediately.
 
 ---
 
-## 7. The four outcomes, the bank and the streak
+## 7. The four outcomes, the streak, and the pot
 
-**[settled]** — the whole of this section. The four outcomes and the cash-out equation are play-test
-2 §3.2 and §3.3; **what the bank counts is not, and no design document covers it** — play-test 2 §3.3
-specifies the rank sum this section no longer describes. The trick-count bank was decided in session
-on 2026-08-14 and the measurement behind it is recorded in `ideas.md` → "Worth costing" rather than in
-a design section. Where the two disagree, this document follows the code.
+**[settled]** — the whole of this section, except where a sub-heading says otherwise. The four
+outcomes are play-test 2 §3.2. **The damage equation is not in any design section**: it was specified
+in the roll-over damage model written on 2026-08-27 and built on 2026-09-01, and that specification
+is the source this section follows. Where an older design document disagrees, this document follows
+the code.
 
 Every trick resolves into exactly one of four outcomes, decided by two facts: **did you win it**, and
 **was it a skull trick**.
 
-| You…               | Clean trick (no skull)           | Skull trick                             |
-| ------------------ | -------------------------------- | --------------------------------------- |
-| **won the trick**  | **Clean win** — you take it      | **You ate the skull** — you take damage |
-| **lost the trick** | **Clean loss** — you take damage | **Dodge** — you take it                 |
+| You…               | Clean trick (no skull)      | Skull trick                      |
+| ------------------ | --------------------------- | -------------------------------- |
+| **won the trick**  | **Clean win** — you bank it | **You ate the skull** — it hurts |
+| **lost the trick** | **Clean loss** — it hurts   | **Dodge** — you bank it          |
 
 So the skull **inverts the trick**: on a clean trick you want to win it, on a skull trick you want to
-lose it.
+lose it. Everything in the rest of this section is keyed to the **banked / hurt** column of that
+table, never to who physically took the cards.
 
-### Taking a trick — a clean win, or a dodge
+### The two figures you are carrying
 
-**One is added to your bank**, and your **multiplier goes up by one**. Nothing else happens: no damage
-is dealt in either direction.
+You carry two numbers, and they no longer count the same thing.
+
+- **The total** is the **damage** every banked trick has added up since the last time you cashed or
+  were hurt.
+- **The roll** is the **number of tricks** you have banked in a row since then.
+
+**What you are sitting on — the pot — is `total × roll`.** That is the figure the Quarry takes if you
+cash it, and the figure you lose if you are hurt.
+
+### Banking a trick — a clean win, or a dodge
+
+The trick works out what it is worth, all on its own:
+
+```
+this trick = (1 + your Whetstones + flat damage from the buffs you fired on THIS trick)
+             × (1 + the multiplier points from the buffs you fired on THIS trick
+                  + the Overlap Bonus)
+```
+
+That figure is added to your **total**, and your **roll** goes up by one. No damage is dealt in
+either direction by the trick itself.
+
+**The 1 is a fixed constant.** It is the same on every banked trick, whatever the cards in it were
+worth: a trick of two 11s and a trick of two 2s are worth exactly the same. Ranks decide who _wins_ a
+trick (section 6) and nothing else.
+
+**A buff pays into the trick it fired on and no other.** A flat-damage card fired on trick 1 raises
+trick 1's figure and is gone; a multiplier card fired on trick 1 multiplies trick 1's figure and is
+gone. Nothing pools across a hand any more. **The Overlap Bonus** for firing more than one buff on
+one trick joins that trick's multiplier.
 
 A clean win and a dodge are **identical in every respect** but their name.
 
-### Taking damage — a clean loss, or eating a skull
+### Then you are asked: apply, or roll over — **[settled]** since 2026-09-01
+
+**Every banked trick stops play and asks you the same question**, before the next trick starts. This
+is the only place the pot can be cashed.
+
+- **Apply** — the pot is dealt to the Quarry's health now. Your total and your roll both go to zero,
+  and the next banked trick starts a fresh streak.
+- **Roll over** — nothing is dealt and nothing is reset. Both figures stand, and the next banked
+  trick adds to them.
+
+**Rolling over is a bet, and the screen states both sides of it.** It names what applying pays right
+now, what the pot becomes if you take the next trick as well — stated as a floor, since you may fire
+nothing on it — and, beside that, that you get **nothing** if you do not.
+
+**It costs you nothing to be asked.** There is no action-point charge and no other price on either
+answer.
+
+**The screen does not pause on your answer — [not built].** The approved surface has both exits hold
+for a moment, with the header changing to name what happened — "dealt to her", "rolled over" — before
+the table comes back, so you see the number you chose for longer than an instant. It returns
+immediately instead. The pause length is declared and unused; nothing else waits on it.
+
+> **A card you played earning nothing because the trick after it went wrong is the whole mechanic.**
+> Timing when you fire your buffs is no longer worth anything by itself — the same card pays the same
+> amount on trick 1 as on trick 6 — but a card fired early can be wiped by every trick between it and
+> your cash, and a card fired on the trick you then cash on is wiped by nothing. Whether that makes
+> holding everything back until the trick before you cash the only sensible line is **unresolved**:
+> [Known tensions](#known-tensions-recorded-not-resolved).
+
+### Being hurt — a clean loss, or eating a skull
 
 Three things happen at once:
 
 1. You take **1 damage**. Always exactly 1, whatever the cards were worth.
-2. Your bank **cashes out at a reduced rate**: **two-thirds of `bank × multiplier`, rounded down**, is
-   dealt to the Quarry's health.
-3. The bank and the multiplier both **reset to zero**.
+2. Your total and your roll both **reset to zero**.
+3. The Quarry takes **nothing at all**.
 
 A clean loss and eating a skull are **identical in every respect** but their name.
 
-**The two-thirds is the cost of being caught, and it is the only cash-out that pays it.** Since
-2026-08-20 you can cash the bank yourself, in full, whenever it is your move (below) — so a hit you did
-not choose pays less than one you did. Applying yourself and the end-of-hand cash both pay the **whole**
-`bank × multiplier`; a clean loss, an eaten skull and Timebomb landing on you all pay **two-thirds of it**.
-See `hybrid-design.md` version-4-scope §3.
+**There is no consolation.** Until 2026-09-01 a hit paid the Quarry two-thirds of what you were
+holding; it now pays nothing, and a nine-trick streak lost on the tenth trick is worth exactly as
+little as a one-trick streak lost on the second. **That is the change that makes rolling over a real
+bet**, and it is expected to feel harsh.
 
-**It always rounds down**, so the Quarry is never paid more than the rule says by a rounding artefact. A
-streak worth 1 therefore pays **nothing at all** when it is caught, and a streak worth 4 pays 2.
+**You are still shown what happened.** A hurt trick raises the same screen a banked trick does, but
+with nothing to decide: it says how much health you took and how large a pot went with it, and offers
+one way out.
+
+### The streak crosses hands, and dies with the fight — **[settled]** since 2026-09-01
+
+**The end of a hand does nothing to your total or your roll.** A streak running at trick 6 carries
+straight into trick 1 of the next hand and keeps climbing. There is no end-of-hand cash-out any more:
+if you want the pot paid, you have to say so at the prompt.
+
+**Beating the Quarry clears both.** A new fight always starts at nothing.
+
+The practical consequence is that **nothing caps a streak but you**. It ends when you cash it or when
+a trick hurts you, and not because a hand ran out of cards.
+
+### So bare play pays 1, 4, 9, 16, 25, 36
+
+With nothing bought and nothing fired, every banked trick is worth exactly 1, so after _n_ banked
+tricks your total is _n_, your roll is _n_, and the pot is _n_ squared:
+
+| Banked in a row | 1   | 2   | 3   | 4   | 5   | 6   | 7   | 8   |
+| --------------- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **Pot**         | 1   | 4   | 9   | 16  | 25  | 36  | 49  | 64  |
+
+**That is deliberately the same curve the old rules paid**, so the bare game feels unchanged. The gap
+opens the moment buffs are involved, because flat damage now sits inside the multiplication and the
+roll multiplies an accumulated damage total rather than a count of tricks. **With cards fired the
+payout is roughly two and a half to three times what the old rules paid for the same cards**, and the
+table above no longer stops at six.
+
+> **None of that is balanced, on purpose.** No health total, shop price, tier value or ability figure
+> was retuned to meet it. The counterweight the design intends — firing a buff also staking some of
+> your health, paid when the streak crashes — is a later change, and how much of it is needed is
+> meant to be found by playing this. [Known tensions](#known-tensions-recorded-not-resolved).
+
+### A Whetstone raises what every banked trick is worth, for the rest of the run — **[settled]**; its price is **[provisional]**
+
+Each **Whetstone** you own (bought on the run-permanent shelf, section 10) adds **1** to the figure in
+the first bracket above. **They stack**: with two, a bare banked trick is worth 3 instead of 1.
+
+**Since 2026-09-01 it sits inside the multiplication**, so it is multiplied both by whatever
+multiplier cards you fire on the trick and — through the total — by the roll. One copy doubles a bare
+six-trick pot from 36 to 72 and two triple it to 108, while a lone banked trick only goes from 1 to 2.
+It rewards the long streak you were already chasing rather than changing which trick you want.
+
+| Banked in a row        | 1   | 2   | 3   | 4   | 5   | 6   |
+| ---------------------- | --- | --- | --- | --- | --- | --- |
+| **Pot** — no Whetstone | 1   | 4   | 9   | 16  | 25  | 36  |
+| **one Whetstone**      | 2   | 8   | 18  | 32  | 50  | 72  |
+| **two Whetstones**     | 3   | 12  | 27  | 48  | 75  | 108 |
+
+**Being caught now takes all of it**, whichever row you are on. The Whetstone raises what you stand to
+lose at exactly the rate it raises what you stand to win.
+
+**It is permanent for the run and never spent.** There is no charge to use, nothing to arm, and
+nothing that consumes it. **Nothing raises the roll's climb** — an item that does is a stated future
+addition, and the two figures are kept separate in the rules precisely so one can be bought without
+the other.
+
+> **The engine tolerates a nonsensical figure rather than breaking on it.** A Whetstone count that is
+> not a whole number above zero is ignored and the bare rule applies. This cannot happen in play, but
+> the figure feeds a health bar, and a spoiled number there would empty a bar with nothing said.
 
 ### A tiered Swan survives a clean loss — **[provisional]**
 
 Since 2026-08-24 there is a **second exception** to the three-part rule above, alongside the primed
 trick below, and it is bought rather than played. It fires only when **you** played a Swan into the
 trick and the trick was a **clean loss** — never an eaten skull, never a dodge, and never a trick you
-took. The Quarry's Swan never fires it.
+banked. The Quarry's Swan never fires it.
 
-- **Silver** — step 3 is spared for the multiplier alone. You still take the 1 damage, the bank still
-  cashes at two-thirds and still resets to zero, but the **streak survives at the number it already
-  held**, so the rate you built is not erased by one lost trick. The purchase protects the **rate**,
-  not the **pot**.
-- **Gold** — steps 2 and 3 are both spared. **Nothing cashes**, and the bank and the multiplier both
-  stand at the values they already held. You still take the 1 damage: no rung insures against health.
+- **Silver** — the **roll** survives at the number it already held; the total still goes to zero. You
+  still take the 1 damage. The purchase protects the length of the streak, not what it had earned.
+- **Gold** — **both** survive, at the values they already held. You still take the 1 damage: no rung
+  insures against health.
 
-This is the primed-trick exception's own shape reached by a different trigger, not a second rule —
-both let a bank and a multiplier survive a lost trick at the values they already held. The two can
-coincide: a trick that is both primed and a clean loss is already costless by the rule below, and a
-gold Swan additionally spares a Timebomb forced cash-out landing on that same trick.
+This is the primed-trick exception's own shape reached by a different trigger, not a second rule. The
+two can coincide: a trick that is both primed and a clean loss is already costless by the rule below,
+and a gold Swan additionally spares a Timebomb wipe landing on that same trick.
 
-**On the sixth trick, gold pays you MORE, not less.** The end-of-hand cash-out below is a separate
-rule and still fires on the bank gold spared, in full. So a streak worth 3 at a multiplier of 3
-deals the Quarry **6** when it is caught by an ordinary clean loss, and **9** when a gold Swan
-carries it into the end of the hand. That is the rung behaving as its own sentence says — the
-two-thirds is the cost of being caught, and a gold Swan is precisely the purchase that says you
-were not.
+> **The rung got simpler, and slightly better, on 2026-09-01.** It used to interact with two other
+> rules — a two-thirds forced rate and an end-of-hand cash-out — and that interaction produced an
+> oddity where a gold Swan paid you _more_ on the sixth trick than an ordinary win did. Both of those
+> rules are gone, so what a rung does now is exactly what its sentence says: it keeps something a hit
+> would otherwise have taken.
 
-The rung is bought on the shop's run-permanent shelf at a fixed price in coins — a tuning value,
-and the developer's. The ladder itself is in [section 5](#5-abilities).
+The rung is bought on the shop's run-permanent shelf at a fixed price in coins — a tuning value, and
+the developer's. The ladder itself is in [section 5](#5-abilities).
 
-**Whose decision:** the developer's — the price, whether a gold Swan makes a clean loss too cheap
-now that it can be simply held rather than played for, and whether the larger sixth-trick payout
-above is the intended reward or wants capping at the reduced rate.
+**Whose decision:** the developer's — the price, and whether sparing a whole pot on a clean loss is
+too strong now that a hit otherwise takes everything.
 
 ### A primed trick the Quarry wins cleanly costs you nothing — **[settled]**
 
-Since 2026-08-19 there is **one exception** to the paragraph above, and it is the whole reason Timebomb
-(section 4) is worth buying.
+Since 2026-08-19 there is **one exception** to the three-part rule above, and it is the whole reason
+Timebomb (section 4) is worth buying.
 
-If a **primed** card was played into the trick **and** the outcome would have been a **clean loss**, the
-outcome is **replaced rather than added to**:
+If a **primed** card was played into the trick **and** the outcome would have been a **clean loss**,
+the outcome is **replaced rather than added to**:
 
 - you take **no damage**;
-- your bank does **not** cash out;
-- your bank and your multiplier **both survive**, at the values they already held.
+- your total and your roll **both survive**, at the values they already held.
 
-You still lose the trick, and the Quarry still leads next. You simply pay nothing for it — and your streak
-carries on as though the trick had not happened. **The Quarry still takes the delayed 4 damage** when the
-next trick resolves (section 8).
+You still lose the trick, and the Quarry still leads next. You simply pay nothing for it — and your
+streak carries on as though the trick had not happened. **The Quarry still takes the delayed 4
+damage** when the next trick resolves (section 8).
 
-**It applies to a clean loss only, and that is deliberate.** A **dodge** is also a trick the Quarry won,
-but a dodge is one you **bank** — so there is nothing there to replace, and treating it as replaced would
-delete a bank you had already earned. A dodge on a primed trick therefore banks exactly as it always
-does, _and_ queues the delayed hit against the Quarry.
+**The screen says so in its own words.** A trick absorbed this way does not report a broken streak; it
+says nothing changed, and its one exit says your total and roll stand.
 
-**Winning a primed trick is an ordinary win, with no exception at all.** A clean win banks 1 and climbs
-the multiplier; **eating a skull still costs you the damage and still cashes and resets your bank**, on
-top of the delayed hit landing on you at the next trick. Nothing about Timebomb softens a skull you chose to
-eat — and neither does a Blast Guard, which covers the delayed hit alone.
+**It applies to a clean loss only, and that is deliberate.** A **dodge** is also a trick the Quarry
+won, but a dodge is one you **bank** — so there is nothing there to replace, and treating it as
+replaced would delete a climb you had already earned. A dodge on a primed trick therefore banks
+exactly as it always does, _and_ queues the delayed hit against the Quarry.
 
-> **The skull case is the harshest available reading, and no design document covers it.** Timebomb waives
-> only the Quarry-win case; nothing says it should also waive a skull. So a primed trick you win that is
-> _also_ a skull trick costs you the skull's damage now **and** 2 more at the next trick. Confirming that, or
-> deciding the mark should suppress that case too, is the developer's — it is recorded under
-> [Known tensions](#known-tensions-recorded-not-resolved).
+**Winning a primed trick is an ordinary win, with no exception at all.** A clean win banks its own
+damage and climbs the roll; **eating a skull still costs you the damage and still wipes your total and
+roll**, on top of the delayed hit landing on you at the next trick. Nothing about Timebomb softens a
+skull you chose to eat — and neither does a Blast Guard, which covers the delayed hit alone.
+
+> **The skull case is the harshest available reading, and no design document covers it.** Timebomb
+> waives only the Quarry-win case; nothing says it should also waive a skull. So a primed trick you win
+> that is _also_ a skull trick costs you the skull's damage now **and** 2 more at the next trick.
+> Confirming that, or deciding the mark should suppress that case too, is the developer's — it is
+> recorded under [Known tensions](#known-tensions-recorded-not-resolved).
 
 > **A dodge on a primed trick is a free bonus, and nobody designed it.** You bank the trick, keep your
-> streak, and the Quarry takes 4 at the next trick — for a card you played expecting to lose with it. It falls out
-> of the two rules above rather than from a decision, and it is recorded under
+> streak, and the Quarry takes 4 at the next trick — for a card you played expecting to lose with it.
+> It falls out of the two rules above rather than from a decision, and it is recorded under
 > [Known tensions](#known-tensions-recorded-not-resolved).
 
-**On the sixth trick, a preserved bank still cashes.** If the replaced clean loss is the last trick of the
-hand, the bank that survived it cashes at the end of the hand under the ordinary rule below — there is
-something left to pay, precisely because the loss did not reset it.
-
-### Timebomb landing on you cashes out your streak — **[settled]**; the amounts are **[provisional]**
+### Timebomb landing on you wipes your streak — **[settled]**; the amounts are **[provisional]**
 
 Since 2026-08-19 there is a **second** way your streak can end, and it is not a trick you lost.
 
-When Timebomb you owe (section 4) lands on **you**, it behaves like any other damage you take: you lose the
-health, your bank **cashes out** at the current multiplier into the Quarry, and bank and multiplier both
-**reset to zero**. It makes no difference whether you won or lost the trick that the Timebomb was paid at.
+When Timebomb you owe (section 4) lands on **you**, it behaves like any other damage you take: you
+lose the health, and your total and roll both **go to zero**. It makes no difference whether you won
+or lost the trick the Timebomb was paid at.
 
-**It is a hit you did not choose, so it cashes at the reduced two-thirds rate** like every other forced
-cash-out (above). Timebomb is the case this document calls "the moment you cannot choose", which is exactly
-what the reduction charges for — paying it in full would make being primed the _cheapest_ way to lose a
-streak, which inverts the item the rule sits beside.
+**Since 2026-09-01 it pays the Quarry nothing**, exactly like any other hit. Until then it cashed your
+streak at a reduced rate on its way out; now the pot is simply lost. Timebomb is the case this
+document calls "the moment you cannot choose", and what that costs you is now the whole pot rather
+than a third of it.
 
-- **On a trick you also lost, the two add up.** You take 1 for the trick plus 2 for the Timebomb — **3**,
-  and one cash-out, not two.
-- **On a trick you won, the trick banks first and then the Timebomb cashes it.** So a streak of four that
-  wins the fifth trick while primed cashes on a bank of five rather than four — **16**, not 10: the
-  trick was won, so it counts, and then the Timebomb spends it at two-thirds.
-- **The Quarry has no equivalent.** Timebomb landing on the Quarry is health and nothing else; the Quarry
-  holds no bank and no streak to lose.
+- **On a trick you also lost, the two add up.** You take 1 for the trick plus 2 for the Timebomb —
+  **3**, and one wipe, not two.
+- **On a trick you banked, the trick banks first and then the Timebomb wipes it.** So a streak that
+  banks the fifth trick while primed loses that trick's own contribution too.
+- **The Quarry has no equivalent.** Timebomb landing on the Quarry is health and nothing else; the
+  Quarry holds no streak to lose.
 
-**This is why the two amounts differ.** Your 2 is half the Quarry's 4 (both figures and their status: section 8) because your side of the hit also
-takes the streak, which is often worth far more than the health (`hybrid-design.md` version-4-scope §1).
+**This is why the two amounts differ.** Your 2 is half the Quarry's 4 (both figures and their status:
+section 8) because your side of the hit also takes the streak, which is often worth far more than the
+health (`hybrid-design.md` version-4-scope §1). **That gap widened on 2026-09-01**, because the streak
+it takes is now taken in full.
 
-> **The moment you cannot choose is the whole point.** Every other cash-out in the game is triggered by a
-> trick you played into. This one is triggered by a trick you played **two moves ago**, and it fires
-> whatever you do next — so a streak in progress is spent at a moment you did not pick. Whether that reads
-> as tension or as an ambush is recorded under
-> [Known tensions](#known-tensions-recorded-not-resolved).
+> **The moment you cannot choose is the whole point.** Every other way your streak can end is
+> triggered by a trick you played into, or is a choice you made at the prompt. This one is triggered
+> by a trick you played **two moves ago**, and it fires whatever you do next. Whether that reads as
+> tension or as an ambush is recorded under [Known tensions](#known-tensions-recorded-not-resolved).
 
 ### A Blast Guard buys back the streak, not the health — **[settled]**; its price and the amount it lets through are **[provisional]**
 
 If you are holding a **Blast Guard** (section 10) when your own Timebomb lands on you:
 
 - you still take the **2 damage**;
-- your bank and your multiplier **survive**, at the values they already held;
-- the Guard is **spent** — even if your bank was zero and there was nothing to save.
+- your total and your roll **survive**, at the values they already held;
+- the Guard is **spent** — even if you were holding nothing and there was nothing to save.
 
-It covers that one case and nothing else. **A trick you simply lose still cashes and resets your streak
-while a Guard is held, and does not consume it**; so does eating a skull. A Guard is not a shield against
+It covers that one case and nothing else. **A trick you simply lose still wipes your streak while a
+Guard is held, and does not consume it**; so does eating a skull. A Guard is not a shield against
 damage and never was: a 1-coin item that insured against every hit in the game would remove the reason
 losing a trick matters.
 
 **It does nothing at all when the Timebomb lands on the Quarry**, because that case already costs you
 nothing.
 
-### The bank
+### There is no end-of-hand cash-out — **[settled]** since 2026-09-01
 
-**The bank only ever climbs** until it cashes. It counts **the tricks you have taken** since the last
-cash-out — whatever the cards in them were. A taken trick adds **1**, plus **1 for every Whetstone you
-own** (section 10); with none, the bank is simply the number of tricks taken.
+The sixth trick of a hand is an ordinary trick. It banks or it hurts by the rules above, it raises the
+same prompt, and then the hand ends with whatever you chose still standing.
 
-**The cards you take are worth nothing in themselves.** A trick of two 11s and a trick of two 2s bank
-exactly the same: one. Ranks decide who _wins_ a trick (section 6) and nothing else.
+> **This was a rule until 2026-09-01, and removing it is what uncapped the payout.** The sixth trick
+> used to force your bank out at the current multiplier whether you wanted it or not, which meant a
+> streak could never be worth more than a hand. It now ends only when you cash it or when a trick
+> hurts you.
 
-### The streak multiplier
+### Applying damage used to be a button, and is not any more — **[settled]** since 2026-09-01
 
-**The multiplier is the number of tricks you have taken in a row.** Clean wins and dodges both count;
-it starts at zero each time it resets, and any damage you take resets it.
-
-### So a streak of _n_ cashes `n × n` — with nothing bought
-
-The bank and the multiplier climb together — by exactly one each, per trick taken — so while a streak
-runs they are the same number, and a cash-out is worth its square:
-
-| Tricks taken in a row                            | 1   | 2   | 3   | 4   | 5   | 6   |
-| ------------------------------------------------ | --- | --- | --- | --- | --- | --- |
-| **Cashed by you, or at hand's end**              | 1   | 4   | 9   | 16  | 25  | 36  |
-| **Caught holding it** — two-thirds, rounded down | 0   | 2   | 6   | 10  | 16  | 24  |
-
-**The top row is what the streak is worth; the bottom row is what it pays if you are caught.** Which row
-you land on is a decision you make, not a dice roll: cash it yourself at any point when it is your move
-(below) and you take the top row. The gap between the rows is the price of pushing one trick further.
-
-A whole hand taken in one unbroken run pays **36**. One loss in the middle of that same hand costs far
-more than a sixth of it: taking three, losing the fourth, then taking the last two pays **6 + 4 = 10** —
-the first streak was caught and paid two-thirds, the second survived to the end of the hand and paid in
-full. So **where** your losses fall matters more than how many you take, and a loss in the middle of a
-hand is worse than one at either end.
-
-That is the table with an empty shop. **A Whetstone changes the first row of the arithmetic and not the
-second** — see below.
-
-### A Whetstone raises what every taken trick banks, for the rest of the run — **[settled]**; its price is **[provisional]**
-
-Each **Whetstone** you own (bought on the run-permanent shelf, section 10) adds **1** to what a taken
-trick banks. **They stack**: with two, every taken trick banks 3. The multiplier is untouched — it still
-climbs by exactly 1 per trick taken — so a streak of _n_ cashes `(1 + copies) × n²`:
-
-| Tricks taken in a row         | 1   | 2   | 3   | 4   | 5   | 6   |
-| ----------------------------- | --- | --- | --- | --- | --- | --- |
-| **Cashes for** — no Whetstone | 1   | 4   | 9   | 16  | 25  | 36  |
-| **one Whetstone**             | 2   | 8   | 18  | 32  | 50  | 72  |
-| **two Whetstones**            | 3   | 12  | 27  | 48  | 75  | 108 |
-
-Those are the figures for a streak you cash yourself or carry to the end of the hand. **Being caught takes
-two-thirds of whichever row you are on**, rounded down — so one Whetstone pays 1, 5, 12, 21, 33, 48 when
-the streak is caught, and two pay 2, 8, 18, 32, 50, 72. The Whetstone raises what you stand to lose at the
-same rate as what you stand to win.
-
-**It multiplies the whole curve rather than shifting it**, so it is worth most on the hands you were
-already playing well: one copy doubles a six-trick hand from 36 to 72, but a lone taken trick only goes
-from 1 to 2. It rewards the long streak you were already chasing rather than changing which trick you
-want.
-
-**It is permanent for the run and never spent.** There is no charge to use, nothing to arm, and nothing
-that consumes it — once bought it applies to every taken trick of every remaining fight. It is the first
-purchase in the game with that duration, and the first that **grows** a reward rather than preserving one.
-
-**Only the bank moves.** The multiplier's climb is deliberately untouched, and an item that raises _it_
-instead is a stated future addition rather than part of this one — the two terms are shown separately on
-screen and kept separate in the rules precisely so one can be bought without the other. **Nothing raises
-the multiplier yet.**
-
-> **The engine tolerates a nonsensical figure rather than breaking on it.** A bank climb that is not a
-> whole number above zero is ignored and the bare `+1` rule applies. This cannot happen in play — the
-> count only ever grows by one at a time — but the bank feeds a health bar, and a spoiled number there
-> would empty a bar with nothing said. It fails back to the plain rule instead.
-
-> **This replaced `Spoils × Standing`, and the shape of the reward is the point of the change.** The
-> old equation was scored once, at the end of thirteen tricks, off a multiplier table read from the
-> final trick count — so a total could _fall_ when you won a trick, and nothing was settled until the
-> last card. The bank only climbs, the multiplier only climbs, and both cash on an event the player
-> can see coming.
-
-> **Card values left the bank on 2026-08-14, and this is what changed.** The bank was the summed
-> printed ranks of every card in every trick taken. The payout is now **exactly predictable from the
-> tricks alone** — the same shape of hand always pays the same number, where before the printed ranks
-> swung it by roughly ±20% with no decision controlling that swing. Whether predictable reads as
-> _readable_ or merely as _flat_ is the open question, and it is recorded under
-> [Known tensions](#known-tensions-recorded-not-resolved).
-
-### Applying damage — cashing your streak when you choose to — **[provisional]** since 2026-08-23
-
-**Before you commit a card, you may cash your bank yourself.** It pays the **full** `bank × multiplier`
-into the Quarry's health and resets bank and multiplier to zero — **but not instantly**, and not for
-free.
-
-- **It is leader-only — [settled], DLR-143, 2026-08-25.** ~~It is available whenever your own card is
-  the next thing to be played — on your lead, and on your follow to a lead already on the table.~~ You
-  must press it **before the trick starts**: it is refused the instant any card, including the
-  Quarry's own lead, is on the table. Not during a trick's reveal, not while an ability is prompting,
-  not on the Quarry's move, and not once your own lead has landed either.
-- **It takes two taps.** The first poises the control; the second spends the streak. The commit cannot
-  be undone, so a single misclick must not be able to spend a hand's work. Pressing `Escape`, or tapping
-  away, cancels a poise.
-- **It is free to press** — **[settled]** since 2026-08-25. Nothing about pressing it costs you
-  anything, and the button states only what it will deal.
-  > **It cost action points from 2026-08-23 to 2026-08-25** — 3 at first, then 1, spent whether or not
-  > the payout ever landed and never refunded if it was later wiped. Action points were removed
-  > entirely (section 4), so the cost and the readout on the button both went with them.
-- **The cash-out does not land where you press it.** It is **queued** rather than dealt, and — since
-  **DLR-143, 2026-08-25** — pays out at the resolution of the **very next trick** after the press. ~~It
-  used to pay out one trick later than that (the trick you pressed in, plus one more).~~ Only one such
-  payout may be in the air at a time: a second press is refused while one is still owed. **Since
-  2026-08-24 the queued payout is on screen** — how much it will deal and how many tricks it still has
-  to run — under the button that queued it, until it lands or is wiped.
-- **Taking damage while it is in the air cuts it to ⅓, floored — [settled], DLR-143, 2026-08-25** (was
-  60%, DLR-141, three days earlier). Any hit that costs you health — a clean loss, an eaten skull, or a
-  Timebomb landing on you — reduces a queued payout to `APPLY_DAMAGE_HIT_RETENTION` of its frozen
-  value, rounded down, rather than destroying it outright. It stays queued, on its existing countdown,
-  at the reduced figure. A hit your blue hearts eat entirely leaves it untouched, at 100% (below). The
-  encounter resolving — either side — still evaporates it in full: there is no target left to pay. If a
-  Timebomb hit and a due payout land on the same trick, **the Timebomb wins**: the payout is cut to
-  ⅓, floored, by that same hit before it settles, and it is the reduced figure that lands.
-  `hybrid-design.md` has not yet been given this feature's design rationale — the citation this
-  bullet would normally carry does not exist; see the Status register.
-- **It stacks with a booked Timebomb hit — [settled], DLR-143, 2026-08-25 (reverses design decision
-  D6, 2026-08-19).** ~~A press is refused outright while a Timebomb hit is still owed against either
-  side.~~ A booked Timebomb no longer blocks the press at all. You may press Apply Damage with a
-  Timebomb already ticking against you or the Quarry, and both settle at the same trick's resolution —
-  the Timebomb-wins ordering above already covers what happens when both are due the same trick.
-- **A payout still owed when your hand's last trick resolves lands anyway**, rather than being lost at
-  the hand boundary. It never survives past that trick, and it never crosses into a fresh encounter or
-  a fresh run.
-- **It is refused, with the reason stated on the control**, when the trick has already started
-  (above), when your bank is empty, when you cannot afford the action-point cost, when a payout from an
-  earlier press is still owed, or when it is not your move.
-- **The trick then proceeds exactly as normal.** You still play your card, it still resolves by the
-  ordinary rules — the bank and multiplier read zero from the moment you pressed, whether or not the
-  payout has landed yet. Applying damage is not a turn, and it does not skip, end or replace anything.
-- **If the payout is what lands the killing blow**, the coins it pays for how fast the fight ended
-  (section 10) count the cards left in your hand **at the moment you pressed**, not at the moment the
-  payout lands — so playing a card during the wait does not quietly shrink that payment.
-
-**It is a third kind of cash-out**, alongside the forced one and the end-of-hand one, and the only one
-you choose the moment of. It is what makes the two-thirds penalty a decision rather than a tax: the
-streak is worth its full square the whole time you are holding it, and being caught is what costs you a
-third of it.
-
-**It can win the fight** — when the payout lands, not when you press. A payout large enough to empty
-the Quarry's health ends the encounter at that resolution, the same as any other damage, and you take
-nothing for it.
-
-> ~~**Nothing shows a payout is in the air.**~~ **Fixed on 2026-08-24.** For one day it was true: you
-> pressed, the bank zeroed, the Quarry's health did not move, and nothing on the felt said a cash-out
-> was still coming until either it landed or a second press was refused. The bar now states the
-> queued figure and the tricks remaining, and states the action-point pool as well, so neither refusal
-> reads as a control dying for no reason. **Neither readout has been looked at by a human**, so
-> whether they are legible where they sit is unjudged.
+> From 2026-08-20 to 2026-09-01 cashing your streak was a **button in the action bar**, pressed before
+> a trick started, with a two-tap commit, five printed refusal reasons, an action-point price for part
+> of that time, and — from 2026-08-23 — a **queued** payout that landed a trick later and could be cut
+> or destroyed by damage taken while it was in the air. **All of it is gone.** The decision is now the
+> prompt above: it is offered after every banked trick, it cannot be refused, it cannot be taken at
+> any other moment, and it pays immediately. Nothing is ever in the air.
 >
-> **The hearts simply drop, whenever the payout lands.** A trick that takes damage breaks the Quarry's
-> hearts with a visible beat, because a trick resolved. A payout landing resolves no trick of its own,
-> so there is no beat to hang it on and the hearts fall without one — the same reading DLR-94 recorded
-> for the instant version, now also true of the moment a delayed payout lands. Whether that reads as
-> abrupt is recorded under [Known tensions](#known-tensions-recorded-not-resolved).
->
-> **None of this has been played.** The action-point cost, the one-trick delay, the hand-end flush, the
-> one-payout-at-a-time rule, and the Timebomb-wins ordering were all built under an unattended sprint
-> run with no developer confirmation — see the callout near the top of this document and
+> Two consequences worth naming. **You can no longer cash mid-trick or on your lead** — cashing is
+> something that happens between tricks and only after a trick you banked. And **you are asked up to
+> six times a hand** where the old button might have been pressed once or never. That frequency is the
+> main cost of the change, and whether it wears out is not settled:
 > [Known tensions](#known-tensions-recorded-not-resolved).
-
-### At the end of the sixth trick, the bank cashes
-
-**[settled]**
-
-When the sixth trick resolves, the bank **cashes out at the current multiplier** and both reset —
-whatever the sixth trick itself did.
-
-**It pays in full**, and since 2026-08-20 that is worth stating outright rather than leaving implied: the
-sixth trick merely arriving is not being caught, so the two-thirds reduction does not apply to it. Only a
-hit you did not choose pays the reduced rate.
-
-In practice exactly one cash-out can ever fire on the sixth trick, never two: if the sixth trick was
-one you took, the end-of-hand cash pays out the bank it just added to; if the sixth trick took damage,
-that damage already cashed the bank and reset it, so there is nothing left to pay. A hand therefore
-never double-counts its last trick.
 
 ---
 
@@ -2211,11 +2204,11 @@ blue hearts consumes both and lets one through; it does not negate the hit.
 - **A killing blow spends none.** If the damage that lands empties the Quarry's bar, you take no
   damage from that event at all (the ordering above), so your blue hearts are carried through
   untouched rather than absorbing a hit that never landed.
-- **A hit your blue hearts eat entirely does not cost you a queued payout.** An Apply Damage payout
-  still in the air is only touched by _losing red health_ (section 7); a fully absorbed hit does not
-  lose any, so the payout survives untouched, at 100%. A hit that is only partly absorbed and still
-  drops red health reduces it to ⅓, floored, exactly as any other health-losing hit does — ⅓ since
-  DLR-143 (was 60% under DLR-141, 2026-08-25; before that it destroyed the payout outright).
+- ~~**A hit your blue hearts eat entirely does not cost you a queued payout.**~~ **Moot since
+  2026-09-01**: there is no queued payout any more (section 7). Applying deals the pot immediately, so
+  nothing is ever in the air to be reduced. Note that blue hearts do **not** save your streak either: a
+  clean loss wipes your total and roll whether or not a blue heart ate the damage, because the wipe is
+  keyed to the trick's outcome and not to the health actually lost.
 
 > **Nothing in the game gives you a blue heart today.** The rule above is enforced everywhere damage
 > is applied, but no purchase, no buff activation and no other event ever grants one, so your count is
@@ -2326,10 +2319,10 @@ pending**, so a player could not dodge a booked hit by cashing out ahead of it, 
 on the confirming second tap. See `hybrid-design.md` version-4-scope §3.
 
 **That rule was reversed outright on 2026-08-25 and no longer exists.** A booked Timebomb and a
-queued Apply Damage payout now stack, and settle together in the same trick's resolution — the
-reduction rule below is what governs the interaction instead. The reason for the refusal, and the
-refusal itself, are both gone; nothing about a pending Timebomb touches the Apply Damage control any
-more. The Status register carries the row.
+queued Apply Damage payout stacked from then on, settling together in the same trick's resolution.
+**And on 2026-09-01 the control itself was removed** (section 7), so there is nothing left for a
+pending Timebomb to gate: cashing is now a prompt raised after a trick has already resolved, and it
+pays immediately. The Status register carries the row.
 
 > **Since 2026-08-23, the control is refused for one further reason**: an earlier press's payout
 > still owed (**[provisional]**, DLR-109). The full order a refusal is chosen in is: not your move, a
@@ -2465,7 +2458,7 @@ design document, not from this section.
 | **Your action points**                     | **Nothing to show since 2026-08-25** — action points were removed from the game, and the two readouts that carried them (the Apply Buff button's figure and the loadout panel's header) went with them. They were open from 2026-08-24 to 2026-08-25, and invisible from the day the pool first cost you something (2026-08-23) until then, which made an unaffordable control read as a control that had simply died (section 4). |
 | **How many cards you are holding**         | **Open since 2026-08-25 — at the top of the Apply Buff panel**, where the action-point pool used to sit, beside how many of them you can use right now. It is the scarcity figure that replaced the pool, now that a card is spent rather than rented (section 4). **Nobody has looked at it.** |
 | **The buffs you own**                      | **Open since 2026-08-24 — inside Apply Buff.** One line each until 2026-08-26, and **a grid of cards since**: the suit each wants, its tier as a roman numeral, when it pays, its condition and its reward, with copies of the same card stacked into one counted card and anything unusable right now moved to the end in one group carrying the reason (section 4). **The panel opens even when there is nothing in it you can use**, on purpose: reading what you hold is how you plan. Placeholder cards you cannot use are not listed at all. **Nobody has looked at the grid.** |
-| **That a cash-out is queued**              | **Open since 2026-08-24 — under the Apply Damage button**: the figure it will deal and how many tricks it still has to run. Hidden for the one day between the delay landing and this readout (section 7).                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **That a cash-out is queued**              | **Nothing to show since 2026-09-01** — a cash-out is never queued any more; choosing **apply** at the prompt deals the pot immediately (section 7). It was open from 2026-08-24, under the Apply Damage button.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | **Whether an activated buff did anything** | **Hidden, and there is now something to hide — since 2026-08-24.** Conditions are checked and rewards are paid (section 4), and **nothing names the cause**: the damage, the coins or the pool simply come out larger. The one place a buff contribution is visible in advance is the per-card `W/L` readout, which includes it. **[not built]** — an announcement at the trick that fired.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | **The buff surface covering the table**     | **The decree and the spent pile can never be hidden, since 2026-08-26** — they sit in their own column of the table and the buff panel sits in another. **The cards already played can be, since 2026-08-27, and that is allowed — [provisional].** The per-card breakdown grows upward from above your hand and may cover the played-cards row while it is open; at a wide screen and at a phone-width one it also **takes the taps meant for the cards underneath**, so the trick is untappable until you move off the panel. Accepted by the developer on the basis that the cost is only paid while you are deliberately reading the breakdown; to be revisited if it gets in the way in play. **Since later the same day the panel is only up while you point at a lit card**, so at rest the table is fully visible — the cost is smaller, not gone. |
 | **A Blast Guard you are holding**          | **Hidden** during a fight — the shop's purse is its only surface, and nothing on the felt says you are carrying one (section 7).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -2806,16 +2799,22 @@ for. Backing out of that prompt returns you to the verdict without doing either.
 
 ### What the shop sells — **[settled]**; every price is **[provisional]**
 
-**The shop sells three things, plus a machine you pull.** It sold five until 2026-08-24, and the
-purchases that left are described further down because none of them was removed from the game — only
-from the shelf.
+**The shop sells one thing, plus a machine you pull, plus a free flask you drink.** It sold five
+until 2026-08-24 and three until 2026-09-01, and every purchase that left is described further down,
+because none of them was removed from the game — only from the shelf.
 
-| Buy                 | Costs                  | You get                                                                                       |
-| ------------------- | ---------------------- | --------------------------------------------------------------------------------------------- |
-| **Heal**            | 1 coin                 | **4 health**, immediately, and never above your maximum — the excess is lost                   |
-| **A Swan rung**     | 5 coins **[open]**     | The next tier of the Swan's ability, for the rest of the run — bronze to silver to gold (§5)   |
-| **A Witch rung**    | 5 coins **[open]**     | The same, for the Witch (§5). Each rank is bought at most twice; rungs do not stack            |
-| **A pull**          | free once, then 1 coin | One spin of the machine you chose, paying you buff cards (see the machine below)               |
+| Buy          | Costs                  | You get                                                                      |
+| ------------ | ---------------------- | ---------------------------------------------------------------------------- |
+| **Heal**     | 1 coin                 | **4 health**, immediately, and never above your maximum — the excess is lost |
+| **A pull**   | free once, then 1 coin | One spin of the machine, paying you buff cards (see the machine below)        |
+
+> **The two rank rungs left the shelf on 2026-09-01.** A **Swan rung** and a **Witch rung** each cost
+> 5 coins **[open]** and bought the next tier of that rank's ability for the rest of the run — bronze
+> to silver to gold — each rank bought at most twice, rungs not stacking. **The rule is unchanged and
+> still enforced; nothing sells either.** They came off because the rules governing them are not
+> settled: *"I haven't figured that out yet."* See §5, where the ladder itself is documented, and
+> which is now **[not built]** in the sense that matters to a player — the ladder exists and no
+> purchase reaches it. **Whose decision:** the developer's.
 
 > **The action-point purchase left the shelf on 2026-08-25**, with the resource it topped up. It
 > cost 3 coins **[open]** for +5 action points a hand for the rest of the run, stacking without
@@ -2927,8 +2926,18 @@ the run.
 
 The middle of the shop is a **slot machine**, and it is the only way to gain a buff card during a run.
 
-**You choose one of two machines.** Each is stocked differently, and which you pick is the whole of
-the decision — after that the pull is chance.
+**There is one machine.** You pull it; there is nothing to choose before you do, and after the pull
+everything is chance.
+
+> **There were two until 2026-09-01, and the second was removed because choosing between them decided
+> nothing.** The **Strongbox** was meant to be the run-permanent machine, stocked toward rewards that
+> paid in coins and refunded action points, against the Skirmisher's in-fight lean. Both of those
+> reward kinds were cut from the game on 2026-08-25 (§4), which left the Strongbox with no identity —
+> and nobody chose it a new one. Measured on what survived, the two machines stocked within a
+> percentage point of each other on every card family and split their reward kinds identically. A
+> choice with no consequence is worse than no choice, so it was removed. **The machine's rules are
+> otherwise unchanged**: the same strip of eight, the same odds, the same prices. **Whose decision:**
+> the developer's; restoring a second machine needs a stocking lean chosen for it first.
 
 **The machine shows you its strip: eight different buff cards, face up, before you pull.** All three
 reels run that same strip of eight. That is not decoration and it is not a courtesy — it is the point:
@@ -3142,7 +3151,7 @@ too, alongside who is coming next.
     down across all six of that hand's windows. **[provisional]**
   - **You may activate as many buffs for one trick as the budget allows**, and the same buff twice
     in one trick is refused. **[settled]**
-  - **An activation you cannot afford is refused with a reason**, the same way Apply Damage and the
+  - **An activation you cannot afford is refused with a reason**, the same way the discard and the
     Discard are refused. **[settled]**
   - **When several buffs pay out on one trick, each pays into its own kind of reward and the
     contributions add** — nothing multiplies anything. A trick on which two or more fire pays a
@@ -3476,7 +3485,10 @@ the mechanics themselves are documented in `../implementation/`.
 > **Nothing on this screen has been seen in a browser** — the contract ran unattended with its browser
 > pass off, so the claim that a four-row shell does not scroll is untested at every viewport size.
 >
-> **Where DLR-109 stands, 2026-08-23.** Apply Damage costs `APPLY_DAMAGE_AP_COST` action points and
+> **Where DLR-109 stood, 2026-08-23 — all of it deleted on 2026-09-01 (DLR-156).** There is no
+> queued payout, no AP cost and no delay any more; the note is kept as the record.
+>
+> Apply Damage cost `APPLY_DAMAGE_AP_COST` action points and
 > queues its payout instead of dealing it, landing `APPLY_DAMAGE_DELAY_TRICKS + 1` trick resolutions
 > later; ~~taking damage in the meantime wipes it, at the same clamp point an ordinary hit already
 > resets the bank through~~ — true until **DLR-141, 2026-08-25**, and no longer: a hit that costs
@@ -3678,60 +3690,56 @@ the mechanics themselves are documented in `../implementation/`.
 | Whether abilities survive six-card hands                                         | **open**                                                                                   | nothing — abilities are unchanged and ability-free hands are accepted                                                                                                                                                                                                                                                                                                                   | Developer, after playtest                                                                                                                                                                                                                                                                                         |
 | Trick resolution, Witch-as-trump                                                 | settled                                                                                    | `src/warCouncil/resolveTrick.ts`                                                                                                                                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
 | Winner leads next, Swan's exception                                              | settled                                                                                    | `src/warCouncil/playCard.ts`, `abilities.ts`                                                                                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                                 |
-| The four outcomes                                                                | settled                                                                                    | `src/warCouncil/bank.ts` — `trickOutcomeFor`, `isTaken`                                                                                                                                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                                                                                                 |
-| Cards have no value; the bank counts tricks                                      | settled — since PT-002                                                                     | `src/warCouncil/bank.ts` — `resolveTrickBank` banks `1` per trick taken plus the run's bank-climb bonus (DLR-92); it reads no card at all, and no value function exists                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                                                                                                 |
-| A streak of _n_ cashes `n × n` with nothing bought                               | settled                                                                                    | `src/warCouncil/bank.ts` — both terms climb by 1 per take when no Whetstone is owned, so the product is a square; pinned by `bank.test.ts`'s `[1,4,9,16,25,36]` spec, which DLR-92 left unedited                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
-| A Whetstone adds 1 to the bank's climb, and stacks                               | settled — since DLR-92                                                                     | `src/warCouncil/bank.ts` — `resolveTrickBank` reads `TrickFacts.bankClimbBonus`; the count lives on `src/hunt/run.ts` — `RunState.whetstones`, and `bankClimbBonusFor` is the one statement of "+1 per copy"                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                                 |
+| The four outcomes | settled | `src/warCouncil/streak.ts` — `trickOutcomeFor`, `isTaken` | — |
+| Cards have no value; a banked trick's worth is a formula, not a rank sum | settled — since PT-002, re-expressed by DLR-156 | `src/warCouncil/streak.ts` — `resolveTrickBank` computes the bracket and reads no card at all | — |
+| Bare play pays 1, 4, 9, 16, 25, 36 | settled | `src/warCouncil/streak.ts` — with nothing fired every banked trick is worth 1, so `total` and `roll` are both n and `potValue` is a square; pinned by `streak.formula.test.ts`'s AC13 spec | — |
+| A Whetstone adds 1 to a banked trick's BASE DAMAGE, inside the bracket, and stacks | settled — the rule, since DLR-92, re-aimed by DLR-156; **provisional** — its strength, which the new bracket multiplied | `src/warCouncil/streak.ts` — `resolveTrickBank` reads `TrickFacts.baseDamageBonus` into the base, so both `buffMult` and the roll multiply it; the count lives on `src/hunt/run.ts` — `RunState.whetstones`, stated once by `baseDamageBonusFor` | **Developer — whether a copy being worth many times more on a long streak is the intended strength** |
 | The Whetstone's price (4 coins)                                                  | **provisional** — set 2026-08-19                                                           | `src/hunt/config.ts` — `WHETSTONE_PRICE`; charged by `src/hunt/shop.ts` — `priceOf`                                                                                                                                                                                                                                                                                                     | **Developer** — transcribed from the design doc, and never yet afforded in a QA run                                                                                                                                                                                                                               |
 | Whetstones carried fight to fight                                                | settled — since DLR-92                                                                     | `src/hunt/run.ts` — `RunState.whetstones`, carried by `advanceRun`'s and `recordEncounter`'s spread, exactly as `coins` is                                                                                                                                                                                                                                                              | —                                                                                                                                                                                                                                                                                                                 |
-| Nothing raises the multiplier's climb                                            | **not built** — by decision                                                                | nothing — `resolveTrickBank`'s `multiplier += 1` takes no bonus, and no `ShopItem` maps to one                                                                                                                                                                                                                                                                                          | **Developer — the twin item, a later ticket**                                                                                                                                                                                                                                                                     |
-| A bank climb that is not a positive integer is ignored                           | settled — since DLR-92                                                                     | `src/warCouncil/bank.ts` — `resolveTrickBank` floors the bonus to 0 unless `Number.isInteger` and `> 0`, so a spoiled figure degrades to the bare rule rather than reaching a health bar                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
-| The bank, and that it only climbs                                                | settled                                                                                    | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                                                                                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                                 |
+| Nothing raises the roll's climb | **not built** — by decision | nothing — `resolveTrickBank`'s `roll += 1` takes no bonus, and no `ShopItem` maps to one | — |
+| A base-damage bonus that is not a positive integer is ignored | settled — since DLR-92 | `src/warCouncil/streak.ts` — `safeBonus` floors it to 0 unless it is a positive integer, so a spoiled figure cannot reach a health bar | — |
+| The total accumulates DAMAGE and the roll counts TRICKS | settled — since DLR-156 | `src/warCouncil/streak.ts` — `StreakState`; `RoundState.total`/`roll`, renamed from `bank`/`multiplier` | — |
+| The pot is `total × roll`, and it is what a cash-out pays | settled — since DLR-156 | `src/warCouncil/streak.ts` — `potValue`, THE one statement of it, read by `applyPot` and by the resolution screen's own display | — |
+| A banked trick's damage is `(BASE_DAMAGE + baseDamageBonus + buffDamage) × buffMult`, from the buffs fired on THAT trick only | settled — since DLR-156 | `src/warCouncil/streak.ts` — `resolveTrickBank`'s taken branch; `src/hunt/buffAccrual.ts` — `trickBonusFor` supplies both buff terms and the Overlap Bonus, per trick | — |
+| `BASE_DAMAGE` is a single configured constant, 1, read in one place | settled — since DLR-156 | `src/hunt/config.ts` — `BASE_DAMAGE`; `resolveTrickBank` is its only reader in the damage path | — |
+| A hurt trick pays the Quarry NOTHING and wipes both figures | settled — since DLR-156, replacing DLR-94's two-thirds forced cash-out | `src/warCouncil/streak.ts` — the hit branch zeroes `total` and `roll`; `TrickResolution.cashOut` is now always 0 | — |
+| After every banked trick, play stops and offers apply or roll over | settled — since DLR-156 | `src/app/warCouncil/roundUiState.ts` — `RoundUiState.resolution`, set by `commitHandlers.ts`'s `resolutionViewFor` on the null-to-non-null edge of `resolvedTrick`; `WarCouncilRound.tsx` switches the whole viewport on it | — |
+| Applying deals the pot immediately and zeroes both; rolling over changes nothing | settled — since DLR-156 | `src/warCouncil/streak.ts` — `applyPot`, `incomingFromPot`; dispatched by `src/app/warCouncil/commitHandlers.ts` — `applyPotAction` / `rollOverAction`, both no-ops on a null resolution rather than throws | — |
+| The prompt costs no action points | **provisional** — since DLR-156, and a flagged balance change: the cost was removed rather than retuned | nothing — `APPLY_DAMAGE_AP_COST` was deleted; the prompt is mandatory, so charging would tax every banked trick | **Developer — whether the choice should cost anything at all** |
+| The streak crosses a hand boundary and is wiped at a fight boundary | settled — since DLR-156 | `src/hunt/run.ts` — `RunState.streak`; `src/hunt/runTransitions.ts` — `streakAfter` returns `EMPTY_STREAK` once `isEncounterResolved`, exactly as `feederCarryAfter` does; carried down through `WarCouncilMountProps.streak` and back on `WarCouncilRoundResult.streak` | — |
+| There is no end-of-hand cash-out | settled — since DLR-156 | `src/warCouncil/streak.ts` — `TrickFacts.finalTrick` folds nothing in; `TrickResolution.cashedAtHandEnd` and `bankAdded` were deleted | — |
+| A trick's damage is narrated one term at a time, in a fixed two-row ledger | settled — the procedure; **provisional** — every timing | `src/app/warCouncil/resolutionBeats.ts` — `resolutionBeatsFor`, pure and derived from what the engine already decided; `useBeatSequence.ts` plays it; `ResolutionLedger.tsx` pins the window at two rows and follows by assignment | **Developer — `--wc-beat`, and whether a whole screen six times a hand wears out** |
+| A played card travels from the hand to the table before the trick resolves | settled — the procedure; **provisional** — the duration | `src/app/warCouncil/useCardFlight.ts` — an idempotent `land()` reachable from `onfinish`, a timer and `visibilitychange`, so a backgrounded tab cannot strand the hand | **Developer — `--wc-flight`** |
+| Both exits hold, naming what happened, before the table returns | **not built** — specified on the approved surface, and it returns immediately instead | nothing — `applyPotAction` and `rollOverAction` clear the screen in the same transition; `--wc-resolve-hold` is declared in `src/app/warCouncil/warCouncilResolve.css` and has no reader in `src/` | — |
+| The screen's three timings and its row height | **provisional** — transcribed placeholders, never chosen | `src/app/warCouncil/warCouncilResolve.css` — `--wc-beat` (520ms), `--wc-resolve-hold` (700ms), `--wc-flight` (380ms), `--wc-ledger-row` (2.5rem), all marked PLACEHOLDER | **Developer — all four, and only answerable by playing** |
 | Named ranks carry a bronze/silver/gold ladder, bought in the shop | **provisional** — since DLR-122, built and unplayed | `src/hunt/rankTiers.ts` — `TieredRank`, `AbilityTier`, `steppedTo`; `TIERED_RANKS` is what the shelf OFFERS (Swan and Witch) while the union names all seven, exactly as `SHOP_ITEMS` does against `ShopItem` | **Developer — every magnitude, and whether the five unbuilt rows ship together** |
 | A rung costs a fixed number of coins, read from one place | **provisional** — the number is unchosen and never played | `src/hunt/rankTiers.ts` — `RANK_TIER_STEP_PRICE`, the only figure `priceOf` reads for either tier item | **Developer — the price, and whether it should escalate per rung** |
 | A rank is bought twice at most, and rungs do not stack | settled — since DLR-122 | `src/hunt/shop.ts` — `refusalFor` returns `PurchaseRefusal.RankAtMaxTier` before the coin check; `src/hunt/rankTiers.ts` — `steppedTo` throws past gold | — |
 | A bought rung applies to the player's copies only | settled — since DLR-122 | `src/warCouncil/rankTierRules.ts` — `tierForSide` returns bronze for any side that is not the player, before the table is read; it is the only route to a tier anywhere in `src/warCouncil/` | **Developer — whether the deck is allowed to be asymmetric at all** |
-| A tiered Swan spares the multiplier (silver) or the whole bank (gold) on a clean loss | **provisional** — since DLR-122, built and unplayed | `src/warCouncil/bank.ts` — `resolveTrickBank` gates both on `outcome === CleanLoss`, so an eaten skull is excluded by the rule rather than by the caller; the facts come from `src/warCouncil/rankTierRules.ts` — `swanTierFactsFor` | **Developer — whether a gold Swan makes a clean loss too cheap** |
+| A tiered Swan spares the roll (silver) or both figures (gold) on a clean loss | **provisional** — since DLR-122, built and unplayed | `src/warCouncil/streak.ts` — `resolveTrickBank` gates both on a CleanLoss outcome, so an eaten skull is excluded by the rule rather than by the caller, and folds gold-implies-silver in itself | **Developer — the price, and whether sparing a whole pot is too strong now a hit takes everything** |
 | A tiered Witch survives the two-Witch cancellation (silver) and outranks every trump (gold) | **provisional** — since DLR-122, built and unplayed | `src/warCouncil/resolveTrick.ts` — `resolveTrickWinner`'s third parameter, defaulted to bronze; both predicates test the player's side before the tier. `cpuPlayer.ts`'s two heuristic calls evaluate at bronze deliberately | **Developer — whether a Quarry that misjudges a gold Witch is flavour or a defect** |
-| The streak multiplier, and its reset                                             | settled                                                                                    | `src/warCouncil/bank.ts` — `resolveTrickBank`                                                                                                                                                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                                 |
-| Cash-out on damage, at **two-thirds** rounded down                               | settled — since DLR-94                                                                     | `src/warCouncil/bank.ts` — `forcedCashValue`, the only reader of `FORCED_CASH_OUT_NUMERATOR`/`_DENOMINATOR` in `src/hunt/config.ts`; `resolveTrickBank`'s forced branch calls it for every forced hit, Timebomb included                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
-| The fraction is a numerator over a denominator, not a float                      | settled — since DLR-94                                                                     | `src/hunt/config.ts` — two constants, multiplied before dividing in `forcedCashValue`, because `x * (2 / 3)` floors wrong on every multiple of 3; pinned by `bank.test.ts`'s multiples-of-three spec                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                                 |
-| Cash-out at the end of the sixth trick, **in full**                              | settled                                                                                    | `src/warCouncil/bank.ts` — `resolveTrickBank`'s `finalTrick` fold calls `cashValue`, deliberately not `forcedCashValue`; pinned by `bank.test.ts`'s AC5 spec, which cashes one streak both ways                                                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                                 |
-| One statement of what a streak is worth                                          | settled — since DLR-94                                                                     | `src/warCouncil/bank.ts` — `cashValue`; all three cash-outs compute through it, so they cannot disagree about what they are a share of                                                                                                                                                                                                                                                  | —                                                                                                                                                                                                                                                                                                                 |
+| The roll, and its reset | settled | `src/warCouncil/streak.ts` — `resolveTrickBank` | — |
+| One statement of what a streak is worth | settled — since DLR-94 as `cashValue`, renamed `potValue` by DLR-156 | `src/warCouncil/streak.ts` — `potValue`; there is now exactly one cash-out, so the question it settled can no longer arise | — |
 | An action-point pool | **not built** — the resource was REMOVED on 2026-08-25 (DLR-145). It existed and was reachable from DLR-104/DLR-109/DLR-114, and its refresh cadence moved to per-trick on 2026-08-25, which is the change that made it pointless: the stake came back before the next bet | `src/hunt/apConfig.ts` — `AP_ENABLED` (**false**); read in exactly one place, `src/hunt/actionPoints.ts` — `apCostFor`, so every cost is 0 and `canAffordAp` is always true. `STARTING_AP` (6), `ApRefreshCadence`, `AP_REFRESH_CADENCE`, `BuffActivationState.apPool`/`.capacity` and `src/hunt/actionPoints.ts` are all still declared and tested, so this is a toggle rather than a deletion | **Developer** — whether points ever return. Nothing costs anything today |
 | Two things spend action points, and they spend the same pool | settled — since DLR-114; **moot since DLR-145**, both costs being 0 | `src/hunt/actionPoints.ts` — `spendAp`, still the only subtraction path; called by `src/app/warCouncil/roundReducer.ts` — `handleTapApplyDamage` and by `src/hunt/buffActivation.ts` — `activateBuff` | — |
-| Applying damage — full figure, both counters reset, no health cost               | settled — since DLR-94                                                                     | `src/warCouncil/voluntaryCashOut.ts` — `cashBankNow` zeroes only bank and multiplier; `incomingFromCashOut` keys the player's share to a hard 0                                                                                                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                                 |
-| Applying damage queues rather than deals | **provisional** — since DLR-109; **it stopped costing anything on 2026-08-25** (cost had moved 3 → 1 the same day, then went with action points) | `src/hunt/apConfig.ts` — `APPLY_DAMAGE_AP_COST` (1, charged at 0 while `AP_ENABLED` is false); `src/hunt/applyDamagePayout.ts` — `queueApplyPayout`; committed by `src/app/warCouncil/roundReducer.ts` — `handleTapApplyDamage`. `ApplyDamageRefusal.InsufficientAp` is kept in the union and is unreachable | **Developer** — the delay and the queue-one-at-a-time reading are still unplayed |
-| The payout lands at the very next trick's resolution                             | **settled** — since DLR-143, 2026-08-25, replacing DLR-109's two-trick delay                | `src/hunt/apConfig.ts` — `APPLY_DAMAGE_DELAY_TRICKS` (0, was 1); `src/hunt/applyDamagePayout.ts` — `applyDamageDelayTricks`, `tickApplyPayout`; settled by `src/app/warCouncil/commitHandlers.ts` — `applyResolution`'s fourth step                                                                                                                                                            | **Developer** — a developer-set figure, still unplayed in feel; feeds AC5's buff-shortening hook unchanged                                                                                                                                                                                                                                                                    |
-| Taking damage while a payout is in the air reduces it to ⅓, floored, rather than wiping it | **settled** — since DLR-143, 2026-08-25, replacing DLR-141's 60% (which had replaced DLR-109's full wipe) | `src/hunt/apConfig.ts` — `APPLY_DAMAGE_HIT_RETENTION` (1/3, was 0.6); `src/hunt/applyDamagePayout.ts` — `reduceApplyPayoutOnHit`; applied at `src/hunt/encounter.ts` — `applyDamage`'s single clamp point, which reduces `pendingApplyPayout` whenever the player's health actually falls and leaves it null (evaporated) only when the encounter also resolves | — |
-| A hit fully absorbed by blue hearts leaves a queued payout untouched, at 100% | settled — since DLR-109, restated by DLR-141's developer-confirmed table | `src/hunt/encounter.ts` — `applyDamage`'s `playerLostHealth` check stays `false` when a hit is fully absorbed, so `pendingApplyPayout` is returned unchanged | — |
-| The encounter resolving — either side — evaporates a queued payout in full | settled — since DLR-109, restated by DLR-141's developer-confirmed table | `src/hunt/encounter.ts` — `applyDamage` nulls `pendingApplyPayout` whenever `winner !== null`, checked before the reduction branch | — |
-| A Timebomb hit on the same trick a payout is due reduces the payout to ⅓, floored, then lands it at that figure | **provisional** — since DLR-109; the fold ORDER is unplayed, the ⅓ figure is DLR-143's settled table | `src/app/warCouncil/commitHandlers.ts` — `applyResolution` settles the payout LAST, after the trick's own damage (which already folds in a detonating Timebomb) has already reduced `pendingApplyPayout` via `reduceApplyPayoutOnHit`                                                                                                                                                                                  | **Developer** — the fold ORDER is a design reading, never played; the ⅓ figure itself is settled. **Reachable through the ordinary press flow for the first time since DLR-143** — a pending Timebomb no longer refuses the press (see two rows below)                                                                                                                                                                                                                                                                    |
-| Only one payout may be queued at a time                                          | **provisional** — since DLR-109                                                            | `src/hunt/encounter.ts` — `queueApplyDamagePayout` returns the encounter unchanged when one is already queued                                                                                                                                                                                                                                                                           | **Developer** — a design reading, never played                                                                                                                                                                                                                                                                    |
-| A payout still owed at the hand's last trick lands there rather than being lost  | **provisional** — since DLR-109                                                            | `src/hunt/applyDamagePayout.ts` — `tickApplyPayout`'s `handEnding` parameter                                                                                                                                                                                                                                                                                                            | **Developer** — a design reading, never played                                                                                                                                                                                                                                                                    |
-| A deferred kill's coin payout counts the hand size at the press, not the landing | settled — since DLR-109                                                                    | `src/hunt/applyDamagePayout.ts` — `PendingApplyPayout.unplayedAtPress`, frozen at `queueApplyPayout`; folded into `unplayedAtResolve` by `src/app/warCouncil/commitHandlers.ts` — `commit`, only when that field is still unset                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                                 |
-| The trick carries on afterwards                                                  | settled — since DLR-94                                                                     | nothing to enforce — `cashBankNow` returns the round with `currentTrick`, `phase`, `leader` and both hands untouched, and writes no `lastResolution`, so the ordinary play path resumes; still true with the cash-out itself deferred (DLR-109)                                                                                                                                         | —                                                                                                                                                                                                                                                                                                                 |
-| One statement of whether Apply Damage is live                                    | settled — since DLR-94, widened DLR-109, re-gated DLR-143                                  | `src/warCouncil/voluntaryCashOut.ts` — `applyDamageRefusalFor`, five clauses since DLR-109 (`NotYourMove → TrickInProgress → PayoutPending → InsufficientAp → EmptyBank`, `TrickInProgress` replacing `TimebombPending` since DLR-143), read by both the reducer's guard and the plate's disabled state; `src/app/warCouncil/roundUiState.ts` — `applyDamageStock` is the one place the app's shape is translated for it                             | —                                                                                                                                                                                                                                                                                                                 |
-| Two taps to spend a streak, `Escape` to cancel                                   | settled — the grammar; the tap count is **provisional**                                    | `src/app/warCouncil/roundUiState.ts` — `RoundUiState.applyPoised`, a hand-transient boolean; since DLR-114 `src/app/warCouncil/ActionBar.tsx` carries `aria-pressed` and the `Escape` handler (`ApplyDamagePlate.tsx` was deleted)                                                                                                                                                      | **Developer** — whether two taps is right, or one. Only felt by playing                                                                                                                                                                                                                                           |
-| The reduced figure is shown beside the full one                                  | settled — since DLR-94                                                                     | `src/app/warCouncil/BankMeter.tsx` — computes it through `forcedCashValue` rather than restating the fraction, so the copy cannot drift from the constants                                                                                                                                                                                                                              | —                                                                                                                                                                                                                                                                                                                 |
+| Applying deals the full pot, resets both figures, and costs no health | settled — since DLR-94, re-homed by DLR-156 | `src/warCouncil/streak.ts` — `applyPot` returns `EMPTY_STREAK` and the dealt figure; `incomingFromPot` keys the player's entry to a hard 0 | — |
 | Damage to the player = 1 per event                                               | settled                                                                                    | `src/hunt/config.ts` — `DAMAGE_PER_HIT`                                                                                                                                                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                                                                                                 |
 | Player health (10)                                                               | **provisional** — set 2026-08-14                                                           | `src/hunt/config.ts` — `PLAYER_START_HEALTH`                                                                                                                                                                                                                                                                                                                                            | Developer, after playing                                                                                                                                                                                                                                                                                          |
 | Quarry health (10)                                                               | **provisional** — set 2026-08-14                                                           | `src/hunt/config.ts` — `QUARRY_ENCOUNTER_HEALTH`                                                                                                                                                                                                                                                                                                                                        | Developer, after playing                                                                                                                                                                                                                                                                                          |
 | Damage applied per trick, mid-hand                                               | settled                                                                                    | `src/hunt/encounter.ts` — `applyDamage`; called per resolution by `src/app/warCouncil/roundReducer.ts`                                                                                                                                                                                                                                                                                  | —                                                                                                                                                                                                                                                                                                                 |
-| The seat → side crossing, once                                                   | settled                                                                                    | `src/warCouncil/bank.ts` — `incomingFrom`                                                                                                                                                                                                                                                                                                                                               | —                                                                                                                                                                                                                                                                                                                 |
+| The seat → side crossing, once | settled | `src/warCouncil/streak.ts` — `incomingFrom` for a resolved trick, `incomingFromPot` for the apply choice | — |
 | Health never negative; surplus discarded                                         | settled                                                                                    | `src/hunt/encounter.ts` — `deplete`, the single clamp                                                                                                                                                                                                                                                                                                                                   | —                                                                                                                                                                                                                                                                                                                 |
 | The Quarry's bar settles first                                                   | settled — since 2026-08-19                                                                 | `src/hunt/encounter.ts` — `applyDamage` depletes the Quarry, then the player **only if the Quarry survived**                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                                 |
 | A mutual kill is a player win                                                    | settled — **overturns a 2026-08-11 ruling**                                                | `src/hunt/encounter.ts` — `resolveWinner` has no tie branch and no constant to read; a Quarry-down event never touches the player, so the case is unreachable. `SIMULTANEOUS_DEPLETION_WINNER` was **deleted**                                                                                                                                                                          | — (the reversal is recorded in `hybrid-design.md` §9)                                                                                                                                                                                                                                                             |
-| Apply Damage is leader-only — refused once any card is on the table              | **settled** — since DLR-143, 2026-08-25                                                    | `src/warCouncil/voluntaryCashOut.ts` — `applyDamageRefusalFor` returns `TrickInProgress`; the predicate is `state.round.currentTrick.length > 0`, read by `src/app/warCouncil/roundUiState.ts` — `applyDamageStock`. Re-asked on the confirming tap, so the Quarry's lead landing under a poise stops the commit                                                                                                 | —                                                                                                                                                                                                                                                                                                                 |
-| ~~Timebomb pending locks Apply Damage~~ — reversed, the two now stack            | **settled** — reversed by DLR-143, 2026-08-25 (was settled since DLR-94, design decision D6, 2026-08-19) | `src/warCouncil/voluntaryCashOut.ts` — `ApplyDamageRefusal.TimebombPending` is **deleted**, not renamed; `src/hunt/encounter.ts`'s `hasPendingTimebomb` has no caller left outside `src/hunt/`. A booked Timebomb and a queued Apply Damage payout now settle together via `src/app/warCouncil/commitHandlers.ts` — `applyResolution`'s existing four-step order (see the ORDER row above) | —                                                                                                                                                                                                                                                                                                                 |
+| ~~Timebomb pending locks Apply Damage~~ — reversed 2026-08-25, then moot | **settled** — the control itself was deleted on 2026-09-01 (DLR-156) | nothing to enforce — there is no press to gate; the prompt is raised after a trick has already resolved | — |
 | An encounter can end mid-hand, and play stops                                    | settled                                                                                    | `src/app/warCouncil/roundReducer.ts` — the `isEncounterResolved` guard in `canAct`                                                                                                                                                                                                                                                                                                      | Developer — whether it feels abrupt                                                                                                                                                                                                                                                                               |
 | Health carried hand to hand                                                      | settled                                                                                    | `src/app/warCouncil/roundReducer.ts` owns the live `EncounterState`; `src/App.tsx` carries it between hands                                                                                                                                                                                                                                                                             | —                                                                                                                                                                                                                                                                                                                 |
 | No cap on hands per encounter                                                    | settled — deliberately none                                                                | no cap key exists to read                                                                                                                                                                                                                                                                                                                                                               | Developer, if the tail stalls                                                                                                                                                                                                                                                                                     |
-| Tricks and multiplier on screen throughout                                       | settled                                                                                    | `src/app/warCouncil/BankMeter.tsx`; wording in `labels.ts` — `TRICKS_LABEL`, `MULTIPLIER_LABEL`                                                                                                                                                                                                                                                                                         | Developer — the wording and the visual values                                                                                                                                                                                                                                                                     |
-| The two terms stay separately addressable                                        | settled — **and used since DLR-92**                                                        | `src/warCouncil/bank.ts` — `bank` and `multiplier` are two fields, and the Whetstone moves only the first; the affordance PT-002 kept them apart for is now load-bearing                                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
+| The total, the roll and the pot on screen throughout | settled | `src/app/warCouncil/BankMeter.tsx` computes the pot through `potValue` rather than restating it; wording in `labels.ts` — `TOTAL_LABEL`, `ROLL_LABEL` | **Developer — the copy is placeholder** |
+| The two terms stay separately addressable | settled — **and used since DLR-92** | `src/warCouncil/streak.ts` — `total` and `roll` are two fields holding two different things, and the Whetstone moves only the first | — |
 | Surplus damage paid back as money                                                | **not built**                                                                              | nothing reads overkill — winning pays a flat coin plus a payout counted from unplayed cards, neither a share of the cash-out                                                                                                                                                                                                                                                            | Developer — a later ticket                                                                                                                                                                                                                                                                                        |
 | Both sides' health on screen                                                     | settled                                                                                    | `src/app/warCouncil/DuelHealthBars.tsx`, `duelHealthBars.ts`, `HeartMark.tsx` — one heart per point since DLR-86; assembled for the round screen by `roundBars.ts` since DLR-101                                                                                                                                                                                                        | Developer — whether 10 (and 18) hearts read well                                                                                                                                                                                                                                                                  |
-| The Quarry's hearts preview the banked streak                                    | **provisional**                                                                            | `src/app/warCouncil/duelHealthBars.ts` — `projectedDepletion` (named `projectedFromStreak` until DLR-101 renamed it and taught it about booked Timebomb; the streak half of its reading is unchanged); styling in `warCouncilHealthBars.css`                                                                                                                                            | Developer — whether it reads as pending or as spent                                                                                                                                                                                                                                                               |
+| The Quarry's hearts preview the pot | **provisional** | `src/app/warCouncil/duelHealthBars.ts` — `projectedDepletion`, which takes `total` and `roll` and multiplies them inline rather than calling the engine's `potValue`; the two agree today because the product is the whole rule | — |
 | Booked Timebomb is drawn on the bar that owes it                                 | **provisional** — since DLR-101, 2026-08-23                                                | `src/app/warCouncil/duelHealthBars.ts` — the fifth `HeartState`, `Ticking`, and the `ticking` overlay clamped to the pending band; fed by `roundBars.ts` from `encounter.pendingTimebomb`; `projectedDepletion` subtracts it from **both** sides and floors both at zero; styling in `warCouncilHealthBars.css` (`[data-state='ticking']`) over `--wc-hp-ticking-*` in `warCouncil.css` | **Developer** — three things: whether booked Timebomb deserves its own reading at all (decided by default in an unattended run, not chosen), the placeholder `--wc-hp-ticking-opacity` and the green-on-green fill, and whether five readings still separate on an 18-heart row. **Never seen in a live browser** |
 | The bar names Timebomb separately from at-risk                                   | **provisional** — copy is placeholder                                                      | `src/app/warCouncil/labels.ts` — `healthBarValueText` reads `pending - ticking` for the at-risk clause and `ticking` for the primed one, omitting either at zero                                                                                                                                                                                                                        | Developer — the wording                                                                                                                                                                                                                                                                                           |
 | Blue hearts absorb before red health, one point each                             | settled — since DLR-110                                                                    | `src/hunt/shield.ts` — `absorbWithShield`, THE single statement of the order; applied inside `applyDamage` in `src/hunt/encounter.ts`, the one damage funnel, so no route can skip it. A killing blow on the Quarry spends none                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                                 |
@@ -3752,7 +3760,7 @@ the mechanics themselves are documented in `../implementation/`.
 | ~~Telegraph fidelity~~ — **wider than anything on screen reads**                  | **not built** — the *stance* half has had no reader since 2026-08-26 (DLR-148) and DLR-155 did not restore it | `src/hunt/telegraphConfig.ts` — `TelegraphFidelity` / `TELEGRAPH_FIDELITY` (**`SuitAndStance`**), moved there from `config.ts` by DLR-155 and re-exported from it, so every existing importer is unchanged; `src/warCouncil/cpuPlayer.ts` — `quarryIntent` still returns `stance` and is still tested (`src/warCouncil/__tests__/quarryIntent.test.ts`), and its only production consumer discards that field | **Developer** — whether stance is ever shown, or the dial narrowed to `Suit` to match what is drawn |
 | Per-card win/lose damage readout                                                 | settled — since 2026-08-24 (DLR-117)                                                       | `src/app/warCouncil/cardDamage.ts` — `cardDamagePreview`, which performs **no arithmetic of its own**: it hands a hypothetical `TrickResolution` to `src/app/warCouncil/commitHandlers.ts` — `applyResolution` (exported by DLR-117) and reports the health delta. Rendered by `HandFan.tsx` beneath each card; copy in `labels.ts` — `cardDamageGlyphText`, `cardDamageText`                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
 | The readout's glyphs and wording (`W6 L1`, `~`)                                  | **provisional**                                                                            | `src/app/warCouncil/labels.ts` — `cardDamageGlyphText`, `CARD_DAMAGE_ESTIMATE_GLYPH`, `CARD_DAMAGE_ESTIMATE_NOTE`; sized by `warCouncilHand.css` — `.wc-card-damage`                                                                                                                                                                                                                                                                                                                                                                                       | Developer — placeholder copy and a transcribed size multiplier, neither seen in a browser                                                                                                                                                                                                                          |
-| Buff rewards appearing in the readout                                            | settled — since DLR-125                                                                    | `src/app/warCouncil/commitHandlers.ts` — `playOptions` now carries the hand's buff input, and `src/app/warCouncil/cardDamage.ts` threads it through `src/warCouncil/bank.ts` — `resolveTrickBank` and reads a health delta. The preview computes no damage of its own, so the rewards, the ceilings and the overlap bonus are inherited rather than restated                                                                                                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                                 |
+| Buff rewards appearing in the readout                                            | settled — since DLR-125                                                                    | `src/app/warCouncil/commitHandlers.ts` — `playOptions` now carries the hand's buff input, and `src/app/warCouncil/cardDamage.ts` threads it through `src/warCouncil/streak.ts` — `resolveTrickBank` and reads a health delta. The preview computes no damage of its own, so the rewards, the ceilings and the overlap bonus are inherited rather than restated                                                                                                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                                 |
 | Rank 8's name ("Timebomb")                                                       | **open** — misleading                                                                      | `src/app/warCouncil/labels.ts` — `RANK_NAME`                                                                                                                                                                                                                                                                                                                                            | Developer                                                                                                                                                                                                                                                                                                         |
 | Between-encounter restore (none, automatic)                                      | **not built** — by decision                                                                | `src/hunt/config.ts` — `ENCOUNTER_PLAYER_RESTORE`; still **no consumer** after DLR-93. A grep in DLR-82's, DLR-84's and DLR-93's final verification guards it                                                                                                                                                                                                                           | **Developer** — the flask has now shipped _without_ wiring this, so it is a separate decision rather than a story waiting to land                                                                                                                                                                                 |
 | Winning a fight pays 10 coins | **provisional** — raised from 1 on 2026-08-25 (DLR-145), transcribed from the ticket rather than derived, and never played | `src/hunt/config.ts` — `COINS_PER_ENCOUNTER_WIN` (**10**); credited by `src/hunt/runTransitions.ts` — `recordEncounter`, the single crediting site | **Developer** — and with it, whether any shop price should move: none did |
@@ -3762,8 +3770,10 @@ the mechanics themselves are documented in `../implementation/`.
 | The unplayed count is taken at the kill                                          | **settled**                                                                                | `src/app/warCouncil/roundReducer.ts` — `captureUnplayed`, frozen at the resolving transition, not re-read later                                                                                                                                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                                 |
 | The verdict names what the win paid                                              | **settled**                                                                                | `src/app/run/RunOutcomePanel.tsx` — the `.run-reward` line; wording in `src/app/run/runLabels.ts` — `rewardText`                                                                                                                                                                                                                                                                        | Developer — all of the copy is placeholder                                                                                                                                                                                                                                                                        |
 | Coins carry across the run, and are on screen                                    | settled — since DLR-84                                                                     | `src/hunt/run.ts` — `RunState.coins`, carried by `advanceRun`'s spread; drawn by `src/app/warCouncil/RoundStatusBand.tsx`'s `.wc-coins` plate                                                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                                 |
-| The shop offers exactly three items | settled — pared by DLR-116, widened by DLR-122, pared again by DLR-145 | `src/hunt/shop.ts` — `SHOP_ITEMS`, now `[SwanTier, WitchTier, Heal]`; the `ShopItem` union still holds all eight and `priceOf` / `categoryOf` / `refusalFor` / `buyFromShop` stay total over it, so nothing was deleted; rendered by `src/app/run/ShopPanel.tsx`, whose refusal record is built by `src/app/run/shopRefusals.ts` — `shopRefusalsFor`, derived from the union rather than hand-listed | **Developer** — DLR-145's own AC3 asked for a two-item shelf (heal plus a pull) while its scope named only the action-point purchase; the two rank-tier items were kept and the disagreement is unresolved |
+| The shop offers exactly one item | settled — pared by DLR-116, widened by DLR-122, pared by DLR-145, pared to the heal alone 2026-09-01 | `src/hunt/shop.ts` — `SHOP_ITEMS`, now `[Heal]`; the `ShopItem` union still holds all eight and `priceOf` / `categoryOf` / `refusalFor` / `buyFromShop` stay total over it, so nothing was deleted; rendered by `src/app/run/ShopPanel.tsx`, whose refusal record is built by `src/app/run/shopRefusals.ts` — `shopRefusalsFor`, derived from the union rather than hand-listed | — resolved: DLR-145's AC3 asked for a heal-plus-a-pull shelf while its scope named only the action-point purchase, and 2026-09-01 settled it that way by taking both rank rungs off |
+| The two rank rungs are priced but unsold | **not built** — off the shelf since 2026-09-01, the ladder itself untouched | `src/hunt/shop.ts` — neither `SwanTier` nor `WitchTier` is in `SHOP_ITEMS`; `priceOf`, `categoryOf` and `refusalFor` still answer for both, and `src/hunt/rankTiers.ts` — `steppedTo` still applies a rung a caller buys | **Developer** — the rank ladder's rules are unsettled; the rungs return when they are decided |
 | Action points as a purchase (+5 a hand) | **not built** — off the shelf since DLR-145, with the resource it bought | `src/hunt/apConfig.ts` - `AP_CAPACITY_STEP`; `src/hunt/config.ts` - `AP_CAPACITY_PRICE` (3); still bought by `src/hunt/runTransitions.ts` - `buyFromShop` and summed by `src/hunt/actionPoints.ts` - `apCapacityFor` if a caller asks, but `SHOP_ITEMS` no longer lists it and `src/sim/reachability.ts` - `unshelvedShopItems` pins that | **Developer** — only if action points return |
+| One machine, not two | settled — since 2026-09-01 | `src/hunt/slotConfig.ts` — `SLOT_MACHINE_IDS`, now `[Skirmisher]`. `SlotMachineId.Strongbox` and both its `src/hunt/slotWeights.ts` rows are RETAINED; removing it from this array is what makes it unreachable, and Skirmisher stays index 0 so `slotSeedFor`'s machine index and every existing seed are unaffected. `src/app/run/SlotMachinePanel.tsx` renders a nameplate at one machine and its `radiogroup` chooser at two or more | **Developer** — a second machine returns only with a stocking lean chosen for it, since the reward axes the Strongbox's lean rode on were cut on 2026-08-25 |
 | The machine's strip: 8 cards, drawn per visit | settled - since DLR-112, playable since DLR-116 | `src/hunt/slotConfig.ts` - `REEL_POOL_SIZE`; drawn by `src/hunt/slotMachine.ts` - `drawReelPool`, weighted by `src/hunt/slotWeights.ts` and boosted through `src/vault/vaultOdds.ts`; seeded by `slotSeedFor` and recomputed, never stored | - |
 | The spin is flat uniform over the strip | settled - since DLR-112 | `src/hunt/slotMachine.ts` - `spinReels`, which takes `REEL_COUNT` uniform picks with no weighting; all weighting is spent in `drawReelPool` | - |
 | What the reels pay (gold / silver+bronze / three bronze) | settled - since DLR-112 | `src/hunt/slotMachine.ts` - `resolvePull`, the one statement of the match rule; the posted percentages are derived by `src/hunt/slotOdds.ts`, never transcribed | - |
@@ -3774,7 +3784,7 @@ the mechanics themselves are documented in `../implementation/`.
 | Which shelf an item sits on                                                      | settled — since DLR-89                                                                     | `src/hunt/shop.ts` — `categoryOf`, an exhaustive `switch`; grouped once at module load into `SHOP_ITEMS_BY_CATEGORY`                                                                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                                 |
 | The heal is on no shelf at all | settled - since DLR-89 | `src/hunt/shop.ts` - `categoryOf` returns `null` for it, collected by `UNCATEGORISED_SHOP_ITEMS`. Since DLR-116 there are no shelves to be off, and the shop renders one flat list | - |
 | One-time use is the shelf you arrive on                                          | settled — since DLR-89                                                                     | `src/app/run/ShopPanel.tsx` — the `useState` initial value; deliberately **not** persisted across visits                                                                                                                                                                                                                                                                                | Developer — whether the shelf should survive re-entry                                                                                                                                                                                                                                                             |
-| An empty shelf says it is empty | **not built** - removed by DLR-116 | nothing - `SHOP_CATEGORY_EMPTY` was deleted with the tab widget. The slot section kept the idea: `SLOT_NO_PULL_YET` in `src/app/run/slotLabels.ts` states an empty result area rather than leaving it blank | - |
+| An empty shelf says it is empty | **not built** - removed by DLR-116, and the idea itself reversed 2026-09-01 | nothing - `SHOP_CATEGORY_EMPTY` was deleted with the tab widget, and `SLOT_NO_PULL_YET` followed it: the slot result area now renders NOTHING before the first pull, because a readout standing in the same place every visit saying nothing is what teaches a player to stop looking at it. The one place the idea survives is the held-cards tray, `SHOP_HELD_EMPTY` in `src/app/run/shopLabels.ts`, which says so once AND points at the thing to do about it | - |
 | Game-permanent is shown and refused | **not built** - removed by DLR-116 | `src/hunt/shop.ts` - `isShopCategoryAvailable` survives and is still tested, but no tab renders it since `ShopCategoryTabs.tsx` was deleted | Developer - whether the shape of the finished shop should still be advertised |
 | What is on the game-permanent shelf                                              | **not built** — nothing designed                                                           | nothing — no item maps to that rung, and version-4-scope §1 declines to design one                                                                                                                                                                                                                                                                                                      | **Developer — a later ticket**                                                                                                                                                                                                                                                                                    |
 | The machine chooser works from the keyboard | settled - since DLR-116 | `src/app/run/SlotMachinePanel.tsx` - a `role="radiogroup"` with a roving tabindex: one tab stop, arrow keys move and select, `Home`/`End` jump to the ends. It replaced the shelf tablist, which was deleted with `ShopCategoryTabs.tsx` | - |
@@ -3824,8 +3834,8 @@ the mechanics themselves are documented in `../implementation/`.
 | Activating a buff — two taps, and the card is spent | settled — the two taps since DLR-114; **that using a condition card removes it from the pile** since DLR-145, 2026-08-25 | `src/hunt/consumables.ts` — `CONDITION_CARD_SINGLE_USE` (Taker/Feeder/Sidestep, all `true`), a sibling of DLR-142's `ACTIVATED_CARD_SINGLE_USE`, both read only by `isConsumableItem`; `src/hunt/buffActivation.ts` — `activateFromPile`, which spends the card and records it on `BuffActivationState.spentThisTrick` so it still fires at this trick's resolution; the two-tap stage is `src/app/warCouncil/buffHandlers.ts` — `handleTapBuff` | **Developer** — whether every card should be single-use; it is one `false` per card type to revert |
 | A card spent on a trick still fires at that trick's resolution | settled — since DLR-145, 2026-08-25 | `src/hunt/buffActivation.ts` — `BuffActivationState.spentThisTrick`, appended by `activateFromPile` and cleared by `openBuffWindow` and `refreshBuffsForNewHand` on exactly the edges that clear `activatedThisTrick`. Read by unioning it with the offered pile in `src/app/warCouncil/buffRoundState.ts` — `buffHandInputFor` and `firedOncePerHandIds`, and again in `src/sim/playHand.ts`. Without it a spent card pays nothing, silently | — |
 | Which card types can be dealt at all (3 of 11 conditions, 2 of 4 reward kinds) | settled — since DLR-145, 2026-08-25; **provisional** — whether the cut is the right one | `src/hunt/buffTemplates.ts` — `TEMPLATE_FAMILIES` (Taker, Feeder, Sidestep) and the narrowed `MintableConditionKind` / `MintableRewardAxis` types on `ConditionBuffTemplate`, which make a cut family or a cut axis **unconstructible** rather than merely unweighted. `BUFF_TEMPLATES` is **16** since DLR-150, 2026-08-27 (6 Taker + **6** Feeder + 2 Sidestep + Cheat + Timebomb) — the Feeder family's Momentum row came back once the carry stopped a Loss-fired multiplier being wiped by that loss's own reset; it was **13** between DLR-145 and then. The eight cut families keep their `BuffKind` member, their `CONDITION_MODIFIER` price, their `buffFires` case and their `BUFF_CADENCE` row; `coins` and `apRefund` keep their `REWARD_BASE` / `REWARD_TIER_VALUE` ladders. Pinned by `src/sim/__tests__/reachability.test.ts` | **Developer** — whether the cut is right, and whether any of the eight should return. Restoring one is a `TEMPLATE_FAMILIES` row |
-| A card that pays you for losing banks its reward for the next hand | settled — since DLR-150, 2026-08-27; **provisional** — the size of the bank, and whether the opening figure should be persistent or a hand-start flourish | `src/hunt/buffAccrual.ts` — `BuffCarry`, `accrueCarry` (uncapped, and it throws rather than accruing zero on an axis that cannot carry), `carriedIn`/`carryOut` on `BuffBonusAccrual`, `startHandAccrual(carriedIn)` seeding the new hand's two spendable figures, and the Feeder-only branch in `resolveFiredBuffs`. The Loss/Win answer is supplied by `src/warCouncil/bank.ts` as `!isTaken(outcome)` and is never re-derived. `src/hunt/run.ts` — `RunState.feederCarry`, seeded empty by `startRun`; `src/hunt/runTransitions.ts` — the private `feederCarryAfter`, which wipes it on a resolved encounter. Pinned by `src/hunt/__tests__/buffCarry.test.ts` and `run.feederCarry.test.ts` | **Developer** — the size of the bank, whether the win-a-trick card should bank on a losing trick too, whether the overlap bonus should follow the trick's outcome, and whether the multiplier version needs its own ladder |
-| Both halves of the bank are on the streak readout | settled — since DLR-150, 2026-08-27; the **wording, colours and glyphs** are provisional | `src/app/warCouncil/BankMeter.tsx` — the `carriedIn` / `carryOut` display-only props and their two lines, both folded into the section's existing accessible name and deliberately **not** into the cash-out figures; styled by `src/app/warCouncil/warCouncilBankMeter.css`. Pinned by `src/app/warCouncil/__tests__/BankMeter.test.tsx` and `WarCouncilRound.feederCarry.test.tsx` | **Developer** — every word, colour and glyph, and whether the opening figure should be persistent or a one-off flourish |
+| A card that pays you for losing banks its reward for the next hand — **and the bank now pays nothing** | **provisional** — since DLR-150, 2026-08-27; the carry is still earned, carried and shown, but DLR-156 removed the hand-long pool it was spent through, so nothing reads it. Restoring it means deciding where a carried-in bonus lands in the new per-trick bracket, which is a design decision | **Developer — where a carried bonus should land now**, and the size of the bank, and whether the opening figure should be persistent or a hand-start flourish | `src/hunt/buffAccrual.ts` — `BuffCarry`, `accrueCarry` (uncapped, and it throws rather than accruing zero on an axis that cannot carry), `carriedIn`/`carryOut` on `BuffBonusAccrual`, `startHandAccrual(carriedIn)` seeding the new hand's two spendable figures, and the Feeder-only branch in `resolveFiredBuffs`. The Loss/Win answer is supplied by `src/warCouncil/streak.ts` as `!isTaken(outcome)` and is never re-derived. `src/hunt/run.ts` — `RunState.feederCarry`, seeded empty by `startRun`; `src/hunt/runTransitions.ts` — the private `feederCarryAfter`, which wipes it on a resolved encounter. Pinned by `src/hunt/__tests__/buffCarry.test.ts` and `run.feederCarry.test.ts` | **Developer** — the size of the bank, whether the win-a-trick card should bank on a losing trick too, whether the overlap bonus should follow the trick's outcome, and whether the multiplier version needs its own ladder |
+| Both halves of the bank are on the streak readout — **naming a figure that pays nothing** | settled — since DLR-150, 2026-08-27; the **wording, colours and glyphs** are provisional | `src/app/warCouncil/BankMeter.tsx` — the `carriedIn` / `carryOut` display-only props and their two lines, both folded into the section's existing accessible name and deliberately **not** into the cash-out figures; styled by `src/app/warCouncil/warCouncilBankMeter.css`. Pinned by `src/app/warCouncil/__tests__/BankMeter.test.tsx` and `WarCouncilRound.feederCarry.test.tsx` | **Developer** — every word, colour and glyph, and whether the opening figure should be persistent or a one-off flourish |
 | A Vault card of a type that is no longer dealt does not arrive | settled — the behaviour predates DLR-145 (DLR-113); DLR-145 is what made it reachable | `src/hunt/buffTemplates.ts` — `templateById` returns `undefined` for a cut id, so `mintGrants` skips it and `src/vault/vaultEconomy.ts` — `oddsBoostRefusalFor` / `startingTierRefusalFor` refuse a purchase against it; `src/vault/` — `reconcileVault` drops it and counts it. No persisted shape, field or key changed and `SAVE_SCHEMA_VERSION` did not move | **Developer** — nothing corrupts, but Vault currency already spent on a cut card is gone. Clearing saved data avoids the confusion |
 | A condition buff can be taken back off the trick; an Activated card cannot — **except a Timebomb, since DLR-154** | **settled** — since DLR-153, 2026-08-27, widened by DLR-154, 2026-08-31; **provisional** — that the returned card goes to the END of the pile rather than its old place | `src/hunt/buffActivation.ts` — `isRevocableBuff` (a frozen set, `REVOCABLE_BUFF_KINDS`, of `Taker`/`Feeder`/`Sidestep`/`Timebomb`, the single statement of what may come back) and `deactivateFromPile`, which refunds through `src/hunt/actionPoints.ts` — `refundAp`, drops the id from `activatedThisTrick` and the buff from `spentThisTrick`, and appends the card to the pile only when `spentThisTrick` says it actually left. It throws rather than clamping; `src/app/warCouncil/buffHandlers.ts` — `handleRemoveBuff` is the guard that keeps the throw off a render, dispatched by `RoundUiActionKind.RemoveBuff` | Developer — whether the card should return to its old place in the pile, and whether the poise tap still earns itself now that a commit can be undone |
 | Activating a buff asks for no card — it rides the trick | settled — the behaviour predates DLR-153; DLR-153 is what made it legible | `src/hunt/buffActivation.ts` — `activateBuff` takes no card argument, and no refusal about choosing one exists anywhere in `src/` | — |
@@ -3843,10 +3853,10 @@ the mechanics themselves are documented in `../implementation/`.
 | Unusable buffs are filtered out rather than shown                                | settled — since DLR-114, unchanged by DLR-135                                              | `src/hunt/buffActivation.ts` — `isPricedBuff` / `activatableBuffs`, read once through `src/app/warCouncil/roundUiState.ts` — `offeredBuffs`. **Byte-identical since DLR-114.** It no longer filters anything at run start: every one of a fresh run's `STARTING_BUFF_COUNT` (20) + `RUN_STARTING_CHEATS` (1) cards is priced, so the opening list is full. The guard stands because any unpriced kind reaching a render is still the bug it catches | Nobody — the content decision it waited on was taken by DLR-135, 2026-08-25                                                                                                                                                                                                                                       |
 | How often each condition may pay — every trick, once a hand, or only at the sixth | settled — since DLR-125 | `src/hunt/buffs.ts` — `BUFF_CADENCE`, a total map over every buff kind; applied by `src/hunt/buffEvaluation.ts` — `firedBuffs` / `firesOncePerHand`, with the once-a-hand families filtered against a fired list held on `src/app/warCouncil/buffRoundState.ts` — `BuffHandState.firedThisHand` | — |
 | Contributions add; two or more on one trick pay a further multiplier bonus | settled — since DLR-108, **paid on real play since DLR-125** | `src/hunt/buffAccrual.ts` — `accrueAxisBonus` (one axis per contribution) and `overlapBonusFor` (`max(0, k − 1)`), drawn from the same multiplier allowance | **Developer** — the overlap bonus has never been played against a real hand |
-| The order the four rewards land in around a cash-out | settled — since DLR-125 | `src/warCouncil/bank.ts` — `resolveTrickBank` holds the multiplier bonus (inside the product) and the flat damage (added after the reduced rate); `src/app/warCouncil/buffRoundState.ts` — `foldBuffOutcome` holds the refund into the next window's pool and the coins, after the trick has resolved | — |
+| A fired buff's damage axes pay into THAT TRICK only; coins, the AP refund and the Feeder carry still pool for the hand | settled — since DLR-156, replacing DLR-125's hand-long damage pool | `src/hunt/buffAccrual.ts` — `trickBonusFor` (per trick) beside `resolveFiredBuffs` (per hand); `payableCashOutBonus`, `markCashOutPaid` and `CashOutBonus` were deleted | — |
 | The per-hand reward ceilings | **two of the four were REMOVED on 2026-08-25** (DLR-145); the remaining two are still enforced but no card pays on their axes, so nothing is clipped in play. The per-hand, not-on-a-hit reset is unchanged in shape | `src/hunt/apConfig.ts` — `MAX_MULTIPLIER_BONUS_PER_HAND` and `MAX_FLAT_DAMAGE_BONUS_PER_HAND` are both `Number.POSITIVE_INFINITY` (were 6 and 12), so `src/hunt/buffAccrual.ts` — `accrueAxisBonus`'s `Math.min` is the identity on those two axes; `MAX_COIN_BONUS_PER_HAND` (10) and `MAX_REFUND_PER_HAND` (6) are untouched. `startHandAccrual` is still that module's only reset | **Developer** — the two constants stay named as the one place a ceiling would be restored. They went because clipping a card you have **spent** destroys it, where clipping one you had rented cost nothing |
-| A reward pool that lands at a cash-out is **spent**, not re-paid at the next one | **provisional** — an agent's reading, never played or confirmed | `src/hunt/buffAccrual.ts` — `payableCashOutBonus` / `markCashOutPaid` and the `multiplierPaid` / `flatDamagePaid` counters, read by both cash-out branches in `src/warCouncil/bank.ts` | **Developer** — the design caps each axis per hand but does not say what a second cash-out in the same hand pays; the alternative reading is a one-line change |
-| Apply Damage's **press** is what the debt-collector condition reads | settled — since DLR-125, enforcing DLR-109's reading | `src/app/warCouncil/buffRoundState.ts` — `BuffHandState.applyDamagePressed`, set by `src/app/warCouncil/roundReducer.ts` — `handleTapApplyDamage` in the branch where the press commits, and read at the next trick resolution | — |
+| ~~A reward pool that lands at a cash-out is **spent**, not re-paid at the next one~~ | **moot since DLR-156** — there is no hand-long damage pool, and only one cash-out | nothing to enforce | — |
+| Choosing **apply** at the prompt is what the debt-collector condition reads | settled — since DLR-125, re-homed by DLR-156 | `src/app/warCouncil/commitHandlers.ts` — `applyPotAction` sets `buffHand.applyDamagePressed`; the family is cut and unconstructible, so the flag is inert | — |
 | Coins a buff earns reach the run's purse, on a win and on a loss | settled — since DLR-125 | `src/app/warCouncilMount.ts` — `WarCouncilRoundResult.coinsEarned`, passed by `src/App.tsx` to `src/hunt/runTransitions.ts` — `recordEncounter`'s optional `buffCoinsEarned` parameter, added outside its won-this-encounter branch | — |
 | Holding a named suit at the hand's end | settled and **unsatisfiable in play** — the rule is enforced; the game gives it no instant. **Unreachable as well since DLR-145**, which stopped dealing the card | `src/hunt/buffEvaluation.ts` — the `keepsake` case, gated on the final trick and the suits left in hand; the hand is empty at that instant because six cards are played over six tricks. Pinned by an assertion in `src/hunt/__tests__/buffEvaluation.test.ts`. No `TEMPLATE_FAMILIES` row mints one since DLR-145 | **Developer** — the defect is unfixed, merely out of reach |
 | **Long Fall** — the twelfth condition on the card list | **not built** — no card, no rule, nothing generates one | nothing to enforce — `src/hunt/buffTemplates.ts` generates no template for it; deferred by DLR-111 for want of a UI answer | **Developer** — the UI question it was deferred on is still open |
@@ -3855,7 +3865,7 @@ the mechanics themselves are documented in `../implementation/`.
 | **Spending a Cheat, a Timebomb or a Shield also spends the card, by default** — since DLR-142, 2026-08-25; **reachable for Cheat and Timebomb, still unreachable for Shield** because nothing mints a Shield | settled — the default; **reversible per card, the developer's to flip** | `src/hunt/consumables.ts` — `ACTIVATED_CARD_SINGLE_USE`, a `Record` of three booleans read by `isConsumableItem` alongside the unchanged five-item `isConsumableItemKind` check; `activateShield` is wired into `src/app/warCouncil/buffHandlers.ts`'s `handleTapBuff` in the same ticket, mirroring the existing Ward branch | **Developer** — reverting any one of the three to "stays in the pile" is a one-line flip in `ACTIVATED_CARD_SINGLE_USE`, nothing else to change |
 | **Which of the five items can be used at all, and in which window**              | three of five **not built**; Puppeteer's window **provisional**                                          | `src/hunt/consumables.ts` — `CONSUMABLE_EFFECT_LIVE` (one boolean per card) and `CONSUMABLE_TIMING`; refused as `NoEffectYet`, read first, in `buffActivationRefusalFor` in `src/hunt/buffActivation.ts`                                                                                                                                                                                     | **Whoever builds each screen** — Puppeteer needs a list of the Quarry's legal moves, Foresight a draw-pile reveal, Spyglass a ruled-out-candidates surface. No reducer opens Puppeteer's window                                                                                                                          |
 | **A Ward absorbing the next hit, ahead of blue hearts, then breaking regardless** | provisional — the ORDER against blue hearts is a reading, not a transcription; the 1/3/5 ladder is transcribed | `src/hunt/consumables.ts` — `WARD_ABSORPTION`, `absorbWithWard`; held on `EncounterState.wardAbsorbs` in `src/hunt/types.ts`, set by `activateWard` and spent inside `applyDamage` in `src/hunt/encounter.ts`, ahead of `absorbWithShield`                                                                                                                                                    | **Developer** — whether a Ward should be taken before or after a blue heart, whether a second Ward should stack rather than replace, and whether silver and gold Ward earn their rows at all (see Known tensions)                                                                                                        |
-| **An activated buff's condition firing, and its reward being paid**              | settled — since DLR-125; **every threshold and reward figure is provisional**                            | `src/hunt/buffEvaluation.ts` — `buffFires`, a total `switch` over the eleven condition families, gated so every consumable and every placeholder answers `false`; thresholds from `src/hunt/buffTemplates.ts` — `CONDITION_THRESHOLD`, reward figures from `REWARD_TIER_VALUE` in the same file; called from `src/warCouncil/bank.ts` — `resolveTrickBank`, which is also where the accrual in `src/hunt/buffAccrual.ts` is finally read | **Developer** — every threshold and every reward figure was chosen by an agent and none has been played                                                                                                                                                                                                                  |
+| **An activated buff's condition firing, and its reward being paid**              | settled — since DLR-125; **every threshold and reward figure is provisional**                            | `src/hunt/buffEvaluation.ts` — `buffFires`, a total `switch` over the eleven condition families, gated so every consumable and every placeholder answers `false`; thresholds from `src/hunt/buffTemplates.ts` — `CONDITION_THRESHOLD`, reward figures from `REWARD_TIER_VALUE` in the same file; called from `src/warCouncil/streak.ts` — `resolveTrickBank`, which is also where the accrual in `src/hunt/buffAccrual.ts` is finally read | **Developer** — every threshold and every reward figure was chosen by an agent and none has been played                                                                                                                                                                                                                  |
 | A buff's description is one line, composed from a naming grammar                 | settled — since DLR-114; the copy is **placeholder**                                       | `src/app/warCouncil/buffLabels.ts` — three `Record`s keyed over the closed kind and reward unions, transcribed from `.docs/design/Balatro-Forbidden-Solitaire/v1-buff-card-list.md`; the same string is the visible line and the accessible name                                                                                                                                        | **Developer** — the wording, and whether one line carries enough                                                                                                                                                                                                                                                  |
 | The line's leading word states the buff's tier (Bronze/Silver/Gold)              | settled — since DLR-142, 2026-08-25                                                        | `src/app/warCouncil/buffLabels.ts` — `BUFF_TIER_WORD`, a fourth `Record` over the closed `BuffTier` union, prefixed onto `buffLine`'s output; flows into the accessible name for free since `buffRowAccessibleName` composes `buffLine` rather than restating it. Deliberately not added to `buffName`, which the trick-payout readout also calls | —                                                                                                                                                                                                                                                                                                                  |
 | The run — a sequence of encounters                                               | settled — since DLR-82                                                                     | `src/hunt/run.ts` — `RunState`, `startRun`; `src/hunt/runTransitions.ts` — `advanceRun`; driven by `src/App.tsx`                                                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
@@ -3901,16 +3911,16 @@ the mechanics themselves are documented in `../implementation/`.
 | Only one Timebomb may be live at a time; a second spend is refused outright | **settled** — since DLR-154, 2026-08-31, replacing the tier-overwrite limitation it removes | `src/hunt/buffActivation.ts` — `BuffActivationRefusal.TimebombLive`, ordered `NoEffectYet → WindowClosed → TimebombLive → AlreadyActive → InsufficientAp`, fed by `src/app/warCouncil/roundUiState.ts` — `timebombLive` (`timebombArmed(state) || round.primedCards.length > 0`) through `buffActivationStock`, and threaded into `activateFromPile` by `src/app/warCouncil/buffHandlers.ts` — `handleTapBuff`. `RoundUiState.primedTimebombDamage` still holds one pair, and now cannot be overwritten while one is live | — |
 | The mark is drawn wherever the card renders                                      | settled — all four surfaces                                                                | `src/app/warCouncil/PlayingCard.tsx` — the `primed` prop; threaded by `HandFan`, `TrickWell`, `AbilityPrompt` and `DecreePile` (the last **fixed in review**, having been built and never passed)                                                                                                                                                                                       | Developer — the glyph and its colour are placeholders                                                                                                                                                                                                                                                             |
 | A primed trick resolves by the normal rules                                      | settled                                                                                    | `src/warCouncil/playCard.ts` — it reports `trickIsPrimed` as a fact and judges none of it; the winner and the bank are decided as ever                                                                                                                                                                                                                                                  | —                                                                                                                                                                                                                                                                                                                 |
-| A primed clean loss is replaced, not added to                                    | settled                                                                                    | `src/warCouncil/bank.ts` — `resolveTrickBank`'s `replaced` flag skips the hit half, so damage and cash-out stay 0 and bank/multiplier pass through                                                                                                                                                                                                                                      | —                                                                                                                                                                                                                                                                                                                 |
-| …and a **dodge** is deliberately not replaced                                    | settled — the outcome, not the winner                                                      | `src/warCouncil/bank.ts` — keyed on `TrickOutcome.CleanLoss`; a Dodge is a Quarry win the player **banks**, so replacing it would delete an earned bank                                                                                                                                                                                                                                 | Developer — the free-bonus interaction it creates                                                                                                                                                                                                                                                                 |
+| A primed clean loss is replaced, not added to                                    | settled                                                                                    | `src/warCouncil/streak.ts` — `resolveTrickBank`'s `replaced` flag skips the hit half, so damage and cash-out stay 0 and bank/multiplier pass through                                                                                                                                                                                                                                      | —                                                                                                                                                                                                                                                                                                                 |
+| …and a **dodge** is deliberately not replaced                                    | settled — the outcome, not the winner                                                      | `src/warCouncil/streak.ts` — keyed on `TrickOutcome.CleanLoss`; a Dodge is a Quarry win the player **banks**, so replacing it would delete an earned bank                                                                                                                                                                                                                                 | Developer — the free-bonus interaction it creates                                                                                                                                                                                                                                                                 |
 | A primed skull trick you win still costs it                                      | settled — the harshest reading                                                             | nothing suppresses it — the override waives only the clean loss, so `SkullWin` resolves in full                                                                                                                                                                                                                                                                                         | **Developer** — no design document covers this case                                                                                                                                                                                                                                                               |
-| The delayed hit follows the trick's winner                                       | settled — no branch, but **no longer symmetric**                                           | `src/warCouncil/bank.ts` — `TrickResolution.timebombTarget`, typed `DuelSide` because this module is already the one seat → side crossing                                                                                                                                                                                                                                               | —                                                                                                                                                                                                                                                                                                                 |
+| The delayed hit follows the trick's winner                                       | settled — no branch, but **no longer symmetric**                                           | `src/warCouncil/streak.ts` — `TrickResolution.timebombTarget`, typed `DuelSide` because this module is already the one seat → side crossing                                                                                                                                                                                                                                               | —                                                                                                                                                                                                                                                                                                                 |
 | Its bronze amount — 4 to the Quarry, 2 to the player                             | **provisional** — split 2026-08-19, tiered 2026-08-24                                      | `src/hunt/config.ts` — `TIMEBOMB_QUARRY_DAMAGE` (4, transcribed) and `TIMEBOMB_PLAYER_DAMAGE` (2, **the developer's own**), the inputs `buffCatalog.ts`'s `TIMEBOMB_DAMAGE` scales by tier; queued by `encounter.ts`'s `queueTimebomb(encounter, target, damage)`, which since DLR-132 takes the primed card's own pair rather than looking one up                                    | **Developer** — the player-side figure is a choice, not a transcription, and every tier is unmeasured in play                                                                                                                                                                                                    |
-| It lands at the resolution of the NEXT trick                                     | settled — retimed 2026-08-19                                                               | `src/app/warCouncil/roundReducer.ts` — `TimebombOptions` reads `encounter.pendingTimebomb` into `playCard`, and `applyResolution` pays, clears and re-books in that order; folded into the trick's own damage by `src/warCouncil/bank.ts` — `resolveTrickBank`. It landed at the next hand's deal until this date                                                                       | —                                                                                                                                                                                                                                                                                                                 |
+| It lands at the resolution of the NEXT trick                                     | settled — retimed 2026-08-19                                                               | `src/app/warCouncil/roundReducer.ts` — `TimebombOptions` reads `encounter.pendingTimebomb` into `playCard`, and `applyResolution` pays, clears and re-books in that order; folded into the trick's own damage by `src/warCouncil/streak.ts` — `resolveTrickBank`. It landed at the next hand's deal until this date                                                                       | —                                                                                                                                                                                                                                                                                                                 |
 | A primed last trick carries into the next hand                                   | settled                                                                                    | `src/hunt/types.ts` — the queue hangs off `EncounterState`, which outlives a hand; nothing at a hand boundary reads or clears it                                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                 |
-| Your share of the hit cashes out your streak                                     | settled — since 2026-08-19, at **two-thirds** since DLR-94                                 | `src/warCouncil/bank.ts` — `resolveTrickBank`'s cash-out branch has a **second trigger**, `timebombToPlayer > 0 && !blastGuarded`, reaching the same statement a lost trick reaches — and therefore the same `forcedCashValue` reduction                                                                                                                                                | Developer — the reading that Timebomb pays the reduced rate rather than full                                                                                                                                                                                                                                      |
-| A primed trick you win banks BEFORE it cashes                                    | settled — a chosen reading                                                                 | `src/warCouncil/bank.ts` — the `isTaken` climb runs above the cash-out branch, so a streak of 4 winning trick 5 cashes 25 rather than 16                                                                                                                                                                                                                                                | Developer — reversing it is one line, and a different feel                                                                                                                                                                                                                                                        |
-| The Quarry's share never touches a bank                                          | settled                                                                                    | `src/warCouncil/bank.ts` — `timebombToQuarry` rides on `TrickResolution` and is summed into the Quarry's total by `incomingFrom`; the Quarry holds no bank or multiplier at all                                                                                                                                                                                                         | —                                                                                                                                                                                                                                                                                                                 |
+| Your share of the hit WIPES your streak, paying the Quarry nothing | settled — since 2026-08-19; **at nothing rather than two-thirds since DLR-156** | `src/warCouncil/streak.ts` — the Timebomb reset reaches the same branch a lost trick does | — |
+| A primed trick you bank climbs BEFORE the Timebomb wipes it | settled — a chosen reading | `src/warCouncil/streak.ts` — the taken climb runs above the reset branch | — |
+| The Quarry's share never touches a streak | settled | `src/warCouncil/streak.ts` — the Quarry holds no streak | — |
 | Two primed tricks both land                                                      | settled                                                                                    | `src/hunt/types.ts` — `EncounterState.pendingTimebomb` is a per-side `IncomingDamage` **accumulator**, not a single side                                                                                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
 | Two marks in ONE trick still owe one hit                                         | settled — a predicate, not a count                                                         | `src/warCouncil/timebomb.ts` — `trickIsPrimed` is a boolean over the trick                                                                                                                                                                                                                                                                                                              | Developer — a count instead of a predicate is a small follow-up                                                                                                                                                                                                                                                   |
 | A delayed hit can kill, and end the run                                          | settled                                                                                    | `src/hunt/encounter.ts` — the hit goes through the same `applyDamage`/`resolveWinner` as any other damage, and `src/hunt/runTransitions.ts` — `outcomeFor` re-derives the run's end from the result                                                                                                                                                                                     | —                                                                                                                                                                                                                                                                                                                 |
@@ -3922,8 +3932,8 @@ the mechanics themselves are documented in `../implementation/`.
 | Its price (1 coin)                                                               | **provisional** — transcribed                                                              | `src/hunt/config.ts` — `BLAST_GUARD_PRICE`; read by `priceOf`. Its own key, level with `HEAL_PRICE`                                                                                                                                                                                                                                                                                     | Developer — from `version-4-scope.md`, not derived; **unmeasured in play**                                                                                                                                                                                                                                        |
 | It sits on the fight-long shelf                                                  | settled — since 2026-08-19                                                                 | `src/hunt/shop.ts` — `categoryOf` returns `ShopCategory.FightLong`; `SHOP_ITEMS_BY_CATEGORY` derives the shelf at module load, so the screen needed no edit                                                                                                                                                                                                                             | —                                                                                                                                                                                                                                                                                                                 |
 | Only one may be held at a time                                                   | settled                                                                                    | `src/hunt/shop.ts` — `PurchaseRefusal.GuardAlreadyActive`, returned by `refusalFor` before the coin check; worded by `src/app/run/shopLabels.ts`                                                                                                                                                                                                                                        | Developer — a count instead of a flag is a small change                                                                                                                                                                                                                                                           |
-| It suppresses the Timebomb reset only                                            | settled                                                                                    | `src/warCouncil/bank.ts` — `blastGuarded` gates the Timebomb trigger and not `trickHit`, so a lost trick still resets the streak and does not spend the Guard                                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                                 |
-| It is spent whenever it fires, streak or not                                     | settled — AC4 read literally                                                               | `src/warCouncil/bank.ts` — `TrickResolution.blastGuardSpent`; flipped by `src/app/warCouncil/roundReducer.ts` at both settle points                                                                                                                                                                                                                                                     | —                                                                                                                                                                                                                                                                                                                 |
+| It suppresses the Timebomb reset only                                            | settled                                                                                    | `src/warCouncil/streak.ts` — `blastGuarded` gates the Timebomb trigger and not `trickHit`, so a lost trick still resets the streak and does not spend the Guard                                                                                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                                 |
+| It is spent whenever it fires, streak or not                                     | settled — AC4 read literally                                                               | `src/warCouncil/streak.ts` — `TrickResolution.blastGuardSpent`; flipped by `src/app/warCouncil/roundReducer.ts` at both settle points                                                                                                                                                                                                                                                     | —                                                                                                                                                                                                                                                                                                                 |
 | It does nothing on the Quarry-side hit                                           | settled                                                                                    | nothing to enforce — `blastGuarded` is read only against `timebombToPlayer`                                                                                                                                                                                                                                                                                                             | —                                                                                                                                                                                                                                                                                                                 |
 | Nothing shows a held Guard during a fight                                        | **not built** — deliberately                                                               | nothing — `src/app/run/ShopPanel.tsx`'s purse cell is its only surface, and the felt renders none of it                                                                                                                                                                                                                                                                                 | **Developer** — the same call as the announcement row above                                                                                                                                                                                                                                                       |
 | The discard — swap 1 to 3 cards for the same count off the pile                  | settled — since DLR-100                                                                    | `src/warCouncil/discard.ts` — `applyDiscard`; committed by `src/app/warCouncil/discardHandlers.ts` — `handleTapDiscard`                                                                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                                                                                                 |
@@ -4318,6 +4328,60 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
 
 ### Known tensions, recorded not resolved
 
+- **Holding every buff back until the trick before you cash may still be the only sensible line**
+  (new 2026-09-01, DLR-156). The new equation was written partly to kill the old reason for
+  hoarding cards — a multiplier card used to multiply the whole hand's pot from wherever it was
+  fired — and it does. Then it reintroduces the same line for a different reason. Timing is now
+  value-neutral: the same card adds the same amount whether it fires on trick 1 or trick 6, and the
+  same roll multiplies it either way. **Exposure is not neutral.** A card fired early can be wiped
+  by every trick between it and your cash; a card fired on the trick you then cash on is wiped by
+  nothing. So the optimal line is to roll cheap bare tricks to build the roll, dump everything on
+  one trick, and cash immediately — identical payout, strictly less risk. Two things soften it and
+  neither is a fix: conditions gate when a card may fire at all, and cards are consumed, so an
+  unfired card is still an asset. **The planned health-penalty counterweight makes it worse, not
+  better**, because firing early would buy more tricks of accumulated penalty. Three candidate
+  levers are named and none chosen: cap how many buffs may fire on one trick, give an unfired card
+  a carrying cost, or pay a bonus for firing at a high roll. **The developer's.**
+- **Whether the roll should survive a hit is undecided** (new 2026-09-01, DLR-156). Wiping the total
+  and the roll together makes a hit total, which is the accepted intent — it is what makes the push
+  a real bet. Halving the **roll** instead, while still wiping the pot, would leave a long survivor
+  something to rebuild on, and it is the cheapest catch-up lever available without adding a rule
+  anywhere else. Not decided.
+- **The payout is roughly two and a half to three times what it was, and nothing caps a streak**
+  (new 2026-09-01, DLR-156). Removing the end-of-hand force-cash means a streak is limited only by
+  losing a trick or choosing to cash, not by the hand running out. No health total, shop price, tier
+  value or ability figure was retuned to meet that. **It is deliberately unbalanced**: the intended
+  counterweight — firing a buff also staking health, accumulated across the streak and paid when it
+  crashes — is a later change, and the point of shipping it like this is to find out how much of it
+  is needed by playing. Two things about that counterweight are themselves unanswered: whether the
+  accumulated penalty clears when the pot does, and whether it is flat per card or scales with tier.
+- **A whole screen firing up to six times a hand may wear out** (new 2026-09-01, DLR-156). The old
+  Apply Damage button might have been pressed once in a hand, or never; the prompt that replaced it
+  is mandatory, blocks play, and takes the whole viewport. At the transcribed 520ms a term, five
+  terms is about three seconds a trick. The candidate fixes are named and deliberately not built:
+  skip the screen on a bare trick where there is nothing to decide, or make a faster non-blocking
+  variant. **Play-and-see, and the developer's.** The single number most worth setting from a
+  play-through is `--wc-beat`.
+- **Nobody has seen either screen running** (new 2026-09-01, DLR-156). The contract ran with its
+  browser pass off. jsdom has no layout engine, so nothing proves the felt or the resolution screen
+  fails to scroll, that the ledger holds a constant height across a full run, or that a greyscale
+  screenshot still tells apply from roll over. A **known** residual is recorded rather than fixed: on
+  the *table* screen at 640px of viewport height or less, the trick well overhangs the felt's lip by
+  7–55px with the prompt open; the measurement is pessimistic, and at 600px the layout wants a
+  structural change rather than a tuning one. The resolution screen itself had zero overflow at every
+  size tested in the approved mockup.
+- **The Feeder carry is earned, carried and displayed, and pays nothing** (new 2026-09-01, DLR-156).
+  A card that pays you for losing still banks its reward for the next hand, that bank still crosses
+  the hand boundary, and the readout still names both halves of it — but the damage a trick deals is
+  now computed from the cards fired on **that trick**, and it never reads the hand's pool, so nothing
+  spends what was carried. Restoring it means deciding where a carried-in bonus should land in the
+  new per-trick bracket. That is a design decision, not a repair, and it is **the developer's**.
+- **The simulator's modelled player now always cashes and never pushes** (new 2026-09-01, DLR-156).
+  When a policy declines to answer the prompt, the headless simulator applies whenever a pot stands.
+  That is the lowest-variance line the choice admits and a deliberate floor — **not a claim about
+  optimal play**, and not a rule of the game. Since the whole mechanic exists for the push, every
+  damage figure the simulator prints is now a lower bound. A policy that times its cash-out is the
+  obvious next one to write.
 - **A card that pays you for winning can fire on a trick that hurt you, and still pays into the hand
   it lost** (new 2026-08-27, DLR-150). Win a skulled trick with the named suit and the win-a-trick
   card fires — you ate the skull, both counters reset, and its reward went into the pot that reset
@@ -4642,7 +4706,9 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
   waiting. Whether that reads as a drawer you open deliberately or as a fumble under pressure is
   unplayed. Recorded rather than solved because the loadout is also what made a single consistent
   action bar possible, and splitting Cheats back out would undo that.
-- **Applying damage now has a wait and a cost, and nothing on the felt says so** (new 2026-08-23,
+- ~~**Applying damage now has a wait and a cost, and nothing on the felt says so**~~ — **moot since
+  2026-09-01 (DLR-156): there is no wait, no cost, and the choice has a whole screen of its own.**
+  (new 2026-08-23,
   DLR-109; **the visibility half fixed 2026-08-24 by DLR-114** — the bar now states the queued payout
   and the action-point pool, so what remains of this entry is whether the wait and the cost are the
   right ones, and whether the two readouts are legible where they sit, which nobody has looked at). Pressing it zeroes the bank and spends action points, but the Quarry's health does not
@@ -4652,7 +4718,9 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
   equally invisible, so an `InsufficientAp` refusal will read as the button dying for no visible
   reason. This is the single thing most worth a developer's look in the running app, and the ticket
   scoped a UI answer out on purpose.
-- **Every figure and every reading behind the delay is an agent's guess under an unattended sprint
+- ~~**Every figure and every reading behind the delay is an agent's guess under an unattended sprint
+  run**~~ — **moot since 2026-09-01 (DLR-156): the delay, the AP cost and all three agent-taken
+  readings were deleted with the queue.** (new 2026-08-23, and originally:
   run, not a played decision** (new 2026-08-23, DLR-109). `APPLY_DAMAGE_AP_COST = 3` (against
   `STARTING_AP = 6`, at most two presses a hand before any buff draws on the same pool) was
   transcribed from the ticket and unplayed. ~~`APPLY_DAMAGE_DELAY_TRICKS = 1` (one trick of exposure
@@ -4739,19 +4807,29 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
   fire rather than as having been earned at zero. The verdict omits the clause entirely at zero,
   which helps; whether it is enough is unmeasured.
 - **Apply Damage may have no wrong answer, which is the one thing it was built to avoid** (new
-  2026-08-20, DLR-94). The two-thirds penalty exists to make holding a streak a bet. But the reduction is
+  2026-08-20, DLR-94; **DLR-156 is the answer, and it went the other way**). The measurement was never
+  taken: the arithmetic was worked through instead, and it said the honest play was *always push* —
+  since a hit returned two-thirds, pushing one more trick only needed you to be about a fifth to a
+  third confident of winning it. So the bet was invisible rather than merely trivial. **A hit now
+  pays nothing at all**, which is what makes the choice real, and the prompt is raised after every
+  banked trick so it cannot be forgotten. What replaces this tension is the exposure line and the
+  wear-out question recorded at the top of this list. The original reading follows.
+  The two-thirds penalty existed to make holding a streak a bet. But the reduction was
   a _flat_ third at every streak length, while the risk of being caught is not flat — it rises with each
   trick you push. If the honest play turns out to be "cash whenever the plate is live", the control is a
   chore rather than a decision, and the fraction is the dial. **The cheapest measurement is whether you
   ever deliberately hold a bank past a trick you could have cashed it on**, and why. Nothing here has been
   played yet.
-- **Two taps to spend a streak, on a rail where two other controls also take two taps** (new 2026-08-20,
+- ~~**Two taps to spend a streak, on a rail where two other controls also take two taps**~~ — **moot
+  since 2026-09-01 (DLR-156): the control is gone, and the prompt's two answers are single presses on
+  a screen that has nothing else on it.** (new 2026-08-20,
   DLR-94). The poise stage guards an irreversible cash-out against a misclick, and it matches the Cheat
   and Timebomb grammar. But Apply Damage is not a per-trick reflex, so the tap cost barely compounds —
   which cuts both ways: it is cheap to keep, and it is also the reason one tap would be safe enough. Only
   felt by playing.
-- **A Timebomb hit now pays a third less than it used to, and Timebomb was already the harshest thing in the
-  game** (new 2026-08-20, DLR-94). The planner's reading — that Timebomb reaches the same forced branch and
+- **A Timebomb hit now takes the whole streak, and Timebomb was already the harshest thing in the
+  game** (new 2026-08-20, DLR-94; **sharpened by DLR-156, which made it pay nothing rather than a
+  third**). The planner's reading — that Timebomb reaches the same forced branch and
   so pays the same reduced rate — is defensible and is what shipped. Its consequence is that the moment
   the rules call "the moment you cannot choose" also became the moment you are paid least for. Whether
   that compounds Timebomb's existing reputation as the change most likely to read as a bug is unmeasured.

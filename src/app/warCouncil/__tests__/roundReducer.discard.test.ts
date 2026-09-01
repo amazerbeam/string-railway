@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import {
   currentTurn,
   DiscardRefusal,
@@ -38,7 +38,7 @@ function uiFrom(
     round,
     encounter,
     blastGuardHeld: false,
-    bankClimbBonus: 0,
+    baseDamageBonus: 0,
     discardsRemaining,
     buffs: [],
   })

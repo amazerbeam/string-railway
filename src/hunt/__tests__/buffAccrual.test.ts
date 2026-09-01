@@ -4,9 +4,7 @@ import * as buffAccrual from '../buffAccrual'
 import {
   EMPTY_BUFF_ACCRUAL,
   accrueAxisBonus,
-  markCashOutPaid,
   overlapBonusFor,
-  payableCashOutBonus,
   resolveFiredBuffs,
   startHandAccrual,
   type BuffBonusAccrual,
@@ -34,8 +32,6 @@ describe('startHandAccrual', () => {
       flatDamageBonus: 0,
       coinBonus: 0,
       apRefunded: 0,
-      multiplierPaid: 0,
-      flatDamagePaid: 0,
       carriedIn: { multiplierBonus: 0, flatDamageBonus: 0 },
       carryOut: { multiplierBonus: 0, flatDamageBonus: 0 },
     })
@@ -143,41 +139,6 @@ describe('resolveFiredBuffs', () => {
     expect(result.coinBonus).toBe(2)
     expect(result.apRefunded).toBe(1)
     expect(result.multiplierBonus).toBe(2)
-  })
-})
-
-describe('DLR-125 — the cash-out spend model', () => {
-  it('a second cash-out in the same hand pays nothing more once the pool is spent', () => {
-    const accrued = accrueAxisBonus(startHandAccrual(), BuffRewardAxis.Magnitude, 5)
-    const first = payableCashOutBonus(accrued)
-    expect(first.flatDamageBonus).toBe(5)
-    const after = markCashOutPaid(accrued, first)
-    expect(payableCashOutBonus(after).flatDamageBonus).toBe(0)
-  })
-
-  it('a contribution accrued AFTER a cash-out is still payable at the next one', () => {
-    const spent = markCashOutPaid(
-      accrueAxisBonus(startHandAccrual(), BuffRewardAxis.Multiplier, 2),
-      {
-        multiplierBonus: 2,
-        flatDamageBonus: 0,
-      },
-    )
-    const more = accrueAxisBonus(spent, BuffRewardAxis.Multiplier, 3)
-    expect(payableCashOutBonus(more).multiplierBonus).toBe(3)
-  })
-
-  // DLR-145 AC9 retired the Multiplier axis's per-hand cap, so a spend no longer has a bound to
-  // re-hit — the case this test guarded against (a spend resetting the pool and letting a second
-  // cash-out pay past the cap) no longer has a cap to reset. What survives is the underlying
-  // bookkeeping: `markCashOutPaid` deducts what was already paid rather than zeroing the accrual,
-  // so a contribution made AFTER a spend is exactly the new payable amount.
-  it('a spend deducts what was paid rather than resetting the running total', () => {
-    let a = accrueAxisBonus(startHandAccrual(), BuffRewardAxis.Multiplier, 6)
-    a = markCashOutPaid(a, payableCashOutBonus(a))
-    a = accrueAxisBonus(a, BuffRewardAxis.Multiplier, 4)
-    expect(a.multiplierBonus).toBe(10)
-    expect(payableCashOutBonus(a).multiplierBonus).toBe(4)
   })
 })
 

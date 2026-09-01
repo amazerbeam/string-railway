@@ -201,7 +201,7 @@ Puppeteer through a window where it would be inert; `NoEffectYet` keeps it unspe
 
 `EncounterState` gained `wardAbsorbs: Damage`, seeded `NO_WARD` by `startEncounter` — which is what
 clears it at an encounter boundary with no explicit clear step to forget, the same argument
-`shieldHearts`, `pendingTimebomb` and `pendingApplyPayout` already make. It survives a hand; it does
+`shieldHearts` and `pendingTimebomb` already make (and `pendingApplyPayout` did, until DLR-156 deleted it). It survives a hand; it does
 not survive a fight.
 
 `activateWard` mirrors `activateShield` verbatim: it **SETS** the tier's figure and never adds, sets
@@ -225,7 +225,7 @@ below N breaks it just as surely as one above N. A zero-damage event and a `quar
 not hits taken and leave it standing, the same carve-out blue hearts already have.
 
 **DLR-110's payout rule is unchanged.** A hit a Ward fully absorbed leaves red health untouched, so
-`pendingApplyPayout` survives; a partially-absorbed hit that still drops red health destroys it
+`pendingApplyPayout` survived; a partially-absorbed hit that still dropped red health destroyed it
 exactly as before.
 
 ## The spend survives the hand
@@ -249,7 +249,7 @@ made it false; the comment was corrected rather than left.
 
 **Ward's silver and gold tiers are nearly indistinguishable in play, and all three rows ship
 anyway.** DLR-111 recommended deleting silver and gold because `DAMAGE_PER_HIT = 1` makes absorbing
-1, 3 and 5 the same outcome. The code refutes the premise: `bank.ts`'s `damageToPlayer` is
+1, 3 and 5 the same outcome. The code refutes the premise: `streak.ts`'s `damageToPlayer` is
 `(trickHit ? DAMAGE_PER_HIT : 0) + trick.timebombToPlayer`, and `TIMEBOMB_DAMAGE`'s player column is
 2 / 4 / 6 — so a player hit is 1, **or 3 / 5 / 7 when a Timebomb detonates against them**. Silver
 and gold Ward are the only cards that cover those, and deleting them would remove the only answer to

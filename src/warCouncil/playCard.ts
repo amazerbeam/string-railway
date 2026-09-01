@@ -1,6 +1,6 @@
 import { HAND_SIZE, PLAYER_HAND_FLOOR, TieredRank } from '../hunt'
 import { applyFoxExchange, applyWoodcutterDraw, nextLeaderAfterTrick } from './abilities'
-import { resolveTrickBank } from './bank'
+import { resolveTrickBank } from './streak'
 import { buffTrickFactsFor } from './buffTrickFacts'
 import { containsCard, removeCard, sameCard } from './cardUtils'
 import { drawCards } from './encounterDeck'
@@ -119,7 +119,7 @@ export function playCard(
   // D1/D3 too; this function decides nothing about the outcome, it only reports the facts. The
   // three Timebomb facts arrive from the caller for the reason `PlayCardOptions` documents.
   const lastResolution = resolveTrickBank(
-    { bank: next.bank, multiplier: next.multiplier },
+    { total: next.total, roll: next.roll },
     {
       playerWon: winner === PlayerSide.Player,
       skullTrick: trickIsSkulled(next.skulledCards, completedTrick),
@@ -128,9 +128,9 @@ export function playCard(
       timebombToPlayer: options?.timebombToPlayer ?? 0,
       timebombToQuarry: options?.timebombToQuarry ?? 0,
       blastGuarded: options?.blastGuarded ?? false,
-      bankClimbBonus: options?.bankClimbBonus ?? 0,
+      baseDamageBonus: options?.baseDamageBonus ?? 0,
       // DLR-122 AC4/AC5 — the Swan ladder as two plain facts, derived by `rankTierRules.ts`,
-      // which owns AC3's player-only gate. `bank.ts` adds the clean-loss half of the rule.
+      // which owns AC3's player-only gate. `streak.ts` adds the clean-loss half of the rule.
       ...swanTierFactsFor(completedTrick, options?.playerRankTiers),
       // DLR-125 — `next.hands` is already post-removal, which is exactly "the hand at hand's
       // end" Keepsake reads. Derived by the ONE producer both this call site and the preview use.
@@ -185,8 +185,8 @@ export function playCard(
       leader: nextLeader,
       tricksPlayed,
       tricksWon,
-      bank: lastResolution.bank,
-      multiplier: lastResolution.multiplier,
+      total: lastResolution.total,
+      roll: lastResolution.roll,
       lastResolution,
       phase: finalTrick ? RoundPhase.Complete : RoundPhase.AwaitingLead,
     },

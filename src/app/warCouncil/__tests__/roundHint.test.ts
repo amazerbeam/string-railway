@@ -1,8 +1,7 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { IllegalMoveReason, PlayerSide, Suit, TrickOutcome } from '../../../warCouncil'
 import { BuffTier, TIMEBOMB_DAMAGE } from '../../../hunt'
 import {
-  APPLY_DAMAGE_POISED_HINT,
   cardAccessibleName,
   DISCARD_READY_HINT,
   DISCARD_SELECT_HINT,
@@ -22,7 +21,7 @@ function baseUi(overrides: Partial<RoundUiState> = {}): RoundUiState {
       round: makeRound(),
       encounter: encounterFixture,
       blastGuardHeld: false,
-      bankClimbBonus: 0,
+      baseDamageBonus: 0,
       discardsRemaining: discardsRemainingFixture,
       buffs: [],
     }),
@@ -38,19 +37,17 @@ const someResolvedTrick: ResolvedTrick = {
   winner: PlayerSide.Player,
   resolution: {
     outcome: TrickOutcome.CleanWin,
-    bankAdded: 1,
+    trickDamage: { base: 1, buffDamage: 0, buffMult: 1, overlapBonus: 0, dealt: 1 },
     cashOut: 0,
     damageToPlayer: 0,
-    bank: 1,
-    multiplier: 1,
-    cashedAtHandEnd: false,
+    total: 1,
+    roll: 1,
     timebombTarget: null,
     timebombToQuarry: 0,
     blastGuardSpent: false,
     buffAccrual: null,
     firedBuffIds: [],
   },
-  payout: null,
   timebombDamage: null,
 }
 
@@ -122,16 +119,6 @@ describe('deriveHint — the cascade’s own priority order', () => {
 
   it('a non-interactive state with nothing selected returns the empty string', () => {
     expect(deriveHint(baseUi(), false, false)).toBe('')
-  })
-
-  it('DLR-94 — a poised Apply plate says so', () => {
-    expect(deriveHint(baseUi({ applyPoised: true }), true, false)).toBe(APPLY_DAMAGE_POISED_HINT)
-  })
-
-  it('DLR-94 — but a held reveal or a rejection still outranks it', () => {
-    expect(
-      deriveHint(baseUi({ applyPoised: true, resolvedTrick: someResolvedTrick }), false, false),
-    ).toBe('Trick resolved')
   })
 
   it('DLR-100 — an open discard selection reports select-vs-ready, and beats the Quarry’s pending lead', () => {

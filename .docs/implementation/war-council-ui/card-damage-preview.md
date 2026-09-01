@@ -13,7 +13,7 @@ disagree with what the game actually pays.
 ## The one rule this module obeys: it performs no damage arithmetic
 
 `cardDamagePreview` in `cardDamage.ts` does not compute damage. It builds a hypothetical
-`TrickFacts`, hands it to `resolveTrickBank` (`src/warCouncil/bank.ts`), hands the resulting
+`TrickFacts`, hands it to `resolveTrickBank` (`src/warCouncil/streak.ts`), hands the resulting
 `TrickResolution` to **`applyResolution` in `commitHandlers.ts` — the same fold a committed trick
 goes through** — and reports the **health delta** it reads back off the returned encounter:
 
@@ -27,7 +27,7 @@ Because the figure is a delta across the real fold, everything that fold does is
 than restated: `absorbWithShield`'s blue-heart absorption, `deplete`'s zero floor on health, D7's
 rule that a Quarry killed by the event spares the player entirely, and DLR-109 AC3's rule that a hit
 destroys an Apply Damage payout due at the same resolution. There is no second `Math.min(shield, …)`
-anywhere in the preview, no second `forcedCashValue`, and no second `DAMAGE_PER_HIT`.
+anywhere in the preview, no second copy of the damage formula, and no second `DAMAGE_PER_HIT`. **This is why DLR-156's new equation reached the preview with no arithmetic change at all** — the largest single saving in that ticket.
 
 `applyDamage`'s own docblock in `src/hunt/encounter.ts` sanctions exactly this: _"Returns a new
 state; the input is never mutated. That is what lets a caller preview an event by applying it to a
@@ -55,7 +55,7 @@ consumer of either.
 Reusing `playOptions` rather than reading the queue again is the same single-statement discipline its
 own docblock already argued for: the preview and the commit cannot read "what is pending" differently,
 because they ask the same function. The four queue/run facts (`timebombToPlayer`, `timebombToQuarry`,
-`blastGuarded`, `bankClimbBonus`) arrive from it with `playCard.ts`'s own `?? 0` / `?? false`
+`blastGuarded`, `baseDamageBonus`) arrive from it with `playCard.ts`'s own `?? 0` / `?? false`
 defaulting reproduced field for field.
 
 ## The only facts the preview assembles itself — and the only ones that can be wrong
@@ -209,5 +209,5 @@ Three checks, run as the closing phase of DLR-117 and cheap to re-run:
 - `Get-ChildItem src\app\warCouncil -Recurse -Include *.ts,*.tsx | Select-String -Pattern "Math\.min\(.*[Ss]hield|absorbWithShield"`
   — expected to find only `duelHealthBars.ts`'s pre-existing calls and this module's docblock prose.
 - `cardDamage.test.ts` reads every expected figure off the engine's own `DAMAGE_PER_HIT`,
-  `forcedCashValue` and `cashValue` rather than hard-coding a number, so the spec would actually
+  the engine's own `potValue` rather than hard-coding a number, so the spec would actually
   catch drift rather than pinning whatever the code happened to produce.

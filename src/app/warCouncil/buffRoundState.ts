@@ -35,7 +35,10 @@ export interface BuffHandState {
   readonly tricksWithoutHit: number
   /** Purse, accumulated this hand and handed up at hand's end. UNIT: coins. */
   readonly coinsEarned: Coins
-  /** DLR-109 — Apply Damage was PRESSED this hand. */
+  /** DLR-109 — Apply Damage was PRESSED this hand. DLR-156 — the trigger moved: the felt's Apply
+   *  Damage button is gone, and this is now set by `applyPotAction` when the player chooses
+   *  Apply on the resolution screen, the only place a cash-out can happen. The cut, unconstructible
+   *  Debt Collector family is the one reader (`CLAUDE.md` → cut buffs), so this stays inert. */
   readonly applyDamagePressed: boolean
 }
 

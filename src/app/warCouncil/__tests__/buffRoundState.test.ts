@@ -46,7 +46,7 @@ function uiFrom(over: { buffs?: readonly Buff[]; coins?: number } = {}): RoundUi
     round: makeRound(),
     encounter: startEncounter(0),
     blastGuardHeld: false,
-    bankClimbBonus: 0,
+    baseDamageBonus: 0,
     discardsRemaining: discardsRemainingFixture,
     buffs: over.buffs ?? [],
     coins: over.coins,
@@ -55,12 +55,11 @@ function uiFrom(over: { buffs?: readonly Buff[]; coins?: number } = {}): RoundUi
 
 const RESOLUTION: TrickResolution = {
   outcome: TrickOutcome.CleanWin,
-  bankAdded: 1,
+  trickDamage: { base: 1, buffDamage: 0, buffMult: 1, overlapBonus: 0, dealt: 1 },
   cashOut: 0,
   damageToPlayer: 0,
-  bank: 1,
-  multiplier: 1,
-  cashedAtHandEnd: false,
+  total: 1,
+  roll: 1,
   timebombTarget: null,
   timebombToQuarry: 0,
   blastGuardSpent: false,
@@ -77,7 +76,6 @@ function withResolved(
     cards: [],
     winner: PlayerSide.Player,
     resolution: { ...RESOLUTION, ...over, firedBuffIds },
-    payout: null,
     timebombDamage: null,
   }
   return { ...ui, resolvedTrick }

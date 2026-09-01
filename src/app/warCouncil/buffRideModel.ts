@@ -98,7 +98,7 @@ export function rideInputFor(state: RoundUiState): RideInput {
     facts: {
       playerHit: false,
       finalTrick: state.round.tricksPlayed + 1 === HAND_SIZE,
-      bankAfterTrick: state.round.bank,
+      bankAfterTrick: state.round.total,
       tricksWithoutHit: buffInput.tricksWithoutHit,
       coins: buffInput.coins,
       playerHealth: buffInput.playerHealth,

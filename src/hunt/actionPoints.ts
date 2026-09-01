@@ -19,10 +19,9 @@ export function apCostGiven(cost: ActionPoints, enabled: boolean): ActionPoints 
 
 /**
  * THE single statement of what a cost actually is once AP_ENABLED is taken into account —
- * every future AP-gated consumer (buff activation, Apply Damage) calls this instead of
- * checking AP_ENABLED itself, mirroring src/warCouncil/voluntaryCashOut.ts's
- * applyDamageRefusalFor. Flip AP_ENABLED off in config.ts and every cost reads as free, with
- * no consuming code writing its own bypass.
+ * every AP-gated consumer (buff activation) calls this instead of checking AP_ENABLED itself.
+ * Flip AP_ENABLED off in config.ts and every cost reads as free, with no consuming code
+ * writing its own bypass.
  */
 export function apCostFor(cost: ActionPoints): ActionPoints {
   return apCostGiven(cost, AP_ENABLED)

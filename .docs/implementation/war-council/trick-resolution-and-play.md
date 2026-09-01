@@ -71,8 +71,8 @@ alongside it. It passes the completed trick, whether the **player** won it (`win
 PlayerSide.Player`), whether the trick was skulled (`trickIsSkulled`), and whether this was the final
 trick (`tricksPlayed === HAND_SIZE`).
 
-`playCard` decides nothing about the outcome itself — it reports those facts and lets `bank.ts` apply
-the rule. See [the bank and the cash-out](bank-and-cash-out.md).
+`playCard` decides nothing about the outcome itself — it reports those facts and lets `streak.ts`
+apply the rule. See [the streak and the pot](the-streak-and-the-pot.md).
 
 The one-card early return writes `lastResolution: null`, so a lead always clears the previous trick's
 resolution rather than leaving it to be rendered against the wrong trick.

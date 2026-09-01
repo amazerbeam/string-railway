@@ -13,7 +13,6 @@ import {
   PlayerSide,
   RoundPhase,
   type AbilityChoice,
-  type ApplyDamageStock,
   type Card,
   type DiscardStock,
   type IllegalMoveReason,
@@ -25,7 +24,6 @@ import {
   activatableBuffs,
   buffActivationStockFor,
   BuffKind,
-  hasPendingApplyPayout,
   isEncounterResolved,
   type Buff,
   type BuffActivationState,
@@ -35,20 +33,15 @@ import {
   type EncounterState,
   type RankTierTable,
   type TimebombDamage,
-  type TrickPayoutEvent,
 } from '../../hunt'
 import type { BuffHandState } from './buffRoundState'
+import type { ResolutionBeat } from './resolutionBeats'
 
 export interface ResolvedTrick {
   readonly cards: readonly TrickCard[] // [lead, follow] — the engine's load-bearing order
   readonly winner: PlayerSide
   /** What the trick did to the bank, the streak and both bars. */
   readonly resolution: TrickResolution
-  /** DLR-119 — what the fold that produced this trick's damage did to a queued Apply Damage
-   *  payout. `null` on every trick that neither settled nor destroyed one. Set by `commit`, which
-   *  is where the fold happens; `deriveResolvedTrick` runs BEFORE the fold and always writes
-   *  `null`. */
-  readonly payout: TrickPayoutEvent | null
   /** DLR-132 — the damage pair a Timebomb booked by THIS trick will detonate for, or `null` when
    *  the trick booked none. Carried on the app-layer `ResolvedTrick` rather than on the engine's
    *  `TrickResolution`, deliberately: a Timebomb's tier is the spent CARD's, which `src/warCouncil/`
@@ -118,22 +111,15 @@ export interface RoundUiState {
    *  resolved trick reports `blastGuardSpent`. Run state carried for the life of the hand, the
    *  same contract `blastGuardHeld` and `discardsRemaining` below document. */
   readonly blastGuardHeld: boolean
-  /** DLR-92 AC4 — the bank-climb bonus in force for this hand, mirrored from the mount's opening
+  /** DLR-92 AC4 — the base-damage bonus in force for this hand, mirrored from the mount's opening
    *  prop. Read-only for the hand's whole life: no action ever writes it, because a hand cannot
    *  spend or change a Whetstone — only the shop between hands can. */
-  readonly bankClimbBonus: number
+  readonly baseDamageBonus: number
   /** DLR-122 AC2/AC3 — the player's bought ability ladder, in force for this hand, mirrored from
-   *  the mount's opening prop. Read-only for the hand's whole life for `bankClimbBonus`'s stated
+   *  the mount's opening prop. Read-only for the hand's whole life for `baseDamageBonus`'s stated
    *  reason: no action ever writes it, because a hand cannot buy a tier — only the shop between
    *  fights can. */
   readonly rankTiers: RankTierTable
-  /** DLR-94 — the Apply Damage plate has been tapped once and awaits its confirming second tap.
-   *  The hand's OWN transient: dies on remount, never touches `RunState`.
-   *
-   *  A single BOOLEAN, unlike the two-tap poise-then-spend gesture every buff row (Cheat and
-   *  Timebomb included) uses: Apply Damage's second tap IS the action, so "poised" is the only
-   *  state there is to be in. */
-  readonly applyPoised: boolean
   /** DLR-95 AC2 — the player's hand size at the FIRST transition after which the encounter reads
    *  resolved, frozen from then on. `null` until then, and `null` for a hand that never ends the
    *  fight.
@@ -175,8 +161,29 @@ export interface RoundUiState {
    *  is a separate module. */
   readonly buffHand: BuffHandState
   /** DLR-125 — the run's purse at the START of this hand, for Miser. Read-only for the hand's
-   *  whole life, exactly as `bankClimbBonus` is: a hand cannot spend coins, only the shop can. */
+   *  whole life, exactly as `baseDamageBonus` is: a hand cannot spend coins, only the shop can. */
   readonly coins: Coins
+  /** DLR-156 AC3/AC14 — the resolution screen's whole content, or `null` while the felt is up.
+   *  ONE nullable field rather than a boolean-plus-payload pair, exactly as `discardSelection`
+   *  and `loadout` are, so "screen closed but holding a stale trick" is unexpressible. Set by
+   *  `commit` on the `null` -> non-null edge of `resolvedTrick`; cleared by `ApplyPot` and
+   *  `RollOver`. */
+  readonly resolution: ResolutionView | null
+}
+
+/** DLR-156 AC3/AC14 — the resolution screen's whole content. */
+export interface ResolutionView {
+  /** AC14 — the two played cards, CLONED onto the screen (`ui-notes.md` §1). */
+  readonly cards: readonly TrickCard[]
+  readonly winner: PlayerSide
+  readonly resolution: TrickResolution
+  /** AC16 — the ordered beats, derived ONCE at the hand-off, never per render. */
+  readonly beats: readonly ResolutionBeat[]
+  /** The trick's ordinal, for the header line. 1-based. */
+  readonly trickNumber: number
+  /** AC2 — what the pot becomes if the next trick also banks, at the bare rule:
+   *  `potValue(total + BASE_DAMAGE, roll + 1)`, because the player may fire nothing next trick. */
+  readonly nextPotFloor: number
 }
 
 /** DLR-114 — `null` when the loadout panel is closed; an object (with `poised: null`) while it is
@@ -201,8 +208,6 @@ export const RoundUiActionKind = {
   ChooseAbility: 'chooseAbility',
   CancelSelection: 'cancelSelection',
   CarryOn: 'carryOn',
-  TapApplyDamage: 'tapApplyDamage',
-  CancelApplyDamage: 'cancelApplyDamage',
   TapDiscard: 'tapDiscard',
   CancelDiscard: 'cancelDiscard',
   ToggleLoadout: 'toggleLoadout',
@@ -215,6 +220,11 @@ export const RoundUiActionKind = {
    *  `CancelBuffPoise`, which drops an UNSPENT poise: this reverses a COMMITTED activation, which
    *  the ruleset had no way to do before this ticket (`the-hunt.md`, "no way to un-activate"). */
   RemoveBuff: 'removeBuff',
+  /** DLR-156 AC5 — deal the pot, zero the streak, close the resolution screen. */
+  ApplyPot: 'applyPot',
+  /** DLR-156 AC6 — leave the streak standing, close the resolution screen. Also the hurt
+   *  branch's only exit ("Onward"), where the streak is already zero. */
+  RollOver: 'rollOver',
 } as const
 export type RoundUiActionKind = (typeof RoundUiActionKind)[keyof typeof RoundUiActionKind]
 
@@ -223,8 +233,6 @@ export type RoundUiAction =
   | { readonly kind: typeof RoundUiActionKind.ChooseAbility; readonly choice: AbilityChoice }
   | { readonly kind: typeof RoundUiActionKind.CancelSelection }
   | { readonly kind: typeof RoundUiActionKind.CarryOn }
-  | { readonly kind: typeof RoundUiActionKind.TapApplyDamage }
-  | { readonly kind: typeof RoundUiActionKind.CancelApplyDamage }
   | { readonly kind: typeof RoundUiActionKind.TapDiscard }
   | { readonly kind: typeof RoundUiActionKind.CancelDiscard }
   | { readonly kind: typeof RoundUiActionKind.ToggleLoadout }
@@ -232,6 +240,8 @@ export type RoundUiAction =
   | { readonly kind: typeof RoundUiActionKind.TapBuff; readonly id: BuffId }
   | { readonly kind: typeof RoundUiActionKind.CancelBuffPoise }
   | { readonly kind: typeof RoundUiActionKind.RemoveBuff; readonly id: BuffId }
+  | { readonly kind: typeof RoundUiActionKind.ApplyPot }
+  | { readonly kind: typeof RoundUiActionKind.RollOver }
 
 /** `true` when the next committed card should ignore follow-suit. EXPORTED so the mount computes
  *  its `legal` set from the SAME predicate the reducer commits with — two readings of "is the
@@ -273,23 +283,6 @@ export function canAct(state: RoundUiState): boolean {
   )
 }
 
-/** The plain values `applyDamageRefusalFor` needs, assembled in ONE place so the reducer's guard
- *  and the plate's disabled state cannot read availability differently.
- *
- *  This is where the app layer's shape is translated into the pure module's — `hasPendingApplyPayout`
- *  and `canAct` are read HERE and nowhere else, which is what lets `voluntaryCashOut.ts` take four
- *  plain values and stay ignorant of both `EncounterState` and `RoundUiState`. */
-export function applyDamageStock(state: RoundUiState): ApplyDamageStock {
-  return {
-    bank: state.round.bank,
-    multiplier: state.round.multiplier,
-    trickInFlight: state.round.currentTrick.length > 0,
-    payoutPending: hasPendingApplyPayout(state.encounter),
-    apPool: state.buffActivation.apPool,
-    canAct: canAct(state),
-  }
-}
-
 /** `true` while the loadout panel is open — the sibling of `discardSelecting`, and read by both
  *  the bar's `aria-pressed` and the reducer's mutual-exclusion guards so the two cannot disagree. */
 export function loadoutOpen(state: RoundUiState): boolean {
@@ -325,8 +318,7 @@ export function discardWindowOpen(state: RoundUiState): boolean {
 }
 
 /** The plain values `discardRefusalFor` needs, assembled in ONE place so the reducer's guard and
- *  the rail control's disabled state cannot read availability differently — the same discipline
- *  `applyDamageStock` above documents. */
+ *  the rail control's disabled state cannot read availability differently. */
 export function discardStock(state: RoundUiState): DiscardStock {
   return {
     discardsRemaining: state.discardsRemaining,

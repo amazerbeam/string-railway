@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { PlayerSide, Suit, TrickOutcome } from '../../../warCouncil'
 import {
   BuffTier,
@@ -7,7 +7,6 @@ import {
   TIMEBOMB_QUARRY_DAMAGE,
   TIMEBOMB_DAMAGE,
   NO_PENDING_TIMEBOMB,
-  isEncounterResolved,
   queueTimebomb,
   startEncounter,
   timebombBuff,
@@ -36,8 +35,8 @@ describe('the queue write (AC3/AC6)', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
-      bank: 2,
-      multiplier: 2,
+      total: 2,
+      roll: 2,
       hands: {
         [PlayerSide.Player]: [card(Suit.Bells, 2)],
         [PlayerSide.Cpu]: [card(Suit.Bells, 9)],
@@ -49,7 +48,7 @@ describe('the queue write (AC3/AC6)', () => {
       round,
       encounter,
       blastGuardHeld: false,
-      bankClimbBonus: 0,
+      baseDamageBonus: 0,
       discardsRemaining: discardsRemainingFixture,
       buffs: [bronzeTimebomb],
     })
@@ -65,16 +64,16 @@ describe('the queue write (AC3/AC6)', () => {
     expect(ui.resolvedTrick?.resolution.timebombTarget).toBe(DuelSide.Quarry)
     expect(ui.encounter.pendingTimebomb[DuelSide.Quarry]).toBe(TIMEBOMB_QUARRY_DAMAGE)
     expect(ui.encounter.health[DuelSide.Player]).toBe(encounter.health[DuelSide.Player])
-    expect(ui.round.bank).toBe(2)
-    expect(ui.round.multiplier).toBe(2)
+    expect(ui.round.total).toBe(2)
+    expect(ui.round.roll).toBe(2)
   })
 
   it('books against the player, mirrored, when a marked trick is won', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
-      bank: 0,
-      multiplier: 0,
+      total: 0,
+      roll: 0,
       hands: {
         [PlayerSide.Player]: [card(Suit.Bells, 9)], // the Witch — wins regardless of trump
         [PlayerSide.Cpu]: [card(Suit.Bells, 2)],
@@ -85,7 +84,7 @@ describe('the queue write (AC3/AC6)', () => {
       round,
       encounter: startEncounter(0),
       blastGuardHeld: false,
-      bankClimbBonus: 0,
+      baseDamageBonus: 0,
       discardsRemaining: discardsRemainingFixture,
       buffs: [bronzeTimebomb],
     })
@@ -98,9 +97,9 @@ describe('the queue write (AC3/AC6)', () => {
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanWin)
     expect(ui.resolvedTrick?.resolution.timebombTarget).toBe(DuelSide.Player)
     expect(ui.encounter.pendingTimebomb[DuelSide.Player]).toBe(TIMEBOMB_PLAYER_DAMAGE)
-    // The ordinary bank climb is untouched by the mark.
-    expect(ui.round.bank).toBe(1)
-    expect(ui.round.multiplier).toBe(1)
+    // The ordinary total climb is untouched by the mark.
+    expect(ui.round.total).toBe(1)
+    expect(ui.round.roll).toBe(1)
   })
 
   it('leaves pendingTimebomb at zero for an unmarked trick', () => {
@@ -117,7 +116,7 @@ describe('the queue write (AC3/AC6)', () => {
       round,
       encounter: startEncounter(0),
       blastGuardHeld: false,
-      bankClimbBonus: 0,
+      baseDamageBonus: 0,
       discardsRemaining: discardsRemainingFixture,
       buffs: [],
     })
@@ -127,41 +126,15 @@ describe('the queue write (AC3/AC6)', () => {
     expect(ui.encounter.pendingTimebomb).toEqual(NO_PENDING_TIMEBOMB)
   })
 
-  it('AC7 — a marked trick whose own cash-out empties the Quarry’s bar leaves pendingTimebomb at zero', () => {
-    // A SkullWin: the player wins a trick carrying a skull, which is a loss by the item's own
-    // rule and is NOT eligible for AC5's replacement (that only covers a CleanLoss), so its own
-    // cash-out fires normally — sized here to empty the Quarry outright, exactly the construction
-    // `roundReducer.bank.test.ts`'s "stops accepting taps" spec uses.
-    const target = card(Suit.Bells, 9) // the Witch — wins regardless of trump
-    const round = makeRound({
-      leader: PlayerSide.Player,
-      trumpSuit: Suit.Keys,
-      bank: 500,
-      multiplier: 2,
-      skulledCards: [target],
-      hands: {
-        [PlayerSide.Player]: [target],
-        [PlayerSide.Cpu]: [card(Suit.Bells, 2)],
-      },
-      currentTrick: [],
-    })
-    let ui = createRoundUiState({
-      round,
-      encounter: startEncounter(0),
-      blastGuardHeld: false,
-      bankClimbBonus: 0,
-      discardsRemaining: discardsRemainingFixture,
-      buffs: [bronzeTimebomb],
-    })
-    ui = armTimebomb(ui)
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target }) // marks it
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target }) // arms to play
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: target }) // commits
-
-    expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.SkullWin)
-    expect(isEncounterResolved(ui.encounter)).toBe(true)
-    expect(ui.encounter.pendingTimebomb).toEqual(NO_PENDING_TIMEBOMB)
-  })
+  // DLR-156 B3 — DELETED, not rewritten: this case's whole premise was "a marked trick's OWN
+  // cash-out empties the Quarry in the SAME transition that books/clears pendingTimebomb", built
+  // on a SkullWin (eating a skull), which is a HURT outcome. AC7 pays the Quarry nothing on ANY
+  // hurt outcome now — a hit cannot kill the Quarry any more, full stop; only the player's own
+  // explicit `ApplyPot` on a BANKED trick can, and that is a separate dispatch from the trick's
+  // own resolution. There is no reconstruction of "one trick's resolution both books a Timebomb
+  // target AND kills the Quarry" left to test — the rule this case pinned no longer exists. What
+  // DOES still matter — pendingTimebomb clearing correctly on an ordinary kill — is covered by
+  // `roundReducer.quickKill.test.ts`'s own DLR-156 rewrite (a win banks, then `ApplyPot` kills).
 })
 
 describe('D1 — a Timebomb is paid at the trick that resolves it, not at the next hand', () => {
@@ -186,7 +159,7 @@ describe('D1 — a Timebomb is paid at the trick that resolves it, not at the ne
       round,
       encounter: owedEncounter,
       blastGuardHeld: false,
-      bankClimbBonus: 0,
+      baseDamageBonus: 0,
       discardsRemaining: discardsRemainingFixture,
       buffs: [],
     })
@@ -221,7 +194,7 @@ describe('D1 — a Timebomb is paid at the trick that resolves it, not at the ne
       round,
       encounter: owedEncounter,
       blastGuardHeld: false,
-      bankClimbBonus: 0,
+      baseDamageBonus: 0,
       discardsRemaining: discardsRemainingFixture,
       buffs: [],
     })
@@ -250,8 +223,8 @@ describe('DLR-91 AC4 — the Blast Guard through the reducer', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
-      bank: 2,
-      multiplier: 2,
+      total: 2,
+      roll: 2,
       hands: {
         [PlayerSide.Player]: [card(Suit.Bells, 9)], // the Witch — wins cleanly regardless of trump
         [PlayerSide.Cpu]: [card(Suit.Bells, 2)],
@@ -268,7 +241,7 @@ describe('DLR-91 AC4 — the Blast Guard through the reducer', () => {
       round,
       encounter: owedEncounter,
       blastGuardHeld: true,
-      bankClimbBonus: 0,
+      baseDamageBonus: 0,
       discardsRemaining: discardsRemainingFixture,
       buffs: [],
     })
@@ -284,8 +257,8 @@ describe('DLR-91 AC4 — the Blast Guard through the reducer', () => {
       owedEncounter.health[DuelSide.Player] - TIMEBOMB_PLAYER_DAMAGE,
     )
     // The streak survives: an ordinary clean win still banks the trick, and no cash-out fired.
-    expect(ui.round.bank).toBe(3)
-    expect(ui.round.multiplier).toBe(3)
+    expect(ui.round.total).toBe(3)
+    expect(ui.round.roll).toBe(3)
     expect(ui.blastGuardHeld).toBe(false)
   })
 
@@ -293,8 +266,8 @@ describe('DLR-91 AC4 — the Blast Guard through the reducer', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
-      bank: 2,
-      multiplier: 2,
+      total: 2,
+      roll: 2,
       hands: {
         [PlayerSide.Player]: [card(Suit.Bells, 9), card(Suit.Keys, 9)],
         [PlayerSide.Cpu]: [card(Suit.Bells, 2), card(Suit.Keys, 2)],
@@ -310,7 +283,7 @@ describe('DLR-91 AC4 — the Blast Guard through the reducer', () => {
       round,
       encounter: owedEncounter,
       blastGuardHeld: true,
-      bankClimbBonus: 0,
+      baseDamageBonus: 0,
       discardsRemaining: discardsRemainingFixture,
       buffs: [],
     })
@@ -320,8 +293,8 @@ describe('DLR-91 AC4 — the Blast Guard through the reducer', () => {
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: first })
     ui = roundReducer(ui, { kind: RoundUiActionKind.TapCard, card: first })
     expect(ui.blastGuardHeld).toBe(false)
-    expect(ui.round.bank).toBe(3)
-    expect(ui.round.multiplier).toBe(3)
+    expect(ui.round.total).toBe(3)
+    expect(ui.round.roll).toBe(3)
 
     // A second Timebomb hit lands this fight, with the Guard already spent — simulating a mark an
     // earlier trick this hand booked, the same way `owedEncounter` above simulates the first.
@@ -338,8 +311,8 @@ describe('DLR-91 AC4 — the Blast Guard through the reducer', () => {
     expect(ui.resolvedTrick?.resolution.outcome).toBe(TrickOutcome.CleanWin)
     expect(ui.resolvedTrick?.resolution.blastGuardSpent).toBe(false)
     // No Guard held this time — the streak cashes out and resets.
-    expect(ui.round.bank).toBe(0)
-    expect(ui.round.multiplier).toBe(0)
+    expect(ui.round.total).toBe(0)
+    expect(ui.round.roll).toBe(0)
     expect(ui.blastGuardHeld).toBe(false)
   })
 })

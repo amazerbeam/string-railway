@@ -1,4 +1,4 @@
-/** @vitest-environment jsdom */
+﻿/** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
@@ -14,7 +14,7 @@ import type { WarCouncilMountProps } from '../../warCouncilMount'
 import { cardAccessibleName } from '../labels'
 import WarCouncilRound from '../WarCouncilRound'
 import {
-  bankClimbBonusFixture,
+  baseDamageBonusFixture,
   bankedRound,
   card,
   coinsFixture,
@@ -27,12 +27,15 @@ import {
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
+import { carryOnFromResolution, stubMatchMedia } from './resolutionTestHelpers'
 
 afterEach(cleanup)
 
+stubMatchMedia()
+
 /**
  * Mirrors `WarCouncilRound.test.tsx`'s own `renderRound` helper (DLR-93 400-line split) — the
- * health-bar, purse, and shape/bank-readout, carved out on their own concern.
+ * health-bar, purse, and shape/total-readout, carved out on their own concern.
  */
 function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
   return render(
@@ -45,7 +48,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       quarryLabel={quarryLabelFixture}
       coins={overrides.coins ?? coinsFixture}
       blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
-      bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
+      baseDamageBonus={overrides.baseDamageBonus ?? baseDamageBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
       buffs={overrides.buffs ?? []}
       onComplete={overrides.onComplete ?? vi.fn()}
@@ -77,10 +80,10 @@ describe('WarCouncilRound', () => {
     expect(coinsPlate?.textContent).toMatch(/7/)
   })
 
-  it('leaves both bars untouched on a clean take — the bank climbs, not health', () => {
+  it('leaves both bars untouched on a clean take — the total climbs, not health', () => {
     // Bells 9 is the Witch: a single Witch acts as an effective trump, so this trick's
     // outcome is deterministic regardless of the fixture's own trump suit (Keys, here) —
-    // the same construction `roundReducer.test.ts`'s own bank specs use.
+    // the same construction `roundReducer.test.ts`'s own total specs use.
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
@@ -96,12 +99,16 @@ describe('WarCouncilRound', () => {
     const bells9 = screen.getByRole('button', { name: '9 of Bells (Witch)' })
     fireEvent.click(bells9)
     fireEvent.click(bells9)
-    expect(screen.getByText(/take the trick/i)).toBeDefined()
+    // DLR-156 AC5 — a banked trick no longer pays the Quarry automatically; it only pays through
+    // an explicit Apply on the resolution screen (which replaces the felt the instant the trick
+    // resolves). Rolling over — never Apply — is what proves BOTH bars genuinely untouched.
+    expect(screen.getByText(/you took it/i)).toBeDefined()
+    carryOnFromResolution()
     expect(healthMeter('Your health').getAttribute('aria-valuenow')).toBe(playerBefore)
     expect(healthMeter(quarryLabelFixture).getAttribute('aria-valuenow')).toBe(quarryBefore)
   })
 
-  it('moves the player’s bar by exactly one hit on a lost clean trick, and cashes the bank into the Quarry (AC6)', () => {
+  it('moves the player’s bar by exactly one hit on a lost clean trick, and cashes the total into the Quarry (AC6)', () => {
     // The deciding sixth trick: each hand holds exactly its last card, so after it resolves
     // neither side has a next lead to read — `quarryIntent` would otherwise be asked for the
     // Quarry's empty-handed "next" lead and throw, exactly the empty-legal-set crash
@@ -109,8 +116,8 @@ describe('WarCouncilRound', () => {
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
-      bank: 2,
-      multiplier: 2,
+      total: 2,
+      roll: 2,
       tricksPlayed: HAND_SIZE - 1,
       hands: {
         [PlayerSide.Player]: [card(Suit.Bells, 2)],
@@ -122,17 +129,20 @@ describe('WarCouncilRound', () => {
     const bells2 = screen.getByRole('button', { name: '2 of Bells' })
     fireEvent.click(bells2)
     fireEvent.click(bells2)
-    expect(screen.getByText(/take the trick/i)).toBeDefined()
+    // DLR-156 AC7 — a hit pays the Quarry NOTHING now; there is no two-thirds consolation any
+    // more, the whole streak is simply lost. The hurt branch offers no choice (its single exit is
+    // "Onward"), so dismissing it changes nothing about either bar beyond the hit already dealt.
+    expect(screen.getByText(/streak is broken/i)).toBeDefined()
+    carryOnFromResolution()
     expect(Number(healthMeter('Your health').getAttribute('aria-valuenow'))).toBe(
       PLAYER_START_HEALTH - DAMAGE_PER_HIT,
     )
-    // DLR-94 AC4 — a forced hit pays two-thirds of 2 x 2, floored: 2.
     expect(Number(healthMeter(quarryLabelFixture).getAttribute('aria-valuenow'))).toBe(
-      quarryHealthForEncounter(0) - 2,
+      quarryHealthForEncounter(0),
     )
   })
 
-  it('renders the shape readout for the dealt hand, and the bank readout climbs on a taken trick (DLR-80 Task 20)', () => {
+  it('renders the shape readout for the dealt hand, and the total readout climbs on a taken trick (DLR-80 Task 20)', () => {
     // Same Witch-beats-anything construction as the clean-take spec above: deterministic
     // regardless of the fixture's own trump suit, so this only exercises the two new readouts.
     const round = makeRound({
@@ -149,17 +159,21 @@ describe('WarCouncilRound', () => {
     // AC11 — the shape readout is on screen before any card is played, and never shows a rank.
     expect(screen.getByText(/Bells: 1 held, none skulled/i)).toBeTruthy()
 
-    // The bank readout's cash figure (bank × multiplier) starts at zero, before any trick.
-    expect(screen.getByLabelText(/cashes for 0/i)).toBeTruthy()
+    // The pot readout (total × roll) starts at zero, before any trick.
+    expect(screen.getByLabelText(/pot stands at 0/i)).toBeTruthy()
 
     const bells9 = screen.getByRole('button', { name: '9 of Bells (Witch)' })
     fireEvent.click(bells9)
     fireEvent.click(bells9)
-    expect(screen.getByText(/take the trick/i)).toBeDefined()
+    expect(screen.getByText(/you took it/i)).toBeDefined()
+    // DLR-156 — rolling over (never Apply, which would deal the pot and reset both figures to
+    // zero) is what proves the felt's own pot readout climbed rather than being reset by the
+    // dismissal itself.
+    carryOnFromResolution()
 
-    // …and climbs the instant the trick is taken: PT-002 banks 1 per trick taken, so one trick
-    // into the streak reads bank 1 × multiplier 1 = 1, not a rank sum.
-    expect(screen.getByLabelText(/cashes for 1\b/i)).toBeTruthy()
+    // …and climbs the instant the trick is taken: DLR-156 banks BASE_DAMAGE per trick taken, so
+    // one trick into the streak reads total 1 × roll 1 = 1, not a rank sum.
+    expect(screen.getByLabelText(/pot stands at 1\b/i)).toBeTruthy()
   })
 
   it('makes a forbidden card playable once a Cheat is spent (AC5, DLR-132)', () => {
@@ -202,7 +216,12 @@ describe('WarCouncilRound', () => {
     expect(description).toMatch(/If you lose:/)
   })
 
-  it('changes the readout live when the seeded bank changes, with no effect or memoisation (DLR-117 AC2)', () => {
+  // DLR-156 B1 — was a pinned, deliberate failure: `cardDamage.ts`'s "if you win" branch used to
+  // read `resolution.cashOut`, which AC5 zeroed unconditionally, so every card's win branch read
+  // 0 regardless of the seeded `total`/`roll`. Fixed by reading `winPot` — what a win adds to the
+  // streak and what the pot would then be worth — straight off the win branch's own resolution,
+  // which is exactly the figure that changes with the seed.
+  it('changes the readout live when the seeded total changes, with no effect or memoisation (DLR-117 AC2)', () => {
     renderRound({ initialState: bankedRound(0, 0) })
     const emptyBankDescription = describedByText(screen.getByRole('button', { name: '7 of Bells' }))
     cleanup()
@@ -213,6 +232,8 @@ describe('WarCouncilRound', () => {
     )
 
     expect(seededBankDescription).not.toBe(emptyBankDescription)
+    // Specifically: the pot the win would leave standing, not just some incidental cross-term.
+    expect(seededBankDescription).toMatch(/the pot would stand at \d+/)
   })
 })
 

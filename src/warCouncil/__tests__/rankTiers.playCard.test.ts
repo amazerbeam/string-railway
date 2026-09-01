@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { ALL_BRONZE, DAMAGE_PER_HIT, steppedTo, TieredRank, type RankTierTable } from '../../hunt'
-import { forcedCashValue } from '../bank'
 import { resolveTrickWinner } from '../resolveTrick'
 import { tierForSide } from '../rankTierRules'
 import { playCard } from '../playCard'
@@ -124,8 +123,8 @@ describe('the ladder through playCard (AC2/AC3/AC6)', () => {
       spentPile: [],
       reshuffled: false,
       drawSeed: 0,
-      bank: 3,
-      multiplier: 3,
+      total: 3,
+      roll: 3,
       lastResolution: null,
       currentTrick: [{ side: PlayerSide.Cpu, card: quarryLead }],
       leader: PlayerSide.Cpu,
@@ -151,25 +150,25 @@ describe('the ladder through playCard (AC2/AC3/AC6)', () => {
     return result.state
   }
 
-  it('with no table threaded through, a clean loss resets bank and multiplier (AC1)', () => {
+  it('with no table threaded through, a clean loss resets total and roll (AC1)', () => {
     const after = loseWithPlayersSwan(undefined)
-    expect(after.bank).toBe(0)
-    expect(after.multiplier).toBe(0)
+    expect(after.total).toBe(0)
+    expect(after.roll).toBe(0)
     expect(after.lastResolution?.damageToPlayer).toBe(DAMAGE_PER_HIT)
   })
 
-  it('at silver the multiplier survives the clean loss and the bank still cashes (AC4)', () => {
+  it('at silver the roll survives the clean loss and the total still wipes, cashing nothing (AC4)', () => {
     const after = loseWithPlayersSwan(SILVER_SWAN)
-    expect(after.multiplier).toBe(3)
-    expect(after.bank).toBe(0)
-    expect(after.lastResolution?.cashOut).toBe(forcedCashValue(3, 3))
+    expect(after.roll).toBe(3)
+    expect(after.total).toBe(0)
+    expect(after.lastResolution?.cashOut).toBe(0)
     expect(after.lastResolution?.damageToPlayer).toBe(DAMAGE_PER_HIT)
   })
 
-  it('at gold the bank survives too and nothing cashes (AC5)', () => {
+  it('at gold the total survives too and nothing cashes (AC5)', () => {
     const after = loseWithPlayersSwan(GOLD_SWAN)
-    expect(after.multiplier).toBe(3)
-    expect(after.bank).toBe(3)
+    expect(after.roll).toBe(3)
+    expect(after.total).toBe(3)
     expect(after.lastResolution?.cashOut).toBe(0)
     expect(after.lastResolution?.damageToPlayer).toBe(DAMAGE_PER_HIT)
   })
@@ -196,7 +195,7 @@ describe('the ladder through playCard (AC2/AC3/AC6)', () => {
       { playerRankTiers: GOLD_SWAN },
     )
     if (!result.ok) throw new Error(`expected a legal play, got ${result.reason}`)
-    expect(result.state.bank).toBe(0)
-    expect(result.state.multiplier).toBe(0)
+    expect(result.state.total).toBe(0)
+    expect(result.state.roll).toBe(0)
   })
 })

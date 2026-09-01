@@ -8,7 +8,7 @@ and folds a resolved trick's outcome back onto `RoundUiState`.
 
 **It decides nothing.** Every rule lives one or two modules deeper — which buffs fire is
 [hunt/buff-condition-evaluation.md](../hunt/buff-condition-evaluation.md), where a contribution
-lands in the cash-out is [war-council/buffs-in-the-cash-out.md](../war-council/buffs-in-the-cash-out.md).
+lands in the cash-out is [war-council/buffs-in-the-trick-damage.md](../war-council/buffs-in-the-trick-damage.md).
 This module moves values between the felt and those two.
 
 ## Why it is its own file rather than three more fields on `roundUiState.ts`
@@ -45,8 +45,9 @@ ride the accrual the fold already adopts wholesale. See
 `App.tsx` remounts the felt per hand (`key={hand}`) — the identical argument `startBuffActivation`
 already makes for the AP pool. Nothing else writes the accrual, and no per-hit reset exists to write.
 
-`applyDamagePressed` is set in `roundReducer.ts`'s `handleTapApplyDamage`, in the branch where the
-press **commits** — the same transition that spends `APPLY_DAMAGE_AP_COST`. That is what makes Debt
+`applyDamagePressed` is set in `commitHandlers.ts`'s `applyPotAction` — the resolution screen's
+Apply choice, and since DLR-156 the only place a cash-out can happen at all. (Until then it was set
+in `handleTapApplyDamage`, in the branch where the press committed and spent AP.) That is what makes Debt
 Collector fire on the press rather than on the delayed landing.
 
 ## `buffHandInputFor` — reading the pile exactly once
@@ -73,7 +74,7 @@ fire again this hand while a Threshold or Terminal family is recorded as spent.
 The rest of the input is plain values the trick cannot supply: the accrual, the fired list, the
 no-hit counter, `state.coins` (Miser), the player's red hearts (Cornered) and the press flag.
 `RoundUiState.coins` is the run's purse at the **start** of the hand and is read-only for the hand's
-whole life, exactly as `bankClimbBonus` is — a hand cannot spend coins, only the shop can. It arrives
+whole life, exactly as `baseDamageBonus` is — a hand cannot spend coins, only the shop can. It arrives
 through a new optional `RoundUiSeed.coins`, defaulted to `0`, so all 38 existing `createRoundUiState`
 fixtures reproduce today's game exactly.
 

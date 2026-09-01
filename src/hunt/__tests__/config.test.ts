@@ -13,6 +13,7 @@ import {
   HAND_SIZE,
   SKULL_DENSITY,
   DAMAGE_PER_HIT,
+  BASE_DAMAGE,
   RUN_STARTING_CHEATS,
   COINS_PER_ENCOUNTER_WIN,
   CHEAT_PRICE,
@@ -109,6 +110,10 @@ describe('DLR-80 configuration', () => {
 
   it('deals exactly one damage per damage event', () => {
     expect(DAMAGE_PER_HIT).toBe(1)
+  })
+
+  it('DLR-156 AC10 — BASE_DAMAGE is the configured 1', () => {
+    expect(BASE_DAMAGE).toBe(1)
   })
 
   it('starts the player at ten', () => {

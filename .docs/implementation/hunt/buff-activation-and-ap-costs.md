@@ -137,7 +137,7 @@ asserts that absence against the module's own export surface rather than trustin
 `resolveFiredBuffs(accrual, fired)` applies R1/R2/R5 for one trick. It reflects R3's five-step
 order (Second Wind → Momentum → cash-out product → Blade → Purse) in the sequence it applies
 contributions, but **does not perform the cash-out step** — nothing in `src/` reads a buff, so
-reordering `bank.ts`'s live cash-out would be a change nobody can observe. Wiring it is a later
+reordering the engine's live cash-out would be a change nobody can observe. Wiring it is a later
 ticket's.
 
 > **Still true after DLR-114, and this is the asymmetry not to smooth over.** `buffAccrual.ts` gained
@@ -147,16 +147,16 @@ ticket's.
 >
 > **DLR-125 was that ticket, and the paragraph above is now history rather than status.** The
 > cash-out step **is** performed: `resolveTrickBank` applies R3's step 2 (Momentum into the
-> multiplier feeding `forcedCashValue`/`cashValue`) and step 4 (Blade added flat, after §7's
+> multiplier feeding the cash-out product) and step 4 (Blade added flat, after §7's
 > two-thirds floor), and the felt's fold applies step 1 (Second Wind into the pool for the next
 > window) and step 5 (Purse into the run's coins). `buffAccrual.ts` also gained `multiplierPaid` /
-> `flatDamagePaid` with `payableCashOutBonus` / `markCashOutPaid`, so each of those two pools pays
+> `flatDamagePaid` with `payableCashOutBonus` / `markCashOutPaid`, so each of those two pools paid
 > **once per hand** rather than once per cash-out. See
 > [Condition evaluation](buff-condition-evaluation.md).
 
 ## Activating a buff — the window, the spend, and the refusal
 
-`buffActivation.ts` follows the shape `voluntaryCashOut.ts`, `flask.ts` and `shop.ts` already set:
+`buffActivation.ts` follows the shape `flask.ts`, `shop.ts` and the since-deleted `voluntaryCashOut.ts` already set:
 a reason **code** (never a sentence — `src/hunt/` holds no user-facing copy), a `*Stock` of plain
 values assembled in one place, and one predicate read by both the guard and the disabled control so
 the two can never disagree.
@@ -181,7 +181,7 @@ the two can never disagree.
 > only to a Timebomb. Adding a member cost one enum entry and one row in
 > `buffLabels.ts`'s `BUFF_ACTIVATION_REFUSAL_MESSAGE`: nothing `switch`es over the union.
 
-The window reason comes first for `applyDamageRefusalFor`'s reason: report what is true of the whole
+The window reason comes first for `applyDamageRefusalFor`'s reason (that predicate was deleted on DLR-156; the reason survives it): report what is true of the whole
 felt before what is true of this one control. `alreadyActive` is the one rule here with no source
 document behind it — §5's R7 says a player paying for a card that cannot fire is a legitimate
 mistake, but paying **twice for one card in one trick** is a duplicate payment, not a mistake worth

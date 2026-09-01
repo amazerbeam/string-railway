@@ -14,7 +14,7 @@ function seededUi(
     round: makeRound(overrides),
     encounter: encounterFixture,
     blastGuardHeld: false,
-    bankClimbBonus: 0,
+    baseDamageBonus: 0,
     discardsRemaining: discardsRemainingFixture,
     buffs,
   })

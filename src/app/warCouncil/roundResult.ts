@@ -15,5 +15,7 @@ export function roundResultFor(ui: RoundUiState): WarCouncilRoundResult {
     unplayedAtResolve: ui.unplayedAtResolve,
     coinsEarned: ui.buffHand.coinsEarned,
     feederCarry: ui.buffHand.accrual.carryOut,
+    // DLR-156 AC8 — the streak after this hand, read straight off the felt's own running figures.
+    streak: { total: ui.round.total, roll: ui.round.roll },
   }
 }

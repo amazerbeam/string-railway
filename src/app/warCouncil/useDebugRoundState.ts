@@ -12,36 +12,16 @@ import { clearDebugRoundState, setDebugRoundState, type DebugRoundState } from '
  * The write is idempotent, so StrictMode's double-invocation is a no-op.
  */
 export function useDebugRoundState(slice: DebugRoundState): void {
-  const {
-    ui,
-    interactive,
-    legalCount,
-    applyCash,
-    applyRefusal,
-    discardRefusal,
-    encounterOver,
-    roundComplete,
-  } = slice
+  const { ui, interactive, legalCount, discardRefusal, encounterOver, roundComplete } = slice
   useEffect(() => {
     setDebugRoundState({
       ui,
       interactive,
       legalCount,
-      applyCash,
-      applyRefusal,
       discardRefusal,
       encounterOver,
       roundComplete,
     })
-  }, [
-    ui,
-    interactive,
-    legalCount,
-    applyCash,
-    applyRefusal,
-    discardRefusal,
-    encounterOver,
-    roundComplete,
-  ])
+  }, [ui, interactive, legalCount, discardRefusal, encounterOver, roundComplete])
   useEffect(() => clearDebugRoundState, [])
 }

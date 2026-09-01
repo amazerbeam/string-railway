@@ -25,10 +25,10 @@ import { BuffKind, BuffRewardAxis } from './buffs'
  * their contribution.
  */
 
-/** The two axes that cross a hand boundary — structurally identical to `CashOutBonus`, and
- *  deliberately so: the carry seeds exactly the two figures a cash-out can spend. A distinct
- *  NAMED type because it lives on `RunState` and crosses the mount seam in both directions,
- *  where `CashOutBonus`'s "what this cash-out may add" meaning would be a lie. */
+/** The two axes that cross a hand boundary — structurally identical to `TrickBuffBonus`'s two
+ *  damage fields, and deliberately so: the carry seeds exactly the two figures a trick can pay.
+ *  A distinct NAMED type because it lives on `RunState` and crosses the mount seam in both
+ *  directions, where `TrickBuffBonus`'s "this trick's own contribution" meaning would be a lie. */
 export interface BuffCarry {
   readonly multiplierBonus: number
   readonly flatDamageBonus: number
@@ -43,12 +43,6 @@ export interface BuffBonusAccrual {
   readonly flatDamageBonus: number
   readonly coinBonus: number
   readonly apRefunded: number
-  /** DLR-125 — how much of `multiplierBonus` a cash-out has already been paid. Moves FORWARD
-   *  only, and only when a cash-out actually fires. `startHandAccrual()` remains the only reset
-   *  in this module and nothing resets this on a hit — R6's asymmetry, unchanged. */
-  readonly multiplierPaid: number
-  /** DLR-125 — the same, for `flatDamageBonus`. */
-  readonly flatDamagePaid: number
   /** DLR-150 AC3 — what seeded this hand's `multiplierBonus`/`flatDamageBonus`. DISPLAY ONLY:
    *  nothing reads it to decide a payout, because the seed is already inside those two figures.
    *  Kept so AC6's opening figure is legible for the whole hand, not only at trick 0. */
@@ -64,20 +58,18 @@ export const EMPTY_BUFF_ACCRUAL: BuffBonusAccrual = {
   flatDamageBonus: 0,
   coinBonus: 0,
   apRefunded: 0,
-  multiplierPaid: 0,
-  flatDamagePaid: 0,
   carriedIn: EMPTY_BUFF_CARRY,
   carryOut: EMPTY_BUFF_CARRY,
 }
 
 /** The value a new hand's accrual starts at. The ONLY reset this module exports — see the module
  *  docblock's R6 note. `carriedIn` (DLR-150 AC3) seeds `multiplierBonus`/`flatDamageBonus`
- *  directly, with `multiplierPaid`/`flatDamagePaid` at zero, so `payableCashOutBonus` reads the
- *  seed as an ordinary spendable bonus with no second payable pool. The carry itself sits outside
- *  R6's caps deliberately — R6 bounds what a hand may PAY, and the carry paid nothing in the hand
- *  that earned it. A distinct named function rather than exporting the constant directly under
- *  two names, so a caller's intent ("start a new hand") is legible at the call site the way
- *  `refreshActionPointsForNewHand` already is for AP. */
+ *  directly, exactly as any other hand-long contribution to those axes (coins, AP refund and the
+ *  Feeder carry — DLR-156 moved the damage axes off this pool onto `trickBonusFor`, per trick).
+ *  The carry itself sits outside R6's caps deliberately — R6 bounds what a hand may PAY, and the
+ *  carry paid nothing in the hand that earned it. A distinct named function rather than exporting
+ *  the constant directly under two names, so a caller's intent ("start a new hand") is legible at
+ *  the call site the way `refreshActionPointsForNewHand` already is for AP. */
 export function startHandAccrual(carriedIn: BuffCarry = EMPTY_BUFF_CARRY): BuffBonusAccrual {
   return {
     ...EMPTY_BUFF_ACCRUAL,
@@ -164,12 +156,13 @@ export function accrueCarry(
 }
 
 /** R1/R2/R5 for one trick's fired buffs, plus DLR-150 AC1/AC2's outcome split. `trickIsLoss` is
- *  supplied by `bank.ts` from `!isTaken(outcome)` — this module never re-derives the skull
- *  inversion, which is stated exactly once, in `bank.ts`'s `TAKEN` table. A FEEDER firing on a
+ *  supplied by `streak.ts` from `!isTaken(outcome)` — this module never re-derives the skull
+ *  inversion, which is stated exactly once, in `streak.ts`'s `TAKEN` table. A FEEDER firing on a
  *  Loss carries; every other family and every Win is unchanged, and so is the Overlap Bonus.
  *  Reflects R3's five-step order (Second Wind → Momentum → cash-out → Blade → Purse) in the
  *  sequence contributions are applied, but does NOT perform the cash-out step itself — that is
- *  `bank.ts`'s job. Never mutates `accrual` or `fired`. */
+ *  `streak.ts`'s job for the hand-long axes; `trickBonusFor` above does the per-trick damage
+ *  axes directly. Never mutates `accrual` or `fired`. */
 export function resolveFiredBuffs(
   accrual: BuffBonusAccrual,
   fired: readonly Buff[],
@@ -188,31 +181,50 @@ export function resolveFiredBuffs(
   return next
 }
 
-/** The unspent balance of the two axes that land AT a cash-out — R3's step 2 (Momentum, inside
- *  the product) and step 4 (Blade, outside it). */
-export interface CashOutBonus {
-  readonly multiplierBonus: number
+/** DLR-156 AC11 — ONE trick's buff contribution, for THAT trick only. Nothing pools. */
+export interface TrickBuffBonus {
   readonly flatDamageBonus: number
+  readonly multiplierBonus: number
+  /** `overlapBonusFor(fired.length)`, carried out separately so the screen can beat it alone. */
+  readonly overlapBonus: number
 }
 
-/** What THIS cash-out may add. Clamped at 0 so a malformed accrual can never produce a negative
- *  bonus that would REDUCE damage — `web-project.md`'s "guard the divisor, not the symptom",
- *  applied to a subtraction that feeds a rendered heart row. */
-export function payableCashOutBonus(accrual: BuffBonusAccrual): CashOutBonus {
-  return {
-    multiplierBonus: Math.max(0, accrual.multiplierBonus - accrual.multiplierPaid),
-    flatDamageBonus: Math.max(0, accrual.flatDamageBonus - accrual.flatDamagePaid),
-  }
+const EMPTY_TRICK_BONUS: TrickBuffBonus = {
+  flatDamageBonus: 0,
+  multiplierBonus: 0,
+  overlapBonus: 0,
 }
 
-/** Records `paid` as spent. This is what makes R6's cap a PER-HAND bound rather than a
- *  per-cash-out one: a pool re-added at every cash-out would pay up to
- *  `MAX_FLAT_DAMAGE_BONUS_PER_HAND` three times in a hand holding a forced cash-out, a voluntary
- *  Apply Damage and an end-of-hand fold. Never mutates `accrual`. */
-export function markCashOutPaid(accrual: BuffBonusAccrual, paid: CashOutBonus): BuffBonusAccrual {
-  return {
-    ...accrual,
-    multiplierPaid: accrual.multiplierPaid + paid.multiplierBonus,
-    flatDamagePaid: accrual.flatDamagePaid + paid.flatDamageBonus,
-  }
+/** DLR-156 AC11 — ONE trick's buff contribution, for THAT trick only. Nothing pools across
+ *  tricks any more: a Blade fired on trick 1 and the same Blade fired on trick 6 both pay into
+ *  their own trick's `(base + bd) x bm` and neither survives it.
+ *
+ *  Reads `buff.reward` through the same `narrowToCostAxis` and the same `BuffKind.Feeder` /
+ *  `trickIsLoss` split `resolveFiredBuffs` uses, so cadence, the Feeder carry and the tier
+ *  table are inherited rather than restated. The Overlap Bonus is returned SEPARATELY rather
+ *  than folded into `multiplierBonus`, so the resolution screen can give it its own beat
+ *  (AC16) without re-deriving `overlapBonusFor`.
+ *
+ *  R6's four per-hand caps are deliberately NOT applied here. They bound what a HAND may pay,
+ *  and this figure is per TRICK; both damage caps are `Number.POSITIVE_INFINITY` today, so no
+ *  number moves either way. Coins, the AP refund and the Feeder carry still run through
+ *  `resolveFiredBuffs` and its caps, untouched. */
+export function trickBonusFor(fired: readonly Buff[], trickIsLoss: boolean): TrickBuffBonus {
+  const totals = fired.reduce((running, buff) => {
+    if (trickIsLoss && buff.kind === BuffKind.Feeder) {
+      // DLR-150 AC1 — carries out instead of paying this trick.
+      return running
+    }
+    const axis = narrowToCostAxis(buff.reward.axis, 'Fired buff reward axis')
+    switch (axis) {
+      case BuffRewardAxis.Multiplier:
+        return { ...running, multiplierBonus: running.multiplierBonus + buff.reward.value }
+      case BuffRewardAxis.Magnitude:
+        return { ...running, flatDamageBonus: running.flatDamageBonus + buff.reward.value }
+      case BuffRewardAxis.Coins:
+      case BuffRewardAxis.ApRefund:
+        return running
+    }
+  }, EMPTY_TRICK_BONUS)
+  return { ...totals, overlapBonus: overlapBonusFor(fired.length) }
 }

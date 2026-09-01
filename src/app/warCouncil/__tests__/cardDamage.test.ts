@@ -13,18 +13,11 @@ import {
   TIMEBOMB_DAMAGE,
   type RankTierTable,
 } from '../../../hunt'
-import {
-  CardRank,
-  cashValue,
-  forcedCashValue,
-  PlayerSide,
-  RoundPhase,
-  Suit,
-} from '../../../warCouncil'
+import { CardRank, PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
 import { createRoundUiState } from '../roundUiState'
 import { cardDamagePreview } from '../cardDamage'
 import {
-  bankClimbBonusFixture,
+  baseDamageBonusFixture,
   blastGuardHeldFixture,
   card,
   discardsRemainingFixture,
@@ -41,7 +34,7 @@ function seededUi(
     round: makeRound(overrides),
     encounter,
     blastGuardHeld: blastGuardHeldFixture,
-    bankClimbBonus: bankClimbBonusFixture,
+    baseDamageBonus: baseDamageBonusFixture,
     discardsRemaining: discardsRemainingFixture,
     buffs: [],
     rankTiers,
@@ -56,19 +49,38 @@ describe('cardDamagePreview — the hand fan’s per-card win/lose readout, deri
     expect(preview.lose.toPlayer).toBe(DAMAGE_PER_HIT)
   })
 
-  it('reads the lose branch’s cash-out off forcedCashValue, never a recomputed figure', () => {
-    const ui = seededUi({ bank: 3, multiplier: 2 })
+  it('DLR-156 B1 — winPot states what taking a bare trick from an empty streak is worth: BASE_DAMAGE into the pot, at roll 1', () => {
+    const ui = seededUi()
     const preview = cardDamagePreview(ui, card(Suit.Bells, 2))!
-    expect(preview.lose.toQuarry).toBe(forcedCashValue(3, 2))
+    expect(preview.winPot.trickDamage).toBe(1)
+    expect(preview.winPot.total).toBe(1)
+    expect(preview.winPot.roll).toBe(1)
+    expect(preview.winPot.pot).toBe(1)
   })
 
-  it('fires the end-of-hand cash on the final trick’s win branch', () => {
-    const ui = seededUi({ bank: 1, multiplier: 1, tricksPlayed: HAND_SIZE - 1 })
+  it('DLR-156 B1 — winPot climbs with the seeded streak, which is what actually varies the readout now that win.toQuarry never does', () => {
+    const empty = cardDamagePreview(seededUi(), card(Suit.Bells, 2))!
+    const seeded = cardDamagePreview(seededUi({ total: 3, roll: 2 }), card(Suit.Bells, 2))!
+    expect(seeded.winPot.pot).toBeGreaterThan(empty.winPot.pot)
+    // The trick's OWN contribution is unchanged by the streak it lands on top of — only the
+    // resulting total/roll/pot climb, per AC1/AC11 (nothing pools INTO this trick's own bracket).
+    expect(seeded.winPot.trickDamage).toBe(empty.winPot.trickDamage)
+  })
+
+  it('DLR-156 AC7 — a hit pays the Quarry nothing, whatever the streak was worth', () => {
+    const ui = seededUi({ total: 3, roll: 2 })
     const preview = cardDamagePreview(ui, card(Suit.Bells, 2))!
-    // A win banks the trick first (bank+1, multiplier+1), then the end-of-hand cash fires on that
-    // post-take total — read off `cashValue`, never restated. Kept well under the Quarry's health
-    // so the delta this module reads is the full cash-out, not a health floor truncating it.
-    expect(preview.win.toQuarry).toBe(cashValue(2, 2))
+    expect(preview.lose.toQuarry).toBe(0)
+  })
+
+  it('DLR-156 AC8 — the final trick of a hand still banks rather than cashing anything', () => {
+    const ui = seededUi({ total: 1, roll: 1, tricksPlayed: HAND_SIZE - 1 })
+    const preview = cardDamagePreview(ui, card(Suit.Bells, 2))!
+    // The end-of-hand cash-out is gone: a win on the last trick banks its own damage exactly as
+    // any other taken trick would, and deals nothing to the Quarry through a resolution.
+    expect(preview.win.toQuarry).toBe(0)
+    // …but it is still real, and the pot readout still says so: total 1 -> 2, roll 1 -> 2, pot 4.
+    expect(preview.winPot.pot).toBe(4)
   })
 
   it('is inexact while the player leads and exact once the Quarry’s lead is on the table', () => {
@@ -130,7 +142,7 @@ describe('cardDamagePreview — the hand fan’s per-card win/lose readout, deri
   })
 
   it('is pure: calling it twice on the same state returns deeply equal values and leaves the encounter unchanged', () => {
-    const ui = seededUi({ bank: 3, multiplier: 2 })
+    const ui = seededUi({ total: 3, roll: 2 })
     const before = ui.encounter
     const first = cardDamagePreview(ui, card(Suit.Bells, 2))
     const second = cardDamagePreview(ui, card(Suit.Bells, 2))
@@ -149,21 +161,20 @@ describe('the preview reads the rank-tier ladder the commit will (DLR-122)', () 
   const GOLD_SWAN = steppedTo(steppedTo(ALL_BRONZE, TieredRank.Swan), TieredRank.Swan)
   const swan = card(Suit.Bells, CardRank.Swan)
 
-  it('shows a clean loss costing health but not the bank once the Swan is at gold (AC5)', () => {
-    const bronze = seededUi({ bank: 3, multiplier: 2 })
-    const gold = seededUi({ bank: 3, multiplier: 2 }, encounterFixture, GOLD_SWAN)
-    // Bronze: the forced cash-out is dealt to the Quarry, exactly as the assertion above states.
-    expect(cardDamagePreview(bronze, swan)!.lose.toQuarry).toBe(forcedCashValue(3, 2))
-    // Gold: nothing cashes, so the Quarry takes nothing — but the player still takes the hit.
+  it('shows a clean loss costing health either way — DLR-156 AC7 pays the Quarry nothing at any tier', () => {
+    const bronze = seededUi({ total: 3, roll: 2 })
+    const gold = seededUi({ total: 3, roll: 2 }, encounterFixture, GOLD_SWAN)
+    const bronzeLose = cardDamagePreview(bronze, swan)!.lose
     const goldLose = cardDamagePreview(gold, swan)!.lose
+    expect(bronzeLose.toQuarry).toBe(0)
     expect(goldLose.toQuarry).toBe(0)
     expect(goldLose.toPlayer).toBe(DAMAGE_PER_HIT)
   })
 
   it('leaves the preview unchanged for a card that is not a Swan', () => {
-    const bronze = cardDamagePreview(seededUi({ bank: 3, multiplier: 2 }), card(Suit.Bells, 2))!
+    const bronze = cardDamagePreview(seededUi({ total: 3, roll: 2 }), card(Suit.Bells, 2))!
     const gold = cardDamagePreview(
-      seededUi({ bank: 3, multiplier: 2 }, encounterFixture, GOLD_SWAN),
+      seededUi({ total: 3, roll: 2 }, encounterFixture, GOLD_SWAN),
       card(Suit.Bells, 2),
     )!
     expect(gold).toEqual(bronze)

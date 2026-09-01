@@ -11,8 +11,9 @@ afterEach(cleanup)
 const HAND = [card(Suit.Bells, 7), card(Suit.Keys, 3), card(Suit.Moons, 11)]
 
 const PREVIEW = {
-  win: { toQuarry: 6, toPlayer: 0, shielded: 0 },
+  win: { toQuarry: 0, toPlayer: 0, shielded: 0 },
   lose: { toQuarry: 4, toPlayer: 1, shielded: 0 },
+  winPot: { trickDamage: 6, total: 6, roll: 1, pot: 6 },
   exact: true,
 }
 
@@ -180,7 +181,8 @@ describe('HandFan', () => {
       .map((id) => document.getElementById(id)?.textContent)
       .find((text) =>
         text?.includes(
-          'If you win this trick: 6 damage to the Quarry. If you lose: 4 damage to the Quarry, 1 damage to you.',
+          'If you win this trick: adds 6 to the streak — the pot would stand at 6. ' +
+            'If you lose: 4 damage to the Quarry, 1 damage to you.',
         ),
       )
     expect(damageText).toBeTruthy()

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { currentTurn, PlayerSide, RoundPhase, type RoundState } from '../types'
 
 function baseState(overrides: Partial<RoundState> = {}): RoundState {
@@ -14,8 +14,8 @@ function baseState(overrides: Partial<RoundState> = {}): RoundState {
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,
-    bank: 0,
-    multiplier: 0,
+    total: 0,
+    roll: 0,
     lastResolution: null,
     currentTrick: [],
     leader: PlayerSide.Cpu,

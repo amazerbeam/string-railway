@@ -1,5 +1,4 @@
 import {
-  APPLY_DAMAGE_POISED_HINT,
   cardAccessibleName,
   DISCARD_READY_HINT,
   DISCARD_SELECT_HINT,
@@ -34,10 +33,6 @@ export function deriveHint(ui: RoundUiState, interactive: boolean, quarryToLead:
   // there is to say — and AC1 requires it to be said out loud.
   if (ui.timebombArmedDamage !== null) return TIMEBOMB_ARMED_HINT
   if (quarryToLead) return 'They are choosing their lead'
-  // Above `ui.armed` deliberately: a poised plate is the more specific thing to say, and unlike
-  // an armed Timebomb it can legitimately coexist with an armed card, because it does not
-  // reinterpret the next hand-card tap.
-  if (ui.applyPoised) return APPLY_DAMAGE_POISED_HINT
   if (ui.armed) return `Tap ${cardAccessibleName(ui.armed)} again to play it`
   // DLR-132 — a live Cheat needs no hint of its own: it is visible in the fan's widened legal set.
   if (interactive) return ui.round.currentTrick.length > 0 ? 'Follow their lead' : 'Your lead'

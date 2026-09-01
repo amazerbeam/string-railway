@@ -6,7 +6,7 @@ import {
   type BuffId,
   type BuffTrickContext,
 } from '../hunt'
-import { isTaken, trickOutcomeFor, type TrickOutcome } from './bank'
+import { isTaken, trickOutcomeFor, type TrickOutcome } from './streak'
 import { targetSuitOf } from './buffTrickFacts'
 import { sameCard } from './cardUtils'
 import type { Card } from './types'

@@ -10,13 +10,14 @@
  * the card and its ability choice can never disagree.
  *
  * BUFFS — at every between-tricks window, activates every offered buff whose refusal is `null`,
- * CHEAPEST AP FIRST, while the pool would still cover `APPLY_DAMAGE_AP_COST` afterwards. A policy
- * that never activated a buff would report the game unwinnable and be technically correct and
- * completely useless, which is why the reserve is the only thing that stops it.
+ * CHEAPEST AP FIRST. A policy that never activated a buff would report the game unwinnable and be
+ * technically correct and completely useless, which is why activating is the default.
  *
- * APPLY DAMAGE — presses when `applyDamageRefusalFor` returns `null` AND either the multiplier has
- * reached `BASELINE_CASH_AT_MULTIPLIER` or this is the hand's last window with a non-empty bank
- * (an unbanked bank is lost at the deal, so the last window is use-it-or-lose-it).
+ * APPLY OR ROLL — declines to answer (`wantsApplyPot` unset), so `playHand.ts`'s driver applies
+ * its own documented modelling default: apply whenever a pot stands, never rolling the dice. That
+ * default is what this policy's printed figures reflect, not a strategy this file states itself.
+ * DLR-156 review fix — this replaces the earlier claim that there was nothing left to press; the
+ * cash-or-roll choice moved onto the resolution screen and IS pressed now, by the driver's default.
  *
  * NEVER — discards, marks a Timebomb, or arms a Cheat. None is on the shop's shelf
  * (`SHOP_ITEMS`), so a baseline that used them would be measuring cards a player cannot buy.
@@ -41,7 +42,6 @@
  * answers a prompt from `chooseCpuMove`'s choice for a different card.
  */
 import {
-  applyDamageRefusalFor,
   CardRank,
   chooseCpuMove,
   containsCard,
@@ -53,11 +53,9 @@ import {
 } from '../warCouncil'
 import {
   apCostOf,
-  APPLY_DAMAGE_AP_COST,
   BuffKind,
   flaskRefusalFor,
   flaskStockFor,
-  HAND_SIZE,
   MAX_CARDS_PER_DISCARD,
   refusalFor,
   shopStockFor,
@@ -70,17 +68,8 @@ import {
   type RunState,
 } from '../hunt'
 import { loadoutRefusalFor } from '../app/warCouncil/buffHandlers'
-import {
-  applyDamageStock,
-  discardStock,
-  offeredBuffs,
-  type RoundUiState,
-} from '../app/warCouncil/roundUiState'
+import { discardStock, offeredBuffs, type RoundUiState } from '../app/warCouncil/roundUiState'
 import type { CardChoice, CheatPlay, ShopAction, SimPolicy } from './types'
-
-/** A policy parameter, NOT a game tunable — see this module's docblock, "APPLY DAMAGE". The
- *  multiplier the baseline waits for before voluntarily cashing out. */
-export const BASELINE_CASH_AT_MULTIPLIER = 3
 
 /** The fixed order the baseline shops in, tried while each is affordable. `ShopItem.ApCapacity`
  *  dropped with DLR-145 (AP removed entirely) — see that ticket's Phase 2. */
@@ -105,22 +94,11 @@ function chooseBuffs(ui: RoundUiState): readonly BuffId[] {
   let pool = ui.buffActivation.apPool
   for (const buff of ordered) {
     const cost = apCostOf(buff)
-    if (pool - cost < APPLY_DAMAGE_AP_COST) continue
+    if (pool - cost < 0) continue
     pool -= cost
     chosen.push(buff.id)
   }
   return chosen
-}
-
-function wantsApplyDamage(ui: RoundUiState): boolean {
-  if (applyDamageRefusalFor(applyDamageStock(ui)) !== null) return false
-  // DLR-146 — was `hands[Player].length <= 1`, which was a proxy for "this is the hand's last
-  // cash-out window" and silently stopped firing at any floor above 1: the baseline policy would
-  // have quietly stopped banking at a hand's end, corrupting the very simulation runs used to
-  // judge whether the floor works. Identical at a floor of 0 — both mean five or six tricks
-  // played — and floor-invariant thereafter.
-  const isLastWindow = HAND_SIZE - ui.round.tricksPlayed <= 1
-  return ui.round.multiplier >= BASELINE_CASH_AT_MULTIPLIER || (isLastWindow && ui.round.bank > 0)
 }
 
 function nextShopAction(run: RunState): ShopAction | null {
@@ -145,7 +123,6 @@ function nextShopAction(run: RunState): ShopAction | null {
 export const baselinePolicy: SimPolicy = {
   name: 'baseline',
   chooseCard,
-  wantsApplyDamage,
   chooseBuffs,
   nextShopAction,
 }
@@ -195,7 +172,6 @@ function rerollFocusedShopAction(run: RunState): ShopAction | null {
 export const rerollFocusedPolicy: SimPolicy = {
   name: 'rerollFocused',
   chooseCard,
-  wantsApplyDamage,
   chooseBuffs,
   nextShopAction: rerollFocusedShopAction,
 }
@@ -229,7 +205,6 @@ function wantsCheatPlay(ui: RoundUiState): CheatPlay | null {
 export const maximalistPolicy: SimPolicy = {
   name: 'maximalist',
   chooseCard,
-  wantsApplyDamage,
   chooseBuffs,
   nextShopAction,
   chooseDiscard,
@@ -237,9 +212,9 @@ export const maximalistPolicy: SimPolicy = {
 }
 
 /** play-tester — the "how far with no buffs at all" floor. `baselinePolicy` verbatim except it
- *  never activates a single buff, ever (`chooseBuffs` always `[]`): card play, Apply Damage timing
- *  and shop order are all identical, so any gap against `baselinePolicy`'s own figures is
- *  attributable to buff activation alone, not to a different strategy elsewhere. */
+ *  never activates a single buff, ever (`chooseBuffs` always `[]`): card play and shop order are
+ *  all identical, so any gap against `baselinePolicy`'s own figures is attributable to buff
+ *  activation alone, not to a different strategy elsewhere. */
 export const noBuffsPolicy: SimPolicy = {
   ...baselinePolicy,
   name: 'noBuffs',

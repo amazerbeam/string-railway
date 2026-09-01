@@ -1,19 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import {
-  activateShield,
-  applyDamage,
-  hasShieldHearts,
-  queueApplyDamagePayout,
-  startEncounter,
-} from '../encounter'
-import { queueApplyPayout } from '../applyDamagePayout'
+import { activateShield, applyDamage, hasShieldHearts, startEncounter } from '../encounter'
 import { advanceRun, buyFromShop, drinkFlask, startRun } from '../run'
-import {
-  APPLY_DAMAGE_HIT_RETENTION,
-  HEAL_HEALTH_RESTORED,
-  OpponentKind,
-  RUN_ENCOUNTERS,
-} from '../config'
+import { HEAL_HEALTH_RESTORED, OpponentKind, RUN_ENCOUNTERS } from '../config'
 import { ShopItem } from '../shop'
 import { BuffTier } from '../buffs'
 import { NO_SHIELD_HEARTS } from '../shield'
@@ -128,22 +116,6 @@ describe('applyDamage — AC4, blue hearts absorb before red health', () => {
     const after = applyDamage(encounter, damage(5, encounter.health[DuelSide.Quarry]))
     expect(after.shieldHearts).toBe(3)
     expect(after.winner).toBe(DuelSide.Player)
-  })
-})
-
-describe('applyDamage — the DLR-109 queued payout, both directions', () => {
-  it('a FULLY absorbed hit leaves the queued payout intact', () => {
-    const queued = queueApplyDamagePayout(shielded(BuffTier.Silver), queueApplyPayout(9, 4))
-    const after = applyDamage(queued, damage(1, 0))
-    expect(after.pendingApplyPayout).toEqual(queued.pendingApplyPayout)
-  })
-
-  it('DLR-141 — a partially absorbed hit that drops red health reduces it to APPLY_DAMAGE_HIT_RETENTION, floored, rather than destroying it', () => {
-    const queued = queueApplyDamagePayout(shielded(BuffTier.Silver), queueApplyPayout(9, 4))
-    const after = applyDamage(queued, damage(3, 0))
-    expect(after.pendingApplyPayout).toMatchObject({
-      cashOut: Math.floor(9 * APPLY_DAMAGE_HIT_RETENTION),
-    })
   })
 })
 

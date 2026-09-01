@@ -1,7 +1,7 @@
 # App shell — `src/app/`
 
 **Status:** implemented
-**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150
+**Built by:** SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150, DLR-156
 
 ## Responsibility
 
@@ -83,7 +83,7 @@ back on `WarCouncilRoundResult`.** `App.tsx`'s `<WarCouncilRound>` JSX gained `b
 that is the whole of the wiring — `handleComplete` and `recordEncounter` were untouched. The reason is
 a rule rather than an omission: **a hand spends action points, not cards**, so a hand cannot add to,
 remove from, or reorder the run's owned pile, and handing it back would invite a future writer to
-think it could. That makes it `bankClimbBonus`'s contract (mirrored in, never returned) rather than
+think it could. That makes it `baseDamageBonus`'s contract (mirrored in, never returned) rather than
 `cheats`' or `timebombCharges`' (mirrored in, spent, returned).
 
 It is **required** rather than optional for the usual reason, and that earned its place immediately:

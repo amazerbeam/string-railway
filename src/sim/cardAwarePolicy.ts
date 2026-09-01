@@ -10,8 +10,8 @@
  * when somebody aims them at the same card.
  *
  * This policy aims them. Its three differences from `baselinePolicy`, and NOTHING else — shop order
- * and Apply Damage timing are the baseline's own methods by reference, so any gap in the printed
- * figures is attributable to card/buff coordination alone:
+ * is the baseline's own method by reference, so any gap in the printed figures is attributable to
+ * card/buff coordination alone:
  *
  * 1. BUFFS — picks the legal card the most affordable buffs are KEYED TO, arms that stack, and
  *    deliberately does NOT arm a targeted buff aimed at a different card. Untargeted buffs
@@ -39,7 +39,6 @@ import {
 } from '../warCouncil'
 import {
   apCostOf,
-  APPLY_DAMAGE_AP_COST,
   buffTargetRankOf,
   buffTargetSuitOf,
   MAX_CARDS_PER_DISCARD,
@@ -107,7 +106,7 @@ function bestAimedCard(ui: RoundUiState, candidates: readonly Buff[]): Card | nu
 
 /**
  * The aimed stack first, then the untargeted buffs, spending AP cheapest-first within each group
- * and holding `APPLY_DAMAGE_AP_COST` back exactly as the baseline does.
+ * while the pool covers it, exactly as the baseline does.
  *
  * A targeted buff aimed at a card this trick will NOT play is left unarmed — that omission is the
  * whole point of this policy, and it is why its AP spend runs lower than the baseline's.
@@ -127,7 +126,7 @@ function chooseBuffs(ui: RoundUiState): readonly BuffId[] {
   let pool = ui.buffActivation.apPool
   for (const buff of ordered) {
     const cost = apCostOf(buff)
-    if (pool - cost < APPLY_DAMAGE_AP_COST) continue
+    if (pool - cost < 0) continue
     pool -= cost
     chosen.push(buff.id)
   }
@@ -196,7 +195,6 @@ export const cardAwarePolicy: SimPolicy = {
   chooseBuffs,
   chooseDiscard,
   // Reference-identical to the baseline's, so a difference in the figures is attributable to card
-  // and buff coordination rather than to a different shop or cash-out rule.
-  wantsApplyDamage: baselinePolicy.wantsApplyDamage,
+  // and buff coordination rather than to a different shop rule.
   nextShopAction: baselinePolicy.nextShopAction,
 }

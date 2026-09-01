@@ -16,7 +16,7 @@ import type {
   EncounterState,
   RankTierTable,
 } from '../../hunt'
-import type { WarCouncilState } from '../../warCouncil'
+import type { StreakState, WarCouncilState } from '../../warCouncil'
 import { startBuffHand } from './buffRoundState'
 import type { RoundUiState } from './roundUiState'
 
@@ -24,7 +24,7 @@ export interface RoundUiSeed {
   readonly round: WarCouncilState
   readonly encounter: EncounterState
   readonly blastGuardHeld: boolean
-  readonly bankClimbBonus: number
+  readonly baseDamageBonus: number
   readonly discardsRemaining: number
   readonly buffs: readonly Buff[]
   /** DLR-116 — the per-hand AP pool including capacity bought in the shop. OPTIONAL and defaulted
@@ -42,13 +42,27 @@ export interface RoundUiSeed {
   /** DLR-150 AC3 — the carry this hand opens on. OPTIONAL and defaulted to `EMPTY_BUFF_CARRY` so
    *  all 11 existing seed literals reproduce today's game exactly, following `apCapacity`. */
   readonly feederCarry?: BuffCarry
+  /** DLR-156 AC8 — the streak this hand opens on. OPTIONAL and defaulted to `EMPTY_STREAK`
+   *  (via `total: 0, roll: 0` below), following `feederCarry`, so every existing
+   *  `createRoundUiState` site and fixture reproduces today's game. */
+  readonly streak?: StreakState
 }
 
 /** Still a pure restructuring of its seed, so StrictMode's double-invocation of the lazy
  *  `useReducer` initialiser recomputes an identical value. */
 export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
   return {
-    round: seed.round,
+    // DLR-156 AC8 — the deal's hard `total: 0, roll: 0` are overwritten HERE, with the run's
+    // carried streak, rather than in `dealRound` — that keeps the engine ignorant of the run.
+    // ONLY when `seed.streak` is actually supplied: `seed.streak === undefined` leaves
+    // `seed.round` untouched rather than forcing it to `0, 0`, so every existing seed literal
+    // that hand-builds a non-zero `round.total`/`round.roll` (a great many component and
+    // reducer specs do) still reproduces exactly, instead of being silently zeroed the moment
+    // this optional field is added.
+    round:
+      seed.streak === undefined
+        ? seed.round
+        : { ...seed.round, total: seed.streak.total, roll: seed.streak.roll },
     armed: null,
     prompt: null,
     resolvedTrick: null,
@@ -62,9 +76,8 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     timebombFuseRemaining: 0,
     timebombBuff: null,
     blastGuardHeld: seed.blastGuardHeld,
-    bankClimbBonus: seed.bankClimbBonus,
+    baseDamageBonus: seed.baseDamageBonus,
     rankTiers: seed.rankTiers ?? ALL_BRONZE,
-    applyPoised: false,
     unplayedAtResolve: null,
     discardsRemaining: seed.discardsRemaining,
     discardSelection: null,
@@ -73,5 +86,7 @@ export function createRoundUiState(seed: RoundUiSeed): RoundUiState {
     loadout: null,
     buffHand: startBuffHand(seed.feederCarry),
     coins: seed.coins ?? 0,
+    // DLR-156 AC3/AC14 — the felt opens with the resolution screen closed.
+    resolution: null,
   }
 }

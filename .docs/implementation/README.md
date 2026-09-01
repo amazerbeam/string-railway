@@ -26,15 +26,15 @@ before it earns one. See the skill's own SKILL.md for the split threshold and pe
 
 | Module                | Doc                                         | Status      | Built by                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | --------------------- | ------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, DLR-150, DLR-152, DLR-153, DLR-154, PT-001, PT-002                                                                                                                                                                   |
-| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150                                                                                                                                                                                        |
-| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, DLR-154, DLR-155, PT-002                                                                                                     |
-| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145                                                                                                                                                                                                                                                                                                                             |
-| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-150, DLR-153, DLR-154, DLR-155, PT-001, PT-002 |
+| `src/warCouncil/`     | [war-council/](war-council/README.md)       | implemented | SCRUM-19, SCRUM-20, SCRUM-26, DLR-47, DLR-49, DLR-50, DLR-51, DLR-52, DLR-63, DLR-66, DLR-67, DLR-68, DLR-69, DLR-70, DLR-80, DLR-81, DLR-83, DLR-90, DLR-91, DLR-92, DLR-94, DLR-96, DLR-100, DLR-109, DLR-125, DLR-143, DLR-146, DLR-149, DLR-150, DLR-152, DLR-153, DLR-154, DLR-156, PT-001, PT-002                                                                                                                                                                   |
+| `src/app/`            | [app/](app/README.md)                       | implemented | SCRUM-37, SCRUM-28, SCRUM-29, SCRUM-34, DLR-47, DLR-53, DLR-63, DLR-67, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-100, DLR-114, DLR-116, DLR-118, DLR-125, DLR-131, DLR-132, DLR-145, DLR-150, DLR-156                                                                                                                                                                                        |
+| `src/app/warCouncil/` | [war-council-ui/](war-council-ui/README.md) | implemented | SCRUM-28, DLR-47, DLR-53, DLR-63, DLR-66, DLR-67, DLR-68, DLR-71, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-86, DLR-90, DLR-91, DLR-92, DLR-94, DLR-95, DLR-97, DLR-100, DLR-101, DLR-108, DLR-109, DLR-114, DLR-115, DLR-117, DLR-125, DLR-132, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-148, DLR-149, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, PT-002                                                                                                     |
+| `src/app/run/`        | [run-ui/](run-ui/README.md)                 | implemented | DLR-82, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-95, DLR-97, DLR-116, DLR-118, DLR-142, DLR-145, 2026-09-01 (unkeyed)                                                                                                                                                                                                                                                                                                                             |
+| `src/hunt/`           | [hunt/](hunt/README.md)                     | partial     | DLR-48, DLR-49, DLR-50, DLR-51, DLR-52, DLR-53, DLR-63, DLR-66, DLR-67, DLR-69, DLR-70, DLR-80, DLR-81, DLR-82, DLR-83, DLR-84, DLR-85, DLR-89, DLR-90, DLR-91, DLR-92, DLR-93, DLR-94, DLR-95, DLR-96, DLR-100, DLR-101, DLR-104, DLR-105, DLR-107, DLR-108, DLR-109, DLR-110, DLR-112, DLR-113, DLR-114, DLR-116, DLR-121, DLR-125, DLR-126, DLR-127, DLR-132, DLR-135, DLR-141, DLR-142, DLR-143, DLR-145, DLR-146, DLR-150, DLR-153, DLR-154, DLR-155, DLR-156, 2026-09-01 (unkeyed), PT-001, PT-002 |
 | `src/persistence/`    | [persistence/](persistence/README.md)       | implemented | DLR-106                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `src/vault/`          | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `src/app/vault/`      | [vault/](vault/README.md)                   | implemented | DLR-113, DLR-118, DLR-145                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154                                                                                                                                                                                                                                                                                                                                                                                  |
+| `src/sim/`            | [sim/](sim/README.md)                       | implemented | DLR-130, DLR-120, DLR-132, DLR-135, DLR-145, DLR-146, DLR-150, DLR-154, DLR-156                                                                                                                                                                                                                                                                                                                                                                                  |
 
 `src/app/warCouncil/` has its own folder rather than a section inside `app/`: it is a module folder
 in its own right, and War Council's combined doc had already passed this project's per-file line
@@ -90,7 +90,7 @@ confirmation press are all gone from `src/`. In implementation terms it retires 
 through DLR-71 — the correct trade for a prototype, with the reasoning banked here and in
 `.docs/design/`.
 
-Start at [war-council/bank-and-cash-out.md](war-council/bank-and-cash-out.md) for the four-outcome
+Start at [war-council/the-streak-and-the-pot.md](war-council/the-streak-and-the-pot.md) for the four-outcome
 loop, [war-council/skulls.md](war-council/skulls.md) for the skulls,
 [hunt/hand-and-skull-tunables.md](hunt/hand-and-skull-tunables.md) for the numbers and what was
 deleted from configuration, or
@@ -148,7 +148,7 @@ went is variance the player could not act on; what stays is the compounding.
 Because a hand now pays a mean of ~7 rather than ~84, **the Quarry's encounter health drops 400 → 10**
 — the developer's own figure, set in the same session, and a knowingly easy one (random legal play wins
 63.8%, a fight lasts ~1.9 hands, ~37% of damage is discarded as overkill). Start at
-[war-council/bank-and-cash-out.md](war-council/bank-and-cash-out.md) for why `n × n` falls out of two
+[war-council/the-streak-and-the-pot.md](war-council/the-streak-and-the-pot.md) for why `n × n` falls out of two
 counters, or [hunt/hand-and-skull-tunables.md](hunt/hand-and-skull-tunables.md) for both health totals
 and what a 10-health Quarry costs.
 
@@ -393,7 +393,7 @@ that as a real decision rather than smoothing it out.
 Start at [hunt/blast-guard.md](hunt/blast-guard.md) for the flag and its lifetime,
 [hunt/encounter-state-and-end-conditions.md](hunt/encounter-state-and-end-conditions.md) for the
 Quarry-first sequencing and the two remaining end conditions,
-[war-council/bank-and-cash-out.md](war-council/bank-and-cash-out.md) for the two sources of a hit, or
+[war-council/the-streak-and-the-pot.md](war-council/the-streak-and-the-pot.md) for the two sources of a hit, or
 [war-council-ui/timebomb-charge-and-the-mark.md](war-council-ui/timebomb-charge-and-the-mark.md) for
 `applyResolution`'s pay → clear → re-book ordering.
 
@@ -419,13 +419,14 @@ and it is worth most on exactly the hands you were already playing well.
 `src/warCouncil/` that must not know what a run is, and the count lives on `RunState` in `src/hunt/`. The
 route taken is the one DLR-91 established for the Blast Guard: widen `PlayCardOptions` with a **plain
 number**, let the reducer — which holds both halves — assemble it, and name the field `bankClimbBonus`
-rather than a Whetstone count so the card layer never learns a shop item's name. A contract-phase grep
+(renamed `baseDamageBonus` by DLR-156) rather than a Whetstone count so the card layer never learns a
+shop item's name. A contract-phase grep
 enforces that `src/warCouncil/` names neither `Whetstone` nor `RunState` in code. The one crossing is a
-single line in `App.tsx`, and it calls `bankClimbBonusFor(run)` rather than passing the count through, so the
+single line in `App.tsx`, and it calls `baseDamageBonusFor(run)` rather than passing the count through, so the
 rule "+1 per copy" is stated in `src/hunt/run.ts` where a reviewer looks for it instead of in a JSX prop.
 
 **A prediction this documentation made was wrong, and the correction is the useful part.**
-`bank-and-cash-out.md` had recorded that "a later item granting bonus bank would add to `bank` rather than
+`the-streak-and-the-pot.md` had recorded that "a later item granting bonus bank would add to `bank` rather than
 redefine a trick's worth". The item that arrived does the opposite — it redefines a trick's worth, precisely
 so the gain scales with the streak rather than being a flat top-up worth the same on a one-trick streak as on
 a six-trick one. The old prediction is left in place beside the correction.
@@ -445,7 +446,7 @@ answer is the **quick-kill payout** — **built at DLR-95** (below), which is th
 Whetstone reachable. Whether it now over-corrects is a play-session question nobody has answered yet.
 
 Start at [hunt/coins-and-the-shop.md](hunt/coins-and-the-shop.md) for the purchase and
-`bankClimbBonusFor`, or [war-council/bank-and-cash-out.md](war-council/bank-and-cash-out.md) for the
+`bankClimbBonusFor`, or [war-council/the-streak-and-the-pot.md](war-council/the-streak-and-the-pot.md) for the
 arithmetic, the four-layer route, and the floor-to-0 guard that keeps a spoiled figure out of a health bar.
 
 **DLR-93 gave the player a heal they do not have to pay for — 2026-08-20.** The **flask** is one charge
@@ -521,12 +522,13 @@ the game spends for you at the worst moment.
   `skullWeights.ts` (93); and `roundReducer.ts` 390 → **352**, carving `quarryAdvance.ts` (96). Neither
   changed a public name or a barrel surface, and every pre-existing spec passed unedited through both.
 
-Start at [war-council/voluntary-cash-out.md](war-council/voluntary-cash-out.md) for the rule and why it
-is not a fifth `TrickOutcome`, [war-council/bank-and-cash-out.md](war-council/bank-and-cash-out.md) for
+Start at [war-council/the-streak-and-the-pot.md](war-council/the-streak-and-the-pot.md) for the rule and why it
+is not a fifth `TrickOutcome`, [war-council/the-streak-and-the-pot.md](war-council/the-streak-and-the-pot.md) for
 the two rates and the arithmetic, or
-[war-council-ui/apply-damage-plate.md](war-council-ui/apply-damage-plate.md) for the control, the
-two-tap grammar and the extraction that had to come first. (The plate itself was deleted by DLR-114;
-Apply Damage is now the fourth button on the felt's action bar, with the rule unchanged.)
+[war-council-ui/the-resolution-screen.md](war-council-ui/the-resolution-screen.md) for the control, the
+two-tap grammar and the extraction that had to come first. **(Superseded: the plate was deleted by
+DLR-114, and DLR-156 deleted the control, the two-thirds rate and every refusal code outright. A hit
+now pays the Quarry nothing, and the only cash-out left is a mandatory prompt after a banked trick.)**
 
 ## DLR-96, the integration pass (2026-08-21)
 
@@ -536,7 +538,7 @@ added no feature: it is a verification ticket that plays the whole economy at on
 composition-level tests the individual tickets had no reason to write, because each spans code two
 different tickets touched.
 
-A static audit of every shared interface — `bank.ts`'s three cash-out paths, `RunState`'s fields, the
+A static audit of every shared interface — the engine's three cash-out paths at the time, `RunState`'s fields, the
 three refusal unions, `config.ts`'s exported constants — found the composition **already correct**
 everywhere the ticket asked it to check. The deliverable is therefore two tests that make that claim
 checkable rather than merely asserted in a docblock:
@@ -724,6 +726,11 @@ lesson.
 
 ## DLR-109, the delayed Apply Damage payout (2026-08-23)
 
+> **Superseded by DLR-156, which deleted the whole mechanic** — `applyDamagePayout.ts`,
+> `EncounterState.pendingApplyPayout`, the AP cost and the delay constants all went. Applying now
+> deals the pot immediately, on the resolution screen the player chose it on. Kept as the record.
+
+
 **Apply Damage stopped being a free, instant, risk-free cash-out.** Pressing it now costs
 `APPLY_DAMAGE_AP_COST` (3 action points, since moved to 1 — see DLR-141 below) and **queues** the
 payout instead of dealing it — the cash lands `APPLY_DAMAGE_DELAY_TRICKS + 1` trick resolutions
@@ -765,12 +772,16 @@ trick rather than being lost (the hand-end flush); only one payout may be queued
 **order** of a detonating Timebomb versus a due payout on the same resolution. `.docs/game_rules/the-hunt.md`
 marks those readings `[provisional]` for exactly this reason, and the delay figure is transcribed
 from the ticket and has never been played. Start at
-[hunt/delayed-apply-damage-payout.md](hunt/delayed-apply-damage-payout.md) for the mechanic and the
+[hunt/README.md](hunt/README.md) for the mechanic and the
 ordering rule, [hunt/quick-kill-payout.md](hunt/quick-kill-payout.md#two-sources-of-the-unplayed-count-since-dlr-109)
-for the two-source count, or [war-council/voluntary-cash-out.md](war-council/voluntary-cash-out.md)
+for the two-source count, or [war-council/the-streak-and-the-pot.md](war-council/the-streak-and-the-pot.md)
 for the widened refusal predicate.
 
 ## DLR-141, the on-hit rule reduces rather than destroys (2026-08-25)
+
+> **Superseded by DLR-156**, which deleted the queued payout this rule retained a share of.
+> `APPLY_DAMAGE_HIT_RETENTION` and `PayoutOutcome` no longer exist. Kept as the record.
+
 
 **A queued Apply Damage payout is no longer an all-or-nothing gamble against the player's health
 bar.** DLR-109 wiped it entirely on any hit that cost the player health; DLR-141 replaced that with a
@@ -803,9 +814,9 @@ cost/delay figures stay `[provisional]`/unplayed, unaffected by this ticket.
 cited three passages that turned out to live in `.docs/game_rules/the-hunt.md` instead —
 `hybrid-design.md` never described this mechanic's on-hit behaviour at all, a pre-existing gap this
 ticket's scope did not cover filling. Start at
-[hunt/delayed-apply-damage-payout.md](hunt/delayed-apply-damage-payout.md#where-it-lives-and-the-three-fates--ac3--dlr-141)
+[hunt/README.md](hunt/README.md)
 for the three-fate rule, the reference-inequality derivation, and the tunable, or
-[war-council-ui/apply-damage-plate.md](war-council-ui/apply-damage-plate.md) for what changed on the
+[war-council-ui/the-resolution-screen.md](war-council-ui/the-resolution-screen.md) for what changed on the
 felt.
 
 ## DLR-114, the pre-hand loadout action bar (2026-08-24)
@@ -868,7 +879,7 @@ Threshold families once per hand, Terminal (Keepsake) only at the final trick, a
 consumable never. The **call site is inside `resolveTrickBank`**, which is forced rather than chosen:
 Hoarder needs the bank _after_ the climb and Unbloodied needs to know whether the trick was a hit —
 figures that only exist inside that function — and R3 puts Momentum **inside** the cash-out product
-and Blade **outside** it, and the product is `bank.ts`'s. Steps 1 and 5 (Second Wind into the AP
+and Blade **outside** it, and the product is the engine's. Steps 1 and 5 (Second Wind into the AP
 pool, Purse into the coins) land in a new `src/app/warCouncil/buffRoundState.ts`, folded after the
 trick has resolved so a refund can never be re-spent on the trick that generated it.
 
@@ -893,7 +904,7 @@ hand's end" is false by construction, and **three Purse cards pay nothing**; an 
 evaluator at all. **`Miser` fights the shop**, and is now live rather than theoretical. And **Long
 Fall** (v1 row #8) is still unimplemented, so eleven of twelve rows are evaluated. Start at
 [hunt/buff-condition-evaluation.md](hunt/buff-condition-evaluation.md) for the evaluator, the cadence
-and the spend model, [war-council/buffs-in-the-cash-out.md](war-council/buffs-in-the-cash-out.md) for
+and the spend model, [war-council/buffs-in-the-trick-damage.md](war-council/buffs-in-the-trick-damage.md) for
 why the call site is where it is, or
 [war-council-ui/buff-hand-state-and-the-fold.md](war-council-ui/buff-hand-state-and-the-fold.md) for
 the hand's bookkeeping and the two load-bearing orderings.
@@ -1059,6 +1070,10 @@ sentinel decision, [hunt/buff-pile.md](hunt/buff-pile.md) for the superseded sca
 
 ## DLR-143, Apply Damage reworked: leader-only, Timebomb stacks, 1-trick settle, ⅓ retention (2026-08-25)
 
+> **Superseded by DLR-156**, which removed the Apply Damage control and both tunables this
+> section retuned. Kept as the record.
+
+
 **DLR-143 corrected three Apply Damage timing/economy rules in the same pass, because all three share
 the two files that gate and pay the action.** The press's own availability gate changed shape rather
 than merely its value: `ApplyDamageRefusal.TimebombPending` (design decision D6, 2026-08-19) is
@@ -1089,9 +1104,9 @@ outside every task's stated file list that hardcoded the pre-change "60%" wordin
 `PAYOUT_QUEUE_RISK_HINT` and broke the moment the retention constant changed; fixed in the same
 review-fix pass.
 
-Start at [war-council/voluntary-cash-out.md](war-council/voluntary-cash-out.md) for the leader-only
+Start at [war-council/the-streak-and-the-pot.md](war-council/the-streak-and-the-pot.md) for the leader-only
 gate and the reason vocabulary swap, or
-[hunt/delayed-apply-damage-payout.md](hunt/delayed-apply-damage-payout.md) for the two tunables, the
+[hunt/README.md](hunt/README.md) for the two tunables, the
 retuned three-fate table, and why the fold order needed no code change to handle the newly-reachable
 stacked case. `.docs/game_rules/the-hunt.md` **is** touched: when Apply Damage may be pressed, whether
 it stacks with Timebomb, how long a payout takes to settle, and what fraction survives a hit are all
@@ -1194,7 +1209,54 @@ stale**, including the tricks-taken and damage-per-hand figures the shop arithme
 re-measuring was out of scope. Start at
 [war-council/the-hand-refill.md](war-council/the-hand-refill.md).
 
-## Latest — DLR-154, Timebomb targeting: the mark, the fuse, and taking it back (2026-08-31)
+## Latest — DLR-156, roll-over damage: a per-trick pot the player cashes or pushes (2026-09-01)
+
+**The ticket that replaced the game's damage equation and gave the decision its own screen.** Until
+2026-09-01 a streak of _n_ tricks paid `bank × multiplier` — two counters holding the same number —
+with buff rewards pooled across a whole hand and a hit paying back two-thirds. Now each **banked**
+trick computes its own damage as `(BASE_DAMAGE + baseDamageBonus + buffDamage) × buffMult` using only
+the buffs fired **on that trick**, accumulating into `total` while `roll` climbs by one; the pot is
+`total × roll`. A trick that **hurts** the player wipes both and pays the Quarry nothing — the
+two-thirds consolation is gone, which is what makes pushing one more trick a real bet. The hand
+boundary now does nothing: the streak is a run-carried figure, clearing only at a fight boundary,
+following DLR-150's `feederCarry` pattern field for field.
+
+**The Apply Damage button left the action bar**, with its five refusals, its AP cost and the
+delayed-payout queue behind it. In its place, **every resolved trick hands off to a second
+full-viewport screen** that carries the two played cards across, derives the damage one term at a
+time in a fixed two-row ledger, and asks *apply* (deal the pot, reset both) or *roll over* (keep
+both, play on). A hurt trick reaches the same screen with nothing to decide and a single **Onward**
+exit. The played card now flies from the hand to the table, with a landing reachable three ways so a
+backgrounded tab cannot strand it.
+
+Names moved with the meaning: `bank.ts` → `streak.ts`, `BankState` → `StreakState`, `cashValue` →
+`potValue`, `bankClimbBonus`/`bankClimbBonusFor` → `baseDamageBonus`/`baseDamageBonusFor`. Deleted
+outright: `voluntaryCashOut.ts`, `applyDamagePayout.ts`, `payoutLabels.ts`, `forcedCashValue` and its
+numerator/denominator pair (the codebase's only fractional rule, and its only division),
+`payableCashOutBonus`/`markCashOutPaid`/`CashOutBonus`, `TrickResolution.bankAdded` and
+`cashedAtHandEnd`, and `EncounterState.pendingApplyPayout`.
+
+**Three things this ticket leaves open on purpose.** The payout lands roughly 2.5–3× today's for
+identical cards with nothing capping a streak — deliberately unbalanced, with the counterweight (a
+health penalty staked by firing a buff) deferred; whether a whole screen firing up to six times a
+hand wears out is play-and-see; and the four CSS tunables (`--wc-beat`, `--wc-resolve-hold`,
+`--wc-flight`, `--wc-ledger-row`) are transcribed placeholders the developer has not chosen. **No
+browser pass was run**, so nothing on either screen has been seen rendering — a verification gap, not
+a build gap.
+
+**One consequence worth knowing that no acceptance criterion names**: the DLR-150 Feeder carry is
+still earned, carried and displayed, but **pays nothing**, because the damage equation no longer
+reads the hand's accrual at all. Restoring it means deciding where a carried-in bonus lands under the
+new equation, which is a design decision rather than a repair.
+
+Start at [war-council/the-streak-and-the-pot.md](war-council/the-streak-and-the-pot.md) for the
+equation and the streak's lifetime,
+[war-council-ui/the-resolution-screen.md](war-council-ui/the-resolution-screen.md) for the screen,
+the beat sequence and the card's flight, or
+[war-council/buffs-in-the-trick-damage.md](war-council/buffs-in-the-trick-damage.md) for the split
+between what a fired buff pays into its own trick and what still pools for the hand.
+
+## DLR-154, Timebomb targeting: the mark, the fuse, and taking it back (2026-08-31)
 
 **The ticket that gave Timebomb everything a player can see, undo and be held to.** The mechanic
 already worked — a spend armed a damage pair, the next hand-card tap primed a card, and the mark
@@ -1327,7 +1389,7 @@ arithmetic surface.
 stays stated exactly once; `TARGET_SUIT` itself remains module-private and total.
 
 Start at [war-council/buff-projection.md](war-council/buff-projection.md) for the module, or
-[war-council/buffs-in-the-cash-out.md](war-council/buffs-in-the-cash-out.md) for the resolution path
+[war-council/buffs-in-the-trick-damage.md](war-council/buffs-in-the-trick-damage.md) for the resolution path
 it delegates to.
 
 ## DLR-148, the buff gallery, the felt re-home, and the trick readout (2026-08-26)
@@ -1396,7 +1458,7 @@ fight was won or lost. A Feeder firing on a **dodge** — a skull trick the play
 is a Win — pays into the hand exactly as before, Overlap Bonus included.
 
 The architectural point worth carrying forward: **the skull inversion is still stated exactly once**,
-in `src/warCouncil/bank.ts`'s `TAKEN` table behind `isTaken`. Everything downstream that needs the
+in `src/warCouncil/streak.ts`'s `TAKEN` table behind `isTaken`. Everything downstream that needs the
 outcome axis **receives it as a parameter** (`trickIsLoss`) rather than re-deriving it — a
 `trickWasLoss(ctx)` predicate inside `src/hunt/` was explicitly rejected as a second statement of the
 game's most misread rule, and `src/hunt/` learns nothing new about skulls.

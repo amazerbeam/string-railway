@@ -21,7 +21,7 @@ export function dealRound(
   /**
    * DLR-123 AC2 — the encounter's carried deck. ABSENT or empty IS a new encounter, so a fresh 33
    * is built and shuffled (AC1/AC10). Trailing and optional following `apCapacity`'s precedent
-   * rather than `bankClimbBonus`': every existing two-argument call still means exactly what it
+   * rather than `baseDamageBonus`': every existing two-argument call still means exactly what it
    * meant — a fresh deal — so no existing spec has to be rewritten to say what it already said.
    */
   deck: EncounterDeck = FRESH_ENCOUNTER_DECK,
@@ -55,8 +55,8 @@ export function dealRound(
     // DLR-146 — drawn from the deal's OWN generator, so the mid-hand reshuffle inherits
     // `dealSeedFor`'s run/encounter/hand uniqueness with no second seed source to keep in step.
     drawSeed: Math.floor(rng() * 0x100000000),
-    bank: 0,
-    multiplier: 0,
+    total: 0,
+    roll: 0,
     lastResolution: null,
     currentTrick: [],
     leader: otherSide(dealer),

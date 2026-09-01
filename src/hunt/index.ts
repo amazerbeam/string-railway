@@ -26,8 +26,7 @@ export {
   PLAYER_HAND_FLOOR,
   SKULL_DENSITY,
   DAMAGE_PER_HIT,
-  FORCED_CASH_OUT_NUMERATOR,
-  FORCED_CASH_OUT_DENOMINATOR,
+  BASE_DAMAGE,
   FORAGE_BUDGET_PER_ENCOUNTER,
   ENCOUNTERS_PER_RUN,
   TelegraphFidelity,
@@ -64,9 +63,6 @@ export {
   MAX_MULTIPLIER_BONUS_PER_HAND,
   MAX_FLAT_DAMAGE_BONUS_PER_HAND,
   MAX_COIN_BONUS_PER_HAND,
-  APPLY_DAMAGE_AP_COST,
-  APPLY_DAMAGE_DELAY_TRICKS,
-  APPLY_DAMAGE_HIT_RETENTION,
   OpponentKind,
   RUN_ENCOUNTERS,
   ORDINARY_OPPONENT_NAMES,
@@ -136,7 +132,7 @@ export {
   isConsumableKind,
 } from './buffCosts'
 
-export type { BuffBonusAccrual, BuffCarry, CashOutBonus } from './buffAccrual'
+export type { BuffBonusAccrual, BuffCarry, TrickBuffBonus } from './buffAccrual'
 export {
   EMPTY_BUFF_ACCRUAL,
   EMPTY_BUFF_CARRY,
@@ -146,8 +142,7 @@ export {
   accrueCarry,
   overlapBonusFor,
   resolveFiredBuffs,
-  markCashOutPaid,
-  payableCashOutBonus,
+  trickBonusFor,
 } from './buffAccrual'
 
 export type {
@@ -220,28 +215,12 @@ export {
   NO_PENDING_TIMEBOMB,
   hasPendingTimebomb,
   queueTimebomb,
-  hasPendingApplyPayout,
-  queueApplyDamagePayout,
   activateShield,
   hasShieldHearts,
   NO_WARD,
   activateWard,
   hasWard,
 } from './encounter'
-
-export type {
-  PendingApplyPayout,
-  ApplyDamageDelayModifiers,
-  ApplyPayoutTick,
-  TrickPayoutEvent,
-} from './applyDamagePayout'
-export {
-  applyDamageDelayTricks,
-  queueApplyPayout,
-  reduceApplyPayoutOnHit,
-  tickApplyPayout,
-  PayoutOutcome,
-} from './applyDamagePayout'
 
 export type { ShopStock } from './shop'
 export {
@@ -290,7 +269,7 @@ export {
   beatenCount,
   shopStockFor,
   flaskStockFor,
-  bankClimbBonusFor,
+  baseDamageBonusFor,
   playerRankTiersFor,
   slotVisitStockFor,
 } from './run'

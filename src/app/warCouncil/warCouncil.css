@@ -385,6 +385,18 @@
   height: clamp(0.85rem, 2vmin, 1.1rem);
 }
 
+/* DLR-156 AC15 — the card's flight layer. `useCardFlight.ts` clones the tapped card into an
+   element carrying this class, appended to `document.body`, so the clone is never clipped by the
+   hand's or the felt's `overflow: hidden` — the same reason `ui-notes.md` §2 gives. Only the
+   per-flight `left`/`top`/`width`/`height` are set inline, on the flyer itself; everything that
+   is true of every flight lives here. */
+.wc-card-flyer {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  will-change: transform;
+}
+
 /* ---------- decree + draw pile, and the table itself: moved to `warCouncilTable.css`
    (DLR-93 400-line pass) — import it alongside this file from the mount component. */
 

@@ -10,8 +10,8 @@ explicitly the next ticket's to add, once there is something to spend AP on.
 `true`) is read in exactly one place — `apCostFor`. `canAffordAp` and `spendAp` both call
 `apCostFor` rather than re-checking the flag themselves, so a future consumer that wants to know
 whether an action is affordable, or wants to spend for it, never writes its own
-`if (AP_ENABLED) …` branch. This mirrors `src/warCouncil/voluntaryCashOut.ts`'s
-`applyDamageRefusalFor`: one function every caller goes through, so the _rule_ — not just the
+`if (AP_ENABLED) …` branch. This mirrored `src/warCouncil/voluntaryCashOut.ts`'s
+`applyDamageRefusalFor` (both deleted by DLR-156): one function every caller goes through, so the _rule_ — not just the
 _flag_ — lives in one place. Flip `AP_ENABLED` to `false` in `config.ts` and every AP-gated action
 becomes free, with zero other code change.
 
@@ -71,8 +71,9 @@ one.
 
 ## DLR-109 — Apply Damage is the first real consumer
 
-**AP finally has a reachable consumer.** `APPLY_DAMAGE_AP_COST` (`3`, `src/hunt/apConfig.ts`, beside
-`APPLY_DAMAGE_DELAY_TRICKS`) is spent through `spendAp` on every committing Apply Damage press, and
+**AP finally has a reachable consumer — and DLR-156 took it away again.** `APPLY_DAMAGE_AP_COST`
+(`3`, `src/hunt/apConfig.ts`, beside `APPLY_DAMAGE_DELAY_TRICKS`) was spent through `spendAp` on
+every committing Apply Damage press, and
 refused through `canAffordAp` before the press can commit — the same two functions this module
 always intended a consumer to call, with no bypass written at the call site. `apPool` got a real
 home: `RoundUiState` — the field is gone since DLR-114, see the next section — seeded per hand through
@@ -81,8 +82,13 @@ remounts the felt per hand, so mount **is** the per-hand refresh) rather than on
 activation's own `BuffActivationState` still has no such home — DLR-108's activation flow remains
 unreachable, and this ticket adds no second AP-spending mechanism: both consumers draw on the same
 `actionPoints.ts` functions. See
-[the delayed Apply Damage payout](delayed-apply-damage-payout.md) for the full mechanic, and
-[the voluntary cash-out](../war-council/voluntary-cash-out.md) for the widened refusal predicate.
+**DLR-156 deleted both constants with the button and the queue.** Applying is now a mandatory prompt
+raised after every banked trick rather than a press the player elects to make, so charging AP for it
+would tax every banked trick rather than pricing a choice — a balance change the ticket flagged
+rather than hid. See
+[war-council-ui/the-resolution-screen.md](../war-council-ui/the-resolution-screen.md) for what
+replaced it, and [the streak and the pot](../war-council/the-streak-and-the-pot.md) for what became
+of the refusal predicate (deleted with its module).
 
 `apPool` was **invisible** as DLR-109 shipped it — nothing rendered it, so an `InsufficientAp` refusal
 read as the button dying for no visible reason.
@@ -158,7 +164,8 @@ only together — the flag flipped without consumption would leave no limit at a
 `canAffordAp` is always true and `spendAp(pool, 0)` never subtracts. Both
 `BuffActivationRefusal.InsufficientAp` and `ApplyDamageRefusal.InsufficientAp` become
 **unreachable rather than deleted** — each stays in its union so
-`BUFF_ACTIVATION_REFUSAL_MESSAGE` and `APPLY_DAMAGE_REFUSAL_MESSAGE` stay total `Record`s, the same
+`BUFF_ACTIVATION_REFUSAL_MESSAGE` stays a total `Record` (`APPLY_DAMAGE_REFUSAL_MESSAGE` went with
+the button on DLR-156), the same
 discipline DLR-132 used for `PurchaseRefusal.SlotsFull`.
 
 **What the flip does *not* do, and had to be removed by hand.** A disabled resource still renders as

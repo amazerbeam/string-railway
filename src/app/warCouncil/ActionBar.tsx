@@ -1,23 +1,15 @@
-import { BuffActivationRefusal, type Buff, type PendingApplyPayout } from '../../hunt'
-import type { ApplyDamageRefusal, Card, DiscardRefusal } from '../../warCouncil'
+import { BuffActivationRefusal, type Buff } from '../../hunt'
+import type { Card, DiscardRefusal } from '../../warCouncil'
 import {
   ACTION_BAR_LABEL,
   APPLY_BUFF_LABEL,
-  APPLY_DAMAGE_BAR_LABEL,
   CARDS_LABEL,
   CARDS_NO_SELECTION_HINT,
   SWAP_LABEL,
   applyBuffAccessibleName,
-  applyDamageBarAccessibleName,
   cardsAccessibleName,
-  queuedPayoutText,
 } from './actionBarLabels'
-import {
-  APPLY_DAMAGE_REFUSAL_MESSAGE,
-  cardAccessibleName,
-  DISCARD_REFUSAL_MESSAGE,
-  discardAccessibleName,
-} from './labels'
+import { cardAccessibleName, DISCARD_REFUSAL_MESSAGE, discardAccessibleName } from './labels'
 
 export interface ActionBarProps {
   readonly offeredBuffs: readonly Buff[]
@@ -29,26 +21,24 @@ export interface ActionBarProps {
   readonly discardSelecting: boolean
   readonly discardSelectionSize: number
   readonly discardRefusal: DiscardRefusal | null
-  readonly applyCashValue: number
-  readonly applyPoised: boolean
-  readonly applyRefusal: ApplyDamageRefusal | null
-  readonly pendingPayout: PendingApplyPayout | null
   readonly onToggleLoadout: () => void
   readonly onPlayArmed: () => void
   readonly onTapSwap: () => void
   readonly onCancelSwap: () => void
-  readonly onTapApplyDamage: () => void
-  readonly onCancelApplyDamage: () => void
 }
 
 /**
  * DLR-114 AC1 — the felt's one bottom-of-screen action bar, carrying every pre-trick decision:
- * Apply Buff, Cards, Swap, Apply Damage, in that order. ALWAYS MOUNTED for the whole hand (the
- * plan's own default) — nothing here is conditionally unmounted, every button greys with its
- * reason on its own face instead, the same "inert rather than absent" precedent every disabled
- * card in `BuffGallery` follows.
+ * Apply Buff, Cards, Swap, in that order. ALWAYS MOUNTED for the whole hand (the plan's own
+ * default) — nothing here is conditionally unmounted, every button greys with its reason on its
+ * own face instead, the same "inert rather than absent" precedent every disabled card in
+ * `BuffGallery` follows.
  *
- * Four controls sits below `game-ux`'s roving-tabindex threshold of about five, so these are plain
+ * DLR-156 Phase 4 — the Apply Damage plate is GONE. The pot's cash-or-roll choice moved off this
+ * bar entirely, onto the resolution screen Phase 5 builds; there is nothing left here for it to
+ * gate.
+ *
+ * Three controls sits below `game-ux`'s roving-tabindex threshold of about five, so these are plain
  * tab stops rather than a roving-tabindex group.
  *
  * `onClick` stops propagation, but for this component that stop is DEFENSIVE-ONLY, not
@@ -59,9 +49,8 @@ export interface ActionBarProps {
  * `.wc-table` and really would leak a click through to `handleCarryOn` without it. Do not delete
  * that one on the mistaken belief this bar's stop already covers it.
  *
- * `Escape` cancels whichever of Swap/Apply Damage is mid-poise — both cancel handlers are called
- * unconditionally, exactly as those retired plates' own reducer-level cancel transitions already
- * no-op when there is nothing to cancel.
+ * `Escape` cancels a mid-poise Swap. `onCancelSwap` is called unconditionally, exactly as that
+ * plate's own reducer-level cancel transition already no-ops when there is nothing to cancel.
  */
 export default function ActionBar({
   offeredBuffs,
@@ -73,24 +62,16 @@ export default function ActionBar({
   discardSelecting,
   discardSelectionSize,
   discardRefusal,
-  applyCashValue,
-  applyPoised,
-  applyRefusal,
-  pendingPayout,
   onToggleLoadout,
   onPlayArmed,
   onTapSwap,
   onCancelSwap,
-  onTapApplyDamage,
-  onCancelApplyDamage,
 }: ActionBarProps) {
   // AC2's own default — only the buff window itself disables Apply Buff. An unaffordable pile
   // still opens: the panel is where the player reads what they own and what it costs.
   const applyBuffDisabled = loadoutRefusal === BuffActivationRefusal.WindowClosed
   const cardsDisabled = !cardsEnabled || armed === null
   const swapDisabled = discardRefusal !== null
-  const applyDamageDisabled = applyRefusal !== null
-  const queued = queuedPayoutText(pendingPayout)
 
   return (
     <nav
@@ -100,7 +81,6 @@ export default function ActionBar({
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => {
         if (e.key !== 'Escape') return
-        onCancelApplyDamage()
         onCancelSwap()
       }}
     >
@@ -167,33 +147,6 @@ export default function ActionBar({
         </button>
         {discardRefusal !== null && (
           <p className="wc-bar-refusal">{DISCARD_REFUSAL_MESSAGE[discardRefusal]}</p>
-        )}
-      </div>
-
-      <div className="wc-bar-item">
-        <button
-          type="button"
-          className={`wc-bar-btn${applyPoised ? ' is-poised' : ''}`}
-          aria-pressed={applyPoised}
-          aria-label={applyDamageBarAccessibleName(
-            applyCashValue,
-            applyPoised,
-            applyRefusal,
-            pendingPayout,
-          )}
-          disabled={applyDamageDisabled}
-          onClick={onTapApplyDamage}
-        >
-          <span className="wc-bar-btn-label" aria-hidden="true">
-            {APPLY_DAMAGE_BAR_LABEL}
-          </span>
-          <span className="wc-bar-btn-figure" aria-hidden="true">
-            cash {applyCashValue}
-          </span>
-        </button>
-        {queued !== null && <p className="wc-bar-queued">{queued}</p>}
-        {applyRefusal !== null && (
-          <p className="wc-bar-refusal">{APPLY_DAMAGE_REFUSAL_MESSAGE[applyRefusal]}</p>
         )}
       </div>
     </nav>

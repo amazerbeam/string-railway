@@ -136,6 +136,7 @@ export function playRun(
       outcome.result.coinsEarned,
       outcome.result.buffs,
       outcome.result.feederCarry,
+      outcome.result.streak,
     )
     coinsEarned += run.coins - coinsBefore
     handsThisFight += 1

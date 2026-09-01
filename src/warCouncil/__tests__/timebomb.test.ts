@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { primeCard, unprimeCard, isPrimed, trickIsPrimed } from '../timebomb'
 import { PlayerSide, Suit, type Card, type RoundState, type TrickCard } from '../types'
 import { dealRound } from '../deal'
@@ -64,13 +64,13 @@ describe('primeCard (AC2)', () => {
     expect(isPrimed(after.primedCards, target)).toBe(true)
   })
 
-  it('leaves the hand, the skulls and the bank untouched', () => {
+  it('leaves the hand, the skulls and the total untouched', () => {
     const state = dealt()
     const after = primeCard(state, PlayerSide.Player, state.hands[PlayerSide.Player][0])
     expect(after.hands).toEqual(state.hands)
     expect(after.skulledCards).toEqual(state.skulledCards)
-    expect(after.bank).toBe(state.bank)
-    expect(after.multiplier).toBe(state.multiplier)
+    expect(after.total).toBe(state.total)
+    expect(after.roll).toBe(state.roll)
   })
 
   it('never mutates its input', () => {

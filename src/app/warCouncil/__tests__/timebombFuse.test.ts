@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { isPrimed, PlayerSide, Suit, type Card, type WarCouncilState } from '../../../warCouncil'
 import {
   BuffTier,
@@ -29,7 +29,7 @@ function baseUi(
       round: makeRound(round),
       encounter: encounterFixture,
       blastGuardHeld: false,
-      bankClimbBonus: 0,
+      baseDamageBonus: 0,
       discardsRemaining: discardsRemainingFixture,
       buffs: [],
     }),
@@ -90,7 +90,7 @@ describe('the Timebomb fuse — DLR-154 R3, the two-trick countdown', () => {
       round: fuseRound(),
       encounter: encounterFixture,
       blastGuardHeld: false,
-      bankClimbBonus: 0,
+      baseDamageBonus: 0,
       discardsRemaining: discardsRemainingFixture,
       buffs: [bronzeTimebomb],
     })

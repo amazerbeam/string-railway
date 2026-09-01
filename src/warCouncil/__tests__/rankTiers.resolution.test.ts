@@ -1,12 +1,6 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { AbilityTier, ALL_BRONZE, DAMAGE_PER_HIT, steppedTo, TieredRank } from '../../hunt'
-import {
-  cashValue,
-  forcedCashValue,
-  resolveTrickBank,
-  type BankState,
-  type TrickFacts,
-} from '../bank'
+import { resolveTrickBank, type StreakState, type TrickFacts } from '../streak'
 import { swanTierFactsFor, tierForSide } from '../rankTierRules'
 import { CardRank, PlayerSide, Suit, type TrickCard } from '../types'
 
@@ -45,7 +39,7 @@ describe('swanTierFactsFor — whose Swan it is (AC3/AC4/AC5)', () => {
   const quarrysSwan = [card(PlayerSide.Cpu, Suit.Bells, CardRank.Swan)]
   const noSwan = [card(PlayerSide.Player, Suit.Bells, 4)]
 
-  it('reads silver as the multiplier alone', () => {
+  it('reads silver as the roll alone', () => {
     expect(swanTierFactsFor(playersSwan, SILVER_SWAN)).toEqual({
       swanKeepsMultiplier: true,
       swanKeepsBank: false,
@@ -81,12 +75,11 @@ describe('swanTierFactsFor — whose Swan it is (AC3/AC4/AC5)', () => {
   })
 })
 
-/* ── AC4/AC5 — the Swan ladder at the bank ──────────────────────────────────────────────── */
+/* ── AC4/AC5 — the Swan ladder at the total ──────────────────────────────────────────────── */
 
 describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
-  /** A real streak, so both the bank and the multiplier have something to lose. */
-  const STREAK: BankState = { bank: 3, multiplier: 3 }
-  const FULL_CASH = forcedCashValue(STREAK.bank, STREAK.multiplier)
+  /** A real streak, so both the total and the roll have something to lose. */
+  const STREAK: StreakState = { total: 3, roll: 3 }
 
   const facts = (over: Partial<TrickFacts> = {}): TrickFacts => ({
     playerWon: false,
@@ -96,41 +89,41 @@ describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
     timebombToPlayer: 0,
     timebombToQuarry: 0,
     blastGuarded: false,
-    bankClimbBonus: 0,
+    baseDamageBonus: 0,
     swanKeepsMultiplier: false,
     swanKeepsBank: false,
     buffs: null,
     ...over,
   })
 
-  it('bronze on a clean loss still resets both and cashes the reduced figure (AC1)', () => {
+  it('bronze on a clean loss resets both and cashes nothing — DLR-156 AC7 (AC1)', () => {
     const r = resolveTrickBank(STREAK, facts())
-    expect(r.bank).toBe(0)
-    expect(r.multiplier).toBe(0)
-    expect(r.cashOut).toBe(FULL_CASH)
+    expect(r.total).toBe(0)
+    expect(r.roll).toBe(0)
+    expect(r.cashOut).toBe(0)
     expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
   })
 
-  it('silver on a clean loss spares the multiplier only — damage and cash still land (AC4)', () => {
+  it('silver on a clean loss spares the roll only — damage lands, nothing ever cashed anyway (AC4)', () => {
     const r = resolveTrickBank(STREAK, facts({ swanKeepsMultiplier: true }))
-    expect(r.multiplier).toBe(STREAK.multiplier)
-    expect(r.bank).toBe(0)
-    expect(r.cashOut).toBe(FULL_CASH)
+    expect(r.roll).toBe(STREAK.roll)
+    expect(r.total).toBe(0)
+    expect(r.cashOut).toBe(0)
     expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
   })
 
-  it('gold on a clean loss spares the bank too — nothing cashes, the damage still lands (AC5)', () => {
+  it('gold on a clean loss spares the total too — the whole streak stands, the damage still lands (AC5)', () => {
     const r = resolveTrickBank(STREAK, facts({ swanKeepsMultiplier: true, swanKeepsBank: true }))
-    expect(r.bank).toBe(STREAK.bank)
-    expect(r.multiplier).toBe(STREAK.multiplier)
+    expect(r.total).toBe(STREAK.total)
+    expect(r.roll).toBe(STREAK.roll)
     expect(r.cashOut).toBe(0)
     expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
   })
 
   it('gold spares the streak even if the caller reports only the gold fact', () => {
     const r = resolveTrickBank(STREAK, facts({ swanKeepsBank: true }))
-    expect(r.multiplier).toBe(STREAK.multiplier)
-    expect(r.bank).toBe(STREAK.bank)
+    expect(r.roll).toBe(STREAK.roll)
+    expect(r.total).toBe(STREAK.total)
   })
 
   it('silver does nothing against an EATEN SKULL — that is AC4 excluding it by name', () => {
@@ -140,8 +133,8 @@ describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
       facts({ playerWon: true, skullTrick: true, swanKeepsMultiplier: true }),
     )
     expect(silver).toEqual(bronze)
-    expect(silver.multiplier).toBe(0)
-    expect(silver.bank).toBe(0)
+    expect(silver.roll).toBe(0)
+    expect(silver.total).toBe(0)
   })
 
   it('gold does nothing against an EATEN SKULL either (AC4/AC5)', () => {
@@ -167,40 +160,34 @@ describe('the Swan ladder through resolveTrickBank (AC4/AC5/AC6)', () => {
     expect(goldWin).toEqual(bronzeWin)
   })
 
-  /* The sixth trick, where the ladder meets the end-of-hand fold. Raised by DLR-122's defender
-     review: the fold runs AFTER the branch above, so a spared bank reaches it intact. `cashOut`
-     is damage dealt TO THE QUARRY, so paying more there is the upgrade working, not inverting —
-     but it is a behavioural read, so it is pinned here rather than left to be rediscovered. */
+  /* DLR-156 AC8 — the end-of-hand fold is GONE: `finalTrick` no longer folds a cash-out in, so
+     the sixth trick behaves exactly like any other. These three cases replace the ones that used
+     to pin the fold, and now pin its absence instead. */
 
-  it('at bronze, a clean loss on the final trick pays the reduced figure and nothing more', () => {
+  it('at bronze, a clean loss on the final trick still just wipes the streak and cashes nothing', () => {
     const r = resolveTrickBank(STREAK, facts({ finalTrick: true }))
-    expect(r.cashOut).toBe(FULL_CASH)
-    expect(r.bank).toBe(0)
-    expect(r.multiplier).toBe(0)
+    expect(r.cashOut).toBe(0)
+    expect(r.total).toBe(0)
+    expect(r.roll).toBe(0)
   })
 
-  it('at silver, the final trick still cashes the bank at the reduced figure — only the streak was spared', () => {
+  it('at silver, the final trick still only spares the roll — the total still wipes, nothing cashes', () => {
     const r = resolveTrickBank(STREAK, facts({ finalTrick: true, swanKeepsMultiplier: true }))
-    // The bank was zeroed by the forced cash, so the end-of-hand fold has nothing left to cash:
-    // `cashValue(0, 3)` is 0 and the total is the reduced figure alone.
-    expect(r.cashOut).toBe(FULL_CASH)
-    expect(r.bank).toBe(0)
-    expect(r.multiplier).toBe(0)
+    expect(r.cashOut).toBe(0)
+    expect(r.total).toBe(0)
+    expect(r.roll).toBe(STREAK.roll)
   })
 
-  it('at gold, the spared streak reaches the end-of-hand fold and cashes IN FULL, not two-thirds', () => {
+  it('at gold, the final trick spares the whole streak and still cashes nothing — no fold to reach', () => {
     const r = resolveTrickBank(
       STREAK,
       facts({ finalTrick: true, swanKeepsMultiplier: true, swanKeepsBank: true }),
     )
-    // The forced two-thirds reduction is what gold buys out of; the ordinary end-of-hand rule
-    // still applies to the surviving bank and pays the whole product to the Quarry.
-    expect(r.cashOut).toBe(cashValue(STREAK.bank, STREAK.multiplier))
-    expect(r.cashOut).toBeGreaterThan(FULL_CASH)
-    expect(r.cashedAtHandEnd).toBe(true)
-    // The hand is over either way, so both counters still finish at zero.
-    expect(r.bank).toBe(0)
-    expect(r.multiplier).toBe(0)
+    // The streak survives the hand boundary untouched (AC8) — there is no end-of-hand rule left
+    // to pay it out, gold rung or not.
+    expect(r.cashOut).toBe(0)
+    expect(r.total).toBe(STREAK.total)
+    expect(r.roll).toBe(STREAK.roll)
     // And the player still took the hit — no rung insures against health.
     expect(r.damageToPlayer).toBe(DAMAGE_PER_HIT)
   })

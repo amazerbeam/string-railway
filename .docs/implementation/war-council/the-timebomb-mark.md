@@ -111,7 +111,7 @@ be played instead of being dead weight.
 
 The literal ticket wording is "if the Quarry won the primed trick". Applied literally it would be
 a defect, because **a Dodge is also a trick the Quarry won** — and a Dodge is a trick the *player
-banks*. Zeroing its `bankAdded` would delete a bank the player had already earned.
+banks*. Zeroing that trick's own damage contribution would delete a climb the player had already earned.
 
 `CleanLoss` is the only outcome where a Quarry win costs the player anything, so it is the only one
 with something to replace. The two readings agree everywhere the override does anything, and this one
@@ -124,7 +124,7 @@ A marked trick the **player** wins is already a `CleanWin`. It falls through to 
 banks 1, climbs the multiplier, and the delayed hit lands on the player at the next trick's resolution
 instead of on the Quarry. There is no mirrored rule and no second branch — the symmetry is structural, because
 `timebombTarget` follows the **winner** rather than a side named in a rule. A spec asserts a marked
-`CleanWin` is field-for-field identical to an unmarked one across `bank`, `multiplier`, `bankAdded`,
+`CleanWin` is field-for-field identical to an unmarked one across `total`, `roll`, `trickDamage`,
 `cashOut` and `damageToPlayer`.
 
 **A marked trick that is also a skull trick and that the player wins still costs the skull's
@@ -148,7 +148,7 @@ app layer's `commit` (`commitHandlers.ts`) now supplies the damage pair directly
 rather than this module or `encounter.ts` looking one up (`timebombDamageFor` is deleted), and the
 reducer still decides when it is settled.
 
-`DuelSide` rather than `PlayerSide` is deliberate. `bank.ts` is already **the** one crossing between
+`DuelSide` rather than `PlayerSide` is deliberate. `streak.ts` is already **the** one crossing between
 the two vocabularies — `incomingFrom`'s docblock says so — and it already imports `DuelSide` from
 `../hunt`. Typing the target as a `DuelSide` here means the reducer receives a side it can hand
 straight to `queueTimebomb` with **no second crossing to get backwards**. A dealer-keyed record would

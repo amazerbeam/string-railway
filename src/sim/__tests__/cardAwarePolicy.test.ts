@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { FRESH_ENCOUNTER_DECK, legalMoves, PlayerSide, type RoundState } from '../../warCouncil'
 import {
   apCapacityFor,
-  bankClimbBonusFor,
+  baseDamageBonusFor,
   buffTargetRankOf,
   buffTargetSuitOf,
   BuffKind,
@@ -31,7 +31,7 @@ function uiFor(run: RunState, handNumber = 1): RoundUiState {
     blastGuardHeld: run.blastGuardHeld,
     discardsRemaining: run.discardsRemaining,
     buffs: run.buffs,
-    bankClimbBonus: bankClimbBonusFor(run),
+    baseDamageBonus: baseDamageBonusFor(run),
     rankTiers: playerRankTiersFor(run),
     apCapacity: apCapacityFor(run.apCapacityBonus),
     coins: run.coins,
@@ -115,8 +115,7 @@ describe('cardAwarePolicy — it aims, the baseline does not', () => {
     expect(cardAwarePolicy.chooseCard(ui.round)).toEqual(baselinePolicy.chooseCard(ui.round))
   })
 
-  it('shares the baseline shop and Apply Damage methods by reference, so only card/buff play differs', () => {
-    expect(cardAwarePolicy.wantsApplyDamage).toBe(baselinePolicy.wantsApplyDamage)
+  it('shares the baseline shop method by reference, so only card/buff play differs', () => {
     expect(cardAwarePolicy.nextShopAction).toBe(baselinePolicy.nextShopAction)
     expect(cardAwarePolicy.chooseBuffs).not.toBe(baselinePolicy.chooseBuffs)
     expect(cardAwarePolicy.chooseCard).not.toBe(baselinePolicy.chooseCard)

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import {
   CardRank,
   legalMoves,
@@ -8,10 +8,9 @@ import {
   type RoundState,
 } from '../../warCouncil'
 import {
-  APPLY_DAMAGE_AP_COST,
   apCostOf,
   apCapacityFor,
-  bankClimbBonusFor,
+  baseDamageBonusFor,
   BUFF_TEMPLATES,
   BuffRewardAxis,
   BuffTier,
@@ -51,7 +50,7 @@ function uiFor(run: RunState, handNumber = 1): RoundUiState {
     blastGuardHeld: run.blastGuardHeld,
     discardsRemaining: run.discardsRemaining,
     buffs: run.buffs,
-    bankClimbBonus: bankClimbBonusFor(run),
+    baseDamageBonus: baseDamageBonusFor(run),
     rankTiers: playerRankTiersFor(run),
     apCapacity: apCapacityFor(run.apCapacityBonus),
     coins: run.coins,
@@ -72,7 +71,7 @@ describe('baselinePolicy.chooseCard', () => {
 })
 
 describe('baselinePolicy.chooseBuffs', () => {
-  it('activates at least one buff, leaving APPLY_DAMAGE_AP_COST in the pool', () => {
+  it('activates at least one buff, never spending more than the pool holds', () => {
     // A freshly started run's pile is a random draw (DLR-135) of unknown cost — mint a real,
     // cheaply-priced buff explicitly so the pile has something the baseline can actually activate
     // at a KNOWN cost.
@@ -94,17 +93,7 @@ describe('baselinePolicy.chooseBuffs', () => {
       if (buff === undefined) throw new Error(`chooseBuffs returned an id ${id} not in ui.buffs`)
       return total + apCostOf(buff)
     }, 0)
-    expect(ui.buffActivation.apPool - spent).toBeGreaterThanOrEqual(APPLY_DAMAGE_AP_COST)
-  })
-})
-
-describe('baselinePolicy.wantsApplyDamage', () => {
-  it('is false on a freshly dealt hand — bank 0, multiplier 0, refusal non-null', () => {
-    const run = startRun(PLAYER_START_HEALTH, [], 23)
-    const ui = uiFor(run)
-    expect(ui.round.bank).toBe(0)
-    expect(ui.round.multiplier).toBe(0)
-    expect(baselinePolicy.wantsApplyDamage(ui)).toBe(false)
+    expect(ui.buffActivation.apPool - spent).toBeGreaterThanOrEqual(0)
   })
 })
 
@@ -143,7 +132,6 @@ describe('maximalistPolicy', () => {
 
   it('differs from baselinePolicy only in the two levers — the shared methods are reference-identical', () => {
     expect(maximalistPolicy.chooseCard).toBe(baselinePolicy.chooseCard)
-    expect(maximalistPolicy.wantsApplyDamage).toBe(baselinePolicy.wantsApplyDamage)
     expect(maximalistPolicy.chooseBuffs).toBe(baselinePolicy.chooseBuffs)
     expect(maximalistPolicy.nextShopAction).toBe(baselinePolicy.nextShopAction)
   })
@@ -200,7 +188,6 @@ describe('maximalistPolicy', () => {
 describe('rerollFocusedPolicy', () => {
   it('differs from baselinePolicy only in nextShopAction — the shared methods are reference-identical', () => {
     expect(rerollFocusedPolicy.chooseCard).toBe(baselinePolicy.chooseCard)
-    expect(rerollFocusedPolicy.wantsApplyDamage).toBe(baselinePolicy.wantsApplyDamage)
     expect(rerollFocusedPolicy.chooseBuffs).toBe(baselinePolicy.chooseBuffs)
     expect(rerollFocusedPolicy.nextShopAction).not.toBe(baselinePolicy.nextShopAction)
   })
@@ -246,7 +233,6 @@ describe('rerollFocusedPolicy', () => {
 describe('noBuffsPolicy', () => {
   it('differs from baselinePolicy only in chooseBuffs — every other method is reference-identical', () => {
     expect(noBuffsPolicy.chooseCard).toBe(baselinePolicy.chooseCard)
-    expect(noBuffsPolicy.wantsApplyDamage).toBe(baselinePolicy.wantsApplyDamage)
     expect(noBuffsPolicy.nextShopAction).toBe(baselinePolicy.nextShopAction)
     expect(noBuffsPolicy.chooseBuffs).not.toBe(baselinePolicy.chooseBuffs)
   })

@@ -37,7 +37,7 @@ function seed(overrides: Partial<WarCouncilState> = {}): RoundUiSeed {
     round: makeRound(overrides),
     encounter: encounterFixture,
     blastGuardHeld: false,
-    bankClimbBonus: 0,
+    baseDamageBonus: 0,
     discardsRemaining: 2,
     buffs: [cheat],
   }

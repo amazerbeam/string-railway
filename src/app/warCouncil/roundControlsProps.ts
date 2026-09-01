@@ -1,7 +1,7 @@
 /**
  * DLR-114 — assembles `ActionBarProps` and `BuffGalleryProps` from the reducer's own state
- * plus the handful of values `WarCouncilRound.tsx` already derives once (interactive, the Apply
- * Damage cash/refusal, the discard refusal, the offered pile, the bar's own loadout refusal).
+ * plus the handful of values `WarCouncilRound.tsx` already derives once (interactive, the discard
+ * refusal, the offered pile, the bar's own loadout refusal).
  *
  * Split out the moment the two controls' prop objects pushed `WarCouncilRound.tsx` over its
  * 400-line budget — the same reason `discardHandlers.ts` and `roundBars.ts` were split out before
@@ -13,10 +13,10 @@
  * argument the same way — hence the options object here, rather than that precedent's shape.
  *
  * Both take one options object rather than positional parameters deliberately: `ActionBarOptions`
- * alone carries three same-shaped nullable refusal values (`loadoutRefusal`, `applyRefusal`,
- * `discardRefusal`) that would transpose silently as positional arguments at the multi-line call
- * site in `WarCouncilRound.tsx` — TypeScript cannot catch two same-typed values swapped by
- * position, but a mislabelled field is a compile error.
+ * alone carries same-shaped nullable refusal values (`loadoutRefusal`, `discardRefusal`) that would
+ * transpose silently as positional arguments at the multi-line call site in `WarCouncilRound.tsx` —
+ * TypeScript cannot catch two same-typed values swapped by position, but a mislabelled field is a
+ * compile error.
  */
 import { createElement, type ReactNode } from 'react'
 import type { Buff, BuffActivationRefusal } from '../../hunt'
@@ -26,7 +26,6 @@ import {
   RoundPhase,
   sameCard,
   type AbilityChoice,
-  type ApplyDamageRefusal,
   type Card,
   type DiscardRefusal,
 } from '../../warCouncil'
@@ -76,8 +75,6 @@ export interface ActionBarOptions {
   readonly offered: readonly Buff[]
   readonly loadoutRefusal: BuffActivationRefusal | null
   readonly interactive: boolean
-  readonly applyCash: number
-  readonly applyRefusal: ApplyDamageRefusal | null
   readonly discardRefusal: DiscardRefusal | null
 }
 
@@ -88,8 +85,6 @@ export function actionBarProps({
   offered,
   loadoutRefusal,
   interactive,
-  applyCash,
-  applyRefusal,
   discardRefusal,
 }: ActionBarOptions): ActionBarProps {
   return {
@@ -102,18 +97,12 @@ export function actionBarProps({
     discardSelecting: discardSelecting(ui),
     discardSelectionSize: ui.discardSelection?.length ?? 0,
     discardRefusal,
-    applyCashValue: applyCash,
-    applyPoised: ui.applyPoised,
-    applyRefusal,
-    pendingPayout: ui.encounter.pendingApplyPayout,
     onToggleLoadout: () => dispatch({ kind: RoundUiActionKind.ToggleLoadout }),
     onPlayArmed: () => {
       if (ui.armed !== null) handleTap(ui.armed)
     },
     onTapSwap: () => dispatch({ kind: RoundUiActionKind.TapDiscard }),
     onCancelSwap: () => dispatch({ kind: RoundUiActionKind.CancelDiscard }),
-    onTapApplyDamage: () => dispatch({ kind: RoundUiActionKind.TapApplyDamage }),
-    onCancelApplyDamage: () => dispatch({ kind: RoundUiActionKind.CancelApplyDamage }),
   }
 }
 

@@ -47,8 +47,8 @@ export function makeRound(overrides: Partial<WarCouncilState> = {}): WarCouncilS
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,
-    bank: 0,
-    multiplier: 0,
+    total: 0,
+    roll: 0,
     lastResolution: null,
     currentTrick: [],
     leader: PlayerSide.Player,
@@ -59,8 +59,8 @@ export function makeRound(overrides: Partial<WarCouncilState> = {}): WarCouncilS
 }
 
 /** A state mid-streak, for the bank readout. */
-export function bankedRound(bank: number, multiplier: number): WarCouncilState {
-  return makeRound({ bank, multiplier })
+export function bankedRound(total: number, roll: number): WarCouncilState {
+  return makeRound({ total, roll })
 }
 
 /** A state whose Quarry holds a known shape with known skulls, for the shape readout. */
@@ -92,9 +92,9 @@ export const coinsFixture = 2
  *  exercise the Guard is not accidentally exercising it. */
 export const blastGuardHeldFixture = false
 
-/** A fixed bank-climb bonus for component specs (DLR-92 AC4) — zero, so a spec that does not
+/** A fixed base-damage bonus for component specs (DLR-92 AC4) — zero, so a spec that does not
  *  exercise the buff is not accidentally exercising it. */
-export const bankClimbBonusFixture = 0
+export const baseDamageBonusFixture = 0
 
 /** A fixed discard budget for component specs (DLR-100 AC5) — the full per-fight allotment, so a
  *  spec that does not exercise the discard is not accidentally starting mid-budget. */

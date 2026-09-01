@@ -1,4 +1,4 @@
-import type { AbilityChoice, Card, RoundState } from '../warCouncil'
+import type { AbilityChoice, Card, RoundState, StreakState } from '../warCouncil'
 import type {
   BuffActivationRefusal,
   BuffCarry,
@@ -48,8 +48,6 @@ export interface SimPolicy {
    *  carry. A one-parameter implementation still satisfies this type, so `baselinePolicy` and every
    *  other existing policy are unchanged and keep ignoring it. */
   chooseCard(round: RoundState, ui?: RoundUiState): CardChoice
-  /** Whether to press Apply Damage in this between-tricks window. */
-  wantsApplyDamage(ui: RoundUiState): boolean
   /** Which owned buffs to activate in this between-tricks window, in the order to activate them. */
   chooseBuffs(ui: RoundUiState): readonly BuffId[]
   /** The next shop action, or `null` to leave the shop. Re-asked after every executed action. */
@@ -70,6 +68,18 @@ export interface SimPolicy {
    *  play does not commit, the same AC7 discipline `commit` itself follows. Optional for
    *  `chooseDiscard`'s reason. */
   wantsCheatPlay?(ui: RoundUiState): CheatPlay | null
+
+  /** DLR-156 review fix — OPTIONAL, called only when the resolution screen offers a real choice
+   *  (`ui.resolution !== null` and the trick was not a hurt one — a hurt trick's only exit is
+   *  `RollOver`/"Onward", never a choice). `true` presses Apply Damage (`RoundUiActionKind.ApplyPot`);
+   *  `false` rolls the pot over (`RoundUiActionKind.RollOver`).
+   *
+   *  Optional for `chooseDiscard`'s own reason: a stub would turn "this policy does not consider
+   *  the push" into "considers it and declines every time", which is a different claim about what
+   *  the printed figures mean. When a policy supplies no method, `playHand.ts`'s driver applies the
+   *  MODELLING DEFAULT documented there — apply whenever a pot stands, never rolling the dice — a
+   *  deliberate floor, not a claim about optimal play. */
+  wantsApplyPot?(ui: RoundUiState): boolean
 }
 
 /** One buff, as it stood the moment a between-tricks window opened — BEFORE that window's own
@@ -140,19 +150,8 @@ export interface HandReport {
    *  a hand where tricks were lost, and a lost trick can still move `damageToQuarry` (bank-climb
    *  and buff effects are not gated on winning the trick). UNIT: tricks. */
   readonly tricksPlayed: number
-  /** Apply Damage payouts (`PayoutOutcome.Paid`) that actually landed on the Quarry this hand —
-   *  already counted inside `damageToQuarry`, broken out here so a queued payout's fate can be
-   *  told apart from a payout that never queued at all. UNIT: damage. */
-  readonly applyDamagePaid: number
-  /** Apply Damage value that was queued and then never landed — the delta a `Reduced` event cut
-   *  (`cashOut - remaining`) plus the full `cashOut` an `Evaporated` event lost outright. Sums
-   *  telescope across a payout reduced more than once: each event's `cashOut` already reflects
-   *  every earlier reduction, so `applyDamagePaid + applyDamageLost` recovers the sum of every
-   *  press's frozen `cashOut` for the hand. UNIT: damage. */
-  readonly applyDamageLost: number
   readonly buffsActivated: number
   readonly apSpent: number
-  readonly applyDamagePresses: number
   readonly coinsFromBuffs: number
   /** Priced buffs in the pile at the hand's START — `activatableBuffs(run.buffs).length`, the same
    *  production predicate the loadout panel reads, so the simulator and the felt cannot disagree
@@ -186,6 +185,11 @@ export interface HandReport {
    *  from Feeders that fired on a LOSS, which paid nothing in this hand. UNIT: bonus points,
    *  per axis. */
   readonly feederCarryOut: BuffCarry
+  /** DLR-156 AC8 — the streak this hand OPENED on, seeded from `RunState.streak`. Zero on the
+   *  first hand of every fight, because the streak is wiped at the fight boundary. */
+  readonly streakIn: StreakState
+  /** DLR-156 AC8 — the streak this hand ENDED on, after every trick it played. */
+  readonly streakOut: StreakState
 }
 
 /** How a run ended. `stalled` is a driver failure, deliberately distinct from `lost`. */

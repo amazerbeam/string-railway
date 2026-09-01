@@ -7,16 +7,14 @@ import type { ActionPoints } from './types'
 
 /**
  * DLR-108 — why "Apply Buff" cannot be pressed. A reason CODE, not a sentence: `src/hunt/` holds
- * no user-facing copy, exactly `src/warCouncil/voluntaryCashOut.ts`'s `ApplyDamageRefusal` and
- * `src/hunt/flask.ts`'s `FlaskRefusal`.
+ * no user-facing copy, exactly `src/hunt/flask.ts`'s `FlaskRefusal`.
  */
 export const BuffActivationRefusal = {
   /** DLR-126 — the card can never do anything IN THIS BUILD: it is a consumable whose effect needs
    *  a player-choice surface no screen provides (Puppeteer, Foresight, Spyglass). Read FIRST,
-   *  before every other refusal, because it is true of the CARD rather than of the felt — the
-   *  same reason `applyDamageRefusalFor` reports `NotYourMove` before a cost. NOT a redundancy
-   *  check: a Ward spent on a trick that turns out to be safe is a legitimate player mistake and
-   *  is allowed. See `consumables.ts`'s `CONSUMABLE_EFFECT_LIVE`. */
+   *  before every other refusal, because it is true of the CARD rather than of the felt. NOT a
+   *  redundancy check: a Ward spent on a trick that turns out to be safe is a legitimate player
+   *  mistake and is allowed. See `consumables.ts`'s `CONSUMABLE_EFFECT_LIVE`. */
   NoEffectYet: 'noEffectYet',
   /** AC1 — the felt is not between tricks; the discard/buff window `discardWindowOpen` already
    *  opens is closed. No new timing gate is built — this reads that same signal. */
@@ -38,9 +36,8 @@ export type BuffActivationRefusal =
 
 /**
  * Everything the rule needs and nothing else — PLAIN VALUES, never a `RoundUiState`. The same
- * discipline `ApplyDamageStock`/`FlaskStock`/`ShopStock` already state: this module owns the rule
- * and must not learn the shape of the layer that calls it. `roundUiState.ts`'s
- * `buffActivationStock` builds it.
+ * discipline `FlaskStock`/`ShopStock` already state: this module owns the rule and must not learn
+ * the shape of the layer that calls it. `roundUiState.ts`'s `buffActivationStock` builds it.
  */
 export interface BuffActivationStock {
   /** DLR-126 — whether spending this card would do anything at all in this build. `false` only for
@@ -89,13 +86,12 @@ export function startBuffActivation(capacity: ActionPoints = STARTING_AP): BuffA
 
 /**
  * THE single statement of whether a buff can be activated — read by the reducer's guard and by
- * the plate's disabled state, so the two can never read availability differently (the same
- * discipline `applyDamageRefusalFor` sets).
+ * the plate's disabled state, so the two can never read availability differently.
  *
  * Order — `NoEffectYet → WindowClosed → TimebombLive → AlreadyActive → InsufficientAp` — reports
  * the reason true of the CARD, then the reason true of the whole felt, then the reasons true of
- * this card on this felt, exactly as `applyDamageRefusalFor` reports `NotYourMove` first. A
- * Foresight is refused for having no effect even on a wide-open felt with a full pool, because
+ * this card on this felt. A Foresight is refused for having no effect even on a wide-open felt
+ * with a full pool, because
  * opening the window would not make it usable. `TimebombLive` reports ahead of `AlreadyActive` so
  * a felt-wide reason (the window) still wins over both, and R2's reason wins over a per-card one.
  */

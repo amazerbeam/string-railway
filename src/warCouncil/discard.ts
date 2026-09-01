@@ -6,8 +6,8 @@ import type { Card, PlayerSide, RoundState } from './types'
 /**
  * DLR-100 AC9 — why the discard rail cannot be tapped, or cannot yet commit. A reason CODE, not a
  * sentence: `src/warCouncil/` holds no user-facing copy, and `src/app/warCouncil/labels.ts` maps
- * these to words. Exactly `voluntaryCashOut.ts`'s `ApplyDamageRefusal`, `src/hunt/flask.ts`'s
- * `FlaskRefusal`, and `src/hunt/shop.ts`'s `PurchaseRefusal`.
+ * these to words. Exactly `src/hunt/flask.ts`'s `FlaskRefusal`, and `src/hunt/shop.ts`'s
+ * `PurchaseRefusal`.
  */
 export const DiscardRefusal = {
   /** AC1 — mid-trick, a reveal is held, a prompt is open, or the hand/fight is over. */
@@ -20,9 +20,9 @@ export const DiscardRefusal = {
 export type DiscardRefusal = (typeof DiscardRefusal)[keyof typeof DiscardRefusal]
 
 /**
- * Everything the rule needs and nothing else — PLAIN VALUES, never a `RoundUiState`.
- * `applyDamageStock`'s own discipline: this module owns the rule and must not learn the shape of
- * the layer that calls it. `roundUiState.ts`'s `discardStock` builds it.
+ * Everything the rule needs and nothing else — PLAIN VALUES, never a `RoundUiState`. This module
+ * owns the rule and must not learn the shape of the layer that calls it. `roundUiState.ts`'s
+ * `discardStock` builds it.
  */
 export interface DiscardStock {
   readonly discardsRemaining: number
@@ -40,8 +40,7 @@ export interface DiscardStock {
 /**
  * THE single statement of whether the discard rail is available — read by the reducer before it
  * commits anything, and by the rail control to disable itself and print the reason. `windowOpen`
- * first, because it is true of the whole felt rather than of this control, mirroring
- * `applyDamageRefusalFor`'s own stated ordering.
+ * comes first, because it is true of the whole felt rather than of this control.
  */
 export function discardRefusalFor(stock: DiscardStock): DiscardRefusal | null {
   if (!stock.windowOpen) return DiscardRefusal.NotAvailable

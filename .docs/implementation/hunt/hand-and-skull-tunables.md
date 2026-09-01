@@ -24,31 +24,33 @@ per-declaration card-value accessor, and rank inversion. **All of that was delet
 | `SKULL_RANK_WEIGHTS` | `SKULL_WEIGHTS_HUMP` | relative weight per rank, ≥ 0, unitless | provisional (PT-001) |
 | `DAMAGE_PER_HIT` | `1` | health points per damage event | settled |
 
-## The forced cash-out fraction — DLR-94
+## The base damage — DLR-156
 
 | Key | Value | Unit | Status |
 | --- | --- | --- | --- |
-| `FORCED_CASH_OUT_NUMERATOR` | `2` | dimensionless ratio, over the denominator | settled (version-4-scope §3) |
-| `FORCED_CASH_OUT_DENOMINATOR` | `3` | dimensionless ratio | settled (version-4-scope §3) |
+| `BASE_DAMAGE` | `1` | damage | settled (roll-over-damage-model, AC10) |
 
-The fraction of `bank × multiplier` a **forced** cash-out pays — a hit the player did not choose. A
-cash-out the player chose, and the end-of-hand one, both pay in full; the reduction is the "you got
-caught before you applied" cost, and it is what makes Apply Damage a decision rather than a button with
-no wrong answer.
+The damage every **banked** trick starts from, before any buff and before the Whetstone's
+`baseDamageBonus`. AC10 requires it be "a single configured constant, read in one place": the one
+reader is `resolveTrickBank`, and nothing else may write a bare `1` into the damage equation.
 
-**Settled, and transcribed rather than chosen here** — the design fixed two-thirds on 2026-08-19. No
-test hard-codes the ratio independently of these two keys, so retuning it is a config edit plus the
-derived figures in `bank.test.ts`.
+**A constant, deliberately.** A card family that raises the base — paying back only if the streak
+survives — is named in `spec.md` as a separate design, and this ticket was explicitly barred from
+making the figure a variable.
 
-**Two constants rather than one float, and that is a correctness measure.** `2 / 3` is
-`0.6666666666666666`, so `3 * (2 / 3)` is `1.9999999999999998` and floors to **1** where the rule says
-2 — wrong for every multiple of 3. Keeping numerator and denominator apart lets
-`src/warCouncil/bank.ts`'s `forcedCashValue` multiply before it divides, so the dividend is an exact
-integer at the only division involved. **This is the first fractional rule in the codebase, and the
-pattern the next one should follow.**
+## The forced cash-out fraction — DLR-94, **deleted by DLR-156**
 
-Their only reader anywhere in `src/` is `forcedCashValue`. See
-[the bank and the cash-out](../war-council/bank-and-cash-out.md).
+`FORCED_CASH_OUT_NUMERATOR` (2) and `FORCED_CASH_OUT_DENOMINATOR` (3) fixed the share a **forced**
+cash-out paid — a hit the player did not choose. **Both are gone.** Under DLR-156 a trick that hurts
+the player pays the Quarry nothing at all: the whole pot is lost, which is the change that makes the
+roll-over choice a real bet. `forcedCashValue`, their only reader, went with them, and with it the
+module's only division.
+
+The reason they were two constants rather than one float is worth keeping, because it is the pattern
+the next fractional rule should follow: `2 / 3` is `0.6666666666666666`, so `3 * (2 / 3)` is
+`1.9999999999999998` and floors to **1** where the rule says 2 — wrong for every multiple of 3.
+Keeping numerator and denominator apart let the code multiply before it divided, so the dividend was
+an exact integer at the only division involved. **There is no fractional rule left in the codebase.**
 
 `SKULL_MIN_RANK` was the fourth key here until **PT-001** absorbed it into the weight curves — see
 [the rank curve](#the-rank-curve-replaced-the-rank-floor-pt-001) below.
@@ -218,7 +220,7 @@ subtraction and vanishes from a health bar with nothing logged.
 types with deliberately different member names, because `src/hunt/` cannot import from
 `src/warCouncil/` without a cycle.
 
-The crossing between them happens **exactly once in the program**, in `src/warCouncil/bank.ts`'s
+The crossing between them happens **exactly once in the program**, in `src/warCouncil/streak.ts`'s
 `incomingFrom` — which is on the warCouncil side because that is the side allowed to know both
 vocabularies. `IncomingDamage` is `Readonly<Record<DuelSide, Damage>>`, keyed by the side each figure
 **depletes** rather than the side that dealt it, so the direction is carried by the data rather than

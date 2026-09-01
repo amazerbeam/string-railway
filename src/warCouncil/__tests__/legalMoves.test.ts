@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { legalMoves } from '../legalMoves'
 import { PlayerSide, RoundPhase, type Card, type RoundState } from '../types'
 
@@ -18,8 +18,8 @@ function stateWith(
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,
-    bank: 0,
-    multiplier: 0,
+    total: 0,
+    roll: 0,
     lastResolution: null,
     currentTrick,
     leader: PlayerSide.Player,

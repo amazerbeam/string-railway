@@ -55,7 +55,7 @@ changing this type, and nothing serialises it.
 `IncomingDamage` beside it is `Readonly<Record<DuelSide, Damage>>` — one Hunt's damage **keyed by the
 side it is applied to**, never by the side that dealt it. That is `HuntOutcome.incoming`'s convention
 carried deliberately across the module boundary, so the crossing is performed exactly once and on
-the other side of it (see [`incomingFrom`](../war-council/bank-and-cash-out.md)).
+the other side of it (see [`incomingFrom`](../war-council/the-streak-and-the-pot.md)).
 
 **`pendingTimebomb` reuses that exact type** rather than inventing a parallel one — damage owed to each
 side at the resolution of the **next trick** (DLR-91 D1; DLR-90 paid it at the next hand's deal),

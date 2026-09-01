@@ -1,12 +1,12 @@
 /** @vitest-environment jsdom */
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PlayerSide, RoundPhase, Suit } from '../../../warCouncil'
-import { HAND_SIZE, quarryHealthForEncounter } from '../../../hunt'
+import { HAND_SIZE } from '../../../hunt'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
 import WarCouncilRound from '../WarCouncilRound'
 import {
-  bankClimbBonusFixture,
+  baseDamageBonusFixture,
   card,
   coinsFixture,
   discardsRemainingFixture,
@@ -18,12 +18,11 @@ import {
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
+import { applyFromResolution, carryOnFromResolution, stubMatchMedia } from './resolutionTestHelpers'
 
 afterEach(cleanup)
 
-function healthMeter(name: 'Your health' | typeof quarryLabelFixture) {
-  return screen.getByRole('meter', { name })
-}
+stubMatchMedia()
 
 /**
  * Renders `WarCouncilRound` with the shared fixtures, letting any prop be overridden per test.
@@ -51,7 +50,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       quarryLabel={quarryLabelFixture}
       coins={overrides.coins ?? coinsFixture}
       blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
-      bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
+      baseDamageBonus={overrides.baseDamageBonus ?? baseDamageBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
       buffs={overrides.buffs ?? []}
       onComplete={overrides.onComplete ?? vi.fn()}
@@ -101,13 +100,85 @@ describe('WarCouncilRound', () => {
     fireEvent.click(bells7)
     expect(bells7.getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(bells7)
-    // Correction: the committed card completes the trick (both fixture hands hold
-    // exactly one Bells card each, and Bells is trump), so the played 7 of Bells is
-    // now visible — condensed, disabled — in TrickWell's held reveal (AC2). A bare
-    // `queryByRole` would find that card instead of correctly reporting "gone from
-    // the hand". Scope the query to the hand's own labelled region.
+    // DLR-156 — the committed card completes the trick (both fixture hands hold exactly one
+    // Bells card each, and Bells is trump), so the felt hands off to the resolution screen
+    // (AC2/AC14) rather than showing the played card in a held reveal of its own. Dismissing it
+    // returns the felt already advanced — the played 7 of Bells does not reappear in the hand.
+    carryOnFromResolution()
     const hand = screen.getByRole('group', { name: /hand/i })
     expect(within(hand).queryByRole('button', { name: '7 of Bells' })).toBeNull()
+  })
+
+  it('resolves the trick and keeps the hand interactive even when the flight’s onfinish never fires (AC15, ui-notes.md §2 — the hidden-tab case)', () => {
+    // Web Animations stubbed so the play COULD start a real flight, but its `onfinish` is
+    // deliberately never invoked — exactly the defect a background tab causes: `currentTime`
+    // freezes at 0, `onfinish` never fires, and without the timer backstop `useCardFlight.ts`
+    // exists to provide, the trick would never resolve and the hand would stop responding for
+    // the rest of the session.
+    const originalAnimate = Element.prototype.animate
+    Element.prototype.animate = vi.fn(
+      () => ({ onfinish: null, cancel: vi.fn() }) as unknown as Animation,
+    )
+    vi.useFakeTimers()
+    try {
+      renderRound()
+      const bells7 = screen.getByRole('button', { name: '7 of Bells' })
+      fireEvent.click(bells7)
+      fireEvent.click(bells7)
+      // Nobody ever calls the stubbed animation's `onfinish` — only the timer backstop can land
+      // this. `--wc-flight` is unreadable in jsdom, so `useCardFlight.ts` falls back to its
+      // documented 380ms; advancing well past it is what proves the timer path alone is enough.
+      act(() => vi.advanceTimersByTime(1000))
+      expect(screen.getByText(/you took it/i)).toBeDefined()
+      carryOnFromResolution()
+      // The hand is back, interactive, and the played card is gone — not a permanently locked
+      // felt, which is the actual failure this defect causes when the landing depends on
+      // `onfinish` alone.
+      const hand = screen.getByRole('group', { name: /hand/i })
+      expect(within(hand).queryByRole('button', { name: '7 of Bells' })).toBeNull()
+      const anotherCard = screen.getByRole('button', { name: '2 of Bells' })
+      expect(anotherCard).toHaveProperty('disabled', false)
+    } finally {
+      Element.prototype.animate = originalAnimate
+      vi.useRealTimers()
+    }
+  })
+
+  it('rejects a tap on a DIFFERENT card while the first is still in flight, rather than silently reinterpreting it as a fresh arm (Defender Critical — WarCouncilTable.tsx/useCardFlight.ts)', () => {
+    // Reproduces the exact A-B-land race: arm 7 of Bells, commit it (starts the ~380ms flight —
+    // the dispatch that actually plays it is DEFERRED to landing, so `ui.armed` still names 7 of
+    // Bells while it is airborne), then tap 2 of Bells before it lands. Before this fix, `ui.armed`
+    // still pointing at 7 of Bells made that second tap read as a fresh arm rather than a commit; it
+    // reached the reducer just as 7 of Bells' own deferred dispatch landed, which then re-armed 7 of
+    // Bells instead of ever playing it — the card visually flew to the table but nothing committed,
+    // and the player's tap on 2 of Bells was silently discarded.
+    const originalAnimate = Element.prototype.animate
+    Element.prototype.animate = vi.fn(
+      () => ({ onfinish: null, cancel: vi.fn() }) as unknown as Animation,
+    )
+    vi.useFakeTimers()
+    try {
+      renderRound()
+      const bells7 = screen.getByRole('button', { name: '7 of Bells' })
+      const bells2 = screen.getByRole('button', { name: '2 of Bells' })
+      fireEvent.click(bells7) // arm
+      fireEvent.click(bells7) // commit — starts the flight, dispatch deferred to landing
+      // Airborne: the whole hand rejects a tap — 2 of Bells is disabled, not a live re-arm target.
+      expect(bells2).toHaveProperty('disabled', true)
+      fireEvent.click(bells2) // a disabled button fires no onClick — this must be a no-op
+      // Land the flight.
+      act(() => vi.advanceTimersByTime(1000))
+      expect(screen.getByText(/you took it/i)).toBeDefined()
+      carryOnFromResolution()
+      // 7 of Bells committed as the player's original intent — gone from the hand; 2 of Bells,
+      // never touched, is still held.
+      const hand = screen.getByRole('group', { name: /hand/i })
+      expect(within(hand).queryByRole('button', { name: '7 of Bells' })).toBeNull()
+      expect(within(hand).getByRole('button', { name: '2 of Bells' })).toBeDefined()
+    } finally {
+      Element.prototype.animate = originalAnimate
+      vi.useRealTimers()
+    }
   })
 
   it('shows the live trick counts and updates them once a trick resolves (AC4)', () => {
@@ -120,12 +191,15 @@ describe('WarCouncilRound', () => {
     // No `@testing-library/jest-dom` is installed in this project (see devDependencies),
     // so the assertion reads the element's own `textContent` rather than reaching for its
     // `toHaveTextContent` matcher.
-    const scoreboard = screen.getByRole('group', { name: /tricks won/i })
-    expect(scoreboard.textContent).toMatch(/You0/)
+    expect(screen.getByRole('group', { name: /tricks won/i }).textContent).toMatch(/You0/)
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
     fireEvent.click(bells7)
-    expect(scoreboard.textContent).toMatch(/You1/)
+    // DLR-156 — the scoreboard lives on the felt, which the resolution screen replaces the
+    // instant the trick resolves; dismiss it, then RE-QUERY — the felt unmounted and remounted,
+    // so the element captured before the trick resolved is a stale, now-detached node.
+    carryOnFromResolution()
+    expect(screen.getByRole('group', { name: /tricks won/i }).textContent).toMatch(/You1/)
   })
 
   it('disables a card the engine says is illegal', () => {
@@ -158,10 +232,14 @@ describe('WarCouncilRound', () => {
     // the assertion.
     const prompt = screen.getByRole('group', { name: 'Choose what the card does' })
     fireEvent.click(within(prompt).getByRole('button', { name: '5 of Moons (Woodcutter)' }))
+    // DLR-156 — the Fox's own commit resolves the trick in the same transition (the player led,
+    // so the Quarry's forced follow completes it immediately), handing off to the resolution
+    // screen; the trump readout lives on the felt, so dismiss it before reading the felt again.
+    carryOnFromResolution()
     expect(screen.getByText(/Moons is trump/i)).toBeDefined()
   })
 
-  it('holds the deciding sixth trick before the hand-over panel, then reports onComplete once', () => {
+  it('holds the deciding sixth trick on the resolution screen before the hand-over panel, then reports onComplete once', () => {
     const onComplete = vi.fn()
     const round = makeRound({
       tricksPlayed: HAND_SIZE - 1,
@@ -174,104 +252,75 @@ describe('WarCouncilRound', () => {
     const last = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(last)
     fireEvent.click(last)
-    // The deciding trick resolves and completes the hand in the same commit, but its cards
-    // and winner must be visible before the hand-over panel replaces them.
-    expect(screen.getByText(/take the trick/i)).toBeDefined()
+    // DLR-156 — the deciding trick resolves and completes the hand in the same commit, but its
+    // cards and winner must be visible — on the resolution screen now, replacing the old felt-side
+    // reveal — before the hand-over panel replaces them.
+    expect(screen.getByText(/you took it/i)).toBeDefined()
     expect(screen.queryByRole('heading', { name: 'The hand is over' })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: /tap the table to carry on/i }))
+    carryOnFromResolution()
+    // `roundReducer.ts`'s Task 15 chaining clears the held reveal and finds the hand already
+    // complete, so the panel appears directly — there is no second felt-side tap to make.
     expect(screen.getByRole('heading', { name: 'The hand is over' })).toBeDefined()
     fireEvent.click(screen.getByRole('button', { name: 'Deal the next Hunt' }))
     expect(onComplete).toHaveBeenCalledTimes(1)
     expect(onComplete.mock.calls[0][0].finalState.phase).toBe(RoundPhase.Complete)
   })
 
-  it('reports onComplete with a finalState still short of RoundPhase.Complete when a cash-out resolves the encounter mid-hand (Defender Warning 1)', () => {
-    // Same construction as `roundReducer.bank.test.ts`'s "stops accepting taps" spec: trick 3 of
-    // 6, a bank of 500 at streak 2 cashes for 500 x 2 = 1000, which comfortably exceeds this
-    // encounter's 10-health Quarry — so the Quarry's bar empties on this trick rather than the
-    // hand's sixth. DLR-82 deleted the terminal panel: the deciding trick now gets its own reveal
-    // beat like any other, and `handleCarryOn` reports the finished encounter upward on the next
-    // tap regardless — so `onComplete`'s `finalState` never reaches `RoundPhase.Complete` down
-    // this path.
+  it('reports onComplete with a finalState still short of RoundPhase.Complete when applying a pot resolves the encounter mid-hand (Defender Warning 1)', () => {
+    // DLR-156 — a cash-out is no longer automatic on a winning trick; it happens only when the
+    // player presses Apply Damage on the resolution screen (AC5). A total of 500 at roll 2 pays
+    // 500 x 2 = 1000, which comfortably exceeds this encounter's 10-health Quarry — so the
+    // Quarry's bar empties on THIS trick, trick 3 of 6, rather than the hand's sixth. The player
+    // leads the trump 9, which beats the Quarry's forced trump follow (5), so the trick BANKS
+    // and offers the choice at all — a losing trick wipes the streak for nothing (AC7) and never
+    // reaches Apply.
     const onComplete = vi.fn()
     const round = makeRound({
       leader: PlayerSide.Player,
       trumpSuit: Suit.Keys,
-      bank: 500,
-      multiplier: 2,
+      total: 500,
+      roll: 2,
       tricksPlayed: 2,
       hands: {
-        [PlayerSide.Player]: [card(Suit.Bells, 1), card(Suit.Keys, 4)],
+        [PlayerSide.Player]: [card(Suit.Keys, 9), card(Suit.Bells, 1)],
         [PlayerSide.Cpu]: [card(Suit.Bells, 8), card(Suit.Keys, 5)],
       },
       currentTrick: [],
     })
     renderRound({ initialState: round, onComplete })
-    const swan = screen.getByRole('button', { name: '1 of Bells (Swan)' })
-    fireEvent.click(swan)
-    fireEvent.click(swan)
-    // The deciding trick's own reveal, same as any other trick — no terminal panel any more.
+    const keys9 = screen.getByRole('button', { name: '9 of Keys (Witch)' })
+    fireEvent.click(keys9)
+    fireEvent.click(keys9)
+    // DLR-156 (hold) — the Apply dispatch is deferred behind `--wc-resolve-hold`; `onComplete`
+    // must not fire early, fire from a lost update, or fire twice once the hold has run its
+    // course. `applyFromResolution` presses AND flushes the hold in one call.
+    applyFromResolution()
+    expect(onComplete).not.toHaveBeenCalled()
+    // Applying the pot killed the Quarry mid-hand — the deciding trick's own reveal survives on
+    // the felt (the SAME held-reveal affordance the hand's actual sixth trick uses below), since
+    // the felt's own `handleCarryOn` reports `onComplete` on that tap without ever reaching a
+    // sixth trick.
     const carryOn = screen.getByRole('button', { name: /tap the table to carry on/i })
     fireEvent.click(carryOn)
     expect(onComplete).toHaveBeenCalledTimes(1)
     expect(onComplete.mock.calls[0][0].finalState.phase).not.toBe(RoundPhase.Complete)
   })
 
-  it('reaches the resolved trick’s carry-on control by keyboard alone', () => {
-    // Every trick but the last resolves mid-hand and holds the felt open — exactly the
-    // state a keyboard-only player was previously unable to escape, since every hand card
-    // is disabled the instant a trick resolves and nothing else in the tree is focusable.
-    // The control is a native <button> (Fix 4): confirming it is reachable by keyboard
-    // (real focus lands on it with no explicit tabIndex needed) is this component's own
-    // contract to prove. Activating it via `fireEvent.click` rather than
-    // `fireEvent.keyDown(..., { key: 'Enter' })` — a native button's own Enter/Space
-    // activation is the HTML platform's guarantee, not this component's to re-prove.
+  it('reaches the resolution screen’s own exit control by keyboard alone', () => {
+    // DLR-156 — every trick now hands off to the resolution screen rather than holding the felt
+    // open, so the escape hatch a keyboard-only player needs is one of ITS controls, not the
+    // felt's own "tap the table" button. Activating it via `fireEvent.click` rather than
+    // `fireEvent.keyDown(..., { key: 'Enter' })` — a native button's own Enter/Space activation
+    // is the HTML platform's guarantee, not this component's to re-prove.
     renderRound()
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
     fireEvent.click(bells7)
-    const carryOn = screen.getByRole('button', { name: /tap the table to carry on/i })
-    carryOn.focus()
-    expect(document.activeElement).toBe(carryOn)
-    fireEvent.click(carryOn)
-    expect(screen.queryByRole('button', { name: /tap the table to carry on/i })).toBeNull()
-  })
-
-  it('DLR-109 — applying QUEUES the streak at no cost rather than cashing it instantly, and the hand plays on', () => {
-    const round = makeRound({
-      leader: PlayerSide.Player,
-      trumpSuit: Suit.Keys,
-      bank: 3,
-      multiplier: 3,
-      hands: {
-        [PlayerSide.Player]: [card(Suit.Bells, 2)],
-        [PlayerSide.Cpu]: [card(Suit.Bells, 9)],
-      },
-      currentTrick: [],
-    })
-    renderRound({ initialState: round })
-
-    const plate = () => screen.getByRole('button', { name: /apply damage/i })
-    const playerBefore = healthMeter('Your health').getAttribute('aria-valuenow')
-
-    fireEvent.click(plate()) // poise
-    fireEvent.click(plate()) // commit
-
-    // DLR-109 — the commit no longer lands in this transition: it is queued and lands at a
-    // later trick resolution (see `roundReducer.delayedApply.test.ts` for the landing itself).
-    expect(Number(healthMeter(quarryLabelFixture).getAttribute('aria-valuenow'))).toBe(
-      quarryHealthForEncounter(0),
-    )
-    expect(healthMeter('Your health').getAttribute('aria-valuenow')).toBe(playerBefore)
-    // AC2 — the bank and multiplier are still spent in this transition, even though the
-    // payout itself has not landed yet.
-    expect(screen.getByLabelText(/cashes for 0\b/i)).toBeTruthy()
-
-    // AC3 — the card is still there to play, and the plate is now refused because the queued
-    // payout is still in the air, not because the bank is empty.
-    expect(plate()).toHaveProperty('disabled', true)
-    expect(screen.getByRole('button', { name: /still in the air/i })).toBeTruthy()
-    expect(screen.getByRole('button', { name: '2 of Bells' })).toBeTruthy()
+    const rollOver = screen.getByRole('button', { name: /roll over/i })
+    rollOver.focus()
+    expect(document.activeElement).toBe(rollOver)
+    carryOnFromResolution()
+    expect(screen.queryByRole('button', { name: /roll over/i })).toBeNull()
   })
 
   it('DLR-148 — the dossier holds three panels now the intent telegraph is gone', () => {

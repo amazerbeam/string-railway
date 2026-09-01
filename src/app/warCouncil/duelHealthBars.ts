@@ -134,8 +134,8 @@ export interface HealthBarOverlays {
  */
 export function projectedDepletion(
   current: Readonly<Record<DuelSide, Health>>,
-  bank: number,
-  multiplier: number,
+  total: number,
+  roll: number,
   pendingTimebombs: Readonly<Record<DuelSide, Damage>>,
   shieldHearts: Health,
 ): Readonly<Record<DuelSide, Health>> {
@@ -144,7 +144,7 @@ export function projectedDepletion(
     [DuelSide.Player]: Math.max(0, current[DuelSide.Player] - throughToHealth),
     [DuelSide.Quarry]: Math.max(
       0,
-      current[DuelSide.Quarry] - bank * multiplier - pendingTimebombs[DuelSide.Quarry],
+      current[DuelSide.Quarry] - total * roll - pendingTimebombs[DuelSide.Quarry],
     ),
   }
 }

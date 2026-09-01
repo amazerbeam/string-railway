@@ -8,7 +8,7 @@ Timebomb lands on them, they still lose the health but their streak survives.** 
 time it fires, and it is gone when the fight ends whether it fired or not.
 
 The Timebomb it insures against is [Timebomb](timebomb-and-the-delayed-hit.md); the cash-out it suppresses
-is [the bank's](../war-council/bank-and-cash-out.md). This file owns the flag, its lifetime, and the
+is [the bank's](../war-council/the-streak-and-the-pot.md). This file owns the flag, its lifetime, and the
 refusal.
 
 ## The flag is on `RunState`, not `EncounterState` — and the ticket said otherwise

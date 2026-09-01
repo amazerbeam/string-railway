@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { HAND_SIZE, SKULL_DENSITY, SKULL_RANK_WEIGHTS } from '../../hunt'
 import { containsCard } from '../cardUtils'
 import { createDeck } from '../deck'
@@ -76,10 +76,10 @@ describe('dealRound', () => {
     }
   })
 
-  it('opens the bank and the streak at zero with nothing resolved', () => {
+  it('opens the total and the streak at zero with nothing resolved', () => {
     const state = dealRound(PlayerSide.Player, lcg(42))
-    expect(state.bank).toBe(0)
-    expect(state.multiplier).toBe(0)
+    expect(state.total).toBe(0)
+    expect(state.roll).toBe(0)
     expect(state.lastResolution).toBeNull()
   })
 

@@ -54,7 +54,7 @@ fields are **not** legality at all — they are the Timebomb owed at this trick,
 into `TrickFacts` and reads no further. They travel on this parameter because the queue lives on
 `EncounterState` and `src/hunt/` must not learn what a `RoundState` is; the reducer holds both and is
 the only caller that supplies them. See
-[the bank and the cash-out](bank-and-cash-out.md).
+[the bank and the cash-out](the-streak-and-the-pot.md).
 
 Three properties fall out of that shape, and each replaces a guard someone could later delete:
 

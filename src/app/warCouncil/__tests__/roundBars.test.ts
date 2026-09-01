@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { BuffTier, DuelSide, queueTimebomb, TIMEBOMB_DAMAGE } from '../../../hunt'
 import {
-  bankClimbBonusFixture,
+  baseDamageBonusFixture,
   discardsRemainingFixture,
   encounterFixture,
   maxHealthFixture,
@@ -16,7 +16,7 @@ function seededUi(encounter = encounterFixture) {
     round: makeRound(),
     encounter,
     blastGuardHeld: blastGuardHeldFixture,
-    bankClimbBonus: bankClimbBonusFixture,
+    baseDamageBonus: baseDamageBonusFixture,
     discardsRemaining: discardsRemainingFixture,
     buffs: [],
   })

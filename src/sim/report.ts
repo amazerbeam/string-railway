@@ -75,7 +75,7 @@ export function formatSummary(summary: SimSummary): string {
     `  mean coins earned: ${mean(runs.map((run) => run.coinsEarned))}  mean coins spent: ${mean(runs.map((run) => run.coinsSpent))}  mean slot pulls: ${mean(runs.map((run) => run.slotPulls))}  mean buffs owned at end: ${mean(runs.map((run) => run.buffsOwnedAtEnd))}`,
     '',
     'Buffs and AP',
-    `  mean buff activations per hand: ${mean(hands.map((hand) => hand.buffsActivated))}  mean AP spent per hand: ${mean(hands.map((hand) => hand.apSpent))}  mean Apply Damage presses per hand: ${mean(hands.map((hand) => hand.applyDamagePresses))}  NoEffectYet refusals: ${totalDeadCardRefusals}`,
+    `  mean buff activations per hand: ${mean(hands.map((hand) => hand.buffsActivated))}  mean AP spent per hand: ${mean(hands.map((hand) => hand.apSpent))}  NoEffectYet refusals: ${totalDeadCardRefusals}`,
     `  hands played holding NO activatable buff: ${percent(buffStarvedHands, hands.length)}`,
     '',
     'Levers',

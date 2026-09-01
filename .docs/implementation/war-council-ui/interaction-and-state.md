@@ -59,7 +59,7 @@ the instant it was made. See
 What it buys is a place to state a rule of the form *"after every transition, observe X"* exactly
 once. DLR-95 needed the player's hand size **at the instant the Quarry's bar empties**, to price the
 quick-kill payout. An encounter can currently become resolved in three different places —
-`handleTapApplyDamage`, and `commit`'s two `applyResolution` calls — so writing the capture at each
+`applyPotAction` (`handleTapApplyDamage` until DLR-156), and `commit`'s two `applyResolution` calls — so writing the capture at each
 would have been three copies of one rule, and the fourth way to end a fight (this file has gained
 one per ticket for four tickets running) would have silently missed it.
 

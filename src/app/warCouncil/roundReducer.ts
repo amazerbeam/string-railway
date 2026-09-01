@@ -1,6 +1,4 @@
 import {
-  applyDamageRefusalFor,
-  cashBankNow,
   CardRank,
   PlayerSide,
   QUARRY_SIDE,
@@ -12,17 +10,8 @@ import {
   sameCard,
   type Card,
 } from '../../warCouncil'
+import { isEncounterResolved, openBuffWindow, TIMEBOMB_FUSE_TRICKS } from '../../hunt'
 import {
-  APPLY_DAMAGE_AP_COST,
-  isEncounterResolved,
-  openBuffWindow,
-  queueApplyDamagePayout,
-  queueApplyPayout,
-  spendAp,
-  TIMEBOMB_FUSE_TRICKS,
-} from '../../hunt'
-import {
-  applyDamageStock,
   canAct,
   discardSelecting,
   timebombArmed,
@@ -40,7 +29,7 @@ import {
   handleToggleLoadout,
 } from './buffHandlers'
 import { foldBuffOutcome } from './buffRoundState'
-import { commit } from './commitHandlers'
+import { applyPotAction, commit, rollOverAction } from './commitHandlers'
 
 // DLR-125 — `foldBuffOutcome` runs BEFORE `openWindowOnTrickResolved`, and the order is
 // load-bearing: the fold credits R3 step 1's AP refund into `buffActivation.apPool` while it
@@ -71,9 +60,9 @@ function openWindowOnTrickResolved(prev: RoundUiState, next: RoundUiState): Roun
 
 /**
  * DLR-95 AC2 — ONE site for "how many cards were left when the Quarry went down", rather than one
- * at each of the three places an encounter can currently become resolved (`handleTapApplyDamage`,
- * and `commit`'s two `applyResolution` calls). A fourth way to end a fight — and this file has
- * gained one per ticket for four tickets running — is covered for free.
+ * at each of the places an encounter can currently become resolved (`commit`'s two
+ * `applyResolution` calls). A fourth way to end a fight — and this file has gained one per ticket
+ * for four tickets running — is covered for free.
  *
  * Writes exactly once: the first transition after which the encounter reads resolved and the field
  * is still `null`. The null check IS the "has this already been captured" test, which is why no
@@ -103,10 +92,6 @@ function applyAction(state: RoundUiState, action: RoundUiAction): RoundUiState {
       return { ...state, armed: null, prompt: null }
     case RoundUiActionKind.CarryOn:
       return handleCarryOn(state)
-    case RoundUiActionKind.TapApplyDamage:
-      return handleTapApplyDamage(state)
-    case RoundUiActionKind.CancelApplyDamage:
-      return state.applyPoised ? { ...state, applyPoised: false } : state
     case RoundUiActionKind.TapDiscard:
       return handleTapDiscard(state)
     case RoundUiActionKind.CancelDiscard:
@@ -121,6 +106,23 @@ function applyAction(state: RoundUiState, action: RoundUiAction): RoundUiState {
       return handleCancelBuffPoise(state)
     case RoundUiActionKind.RemoveBuff:
       return handleRemoveBuff(state, action.id)
+    // DLR-156 Task 15 Step 7 — chained through `handleCarryOn`, the SAME transition the felt's own
+    // "tap the table" gesture dispatches, so a choice on the resolution screen returns the player
+    // to an already-advanced table rather than the very reveal that screen just replaced (which
+    // would demand a second, redundant tap before the Quarry could even lead again).
+    //
+    // NOT chained when the choice itself ends the encounter (`isEncounterResolved`): the felt's
+    // OWN `handleCarryOn` wrapper (`WarCouncilTable.tsx`) checks `encounterOver` FIRST and reports
+    // `onComplete` directly, WITHOUT ever dispatching `CarryOn` — so the held reveal it reads to
+    // offer that tap must survive here, exactly as it always has for the deciding trick.
+    case RoundUiActionKind.ApplyPot: {
+      const applied = applyPotAction(state)
+      return isEncounterResolved(applied.encounter) ? applied : handleCarryOn(applied)
+    }
+    case RoundUiActionKind.RollOver: {
+      const rolled = rollOverAction(state)
+      return isEncounterResolved(rolled.encounter) ? rolled : handleCarryOn(rolled)
+    }
   }
 }
 
@@ -149,75 +151,6 @@ function handleTapCard(state: RoundUiState, tapped: Card): RoundUiState {
   }
 
   return { ...state, armed: tapped, rejection: null }
-}
-
-/**
- * DLR-94 AC1/AC2 — three outcomes on one control. A refusal
- * changes nothing; nothing poised poises; poised COMMITS. There is no third stage: unlike a
- * Timebomb row, this control's second tap IS the action rather than a prelude to a hand-card tap.
- *
- * Asks `applyDamageRefusalFor` on BOTH taps, not just the first. The felt can change under a
- * poised plate — the Quarry leads (starting the trick and closing the leader-only window), a
- * reveal is held, the turn passes — and re-reading is what stops a poise made while the control
- * was live from committing after it stopped being. DLR-143 AC1 reverses D6 (version-4-scope §3,
- * 2026-08-19): a pending Timebomb no longer blocks this control at all, and the two are allowed
- * to stack, settling together in `commitHandlers.ts`'s existing trick-resolution fold.
- *
- * AC3 needs no code here. `cashBankNow` returns the round with only `bank` and `multiplier` moved,
- * `resolvedTrick` stays null, and nothing writes `lastResolution` — so no reveal is held, the felt
- * never enters its waiting state, and the player's next tap plays their card by the ordinary rules.
- *
- * Poising does NOT clear a live Cheat or an armed Timebomb, and they do not clear it. Neither
- * reinterprets a hand-card tap the way arming a Timebomb does, so a player may poise a Cheat and
- * apply damage in either order without losing either.
- *
- * DLR-109 — the committing tap no longer resolves anything. It spends `APPLY_DAMAGE_AP_COST`
- * through `spendAp`, the only subtraction path, and QUEUES the cash-out instead of dealing it —
- * `applyResolution` in `commitHandlers.ts` settles it a trick or more later, LAST, after the
- * trick's own damage and the Timebomb book/clear. The AP is spent at the moment of the press and
- * is NOT refunded if the queued payout is later wiped by AC3's damage-during-the-window rule.
- * `captureUnplayed` no longer fires on this transition — the press no longer resolves the
- * encounter, so there is nothing for it to capture here; a DELAYED kill's press-time hand size is
- * threaded instead through `settleApplyPayout`'s `unplayedAtPress`.
- */
-function handleTapApplyDamage(state: RoundUiState): RoundUiState {
-  if (applyDamageRefusalFor(applyDamageStock(state)) !== null) {
-    // A refusal drops a held poise rather than leaving it stranded, and never half-applies. The
-    // reason is already on the plate's face, so the player is never left with no visible cause.
-    return state.applyPoised ? { ...state, applyPoised: false } : state
-  }
-  if (!state.applyPoised) {
-    return { ...state, applyPoised: true }
-  }
-
-  const { state: round, cashOut } = cashBankNow(state.round)
-  // Guarded for `applyResolution`'s stated reason: a resolved encounter must never be written to,
-  // and a reducer must not throw. Unreachable in practice — a resolved encounter already fails
-  // `canAct`, so `applyDamageRefusalFor` returned `NotYourMove` above.
-  if (isEncounterResolved(state.encounter)) {
-    return { ...state, applyPoised: false }
-  }
-  // AC2 — the press no longer deals anything. It freezes the figure and the press-time hand size
-  // (AC4) and hands both to the encounter's queue; `applyResolution` settles it a trick or more
-  // later. AC1 — the cost is spent through `spendAp`, the ONLY subtraction path, so `AP_ENABLED`
-  // is honoured with no bypass written here. `spendAp` throws on an unaffordable spend and the
-  // `InsufficientAp` refusal above is what guarantees this line never reaches that.
-  const payout = queueApplyPayout(cashOut, state.round.hands[PlayerSide.Player].length)
-  return {
-    ...state,
-    round,
-    encounter: queueApplyDamagePayout(state.encounter, payout),
-    buffActivation: {
-      ...state.buffActivation,
-      apPool: spendAp(state.buffActivation.apPool, APPLY_DAMAGE_AP_COST),
-    },
-    // DLR-125 — Debt Collector's trigger is THE PRESS, not the landing (DLR-109's reading, until
-    // now unenforced in code). Set here, at the moment the press commits, and read at the next
-    // trick's resolution; firing on the queued payout's arrival would pay the family a trick or
-    // more late and would silently contradict a reading DLR-109 already recorded.
-    buffHand: { ...state.buffHand, applyDamagePressed: true },
-    applyPoised: false,
-  }
 }
 
 /**

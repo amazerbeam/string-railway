@@ -10,36 +10,43 @@
  * behaviour changed, and every docblock came with its function.
  */
 import {
+  applyPot,
   containsCard,
   incomingFrom,
-  incomingFromCashOut,
+  incomingFromPot,
   playCard,
+  potValue,
   PlayerSide,
-  RoundPhase,
   type AbilityChoice,
   type Card,
   type PlayCardOptions,
+  type StreakState,
   type TrickCard,
   type TrickResolution,
 } from '../../warCouncil'
 import {
   applyDamage,
+  BASE_DAMAGE,
   BuffTier,
   DuelSide,
   hasPendingTimebomb,
   isEncounterResolved,
   NO_PENDING_TIMEBOMB,
-  PayoutOutcome,
   queueTimebomb,
-  tickApplyPayout,
   TIMEBOMB_DAMAGE,
   type EncounterState,
   type TimebombDamage,
-  type TrickPayoutEvent,
 } from '../../hunt'
-import { cheatArmed, type RoundUiState } from './roundUiState'
+import {
+  cheatArmed,
+  offeredBuffs,
+  type ResolutionView,
+  type ResolvedTrick,
+  type RoundUiState,
+} from './roundUiState'
 import { buffHandInputFor } from './buffRoundState'
 import { advanceQuarryFollow, deriveResolvedTrick } from './quarryAdvance'
+import { resolutionBeatsFor } from './resolutionBeats'
 import { liftDetonatedMark, liftExpiredMarks } from './timebombMarks'
 
 /**
@@ -60,7 +67,7 @@ export function playOptions(state: RoundUiState): PlayCardOptions {
     timebombToPlayer: state.encounter.pendingTimebomb[DuelSide.Player],
     timebombToQuarry: state.encounter.pendingTimebomb[DuelSide.Quarry],
     blastGuarded: state.blastGuardHeld,
-    bankClimbBonus: state.bankClimbBonus,
+    baseDamageBonus: state.baseDamageBonus,
     // DLR-122 — the FIFTH field, in the one assembly all three readers share. A preview or a
     // commit that read the run's ladder itself would be exactly the second reading this
     // docblock already warns about.
@@ -74,52 +81,36 @@ export function playOptions(state: RoundUiState): PlayCardOptions {
 }
 
 /**
- * One trick's whole effect on the encounter, in the one place it is stated. FOUR steps, and the
- * ORDER IS LOAD-BEARING (DLR-109 adds the fourth):
+ * One trick's whole effect on the encounter, in the one place it is stated. THREE steps, and the
+ * ORDER IS LOAD-BEARING:
  *
  *   1. the trick's own damage — which already folds in any Timebomb detonating this trick, via
  *      `playOptions` — is applied;
  *   2. the paid Timebomb queue is cleared;
- *   3. this trick's own prime is booked for the next trick;
- *   4. the queued Apply Damage payout ticks, and lands if it is due.
+ *   3. this trick's own prime is booked for the next trick.
  *
- * Step 4 is LAST, and that is the whole ordering rule when a payout and a ticking Timebomb are
- * both outstanding. DLR-141 split AC3's old wipe into a reduce/evaporate pair, both inside
- * `applyDamage`: step 1 has already run `reduceApplyPayoutOnHit` on any trick that cost the
- * player health, so a Timebomb detonating against the player on the trick a payout was due
- * REDUCES that payout to `APPLY_DAMAGE_HIT_RETENTION` of its value (floored, clamped to a
- * minimum of `1`; `null` only when the encounter itself resolved) rather than destroying it
- * outright — and it is this reduced figure,
- * not the original, that lands if step 4 also settles the payout this same trick. Putting the
- * tick anywhere earlier would let a player dodge the reduction by timing, which is the one thing
- * the criterion exists to prevent.
+ * DLR-156 Phase 4 — the fourth step, the queued Apply Damage payout's tick, is GONE with the
+ * queue itself: applying now happens once, immediately, through `applyPot` on the resolution
+ * screen (Phase 5), not through a delayed settle folded in here.
  *
  * The all-zero skip on step 1 avoids bumping `damageEventsApplied` for nothing, but does not
  * return early: a REPLACED clean loss (DLR-90 AC5) is an all-zero event that still owes a booking.
  */
 export interface FoldedResolution {
   readonly encounter: EncounterState
-  /** DLR-109 AC4 — the press-time unplayed count, and ONLY when a DELAYED payout is what resolved
-   *  the encounter. `null` on every other path, including a kill by ordinary trick damage, which
-   *  `captureUnplayed` still handles off the live hand. */
-  readonly unplayedAtPress: number | null
-  /** DLR-119 — what this fold did to a queued payout, for the felt to narrate. `null` when
-   *  nothing was queued. REQUIRED, not optional: an omitted field narrates nothing, silently. */
-  readonly payout: TrickPayoutEvent | null
 }
 
 /**
  * EXPORTED on DLR-117 so the hand fan's per-card preview can ask THIS function what a
  * hypothetical trick would cost instead of re-deriving the arithmetic. That is the whole
  * anti-drift argument for the preview: it reads a health DELTA off the real fold, so shield
- * absorption, the zero floor, and the payout-destroyed-by-a-hit rule are inherited rather
- * than restated. `projectedDepletion` (`duelHealthBars.ts`) is the cautionary case — it had
- * its own absorption arithmetic and it lied until DLR-115.
+ * absorption and the zero floor are inherited rather than restated. `projectedDepletion`
+ * (`duelHealthBars.ts`) is the cautionary case — it had its own absorption arithmetic and it
+ * lied until DLR-115.
  */
 export function applyResolution(
   encounter: EncounterState,
   resolution: TrickResolution,
-  handEnding: boolean,
   // DLR-132 — the primed card's OWN tier's damage pair. `commit` threads `state.primedTimebombDamage`
   // here, falling back to bronze when nothing is primed — unreachable in practice, since a
   // `timebombTarget` implies a primed card implies a spend, but the reducer must stay throw-free
@@ -128,43 +119,18 @@ export function applyResolution(
   // and behaving exactly as bronze always has, without passing one.
   timebombDamage: TimebombDamage = TIMEBOMB_DAMAGE[BuffTier.Bronze],
   // R3 — the fuse expired with the card still held. Booked through `queueTimebomb`, the IDENTICAL
-  // path a played bomb takes (below), so the bank reset, the Blast Guard and the forced cash-out
-  // are inherited rather than restated (Assumption 13). `queueTimebomb` itself indexes the pair by
+  // path a played bomb takes (below), so the bank reset and the Blast Guard's absorption are
+  // inherited rather than restated (Assumption 13). `queueTimebomb` itself indexes the pair by
   // `target`, so passing the PLAYER side's damage happens by naming `DuelSide.Player` as the
   // target — the same figure `TIMEBOMB_DAMAGE[tier][DuelSide.Player]` gives (Assumption 14).
   fuseExpired = false,
 ): FoldedResolution {
-  if (isEncounterResolved(encounter)) return { encounter, unplayedAtPress: null, payout: null }
-  const queued = encounter.pendingApplyPayout
+  if (isEncounterResolved(encounter)) return { encounter }
   const incoming = incomingFrom(resolution)
   const paid =
     incoming[DuelSide.Player] === 0 && incoming[DuelSide.Quarry] === 0
       ? encounter
       : applyDamage(encounter, incoming)
-  // DLR-141 — `applyDamage`'s two remaining fates, read off the field across that call.
-  // `reduceApplyPayoutOnHit` clamps its floor at `1`, so a queued payout can only go to `null`
-  // when the encounter resolved this trick (EVAPORATED); a smaller `cashOut` still standing is
-  // REDUCED; unchanged is no event at all.
-  const payoutEvent: TrickPayoutEvent | null =
-    queued === null
-      ? null
-      : paid.pendingApplyPayout === null
-        ? { outcome: PayoutOutcome.Evaporated, cashOut: queued.cashOut, remaining: null }
-        : // Reference inequality, not a `cashOut` value comparison: `reduceApplyPayoutOnHit`
-          // always returns a NEW object (`{ ...pending, cashOut }`) when it reduces, and
-          // returns the SAME reference untouched when no hit landed this trick. Comparing
-          // `cashOut` values instead would only detect a reduction because
-          // `APPLY_DAMAGE_HIT_RETENTION` happens to be `< 1` today — raise that tunable to
-          // `1.0` and a value comparison would silently stop reporting `Reduced` even though a
-          // hit landed. Reference inequality detects "a reduction happened" independent of what
-          // fraction the reduction produced.
-          paid.pendingApplyPayout !== queued
-          ? {
-              outcome: PayoutOutcome.Reduced,
-              cashOut: queued.cashOut,
-              remaining: paid.pendingApplyPayout.cashOut,
-            }
-          : null
   const cleared = hasPendingTimebomb(paid)
     ? { ...paid, pendingTimebomb: NO_PENDING_TIMEBOMB }
     : paid
@@ -173,46 +139,41 @@ export function applyResolution(
       ? cleared
       : queueTimebomb(cleared, resolution.timebombTarget, timebombDamage)
   const withFuse = fuseExpired ? queueTimebomb(booked, DuelSide.Player, timebombDamage) : booked
-  return settleApplyPayout(withFuse, handEnding, payoutEvent)
+  return { encounter: withFuse }
 }
 
 /**
- * The payout half of `applyResolution`, split out so the four-step order above reads as four
- * steps. Ticks the queue and, when a payout comes due, deals it through `incomingFromCashOut` —
- * the ONE sanctioned `PlayerSide -> DuelSide` crossing for this figure — guarding
- * `isEncounterResolved` for the reason `applyResolution` already guards it: a dead Quarry needs no
- * further damage, and a dead player has already had the payout nulled by the `winner !== null`
- * (Evaporated) branch above, not by a hit's ordinary reduction.
+ * DLR-156 AC3/AC14 — builds the resolution screen's whole content on the `null` -> non-null edge
+ * of `resolvedTrick`, the SAME edge `foldBuffOutcome` and `openWindowOnTrickResolved` fire on.
+ * Called exactly ONCE per resolved trick, inside `commit` — never per render and never per beat
+ * (`plan.md` → Runtime quality notes). `resolutionBeatsFor` runs no rule of its own; it only
+ * replays what `resolveTrickBank` already decided.
+ *
+ * `before` is `state.round.total`/`.roll` — the streak as it stood BEFORE this trick, which is
+ * exactly `state.round`'s figures at every call site: the completing play is always the last
+ * thing `commit` does with `state.round`, so nothing has touched `total`/`roll` yet by the time
+ * this function reads them.
  */
-function settleApplyPayout(
-  encounter: EncounterState,
-  handEnding: boolean,
-  payoutEvent: TrickPayoutEvent | null,
-): FoldedResolution {
-  const tick = tickApplyPayout(encounter.pendingApplyPayout, handEnding)
-  if (tick.due === null) {
-    // A no-payout trick allocates nothing: `tick.pending` is `null`, equal to the field it came
-    // from, so the input object is returned untouched rather than a spread copy of itself.
-    return tick.pending === encounter.pendingApplyPayout
-      ? { encounter, unplayedAtPress: null, payout: payoutEvent }
-      : {
-          encounter: { ...encounter, pendingApplyPayout: tick.pending },
-          unplayedAtPress: null,
-          payout: payoutEvent,
-        }
-  }
-  const cleared: EncounterState = { ...encounter, pendingApplyPayout: null }
-  const settled = isEncounterResolved(cleared)
-    ? cleared
-    : applyDamage(cleared, incomingFromCashOut(tick.due.cashOut))
+function resolutionViewFor(
+  state: RoundUiState,
+  resolvedTrick: ResolvedTrick,
+  trickNumber: number,
+): ResolutionView {
+  const before: StreakState = { total: state.round.total, roll: state.round.roll }
+  // DLR-145 — the pile AND the cards spent out of it this trick, the same union
+  // `buffHandInputFor`/`firedOncePerHandIds` read, so a card consumed on the trick it fired is
+  // still resolvable by id here.
+  const candidates = [...offeredBuffs(state), ...state.buffActivation.spentThisTrick]
+  const { resolution } = resolvedTrick
   return {
-    encounter: settled,
-    unplayedAtPress: isEncounterResolved(settled) ? tick.due.unplayedAtPress : null,
-    // DLR-141 — a trick that BOTH reduces and settles a payout in the same fold reports it PAID
-    // at the reduced figure: `tick.due.cashOut` is already the post-reduction value, so the
-    // number the player is told is the number that actually landed. The intermediate `Reduced`
-    // event this fold may have produced is deliberately overwritten here, not composed with it.
-    payout: { outcome: PayoutOutcome.Paid, cashOut: tick.due.cashOut, remaining: null },
+    cards: resolvedTrick.cards,
+    winner: resolvedTrick.winner,
+    resolution,
+    beats: resolutionBeatsFor(resolution, candidates, before),
+    trickNumber,
+    // AC2 — the bare rule: the player may fire nothing next trick, so this is a FLOOR, not a
+    // prediction of what the next trick will actually pay.
+    nextPotFloor: potValue(resolution.total + BASE_DAMAGE, resolution.roll + 1),
   }
 }
 
@@ -270,14 +231,23 @@ export function commit(
   // `liftDetonatedMark`'s docblock for why this one needs a different lift than `fuseExpired`'s.
   const detonatedByPlay = resolvedTrick !== null && resolvedTrick.resolution.timebombTarget !== null
   const folded = resolvedTrick
-    ? applyResolution(
-        state.encounter,
-        resolvedTrick.resolution,
-        result.state.phase === RoundPhase.Complete,
-        timebombDamage,
-        fuseExpired,
-      )
+    ? applyResolution(state.encounter, resolvedTrick.resolution, timebombDamage, fuseExpired)
     : null
+  // DLR-156 AC3/AC14 — the ONE `null` -> non-null edge for THIS commit's own resolving play.
+  // Reused for both `resolvedTrick` (the felt's existing hold-until-CarryOn reveal) and
+  // `resolution` (the new screen), so the two can never disagree about which trick this is.
+  const resolvedTrickWithTimebomb: ResolvedTrick | null =
+    resolvedTrick !== null && folded !== null
+      ? {
+          ...resolvedTrick,
+          timebombDamage:
+            resolvedTrick.resolution.timebombTarget === null ? null : state.primedTimebombDamage,
+        }
+      : resolvedTrick
+  const resolution: ResolutionView | null =
+    resolvedTrickWithTimebomb !== null
+      ? resolutionViewFor(state, resolvedTrickWithTimebomb, result.state.tricksPlayed)
+      : state.resolution
   const settled: RoundUiState = {
     ...state,
     round: liftDetonatedMark(
@@ -287,20 +257,9 @@ export function commit(
     armed: null,
     prompt: null,
     rejection: null,
-    resolvedTrick:
-      resolvedTrick !== null && folded !== null
-        ? {
-            ...resolvedTrick,
-            payout: folded.payout,
-            timebombDamage:
-              resolvedTrick.resolution.timebombTarget === null ? null : state.primedTimebombDamage,
-          }
-        : resolvedTrick,
+    resolvedTrick: resolvedTrickWithTimebomb,
+    resolution,
     encounter: folded ? folded.encounter : state.encounter,
-    // DLR-109 AC4 — a DELAYED payout's press-time count, threaded in ONLY when nothing has
-    // already frozen this field. The null check IS `captureUnplayed`'s "has this already been
-    // captured" test, so this line and that function must never fight over the field.
-    unplayedAtResolve: state.unplayedAtResolve ?? folded?.unplayedAtPress ?? null,
     cheatTricksRemaining,
     timebombFuseRemaining,
     // DLR-154 FIX 2/FIX B — a detonation clears `timebombBuff`, whether the mark expired in hand
@@ -325,7 +284,6 @@ export function commit(
     ? applyResolution(
         settled.encounter,
         advanced.resolvedTrick.resolution,
-        advanced.round.phase === RoundPhase.Complete,
         timebombDamage,
         fuseExpired,
       )
@@ -334,6 +292,22 @@ export function commit(
   // card LED, so this branch needs its own detonation check, mirroring `detonatedByPlay` above.
   const detonatedByQuarryFollow =
     advanced.resolvedTrick !== null && advanced.resolvedTrick.resolution.timebombTarget !== null
+  // DLR-156 AC3/AC14 — the SECOND `null` -> non-null edge: a trick the player LED that only
+  // resolves once the Quarry's automatic follow lands, later in this same commit.
+  const advancedResolvedTrickWithTimebomb: ResolvedTrick | null =
+    advanced.resolvedTrick !== null && quarryFolded !== null
+      ? {
+          ...advanced.resolvedTrick,
+          timebombDamage:
+            advanced.resolvedTrick.resolution.timebombTarget === null
+              ? null
+              : settled.primedTimebombDamage,
+        }
+      : advanced.resolvedTrick
+  const advancedResolution: ResolutionView | null =
+    advancedResolvedTrickWithTimebomb !== null
+      ? resolutionViewFor(settled, advancedResolvedTrickWithTimebomb, advanced.round.tricksPlayed)
+      : settled.resolution
   return {
     ...settled,
     round: liftDetonatedMark(
@@ -342,20 +316,10 @@ export function commit(
         ? advanced.resolvedTrick.cards
         : [],
     ),
-    resolvedTrick:
-      advanced.resolvedTrick !== null && quarryFolded !== null
-        ? {
-            ...advanced.resolvedTrick,
-            payout: quarryFolded.payout,
-            timebombDamage:
-              advanced.resolvedTrick.resolution.timebombTarget === null
-                ? null
-                : settled.primedTimebombDamage,
-          }
-        : advanced.resolvedTrick,
+    resolvedTrick: advancedResolvedTrickWithTimebomb,
+    resolution: advancedResolution,
     cpuFault: advanced.cpuFault,
     encounter: quarryFolded ? quarryFolded.encounter : settled.encounter,
-    unplayedAtResolve: settled.unplayedAtResolve ?? quarryFolded?.unplayedAtPress ?? null,
     // DLR-154 FIX B — clears `timebombBuff` when the marked LEAD card's detonation resolves only
     // now, via the Quarry's follow. `settled.timebombBuff` already reflects the settled step's own
     // clearing (`fuseExpired`/`detonatedByPlay`), so this only narrows it further, never reopens it.
@@ -364,4 +328,42 @@ export function commit(
       ? false
       : settled.blastGuardHeld,
   }
+}
+
+/**
+ * DLR-156 AC5 — the resolution screen's Apply choice: deals `potValue(total, roll)` to the
+ * Quarry, zeroes the streak, and closes the screen.
+ *
+ * TOTAL and GUARDED, per `plan.md` → Runtime quality notes: a `null` resolution is a no-op
+ * returning `state` unchanged rather than a throw, because a throw inside an event handler
+ * unmounts the tree (the discipline `primeTapped` already documents). An already-resolved
+ * encounter is inert rather than a `RangeError` — `applyDamage` throws on one, exactly the
+ * shape `applyResolution`'s own `isEncounterResolved` short-circuit exists to prevent, so this
+ * function repeats that guard rather than trusting the caller never to reach it.
+ *
+ * DLR-156 Assumption 11 — the cut, unconstructible Debt Collector family's `applyDamagePressed`
+ * trigger moves here: this is the only place a cash-out can happen now.
+ */
+export function applyPotAction(state: RoundUiState): RoundUiState {
+  if (state.resolution === null) return state
+  if (isEncounterResolved(state.encounter)) {
+    return { ...state, resolution: null }
+  }
+  const { streak, dealt } = applyPot({ total: state.round.total, roll: state.round.roll })
+  return {
+    ...state,
+    round: { ...state.round, total: streak.total, roll: streak.roll },
+    encounter: applyDamage(state.encounter, incomingFromPot(dealt)),
+    buffHand: { ...state.buffHand, applyDamagePressed: true },
+    resolution: null,
+  }
+}
+
+/** DLR-156 AC6 — the resolution screen's Roll over choice, and the hurt branch's only exit
+ *  ("Onward"). Leaves `round.total`/`round.roll` exactly as they stand — already zero on the
+ *  hurt branch (AC7) — and only closes the screen. `null`-guarded for `applyPotAction`'s stated
+ *  reason. */
+export function rollOverAction(state: RoundUiState): RoundUiState {
+  if (state.resolution === null) return state
+  return { ...state, resolution: null }
 }

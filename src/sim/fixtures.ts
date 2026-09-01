@@ -233,8 +233,7 @@ export function fixtureHandWithPrimedTimebomb(seed = 1302): RoundUiState {
  *  `baselinePolicy.test.ts` does, because a fresh run's pile is a random draw (DLR-135) and this
  *  fixture needs two buffs of a KNOWN cost. Taker on the Magnitude
  *  axis at Bronze costs `1` AP each (`REWARD_BASE.magnitude.bronze + CONDITION_MODIFIER.taker` =
- *  `1 + 0`), so both together cost `2` of `STARTING_AP`'s `6` — comfortably inside the reserve
- *  `wantsApplyDamage`'s `APPLY_DAMAGE_AP_COST` of `3` would otherwise need. */
+ *  `1 + 0`), so both together cost `2` of `STARTING_AP`'s `6`, comfortably affordable. */
 function twoCheapActivatableBuffs(): readonly Buff[] {
   const takerMagnitudeTemplates = templatesForFamily(BuffKind.Taker).filter(
     (template) => template.form === 'condition' && template.axis === BuffRewardAxis.Magnitude,

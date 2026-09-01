@@ -1,5 +1,3 @@
-import type { PendingApplyPayout } from './applyDamagePayout'
-
 export const QuarryCharacter = {
   Swan: 'swan',
   Fox: 'fox',
@@ -88,12 +86,6 @@ export interface EncounterState {
    *  discards it at an encounter boundary (AC7) with no explicit clear step to forget; that is
    *  why this lives here and not on `RunState`. */
   readonly pendingTimebomb: IncomingDamage
-  /** DLR-109 AC2 — a cash-out pressed but not yet dealt, or `null`. Sibling of `pendingTimebomb`
-   *  above and seeded `null` by `startEncounter`, which is what discards it at an encounter
-   *  boundary with no explicit clear step to forget. Wiped inside `applyDamage`, the module's
-   *  single clamp point, whenever the player actually loses health or the encounter resolves
-   *  (AC3) — no other function in this module writes it. NOT PERSISTED. */
-  readonly pendingApplyPayout: PendingApplyPayout | null
   /** DLR-110 — the player's blue hearts (design doc §7a). A second pool of hit points that is
    *  NOT part of `health`, cannot be restored by any heal path, and is spent before red health
    *  (AC4). A scalar rather than a `Record<DuelSide, Health>` because only the player can hold
@@ -101,7 +93,7 @@ export interface EncounterState {
    *  would have to handle, unlike `pendingTimebomb`, which is side-keyed because Timebomb
    *  genuinely hits both sides. Seeded to `NO_SHIELD_HEARTS` by `startEncounter`, which is what
    *  clears it at an encounter boundary with no explicit clear step to forget — the reason
-   *  `pendingTimebomb` and `pendingApplyPayout` live here too. NOT PERSISTED. */
+   *  `pendingTimebomb` lives here too. NOT PERSISTED. */
   readonly shieldHearts: Health
   /** DLR-126 — a Ward held: how much damage it will absorb on the NEXT hit taken, after which it
    *  BREAKS regardless of whether that hit was fully absorbed (`v1-buff-card-list.md` → *Ward*).

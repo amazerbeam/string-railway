@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   advanceRun,
-  bankClimbBonusFor,
+  baseDamageBonusFor,
   playerRankTiersFor,
   beatenCount,
   buyFromShop,
@@ -160,6 +160,7 @@ function App() {
       result.coinsEarned,
       result.buffs,
       result.feederCarry,
+      result.streak,
     )
     setRun(recorded)
     if (isEncounterResolved(recorded.encounter)) {
@@ -364,8 +365,9 @@ function App() {
       blastGuardHeld={run.blastGuardHeld}
       discardsRemaining={run.discardsRemaining}
       feederCarry={run.feederCarry}
+      streak={run.streak}
       buffs={run.buffs}
-      bankClimbBonus={bankClimbBonusFor(run)}
+      baseDamageBonus={baseDamageBonusFor(run)}
       rankTiers={playerRankTiersFor(run)}
       quarryLabel={quarryHealthLabel(currentName)}
       onComplete={handleComplete}

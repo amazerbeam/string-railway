@@ -5,12 +5,10 @@ import {
   applyDamage,
   hasWard,
   NO_WARD,
-  queueApplyDamagePayout,
   startEncounter,
 } from '../encounter'
-import { queueApplyPayout } from '../applyDamagePayout'
 import { advanceRun, startRun } from '../run'
-import { APPLY_DAMAGE_HIT_RETENTION, OpponentKind, RUN_ENCOUNTERS } from '../config'
+import { OpponentKind, RUN_ENCOUNTERS } from '../config'
 import { BuffTier } from '../buffs'
 import { WARD_ABSORPTION } from '../consumables'
 import { NO_SHIELD_HEARTS } from '../shield'
@@ -127,30 +125,5 @@ describe('applyDamage — a Ward absorbs BEFORE blue hearts', () => {
     expect(after.wardAbsorbs).toBe(NO_WARD)
     expect(after.shieldHearts).toBe(2)
     expect(after.health[DuelSide.Player]).toBe(MAX)
-  })
-})
-
-describe('applyDamage — a hit a Ward fully absorbed leaves a queued payout standing', () => {
-  it('keeps pendingApplyPayout when red health never moved', () => {
-    const queued = queueApplyDamagePayout(warded(BuffTier.Silver), queueApplyPayout(4, 1))
-    expect(queued.pendingApplyPayout).not.toBeNull()
-
-    const after = applyDamage(queued, damage(2, 0))
-
-    expect(after.health[DuelSide.Player]).toBe(MAX)
-    expect(after.wardAbsorbs).toBe(NO_WARD)
-    // DLR-110's reading, unchanged by DLR-126: the payout is lost by LOSING HEALTH, and a guard
-    // that ate the hit did its job.
-    expect(after.pendingApplyPayout).not.toBeNull()
-  })
-
-  it('DLR-141 — reduces pendingApplyPayout to APPLY_DAMAGE_HIT_RETENTION, floored, when the Ward only partly covered the hit', () => {
-    const queued = queueApplyDamagePayout(warded(BuffTier.Bronze), queueApplyPayout(4, 1))
-    const after = applyDamage(queued, damage(3, 0))
-
-    expect(after.health[DuelSide.Player]).toBe(MAX - 2)
-    expect(after.pendingApplyPayout).toMatchObject({
-      cashOut: Math.floor(4 * APPLY_DAMAGE_HIT_RETENTION),
-    })
   })
 })

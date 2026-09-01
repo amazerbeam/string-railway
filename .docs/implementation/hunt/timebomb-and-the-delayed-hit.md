@@ -10,12 +10,13 @@ it, a heal is applied by the purchase that bought it. Timebomb books a hit again
 meantime and exactly one place to settle it.
 
 > **DLR-109 gave this mechanic a sibling, and the two must not be confused.** Apply Damage's payout
-> (`applyDamagePayout.ts`) now delays its own cash-out by a trick or more, reusing this module's
+> (`applyDamagePayout.ts`) delayed its own cash-out by a trick or more, reusing this module's
 > queue-on-`EncounterState` shape deliberately rather than inventing a second one — but it is **not**
 > a Timebomb: it is *queued* and *lands*, never *primed*, *ticking*, or *detonating*. The two queues
 > also interact once: because Apply Damage's wipe rule lives inside `applyDamage`, a Timebomb that
 > detonates against the player on the same trick a payout was due destroys that payout. See
-> [the delayed Apply Damage payout](delayed-apply-damage-payout.md) for the full mechanic and the
+> **Both that module and its doc were deleted by DLR-156.** See the DLR-109 paragraph in
+> [README.md](README.md) for the record of the
 > ordering rule that produces that interaction.
 
 The mark itself is not here — it lives on `RoundState` and is written by
@@ -153,7 +154,7 @@ figures off `encounter.pendingTimebomb`, and hands them *into* `playCard` throug
 parameter. `resolveTrickBank` then folds the player's share into that trick's `damageToPlayer` and
 reaches the same cash-out branch a lost trick reaches; the Quarry's share rides out on
 `TrickResolution` and is summed by `incomingFrom`. See
-[the bank and the cash-out](../war-council/bank-and-cash-out.md).
+[the bank and the cash-out](../war-council/the-streak-and-the-pot.md).
 
 Two alternatives were considered and rejected, and both are worth knowing before moving it back:
 
@@ -176,7 +177,8 @@ queue needs clearing after a payment.
 > (2026-08-19) decided that Apply Damage must be disabled while Timebomb is pending, and when DLR-91
 > shipped there was no such control, so the predicate was kept waiting rather than re-derived by a
 > later ticket. DLR-94 built the control and read this predicate:
-> `src/warCouncil/voluntaryCashOut.ts`'s `applyDamageRefusalFor` returned `TimebombPending`, re-asked
+> `src/warCouncil/voluntaryCashOut.ts`'s `applyDamageRefusalFor` returned `TimebombPending` (both
+> deleted by DLR-156), re-asked
 > on the confirming second tap, reading **both** sides of the queue so a hit owed to the Quarry locked
 > the control too. **DLR-143 (2026-08-25) reversed D6 outright** — the two systems now stack rather
 > than exclude each other — and `roundUiState.ts`'s `applyDamageStock` dropped its only call to
@@ -324,5 +326,5 @@ says the Guard is there. See [Blast Guard](blast-guard.md).
 Everything in this file is inside the lint-enforced no-React, no-DOM boundary on `src/hunt/**`. The
 queue, its payment and the charge are all plain immutable transitions unit-testable with no renderer,
 and `src/hunt/` still never imports `src/warCouncil/`. The `PlayerSide` → `DuelSide` crossing this
-feature needs happens once, on the warCouncil side, in `bank.ts` — see
+feature needs happens once, on the warCouncil side, in `streak.ts` — see
 [the mark](../war-council/the-timebomb-mark.md).

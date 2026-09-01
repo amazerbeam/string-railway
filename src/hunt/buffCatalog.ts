@@ -85,8 +85,8 @@ export const TIMEBOMB_TIER_MULTIPLIER: Readonly<Record<BuffTier, number>> = {
  * retuning `TIMEBOMB_QUARRY_DAMAGE` moves this table with it, which is what makes the migration
  * incapable of silently diverging from the mechanic it migrates.
  *
- * Both operands are integers and the multipliers are integers, so every product is exact — this
- * needs none of the numerator/denominator treatment `FORCED_CASH_OUT_*` required in `config.ts`.
+ * Both operands are integers and the multipliers are integers, so every product is exact and
+ * needs no numerator/denominator treatment.
  * UNIT: health points, applied once, to one side, at the resolution of the next trick.
  */
 export const TIMEBOMB_DAMAGE: Readonly<Record<BuffTier, TimebombDamage>> = {

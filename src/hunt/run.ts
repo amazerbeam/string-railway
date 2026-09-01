@@ -1,7 +1,7 @@
 // DLR-93 Phase 2.5 — split from a single `run.ts` once that file crossed the 400-line blocking
 // budget (`CLAUDE.md`, `react-frontend`). This module owns the run's SHAPE — `RunState`,
 // `startRun`, and the projections `shopStockFor` / `flaskStockFor` — plus the small pure
-// queries (`canAdvanceRun`, `beatenCount`, `bankClimbBonusFor`) that read a `RunState` without
+// queries (`canAdvanceRun`, `beatenCount`, `baseDamageBonusFor`) that read a `RunState` without
 // producing a new one. The run's TRANSITIONS — `advanceRun`, `recordEncounter`, `buyFromShop`,
 // `drinkFlask` and their private helpers — live in `./runTransitions` and are re-exported below
 // so every existing importer (`src/hunt/index.ts`, the `run.*.test.ts` specs) needed no change.
@@ -25,6 +25,12 @@ import type { FlaskStock } from './flask'
 import type { ShopStock } from './shop'
 import type { SlotVisitStock } from './slotMachine'
 import { DuelSide, type Coins, type EncounterState, type Health } from './types'
+// DLR-156 AC8/AC9 — TYPE-ONLY, erased under `verbatimModuleSyntax`. `src/warCouncil/**` imports
+// FROM `src/hunt/**` at runtime (see `streak.ts`), never the reverse; importing `StreakState` as
+// a value here would open a real circular runtime import. A type-only import has no such cost —
+// it disappears at compile time — so the streak's SHAPE stays single-sourced in `streak.ts`
+// without hunt learning anything about the card layer at runtime.
+import type { StreakState } from '../warCouncil'
 
 /**
  * How a run has ended, or that it has not (DLR-82 AC4/AC5).
@@ -144,6 +150,11 @@ export interface RunState {
    *  the fight boundary, exactly as `blastGuardHeld` is. The hand owns it for its life and hands
    *  the survivor back through `WarCouncilRoundResult`. NEVER persisted, exactly as `coins`. */
   readonly feederCarry: BuffCarry
+  /** DLR-156 AC8/AC9 — the streak carried between the HANDS of one fight. Lives on the run
+   *  rather than on `EncounterState` for `feederCarry`'s stated reason: the card layer owns it
+   *  for the life of a hand and hands it back, and the run is what survives between hands.
+   *  Wiped at the fight boundary by `streakAfter`. NEVER persisted, exactly as `coins` above. */
+  readonly streak: StreakState
 }
 
 /**
@@ -190,6 +201,10 @@ export function startRun(
     // nothing plays exactly as it plays now.
     rankTiers: ALL_BRONZE,
     feederCarry: EMPTY_BUFF_CARRY,
+    // DLR-156 AC8 — a literal, not the imported `EMPTY_STREAK`: that constant is a VALUE export
+    // of `src/warCouncil/streak.ts`, and importing it here would be the runtime circular import
+    // the type-only import above avoids. The shape is trivial and structural, not a tunable.
+    streak: { total: 0, roll: 0 },
   }
 }
 
@@ -255,13 +270,13 @@ export function slotVisitStockFor(run: RunState): SlotVisitStock {
  * free of `RunState` (AC4). The multiplier-side twin named as future scope would contribute its
  * own figure through a sibling of this function, never by reinterpreting this one.
  */
-export function bankClimbBonusFor(run: RunState): number {
+export function baseDamageBonusFor(run: RunState): number {
   return run.whetstones
 }
 
 /**
  * DLR-122 AC2/AC3 — THE statement of "the bought ladder the PLAYER's cards resolve at". The
- * sibling of `bankClimbBonusFor` above and for its stated reason: `App` reads this and hands the
+ * sibling of `baseDamageBonusFor` above and for its stated reason: `App` reads this and hands the
  * RESULT to the card layer as a plain value, which is what keeps `src/warCouncil/` free of
  * `RunState`.
  *

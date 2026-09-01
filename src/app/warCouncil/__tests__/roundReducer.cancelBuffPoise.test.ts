@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { BuffTier, cheatBuff, startEncounter, type Buff } from '../../../hunt'
 import { roundReducer } from '../roundReducer'
 import { createRoundUiState, RoundUiActionKind } from '../roundUiState'
@@ -6,7 +6,7 @@ import { discardsRemainingFixture, makeRound } from './roundFixture'
 
 // AC18 (DLR-148) — `CancelBuffPoise` unwinds ONE level (drops an unspent poise, panel stays
 // open); `CancelLoadout` remains the separate action that closes the panel outright. Carved into
-// its own file for the same reason `roundReducer.bank.test.ts` was: `roundReducer.test.ts`
+// its own file for the same reason `roundReducer.total.test.ts` was: `roundReducer.test.ts`
 // crossed the 400-line budget once this describe block landed. Duplicated rather than imported,
 // matching the established local pattern those sibling files already document.
 function uiFrom(buffs: readonly Buff[]) {
@@ -14,7 +14,7 @@ function uiFrom(buffs: readonly Buff[]) {
     round: makeRound(),
     encounter: startEncounter(0),
     blastGuardHeld: false,
-    bankClimbBonus: 0,
+    baseDamageBonus: 0,
     discardsRemaining: discardsRemainingFixture,
     buffs,
   })

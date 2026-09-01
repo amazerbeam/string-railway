@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { createSeededRng } from '../../hunt'
 import { applyFoxExchange, applyWoodcutterDraw, nextLeaderAfterTrick } from '../abilities'
 import { dealRound } from '../deal'
@@ -27,8 +27,8 @@ function baseState(overrides: Partial<RoundState> = {}): RoundState {
     spentPile: [],
     reshuffled: false,
     drawSeed: 0,
-    bank: 0,
-    multiplier: 0,
+    total: 0,
+    roll: 0,
     lastResolution: null,
     currentTrick: [],
     leader: PlayerSide.Player,

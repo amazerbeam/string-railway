@@ -25,8 +25,6 @@ export interface DebugRoundState {
   ui: RoundUiState
   interactive: boolean
   legalCount: number
-  applyCash: number
-  applyRefusal: string | null
   discardRefusal: string | null
   encounterOver: boolean
   roundComplete: boolean

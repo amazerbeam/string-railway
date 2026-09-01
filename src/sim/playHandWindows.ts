@@ -5,10 +5,10 @@
  * `runDiscard`, `runCheatPlay`, `runBuffWindow` — and nothing else. `playHand.ts` keeps the driver
  * loop itself, which is the part that actually needs all of these in view at once.
  */
-import { applyDamageRefusalFor, discardRefusalFor, type WarCouncilState } from '../warCouncil'
+import { discardRefusalFor, type WarCouncilState } from '../warCouncil'
 import {
   apCapacityFor,
-  bankClimbBonusFor,
+  baseDamageBonusFor,
   BuffActivationRefusal,
   MAX_CARDS_PER_DISCARD,
   playerRankTiersFor,
@@ -18,7 +18,6 @@ import {
 import { loadoutRefusalFor } from '../app/warCouncil/buffHandlers'
 import { roundReducer } from '../app/warCouncil/roundReducer'
 import {
-  applyDamageStock,
   cheatArmed,
   discardSelecting,
   discardStock,
@@ -42,11 +41,12 @@ export function seedFor(run: RunState, dealt: WarCouncilState): RoundUiSeed {
     blastGuardHeld: run.blastGuardHeld,
     discardsRemaining: run.discardsRemaining,
     buffs: run.buffs,
-    bankClimbBonus: bankClimbBonusFor(run),
+    baseDamageBonus: baseDamageBonusFor(run),
     rankTiers: playerRankTiersFor(run),
     apCapacity: apCapacityFor(run.apCapacityBonus),
     coins: run.coins,
     feederCarry: run.feederCarry,
+    streak: run.streak,
   }
 }
 
@@ -144,11 +144,10 @@ export function runCheatPlay(initial: RoundUiState, policy: SimPolicy): CheatPla
 interface WindowOutcome {
   readonly ui: RoundUiState
   readonly buffsActivated: number
-  readonly applyDamagePresses: number
   readonly deadCardRefusals: number
-  /** 2026-08-25 — every AP this window spent, on buffs and Apply Damage alike. Safe to diff
-   *  `initial`/final `apPool` directly: no `TapCard` dispatch happens inside this window, so no
-   *  per-trick refill can land between the spends counted and this diff. */
+  /** 2026-08-25 — every AP this window spent, on buffs. Safe to diff `initial`/final `apPool`
+   *  directly: no `TapCard` dispatch happens inside this window, so no per-trick refill can land
+   *  between the spends counted and this diff. */
   readonly apSpent: ActionPoints
   /** Every buff `offeredBuffs(initial)` held at this window's OPEN, kind and refusal together —
    *  see `BuffWindowObservation`. Independent of `policy.chooseBuffs`: recorded from `initial`,
@@ -156,14 +155,14 @@ interface WindowOutcome {
   readonly observations: readonly BuffWindowObservation[]
 }
 
-/** One between-tricks window: the policy's buff activations, then its Apply Damage press. Every
- *  dispatch is preceded by re-asking the engine's own refusal predicate, and a refused action is
- *  skipped rather than dispatched — the driver treats every policy answer as advisory. */
+/** One between-tricks window: the policy's buff activations. Every dispatch is preceded by
+ *  re-asking the engine's own refusal predicate, and a refused action is skipped rather than
+ *  dispatched — the driver treats every policy answer as advisory. DLR-156 Phase 4 — the Apply
+ *  Damage press this window used to try is gone with the control itself. */
 export function runBuffWindow(initial: RoundUiState, policy: SimPolicy): WindowOutcome {
   let ui = initial
   let buffsActivated = 0
   let deadCardRefusals = 0
-  let applyDamagePresses = 0
   const observations: BuffWindowObservation[] = offeredBuffs(initial).map((buff) => ({
     kind: buff.kind,
     refusal: loadoutRefusalFor(initial, buff),
@@ -193,18 +192,9 @@ export function runBuffWindow(initial: RoundUiState, policy: SimPolicy): WindowO
     ui = roundReducer(ui, { kind: RoundUiActionKind.CancelLoadout })
   }
 
-  if (policy.wantsApplyDamage(ui) && applyDamageRefusalFor(applyDamageStock(ui)) === null) {
-    ui = roundReducer(ui, { kind: RoundUiActionKind.TapApplyDamage }) // poise
-    if (applyDamageRefusalFor(applyDamageStock(ui)) === null) {
-      ui = roundReducer(ui, { kind: RoundUiActionKind.TapApplyDamage }) // commit
-      applyDamagePresses += 1
-    }
-  }
-
   return {
     ui,
     buffsActivated,
-    applyDamagePresses,
     deadCardRefusals,
     apSpent: initial.buffActivation.apPool - ui.buffActivation.apPool,
     observations,

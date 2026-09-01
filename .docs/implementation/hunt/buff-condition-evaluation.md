@@ -8,8 +8,8 @@ This module is the missing middle — the pure predicate that answers "did this 
 true on this trick", plus the cadence rule that decides how often a satisfied condition may pay.
 
 Where the answer is then *spent* is not here: the call site is `resolveTrickBank` in
-`src/warCouncil/bank.ts`, documented at
-[war-council/buffs-in-the-cash-out.md](../war-council/buffs-in-the-cash-out.md), and the fold back
+`src/warCouncil/streak.ts`, documented at
+[war-council/buffs-in-the-trick-damage.md](../war-council/buffs-in-the-trick-damage.md), and the fold back
 onto the felt is [war-council-ui/buff-hand-state-and-the-fold.md](../war-council-ui/buff-hand-state-and-the-fold.md).
 The stacking rule this all implements is `hybrid-design.md` §5 → _Resolving several buffs on one
 trick_ (R1–R7), cited and never restated.
@@ -75,25 +75,25 @@ total map, and `firesOncePerHand` is the single statement of which cadences it a
 
 Order follows `active`, because the pile's order is the player's mental order.
 
-## `resolveTrickBuffs` — one call, so `bank.ts` states R3's order and nothing else
+## `resolveTrickBuffs` — one call, so `streak.ts` states R3's order and nothing else
 
 `resolveTrickBuffs(input, ctx, trickIsLoss)` composes the cadence filter with the accrual arithmetic and returns
 `{ accrual, firedIds }`. It **delegates every figure to `resolveFiredBuffs`** in `buffAccrual.ts` —
 R1 (one axis per contribution), R2 (contributions add within an axis), R5 (the Overlap Bonus,
 `max(0, k − 1)`) and R6 (the per-hand caps) are never re-derived here. That is what leaves
-`src/warCouncil/bank.ts` holding exactly one rule of its own: R3's *order*.
+`src/warCouncil/streak.ts` holding exactly one rule of its own: R3's *order*.
 
 **`trickIsLoss` is the outcome axis, and this module never derives it.** DLR-150 added it as a third
 parameter that is passed straight through to `resolveFiredBuffs` and read for nothing here. It
-arrives from `src/warCouncil/bank.ts` as `!isTaken(outcome)`, because that file's `TAKEN` table *is*
+arrives from `src/warCouncil/streak.ts` as `!isTaken(outcome)`, because that file's `TAKEN` table *is*
 the skull inversion and a second statement of it in `src/hunt/` — a `trickWasLoss(ctx)` predicate
 reading `playerWon === skullTrick` — would be two copies of the game's most misread rule in two
 modules. Every `buffFires` case still reads only the **mechanical** axis (`ctx.playerWon`, did the
 player physically take the cards); the outcome axis is used for exactly one thing, the Feeder carry.
 See [The Feeder carry](the-feeder-carry.md).
 
-`BuffTrickInput` and `BuffHandContext` are declared **in this module**, not in `bank.ts`, because
-`src/hunt/` owns what a buff is and `bank.ts` is already an importer of `../hunt`. `BuffHandContext`
+`BuffTrickInput` and `BuffHandContext` are declared **in this module**, not in `streak.ts`, because
+`src/hunt/` owns what a buff is and `streak.ts` is already an importer of `../hunt`. `BuffHandContext`
 is a `Pick<>` of `BuffTrickContext`, so the hand-scoped half and the whole cannot drift apart.
 
 ## `advanceTricksWithoutHit` — the one counter here that zeroes on a hit
@@ -112,7 +112,16 @@ this ticket unchanged: `startHandAccrual()` is still the only reset `buffAccrual
 lives in `src/app/warCouncil/buffRoundState.ts`, on the far side of a module boundary from the caps,
 precisely so no reader can mistake one for the other.
 
-## The cash-out spend model — a plan decision, not a transcription
+## The cash-out spend model — a plan decision, and **deleted by DLR-156**
+
+> **None of this section describes live code.** DLR-156 stopped buff rewards pooling across a hand:
+> `trickBonusFor` reads one trick's Blade and Momentum contribution directly, into that trick's own
+> `(base + bd) × bm` bracket, and nothing survives the trick. With one cash-out left and no pool for
+> it to read, `payableCashOutBonus`, `markCashOutPaid`, `CashOutBonus`, `NO_CASH_OUT_BONUS` and the
+> `multiplierPaid`/`flatDamagePaid` counters all lost their only reason to exist and were deleted.
+> The section is kept because the reading it records — that R6's cap is per *hand* and a pool is
+> spent once — is the reading a ticket restoring a hand-long pool would have to make again.
+
 
 `buffAccrual.ts` gained two counters this ticket, `multiplierPaid` and `flatDamagePaid`, plus
 `payableCashOutBonus` (what this cash-out may still add) and `markCashOutPaid` (recording it spent).
@@ -125,7 +134,7 @@ to `MAX_FLAT_DAMAGE_BONUS_PER_HAND` three times over in a hand holding a forced 
 Apply Damage and an end-of-hand fold — at which point the cap is not a cap. **This plan spent each
 pool once**, which is a reading taken by the contract rather than a value transcribed from the
 design (`plan.md` → Risks). If the developer wants the pool re-applied at every cash-out it is a
-one-line change in `bank.ts` and the two `*Paid` counters come out.
+one-line change in `streak.ts` and the two `*Paid` counters come out.
 
 `payableCashOutBonus` clamps with `Math.max(0, …)`, so a malformed accrual can never yield a
 negative bonus that *reduces* damage on its way to a rendered heart row.

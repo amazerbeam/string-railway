@@ -9,7 +9,7 @@ import type {
   Hunt,
   RankTierTable,
 } from '../hunt'
-import type { WarCouncilState } from '../warCouncil'
+import type { StreakState, WarCouncilState } from '../warCouncil'
 
 export interface WarCouncilMountProps {
   readonly initialState: WarCouncilState
@@ -55,22 +55,22 @@ export interface WarCouncilMountProps {
    *  Cheat and Timebomb are pile members now, so this is also the ONLY figure that carries either
    *  of them into or out of a hand; there is no longer a second `cheats`/`timebombCharges` pair. */
   readonly buffs: readonly Buff[]
-  /** DLR-92 AC4 — the bank-climb bonus in force for this hand, ALREADY RESOLVED from the run's
-   *  Whetstone count by `bankClimbBonusFor`. A number, not a `RunState` and not an item count: the
+  /** DLR-92 AC4 — the base-damage bonus in force for this hand, ALREADY RESOLVED from the run's
+   *  Whetstone count by `baseDamageBonusFor`. A number, not a `RunState` and not an item count: the
    *  card layer renders a run figure and must not learn what bought it. REQUIRED rather than
    *  optional so the compiler enumerates every mount site instead of letting one silently fight
    *  without the buff. Unlike `blastGuardHeld` it does NOT come back on
    *  `WarCouncilRoundResult` — a hand cannot spend it. */
-  readonly bankClimbBonus: number
+  readonly baseDamageBonus: number
   /** DLR-116 — the per-hand AP pool including capacity bought in the shop. OPTIONAL and defaulted
    *  to STARTING_AP so every existing seed fixture reproduces the pre-DLR-116 pool exactly; the
    *  driver passes apCapacityFor(run.apCapacityBonus). */
   readonly apCapacity?: ActionPoints
   /** DLR-122 AC2/AC3 — the PLAYER's bought ability ladder, ALREADY RESOLVED from the run by
    *  `playerRankTiersFor`. A plain table, not a `RunState`: the card layer resolves a run figure
-   *  and must not learn what bought it, exactly as `bankClimbBonus` above documents. OPTIONAL and
+   *  and must not learn what bought it, exactly as `baseDamageBonus` above documents. OPTIONAL and
    *  defaulted to `ALL_BRONZE`, following `apCapacity` immediately above rather than
-   *  `bankClimbBonus`: an absent table IS "nothing bought", which AC1 requires play identically
+   *  `baseDamageBonus`: an absent table IS "nothing bought", which AC1 requires play identically
    *  to today, so every existing seed fixture reproduces the pre-DLR-122 game exactly. Unlike
    *  `blastGuardHeld` it does NOT come back on `WarCouncilRoundResult` —
    *  a hand cannot buy or spend a tier. */
@@ -78,6 +78,9 @@ export interface WarCouncilMountProps {
   /** DLR-150 AC3 — the carry this hand OPENS on. OPTIONAL and defaulted to `EMPTY_BUFF_CARRY`,
    *  following `apCapacity`, so every existing mount site and fixture reproduces today's game. */
   readonly feederCarry?: BuffCarry
+  /** DLR-156 AC8 — the streak this hand OPENS on. OPTIONAL and defaulted to `EMPTY_STREAK`,
+   *  following `feederCarry`, so every existing mount site and fixture reproduces today's game. */
+  readonly streak?: StreakState
   readonly onComplete: (result: WarCouncilRoundResult) => void
 }
 
@@ -124,4 +127,7 @@ export interface WarCouncilRoundResult {
   /** DLR-150 AC1 — what this hand banked for the next one. REQUIRED, following `coinsEarned`,
    *  so the compiler enumerates every construction site. */
   readonly feederCarry: BuffCarry
+  /** DLR-156 AC8 — the streak after this hand. REQUIRED, following `feederCarry`, so the
+   *  compiler enumerates every construction site. */
+  readonly streak: StreakState
 }

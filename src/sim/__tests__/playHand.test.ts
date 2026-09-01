@@ -49,16 +49,6 @@ describe('playHand', () => {
     }
   })
 
-  it('reports applyDamagePaid as a non-negative subset of damageToQuarry, and applyDamageLost as non-negative', () => {
-    const run = startRun(PLAYER_START_HEALTH, [], 42)
-    for (let hand = 1; hand <= 5; hand += 1) {
-      const outcome = playHand(run, hand, FRESH_ENCOUNTER_DECK, baselinePolicy)
-      expect(outcome.report.applyDamagePaid).toBeGreaterThanOrEqual(0)
-      expect(outcome.report.applyDamageLost).toBeGreaterThanOrEqual(0)
-      expect(outcome.report.applyDamagePaid).toBeLessThanOrEqual(outcome.report.damageToQuarry)
-    }
-  })
-
   it('carries the reward axis, tier and value on every fire outcome and window observation', () => {
     const run = startRun(PLAYER_START_HEALTH, [], 42)
     const outcome = playHand(run, 1, FRESH_ENCOUNTER_DECK, baselinePolicy)
@@ -123,7 +113,6 @@ describe('playHand — the optional levers', () => {
     expect(second.report.tricksWon).toBe(first.report.tricksWon)
     expect(second.report.buffsActivated).toBe(first.report.buffsActivated)
     expect(second.report.apSpent).toBe(first.report.apSpent)
-    expect(second.report.applyDamagePresses).toBe(first.report.applyDamagePresses)
   })
 
   it('a policy discarding the first two hand cards commits exactly one discard for the whole hand, and the discarded cards leave the final hand', () => {
@@ -159,6 +148,29 @@ describe('playHand — the optional levers', () => {
 
     expect(outcome.report.discardsUsed).toBe(0)
     expect(outcome.result.discardsRemaining).toBe(run.discardsRemaining)
+  })
+
+  it('the driver applies the pot by default when a policy answers nothing, so the Quarry CAN take damage through it (DLR-156 review fix — the sim-win-rate regression: `playHand.ts` used to dispatch only `CarryOn`, never `ApplyPot`, leaving the Quarry undamageable since `TrickResolution.cashOut` is zeroed unconditionally)', () => {
+    const run = startRun(PLAYER_START_HEALTH, [], 42)
+    let sawQuarryDamage = false
+    for (let hand = 1; hand <= 5; hand += 1) {
+      const outcome = playHand(run, hand, FRESH_ENCOUNTER_DECK, baselinePolicy)
+      if (outcome.report.damageToQuarry > 0) sawQuarryDamage = true
+    }
+    expect(sawQuarryDamage).toBe(true)
+  })
+
+  it('a policy that always rolls the pot over (wantsApplyPot: () => false) never deals damage to the Quarry through the POT — `chooseBuffs: () => []` isolates this from a Timebomb detonation, the other route to Quarry damage `incomingFrom` folds in', () => {
+    const run = startRun(PLAYER_START_HEALTH, [], 42)
+    const neverApplies: SimPolicy = {
+      ...baselinePolicy,
+      chooseBuffs: () => [],
+      wantsApplyPot: () => false,
+    }
+    for (let hand = 1; hand <= 5; hand += 1) {
+      const outcome = playHand(run, hand, FRESH_ENCOUNTER_DECK, neverApplies)
+      expect(outcome.report.damageToQuarry).toBe(0)
+    }
   })
 
   it('a Cheat play naming a cheatId not held reports zero Cheats armed and leaves the held Cheats unchanged', () => {

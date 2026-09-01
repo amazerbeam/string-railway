@@ -4,7 +4,6 @@ import {
   accrueAxisBonus,
   accrueCarry,
   EMPTY_BUFF_CARRY,
-  payableCashOutBonus,
   resolveFiredBuffs,
   startHandAccrual,
 } from '../buffAccrual'
@@ -45,7 +44,10 @@ describe('DLR-150 AC1 — a Feeder firing on a Loss carries and pays nothing thi
   it('routes the reward into carryOut, not the payable axis', () => {
     const carried = resolveFiredBuffs(startHandAccrual(), [bladeFeeder], true)
     expect(carried.carryOut).toEqual({ multiplierBonus: 0, flatDamageBonus: 1 })
-    expect(payableCashOutBonus(carried)).toEqual({ multiplierBonus: 0, flatDamageBonus: 0 })
+    expect({
+      multiplierBonus: carried.multiplierBonus,
+      flatDamageBonus: carried.flatDamageBonus,
+    }).toEqual({ multiplierBonus: 0, flatDamageBonus: 0 })
   })
 })
 
@@ -53,14 +55,20 @@ describe('DLR-150 AC2 — the same card firing on a dodge pays this hand', () =>
   it('pays this hand and a second fired buff still adds the Overlap Bonus', () => {
     const paid = resolveFiredBuffs(startHandAccrual(), [bladeFeeder, momentumFeeder], false)
     expect(paid.carryOut).toEqual(EMPTY_BUFF_CARRY)
-    expect(payableCashOutBonus(paid)).toEqual({ multiplierBonus: 2 + 1, flatDamageBonus: 1 })
+    expect({
+      multiplierBonus: paid.multiplierBonus,
+      flatDamageBonus: paid.flatDamageBonus,
+    }).toEqual({ multiplierBonus: 2 + 1, flatDamageBonus: 1 })
   })
 })
 
 describe('DLR-150 AC3 — the carry seeds the next hand', () => {
-  it('is spendable through payableCashOutBonus and survives a later same-axis accrual unclipped', () => {
+  it('is spendable as an ordinary hand-long bonus and survives a later same-axis accrual unclipped', () => {
     const next = startHandAccrual({ multiplierBonus: 3, flatDamageBonus: 2 })
-    expect(payableCashOutBonus(next)).toEqual({ multiplierBonus: 3, flatDamageBonus: 2 })
+    expect({
+      multiplierBonus: next.multiplierBonus,
+      flatDamageBonus: next.flatDamageBonus,
+    }).toEqual({ multiplierBonus: 3, flatDamageBonus: 2 })
     expect(next.carriedIn).toEqual({ multiplierBonus: 3, flatDamageBonus: 2 })
     expect(next.carryOut).toEqual(EMPTY_BUFF_CARRY)
 
@@ -77,7 +85,7 @@ describe('a non-Feeder firing on a Loss is unchanged', () => {
   it('a Taker that ate a skull still pays this hand', () => {
     const takerLoss = resolveFiredBuffs(startHandAccrual(), [bladeTaker], true)
     expect(takerLoss.carryOut).toEqual(EMPTY_BUFF_CARRY)
-    expect(payableCashOutBonus(takerLoss).flatDamageBonus).toBe(1)
+    expect(takerLoss.flatDamageBonus).toBe(1)
   })
 })
 

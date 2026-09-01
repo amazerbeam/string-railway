@@ -7,7 +7,7 @@ import type { WarCouncilMountProps } from '../../warCouncilMount'
 import { TIMEBOMB_ARMED_HINT } from '../labels'
 import WarCouncilRound from '../WarCouncilRound'
 import {
-  bankClimbBonusFixture,
+  baseDamageBonusFixture,
   card,
   coinsFixture,
   discardsRemainingFixture,
@@ -19,6 +19,7 @@ import {
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
+import { carryOnFromResolution, stubMatchMedia } from './resolutionTestHelpers'
 
 // DLR-154 FIX C — split out of `WarCouncilRound.timebomb.test.tsx`, which the FIX A2/FIX B work on
 // this ticket pushed over its 400-line budget. This is the revocation/keyboard group: the
@@ -28,6 +29,8 @@ import {
 // rather than imported from the sibling spec, matching that precedent's own choice.
 
 afterEach(cleanup)
+
+stubMatchMedia()
 
 const bronzeTimebomb = timebombBuff(BuffTier.Bronze, 1)
 
@@ -43,7 +46,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       quarryLabel={quarryLabelFixture}
       coins={overrides.coins ?? coinsFixture}
       blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
-      bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
+      baseDamageBonus={overrides.baseDamageBonus ?? baseDamageBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
       buffs={overrides.buffs ?? [bronzeTimebomb]}
       onComplete={overrides.onComplete ?? vi.fn()}
@@ -179,8 +182,9 @@ describe('WarCouncilRound — Timebomb revocation and keyboard reach (DLR-90, DL
     const bells4 = screen.getByRole('button', { name: '4 of Bells' })
     fireEvent.click(bells4)
     fireEvent.click(bells4)
-    expect(screen.getByText(/take the trick/i)).toBeDefined()
-    fireEvent.click(screen.getByRole('button', { name: /tap the table to carry on/i }))
+    // DLR-156 — hands off to the resolution screen rather than a held felt-side reveal.
+    expect(screen.getAllByText(/took it|streak is broken/i).length).toBeGreaterThan(0)
+    carryOnFromResolution()
 
     // AC13/FIX 2 — the row survives the trick boundary, still naming its target.
     expect(screen.getByRole('group', { name: 'Riding this trick' })).toBeTruthy()

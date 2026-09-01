@@ -11,14 +11,15 @@
 /* ---------- the bar: the shell's fourth grid row ---------- */
 
 /* DLR-119 — `flex-wrap: wrap`, and it is a REACHABILITY fix rather than a cosmetic one.
-   Each of the four items floors at `.wc-bar-btn`'s own `min-width: clamp(5.5rem, 14vmin, 8.5rem)`
-   — 88px below a 629px vmin — and a flex item's default `min-width: auto` stops it shrinking past
-   that. Four of them plus three `clamp(0.5rem, 2vmin, 1.25rem)` gaps (8px each at that size) plus
-   2 x 9.6px of clamped padding needs 395.2px. `.wc-shell` is `overflow: hidden`, so at a 390px
-   viewport Apply Damage was clipped away entirely — not scrolled off, GONE, with no way to reach
-   it by pointer or by scroll. Wrapping is a structural guarantee at any width and introduces no
-   new size number; shrinking the button floor would have been inventing a tuning value. The cost
-   is roughly 50-60px of extra `actions` row on a phone, which is the developer's to judge. */
+   Each item floors at `.wc-bar-btn`'s own `min-width: clamp(5.5rem, 14vmin, 8.5rem)` — 88px below
+   a 629px vmin — and a flex item's default `min-width: auto` stops it shrinking past that. Before
+   DLR-156 Phase 4 dropped the fourth (Apply Damage) plate, four of them plus three
+   `clamp(0.5rem, 2vmin, 1.25rem)` gaps (8px each at that size) plus 2 x 9.6px of clamped padding
+   needed 395.2px — `.wc-shell` is `overflow: hidden`, so at a 390px viewport the fourth plate was
+   clipped away entirely, not scrolled off, GONE, with no way to reach it by pointer or by scroll.
+   Wrapping is a structural guarantee at any width and introduces no new size number; shrinking the
+   button floor would have been inventing a tuning value. Kept for the three remaining buttons: the
+   guarantee still costs nothing extra when nothing wraps. */
 .wc-bar {
   grid-area: actions;
   display: flex;
@@ -105,25 +106,16 @@
   filter: brightness(0.9);
 }
 
-/* The refusal sentence and the queued-payout note, on the face of the control rather than
-   behind hover — `game-ux` forbids hiding anything a decision needs behind hover, and touch has
-   no hover at all. */
-.wc-bar-refusal,
-.wc-bar-queued {
+/* The refusal sentence, on the face of the control rather than behind hover — `game-ux` forbids
+   hiding anything a decision needs behind hover, and touch has no hover at all. */
+.wc-bar-refusal {
   margin: 0;
   max-width: 9rem;
   font-family: var(--wc-sans);
   font-size: clamp(0.5rem, 1.1vmin, 0.62rem);
   line-height: 1.35;
   text-align: center;
-}
-
-.wc-bar-refusal {
   color: var(--wc-alarm);
-}
-
-.wc-bar-queued {
-  color: var(--wc-chalk-dim);
 }
 
 @media (prefers-reduced-motion: reduce) {

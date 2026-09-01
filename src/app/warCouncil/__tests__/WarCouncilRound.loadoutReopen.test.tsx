@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { WarCouncilMountProps } from '../../warCouncilMount'
 import WarCouncilRound from '../WarCouncilRound'
 import {
-  bankClimbBonusFixture,
+  baseDamageBonusFixture,
   coinsFixture,
   discardsRemainingFixture,
   encounterFixture,
@@ -15,8 +15,11 @@ import {
   quarryLabelFixture,
   runLabelFixture,
 } from './roundFixture'
+import { carryOnFromResolution, stubMatchMedia } from './resolutionTestHelpers'
 
 afterEach(cleanup)
+
+stubMatchMedia()
 
 /** Mirrors `WarCouncilRound.timebomb.test.tsx`'s own `renderRound` helper. */
 function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
@@ -30,7 +33,7 @@ function renderRound(overrides: Partial<WarCouncilMountProps> = {}) {
       quarryLabel={quarryLabelFixture}
       coins={overrides.coins ?? coinsFixture}
       blastGuardHeld={overrides.blastGuardHeld ?? blastGuardHeldFixture}
-      bankClimbBonus={overrides.bankClimbBonus ?? bankClimbBonusFixture}
+      baseDamageBonus={overrides.baseDamageBonus ?? baseDamageBonusFixture}
       discardsRemaining={overrides.discardsRemaining ?? discardsRemainingFixture}
       buffs={overrides.buffs ?? []}
       onComplete={overrides.onComplete ?? vi.fn()}
@@ -58,16 +61,18 @@ describe('WarCouncilRound — the loadout drawer deliberately remembers it was o
     const bells7 = screen.getByRole('button', { name: '7 of Bells' })
     fireEvent.click(bells7)
     fireEvent.click(bells7)
-    expect(screen.getByText(/take the trick/i)).toBeDefined()
-
-    // `loadoutDoorOpen` is false while the reveal is held, so the gallery does not render — this
-    // half is already pinned by the timebomb spec; restated here so the sequence reads whole.
+    // DLR-156 — the resolution screen REPLACES the felt the instant the trick resolves, so the
+    // gallery is gone along with the rest of the felt, not merely hidden behind
+    // `loadoutDoorOpen`'s own gate — this half is already pinned by the timebomb spec; restated
+    // here so the sequence reads whole.
+    expect(screen.getByText(/took it|streak is broken/i)).toBeDefined()
     expect(gallery()).toBeNull()
 
-    // Dismiss the held reveal. `handleCarryOn` does not clear `ui.loadout` — the panel's own
-    // toggle state — so the gallery is expected to render again with no further tap on the
-    // "Apply buff" bar.
-    fireEvent.click(screen.getByRole('button', { name: /tap the table to carry on/i }))
+    // Dismiss the resolution screen. Neither `applyPotAction`/`rollOverAction` nor the
+    // `handleCarryOn` they chain through (`roundReducer.ts`) ever touches `ui.loadout` — the
+    // panel's own toggle state — so the gallery is expected to render again with no further tap
+    // on the "Apply buff" bar.
+    carryOnFromResolution()
 
     expect(gallery()).toBeTruthy()
   })

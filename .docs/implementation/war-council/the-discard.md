@@ -5,7 +5,7 @@
 ## What it is
 
 `src/warCouncil/discard.ts` is the pure engine module for the discard mechanic — a fifth standalone
-mechanic file beside `voluntaryCashOut.ts`, following that file's exact shape: a `*Refusal` reason
+mechanic file beside the then-live `voluntaryCashOut.ts` (deleted by DLR-156), following that file's exact shape: a `*Refusal` reason
 code union, a `*Stock` interface of plain values, a `*RefusalFor(stock)` predicate, and an
 `apply*` function.
 
@@ -64,13 +64,13 @@ export function discardRefusalFor(stock: DiscardStock): DiscardRefusal | null
 ```
 
 `discardRefusalFor` is checked in order — `windowOpen` first (true of the whole felt rather than of
-one control, mirroring `applyDamageRefusalFor`'s own stated ordering), then `discardsRemaining`, then
+one control, mirroring the stated ordering of the since-deleted `applyDamageRefusalFor`), then `discardsRemaining`, then
 `selecting && selectionSize <= 0`. The `selecting` guard on the third check is what stops "nothing
 chosen yet, mode not even open" from reporting `EmptySelection` before the rail control has ever been
 tapped — a closed, unspent rail is not refused for having nothing selected.
 
 `DiscardStock` is **plain values, never a `RoundUiState`** — this module owns the rule and must not
-learn the shape of the layer that calls it, the same discipline `ApplyDamageStock` and `FlaskStock`
+learn the shape of the layer that calls it, the same discipline `FlaskStock` (and, until DLR-156, `ApplyDamageStock`)
 already carry. `discardRefusalFor` is **the single statement of whether the discard rail is
 available**: read by the reducer before it commits anything, and by the rail control to disable
 itself and print the reason — one rule read twice, never re-derived at either call site.
@@ -85,7 +85,7 @@ See
 ## The barrel
 
 `src/warCouncil/index.ts` re-exports `DiscardRefusal`, `discardRefusalFor`, `applyDiscard` and the
-`DiscardStock` type, alongside the `voluntaryCashOut.ts` exports it sits beside.
+`DiscardStock` type. (It sat beside `voluntaryCashOut.ts`'s exports until DLR-156 deleted that module.)
 
 ## What this module does not decide
 

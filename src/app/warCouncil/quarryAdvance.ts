@@ -49,9 +49,8 @@ export function deriveResolvedTrick(
     cards: [before.currentTrick[0], playedCard],
     winner,
     resolution,
-    payout: null,
-    // DLR-132 — `deriveResolvedTrick` runs BEFORE `commit`'s fold, the same reason `payout` above
-    // always writes `null` here: only `commit` knows which Timebomb tier (if any) is spent.
+    // DLR-132 — `deriveResolvedTrick` runs BEFORE `commit`'s fold, so only `commit` knows which
+    // Timebomb tier (if any) is spent; this always writes `null` here.
     timebombDamage: null,
   }
 }

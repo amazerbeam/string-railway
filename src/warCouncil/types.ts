@@ -1,4 +1,4 @@
-import type { TrickResolution } from './bank'
+import type { TrickResolution } from './streak'
 
 export const Suit = {
   Bells: 'bells',
@@ -111,9 +111,9 @@ export interface RoundState {
   readonly drawSeed: number
   /** AC4/AC5 — the number of tricks taken in a row since the last cash-out. Only ever climbs
    *  until it cashes, which is the property the retired pending-damage figure lacked. */
-  readonly bank: number
+  readonly total: number
   /** AC9 — the number of tricks taken in a row. Zero on any damage taken. */
-  readonly multiplier: number
+  readonly roll: number
   /** The resolution of the trick that just completed. `null` on a fresh deal and after a lead.
    *  The reducer reads it to apply damage; the felt reads it to say what happened. */
   readonly lastResolution: TrickResolution | null

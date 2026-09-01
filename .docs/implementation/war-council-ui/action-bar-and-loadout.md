@@ -73,7 +73,7 @@ readonly loadout: LoadoutSelection | null     // null = panel closed
 ```
 
 Divergence is now unexpressible. `applyDamageStock` reads `state.buffActivation.apPool`,
-`handleTapApplyDamage` writes `spendAp`'s result back into `state.buffActivation.apPool`, and
+`handleTapApplyDamage` (deleted by DLR-156) wrote `spendAp`'s result back into `state.buffActivation.apPool`, and
 `activateBuff` returns a whole new `BuffActivationState`. `startBuffActivation()` seeds it in
 `createRoundUiState`, which **is** the per-hand refresh because `App.tsx` remounts the felt with
 `key={hand}` — the identical argument the retired `apPool: refreshActionPointsForNewHand(STARTING_AP)`
@@ -82,7 +82,7 @@ remains uncalled by the felt.
 
 `buffs` is the first field mirrored from a mount prop that is **never written by any action** and
 never handed back on `WarCouncilRoundResult` — a hand spends action points, not cards, so it cannot
-change the pile. That makes it `bankClimbBonus`'s contract rather than `cheats`'s.
+change the pile. That makes it `baseDamageBonus`'s contract rather than `cheats`'s.
 
 `LoadoutSelection` is `{ poised: BuffId | null }`, and `state.loadout` is one nullable field rather
 than a boolean-plus-id pair, for `CheatSelection`'s stated reason: two fields would admit "closed but
@@ -149,14 +149,14 @@ inside the panel, never on the bar.
 
 ## Activation is two-tap: reversible until the second tap, committing after
 
-`handleTapBuff` has three outcomes on one row, mirroring `handleTapApplyDamage`'s shape:
+`handleTapBuff` has three outcomes on one row, mirroring the shape of the since-deleted `handleTapApplyDamage`:
 
 - a refusal **drops the poise** and changes nothing else;
 - nothing poised, or a different buff poised, **poises this one**;
 - the same buff poised **commits** through `activateBuff`, which spends AP through `spendAp` — the
   only subtraction path — and appends the id to `activatedThisTrick`.
 
-The refusal is re-read on **both** taps, for `handleTapApplyDamage`'s stated reason: the felt can
+The refusal is re-read on **both** taps, for `handleTapApplyDamage`'s stated reason (that handler is gone, the reason is not): the felt can
 change under a poised row, and re-reading is what stops a poise made while the row was live from
 committing after it stopped being. `Escape` (via `handleCancelLoadout`) drops the poise unspent.
 
@@ -245,7 +245,7 @@ Shield's effect had never fired from the app layer before this ticket.
 > union lives in the simulator (`src/sim/playHand.ts`); the three must be kept in step.
 
 `actionBarLabels.ts` owns the bar's own copy and reuses `labels.ts`'s existing
-`APPLY_DAMAGE_POISED_HINT`, `APPLY_DAMAGE_REFUSAL_MESSAGE`, `DISCARD_REFUSAL_MESSAGE`,
+`DISCARD_REFUSAL_MESSAGE`,
 `discardAccessibleName` and `cardAccessibleName` rather than restating any of them — which is why
 deleting the two plates rewrote no copy. `queuedPayoutText(pending)` is the queued-payout readout
 (`Payout queued: 12 damage, 2 tricks to go.`), returning `null` rather than rendering
@@ -281,7 +281,7 @@ This is `duelHealthBars`'s `HealthBarOverlays` reasoning applied a second time.
 the two components' specs. Their **mechanics did not go anywhere** — the two-tap Apply Damage grammar,
 its refusal-on-both-taps rule, the discard's `discardWindowOpen` gate and its selection model are all
 unchanged and all now driven from the bar. Their explanations stay where they were, in
-[apply-damage-plate.md](apply-damage-plate.md) and
+[the-resolution-screen.md](the-resolution-screen.md) and
 [discard-plate-and-selection.md](discard-plate-and-selection.md), each carrying a note about where the
 control now lives. `labels.ts`'s label functions were kept and are reused by the bar.
 

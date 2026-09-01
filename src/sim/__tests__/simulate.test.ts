@@ -4,6 +4,7 @@ import { baselinePolicy } from '../baselinePolicy'
 import { formatSummary } from '../report'
 import { simulate } from '../simulate'
 import { EMPTY_BUFF_CARRY } from '../../hunt'
+import { EMPTY_STREAK } from '../../warCouncil'
 
 function handFixture(overrides: Partial<HandReport> = {}): HandReport {
   return {
@@ -12,11 +13,8 @@ function handFixture(overrides: Partial<HandReport> = {}): HandReport {
     damageToPlayer: 0,
     tricksWon: 0,
     tricksPlayed: 0,
-    applyDamagePaid: 0,
-    applyDamageLost: 0,
     buffsActivated: 0,
     apSpent: 0,
-    applyDamagePresses: 0,
     coinsFromBuffs: 0,
     activatableBuffsHeld: 0,
     discardsUsed: 0,
@@ -27,6 +25,8 @@ function handFixture(overrides: Partial<HandReport> = {}): HandReport {
     buffFireOutcomes: [],
     feederCarriedIn: EMPTY_BUFF_CARRY,
     feederCarryOut: EMPTY_BUFF_CARRY,
+    streakIn: EMPTY_STREAK,
+    streakOut: EMPTY_STREAK,
     ...overrides,
   }
 }
@@ -66,6 +66,16 @@ describe('simulate + formatSummary', () => {
       expect(run.ending).not.toBe(RunEnding.Stalled)
       expect(run.hands.length).toBeGreaterThanOrEqual(1)
     }
+  })
+
+  it('the Quarry can actually be beaten in at least one fight (Code-Evaluator regression) — playHand.ts must dispatch the resolution screen’s apply-or-roll choice, or the Quarry can never take pot damage since `TrickResolution.cashOut` is zeroed unconditionally (DLR-156 AC5), and no simulated policy could defeat a Quarry through ordinary play at all', () => {
+    // A whole RUN win is a documented, long-standing near-zero-probability event for every policy
+    // here regardless of this fix (`.docs/implementation/run-winnability-simulation.md` — a
+    // 25-encounter run against `PLAYER_START_HEALTH = 10` with no restore between fights), so a
+    // full-run win is not the right bar. Beating even ONE fight is: it is only reachable at all
+    // through `ApplyPot` actually dealing the Quarry damage, which is exactly what was broken.
+    const summary = simulate({ runs: 20, baseSeed: 1 }, baselinePolicy)
+    expect(summary.runs.some((run) => run.fightsWon > 0)).toBe(true)
   })
 
   it('reports no NaN in a 1-run batch', () => {

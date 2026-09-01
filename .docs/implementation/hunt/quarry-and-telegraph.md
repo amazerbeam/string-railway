@@ -23,7 +23,7 @@ A future final-boss ticket that gives a character a real power adds its copy **a
 in the same change. Nothing about that power's shape is designed yet — see
 [../war-council/legal-moves-and-abilities.md](../war-council/legal-moves-and-abilities.md).
 
-This module holds no rule logic. The `warCouncil → hunt` import edge remains (`skulls.ts`/`bank.ts`
+This module holds no rule logic. The `warCouncil → hunt` import edge remains (`skulls.ts`/`streak.ts`
 read tunables from here); `QuarryCharacter` is no longer part of it, since DLR-81 removed the type
 from `src/warCouncil/types.ts` along with the `quarryCharacter` state field. Only `src/App.tsx` and
 the UI read the character now.
