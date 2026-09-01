@@ -81,7 +81,9 @@ here, every one of which is **decided, enforced and tested, yet cannot be obtain
 >
 > - **The Quarry's next-trick intent is no longer telegraphed.** The suit-and-stance line that used
 >   to appear before you committed — and the speculative reading against a card you had merely
->   selected — are both deleted. Section 9 states what you can and cannot see now.
+>   selected — are both deleted. Section 9 states what you can and cannot see now. (**Partly undone
+>   on 2026-08-31:** the *suit* they are about to lead is shown again, in the holds panel. The stance
+>   and the speculative reading are still gone. Section 9.)
 > - **A skulled card shows a skull instead of its picture**, the same skull on every rank and suit,
 >   with its rank and suit still readable in the corner. Section 3.
 > - **When the Quarry leads a card that does something to you, the table now says what** — what
@@ -1300,6 +1302,10 @@ per-card cost readout below keeps, for the same reason.
 > **This replaced the intent telegraph, and it is not the same thing.** Until 2026-08-26 the game
 > told you, *before* you committed, what the Quarry was **about to** play. That is gone. This says
 > what the card they have **already played** will do to you. See section 9.
+>
+> **Since 2026-08-31 there is also a separate, narrower forward-looking mark** — the suit the Quarry
+> is about to **lead**, in the holds panel, never the card and never the stance. It is a different
+> surface answering a different question, and this readout is unchanged by it. Section 9.
 
 ### Every card in your hand tells you what it would cost
 
@@ -2442,7 +2448,8 @@ design document, not from this section.
 | The Quarry's hand                          | **Hidden**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | **Which of its cards are skulled**         | **Open — by suit, never by rank.** Per suit: how many it holds, and how many of those are skulled (section 3).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | A skulled card once played                 | **Marked**, face up on the table                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ~~The Quarry's next-trick intent~~            | **Hidden since 2026-08-26.** It was **telegraphed** before you committed — the suit it was about to play, plus its stance (leading, or, when following you, pressing or ducking), never the exact card — and a speculative reading of the same against a card you had merely selected. Both were deleted. Nothing anywhere previews an unplayed card now. |
+| **The suit the Quarry is about to lead**      | **Open since 2026-08-31 — in the panel that already says what they hold**, and **only when they are the one leading.** That suit's row is marked and named in words: *"The Quarry will lead with Bells."* It is **the suit and nothing else** — never the rank, never which of that suit's cards, and **never their stance** (whether they are pressing or ducking), even though the engine still computes it. It appears while their lead is held uncommitted, clears the instant they have led, and **never appears when you are the one leading** — a follow is a function of your lead and does not exist until you have made it. **[provisional]**: the mark is on screen and unplayed, and whether it reads at a glance is the developer's. |
+| ~~The Quarry's stance, and any reading of a card you have merely selected~~ | **Hidden since 2026-08-26.** Before then, the telegraph also named whether the Quarry was pressing to win or ducking, and a second, speculative reading previewed what it would do against a card you had only *selected*. Both were deleted and **neither came back on 2026-08-31.** Nothing anywhere previews a card **you** have not played. |
 | **What their played card will do to you**   | **Open since 2026-08-26 — beside the table**, once they have led and only where their card does something beyond taking the trick: what happens if you win it and what happens if you lose it, or the rule it puts on your follow (section 4). It **never** says which branch will happen, and **never** reveals anything about a card they have not played. Nothing at all is shown when their card has nothing extra to do, when the table is empty, or when you led. Its wording is **[provisional]** and unseen. |
 | The Quarry's trick count                   | Public                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | The Quarry's character and its rule        | Always on screen                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -2463,10 +2470,23 @@ design document, not from this section.
 | **The buff surface covering the table**     | **The decree and the spent pile can never be hidden, since 2026-08-26** — they sit in their own column of the table and the buff panel sits in another. **The cards already played can be, since 2026-08-27, and that is allowed — [provisional].** The per-card breakdown grows upward from above your hand and may cover the played-cards row while it is open; at a wide screen and at a phone-width one it also **takes the taps meant for the cards underneath**, so the trick is untappable until you move off the panel. Accepted by the developer on the basis that the cost is only paid while you are deliberately reading the breakdown; to be revisited if it gets in the way in play. **Since later the same day the panel is only up while you point at a lit card**, so at rest the table is fully visible — the cost is smaller, not gone. |
 | **A Blast Guard you are holding**          | **Hidden** during a fight — the shop's purse is its only surface, and nothing on the felt says you are carrying one (section 7).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
-**There is no telegraph any more — [settled] since 2026-08-26.** Its fidelity dial — suit only, or
-suit and stance — still exists in configuration and **nothing reads it**; the whole surface was
-deleted, both the live reading and the speculative one. What replaced it is not a preview: the
-readout in section 4 speaks only about a card the Quarry has **already** played.
+**Half a telegraph came back on 2026-08-31 — [provisional].** From 2026-08-26 there was none at all:
+the whole surface was deleted, both the live reading and the speculative one. What now exists is
+**narrower than what was removed, and deliberately so** — it names the suit the Quarry is about to
+**lead** with, in the panel that already says what they hold, and it says nothing else:
+
+- **No rank, and no card.** The marked row stays a tally of that suit; nothing distinguishes one of
+  its cards from another.
+- **No stance.** The engine still computes whether the Quarry is pressing or ducking, and this
+  surface reads the suit and throws the stance away. The fidelity dial is therefore still set wider
+  than anything on screen actually shows.
+- **Only on their lead.** When you lead, nothing is marked, because a follow does not exist until you
+  have chosen — telegraphing it after you commit would be a caption on a decision already made.
+
+It exists because almost every buff you can own asks for a **suit** (section 4), so choosing which to
+activate meant guessing at the one fact that decides whether they pay. **It can be switched off in
+one word** by whoever is tuning the game. The readout in section 4 is a different thing and is
+unchanged: it speaks only about a card the Quarry has **already** played.
 
 ---
 
@@ -3271,6 +3291,27 @@ the mechanics themselves are documented in `../implementation/`.
 > whether the opening figure should stay up all hand or flash once at the start is unanswered. Those
 > are the developer's, after playing, and the register rows above say so.
 
+> **Where DLR-155 stands, 2026-08-31.** **Live and reachable by a player, in full:** when the Quarry
+> is the one leading, the "what the Quarry holds" panel marks the row for the suit it is about to
+> lead — that row's tiles enlarged and ringed, its name in words on hover or keyboard focus, and the
+> same sentence available to a screen reader. Nothing is marked when you lead or once they have led.
+>
+> **It is narrower than the surface DLR-148 deleted, on purpose.** Suit only: no rank, no card, no
+> stance. The engine computes the stance and this surface discards it, so the fidelity dial is set
+> wider than what is drawn — that gap is recorded in the register above, not an oversight.
+>
+> **No mechanic moved.** Nothing about what a card does, what a trick costs, when a buff may be
+> spent, or what anything scores is different. The engine already computed this intent and had done
+> since DLR-52; what changed is that something finally asks it. The one rule-shaped change is to
+> **what a player can see**, which is why it lands in section 9 and nowhere else.
+>
+> **Nobody has looked at it.** No browser pass was run. Every visual value — the tile size, the ring
+> width, the glow radius and its colour — is transcribed from the approved mockup and is the
+> developer's to retune by eye. Three questions are open and only answerable by playing: whether the
+> mark reads at a glance without hunting, whether its glow competes with the buff-ride lighting on
+> your own hand, and whether the last row's tooltip sits cleanly now that it opens upward to avoid
+> being clipped. Whether the readout is drawn at all is a single switch, named in the register above.
+
 > **Where DLR-148 stands, 2026-08-26.** **Live and reachable by a player,
 > in full:** every rule this ticket touched is on screen, because the ticket touched nothing else —
 > it is a screen change end to end. The buff panel is a grid of cards with duplicates stacked and
@@ -3285,6 +3326,12 @@ the mechanics themselves are documented in `../implementation/`.
 > declared and still tested and **has no reader at all**. That is a recorded decision rather than an
 > oversight, and the register row above says so. Do not read those constants as evidence a telegraph
 > exists.
+>
+> > **Superseded in part on 2026-08-31 by DLR-155**, which gave `quarryIntent` a production reader
+> > again. The sentence above was true when written and is the record of it. What is true now: the
+> > **suit** the Quarry will lead is shown, the **stance** still has no reader, and the speculative
+> > "if you lead that" reading is still gone and is not coming back through this route. See the
+> > DLR-155 note below.
 >
 > **No mechanic moved.** No cost, no timing, no condition, no cadence, no activation window, no
 > template. In particular the fence in the buff grid **reads** the existing activation gate and does
@@ -3701,7 +3748,8 @@ the mechanics themselves are documented in `../implementation/`.
 | The Quarry has no rule-break of any kind                                         | settled                                                                                    | nothing to enforce — `legalMoves.ts` reads only the led card; guarded by `cpuPlayer.test.ts`'s 60-seed soak                                                                                                                                                                                                                                                                             | —                                                                                                                                                                                                                                                                                                                 |
 | Quarry character = a name only                                                   | settled                                                                                    | `src/hunt/quarryCharacters.ts` — `QuarryCharacterInfo` has no rule field                                                                                                                                                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
 | What any character's power is                                                    | **not built** — undecided                                                                  | —                                                                                                                                                                                                                                                                                                                                                                                       | **Developer — a final-boss ticket, not every opponent**                                                                                                                                                                                                                                                           |
-| ~~Telegraph fidelity~~ — **the telegraph itself is gone**                        | **not built** — the surface was DELETED on 2026-08-26 (DLR-148). It existed and was reachable from DLR-53 | `src/hunt/config.ts` — `TelegraphFidelity` / `TELEGRAPH_FIDELITY`, and `src/warCouncil/cpuPlayer.ts` — `quarryIntent`, are all still declared and still tested (`src/warCouncil/__tests__/quarryIntent.test.ts`) and have **no production consumer**: nothing in `src/app/` reads any of them. A toggle-off by deletion of every reader, not a deletion of the engine surface | **Developer** — whether an intent preview ever returns. Nothing shows one today |
+| The suit the Quarry will **lead** with, marked in the holds panel                 | **provisional** — restored 2026-08-31 (DLR-155), narrower than the surface DLR-148 deleted on 2026-08-26: suit only, lead only, no stance | `src/app/warCouncil/quarryTelegraph.ts` — `telegraphedLeadSuit`, the single reader of `quarryIntent` and the one call for the whole panel; `src/app/warCouncil/QuarryShape.tsx` — the `leadSuit` prop and the marked row; `src/app/warCouncil/labels.ts` — `quarryLeadTelegraphText`, sole owner of the sentence; `src/hunt/telegraphConfig.ts` — `QUARRY_LEAD_TELEGRAPH_ENABLED` (**true**), read in exactly that one place | **Developer** — the glow's size and colour, whether it reads at a glance, and whether it stays on at all |
+| ~~Telegraph fidelity~~ — **wider than anything on screen reads**                  | **not built** — the *stance* half has had no reader since 2026-08-26 (DLR-148) and DLR-155 did not restore it | `src/hunt/telegraphConfig.ts` — `TelegraphFidelity` / `TELEGRAPH_FIDELITY` (**`SuitAndStance`**), moved there from `config.ts` by DLR-155 and re-exported from it, so every existing importer is unchanged; `src/warCouncil/cpuPlayer.ts` — `quarryIntent` still returns `stance` and is still tested (`src/warCouncil/__tests__/quarryIntent.test.ts`), and its only production consumer discards that field | **Developer** — whether stance is ever shown, or the dial narrowed to `Suit` to match what is drawn |
 | Per-card win/lose damage readout                                                 | settled — since 2026-08-24 (DLR-117)                                                       | `src/app/warCouncil/cardDamage.ts` — `cardDamagePreview`, which performs **no arithmetic of its own**: it hands a hypothetical `TrickResolution` to `src/app/warCouncil/commitHandlers.ts` — `applyResolution` (exported by DLR-117) and reports the health delta. Rendered by `HandFan.tsx` beneath each card; copy in `labels.ts` — `cardDamageGlyphText`, `cardDamageText`                                                                                                                                                                                | —                                                                                                                                                                                                                                                                                                                 |
 | The readout's glyphs and wording (`W6 L1`, `~`)                                  | **provisional**                                                                            | `src/app/warCouncil/labels.ts` — `cardDamageGlyphText`, `CARD_DAMAGE_ESTIMATE_GLYPH`, `CARD_DAMAGE_ESTIMATE_NOTE`; sized by `warCouncilHand.css` — `.wc-card-damage`                                                                                                                                                                                                                                                                                                                                                                                       | Developer — placeholder copy and a transcribed size multiplier, neither seen in a browser                                                                                                                                                                                                                          |
 | Buff rewards appearing in the readout                                            | settled — since DLR-125                                                                    | `src/app/warCouncil/commitHandlers.ts` — `playOptions` now carries the hand's buff input, and `src/app/warCouncil/cardDamage.ts` threads it through `src/warCouncil/bank.ts` — `resolveTrickBank` and reads a health delta. The preview computes no damage of its own, so the rewards, the ceilings and the overlap bonus are inherited rather than restated                                                                                                                                                                                                                                                                                                                                                            | —                                                                                                                                                                                                                                                                                                                 |
@@ -4300,6 +4348,12 @@ for this contract. All four are under [Known tensions](#known-tensions-recorded-
   unmeasured, and the discard's whole "throw cards to dodge a telegraphed suit" line of play loses
   the thing it was dodging. **Whose decision:** the developer's, after playing. The engine can still
   compute an intent, so restoring a surface for it is a new screen rather than new rules.
+
+  > **Half-answered on 2026-08-31 (DLR-155), and the tension stays open.** The lead **suit** is shown
+  > again, in the holds panel, which gives the discard back the thing it was dodging and gives a
+  > suit-scoped buff a fact to be chosen against. What is still not measured is the original
+  > question: whether the game wanted the *rest* of it — the stance, and any reading against a card
+  > you have merely selected. Neither returned, and both remain the developer's call after playing.
 - **Cards re-sort under your finger as the usable window opens and closes** (new 2026-08-26,
   DLR-148). Anything you cannot use right now moves to the end of the buff grid, and the grid is
   re-derived continuously — so a card can move between where you looked and where you tapped, at the

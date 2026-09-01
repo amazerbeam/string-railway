@@ -92,4 +92,56 @@ describe('QuarryShape', () => {
     )
     expect(screen.getByText(/Bells: 0 held, none skulled/i)).toBeTruthy()
   })
+
+  const SHAPE = [
+    { suit: Suit.Bells, held: 3, skulled: 1 },
+    { suit: Suit.Keys, held: 2, skulled: 0 },
+    { suit: Suit.Moons, held: 1, skulled: 0 },
+  ]
+
+  it('marks exactly the telegraphed suit row, and says so in words', () => {
+    const { container } = render(<QuarryShape shape={SHAPE} leadSuit={Suit.Bells} />)
+    expect(container.querySelectorAll('.wc-shape-row-lead')).toHaveLength(1)
+    expect(container.querySelector('.wc-suit-bells')!.classList).toContain('wc-shape-row-lead')
+
+    // AC3 — real text, not an aria-label on a group of aria-hidden children. The sentence is
+    // carried in two channels (the `.wc-sr-only` span and the visible `.wc-shape-tip`), so both
+    // copies are asserted rather than a single `getByText` — which would otherwise throw on
+    // finding two matching nodes.
+    expect(screen.getAllByText('The Quarry will lead with Bells')).toHaveLength(2)
+
+    // AC2 — the visible bubble says the same thing, and is hidden from assistive tech so the
+    // sentence is not announced twice.
+    const tip = container.querySelector('.wc-shape-tip')!
+    expect(tip.textContent).toBe('The Quarry will lead with Bells')
+    expect(tip.getAttribute('aria-hidden')).toBe('true')
+  })
+
+  it('makes only the marked row a keyboard stop', () => {
+    const { container } = render(<QuarryShape shape={SHAPE} leadSuit={Suit.Keys} />)
+    const focusable = container.querySelectorAll('.wc-shape-row[tabindex="0"]')
+    expect(focusable).toHaveLength(1)
+    expect(focusable[0].classList).toContain('wc-suit-keys')
+  })
+
+  it('marks nothing when no suit is telegraphed — the player leads, or mid-trick (AC4)', () => {
+    const { container } = render(<QuarryShape shape={SHAPE} leadSuit={null} />)
+    expect(container.querySelectorAll('.wc-shape-row-lead')).toHaveLength(0)
+    expect(container.querySelectorAll('.wc-shape-tip')).toHaveLength(0)
+    expect(container.querySelectorAll('.wc-shape-row[tabindex]')).toHaveLength(0)
+    expect(container.textContent).not.toMatch(/will lead with/)
+  })
+
+  it('marks nothing when the prop is omitted altogether', () => {
+    const { container } = render(<QuarryShape shape={SHAPE} />)
+    expect(container.querySelectorAll('.wc-shape-row-lead')).toHaveLength(0)
+  })
+
+  it('leaks no rank through the marked row (AC5)', () => {
+    const { container } = render(<QuarryShape shape={SHAPE} leadSuit={Suit.Bells} />)
+    const marked = container.querySelector('.wc-shape-row-lead')!
+    // The marked row draws the same tally as any other — no tile is singled out.
+    expect(marked.querySelectorAll('.wc-shape-card')).toHaveLength(3)
+    expect(marked.querySelector('.wc-shape-tip')!.textContent).not.toMatch(/\d/)
+  })
 })

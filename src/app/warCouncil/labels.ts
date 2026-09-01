@@ -198,6 +198,15 @@ export function quarryShapeText(shape: readonly SuitShape[]): string {
   return `${QUARRY_SHAPE_LABEL} — ${shape.map(suitShapeRowText).join('; ')}.`
 }
 
+/** DLR-155 AC2/AC3 — the telegraph's ONE sentence, used by both the visible bubble and the
+ *  `.wc-sr-only` span in `QuarryShape.tsx`, so the two channels cannot drift into two copies of
+ *  one phrase (the exact defect DLR-80 found between `quarryShapeText` and that component, which
+ *  is why `suitShapeRowText` above has a single owner). Suit name from `SUIT_NAME`, never typed
+ *  out. Never a rank: `Suit` has none to give. PLACEHOLDER COPY, as this file's rest is. */
+export function quarryLeadTelegraphText(suit: Suit): string {
+  return `The Quarry will lead with ${SUIT_NAME[suit]}`
+}
+
 /** The purse plate on the status band (DLR-84). PLACEHOLDER copy, as this file's other labels
  *  are. Distinct from `runLabels.ts`'s `SHOP_COINS_LABEL`: each file owns its own surface's
  *  copy, so the felt and the shop can be reworded independently. */

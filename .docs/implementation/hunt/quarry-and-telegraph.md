@@ -28,9 +28,16 @@ read tunables from here); `QuarryCharacter` is no longer part of it, since DLR-8
 from `src/warCouncil/types.ts` along with the `quarryCharacter` state field. Only `src/App.tsx` and
 the UI read the character now.
 
-### Telegraph fidelity — how much of the Quarry's intent the player sees (DLR-52)
+### Telegraph fidelity — how much of the Quarry's intent the player sees (DLR-52, rehoused DLR-155)
 
-`TELEGRAPH_FIDELITY` in `config.ts` decides how much the Quarry's next-move telegraph reveals. It is
+> **These constants moved file on DLR-155 and kept their names.** They live in
+> **`telegraphConfig.ts`** now, not `config.ts` — that file stood at 388 of its 400-line budget when
+> a third telegraph constant needed a home, so the group split out exactly as `apConfig.ts` had.
+> `config.ts` **re-exports all three**, so every importer that already said `from '../hunt'` or
+> `from './config'` resolves unchanged and not one call site was edited. Anything below that reads
+> "`config.ts`" as the *home* of a telegraph tunable means `telegraphConfig.ts`.
+
+`TELEGRAPH_FIDELITY` decides how much the Quarry's next-move telegraph reveals. It is
 a `TelegraphFidelity`, an `as const` union with exactly two levels:
 
 | Value                                                 | Reveals                                                                          |
@@ -47,6 +54,28 @@ which fidelity is selected. See
 constant and what it returns at each level.
 
 `SuitAndStance` is the conservative default named at DLR-52's planning gate, not a playtested
-choice — its own comment in `config.ts` flags it as the single value in this file most likely to move
+choice — its own comment flags it as the single value in this group most likely to move
 once T8's playtest happens. Narrowing it to `Suit` removes the `stance` key from the telegraph's
 shape entirely, which is a real behavioural change a consumer will see, not a cosmetic one.
+
+**Nothing on screen currently reads `stance`, so the dial is set wider than what is drawn.** The one
+production consumer of `quarryIntent` — `telegraphedLeadSuit` (below) — takes `.suit` and discards
+`.stance` deliberately, which is what lets this constant stay at `SuitAndStance` without the UI
+implying more than it shows. Narrowing it to `Suit` would therefore change no pixel today.
+
+### `QUARRY_LEAD_TELEGRAPH_ENABLED` — whether the holds panel draws the lead mark at all (DLR-155)
+
+A plain `boolean`, shipping **`true`**, in `telegraphConfig.ts`. It is the one switch for the
+Quarry's lead telegraph: turning it off removes the marked row, the tooltip and the screen-reader
+sentence together.
+
+**It is deliberately a different question from `TELEGRAPH_FIDELITY` sitting beside it.** Fidelity
+says *how much* a telegraph may reveal; this says *whether this particular surface draws one at
+all*. They are independent — the fidelity dial governs the shape `quarryIntent` returns, and this
+governs one consumer of it.
+
+**It is read in exactly one place**, `telegraphedLeadSuit` in
+[`src/app/warCouncil/quarryTelegraph.ts`](../war-council-ui/hunt-readouts-and-telegraph.md), so no
+consuming component can write its own bypass — the same discipline `AP_ENABLED` / `apCostFor` keeps.
+`__tests__/config.test.ts` pins both its type and its value, and a grep audit in DLR-155's own
+contract checks that no component names it.

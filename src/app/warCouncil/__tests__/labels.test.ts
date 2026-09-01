@@ -18,6 +18,7 @@ import {
   HEALTH_BAR_LABEL,
   healthBarValueText,
   ILLEGAL_MOVE_MESSAGE,
+  quarryLeadTelegraphText,
   quarryShapeText,
   RANK_NAME,
   suitShapeRowText,
@@ -278,6 +279,22 @@ describe('quarryShapeText — AC11, never a rank', () => {
     // Every digit in the sentence is a count (held/skulled), never a rank — there is no rank
     // field on SuitShape for this function to read in the first place.
     expect(quarryShapeText(shape)).not.toMatch(/rank/i)
+  })
+})
+
+describe('quarryLeadTelegraphText — DLR-155 AC2, the telegraph sentence', () => {
+  it('names the suit and nothing else', () => {
+    expect(quarryLeadTelegraphText(Suit.Bells)).toBe('The Quarry will lead with Bells')
+  })
+
+  it('draws every suit name from SUIT_NAME rather than typing one out', () => {
+    for (const suit of [Suit.Bells, Suit.Keys, Suit.Moons]) {
+      expect(quarryLeadTelegraphText(suit)).toBe(`The Quarry will lead with ${SUIT_NAME[suit]}`)
+    }
+  })
+
+  it('never carries a rank (AC5)', () => {
+    expect(quarryLeadTelegraphText(Suit.Moons)).not.toMatch(/\d/)
   })
 })
 

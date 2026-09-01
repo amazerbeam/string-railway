@@ -298,18 +298,6 @@ export const WHETSTONE_PRICE: Coins = 4
 // UNIT: coins per card left unplayed in the player's hand at the kill.
 export const QUICK_KILL_TIER_MULTIPLIERS: readonly number[] = [2, 1, 0.5]
 
-export const TelegraphFidelity = {
-  Suit: 'suit', // narrowest — only the lead suit is telegraphed
-  SuitAndStance: 'suitAndStance', // §4's stated default — suit plus pressing/ducking
-} as const
-export type TelegraphFidelity = (typeof TelegraphFidelity)[keyof typeof TelegraphFidelity]
-
-// §4's visibility table / DLR-52 AC4 — the Quarry's next-trick intent is telegraphed at this
-// fidelity, never as the exact card, so §4's hidden-hand row is never violated. Conservative
-// default named at the DLR-52 planning gate; the single value most likely to move after T8's
-// playtest.
-export const TELEGRAPH_FIDELITY: TelegraphFidelity = TelegraphFidelity.SuitAndStance
-
 // Which opponent the single encounter is fought against. Purely an IDENTITY LABEL — it selects
 // a name for the dossier panel and nothing else. No character carries a mechanical power:
 // DLR-81 deleted the Monarch's round-long rule-break, and powers are deferred to a final-boss
@@ -386,3 +374,12 @@ export {
   APPLY_DAMAGE_HIT_RETENTION,
   AP_CAPACITY_STEP,
 } from './apConfig'
+
+// DLR-155 — the telegraph tunables moved to `./telegraphConfig` when this file reached its
+// 400-line blocking budget, the same split `apConfig.ts` already made. Re-exported here so every
+// existing importer (`cpuPlayer.ts`, `index.ts`, the specs) resolves unchanged.
+export {
+  TelegraphFidelity,
+  TELEGRAPH_FIDELITY,
+  QUARRY_LEAD_TELEGRAPH_ENABLED,
+} from './telegraphConfig'

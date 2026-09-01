@@ -46,6 +46,11 @@ enforced by the shape of the data rather than by the discipline of the component
 A suit the Quarry has been stripped of renders as a **zero row** rather than being omitted, so the
 row count is stable for the whole hand and an exhausted suit is legible as such.
 
+**Since DLR-155 one row can also be marked** as the suit the Quarry is about to lead, from an
+optional `leadSuit` prop — see [The lead telegraph](#the-lead-telegraph--the-suit-the-quarry-is-about-to-lead-dlr-155)
+below. It does not weaken "it computes nothing" or the no-rank guarantee: the marked row draws the
+same tally as any other, and the suit is decided upstream.
+
 **Accessibility.** Each row carries an `aria-label` built by `labels.ts`'s `suitShapeRowText` — the
 single owner of that phrase, which `quarryShapeText` also builds its joined sentence from — and each
 skull glyph is a `role="img"` carrying `SKULL_MARK_LABEL`. So the readout reads without colour and
@@ -195,6 +200,14 @@ between the two zones without needing a new transient UI state.
 > `src/warCouncil/__tests__/quarryIntent.test.ts`. That is a recorded decision — removing engine
 > surface is a larger cut than a UI ticket's scope — not a live feature. **No screen reads it.**
 >
+> > **The last sentence stopped being true on DLR-155.** `quarryIntent` has a production consumer
+> > again — `telegraphedLeadSuit`, which the holds panel uses to mark the suit the Quarry is about
+> > to lead (see [The lead telegraph](#the-lead-telegraph--the-suit-the-quarry-is-about-to-lead-dlr-155)
+> > below). Everything else above still holds: the felt telegraph and its speculative half are gone
+> > and did not come back, `stance` still has no reader, and `TelegraphFidelity` /
+> > `TELEGRAPH_FIDELITY` now live in `src/hunt/telegraphConfig.ts` rather than `config.ts`, which
+> > re-exports them.
+>
 > One thing below outlived the deletion: **the Quarry's lead is still held uncommitted** on trick 1,
 > because the commit is folded onto the carry-on tap on every later trick and trick 1 has no prior
 > reveal to fold onto. `TrickWell`'s copy for that window lost its pointer at the telegraph — it read
@@ -216,8 +229,105 @@ arm-then-confirm interaction, which is a selection rather than a commitment.
 `intentPreview.ts`'s `previewQuarryIntent(round, card, fidelity?)` plays the card into a throwaway
 state via the pure `playCard` and asks `quarryIntent` about the result.
 
-The fidelity was read from `TELEGRAPH_FIDELITY`, never decided here. That constant still exists and
-nothing reads it.
+The fidelity was read from `TELEGRAPH_FIDELITY`, never decided here. That constant still exists, in
+`src/hunt/telegraphConfig.ts` since DLR-155, and `quarryIntent` still defaults its `fidelity`
+parameter from it — but **no UI reads it, and no UI shows anything it governs**: the lead telegraph
+below takes `.suit` and discards `.stance` outright rather than consulting the dial, so the dial is
+set wider (`SuitAndStance`) than anything actually drawn.
+
+### The lead telegraph — the suit the Quarry is about to lead (DLR-155)
+
+The felt telegraph did not come back. What came back is **much narrower and lives somewhere else**:
+`QuarryShape`, the panel that already says what the Quarry holds, marks the row for the suit it is
+about to **lead** with.
+
+**Why it exists at all.** Almost every mintable buff is suit-scoped — Taker and Feeder are three
+suits each — so when the player is not leading, the whole activation decision hinges on a fact the
+screen did not show. The engine had computed that fact since DLR-52 and nothing had ever asked it.
+This is the surface, not new engine work.
+
+#### `telegraphedLeadSuit` — the whole rule, in one pure function
+
+`quarryTelegraph.ts` exports `telegraphedLeadSuit(state, quarryToLead): Suit | null`. It returns
+`null` when `QUARRY_LEAD_TELEGRAPH_ENABLED` is off, `null` when `quarryToLead` is false, and
+otherwise `quarryIntent(state)?.suit ?? null`.
+
+**It is a module rather than four lines in `WarCouncilRound.tsx` for three separate reasons**, and
+all three are worth keeping: that file was at 397 of its 400-line budget; a three-condition gate with
+a configuration flag in it is a testable invariant, and this project pushes those out of `.tsx` so
+they can be asserted with no renderer; and it puts the single `quarryIntent()` call behind one named
+door. That last one is the live risk — `quarryIntent` runs `chooseCpuCard` on every call, so the call
+sits deliberately **outside** `QuarryShape`'s own row loop, once per round render, never per tile.
+
+**`quarryToLead` is passed in, not re-derived.** `WarCouncilRound.tsx` already computes "the Quarry
+has chosen its lead but has not committed it", and that boolean is *strictly stronger* than what the
+telegraph needs: it additionally excludes a held reveal, an open ability prompt, an engine fault and
+a finished round — every state in which a mark would be noise. A second copy of that condition here
+is exactly the drift this codebase avoids elsewhere.
+
+**`stance` is read and discarded by construction**, not by discipline — the function names `.suit`
+and there is no path by which a stance could reach a caller. Nor can a rank: `QuarryIntent` carries
+none, and neither does `SuitShape`.
+
+No `useMemo` wraps the call. There is no profiling evidence, and this project treats speculative
+memoisation as its own cost. `quarryIntent` is pure and safe under StrictMode's double-invoke by its
+own docblock, and `chooseCpuCard` reaches no `Math.random`, so a second invoke returns the identical
+suit — which is what lets the spec assert stability directly.
+
+#### What the row renders
+
+`QuarryShape` takes an **optional** `leadSuit?: Suit | null` — optional for the same reason
+`cardAccessibleName`'s `marks` is, so every existing render site kept compiling and an un-telegraphed
+panel stays a real state. Per row it computes `marked = row.suit === leadSuit`, three string
+comparisons per render, and when marked adds `wc-shape-row-lead`, sets `tabIndex={0}`, and renders
+two extra children.
+
+**The component still computes nothing.** It is handed a suit and compares it to each row's own; it
+does not know what a telegraph is.
+
+**The sentence exists twice on purpose, from one owner.** `labels.ts`'s `quarryLeadTelegraphText(suit)`
+builds `` `The Quarry will lead with ${SUIT_NAME[suit]}` `` and is called for both a `.wc-sr-only`
+span (real text, so a screen reader gets it — not an `aria-label` on a group of `aria-hidden`
+children, which Chrome prunes) and an `aria-hidden` `.wc-shape-tip` bubble. Two channels, one
+builder, so they cannot drift into two copies of one phrase — the exact defect DLR-80 found between
+`quarryShapeText` and this component. The visible bubble being `aria-hidden` is what stops the
+sentence being announced twice.
+
+**Only the marked row is a tab stop.** `tabIndex` is set when marked and omitted otherwise, so a
+readout with nothing to say adds no tab stops; one appears when the Quarry is to lead and vanishes
+when it leads. Three permanent stops on a pure readout was judged worse.
+
+#### The treatment is CSS only
+
+No React state, no hook, no effect — and therefore nothing to clean up and nothing that can be left
+stuck open by a second mount. The `useCardTip` hook was considered and rejected: it exists to
+position a bubble against a specific card's *measured* anchor, and this bubble anchors to a fixed
+panel row, so it would have bought nothing and cost a second state owner.
+
+`.wc-shape-row-lead` tints the row and rings it; `.wc-shape-row-lead .wc-shape-card` **enlarges** the
+tile and adds a ring plus an outer glow in `--wc-alarm`. **The size change is the point, not
+decoration** — this panel already spends hue on suit identity, so a second categorical axis cannot
+also be a field colour, and growing the tiles keeps the mark legible in greyscale. It is also
+deliberately unlike the buff-ride lighting on the player's own hand: this **grows** where a hand card
+**lifts**, and takes alarm red where the hand takes brass and green.
+
+The bubble is revealed by `:hover` inside `@media (hover: hover)` and by `:focus-visible` on the row,
+with a `prefers-reduced-motion` override killing the transition. **Nothing a decision needs is
+hover-only** — the glow and the enlarged tiles are always visible, and the tooltip only *names in
+words* what the mark already shows.
+
+> **The last row's bubble opens upward, and that is a fix rather than a flourish.** `.wc-dossier`
+> carries `overflow: hidden` (guarding against a long rule-break sentence widening the grid past the
+> viewport), so a tooltip hanging below the **bottommost** suit row had nowhere to go and would have
+> been clipped — silently, since jsdom has no layout engine and every test would still have passed.
+> `.wc-shape-row-lead:last-child .wc-shape-tip` flips it to `bottom: calc(100% + 0.3rem)`.
+> Keyed to `:last-child` rather than to Moons, so it survives a change to `ALL_SUITS`' order.
+> `__tests__/quarryShapeCss.test.ts` pins both the flip and the fact that `.wc-dossier`'s
+> `overflow: hidden` is still there, so a later "fix" cannot quietly remove the guard instead.
+
+**Every visual value here — tile size, ring width, glow radius, colour — is transcribed from the
+approved mockup and is the developer's to retune.** Whether the mark reads at a glance, and whether
+it competes with the hand's own lighting, are questions only playing answers.
 
 ### The hand-over panel states a tally, not an equation
 
@@ -225,8 +335,16 @@ nothing reads it.
 lost, and health dealt to the Quarry — followed by either the terminal outcome or the single control
 that deals the next hand.
 
-`handSummary`'s two figures are a **delta against the encounter this hand started from**, computed in
-`WarCouncilRound.tsx` and never re-derived in the panel.
+`handSummary`'s two figures are a **delta against the encounter this hand started from**, computed by
+`handSummaryFor(ui)` in **`roundHandSummary.ts`** and never re-derived in the panel.
+
+> **It moved out of `WarCouncilRound.tsx` on DLR-155, unchanged.** That ticket's own two-line
+> addition tipped the file to 402 lines against a 400-line blocking budget, so this derivation — the
+> largest self-contained block with nothing to do with the telegraph — was lifted into its own module
+> with its reasoning carried across verbatim, and the budget breach fixed inside the ticket that
+> caused it. Same fields, same logic, same `RoundUiState` input; `WarCouncilRound.duelHealthBars.test.tsx`
+> was re-run against the move. A reader looking for this code in `WarCouncilRound.tsx` will not find
+> it there.
 
 **Both sides of that subtraction come from the reducer** — `ui.openingEncounter` frozen at mount
 against `ui.encounter` live — and that is a correction, not an implementation detail. The baseline

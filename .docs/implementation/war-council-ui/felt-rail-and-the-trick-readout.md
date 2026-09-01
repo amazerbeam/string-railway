@@ -160,3 +160,9 @@ intent", but "Their intent" was `IntentTelegraph`, a sibling rendered inside the
 > ticket's scope and would strand a config value in the lint-enforced pure tree. Treat it as
 > present-but-unconsumed — **no player-facing telegraph exists**, and any doc describing one is
 > describing something that was deleted on 2026-08-26.
+>
+> > **Superseded on DLR-155, 2026-08-31.** `quarryIntent` has a production consumer again —
+> > `telegraphedLeadSuit`, which marks the Quarry's lead **suit** in the holds panel, not on the
+> > felt — and the two constants moved to `src/hunt/telegraphConfig.ts`, re-exported from
+> > `config.ts`. **The felt readout this file describes is unchanged**, and nothing on the felt
+> > previews an unplayed card.

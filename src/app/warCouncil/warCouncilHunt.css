@@ -91,6 +91,8 @@
   gap: 0.45rem;
   padding: 0.25rem 0;
   font-size: 0.78rem;
+  /* DLR-155 — anchors the marked row's tooltip. */
+  position: relative;
 }
 
 .wc-shape-row + .wc-shape-row {
@@ -185,6 +187,91 @@
 }
 .wc-shape-row.wc-suit-moons .wc-shape-card {
   --wc-suit: var(--wc-moons);
+}
+
+/* ---------- DLR-155: the telegraphed lead row ----------
+
+   FORM FIRST. The tiles grow and take a ring, so the mark survives a greyscale reading — this
+   panel already spends hue on suit identity, and a second categorical axis cannot also be a
+   field colour. The alarm hue reinforces; it is never the only signal.
+
+   Keyed to the Quarry's side and deliberately unlike the player's own hand lighting: this GROWS
+   where a hand card LIFTS, and takes the alarm red where the hand takes brass and the Timebomb
+   green. TUNING VALUES — the tile size, the ring width, the glow radius and the colour are the
+   developer's; these are the mockup's, shipped so there is something to play against. */
+.wc-shape-row-lead {
+  background: color-mix(in srgb, var(--wc-alarm) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wc-alarm) 45%, transparent);
+}
+
+.wc-shape-row-lead .wc-shape-suit {
+  font-weight: 700;
+}
+
+.wc-shape-row-lead .wc-shape-card {
+  width: 1.62rem;
+  height: 2.15rem;
+  box-shadow:
+    0 0 0 1.5px var(--wc-alarm),
+    0 0 0.55rem color-mix(in srgb, var(--wc-alarm) 55%, transparent);
+}
+
+.wc-shape-row-lead .wc-shape-card-mark {
+  width: 1.22rem;
+  height: 1.22rem;
+}
+
+/* The tooltip. Its content is a NICETY — the glow above is what the buff decision reads, and it
+   is always visible, so nothing a decision needs is hover-only. Revealed on hover for pointer
+   devices only, and on `:focus-visible` so the keyboard path works without a stuck outline after
+   a click. `aria-hidden` in the markup: the `.wc-sr-only` sibling carries the same sentence. */
+.wc-shape-tip {
+  position: absolute;
+  left: 0.4rem;
+  top: calc(100% + 0.3rem);
+  z-index: 5;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.25rem;
+  background: var(--wc-ink);
+  color: var(--wc-parchment);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease-out;
+}
+
+@media (hover: hover) {
+  .wc-shape-row-lead:hover .wc-shape-tip {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+.wc-shape-row-lead:focus-visible {
+  outline: 2px solid var(--wc-brass);
+  outline-offset: 2px;
+}
+
+.wc-shape-row-lead:focus-visible .wc-shape-tip {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-shape-tip {
+    transition: none;
+  }
+}
+
+/* DLR-155 — the bottommost row (Moons, third of three) has nowhere below it to render a tooltip
+   before hitting `.wc-dossier`'s own `overflow: hidden` (see that rule's comment — it stays; it
+   guards a different overflow entirely). `:last-child` is structural rather than suit-keyed, so
+   this still holds if `ALL_SUITS`' order ever changes: whichever row renders last flips its
+   tooltip to sit above the row instead of below, anchored off its own box either way. */
+.wc-shape-row-lead:last-child .wc-shape-tip {
+  top: auto;
+  bottom: calc(100% + 0.3rem);
 }
 
 /* ---------- the bank meter (DLR-80, AC4/AC5/AC8/AC9) ---------- */

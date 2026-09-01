@@ -1,5 +1,5 @@
 import { useReducer } from 'react'
-import { DuelSide, isEncounterResolved, payableCashOutBonus, quarryCharacterInfo } from '../../hunt'
+import { isEncounterResolved, payableCashOutBonus, quarryCharacterInfo } from '../../hunt'
 import {
   applyDamageRefusalFor,
   cashValue,
@@ -27,8 +27,10 @@ import HandFan from './HandFan'
 import { sortHandForDisplay } from './handOrder'
 import { cardKey } from './labels'
 import QuarryDossier from './QuarryDossier'
+import { telegraphedLeadSuit } from './quarryTelegraph'
 import QuarryShape from './QuarryShape'
 import { barsForRound } from './roundBars'
+import { handSummaryFor } from './roundHandSummary'
 import { deriveHint } from './roundHint'
 import { roundReducer } from './roundReducer'
 import { roundResultFor } from './roundResult'
@@ -178,21 +180,8 @@ export default function WarCouncilRound({
 
   const shape = suitShape(ui.round.hands[PlayerSide.Cpu], ui.round.skulledCards)
 
-  // This hand's own tally, as the delta against the encounter this component was mounted with.
-  // Both sides of the subtraction come from the reducer: `ui.openingEncounter` is frozen at mount,
-  // `ui.encounter` moves on every trick that cashes or hits — so the difference is exactly what
-  // this hand did.
-  //
-  // The baseline is deliberately NOT the `encounter` prop. On the hand that ends the encounter,
-  // `handleCarryOn` calls `onComplete`, and `App` sets its own encounter and returns early without
-  // changing the `key` that would remount this component — so the prop turns into the live value
-  // while the terminal panel is still on screen, and a prop-based delta reads 0 for a hand that
-  // plainly did damage.
-  const handSummary = {
-    healthLost: ui.openingEncounter.health[DuelSide.Player] - ui.encounter.health[DuelSide.Player],
-    dealtToQuarry:
-      ui.openingEncounter.health[DuelSide.Quarry] - ui.encounter.health[DuelSide.Quarry],
-  }
+  // DLR-155 — extracted to `roundHandSummary.ts`, which carries the derivation's own reasoning.
+  const handSummary = handSummaryFor(ui)
 
   const displayHand = sortHandForDisplay(ui.round.hands[PlayerSide.Player])
 
@@ -226,6 +215,10 @@ export default function WarCouncilRound({
     ui.round.currentTrick.length === 0
 
   const hint = deriveHint(ui, interactive, quarryToLead)
+
+  // DLR-155 — ONE call per render, deliberately outside `QuarryShape`'s own row loop:
+  // `quarryIntent` runs `chooseCpuCard` on every poll. No `useMemo` — no profiling evidence.
+  const leadSuit = telegraphedLeadSuit(ui.round, quarryToLead)
 
   // DLR-153 Phase 8 Correction 1 — the touch path into a hover-only breakdown: `HandFan.tsx`
   // gates `onEnterCard` to a mouse pointer, so a tap pins the readout here instead (a SELECTION,
@@ -291,7 +284,7 @@ export default function WarCouncilRound({
           info={quarryCharacterInfo(hunt.quarry.character)}
           tricksWon={ui.round.tricksWon[PlayerSide.Cpu]}
         />
-        <QuarryShape shape={shape} />
+        <QuarryShape shape={shape} leadSuit={leadSuit} />
         <BankMeter
           bank={ui.round.bank}
           multiplier={ui.round.multiplier}

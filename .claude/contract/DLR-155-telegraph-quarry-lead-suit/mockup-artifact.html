@@ -1,0 +1,396 @@
+<title>Quarry Lead Telegraph</title>
+<style>
+  :root {
+    --wc-chamber: #0c1013;
+    --wc-chamber-lift: #141a1f;
+    --wc-parchment: #e9e1cd;
+    --wc-parchment-shade: #d3c8ae;
+    --wc-ink: #191610;
+    --wc-ink-soft: #5c5443;
+    --wc-brass: #c99a4e;
+    --wc-alarm: #d1705f;
+    --wc-bells: #c9873f;
+    --wc-keys: #5f93a8;
+    --wc-moons: #9c7cb8;
+    --wc-timebomb: #8fb04e;
+    --wc-timebomb-edge: #5c7a2e;
+    --wc-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+    --wc-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100svh;
+    background: var(--wc-chamber);
+    color: var(--wc-parchment);
+    font-family: var(--wc-sans);
+    display: grid;
+    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+    gap: 1.5rem;
+    padding: 1.5rem;
+    align-items: start;
+  }
+
+  @media (max-width: 46rem) {
+    body {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* ---------- the dossier column, as the real screen has it ---------- */
+
+  .wc-dossier {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .wc-shape {
+    background: var(--wc-parchment);
+    color: var(--wc-ink);
+    border-radius: 0.4rem;
+    padding: 0.7rem 0.8rem 0.85rem;
+    box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.45);
+  }
+
+  .wc-shape-eyebrow {
+    margin: 0 0 0.55rem;
+    font-family: var(--wc-serif);
+    font-size: 0.78rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--wc-ink-soft);
+  }
+
+  .wc-shape-row {
+    position: relative; /* NEW — the tooltip anchors to the row */
+    display: grid;
+    grid-template-columns: 1.1rem 3.4rem 1fr;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.22rem 0.15rem;
+    border-radius: 0.25rem;
+    outline: none;
+  }
+
+  .wc-shape-row + .wc-shape-row {
+    margin-top: 0.2rem;
+  }
+
+  .wc-shape-pip {
+    width: 0.95rem;
+    height: 0.95rem;
+    border-radius: 50%;
+    background: var(--wc-suit);
+  }
+
+  .wc-shape-suit {
+    font-family: var(--wc-serif);
+    font-size: 0.9rem;
+  }
+
+  .wc-shape-cards {
+    display: flex;
+    gap: 0.2rem;
+    flex-wrap: wrap;
+  }
+
+  .wc-shape-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.22rem;
+    height: 1.62rem;
+    border-radius: 0.18rem;
+    border: 1px solid var(--wc-suit, var(--wc-ink-soft));
+    background: #fff;
+    color: var(--wc-suit, var(--wc-ink-soft));
+    font-size: 0.8rem;
+    transition:
+      width 0.14s ease-out,
+      height 0.14s ease-out,
+      box-shadow 0.14s ease-out;
+  }
+
+  .wc-shape-card-skulled {
+    background: var(--wc-timebomb);
+    border-color: var(--wc-timebomb-edge);
+    color: var(--wc-ink);
+    font-size: 0.95rem;
+  }
+
+  .wc-shape-none {
+    color: var(--wc-ink-soft);
+  }
+
+  .wc-shape-row.wc-suit-bells {
+    --wc-suit: var(--wc-bells);
+  }
+  .wc-shape-row.wc-suit-keys {
+    --wc-suit: var(--wc-keys);
+  }
+  .wc-shape-row.wc-suit-moons {
+    --wc-suit: var(--wc-moons);
+  }
+
+  /* ---------- DLR-155: the marked row ----------
+     Form FIRST — the tiles grow and take a ring, so the mark survives a greyscale
+     reading. The panel already spends hue on suit identity, so the alarm colour is a
+     reinforcement, never the only signal. */
+
+  .wc-shape-row-lead {
+    background: color-mix(in srgb, var(--wc-alarm) 12%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wc-alarm) 45%, transparent);
+  }
+
+  .wc-shape-row-lead .wc-shape-suit {
+    font-weight: 700;
+  }
+
+  .wc-shape-row-lead .wc-shape-card {
+    width: 1.62rem;
+    height: 2.15rem;
+    box-shadow:
+      0 0 0 1.5px var(--wc-alarm),
+      0 0 0.55rem color-mix(in srgb, var(--wc-alarm) 55%, transparent);
+  }
+
+  /* ---------- the tooltip ----------
+     Hidden by default; revealed on hover (pointer devices only) and on keyboard focus.
+     `aria-hidden` in the real component — the `.wc-sr-only` span carries the sentence
+     for assistive tech, so it is never announced twice. */
+
+  .wc-shape-tip {
+    position: absolute;
+    left: 0.4rem;
+    top: calc(100% + 0.3rem);
+    z-index: 5;
+    padding: 0.3rem 0.5rem;
+    border-radius: 0.25rem;
+    background: var(--wc-ink);
+    color: var(--wc-parchment);
+    font-size: 0.78rem;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.12s ease-out;
+  }
+
+  @media (hover: hover) {
+    .wc-shape-row-lead:hover .wc-shape-tip {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+
+  .wc-shape-row-lead:focus-visible {
+    outline: 2px solid var(--wc-brass);
+    outline-offset: 2px;
+  }
+
+  .wc-shape-row-lead:focus-visible .wc-shape-tip {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .wc-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* ---------- the mockup's own scaffolding (not shipped) ---------- */
+
+  .harness {
+    background: var(--wc-chamber-lift);
+    border: 1px solid #23303a;
+    border-radius: 0.4rem;
+    padding: 1rem 1.1rem 1.2rem;
+  }
+
+  .harness h1 {
+    margin: 0 0 0.2rem;
+    font-family: var(--wc-serif);
+    font-size: 1.05rem;
+  }
+
+  .harness p {
+    margin: 0 0 0.9rem;
+    font-size: 0.85rem;
+    color: #93a3ad;
+    line-height: 1.5;
+  }
+
+  .harness button {
+    font: inherit;
+    font-size: 0.85rem;
+    min-height: 2.75rem;
+    padding: 0 0.9rem;
+    margin: 0 0.4rem 0.4rem 0;
+    border-radius: 0.3rem;
+    border: 1px solid #35454f;
+    background: #1c252c;
+    color: var(--wc-parchment);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .harness button[aria-pressed='true'] {
+    border-color: var(--wc-brass);
+    color: var(--wc-brass);
+  }
+
+  .harness code {
+    font-size: 0.8rem;
+    color: var(--wc-brass);
+  }
+
+  .readout {
+    margin-top: 0.9rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid #23303a;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: #93a3ad;
+  }
+</style>
+
+<aside class="wc-dossier">
+  <section class="wc-shape" aria-label="What the Quarry holds">
+    <p class="wc-shape-eyebrow" aria-hidden="true">What the Quarry holds</p>
+
+    <div class="wc-shape-row wc-suit-bells" data-suit="bells">
+      <span class="wc-sr-only" data-row-text>Bells: 3 held, 1 skulled</span>
+      <span class="wc-shape-pip" aria-hidden="true"></span>
+      <span class="wc-shape-suit" aria-hidden="true">Bells</span>
+      <span class="wc-shape-cards" aria-hidden="true">
+        <span class="wc-shape-card">◆</span>
+        <span class="wc-shape-card">◆</span>
+        <span class="wc-shape-card wc-shape-card-skulled">☠</span>
+      </span>
+    </div>
+
+    <div class="wc-shape-row wc-suit-keys" data-suit="keys">
+      <span class="wc-sr-only" data-row-text>Keys: 4 held, none skulled</span>
+      <span class="wc-shape-pip" aria-hidden="true"></span>
+      <span class="wc-shape-suit" aria-hidden="true">Keys</span>
+      <span class="wc-shape-cards" aria-hidden="true">
+        <span class="wc-shape-card">⚷</span>
+        <span class="wc-shape-card">⚷</span>
+        <span class="wc-shape-card">⚷</span>
+        <span class="wc-shape-card">⚷</span>
+      </span>
+    </div>
+
+    <div class="wc-shape-row wc-suit-moons" data-suit="moons">
+      <span class="wc-sr-only" data-row-text>Moons: 0 held, none skulled</span>
+      <span class="wc-shape-pip" aria-hidden="true"></span>
+      <span class="wc-shape-suit" aria-hidden="true">Moons</span>
+      <span class="wc-shape-cards" aria-hidden="true">
+        <span class="wc-shape-none">—</span>
+      </span>
+    </div>
+  </section>
+</aside>
+
+<section class="harness">
+  <h1>DLR-155 — the Quarry's lead telegraph</h1>
+  <p>
+    Placeholder tally, not real game state. Pick a round state below, then
+    <strong>hover the glowing row</strong> or <strong>press Tab</strong> to reach it — the
+    tooltip should read <code>The Quarry will lead with &lt;suit&gt;</code>. Tab again: the
+    stop disappears once the row is no longer marked.
+  </p>
+
+  <div role="group" aria-label="Round state">
+    <button type="button" data-state="bells" aria-pressed="true">
+      Quarry to lead — Bells
+    </button>
+    <button type="button" data-state="keys" aria-pressed="false">Quarry to lead — Keys</button>
+    <button type="button" data-state="player" aria-pressed="false">Player leads</button>
+    <button type="button" data-state="mid" aria-pressed="false">
+      Mid-trick — Quarry has led
+    </button>
+    <button type="button" data-state="off" aria-pressed="false">Flag off</button>
+  </div>
+
+  <p class="readout" id="readout"></p>
+</section>
+
+<script>
+  const SUIT_NAME = { bells: 'Bells', keys: 'Keys', moons: 'Moons' }
+  const rows = Array.from(document.querySelectorAll('.wc-shape-row'))
+  const buttons = Array.from(document.querySelectorAll('[data-state]'))
+  const readout = document.getElementById('readout')
+
+  const NOTES = {
+    bells: 'quarryToLead = true, quarryIntent() → { suit: bells } → leadSuit = "bells".',
+    keys: 'quarryToLead = true, quarryIntent() → { suit: keys } → leadSuit = "keys".',
+    player: 'The player is on turn to lead. quarryIntent() returns null → leadSuit = null.',
+    mid: 'The Quarry has already led; the trick is no longer empty → leadSuit = null.',
+    off: 'QUARRY_LEAD_TELEGRAPH_ENABLED = false. The resolver short-circuits → leadSuit = null.',
+  }
+
+  /** The whole of the component's logic: mark the row whose suit matches, unmark the rest. */
+  function applyLeadSuit(leadSuit) {
+    for (const row of rows) {
+      const marked = row.dataset.suit === leadSuit
+      row.classList.toggle('wc-shape-row-lead', marked)
+
+      // Only the marked row is a tab stop — three permanent stops on a readout is worse.
+      if (marked) row.setAttribute('tabindex', '0')
+      else row.removeAttribute('tabindex')
+
+      const existingTip = row.querySelector('.wc-shape-tip')
+      if (existingTip) existingTip.remove()
+      const existingSr = row.querySelector('[data-telegraph]')
+      if (existingSr) existingSr.remove()
+
+      if (!marked) continue
+
+      const sentence = `The Quarry will lead with ${SUIT_NAME[leadSuit]}`
+
+      // Real text for a screen reader — never an aria-label on a group of aria-hidden
+      // children, which Chrome prunes.
+      const sr = document.createElement('span')
+      sr.className = 'wc-sr-only'
+      sr.setAttribute('data-telegraph', '')
+      sr.textContent = sentence
+      row.prepend(sr)
+
+      // The visible bubble says the same thing, and is hidden from assistive tech so the
+      // sentence is not announced twice.
+      const tip = document.createElement('span')
+      tip.className = 'wc-shape-tip'
+      tip.setAttribute('aria-hidden', 'true')
+      tip.textContent = sentence
+      row.append(tip)
+    }
+  }
+
+  function select(state) {
+    for (const button of buttons) {
+      button.setAttribute('aria-pressed', String(button.dataset.state === state))
+    }
+    const leadSuit = state === 'bells' || state === 'keys' ? state : null
+    applyLeadSuit(leadSuit)
+    readout.textContent = NOTES[state]
+  }
+
+  for (const button of buttons) {
+    button.addEventListener('click', () => select(button.dataset.state))
+  }
+
+  select('bells')
+</script>
+

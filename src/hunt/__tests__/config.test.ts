@@ -4,6 +4,7 @@ import {
   ENCOUNTERS_PER_RUN,
   TelegraphFidelity,
   TELEGRAPH_FIDELITY,
+  QUARRY_LEAD_TELEGRAPH_ENABLED,
   SLICE_QUARRY_CHARACTER,
   PLAYER_START_HEALTH,
   QUARRY_ENCOUNTER_HEALTH,
@@ -62,6 +63,18 @@ describe('TELEGRAPH_FIDELITY', () => {
       expect.arrayContaining(['suit', 'suitAndStance']),
     )
     expect(Object.values(TelegraphFidelity)).toHaveLength(2)
+  })
+
+  it('ships the Quarry lead telegraph switched on, as a plain boolean', () => {
+    // DLR-155 AC8 — a boolean, not an enum: this says whether the surface draws, and
+    // TELEGRAPH_FIDELITY beside it still says how much a telegraph may reveal.
+    expect(typeof QUARRY_LEAD_TELEGRAPH_ENABLED).toBe('boolean')
+    expect(QUARRY_LEAD_TELEGRAPH_ENABLED).toBe(true)
+  })
+
+  it('still reaches the relocated telegraph constants through config.ts', () => {
+    // The re-export is what keeps all fourteen existing references resolving after the move.
+    expect(TELEGRAPH_FIDELITY).toBe(TelegraphFidelity.SuitAndStance)
   })
 })
 
