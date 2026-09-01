@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shop — redesign</title>
+    <!-- `mockup.css` is GENERATED from the real stylesheets by `build-mockup.py`, so the machine and
+         the buff cards below are styled by the code that actually ships. The `mk-*` rules in the
+         <style> block are this REDESIGN's new CSS — the part that would move into `shop.css` if the
+         direction is approved. -->
+    <link rel="stylesheet" href="mockup.css" />
+    <style>
+      /* ==========================================================================================
+         THE REDESIGN. Everything below is new; the old shop's own layout rules are overridden.
+
+         Three zones instead of ten stacked blocks:
+           1. one thin status strip, edge-anchored   (was: title + next-up + purse + health = 4)
+           2. the machine, centre stage, as the hero of the screen
+           3. what you own, and the one thing you can buy
+
+         Every colour and size here is a PLACEHOLDER for the developer to retune.
+         ========================================================================================== */
+
+      body {
+        margin: 0;
+      }
+
+      .mk-shell {
+        height: 100dvh;
+        width: 100%;
+        overflow: hidden;
+        box-sizing: border-box;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        gap: clamp(0.5rem, 1.6vmin, 1rem);
+        padding: clamp(0.6rem, 2vmin, 1.2rem);
+        /* The 2.4rem is MOCKUP-ONLY clearance for the control bar pinned to the bottom of this
+           page; the shipped screen uses only the safe-area inset. */
+        padding-bottom: calc(max(clamp(0.6rem, 2vmin, 1.2rem), env(safe-area-inset-bottom, 0px)) + 2.4rem);
+        /* A room, not a document: a warm pool of light over the machine, falling off to the
+           corners. This is most of what makes it read as somewhere you have walked into. */
+        background:
+          radial-gradient(90% 60% at 50% 8%, #2a211a 0%, transparent 60%),
+          radial-gradient(120% 90% at 50% 45%, #161d22 0%, #05080a 100%);
+        color: var(--wc-chalk);
+        font-family: var(--wc-sans);
+        color-scheme: dark;
+      }
+
+      /* ---- 1. Status strip -------------------------------------------------------------------
+         One row, pinned to the top edge. `game-ux` — status is anchored at the edges so it never
+         crowds the thing that matters. Four old blocks collapse into this. */
+      .mk-status {
+        display: flex;
+        align-items: center;
+        gap: clamp(0.8rem, 3vmin, 2rem);
+        padding: 0.35rem clamp(0.6rem, 2vmin, 1.1rem);
+        border-bottom: 1px solid #ffffff14;
+      }
+      .mk-stat {
+        display: flex;
+        align-items: baseline;
+        gap: 0.45rem;
+      }
+      .mk-stat-value {
+        font-family: var(--wc-serif);
+        font-size: clamp(1.2rem, 3.4vmin, 1.9rem);
+        color: var(--wc-parchment);
+        line-height: 1;
+      }
+      .mk-coin {
+        color: var(--wc-brass);
+      }
+      .mk-stat-label {
+        font-size: clamp(0.52rem, 1.2vmin, 0.64rem);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--wc-chalk-dim);
+      }
+      .mk-hearts {
+        display: flex;
+        gap: 0.18rem;
+        font-size: clamp(0.95rem, 2.6vmin, 1.4rem);
+        line-height: 1;
+      }
+      /* Whole vs spent differ in SHAPE (filled vs outline), not only in tone. */
+      .mk-heart {
+        color: var(--wc-hp-secure-fill, #d05a4e);
+      }
+      .mk-heart[data-spent='true'] {
+        color: #4a5257;
+      }
+      .mk-next {
+        margin-left: auto;
+        text-align: right;
+        font-size: clamp(0.66rem, 1.6vmin, 0.8rem);
+        color: var(--wc-chalk-dim);
+      }
+      .mk-next b {
+        display: block;
+        font-family: var(--wc-serif);
+        font-size: clamp(0.85rem, 2.2vmin, 1.05rem);
+        color: var(--wc-parchment);
+        font-weight: 500;
+      }
+
+      /* ---- 2. The stage ---------------------------------------------------------------------- */
+      /* The machine and its two reference panels are ONE object, centred together. Sizing the
+         panels as a far-right column left the machine marooned in the middle of an empty screen
+         with its own payout table a third of a viewport away — the panels belong beside the thing
+         they describe. `max-width` keeps the group from stretching on a wide monitor. */
+      .mk-stage {
+        min-height: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: clamp(0.8rem, 2.5vmin, 1.8rem);
+        padding-inline: clamp(0.5rem, 3vw, 3rem);
+      }
+      .mk-machine {
+        display: flex;
+        justify-content: center;
+        min-width: 0;
+      }
+      /* The machine is the hero, so it takes the height that is going. Sized against BOTH axes —
+         `vh` so it grows into a tall stage rather than leaving a dead band above the tray, `vw` so
+         it never outgrows its column on a short wide monitor. The exact scale is a tuning value the
+         developer owns; what matters here is that it fills the stage instead of floating in it. */
+      .mk-machine .shop-cabinet {
+        --reel-window-h: clamp(5.5rem, min(26vh, 15vw), 11rem);
+        --reel-window-w: clamp(5.8rem, min(27vh, 16vw), 11.5rem);
+      }
+      .mk-machine .shop-slot {
+        border: none;
+        background: none;
+        padding: 0;
+      }
+
+      /* The strip, as eight GLYPH CHIPS rather than eight sentences. Same information, read as
+         symbols — which is how you actually compare it against three windows. The full sentence is
+         still on each chip's `title` and its accessible name, so nothing is hidden that a decision
+         needs; the chip itself already carries family, axis and suit. */
+      .mk-side {
+        flex: 0 1 clamp(10rem, 22vw, 15rem);
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: clamp(0.4rem, 1.4vmin, 0.7rem);
+      }
+      .mk-side h2 {
+        margin: 0;
+        font-family: var(--wc-serif);
+        font-size: clamp(0.6rem, 1.4vmin, 0.72rem);
+        font-weight: 500;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--wc-chalk-dim);
+      }
+      .mk-chips {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(4.1rem, 1fr));
+        gap: 3px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .mk-chip {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1px;
+        padding: 0.25rem 0.15rem;
+        border: 1px solid #ffffff1a;
+        border-radius: 3px;
+        background: #ffffff08;
+        text-align: center;
+      }
+      .mk-chip svg {
+        width: clamp(0.85rem, 2.1vmin, 1.1rem);
+        height: clamp(0.85rem, 2.1vmin, 1.1rem);
+        stroke-width: 1.6;
+      }
+      .mk-chip-fam {
+        font-family: var(--wc-serif);
+        font-size: clamp(0.52rem, 1.2vmin, 0.64rem);
+        color: var(--wc-parchment);
+        line-height: 1.1;
+      }
+      .mk-chip-axis {
+        font-size: clamp(0.42rem, 1vmin, 0.5rem);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--wc-chalk-dim);
+      }
+      .mk-chip[data-glyph='bells'] svg {
+        color: #d79a52;
+      }
+      .mk-chip[data-glyph='keys'] svg {
+        color: #7fb0cd;
+      }
+      .mk-chip[data-glyph='moons'] svg {
+        color: #a98fd0;
+      }
+      .mk-chip[data-glyph='sidestep'] svg,
+      .mk-chip[data-glyph='cheat'] svg {
+        color: var(--wc-chalk-dim);
+      }
+      .mk-chip[data-glyph='timebomb'] svg {
+        color: var(--wc-timebomb);
+      }
+
+      /* The payout table, as three compact rows. Ranking reads by RULE WEIGHT, not hue. */
+      .mk-pays {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: clamp(0.56rem, 1.3vmin, 0.68rem);
+      }
+      .mk-pays li {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        padding: 0.14rem 0 0.14rem 0.4rem;
+        border-left: 2px solid var(--wc-chalk-dim);
+        white-space: nowrap;
+      }
+      .mk-pays li[data-o='threeMatch'] {
+        border-left-color: var(--wc-brass);
+      }
+      .mk-pays li[data-o='twoMatch'] {
+        border-left-color: var(--wc-brass-dim);
+      }
+      .mk-pays li[data-o='allDifferent'] {
+        border-left-style: dotted;
+      }
+      .mk-pays b {
+        font-family: var(--wc-serif);
+        font-weight: 500;
+        color: var(--wc-parchment);
+      }
+      .mk-pays span {
+        margin-left: auto;
+        color: var(--wc-chalk-dim);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* The result. Renders NOTHING until there is something to say — no placeholder frame. */
+      .mk-result {
+        min-height: 0;
+      }
+      .mk-result-line {
+        margin: 0 0 0.2rem;
+        font-family: var(--wc-serif);
+        font-size: clamp(0.78rem, 1.9vmin, 0.95rem);
+        color: var(--wc-brass);
+      }
+      .mk-won {
+        display: flex;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
+
+      /* ---- 3. What you own, and what you can buy --------------------------------------------- */
+      .mk-tray {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        gap: clamp(0.7rem, 2.5vmin, 1.6rem);
+        padding-top: clamp(0.4rem, 1.4vmin, 0.7rem);
+        border-top: 1px solid #ffffff14;
+      }
+      .mk-owned {
+        min-width: 0;
+      }
+      .mk-owned-head {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        margin-bottom: 0.3rem;
+      }
+      .mk-owned-head h2 {
+        margin: 0;
+        font-family: var(--wc-serif);
+        font-size: clamp(0.6rem, 1.4vmin, 0.72rem);
+        font-weight: 500;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--wc-chalk-dim);
+      }
+      .mk-owned-count {
+        font-size: clamp(0.56rem, 1.3vmin, 0.68rem);
+        color: var(--wc-chalk-dim);
+      }
+      /* Your cards, at the size they are on the felt. This is the answer to "I can't tell what I
+         have" — the inventory is the same object you will play with, not a list of its names. */
+      .mk-hand {
+        display: flex;
+        gap: clamp(0.25rem, 0.9vmin, 0.45rem);
+        overflow-x: auto;
+        overscroll-behavior: contain;
+        padding-bottom: 2px;
+      }
+      /* `.wc-buffcard` takes its width from being a GRID ITEM in the buff gallery, so dropped into
+         a flex row it collapses to a 0px dot. The width is stated explicitly here — the same
+         "cards with width but no height" trap the buff-gallery mockup hit. */
+      .mk-hand .wc-buffcard {
+        --wc-buffcard-w: clamp(4.4rem, 8vmin, 5.8rem);
+        flex: 0 0 auto;
+        width: var(--wc-buffcard-w);
+      }
+      .mk-empty {
+        font-size: clamp(0.66rem, 1.6vmin, 0.8rem);
+        color: var(--wc-chalk-dim);
+        font-style: italic;
+      }
+
+      .mk-buys {
+        display: flex;
+        align-items: end;
+        gap: clamp(0.4rem, 1.4vmin, 0.8rem);
+      }
+      /* One tile per thing you can buy — a price and a name, no 40-word blurb. */
+      .mk-buy {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.2rem;
+        min-width: clamp(4.6rem, 11vmin, 6.2rem);
+        min-height: 44px;
+        padding: 0.5rem 0.7rem;
+        border: 1px solid var(--wc-brass-dim);
+        border-radius: 5px;
+        background: #ffffff0a;
+        color: var(--wc-chalk);
+        font-family: var(--wc-sans);
+        cursor: pointer;
+        touch-action: manipulation;
+        transition:
+          border-color 140ms ease,
+          background-color 140ms ease,
+          transform 140ms ease;
+      }
+      .mk-buy:hover {
+        border-color: var(--wc-brass);
+        background: #ffffff14;
+      }
+      .mk-buy:active {
+        transform: translateY(1px);
+      }
+      .mk-buy-icon {
+        font-size: clamp(1rem, 2.6vmin, 1.4rem);
+        line-height: 1;
+      }
+      .mk-buy-name {
+        font-family: var(--wc-serif);
+        font-size: clamp(0.72rem, 1.7vmin, 0.88rem);
+        color: var(--wc-parchment);
+      }
+      .mk-buy-price {
+        font-size: clamp(0.52rem, 1.2vmin, 0.62rem);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--wc-brass);
+      }
+      .mk-buy[data-free='true'] {
+        border-style: dashed;
+      }
+      .mk-buy[data-free='true'] .mk-buy-price {
+        color: var(--wc-chalk-dim);
+      }
+      .mk-leave {
+        min-height: 44px;
+        padding: 0.6rem clamp(1rem, 3vmin, 1.8rem);
+        border: 1px solid var(--wc-brass);
+        border-radius: 5px;
+        background: linear-gradient(#c99a4e, #a87e3a);
+        color: #1b1408;
+        font-family: var(--wc-serif);
+        font-size: clamp(0.85rem, 2vmin, 1.05rem);
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+      .mk-leave:active {
+        transform: translateY(1px);
+      }
+
+      @media (max-width: 60rem) {
+        .mk-stage {
+          grid-template-columns: minmax(0, 1fr);
+          align-content: start;
+          overflow-y: auto;
+        }
+        .mk-tray {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .mk-buys {
+          flex-wrap: wrap;
+        }
+      }
+
+      /* Mockup-only control bar. None of this ships. */
+      .mock-bar {
+        position: fixed;
+        z-index: 50;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 0.4rem 0.8rem;
+        background: #0d1114ee;
+        border-top: 1px solid #7d6132;
+        font: 12px system-ui, sans-serif;
+        color: #cdd6d2;
+      }
+      .mock-bar button,
+      .mock-bar label {
+        font: inherit;
+      }
+      .mock-bar button {
+        padding: 0.28rem 0.55rem;
+        background: #1b2226;
+        color: #e9e1cd;
+        border: 1px solid #7d6132;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .mock-bar b {
+        color: #c99a4e;
+      }
+      .mock-bar .n {
+        opacity: 0.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="mk-shell">
+      <!-- 1. status ------------------------------------------------------------------------- -->
+      <header class="mk-status">
+        <div class="mk-stat">
+          <span class="mk-stat-value mk-coin" id="coins">9</span>
+          <span class="mk-stat-label">Coins</span>
+        </div>
+        <div class="mk-stat">
+          <span class="mk-hearts" id="hearts" aria-label="Health 4 of 6"></span>
+          <span class="mk-stat-label">Health</span>
+        </div>
+        <div class="mk-next"><b>Bran</b>Fight 2 of 5</div>
+      </header>
+
+      <!-- 2. the machine -------------------------------------------------------------------- -->
+      <main class="mk-stage">
+        <div class="mk-machine">
+          <section class="shop-slot" aria-label="The machines" id="slot">
+            <div class="shop-cabinet">
+              <div class="shop-cabinet-marquee" role="radiogroup" aria-label="Choose a machine">
+                <span class="shop-cabinet-bulbs" aria-hidden="true"></span>
+                <button class="shop-cabinet-name" role="radio" aria-checked="true" tabindex="0">
+                  Skirmisher
+                </button>
+                <button class="shop-cabinet-name" role="radio" aria-checked="false" tabindex="-1">
+                  Strongbox
+                </button>
+              </div>
+              <div class="shop-cabinet-neck" aria-hidden="true"><span></span><span></span></div>
+              <div class="shop-cabinet-case">
+                <div class="shop-cabinet-window" id="window">
+                  <span class="shop-cabinet-payline" id="payline" aria-hidden="true">
+                    <span class="shop-cabinet-pip"></span><span class="shop-cabinet-pip"></span
+                    ><span class="shop-cabinet-pip"></span>
+                  </span>
+                </div>
+                <p class="shop-cabinet-plate" id="plate">Pull — Free</p>
+                <button class="shop-cabinet-lever" id="lever" aria-label="Pull — Free">
+                  <span class="shop-cabinet-lever-arm" aria-hidden="true"
+                    ><span class="shop-cabinet-lever-knob"></span
+                  ></span>
+                  <span class="shop-cabinet-lever-mount" aria-hidden="true"></span>
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="mk-side">
+          <div>
+            <h2>On this strip</h2>
+            <ul class="mk-chips" id="chips"></ul>
+          </div>
+          <div>
+            <h2>Pays</h2>
+            <ul class="mk-pays">
+              <li data-o="threeMatch"><b>Three alike</b> 1 gold <span>1.6%</span></li>
+              <li data-o="twoMatch"><b>Two alike</b> 1 silver + 1 bronze <span>32.8%</span></li>
+              <li data-o="allDifferent"><b>All different</b> 3 bronze <span>65.6%</span></li>
+            </ul>
+          </div>
+          <div class="mk-result" id="result"></div>
+        </aside>
+      </main>
+
+      <!-- 3. what you own, what you can buy -------------------------------------------------- -->
+      <footer class="mk-tray">
+        <div class="mk-owned">
+          <div class="mk-owned-head">
+            <h2>What you hold</h2>
+            <span class="mk-owned-count" id="owned-count"></span>
+          </div>
+          <div class="mk-hand" id="hand"></div>
+        </div>
+        <div class="mk-buys">
+          <button class="mk-buy">
+            <span class="mk-buy-icon" aria-hidden="true">✚</span>
+            <span class="mk-buy-name">Heal</span>
+            <span class="mk-buy-price">1 coin</span>
+          </button>
+          <button class="mk-buy" data-free="true">
+            <span class="mk-buy-icon" aria-hidden="true">⚗</span>
+            <span class="mk-buy-name">Flask</span>
+            <span class="mk-buy-price">Free · 1 left</span>
+          </button>
+          <button class="mk-leave">Fight Bran</button>
+        </div>
+      </footer>
+    </div>
+
+    <div class="mock-bar">
+      <b>Mockup</b>
+      <button id="b-rand">Pull</button>
+      <button id="b-two">Force two alike</button>
+      <button id="b-three">Force three alike</button>
+      <button id="b-diff">Force all different</button>
+      <button id="b-empty">Empty inventory</button>
+      <label><input type="checkbox" id="c-grey" /> greyscale</label>
+      <label><input type="checkbox" id="c-red" /> reduced motion</label>
+      <span class="n">Machine + cards use the real stylesheets. Layout is the proposal.</span>
+    </div>
+
+    <script>
+      // Transcribed from slotSpinConfig.ts so mockup and app agree.
+      const SPIN_TOTAL_MS = 2000,
+        REEL_STAGGER_MS = 320,
+        RESULT_REVEAL_MS = 260,
+        REDUCED_MOTION_MS = 320,
+        REEL_COUNT = 3
+      const reelStopMs = (i) => SPIN_TOTAL_MS - (REEL_COUNT - 1 - i) * REEL_STAGGER_MS
+
+      const G = {
+        bells:
+          '<circle cx="12" cy="2.9" r="1.05"/><path d="M12 4.9v.8"/><path d="M6.6 16.1v-4.3a5.4 5.4 0 0 1 10.8 0v4.3"/><path d="M4.4 16.1h15.2"/><path d="M9.9 18.7a2.1 2.1 0 0 0 4.2 0"/>',
+        keys: '<circle cx="12" cy="6.5" r="3.7"/><circle cx="12" cy="6.5" r="1.35" opacity=".55"/><path d="M12 10.2V21"/><path d="M12 14.3h3.5M12 17h2.7"/>',
+        moons:
+          '<path d="M15.4 3.6a8.4 8.4 0 1 0 4.1 12 6.9 6.9 0 0 1-4.1-12z"/><circle cx="9.5" cy="9.7" r="1.15" opacity=".45"/><circle cx="7.7" cy="14.3" r=".8" opacity=".4"/>',
+        sidestep:
+          '<path d="M4 6.5 9.5 12 4 17.5"/><path d="M12.5 6.5 18 12l-5.5 5.5" opacity=".55"/><path d="M20.5 6.5V17.5" opacity=".35"/>',
+        cheat:
+          '<rect x="7.5" y="4" width="10" height="14" rx="1.6" transform="rotate(-14 12.5 11)"/><rect x="7.5" y="4" width="10" height="14" rx="1.6" opacity=".55"/><path d="M4 20.5h16" opacity=".4"/>',
+        timebomb:
+          '<circle cx="11" cy="15" r="6.4"/><path d="M15.6 10.4 18 8"/><path d="M18 8c1.6-1.6 3.2-.6 3 1.1"/>',
+      }
+      const svg = (g) =>
+        `<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">${G[g]}</g></svg>`
+
+      const STRIP = [
+        { id: 'a', glyph: 'moons', family: 'Taker', axis: 'Momentum', cond: 'win a trick with Moons' },
+        { id: 'b', glyph: 'cheat', family: 'Cheat', axis: null, cond: 'play any card, ignoring follow-suit' },
+        { id: 'c', glyph: 'sidestep', family: 'Sidestep', axis: 'Momentum', cond: 'dodge a skull' },
+        { id: 'd', glyph: 'keys', family: 'Feeder', axis: 'Blade', cond: 'lose a trick with Keys' },
+        { id: 'e', glyph: 'timebomb', family: 'Timebomb', axis: null, cond: 'prime a card in your hand' },
+        { id: 'f', glyph: 'keys', family: 'Taker', axis: 'Momentum', cond: 'win a trick with Keys' },
+        { id: 'g', glyph: 'bells', family: 'Taker', axis: 'Momentum', cond: 'win a trick with Bells' },
+        { id: 'h', glyph: 'sidestep', family: 'Sidestep', axis: 'Blade', cond: 'dodge a skull' },
+      ]
+
+      // ---- status --------------------------------------------------------------------------
+      document.getElementById('hearts').innerHTML = [1, 1, 1, 1, 0, 0]
+        .map((v) => `<span class="mk-heart" data-spent="${!v}">${v ? '♥' : '♡'}</span>`)
+        .join('')
+
+      // ---- strip chips ---------------------------------------------------------------------
+      document.getElementById('chips').innerHTML = STRIP.map(
+        (s) => `<li class="mk-chip" data-glyph="${s.glyph}"
+             title="${s.family}${s.axis ? ' (' + s.axis + ')' : ''} — ${s.cond}">
+          ${svg(s.glyph)}
+          <span class="mk-chip-fam">${s.family}</span>
+          ${s.axis ? `<span class="mk-chip-axis">${s.axis}</span>` : ''}
+        </li>`,
+      ).join('')
+
+      // ---- inventory: the REAL buff card markup --------------------------------------------
+      const TIER_NUM = { bronze: 'I', silver: 'II', gold: 'III' }
+      let owned = [
+        { tier: 'bronze', suit: 'keys', name: 'Key-Taker', cond: 'win a trick with Keys', payoff: '+1 damage' },
+        { tier: 'silver', suit: 'moons', name: 'Moon-Feeder', cond: 'lose a trick with Moons', payoff: '×2 momentum' },
+        { tier: 'bronze', suit: null, name: 'Cheat', cond: 'play any card, ignoring follow-suit', payoff: '1 trick' },
+      ]
+      function drawOwned() {
+        const hand = document.getElementById('hand')
+        document.getElementById('owned-count').textContent = owned.length
+          ? `${owned.length} card${owned.length === 1 ? '' : 's'}`
+          : ''
+        if (!owned.length) {
+          // Nothing held: say so once, plainly. No empty frames.
+          hand.innerHTML = `<p class="mk-empty">Nothing yet — pull the machine.</p>`
+          return
+        }
+        hand.innerHTML = owned
+          .map(
+            (b) => `
+          <span class="wc-buffcard wc-buffcard-${b.tier}${b.suit ? ' wc-buffcard-' + b.suit : ''}">
+            <span class="wc-buffcard-sheen" aria-hidden="true"></span>
+            <span class="wc-buffcard-face">
+              <span class="wc-buffcard-top">
+                <span class="wc-buffcard-suit${b.suit ? '' : ' wc-buffcard-suit-none'}">${b.suit ? svg(b.suit) : ''}</span>
+                <span class="wc-buffcard-tier">${TIER_NUM[b.tier]}</span>
+              </span>
+              <span class="wc-buffcard-name">${b.name}</span>
+              <span class="wc-buffcard-cond">${b.cond}</span>
+              <span class="wc-buffcard-payoff">${b.payoff}</span>
+            </span>
+          </span>`,
+          )
+          .join('')
+      }
+      drawOwned()
+
+      // ---- the machine ---------------------------------------------------------------------
+      const win = document.getElementById('window'),
+        payline = document.getElementById('payline'),
+        plate = document.getElementById('plate'),
+        lever = document.getElementById('lever'),
+        result = document.getElementById('result')
+      const pips = () => [...payline.querySelectorAll('.shop-cabinet-pip')]
+      const symHtml = (s) => `
+        <span class="shop-reel-symbol" aria-hidden="true">
+          <span class="shop-reel-glyph" data-glyph="${s.glyph}">${svg(s.glyph).replace('<svg', '<svg class="shop-reel-glyph-mark"')}</span>
+          <span class="shop-reel-family">${s.family}</span>
+          ${s.axis ? `<span class="shop-reel-axis">${s.axis}</span>` : ''}
+        </span>`
+
+      function paint(landed, travelling) {
+        ;[...win.querySelectorAll('.shop-reel')].forEach((r) => r.remove())
+        landed.forEach((sym, i) => {
+          const col = [...STRIP, ...STRIP, ...STRIP, sym]
+          const el = document.createElement('div')
+          el.className = 'shop-reel'
+          if (travelling) el.dataset.spinning = 'true'
+          el.innerHTML =
+            `<div class="shop-reel-column" style="--reel-offset:${col.length - 1};--reel-duration:${reelStopMs(i)}ms">` +
+            col.map(symHtml).join('') +
+            `</div><span class="shop-reel-gloss" aria-hidden="true"></span>`
+          win.insertBefore(el, payline)
+        })
+      }
+      const flags = (l) => l.map((s) => l.filter((o) => o.id === s.id).length > 1)
+      function outcomeOf(l) {
+        const n = new Set(l.map((s) => s.id)).size
+        if (n === 1) return ['Three matched — one gold', [{ ...l[0], tier: 'gold' }]]
+        if (n === 2)
+          return [
+            'Two matched — one silver and one bronze',
+            [{ ...l[0], tier: 'silver' }, { ...l[2], tier: 'bronze' }],
+          ]
+        return ['Three different — three bronze', l.map((s) => ({ ...s, tier: 'bronze' }))]
+      }
+      function pick(mode) {
+        const r = () => STRIP[(Math.random() * STRIP.length) | 0]
+        if (mode === 'three') { const a = r(); return [a, a, a] }
+        if (mode === 'two') { const a = r(); let b = r(); while (b.id === a.id) b = r(); return [a, a, b] }
+        if (mode === 'diff') return [...STRIP].sort(() => Math.random() - 0.5).slice(0, 3)
+        return [r(), r(), r()]
+      }
+
+      let pulls = 0, spinning = false
+      const timers = []
+      function spin(mode) {
+        if (spinning) return
+        spinning = true
+        timers.forEach(clearTimeout)
+        timers.length = 0
+        const landed = pick(mode)
+        lever.disabled = true
+        plate.textContent = 'Spinning…'
+        result.innerHTML = ''
+        payline.removeAttribute('data-live')
+        pips().forEach((p) => p.removeAttribute('data-on'))
+        paint(landed, true)
+        const at = (ms, fn) => timers.push(setTimeout(fn, ms))
+        const land = () => {
+          const f = flags(landed)
+          ;[...win.querySelectorAll('.shop-reel')].forEach((r, i) => {
+            r.removeAttribute('data-spinning')
+            if (f[i]) r.dataset.matched = 'true'
+          })
+          if (f.some(Boolean)) payline.dataset.live = 'true'
+          pips().forEach((p, i) => { if (f[i]) p.dataset.on = 'true' })
+          const [label, won] = outcomeOf(landed)
+          result.innerHTML =
+            `<p class="mk-result-line">${label}</p><div class="mk-won">` +
+            won.map((w) => `<span class="mk-chip" data-glyph="${w.glyph}">${svg(w.glyph)}<span class="mk-chip-fam">${w.family}</span><span class="mk-chip-axis">${w.tier}</span></span>`).join('') +
+            `</div>`
+          // Won cards land in your hand — the inventory updates in front of you.
+          won.forEach((w) => owned.push({ tier: w.tier, suit: ['bells','keys','moons'].includes(w.glyph) ? w.glyph : null, name: w.family, cond: w.cond, payoff: w.axis || '—' }))
+          drawOwned()
+          pulls += 1
+          plate.textContent = 'Pull — 1 coin'
+          lever.disabled = false
+          spinning = false
+        }
+        if (document.getElementById('c-red').checked) { at(REDUCED_MOTION_MS, land); return }
+        for (let i = 0; i < REEL_COUNT; i++)
+          at(reelStopMs(i), () => { const r = win.querySelectorAll('.shop-reel')[i]; if (r) r.removeAttribute('data-spinning') })
+        at(SPIN_TOTAL_MS + RESULT_REVEAL_MS, land)
+      }
+
+      paint(STRIP.slice(0, 3), false)
+      // Ids are hyphenated, so there is no `b_two` global to lean on — look each one up.
+      const $ = (id) => document.getElementById(id)
+      lever.addEventListener('click', () => spin('random'))
+      $('b-rand').addEventListener('click', () => spin('random'))
+      $('b-two').addEventListener('click', () => spin('two'))
+      $('b-three').addEventListener('click', () => spin('three'))
+      $('b-diff').addEventListener('click', () => spin('diff'))
+      $('b-empty').addEventListener('click', () => { owned = []; drawOwned() })
+      $('c-grey').addEventListener('change', (e) => {
+        document.querySelector('.mk-shell').style.filter = e.target.checked ? 'grayscale(1)' : ''
+      })
+      document.querySelectorAll('.shop-cabinet-name').forEach((b, _, all) =>
+        b.addEventListener('click', () => all.forEach((x) => x.setAttribute('aria-checked', String(x === b)))),
+      )
+    </script>
+  </body>
+</html>

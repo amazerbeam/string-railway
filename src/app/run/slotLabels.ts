@@ -37,6 +37,8 @@ export const SLOT_RESULT_GROUP_LABEL = 'Your last pull'
 export const SLOT_PULL_LABEL = 'Pull'
 export const SLOT_FREE_TAG = 'Free'
 export const SLOT_NO_PULL_YET = 'No pull yet this visit.'
+export const SLOT_SPINNING_LABEL = 'Spinning…'
+export const SLOT_ODDS_GROUP_LABEL = 'What this machine pays'
 
 /** AC1 — the outcome display's own words. Total over `SlotOutcome`, so a fourth outcome is a
  *  compile error here rather than a blank line on screen — the guarantee `PURCHASE_REFUSAL_MESSAGE`
@@ -60,20 +62,52 @@ export function slotPullPriceText(price: Coins): string {
   return `${price} coin${price === 1 ? '' : 's'}`
 }
 
-/** One sentence built entirely from `slotOutcomeOdds()` and `expectedCardsPerPull()`. Each
- *  probability is rendered to one decimal place. NO PERCENTAGE LITERAL anywhere in this module —
- *  every figure below is a derived expression, never a quoted number. */
-export function slotOddsText(): string {
+/** One row of the cabinet's payout table: a CODE plus three already-worded cells. The panel lays
+ *  them out; it never composes a figure. */
+export interface SlotOddsRow {
+  readonly outcome: SlotOutcome
+  /** What has to land, in the fewest words that still say it. */
+  readonly match: string
+  /** What it pays. */
+  readonly pays: string
+  /** How often, to one decimal place. */
+  readonly chance: string
+}
+
+/** The posted odds as the three rows a real cabinet prints, replacing the one dense six-number
+ *  sentence this screen used to open with. NO PERCENTAGE LITERAL anywhere: every figure below is
+ *  derived from `slotOutcomeOdds()`, so a re-tuned `REEL_POOL_SIZE` or `SLOT_FAMILY_WEIGHTS` cannot
+ *  leave this screen quoting a stale number. Ordered best-first, the way a payout table is read. */
+export function slotOddsRows(): readonly SlotOddsRow[] {
   const odds = slotOutcomeOdds()
-  const pct = (fraction: number) => (fraction * 100).toFixed(1)
+  const pct = (fraction: number) => `${(fraction * 100).toFixed(1)}%`
+  return [
+    {
+      outcome: SlotOutcome.ThreeMatch,
+      match: 'Three alike',
+      pays: '1 gold',
+      chance: pct(odds[SlotOutcome.ThreeMatch]),
+    },
+    {
+      outcome: SlotOutcome.TwoMatch,
+      match: 'Two alike',
+      pays: '1 silver + 1 bronze',
+      chance: pct(odds[SlotOutcome.TwoMatch]),
+    },
+    {
+      outcome: SlotOutcome.AllDifferent,
+      match: 'All different',
+      pays: '3 bronze',
+      chance: pct(odds[SlotOutcome.AllDifferent]),
+    },
+  ]
+}
+
+/** The strip's own summary: how many symbols across how many reels, and what a pull is worth on
+ *  average. Both figures derived, never quoted. */
+export function slotStripSummaryText(): string {
   const expected = expectedCardsPerPull().toFixed(2)
-  return (
-    `${REEL_POOL_SIZE} symbols, ${REEL_COUNT} reels — ` +
-    `three matching ${pct(odds[SlotOutcome.ThreeMatch])}% (gold), ` +
-    `two matching ${pct(odds[SlotOutcome.TwoMatch])}% (silver and bronze), ` +
-    `all different ${pct(odds[SlotOutcome.AllDifferent])}% (three bronze). ` +
-    `${expected} cards a pull on average.`
-  )
+  return `${REEL_POOL_SIZE} symbols on ${REEL_COUNT} reels — ${expected} cards a pull on average.`
 }
 
 /** The pull control's accessible name — folds in the refusal so a screen-reader user hears why a

@@ -1,0 +1,183 @@
+/* The CABINET'S REELS — one window's drum, the symbol faces that travel through it, the travel
+   animation itself, and the reduced-motion fallback. Split out of `shopSlotCabinet.css` at the
+   400-line blocking budget; that file keeps the marquee, the case, the payline and the lever, and
+   both are imported together from `SlotMachinePanel.tsx` after `shopSlot.css`, so the cascade order
+   matches the import order.
+
+   `--reel-window-h` / `--reel-window-w` are declared by `.shop-cabinet` in `shopSlotCabinet.css`
+   and inherited here — the cabinet's one scale tunable is stated once, not twice.
+
+   Every colour, size bound, gradient stop and duration below is a PLACEHOLDER the developer owns.
+   The travel DURATIONS are not set here at all: they arrive per reel as `--reel-duration`, computed
+   from `slotSpinConfig.ts`, whose two-second total is the developer's own figure. */
+
+.shop-reel {
+  position: relative;
+  overflow: hidden;
+  flex: 0 1 var(--reel-window-w);
+  min-width: 0;
+  height: var(--reel-window-h);
+  border-radius: 3px;
+  border: 1px solid #0006;
+  /* A drum, not a flat panel: light across the middle where the surface faces you, falling off top
+     and bottom where it curves away. This is most of what sells the symbols as being ON a wheel. */
+  background: linear-gradient(#7d8688 0%, #e9edee 26%, #fdfefe 50%, #e2e7e8 74%, #798285 100%);
+  color: var(--wc-ink);
+}
+
+/* A machine whose strip has not been drawn yet: a dark, still window rather than a blank white drum
+   that would read as a symbol having been lost. */
+.shop-reel[data-empty='true'] {
+  background: linear-gradient(#1b2124, #0f1315);
+}
+
+/* The matched ring, in FORM as well as tone: a doubled brass edge, drawn as an inset shadow so it
+   does not shift the window's size. Reinforced by the payline pip below it. */
+.shop-reel[data-matched='true'] {
+  box-shadow:
+    inset 0 0 0 2px var(--cabinet-brass),
+    0 0 10px 1px #e6b96666;
+}
+
+.shop-reel-column {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  /* At rest the column is simply PARKED at its landed symbol, with no animation attached — an
+     unconditional `animation` here made every reel travel once on mount, so the shop spun itself
+     the moment it opened. The travel below is applied only while a pull is in flight. */
+  transform: translateY(calc(var(--reel-offset) * var(--reel-window-h) * -1));
+}
+
+/* One pass, applied only while this reel is still turning, plus the motion blur that is the
+   difference between "symbols changing" and "a wheel spinning". Because the column is remounted per
+   pull (`key={spinId}`), the animation restarts from the top every time — including a second pull
+   that lands on the same three symbols, which would otherwise show no movement at all. When the
+   reel settles the attribute is removed, and the parked transform above is the same value the
+   animation ended on, so it holds its position instead of snapping back. */
+.shop-reel[data-spinning='true'] .shop-reel-column {
+  animation: shop-reel-travel var(--reel-duration) cubic-bezier(0.28, 0.02, 0.12, 1) both;
+  filter: blur(0.7px);
+}
+
+/* Start parked at the top of the column and arrive at the landed symbol. The easing is what makes
+   it read as a wheel — a fast, almost linear middle, then a long deceleration into the stop rather
+   than a symmetric ease. */
+@keyframes shop-reel-travel {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(var(--reel-offset) * var(--reel-window-h) * -1));
+  }
+}
+
+.shop-reel-symbol {
+  flex: 0 0 var(--reel-window-h);
+  height: var(--reel-window-h);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 3px;
+  box-sizing: border-box;
+  text-align: center;
+  /* The seam between two positions on the drum. */
+  border-bottom: 1px solid #0000001a;
+}
+
+.shop-reel-glyph {
+  width: clamp(1.4rem, 3.6vmin, 2rem);
+  height: clamp(1.4rem, 3.6vmin, 2rem);
+  line-height: 0;
+}
+
+/* The suit tint is the ONLY categorical colour on a reel face — tier is decided by the match
+   pattern, not by the symbol — so there is no second axis for it to collide with. The three
+   figure-dark tints are used rather than the lighter suit tokens because a reel face is a LIGHT
+   drum: `--wc-bells` and its siblings are tuned for the dark felt and wash out here. */
+.shop-reel-glyph[data-glyph='bells'] {
+  color: var(--wc-fig-bells-mid);
+}
+
+.shop-reel-glyph[data-glyph='keys'] {
+  color: var(--wc-fig-keys-mid);
+}
+
+.shop-reel-glyph[data-glyph='moons'] {
+  color: var(--wc-fig-moons-mid);
+}
+
+/* Sidestep and Cheat carry no suit, so they take the ink tone rather than borrowing one — the reel
+   must never imply a suit a card does not target. */
+.shop-reel-glyph[data-glyph='sidestep'],
+.shop-reel-glyph[data-glyph='cheat'] {
+  color: var(--wc-ink-soft);
+}
+
+.shop-reel-glyph[data-glyph='timebomb'] {
+  color: var(--wc-timebomb-edge);
+}
+
+.shop-reel-glyph-mark {
+  width: 100%;
+  height: 100%;
+  stroke-width: 1.5;
+}
+
+.shop-reel-family {
+  font-family: var(--wc-serif);
+  font-size: clamp(0.66rem, 1.7vmin, 0.86rem);
+  font-weight: 600;
+  line-height: 1.05;
+  color: var(--wc-ink);
+}
+
+.shop-reel-axis {
+  font-size: clamp(0.46rem, 1.1vmin, 0.58rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wc-ink-soft);
+}
+
+/* The curved-glass highlight over each window. `pointer-events: none` so it never eats a press. */
+.shop-reel-gloss {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    #00000026 0%,
+    #ffffff2e 8%,
+    #ffffff00 22%,
+    #ffffff00 74%,
+    #0000002e 100%
+  );
+}
+
+/* ---- Reduced motion -------------------------------------------------------------------- */
+
+/* No travel at all: the column is parked at its landed symbol and cross-fades in. `useSlotSpin`
+   makes the same decision in JS (it reads the same query and skips the stagger), so the timing and
+   the rendering agree rather than one of them animating alone. */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes shop-reel-fade {
+    from {
+      opacity: 0.35;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .shop-reel[data-spinning='true'] .shop-reel-column {
+    animation: shop-reel-fade 160ms ease both;
+    filter: none;
+  }
+
+  .shop-cabinet-lever-arm,
+  .shop-cabinet-name,
+  .shop-cabinet-payline {
+    transition: none;
+  }
+}

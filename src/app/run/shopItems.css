@@ -114,13 +114,13 @@
   white-space: nowrap;
 }
 
-/* AC6 — the reason is a sentence on the face of the screen, never a silent no-op. `line-height`
-   is set explicitly (rather than inheriting the page's 1.5) so an EMPTY reason still only reserves
-   one compact line — the row-list redesign above needs every one of these back for the fit to
-   work at 1319×900. */
+/* AC6 — the reason is a sentence on the face of the screen, never a silent no-op. It is now
+   rendered ONLY when there is a reason (see `ShopPanel.tsx`), so the `min-height: 1em` that used to
+   reserve a line for the empty case is gone: an absent refusal costs no height at all. Five such
+   reserved-but-empty lines were a large part of the vertical budget this screen was overrunning,
+   and `game-ux` forbids a panel that exists to say nothing is wrong. */
 .shop-refusal {
   margin: 0;
-  min-height: 1em;
   line-height: 1.25;
   font-size: clamp(0.68rem, 1.6vmin, 0.8rem);
   color: var(--wc-alarm);

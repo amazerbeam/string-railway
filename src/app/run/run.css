@@ -1,3 +1,11 @@
+/* Every `--wc-*` token this file and its siblings read is declared in `warCouncil.css`'s `:root`,
+   and until now nothing on the run screens imported it: the shop, the verdict and the map only had
+   their tokens because a round had mounted earlier in the session and left that stylesheet loaded.
+   A shop rendered without a fight in front of it lost every colour, border and font at once.
+   Imported here so the run screens stand on their own; the bundler emits one copy however many
+   modules ask for it. */
+@import './../warCouncil/warCouncil.css';
+
 /* The run verdict's own full-viewport shell (DLR-82). Transcribed from
    `.claude/contract/DLR-82-play-fights-in-sequence-on-one-health-bar/mockup.html`.
    `100dvh`, never `100vh`; `100%`, never `100vw` — game-ux's hard floor.

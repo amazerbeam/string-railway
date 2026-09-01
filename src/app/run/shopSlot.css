@@ -1,159 +1,157 @@
-/* The slot machine section of the shop screen (DLR-116). Layout reference: this contract's
-   `mockup.html`, `.slot` section. Imported from `ShopPanel.tsx` after `shopFlask.css`, so the
-   cascade order matches the import order — see `shop.css`'s header for that convention.
+/* The slot machine SECTION — the frame the cabinet stands in, the face-up strip, the payout table
+   and the result readout. The cabinet itself (marquee, case, windows, payline, lever) is
+   `shopSlotCabinet.css`; the two are imported together, in that order, from `SlotMachinePanel.tsx`,
+   so the cascade order matches the import order.
 
-   Only `.shop-slot-*` rules live here; `.shop-refusal` is reused from `shopItems.css` rather than
-   duplicated, exactly as the priced-item rows and the flask row already share it.
+   `.shop-refusal` is reused from `shopItems.css` rather than duplicated, exactly as the priced-item
+   rows and the flask row already share it.
 
-   Every clamp() bound and every colour below is a PLACEHOLDER the developer owns — none of them
-   has been played. No `100vh`, no `100vw` anywhere, per `game-ux`'s hard floor. */
+   Every clamp() bound and every colour below is a PLACEHOLDER the developer owns. No `100vh`, no
+   `100vw` anywhere, per `game-ux`'s hard floor. */
 
 .shop-slot {
-  /* DLR-89's residual-clipping fix pattern (`shop.css`) — fixed chrome holds its own size rather
-     than being asked to shrink when `.shop` is capped to the shell's available height. The strip
-     below is the one region in this section allowed to give up space instead. */
+  /* Fixed chrome holds its own size rather than being asked to shrink when `.shop` is capped to the
+     shell's available height — DLR-89's residual-clipping pattern (`shop.css`). The strip list
+     inside is the one region in this section allowed to give up space. */
   flex: 0 0 auto;
   width: 100%;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: clamp(0.3rem, 1vmin, 0.5rem);
-  padding: clamp(0.3rem, 1vmin, 0.5rem);
+  gap: clamp(0.25rem, 0.9vmin, 0.45rem);
+  padding: clamp(0.4rem, 1.4vmin, 0.75rem);
   border: 1px solid var(--wc-brass-dim);
-  border-radius: 4px;
+  border-radius: 6px;
+  /* A recessed alcove, so the machine reads as standing IN the shop rather than being drawn on
+     top of it. */
+  background: radial-gradient(120% 100% at 50% 0%, #ffffff08, transparent 70%);
   text-align: left;
 }
 
-.shop-slot-machines {
+/* The cabinet takes the WHOLE of its column and the two reference panels sit underneath it.
+   Standing them beside the machine was measured wrong: at a 1568px viewport the shop's left column
+   is 367px, and three 7.2rem windows plus case padding and the lever need 420px of it, so the case
+   overflowed its own cabinet and the panels were crushed into four-line wraps. `game-ux` — a tile
+   bound is chosen against the CONTAINER's measured width, not the viewport's. */
+.shop-slot-body {
   display: flex;
-  gap: clamp(0.3rem, 1vmin, 0.6rem);
-  justify-content: center;
+  flex-direction: column;
+  align-items: stretch;
+  gap: clamp(0.35rem, 1.4vmin, 0.7rem);
 }
 
-.shop-slot-machine {
-  flex: 1 1 auto;
+/* The strip and the payout table share one row beneath the machine — both are reference, read
+   before a pull rather than during one, so they belong together and below. */
+.shop-slot-side {
   min-width: 0;
-  min-height: 44px;
-  padding: 0.4rem clamp(0.4rem, 1.6vmin, 0.8rem);
-  border: 1px solid var(--wc-brass-dim);
-  border-radius: 4px;
-  background: none;
-  color: var(--wc-chalk);
-  font-family: var(--wc-sans);
-  font-size: clamp(0.78rem, 1.8vmin, 0.95rem);
-  cursor: pointer;
-  touch-action: manipulation;
-  transition:
-    color var(--wc-ui-transition-ms) ease,
-    border-color var(--wc-ui-transition-ms) ease,
-    background-color var(--wc-ui-transition-ms) ease,
-    transform var(--wc-ui-transition-ms) ease;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(0.35rem, 1.4vmin, 0.7rem);
 }
 
-/* Selected reads in FORM as well as tone — a thicker brass edge and a lifted fill plus the arrow
-   glyph below, so a greyscale screenshot still shows which machine is chosen. `game-ux`'s
-   no-colour-alone floor, the same device `.shop-tab[aria-selected='true']` already uses. */
-.shop-slot-machine[aria-checked='true'] {
-  border-width: 2px;
-  border-color: var(--wc-brass);
-  background: #ffffff0d;
-  color: var(--wc-brass);
+.shop-slot-strip-panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
-.shop-slot-machine[aria-checked='true']::before {
-  content: '▸ ';
-}
-
-.shop-slot-machine:focus-visible {
-  outline: 2px solid var(--wc-parchment);
-  outline-offset: 2px;
-}
-
-@media (hover: hover) {
-  .shop-slot-machine:not([aria-checked='true']):hover {
-    border-color: var(--wc-parchment);
-    color: var(--wc-parchment);
-  }
-}
-
-.shop-slot-machine:active {
-  transform: translateY(1px);
-}
-
-.shop-slot-odds {
+.shop-slot-strip-summary {
   margin: 0;
-  font-size: clamp(0.68rem, 1.6vmin, 0.82rem);
+  font-size: clamp(0.54rem, 1.25vmin, 0.66rem);
+  letter-spacing: 0.06em;
   color: var(--wc-chalk-dim);
 }
 
-/* The ONE scoped scroll region in this section, mirroring `.shop-panel`'s own justification in
-   `shopItems.css`: eight strip rows against a bounded height, with the purse, health, chooser,
-   odds line and pull control all staying outside it and staying visible. `game-ux` forbids the
-   page scrolling; it does not forbid one bounded region owning its own overflow. */
+/* The ONE scoped scroll region in this section, mirroring `.shop-panel`'s own justification: eight
+   strip rows against a bounded height, with the cabinet, the payout table, the purse, the health
+   row and the lever all staying outside it and staying visible. `game-ux` forbids the PAGE
+   scrolling; it does not forbid one bounded region owning its own overflow. */
 .shop-slot-strip {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(0.2rem, 0.8vmin, 0.35rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   margin: 0;
   padding: 0;
   list-style: none;
-  max-height: clamp(6rem, 20vmin, 9rem);
+  max-height: clamp(4.5rem, 14vmin, 6.5rem);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
 .shop-slot-symbol {
-  padding: 0.2rem 0.4rem;
-  border: 1px dashed var(--wc-brass-dim);
-  border-radius: 4px;
-  font-size: clamp(0.68rem, 1.5vmin, 0.8rem);
+  padding: 0.08rem 0.35rem;
+  border-left: 2px solid var(--wc-brass-dim);
+  font-size: clamp(0.58rem, 1.3vmin, 0.7rem);
   line-height: 1.3;
+  color: var(--wc-chalk);
 }
 
-.shop-slot-pull {
+/* ---- The payout table ------------------------------------------------------------------- */
+
+/* Three rows, best first — the shape a payout table takes on a real cabinet, replacing the dense
+   six-number sentence this section used to open with. Every figure is still derived from the engine
+   by `slotOddsRows()`; nothing here quotes a percentage. */
+.shop-slot-odds {
+  margin: 0;
+  padding: clamp(0.2rem, 0.7vmin, 0.35rem);
+  list-style: none;
+  border: 1px solid var(--wc-brass-dim);
+  border-radius: 4px;
+  background: #00000038;
+  font-size: clamp(0.55rem, 1.25vmin, 0.68rem);
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: 1px;
 }
 
-.shop-slot-pull-button {
-  align-self: flex-start;
-  min-height: 44px;
-  padding: 0.5rem clamp(0.8rem, 2.4vmin, 1.4rem);
-  border: 1px solid var(--wc-brass);
-  border-radius: 4px;
-  background: #ffffff0d;
+.shop-slot-odds li {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.45rem;
+  padding: 0.12rem 0.2rem 0.12rem 0.35rem;
+  white-space: nowrap;
+}
+
+/* The ranking is marked in FORM — a solid, a dimmed and a dotted rule — not by hue alone, so the
+   order survives greyscale. */
+.shop-slot-odds li[data-outcome='threeMatch'] {
+  border-left: 2px solid var(--wc-brass);
+}
+
+.shop-slot-odds li[data-outcome='twoMatch'] {
+  border-left: 2px solid var(--wc-brass-dim);
+}
+
+.shop-slot-odds li[data-outcome='allDifferent'] {
+  border-left: 2px dotted var(--wc-chalk-dim);
+}
+
+.shop-slot-odds-match {
+  font-family: var(--wc-serif);
+  color: var(--wc-parchment);
+}
+
+.shop-slot-odds-pays {
   color: var(--wc-chalk);
-  font-family: var(--wc-sans);
-  font-size: clamp(0.85rem, 2vmin, 1rem);
-  cursor: pointer;
-  touch-action: manipulation;
-  transition:
-    opacity var(--wc-ui-transition-ms) ease,
-    transform var(--wc-ui-transition-ms) ease;
+  min-width: 0;
 }
 
-.shop-slot-pull-button:disabled {
-  cursor: not-allowed;
-  border-style: dashed;
-  border-color: var(--wc-chalk-dim);
-  opacity: 0.55;
+.shop-slot-odds-chance {
+  color: var(--wc-chalk-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.shop-slot-pull-button:focus-visible {
-  outline: 2px solid var(--wc-parchment);
-  outline-offset: 2px;
-}
-
-.shop-slot-pull-button:not(:disabled):active {
-  transform: translateY(1px);
-}
+/* ---- The result ------------------------------------------------------------------------- */
 
 .shop-slot-result {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  font-size: clamp(0.72rem, 1.7vmin, 0.85rem);
+  gap: 0.15rem;
+  font-size: clamp(0.64rem, 1.45vmin, 0.78rem);
 }
 
 .shop-slot-no-pull {
@@ -165,10 +163,36 @@
 .shop-slot-outcome {
   margin: 0;
   font-family: var(--wc-serif);
+  font-size: clamp(0.76rem, 1.85vmin, 0.92rem);
   color: var(--wc-brass);
+  /* Arriving is itself a signal that the reels have agreed, so it enters rather than appearing —
+     but only as reinforcement: the payline pips already carry the match statically. */
+  animation: shop-slot-outcome-in 220ms ease both;
 }
 
-.shop-slot-result-symbols,
+/* A better outcome earns more marks rather than a brighter colour, so the ranking is still legible
+   in greyscale. */
+.shop-slot-outcome[data-outcome='threeMatch']::before {
+  content: '◆◆◆ ';
+  letter-spacing: -0.1em;
+}
+
+.shop-slot-outcome[data-outcome='twoMatch']::before {
+  content: '◆◆ ';
+  letter-spacing: -0.1em;
+}
+
+@keyframes shop-slot-outcome-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .shop-slot-awards {
   margin: 0;
   padding: 0;
@@ -176,4 +200,31 @@
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
+  color: var(--wc-chalk);
+}
+
+.shop-slot-awards li {
+  position: relative;
+  padding-left: 0.9rem;
+}
+
+.shop-slot-awards li::before {
+  content: '+';
+  position: absolute;
+  left: 0.1rem;
+  color: var(--wc-brass);
+}
+
+/* Below this width the two reference panels stack rather than each becoming a column of one-word
+   wraps. The breakpoint is a PLACEHOLDER. */
+@media (max-width: 30rem) {
+  .shop-slot-side {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-slot-outcome {
+    animation: none;
+  }
 }

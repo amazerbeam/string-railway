@@ -23,7 +23,11 @@
      PLACEHOLDER the developer owns. */
   gap: clamp(0.3rem, 1vmin, 0.6rem);
   text-align: center;
-  max-width: 42rem;
+  /* Was 42rem, which boxed the machine into a narrow strip with a third of the screen empty either
+     side while the stack still overran its height. The shop is now allowed the width it has, and
+     `.shop-columns` below spends it sideways — which is what bought the cabinet its size AND took
+     the vertical overrun out. A PLACEHOLDER bound like every other here. */
+  max-width: 68rem;
   width: 100%;
   /* DLR-89 residual-clipping fix, take 2. `max-height: 100%` was inert: `.shop`'s containing
      block is `.run-shell`'s grid ROW, and a grid row's height is itself resolved from its
@@ -165,4 +169,47 @@
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
   gap: clamp(0.6rem, 2.4vmin, 1.2rem);
   width: 100%;
+}
+
+/* ---- The two-column body ----------------------------------------------------------------- */
+
+/* The machine on one side, everything bought with a coin on the other. The shop used to be one
+   tall column, which is why it overran `.run-shell`'s non-scrolling box by 172px at 1920x911, with
+   the flask row and the leave button clipped off the bottom entirely. Spending the screen's width
+   is what fixes that at the root, rather than shaving another clamp() bound.
+
+   Collapses to a single column below the breakpoint, where a stack is the only thing that fits.
+   Both the breakpoint and the column split are PLACEHOLDERS the developer owns. */
+.shop-columns {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(0.6rem, 2.4vmin, 1.4rem);
+  text-align: left;
+  /* The ONE scoped scroll region on this screen, and it earns it. Measured across twelve viewport
+     sizes, every desktop shape now fits with nothing clipped — but a viewport that is BOTH narrow
+     and short (430x700 clipped 176px, 360x640 clipped 266px) collapses to a single column and the
+     stack cannot fit however the bounds are tuned. `.run-shell` is `overflow: hidden`, so what
+     overran was silently cut off, and what got cut was the bottom of the screen: the flask and the
+     leave button. Scrolling this region instead keeps the title, the purse, the health row and —
+     the point — the leave-for-the-next-fight button pinned outside it and always reachable. The
+     PAGE still never scrolls, which is the rule `game-ux` actually sets. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.shop-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.25rem, 0.9vmin, 0.5rem);
+}
+
+@media (max-width: 56rem) {
+  .shop-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

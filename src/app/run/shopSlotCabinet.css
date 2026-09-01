@@ -1,0 +1,317 @@
+/* The slot machine CABINET — the marquee, the case, the three reel windows, the payline and the
+   lever. Split out of `shopSlot.css` (which keeps the section shell, the strip list, the payout
+   table and the result) so no file approaches the 400-line blocking budget; the reel drums themselves
+   are `shopSlotReel.css`, split off at that budget on this same pass.
+
+   Built to the anatomy of a real machine — lit sign on top, moulded housing, three framed windows
+   with a payline through the middle, lever on the right — but in this game's own palette rather
+   than casino red and yellow: brass where a cabinet would be chrome, chamber-dark where it would be
+   white enamel.
+
+   EVERY colour, size bound, gradient stop and duration below is a PLACEHOLDER the developer owns,
+   with one exception that is theirs already: the two-second whole-animation figure, which lives in
+   `slotSpinConfig.ts`. No `100vh`, no `100vw`. */
+
+.shop-cabinet {
+  /* One tunable drives the machine's whole scale — a window's height. Everything else is a multiple
+     of it, so the cabinet grows and shrinks as one object instead of drifting apart. Bounded
+     against the SHOP COLUMN's measured width, not the viewport's: at a 1568px viewport that column
+     is ~430px, and three windows plus case padding and the lever have to fit inside it. */
+  --reel-window-h: clamp(4.2rem, 9.5vmin, 5.6rem);
+  --reel-window-w: clamp(4.4rem, 10vmin, 6rem);
+  --cabinet-brass: var(--wc-brass);
+  --cabinet-brass-dim: var(--wc-brass-dim);
+
+  position: relative;
+  align-self: center;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ---- The marquee ------------------------------------------------------------------------ */
+
+/* The lit sign, and the machine chooser: picking a machine and reading which one you are at are the
+   same object. A radiogroup, so arrow keys move and select. */
+.shop-cabinet-marquee {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--cabinet-brass);
+  border-radius: 12px 12px 4px 4px;
+  background: radial-gradient(120% 160% at 50% 0%, #2a2117 0%, #14100b 70%), var(--wc-chamber-lift);
+  box-shadow:
+    inset 0 0 0 1px #0006,
+    0 2px 6px #0008;
+}
+
+/* The bulb run along the sign's top and bottom edge. Purely decorative and `aria-hidden`; it does
+   not blink, because a marquee that never stops flashing is a distraction rather than a signal. */
+.shop-cabinet-bulbs {
+  position: absolute;
+  inset: 3px;
+  border-radius: 10px 10px 3px 3px;
+  pointer-events: none;
+  background-image: radial-gradient(circle, var(--cabinet-brass) 0 40%, transparent 42%);
+  background-size: 9px 9px;
+  background-repeat: repeat-x;
+  background-position:
+    0 0,
+    0 100%;
+  opacity: 0.45;
+}
+
+.shop-cabinet-name {
+  position: relative;
+  min-height: 44px;
+  padding: 0.3rem clamp(0.7rem, 2.4vmin, 1.3rem);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--wc-chalk-dim);
+  font-family: var(--wc-serif);
+  font-size: clamp(0.8rem, 1.9vmin, 1rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    color var(--wc-ui-transition-ms) ease,
+    background-color var(--wc-ui-transition-ms) ease,
+    border-color var(--wc-ui-transition-ms) ease;
+}
+
+/* Selected reads in FORM as well as tone — a lit plate, a brass edge and the diamond glyph below —
+   so a greyscale screenshot still shows which machine is chosen. `game-ux`'s no-colour-alone
+   floor. */
+.shop-cabinet-name[aria-checked='true'] {
+  border-color: var(--cabinet-brass);
+  background: linear-gradient(#3a2d18, #221a0f);
+  color: var(--wc-parchment);
+  text-shadow: 0 0 10px #e6b96688;
+}
+
+.shop-cabinet-name[aria-checked='true']::before {
+  content: '\25C6\A0';
+  color: var(--cabinet-brass);
+}
+
+.shop-cabinet-name:focus-visible {
+  outline: 2px solid var(--wc-parchment);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .shop-cabinet-name:not([aria-checked='true']):not(:disabled):hover {
+    color: var(--wc-parchment);
+    border-color: var(--cabinet-brass-dim);
+  }
+}
+
+.shop-cabinet-name:disabled {
+  cursor: default;
+}
+
+/* The two posts the sign stands on, above the case. */
+.shop-cabinet-neck {
+  display: flex;
+  gap: clamp(2.5rem, 9vmin, 5rem);
+  margin-top: -1px;
+}
+
+.shop-cabinet-neck span {
+  width: clamp(0.5rem, 1.4vmin, 0.75rem);
+  height: clamp(0.4rem, 1.2vmin, 0.6rem);
+  background: linear-gradient(90deg, #4a4f52, #9aa3a7 40%, #4a4f52);
+  border-radius: 0 0 2px 2px;
+}
+
+/* ---- The case -------------------------------------------------------------------------- */
+
+/* The housing. `padding-right` reserves the strip the lever is mounted in, so the arm sits ON the
+   cabinet's own right shoulder rather than floating clear of it. */
+.shop-cabinet-case {
+  position: relative;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.3rem, 1.1vmin, 0.55rem);
+  padding: clamp(0.6rem, 2vmin, 1.05rem) clamp(2.6rem, 6.5vmin, 3.8rem)
+    clamp(0.5rem, 1.6vmin, 0.85rem) clamp(0.9rem, 2.8vmin, 1.5rem);
+  border-radius: 10px;
+  /* A dark metal panel with one diagonal gloss band across it, which is what reads as "moulded
+     housing" rather than "rectangle". */
+  background:
+    linear-gradient(118deg, transparent 0 38%, #ffffff0e 38% 46%, transparent 46%),
+    linear-gradient(160deg, #333a3e 0%, #1b2124 55%, #262d31 100%);
+  box-shadow:
+    inset 0 1px 0 #ffffff26,
+    inset 0 -2px 4px #0009,
+    0 6px 18px #000a;
+}
+
+/* The three windows, plus the payline laid over them. */
+.shop-cabinet-window {
+  position: relative;
+  isolation: isolate;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  gap: clamp(0.25rem, 0.9vmin, 0.45rem);
+  padding: clamp(0.3rem, 1vmin, 0.5rem);
+  border-radius: 5px;
+  background: #0b0e10;
+  box-shadow: inset 0 2px 6px #000c;
+}
+
+/* The payline: one hairline across all three windows, with a pip over each. The pips carry the
+   match without colour — a lit pip is a filled diamond, an unlit one a hollow outline. */
+.shop-cabinet-payline {
+  position: absolute;
+  left: clamp(0.3rem, 1vmin, 0.5rem);
+  right: clamp(0.3rem, 1vmin, 0.5rem);
+  top: 50%;
+  transform: translateY(-50%);
+  height: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: linear-gradient(90deg, transparent, var(--cabinet-brass-dim) 12% 88%, transparent);
+  pointer-events: none;
+  z-index: 2;
+  transition: background var(--wc-ui-transition-ms) ease;
+}
+
+.shop-cabinet-payline[data-live='true'] {
+  background: linear-gradient(90deg, transparent, var(--cabinet-brass) 12% 88%, transparent);
+}
+
+.shop-cabinet-pip {
+  width: clamp(0.3rem, 0.9vmin, 0.45rem);
+  aspect-ratio: 1;
+  rotate: 45deg;
+  border: 1px solid var(--cabinet-brass-dim);
+  background: transparent;
+}
+
+.shop-cabinet-pip[data-on='true'] {
+  border-color: var(--cabinet-brass);
+  background: var(--cabinet-brass);
+  box-shadow: 0 0 6px 1px #e6b96699;
+}
+
+/* The engraved plate under the windows — what a pull costs, or that the reels are turning. */
+.shop-cabinet-plate {
+  margin: 0;
+  padding: 0.12rem 0.7rem;
+  border-radius: 3px;
+  background: #0f1315;
+  color: var(--wc-brass);
+  font-family: var(--wc-serif);
+  font-size: clamp(0.6rem, 1.45vmin, 0.76rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 2px #000a;
+}
+
+/* ---- The lever ------------------------------------------------------------------------- */
+
+/* The pull control IS the lever — a real `<button>`, so it keeps its 44px target, its focus ring
+   and Enter/Space for nothing. Positioned in the case's own right-hand padding strip, with the
+   pivot boss at the bottom and the arm rising out of it. */
+.shop-cabinet-lever {
+  position: absolute;
+  right: clamp(0.35rem, 1.2vmin, 0.7rem);
+  bottom: clamp(0.9rem, 2.6vmin, 1.5rem);
+  width: clamp(1.9rem, 4.4vmin, 2.6rem);
+  min-height: 44px;
+  height: clamp(5.5rem, 13vmin, 8rem);
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.shop-cabinet-lever:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.shop-cabinet-lever:focus-visible {
+  outline: 2px solid var(--wc-parchment);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* The pivot boss, bolted through the side of the housing. Drawn last in the DOM so it sits over the
+   foot of the arm. */
+.shop-cabinet-lever-mount {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  translate: -50% 0;
+  width: clamp(1.1rem, 2.7vmin, 1.5rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #cfd6d9, #6d7679 60%, #3b4245);
+  box-shadow:
+    inset 0 0 0 2px #2b3134,
+    0 2px 4px #000a;
+}
+
+/* The arm. It rotates about the boss, so a press swings the whole thing down and back, which is
+   what a lever does — a straight translate reads as a slider. */
+.shop-cabinet-lever-arm {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(0.4rem, 1.1vmin, 0.6rem);
+  translate: -50% 0;
+  transform-origin: 50% 100%;
+  /* Wider and brighter than the first pass, which drew a 7px near-black rod against a near-black
+     ground: measured on screen, the arm was geometrically right and simply invisible, so the lever
+     read as two disconnected balls. Chrome needs a hot specular stripe to read as chrome. */
+  width: clamp(0.42rem, 1.05vmin, 0.6rem);
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    #6a7377 0%,
+    #aab3b7 26%,
+    #f2f6f8 48%,
+    #9aa3a7 72%,
+    #555d60 100%
+  );
+  box-shadow: 0 0 4px #0009;
+  transition: rotate 220ms cubic-bezier(0.3, 0.9, 0.4, 1);
+}
+
+.shop-cabinet-lever-knob {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  translate: -50% -60%;
+  width: clamp(1.1rem, 2.8vmin, 1.6rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #fdfeff, #9aa3a7 52%, #3d4548);
+  box-shadow: 0 2px 5px #000a;
+}
+
+/* Held down while the reels turn, so the lever's position states that a pull is in flight — the arm
+   is the object the action happened on, so it is the object that shows it. */
+.shop-cabinet-lever:not(:disabled):active .shop-cabinet-lever-arm,
+.shop-slot[data-spinning='true'] .shop-cabinet-lever-arm {
+  rotate: 34deg;
+}
+
+@media (hover: hover) {
+  .shop-cabinet-lever:not(:disabled):hover .shop-cabinet-lever-arm {
+    rotate: 8deg;
+  }
+}

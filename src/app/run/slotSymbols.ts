@@ -1,0 +1,78 @@
+import {
+  BuffKind,
+  BuffRewardAxis,
+  type BuffTargetSuit,
+  type BuffTemplate,
+  type MintableRewardAxis,
+} from '../../hunt'
+
+/**
+ * A reel symbol's FACE — what one window of the cabinet shows while it spins past.
+ *
+ * A slot reel is read in the fraction of a second it is moving, so the strip's long sentence
+ * (`slotSymbolText`, still the strip list's and the screen reader's wording) is unreadable in a
+ * window. This module reduces a template to the three marks a symbol can carry at speed: a suit
+ * glyph, a one-word family, and a one-word reward axis.
+ *
+ * `slotLabels.ts` stays the ONE grammar for a symbol's SENTENCE; this is its glyph vocabulary, and
+ * it derives every word from `buffLabels.ts`'s own tables rather than restating them.
+ */
+
+/** What the window paints in its glyph slot. `suit` covers the two suit-parameterised families;
+ *  Sidestep and the two activated templates carry no suit and take their own mark instead. */
+export type SlotGlyph =
+  | { readonly kind: 'suit'; readonly suit: BuffTargetSuit }
+  | { readonly kind: 'sidestep' }
+  | { readonly kind: 'cheat' }
+  | { readonly kind: 'timebomb' }
+
+export interface SlotSymbolFace {
+  /** `template.id` — already unique across the strip, so it is the React key AND what a
+   *  match compares on, exactly as `resolvePull` compares templates. */
+  readonly id: string
+  readonly glyph: SlotGlyph
+  /** The family word — Taker / Feeder / Sidestep / Cheat / Timebomb. */
+  readonly family: string
+  /** The reward axis word — Blade / Momentum — or `null` for an activated card, which has no
+   *  axis at all (`ActivatedBuffTemplate`'s own docblock). Rendering nothing rather than a
+   *  placeholder row is `game-ux`'s "do not render a panel that has nothing to say". */
+  readonly axis: string | null
+}
+
+/** PLACEHOLDER COPY, the developer's to retune, exactly as `slotLabels.ts` marks its own. Keyed
+ *  over the family words a mintable template can carry, so a restored family fails to compile
+ *  here rather than rendering `undefined` in a reel window. */
+const FAMILY_WORD: Readonly<Record<BuffTemplate['kind'], string>> = {
+  [BuffKind.Taker]: 'Taker',
+  [BuffKind.Feeder]: 'Feeder',
+  [BuffKind.Sidestep]: 'Sidestep',
+  [BuffKind.Cheat]: 'Cheat',
+  [BuffKind.Timebomb]: 'Timebomb',
+}
+
+/** The two mintable axes, in the same words `BUFF_REWARD_SUFFIX` uses — restated as a narrowed
+ *  table rather than imported wholesale so a cut axis cannot leak onto a reel face. */
+const AXIS_WORD: Readonly<Record<MintableRewardAxis, string>> = {
+  [BuffRewardAxis.Magnitude]: 'Blade',
+  [BuffRewardAxis.Multiplier]: 'Momentum',
+}
+
+/** One template's reel face. Total over the `form` union, so a third template shape is a compile
+ *  error here rather than a blank window. */
+export function slotSymbolFace(template: BuffTemplate): SlotSymbolFace {
+  if (template.form === 'activated') {
+    return {
+      id: template.id,
+      glyph: template.kind === BuffKind.Cheat ? { kind: 'cheat' } : { kind: 'timebomb' },
+      family: FAMILY_WORD[template.kind],
+      axis: null,
+    }
+  }
+  const suit = template.target?.suit
+  return {
+    id: template.id,
+    glyph: suit === undefined ? { kind: 'sidestep' } : { kind: 'suit', suit },
+    family: FAMILY_WORD[template.kind],
+    axis: AXIS_WORD[template.axis],
+  }
+}

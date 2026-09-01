@@ -120,9 +120,14 @@ export default function ShopPanel({
           </span>
           <span className="shop-item-price">{priceText(item)}</span>
         </button>
-        <p className="shop-refusal" role="status">
-          {refusal === null ? '' : PURCHASE_REFUSAL_MESSAGE[refusal]}
-        </p>
+        {/* A reason renders only when there IS one — `game-ux`: never a panel that exists to say
+            nothing is wrong. Reserving an empty line per row was also most of the vertical budget
+            this screen was overrunning. */}
+        {refusal !== null && (
+          <p className="shop-refusal" role="status">
+            {PURCHASE_REFUSAL_MESSAGE[refusal]}
+          </p>
+        )}
       </div>
     )
   }
@@ -171,44 +176,56 @@ export default function ShopPanel({
           </span>
         </div>
 
-        <SlotMachinePanel {...slot} />
+        {/* The machine on the left, the coin purchases on the right — one grid rather than one
+            tall column, which is what keeps this screen inside `.run-shell`'s non-scrolling box.
+            See `shop.css`'s `.shop-columns` for why the height fix is a width fix. */}
+        <div className="shop-columns">
+          <div className="shop-column">
+            <SlotMachinePanel {...slot} />
+          </div>
 
-        {/* AC2/AC3 — the pared purchasable list: Health and the two rank-tier steps, no tablist,
-            no tabpanel, no "Also for sale" heading. DLR-145 AC3 took the AP-capacity row off. */}
-        <div className="shop-list">{SHOP_ITEMS.map(renderItem)}</div>
+          <div className="shop-column">
+            {/* AC2/AC3 — the pared purchasable list: Health and the two rank-tier steps, no
+                tablist, no tabpanel, no "Also for sale" heading. DLR-145 AC3 took the AP-capacity
+                row off. */}
+            <div className="shop-list">{SHOP_ITEMS.map(renderItem)}</div>
 
-        {/* AC6 (DLR-93) — the flask keeps its OWN accessible group so it still reads as apart
-            from the priced items to a screen reader, even sitting in the same flow. */}
-        <div role="group" aria-label={SHOP_FLASK_GROUP_LABEL}>
-          <button
-            type="button"
-            className="shop-list-item is-flask"
-            disabled={flaskRefusal !== null}
-            onClick={onDrinkFlask}
-            aria-label={flaskAccessibleName(
-              flaskCharges,
-              flaskHealAmount(maxPlayerHealth),
-              flaskRefusal,
-            )}
-          >
-            <span className="shop-flask-icon" aria-hidden="true">
-              <FlaskMark />
-            </span>
-            <span className="shop-list-item-main">
-              <span className="shop-item-name">{SHOP_FLASK_LABEL}</span>
-              {' — '}
-              <span className="shop-item-blurb">
-                {flaskBlurbText(flaskHealAmount(maxPlayerHealth))}
-              </span>
-            </span>
-            <span className="shop-flask-tag">
-              <span className="shop-flask-free">{SHOP_FLASK_NO_COIN}</span>
-              <span className="shop-flask-charges">{flaskChargesText(flaskCharges)}</span>
-            </span>
-          </button>
-          <p className="shop-refusal" role="status">
-            {flaskRefusal === null ? '' : FLASK_REFUSAL_MESSAGE[flaskRefusal]}
-          </p>
+            {/* AC6 (DLR-93) — the flask keeps its OWN accessible group so it still reads as apart
+                from the priced items to a screen reader, even sitting in the same flow. */}
+            <div role="group" aria-label={SHOP_FLASK_GROUP_LABEL}>
+              <button
+                type="button"
+                className="shop-list-item is-flask"
+                disabled={flaskRefusal !== null}
+                onClick={onDrinkFlask}
+                aria-label={flaskAccessibleName(
+                  flaskCharges,
+                  flaskHealAmount(maxPlayerHealth),
+                  flaskRefusal,
+                )}
+              >
+                <span className="shop-flask-icon" aria-hidden="true">
+                  <FlaskMark />
+                </span>
+                <span className="shop-list-item-main">
+                  <span className="shop-item-name">{SHOP_FLASK_LABEL}</span>
+                  {' — '}
+                  <span className="shop-item-blurb">
+                    {flaskBlurbText(flaskHealAmount(maxPlayerHealth))}
+                  </span>
+                </span>
+                <span className="shop-flask-tag">
+                  <span className="shop-flask-free">{SHOP_FLASK_NO_COIN}</span>
+                  <span className="shop-flask-charges">{flaskChargesText(flaskCharges)}</span>
+                </span>
+              </button>
+              {flaskRefusal !== null && (
+                <p className="shop-refusal" role="status">
+                  {FLASK_REFUSAL_MESSAGE[flaskRefusal]}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
         <p className="shop-hint">{SHOP_NOTHING_TO_BUY_HINT}</p>

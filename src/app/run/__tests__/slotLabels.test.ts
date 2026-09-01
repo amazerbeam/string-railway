@@ -14,7 +14,8 @@ import {
   SLOT_MACHINE_NAME,
   SLOT_OUTCOME_LABEL,
   SLOT_REFUSAL_MESSAGE,
-  slotOddsText,
+  slotOddsRows,
+  slotStripSummaryText,
   slotPullAccessibleName,
   slotPullPriceText,
   slotSymbolText,
@@ -42,10 +43,20 @@ describe('slotLabels', () => {
     expect(slotPullPriceText(1)).toBe('1 coin')
   })
 
-  it('builds the odds sentence entirely from the derived engine figures', () => {
-    const text = slotOddsText()
+  it('builds one payout row per SlotOutcome, every chance derived from the engine', () => {
+    const rows = slotOddsRows()
+    expect(rows).toHaveLength(Object.values(SlotOutcome).length)
+    expect(new Set(rows.map((row) => row.outcome)).size).toBe(rows.length)
+    expect(rows.find((row) => row.outcome === SlotOutcome.ThreeMatch)?.chance).toBe('1.6%')
+    for (const row of rows) {
+      expect(row.match.length).toBeGreaterThan(0)
+      expect(row.pays.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('builds the strip summary entirely from the derived engine figures', () => {
+    const text = slotStripSummaryText()
     expect(text).toContain(String(REEL_POOL_SIZE))
-    expect(text).toContain('1.6')
     expect(text).toContain('2.64')
   })
 

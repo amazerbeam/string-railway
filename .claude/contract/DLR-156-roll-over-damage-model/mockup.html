@@ -1,0 +1,1591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Trick resolution — the damage build-up</title>
+<style>
+/* ============================================================================
+   TRICK RESOLUTION MOCKUP — 2026-08-27
+
+   What this study is for: the moment between "I clicked a card" and "I chose
+   what to do with the pot". Four things happen in it and today none of them are
+   on screen.
+
+     1. the card LEAVES THE HAND and travels to the table (it does not teleport)
+     2. a damage readout opens above the hand at ZERO
+     3. every term of the formula lands ONE AT A TIME, each one hitting the
+        number visibly
+     4. the pot is offered: APPLY, or ROLL OVER at a higher roll
+
+   The arithmetic is NOT invented here. It is the roll-over model, verbatim:
+   ./roll-over-damage-model.md, alongside this file
+
+       trick damage = (baseDamage + buffDamage) x buffMult
+       total        = every banked trick's damage, added up
+       pot          = total x roll
+
+   baseDamage = 1 (that doc's AC 10). Blade pays 1/3/5 and Momentum pays 2/3/5
+   at bronze/silver/gold (AC 12). The Overlap Bonus adds firedCount - 1 to the
+   multiplier pool (.claude/contract/DLR-147-full-ui-pass/buff-resolution-and-lifetimes.md, section 3.4).
+
+   EVERY DURATION IN THIS FILE IS A PLACEHOLDER. Pacing is a feel judgement and
+   game-ux says it is the developer's, so the dev rail at the bottom right
+   retunes the beat live and reads the number back — the value that ships comes
+   off a play-through rather than off my guess.
+
+   Tokens are copied from src/app/warCouncil/warCouncil.css :root, carrying the
+   same PLACEHOLDER marks as the other DLR-147 mockups.
+   ========================================================================== */
+:root {
+  --wc-chamber:#0c1013; --wc-chamber-lift:#141a1f;
+  --wc-felt:#16241f; --wc-felt-lip:#0a1211; --wc-felt-line:#2b4038;
+  --wc-parchment:#e9e1cd; --wc-parchment-shade:#d3c8ae; --wc-parchment-deep:#c0b393;
+  --wc-ink:#191610; --wc-ink-soft:#5f5647;
+  --wc-brass:#c99a4e; --wc-brass-dim:#7d6132;
+  --wc-chalk:#cdd6d2; --wc-chalk-dim:#6f7d78; --wc-alarm:#d1705f;
+  --wc-bells:#c9873f; --wc-keys:#5f93a8; --wc-moons:#9c7cb8;
+  --wc-serif:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+  --wc-sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+  --wc-ui-transition-ms:140ms;
+
+  /* PLACEHOLDER — no tier colour exists in the codebase. Carried from
+     ../DLR-147-full-ui-pass/mockup-buff-metal.html so a plaque here reads as the same object. */
+  --m-bronze:linear-gradient(142deg,#f3c894 0%,#b0702e 22%,#65401c 47%,#e0a561 64%,#7d4d20 100%);
+  --m-silver:linear-gradient(142deg,#ffffff 0%,#ccd6da 20%,#76858c 47%,#f2f7f9 64%,#8e9ba1 100%);
+  --m-gold:linear-gradient(142deg,#fff6cf 0%,#e6c159 21%,#8f6d1c 47%,#f8e296 64%,#a8842a 100%);
+  --m-bronze-edge:#4a2d13; --m-silver-edge:#59656b; --m-gold-edge:#6b520f;
+
+  /* The two reward axes get a colour EACH AND A GLYPH EACH, because the panel
+     shows them side by side and game-ux forbids leaning on hue alone. Blade is
+     the wedge, Momentum is the double chevron. Both inks below are used on the
+     dark panel only and were measured against it, not inherited: --blade on
+     #10171a is 7.9:1 and --momentum on the same ground is 8.6:1. */
+  --blade:#e2a24a; --blade-deep:#5c3d12;
+  --momentum:#7fc4e0; --momentum-deep:#154456;
+  --pot:#f0d488;
+
+  /* PLACEHOLDER — every size bound. Developer's. */
+  --card-w:clamp(3rem,4.8vw,4.6rem);
+  --plate-card-w:clamp(2.4rem,3.6vw,3.5rem);
+  --rail-w:clamp(9rem,14vw,13.5rem);
+
+  --lift-hover:-10px;
+  --lift-rest:calc(var(--lift-hover) / 2);
+  --lift-armed:-24px;
+
+  /* THE BEAT. One number the whole sequence derives from, so retuning is one
+     slider and not eleven. PLACEHOLDER — set it by playing, not by reading. */
+  --beat:520ms;
+}
+* { box-sizing:border-box; }
+html,body { margin:0; padding:0; }
+body {
+  height:100dvh; overflow:hidden; color-scheme:dark;
+  background:radial-gradient(120% 80% at 50% 0%, #17202700 0%, #060809 100%), var(--wc-chamber);
+  color:var(--wc-chalk); font-family:var(--wc-sans); -webkit-font-smoothing:antialiased;
+}
+.shell {
+  height:100dvh; width:100%; overflow:hidden; display:grid;
+  grid-template-rows:auto minmax(0,1fr) auto auto;
+  grid-template-columns:minmax(10rem,17vw) 1fr;
+  grid-template-areas:'status status' 'dossier table' 'hand hand' 'actions actions';
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px)
+          env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);
+}
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+  clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+
+/* ---------- status ---------- */
+.status { grid-area:status; display:flex; align-items:center; gap:clamp(.6rem,2vw,1.6rem);
+  padding:clamp(.4rem,1vh,.8rem) clamp(.6rem,2vw,1.4rem);
+  background:var(--wc-chamber-lift); border-bottom:1px solid #232c33; }
+.stat { display:flex; flex-direction:column; gap:.1rem; }
+.stat b { font-family:var(--wc-serif); font-size:clamp(.7rem,1.5vmin,.9rem); color:var(--wc-brass); font-weight:400; }
+.stat span { font-size:clamp(.46rem,1vmin,.58rem); letter-spacing:.09em; color:var(--wc-chalk-dim); text-transform:uppercase; }
+.hearts { display:flex; gap:.14rem; margin-left:auto; }
+.heart { width:clamp(.6rem,1.4vmin,.85rem); aspect-ratio:1; background:#cc3f4a;
+  clip-path:polygon(50% 100%,0 38%,15% 8%,50% 26%,85% 8%,100% 38%);
+  transition:background 220ms ease, transform 220ms ease; }
+.heart.gone { background:#2a2f33; transform:scale(.8); }
+
+/* ---------- dossier ---------- */
+.dossier { grid-area:dossier; display:flex; flex-direction:column; gap:clamp(.3rem,.9vh,.6rem);
+  padding:clamp(.4rem,1vh,.8rem) clamp(.3rem,.8vw,.7rem); min-height:0; }
+.panel { border:1px solid #232c33; border-radius:8px; background:var(--wc-chamber-lift);
+  padding:clamp(.4rem,1vh,.7rem) clamp(.45rem,1vw,.75rem); }
+.panel h2 { margin:0 0 .3rem; font-size:clamp(.44rem,.95vmin,.56rem); letter-spacing:.11em;
+  text-transform:uppercase; color:var(--wc-chalk-dim); font-weight:600; }
+.panel p { margin:0; font-family:var(--wc-serif); font-size:clamp(.72rem,1.6vmin,.95rem); color:var(--wc-chalk); }
+.panel p.small { font-family:var(--wc-sans); font-size:clamp(.5rem,1.1vmin,.64rem);
+  color:var(--wc-chalk-dim); line-height:1.5; }
+
+/* ---------- felt ---------- */
+.felt { grid-area:table; position:relative; margin:0 clamp(.4rem,1.4vw,1.1rem) clamp(.2rem,.6vh,.5rem);
+  border-radius:clamp(.5rem,1.4vw,1.1rem); min-height:0; display:grid;
+  grid-template-columns:var(--rail-w) minmax(0,1fr); gap:clamp(.35rem,1vw,.8rem);
+  padding:clamp(.35rem,1vh,.7rem);
+  background:radial-gradient(60% 70% at 50% 45%, #1d2f28 0%, var(--wc-felt) 55%, #101b18 100%);
+  box-shadow:inset 0 0 0 1px var(--wc-felt-line), inset 0 0 0 clamp(3px,.7vw,7px) var(--wc-felt-lip),
+             inset 0 clamp(6px,1.6vh,16px) clamp(16px,4vh,36px) #00000066;
+}
+.game-rail { display:flex; flex-direction:column; align-items:center; justify-content:space-evenly; min-height:0;
+  gap:clamp(.15rem,.5vh,.4rem); padding:clamp(.4rem,1vh,.7rem) clamp(.3rem,.6vw,.5rem);
+  background:#12201c; border:1px solid var(--wc-felt-line); border-radius:10px; overflow:hidden; }
+.rail-label { font-size:clamp(.42rem,.9vmin,.54rem); letter-spacing:.13em; text-transform:uppercase;
+  color:var(--wc-chalk-dim); }
+.rail-rule { width:80%; height:1px; background:var(--wc-felt-line); margin:clamp(.2rem,.7vh,.5rem) 0; }
+.rail-sec { display:flex; flex-direction:column; align-items:center; gap:clamp(.12rem,.4vh,.3rem); }
+.rail-note { font-size:clamp(.4rem,.88vmin,.5rem); color:var(--wc-chalk-dim); text-align:center; }
+.pile { position:relative; width:var(--plate-card-w); aspect-ratio:2/3; margin:.15rem 0 .1rem; }
+.pile .back { position:absolute; inset:0; border-radius:4px; box-shadow:0 0 0 1px #00000055;
+  background:repeating-linear-gradient(-45deg,#2c3a42 0 2px,#1e282e 2px 4px); }
+.pile .back.b1 { transform:translate(6px,-6px); } .pile .back.b2 { transform:translate(3px,-3px); }
+.trump { display:flex; align-items:center; gap:.3rem; padding:.2rem .45rem; border-radius:6px;
+  border:1px solid var(--wc-brass-dim); background:#1c2a24; color:var(--wc-brass);
+  font-size:clamp(.5rem,1.1vmin,.64rem); font-weight:600; }
+
+/* ---------- the playing card, folded in from DLR-147's mockup-card-faces.html ----------
+   One face at two sizes. `plate` is the condensed rendering used on the felt:
+   game-ux says a played card is a record, not a choice.
+
+   ONE DELIBERATE OMISSION vs the gallery: the tiled paper-grain bitmap. It is a
+   36KB data URI that changes nothing about the motion this file exists to
+   study. Its two hard-won decisions still stand and must be carried into src/ —
+   NO filter:url() and NO mix-blend-mode on a card, both of which stalled
+   Chrome's rasteriser hard enough to time out screenshots. See the gallery's
+   comment for the full account. */
+/* `display:block` is LOAD-BEARING and was missing for one round: the hand's
+   card is a <span> inside the button, width does not apply to an inline box,
+   and every hand card rendered 2px wide while the felt's <div> plates looked
+   perfect. Do not drop it in the port. */
+.pc { display:block; position:relative; width:100%; height:100%; aspect-ratio:2/3; overflow:hidden;
+  border-radius:5px; color:var(--wc-ink); --suit:var(--wc-ink);
+  --art-a:#ccc; --art-b:#eee; --fig:#333; --pc-art-top:32%;
+  background:radial-gradient(120% 90% at 50% 0%, #fffbf2 0%, var(--wc-parchment) 44%,
+             var(--wc-parchment-shade) 100%);
+  border:1px solid var(--wc-parchment-deep);
+  box-shadow:0 2px 6px #00000059, inset 0 0 0 1px #ffffffaa; }
+.pc.bells { --suit:var(--wc-bells); --art-a:#e08a3a; --art-b:#ffe3ad; --fig:#40260c; }
+.pc.keys  { --suit:var(--wc-keys);  --art-a:#6f9fc0; --art-b:#eaf5fd; --fig:#132e3d; }
+.pc.moons { --suit:var(--wc-moons); --art-a:#6a4f96; --art-b:#e4d8f6; --fig:#241640; }
+.pc.act { border-width:1.5px; border-color:var(--wc-brass-dim); }
+.pc.inert { border-style:dashed; }
+.pc.empty { background:transparent; border:1px dashed #3d5a50; box-shadow:none; }
+.pc::after { content:''; position:absolute; inset:3px; z-index:5; border:1px solid currentColor;
+  opacity:.13; border-radius:3px; pointer-events:none; }
+.pc.empty::after { display:none; }
+.pc .corner { position:absolute; z-index:3; top:5%; left:7%; display:grid;
+  grid-template-columns:auto auto; column-gap:.12rem; align-items:center; line-height:1; }
+.pc .corner .r { font-family:var(--wc-serif); color:var(--suit);
+  font-size:clamp(.6rem,1.5vmin,.95rem); letter-spacing:-.02em; }
+.pc .corner .g { width:clamp(.42rem,1vmin,.62rem); height:clamp(.42rem,1vmin,.62rem); color:var(--suit); }
+.pc .corner .nm { grid-row:2; grid-column:1 / -1; font-family:var(--wc-serif);
+  font-size:clamp(.3rem,.62vmin,.4rem); color:var(--wc-ink-soft); white-space:nowrap; margin-top:.06rem; }
+.pc.plate .corner .nm { display:none; }
+.pc.plate { --pc-art-top:27%; cursor:default; }
+.pc .art { position:absolute; left:7%; right:7%; top:var(--pc-art-top); bottom:6%;
+  border-radius:3px; overflow:hidden; z-index:1;
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--fig) 22%, transparent); }
+.pc .art .wash { position:absolute; inset:0;
+  background:radial-gradient(78% 62% at 50% 34%, var(--art-b) 0%,
+             color-mix(in srgb, var(--art-a) 55%, var(--art-b)) 42%, var(--art-a) 100%); }
+.pc .art .glow { position:absolute; left:50%; top:34%; width:74%; aspect-ratio:1;
+  transform:translate(-50%,-50%); border-radius:50%;
+  background:radial-gradient(circle, #ffffff8c 0%, #ffffff33 46%, #ffffff00 72%); }
+.pc .art .figure { position:absolute; left:50%; bottom:6%; width:66%;
+  transform:translateX(-50%); color:var(--fig); }
+.pc .art .figure svg { width:100%; display:block; }
+.pc .art .vig { position:absolute; inset:0; box-shadow:inset 0 0 8px 3px #00000026; }
+.pc .pips { position:absolute; inset:26% 22% 20% 22%; z-index:2; display:grid;
+  grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(7,1fr);
+  justify-items:center; align-items:center; }
+.pc .pips .g { width:100%; max-width:clamp(.5rem,1.3vmin,.9rem); aspect-ratio:1; color:var(--suit); }
+.pc .pips .g.inv { transform:rotate(180deg); }
+
+/* ---------- the trick well ---------- */
+/* A SIZE CONTAINER, so the well can be bound against the box it actually gets
+   rather than against the viewport. This is the difference that matters: the
+   stage is what is left after the status bar, the readout, the hand and the
+   prompt have taken their share, and that residue shrinks much faster than the
+   viewport does. Bounding a card in `vh` prices it against a height it does not
+   have. */
+.stage { position:relative; min-height:0; display:grid; place-items:center;
+  container-type:size; container-name:stage; }
+.well { display:flex; gap:clamp(1.4rem,5vw,3.4rem); align-items:flex-start; }
+.well figure { margin:0; display:flex; flex-direction:column; align-items:center; gap:.35rem; }
+/* Sized against BOTH axes, and the second one is the finding. At 6vw alone the
+   well measured 9px past the felt's bottom lip at 1024x640, 49px at 1024x600
+   and 63px at 700x640 — the played cards sat on the felt's edge. A 2:3 card
+   grows in height as the viewport widens, so a width-only bound is blind to
+   exactly the viewport that breaks it. And a viewport bound was still not
+   enough: `vh` prices the card against a height the stage does not have, so the
+   bound is taken from the CONTAINER instead.
+   `cqh` is the load-bearing half — the strip above the well and the verdict
+   below it take roughly a third of the stage between them, so the card gets
+   about 40cqh before anything touches the felt's lip. Numbers are
+   PLACEHOLDERS; sizing against the container is not. */
+.well .slot { --slot-floor:2.6rem;
+  width:clamp(var(--slot-floor), min(14cqw, 26cqh), 5.6rem); aspect-ratio:2/3; position:relative; }
+.well .slot > * { position:absolute; inset:0; }
+.well figcaption { font-size:clamp(.44rem,.95vmin,.55rem); letter-spacing:.1em; color:var(--wc-chalk-dim); }
+/* The winner is named in WORDS and marked with a raised laurel edge, so a
+   greyscale screenshot still says who took it. Colour only reinforces. */
+.well .verdict { margin-top:.3rem; min-height:1.1rem; font-family:var(--wc-serif);
+  font-size:clamp(.55rem,1.25vmin,.72rem); letter-spacing:.06em; text-transform:uppercase;
+  opacity:0; transition:opacity 200ms ease; }
+.well .verdict.on { opacity:1; }
+.well figure.took .slot { outline:2px solid var(--wc-brass); outline-offset:4px; border-radius:7px; }
+.well figure.took .verdict { color:var(--wc-brass); }
+.well figure.lost .verdict { color:var(--wc-chalk-dim); }
+
+/* the riding strip: what is live FOR THE TRICK, before you commit to a card.
+   A buff belongs to the trick, not to a card — the gallery mockup owns that
+   reasoning and this file inherits it. */
+.riding { display:flex; align-items:center; gap:clamp(.3rem,.9vw,.6rem);
+  margin-bottom:clamp(.4rem,1.4vh,.9rem); flex-wrap:wrap; justify-content:center; }
+.riding > span.k { font-size:clamp(.42rem,.9vmin,.52rem); letter-spacing:.13em;
+  text-transform:uppercase; color:var(--wc-chalk-dim); }
+
+/* A buff plaque. The tier is a metallic FRAME and the face stays near-neutral,
+   because tier and suit were measured 28.7 RGB units apart and cannot both be a
+   field colour (game-ux). The axis is the frame's inner chip plus a glyph. */
+.plaque { position:relative; display:flex; align-items:center; gap:.34rem;
+  padding:.26rem .5rem .26rem .3rem; border-radius:7px; background:var(--metal);
+  box-shadow:0 1px 0 #ffffff2e inset, 0 2px 5px #0009; color:#1b1710;
+  font-size:clamp(.48rem,1.05vmin,.62rem); white-space:nowrap; }
+.plaque.bronze { --metal:var(--m-bronze); }
+.plaque.silver { --metal:var(--m-silver); }
+.plaque.gold   { --metal:var(--m-gold); }
+.plaque .axis { display:inline-flex; align-items:center; justify-content:center;
+  width:1.05rem; height:1.05rem; border-radius:5px; flex:0 0 auto;
+  background:#151210; color:var(--ax); }
+.plaque .axis svg { width:.72rem; height:.72rem; }
+.plaque.blade    { --ax:var(--blade); }
+.plaque.momentum { --ax:var(--momentum); }
+.plaque b { font-family:var(--wc-serif); font-weight:400; }
+.plaque .pay { font-weight:700; letter-spacing:.02em; }
+.plaque .tierword { font-size:clamp(.38rem,.82vmin,.46rem); letter-spacing:.11em;
+  text-transform:uppercase; opacity:.72; }
+/* the plaque leaves the strip as its beat lands, so the ledger is visibly fed
+   BY the strip rather than being a second, separate list of the same thing */
+.plaque.spent { opacity:.2; filter:grayscale(1); transition:opacity 240ms ease, filter 240ms ease; }
+
+/* ============================================================================
+   THE RESOLUTION SCREEN
+
+   The build-up and the apply-or-roll decision are their OWN SCREEN, not a panel
+   on the table. Three things follow from that and each one is why it is worth
+   the extra surface:
+
+   - The table screen stops moving. A readout that opens between the felt and
+     the hand pushes both of them every time it changes size, and it changes
+     size on a screen whose whole job is to make one number move.
+   - The decision gets the viewport. Apply-or-roll fires up to six times a hand
+     (roll-over-damage-model.md, "the main interaction-cost risk"), and a bet
+     the player takes that often should not be two buttons in a strip they also
+     use for Buffs, Cards and Swap.
+   - Nothing on the table competes with the number. game-ux says the cards take
+     visual precedence and the UI serves them — which is true of the table, and
+     the reason the arithmetic does not belong on it.
+
+   The cost is a screen change six times a hand, and that is the thing to judge
+   by playing it: it may want to be quicker, or to auto-dismiss on a bare trick
+   where there is nothing to decide. Both are the developer's call.
+
+   It is a SEPARATE full-viewport shell rather than a modal over the felt: a
+   dialog centred on the table would leave the felt half-visible round the
+   edges, which reads as "you are still there" while every control on it is
+   dead. The trick that was just played comes with you, at the top, so the
+   number is attached to the cards that produced it. */
+/* FOUR rows, four children: the header, ONE cluster, and the two prompts. The
+   trick, the verdict and the readout are a single object — they are read as one
+   sentence ("you took it, here is what it is worth") — so they are one grid
+   child with their own internal spacing, not three rows the grid can pull
+   apart. The first cut had them as separate children and it went wrong twice:
+   four declared rows against six children put the `1fr` on the one-line verdict
+   and opened 450px of void in the middle; fixing the count then spread the same
+   three blocks evenly down 828px, which is not composition, it is distribution.
+   A grid does not complain about either. */
+.resolve { position:fixed; inset:0; z-index:50; display:grid;
+  grid-template-rows:auto minmax(0,1fr) auto auto; justify-items:center;
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px)
+          env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);
+  height:100dvh; overflow:hidden;
+  background:radial-gradient(90% 70% at 50% 42%, #14201d 0%, #080c0e 62%, #05070800 100%),
+             var(--wc-chamber);
+  opacity:0; transform:scale(.985); pointer-events:none;
+  transition:opacity 260ms ease, transform 260ms ease; }
+.resolve.on { opacity:1; transform:none; pointer-events:auto; }
+.rhead { padding:clamp(.5rem,1.6vh,1rem) 1rem clamp(.2rem,.6vh,.4rem);
+  font-size:clamp(.44rem,.95vmin,.55rem); letter-spacing:.16em; text-transform:uppercase;
+  color:var(--wc-chalk-dim); }
+/* the trick, carried across, condensed — it is a record here, not a choice */
+.rtrick { display:flex; align-items:flex-start; gap:clamp(1rem,4vw,2.4rem); }
+.rtrick figure { margin:0; display:flex; flex-direction:column; align-items:center; gap:.25rem; }
+/* Bigger than the felt's plates, smaller than a hand card. On the table a
+   played card is a record among many; here it is one of two objects on the
+   screen and the only thing explaining the number. PLACEHOLDER. */
+.rtrick .slot { width:clamp(3.2rem,7vmin,5.2rem); aspect-ratio:2/3; position:relative; }
+.rtrick .slot > * { position:absolute; inset:0; }
+.rtrick figcaption { font-size:clamp(.38rem,.85vmin,.48rem); letter-spacing:.1em; color:var(--wc-chalk-dim); }
+.rtrick figure.took .slot { outline:2px solid var(--wc-brass); outline-offset:3px; border-radius:6px; }
+.rverdict { font-family:var(--wc-serif); letter-spacing:.08em; text-transform:uppercase;
+  font-size:clamp(.7rem,1.7vmin,1rem); color:var(--wc-brass);
+  margin-top:clamp(.2rem,.8vh,.5rem); }
+.rverdict.hurt { color:var(--wc-alarm); }
+.rmain { align-self:center; width:100%; display:flex; flex-direction:column;
+  align-items:center; gap:clamp(.5rem,2.2vh,1.4rem); min-height:0; }
+.rbody { width:100%; display:grid; justify-items:center;
+  padding:0 clamp(.5rem,2vw,1.5rem); }
+/* The prompt is the screen's footer and spans it; `justify-items:center` on the
+   grid would otherwise shrink-wrap it to its two buttons and leave the bar
+   floating. */
+.resolve .prompt { width:100%; }
+/* Given a screen to itself the readout can be read from further away. These are
+   the same tokens as on the table, scaled up — PLACEHOLDERS, all of them. */
+.resolve .potbox { width:min(calc(100% - 1rem), 68rem); }
+.resolve .big .v { font-size:clamp(2.6rem,8vmin,4.6rem); }
+.resolve .potline .potv { font-size:clamp(1.4rem,3.8vmin,2.3rem); }
+.resolve .ledger { --lrow-h:clamp(1.45rem, 3vmin, 1.9rem); }
+.resolve .lrow { font-size:clamp(.56rem,1.3vmin,.76rem); }
+
+/* ============================================================================
+   THE DAMAGE READOUT
+   ========================================================================== */
+/* WIDTH IS CAPPED, and the cap is the finding rather than a preference: run
+   full-bleed and the ledger is 1305px wide at a 1745 viewport, which puts a
+   card's name and the number it moved a foot apart. The eye has to travel the
+   whole panel per beat, and the beat is the thing this panel exists to sell.
+   62rem is a PLACEHOLDER for the developer; the RULE is that the ledger's name
+   column and its running total stay inside one fixation. */
+.potbox { margin:0 auto; border-radius:12px;
+  width:min(calc(100% - 2 * clamp(.4rem,1.4vw,1.1rem)), 62rem);
+  border:1px solid var(--wc-brass-dim); background:linear-gradient(180deg,#141d21,#10171a);
+  box-shadow:0 8px 26px #0000008c;
+  display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:stretch;
+  overflow:hidden; opacity:0; transform:translateY(10px); pointer-events:none;
+  transition:opacity 220ms ease, transform 220ms ease; }
+.potbox.on { opacity:1; transform:none; pointer-events:auto; }
+/* game-ux: do not render a panel that has nothing to say. Before a card is
+   played there is no trick to price, so the box is not merely empty — it is
+   not there. It arrives WITH the card. */
+
+/* left half: the ledger, one row per term, arriving one at a time.
+
+   THE WINDOW IS EXACTLY TWO ROWS TALL, ALWAYS. It does not grow with the
+   sixth beat and it does not collapse on the first — a panel that changes
+   height mid-sequence drags the hand and the prompt up and down under the
+   player's eye on every beat, which is motion the beat itself has to compete
+   with. Reserving the space costs one empty row on a bare trick and buys a
+   readout that never moves.
+
+   The overflow is SCOPED to this box and it is the file's only scrolling
+   region (game-ux hard floor: say why). The reason is that the ledger is the
+   one surface whose length the player controls — a trick can fire anywhere
+   from one term to six — and the alternative to scrolling it is either
+   shrinking the type past reading size or moving the whole layout.
+
+   Rows are pinned to a MEASURED height rather than left to their content, so
+   two rows is exactly two rows whatever a card is called. PLACEHOLDER. */
+.ledger { padding:clamp(.4rem,1.1vh,.7rem) clamp(.55rem,1.4vw,1rem);
+  display:flex; flex-direction:column; gap:.18rem; min-width:0;
+  --lrow-h:clamp(1.3rem, 2.7vmin, 1.7rem); }
+.ledger h2 { margin:0 0 .12rem; font-size:clamp(.42rem,.9vmin,.52rem); letter-spacing:.13em;
+  text-transform:uppercase; color:var(--wc-chalk-dim); font-weight:600; }
+.lscroll { height:calc(var(--lrow-h) * 2); overflow-y:auto; overflow-x:hidden;
+  scrollbar-width:thin; scrollbar-color:var(--wc-brass-dim) transparent; }
+.lscroll::-webkit-scrollbar { width:5px; }
+.lscroll::-webkit-scrollbar-thumb { background:var(--wc-brass-dim); border-radius:3px; }
+.lscroll::-webkit-scrollbar-track { background:transparent; }
+/* A scrolled-away row must not simply vanish — the top edge fades so the panel
+   says "there is more above" without spending a row on saying it. The fade is
+   only applied while the box actually overflows. */
+.lscroll.over { mask-image:linear-gradient(180deg, #0000 0, #000 var(--lrow-h)); }
+.lrow { display:grid; grid-template-columns:1.15rem minmax(0,1fr) auto auto;
+  align-items:center; gap:.4rem; height:var(--lrow-h); box-sizing:border-box;
+  font-size:clamp(.5rem,1.1vmin,.66rem); line-height:1.25;
+  opacity:0; transform:translateX(-10px);
+  animation:lrow-in calc(var(--beat) * .42) cubic-bezier(.2,1.4,.4,1) forwards; }
+@keyframes lrow-in { to { opacity:1; transform:none; } }
+.lrow .ic { display:inline-flex; align-items:center; justify-content:center;
+  width:1.15rem; height:1.15rem; border-radius:5px; background:#0a1013; color:var(--ax,var(--wc-chalk-dim)); }
+.lrow .ic svg { width:.78rem; height:.78rem; }
+.lrow .nm { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--wc-chalk); }
+.lrow .nm small { color:var(--wc-chalk-dim); }
+.lrow .pay { font-family:var(--wc-serif); font-weight:700; color:var(--ax,var(--wc-chalk));
+  font-size:clamp(.6rem,1.3vmin,.8rem); }
+/* running product after this row lands — this is what makes the ledger a
+   derivation rather than a receipt: you can read the number climbing */
+.lrow .run { font-family:var(--wc-serif); font-size:clamp(.55rem,1.2vmin,.72rem);
+  color:var(--wc-chalk-dim); min-width:3.2rem; text-align:right; }
+.lrow .run b { color:var(--pot); font-weight:400; }
+.lrow.blade    { --ax:var(--blade); }
+.lrow.momentum { --ax:var(--momentum); }
+.lrow.base     { --ax:var(--wc-chalk); }
+.lrow.overlap  { --ax:var(--pot); }
+.lrow.bank     { --ax:var(--wc-brass); }
+.lrow.hurt     { --ax:var(--wc-alarm); }
+.lrow.overlap .nm, .lrow.bank .nm { font-family:var(--wc-serif); }
+
+/* right half: the number itself */
+.figures { display:flex; align-items:center; gap:clamp(.5rem,1.6vw,1.2rem);
+  padding:clamp(.35rem,1vh,.6rem) clamp(.7rem,1.8vw,1.3rem);
+  border-left:1px solid #222e33; background:#0d1417; }
+.reg { display:flex; flex-direction:column; align-items:center; gap:.06rem; }
+.reg .k { font-size:clamp(.4rem,.88vmin,.5rem); letter-spacing:.12em; text-transform:uppercase;
+  color:var(--wc-chalk-dim); }
+.reg .v { font-family:var(--wc-serif); line-height:1;
+  font-size:clamp(1rem,2.6vmin,1.5rem); color:var(--wc-chalk);
+  font-variant-numeric:tabular-nums; }
+.reg.dmg .v { color:var(--blade); }
+.reg.mult .v { color:var(--momentum); }
+.reg .op { font-size:clamp(.9rem,2vmin,1.2rem); color:var(--wc-chalk-dim); align-self:center; }
+
+/* THE BIG ONE. It is the only thing in the panel allowed to be this size, and
+   the impact animation is hung on it. */
+.big { display:flex; flex-direction:column; align-items:center; gap:.05rem; position:relative; }
+.big .k { font-size:clamp(.44rem,.95vmin,.55rem); letter-spacing:.14em; text-transform:uppercase;
+  color:var(--wc-brass); }
+.big .v { font-family:var(--wc-serif); line-height:.95; font-variant-numeric:tabular-nums;
+  font-size:clamp(2.1rem,6.2vmin,3.6rem); color:var(--pot);
+  text-shadow:0 0 18px #f0d48838; }
+.big.hurt .v { color:var(--wc-alarm); text-shadow:none; }
+.big.hurt .k { color:var(--wc-alarm); }
+
+/* IMPACT. Scale + a ring that punches outward. The ring is a pseudo-element on
+   a wrapper so it cannot be clipped by the number's own box. Reduced motion
+   swaps the whole thing for a colour-and-weight flash, below. */
+.big.hit .v { animation:impact var(--beat) cubic-bezier(.2,1.5,.35,1); }
+@keyframes impact {
+  0%   { transform:scale(1); }
+  18%  { transform:scale(1.42); }
+  38%  { transform:scale(.94); }
+  60%  { transform:scale(1.08); }
+  100% { transform:scale(1); }
+}
+.big::after { content:''; position:absolute; left:50%; top:52%; width:4.2rem; aspect-ratio:1;
+  transform:translate(-50%,-50%) scale(.3); border-radius:50%; pointer-events:none;
+  border:2px solid var(--pot); opacity:0; }
+.big.hit::after { animation:shock calc(var(--beat) * .8) ease-out; }
+@keyframes shock {
+  0%   { opacity:.85; transform:translate(-50%,-50%) scale(.28); border-width:5px; }
+  100% { opacity:0;   transform:translate(-50%,-50%) scale(2.1); border-width:1px; }
+}
+/* the whole panel takes the knock too — small, and only on the beat, so it
+   reads as force rather than as a broken layout */
+.potbox.knock { animation:knock calc(var(--beat) * .34) ease-out; }
+@keyframes knock {
+  0% { transform:translate(0,0); } 25% { transform:translate(0,3px); }
+  60% { transform:translate(0,-2px); } 100% { transform:translate(0,0); }
+}
+/* the term that just landed, thrown up over the number */
+.spark { position:absolute; left:50%; top:8%; transform:translate(-50%,0);
+  font-family:var(--wc-serif); font-size:clamp(.85rem,2.1vmin,1.3rem); font-weight:700;
+  color:var(--ax,var(--pot)); pointer-events:none; white-space:nowrap;
+  animation:spark calc(var(--beat) * 1.1) ease-out forwards; }
+@keyframes spark {
+  0%   { opacity:0; transform:translate(-50%,14px) scale(.7); }
+  22%  { opacity:1; transform:translate(-50%,-4px) scale(1.15); }
+  100% { opacity:0; transform:translate(-50%,-42px) scale(1); }
+}
+
+/* the pot line: total x roll, kept BELOW the trick figure because it is the
+   accumulated bet and the trick damage is what just happened */
+.potline { display:flex; align-items:center; gap:.45rem; padding-left:clamp(.4rem,1.2vw,.9rem);
+  border-left:1px dashed #2b383e; }
+.potline .stack { display:flex; flex-direction:column; align-items:flex-start; gap:.1rem; }
+.potline .lab { font-size:clamp(.4rem,.86vmin,.48rem); letter-spacing:.11em; text-transform:uppercase;
+  color:var(--wc-chalk-dim); }
+.potline .val { font-family:var(--wc-serif); font-size:clamp(.75rem,1.7vmin,1rem);
+  color:var(--wc-chalk); font-variant-numeric:tabular-nums; }
+.potline .potv { font-size:clamp(1.2rem,3.2vmin,1.9rem); color:var(--pot); }
+.potline .potv.hit { animation:impact var(--beat) cubic-bezier(.2,1.5,.35,1); }
+
+/* ---------- the apply-or-roll prompt ----------
+   The roll-over doc removes the Apply Damage BUTTON and replaces it with this
+   prompt, raised the moment a banked trick resolves. It states all three things
+   that doc says the decision needs: the pot now, the pot if the next trick also
+   banks, and the roll being wagered. */
+.prompt { display:flex; flex-wrap:wrap; justify-content:center; align-items:stretch;
+  gap:clamp(.5rem,2vmin,1.25rem); padding:clamp(.4rem,1.2vh,.8rem) clamp(.6rem,2vw,1.5rem);
+  background:var(--wc-chamber-lift); border-top:1px solid #232c33; }
+.pbtn { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:.12rem; min-width:clamp(9rem,22vmin,14rem); min-height:3.4rem; padding:.5rem 1rem;
+  border-radius:10px; cursor:pointer; touch-action:manipulation; font-family:var(--wc-serif);
+  border:1px solid var(--wc-brass-dim); background:linear-gradient(160deg,#2a2418,#1a1710);
+  color:var(--wc-brass);
+  transition:transform var(--wc-ui-transition-ms) ease, filter var(--wc-ui-transition-ms) ease; }
+.pbtn b { font-size:clamp(.8rem,1.9vmin,1.05rem); font-weight:400; letter-spacing:.04em; }
+.pbtn .fig { font-size:clamp(1.15rem,2.9vmin,1.65rem); line-height:1; font-variant-numeric:tabular-nums; }
+.pbtn small { font-family:var(--wc-sans); font-size:clamp(.46rem,1vmin,.58rem); color:var(--wc-chalk-dim);
+  letter-spacing:.02em; }
+.pbtn:focus-visible { outline:2px solid var(--wc-brass); outline-offset:3px; }
+@media (hover:hover) { .pbtn:hover { filter:brightness(1.18); transform:translateY(-2px); } }
+.pbtn:active { filter:brightness(.93); }
+/* APPLY is the safe half and ROLL is the greedy half, and they are told apart
+   by SHAPE and WORDS first: apply is solid-edged and says what it pays now,
+   roll is dashed-edged (the same dashed idiom the rest of this UI uses for
+   "provisional") and says what it could pay and what it risks. */
+.pbtn.apply .fig { color:var(--pot); }
+.pbtn.roll { border-style:dashed; border-color:var(--momentum); color:var(--momentum); }
+.pbtn.roll .fig { color:var(--momentum); }
+.pbtn.roll .risk { color:var(--wc-alarm); }
+.pbtn .mult { position:absolute; top:-.55rem; right:-.4rem; padding:.1rem .38rem; border-radius:999px;
+  background:var(--momentum); color:#0a1a20; font-family:var(--wc-sans); font-weight:700;
+  font-size:clamp(.44rem,1vmin,.56rem); letter-spacing:.03em; }
+
+/* ---------- hand + the ordinary action bar ---------- */
+.hand { grid-area:hand; position:relative; display:flex; justify-content:center; align-items:flex-end;
+  gap:clamp(.2rem,.6vw,.5rem); padding:clamp(.5rem,1.6vh,1rem) 0 clamp(.3rem,1vh,.7rem); }
+.hand .pick { width:var(--card-w); }
+.hand .pc { border-radius:6px; }
+.pick { position:relative; display:block; padding:0; border:none; background:none;
+  cursor:pointer; touch-action:manipulation; transform:translateY(var(--lift-rest));
+  transition:transform var(--wc-ui-transition-ms) ease, filter var(--wc-ui-transition-ms) ease,
+             opacity 200ms ease; }
+.pick .pc { width:100%; height:auto; }
+@media (hover: hover) {
+  .hand .pick:not(.is-armed):not(.is-illegal):hover { transform:translateY(var(--lift-hover)); filter:brightness(1.05); }
+  .hand .pick:not(.is-armed):not(.is-illegal):hover .pc { box-shadow:0 12px 20px #000000a6; }
+}
+.hand .pick:focus-visible { outline:none; transform:translateY(var(--lift-hover)); }
+.hand .pick:focus-visible .pc { outline:2px solid var(--wc-brass); outline-offset:3px;
+  box-shadow:0 12px 20px #000000a6; }
+.hand .pick.is-armed { transform:translateY(var(--lift-armed)); }
+.hand .pick.is-armed .pc { box-shadow:0 16px 26px #000000b8, 0 0 0 2px var(--wc-brass); }
+.hand .pick.is-armed::after { content:'PLAY'; position:absolute; left:50%; bottom:-1.15rem;
+  transform:translateX(-50%); padding:.12rem .4rem; border-radius:4px;
+  background:var(--wc-brass); color:#1a1206; font-family:var(--wc-sans);
+  font-size:clamp(.38rem,.85vmin,.5rem); font-weight:700; letter-spacing:.08em; white-space:nowrap; }
+.hand .pick:active { filter:brightness(.95); }
+.hand .pick.is-illegal { cursor:default; opacity:.42; }
+.hand .pick.is-illegal .pc { border-style:dashed; }
+/* the gap the card left behind: it collapses AFTER the card has landed, so the
+   hand does not reflow under the player's finger mid-flight */
+.pick.flown { visibility:hidden; }
+.pick.collapsed { width:0 !important; opacity:0; margin:0; }
+
+/* every card a riding buff would fire on wears the count on its face. The
+   NUMERAL is the carrier; the glow only reinforces it (greyscale test). */
+.pick .load { position:absolute; right:-.25rem; bottom:-.3rem; z-index:7;
+  min-width:1.15rem; height:1.15rem; padding:0 .22rem; border-radius:999px;
+  display:flex; align-items:center; justify-content:center;
+  background:#0d1417; border:1.5px solid var(--blade); color:var(--blade);
+  font-family:var(--wc-serif); font-size:clamp(.5rem,1.1vmin,.66rem); font-weight:700; }
+.pick.hot .pc { box-shadow:0 2px 6px #00000059, inset 0 0 0 1px #ffffffaa,
+  0 0 16px 3px color-mix(in srgb, var(--blade) 55%, transparent); }
+.pick.is-armed.hot .pc { box-shadow:0 16px 26px #000000b8, 0 0 0 2px var(--wc-brass),
+  0 0 22px 5px color-mix(in srgb, var(--blade) 60%, transparent); }
+.pick:not(.hot) .load { display:none; }
+
+.bar { grid-area:actions; display:flex; flex-wrap:wrap; justify-content:center; align-items:stretch;
+  gap:clamp(.5rem,2vmin,1.25rem); padding:clamp(.4rem,1.2vh,.8rem) clamp(.6rem,2vw,1.5rem);
+  background:var(--wc-chamber-lift); border-top:1px solid #232c33; }
+.bar button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.15rem;
+  min-width:clamp(5.5rem,14vmin,8.5rem); min-height:2.75rem; padding:.4rem .7rem; border-radius:8px;
+  border:1px solid var(--wc-brass-dim); background:linear-gradient(160deg,#2a2418,#1a1710);
+  color:var(--wc-brass); font-family:var(--wc-serif); cursor:pointer; touch-action:manipulation;
+  transition:transform var(--wc-ui-transition-ms) ease, filter var(--wc-ui-transition-ms) ease; }
+.bar button b { font-size:clamp(.68rem,1.5vmin,.85rem); font-weight:400; letter-spacing:.04em; }
+.bar button small { font-size:clamp(.5rem,1.1vmin,.62rem); color:var(--wc-chalk-dim); }
+.bar button:focus-visible { outline:2px solid var(--wc-brass); outline-offset:3px; }
+@media (hover:hover) { .bar button:hover { filter:brightness(1.15); } }
+/* NOTE, and it is the point of the roll-over doc's AC 4: there is no Apply
+   Damage button in this bar. The decision moved into the prompt above. */
+[hidden] { display:none !important; }
+
+/* the flight layer: the card in transit lives here, above everything, so it is
+   never clipped by the hand's or the felt's overflow */
+.flight { position:fixed; inset:0; z-index:60; pointer-events:none; }
+.flight .flyer { position:absolute; will-change:transform; }
+
+/* ---------- dev rail — mockup only, never ships ---------- */
+.dev { position:fixed; right:.6rem; bottom:.6rem; z-index:90; display:flex; gap:.45rem; align-items:center;
+  padding:.35rem .55rem; border-radius:8px; border:1px dashed #55636a; background:#0d1417ee;
+  font-size:.62rem; color:var(--wc-chalk-dim); }
+.dev button { padding:.25rem .5rem; border-radius:5px; border:1px solid var(--wc-brass-dim);
+  background:#1a1710; color:var(--wc-brass); font-size:.62rem; cursor:pointer; }
+.dev input[type=range] { width:5.5rem; accent-color:var(--wc-brass); }
+.toast { position:fixed; left:50%; bottom:clamp(6rem,16vh,10rem); transform:translateX(-50%); z-index:80;
+  padding:.4rem .8rem; border-radius:8px; background:#1a1710; border:1px solid var(--wc-brass);
+  color:var(--wc-brass); font-size:.7rem; opacity:0; transition:opacity 200ms ease; pointer-events:none; }
+.toast.show { opacity:1; }
+
+/* ---------- narrow ----------
+   Below this the felt's rail and the ledger cannot both hold their words. The
+   rail goes (its content is duplicated in the dossier and the well) and the
+   ledger drops under the figures rather than beside them. */
+@media (max-width: 860px) {
+  .shell { grid-template-columns:1fr; grid-template-areas:'status' 'table' 'hand' 'actions'; }
+  .dossier { display:none; }
+  .felt { grid-template-columns:minmax(0,1fr); }
+  .game-rail { display:none; }
+  .potbox { grid-template-columns:minmax(0,1fr); }
+  .figures { border-left:none; border-bottom:1px solid #222e33; justify-content:center; }
+  .potbox { display:flex; flex-direction:column-reverse; }
+}
+
+/* ---------- short viewports ----------
+   A laptop at 600–640 CSS px of height is the case that breaks first, and what
+   breaks is the ledger: six rows of it is a quarter of the screen. The rows
+   stay — every one of them is a beat, and dropping one would remove a term from
+   the derivation — but they tighten, and the big number gives back the space it
+   only needs for drama. */
+@media (max-height: 700px) {
+  .ledger { gap:.05rem; --lrow-h:clamp(1.15rem, 2.4vmin, 1.45rem); }
+  .big .v { font-size:clamp(1.7rem,5vmin,2.6rem); }
+  .hand { padding-top:clamp(.3rem,1vh,.6rem); }
+  .riding { margin-bottom:.25rem; }
+  .well figure { gap:.15rem; }
+  .well .verdict { margin-top:.1rem; }
+  .well .slot { --slot-floor:2.2rem; }
+}
+.well .slot { min-width:0; }
+
+/* ---------- reduced motion ----------
+   The beat still HAPPENS — one term at a time is information, not decoration,
+   and removing the stagger would remove the derivation. What goes is the
+   travel, the scale and the shock ring; the impact becomes a one-frame colour
+   and weight flash, which still marks which number moved. */
+@media (prefers-reduced-motion: reduce) {
+  .pick, .potbox, .pbtn { transition:none; }
+  .lrow { animation-duration:1ms; }
+  .big.hit .v { animation:flash calc(var(--beat) * .5) steps(2,end); }
+  .big.hit::after, .spark { animation:none; opacity:0; }
+  .potbox.knock { animation:none; }
+  .potline .potv.hit { animation:flash calc(var(--beat) * .5) steps(2,end); }
+  @keyframes flash { 0%,49% { filter:brightness(2.1); } 50%,100% { filter:none; } }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="s-bells" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="2.9" r="1.05"/>
+      <path d="M12 4.9v.8"/>
+      <path d="M6.6 16.1v-4.3a5.4 5.4 0 0 1 10.8 0v4.3"/>
+      <path d="M4.4 16.1h15.2"/>
+      <path d="M9.9 18.7a2.1 2.1 0 0 0 4.2 0"/>
+      <path d="M9.3 12.1a2.7 2.7 0 0 1 2.4-2.4" opacity=".5"/>
+      <path d="M8.5 16.1v-3.7M15.5 16.1v-3.7" opacity=".3"/>
+    </g>
+  </symbol>
+  <symbol id="s-keys" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="6.5" r="3.7"/>
+      <circle cx="12" cy="6.5" r="1.35" opacity=".55"/>
+      <path d="M12 10.2V21"/>
+      <path d="M12 14.3h3.5M12 17h2.7"/>
+      <path d="M12 19.5h1.9" opacity=".55"/>
+    </g>
+  </symbol>
+  <symbol id="s-moons" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15.4 3.6a8.4 8.4 0 1 0 4.1 12 6.9 6.9 0 0 1-4.1-12z"/>
+      <circle cx="9.5" cy="9.7" r="1.15" opacity=".45"/>
+      <circle cx="7.7" cy="14.3" r=".8" opacity=".4"/>
+      <circle cx="11.7" cy="15.5" r=".62" opacity=".35"/>
+    </g>
+  </symbol>
+  <!-- the two reward axes, as GLYPHS, so neither depends on its colour -->
+  <symbol id="s-blade" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2.5 16 12l-4 9.5L8 12z"/><path d="M8 12h8" opacity=".55"/>
+    </g>
+  </symbol>
+  <symbol id="s-momentum" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 15.5 12 8l8 7.5"/><path d="M4 20 12 12.5l8 7.5" opacity=".55"/>
+    </g>
+  </symbol>
+  <symbol id="s-base" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8"/><path d="M12 8.5v7M8.5 12h7"/>
+    </g>
+  </symbol>
+  <symbol id="s-overlap" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="9" cy="12" r="5.6"/><circle cx="15" cy="12" r="5.6"/>
+    </g>
+  </symbol>
+  <symbol id="s-bank" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 9.5 12 4l8 5.5"/><path d="M6 9.5V19h12V9.5"/><path d="M4 19h16"/>
+    </g>
+  </symbol>
+  <symbol id="s-hurt" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 5l14 14M19 5 5 19"/>
+    </g>
+  </symbol>
+  <symbol id="skull-fig" viewBox="0 0 100 100">
+    <path d="M50 8C29 8 16 21 16 40c0 10 4 18 9 23 3 4 5 7 5 11v4c0 5 4 8 9 8h22c5 0 9-3 9-8v-4
+      c0-4 2-7 5-11 5-5 9-13 9-23C84 21 71 8 50 8z" fill="#efe8d7"/>
+    <ellipse cx="36" cy="43" rx="10" ry="11" fill="#171310"/>
+    <ellipse cx="64" cy="43" rx="10" ry="11" fill="#171310"/>
+    <path d="M50 54l7 13H43z" fill="#171310"/>
+    <path d="M33 72h34v10a4 4 0 0 1-4 4H37a4 4 0 0 1-4-4z" fill="#efe8d7"/>
+    <g fill="#171310" opacity=".8"><rect x="39" y="72" width="1.8" height="14"/>
+      <rect x="45" y="72" width="1.8" height="14"/><rect x="51" y="72" width="1.8" height="14"/>
+      <rect x="57" y="72" width="1.8" height="14"/></g>
+  </symbol>
+</svg>
+
+<div class="shell">
+
+  <header class="status">
+    <div class="stat"><span>Run</span><b>Fight 1 of 25 — Aoife</b></div>
+    <div class="stat"><span>Trick</span><b id="trickNo">3 of 6</b></div>
+    <div class="stat"><span>Your health</span><b id="hpText">10 / 10</b></div>
+    <div class="hearts" id="hearts" aria-label="Your health, 10 of 10"></div>
+  </header>
+
+  <aside class="dossier">
+    <section class="panel"><h2>The Quarry</h2><p>Aoife</p></section>
+    <section class="panel"><h2>The streak</h2>
+      <p id="streakText">2 tricks rolled</p>
+      <p class="small">A hit takes the whole pot. There is no two-thirds consolation.</p></section>
+    <section class="panel"><h2>Where this came from</h2>
+      <p class="small">Arithmetic: <b>roll-over-damage-model.md</b>.<br />
+        Lifetimes and the Overlap Bonus: <b>buff-resolution-and-lifetimes.md</b>.</p></section>
+  </aside>
+
+  <section class="felt">
+    <div class="game-rail">
+      <div class="rail-sec">
+        <span class="rail-label">Decree</span>
+        <div class="pile"><i class="back b1"></i><i class="back b2"></i>
+          <div class="pc-slot" data-suit="moons" data-rank="9" data-variant="plate"></div>
+        </div>
+        <div class="trump">&#9790; Moons is trump</div>
+        <p class="rail-note">14 in the pile</p>
+      </div>
+      <div class="rail-rule"></div>
+      <div class="rail-sec">
+        <span class="rail-label">Must follow</span>
+        <p class="rail-note"><b style="color:var(--wc-bells)">Bells</b> was led.<br />
+          Your Keys and Moons are out of reach this trick.</p>
+      </div>
+      <div class="rail-rule"></div>
+      <div class="rail-sec">
+        <span class="rail-label">Spent</span>
+        <div class="pile"><i class="back b1"></i><i class="back b2"></i><i class="back"></i></div>
+        <p class="rail-note"><b style="color:var(--wc-chalk)">4 spent</b><br />Spent cards stay spent</p>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <div class="riding" id="ridingStrip" aria-label="Riding this trick"></div>
+        <div class="well">
+          <figure id="figThem">
+            <div class="slot"><div class="pc-slot" data-suit="bells" data-rank="4" data-variant="plate"></div></div>
+            <figcaption>AOIFE LED</figcaption>
+            <div class="verdict" id="verdictThem"></div>
+          </figure>
+          <figure id="figYou">
+            <div class="slot" id="youSlot"><div class="pc empty"></div></div>
+            <figcaption id="youCap">YOU — TO FOLLOW</figcaption>
+            <div class="verdict" id="verdictYou"></div>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="hand" id="hand"></div>
+
+  <nav class="bar" id="bar">
+    <button><b>Buffs</b><small id="buffsFig">3 riding &middot; 9 held</small></button>
+    <button><b>Cards</b><small id="cardsFig">Pick a Bells card</small></button>
+    <button><b>Swap</b><small>3 left</small></button>
+  </nav>
+
+</div>
+
+<!-- ==========================================================================
+     THE RESOLUTION SCREEN. A second full-viewport shell, not a dialog over the
+     felt. See the .resolve comment in the stylesheet for why.
+     ========================================================================== -->
+<section class="resolve" id="resolve" aria-hidden="true"
+         aria-label="Trick resolved — apply the pot or roll it over">
+  <p class="rhead" id="rhead">Trick 3 of 6 &middot; resolved</p>
+
+  <div class="rmain">
+  <div class="rtrick">
+    <figure id="rFigThem">
+      <div class="slot" id="rSlotThem"></div>
+      <figcaption>AOIFE LED</figcaption>
+    </figure>
+    <figure id="rFigYou">
+      <div class="slot" id="rSlotYou"></div>
+      <figcaption>YOU PLAYED</figcaption>
+    </figure>
+  </div>
+  <p class="rverdict" id="rVerdict">You took it</p>
+
+  <div class="rbody">
+    <section class="potbox" id="potbox" aria-live="polite" aria-label="Damage for this trick">
+      <div class="ledger" id="ledger"><h2>This trick</h2>
+        <div class="lscroll" id="lscroll"></div>
+      </div>
+      <div class="figures">
+        <div class="reg dmg"><span class="k">Damage</span><span class="v" id="regDmg">0</span></div>
+        <span class="op">&times;</span>
+        <div class="reg mult"><span class="k">Mult</span><span class="v" id="regMult">1</span></div>
+        <span class="op">=</span>
+        <div class="big" id="big"><span class="k">This trick</span><span class="v" id="bigV">0</span></div>
+        <div class="potline">
+          <div class="stack"><span class="lab">Total</span><span class="val" id="totV">12</span></div>
+          <span class="op">&times;</span>
+          <div class="stack"><span class="lab">Roll</span><span class="val" id="rollV">2</span></div>
+          <span class="op">=</span>
+          <div class="stack"><span class="lab">Pot</span><span class="val potv" id="potV">24</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  </div>
+
+  <nav class="prompt" id="prompt" hidden aria-label="Apply the pot, or roll it over">
+    <button class="pbtn apply" id="applyBtn">
+      <b>Apply Damage</b><span class="fig" id="applyFig">0</span>
+      <small>dealt to Aoife now &middot; total and roll reset</small>
+    </button>
+    <button class="pbtn roll" id="rollBtn">
+      <span class="mult" id="rollMult">next roll &times;3</span>
+      <b>Roll over</b><span class="fig" id="rollFig">0</span>
+      <small>if you take trick 4 &middot; <span class="risk">0 if you do not</span></small>
+    </button>
+  </nav>
+
+  <!-- On a trick that hurt there is nothing to decide, so no choice is offered
+       (roll-over-damage-model.md AC 7). The screen still has something to say —
+       how much was lost — so it gets a way out rather than a decision. -->
+  <nav class="prompt" id="hurtOut" hidden>
+    <button class="pbtn" id="onwardBtn"><b>Onward</b><small>trick 4 starts from nothing</small></button>
+  </nav>
+</section>
+
+<div class="flight" id="flight"></div>
+
+<div class="dev">
+  <span>mockup only —</span>
+  <label>beat <input type="range" id="beatRange" min="180" max="1100" step="20" value="520" /></label>
+  <span id="beatOut">520ms</span>
+  <button id="replay">Replay</button>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ==========================================================================
+   THE SCENARIO
+
+   Trick 3 of the hand. The player is two tricks into a streak: total 12,
+   roll 2, so the pot standing on the table is 24.
+
+   Aoife has led the 4 of Bells. It carries no skull, so the mechanical axis
+   and the outcome axis agree this trick and there is no inversion to explain
+   — this study is about the arithmetic, and CLAUDE.md's four-outcome table is
+   a separate comprehension problem that mockup-trick-readout.html already
+   owns. Play the 10 or the 7 and you take it; play the 2 or the Swan and you
+   do not.
+
+   Three buffs are already riding. They were activated between tricks, which is
+   what buff-resolution-and-lifetimes.md section 2 says twelve of the thirteen
+   cards require, so by the time this screen is live the player's only decision
+   left is which card to play.
+   ========================================================================== */
+
+const BEAT = () => parseInt(getComputedStyle(document.documentElement)
+  .getPropertyValue('--beat'), 10) || 520;
+
+const BASE_DAMAGE = 1;               // roll-over-damage-model.md, AC 10
+
+/* Tier values, AC 12: Blade 1/3/5, Momentum 2/3/5. Not tunable here. */
+const TIER_PAY = { blade:{ bronze:1, silver:3, gold:5 },
+                   momentum:{ bronze:2, silver:3, gold:5 } };
+
+const RIDING = [
+  { name:'Bell-Taker', axis:'blade',    tier:'bronze', suit:'bells',
+    cond:'Took a trick playing Bells' },
+  { name:'Bell-Taker', axis:'momentum', tier:'bronze', suit:'bells',
+    cond:'Took a trick playing Bells' },
+  { name:'Bell-Taker', axis:'momentum', tier:'bronze', suit:'bells',
+    cond:'Took a trick playing Bells' },
+];
+const pay = b => TIER_PAY[b.axis][b.tier];
+
+/* opening state — the two tricks already rolled */
+const OPENING = { total:12, roll:2, hp:10 };
+let state = { ...OPENING };
+
+const LED = { suit:'bells', rank:4 };
+
+/* The hand. `wins` is authored per card against the 4 of Bells with Moons
+   trump: 10 and 7 beat it, 2 and the Swan do not, and Keys/Moons cannot be
+   played at all because Bells was led. */
+const HAND = [
+  { suit:'bells', rank:10, wins:true  },
+  { suit:'bells', rank:7,  wins:true  },
+  { suit:'bells', rank:2,  wins:false },
+  { suit:'bells', rank:1,  wins:false },
+  { suit:'keys',  rank:3,  illegal:true },
+  { suit:'moons', rank:9,  illegal:true },
+];
+
+/* ---------------- playing cards, folded in from DLR-147's mockup-card-faces.html ----- */
+const SUITS = [
+  { id:'bells', name:'Bells', glyph:'s-bells', pal:{ d:'#3a2109', m:'#7a4d1c', l:'#c99a55', w:'#fff4dd' } },
+  { id:'keys',  name:'Keys',  glyph:'s-keys',  pal:{ d:'#0f2735', m:'#2b556e', l:'#7fb0cd', w:'#f2fbff' } },
+  { id:'moons', name:'Moons', glyph:'s-moons', pal:{ d:'#1e1236', m:'#43306e', l:'#8f74bd', w:'#f6f0ff' } },
+];
+const SUIT_BY_ID = Object.fromEntries(SUITS.map(s => [s.id, s]));
+
+const FIGURE = {
+  swan: (p,u) => `<defs>
+      <linearGradient id="sw${u}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${p.w}"/><stop offset="1" stop-color="${p.l}"/>
+      </linearGradient></defs>
+      <ellipse cx="50" cy="88" rx="42" ry="6" fill="${p.d}" opacity=".22"/>
+      <path d="M14 74c0-11 14-19 32-19s34 7 34 18c0 8-13 14-33 14S14 82 14 74z" fill="url(#sw${u})"/>
+      <path d="M27 67c9-8 23-11 35-7-6 3-10 8-12 13-9 2-17 0-23-6z" fill="${p.w}"/>
+      <path d="M22 77c11-6 25-8 37-4" stroke="${p.l}" stroke-width="2" fill="none" opacity=".75"/>
+      <path d="M64 66C50 54 55 28 72 24" fill="none" stroke="url(#sw${u})" stroke-width="10" stroke-linecap="round"/>
+      <circle cx="74" cy="23" r="8.5" fill="${p.w}"/>
+      <path d="M81 20l13 4-13 5z" fill="${p.l}"/>
+      <circle cx="77.5" cy="21" r="1.7" fill="${p.d}"/>`,
+  fox: (p,u) => `<ellipse cx="54" cy="91" rx="40" ry="5" fill="${p.d}" opacity=".2"/>
+      <path d="M22 88C0 80 4 46 30 42c-9 17-4 33 10 40z" fill="${p.m}"/>
+      <path d="M32 90c0-19 11-31 26-31s26 12 26 31z" fill="${p.m}"/>
+      <path d="M46 90c0-13 4-22 12-25 8 3 12 12 12 25z" fill="${p.w}" opacity=".5"/>
+      <path d="M35 44L39 12l17 17h10l17-17 4 32c0 8-3 14-9 19L61 76 44 63c-6-5-9-11-9-19z" fill="${p.m}"/>
+      <path d="M45 38l-4-18 12 11z" fill="${p.d}"/>
+      <path d="M77 38l4-18-12 11z" fill="${p.d}"/>
+      <circle cx="50" cy="45" r="3" fill="${p.d}"/>
+      <circle cx="72" cy="45" r="3" fill="${p.d}"/>
+      <path d="M61 60l5 5-5 5-5-5z" fill="${p.d}"/>`,
+  witch: (p,u) => `<defs>
+      <linearGradient id="cl${u}" x1=".28" y1="0" x2=".72" y2="1">
+        <stop offset="0" stop-color="${p.m}"/><stop offset="1" stop-color="${p.d}"/>
+      </linearGradient>
+      <radialGradient id="or${u}">
+        <stop offset="0" stop-color="#fff"/>
+        <stop offset=".42" stop-color="${p.w}" stop-opacity=".6"/>
+        <stop offset="1" stop-color="${p.w}" stop-opacity="0"/>
+      </radialGradient></defs>
+      <ellipse cx="48" cy="92" rx="33" ry="5" fill="${p.d}" opacity=".25"/>
+      <circle cx="78" cy="16" r="21" fill="url(#or${u})"/>
+      <rect x="75.5" y="18" width="5" height="74" rx="2.5" fill="${p.m}"/>
+      <circle cx="78" cy="15" r="7.5" fill="none" stroke="${p.l}" stroke-width="3.5"/>
+      <circle cx="78" cy="15" r="3" fill="#fff"/>
+      <path d="M22 92c0-30 10-48 24-48s24 18 24 48z" fill="url(#cl${u})"/>
+      <path d="M32 52c0-13 6-21 14-21s14 8 14 21c0 7-28 7-28 0z" fill="${p.d}"/>
+      <ellipse cx="46" cy="48" rx="7" ry="8.5" fill="${p.w}" opacity=".92"/>
+      <circle cx="44" cy="47" r="1.6" fill="${p.d}"/>
+      <circle cx="49.5" cy="47" r="1.6" fill="${p.d}"/>`,
+  harp: (p,u) => `<defs>
+      <linearGradient id="hp${u}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="${p.w}"/><stop offset=".5" stop-color="${p.l}"/>
+        <stop offset="1" stop-color="${p.m}"/>
+      </linearGradient></defs>
+      <ellipse cx="50" cy="92" rx="26" ry="4" fill="${p.d}" opacity=".24"/>
+      <rect x="29" y="79" width="42" height="10" rx="5" fill="url(#hp${u})"/>
+      <path d="M35 81c-5-23 0-42 13-55 3-3 8 0 6 4-10 12-15 29-12 51z" fill="url(#hp${u})"/>
+      <path d="M62 81c1-18 1-34-1-47l7-2c2 14 2 31 1 49z" fill="url(#hp${u})"/>
+      <path d="M49 27l21-5 2 9-22 4z" fill="${p.m}"/>
+      <g stroke="${p.w}" stroke-width="1.1" opacity=".8" stroke-linecap="round">
+        <path d="M53 32L44 79"/><path d="M58 31L51 79"/>
+        <path d="M63 30L58 79"/><path d="M68 29L65 79"/>
+      </g>
+      <circle cx="70" cy="25" r="3.4" fill="${p.w}"/>`,
+};
+
+const RANK_META = {
+  1:{ name:'Swan', cls:'act', fig:'swan' },
+  3:{ name:'Fox',  cls:'act', fig:'fox' },
+  7:{ name:'Treasure', cls:'inert', figBySuit:{ bells:'harp', keys:'harp', moons:'harp' } },
+  9:{ name:'Witch', cls:'act', fig:'witch' },
+};
+const PIP_LAYOUT = {
+  2:[[1,2],[7,2]], 4:[[1,1],[1,3],[7,1],[7,3]],
+  6:[[1,1],[1,3],[4,1],[4,3],[7,1],[7,3]],
+  8:[[1,1],[1,3],[3,1],[3,3],[5,1],[5,3],[7,1],[7,3]],
+  10:[[1,1],[1,3],[3,1],[3,3],[5,1],[5,3],[7,1],[7,3],[2,2],[6,2]],
+};
+let pcUid = 0;
+
+function faceHTML(suitId, rank) {
+  const suit = SUIT_BY_ID[suitId];
+  const meta = RANK_META[rank] || { name:null, cls:'plain' };
+  const figKey = meta.figBySuit ? meta.figBySuit[suitId] : meta.fig;
+  const u = 'pc' + (++pcUid);
+  const body = figKey
+    ? `<span class="art"><span class="wash"></span><span class="glow"></span>
+         <span class="figure"><svg viewBox="0 0 100 100" aria-hidden="true">${FIGURE[figKey](suit.pal, u)}</svg></span>
+         <span class="vig"></span></span>`
+    : `<span class="pips">` + (PIP_LAYOUT[rank] || [[4,2]]).map(([r,c]) =>
+        `<svg class="g${r > 4 ? ' inv' : ''}" style="grid-row:${r};grid-column:${c}"
+          aria-hidden="true"><use href="#${suit.glyph}"/></svg>`).join('') + `</span>`;
+  const corner = `<span class="corner"><span class="r">${rank}</span>` +
+    `<svg class="g" aria-hidden="true"><use href="#${suit.glyph}"/></svg>` +
+    (meta.name ? `<span class="nm">${meta.name}</span>` : '') + `</span>`;
+  return { html: corner + body, cls: meta.cls,
+    label: `${rank} of ${suit.name}${meta.name ? ' — ' + meta.name : ''}` };
+}
+
+function plateCard(suitId, rank) {
+  const f = faceHTML(suitId, rank);
+  const el = document.createElement('div');
+  el.className = `pc ${f.cls} ${suitId} plate`;
+  el.setAttribute('role','img');
+  el.setAttribute('aria-label', f.label);
+  el.innerHTML = f.html;
+  return el;
+}
+
+document.querySelectorAll('.pc-slot').forEach(s => {
+  s.replaceWith(plateCard(s.dataset.suit, +s.dataset.rank));
+});
+
+/* ---------------- the riding strip ---------------- */
+const AXIS_WORD = { blade:'Blade', momentum:'Momentum' };
+const AXIS_UNIT = { blade:'DMG', momentum:'MULT' };
+
+function plaqueHTML(b, i) {
+  return `<div class="plaque ${b.tier} ${b.axis}" data-idx="${i}"
+      title="${b.cond}">
+      <span class="axis"><svg aria-hidden="true"><use href="#s-${b.axis}"/></svg></span>
+      <span><b>${b.name}</b> <span class="tierword">${b.tier} ${AXIS_WORD[b.axis]}</span></span>
+      <span class="pay">+${pay(b)} ${AXIS_UNIT[b.axis]}</span>
+    </div>`;
+}
+const strip = document.getElementById('ridingStrip');
+function renderStrip() {
+  strip.innerHTML = `<span class="k">Riding this trick</span>` +
+    RIDING.map(plaqueHTML).join('');
+}
+
+/* ---------------- the hand ---------------- */
+const hand = document.getElementById('hand');
+function renderHand() {
+  hand.innerHTML = '';
+  hand.setAttribute('role','group');
+  hand.setAttribute('aria-label','Your hand');
+  HAND.forEach((c, i) => {
+    const f = faceHTML(c.suit, c.rank);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pick' + (c.illegal ? ' is-illegal' : '');
+    b.tabIndex = -1;
+    b.dataset.idx = i;
+    b.dataset.label = f.label;
+    /* how many riding buffs this card could fire on, on a trick it TAKES.
+       Suit gate only — the branch is decided by the outcome, not the card. */
+    const hot = c.illegal ? 0 : RIDING.filter(r => r.suit === c.suit).length;
+    b.setAttribute('aria-label', f.label +
+      (c.illegal ? ', cannot be played, Bells was led'
+                 : hot ? `, ${hot} riding buffs would fire if this takes the trick` : ''));
+    b.innerHTML = `<span class="pc ${f.cls} ${c.suit}">${f.html}</span>` +
+      (hot ? `<span class="load">${hot}</span>` : '');
+    if (hot) b.classList.add('hot');
+    hand.appendChild(b);
+  });
+  const first = hand.querySelector('.pick:not(.is-illegal)');
+  if (first) first.tabIndex = 0;
+}
+
+/* roving tabindex — game-ux hard floor: six sibling controls is one widget */
+hand.addEventListener('keydown', e => {
+  const list = [...hand.querySelectorAll('.pick:not(.is-illegal)')];
+  const i = list.indexOf(document.activeElement);
+  if (i < 0) return;
+  let n = null;
+  if (e.key === 'ArrowRight') n = (i + 1) % list.length;
+  else if (e.key === 'ArrowLeft') n = (i - 1 + list.length) % list.length;
+  else if (e.key === 'Home') n = 0;
+  else if (e.key === 'End') n = list.length - 1;
+  else if (e.key === 'Escape') { disarm(); return; }
+  else return;
+  e.preventDefault();
+  list.forEach(c => (c.tabIndex = -1));
+  list[n].tabIndex = 0; list[n].focus();
+});
+
+let armed = null;
+function disarm() {
+  if (!armed) return;
+  armed.classList.remove('is-armed');
+  armed = null;
+  document.getElementById('cardsFig').textContent = 'Pick a Bells card';
+}
+
+hand.addEventListener('click', e => {
+  const b = e.target.closest('.pick');
+  if (!b || b.classList.contains('is-illegal') || running) return;
+  /* Two taps, and BOTH on the card — game-ux: confirmation belongs on the
+     object being acted on, never on a button across the screen. */
+  if (armed === b) { play(b); return; }
+  disarm();
+  armed = b; b.classList.add('is-armed');
+  document.getElementById('cardsFig').textContent = b.dataset.label;
+});
+
+/* ---------------- the readout ---------------- */
+const potbox = document.getElementById('potbox');
+const ledger = document.getElementById('ledger');
+const lscroll = document.getElementById('lscroll');
+
+/* The window shows the two most recent terms, so it has to FOLLOW the beat.
+   Without this the third term onward lands below the fold and the sequence
+   silently stops being a derivation — the number keeps jumping and the reason
+   is off-screen.
+
+   THE JUMP IS INSTANT, AND THAT IS DELIBERATE AFTER A FAILURE. The first cut
+   used `behavior:'smooth'`, which is driven by the same compositor the flight
+   animation is: measured over a full six-beat run, scrollTop never left 0 and
+   every term after the second landed below the fold with no sign anything had
+   happened. Smooth scrolling is an effect that can silently not run; a
+   scrollTop assignment cannot. Nothing is lost — the row already announces
+   itself by sliding in from the left, and the list stepping by exactly one row
+   height reads as crisp rather than abrupt. Do not put `scroll-behavior:smooth`
+   on this box in the port; it re-creates the same failure. */
+function clearLedger() {
+  lscroll.innerHTML = '';
+  lscroll.classList.remove('over');
+  lscroll.scrollTop = 0;
+}
+function followLedger() {
+  const over = lscroll.scrollHeight > lscroll.clientHeight + 1;
+  lscroll.classList.toggle('over', over);
+  if (!over) return;
+  lscroll.scrollTop = lscroll.scrollHeight;
+}
+const big    = document.getElementById('big');
+const bigV   = document.getElementById('bigV');
+const regDmg = document.getElementById('regDmg');
+const regMult= document.getElementById('regMult');
+const totV   = document.getElementById('totV');
+const rollV  = document.getElementById('rollV');
+const potV   = document.getElementById('potV');
+
+function paintPot() {
+  totV.textContent  = state.total;
+  rollV.textContent = state.roll;
+  potV.textContent  = state.total * state.roll;
+  document.getElementById('streakText').textContent =
+    state.roll === 0 ? 'no streak' : `${state.roll} trick${state.roll === 1 ? '' : 's'} rolled`;
+}
+function paintHearts() {
+  const h = document.getElementById('hearts');
+  h.innerHTML = '';
+  for (let i = 0; i < 10; i++) {
+    const el = document.createElement('i');
+    el.className = 'heart' + (i >= state.hp ? ' gone' : '');
+    h.appendChild(el);
+  }
+  h.setAttribute('aria-label', `Your health, ${state.hp} of 10`);
+  document.getElementById('hpText').textContent = `${state.hp} / 10`;
+}
+
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+/* one beat: the row lands, the term is thrown, the number is hit */
+function landRow({ kind, icon, name, note, pay, unit, run }) {
+  const row = document.createElement('div');
+  row.className = 'lrow ' + kind;
+  row.innerHTML =
+    `<span class="ic"><svg aria-hidden="true"><use href="#s-${icon}"/></svg></span>` +
+    `<span class="nm">${name}${note ? ' <small>' + note + '</small>' : ''}</span>` +
+    `<span class="pay">${pay}</span>` +
+    `<span class="run">${run}</span>`;
+  lscroll.appendChild(row);
+  followLedger();
+  return row;
+}
+function impact(text, kind) {
+  big.classList.remove('hit'); void big.offsetWidth; big.classList.add('hit');
+  potbox.classList.remove('knock'); void potbox.offsetWidth; potbox.classList.add('knock');
+  if (text) {
+    const s = document.createElement('span');
+    s.className = 'spark ' + (kind || '');
+    s.style.setProperty('--ax',
+      kind === 'blade' ? 'var(--blade)' :
+      kind === 'momentum' ? 'var(--momentum)' :
+      kind === 'hurt' ? 'var(--wc-alarm)' : 'var(--pot)');
+    s.textContent = text;
+    big.appendChild(s);
+    setTimeout(() => s.remove(), BEAT() * 1.2);
+  }
+}
+
+/* ---------------- the flight ----------------
+   The card is cloned into a fixed layer, its start and end boxes are MEASURED,
+   and it is animated between them. Two things this buys that a CSS transition
+   on the card in place would not: it is never clipped by the hand's or the
+   felt's overflow, and the hand's gap closes only after the card has landed, so
+   nothing reflows under the player's finger mid-flight. */
+const flight = document.getElementById('flight');
+function flyCard(fromEl, toEl) {
+  return new Promise(resolve => {
+    const a = fromEl.getBoundingClientRect();
+    const b = toEl.getBoundingClientRect();
+    const clone = fromEl.querySelector('.pc').cloneNode(true);
+    const wrap = document.createElement('div');
+    wrap.className = 'flyer';
+    wrap.style.cssText =
+      `left:${a.left}px; top:${a.top}px; width:${a.width}px; height:${a.height}px;`;
+    clone.style.cssText = 'width:100%;height:100%;';
+    wrap.appendChild(clone);
+    flight.appendChild(wrap);
+    fromEl.classList.add('flown');
+
+    const dx = (b.left + b.width / 2) - (a.left + a.width / 2);
+    const dy = (b.top + b.height / 2) - (a.top + a.height / 2);
+    const scale = b.width / a.width;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const ms = reduce ? 1 : BEAT() * 0.9;
+
+    /* An arc, not a straight line: the card lifts clear of the hand before it
+       travels, which is what makes it read as PLACED rather than dragged
+       through the other cards. The mid keyframe is the lift. */
+    const anim = wrap.animate([
+      { transform:'translate(0,0) scale(1) rotate(0deg)' },
+      { transform:`translate(${dx * .45}px, ${dy * .35 - 34}px) scale(${1 + (scale - 1) * .3}) rotate(-4deg)`,
+        offset:.45 },
+      { transform:`translate(${dx}px, ${dy}px) scale(${scale}) rotate(0deg)` },
+    ], { duration:ms, easing:'cubic-bezier(.3,.75,.25,1)', fill:'forwards' });
+
+    /* THE LANDING MUST NOT DEPEND ON onfinish ALONE, and this is a real defect
+       rather than a mockup nicety. A background tab does not run animations:
+       currentTime stays at 0, `onfinish` never fires, and every await after it
+       is dead — the trick never resolves, `running` stays true, and the hand
+       stops responding to clicks for the rest of the session. Found by
+       switching away from the tab mid-flight. A timer backstop and a
+       visibilitychange hook both land the card; `landed` makes it idempotent.
+       Carry this into src/ — anything that awaits a WAAPI finish needs it. */
+    let landed = false;
+    const land = () => {
+      if (landed) return;
+      landed = true;
+      document.removeEventListener('visibilitychange', land);
+      try { anim.cancel(); } catch (_) { /* already gone */ }
+      toEl.innerHTML = '';
+      toEl.appendChild(clone);
+      clone.style.cssText = '';
+      clone.classList.add('plate');
+      wrap.remove();
+      resolve();
+    };
+    anim.onfinish = land;
+    setTimeout(land, ms + 260);
+    document.addEventListener('visibilitychange', land);
+  });
+}
+
+/* ---------------- the sequence ---------------- */
+let running = false;
+
+async function play(btn) {
+  running = true;
+  disarmAll();
+  const card = HAND[+btn.dataset.idx];
+  document.getElementById('bar').hidden = true;
+  document.getElementById('prompt').hidden = true;
+
+  const youSlot = document.getElementById('youSlot');
+  await flyCard(btn, youSlot);
+  btn.classList.add('collapsed');
+  document.getElementById('youCap').textContent = 'YOU PLAYED';
+
+  await wait(BEAT() * 0.35);
+
+  /* the trick is decided before a single number moves — the player should
+     never be watching damage accrue while still unsure who won */
+  const took = !!card.wins;
+  document.getElementById('figYou').classList.add(took ? 'took' : 'lost');
+  document.getElementById('figThem').classList.add(took ? 'lost' : 'took');
+  const vy = document.getElementById('verdictYou');
+  const vt = document.getElementById('verdictThem');
+  vy.textContent = took ? 'You took it' : 'Aoife took it';
+  vy.classList.add('on');
+  vt.textContent = took ? '' : 'Aoife took it';
+  if (!took) { vy.textContent = 'You lost it'; vt.classList.add('on'); }
+
+  await wait(BEAT() * 0.6);
+
+  /* ---- and now we LEAVE THE TABLE ----
+     The trick is decided on the felt, where the cards are, and priced on a
+     screen of its own. The two played cards come across so the number is
+     attached to the thing that earned it. */
+  await openResolve(card, took);
+
+  clearLedger();
+  bigV.textContent = '0';
+  regDmg.textContent = '0';
+  regMult.textContent = '1';
+  big.classList.remove('hurt');
+  potbox.classList.add('on');
+  paintPot();
+
+  await wait(BEAT() * 0.55);
+
+  if (took) await bankedSequence(card);
+  else      await hurtSequence();
+
+  running = false;
+}
+
+/* ---------------- the screen change ---------------- */
+const resolveScreen = document.getElementById('resolve');
+
+async function openResolve(card, took) {
+  /* The cards are CLONED, not moved. Moving them would empty the trick well
+     behind the screen, and the player is coming back to that table in a
+     moment — a well that lost its cards while the screen was up reads as a
+     bug on the way back. */
+  const them = document.querySelector('#figThem .slot .pc');
+  const you  = document.querySelector('#youSlot .pc');
+  const put = (slotId, node) => {
+    const slot = document.getElementById(slotId);
+    slot.innerHTML = '';
+    if (node) { const c = node.cloneNode(true); c.style.cssText = ''; slot.appendChild(c); }
+  };
+  put('rSlotThem', them);
+  put('rSlotYou', you);
+
+  document.getElementById('rFigYou').className = took ? 'took' : '';
+  document.getElementById('rFigThem').className = took ? '' : 'took';
+  const v = document.getElementById('rVerdict');
+  v.textContent = took ? 'You took it' : 'Aoife took it';
+  v.classList.toggle('hurt', !took);
+  document.getElementById('rhead').textContent =
+    took ? 'Trick 3 of 6 · banked' : 'Trick 3 of 6 · the streak is broken';
+
+  resolveScreen.classList.add('on');
+  resolveScreen.setAttribute('aria-hidden', 'false');
+  /* Focus moves with the screen or the keyboard is left behind on a table it
+     can no longer reach. The prompt's own button takes it once it appears; until
+     then the screen itself holds it so a screen reader announces the change. */
+  resolveScreen.setAttribute('tabindex', '-1');
+  resolveScreen.focus({ preventScroll:true });
+  await wait(320);
+}
+
+function closeResolve() {
+  resolveScreen.classList.remove('on');
+  resolveScreen.setAttribute('aria-hidden', 'true');
+  document.getElementById('prompt').hidden = true;
+  document.getElementById('hurtOut').hidden = true;
+  potbox.classList.remove('on');
+  document.getElementById('bar').hidden = false;
+  const back = hand.querySelector('.pick:not(.is-illegal):not(.collapsed)');
+  if (back) back.focus({ preventScroll:true });
+}
+
+function disarmAll() {
+  hand.querySelectorAll('.pick').forEach(p => p.classList.remove('is-armed'));
+  armed = null;
+}
+
+/* the fired set: suit gate only. On a trick the player TOOK, every Bell-Taker
+   riding fires — the buff belongs to the trick, not to the card. */
+function firedFor(card) { return RIDING.filter(r => r.suit === card.suit); }
+
+async function bankedSequence(card) {
+  const fired = firedFor(card);
+  let dmg = 0, mult = 1;
+  const show = () => {
+    regDmg.textContent = dmg;
+    regMult.textContent = mult;
+    bigV.textContent = dmg * mult;
+  };
+
+  /* ---- beat 1: the base ---- */
+  dmg = BASE_DAMAGE; show();
+  landRow({ kind:'base', icon:'base', name:'Base damage',
+    note:'every trick you take', pay:`+${BASE_DAMAGE} DMG`, run:`<b>${dmg * mult}</b>` });
+  impact(`+${BASE_DAMAGE}`, 'base');
+  await wait(BEAT());
+
+  /* ---- beats 2..n: one per fired card ---- */
+  for (const b of fired) {
+    const n = pay(b);
+    if (b.axis === 'blade') dmg += n; else mult += n;
+    show();
+    landRow({ kind:b.axis, icon:b.axis,
+      name:`${b.name} <small>(${AXIS_WORD[b.axis]})</small>`,
+      note:b.tier, pay:`+${n} ${AXIS_UNIT[b.axis]}`, run:`<b>${dmg * mult}</b>` });
+    impact(`+${n} ${AXIS_UNIT[b.axis]}`, b.axis);
+    markSpent(RIDING.indexOf(b));
+    await wait(BEAT());
+  }
+
+  /* ---- the Overlap Bonus ----
+     buff-resolution-and-lifetimes.md section 3.4: firedCount - 1, into the
+     multiplier pool, regardless of what the cards themselves pay. That doc
+     calls it "the cheapest available moment of drama on this screen" and it is
+     currently invisible, so it gets its own beat rather than being folded
+     silently into the multiplier. */
+  if (fired.length > 1) {
+    const ov = fired.length - 1;
+    mult += ov; show();
+    landRow({ kind:'overlap', icon:'overlap', name:'Overlap Bonus',
+      note:`${fired.length} fired on one trick`, pay:`+${ov} MULT`, run:`<b>${dmg * mult}</b>` });
+    impact(`OVERLAP +${ov}`, 'overlap');
+    await wait(BEAT() * 1.15);
+  }
+
+  /* ---- the bank: this trick joins the streak ---- */
+  const trick = dmg * mult;
+  state.total += trick;
+  state.roll  += 1;
+  paintPot();
+  landRow({ kind:'bank', icon:'bank', name:'Banked into the streak',
+    note:`total ${state.total} &times; roll ${state.roll}`,
+    pay:`+${trick}`, run:`<b>pot ${state.total * state.roll}</b>` });
+  potV.classList.remove('hit'); void potV.offsetWidth; potV.classList.add('hit');
+  potbox.classList.remove('knock'); void potbox.offsetWidth; potbox.classList.add('knock');
+  await wait(BEAT() * 0.9);
+
+  offerPrompt(trick);
+}
+
+async function hurtSequence() {
+  /* AC 7: a trick the player loses deals the hit's damage, sets total and roll
+     to zero, deals nothing to the Quarry, and offers NO choice. The panel still
+     opens — it has something to say, which is exactly how much was lost. */
+  const lost = state.total * state.roll;
+  big.classList.add('hurt');
+  document.querySelector('#big .k').textContent = 'Pot lost';
+  bigV.textContent = lost;
+  landRow({ kind:'hurt', icon:'hurt', name:'Aoife took the trick',
+    note:'no damage accrues', pay:'—', run:'' });
+  impact('', 'hurt');
+  await wait(BEAT());
+
+  state.hp -= 1; paintHearts();
+  landRow({ kind:'hurt', icon:'hurt', name:'You take the hit',
+    note:'health', pay:'−1', run:'' });
+  impact('−1 HEALTH', 'hurt');
+  await wait(BEAT());
+
+  state.total = 0; state.roll = 0; paintPot();
+  bigV.textContent = '0';
+  landRow({ kind:'hurt', icon:'hurt', name:'The whole pot is gone',
+    note:'no two-thirds consolation', pay:`−${lost}`, run:'<b>pot 0</b>' });
+  impact(`−${lost}`, 'hurt');
+  potV.classList.remove('hit'); void potV.offsetWidth; potV.classList.add('hit');
+  await wait(BEAT() * 1.2);
+
+  const out = document.getElementById('hurtOut');
+  out.hidden = false;
+  document.getElementById('onwardBtn').focus({ preventScroll:true });
+}
+
+function markSpent(i) {
+  const p = strip.querySelector(`.plaque[data-idx="${i}"]`);
+  if (p) p.classList.add('spent');
+}
+
+/* ---------------- apply, or roll ---------------- */
+function offerPrompt(trickJustBanked) {
+  const potNow = state.total * state.roll;
+  /* What rolling is worth is a FLOOR, not a promise: the next trick pays at
+     least a bare one, because the player may fire nothing on it. Stating the
+     floor and the risk in the same control is what turns this from a nag into
+     a bet — and the doc's open question is whether it should block at all. */
+  const nextBare = (state.total + BASE_DAMAGE) * (state.roll + 1);
+  document.getElementById('applyFig').textContent = potNow;
+  document.getElementById('rollFig').textContent = nextBare + '+';
+  document.getElementById('rollMult').textContent = `next roll ×${state.roll + 1}`;
+  document.querySelector('#rollBtn .risk').textContent = '0 if you do not';
+  const p = document.getElementById('prompt');
+  p.hidden = false;
+  document.getElementById('applyBtn').focus();
+}
+
+/* Both exits do the SAME two things — settle the pot, then leave the screen —
+   and the pause between them is what stops the payout being invisible. Applying
+   79 damage and cutting straight back to the felt would show the player the
+   number they chose for exactly zero frames. */
+document.getElementById('applyBtn').addEventListener('click', async () => {
+  const potNow = state.total * state.roll;
+  state.total = 0; state.roll = 0;
+  paintPot();
+  bigV.textContent = potNow;
+  document.querySelector('#big .k').textContent = 'Dealt to Aoife';
+  impact(`−${potNow} TO AOIFE`, 'overlap');
+  document.getElementById('prompt').hidden = true;
+  await wait(BEAT() * 1.6);
+  closeResolve();
+  say(`${potNow} dealt. Total and roll are back to zero — press Replay.`);
+});
+
+document.getElementById('rollBtn').addEventListener('click', async () => {
+  document.getElementById('prompt').hidden = true;
+  document.querySelector('#big .k').textContent = 'Rolled over';
+  impact(`ROLL ×${state.roll + 1}`, 'momentum');
+  await wait(BEAT() * 1.2);
+  closeResolve();
+  say(`Rolled. Trick 4 will pay at roll ×${state.roll + 1} — press Replay.`);
+});
+
+document.getElementById('onwardBtn').addEventListener('click', () => {
+  closeResolve();
+  say('A hit is total. Trick 4 starts from nothing — press Replay.');
+});
+
+/* ---------------- dev rail ---------------- */
+let toastT = null;
+function say(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 3200);
+}
+const range = document.getElementById('beatRange');
+range.addEventListener('input', () => {
+  document.documentElement.style.setProperty('--beat', range.value + 'ms');
+  document.getElementById('beatOut').textContent = range.value + 'ms';
+});
+document.getElementById('replay').addEventListener('click', reset);
+
+function reset() {
+  running = false;
+  state = { ...OPENING };
+  document.getElementById('figYou').className = '';
+  document.getElementById('figThem').className = '';
+  document.getElementById('verdictYou').className = 'verdict';
+  document.getElementById('verdictThem').className = 'verdict';
+  document.getElementById('youCap').textContent = 'YOU — TO FOLLOW';
+  document.getElementById('youSlot').innerHTML = '<div class="pc empty"></div>';
+  document.querySelector('#big .k').textContent = 'This trick';
+  big.classList.remove('hurt');
+  bigV.textContent = '0';
+  regDmg.textContent = '0'; regMult.textContent = '1';
+  clearLedger();
+  potbox.classList.remove('on');
+  document.getElementById('prompt').hidden = true;
+  document.getElementById('hurtOut').hidden = true;
+  resolveScreen.classList.remove('on');
+  resolveScreen.setAttribute('aria-hidden', 'true');
+  document.getElementById('rSlotThem').innerHTML = '';
+  document.getElementById('rSlotYou').innerHTML = '';
+  document.getElementById('bar').hidden = false;
+  flight.innerHTML = '';
+  clearTimeout(toastT);
+  document.getElementById('toast').classList.remove('show');
+  renderStrip(); renderHand(); paintPot(); paintHearts();
+  const first = hand.querySelector('.pick:not(.is-illegal)');
+  if (first) { first.classList.add('is-armed'); armed = first;
+    document.getElementById('cardsFig').textContent = first.dataset.label; }
+}
+
+reset();
+say('The 10 of Bells is already armed — click it again to play it.');
+</script>
+</body>
+</html>

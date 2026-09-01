@@ -345,6 +345,8 @@ export type {
   ConditionBuffTemplate,
   ActivatedBuffTemplate,
   BuffActivatedTemplateKind,
+  MintableConditionKind,
+  MintableRewardAxis,
   BuffThresholdFamily,
   TemplateGrant,
 } from './buffTemplates'
